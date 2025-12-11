@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2025, Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec_assy6941/mec1743_qlj
+name: MEC174X EVB ASSY 6941 with MEC1743-QLJ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 60
+flash: 416
+supported:
+  - gpio
+  - pinctrl
+  - i2c
+  - spi
+testing:
+  binaries:
+    - spi_image.bin
+  ignore_tags:
+    - bluetooth
+    - net
+vendor: microchip

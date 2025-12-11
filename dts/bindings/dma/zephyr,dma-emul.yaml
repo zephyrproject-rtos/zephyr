@@ -1,0 +1,20 @@
+# Copyright 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulated DMA Controller
+
+include: dma-controller.yaml
+
+compatible: zephyr,dma-emul
+
+properties:
+  stack-size:
+    type: int
+    required: true
+    description: >
+      Stack size (in bytes) for the instance-specific work_q thread.
+
+  priority:
+    type: int
+    description: >
+      Priority for the instance-specific work_q thread.

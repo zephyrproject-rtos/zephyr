@@ -1,0 +1,21 @@
+# Copyright (c) 2021 Florin Stancu <niflostancu@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_CC13XX_CC26XX
+	bool "Watchdog Driver for CC13xx / CC26xx family of MCUs"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable watchdog for CC13xx / CC26xx family of MCUs
+
+config WDT_CC13XX_CC26XX_INITIAL_TIMEOUT
+	int "Value for initial WDT timeout in ms"
+	depends on WDT_CC13XX_CC26XX
+	default 2000
+	range 1 2863311
+	help
+	  The CC13xx/CC26xx watchdog timer is sourced from the MCU clock
+	  using a fixed prescaler of 32.
+	  E.g., for the standard 48 MHz MCU clock, the following:
+	  0xFFFFFFFF / (48^9 / 32 / 1000) [ms]

@@ -1,0 +1,13 @@
+sample:
+  description: Demonstration of the LP50xx LED driver
+  name: LP50xx sample
+tests:
+  sample.drivers.led.lp50xx:
+    filter: dt_compat_enabled("ti,lp5009") or
+            dt_compat_enabled("ti,lp5012") or
+            dt_compat_enabled("ti,lp5018") or
+            dt_compat_enabled("ti,lp5024") or
+            dt_compat_enabled("ti,lp5030") or
+            dt_compat_enabled("ti,lp5036")
+    tags: LED
+    depends_on: i2c

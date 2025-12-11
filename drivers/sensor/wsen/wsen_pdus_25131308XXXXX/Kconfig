@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config WSEN_PDUS_25131308XXXXX
+	bool "WSEN-PDUS-25131308XXXXX differential pressure sensor"
+	default y
+	depends on DT_HAS_WE_WSEN_PDUS_25131308XXXXX_ENABLED
+	select I2C
+	select HAS_WESENSORS
+	help
+	  Enable driver for the WSEN-PDUS-25131308XXXXX I2C-based differential pressure sensor.

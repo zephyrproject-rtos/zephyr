@@ -1,0 +1,10 @@
+# M5Stack Atom Lite board configuration
+
+# Copyright (c) 2024 Nikola Trifunovic <nikola@trifunovic.at>
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M5STACK_ATOM_LITE
+	select SOC_ESP32_PICO_D4
+	select SOC_ESP32_PROCPU if BOARD_M5STACK_ATOM_LITE_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_M5STACK_ATOM_LITE_ESP32_APPCPU

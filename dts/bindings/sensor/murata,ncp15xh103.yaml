@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Silicom Connectivity Solutions Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MURATA NCP15XH103 thermistor
+
+compatible: "murata,ncp15xh103"
+
+include: ntc-thermistor.yaml

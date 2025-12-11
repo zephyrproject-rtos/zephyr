@@ -1,0 +1,20 @@
+# Nordic Semiconductor nRF54H20 Application MCU
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF54H20_CPUAPP
+
+config NUM_IRQS
+	default 471
+
+config SHELL_BACKEND_SERIAL
+	default n if DEBUG_NRF_ETR_SHELL
+
+config POWER_DOMAIN
+	default y
+
+config CODE_DATA_RELOCATION
+	default y if (PM || POWEROFF) && !MCUBOOT
+
+endif # SOC_NRF54H20_CPUAPP

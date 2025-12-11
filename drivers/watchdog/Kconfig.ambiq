@@ -1,0 +1,14 @@
+# Ambiq SDK WDT
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config WDT_AMBIQ
+	bool "AMBIQ WDT driver"
+	default y
+	depends on DT_HAS_AMBIQ_WATCHDOG_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_WDT
+	help
+	  Enable driver for Ambiq WDT.

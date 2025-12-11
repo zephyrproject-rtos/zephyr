@@ -1,0 +1,25 @@
+sample:
+  description: On-Demand paging of firmware larger than available memory
+  name: demand-paging
+common:
+  tags:
+    - kernel
+    - mmu
+    - demand_paging
+  integration_platforms:
+    - qemu_cortex_a53
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Calling huge body of code that doesn't fit in memory"
+      - "free memory pages: from (.*) to 0, (.*) page faults"
+      - "Calling it a second time"
+      - "free memory pages: from 0 to 0, (.*) page faults"
+      - "Done."
+tests:
+  sample.demand_paging.ondemand_section:
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp

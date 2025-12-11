@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_LMP90100_EVB
+	def_bool $(shields_list_contains,lmp90100_evb)

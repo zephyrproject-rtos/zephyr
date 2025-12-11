@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_ESP32
+	bool "ESP32 MDIO driver"
+	default y
+	depends on SOC_SERIES_ESP32
+	depends on DT_HAS_ESPRESSIF_ESP32_MDIO_ENABLED
+	help
+	  Enable ESP32 MCU Family MDIO driver.

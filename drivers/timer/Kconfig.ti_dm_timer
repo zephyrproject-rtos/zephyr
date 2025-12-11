@@ -1,0 +1,13 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_DM_TIMER
+	bool "TI Dual-Mode Timer"
+	default y
+	depends on DT_HAS_TI_AM654_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for TI Dual-Mode timer. This
+	  driver provides system tick interface.

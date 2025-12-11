@@ -1,0 +1,38 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC basic timer
+
+compatible: "microchip,xec-timer"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    description: Timer frequency equals clock-frequency divided by the prescaler value
+
+  max-value:
+    type: int
+    required: true
+    description: Maximum counter value the instance can handle
+
+  girqs:
+    type: array
+    required: true
+    description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+
+  pcrs:
+    type: array
+    required: true
+    description: PCR sleep enable register index and bit position.

@@ -1,0 +1,85 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO based QDEC input device
+
+  Implement an input device generating relative axis event reports for a rotary
+  encoder connected to two GPIOs. The driver is normally idling until it sees a
+  transition on any of the encoder signal lines, then switches to polling mode
+  and samples the two signal lines periodically to track the encoder position,
+  and goes back to idling after the specified timeout.
+
+  Example configuration:
+
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+  qdec {
+          compatible = "gpio-qdec";
+          gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>,
+                  <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+          steps-per-period = <4>;
+          zephyr,axis = <INPUT_REL_WHEEL>;
+          sample-time-us = <2000>;
+          idle-timeout-ms = <200>;
+  };
+
+compatible: "gpio-qdec"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for the A and B encoder signals.
+
+  led-gpios:
+    type: phandle-array
+    description: |
+      GPIOs for LED or other components needed for sensing the AB signals.
+
+  led-pre-us:
+    type: int
+    description: |
+      Time between enabling the led-gpios output pins and reading the encoder
+      state on the input pins, meant to give the state detector (such a
+      phototransistor) time to settle to right state. Required if led-gpios and
+      idle-poll-time-us are specified, can be explicitly set to 0 for no delay.
+
+  steps-per-period:
+    type: int
+    required: true
+    description: |
+      How many steps to count before reporting an input event.
+
+  zephyr,axis:
+    type: int
+    required: true
+    description: |
+      The input code for the axis to report for the device, typically any of
+      INPUT_REL_*.
+
+  sample-time-us:
+    type: int
+    required: true
+    description: |
+      How often to sample the A and B signal lines when tracking the encoder
+      movement.
+
+  idle-poll-time-us:
+    type: int
+    description: |
+      How often to sample the A and B signal while idling. If unset then the
+      driver will use the GPIO interrupt to exit idle state, and any GPIO
+      specified in led-gpios will be enabled all the time. If non zero, then
+      the driver will poll every idle-poll-time-us microseconds while idle, and
+      only activate led-gpios before sampling the encoder state.
+
+  idle-timeout-ms:
+    type: int
+    required: true
+    description: |
+      Timeout for the last detected transition before stopping the sampling
+      timer and going back to idle state.

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/infineon/cat1b/mpns/cyw20829b1340.dtsi>
+#include "cyw920829m2evk_02.dtsi"
+
+/ {
+	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit w/ CYW20829B1340";
+	compatible = "infineon,cyw920829m2evk_02", "infineon,CYW20829";
+};

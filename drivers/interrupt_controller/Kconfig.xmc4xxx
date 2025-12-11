@@ -1,0 +1,12 @@
+# XMC4XXX INTC configuration
+
+# Copyright (c) Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+config XMC4XXX_INTC
+	bool "Interrupt Controller Driver for XMC4XXX series devices"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_INTC_ENABLED
+	help
+	  Enable interrupt controller driver for XMC4XXX series of devices. This is required for
+	  GPIO interrupt support.

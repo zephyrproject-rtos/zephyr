@@ -1,0 +1,37 @@
+# STMicroelectronics STM32WB0 MCU series
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32WB0X
+
+config NUM_IRQS
+	default 32
+
+if STM32WB0_RADIO_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 10240
+
+config CORTEX_M_SYSTICK
+	default n
+
+endif # STM32WB0_RADIO_TIMER
+
+if BT
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1152
+
+config BT_AUTO_PHY_UPDATE
+	default n
+
+config BT_AUTO_DATA_LEN_UPDATE
+	default n
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+endif # SOC_SERIES_STM32WB0X

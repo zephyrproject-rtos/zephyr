@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	memory@50000f00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x50000f00 0x100>;
+		zephyr,memory-region = "SRAMLP_RETAINED_MEM";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+
+	aliases {
+		retainedmemdevice = &retainedmem0;
+	};
+};
+
+&sramlp {
+	/* Shrink sramlp size to avoid overlap with retained memory region:
+	 * 4KB - 256 = 0xf00
+	 */
+	reg = <0x50000000 0xf00>;
+};

@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Endor AG
+# SPDX-License-Identifier: Apache-2.0
+
+config IS31FL3216A
+	bool "IS31FL3216A LED driver"
+	default y
+	depends on DT_HAS_ISSI_IS31FL3216A_ENABLED
+	select I2C
+	help
+	  Enable LED driver for Lumissil Microsystems (a division of ISSI)
+	  IS31FL3216A. This chip supports up to 16 PWM controlled LEDs.

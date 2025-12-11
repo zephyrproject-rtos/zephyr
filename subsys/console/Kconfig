@@ -1,0 +1,49 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CONSOLE_SUBSYS
+	bool "Console subsystem/support routines"
+	help
+	  Console subsystem and helper functions
+
+if CONSOLE_SUBSYS
+
+choice
+	prompt "Console 'get' function selection"
+	optional
+	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
+
+config CONSOLE_GETCHAR
+	bool "Character by character input and output"
+	select UART_CONSOLE_DEBUG_SERVER_HOOKS
+	select CONSOLE_HANDLER
+
+config CONSOLE_GETLINE
+	bool "Line by line input"
+	select CONSOLE_HANDLER
+
+endchoice
+
+if CONSOLE_GETCHAR
+
+config CONSOLE_GETCHAR_BUFSIZE
+	int "console_getchar() buffer size"
+	default 16
+	help
+	  Buffer size for console_getchar(). The default is optimized
+	  to save RAM. You may need to increase it e.g. to support
+	  large host-side clipboard pastes. Set to 0 to disable
+	  interrupt-driven operation and use busy-polling.
+
+config CONSOLE_PUTCHAR_BUFSIZE
+	int "console_putchar() buffer size"
+	default 16
+	help
+	  Buffer size for console_putchar().  The default is optimized
+	  to save RAM. You may need to increase it e.g. to support
+	  large host-side clipboard pastes. Set to 0 to disable
+	  interrupt-driven operation and use busy-polling.
+
+endif # CONSOLE_GETCHAR
+
+endif # CONSOLE_SUBSYS

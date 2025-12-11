@@ -1,0 +1,13 @@
+common:
+  depends_on: serial-net
+  tags:
+    - net
+    - ppp
+tests:
+  net.ppp:
+    min_ram: 21
+  net.ppp.statistics:
+    extra_args:
+      - CONFIG_NET_STATISTICS=y
+      - CONFIG_NET_STATISTICS_PPP=y
+      - CONFIG_NET_STATISTICS_USER_API=y

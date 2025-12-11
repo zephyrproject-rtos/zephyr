@@ -1,0 +1,171 @@
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    A USB Type-C connector node represents a physical USB Type-C connector.
+    It should be a child of a USB-C interface controller or a separate node
+    when it is attached to both MUX and USB-C interface controller.
+
+    This is based on Linux, documentation:
+      https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/devicetree/bindings/connector/usb-connector.yaml?h=v5.19&id=3d7cb6b04c3f3115719235cc6866b10326de34cd
+
+    Example:
+
+    USB-C connector attached to a STM32 UCPD typec port controller, which has
+    power delivery support and enables SINK.
+
+    vbus1: vbus {
+        compatible = "zephyr,usb-c-vbus-adc";
+        io-channels = <&adc2 8>;
+        output-ohms = <49900>;
+        full-ohms = <(330000 + 49900)>;
+    };
+
+    ports {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        port1: usb-c-port@1 {
+            compatible = "usb-c-connector";
+            reg = <1>;
+            tcpc = <&ucpd1>;
+            vbus = <&vbus1>;
+            power-role = "sink";
+            sink-pdos = <PDO_FIXED(5000, 2000, PDO_FIXED_USB_COMM)
+                         PDO_VAR(5000, 12000, 2000)>;
+            op-sink-microwatt = <10000000>;
+        };
+    };
+
+
+compatible: "usb-c-connector"
+
+include: base.yaml
+
+properties:
+  tcpc:
+    type: phandle
+    required: true
+    description: |
+        Type-C Port Controller for this port.
+
+  vbus:
+    type: phandle
+    required: true
+    description: |
+        VBUS measurement and control for this port.
+
+  ppc:
+    type: phandle
+    description: |
+        Power path controller for this port
+
+  power-role:
+    type: string
+    required: true
+    enum:
+      - "sink"
+      - "source"
+      - "dual"
+    description: |
+      The Port power role. "dual" for Dual Role Port.
+
+  try-power-role:
+    type: string
+    enum:
+      - "sink"
+      - "source"
+      - "dual"
+    description: |
+      Preferred power role.
+
+  data-role:
+    type: string
+    enum:
+      - "host"
+      - "device"
+      - "dual"
+    description: |
+      The Port data role.
+        * "host" for Downstream Facing Port (DFP)
+        * "device" for Upstream Facing Port (UFP)
+        * "dual" for Dual Role Data
+
+  typec-power-opmode:
+    type: string
+    enum:
+      - "default"
+      - "1.5A"
+      - "3.0A"
+    description: |
+      Initial Type C advertised power, determined by the Rp when
+      operating as a Source.
+      * "default" corresponds to default USB voltage and current
+        defined by the  USB 2.0 and USB 3.2 specifications.
+          * 5V@500mA for USB 2.0
+          * 5V@900mA for USB 3.2 single-lane
+          * 5V@1500mA for USB 3.2 dual-lane
+      * "1.5A" and "3.0A", 5V@1.5A and 5V@3.0A.
+
+  pd-disable:
+    type: boolean
+    description: |
+      Disables power delivery when true
+
+  source-pdos:
+    type: array
+    description: |
+      An array of source Power Data Objects (PDOs).
+      Use the following macros to define the PDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * PDO_FIXED
+        * PDO_BATT
+        * PDO_VAR
+        * PDO_PPS_APDO
+      Valid range: 1 - 7
+
+  sink-pdos:
+    type: array
+    description: |
+      An array of sink Power Data Objects (PDOs).
+      Use the following macros to define the PDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * PDO_FIXED
+        * PDO_BATT
+        * PDO_VAR
+        * PDO_PPS_APDO
+      Valid range: 1 - 7
+
+  sink-vdos:
+    type: array
+    description: |
+      An array of sink Vendor Defined Objects (VDOs).
+      Use the following macros to define the VDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * VDO_IDH
+        * VDO_CERT
+        * VDO_PRODUCT
+        * VDO_UFP
+        * VDO_DFP
+        * VDO_PCABLE
+        * VDO_ACABLE
+        * VDO_VPD
+      Valid range: 3 - 6
+
+  sink-vdos-v1:
+    type: array
+    description: |
+      An array of sink Vendor Defined Objects (VDOs).
+      Use the following macros to define the VDOs, defined in
+      dt-bindings/usb-c/pd.h.
+        * VDO_IDH
+        * VDO_CERT
+        * VDO_PRODUCT
+        * VDO_CABLE
+        * VDO_AMA
+      Valid range: 3 - 6
+
+  op-sink-microwatt:
+    type: int
+    description: |
+      Minimum power, in microwatts, needed by the sink. A Capability
+      Mismatch is sent to the Source if the power can't be met.

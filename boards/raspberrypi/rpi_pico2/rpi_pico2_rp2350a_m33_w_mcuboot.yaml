@@ -1,0 +1,22 @@
+identifier: rpi_pico2/rp2350a/m33/w/mcuboot
+name: Raspberry Pi Pico 2 (Cortex-M33) WiFi - MCUboot
+type: mcu
+arch: arm
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - wifi

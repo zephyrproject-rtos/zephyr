@@ -1,0 +1,40 @@
+# Copyright (c) 2022, Wouter Cappelle
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common fields for STM32 family TEMP production calibrated sensors
+
+include: [base.yaml, "st,stm32-temp-common.yaml"]
+
+properties:
+  ts-cal1-addr:
+    type: int
+    required: true
+    description: Address of TS_CAL1 calibration parameter
+
+  ts-cal1-temp:
+    type: int
+    required: true
+    description: Temperature at which TS_CAL1 has been measured (TS_CAL2_TEMP)
+
+  ts-cal-vrefanalog:
+    type: int
+    required: true
+    description: |
+      Analog voltage reference (Vref+) voltage with which
+      temperature sensor calibration parameters have been
+      measured
+
+  ts-cal-resolution:
+    type: int
+    description: |
+      ADC resolution used for measuring calibration data
+
+      This is usually equal to the ADC's native resolution.
+
+      Most series have a 12-bit ADC, but 14-bit and 16-bit
+      also exists on e.g., STM32U5 and STM32H7 (16) series.
+    default: 12
+    enum:
+    - 12
+    - 14
+    - 16

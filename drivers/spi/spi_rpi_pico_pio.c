@@ -1,0 +1,1089 @@
+/*
+ * Copyright (c) 2023 Stephen Boylan <stephen.boylan@beechwoods.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT raspberrypi_pico_spi_pio
+
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(spi_pico_pio);
+
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/pinctrl.h>
+#include "spi_context.h"
+
+#include <zephyr/drivers/misc/pio_rpi_pico/pio_rpi_pico.h>
+
+#include <hardware/pio.h>
+#include "hardware/clocks.h"
+
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+
+#include <zephyr/drivers/dma.h>
+#include <zephyr/spinlock.h>
+#if defined(CONFIG_SOC_SERIES_RP2040)
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
+#elif defined(CONFIG_SOC_SERIES_RP2350)
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2350.h>
+#endif
+
+#include "hardware/dma.h"
+
+#endif
+
+#define SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(sio_gpios)
+
+#define PIO_CYCLES     (4)
+#define PIO_FIFO_DEPTH (4)
+#define PIO_MAX_OFFSET (32)
+
+struct spi_pico_pio_dma_config {
+	const struct device *dev;
+	uint32_t tx_channel;
+	uint32_t rx_channel;
+};
+
+struct spi_pico_pio_config {
+	const struct device *piodev;
+	const struct pinctrl_dev_config *pin_cfg;
+	struct gpio_dt_spec clk_gpio;
+	struct gpio_dt_spec mosi_gpio;
+	struct gpio_dt_spec miso_gpio;
+	struct gpio_dt_spec sio_gpio;
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_id;
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+	const struct spi_pico_pio_dma_config dma_config;
+#endif
+};
+
+struct spi_pico_pio_data {
+	struct spi_context spi_ctx;
+	uint32_t tx_count;
+	uint32_t rx_count;
+	size_t pio_sm;
+	pio_program_t *pio_tx_program;
+	pio_program_t *pio_rx_program;
+	uint32_t pio_tx_offset;
+	uint32_t pio_rx_offset;
+	uint32_t pio_rx_wrap_target;
+	uint32_t pio_rx_wrap;
+	uint32_t bits;
+	uint32_t dfs;
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+	struct k_spinlock lock;
+	struct dma_config dma_config;
+	struct dma_block_config dma_block;
+	bool tx_callbacked;
+	bool rx_callbacked;
+#endif
+};
+
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+static uint32_t dummy_tx;
+static uint32_t dummy_rx;
+#endif
+
+/* ------------ */
+/* spi_mode_0_0 */
+/* ------------ */
+
+#define SPI_MODE_0_0_WRAP_TARGET 0
+#define SPI_MODE_0_0_WRAP        1
+#define SPI_MODE_0_0_CYCLES      4
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0_WRAP,
+			    /*     .wrap_target */
+			    0x6101, /*  0: out    pins, 1         side 0 [1] */
+			    0x5101, /*  1: in     pins, 1         side 1 [1] */
+			    /*     .wrap */
+);
+
+/* ------------ */
+/* spi_mode_0_1 */
+/* ------------ */
+
+#define SPI_MODE_0_1_WRAP_TARGET 0
+#define SPI_MODE_0_1_WRAP        2
+#define SPI_MODE_0_1_CYCLES      4
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_1, SPI_MODE_0_1_WRAP_TARGET, SPI_MODE_0_1_WRAP,
+			    /*     .wrap_target */
+			    0x6021,   /* 0: out    x, 1            side 0 */
+			    0xb101,   /* 1: mov    pins, x         side 1 [1] */
+			    0x4001,   /* 2: in     pins, 1         side 0 */
+				      /*     .wrap */
+);
+
+/* ------------ */
+/* spi_mode_1_1 */
+/* ------------ */
+
+#define SPI_MODE_1_1_WRAP_TARGET 0
+#define SPI_MODE_1_1_WRAP        2
+#define SPI_MODE_1_1_CYCLES      4
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1_WRAP,
+			    /*     .wrap_target */
+			    0x7021, /*  0: out    x, 1            side 1 */
+			    0xa101, /*  1: mov    pins, x         side 0 [1] */
+			    0x5001, /*  2: in     pins, 1         side 1 */
+			    /*     .wrap */
+);
+
+#if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
+/* ------------------- */
+/* spi_sio_mode_0_0_tx */
+/* ------------------- */
+
+#define SPI_SIO_MODE_0_0_TX_WRAP_TARGET 0
+#define SPI_SIO_MODE_0_0_TX_WRAP        2
+#define SPI_SIO_MODE_0_0_TX_CYCLES      2
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_tx, SPI_SIO_MODE_0_0_TX_WRAP_TARGET,
+			    SPI_SIO_MODE_0_0_TX_WRAP,
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0  */
+			    0x6001, /*  1: out    pins, 1         side 0  */
+			    0x10e1, /*  2: jmp    !osre, 1        side 1  */
+			    /*     .wrap */
+);
+
+/* ------------------------- */
+/* spi_sio_mode_0_0_rx */
+/* ------------------------- */
+
+#define SPI_SIO_MODE_0_0_RX_WRAP_TARGET 0
+#define SPI_SIO_MODE_0_0_RX_WRAP        3
+#define SPI_SIO_MODE_0_0_RX_CYCLES      2
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_rx, SPI_SIO_MODE_0_0_RX_WRAP_TARGET,
+			    SPI_SIO_MODE_0_0_RX_WRAP,
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0 */
+			    0x6020, /*  1: out    x, 32           side 0 */
+			    0x5001, /*  2: in     pins, 1         side 1 */
+			    0x0042, /*  3: jmp    x--, 2          side 0 */
+			    /*     .wrap */
+);
+#endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
+
+static float spi_pico_pio_clock_divisor(const uint32_t clock_freq, int cycles,
+					uint32_t spi_frequency)
+{
+	return (float)clock_freq / (float)(cycles * spi_frequency);
+}
+
+static uint32_t spi_pico_pio_maximum_clock_frequency(const uint32_t clock_freq, int cycles)
+{
+	return clock_freq / cycles;
+}
+
+static uint32_t spi_pico_pio_minimum_clock_frequency(const uint32_t clock_freq, int cycles)
+{
+	return clock_freq / (cycles * 65536);
+}
+
+static inline bool spi_pico_pio_transfer_ongoing(struct spi_pico_pio_data *data)
+{
+	return spi_context_tx_on(&data->spi_ctx) || spi_context_rx_on(&data->spi_ctx);
+}
+
+static inline void spi_pico_pio_sm_put8(PIO pio, uint sm, uint8_t data)
+{
+	/* Do 8 bit accesses on FIFO, so that write data is byte-replicated. This */
+	/* gets us the left-justification for free (for MSB-first shift-out) */
+	io_rw_8 *txfifo = (io_rw_8 *)&pio->txf[sm];
+
+	*txfifo = data;
+}
+
+static inline uint8_t spi_pico_pio_sm_get8(PIO pio, uint sm)
+{
+	/* Do 8 bit accesses on FIFO, so that write data is byte-replicated. This */
+	/* gets us the left-justification for free (for MSB-first shift-out) */
+	io_rw_8 *rxfifo = (io_rw_8 *)&pio->rxf[sm];
+
+	return *rxfifo;
+}
+
+static inline void spi_pico_pio_sm_put16(PIO pio, uint sm, uint16_t data)
+{
+	/* Do 16 bit accesses on FIFO, so that write data is halfword-replicated. This */
+	/* gets us the left-justification for free (for MSB-first shift-out) */
+	io_rw_16 *txfifo = (io_rw_16 *)&pio->txf[sm];
+
+	*txfifo = data;
+}
+
+static inline uint16_t spi_pico_pio_sm_get16(PIO pio, uint sm)
+{
+	io_rw_16 *rxfifo = (io_rw_16 *)&pio->rxf[sm];
+
+	return *rxfifo;
+}
+
+static inline void spi_pico_pio_sm_put32(PIO pio, uint sm, uint32_t data)
+{
+	io_rw_32 *txfifo = (io_rw_32 *)&pio->txf[sm];
+
+	*txfifo = data;
+}
+
+static inline uint32_t spi_pico_pio_sm_get32(PIO pio, uint sm)
+{
+	io_rw_32 *rxfifo = (io_rw_32 *)&pio->rxf[sm];
+
+	return *rxfifo;
+}
+
+static inline int spi_pico_pio_sm_complete(PIO pio,
+					   struct spi_pico_pio_data *data)
+{
+	return ((pio->sm[data->pio_sm].addr == data->pio_tx_offset) &&
+		pio_sm_is_tx_fifo_empty(pio, data->pio_sm));
+}
+
+static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
+				  struct spi_pico_pio_data *data, const struct spi_config *spi_cfg)
+{
+	const struct gpio_dt_spec *clk = NULL;
+	pio_sm_config sm_config;
+	bool lsb = false;
+	uint32_t cpol = 0;
+	uint32_t cpha = 0;
+	uint32_t rc = 0;
+	uint32_t clock_freq;
+	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+
+	rc = clock_control_on(dev_cfg->clk_dev, dev_cfg->clk_id);
+	if (rc < 0) {
+		LOG_ERR("Failed to enable the clock");
+		return rc;
+	}
+
+	rc = clock_control_get_rate(dev_cfg->clk_dev, dev_cfg->clk_id, &clock_freq);
+	if (rc < 0) {
+		LOG_ERR("Failed to get clock frequency");
+		return rc;
+	}
+
+	if (spi_context_configured(&data->spi_ctx, spi_cfg)) {
+		return 0;
+	}
+
+	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
+		LOG_ERR("Slave mode not supported");
+		return -ENOTSUP;
+	}
+
+	/* Note that SPI_TRANSFER_LSB controls the direction of shift, not the */
+	/* "endianness" of the data.  In MSB mode, the high-order bit of the   */
+	/* most significant byte is sent first;  in LSB mode, the low-order    */
+	/* bit of the least-significant byte is sent first.                    */
+	if (spi_cfg->operation & SPI_TRANSFER_LSB) {
+		lsb = true;
+	}
+
+#if defined(CONFIG_SPI_EXTENDED_MODES)
+	if (spi_cfg->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)) {
+		LOG_ERR("Unsupported configuration");
+		return -ENOTSUP;
+	}
+#endif /* CONFIG_SPI_EXTENDED_MODES */
+
+	data->bits = SPI_WORD_SIZE_GET(spi_cfg->operation);
+
+	if ((data->bits != 8) && (data->bits != 16) && (data->bits != 32)) {
+		LOG_ERR("Only 8, 16, and 32 bit word sizes are supported");
+		return -ENOTSUP;
+	}
+
+	data->dfs = ((data->bits - 1) / 8) + 1;
+
+	if (spi_cfg->operation & SPI_CS_ACTIVE_HIGH) {
+		gpio_set_outover(data->spi_ctx.config->cs.gpio.pin, GPIO_OVERRIDE_INVERT);
+	}
+
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
+		cpol = 1;
+	}
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
+		cpha = 1;
+	}
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
+		LOG_ERR("Loopback not supported");
+		return -ENOTSUP;
+	}
+
+#if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+		if (dev_cfg->dma_config.dev) {
+			LOG_ERR("DMA not supported in 3-wire operation");
+			return -ENOTSUP;
+		}
+#endif
+
+		if ((cpol != 0) || (cpha != 0)) {
+			LOG_ERR("Only mode (0, 0) supported in 3-wire SIO");
+			return -ENOTSUP;
+		}
+
+		if ((spi_cfg->frequency > spi_pico_pio_maximum_clock_frequency(
+						  clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES)) ||
+		    (spi_cfg->frequency < spi_pico_pio_minimum_clock_frequency(
+						  clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES))) {
+			LOG_ERR("clock-frequency out of range");
+			return -EINVAL;
+		}
+	} else if (dev_cfg->sio_gpio.port) {
+		LOG_ERR("SPI_HALF_DUPLEX operation needed for sio-gpios");
+		return -EINVAL;
+	}
+#else
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("No sio-gpios defined, half-duplex not enabled");
+		return -EINVAL;
+	}
+#endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
+
+	if (data->pio_tx_program) {
+		pio_remove_program(pio, data->pio_tx_program, data->pio_tx_offset);
+		data->pio_tx_program = NULL;
+		data->pio_tx_offset = PIO_MAX_OFFSET;
+	}
+
+	if (data->pio_rx_program) {
+		pio_remove_program(pio, data->pio_rx_program, data->pio_rx_offset);
+		data->pio_rx_program = NULL;
+		data->pio_rx_offset = PIO_MAX_OFFSET;
+	}
+
+	clk = &dev_cfg->clk_gpio;
+	if (data->pio_sm == (size_t) -1) {
+		rc = pio_rpi_pico_allocate_sm(dev_cfg->piodev, &data->pio_sm);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	if (dev_cfg->sio_gpio.port) {
+#if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
+		const struct gpio_dt_spec *sio = &dev_cfg->sio_gpio;
+
+		float clock_div = spi_pico_pio_clock_divisor(clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES,
+							     spi_cfg->frequency);
+
+		data->pio_tx_program =
+			(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx);
+		data->pio_tx_offset = pio_add_program(pio, data->pio_tx_program);
+
+		data->pio_rx_program = RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx);
+		data->pio_rx_offset = pio_add_program(pio, data->pio_rx_program);
+		data->pio_rx_wrap_target =
+			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_rx);
+		data->pio_rx_wrap =
+			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_rx);
+
+		sm_config = pio_get_default_sm_config();
+
+		sm_config_set_clkdiv(&sm_config, clock_div);
+		sm_config_set_in_pins(&sm_config, sio->pin);
+		sm_config_set_in_shift(&sm_config, lsb, true, data->bits);
+		sm_config_set_out_pins(&sm_config, sio->pin, 1);
+		sm_config_set_out_shift(&sm_config, lsb, false, data->bits);
+		hw_set_bits(&pio->input_sync_bypass, 1u << sio->pin);
+
+		sm_config_set_sideset_pins(&sm_config, clk->pin);
+		sm_config_set_sideset(&sm_config, 1, false, false);
+		sm_config_set_wrap(
+			&sm_config,
+			data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_tx),
+			data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_tx));
+
+		pio_sm_set_pindirs_with_mask(pio, data->pio_sm,
+					     (BIT(clk->pin) | BIT(sio->pin)),
+					     (BIT(clk->pin) | BIT(sio->pin)));
+		pio_sm_set_pins_with_mask(pio, data->pio_sm, 0,
+					  BIT(clk->pin) | BIT(sio->pin));
+		pio_gpio_init(pio, sio->pin);
+		pio_gpio_init(pio, clk->pin);
+
+		pio_sm_init(pio, data->pio_sm, data->pio_tx_offset, &sm_config);
+		pio_sm_set_enabled(pio, data->pio_sm, true);
+#else
+		LOG_ERR("SIO pin requires half-duplex support");
+		return -EINVAL;
+#endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
+	} else {
+		/* 4-wire mode */
+		const struct gpio_dt_spec *miso = miso = &dev_cfg->miso_gpio;
+		const struct gpio_dt_spec *mosi = &dev_cfg->mosi_gpio;
+		uint32_t wrap_target;
+		uint32_t wrap;
+		int cycles;
+
+		if ((cpol == 0) && (cpha == 0)) {
+			data->pio_tx_program =
+				(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_mode_0_0);
+			wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_mode_0_0);
+			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_0_0);
+			cycles = SPI_MODE_0_0_CYCLES;
+		} else if ((cpol == 1) && (cpha == 1)) {
+			data->pio_tx_program =
+				(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_mode_1_1);
+			wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_mode_1_1);
+			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_1_1);
+			cycles = SPI_MODE_1_1_CYCLES;
+		} else if ((cpol == 0) && (cpha == 1)) {
+			data->pio_tx_program =
+				(pio_program_t *)RPI_PICO_PIO_GET_PROGRAM(spi_mode_0_1);
+			wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_mode_0_1);
+			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_0_1);
+			cycles = SPI_MODE_0_1_CYCLES;
+		} else {
+			LOG_ERR("Not supported:  cpol=%d, cpha=%d", cpol, cpha);
+			return -ENOTSUP;
+		}
+
+		if ((spi_cfg->frequency >
+		     spi_pico_pio_maximum_clock_frequency(clock_freq, cycles)) ||
+		    (spi_cfg->frequency <
+		     spi_pico_pio_minimum_clock_frequency(clock_freq, cycles))) {
+			LOG_ERR("clock-frequency out of range");
+			return -EINVAL;
+		}
+
+		float clock_div =
+			spi_pico_pio_clock_divisor(clock_freq, cycles, spi_cfg->frequency);
+
+		if (!pio_can_add_program(pio, data->pio_tx_program)) {
+			return -EBUSY;
+		}
+
+		data->pio_tx_offset = pio_add_program(pio, data->pio_tx_program);
+		sm_config = pio_get_default_sm_config();
+
+		sm_config_set_clkdiv(&sm_config, clock_div);
+		sm_config_set_in_pins(&sm_config, miso->pin);
+		sm_config_set_in_shift(&sm_config, lsb, true, data->bits);
+		sm_config_set_out_pins(&sm_config, mosi->pin, 1);
+		sm_config_set_out_shift(&sm_config, lsb, true, data->bits);
+		sm_config_set_sideset_pins(&sm_config, clk->pin);
+		sm_config_set_sideset(&sm_config, 1, false, false);
+		sm_config_set_wrap(&sm_config, data->pio_tx_offset + wrap_target,
+				   data->pio_tx_offset + wrap);
+
+		pio_sm_set_consecutive_pindirs(pio, data->pio_sm, miso->pin, 1, false);
+		pio_sm_set_pindirs_with_mask(pio, data->pio_sm,
+					     (BIT(clk->pin) | BIT(mosi->pin)),
+					     (BIT(clk->pin) | BIT(mosi->pin)));
+		pio_sm_set_pins_with_mask(pio, data->pio_sm, (cpol << clk->pin),
+					  BIT(clk->pin) | BIT(mosi->pin));
+		pio_gpio_init(pio, mosi->pin);
+		pio_gpio_init(pio, miso->pin);
+		pio_gpio_init(pio, clk->pin);
+
+		pio_sm_init(pio, data->pio_sm, data->pio_tx_offset, &sm_config);
+		pio_sm_set_enabled(pio, data->pio_sm, true);
+	}
+
+	data->spi_ctx.config = spi_cfg;
+
+	return 0;
+}
+
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+static int spi_pico_pio_dma_setup(const struct device *dev, bool dir);
+
+static int spi_pico_pio_start_dma_transceive(const struct device *dev)
+{
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	int err;
+
+	err = spi_pico_pio_dma_setup(dev, false);
+	if (err) {
+		goto on_error;
+	}
+
+	err = spi_pico_pio_dma_setup(dev, true);
+	if (err) {
+		goto on_error;
+	}
+
+on_error:
+	if (err < 0) {
+		dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.tx_channel);
+		dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.rx_channel);
+	}
+
+	return err;
+}
+
+static void spi_pico_pio_dma_complete(const struct device *dev, int status)
+{
+	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+
+	dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.tx_channel);
+	dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.rx_channel);
+
+	spi_context_complete(&data->spi_ctx, dev, status);
+}
+
+static void spi_pico_pio_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+				      int status)
+{
+	const struct device *dev = (const struct device *)arg;
+	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	bool complete = false;
+	k_spinlock_key_t key;
+	int err = 0;
+
+	if (status < 0) {
+		key = k_spin_lock(&data->lock);
+
+		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
+		spi_pico_pio_dma_complete(dev, status);
+
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
+
+	if (dma_dev != dev_cfg->dma_config.dev) {
+		/* rpi pico has only one dma controller so far
+		 * so this branch will never run in theory.
+		 */
+		return;
+	}
+
+	key = k_spin_lock(&data->lock);
+
+	size_t chunk_len = spi_context_max_continuous_chunk(&data->spi_ctx);
+
+	if (channel == dev_cfg->dma_config.tx_channel) {
+		data->tx_count += chunk_len;
+		data->tx_callbacked = true;
+	} else if (channel == dev_cfg->dma_config.rx_channel) {
+		data->rx_count += chunk_len;
+		data->rx_callbacked = true;
+	}
+
+	/* Check transfer finished.
+	 * chunk_len is zero here means the transfer is already complete.
+	 */
+	if (MIN(data->tx_count, data->rx_count) >= chunk_len) {
+		spi_context_update_tx(&data->spi_ctx, 1, chunk_len);
+		spi_context_update_rx(&data->spi_ctx, 1, chunk_len);
+
+		if (spi_pico_pio_transfer_ongoing(data)) {
+			/* Next chunk is available, reset the count and
+			 * continue processing
+			 */
+			data->tx_count = 0;
+			data->rx_count = 0;
+		} else {
+			/* All data is processed, complete the process */
+			complete = true;
+		}
+	}
+
+	if (!complete && data->tx_callbacked && data->rx_callbacked) {
+		err = spi_pico_pio_start_dma_transceive(dev);
+		if (err) {
+			complete = true;
+		}
+	}
+
+	if (complete) {
+		spi_pico_pio_dma_complete(dev, err);
+	}
+
+	k_spin_unlock(&data->lock, key);
+}
+
+static int spi_pico_pio_dma_setup(const struct device *dev, bool dir)
+{
+	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	struct dma_config *dma_cfg = &data->dma_config;
+	struct dma_block_config *block_cfg = &data->dma_block;
+	uint32_t dma_channel =
+		dir ? dev_cfg->dma_config.tx_channel : dev_cfg->dma_config.rx_channel;
+	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+	int ret;
+
+	memset(dma_cfg, 0, sizeof(struct dma_config));
+	memset(block_cfg, 0, sizeof(struct dma_block_config));
+
+	dma_cfg->source_burst_length = 1;
+	dma_cfg->dest_burst_length = 1;
+	dma_cfg->user_data = (void *)dev;
+	dma_cfg->block_count = 1U;
+	dma_cfg->head_block = block_cfg;
+	dma_cfg->dma_slot = RPI_PICO_DMA_DREQ_TO_SLOT(pio_get_dreq(pio, data->pio_sm, dir));
+	dma_cfg->channel_direction = dir ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY;
+	dma_cfg->source_data_size = data->dfs;
+	dma_cfg->dest_data_size = data->dfs;
+
+	block_cfg->block_size = spi_context_max_continuous_chunk(&data->spi_ctx);
+	dma_cfg->dma_callback = spi_pico_pio_dma_callback;
+
+	if (dir) {
+		/* TX, in pio convention */
+		block_cfg->dest_address = (uint32_t)&pio->txf[data->pio_sm];
+		block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		if (spi_context_tx_buf_on(&data->spi_ctx)) {
+			block_cfg->source_address = (uint32_t)data->spi_ctx.tx_buf;
+			block_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		} else {
+			block_cfg->source_address = (uint32_t)&dummy_tx;
+			block_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
+
+		data->tx_callbacked = false;
+	} else {
+		/* RX, in pio convention */
+		block_cfg->source_address = (uint32_t)&pio->rxf[data->pio_sm];
+		block_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		if (spi_context_rx_buf_on(&data->spi_ctx)) {
+			block_cfg->dest_address = (uint32_t)data->spi_ctx.rx_buf;
+			block_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		} else {
+			block_cfg->dest_address = (uint32_t)&dummy_rx;
+			block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
+
+		data->rx_callbacked = false;
+	}
+
+	ret = dma_config(dev_cfg->dma_config.dev, dma_channel, dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("dma ctrl %p: dma_config failed with %d", dev_cfg->dma_config.dev, ret);
+		return ret;
+	}
+
+	ret = dma_start(dev_cfg->dma_config.dev, dma_channel);
+	if (ret < 0) {
+		LOG_ERR("dma ctrl %p: dma_start failed with %d", dev_cfg->dma_config.dev, ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
+static void spi_pico_pio_txrx_4_wire(const struct device *dev)
+{
+	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	const size_t chunk_len = spi_context_max_continuous_chunk(&data->spi_ctx);
+	const uint8_t *txbuf = data->spi_ctx.tx_buf;
+	uint8_t *rxbuf = data->spi_ctx.rx_buf;
+	uint32_t txrx;
+	size_t fifo_cnt = 0;
+	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+
+	while (data->rx_count < chunk_len || data->tx_count < chunk_len) {
+		/* Fill up fifo with available TX data */
+		while ((!pio_sm_is_tx_fifo_full(pio, data->pio_sm)) &&
+		       data->tx_count < chunk_len && fifo_cnt < PIO_FIFO_DEPTH) {
+			/* Send 0 in the case of read only operation */
+			txrx = 0;
+
+			switch (data->dfs) {
+			case 4: {
+				if (txbuf) {
+					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
+				}
+				spi_pico_pio_sm_put32(pio, data->pio_sm, txrx);
+			} break;
+
+			case 2: {
+				if (txbuf) {
+					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
+				}
+				spi_pico_pio_sm_put16(pio, data->pio_sm, txrx);
+			} break;
+
+			case 1: {
+				if (txbuf) {
+					txrx = ((uint8_t *)txbuf)[data->tx_count];
+				}
+				spi_pico_pio_sm_put8(pio, data->pio_sm, txrx);
+			} break;
+
+			default:
+				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+				break;
+			}
+			data->tx_count++;
+			fifo_cnt++;
+		}
+
+		while ((!pio_sm_is_rx_fifo_empty(pio, data->pio_sm)) &&
+		       data->rx_count < chunk_len && fifo_cnt > 0) {
+			switch (data->dfs) {
+			case 4: {
+				txrx = spi_pico_pio_sm_get32(pio, data->pio_sm);
+
+				/* Discard received data if rx buffer not assigned */
+				if (rxbuf) {
+					sys_put_be32(txrx, rxbuf + (data->rx_count * 4));
+				}
+			} break;
+
+			case 2: {
+				txrx = spi_pico_pio_sm_get16(pio, data->pio_sm);
+
+				/* Discard received data if rx buffer not assigned */
+				if (rxbuf) {
+					sys_put_be16(txrx, rxbuf + (data->rx_count * 2));
+				}
+			} break;
+
+			case 1: {
+				txrx = spi_pico_pio_sm_get8(pio, data->pio_sm);
+
+				/* Discard received data if rx buffer not assigned */
+				if (rxbuf) {
+					((uint8_t *)rxbuf)[data->rx_count] = (uint8_t)txrx;
+				}
+			} break;
+
+			default:
+				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+				break;
+			}
+			data->rx_count++;
+			fifo_cnt--;
+		}
+	}
+}
+
+static void spi_pico_pio_txrx_3_wire(const struct device *dev)
+{
+#if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
+	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	const uint8_t *txbuf = data->spi_ctx.tx_buf;
+	uint8_t *rxbuf = data->spi_ctx.rx_buf;
+	uint32_t txrx;
+	int sio_pin = dev_cfg->sio_gpio.pin;
+	uint32_t tx_size = data->spi_ctx.tx_len; /* Number of WORDS to send */
+	uint32_t rx_size = data->spi_ctx.rx_len; /* Number of WORDS to receive */
+	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+
+	if (txbuf) {
+		pio_sm_set_enabled(pio, data->pio_sm, false);
+		pio_sm_set_wrap(pio, data->pio_sm,
+				data->pio_tx_offset +
+					RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_tx),
+				data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_tx));
+		pio_sm_clear_fifos(pio, data->pio_sm);
+		pio_sm_set_pindirs_with_mask(pio, data->pio_sm, BIT(sio_pin),
+					     BIT(sio_pin));
+		pio_sm_restart(pio, data->pio_sm);
+		pio_sm_clkdiv_restart(pio, data->pio_sm);
+		pio_sm_exec(pio, data->pio_sm, pio_encode_jmp(data->pio_tx_offset));
+		pio_sm_set_enabled(pio, data->pio_sm, true);
+
+		while (data->tx_count < tx_size) {
+			/* Fill up fifo with available TX data */
+			while ((!pio_sm_is_tx_fifo_full(pio, data->pio_sm)) &&
+			       data->tx_count < tx_size) {
+
+				switch (data->dfs) {
+				case 4: {
+					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
+					spi_pico_pio_sm_put32(pio, data->pio_sm, txrx);
+				} break;
+
+				case 2: {
+					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
+					spi_pico_pio_sm_put16(pio, data->pio_sm, txrx);
+				} break;
+
+				case 1: {
+					txrx = ((uint8_t *)txbuf)[data->tx_count];
+					spi_pico_pio_sm_put8(pio, data->pio_sm, txrx);
+				} break;
+
+				default:
+					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+					break;
+				}
+				data->tx_count++;
+			}
+		}
+		/* Wait for the state machine to complete the cycle */
+		/* before resetting the PIO for reading.            */
+		while ((!pio_sm_is_tx_fifo_empty(pio, data->pio_sm)) ||
+		       (!spi_pico_pio_sm_complete(pio, data))) {
+			;
+		}
+	}
+
+	if (rxbuf) {
+		pio_sm_set_enabled(pio, data->pio_sm, false);
+		pio_sm_set_wrap(pio, data->pio_sm, data->pio_rx_wrap_target,
+				data->pio_rx_wrap);
+		pio_sm_clear_fifos(pio, data->pio_sm);
+		pio_sm_set_pindirs_with_mask(pio, data->pio_sm, 0, BIT(sio_pin));
+		pio_sm_restart(pio, data->pio_sm);
+		pio_sm_clkdiv_restart(pio, data->pio_sm);
+		pio_sm_put(pio, data->pio_sm, (rx_size * data->bits) - 1);
+		pio_sm_exec(pio, data->pio_sm, pio_encode_jmp(data->pio_rx_offset));
+		pio_sm_set_enabled(pio, data->pio_sm, true);
+
+		while (data->rx_count < rx_size) {
+			while ((!pio_sm_is_rx_fifo_empty(pio, data->pio_sm)) &&
+			       data->rx_count < rx_size) {
+
+				switch (data->dfs) {
+				case 4: {
+					txrx = spi_pico_pio_sm_get32(pio, data->pio_sm);
+					sys_put_be32(txrx, rxbuf + (data->rx_count * 4));
+				} break;
+
+				case 2: {
+					txrx = spi_pico_pio_sm_get16(pio, data->pio_sm);
+					sys_put_be16(txrx, rxbuf + (data->rx_count * 2));
+				} break;
+
+				case 1: {
+					txrx = spi_pico_pio_sm_get8(pio, data->pio_sm);
+					rxbuf[data->rx_count] = (uint8_t)txrx;
+				} break;
+
+				default:
+					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+					break;
+				}
+				data->rx_count++;
+			}
+		}
+	}
+#else
+	LOG_ERR("SIO pin requires half-duplex support");
+#endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
+}
+
+static void spi_pico_pio_txrx(const struct device *dev)
+{
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+
+	/* 3-wire or 4-wire mode? */
+	if (dev_cfg->sio_gpio.port) {
+		spi_pico_pio_txrx_3_wire(dev);
+	} else {
+		spi_pico_pio_txrx_4_wire(dev);
+	}
+}
+
+static int spi_pico_pio_transceive_impl(const struct device *dev, const struct spi_config *spi_cfg,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs, bool asynchronous,
+					spi_callback_t cb, void *userdata)
+{
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	struct spi_pico_pio_data *data = dev->data;
+	struct spi_context *spi_ctx = &data->spi_ctx;
+	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+	int rc = 0;
+
+	spi_context_lock(spi_ctx, asynchronous, cb, userdata, spi_cfg);
+
+	rc = spi_pico_pio_configure(dev_cfg, data, spi_cfg);
+	if (rc < 0) {
+		goto error;
+	}
+
+	spi_context_buffers_setup(spi_ctx, tx_bufs, rx_bufs, data->dfs);
+	spi_context_cs_control(spi_ctx, true);
+
+	do {
+		data->tx_count = 0;
+		data->rx_count = 0;
+
+		pio_sm_clear_fifos(pio, data->pio_sm);
+
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+		if (dev_cfg->dma_config.dev) {
+			struct dma_status tx_stat = {.busy = true};
+			struct dma_status rx_stat = {.busy = true};
+
+			dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.tx_channel);
+			dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.rx_channel);
+
+			while (tx_stat.busy || rx_stat.busy) {
+				dma_get_status(dev_cfg->dma_config.dev,
+						dev_cfg->dma_config.tx_channel, &tx_stat);
+				dma_get_status(dev_cfg->dma_config.dev,
+						dev_cfg->dma_config.rx_channel, &rx_stat);
+			}
+
+			rc = spi_pico_pio_start_dma_transceive(dev);
+			if (rc < 0) {
+				goto error;
+			}
+			rc = spi_context_wait_for_completion(spi_ctx);
+		} else {
+#else
+		{
+#endif
+			spi_pico_pio_txrx(dev);
+			spi_context_update_tx(spi_ctx, data->dfs, data->tx_count);
+			spi_context_update_rx(spi_ctx, data->dfs, data->rx_count);
+		}
+
+	} while (spi_pico_pio_transfer_ongoing(data));
+
+error:
+	spi_context_cs_control(spi_ctx, false);
+	spi_context_release(spi_ctx, rc);
+
+	return rc;
+}
+
+static int spi_pico_pio_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+				   const struct spi_buf_set *tx_bufs,
+				   const struct spi_buf_set *rx_bufs)
+{
+	return spi_pico_pio_transceive_impl(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+}
+
+int spi_pico_pio_release(const struct device *dev, const struct spi_config *spi_cfg)
+{
+	struct spi_pico_pio_data *data = dev->data;
+
+	spi_context_unlock_unconditionally(&data->spi_ctx);
+
+	return 0;
+}
+
+static DEVICE_API(spi, spi_pico_pio_api) = {
+	.transceive = spi_pico_pio_transceive,
+	.release = spi_pico_pio_release,
+};
+
+static int config_gpio(const struct gpio_dt_spec *gpio, const char *tag, int mode)
+{
+	int rc = 0;
+
+	if (!device_is_ready(gpio->port)) {
+		LOG_ERR("GPIO port for %s pin is not ready", tag);
+		return -ENODEV;
+	}
+
+	rc = gpio_pin_configure_dt(gpio, mode);
+	if (rc < 0) {
+		LOG_ERR("Couldn't configure %s pin; (%d)", tag, rc);
+		return rc;
+	}
+
+	return 0;
+}
+
+int spi_pico_pio_init(const struct device *dev)
+{
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	struct spi_pico_pio_data *data = dev->data;
+	int rc;
+
+	rc = pinctrl_apply_state(dev_cfg->pin_cfg, PINCTRL_STATE_DEFAULT);
+	if (rc) {
+		LOG_ERR("Failed to apply pinctrl state");
+		return rc;
+	}
+
+	rc = config_gpio(&dev_cfg->clk_gpio, "clk", GPIO_OUTPUT_ACTIVE);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (dev_cfg->mosi_gpio.port != NULL) {
+		rc = config_gpio(&dev_cfg->mosi_gpio, "mosi", GPIO_OUTPUT);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	if (dev_cfg->miso_gpio.port != NULL) {
+		rc = config_gpio(&dev_cfg->miso_gpio, "miso", GPIO_INPUT);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	rc = spi_context_cs_configure_all(&data->spi_ctx);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure CS pins: %d", rc);
+		return rc;
+	}
+
+	spi_context_unlock_unconditionally(&data->spi_ctx);
+
+	return 0;
+}
+
+
+#define DMAS_ENABLED(inst)                                                           \
+	COND_CODE_1(CONFIG_SPI_RPI_PICO_PIO_DMA, (DT_INST_DMAS_HAS_NAME(inst, tx) && \
+	 DT_INST_DMAS_HAS_NAME(inst, rx)), (false))
+
+#define DMA_INITIALIZER(inst)                                                                    \
+	{                                                                                        \
+		.dev = (DMAS_ENABLED(inst) ? DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, tx))  \
+					   : 0),                                                 \
+		.tx_channel =                                                                    \
+			(DMAS_ENABLED(inst) ? DT_INST_DMAS_CELL_BY_NAME(inst, tx, channel) : 0), \
+		.rx_channel =                                                                    \
+			(DMAS_ENABLED(inst) ? DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel) : 0), \
+	}
+
+#define SPI_PICO_PIO_INIT(inst)                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                          \
+	static struct spi_pico_pio_config spi_pico_pio_config_##inst = {                       \
+		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
+		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                               \
+		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                            \
+		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                  \
+		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                  \
+		.sio_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sio_gpios, {0}),                    \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                           \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id), \
+		IF_ENABLED(CONFIG_SPI_RPI_PICO_PIO_DMA,                                        \
+			(.dma_config = DMA_INITIALIZER(inst),)                                 \
+		)                                                                              \
+	};                                                                                     \
+	static struct spi_pico_pio_data spi_pico_pio_data_##inst = {                           \
+		.pio_sm = (size_t) -1,                                                         \
+		.pio_tx_offset = PIO_MAX_OFFSET,                                               \
+		.pio_rx_offset = PIO_MAX_OFFSET,                                               \
+		SPI_CONTEXT_INIT_LOCK(spi_pico_pio_data_##inst, spi_ctx),                      \
+		SPI_CONTEXT_INIT_SYNC(spi_pico_pio_data_##inst, spi_ctx),                      \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)                    \
+	};                                                                                     \
+	SPI_DEVICE_DT_INST_DEFINE(inst, spi_pico_pio_init, NULL, &spi_pico_pio_data_##inst,    \
+				&spi_pico_pio_config_##inst, POST_KERNEL,                      \
+				CONFIG_SPI_INIT_PRIORITY, &spi_pico_pio_api);                  \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");            \
+	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                              \
+			DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                            \
+			(!DT_INST_NODE_HAS_PROP(inst, sio_gpios))) ||                          \
+				(DT_INST_NODE_HAS_PROP(inst, sio_gpios) &&                     \
+				!(DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                   \
+				DT_INST_NODE_HAS_PROP(inst, miso_gpios))),                     \
+			"Invalid GPIO Configuration");
+
+DT_INST_FOREACH_STATUS_OKAY(SPI_PICO_PIO_INIT)

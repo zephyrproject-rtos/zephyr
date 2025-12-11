@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT st_stm32_npu
+
+#include <errno.h>
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/reset.h>
+#include <zephyr/init.h>
+#include <soc.h>
+
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+
+/* Read-only driver configuration */
+struct npu_stm32_cfg {
+	/* Clock configuration. */
+	struct stm32_pclken pclken_npu;
+	struct stm32_pclken pclken_cacheaxi;
+	/* Reset configuration */
+	const struct reset_dt_spec reset_npu;
+	const struct reset_dt_spec reset_cacheaxi;
+};
+
+static int npu_stm32_init(const struct device *dev)
+{
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct npu_stm32_cfg *cfg = dev->config;
+
+	if (!device_is_ready(clk)) {
+		return -ENODEV;
+	}
+
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken_npu) != 0) {
+		return -EIO;
+	}
+
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken_cacheaxi) != 0) {
+		return -EIO;
+	}
+
+	if (!device_is_ready(cfg->reset_npu.dev)) {
+		return -ENODEV;
+	}
+
+	/* Reset timer to default state using RCC */
+	(void)reset_line_toggle_dt(&cfg->reset_npu);
+	(void)reset_line_toggle_dt(&cfg->reset_cacheaxi);
+
+	return 0;
+}
+
+
+static const struct npu_stm32_cfg npu_stm32_cfg = {
+	.pclken_npu = STM32_CLOCK_INFO_BY_NAME(DT_NODELABEL(npu), npu),
+	.pclken_cacheaxi = STM32_CLOCK_INFO_BY_NAME(DT_NODELABEL(npu), cacheaxi),
+	.reset_npu = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 0),
+	.reset_cacheaxi = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 1),
+};
+
+DEVICE_DT_DEFINE(DT_NODELABEL(npu), npu_stm32_init, NULL,
+		 NULL, &npu_stm32_cfg, POST_KERNEL,
+		 CONFIG_APPLICATION_INIT_PRIORITY, NULL);

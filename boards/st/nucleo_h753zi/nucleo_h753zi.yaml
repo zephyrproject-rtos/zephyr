@@ -1,0 +1,26 @@
+identifier: nucleo_h753zi
+name: ST Nucleo H753ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 2048
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - dma
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - adc
+  - netif:eth
+  - spi
+  - rtc
+  - usb_device
+  - can
+  - watchdog
+vendor: st

@@ -1,0 +1,12 @@
+identifier: stm32f411e_disco
+name: ST STM32F411E Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 512
+supported:
+  - counter
+vendor: st

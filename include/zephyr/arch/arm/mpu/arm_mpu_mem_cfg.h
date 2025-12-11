@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2017 Linaro Limited.
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef _INCLUDE_ZEPHYR_ARCH_ARM_MPU_MEM_CFG_H_
+#define _INCLUDE_ZEPHYR_ARCH_ARM_MPU_MEM_CFG_H_
+
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
+
+#if !defined(CONFIG_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_MAINLINE)
+
+/* Flash Region Definitions */
+#if CONFIG_FLASH_SIZE <= 64
+#define REGION_FLASH_SIZE REGION_64K
+#elif CONFIG_FLASH_SIZE <= 128
+#define REGION_FLASH_SIZE REGION_128K
+#elif CONFIG_FLASH_SIZE <= 256
+#define REGION_FLASH_SIZE REGION_256K
+#elif CONFIG_FLASH_SIZE <= 512
+#define REGION_FLASH_SIZE REGION_512K
+#elif CONFIG_FLASH_SIZE <= 1024
+#define REGION_FLASH_SIZE REGION_1M
+#elif CONFIG_FLASH_SIZE <= 2048
+#define REGION_FLASH_SIZE REGION_2M
+#elif CONFIG_FLASH_SIZE <= 4096
+#define REGION_FLASH_SIZE REGION_4M
+#elif CONFIG_FLASH_SIZE <= 8192
+#define REGION_FLASH_SIZE REGION_8M
+#elif CONFIG_FLASH_SIZE <= 16384
+#define REGION_FLASH_SIZE REGION_16M
+#elif CONFIG_FLASH_SIZE <= 65536
+#define REGION_FLASH_SIZE REGION_64M
+#elif CONFIG_FLASH_SIZE <= 131072
+#define REGION_FLASH_SIZE REGION_128M
+#elif CONFIG_FLASH_SIZE <= 262144
+#define REGION_FLASH_SIZE REGION_256M
+#elif CONFIG_FLASH_SIZE <= 524288
+#define REGION_FLASH_SIZE REGION_512M
+#elif CONFIG_FLASH_SIZE <= 1048576
+#define REGION_FLASH_SIZE REGION_1G
+#elif CONFIG_FLASH_SIZE <= 2097152
+#define REGION_FLASH_SIZE REGION_2G
+#elif CONFIG_FLASH_SIZE <= 4194304
+#define REGION_FLASH_SIZE REGION_4G
+#else
+#error "Unsupported flash size configuration"
+#endif
+
+/* SRAM Region Definitions */
+#if CONFIG_SRAM_SIZE <= 16
+#define REGION_SRAM_SIZE REGION_16K
+#elif CONFIG_SRAM_SIZE <= 32
+#define REGION_SRAM_SIZE REGION_32K
+#elif CONFIG_SRAM_SIZE <= 64
+#define REGION_SRAM_SIZE REGION_64K
+#elif CONFIG_SRAM_SIZE <= 128
+#define REGION_SRAM_SIZE REGION_128K
+#elif CONFIG_SRAM_SIZE <= 256
+#define REGION_SRAM_SIZE REGION_256K
+#elif CONFIG_SRAM_SIZE <= 512
+#define REGION_SRAM_SIZE REGION_512K
+#elif CONFIG_SRAM_SIZE <= 1024
+#define REGION_SRAM_SIZE REGION_1M
+#elif CONFIG_SRAM_SIZE <= 2048
+#define REGION_SRAM_SIZE REGION_2M
+#elif CONFIG_SRAM_SIZE <= 4096
+#define REGION_SRAM_SIZE REGION_4M
+#elif CONFIG_SRAM_SIZE <= 8192
+#define REGION_SRAM_SIZE REGION_8M
+#elif CONFIG_SRAM_SIZE <= 16384
+#define REGION_SRAM_SIZE REGION_16M
+#elif CONFIG_SRAM_SIZE <= 32768
+#define REGION_SRAM_SIZE REGION_32M
+#elif CONFIG_SRAM_SIZE <= 65536
+#define REGION_SRAM_SIZE REGION_64M
+#elif CONFIG_SRAM_SIZE <= 131072
+#define REGION_SRAM_SIZE REGION_128M
+#elif CONFIG_SRAM_SIZE <= 262144
+#define REGION_SRAM_SIZE REGION_256M
+#elif CONFIG_SRAM_SIZE <= 524288
+#define REGION_SRAM_SIZE REGION_512M
+#elif CONFIG_SRAM_SIZE <= 1048576
+#define REGION_SRAM_SIZE REGION_1G
+#elif CONFIG_SRAM_SIZE <= 2097152
+#define REGION_SRAM_SIZE REGION_2G
+#elif CONFIG_SRAM_SIZE <= 4194304
+#define REGION_SRAM_SIZE REGION_4G
+#else
+#error "Unsupported sram size configuration"
+#endif
+
+/* Define Wrong value  */
+#define REGION_SIZE_UNSUPPORTED -1
+
+/* Customed Memory Region Definitions  */
+#define REGION_CUSTOMED_MEMORY_SIZE(size_kb) \
+	((size_kb) <= 16      ? REGION_16K : \
+	(size_kb) <= 32       ? REGION_32K : \
+	(size_kb) <= 64       ? REGION_64K : \
+	(size_kb) <= 128      ? REGION_128K : \
+	(size_kb) <= 256      ? REGION_256K : \
+	(size_kb) <= 512      ? REGION_512K : \
+	(size_kb) <= 1024     ? REGION_1M : \
+	(size_kb) <= 2048     ? REGION_2M : \
+	(size_kb) <= 4096     ? REGION_4M : \
+	(size_kb) <= 8192     ? REGION_8M : \
+	(size_kb) <= 16384    ? REGION_16M : \
+	(size_kb) <= 32768    ? REGION_32M : \
+	(size_kb) <= 65536    ? REGION_64M : \
+	(size_kb) <= 131072   ? REGION_128M : \
+	(size_kb) <= 262144   ? REGION_256M : \
+	(size_kb) <= 524288   ? REGION_512M : \
+	(size_kb) <= 1048576  ? REGION_1G : \
+	(size_kb) <= 2097152  ? REGION_2G : \
+	(size_kb) <= 4194304  ? REGION_4G : \
+	REGION_SIZE_UNSUPPORTED)
+
+#endif /* !ARMV8_M_BASELINE && !ARMV8_M_MAINLINE */
+
+#endif /* _INCLUDE_ZEPHYR_ARCH_ARM_MPU_MEM_CFG_H_ */

@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2021 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32l562e_dk_common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32L562E-DK Discovery board";
+	compatible = "st,stm32l562e-dk";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+
+	aliases {
+		led0 = &green_led_10;
+		sw0 = &user_button;
+	};
+};
+
+/* Last 64kB of SRAM1 (node label sram0) are owned by TF-M */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192 - 64)>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Flash layout:
+		 *  - BL2 - Multi image boot
+		 *  - internal
+		 *  - external
+		 *  - Scratch
+		 */
+		boot_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(68)>;
+			read-only;
+		};
+
+		scratch_partition: partition@11000 {
+			reg = <0x00011000 DT_SIZE_K(8)>;
+		};
+
+		otp_partition: partition@13000 {
+			reg = <0x00013000 DT_SIZE_K(8)>;
+		};
+
+		general_secure_storage_partition: partition@15000 {
+			reg = <0x00015000 DT_SIZE_K(8)>;
+		};
+
+		internal_secure_storage_partition: partition@17000 {
+			reg = <0x00017000 DT_SIZE_K(8)>;
+		};
+
+		slot0_partition: partition@19000 {
+			reg = <0x00019000 DT_SIZE_K(240)>;
+		};
+
+		slot0_ns_partition: partition@55000 {
+			reg = <0x00055000 DT_SIZE_K(172)>;
+		};
+	};
+};
+
+&mx25lm51245 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(240)>;
+		};
+
+		unused: partition@3c000 {
+			reg = <0x0003c000 DT_SIZE_K(32)>;
+		};
+
+		slot1_ns_partition: partition@44000 {
+			reg = <0x00044000 DT_SIZE_K(172)>;
+		};
+
+		storage_partition: partition@6f000 {
+			reg = <0x0006f000 (DT_SIZE_M(64) - DT_SIZE_K(444))>;
+		};
+	};
+};

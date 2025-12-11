@@ -1,0 +1,4 @@
+vendor: intel
+comment: "Intel Atom SoC"
+socs:
+- name: atom

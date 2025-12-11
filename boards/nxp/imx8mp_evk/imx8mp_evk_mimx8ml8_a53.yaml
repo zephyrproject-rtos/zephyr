@@ -1,0 +1,24 @@
+#
+# Copyright 2024-2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mp_evk/mimx8ml8/a53
+name: NXP i.MX8M Plus EVK A53
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - can
+  - gpio
+  - i2c
+  - net
+  - uart
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: nxp

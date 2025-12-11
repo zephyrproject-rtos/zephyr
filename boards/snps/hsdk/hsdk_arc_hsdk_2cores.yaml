@@ -1,0 +1,15 @@
+identifier: hsdk/arc_hsdk/2cores
+name: HS Development Kit(2 cores)
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+supported:
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

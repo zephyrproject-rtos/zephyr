@@ -1,0 +1,15 @@
+# Copyright (c) 2023, Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: VND Emul tester
+
+compatible: "vnd,emul-tester"
+
+include: base.yaml
+
+properties:
+  scale:
+    type: int
+    required: true
+    description: |
+      Integer scale applied to the set action for testing.

@@ -1,0 +1,6 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

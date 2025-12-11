@@ -1,0 +1,19 @@
+sample:
+  name: SMF HSM PSiCC2 Demo
+common:
+  tags:
+    - smf
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - ".*<inf> hsm_psicc2_thread: initial_entry.*"
+      - ".*<inf> hsm_psicc2_thread: s_entry.*"
+      - ".*<inf> hsm_psicc2_thread: s2_entry.*"
+      - ".*<inf> hsm_psicc2_thread: s21_entry.*"
+      - ".*<inf> hsm_psicc2_thread: s211_entry.*"
+tests:
+  sample.smf.hsm_psicc2: {}

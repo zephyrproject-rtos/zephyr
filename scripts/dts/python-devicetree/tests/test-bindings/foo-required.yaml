@@ -1,0 +1,4 @@
+properties:
+  foo:
+    type: int
+    required: true

@@ -1,0 +1,39 @@
+# Memory controller configuration options
+
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MEMC
+	bool "Memory controller drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Add support for memory controllers
+
+if MEMC
+
+config MEMC_INIT_PRIORITY
+	int "Initialization priority"
+	default 80 if MSPI
+	default 0
+	help
+	  Memory controllers initialization priority.
+
+# zephyr-keep-sorted-start
+source "drivers/memc/Kconfig.bflb"
+source "drivers/memc/Kconfig.max32_hpb"
+source "drivers/memc/Kconfig.mcux"
+source "drivers/memc/Kconfig.mspi"
+source "drivers/memc/Kconfig.nxp_s32"
+source "drivers/memc/Kconfig.renesas_ra"
+source "drivers/memc/Kconfig.sam"
+source "drivers/memc/Kconfig.sifive"
+source "drivers/memc/Kconfig.siwx91x_qspi"
+source "drivers/memc/Kconfig.smartbond"
+source "drivers/memc/Kconfig.stm32"
+# zephyr-keep-sorted-stop
+
+module = MEMC
+module-str = memc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

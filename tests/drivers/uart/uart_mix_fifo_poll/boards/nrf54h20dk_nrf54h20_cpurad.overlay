@@ -1,0 +1,19 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&dut {
+	memory-regions = <&cpurad_dma_region>;
+};
+
+&dma_fast_region {
+	status = "okay";
+};
+
+&dut2 {
+	memory-regions = <&dma_fast_region>;
+};
+
+&grtc {
+	interrupts = <109 2>;
+};

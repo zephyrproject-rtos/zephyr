@@ -1,0 +1,49 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 ADC SAR controller
+
+compatible: "nxp,s32-adc-sar"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: Indicates the reference voltage of the ADC in mV.
+
+  group-channel:
+    type: string
+    required: true
+    enum:
+      - "precision"
+      - "standard"
+      - "external"
+    description: The ADC group channel.
+
+  high-speed:
+    type: boolean
+    description: Use high speed during conversion, calibration.
+
+  callback-select:
+    type: string
+    default: "normal-end-conversion"
+    enum:
+      - "normal-end-conversion"
+      - "normal-end-chain"
+    description: |
+      Select normal end conversion callback to reduce interrupt handling time.
+      Select normal end chain callback to reduce the number of interrupt occurrences.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

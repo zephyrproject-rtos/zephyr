@@ -1,0 +1,3 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf5340dk_nrf5340_cpuapp.overlay"

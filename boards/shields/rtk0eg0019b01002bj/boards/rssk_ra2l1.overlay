@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rtk0eg0019b01002bj_ctsu {
+	clock-div = <1>;
+	pwr-supply-sel = "internal-power";
+	pwr-supply-sel2 = "pwr-supply-sel";
+	atune1 = "normal";
+	atune12 = <40>;
+	measure-mode = "self-multi-scan";
+	po-sel = "same-pulse";
+	status = "okay";
+
+	group1 {
+		ssdiv = "4.00", "4.00", "4.00";
+		so = <0x03B>, <0x059>, <0x049>;
+		snum = <0x07>, <0x07>, <0x07>;
+		sdpa = <0x0F>, <0x0F>, <0x0F>;
+		num-moving-avg = <4>;
+		on-freq = <3>;
+		off-freq = <3>;
+		drift-freq = <255>;
+		cancel-freq = <0>;
+		status = "okay";
+
+		button1 {
+			threshold = <769>;
+			hysteresis = <38>;
+			status = "okay";
+		};
+
+		button2 {
+			threshold = <740>;
+			hysteresis = <37>;
+			status = "okay";
+		};
+
+		button3 {
+			threshold = <784>;
+			hysteresis = <39>;
+			status = "okay";
+		};
+	};
+
+	group2 {
+		ssdiv = "4.00", "4.00", "4.00", "4.00", "4.00";
+		so = <0x02B>, <0x03B>, <0x036>, <0x03B>, <0x03A>;
+		snum = <0x07>, <0x07>, <0x07>, <0x07>, <0x07>;
+		sdpa = <0x0F>, <0x0F>, <0x0F>, <0x0F>, <0x0F>;
+		num-moving-avg = <4>;
+		on-freq = <3>;
+		off-freq = <3>;
+		drift-freq = <255>;
+		cancel-freq = <0>;
+		status = "okay";
+
+		slider {
+			threshold = <573>;
+			status = "okay";
+		};
+	};
+
+	group3 {
+		ssdiv = "4.00", "4.00", "4.00", "4.00";
+		so = <0x047>, <0x046>, <0x049>, <0x040>;
+		snum = <0x07>, <0x07>, <0x07>, <0x07>;
+		sdpa = <0x0F>, <0x0F>, <0x0F>, <0x0F>;
+		num-moving-avg = <4>;
+		on-freq = <3>;
+		off-freq = <3>;
+		drift-freq = <255>;
+		cancel-freq = <0>;
+		status = "okay";
+
+		wheel {
+			threshold = <711>;
+			status = "okay";
+		};
+	};
+};

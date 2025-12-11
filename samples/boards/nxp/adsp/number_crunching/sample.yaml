@@ -1,0 +1,20 @@
+sample:
+  description: An application that demonstrates
+    how to integrate a proprietary library which
+    executes math functions on target.
+  name: Proprietary Library
+tests:
+  sample.app_dev.number_crunching:
+    platform_allow:
+      - native_sim
+      - imx8mp_evk/mimx8ml8/adsp
+    integration_platforms:
+      - native_sim
+      - imx8mp_evk/mimx8ml8/adsp
+    tags: external
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Number crunching example!"
+        - "[Library Test]"

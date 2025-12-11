@@ -1,0 +1,70 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_SIZE
+	int
+
+config FLASH_BASE_ADDRESS
+	hex
+
+config ESP32_USE_UNSUPPORTED_REVISION
+	bool "Use unsupported ESP32 revision (Rev 0/1)"
+	help
+	  ESP32 SoC has multiple revisions, some of which are not supported by the current
+	  implementation, as such as REV0 and REV1. In case those revisions are required,
+	  set this option to enable support for them. Note that this is not recommended and
+	  may lead to unexpected behavior.
+
+config ESP_SIMPLE_BOOT
+	bool "Simple Boot method"
+	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT
+	help
+	  The Simple Boot is a booting method that doesn't need a 2nd stage bootloader.
+	  Output is a single image that should be flashed at an offset defined by used SOC.
+	  Please note that this method brings the system up with all memories set-up, but
+	  all other features, such as secure boot OTA or slots management are not available.
+
+config ESP32_TIMER_TASK_STACK_SIZE
+	int "Stack size of the high resolution ESP Timer"
+	default 4096
+	help
+	  Set the stack size for the internal high resolution ESP Timer
+	  used in Wi-Fi and BLE peripherals.
+
+config ESP32_TIMER_TASK_PRIO
+	int "Task priority of the high resolution ESP Timer"
+	default 3
+	help
+	  Set the task priority for the internal high resolution ESP Timer
+	  used in Wi-Fi and BLE peripherals.
+
+if (BT_ESP32 || WIFI_ESP32 || IEEE802154_ESP32)
+
+config ESP32_PHY_MAX_TX_POWER
+	int "Max Wi-Fi/BLE/IEEE802154 TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for the ESP32 radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_SW_COEXIST_ENABLE
+	bool "Software controls Wi-Fi/Bluetooth coexistence"
+	default y if (BT_ESP32 && WIFI_ESP32) || \
+		     (WIFI_ESP32 && IEEE802154_ESP32) || \
+		     (IEEE802154_ESP32 && BT_ESP32)
+	help
+	  If enabled, Wi-Fi & Bluetooth coexistence is controlled by software rather than hardware.
+	  Recommended for heavy traffic scenarios. Both coexistence configuration options are
+	  automatically managed, no user intervention is required.
+	  If only Bluetooth is used, it is recommended to disable this option to reduce binary file
+	  size.
+
+endif
+
+rsource "Kconfig.amp"
+rsource "Kconfig.console"
+rsource "Kconfig.efuse"
+rsource "Kconfig.spiram"
+rsource "Kconfig.esptool"
+rsource "Kconfig.flash"

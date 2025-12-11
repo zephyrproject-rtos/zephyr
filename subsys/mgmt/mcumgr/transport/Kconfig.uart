@@ -1,0 +1,63 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to UART transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_UART_
+
+menuconfig MCUMGR_TRANSPORT_UART
+	bool "UART mcumgr SMP transport"
+	depends on CONSOLE
+	depends on BASE64
+	depends on CRC
+	select UART_MCUMGR
+	help
+	  Enables handling of SMP commands received over UART.  This is a
+	  lightweight alternative to MCUMGR_TRANSPORT_SHELL.  It allows mcumgr
+	  commands to be received over UART without requiring an additional
+	  thread.
+
+if MCUMGR_TRANSPORT_UART
+
+if UART_ASYNC_API
+
+menuconfig MCUMGR_TRANSPORT_UART_ASYNC
+	bool "Use async UART API when available"
+	help
+	  The option enables use of UART async API when available for selected mcumgr uart port.
+
+if MCUMGR_TRANSPORT_UART_ASYNC
+
+config MCUMGR_TRANSPORT_UART_ASYNC_BUFS
+	int "Number of async RX UART buffers"
+	range 2 8
+	default 2
+	help
+	  The asynchronous UART API requires registering RX buffers for received data; when the RX
+	  reaches the end of a buffer, it will send event requesting next buffer, to be able to
+	  receive data without stopping due to running out of buffer space.  At least two buffers
+	  area required for smooth RX operation.
+
+config MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE
+	int "Size of single async RX UART buffer"
+	default 64
+	help
+	  The size of single buffer for asynchronous RX.
+
+endif # MCUMGR_TRANSPORT_UART_ASYNC
+
+endif # UART_ASYNC_API
+
+config MCUMGR_TRANSPORT_UART_MTU
+	int "UART SMP MTU"
+	default 256
+	help
+	  Maximum size of SMP frames sent and received over UART, in bytes.
+	  This value must satisfy the following relation:
+	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+
+endif # MCUMGR_TRANSPORT_UART

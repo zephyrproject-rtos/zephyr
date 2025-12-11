@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa 3 0>; /* GPIOA.3 */
+		in-gpios = <&gpioe 4 0>;  /* GPIOE.4 */
+	};
+};

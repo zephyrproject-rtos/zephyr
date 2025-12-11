@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023, Meta Platforms, Inc. and its affiliates.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(8)>;
+};
+
+&flash0 {
+	reg = <0 DT_SIZE_K(64)>;
+};

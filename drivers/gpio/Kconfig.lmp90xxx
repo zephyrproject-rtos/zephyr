@@ -1,0 +1,26 @@
+# LMP90xxx GPIO configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_LMP90XXX
+	bool "LMP90xxx GPIO driver"
+	default y
+	depends on DT_HAS_TI_LMP90XXX_GPIO_ENABLED
+	depends on ADC_LMP90XXX_GPIO
+	help
+	  Enable GPIO driver for LMP90xxx.
+
+	  The LMP90xxx is a multi-channel, low power sensor analog
+	  frontend (AFE).
+
+	  The GPIO port of the LMP90xxx (D6 to D0) is exposed as a
+	  GPIO controller driver with read/write support.
+
+config GPIO_LMP90XXX_INIT_PRIORITY
+	int "Driver init priority"
+	default 99
+	depends on GPIO_LMP90XXX
+	help
+	  Device driver initialization priority. This driver must be
+	  initialized after the LMP90xxx ADC driver.

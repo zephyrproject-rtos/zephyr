@@ -1,0 +1,19 @@
+Title: Test multilib
+
+Description:
+
+Some architectures support different ISA variants, each backed a different
+multilib in a same compiler. Selecting wrong multilib may have adverse
+effects on performance, or sometime produce broken executables altogether
+(for example, ARM Cortex-M requires thumb2 multilib and will be broken with
+default ("arm") multilib or "thumb" multilib). This app is a smoke-test
+for selecting non-wrong multilib - it uses operation(s) which guaranteedly
+will call support routine(s) in libgcc and checks for expected result.
+
+Sample failure output ("thumb" used on Cortex-M instead of "thumb2"):
+
+***** USAGE FAULT *****
+  Executing thread ID (thread): 0x200002a0
+  Faulting instruction address:  0x00000000
+  Illegal use of the EPSR
+Fatal fault in essential task ! Spinning...

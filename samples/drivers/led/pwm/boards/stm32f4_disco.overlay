@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		status = "disabled";
+	};
+};

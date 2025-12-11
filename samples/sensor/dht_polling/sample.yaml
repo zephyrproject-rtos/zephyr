@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2023 Ian Morris
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  description: Digital Humidity Temperature polling sample
+  name: DHT polling sample
+tests:
+  sample.sensor.dht_polling:
+    tags: sensors
+    filter: dt_alias_exists("dht0")
+    integration_platforms:
+      - nucleo_f401re
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+      - adafruit_feather_rp2040/rp2040
+      - adafruit_feather_canbus_rp2040/rp2040
+      - nucleo_f401re
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_aht20"
+      - platform:adafruit_feather_rp2040/rp2040:SHIELD="adafruit_sht4x"
+      - platform:adafruit_feather_canbus_rp2040/rp2040:SHIELD="sparkfun_shtc3"
+    harness: console
+    harness_config:
+      fixture: fixture_i2c_hs300x
+      type: one_line
+      regex:
+        - "[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]*: temp is (.*) °C humidity is (.*) %RH"

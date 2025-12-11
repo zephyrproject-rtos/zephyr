@@ -1,0 +1,3 @@
+&arduino_i2c {
+	compatible = "nordic,nrf-twi";
+};

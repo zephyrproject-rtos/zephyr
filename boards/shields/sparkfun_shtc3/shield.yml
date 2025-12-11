@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: sparkfun_shtc3
+  full_name: Sparkfun SHTC3 Temperature and Humidity Sensor Shield
+  vendor: sparkfun
+  supported_features:
+    - sensor

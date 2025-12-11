@@ -1,0 +1,52 @@
+/*
+ * External QSPI Flash partition for Arduino IoT Cloud services, rev 2
+ *
+ * Copyright (c) 2025 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Note: This is an obsolete partition table layout which does not support
+ *       some of the latest features of the Arduino IoT library.
+ *       Please update your board by running the most recent version of the
+ *       'QSPIFormat' sketch.
+ */
+
+&qspi_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Partition 1: Master Boot Record 4kB */
+		mbr_partition: partition@0 {
+			label = "mbr";
+			reg = <0x0 DT_SIZE_K(4)>;
+		};
+
+		/* Partition 2: WiFi firmware and certificates 1MB - 4kB */
+		wlan_partition: partition@1000 {
+			label = "wlan";
+			reg = <0x001000 DT_SIZE_K(1020)>;
+		};
+
+		/* Partition 3: OTA 5MB */
+		ota_partition: partition@100000 {
+			label = "ota";
+			reg = <0x100000 DT_SIZE_M(5)>;
+		};
+
+		/* Partition 4: User data 8MB */
+		storage_partition: partition@600000 {
+			label = "storage";
+			reg = <0x600000 DT_SIZE_M(8)>;
+		};
+
+		/* Partition 5: Binary FW image for the Airoc WLAN */
+		airoc_firmware: partition@f80000 {
+			label = "4343WA1.bin";
+			reg = <0xf80000 DT_SIZE_K(512)>;
+		};
+	};
+};

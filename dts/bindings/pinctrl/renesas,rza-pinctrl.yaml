@@ -1,0 +1,105 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Below generic example shows of supported pinctrl definitions:
+
+    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza-common.h>
+    example_pins: device_pin {
+        device-pinmux {
+          pinmux = <RZA_PINMUX(PORT_08, 1, 5)>,
+                   <RZA_PINMUX(PORT_08, 2, 5)>;
+          bias_pull_up;
+          renesas,filter = RZA_FILTER_SET(RZA_FILNUM_8_STAGE,RZA_FILCLKSEL_DIV_18000);
+          drive-strength = <1>;
+          slew-rate = "fast";
+        };
+
+        device-spins {
+          pins = <BSP_IO_XSPI_IO0>, <BSP_IO_XSPI_IO4>;
+          input-enable;
+          renesas,filter = RZA_FILTER_SET(RZA_FILNUM_8_STAGE,RZA_FILCLKSEL_DIV_18000);
+          drive-strength = <2>;
+          slew-rate = "fast";
+        };
+      };
+
+
+compatible: renesas,rza-pinctrl
+
+include: base.yaml
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+child-binding:
+  description: |
+    This RZA pins mux/cfg nodes description.
+
+  child-binding:
+    description: |
+      The RZA pinmux/pincfg configuration nodes description.
+
+    include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+      - bias-disable
+      - bias-high-impedance
+      - bias-pull-down
+      - bias-pull-up
+      - bias-pull-pin-default
+      - drive-strength
+      - input-enable
+      - input-disable
+      - output-enable
+      - power-source
+      - low-power-enable
+      - low-power-disable
+
+    properties:
+      pinmux:
+        type: array
+        description: |
+          Pinmux configuration node.
+          Values are constructed from GPIO port number, pin number, and
+          alternate function configuration number using the RZA_PINMUX()
+          helper macro in pinctrl_rza.h
+
+      pins:
+        type: array
+        description: |
+          Special Purpose pins configuration node.
+          Values are define in pinctrl_rza.h.
+          Ex: BSP_IO_XSPI_IO0,BSP_IO_I3C_SCL,...
+
+      drive-strength:
+        type: int
+        default: 0
+        description: |
+          Maximum sink or source current in mA for pin which shall be selected
+          depending on device and pin group.
+
+      renesas,filter:
+        type: int
+        default: 0
+        description: |
+          Digital Noise Filter configuration for a pin which shall be defined
+          using RZA_FILTER_SET() helper macro in pinctrl_rza.h to specify
+          FILNUM and FILCLKSEL. With 24Mhz external clock:
+          - min debounce time will be 166.666ns for FILNUM=0 and FILCLKSEL=0
+          - max debounce time will be 24ms for FILNUM=3 and FILCLKSEL=3.
+          This property intentionally redefined to avoid unnecessary conversation from usec to
+          FILNUM and FILCLKSEL values depending on external clock value as this configuration
+          is static.
+
+      slew-rate:
+        type: string
+        default: "fast"
+        enum:
+        - "slow"
+        - "fast"
+        description: |
+          Select slew rate for pin.

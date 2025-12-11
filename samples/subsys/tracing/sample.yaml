@@ -1,0 +1,93 @@
+common:
+  tags:
+    - tracing
+    - debug
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "thread_a: Hello World from (.*)!"
+      - "thread_b: Hello World from (.*)!"
+tests:
+  sample.tracing.user:
+    extra_args: CONF_FILE="prj_user.conf"
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - mr_canhubk3
+    harness_config:
+      type: multi_line
+      regex:
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"
+        - "sys_trace_.*_user.*"
+  sample.tracing.format.sysview:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1064_evk
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args: SNIPPET="rtt-tracing"
+  sample.tracing.osawareness.openocd:
+    arch_exclude:
+      - posix
+      - xtensa
+    platform_exclude: qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+  sample.tracing.transport.uart:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    filter: dt_chosen_enabled("zephyr,tracing-uart")
+  sample.tracing.transport.uart.ctf:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+    extra_args: CONF_FILE="prj_uart_ctf.conf"
+    filter: dt_chosen_enabled("zephyr,tracing-uart")
+  sample.tracing.transport.usb.ctf:
+    integration_platforms:
+      - frdm_k64f
+    depends_on: usbd
+    extra_args: CONF_FILE="prj_usb_ctf.conf"
+  sample.tracing.transport.native:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+  sample.tracing.transport.native.ctf:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args: CONF_FILE="prj_native_ctf.conf"
+  sample.tracing.percepio:
+    platform_allow: frdm_k64f
+    extra_args: CONF_FILE="prj_percepio.conf"
+    modules:
+      - percepio
+  sample.tracing.gpio:
+    depends_on: gpio
+    harness_config:
+      type: multi_line
+      regex:
+        - "port: gpio_emul, pin: [01] flags: (.*)"
+        - "port: gpio_emul, pin: [01] ret: 0"
+        - "port: gpio_emul, pins: [01]"
+        - "port: gpio_emul, ret: 0"
+        - "Interrupt detected!"
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"
+        - "sys_trace_.*_user.*"
+    extra_args:
+      - CONF_FILE="prj_gpio.conf"
+      - EXTRA_DTC_OVERLAY_FILE="gpio.overlay"
+    integration_platforms:
+      - native_sim

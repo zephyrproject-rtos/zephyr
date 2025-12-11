@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Andreas Kilian
+# SPDX-License-Identifier: Apache-2.0
+
+# Vishay VEML7700 ambient light sensor driver options.
+
+config VEML7700
+	bool "Vishay VEML7700 ambient light sensor"
+	default y
+	depends on DT_HAS_VISHAY_VEML7700_ENABLED
+	select I2C
+	help
+	  Enable Vishay VEML7700 ambient light sensor driver.

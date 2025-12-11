@@ -1,0 +1,12 @@
+# Copyright 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1040_EVK
+
+config DEVICE_CONFIGURATION_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
+endif # BOARD_MIMXRT1040_EVK

@@ -1,0 +1,7 @@
+board:
+  name: hexiwear
+  full_name: Hexiwear
+  vendor: nxp
+  socs:
+    - name: mk64f12
+    - name: mkw40z4

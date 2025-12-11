@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Silicon Signals Pvt. Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: JDI LPM013M126 176x176 Color Memory LCD
+
+compatible: "jdi,lpm013m126"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+  disp-gpios:
+    type: phandle-array
+    description: |
+      DISPLAY enable pin.
+      Determines whether the LCD shows its memory content or a blank (white) screen.
+      When defined, this pin is driven high during initialization.
+      Blanking operations provided by the API can toggle this pin as needed.
+
+  extcomin-gpios:
+    type: phandle-array
+    description: |
+      EXTCOMIN pin
+      Provides a square wave on the EXTCOMIN pin to toggle VCOM (common electrode voltage)
+      level.
+
+  extcomin-frequency:
+    type: int
+    description: |
+      Frequency (Hz) to toggle the EXTCOMIN pin.

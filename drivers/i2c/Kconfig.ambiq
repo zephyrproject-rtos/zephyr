@@ -1,0 +1,32 @@
+# Ambiq SDK I2C
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_AMBIQ
+	bool "AMBIQ I2C driver"
+	default y
+	depends on DT_HAS_AMBIQ_I2C_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_I2C
+	help
+	  Enable driver for Ambiq I2C.
+
+if I2C_AMBIQ
+
+config I2C_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in i2c driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
+config I2C_AMBIQ_BUS_RECOVERY
+	bool "Bus recovery support"
+	select I2C_BITBANG
+	help
+	  Enable AMBIQ driver bus recovery support via GPIO bitbanging.
+
+endif # I2C_AMBIQ

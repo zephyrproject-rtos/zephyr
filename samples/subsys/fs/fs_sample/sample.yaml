@@ -1,0 +1,128 @@
+sample:
+  name: Filesystems sample
+common:
+  tags: filesystem
+  modules:
+    - fatfs
+tests:
+  sample.filesystem.fat_fs:
+    depends_on: sdhc
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    extra_args:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
+  sample.filesystem.fat_fs.overlay:
+    platform_allow: nrf52840_blip
+  sample.filesystem.fat_fs.adafruit_2_8_tft_touch_v2:
+    depends_on:
+      - arduino_spi
+      - arduino_gpio
+      - arduino_i2c
+    platform_exclude:
+      - stm32f769i_disco
+      - pan1781_evb
+      - pan1782_evb
+      - frdm_k64f
+      - mimxrt1010_evk
+    extra_args: SHIELD=adafruit_2_8_tft_touch_v2
+    tags: shield
+    harness: console
+    harness_config:
+      fixture: fixture_shield_adafruit_2_8_tft_touch_v2
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+  sample.filesystem.fat_fs.nrf52840dk_nrf52840:
+    build_only: true
+    platform_allow: nrf52840dk/nrf52840
+  sample.filesystem.fat_fs.nrf52840dk_nrf52840_ram_disk:
+    build_only: true
+    platform_allow: nrf52840dk/nrf52840
+    extra_args:
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_ram_disk.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_ram_disk.overlay
+  sample.filesystem.fat_fs.nrf52840dk_nrf52840_ram_disk_region:
+    build_only: true
+    platform_allow: nrf52840dk/nrf52840
+    extra_args:
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_ram_disk.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_ram_disk_region.overlay
+  sample.filesystem.fat_fs.nrf54l15dk:
+    build_only: true
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
+  sample.filesystem.fat_fs.ophelia4ev:
+    build_only: true
+    platform_allow: ophelia4ev/nrf54l15/cpuapp
+  sample.filesystem.fat_fs.nrf52840dk_nrf52840.qspi:
+    build_only: true
+    platform_allow: nrf52840dk/nrf52840
+    extra_args:
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
+  sample.filesystem.fat_fs.has_sdmmc_disk:
+    build_only: true
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    integration_platforms:
+      - frdm_k64f
+  sample.filesystem.ext2:
+    simulation_exclude:
+      - renode
+    extra_args: CONF_FILE="prj_ext.conf"
+    platform_allow:
+      - hifive_unmatched/fu740/s7
+      - bl5340_dvk/nrf5340/cpuapp
+  sample.filesystem.fat_fs.stm32h747i_disco_m7_sdmmc:
+    build_only: true
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+  sample.filesystem.fat_fs.stm32f746g_sdmmc_dma:
+    build_only: true
+    platform_allow: stm32f746g_disco
+    extra_args:
+      - FILE_SUFFIX=dma
+  sample.filesystem.fat_fs.sdhc_spi.renesas_sci_b_spi:
+    depends_on: spi
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  sample.filesystem.fat_fs.sdhc_spi.renesas_sci_b_spi_ra8x2:
+    depends_on: spi
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85

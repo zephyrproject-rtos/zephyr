@@ -1,0 +1,38 @@
+# RISCV64_MIV Microchip Polarfire SOC configuration options
+
+# Copyright (c) 2020-2021 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_POLARFIRE
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	imply XIP
+
+config SOC_POLARFIRE
+	select 64BIT
+	select SCHED_IPI_SUPPORTED
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+
+config SOC_POLARFIRE_U54
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_G
+	select RISCV_ISA_EXT_C
+
+config SOC_POLARFIRE_E51
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+config MPFS_HAL
+	depends on SOC_POLARFIRE
+	bool "Microchip Polarfire SOC hardware abstracton layer"
+	select HAS_MPFS_HAL

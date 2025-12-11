@@ -1,0 +1,77 @@
+# i.MX RT6XX series configuration options
+
+# Copyright 2020, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMXRT6XX
+
+config CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK
+	bool
+	default y
+
+# alias for hal
+config SOC_SERIES_IMX_RT6XX
+	bool
+	default y
+
+# another alias for hal
+config SOC_SERIES_IMXRT_6XX
+	bool
+	default y
+
+endif # SOC_SERIES_MIMXRT6XX
+
+if SOC_MIMXRT685S_CM33
+
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	default 0x400
+
+config CODE_DATA_RELOCATION_SRAM
+	default y if FLASH_MCUX_FLEXSPI_XIP
+
+config ROM_START_OFFSET
+	default 0x1200 if NXP_IMXRT_BOOT_HEADER
+
+config NUM_IRQS
+	default 60
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACK_SIZE
+	default 1024
+endif # MBEDTLS
+
+config I2S_MCUX_FLEXCOMM
+	select INIT_AUDIO_PLL
+
+config AUDIO_DMIC_MCUX
+	select INIT_AUDIO_PLL
+
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
+if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 250105263
+
+endif # CORTEX_M_SYSTICK
+
+endif # SOC_MIMXRT685S_CM33
+
+if SOC_MIMXRT685S_HIFI4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config MCUX_CORE_SUFFIX
+	default "_dsp"
+
+endif # SOC_MIMXRT685S_HIFI4

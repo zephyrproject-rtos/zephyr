@@ -1,0 +1,11 @@
+# ST Microelectronics STM32F107XC MCU
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F107XC
+
+config NUM_IRQS
+	default 68
+
+endif # SOC_STM32F107XC

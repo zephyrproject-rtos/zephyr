@@ -1,0 +1,34 @@
+# Kinetis KE1xZ series configuration options
+
+# Copyright (c) 2019-2021 Vestas Wind Systems A/S
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KE1XZ
+
+config MCUX_LPTMR_TIMER
+	default y if PM
+
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/soc/lptmr@40040000,clock-frequency) if MCUX_LPTMR_TIMER
+
+config NUM_IRQS
+	default 32
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y
+
+# The flash option register (FOPT) boot options:
+# 0000 0001 - Normal Boot
+# 0000 0000 - Set NMI pin/interrupts to disabled
+# 0000 1000 - Allow Reset detection from RESET_Pin
+# 1111 0010 - Reserved for Future Expansion
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0xFB
+	depends on KINETIS_FLASH_CONFIG
+
+endif # SOC_SERIES_KE1XZ

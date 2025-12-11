@@ -1,0 +1,9 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+config VIDEO_HIMAX_HM01B0
+	bool "Real-time monochrome camera Himax HM01B0 sensor"
+	depends on DT_HAS_HIMAX_HM01B0_ENABLED
+	select I2C
+	default y
+	help
+	  Enable driver for monochrome camera Himax HM01B0 sensor.

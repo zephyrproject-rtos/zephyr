@@ -1,0 +1,12 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Plantower PMS7003 air pollution sensor.
+  Air pollution sensor capable of measuring mass concentration of dust.  See
+  more info at:
+  https://www.espruino.com/datasheets/PMS7003.pdf
+
+compatible: "plantower,pms7003"
+
+include: [sensor-device.yaml, uart-device.yaml]

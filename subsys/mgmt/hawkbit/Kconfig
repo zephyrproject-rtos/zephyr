@@ -1,0 +1,283 @@
+# Copyright (c) 2020 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HAWKBIT
+	bool "Eclipse hawkBit Firmware Over-the-Air support"
+	depends on SETTINGS
+	depends on FLASH
+	depends on REBOOT
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	depends on IMG_MANAGER
+	depends on NETWORKING
+	depends on HTTP_CLIENT
+	depends on JSON_LIBRARY
+	depends on BOOTLOADER_MCUBOOT
+	depends on SMF
+	depends on SMF_ANCESTOR_SUPPORT
+	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+	select MPU_ALLOW_FLASH_WRITE
+	select IMG_ENABLE_IMAGE_CHECK
+	select IMG_ERASE_PROGRESSIVELY
+	help
+	  hawkBit is a domain independent back-end framework for polling out
+	  software updates to constrained edge devices as well as more powerful
+	  controllers and gateways connected to IP based networking infrastructure.
+
+if HAWKBIT
+config HAWKBIT_POLL_INTERVAL
+	int "Time to poll interval (in minutes)"
+	default 5
+	range 1 43200
+	help
+	  Set the interval that the hawkbit update server will be polled.
+	  This time interval is zero and 43200 minutes(30 days). This will be overridden
+	  by the value configured in the settings of the hawkBit server.
+
+config HAWKBIT_AUTOHANDLER
+	bool "hawkBit autohandler"
+	select EVENTS
+	default y
+	help
+	  Activate autohandler to handle the update process automatically.
+
+config HAWKBIT_SHELL
+	bool "hawkBit shell utilities"
+	depends on SHELL
+	depends on HAWKBIT_AUTOHANDLER
+	help
+	  Activate shell module that provides hawkBit commands.
+
+config HAWKBIT_SHELL_AUTOHANDLER_TIMEOUT
+	int "hawkBit shell autohandler timeout"
+	default 200
+	depends on HAWKBIT_SHELL
+	help
+	  Set the timeout in milliseconds for the hawkBit shell autohandler. During
+	  the timeout, the hawkBit shell autohandler blocks the shell and waits for
+	  the hawkBit autohandler to finish. During this time, log messages for the
+	  shell logger are not printed, so this timeout should be set to a value that
+	  is not too long, to not drop the logs.
+
+config HAWKBIT_TENANT
+	string "Tenant name for the hawkbit server"
+	default "default"
+	help
+	  Configure the tenant name for the hawkbit server.
+
+config HAWKBIT_SERVER
+	string "User address for the hawkbit server"
+	help
+	  Configure the hawkbit server address. If the address is not an IP address,
+	  CONFIG_DNS_RESOLVER must be enabled to resolve the hostname.
+
+config HAWKBIT_PORT
+	int "Port number for the hawkbit server"
+	default 8080
+	help
+	  Configure the hawkbit port number.
+
+config HAWKBIT_SET_SETTINGS_RUNTIME
+	bool "Set hawkbit settings at runtime"
+	help
+	  Enable to set hawkbit settings at runtime.
+
+config HAWKBIT_USE_DOMAIN_NAME
+	bool "Use server_domain for domain name instead of server_addr"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Enable to use the server_domain field for TLS and HTTP. If enabled,
+	  server_addr can accept an already resolved IP address, and the domain name
+	  can be provided via server_domain.
+
+config HAWKBIT_DOMAIN_NAME_MAX_LEN
+	int "The buffer size for storing the domain name string"
+	default DNS_RESOLVER_MAX_QUERY_LEN if DNS_RESOLVER
+	default 255
+	depends on HAWKBIT_USE_DOMAIN_NAME
+	help
+	  The size for the internal buffer used to hold the domain name string.
+
+choice HAWKBIT_DDI_SECURITY
+	prompt "hawkBit DDI API authentication modes"
+	default HAWKBIT_DDI_NO_SECURITY
+
+config HAWKBIT_DDI_NO_SECURITY
+	bool "No authentication security"
+	select DEPRECATED
+	help
+	  No authentication security for the hawkBit DDI API. Support for this
+	  had been removed from the hawkBit server in version 0.8.0. Use gateway
+	  security token authentication instead, if you want something similar.
+
+config HAWKBIT_DDI_TARGET_SECURITY
+	bool "Use target security token authentication"
+	help
+	  Use target security token authentication for the hawkBit DDI API.
+	  Here the security token is unique for each device and is generated
+	  during the device registration process. The device has to be registered
+	  in the hawkBit server before using this authentication mode.
+
+config HAWKBIT_DDI_GATEWAY_SECURITY
+	bool "Use gateway security token authentication"
+	help
+	  Use gateway security token authentication for the hawkBit DDI API.
+	  Here the security token is shared between all devices in the same
+	  tenant. The device can register itself in the hawkBit server on
+	  first connection to the server. The device does not need to be registered
+	  in the hawkBit server before using this authentication mode.
+
+endchoice
+
+config HAWKBIT_DDI_SECURITY_TOKEN
+	string "Authentication security token"
+	depends on HAWKBIT_DDI_TARGET_SECURITY || HAWKBIT_DDI_GATEWAY_SECURITY
+	default ""
+	help
+	  Authentication security token for the configured hawkBit DDI
+	  authentication mode.
+
+config HAWKBIT_CUSTOM_ATTRIBUTES
+	bool "Custom device attributes"
+	help
+	  Use custom definition of device attributes.
+
+config HAWKBIT_STATUS_BUFFER_SIZE
+	int "hawkBit status buffer size"
+	default 200
+	help
+	  Set the size of the buffer, which is used to store the
+	  json strings, that are sent to the hawkBit server. It might
+	  be increased if the custom attributes are used extensively.
+
+choice HAWKBIT_DEVICE_ID_SOURCE
+	prompt "Source of the Hawkbit device ID"
+
+config HAWKBIT_HWINFO_DEVICE_ID
+	bool "Device ID through HWINFO module"
+	depends on HWINFO
+
+config HAWKBIT_CUSTOM_DEVICE_ID
+	bool "Custom device id through callback function"
+	help
+	  Be able to customize the device id during runtime to a custom value,
+	  by configuring the callback function. See `hawkbit_set_device_identity_cb`
+
+endchoice
+
+config HAWKBIT_DEVICE_ID_MAX_LENGTH
+	int "Maximum length of the device id"
+	depends on HAWKBIT_CUSTOM_DEVICE_ID
+	range 1 128
+	default 32
+	help
+	  Maximum length of the device id.
+
+config HAWKBIT_USE_TLS
+	bool "Use TLS for hawkBit server connection"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Use TLS for hawkBit connection.
+
+if HAWKBIT_USE_TLS
+
+choice HAWKBIT_CERT_TAG
+	prompt "hawkBit certificate tag"
+	default HAWKBIT_USE_STATIC_CERT_TAG
+
+config HAWKBIT_USE_STATIC_CERT_TAG
+	bool "Use static certificate tag"
+	help
+	  Use static certificate tag for TLS connection to the hawkBit server.
+
+config HAWKBIT_USE_DYNAMIC_CERT_TAG
+	bool "Use dynamic certificate tag"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Use dynamic certificate tag for TLS connection to the hawkBit server.
+
+endchoice
+
+config HAWKBIT_STATIC_CERT_TAG
+	int "Static certificate tag"
+	depends on HAWKBIT_USE_STATIC_CERT_TAG
+	default 1
+	help
+	  Static certificate tag for TLS connection to the hawkBit server.
+
+endif
+
+choice HAWKBIT_REBOOT_MODE
+	prompt "Reboot mode after update"
+	default HAWKBIT_REBOOT_WARM
+
+config HAWKBIT_REBOOT_WARM
+	bool "Warm reboot after update"
+	help
+	  Do a warm reboot after the update.
+
+config HAWKBIT_REBOOT_COLD
+	bool "Cold reboot after update"
+	help
+	  Do a cold reboot after the update.
+
+config HAWKBIT_REBOOT_NONE
+	bool "Don't reboot after update"
+	help
+	  Do not reboot after the update.
+
+endchoice
+
+config HEAP_MEM_POOL_ADD_SIZE_HAWKBIT
+	int "Heap memory pool size for hawkBit"
+	default 4096
+	help
+	  Set the size of the heap memory pool for hawkBit.
+
+config HAWKBIT_EVENT_CALLBACKS
+	bool "Set hawkBit event callbacks"
+	help
+	  Be able to set event callbacks for hawkBit.
+
+config HAWKBIT_SAVE_PROGRESS
+	bool "Save the hawkBit update download progress"
+	depends on STREAM_FLASH_PROGRESS
+	help
+	  Regularly save progress of hawkBit update download operation.
+	  When enabled, the download progress is periodically saved to
+	  non-volatile storage. If a download is interrupted, it can be resumed from
+	  the last saved point rather than starting over, saving bandwidth and time.
+	  This is especially useful for large updates over unreliable networks or in
+	  resource-constrained environments.
+
+config HAWKBIT_SAVE_PROGRESS_INTERVAL
+	int "Save the hawkBit update download progress interval"
+	default 5
+	range 0 100
+	depends on HAWKBIT_SAVE_PROGRESS
+	help
+	  Set the interval (in percent) that the hawkBit update download progress will be saved.
+	  0 means that the progress will be saved every time a new chunk is downloaded.
+
+config HAWKBIT_CONFIRM_IMG_ON_INIT
+	bool "Confirm boot image at hawkBit init"
+	default y
+	help
+	  Automatically confirm current boot image at hawkBit initialization.
+	  Application shall handle image confirmation when set to false.
+
+config HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM
+	bool "Erase second slot after confirming boot image"
+	default y
+	depends on HAWKBIT_CONFIRM_IMG_ON_INIT
+	help
+	  Erase the second image slot partition contents after confirming current boot image
+	  at hawkBit init.
+
+module = HAWKBIT
+module-str = Log Level for hawkbit
+module-help = Enables logging for hawkBit code.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

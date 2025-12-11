@@ -1,0 +1,16 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common default speeds property for MIIPHY devices
+
+properties:
+  default-speeds:
+    type: string-array
+    description: The selected speeds are used to configure the PHY during initialization
+    enum:
+      - "10BASE Half-Duplex"
+      - "10BASE Full-Duplex"
+      - "100BASE Half-Duplex"
+      - "100BASE Full-Duplex"
+      - "1000BASE Half-Duplex"
+      - "1000BASE Full-Duplex"

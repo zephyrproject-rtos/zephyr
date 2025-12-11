@@ -1,0 +1,24 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_NRFX
+	bool "nRF GPIO driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_GPIO_ENABLED
+	select NRFX_GPIOTE0 if HAS_HW_NRF_GPIOTE0
+	select NRFX_GPIOTE1 if HAS_HW_NRF_GPIOTE1
+	select NRFX_GPIOTE20 if HAS_HW_NRF_GPIOTE20
+	select NRFX_GPIOTE30 if HAS_HW_NRF_GPIOTE30
+	select NRFX_GPIOTE130 if HAS_HW_NRF_GPIOTE130
+	select NRFX_GPIOTE131 if HAS_HW_NRF_GPIOTE131
+	help
+	  Enable GPIO driver for nRF line of MCUs.
+
+config GPIO_NRFX_INTERRUPT
+	bool "Interrupt support"
+	depends on GPIO_NRFX
+	default y
+	help
+	  The option can be used to disable the GPIO interrupt support to
+	  significantly reduce memory footprint in case of application that does
+	  not need GPIO interrupts.

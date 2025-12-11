@@ -1,0 +1,23 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The BL70x Root Clock
+
+compatible: "bflb,bl70x-root-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: source
+
+  divider:
+    type: int
+    required: true
+    description: Divide source clock by this 8-bits value. Typically 1.
+
+  "#clock-cells":
+    const: 0

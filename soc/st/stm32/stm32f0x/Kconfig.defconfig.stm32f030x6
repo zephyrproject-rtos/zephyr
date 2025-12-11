@@ -1,0 +1,9 @@
+# Copyright (c) 2022 William MARTIN <william.martin@power-lan.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F030X6
+
+config NUM_IRQS
+	default 28
+
+endif # SOC_STM32F030X6

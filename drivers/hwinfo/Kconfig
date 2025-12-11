@@ -1,0 +1,64 @@
+# HW Info driver configuration options
+
+# Copyright (c) 2019 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HWINFO
+	bool "Hardware Information drivers"
+	help
+	  Enable hwinfo driver.
+
+if HWINFO
+
+module = HWINFO
+module-str = HWINFO
+source "subsys/logging/Kconfig.template.log_config"
+
+config HWINFO_HAS_DRIVER
+	bool
+	help
+	  This is an option enabled by individual drivers to signal that there is a hwinfo driver.
+
+config HWINFO_SHELL
+	bool "HWINFO Shell"
+	depends on SHELL
+	help
+	  Enable hwinfo Shell for testing.
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.ambiq"
+rsource "Kconfig.andes"
+rsource "Kconfig.cc13xx_cc26xx"
+rsource "Kconfig.cc23x0"
+rsource "Kconfig.esp32"
+rsource "Kconfig.gecko"
+rsource "Kconfig.imxrt"
+rsource "Kconfig.litex"
+rsource "Kconfig.max32"
+rsource "Kconfig.mchp"
+rsource "Kconfig.mcux_mcx_cmc"
+rsource "Kconfig.mcux_rcm"
+rsource "Kconfig.mcux_rstctl"
+rsource "Kconfig.mcux_sim"
+rsource "Kconfig.mcux_src"
+rsource "Kconfig.mcux_src_rev2"
+rsource "Kconfig.mcux_syscon"
+rsource "Kconfig.mspm0"
+rsource "Kconfig.native"
+rsource "Kconfig.nrf"
+rsource "Kconfig.numaker"
+rsource "Kconfig.numaker_rmc"
+rsource "Kconfig.psoc6"
+rsource "Kconfig.renesas_ra"
+rsource "Kconfig.rpi_pico"
+rsource "Kconfig.rw61x"
+rsource "Kconfig.sam"
+rsource "Kconfig.sam0"
+rsource "Kconfig.sam4l"
+rsource "Kconfig.sam_rstc"
+rsource "Kconfig.silabs_series2"
+rsource "Kconfig.smartbond"
+rsource "Kconfig.stm32"
+# zephyr-keep-sorted-stop
+
+endif

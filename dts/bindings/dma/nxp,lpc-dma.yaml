@@ -1,0 +1,41 @@
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC DMA controller
+
+compatible: "nxp,lpc-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  nxp,dma-num-of-otrigs:
+    type: int
+    description: Number of Inputmux connections a DMA channel can receive from
+
+  nxp,dma-otrig-base-address:
+    type: int
+    description: Address used when listening to Inputmux DMA signals
+
+  nxp,dma-itrig-base-address:
+    type: int
+    description: DMA Channel Selection Address used for receiving signals
+
+  "#dma-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a DMA specifier
+
+# - #dma-cells : Must be <1>.
+# channel: the dma channel, each channel supports one DMA request line
+
+dma-cells:
+  - channel

@@ -1,0 +1,160 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODEM_MODULES
+	bool "Modem modules"
+
+if MODEM_MODULES
+
+config MODEM_DEDICATED_WORKQUEUE
+	bool "Use a dedicated workqueue for modem operations"
+
+if MODEM_DEDICATED_WORKQUEUE
+
+config MODEM_DEDICATED_WORKQUEUE_STACK_SIZE
+	int "Modem dedicated workqueue stack size"
+	default 1024
+
+config MODEM_DEDICATED_WORKQUEUE_PRIORITY
+	int "Modem dedicated workqueue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+
+endif # MODEM_DEDICATED_WORKQUEUE
+
+config MODEM_CHAT
+	bool "Modem chat module"
+	select RING_BUFFER
+	select MODEM_PIPE
+
+if MODEM_CHAT
+
+config MODEM_CHAT_LOG_BUFFER_SIZE
+	int "Modem chat log buffer size in bytes"
+	default 128
+
+endif
+
+config MODEM_CMUX
+	bool "Modem CMUX module"
+	select MODEM_PIPE
+	select RING_BUFFER
+	select EVENTS
+	select CRC
+
+if MODEM_CMUX
+
+config MODEM_CMUX_DEFAULT_MTU_127
+	bool
+	help
+	  Hint that the default MODEM_CMUX_MTU size should be 127 bytes.
+
+config MODEM_CMUX_MTU
+	int "CMUX MTU size in bytes"
+	range 16 1500
+	default 127 if MODEM_CMUX_DEFAULT_MTU_127
+	default 31
+	help
+	  Maximum Transmission Unit (MTU) size for the CMUX module.
+	  Linux ldattach defaults to 127 bytes, 3GPP TS 27.010 to 31.
+
+config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
+	int "CMUX module extra work buffer size in bytes"
+	default 0
+	help
+	  Extra bytes to add to the work buffers used by the CMUX module.
+	  The default size of these buffers is MODEM_CMUX_MTU + 7 (CMUX header size).
+
+config MODEM_CMUX_MSC_FC_THRESHOLD
+	int "Enable flow control when the DLCI ring buffer has less than this many bytes free"
+	range 0 MODEM_CMUX_MTU
+	default MODEM_CMUX_MTU if MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA > 0
+	default 0
+	help
+	  When the available space in a DLCI receive ring buffer is less than this
+	  value, the CMUX module will send Modem Status Command frame with the
+	  flow control bit set to indicate that the sender should stop sending data.
+	  Flow control is released once the incoming buffer has at least MODEM_CMUX_MTU
+	  bytes free again.
+	  This only works if the peer supports MSC messages.
+	  Disable flow control by setting this value to 0.
+
+config MODEM_CMUX_T3_TIMEOUT
+	int "CMUX T3 timeout in seconds"
+	range 1 255
+	default 10
+	help
+	  Response Timer for wake-up procedure(T3).
+	  Time in seconds before the link is considered dead.
+
+module = MODEM_CMUX
+module-str = modem_cmux
+source "subsys/logging/Kconfig.template.log_config"
+
+config MODEM_CMUX_LOG_FRAMES
+	bool "Log CMUX frames"
+	depends on MODEM_CMUX_LOG_LEVEL_DBG
+	help
+	  Enable logging of CMUX frames. This can produce a lot of log data.
+
+endif
+
+config MODEM_PIPE
+	bool "Modem pipe module"
+	select EVENTS
+
+config MODEM_PIPELINK
+	bool "Modem pipelink module"
+	depends on MODEM_PIPE
+
+config MODEM_PPP
+	bool "Modem PPP module"
+	depends on NET_L2_PPP
+	select MODEM_PIPE
+	select RING_BUFFER
+	select CRC
+	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME
+
+if MODEM_PPP
+
+config MODEM_PPP_NET_BUF_FRAG_SIZE
+	int "Network buffer fragment size"
+	default NET_BUF_DATA_SIZE if NET_BUF_FIXED_DATA_SIZE
+	default 128
+
+endif
+
+config MODEM_STATS
+	bool "Modem statistics"
+	depends on SHELL
+	help
+	  Enables modem statistics shell commands which track the usage of
+	  buffers across the modem modules. The statistics are useful for
+	  scaling buffer sizes, as these are application specific.
+
+config MODEM_STATS_BUFFER_NAME_SIZE
+	int "Maximum string size of modem stats buffer name"
+	default 32
+	range 8 64
+
+config MODEM_UBX
+	bool "Modem U-BLOX module"
+	select RING_BUFFER
+	select MODEM_PIPE
+	help
+	  Enable Modem U-BLOX module.
+
+if MODEM_UBX
+
+config MODEM_UBX_LOG_BUFFER
+	int "Modem U-BLOX log buffer size"
+	default 128
+
+endif
+
+module = MODEM_MODULES
+module-str = modem_modules
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "backends/Kconfig"
+
+endif

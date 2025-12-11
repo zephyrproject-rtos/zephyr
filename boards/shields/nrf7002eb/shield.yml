@@ -1,0 +1,12 @@
+shields:
+  - name: nrf7002eb
+    full_name: nRF7002 Evaluation Board Shield
+    vendor: nordic
+    supported_features:
+      - wifi
+
+  - name: nrf7002eb_coex
+    full_name: nRF7002 Evaluation Board Shield (SR Co-Existence)
+    vendor: nordic
+    supported_features:
+      - wifi

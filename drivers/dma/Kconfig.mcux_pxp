@@ -1,0 +1,10 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_PXP
+	bool "MCUX PXP DMA driver"
+	default y
+	depends on DT_HAS_NXP_PXP_ENABLED
+	depends on DISPLAY
+	help
+	  PXP DMA driver for NXP SOCs

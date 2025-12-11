@@ -1,0 +1,14 @@
+# Copyright (c) 2025, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+title: Omron D6F mass flow rate sensor.
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC used to measure the mass flow rate:
+      <&adc_node channel>

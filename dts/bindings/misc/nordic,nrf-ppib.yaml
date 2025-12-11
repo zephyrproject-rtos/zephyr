@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nordic PPIB (Programmable Peripheral Interconnect Bridge)
+
+compatible: "nordic,nrf-ppib"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

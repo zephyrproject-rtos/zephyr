@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX62N
+	bool
+	select SOC_FAMILY_RENESAS_RX
+	help
+	  Renesas RX62N series
+
+config SOC_R5F562N8
+	bool
+	select SOC_SERIES_RX62N
+	help
+	  R5F562N8
+
+config SOC_SERIES
+	default "rx62n" if SOC_SERIES_RX62N
+
+config SOC
+	default "r5f562n8" if SOC_R5F562N8

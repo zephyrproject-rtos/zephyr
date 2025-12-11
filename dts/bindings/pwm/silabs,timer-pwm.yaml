@@ -1,0 +1,20 @@
+title: Silicon Labs TIMER PWM (Pulse Width Modulation)
+
+description: |
+  PWM controller using the TIMER peripheral on Silicon Labs Series 2 SoCs.
+
+compatible: "silabs,timer-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Infineon XMC4xxx CAN
+
+compatible: "infineon,xmc4xxx-can"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-prescaler:
+    type: int
+    required: true
+    description: Clock divider for the input clock. Valid range is [1, 1023].
+
+  message-objects:
+    type: int
+    required: true
+    description: Number of total can messages supported by hardware.

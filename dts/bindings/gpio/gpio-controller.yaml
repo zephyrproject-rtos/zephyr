@@ -1,0 +1,102 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for GPIO controllers
+
+properties:
+  "gpio-controller":
+    type: boolean
+    required: true
+    description: Convey's this node is a GPIO controller
+  "#gpio-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a GPIO specifier
+  ngpios:
+    type: int
+    default: 32
+    description: |
+        This property indicates the number of in-use slots of available slots
+        for GPIOs. The typical example is something like this: the hardware
+        register is 32 bits wide, but only 18 of the bits have a physical
+        counterpart. The driver is generally written so that all 32 bits can
+        be used, but the IP block is reused in a lot of designs, some using
+        all 32 bits, some using 18 and some using 12. In this case, setting
+        "ngpios = <18>;" informs the driver that only the first 18 GPIOs, at
+        local offset 0 .. 17, are in use.  For cases in which there might be
+        holes in the slot range, this value should be the max slot number+1.
+  gpio-reserved-ranges:
+    type: array
+    description: |
+        If not all the GPIOs at offsets 0...N-1 are usable for ngpios = <N>, then
+        this property contains an additional set of tuples which specify which GPIOs
+        are unusable. This property indicates the start and size of the GPIOs
+        that can't be used.
+
+        For example, setting "gpio-reserved-ranges = <3 2>, <10 1>;" means that
+        GPIO offsets 3, 4, and 10 are not usable, even if ngpios = <18>.
+  gpio-line-names:
+    type: string-array
+    description: |
+        This is an array of strings defining the names of the GPIO lines
+        going out of the GPIO controller
+
+child-binding:
+  description: |
+    Optional GPIO hog configuration.
+
+    Each GPIO controller may contain GPIO hog definitions. GPIO hogging is a mechanism for
+    providing automatic GPIO configuration during driver initialization when Kconfig
+    CONFIG_GPIO_HOGS is enabled.
+
+    Each GPIO hog is represented as a child node of the GPIO controller.
+
+    Example:
+      &gpio1 {
+        mux-hog {
+          gpio-hog;
+          gpios = <10 GPIO_ACTIVE_HIGH>, <11 GPIO_ACTIVE_HIGH>;
+          output-high;
+        };
+      };
+
+      &gpio2 {
+        test-hog {
+          gpio-hog;
+          gpios = <26 GPIO_ACTIVE_HIGH>;
+          output-low;
+          line-name = "test";
+      };
+    };
+
+  properties:
+    gpio-hog:
+      type: boolean
+      required: true
+      description: |
+        Conveys this node is a GPIO hog.
+    gpios:
+      type: array
+      required: true
+      description: |
+        This is an array of GPIO specifiers (e.g. pin, flags) to be hogged. The number of array
+        entries must be an integer multiple of the number of GPIO specifier cells for the parent
+        GPIO controller.
+    input:
+      type: boolean
+      description: |
+        If this property is set, the GPIO is configured as an input. This property takes
+        precedence over the output-low and output-high properties.
+    output-low:
+      type: boolean
+      description: |
+        If this property is set, the GPIO is configured as an output set to logical low. This
+        property takes precedence over the output-high property.
+    output-high:
+      type: boolean
+      description: |
+        If this property is set, the GPIO is configured as an output set to logical high.
+    line-name:
+      type: string
+      description: |
+        Optional GPIO line name.

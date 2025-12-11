@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ * Copyright (c) 2025 Brill Power
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h742.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32h743", "st,stm32h7", "simple-bus";
+	};
+
+	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
+	sram0: memory@24000000 {
+		reg = <0x24000000 DT_SIZE_K(512)>;
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
+	sram1: memory@30000000 {
+		reg = <0x30000000 DT_SIZE_K(128)>;
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM2 in D2 domain */
+	sram2: memory@30020000 {
+		reg = <0x30020000 DT_SIZE_K(128)>;
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM3 in D2 domain */
+	sram3: memory@30040000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30040000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM3";
+	};
+};

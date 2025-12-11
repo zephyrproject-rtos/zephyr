@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc1 0>, <&adc1 8>, <&adc1 9>;
+	};
+};
+
+&pinctrl {
+	adc1_default: adc1_default {
+		group1 {
+			pinmux = <ADC1_A0_PA2_0>;
+		};
+	};
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+
+	/* Channel 0 is floating */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+
+	/* Channel 8 is connected to Vref, which is between 1.17 and 1.23 V */
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+
+	/* Channel 9 is connected to Vcal, which is half of Avdd, i.e ~1.65 V */
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};

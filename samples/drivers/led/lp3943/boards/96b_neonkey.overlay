@@ -1,0 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};

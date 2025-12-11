@@ -1,0 +1,65 @@
+# Copyright (c) 2025 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, it51xxx Voltage Comparator node
+
+compatible: "ite,it51xxx-vcmp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  vcmp-ch:
+    type: int
+    required: true
+    description: |
+      Voltage comparator channel.
+      Check include/zephyr/dt-bindings/comparator/it51xxx-vcmp.h file for
+      pre-defined values.
+
+  threshold-mv:
+    type: int
+    required: true
+    description: |
+      16-bit value in milli-volts present on ADC data as threshold assert.
+
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC channel that will perform measurement.
+
+  scan-period:
+    type: int
+    description: |
+      0x1: Set comparator scan period to 100US
+      0x2: Set comparator scan period to 200US
+      0x3: Set comparator scan period to 400US
+      0x4: Set comparator scan period to 600US
+      0x5: Set comparator scan period to 800US
+      0x6: Set comparator scan period to 1MS
+      0x7: Set comparator scan period to 1.5MS
+      0x8: Set comparator scan period to 2MS
+      0x9: Set comparator scan period to 2.5MS
+      0xA: Set comparator scan period to 3MS
+      0xB: Set comparator scan period to 4MS
+      0xC: Set comparator scan period to 5MS
+    default: 0x4
+    enum:
+      - 0x1
+      - 0x2
+      - 0x3
+      - 0x4
+      - 0x5
+      - 0x6
+      - 0x7
+      - 0x8
+      - 0x9
+      - 0xA
+      - 0xB
+      - 0xC

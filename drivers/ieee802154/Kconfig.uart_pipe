@@ -1,0 +1,57 @@
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_UPIPE
+	bool "UART PIPE fake radio driver support for QEMU"
+	default y
+	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && \
+		   DT_HAS_ZEPHYR_IEEE802154_UART_PIPE_ENABLED
+	select UART_PIPE
+
+if IEEE802154_UPIPE
+
+config IEEE802154_UPIPE_HW_FILTER
+	bool "Hw Filtering"
+	default y
+	help
+	  This option assure the driver will process just frames addressed to him.
+
+config IEEE802154_UPIPE_RANDOM_MAC
+	bool "Random MAC address"
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+if ! IEEE802154_UPIPE_RANDOM_MAC
+
+config IEEE802154_UPIPE_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 4 of the MAC address.
+
+config IEEE802154_UPIPE_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 5 of the MAC address.
+
+config IEEE802154_UPIPE_MAC6
+	hex "MAC Address Byte 6"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 6 of the MAC address.
+
+config IEEE802154_UPIPE_MAC7
+	hex "MAC Address Byte 7"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 7 of the MAC address.
+
+endif # IEEE802154_UPIPE_RANDOM_MAC
+
+endif # IEEE802154_UPIPE

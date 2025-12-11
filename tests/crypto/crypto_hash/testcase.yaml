@@ -1,0 +1,20 @@
+tests:
+  crypto.hash.mbedtls_shim:
+    platform_allow:
+      - native_sim
+      - nucleo_u575zi_q
+    integration_platforms:
+      - native_sim
+      - nucleo_u575zi_q
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
+    tags: crypto
+  crypto.hash:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - sama7g54_ek
+    tags: crypto

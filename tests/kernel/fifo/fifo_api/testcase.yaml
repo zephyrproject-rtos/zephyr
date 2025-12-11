@@ -1,0 +1,5 @@
+common:
+  tags:
+    - kernel
+tests:
+  kernel.fifo: {}

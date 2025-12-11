@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config XOPEN_STREAMS
+	bool "X/Open streams"
+	help
+	  This option provides support for the X/Open Streams interface, including functions such as
+	  fattach(), fdetach(), getmsg(), getpmsg(), putmsg(), and putpmsg().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html#tag_02_01_05_09

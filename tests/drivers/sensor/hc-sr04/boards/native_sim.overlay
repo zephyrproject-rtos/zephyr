@@ -1,0 +1,11 @@
+/* Copyright (c) 2024 Adrien Leravat
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	hc_sr04: hc_sr04 {
+		compatible = "hc-sr04";
+		trigger-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		echo-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+	};
+};

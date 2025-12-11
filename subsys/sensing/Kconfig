@@ -1,0 +1,91 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSING
+	bool "Sensing Subsystem"
+	default y
+	depends on DT_HAS_ZEPHYR_SENSING_ENABLED
+	select RTIO
+	select RTIO_CONSUME_SEM
+	select SENSOR
+	select SENSOR_ASYNC_API
+	help
+	  Enable Sensing Subsystem.
+
+if SENSING
+
+module = SENSING
+module-str = sensing
+source "subsys/logging/Kconfig.template.log_config"
+
+config SENSING_RTIO_SQE_NUM
+	int "Number of the sensing RTIO SQE"
+	default 32
+
+config SENSING_RTIO_CQE_NUM
+	int "Number of the sensing RTIO SQE"
+	default 32
+
+config SENSING_RTIO_BLOCK_SIZE
+	int "Block size of the RTIO context"
+	default 64
+
+config SENSING_RTIO_BLOCK_COUNT
+	int "Number of memory blocks of the RTIO context"
+	default 32
+
+config SENSING_MAX_SENSITIVITY_COUNT
+	int "maximum sensitivity count one sensor could support"
+	depends on SENSING
+	default 6
+	help
+	  This is the maximum sensitivity count one sensor could support,
+	  some sensors such as ALS sensor could define different sensitivity for each data filed,
+	  So, maximum sensitivity count is needed for sensors
+	  Typical values are 6
+
+config SENSING_RUNTIME_THREAD_STACK_SIZE
+	int "stack size for sensing subsystem runtime thread"
+	depends on SENSING
+	default 4096
+	help
+	  This is the stack size for sensing subsystem runtime thread
+	  Typical values are 4096
+
+config SENSING_RUNTIME_THREAD_PRIORITY
+	int "priority for sensing subsystem runtime thread"
+	depends on SENSING
+	default 7
+	help
+	  This is the thread priority for sensor subsystem runtime thread
+	  Ring buffer data is stored by runtime thread, and then give semaphore
+	  to notify dispatch thread, runtime thread priority should lower than
+	  dispatch thread priority to ensure dispatch thread could fetch data as
+	  soon as runtime thread give semaphore. Take for example, if runtime
+	  priority is higher than dispatch thread, and runtime running in full
+	  loading with no sleep, then dispatch thread has no change to fetch
+	  data, then ring buf will always be put into data until overflow.
+	  Typical values are 9
+
+config SENSING_DISPATCH_THREAD_STACK_SIZE
+	int "stack size for sensor dispatch thread"
+	depends on SENSING
+	default 1024
+	help
+	  This is the stack size for sensor dispatch thread
+	  Typical values are 1024
+
+config SENSING_DISPATCH_THREAD_PRIORITY
+	  int "priority for sensor dispatch thread"
+	  depends on SENSING
+	  default 8
+	  help
+	    This is the thread priority for sensing subsystem dispatch thread
+	    Ring buffer data should be fetched ASAP, so Dispatch
+	    thread priority should be higher than runtime thread
+	    Typical values are 8
+
+source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
+source "subsys/sensing/sensor/hinge_angle/Kconfig"
+
+endif # SENSING

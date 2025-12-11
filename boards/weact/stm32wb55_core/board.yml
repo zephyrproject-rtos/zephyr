@@ -1,0 +1,6 @@
+board:
+  name: weact_stm32wb55_core
+  full_name: STM32WB55 Core Board V1.0
+  vendor: weact
+  socs:
+    - name: stm32wb55xx

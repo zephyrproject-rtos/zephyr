@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2019 Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Top-level configuration file for LORA drivers.
+
+menuconfig LORA
+	bool "LoRa drivers"
+	select POLL
+	help
+	  Include LoRa drivers in the system configuration.
+
+if LORA
+
+choice LORA_MODULE_BACKEND
+	prompt "Low-level LoRa modem integration to use"
+
+config LORA_MODULE_BACKEND_LORAMAC_NODE
+	bool "loramac-node backend"
+	depends on ZEPHYR_LORAMAC_NODE_MODULE
+
+config LORA_MODULE_BACKEND_LORA_BASICS_MODEM
+	bool "LoRa Basic modem backend"
+	depends on ZEPHYR_LORA_BASICS_MODEM_MODULE
+	depends on DT_HAS_SEMTECH_SX1262_ENABLED || DT_HAS_SEMTECH_SX1261_ENABLED || DT_HAS_SEMTECH_SX1272_ENABLED || DT_HAS_SEMTECH_SX1276_ENABLED
+	select USE_LORA_BASICS_MODEM_DRIVERS
+	help
+	  LoRa API support using the LoRa Basics Modem module.
+
+endchoice
+
+module = LORA
+module-str = lora
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORA_SHELL
+	bool "LoRa Shell"
+	depends on SHELL
+	help
+	  Enable LoRa Shell for testing.
+
+config LORA_INIT_PRIORITY
+	int "LoRa initialization priority"
+	default 90
+	help
+	  System initialization priority for LoRa drivers.
+
+rsource "Kconfig.sx12xx"
+rsource "Kconfig.rylrxxx"
+rsource "lora_basics_modem/Kconfig"
+
+endif # LORA

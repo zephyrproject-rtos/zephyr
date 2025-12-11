@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RXv1 CPU
+
+compatible: "renesas,rxv1"
+
+include: renesas,rx.yaml

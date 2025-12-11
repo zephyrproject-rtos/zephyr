@@ -1,0 +1,11 @@
+# Nordic Semiconductor nRF54 L05, L10 and L15 MCUs
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF54L05_CPUAPP || SOC_NRF54L10_CPUAPP || SOC_NRF54L15_CPUAPP
+
+config NUM_IRQS
+	default 271
+
+endif # SOC_NRF54L05_CPUAPP || SOC_NRF54L10_CPUAPP || SOC_NRF54L15_CPUAPP

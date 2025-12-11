@@ -1,0 +1,44 @@
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  harness: net
+  tags: net
+  depends_on: netif
+  build_only: true
+  platform_allow:
+    - frdm_k64f
+    - stm32h573i_dk
+    - stm32h573i_dk/stm32h573xx/ext_flash_app
+    - stm32h750b_dk/stm32h750xx/ext_flash_app
+  integration_platforms:
+    - frdm_k64f
+    - stm32h573i_dk
+    - stm32h573i_dk/stm32h573xx/ext_flash_app
+sample:
+  description: hawkBit Firmware Over-the-Air (FOTA)
+  name: hawkbit
+tests:
+  sample.net.hawkbit.default: {}
+  sample.net.hawkbit.sysbuild:
+    sysbuild: true
+  sample.net.hawkbit.manual:
+    extra_configs:
+      - CONFIG_HAWKBIT_MANUAL=y
+  sample.net.hawkbit.ddi.target:
+    extra_configs:
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
+      - CONFIG_HAWKBIT_DDI_TARGET_SECURITY=y
+  sample.net.hawkbit.ddi.no_security:
+    extra_configs:
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
+      - CONFIG_HAWKBIT_DDI_NO_SECURITY=y
+  sample.net.hawkbit.tls:
+    extra_configs:
+      - CONFIG_HAWKBIT_USE_TLS=y
+      - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
+  sample.net.hawkbit.set_settings_runtime:
+    extra_configs:
+      - CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME=y
+  sample.net.hawkbit.save_progress:
+    extra_configs:
+      - CONFIG_HAWKBIT_SAVE_PROGRESS=y
+      - CONFIG_STREAM_FLASH_PROGRESS=y

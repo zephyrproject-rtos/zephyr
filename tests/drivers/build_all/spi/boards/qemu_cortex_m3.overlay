@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	spi0: spi@88888888 {
+		compatible = "cdns,spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x88888888 0x400>;
+		interrupt-parent = <&nvic>;
+		interrupts = <4 1>;
+		fifo-width = <8>;
+		rx-fifo-depth = <256>;
+		tx-fifo-depth = <256>;
+		clock-frequency = <100000000>;
+	};
+};

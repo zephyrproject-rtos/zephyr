@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Benjamin Cabé <benjamin@zephyrproject.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_LTE_IOT10_CLICK
+
+if MODEM_CELLULAR
+
+# Using regulator-fixed driver to pull RTS low and effectively disable flow control since it can't
+# really be setup in a generic way when using shields.
+config REGULATOR
+	default y
+
+endif # MODEM_CELLULAR
+
+endif # SHIELD_MIKROE_LTE_IOT10_CLICK

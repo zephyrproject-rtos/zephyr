@@ -1,0 +1,24 @@
+#
+# Xilinx Processor System Gigabit Ethernet controller (GEM) driver
+# configuration options
+#
+# Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_XLNX_GEM
+	bool "Xilinx GEM Ethernet driver"
+	default y
+	depends on DT_HAS_XLNX_GEM_ENABLED
+	depends on !QEMU_TARGET || (QEMU_TARGET && NET_QEMU_ETHERNET)
+	help
+	  Enable Xilinx GEM Ethernet driver.
+
+config ETH_NIC_MODEL
+	string
+	default "cadence_gem"
+	depends on ETH_XLNX_GEM
+	help
+	  Value of the -nic parameter to be used when starting QEMU.
+	  This parameter specifies which type of Ethernet controller
+	  shall be simulated by QEMU.

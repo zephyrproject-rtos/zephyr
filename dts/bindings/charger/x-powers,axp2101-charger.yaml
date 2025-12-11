@@ -1,0 +1,77 @@
+# Copyright 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Charger part of the AXP2101 PMU MFD device.
+
+  This charger should be instantiated as child of the AXP2101 MFD device, i.e.
+
+  axp2101@34 {
+    compatible = "x-powers,axp2101";
+    reg = <0x34>;
+
+    charger {
+      compatible = "x-powers,axp2101-charger";
+      constant-charge-current-max-microamp = <300000>;
+      constant-charge-voltage-max-microvolt = <4200000>;
+    };
+
+    regulators {
+    ...
+    }
+  }
+
+compatible: "x-powers,axp2101-charger"
+
+on-bus: axp2101
+
+include:
+  - base.yaml
+  - battery.yaml
+
+properties:
+  # Extending the definition from battery.yaml
+  constant-charge-current-max-microamp:
+    required: true
+    enum:
+      - 100000
+      - 125000
+      - 150000
+      - 175000
+      - 200000
+      - 300000
+      - 400000
+      - 500000
+      - 600000
+      - 700000
+      - 800000
+      - 900000
+      - 1000000
+
+  # Extending the definition from battery.yaml
+  constant-charge-voltage-max-microvolt:
+    required: true
+    enum:
+      - 4000000
+      - 4100000
+      - 4200000
+      - 4350000
+      - 4400000
+
+  # Extending the definition from battery.yaml
+  charge-term-current-microamp:
+    enum:
+      - 0
+      - 25000
+      - 50000
+      - 75000
+      - 100000
+      - 125000
+      - 150000
+      - 200000
+
+  vbackup-enable:
+    type: boolean
+    description:
+      Enable Vbackup on boot. This is normally used to charge a button battery
+      that is used by some RTC IC.

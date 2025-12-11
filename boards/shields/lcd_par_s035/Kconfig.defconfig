@@ -1,0 +1,31 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_LCD_PAR_S035
+if LVGL
+
+# Enable double buffering
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+# VDB size is 10% of the full screen size
+config LV_Z_VDB_SIZE
+	default 10
+
+# Configure LVGL to use touchscreen
+config INPUT
+	default y
+
+config INPUT_GT911_INTERRUPT
+	default y
+
+endif # LVGL
+
+endif # SHIELD_LCD_PAR_S035

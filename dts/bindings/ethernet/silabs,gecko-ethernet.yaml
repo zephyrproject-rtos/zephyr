@@ -1,0 +1,101 @@
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiLabs Gecko Ethernet
+
+compatible: "silabs,gecko-ethernet"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: mmio register space
+
+  interrupts:
+    required: true
+    description: required interrupts
+
+  # PHY address
+  phy-address:
+    type: int
+    required: true
+    description: address of the PHY on the MDIO bus
+
+  # RMII interface location
+  location-rmii:
+    type: int
+    required: true
+    description: location of RMII pins, configuration defined as <location>
+
+  # PHY management interface location
+  location-mdio:
+    type: int
+    required: true
+    description: location of MDC and MDIO pins, configuration defined as <location>
+
+  # PHY management pins
+  location-phy-mdc:
+    type: array
+    required: true
+    description: PHY MDC individual pin configuration defined as <location port pin>
+
+  location-phy-mdio:
+    type: array
+    required: true
+    description: PHY MDIO individual pin configuration defined as <location port pin>
+
+  # RMII interface pins
+  location-rmii-refclk:
+    type: array
+    required: true
+    description: Reference clock individual pin configuration defined as <location port pin>
+
+  location-rmii-crs-dv:
+    type: array
+    required: true
+    description: Receive data valid individual pin configuration defined as <location port pin>
+
+  location-rmii-txd0:
+    type: array
+    required: true
+    description: Transmit data 0 individual pin configuration defined as <location port pin>
+
+  location-rmii-txd1:
+    type: array
+    required: true
+    description: Transmit data 1 individual pin configuration defined as <location port pin>
+
+  location-rmii-tx-en:
+    type: array
+    required: true
+    description: Transmit enable individual pin configuration defined as <location port pin>
+
+  location-rmii-rxd0:
+    type: array
+    required: true
+    description: Receive data 0 individual pin configuration defined as <location port pin>
+
+  location-rmii-rxd1:
+    type: array
+    required: true
+    description: Receive data 1 individual pin configuration defined as <location port pin>
+
+  location-rmii-rx-er:
+    type: array
+    required: true
+    description: Receive error individual pin configuration defined as <location port pin>
+
+  # PHY control pins
+  location-phy-pwr-enable:
+    type: array
+    description: PHY power enable individual pin configuration defined as <port pin>
+
+  location-phy-reset:
+    type: array
+    description: PHY reset individual pin configuration defined as <port pin>
+
+  location-phy-interrupt:
+    type: array
+    description: PHY interrupt individual pin configuration defined as <port pin>

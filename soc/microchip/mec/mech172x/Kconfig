@@ -1,0 +1,18 @@
+# Microchip MECH172X MCU core series using MEC5 HAL and DTSI
+
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MECH172X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	select HAS_MEC5_HAL
+	select SOC_PREP_HOOK
+
+if SOC_SERIES_MECH172X
+
+endif # SOC_SERIES_MECH172X

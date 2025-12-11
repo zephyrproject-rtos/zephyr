@@ -1,0 +1,86 @@
+# Copyright (c), 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADP3560 PMIC
+
+  The PMIC has one buck converter and one buck-boost converter. Both need to be
+  defined as children nodes, strictly following the BUCK and BUCKBOOST node
+  names. For example:
+
+  pmic@46 {
+    compatible = "adi,adp5360";
+    reg = <0x46>;
+    ...
+    regulators {
+      compatible = "adi,adp5360-regulator";
+
+      BUCK {
+        /* all properties for BUCK */
+      };
+      BUCKBOOST {
+        /* all properties for BUCKBOOST */
+      };
+    };
+  };
+
+compatible: "adi,adp5360-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-allowed-modes
+        - regulator-initial-mode
+
+  properties:
+    adi,switch-delay-us:
+      type: int
+      enum:
+        - 0
+        - 5
+        - 10
+        - 20
+      description: Switch delay time in hysteresis.
+
+    adi,soft-start-ms:
+      type: int
+      enum:
+        - 1
+        - 8
+        - 64
+        - 512
+      description: Soft start time in milliseconds
+
+    adi,ilim-milliamp:
+      type: int
+      enum:
+        - 100
+        - 200
+        - 300
+        - 400
+        - 500
+        - 600
+        - 700
+        - 800
+      description: |
+        Peak current limit, in milliamperes. Values above 400mA are only
+        applicable to buck boost.
+
+    adi,enable-stop-pulse:
+      type: boolean
+      description: |
+        With this option selected and the buck/boost enabled, the buck/boost
+        regulator can be stopped using the STP pin.
+
+    adi,enable-output-discharge:
+      type: boolean
+      description: Enable output discharge functionality

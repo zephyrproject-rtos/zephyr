@@ -1,0 +1,6 @@
+board:
+  name: rcar_h3ulcb
+  full_name: R-Car H3ULCB
+  vendor: renesas
+  socs:
+  - name: r8a77951

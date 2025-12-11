@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Realtek Semiconductor Corporation, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+description: RTS5912 ULPM power controller
+
+compatible: "realtek,rts5912-ulpm"
+
+include: base.yaml
+
+properties:
+  wkup-pins-max:
+    type: int
+    description: |
+      Max nbr of system wake-up pins.
+      For example wkup-pins-nb = <5>; on the rts5912
+
+child-binding:
+  description: |
+    RTS5912 wake-up pin node.
+
+    All nodes using this binding must be named "wkup-pin@[index]"
+    index starts from 0
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Wake-up pin identifier, same as "index" in node name
+
+    wkup-pin-pol:
+      type: string
+      default: rising
+      description: indicates a wakeup polarity
+      enum:
+        - rising
+        - falling
+
+    wkup-pin-mode:
+      type: string
+      default: vin
+      required: true
+      description: indicates a wakeup pin mode selection
+      enum:
+        - vin
+        - gpio

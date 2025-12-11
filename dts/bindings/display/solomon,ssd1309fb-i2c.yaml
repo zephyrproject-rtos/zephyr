@@ -1,0 +1,12 @@
+# Copyright (c) 2025, Marcio Ribeiro
+# SPDX-License-Identifier: Apache-2.0
+
+title: Solomon SSD1309 display controller on I2C bus
+
+description: |
+    The Solomon SSD1309 is a monochrome OLED controller
+    with a maximum 128x64 resolution.
+
+compatible: "solomon,ssd1309fb"
+
+include: ["solomon,ssd1306fb-common.yaml", "i2c-device.yaml"]

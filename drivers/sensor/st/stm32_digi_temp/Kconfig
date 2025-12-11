@@ -1,0 +1,18 @@
+# STM32 digital temperature sensor configuration options
+
+# Copyright (c) 2024 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_DIGI_TEMP
+	bool "STM32 Digital Temperature Sensor"
+	default y
+	depends on DT_HAS_ST_STM32_DIGI_TEMP_ENABLED
+	depends on SOC_FAMILY_STM32
+	help
+	  Enable the driver for STM32 digital temperature sensor. This sensor
+	  is different from the STM32 analog temperature sensor, which is read
+	  by an ADC. While both drivers have similar code footprint, the analog
+	  temperature driver also requires the ADC driver to be enabled. The
+	  sensors differ in precision, accuracy and power consumption. Users
+	  are encouraged to consult the datasheet to select the sensor that
+	  best suits their needs.

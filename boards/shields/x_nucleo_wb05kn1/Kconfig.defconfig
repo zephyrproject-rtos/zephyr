@@ -1,0 +1,21 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_WB05KN1_UART || SHIELD_X_NUCLEO_WB05KN1_SPI
+
+if BT
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+config BT_BLUENRG_ACI
+	default y
+
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+endif # SHIELD_X_NUCLEO_WB05KN1_UART || SHIELD_X_NUCLEO_WB05KN1_SPI

@@ -1,0 +1,194 @@
+/*
+ * Copyright 2021, 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/dai/esai.h>
+#include <zephyr/dt-bindings/power/imx_scu_rsrc.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clic: interrupt-controller@0 {
+				compatible = "cdns,xtensa-core-intc";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <3>;
+			};
+		};
+	};
+
+	scu: system-controller {
+		ccm: clock-controller {
+			compatible = "nxp,imx-ccm";
+			#clock-cells = <3>;
+		};
+
+		iomuxc: iomuxc {
+			compatible = "nxp,imx-iomuxc-scu";
+
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8-pinctrl";
+			};
+		};
+
+		power-domains {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			irqstr_pd: pd@0 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <0>;
+				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch6_pd: pd@1 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <1>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH6>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch7_pd: pd@2 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <2>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH7>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch14_pd: pd@3 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <3>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH14>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch15_pd: pd@4 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <4>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH15>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch6_pd: pd@5 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <5>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH6>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch7_pd: pd@6 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <6>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH7>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch14_pd: pd@7 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <7>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH14>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch15_pd: pd@8 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <8>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH15>;
+				#power-domain-cells = <0>;
+			};
+		};
+	};
+
+	sram0: memory@92400000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x92400000 DT_SIZE_K(512)>;
+	};
+
+	sram1: memory@92c00000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x92c00000 DT_SIZE_K(512)>;
+	};
+
+	edma0: dma@591f0000 {
+		compatible = "nxp,edma";
+		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
+		valid-channels = <6>, <7>, <14>, <15>;
+		power-domains = <&edma0_ch6_pd>, <&edma0_ch7_pd>,
+				<&edma0_ch14_pd>, <&edma0_ch15_pd>;
+		interrupts-extended = <&master6 58>, <&master6 58>,
+				      <&master5 29>, <&master5 29>;
+		#dma-cells = <2>;
+		status = "disabled";
+	};
+
+	sai1: dai@59050000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x59050000 DT_SIZE_K(64)>;
+		interrupt-parent = <&master5>;
+		interrupts = <28>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
+		clock-names = "bus";
+		dai-index = <1>;
+		dmas = <&edma0 15 0>, <&edma0 14 0>;
+		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	esai0: dai@59010000 {
+		compatible = "nxp,dai-esai";
+		reg = <0x59010000 DT_SIZE_K(64)>;
+		dmas = <&edma0 7 0>, <&edma0 6 0>;
+		dma-names = "tx", "rx";
+		clocks = <&ccm IMX_CCM_AUD_PLL_DIV_CLK0 0x0 0x0>,
+			 <&ccm IMX_CCM_ESAI0_CLK 0x0 0x0>;
+		esai-pin-modes = <ESAI_PIN_HCKR ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_HCKT ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO4_SDI1 ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO3_SDI2 ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO2_SDI3 ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO1 ESAI_PIN_DISCONNECTED>;
+		status = "disabled";
+	};
+
+	/* LSIO MU2, used to interact with the SCFW */
+	scu_mu: mailbox@5d1d0000 {
+		reg = <0x5d1d0000 DT_SIZE_K(64)>;
+	};
+
+	lpuart2: serial@5a080000 {
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
+		reg = <0x5a080000 DT_SIZE_K(4)>;
+		interrupt-parent = <&master4>;
+		interrupts = <3>;
+		/* this is actually LPUART2 clock but the macro indexing starts at 1 */
+		clocks = <&ccm IMX_CCM_LPUART3_CLK 0x0 0x0>;
+		status = "disabled";
+	};
+
+	mailbox0: mailbox@5d310000 {
+		compatible = "nxp,imx-mu";
+		reg = <0x5d310000 0x10000>;
+		interrupt-parent = <&clic>;
+		interrupts = <7 0 0>;
+		rdc = <0>;
+		status = "disabled";
+	};
+};

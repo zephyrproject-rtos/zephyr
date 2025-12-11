@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
+#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
+#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+
+&hfxo {
+	status = "okay";
+	accuracy-ppm = <30>;
+};
+
+&lfxo {
+	status = "okay";
+};
+
+/* Get a node label for wi-fi spi to use in shield files */
+wifi_spi: &spi130 {};

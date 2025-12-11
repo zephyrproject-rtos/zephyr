@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &arduino_modulino_movement;
+	};
+};
+
+&zephyr_i2c {
+	arduino_modulino_movement: arduino-modulino-movement@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+	};
+};

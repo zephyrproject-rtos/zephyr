@@ -1,0 +1,20 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &sram1;
+		zephyr,ipc = &mailbox_b;
+	};
+
+	mailbox_b: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox1_b 0>, <&mbox1_b 1>;
+		mbox-names = "tx", "rx";
+	};
+};

@@ -1,0 +1,15 @@
+/*
+ * Copyright 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This board disables can1 by default in favor of USB. */
+
+&can1 {
+	status = "okay";
+};
+
+&usb {
+	status = "disabled";
+};

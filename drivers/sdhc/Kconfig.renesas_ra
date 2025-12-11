@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_RENESAS_RA
+	bool "Renesas RA SDHI driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_SDHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select USE_RA_FSP_SDHI
+	select USE_RA_FSP_DTC
+	select PINCTRL
+	help
+	  Enables Renesas SD Host controller driver

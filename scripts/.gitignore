@@ -1,0 +1,7 @@
+parser.out
+parsetab.py
+tests/.mypy_cache
+tests/twister/.pytest_cache
+tests/twister/htmlcov
+tests/twister/__pycache__
+tests/twister/.coverage

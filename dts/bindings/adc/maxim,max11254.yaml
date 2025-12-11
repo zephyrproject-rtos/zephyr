@@ -1,0 +1,5 @@
+description: Maxim Integrated MAX11254 SPI ADC
+
+compatible: "maxim,max11254"
+
+include: maxim,max1125x-base.yaml

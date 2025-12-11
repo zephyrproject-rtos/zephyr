@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Basalte bv
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, Tonies GmbH
+# Copyright 2020-2023, 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_FLEXRAM
+	bool
+	default y if DT_HAS_NXP_FLEXRAM_ENABLED
+
+if NXP_FLEXRAM
+
+config NXP_FLEXRAM_MAGIC_ADDR_API
+	bool "NXP FlexRAM magic addr API"
+	depends on SOC_SERIES_IMXRT11XX
+	help
+	  Enable API to use flexRAM magic address functionality
+
+config NXP_FLEXRAM_ERROR_INTERRUPT
+	bool "NXP FlexRAM error interrupt"
+	help
+	  Allow flexram to generate error interrupts
+
+endif # NXP_FLEXRAM

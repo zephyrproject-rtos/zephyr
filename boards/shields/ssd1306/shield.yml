@@ -1,0 +1,24 @@
+shields:
+  - name: ssd1306_128x32
+    full_name: SSD1306 128x32 pixels generic shield
+    vendor: others
+    supported_features:
+      - display
+
+  - name: ssd1306_128x64
+    full_name: SSD1306 128x64 pixels generic shield
+    vendor: others
+    supported_features:
+      - display
+
+  - name: ssd1306_128x64_spi
+    full_name: SSD1306 128x64 pixels generic shield (SPI)
+    vendor: others
+    supported_features:
+      - display
+
+  - name: sh1106_128x64
+    full_name: SH1106 128x64 pixels generic shield
+    vendor: others
+    supported_features:
+      - display

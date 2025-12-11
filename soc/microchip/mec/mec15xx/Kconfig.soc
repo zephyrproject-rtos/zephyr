@@ -1,0 +1,20 @@
+# Microchip MEC1501 MCU core series
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MEC15XX
+	bool
+	select SOC_FAMILY_MICROCHIP_MEC
+	help
+	  Enable support for Microchip MEC Cortex-M4 MCU series
+
+config SOC_SERIES
+	default "mec15xx" if SOC_SERIES_MEC15XX
+
+config SOC_MEC1501_HSZ
+	bool
+	select SOC_SERIES_MEC15XX
+
+config SOC
+	default "mec1501_hsz" if SOC_MEC1501_HSZ

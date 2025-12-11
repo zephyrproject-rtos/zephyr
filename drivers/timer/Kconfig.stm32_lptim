@@ -1,0 +1,77 @@
+# STM32 LPTIM configuration options
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
+DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
+
+menuconfig STM32_LPTIM_TIMER
+	bool "STM32 Low Power Timer [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ST_STM32_LPTIM_ENABLED
+	depends on CLOCK_CONTROL && PM
+	select TICKLESS_CAPABLE
+	select EXPERIMENTAL
+	help
+	  This module implements a kernel device driver for the LowPower Timer
+	  and provides the standard "system clock driver" interfaces.
+
+if STM32_LPTIM_TIMER
+
+# Invisible symbols exposing the selected LPTIM source to Kconfig
+# NOTE: the values 2/3 correspond too STM32_SRC_LSE/STM32_SRC_LSI
+# defined in include/zephyr/dt-bindings/clock/stm32_common_clocks.h
+config STM32_LPTIM_CLOCK_LSI
+	def_bool "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 3
+	help
+	  LSI used as LPTIM clock source
+
+config STM32_LPTIM_CLOCK_LSE
+	def_bool "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 2
+	help
+	  LSE used as LPTIM clock source
+
+config STM32_LPTIM_CLOCK
+	int
+	default 32768 if STM32_LPTIM_CLOCK_LSE
+	default 32000 if STM32_LPTIM_CLOCK_LSI
+
+config STM32_LPTIM_TIMEBASE
+	hex "LPTIM AutoReload value"
+	default 0xFFFF if STM32_LPTIM_CLOCK_LSE
+	default 0xF9FF if STM32_LPTIM_CLOCK_LSI
+
+config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
+	bool "Override tick to freq ratio check"
+	default y if ZTEST
+	help
+	  For LPTIM configuration, a specific tick freq is advised
+	  depending on LPTIM input clock:
+	  - LSI(32KHz): 4000 ticks/sec
+	  - LSE(32768): 4096 ticks/sec
+	  To prevent misconfigurations, a dedicated check is implemented
+	  in the driver.
+	  This options allows to override this check
+
+config STM32_LPTIM_STDBY_TIMER
+	bool
+	default $(dt_chosen_enabled,$(DT_CHOSEN_STDBY_TIMER))
+	depends on COUNTER
+	depends on TICKLESS_KERNEL
+	select EXPERIMENTAL
+	help
+	  Use an additional timer while entering Standby mode.
+	  There are chips e.g. STM32WBAX family that use LPTIM as a system timer,
+	  but LPTIM is not clocked in standby mode. These chips usually have
+	  another timer that is not stopped, but it has lower frequency e.g.
+	  RTC, thus it can't be used as a main system timer.
+	  Same approach is used on STM32U5 and STOP3 mode.
+
+	  Use the Standby timer for timeout (wakeup) when the system is entering
+	  Standby state.
+
+	  The chosen Standby timer node has to support setting alarm from the
+	  counter API.
+
+endif # STM32_LPTIM_TIMER

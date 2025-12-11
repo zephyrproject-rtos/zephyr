@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&plli2s {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <3>;
+	div-q = <4>;
+	clocks = <&clk_hse>;
+	status = "okay"; /* 48MHz on PLLI2SQ */
+};
+
+&dma2 {
+	status = "okay";
+};

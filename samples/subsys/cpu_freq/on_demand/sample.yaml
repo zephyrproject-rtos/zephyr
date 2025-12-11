@@ -1,0 +1,37 @@
+sample:
+  description: CPU frequency scaling sample
+  name: CPU Freq Sample
+common:
+  tags: cpu_freq
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "^.*<inf> cpu_freq_sample: Starting CPU Freq Subsystem Sample!"
+      - "^.*<dbg> cpu_load_metric: cpu_load_metric_get: CPU[0-9]+ Execution cycles: \
+         [0-9]+, Total cycles: [0-9]+"
+      - "^.*<dbg> cpu_freq_policy_on_demand: cpu_freq_policy_select_pstate: \
+         CPU[0-9]+ Load: [0-9]+%"
+      - "^.*<dbg> cpu_freq_policy_on_demand: cpu_freq_policy_select_pstate: On-Demand Policy: \
+         Selected P-state [0-9]+ with load_threshold=[0-9]+%"
+
+tests:
+  sample.cpu_freq.soc:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  sample.cpu_freq.stub:
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y

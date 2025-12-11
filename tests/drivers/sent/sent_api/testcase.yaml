@@ -1,0 +1,7 @@
+tests:
+  drivers.sent:
+    tags:
+      - drivers
+      - sent
+    depends_on: sent
+    filter: dt_alias_exists("sent0")

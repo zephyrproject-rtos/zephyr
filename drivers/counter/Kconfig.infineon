@@ -1,0 +1,13 @@
+# Infineon CAT1 counter driver
+
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_INFINEON_CAT1
+	bool "Infineon CAT1 COUNTER driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_COUNTER_ENABLED
+	select USE_INFINEON_TIMER
+	help
+	  This option enables the COUNTER driver for Infineon CAT1 family.

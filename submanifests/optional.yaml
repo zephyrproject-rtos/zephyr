@@ -1,0 +1,38 @@
+manifest:
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+  # zephyr-keep-sorted-start re(^\s+\- name:)
+  projects:
+    - name: canopennode
+      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
+      path: modules/lib/canopennode
+      remote: upstream
+      groups:
+        - optional
+    - name: chre
+      revision: 3b32c76efee705af146124fb4190f71be5a4e36e
+      path: modules/lib/chre
+      remote: upstream
+      groups:
+        - optional
+    - name: tflite-micro
+      revision: 8d404de73acf7687831e16d88e86e4f73cfddf8e
+      path: optional/modules/lib/tflite-micro
+      repo-path: tflite-micro
+      remote: upstream
+      groups:
+        - optional
+    - name: thrift
+      path: optional/modules/lib/thrift
+      revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234
+      remote: upstream
+      groups:
+        - optional
+    - name: zephyr-lang-rust
+      revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
+      path: modules/lang/rust
+      remote: upstream
+      groups:
+        - optional
+# zephyr-keep-sorted-stop

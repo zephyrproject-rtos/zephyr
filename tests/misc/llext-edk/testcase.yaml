@@ -1,0 +1,10 @@
+tests:
+  misc.edk.pytest:
+    harness: pytest
+    tags:
+      - pytest
+      - edk
+    platform_allow:
+      - qemu_cortex_r5
+    toolchain_exclude: llvm
+    timeout: 120 # See #85662

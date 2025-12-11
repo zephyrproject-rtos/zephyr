@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "pinctrl API Test"
+
+source "Kconfig.zephyr"
+
+config PINCTRL_TEST_STORE_REG
+	bool "Store register address"
+	select PINCTRL_STORE_REG
+	help
+	  This option should be selected by unit tests that want to store the
+	  register address of devices.

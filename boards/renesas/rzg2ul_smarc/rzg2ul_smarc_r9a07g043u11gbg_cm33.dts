@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <arm/renesas/rz/rzg/r9a07g043.dtsi>
+#include "rzg2ul_smarc-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RZ/G2UL SMARC";
+	compatible = "renesas,rzg2ul-smarc";
+
+	chosen {
+		zephyr,sram = &ddr;
+	};
+
+	ddr: memory@60010000 {
+		compatible = "mmio-sram";
+		reg = <0x60010000 DT_SIZE_M(46)>;
+	};
+};

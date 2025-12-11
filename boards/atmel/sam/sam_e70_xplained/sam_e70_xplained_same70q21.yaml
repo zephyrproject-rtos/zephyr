@@ -1,0 +1,25 @@
+identifier: sam_e70_xplained/same70q21
+name: SAM E70 Xplained
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+flash: 2048
+ram: 384
+supported:
+  - adc
+  - can
+  - counter
+  - dac
+  - dma
+  - gpio
+  - hwinfo
+  - i2s
+  - pwm
+  - netif:eth
+  - sdhc
+  - spi
+  - usb_device
+  - watchdog
+vendor: atmel

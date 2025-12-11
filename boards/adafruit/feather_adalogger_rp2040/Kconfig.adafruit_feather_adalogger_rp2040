@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_ADALOGGER_RP2040
+	select SOC_RP2040

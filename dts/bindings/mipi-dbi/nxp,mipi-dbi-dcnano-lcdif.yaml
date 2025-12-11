@@ -1,0 +1,85 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DBI settings for NXP DCnano LCD controller. DCNano is used in DPI mode by default,
+  when used in DBI mode the compatible need to change in example overlay. For example:
+
+  &lcdif {
+      compatible = "nxp,mipi-dbi-dcnano-lcdif";
+      clock-frequency = <279000000>;
+      wr-period = <14>;
+      wr-assert = <6>;
+      wr-deassert = <13>;
+      cs-assert = <1>;
+      cs-deassert = <4>;
+  };
+
+compatible: "nxp,mipi-dbi-dcnano-lcdif"
+
+include: [base.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The DBI clock source frequency.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin.
+
+  divider:
+    type: int
+    description: |
+      Divider of the DBI clock source frequency, the final DBI frequency is
+      clock-frequency / divider.
+
+  wr-period:
+    type: int
+    required: true
+    description: |
+      How many clock cycles does one write cycle take.
+
+  wr-assert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to assert E signal for TypeA_ClockedE, or WRX signal for TypeB.
+
+  wr-deassert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to deassert E signal for TypeA_ClockedE, or WRX signal for TypeB.
+
+  cs-assert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to assert CSX signal for TypeA_FixedE or TypeB.
+
+  cs-deassert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to deassert CSX signal for TypeA_FixedE or TypeB.
+
+  endian:
+    type: string
+    description: |
+      Input data endian mode.
+    enum:
+      - "no-swap"
+      - "half-word"
+      - "word"
+
+  swizzle:
+    type: string
+    description: |
+      Bus data output order.
+    enum:
+      - "RGB"
+      - "BGR"

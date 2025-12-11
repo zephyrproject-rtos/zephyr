@@ -1,0 +1,52 @@
+/*
+ * Copyright 2020 Broadcom
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <broadcom/viper-common.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&uart0 {
+	interrupts = <1 3>;
+};
+
+&uart1 {
+	interrupts = <203 3>;
+};
+
+&pcie0_ep {
+	interrupt-parent = <&nvic>;
+	interrupts = <44 3>, <46 3>, <98 3>, <99 3>, <215 3>;
+	interrupt-names = "perst", "perst_inband", "flr",
+			  "snoop_irq1", "pcie_pmon_lite";
+};
+
+&paxdma {
+	interrupt-parent = <&nvic>;
+	interrupts = <228 3>;
+};

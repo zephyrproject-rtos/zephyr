@@ -1,0 +1,9 @@
+# Copyright (c) 2023, Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 TEMP for production calibrated sensors with a single calibration temperature.
+
+compatible: "st,stm32c0-temp-cal"
+
+include: "st,stm32-temp-cal-common.yaml"

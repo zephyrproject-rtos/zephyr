@@ -1,0 +1,58 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCTP
+	bool "Management Component Transport Protocol [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable the MCTP Subsystem and Module Usage
+
+if MCTP
+
+config MCTP_HEAP_SIZE
+	int "MCTP Heap Size"
+	default 1024
+	help
+	  MCTP requires a heap for allocating packet buffers. A dedicated
+	  heap is provided to MCTP at startup avoiding the need to specify
+	  libmctp's allocation operations. This setting defines the size of
+	  the dedicated MCTP heap in bytes. Defaults to 1KB for small packets.
+
+config MCTP_UART
+	bool "MCTP UART Binding"
+	depends on UART_ASYNC_API
+	help
+	  Build the MCTP UART binding to use MCTP over Zephyr's async UART
+	  interface.
+
+config MCTP_I2C_GPIO_CONTROLLER
+	bool "MCTP I2C+GPIO Controller Binding"
+	depends on I2C
+	depends on I2C_RTIO
+	depends on GPIO
+	help
+	  Build the MCTP I2C+GPIO controller binding to use MCTP over Zephyr's I2C RTIO
+	  interface and GPIO interrupts from targets to signal their request to write.
+
+config MCTP_I2C_GPIO_TARGET
+	bool "MCTP I2C+GPIO Target Binding"
+	depends on I2C
+	depends on GPIO
+	help
+	  Build the MCTP I2C+GPIO target binding to use MCTP over Zephyr's I2C target
+	  interface and GPIO to signal writes to the bus controller.
+
+config MCTP_USB
+	bool "MCTP USB Binding"
+	depends on USB_DEVICE_STACK_NEXT
+	help
+	  Build the MCTP USB binding to use MCTP over Zephyr's USB device interface.
+
+module = MCTP
+module-str = MCTP
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.usb"
+
+endif

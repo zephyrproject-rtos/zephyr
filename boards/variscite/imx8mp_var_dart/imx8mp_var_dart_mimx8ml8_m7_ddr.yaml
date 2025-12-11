@@ -1,0 +1,18 @@
+#
+# Copyright 2025 Variscite Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mp_var_dart/mimx8ml8/m7/ddr
+name: Variscite DART-MX8M-PLUS M7 (DDR)
+type: mcu
+arch: arm
+ram: 2048
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio

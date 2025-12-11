@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Joseph Yates
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pico_i2c1 {
+	waveshare_pico_ups: ina219@43 {
+		status = "okay";
+		compatible = "ti,ina219";
+		reg = <0x43>;
+		brng = <1>;
+		pg = <3>;
+		sadc = <12>;
+		badc = <12>;
+		shunt-milliohm = <100>;
+		lsb-microamp = <20>;
+	};
+};

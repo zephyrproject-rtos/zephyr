@@ -1,0 +1,3 @@
+&rcc {
+	apb1-prescaler = <16>;
+};

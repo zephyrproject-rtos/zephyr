@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_SAMD21_BREAKOUT
+	select SOC_SAMD21G18A

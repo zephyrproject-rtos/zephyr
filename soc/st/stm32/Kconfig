@@ -1,0 +1,53 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_STM32
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select STM32_ENABLE_DEBUG_SLEEP_STOP if ZTEST
+	select BUILD_OUTPUT_HEX
+
+if SOC_FAMILY_STM32
+
+rsource "*/Kconfig"
+
+# Kconfig options used to configure the family-wide code
+# found in `common/` are declared in `common/Kconfig`.
+# Some options are also shared by multiple series, but not
+# used by this family-wide common code; instead, they are
+# consumed by certain drivers, SoC-specific code or the
+# STM32Cube HAL module.
+#
+# (Please indicate as a comment where each option is consumed)
+
+# This option is consumed by the HAL module
+config USE_STM32_ASSERT
+	depends on ASSERT
+	bool "STM32Cube HAL and LL drivers asserts"
+	help
+	  Enable asserts in STM32Cube HAL and LL drivers.
+
+config HAS_STM32_FLASH_PREFETCH
+	bool
+	help
+	  Hidden symbol selected by SoCs which support flash prefetch.
+
+# This option is consumed by `soc.c` of applicable series
+config STM32_FLASH_PREFETCH
+	bool "Flash prefetch buffer"
+	default y
+	depends on HAS_STM32_FLASH_PREFETCH
+	help
+	  Enable flash prefetch. For power efficiency, it is recommended to
+	  be enabled when flash is accessed through a cache memory. Flash
+	  prefetch also improves performances a bit.
+
+# This option is consumed by external flash drivers
+config STM32_APP_IN_EXT_FLASH
+	bool
+	help
+	  Allows the SoC clock driver to correctly initialize the
+	  Q/O/XSPI controller clocks when the application is residing
+	  in external Flash and is chainloaded with MCUboot.
+	  Whether the app is eXecuted in Place (XiP) depends on the MCUboot mode used.
+
+endif # SOC_FAMILY_STM32

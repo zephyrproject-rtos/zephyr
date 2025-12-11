@@ -1,0 +1,108 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMXRT10XX
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select ARM
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select HAS_MCUX_CACHE
+	select HAS_SWO
+	select HAS_PM
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_MIMXRT1011
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+
+config SOC_MIMXRT1015
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+
+config SOC_MIMXRT1021
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+
+config SOC_MIMXRT1024
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+	select HAS_MCUX_SRC
+
+config SOC_MIMXRT1042
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+
+config SOC_MIMXRT1052
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+	select HAS_MCUX_SRC
+
+config SOC_MIMXRT1062
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+	select HAS_MCUX_SRC
+
+config SOC_MIMXRT1064
+	select HAS_MCUX_SRC
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+
+if SOC_SERIES_IMXRT10XX
+
+config INIT_ENET_PLL
+	bool "Initialize ENET PLL"
+	default y if ETH_NXP_ENET
+	help
+	  When enabled, will call the SDK function to initialize the enet pll.
+	  The exact meaning of what the "enet pll" is in the hardware according
+	  to the SDK changes per platform, and so does the API signature.
+	  This configuration also assumes a certain default clocking scheme for each SOC.
+	  See soc.c code and HAL fsl_clock.c for the platform for better understanding.
+
+config INIT_PLL6_500M
+	bool "PLL6 500M output enable"
+	default y
+	depends on SOC_MIMXRT1011 || SOC_MIMXRT1015 || \
+		   SOC_MIMXRT1021 || SOC_MIMXRT1024
+	select INIT_ENET_PLL
+
+config INIT_SYS_PLL
+	bool "Initialize System PLL"
+	default y if SOC_MIMXRT1042
+
+config INIT_VIDEO_PLL
+	default y if DISPLAY_MCUX_ELCDIF
+	depends on !SOC_MIMXRT1011 && !SOC_MIMXRT1015 && \
+		   !SOC_MIMXRT1021 && !SOC_MIMXRT1024
+
+if PM
+
+config DCDC_TARGET_LOW_POWER_VOLTAGE
+	int "Target DCDC voltage in mV for low power mode"
+	default 1075
+	range 925 1300
+	help
+	  When entering suspend-to-idle drops to this target SOC voltage.
+	  If you are experiencing issues with low power mode stability,
+	  try raising this voltage value. Increment or decrement in steps of 25 mV.
+
+config DCDC_TARGET_NORMAL_VOLTAGE
+	int "Target DCDC voltage in mV for normal mode"
+	default 1275
+	range 925 1300
+	help
+	  When exiting suspend-to-idle raises to this SOC voltage.
+	  Increment or decrement in steps of 25 mV.
+
+endif # PM
+
+endif # SOC_SERIES_IMXRT10XX

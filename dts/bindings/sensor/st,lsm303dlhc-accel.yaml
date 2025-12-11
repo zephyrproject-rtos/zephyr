@@ -1,0 +1,8 @@
+# Copyright (c) 2018 Philémon Jaermann
+# SPDX-License-Identifier: Apache-2.0
+
+description: LSM303DLHC acceleration sensor
+
+compatible: "st,lsm303dlhc-accel"
+
+include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]

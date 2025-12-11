@@ -1,0 +1,88 @@
+# Copyright (c) 2021-2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig UDC_DRIVER
+	bool "USB device controller drivers"
+	select NET_BUF
+	help
+	  USB device controller driver.
+
+if UDC_DRIVER
+
+config UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	bool
+
+config UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
+	bool "Allow High-Speed chirp"
+	default y if UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	help
+	  Allow High-Speed capable device to operate at High-Speed. Disable this
+	  option to force Full-Speed only operation.
+
+config UDC_BUF_COUNT
+	int "Number of buffers in the pool"
+	range 16 256
+	default 16
+	help
+	  Number of UDC request buffers in the pool.
+
+config UDC_BUF_POOL_SIZE
+	int "Memory available for requests"
+	range 64 32768
+	default 1024
+	help
+	  Total amount of memory available for UDC requests.
+
+config UDC_BUF_FORCE_NOCACHE
+	bool "Place the buffer pools in the nocache memory region"
+	depends on NOCACHE_MEMORY && DCACHE
+	help
+	  Place the buffer pools in the nocache memory region if the driver
+	  cannot handle buffers in cached memory.
+
+config UDC_ENABLE_SOF
+	bool "SOF interrupt processing"
+	help
+	  Enabled SoF interrupts can cause a very high CPU load on high-speed
+	  controllers because the interrupt rate would be 125 µs.
+
+config UDC_WORKQUEUE
+	bool "Use a dedicate work queue for UDC drivers"
+	help
+	  This option provides a dedicated work queue for UDC drivers.
+
+config UDC_WORKQUEUE_STACK_SIZE
+	int "UDC workqueue stack size"
+	depends on UDC_WORKQUEUE
+	default 512
+
+config UDC_WORKQUEUE_PRIORITY
+	int "UDC workqueue priority"
+	depends on UDC_WORKQUEUE
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  By default, UDC work queue priority is the same as
+	  System workqueue priority.
+
+module = UDC_DRIVER
+module-str = usb drv
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/usb/udc/Kconfig.dwc2"
+source "drivers/usb/udc/Kconfig.nrf"
+source "drivers/usb/udc/Kconfig.kinetis"
+source "drivers/usb/udc/Kconfig.skeleton"
+source "drivers/usb/udc/Kconfig.virtual"
+source "drivers/usb/udc/Kconfig.smartbond"
+source "drivers/usb/udc/Kconfig.stm32"
+source "drivers/usb/udc/Kconfig.it82xx2"
+source "drivers/usb/udc/Kconfig.mcux"
+source "drivers/usb/udc/Kconfig.numaker"
+source "drivers/usb/udc/Kconfig.rpi_pico"
+source "drivers/usb/udc/Kconfig.ambiq"
+source "drivers/usb/udc/Kconfig.renesas_ra"
+source "drivers/usb/udc/Kconfig.max32"
+source "drivers/usb/udc/Kconfig.sam0"
+
+endif # UDC_DRIVER

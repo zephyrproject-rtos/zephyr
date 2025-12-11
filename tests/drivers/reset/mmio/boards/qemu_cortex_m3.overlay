@@ -1,0 +1,14 @@
+/ {
+	reset0: reset@20000004 {
+		compatible = "reset-mmio";
+		reg = <0x20000004 0x4>;
+		num-resets = <16>;
+	};
+
+	reset1: reset@20000008 {
+		compatible = "reset-mmio";
+		reg = <0x20000008 0x4>;
+		num-resets = <16>;
+		active-low;
+	};
+};

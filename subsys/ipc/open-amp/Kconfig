@@ -1,0 +1,79 @@
+#
+# Copyright (c) 2020, STMicroelectronics
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config OPENAMP_RSC_TABLE
+	bool "coprocessor resource table"
+	imply OPENAMP
+	help
+	  add the resource table in the generated binary. This table is
+	  compatible with linux remote proc framework and OpenAMP library.
+
+config OPENAMP_VENDOR_RSC_TABLE
+	bool "Vendor specific resource table"
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Enable vendor-specific resource table with features
+	  supported by remote processor.
+
+config OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF
+	int "Resource table number of rpmsg buffers"
+	default 0
+	depends on OPENAMP_RSC_TABLE
+	help
+	  This option specifies the number of buffer used in a Vring for
+	  interprocessor communication
+
+config OPENAMP_RSC_TABLE_IPM_RX_ID
+	int "IPM RX channel ID"
+	default 0
+	depends on OPENAMP_RSC_TABLE
+	help
+	   This option specifies the IPM RX channel ID used in a VRING
+	   for interprocessor communication
+
+config OPENAMP_RSC_TABLE_IPM_TX_ID
+	int "IPM TX channel ID"
+	default 1
+	depends on OPENAMP_RSC_TABLE
+	help
+	   This option specifies the IPM TX channel ID used in a VRING
+	   for interprocessor communication
+
+config OPENAMP_COPY_RSC_TABLE
+	bool "Copy resource table section"
+	depends on OPENAMP_RSC_TABLE
+	help
+	  The .resource_table section must be placed in a specific location
+	  known by both this core and the remote core. If this is not taken
+	  care of by the remote then this firmware has the ability to copy
+	  the table to a specific location. This memory region can be declared
+	  in the device tree by the "zephyr,ipc_rsc_table" node.
+
+	  This is not needed if the remote loads this firmware and has control
+	  over the placement of the .resource_table section such as remoteproc.
+
+config OPENAMP_VENDOR_RSC_TABLE_FILE
+	string "Source file containing vendor-specific resource table"
+	default "resource_table.c"
+	depends on OPENAMP_VENDOR_RSC_TABLE
+	help
+	  Name of a source file containing vendor-specific
+	  resource table.
+
+config OPENAMP_VENDOR_ADDR_TRANSLATION
+	bool "Address translation support for OpenAMP"
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Enable support for address translation from remote driver to device
+
+config OPENAMP_VENDOR_ADDR_TRANSLATION_FILE
+	string "Header file containing vendor-specific address translation table"
+	default "addr_translation.h"
+	depends on OPENAMP_VENDOR_ADDR_TRANSLATION
+	help
+	  Name of a header file containing vendor-specific
+	  address translation table.

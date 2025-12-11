@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2017 Christian Taedcke
+
+rsource "*/Kconfig.defconfig"
+
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
+
+config SOC_GECKO_EMU
+	default y
+	select SOC_GECKO_CORE
+	depends on PM
+
+config CORTEX_M_SYSTICK
+	default n if GECKO_BURTC_TIMER
+
+endif

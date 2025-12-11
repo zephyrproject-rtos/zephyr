@@ -1,0 +1,9 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MPS4_CORSTONE315
+
+config NUM_IRQS
+	default 232
+
+endif

@@ -1,0 +1,5 @@
+tests:
+  kernel.pipe.api:
+    tags:
+      - kernel
+      - userspace

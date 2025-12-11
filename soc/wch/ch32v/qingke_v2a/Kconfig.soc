@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Jianxiong Gu
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V2A
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "qingke_v2a" if SOC_SERIES_QINGKE_V2A
+
+rsource "Kconfig.soc.*"

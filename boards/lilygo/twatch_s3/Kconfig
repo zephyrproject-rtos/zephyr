@@ -1,0 +1,7 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_TWATCH_S3_ESP32S3_PROCPU
+	default 256 if BOARD_TWATCH_S3_ESP32S3_APPCPU

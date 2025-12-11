@@ -1,0 +1,25 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Use this compatible for i.MX boards on which the
+  IOMUXC is managed by the SCU.
+
+compatible: "nxp,imx-iomuxc-scu"
+
+include: base.yaml
+
+child-binding:
+  description: SCFW-based IOMUXC pin mux.
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        This is an array of values defining the pin mux selection
+        with the following format:
+
+          <pad, mux>
+
+        pad: Which pad to configure.
+        mux: Select which signal to route.

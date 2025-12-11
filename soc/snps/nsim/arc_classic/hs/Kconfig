@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NSIM_HS
+	select ARC
+	select CPU_HAS_FPU
+	select CPU_HAS_MPU if !SMP

@@ -1,0 +1,11 @@
+# STMicroelectronics STM32U595XX MCU
+
+# Copyright (c) 2023 PSICONTROL nv
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U595XX
+
+config NUM_IRQS
+	default 132
+
+endif # SOC_STM32U595XX

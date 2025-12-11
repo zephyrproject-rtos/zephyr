@@ -1,0 +1,12 @@
+# OV2640
+
+# Copyright (c) 2021 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV2640
+	bool "OV2640 CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_OVTI_OV2640_ENABLED
+	default y
+	help
+	  Enable driver for OV2640 CMOS digital image sensor device.

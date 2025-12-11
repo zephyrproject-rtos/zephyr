@@ -1,0 +1,21 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config OPTEE
+	bool "OP-TEE driver"
+	depends on (ARM64 && ARMV8_A_NS && HAS_ARM_SMCCC) || ZTEST
+	help
+	  This implements support of the OP-TEE firmware which is loaded
+	  as BL32 image. OP-TEE is a Trust Zone OS which implements mechanisms
+	  of the hardware isolation and rely to ARM TrustZone technology.
+	  Driver requests functions from the OP-TEE and implements RPC mechanism
+	  needed by OP-TEE to run services. See https://www.op-tee.org for more
+	  information.
+
+config OPTEE_MAX_NOTIF
+	int "Max number of OP-TEE notifications"
+	depends on OPTEE
+	default $(UINT8_MAX)
+	help
+	 Sets the maximum notifications from OP-TEE to the Normal World. OP-TEE using
+	 this mechanism for the synchronization.

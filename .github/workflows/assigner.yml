@@ -1,0 +1,88 @@
+name: Pull Request/Issue Assigner
+
+on:
+  pull_request_target:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    branches:
+    - main
+    - collab-*
+    - v*-branch
+  issues:
+    types:
+    - labeled
+
+permissions:
+  contents: read
+
+jobs:
+  assignment:
+    name: Pull Request/Issue Assignment
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write        # to add assignees to issues
+
+    steps:
+    - name: Check out source code
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Set up Python
+      uses: zephyrproject-rtos/action-python-env@32e53bef090c33d53aa94f1d9a9d29c93cfdc5f7 # main
+      with:
+        python-version: 3.12
+
+    - name: Fetch west.yml/Maintainer.yml from pull request
+      if: >
+        github.event_name == 'pull_request_target' && github.base_ref == 'main'
+      run: |
+        git fetch origin pull/${{ github.event.pull_request.number }}/merge
+        git show FETCH_HEAD:west.yml > pr_west.yml
+        git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
+
+    - name: west setup
+      if: >
+        github.event_name == 'pull_request_target'
+      run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        west init -l . || true
+
+    - name: Run assignment script
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+      run: |
+        FLAGS="-v"
+        FLAGS+=" -o ${{ github.event.repository.owner.login }}"
+        FLAGS+=" -r ${{ github.event.repository.name }}"
+        FLAGS+=" -M MAINTAINERS.yml"
+        if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [ "${{ github.base_ref }}" != "main" ]; then
+            FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
+          else
+            FLAGS+=" -P ${{ github.event.pull_request.number }}"
+          fi
+        elif [ "${{ github.event_name }}" = "issues" ]; then
+          FLAGS+=" -I ${{ github.event.issue.number }}"
+        elif [ "${{ github.event_name }}" = "schedule" ]; then
+          FLAGS+=" --modules"
+        else
+          echo "Unknown event: ${{ github.event_name }}"
+          exit 1
+        fi
+        python3 scripts/ci/set_assignees.py $FLAGS
+
+    - name: Check maintainer file changes
+      if: >
+        github.event_name == 'pull_request_target' && github.base_ref == 'main'
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+      run: |
+        python  ./scripts/ci/check_maintainer_changes.py  \
+          --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml

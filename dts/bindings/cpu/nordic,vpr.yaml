@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic Semiconductor RISC-V VPR CPU
+
+compatible: "nordic,vpr"
+
+include: riscv,cpus.yaml
+
+properties:
+  nordic,bus-width:
+    type: int
+    enum:
+      - 32
+      - 64
+    required: true
+    description:
+      Bus width of the CPU.

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Ishraq Ibne Ashraf <ishraq.i.ashraf@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: wio_wm1110_dev_kit
+  full_name: Wio-WM1110 Dev Kit
+  vendor: seeed
+  socs:
+  - name: nrf52840

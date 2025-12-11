@@ -1,0 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&npu0 {
+	status = "okay";
+};

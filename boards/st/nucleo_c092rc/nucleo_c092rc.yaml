@@ -1,0 +1,24 @@
+identifier: nucleo_c092rc
+name: ST Nucleo C092RC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - can
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - rtc
+  - spi
+  - watchdog
+ram: 30
+flash: 256
+vendor: st

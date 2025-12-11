@@ -1,0 +1,28 @@
+# Copyright (c) 2020-2021 ATL Electronics
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 GPIO Port
+
+compatible: "infineon,cat1-gpio"
+
+include: [gpio-controller.yaml, base.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

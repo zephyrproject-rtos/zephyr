@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_PW
+	bool "Penwell SPI driver"
+	default y
+	depends on DT_HAS_INTEL_PENWELL_SPI_ENABLED
+	help
+	  Enable the Penwell SPI driver.
+
+if SPI_PW
+
+config SPI_PW_INTERRUPT
+	bool "Penwell SPI Interrupt mode Support"
+	help
+	  Enable Interrupt support for the SPI Driver.
+
+config SPI_PW_LPSS_DMA
+	bool "USE SPI DMA for synchronous Transfers"
+	select DMA
+	select DMA_INTEL_LPSS
+	depends on SPI_PW_INTERRUPT
+	help
+	  This option enables SPI DMA feature to be used for synchrounous
+	  data transfers. All Tx operaton are done using dma channel 0 and
+	  all Rx operations are done using dma channel 1.
+
+endif # SPI_PW

@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_ARC
+	select SOC_QEMU_ARC_EM if BOARD_QEMU_ARC_QEMU_ARC_EM
+	select SOC_QEMU_ARC_HS if BOARD_QEMU_ARC_QEMU_ARC_HS || BOARD_QEMU_ARC_QEMU_ARC_HS_XIP
+	select SOC_QEMU_ARC_HS5X if BOARD_QEMU_ARC_QEMU_ARC_HS5X
+	select SOC_QEMU_ARC_HS6X if BOARD_QEMU_ARC_QEMU_ARC_HS6X

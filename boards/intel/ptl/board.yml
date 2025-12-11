@@ -1,0 +1,6 @@
+boards:
+  - name: intel_ptl_h_crb
+    full_name: Panther Lake H CRB
+    vendor: intel
+    socs:
+      - name: panther_lake

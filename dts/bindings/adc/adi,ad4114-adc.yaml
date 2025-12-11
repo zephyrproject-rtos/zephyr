@@ -1,0 +1,12 @@
+include: [adc-controller.yaml, spi-device.yaml]
+
+compatible: "adi,ad4114-adc"
+
+description: Binding for the ADI AD4114 ADC.
+
+properties:
+  map-inputs:
+    type: array
+    required: true
+    description: |
+      Array of 16 values corresponding to CHANNEL REGISTER 0 TO CHANNEL REGISTER 15.

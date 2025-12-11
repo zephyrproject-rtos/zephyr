@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config SOC_SERIES_RTS5912
+	select ARM
+	select CPU_CORTEX_M33
+	select SYS_CLOCK_EXISTS
+	select DYNAMIC_INTERRUPTS
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_SERIES_RTS5912
+
+config RTS5912_ON_ENTER_CPU_IDLE_HOOK
+	bool "CPU idle hook enable"
+	default y
+	imply ARM_ON_ENTER_CPU_IDLE_HOOK
+	help
+	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when
+	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+	  If needed, this hook can be used to prevent the CPU from actually
+	  entering sleep by skipping the WFE/WFI instruction.
+
+config RTS5912_DEBUG_SWJ
+	bool "Serial wire JTAG"
+	default y
+	depends on DT_HAS_SWJ_CONNECTOR_ENABLED
+	help
+	  Enables the serial wire JTAG connection on the RTS5912 EC.
+
+config SOC_RTS5912_ULPM
+	bool "Realtek RTS5912 ULPM (Ultra Low Power Mode)"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_ULPM_ENABLED
+	select HAS_POWEROFF
+	help
+	  Enable support for RTS5912 ULPM PWR wake-up pins.
+
+endif # SOC_SERIES_RTS5912

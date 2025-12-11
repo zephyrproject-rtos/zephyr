@@ -1,0 +1,12 @@
+# TI_HDC temperature and humidity sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_HDC
+	bool "Texas Instruments Temperature and Humidity Sensor (e.g. HDC1008)"
+	default y
+	depends on DT_HAS_TI_HDC_ENABLED
+	select I2C
+	help
+	  Enable driver for TI temperature and humidity sensors.

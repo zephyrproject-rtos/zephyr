@@ -1,0 +1,14 @@
+sample:
+  name: ZMS Sample
+
+tests:
+  sample.zms.basic:
+    tags: zms
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Sample code finished Successfully"

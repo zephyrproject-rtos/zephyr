@@ -1,0 +1,37 @@
+description: STM32 PWM
+
+compatible: "st,stm32-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  four-channel-capture-support:
+    type: boolean
+    description: |
+      Add support to capture on four channels. This is less accurate than
+      the default 2 channel support because the counter is reset by
+      interrupt instead of slave-mode controller. This option can also
+      be used as alternative for timers that does not support slave mode.
+
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM
+      - period to set in ns
+      - flags : combination of standard flags like PWM_POLARITY_NORMAL
+        or specific flags like STM32_PWM_COMPLEMENTARY. As an example,
+        the following complementary PWMs(CH2&CH2N) are shown below.
+          <&pwm1 2 100 (PWM_POLARITY_NORMAL)>;
+          <&pwm1 2 100 (PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
+
+pwm-cells:
+  - channel
+  - period
+  - flags

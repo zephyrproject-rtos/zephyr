@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_LITEX_LITEETH
+	bool "Litex LiteEth MDIO controller driver"
+	default y
+	depends on DT_HAS_LITEX_LITEETH_MDIO_ENABLED
+	help
+	  Enable MDIO support from Litex LiteEth controller.

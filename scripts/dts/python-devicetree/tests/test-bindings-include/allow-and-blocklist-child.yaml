@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: |
+  An include must not give both an allowlist and a blocklist in a
+  child binding. This binding should cause an error.
+compatible: allow-and-blocklist-child
+include:
+  - name: include.yaml
+    child-binding:
+      property-blocklist: [x]
+      property-allowlist: [y]

@@ -1,0 +1,15 @@
+# Copyright NXP 2025
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PMC temperature sensor (PMC-TMPSNS)
+
+compatible: "nxp,pmc-tmpsns"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      This should point to an ADC channel (e.g., <&adc0 0>)
+      to read from the PMC internal temperature sensor.

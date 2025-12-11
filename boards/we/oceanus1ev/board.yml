@@ -1,0 +1,12 @@
+board:
+  name: we_oceanus1ev
+  full_name: Oceanus-I EV
+  vendor: we
+  revision:
+    format: "major.minor.patch"
+    default: "1.1.0"
+    exact: true
+    revisions:
+    - name: "1.1.0"
+  socs:
+  - name: stm32wle5xx

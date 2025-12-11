@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+&clk_hse {
+	hse-bypass; /* X3 is a 25MHz oscillator on PH0 */
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <64>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	ahb-prescaler = <2>;              /* Use AHB prescaler to reduce HCLK */
+	clock-frequency = <DT_FREQ_M(100)>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};

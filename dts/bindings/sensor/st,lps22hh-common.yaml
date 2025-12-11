@@ -1,0 +1,45 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the odr property in a .dts or .dtsi file you may include
+    lps22hh.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lps22hh.h>
+
+    lps22hh: lps22hh@0 {
+      ...
+
+      odr = <LPS22HH_DT_ODR_200HZ>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  odr:
+    type: int
+    default: 0
+    description: |
+        Specify the default output data rate expressed in samples per second (Hz).
+        The default is the power-on reset value.
+
+        - 0  # LPS22HH_DT_ODR_POWER_DOWN
+        - 1  # LPS22HH_DT_ODR_1HZ
+        - 2  # LPS22HH_DT_ODR_10HZ
+        - 3  # LPS22HH_DT_ODR_25HZ
+        - 4  # LPS22HH_DT_ODR_50HZ
+        - 5  # LPS22HH_DT_ODR_75HZ
+        - 6  # LPS22HH_DT_ODR_100HZ
+        - 7  # LPS22HH_DT_ODR_200HZ
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]

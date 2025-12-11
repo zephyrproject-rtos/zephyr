@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas IPC MBOX
+
+  Notes:
+  - With Renesas IPC MBOX, both TX and RX functions can be used on a single channel.
+
+compatible: "renesas,ra-ipc-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  unit:
+    type: int
+    required: true
+    description: |
+      MBOX unit index number.
+      A unit will use 2 FIFO for read and write operation: IPC1x and IPC0x, with x is the unit index
+      For example, the MBOX unit 0 will use IPC10 and IPC00
+
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  channel-mask:
+    type: int
+    required: true
+    description: |
+      Bitmask of valid channels. Each bit corresponds to a channel.
+      Setting bit n to 1 enables channel n.
+
+  message-channel-select:
+    type: int
+    default: 0
+    description: |
+      There is only one channel that supports message mode.
+      This property selects the channel that supports message mode,
+      while all other channels support only signal mode.
+      If the selected channel is not enabled in channel-mask, the driver will return an error.
+
+mbox-cells:
+  - channel

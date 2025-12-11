@@ -1,0 +1,35 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom iProc PAX(PCIE<->AXI) DMA controller version 2
+
+include: dma-controller.yaml
+
+compatible: brcm,iproc-pax-dma-v2
+
+properties:
+  reg:
+    description: |
+      Register space for the memory mapped PAX DMA controller registers,
+      It includes data mover engine(dme), ring manager, ring manager common
+      registers.
+    required: true
+  bd-memory:
+    type: array
+    description: Uncached memory address to populate dma buffer descriptors
+    required: true
+  scr-addr-loc:
+    type: int
+    description: Location where address of the scratch buffer host has populated
+    required: true
+  scr-size-loc:
+    type: int
+    description: Location where size of the scratch buffer host has populated
+    required: true
+  interrupts:
+    type: array
+    description: Ring manager line interrupt number
+  pcie-ep:
+    type: phandle
+    description: Pcie endpoint handle
+    required: true

@@ -1,0 +1,23 @@
+title: Silicon Labs Series 0-2 GPIO (General Purpose Input/Output) Port
+
+description: |
+  Single GPIO port on Silicon Labs EFM32 and EFR32 Series 0, 1 and 2.
+
+compatible: "silabs,gecko-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: peripheral ID
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

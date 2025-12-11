@@ -1,0 +1,9 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_INTEL_SOCFPGA
+	bool "Intel SoC FPGA Reset Controller driver"
+	default y
+	depends on DT_HAS_INTEL_SOCFPGA_RESET_ENABLED
+	help
+	  Enable the Reset driver for Intel SoC FPGA device

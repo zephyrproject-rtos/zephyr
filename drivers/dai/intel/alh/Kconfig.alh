@@ -1,0 +1,25 @@
+# SOF ALH configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_INTEL_ALH
+	bool "Intel ALH driver for Dai interface"
+	default y
+	depends on DT_HAS_INTEL_ALH_DAI_ENABLED
+	select DMA
+	help
+	  Select this to enable Intel ALH driver.
+	  The ALH is an intermediary device, which acts as a hub and provides an
+	  abstracted support for numerous sound interfaces (e.g. SoundWire).
+
+if DAI_INTEL_ALH
+
+config DAI_ALH_HAS_OWNERSHIP
+	bool "Intel ALH driver has ownership only on ACE 1.5"
+	default y
+	depends on SOC_INTEL_ACE15_MTPM
+	help
+	  Select this to enable programming HW ownership
+
+endif

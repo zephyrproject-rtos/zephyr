@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF high-frequency crystal oscillator (nRF51 series)
+
+compatible: "nordic,nrf51-hfxo"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 16000000
+
+  startup-time-us:
+    type: int
+    required: true
+    description: |
+      Startup time in microseconds.
+
+      The value can be obtained by first measuring the time between
+      TASKS_HFCLKSTART and EVENTS_HFCLKSTARTED. Then multiply
+      the value by 2 to account for temperature and supply variations.
+
+      Note that the startup time will be longer usual on the first
+      power-up and as such should not be used to determine
+      startup-time-us.

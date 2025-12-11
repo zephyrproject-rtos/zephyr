@@ -1,0 +1,5 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_G1120B0MIPI
+	def_bool $(shields_list_contains,g1120b0mipi)

@@ -1,0 +1,22 @@
+&stm32_lp_tick_source {
+	/*
+	 * Default LPTIM period is 2 seconds. This means that application will
+	 * be woken up every 2 seconds to reload its counter.
+	 * This behavior can be tuned in 2 ways:
+	 *
+	 * A] Extend the default period by setting a prescaler.
+	 *    New period = 2sec * st,prescaler
+	 *    Check the lptim bindings to see the impact on CONFIG_SYS_CLOCK_TICKS_PER_SEC
+	 *    and LPTIM precision.
+	 * B] Provide the LPTIM timeout definition.
+	 *    In this case New period = st,timeout
+	 *    Then st,prescaler should be defined with the following constraint:
+	 *    st,timeout < st,prescaler * 2
+	 */
+
+	/* The following setting will define LPTIM period as 32 sec */
+	st,prescaler = <16>;
+
+	/* Uncomment this line to have LPTIM period of 5 seconds */
+	/* st,timeout = <5>; */
+};

@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MCUX_RCM
+	bool "NXP kinetis reset cause"
+	default y
+	depends on HAS_MCUX_RCM
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP kinetis mcux RCM hwinfo driver.

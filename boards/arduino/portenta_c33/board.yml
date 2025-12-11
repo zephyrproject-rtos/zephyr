@@ -1,0 +1,6 @@
+board:
+  name: arduino_portenta_c33
+  full_name: Arduino Portenta C33
+  vendor: arduino
+  socs:
+  - name: r7fa6m5bh3cfc

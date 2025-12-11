@@ -1,0 +1,51 @@
+common:
+  tags:
+    - filesystem
+    - littlefs
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - native_sim
+    - native_sim/native/64
+    - mr_canhubk3
+    - frdm_mcxn947/mcxn947/cpu0
+    - frdm_rw612
+    - mimxrt1010_evk
+    - mimxrt1015_evk
+    - mimxrt1020_evk
+    - mimxrt1040_evk
+    - mimxrt1050_evk/mimxrt1052/hyperflash
+    - mimxrt1060_evk/mimxrt1062/qspi
+    - mimxrt1064_evk
+    - mimxrt1160_evk/mimxrt1166/cm7
+    - mimxrt1170_evk/mimxrt1176/cm7
+    - mimxrt1180_evk/mimxrt1189/cm33
+    - mimxrt595_evk/mimxrt595s/cm33
+    - mimxrt685_evk/mimxrt685s/cm33
+  integration_platforms:
+    - native_sim
+  modules:
+    - littlefs
+tests:
+  filesystem.littlefs.default:
+    timeout: 60
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
+      - frdm_mcxa156
+      - frdm_mcxn236
+      - frdm_mcxw71
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1024_evk
+  filesystem.littlefs.custom:
+    timeout: 180
+    extra_configs:
+      - CONFIG_APP_TEST_CUSTOM=y
+      - CONFIG_FS_LITTLEFS_FC_HEAP_SIZE=16384

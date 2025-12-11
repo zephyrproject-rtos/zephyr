@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023, Synopsys Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	hostlink: hostlink {
+		compatible = "snps,hostlink-uart";
+		status = "okay";
+	};
+
+	chosen {
+		zephyr,console = &hostlink;
+		zephyr,shell-uart = &hostlink;
+	};
+};

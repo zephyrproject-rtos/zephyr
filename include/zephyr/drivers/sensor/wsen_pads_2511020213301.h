@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief Extended public API for WSEN-PADS-2511020213301 Sensor
+ *
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_WSEN_PADS_2511020213301_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_WSEN_PADS_2511020213301_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <zephyr/drivers/sensor.h>
+
+enum sensor_attribute_wsen_pads_2511020213301 {
+	SENSOR_ATTR_WSEN_PADS_2511020213301_REFERENCE_POINT = SENSOR_ATTR_PRIV_START,
+};
+
+#ifdef CONFIG_WSEN_PADS_2511020213301_PRESSURE_THRESHOLD
+enum sensor_trigger_wsen_pads_2511020213301 {
+	SENSOR_TRIG_WSEN_PADS_2511020213301_THRESHOLD_UPPER = SENSOR_TRIG_PRIV_START,
+	SENSOR_TRIG_WSEN_PADS_2511020213301_THRESHOLD_LOWER,
+};
+#endif /* CONFIG_WSEN_PADS_2511020213301_PRESSURE_THRESHOLD */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_WSEN_PADS_2511020213301_H_ */

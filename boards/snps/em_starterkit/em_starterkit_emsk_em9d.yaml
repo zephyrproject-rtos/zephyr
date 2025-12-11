@@ -1,0 +1,16 @@
+identifier: em_starterkit/emsk_em9d
+name: EM Starterkit
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - i2c
+  - spi
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

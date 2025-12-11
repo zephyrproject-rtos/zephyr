@@ -1,0 +1,20 @@
+# Private config options for eSPI sample app
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Enhanced Serial Peripheral Interface application"
+
+config ESPI_VIRTUAL_WIRE_TIMEOUT
+	int "Timeout for virtual wires"
+	default 5000
+	help
+	  Timeout for virtual wires
+
+config ESPI_USE_BOARD_POWER
+	bool "Use board power"
+	depends on $(dt_nodelabel_enabled,board_power)
+	select GPIO
+	default y
+
+source "Kconfig.zephyr"

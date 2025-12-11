@@ -1,0 +1,25 @@
+version = 1
+
+# Declare default license and copyright text for files that typically do not include them.
+[[annotations]]
+path = [
+    # zephyr-keep-sorted-start
+    "**/*.cfg",
+    "**/*.cmake",
+    "**/*.conf",
+    "**/*.ecl",
+    "**/*.html",
+    "**/*.rst",
+    "**/*.yaml",
+    "**/*.yml",
+    "**/*_defconfig",
+    "**/CMakeLists.txt",
+    "**/Kconfig*",
+    "doc/requirements.in",
+    "doc/requirements.txt",
+    "scripts/requirements-*.in",
+    "scripts/requirements-*.txt",
+    # zephyr-keep-sorted-stop
+]
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"

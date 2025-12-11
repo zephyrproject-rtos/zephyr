@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Shontal Biton
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XG28_RB4401C
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+if SOC_GECKO_USE_RAIL
+
+config FPU
+	default y
+
+endif # SOC_GECKO_USE_RAIL
+
+endif # BOARD_XG28_RB4401C

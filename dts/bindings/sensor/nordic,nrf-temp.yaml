@@ -1,0 +1,15 @@
+# Copyright (c) 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family TEMP node
+
+compatible: "nordic,nrf-temp"
+
+include: sensor-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

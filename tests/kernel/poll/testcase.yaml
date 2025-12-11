@@ -1,0 +1,19 @@
+tests:
+  kernel.poll:
+    ignore_faults: true
+    tags:
+      - kernel
+      - userspace
+    platform_exclude:
+      - nrf52dk/nrf52810
+  kernel.poll.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    ignore_faults: true
+    tags:
+      - kernel
+      - userspace
+      - libc
+    platform_exclude:
+      - nrf52dk/nrf52810
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

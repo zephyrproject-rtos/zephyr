@@ -1,0 +1,21 @@
+# Copyright 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 SRAM configuration controller
+
+compatible: "st,stm32n6-ramcfg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      Two clocks are required to enable the SRAM:
+        * "ramcfg" for the RAMCFG controller clock
+        * "axisram" for the SRAM dedicated clock
+  clock-names:
+    required: true

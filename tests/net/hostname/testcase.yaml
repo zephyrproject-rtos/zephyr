@@ -1,0 +1,33 @@
+common:
+  min_ram: 16
+  tags:
+    - net
+    - hostname
+  depends_on: netif
+tests:
+  net.hostname:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=n
+      - CONFIG_NET_HOSTNAME_DYNAMIC=n
+  net.hostname.unique:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=y
+      - CONFIG_NET_HOSTNAME_DYNAMIC=n
+  net.hostname.dynamic:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=n
+      - CONFIG_NET_HOSTNAME_DYNAMIC=y
+  net.hostname.unique.dynamic:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=y
+      - CONFIG_NET_HOSTNAME_DYNAMIC=y
+  net.hostname.event:
+    extra_configs:
+      - CONFIG_NET_MGMT=y
+      - CONFIG_NET_MGMT_EVENT_INFO=y
+  net.hostname.event.unique:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_UNIQUE=y
+      - CONFIG_NET_MGMT=y
+      - CONFIG_NET_MGMT_EVENT=y
+      - CONFIG_NET_MGMT_EVENT_INFO=n

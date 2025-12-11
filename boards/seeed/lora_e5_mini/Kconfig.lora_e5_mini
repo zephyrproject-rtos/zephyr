@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LORA_E5_MINI
+	select SOC_STM32WLE5XX

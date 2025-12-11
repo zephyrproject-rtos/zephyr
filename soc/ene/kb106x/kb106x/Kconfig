@@ -1,0 +1,8 @@
+# Copyright (c) 2025 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KB106X
+	select ARM
+	select CPU_CORTEX_M3
+	select HAS_PM
+	select SOC_EARLY_INIT_HOOK

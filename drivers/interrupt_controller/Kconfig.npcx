@@ -1,0 +1,20 @@
+# NPCX GPIO driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config NPCX_MIWU
+	bool "Nuvoton NPCX embedded controller (EC) miwu driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_MIWU_ENABLED
+	help
+	  This option enables the Multi-Input Wake-Up Unit (MIWU) driver
+	  for NPCX family of processors.
+	  This is required for GPIO, RTC, LPC/eSPI interrupt support.
+
+config NPCX_MIWU_BOTH_EDGE_TRIG_WORKAROUND
+	bool
+	default y if SOC_NPCX9M7FB
+	help
+	  Workaround the issue "MIWU Any Edge Trigger Condition"
+	  in the npcx9m7fb SoC errata.

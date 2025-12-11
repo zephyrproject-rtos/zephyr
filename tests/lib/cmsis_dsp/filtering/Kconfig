@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config CMSIS_DSP_TEST_FILTERING_BIQUAD
+	bool "Test: Filtering BIQUAD"
+
+config CMSIS_DSP_TEST_FILTERING_DECIM
+	bool "Test: Filtering DECIM"
+
+config CMSIS_DSP_TEST_FILTERING_FIR
+	bool "Test: Filtering FIR"
+
+config CMSIS_DSP_TEST_FILTERING_MISC
+	bool "Test: Filtering MISC"
+
+config CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL
+	bool "Test: Filtering MISC - Partial Convolution"
+
+source "Kconfig"

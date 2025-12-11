@@ -1,0 +1,41 @@
+# Copyright (c), 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nPM1100 PMIC
+
+  The PMIC has one buck converter. It needs to be defined as a child node,
+  strictly following the BUCK node name. For example:
+
+  pmic {
+    compatible = "nordic,npm1100";
+
+    BUCK {
+      /* all properties for BUCK */
+    };
+  };
+
+  Note that only mode can be controlled (via GPIO pin MODE).
+
+compatible: "nordic,npm1100"
+
+include: base.yaml
+
+properties:
+  nordic,iset-gpios:
+    type: phandle-array
+    description: |
+      ISET control pin.
+
+child-binding:
+  properties:
+    nordic,mode-gpios:
+      type: phandle-array
+      description: |
+        MODE control pin.
+
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-allowed-modes
+        - regulator-initial-mode

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2023, Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &devmux0;
+		zephyr,shell_uart = &devmux0;
+	};
+
+	euart0: uart_emul0 {
+		compatible = "zephyr,uart-emul";
+		current-speed = <0>;
+		status = "okay";
+	};
+
+	euart1: uart_emul1 {
+		compatible = "zephyr,uart-emul";
+		current-speed = <0>;
+		status = "okay";
+	};
+
+	devmux0: dev_mux_0 {
+		compatible = "zephyr,devmux";
+		devices = <&uart0 &euart0 &euart1>;
+		zephyr,mutable;
+		status = "okay";
+	};
+
+	devmux1: dev_mux_1 {
+		compatible = "zephyr,devmux";
+		devices = <&uart0 &euart0 &euart1>;
+		zephyr,mutable;
+		selected = <2>;
+		status = "okay";
+	};
+};

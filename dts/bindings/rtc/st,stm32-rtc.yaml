@@ -1,0 +1,61 @@
+# Copyright (c) 2018, Workaround GmbH
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 RTC
+
+compatible: "st,stm32-rtc"
+
+include:
+  - rtc.yaml
+  - rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  sync-prescaler:
+    type: int
+    description: |
+      RTC synchronous prescaler value. Optional, if not set defaulted in code to:
+      - Selected to give 1 Hz tick rate, based on source clock frequency and asynchronous
+        prescaler value.
+
+  async-prescaler:
+    type: int
+    description: |
+      RTC asynchronous prescaler value. Optional, if not set defaulted in code to:
+      - 0x7F if RTC source clock is LSE/LSI
+      - 1 if using counter with CONFIG_COUNTER_RTC_STM32_SUBSECONDS option
+      - 0x7C if RTC source clock is HSE
+
+  hse-prescaler:
+    type: int
+    description: |
+      RTC HSE prescaler value. Applies only when RTC source clock is HSE.
+      Optional, defaulting to the value calculated based on HSE clock frequency
+      to give the highest possibly prescaled source frequency below 1MHz.
+
+  calib-out-freq:
+    type: int
+    description: |
+      Calibration output frequency (1 Hz or 512 Hz).
+    enum:
+      - 1
+      - 512
+
+  alarms-count:
+    description: |
+      Number of alarms supported by STM32 RTC device.
+      Most of STM32 MCU series have 2 RTC alarms, A & B.
+      Defaults to 0 when not declared in devicetree.
+
+  alrm-exti-line:
+    type: int
+    description: |
+      Number of the Extended Interrupts and Event Controller (EXTI) interrupt
+      line connected to the RTC Alarm event.
+      Not required, since RTC Alarm interrupt could be routed directly to Nested
+      Vectored Interrupt Controller (NVIC) and to Power Control (PWR) wake-up
+      pins on some series.
+      Valid range: 0 - 31

@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Dipak Shetty
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC51XX Stepper Motor Controller (SPI mode)
+
+  Example:
+
+    &spi0 {
+        tmc51xx: tmc51xx@0 {
+            compatible = "adi,tmc51xx";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(8)>;
+            diag0-gpios = <&gpio0 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* Diag0 pin */
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
+            en-pwm-mode, shaft; /* ADI TMC Global configuration flags */
+
+            tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
+              compatible = "adi,tmc51xx-stepper-drv";
+              micro-step-res = <256>;
+              /* ADI TMC stallguard settings specific to TMC51XX */
+              stallguard2-threshold=<9>;
+            };
+
+            tmc51xx_1_motion_controller: tmc51xx_1_motion_controller {
+              compatible = "adi,tmc51xx-stepper";
+
+              /* ADI TMC stallguard settings specific to TMC5160 */
+              activate-stallguard2;
+              stallguard-velocity-check-interval-ms = <100>;
+              stallguard-threshold-velocity = <50000>;
+
+              /* ADI TMC ramp generator as well as current settings */
+              vstart = <10>;
+              a1 = <20>;
+              v1 = <30>;
+              d1 = <40>;
+              vmax = <50>;
+              amax = <60>;
+              dmax = <70>;
+              tzerowait = <80>;
+              thigh = <90>;
+              tcoolthrs = <100>;
+              tpwmthrs = <110>;
+              tpowerdown = <120>;
+              ihold = <1>;
+              irun = <2>;
+              iholddelay = <3>;
+            };
+        };
+    };
+
+compatible: "adi,tmc51xx"
+
+include: [spi-device.yaml, "adi,tmc51xx-base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      Diagnostics output DIAG0 pin. This pin enables interrupt-based
+      rampstat handling, allowing the driver to respond to motor events
+      like position reached or stall detection without polling.
+      Should be configured as push-pull output (active high).

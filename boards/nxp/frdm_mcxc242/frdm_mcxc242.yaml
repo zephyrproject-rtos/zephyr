@@ -1,0 +1,30 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxc242
+name: NXP FRDM-MCXC242
+type: mcu
+arch: arm
+ram: 16
+flash: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - usb_device
+  - usbd
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: nxp

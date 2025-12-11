@@ -1,0 +1,17 @@
+# SAM E54 Xplained Pro board configuration
+#
+# Copyright (c) 2019 Benjamin Valentin
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if ETH_SAM_GMAC
+
+# Read MAC address from AT24MAC402 EEPROM
+
+config EEPROM
+	default y if NVMEM
+
+endif # ETH_SAM_GMAC
+
+configdefault NET_L2_ETHERNET
+	default y

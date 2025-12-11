@@ -1,0 +1,21 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &lsm6dsl_mikroe_lsm6dsl_click;
+	};
+};
+
+&mikrobus_spi {
+	status = "okay";
+
+	lsm6dsl_mikroe_lsm6dsl_click: lsm6dsl@0 {
+		compatible = "st,lsm6dsl";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		irq-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

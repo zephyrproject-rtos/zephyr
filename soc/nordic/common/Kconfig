@@ -1,0 +1,78 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_NORDIC_DMM
+	bool
+
+config HAS_NORDIC_RAM_CTRL
+	bool
+
+config NRF_FORCE_RAM_ON_REBOOT
+	bool "Force all RAM blocks to be powered on before rebooting"
+	depends on HAS_NORDIC_RAM_CTRL
+	help
+	  RAM power configuration is preserved through soft reset,
+	  meaning that there is a risk of accessing powered off RAM blocks
+	  when booting in different application (i.e. bootloader).
+	  Force all RAM blocks to be powered on before triggering soft reset
+	  to prevent this from happening.
+
+config NRF_SYS_EVENT
+	bool "nRF system event support"
+	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
+
+config SOC_NRF_FORCE_CONSTLAT
+	bool "Force constant latency mode in system ON"
+	depends on NRF_SYS_EVENT && !RISCV
+	help
+	  In constant latency mode the CPU wakeup latency and the PPI task response
+	  will be constant and kept at a minimum. This is secured by forcing a set
+	  of base resources on while in sleep. The advantage of having a constant
+	  and predictable latency will be at the cost of having increased power consumption.
+
+config MRAM_LATENCY
+	bool "MRAM latency manager"
+	depends on NRFS_HAS_MRAM_SERVICE
+	select ONOFF
+	select NRFS_MRAM_SERVICE_ENABLED
+
+if MRAM_LATENCY
+
+config MRAM_LATENCY_SYNC_TIMEOUT
+	int "Timeout in synchronous request"
+	default 1000
+	help
+	  Timeout is given in milliseconds.
+
+config MRAM_LATENCY_AUTO_REQ
+	bool "Request MRAM without latency at start"
+	help
+	  When enabled then MRAM configuration without latency is requested
+	  during the initialization and is kept enabled until the mram_latency API user
+	  calls mram_no_latency_sync_release().
+
+module = MRAM_LATENCY
+module-str = mram_latency
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MRAM_LATENCY
+
+if HAS_NORDIC_DMM
+
+config DMM_HEAP_CHUNKS
+	int "Number of chunks in the DMM heap"
+	default 32
+	help
+	  DMM is using a simplified heap which is using 32 bit mask to allocate
+	  required buffer which consists of contiguous chunks. If there are many
+	  small buffers used with DMM it is possible that allocation will fail.
+	  Number of chunks is a trade-off between performance and granularity.
+	  Must be multiply of 32.
+
+config DMM_STATS
+	bool "Usage statistics"
+
+endif # HAS_NORDIC_DMM
+
+rsource "vpr/Kconfig"
+rsource "uicr/Kconfig"

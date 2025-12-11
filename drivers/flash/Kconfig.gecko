@@ -1,0 +1,16 @@
+# Silicon Labs Gecko flash driver config
+
+# Copyright (c) 2018, Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_GECKO
+	bool "Silicon Labs Gecko flash driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select SOC_GECKO_MSC
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enable Silicon Labs Gecko series internal flash driver.

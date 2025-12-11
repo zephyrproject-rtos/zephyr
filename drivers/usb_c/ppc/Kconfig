@@ -1,0 +1,31 @@
+# Power path controllers configuration options
+
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBC_PPC_DRIVER
+	bool "USB-C PPC drivers"
+	help
+	  Enable USB-C Power Path Controllers support
+
+if USBC_PPC_DRIVER
+
+config USBC_PPC_INIT_PRIORITY
+	int "USBC PPC driver init priority"
+	default 82
+	help
+	  Initialization priority of the USB-C PPC drivers in POST_KERNEL.
+
+config USBC_PPC_SHELL
+	bool "Shell commands for PPC"
+	help
+	  Add useful shell commands to manipulate and debug the PPCs
+
+source "drivers/usb_c/ppc/Kconfig.nxp"
+source "drivers/usb_c/ppc/Kconfig.numaker"
+
+module = USBC_PPC
+module-str = usbc-ppc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBC_PPC_DRIVER

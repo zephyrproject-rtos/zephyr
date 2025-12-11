@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+include: spi-device.yaml
+
+description: Analog MAX22017 DAC/GPIO chip common properties
+
+properties:
+  rst-gpios:
+    description: Reset pin for max22017.
+    type: phandle-array
+
+  crc-mode:
+    description: Enables CRC over SPI.
+    type: boolean
+
+  int-gpios:
+    description: Interrupt gpio
+    type: phandle-array
+
+compatible: "adi,max22017"

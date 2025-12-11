@@ -1,0 +1,154 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics IIS3DWB 3-axis accelerometer accessed through SPI bus
+
+compatible: "st,iis3dwb"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    description: |
+      Select DRDY pin number (1 or 2).
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+
+    enum: [1, 2]
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.
+
+  range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 0  # IIS3DWB_DT_FS_2G
+      - 1  # IIS3DWB_DT_FS_16G
+      - 2  # IIS3DWB_DT_FS_4G
+      - 3  # IIS3DWB_DT_FS_8G
+
+    enum: [0, 1, 2, 3]
+
+  odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default output data rate expressed in samples per second (Hz).
+      Default is power-down mode
+
+      - 0  # IIS3DWB_DT_ODR_OFF
+      - 5  # IIS3DWB_DT_ODR_26k7Hz
+
+    enum: [0, 5]
+
+  filter:
+    type: int
+    default: 0x00
+    description: |
+      Specify the filter settings.
+      Default is power-down mode
+
+      - 0x00 # IIS3DWB_DT_LP_6k3Hz
+      - 0x10 # IIS3DWB_DT_SLOPE_ODR_DIV_4
+      - 0x11 # IIS3DWB_DT_HP_ODR_DIV_10
+      - 0x12 # IIS3DWB_DT_HP_ODR_DIV_20
+      - 0x13 # IIS3DWB_DT_HP_ODR_DIV_45
+      - 0x14 # IIS3DWB_DT_HP_ODR_DIV_100
+      - 0x15 # IIS3DWB_DT_HP_ODR_DIV_200
+      - 0x16 # IIS3DWB_DT_HP_ODR_DIV_400
+      - 0x17 # IIS3DWB_DT_HP_ODR_DIV_800
+      - 0x37 # IIS3DWB_DT_HP_REF_MODE
+      - 0x80 # IIS3DWB_DT_LP_ODR_DIV_4
+      - 0x81 # IIS3DWB_DT_LP_ODR_DIV_10
+      - 0x82 # IIS3DWB_DT_LP_ODR_DIV_20
+      - 0x83 # IIS3DWB_DT_LP_ODR_DIV_45
+      - 0x84 # IIS3DWB_DT_LP_ODR_DIV_100
+      - 0x85 # IIS3DWB_DT_LP_ODR_DIV_200
+      - 0x86 # IIS3DWB_DT_LP_ODR_DIV_400
+      - 0x87 # IIS3DWB_DT_LP_ODR_DIV_800
+
+    enum: [0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+           0x17, 0x37, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85,
+           0x86, 0x87]
+
+  fifo-watermark:
+    type: int
+    default: 32
+    description: |
+      Specify the default FIFO watermark threshold. Every unit indicates a FIFO row (1 byte of TAG +
+      6 bytes of data). (min 0; max 255)
+      A typical threshold value is 32 which is then used as default.
+      Valid range: 0 - 511
+
+  accel-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer FIFO batch data rate expressed in Hz.
+      The values are taken in accordance to iis3dwb_bdr_xl_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0  # IIS3DWB_DT_XL_NOT_BATCHED
+      - 10 # IIS3DWB_DT_XL_BATCHED_AT_26k7Hz
+
+    enum: [0, 10]
+
+  temp-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default timestamp FIFO batch data rate expressed in Hz.
+      The values are taken in accordance to iis3dwb_odr_t_batch_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0  # IIS3DWB_DT_TEMP_NOT_BATCHED
+      - 3  # IIS3DWB_DT_TEMP_BATCHED_AT_104Hz
+
+    enum: [0, 3]
+
+  timestamp-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default timestamp FIFO batch data rate expressed as a fraction of the odr.
+      The values are taken in accordance to lis2dux12_dec_ts_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0x0 # IIS3DWB_DT_TS_NOT_BATCHED
+      - 0x1 # IIS3DWB_DT_DEC_TS_1
+      - 0x2 # IIS3DWB_DT_DEC_TS_8
+      - 0x3 # IIS3DWB_DT_DEC_TS_32
+
+    enum: [0x00, 0x01, 0x02, 0x03]

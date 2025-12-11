@@ -1,0 +1,25 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PDM MICFIL
+
+compatible: "nxp,dai-micfil"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  dai-index:
+    type: int
+    description: |
+      Use this property to specify the index of the DAI. At the
+      moment, this is only used by SOF to fetch the "struct device"
+      associated with the DAI whose index Linux passes to SOF
+      through an IPC. If this property is not specified, the DAI
+      index will be considered 0.
+  fifo-depth:
+    type: int
+    required: true
+    description: |
+      Depth (in words) for each channel's FIFO.

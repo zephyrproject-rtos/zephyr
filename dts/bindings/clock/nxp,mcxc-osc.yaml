@@ -1,0 +1,40 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCXC oscillator
+
+compatible: "nxp,mcxc-osc"
+
+include: fixed-clock.yaml
+
+properties:
+  load-capacitance-picofarads:
+    type: int
+    enum:
+      - 0
+      - 2
+      - 4
+      - 6
+      - 8
+      - 10
+      - 12
+      - 14
+      - 16
+      - 18
+      - 20
+      - 22
+      - 24
+      - 26
+      - 28
+      - 30
+    description: |
+      Oscillator load capacitance in picofarads.
+
+  mode:
+    type: string
+    enum:
+      - "external"
+      - "low-power"
+      - "high-gain"
+    description: |
+      Oscillator Mode Selection

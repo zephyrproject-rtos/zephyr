@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Display Read Write Test"
+
+source "Kconfig.zephyr"
+
+config DISPLAY_BUFFER_USE_GENERIC_SECTION
+	bool "Place the display buffer in a specific memory section"
+	help
+	  Place the display buffer in a specific memory section.
+
+config DISPLAY_BUFFER_ALIGNMENT
+	int "Display buffer memory alignment"
+	default 32
+	help
+	  Specific display buffer alignment.
+
+if DISPLAY_BUFFER_USE_GENERIC_SECTION
+
+config DISPLAY_BUFFER_SECTION
+	string "Memory section to place Display Buffer"
+	help
+	  Specific memory section to place the display buffer.
+
+endif # DISPLAY_BUFFER_USE_GENERIC_SECTION

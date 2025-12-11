@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas Event Link Controller config options
+
+menuconfig RENESAS_ELC
+	bool "Renesas Event Link Controller Driver"
+	depends on SOC_FAMILY_RENESAS_RA
+	help
+	  Enable config options for Renesas Event Link Controller
+
+if RENESAS_ELC
+
+config RENESAS_ELC_INIT_PRIORITY
+	int "Renesas Event Link Controller initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for Renesas Event Link Controller drivers.
+
+source "drivers/misc/interconn/renesas_elc/Kconfig.renesas_ra_elc"
+
+endif # RENESAS_ELC

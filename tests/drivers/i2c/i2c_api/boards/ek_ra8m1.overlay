@@ -1,0 +1,10 @@
+/ {
+	aliases {
+		i2c-0 = &iic1;
+		gy271 = &iic1;
+	};
+};
+
+&iic1 {
+	status = "okay";
+};

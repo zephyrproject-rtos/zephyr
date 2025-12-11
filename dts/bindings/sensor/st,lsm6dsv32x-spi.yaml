@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM6DSV32X 6-axis IMU (Inertial Measurement Unit) sensor
+    accessed through SPI bus
+
+compatible: "st,lsm6dsv32x"
+
+include: ["spi-device.yaml", "st,lsm6dsv32x-common.yaml"]

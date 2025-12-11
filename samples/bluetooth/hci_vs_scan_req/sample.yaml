@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth HCI Vendor-Specific Scan Request
+tests:
+  sample.bluetooth.hci_vs_scan_req:
+    harness: bluetooth
+    platform_allow:
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_configs:
+      - CONFIG_BT_LL_SW_SPLIT=y
+    tags: bluetooth

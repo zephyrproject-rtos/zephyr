@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Renesas Electronics Corporation and/or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+description: Smartbond watchdog
+
+compatible: "renesas,smartbond-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

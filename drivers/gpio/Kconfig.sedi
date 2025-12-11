@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config GPIO_SEDI
+	bool "SEDI GPIO driver"
+	default y
+	depends on DT_HAS_INTEL_SEDI_GPIO_ENABLED
+	help
+	  This option enables Intel SEDI GPIO driver.
+	  This driver is simply a shim driver built upon the SEDI
+	  bare metal GPIO driver in hal-intel module.

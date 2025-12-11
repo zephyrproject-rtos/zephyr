@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: SweRV EH1 PIC (Programmable Interrupt Controller)
+
+compatible: "swerv,pic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  riscv,max-priority:
+    type: int
+    description: maximum interrupt priority
+    required: true
+
+interrupt-cells:
+  - irq
+  - priority

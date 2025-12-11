@@ -1,0 +1,35 @@
+# Copyright (c) 2021 Toby Firth
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX Standard Timer/Counter
+
+compatible: "nxp,lpc-ctimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: clock to use
+
+  mode:
+    type: int
+    required: true
+    description: timer mode
+
+  input:
+    type: int
+    required: true
+    description: input channel
+
+  prescale:
+    type: int
+    required: true
+    description: prescale value

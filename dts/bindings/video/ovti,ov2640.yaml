@@ -1,0 +1,29 @@
+# Copyright (c) 2021 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: OV2640 CMOS video sensor
+
+compatible: "ovti,ov2640"
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+
+  clock-rate-control:
+    type: int
+    default: 0x87
+    description: |
+      Define the value to the Clock Rate Control register. By changing
+      the system clock divide ratio and PLL, the frame rate and pixel
+      rate will change together.
+      Bit[7]    Internal frequency doublers ON/OFF selection.
+                0: ON       1: OFF
+      Bit[6]    Reserved
+      Bit[5:0]  Clock divider.
+
+      CLK = XVCLK /(decimal value of CLKRC[5:0] + 1)
+
+include: i2c-device.yaml

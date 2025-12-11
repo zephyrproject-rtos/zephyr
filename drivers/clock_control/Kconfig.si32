@@ -1,0 +1,18 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SI32_PLL
+	bool "SI32 PLL clock control"
+	default y
+	depends on DT_HAS_SILABS_SI32_PLL_ENABLED
+
+config CLOCK_CONTROL_SI32_AHB
+	bool "SI32 AHB clock control"
+	default y
+	depends on DT_HAS_SILABS_SI32_AHB_ENABLED
+
+config CLOCK_CONTROL_SI32_APB
+	bool "SI32 APB clock control"
+	default y
+	depends on DT_HAS_SILABS_SI32_APB_ENABLED

@@ -1,0 +1,64 @@
+# Copyright (c) 2020, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 timers
+
+compatible: "st,stm32-timers"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
+
+  st,prescaler:
+    type: int
+    required: true
+    description: |
+      Clock prescaler at the input of the timer
+      Could be in range [0 .. 0xFFFF] for STM32 General Purpose Timers (CLK/(prescaler+1) )
+
+  st,countermode:
+    type: int
+    default: 0 # STM32_TIM_COUNTERMODE_UP - reset state
+    description: |
+      Sets timer counter mode.
+
+      Use constants defined in dt-bindings/timer/stm32-timer.h.
+
+      * STM32_TIM_COUNTERMODE_UP             - used as upcounter.
+      * STM32_TIM_COUNTERMODE_DOWN           - used as downcounter.
+      * STM32_TIM_COUNTERMODE_CENTER_DOWN    - counts up and down alternatively.
+                                               Output compare interrupt flags of output channels
+                                               are set only when the counter is counting down.
+      * STM32_TIM_COUNTERMODE_CENTER_UP      - counts up and down alternatively.
+                                               Output compare interrupt flags of output channels
+                                               are set only when the counter is counting up.
+      * STM32_TIM_COUNTERMODE_CENTER_UP_DOWN - counts up and down alternatively.
+                                               Output compare interrupt flags of output channels
+                                               are set only when the counter is counting up or
+                                               down.
+
+      If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+
+  st,deadtime:
+    type: int
+    default: 0
+    description: |
+      Sets the dead-time configuration on the associated timer which will add
+      a delay between the rising edge of the reference signal and the rising
+      edge of both the OCx and OCxN signals. This is commonly used and required
+      with bridge circuits to prevent shoot-through currents.
+
+      This feature is supported only by certain timer instances. Refer
+      to your product's Reference Manual for more information about this
+      feature's availability. (In particular, certain series such as
+      STM32L0/STM32L1 have no instance supporting this feature).
+
+      Valid range [0 ... 255].

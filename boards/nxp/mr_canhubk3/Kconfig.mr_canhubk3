@@ -1,0 +1,6 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MR_CANHUBK3
+	select SOC_S32K344
+	select SOC_PART_NUMBER_PS32K344EHVPBS

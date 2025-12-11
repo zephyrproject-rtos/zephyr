@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIFIVE_FREEDOM_FE300
+	bool
+	select SOC_FAMILY_SIFIVE_FREEDOM
+
+config SOC_SERIES
+	default "fe300" if SOC_SERIES_SIFIVE_FREEDOM_FE300
+
+config SOC_SIFIVE_FREEDOM_FE310_G000
+	bool
+	select SOC_SERIES_SIFIVE_FREEDOM_FE300
+
+config SOC_SIFIVE_FREEDOM_FE310_G002
+	bool
+	select SOC_SERIES_SIFIVE_FREEDOM_FE300
+
+config SOC
+	default "fe310_g000" if SOC_SIFIVE_FREEDOM_FE310_G000
+	default "fe310_g002" if SOC_SIFIVE_FREEDOM_FE310_G002

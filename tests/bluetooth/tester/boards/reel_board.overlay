@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,uart-pipe = &uart0;
+	};
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+};

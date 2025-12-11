@@ -1,0 +1,102 @@
+# Copyright (c) 2020,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX EDMA controller
+
+compatible: "nxp,mcux-edma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies base physical address(s) and size of DMA and respective DMAMUX register(s)
+      that routes DMA sources
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+    description: |
+      Specifies the number of DMA channels supported by the controller.
+      This value is used to validate the channel number provided in the
+      DMA specifier.
+
+  dma-requests:
+    required: true
+    description: |
+      Indicates the maximum value of the DMA request sources (slots) index supported by
+      DMAMUX. This value is used to validate the request source index provided in the
+      DMA specifier.
+
+  dmamux-reg-offset:
+    type: int
+    default: 0
+    description:
+      The offset value for obtaining DMAMUX register index from DMAMUX channel.
+      Default value means DMAMUX channel is identical with DMAMUX register index
+
+  channel-gap:
+    type: array
+    description: |
+      On some platforms, there may be a gap in the channels and
+      this array specifies the start and end of a single gap
+
+  nxp,mem2mem:
+    type: boolean
+    description: If the DMA controller supports memory to memory transfer
+
+  nxp,a-on:
+    type: boolean
+    description: If the DMA controller supports always on
+
+  irq-shared-offset:
+    type: int
+    default: 0
+    description: |
+      Describes an offset between two channels share the same interrupt entry.
+      Default value means each channel has separate interrupt entry.
+
+  no-error-irq:
+    type: boolean
+    description: |
+      If the SoCs don't have a separate interrupt id for error IRQ.
+
+  nxp,version:
+    type: int
+    enum:
+      - 2
+      - 3
+      - 4
+      - 5
+    description: |
+      eDMA IP revision number.
+
+  channels-shared-irq-mask:
+    type: array
+    description: |
+      Describes channel enabled mask value on every IRQ.
+      The channel number is mapped to the bit value of array element value.
+      If the interrupt is shared on one channel number, the correspongding
+      bit is set to 1.
+      Please note each element of the array must be 32-bit. If there are more
+      than 32 channels, add one or more 32-bit elements in array(elements
+      should be contiguous). The software will determine the mask value of
+      several elements corresponding to the same interrupt according to the
+      number of channels.
+
+  "#dma-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a DMAMUX specifier
+
+# - #dma-cells : Must be <2>.
+#  The 1st cell specifies the DMA channel which will be used
+#  The 2nd cell specifies the request source (slot) ID.
+#    See the SoC's reference manual for all the supported request sources.
+
+dma-cells:
+  - mux
+  - source

@@ -1,0 +1,53 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Misc. Pylib Scripts TestSuite
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/build_helpers/**'
+    - '.github/workflows/pylib_tests.yml'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/build_helpers/**'
+    - '.github/workflows/pylib_tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pylib-tests:
+    name: Misc. Pylib Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+        os: [ubuntu-24.04]
+    steps:
+    - name: checkout
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
+      run: |
+        pip install -r scripts/requirements-actions.txt --require-hashes
+    - name: Run pytest for build_helpers
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        echo "Run build_helpers tests"
+        PYTHONPATH=./scripts/tests pytest ./scripts/tests/build_helpers

@@ -1,0 +1,16 @@
+description: ARM PL011 UART
+
+compatible: "arm,pl011"
+
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  fifo-disable:
+    type: boolean
+    description: Disable the UART FIFO

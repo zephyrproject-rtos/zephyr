@@ -1,0 +1,38 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC23x0 SPI controller
+
+compatible: "ti,cc23x0-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional TX & RX DMA specifiers. Each specifier will have a phandle
+      reference to the DMA controller, the channel number, and the peripheral
+      trigger source.
+
+      Example for channels 0/1 with spi0txtrg/spi0rxtrg trigger sources:
+        dmas = <&dma 0 0>, <&dma 1 1>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. This should be "tx" and "rx"
+      to match the dmas property.
+
+      Example:
+        dma-names = "tx", "rx";

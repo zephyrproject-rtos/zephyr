@@ -1,0 +1,15 @@
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Benchmark completed"
+  timeout: 10
+  tags: crypto
+  arch_exclude:
+    - posix
+tests:
+  benchmark.crypto.mbedtls:
+    filter: CONFIG_TEST_RANDOM_GENERATOR
+    integration_platforms:
+      - qemu_x86

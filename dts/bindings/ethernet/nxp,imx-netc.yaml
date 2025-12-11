@@ -1,0 +1,13 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX NETC Controller
+
+compatible: "nxp,imx-netc"
+
+include: [base.yaml]
+
+properties:
+  msi-parent:
+    type: phandle
+    description: MSI controller

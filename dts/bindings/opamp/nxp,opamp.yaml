@@ -1,0 +1,64 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Operational Amplifier (opamp)
+
+include:
+  - name: opamp-controller.yaml
+  - name: reset-device.yaml
+
+compatible: "nxp,opamp"
+
+properties:
+  non-inverting-reference:
+    type: string
+    enum:
+      - "Input0"
+      - "Input1"
+      - "Input2"
+      - "Input3"
+    description: |
+      Selects non-inverting path reference voltage source.
+      The actual meaning of each option:
+      "Input0": MCU internal DAC out
+      "Input1": VDD / 2
+      "Input2": MCU internal VREF out
+      "Input3": Fixed 520mv
+
+  operation-mode:
+    type: string
+    enum:
+      - "low_noise"
+      - "high_speed"
+    default: "low_noise"
+    description: |
+      Selects opamp operation mode.
+      Reasons why set default value to low_noise:
+      1. Matches the value after register reset.
+      2. If there is no special high slew rate requirement,
+      there is no need to change the mode to high speed mode.
+      The actual meaning of each option:
+      "low_noise": OPAMP in low noise mode
+      "high_speed": OPAMP in high slew rate mode
+
+  enable-measure-reference:
+    type: boolean
+    description: |
+      Specifies whether the measure positive gain resistor ladder
+      reference voltage switch is on or off for ADC channel.
+
+  enable-measure-output:
+    type: boolean
+    description: |
+      Specifies whether the measure negative gain resistor ladder
+      voltage switch is on or off for ADC channel.
+
+  "#nxp,opamp-cells":
+    type: int
+    const: 1
+    description: |
+      Number of items to expect in a opamp specifier.
+
+nxp,opamp-cells:
+  - channel_id

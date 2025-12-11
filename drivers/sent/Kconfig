@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SENT
+	bool "SENT Single Edge Nibble Transmission (SENT)"
+	help
+	  Enable SENT Driver Configuration
+
+if SENT
+
+module = SENT
+module-str = sent
+source "subsys/logging/Kconfig.template.log_config"
+
+config SENT_INIT_PRIORITY
+	int "SENT driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  SENT driver device initialization priority.
+
+source "drivers/sent/Kconfig.nxp_s32"
+
+endif # SENT

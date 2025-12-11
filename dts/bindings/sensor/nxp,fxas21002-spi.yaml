@@ -1,0 +1,8 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: FXAS21002 3-axis gyroscope sensor
+
+compatible: "nxp,fxas21002"
+
+include: ["spi-device.yaml", "nxp,fxas21002-common.yaml"]

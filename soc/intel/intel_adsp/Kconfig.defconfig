@@ -1,0 +1,37 @@
+# Intel CAVS SoC family default configuration options
+#
+# Copyright (c) 2020-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_INTEL_ADSP
+
+rsource "*/Kconfig.defconfig.series"
+
+# A workaround for HWMv2 to recover SOF arch/xtensa defaults overridden by arch/host.
+
+# console can't handle the amount of data coming from many tests, so introduce
+# a delay between testcases.
+if ZTEST
+config ZTEST_TEST_DELAY_MS
+	default 100
+endif
+
+config CONSOLE
+	def_bool y
+
+if CONSOLE && !SIMULATOR_XTENSA
+config WINSTREAM_CONSOLE
+	def_bool y
+endif
+
+config CACHE_MANAGEMENT
+	def_bool y
+
+choice CACHE_TYPE
+	default SOC_CACHE
+endchoice
+
+config DCACHE_LINE_SIZE
+	default 64
+
+endif # SOC_FAMILY_INTEL_ADSP

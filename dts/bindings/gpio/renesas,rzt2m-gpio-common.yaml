@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+description: Renesas RZT2M GPIO common
+
+compatible: "renesas,rzt2m-gpio-common"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true

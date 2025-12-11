@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family RNG (Random Number Generator)
+
+compatible: "nordic,nrf-rng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

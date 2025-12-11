@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs LETIMER (Low Energy Timer)
+
+description: |
+  Low Energy Timer peripheral on Silicon Labs Series 2 SoCs.
+
+compatible: "silabs,series2-letimer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  run-in-debug:
+    type: boolean
+    description: |
+      Enable to keep timer running in debug mode.
+
+  clock-div:
+    type: int
+    default: 1
+    description: Clock divider for timer
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256

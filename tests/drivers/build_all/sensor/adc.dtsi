@@ -1,0 +1,155 @@
+/*
+ * Copyright (c) 2023 FTP Technologies
+ * Copyright (c) 2023, Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for ADC devices
+ */
+
+#include <zephyr/dt-bindings/battery/battery.h>
+
+test_adc_mcp9700a: mcp9700a {
+	status = "okay";
+	compatible = "microchip,mcp970x";
+	family = "MCP9700/9700A";
+	io-channels = <&test_adc 0>;
+};
+
+test_voltage: voltage {
+	status = "okay";
+	compatible = "voltage-divider";
+	io-channels = <&test_adc 1>;
+	io-channel-names = "VOLTAGE";
+	output-ohms = <47000>; /* R1 */
+	full-ohms = <(100000 + 47000)>; /* R2 + R1 */
+	power-gpios = <&test_gpio 0 0>;
+};
+
+test_current: current_amp {
+	status = "okay";
+	compatible = "current-sense-amplifier";
+	io-channels = <&test_adc 2>;
+	io-channel-names = "CURRENT_AMP";
+	sense-resistor-milli-ohms = <1>;
+	sense-gain-mult = <1>;
+	sense-gain-div = <1>;
+	zero-current-voltage-mv = <0>;
+};
+
+test_current_alt_gain: current_amp_alt_gain {
+	compatible = "current-sense-amplifier";
+	io-channels = <&adc0 0>;
+	sense-resistor-milli-ohms = <2>;
+	sense-gain-mult = <50>;
+	gain-extended-range = "ADC_GAIN_1_6";
+};
+
+test_composite_fuel_gauge: composite_fuel_gauge {
+	compatible = "zephyr,fuel-gauge-composite";
+	status = "okay";
+	source-primary = <&test_voltage>;
+	source-secondary = <&test_current>;
+	device-chemistry = "lithium-ion-polymer";
+	ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+	charge-full-design-microamp-hours = <1000000>;
+};
+
+test_adc_emul: adc-emul {
+	compatible = "zephyr,adc-emul";
+	nchannels = <2>;
+	ref-internal-mv = <3300>;
+	ref-external1-mv = <5000>;
+	#io-channel-cells = <1>;
+	status = "okay";
+};
+
+test_adc_ntc_thermistor_generic: ntc-thermistor-generic {
+	compatible = "ntc-thermistor-generic";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+	zephyr,compensation-table = <0 0>, <1 1>;
+};
+
+test_adc_epcos_b57861s0103a039: epcos-b57861s0103a039 {
+	compatible = "epcos,b57861s0103a039";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_murata_ncp15wb473: murata-ncp15wb473 {
+	compatible = "murata,ncp15wb473";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_omron_d6f_p0001: test-omron-d6f-p0001 {
+	status = "okay";
+	compatible = "omron,d6f-p0001";
+	io-channels = <&test_adc 0>;
+};
+
+test_omron_d6f_p0010: test-omron-d6f-p0010 {
+	status = "okay";
+	compatible = "omron,d6f-p0010";
+	io-channels = <&test_adc 0>;
+};
+
+test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
+	compatible = "tdk,ntcg163jf103ft1";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_lm35: lm35 {
+	compatible = "lm35";
+	io-channels = <&test_adc 0>;
+	status = "okay";
+};
+
+test_murata_ncp15xh103: murata-ncp15xh103 {
+	compatible = "murata,ncp15xh103";
+	io-channels = <&test_adc 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
+
+test_seeed_grove_light: seeed-grove-light {
+	compatible = "seeed,grove-light";
+	io-channels = <&test_adc 0>;
+};
+
+test_seeed_grove_temperature: seeed-grove-temperature {
+	compatible = "seeed,grove-temperature";
+	io-channels = <&test_adc 0>;
+};
+
+test_veaa_x_3: test_veaa_x_3 {
+	status = "okay";
+	compatible = "festo,veaa-x-3";
+	io-channels = <&test_adc 3>;
+	dac = <&test_dac>;
+	dac-channel-id = <2>;
+	dac-resolution = <12>;
+	pressure-range-type = "D2";
+};
+
+test_als_pt19: test_als-pt19 {
+	compatible = "everlight,als-pt19";
+	io-channels = <&test_adc 0>;
+	load-resistor = <10000>;
+};

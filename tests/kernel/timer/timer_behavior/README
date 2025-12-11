@@ -1,0 +1,86 @@
+# Test a timer implementations variance and long term drift
+
+Records and calculates statistical values against a timer validating that.
+
+1. Timer variance and standard deviation is below defined acceptable values.
+2. Periodic timers do not drift in either direction from expected total time.
+
+Timers are meant to be precise and accurate. This test validates an implementation is both.
+
+--------------------------------------------------------------------------------
+
+External tool testing
+
+It's also possible to use an external tool, such as a logic analyzer, to
+collect samples. The "kernel.timer.timer_behavior_external" test will toggle a
+GPIO pin on every cycle - first cycle will be a rising edge. This test expects
+a Python module to interface with the external tool, which will provide the
+necessary statistics that the test will use to assert the test status.
+
+GPIO pin
+
+To enable external tool testing on a board, it must provide the compatible
+"test-kernel-timer-behavior-external", with property "timeout-gpios" being the
+GPIO pin that will be toggled each period.
+
+External tool interface
+
+In order to get data from the external tool, the test expects a Python module,
+named on testcase.yaml, with the following interface:
+
+    run(seconds: float, options: str) -> {}, int
+
+The `seconds` parameter defines for how long the data collection is expected
+to run; `options` is a string defined on testcase.yaml with options known to
+the external tool helper module. It should return a tuple with a dictionary
+for the following time statistics, in seconds:
+
+    'mean':         Mean time of each period
+    'stddev':       Standard deviation from the mean time
+    'var':          Variance from the mean time
+    'min':          Minimum period registered
+    'max':          Maximum period registered
+    'total_time':   Total time, between first and last period.
+
+and an integer value of how many data values are collected for the statistics.
+
+Note that the collection may need to go a bit after the "seconds" parameter,
+to account for expected drift in the test and between the DUT and the external
+tool.
+
+One can check `pytest/saleae_logic2.py` file as a sample of external tool
+helper module.
+
+Twister
+
+For Twister execute the external tool testing, the fixture "gpio_timerout"
+must be available on the device. Also, testcase.yaml
+"harness_config/pytest_args" from "kernel.timer.timer_behavior_external" must
+have parameters "tool", with the name of a loadable Python module and
+"tool-options", a string with options passed to the Python module helper.
+
+Check testcase.yaml for an example using the saleae_logic2 module.
+
+Configuration options
+
+At its heart, the external testing is actually comparing two clocks: one on
+the board under test and one at the external tool (Zephyr implementation of
+the timer also plays a role, and it's the real target of the test, but it
+depends on the board's clock). Different clocks run at different speeds, so
+they tend to drift. To be able to account for this drift, the external test
+doesn't reuse CONFIG_TIMER_TEST_MAX_DRIFT and
+CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT, instead introducing
+CONFIG_TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM and
+CONFIG_TIMER_EXTERNAL_TEST_PERIOD_MAX_DRIFT_PPM, that can be more finely tuned
+for the hardware in question.
+
+Also, CONFIG_TIMER_EXTERNAL_TEST_SYNC_DELAY is used to set a delay before a
+test cycle starts, so that the external tool can be set up.
+
+Dependencies
+
+The external tool interface may have its own dependencies. For instance,
+the saleae_logic2 module ones are listed at pytest/requirements-saleae.txt.
+One can install them with pip (possibly in some virtual environment):
+
+    pip install -r pytest/requirements-saleae.txt

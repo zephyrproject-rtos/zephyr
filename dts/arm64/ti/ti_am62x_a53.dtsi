@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2023 Enphase Energy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ti/k3-am62-main.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+	};
+
+	firmware {
+		psci: psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
+	};
+
+	oc_sram: memory@70000000 {
+		reg = <0x70000000 DT_SIZE_K(64)>;
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	gic: interrupt-controller@1800000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x01800000 0x10000>, /* GICD */
+		      <0x01880000 0xc0000>; /* GICR */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	pinctrl: pinctrl@f4000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x000f4000 0x2ac>;
+		status = "okay";
+	};
+
+	mbox0: mailbox0@29000000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29000000 0x200>;
+		interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		usr-id = <0>;
+		#mbox-cells = <1>;
+	};
+};
+
+&main_uart0 {
+	interrupts = <GIC_SPI 178 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart1 {
+	interrupts = <GIC_SPI 179 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart2 {
+	interrupts = <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart3 {
+	interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart4 {
+	interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart5 {
+	interrupts = <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart6 {
+	interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c0 {
+	interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c1 {
+	interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c2 {
+	interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c3 {
+	interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};

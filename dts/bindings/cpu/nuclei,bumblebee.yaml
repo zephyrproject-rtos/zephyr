@@ -1,0 +1,8 @@
+# Copyright (c) 2021 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuclei Bumblebee RISC-V Core
+
+compatible: "nuclei,bumblebee"
+
+include: riscv,cpus.yaml

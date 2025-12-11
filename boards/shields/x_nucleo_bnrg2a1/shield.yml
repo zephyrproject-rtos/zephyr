@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_bnrg2a1
+  full_name: X-NUCLEO-BNRG2A1
+  vendor: st
+  supported_features:
+    - bluetooth

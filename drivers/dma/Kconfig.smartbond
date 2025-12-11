@@ -1,0 +1,11 @@
+# Smartbond DMA Accelerator Configuration Options
+
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SMARTBOND
+	bool "Smartbond DMA Accelerator Driver"
+	depends on DT_HAS_RENESAS_SMARTBOND_DMA_ENABLED
+	default y
+	help
+	  Enable Smartbond DMA Accelerator Driver

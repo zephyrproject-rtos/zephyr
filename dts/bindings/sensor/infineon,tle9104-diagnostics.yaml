@@ -1,0 +1,15 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Output diagnostics of the powertrain switch TLE9104
+
+compatible: "infineon,tle9104-diagnostics"
+
+include: [sensor-device.yaml]
+
+on-bus: tle9104
+
+properties:
+  "#sensor-cells":
+    type: int
+    const: 0

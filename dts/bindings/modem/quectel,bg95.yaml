@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel BG95 modem
+
+compatible: "quectel,bg95"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+
+  autostarts:
+    type: boolean
+    description: |
+      Set for modem variants or carrier boards that start the module
+      automatically when supply voltage is applied—that is, the modem
+      asserts PWRKEY internally and does not require an external PWRKEY
+      pulse.

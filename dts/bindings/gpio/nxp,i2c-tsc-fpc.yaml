@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+compatible: "nxp,i2c-tsc-fpc"
+
+description: |
+    GPIO pins exposed on NXP LCD touch controller interface. These pins are
+    exposed on a 6 pin flexible printed cable connector. The pins have the
+    following assignments:
+
+      Pin Number    Usage
+      1             VDD
+      2             LCD touch reset
+      3             LCD touch interrupt
+      4             LCD touch controller I2C SCL
+      5             LCD touch controller I2C SDA
+      6             GND
+
+include: [gpio-nexus.yaml, base.yaml]

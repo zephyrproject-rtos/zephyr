@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&audiopll {
+	status = "okay";
+	frequency = <NRFS_AUDIOPLL_FREQ_AUDIO_48K>;
+};
+
+&tdm130 {
+	mck-frequency = <12288000>;
+	mck-clock-source = "ACLK";
+	sck-clock-source = "ACLK";
+};

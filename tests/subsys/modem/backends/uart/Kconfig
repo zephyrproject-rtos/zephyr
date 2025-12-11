@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_HW_FLOW_CONTROL
+	bool "Test hardware flow control"
+	help
+	  By default, the test uses backend transmit and receive
+	  buffers of adequate size, and waits until transmitted
+	  data has been fully received before next transmit.
+
+	  This option limits the backend receive buffer size and
+	  imposes a delay on reading received data, ensuring
+	  transmitted data will be dropped if hw flow control is
+	  not enabled.

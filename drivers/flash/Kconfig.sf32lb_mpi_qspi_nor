@@ -1,0 +1,15 @@
+# Copyright 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_SF32LB_MPI_QSPI_NOR
+	bool "SiFli SF32LB MPI QSPI NOR driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_MPI_QSPI_NOR_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select DMA
+	help
+	  Enable the flash driver for a NOR serial flash memory device connected
+	  to the SiFli SF32LB MPI peripheral.

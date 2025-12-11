@@ -1,0 +1,43 @@
+# SSD1331 display controller configuration options
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SSD1331
+	bool "SSD1331 display controller driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1331_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for SSD1331 display controller.
+
+if SSD1331
+
+config SSD1331_DEFAULT_CONTRAST
+	int "SSD1331 default contrast"
+	default 100
+	range 0 255
+	help
+	  SSD1331 default contrast.
+
+config SSD1331_CONTRASTA
+	int "SSD1331 contrast multiplier for seg A"
+	default 145
+	range 0 255
+	help
+	  Contrast multiplier for seg A
+
+config SSD1331_CONTRASTB
+	int "SSD1331 contrast multiplier for seg B"
+	default 80
+	range 0 255
+	help
+	  Contrast multiplier for seg B
+
+config SSD1331_CONTRASTC
+	int "SSD1331 contrast multiplier for seg C"
+	default 125
+	range 0 255
+	help
+	  Contrast multiplier for seg C
+
+endif # SSD1331

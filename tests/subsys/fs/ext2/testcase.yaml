@@ -1,0 +1,59 @@
+common:
+  tags: filesystem
+tests:
+  filesystem.ext2.default:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
+      - bl5340_dvk/nrf5340/cpuapp
+    integration_platforms:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk_small.overlay"
+
+  filesystem.ext2.big:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - CONF_FILE=prj_big.conf
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk_big.overlay"
+
+  filesystem.ext2.sdcard:
+    simulation_exclude:
+      - renode
+    platform_allow:
+      - hifive_unmatched/fu740/s7
+      - hifive_unmatched/fu740/u74
+      - bl5340_dvk/nrf5340/cpuapp
+      - mck_ra8t1
+      - ek_ra8m1
+      - ek_ra8d1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lfecac/cm85
+      - ek_ra8p1/r7ka8p1kflcac/cm33
+      - ek_ra8d2/r7ka8d2kflcac/cm85
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+    extra_args:
+      - CONF_FILE=prj_sdcard.conf
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
+      - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm33:SHIELD=pmod_sd
+    extra_configs:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:ek_ra8d1/r7fa8d1bhecbd:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm33:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:ek_ra8d2/r7ka8d2kflcac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:ek_ra8m2/r7ka8m2jflcac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:mck_ra8t1/r7fa8t1ahecbd:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:mck_ra8t2/r7ka8t2lfecac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+
+  filesystem.ext2.flash:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args: CONF_FILE=prj_flash.conf

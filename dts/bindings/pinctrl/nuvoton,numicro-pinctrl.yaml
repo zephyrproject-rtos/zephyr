@@ -1,0 +1,60 @@
+# Copyright (c) 2022 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NuMicro pinctrl node. This node will define pin configurations in pin groups,
+  and has the 'pinctrl' node identifier in the SOC's devicetree. Each group
+  within the pin configuration defines the pin configuration for a peripheral,
+  and each numbered subgroup in the pin group defines all the pins for that
+  peripheral with the same configuration properties. The 'pinmux' property in
+  a group selects the pins to be configured, and the remaining properties set
+  configuration values for those pins. Here is an example group for UART0 pins:
+
+  uart0_default: uart0_default {
+    group0 {
+      pinmux = <UART0_RXD_PB12>, <UART0_TXD_PB13>;
+    };
+  };
+
+compatible: "nuvoton,numicro-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: NuMicro pin controller pin group
+  child-binding:
+    description: |
+      NuMicro pin controller pin configuration node
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+          - input-schmitt-enable
+          - input-disable
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selections for this group. See the SoC level pinctrl dtsi file
+          for a defined list of these options.
+      slew-rate:
+        default: "normal"
+        type: string
+        enum:
+          - "normal"
+          - "high"
+          - "fast"
+        description: |
+          Pin output slew rate. Sets the HSRENx register. If not set, defaults to the
+          reset value (normal).
+      input-debounce:
+        type: boolean
+        description: |
+          enable the input debounce function

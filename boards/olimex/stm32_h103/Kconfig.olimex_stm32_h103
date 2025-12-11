@@ -1,0 +1,5 @@
+# Copyright (c) 2020, Josep Puigdemont
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_STM32_H103
+	select SOC_STM32F103XB

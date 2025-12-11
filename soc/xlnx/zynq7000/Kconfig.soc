@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_XILINX_ZYNQ7000
+	bool
+
+config SOC_FAMILY
+	default "xilinx_zynq7000" if SOC_FAMILY_XILINX_ZYNQ7000
+
+rsource "*/Kconfig.soc"

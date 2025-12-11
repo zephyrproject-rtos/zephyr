@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_TLSR951X
+	bool
+	select SOC_FAMILY_TELINK_TLSR
+	help
+	  Telink TLSR951X
+
+config SOC_TLSR9518
+	bool
+	select SOC_SERIES_TLSR951X
+	help
+	  Telink TLSR9518
+
+config SOC_SERIES
+	default "tlsr951x" if SOC_SERIES_TLSR951X
+
+config SOC
+	default "tlsr9518" if SOC_TLSR9518

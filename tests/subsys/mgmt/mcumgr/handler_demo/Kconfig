@@ -1,0 +1,38 @@
+# Copyright Nordic Semiconductor ASA 2023. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+# The Kconfig file is dedicated to example management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_EXAMPLE_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+if MCUMGR
+
+menuconfig MCUMGR_GRP_EXAMPLE_APP
+	bool "MCUmgr handlers for example management (app)"
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	default y
+	help
+	  Enables MCUmgr handlers for example management. This demonstrates the
+	  file at application-level.
+
+if MCUMGR_GRP_EXAMPLE_APP
+config MCUMGR_GRP_EXAMPLE_OTHER_HOOK
+	bool "Other hook"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to receive callback when the "other" example
+	  management function is called
+
+module = MCUMGR_GRP_EXAMPLE
+module-str = mcumgr_grp_example
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
+
+endif
+
+source "Kconfig.zephyr"

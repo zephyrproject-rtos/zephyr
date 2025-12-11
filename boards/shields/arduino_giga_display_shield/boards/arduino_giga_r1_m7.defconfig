@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ARDUINO_GIGA_DISPLAY_SHIELD
+
+if LVGL
+
+# Double frame buffer maintained by lvgl.
+config STM32_LTDC_FB_NUM
+	default 0
+
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_FULL_REFRESH
+	default y
+
+endchoice
+
+endif # LVGL
+
+endif # SHIELD_ARDUINO_GIGA_DISPLAY_SHIELD

@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SILABS_XG26
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 93
+
+config PM
+	default n
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
+
+choice PM_POLICY
+	default PM_POLICY_DEFAULT
+	depends on PM
+endchoice
+
+endif

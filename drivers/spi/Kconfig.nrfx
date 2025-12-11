@@ -1,0 +1,62 @@
+# Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NRFX
+	bool "nRF SPI nrfx drivers"
+	default y
+	depends on SOC_FAMILY_NORDIC_NRF
+	select GPIO
+	select PINCTRL
+	help
+	  Enable support for nrfx SPI drivers for nRF MCU series.
+
+if SPI_NRFX
+
+config SPI_NRFX_SPI
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPI_ENABLED
+	select NRFX_SPI0 if HAS_HW_NRF_SPI0
+	select NRFX_SPI1 if HAS_HW_NRF_SPI1
+	select NRFX_SPI2 if HAS_HW_NRF_SPI2
+
+config SPI_NRFX_SPIM
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
+	select NRFX_SPIM
+
+config SPI_NRFX_SPIS
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIS_ENABLED
+	select SPI_SLAVE
+	select NRFX_SPIS
+
+config SPI_NRFX_RAM_BUFFER_SIZE
+	int "Size of RAM buffers for SPIM peripherals"
+	default 8
+	depends on SPI_NRFX_SPIM
+	help
+	  Because of using EasyDMA, SPIM peripherals cannot use transmit and
+	  receive buffers from all memory locations. They are restricted to
+	  buffers located in certain RAM memories only. Therefore, each SPIM
+	  driver instance needs to use an intermediate local RAM buffer,
+	  to transfer data in chunks not exceeding the size of that buffer,
+	  and to copy those chunks between the local buffer and the one
+	  specified in the transfer request if the latter is not accessible
+	  by EasyDMA.
+
+	  This option specifies the size in bytes of such local RAM buffers
+	  for both TX and RX paths. A size of 0 means that this feature should
+	  be disabled and the driver user must take care of not making transfer
+	  requests with buffers not accessible by EasyDMA since such transfers
+	  will fail.
+
+config SPI_NRFX_WAKE_TIMEOUT_US
+	int "Maximum time to wait for SPI slave to wake up"
+	default 200
+	help
+	  Maximum amount of time (in microseconds) that SPI master should wait
+	  for SPI slave to wake up after the WAKE line is asserted. Used only
+	  by instances that have the WAKE line configured (see the wake-gpios
+	  devicetree property).
+
+endif # SPI_NRFX

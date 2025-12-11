@@ -1,0 +1,125 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+*.o
+*.a
+*.d
+*.cmd
+*.log
+*.pyc
+*.swp
+*.swo
+*~
+
+# Emacs
+\#*\#
+
+build*/
+!doc/build/
+!scripts/build
+!tests/drivers/build_all
+!scripts/pylib/build_helpers
+cscope.*
+.dir
+
+/*.patch
+
+# The .cache directory will be used to cache toolchain capabilities if
+# no suitable out-of-tree directory is found.
+.cache
+
+outdir
+outdir-*
+scripts/basic/fixdep
+scripts/gen_idt/gen_idt
+coverage-report
+doc-coverage.info
+doc/_build
+doc/doxygen
+doc/xml
+doc/html
+doc/boards
+doc/samples
+doc/latex
+doc/themes/zephyr-docs-theme
+sanity-out*
+twister-out*
+bsim_out
+bsim_bt_out
+myresults.xml
+tests/RunResults.xml
+scripts/grub
+doc/reference/kconfig/*.rst
+doc/doc.warnings
+.*project
+.settings
+.envrc
+.vscode
+hide-defaults-note
+venv
+.venv
+.envrc
+.DS_Store
+.clangd
+new.info
+
+# Cargo drops lock files in projects to capture resolved dependencies.
+# We don't want to record these.
+Cargo.lock
+
+# Cargo encourages a .cargo/config.toml file to symlink to a generated file.  Don't save these.
+.cargo/
+
+# Normal west builds will place the Rust target directory under the build directory.  However,
+# sometimes IDEs and such will litter these target directories as well.
+target/
+
+# CI output
+compliance.xml
+dts_linter.patch
+_error.types
+
+# Tag files
+GPATH
+GRTAGS
+GTAGS
+TAGS
+tags
+
+.idea
+
+# from check_compliance.py
+# zephyr-keep-sorted-start
+BinaryFiles.txt
+BoardYml.txt
+Checkpatch.txt
+ClangFormat.txt
+DevicetreeBindings.txt
+DevicetreeLinting.txt
+GitDiffCheck.txt
+Gitlint.txt
+Identity.txt
+ImageSize.txt
+Kconfig.txt
+KconfigBasic.txt
+KconfigBasicNoModules.txt
+KconfigHWMv2.txt
+KeepSorted.txt
+LicenseAndCopyrightCheck.txt
+MaintainersFormat.txt
+ModulesMaintainers.txt
+Nits.txt
+Pylint.txt
+PythonCompat.txt
+Ruff.txt
+SphinxLint.txt
+SysbuildKconfig.txt
+SysbuildKconfigBasic.txt
+SysbuildKconfigBasicNoModules.txt
+TextEncoding.txt
+YAMLLint.txt
+ZephyrModuleFile.txt
+# zephyr-keep-sorted-stop
+
+# Node dependecies
+node_modules

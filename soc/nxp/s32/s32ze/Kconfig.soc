@@ -1,0 +1,32 @@
+# NXP S32ZE MCUs series
+
+# Copyright 2022-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_S32ZE
+	bool
+	select SOC_FAMILY_NXP_S32
+
+config SOC_SERIES
+	default "s32ze" if SOC_SERIES_S32ZE
+
+config SOC_S32Z270
+	bool
+	select SOC_SERIES_S32ZE
+
+config SOC_S32Z270_RTU0
+	bool
+	select SOC_S32Z270
+
+config SOC_S32Z270_RTU1
+	bool
+	select SOC_S32Z270
+
+config SOC
+	default "s32z270" if SOC_S32Z270
+
+config SOC_PART_NUMBER_P32Z270ADCK0MJFT
+	bool
+
+config SOC_PART_NUMBER
+	default "P32Z270ADCK0MJFT" if SOC_PART_NUMBER_P32Z270ADCK0MJFT

@@ -1,0 +1,15 @@
+description: BCM2711 UART
+
+compatible: "brcm,bcm2711-aux-uart"
+
+include: [uart-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true

@@ -1,0 +1,74 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+include: dac-controller.yaml
+
+description: Analog Devices MAX22017 16bit DAC
+
+properties:
+  "#io-channel-cells":
+    const: 2
+
+  num-channels:
+    type: int
+    description: Number of DAC output channels.
+    default: 2
+
+  resolution:
+    type: int
+    description: DAC resolution.
+    default: 16
+
+  busy-gpios:
+    description: Busy line indicating the DAC is calculating next sample.
+    type: phandle-array
+
+  ldac-gpios:
+    description: Load both DAC latches at the same time.
+    type: phandle-array
+
+  polarity-mode:
+    description: |
+      Unipolar/bipolar mode selection for channels.
+      0 Indicates bipolar mode and 1 unipolar mode.
+      The default settings to bipolar here align with the default mode of the device.
+    default: [0, 0]
+    type: uint8-array
+
+  dac-mode:
+    description: |
+      Voltage/current mode selection for channels.
+      0 indicates voltage mode and 1 indicates current mode.
+      The default settings to voltage mode here align with the default mode of the device.
+    default: [0, 0]
+    type: uint8-array
+
+  latch-mode:
+    description: |
+      Latch mode selection for channels.
+      0 means the channel is not latched, 1 means latched.
+      The default settings to non latched should be more straightforward to use than the latched
+      mode. The latch mode can be used eitheir with the ldac-gpios to load both channels at the
+      same time or if no ldac-gpios property is set, latching will be done per channel with a
+      register write.
+    default: [0, 0]
+    type: uint8-array
+
+  overcurrent-mode:
+    description: |
+      Overcurrent mode selection for channels.
+      0 for current limiting mode
+      1 for short circuit protection auto power up mode
+      2 for short circuit protection shutdown mode
+      The default setting to current limiting mode here aligns with the default mode of the device.
+    default: [0, 0]
+    type: uint8-array
+
+  timeout:
+    description: |
+      Timeout in ms.
+      The value should be between 100 and 1600ms in increments of 100ms.
+    type: int
+
+compatible: "adi,max22017-dac"

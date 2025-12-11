@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Qorvo's RFSW8001 is a single pole triple throw (SP3T) RF switch. The RF1,
+  RF2 and RF3 pins are used to control the behavior of the switch as detailed
+  in the "Switch Control Logic Table" in the datasheet.
+
+compatible: "qorvo,rfsw8001"
+
+include: base.yaml
+
+properties:
+  rf1-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to control the RF1 switch
+
+  rf2-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to control the RF2 switch
+
+  rf3-gpios:
+    type: phandle-array
+    required: true
+    description: Pin used to control the RF3 switch

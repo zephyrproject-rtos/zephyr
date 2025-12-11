@@ -1,0 +1,105 @@
+# Copyright 2022-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RW6XX
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x1300 if NXP_RW6XX_BOOT_HEADER
+
+config NUM_IRQS
+	default 129
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000 if MCUX_OS_TIMER
+	default 260000000 if CORTEX_M_SYSTICK
+
+config NXP_MONOLITHIC_NBU
+	default y if (BT || IEEE802154)
+
+if BT
+
+config HCI_NXP_ENABLE_AUTO_SLEEP
+	default y
+
+config HCI_NXP_SET_CAL_DATA
+	default y
+
+config MAIN_STACK_SIZE
+	default 2560
+
+config BT_LONG_WQ_STACK_SIZE
+	default 5120 if (WIFI || IEEE802154)
+	default 2560
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config BT_BUF_EVT_RX_COUNT
+	default 12
+
+config BT_BUF_ACL_TX_COUNT
+	default 8
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+endif # BT
+
+config NXP_MONOLITHIC_WIFI
+	default y if WIFI
+
+config NXP_FW_LOADER
+	default y if (BT || WIFI || IEEE802154)
+
+config NXP_RF_IMU
+	default y if (BT || WIFI || IEEE802154)
+
+if WIFI
+orsource "Kconfig.defconfig.wifi"
+endif # WIFI
+
+if PM
+# For PM mode 3 we change this config to get better accuracy
+# when using the iKHz RTC clock as system clock.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000 if "$(dt_nodelabel_enabled,standby)"
+
+# Enable PM_DEVICE by default if STANDBY mode is enabled
+# as we use the TURN_OFF and TURN_ON actions to recover
+# from Standby mode (PM Mode 3)
+config PM_DEVICE
+	default y if "$(dt_nodelabel_enabled,standby)" || "$(dt_nodelabel_enabled,suspend)"
+
+# Enable PM_POLICY_DEVICE_CONSTRAINTS by default when doing PM_DEVICE.
+# This will allow support of device power states.
+config PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE
+
+# Enable the counter if STANDBY mode is enabled
+# RTC counter is the wakeup source from STANDBY mode
+config COUNTER
+	default y if "$(dt_nodelabel_enabled,standby)"
+
+config MCUX_OS_TIMER_PM_POWERED_OFF
+	default y
+
+# PM code that runs from the idle loop has a large
+# footprint. Hence increase the size when PM is enabled.
+config IDLE_STACK_SIZE
+	default 640
+
+endif # PM
+
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
+endif # SOC_SERIES_RW6XX

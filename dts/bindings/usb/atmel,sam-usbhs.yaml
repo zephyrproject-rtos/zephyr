@@ -1,0 +1,21 @@
+# Copyright (c) 2018 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Atmel SAM Family USB (USBHS) in device mode
+
+compatible: "atmel,sam-usbhs"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

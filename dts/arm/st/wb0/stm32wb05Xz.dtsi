@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wb0/stm32wb05.dtsi>
+
+/ {
+	soc {
+		flash: flash-controller@40001000 {
+			flash0: flash@10040000 {
+				reg = <0x10040000 DT_SIZE_K(192)>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(24)>;
+	};
+};

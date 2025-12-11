@@ -1,0 +1,8 @@
+common:
+  depends_on: netif
+tests:
+  net.route_mcast:
+    min_ram: 21
+    tags:
+      - net
+      - route_mcast

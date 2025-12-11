@@ -1,0 +1,28 @@
+# Copyright 2022-2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config OPENAMP_REMOTE_BOARD
+string
+	default "lpcxpresso54114/lpc54114/m0" if $(BOARD) = "lpcxpresso54114"
+	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
+	default "mps2/an521/cpu1" if $(BOARD) = "mps2"
+	default "v2m_musca_b1/musca_b1/ns" if $(BOARD) = "v2m_musca_b1"
+	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
+	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
+	default "mimxrt1170_evkb/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evkb"
+	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
+	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
+	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
+	default "mimxrt700_evk/mimxrt798s/cm33_cpu1" if $(BOARD) = "mimxrt700_evk"
+	default "esp32s3_devkitm/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitm"
+	default "esp32s3_devkitc/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitc"
+	default "esp32_devkitc/esp32/appcpu" if $(BOARD) = "esp32_devkitc"
+	default "esp_wrover_kit/esp32/appcpu" if $(BOARD) = "esp_wrover_kit"
+	default "esp32_ethernet_kit/esp32/appcpu" if $(BOARD) = "esp32_ethernet_kit"
+	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
+	default "imx943_evk/mimx94398/m33" if "$(BOARD)$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_1"
+	default "imx943_evk/mimx94398/m33" if "$(BOARD)$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_0"
+	default "imx943_evk/mimx94398/m7_1" if "$(BOARD)$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m33"

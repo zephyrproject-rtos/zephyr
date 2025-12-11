@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RHX
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ISA_EXT_ZBA
+	select RISCV_ISA_EXT_ZBB
+	select RISCV_ISA_EXT_ZBC
+	select RISCV_ISA_EXT_ZBS
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select INCLUDE_RESET_VECTOR
+	imply XIP

@@ -1,0 +1,18 @@
+# Copyright (c) 2025, Marcio Ribeiro
+# SPDX-License-Identifier: Apache-2.0
+
+title: Solomon SSD1309 display controller on SPI bus
+
+description: |
+    The Solomon SSD1309 is a monochrome OLED controller
+    with a maximum 128x64 resolution.
+
+compatible: "solomon,ssd1309fb"
+
+include: ["solomon,ssd1306fb-common.yaml", "spi-device.yaml"]
+
+properties:
+  data-cmd-gpios:
+    type: phandle-array
+    required: true
+    description: D/C# pin.

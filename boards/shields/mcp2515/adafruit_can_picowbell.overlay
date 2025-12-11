@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2023 Joseph Yates
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pico_spi {
+	status = "okay";
+	cs-gpios = <&pico_header 20 GPIO_ACTIVE_LOW>;
+
+	mcp2515_adafruit_can_picowbell: can@0 {
+		compatible = "microchip,mcp2515";
+		spi-max-frequency = <1000000>;
+		int-gpios = <&pico_header 21 GPIO_ACTIVE_LOW>;
+		status = "okay";
+		reg = <0x0>;
+		osc-freq = <16000000>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2515_adafruit_can_picowbell;
+	};
+};

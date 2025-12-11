@@ -1,0 +1,79 @@
+# Atmel WINC1500 WiFi driver options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_WINC1500
+	bool "WINC1500 driver support"
+	default y
+	depends on DT_HAS_ATMEL_WINC1500_ENABLED
+	select SPI
+	select ATMEL_WINC1500
+	select WIFI_OFFLOAD
+	select NET_L2_WIFI_MGMT
+
+if WIFI_WINC1500
+
+config WIFI_WINC1500_NAME
+	string "Driver name"
+	default "WINC1500"
+
+config WINC1500_DRV_USE_OLD_SPI_SW
+	bool "Use old SPI access method in the vendor HAL"
+	help
+	  This option, when enabled, causes USE_OLD_SPI_SW
+	  setting to be passed to vendor HAL.
+
+config WIFI_WINC1500_THREAD_STACK_SIZE
+	int "HAL callback handler thread stack size"
+	default 2048
+	help
+	  This option sets the size of the stack used by the thread handling
+	  WINC1500 HAL callbacks. Do not touch it unless you know what you are
+	  doing.
+
+config WIFI_WINC1500_THREAD_PRIO
+	int "HAL callback handler thread priority"
+	default 2
+	help
+	  This option sets the priority of the thread handling WINC1500 HAL
+	  callbacks. Do not touch it unless you know what you are doing.
+
+config WIFI_WINC1500_BUF_CTR
+	int "Number of buffer per-buffer pool"
+	default 1
+	help
+	  Set the number of buffer the driver will have access to in each of
+	  its buffer pools.
+
+config WIFI_WINC1500_MAX_PACKET_SIZE
+	int "Maximum size of a packet, in bytes"
+	default 1500
+	help
+	  Set the maximum size of a network packet going through the chip.
+	  This sets the size of each buffer, in each buffer pools.
+	  Do not modify it unless you know what you are doing.
+
+config WIFI_WINC1500_OFFLOAD_MAX_SOCKETS
+	int "Maximum number of sockets that can be managed"
+	default 2
+	help
+	  Set the number of sockets that can be managed through the driver
+	  and the chip.
+
+choice
+	bool "In which region is the chip running?"
+	default WIFI_WINC1500_REGION_NORTH_AMERICA
+
+config WIFI_WINC1500_REGION_NORTH_AMERICA
+	bool "Region North America"
+
+config WIFI_WINC1500_REGION_EUROPE
+	bool "Region Europe"
+
+config WIFI_WINC1500_REGION_ASIA
+	bool "Region Asia"
+
+endchoice
+
+endif # WIFI_WINC1500

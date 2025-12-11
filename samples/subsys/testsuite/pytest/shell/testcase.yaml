@@ -1,0 +1,43 @@
+common:
+  tags:
+    - test_framework
+    - pytest
+    - shell
+  platform_exclude: qemu_rx
+  filter: CONFIG_SERIAL and not CONFIG_SMP and dt_chosen_enabled("zephyr,shell-uart")
+  extra_configs:
+    - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+  min_ram: 40
+  integration_platforms:
+    - native_sim
+    - qemu_cortex_m3
+tests:
+  sample.pytest.shell:
+    harness: pytest
+  sample.pytest.shell.vt100_colors_off:
+    harness: pytest
+    extra_configs:
+      - CONFIG_SHELL_VT100_COLORS=n
+  sample.harness.shell:
+    harness: shell
+    harness_config:
+      shell_commands: &kernel_commands
+        - command: "kernel cycles"
+          expected: "cycles: .* hw cycles"
+        - command: "kernel version"
+          expected: "Zephyr version .*"
+        - command: "kernel sleep 100"
+  sample.harness.shell.vt100_colors_off:
+    harness: shell
+    extra_configs:
+      - CONFIG_SHELL_VT100_COLORS=n
+    harness_config:
+      shell_commands: *kernel_commands
+  sample.pytest.required_app_demo:
+    required_applications:
+      - name: sample.pytest.shell
+      - name: sample.harness.shell
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest_shared_app/test_shared_app.py"

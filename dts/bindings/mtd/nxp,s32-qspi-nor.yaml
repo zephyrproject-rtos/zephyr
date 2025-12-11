@@ -1,0 +1,38 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QSPI NOR flash connected to the NXP S32 QSPI bus.
+
+compatible: "nxp,s32-qspi-nor"
+
+include: "nxp,s32-qspi-device.yaml"
+
+properties:
+  has-32k-erase:
+    type: boolean
+    description: |
+      Set if the memory device supports 32 KiBy block erase operation.
+
+  readoc:
+    type: string
+    enum:
+      - "1-1-1"   # 0x0B
+      - "1-1-2"   # 0x3B
+      - "1-2-2"   # 0xBB
+      - "1-1-4"   # 0x6B
+      - "1-4-4"   # 0xEB
+    description: |
+      Specify the number of data lines and opcode used for reading.
+      If not provided, 1-1-1 will be selected.
+
+  writeoc:
+    type: string
+    enum:
+      - "1-1-1"   # 0x02
+      - "1-1-2"   # 0xA2
+      - "1-1-4"   # 0x32
+      - "1-4-4"   # 0x38
+    description: |
+      Specify the number of data lines and opcode used for writing.
+      If not provided, 1-1-1 will be selected.

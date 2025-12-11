@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_mcp9808
+  full_name: Adafruit MCP9808 High Accuracy I2C Temperature Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

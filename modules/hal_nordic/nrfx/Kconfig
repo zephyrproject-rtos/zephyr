@@ -1,0 +1,395 @@
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_NRFX
+	bool
+
+menu "nrfx drivers"
+	depends on HAS_NRFX
+
+rsource "Kconfig.logging"
+
+config NRFX_ADC
+	bool "ADC driver"
+	depends on $(dt_nodelabel_exists,adc) && SOC_SERIES_NRF51X
+
+config NRFX_CLOCK
+	bool "CLOCK driver"
+	depends on $(dt_nodelabel_exists,clock)
+
+if NRFX_CLOCK
+
+config NRFX_CLOCK_USE_LFRC_CALIBRATION
+	bool "Extend NRFX_CLOCK to use LFRC peripheral"
+
+config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
+	bool "Two stage start sequence of the low frequency clock"
+
+config NRFX_CLOCK_LF_CAL_ENABLED
+	bool "LFRC Calibration enabled"
+
+config NRFX_CLOCK_LF_SRC_RC
+	bool "RC Oscillator"
+
+config NRFX_CLOCK_LF_SRC_XTAL
+	bool "Crystal Oscillator"
+
+config NRFX_CLOCK_LF_SRC_SYNTH
+	depends on !SOC_SERIES_NRF91X
+	bool "Synthesized from HFCLK"
+
+config NRFX_CLOCK_LF_SRC_LOW_SWING
+	depends on SOC_SERIES_NRF52X
+	bool "External low swing"
+
+config NRFX_CLOCK_LF_SRC_FULL_SWING
+	depends on SOC_SERIES_NRF52X
+	bool "External full swing"
+
+endif # NRFX_CLOCK
+
+config NRFX_COMP
+	bool "COMP driver"
+	depends on $(dt_nodelabel_exists,comp)
+
+config NRFX_CRACEN
+	bool "CRACEN drivers"
+	depends on SOC_COMPATIBLE_NRF54LX
+	select NRFX_CRACEN_BSIM_SUPPORT if SOC_SERIES_BSIM_NRFXX
+
+config NRFX_CRACEN_BSIM_SUPPORT
+	bool
+
+config NRFX_EGU
+	bool
+
+config NRFX_EGU0
+	bool "EGU0 driver instance"
+	depends on $(dt_nodelabel_exists,egu0)
+	select NRFX_EGU
+
+config NRFX_EGU1
+	bool "EGU1 driver instance"
+	depends on $(dt_nodelabel_exists,egu1)
+	select NRFX_EGU
+
+config NRFX_EGU2
+	bool "EGU2 driver instance"
+	depends on $(dt_nodelabel_exists,egu2)
+	select NRFX_EGU
+
+config NRFX_EGU3
+	bool "EGU3 driver instance"
+	depends on $(dt_nodelabel_exists,egu3)
+	select NRFX_EGU
+
+config NRFX_EGU4
+	bool "EGU4 driver instance"
+	depends on $(dt_nodelabel_exists,egu4)
+	select NRFX_EGU
+
+config NRFX_EGU5
+	bool "EGU5 driver instance"
+	depends on $(dt_nodelabel_exists,egu5)
+	select NRFX_EGU
+
+config NRFX_EGU10
+	bool "EGU10 driver instance"
+	depends on $(dt_nodelabel_exists,egu10)
+	select NRFX_EGU
+
+config NRFX_EGU20
+	bool "EGU20 driver instance"
+	depends on $(dt_nodelabel_exists,egu20)
+	select NRFX_EGU
+
+config NRFX_EGU020
+	bool "EGU020 driver instance"
+	depends on $(dt_nodelabel_exists,egu020)
+	select NRFX_EGU
+
+config NRFX_EGU130
+	bool "EGU130 driver instance"
+	depends on $(dt_nodelabel_exists,egu130)
+	select NRFX_EGU
+
+config NRFX_GPIOTE
+	bool
+
+config NRFX_GPIOTE0
+	bool "GPIOTE0 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote0)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE1
+	bool "GPIOTE1 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote1)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE20
+	bool "NRFX_GPIOTE20 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote20)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE30
+	bool "NRFX_GPIOTE30 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote30)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE130
+	bool "NRFX_GPIOTE130 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote130)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE131
+	bool "NRFX_GPIOTE131 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote131)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE_NONUNIFORM_INSTANCES
+	def_bool $(dt_nodelabel_enabled,gpiote0)
+	depends on $(dt_nodelabel_bool_prop,gpiote0,fixed-channels-supported)
+
+config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
+	int "Number of event handlers"
+	depends on NRFX_GPIOTE
+	range 1 15
+	help
+	  Specifies number of handlers that can be registered to nrfx_gpiote driver
+	  by the user.
+
+config NRFX_GPPI
+	bool "Generic PPI layer"
+	help
+	   Enable the nrfx_gppi utilities providing unified API for creating PPI
+	   connections across SoC families.
+
+config NRFX_GPPI_V1
+	bool "GPPI layer legacy"
+	depends on NRFX_GPPI
+	default y if SOC_SERIES_NRF54HX
+	help
+	  When enabled then legacy version of Generic PPI layer is used.
+
+config NRFX_GRTC
+	bool "GRTC driver"
+	depends on $(dt_nodelabel_exists,grtc)
+
+config NRFX_I2S
+	bool "I2S driver"
+
+config NRFX_IPC
+	bool "IPC driver"
+	depends on $(dt_nodelabel_exists,ipc)
+
+config NRFX_LPCOMP
+	bool "LPCOMP driver"
+	depends on $(dt_nodelabel_exists,comp) && !SOC_NRF52810 && !SOC_NRF52811 && !SOC_NRF52820
+
+config NRFX_MRAMC
+	bool "MRAMC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC))
+
+config NRFX_NFCT
+	bool "NFCT driver"
+	depends on $(dt_nodelabel_exists,nfct)
+	select NRFX_TIMER
+
+config NRFX_NVMC
+	bool "NVMC driver"
+	depends on $(dt_nodelabel_exists,flash_controller)
+
+config NRFX_PDM
+	bool "PDM driver"
+
+config NRFX_POWER
+	bool "POWER driver"
+	depends on $(dt_nodelabel_exists,power)
+	# On SoCs featuring the USBREG peripheral, the POWER driver uses
+	# internally the USBREG driver.
+	select NRFX_USBREG if $(dt_nodelabel_exists,usbreg)
+
+config NRFX_PWM
+	bool "PWM driver"
+
+config NRFX_QDEC
+	bool "QDEC driver"
+
+config NRFX_QSPI
+	bool "QSPI driver"
+	depends on $(dt_nodelabel_exists,qspi)
+
+config NRFX_RNG
+	bool "RNG driver"
+	depends on $(dt_nodelabel_exists,rng)
+
+config NRFX_RRAMC
+	bool "RRAMC driver"
+	depends on $(dt_nodelabel_exists,rram_controller)
+
+config NRFX_RTC
+	bool
+
+config NRFX_RTC0
+	bool "RTC0 driver instance"
+	depends on $(dt_nodelabel_exists,rtc0)
+	select NRFX_RTC
+
+config NRFX_RTC1
+	bool "RTC1 driver instance"
+	depends on $(dt_nodelabel_exists,rtc1)
+	select NRFX_RTC
+
+config NRFX_RTC2
+	bool "RTC2 driver instance"
+	depends on $(dt_nodelabel_exists,rtc2)
+	select NRFX_RTC
+
+config NRFX_RTC130
+	bool "RTC130 driver instance"
+	depends on $(dt_nodelabel_exists,rtc130)
+	select NRFX_RTC
+
+config NRFX_RTC131
+	bool "RTC131 driver instance"
+	depends on $(dt_nodelabel_exists,rtc131)
+	select NRFX_RTC
+
+config NRFX_SAADC
+	bool "SAADC driver"
+	depends on $(dt_nodelabel_exists,adc) && !SOC_SERIES_NRF51X
+
+config NRFX_SPI
+	bool
+
+config NRFX_SPI0
+	bool "SPI0 driver instance"
+	depends on $(dt_nodelabel_exists,spi0) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	select NRFX_SPI
+
+config NRFX_SPI1
+	bool "SPI1 driver instance"
+	depends on $(dt_nodelabel_exists,spi1) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	select NRFX_SPI
+
+config NRFX_SPI2
+	bool "SPI2 driver instance"
+	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52X
+	select NRFX_SPI
+
+DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
+
+config NRFX_SPIM
+	bool "SPIM driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
+
+config NRFX_SPIS
+	bool "SPIS driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIS))
+
+config NRFX_SYSTICK
+	bool "SYSTICK driver"
+	depends on CPU_CORTEX_M_HAS_SYSTICK
+
+config NRFX_TBM
+	bool "TBM driver"
+	depends on $(dt_nodelabel_exists,tbm)
+
+config NRFX_TEMP
+	bool "TEMP driver"
+	depends on $(dt_nodelabel_exists,temp)
+
+config NRFX_TIMER
+	bool "TIMER driver"
+
+config NRFX_TWI
+	bool
+
+config NRFX_TWI0
+	bool "TWI0 driver instance"
+	depends on $(dt_nodelabel_exists,i2c0) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	select NRFX_TWI
+
+config NRFX_TWI1
+	bool "TWI1 driver instance"
+	depends on $(dt_nodelabel_exists,i2c1) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	select NRFX_TWI
+
+config NRFX_TWIM
+	bool "NRFX driver for TWIM peripheral"
+
+config NRFX_TWIS
+	bool "NRFX driver for TWIS peripheral"
+
+config NRFX_UART
+	bool
+
+config NRFX_UART0
+	bool "UART0 driver instance"
+	depends on $(dt_nodelabel_exists,uart0) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	select NRFX_UART
+
+config NRFX_UARTE
+	bool "UARTE driver"
+
+config NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG
+	bool "UARTE GPIO configuration support"
+	depends on NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG
+	bool "UARTE PSEL configuration support"
+	depends on NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_TX_LINK
+	bool "UARTE TX transfer linking support"
+	depends on NRFX_UARTE
+
+config NRFX_UARTE_CONFIG_RX_CACHE_ENABLED
+	bool "UARTE RX caching support"
+	depends on NRFX_UARTE
+	help
+	  Feature might be enabled on platforms which has limitations regarding addresses
+	  to which receiver can write data. If enabled then internal driver buffers
+	  (cache buffers) are used for DMA transfers and data is copied to the user buffer.
+
+config NRFX_USBREG
+	bool "USBREG driver"
+	depends on $(dt_nodelabel_exists,usbreg)
+
+config NRFX_WDT
+	bool
+
+menu "Peripheral Resource Sharing module"
+
+config NRFX_PRS
+	bool
+
+config NRFX_PRS_BOX_0
+	bool "PRS box 0"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_1
+	bool "PRS box 1"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_2
+	bool "PRS box 2"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_3
+	bool "PRS box 3"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_4
+	bool "PRS box 4"
+	select NRFX_PRS
+
+endmenu
+
+config NRFX_RESERVED_RESOURCES_HEADER
+	string
+	default "nrfx_reserved_resources.h"
+
+endmenu # "nrfx drivers"

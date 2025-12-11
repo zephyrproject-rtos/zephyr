@@ -1,0 +1,6 @@
+board:
+  name: numaker_m3334ki
+  full_name: NUMAKER M3334KI
+  vendor: nuvoton
+  socs:
+  - name: m333xxx

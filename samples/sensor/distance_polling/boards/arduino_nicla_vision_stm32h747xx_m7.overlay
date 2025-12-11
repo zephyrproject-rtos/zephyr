@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Thiyagarajan Pandiyan <psvthiyagarajan@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		distance0 = &vl53l1x;
+	};
+};

@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SPI controller
+
+compatible: "renesas,ra-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  reg:
+    required: true
+
+  tx-dtc:
+    type: boolean
+
+  rx-dtc:
+    type: boolean
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

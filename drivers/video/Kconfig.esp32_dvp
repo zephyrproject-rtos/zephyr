@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_ESP32
+	bool "Video interface driver"
+	select DMA
+	depends on DT_HAS_ESPRESSIF_ESP32_LCD_CAM_ENABLED
+	default y
+	help
+	  This option enables the video interface for the esp32s3.

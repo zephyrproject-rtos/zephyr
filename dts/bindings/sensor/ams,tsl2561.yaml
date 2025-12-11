@@ -1,0 +1,28 @@
+# Copyright (c) 2023, Gustavo Silva
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    OSRAM ams TSL2561 light sensor.
+
+compatible: "ams,tsl2561"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  integration-time:
+    type: int
+    default: 402
+    description: |
+      ADC integration time in ms. The default value matches Timing Register's value at power on.
+    enum:
+      - 13
+      - 101
+      - 402
+  gain:
+    type: int
+    default: 16
+    description: |
+      ADC gain factor. The default value matches Timing Register's value at power on.
+    enum:
+      - 1
+      - 16

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CH32V00X
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "ch32v00x" if SOC_SERIES_CH32V00X
+
+rsource "Kconfig.soc.*"

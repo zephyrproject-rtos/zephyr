@@ -1,0 +1,22 @@
+# Raspberry Pi RP2350 MCU line
+
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RP2350
+
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	default y if RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	default y if !RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
+
+config NUM_IRQS
+	default 52
+
+DT_CLK_SYS_PATH := $(dt_nodelabel_path,clk_sys)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CLK_SYS_PATH),clock-frequency)
+
+endif # SOC_SERIES_RP2350

@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f1/stm32f105.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f107", "st,stm32f1", "simple-bus";
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
+			reg = <0x40020400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
+			interrupts = <56 0 57 0 58 0 59 0 60 0>;
+			status = "disabled";
+		};
+
+		ethernet@40028000 {
+			reg = <0x40028000 0x2000>;
+			clock-names = "stm-eth";
+			clocks = <&rcc STM32_CLOCK(AHB1, 14)>;
+
+			mac: ethernet {
+				compatible = "st,stm32-ethernet";
+				interrupts = <61 0>;
+				clock-names = "mac-clk-tx", "mac-clk-rx";
+				clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
+					 <&rcc STM32_CLOCK(AHB1, 16)>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+	};
+};

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fake_stepper_driver: fake_stepper_driver {
+		compatible = "zephyr,fake-stepper-drv";
+		status = "okay";
+	};
+
+	fake_stepper_controller: fake_stepper_controller {
+		compatible = "zephyr,fake-stepper";
+		status = "okay";
+	};
+};

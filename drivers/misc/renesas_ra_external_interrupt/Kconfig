@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas RA External Interrupt Option
+
+config RENESAS_RA_EXTERNAL_INTERRUPT
+	bool "Renesas RA External Interrupt Driver"
+	depends on DT_HAS_RENESAS_RA_EXTERNAL_INTERRUPT_ENABLED
+	default y
+	help
+	  Enable config options for Renesas RA external interrupt

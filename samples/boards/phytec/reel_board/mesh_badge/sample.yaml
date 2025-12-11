@@ -1,0 +1,10 @@
+sample:
+  description: reel board mesh badge sample
+  name: mesh badge
+tests:
+  sample.board.reel_board.mesh_badge:
+    platform_allow: reel_board
+    tags:
+      - samples
+      - sensor
+    harness: sensor

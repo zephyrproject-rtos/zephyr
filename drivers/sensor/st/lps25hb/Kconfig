@@ -1,0 +1,19 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LPS25HB
+	bool "LPS25HB pressure and temperature"
+	default y
+	depends on DT_HAS_ST_LPS25HB_PRESS_ENABLED
+	select I2C
+	help
+	  Enable driver for LPS25HB I2C-based pressure and temperature
+	  sensor.
+
+config LPS25HB_SAMPLING_RATE
+	int "Output data rate"
+	default 25
+	depends on LPS25HB
+	help
+	  Sensor output data rate expressed in samples per second.
+	  Data rates supported by the chip are 1, 7, 13, 25.

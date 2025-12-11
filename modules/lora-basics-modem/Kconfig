@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Top-level configuration file for LoRa Basics Modem containing LoRa
+# transceiver drivers and LBM LoRaWAN stack
+
+config ZEPHYR_LORA_BASICS_MODEM_MODULE
+	bool
+
+config USE_LORA_BASICS_MODEM_DRIVERS
+	bool

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox0 0>, <&mbox0 0>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&mbox0 {
+	interrupts = <94 1>;
+	status = "okay";
+};

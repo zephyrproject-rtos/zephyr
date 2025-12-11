@@ -1,0 +1,6 @@
+board:
+  name: nucleo_c092rc
+  full_name: Nucleo C092RC
+  vendor: st
+  socs:
+    - name: stm32c092xx

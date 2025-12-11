@@ -1,0 +1,29 @@
+# LPC LPC51U68 MCU line
+
+# Copyright (c) 2021 metraTec GmbH
+# Copyright 2024 NXP
+# SPDX-License Identifier: Apache-2.0
+
+config SOC_SERIES_LPC51U68
+	bool
+	select SOC_FAMILY_LPC
+
+config SOC_SERIES
+	default "lpc51u68" if SOC_SERIES_LPC51U68
+
+config SOC_LPC51U68
+	bool
+	select SOC_SERIES_LPC51U68
+
+config SOC
+	default "lpc51u68" if SOC_LPC51U68
+
+config SOC_PART_NUMBER_LPC51U68JBD48
+	bool
+
+config SOC_PART_NUMBER_LPC51U68JBD64
+	bool
+
+config SOC_PART_NUMBER
+	default "LPC51U68JBD48" if SOC_PART_NUMBER_LPC51U68JBD48
+	default "LPC51U68JBD64" if SOC_PART_NUMBER_LPC51U68JBD64

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g4/stm32g491Xe.dtsi>
+#include <st/g4/stm32g491r(c-e)tx-pinctrl.dtsi>
+#include <mem.h>
+#include <freq.h>
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mb85rs1mt: mb85rs1mt@0 {
+		status = "okay";
+		compatible = "fujitsu,mb85rsxx";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		size = <DT_SIZE_K(128)>;
+	};
+};

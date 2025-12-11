@@ -1,0 +1,28 @@
+# HW spinlock configuration options
+
+# Copyright (c) 2023 Sequans Communications.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HWSPINLOCK
+	bool "HW spinlock Support"
+	help
+	  Include support for HW spinlock.
+
+if HWSPINLOCK
+
+module = HWSPINLOCK
+module-str = hwspinlock
+source "subsys/logging/Kconfig.template.log_config"
+
+config HWSPINLOCK_INIT_PRIORITY
+	int "HW spinlock init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  HW spinlock driver device initialization priority.
+
+# zephyr-keep-sorted-start
+source "drivers/hwspinlock/Kconfig.sqn"
+source "drivers/hwspinlock/Kconfig.test"
+# zephyr-keep-sorted-stop
+
+endif

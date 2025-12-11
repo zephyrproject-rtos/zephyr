@@ -1,0 +1,8 @@
+tests:
+  drivers.sensor.accel:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

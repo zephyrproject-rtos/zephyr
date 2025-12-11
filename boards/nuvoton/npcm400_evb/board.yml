@@ -1,0 +1,6 @@
+board:
+  name: npcm400_evb
+  full_name: NPCM400_EVB
+  vendor: nuvoton
+  socs:
+  - name: npcm400

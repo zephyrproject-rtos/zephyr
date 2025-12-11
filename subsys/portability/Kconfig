@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Portability"
+
+source "subsys/portability/cmsis_rtos_v1/Kconfig"
+
+source "subsys/portability/cmsis_rtos_v2/Kconfig"
+
+endmenu

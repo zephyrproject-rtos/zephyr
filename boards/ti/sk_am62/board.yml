@@ -1,0 +1,6 @@
+board:
+  name: sk_am62
+  full_name: SK-AM62 Evaluation board
+  vendor: ti
+  socs:
+  - name: am6234

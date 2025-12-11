@@ -1,0 +1,39 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX synchronized I/O"
+
+config POSIX_FSYNC
+	bool "Support for fsync()"
+	help
+	  Select 'y' here and Zephyr will provide an implementation of fsync().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html
+
+
+config POSIX_SYNCHRONIZED_IO
+	bool "POSIX synchronized I/O"
+	select POSIX_FSYNC
+	help
+	  Select 'y' here and Zephyr will provide an implementation of fdatasync(), fsync(),
+	  and msync().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/msync.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/fdatasync.html
+
+if POSIX_FSYNC
+
+# These options are intended to be used for compatibility with external POSIX
+# implementations such as those in Newlib or Picolibc.
+
+config POSIX_FILE_SYSTEM_ALIAS_FSYNC
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for fsync() as _fsync().
+
+endif # POSIX_FSYNC
+
+endmenu

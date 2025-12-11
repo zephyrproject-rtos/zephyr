@@ -1,0 +1,57 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Fields for I3C Controllers
+
+include: base.yaml
+
+bus: [i3c, i2c]
+
+properties:
+  "#address-cells":
+    required: true
+    const: 3
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  i3c-scl-hz:
+    type: int
+    description: |
+      Frequency of the SCL signal used for I3C transfers. When undefined,
+      use the controller default or as specified by the I3C specification.
+
+  i2c-scl-hz:
+    type: int
+    description: |
+      Frequency of the SCL signal used for I2C transfers. When undefined
+      and there are I2C devices attached to the bus, look at the Legacy
+      Virtual Register (LVR) of all connected I2C devices to determine
+      the maximum allowed frequency.
+
+  primary-controller-da:
+    type: int
+    description: |
+      This is the self assigned dynamic address of the I3C controller. This
+      is the address is used to communicate with itself after a handoff by
+      a secondary controller. This is only used if the controller is a primary
+      controller.
+
+  od-thigh-min-ns:
+    type: int
+    default: 24
+    description: |
+      Minimum high clock pulse length (ns) in Open-Drain mode for pure bus.
+      The default value is from Section 4.3.11.2 & Table 49 of the I3C
+      Basic Specifiction v1.2 (16-Dec-2024).
+
+  od-tlow-min-ns:
+    type: int
+    default: 200
+    description: |
+      Minimum low clock pulse length (ns) in Open-Drain mode.
+      The default value is from Section 4.3.11.2 & Table 49 of the I3C
+      Basic Specifiction v1.2 (16-Dec-2024).
+      Specifiction.

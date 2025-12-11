@@ -1,0 +1,13 @@
+# Copyright (c) 2020,2021 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_ARC
+
+configdefault NET_L2_ETHERNET
+	default y
+
+# Required to satisfy dependency of networking stack on RNG
+configdefault TEST_RANDOM_GENERATOR
+	default y if NETWORKING
+
+endif

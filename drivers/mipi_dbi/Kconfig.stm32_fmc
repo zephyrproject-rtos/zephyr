@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_STM32_FMC
+	bool "MIPI DBI driver for STM32 FMC"
+	default y
+	depends on DT_HAS_ST_STM32_FMC_MIPI_DBI_ENABLED
+	select MEMC
+	help
+	  Enable support for MIPI DBI driver for controller based on the stm32 FMC.
+
+if MIPI_DBI_STM32_FMC
+
+config MIPI_DBI_STM32_FMC_MEM_BARRIER
+	bool "Adds memory barrier after every address and data register access"
+	default y
+
+endif # MIPI_DBI_STM32_FMC

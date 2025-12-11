@@ -1,0 +1,18 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties for PS/2 devices
+
+include: base.yaml
+
+bus: ps2
+
+properties:
+  "#address-cells":
+    type: int
+    required: true
+    const: 1
+  "#size-cells":
+    type: int
+    required: true
+    const: 0

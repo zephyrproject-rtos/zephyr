@@ -1,0 +1,95 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADC based analog axis input device
+
+  Implement an input device generating absolute axis events by periodically
+  reading from some ADC channels.
+
+  Example configuration:
+
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+  analog_axis {
+          compatible = "analog-axis";
+          poll-period-ms = <15>;
+          axis-x {
+                  io-channels = <&adc 0>;
+                  in-deadzone = <50>;
+                  in-min = <100>;
+                  in-max = <800>;
+                  zephyr,axis = <INPUT_ABS_X>;
+          };
+  };
+
+compatible: "analog-axis"
+
+include: base.yaml
+
+properties:
+  poll-period-ms:
+    type: int
+    default: 15
+    description: |
+      How often to get new ADC samples for the various configured axes in
+      milliseconds. Defaults to 15ms if unspecified.
+
+child-binding:
+  properties:
+    io-channels:
+      type: phandle-array
+      required: true
+      description: |
+        ADC IO channel to use.
+
+    out-min:
+      type: int
+      default: 0
+      description: |
+        Minimum value to output on input events. Defaults to 0 if unspecified.
+
+    out-max:
+      type: int
+      default: 255
+      description: |
+        Maximum value to output on input events. Defaults to 255 if
+        unspecified.
+
+    in-deadzone:
+      type: int
+      default: 0
+      description: |
+        Deadzone for the input center value. If specified input values between
+        the center of the range plus or minus this value will be reported as
+        center. Defaults to 0, no deadzone.
+
+    in-min:
+      type: int
+      required: true
+      description: |
+        Input value that corresponds to the minimum output value.
+
+    in-max:
+      type: int
+      required: true
+      description: |
+        Input value that corresponds to the maximum output value.
+
+    zephyr,axis:
+      type: int
+      required: true
+      description: |
+        The input code for the axis to report for the device, typically any of
+        INPUT_ABS_*.
+
+    invert-input:
+      type: boolean
+      description: |
+        If set, invert the raw ADC value before processing it. Useful for
+        differential channels.
+
+    invert-output:
+      type: boolean
+      description: |
+        If set, invert the output value.

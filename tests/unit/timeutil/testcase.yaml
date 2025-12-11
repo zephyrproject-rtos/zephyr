@@ -1,0 +1,10 @@
+common:
+  tags: timeutil
+  type: unit
+
+tests:
+  utilities.time:
+    extra_args: M64_MODE=0
+
+  utilities.time.64bit:
+    extra_args: M64_MODE=1

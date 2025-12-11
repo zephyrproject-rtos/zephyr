@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/gd32f3x0.h>
+#include <zephyr/dt-bindings/clock/gd32f3x0-clocks.h>
+#include <zephyr/dt-bindings/reset/gd32f3x0.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			clock-frequency = <DT_FREQ_M(108)>;
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		rcu: reset-clock-controller@40021000 {
+			compatible = "gd,gd32-rcu";
+			reg = <0x40021000 0x400>;
+			status = "okay";
+
+			cctl: clock-controller {
+				compatible = "gd,gd32-cctl";
+				#clock-cells = <1>;
+				status = "okay";
+			};
+
+			rctl: reset-controller {
+				compatible = "gd,gd32-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
+		};
+
+		fmc: flash-controller@40022000 {
+			compatible = "gd,gd32-flash-controller";
+			reg = <0x40022000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "gd,gd32-nv-flash-v1", "soc-nv-flash";
+				write-block-size = <2>;
+				max-erase-time-ms = <300>;
+				page-size = <DT_SIZE_K(1)>;
+			};
+		};
+
+		usart0: usart@40013800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40013800 0x400>;
+			interrupts = <27 0>;
+			clocks = <&cctl GD32_CLOCK_USART0>;
+			resets = <&rctl GD32_RESET_USART0>;
+			status = "disabled";
+		};
+
+		usart1: usart@40004400 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004400 0x400>;
+			interrupts = <28 0>;
+			clocks = <&cctl GD32_CLOCK_USART1>;
+			resets = <&rctl GD32_RESET_USART1>;
+			status = "disabled";
+		};
+
+		adc0: adc@40012400 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012400 0x400>;
+			interrupts = <12 0>;
+			rcu-clock-source = <GD32_RCU_ADCCK_APB2_DIV4>;
+			clocks = <&cctl GD32_CLOCK_ADC>;
+			resets = <&rctl GD32_RESET_ADC>;
+			channels = <16>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dma: dma@40020000 {
+			compatible = "gd,gd32-dma";
+			reg = <0x40020000 0x400>;
+			interrupts = <9 0>, <10 0>, <11 0>, <48 0>;
+			clocks = <&cctl GD32_CLOCK_DMA>;
+			dma-channels = <7>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		fwdgt: watchdog@40003000 {
+			compatible = "gd,gd32-fwdgt";
+			reg = <0x40003000 0x400>;
+			status = "disabled";
+		};
+
+		wwdgt: watchdog@40002c00 {
+			compatible = "gd,gd32-wwdgt";
+			reg = <0x40002C00 0x400>;
+			clocks = <&cctl GD32_CLOCK_WWDGT>;
+			resets = <&rctl GD32_RESET_WWDGT>;
+			interrupts = <0 0>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@48000000 {
+			compatible = "gd,gd32-pinctrl-af";
+			reg = <0x48000000 0x1800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpioa: gpio@48000000 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000000 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOA>;
+				resets = <&rctl GD32_RESET_GPIOA>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@48000400 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000400 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOB>;
+				resets = <&rctl GD32_RESET_GPIOB>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@48000800 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000800 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOC>;
+				resets = <&rctl GD32_RESET_GPIOC>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@48000c00 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000c00 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOD>;
+				resets = <&rctl GD32_RESET_GPIOD>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@48001400 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48001400 0x400>;
+				clocks = <&cctl GD32_CLOCK_GPIOF>;
+				resets = <&rctl GD32_RESET_GPIOF>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

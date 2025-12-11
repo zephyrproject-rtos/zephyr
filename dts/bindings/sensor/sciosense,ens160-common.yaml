@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Gustavo Silva
+# SPDX-License-Identifier: Apache-2.0
+
+description: ScioSense ENS160 Digital Metal Oxide Multi-Gas Sensor
+
+compatible: "sciosense,ens160"
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The interrupt pin of ENS160.

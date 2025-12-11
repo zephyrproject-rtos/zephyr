@@ -1,0 +1,55 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DSP
+	bool "DSP subsystem"
+	help
+	  Include the DSP (Digital Signal Processing) subsystem as a part of the
+	  Zephyr build. This enables applications to include and call into the
+	  <zephyr/dsp/dsp.h> header.
+
+if DSP
+
+config DSP_BACKEND_HAS_STATIC
+	bool
+
+config DSP_BACKEND_HAS_AGU
+	bool
+
+config DSP_BACKEND_HAS_XDATA_SECTION
+	bool
+
+choice DSP_BACKEND
+	prompt "DSP library backend selection"
+	default DSP_BACKEND_CMSIS if CMSIS_DSP
+	default DSP_BACKEND_ARCMWDT if ARC && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	default DSP_BACKEND_CUSTOM
+
+config DSP_BACKEND_CMSIS
+	bool "Use the CMSIS-DSP library as the math backend"
+	depends on CMSIS_DSP
+	select DSP_BACKEND_HAS_STATIC
+	help
+	  Implement the various zephyr DSP functions using the CMSIS-DSP library. This feature
+	  requires the CMSIS module to be selected.
+
+config DSP_BACKEND_CUSTOM
+	bool "Do not use any Zephyr backends for DSP"
+	help
+	  Rely on the application to provide a custom DSP backend. The implementation should be
+	  added to the 'zdsp' build target by the application or one of its modules.
+
+config DSP_BACKEND_ARCMWDT
+	bool "Use the mwdt library as the math backend"
+	depends on ARCMWDT_LIBC
+	depends on CMSIS_DSP
+	select DSP_BACKEND_HAS_STATIC
+	select DSP_BACKEND_HAS_AGU
+	select DSP_BACKEND_HAS_XDATA_SECTION
+	help
+	  Implement the various zephyr DSP functions using the MWDT-DSP library. This feature
+	  requires the MetaWare toolchain and CMSIS module to be selected.
+
+endchoice
+
+endif # DSP

@@ -1,0 +1,13 @@
+identifier: iotdk
+name: IoT Development Kit
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

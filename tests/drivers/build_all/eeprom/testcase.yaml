@@ -1,0 +1,26 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - eeprom
+tests:
+  drivers.eeprom.build:
+    min_ram: 32
+    min_flash: 128
+    platform_exclude: serpente
+    depends_on:
+      - gpio
+      - i2c
+      - spi
+
+  drivers.eeprom.emul.build:
+    min_ram: 64
+    min_flash: 128
+    platform_exclude: serpente
+    depends_on:
+      - gpio
+      - i2c
+      - spi
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_EEPROM_AT2X_EMUL=y

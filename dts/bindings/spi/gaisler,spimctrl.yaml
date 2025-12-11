@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Frontgrade Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+description: GRLIB SPIMCTRL
+
+compatible: "gaisler,spimctrl"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

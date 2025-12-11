@@ -1,0 +1,12 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This device is used to measure VBUS on a Type-C Port and to
+    discharge VBUS when needed.
+    It should be used as a child node for a specific TCPCI compliant device. The I2C address is
+    taken from the parent of this node.
+
+compatible: "zephyr,usb-c-vbus-tcpci"
+
+include: [base.yaml]

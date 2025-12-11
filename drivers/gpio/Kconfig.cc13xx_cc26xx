@@ -1,0 +1,11 @@
+# TI CC13xx / CC26xx GPIO configuration options
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx / CC26xx GPIO driver"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_GPIO_ENABLED
+	help
+	  Enable the TI SimpleLink CC13xx / CC26xx GPIO driver.

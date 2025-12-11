@@ -1,0 +1,19 @@
+# ESP32 Pulse Counter configuration
+
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PCNT_ESP32
+	bool "ESP32 Pulse Counter driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_PCNT_ENABLED
+	help
+	  This option enables the PCNT driver for ESP32 family of
+	  processors.
+
+config PCNT_ESP32_TRIGGER
+	bool "Trigger support"
+	depends on PCNT_ESP32
+	default y
+	help
+	  Enable trigger support for the PCNT.

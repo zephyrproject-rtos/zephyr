@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+description: |
+  TMAG3001 Low-Power 3D Linear and Angle Hall-Effect Sensor With I2C Interface
+  and Wake Up Detection in WCSP.
+
+  See the specification for the default I2C address.
+
+  The specification of the sensor can be found at:
+    https://www.ti.com/lit/ds/symlink/tmag3001.pdf
+
+  Currently, this driver shares implementation with tmag5273. When setting the
+  enum properties in a .dts or .dtsi file you may include
+  `zephyr/dt-bindings/sensor/tmag5273.h` and use the macros defined there.
+
+compatible: "ti,tmag3001"
+
+include: ["ti,tmag5273.yaml"]

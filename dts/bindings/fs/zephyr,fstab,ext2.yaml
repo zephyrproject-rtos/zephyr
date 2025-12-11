@@ -1,0 +1,16 @@
+# Copyright (C) 2025 Arch-Embedded B.V.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Pre-defined EXT2 file systems.
+
+compatible: "zephyr,fstab,ext2"
+
+include: zephyr,fstab-common.yaml
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      The disk name where the file system is mounted.

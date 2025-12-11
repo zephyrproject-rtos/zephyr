@@ -1,0 +1,22 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic GNSS NMEA receiver
+
+  Implement a generic NMEA based GNSS device.
+
+  Example configuration:
+
+  &uart0 {
+          current-speed = <9600>;
+          ...
+          gnss: gnss-nmea-generic {
+                  compatible = "gnss-nmea-generic";
+          };
+  };
+
+compatible: "gnss-nmea-generic"
+
+include:
+  - uart-device.yaml

@@ -1,0 +1,43 @@
+#
+# Schema to validate a YAML file providing the list of configurations
+# under quarantine
+#
+# We load this with pykwalify
+# (http://pykwalify.readthedocs.io/en/unstable/validation-rules.html),
+# a YAML structure validator, to validate the YAML files that provide
+# a list of configurations (scenarios + platforms) under quarantine
+#
+type: seq
+matching: all
+sequence:
+  - type: map
+    required: true
+    matching: all
+    mapping:
+      "scenarios":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+          - unique: true
+      "platforms":
+        required: false
+        type: seq
+        sequence:
+          - type: str
+          - unique: true
+      "architectures":
+        required: false
+        type: seq
+        sequence:
+          - type: str
+          - unique: true
+      "simulations":
+        required: false
+        type: seq
+        sequence:
+          - type: str
+          - unique: true
+      "comment":
+        type: str
+        required: false

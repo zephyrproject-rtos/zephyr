@@ -1,0 +1,11 @@
+# STMicroelectronics STM32C011xx MCU
+
+# Copyright (c) 2024 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32C011XX
+
+config NUM_IRQS
+	default 29
+
+endif # SOC_STM32C011XX

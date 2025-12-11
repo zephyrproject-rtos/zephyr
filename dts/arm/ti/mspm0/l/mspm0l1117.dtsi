@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/mspm0/l/mspm0l111x.dtsi>
+
+/ {
+	soc {
+		flash0: serial-flash@0 {
+			reg = <0x0 DT_SIZE_K(128)>;
+		};
+	};
+};

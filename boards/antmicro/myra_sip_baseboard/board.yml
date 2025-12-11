@@ -1,0 +1,6 @@
+board:
+  name: myra_sip_baseboard
+  full_name: Myra SiP Baseboard
+  vendor: antmicro
+  socs:
+    - name: myra

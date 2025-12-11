@@ -1,0 +1,47 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/rtc.h)
+
+zephyr_library()
+
+zephyr_library_sources(rtc_utils.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_SHELL rtc_shell.c)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE rtc_handlers.c)
+
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_RTC_AM1805 rtc_am1805.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_AMBIQ rtc_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_ATMEL_SAM rtc_sam.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_ATMEL_SAM0 rtc_sam0.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_BQ32002 rtc_bq32002.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_COUNTER rtc_counter.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_DS1307 rtc_ds1307.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_DS1337 rtc_ds1337.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_DS3231 rtc_ds3231.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_EMUL rtc_emul.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_FAKE rtc_fake.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_INFINEON_CAT1 rtc_infineon.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_MCHP_G1 rtc_mchp_g1.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_MOTOROLA_MC146818 rtc_mc146818.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_NUMAKER rtc_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_NXP_IRTC rtc_nxp_irtc.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_PCF2123 rtc_pcf2123.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_PCF85063A rtc_pcf85063a.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_PCF8523 rtc_pcf8523.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_PCF8563 rtc_pcf8563.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RENESAS_RA rtc_renesas_ra.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RPI_PICO rtc_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RTS5912 rtc_rts5912.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RV3028 rtc_rv3028.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RV3032 rtc_rv3032.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RV8263 rtc_rv8263.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RV8803 rtc_rv8803.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_RX8130CE rtc_rx8130ce.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_SF32LB rtc_sf32lb.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_SILABS_SIWX91X rtc_silabs_siwx91x.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_SMARTBOND rtc_smartbond.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_STM32 rtc_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_TI_MSPM0 rtc_ti_mspm0.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_XMC4XXX rtc_xmc4xxx.c)
+# zephyr-keep-sorted-stop

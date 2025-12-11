@@ -1,0 +1,12 @@
+description: GRLIB GPTIMER
+
+compatible: "gaisler,gptimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

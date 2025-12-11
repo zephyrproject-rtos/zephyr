@@ -1,0 +1,30 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for USB BC1.2 devices
+
+include: base.yaml
+
+properties:
+  charging-mode:
+    required: true
+    type: string
+    description: |
+      Define the charging port mode supported by the BC1.2 device.
+      Charging modes
+      - BC12_TYPE_NONE: Device does not support charging and only supports
+                        portable-device mode.
+      - BC12_TYPE_SDP:  Device supports SDP (standard downstream port)
+                        charging. The USB data lines are active and the
+                        maximum current is limited to 0.5A.
+      - BC12_TYPE_CDP:  Device supports CDP (charging downstream port)
+                        charging. The USB data lines are active and the
+                        maximum current is limited to 1.5A.
+      - BC12_TYPE_DCP:  Device supports DCP (dedicated charging port)
+                        charging. The USB data lines are disabled and the
+                        maximum current is limited to 1.5A.
+    enum:
+      - BC12_TYPE_NONE
+      - BC12_TYPE_SDP
+      - BC12_TYPE_CDP
+      - BC12_TYPE_DCP

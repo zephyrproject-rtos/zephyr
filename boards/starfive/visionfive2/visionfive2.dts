@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 Kanak Shilledar <kanakshilledar111@protonmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "starfive/jh7110-visionfive-v2.dtsi"
+
+/ {
+	model = "StarFive VisionFive V2";
+	compatible = "starfive,visionfive-v2";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &l2lim;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

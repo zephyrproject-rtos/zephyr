@@ -1,0 +1,8 @@
+board:
+  name: stm32l562e_dk
+  full_name: STM32L562E-DK Discovery
+  vendor: st
+  socs:
+    - name: stm32l562xx
+      variants:
+        - name: ns

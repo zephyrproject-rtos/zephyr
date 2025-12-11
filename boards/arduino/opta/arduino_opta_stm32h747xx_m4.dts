@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2023 Felipe Neves
+ * Copyright (c) 2024 DNDG srl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m4.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_opta-common.dtsi"
+
+/ {
+	model = "Arduino OPTA M4 core Programmable Logic Controller";
+	compatible = "arduino,opta-m4";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot1_partition;
+	};
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "unused";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-0";
+			reg = <0x00080000 DT_SIZE_K(512)>;
+		};
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(240)>;
+};

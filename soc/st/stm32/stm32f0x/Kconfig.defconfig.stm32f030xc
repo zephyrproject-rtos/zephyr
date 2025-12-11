@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Brian Kubisiak <brian@kubisiak.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F030XC
+
+config NUM_IRQS
+	default 31
+
+endif # SOC_STM32F030XC

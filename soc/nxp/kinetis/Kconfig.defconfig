@@ -1,0 +1,11 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_KINETIS
+
+rsource "*/Kconfig.defconfig"
+
+config WDT_DISABLE_AT_BOOT
+	default y
+
+endif # SOC_FAMILY_KINETIS

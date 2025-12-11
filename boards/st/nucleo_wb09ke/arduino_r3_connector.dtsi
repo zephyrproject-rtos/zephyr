@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* Most pins are not connected to the Arduino
+		 * connector in default hardware configuration.
+		 * Only the connected pins are provided here.
+		 */
+		gpio-map = <ARDUINO_HEADER_R3_D8 0 &gpiob 15 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpioa 9 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpioa 11 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpioa 8 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpiob 3 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpiob 7 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpiob 6 0>;
+	};
+};
+
+arduino_i2c: &i2c1 {};
+
+arduino_serial: &usart1 {};
+
+arduino_spi: &spi3 {};

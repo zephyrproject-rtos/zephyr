@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &sai1_a;
+	};
+};
+
+/* PLL3 for clocking SAI1 peripheral */
+&pll3 {
+	/* 44.1KHz (-0.1% Error) */
+	div-m = <12>;
+	mul-n = <203>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&sai1_a {
+	pinctrl-0 = <&sai1_mclk_a_pg7 &sai1_sd_a_pc1
+		     &sai1_fs_a_pe4 &sai1_sck_a_pe5>;
+	pinctrl-names = "default";
+	status = "okay";
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&gpdma1 {
+	status = "okay";
+};

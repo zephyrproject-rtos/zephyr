@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI DRV84XX stepper motor driver.
+  Compatible with drv8424, drv8425, drv8426, drv8434 and drv8436.
+
+  Example:
+  drv8424: drv8424 {
+    status = "okay";
+    compatible = "ti,drv84xx";
+
+    fault-gpios = <&arduino_header 16 0>;
+    sleep-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;
+    en-gpios  = <&arduino_header 14 0>;
+    m0-gpios = <&mikroe_stepper_gpios 0 0>;
+    m1-gpios = <&mikroe_stepper_gpios 1 0>;
+  };
+
+
+compatible: "ti,drv84xx"
+
+include:
+  - name: stepper-driver.yaml
+  - name: step-dir-timing.yaml
+
+properties:
+  step-width-ns:
+    default: 970
+
+  fault-gpios:
+    type: phandle-array
+    description: Fault pin.
+
+  sleep-gpios:
+    type: phandle-array
+    description: Sleep pin (active low).
+
+  m0-gpios:
+    type: phandle-array
+    description: Microstep configuration pin 0.
+
+  m1-gpios:
+    type: phandle-array
+    description: Microstep configuration pin 1.

@@ -1,0 +1,10 @@
+sample:
+  name: USB audio Headphones Microphone sample
+tests:
+  sample.usb.legacy.audio.headphones_microphone:
+    depends_on: usb_device
+    tags: usb
+    build_only: true
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp

@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MCUX_SYSCON
+	bool "NXP LPC device ID"
+	default y
+	depends on DT_HAS_NXP_LPC_UID_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP LPC mcux hwinfo driver.

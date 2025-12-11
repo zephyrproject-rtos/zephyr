@@ -1,0 +1,89 @@
+family:
+- name: atmel_sam
+  series:
+  - name: sam3x
+    socs:
+    - name: sam3x4c
+    - name: sam3x4e
+    - name: sam3x8c
+    - name: sam3x8e
+    - name: sam3x8h
+  - name: sam4e
+    socs:
+    - name: sam4e8c
+    - name: sam4e8e
+    - name: sam4e16c
+    - name: sam4e16e
+  - name: sam4l
+    socs:
+    - name: sam4ls2a
+    - name: sam4ls2b
+    - name: sam4ls2c
+    - name: sam4ls4a
+    - name: sam4ls4b
+    - name: sam4ls4c
+    - name: sam4ls8a
+    - name: sam4ls8b
+    - name: sam4ls8c
+    - name: sam4lc2a
+    - name: sam4lc2b
+    - name: sam4lc2c
+    - name: sam4lc4a
+    - name: sam4lc4b
+    - name: sam4lc4c
+    - name: sam4lc8a
+    - name: sam4lc8b
+    - name: sam4lc8c
+  - name: sam4s
+    socs:
+    - name: sam4s2a
+    - name: sam4s2b
+    - name: sam4s2c
+    - name: sam4s4a
+    - name: sam4s4b
+    - name: sam4s4c
+    - name: sam4s8b
+    - name: sam4s8c
+    - name: sam4s16b
+    - name: sam4s16c
+    - name: sam4sa16c
+  - name: same70
+    socs:
+    - name: same70j19
+    - name: same70j20
+    - name: same70j21
+    - name: same70n19
+    - name: same70n20
+    - name: same70n21
+    - name: same70q19
+    - name: same70q20
+    - name: same70q21
+    - name: same70j19b
+    - name: same70j20b
+    - name: same70j21b
+    - name: same70n19b
+    - name: same70n20b
+    - name: same70n21b
+    - name: same70q19b
+    - name: same70q20b
+    - name: same70q21b
+  - name: samv71
+    socs:
+    - name: samv71j19
+    - name: samv71j20
+    - name: samv71j21
+    - name: samv71n19
+    - name: samv71n20
+    - name: samv71n21
+    - name: samv71q19
+    - name: samv71q20
+    - name: samv71q21
+    - name: samv71j19b
+    - name: samv71j20b
+    - name: samv71j21b
+    - name: samv71n19b
+    - name: samv71n20b
+    - name: samv71n21b
+    - name: samv71q19b
+    - name: samv71q20b
+    - name: samv71q21b

@@ -1,0 +1,8 @@
+board:
+  name: bl654_dvk
+  full_name: BL654 DVK
+  vendor: ezurio
+  socs:
+  - name: nrf52840
+    variants:
+    - name: pa

@@ -1,0 +1,8 @@
+tests:
+  ipc.icmsg_pbuf:
+    # For native(POSIX arch) targets, let's skip those which do not produce an executable
+    # (amp targets which need more images)
+    filter: not CONFIG_ARCH_POSIX or CONFIG_BUILD_OUTPUT_EXE
+    integration_platforms:
+      - native_sim
+    timeout: 120

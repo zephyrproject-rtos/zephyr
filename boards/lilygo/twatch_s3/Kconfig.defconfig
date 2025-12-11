@@ -1,0 +1,17 @@
+# Copyright 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if DISPLAY
+
+choice ST7789V_PIXEL_FORMAT
+	default ST7789V_BGR565
+endchoice
+
+if LVGL
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+endif # DISPLAY

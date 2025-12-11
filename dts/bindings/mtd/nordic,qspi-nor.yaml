@@ -1,0 +1,98 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QSPI NOR flash supporting the JEDEC CFI interface.
+
+compatible: "nordic,qspi-nor"
+
+include: [base.yaml, "jedec,spi-nor-common.yaml"]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  jedec-id:
+    required: true
+
+  size:
+    type: int
+    description: |
+      The size in bits. Set this or size-in-bytes, but not both.
+
+  size-in-bytes:
+    type: int
+    description: |
+      The size in bytes. Set this or size, but not both.
+
+  # Match original driver NORDIC_QSPI_NOR_QE_BIT Kconfig default.
+  quad-enable-requirements:
+    default: "S1B6"
+
+  readoc:
+    type: string
+    enum:
+      - "fastread"        # Single data line SPI, FAST_READ (0x0B)
+      - "read2o"          # Dual data line SPI, READ2O (0x3B)
+      - "read2io"         # Dual data line SPI, READ2IO (0xBB)
+      - "read4o"          # Quad data line SPI, READ4O (0x6B)
+      - "read4io"         # Quad data line SPI, READ4IO (0xEB)
+    description: |
+      Specify the number of data lines and opcode used for reading.
+      If not provided fastread will be selected.
+
+  writeoc:
+    type: string
+    enum:
+      - "pp"            # Single data line SPI, PP (0x02)
+      - "pp2o"          # Dual data line SPI, PP2O (0xA2)
+      - "pp4o"          # Quad data line SPI, PP4O (0x32)
+      - "pp4io"         # Quad data line SPI, PP4IO (0x38)
+    description: |
+      Specify the number of data lines and opcode used for writing.
+      If not provided pp will be selected.
+
+  address-size-32:
+    type: boolean
+    description: |
+      Set to indicate that 32-bit addressing is to be used.
+      If not specified 24-bit addressing will be used.
+
+  ppsize-512:
+    type: boolean
+    description: |
+      Set to indicate that the write opcode operates on 512-byte pages.
+      If not specified the write opcode operates on 256-byte pages.
+
+  sck-delay:
+    type: int
+    default: 0
+    description: |
+      Number of clock cycles CSn must be asserted before it can go low
+      again, specified in nanoseconds.
+
+  rx-delay:
+    type: int
+    description: |
+      Number of clock cycles from the rising edge of the SPI clock
+      until the input serial data is sampled.
+
+  cpha:
+    type: boolean
+    description: |
+      Set to indicate phase starts with asserted half-phase (CPHA=1).
+      For this driver using this property requires also using cpol.
+
+  cpol:
+    type: boolean
+    description: |
+      Set to indicate clock leading edge is falling (CPOL=1).
+      For this driver using this property requires also using cpha.
+
+  sck-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum clock speed supported by the device, in Hz.

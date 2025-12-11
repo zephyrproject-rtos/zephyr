@@ -1,0 +1,33 @@
+#
+# Copyright 2018, 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxw71
+name: NXP FRDM_MCXW71
+type: mcu
+arch: arm
+ram: 64
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - counter
+  - dma
+  - flash
+  - flexio
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - regulator
+  - spi
+  - uart
+  - watchdog
+  - netif:openthread
+  - rtc
+vendor: nxp

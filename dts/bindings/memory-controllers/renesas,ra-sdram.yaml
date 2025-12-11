@@ -1,0 +1,130 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA SDRAM controller.
+  sdram {
+      pinctrl-0 = <&sdram_default>;
+      pinctrl-names = "default";
+      status = "okay";
+      auto-refresh-interval = <10>;
+      auto-refresh-count = <8>;
+      precharge-cycle-count = <3>;
+      multiplex-addr-shift = "10-bit";
+      edian-mode = "little-endian";
+      continuous-access;
+      bus-width = "16-bit";
+      bank@0 {
+        reg = <0>;
+        renesas,ra-sdram-timing = <RENESAS_RA_SDRAM_TRAS_6CYCLES
+                  RENESAS_RA_SDRAM_TRCD_3CYCLES
+                  RENESAS_RA_SDRAM_TRP_3CYCLES
+                  RENESAS_RA_SDRAM_TWR_2CYCLES
+                  RENESAS_RA_SDRAM_TCL_3CYCLES
+                  937
+                  RENESAS_RA_SDRAM_TREFW_8CYCLES>;
+      };
+
+  Note that you will find definitions for the renesas,ra-sdram-control field at
+  dt-bindings/memory-controller/renesas,ra-sdram.h. This file is already included
+  in the SoC DeviceTree files.
+
+  Finally, in order to make the memory available you will need to define new
+  memory device/s in DeviceTree:
+
+  sdram1: sdram@68000000 {
+      compatible = "zephyr,memory-region", "mmio-sram";
+      device_type = "memory";
+      reg = <0x68000000 DT_SIZE_M(X)>;
+      zephyr,memory-region = "SDRAM";
+  };
+
+compatible: "renesas,ra-sdram"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  auto-refresh-interval:
+    type: int
+    default: 10
+    description: Number of auto-refresh-interval.
+
+  auto-refresh-count:
+    type: int
+    default: 8
+    description: Number of auto-refresh-count.
+
+  precharge-cycle-count:
+    type: int
+    default: 3
+    description: Number of precharge-cycle-count.
+
+  multiplex-addr-shift:
+    type: string
+    default: "10-bit"
+    enum:
+      - "8-bit"
+      - "9-bit"
+      - "10-bit"
+      - "11-bit"
+    description: |
+      Select the size of the shift towards the lower half of the row address in row address/column
+      address multiplexing.
+
+  edian-mode:
+    type: string
+    default: "little-endian"
+    enum:
+      - "little-endian"
+      - "big-endian"
+    description: Specifies the endianness for the SDRAM address space.
+
+  continuous-access:
+    type: boolean
+    description: Enables or disables continuous access to the SDRAM access space.
+
+  bus-width:
+    type: string
+    default: "16-bit"
+    enum:
+      - "16-bit"
+      - "32-bit"
+      - "8-bit"
+    description: Specify the data bus width for SDRAM
+
+child-binding:
+  description: SDRAM bank.
+
+  properties:
+    reg:
+      type: int
+      required: true
+
+    renesas,ra-sdram-timing:
+      type: array
+      required: true
+      description: |
+        SDRAM timing configuration. Expected fields, in order, are,
+
+        - TRAS: Row active interval. The effective value from 1 to 7 cycles
+        - TRCD: Row column latency. The effective value from 1 to 4 cycles
+        - TRP: Row precharge interval. The effective value from 1 to 8 cycles
+        - TWR: Write recovery interval. The effective value from 1 to 2 cycles
+        - TCL: Column latency. The effective value from 1 to 3 cycles
+        - TRFC: Auto-Refresh Request Interval Setting.
+        - TREFW: Auto-Refresh Cycle/Self-Refresh Clearing Cycle Count Setting.
+          The effective value from 1 to 16 cycles

@@ -1,0 +1,9 @@
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics IIS2DLPC accelerometer accessed through SPI bus
+
+compatible: "st,iis2dlpc"
+
+include: ["spi-device.yaml", "st,iis2dlpc-common.yaml"]

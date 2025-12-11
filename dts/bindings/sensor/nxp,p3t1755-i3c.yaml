@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    NXP P3T1755 digital temperature sensor connected to I3C bus.
+
+compatible: "nxp,p3t1755"
+
+include: ["i3c-device.yaml", "nxp,p3t1755-common.yaml"]

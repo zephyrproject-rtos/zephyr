@@ -1,0 +1,41 @@
+# Copyright 2023 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LVGL keypad indev pseudo-device
+
+  Listens for input events and routes the
+  lv_indev_data_t to the underlying keypad lv_indev_t managed by LVGL.
+
+  The property input-codes can be used to setup a mapping of input codes
+  to the lvgl keys. There are lvgl keys that have a special function:
+  https://docs.lvgl.io/master/overview/indev.html#keys.
+
+  The pseudo device can be associated to a specific device to listen only
+  for events from that device. Example configuration:
+
+  #include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+  keypad {
+          compatible = "zephyr,lvgl-keypad-input";
+          input = <&buttons>;
+          input-codes = <INPUT_KEY_1 INPUT_KEY_2>;
+          lvgl-codes = <LV_KEY_NEXT LV_KEY_PREV>;
+  };
+
+compatible: "zephyr,lvgl-keypad-input"
+
+include: zephyr,lvgl-common-input.yaml
+
+properties:
+  input-codes:
+    type: array
+    required: true
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).
+
+  lvgl-codes:
+    type: array
+    required: true
+    description: |
+      Array of mapped lvgl keys.

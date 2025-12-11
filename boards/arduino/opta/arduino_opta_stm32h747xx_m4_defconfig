@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Use zephyr,code-partition as flash offset
+CONFIG_USE_DT_CODE_PARTITION=y

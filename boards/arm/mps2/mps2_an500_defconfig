@@ -1,0 +1,15 @@
+#
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_RUNTIME_NMI=y
+
+# GPIOs
+CONFIG_GPIO=y
+
+# Serial
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y

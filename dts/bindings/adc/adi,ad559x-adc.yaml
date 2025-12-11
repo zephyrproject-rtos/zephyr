@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: AD559x ADC Controller
+
+compatible: "adi,ad559x-adc"
+
+include: adc-controller.yaml
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  double-input-range:
+    type: boolean
+    description: |
+      Default ADC input range is 0V to Vref.
+      This option increases the range from 0V to 2 x Vref. Note that this
+      requires VDD >= 2 x Vref.
+
+io-channel-cells:
+  - input

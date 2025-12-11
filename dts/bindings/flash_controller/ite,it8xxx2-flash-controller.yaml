@@ -1,0 +1,8 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 flash memory
+
+compatible: "ite,it8xxx2-flash-controller"
+
+include: flash-controller.yaml

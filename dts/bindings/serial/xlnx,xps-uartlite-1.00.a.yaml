@@ -1,0 +1,9 @@
+description: Xilinx UART Lite IP
+
+compatible: "xlnx,xps-uartlite-1.00.a"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true

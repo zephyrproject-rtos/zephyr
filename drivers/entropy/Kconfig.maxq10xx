@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_MAXQ10XX_RNG
+	bool "MAXQ10xx entropy number generator driver"
+	default y
+	depends on DT_HAS_ADI_MAXQ10XX_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	select SPI
+	select MFD
+	select CRC
+	help
+	  This option enables the entropy number generator driver for the
+	  MAXQ10xx crypto chips.
+
+# Don't use use the MAXQ10XX RNG as a random source since it can be quite slow.
+# Instead, use the software-implemented xoshiro PRNG.
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_MAXQ10XX_RNG
+endchoice

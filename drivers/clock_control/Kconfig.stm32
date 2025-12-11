@@ -1,0 +1,115 @@
+# STM32 MCU clock control driver config
+
+# Copyright (c) 2017 Linaro
+# Copyright (c) 2017 RnDity Sp. z o.o.
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CLOCK_CONTROL_STM32_CUBE
+	bool "STM32 Reset & Clock Control"
+	depends on SOC_FAMILY_STM32
+	default y
+	select USE_STM32_LL_UTILS
+	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32MP13X || \
+		SOC_SERIES_STM32MP2X || SOC_SERIES_STM32H7X || SOC_SERIES_STM32H7RSX || \
+		SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || \
+		SOC_SERIES_STM32N6X)
+	select RUNTIME_NMI if ($(dt_nodelabel_enabled,clk_hse) && \
+		$(dt_nodelabel_bool_prop,clk_hse,css-enabled))
+	help
+	  Enable driver for Reset & Clock Control subsystem found
+	  in STM32 family of MCUs
+
+if CLOCK_CONTROL_STM32_CUBE
+
+config CLOCK_STM32_HSE_CLOCK
+	int
+	default $(dt_nodelabel_int_prop,clk_hse,clock-frequency)
+	depends on $(dt_nodelabel_enabled,clk_hse)
+	help
+	  Frequency of external high-speed clock (HSE).
+
+	  The value of this symbol is used to set the preprocessor
+	  definition "HSE_VALUE" notably consumed by the HAL.
+
+	  This symbol cannot be set externally: its value is directly
+	  taken from the "clock-frequency" property of the "clk_hse"
+	  Device Tree node when it is enabled.
+
+	  This node would usually looks similar to:
+
+	    &clk_hse {
+	      clock-frequency = <DT_FREQ_M(25)>;
+	      status = "okay";
+	    };
+
+	  If the "clk_hse" node does not exist or is not enabled
+	  (status != "okay"), this symbol is not defined and the
+	  HSE_VALUE preprocessor definition does not exist.
+
+config CLOCK_STM32_MUX
+	bool "STM32 clock mux driver"
+	default y
+	depends on DT_HAS_ST_STM32_CLOCK_MUX_ENABLED
+	help
+	  Enable driver for STM32 clock mux which don't match an
+	  existing clock hardware block but allows to select a clock
+	  for a specific domain. For instance per_ck clock on STM32H7 or
+	  CLK48 clock
+
+menu "STM32WB0 LSI options"
+	depends on DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
+
+config STM32WB0_LSI_MEASUREMENT_WINDOW
+	int "Size of LSI measurement window (in periods)"
+	default 32
+	range 23 256
+	help
+	  Size of the LSI measurement window (# of LSI periods)
+
+	  The measurement process involves waiting for a certain amount of LSI periods
+	  to occur, in order to determine precisely the LSI period, and thus frequency.
+
+	  This property controls how much LSI periods are required for each measure.
+	  Bigger window sizes increase accuracy of the measure, but increase the time
+	  needed to complete it. Since fLSI >= 24kHz, increasing the measurement window
+	  size makes each measure roughly 42µs slower in the worst case.
+
+	  Minimal value is a recommendation from RM0505 Rev.1 §25.8.2, and maximum
+	  value is a hardware limitation.
+
+config STM32WB0_LSI_RUNTIME_MEASUREMENT_INTERVAL
+	int "LSI run-time measurement interval (ms)"
+	default 0
+	help
+	  Interval at which runtime measurements should be performed, in milliseconds
+
+	  Since the LSI RC frequency is affected by temperature, which is not stable
+	  across time, it is recommended to perform measurements of the LSI frequency
+	  at regular intervals to obtain better accuracy.
+
+	  This property enables runtime LSI measurement if present. In this case,
+	  a background thread is created and performs LSI measurements, sleeping
+	  the amount of time specified in this property between each measure. This
+	  thread is also tasked with updating the control registers of peripherals
+	  affected by slow clock drift such as RTC or IWDG, in collaboration with
+	  the peripherals' drivers. Note that this increases the memory footprint
+	  of the clock control driver, and may increase power consumption.
+
+	  Setting this option to the default value of "0" disables runtime frequency
+	  measurements - the result of a single measure performed at boot will be
+	  treated as LSI frequency for the lifetime of the application.
+
+endmenu # DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
+
+# Micro-controller Clock Output (MCO) configuration options
+config CLOCK_STM32_MCO
+	bool
+	default y
+	select PINCTRL
+	depends on DT_HAS_ST_STM32_CLOCK_MCO_ENABLED || DT_HAS_ST_STM32F1_CLOCK_MCO_ENABLED
+	help
+	  Allows to output various different clock sources onto the MCO pin
+	  using a configurable prescaler.
+
+endif # CLOCK_CONTROL_STM32_CUBE

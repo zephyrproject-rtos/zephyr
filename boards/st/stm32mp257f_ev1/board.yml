@@ -1,0 +1,6 @@
+board:
+  name: stm32mp257f_ev1
+  full_name: STM32MP257F-EV1 Evaluation Board
+  vendor: st
+  socs:
+    - name: stm32mp257fxx

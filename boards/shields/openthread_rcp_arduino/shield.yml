@@ -1,0 +1,12 @@
+shields:
+  - name: openthread_rcp_arduino_serial
+    full_name: OpenThread RCP over Arduino UART
+    vendor: others
+    supported_features:
+      - hdlc_rcp_if
+
+  - name: openthread_rcp_arduino_spi
+    full_name: OpenThread RCP over Arduino SPI
+    vendor: others
+    supported_features:
+      - hdlc_rcp_if

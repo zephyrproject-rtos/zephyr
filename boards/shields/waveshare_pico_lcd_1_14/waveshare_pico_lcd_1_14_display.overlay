@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	chosen {
+		zephyr,display = &st7789v_waveshare_pico_lcd_1_14;
+	};
+
+	mipi_dbi_waveshare_pico_lcd_1_14 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		dc-gpios = <&pico_header 8 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&pico_header 12 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		st7789v_waveshare_pico_lcd_1_14: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <20000000>;
+
+			width = <240>;
+			height = <135>;
+			x-offset = <40>;
+			y-offset = <53>;
+
+			vcom = <0x19>;
+			gctrl = <0x35>;
+			vrhs = <0x12>;
+			vdvs = <0x20>;
+			mdac = <0x77>;
+			gamma = <0x00>;
+			colmod = <0x05>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 00];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [d0 04 0d 11 13 2b 3f 54 4c 18 0d 0b 1f 23];
+			nvgam-param = [d0 04 0c 11 13 2c 3f 44 51 2f 1f 1f 20 23];
+			ram-param = [00 F0];
+			rgb-param = [40 02 14];
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			status = "okay";
+		};
+	};
+
+	lcd_backlight_en {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_backlight_enable";
+		enable-gpios = <&pico_header 13 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};

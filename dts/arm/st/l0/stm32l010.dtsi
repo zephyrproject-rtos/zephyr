@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019-2020 Grinn
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l0/stm32l0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l010", "st,stm32l0", "simple-bus";
+	};
+};

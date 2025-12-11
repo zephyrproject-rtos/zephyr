@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/intel/intel_adsp_ace40.dtsi>
+
+/ {
+	cpus {
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <2>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <3>;
+			cpu-power-states = <&d0i3 &d3>;
+		};
+	};
+
+	sram0: memory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(4608)>;
+	};
+};

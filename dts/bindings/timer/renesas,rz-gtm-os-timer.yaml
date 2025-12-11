@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ OS timer
+
+compatible: "renesas,rz-gtm-os-timer"
+
+include: base.yaml

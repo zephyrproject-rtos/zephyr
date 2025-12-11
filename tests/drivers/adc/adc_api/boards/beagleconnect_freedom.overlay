@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) Ayush Singh <ayush@beagleboard.org>
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0x09>, <&adc0 0x0a>, <&adc0 0x0b>, <&adc0 0x0c>,
+			      <&adc0 0x0d>, <&adc0 0x0e>;
+	};
+};

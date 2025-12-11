@@ -1,0 +1,9 @@
+common:
+  integration_platforms:
+    - native_sim
+
+tests:
+  logging.cache:
+    tags:
+      - log_cache
+      - logging

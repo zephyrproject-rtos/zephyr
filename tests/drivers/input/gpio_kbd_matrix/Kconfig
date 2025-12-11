@@ -1,0 +1,7 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_KBD_DRIVE_COLUMN_HOOK
+	default y
+
+source "Kconfig.zephyr"

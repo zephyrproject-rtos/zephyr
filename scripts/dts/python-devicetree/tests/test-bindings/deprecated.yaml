@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Property deprecated value test
+
+compatible: "test-deprecated"
+
+properties:
+  oldprop:
+    type: int
+    deprecated: true
+    required: false
+
+  curprop:
+    type: int
+    required: false

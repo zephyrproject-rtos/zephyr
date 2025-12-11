@@ -1,0 +1,16 @@
+identifier: hexiwear/mk64f12
+name: Hexiwear
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - ble
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+vendor: nxp

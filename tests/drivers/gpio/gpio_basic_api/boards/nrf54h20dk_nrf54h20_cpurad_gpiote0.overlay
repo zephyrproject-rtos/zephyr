@@ -1,0 +1,28 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&pinctrl {
+	gpiote0_default_alt: gpiote0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 4)>;
+		};
+	};
+};
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio1 5 0>;
+		in-gpios = <&gpio1 4 0>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+	gpiote-instance = <&gpiote0>;
+};
+
+&gpiote0 {
+	status = "okay";
+	pinctrl-0 = <&gpiote0_default_alt>;
+	pinctrl-names = "default";
+};

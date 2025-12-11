@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ICEV_WIRELESS
+	select SOC_ESP32C3_MINI_N4

@@ -1,0 +1,11 @@
+tests:
+
+  libraries.devicetree.memory_region:
+    platform_allow: qemu_cortex_m3
+    tags: devicetree
+
+  libraries.devicetree.memory_region.linker_generator:
+    platform_allow: qemu_cortex_m3
+    tags: devicetree
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

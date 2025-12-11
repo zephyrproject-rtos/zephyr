@@ -1,0 +1,28 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Low Power Periodic Interrupt Timer (LPIT)
+
+compatible: "nxp,lpit"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  max-load-value:
+    type: int
+    required: true
+    description: Maximum timeout ticks allowed for timer channels.
+
+  enable-run-in-debug:
+    type: boolean
+    description: Set 1 to allows timer channels to continue running when the chip enters Debug mode.
+
+  enable-run-in-doze:
+    type: boolean
+    description: Set 1 to allows timer channels to continue running when the chip enters Doze mode.

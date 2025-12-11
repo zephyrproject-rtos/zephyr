@@ -1,0 +1,232 @@
+family:
+  - name: silabs_s0
+    series:
+      - name: efm32wg
+        socs:
+          - name: efm32wg990f256
+      - name: efm32hg
+        socs:
+          - name: efm32hg322f64
+      - name: efm32tg
+        socs:
+          - name: efm32tg840f32
+  - name: silabs_s1
+    series:
+      - name: efm32pg1b
+        socs:
+          - name: efm32pg1b200f256gm48
+      - name: efr32fg1p
+        socs:
+          - name: efr32fg1p133f256gm48
+      - name: efm32pg12b
+        socs:
+          - name: efm32pg12b500f1024gl125
+      - name: efr32bg13p
+        socs:
+          - name: efr32bg13p632f512gm48
+      - name: efr32fg13p
+        socs:
+          - name: efr32fg13p233f512gm48
+      - name: efm32jg12b
+        socs:
+          - name: efm32jg12b500f1024gl125
+      - name: efr32mg12p
+        socs:
+          - name: efr32mg12p332f1024gl125
+          - name: efr32mg12p432f1024gl125
+          - name: efr32mg12p433f1024gm68
+      - name: efm32gg11b
+        socs:
+          - name: efm32gg11b820f2048gl192
+          - name: efm32gg11b820f2048gm64
+      - name: efm32gg12b
+        socs:
+          - name: efm32gg12b810f1024gm64
+  - name: silabs_s2
+    series:
+      - name: efr32mg21
+        socs:
+          - name: efr32mg21a020f1024im32
+      - name: efr32bg22
+        socs:
+          - name: efr32bg22c224f512im40
+          - name: efr32bg22c224f512im32
+          - name: efr32bg22c224f512gn32
+          - name: efr32bg22c224f512gm40
+          - name: efr32bg22c224f512gm32
+          - name: efr32bg22c222f352gn32
+          - name: efr32bg22c222f352gm40
+          - name: efr32bg22c222f352gm32
+      - name: efr32mg22
+        socs:
+          - name: efr32mg22c224f512im40
+          - name: efr32mg22c224f512im32
+          - name: efr32mg22c224f512gn32
+          - name: efr32mg22e224f512im40
+          - name: efr32mg22e224f512im32
+      - name: efr32bg24
+        socs:
+          - name: efr32bg24a010f1024im40
+          - name: efr32bg24a010f1024im48
+          - name: efr32bg24a020f1024im40
+          - name: efr32bg24a020f1024im48
+          - name: efr32bg24b110f1536im48
+          - name: efr32bg24b210f1024im48
+          - name: efr32bg24b220f1024im48
+          - name: efr32bg24l010f768im40
+          - name: efr32bg24l210f768im40
+      - name: efr32mg24
+        socs:
+          - name: efr32mg24b010f1024im48
+          - name: efr32mg24b010f1536im40
+          - name: efr32mg24b010f1536im48
+          - name: efr32mg24b020f1024im48
+          - name: efr32mg24b020f1536im40
+          - name: efr32mg24b020f1536im48
+          - name: efr32mg24b110f1536im48
+          - name: efr32mg24b120f1536im48
+          - name: efr32mg24b210f1536im48
+          - name: efr32mg24b220f1536im48
+          - name: efr32mg24b310f1536im48
+      - name: bgm24
+        socs:
+          - name: bgm240pa22vna
+          - name: bgm240pa32vna
+          - name: bgm240pa32vnn
+          - name: bgm240pb22vna
+          - name: bgm240pb32vna
+          - name: bgm240pb32vnn
+          - name: bgm240sa22vna
+          - name: bgm240sb22vna
+      - name: mgm24
+        socs:
+          - name: mgm240pa22vna
+          - name: mgm240pa32vna
+          - name: mgm240pa32vnn
+          - name: mgm240pb22vna
+          - name: mgm240pb32vna
+          - name: mgm240pb32vnn
+          - name: mgm240sa22vna
+          - name: mgm240sd22vna
+      - name: efm32pg26
+        socs:
+          - name: efm32pg26b101f512il136
+          - name: efm32pg26b101f512im68
+          - name: efm32pg26b301f1024il136
+          - name: efm32pg26b301f1024im68
+          - name: efm32pg26b301f2048il136
+          - name: efm32pg26b301f2048im68
+          - name: efm32pg26b500f3200il136
+          - name: efm32pg26b500f3200im48
+          - name: efm32pg26b500f3200im68
+          - name: efm32pg26b501f3200il136
+          - name: efm32pg26b501f3200im48
+          - name: efm32pg26b501f3200im68
+      - name: efr32bg26
+        socs:
+          - name: efr32bg26b311f1024il136
+          - name: efr32bg26b311f1024im68
+          - name: efr32bg26b311f2048il136
+          - name: efr32bg26b311f2048im48
+          - name: efr32bg26b311f2048im68
+          - name: efr32bg26b321f1024im68
+          - name: efr32bg26b321f2048im48
+          - name: efr32bg26b321f2048im68
+          - name: efr32bg26b410f3200im48
+          - name: efr32bg26b411f3200im48
+          - name: efr32bg26b420f3200im48
+          - name: efr32bg26b421f3200im48
+          - name: efr32bg26b510f3200il136
+          - name: efr32bg26b510f3200im48
+          - name: efr32bg26b510f3200im68
+          - name: efr32bg26b511f3200il136
+          - name: efr32bg26b511f3200im48
+          - name: efr32bg26b511f3200im68
+      - name: efr32mg26
+        socs:
+          - name: efr32mg26b521f3200im68
+          - name: efr32mg26b521f3200im48
+          - name: efr32mg26b520f3200im68
+          - name: efr32mg26b520f3200im48
+          - name: efr32mg26b511f3200im68
+          - name: efr32mg26b511f3200im48
+          - name: efr32mg26b511f3200il136
+          - name: efr32mg26b510f3200im68
+          - name: efr32mg26b510f3200im48
+          - name: efr32mg26b510f3200il136
+          - name: efr32mg26b421f3200im68
+          - name: efr32mg26b421f3200im48
+          - name: efr32mg26b420f3200im68
+          - name: efr32mg26b420f3200im48
+          - name: efr32mg26b411f3200im68
+          - name: efr32mg26b411f3200im48
+          - name: efr32mg26b410f3200im68
+          - name: efr32mg26b410f3200im48
+          - name: efr32mg26b311f3200il136
+          - name: efr32mg26b221f3200im48
+          - name: efr32mg26b221f2048im68
+          - name: efr32mg26b211f3200im48
+          - name: efr32mg26b211f2048im68
+      - name: bgm26
+        socs:
+          - name: bgm260pb22vna
+          - name: bgm260pb32vna
+      - name: mgm26
+        socs:
+          - name: mgm260pb22vna
+          - name: mgm260pb32vna
+          - name: mgm260pb32vnn
+          - name: mgm260pd22vna
+          - name: mgm260pd32vna
+          - name: mgm260pd32vnn
+      - name: efr32bg27
+        socs:
+          - name: efr32bg27c140f768im32
+          - name: efr32bg27c140f768im40
+          - name: efr32bg27c230f768im32
+          - name: efr32bg27c230f768im40
+          - name: efr32bg27c320f768gj39
+          - name: efr32bg27c320f768ij39
+      - name: efr32mg27
+        socs:
+          - name: efr32mg27c140f768im32
+          - name: efr32mg27c140f768im40
+          - name: efr32mg27c230f768im32
+          - name: efr32mg27c230f768im40
+      - name: efr32zg23
+        socs:
+          - name: efr32zg23b020f512im48
+      - name: efr32zg28
+        socs:
+          - name: efr32zg28b322f1024im68
+      - name: efr32bg29
+        socs:
+          - name: efr32bg29b140f1024im40
+          - name: efr32bg29b220f1024cj45
+          - name: efr32bg29b221f1024cj45
+          - name: efr32bg29b230f1024cm40
+      - name: efr32mg29
+        socs:
+          - name: efr32mg29b140f1024im40
+          - name: efr32mg29b230f1024cm40
+      - name: efm32pg28
+        socs:
+          - name: efm32pg28b310f1024im68
+      - name: efm32pg23
+        socs:
+          - name: efm32pg23b310f512im48
+      - name: bgm22
+        socs:
+          - name: bgm220sc22hna
+          - name: bgm220pc22hna
+          - name: bgm220pc22wga
+  - name: silabs_siwx91x
+    series:
+      - name: siwg917
+        socs:
+          - name: siwg917m111mgtba
+  - name: silabs_sim3
+    series:
+      - name: sim3u
+        socs:
+          - name: sim3u167

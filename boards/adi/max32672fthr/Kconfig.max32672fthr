@@ -1,0 +1,7 @@
+# MAX32672FTHR boards configuration
+
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX32672FTHR
+	select SOC_MAX32672

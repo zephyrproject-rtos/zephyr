@@ -1,0 +1,29 @@
+common:
+  depends_on: netif
+  min_ram: 32
+  tags:
+    - net
+    - tunnel
+    - virtual
+  filter: CONFIG_ENTROPY_HAS_DRIVER
+tests:
+  net.virtual.tunnel.ipip:
+    extra_configs:
+      - CONFIG_NET_TEST_TUNNEL_PEER_ADDR="192.0.2.2"
+      - CONFIG_NET_TEST_TUNNEL_MY_ADDR="198.51.100.1"
+      - CONFIG_NET_TEST_TUNNEL_NAME="ipip"
+  net.virtual.tunnel.ip6ip:
+    extra_configs:
+      - CONFIG_NET_TEST_TUNNEL_PEER_ADDR="192.0.2.2"
+      - CONFIG_NET_TEST_TUNNEL_MY_ADDR="2001:db8:200::1"
+      - CONFIG_NET_TEST_TUNNEL_NAME="ip6ip"
+  net.virtual.tunnel.ipip6:
+    extra_configs:
+      - CONFIG_NET_TEST_TUNNEL_PEER_ADDR="2001:db8::2"
+      - CONFIG_NET_TEST_TUNNEL_MY_ADDR="198.51.100.1"
+      - CONFIG_NET_TEST_TUNNEL_NAME="ipip6"
+  net.virtual.tunnel.ip6ip6:
+    extra_configs:
+      - CONFIG_NET_TEST_TUNNEL_PEER_ADDR="2001:db8::2"
+      - CONFIG_NET_TEST_TUNNEL_MY_ADDR="2001:db8:200::1"
+      - CONFIG_NET_TEST_TUNNEL_NAME="ip6ip6"

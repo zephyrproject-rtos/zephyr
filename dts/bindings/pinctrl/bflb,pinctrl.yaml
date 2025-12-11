@@ -1,0 +1,91 @@
+# Copyright (c) 2021-2025 Gerson Fernando Budke <nandojve@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab Pinctrl node
+
+compatible: "bflb,pinctrl"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
+
+child-binding:
+  description: |
+    Bouffalo Lab pin controller pin configuration nodes. Each node is composed
+    by one or more groups, each defining the configuration for a set of pins.
+
+  child-binding:
+    description: |
+      Bouffalo Lab pin controller pin configuration group. Each group contains
+      a list of pins sharing the same set of properties. Example:
+
+      uart0_default: uart0_default {
+        /* group 1 (name is arbitrary) */
+        group1 {
+          /* configure to uart0 function plus modem interrupt, pin 7 as UART_RX
+             pin 16 as UART_TX and finally pin 18 as gpio */
+          pinmux = <GPIO7_UART0_RX>,
+                   <GPIO16_UART0_TX>;
+          bias-pull-up;
+          input-schmitt-enable;
+        };
+      };
+
+      uart0_sleep: uart0_sleep {
+        group1 {
+          pinmux = <GPIO7_UART0_RX>,
+                   <GPIO16_UART0_TX>;
+          bias-high-impedance;
+        };
+      };
+
+      The list of supported standard properties:
+      - bias-high-impedance: Disable pull-up/down (default behavior, not
+        required).
+      - bias-pull-up: Enable pull-up resistor.
+      - bias-pull-down: Enable pull-down resistor.
+      - input-enable: Enable GPIO as input (default behavior, not required).
+      - input-schmitt-enable: Enable Schimitt Trigger when GPIO is Input.
+      - output-enable: Enable GPIO as output.
+
+      Note that bias options are mutually exclusive. It is the same with GPIO
+      input/output enable options.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-high-impedance
+          - bias-pull-down
+          - bias-pull-up
+          - input-enable
+          - input-schmitt-enable
+          - output-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should be
+          defined using the BFLB_PINMUX utility macro that encode all the pin
+          route matrix.
+      drive-strength:
+        type: int
+        default: 0
+        enum:
+          - 0     # Default value, lower strength, 8mA
+          - 1     # 9.6mA
+          - 2     # 11.2mA
+          - 3     # highest strength, 12.8mA
+        description: |
+          Pin drive strength. It tunes pin max current where 0 means lower
+          value, which is the default, and 3 represents max drive strength.
+          The driver will automatically apply the default value (8mA) to all
+          pins to save power.

@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf9161dk_nrf9161_common_0_7_0.dtsi"

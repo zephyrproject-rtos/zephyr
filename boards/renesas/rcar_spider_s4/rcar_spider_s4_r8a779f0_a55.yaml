@@ -1,0 +1,12 @@
+identifier: rcar_spider_s4/r8a779f0/a55
+name: Cortex A55 for Renesas Spider
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - pinctrl
+  - gpio
+  - clock_control
+  - uart

@@ -1,0 +1,14 @@
+# Analog Devices MAX32650 MCU
+
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MAX32650
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
+
+config NUM_IRQS
+	default 80
+
+endif # SOC_MAX32650

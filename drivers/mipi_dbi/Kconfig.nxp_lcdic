@@ -1,0 +1,22 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_NXP_LCDIC
+	bool "NXP MIPI DBI LCDIC driver"
+	default y
+	depends on DT_HAS_NXP_LCDIC_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for NXP SPI LCDIC display controller driver
+
+if MIPI_DBI_NXP_LCDIC
+
+config MIPI_DBI_NXP_LCDIC_DMA
+	bool "Use DMA for transfers with LCDIC driver"
+	select DMA
+	help
+	  Use DMA for transfers when sending data with the LCDIC driver.
+	  Commands will still be sent in polling mode.
+
+endif # MIPI_DBI_NXP_LCDIC

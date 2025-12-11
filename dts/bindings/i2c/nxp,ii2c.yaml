@@ -1,0 +1,15 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP II2C
+
+compatible: "nxp,ii2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml, "nxp,rdc-policy.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,13 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+cpu0: &{/cpus/cpu@0} {};
+
+&lptmr0 {
+	status = "okay";
+	clock-frequency = <16384>;
+	timer-mode-sel = <0>;
+};

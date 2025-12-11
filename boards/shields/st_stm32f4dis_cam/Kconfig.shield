@@ -1,0 +1,6 @@
+# Copyright (c) 2025 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST_STM32F4DIS_CAM
+	def_bool $(shields_list_contains,st_stm32f4dis_cam)

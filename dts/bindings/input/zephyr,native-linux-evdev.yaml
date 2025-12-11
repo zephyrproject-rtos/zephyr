@@ -1,0 +1,23 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Linux evdev based input device
+
+  Allows using a Linux evdev device to read input events and report them back
+  as Zephyr input events.
+
+  Example configuration:
+
+  evdev {
+          compatible = "zephyr,native-linux-evdev";
+  };
+
+  Then run the binary specifying the evdev device with the --evdev flag, for
+  example:
+
+  ./build/zephyr/zephyr.exe --evdev=/dev/input/event0
+
+compatible: "zephyr,native-linux-evdev"
+
+include: base.yaml

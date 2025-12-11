@@ -1,0 +1,22 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX Internal Timer (ITIM)
+
+compatible: "nuvoton,npcx-itim-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      The frequency in Hz for this timer's clock source.
+      This value is used to set SYS_CLOCK_HW_CYCLES_PER_SEC.

@@ -1,0 +1,10 @@
+# FPGA ALTERA driver configuration options
+
+# Copyright (c) 2024, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ALTERA_AGILEX_BRIDGE_FPGA
+	bool "ALTERA fpga driver"
+	depends on ARM_SIP_SVC_SUBSYS
+	help
+	  Enable ALTERA FPGA driver.

@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SMARTBOND
+	bool "Renesas SmartBond(tm) GPIO driver"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_GPIO_ENABLED
+	help
+	  Enable GPIO driver for Renesas SmartBond(tm) MCU family.

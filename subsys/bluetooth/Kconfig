@@ -1,0 +1,448 @@
+# Bluetooth configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT
+	bool "Bluetooth"
+	# Some BT threads use co-op priorities to implement critical sections,
+	# will need some refactoring to work on SMP systems.
+	depends on !SMP
+	select NET_BUF
+	help
+	  This option enables Bluetooth support.
+
+if BT
+
+choice BT_STACK_SELECTION
+	prompt "Bluetooth Stack Selection"
+	default BT_HCI
+	help
+	  Select the Bluetooth stack to compile.
+
+config BT_HCI
+	bool "HCI-based"
+	help
+	  HCI-based stack with optional host & controller parts and an
+	  HCI driver in between.
+
+config BT_CUSTOM
+	bool "Custom"
+	help
+	  Select a custom, non-HCI based stack. If you're not sure what
+	  this is, you probably want the HCI-based stack instead.
+
+endchoice
+
+# The Bluetooth subsystem requires the system workqueue to execute at
+# a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1
+
+if BT_HCI
+
+config BT_HCI_RAW
+	bool "RAW HCI access"
+	help
+	  This option allows to access Bluetooth controller
+	  from the application with the RAW HCI protocol.
+
+config BT_HCI_RAW_H4
+	bool "RAW HCI H:4 transport"
+	help
+	  This option enables HCI RAW access to work over an H:4
+	  transport, note that it still need to be selected at runtime.
+
+config BT_HCI_RAW_H4_ENABLE
+	bool "RAW HCI H:4 transport enable"
+	depends on BT_HCI_RAW_H4
+	help
+	  This option enables use of H:4 transport for HCI RAW access at
+	  build time.
+
+config BT_HCI_RAW_CMD_EXT
+	bool "RAW HCI Command Extension"
+	help
+	  This option enables HCI RAW command extension so the driver can
+	  register it own command table extension.
+
+config BT_PERIPHERAL
+	bool "Peripheral Role support"
+	select BT_BROADCASTER
+	select BT_CONN
+	default y if BT_HCI_RAW
+	help
+	  Select this for LE Peripheral role support.
+
+config BT_CENTRAL
+	bool "Central Role support"
+	select BT_OBSERVER
+	select BT_CONN
+	default y if BT_HCI_RAW
+	help
+	  Select this for LE Central role support.
+
+config BT_BROADCASTER
+	bool "Broadcaster Role support"
+	default y if !BT_OBSERVER
+	help
+	  Select this for LE Broadcaster role support.
+
+config BT_OBSERVER
+	bool "Observer Role support"
+	help
+	  Select this for LE Observer role support.
+
+rsource "Kconfig.adv"
+
+config BT_CONN
+	bool
+
+config BT_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BT_CONN
+	range 1 250
+	default 2 if BT_MESH_GATT_CLIENT
+	default 1
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported.
+
+config BT_CONN_TX
+	bool
+	default BT_CONN || BT_ISO_TX
+	help
+	  Hidden configuration that is true if ACL or broadcast ISO is enabled
+
+config BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE
+	int
+	default 1 if BT_FRAME_SPACE_UPDATE || BT_SHORTER_CONNECTION_INTERVALS
+	default 0
+	depends on BT_LE_EXTENDED_FEAT_SET
+	help
+	  Minimum required feature page that must be supported.
+
+config BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE
+	int "Maximum supported feature page"
+	default BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE
+	range BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE 10
+	depends on BT_LE_EXTENDED_FEAT_SET
+	help
+	  Maximum feature page that can be stored for local supported features.
+
+config BT_LE_EXTENDED_FEAT_SET
+	bool "LL Extended Feature Set"
+	depends on !HAS_BT_CTLR || BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
+	help
+	  Enable support for the LL Extended Feature Set feature.
+
+if BT_CONN
+config BT_CONN_DYNAMIC_CALLBACKS
+	bool "Dynamic connection callbacks"
+	default y
+	help
+	  Enable support for dynamic connection callbacks. This links in
+	  bt_conn_cb_register(). Disabling this config is safe. It will make
+	  uses of this and associated APIs fail to link. Note: Static registration
+	  through BT_CONN_CB_DEFINE() is always available and does not depend on
+	  this config.
+
+config BT_HCI_ACL_FLOW_CONTROL
+	bool "Controller to Host ACL flow control support"
+	# Enable if building a Host-only build
+	default y if !HAS_BT_CTLR && !BT_STM32_IPM && !BT_ESP32  && !BT_STM32WBA
+	# Enable if building a Controller-only build
+	default y if BT_HCI_RAW
+	select POLL
+	help
+	  Enable support for throttling ACL buffers from the controller
+	  to the host. This is particularly useful when the host and
+	  controller are on separate cores since it ensures that we do
+	  not run out of incoming ACL buffers.
+
+config BT_REMOTE_VERSION
+	bool "Allow fetching of remote version"
+	# Enable if building a Controller-only build
+	default y if BT_HCI_RAW
+	help
+	  Enable this to get access to the remote version in the Controller and
+	  in the Host through bt_conn_get_remote_info(). The fields in question
+	  can then be found in the bt_conn_remote_info struct.
+
+config BT_PHY_UPDATE
+	bool "PHY Update"
+	default y
+	depends on !HAS_BT_CTLR || BT_CTLR_PHY_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure.
+
+config BT_DATA_LEN_UPDATE
+	bool "Data Length Update"
+	default y if ((BT_BUF_ACL_TX_SIZE > 27) || (BT_BUF_ACL_RX_SIZE > 27))
+	depends on !HAS_BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
+
+config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
+	bool "Periodic Advertising Sync Transfer receiver"
+	depends on BT_PER_ADV_SYNC && BT_CONN && (!HAS_BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+
+config BT_PER_ADV_SYNC_TRANSFER_SENDER
+	bool "Periodic Advertising Sync Transfer sender"
+	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && BT_CONN && (!HAS_BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
+
+config BT_SCA_UPDATE
+	bool "Sleep Clock Accuracy Update"
+	default y if BT_ISO_PERIPHERAL || BT_ISO_CENTRAL
+	depends on !HAS_BT_CTLR || BT_CTLR_SCA_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth 5.1 Sleep Clock Accuracy Update Procedure
+
+config BT_TRANSMIT_POWER_CONTROL
+	bool "LE Power Control"
+	depends on !HAS_BT_CTLR || BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	help
+	  Enable support for LE Power Control Request feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
+
+config BT_PATH_LOSS_MONITORING
+	bool "LE Path Loss Monitoring"
+	depends on !HAS_BT_CTLR || BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
+	help
+	  Enable support for LE Path Loss Monitoring feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
+
+config BT_SUBRATING
+	bool "LE Connection Subrating"
+	depends on !HAS_BT_CTLR || BT_CTLR_SUBRATING_SUPPORT
+	help
+	  Enable support for LE Connection Subrating feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.35.
+
+config BT_FRAME_SPACE_UPDATE
+	bool "Frame Space Update"
+	depends on (!HAS_BT_CTLR || BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT) && BT_CONN && BT_LE_EXTENDED_FEAT_SET
+	help
+	  Enable support for Bluetooth 6.0 Frame Space Update feature.
+
+config BT_CHANNEL_SOUNDING
+	bool "Channel Sounding [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on !HAS_BT_CTLR || BT_CTLR_CHANNEL_SOUNDING_SUPPORT
+	help
+	  Enable support for Bluetooth 6.0 Channel Sounding feature.
+
+config BT_CHANNEL_SOUNDING_TEST
+	bool "Channel Sounding Test [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_CHANNEL_SOUNDING
+	help
+	  Enable support for Channel Sounding test mode.
+
+config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_SIZE
+	int "Subevent result reassembly buffer size"
+	depends on BT_CHANNEL_SOUNDING
+	range 239 5600
+	default 5600
+	help
+	  When the results for a CS subevent cannot fit into a single HCI event,
+	  it will be split up into multiple events and consequently, reassembled into a
+	  full CS subevent. This config sets the size of the reassembly buffer.
+
+config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT
+	int "Subevent result reassembly buffer count"
+	depends on BT_CHANNEL_SOUNDING
+	range 1 BT_MAX_CONN
+	default 1
+	help
+	  Controls the number of the reassembly buffers for CS subevent
+	  results. Each running CS procedure is allocated one buffer and the
+	  number of concurrent CS procedures is limited by this value.
+
+config BT_SHORTER_CONNECTION_INTERVALS
+	bool "Shorter Connection Intervals"
+	depends on !HAS_BT_CTLR || BT_CTLR_SHORTER_CONNECTION_INTERVALS_SUPPORT
+	depends on BT_LE_EXTENDED_FEAT_SET
+	depends on BT_SUBRATING
+	help
+	  Enable support for the Bluetooth 6.2 Shorter Connection Intervals
+	  feature.
+
+endif # BT_CONN
+
+config BT_ISO
+	bool
+
+config BT_ISO_TX
+	bool
+
+config BT_ISO_RX
+	bool
+
+#TODO : Split between client(central) and server(peripheral)
+config BT_ISO_UNICAST
+	bool
+	depends on BT_CONN
+	select BT_ISO
+	select BT_ISO_TX
+	select BT_ISO_RX
+	help
+	  This option enables support for Bluetooth Unicast
+	  Isochronous channels.
+
+config BT_ISO_PERIPHERAL
+	bool "Bluetooth Isochronous Channel Unicast Peripheral Support"
+	depends on !HAS_BT_CTLR || BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	depends on BT_PERIPHERAL
+	select BT_ISO_UNICAST
+	help
+	  This option enables support for Bluetooth Unicast
+	  Isochronous channels for the peripheral role.
+
+config BT_ISO_CENTRAL
+	bool "Bluetooth Isochronous Channel Unicast Central Support"
+	depends on !HAS_BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
+	depends on BT_CENTRAL
+	select BT_ISO_UNICAST
+	help
+	  This option enables support for Bluetooth Broadcast
+	  Isochronous channels for the central role.
+
+config BT_ISO_BROADCAST
+	bool
+	select BT_ISO
+	select BT_EXT_ADV
+
+config BT_ISO_BROADCASTER
+	bool "Bluetooth Isochronous Broadcaster Support"
+	depends on !HAS_BT_CTLR || BT_CTLR_ADV_ISO_SUPPORT
+	select BT_ISO_BROADCAST
+	select BT_ISO_TX
+	select BT_BROADCASTER
+	select BT_PER_ADV
+	help
+	  This option enables support for the Bluetooth Isochronous Broadcaster.
+
+config BT_ISO_SYNC_RECEIVER
+	bool "Bluetooth Isochronous Synchronized Receiver Support"
+	depends on !HAS_BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
+	depends on BT_OBSERVER
+	select BT_ISO_BROADCAST
+	select BT_ISO_RX
+	select BT_PER_ADV_SYNC
+	help
+	  This option enables support for the Bluetooth Isochronous
+	  Synchronized Receiver.
+
+if BT_ISO
+
+config BT_ISO_MAX_CHAN
+	int "Maximum number of simultaneous ISO channels"
+	depends on BT_ISO
+	default BT_MAX_CONN if BT_CONN
+	default 1
+	range 1 64
+	help
+	  Maximum number of simultaneous Bluetooth isochronous channels
+	  supported.
+
+config BT_ISO_TX_BUF_COUNT
+	int "Number of Isochronous TX buffers"
+	default 1
+	range 1 $(UINT8_MAX)
+	help
+	  Number of buffers available for outgoing Isochronous channel SDUs.
+
+config BT_ISO_TX_MTU
+	int "Maximum supported MTU for Isochronous TX buffers"
+	range 1 4095
+	default 247
+	help
+	  Maximum MTU for Isochronous channels TX buffers.
+	  This is the actual data payload. It doesn't include the optional
+	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`).
+	  Set this value to 247 to fit 247 bytes of data within a single
+	  HCI ISO Data packet with Data_Total_Length of 255, utilizing
+	  timestamps.
+
+config BT_ISO_RX_BUF_COUNT
+	int "Number of Isochronous RX buffers"
+	default 1
+	range 1 $(UINT8_MAX)
+	help
+	  Number of buffers available for incoming Isochronous channel SDUs.
+
+config BT_ISO_RX_MTU
+	int "Maximum supported MTU for Isochronous RX buffers"
+	default 251
+	range 23 4095
+	help
+	  Maximum MTU for Isochronous channels RX buffers.
+	  This is the actual data payload. It doesn't include the optional
+	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_sdu_ts_hdr`)
+
+config BT_ISO_TEST_PARAMS
+	bool "ISO test parameters support"
+	help
+	  Enabling advanced ISO parameters will allow the use of the ISO test
+	  parameters for creating a CIG or a BIG. These test parameters were
+	  intended for testing, but can be used to allow the host to set more
+	  settings that are otherwise usually controlled by the controller.
+
+if BT_ISO_UNICAST
+
+config BT_ISO_MAX_CIG
+	int "Maximum number of Connected Isochronous Groups (CIGs) to support"
+	default 1
+	help
+	  Maximum number of CIGs that are supported by the host. A CIG can be
+	  used for either transmitting or receiving.
+
+endif # BT_ISO_UNICAST
+
+if BT_ISO_BROADCAST
+
+config BT_ISO_MAX_BIG
+	int "Maximum number of Broadcast Isochronous Groups (BIGs) to support"
+	default 1
+	range 1 BT_EXT_ADV_MAX_ADV_SET
+	help
+	  Maximum number of BIGs that are supported by the host. A BIG can be
+	  used for either transmitting or receiving, but not at the same time.
+
+endif # BT_ISO_BROADCAST
+endif # BT_ISO
+
+rsource "common/Kconfig"
+rsource "host/Kconfig"
+rsource "controller/Kconfig"
+rsource "crypto/Kconfig"
+rsource "lib/Kconfig"
+rsource "Kconfig.logging"
+
+config BT_SHELL
+	bool "Bluetooth shell"
+	select SHELL
+	select BT_PRIVATE_SHELL
+	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
+	help
+	  Activate shell module that provides Bluetooth commands to the
+	  console.
+
+endif # BT_HCI
+
+config BT_COMPANY_ID
+	hex "Company Id"
+	default 0x05F1
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier for this device. The Linux
+	  Foundation's Company Identifier (0x05F1) is the default value for
+	  this option although silicon vendors and hardware manufacturers
+	  can set their own. Note that the controller's Company Identifier is
+	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+
+endif # BT

@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright The Zephyr Project Contributors
+ */
+
+/ {
+	aliases {
+		rtc = &rtc;
+	};
+};
+
+&rtc {
+	clocks = <&clocks RPI_PICO_CLKID_CLK_RTC>;
+	status = "okay";
+};

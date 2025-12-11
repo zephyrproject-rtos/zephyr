@@ -1,0 +1,58 @@
+# Copyright 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/regulator/voltage test in Zephyr.
+
+compatible: "test-regulator-voltage"
+
+properties:
+  regulators:
+    type: phandles
+    required: true
+    description: |
+      Regulators to be tested. Each entry must have a matching ADC entry in
+      io-channels.
+
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC channels to be used. Each entry must have a matching entry in
+      regulators.
+
+  tolerance-microvolt:
+    type: array
+    required: true
+    description: |
+      Tolerance (+/-) when reading configured voltages using ADC. This should
+      be set at most to the regulator resolution. Some noisy regulators may
+      require more, though. Each entry must have a matching entry in
+      regulators.
+
+  adc-avg-count:
+    type: int
+    default: 1
+    description: |
+      Number of ADC readings to average. Defaults to 1 (no average).
+
+  set-read-delay-ms:
+    type: int
+    default: 0
+    description: |
+      Delay between voltage set and ADC read. Defaults to 0 (no delay).
+
+  min-microvolt:
+    type: int
+    default: -2147483648
+    description: |
+      Specifies the minimum voltage at which the test will run, in microvolts.
+      Used to filter out ranges that cannot be tested correctly in the configuration.
+
+  max-microvolt:
+    type: int
+    default: 2147483647
+    description: |
+      Specifies the maximum voltage at which the test will run, in microvolts.
+      Used to filter out ranges that cannot be tested correctly in the configuration.

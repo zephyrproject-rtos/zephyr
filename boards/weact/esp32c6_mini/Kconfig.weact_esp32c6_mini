@@ -1,0 +1,9 @@
+# ESP32-C6-Mini board configuration
+
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WEACT_ESP32C6_MINI
+	select SOC_ESP32_C6_WROOM_1U_N4
+	select SOC_ESP32C6_HPCORE if BOARD_WEACT_ESP32C6_MINI_ESP32C6_HPCORE
+	select SOC_ESP32C6_LPCORE if BOARD_WEACT_ESP32C6_MINI_ESP32C6_LPCORE

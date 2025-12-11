@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Base properties for testing property filters propagation
+# up to the grandchild-binding level.
+
+properties:
+  prop-1:
+    type: int
+  prop-2:
+    type: int
+  prop-3:
+    type: int
+
+child-binding:
+  properties:
+    child-prop-1:
+      type: int
+    child-prop-2:
+      type: int
+    child-prop-3:
+      type: int
+
+  child-binding:
+    properties:
+      grandchild-prop-1:
+        type: int
+      grandchild-prop-2:
+        type: int
+      grandchild-prop-3:
+        type: int

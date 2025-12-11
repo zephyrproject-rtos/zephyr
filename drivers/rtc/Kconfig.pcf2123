@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Lukas Gunnarsson <lukasgunnarsson@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_PCF2123
+	bool "NXP PCF2123 Real-Time Clock driver"
+	default y
+	depends on DT_HAS_NXP_PCF2123_ENABLED
+	select SPI
+	help
+	  Enable NXP PCF2123 SPI RTC driver.

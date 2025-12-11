@@ -1,0 +1,1178 @@
+/*
+ * Copyright (c) 2017-2022 Linaro Limited.
+ * Copyright (c) 2017 RnDity Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <soc.h>
+#include <stm32_bitops.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
+#include <stm32_ll_utils.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
+
+#include "clock_stm32_ll_common.h"
+
+/* Macros to fill up prescaler values */
+#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
+#define hsi_divider(v) z_hsi_divider(v)
+
+#if defined(LL_RCC_HCLK_DIV_1)
+#define fn_ahb_prescaler(v) LL_RCC_HCLK_DIV_ ## v
+#define ahb_prescaler(v) fn_ahb_prescaler(v)
+#else
+#define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
+#define ahb_prescaler(v) fn_ahb_prescaler(v)
+#endif
+
+#define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
+#define apb1_prescaler(v) fn_apb1_prescaler(v)
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
+#define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
+#define apb2_prescaler(v) fn_apb2_prescaler(v)
+#endif
+
+#if defined(RCC_CFGR_ADCPRE)
+#define z_adc12_prescaler(v) LL_RCC_ADC_CLKSRC_PCLK2_DIV_ ## v
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#elif defined(RCC_CFGR2_ADC1PRES)
+#define z_adc12_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    LL_RCC_ADC1_CLKSRC_HCLK, \
+		    LL_RCC_ADC1_CLKSRC_PLL_DIV_ ## v)
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#else
+#define z_adc12_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    (LL_RCC_ADC12_CLKSRC_HCLK), \
+		    (LL_RCC_ADC12_CLKSRC_PLL_DIV_ ## v))
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#define z_adc34_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    (LL_RCC_ADC34_CLKSRC_HCLK), \
+		    (LL_RCC_ADC34_CLKSRC_PLL_DIV_ ## v))
+#define adc34_prescaler(v) z_adc34_prescaler(v)
+#endif
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
+#define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK4_FREQ
+#define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB4Prescaler
+#elif DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
+#define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK3_FREQ
+#define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB3Prescaler
+#else
+#define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK_FREQ
+#define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
+#endif
+
+#if defined(RCC_PLLCFGR_PLLPEN)
+#define RCC_PLLP_ENABLE() stm32_reg_set_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
+#else
+#define RCC_PLLP_ENABLE()
+#endif /* RCC_PLLCFGR_PLLPEN */
+#if defined(RCC_PLLCFGR_PLLQEN)
+#define RCC_PLLQ_ENABLE() stm32_reg_set_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
+#else
+#define RCC_PLLQ_ENABLE()
+#endif /* RCC_PLLCFGR_PLLQEN */
+
+/**
+ * @brief Return frequency for pll with 2 dividers and a multiplier
+ */
+__unused
+static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
+				      int pllm_div,
+				      int plln_mul,
+				      int pllout_div)
+{
+	__ASSERT_NO_MSG(pllm_div && pllout_div);
+
+	return pllsrc_freq / pllm_div * plln_mul / pllout_div;
+}
+
+static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
+{
+	return clock / prescaler;
+}
+
+__unused
+static uint32_t get_msi_frequency(void)
+{
+#if defined(STM32_MSI_ENABLED)
+#if !defined(LL_RCC_MSIRANGESEL_RUN)
+	return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSI_GetRange());
+#else
+	return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
+				      LL_RCC_MSI_GetRange());
+#endif
+#endif
+	return 0;
+}
+
+/** @brief Verifies clock is part of active clock configuration */
+int enabled_clock(uint32_t src_clk)
+{
+	int r = 0;
+
+	switch (src_clk) {
+	case STM32_SRC_SYSCLK:
+		break;
+#if defined(STM32_SRC_PCLK)
+	case STM32_SRC_PCLK:
+		break;
+#endif /* STM32_SRC_PCLK */
+#if defined(STM32_SRC_HSE)
+	case STM32_SRC_HSE:
+		if (!IS_ENABLED(STM32_HSE_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSE */
+#if defined(STM32_SRC_EXT_HSE)
+	case STM32_SRC_EXT_HSE:
+		/* EXT_HSE is the raw OSC_IN signal, so it is always
+		 * available, regardless of the clocks configuration.
+		 */
+		break;
+#endif /* STM32_SRC_HSE */
+#if defined(STM32_SRC_HSI)
+	case STM32_SRC_HSI:
+		if (!IS_ENABLED(STM32_HSI_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSI */
+#if defined(STM32_SRC_LSE)
+	case STM32_SRC_LSE:
+		if (!IS_ENABLED(STM32_LSE_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_LSE */
+#if defined(STM32_SRC_LSI)
+	case STM32_SRC_LSI:
+		if (!IS_ENABLED(STM32_LSI_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_LSI */
+#if defined(STM32_SRC_HSI14)
+	case STM32_SRC_HSI14:
+		if (!IS_ENABLED(STM32_HSI14_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSI14 */
+#if defined(STM32_SRC_HSI48)
+	case STM32_SRC_HSI48:
+		if (!IS_ENABLED(STM32_HSI48_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_HSI48 */
+#if defined(STM32_SRC_MSI)
+	case STM32_SRC_MSI:
+		if (!IS_ENABLED(STM32_MSI_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_MSI */
+#if defined(STM32_SRC_CK48)
+	case STM32_SRC_CK48:
+		if (!IS_ENABLED(STM32_CK48_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_CK48 */
+#if defined(STM32_SRC_PLLCLK)
+	case STM32_SRC_PLLCLK:
+		if (!IS_ENABLED(STM32_PLL_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLCLK */
+#if defined(STM32_SRC_PLL_P)
+	case STM32_SRC_PLL_P:
+		if (!IS_ENABLED(STM32_PLL_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_P */
+#if defined(STM32_SRC_PLL_Q)
+	case STM32_SRC_PLL_Q:
+		if (!IS_ENABLED(STM32_PLL_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_Q */
+#if defined(STM32_SRC_PLL_R)
+	case STM32_SRC_PLL_R:
+		if (!IS_ENABLED(STM32_PLL_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_R */
+#if defined(STM32_SRC_PLLI2S_Q)
+	case STM32_SRC_PLLI2S_Q:
+		if (!IS_ENABLED(STM32_PLLI2S_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLI2S_Q */
+#if defined(STM32_SRC_PLLI2S_R)
+	case STM32_SRC_PLLI2S_R:
+		if (!IS_ENABLED(STM32_PLLI2S_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLI2S_R */
+#if defined(STM32_SRC_PLLSAI_P)
+	case STM32_SRC_PLLSAI_P:
+		if (!IS_ENABLED(STM32_PLLSAI_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI_P */
+#if defined(STM32_SRC_PLLSAI_Q)
+	case STM32_SRC_PLLSAI_Q:
+		if (!IS_ENABLED(STM32_PLLSAI_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI_Q */
+#if defined(STM32_SRC_PLLSAI_DIVQ)
+	case STM32_SRC_PLLSAI_DIVQ:
+		if (!IS_ENABLED(STM32_PLLSAI_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI_DIVQ */
+#if defined(STM32_SRC_PLLSAI_R)
+	case STM32_SRC_PLLSAI_R:
+		if (!IS_ENABLED(STM32_PLLSAI_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI_R */
+#if defined(STM32_SRC_PLLSAI_DIVR)
+	case STM32_SRC_PLLSAI_DIVR:
+		if (!IS_ENABLED(STM32_PLLSAI_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI_DIVR */
+#if defined(STM32_SRC_PLLSAI1_P)
+	case STM32_SRC_PLLSAI1_P:
+		if (!IS_ENABLED(STM32_PLLSAI1_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI1_P */
+#if defined(STM32_SRC_PLLSAI1_Q)
+	case STM32_SRC_PLLSAI1_Q:
+		if (!IS_ENABLED(STM32_PLLSAI1_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI1_Q */
+#if defined(STM32_SRC_PLLSAI1_R)
+	case STM32_SRC_PLLSAI1_R:
+		if (!IS_ENABLED(STM32_PLLSAI1_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI1_R */
+#if defined(STM32_SRC_PLLSAI2_P)
+	case STM32_SRC_PLLSAI2_P:
+		if (!IS_ENABLED(STM32_PLLSAI2_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI2_P */
+#if defined(STM32_SRC_PLLSAI2_Q)
+	case STM32_SRC_PLLSAI2_Q:
+		if (!IS_ENABLED(STM32_PLLSAI2_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI2_Q */
+#if defined(STM32_SRC_PLLSAI2_R)
+	case STM32_SRC_PLLSAI2_R:
+		if (!IS_ENABLED(STM32_PLLSAI2_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI2_R */
+#if defined(STM32_SRC_PLLSAI2_DIVR)
+	case STM32_SRC_PLLSAI2_DIVR:
+		if (!IS_ENABLED(STM32_PLLSAI2_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLLSAI2_DIVR */
+#if defined(STM32_SRC_PLL2CLK)
+	case STM32_SRC_PLL2CLK:
+		if (!IS_ENABLED(STM32_PLL2_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif
+#if defined(STM32_SRC_PLL3CLK)
+	case STM32_SRC_PLL3CLK:
+		if (!IS_ENABLED(STM32_PLL3_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif
+#if defined(STM32_SRC_TIMPCLK1)
+	case STM32_SRC_TIMPCLK1:
+		break;
+#endif /* STM32_SRC_TIMPCLK1 */
+#if defined(STM32_SRC_TIMPCLK2)
+	case STM32_SRC_TIMPCLK2:
+		break;
+#endif /* STM32_SRC_TIMPCLK2 */
+#if defined(STM32_SRC_TIMPLLCLK)
+	case STM32_SRC_TIMPLLCLK:
+		break;
+#endif /* STM32_SRC_TIMPLLCLK */
+	default:
+		return -ENOTSUP;
+	}
+
+	return r;
+}
+
+static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile int temp;
+
+	ARG_UNUSED(dev);
+
+	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+		/* Attempt to change a wrong periph clock bit */
+		return -ENOTSUP;
+	}
+
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		     pclken->enr);
+	/* Delay after enabling the clock, to allow it to become active.
+	 * See (for example) RM0440 7.2.17
+	 */
+	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	UNUSED(temp);
+
+	return 0;
+}
+
+static int stm32_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+
+	ARG_UNUSED(dev);
+
+	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+		/* Attempt to toggle a wrong periph clock bit */
+		return -ENOTSUP;
+	}
+
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		       pclken->enr);
+
+	return 0;
+}
+
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system,
+					 void *data)
+{
+	/* At least one alt src clock available */
+	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	int err;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+
+	err = enabled_clock(pclken->bus);
+	if (err < 0) {
+		/* Attempt to configure a src clock not available or not valid */
+		return err;
+	}
+
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+
+	return 0;
+}
+
+static int stm32_clock_control_get_subsys_rate(const struct device *clock,
+						clock_control_subsys_t sub_system,
+						uint32_t *rate)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	/*
+	 * Get AHB Clock (= SystemCoreClock = SYSCLK/prescaler)
+	 * SystemCoreClock is preferred to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+	 * since it will be updated after clock configuration and hence
+	 * more likely to contain actual clock speed
+	 */
+	uint32_t ahb_clock = SystemCoreClock;
+	uint32_t apb1_clock = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
+	uint32_t apb2_clock = get_bus_clock(ahb_clock, STM32_APB2_PRESCALER);
+#elif defined(STM32_CLOCK_BUS_APB2)
+	/* APB2 bus exists, but w/o dedicated prescaler */
+	uint32_t apb2_clock = apb1_clock;
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
+	uint32_t ahb3_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER,
+					    STM32_AHB3_PRESCALER);
+#elif defined(STM32_CLOCK_BUS_AHB3)
+	/* AHB3 bus exists, but w/o dedicated prescaler */
+	uint32_t ahb3_clock = ahb_clock;
+#endif
+
+	ARG_UNUSED(clock);
+
+	switch (pclken->bus) {
+	case STM32_CLOCK_BUS_AHB1:
+#if defined(STM32_CLOCK_BUS_AHB2)
+	case STM32_CLOCK_BUS_AHB2:
+#endif
+#if defined(STM32_CLOCK_BUS_IOP)
+	case STM32_CLOCK_BUS_IOP:
+#endif
+		*rate = ahb_clock;
+		break;
+#if defined(STM32_CLOCK_BUS_AHB3)
+	case STM32_CLOCK_BUS_AHB3:
+		*rate = ahb3_clock;
+		break;
+#endif
+	case STM32_CLOCK_BUS_APB1:
+#if defined(STM32_CLOCK_BUS_APB1_2)
+	case STM32_CLOCK_BUS_APB1_2:
+#endif
+#if defined(STM32_SRC_PCLK)
+	case STM32_SRC_PCLK:
+#endif
+		*rate = apb1_clock;
+		break;
+#if defined(STM32_CLOCK_BUS_APB2)
+	case STM32_CLOCK_BUS_APB2:
+		*rate = apb2_clock;
+		break;
+#endif
+#if defined(STM32_CLOCK_BUS_APB3)
+	case STM32_CLOCK_BUS_APB3:
+		/* STM32WL: AHB3 and APB3 share the same clock and prescaler. */
+		*rate = ahb3_clock;
+		break;
+#endif
+	case STM32_SRC_SYSCLK:
+		*rate = SystemCoreClock * STM32_CORE_PRESCALER;
+		break;
+#if defined(STM32_SRC_PLLCLK) && defined(STM32_SYSCLK_SRC_PLL)
+	case STM32_SRC_PLLCLK:
+		if (get_pllout_frequency() == 0) {
+			return -EIO;
+		}
+		*rate = get_pllout_frequency();
+		break;
+#endif
+#if defined(STM32_SRC_PLL_P) && STM32_PLL_P_ENABLED
+	case STM32_SRC_PLL_P:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_P_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLL_Q) && STM32_PLL_Q_ENABLED
+	case STM32_SRC_PLL_Q:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_Q_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLL_R) && STM32_PLL_R_ENABLED
+	case STM32_SRC_PLL_R:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_R_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLLI2S_Q) && STM32_PLLI2S_Q_ENABLED && STM32_PLLI2S_ENABLED
+	case STM32_SRC_PLLI2S_Q:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLLI2S_M_DIVISOR,
+					      STM32_PLLI2S_N_MULTIPLIER,
+					      STM32_PLLI2S_Q_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLI2S_Q */
+#if defined(STM32_SRC_PLLI2S_R) && STM32_PLLI2S_ENABLED
+	case STM32_SRC_PLLI2S_R:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLLI2S_M_DIVISOR,
+					      STM32_PLLI2S_N_MULTIPLIER,
+					      STM32_PLLI2S_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLI2S_R */
+#if defined(STM32_SRC_PLLSAI_P) && STM32_PLLSAI_P_ENABLED
+	case STM32_SRC_PLLSAI_P:
+		*rate = get_pll_div_frequency(get_pllsaisrc_frequency(),
+					      STM32_PLLSAI_M_DIVISOR,
+					      STM32_PLLSAI_N_MULTIPLIER,
+					      STM32_PLLSAI_P_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI_P */
+#if defined(STM32_SRC_PLLSAI_Q) && STM32_PLLSAI_Q_ENABLED
+	case STM32_SRC_PLLSAI_Q:
+		*rate = get_pll_div_frequency(get_pllsaisrc_frequency(),
+					      STM32_PLLSAI_M_DIVISOR,
+					      STM32_PLLSAI_N_MULTIPLIER,
+					      STM32_PLLSAI_Q_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI_Q */
+#if defined(STM32_SRC_PLLSAI_DIVQ) && STM32_PLLSAI_Q_ENABLED && STM32_PLLSAI_DIVQ_ENABLED && \
+	defined(STM32_PLLSAI_DIVQ_DIVISOR)
+	case STM32_SRC_PLLSAI_DIVQ:
+		*rate = get_pll_div_frequency(get_pllsaisrc_frequency(),
+					      STM32_PLLSAI_M_DIVISOR,
+					      STM32_PLLSAI_N_MULTIPLIER,
+					      STM32_PLLSAI_Q_DIVISOR);
+		*rate /= STM32_PLLSAI_DIVQ_DIVISOR;
+		break;
+#endif /* STM32_SRC_PLLSAI_DIVQ */
+#if defined(STM32_SRC_PLLSAI_R) && STM32_PLLSAI_R_ENABLED
+	case STM32_SRC_PLLSAI_R:
+		*rate = get_pll_div_frequency(get_pllsaisrc_frequency(),
+					      STM32_PLLSAI_M_DIVISOR,
+					      STM32_PLLSAI_N_MULTIPLIER,
+					      STM32_PLLSAI_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI_R */
+#if defined(STM32_SRC_PLLSAI_DIVR) && STM32_PLLSAI_R_ENABLED && STM32_PLLSAI_DIVR_ENABLED && \
+	defined(STM32_PLLSAI_DIVR_DIVISOR)
+	case STM32_SRC_PLLSAI_DIVR:
+		*rate = get_pll_div_frequency(get_pllsaisrc_frequency(),
+					      STM32_PLLSAI_M_DIVISOR,
+					      STM32_PLLSAI_N_MULTIPLIER,
+					      STM32_PLLSAI_R_DIVISOR);
+		*rate /= STM32_PLLSAI_DIVR_DIVISOR;
+		break;
+#endif /* STM32_SRC_PLLSAI_DIVR */
+#if defined(STM32_SRC_PLLSAI1_P) && STM32_PLLSAI1_P_ENABLED
+	case STM32_SRC_PLLSAI1_P:
+		*rate = get_pll_div_frequency(get_pllsai1src_frequency(),
+					      STM32_PLLSAI1_M_DIVISOR,
+					      STM32_PLLSAI1_N_MULTIPLIER,
+					      STM32_PLLSAI1_P_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI1_P */
+#if defined(STM32_SRC_PLLSAI1_Q) && STM32_PLLSAI1_Q_ENABLED
+	case STM32_SRC_PLLSAI1_Q:
+		*rate = get_pll_div_frequency(get_pllsai1src_frequency(),
+					      STM32_PLLSAI1_M_DIVISOR,
+					      STM32_PLLSAI1_N_MULTIPLIER,
+					      STM32_PLLSAI1_Q_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI1_Q */
+#if defined(STM32_SRC_PLLSAI1_R) && STM32_PLLSAI1_R_ENABLED
+	case STM32_SRC_PLLSAI1_R:
+		*rate = get_pll_div_frequency(get_pllsai1src_frequency(),
+					      STM32_PLLSAI1_M_DIVISOR,
+					      STM32_PLLSAI1_N_MULTIPLIER,
+					      STM32_PLLSAI1_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI1_R */
+#if defined(STM32_SRC_PLLSAI2_P) && STM32_PLLSAI2_P_ENABLED
+	case STM32_SRC_PLLSAI2_P:
+		*rate = get_pll_div_frequency(get_pllsai2src_frequency(),
+					      STM32_PLLSAI2_M_DIVISOR,
+					      STM32_PLLSAI2_N_MULTIPLIER,
+					      STM32_PLLSAI2_P_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI2_P */
+#if defined(STM32_SRC_PLLSAI2_Q) && STM32_PLLSAI2_Q_ENABLED
+	case STM32_SRC_PLLSAI2_Q:
+		*rate = get_pll_div_frequency(get_pllsai2src_frequency(),
+					      STM32_PLLSAI2_M_DIVISOR,
+					      STM32_PLLSAI2_N_MULTIPLIER,
+					      STM32_PLLSAI2_Q_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI2_Q */
+#if defined(STM32_SRC_PLLSAI2_R) && STM32_PLLSAI2_R_ENABLED
+	case STM32_SRC_PLLSAI2_R:
+		*rate = get_pll_div_frequency(get_pllsai2src_frequency(),
+					      STM32_PLLSAI2_M_DIVISOR,
+					      STM32_PLLSAI2_N_MULTIPLIER,
+					      STM32_PLLSAI2_R_DIVISOR);
+		break;
+#endif /* STM32_SRC_PLLSAI2_R */
+#if defined(STM32_SRC_PLLSAI2_DIVR) && STM32_PLLSAI2_R_ENABLED && STM32_PLLSAI2_DIVR_ENABLED && \
+	defined(STM32_PLLSAI2_DIVR_DIVISOR)
+	case STM32_SRC_PLLSAI2_DIVR:
+		*rate = get_pll_div_frequency(get_pllsai2src_frequency(),
+					      STM32_PLLSAI2_M_DIVISOR,
+					      STM32_PLLSAI2_N_MULTIPLIER,
+					      STM32_PLLSAI2_R_DIVISOR);
+		*rate /= STM32_PLLSAI2_DIVR_DIVISOR;
+		break;
+#endif /* STM32_SRC_PLLSAI2_DIVR */
+#if defined(STM32_SRC_LSE)
+	case STM32_SRC_LSE:
+		*rate = STM32_LSE_FREQ;
+		break;
+#endif
+#if defined(STM32_SRC_LSI)
+	case STM32_SRC_LSI:
+		*rate = STM32_LSI_FREQ;
+		break;
+#endif
+#if defined(STM32_SRC_HSI)
+	case STM32_SRC_HSI:
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		*rate = STM32_HSI_FREQ / STM32_HSI_DIVISOR;
+#else
+		*rate = STM32_HSI_FREQ;
+#endif
+		break;
+#endif
+#if defined(STM32_SRC_MSI)
+	case STM32_SRC_MSI:
+		*rate = get_msi_frequency();
+		break;
+#endif
+#if defined(STM32_SRC_HSE)
+	case STM32_SRC_HSE:
+		*rate = STM32_HSE_FREQ;
+		break;
+#endif
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
+#if defined(STM32_CK48_ENABLED)
+	case STM32_SRC_CK48:
+		*rate = get_ck48_frequency();
+		break;
+#endif /* STM32_CK48_ENABLED */
+#if defined(STM32_SRC_TIMPCLK1)
+	case STM32_SRC_TIMPCLK1:
+#if STM32_TIMER_PRESCALER && (defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE))
+		*rate = STM32_APB1_PRESCALER <= 4 ? ahb_clock : apb1_clock * 4;
+#else /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+#endif /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		break;
+#endif /* STM32_SRC_TIMPCLK1 */
+#if defined(STM32_SRC_TIMPCLK2)
+	case STM32_SRC_TIMPCLK2:
+#if STM32_TIMER_PRESCALER && (defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE))
+		*rate = STM32_APB2_PRESCALER <= 4 ? ahb_clock : apb2_clock * 4;
+#else /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+#endif /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+		break;
+#endif /* STM32_SRC_TIMPCLK2 */
+#if defined(STM32_SRC_TIMPLLCLK) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll))
+	case STM32_SRC_TIMPLLCLK:
+		*rate = get_pllout_frequency() * 2;
+		if (*rate == 0) {
+			return -EIO;
+		}
+		break;
+#endif /* STM32_SRC_TIMPLLCLK */
+
+	default:
+		return -ENOTSUP;
+	}
+
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
+	}
+
+	return 0;
+}
+
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+		/* Gated clocks */
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+		    == pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	} else {
+		/* Domain clock sources */
+		if (enabled_clock(pclken->bus) == 0) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+}
+
+static DEVICE_API(clock_control, stm32_clock_control_api) = {
+	.on = stm32_clock_control_on,
+	.off = stm32_clock_control_off,
+	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
+	.configure = stm32_clock_control_configure,
+};
+
+/*
+ * Unconditionally switch the system clock source to HSI.
+ */
+__unused
+static void stm32_clock_switch_to_hsi(void)
+{
+	/* Enable HSI if not enabled */
+	if (LL_RCC_HSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+		/* Wait for HSI ready */
+		}
+	}
+
+	/* Set HSI as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+	}
+}
+
+__unused
+static void set_up_plls(void)
+{
+#if defined(STM32_PLL_ENABLED)
+
+	/*
+	 * Case of chain-loaded applications:
+	 * Switch to HSI and disable the PLL before configuration.
+	 * (Switching to HSI makes sure we have a SYSCLK source in
+	 * case we're currently running from the PLL we're about to
+	 * turn off and reconfigure.)
+	 *
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		stm32_clock_switch_to_hsi();
+		LL_RCC_SetAHBPrescaler(ahb_prescaler(1));
+	}
+	/* Disable PLL */
+	LL_RCC_PLL_Disable();
+	while (LL_RCC_PLL_IsReady() != 0U) {
+		/* Wait for PLL to be disabled */
+	}
+
+#endif
+
+#if defined(STM32_PLL2_ENABLED)
+	/*
+	 * Disable PLL2 after switching to HSI for SysClk
+	 * and disabling PLL, but before enabling PLL again,
+	 * since PLL source can be PLL2.
+	 */
+	LL_RCC_PLL2_Disable();
+	while (LL_RCC_PLL2_IsReady() != 0U) {
+		/* Wait for PLL2 to be disabled */
+	}
+
+	config_pll2();
+
+	/* Enable PLL2 */
+	LL_RCC_PLL2_Enable();
+	while (LL_RCC_PLL2_IsReady() != 1U) {
+	/* Wait for PLL2 ready */
+	}
+#endif /* STM32_PLL2_ENABLED */
+
+#if defined(STM32_PLL_ENABLED)
+
+#if defined(STM32_SRC_PLL_P) && STM32_PLL_P_ENABLED
+	stm32_reg_modify_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
+	RCC_PLLP_ENABLE();
+#endif
+#if defined(STM32_SRC_PLL_Q) && STM32_PLL_Q_ENABLED
+	stm32_reg_modify_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
+	RCC_PLLQ_ENABLE();
+#endif
+
+	config_pll_sysclock();
+
+	/* Enable PLL */
+	LL_RCC_PLL_Enable();
+	while (LL_RCC_PLL_IsReady() != 1U) {
+	/* Wait for PLL ready */
+	}
+
+#endif /* STM32_PLL_ENABLED */
+
+#if defined(STM32_PLLI2S_ENABLED)
+	config_plli2s();
+
+	/* Enable PLL */
+	LL_RCC_PLLI2S_Enable();
+	while (LL_RCC_PLLI2S_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLI2S_ENABLED */
+
+#if defined(STM32_PLLSAI_ENABLED)
+	config_pllsai();
+
+	/* Enable PLL */
+	LL_RCC_PLLSAI_Enable();
+	while (LL_RCC_PLLSAI_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLSAI_ENABLED */
+
+#if defined(STM32_PLLSAI1_ENABLED)
+	config_pllsai1();
+
+	/* Enable PLL */
+	LL_RCC_PLLSAI1_Enable();
+	while (LL_RCC_PLLSAI1_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLSAI1_ENABLED */
+
+#if defined(STM32_PLLSAI2_ENABLED)
+	config_pllsai2();
+
+	/* Enable PLL */
+	LL_RCC_PLLSAI2_Enable();
+	while (LL_RCC_PLLSAI2_IsReady() != 1U) {
+		/* Wait for PLL ready */
+	}
+#endif /* STM32_PLLSAI2_ENABLED */
+}
+
+static void set_up_fixed_clock_sources(void)
+{
+
+	if (IS_ENABLED(STM32_HSE_ENABLED)) {
+#if defined(STM32_HSE_BYPASS)
+		/* Check if need to enable HSE bypass feature or not */
+		if (IS_ENABLED(STM32_HSE_BYPASS)) {
+			LL_RCC_HSE_EnableBypass();
+		} else {
+			LL_RCC_HSE_DisableBypass();
+		}
+#endif
+#if STM32_HSE_TCXO
+		LL_RCC_HSE_EnableTcxo();
+#endif
+#if STM32_HSE_DIV2
+		LL_RCC_HSE_EnableDiv2();
+#endif
+		/* Enable HSE */
+		LL_RCC_HSE_Enable();
+		while (LL_RCC_HSE_IsReady() != 1) {
+		/* Wait for HSE ready */
+		}
+		/* Check if we need to enable HSE clock security system or not */
+#if STM32_HSE_CSS
+		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
+		LL_RCC_HSE_EnableCSS();
+#endif /* STM32_HSE_CSS */
+	}
+
+	if (IS_ENABLED(STM32_HSI_ENABLED)) {
+		/* Enable HSI if not enabled */
+		if (LL_RCC_HSI_IsReady() != 1) {
+			/* Enable HSI */
+			LL_RCC_HSI_Enable();
+			while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			}
+		}
+#if STM32_HSI_DIV_ENABLED
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		if (STM32_HSI_DIVISOR == 4) {
+			LL_RCC_HSI_EnableDivider();
+		} else {
+			LL_RCC_HSI_DisableDivider();
+		}
+#else
+		LL_RCC_SetHSIDiv(hsi_divider(STM32_HSI_DIVISOR));
+#endif
+#endif
+	}
+
+	if (IS_ENABLED(STM32_LSI_ENABLED)) {
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+		LL_RCC_LSI1_Enable();
+		while (LL_RCC_LSI1_IsReady() != 1) {
+		}
+#else
+		LL_RCC_LSI_Enable();
+		while (LL_RCC_LSI_IsReady() != 1) {
+		}
+#endif
+	}
+
+	if (IS_ENABLED(STM32_LSE_ENABLED)) {
+		/* LSE belongs to the back-up domain, enable access.*/
+
+		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+		stm32_backup_domain_enable_access();
+
+#if STM32_LSE_DRIVING
+		/* Configure driving capability */
+		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
+#endif
+
+		if (IS_ENABLED(STM32_LSE_BYPASS)) {
+			/* Configure LSE bypass */
+			LL_RCC_LSE_EnableBypass();
+		}
+
+		/* Enable LSE Oscillator (32.768 kHz) */
+		LL_RCC_LSE_Enable();
+		while (!LL_RCC_LSE_IsReady()) {
+			/* Wait for LSE ready */
+		}
+
+#ifdef RCC_BDCR_LSESYSEN
+		LL_RCC_LSE_EnablePropagation();
+		/* Wait till LSESYS is ready */
+		while (!LL_RCC_LSE_IsPropagationReady()) {
+		}
+#endif /* RCC_BDCR_LSESYSEN */
+
+		stm32_backup_domain_disable_access();
+
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+	}
+
+#if defined(STM32_MSI_ENABLED)
+	if (IS_ENABLED(STM32_MSI_ENABLED)) {
+		/* Set MSI Range */
+#if defined(RCC_CR_MSIRGSEL)
+		LL_RCC_MSI_EnableRangeSelection();
+#endif /* RCC_CR_MSIRGSEL */
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+		LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
+#else
+		LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
+#endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32L1X */
+
+#if STM32_MSI_PLL_MODE
+		/* Enable MSI hardware auto calibration */
+		LL_RCC_MSI_EnablePLLMode();
+#endif
+
+		LL_RCC_MSI_SetCalibTrimming(0);
+
+		/* Enable MSI if not enabled */
+		if (LL_RCC_MSI_IsReady() != 1) {
+			/* Enable MSI */
+			LL_RCC_MSI_Enable();
+			while (LL_RCC_MSI_IsReady() != 1) {
+				/* Wait for MSI ready */
+			}
+		}
+	}
+#endif /* STM32_MSI_ENABLED */
+
+#if defined(STM32_HSI14_ENABLED)
+	/* For all series with HSI 14 clock support */
+	if (IS_ENABLED(STM32_HSI14_ENABLED)) {
+		LL_RCC_HSI14_Enable();
+		while (LL_RCC_HSI14_IsReady() != 1) {
+		}
+	}
+#endif /* STM32_HSI48_ENABLED */
+
+#if defined(STM32_HSI48_ENABLED)
+	/* For all series with HSI 48 clock support */
+	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		/*
+		 * HSI48 requires VREFINT (see RM0376 section 7.2.4).
+		 * The SYSCFG is needed to control VREFINT, so clock it.
+		 */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+		LL_SYSCFG_VREFINT_EnableHSI48();
+#endif /* CONFIG_SOC_SERIES_STM32L0X */
+
+		/*
+		 * STM32WB: Lock the CLK48 HSEM and do not release to prevent
+		 * M0 core to disable this clock (used for RNG on M0).
+		 * No-op on other series.
+		 */
+		z_stm32_hsem_lock(CFG_HW_CLK48_CONFIG_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+		LL_RCC_HSI48_Enable();
+		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+	}
+#endif /* STM32_HSI48_ENABLED */
+}
+
+/**
+ * @brief Initialize clocks for the stm32
+ *
+ * This routine is called to enable and configure the clocks and PLL
+ * of the soc on the board. It depends on the board definition.
+ * This function is called on the startup and also to restore the config
+ * when exiting for low power mode.
+ *
+ * @param dev clock device struct
+ *
+ * @return 0
+ */
+int stm32_clock_control_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* Some clocks would be activated by default */
+	config_enable_default_clocks();
+	config_regulator_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
+#if defined(FLASH_ACR_LATENCY)
+	uint32_t old_flash_freq;
+	uint32_t new_flash_freq;
+
+	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
+					       GET_CURRENT_FLASH_PRESCALER());
+
+	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				      STM32_FLASH_PRESCALER);
+
+	/* If HCLK increases, set flash latency before any clock setting */
+	if (old_flash_freq < new_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
+	}
+#endif /* FLASH_ACR_LATENCY */
+
+	/* Set up individual enabled clocks */
+	set_up_fixed_clock_sources();
+
+	/* Set up PLLs */
+	set_up_plls();
+
+	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
+		(ahb_prescaler(STM32_CORE_PRESCALER) == ahb_prescaler(1)) &&
+		(MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
+		LL_RCC_SetAHBPrescaler(ahb_prescaler(2));
+	} else {
+		LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
+	}
+
+#if STM32_SYSCLK_SRC_PLL
+	/* Set PLL as System Clock Source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+	}
+#elif STM32_SYSCLK_SRC_HSE
+	/* Set HSE as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+	}
+#elif STM32_SYSCLK_SRC_MSI
+	/* Set MSI as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
+	}
+#elif STM32_SYSCLK_SRC_HSI
+	stm32_clock_switch_to_hsi();
+#endif /* STM32_SYSCLK_SRC_... */
+
+	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
+		(ahb_prescaler(STM32_CORE_PRESCALER) == ahb_prescaler(1)) &&
+		(MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
+		LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
+	}
+
+#if defined(FLASH_ACR_LATENCY)
+	/* If HCLK not increased, set flash latency after all clock setting */
+	if (old_flash_freq >= new_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
+	}
+#endif /* FLASH_ACR_LATENCY */
+
+	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
+	/* Set bus prescalers prescaler */
+	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_APB1_PRESCALER));
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
+	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_APB2_PRESCALER));
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
+	LL_C2_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CPU2_PRESCALER));
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
+	LL_RCC_SetAHB3Prescaler(ahb_prescaler(STM32_AHB3_PRESCALER));
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
+	LL_RCC_SetAHB4Prescaler(ahb_prescaler(STM32_AHB4_PRESCALER));
+#endif
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE)
+	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+	} else {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+	}
+#endif
+
+	return 0;
+}
+
+#if defined(STM32_HSE_CSS)
+void __weak stm32_hse_css_callback(void) {}
+
+/* Called by the HAL in response to an HSE CSS interrupt */
+void HAL_RCC_CSSCallback(void)
+{
+	stm32_hse_css_callback();
+}
+#endif
+
+void __weak config_regulator_voltage(uint32_t hclk_freq) {}
+/**
+ * @brief RCC device, note that priority is intentionally set to 1 so
+ * that the device init runs just after SOC init
+ */
+DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
+		    stm32_clock_control_init,
+		    NULL,
+		    NULL, NULL,
+		    PRE_KERNEL_1,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		    &stm32_clock_control_api);

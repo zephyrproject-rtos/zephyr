@@ -1,0 +1,8 @@
+# Copyright (C) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: INTEL FPGA NIOSV Softcore Processor
+
+compatible: "intel,niosv"
+
+include: riscv,cpus.yaml

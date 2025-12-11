@@ -1,0 +1,24 @@
+# Copyright (c) 2017-2021 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MPS3
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  Enable support for ARM MPS3 MCU Series
+
+config SOC_SERIES
+	default "mps3" if SOC_SERIES_MPS3
+
+config SOC_MPS3_CORSTONE300
+	bool
+	select SOC_SERIES_MPS3
+
+config SOC_MPS3_CORSTONE310
+	bool
+	select SOC_SERIES_MPS3
+
+config SOC
+	default "corstone300" if SOC_MPS3_CORSTONE300
+	default "corstone310" if SOC_MPS3_CORSTONE310

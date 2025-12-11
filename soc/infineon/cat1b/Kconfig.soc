@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Family definitions
+config SOC_FAMILY_INFINEON_CAT1
+	bool
+
+config SOC_FAMILY_INFINEON_CAT1B
+	bool
+	select SOC_FAMILY_INFINEON_CAT1
+
+# MPNs definitions
+rsource "*/Kconfig.soc"

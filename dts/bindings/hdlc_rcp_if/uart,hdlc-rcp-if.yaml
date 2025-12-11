@@ -1,0 +1,9 @@
+# Copyright (c) 2024, DENX Software Engineering GmbH
+#               Lukasz Majewski <lukma@denx.de>
+# SPDX-License-Identifier: Apache-2.0
+
+description: UART HDLC RCP interface node
+
+compatible: "uart,hdlc-rcp-if"
+
+include: base.yaml

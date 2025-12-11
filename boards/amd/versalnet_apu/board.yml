@@ -1,0 +1,6 @@
+board:
+  name: versalnet_apu
+  full_name: Versal Net APU Development Board
+  vendor: amd
+  socs:
+  - name: amd_versalnet_apu

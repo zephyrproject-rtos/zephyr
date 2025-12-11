@@ -1,0 +1,28 @@
+identifier: xg28_rb4401c
+name: EFR32xG28 868-915 MHz 20 dBm Radio Board (xG28-RB4401C, BRD4401C)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - led
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - pm
+vendor: silabs

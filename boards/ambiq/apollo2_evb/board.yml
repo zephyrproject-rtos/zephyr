@@ -1,0 +1,6 @@
+board:
+  name: apollo2_evb
+  full_name: Apollo2 EVB
+  vendor: ambiq
+  socs:
+  - name: apollo2

@@ -1,0 +1,6 @@
+board:
+  name: nucleo_f439zi
+  full_name: Nucleo F439ZI
+  vendor: st
+  socs:
+    - name: stm32f439xx

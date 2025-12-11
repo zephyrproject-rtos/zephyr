@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2020 Marco Peter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	chosen {
+		zephyr,display = &ssd1306_ssd1306_128x64_spi;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	ssd1306_ssd1306_128x64_spi: ssd1306@0 {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x0>;
+		spi-max-frequency = <10000000>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+		data-cmd-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 0>;
+		/* reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>; */
+	};
+};

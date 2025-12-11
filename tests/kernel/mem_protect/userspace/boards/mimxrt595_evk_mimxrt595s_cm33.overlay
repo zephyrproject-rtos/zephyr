@@ -1,0 +1,14 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Disable USB SRAM node because this test does not
+ * need USB but needs an extra MPU region which
+ * otherwise would be taken up for the SRAM1 USB region.
+ */
+&sram1 {
+	status = "disabled";
+};

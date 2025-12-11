@@ -1,0 +1,15 @@
+# Copyright (c) 2025 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "STM32WBA Bluetooth configuration"
+	depends on BT_STM32WBA
+
+config BT_STM32WBA_USE_TEMP_BASED_CALIB
+	bool "STM32WBA Radio calibration based on temperature sensor"
+	default y
+	select SENSOR
+	select STM32_TEMP
+	help
+	  Allows the linklayer to calibrate itself on the current temperature read on the ADC4
+endmenu

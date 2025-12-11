@@ -1,0 +1,414 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_mcxn947-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		sdhc0 = &usdhc0;
+		mcuboot-button0 = &user_button_2;
+	};
+
+	chosen {
+		zephyr,edac = &erm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_1 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+			status = "disabled";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+			status = "disabled";
+		};
+
+		red_led: led_3 {
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "disabled";
+		};
+
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+			status = "disabled";
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* ANA_4/ADC1_A0      AN */
+			   <1 0 &gpio1 3 0>,  /* RST */
+			   <2 0 &gpio3 23 0>, /* CS */
+			   <3 0 &gpio3 21 0>, /* SCK */
+			   <4 0 &gpio3 22 0>, /* MISO */
+			   <5 0 &gpio3 20 0>, /* MOSI */
+			   <6 0 &gpio3 19 0>, /* PWM */
+			   <7 0 &gpio5 7 0>,  /* INT */
+			   <8 0 &gpio1 16 0>, /* GPIO, Not a RX */
+			   <9 0 &gpio1 17 0>, /* GPIO, Not a TX */
+			   <10 0 &gpio1 1 0>, /* SCL */
+			   <11 0 &gpio1 0 0>; /* SDA */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A2 0 &gpio0 14 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 22 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0 15 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0 23 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio4 3 0>,   /* RX */
+			   <ARDUINO_HEADER_R3_D1 0 &gpio4 2 0>,   /* TX */
+			   <ARDUINO_HEADER_R3_D2 0 &gpio0 29 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio1 23 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio0 30 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 21 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 2 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio0 31 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio0 10 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio0 27 0>, /* CS */
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 24 0>, /* MOSI */
+			   <ARDUINO_HEADER_R3_D12 0 &gpio0 26 0>, /* MISO */
+			   <ARDUINO_HEADER_R3_D13 0 &gpio0 25 0>, /* SCK */
+			   <ARDUINO_HEADER_R3_D14 0 &gpio4 0 0>,  /* SDA */
+			   <ARDUINO_HEADER_R3_D15 0 &gpio4 1 0>;  /* SCL */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio4 5 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+	};
+
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <DVP_20PIN_PEN 0 &gpio1 19 0>,
+			   <DVP_20PIN_PDN 0 &gpio1 18 0>;
+	};
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&eim0_channel5 {
+	status = "okay";
+};
+
+&eim0_channel6 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&flexcomm1_lpspi1 {
+	pinctrl-0 = <&pinmux_flexcomm1_lpspi>;
+	pinctrl-names = "default";
+};
+
+arduino_spi: &flexcomm1_lpspi1 {};
+
+&flexcomm6_lpspi6 {
+	pinctrl-0 = <&pinmux_flexcomm6_lpspi>;
+	pinctrl-names = "default";
+};
+
+mikrobus_spi: &flexcomm6_lpspi6 {};
+
+nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
+	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+arduino_i2c: &flexcomm2_lpi2c2 {};
+
+&flexcomm3_lpi2c3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+mikrobus_i2c: &flexcomm3_lpi2c3 {};
+
+&flexcomm2_lpuart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart>;
+	pinctrl-names = "default";
+};
+
+arduino_serial: &flexcomm2_lpuart2 {};
+
+&flexcomm4_lpuart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm4_lpuart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm7_lpi2c7 {
+	pinctrl-0 = <&pinmux_flexcomm7_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+/* SmartDMA is used for video driver on this board */
+&smartdma {
+	/* Shields do not enable video-sdma parent node so enable it by default */
+	status = "okay";
+	program-mem = <0x4000000>;
+
+	video_sdma: video-sdma {
+		status = "disabled";
+		compatible = "nxp,video-smartdma";
+		pinctrl-0 = <&pinmux_smartdma_camera>;
+		pinctrl-names = "default";
+		vsync-pin = <4>;
+		hsync-pin = <11>;
+		pclk-pin = <5>;
+	};
+};
+
+/*
+ * MCXN947 board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};
+
+&sram {
+	sramg: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 DT_SIZE_K(64)>;
+	};
+
+	sramh: memory@20060000 {
+		compatible = "mmio-sram";
+		reg = <0x20060000 DT_SIZE_K(32)>;
+	};
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+		};
+
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(984)>;
+		};
+
+		slot1_partition: partition@10A000 {
+			label = "image-1";
+			reg = <0x0010A000 DT_SIZE_K(984)>;
+		};
+		/* storage_partition is placed in WINBOND flash memory*/
+	};
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	combination-mode;
+	rx-clock-source = <1>;
+
+	/* WINBOND flash memory*/
+	w25q64jvssiq: w25q64jvssiq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		status = "disabled";
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		jedec-id = [ef 40 17];
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <1>;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <0>;
+	};
+};
+
+&dac0 {
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&sai0 {
+	pinctrl-0 = <&pinmux_sai0>;
+	pinctrl-names = "default";
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "disabled";
+	};
+};
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};
+
+&usdhc0 {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	cd-gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default", "slow", "med";
+	no-1-8-v;
+};
+
+&lpadc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
+	/* DMA channels 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 61>;
+	dma-names = "tx";
+	shifters-count = <8>;
+	timers-count = <1>;
+	enwr-pin = <1>;
+	rd-pin = <0>;
+	data-pin-start = <16>;
+	reset-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&opamp0 {
+	pinctrl-0 = <&pinmux_opamp0>;
+	pinctrl-names = "default";
+};
+
+&i3c1 {
+	pinctrl-0 = <&pinmux_i3c1>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
+};
+
+dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
+
+dvp_20pin_interface: &video_sdma {};

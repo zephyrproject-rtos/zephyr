@@ -1,0 +1,12 @@
+# KB1200 tachometer sensor configuration options
+
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_ENE_KB1200
+	bool "ENE KB1200 tachometer sensor"
+	default y
+	depends on DT_HAS_ENE_KB1200_TACH_ENABLED
+	select PINCTRL
+	help
+	  Enable tachometer sensor for ENE KB1200.

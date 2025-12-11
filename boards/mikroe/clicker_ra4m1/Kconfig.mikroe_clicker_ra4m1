@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Ian Morris
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIKROE_CLICKER_RA4M1
+	select SOC_R7FA4M1AB3CFM

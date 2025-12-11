@@ -1,0 +1,90 @@
+# Debug Options
+
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_LOG
+	bool "Network stack logging and debugging"
+	select LOG
+	help
+	  Enable logging in various parts of the network stack.
+	  Specific debugging options to other sub-menus will be unlocked
+	  as well (IPv6, IPv4, ...).
+
+module = NET_PKT
+module-dep = NET_LOG
+module-str = Log level for network packet and buffer allocation
+module-help = Enables debug of network packet and buffer allocations and frees.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_DEBUG_NET_PKT_ALLOC
+	bool "Debug network packet and buffer individual allocation"
+	default y if NET_PKT_LOG_LEVEL_DBG
+	help
+	  Enables printing of network packet and buffer allocations and frees for
+	  each allocation. This can produce lot of output so it is disabled by
+	  default.
+
+config NET_DEBUG_NET_PKT_EXTERNALS
+	int "How many external network packet allocations"
+	default 0
+	help
+	  How many external net_pkt objects are there in user specific pools.
+	  This value is used when allocating space for tracking the
+	  memory allocations.
+
+config NET_DEBUG_NET_PKT_NON_FRAGILE_ACCESS
+	bool "Reduce r/w fragility by resetting the packet cursor when freed"
+	select NET_DEBUG_NET_PKT_ALLOC
+	help
+	  This MUST not be used unless you have an hard to catch bug. This will
+	  reset the pkt cursor when it's freed, so any subsequent r/w operations
+	  will not segfault, but just bail out and hopefully it will enable you
+	  to know who/where the packet was freed already. Do not set this, by
+	  any means, unless you are actively debugging.
+
+if !NET_RAW_MODE
+
+module = NET_CORE
+module-dep = NET_LOG
+module-str = Log level for core IP stack
+module-help = Enables core network stack code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IF
+module-dep = NET_LOG
+module-str = Log level for network interface code
+module-help = Enables network interface code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_TC
+module-dep = NET_LOG
+module-str = Log level for network traffic class code
+module-help = Enables network traffic class code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_UTILS
+module-dep = NET_LOG
+module-str = Log level for utility functions in IP stack
+module-help = Enables utility functions to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_CONTEXT
+module-dep = NET_LOG
+module-str = Log level for network context allocation
+module-help = Enables printing of network context allocations and frees.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_CONN
+module-dep = NET_LOG
+module-str = Log level for UDP/TCP connection handling
+module-help = Enables UDP/TCP connection debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_ROUTE
+module-dep = NET_LOG
+module-str = Log level for route management
+module-help = Enables routing engine debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_RAW_MODE

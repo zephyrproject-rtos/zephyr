@@ -1,0 +1,198 @@
+/* btp_csis.c - Bluetooth CSIS Tester */
+
+/*
+ * Copyright (c) 2023 Oticon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "btp/btp.h"
+
+#define LOG_MODULE_NAME bttester_csis
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
+#define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
+
+static struct bt_csip_set_member_svc_inst *csis_svc_inst;
+static uint8_t sirk_read_response;
+
+static uint8_t csis_supported_commands(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	struct btp_csis_read_supported_commands_rp *rp = rsp;
+
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CSIS, rp->data);
+	*rsp_len += sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t csis_set_member_lock(const void *cmd, uint16_t cmd_len,
+				    void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_csis_set_member_lock_cmd *cp = cmd;
+	int err = -1;
+
+	if (csis_svc_inst) {
+		err = bt_csip_set_member_lock(csis_svc_inst, cp->lock, cp->force);
+	}
+
+	return BTP_STATUS_VAL(err);
+}
+
+static uint8_t csis_get_member_rsi(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	struct btp_csis_get_member_rsi_rp *rp = rsp;
+	int err = -1;
+
+	if (csis_svc_inst) {
+		err = bt_csip_set_member_generate_rsi(csis_svc_inst, rp->rsi);
+	}
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_VAL(err);
+}
+
+static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_csis_sirk_set_type_cmd *cp = cmd;
+
+	switch (cp->type) {
+	case BTP_CSIS_SIRK_TYPE_PLAINTEXT:
+		LOG_DBG("SIRK type: plain text");
+		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
+		break;
+	case BTP_CSIS_SIRK_TYPE_ENCRYPTED:
+		LOG_DBG("SIRK type: encrypted");
+		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
+		break;
+	case BTP_CSIS_SIRK_TYPE_OOB_ONLY:
+		LOG_DBG("SIRK type: OOB procedure only");
+		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY;
+		break;
+	default:
+		LOG_ERR("Unknown SIRK type: %u", cp->type);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t csis_set_sirk(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_csis_set_sirk_cmd *cp = cmd;
+	int err = -ENOENT;
+
+	LOG_DBG("Setting new SIRK");
+
+	if (csis_svc_inst != NULL) {
+		err = bt_csip_set_member_sirk(csis_svc_inst, cp->sirk);
+	} else {
+		LOG_DBG("No CSIS instance registered");
+	}
+
+	return BTP_STATUS_VAL(err);
+}
+
+static uint8_t csis_set_set_size(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_csis_set_set_size_cmd *cp = cmd;
+	int err = -ENOENT;
+
+	LOG_DBG("Setting new set size %u and rank %u", cp->set_size, cp->rank);
+
+	if (csis_svc_inst != NULL) {
+		err = bt_csip_set_member_set_size_and_rank(csis_svc_inst, cp->set_size, cp->rank);
+	} else {
+		LOG_DBG("No CSIS instance registered");
+	}
+
+	return BTP_STATUS_VAL(err);
+}
+
+static const struct btp_handler csis_handlers[] = {
+	{
+		.opcode = BTP_CSIS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = csis_supported_commands,
+	},
+	{
+		.opcode = BTP_CSIS_SET_MEMBER_LOCK,
+		.expect_len = sizeof(struct btp_csis_set_member_lock_cmd),
+		.func = csis_set_member_lock,
+	},
+	{
+		.opcode = BTP_CSIS_GET_MEMBER_RSI,
+		.expect_len = sizeof(struct btp_csis_get_member_rsi_cmd),
+		.func = csis_get_member_rsi,
+	},
+	{
+		.opcode = BTP_CSIS_SET_SIRK_TYPE,
+		.expect_len = sizeof(struct btp_csis_sirk_set_type_cmd),
+		.func = csis_set_sirk_type,
+	},
+	{
+		.opcode = BTP_CSIS_SET_SIRK,
+		.expect_len = sizeof(struct btp_csis_set_sirk_cmd),
+		.func = csis_set_sirk,
+	},
+	{
+		.opcode = BTP_CSIS_SET_SET_SIZE,
+		.expect_len = sizeof(struct btp_csis_set_set_size_cmd),
+		.func = csis_set_set_size,
+	},
+};
+
+static void lock_changed_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst,
+			    bool locked)
+{
+	LOG_DBG("%s", locked ? "locked" : "unlocked");
+}
+
+static uint8_t sirk_read_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst)
+{
+	return sirk_read_response;
+}
+
+static struct bt_csip_set_member_cb csis_cb = {
+	.lock_changed = lock_changed_cb,
+	.sirk_read_req = sirk_read_cb,
+};
+
+uint8_t tester_init_csis(void)
+{
+	const struct bt_csip_set_member_register_param register_params = {
+		.set_size = 1,
+		.sirk = { 0xB8, 0x03, 0xEA, 0xC6, 0xAF, 0xBB, 0x65, 0xA2,
+			  0x5A, 0x41, 0xF1, 0x53, 0x05, 0x68, 0x8E, 0x83 },
+		.lockable = true,
+		.rank = 1,
+		.cb = &csis_cb,
+	};
+	int err = bt_csip_set_member_register(&register_params, &csis_svc_inst);
+
+	sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
+
+	tester_register_command_handlers(BTP_SERVICE_ID_CSIS, csis_handlers,
+					 ARRAY_SIZE(csis_handlers));
+
+	return BTP_STATUS_VAL(err);
+}
+
+uint8_t tester_unregister_csis(void)
+{
+	return BTP_STATUS_SUCCESS;
+}

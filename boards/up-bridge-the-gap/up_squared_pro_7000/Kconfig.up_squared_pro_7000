@@ -1,0 +1,5 @@
+# Copyright (c) 2018-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UP_SQUARED_PRO_7000
+	select SOC_ALDER_LAKE

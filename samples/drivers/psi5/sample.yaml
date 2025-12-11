@@ -1,0 +1,11 @@
+sample:
+  name: PSI5 driver sample
+
+tests:
+  sample.drivers.psi5:
+    tags:
+      - drivers
+      - psi5
+    depends_on: psi5
+    filter: dt_alias_exists("psi5-0")
+    harness: sensor

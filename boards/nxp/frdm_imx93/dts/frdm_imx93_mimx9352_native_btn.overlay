@@ -1,0 +1,35 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Apply this overlay to test USER_BTN1 and USER_BTN2 on PCAL6524.
+ *
+ * The user buttons USER_BTN1 and USER_BTN2 is connected to onboard GPIO expander PCAL6524
+ * by default, but can be changed to connect to FRDM-IMX93 GPIO. To do this, remove R2608
+ * and R2610, populate R2611 and R2612.
+ */
+
+/* Remove default keys */
+/delete-node/ &btn_1;
+/delete-node/ &btn_2;
+
+/ {
+	keys {
+		compatible = "gpio-keys";
+
+		btn_1: btn_1 {
+			label = "BTN1";
+			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn_2: btn_2 {
+			label = "BTN2";
+			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};

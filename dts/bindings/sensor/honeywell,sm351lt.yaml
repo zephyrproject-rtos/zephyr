@@ -1,0 +1,14 @@
+# Copyright (c) 2020, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+description: SM351LT magnetoresistive sensor
+
+compatible: "honeywell,sm351lt"
+
+include: sensor-device.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to the sensor

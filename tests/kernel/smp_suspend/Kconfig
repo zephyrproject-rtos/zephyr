@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SMP suspend test"
+
+source "Kconfig.zephyr"
+
+config SMP_TEST_RELAX
+	int "A delay to compensate for spinlock bias induced by arch_spin_relax"
+	default 16

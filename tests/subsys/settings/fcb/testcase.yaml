@@ -1,0 +1,18 @@
+tests:
+  settings.fcb.raw:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - native_sim
+    tags:
+      - settings
+      - fcb

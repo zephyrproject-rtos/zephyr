@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX261
+	bool
+	select SOC_FAMILY_RENESAS_RX
+	help
+	  Renesas RX261 series
+
+config SOC_R5F52618BGFP
+	bool
+	select SOC_SERIES_RX261
+	help
+	  R5F52618BGFP microcontroller SoC
+
+config SOC_SERIES
+	default "rx261" if SOC_SERIES_RX261
+
+config SOC
+	default "r5f52618bgfp" if SOC_R5F52618BGFP

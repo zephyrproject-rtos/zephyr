@@ -1,0 +1,5 @@
+description: Texas Instruments LP5036 I2C LED controller node
+
+compatible: ti,lp5036
+
+include: ti,lp50xx.yaml

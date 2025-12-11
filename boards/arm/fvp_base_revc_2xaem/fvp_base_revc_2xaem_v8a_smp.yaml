@@ -1,0 +1,24 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_base_revc_2xaem/v8a/smp
+name: FVP Base RevC 2xAEM ARMv8-A (SMP)
+arch: arm64
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Base_RevC-2xAEMvA
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+flash: 64
+vendor: arm
+supported:
+  - gpio
+  - uart
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

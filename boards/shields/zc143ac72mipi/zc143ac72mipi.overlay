@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &co5300_zc143ac72mipi;
+	};
+
+	en_mipi_display_zc143ac72mipi: enable-mipi-display {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+	autoinsert-eotp;
+	phy-clock = <319488000>;
+
+	co5300_zc143ac72mipi: co5300@0 {
+		status = "okay";
+		compatible = "chipone,co5300";
+		reg = <0x0>;
+		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
+		backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
+		tear-effect-gpios = <&nxp_mipi_connector 22 GPIO_ACTIVE_HIGH>;
+		data-lanes = <1>;
+		width = <466>;
+		height = <466>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+	};
+};

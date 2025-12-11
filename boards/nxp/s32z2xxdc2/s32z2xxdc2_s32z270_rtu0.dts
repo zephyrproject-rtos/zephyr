@@ -1,0 +1,39 @@
+/*
+ * Copyright 2022-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/nxp/nxp_s32z27x_rtu0_r52.dtsi>
+#include "s32z2xxdc2_s32z270.dtsi"
+
+/ {
+	model = "NXP X-S32Z270-DC (DC2) on RTU0 Cortex-R52 cores";
+	compatible = "nxp,s32z270";
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,flash = &cram0;
+		zephyr,canbus = &canxl0;
+		zephyr,flash-controller = &s26hs512t;
+	};
+
+	aliases {
+		watchdog0 = &swt0;
+	};
+};
+
+&mru0 {
+	rx-channels = <1>;
+	status = "okay";
+};
+
+&enetc_psi0 {
+	mboxes = <&mru0 0>;
+	mbox-names = "rx";
+};
+
+&canxl0 {
+	status = "okay";
+};

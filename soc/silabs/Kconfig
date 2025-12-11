@@ -1,0 +1,137 @@
+# Copyright (c) 2017 Christian Taedcke
+# Copyright (c) 2018 Gil Benkoe
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "*/Kconfig"
+
+if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+
+config SOC_GECKO_HAS_RADIO
+	bool
+	help
+	  If enabled, indicates that the SoC has a Radio PHY.
+
+config SOC_GECKO_USE_RAIL
+	bool "Use RAIL (Radio Abstraction Interface Layer)"
+	depends on SOC_GECKO_HAS_RADIO
+	help
+	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
+	  hardware. This option enable the proper set of features to allow to properly compile
+	  with the RAIL blob.
+
+config SOC_GECKO_CUSTOM_RADIO_PHY
+	bool "Use RAIL for custom radio phy packet sending and receiving"
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
+	help
+	  If enabled, RAIL can be used for user generated custom radio phy
+	  management, sending and receiving packets on radio phy. User has
+	  to provide the radio_config.c and radio_config.h files for the phy.
+
+endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
+
+config SOC_GECKO_EMU_DCDC
+	bool "SoC DC/DC regulator"
+	select SOC_GECKO_EMU
+	help
+	  Enable the on chip DC/DC regulator
+
+choice SOC_GECKO_EMU_DCDC_MODE
+	prompt "DC/DC mode"
+	depends on SOC_GECKO_EMU_DCDC
+	help
+	  Select power configuration mode of the on chip DC/DC converter.
+
+	config SOC_GECKO_EMU_DCDC_MODE_UNCONFIGURED
+		bool "Initial / Unconfigured"
+
+	config SOC_GECKO_EMU_DCDC_MODE_ON
+		bool "DC/DC On"
+
+	config SOC_GECKO_EMU_DCDC_MODE_OFF
+		bool "DC/DC Off"
+
+	config SOC_GECKO_EMU_DCDC_MODE_BYPASS
+		bool "Bypass"
+endchoice
+
+config CMU_NEED_LFXO
+	bool
+	help
+	  Set if LFXO oscillator should be configured and enabled, potentially
+	  in on-demand mode, after SoC is initialized.
+
+choice
+	prompt "High Frequency Clock Selection"
+	default CMU_HFCLK_HFXO
+
+config CMU_HFCLK_HFXO
+	bool "External high frequency crystal oscillator"
+	help
+	  Set this option to use the external high frequency crystal oscillator
+	  as high frequency clock.
+
+config CMU_HFCLK_LFXO
+	bool "External low frequency crystal oscillator"
+	select CMU_NEED_LFXO
+	help
+	  Set this option to use the external low frequency crystal oscillator
+	  as high frequency clock.
+
+config CMU_HFCLK_HFRCO
+	bool "Internal high frequency RC oscillator"
+	help
+	  Set this option to use the internal high frequency RC oscillator as high frequency clock.
+
+endchoice
+
+config CMU_HFXO_FREQ
+	int "External high frequency oscillator frequency"
+	help
+	  Set the external high frequency oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config CMU_LFXO_FREQ
+	int "External low frequency oscillator frequency"
+	help
+	  Set the external low frequency oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config CMU_HFRCO_FREQ
+	int "Internal high frequency RC oscillator frequency"
+	default 0
+	depends on SOC_GECKO_HAS_HFRCO_FREQRANGE
+	help
+	  Set the internal high frequency RC oscillator frequency in Hz. This should be set by the
+	  board's defconfig. Only supported values may be used here. Setting this to 0, skips the
+	  configuration of the high frequency RC oscillator completely. This may be desired, if
+	  the bootloader already configured it properly or the device's default clock source should
+	  be used with it's default configuration.
+
+config SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	bool
+	help
+	  If enabled, indicates that SoC allows to configure individual pin
+	  locations. This is supported by e.g. efr32fg1p, efr32mg12p series.
+	  If disabled, indicates that pin locations are configured in groups.
+	  This is supported by e.g. efm32hg, efm32wg series.
+
+config SOC_GECKO_HAS_ERRATA_RTCC_E201
+	bool
+	help
+	  Set if the SoC is affected by errata RTCC_E201:
+	  "When the RTCC is configured with a prescaler, the CCV1 top value enable
+	  feature enabled by setting CCV1TOP in RTCC_CTRL fails to wrap the counter
+	  when RTCC_CNT is equal to RTCC_CC1_CCV, as intended."
+
+config SOC_GECKO_HAS_HFRCO_FREQRANGE
+	bool
+	help
+	  If enabled, indicates that configuration of HFRCO frequency for this SOC is supported
+	  via FREQRANGE field. This is supported for e.g. efr32fg1p, efr32mg12p series.
+	  If disabled, indicates that configuration of HFRCO frequency for corresponding SOC
+	  is not supported via this field. This is the case for e.g. efm32hg, efm32wg series.
+
+endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1

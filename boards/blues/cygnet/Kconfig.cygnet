@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Blues
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CYGNET
+	select SOC_STM32L433XX

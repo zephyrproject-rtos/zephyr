@@ -1,0 +1,34 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA4M1
+	bool
+	select SOC_FAMILY_RENESAS_RA
+	help
+	  Renesas RA4M1 series
+
+config SOC_R7FA4M1AB3CFM
+	bool
+	select SOC_SERIES_RA4M1
+	help
+	  R7FA4M1AB3CFM
+
+config SOC_R7FA4M1AB3CFP
+	bool
+	select SOC_SERIES_RA4M1
+	help
+	  R7FA4M1AB3CFP
+
+config SOC_R7FA4M1AB3CNE
+	bool
+	select SOC_SERIES_RA4M1
+	help
+	  R7FA4M1AB3CNE
+
+config SOC_SERIES
+	default "ra4m1" if SOC_SERIES_RA4M1
+
+config SOC
+	default "r7fa4m1ab3cfm" if SOC_R7FA4M1AB3CFM
+	default "r7fa4m1ab3cfp" if SOC_R7FA4M1AB3CFP
+	default "r7fa4m1ab3cne" if SOC_R7FA4M1AB3CNE

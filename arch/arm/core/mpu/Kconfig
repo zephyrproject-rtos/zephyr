@@ -1,0 +1,84 @@
+# Memory Protection Unit (MPU) configuration options
+
+# Copyright (c) 2017 Linaro Limited
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if CPU_HAS_MPU
+
+config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+	int
+	default 256 if ARM_MPU && ARMV6_M_ARMV8_M_BASELINE && !ARMV8_M_BASELINE
+	default 128 if ARM_MPU && FPU_SHARING && MPU_STACK_GUARD
+	default 64 if ARM_MPU && AARCH32_ARMV8_R
+	default 32 if ARM_MPU
+	default 4
+	help
+	  Minimum size (and alignment) of an ARM MPU region. Use this
+	  symbol to guarantee minimum size and alignment of MPU regions.
+	  A minimum 4-byte alignment is enforced in ARM builds without
+	  support for Memory Protection.
+
+if ARM_MPU
+
+config MPU_STACK_GUARD
+	bool "Thread Stack Guards"
+	help
+	  Enable Thread Stack Guards via MPU
+
+config MPU_STACK_GUARD_MIN_SIZE_FLOAT
+	int
+	depends on MPU_STACK_GUARD
+	depends on FPU_SHARING
+	default 128
+	help
+	  Minimum size (and alignment when applicable) of an ARM MPU
+	  region, which guards the stack of a thread that is using the
+	  Floating Point (FP) context. The width of the guard is set to
+	  128, to accommodate the length of a Cortex-M exception stack
+	  frame when the floating point context is active. The FP context
+	  is only stacked in sharing FP registers mode, therefore, the
+	  option is applicable only when FPU_SHARING is selected.
+
+config MPU_ALLOW_FLASH_WRITE
+	bool "Add MPU access to write to flash"
+	help
+	  Enable this to allow MPU RWX access to flash memory
+
+config MPU_DISABLE_BACKGROUND_MAP
+	bool "Disables the default background address map"
+	help
+	  Enable this to turn off the default background MPU address map. Your
+	  SoC definition should likely provide its own custom MPU regions.
+
+config CUSTOM_SECTION_ALIGN
+	bool "Custom Section Align"
+	help
+	  MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT(ARMv7-M) sometimes cause memory
+	  wasting in linker scripts defined memory sections. Use this symbol
+	  to guarantee user custom section align size to avoid more memory used
+	  for respect alignment. But that needs carefully configure MPU region
+	  and sub-regions(ARMv7-M) to cover this feature.
+
+config CUSTOM_SECTION_MIN_ALIGN_SIZE
+	int "Custom Section Align Size"
+	default 32
+	help
+	  Custom align size of memory section in linker scripts. Usually
+	  it should consume less alignment memory. Although this alignment
+	  size is configured by users, it must also respect the power of
+	  two regulation if hardware requires.
+
+config ARM_MPU_PXN
+	bool
+	default y
+	depends on ARMV8_1_M_MAINLINE
+	help
+	  Enable support for Armv8.1-m MPU's Privileged Execute Never (PXN) attr.
+	  An MPU region marked with PXN attribute can only be executed from an
+	  unprivileged mode and executing such region from privileged mode will
+	  result in a Memory Management fault.
+
+endif # ARM_MPU
+
+endif # CPU_HAS_MPU

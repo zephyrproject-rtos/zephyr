@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Emil Lindqvist
+# SPDX-License-Identifier: Apache-2.0
+
+description: u-blox SARA-R5 modem
+
+compatible: "u-blox,sara-r5"
+
+include: zephyr,cellular-modem-device.yaml

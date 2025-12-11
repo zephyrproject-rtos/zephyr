@@ -1,0 +1,12 @@
+# STM32WB5MM-DK Discovery Development board configuration
+
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32WB5MM_DK
+
+config BT_STM32_IPM
+	default y
+	depends on BT
+
+endif

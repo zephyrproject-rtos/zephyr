@@ -1,0 +1,170 @@
+# Common architecture configuration options
+
+# Copyright (c) 2022, CSIRO.
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SEMIHOST
+	bool "Semihosting support for ARM, RISC-V and Xtensa targets"
+	depends on ARM || ARM64 || RISCV || (XTENSA && !SIMULATOR_XTENSA)
+	help
+	  Semihosting is a mechanism that enables code running on an ARM, RISC-V
+	  or Xtensa target to communicate and use the Input/Output facilities on
+	  a host computer that is running a debugger.
+	  Additional information can be found in:
+	  https://developer.arm.com/documentation/dui0471/m/what-is-semihosting-
+	  https://github.com/riscv-non-isa/riscv-semihosting/blob/main/riscv-semihosting.adoc
+	  This option is compatible with hardware and with QEMU, through the
+	  (automatic) use of the -semihosting-config switch when invoking it.
+
+config ISR_TABLE_SHELL
+	bool "Shell command to dump the ISR tables"
+	depends on GEN_SW_ISR_TABLE
+	depends on SHELL
+	help
+	  This option enables a shell command to dump the ISR tables.
+
+config ARCH_SUPPORTS_ROM_OFFSET
+	bool
+	default y
+	depends on  (ARM || X86 || ARM64 || RISCV || ARC)
+	help
+	  Hidden option to enable support for ROM offset within the linker
+	  script, which will place a block of 0x0 of size
+	  CONFIG_ROM_START_OFFSET at the start of the ROM region.
+
+config ARM_MPU
+	bool "ARM MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select THREAD_STACK_INFO
+	select ARCH_HAS_EXECUTABLE_PAGE_BIT if (CPU_AARCH32_CORTEX_R || CPU_CORTEX_M)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(CPU_HAS_NXP_SYSMPU || ARMV8_M_BASELINE || ARMV8_M_MAINLINE || AARCH32_ARMV8_R)
+	select MPU_REQUIRES_NON_OVERLAPPING_REGIONS if CPU_HAS_ARM_MPU && (ARMV8_M_BASELINE || ARMV8_M_MAINLINE || AARCH32_ARMV8_R)
+	select MPU_GAP_FILLING if AARCH32_ARMV8_R
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS if (CPU_AARCH32_CORTEX_R || CPU_CORTEX_M)
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE && CPU_AARCH64_CORTEX_R
+	default y if CPU_AARCH64_CORTEX_R
+	depends on CPU_HAS_MPU
+	help
+	  MCU implements Memory Protection Unit.
+
+	  Notes:
+	  The ARMv6-M, ARMv7-M, and ARMv8-R MPU MPU architecture requires a power-of-two
+	  alignment of MPU region base address and size.
+
+	  The NXP MPU as well as the ARMv8-M MPU do not require MPU regions
+	  to have power-of-two alignment for base address and region size.
+
+	  The ARMv8-M and ARMv8-R MPU requires the active MPU regions be non-overlapping.
+	  As a result of this, both respective MPUs needs to fully partition the
+	  memory map when programming dynamic memory regions (e.g. PRIV stack
+	  guard, user thread stack, and application memory domains), if the
+	  system requires PRIV access policy different from the access policy
+	  of the ARMv8-M or ARMv8-R background memory map. The application developer may
+	  enforce full PRIV (kernel) memory partition by enabling the
+	  MPU_GAP_FILLING option.
+	  By not enforcing full partition, MPU may leave part of kernel
+	  SRAM area covered only by the default ARMv8-M or ARMv8-R memory map. This
+	  is fine for User Mode, since the background ARM map does not
+	  allow nPRIV access at all. However, since the background map
+	  policy allows instruction fetches by privileged code, forcing
+	  this Kconfig option off prevents the system from directly
+	  triggering MemManage exceptions upon accidental attempts to
+	  execute code from SRAM in XIP builds.
+	  Since this does not compromise User Mode, we make the skipping
+	  of full partitioning the default behavior for the ARMv8-M and ARMv8-R MPU
+	  driver.
+
+config ARM_PAC_PER_THREAD
+	bool "Set cryptographically secure PAC key per thread"
+	depends on ARM_PAC
+	depends on ENTROPY_DEVICE_RANDOM_GENERATOR || TIMER_RANDOM_GENERATOR
+	help
+	  Select this option to generate and use unique keys per thread to generate Pointer
+	  Authentication Code.
+	  Internally, sys_csrand_get() is used as part of arch_new_thread() to generate
+	  cryptographically secure random keys, which are saved in the thread's
+	  architecture-specific context. These keys are then loaded into the PAC key registers
+	  before switching to the thread during context switches.
+	  Applications can chose to have hardware based random keys generator by selecting the right
+	  generator from RNG_GENERATOR_CHOICE or by selecting TIMER_RANDOM_GENERATOR for testing
+	  with pseudo random keys.
+	  Note: GCC version 14.3 or higher is needed to support this option.
+
+config ARM_PAC
+	bool
+	help
+	  This option signifies that Pointer Authentication Code is enabled.
+
+config ARM_BTI
+	bool
+	help
+	  This option signifies that Branch Target Identification is enabled.
+
+choice ARM_PACBTI
+	prompt "Pointer Authentication and Branch Target Identification (PACBTI)"
+	default ARM_PACBTI_NONE
+	depends on ARMV8_1_M_MAINLINE
+	help
+	  Select a PACBTI configuration to enable the compiler to insert the required
+	  Pointer Authentication and Branch Target Identification (PACBTI) instructions.
+	  This also sets the necessary configuration options to enable PACBTI bits
+	  in hardware.
+
+config ARM_PACBTI_STANDARD
+	bool "Standard (PACRET + LEAF + BTI)"
+	select ARM_PAC
+	select ARM_BTI
+	help
+	  This option instructs the compiler to generate code with all branch protection features
+	  enabled at their standard level.
+
+config ARM_PACBTI_PACRET
+	bool "PACRET only"
+	select ARM_PAC
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory.
+
+config ARM_PACBTI_PACRET_LEAF
+	bool "PACRET + Leaf"
+	select ARM_PAC
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  also sign leaf functions even if they do not write the return address to memory.
+
+config ARM_PACBTI_BTI
+	bool "BTI only"
+	select ARM_BTI
+	help
+	  This option enables Branch Target Identification (BTI), which inserts special landing
+	  pad instructions at valid indirect branch targets. This option does not enable Pointer
+	  Authentication (PAC).
+
+config ARM_PACBTI_PACRET_BTI
+	bool "PACRET + BTI"
+	select ARM_PAC
+	select ARM_BTI
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  add landing-pad instructions at the permitted targets of indirect branch instructions
+
+config ARM_PACBTI_PACRET_LEAF_BTI
+	bool "PACRET + Leaf + BTI"
+	select ARM_PAC
+	select ARM_BTI
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  also sign leaf functions even if they do not write the return address to memory and,
+	  add landing-pad instructions at the permitted targets of indirect branch instructions
+
+config ARM_PACBTI_NONE
+	bool "None"
+	help
+	This option instructs the compiler to generate code without branch protection or return
+	address signing
+endchoice

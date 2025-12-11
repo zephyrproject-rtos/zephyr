@@ -1,0 +1,15 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/ {
+	servo: servo {
+		compatible = "pwm-servo";
+		pwms = <&sw_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		min-pulse = <PWM_USEC(700)>;
+		max-pulse = <PWM_USEC(2500)>;
+	};
+};
+
+&sw_pwm {
+	status = "okay";
+	clock-prescaler = <3>;
+	channel-gpios = <&edge_connector 19 GPIO_ACTIVE_HIGH>;
+};

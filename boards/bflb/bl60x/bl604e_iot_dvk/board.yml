@@ -1,0 +1,6 @@
+board:
+  name: bl604e_iot_dvk
+  full_name: BL604E IOT DVK development board
+  vendor: bflb
+  socs:
+    - name: bl604e20q2i

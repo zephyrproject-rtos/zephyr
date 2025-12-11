@@ -1,0 +1,29 @@
+tests:
+  kernel.timer:
+    tags:
+      - kernel
+      - timer
+      - userspace
+  kernel.timer.no_multitheading:
+    tags:
+      - kernel
+      - timer
+    platform_allow:
+      - qemu_cortex_m3
+      - nsim/nsim_em
+      - nsim/nsim_em7d_v22
+      - nsim/nsim_hs
+      - nsim/nsim_hs/mpuv6
+      - nsim/nsim_hs5x
+      - nsim/nsim_hs6x
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs6x
+      - qemu_leon3
+    integration_platforms:
+      - qemu_cortex_m3
+      - nsim/nsim_em
+    extra_configs:
+      - CONFIG_MULTITHREADING=n
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_SPIN_VALIDATE=n

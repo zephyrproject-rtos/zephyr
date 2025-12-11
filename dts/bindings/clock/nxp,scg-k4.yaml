@@ -1,0 +1,19 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP K4 Generation SCG (System Clock Generator) IP node
+
+compatible: "nxp,scg-k4"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - name
+  - mrcc_offset # See fsl_clock.h clock IP names, 0 if N/A

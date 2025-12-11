@@ -1,0 +1,17 @@
+description: Local Advanced Programmable Interrupt Controller (APIC)
+
+compatible: "intel,loapic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+
+interrupt-cells:
+  - irq
+  - sense
+  - priority

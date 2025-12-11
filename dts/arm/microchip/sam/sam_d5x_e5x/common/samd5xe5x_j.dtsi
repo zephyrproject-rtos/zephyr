@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <microchip/sam/sam_d5x_e5x/common/samd5xe5x.dtsi>
+
+/ {
+	soc {
+		tcc3: tcc@42001000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x42001000 0x2000>;
+			interrupts = <101 0>, <102 0>, <103 0>;
+			clocks = <&mclkperiphperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC3>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+		};
+
+		tcc4: tcc@43001000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x43001000 0x2000>;
+			interrupts = <104 0>, <105 0>, <106 0>;
+			clocks = <&mclkperiphperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TCC4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC4>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+		};
+	};
+};

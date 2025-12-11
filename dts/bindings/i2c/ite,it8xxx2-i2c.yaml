@@ -1,0 +1,15 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it8xxx2 I2C
+
+compatible: "ite,it8xxx2-i2c"
+
+include: ite,common-i2c.yaml
+
+properties:
+  fifo-enable:
+    type: boolean
+    description: |
+      FIFO1 supports channel A.
+      FIFO2 supports channel B.

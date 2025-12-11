@@ -1,0 +1,45 @@
+name: Manifest
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  contribs:
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write # to create/update pull request comments
+    name: Manifest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          path: zephyrproject/zephyr
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: west setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        working-directory: zephyrproject/zephyr
+        run: |
+          pip install -r scripts/requirements-west.txt --require-hashes
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          west init -l . || true
+
+      - name: Manifest
+        uses: zephyrproject-rtos/action-manifest@09983f53d3d878791aa37a7755ae44d695f4c1e5 # v2.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          manifest-path: 'west.yml'
+          checkout-path: 'zephyrproject/zephyr'
+          use-tree-checkout: 'true'
+          check-impostor-commits: 'true'
+          label-prefix: 'manifest-'
+          verbosity-level: '1'
+          labels: 'manifest'
+          dnm-labels: 'DNM (manifest)'
+          blobs-added-labels: 'Binary Blobs Added'
+          blobs-modified-labels: 'Binary Blobs Modified'

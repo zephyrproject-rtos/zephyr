@@ -1,0 +1,102 @@
+common:
+  build_only: true
+  tags: bluetooth
+
+tests:
+  bluetooth.general.tester:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - nrf52840dk/nrf52840
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester_bsim:
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_prj_conf
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
+  bluetooth.general.tester.nxp:
+    # Disabling monolithic since CI environment doesn't use blobs
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - rd_rw612_bga
+      - frdm_rw612
+    extra_configs:
+      - CONFIG_NXP_MONOLITHIC_NBU=n
+  bluetooth.general.tester_hci_ipc:
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags: bluetooth
+    sysbuild: true
+  bluetooth.general.tester_hci_ipc_bsim:
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_prj_conf
+    sysbuild: true
+  bluetooth.general.tester_le_audio:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+    tags: bluetooth
+    harness: bluetooth
+    sysbuild: true
+  bluetooth.general.tester_le_audio_bsim:
+    build_only: true
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_le_audio_prj_conf
+    sysbuild: true
+  bluetooth.general.tester_mesh:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - nrf52840dk/nrf52840
+    extra_args: EXTRA_CONF_FILE="overlay-mesh.conf"
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester.legacy_adv:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_BT_EXT_ADV=n
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester_br_edr:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - EXTRA_CONF_FILE="prj_br.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    tags: bluetooth
+    harness: bluetooth

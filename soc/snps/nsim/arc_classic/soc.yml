@@ -1,0 +1,23 @@
+family:
+  - name: nsim_arc_classic
+    series:
+      - name: nsim_em
+        socs:
+          - name: nsim_em
+          - name: nsim_em7d_v22
+          - name: nsim_em11d
+      - name: nsim_hs
+        socs:
+          - name: nsim_hs
+          - name: nsim_hs_smp
+          - name: nsim_hs_mpuv6
+          - name: nsim_hs5x
+          - name: nsim_hs5x_smp
+          - name: nsim_hs6x
+          - name: nsim_hs6x_smp
+      - name: nsim_vpx5
+        socs:
+          - name: nsim_vpx5
+      - name: nsim_sem
+        socs:
+          - name: nsim_sem

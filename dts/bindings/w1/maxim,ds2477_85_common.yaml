@@ -1,0 +1,91 @@
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Common Properties for the DS2477 and DS2485 I2C 1-Wire masters:
+
+include: [w1-master.yaml, i2c-device.yaml]
+
+properties:
+  switching-threshold:
+    type: string
+    required: true
+    enum:
+      - "low"
+      - "medium"
+      - "high"
+      - "off"
+    description: |
+      Default Low-to-High Switching Threshold.
+
+      Only the following values are allowed:
+        low:     0.25 x VCC, no hysteresis
+        medium:  0.40 x VCC, no hysteresis (recommended for most configurations)
+        high:    0.75 x VCC, with hysteresis
+        off:     off (chip reset value)
+
+  active-pull-threshold:
+    type: string
+    required: true
+    enum:
+      - "low"
+      - "medium"
+      - "high"
+      - "off"
+    description: |
+      Default Active Pullup on Threshold configuration.
+      For configurations with a single slave a "low" active pull
+      threshold is recommended.
+
+      Only the following values are allowed:
+        low:     0.25 x VCC (recommended for most configurations)
+        medium:  0.40 x VCC
+        high:    0.75 x VCC
+        off:     off (chip reset value)
+
+  weak-pullup:
+    type: string
+    required: true
+    enum:
+      - "extern"
+      - "500"
+      - "1000"
+      - "333"
+    description: |
+      Default 1-Wire Weak Pullup Resistance in ohms.
+      For most configurations with a single slave "1000" ohms are recommended,
+      but some devices and multidrop configurations might need a stronger pullup.
+
+      To enter floating condition, it is suggested to switch the weak-pull up
+      to extern and disable the switching as well as the active-pull threshold.
+
+      Only the following values are allowed:
+        "extern" (chip reset value)
+        "500"
+        "1000" (recommended for most configurations)
+        "333"
+
+  standard-slew:
+    type: int
+    default: 150
+    enum:
+      - 50
+      - 150
+      - 1300
+    description: |
+      Default slew for standard speed mode in ns. Only the following values are
+      allowed:
+        50
+        150   (default; chip reset value)
+        1300
+
+  overdrive-slew:
+    type: int
+    default: 50
+    enum:
+      - 50
+      - 150
+    description: |
+      Default slew for overdrive speed mode in ns. Only the following values are
+      allowed:
+        50    (default; chip reset value)
+        150

@@ -1,0 +1,8 @@
+# Raytac MDBT50Q-CX-40 Dongle nRF52840 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# Copyright (c) 2025 Raytac Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAYTAC_MDBT50Q_CX_40_DONGLE
+	select SOC_NRF52840_QIAA

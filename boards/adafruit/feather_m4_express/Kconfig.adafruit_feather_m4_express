@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Daikin Comfort Technologies North America, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_M4_EXPRESS
+	select SOC_SAMD51J19A

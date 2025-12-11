@@ -1,0 +1,11 @@
+identifier: rzv2n_evk/r9a09g056n48gbg/cm33
+name: Cortex-M33 for Renesas RZ/V2N EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+vendor: renesas

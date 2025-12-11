@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	memory@50001f00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x50001f00 0x100>;
+		zephyr,memory-region = "RTC_SLOW_RAM_RETAINED_MEM";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+};
+
+&rtc_slow_ram {
+	/* Shrink rtc_slow_ram size to avoid overlap with retained memory region:
+	 * 8KB - 256 = 0x1f00
+	 */
+	reg = <0x50000000 0x1f00>;
+};

@@ -1,0 +1,11 @@
+# ST STM32F479XI MCU configuration options
+
+# Copyright (c) 2025 Christopher Cichiwskyj
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F479XX
+
+config NUM_IRQS
+	default 93
+
+endif # SOC_STM32F479XX

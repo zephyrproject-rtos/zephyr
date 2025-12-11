@@ -1,0 +1,7 @@
+# PAN1782 EVB configuration
+
+# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PAN1782_EVB
+	select SOC_NRF52833_QIAA

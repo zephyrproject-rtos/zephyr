@@ -1,0 +1,11 @@
+tests:
+  boards.neorv32.build_all:
+    build_only: true
+    tags:
+      - drivers
+      - entropy
+      - gpio
+      - uart
+    platform_allow: neorv32/neorv32/minimalboot
+    integration_platforms:
+      - neorv32/neorv32/minimalboot

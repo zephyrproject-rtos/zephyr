@@ -1,0 +1,28 @@
+common:
+  harness: net
+  tags:
+    - net
+    - mdns
+sample:
+  name: mDNS responder
+tests:
+  sample.net.mdns_responder:
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_x86
+  sample.net.mdns_responder.probing:
+    extra_args:
+      - CONFIG_MDNS_RESPONDER_PROBE=y
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_x86
+  sample.net.mdns_responder.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp

@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rw6xx.dtsi>
+#include "ubx_evk_iris_w1_common.dtsi"

@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Pete Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_PRO_MICRO_RP2040
+	select RP2_FLASH_W25Q080

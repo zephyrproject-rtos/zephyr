@@ -1,0 +1,772 @@
+/*
+ * Copyright (c) 2017, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "xtensa/corebits.h"
+#include <string.h>
+#include <xtensa_asm2_context.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <kernel_internal.h>
+#include <kswap.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/offsets.h>
+#include <zephyr/zsr.h>
+#include <zephyr/arch/common/exc_handle.h>
+
+#include <kernel_internal.h>
+#include <xtensa_internal.h>
+#include <xtensa_stack.h>
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+extern char xtensa_arch_except_epc[];
+extern char xtensa_arch_kernel_oops_epc[];
+
+extern void xtensa_lazy_hifi_save(uint8_t *regs);
+extern void xtensa_lazy_hifi_load(uint8_t *regs);
+
+#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+#define LAZY_COPROCESSOR_LOCK
+
+static struct k_spinlock coprocessor_lock;
+#endif
+
+
+bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
+{
+	uintptr_t start, end;
+	struct k_thread *thread = _current;
+	bool was_in_isr, invalid;
+
+	/* Without userspace, there is no privileged stack so the thread stack
+	 * is the whole stack (minus reserved area). So there is no need to
+	 * check for PS == UINT32_MAX for special treatment.
+	 */
+	ARG_UNUSED(ps);
+
+	/* Since both level 1 interrupts and exceptions go through
+	 * the same interrupt vector, both of them increase the nested
+	 * counter in the CPU struct. The architecture vector handler
+	 * moves execution to the interrupt stack when nested goes from
+	 * zero to one. Afterwards, any nested interrupts/exceptions will
+	 * continue running in interrupt stack. Therefore, only when
+	 * nested > 1, then it was running in the interrupt stack, and
+	 * we should check bounds against the interrupt stack.
+	 */
+	was_in_isr = arch_curr_cpu()->nested > 1;
+
+	if ((thread == NULL) || was_in_isr) {
+		/* We were servicing an interrupt or in early boot environment
+		 * and are supposed to be on the interrupt stack.
+		 */
+		int cpu_id;
+
+#ifdef CONFIG_SMP
+		cpu_id = arch_curr_cpu()->id;
+#else
+		cpu_id = 0;
+#endif
+
+		start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[cpu_id]);
+		end = start + CONFIG_ISR_STACK_SIZE;
+#ifdef CONFIG_USERSPACE
+	} else if (ps == UINT32_MAX) {
+		/* Since the stashed PS is inside struct pointed by frame->ptr_to_bsa,
+		 * we need to verify that both frame and frame->ptr_to_bsa are valid
+		 * pointer within the thread stack. Also without PS, we have no idea
+		 * whether we were in kernel mode (using privileged stack) or user
+		 * mode (normal thread stack). So we need to check the whole stack
+		 * area.
+		 *
+		 * And... we cannot account for reserved area since we have no idea
+		 * which to use: ARCH_KERNEL_STACK_RESERVED or ARCH_THREAD_STACK_RESERVED
+		 * as we don't know whether we were in kernel or user mode.
+		 */
+		start = (uintptr_t)thread->stack_obj;
+		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+	} else if (((ps & PS_RING_MASK) == 0U) &&
+		   ((thread->base.user_options & K_USER) == K_USER)) {
+		/* Check if this is a user thread, and that it was running in
+		 * kernel mode. If so, we must have been doing a syscall, so
+		 * check with privileged stack bounds.
+		 */
+		start = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
+		end = thread->stack_info.start;
+#endif
+	} else {
+		start = thread->stack_info.start;
+		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+	}
+
+	invalid = (addr <= start) || ((addr + sz) >= end);
+
+	return invalid;
+}
+
+bool xtensa_is_frame_pointer_valid(_xtensa_irq_stack_frame_raw_t *frame)
+{
+	_xtensa_irq_bsa_t *bsa;
+
+	/* Check if the pointer to the frame is within stack bounds. If not, there is no
+	 * need to test if the BSA (base save area) pointer is also valid as it is
+	 * possibly invalid.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame, sizeof(*frame), UINT32_MAX)) {
+		return false;
+	}
+
+	/* Need to test if the BSA area is also within stack bounds. The information
+	 * contained within the BSA is only valid if within stack bounds.
+	 */
+	bsa = frame->ptr_to_bsa;
+	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
+		return false;
+	}
+
+#ifdef CONFIG_USERSPACE
+	/* With usespace, we have privileged stack and normal thread stack within
+	 * one stack object. So we need to further test whether the frame pointer
+	 * resides in the correct stack based on kernel/user mode.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame, sizeof(*frame), bsa->ps)) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+void xtensa_dump_stack(const void *stack)
+{
+	_xtensa_irq_stack_frame_raw_t *frame = (void *)stack;
+	_xtensa_irq_bsa_t *bsa;
+	uintptr_t num_high_regs;
+	int reg_blks_remaining;
+
+	/* Don't dump stack if the stack pointer is invalid as any frame elements
+	 * obtained via de-referencing the frame pointer are probably also invalid.
+	 * Or worse, cause another access violation.
+	 */
+	if (!xtensa_is_frame_pointer_valid(frame)) {
+		return;
+	}
+
+	bsa = frame->ptr_to_bsa;
+
+	/* Calculate number of high registers. */
+	num_high_regs = (uint8_t *)bsa - ((uint8_t *)frame + sizeof(void *));
+	num_high_regs /= sizeof(uintptr_t);
+
+	/* And high registers are always comes in 4 in a block. */
+	reg_blks_remaining = (int)num_high_regs / 4;
+
+	EXCEPTION_DUMP(" **  A0 %p  SP %p  A2 %p  A3 %p",
+		(void *)bsa->a0,
+		(void *)((char *)bsa + sizeof(*bsa)),
+		(void *)bsa->a2, (void *)bsa->a3);
+
+	if (reg_blks_remaining > 0) {
+		reg_blks_remaining--;
+
+		EXCEPTION_DUMP(" **  A4 %p  A5 %p  A6 %p  A7 %p",
+			(void *)frame->blks[reg_blks_remaining].r0,
+			(void *)frame->blks[reg_blks_remaining].r1,
+			(void *)frame->blks[reg_blks_remaining].r2,
+			(void *)frame->blks[reg_blks_remaining].r3);
+	}
+
+	if (reg_blks_remaining > 0) {
+		reg_blks_remaining--;
+
+		EXCEPTION_DUMP(" **  A8 %p  A9 %p A10 %p A11 %p",
+			(void *)frame->blks[reg_blks_remaining].r0,
+			(void *)frame->blks[reg_blks_remaining].r1,
+			(void *)frame->blks[reg_blks_remaining].r2,
+			(void *)frame->blks[reg_blks_remaining].r3);
+	}
+
+	if (reg_blks_remaining > 0) {
+		reg_blks_remaining--;
+
+		EXCEPTION_DUMP(" ** A12 %p A13 %p A14 %p A15 %p",
+			(void *)frame->blks[reg_blks_remaining].r0,
+			(void *)frame->blks[reg_blks_remaining].r1,
+			(void *)frame->blks[reg_blks_remaining].r2,
+			(void *)frame->blks[reg_blks_remaining].r3);
+	}
+
+#if XCHAL_HAVE_LOOPS
+	EXCEPTION_DUMP(" ** LBEG %p LEND %p LCOUNT %p",
+		(void *)bsa->lbeg,
+		(void *)bsa->lend,
+		(void *)bsa->lcount);
+#endif
+
+	EXCEPTION_DUMP(" ** SAR %p", (void *)bsa->sar);
+
+#if XCHAL_HAVE_THREADPTR
+	EXCEPTION_DUMP(" **  THREADPTR %p", (void *)bsa->threadptr);
+#endif
+}
+
+static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
+{
+	int mask;
+
+	mask = BIT(num_bits) - 1;
+	val = val >> offset;
+	return val & mask;
+}
+
+static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t depc)
+{
+	void *pc;
+	uint32_t ps;
+	_xtensa_irq_bsa_t *bsa = (void *)*(int **)print_stack;
+
+	if (is_dblexc) {
+		EXCEPTION_DUMP(" ** FATAL EXCEPTION (DOUBLE)");
+	} else {
+		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
+	}
+
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
+		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
+		xtensa_exccause(bsa->exccause));
+
+	/* Don't print information if the BSA area is invalid as any elements
+	 * obtained via de-referencing the pointer are probably also invalid.
+	 * Or worse, cause another access violation.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
+		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
+		return;
+	}
+
+	ps = bsa->ps;
+	pc = (void *)bsa->pc;
+
+	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)bsa->excvaddr);
+
+	if (is_dblexc) {
+		EXCEPTION_DUMP(" **  DEPC %p", (void *)depc);
+	}
+
+	EXCEPTION_DUMP(" **  PS %p", (void *)bsa->ps);
+	EXCEPTION_DUMP(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
+		       get_bits(XCHAL_PS_INTLEVEL_SHIFT, XCHAL_PS_INTLEVEL_BITS, ps),
+		       get_bits(XCHAL_PS_EXCM_SHIFT, XCHAL_PS_EXCM_BITS, ps),
+		       get_bits(XCHAL_PS_UM_SHIFT, XCHAL_PS_UM_BITS, ps),
+		       get_bits(XCHAL_PS_RING_SHIFT, XCHAL_PS_RING_BITS, ps),
+		       get_bits(XCHAL_PS_WOE_SHIFT, XCHAL_PS_WOE_BITS, ps),
+		       get_bits(XCHAL_PS_OWB_SHIFT, XCHAL_PS_OWB_BITS, ps),
+		       get_bits(XCHAL_PS_CALLINC_SHIFT, XCHAL_PS_CALLINC_BITS, ps));
+}
+
+static ALWAYS_INLINE void usage_stop(void)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	z_sched_usage_stop();
+#endif
+}
+
+static inline void *return_to(void *interrupted)
+{
+#ifdef CONFIG_MULTITHREADING
+	return _current_cpu->nested <= 1 ?
+		z_get_next_switch_handle(interrupted) : interrupted;
+#else
+	return interrupted;
+#endif /* CONFIG_MULTITHREADING */
+}
+
+#if defined(LAZY_COPROCESSOR_LOCK)
+/**
+ * Spin until thread is no longer the HiFi owner on specified CPU.
+ * Note: Interrupts are locked on entry. Unlock before spinning to allow
+ * an IPI to be caught and processed; restore them afterwards.
+ */
+static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
+{
+	unsigned int key;
+	unsigned int original;
+	unsigned int unlocked;
+
+	__asm__ volatile("rsr.ps %0" : "=r"(original));
+	unlocked = original & ~PS_INTLEVEL_MASK;
+	__asm__ volatile("wsr.ps %0; rsync" :: "r"(unlocked) : "memory");
+
+	/* Spin until thread is no longer the HiFi owner on the other CPU */
+
+	while ((struct k_thread *)
+	       atomic_ptr_get(&cpu->arch.hifi_owner) == thread) {
+		key = arch_irq_lock();
+		arch_spin_relax();
+		arch_irq_unlock(key);
+	}
+
+	__asm__ volatile("wsr.ps %0; rsync" :: "r"(original) : "memory");
+}
+
+/**
+ * Determine if the thread is the owner of a HiFi on another CPU. This is
+ * called with the coprocessor lock held
+ */
+static struct _cpu *thread_hifi_owner_elsewhere(struct k_thread *thread)
+{
+	struct _cpu *this_cpu = arch_curr_cpu();
+	struct k_thread *owner;
+
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		owner = (struct k_thread *)
+			atomic_ptr_get(&_kernel.cpus[i].arch.hifi_owner);
+		if ((this_cpu != &_kernel.cpus[i]) && (owner == thread)) {
+			return &_kernel.cpus[i];
+		}
+	}
+	return NULL;
+}
+#endif
+
+/**
+ * This routine only needed for SMP systems with HiFi sharing. It handles the
+ * IPI sent to save the HiFi registers so the owner can load them onto another
+ * CPU.
+ */
+void arch_ipi_lazy_coprocessors_save(void)
+{
+#if defined(LAZY_COPROCESSOR_LOCK)
+	k_spinlock_key_t key = k_spin_lock(&coprocessor_lock);
+	struct _cpu *cpu = arch_curr_cpu();
+	struct k_thread *save_hifi = (struct k_thread *)
+				     atomic_ptr_get(&cpu->arch.save_hifi);
+	struct k_thread *hifi_owner = (struct k_thread *)
+				      atomic_ptr_get(&cpu->arch.hifi_owner);
+
+	if ((save_hifi == hifi_owner) && (save_hifi != NULL)) {
+		unsigned int cp;
+
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		xtensa_lazy_hifi_save(save_hifi->arch.hifi_regs);
+
+		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		atomic_ptr_set(&cpu->arch.hifi_owner, NULL);
+	}
+	atomic_ptr_set(&cpu->arch.save_hifi, NULL);
+	k_spin_unlock(&coprocessor_lock, key);
+#endif
+}
+
+
+#if XCHAL_NUM_INTERRUPTS <= 32
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 64
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 96
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK2,                                                       \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 128
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK2,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK3,                                                       \
+	}
+#else
+#error "xtensa supports up to 128 interrupts"
+#endif
+
+#if XCHAL_HAVE_NMI
+#define MAX_INTR_LEVEL XCHAL_NMILEVEL
+#elif XCHAL_HAVE_INTERRUPTS
+#define MAX_INTR_LEVEL XCHAL_NUM_INTLEVELS
+#else
+#error Xtensa core with no interrupt support is used
+#define MAX_INTR_LEVEL 0
+#endif
+
+#define GRP_COUNT (ROUND_UP(XCHAL_NUM_INTERRUPTS, 32) / 32)
+
+static const uint32_t xtensa_lvl_mask[MAX_INTR_LEVEL][GRP_COUNT] = {
+#if MAX_INTR_LEVEL >= 1
+	DECLARE_IRQ(1),
+#endif
+#if MAX_INTR_LEVEL >= 2
+	DECLARE_IRQ(2),
+#endif
+#if MAX_INTR_LEVEL >= 3
+	DECLARE_IRQ(3),
+#endif
+#if MAX_INTR_LEVEL >= 4
+	DECLARE_IRQ(4),
+#endif
+#if MAX_INTR_LEVEL >= 5
+	DECLARE_IRQ(5),
+#endif
+#if MAX_INTR_LEVEL >= 6
+	DECLARE_IRQ(6),
+#endif
+#if MAX_INTR_LEVEL >= 7
+	DECLARE_IRQ(7),
+#endif
+};
+
+/* Handles all interrupts for given IRQ Level.
+ * - Supports up to 128 interrupts (max supported by Xtensa)
+ * - Supports all IRQ levels
+ * - Uses __builtin_ctz that for most xtensa configurations will be optimized using nsau instruction
+ */
+__unused static void xtensa_handle_irq_lvl(int irq_lvl)
+{
+	int irq;
+	uint32_t irq_mask;
+	uint32_t intenable;
+#if XCHAL_NUM_INTERRUPTS > 0
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][0];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+		__asm__ volatile("wsr.intclear %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 32
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][1];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 32].isr(_sw_isr_table[irq + 32].arg);
+		__asm__ volatile("wsr.intclear1 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+
+#if XCHAL_NUM_INTERRUPTS > 64
+	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][2];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 64].isr(_sw_isr_table[irq + 64].arg);
+		__asm__ volatile("wsr.intclear2 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	__asm__ volatile("rsr.interrupt3 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][3];
+
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 96].isr(_sw_isr_table[irq + 96].arg);
+		__asm__ volatile("wsr.intclear3 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+}
+
+#define DEF_INT_C_HANDLER(l)                                                                       \
+	__unused void *xtensa_int##l##_c(void *interrupted_stack)                                  \
+	{                                                                                          \
+		usage_stop();                                                                      \
+		xtensa_handle_irq_lvl(l);                                                          \
+		return return_to(interrupted_stack);                                               \
+	}
+
+#if MAX_INTR_LEVEL >= 2
+DEF_INT_C_HANDLER(2)
+#endif
+
+#if MAX_INTR_LEVEL >= 3
+DEF_INT_C_HANDLER(3)
+#endif
+
+#if MAX_INTR_LEVEL >= 4
+DEF_INT_C_HANDLER(4)
+#endif
+
+#if MAX_INTR_LEVEL >= 5
+DEF_INT_C_HANDLER(5)
+#endif
+
+#if MAX_INTR_LEVEL >= 6
+DEF_INT_C_HANDLER(6)
+#endif
+
+#if MAX_INTR_LEVEL >= 7
+DEF_INT_C_HANDLER(7)
+#endif
+
+static inline DEF_INT_C_HANDLER(1)
+
+/* C handler for level 1 exceptions/interrupts.  Hooked from the
+ * DEF_EXCINT 1 vector declaration in assembly code.  This one looks
+ * different because exceptions and interrupts land at the same
+ * vector; other interrupt levels have their own vectors.
+ */
+void *xtensa_excint1_c(void *esf)
+{
+	int cause, reason;
+	int *interrupted_stack = &((struct arch_esf *)esf)->dummy;
+	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
+	bool is_fatal_error = false;
+	bool is_dblexc = false;
+	uint32_t ps;
+	void *pc, *print_stack = (void *)interrupted_stack;
+	uint32_t depc = 0;
+
+#ifdef CONFIG_XTENSA_MMU
+	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
+
+	is_dblexc = (depc != 0U);
+#endif /* CONFIG_XTENSA_MMU */
+
+	cause = bsa->exccause;
+
+	switch (cause) {
+	case EXCCAUSE_LEVEL1_INTERRUPT:
+#ifdef CONFIG_XTENSA_MMU
+		if (!is_dblexc) {
+			return xtensa_int1_c(interrupted_stack);
+		}
+#else
+		return xtensa_int1_c(interrupted_stack);
+#endif /* CONFIG_XTENSA_MMU */
+		break;
+#ifndef CONFIG_USERSPACE
+	/* Syscalls are handled earlier in assembly if MMU is enabled.
+	 * So we don't need this here.
+	 */
+	case EXCCAUSE_SYSCALL:
+		/* Just report it to the console for now */
+		EXCEPTION_DUMP(" ** SYSCALL PS %p PC %p",
+			(void *)bsa->ps, (void *)bsa->pc);
+		xtensa_dump_stack(interrupted_stack);
+
+		/* Xtensa exceptions don't automatically advance PC,
+		 * have to skip the SYSCALL instruction manually or
+		 * else it will just loop forever
+		 */
+		bsa->pc += 3;
+		break;
+#endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+		/* Identify the interrupted thread and the old HiFi owner */
+		struct k_thread *thread = _current;
+		struct k_thread *owner;
+		unsigned int cp;
+
+#if defined(LAZY_COPROCESSOR_LOCK)
+		/*
+		 * If the interrupted thread is a HiFi owner on another CPU,
+		 * then send an IPI to that CPU to have it save its HiFi state
+		 * and then return. This CPU will continue to raise the current
+		 * exception (and send IPIs) until the other CPU has both saved
+		 * the HiFi registers and cleared its HiFi owner.
+		 */
+
+		k_spinlock_key_t key  = k_spin_lock(&coprocessor_lock);
+		struct _cpu *cpu = thread_hifi_owner_elsewhere(thread);
+
+		if (cpu != NULL) {
+			cpu->arch.save_hifi = thread;
+			arch_sched_directed_ipi(BIT(cpu->id));
+			k_spin_unlock(&coprocessor_lock, key);
+			spin_while_hifi_owner(cpu, thread);
+			key = k_spin_lock(&coprocessor_lock);
+		}
+#endif
+		owner = (struct k_thread *)
+			atomic_ptr_get(&arch_curr_cpu()->arch.hifi_owner);
+
+		/* Enable the HiFi coprocessor */
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		if (owner == thread) {
+#if defined(LAZY_COPROCESSOR_LOCK)
+			k_spin_unlock(&coprocessor_lock, key);
+#endif
+			break;
+		}
+
+		if (owner != NULL) {
+			xtensa_lazy_hifi_save(owner->arch.hifi_regs);
+		}
+
+		atomic_ptr_set(&arch_curr_cpu()->arch.hifi_owner, thread);
+#if defined(LAZY_COPROCESSOR_LOCK)
+		k_spin_unlock(&coprocessor_lock, key);
+#endif
+		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
+		break;
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	case EXCCAUSE_DTLB_MULTIHIT:
+		xtensa_exc_dtlb_multihit_handle();
+		break;
+	case EXCCAUSE_LOAD_STORE_RING:
+		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
+			break;
+		}
+		__fallthrough;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
+	default:
+		reason = K_ERR_CPU_EXCEPTION;
+
+		/* If the BSA area is invalid, we cannot trust anything coming out of it. */
+		if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
+			goto skip_checks;
+		}
+
+		ps = bsa->ps;
+		pc = (void *)bsa->pc;
+
+		/* Default for exception */
+		is_fatal_error = true;
+
+		/* We need to distinguish between an ill in xtensa_arch_except,
+		 * e.g for k_panic, and any other ill. For exceptions caused by
+		 * xtensa_arch_except calls, we also need to pass the reason_p
+		 * to xtensa_fatal_error. Since the ARCH_EXCEPT frame is in the
+		 * BSA, the first arg reason_p is stored at the A2 offset.
+		 * We assign EXCCAUSE the unused, reserved code 63; this may be
+		 * problematic if the app or new boards also decide to repurpose
+		 * this code.
+		 *
+		 * Another intentionally ill is from xtensa_arch_kernel_oops.
+		 * Kernel OOPS has to be explicitly raised so we can simply
+		 * set the reason and continue.
+		 */
+		if (cause == EXCCAUSE_ILLEGAL) {
+			if (pc == (void *)&xtensa_arch_except_epc) {
+				cause = 63;
+				reason = bsa->a2;
+			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
+				cause = 64; /* kernel oops */
+				reason = K_ERR_KERNEL_OOPS;
+
+				/* A3 contains the second argument to
+				 * xtensa_arch_kernel_oops(reason, ssf)
+				 * where ssf is the stack frame causing
+				 * the kernel oops.
+				 */
+				print_stack = (void *)bsa->a3;
+			}
+
+			bsa->exccause = cause;
+		}
+
+skip_checks:
+		if (reason != K_ERR_KERNEL_OOPS) {
+			print_fatal_exception(print_stack, is_dblexc, depc);
+		}
+#ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB
+		extern void z_gdb_isr(struct arch_esf *esf);
+		z_gdb_isr((void *)print_stack);
+#endif
+
+		/* FIXME: legacy xtensa port reported "HW" exception
+		 * for all unhandled exceptions, which seems incorrect
+		 * as these are software errors.  Should clean this
+		 * up.
+		 */
+		xtensa_fatal_error(reason, (void *)print_stack);
+		break;
+	}
+
+#ifdef CONFIG_XTENSA_MMU
+	switch (cause) {
+	case EXCCAUSE_LEVEL1_INTERRUPT:
+#ifndef CONFIG_USERSPACE
+	case EXCCAUSE_SYSCALL:
+#endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+		is_fatal_error = false;
+		break;
+	default:
+		is_fatal_error = true;
+		break;
+	}
+#endif /* CONFIG_XTENSA_MMU */
+
+	if (is_dblexc || is_fatal_error) {
+		uint32_t ignore;
+
+		/* We are going to manipulate _current_cpu->nested manually.
+		 * Since the error is fatal, for recoverable errors, code
+		 * execution must not return back to the current thread as
+		 * it is being terminated (via above xtensa_fatal_error()).
+		 * So we need to prevent more interrupts coming in which
+		 * will affect the nested value as we are going outside of
+		 * normal interrupt handling procedure.
+		 *
+		 * Setting nested to 1 has two effects:
+		 * 1. Force return_to() to choose a new thread.
+		 *    Since the current thread is being terminated, it will
+		 *    not be chosen again.
+		 * 2. When context switches to the newly chosen thread,
+		 *    nested must be zero for normal code execution,
+		 *    as that is not in interrupt context at all.
+		 *    After returning from this function, the rest of
+		 *    interrupt handling code will decrement nested,
+		 *    resulting it being zero before switching to another
+		 *    thread.
+		 */
+		__asm__ volatile("rsil %0, %1"
+				: "=r" (ignore) : "i"(XCHAL_EXCM_LEVEL));
+
+		_current_cpu->nested = 1;
+	}
+
+#if defined(CONFIG_XTENSA_MMU)
+	if (is_dblexc) {
+		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+	}
+#endif /* CONFIG_XTENSA_MMU */
+
+	return return_to(interrupted_stack);
+}
+
+#if defined(CONFIG_GDBSTUB)
+void *xtensa_debugint_c(int *interrupted_stack)
+{
+	extern void z_gdb_isr(struct arch_esf *esf);
+
+	z_gdb_isr((void *)interrupted_stack);
+
+	return return_to(interrupted_stack);
+}
+#endif

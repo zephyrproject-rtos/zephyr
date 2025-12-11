@@ -1,0 +1,8 @@
+identifier: scobc_a1
+name: SC-OBC Module A1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart

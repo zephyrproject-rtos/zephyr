@@ -1,0 +1,21 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32WL HSE Clock
+
+compatible: "st,stm32wl-hse-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hse-tcxo:
+    type: boolean
+    description: |
+      When set, TCXO is selected as external source clock for HSE.
+      Otherwise, external crystal is selected as HSE source clock.
+
+  hse-div2:
+    type: boolean
+    description: |
+      When set HSE output clock is divided by 2.
+      Otherwise, no prescaler is used.

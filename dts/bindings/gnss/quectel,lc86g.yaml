@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Trackunit Corporation
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel LC86G GNSS modem
+
+compatible: "quectel,lc86g"
+
+include:
+  - uart-device.yaml
+  - gnss-pps.yaml

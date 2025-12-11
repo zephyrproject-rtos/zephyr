@@ -1,0 +1,105 @@
+# Copyright (c) 2021 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ANDES_AE350
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_PMP
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_HAS_ANDES_EXECIT
+	select CPU_HAS_ANDES_HWDSP
+	select CPU_HAS_ANDES_PFT
+	select CPU_HAS_ANDES_PMA
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_CUSTOM_CSR_ANDES_HWDSP
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_CUSTOM_CSR_ANDES_PFT
+	select SOC_EARLY_INIT_HOOK if RISCV_CUSTOM_CSR_ANDES_PMA
+	select SOC_PER_CORE_INIT_HOOK if RISCV_CUSTOM_CSR_ANDES_PMA
+	imply XIP
+
+config SOC_ANDES_AE350
+	select RISCV_HAS_PLIC
+
+config SOC_ANDES_AE350_CLIC
+	select RISCV_HAS_CLIC
+	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
+	select CLIC_SMCLICCONFIG_EXT
+	select LEGACY_CLIC_MEMORYMAP_ACCESS
+
+if SOC_SERIES_ANDES_AE350
+
+choice
+prompt "Base CPU ISA options"
+default RV32I_CPU
+
+config RV32I_CPU
+	bool "RISCV32 CPU ISA"
+	select RISCV_ISA_RV32I
+
+config RV32E_CPU
+	bool "RISCV32E CPU ISA"
+	select RISCV_ISA_RV32E
+
+config RV64I_CPU
+	bool "RISCV64 CPU ISA"
+	select RISCV_ISA_RV64I
+
+endchoice
+
+choice
+prompt "FPU options"
+default NO_FPU
+
+config NO_FPU
+	bool "No FPU"
+
+config SINGLE_PRECISION_FPU
+	bool "Single precision FPU"
+	select RISCV_ISA_EXT_F
+
+config DOUBLE_PRECISION_FPU
+	bool "Double precision FPU"
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+endchoice
+
+config SOC_ANDES_V5_HWDSP
+	bool
+	select DEPRECATED
+
+config SOC_ANDES_V5_PFT
+	bool
+	select DEPRECATED
+
+config SOC_ANDES_V5_EXECIT
+	bool
+	select DEPRECATED
+
+config SOC_ANDES_V5_PMA
+	bool
+	select DEPRECATED
+
+config SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE
+	bool
+	select DEPRECATED
+
+config SOC_ANDES_V5_L2C
+	bool
+	select DEPRECATED
+
+config SOC_ANDES_V5_IOCP
+	bool "Andes V5 I/O Coherence Port (IOCP)"
+	depends on DCACHE
+	help
+		Support Andes V5 I/O Coherence Port to handle cache coherency
+		between cache and external non-caching master, such as DMA
+		controller.
+
+endif # SOC_SERIES_ANDES_AE350

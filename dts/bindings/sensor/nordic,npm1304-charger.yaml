@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: nPM1304 PMIC Charger
+
+compatible: "nordic,npm1304-charger"
+
+include: "nordic,npm13xx-charger-common.yaml"
+
+properties:
+  term-microvolt:
+    type: int
+    required: true
+    description: |
+      Charge termination voltage in uV.
+      Available range is 3.6 V to 3.65 V and 4.0 V to 4.65 V in 50 mV steps.
+
+  term-warm-microvolt:
+    type: int
+    description: |
+      Charge termination voltage when warm in uV.
+      Available range is 3.6 V to 3.65 V and 4.0 V to 4.65 V in 50 mV steps.
+      If omitted, the term-microvolt value will be used.
+
+  current-microamp:
+    type: int
+    required: true
+    description: |
+      Charge current in uA.
+      Available range is 4 mA to 100 mA in 0.5 mA steps.
+
+  dischg-limit-microamp:
+    type: int
+    const: 125000
+    default: 125000
+    description: |
+      Discharge current limit in uA. Fixed to 125 mA on nPM1304.
+
+  term-current-percent:
+    type: int
+    enum:
+      - 10
+      - 5
+    default: 10
+    description: |
+      Termination current, as a percentage of current-microamp.
+      Charge completes when the charge current falls below this value.
+      If omitted the device default of 10% is used.

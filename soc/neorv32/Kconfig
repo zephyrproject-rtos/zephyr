@@ -1,0 +1,34 @@
+# Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NEORV32
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	imply XIP
+
+if SOC_NEORV32
+
+config SOC_NEORV32_VERSION
+	hex
+	default 0x01110600
+	help
+	  The targeted NEORV32 version as BCD-coded number. The format is
+	  identical to that of the NEORV32 Machine implementation ID (mimpid)
+	  register.
+
+config SOC_NEORV32_READ_FREQUENCY_AT_RUNTIME
+	bool "Read the NEORV32 clock frequency at runtime"
+	default y
+	depends on !$(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	depends on SYS_CLOCK_EXISTS
+	select SOC_EARLY_INIT_HOOK
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  If enabled, the NEORV32 clock frequency will be read from SYSINFO during boot. This
+	  results in small overhead, which can be avoided by setting the clock-frequency property of
+	  the cpu@0 devicetree node if the frequency is known at build-time.
+
+endif # SOC_NEORV32
