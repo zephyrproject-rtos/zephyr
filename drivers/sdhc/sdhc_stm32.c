@@ -38,7 +38,7 @@ struct sdhc_stm32_config {
 	uint16_t clk_div;         /* Clock divider value to configure SDIO/SDMMC clock speed */
 	uint32_t power_delay_ms;  /* power delay prop for the host in milliseconds */
 	uint32_t reg_addr;        /* Base address of the SDIO/SDMMC peripheral register block */
-	SDMMC_HandleTypeDef *hsd; /* Pointer to SDMMC handle */
+	sdhc_stm32_ll_handle_t *hsd; /* Pointer to SDMMC handle */
 	const struct stm32_pclken *pclken;     /* Pointer to peripheral clock configuration */
 	const struct pinctrl_dev_config *pcfg; /* Pointer to pin control configuration */
 	struct gpio_dt_spec sdhi_on_gpio;  /* Power pin to control the regulators used by card.*/
@@ -220,13 +220,13 @@ static void sdhc_stm32_log_sdmmc_err_type(uint32_t error_code)
  * This helper function queries the error status of an SDHC operation
  * and reports specific error types using `LOG_ERR()`.
  * In addition to logging, it also resets the `ErrorCode` field
- * of the `SDMMC_HandleTypeDef` to `SDMMC_ERROR_NONE`.
+ * of the `sdhc_stm32_ll_handle_t` to `SDMMC_ERROR_NONE`.
  *
  * @param hsd Pointer to the SDMMC handle.
  */
-static void sdhc_stm32_log_err_type(SDMMC_HandleTypeDef *hsd)
+static void sdhc_stm32_log_err_type(sdhc_stm32_ll_handle_t *hsd)
 {
-	uint32_t error_code = SDMMC_LL_GetError(hsd);
+	uint32_t error_code = sdhc_stm32_ll_get_error(hsd);
 
 	if (error_code == SDMMC_ERROR_NONE) {
 		return;
@@ -258,12 +258,12 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 {
 	struct sdhc_stm32_data *data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
-	SDMMC_HandleTypeDef *hsd = config->hsd;
+	sdhc_stm32_ll_handle_t *hsd = config->hsd;
 
 	data->host_io.bus_width = config->bus_width;
 	hsd->Instance = (SDMMC_TypeDef *)config->reg_addr;
 
-	if (SDMMC_LL_DeInit(hsd) != SDMMC_OK) {
+	if (sdhc_stm32_ll_deinit(hsd) != SDMMC_OK) {
 		LOG_ERR("Failed to de-initialize the %s device",
 			IS_ENABLED(CONFIG_SDIO_STACK) ? "SDIO" : "SDMMC");
 		return -EIO;
@@ -288,7 +288,7 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)) {
-		if (SDMMC_LL_Init(hsd) != SDMMC_OK) {
+		if (sdhc_stm32_ll_init(hsd) != SDMMC_OK) {
 			return -EIO;
 		}
 	} else {
@@ -346,15 +346,15 @@ static int sdhc_stm32_rw_direct(const struct device *dev, struct sdhc_command *c
 	uint8_t func = (cmd->arg >> SDIO_CMD_ARG_FUNC_NUM_SHIFT) & 0x7;
 	uint32_t reg_addr = (cmd->arg >> SDIO_CMD_ARG_REG_ADDR_SHIFT) & SDIO_CMD_ARG_REG_ADDR_MASK;
 
-	SDIO_LL_DirectCmd_TypeDef arg = {
+	sdhc_stm32_sdio_direct_cmd_t arg = {
 		.Reg_Addr = reg_addr, .ReadAfterWrite = raw_flag, .IOFunctionNbr = func};
 
 	if (direction == SDIO_IO_WRITE) {
 		uint8_t data_in = cmd->arg & SDIO_DIRECT_CMD_DATA_MASK;
 
-		res = SDIO_LL_WriteDirect(config->hsd, &arg, data_in);
+		res = sdhc_stm32_ll_sdio_write_direct(config->hsd, &arg, data_in);
 	} else {
-		res = SDIO_LL_ReadDirect(config->hsd, &arg, (uint8_t *)&cmd->response);
+		res = sdhc_stm32_ll_sdio_read_direct(config->hsd, &arg, (uint8_t *)&cmd->response);
 	}
 
 	return res == SDMMC_OK ? 0 : -EIO;
@@ -377,7 +377,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 		return -EINVAL;
 	}
 
-	SDIO_LL_ExtendedCmd_TypeDef arg = {.Reg_Addr = reg_addr,
+	sdhc_stm32_sdio_ext_cmd_t arg = {.Reg_Addr = reg_addr,
 					   .IOFunctionNbr = func,
 					   .Block_Mode = is_block_mode ? SDMMC_SDIO_MODE_BLOCK
 								       : SDMMC_SDIO_MODE_BYTE,
@@ -396,25 +396,25 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 
 	if (direction == SDIO_IO_WRITE) {
 		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
-			res = SDIO_LL_WriteExtended(config->hsd, &arg, data->data,
+			res = sdhc_stm32_ll_sdio_write_extended(config->hsd, &arg, data->data,
 						    dev_data->total_transfer_bytes,
 						    data->timeout_ms);
 		} else {
 			memcpy(dev_data->sdio_dma_buf, data->data, dev_data->total_transfer_bytes);
 			sys_cache_data_flush_range(dev_data->sdio_dma_buf,
 						   dev_data->total_transfer_bytes);
-			res = SDIO_LL_WriteExtended_DMA(config->hsd, &arg, dev_data->sdio_dma_buf,
+			res = sdhc_stm32_ll_sdio_write_extended_dma(config->hsd, &arg, dev_data->sdio_dma_buf,
 							dev_data->total_transfer_bytes);
 		}
 	} else {
 		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
-			res = SDIO_LL_ReadExtended(config->hsd, &arg, data->data,
+			res = sdhc_stm32_ll_sdio_read_extended(config->hsd, &arg, data->data,
 						   dev_data->total_transfer_bytes,
 						   data->timeout_ms);
 		} else {
 			sys_cache_data_flush_range(dev_data->sdio_dma_buf,
 						   dev_data->total_transfer_bytes);
-			res = SDIO_LL_ReadExtended_DMA(config->hsd, &arg, dev_data->sdio_dma_buf,
+			res = sdhc_stm32_ll_sdio_read_extended_dma(config->hsd, &arg, dev_data->sdio_dma_buf,
 						       dev_data->total_transfer_bytes);
 		}
 	}
@@ -469,7 +469,7 @@ static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *d
 	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
+	if (!WAIT_FOR(sdhc_stm32_ll_get_card_state(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
 		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
@@ -478,10 +478,10 @@ static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *d
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 
-		ret = SDMMC_WriteBlocks_DMA(config->hsd, data->data, data->block_addr,
+		ret = sdhc_stm32_ll_write_blocks_dma(config->hsd, data->data, data->block_addr,
 					    data->blocks);
 	} else {
-		ret = SDMMC_WriteBlocks(config->hsd, data->data, data->block_addr, data->blocks,
+		ret = sdhc_stm32_ll_write_blocks(config->hsd, data->data, data->block_addr, data->blocks,
 					data->timeout_ms);
 	}
 
@@ -510,7 +510,7 @@ static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *da
 	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
+	if (!WAIT_FOR(sdhc_stm32_ll_get_card_state(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
 		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
@@ -519,9 +519,9 @@ static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *da
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 
-		ret = SDMMC_ReadBlocks_DMA(config->hsd, data->data, data->block_addr, data->blocks);
+		ret = sdhc_stm32_ll_read_blocks_dma(config->hsd, data->data, data->block_addr, data->blocks);
 	} else {
-		ret = SDMMC_ReadBlocks(config->hsd, data->data, data->block_addr, data->blocks,
+		ret = sdhc_stm32_ll_read_blocks(config->hsd, data->data, data->block_addr, data->blocks,
 				       data->timeout_ms);
 	}
 
@@ -541,13 +541,13 @@ static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *da
 	int res;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	res = SDMMC_Erase(config->hsd, data->block_addr,
+	res = sdhc_stm32_ll_erase(config->hsd, data->block_addr,
 			  ((data->block_size * data->blocks) + data->block_addr));
 	if (res != SDMMC_OK) {
 		return res;
 	}
 
-	if (!WAIT_FOR(SDMMC_GetCardState(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
+	if (!WAIT_FOR(sdhc_stm32_ll_get_card_state(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
 		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
 		return SDMMC_ERROR;
@@ -632,7 +632,7 @@ static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config,
 	return res;
 }
 
-static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card_relative_address,
+static uint32_t sdhc_stm32_get_sd_status(sdhc_stm32_ll_handle_t *hsd, uint32_t card_relative_address,
 					 uint32_t *card_status_resp)
 {
 	uint32_t res;
@@ -652,7 +652,7 @@ static uint32_t sdhc_stm32_get_sd_status(SDMMC_HandleTypeDef *hsd, uint32_t card
 
 static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config)
 {
-	if (SDMMC_LL_GetState(config->hsd) != SDMMC_STATE_READY) {
+	if (sdhc_stm32_ll_get_state(config->hsd) != SDMMC_STATE_READY) {
 		return false;
 	}
 
@@ -759,7 +759,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_SWITCH:
-		res = SDMMC_SwitchSpeed(config->hsd, cmd->arg);
+		res = sdhc_stm32_ll_switch_speed(config->hsd, cmd->arg);
 		break;
 
 	case SD_APP_CMD:
@@ -812,7 +812,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_APP_SEND_SCR:
-		res = SDMMC_FindSCR(config->hsd, data->data);
+		res = sdhc_stm32_ll_find_scr(config->hsd, data->data);
 		break;
 
 	case SD_SET_BLOCK_SIZE:
@@ -870,7 +870,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			res = -EINVAL;
 			goto end;
 		}
-		if (SDMMC_LL_ConfigFrequency(config->hsd, (uint32_t)ios->clock) != SDMMC_OK) {
+		if (sdhc_stm32_ll_config_freq(config->hsd, (uint32_t)ios->clock) != SDMMC_OK) {
 			LOG_ERR("Failed to set clock to %d", ios->clock);
 			res = -EIO;
 			goto end;
@@ -987,7 +987,7 @@ static int sdhc_stm32_card_busy(const struct device *dev)
 {
 	const struct sdhc_stm32_config *config = dev->config;
 
-	return SDMMC_LL_GetState(config->hsd) == SDMMC_STATE_BUSY;
+	return sdhc_stm32_ll_get_state(config->hsd) == SDMMC_STATE_BUSY;
 }
 
 static int sdhc_stm32_reset(const struct device *dev)
@@ -1009,7 +1009,7 @@ static int sdhc_stm32_reset(const struct device *dev)
 
 	/* Resetting card */
 	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
-		res = SDIO_LL_CardReset(config->hsd);
+		res = sdhc_stm32_ll_sdio_card_reset(config->hsd);
 	} else if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		res = sdhc_stm32_go_idle_state(dev);
 	} else {
@@ -1084,11 +1084,11 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_SDIO_STACK)) {
-		SDIO_IRQHandler(config->hsd);
+		sdhc_stm32_ll_sdio_irq_handler(config->hsd);
 	}
 
 	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
-		SDMMC_IRQHandler(config->hsd);
+		sdhc_stm32_ll_irq_handler(config->hsd);
 	}
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1196,7 +1196,7 @@ static int sdhc_stm32_pm_action(const struct device *dev, enum pm_device_action 
                                                                                                    \
 	STM32_SDHC_IRQ_HANDLER(index)                                                              \
                                                                                                    \
-	static SDMMC_HandleTypeDef hsd_##index;                                                    \
+	static sdhc_stm32_ll_handle_t hsd_##index;                                                    \
                                                                                                    \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
                                                                                                    \

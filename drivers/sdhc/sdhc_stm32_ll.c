@@ -19,13 +19,13 @@ LOG_MODULE_REGISTER(sdhc_stm32_ll, CONFIG_SDHC_LOG_LEVEL);
  * @param hsd: Pointer to SD handle
  * @retval None
  */
-__weak void SDMMC_TxCpltCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_tx_cplt_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMC_TxCpltCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_tx_cplt_cb can be implemented in the user file
 	 */
 }
 
@@ -34,13 +34,13 @@ __weak void SDMMC_TxCpltCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd: Pointer SD handle
  * @retval None
  */
-__weak void SDMMC_RxCpltCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_rx_cplt_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMC_RxCpltCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_rx_cplt_cb can be implemented in the user file
 	 */
 }
 
@@ -49,13 +49,13 @@ __weak void SDMMC_RxCpltCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd: Pointer SD handle
  * @retval None
  */
-__weak void SDMMC_ErrorCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_error_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMC_ErrorCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_error_cb can be implemented in the user file
 	 */
 }
 
@@ -64,13 +64,13 @@ __weak void SDMMC_ErrorCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd: SD handle
  * @retval None
  */
-__weak void SDMMCEx_Read_DMADoubleBuf0CpltCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_read_dma_buf0_cplt_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMCEx_Read_DMADoubleBuf0CpltCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_read_dma_buf0_cplt_cb can be implemented in the user file
 	 */
 }
 
@@ -79,13 +79,13 @@ __weak void SDMMCEx_Read_DMADoubleBuf0CpltCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd: SD handle
  * @retval None
  */
-__weak void SDMMC_Read_DMADoubleBuf1CpltCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_read_dma_buf1_cplt_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMC_Read_DMADoubleBuf1CpltCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_read_dma_buf1_cplt_cb can be implemented in the user file
 	 */
 }
 
@@ -94,13 +94,13 @@ __weak void SDMMC_Read_DMADoubleBuf1CpltCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd: SD handle
  * @retval None
  */
-__weak void SDMMC_Write_DMADoubleBuf0CpltCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_write_dma_buf0_cplt_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMC_Write_DMADoubleBuf0CpltCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_write_dma_buf0_cplt_cb can be implemented in the user file
 	 */
 }
 
@@ -109,13 +109,13 @@ __weak void SDMMC_Write_DMADoubleBuf0CpltCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd: SD handle
  * @retval None
  */
-__weak void SDMMC_Write_DMADoubleBuf1CpltCallback(SDMMC_HandleTypeDef *hsd)
+__weak void sdhc_stm32_ll_write_dma_buf1_cplt_cb(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Prevent unused argument(s) compilation warning */
 	UNUSED(hsd);
 
 	/* NOTE : This function should not be modified, when the callback is needed,
-	 * the SDMMC_Write_DMADoubleBuf1CpltCallback can be implemented in the user file
+	 * the sdhc_stm32_ll_write_dma_buf1_cplt_cb can be implemented in the user file
 	 */
 }
 
@@ -125,7 +125,7 @@ __weak void SDMMC_Write_DMADoubleBuf1CpltCallback(SDMMC_HandleTypeDef *hsd)
  * @param hsd Pointer to SDMMC handle
  * @return SDMMC_ERROR_NONE if no error, otherwise appropriate error code
  */
-static uint32_t SDMMC_CheckDataErrors(SDMMC_HandleTypeDef *hsd)
+static uint32_t sdhc_stm32_ll_check_data_errors(sdhc_stm32_ll_handle_t *hsd)
 {
 	uint32_t errorcode = SDMMC_ERROR_NONE;
 
@@ -151,7 +151,7 @@ static uint32_t SDMMC_CheckDataErrors(SDMMC_HandleTypeDef *hsd)
  * @param hsd Pointer to SDMMC handle
  * @param pBuf Pointer to destination buffer pointer (updated after read)
  */
-static void SDMMC_ReadFIFOBlock(SDMMC_HandleTypeDef *hsd, uint8_t **pBuf)
+static void sdhc_stm32_ll_read_fifo_block(sdhc_stm32_ll_handle_t *hsd, uint8_t **pBuf)
 {
 	uint32_t data;
 
@@ -170,7 +170,7 @@ static void SDMMC_ReadFIFOBlock(SDMMC_HandleTypeDef *hsd, uint8_t **pBuf)
  * @param hsd Pointer to SDMMC handle
  * @param pBuf Pointer to source buffer pointer (updated after write)
  */
-static void SDMMC_WriteFIFOBlock(SDMMC_HandleTypeDef *hsd, uint8_t **pBuf)
+static void sdhc_stm32_ll_write_fifo_block(sdhc_stm32_ll_handle_t *hsd, uint8_t **pBuf)
 {
 	uint32_t data;
 
@@ -190,7 +190,8 @@ static void SDMMC_WriteFIFOBlock(SDMMC_HandleTypeDef *hsd, uint8_t **pBuf)
  * @param errorcode Error code to set
  * @return SDMMC_ERROR status
  */
-static SDMMC_StatusTypeDef SDMMC_HandleDataError(SDMMC_HandleTypeDef *hsd, uint32_t errorcode)
+static SDMMC_StatusTypeDef sdhc_stm32_ll_handle_data_error(sdhc_stm32_ll_handle_t *hsd,
+							   uint32_t errorcode)
 {
 	__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
 	hsd->ErrorCode |= errorcode;
@@ -203,7 +204,7 @@ static SDMMC_StatusTypeDef SDMMC_HandleDataError(SDMMC_HandleTypeDef *hsd, uint3
  *
  * @param hsd Pointer to SDMMC handle
  */
-static inline void SDMMC_DisableDataInterrupts(SDMMC_HandleTypeDef *hsd)
+static inline void sdhc_stm32_ll_disable_data_interrupts(sdhc_stm32_ll_handle_t *hsd)
 {
 	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
 					  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
@@ -212,8 +213,8 @@ static inline void SDMMC_DisableDataInterrupts(SDMMC_HandleTypeDef *hsd)
 	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_IDMABTC);
 }
 
-SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd,
-				uint32_t BlockEndAdd)
+SDMMC_StatusTypeDef sdhc_stm32_ll_erase(sdhc_stm32_ll_handle_t *hsd, uint32_t BlockStartAdd,
+					uint32_t BlockEndAdd)
 {
 	uint32_t errorstate;
 	uint32_t start_add = BlockStartAdd;
@@ -301,7 +302,7 @@ SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd
 	}
 }
 
-uint32_t SDMMC_SendStatus(SDMMC_HandleTypeDef *hsd, uint32_t *pCardStatus)
+uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t *pCardStatus)
 {
 	uint32_t errorstate;
 
@@ -330,7 +331,7 @@ uint32_t SDMMC_SendStatus(SDMMC_HandleTypeDef *hsd, uint32_t *pCardStatus)
  * @param  SwitchSpeedMode: SD speed mode(SDMMC_SDR12_SWITCH_PATTERN, SDMMC_SDR25_SWITCH_PATTERN)
  * @retval SD Card error state
  */
-uint32_t SDMMC_SwitchSpeed(SDMMC_HandleTypeDef *hsd, uint32_t SwitchSpeedMode)
+uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t SwitchSpeedMode)
 {
 	uint32_t errorstate = SDMMC_ERROR_NONE;
 	SDMMC_DataInitTypeDef sdmmc_datainitstructure;
@@ -415,7 +416,7 @@ uint32_t SDMMC_SwitchSpeed(SDMMC_HandleTypeDef *hsd, uint32_t SwitchSpeedMode)
 	return errorstate;
 }
 
-uint32_t SDMMC_FindSCR(SDMMC_HandleTypeDef *hsd, uint32_t *pSCR)
+uint32_t sdhc_stm32_ll_find_scr(sdhc_stm32_ll_handle_t *hsd, uint32_t *pSCR)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -490,13 +491,13 @@ uint32_t SDMMC_FindSCR(SDMMC_HandleTypeDef *hsd, uint32_t *pSCR)
 	return SDMMC_ERROR_NONE;
 }
 
-SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd)
+SDMMC_CardStateTypeDef sdhc_stm32_ll_get_card_state(sdhc_stm32_ll_handle_t *hsd)
 {
 	uint32_t cardstate;
 	uint32_t errorstate;
 	uint32_t resp1 = 0;
 
-	errorstate = SDMMC_SendStatus(hsd, &resp1);
+	errorstate = sdhc_stm32_ll_send_status(hsd, &resp1);
 	if (errorstate != SDMMC_ERROR_NONE) {
 		hsd->ErrorCode |= errorstate;
 	}
@@ -516,8 +517,9 @@ SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd)
  * @param  Timeout: Specify timeout value
  * @retval SDMMC status
  */
-SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, uint32_t BlockAdd,
-				     uint32_t NumberOfBlocks, uint32_t Timeout)
+SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks(sdhc_stm32_ll_handle_t *hsd,
+					      uint8_t *pData, uint32_t BlockAdd,
+					      uint32_t NumberOfBlocks, uint32_t Timeout)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -587,7 +589,7 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
 			if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF) &&
 			    (dataremaining >= SDMMC_FIFO_SIZE)) {
 				/* Read data from SDMMC Rx FIFO */
-				SDMMC_ReadFIFOBlock(hsd, &tempbuff);
+				sdhc_stm32_ll_read_fifo_block(hsd, &tempbuff);
 				dataremaining -= SDMMC_FIFO_SIZE;
 			}
 
@@ -619,10 +621,10 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
 		}
 
 		/* Check for data transfer errors */
-		errorstate = SDMMC_CheckDataErrors(hsd);
+		errorstate = sdhc_stm32_ll_check_data_errors(hsd);
 		if (errorstate != SDMMC_ERROR_NONE) {
 			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_HandleDataError(hsd, errorstate);
+			return sdhc_stm32_ll_handle_data_error(hsd, errorstate);
 		}
 
 		/* Clear all the static flags */
@@ -646,8 +648,9 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
  * @param  Timeout: Specify timeout value
  * @retval SDMMC status
  */
-SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *pData,
-				      uint32_t BlockAdd, uint32_t NumberOfBlocks, uint32_t Timeout)
+SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks(sdhc_stm32_ll_handle_t *hsd, const uint8_t *pData,
+					       uint32_t BlockAdd, uint32_t NumberOfBlocks,
+					       uint32_t Timeout)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -717,7 +720,7 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
 			if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXFIFOHE) &&
 			    (dataremaining >= SDMMC_FIFO_SIZE)) {
 				/* Write data to SDMMC Tx FIFO */
-				SDMMC_WriteFIFOBlock(hsd, &tempbuff);
+				sdhc_stm32_ll_write_fifo_block(hsd, &tempbuff);
 				dataremaining -= SDMMC_FIFO_SIZE;
 			}
 
@@ -749,10 +752,10 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
 		}
 
 		/* Check for data transfer errors */
-		errorstate = SDMMC_CheckDataErrors(hsd);
+		errorstate = sdhc_stm32_ll_check_data_errors(hsd);
 		if (errorstate != SDMMC_ERROR_NONE) {
 			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_HandleDataError(hsd, errorstate);
+			return sdhc_stm32_ll_handle_data_error(hsd, errorstate);
 		}
 
 		/* Clear all the static flags */
@@ -770,7 +773,7 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
  * @brief  Writes block(s) to a specified address in a card. The Data transfer
  *         is managed by DMA mode.
  * @note   This API should be followed by a check on the card state through
- *         SDMMC_GetCardState().
+ *         sdhc_stm32_ll_get_card_state().
  * @note   You could also check the DMA transfer process through the SD Tx
  *         interrupt event.
  * @param  hsd: Pointer to SD handle
@@ -779,8 +782,9 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
  * @param  NumberOfBlocks: Number of blocks to write
  * @retval SDMMC status
  */
-SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_t *pData,
-					  uint32_t BlockAdd, uint32_t NumberOfBlocks)
+SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks_dma(sdhc_stm32_ll_handle_t *hsd,
+						   const uint8_t *pData, uint32_t BlockAdd,
+						   uint32_t NumberOfBlocks)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -860,7 +864,7 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_
  * @brief  Reads block(s) from a specified address in a card. The Data transfer
  *         is managed by DMA mode.
  * @note   This API should be followed by a check on the card state through
- *         SDMMC_GetCardState().
+ *         sdhc_stm32_ll_get_card_state().
  * @note   You could also check the DMA transfer process through the SD Rx
  *         interrupt event.
  * @param  hsd: Pointer SD handle
@@ -869,8 +873,8 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_
  * @param  NumberOfBlocks: Number of blocks to read.
  * @retval SDMMC status
  */
-SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pData,
-					 uint32_t BlockAdd, uint32_t NumberOfBlocks)
+SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks_dma(sdhc_stm32_ll_handle_t *hsd, uint8_t *pData,
+						  uint32_t BlockAdd, uint32_t NumberOfBlocks)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -947,11 +951,11 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pDat
 
 /**
  * @brief  Wrap up reading in non-blocking mode.
- * @param  hsd: pointer to a SDMMC_HandleTypeDef structure that contains
+ * @param  hsd: pointer to a sdhc_stm32_ll_handle_t structure that contains
  *              the configuration information.
  * @retval None
  */
-void SDMMC_Read_IT(SDMMC_HandleTypeDef *hsd)
+void sdhc_stm32_ll_read_it(sdhc_stm32_ll_handle_t *hsd)
 {
 	uint32_t count;
 	uint32_t data;
@@ -980,11 +984,11 @@ void SDMMC_Read_IT(SDMMC_HandleTypeDef *hsd)
 
 /**
  * @brief  Wrap up writing in non-blocking mode.
- * @param  hsd: pointer to a SDMMC_HandleTypeDef structure that contains
+ * @param  hsd: pointer to a sdhc_stm32_ll_handle_t structure that contains
  *              the configuration information.
  * @retval None
  */
-void SDMMC_Write_IT(SDMMC_HandleTypeDef *hsd)
+void sdhc_stm32_ll_write_it(sdhc_stm32_ll_handle_t *hsd)
 {
 	uint32_t count;
 	uint32_t data;
@@ -1016,7 +1020,7 @@ void SDMMC_Write_IT(SDMMC_HandleTypeDef *hsd)
  * @param  hsd: Pointer to SD handle
  * @retval None
  */
-void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
+void sdhc_stm32_ll_irq_handler(sdhc_stm32_ll_handle_t *hsd)
 {
 	uint32_t errorstate;
 	uint32_t context = hsd->Context;
@@ -1024,12 +1028,12 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 	/* Check for SDMMC interrupt flags */
 	if ((__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF) != RESET) &&
 	    ((context & SDMMC_CONTEXT_IT) != 0U)) {
-		SDMMC_Read_IT(hsd);
+		sdhc_stm32_ll_read_it(hsd);
 	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DATAEND) != RESET) {
 		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DATAEND);
 
 		/* Disable all data transfer interrupts */
-		SDMMC_DisableDataInterrupts(hsd);
+		sdhc_stm32_ll_disable_data_interrupts(hsd);
 		__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
 		if ((context & SDMMC_CONTEXT_IT) != 0U) {
@@ -1038,7 +1042,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 				errorstate = SDMMC_CmdStopTransfer(hsd->Instance);
 				if (errorstate != SDMMC_ERROR_NONE) {
 					hsd->ErrorCode |= errorstate;
-					SDMMC_ErrorCallback(hsd);
+					sdhc_stm32_ll_error_cb(hsd);
 				}
 			}
 
@@ -1049,9 +1053,9 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 			hsd->Context = SDMMC_CONTEXT_NONE;
 			if (((context & SDMMC_CONTEXT_READ_SINGLE_BLOCK) != 0U) ||
 			    ((context & SDMMC_CONTEXT_READ_MULTIPLE_BLOCK) != 0U)) {
-				SDMMC_RxCpltCallback(hsd);
+				sdhc_stm32_ll_rx_cplt_cb(hsd);
 			} else {
-				SDMMC_TxCpltCallback(hsd);
+				sdhc_stm32_ll_tx_cplt_cb(hsd);
 			}
 		} else if ((context & SDMMC_CONTEXT_DMA) != 0U) {
 			hsd->Instance->DLEN = 0;
@@ -1064,7 +1068,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 				errorstate = SDMMC_CmdStopTransfer(hsd->Instance);
 				if (errorstate != SDMMC_ERROR_NONE) {
 					hsd->ErrorCode |= errorstate;
-					SDMMC_ErrorCallback(hsd);
+					sdhc_stm32_ll_error_cb(hsd);
 				}
 			}
 
@@ -1072,29 +1076,29 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 			hsd->Context = SDMMC_CONTEXT_NONE;
 			if (((context & SDMMC_CONTEXT_WRITE_SINGLE_BLOCK) != 0U) ||
 			    ((context & SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U)) {
-				SDMMC_TxCpltCallback(hsd);
+				sdhc_stm32_ll_tx_cplt_cb(hsd);
 			}
 			if (((context & SDMMC_CONTEXT_READ_SINGLE_BLOCK) != 0U) ||
 			    ((context & SDMMC_CONTEXT_READ_MULTIPLE_BLOCK) != 0U)) {
-				SDMMC_RxCpltCallback(hsd);
+				sdhc_stm32_ll_rx_cplt_cb(hsd);
 			}
 		} else {
 			/* Nothing to do */
 		}
 	} else if ((__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXFIFOHE) != RESET) &&
 		   ((context & SDMMC_CONTEXT_IT) != 0U)) {
-		SDMMC_Write_IT(hsd);
+		sdhc_stm32_ll_write_it(hsd);
 	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 							   SDMMC_FLAG_RXOVERR |
 							   SDMMC_FLAG_TXUNDERR) != RESET) {
 		/* Set Error code */
-		hsd->ErrorCode |= SDMMC_CheckDataErrors(hsd);
+		hsd->ErrorCode |= sdhc_stm32_ll_check_data_errors(hsd);
 
 		/* Clear All flags */
 		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_DATA_FLAGS);
 
 		/* Disable all interrupts */
-		SDMMC_DisableDataInterrupts(hsd);
+		sdhc_stm32_ll_disable_data_interrupts(hsd);
 
 		__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 		hsd->Instance->DCTRL |= SDMMC_DCTRL_FIFORST;
@@ -1107,7 +1111,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 			/* Set the SD state to ready to be able to start again the process */
 			hsd->State = SDMMC_STATE_READY;
 			hsd->Context = SDMMC_CONTEXT_NONE;
-			SDMMC_ErrorCallback(hsd);
+			sdhc_stm32_ll_error_cb(hsd);
 		} else if ((context & SDMMC_CONTEXT_DMA) != 0U) {
 			if (hsd->ErrorCode != SDMMC_ERROR_NONE) {
 				/* Disable Internal DMA */
@@ -1117,7 +1121,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 				/* Set the SD state to ready to be able to start again the process
 				 */
 				hsd->State = SDMMC_STATE_READY;
-				SDMMC_ErrorCallback(hsd);
+				sdhc_stm32_ll_error_cb(hsd);
 			}
 		} else {
 			/* Nothing to do */
@@ -1127,16 +1131,16 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 		if (READ_BIT(hsd->Instance->IDMACTRL, SDMMC_IDMA_IDMABACT) == 0U) {
 			/* Current buffer is buffer0, Transfer complete for buffer1 */
 			if ((context & SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U) {
-				SDMMC_Write_DMADoubleBuf1CpltCallback(hsd);
-			} else { /* SDMMC_CONTEXT_READ_MULTIPLE_BLOCK */
-				SDMMC_Read_DMADoubleBuf1CpltCallback(hsd);
+				sdhc_stm32_ll_write_dma_buf1_cplt_cb(hsd);
+			} else { /* SD_CONTEXT_READ_MULTIPLE_BLOCK */
+				sdhc_stm32_ll_read_dma_buf1_cplt_cb(hsd);
 			}
 		} else { /* SD_DMA_BUFFER1 */
 			/* Current buffer is buffer1, Transfer complete for buffer0 */
 			if ((context & SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U) {
-				SDMMC_Write_DMADoubleBuf0CpltCallback(hsd);
-			} else { /* SDMMC_CONTEXT_READ_MULTIPLE_BLOCK */
-				SDMMCEx_Read_DMADoubleBuf0CpltCallback(hsd);
+				sdhc_stm32_ll_write_dma_buf0_cplt_cb(hsd);
+			} else { /* SD_CONTEXT_READ_MULTIPLE_BLOCK */
+				sdhc_stm32_ll_read_dma_buf0_cplt_cb(hsd);
 			}
 		}
 	} else {
@@ -1150,7 +1154,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
  * @param block_size Block size in bytes
  * @return SDMMC DataBlockSize value
  */
-static uint32_t SDMMC_LL_Convert_Block_Size(SDMMC_HandleTypeDef *hsd, uint32_t block_size)
+static uint32_t sdhc_stm32_ll_convert_block_size(sdhc_stm32_ll_handle_t *hsd, uint32_t block_size)
 {
 	uint32_t datablock_size = SDMMC_DATABLOCK_SIZE_1B;
 
@@ -1212,17 +1216,50 @@ static uint32_t SDMMC_LL_Convert_Block_Size(SDMMC_HandleTypeDef *hsd, uint32_t b
 
 /**
  * @brief Get the SDMMC peripheral clock frequency
+ *
+ * This function returns the clock frequency for the SDMMC peripheral
+ * based on the STM32 series.
+ *
  * @return Clock frequency in Hz
  */
-static uint32_t SDMMC_LL_GetClockFreq(void)
+static uint32_t sdhc_stm32_ll_get_clock_freq(void)
 {
-/* Get SDMMC peripheral clock frequency */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	return HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
+	uint32_t clk_freq = 0U;
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
+
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC12);
+
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
+      defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
+      defined(CONFIG_SOC_SERIES_STM32N6X)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC1);
+
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_ICLK);
+
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDIO);
+
 #else
-	/* Add support for other STM32 series as needed */
-	return 0;
+	/* Unsupported series - try common SDMMC clock as fallback */
+#if defined(RCC_PERIPHCLK_SDMMC)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
+#elif defined(RCC_PERIPHCLK_SDMMC1)
+	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC1);
+#else
+	#warning "SDMMC clock frequency not defined for this STM32 series"
 #endif
+#endif
+
+	/* if clock frequency is 0, something is wrong with RCC config */
+	if (clk_freq == 0U) {
+		LOG_ERR("Failed to get SDMMC peripheral clock frequency");
+	}
+
+	return clk_freq;
 }
 
 /**
@@ -1234,7 +1271,7 @@ static uint32_t SDMMC_LL_GetClockFreq(void)
  * @param ClockSpeed Desired clock speed in Hz
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDMMC_LL_ConfigFrequency(SDMMC_HandleTypeDef *hsd, uint32_t ClockSpeed)
+SDMMC_StatusTypeDef sdhc_stm32_ll_config_freq(sdhc_stm32_ll_handle_t *hsd, uint32_t ClockSpeed)
 {
 	uint32_t ClockDiv;
 
@@ -1255,7 +1292,7 @@ SDMMC_StatusTypeDef SDMMC_LL_ConfigFrequency(SDMMC_HandleTypeDef *hsd, uint32_t 
 	 * Formula: ClockDiv = PeripheralClock / (2 * DesiredClock)
 	 * This is the STM32 SDMMC clock divider calculation
 	 */
-	ClockDiv = SDMMC_LL_GetClockFreq() / (2U * ClockSpeed);
+	ClockDiv = sdhc_stm32_ll_get_clock_freq() / (2U * ClockSpeed);
 
 	/* Modify the CLKCR register to set the clock divider
 	 * This is direct LL register manipulation
@@ -1272,7 +1309,7 @@ SDMMC_StatusTypeDef SDMMC_LL_ConfigFrequency(SDMMC_HandleTypeDef *hsd, uint32_t 
  * @param hsd Pointer to SDIO LL handle
  * @return Current state
  */
-uint32_t SDMMC_LL_GetState(const SDMMC_HandleTypeDef *hsd)
+uint32_t sdhc_stm32_ll_get_state(const sdhc_stm32_ll_handle_t *hsd)
 {
 	if (hsd == NULL) {
 		return SDMMC_STATE_ERROR;
@@ -1285,7 +1322,7 @@ uint32_t SDMMC_LL_GetState(const SDMMC_HandleTypeDef *hsd)
  * @param hsd Pointer to SDMMC handle
  * @return Error code
  */
-uint32_t SDMMC_LL_GetError(const SDMMC_HandleTypeDef *hsd)
+uint32_t sdhc_stm32_ll_get_error(const sdhc_stm32_ll_handle_t *hsd)
 {
 	if (hsd == NULL) {
 		return SDMMC_ERROR_INVALID_PARAMETER;
@@ -1302,7 +1339,7 @@ uint32_t SDMMC_LL_GetError(const SDMMC_HandleTypeDef *hsd)
  * @param hsd Pointer to SDIO LL handle
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
+SDMMC_StatusTypeDef sdhc_stm32_ll_init(sdhc_stm32_ll_handle_t *hsd)
 {
 	SDMMC_InitTypeDef Init;
 	uint32_t sdmmc_clk;
@@ -1334,7 +1371,7 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
 			Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
 
 			/* Calculate initial clock divider for 400 kHz */
-			sdmmc_clk = SDMMC_LL_GetClockFreq();
+			sdmmc_clk = sdhc_stm32_ll_get_clock_freq();
 			if (sdmmc_clk == 0U) {
 				hsd->ErrorCode = SDMMC_ERROR_INVALID_PARAMETER;
 				return SDMMC_ERROR;
@@ -1368,7 +1405,7 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
 
 	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		/* Init Clock should be less or equal to 400Khz*/
-		sdmmc_clk = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
+		sdmmc_clk = sdhc_stm32_ll_get_clock_freq();
 		if (sdmmc_clk == 0U) {
 			hsd->State = SDMMC_STATE_READY;
 			hsd->ErrorCode = SDMMC_ERROR_INVALID_PARAMETER;
@@ -1404,7 +1441,7 @@ SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd)
  * @param hsd Pointer to SDMMC handle
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDMMC_LL_DeInit(SDMMC_HandleTypeDef *hsd)
+SDMMC_StatusTypeDef sdhc_stm32_ll_deinit(sdhc_stm32_ll_handle_t *hsd)
 {
 	/* Check the parameters */
 	assert_param(IS_SDMMC_ALL_INSTANCE(hsd->Instance));
@@ -1436,8 +1473,8 @@ SDMMC_StatusTypeDef SDMMC_LL_DeInit(SDMMC_HandleTypeDef *hsd)
  * @param pData Pointer to receive data
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_ReadDirect(SDMMC_HandleTypeDef *hsd,
-				       SDIO_LL_DirectCmd_TypeDef *Argument, uint8_t *pData)
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_direct(sdhc_stm32_ll_handle_t *hsd,
+				       sdhc_stm32_sdio_direct_cmd_t *Argument, uint8_t *pData)
 {
 	uint32_t cmd;
 	uint32_t errorstate;
@@ -1511,8 +1548,8 @@ SDMMC_StatusTypeDef SDIO_LL_ReadDirect(SDMMC_HandleTypeDef *hsd,
  * @param Data Data to write
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_WriteDirect(SDMMC_HandleTypeDef *hsd,
-					SDIO_LL_DirectCmd_TypeDef *Argument, uint8_t Data)
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_direct(sdhc_stm32_ll_handle_t *hsd,
+					sdhc_stm32_sdio_direct_cmd_t *Argument, uint8_t Data)
 {
 	uint32_t cmd;
 	uint32_t errorstate;
@@ -1588,8 +1625,8 @@ SDMMC_StatusTypeDef SDIO_LL_WriteDirect(SDMMC_HandleTypeDef *hsd,
  * @param Timeout_Ms Timeout in milliseconds
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
-					 SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_extended(sdhc_stm32_ll_handle_t *hsd,
+					 sdhc_stm32_sdio_ext_cmd_t *Argument, uint8_t *pData,
 					 uint32_t Size_byte, uint32_t Timeout_Ms)
 {
 	uint32_t cmd;
@@ -1636,7 +1673,7 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
 
 	if (Argument->Block_Mode == SDMMC_SDIO_MODE_BLOCK) {
 		config.DataLength = (uint32_t)(nbr_of_block * hsd->block_size);
-		config.DataBlockSize = SDMMC_LL_Convert_Block_Size(hsd, hsd->block_size);
+		config.DataBlockSize = sdhc_stm32_ll_convert_block_size(hsd, hsd->block_size);
 	} else {
 		config.DataLength = (Size_byte > 0U) ? Size_byte : 512U;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_1B;
@@ -1680,7 +1717,7 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
 		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF) &&
 		    (dataremaining >= 32U)) {
 			/* Read 32 bytes from FIFO (8 x 4-byte words) */
-			SDMMC_ReadFIFOBlock(hsd, &tempbuff);
+			sdhc_stm32_ll_read_fifo_block(hsd, &tempbuff);
 			dataremaining -= 32U;
 		} else if (dataremaining < 32U) {
 			/* Read remaining bytes */
@@ -1710,9 +1747,9 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
 	__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
 	/* Check for data transfer errors */
-	errorstate = SDMMC_CheckDataErrors(hsd);
+	errorstate = sdhc_stm32_ll_check_data_errors(hsd);
 	if (errorstate != SDMMC_ERROR_NONE) {
-		return SDMMC_HandleDataError(hsd, errorstate);
+		return sdhc_stm32_ll_handle_data_error(hsd, errorstate);
 	}
 
 	/* Clear all static data flags */
@@ -1735,9 +1772,10 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
  * @param Timeout_Ms Timeout in milliseconds
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
-					  SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					  uint32_t Size_byte, uint32_t Timeout_Ms)
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_extended(sdhc_stm32_ll_handle_t *hsd,
+						      sdhc_stm32_sdio_ext_cmd_t *Argument,
+						      uint8_t *pData, uint32_t Size_byte,
+						      uint32_t Timeout_Ms)
 {
 	uint32_t cmd;
 	SDMMC_DataInitTypeDef config;
@@ -1784,7 +1822,7 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
 
 	if (Argument->Block_Mode == SDMMC_SDIO_MODE_BLOCK) {
 		config.DataLength = (uint32_t)(nbr_of_block * hsd->block_size);
-		config.DataBlockSize = SDMMC_LL_Convert_Block_Size(hsd, hsd->block_size);
+		config.DataBlockSize = sdhc_stm32_ll_convert_block_size(hsd, hsd->block_size);
 	} else {
 		config.DataLength = (Size_byte > 0U) ? Size_byte : 512U;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_1B;
@@ -1863,9 +1901,9 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
 	__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
 	/* Check for data transfer errors */
-	errorstate = SDMMC_CheckDataErrors(hsd);
+	errorstate = sdhc_stm32_ll_check_data_errors(hsd);
 	if (errorstate != SDMMC_ERROR_NONE) {
-		return SDMMC_HandleDataError(hsd, errorstate);
+		return sdhc_stm32_ll_handle_data_error(hsd, errorstate);
 	}
 
 	/* Clear all static data flags */
@@ -1888,9 +1926,9 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
  * @param Size_byte Number of bytes to read
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_ReadExtended_DMA(SDMMC_HandleTypeDef *hsd,
-					     SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					     uint32_t Size_byte)
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_extended_dma(sdhc_stm32_ll_handle_t *hsd,
+							 sdhc_stm32_sdio_ext_cmd_t *Argument,
+							 uint8_t *pData, uint32_t Size_byte)
 {
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
@@ -1935,7 +1973,7 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended_DMA(SDMMC_HandleTypeDef *hsd,
 
 	if (Argument->Block_Mode == SDMMC_SDIO_MODE_BLOCK) {
 		config.DataLength = (uint32_t)(nbr_of_block * hsd->block_size);
-		config.DataBlockSize = SDMMC_LL_Convert_Block_Size(hsd, hsd->block_size);
+		config.DataBlockSize = sdhc_stm32_ll_convert_block_size(hsd, hsd->block_size);
 	} else {
 		config.DataLength = (Size_byte > 0U) ? Size_byte : 512U;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_1B;
@@ -1991,9 +2029,9 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended_DMA(SDMMC_HandleTypeDef *hsd,
  * @param Size_byte Number of bytes to write
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
-					      SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					      uint32_t Size_byte)
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_extended_dma(sdhc_stm32_ll_handle_t *hsd,
+							  sdhc_stm32_sdio_ext_cmd_t *Argument,
+							  uint8_t *pData, uint32_t Size_byte)
 {
 	uint32_t cmd;
 	SDMMC_DataInitTypeDef config;
@@ -2038,7 +2076,7 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
 
 	if (Argument->Block_Mode == SDMMC_SDIO_MODE_BLOCK) {
 		config.DataLength = (uint32_t)(nbr_of_block * hsd->block_size);
-		config.DataBlockSize = SDMMC_LL_Convert_Block_Size(hsd, hsd->block_size);
+		config.DataBlockSize = sdhc_stm32_ll_convert_block_size(hsd, hsd->block_size);
 	} else {
 		config.DataLength = (Size_byte > 512U) ? 512U : Size_byte;
 		config.DataBlockSize = SDMMC_DATABLOCK_SIZE_1B;
@@ -2092,9 +2130,9 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
  * @param hsd Pointer to SDMMC handle
  * @return SDMMC_StatusTypeDef Status
  */
-SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd)
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_card_reset(sdhc_stm32_ll_handle_t *hsd)
 {
-	SDIO_LL_DirectCmd_TypeDef cmd_arg;
+	sdhc_stm32_sdio_direct_cmd_t cmd_arg;
 	SDMMC_StatusTypeDef status;
 	uint8_t data = 0x08U; /* RES bit (bit 3) in CCCR register 6 */
 
@@ -2114,7 +2152,7 @@ SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd)
 	cmd_arg.Reg_Addr = 0x06U;   /* CCCR I/O Abort register */
 	cmd_arg.ReadAfterWrite = 0; /* Write only */
 
-	status = SDIO_LL_WriteDirect(hsd, &cmd_arg, data);
+	status = sdhc_stm32_ll_sdio_write_direct(hsd, &cmd_arg, data);
 	if (status != SDMMC_OK) {
 		LOG_ERR("Failed to reset SDIO card");
 		return status;
@@ -2138,7 +2176,7 @@ SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd)
  * Callbacks are handled by the Zephyr SDHC driver layer.
  * @param hsd Pointer to SDMMC handle
  */
-void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
+void sdhc_stm32_ll_sdio_irq_handler(sdhc_stm32_ll_handle_t *hsd)
 {
 	uint32_t flags;
 	uint32_t errorcode;
@@ -2157,7 +2195,7 @@ void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
 		hsd->State = SDMMC_STATE_READY;
 
 		/* Disable all data transfer interrupts */
-		SDMMC_DisableDataInterrupts(hsd);
+		sdhc_stm32_ll_disable_data_interrupts(hsd);
 		__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
 		/* If DMA was used, clean up DMA configuration */
@@ -2175,7 +2213,7 @@ void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
 	}
 
 	/* Check for errors */
-	errorcode = SDMMC_CheckDataErrors(hsd);
+	errorcode = sdhc_stm32_ll_check_data_errors(hsd);
 	if (errorcode != SDMMC_ERROR_NONE) {
 		hsd->ErrorCode |= errorcode;
 
@@ -2184,7 +2222,7 @@ void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
 							  SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR);
 
 		/* Disable interrupts */
-		SDMMC_DisableDataInterrupts(hsd);
+		sdhc_stm32_ll_disable_data_interrupts(hsd);
 
 		hsd->State = SDMMC_STATE_READY;
 

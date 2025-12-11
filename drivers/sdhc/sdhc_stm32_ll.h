@@ -111,7 +111,7 @@ typedef struct {
 
 	uint32_t CardSpeed; /* Specifies the card Speed */
 
-} SDMMC_CardInfoTypeDef;
+} sdhc_stm32_card_info_t;
 
 /**
  * @brief SD handle Structure definition
@@ -137,14 +137,14 @@ typedef struct {
 
 	__IO uint32_t ErrorCode; /* SD Card Error codes */
 
-	SDMMC_CardInfoTypeDef SdCard; /* SD Card information */
+	sdhc_stm32_card_info_t SdCard; /* SD Card information */
 
 	uint32_t CSD[4]; /* SD card specific data table */
 
 	uint32_t CID[4]; /* SD card identification number table */
 
 	uint32_t block_size; /* Block size for SDIO data transfer */
-} SDMMC_HandleTypeDef;
+} sdhc_stm32_ll_handle_t;
 
 /**
  * @brief SDIO Direct Command argument structure (for CMD52)
@@ -153,7 +153,7 @@ typedef struct {
 	uint32_t Reg_Addr;       /* Register address to read/write */
 	uint32_t ReadAfterWrite; /* Read after write flag */
 	uint32_t IOFunctionNbr;  /* IO function number */
-} SDIO_LL_DirectCmd_TypeDef;
+} sdhc_stm32_sdio_direct_cmd_t;
 
 /**
  * @brief SDIO Extended Command argument structure (for CMD53)
@@ -163,51 +163,58 @@ typedef struct {
 	uint32_t IOFunctionNbr; /* IO function number */
 	uint32_t Block_Mode;    /* Block or byte mode */
 	uint32_t OpCode;        /* Operation code (increment/fixed address) */
-} SDIO_LL_ExtendedCmd_TypeDef;
+} sdhc_stm32_sdio_ext_cmd_t;
 
 /**
  * @brief SD/MMC Functions Prototypes
  */
-SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd);
-SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_t *pData,
-					  uint32_t BlockAdd, uint32_t NumberOfBlocks);
-SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *pData,
-				      uint32_t BlockAdd, uint32_t NumberOfBlocks, uint32_t Timeout);
-SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pData,
-					 uint32_t BlockAdd, uint32_t NumberOfBlocks);
-SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, uint32_t BlockAdd,
-				     uint32_t NumberOfBlocks, uint32_t Timeout);
-SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd,
-				uint32_t BlockEndAdd);
-uint32_t SDMMC_SwitchSpeed(SDMMC_HandleTypeDef *hsd, uint32_t SwitchSpeedMode);
-uint32_t SDMMC_FindSCR(SDMMC_HandleTypeDef *hsd, uint32_t *pSCR);
-void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd);
-SDMMC_StatusTypeDef SDMMC_LL_ConfigFrequency(SDMMC_HandleTypeDef *hsd, uint32_t ClockSpeed);
-SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd);
-SDMMC_StatusTypeDef SDMMC_LL_DeInit(SDMMC_HandleTypeDef *hsd);
-uint32_t SDMMC_LL_GetState(const SDMMC_HandleTypeDef *hsd);
-uint32_t SDMMC_LL_GetError(const SDMMC_HandleTypeDef *hsd);
+SDMMC_CardStateTypeDef sdhc_stm32_ll_get_card_state(sdhc_stm32_ll_handle_t *hsd);
+SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks_dma(sdhc_stm32_ll_handle_t *hsd,
+						   const uint8_t *data, uint32_t block_addr,
+						   uint32_t num_blocks);
+SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks(sdhc_stm32_ll_handle_t *hsd, const uint8_t *data,
+					       uint32_t block_addr, uint32_t num_blocks,
+					       uint32_t timeout);
+SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks_dma(sdhc_stm32_ll_handle_t *hsd, uint8_t *data,
+						  uint32_t block_addr, uint32_t num_blocks);
+SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks(sdhc_stm32_ll_handle_t *hsd, uint8_t *data,
+					      uint32_t block_addr, uint32_t num_blocks,
+					      uint32_t timeout);
+SDMMC_StatusTypeDef sdhc_stm32_ll_erase(sdhc_stm32_ll_handle_t *hsd, uint32_t block_start,
+					uint32_t block_end);
+uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t speed_mode);
+uint32_t sdhc_stm32_ll_find_scr(sdhc_stm32_ll_handle_t *hsd, uint32_t *scr);
+void sdhc_stm32_ll_irq_handler(sdhc_stm32_ll_handle_t *hsd);
+SDMMC_StatusTypeDef sdhc_stm32_ll_config_freq(sdhc_stm32_ll_handle_t *hsd, uint32_t clock_speed);
+SDMMC_StatusTypeDef sdhc_stm32_ll_init(sdhc_stm32_ll_handle_t *hsd);
+SDMMC_StatusTypeDef sdhc_stm32_ll_deinit(sdhc_stm32_ll_handle_t *hsd);
+uint32_t sdhc_stm32_ll_get_state(const sdhc_stm32_ll_handle_t *hsd);
+uint32_t sdhc_stm32_ll_get_error(const sdhc_stm32_ll_handle_t *hsd);
 
 /**
  * @brief SDIO Functions Prototypes
  */
-SDMMC_StatusTypeDef SDIO_LL_ReadDirect(SDMMC_HandleTypeDef *hsd,
-				       SDIO_LL_DirectCmd_TypeDef *Argument, uint8_t *pData);
-SDMMC_StatusTypeDef SDIO_LL_WriteDirect(SDMMC_HandleTypeDef *hsd,
-					SDIO_LL_DirectCmd_TypeDef *Argument, uint8_t Data);
-SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
-					 SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					 uint32_t Size_byte, uint32_t Timeout_Ms);
-SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
-					  SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					  uint32_t Size_byte, uint32_t Timeout_Ms);
-SDMMC_StatusTypeDef SDIO_LL_ReadExtended_DMA(SDMMC_HandleTypeDef *hsd,
-					     SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					     uint32_t Size_byte);
-SDMMC_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
-					      SDIO_LL_ExtendedCmd_TypeDef *Argument, uint8_t *pData,
-					      uint32_t Size_byte);
-SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd);
-void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_direct(sdhc_stm32_ll_handle_t *hsd,
+						   sdhc_stm32_sdio_direct_cmd_t *arg,
+						   uint8_t *data);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_direct(sdhc_stm32_ll_handle_t *hsd,
+						    sdhc_stm32_sdio_direct_cmd_t *arg,
+						    uint8_t data);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_extended(sdhc_stm32_ll_handle_t *hsd,
+						     sdhc_stm32_sdio_ext_cmd_t *arg,
+						     uint8_t *data, uint32_t size,
+						     uint32_t timeout_ms);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_extended(sdhc_stm32_ll_handle_t *hsd,
+						      sdhc_stm32_sdio_ext_cmd_t *arg,
+						      uint8_t *data, uint32_t size,
+						      uint32_t timeout_ms);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_extended_dma(sdhc_stm32_ll_handle_t *hsd,
+							 sdhc_stm32_sdio_ext_cmd_t *arg,
+							 uint8_t *data, uint32_t size);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_extended_dma(sdhc_stm32_ll_handle_t *hsd,
+							  sdhc_stm32_sdio_ext_cmd_t *arg,
+							  uint8_t *data, uint32_t size);
+SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_card_reset(sdhc_stm32_ll_handle_t *hsd);
+void sdhc_stm32_ll_sdio_irq_handler(sdhc_stm32_ll_handle_t *hsd);
 
 #endif /* ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_ */
