@@ -161,6 +161,270 @@
 			};
 		};
 
+		gpt0: gpt@43010000 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010000 0x100>;
+			channel = <0>;
+			interrupts = <406 1>, <407 1>, <408 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt1: gpt@43010100 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010100 0x100>;
+			channel = <1>;
+			interrupts = <409 1>, <410 1>, <411 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt2: gpt@43010200 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010200 0x100>;
+			channel = <2>;
+			interrupts = <412 1>, <413 1>, <414 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt3: gpt@43010300 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010300 0x100>;
+			channel = <3>;
+			interrupts = <415 1>, <416 1>, <417 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt4: gpt@43010400 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010400 0x100>;
+			channel = <4>;
+			interrupts = <418 1>, <419 1>, <420 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt5: gpt@43010500 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010500 0x100>;
+			channel = <5>;
+			interrupts = <421 1>, <422 1>, <423 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt6: gpt@43010600 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010600 0x100>;
+			channel = <6>;
+			interrupts = <424 1>, <425 1>, <426 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt7: gpt@43010700 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43010700 0x100>;
+			channel = <7>;
+			interrupts = <427 1>, <428 1>, <429 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt8: gpt@43020000 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020000 0x100>;
+			channel = <8>;
+			interrupts = <430 1>, <431 1>, <432 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt9: gpt@43020100 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020100 0x100>;
+			channel = <9>;
+			interrupts = <433 1>, <434 1>, <435 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt10: gpt@43020200 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020200 0x100>;
+			channel = <10>;
+			interrupts = <436 1>, <437 1>, <438 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt11: gpt@43020300 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020300 0x100>;
+			channel = <11>;
+			interrupts = <439 1>, <440 1>, <441 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt12: gpt@43020400 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020400 0x100>;
+			channel = <12>;
+			interrupts = <442 1>, <443 1>, <444 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt13: gpt@43020500 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020500 0x100>;
+			channel = <13>;
+			interrupts = <445 1>, <446 1>, <447 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt14: gpt@43020600 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020600 0x100>;
+			channel = <14>;
+			interrupts = <448 1>, <449 1>, <450 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt15: gpt@43020700 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x43020700 0x100>;
+			channel = <15>;
+			interrupts = <451 1>, <452 1>, <453 1>;
+			interrupt-names = "ccmpa", "ccmpb", "ovf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		intc: intc@40400000 {
+			compatible = "renesas,rz-intc";
+			reg = <0x40400000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&nvic>;
+		};
+
 		sci0: sci0@42800c00 {
 			compatible = "renesas,rz-sci-b";
 			reg = <0x42800c00 0x400>;
