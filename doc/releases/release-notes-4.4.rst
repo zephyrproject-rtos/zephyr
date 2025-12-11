@@ -123,6 +123,7 @@ New APIs and options
   * Audio
 
     * :c:func:`bt_bap_ep_get_conn`
+    * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
 
   * Host
 
