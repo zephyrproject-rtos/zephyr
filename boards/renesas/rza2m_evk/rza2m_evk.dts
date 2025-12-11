@@ -79,6 +79,10 @@
 
 &ostm0 {
 	status = "okay";
+
+	os_timer {
+		status = "okay";
+	};
 };
 
 /* Currently, the maximum supported baud rate on the USB Micro port (CN5) is 115200 */
