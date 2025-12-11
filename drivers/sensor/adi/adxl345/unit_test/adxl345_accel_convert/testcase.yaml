@@ -1,0 +1,7 @@
+tests:
+  adxl345.adxl345_accel_convert:
+    tags: adxl345
+    type: unit
+    extra_args:
+      # add -g to allow debugging in vscode
+      - EXTRA_CPPFLAGS="-g;-DZEPHYR_INCLUDE_DEVICE_H_;-DZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H"
