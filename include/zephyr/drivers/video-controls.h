@@ -335,6 +335,19 @@ enum video_camera_orientation {
 #define VIDEO_CID_CAMERA_SENSOR_ROTATION (VIDEO_CID_CAMERA_CLASS_BASE + 35)
 
 /**
+ * Determines the automatic exposure compensation. It is effective only when
+ * VIDEO_CID_EXPOSURE_AUTO control is set to AUTO, SHUTTER_PRIORITY, or
+ * APERTURE_PRIORITY. It is expressed in terms of EV; drivers should interpret
+ * the values as 0.001 EV units, where the value 1000 stands for +1 EV.
+ *
+ * Increasing the exposure compensation value is equivalent to decreasing the
+ * exposure value (EV) and will increase the amount of light at the image sensor.
+ * The camera performs the exposure compensation by adjusting absolute exposure
+ * time and/or aperture.
+ */
+#define VIDEO_CID_AUTO_EXPOSURE_BIAS (VIDEO_CID_CAMERA_CLASS_BASE + 36)
+
+/**
  * @}
  */
 
