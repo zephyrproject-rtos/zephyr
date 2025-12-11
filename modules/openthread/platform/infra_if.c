@@ -392,21 +392,21 @@ static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len)
 	}
 
 	switch (ipv4_hdr->proto) {
-	case IPPROTO_ICMP:
+	case NET_IPPROTO_ICMP:
 		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_ICMP) != 0) {
 			struct net_icmp_hdr *icmp_hdr = (struct net_icmp_hdr *)pkt_cursor;
 
 			icmp_hdr->chksum = 0;
 		}
 	break;
-	case IPPROTO_UDP:
+	case NET_IPPROTO_UDP:
 		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_UDP) != 0) {
 			struct net_udp_hdr *udp_hdr = (struct net_udp_hdr *)pkt_cursor;
 
 			udp_hdr->chksum = 0;
 		}
 	break;
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_TCP) != 0) {
 			struct net_tcp_hdr *tcp_hdr = (struct net_tcp_hdr *)pkt_cursor;
 
