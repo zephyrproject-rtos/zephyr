@@ -176,6 +176,15 @@ static void setup(void *f)
 	k_sem_init(&mqtt_sn_tx_sem, 0, 1);
 	k_sem_init(&mqtt_sn_rx_sem, 0, 1);
 	k_sem_init(&mqtt_sn_cb_sem, 0, 1);
+
+	/* The MQTT-SN client uses timestamp 0 as a special value which
+	 * indicates, that no gwinfo or searchgw message needs to be sent.
+	 * This means that the code effectively ignores such incoming messages
+	 * during timestamp 0. Since this is both unrealistic and unproblematic
+	 * on a real device, we simply sleep here to workaround that without
+	 * complicating the MQTT-SN implementation.
+	 */
+	k_sleep(K_MSEC(1));
 }
 
 static void cleanup(void *f)
