@@ -223,7 +223,7 @@ out:
 	otMessageFree(message);
 }
 
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) && defined(CONFIG_NET_IPV4)
 static void ot_receive_nat64_handler(otMessage *message, void *context)
 {
 	struct otbr_msg_ctx *req = NULL;
@@ -247,7 +247,7 @@ out:
 
 	otMessageFree(message);
 }
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR && CONFIG_NET_IPV4 */
 
 static bool is_ipv6_frag(struct net_pkt *pkt)
 {
@@ -347,9 +347,9 @@ static int openthread_l2_init(struct net_if *iface)
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) && defined(CONFIG_NET_IPV4)
 		openthread_set_nat64_receive_cb(ot_receive_nat64_handler, (void *)ot_l2_context);
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR*/
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR && CONFIG_NET_IPV4 */
 		openthread_border_router_init(ot_l2_context);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
