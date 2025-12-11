@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <soc/soc.h>
 #include <hal/gpio_ll.h>
 #include <esp_attr.h>
+#include <esp_sleep.h>
 #include <hal/rtc_io_hal.h>
 
 #include <soc.h>
@@ -22,6 +23,7 @@
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -463,6 +465,37 @@ static void IRAM_ATTR gpio_esp32_fire_callbacks(const struct device *dev)
 	}
 }
 
+static int gpio_esp32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+#if CONFIG_PM
+		if (pm_device_wakeup_is_capable(dev)) {
+			/* If the driver is being suspended, GPIO is not enabled as wakeup device */
+			esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+#if CONFIG_PM
+		if (pm_device_wakeup_is_capable(dev)) {
+			esp_sleep_enable_gpio_wakeup();
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(const struct device *dev)
@@ -486,7 +519,7 @@ static int gpio_esp32_init(const struct device *dev)
 		isr_connected = true;
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, gpio_esp32_pm_action);
 }
 
 static DEVICE_API(gpio, gpio_esp32_driver_api) = {
@@ -502,16 +535,17 @@ static DEVICE_API(gpio, gpio_esp32_driver_api) = {
 };
 
 #define ESP_SOC_GPIO_INIT(_id)							\
-	static struct gpio_esp32_data gpio_data_##_id;	\
+	static struct gpio_esp32_data gpio_data_##_id;				\
 	static struct gpio_esp32_config gpio_config_##_id = {			\
 		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),		\
 		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),	\
 		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),	\
 		.gpio_port = _id	\
 	};									\
+	PM_DEVICE_DT_INST_DEFINE(_id, gpio_esp32_pm_action);			\
 	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id),				\
 			&gpio_esp32_init,					\
-			NULL,							\
+			PM_DEVICE_DT_INST_GET(_id),				\
 			&gpio_data_##_id,					\
 			&gpio_config_##_id,					\
 			PRE_KERNEL_1,						\
