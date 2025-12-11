@@ -1,0 +1,9 @@
+tests:
+  drivers.sensor.adxl345:
+    tags:
+      - drivers
+      - sensor
+    type: unit
+    extra_args:
+      # add -g to allow debugging in vscode
+      - EXTRA_CPPFLAGS="-g"

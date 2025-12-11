@@ -15,6 +15,7 @@
 #include <zephyr/sys/__assert.h>
 
 #include "adxl345.h"
+#include "adxl345_convert.h"
 
 LOG_MODULE_REGISTER(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -374,23 +375,6 @@ int adxl345_read_sample(const struct device *dev,
 	return 0;
 }
 
-static void adxl345_accel_convert(struct sensor_value *val, int16_t sample,
-				  uint8_t selected_range)
-{
-	const int32_t sensitivity[] = {
-		[ADXL345_RANGE_2G] = INT32_C(SENSOR_G / 256),
-		[ADXL345_RANGE_4G] = INT32_C(SENSOR_G / 128),
-		[ADXL345_RANGE_8G] = INT32_C(SENSOR_G / 64),
-		[ADXL345_RANGE_16G] = INT32_C(SENSOR_G / 32),
-	};
-
-	if (sample & BIT(9)) {
-		sample |= ADXL345_COMPLEMENT;
-	}
-
-	val->val1 = (sample * sensitivity[selected_range]) / 1000000;
-	val->val2 = (sample * sensitivity[selected_range]) % 1000000;
-}
 
 static int adxl345_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
