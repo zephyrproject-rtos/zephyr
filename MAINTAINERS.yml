@@ -6109,6 +6109,8 @@ West:
     - modules/openthread/
   labels:
     - "area: OpenThread"
+  tests:
+    - openthread
 
 "West project: percepio":
   status: maintained
