@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_RENESAS_RZA2M_GPT
+	bool "Renesas RZA2M General PWM Timer (GPT) PWM driver"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_GPT_PWM_ENABLED
+	help
+	  Enable the PWM driver for the Renesas RZA2M General PWM Timer (GPT).
