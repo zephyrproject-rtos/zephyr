@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+description: |
+  ZFM-x0 Series Optical Fingerprint Sensor
+
+  This binding supports fingerprint sensor modules using the Zhiantec/Synochip
+  ZFM protocol, including ZFM-20, ZFM-60, ZFM-70, R30x, JM-101, DY-50, FPM10A,
+  and other compatible modules.
+
+compatible: "zhiantec,zfm-x0"
+
+include: [uart-device.yaml]
+
+properties:
+  comm-addr:
+    type: int
+    default: 0xFFFFFFFF
+    description: |
+      Device communication address used in ZFM protocol packets.
+      Default is 0xFFFFFFFF. Can be changed via system parameter commands.
+
+  password:
+    type: int
+    default: 0x00000000
+    description: |
+      Sensor password for authentication. All sensors ship with default
+      password 0x00000000. Only change if you've modified the sensor's
+      password using the password change command.
