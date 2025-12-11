@@ -19,7 +19,6 @@ if STM32_LTDC
 choice STM32_LTDC_PIXEL_FORMAT
 	prompt "Color pixel format"
 	default STM32_LTDC_RGB565
-	depends on STM32_LTDC
 	help
 	  Specify the color pixel format for the STM32 LCD-TFT display controller.
 
