@@ -1156,6 +1156,7 @@
 				clock-names = "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB1, 16)>,
 					 <&rcc STM32_CLOCK(AHB1, 17)>;
+				memory-regions = <&sram2>;
 				status = "disabled";
 			};
 
