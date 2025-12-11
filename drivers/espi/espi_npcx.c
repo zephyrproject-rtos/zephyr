@@ -600,27 +600,34 @@ static void espi_vw_notify_host_warning(const struct device *dev,
 	espi_npcx_receive_vwire(dev, signal, &wire);
 
 	k_busy_wait(NPCX_ESPI_VWIRE_ACK_DELAY);
-	switch (signal) {
-	case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
-		espi_npcx_send_vwire(dev,
-				ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
-				wire);
-		break;
-	case ESPI_VWIRE_SIGNAL_SUS_WARN:
-		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_ACK,
-				wire);
-		break;
-	case ESPI_VWIRE_SIGNAL_OOB_RST_WARN:
-		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
-				wire);
-		break;
+	if (!IS_ENABLED(CONFIG_ESPI_AUTOMATIC_WARNING_ACKNOWLEDGE)) {
+		struct espi_npcx_data *const data = dev->data;
+		struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
+
+		evt.evt_details = signal;
+		evt.evt_data = wire;
+		espi_send_callbacks(&data->callbacks, dev, evt);
+	} else {
+		switch (signal) {
+		case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
+			espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
+					wire);
+			break;
+		case ESPI_VWIRE_SIGNAL_SUS_WARN:
+			espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_SUS_ACK,
+					wire);
+			break;
+		case ESPI_VWIRE_SIGNAL_OOB_RST_WARN:
+			espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
+					wire);
+			break;
 #if DT_NODE_EXISTS(DT_CHILD(DT_PATH(npcx_espi_vws_map), vw_dnx_warn))
-	case ESPI_VWIRE_SIGNAL_DNX_WARN:
-		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK, wire);
-		break;
+		case ESPI_VWIRE_SIGNAL_DNX_WARN:
+			espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK, wire);
+			break;
 #endif
-	default:
-		break;
+		default:
+			break;
 	}
 }
 
