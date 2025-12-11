@@ -1324,6 +1324,33 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
  */
 int bt_le_adv_stop(void);
 
+/** @brief Advertising info structure. */
+struct bt_le_adv_info {
+	/** Local identity handle. */
+	uint8_t                    id;
+
+	/** Current local advertising address used.
+	 *
+	 * This address reflects the Host advertiser's own address while advertising is enabled
+	 * (between bt_le_adv_start() and bt_le_adv_stop()). It does not provide ordering guarantees
+	 * relative to the Controller events.
+	 *
+	 * Limitation: For private directed advertising, the Controller may generate the RPA
+	 * internally.  In that case, the address reported here is not correct.
+	 */
+	const bt_addr_le_t         *addr;
+};
+
+/**
+ * @brief Get advertising info
+ *
+ * @param info Advertising info object. The values in this object are only valid on success.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL advertising is not started or @p info is NULL.
+ */
+int bt_le_adv_get_info(struct bt_le_adv_info *info);
+
 /**
  * @brief Create advertising set.
  *
