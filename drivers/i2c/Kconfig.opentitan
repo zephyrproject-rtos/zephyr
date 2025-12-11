@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_OPENTITAN
+	bool "OpenTitan I2C driver"
+	default y
+	depends on DT_HAS_LOWRISC_OPENTITAN_I2C_ENABLED
+	help
+	  Enable I2C support on OpenTitan
+
+config I2C_OPENTITAN_TIMEOUT_US
+	int "Transfer stall timeout (us)"
+	depends on I2C_OPENTITAN
+	default 1000
+	help
+	  Time the bus may make no progress beyond the nominal byte time before
+	  a transfer fails with -ETIMEDOUT. Raise this for targets that stretch
+	  the clock for long periods.
