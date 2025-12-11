@@ -158,6 +158,8 @@ static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
 #endif
 #endif /* CONFIG_ARCH_POSIX */
 
+uint8_t prog_unit_buf[FLASH_SIMULATOR_PROG_UNIT];
+
 static DEVICE_API(flash, flash_sim_api);
 
 static const struct flash_parameters flash_sim_parameters = {
@@ -217,7 +219,6 @@ static int flash_sim_read(const struct device *dev, const off_t offset,
 static int flash_sim_write(const struct device *dev, const off_t offset,
 			   const void *data, const size_t len)
 {
-	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 	ARG_UNUSED(dev);
 
 	if (!flash_range_is_valid(dev, offset, len)) {
@@ -233,12 +234,12 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 #if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 	/* check if any unit has been already programmed */
-	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+	memset(prog_unit_buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(prog_unit_buf));
 #else
-	memcpy(buf, MOCK_FLASH(offset), sizeof(buf));
+	memcpy(prog_unit_buf, MOCK_FLASH(offset), sizeof(prog_unit_buf));
 #endif
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
-		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
+		if (memcmp(prog_unit_buf, MOCK_FLASH(offset + i), sizeof(prog_unit_buf))) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
 			return -EIO;
