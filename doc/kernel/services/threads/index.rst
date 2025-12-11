@@ -93,7 +93,7 @@ thread self-exits, or the target thread aborts (either due to a
 
 Once a thread has terminated, the kernel guarantees that no use will
 be made of the thread struct.  The memory of such a struct can then be
-re-used for any purpose, including spawning a new thread.  Note that
+reused for any purpose, including spawning a new thread.  Note that
 the thread must be fully terminated, which presents race conditions
 where a thread's own logic signals completion which is seen by another
 thread before the kernel processing is complete.  Under normal
@@ -563,7 +563,7 @@ The following code illustrates the ways a thread can terminate.
     }
 
 If :kconfig:option:`CONFIG_USERSPACE` is enabled, aborting a thread will additionally
-mark the thread and stack objects as uninitialized so that they may be re-used.
+mark the thread and stack objects as uninitialized so that they may be reused.
 
 Runtime Statistics
 ******************
