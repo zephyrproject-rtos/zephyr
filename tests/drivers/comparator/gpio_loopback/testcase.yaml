@@ -20,6 +20,7 @@ tests:
   drivers.comparator.gpio_loopback.mcux_acmp:
     platform_allow:
       - frdm_ke15z
+      - frdm_mcxe247
   drivers.comparator.gpio_loopback.nrf_comp:
     extra_args:
       - FILE_SUFFIX="nrf_comp"

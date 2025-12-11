@@ -34,4 +34,12 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pinmux_cmp0: pinmux_cmp0 {
+		group0 {
+			pinmux = <CMP0_IN0_PTA0>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
 };
