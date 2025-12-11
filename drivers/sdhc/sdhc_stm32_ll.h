@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SDHC_STM32_LL_H__
-#define __SDHC_STM32_LL_H__
+#ifndef ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_
+#define ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -210,4 +210,4 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended_DMA(SDMMC_HandleTypeDef *hsd,
 SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd);
 void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd);
 
-#endif /*__SDHC_STM32_LL_H__*/
+#endif /* ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_ */

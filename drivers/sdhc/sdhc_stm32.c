@@ -27,14 +27,6 @@ typedef void (*irq_config_func_t)(void);
 
 BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 
-/* Configuration validation
- *BUILD_ASSERT(!(IS_ENABLED(CONFIG_SDIO_STACK) && IS_ENABLED(CONFIG_SDMMC_STACK)),
- *	"Both SDIO_STACK and SDMMC_STACK cannot be enabled simultaneously");
- *
- *BUILD_ASSERT((IS_ENABLED(CONFIG_SDIO_STACK) || IS_ENABLED(CONFIG_SDMMC_STACK)),
- *	"Either SDIO_STACK or SDMMC_STACK must be enabled");
- */
-
 #define SDIO_OCR_SDIO_S18R BIT(24) /* SDIO OCR bit indicating support for 1.8V switching */
 
 struct sdhc_stm32_config {
@@ -876,12 +868,12 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			LOG_ERR("Invalid clock frequency, domain (%u, %u)", props->f_min,
 				props->f_max);
 			res = -EINVAL;
-			goto out;
+			goto end;
 		}
 		if (SDMMC_LL_ConfigFrequency(config->hsd, (uint32_t)ios->clock) != SDMMC_OK) {
 			LOG_ERR("Failed to set clock to %d", ios->clock);
 			res = -EIO;
-			goto out;
+			goto end;
 		}
 		host_io->clock = ios->clock;
 		LOG_DBG("Clock set to %d", ios->clock);
@@ -911,7 +903,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 		host_io->bus_width = ios->bus_width;
 	}
 
-out:
+end:
 	k_mutex_unlock(&data->bus_mutex);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(dev);

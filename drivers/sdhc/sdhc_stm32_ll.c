@@ -565,7 +565,7 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
 			/* Read Multi Block command */
 			errorstate = SDMMC_CmdReadMultiBlock(hsd->Instance, add);
 		} else {
-			hsd->Context = SD_CONTEXT_READ_SINGLE_BLOCK;
+			hsd->Context = SDMMC_CONTEXT_READ_SINGLE_BLOCK;
 
 			/* Read Single Block command */
 			errorstate = SDMMC_CmdReadSingleBlock(hsd->Instance, add);
@@ -827,12 +827,12 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_
 
 		/* Write Blocks in Polling mode */
 		if (NumberOfBlocks > 1U) {
-			hsd->Context = (SD_CONTEXT_WRITE_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
+			hsd->Context = (SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK | SDMMC_CONTEXT_DMA);
 
 			/* Write Multi Block command */
 			errorstate = SDMMC_CmdWriteMultiBlock(hsd->Instance, add);
 		} else {
-			hsd->Context = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA);
+			hsd->Context = (SDMMC_CONTEXT_WRITE_SINGLE_BLOCK | SDMMC_CONTEXT_DMA);
 
 			/* Write Single Block command */
 			errorstate = SDMMC_CmdWriteSingleBlock(hsd->Instance, add);
@@ -842,7 +842,7 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks_DMA(SDMMC_HandleTypeDef *hsd, const uint8_
 			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
 			hsd->ErrorCode |= errorstate;
 			hsd->State = SDMMC_STATE_READY;
-			hsd->Context = SD_CONTEXT_NONE;
+			hsd->Context = SDMMC_CONTEXT_NONE;
 			return SDMMC_ERROR;
 		}
 
@@ -916,12 +916,12 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pDat
 
 		/* Read Blocks in DMA mode */
 		if (NumberOfBlocks > 1U) {
-			hsd->Context = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
+			hsd->Context = (SDMMC_CONTEXT_READ_MULTIPLE_BLOCK | SDMMC_CONTEXT_DMA);
 
 			/* Read Multi Block command */
 			errorstate = SDMMC_CmdReadMultiBlock(hsd->Instance, add);
 		} else {
-			hsd->Context = (SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA);
+			hsd->Context = (SDMMC_CONTEXT_READ_SINGLE_BLOCK | SDMMC_CONTEXT_DMA);
 
 			/* Read Single Block command */
 			errorstate = SDMMC_CmdReadSingleBlock(hsd->Instance, add);
@@ -931,7 +931,7 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pDat
 			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
 			hsd->ErrorCode |= errorstate;
 			hsd->State = SDMMC_STATE_READY;
-			hsd->Context = SD_CONTEXT_NONE;
+			hsd->Context = SDMMC_CONTEXT_NONE;
 			return SDMMC_ERROR;
 		}
 
@@ -951,7 +951,7 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks_DMA(SDMMC_HandleTypeDef *hsd, uint8_t *pDat
  *              the configuration information.
  * @retval None
  */
-void SD_Read_IT(SDMMC_HandleTypeDef *hsd)
+void SDMMC_Read_IT(SDMMC_HandleTypeDef *hsd)
 {
 	uint32_t count;
 	uint32_t data;
@@ -984,7 +984,7 @@ void SD_Read_IT(SDMMC_HandleTypeDef *hsd)
  *              the configuration information.
  * @retval None
  */
-void SD_Write_IT(SDMMC_HandleTypeDef *hsd)
+void SDMMC_Write_IT(SDMMC_HandleTypeDef *hsd)
 {
 	uint32_t count;
 	uint32_t data;
@@ -1024,7 +1024,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 	/* Check for SDMMC interrupt flags */
 	if ((__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF) != RESET) &&
 	    ((context & SDMMC_CONTEXT_IT) != 0U)) {
-		SD_Read_IT(hsd);
+		SDMMC_Read_IT(hsd);
 	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DATAEND) != RESET) {
 		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DATAEND);
 
@@ -1083,7 +1083,7 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 		}
 	} else if ((__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXFIFOHE) != RESET) &&
 		   ((context & SDMMC_CONTEXT_IT) != 0U)) {
-		SD_Write_IT(hsd);
+		SDMMC_Write_IT(hsd);
 	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 							   SDMMC_FLAG_RXOVERR |
 							   SDMMC_FLAG_TXUNDERR) != RESET) {
@@ -1128,14 +1128,14 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 			/* Current buffer is buffer0, Transfer complete for buffer1 */
 			if ((context & SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U) {
 				SDMMC_Write_DMADoubleBuf1CpltCallback(hsd);
-			} else { /* SD_CONTEXT_READ_MULTIPLE_BLOCK */
+			} else { /* SDMMC_CONTEXT_READ_MULTIPLE_BLOCK */
 				SDMMC_Read_DMADoubleBuf1CpltCallback(hsd);
 			}
 		} else { /* SD_DMA_BUFFER1 */
 			/* Current buffer is buffer1, Transfer complete for buffer0 */
 			if ((context & SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U) {
 				SDMMC_Write_DMADoubleBuf0CpltCallback(hsd);
-			} else { /* SD_CONTEXT_READ_MULTIPLE_BLOCK */
+			} else { /* SDMMC_CONTEXT_READ_MULTIPLE_BLOCK */
 				SDMMCEx_Read_DMADoubleBuf0CpltCallback(hsd);
 			}
 		}
