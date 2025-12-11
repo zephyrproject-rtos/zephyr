@@ -684,6 +684,7 @@ sunw	Sun Microsystems, Inc
 supermicro	Super Micro Computer, Inc.
 swir	Sierra Wireless
 syna	Synaptics Inc.
+synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
@@ -809,6 +810,7 @@ zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	Zephyr Project
+zhiantec	Hangzhou Zhian Technology Co., Ltd.
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd
