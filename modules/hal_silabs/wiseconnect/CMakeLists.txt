@@ -89,8 +89,6 @@ zephyr_library_sources(
   ${SISDK}/platform/service/mem_pool/src/sl_mem_pool.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_adc.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_dac.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ipmu.c
@@ -107,6 +105,8 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_ADC_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/aux_reference_volt_config.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_bod.c
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_dac.c
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_adc.c
 )
 
 zephyr_compile_definitions_ifdef(CONFIG_BT_SILABS_SIWX91X
