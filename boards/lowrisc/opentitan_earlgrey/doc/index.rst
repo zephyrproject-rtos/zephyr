@@ -38,6 +38,8 @@ the Earl Grey chip simulated in Verilator, a cycle-accurate HDL simulation tool.
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | I2C host controller                 |
++-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI host                            |
 +-----------+------------+-------------------------------------+
 | WDT       | on-chip    | Always-On Timer (Watchdog)          |
