@@ -92,7 +92,7 @@
 		};
 
 		uart1: serial@400c4000 {
-			compatible = "nuvoton,npcx-uart";
+			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npcmn";
 			reg = <0x400c4000 0x100>;
 			interrupts = <23 3>;
 			uart-rx = <&wui_io14>;
@@ -101,7 +101,7 @@
 		};
 
 		uart2: serial@400c4200 {
-			compatible = "nuvoton,npcx-uart";
+			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npcmn";
 			reg = <0x400c4200 0x100>;
 			interrupts = <76 3>;
 			uart-rx = <&wui_io30>;
@@ -110,7 +110,7 @@
 		};
 
 		uart3: serial@400c4400 {
-			compatible = "nuvoton,npcx-uart";
+			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npcmn";
 			reg = <0x400c4400 0x100>;
 			interrupts = <77 3>;
 			uart-rx = <&wui_io40>;
@@ -119,7 +119,7 @@
 		};
 
 		uart4: serial@400c4600 {
-			compatible = "nuvoton,npcx-uart";
+			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npcmn";
 			reg = <0x400c4600 0x100>;
 			interrupts = <78 3>;
 			uart-rx = <&wui_io44>;

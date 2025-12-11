@@ -36,6 +36,7 @@ static const struct npcx_pwm_pinctrl_config pwm_pinctrl_cfg[] = {
 };
 
 /* Pin-control local functions for peripheral devices */
+#if !defined(CONFIG_SOC_SERIES_NPCM4)
 static bool npcx_periph_pinmux_has_lock(int group)
 {
 	if ((BIT(group) & NPCX_DEVALT_LK_GROUP_MASK) != 0) {
@@ -44,6 +45,7 @@ static bool npcx_periph_pinmux_has_lock(int group)
 
 	return false;
 }
+#endif
 
 static void npcx_periph_pinmux_configure(const struct npcx_periph *alt, bool is_alternate,
 	bool is_locked)
@@ -64,9 +66,11 @@ static void npcx_periph_pinmux_configure(const struct npcx_periph *alt, bool is_
 		NPCX_DEVALT(scfg_base, alt->group) &= ~alt_mask;
 	}
 
+#if !defined(CONFIG_SOC_SERIES_NPCM4)
 	if (is_locked && npcx_periph_pinmux_has_lock(alt->group)) {
 		NPCX_DEVALT_LK(scfg_base, alt->group) |= alt_mask;
 	}
+#endif
 }
 
 static void npcx_periph_pupd_configure(const struct npcx_periph *pupd,

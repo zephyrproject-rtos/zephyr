@@ -22,10 +22,9 @@ NPCX_REG_OFFSET_CHECK(pmc_reg, PWDWN_CTL1, 0x008);
 NPCX_REG_OFFSET_CHECK(pmc_reg, PWDWN_CTL7, 0x024);
 
 /* SCFG register structure check */
-NPCX_REG_SIZE_CHECK(scfg_reg, 0x02f);
+NPCX_REG_SIZE_CHECK(scfg_reg, 0x02c);
 NPCX_REG_OFFSET_CHECK(scfg_reg, DEV_CTL4, 0x006);
 NPCX_REG_OFFSET_CHECK(scfg_reg, DEVALT0, 0x010);
-NPCX_REG_OFFSET_CHECK(scfg_reg, LV_GPIO_CTL0, 0x02a);
 
 /* GLUE register structure check */
 NPCX_REG_SIZE_CHECK(glue_reg, 0x028);
@@ -35,10 +34,10 @@ NPCX_REG_OFFSET_CHECK(glue_reg, SMB_SEL, 0x021);
 NPCX_REG_OFFSET_CHECK(glue_reg, PSL_CTS, 0x027);
 
 /* UART register structure check */
-NPCX_REG_SIZE_CHECK(uart_reg, 0x02d);
+NPCX_REG_SIZE_CHECK(uart_reg, 0x027);
 NPCX_REG_OFFSET_CHECK(uart_reg, UPSR, 0x00e);
-NPCX_REG_OFFSET_CHECK(uart_reg, UFTSTS, 0x020);
-NPCX_REG_OFFSET_CHECK(uart_reg, UFRCTL, 0x026);
+NPCX_REG_OFFSET_CHECK(uart_reg, UFCTRL, 0x016);
+NPCX_REG_OFFSET_CHECK(uart_reg, URXFLV, 0x01A);
 
 /* GPIO register structure check */
 NPCX_REG_SIZE_CHECK(gpio_reg, 0x008);

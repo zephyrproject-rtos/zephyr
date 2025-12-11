@@ -167,25 +167,30 @@ struct scfg_reg {
 	volatile uint8_t reserved2;
 	/* 0x006: Device Control 4 */
 	volatile uint8_t DEV_CTL4;
-	volatile uint8_t reserved3[9];
+	volatile uint8_t reserved3[4];
+	volatile uint8_t DEVALT10;
+	volatile uint8_t DEVALT11;
+	volatile uint8_t DEVALT12;
+	volatile uint8_t reserved4[2];
 	/* 0x010 - 1F: Device Alternate Function 0 - F */
 	volatile uint8_t DEVALT0[16];
-	volatile uint8_t reserved4[6];
-	/* 0x026: Low-Voltage GPIO Pins Control 5 */
-	volatile uint8_t LV_GPIO_CTL5[1];
-	volatile uint8_t reserved5;
-	/* 0x028: Pull-Up/Pull-Down Enable 0 */
-	volatile uint8_t PUPD_EN0;
-	/* 0x029: Pull-Up/Pull-Down Enable 1 */
-	volatile uint8_t PUPD_EN1;
-	/* 0x02A - 2E: Low-Voltage GPIO Pins Control 0 - 4 */
-	volatile uint8_t LV_GPIO_CTL0[5];
+	volatile uint8_t reserved5[4];
+	/* 0x024: DEVALTCX */
+	volatile uint8_t DEVALTCX;
+	volatile uint8_t reserved6[3];
+	/* 0x028: Device Pull-Up Enable 0 */
+	volatile uint8_t DEVPU0;
+	/* 0x029: Device Pull-Down Enable 1 */
+	volatile uint8_t DEVPD1;
+	/* 0x02A: Low-Voltage Pins Control 0 */
+	volatile uint8_t LV_CTL0;
+	/* 0x02B: Low-Voltage Pins Control 1 */
+	volatile uint8_t LV_CTL1;
 };
 
 /* Macro functions for SCFG multi-registers */
 #define NPCX_DEV_CTL(base, n)     (*(volatile uint8_t *)(base + n))
 #define NPCX_DEVALT(base, n)      (*(volatile uint8_t *)(base + NPCX_DEVALT_OFFSET(n)))
-#define NPCX_DEVALT_LK(base, n)   (*(volatile uint8_t *)(base + NPCX_DEVALT_LK_OFFSET(n)))
 #define NPCX_PUPD_EN(base, n)     (*(volatile uint8_t *)(base + NPCX_PUPD_EN_OFFSET(n)))
 #define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + NPCX_LV_GPIO_CTL_OFFSET(n)))
 
@@ -315,21 +320,16 @@ struct uart_reg {
 	volatile uint8_t reserved7;
 	/* 0x00E: Baud Rate Prescaler */
 	volatile uint8_t UPSR;
-	volatile uint8_t reserved8[17];
-	/* 0x020: FIFO Mode Transmit Status */
-	volatile uint8_t UFTSTS;
+	volatile uint8_t reserved8[7];
+	/* 0x016: FIFO Control */
+	volatile uint8_t UFCTRL;
 	volatile uint8_t reserved9;
-	/* 0x022: FIFO Mode Receive Status */
-	volatile uint8_t UFRSTS;
+	/* 0x018: TX FIFO Current Level */
+	volatile uint8_t UTXFLV;
 	volatile uint8_t reserved10;
-	/* 0x024: FIFO Mode Transmit Control */
-	volatile uint8_t UFTCTL;
-	volatile uint8_t reserved11;
-	/* 0x026: FIFO Mode Receive Control */
-	volatile uint8_t UFRCTL;
-	volatile uint8_t reserved12[5];
-	/* 0x02C: Common Mode Operation Control */
-	volatile uint8_t UCNTL;
+	/* 0x01A: RX FIFO Current Level */
+	volatile uint8_t URXFLV;
+	volatile uint8_t reserved11[12];
 };
 
 /* UART register fields */
@@ -374,6 +374,11 @@ struct uart_reg {
 #define NPCX_UFRCTL_ERR_EN           7
 #define NPCX_UCNTL_CR_SIN_INV        0
 #define NPCX_UCNTL_CR_SOUT_INV       1
+
+#define NPCX_UFCTRL_FIFOEN 0
+#define NPCX_UTXFLV_TFL    FIELD(0, 5)
+#define NPCX_URXFLV_RFL    FIELD(0, 5)
+#define NPCX_SZ_UART_FIFO  16
 
 /* Macro functions for MIWU multi-registers */
 #define NPCX_WKEDG(base, group)  (*(volatile uint8_t *)(base + NPCX_WKEDG_OFFSET(group)))

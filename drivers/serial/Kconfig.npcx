@@ -29,6 +29,7 @@ config UART_NPCX_USE_MDMA
 config UART_NPCX_FIFO_EX
 	bool "Extended NPCX UART FIFO driver support"
 	default y if DT_HAS_NUVOTON_NPCX_UART_NPCKN_ENABLED
+	default y if DT_HAS_NUVOTON_NPCX_UART_NPCMN_ENABLED
 	help
-	  This option enables the extended UART FIFO driver for NPCKN variant
-	  of processors.
+	  This option enables the extended UART FIFO driver for NPCKN and
+	  NPCMN variant of processors.

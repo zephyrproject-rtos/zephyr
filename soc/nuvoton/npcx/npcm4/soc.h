@@ -10,10 +10,9 @@
 #include <cmsis_core_m_defaults.h>
 
 /* NPCM4 SCFG multi-registers */
-#define NPCX_DEVALT_OFFSET(n)      (0x010 + n)
-#define NPCX_PUPD_EN_OFFSET(n)     (0x02b + n)
-#define NPCX_LV_GPIO_CTL_OFFSET(n) (0x150 + n)
-#define NPCX_DEVALT_LK_OFFSET(n)   (0x210 + n)
+#define NPCX_DEVALT_OFFSET(n)      (n)
+#define NPCX_PUPD_EN_OFFSET(n)     (((n) == 2) ? 0x073 : ((n) == 3) ? 0x07b : (0x028 + (n)))
+#define NPCX_LV_GPIO_CTL_OFFSET(n) (((n) == 4) ? 0x06e : 0x2a + (n))
 
 /* NPCM4 MIWU multi-registers */
 #define NPCX_WKEDG_OFFSET(n)  (0x000 + (n * 2) + ((n < 5) ? 0 : 0x01e))
@@ -42,6 +41,11 @@
 #define NPCX_FIU_EXT_CFG_SPI1_2DEV   6
 #define NPCX_FIU_EXT_CFG_LOW_DEV_NUM 7
 
+/* NPCM4 UART register fields */
+#define NPCK_FIFO_EN       0
+#define NPCK_RX_FIFO_LEVEL FIELD(6, 2)
+#define NPCK_SZ_UART_FIFO  16
+
 /* NPCM4 supported group mask of DEVALT_LK */
 #define NPCX_DEVALT_LK_GROUP_MASK                                                                  \
 	(BIT(0) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(11) | BIT(13) | BIT(15) |       \
@@ -60,21 +64,9 @@
 #include <soc_power.h>
 
 /* NPCM4 Clock prescaler configurations */
-#define VAL_HFCGP ((FPRED_VAL << 4) | AHB6DIV_VAL)
-
-#if defined(FIU1DIV_VAL)
-#define VAL_HFCBCD ((FIU1DIV_VAL << 4) | (FIUDIV_VAL << 2))
-#else
-#define VAL_HFCBCD (FIUDIV_VAL << 2)
-#endif
-
-#define VAL_HFCBCD1 (APB1DIV_VAL | (APB2DIV_VAL << 4))
-
-#ifndef APB4DIV_VAL
-#define APB4DIV_VAL 0
-#endif
-#define VAL_HFCBCD2 (APB3DIV_VAL | (APB4DIV_VAL << 4))
-
-#define VAL_HFCBCD3 MCLKD_SL /* Used by I3C1/2/3 modules */
+#define VAL_HFCGP   ((FPRED_VAL << 4) | AHB6DIV_VAL)
+#define VAL_HFCBCD  (APB1DIV_VAL | (APB2DIV_VAL << 4))
+#define VAL_HFCBCD1 ((MCLKD_SL << 2) | FIUDIV_VAL)
+#define VAL_HFCBCD2 APB3DIV_VAL
 
 #endif /* _NUVOTON_NPCM_SOC_H_ */

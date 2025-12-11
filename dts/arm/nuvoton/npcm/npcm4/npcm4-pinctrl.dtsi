@@ -148,7 +148,7 @@
 	};
 
 	/omit-if-no-ref/ cr_uart1_sout_gp15: periph-cr-uart1-out {
-		pinmux = <&alta_urto2_sl>;
+		pinmux = <&alta_urto1_sl>;
 	};
 
 	/omit-if-no-ref/ cr_uart2_sin_gp30: periph-cr-uart2-in {
@@ -156,7 +156,7 @@
 	};
 
 	/omit-if-no-ref/ cr_uart2_sout_gp31: periph-cr-uart2-out {
-		pinmux = <&alt31_urto3_sl>;
+		pinmux = <&alta_urto2_sl>;
 	};
 
 	/* ADC peripheral interfaces */

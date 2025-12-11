@@ -42,12 +42,12 @@
 			 /*i3c-prescaler = <1>; I3C_CLK runs at 96MHz */
 			/*ram-pd-depth = <15>;  Valid bit-depth of RAM_PDn reg */
 			pwdwn-ctl-val = <0xe7 /* Start with PWDWN_CTL0 */
-					 0xfb /* No FIU_PD */
+					 0xea /* No FIU_PD */
 					 0xff
 					 0x7f /* No GDMA */
 					 0xb7 /* No N2JTAG/SMB_DMA */
 					 0xfa /* No CCD/PSL */
-					 0x7f>; /* No eSPI */
+					 0x5f>; /* No eSPI */
 		};
 		/* Wake-up input source mapping for GPIOs in npcm4 series */
 		gpio0: gpio@40081000 {
