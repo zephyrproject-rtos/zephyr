@@ -11,6 +11,7 @@
 #include <stm32_ll_system.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
@@ -107,5 +108,64 @@ int stm32_usb_pwr_enable(void)
 	 */
 	LL_PWR_EnableVddUSB();
 #endif
+	return 0;
+}
+
+int stm32_usb_pwr_disable(void)
+{
+	atomic_val_t old = atomic_dec(&usb_pwr_refcount);
+
+	if (old > 1) {
+		/* There are other users - don't disable now */
+		return 0;
+	}
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_PWR_DisableUSBVoltageDetector();
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+		LL_PWR_DisableUSBEPODBooster();
+		while (LL_PWR_IsActiveFlag_USBBOOST() != 0) {
+			/* Wait for USB EPOD BOOST off */
+		}
+
+		LL_PWR_DisableUSBPowerSupply();
+	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+
+	LL_PWR_DisableVddUSB();
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* Disable Vdd33USB voltage monitoring */
+	LL_PWR_DisableVddUSBMonitoring();
+
+	/* Disable VDDUSB */
+	LL_PWR_DisableVddUSB();
+#elif defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* Disable USB OTG booster */
+	LL_PWR_DisableUSBBooster();
+
+	while (LL_PWR_IsActiveFlag_USBBOOSTRDY()) {
+		/* Wait until USB OTG booster is off */
+	}
+
+	/* Disable USB OTG internal power */
+	LL_PWR_DisableUSBPWR();
+
+	/* Disable VDD11USB */
+	LL_PWR_DisableVdd11USB();
+
+	while (LL_PWR_IsActiveFlag_VDD11USBRDY()) {
+		/* Wait until VDD11USB supply is off */
+	}
+
+	/* Enable VDDUSB power isolation */
+	LL_PWR_DisableVddUSB();
+#elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
+	/* Enable VDDUSB power isolation */
+	LL_PWR_DisableVDDUSB();
+#elif defined(PWR_CR2_USV)
+	/* Enable VDDUSB power isolation */
+	LL_PWR_DisableVddUSB();
+#endif
+
 	return 0;
 }
