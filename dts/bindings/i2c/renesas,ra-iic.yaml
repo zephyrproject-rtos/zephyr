@@ -33,3 +33,10 @@ properties:
   interrupt-priority-level:
     type: int
     default: 12
+
+  max-bitrate-supported:
+    type: int
+    default: 1000000
+    description: |
+      Maximum supported I2C bitrate in Hz, with the default set to I2C_BITRATE_FAST_PLUS.
+      This property may be overlayed if the device supports higher or lower speeds.

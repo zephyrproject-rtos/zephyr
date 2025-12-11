@@ -75,7 +75,7 @@
 &iic1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clock-frequency = <DT_FREQ_M(1)>;
+	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
 	interrupts = <54 1>, <55 1>, <56 1>, <57 1>;

@@ -34,6 +34,7 @@ struct i2c_ra_iic_config {
 	double rise_time_s;
 	double fall_time_s;
 	uint32_t duty_cycle_percent;
+	uint32_t max_bitrate_supported;
 };
 
 struct i2c_ra_iic_data {
@@ -67,7 +68,9 @@ struct ra_iic_master_bitrate {
 
 static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 {
+	const struct i2c_ra_iic_config *config = dev->config;
 	struct i2c_ra_iic_data *data = (struct i2c_ra_iic_data *const)dev->data;
+	uint32_t desire_bitrate;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("Only I2C Master mode supported.");
@@ -76,16 +79,24 @@ static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		data->fsp_config.rate = I2C_MASTER_RATE_STANDARD;
+		desire_bitrate = I2C_MASTER_RATE_STANDARD;
 		break;
 	case I2C_SPEED_FAST:
-		data->fsp_config.rate = I2C_MASTER_RATE_FAST;
+		desire_bitrate = I2C_MASTER_RATE_FAST;
 		break;
 	case I2C_SPEED_FAST_PLUS:
-		data->fsp_config.rate = I2C_MASTER_RATE_FASTPLUS;
+		desire_bitrate = I2C_MASTER_RATE_FASTPLUS;
 		break;
 	default:
 		LOG_ERR("%s: Invalid I2C speed rate flag: %d", __func__, I2C_SPEED_GET(dev_config));
+		return -EIO;
+	}
+
+	if (desire_bitrate <= config->max_bitrate_supported) {
+		data->fsp_config.rate = desire_bitrate;
+	} else{
+		LOG_ERR("%s: Requested bitrate %u exceeds max supported bitrate %u",
+			__func__, desire_bitrate, config->max_bitrate_supported);
 		return -EIO;
 	}
 
@@ -546,6 +557,10 @@ static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 		irq_enable(DT_INST_IRQ_BY_NAME(index, eri, irq));                                  \
 	}                                                                                          \
                                                                                                    \
+	BUILD_ASSERT(DT_INST_PROP(index, clock_frequency) <=                                        \
+			     DT_INST_PROP(index, max_bitrate_supported),                           \
+		     "The desire clock-frequency in devicetree exceeds max-bitrate-supported");    \
+                                                                                                   \
 	static const struct i2c_ra_iic_config i2c_ra_iic_config_##index = {                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
@@ -559,6 +574,7 @@ static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RA_IIC_MASTER_DIV_TIME_NS,      \
 		.fall_time_s = DT_INST_PROP(index, fall_time_ns) / RA_IIC_MASTER_DIV_TIME_NS,      \
 		.duty_cycle_percent = DT_INST_PROP(index, duty_cycle_percent),                     \
+		.max_bitrate_supported = DT_INST_PROP(index, max_bitrate_supported),               \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_ra_iic_data i2c_ra_iic_data_##index = {                                  \
