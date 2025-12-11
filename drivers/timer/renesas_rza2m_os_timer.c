@@ -12,14 +12,16 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
 
-#define DT_DRV_COMPAT renesas_rza2m_ostm
+#define DT_DRV_COMPAT renesas_rza2m_ostm_timer
 
-DEVICE_MMIO_TOPLEVEL_STATIC(ostm_base, DT_DRV_INST(0));
+#define RZA2M_OSTM(idx) DT_INST_PARENT(idx)
+
+DEVICE_MMIO_TOPLEVEL_STATIC(ostm_base, RZA2M_OSTM(0));
 
 /* The interrupt numbers in the device tree are interrupt IDs and need to be converted to SPI
  * interrupt numbers
  */
-#define OSTM_IRQ_NUM (DT_INST_IRQN(0) - GIC_SPI_INT_BASE)
+#define OSTM_IRQ_NUM (DT_IRQ_BY_NAME(RZA2M_OSTM(0), overflow, irq) - GIC_SPI_INT_BASE)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = OSTM_IRQ_NUM;
@@ -185,8 +187,8 @@ uint32_t sys_clock_cycle_get_32(void)
 static int sys_clock_driver_init(void)
 {
 	int ret;
-	const struct device *clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
-	uint32_t clock_subsys = DT_INST_CLOCKS_CELL(0, clk_id);
+	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(RZA2M_OSTM(0)));
+	uint32_t clock_subsys = DT_CLOCKS_CELL(RZA2M_OSTM(0), clk_id);
 
 	if (!device_is_ready(clock_dev)) {
 		return -ENODEV;
@@ -211,8 +213,8 @@ static int sys_clock_driver_init(void)
 
 	DEVICE_MMIO_TOPLEVEL_MAP(ostm_base, K_MEM_CACHE_NONE);
 
-	IRQ_CONNECT(OSTM_IRQ_NUM, DT_INST_IRQ(0, priority), ostm_irq_handler, NULL,
-		    DT_INST_IRQ(0, flags));
+	IRQ_CONNECT(OSTM_IRQ_NUM, DT_IRQ_BY_NAME(RZA2M_OSTM(0), overflow, priority),
+		    ostm_irq_handler, NULL, DT_IRQ_BY_NAME(RZA2M_OSTM(0), overflow, flags));
 
 	/* Restarting the timer will cause reset of CNT register in free-running mode */
 	sys_clock_disable();
