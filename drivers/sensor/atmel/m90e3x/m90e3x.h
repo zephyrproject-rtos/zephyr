@@ -307,7 +307,7 @@ struct m90e3x_config {
 };
 
 extern const struct m90e3x_bus_io m90e3x_bus_io_spi;
-extern const struct m90e3x_pm_mode_ops m90e3x_pm_mode_ops;
+extern const struct m90e3x_pm_mode_ops m90e3x_pm_mode;
 
 /**
  * @brief Convert M90E3X energy register value to float. Basead on datasheet value scaling.
