@@ -19,6 +19,24 @@ find_package(Zephyr
 
 project(uicr)
 
+# Import the main application's DTS output for processing
+zephyr_get(default_image_dir SYSBUILD LOCAL)
+add_custom_target(default_image_devicetree_target)
+zephyr_dt_import(EDT_PICKLE_FILE ${default_image_dir}/zephyr/edt.pickle TARGET default_image_devicetree_target)
+
+# Method 1: Get alias first then property
+#dt_alias(watchdog_node PROPERTY watchdog0 TARGET default_image_devicetree_target)
+#dt_prop(watchdog_enable_at_boot PATH "${watchdog_node}" PROPERTY "enable-at-boot" TARGET default_image_devicetree_target)
+
+# Method 2: Get property directly from the alias
+dt_prop(watchdog_enable_at_boot PATH watchdog0 PROPERTY "enable-at-boot" TARGET default_image_devicetree_target)
+
+if(watchdog_enable_at_boot)
+  message(WARNING "UICR: Enable watchdog at boot")
+else()
+  message(WARNING "UICR: Do not enable watchdog at boot")
+endif()
+
 # Function to parse a Kconfig value from a .config file
 function(parse_kconfig_value config_file config_name output_var)
   file(STRINGS ${config_file} config_lines ENCODING "UTF-8")

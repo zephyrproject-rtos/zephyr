@@ -18,7 +18,9 @@ cpuflpr_vevif: &cpuflpr_vevif_tx {};
 
 cpusys_vevif: &cpusys_vevif_tx {};
 
-wdt010: &cpuapp_wdt010 {};
+wdt010: &cpuapp_wdt010 {
+	compatible = "nordic,nrf-wdt-v2";
+};
 
 wdt011: &cpuapp_wdt011 {};
 
