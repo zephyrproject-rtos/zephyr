@@ -24,7 +24,6 @@
 
 #include "common/bt_settings_commit.h"
 #include "common/bt_str.h"
-#include "common/assert.h"
 #include "hci_core.h"
 #include "settings.h"
 #include "sys/types.h"
@@ -76,8 +75,10 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 {
 	size_t len = 3;
 
-	/* path_size is less than 3; strlen("bt/") */
-	BT_ASSERT(path_size >= len);
+	/* path_size is less than or equal 3; strlen("bt/") */
+	if (path_size <= len) {
+		return -EINVAL;
+	}
 
 	/* Key format:
 	 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
@@ -117,10 +118,9 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 		len += strlen(&path[len]);
 	}
 
-	/* If path string is full, always null terminate at path_size */
+	/* Insufficient path_size, include null termination */
 	if (len >= path_size) {
-		/* Truncate string */
-		path[path_size - 1] = '\0';
+		return -EINVAL;
 	}
 
 	LOG_DBG("Encoded path %s", path);
@@ -132,8 +132,10 @@ static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const ch
 {
 	size_t len = 3;
 
-	/* path_size is less than 3; strlen("bt/") */
-	BT_ASSERT(path_size >= len);
+	/* path_size is less than or equal 3; strlen("bt/") */
+	if (path_size <= len) {
+		return -EINVAL;
+	}
 
 	/* Key format:
 	 *  "bt/<key>"
@@ -144,10 +146,9 @@ static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const ch
 	strncpy(&path[len], key, path_size - len);
 	len = strlen(path);
 
-	/* If path string is full, always null terminate at path_size */
+	/* Insufficient path_size, include null termination */
 	if (len >= path_size) {
-		/* Truncate string */
-		path[path_size - 1] = '\0';
+		return -EINVAL;
 	}
 
 	LOG_DBG("Encoded path %s", path);
