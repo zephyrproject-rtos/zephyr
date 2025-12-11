@@ -25,6 +25,7 @@ supported:
   - usbd
   - watchdog
   - dma
+  - dac
 testing:
   ignore_tags:
     - net

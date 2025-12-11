@@ -375,6 +375,15 @@
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>;
 			status = "disabled";
 		};
+
+		dac: dac@4003f000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x4003f000 0x1000>;
+			interrupts = <25 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			voltage-reference = <2>;
+		};
 	};
 };
 
