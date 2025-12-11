@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config M90EXX_ROBUSTNESS_WORKAROUND
-  bool "Enable Atmel M90EXX robustness workaround"
+bool "Atmel M90EXX robustness workaround"
   depends on M90E32AS || M90E26
   default n
   help
     Enable workaround for robustness issues in Atmel M90EXX series energy metering ICs.
-    
+
     This option enables additional checks and error handling to improve the reliability
     of communication with the M90EXX devices, which may be prone to transient faults
     under certain conditions.
@@ -19,7 +19,7 @@ config M90EXX_ROBUSTNESS_WORKAROUND
     If unsure, it is recommended to enable this option.
 
 config M90EXX_SHELL
-  bool "Enable Atmel M90EXX Shell Commands"
+  bool "Atmel M90EXX Shell Commands"
   depends on SHELL && (M90E32AS || M90E26)
   default n
   help

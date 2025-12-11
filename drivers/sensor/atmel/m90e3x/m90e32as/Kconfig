@@ -6,7 +6,7 @@ menuconfig M90E32AS
   default y
   depends on DT_HAS_ATMEL_M90E32AS_ENABLED
   select SPI
-  select CONFIG_PM_DEVICE_RUNTIME if CONFIG_PM_DEVICE
+  select PM_DEVICE_RUNTIME if PM_DEVICE
   help
     Enable driver for Atmel M90E32AS energy meter IC.
 
