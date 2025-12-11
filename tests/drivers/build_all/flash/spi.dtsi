@@ -36,3 +36,18 @@ at25xv021a@2 {
 	timeout = <1>;
 	timeout-erase = <1>;
 };
+
+spi-nand@3 {
+	compatible = "jedec,spi-nand";
+	reg = <0x3>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	/* mt29f4g01 parameters */
+	jedec-id = [2c 35];
+	size-bytes = <536870912>;
+	erase-block-size = <262144>;
+	write-block-size = <4096>;
+	block-erase-duration-max = <10000>;
+	page-program-duration-max = <600>;
+	page-read-duration-max = <200>;
+};
