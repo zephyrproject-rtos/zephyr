@@ -1,6 +1,6 @@
 version = 1
 
-# Declare default license and copyright text for files that typically do not include them.
+# Declare default license and copyright text for files that typically do not or cannot include them.
 [[annotations]]
 path = [
     # zephyr-keep-sorted-start
@@ -9,6 +9,7 @@ path = [
     "**/*.conf",
     "**/*.ecl",
     "**/*.html",
+    "**/*.json",
     "**/*.rst",
     "**/*.yaml",
     "**/*.yml",
