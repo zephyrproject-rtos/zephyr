@@ -1676,18 +1676,15 @@ static int udc_dwc2_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
 	struct net_buf *buf;
+	bool invd;
 
 	udc_dwc2_ep_disable(dev, cfg, false, true);
 
-	buf = udc_buf_get_all(cfg);
-
-	if (dwc2_in_buffer_dma_mode(dev) && USB_EP_DIR_IS_OUT(cfg->addr)) {
-		for (struct net_buf *iter = buf; iter; iter = iter->frags) {
-			sys_cache_data_invd_range(iter->data, iter->len);
+	invd = dwc2_in_buffer_dma_mode(dev) && USB_EP_DIR_IS_OUT(cfg->addr);
+	for (buf = udc_buf_get(cfg); buf; buf = udc_buf_get(cfg)) {
+		if (invd) {
+			sys_cache_data_invd_range(buf->data, buf->len);
 		}
-	}
-
-	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
@@ -2142,6 +2139,7 @@ static int udc_dwc2_enable(const struct device *dev)
 static int udc_dwc2_disable(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
@@ -2181,8 +2179,7 @@ static int udc_dwc2_disable(const struct device *dev)
 	 * triggering Soft Reset seems to be enough on shutdown clean up.
 	 */
 	dwc2_core_soft_reset(dev);
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf) {
+	for (buf = udc_buf_get(cfg_out); buf; buf = udc_buf_get(cfg_out)) {
 		net_buf_unref(buf);
 	}
 

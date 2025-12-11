@@ -1110,17 +1110,13 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	__maybe_unused HAL_StatusTypeDef status;
-	struct net_buf *buf;
 
 	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
 
 	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf != NULL) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
 
 	udc_ep_set_busy(ep_cfg, false);
 

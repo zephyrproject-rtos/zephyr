@@ -1038,7 +1038,6 @@ static int udc_sam_usbhs_ep_dequeue(const struct device *dev,
 	uint8_t ep_idx = ep_addr_to_hw_ep(ep_cfg->addr);
 	int bit = ep_to_bit(ep_cfg->addr);
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
@@ -1059,11 +1058,8 @@ static int udc_sam_usbhs_ep_dequeue(const struct device *dev,
 	 */
 	atomic_clear_bit(&priv->xfer_finished, bit);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-		udc_ep_set_busy(ep_cfg, false);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
+	udc_ep_set_busy(ep_cfg, false);
 
 	irq_unlock(lock_key);
 
