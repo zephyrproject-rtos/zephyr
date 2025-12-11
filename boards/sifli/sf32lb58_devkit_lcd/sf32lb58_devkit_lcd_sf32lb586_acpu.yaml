@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sf32lb58_devkit/sf32lb586/acpu
+name: SF32LB58-DEVKIT-SF32LB586-ACPU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - gpio
+vendor: sifli

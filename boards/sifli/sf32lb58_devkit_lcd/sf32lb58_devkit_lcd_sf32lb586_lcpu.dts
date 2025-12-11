@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <sifli/sf32lb586_acpu.dtsi>
+
+/ {
+    model = "SiFli SF32LB58 DevKit ACPU";
+    compatible = "sifli,sf32lb58_devkit_sf32lb586_acpu";
+
+    chosen {
+        zephyr,console = &usart1;
+        zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash2;
+    };
+};
