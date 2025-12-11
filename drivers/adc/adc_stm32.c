@@ -1700,6 +1700,13 @@ static int adc_stm32_init(const struct device *dev)
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
 
+	/* If several ADCs are used and share a common clock property (for example ADC1/2 prescaler
+	 * value on STM32U5), none of them should be enabled when the clock is set.
+	 * To that end, make sure to disable ADC at the end of the initialization, it will be
+	 * enabled later when necessary anyway.
+	 */
+	adc_stm32_disable(adc);
+
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
