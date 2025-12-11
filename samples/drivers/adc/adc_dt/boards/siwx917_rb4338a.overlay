@@ -31,5 +31,6 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <10>;
 	};
+
 	status = "okay";
 };

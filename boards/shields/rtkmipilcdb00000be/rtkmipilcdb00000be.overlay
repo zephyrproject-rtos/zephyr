@@ -58,5 +58,6 @@
 		hfront-porch = <72>;
 		vfront-porch = <17>;
 	};
+
 	backlight-gpios = <&renesas_mipi_connector 15 GPIO_ACTIVE_HIGH>;
 };

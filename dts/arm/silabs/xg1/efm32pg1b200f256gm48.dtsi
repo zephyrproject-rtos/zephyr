@@ -9,7 +9,8 @@
 
 / {
 	soc {
-		compatible = "silabs,efm32pg1b200f256gm48", "silabs,efm32pg1b", "silabs,efm32", "simple-bus";
+		compatible = "silabs,efm32pg1b200f256gm48", "silabs,efm32pg1b", "silabs,efm32",
+			     "simple-bus";
 	};
 };
 

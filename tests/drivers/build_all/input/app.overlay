@@ -69,6 +69,7 @@
 				gpios = <&test_gpio 0 0>;
 				zephyr,code = <0>;
 			};
+
 			polling-mode;
 		};
 

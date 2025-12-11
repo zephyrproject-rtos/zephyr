@@ -36,6 +36,7 @@
 			pin-id = <5>;
 			prescaler = <1>;
 		};
+
 		status = "okay";
 	};
 };
