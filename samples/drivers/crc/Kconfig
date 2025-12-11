@@ -1,0 +1,28 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menu "CRC sample application"
+
+choice SAMPLE_CRC_VARIANT
+	prompt "CRC variant to run"
+	default SAMPLE_CRC_VARIANT_CRC8
+	help
+	  Choose which CRC algorithm the sample computes.
+
+config SAMPLE_CRC_VARIANT_CRC8
+	bool "CRC8"
+
+config SAMPLE_CRC_VARIANT_CRC16_CCITT
+	bool "CRC16-CCITT"
+
+config SAMPLE_CRC_VARIANT_CRC32_IEEE
+	bool "CRC32-IEEE"
+
+config SAMPLE_CRC_VARIANT_CRC32_C
+	bool "CRC32-C"
+
+endchoice
+
+endmenu
+
+source "Kconfig.zephyr"
