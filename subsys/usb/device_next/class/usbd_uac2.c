@@ -818,33 +818,20 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	terminal = cfg->as_terminals[as_idx];
 
 	if (is_feedback) {
-		bool clear_double = buf->frags;
-
 		if (ctx->fb_queued & BIT(as_idx)) {
 			ctx->fb_queued &= ~BIT(as_idx);
 		} else {
-			clear_double = true;
-		}
-
-		if (clear_double) {
 			ctx->fb_double &= ~BIT(as_idx);
 		}
-	} else if (!atomic_test_and_clear_bit(&ctx->as_queued, as_idx) || buf->frags) {
+	} else if (!atomic_test_and_clear_bit(&ctx->as_queued, as_idx)) {
 		atomic_clear_bit(&ctx->as_double, as_idx);
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
 		ctx->ops->data_recv_cb(dev, terminal, buf->__buf, buf->len,
 				       ctx->user_data);
-		if (buf->frags) {
-			ctx->ops->data_recv_cb(dev, terminal, buf->frags->__buf,
-					       buf->frags->len, ctx->user_data);
-		}
 	} else if (!is_feedback) {
 		ctx->ops->buf_release_cb(dev, terminal, buf->__buf, ctx->user_data);
-		if (buf->frags) {
-			ctx->ops->buf_release_cb(dev, terminal, buf->frags->__buf, ctx->user_data);
-		}
 	}
 
 	usbd_ep_buf_free(uds_ctx, buf);

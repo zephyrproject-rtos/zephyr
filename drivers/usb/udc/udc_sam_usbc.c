@@ -887,7 +887,6 @@ static int udc_sam_usbc_ep_dequeue(const struct device *const dev,
 	Usbc *const base = config->base;
 	const uint8_t phys_ep = virt_to_phys_ep(dev, ep_cfg->addr);
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
@@ -905,11 +904,8 @@ static int udc_sam_usbc_ep_dequeue(const struct device *const dev,
 	}
 
 	/* Always dequeue pending buffers and notify class layer */
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-		udc_ep_set_busy(ep_cfg, false);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
+	udc_ep_set_busy(ep_cfg, false);
 
 	irq_unlock(lock_key);
 
