@@ -394,7 +394,7 @@
 
 			clocks = <&gclk 42>, <&mclk 0x20 9>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 2>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
