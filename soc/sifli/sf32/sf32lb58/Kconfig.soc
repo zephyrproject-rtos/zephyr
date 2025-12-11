@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_SERIES_SF32LB58
+	bool
+	select SOC_FAMILY_SF32
+
+config SOC_SERIES
+	default "sf32lb58" if SOC_SERIES_SF32LB58
+
+config SOC_SF32LB586_HCPU
+	bool
+    select SOC_SERIES_SF32LB58
+
+config SOC_SF32LB586_ACPU
+	bool
+    select SOC_SERIES_SF32LB58
+
+config SOC_SF32LB586_LCPU
+	bool
+    select SOC_SERIES_SF32LB58
+
+config SOC
+	default "sf32lb586" if SOC_SF32LB586_HCPU || SOC_SF32LB586_ACPU || SOC_SF32LB586_LCPU
