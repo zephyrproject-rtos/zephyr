@@ -20,4 +20,18 @@
 			input-enable;
 		};
 	};
+
+	/omit-if-no-ref/ gpt5_pins: gpt5 {
+		gpt5-pinmux {
+			pinmux = <RZT_PINMUX(PORT_08, 5, 3)>, /* GTIOCA */
+				 <RZT_PINMUX(PORT_08, 7, 6)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt6_pins: gpt6 {
+		gpt6-pinmux {
+			pinmux = <RZT_PINMUX(PORT_09, 0, 6)>, /* GTIOCA */
+				 <RZT_PINMUX(PORT_09, 2, 5)>; /* GTIOCB */
+		};
+	};
 };
