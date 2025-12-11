@@ -81,27 +81,6 @@ struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg)
 	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
-struct net_buf *udc_buf_get_all(struct udc_ep_config *const ep_cfg)
-{
-	struct net_buf *buf;
-
-	buf = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
-	if (!buf) {
-		return NULL;
-	}
-
-	LOG_DBG("ep 0x%02x dequeue %p", ep_cfg->addr, buf);
-	for (struct net_buf *n = buf; !k_fifo_is_empty(&ep_cfg->fifo); n = n->frags) {
-		n->frags = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
-		LOG_DBG("|-> %p ", n->frags);
-		if (n->frags == NULL) {
-			break;
-		}
-	}
-
-	return buf;
-}
-
 struct net_buf *udc_buf_peek(struct udc_ep_config *const ep_cfg)
 {
 	return k_fifo_peek_head(&ep_cfg->fifo);
@@ -125,6 +104,15 @@ void udc_ep_buf_clear_zlp(const struct net_buf *const buf)
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 
 	bi->zlp = false;
+}
+
+void udc_ep_cancel_queued(const struct device *dev, struct udc_ep_config *const cfg)
+{
+	struct net_buf *buf;
+
+	for (buf = udc_buf_get(cfg); buf; buf = udc_buf_get(cfg)) {
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
+	}
 }
 
 void udc_setup_received(const struct device *dev, const void *const setup)
