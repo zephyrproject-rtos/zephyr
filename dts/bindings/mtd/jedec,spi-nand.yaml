@@ -1,0 +1,53 @@
+# Copyright (c) 2025 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Properties supporting Zephyr spi-nand flash driver (over the Zephyr SPI
+  API) control of serial flash memories using the standard command set.
+
+compatible: "jedec,spi-nand"
+
+include: [spi-device.yaml]
+
+properties:
+  jedec-id:
+    type: uint8-array
+    required: true
+    description: JEDEC ID as manufacturer ID, memory type, memory density
+
+  size-bytes:
+    type: int
+    required: true
+    description: flash capacity in bytes
+
+  erase-block-size:
+    type: int
+    required: true
+    description: |
+      Address alignment required by flash erase operations. Equivalent to
+      the block size for SPI NAND flash storage.
+
+  write-block-size:
+    type: int
+    required: true
+    description: |
+      Address alignment required by flash write operations. Equivalent to
+      the page size for SPI NAND flash storage.
+
+  block-erase-duration-max:
+    type: int
+    required: true
+    description: |
+      Maximum erase duration in microseconds.
+
+  page-program-duration-max:
+    type: int
+    required: true
+    description: |
+      Maximum erase duration in microseconds.
+
+  page-read-duration-max:
+    type: int
+    required: true
+    description: |
+      Maximum read duration in microseconds.
