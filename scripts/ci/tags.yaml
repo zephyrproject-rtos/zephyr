@@ -76,6 +76,11 @@ net:
     - drivers/ieee802154/
     - drivers/ptp_clock/
 
+openthread:
+  files:
+    - modules/openthread/
+    - subsys/net/l2/openthread/
+
 posix:
   files:
     - lib/posix/
