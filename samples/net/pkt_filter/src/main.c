@@ -86,6 +86,35 @@ static NPF_IP_SRC_ADDR_BLOCKLIST(ipv6_src_block,
 static NPF_RULE(ipv4_addr_block, NET_OK, ipv4_src_block);
 static NPF_RULE(ipv6_addr_block, NET_OK, ipv6_src_block);
 
+/* Rules for other upper layer protocols like UDP or TCP */
+/* The pkt_counter is used to count matched packets in the handler. It is optional
+ * and it is up to the application how to use it.
+ */
+static int user_data_pkt_counter;
+
+static bool handler_local_in(struct net_pkt *pkt, void *user_data)
+{
+	int *pkt_counter = (int *)user_data;
+
+	if (pkt_counter != NULL) {
+		(*pkt_counter)++;
+
+		LOG_DBG("Local-in matched packets: %d", *pkt_counter);
+	} else {
+		LOG_DBG("Local-in matched packet");
+	}
+
+	/* We can evaluate the packet here and return true/false based on that.
+	 * For this sample, we just return true to match all the received packets.
+	 */
+
+	return true;
+}
+
+/* Note that the user_data argument is optional and can be NULL */
+static NPF_LOCAL_IN_MATCH(local_in_match, handler_local_in, &user_data_pkt_counter);
+static NPF_RULE(local_in_rule, NET_OK, local_in_match);
+
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 	int count = 0;
@@ -181,6 +210,9 @@ static void init_app(void)
 
 	/* We block packets from specific IPv6 addresses */
 	npf_append_ipv6_recv_rule(&ipv6_addr_block);
+
+	/* Catch other upper layer protocols like UDP / TCP */
+	npf_append_local_in_recv_rule(&local_in_rule);
 }
 
 int main(void)
