@@ -481,7 +481,7 @@ OpenOCD Deprecates HLA ST-Link Interface
 ========================================
 
 OpenOCD has deprecated the legacy HLA interface used by ST-Link firmware in favor to the
-generic DAP interface in Januray 2024 (see `OpenOCD deprecates ST-Link HLA Interface`_)
+generic DAP interface in January 2024 (see `OpenOCD deprecates ST-Link HLA Interface`_)
 in favor of the generic DAP interface. DAP interface is supported by ST-Link firmware
 since 2015 (from version v2j24).
 

@@ -515,7 +515,7 @@ files for a board named ``plank``:
   Kconfig trees.
 
   This file selects the SoC in the Kconfig tree and potential other SoC related
-  Kconfig settings. This file must not select anything outside the re-usable
+  Kconfig settings. This file must not select anything outside the reusable
   Kconfig board and SoC trees.
 
   A :file:`Kconfig.plank` may look like this:
