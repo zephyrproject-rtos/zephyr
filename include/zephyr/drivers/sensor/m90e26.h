@@ -13,17 +13,17 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_M90E26_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_M90E26_H_
 
-#include <zephyr/drivers/sensor.h>
-
 /**
- * @defgroup m90e26_interface Atmel M90E26 Sensor Interface
- * @ingroup sensor_interface
+ * @defgroup m90e26_interface M90E26 Interface
+ * @brief Documentation for Atmel M90E26 energy metering IC interface
  * @{
  */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <zephyr/drivers/sensor.h>
 
 /**
  * @brief Bit masks for SysStatus register fields.

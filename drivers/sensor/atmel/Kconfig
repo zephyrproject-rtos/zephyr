@@ -30,6 +30,6 @@ config M90EXX_SHELL
     testing, and manual configuration of the energy metering ICs.
 
 # zephyr-keep-sorted-start
-source "drivers/sensor/atmel/m90e3x/Kconfig"
 source "drivers/sensor/atmel/m90e26/Kconfig"
+source "drivers/sensor/atmel/m90e3x/Kconfig"
 # zephyr-keep-sorted-stop

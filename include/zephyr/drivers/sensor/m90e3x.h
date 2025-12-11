@@ -13,11 +13,17 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_M90E3X_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_M90E3X_H_
 
-#include <zephyr/drivers/sensor.h>
+/**
+ * @defgroup m90e3x_interface M90E3X Interface
+ * @brief Documentation for Atmel M90E3X energy metering IC interface
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <zephyr/drivers/sensor.h>
 
 /**
  * @brief Type definition for M90E3X register addresses.

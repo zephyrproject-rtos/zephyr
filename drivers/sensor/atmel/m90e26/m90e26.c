@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(m90e26, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int m90e26_bus_check(const struct device *dev)
 {
-  const struct m90e26_config *cfg = (struct m90e26_config *)dev->config;
+  const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
 
   return cfg->bus_io->bus_check(dev);
 }
@@ -45,8 +45,8 @@ static inline int m90e26_read_register(const struct device *dev,
                                          const m90e26_register_t reg, 
                                          m90e26_data_value_t *value)
 {
-  const struct m90e26_config *cfg = (struct m90e26_config *)dev->config;
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
+  const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
   int ret = 0;
 
   ret = k_mutex_lock(&data->bus_lock, K_FOREVER);
@@ -100,8 +100,8 @@ static inline int m90e26_write_register(const struct device *dev,
                                           const m90e26_register_t addr, 
                                           const m90e26_data_value_t *value)
 {
-  const struct m90e26_config *cfg = (struct m90e26_config *)dev->config;
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
+  const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
   int ret = 0;
 
   if (addr == SysStatus || addr == LastData || addr >=APenergy)
@@ -160,16 +160,44 @@ end:
 
 static int m90e26_checksum1(const struct device *dev)
 {
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
-  m90e26_data_value_t *reg = &data->config_registers.PLconstH;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  const struct m90e26_config_registers *reg = &data->config_registers;
   uint8_t lsb = 0;
   uint8_t msb = 0;
-  
-  for (uint8_t i = 0; i < 11; i++)
-  {
-    lsb += (reg[i].uint16 & 0xFF) + (reg[i].uint16 >> 8);
-    msb ^= (reg[i].uint16 & 0xFF) ^ (reg[i].uint16 >> 8);
-  }
+
+  // PLconstH
+  lsb += (reg->PLconstH.uint16 & 0xFF) + (reg->PLconstH.uint16 >> 8);
+  msb ^= (reg->PLconstH.uint16 & 0xFF) ^ (reg->PLconstH.uint16 >> 8);
+  // PLconstL
+  lsb += (reg->PLconstL.uint16 & 0xFF) + (reg->PLconstL.uint16 >> 8);
+  msb ^= (reg->PLconstL.uint16 & 0xFF) ^ (reg->PLconstL.uint16 >> 8);
+  // Lgain
+  lsb += (reg->Lgain.uint16 & 0xFF) + (reg->Lgain.uint16 >> 8);
+  msb ^= (reg->Lgain.uint16 & 0xFF) ^ (reg->Lgain.uint16 >> 8);
+  // Lphi
+  lsb += (reg->Lphi.uint16 & 0xFF) + (reg->Lphi.uint16 >> 8);
+  msb ^= (reg->Lphi.uint16 & 0xFF) ^ (reg->Lphi.uint16 >> 8);
+  // Ngain
+  lsb += (reg->Ngain.uint16 & 0xFF) + (reg->Ngain.uint16 >> 8);
+  msb ^= (reg->Ngain.uint16 & 0xFF) ^ (reg->Ngain.uint16 >> 8);
+  // Nphi
+  lsb += (reg->Nphi.uint16 & 0xFF) + (reg->Nphi.uint16 >> 8);
+  msb ^= (reg->Nphi.uint16 & 0xFF) ^ (reg->Nphi.uint16 >> 8);
+  // PStartTh
+  lsb += (reg->PStartTh.uint16 & 0xFF) + (reg->PStartTh.uint16 >> 8);
+  msb ^= (reg->PStartTh.uint16 & 0xFF) ^ (reg->PStartTh.uint16 >> 8);
+  // PNolTh
+  lsb += (reg->PNolTh.uint16 & 0xFF) + (reg->PNolTh.uint16 >> 8);
+  msb ^= (reg->PNolTh.uint16 & 0xFF) ^ (reg->PNolTh.uint16 >> 8);
+  // QStartTh
+  lsb += (reg->QStartTh.uint16 & 0xFF) + (reg->QStartTh.uint16 >> 8);
+  msb ^= (reg->QStartTh.uint16 & 0xFF) ^ (reg->QStartTh.uint16 >> 8);
+  // QNolTh
+  lsb += (reg->QNolTh.uint16 & 0xFF) + (reg->QNolTh.uint16 >> 8);
+  msb ^= (reg->QNolTh.uint16 & 0xFF) ^ (reg->QNolTh.uint16 >> 8);
+  // MMode
+  lsb += (reg->MMode.uint16 & 0xFF) + (reg->MMode.uint16 >> 8);
+  msb ^= (reg->MMode.uint16 & 0xFF) ^ (reg->MMode.uint16 >> 8);
 
   m90e26_data_value_t checksum = {.uint16 = (msb << 8) | lsb};
   return m90e26_write_register(dev, CS1, &checksum);
@@ -177,16 +205,41 @@ static int m90e26_checksum1(const struct device *dev)
 
 static int m90e26_checksum2(const struct device *dev)
 {
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
-  m90e26_data_value_t *reg = &data->config_registers.Ugain;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  const struct m90e26_config_registers *reg = &data->config_registers;
   uint8_t lsb = 0;
   uint8_t msb = 0;
-  
-  for (uint8_t i = 0; i < 10; i++)
-  {
-    lsb += (reg[i].uint16 & 0xFF) + (reg[i].uint16 >> 8);
-    msb ^= (reg[i].uint16 & 0xFF) ^ (reg[i].uint16 >> 8);
-  }
+
+  // Ugain
+  lsb += (reg->Ugain.uint16 & 0xFF) + (reg->Ugain.uint16 >> 8);
+  msb ^= (reg->Ugain.uint16 & 0xFF) ^ (reg->Ugain.uint16 >> 8);
+  // IgainL
+  lsb += (reg->IgainL.uint16 & 0xFF) + (reg->IgainL.uint16 >> 8);
+  msb ^= (reg->IgainL.uint16 & 0xFF) ^ (reg->IgainL.uint16 >> 8);
+  // IgainN
+  lsb += (reg->IgainN.uint16 & 0xFF) + (reg->IgainN.uint16 >> 8);
+  msb ^= (reg->IgainN.uint16 & 0xFF) ^ (reg->IgainN.uint16 >> 8);
+  // Uoffset
+  lsb += (reg->Uoffset.uint16 & 0xFF) + (reg->Uoffset.uint16 >> 8);
+  msb ^= (reg->Uoffset.uint16 & 0xFF) ^ (reg->Uoffset.uint16 >> 8);
+  // IoffsetL
+  lsb += (reg->IoffsetL.uint16 & 0xFF) + (reg->IoffsetL.uint16 >> 8);
+  msb ^= (reg->IoffsetL.uint16 & 0xFF) ^ (reg->IoffsetL.uint16 >> 8);
+  // IoffsetN
+  lsb += (reg->IoffsetN.uint16 & 0xFF) + (reg->IoffsetN.uint16 >> 8);
+  msb ^= (reg->IoffsetN.uint16 & 0xFF) ^ (reg->IoffsetN.uint16 >> 8);
+  // PoffsetL
+  lsb += (reg->PoffsetL.uint16 & 0xFF) + (reg->PoffsetL.uint16 >> 8);
+  msb ^= (reg->PoffsetL.uint16 & 0xFF) ^ (reg->PoffsetL.uint16 >> 8);
+  // QoffsetL
+  lsb += (reg->QoffsetL.uint16 & 0xFF) + (reg->QoffsetL.uint16 >> 8);
+  msb ^= (reg->QoffsetL.uint16 & 0xFF) ^ (reg->QoffsetL.uint16 >> 8);
+  // PoffsetN
+  lsb += (reg->PoffsetN.uint16 & 0xFF) + (reg->PoffsetN.uint16 >> 8);
+  msb ^= (reg->PoffsetN.uint16 & 0xFF) ^ (reg->PoffsetN.uint16 >> 8);
+  // QoffsetN
+  lsb += (reg->QoffsetN.uint16 & 0xFF) + (reg->QoffsetN.uint16 >> 8);
+  msb ^= (reg->QoffsetN.uint16 & 0xFF) ^ (reg->QoffsetN.uint16 >> 8);
 
   m90e26_data_value_t checksum = {.uint16 = (msb << 8) | lsb};
   return m90e26_write_register(dev, CS2, &checksum);
@@ -242,7 +295,7 @@ static int m90e26_measurement_calibration_finish(const struct device *dev)
 
 static void m90e26_reload_config(const struct device *dev)
 {
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
 
   m90e26_write_register(dev, FuncEn, &data->config_registers.FuncEn);
   m90e26_write_register(dev, SagTh, &data->config_registers.SagTh);
@@ -392,7 +445,7 @@ static int m90e26_sample_fetch(const struct device *dev, enum sensor_channel cha
 static int m90e26_channel_get(const struct device *dev, enum sensor_channel channel,
                                 struct sensor_value *value)
 {
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
   int ret = 0;
 
   switch ((uint16_t)channel)
@@ -514,7 +567,7 @@ static int m90e26_trigger_set(const struct device *dev,
                                 const struct sensor_trigger *trig,
                                 sensor_trigger_handler_t handler)
 {
-  struct m90e26_data *data = (struct m90e26_data *)dev->data;
+  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
   const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
   int ret = -ENOTSUP;
 
