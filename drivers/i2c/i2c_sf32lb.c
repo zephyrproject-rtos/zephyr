@@ -86,8 +86,8 @@ static void i2c_sf32lb_isr(const struct device *dev)
 #ifdef CONFIG_I2C_SF32LB_DMA
 	if (IS_BIT_SET(sr, I2C_SR_DMADONE_Pos)) {
 		sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
-		printk("DMA done interrupt\n");
-		//k_sem_give(&data->i2c_compl);
+		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+		k_sem_give(&data->i2c_compl);
 	}
 #endif
 #ifdef CONFIG_I2C_SF32LB_INTERRUPT
@@ -156,6 +156,8 @@ static void i2c_sf32lb_isr(const struct device *dev)
 }
 #endif
 
+__USED volatile int test_flag = 0;
+
 static int i2c_sf32lb_send_addr(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
 {
 	int ret = 0;
@@ -189,6 +191,7 @@ static int i2c_sf32lb_send_addr(const struct device *dev, uint16_t addr, struct 
 		/* Wait for MSD(Master Stop Detected) to set, it appears slower than NACK */
 		WAIT_FOR(sys_test_bit(cfg->base + I2C_SR, I2C_SR_MSD_Pos),
 			 SF32LB_I2C_TIMEOUT_MAX_US, NULL);
+		LOG_ERR("No ACK received for address 0x%02x", addr >> 1);
 		ret = -EIO;
 	}
 
@@ -437,21 +440,28 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	}
 
 	if (addr_sent) {
+		test_flag = -1;
 		ret = i2c_sf32lb_send_addr(dev, addr, msg);
+		test_flag = 1;
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
 	if (stop_needed) {
+		test_flag = -2;
 		sys_set_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
+		test_flag = 2;
 	}
 
+	/* Clear stale completion, program byte count, then arm IRQ */
 	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
 	sys_write8(msg->len, config->base + I2C_DNR);
-	sys_set_bits(config->base + I2C_CR, I2C_CR_DMAEN | I2C_CR_MSDE);
+	printk("I2C_DNR=%d\n", sys_read8(config->base + I2C_DNR));
 	sys_set_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
-	sys_write32(I2C_TCR_RXREQ, config->base + I2C_TCR);
+	sys_set_bits(config->base + I2C_CR, I2C_CR_MSDE);
+
+	// while(1);
 
 	ret = i2c_sf32lb_dma_rx_config(dev, msg);
 	if (ret < 0) {
@@ -462,8 +472,9 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	if (ret < 0) {
 		return ret;
 	}
-
-	sys_write32(I2C_TCR_RXREQ, config->base + I2C_TCR);
+	
+	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_set_bit(config->base + I2C_TCR, I2C_TCR_RXREQ_Pos);
 
 	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
 	if (ret < 0) {
@@ -472,7 +483,10 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	}
 
 	sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
 	if (stop_needed) {
+		// while (sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos)) {
+		// }
 		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
 	}
 
@@ -624,8 +638,9 @@ static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	int ret = 0;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-printk("i2c_sf32lb_transfer num_msgs=%d addr=0x%02x\n", num_msgs, addr);
+	printk("i2c_sf32lb_transfer num_msgs=%d addr=0x%02x\n", num_msgs, addr);
 	sys_set_bits(cfg->base + I2C_CR, I2C_CR_IUE | I2C_CR_MSDE);
+	__ASM("B .");
 
 	if (sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos)) {
 		k_mutex_unlock(&data->lock);
