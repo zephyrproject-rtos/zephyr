@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT espressif_esp32_gpio
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <driver/gpio.h>
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
@@ -102,6 +103,9 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 	const struct gpio_esp32_config *const cfg = dev->config;
 	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
 	uint32_t key;
+#if CONFIG_PM
+	bool wakeup_disable = false;
+#endif
 	int ret = 0;
 
 	if (!gpio_pin_is_valid(io_pin)) {
@@ -262,11 +266,66 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 
 	if (flags & GPIO_INPUT) {
 		gpio_ll_input_enable(&GPIO, io_pin);
+#if CONFIG_PM
+		if (pm_device_wakeup_is_capable(dev)) {
+			if (flags & GPIO_INT_WAKEUP) {
+				if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
+					int polarity = (flags & GPIO_ACTIVE_LOW) ? 0 : 1;
+					int err;
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+					err = esp_sleep_enable_ext1_wakeup_io(
+						BIT64(io_pin), polarity);
+
+					if (err == ESP_ERR_NOT_ALLOWED) {
+						LOG_WRN("Pin %d wakeup polarity conflicts "
+							"with other EXT1 pins",
+							io_pin);
+					} else if (err != 0) {
+						LOG_WRN("Pin %d: EXT1 wakeup config "
+							"failed (%d)",
+							io_pin, err);
+					}
+#elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+					err = esp_deep_sleep_enable_gpio_wakeup(
+						BIT64(io_pin), polarity);
+
+					if (err != 0) {
+						LOG_WRN("Pin %d: GPIO wakeup config "
+							"failed (%d)",
+							io_pin, err);
+					}
+#endif
+				} else {
+					LOG_WRN("Pin %d is not wakeup capable", io_pin);
+				}
+			} else {
+				wakeup_disable = true;
+			}
+		}
+#endif
 	} else {
 		if (!(flags & ESP32_GPIO_PIN_IN_EN)) {
 			gpio_ll_input_disable(&GPIO, io_pin);
+#if CONFIG_PM
+			if (pm_device_wakeup_is_capable(dev)) {
+				wakeup_disable = true;
+			}
+#endif
 		}
 	}
+
+#if CONFIG_PM
+	if (wakeup_disable) {
+		/* Account for pin reconfig with GPIO_INT_WAKEUP
+		 * disabled, or pin direction change.
+		 */
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+		esp_sleep_disable_ext1_wakeup_io(BIT64(io_pin));
+#elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+		/* No API to disable for now */
+#endif
+	}
+#endif
 
 end:
 	irq_unlock(key);
