@@ -692,6 +692,12 @@
 			clk-divider = <256>;
 			status = "disabled";
 		};
+
+		crc: crc@40032000 {
+			compatible = "nxp,crc";
+			reg = <0x40032000 0x1000>;
+			status = "disabled";
+		};
 	};
 };
 

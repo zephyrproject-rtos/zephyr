@@ -31,6 +31,7 @@
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -211,5 +212,9 @@
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
