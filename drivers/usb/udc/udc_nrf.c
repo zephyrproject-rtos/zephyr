@@ -1503,16 +1503,9 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 static int udc_nrf_ep_dequeue(const struct device *dev,
 			      struct udc_ep_config *cfg)
 {
-	struct net_buf *buf;
-
 	nrf_usbd_legacy_ep_abort(cfg->addr);
 
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	} else {
-		LOG_INF("ep 0x%02x queue is empty", cfg->addr);
-	}
+	udc_ep_cancel_queued(dev, cfg);
 
 	udc_ep_set_busy(cfg, false);
 

@@ -322,14 +322,10 @@ static int udc_renesas_ra_ep_dequeue(const struct device *dev, struct udc_ep_con
 {
 	struct udc_renesas_ra_data *data = udc_get_private(dev);
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(cfg);
-	if (buf != NULL) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, cfg);
 
 	if (FSP_SUCCESS != R_USBD_XferAbort(&data->udc, cfg->addr)) {
 		return -EIO;

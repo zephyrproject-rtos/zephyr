@@ -564,7 +564,6 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 {
 	struct usbfsotg_bd *bd;
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	bd = usbfsotg_get_ebd(dev, cfg, false);
 
@@ -573,10 +572,7 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	irq_unlock(lock_key);
 
 	cfg->stat.halted = false;
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, cfg);
 
 	udc_ep_set_busy(cfg, false);
 
