@@ -341,12 +341,12 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.Request = dma_cfg->dma_slot;
 #endif
 
-	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
 		LOG_ERR("Source and destination data sizes are not aligned");
 		return -EINVAL;
 	}
 
-	int idx = find_lsb_set(dma_cfg.source_data_size) - 1;
+	int idx = find_lsb_set(dma_cfg->source_data_size) - 1;
 
 #if defined(CONFIG_DMA_STM32U5)
 	if (idx >= ARRAY_SIZE(dma_src_size)) {
