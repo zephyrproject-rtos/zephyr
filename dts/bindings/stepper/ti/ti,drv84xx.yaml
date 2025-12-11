@@ -44,11 +44,3 @@ properties:
   sleep-gpios:
     type: phandle-array
     description: Sleep pin (active low).
-
-  m0-gpios:
-    type: phandle-array
-    description: Microstep configuration pin 0.
-
-  m1-gpios:
-    type: phandle-array
-    description: Microstep configuration pin 1.
