@@ -215,6 +215,7 @@ static int tp_udp_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, co
 		LOG_HEXDUMP_DBG(buf, sz, "Sending Broadcast UDP packet");
 
 		/* Set ttl if requested value does not match existing*/
+		ttl_len = sizeof(ttl);
 		rc = get_multicast_ttl(udp, &ttl, &ttl_len);
 		if (rc < 0) {
 			return -errno;
