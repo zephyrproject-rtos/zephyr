@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/pinctrl/sf32lb58-hpsys-pinmux.dtsi>
+#include <sifli/sf32lb58-hpsys-pinmux.dtsi>
 
 &pinctrl {
 	pinmux_usart1_default: pinmux_usart1_default {

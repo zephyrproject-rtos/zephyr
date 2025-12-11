@@ -66,13 +66,13 @@
 		};
 
         pinmux: pinmux@40003000 {
-            compatible = "sifli,sf32lb58-pinmux";
+            compatible = "sifli,sf32lb58-hpsys-pinmux";
             reg = <0x40003000 0x1000>;
             clocks = <&hpsys_rcc HPSYS_RCC_SUBSYS_PINMUX1>;
             status = "okay";
 
             pinctrl: pinctrl {
-                compatible = "sifli,sf32lb58-pinctrl";
+                compatible = "sifli,sf32lb58-hpsys-pinctrl";
                 status = "okay";
             };
         };

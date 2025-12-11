@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sifli SF32LB58 HPSYS pinmux
+
+
+compatible: "sifli,sf32lb58-hpsys-pinmux"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: SF32LB58 HPSYS pinmux option
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        An array of values defines the pinmux options, in the format:
+        <pinmux_reg sel>
+        pinmux_reg: register address of the pinmux
+        sel: function selection of the pinmux. the value need to be
+        combined with other fields values, like pull-up/down bit
