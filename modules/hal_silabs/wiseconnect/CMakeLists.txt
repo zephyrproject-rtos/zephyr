@@ -91,6 +91,7 @@ zephyr_library_sources(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ipmu.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c
@@ -119,16 +120,12 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
-)
-
 zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
-  UDMA_ROMDRIVER_PRESENT
+  UDMA_ROMDRIVER_PRESENT # replace rsi_udma.c and rsi_udma_wrapper.c
 )
 
 zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_GPDMA
-  GPDMA_ROMDRIVER_PRESENT
+  GPDMA_ROMDRIVER_PRESENT # replace rsi_gpdma.c
 )
 
 zephyr_compile_definitions_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X
