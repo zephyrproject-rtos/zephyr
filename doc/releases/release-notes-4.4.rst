@@ -123,6 +123,7 @@ New APIs and options
   * Audio
 
     * :c:func:`bt_bap_ep_get_conn`
+    * :c:member:`bt_ccp_call_control_client_cb.user_data`
 
   * Host
 
