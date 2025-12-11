@@ -7,11 +7,10 @@
 #include <zephyr/drivers/pinctrl/sf32lb58-hpsys-pinmux.dtsi>
 
 &pinctrl {
-    pinmux_usart1_default: pinmux_usart1_default {
-        group0 {
-            pinmux = <&uart1_rxd_pa32 &uart1_txd_pa31>;
-            bias-disable;
-        };
-    };
+	pinmux_usart1_default: pinmux_usart1_default {
+		group0 {
+			pinmux = <&uart1_rxd_pa32 &uart1_txd_pa31>;
+			bias-disable;
+		};
+	};
 };
-

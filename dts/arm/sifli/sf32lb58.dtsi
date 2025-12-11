@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <freq.h>
+#include <mem.h>
+
+/ {
+    clocks {
+        clk_lrc10: clk-lrc10 {
+            compatible = "sifli,sf32lb58-rc-clk";
+            #clock-cells = <0>;
+            clock-frequency = <DT_FREQ_K(10)>;
+            status = "disabled";
+        };
+
+        clk_lxt32: clk-lxt32 {
+            compatible = "fixed-clock";
+            #clock-cells = <0>;
+            clock-frequency = <32768>;
+            status = "disabled";
+        };
+
+        clk_hrc48: clk-hrc48 {
+            compatible = "sifli,sf32lb58-rc-clk";
+            #clock-cells = <0>;
+            clock-frequency = <DT_FREQ_M(48)>;
+            status = "okay";  /* hrc48 starts working when chip started */
+        };
+
+        clk_hxt48: clk-hxt48 {
+            compatible = "sifli,sf32lb58-xt-clk";
+            #clock-cells = <0>;
+            clock-frequency = <DT_FREQ_M(48)>;
+            status = "okay"; /* hxt48 starts working when chip started */
+            /* clk-ctrl is required to bet set in both hpsys and lpsys dts */
+            /* clk-ctrl = <&hpsys_aon SF32LB58_HPSYS_AON_SUBSYS_HXT48> */
+        };
+    };
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

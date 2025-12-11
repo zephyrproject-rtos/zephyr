@@ -10,17 +10,17 @@
 #include <mem.h>
 
 / {
-    model = "SiFli SF32LB58 DevKit LCD HCPU";
-    compatible = "sifli,sf32lb58_devkit_lcd_sf32lb586_hcpu";
+	model = "SiFli SF32LB58 DevKit LCD HCPU";
+	compatible = "sifli,sf32lb58_devkit_lcd_sf32lb586_hcpu";
 
-    chosen {
-        zephyr,console = &usart1;
-        zephyr,shell-uart = &usart1;
-    };
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
 };
 
 &usart1 {
-    pinctrl-0 = <&pinmux_usart1_default>;
-    pinctrl-names = "default";
-    status = "okay";
+	pinctrl-0 = <&pinmux_usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
