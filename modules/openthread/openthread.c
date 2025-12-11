@@ -498,7 +498,7 @@ void openthread_set_receive_cb(openthread_receive_cb cb, void *context)
 	}
 }
 
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 void openthread_set_nat64_receive_cb(openthread_receive_cb cb, void *context)
 {
 	__ASSERT(cb != NULL, "NAT64 receive callback is not set");
@@ -512,7 +512,7 @@ void openthread_set_nat64_receive_cb(openthread_receive_cb cb, void *context)
 		openthread_mutex_unlock();
 	}
 }
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR && CONFIG_NET_IPV4 */
 
 void openthread_mutex_lock(void)
 {
