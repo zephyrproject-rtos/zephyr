@@ -2617,7 +2617,8 @@ void bt_le_oob_set_legacy_flag(bool enable);
  *  callback provided that the legacy method is user pairing.
  *
  *  @param conn  @ref BT_CONN_TYPE_LE connection object.
- *  @param tk Pointer to 16 byte long TK array
+ *  @param tk Pointer to 16 byte long TK array. The TK value should be generated randomly for each
+ *            new pairing process.
  *
  *  @retval 0 Success
  *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
