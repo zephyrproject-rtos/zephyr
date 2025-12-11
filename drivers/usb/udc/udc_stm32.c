@@ -954,6 +954,7 @@ static int udc_stm32_shutdown(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
+	int err;
 
 	status = HAL_PCD_DeInit(&priv->pcd);
 	if (status != HAL_OK) {
@@ -963,6 +964,12 @@ static int udc_stm32_shutdown(const struct device *dev)
 
 	if (udc_stm32_clock_disable(dev) < 0) {
 		LOG_ERR("Error disabling clock(s)");
+		/* continue anyway */
+	}
+
+	err = stm32_usb_pwr_disable();
+	if (err != 0) {
+		LOG_ERR("Error disabling USB power: %d", err);
 		/* continue anyway */
 	}
 
