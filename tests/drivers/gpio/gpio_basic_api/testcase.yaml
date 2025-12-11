@@ -4,8 +4,6 @@ common:
     - gpio
   depends_on: gpio
   harness: ztest
-  harness_config:
-    fixture: gpio_loopback
 
 tests:
   drivers.gpio.2pin:
