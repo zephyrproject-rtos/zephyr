@@ -42,7 +42,6 @@ struct siwx91x_nwp_data {
 struct siwx91x_nwp_config {
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
-	uint8_t power_profile;
 };
 
 typedef struct {
@@ -395,9 +394,9 @@ static int siwx91x_nwp_init(const struct device *dev)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
 	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
-		.profile = config->power_profile};
+		.profile = DEEP_SLEEP_WITH_RAM_RETENTION};
 	__maybe_unused sl_bt_performance_profile_t bt_performance_profile = {
-		.profile = config->power_profile};
+		.profile = DEEP_SLEEP_WITH_RAM_RETENTION};
 	sl_wifi_device_configuration_t network_config;
 	int ret;
 
@@ -466,7 +465,6 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
                                                                                                    \
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
-		.power_profile = DT_ENUM_IDX(DT_DRV_INST(inst), power_profile),                    \
 		.stack_size = DT_INST_PROP(inst, stack_size)                                       \
 	};                                                                                         \
                                                                                                    \
