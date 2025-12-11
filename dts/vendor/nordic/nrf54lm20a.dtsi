@@ -99,7 +99,6 @@
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		/* intentionally empty because UICR is hardware fixed to Secure */
 #else
-
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
@@ -129,7 +128,6 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 #else
-
 		global_peripherals: peripheral@50000000 {
 			reg = <0x50000000 0x10000000>;
 			ranges = <0x0 0x50000000 0x10000000>;
@@ -765,7 +763,6 @@
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 			/* intentionally empty because WDT30 is hardware fixed to Secure */
 #else
-
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;

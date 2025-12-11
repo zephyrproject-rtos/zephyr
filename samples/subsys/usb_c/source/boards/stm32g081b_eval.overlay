@@ -73,7 +73,8 @@
 			vbus = <&vbus1>;
 			power-role = "source";
 			typec-power-opmode = "3.0A";
-			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0) PDO_FIXED(15000, 100, 0)>;
+			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0)
+				       PDO_FIXED(15000, 100, 0)>;
 		};
 		/* usbc.rst usbc-port end */
 	};

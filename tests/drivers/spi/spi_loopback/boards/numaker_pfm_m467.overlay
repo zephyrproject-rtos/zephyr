@@ -28,6 +28,7 @@
 		reg = <0>;
 		spi-max-frequency = <16000000>;
 	};
+
 	status = "okay";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-names = "default";

@@ -187,6 +187,7 @@
 				status = "disabled";
 				disk-name = "SD";
 			};
+
 			power-delay-ms = <1500>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 10>;
 		};
