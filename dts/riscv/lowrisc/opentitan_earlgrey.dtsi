@@ -5,6 +5,7 @@
  */
 
 #include <freq.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "lowrisc,opentitan-earlgrey";
@@ -33,6 +34,14 @@
 		};
 	};
 
+	clocks {
+		pclk: p-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		compatible = "simple-bus";
 		ranges;
@@ -52,6 +61,36 @@
 		uart0: serial@40000000 {
 			compatible = "lowrisc,opentitan-uart";
 			reg = <0x40000000 0x1000>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40080000 {
+			compatible = "lowrisc,opentitan-i2c";
+			reg = <0x40080000 0x100>;
+			clocks = <&pclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40090000 {
+			compatible = "lowrisc,opentitan-i2c";
+			reg = <0x40090000 0x100>;
+			clocks = <&pclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@400a0000 {
+			compatible = "lowrisc,opentitan-i2c";
+			reg = <0x400a0000 0x100>;
+			clocks = <&pclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
