@@ -167,7 +167,7 @@ static int m90e3x_pm_normal_mode(const struct device *dev)
   return ret;
 }
 
-const struct m90e3x_pm_mode_ops m90e3x_pm_mode_ops = {
+const struct m90e3x_pm_mode_ops m90e3x_pm_mode = {
   .enter_idle_mode = m90e3x_pm_idle_mode,
   .enter_detection_mode = m90e3x_pm_detection_mode,
   .enter_partial_measurement_mode = m90e3x_pm_partial_measurement_mode,

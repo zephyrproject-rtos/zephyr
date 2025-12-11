@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(m90e3x_shell, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "m90e3x.h"
 
-static int cmd_m90e3x_get_power_mode(const struct shell *shell, size_t argc, char **argv)
+static int cmd_m90e3x_get_power_mode(const struct shell *m90e3x_shell, size_t argc, char **argv)
 {
   const struct device *dev;
   struct m90e3x_data *data;
@@ -22,14 +22,14 @@ static int cmd_m90e3x_get_power_mode(const struct shell *shell, size_t argc, cha
 
   if (argc != 2)
   {
-    shell_print(shell, "Usage: %s [device]", argv[0]);
+    shell_print(m90e3x_shell, "Usage: %s [device]", argv[0]);
     return -EINVAL;
   }
 
   dev = device_get_binding(argv[1]);
   if (dev == NULL)
   {
-    shell_print(shell, "Device %s not found.", argv[1]);
+    shell_print(m90e3x_shell, "Device %s not found.", argv[1]);
     return -ENODEV;
   }
 
@@ -39,26 +39,26 @@ static int cmd_m90e3x_get_power_mode(const struct shell *shell, size_t argc, cha
   switch (power_mode)
   {
   case M90E3X_IDLE:
-    shell_print(shell, "Power Mode: IDLE");
+    shell_print(m90e3x_shell, "Power Mode: IDLE");
     break;
   case M90E3X_DETECTION:
-    shell_print(shell, "Power Mode: DETECTION");
+    shell_print(m90e3x_shell, "Power Mode: DETECTION");
     break;
   case M90E3X_PARTIAL:
-    shell_print(shell, "Power Mode: PARTIAL MEASUREMENT");
+    shell_print(m90e3x_shell, "Power Mode: PARTIAL MEASUREMENT");
     break;
   case M90E3X_NORMAL:
-    shell_print(shell, "Power Mode: NORMAL");
+    shell_print(m90e3x_shell, "Power Mode: NORMAL");
     break;
   default:
-    shell_print(shell, "Power Mode: UNKNOWN");
+    shell_print(m90e3x_shell, "Power Mode: UNKNOWN");
     break;
   }
 
   return 0;
 }
 
-static int cmd_m90e3x_set_power_mode(const struct shell *shell, size_t argc, char **argv)
+static int cmd_m90e3x_set_power_mode(const struct shell *m90e3x_shell, size_t argc, char **argv)
 {
   const struct device *dev;
   struct m90e3x_config *config;
@@ -68,21 +68,21 @@ static int cmd_m90e3x_set_power_mode(const struct shell *shell, size_t argc, cha
 
   if (argc != 3)
   {
-    shell_print(shell, "Usage: %s [device] [mode]", argv[0]);
+    shell_print(m90e3x_shell, "Usage: %s [device] [mode]", argv[0]);
     return -EINVAL;
   }
 
   dev = device_get_binding(argv[1]);
   if (dev == NULL)
   {
-    shell_print(shell, "Device %s not found.", argv[1]);
+    shell_print(m90e3x_shell, "Device %s not found.", argv[1]);
     return -ENODEV;
   }
 
   mode = shell_strtol(argv[2], 10, &ret);
   if (ret < 0)
   {
-    shell_print(shell, "Invalid mode value: %s", argv[2]);
+    shell_print(m90e3x_shell, "Invalid mode value: %s", argv[2]);
     return -EINVAL;
   }
 
@@ -91,7 +91,7 @@ static int cmd_m90e3x_set_power_mode(const struct shell *shell, size_t argc, cha
 
   if (config->pm_mode_ops == NULL)
   {
-    shell_print(shell, "Power mode operations not defined for device %s.", dev->name);
+    shell_print(m90e3x_shell, "Power mode operations not defined for device %s.", dev->name);
     return -ENOTSUP;
   }
 
@@ -110,22 +110,22 @@ static int cmd_m90e3x_set_power_mode(const struct shell *shell, size_t argc, cha
     ret = config->pm_mode_ops->enter_normal_mode(dev);
     break;
   default:
-    shell_print(shell, "Invalid power mode. Valid values: 0 (IDLE), 1 (DETECTION), 2 (PARTIAL), 3 (NORMAL)");
+    shell_print(m90e3x_shell, "Invalid power mode. Valid values: 0 (IDLE), 1 (DETECTION), 2 (PARTIAL), 3 (NORMAL)");
     return -EINVAL;
   }
 
   if (ret < 0) {
-    shell_print(shell, "Failed to set power mode %d", mode);
+    shell_print(m90e3x_shell, "Failed to set power mode %d", mode);
     return ret;
   }
 
   data->current_power_mode = (enum m90e3x_power_mode)mode;
 
-  shell_print(shell, "Power mode set to %d", mode);
+  shell_print(m90e3x_shell, "Power mode set to %d", mode);
   return 0;
 }
 
-static int cmd_m90e3x_read_register(const struct shell *shell, size_t argc, char **argv)
+static int cmd_m90e3x_read_register(const struct shell *m90e3x_shell, size_t argc, char **argv)
 {
   int ret = 0;
   m90e3x_data_value_t value = {0}, mean = {0};
@@ -136,14 +136,14 @@ static int cmd_m90e3x_read_register(const struct shell *shell, size_t argc, char
 
   if (argc < 3 || argc > 4)
   {
-    shell_error(shell, "Usage: m90e3x read_register [device] [hex_register_address] <N>");
+    shell_error(m90e3x_shell, "Usage: m90e3x read_register [device] [hex_register_address] <N>");
     return -EINVAL;
   }
 
   dev = device_get_binding(argv[1]);
   if (!dev)
   {
-    shell_error(shell, "Device %s not found.", argv[1]);
+    shell_error(m90e3x_shell, "Device %s not found.", argv[1]);
     return -ENODEV;
   }
 
@@ -154,19 +154,19 @@ static int cmd_m90e3x_read_register(const struct shell *shell, size_t argc, char
     ret = config->bus_io->read(dev, reg, &value);
     if (ret < 0)
     {
-      shell_error(shell, "Error on read register from %s. [%d]", argv[1], ret);
+      shell_error(m90e3x_shell, "Error on read register from %s. [%d]", argv[1], ret);
       return ret;
     }
     mean.uint16 += value.uint16 / N;
   }
 
-  shell_print(shell, "Register: [0x%04X] | Value: [0x%04X]", reg, mean.uint16);
+  shell_print(m90e3x_shell, "Register: [0x%04X] | Value: [0x%04X]", reg, mean.uint16);
 
   return ret;
 }
 
 
-static int cmd_m90e3x_write_register(const struct shell *shell, size_t argc, char **argv)
+static int cmd_m90e3x_write_register(const struct shell *m90e3x_shell, size_t argc, char **argv)
 {
   int ret = 0;
   m90e3x_data_value_t value = {0};
@@ -176,14 +176,14 @@ static int cmd_m90e3x_write_register(const struct shell *shell, size_t argc, cha
 
   if (argc != 4)
   {
-    shell_error(shell, "Usage: m90e3x write_register [device] [hex_register_address] [hex_value]");
+    shell_error(m90e3x_shell, "Usage: m90e3x write_register [device] [hex_register_address] [hex_value]");
     return -EINVAL;
   }
 
   dev = device_get_binding(argv[1]);
   if (!dev)
   {
-    shell_error(shell, "Device %s not found.", argv[1]);
+    shell_error(m90e3x_shell, "Device %s not found.", argv[1]);
     return -ENODEV;
   }
 
@@ -194,11 +194,11 @@ static int cmd_m90e3x_write_register(const struct shell *shell, size_t argc, cha
   ret = config->bus_io->write(dev, reg, &value);
   if (ret < 0)
   {
-    shell_error(shell, "Error on write register to %s. [%d]", argv[1], ret);
+    shell_error(m90e3x_shell, "Error on write register to %s. [%d]", argv[1], ret);
     return ret;
   }
 
-  shell_print(shell, "Wrote Register: [0x%04X] | Value: [0x%04X]", reg, value.uint16);
+  shell_print(m90e3x_shell, "Wrote Register: [0x%04X] | Value: [0x%04X]", reg, value.uint16);
 
   return ret;
 }

@@ -62,6 +62,12 @@ typedef int (*m90e3x_pm_detection_mode_func)(const struct device *dev);
 typedef int (*m90e3x_pm_partial_measurement_mode_func)(const struct device *dev);
 typedef int (*m90e3x_pm_idle_mode_func)(const struct device *dev);
 
+/**
+ * @brief Structure defining the power management mode operations for M90E3X.
+ * 
+ * @note Each function pointer corresponds to a function that sets the M90E3X
+ * device into the respective power mode.
+ */
 struct m90e3x_pm_mode_ops
 {
   m90e3x_pm_idle_mode_func enter_idle_mode;
