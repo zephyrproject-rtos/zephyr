@@ -451,6 +451,9 @@ Video
   :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE` which represent the
   size in byte allocated for the whole video buffer pool.
 
+* The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
+  active level compared to before, to match the active level expected by the sensor.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
