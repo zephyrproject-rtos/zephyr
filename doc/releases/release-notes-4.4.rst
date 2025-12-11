@@ -144,6 +144,7 @@ New APIs and options
 
     * :c:func:`bt_bap_ep_get_conn`
     * :c:member:`bt_ccp_call_control_client_cb.user_data`
+    * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
 
   * Host
 
