@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 EXALT Technologies.
+ * Copyright (c) 2017 STMicroelectronics.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -180,8 +181,6 @@ SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd
 				uint32_t BlockEndAdd);
 uint32_t SDMMC_SwitchSpeed(SDMMC_HandleTypeDef *hsd, uint32_t SwitchSpeedMode);
 uint32_t SDMMC_FindSCR(SDMMC_HandleTypeDef *hsd, uint32_t *pSCR);
-SDMMC_StatusTypeDef SDMMC_DeInit(SDMMC_HandleTypeDef *hsd);
-SDMMC_StatusTypeDef SDMMC_Interface_Init(SDMMC_HandleTypeDef *hsd);
 void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd);
 SDMMC_StatusTypeDef SDMMC_LL_ConfigFrequency(SDMMC_HandleTypeDef *hsd, uint32_t ClockSpeed);
 SDMMC_StatusTypeDef SDMMC_LL_Init(SDMMC_HandleTypeDef *hsd);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 EXALT Technologies.
+ * Copyright (c) 2017 STMicroelectronics.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,6 +117,99 @@ __weak void SDMMC_Write_DMADoubleBuf1CpltCallback(SDMMC_HandleTypeDef *hsd)
 	/* NOTE : This function should not be modified, when the callback is needed,
 	 * the SDMMC_Write_DMADoubleBuf1CpltCallback can be implemented in the user file
 	 */
+}
+
+/**
+ * @brief Check and handle data transfer error flags
+ *
+ * @param hsd Pointer to SDMMC handle
+ * @return SDMMC_ERROR_NONE if no error, otherwise appropriate error code
+ */
+static uint32_t SDMMC_CheckDataErrors(SDMMC_HandleTypeDef *hsd)
+{
+	uint32_t errorcode = SDMMC_ERROR_NONE;
+
+	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
+		errorcode |= SDMMC_ERROR_DATA_TIMEOUT;
+	}
+	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
+		errorcode |= SDMMC_ERROR_DATA_CRC_FAIL;
+	}
+	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR)) {
+		errorcode |= SDMMC_ERROR_RX_OVERRUN;
+	}
+	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXUNDERR)) {
+		errorcode |= SDMMC_ERROR_TX_UNDERRUN;
+	}
+
+	return errorcode;
+}
+
+/**
+ * @brief Read multiple words from FIFO (FIFO half-full condition)
+ *
+ * @param hsd Pointer to SDMMC handle
+ * @param pBuf Pointer to destination buffer pointer (updated after read)
+ */
+static void SDMMC_ReadFIFOBlock(SDMMC_HandleTypeDef *hsd, uint8_t **pBuf)
+{
+	uint32_t data;
+
+	for (uint32_t count = 0U; count < 8U; count++) {
+		data = SDMMC_ReadFIFO(hsd->Instance);
+		*(*pBuf)++ = (uint8_t)(data & 0xFFU);
+		*(*pBuf)++ = (uint8_t)((data >> 8U) & 0xFFU);
+		*(*pBuf)++ = (uint8_t)((data >> 16U) & 0xFFU);
+		*(*pBuf)++ = (uint8_t)((data >> 24U) & 0xFFU);
+	}
+}
+
+/**
+ * @brief Write multiple words to FIFO
+ *
+ * @param hsd Pointer to SDMMC handle
+ * @param pBuf Pointer to source buffer pointer (updated after write)
+ */
+static void SDMMC_WriteFIFOBlock(SDMMC_HandleTypeDef *hsd, uint8_t **pBuf)
+{
+	uint32_t data;
+
+	for (uint32_t count = 0U; count < 8U; count++) {
+		data = (uint32_t)(*(*pBuf)++);
+		data |= ((uint32_t)(*(*pBuf)++) << 8U);
+		data |= ((uint32_t)(*(*pBuf)++) << 16U);
+		data |= ((uint32_t)(*(*pBuf)++) << 24U);
+		SDMMC_WriteFIFO(hsd->Instance, &data);
+	}
+}
+
+/**
+ * @brief Handle data transfer errors and cleanup
+ *
+ * @param hsd Pointer to SDMMC handle
+ * @param errorcode Error code to set
+ * @return SDMMC_ERROR status
+ */
+static SDMMC_StatusTypeDef SDMMC_HandleDataError(SDMMC_HandleTypeDef *hsd, uint32_t errorcode)
+{
+	__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
+	hsd->ErrorCode |= errorcode;
+	hsd->State = SDMMC_STATE_READY;
+	return SDMMC_ERROR;
+}
+
+/**
+ * @brief Disable all data transfer interrupts
+ *
+ * @param hsd Pointer to SDMMC handle
+ */
+static inline void SDMMC_DisableDataInterrupts(SDMMC_HandleTypeDef *hsd)
+{
+	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
+					  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
+					  SDMMC_IT_RXOVERR | SDMMC_IT_TXFIFOHE |
+					  SDMMC_IT_RXFIFOHF);
+	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_IDMABTC);
 }
 
 SDMMC_StatusTypeDef SDMMC_Erase(SDMMC_HandleTypeDef *hsd, uint32_t BlockStartAdd,
@@ -412,27 +506,6 @@ SDMMC_CardStateTypeDef SDMMC_GetCardState(SDMMC_HandleTypeDef *hsd)
 	return (SDMMC_CardStateTypeDef)cardstate;
 }
 
-SDMMC_StatusTypeDef SDMMC_DeInit(SDMMC_HandleTypeDef *hsd)
-{
-	/* Check the SD handle allocation */
-	if (hsd == NULL) {
-		return SDMMC_ERROR;
-	}
-
-	/* Check the parameters */
-	assert_param(IS_SDMMC_ALL_INSTANCE(hsd->Instance));
-
-	hsd->State = SDMMC_STATE_BUSY;
-
-	/* Set SD power state to off */
-	(void)SDMMC_PowerState_OFF(hsd->Instance);
-
-	hsd->ErrorCode = SDMMC_ERROR_NONE;
-	hsd->State = SDMMC_STATE_RESET;
-
-	return SDMMC_OK;
-}
-
 /**
  * @brief  Reads block(s) from a specified address in a card. The Data transfer
  *         is managed by polling mode.
@@ -449,8 +522,6 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
 	uint32_t tickstart = HAL_GetTick();
-	uint32_t count;
-	uint32_t data;
 	uint32_t dataremaining;
 	uint32_t add = BlockAdd;
 	uint8_t *tempbuff = pData;
@@ -516,17 +587,7 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
 			if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF) &&
 			    (dataremaining >= SDMMC_FIFO_SIZE)) {
 				/* Read data from SDMMC Rx FIFO */
-				for (count = 0U; count < (SDMMC_FIFO_SIZE / 4U); count++) {
-					data = SDMMC_ReadFIFO(hsd->Instance);
-					*tempbuff = (uint8_t)(data & 0xFFU);
-					tempbuff++;
-					*tempbuff = (uint8_t)((data >> 8U) & 0xFFU);
-					tempbuff++;
-					*tempbuff = (uint8_t)((data >> 16U) & 0xFFU);
-					tempbuff++;
-					*tempbuff = (uint8_t)((data >> 24U) & 0xFFU);
-					tempbuff++;
-				}
+				SDMMC_ReadFIFOBlock(hsd, &tempbuff);
 				dataremaining -= SDMMC_FIFO_SIZE;
 			}
 
@@ -557,28 +618,11 @@ SDMMC_StatusTypeDef SDMMC_ReadBlocks(SDMMC_HandleTypeDef *hsd, uint8_t *pData, u
 			}
 		}
 
-		/* Get error state */
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
-			hsd->State = SDMMC_STATE_READY;
+		/* Check for data transfer errors */
+		errorstate = SDMMC_CheckDataErrors(hsd);
+		if (errorstate != SDMMC_ERROR_NONE) {
 			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_ERROR;
-		} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
-			hsd->State = SDMMC_STATE_READY;
-			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_ERROR;
-		} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-			hsd->ErrorCode |= SDMMC_ERROR_RX_OVERRUN;
-			hsd->State = SDMMC_STATE_READY;
-			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_ERROR;
+			return SDMMC_HandleDataError(hsd, errorstate);
 		}
 
 		/* Clear all the static flags */
@@ -608,11 +652,9 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
 	uint32_t tickstart = HAL_GetTick();
-	uint32_t count;
-	uint32_t data;
 	uint32_t dataremaining;
 	uint32_t add = BlockAdd;
-	const uint8_t *tempbuff = pData;
+	uint8_t *tempbuff = (uint8_t *)pData;
 
 	if (NULL == pData) {
 		hsd->ErrorCode |= SDMMC_ERROR_INVALID_PARAMETER;
@@ -675,17 +717,7 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
 			if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXFIFOHE) &&
 			    (dataremaining >= SDMMC_FIFO_SIZE)) {
 				/* Write data to SDMMC Tx FIFO */
-				for (count = 0U; count < (SDMMC_FIFO_SIZE / 4U); count++) {
-					data = (uint32_t)(*tempbuff);
-					tempbuff++;
-					data |= ((uint32_t)(*tempbuff) << 8U);
-					tempbuff++;
-					data |= ((uint32_t)(*tempbuff) << 16U);
-					tempbuff++;
-					data |= ((uint32_t)(*tempbuff) << 24U);
-					tempbuff++;
-					(void)SDMMC_WriteFIFO(hsd->Instance, &data);
-				}
+				SDMMC_WriteFIFOBlock(hsd, &tempbuff);
 				dataremaining -= SDMMC_FIFO_SIZE;
 			}
 
@@ -716,28 +748,11 @@ SDMMC_StatusTypeDef SDMMC_WriteBlocks(SDMMC_HandleTypeDef *hsd, const uint8_t *p
 			}
 		}
 
-		/* Get error state */
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
-			hsd->State = SDMMC_STATE_READY;
+		/* Check for data transfer errors */
+		errorstate = SDMMC_CheckDataErrors(hsd);
+		if (errorstate != SDMMC_ERROR_NONE) {
 			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_ERROR;
-		} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
-			hsd->State = SDMMC_STATE_READY;
-			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_ERROR;
-		} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXUNDERR)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-			hsd->ErrorCode |= SDMMC_ERROR_TX_UNDERRUN;
-			hsd->State = SDMMC_STATE_READY;
-			hsd->Context = SDMMC_CONTEXT_NONE;
-			return SDMMC_ERROR;
+			return SDMMC_HandleDataError(hsd, errorstate);
 		}
 
 		/* Clear all the static flags */
@@ -1013,12 +1028,8 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DATAEND) != RESET) {
 		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DATAEND);
 
-		__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
-							  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
-							  SDMMC_IT_RXOVERR | SDMMC_IT_TXFIFOHE |
-							  SDMMC_IT_RXFIFOHF);
-
-		__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_IDMABTC);
+		/* Disable all data transfer interrupts */
+		SDMMC_DisableDataInterrupts(hsd);
 		__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
 		if ((context & SDMMC_CONTEXT_IT) != 0U) {
@@ -1077,26 +1088,13 @@ void SDMMC_IRQHandler(SDMMC_HandleTypeDef *hsd)
 							   SDMMC_FLAG_RXOVERR |
 							   SDMMC_FLAG_TXUNDERR) != RESET) {
 		/* Set Error code */
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_IT_DCRCFAIL) != RESET) {
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
-		}
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_IT_DTIMEOUT) != RESET) {
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
-		}
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_IT_RXOVERR) != RESET) {
-			hsd->ErrorCode |= SDMMC_ERROR_RX_OVERRUN;
-		}
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_IT_TXUNDERR) != RESET) {
-			hsd->ErrorCode |= SDMMC_ERROR_TX_UNDERRUN;
-		}
+		hsd->ErrorCode |= SDMMC_CheckDataErrors(hsd);
 
 		/* Clear All flags */
 		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_DATA_FLAGS);
 
 		/* Disable all interrupts */
-		__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
-							  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
-							  SDMMC_IT_RXOVERR);
+		SDMMC_DisableDataInterrupts(hsd);
 
 		__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 		hsd->Instance->DCTRL |= SDMMC_DCTRL_FIFORST;
@@ -1598,7 +1596,6 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
 	SDMMC_DataInitTypeDef config;
 	uint32_t errorstate;
 	uint32_t tickstart = k_uptime_get_32();
-	uint32_t regCount;
 	uint8_t byteCount;
 	uint32_t data;
 	uint32_t dataremaining;
@@ -1683,17 +1680,7 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
 		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF) &&
 		    (dataremaining >= 32U)) {
 			/* Read 32 bytes from FIFO (8 x 4-byte words) */
-			for (regCount = 0U; regCount < 8U; regCount++) {
-				data = SDMMC_ReadFIFO(hsd->Instance);
-				*tempbuff = (uint8_t)(data & 0xFFU);
-				tempbuff++;
-				*tempbuff = (uint8_t)((data >> 8U) & 0xFFU);
-				tempbuff++;
-				*tempbuff = (uint8_t)((data >> 16U) & 0xFFU);
-				tempbuff++;
-				*tempbuff = (uint8_t)((data >> 24U) & 0xFFU);
-				tempbuff++;
-			}
+			SDMMC_ReadFIFOBlock(hsd, &tempbuff);
 			dataremaining -= 32U;
 		} else if (dataremaining < 32U) {
 			/* Read remaining bytes */
@@ -1722,22 +1709,10 @@ SDMMC_StatusTypeDef SDIO_LL_ReadExtended(SDMMC_HandleTypeDef *hsd,
 
 	__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
-	/* Check for errors */
-	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-		hsd->ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
-		hsd->State = SDMMC_STATE_READY;
-		return SDMMC_ERROR;
-	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-		hsd->ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
-		hsd->State = SDMMC_STATE_READY;
-		return SDMMC_ERROR;
-	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR)) {
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-		hsd->ErrorCode |= SDMMC_ERROR_RX_OVERRUN;
-		hsd->State = SDMMC_STATE_READY;
-		return SDMMC_ERROR;
+	/* Check for data transfer errors */
+	errorstate = SDMMC_CheckDataErrors(hsd);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return SDMMC_HandleDataError(hsd, errorstate);
 	}
 
 	/* Clear all static data flags */
@@ -1887,22 +1862,10 @@ SDMMC_StatusTypeDef SDIO_LL_WriteExtended(SDMMC_HandleTypeDef *hsd,
 
 	__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
-	/* Check for errors */
-	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-		hsd->ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
-		hsd->State = SDMMC_STATE_READY;
-		return SDMMC_ERROR;
-	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-		hsd->ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
-		hsd->State = SDMMC_STATE_READY;
-		return SDMMC_ERROR;
-	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXUNDERR)) {
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_FLAGS);
-		hsd->ErrorCode |= SDMMC_ERROR_TX_UNDERRUN;
-		hsd->State = SDMMC_STATE_READY;
-		return SDMMC_ERROR;
+	/* Check for data transfer errors */
+	errorstate = SDMMC_CheckDataErrors(hsd);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return SDMMC_HandleDataError(hsd, errorstate);
 	}
 
 	/* Clear all static data flags */
@@ -2178,6 +2141,7 @@ SDMMC_StatusTypeDef SDIO_LL_CardReset(SDMMC_HandleTypeDef *hsd)
 void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
 {
 	uint32_t flags;
+	uint32_t errorcode;
 
 	if (hsd == NULL) {
 		return;
@@ -2193,12 +2157,7 @@ void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
 		hsd->State = SDMMC_STATE_READY;
 
 		/* Disable all data transfer interrupts */
-		__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
-							  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
-							  SDMMC_IT_RXOVERR | SDMMC_IT_TXFIFOHE |
-							  SDMMC_IT_RXFIFOHF);
-
-		__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_IDMABTC);
+		SDMMC_DisableDataInterrupts(hsd);
 		__SDMMC_CMDTRANS_DISABLE(hsd->Instance);
 
 		/* If DMA was used, clean up DMA configuration */
@@ -2216,30 +2175,16 @@ void SDIO_IRQHandler(SDMMC_HandleTypeDef *hsd)
 	}
 
 	/* Check for errors */
-	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
-						    SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)) {
-		/* Update error code based on flags */
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_CRC_FAIL;
-		}
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
-			hsd->ErrorCode |= SDMMC_ERROR_DATA_TIMEOUT;
-		}
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR)) {
-			hsd->ErrorCode |= SDMMC_ERROR_RX_OVERRUN;
-		}
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_TXUNDERR)) {
-			hsd->ErrorCode |= SDMMC_ERROR_TX_UNDERRUN;
-		}
+	errorcode = SDMMC_CheckDataErrors(hsd);
+	if (errorcode != SDMMC_ERROR_NONE) {
+		hsd->ErrorCode |= errorcode;
 
 		/* Clear error flags */
 		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 							  SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR);
 
 		/* Disable interrupts */
-		__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
-							  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
-							  SDMMC_IT_RXOVERR);
+		SDMMC_DisableDataInterrupts(hsd);
 
 		hsd->State = SDMMC_STATE_READY;
 

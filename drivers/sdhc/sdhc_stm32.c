@@ -236,6 +236,10 @@ static void sdhc_stm32_log_err_type(SDMMC_HandleTypeDef *hsd)
 {
 	uint32_t error_code = SDMMC_LL_GetError(hsd);
 
+	if (error_code == SDMMC_ERROR_NONE) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_SDMMC_STACK)) {
 		sdhc_stm32_log_sdmmc_err_type(error_code);
 	}
