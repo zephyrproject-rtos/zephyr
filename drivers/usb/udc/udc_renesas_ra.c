@@ -356,8 +356,7 @@ static int udc_renesas_ra_ep_dequeue(const struct device *dev, struct udc_ep_con
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(cfg);
-	if (buf != NULL) {
+	while ((buf = udc_buf_get(cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 

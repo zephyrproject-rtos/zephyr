@@ -1489,8 +1489,7 @@ static int udc_numaker_ep_dequeue(const struct device *dev, struct udc_ep_config
 
 	numaker_usbd_ep_abort(ep_cur);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(ep_cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 

@@ -650,8 +650,7 @@ static int udc_smartbond_ep_dequeue(const struct device *dev, struct udc_ep_conf
 
 	udc_smartbond_ep_abort(dev, ep_cfg);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(ep_cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
@@ -1170,12 +1169,11 @@ static void empty_ep0_queues(const struct device *dev)
 	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 
-	buf = udc_buf_get_all(cfg_out);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg_out))) {
 		net_buf_unref(buf);
 	}
-	buf = udc_buf_get_all(cfg_in);
-	if (buf) {
+
+	while ((buf = udc_buf_get(cfg_in))) {
 		net_buf_unref(buf);
 	}
 }

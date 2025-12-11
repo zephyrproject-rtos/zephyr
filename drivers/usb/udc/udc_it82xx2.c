@@ -503,8 +503,7 @@ static int it82xx2_ep_dequeue(const struct device *dev, struct udc_ep_config *co
 	}
 	irq_unlock(lock_key);
 
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 

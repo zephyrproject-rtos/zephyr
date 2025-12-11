@@ -324,15 +324,15 @@ static int sam0_ctrl_feed_dout(const struct device *dev, const size_t length)
 
 static void drop_control_transfers(const struct device *dev)
 {
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
+	while ((buf = udc_buf_get(cfg_out))) {
 		net_buf_unref(buf);
 	}
 
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
+	while ((buf = udc_buf_get(cfg_in))) {
 		net_buf_unref(buf);
 	}
 }
@@ -762,11 +762,11 @@ static int udc_sam0_ep_dequeue(const struct device *dev, struct udc_ep_config *c
 		endpoint->EPSTATUSSET.bit.BK0RDY = 1;
 	}
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(ep_cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-		udc_ep_set_busy(ep_cfg, false);
 	}
+
+	udc_ep_set_busy(ep_cfg, false);
 
 	irq_unlock(lock_key);
 

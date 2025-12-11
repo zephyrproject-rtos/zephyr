@@ -90,19 +90,6 @@ void udc_ep_set_busy(struct udc_ep_config *const ep_cfg,
 struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg);
 
 /**
- * @brief Get all UDC request from endpoint FIFO.
- *
- * Get all UDC request from endpoint FIFO as single-linked list.
- * This function removes all request from endpoint FIFO and
- * is typically used to dequeue endpoint FIFO.
- *
- * @param[in] ep_cfg Pointer to endpoint configuration
- *
- * @return pointer to UDC request or NULL on error.
- */
-struct net_buf *udc_buf_get_all(struct udc_ep_config *const ep_cfg);
-
-/**
  * @brief Peek request at the head of endpoint FIFO.
  *
  * Return request from the head of endpoint FIFO without removing.

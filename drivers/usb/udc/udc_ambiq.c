@@ -297,8 +297,7 @@ static int udc_ambiq_ep_dequeue(const struct device *dev, struct udc_ep_config *
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(ep_cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
