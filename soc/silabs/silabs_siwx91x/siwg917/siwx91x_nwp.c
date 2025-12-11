@@ -343,7 +343,7 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 {
 	const struct siwx91x_nwp_config *config = dev->config;
 	sl_wifi_device_configuration_t default_config = {
-		.region_code = siwx91x_map_country_code_to_region(DEFAULT_COUNTRY_CODE),
+		.region_code = siwx91x_map_country_code_to_region(siwx91x_get_country_code(dev)),
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
@@ -374,7 +374,6 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS)) {
 		boot_config->feature_bit_map |= SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS;
 	}
-	siwx91x_store_country_code(dev, DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
 	siwx91x_apply_boot_config(dev, boot_config);
 
