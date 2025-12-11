@@ -107,6 +107,12 @@
 	pinctrl-names = "default";
 };
 
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_cmp0>;
+	pinctrl-names = "default";
+};
+
 &cpu0 {
 	clock-frequency = <80000000>;
 };
