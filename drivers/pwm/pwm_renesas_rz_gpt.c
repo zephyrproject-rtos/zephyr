@@ -324,6 +324,11 @@ static int pwm_rz_gpt_configure_capture(const struct device *dev, uint32_t chann
 		} else if (channel == RZ_PWM_GPT_IO_B) {
 			fsp_cfg_extend->stop_source = fsp_cfg_extend->capture_b_source;
 		}
+
+		if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
+			fsp_cfg_extend->stop_source = (gpt_source_t)(GPT_SOURCE_NONE);
+		}
+
 		fsp_cfg_extend->clear_source = fsp_cfg_extend->start_source;
 	}
 
@@ -606,6 +611,48 @@ static void pwm_rz_gpt_ovf_isr(const struct device *dev)
 	gpt_counter_overflow_isr();
 }
 
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
+
+#ifdef CONFIG_CPU_CORTEX_M33
+#define RZ_INTM33SEL_ADDR_OFFSET 0x200
+#define RZ_INTC_INTSEL_BASE      RZ_INTC_BASE + RZ_INTM33SEL_ADDR_OFFSET
+#else /* CONFIG_CPU_CORTEX_R8 */
+#define RZ_INTR8SEL_ADDR_OFFSET 0x140
+#define RZ_INTC_INTSEL_BASE     RZ_INTC_BASE + RZ_INTR8SEL_ADDR_OFFSET
+#endif
+
+#define OFFSET(y)                   ((y) - 353 - COND_CODE_1(CONFIG_GIC, (GIC_SPI_INT_BASE), (0)))
+#define REG_INTSEL_READ(y)          sys_read32(RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_WRITE(y, v)      sys_write32((v), RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_SPIk_SEL_MASK(y) (BIT_MASK(10) << ((OFFSET(y) % 3) * 10))
+
+/**
+ * @brief Connect an @p irq number with an @p event
+ */
+static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
+{
+	uint32_t reg_val = REG_INTSEL_READ(irq);
+
+	reg_val &= ~REG_INTSEL_SPIk_SEL_MASK(irq);
+	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
+	REG_INTSEL_WRITE(irq, reg_val);
+}
+
+#define PWM_RZ_CONNECT_IRQ_SELECT(inst)                                                            \
+	do {                                                                                       \
+		intc_connect_irq_event(DT_IRQ_BY_NAME(GPT(inst), ccmpa, irq),                      \
+				       CONCAT(GPT, DT_PROP(GPT(inst), channel), _CCMPA_IRQSELn));  \
+		intc_connect_irq_event(DT_IRQ_BY_NAME(GPT(inst), ccmpb, irq),                      \
+				       CONCAT(GPT, DT_PROP(GPT(inst), channel), _CCMPB_IRQSELn));  \
+		intc_connect_irq_event(DT_IRQ_BY_NAME(GPT(inst), ovf, irq),                        \
+				       CONCAT(GPT, DT_PROP(GPT(inst), channel), _OVF_IRQSELn));    \
+	} while (0)
+
+#else
+#define PWM_RZ_CONNECT_IRQ_SELECT(inst)
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+
 #ifdef CONFIG_CPU_CORTEX_M
 #define GPT_GET_IRQ_FLAGS(idx, irq_name) 0
 #else /* Cortex-A/R */
@@ -614,6 +661,7 @@ static void pwm_rz_gpt_ovf_isr(const struct device *dev)
 
 #define PWM_RZ_IRQ_CONFIG_INIT(inst)                                                               \
 	do {                                                                                       \
+		PWM_RZ_CONNECT_IRQ_SELECT(inst);                                                   \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(GPT(inst), ccmpa, irq),                                 \
 			    DT_IRQ_BY_NAME(GPT(inst), ccmpa, priority), pwm_rz_gpt_ccmpa_isr,      \
 			    DEVICE_DT_INST_GET(inst), GPT_GET_IRQ_FLAGS(inst, ccmpa));             \
