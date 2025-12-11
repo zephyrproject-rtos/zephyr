@@ -24,6 +24,7 @@
 
 #include "common/bt_settings_commit.h"
 #include "common/bt_str.h"
+#include "common/assert.h"
 #include "hci_core.h"
 #include "settings.h"
 #include "sys/types.h"
@@ -75,45 +76,51 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 {
 	size_t len = 3;
 
-	/* Skip if path_size is less than 3; strlen("bt/") */
+	/* path_size is less than 3; strlen("bt/") */
+	BT_ASSERT(path_size >= len);
+
+	/* Key format:
+	 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
+	 */
+	strcpy(path, "bt/");
+
+	/* Concatenate subsys as much the free space permits */
+	strncpy(&path[len], subsys, (path_size - len));
+
+	/* Postfix '/' if there is free space */
+	len = strlen(path);
 	if (len < path_size) {
-		/* Key format:
-		 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
+		path[len] = '/';
+		len++;
+	}
+
+	/* Concatenate addr as much the free space permits */
+	for (int8_t i = 5; i >= 0 && len < path_size; i--) {
+		len += bin2hex(&addr->a.val[i], 1, &path[len],
+			       path_size - len);
+	}
+
+	/* Postfix addr type if there is free space */
+	if (len < path_size) {
+		/* Type can be either BT_ADDR_LE_PUBLIC or
+		 * BT_ADDR_LE_RANDOM (value 0 or 1)
 		 */
-		strcpy(path, "bt/");
-		strncpy(&path[len], subsys, path_size - len);
-		len = strlen(path);
-		if (len < path_size) {
-			path[len] = '/';
-			len++;
-		}
+		path[len] = '0' + addr->type;
+		len++;
+	}
 
-		for (int8_t i = 5; i >= 0 && len < path_size; i--) {
-			len += bin2hex(&addr->a.val[i], 1, &path[len],
-				       path_size - len);
-		}
+	/* Postfix '/' and concatenate key as much the free space permits */
+	if ((key != NULL) && (len < path_size)) {
+		path[len] = '/';
+		len++;
+		strncpy(&path[len], key, path_size - len);
+		len += strlen(&path[len]);
+	}
 
-		if (len < path_size) {
-			/* Type can be either BT_ADDR_LE_PUBLIC or
-			 * BT_ADDR_LE_RANDOM (value 0 or 1)
-			 */
-			path[len] = '0' + addr->type;
-			len++;
-		}
-
-		if (key && len < path_size) {
-			path[len] = '/';
-			len++;
-			strncpy(&path[len], key, path_size - len);
-			len += strlen(&path[len]);
-		}
-
-		if (len >= path_size) {
-			/* Truncate string */
-			path[path_size - 1] = '\0';
-		}
-	} else if (path_size > 0) {
-		*path = '\0';
+	/* If path string is full, always null terminate at path_size */
+	if (len >= path_size) {
+		/* Truncate string */
+		path[path_size - 1] = '\0';
 	}
 
 	LOG_DBG("Encoded path %s", path);
@@ -125,26 +132,22 @@ static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const ch
 {
 	size_t len = 3;
 
-	/* Skip if path_size is less than 3; strlen("bt/") */
-	if (len < path_size) {
-		/* Key format:
-		 *  "bt/<key>", "/<key>" is optional
-		 */
-		strcpy(path, "bt/");
+	/* path_size is less than 3; strlen("bt/") */
+	BT_ASSERT(path_size >= len);
 
-		/* Concatenate key as much the free space permits */
-		strncpy(&path[len], key, path_size - len);
-		len = strlen(path);
+	/* Key format:
+	 *  "bt/<key>"
+	 */
+	strcpy(path, "bt/");
 
-		/* If path string is full, always null terminate at path_size */
-		if (len >= path_size) {
-			/* Truncate string */
-			path[path_size - 1] = '\0';
-		}
+	/* Concatenate key as much the free space permits */
+	strncpy(&path[len], key, path_size - len);
+	len = strlen(path);
 
-	} else if (path_size > 0) {
-		/* path_size not sufficient for "bt/" */
-		*path = '\0';
+	/* If path string is full, always null terminate at path_size */
+	if (len >= path_size) {
+		/* Truncate string */
+		path[path_size - 1] = '\0';
 	}
 
 	LOG_DBG("Encoded path %s", path);
@@ -375,10 +378,11 @@ int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, con
 		      size_t val_len)
 {
 	char key_str[BT_SETTINGS_KEY_MAX];
-	char id_str[4];
 	int err;
 
 	if (addr) {
+		char id_str[4];
+
 		if (id) {
 			u8_to_dec(id_str, sizeof(id_str), id);
 		}
@@ -403,10 +407,11 @@ int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, con
 int bt_settings_delete(const char *key, uint8_t id, const bt_addr_le_t *addr)
 {
 	char key_str[BT_SETTINGS_KEY_MAX];
-	char id_str[4];
 	int err;
 
 	if (addr) {
+		char id_str[4];
+
 		if (id) {
 			u8_to_dec(id_str, sizeof(id_str), id);
 		}
