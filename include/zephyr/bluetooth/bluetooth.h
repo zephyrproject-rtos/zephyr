@@ -84,12 +84,19 @@ extern "C" {
 			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
 		(0U)))
 
+/** Bluetooth Device Name */
+#define BT_DEVICE_NAME		COND_CODE_1(CONFIG_BT_HCI_HOST,				        \
+					    (COND_CODE_1(CONFIG_BT_DEVICE_NAME_DYNAMIC,	        \
+						((const uint8_t *)bt_get_name()),	        \
+						((const uint8_t *)CONFIG_BT_DEVICE_NAME))),     \
+					    (""))
+
 /** Length of the Bluetooth Device Name (excluding NULL termination). */
-#if defined(CONFIG_BT_DEVICE_NAME)
-#define BT_DEVICE_NAME_LEN      (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
-#else
-#define BT_DEVICE_NAME_LEN      0
-#endif /* CONFIG_BT_DEVICE_NAME */
+#define BT_DEVICE_NAME_LEN	COND_CODE_1(CONFIG_BT_HCI_HOST,				        \
+					    (COND_CODE_1(CONFIG_BT_DEVICE_NAME_DYNAMIC,	        \
+						(strlen(bt_get_name())),		        \
+						(sizeof(CONFIG_BT_DEVICE_NAME) - 1))),	        \
+					    (0U))
 
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;

@@ -26,9 +26,6 @@
 #include "bs_tracing.h"
 #include "commands.h"
 
-#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN		BT_DEVICE_NAME_LEN
-
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
@@ -40,14 +37,13 @@ static const struct bt_data ad[] = {
 		      0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static int service_set;
 
 static int start_advertising(void)
 {
+	struct bt_data sd[] = {
+		BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
+	};
 	int err;
 
 	err = bt_le_adv_start(BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_USE_IDENTITY,

@@ -10,9 +10,6 @@
 
 #include <zephyr/ztest.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
-
 #define TIMEOUT_MS 300000 /* 5 minutes */
 
 static const struct bt_data ad[] = {
@@ -21,7 +18,7 @@ static const struct bt_data ad[] = {
 
 /* Set Scan Response data */
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+	BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 };
 
 ZTEST_SUITE(adv_tests, NULL, NULL, NULL, NULL, NULL);

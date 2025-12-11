@@ -607,7 +607,7 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 		base_ad[0].data = ad_buf.data;
 		base_ad[1].type = BT_DATA_NAME_COMPLETE;
 		base_ad[1].data_len = BT_DEVICE_NAME_LEN;
-		base_ad[1].data = CONFIG_BT_DEVICE_NAME;
+		base_ad[1].data = BT_DEVICE_NAME;
 
 		err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY,
 						     base_ad, 2, NULL, 0, gap_settings,

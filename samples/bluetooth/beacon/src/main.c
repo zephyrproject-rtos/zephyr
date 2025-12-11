@@ -14,9 +14,6 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
-
 /*
  * Set Advertisement data. Based on the Eddystone specification:
  * https://github.com/google/eddystone/blob/master/protocol-specification.md
@@ -37,7 +34,7 @@ static const struct bt_data ad[] = {
 
 /* Set Scan Response data */
 static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+	BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 };
 
 static void bt_ready(int err)

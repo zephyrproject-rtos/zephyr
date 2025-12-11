@@ -17,15 +17,12 @@
 
 #include <zephyr/bluetooth/services/ots.h>
 
-#define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN  BT_DEVICE_NAME_LEN
-
 #define OBJ_POOL_SIZE CONFIG_BT_OTS_MAX_OBJ_CNT
 #define OBJ_MAX_SIZE  100
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+	BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 };
 
 static const struct bt_data sd[] = {

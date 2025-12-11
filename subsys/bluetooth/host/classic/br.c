@@ -902,7 +902,7 @@ int bt_br_init(void)
 	}
 
 	name_cp = net_buf_add(buf, sizeof(*name_cp));
-	strncpy((char *)name_cp->local_name, CONFIG_BT_DEVICE_NAME, sizeof(name_cp->local_name));
+	strncpy((char *)name_cp->local_name, BT_DEVICE_NAME, sizeof(name_cp->local_name));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
 	if (err) {

@@ -23,10 +23,6 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
-};
-
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
@@ -157,6 +153,10 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 
 static void bt_ready(int err)
 {
+	struct bt_data sd[] = {
+		BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
+	};
+
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;

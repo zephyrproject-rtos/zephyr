@@ -13,9 +13,6 @@
 BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HAS_HCI_VS),
 	     "This app requires Zephyr-specific HCI vendor extensions");
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LENGTH BT_DEVICE_NAME_LEN
-
 /* Advertising Interval: the longer, the less energy consumption.
  * Units: 0.625 milliseconds.
  * The Minimum Advertising Interval and Maximum Advertising Interval should not be the same value
@@ -36,7 +33,7 @@ static const struct bt_le_adv_param parameters = {
 
 static const struct bt_data adv_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LENGTH),
+	BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LENGTH),
 };
 
 static const struct bt_data scan_rsp_data[] = {
@@ -113,7 +110,7 @@ static int start_advertising(void)
 		return err;
 	}
 
-	printk("Advertising successfully started (%s)\n", CONFIG_BT_DEVICE_NAME);
+	printk("Advertising successfully started (%s)\n", BT_DEVICE_NAME);
 
 	return 0;
 }

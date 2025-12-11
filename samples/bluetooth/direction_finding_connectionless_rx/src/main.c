@@ -18,8 +18,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
 
-#define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 #define NAME_LEN        30
 #define PEER_NAME_LEN_MAX 30
 /* BT Core 5.3 Vol 6, Part B section 4.4.5.1 Periodic Advertising Trains allows controller to wait

@@ -47,8 +47,6 @@ static const struct bt_uuid_128 led_char_uuid = BT_UUID_INIT_128(
 static const struct bt_uuid_128 but_notif_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x0000fe42, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN BT_DEVICE_NAME_LEN
 #define ADV_LEN 12
 
 /* Advertising data */
@@ -69,7 +67,7 @@ static uint8_t manuf_data[ADV_LEN] = {
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+	BT_DATA(BT_DATA_NAME_COMPLETE, BT_DEVICE_NAME, BT_DEVICE_NAME_LEN),
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, manuf_data, ADV_LEN)
 };
 

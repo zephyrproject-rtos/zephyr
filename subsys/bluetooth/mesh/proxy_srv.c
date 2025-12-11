@@ -523,8 +523,8 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
 		sd[0].type = BT_DATA_NAME_COMPLETE;
-		sd[0].data_len = BT_MESH_DEVICE_NAME_LEN;
-		sd[0].data = BT_MESH_DEVICE_NAME;
+		sd[0].data_len = BT_DEVICE_NAME_LEN;
+		sd[0].data = BT_DEVICE_NAME;
 	}
 
 	err = bt_mesh_adv_gatt_start(
@@ -618,8 +618,8 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
 		sd[0].type = BT_DATA_NAME_COMPLETE;
-		sd[0].data_len = BT_MESH_DEVICE_NAME_LEN;
-		sd[0].data = BT_MESH_DEVICE_NAME;
+		sd[0].data_len = BT_DEVICE_NAME_LEN;
+		sd[0].data = BT_DEVICE_NAME;
 	}
 
 	err = bt_mesh_adv_gatt_start(&slow_adv_param, duration, net_id_ad,
