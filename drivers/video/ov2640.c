@@ -1026,9 +1026,8 @@ static int ov2640_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_pin_set_dt(&cfg->reset_gpio, 0);
 	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&cfg->reset_gpio, 1);
+	gpio_pin_set_dt(&cfg->reset_gpio, 0);
 	k_sleep(K_MSEC(1));
 #endif
 
