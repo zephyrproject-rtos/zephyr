@@ -213,9 +213,41 @@ static int adc_sf32lb_read(const struct device *dev, const struct adc_sequence *
 	return error;
 }
 
+static int adc_sf32lb_read_async(const struct device *dev,
+				 const struct adc_sequence *sequence,
+				 struct k_poll_signal *async)
+{
+	struct adc_sf32lb_data *data = dev->data;
+	int error;
+
+	if (sequence->resolution != 12U) {
+		LOG_ERR("Resolution %d is not supported", sequence->resolution);
+		return -ENOTSUP;
+	}
+
+	if (sequence->oversampling) {
+		LOG_ERR("Oversampling is not supported");
+		return -ENOTSUP;
+	}
+
+	if (sequence->calibrate) {
+		LOG_ERR("Calibration is not supported");
+		return -ENOTSUP;
+	}
+
+	adc_context_lock(&data->ctx, true, async);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
+}
+
 static DEVICE_API(adc, adc_sf32lb_driver_api) = {
 	.channel_setup = adc_sf32lb_channel_setup,
 	.read = adc_sf32lb_read,
+#ifdef CONFIG_ADC_ASYNC
+	.read_async = adc_sf32lb_read_async,
+#endif
 	.ref_internal = ADC_SF32LB_DEFAULT_VREF_INTERNAL,
 };
 
