@@ -53,8 +53,10 @@ The board revision selects the OpenTitan hardware version:
        ``Earlgrey-M2.5.x`` releases
 
 Revision ``0.0.0`` has an older AON timer register map, a different watchdog
-bark interrupt ID and fewer PLIC interrupt sources. To build for it, use
-``opentitan_earlgrey@0.0.0`` as the board.
+bark interrupt ID and fewer PLIC interrupt sources. Its I2C controllers are
+disabled because the I2C driver supports only I2C IP version 2.0.0, and this
+revision has version 1.0. To build for it, use ``opentitan_earlgrey@0.0.0`` as
+the board.
 
 Building and Flashing
 =====================
