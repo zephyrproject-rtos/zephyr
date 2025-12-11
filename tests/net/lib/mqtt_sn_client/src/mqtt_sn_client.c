@@ -324,8 +324,40 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_gw)
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
 }
 
-/* Test send SEARCHGW and peer response */
-static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer)
+/* Test send SEARCHGW and expect GWINFO response from a gateway */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer_direct)
+{
+	int err;
+	static uint8_t gwinfo[3];
+
+	gwinfo[0] = 3;
+	gwinfo[1] = 0x02;
+	gwinfo[2] = gw_id;
+
+	err = mqtt_sn_client_init(mqtt_client, &client_id, &transport, evt_cb, tx, sizeof(tx), rx,
+				  sizeof(rx));
+	zassert_equal(err, 0, "unexpected error %d", err);
+
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+	err = mqtt_sn_search(mqtt_client, 1);
+	zassert_equal(err, 0, "unexpected error %d", err);
+
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+
+	assert_msg_send(1, 3, NULL);
+	zassert_equal(mqtt_client->state, 0, "Wrong state");
+	zassert_equal(evt_cb_data.called, 0, "Unexpected event");
+
+	err = input(mqtt_client, gwinfo, sizeof(gwinfo), &gw_addr);
+	zassert_equal(err, 0, "unexpected error %d", err);
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
+	zassert_equal(evt_cb_data.called, 1, "NO event");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
+}
+
+/* Test send SEARCHGW and expect GWINFO response from another client */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer_indirect)
 {
 	int err;
 	static uint8_t gwinfo[3 + 3];
