@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +24,7 @@ extern "C" {
  */
 
 /** Number of endpoints. */
-#define NUM_ENDPOINTS	CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
+#define NUM_ENDPOINTS	CONFIG_IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
 
 struct ipc_rpmsg_ept;
 
