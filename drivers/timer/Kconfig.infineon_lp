@@ -5,13 +5,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config INFINEON_CAT1_LP_TIMER
+config INFINEON_LP_TIMER_HAL
 	bool "Infineon CAT1 Low Power Timer driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_LP_TIMER_ENABLED
+	depends on DT_HAS_INFINEON_LP_TIMER_ENABLED
+	depends on USE_INFINEON_LEGACY_HAL
 	depends on PM
 	select USE_INFINEON_LPTIMER
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the LowPower Timer
+	  and provides the standard "system clock driver" interfaces.  This implementation
+	  is based on the Infineon Legacy HAL.
+
+config INFINEON_LP_TIMER_PDL
+	bool "Infineon CAT1 Low Power Timer driver"
+	default y
+	depends on DT_HAS_INFINEON_LP_TIMER_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	depends on PM
+	select USE_INFINEON_LPTIMER
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a PDL based kernel device driver for the LowPower Timer
 	  and provides the standard "system clock driver" interfaces.
