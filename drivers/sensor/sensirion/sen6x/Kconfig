@@ -1,0 +1,33 @@
+# Copyright 2025 sevenlab engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SEN6X
+	bool "SEN6x environmental sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SEN6X_ENABLED
+	select CRC
+	select I2C
+	select I2C_RTIO
+	select SENSOR_ASYNC_API
+	help
+	  Enable driver for SEN6x environmental sensor.
+
+	  The sensor does not have an interrupt pin, but it's status registers
+	  are being made available through other means:
+	  - Every time data is read, the driver checks if the data has actually
+	    changed. This information can be retrieved using the decoders
+	    has_trigger API with the SENSOR_TRIG_DATA_READY trigger.
+	  - You can register a status callback with the driver to get notified
+	    about sensor errors. If any callbacks are registered, the status
+	    register is read and callbacks are triggered on every call to the
+	    sensors submit function.
+	    The driver allows submitting a read with 0 channels, to poll just
+	    the status.
+
+if SEN6X
+
+config SEN6X_SHELL
+	bool "SEN6x shell"
+	depends on SHELL
+
+endif # SEN6X
