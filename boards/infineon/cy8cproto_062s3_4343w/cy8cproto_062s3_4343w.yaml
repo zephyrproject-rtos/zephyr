@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Hari Udayakumar <hariudkmr@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8cproto_062s3_4343w
+name: CY8CPROTO-062S3-4343W PSOC 6 Wi-Fi BT Prototyping Kit
+type: mcu
+arch: arm
+ram: 256
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - watchdog
+vendor: infineon
