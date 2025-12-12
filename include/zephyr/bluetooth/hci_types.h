@@ -712,6 +712,13 @@ struct bt_hci_rp_write_conn_accept_timeout {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY      BT_OP(BT_OGF_BASEBAND, 0x001c) /* 0x0c1c */
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY   BT_OP(BT_OGF_BASEBAND, 0x001e) /* 0x0c1e */
+struct bt_hci_cp_write_scan_activity {
+	uint16_t interval;
+	uint16_t window;
+} __packed;
+
 #define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023) /* 0x0c23 */
 struct bt_hci_rp_read_class_of_device {
 	uint8_t  status;
@@ -913,9 +920,16 @@ struct bt_hci_cp_write_current_iac_lap {
 	struct bt_hci_iac_lap lap[0];
 } __packed;
 
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE       BT_OP(BT_OGF_BASEBAND, 0x0043) /* 0x0c43 */
+
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
 struct bt_hci_cp_write_inquiry_mode {
 	uint8_t  mode;
+} __packed;
+
+#define BT_HCI_OP_WRITE_PAGE_SCAN_TYPE          BT_OP(BT_OGF_BASEBAND, 0x0047) /* 0x0c47 */
+struct bt_hci_cp_write_scan_type {
+	uint8_t type;
 } __packed;
 
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */
