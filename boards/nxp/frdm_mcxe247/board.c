@@ -214,7 +214,7 @@ __weak void clock_init(void)
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi2), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc0))
-	CLOCK_SetIpSrc(kCLOCK_Adc0
+	CLOCK_SetIpSrc(kCLOCK_Adc0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc1))

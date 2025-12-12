@@ -98,6 +98,20 @@
 	};
 };
 
+&adc0 {
+	status = "okay";
+	sample-time = <12>;
+	vref-mv = <3300>;
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+};
+
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_cmp0>;
+	pinctrl-names = "default";
+};
+
 &cpu0 {
 	clock-frequency = <80000000>;
 };
@@ -134,6 +148,10 @@
 
 &slow_clk {
 	clock-div = <4>;
+};
+
+&fircdiv1_clk {
+	clock-div = <1>;
 };
 
 &fircdiv2_clk {
