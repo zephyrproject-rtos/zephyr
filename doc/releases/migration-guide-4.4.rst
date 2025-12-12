@@ -64,6 +64,16 @@ Controller Area Network (CAN)
   * :kconfig:option:`CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS` for :dtcompatible:`st,stm32-fdcan`
   * :kconfig:option:`CONFIG_CAN_XMC4XXX_MAX_FILTERS` for :dtcompatible:`infineon,xmc4xxx-can-node`
 
+Display
+=======
+
+* For ILI9XXX controllers, the usage of ``ILI9XXX_PIXEL_FORMAT_x`` in devicetrees for panel color
+  format selection has been updated to ``PANEL_PIXEL_FORMAT_x``. Out-of-tree boards and shields
+  should be updated accordingly. (:github:`99267`).
+
+* For ILI9341 controller, display mirroring configuration has been updated to conform with
+  the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
+
 Ethernet
 ========
 
