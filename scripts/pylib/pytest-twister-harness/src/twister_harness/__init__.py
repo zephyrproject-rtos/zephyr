@@ -4,10 +4,22 @@
 
 # flake8: noqa
 
+import os
+import sys
 from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.helpers.mcumgr import MCUmgr, MCUmgrBle
 from twister_harness.helpers.shell import Shell
 
-__all__ = ['DeviceAdapter', 'MCUmgr', 'MCUmgrBle', 'Shell']
+__all__ = ["DeviceAdapter", "MCUmgr", "MCUmgrBle", "Shell"]
 
-__version__ = '0.0.1'
+__version__ = "0.0.1"
+
+# Add the directory to PYTHONPATH
+zephyr_base = os.path.abspath(os.getenv("ZEPHYR_BASE"))
+if zephyr_base:
+    sys.path.insert(
+        0, os.path.join(zephyr_base, "scripts")
+    )  # import zephyr_module in environment.py
+    sys.path.insert(0, os.path.join(zephyr_base, "scripts", "pylib", "twister"))
+else:
+    raise EnvironmentError("ZEPHYR_BASE environment variable is not set")
