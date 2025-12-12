@@ -30,3 +30,13 @@ properties:
       of SCK (leading or trailing, depending on the CPHA setting used) until
       the input serial data on MISO is actually sampled. This property does
       not have any effect if the rx-delay-supported property is not set.
+
+  cross-power-domain-gpios:
+    type: boolean
+    description: |
+      Select P2 pins can be used for some serial interfaces in the peripheral domain,
+      when the device is in Constant Latency sub-power mode. This property notifies
+      the driver that this SPIM instance uses cross power-domain GPIOs, and therefore
+      requests the appropriate sub-power mode while active.
+
+      Only valid for SPIM20 on nRF54L devices. Depends on CONFIG_NRF_SYS_EVENT.
