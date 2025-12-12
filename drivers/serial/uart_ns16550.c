@@ -85,6 +85,13 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_IOPORT_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_NS16550_DT_PROP_IOMAPPED_HELPER, io_mapped, 0) 0)
 
+/* Some variants have extra capabilities */
+#define UART_NS16550_INTEL_XSCALE DT_HAS_COMPAT_STATUS_OKAY(intel_xscale_uart)
+
+#define UART_NS16550_CAP_ENABLED UART_NS16550_INTEL_XSCALE
+
+#define UART_CAP_UUE	BIT(0)	/* UART needs IER bit 6 set (XScale) */
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg.       */
@@ -115,6 +122,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IER_TBE 0x02   /* transmit bit enable */
 #define IER_LSR 0x04   /* line status interrupts */
 #define IER_MSI 0x08   /* modem status interrupts */
+#define IER_UUE 0x40   /* UART Unit Enable (XScale) */
 
 /* equates for interrupt identification register */
 
@@ -354,6 +362,9 @@ struct uart_ns16550_dev_config {
 #endif
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
+#endif
+#if UART_NS16550_CAP_ENABLED
+	uint32_t capabilities;
 #endif
 };
 
@@ -736,7 +747,12 @@ static int uart_ns16550_configure(const struct device *dev,
 	(void)ns16550_read_char(dev, &c);
 
 	/* disable interrupts  */
+#if UART_NS16550_INTEL_XSCALE
+	ns16550_outbyte(dev_cfg, IER(dev), (dev_cfg->capabilities & UART_CAP_UUE) ?
+					   IER_UUE : 0x00);
+#else
 	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
+#endif
 	ret = 0;
 
 out:
@@ -2031,7 +2047,9 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 		IF_ENABLED(CONFIG_PINCTRL,                                           \
 			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
-			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
+		IF_ENABLED(DT_INST_NODE_HAS_COMPAT(n, intel_xscale_uart),            \
+			(.capabilities = UART_CAP_UUE,))
 
 #define UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                                  \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
