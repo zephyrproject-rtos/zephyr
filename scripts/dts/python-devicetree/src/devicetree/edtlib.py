@@ -2701,7 +2701,7 @@ def _bad_overwrite(to_dict: dict, from_dict: dict, prop: str,
         return False
 
     # These are overridden deliberately
-    if prop in {"title", "description", "compatible"}:
+    if prop in {"title", "description", "compatible", "examples"}:
         return False
 
     if prop == "required":
