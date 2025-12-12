@@ -115,13 +115,18 @@ static void i2c_stm32_target_event(const struct device *dev)
 	target_cb = target_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
-		uint8_t val;
+		uint8_t val = 0x00;
+		int ret = target_cb->read_processed(target_cfg, &val);
 
-		if (target_cb->read_processed(target_cfg, &val) < 0) {
+		/* We should transmit the data before logging because logging could
+		 * lead the i2c target to stretch the clock if the data are not
+		 * transmitted fast enough.
+		 */
+		LL_I2C_TransmitData8(i2c, val);
+		if (ret < 0) {
 			LOG_ERR("Error continuing reading");
-		} else {
-			LL_I2C_TransmitData8(i2c, val);
 		}
+
 		return;
 	}
 
