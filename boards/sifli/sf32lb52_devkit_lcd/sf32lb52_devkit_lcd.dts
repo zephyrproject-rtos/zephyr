@@ -156,6 +156,12 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	ft6146: ft6146@38 {
+		compatible = "focaltech,ft6146";
+		reg = <0x38>;
+		int-gpios = <&gpioa_00_31 31 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioa_00_31 9 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &crc {
