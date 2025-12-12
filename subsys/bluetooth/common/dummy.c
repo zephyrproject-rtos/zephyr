@@ -39,6 +39,13 @@ BUILD_ASSERT(alignof(bt_addr_le_t) == 1);
  * before any new data arrives on a connection to the Host threads.
  */
 BUILD_ASSERT(CONFIG_BT_DRIVER_RX_HIGH_PRIO < CONFIG_BT_HCI_TX_PRIO);
+
+BUILD_ASSERT(
+	(sizeof(CONFIG_BT_DEVICE_NAME) - 1) <
+	COND_CODE_1(CONFIG_BT_DEVICE_NAME_DYNAMIC,
+		    (CONFIG_BT_DEVICE_NAME_MAX),
+		    (248))
+);
 #endif /* defined(CONFIG_BT_HCI_HOST) */
 
 #if (defined(CONFIG_LOG_BACKEND_RTT) &&                     \

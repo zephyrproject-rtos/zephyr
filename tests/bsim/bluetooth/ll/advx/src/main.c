@@ -315,8 +315,8 @@ static void test_advx_main(void)
 	/* Scannable advertiser need to have scan response data */
 	printk("Set scan response data...");
 	sd[0].type = BT_DATA_NAME_COMPLETE;
-	sd[0].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
-	sd[0].data = CONFIG_BT_DEVICE_NAME;
+	sd[0].data_len = BT_DEVICE_NAME_LEN;
+	sd[0].data = BT_DEVICE_NAME;
 	err = bt_le_ext_adv_set_data(adv, NULL, 0, sd, 1);
 	if (err) {
 		goto exit;
@@ -1209,8 +1209,8 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	if (!is_scan_rsp &&
 	    ((info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0) &&
 	    ((info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0) &&
-	    (strlen(name) == strlen(CONFIG_BT_DEVICE_NAME)) &&
-	    (!strcmp(name, CONFIG_BT_DEVICE_NAME))) {
+	    (strlen(name) == BT_DEVICE_NAME_LEN) &&
+	    (!strcmp(name, BT_DEVICE_NAME))) {
 		is_scan_rsp = true;
 	}
 

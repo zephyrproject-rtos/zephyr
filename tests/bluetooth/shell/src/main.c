@@ -30,8 +30,6 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/services/hrs.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-
 #if defined(CONFIG_BT_HRS)
 static bool hrs_simulate;
 
