@@ -1757,6 +1757,10 @@ out:
 		int_status = sys_le32_to_cpu(int_status);
 		gpio_fire_callbacks(&data->callbacks, dev, int_status);
 	}
+
+	if (gpio_pin_get_dt(&cfg->gpio_int) == 1) {
+		k_work_submit(&data->int_work);
+	}
 }
 
 static void gpio_pca_series_interrupt_worker_standard(struct k_work *work)
