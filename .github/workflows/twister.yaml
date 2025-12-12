@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
+        uses: zephyrproject-rtos/action-zephyr-setup@80fc48bd300ebd266d53bcfe8631060d5027843b # PR 57
         with:
           app-path: zephyr
           enable-ccache: false
