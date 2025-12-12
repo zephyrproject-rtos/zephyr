@@ -1,0 +1,12 @@
+identifier: sr100_rdk
+name: Synaptics SR100 RDK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+vendor: syna
