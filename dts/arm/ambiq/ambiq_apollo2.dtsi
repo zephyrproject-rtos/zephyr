@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright (c) 2025 Ambiq Micro Inc. */
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
@@ -69,7 +70,7 @@
 		};
 
 		uart0: uart@APOLLO2_UART0 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <APOLLO2_UART0_BASE APOLLO2_UART0_SIZE>;
 			interrupts = <APOLLO2_UART0_IRQ 0>;
 			interrupt-names = "UART0";
@@ -78,7 +79,7 @@
 		};
 
 		uart1: uart@APOLLO2_UART1 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <APOLLO2_UART1_BASE APOLLO2_UART1_SIZE>;
 			interrupts = <APOLLO2_UART1_IRQ 0>;
 			interrupt-names = "UART1";

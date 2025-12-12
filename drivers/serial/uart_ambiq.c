@@ -16,9 +16,17 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#include <stdint.h>
 
 /* ambiq-sdk includes */
 #include <soc.h>
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+/* Apollo2 CMSIS headers define UART0/UART1 but do not provide UARTn(). */
+#ifndef UARTn
+#define UARTn(n) ((UART0_Type *)(UART0_BASE + ((uintptr_t)(n) * (UART1_BASE - UART0_BASE))))
+#endif
+#endif
 
 LOG_MODULE_REGISTER(uart_ambiq, CONFIG_UART_LOG_LEVEL);
 
@@ -89,18 +97,184 @@ struct uart_ambiq_data {
 	bool rx_dma_lock_active;
 };
 
-static int uart_ambiq_configure(const struct device *dev, const struct uart_config *cfg)
+/*
+ * HAL/SoC adapter layer:
+ * - Apollo2x uses "old" Ambiq HAL (module index based APIs)
+ * - Apollo3x/4x/5x use "new" Ambiq HAL (handle based APIs)
+ *
+ * Keep all SoC conditionals here to avoid scattering #ifdefs throughout the driver.
+ */
+static inline uint32_t uart_ambiq_reg_fr_get(const struct uart_ambiq_config *cfg)
 {
-#ifdef CONFIG_SOC_SERIES_APOLLO5X
-	const struct uart_ambiq_config *config = dev->config;
+	return UARTn(cfg->inst_idx)->FR;
+}
+
+static inline uint32_t uart_ambiq_reg_rsr_get(const struct uart_ambiq_config *cfg)
+{
+	return UARTn(cfg->inst_idx)->RSR;
+}
+
+static inline uint32_t uart_ambiq_hal_flags_get(const struct device *dev)
+{
+	struct uart_ambiq_data *data = dev->data;
+	uint32_t flag = 0;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	flag = am_hal_uart_flags_get(cfg->inst_idx);
+#else
+	am_hal_uart_flags_get(data->uart_handler, &flag);
 #endif
+	return flag;
+}
+
+static inline void uart_ambiq_hal_irq_enable(const struct device *dev, uint32_t mask)
+{
 	struct uart_ambiq_data *data = dev->data;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	am_hal_uart_int_enable(cfg->inst_idx, mask);
+#else
+	am_hal_uart_interrupt_enable(data->uart_handler, mask);
+#endif
+}
+
+static inline void uart_ambiq_hal_irq_disable(const struct device *dev, uint32_t mask)
+{
+	struct uart_ambiq_data *data = dev->data;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	am_hal_uart_int_disable(cfg->inst_idx, mask);
+#else
+	am_hal_uart_interrupt_disable(data->uart_handler, mask);
+#endif
+}
+
+static inline uint32_t uart_ambiq_hal_irq_enable_get(const struct device *dev)
+{
+	struct uart_ambiq_data *data = dev->data;
+	uint32_t ier = 0;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	ier = am_hal_uart_int_enable_get(cfg->inst_idx);
+#else
+	am_hal_uart_interrupt_enable_get(data->uart_handler, &ier);
+#endif
+	return ier;
+}
+
+static inline uint32_t uart_ambiq_hal_irq_status_get(const struct device *dev, bool enabled_only)
+{
+	struct uart_ambiq_data *data = dev->data;
+	uint32_t status = 0;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	status = am_hal_uart_int_status_get(cfg->inst_idx, enabled_only);
+#else
+	am_hal_uart_interrupt_status_get(data->uart_handler, &status, enabled_only);
+#endif
+	return status;
+}
+
+static inline void uart_ambiq_hal_irq_clear(const struct device *dev, uint32_t status)
+{
+	struct uart_ambiq_data *data = dev->data;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	am_hal_uart_int_clear(cfg->inst_idx, status);
+#else
+	am_hal_uart_interrupt_clear(data->uart_handler, status);
+#endif
+}
+
+static int uart_ambiq_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	struct uart_ambiq_data *data = dev->data;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *config = dev->config;
+	/* Apollo2 HAL uses a different config struct and API. */
+	data->hal_cfg.ui32BaudRate = cfg->baudrate;
+
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_5;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_6;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_7;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_8;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		data->hal_cfg.bTwoStopBits = false;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		data->hal_cfg.bTwoStopBits = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		data->hal_cfg.ui32FlowCtrl = AM_HAL_UART_FLOW_CTRL_NONE;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		data->hal_cfg.ui32FlowCtrl = AM_HAL_UART_FLOW_CTRL_RTS_CTS;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		data->hal_cfg.ui32Parity = AM_HAL_UART_PARITY_NONE;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		data->hal_cfg.ui32Parity = AM_HAL_UART_PARITY_EVEN;
+		break;
+	case UART_CFG_PARITY_ODD:
+		data->hal_cfg.ui32Parity = AM_HAL_UART_PARITY_ODD;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	am_hal_uart_config(config->inst_idx, &data->hal_cfg);
+	am_hal_uart_fifo_config(config->inst_idx,
+				AM_HAL_UART_TX_FIFO_1_2 | AM_HAL_UART_RX_FIFO_1_2);
+
+	data->uart_cfg = *cfg;
+	return 0;
+#else
+	/* Apollo3/4/5 (new HAL) */
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
-	/*
-	 * Apollo3 HAL uses a combined ui32FifoLevels bitfield rather than separate
-	 * eTXFifoLevel/eRXFifoLevel.
-	 */
 	data->hal_cfg.ui32FifoLevels =
 		AM_HAL_UART_TX_FIFO_1_2 | AM_HAL_UART_RX_FIFO_1_2 | AM_HAL_UART_FIFO_ENABLE;
 #else
@@ -224,6 +398,7 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 #endif
 
 #ifdef CONFIG_SOC_SERIES_APOLLO5X
+	const struct uart_ambiq_config *config = dev->config;
 	switch (config->clk_src) {
 	case 0:
 		data->hal_cfg.eClockSrc = AM_HAL_UART_CLOCK_SRC_HFRC;
@@ -241,8 +416,8 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 	}
 
 	data->uart_cfg = *cfg;
-
 	return 0;
+#endif /* CONFIG_SOC_SERIES_APOLLO2X */
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
@@ -259,31 +434,36 @@ static int uart_ambiq_config_get(const struct device *dev, struct uart_config *c
 static bool uart_ambiq_is_readable(const struct device *dev)
 {
 	const struct uart_ambiq_config *config = dev->config;
-	struct uart_ambiq_data *data = dev->data;
-	uint32_t flag = 0;
+	uint32_t flag;
 
 	if (!(UARTn(config->inst_idx)->CR & UART0_CR_UARTEN_Msk) ||
 	    !(UARTn(config->inst_idx)->CR & UART0_CR_RXE_Msk)) {
 		return false;
 	}
-	am_hal_uart_flags_get(data->uart_handler, &flag);
+	flag = uart_ambiq_hal_flags_get(dev);
 
 	return (flag & UART0_FR_RXFE_Msk) == 0U;
 }
 
 static int uart_ambiq_poll_in(const struct device *dev, unsigned char *c)
 {
+	const struct uart_ambiq_config *config = dev->config;
 	struct uart_ambiq_data *data = dev->data;
-	uint32_t flag = 0;
+	uint32_t err;
 
 	if (!uart_ambiq_is_readable(dev)) {
 		return -1;
 	}
 
 	/* got a character */
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	ARG_UNUSED(data);
+	*c = (unsigned char)(UARTn(config->inst_idx)->DR & UART0_DR_DATA_Msk);
+#else
 	am_hal_uart_fifo_read(data->uart_handler, c, 1, NULL);
-	am_hal_uart_flags_get(data->uart_handler, &flag);
-	return flag & UART_AMBIQ_RSR_ERROR_MASK;
+#endif
+	err = uart_ambiq_reg_rsr_get(config) & UART_AMBIQ_RSR_ERROR_MASK;
+	return err;
 }
 
 static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
@@ -294,7 +474,7 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 
 	/* Wait for space in FIFO */
 	do {
-		am_hal_uart_flags_get(data->uart_handler, &flag);
+		flag = uart_ambiq_hal_flags_get(dev);
 	} while (flag & UART0_FR_TXFF_Msk);
 
 	key = irq_lock();
@@ -306,12 +486,19 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 	if (!data->tx_poll_trans_on && !data->tx_int_trans_on) {
 		data->tx_poll_trans_on = true;
 
-		am_hal_uart_interrupt_enable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
+		uart_ambiq_hal_irq_enable(dev, AM_HAL_UART_INT_TXCMP);
 	}
 #endif
 
 	/* Send a character */
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *config = dev->config;
+
+	ARG_UNUSED(data);
+	UARTn(config->inst_idx)->DR = (uint32_t)c;
+#else
 	am_hal_uart_fifo_write(data->uart_handler, &c, 1, NULL);
+#endif
 
 	irq_unlock(key);
 }
@@ -337,7 +524,7 @@ static int uart_ambiq_err_check(const struct device *dev)
 	if (UARTn(cfg->inst_idx)->RSR & AM_HAL_UART_RSR_FESTAT) {
 		errors |= UART_ERROR_FRAMING;
 	}
-#elif defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO3X)
+#else
 	if (UARTn(cfg->inst_idx)->RSR & UART0_RSR_OESTAT_Msk) {
 		errors |= UART_ERROR_OVERRUN;
 	}
@@ -368,7 +555,17 @@ static int uart_ambiq_fifo_fill(const struct device *dev, const uint8_t *tx_data
 	/* Lock interrupts to prevent nested interrupts or thread switch */
 	key = irq_lock();
 
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	while ((num_tx < len) && ((UARTn(cfg->inst_idx)->FR & UART0_FR_TXFF_Msk) == 0U)) {
+		UARTn(cfg->inst_idx)->DR = (uint32_t)tx_data[num_tx];
+		num_tx++;
+	}
+#else
 	am_hal_uart_fifo_write(data->uart_handler, (uint8_t *)tx_data, len, &num_tx);
+#endif
 
 	irq_unlock(key);
 
@@ -380,7 +577,17 @@ static int uart_ambiq_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 	struct uart_ambiq_data *data = dev->data;
 	int num_rx = 0U;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	const struct uart_ambiq_config *cfg = dev->config;
+
+	ARG_UNUSED(data);
+	while ((num_rx < len) && ((UARTn(cfg->inst_idx)->FR & UART0_FR_RXFE_Msk) == 0U)) {
+		rx_data[num_rx] = (uint8_t)(UARTn(cfg->inst_idx)->DR & UART0_DR_DATA_Msk);
+		num_rx++;
+	}
+#else
 	am_hal_uart_fifo_read(data->uart_handler, rx_data, len, &num_rx);
+#endif
 
 	return num_rx;
 }
@@ -395,8 +602,7 @@ static void uart_ambiq_irq_tx_enable(const struct device *dev)
 	data->tx_poll_trans_on = false;
 	data->tx_int_trans_on = true;
 
-	am_hal_uart_interrupt_enable(data->uart_handler,
-				     (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
+	uart_ambiq_hal_irq_enable(dev, (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
 
 	irq_unlock(key);
 
@@ -442,8 +648,7 @@ static void uart_ambiq_irq_tx_disable(const struct device *dev)
 	key = irq_lock();
 
 	data->sw_call_txdrdy = true;
-	am_hal_uart_interrupt_disable(data->uart_handler,
-				      (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
+	uart_ambiq_hal_irq_disable(dev, (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
 	data->tx_int_trans_on = false;
 
 	irq_unlock(key);
@@ -451,79 +656,69 @@ static void uart_ambiq_irq_tx_disable(const struct device *dev)
 
 static int uart_ambiq_irq_tx_complete(const struct device *dev)
 {
-	struct uart_ambiq_data *data = dev->data;
-	uint32_t flag = 0;
+	const struct uart_ambiq_config *cfg = dev->config;
+	uint32_t fr = uart_ambiq_reg_fr_get(cfg);
+
 	/* Check for UART is busy transmitting data. */
-	am_hal_uart_flags_get(data->uart_handler, &flag);
-	return ((flag & AM_HAL_UART_FR_BUSY) == 0);
+	return ((fr & UART0_FR_BUSY_Msk) == 0U);
 }
 
 static int uart_ambiq_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_ambiq_config *cfg = dev->config;
-	struct uart_ambiq_data *data = dev->data;
-	uint32_t status, flag, ier = 0;
+	uint32_t status;
+	uint32_t fr;
+	uint32_t ier;
 
 	if (!(UARTn(cfg->inst_idx)->CR & UART0_CR_TXE_Msk)) {
 		return false;
 	}
 
 	/* Check for TX interrupt status is set or TX FIFO is empty. */
-	am_hal_uart_interrupt_status_get(data->uart_handler, &status, false);
-	am_hal_uart_flags_get(data->uart_handler, &flag);
-	am_hal_uart_interrupt_enable_get(data->uart_handler, &ier);
+	status = uart_ambiq_hal_irq_status_get(dev, false);
+	fr = uart_ambiq_reg_fr_get(cfg);
+	ier = uart_ambiq_hal_irq_enable_get(dev);
+
 	return ((ier & AM_HAL_UART_INT_TX) &&
-		((status & UART0_IES_TXRIS_Msk) || (flag & AM_HAL_UART_FR_TX_EMPTY)));
+		((status & UART0_IES_TXRIS_Msk) || (fr & UART0_FR_TXFE_Msk)));
 }
 
 static void uart_ambiq_irq_rx_enable(const struct device *dev)
 {
-	struct uart_ambiq_data *data = dev->data;
-
-	am_hal_uart_interrupt_enable(data->uart_handler,
-				     (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT));
+	uart_ambiq_hal_irq_enable(dev, (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT));
 }
 
 static void uart_ambiq_irq_rx_disable(const struct device *dev)
 {
-	struct uart_ambiq_data *data = dev->data;
-
-	am_hal_uart_interrupt_disable(data->uart_handler,
-				      (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT));
+	uart_ambiq_hal_irq_disable(dev, (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT));
 }
 
 static int uart_ambiq_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_ambiq_config *cfg = dev->config;
-	struct uart_ambiq_data *data = dev->data;
-	uint32_t flag = 0;
-	uint32_t ier = 0;
+	uint32_t fr;
+	uint32_t ier;
 
 	if (!(UARTn(cfg->inst_idx)->CR & UART0_CR_RXE_Msk)) {
 		return false;
 	}
 
-	am_hal_uart_flags_get(data->uart_handler, &flag);
-	am_hal_uart_interrupt_enable_get(data->uart_handler, &ier);
-	return ((ier & AM_HAL_UART_INT_RX) && (!(flag & AM_HAL_UART_FR_RX_EMPTY)));
+	fr = uart_ambiq_reg_fr_get(cfg);
+	ier = uart_ambiq_hal_irq_enable_get(dev);
+	return ((ier & AM_HAL_UART_INT_RX) && ((fr & UART0_FR_RXFE_Msk) == 0U));
 }
 
 static void uart_ambiq_irq_err_enable(const struct device *dev)
 {
-	struct uart_ambiq_data *data = dev->data;
 	/* enable framing, parity, break, and overrun */
-	am_hal_uart_interrupt_enable(data->uart_handler,
-				     (AM_HAL_UART_INT_FRAME_ERR | AM_HAL_UART_INT_PARITY_ERR |
-				      AM_HAL_UART_INT_BREAK_ERR | AM_HAL_UART_INT_OVER_RUN));
+	uart_ambiq_hal_irq_enable(dev, (AM_HAL_UART_INT_FRAME_ERR | AM_HAL_UART_INT_PARITY_ERR |
+					AM_HAL_UART_INT_BREAK_ERR | AM_HAL_UART_INT_OVER_RUN));
 }
 
 static void uart_ambiq_irq_err_disable(const struct device *dev)
 {
-	struct uart_ambiq_data *data = dev->data;
-
-	am_hal_uart_interrupt_disable(data->uart_handler,
-				      (AM_HAL_UART_INT_FRAME_ERR | AM_HAL_UART_INT_PARITY_ERR |
-				       AM_HAL_UART_INT_BREAK_ERR | AM_HAL_UART_INT_OVER_RUN));
+	uart_ambiq_hal_irq_disable(dev, (AM_HAL_UART_INT_FRAME_ERR | AM_HAL_UART_INT_PARITY_ERR |
+					 AM_HAL_UART_INT_BREAK_ERR | AM_HAL_UART_INT_OVER_RUN));
 }
 
 static int uart_ambiq_irq_is_pending(const struct device *dev)
@@ -559,6 +754,13 @@ static int uart_ambiq_init(const struct device *dev)
 	int ret = 0;
 	uint32_t status;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	ARG_UNUSED(status);
+	/* Apollo2 HAL does not use handles and has no power_control API. */
+	data->uart_handler = (void *)(uintptr_t)config->inst_idx;
+	am_hal_uart_pwrctrl_enable(config->inst_idx);
+	am_hal_uart_clock_enable(config->inst_idx);
+#else
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_uart_initialize(config->inst_idx, &data->uart_handler)) {
 		LOG_ERR("Fail to initialize UART\n");
@@ -571,6 +773,7 @@ static int uart_ambiq_init(const struct device *dev)
 		ret = -EIO;
 		goto end;
 	}
+#endif
 
 	ret = uart_ambiq_configure(dev, &data->uart_cfg);
 	if (ret < 0) {
@@ -600,7 +803,13 @@ static int uart_ambiq_init(const struct device *dev)
 
 end:
 	if (ret < 0) {
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+		am_hal_uart_disable(config->inst_idx);
+		am_hal_uart_clock_disable(config->inst_idx);
+		am_hal_uart_pwrctrl_disable(config->inst_idx);
+#else
 		am_hal_uart_deinitialize(data->uart_handler);
+#endif
 	}
 	return ret;
 }
@@ -657,17 +866,16 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 void uart_ambiq_isr(const struct device *dev)
 {
 	struct uart_ambiq_data *data = dev->data;
-	uint32_t status = 0;
+	uint32_t status = uart_ambiq_hal_irq_status_get(dev, false);
 
-	am_hal_uart_interrupt_status_get(data->uart_handler, &status, false);
-	am_hal_uart_interrupt_clear(data->uart_handler, status);
+	uart_ambiq_hal_irq_clear(dev, status);
 
 	if (status & AM_HAL_UART_INT_TXCMP) {
 		if (data->tx_poll_trans_on) {
 			/* A poll transmission just completed,
 			 * allow system to suspend
 			 */
-			am_hal_uart_interrupt_disable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
+			uart_ambiq_hal_irq_disable(dev, AM_HAL_UART_INT_TXCMP);
 			data->tx_poll_trans_on = false;
 		}
 		/* Transmission was either async or IRQ based,
