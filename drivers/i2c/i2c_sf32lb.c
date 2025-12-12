@@ -87,6 +87,7 @@ static void i2c_sf32lb_isr(const struct device *dev)
 	if (IS_BIT_SET(sr, I2C_SR_DMADONE_Pos)) {
 		sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
 		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+		printk("DMA transfer completed\n");
 		k_sem_give(&data->i2c_compl);
 	}
 #endif
@@ -326,9 +327,9 @@ static void i2c_sf32lb_rx_done(const struct device *dev, void *arg, uint32_t cha
 	const struct i2c_sf32lb_config *config = device->config;
 	struct i2c_sf32lb_data *data = device->data;
 
-	sys_write32(0, config->base + I2C_IER);
+	// sys_write32(0, config->base + I2C_IER);
 
-	k_sem_give(&data->i2c_compl);
+	// k_sem_give(&data->i2c_compl);
 }
 
 static void i2c_sf32lb_tx_done(const struct device *dev, void *arg, uint32_t channel, int status)
@@ -337,9 +338,9 @@ static void i2c_sf32lb_tx_done(const struct device *dev, void *arg, uint32_t cha
 	const struct i2c_sf32lb_config *config = device->config;
 	struct i2c_sf32lb_data *data = device->data;
 
-	sys_write32(0, config->base + I2C_IER);
+	// sys_write32(0, config->base + I2C_IER);
 
-	k_sem_give(&data->i2c_compl);
+	// k_sem_give(&data->i2c_compl);
 }
 
 static int i2c_sf32lb_dma_tx_config(const struct device *dev, struct i2c_msg *msg)
@@ -412,7 +413,7 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 
 	sys_write32(I2C_TCR_TXREQ, config->base + I2C_TCR);
 
-	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US/ 1000));
+	ret = k_sem_take(&data->i2c_compl, K_FOREVER);
 	if (ret < 0) {
 		LOG_ERR("master send timeout");
 		return ret;
@@ -440,28 +441,21 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	}
 
 	if (addr_sent) {
-		test_flag = -1;
 		ret = i2c_sf32lb_send_addr(dev, addr, msg);
-		test_flag = 1;
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
 	if (stop_needed) {
-		test_flag = -2;
 		sys_set_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
-		test_flag = 2;
 	}
 
 	/* Clear stale completion, program byte count, then arm IRQ */
 	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
-	sys_write8(msg->len, config->base + I2C_DNR);
-	printk("I2C_DNR=%d\n", sys_read8(config->base + I2C_DNR));
+
 	sys_set_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
 	sys_set_bits(config->base + I2C_CR, I2C_CR_MSDE);
-
-	// while(1);
 
 	ret = i2c_sf32lb_dma_rx_config(dev, msg);
 	if (ret < 0) {
@@ -472,11 +466,26 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	if (ret < 0) {
 		return ret;
 	}
-	
-	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
-	sys_set_bit(config->base + I2C_TCR, I2C_TCR_RXREQ_Pos);
 
-	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
+	// __ASM("B .");
+	printk("I2C_DNR: %d\n", msg->len);
+	printk("I2C_TCR: 0x%08x\n", sys_read32(config->base + I2C_TCR));
+	printk("I2C_CR: 0x%08x\n", sys_read32(config->base + I2C_CR));
+	printk("I2C_IER: 0x%08x\n", sys_read32(config->base + I2C_IER));
+	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	// if (stop_needed) {
+	// 	sys_write32(I2C_CR_LASTNACK | I2C_CR_LASTSTOP | I2C_CR_DMAEN,
+	// 		    config->base + I2C_CR);
+	// } else {
+	// 	sys_write32(I2C_CR_DMAEN, config->base + I2C_CR);
+	// }
+	sys_write8(msg->len, config->base + I2C_DNR);
+	sys_write32(I2C_TCR_RXREQ, config->base + I2C_TCR);
+	// sys_set_bit(config->base + I2C_TCR, I2C_TCR_RXREQ_Pos);
+
+	// ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
+	// forever
+	ret = k_sem_take(&data->i2c_compl, K_FOREVER);
 	if (ret < 0) {
 		LOG_ERR("master recv timeout");
 		return ret;
@@ -485,10 +494,12 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
 	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
 	if (stop_needed) {
-		// while (sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos)) {
-		// }
+		while (sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos)) {
+			k_sleep(K_MSEC(1));
+		}
 		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
 	}
+	sf32lb_dma_stop_dt(&config->dma_rx);
 
 	return ret;
 }
@@ -582,6 +593,54 @@ static int i2c_sf32lb_master_recv(const struct device *dev, uint16_t addr, struc
 }
 #endif
 
+// static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+// {
+// 	int ret = 0;
+// 	const struct i2c_sf32lb_config *cfg = dev->config;
+// 	struct i2c_sf32lb_data *data = dev->data;
+// 	uint32_t tcr = I2C_TCR_TB;
+// 	bool stop_needed = i2c_is_stop_op(msg);
+// 	bool addr_sent = (data->rw_flags != (msg->flags & I2C_MSG_RW_MASK));
+
+// 	data->rw_flags = msg->flags & I2C_MSG_RW_MASK;
+
+// 	if (addr_sent) {
+// 		ret = i2c_sf32lb_send_addr(dev, addr, msg);
+// 		if (ret < 0) {
+// 			return ret;
+// 		}
+// 	}
+
+// 	for (uint32_t j = 0U; j < msg->len; j++) {
+// 		bool last = ((msg->len - j) == 1U) ? true : false;
+
+// 		if (last && stop_needed) {
+// 			tcr |= I2C_TCR_STOP;
+// 		}
+
+// 		sys_write8(msg->buf[j], cfg->base + I2C_DBR);
+
+// 		sys_write32(tcr, cfg->base + I2C_TCR);
+
+// 		while (!sys_test_bit(cfg->base + I2C_SR, I2C_SR_TE_Pos)) {
+// 		}
+
+// 		sys_set_bit(cfg->base + I2C_SR, I2C_SR_TE_Pos);
+
+// 		if (sys_test_bit(cfg->base + I2C_SR, I2C_SR_NACK_Pos)) {
+// 			ret = -EIO;
+// 			break;
+// 		}
+// 	}
+
+// 	if (stop_needed) {
+// 		while (sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos)) {
+// 		}
+// 	}
+
+// 	return ret;
+// }
+
 static int i2c_sf32lb_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_sf32lb_config *cfg = dev->config;
@@ -640,7 +699,7 @@ static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	k_mutex_lock(&data->lock, K_FOREVER);
 	printk("i2c_sf32lb_transfer num_msgs=%d addr=0x%02x\n", num_msgs, addr);
 	sys_set_bits(cfg->base + I2C_CR, I2C_CR_IUE | I2C_CR_MSDE);
-	__ASM("B .");
+	// __ASM("B .");
 
 	if (sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos)) {
 		k_mutex_unlock(&data->lock);
@@ -791,10 +850,11 @@ static int i2c_sf32lb_init(const struct device *dev)
 #if defined(CONFIG_I2C_SF32LB_INTERRUPT) || defined(CONFIG_I2C_SF32LB_DMA)
 #define I2C_SF32LB_IRQ_HANDLER_DECL(n) static void i2c_sf32lb_irq_config_func_##n(void);
 #define I2C_SF32LB_IRQ_HANDLER_FUNC(n) .irq_cfg_func = i2c_sf32lb_irq_config_func_##n,
-#define I2C_SF32LB_SEM_INIT(n) .i2c_compl = Z_SEM_INITIALIZER(i2c_sf32lb_data_##n.i2c_compl, 0, 1),
+#define I2C_SF32LB_SEM_INIT(n)         .i2c_compl = Z_SEM_INITIALIZER(i2c_sf32lb_data_##n.i2c_compl, 0, 1),
 #define I2C_SF32LB_IRQ_HANDLER(n)                                                                  \
-	static void i2c_sf32lb_irq_config_func_##n(void) {                                         \
-	                                                                                           \
+	static void i2c_sf32lb_irq_config_func_##n(void)                                           \
+	{                                                                                          \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sf32lb_isr,             \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
@@ -806,28 +866,25 @@ static int i2c_sf32lb_init(const struct device *dev)
 #define I2C_SF32LB_SEM_INIT(n)
 #endif
 
-#define I2C_SF32LB_DEFINE(n)                                                                       \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	I2C_SF32LB_IRQ_HANDLER_DECL(n)                                                             \
-	                                                                                           \
-	static struct i2c_sf32lb_data i2c_sf32lb_data_##n = {                                      \
-		.lock = Z_MUTEX_INITIALIZER(i2c_sf32lb_data_##n.lock),                             \
-		I2C_SF32LB_SEM_INIT(n)                                                             \
-	};                                                                                         \
-	static const struct i2c_sf32lb_config i2c_sf32lb_config_##n = {                            \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET(n),                                         \
-		.bitrate = DT_INST_PROP_OR(n, clock_frequency, 100000),                            \
+#define I2C_SF32LB_DEFINE(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                                   \
+	I2C_SF32LB_IRQ_HANDLER_DECL(n)                                                               \
+                                                                                                     \
+	static struct i2c_sf32lb_data i2c_sf32lb_data_##n = {                                        \
+		.lock = Z_MUTEX_INITIALIZER(i2c_sf32lb_data_##n.lock), I2C_SF32LB_SEM_INIT(n)};      \
+	static const struct i2c_sf32lb_config i2c_sf32lb_config_##n = {                              \
+		.base = DT_INST_REG_ADDR(n),                                                         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET(n),                                           \
+		.bitrate = DT_INST_PROP_OR(n, clock_frequency, 100000),                              \
 		IF_ENABLED(CONFIG_I2C_SF32LB_DMA, (                                                \
 			.dma_tx = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(n, tx),                      \
 			.dma_rx = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(n, rx),                      \
-		))                                                                                 \
-		I2C_SF32LB_IRQ_HANDLER_FUNC(n)                                                     \
-	};                                                                                         \
-	I2C_SF32LB_IRQ_HANDLER(n)                                                                  \
-	DEVICE_DT_INST_DEFINE(n, i2c_sf32lb_init, NULL, &i2c_sf32lb_data_##n,                      \
-			      &i2c_sf32lb_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
+		)) \
+					    I2C_SF32LB_IRQ_HANDLER_FUNC(n)};                         \
+	I2C_SF32LB_IRQ_HANDLER(n)                                                                    \
+	DEVICE_DT_INST_DEFINE(n, i2c_sf32lb_init, NULL, &i2c_sf32lb_data_##n,                        \
+			      &i2c_sf32lb_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,         \
 			      &i2c_sf32lb_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SF32LB_DEFINE)
