@@ -10,6 +10,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/dma.h>
+#include <mchp_dt_helper.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 
@@ -51,12 +53,25 @@ struct i2c_mchp_clock {
 	clock_control_subsys_t gclk_sys;
 };
 
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+struct i2c_mchp_dma {
+	const struct device *dma_dev;
+	uint8_t tx_dma_request;
+	uint8_t tx_dma_channel;
+	uint8_t rx_dma_request;
+	uint8_t rx_dma_channel;
+};
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+
 struct i2c_mchp_dev_config {
 	sercom_registers_t *regs;
 	struct i2c_mchp_clock i2c_clock;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
 	void (*irq_config_func)(const struct device *dev);
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+	struct i2c_mchp_dma i2c_dma;
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 	uint8_t run_in_standby;
 };
 
@@ -86,8 +101,16 @@ struct i2c_mchp_dev_data {
 	struct i2c_target_callbacks target_callbacks;
 	uint8_t rx_tx_data;
 #endif /*CONFIG_I2C_TARGET*/
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+	const struct i2c_mchp_dev_config *cfg;
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 	bool firstReadAfterAddrMatch;
 };
+
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+static int i2c_dma_write_config(const struct device *dev);
+static int i2c_dma_read_config(const struct device *dev);
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 
 static void i2c_swrst(const struct device *dev)
 {
@@ -505,11 +528,15 @@ static bool i2c_is_terminate_on_error(const struct device *dev)
 		return false;
 	}
 
+	LOG_ERR("I2C error on %s: status=0x%x", dev->name, data->current_msg.status);
+
 	i2c_controller_status_clear(dev, data->current_msg.status);
 	i2c_controller_int_disable(dev, SERCOM_I2CM_INTENSET_Msk);
 	i2c_controller_transfer_stop(dev);
 #ifdef CONFIG_I2C_CALLBACK
-	data->i2c_async_callback(dev, (int)data->current_msg.status, data->user_data);
+	if (data->i2c_async_callback != NULL) {
+		data->i2c_async_callback(dev, (int)data->current_msg.status, data->user_data);
+	}
 #else
 	k_sem_give(&data->i2c_sync_sem);
 #endif /*CONFIG_I2C_CALLBACK*/
@@ -517,11 +544,42 @@ static bool i2c_is_terminate_on_error(const struct device *dev)
 	return true;
 }
 
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+static int i2c_configure_dma(const struct device *dev, bool is_read)
+{
+	int retval = I2C_MCHP_SUCCESS;
+
+	if (is_read == true) {
+		retval = i2c_dma_read_config(dev);
+	} else {
+		retval = i2c_dma_write_config(dev);
+	}
+
+	return retval;
+}
+
+static int i2c_start_dma(const struct device *dev, bool is_read)
+{
+	const struct i2c_mchp_dev_config *cfg = dev->config;
+	int retval = I2C_MCHP_SUCCESS;
+	uint32_t channel;
+
+	if (is_read == true) {
+		channel = cfg->i2c_dma.rx_dma_channel;
+	} else {
+		channel = cfg->i2c_dma.tx_dma_channel;
+	}
+
+	retval = dma_start(cfg->i2c_dma.dma_dev, channel);
+
+	return retval;
+}
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+
 static void i2c_restart(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = dev->data;
 
-	/* left-shift address by 1 for R/W bit. */
 	uint32_t addr_reg = data->target_addr << 1U;
 
 	bool is_read =
@@ -530,8 +588,25 @@ static void i2c_restart(const struct device *dev)
 		addr_reg |= 1U;
 	}
 
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+	int retval = i2c_configure_dma(dev, is_read);
+
+	if (retval == I2C_MCHP_SUCCESS) {
+		i2c_controller_addr_write(dev, addr_reg);
+		retval = i2c_start_dma(dev, is_read);
+	}
+
+	if (retval != I2C_MCHP_SUCCESS) {
+		LOG_ERR("I2C restart DMA failed on %s: error=%d", dev->name, retval);
+
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, retval, data->user_data);
+		}
+	}
+#else
 	i2c_controller_addr_write(dev, addr_reg);
 	i2c_controller_int_enable(dev, SERCOM_I2CM_INTENSET_Msk);
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 }
 
 #ifdef CONFIG_I2C_TARGET
@@ -777,10 +852,14 @@ static void i2c_handle_controller_error(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = dev->data;
 
+	LOG_ERR("I2C controller error on %s: status=0x%08X", dev->name, data->current_msg.status);
+
 	i2c_controller_transfer_stop(dev);
 	i2c_controller_int_disable(dev, SERCOM_I2CM_INTENSET_Msk);
 #ifdef CONFIG_I2C_CALLBACK
-	data->i2c_async_callback(dev, (int)data->current_msg.status, data->user_data);
+	if (data->i2c_async_callback != NULL) {
+		data->i2c_async_callback(dev, (int)data->current_msg.status, data->user_data);
+	}
 #else
 	k_sem_give(&data->i2c_sync_sem);
 #endif /*CONFIG_I2C_CALLBACK*/
@@ -803,8 +882,10 @@ static void i2c_handle_controller_write_mode(const struct device *dev, bool cont
 			i2c_restart(dev);
 		} else {
 #ifdef CONFIG_I2C_CALLBACK
-			data->i2c_async_callback(dev, (int)data->current_msg.status,
-						 data->user_data);
+			if (data->i2c_async_callback != NULL) {
+				data->i2c_async_callback(dev, (int)data->current_msg.status,
+							 data->user_data);
+			}
 #else
 			k_sem_give(&data->i2c_sync_sem);
 #endif /*CONFIG_I2C_CALLBACK*/
@@ -832,9 +913,11 @@ static void i2c_handle_controller_read_mode(const struct device *dev, bool conti
 		i2c_controller_transfer_stop(dev);
 	}
 
+#ifndef CONFIG_I2C_MCHP_DMA_DRIVEN
 	*data->current_msg.buffer = i2c_byte_read(dev);
 	data->current_msg.buffer++;
 	data->current_msg.size--;
+#endif /*!CONFIG_I2C_MCHP_DMA_DRIVEN*/
 
 	if ((continue_next == false) && (data->current_msg.size == 0U)) {
 		i2c_controller_int_disable(dev, SERCOM_I2CM_INTFLAG_SB_Msk);
@@ -848,8 +931,10 @@ static void i2c_handle_controller_read_mode(const struct device *dev, bool conti
 			i2c_restart(dev);
 		} else {
 #ifdef CONFIG_I2C_CALLBACK
-			data->i2c_async_callback(dev, (int)data->current_msg.status,
-						 data->user_data);
+			if (data->i2c_async_callback != NULL) {
+				data->i2c_async_callback(dev, (int)data->current_msg.status,
+							 data->user_data);
+			}
 #else
 			k_sem_give(&data->i2c_sync_sem);
 #endif /*CONFIG_I2C_CALLBACK*/
@@ -1074,6 +1159,240 @@ static int i2c_mchp_target_unregister(const struct device *dev,
 }
 #endif /*CONFIG_I2C_MCHP_TARGET*/
 
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+static void i2c_dma_write_done(const struct device *dma_dev, void *arg, uint32_t id, int error_code)
+{
+	struct i2c_mchp_dev_data *data = (struct i2c_mchp_dev_data *)arg;
+	const struct device *dev = data->dev;
+	const struct i2c_mchp_dev_config *cfg = dev->config;
+	bool continue_next = false;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(id);
+
+	unsigned int key = irq_lock();
+
+	if (i2c_is_terminate_on_error(dev) == true) {
+		irq_unlock(key);
+		LOG_ERR("I2C termination due to previous error on %s: status=%d", dev->name,
+			data->current_msg.status);
+
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, (int)data->current_msg.status,
+						 data->user_data);
+		}
+
+		return;
+	}
+
+	if (error_code < 0) {
+		irq_unlock(key);
+		LOG_ERR("DMA write error on %s: %d", dev->name, error_code);
+
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, error_code, data->user_data);
+		}
+
+		return;
+	}
+
+	if (data->num_msgs > 1U) {
+		uint8_t cur_flags = data->msgs_array[data->msg_index].flags;
+		uint8_t next_flags = data->msgs_array[data->msg_index + 1U].flags;
+
+		bool same_rw = ((cur_flags & I2C_MSG_RW_MASK) == (next_flags & I2C_MSG_RW_MASK));
+		bool no_restart = ((next_flags & I2C_MSG_RESTART) == 0U);
+
+		continue_next = same_rw && no_restart;
+	}
+
+	if (continue_next == true) {
+		data->msg_index++;
+		data->num_msgs--;
+
+		data->current_msg.buffer = data->msgs_array[data->msg_index].buf;
+		data->current_msg.size = data->msgs_array[data->msg_index].len;
+		data->current_msg.status = 0U;
+
+		irq_unlock(key);
+
+		if (i2c_dma_write_config(dev) == 0) {
+			int retval = dma_start(cfg->i2c_dma.dma_dev, cfg->i2c_dma.tx_dma_channel);
+
+			if (retval != 0) {
+				LOG_ERR("DMA write start failed on %s: %d", dev->name, retval);
+
+				if (data->i2c_async_callback != NULL) {
+					data->i2c_async_callback(dev, retval, data->user_data);
+				}
+			}
+		} else {
+			LOG_ERR("DMA write config failed on %s", dev->name);
+			if (data->i2c_async_callback != NULL) {
+				data->i2c_async_callback(dev, -EIO, data->user_data);
+			}
+		}
+
+		return;
+	}
+
+	data->current_msg.size = 0U;
+	irq_unlock(key);
+
+	i2c_controller_int_enable(dev, SERCOM_I2CM_INTENSET_MB_Msk);
+}
+
+static void i2c_dma_read_done(const struct device *dma_dev, void *arg, uint32_t id, int error_code)
+{
+	struct i2c_mchp_dev_data *data = (struct i2c_mchp_dev_data *)arg;
+	const struct device *dev = data->dev;
+	const struct i2c_mchp_dev_config *cfg = dev->config;
+	bool continue_next = false;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(id);
+
+	unsigned int key = irq_lock();
+
+	if (i2c_is_terminate_on_error(dev) == true) {
+		irq_unlock(key);
+		LOG_ERR("I2C termination due to previous error on %s: status=%d", dev->name,
+			data->current_msg.status);
+
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, (int)data->current_msg.status,
+						 data->user_data);
+		}
+
+		return;
+	}
+
+	if (error_code < 0) {
+		irq_unlock(key);
+		LOG_ERR("DMA read error on %s: %d", dev->name, error_code);
+
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, error_code, data->user_data);
+		}
+
+		return;
+	}
+
+	if (data->num_msgs > 1U) {
+		uint8_t cur_flags = data->msgs_array[data->msg_index].flags;
+		uint8_t next_flags = data->msgs_array[data->msg_index + 1U].flags;
+
+		bool same_rw = ((cur_flags & I2C_MSG_RW_MASK) == (next_flags & I2C_MSG_RW_MASK));
+		bool no_restart = ((next_flags & I2C_MSG_RESTART) == 0U);
+
+		continue_next = same_rw && no_restart;
+	}
+
+	if (continue_next == true) {
+		data->msg_index++;
+		data->num_msgs--;
+
+		data->current_msg.buffer = data->msgs_array[data->msg_index].buf;
+		data->current_msg.size = data->msgs_array[data->msg_index].len;
+		data->current_msg.status = 0U;
+
+		irq_unlock(key);
+
+		if (i2c_dma_read_config(dev) == I2C_MCHP_SUCCESS) {
+
+			int retval = dma_start(cfg->i2c_dma.dma_dev, cfg->i2c_dma.rx_dma_channel);
+
+			if (retval != I2C_MCHP_SUCCESS) {
+				LOG_ERR("DMA read start failed on %s: %d", dev->name, retval);
+
+				if (data->i2c_async_callback != NULL) {
+					data->i2c_async_callback(dev, retval, data->user_data);
+				}
+			}
+
+		} else {
+			LOG_ERR("DMA read config failed on %s", dev->name);
+			if (data->i2c_async_callback != NULL) {
+				data->i2c_async_callback(dev, -EIO, data->user_data);
+			}
+		}
+
+		return;
+	}
+
+	data->current_msg.size = 0U;
+	irq_unlock(key);
+
+	i2c_controller_int_enable(dev, SERCOM_I2CM_INTENSET_SB_Msk);
+}
+
+static int i2c_dma_write_config(const struct device *dev)
+{
+	struct i2c_mchp_dev_data *data = dev->data;
+	const struct i2c_mchp_dev_config *const cfg = dev->config;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+	int retval = I2C_MCHP_SUCCESS;
+
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg.source_data_size = 1;
+	dma_cfg.dest_data_size = 1;
+	dma_cfg.user_data = data;
+	dma_cfg.dma_callback = i2c_dma_write_done;
+	dma_cfg.block_count = 1;
+	dma_cfg.head_block = &dma_blk;
+	dma_cfg.dma_slot = cfg->i2c_dma.tx_dma_request;
+
+	dma_blk.block_size = data->current_msg.size;
+	dma_blk.source_address = (uint32_t)data->current_msg.buffer;
+	dma_blk.dest_address = (uint32_t)(&(cfg->regs->I2CM.SERCOM_DATA));
+	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+	retval = dma_config(cfg->i2c_dma.dma_dev, cfg->i2c_dma.tx_dma_channel, &dma_cfg);
+	if (retval != I2C_MCHP_SUCCESS) {
+		LOG_ERR("Write DMA configure on %s failed: %d", dev->name, retval);
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, retval, data->user_data);
+		}
+	}
+
+	return retval;
+}
+
+static int i2c_dma_read_config(const struct device *dev)
+{
+	struct i2c_mchp_dev_data *data = dev->data;
+	const struct i2c_mchp_dev_config *const cfg = dev->config;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+	int retval = I2C_MCHP_SUCCESS;
+
+	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_cfg.source_data_size = 1;
+	dma_cfg.dest_data_size = 1;
+	dma_cfg.user_data = data;
+	dma_cfg.dma_callback = i2c_dma_read_done;
+	dma_cfg.block_count = 1;
+	dma_cfg.head_block = &dma_blk;
+	dma_cfg.dma_slot = cfg->i2c_dma.rx_dma_request;
+
+	dma_blk.block_size = data->current_msg.size;
+	dma_blk.dest_address = (uint32_t)data->current_msg.buffer;
+	dma_blk.source_address = (uint32_t)(&(cfg->regs->I2CM.SERCOM_DATA));
+	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+	retval = dma_config(cfg->i2c_dma.dma_dev, cfg->i2c_dma.rx_dma_channel, &dma_cfg);
+	if (retval != I2C_MCHP_SUCCESS) {
+		LOG_ERR("Read DMA configure on %s failed: %d", dev->name, retval);
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, retval, data->user_data);
+		}
+	}
+
+	return retval;
+}
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+
 #ifdef CONFIG_I2C_CALLBACK
 static int i2c_mchp_transfer_cb(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 				uint16_t addr, i2c_callback_t i2c_async_callback, void *user_data)
@@ -1119,15 +1438,34 @@ static int i2c_mchp_transfer_cb(const struct device *dev, struct i2c_msg *msgs, 
 	if (is_read == true) {
 		addr_reg |= I2C_MESSAGE_DIR_READ;
 	}
+
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+	int retval = i2c_configure_dma(dev, is_read);
+
+	if (retval == I2C_MCHP_SUCCESS) {
+		i2c_controller_addr_write(dev, addr_reg);
+		retval = i2c_start_dma(dev, is_read);
+	}
+
+	if (retval != I2C_MCHP_SUCCESS) {
+		LOG_ERR("I2C DMA start failed on %s: error=%d", dev->name, retval);
+
+		if (data->i2c_async_callback != NULL) {
+			data->i2c_async_callback(dev, retval, user_data);
+		}
+	}
+#else
 	i2c_controller_addr_write(dev, addr_reg);
 	i2c_controller_int_enable(dev, SERCOM_I2CM_INTENSET_Msk);
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+
 	k_mutex_unlock(&data->i2c_bus_mutex);
 
 	return I2C_MCHP_SUCCESS;
 }
 #endif /*CONFIG_I2C_CALLBACK*/
 
-#if !defined(CONFIG_I2C_MCHP_INTERRUPT_DRIVEN)
+#ifndef CONFIG_I2C_MCHP_INTERRUPT_DRIVEN
 static bool i2c_is_nack(const struct device *dev)
 {
 	bool retval;
@@ -1468,6 +1806,40 @@ static int i2c_mchp_init(const struct device *dev)
 		return retval;
 	}
 
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
+	data->dev = dev;
+	data->cfg = cfg;
+
+	if ((cfg->i2c_dma.tx_dma_channel == 0xFFU) || (cfg->i2c_dma.rx_dma_channel == 0xFFU)) {
+		LOG_ERR("Invalid DMA configuration: TX or RX DMA channel is disabled (0xFF)");
+		return -EINVAL;
+	}
+
+	if (device_is_ready(cfg->i2c_dma.dma_dev) == false) {
+		LOG_ERR("DMA device not ready");
+		return -ENODEV;
+	}
+
+	int dma_ch = cfg->i2c_dma.tx_dma_channel;
+	int dma_ch_request = dma_request_channel(cfg->i2c_dma.dma_dev, &dma_ch);
+
+	/* No valid channel available. */
+	if (dma_ch_request != cfg->i2c_dma.tx_dma_channel) {
+		LOG_ERR("TX DMA channel %d unavailable", cfg->i2c_dma.tx_dma_channel);
+		return -EBUSY;
+	}
+
+	dma_ch = cfg->i2c_dma.rx_dma_channel;
+	dma_ch_request = dma_request_channel(cfg->i2c_dma.dma_dev, &dma_ch);
+
+	/* No valid channel available. */
+	if (dma_ch_request != cfg->i2c_dma.rx_dma_channel) {
+		LOG_ERR("RX DMA channel %d unavailable", cfg->i2c_dma.rx_dma_channel);
+		return -EBUSY;
+	}
+
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+
 	i2c_controller_enable(dev, false);
 	cfg->irq_config_func(dev);
 	i2c_controller_runstandby_enable(dev);
@@ -1515,6 +1887,22 @@ static DEVICE_API(i2c, i2c_mchp_api) = {
 	.i2c_clock.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem)),           \
 	.i2c_clock.gclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, subsystem)),
 
+#if CONFIG_I2C_MCHP_DMA_DRIVEN
+#define I2C_MCHP_DMA_CHECK(n)                                                                      \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, dmas),                                               \
+		     "DMA is enabled for I2C instance " #n                                         \
+		     " but 'dmas' property is missing in the devicetree.")
+#define I2C_MCHP_DMA_CHANNELS(n)                                                                   \
+	.i2c_dma.dma_dev = DEVICE_DT_GET(MCHP_DT_INST_DMA_CTLR(n, tx)),                            \
+	.i2c_dma.tx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, tx),                                 \
+	.i2c_dma.tx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, tx),                                 \
+	.i2c_dma.rx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, rx),                                 \
+	.i2c_dma.rx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, rx),
+#else
+#define I2C_MCHP_DMA_CHECK(n)
+#define I2C_MCHP_DMA_CHANNELS(n)
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+
 #define I2C_MCHP_IRQ_CONNECT(n, m)                                                                 \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
@@ -1528,9 +1916,10 @@ static DEVICE_API(i2c, i2c_mchp_api) = {
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.irq_config_func = &i2c_mchp_irq_config_##n,                                       \
 		.run_in_standby = DT_INST_PROP(n, run_in_standby_en),                              \
-		I2C_MCHP_REG_DEFN(n) I2C_MCHP_CLOCK_DEFN(n)}
+		I2C_MCHP_REG_DEFN(n) I2C_MCHP_CLOCK_DEFN(n) I2C_MCHP_DMA_CHANNELS(n)}
 
 #define I2C_MCHP_DEVICE_INIT(n)                                                                    \
+	I2C_MCHP_DMA_CHECK(n);                                                                     \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void i2c_mchp_irq_config_##n(const struct device *dev);                             \
 	I2C_MCHP_CONFIG_DEFN(n);                                                                   \
