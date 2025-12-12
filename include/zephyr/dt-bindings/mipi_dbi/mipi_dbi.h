@@ -160,15 +160,15 @@
  */
 #define MIPI_DBI_MODE_RGB666_2 (0x5 << 4U)
 /**
- * RGB666 (18 bpp).
+ * RGB888 (24 bpp).
  *
- * - For 8-bit data bus width, #MIPI_DBI_MODE_RGB666_1 and #MIPI_DBI_MODE_RGB666_2 are the same.
+ * - For 8-bit data bus width, #MIPI_DBI_MODE_RGB888_1 and #MIPI_DBI_MODE_RGB888_2 are the same.
  *   1 pixel is sent in 3 cycles, R component first.
- * - For 16-bit data bus width, #MIPI_DBI_MODE_RGB666_1 is option 1, 2 pixels are sent in 3 cycles.
+ * - For 16-bit data bus width, #MIPI_DBI_MODE_RGB888_1 is option 1, 2 pixels are sent in 3 cycles.
  *   The first pixel's R/G/B components are sent in cycle 1 bits 8-15, cycle 1 bits 0-7 and cycle 2
  *   bits 0-15. The second pixel's R/G/B components are sent in cycle 2 bits 0-7, cycle 3 bits 8-15
  *   and cycle 3 bits 0-7.
- *   #MIPI_DBI_MODE_RGB666_2 is option 2, 1 pixel is sent in 2 cycles. The pixel's R/G/B components
+ *   #MIPI_DBI_MODE_RGB888_2 is option 2, 1 pixel is sent in 2 cycles. The pixel's R/G/B components
  *   are sent in cycle 1 bits 0-7, cycle 2 bits 8-15 and cycle 2 bits 0-7.
  */
 #define MIPI_DBI_MODE_RGB888_1 (0x6 << 4U)
