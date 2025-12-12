@@ -538,6 +538,9 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #ifdef CONFIG_ADC_AMBIQ_DMA
 	data->use_dma = false;
 #endif
+
+	/* Disable all ADC interrupts */
+	am_hal_adc_interrupt_disable(data->adcHandle, 0xFF);
 	/* All sampling is truly complete, disable ADC and put device to sleep */
 	am_hal_adc_disable(data->adcHandle);
 	pm_device_runtime_put_async(data->dev, K_MSEC(1));
