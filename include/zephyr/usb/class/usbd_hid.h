@@ -178,6 +178,9 @@ struct hid_device_ops {
 	 * and the execution time should be quite short.
 	 */
 	void (*sof)(const struct device *dev);
+
+  	void (*suspend)(const struct device *dev);
+  	void (*resume)(const struct device *dev);
 };
 
 /**
