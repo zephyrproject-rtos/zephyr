@@ -33,18 +33,24 @@ extern "C" {
  * @{
  */
 
-#define SETTINGS_MAX_DIR_DEPTH  8 /* max depth of settings tree */
+/** Max depth of settings tree */
+#define SETTINGS_MAX_DIR_DEPTH  8
+/** Max setting name length */
 #define SETTINGS_MAX_NAME_LEN   (8 * SETTINGS_MAX_DIR_DEPTH)
+/** Max setting value length */
 #define SETTINGS_MAX_VAL_LEN    256
+/** Setting name field separator */
 #define SETTINGS_NAME_SEPARATOR '/'
+/** Setting name end character */
 #define SETTINGS_NAME_END       '='
 
-/* place for settings additions:
+/**
+ * Place for settings additions:
  * up to 7 separators, '=', '\0'
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
-/* Maximum Settings name length including separators */
+/** Maximum Settings name length including separators */
 #define SETTINGS_FULL_NAME_LEN ((SETTINGS_MAX_NAME_LEN) + (SETTINGS_EXTRA_LEN) + 1)
 
 /**
@@ -209,7 +215,7 @@ struct settings_handler_static {
  * @param _export export routine (can be NULL)
  * @param _cprio commit priority (lower value is higher priority)
  *
- * This creates a variable _hname prepended by settings_handler_.
+ * This creates a variable @c _hname prepended by @c settings_handler_.
  *
  */
 
@@ -423,8 +429,7 @@ int settings_commit_subtree(const char *subtree);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_save_subtree_or_single_without_modification(const char *name,
-							 bool save_if_subtree,
+int settings_save_subtree_or_single_without_modification(const char *name, bool save_if_subtree,
 							 bool save_if_single_setting);
 #endif
 
@@ -497,6 +502,9 @@ struct settings_store_itf {
 	 * It means that if the backend does not contain any functionality to
 	 * really delete old keys, it has to filter out old entities and call
 	 * load callback only on the final entity.
+	 *
+	 * @return Actual size of value that corresponds to name on success, negative value on
+	 * failure.
 	 */
 	int (*csi_load)(struct settings_store *cs, const struct settings_load_arg *arg);
 
@@ -507,6 +515,9 @@ struct settings_store_itf {
 	 * @param[in] name Key in string format.
 	 * @param[in] buf Buffer where data should be copied.
 	 * @param[in] buf_len Length of buf.
+	 *
+	 * @return Actual size of value that corresponds to name on success, negative value on
+	 * failure
 	 */
 	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name, char *buf,
 				size_t buf_len);
@@ -527,6 +538,8 @@ struct settings_store_itf {
 	 * @brief Handler called before an export operation.
 	 *
 	 * @param[in] cs Corresponding backend handler node
+	 *
+	 * @return 0 on success, negative error number on failure
 	 */
 	int (*csi_save_start)(struct settings_store *cs);
 
@@ -537,6 +550,8 @@ struct settings_store_itf {
 	 * @param[in] name Key in string format
 	 * @param[in] value Binary value
 	 * @param[in] val_len Length of value in bytes.
+	 *
+	 * @return 0 on success, negative error number on failure
 	 */
 	int (*csi_save)(struct settings_store *cs, const char *name, const char *value,
 			size_t val_len);
@@ -545,6 +560,8 @@ struct settings_store_itf {
 	 * @brief Handler called after an export operation.
 	 *
 	 * @param[in] cs Corresponding backend handler node
+	 *
+	 * @return 0 on success, negative error number on failure
 	 */
 	int (*csi_save_end)(struct settings_store *cs);
 
@@ -552,6 +569,8 @@ struct settings_store_itf {
 	 * @brief Get pointer to the storage instance used by the backend.
 	 *
 	 * @param[in] cs Corresponding backend handler node
+	 *
+	 * @return Pointer to storage object
 	 */
 	void *(*csi_storage_get)(struct settings_store *cs);
 };
@@ -701,7 +720,7 @@ int settings_runtime_commit(const char *name);
  * It might pointer to: `struct nvs_fs`, `struct fcb` or string witch file name
  * depends on settings backend type used.
  *
- * @return Pointer to which reference to the storage object can be stored.
+ * @param[out] storage Pointer to which reference to the storage object can be stored.
  *
  * @return 0 on success, negative error code on failure.
  */
