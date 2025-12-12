@@ -4,23 +4,7 @@
 description: |
   Microchip MCP251XFD SPI CAN FD controller
 
-  The MCP251XFD node is defined on an SPI bus. An example
-  configuration is:
-
-  &mikrobus_spi {
-      cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
-
-      mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
-          compatible = "microchip,mcp251xfd";
-          status = "okay";
-
-          spi-max-frequency = <18000000>;
-          int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
-          reg = <0x0>;
-          osc-freq = <40000000>;
-
-      };
-  };
+  The MCP251XFD node is defined on an SPI bus.
 
 compatible: "microchip,mcp251xfd"
 
@@ -78,3 +62,20 @@ properties:
       - 2
       - 4
       - 10
+
+examples:
+  - |
+    &mikrobus_spi {
+        cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+        mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
+            compatible = "microchip,mcp251xfd";
+            status = "okay";
+
+            spi-max-frequency = <18000000>;
+            int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+            reg = <0x0>;
+            osc-freq = <40000000>;
+
+        };
+    };
