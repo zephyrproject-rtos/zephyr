@@ -93,6 +93,7 @@ struct ieee802154_cc13xx_cc26xx_data {
 #endif /* CONFIG_SOC_CCxx52x */
 
 	volatile int16_t saved_cmdhandle;
+	volatile RF_CmdHandle rx_handle;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC13XX_CC26XX_H_ */
