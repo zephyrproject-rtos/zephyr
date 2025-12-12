@@ -153,17 +153,19 @@ Sample Output
       current_pixel_format = 32, current_orientation = 0
 
     Capture started
-    Got frame 0! size: 261120; timestamp 249 ms
-    Got frame 1! size: 261120; timestamp 282 ms
-    Got frame 2! size: 261120; timestamp 316 ms
-    Got frame 3! size: 261120; timestamp 350 ms
-    Got frame 4! size: 261120; timestamp 384 ms
-    Got frame 5! size: 261120; timestamp 418 ms
-    Got frame 6! size: 261120; timestamp 451 ms
+    Got frame 0! size: 261120; timestamp 249 ms (delta 249 ms)
+    Got frame 1! size: 261120; timestamp 282 ms (delta 33 ms)
+    Got frame 2! size: 261120; timestamp 316 ms (delta 34 ms)
+    Got frame 3! size: 261120; timestamp 350 ms (delta 34 ms)
+    Got frame 4! size: 261120; timestamp 384 ms (delta 34 ms)
+    Got frame 5! size: 261120; timestamp 418 ms (delta 34 ms)
+    Got frame 6! size: 261120; timestamp 451 ms (delta 33 ms)
 
    <repeats endlessly>
 
-If using the shell, the capture would not start, and instead it is possible to access the shell
+If using the shell, the capture will not start unless the Kconfig option
+:kconfig:option:`VIDEO_SHELL_AND_CAPTURE` is set. In both cases, the shell can be used to change
+parameters on the fly:
 
 .. code-block:: console
 
