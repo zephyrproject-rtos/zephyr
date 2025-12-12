@@ -21,7 +21,7 @@ tests:
       - qemu_x86
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
   debug.coredump.backends.in_memory:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
