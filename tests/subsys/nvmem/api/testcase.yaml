@@ -17,3 +17,10 @@ tests:
       - CONFIG_NVMEM_FLASH_WRITE=y
     extra_dtc_overlay_files:
       - flash.overlay
+  nvmem.api.otp:
+    extra_configs:
+      - CONFIG_OTP=y
+      - CONFIG_OTP_PROGRAM=y
+      - CONFIG_NVMEM_OTP_WRITE=y
+    extra_dtc_overlay_files:
+      - otp.overlay
