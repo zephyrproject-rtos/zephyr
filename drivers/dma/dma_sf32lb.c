@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(dma_sf32lb, CONFIG_DMA_LOG_LEVEL);
 #define DMAC_CSELR2    offsetof(DMAC_TypeDef, CSELR2)
 
 #define DMAC_ISR_TCIF(n) (DMAC_ISR_TCIF1_Msk << (n * 4U))
+#define DMAC_ISR_HTIF(n) (DMAC_ISR_HTIF1_Msk << (n * 4U))
 
 #define DMAC_IFCR_ALL(n)                                                                           \
 	((DMAC_IFCR_CGIF1_Msk | DMAC_IFCR_CTCIF1_Msk | DMAC_IFCR_CHTIF1_Msk |                      \
@@ -51,6 +52,7 @@ LOG_MODULE_REGISTER(dma_sf32lb, CONFIG_DMA_LOG_LEVEL);
 	 << (n * 4U))
 #define DMAC_IFCR_CTCIF(n) (DMAC_IFCR_CTCIF1_Msk << (n * 4U))
 #define DMAC_IFCR_CTEIF(n) (DMAC_IFCR_CTEIF1_Msk << (n * 4U))
+#define DMAC_IFCR_CTHIF(n) (DMAC_IFCR_CHTIF1_Msk << (n * 4U))
 
 #define DMAC_CCRX_PSIZE(n) FIELD_PREP(DMAC_CCR1_PSIZE_Msk, LOG2CEIL(n))
 #define DMAC_CCRX_MSIZE(n) FIELD_PREP(DMAC_CCR1_MSIZE_Msk, LOG2CEIL(n))
@@ -72,6 +74,7 @@ struct dma_sf32lb_config {
 struct dma_sf32lb_channel {
 	dma_callback_t callback;
 	void *user_data;
+	uint32_t size;
 	enum dma_channel_direction direction;
 };
 
@@ -89,12 +92,16 @@ static void dma_sf32lb_isr(const struct device *dev, uint8_t channel)
 	isr = sys_read32(config->dmac + DMAC_ISR);
 	if ((isr & DMAC_ISR_TCIF(channel)) != 0U) {
 		status = DMA_STATUS_COMPLETE;
+	} else if ((isr & DMAC_ISR_HTIF(channel)) != 0U) {
+		status = DMA_STATUS_BLOCK;
 	} else {
 		status = -EIO;
 	}
 
-	config->channels[channel].callback(dev, config->channels[channel].user_data, channel,
+	if (config->channels[channel].callback) {
+		config->channels[channel].callback(dev, config->channels[channel].user_data, channel,
 					   status);
+	}
 
 	sys_write32(DMAC_IFCR_ALL(channel), config->dmac + DMAC_IFCR);
 }
@@ -107,16 +114,9 @@ static void dma_sf32lb_isr(const struct device *dev, uint8_t channel)
 
 LISTIFY(8, DMA_SF32LB_IRQ_DEFINE, ())
 
-static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
-			     struct dma_config *config_dma)
+static inline int check_dma_config(uint32_t channel, struct dma_config *config_dma,
+			    const struct dma_sf32lb_config *config)
 {
-	const struct dma_sf32lb_config *config = dev->config;
-	struct dma_sf32lb_data *data = dev->data;
-	uint32_t ccrx;
-	uint32_t cselrx;
-	uint32_t cparx;
-	uint32_t cm0arx;
-
 	if (channel >= config->n_channels) {
 		LOG_ERR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
 			config->n_channels);
@@ -167,19 +167,47 @@ static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	/* configure transfer parameters */
-	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
-	if ((ccrx & DMAC_CCR1_EN) != 0U) {
-		LOG_ERR("Configuration not possible with DMA enabled");
-		return -EIO;
+	if (config_dma->dest_data_size != config_dma->source_data_size) {
+		LOG_ERR("dest_data_size != source_data_size not support");
+		return -EINVAL;
 	}
 
-	ccrx &= ~(DMAC_CCR1_TCIE | DMAC_CCR1_HTIE | DMAC_CCR1_TEIE | DMAC_CCR1_DIR_Msk |
+	return 0;
+}
+
+static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
+			     struct dma_config *config_dma)
+{
+	int ret;
+	const struct dma_sf32lb_config *config = dev->config;
+	struct dma_sf32lb_data *data = dev->data;
+	uint32_t ccrx;
+	uint32_t cselrx;
+	uint32_t cparx;
+	uint32_t cm0arx;
+
+	ret = check_dma_config(channel, config_dma, config);
+	if (ret) {
+		return ret;
+	}
+
+	/* configure transfer parameters */
+	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
+
+	ccrx &= ~(DMAC_CCR1_TCIE | DMAC_CCR1_HTIE | DMAC_CCR1_TEIE | DMAC_CCR1_DIR_Msk | DMAC_CCR1_CIRC_Msk |
 		  DMAC_CCR1_CIRC_Msk | DMAC_CCR1_PINC_Msk | DMAC_CCR1_MINC_Msk |
 		  DMAC_CCR1_PSIZE_Msk | DMAC_CCR1_MSIZE_Msk | DMAC_CCR1_PL_Msk |
 		  DMAC_CCR1_MEM2MEM_Msk);
 
 	ccrx |= FIELD_PREP(DMAC_CCR1_PL_Msk, config_dma->channel_priority);
+
+	if (config_dma->head_block->dest_reload_en || config_dma->head_block->source_reload_en) {
+		ccrx |= DMAC_CCR1_CIRC;
+	}
+
+	if (config_dma->complete_callback_en) {
+		ccrx |= DMAC_CCR1_TCIE;
+	}
 
 	switch (config_dma->channel_direction) {
 	case MEMORY_TO_MEMORY:
@@ -247,6 +275,7 @@ static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
 	config->channels[channel].callback = config_dma->dma_callback;
 	config->channels[channel].user_data = config_dma->user_data;
 	config->channels[channel].direction = config_dma->channel_direction;
+	config->channels[channel].size = config_dma->source_data_size;
 
 	return 0;
 }
@@ -271,9 +300,14 @@ static int dma_sf32lb_reload(const struct device *dev, uint32_t channel, uint32_
 	}
 
 	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
-	if ((ccrx & DMAC_CCR1_EN) != 0U) {
-		LOG_ERR("Channel %" PRIu32 " is busy", channel);
-		return -EBUSY;
+
+	/* configure size, src/dst addresses */
+	if (config->channels[channel].size == 4) {
+		size >>= 2;
+	} else if (config->channels[channel].size == 2) {
+		size >>= 1;
+	} else {
+		return -EINVAL;
 	}
 
 	/* configure size, src/dst addresses */
