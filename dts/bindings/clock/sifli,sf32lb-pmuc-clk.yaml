@@ -1,0 +1,32 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli PMUC low-speed clock controller. PMUC controls the on-chip low-power
+  RC oscillators. This binding exposes those clocks so other blocks (e.g. RCC)
+  can request and manage them through the common clock control API.
+
+compatible: "sifli,sf32lb-pmuc-clk"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+    description: Clock index, see dt-bindings/clock/sf32lb-pmuc-clocks.h
+
+  clock-frequencies:
+    type: array
+    required: true
+    description: |
+      Frequencies (in Hz) for PMUC managed clocks, ordered by clock index:
+        0: LRC10 (10 kHz RC oscillator)
+        1: LRC32 (32 kHz RC oscillator)
+
+clock-cells:
+  - clk_id
