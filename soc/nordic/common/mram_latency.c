@@ -29,6 +29,11 @@ struct sync_latency_req {
 	int res;
 };
 
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+K_SEM_DEFINE(internal_switch_sem, 0, 1);
+static bool internal_switch;
+#endif /* CONFIG_SOC_NRF54H20_CPURAD */
+
 static void latency_change_req(bool latency_not_allowed)
 {
 	nrfs_err_t err;
@@ -76,10 +81,20 @@ static void no_latency_stop(struct onoff_manager *mgr, onoff_notify_fn notify)
 
 static void evt_handler(nrfs_mram_latency_evt_t const *p_evt, void *context)
 {
-	int res = p_evt->type == NRFS_MRAM_LATENCY_REQ_APPLIED ? 0 : -EIO;
-
-	LOG_DBG("Latency not allowed - applied");
-	onoff_notify(&mram_latency_mgr, res);
+	switch (p_evt->type) {
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+	case NRFS_MRAM_LATENCY_REQ_APPLIED:
+		LOG_DBG("Latency not allowed - applied");
+		onoff_notify(&mram_latency_mgr, 0);
+		break;
+#endif /* CONFIG_SOC_NRF54H20_CPURAD */
+	case NRFS_MRAM_INTERNAL_REQ_APPLIED:
+		k_sem_give(&internal_switch_sem);
+		break;
+	default:
+		onoff_notify(&mram_latency_mgr, -EIO);
+		break;
+	}
 }
 
 static void work_handler(struct k_work *work)
@@ -135,6 +150,40 @@ int mram_no_latency_sync_release(void)
 	return onoff_release(&mram_latency_mgr) >= 0 ? 0 : -EIO;
 }
 
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+static int internal_switch_set(bool enable)
+{
+	int err;
+
+	if (internal_switch == enable) {
+		return 0;
+	}
+
+	if (k_is_in_isr() || (state != MRAM_LATENCY_ON)) {
+		return -ENOTSUP;
+	}
+
+	if (nrfs_mram_internal_switch(enable, NULL) != NRFS_SUCCESS) {
+		return -EIO;
+	}
+	err = k_sem_take(&internal_switch_sem, K_MSEC(CONFIG_MRAM_LATENCY_SYNC_TIMEOUT));
+	if (err == 0) {
+		internal_switch = enable;
+	}
+	return err;
+}
+
+int mram_no_latency_internal_switch_enable(void)
+{
+	return internal_switch_set(true);
+}
+
+int mram_no_latency_internal_switch_disable(void)
+{
+	return internal_switch_set(false);
+}
+#endif /* CONFIG_SOC_NRF54H20_CPURAD */
+
 /* First initialize onoff manager to be able to accept requests. */
 static int init_manager(void)
 {
@@ -175,4 +224,4 @@ static int init_nrfs(void)
 }
 
 SYS_INIT(init_manager, PRE_KERNEL_1, 0);
-SYS_INIT(init_nrfs, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(init_nrfs, POST_KERNEL, UTIL_INC(CONFIG_NRFS_BACKEND_IPC_SERVICE_INIT_PRIO));
