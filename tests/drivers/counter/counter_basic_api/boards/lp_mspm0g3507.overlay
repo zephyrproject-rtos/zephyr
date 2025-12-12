@@ -1,0 +1,31 @@
+&timg0 {
+	status = "okay";
+};
+
+&counterg0 {
+	status = "okay";
+};
+
+&timg6 {
+	status = "okay";
+};
+
+&counterg6 {
+	status = "okay";
+};
+
+&timg7 {
+	status = "okay";
+};
+
+&counterg7 {
+	status = "okay";
+};
+
+&timg12 {
+	status = "okay";
+};
+
+&counterg12 {
+	status = "okay";
+};
