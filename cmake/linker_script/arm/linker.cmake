@@ -264,3 +264,5 @@ zephyr_linker_section(NAME .last_section VMA FLASH LMA FLASH
                       NOINPUT TYPE LINKER_SCRIPT_FOOTER)
 # KEEP can not be passed to zephyr_linker_section, so:
 zephyr_linker_section_configure(SECTION .last_section INPUT ".last_section" KEEP)
+
+zephyr_linker_symbol(SYMBOL "_flash_used" EXPR "(@__last_section_end@ - ${rom_start})")
