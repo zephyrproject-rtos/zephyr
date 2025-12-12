@@ -53,5 +53,19 @@
 				disk-name = "mmc0";
 			};
 		};
+
+		can0: can@f1980000 {
+			compatible = "xlnx,canfd-2.0";
+			status = "disabled";
+			reg = <0xf1980000 0x6000>;
+			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		can1: can@f1990000 {
+			compatible = "xlnx,canfd-2.0";
+			status = "disabled";
+			reg = <0xf1990000 0x6000>;
+			interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
 	};
 };
