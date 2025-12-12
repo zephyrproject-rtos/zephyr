@@ -87,6 +87,37 @@ def main(argv):
         print("Pull request is description is empty.")
         fail = True
 
+    # Check if PR title is different from branch name
+    branch_name = pr.head.ref
+    pr_title = pr.title.strip()
+
+    # Convert branch name to potential default title formats that GitHub might generate
+    # GitHub typically converts branch names by replacing dashes/underscores with spaces
+    # and capitalizing the first letter
+    potential_auto_titles = [
+        branch_name,
+        branch_name.replace('-', ' '),
+        branch_name.replace('_', ' '),
+        branch_name.replace('-', ' ').replace('_', ' '),
+        branch_name.replace('-', ' ').capitalize(),
+        branch_name.replace('_', ' ').capitalize(),
+        branch_name.replace('-', ' ').replace('_', ' ').capitalize(),
+        branch_name.title(),
+        branch_name.replace('-', ' ').title(),
+        branch_name.replace('_', ' ').title(),
+        branch_name.replace('-', ' ').replace('_', ' ').title(),
+    ]
+
+    if pr_title in potential_auto_titles or pr_title.lower() in [
+        t.lower() for t in potential_auto_titles
+    ]:
+        print(
+            f"Pull request title \"{pr_title}\" appears to be auto-generated "
+            f"from branch name \"{branch_name}\"."
+        )
+        print("Please provide a meaningful title that describes the changes.")
+        fail = True
+
     if fail:
         print("This workflow fails so that the pull request cannot be merged.")
         sys.exit(1)
