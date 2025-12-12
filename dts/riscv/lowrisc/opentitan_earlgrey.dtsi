@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
 / {
 	#address-cells = <0x01>;
 	#size-cells = <0x01>;
@@ -25,6 +28,14 @@
 				interrupt-controller;
 				compatible = "riscv,cpu-intc";
 			};
+		};
+	};
+
+	clocks {
+		pclk: p-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
 		};
 	};
 
@@ -101,6 +112,36 @@
 			clock-frequency = <48000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		i2c0: i2c@40080000 {
+			compatible = "lowrisc,opentitan-i2c";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40080000 0x100>;
+			clocks = <&pclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
+		i2c1: i2c@40090000 {
+			compatible = "lowrisc,opentitan-i2c";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40090000 0x100>;
+			clocks = <&pclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
+		i2c2: i2c@400a0000 {
+			compatible = "lowrisc,opentitan-i2c";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400a0000 0x100>;
+			clocks = <&pclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 		};
 	};
 };
