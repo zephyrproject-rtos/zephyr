@@ -17,30 +17,6 @@ description: |
   high and active low respectively, meaning that the current flows from
   digit-gpios to segment-gpios. Vice versa for common cathode.
 
-  Example:
-
-  #include <zephyr/dt-bindings/gpio/gpio.h>
-
-  / {
-          auxdisplay_0: digi-display {
-                  compatible = "gpio-7-segment";
-                  columns = <3>;
-                  rows = <1>;
-                  segment-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>, /* A */
-                                  <&gpio0 1 GPIO_ACTIVE_LOW>, /* B */
-                                  <&gpio0 2 GPIO_ACTIVE_LOW>, /* C */
-                                  <&gpio0 3 GPIO_ACTIVE_LOW>, /* D */
-                                  <&gpio0 4 GPIO_ACTIVE_LOW>, /* E */
-                                  <&gpio0 5 GPIO_ACTIVE_LOW>, /* F */
-                                  <&gpio0 6 GPIO_ACTIVE_LOW>, /* G */
-                                  <&gpio0 7 GPIO_ACTIVE_LOW>; /* DP */
-                  digit-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,  /* DIG1 */
-                                <&gpio1 1 GPIO_ACTIVE_HIGH>,  /* DIG2 */
-                                <&gpio1 2 GPIO_ACTIVE_HIGH>;  /* DIG3 */
-                  refresh-period-ms = <1>;
-          };
-  };
-
 compatible: "gpio-7-segment"
 
 include: auxdisplay-device.yaml
@@ -86,3 +62,27 @@ properties:
       This is the time between the display of each digit. The refresh period
       must be long enough to allow the segments to be driven and the digit to
       be selected.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    / {
+            auxdisplay_0: digi-display {
+                    compatible = "gpio-7-segment";
+                    columns = <3>;
+                    rows = <1>;
+                    segment-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>, /* A */
+                                    <&gpio0 1 GPIO_ACTIVE_LOW>, /* B */
+                                    <&gpio0 2 GPIO_ACTIVE_LOW>, /* C */
+                                    <&gpio0 3 GPIO_ACTIVE_LOW>, /* D */
+                                    <&gpio0 4 GPIO_ACTIVE_LOW>, /* E */
+                                    <&gpio0 5 GPIO_ACTIVE_LOW>, /* F */
+                                    <&gpio0 6 GPIO_ACTIVE_LOW>, /* G */
+                                    <&gpio0 7 GPIO_ACTIVE_LOW>; /* DP */
+                    digit-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,  /* DIG1 */
+                                  <&gpio1 1 GPIO_ACTIVE_HIGH>,  /* DIG2 */
+                                  <&gpio1 2 GPIO_ACTIVE_HIGH>;  /* DIG3 */
+                    refresh-period-ms = <1>;
+            };
+    };
