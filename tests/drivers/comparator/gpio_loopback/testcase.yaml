@@ -47,3 +47,6 @@ tests:
   drivers.comparator.gpio_loopback.nxp_hscmp:
     platform_allow:
       - lpcxpresso55s36
+  drivers.comparator.gpio_loopback.nxp_acomp:
+    platform_allow:
+      - frdm_rw612
