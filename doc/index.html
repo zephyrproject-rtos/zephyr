@@ -1,4 +1,9 @@
 <style>
+  :root {
+    --shadow-color: rgb(from var(--body-color) r g b / calc(alpha * 0.2));
+    --shadow-style: 0 12px 6px -6px var(--shadow-color);
+  }
+
   h1 {
     display: none;
   }
@@ -26,7 +31,6 @@
       p {
         color: var(--body-color);
         font-size: 0.9rem;
-        opacity: 0.6;
         line-height: 1.2em;
       }
   }
@@ -55,11 +59,11 @@
   .card-title {
     font-size: 1.125rem;
     font-weight: bold;
-    color: #fff;
+    color: var(--body-color);
     margin-bottom: 0.25rem !important;
   }
   .card-description {
-    color: var(--navbar-level-1-color);
+    color: var(--body-color);
     font-weight: 300;
     font-size: 0.9rem !important;
     margin: 0 !important;
@@ -71,7 +75,7 @@
 
   /* === LANDING CARDS === */
   .landing-card {
-    background-color: var(--navbar-background-color);
+    background-color: var(--landing-card-background-color);
     border-radius: 0.75rem;
     padding: 1.5rem 2rem;
     display: flex;
@@ -83,7 +87,7 @@
     transition: all 0.15s ease 0.15s ease;
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--shadow-style);
       text-decoration: none;
       .landing-watermark {
         transform: translateY(-50%) rotate(-8deg) scale(1.1);
@@ -108,7 +112,7 @@
     opacity: 0.12;
     pointer-events: none;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    color: var(--navbar-scrollbar-color);
+    color: var(--link-color);
     i {
       font-size: 5rem !important;
       line-height: 1;
@@ -117,7 +121,7 @@
 
   /* === PERSONA CARDS === */
   .persona-card {
-    background-color: var(--navbar-background-color);
+    background-color: var(--landing-card-background-color);
     border-radius: 0.75rem;
     padding: 1.5rem 2rem;
     position: relative;
@@ -130,12 +134,15 @@
     transition: all 0.2s ease;
     &:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow-style);
       border-color: rgba(255, 255, 255, 0.05);
       .watermark {
         transform: rotate(-10deg) scale(1.1);
         opacity: 0.15;
       }
+    }
+    .persona-link:hover {
+      font-weight: 500;
     }
     .card-content {
       position: relative;
@@ -249,7 +256,7 @@
   .persona-link {
     display: flex;
     align-items: center;
-    color: var(--navbar-level-1-color) !important;
+    color: var(--body-color) !important;
     font-size: 0.9rem;
     text-decoration: none;
     transition: color 0.2s;
@@ -264,7 +271,7 @@
 
   /* === CONTRIBUTE CARD === */
   .contribute-card {
-    background-color: var(--navbar-background-color);
+    background-color: var(--landing-card-background-color);
     border-radius: 0.5rem;
     padding: 2rem;
     display: flex;
@@ -275,10 +282,10 @@
     transition: all 0.1s ease;
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow-style);
       text-decoration: none;
       .cta-text {
-        color: #fff;
+        color: var(--body-color);
       }
     }
     @media (max-width: 768px) {
@@ -299,7 +306,7 @@
     flex-shrink: 0;
   }
   .cta-text {
-    color: var(--navbar-level-1-color);
+    color: var(--body-color);
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -315,7 +322,7 @@
 
   /* === REFERENCE CARDS === */
   .reference-card {
-    background-color: var(--navbar-background-color);
+    background-color: var(--landing-card-background-color);
     border-radius: 0.5rem;
     padding: 1rem;
     display: flex;
@@ -325,7 +332,7 @@
     transition: transform 0.1s ease;
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow-style);
       text-decoration: none;
       .reference-arrow {
         opacity: 1;
@@ -369,7 +376,7 @@
     margin-bottom: 0.5rem !important;
   }
   .section-subtitle {
-    opacity: 0.6;
+    opacity: 0.75;
     margin-top: 0.5rem;
     font-size: 0.95rem;
   }
