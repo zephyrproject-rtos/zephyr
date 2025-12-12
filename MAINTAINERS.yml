@@ -436,6 +436,20 @@ Binary Descriptors:
   tests:
     - bindesc
 
+Biometrics Drivers:
+  status: maintained
+  maintainers:
+    - heronet
+  files:
+    - drivers/biometrics/
+    - dts/bindings/biometrics/
+    - include/zephyr/drivers/biometrics.h
+    - samples/drivers/biometrics/
+    - tests/drivers/biometrics/
+    - doc/hardware/peripherals/biometrics.rst
+  labels:
+    - "area: Biometrics"
+
 Bluetooth Audio:
   status: maintained
   maintainers:
