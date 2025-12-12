@@ -21,4 +21,28 @@ module = VC8000NANOE
 module-str = vc8000nanoe
 source "subsys/logging/Kconfig.template.log_config"
 
+choice VIDEO_STM32_VENC_MEM_ALLOC
+	prompt "Select allocator for VENC internal memory"
+
+config VIDEO_STM32_VENC_SMH_ALLOC
+	bool "Shared-Multi-Heap"
+
+config VIDEO_STM32_VENC_HEAP_ALLOC
+	bool "Heap"
+
+endchoice
+
+config VIDEO_STM32_VENC_HEAP_SIZE
+	int "VENC internal memory pool size in byte"
+	depends on VIDEO_STM32_VENC_HEAP_ALLOC
+	default 7340032
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+	bool "Place VENC internal memory pool in a Zephyr memory-region"
+	depends on VIDEO_STM32_VENC_HEAP_ALLOC
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME
+	string "Name of the zephyr memory-region for memory pool"
+	depends on VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+
 endif

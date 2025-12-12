@@ -180,6 +180,12 @@ New APIs and options
 
   * :c:macro:`COND_CASE_1`
 
+* Video
+
+  * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
+  * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
+  * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
