@@ -57,9 +57,8 @@ int bmg160_read_byte(const struct device *dev, uint8_t reg_addr,
 	return bmg160_read(dev, reg_addr, byte, 1);
 }
 
-static int bmg160_write(const struct device *dev, uint8_t reg_addr,
-			uint8_t *data,
-			uint8_t len)
+int bmg160_write_byte(const struct device *dev, uint8_t reg_addr,
+		      uint8_t byte)
 {
 	const struct bmg160_device_config *dev_cfg = dev->config;
 	struct bmg160_device_data *bmg160 = dev->data;
@@ -69,20 +68,13 @@ static int bmg160_write(const struct device *dev, uint8_t reg_addr,
 
 	k_sem_take(&bmg160->sem, K_FOREVER);
 
-	if (i2c_burst_write_dt(&dev_cfg->i2c,
-			       reg_addr, data, len) < 0) {
+	if (i2c_reg_write_byte_dt(&dev_cfg->i2c, reg_addr, byte) < 0) {
 		ret = -EIO;
 	}
 
 	k_sem_give(&bmg160->sem);
 
 	return ret;
-}
-
-int bmg160_write_byte(const struct device *dev, uint8_t reg_addr,
-		      uint8_t byte)
-{
-	return bmg160_write(dev, reg_addr, &byte, 1);
 }
 
 int bmg160_update_byte(const struct device *dev, uint8_t reg_addr,
