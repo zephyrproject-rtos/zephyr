@@ -34,6 +34,13 @@ enum imx335_res {
 	IMX335_RES_1296x972,
 };
 
+enum imx335_framerate {
+	IMX335_25_FPS,
+	IMX335_30_FPS,
+	IMX335_50_FPS,
+	IMX335_60_FPS,
+};
+
 struct imx335_config {
 	struct i2c_dt_spec i2c;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -51,6 +58,7 @@ struct imx335_ctrls {
 struct imx335_data {
 	struct imx335_ctrls ctrls;
 	struct video_format fmt;
+	uint32_t frame_rate;
 	bool enabled;
 };
 
@@ -333,6 +341,13 @@ static const struct video_format_cap imx335_fmts[] = {
 	{0}
 };
 
+static const uint32_t imx335_framerates[] = {
+	[IMX335_25_FPS] = 25,
+	[IMX335_30_FPS] = 30,
+	[IMX335_50_FPS] = 50,
+	[IMX335_60_FPS] = 60,
+};
+
 static int imx335_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct imx335_data *drv_data = dev->data;
@@ -423,6 +438,62 @@ static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 	}
 }
 
+static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	const struct imx335_config *cfg = dev->config;
+	struct imx335_data *drv_data = dev->data;
+	int ret;
+
+	struct video_frmival_enum match = {
+		.format = &drv_data->fmt,
+		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
+		.discrete = *frmival,
+	};
+	video_closest_frmival(dev, &match);
+
+	uint16_t hmax;
+
+	switch (match.index) {
+	case IMX335_25_FPS:
+		hmax = (drv_data->fmt.width == IMX335_BIN_2X2_WIDTH
+				&& drv_data->fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
+		break;
+	case IMX335_30_FPS:
+		hmax = 0x0226;
+		break;
+	case IMX335_50_FPS:
+		hmax = 0x0140;
+		break;
+	case IMX335_60_FPS:
+		hmax = 0x0113;
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
+	/* use REGHOLD to ensure that our change is applied consistently */
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_HMAX, hmax);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	frmival->numerator = 1;
+	frmival->denominator = imx335_framerates[match.index];
+	drv_data->frame_rate = imx335_framerates[match.index];
+
+	return 0;
+}
+
 static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct imx335_data *drv_data = dev->data;
@@ -479,28 +550,43 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	drv_data->fmt.width = fmt->width;
 	drv_data->fmt.height = fmt->height;
+	/* update framerate, since the timing and allowed framerates may have changed */
+	struct video_frmival frmival = {
+		.numerator = 1,
+		.denominator = drv_data->frame_rate,
+	};
 
-	return 0;
+	return imx335_set_frmival(dev, &frmival);
 }
 
 static int imx335_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	/* Only 30fps is supported right now */
+	struct imx335_data *drv_data = dev->data;
+
 	frmival->numerator = 1;
-	frmival->denominator = 30;
+	frmival->denominator = drv_data->frame_rate;
 
 	return 0;
 }
 
 static int imx335_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	if (fie->index > 0) {
+	size_t fmt_idx;
+	int ret;
+
+	ret = video_format_caps_index(imx335_fmts, fie->format, &fmt_idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((fmt_idx == IMX335_RES_2592x1944 && fie->index > IMX335_30_FPS)
+	     || (fmt_idx == IMX335_RES_1296x972 && fie->index > IMX335_60_FPS)) {
 		return -EINVAL;
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
 	fie->discrete.numerator = 1;
-	fie->discrete.denominator = 30;
+	fie->discrete.denominator = imx335_framerates[fie->index];
 
 	return 0;
 }
@@ -511,8 +597,7 @@ static DEVICE_API(video, imx335_driver_api) = {
 	.get_caps = imx335_get_caps,
 	.set_stream = imx335_set_stream,
 	.set_ctrl = imx335_set_ctrl,
-	/* frmival is fixed, hence set/get_frmival both return 30fps */
-	.set_frmival = imx335_get_frmival,
+	.set_frmival = imx335_set_frmival,
 	.get_frmival = imx335_get_frmival,
 	.enum_frmival = imx335_enum_frmival,
 };
@@ -673,6 +758,7 @@ static int imx335_init(const struct device *dev)
 			.width = IMX335_NATIVE_WIDTH,						\
 			.height = IMX335_NATIVE_HEIGHT,						\
 		},										\
+		.frame_rate = 30,								\
 		.enabled = false,								\
 	};											\
 	static const struct imx335_config imx335_cfg_##n = {					\
