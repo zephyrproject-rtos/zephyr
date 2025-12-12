@@ -1,0 +1,6 @@
+shield:
+  name: nxp_s32k5xx_mb
+  full_name: NXP S32K5XX MB
+  vendor: nxp
+  supported_features:
+    - uart

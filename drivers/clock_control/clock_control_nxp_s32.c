@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023,2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,11 @@
 #include <zephyr/drivers/clock_control.h>
 
 #include <Clock_Ip.h>
+
+#if defined(CLOCK_IP_HAS_FIRC_CLK) && (CLOCK_IP_HAS_FIRC_CLK == 0)
+/*  Support newer platforms in which CLOCK_IS_OFF is undefined */
+#define CLOCK_IS_OFF -1
+#endif
 
 #define NXP_S32_CLOCK_CONFIG_IDX CONFIG_CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
 
