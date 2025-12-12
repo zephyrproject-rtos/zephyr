@@ -32,4 +32,6 @@ supported:
   - usbd
   - video
   - watchdog
+  - ble
+  - bt_classic
 vendor: nxp
