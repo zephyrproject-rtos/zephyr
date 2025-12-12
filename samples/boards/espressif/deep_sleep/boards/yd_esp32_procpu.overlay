@@ -7,7 +7,6 @@
 / {
 	aliases {
 		wakeup-gpios = &wakeup_pins;
-		retainedmemdevice = &retainedmem0;
 	};
 
 	gpio_keys {
@@ -18,28 +17,9 @@
 				<&gpio0 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH | GPIO_INT_WAKEUP)>;
 		};
 	};
-
-	memory@50001f00 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x50001f00 0x100>;
-		zephyr,memory-region = "RTC_SLOW_RAM_RETAINED_MEM";
-		status = "okay";
-
-		retainedmem0: retainedmem {
-			compatible = "zephyr,retained-ram";
-			status = "okay";
-		};
-	};
 };
 
 &gpio0 {
 	/* Configure device as wakeup source */
 	wakeup-source;
-};
-
-&rtc_slow_ram {
-	/* Shrink rtc_slow_ram size to avoid overlap with retained memory region:
-	 * 8KB - 256 = 0x1f00
-	 */
-	reg = <0x50000000 0x1f00>;
 };
