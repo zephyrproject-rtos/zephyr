@@ -95,4 +95,6 @@
     --footer-color: #aaa;
 
     --graphviz-filter: invert(0.9) brightness(1.2);
+
+    --landing-card-background-color: var(--navbar-background-color);
 }

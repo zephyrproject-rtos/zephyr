@@ -93,4 +93,6 @@
     --footer-color: #747474;
 
     --graphviz-filter: none;
+
+    --landing-card-background-color: var(--admonition-note-background-color);
 }
