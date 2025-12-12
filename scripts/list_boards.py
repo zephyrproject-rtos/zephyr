@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2020-2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -58,13 +58,15 @@ class Revision:
 class Variant:
     name: str
     variants: list[str] = field(default_factory=list)
+    include_parent_kconfig: bool = field(default_factory=bool)
+    include_parent_dts: bool = field(default_factory=bool)
 
     @staticmethod
     def from_dict(variant):
         variants = []
         for v in variant.get('variants', []):
             variants.append(Variant.from_dict(v))
-        return Variant(variant['name'], variants)
+        return Variant(variant['name'], variants, (variant.get('include-parent-kconfig') is True), (variant.get('include-parent-dts') is True))
 
 
 @dataclass
@@ -315,6 +317,50 @@ def board_v2_qualifiers(board):
     return qualifiers_list
 
 
+def board_v2_inner_parent_include(id_str, variants):
+    parent_kconfig_inner_list = []
+    parent_dts_inner_list = []
+
+    for v in variants:
+        chained_id_str = id_str + "/" + v.name
+
+        if v.include_parent_kconfig is True:
+            parent_kconfig_inner_list.append(chained_id_str)
+
+        if v.include_parent_dts is True:
+            parent_dts_inner_list.append(chained_id_str)
+
+        if v.variants:
+            resp = board_v2_inner_parent_include(chained_id_str, v.variants)
+            parent_kconfig_inner_list.extend(resp[0])
+            parent_dts_inner_list.extend(resp[1])
+
+    return [parent_kconfig_inner_list, parent_dts_inner_list]
+
+
+def board_v2_parent_include(board):
+    parent_kconfig_list = []
+    parent_dts_list = []
+
+    for s in board.socs:
+        if s.cpuclusters:
+            for c in s.cpuclusters:
+                id_str = s.name + '/' + c.name
+                resp = board_v2_inner_parent_include(id_str, c.variants)
+                parent_kconfig_list.extend(resp[0])
+                parent_dts_list.extend(resp[1])
+        else:
+            resp = board_v2_inner_parent_include(s.name, s.variants)
+            parent_kconfig_list.extend(resp[0])
+            parent_dts_list.extend(resp[1])
+
+    for v in board.variants:
+# ???? this looks to be a faulty implementation and never contains anything even with extended board/soc
+        print("5)")
+        print(v)
+    return [parent_kconfig_list, parent_dts_list]
+
+
 def board_v2_qualifiers_csv(board):
     # Return in csv (comma separated value) format
     return ",".join(board_v2_qualifiers(board))
@@ -328,6 +374,7 @@ def dump_v2_boards(args):
 
     for b in boards.values():
         qualifiers_list = board_v2_qualifiers(b)
+        include_parent_list = board_v2_parent_include(b)
         if args.cmakeformat is not None:
             def notfound(x):
                 return x or 'NOTFOUND'
@@ -343,6 +390,8 @@ def dump_v2_boards(args):
                 REVISIONS='REVISIONS;' + ';'.join(
                           [x.name for x in b.revisions]),
                 SOCS='SOCS;' + ';'.join([s.name for s in b.socs]),
+                INCLUDE_PARENT_KCONFIG='INCLUDE_PARENT_KCONFIG;' + notfound(';'.join(include_parent_list[0])),
+                INCLUDE_PARENT_DTS='INCLUDE_PARENT_DTS;' + notfound(';'.join(include_parent_list[1])),
                 QUALIFIERS='QUALIFIERS;' + ';'.join(qualifiers_list)
             )
             print(info)
