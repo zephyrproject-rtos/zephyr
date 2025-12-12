@@ -1,11 +1,12 @@
 #
-# Copyright 2025-2026 NXP
+# Copyright 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
   AND "$ENV{USE_NXP_SPSDK_IMAGE}" STREQUAL "y"))
   find_program(7Z_EXECUTABLE 7z REQUIRED)
+  # reuse EVK's firmware
   set(FIRMWARE_RELEASE "imx93evk-boot-firmware-6.12.34-2.1.0")
   # Parse SPSDK version
   execute_process(
@@ -17,7 +18,7 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
   message(STATUS "SPSDK version is ${SPSDK_VERSION}")
 
   if(CONFIG_SOC_MIMX9352_A55)
-    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_primary.yaml
+    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_primary.yaml
       "
       family: mimx9352
       revision: a1
@@ -35,7 +36,7 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
                 lpddr_dmem_2d:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/lpddr4_dmem_2d_v202201.bin
                 spl_ddr:           ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/u-boot-spl.bin-imx93evk-sd
     ")
-    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_secondary.yaml
+    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_secondary.yaml
       "
       family: mimx9352
       revision: a1
@@ -53,13 +54,13 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
                 core_id:        cortex-a55
                 is_encrypted:   false
     ")
-    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_flash_template.yaml
+    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_flash_template.yaml
       "
       family: mimx9352
       revision: a1
       memory_type: serial_downloader
-      primary_image_container_set: ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_primary.yaml
-      secondary_image_container_set: ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_secondary.yaml
+      primary_image_container_set: ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_primary.yaml
+      secondary_image_container_set: ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_secondary.yaml
    ")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${7Z_EXECUTABLE} x ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin -o./imx-boot-firmware -aos -bso0 -bse1
@@ -67,11 +68,11 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     )
     if(SPSDK_VERSION VERSION_GREATER_EQUAL "3.0.0")
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-        COMMAND nxpimage bootable-image export -c ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_flash_template.yaml -o flash.bin
+        COMMAND nxpimage bootable-image export -c ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_flash_template.yaml -o flash.bin
       )
     else()
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-        COMMAND nxpimage bootable-image merge -c ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_flash_template.yaml -o flash.bin
+        COMMAND nxpimage bootable-image merge -c ${CMAKE_BINARY_DIR}/zephyr/imx93_frdm_mimx9352_a55_ahab_flash_template.yaml -o flash.bin
       )
     endif()
   else()
@@ -81,6 +82,3 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin
     REQUIRED)
 endif()
-
-zephyr_library()
-zephyr_library_sources(board.c)
