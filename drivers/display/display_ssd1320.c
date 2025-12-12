@@ -267,7 +267,7 @@ static int ssd1320_write_pixels_mipi(const struct device *dev, const uint8_t *bu
 	int ret, i;
 	int total = 0;
 
-	mipi_desc.pitch = desc->pitch;
+	mipi_desc.pitch = desc->pitch / 2;
 
 	while (pixel_count > total) {
 		i = ssd1320_convert_L_8(dev, buf, total, pixel_count);

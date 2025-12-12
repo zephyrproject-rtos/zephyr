@@ -244,14 +244,8 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 
 	LCDIF_SetFrameBufferConfig(config->base, 0, &fbConfig);
 
-	if (bytes_per_pixel == 3U) {
-		/* For RGB888 the stride shall be calculated as
-		 * 4 bytes per pixel instead of 3.
-		 */
-		LCDIF_SetFrameBufferStride(config->base, 0, 4U * desc->pitch);
-	} else {
-		LCDIF_SetFrameBufferStride(config->base, 0, bytes_per_pixel * desc->pitch);
-	}
+	/* pitch is now in bytes per row */
+	LCDIF_SetFrameBufferStride(config->base, 0, desc->pitch);
 
 	/* Set the updated area's size according to desc. */
 	LCDIF_SetFrameBufferPosition(config->base, 0U, 0U, 0U, desc->width,

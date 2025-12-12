@@ -183,6 +183,7 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 	struct display_buffer_descriptor mipi_desc;
 	int ret;
 
+	mipi_desc.pitch = desc->width;
 	for (int i = 0; i < desc->height / 8; i++) {
 		st75256_set_window(dev, x, y + i * 8, desc->width, desc->height);
 		st75256_start_write(dev);
@@ -259,14 +260,6 @@ static int st75256_write(const struct device *dev, const uint16_t x, const uint1
 {
 	struct st75256_data *data = dev->data;
 	size_t buf_len;
-
-	/* pitch is always width because of vtiled monochrome at 8 pixels per byte
-	 * or greyscale at one pixel per byte converted to vtiled 4 pixels per byte
-	 */
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
-		return -EINVAL;
-	}
 
 	if (data->current_pixel_format == PIXEL_FORMAT_MONO01) {
 		buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);

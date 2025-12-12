@@ -242,10 +242,6 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	int ret;
 	uint8_t cmd_data[2];
 
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is different from width");
-		return -EINVAL;
-	}
 
 	switch (data->current_pixel_format) {
 	case PIXEL_FORMAT_MONO01:
