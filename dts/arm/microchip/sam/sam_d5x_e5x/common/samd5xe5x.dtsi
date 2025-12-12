@@ -111,6 +111,19 @@
 			status = "disabled";
 		};
 
+		eic: eic@40002800 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x40002800 0x38>;
+			interrupts = <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>, <17 0>, <18 0>, <19 0>,
+				     <20 0>, <21 0>, <22 0>, <23 0>,
+				     <24 0>, <25 0>, <26 0>, <27 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			low-power-mode;
+		};
+
 		sercom0: sercom@40003000 {
 			compatible = "microchip,sercom-g1";
 			status = "disabled";
@@ -165,6 +178,7 @@
 			porta: gpio@41008000 {
 				compatible = "microchip,port-g1-gpio";
 				reg = <0x41008000 0x80>;
+				port-id = <0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#microchip,pin-cells = <2>;
@@ -174,6 +188,7 @@
 			portb: gpio@41008080 {
 				compatible = "microchip,port-g1-gpio";
 				reg = <0x41008080 0x80>;
+				port-id = <1>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#microchip,pin-cells = <2>;
