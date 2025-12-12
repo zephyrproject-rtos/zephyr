@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Endress+Hauser GmbH+Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ftl {
+		compatible = "zephyr,ftl-dhara";
+		partition = <&nand_partition>;
+		disk-name = "NAND";
+		buffer-size = <512>;
+	};
+};
+
+&flash0 {
+	write-block-size = <512>;
+
+	partitions {
+		nand_partition: partition@100000 {
+			label = "nand";
+			reg = <0x100000 DT_SIZE_K(1024)>;
+		};
+	};
+};
