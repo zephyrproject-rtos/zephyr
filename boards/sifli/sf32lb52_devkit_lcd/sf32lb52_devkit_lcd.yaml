@@ -13,5 +13,5 @@ supported:
   - uart
   - gpio
   - watchdog
-  - bluetooth
+  - display
 vendor: sifli
