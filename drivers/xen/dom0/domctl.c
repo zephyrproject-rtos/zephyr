@@ -4,11 +4,12 @@
  *
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/domctl.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/dom0/domctl.h>
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/domctl.h>
-#include <zephyr/xen/public/xen.h>
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
