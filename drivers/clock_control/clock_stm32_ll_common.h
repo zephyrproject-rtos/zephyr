@@ -27,6 +27,9 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
+#define z_pll_divr(v) LL_RCC_PLLDIVR_DIV_ ## v
+#define plldivr(v) z_pll_divr(v)
+
 #if defined(RCC_PLLI2SCFGR_PLLI2SM)
 /* Some stm32F4 devices have a dedicated PLL I2S with M divider */
 #define z_plli2s_m(v) LL_RCC_PLLI2SM_DIV_ ## v
@@ -36,11 +39,20 @@
 #endif /* RCC_PLLI2SCFGR_PLLI2SM */
 #define plli2sm(v) z_plli2s_m(v)
 
+#define z_plli2s_p(v) LL_RCC_PLLI2SP_DIV_ ## v
+#define plli2sp(v) z_plli2s_p(v)
+
 #define z_plli2s_q(v) LL_RCC_PLLI2SQ_DIV_ ## v
 #define plli2sq(v) z_plli2s_q(v)
 
+#define z_plli2s_divq(v) LL_RCC_PLLI2SDIVQ_DIV_ ## v
+#define plli2sdivq(v) z_plli2s_divq(v)
+
 #define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
 #define plli2sr(v) z_plli2s_r(v)
+
+#define z_plli2s_divr(v) LL_RCC_PLLI2SDIVR_DIV_ ## v
+#define plli2sdivr(v) z_plli2s_divr(v)
 
 #define z_pllsai_m(v) LL_RCC_PLLM_DIV_ ## v
 #define pllsaim(v) z_pllsai_m(v)
@@ -101,6 +113,7 @@ uint32_t get_pllsrc_frequency(void);
 void config_pll2(void);
 #endif
 #if defined(STM32_PLLI2S_ENABLED)
+uint32_t get_plli2ssrc_frequency(void);
 void config_plli2s(void);
 #endif
 #if defined(STM32_PLLSAI_ENABLED)
