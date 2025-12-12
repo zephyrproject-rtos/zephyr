@@ -119,19 +119,19 @@
 			read-only;
 		};
 
-		/*
-		 * The flash starting at offset 0x2000 and ending at
-		 * offset 0x3fff is reserved for use by the application.
-		 */
-
-		slot0_partition: partition@4000 {
+		slot0_partition: partition@2000 {
 			label = "image-0";
-			reg = <0x00004000 DT_SIZE_K(16)>;
+			reg = <0x00002000 DT_SIZE_K(20)>;
 		};
 
 		slot1_partition: partition@8000 {
 			label = "image-1";
-			reg = <0x00008000 DT_SIZE_K(20)>;
+			reg = <0x00008000 DT_SIZE_K(24)>;
+		};
+
+		storage_partition: partition@e000 {
+			label = "storage";
+			reg = <0x0000e000 DT_SIZE_K(12)>;
 		};
 	};
 };
