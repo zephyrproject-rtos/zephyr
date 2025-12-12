@@ -13,4 +13,10 @@
 				 <RZA2M_PINMUX(PORT_09, 1, 4)>; /* RXD */
 		};
 	};
+
+	/omit-if-no-ref/ adc_default: adc_default {
+		adc-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_05, 6, 1)>; /* AN006 */
+		};
+	};
 };
