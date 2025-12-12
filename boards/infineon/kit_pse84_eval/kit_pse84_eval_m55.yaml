@@ -18,3 +18,4 @@ supported:
   - pinctrl
   - uart
   - spi
+  - sdhc
