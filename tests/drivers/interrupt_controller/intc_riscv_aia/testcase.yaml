@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  arch_allow: riscv
+  tags:
+    - drivers
+    - interrupt
+    - riscv
+    - aia
+    - aplic
+    - imsic
+
+tests:
+  drivers.interrupt_controller.intc_riscv_aia: {}
