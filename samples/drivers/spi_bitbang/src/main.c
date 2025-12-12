@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 #include <string.h>
 #include <zephyr/drivers/spi.h>
 
-#define SPIBB_NODE	DT_NODELABEL(spibb0)
+#define SPIBB_NODE	DT_NODELABEL(usart0)
 
 /*
  * writes 5 9bit words, you can check the output with a logic analyzer
@@ -52,7 +52,7 @@ void test_9bit_loopback_partial(const struct device *dev,
 	struct spi_config config;
 
 	config.frequency = 125000;
-	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(9);
+	config.operation = SPI_MODE_LOOP | SPI_WORD_SET(8);
 	config.slave = 0;
 	config.cs = *cs;
 
@@ -138,14 +138,14 @@ int main(void)
 	 * where the pattern repeats.
 	 */
 	while (1) {
-		test_basic_write_9bit_words(dev, &cs_ctrl);
+		//ssstest_basic_write_9bit_words(dev, &cs_ctrl);
 		k_sleep(K_MSEC(200));
 
 		test_9bit_loopback_partial(dev, &cs_ctrl);
 		k_sleep(K_MSEC(200));
 
-		test_8bit_xfer(dev, &cs_ctrl);
-		k_sleep(K_MSEC(1000));
+		//test_8bit_xfer(dev, &cs_ctrl);
+		//k_sleep(K_MSEC(1000));
 	}
 	return 0;
 }
