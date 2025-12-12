@@ -5,5 +5,21 @@ config SPI_SF32LB
 	bool "SPI Driver for SF32LB family of MCUs"
 	default y
 	depends on DT_HAS_SIFLI_SF32LB_SPI_ENABLED
+	select SPI_SF32LB_DMA if SPI_ASYNC
 	help
 	  Enable SPI driver for SF32LB MCUs
+
+if SPI_SF32LB
+
+config SPI_SF32LB_INTERRUPT
+	bool "SF32LB MCU SPI Interrupt Support"
+	help
+	  Enable interrupt support for SF32LB MCU SPI driver.
+
+config SPI_SF32LB_DMA
+	bool "SF32LB MCU SPI DMA Support"
+	select DMA
+	help
+	  Enable DMA support for SF32LB MCU SPI driver.
+
+endif # SPI_SF32LB

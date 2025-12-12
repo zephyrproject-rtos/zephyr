@@ -169,10 +169,6 @@ static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
 
 	/* configure transfer parameters */
 	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
-	if ((ccrx & DMAC_CCR1_EN) != 0U) {
-		LOG_ERR("Configuration not possible with DMA enabled");
-		return -EIO;
-	}
 
 	ccrx &= ~(DMAC_CCR1_TCIE | DMAC_CCR1_HTIE | DMAC_CCR1_TEIE | DMAC_CCR1_DIR_Msk |
 		  DMAC_CCR1_CIRC_Msk | DMAC_CCR1_PINC_Msk | DMAC_CCR1_MINC_Msk |
