@@ -6,4 +6,9 @@ common:
 tests:
   drivers.dac.api:
     depends_on: dac
+    filter: not dt_alias_exists("second_uart")
+    min_ram: 16
+  drivers.dac.api.sec_uart:
+    depends_on: dac
+    filter: dt_alias_exists("second_uart")
     min_ram: 16
