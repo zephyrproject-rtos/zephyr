@@ -6,6 +6,7 @@ zephyr_sources(
   dec.c
   hex.c
   rb.c
+  set.c
   timeutil.c
   bitarray.c
   bitmask.c
