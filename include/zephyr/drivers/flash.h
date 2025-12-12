@@ -697,6 +697,54 @@ enum flash_ex_op_types {
 	 * Reset flash device.
 	 */
 	FLASH_EX_OP_RESET = 0,
+	/*
+	 * Issue a command to read from flash device.
+	 */
+	FLASH_EX_OP_CMD_READ = 1,
+	/*
+	 * Issue a command to write to flash device.
+	 */
+	FLASH_EX_OP_CMD_WRITE = 2,
+};
+
+/**
+ *  @brief Input for FLASH_EX_OP_CMD_READ extra flash operations
+ */
+struct flash_ex_op_cmd_read_in {
+	/* register or command to read */
+	uint8_t cmd;
+	/* buffer to write the read data to */
+	uint8_t *read_buffer;
+	/* length of above buffer */
+	size_t buffer_len;
+};
+
+/**
+ *  @brief Output from FLASH_EX_OP_CMD_READ extra flash operations
+ */
+struct flash_ex_op_cmd_read_out {
+	/* bytes actually read and stored in the input buffer */
+	size_t read_len;
+};
+
+/**
+ *  @brief Input for FLASH_EX_OP_CMD_WRITE extra flash operations
+ */
+struct flash_ex_op_cmd_write_in {
+	/* register or command to write */
+	uint8_t cmd;
+	/* buffer with the data to write */
+	uint8_t *write_buffer;
+	/* length of above buffer */
+	size_t buffer_len;
+};
+
+/**
+ *  @brief Output from FLASH_EX_OP_CMD_WRITE extra flash operations
+ */
+struct flash_ex_op_cmd_write_out {
+	/* bytes actually written from input buffer */
+	size_t write_len;
 };
 
 static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
