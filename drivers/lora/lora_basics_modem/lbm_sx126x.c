@@ -440,6 +440,59 @@ static void sx126x_dio1_callback(const struct device *dev, struct gpio_callback 
 	k_work_schedule(&data->lbm_common.op_done_work, K_NO_WAIT);
 }
 
+int lbm_driver_add_dio1_gpio_callback(const struct device *dev,
+				      struct gpio_callback *callback,
+				      gpio_callback_handler_t handler)
+{
+	const struct lbm_sx126x_config *config = dev->config;
+	int ret;
+
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	if (callback == NULL || handler == NULL) {
+		return -EINVAL;
+	}
+
+	gpio_init_callback(callback, handler, BIT(config->dio1.pin));
+
+	ret = gpio_add_callback(config->dio1.port, callback);
+	if (ret < 0) {
+		LOG_ERR("Failed to add GPIO callback: %d", ret);
+		return ret;
+	}
+
+	gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+
+	LOG_DBG("Added user GPIO callback");
+	return 0;
+}
+
+int lbm_driver_remove_dio1_gpio_callback(const struct device *dev,
+					 struct gpio_callback *callback)
+{
+	const struct lbm_sx126x_config *config = dev->config;
+	int ret;
+
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	if (callback == NULL) {
+		return -EINVAL;
+	}
+
+	ret = gpio_remove_callback(config->dio1.port, callback);
+	if (ret < 0) {
+		LOG_ERR("Failed to remove GPIO callback: %d", ret);
+		return ret;
+	}
+
+	LOG_DBG("Removed user GPIO callback");
+	return 0;
+}
+
 static int sx126x_init(const struct device *dev)
 {
 	const struct lbm_sx126x_config *config = dev->config;
