@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/psoc4/mpns/cy8c4149azi_s598.dtsi>
+#include <arm/infineon/psoc4/psoc4100smax/system_clocks.dtsi>
+#include "cy8ckit_041s_max-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "CY8CKIT-041S-MAX Development Board";
+	compatible = "infineon,cy8ckit-041s-max", "infineon,psoc4100smax";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led1: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt7 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &user_led1;
+	};
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri0_group0_16bit_1>;
+	pinctrl-0 = <&p0_5_scb2_uart_tx &p0_4_scb2_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri0_group0_16bit_1 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <2>;
+	clock-div = <26>;
+};
+
+&hf_clk_sel {
+	status = "okay";
+};
+
+&clk_hf0 {
+	status = "okay";
+};
