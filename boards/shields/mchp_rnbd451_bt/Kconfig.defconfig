@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MAIN_STACK_SIZE
+	default 2048 if BT_HOST_CRYPTO
+
+config BT_BUF_ACL_TX_COUNT
+	default 12
+
+config BT_BUF_EVT_RX_COUNT
+	default 13
