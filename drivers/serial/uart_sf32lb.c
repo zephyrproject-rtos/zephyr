@@ -75,6 +75,9 @@ struct sf32lb_uart_async_data {
 #define UART_BRR_MIN 0x10U
 
 struct uart_sf32lb_data {
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uart_config uart_config;
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_callback;
 	void *cb_data;
@@ -115,6 +118,9 @@ static void uart_sf32lb_isr(const struct device *dev)
 static int uart_sf32lb_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_sf32lb_config *config = dev->config;
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uart_sf32lb_data *data = dev->data;
+#endif
 	enum uart_config_data_bits data_bits = cfg->data_bits;
 	uint32_t cr1, cr2, cr3, brr, miscr;
 
@@ -207,12 +213,12 @@ static int uart_sf32lb_configure(const struct device *dev, const struct uart_con
 	miscr = sys_read32(config->base + UART_MISCR);
 	miscr &= ~USART_MISCR_SMPLINI_Msk;
 
-	brr = 48000000UL / config->uart_cfg.baudrate;
+	brr = 48000000UL / cfg->baudrate;
 	if (brr < UART_BRR_MIN) {
 		cr1 |= USART_CR1_OVER8;
 		sys_write32(cr1, config->base + UART_CR1);
 		/* recalculate brr with reduced oversampling */
-		brr = (48000000UL * 2U) / config->uart_cfg.baudrate;
+		brr = (48000000UL * 2U) / cfg->baudrate;
 		miscr |= FIELD_PREP(USART_MISCR_SMPLINI_Msk, 2U);
 	} else {
 		miscr |= FIELD_PREP(USART_MISCR_SMPLINI_Msk, 6U);
@@ -221,6 +227,9 @@ static int uart_sf32lb_configure(const struct device *dev, const struct uart_con
 	sys_write32(miscr, config->base + UART_MISCR);
 	sys_write32(brr, config->base + UART_BRR);
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	data->uart_config = *cfg;
+#endif
 	return 0;
 }
 
@@ -275,6 +284,22 @@ static int uart_sf32lb_err_check(const struct device *dev)
 
 	return err;
 }
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_sf32lb_configure_set(const struct device *dev, const struct uart_config *cfg)
+{
+	return uart_sf32lb_configure(dev, cfg);
+}
+
+static int uart_sf32lb_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_sf32lb_data *data = dev->data;
+
+	*cfg = data->uart_config;
+
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_sf32lb_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
@@ -548,7 +573,7 @@ static int uart_async_sf32lb_rx_enable(const struct device *dev, uint8_t *buf, s
 	uart_sf32lb_async_timer_start(&data->async.rx.timeout_work, timeout);
 
 	irq_unlock(key);
-
+printk("uart_async_sf32lb_rx_enable done!\n");
 	return 0;
 }
 
@@ -660,8 +685,8 @@ static int uart_async_sf32lb_tx(const struct device *dev, const uint8_t *buf, si
 		return -EINVAL;
 	}
 
-	sf32lb_dma_get_status_dt(&config->rx_dma, &dma_stat);
-	if (dma_stat.busy) {
+	sf32lb_dma_get_status_dt(&config->tx_dma, &dma_stat);
+	if (dma_stat.busy) {printk("uart_async_sf32lb_tx dma_stat.busy:%d\n", dma_stat.busy);
 		return -EBUSY;
 	}
 
@@ -671,7 +696,7 @@ static int uart_async_sf32lb_tx(const struct device *dev, const uint8_t *buf, si
 	data->async.tx.len = len;
 
 	sf32lb_dma_reload_dt(&config->tx_dma, (uint32_t)data->async.tx.buf,
-			     (uintptr_t)(config->base + UART_TDR), data->async.tx.len);
+			     (uint32_t)(config->base + UART_TDR), data->async.tx.len);
 
 	(void)sf32lb_dma_start_dt(&config->tx_dma);
 
@@ -683,7 +708,7 @@ static int uart_async_sf32lb_tx(const struct device *dev, const uint8_t *buf, si
 	sys_set_bit(config->base + UART_CR3, USART_CR3_DMAT_Pos);
 
 	irq_unlock(key);
-
+printk("uart_async_sf32lb_tx done!\n");
 	return 0;
 }
 
@@ -696,7 +721,7 @@ static int uart_async_sf32lb_tx_abort(const struct device *dev)
 	int err;
 	unsigned int key;
 
-	sf32lb_dma_get_status_dt(&config->rx_dma, &dma_stat);
+	sf32lb_dma_get_status_dt(&config->tx_dma, &dma_stat);
 	if (dma_stat.busy) {
 		return -EBUSY;
 	}
@@ -780,6 +805,10 @@ static const struct uart_driver_api uart_sf32lb_api = {
 	.poll_in = uart_sf32lb_poll_in,
 	.poll_out = uart_sf32lb_poll_out,
 	.err_check = uart_sf32lb_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_sf32lb_configure_set,
+	.config_get = uart_sf32lb_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_sf32lb_fifo_fill,
 	.fifo_read = uart_sf32lb_fifo_read,
@@ -819,7 +848,7 @@ static int uart_sf32lb_init(const struct device *dev)
 	struct dma_block_config tx_dma_blk = {0};
 #endif
 	int ret;
-
+printk("uart_sf32lb_init\n");
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
@@ -924,8 +953,8 @@ static int uart_sf32lb_init(const struct device *dev)
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
 			(.irq_config_func = uart_sf32lb_irq_config_func_##index,))                 \
 		IF_ENABLED(CONFIG_UART_ASYNC_API,                                                  \
-			(.tx_dma = SF32LB_DMA_DT_INST_SPEC_GET(index),                             \
-			 .rx_dma = SF32LB_DMA_DT_INST_SPEC_GET(index),))                           \
+			(.tx_dma = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(index, tx),                 \
+			 .rx_dma = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(index, rx),))               \
 		};                                                                                 \
                                                                                                    \
 	static struct uart_sf32lb_data uart_sf32lb_data_##index;                                   \
