@@ -34,3 +34,5 @@ tests:
       - cyw920829m2evk_02/cyw20829b1340
       - cyw920829m2evk_02/cyw20829b1010
       - cyw920829m2evk_02/cyw20829b0lkml
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
