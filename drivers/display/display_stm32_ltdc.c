@@ -17,6 +17,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/display/display_stm32_ltdc.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/pm/device.h>
@@ -89,6 +90,16 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 
+	/*
+	 * Allow handling or extending the ISR with custom code in weak function.
+	 * An example of this could be to call the HAL LTDC IRQ handler.
+	 * Return 0 to continue with the default handler or 1 if the interrupt
+	 * has been fully handled by the custom handler.
+	 */
+	if (ltdc_isr_custom_handler(&data->hltdc) == 1) {
+		return;
+	}
+
 	if (__HAL_LTDC_GET_FLAG(&data->hltdc, LTDC_FLAG_LI) &&
 	    __HAL_LTDC_GET_IT_SOURCE(&data->hltdc, LTDC_IT_LI)) {
 		if (data->front_buf != data->pend_buf) {
@@ -102,6 +113,12 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 
 		__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
 	}
+}
+
+__weak int ltdc_isr_custom_handler(LTDC_HandleTypeDef *hltdc)
+{
+	ARG_UNUSED(hltdc);
+	return 0;
 }
 
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
