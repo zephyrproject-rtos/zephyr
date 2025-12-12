@@ -71,10 +71,6 @@ struct pl011_data {
 /*
  * Include headers based on the presence of each specific compatible.
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ambiq_pl011_uart)
-#include "uart_pl011_ambiq.h"
-#endif
-
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_uart)
 #include "uart_pl011_raspberrypi_pico.h"
 #endif
@@ -98,18 +94,9 @@ static inline int clk_enable_arm_pl011(const struct device *dev, uint32_t clk)
 /*
  * Conditionally define power management (PM) macros.
  */
-#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
-
-/* For Apollo 3x, 4x and 5x, enable PM by defining macros that create and retrieve the PM device */
-#define PM_INST_DEFINE(n) PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);
-#define PM_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
-
-#else
-
-/* For all others, define these macros to be empty and NULL, as there is no PM support for them*/
+/* No PM support in this driver */
 #define PM_INST_DEFINE(n)
 #define PM_INST_GET(n) NULL
-#endif
 
 static void pl011_enable(const struct device *dev)
 {
@@ -633,16 +620,16 @@ static int pl011_init(const struct device *dev)
 
 /*
  * The first element of compatible is used to determine the type.
- * When compatible defines as "ambiq,pl011-uart", "arm,pl011",
- * this macro expands to pwr_on_ambiq_pl011_uart.
+ * E.g. if compatible is "vendor,soc-uart", "arm,pl011", then this expands
+ * to pwr_on_vendor_soc_uart.
  */
 #define COMPAT_SPECIFIC_PWR_ON_FUNC(n)                                                             \
 		COMPAT_SPECIFIC_FUNC_NAME(pwr_on_, DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0))
 
 /*
  * The first element of compatible is used to determine the type.
- * When compatible defines as "ambiq,pl011-uart", "arm,pl011",
- * this macro expands to clk_enable_ambiq_pl011_uart.
+ * E.g. if compatible is "vendor,soc-uart", "arm,pl011", then this expands
+ * to clk_enable_vendor_soc_uart.
  */
 #define COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n)                                                         \
 	COMPAT_SPECIFIC_FUNC_NAME(clk_enable_, DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0))
