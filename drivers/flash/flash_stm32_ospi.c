@@ -1293,24 +1293,23 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				    && ((bet == NULL)
 					|| (etp->exp > bet->exp))) {
 					bet = etp;
-					cmd_erase.Instruction = bet->cmd;
-				} else if (bet == NULL) {
-					/* Use the default sector erase cmd */
-					if (dev_cfg->data_mode == OSPI_OPI_MODE) {
-						cmd_erase.Instruction = SPI_NOR_OCMD_SE;
-					} else {
-						cmd_erase.Instruction =
-							(stm32_ospi_hal_address_size(dev) ==
-							HAL_OSPI_ADDRESS_32_BITS)
-							? SPI_NOR_CMD_SE_4B
-							: SPI_NOR_CMD_SE;
-					}
 				}
-				/* Avoid using wrong erase type,
-				 * if zero entries are found in erase_types
-				 */
-				bet = NULL;
 			}
+
+			if (bet != NULL) {
+				cmd_erase.Instruction = bet->cmd;
+			} else {
+				/* Use the default sector erase cmd */
+				if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+					cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+				} else {
+					cmd_erase.Instruction = (stm32_ospi_hal_address_size(dev) ==
+						HAL_OSPI_ADDRESS_32_BITS)
+						? SPI_NOR_CMD_SE_4B
+						: SPI_NOR_CMD_SE;
+				}
+			}
+
 			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
 				cmd_erase.Address, cmd_erase.AddressSize,
 				cmd_erase.AddressMode, cmd_erase.Instruction);
