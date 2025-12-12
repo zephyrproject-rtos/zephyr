@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tcpwm0_0 {
+	status = "okay";
+	divider-type = <DIV_16_BIT>;
+	divider-sel = <1>;
+	divider-val = <11499>;
+	interrupts = <16 0>;
+
+	counter0_0 {
+		status = "okay";
+		compatible = "infineon,tcpwm-counter";
+		clocks = <&peri_div_16bit_3>;
+	};
+};
