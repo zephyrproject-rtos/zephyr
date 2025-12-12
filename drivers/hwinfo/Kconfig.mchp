@@ -9,3 +9,11 @@ config HWINFO_MCHP_G1
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable mchp hwinfo driver
+
+config HWINFO_MCHP_G2
+	bool "Microchip hwinfo g2"
+	default y
+	depends on SOC_FAMILY_MICROCHIP_SAMA7
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable mchp hwinfo g2 driver.
