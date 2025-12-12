@@ -23,6 +23,8 @@ spi-nor@1 {
 	spi-max-frequency = <5000000>;
 	size = <1048576>;
 	jedec-id = [00 11 22];
+	mxicy,mx25r-power-mode = "high-performance";
+	winbond,w25q-output-driver-strength = "75%";
 };
 
 at25xv021a@2 {
