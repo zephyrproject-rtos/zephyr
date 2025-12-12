@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -191,4 +192,32 @@ zephyr_udc0: &usb {
 &clk48 {
 	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(3)>;
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@25000 {
+			label = "image-1";
+			reg = <0x00025000 DT_SIZE_K(102)>;
+		};
+
+		storage_partition: partition@3e800 {
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
+	};
 };

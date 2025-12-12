@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -172,10 +173,24 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set 4KB of storage at the end of 128KB flash */
-		storage_partition: partition@1f000 {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(36)>;
+		};
+
+		slot0_partition: partition@9000 {
+			label = "image-0";
+			reg = <0x00009000 DT_SIZE_K(42)>;
+		};
+
+		slot1_partition: partition@13800 {
+			label = "image-1";
+			reg = <0x00013800 DT_SIZE_K(44)>;
+		};
+
+		storage_partition: partition@1e800 {
 			label = "storage";
-			reg = <0x0001f000 DT_SIZE_K(4)>;
+			reg = <0x0001e800 DT_SIZE_K(6)>;
 		};
 	};
 };

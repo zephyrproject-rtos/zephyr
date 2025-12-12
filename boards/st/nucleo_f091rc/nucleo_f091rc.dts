@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &can1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -143,20 +144,6 @@
 	status = "okay";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* Set 6Kb of storage at the end of the 256Kb of flash */
-		storage_partition: partition@3e800 {
-			label = "storage";
-			reg = <0x0003e800 DT_SIZE_K(6)>;
-		};
-	};
-};
-
 &adc1 {
 	pinctrl-0 = <&adc_in0_pa0>;
 	pinctrl-names = "default";
@@ -196,4 +183,32 @@
 
 &vbat {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@25000 {
+			label = "image-1";
+			reg = <0x00025000 DT_SIZE_K(102)>;
+		};
+
+		storage_partition: partition@3e800 {
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
+	};
 };

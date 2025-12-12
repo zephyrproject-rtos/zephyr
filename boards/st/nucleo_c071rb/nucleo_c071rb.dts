@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -193,4 +194,32 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(36)>;
+		};
+
+		slot0_partition: partition@9000 {
+			label = "image-0";
+			reg = <0x00009000 DT_SIZE_K(42)>;
+		};
+
+		slot1_partition: partition@13800 {
+			label = "image-1";
+			reg = <0x00013800 DT_SIZE_K(44)>;
+		};
+
+		storage_partition: partition@1e800 {
+			label = "storage";
+			reg = <0x0001e800 DT_SIZE_K(6)>;
+		};
+	};
 };
