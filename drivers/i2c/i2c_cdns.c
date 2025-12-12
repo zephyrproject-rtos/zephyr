@@ -700,6 +700,8 @@ static void cdns_i2c_master_handle_receive_interrupt(const struct device *dev, u
 	struct cdns_i2c_data *i2c_bus = dev->data;
 	uint32_t transfer_size;
 	uint32_t xfer_size;
+	/*  clearing bus hold once is enough */
+	bool bus_hold_cleared = false;
 
 	/* Handle reception interrupt (data available or transfer complete) */
 	if (((isr_status & CDNS_I2C_IXR_COMP) == 0U) && ((isr_status & CDNS_I2C_IXR_DATA) == 0U)) {
@@ -715,6 +717,12 @@ static void cdns_i2c_master_handle_receive_interrupt(const struct device *dev, u
 			i2c_bus->p_recv_buf++;
 			i2c_bus->recv_count--;
 			i2c_bus->curr_recv_count--;
+
+			if (!bus_hold_cleared && (i2c_bus->recv_count <= i2c_bus->fifo_depth) &&
+			    !i2c_bus->bus_hold_flag) {
+				cdns_i2c_clear_bus_hold(dev);
+				bus_hold_cleared = true;
+			}
 		} else {
 			/* Handle receive buffer overflow or unexpected condition */
 			LOG_ERR("I2C receive buffer overflow. Transfer aborted!");
@@ -752,10 +760,6 @@ static void cdns_i2c_master_handle_receive_interrupt(const struct device *dev, u
 	/* Complete transfer if all data has been received and no more data is expected */
 	if (((isr_status & CDNS_I2C_IXR_COMP) == CDNS_I2C_IXR_COMP) &&
 	    (i2c_bus->recv_count == 0U)) {
-		/* Release bus hold if no longer needed */
-		if (i2c_bus->bus_hold_flag == 0U) {
-			cdns_i2c_clear_bus_hold(dev);
-		}
 		/* Notify completion of the transfer */
 		(void)k_event_post(&i2c_bus->xfer_done, I2C_XFER_COMPLETION_EVENT);
 	}
