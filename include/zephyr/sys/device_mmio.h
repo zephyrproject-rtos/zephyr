@@ -132,6 +132,15 @@ struct z_device_mmio_rom {
 		.addr = (mm_reg_t)DT_REG_ADDR_BY_NAME_U64(node_id, name) \
 	}
 
+__boot_func
+static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
+			      size_t size, uint32_t flags)
+{
+	ARG_UNUSED(size);
+	ARG_UNUSED(flags);
+	*virt_addr = phys_addr;
+}
+
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 #endif /* !_ASMLANGUAGE */
 /** @} */
