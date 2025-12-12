@@ -738,6 +738,7 @@ Bouffalolab Platforms:
     - josuah
   files:
     - boards/bflb/
+    - boards/sipeed/maix_m0s_dock/
     - drivers/*/*bflb*
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
