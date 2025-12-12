@@ -17,6 +17,12 @@ if("${LINKER}" STREQUAL "lld")
   target_link_options(native_simulator INTERFACE "-fuse-ld=lld")
 endif()
 
+# Enable -Wunaligned-access for Clang to catch alignment issues when running native_sim tests.
+# This warning is enabled by default for ARM embedded targets not supporting unaligned access but not for native targets.
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  zephyr_compile_options(-Wunaligned-access)
+endif()
+
 set(nsi_config_content
   ${nsi_config_content}
   "NSI_AR:=${CMAKE_AR}"
