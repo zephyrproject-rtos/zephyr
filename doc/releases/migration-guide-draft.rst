@@ -522,6 +522,16 @@ Tools
 * The stm32flash runner now defaults to 115200 baud instead of 57600 when no ``--baud-rate`` is
   given. Pass ``--baud-rate=57600`` to keep the previous speed.
 
+
+IPC
+===
+
+* :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE` has been renamed to
+  :kconfig:option:`CONFIG_IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE`, as it configures the RPMsg
+  support library. Update application and board configuration files to use the new name. The old
+  option remains as a deprecated alias: its value is used unless the new option is explicitly set.
+  (:github:`101918`)
+
 Modules
 *******
 
