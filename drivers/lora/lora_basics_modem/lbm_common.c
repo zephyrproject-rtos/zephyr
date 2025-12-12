@@ -105,14 +105,50 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 	}
 
 	switch (lora_config->bandwidth) {
+	case BW_7_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_007_KHZ;
+		break;
+	case BW_10_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_010_KHZ;
+		break;
+	case BW_15_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_015_KHZ;
+		break;
+	case BW_20_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_020_KHZ;
+		break;
+	case BW_31_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_031_KHZ;
+		break;
+	case BW_41_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_041_KHZ;
+		break;
+	case BW_62_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_062_KHZ;
+		break;
 	case BW_125_KHZ:
 		params.mod_params.bw = RAL_LORA_BW_125_KHZ;
+		break;
+	case BW_200_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_200_KHZ;
 		break;
 	case BW_250_KHZ:
 		params.mod_params.bw = RAL_LORA_BW_250_KHZ;
 		break;
+	case BW_400_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_400_KHZ;
+		break;
 	case BW_500_KHZ:
 		params.mod_params.bw = RAL_LORA_BW_500_KHZ;
+		break;
+	case BW_800_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_800_KHZ;
+		break;
+	case BW_1000_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_1000_KHZ;
+		break;
+	case BW_1600_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_1600_KHZ;
 		break;
 	default:
 		ret = -EINVAL;
