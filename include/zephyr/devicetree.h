@@ -5488,60 +5488,60 @@
 /** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has property @p prop.
+ * identified by index @p inst, if instance has property @p prop.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has boolean property
+ * identified by index @p inst, if instance has boolean property
  * @p prop with value 1.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance property value is 1,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
-	IF_ENABLED(DT_INST_PROP(idx, prop), (1,))
+#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
+	IF_ENABLED(DT_INST_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has no property @p prop.
+ * identified by index @p inst, if instance has no property @p prop.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
-	IF_DISABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
+	IF_DISABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has no boolean property
+ * identified by index @p inst, if instance has no boolean property
  * @p prop with value 1.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance property value is 0,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
-	IF_DISABLED(DT_INST_PROP(idx, prop), (1,))
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
+	IF_DISABLED(DT_INST_PROP(inst, prop), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
