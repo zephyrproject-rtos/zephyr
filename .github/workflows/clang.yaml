@@ -5,6 +5,7 @@ on:
       - main
       - v*-branch
       - collab-*
+  pull_request:
 permissions:
   contents: read
 
