@@ -87,6 +87,19 @@
 			};
 		};
 
+		rtc: rtc@40002400 {
+			compatible = "microchip,rtc-g1";
+			reg = <0x40002400 0x400>;
+			interrupts = <11 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_RTC>,
+				 <&rtcclock CLOCK_MCHP_RTC_ID>;
+			clock-names = "mclk", "rtcclk";
+			prescaler = <1>;
+			alarms-count = <2>;
+			cal-constant = <1048576>;
+			status = "disabled";
+		};
+
 		sercom0: sercom@40003000 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x40003000 0x29>;
