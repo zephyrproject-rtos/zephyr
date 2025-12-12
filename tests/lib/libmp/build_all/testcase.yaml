@@ -1,0 +1,38 @@
+tests:
+  libmp.core.build:
+    tags:
+      - lib
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt685_evk/mimxrt685s/cm33
+    build_only: true
+    extra_args:
+      - CONFIG_MP_CAPSFILTER=y
+
+  libmp.video_plugin.build:
+    tags:
+      - lib
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - SHIELD=rk055hdmipi4ma0
+      - CONFIG_VIDEO=y
+      - CONFIG_DISPLAY=y
+      - CONFIG_MP_PLUGIN_ZVID=y
+      - CONFIG_MP_PLUGIN_ZDISP=y
+
+  libmp.audio_plugin.build:
+    tags:
+      - lib
+    build_only: true
+    platform_allow:
+      - mimxrt685_evk/mimxrt685s/cm33
+    extra_args:
+      - CONFIG_I2S=y
+      - CONFIG_AUDIO=y
+      - CONFIG_AUDIO_DMIC=y
+      - CONFIG_AUDIO_CODEC=y
+      - CONFIG_MP_PLUGIN_ZAUD=y
