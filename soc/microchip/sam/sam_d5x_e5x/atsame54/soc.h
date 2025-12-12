@@ -10,7 +10,6 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-
 #if defined(CONFIG_SOC_ATSAME54N19A)
 #include <same54n19a.h>
 #elif defined(CONFIG_SOC_ATSAME54N20A)
@@ -22,6 +21,8 @@
 #else
 #error "Library does not support the specified device."
 #endif
+
+#include <sam_d5x_e5x.h>
 
 #endif /* _ASMLANGUAGE */
 

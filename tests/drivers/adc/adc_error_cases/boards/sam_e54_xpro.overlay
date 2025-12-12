@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	aliases {
+		adc = &adc0;
+	};
+};
+
+&adc0 {
+	status = "okay";
+};
