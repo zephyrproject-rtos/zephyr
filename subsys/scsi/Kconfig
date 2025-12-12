@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# SCSI Subsystem Configuration
+# This option enables support for SCSI controllers, which are commonly
+# used in storage devices such as hard drives, optical drives, and more.
+# Enabling this option will allow the system to use SCSI-based storage
+# protocols and commands.
+
+menuconfig SCSI
+	bool "Support SCSI controllers"
+	default n
+	help
+	  Enable this option if you want to support SCSI (Small Computer
+	  System Interface) controllers on your platform. This will allow
+	  the system to communicate with SCSI devices and manage storage.
+
+if SCSI
+
+# Define the SCSI subsystem as a module
+module = SCSI
+module-str = scsi
+
+# Include additional logging configuration for SCSI subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SCSI
