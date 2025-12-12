@@ -22,6 +22,9 @@ struct gnss_ubx_common_data {
 		size_t size;
 	} satellites;
 #endif
+#if CONFIG_GNSS_VELNED
+	struct gnss_velned velned;
+#endif
 };
 
 struct gnss_ubx_common_config {
@@ -37,6 +40,9 @@ void gnss_ubx_common_pvt_callback(struct modem_ubx *ubx, const struct ubx_frame 
 
 void gnss_ubx_common_satellite_callback(struct modem_ubx *ubx, const struct ubx_frame *frame,
 				       size_t len, void *user_data);
+
+void gnss_ubx_common_velned_callback(struct modem_ubx *ubx, const struct ubx_frame *frame,
+				     size_t len, void *user_data);
 
 void gnss_ubx_common_init(struct gnss_ubx_common_data *data,
 			 const struct gnss_ubx_common_config *config);

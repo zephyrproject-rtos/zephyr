@@ -16,4 +16,7 @@ void gnss_publish_data(const struct device *dev, const struct gnss_data *data);
 void gnss_publish_satellites(const struct device *dev, const struct gnss_satellite *satellites,
 			     uint16_t size);
 
+/** Internal function used by GNSS drivers to publish GNSS velocity */
+void gnss_publish_velned(const struct device *dev, const struct gnss_velned *velned);
+
 #endif /* ZEPHYR_DRIVERS_GNSS_GNSS_H_ */
