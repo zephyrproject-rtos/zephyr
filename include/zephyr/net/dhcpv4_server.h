@@ -33,6 +33,12 @@ struct net_if;
 
 #define DHCPV4_CLIENT_ID_MAX_SIZE 20
 
+/**
+ * Max DHCP hardware address size is defined in RFC2131
+ * https://www.rfc-editor.org/rfc/rfc2131
+ */
+#define DHCPV4_HARDWARE_ADDRESS_MAX_SIZE 16
+
 enum dhcpv4_server_addr_state {
 	DHCPV4_SERVER_ADDR_FREE,
 	DHCPV4_SERVER_ADDR_RESERVED,
@@ -41,6 +47,10 @@ enum dhcpv4_server_addr_state {
 };
 
 struct dhcpv4_client_id {
+	uint8_t hw_addr_type;
+	uint8_t hw_addr_buf[DHCPV4_HARDWARE_ADDRESS_MAX_SIZE];
+	uint8_t hw_addr_len;
+
 	uint8_t buf[DHCPV4_CLIENT_ID_MAX_SIZE];
 	uint8_t len;
 };
