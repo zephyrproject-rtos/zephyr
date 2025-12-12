@@ -23,14 +23,19 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_ambiq, CONFIG_ADC_LOG_LEVEL);
 
-/* Number of slots available. */
-#define AMBIQ_ADC_SLOT_NUMBER     AM_HAL_ADC_MAX_SLOTS
-#define ADC_TRANSFER_TIMEOUT_MSEC 500
+#if defined(CONFIG_ADC_AMBIQ_DMA) && defined(CONFIG_ADC_ASYNC)
+#error "ADC DMA mode does not support async mode."
+#endif
 
+/* Number of slots available. */
+#define AMBIQ_ADC_SLOT_NUMBER AM_HAL_ADC_MAX_SLOTS
+
+#ifdef CONFIG_ADC_AMBIQ_DMA
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 #define AMBIQ_ADC_DMA_INT (AM_HAL_ADC_INT_DERR | AM_HAL_ADC_INT_DCMP)
 #else
 #define AMBIQ_ADC_DMA_INT (AM_HAL_ADC_INT_DERR | AM_HAL_ADC_INT_DCMP | AM_HAL_ADC_INT_FIFOOVR1)
+#endif
 #endif
 
 struct adc_ambiq_config {
@@ -47,10 +52,12 @@ struct adc_ambiq_data {
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint8_t active_channels;
-	struct k_sem dma_done_sem;
+#ifdef CONFIG_ADC_AMBIQ_DMA
 	am_hal_adc_dma_config_t dma_cfg;
 	am_hal_adc_sample_t *sample_buf;
-	bool dma_mode;
+	bool dma_mode; /* Device tree configuration: DMA enabled */
+	bool use_dma;  /* Runtime decision: actually use DMA for this sequence */
+#endif
 	const struct device *dev;
 };
 
@@ -97,12 +104,15 @@ static int adc_ambiq_config(const struct device *dev)
 	ADCConfig.eTrigger = AM_HAL_ADC_TRIGSEL_SOFTWARE;
 	ADCConfig.eClockMode = AM_HAL_ADC_CLKMODE_LOW_LATENCY;
 	ADCConfig.ePowerMode = AM_HAL_ADC_LPMODE0;
-	if (data->dma_mode) {
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	if (data->use_dma) {
 		ADCConfig.eRepeat = AM_HAL_ADC_REPEATING_SCAN;
 	} else {
 		ADCConfig.eRepeat = AM_HAL_ADC_SINGLE_SCAN;
 	}
-
+#else
+	ADCConfig.eRepeat = AM_HAL_ADC_SINGLE_SCAN;
+#endif
 	if (AM_HAL_STATUS_SUCCESS != am_hal_adc_configure(data->adcHandle, &ADCConfig)) {
 		LOG_ERR("configuring ADC failed.\n");
 		return -ENODEV;
@@ -139,21 +149,95 @@ static int adc_ambiq_slot_config(const struct device *dev, const struct adc_sequ
 	return 0;
 }
 
-static void adc_ambiq_disable(const struct device *dev)
+static void adc_ambiq_stop_sampling(const struct device *dev)
 {
+#ifdef CONFIG_ADC_AMBIQ_DMA
 	struct adc_ambiq_data *data = dev->data;
-	am_hal_adc_slot_config_t ADCSlotConfig;
 
-	am_hal_adc_interrupt_disable(data->adcHandle, 0xFF);
-	ADCSlotConfig.bEnabled = false;
-	for (uint8_t slotNum = 0; slotNum < AM_HAL_ADC_MAX_SLOTS; slotNum++) {
-		am_hal_adc_configure_slot(data->adcHandle, slotNum, &ADCSlotConfig);
-	}
-	if (data->dma_mode) {
+	if (data->use_dma) {
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+		/* Stop the ADC repetitive sample timer A3 */
+		am_hal_ctimer_stop(3, AM_HAL_CTIMER_TIMERA);
+		am_hal_ctimer_adc_trigger_disable();
+#else
+		/* Disable internal repeat trigger timer */
+		am_hal_adc_irtt_disable(data->adcHandle);
+#endif
+		/* Disable DMA */
 		ADCn(0)->DMACFG_b.DMAEN = 0;
 	}
-	am_hal_adc_disable(data->adcHandle);
+#endif
 }
+
+static void adc_ambiq_start_sampling(const struct device *dev)
+{
+	struct adc_ambiq_data *data = dev->data;
+
+	LOG_DBG("ADC: sequence.options=%p, extra_samplings=%u", data->ctx.sequence.options,
+		data->ctx.sequence.options ? data->ctx.options.extra_samplings : 0);
+	/* Enable the ADC for safety. */
+	am_hal_adc_enable(data->adcHandle);
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	if (data->use_dma) {
+		ADCn(0)->DMACFG_b.DMAEN = 1;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+		/* Enable the ADC repetitive sample timer A3 */
+		am_hal_ctimer_adc_trigger_enable();
+		am_hal_ctimer_start(3, AM_HAL_CTIMER_TIMERA);
+#else
+		/* Enable internal repeat trigger timer */
+		am_hal_adc_irtt_enable(data->adcHandle);
+#endif
+	}
+#endif
+	/* Trigger the ADC */
+	am_hal_adc_sw_trigger(data->adcHandle);
+}
+
+#ifdef CONFIG_ADC_AMBIQ_DMA
+static int adc_ambiq_dma_config(const struct device *dev, uint8_t active_channels)
+{
+	struct adc_ambiq_data *data = dev->data;
+	am_hal_adc_dma_config_t ADCDmaConfig = data->dma_cfg;
+
+	if (data->dma_cfg.ui32SampleCount < active_channels) {
+		LOG_ERR("Not enough DMA buffer.\n");
+		return -EOVERFLOW;
+	}
+
+	ADCDmaConfig.ui32SampleCount = active_channels;
+
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	/* Start a timer to trigger the ADC periodically. */
+	am_hal_ctimer_config_single(3, AM_HAL_CTIMER_TIMERA,
+				    AM_HAL_CTIMER_HFRC_3MHZ | AM_HAL_CTIMER_FN_REPEAT);
+	am_hal_ctimer_int_enable(AM_HAL_CTIMER_INT_TIMERA3);
+	am_hal_ctimer_period_set(3, AM_HAL_CTIMER_TIMERA, 10, 5);
+	/* Enable the timer A3 to trigger the ADC directly */
+	am_hal_ctimer_adc_trigger_enable();
+#else
+	am_hal_adc_irtt_config_t ADCIrttConfig;
+
+	/* Set up internal repeat trigger timer */
+	ADCIrttConfig.bIrttEnable = true;
+	ADCIrttConfig.eClkDiv = AM_HAL_ADC_RPTT_CLK_DIV16; /* 24MHz / 16  = 1.5MHz */
+	ADCIrttConfig.ui32IrttCountMax = 750;              /* 1.5MHz / 750 = 2kHz */
+	am_hal_adc_configure_irtt(data->adcHandle, &ADCIrttConfig);
+#endif
+
+	/* Configure DMA */
+	if (AM_HAL_STATUS_SUCCESS != am_hal_adc_configure_dma(data->adcHandle, &ADCDmaConfig)) {
+		LOG_ERR("Error - configuring DMA failed.\n");
+		return -EINVAL;
+	}
+
+	am_hal_adc_interrupt_clear(data->adcHandle, AMBIQ_ADC_DMA_INT);
+	am_hal_adc_interrupt_enable(data->adcHandle, AMBIQ_ADC_DMA_INT);
+
+	return 0;
+}
+#endif /* CONFIG_ADC_AMBIQ_DMA */
 
 static void adc_ambiq_isr(const struct device *dev)
 {
@@ -177,22 +261,54 @@ static void adc_ambiq_isr(const struct device *dev)
 						&Sample);
 			*data->buffer++ = Sample.ui32Sample;
 		}
-		am_hal_adc_disable(data->adcHandle);
+		/* Stop sampling but keep ADC enabled for next sampling */
+		adc_ambiq_stop_sampling(dev);
 		/* Clear the ADC interrupt.*/
 		am_hal_adc_interrupt_clear(data->adcHandle, AM_HAL_ADC_INT_CNVCMP);
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 
-	if (data->dma_mode) {
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	if (data->use_dma) {
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 		if (ui32IntMask & AM_HAL_ADC_INT_DCMP) {
 #else
 		if (((ui32IntMask & AM_HAL_ADC_INT_FIFOOVR1) && (ADCn(0)->DMASTAT_b.DMACPL)) ||
 		    (ui32IntMask & AM_HAL_ADC_INT_DCMP)) {
 #endif
-			k_sem_give(&data->dma_done_sem);
+			/* Clear the DMA interrupt first to avoid race condition */
+			am_hal_adc_interrupt_clear(data->adcHandle, ui32IntMask);
+
+#if CONFIG_ADC_AMBIQ_HANDLE_CACHE
+			if (!buf_in_nocache((uintptr_t)data->dma_cfg.ui32TargetAddress,
+					    data->active_channels * sizeof(uint32_t))) {
+				/* Invalidate Dcache after DMA read */
+				sys_cache_data_invd_range((void *)data->dma_cfg.ui32TargetAddress,
+							  data->active_channels * sizeof(uint32_t));
+			}
+#endif /* CONFIG_ADC_AMBIQ_HANDLE_CACHE */
+
+			/* Read the value from the DMA buffer */
+			am_hal_adc_samples_read(
+				data->adcHandle, false, (uint32_t *)data->dma_cfg.ui32TargetAddress,
+				(uint32_t *)&data->active_channels, data->sample_buf);
+
+			/* Copy data to user buffer */
+			for (uint32_t i = 0; i < data->active_channels; i++) {
+				*data->buffer++ = data->sample_buf[i].ui32Sample;
+			}
+
+			/* Stop sampling but keep ADC enabled for next sampling */
+			adc_ambiq_stop_sampling(dev);
+
+			/* Let framework handle repeated samplings */
+			adc_context_on_sampling_done(&data->ctx, dev);
+		} else {
+			/* Clear other DMA-related interrupts */
+			am_hal_adc_interrupt_clear(data->adcHandle, ui32IntMask);
 		}
 	}
+#endif /* CONFIG_ADC_AMBIQ_DMA */
 }
 
 static int adc_ambiq_check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
@@ -235,16 +351,33 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 		return -EINVAL;
 	}
 
-	error = adc_ambiq_check_buffer_size(sequence, active_channels);
-	if (error < 0) {
-		return error;
-	}
-
 	active_channels = POPCOUNT(sequence->channels);
 	if (active_channels > AMBIQ_ADC_SLOT_NUMBER) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", AMBIQ_ADC_SLOT_NUMBER);
 		return -ENOTSUP;
 	}
+
+	error = adc_ambiq_check_buffer_size(sequence, active_channels);
+	if (error < 0) {
+		return error;
+	}
+
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	/* Calculate total samples and decide whether to use DMA */
+	if (data->dma_mode) {
+		uint32_t total_samples = active_channels;
+
+		if (sequence->options) {
+			total_samples *= (1 + sequence->options->extra_samplings);
+		}
+		data->use_dma = (total_samples >= CONFIG_ADC_AMBIQ_DMA_MIN_SAMPLES);
+		LOG_DBG("DMA mode: %s (total_samples=%u, threshold=%d)",
+			data->use_dma ? "enabled" : "disabled", total_samples,
+			CONFIG_ADC_AMBIQ_DMA_MIN_SAMPLES);
+	} else {
+		data->use_dma = false;
+	}
+#endif
 
 	error = adc_ambiq_config(dev);
 	if (error < 0) {
@@ -262,78 +395,26 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 	}
 	__ASSERT_NO_MSG(channels == 0);
 
-	if (data->dma_mode) {
-		am_hal_adc_dma_config_t ADCDmaConfig = data->dma_cfg;
-
-		if (data->dma_cfg.ui32SampleCount < active_channels) {
-			LOG_ERR("Not enough DMA buffer.\n");
-			return -EOVERFLOW;
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	if (data->use_dma) {
+		error = adc_ambiq_dma_config(dev, active_channels);
+		if (error < 0) {
+			return error;
 		}
-		ADCDmaConfig.ui32SampleCount = active_channels;
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
-		/* Start a timer to trigger the ADC periodically. */
-		am_hal_ctimer_config_single(3, AM_HAL_CTIMER_TIMERA,
-					    AM_HAL_CTIMER_HFRC_3MHZ | AM_HAL_CTIMER_FN_REPEAT);
-		am_hal_ctimer_int_enable(AM_HAL_CTIMER_INT_TIMERA3);
-		am_hal_ctimer_period_set(3, AM_HAL_CTIMER_TIMERA, 10, 5);
-		/* Enable the timer A3 to trigger the ADC directly */
-		am_hal_ctimer_adc_trigger_enable();
-#else
-		am_hal_adc_irtt_config_t ADCIrttConfig;
-
-		/* Set up internal repeat trigger timer */
-		ADCIrttConfig.bIrttEnable = true;
-		ADCIrttConfig.eClkDiv = AM_HAL_ADC_RPTT_CLK_DIV16; /* 24MHz / 16  = 1.5MHz */
-		ADCIrttConfig.ui32IrttCountMax = 750;              /* 1.5MHz / 750 = 2kHz */
-		am_hal_adc_configure_irtt(data->adcHandle, &ADCIrttConfig);
-#endif
-		/* Configure DMA.*/
-		if (AM_HAL_STATUS_SUCCESS !=
-		    am_hal_adc_configure_dma(data->adcHandle, &ADCDmaConfig)) {
-			LOG_ERR("Error - configuring DMA failed.\n");
-			return -EINVAL;
-		}
-
-		am_hal_adc_interrupt_clear(data->adcHandle, AMBIQ_ADC_DMA_INT);
-		am_hal_adc_interrupt_enable(data->adcHandle, AMBIQ_ADC_DMA_INT);
 	} else {
 		am_hal_adc_interrupt_enable(data->adcHandle, AM_HAL_ADC_INT_CNVCMP);
 	}
+#else
+	am_hal_adc_interrupt_enable(data->adcHandle, AM_HAL_ADC_INT_CNVCMP);
+#endif
 
 	data->active_channels = active_channels;
 	data->buffer = sequence->buffer;
 	/* Start ADC conversion */
 	adc_context_start_read(&data->ctx, sequence);
 
-	if (data->dma_mode) {
-		if (k_sem_take(&data->dma_done_sem, K_MSEC(ADC_TRANSFER_TIMEOUT_MSEC))) {
-			LOG_ERR("Timeout waiting for transfer complete");
-			/* cancel timed out transaction */
-			adc_ambiq_disable(dev);
-			/* clean up for next xfer */
-			k_sem_reset(&data->dma_done_sem);
-			return -ETIMEDOUT;
-		}
-#if CONFIG_ADC_AMBIQ_HANDLE_CACHE
-		if (!buf_in_nocache((uintptr_t)data->dma_cfg.ui32TargetAddress,
-				    data->active_channels * sizeof(uint32_t))) {
-			/* Invalidate Dcache after DMA read */
-			sys_cache_data_invd_range((void *)data->dma_cfg.ui32TargetAddress,
-						  data->active_channels * sizeof(uint32_t));
-		}
-#endif /* CONFIG_ADC_AMBIQ_HANDLE_CACHE */
-		/* Read the value from the FIFO. */
-		am_hal_adc_samples_read(data->adcHandle, false,
-					(uint32_t *)data->dma_cfg.ui32TargetAddress,
-					(uint32_t *)&data->active_channels, data->sample_buf);
-		for (uint32_t i = 0; i < data->active_channels; i++) {
-			*data->buffer++ = data->sample_buf[i].ui32Sample;
-		}
-		adc_ambiq_disable(dev);
-		adc_context_on_sampling_done(&data->ctx, dev);
-	} else {
-		error = adc_context_wait_for_completion(&data->ctx);
-	}
+	/* Wait for all samplings to complete (handled by framework in ISR) */
+	error = adc_context_wait_for_completion(&data->ctx);
 
 	return error;
 }
@@ -408,19 +489,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_ambiq_data *data = CONTAINER_OF(ctx, struct adc_ambiq_data, ctx);
 
 	data->repeat_buffer = data->buffer;
-	/* Enable the ADC. */
-	am_hal_adc_enable(data->adcHandle);
-	if (data->dma_mode) {
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
-		/* Start the ADC repetitive sample timer A3 */
-		am_hal_ctimer_start(3, AM_HAL_CTIMER_TIMERA);
-#else
-		/* Enable internal repeat trigger timer */
-		am_hal_adc_irtt_enable(data->adcHandle);
-#endif
-	}
-	/*Trigger the ADC*/
-	am_hal_adc_sw_trigger(data->adcHandle);
+	adc_ambiq_start_sampling(data->dev);
 }
 
 static int adc_ambiq_init(const struct device *dev)
@@ -439,6 +508,10 @@ static int adc_ambiq_init(const struct device *dev)
 
 	/* power on ADC*/
 	ret = am_hal_adc_power_control(data->adcHandle, AM_HAL_SYSCTRL_WAKE, false);
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Failed to power on ADC, code: %d", ret);
+		return -ENODEV;
+	}
 
 	ret = pinctrl_apply_state(cfg->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -450,6 +523,10 @@ static int adc_ambiq_init(const struct device *dev)
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	data->dev = dev;
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	/* Initialize use_dma to false, will be set dynamically in adc_ambiq_start_read */
+	data->use_dma = false;
+#endif
 
 	return 0;
 }
@@ -458,10 +535,13 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 {
 	struct adc_ambiq_data *data = CONTAINER_OF(ctx, struct adc_ambiq_data, ctx);
 
-	/* All sampling is truly complete, safe to put device to sleep */
-	pm_device_runtime_put(data->dev);
+#ifdef CONFIG_ADC_AMBIQ_DMA
+	data->use_dma = false;
+#endif
+	/* All sampling is truly complete, disable ADC and put device to sleep */
+	am_hal_adc_disable(data->adcHandle);
+	pm_device_runtime_put_async(data->dev, K_MSEC(1));
 }
-
 
 #ifdef CONFIG_ADC_ASYNC
 static int adc_ambiq_read_async(const struct device *dev, const struct adc_sequence *sequence,
@@ -534,6 +614,15 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	};
 #endif
 
+#if CONFIG_ADC_AMBIQ_HANDLE_CACHE
+#define __ADC_NOCACHE(n)                                                                           \
+	__attribute__((section(DT_INST_PROP_OR(n, dma_buffer_location, ".nocache"))))
+#else
+#define __ADC_NOCACHE(n)
+#endif /* CONFIG_ADC_AMBIQ_HANDLE_CACHE */
+
+#ifdef CONFIG_ADC_AMBIQ_DMA
+
 #define ADC_DMA_CFG(n, buf, size)                                                                  \
 	{                                                                                          \
 		.bDynamicPriority = true,                                                          \
@@ -543,12 +632,31 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.ui32TargetAddress = (uint32_t)buf,                                                \
 	}
 
-#if CONFIG_ADC_AMBIQ_HANDLE_CACHE
-#define __ADC_NOCACHE(n)                                                                           \
-	__attribute__((section(DT_INST_PROP_OR(n, dma_buffer_location, ".nocache"))))
+#define ADC_AMBIQ_DMA_BUF_DEFINE(n)                                                                \
+	IF_ENABLED(DT_INST_PROP(n, dma_mode), (                                                \
+		static uint32_t adc_ambiq_dma_buf##n[DT_INST_PROP_OR(n, dma_buffer_size, 128)] \
+			__ADC_NOCACHE(n);                                                         \
+		static am_hal_adc_sample_t                                                         \
+			adc_sample_buf##n[DT_INST_PROP_OR(n, dma_buffer_size, 128)]; \
+	))
+
+#define ADC_AMBIQ_DMA_CFG_ENABLED(n)                                                               \
+	ADC_DMA_CFG(n, adc_ambiq_dma_buf##n, DT_INST_PROP_OR(n, dma_buffer_size, 128))
+
+#define ADC_AMBIQ_DMA_CFG_DISABLED ADC_DMA_CFG(0, NULL, 0)
+
+#define ADC_AMBIQ_DMA_INIT(n)                                                                      \
+	.dma_cfg = COND_CODE_1(DT_INST_PROP(n, dma_mode),                                      \
+		(ADC_AMBIQ_DMA_CFG_ENABLED(n)),                                                   \
+		(ADC_AMBIQ_DMA_CFG_DISABLED)),                      \
+		 .dma_mode = DT_INST_PROP(n, dma_mode),                                            \
+		 .sample_buf = COND_CODE_1(DT_INST_PROP(n, dma_mode),                              \
+		(adc_sample_buf##n), (NULL)),
+
 #else
-#define __ADC_NOCACHE(n)
-#endif /* CONFIG_ADC_AMBIQ_HANDLE_CACHE */
+#define ADC_AMBIQ_DMA_BUF_DEFINE(n)
+#define ADC_AMBIQ_DMA_INIT(n)
+#endif
 
 #define ADC_AMBIQ_INIT(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
@@ -559,28 +667,11 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	};                                                                                         \
-	IF_ENABLED(DT_INST_PROP(n, dma_mode),                                           \
-	(static uint32_t adc_ambiq_dma_buf##n[DT_INST_PROP_OR(n, dma_buffer_size, 128)]  \
-	 __ADC_NOCACHE(n);)                   \
-	)         \
-	IF_ENABLED(DT_INST_PROP(n, dma_mode),                                           \
-	(static am_hal_adc_sample_t adc_sample_buf##n[DT_INST_PROP_OR(n, dma_buffer_size, 128)];)) \
+	ADC_AMBIQ_DMA_BUF_DEFINE(n)                                                                \
 	static struct adc_ambiq_data adc_ambiq_data_##n = {                                        \
 		ADC_CONTEXT_INIT_TIMER(adc_ambiq_data_##n, ctx),                                   \
 		ADC_CONTEXT_INIT_LOCK(adc_ambiq_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_SYNC(adc_ambiq_data_##n, ctx),                                    \
-		.dma_cfg = ADC_DMA_CFG(                                                            \
-			n, COND_CODE_1(DT_INST_PROP(n, dma_mode), (adc_ambiq_dma_buf##n), \
-									    (NULL)),               \
-				    COND_CODE_1(DT_INST_PROP(n, dma_mode),              \
-					(DT_INST_PROP_OR(n, dma_buffer_size, 128)), (0))),    \
-						.dma_mode = DT_INST_PROP(n, dma_mode),             \
-						.dma_done_sem = Z_SEM_INITIALIZER(                 \
-							adc_ambiq_data_##n.dma_done_sem, 0, 1),    \
-						.sample_buf = COND_CODE_1(     \
-							DT_INST_PROP(n, dma_mode), \
-							(adc_sample_buf##n), (NULL)),              \
-	};                                                                                         \
+		ADC_CONTEXT_INIT_SYNC(adc_ambiq_data_##n, ctx), ADC_AMBIQ_DMA_INIT(n)};            \
 	const static struct adc_ambiq_config adc_ambiq_config_##n = {                              \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \

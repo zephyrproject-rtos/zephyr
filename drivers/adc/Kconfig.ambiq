@@ -21,4 +21,26 @@ config ADC_AMBIQ_HANDLE_CACHE
 	help
 	  Disable this if cache has been handled in upper layers.
 
+config ADC_AMBIQ_DMA
+	bool "Ambiq ADC DMA Support."
+	default n
+	help
+	  Enable the ADC DMA mode for ADC instances
+	  that enable dma channels in their device tree node.
+
+if ADC_AMBIQ_DMA
+
+config ADC_AMBIQ_DMA_MIN_SAMPLES
+	int "Minimum number of samples to use DMA mode"
+	default 64
+	range 1 65535
+	help
+	  When DMA mode is enabled in device tree, the driver will only use DMA
+	  if the total number of samples (channels × (1 + extra_samplings)) is
+	  greater than or equal to this value. Otherwise, interrupt mode will be
+	  used. This allows both DMA and interrupt modes to coexist based on
+	  the workload size.
+
+endif # ADC_AMBIQ_DMA
+
 endif # ADC_AMBIQ
