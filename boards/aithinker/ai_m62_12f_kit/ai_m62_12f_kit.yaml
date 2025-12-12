@@ -22,4 +22,5 @@ supported:
   - display
   - spi
   - flash
+  - input
 vendor: bflb
