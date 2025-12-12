@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	lin_click0: tle72593ge {
+		compatible = "infineon,tle72593ge", "lin-transceiver-gpio";
+		wakeup-gpios = <&ioport6 1 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&ioport6 2 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <20000>;
+		#phy-cells = <0>;
+	};
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* TXD */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* RXD */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>;
+		};
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	interrupts = <95 1>, <94 1>, <93 1>, <92 1>, <91 1>, <90 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri", "aed", "bfd";
+	status = "okay";
+
+	uart {
+		status = "disabled";
+	};
+
+	i2c {
+		status = "disabled";
+	};
+
+	dut: lin {
+		phys = <&lin_click0>;
+		status = "okay";
+	};
+};
