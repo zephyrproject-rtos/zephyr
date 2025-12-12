@@ -1913,11 +1913,11 @@ static const struct unsolicited {
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
 {
-	int i;
+	ARRAY_FOR_EACH(handlers, i) {
+		size_t len = strlen(handlers[i].cmd);
 
-	for (i = 0; i < ARRAY_SIZE(handlers); i++) {
-		if (!strncmp(hf_at->buf, handlers[i].cmd,
-			     strlen(handlers[i].cmd))) {
+		if ((hf_at->rsp_buf.len >= len) &&
+		    (strncmp(hf_at->rsp_buf.data, handlers[i].cmd, len) == 0)) {
 			return &handlers[i];
 		}
 	}
@@ -4419,8 +4419,6 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	}
 
 	hf->acl = conn;
-	hf->at.buf = hf->hf_buffer;
-	hf->at.buf_max_len = HF_MAX_BUF_LEN;
 
 	hf->rfcomm_dlc.ops = &ops;
 	hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
