@@ -10,7 +10,7 @@ menuconfig I2C_DW
 	  Enable the Design Ware I2C driver
 
 config I2C_DW_CLOCK_SPEED
-	int "Set the clock speed for I2C"
+	int "Set the clock speed for I2C (MHz)"
 	depends on I2C_DW
 	default 100 if I2C_RTS5912
 	default 32
@@ -35,3 +35,8 @@ config I2C_DW_EXTENDED_SUPPORT
 	help
 	  This option enables support for the SCL/SDA timeout registers and some
 	  additional features of the DW I2C controller.
+	  
+config I2C_DW_SDA_HOLD_SUPPORT
+	bool "Enable SDA hold support"
+	help
+	  This option enables support for the SDA hold registers

@@ -121,6 +121,11 @@ struct i2c_dw_rom_config {
 	uint32_t sda_timeout_value;
 	uint32_t scl_timeout_value;
 #endif
+
+#ifdef CONFIG_I2C_DW_SDA_HOLD_SUPPORT
+	uint32_t sda_tx_hold_ns;
+	uint32_t sda_rx_hold_ns;
+#endif
 };
 
 struct i2c_dw_dev_config {
