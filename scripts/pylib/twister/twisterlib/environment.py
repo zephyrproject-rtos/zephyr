@@ -271,6 +271,17 @@ Artificially long but functional example:
     )
 
     parser.add_argument(
+        "--west-cmd", choices=['flash', 'debug'],
+        default='flash',
+        help="""Uses the specified west command.
+
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
+                         --west-cmd="flash"
+        will translate to "west flash ..."
+        """
+    )
+
+    parser.add_argument(
         "-a", "--arch", action="append",
         help="Arch filter for testing. Takes precedence over --platform. "
              "If unspecified, test all arches. Multiple invocations "
