@@ -757,7 +757,6 @@ fp_trap_exit:
 #endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
 
 	csrw mepc, t0
-	csrw mstatus, t2
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -795,6 +794,8 @@ fp_trap_exit:
 	sr t0, __struct_arch_esf_sp_OFFSET(sp)
 2:
 #endif
+
+	csrw mstatus, t2
 
 	/* Restore s0 (it is no longer ours) */
 	lr s0, __struct_arch_esf_s0_OFFSET(sp)
