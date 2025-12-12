@@ -17,6 +17,12 @@ if("${LINKER}" STREQUAL "lld")
   target_link_options(native_simulator INTERFACE "-fuse-ld=lld")
 endif()
 
+# Enable -Wunaligned-access for Clang to catch alignment issues in CI
+# This warning is enabled by default for ARM embedded targets but not for native hosts
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  target_compile_options(native_simulator INTERFACE "-Wunaligned-access")
+endif()
+
 set(nsi_config_content
   ${nsi_config_content}
   "NSI_AR:=${CMAKE_AR}"
