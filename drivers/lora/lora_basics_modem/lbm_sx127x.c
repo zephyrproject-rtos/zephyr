@@ -365,11 +365,45 @@ static void sx127x_irq_handler(void *irq_context)
 	k_work_reschedule(&data->lbm_common.op_done_work, K_NO_WAIT);
 }
 
-static int sx127x_driver_init(const struct device *dev)
+int lbm_driver_radio_init(const struct device *dev)
 {
 	const struct lbm_sx127x_config *config = dev->config;
 	struct lbm_sx127x_data *data = dev->data;
 	ral_status_t status;
+	int ret;
+
+	/* Reset chip */
+	status = ral_reset(&config->lbm_common.ralf.ral);
+	if (status != RAL_STATUS_OK) {
+		LOG_ERR("Reset failure (%d)", status);
+		return -EIO;
+	}
+
+	/* Common structure init */
+	ret = lbm_lora_common_init(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure and enable interrupts */
+	for (int i = 0; i < MIN(config->num_dios, 3); i++) {
+		gpio_init_callback(&data->dio_packages[i].callback, sx127x_dio_callback,
+				   BIT(config->dios[i].pin));
+		if (gpio_add_callback(config->dios[i].port, &data->dio_packages[i].callback) < 0) {
+			LOG_ERR("Could not set GPIO callback for DIO%d interrupt.", i);
+			return -EIO;
+		}
+		gpio_pin_interrupt_configure_dt(&config->dios[i], GPIO_INT_EDGE_RISING);
+	}
+
+	LOG_INF("Radio initialized");
+	return 0;
+}
+
+static int sx127x_driver_init(const struct device *dev)
+{
+	const struct lbm_sx127x_config *config = dev->config;
+	struct lbm_sx127x_data *data = dev->data;
 
 	data->radio.hal_context = dev;
 	data->radio.irq_handler_context = (void *)dev;
@@ -403,30 +437,22 @@ static int sx127x_driver_init(const struct device *dev)
 		gpio_pin_configure_dt(&config->tcxo_power, GPIO_OUTPUT_INACTIVE);
 	}
 
-	/* Configure interrupts */
+	/* Configure interrupt structures */
 	for (int i = 0; i < MIN(config->num_dios, 3); i++) {
 		data->dio_packages[i].idx = i;
 		k_work_init(&data->dio_packages[i].worker, dio_work_function);
-
 		gpio_pin_configure_dt(&config->dios[i], GPIO_INPUT);
-		gpio_init_callback(&data->dio_packages[i].callback, sx127x_dio_callback,
-				   BIT(config->dios[i].pin));
-		if (gpio_add_callback(config->dios[i].port, &data->dio_packages[i].callback) < 0) {
-			LOG_ERR("Could not set GPIO callback for DIO%d interrupt.", i);
-			return -EIO;
-		}
-		gpio_pin_interrupt_configure_dt(&config->dios[i], GPIO_INT_EDGE_RISING);
 	}
 
-	/* Reset chip on boot */
-	status = ral_reset(&config->lbm_common.ralf.ral);
-	if (status != RAL_STATUS_OK) {
-		LOG_ERR("Reset failure (%d)", status);
-		return -EIO;
+	/* Initialize data structure */
+	data->dev = dev;
+
+	if (!IS_ENABLED(CONFIG_LORA_BASICS_MODEM_DEFERRED_INIT)) {
+		return lbm_driver_radio_init(dev);
 	}
 
-	/* Common structure init */
-	return lbm_lora_common_init(dev);
+	LOG_INF("Device initialized (radio initialization deferred)");
+	return 0;
 }
 
 #define SX127X_DIO_GPIO_ELEM(idx, node_id) GPIO_DT_SPEC_GET_BY_IDX(node_id, dio_gpios, idx)
