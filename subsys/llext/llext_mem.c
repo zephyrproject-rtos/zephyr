@@ -132,6 +132,9 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
 				if ((IS_ALIGNED(ext->mem[mem_idx], region_align) ||
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+				    (mem_idx == LLEXT_MEM_RODATA_NO_RELOC) ||
+#endif
 				     ldr_parm->pre_located) &&
 				    ((mem_idx != LLEXT_MEM_TEXT) ||
 				     INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc))) {
