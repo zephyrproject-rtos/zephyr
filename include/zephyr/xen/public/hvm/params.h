@@ -33,6 +33,7 @@
  */
 #define HVM_PARAM_STORE_PFN		1
 #define HVM_PARAM_STORE_EVTCHN		2
+#define HVM_PARAM_MAGIC_BASE_PFN	3
 
 /* Console debug shared memory ring and event channel */
 #define HVM_PARAM_CONSOLE_PFN		17
