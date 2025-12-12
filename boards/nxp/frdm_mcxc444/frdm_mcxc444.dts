@@ -199,3 +199,7 @@ zephyr_udc0: &usb {
 &dma {
 	status = "okay";
 };
+
+&dac {
+	status = "okay";
+};
