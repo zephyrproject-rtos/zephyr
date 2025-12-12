@@ -32,6 +32,7 @@ def test_runner_imports():
         'intel_cyclonev',
         'jlink',
         'linkserver',
+        'lldbac',
         'mdb-hw',
         'mdb-nsim',
         'minichlink',
