@@ -144,9 +144,11 @@ void z_time_slice(void)
 
 	if (slice_expired[_current_cpu->id] && (z_time_slice_size(curr) != 0)) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
-		if (curr->base.slice_expired) {
+		k_thread_timeslice_fn_t handler = curr->base.slice_expired;
+
+		if (handler != NULL) {
 			k_spin_unlock(&_sched_spinlock, key);
-			curr->base.slice_expired(curr, curr->base.slice_data);
+			handler(curr, curr->base.slice_data);
 			key = k_spin_lock(&_sched_spinlock);
 		}
 #endif
