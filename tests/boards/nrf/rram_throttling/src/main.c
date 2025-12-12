@@ -20,7 +20,7 @@
 #define TEST_AREA_SIZE   FIXED_PARTITION_SIZE(TEST_AREA)
 #define TEST_AREA_DEVICE FIXED_PARTITION_DEVICE(TEST_AREA)
 #else
-#error "Unsupported configuraiton"
+#error "Unsupported configuration"
 #endif
 
 #define BUF_SIZE        512
