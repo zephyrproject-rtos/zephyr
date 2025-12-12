@@ -172,14 +172,19 @@ static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
 	}
 }
 
-static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
-						uint16_t channel)
+static int ieee802154_cc13xx_cc26xx_do_set_channel(const struct device *dev,
+						uint16_t channel, bool force)
 {
 	int ret;
 	RF_CmdHandle cmd_handle;
 	RF_EventMask reason;
 	uint16_t freq, fract;
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+
+	/* Only stop radio operations and setup RX operations if really needed */
+	if (channel == drv_data->cmd_ieee_rx.channel && !force) {
+		return 0;
+	}
 
 	ret = ieee802154_cc13xx_cc26xx_channel_to_frequency(channel, &freq, &fract);
 	if (ret < 0) {
@@ -226,6 +231,12 @@ out:
 	return ret;
 }
 
+static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
+						uint16_t channel)
+{
+	return ieee802154_cc13xx_cc26xx_do_set_channel(dev, channel, false);
+}
+
 /* TODO remove when rf driver bugfix is pulled in */
 static int ieee802154_cc13xx_cc26xx_reset_channel(
 	const struct device *dev)
@@ -240,7 +251,7 @@ static int ieee802154_cc13xx_cc26xx_reset_channel(
 
 	LOG_DBG("re-setting channel to %u", channel);
 
-	return ieee802154_cc13xx_cc26xx_set_channel(dev, channel);
+	return ieee802154_cc13xx_cc26xx_do_set_channel(dev, channel, true);
 }
 
 static int
