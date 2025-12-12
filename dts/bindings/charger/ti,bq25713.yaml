@@ -7,18 +7,6 @@ description: |
   BQ25713 targets 1s to 4s Cell, USB Power Delivery/Adapter Charger with
   Narrow VDC Power Path Management and Processor Hot Monitor
 
-  This charger is represented by device tree child node, e.g:
-
-  charger: bq25713@6b {
-      compatible = "ti,bq25713";
-      reg = <0x6b>;
-      status = "okay";
-
-      constant-charge-current-max-microamp = <1000000>;
-      constant-charge-voltage-max-microvolt = <3800000>;
-      system-voltage-min-threshold-microvolt = <3328000>;
-  };
-
 include: [battery.yaml, i2c-device.yaml]
 
 compatible: "ti,bq25713"
@@ -46,3 +34,15 @@ properties:
       Voltage that will be set above when the system voltage drops this level.
       This value will be set at initialization time. Range: 1.024 V to 16.128 V.
       The value specified will be rounded down to the closest implemented value.
+
+examples:
+  - |
+    charger: bq25713@6b {
+      compatible = "ti,bq25713";
+      reg = <0x6b>;
+      status = "okay";
+
+      constant-charge-current-max-microamp = <1000000>;
+      constant-charge-voltage-max-microvolt = <3800000>;
+      system-voltage-min-threshold-microvolt = <3328000>;
+    };
