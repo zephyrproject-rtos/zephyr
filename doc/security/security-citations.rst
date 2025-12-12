@@ -47,3 +47,8 @@ Security Document Citations
 
 .. [CIIBPB] Core Infrastructure Initiative Best Practices Badge. [Online].
    Available: https://github.com/linuxfoundation/cii-best-practices-badge
+
+.. [CRA24] Regulation (EU) 2024/2847 of the European Parliament and of the Council
+   of 23 October 2024 on horizontal cybersecurity requirements for products with
+   digital elements (Cyber Resilience Act). [Online].
+   Available: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847
