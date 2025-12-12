@@ -524,6 +524,15 @@ struct i3c_config_custom {
 };
 
 /**
+ * @brief I3C callback for asynchronous transfer requests
+ *
+ * @param dev I3C device which is notifying of transfer completion or error
+ * @param result Result code of the transfer request. 0 is success, -errno for failure.
+ * @param data Transfer requester supplied data which is passed along to the callback.
+ */
+typedef void (*i3c_callback_t)(const struct device *dev, int result, void *data);
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * These are for internal use only, so skip these in
@@ -711,7 +720,47 @@ __subsystem struct i3c_driver_api {
 			 struct i3c_device_desc *target,
 			 struct i3c_msg *msgs,
 			 uint8_t num_msgs);
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+	/**
+	 * Send Common Command Code (CCC).
+	 *
+	 * Controller only API.
+	 *
+	 * @see i3c_do_ccc_cb()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param payload Pointer to the CCC payload.
+	 * @param cb Function pointer for completion callback.
+	 * @param userdata Userdata passed to callback.
+	 *
+	 * @return See i3c_do_ccc_cb()
+	 */
+	int (*do_ccc_cb)(const struct device *dev,
+			 struct i3c_ccc_payload *payload,
+			 i3c_callback_t cb,
+			 void *userdata);
 
+	/**
+	 * Transfer messages in I3C mode.
+	 *
+	 * @see i3c_transfer_cb()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param target Pointer to target device descriptor.
+	 * @param msg Pointer to I3C messages.
+	 * @param num_msgs Number of messages to transfer.
+	 * @param cb Function pointer for completion callback.
+	 * @param userdata Userdata passed to callback.
+	 *
+	 * @return See i3c_transfer_cb()
+	 */
+	int (*i3c_xfers_cb)(const struct device *dev,
+			    struct i3c_device_desc *target,
+			    struct i3c_msg *msgs,
+			    uint8_t num_msgs,
+			    i3c_callback_t cb,
+			    void *userdata);
+#endif
 	/**
 	 * Find a registered I3C target device.
 	 *
@@ -1728,6 +1777,49 @@ static inline int z_impl_i3c_do_ccc(const struct device *dev,
 	return api->do_ccc(dev, payload);
 }
 
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Send CCC to the bus.
+ *
+ * This routine provides a generic interface to perform a CCC
+ * to another I3C device asynchronously with a callback completion.
+ *
+ * @see i3c_do_ccc()
+ * @funcprops \isr_ok
+ *
+ * @param dev Pointer to the device structure for the controller driver
+ *            instance.
+ * @param payload Pointer to the structure describing the CCC payload.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY Bus is busy.
+ * @retval -EIO General Input / output error.
+ * @retval -EINVAL Invalid valid set in the payload structure.
+ * @retval -ENOSYS Not implemented.
+ */
+__syscall int i3c_do_ccc_cb(const struct device *dev,
+			    struct i3c_ccc_payload *payload,
+			    i3c_callback_t cb,
+			    void *userdata);
+
+static inline int z_impl_i3c_do_ccc_cb(const struct device *dev,
+				      struct i3c_ccc_payload *payload,
+				      i3c_callback_t cb,
+				      void *userdata)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->do_ccc_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->do_ccc_cb(dev, payload, cb, userdata);
+}
+#endif
+
 /**
  * @addtogroup i3c_transfer_api
  * @{
@@ -1770,6 +1862,53 @@ static inline int z_impl_i3c_transfer(struct i3c_device_desc *target,
 
 	return api->i3c_xfers(target->bus, target, msgs, num_msgs);
 }
+
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Perform data transfer from the controller to a I3C target device.
+ *
+ * This routine provides a generic interface to perform data transfer
+ * to a target device synchronously. Use i3c_read()/i3c_write()
+ * for simple read or write.
+ *
+ * The array of message @p msgs must not be `NULL`.  The number of
+ * message @p num_msgs may be zero, in which case no transfer occurs.
+ *
+ * @note Not all scatter/gather transactions can be supported by all
+ * drivers.  As an example, a gather write (multiple consecutive
+ * i3c_msg buffers all configured for #I3C_MSG_WRITE) may be packed
+ * into a single transaction by some drivers, but others may emit each
+ * fragment as a distinct write transaction, which will not produce
+ * the same behavior.  See the documentation of i3c_msg for
+ * limitations on support for multi-message bus transactions.
+ *
+ * @param target I3C target device descriptor.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY Bus is busy.
+ * @retval -EIO General input / output error.
+ */
+__syscall int i3c_transfer_cb(struct i3c_device_desc *target,
+			      struct i3c_msg *msgs,
+			      uint8_t num_msgs,
+			      i3c_callback_t cb,
+			      void *userdata);
+
+static inline int z_impl_i3c_transfer_cb(struct i3c_device_desc *target,
+					 struct i3c_msg *msgs,
+					 uint8_t num_msgs,
+					 i3c_callback_t cb,
+					 void *userdata)
+{
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+
+	return api->i3c_xfers_cb(target->bus, target, msgs, num_msgs, cb, userdata);
+}
+#endif
 
 /** @} */
 
