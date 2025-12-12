@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Ayush Singh, BeagleBoard.org
+# SPDX-License-Identifier: Apache-2.0
+
+description: RMPSG UART device
+
+compatible: "rpmsg-uart"
+
+include: [base.yaml]

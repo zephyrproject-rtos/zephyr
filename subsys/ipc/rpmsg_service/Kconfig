@@ -44,6 +44,20 @@ config RPMSG_SERVICE_MODE_REMOTE
 
 endchoice
 
+choice RPMSG_SERVICE_BACKEND
+	prompt "RPMsg Service backend"
+
+config RPMSG_SERVICE_BACKEND_ZEPHYR
+	bool "RPMsg service backend for Zephyr host/remote"
+
+config RPMSG_SERVICE_BACKEND_LINUX
+	bool "RPMsg service backend for Linux host"
+	depends on RPMSG_SERVICE_MODE_REMOTE
+	depends on (HEAP_MEM_POOL_SIZE > 0)
+	depends on (OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+
+endchoice
+
 config RPMSG_SERVICE_NUM_ENDPOINTS
 	int "Max number of registered endpoints"
 	default 2
