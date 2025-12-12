@@ -358,6 +358,11 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
+
+			uhc {
+				compatible = "renesas,ra-uhc";
+				status = "disabled";
+			};
 		};
 
 		flash: flash-controller@407e0000 {
