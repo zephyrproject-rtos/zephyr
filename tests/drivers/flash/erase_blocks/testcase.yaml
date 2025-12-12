@@ -15,5 +15,6 @@ tests:
       - b_u585i_iot02a
       - nrf9160dk/nrf9160
       - nrf5340dk/nrf5340/cpuapp
+      - frdm_mcxc444
     integration_platforms:
       - nrf9160dk/nrf9160
