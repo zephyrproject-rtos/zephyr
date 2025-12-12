@@ -214,6 +214,8 @@ class Leshan:
             return bool(value)
         if val_type == 'INTEGER':
             return int(value)
+        if val_type == 'FLOAT':
+            return float(value)
         return value
 
     @classmethod
