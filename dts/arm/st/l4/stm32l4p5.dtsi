@@ -454,6 +454,12 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		rng: rng@50060800 {
+			nist-config = <0xf00d00>;
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0xaa74>;
+		};
 	};
 
 	otgfs_phy: otgfs_phy {

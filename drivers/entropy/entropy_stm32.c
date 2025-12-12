@@ -200,8 +200,10 @@ static void configure_rng(void)
 #ifdef STM32_CONDRST_SUPPORT
 	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
 	uint32_t desired_htcr = DT_INST_PROP_OR(0, health_test_config, 0U);
+	uint32_t desired_nscr = DT_INST_PROP_OR(0, noise_source_control, 0U);
 	uint32_t cur_nist_cfg = 0U;
 	uint32_t cur_htcr = 0U;
+	uint32_t cur_nscr = 0U;
 
 #if DT_INST_NODE_HAS_PROP(0, nist_config)
 	/*
@@ -220,26 +222,55 @@ static void configure_rng(void)
 			));
 #endif /* nist_config */
 
+/* TODO: this is needed only due to mismatch of STM32L4 HAL with others.
+ * Remove this special case once STM32CubeL4 v1.18.2 or later has been
+ * integrated in hal_stm32 (see also ST Internal Reference 207828).
+ */
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+	cur_htcr = LL_RNG_GetHealthconfiguration(rng);
+#else /* CONFIG_SOC_SERIES_STM32L4X */
 	cur_htcr = LL_RNG_GetHealthConfig(rng);
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 #endif /* health_test_config */
 
-	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr) {
+#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
+	cur_nscr = LL_RNG_GetNoiseConfig(rng);
+#endif /* noise_source_control */
+
+	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr ||
+	    cur_nscr != desired_nscr) {
 		stm32_reg_modify_bits(&rng->CR, cur_nist_cfg, desired_nist_cfg | RNG_CR_CONDRST);
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+#if defined(RNG_VER_3_2) || defined(RNG_VER_3_1)
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
+		LL_RNG_SetHealthconfiguration(rng, DT_INST_PROP(0, health_test_magic));
+#endif /* health_test_magic */
+		LL_RNG_SetHealthconfiguration(rng, desired_htcr);
+#endif /* health_test_config */
+#endif /* RNG_VER_3_2 || RNG_VER_3_1 */
+
+		LL_RNG_ResetConditioningResetBit(rng);
+		/* Wait for conditioning reset process to be completed */
+		while (LL_RNG_IsResetConditioningBitSet(rng) == 1) {
+		}
+#else /* CONFIG_SOC_SERIES_STM32L4X */
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+#if DT_INST_NODE_HAS_PROP(0, health_test_magic)
+		/* On certain series, a magic value must be written first as
+		 * health configuration before the actual configuration value.
+		 */
 		LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
 		LL_RNG_SetHealthConfig(rng, desired_htcr);
 #endif /* health_test_config */
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
-		LL_RNG_ResetConditioningResetBit(rng);
-		/* Wait for conditioning reset process to be completed */
-		while (LL_RNG_IsResetConditioningBitSet(rng) == 1) {
-		}
-#else
+#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
+		LL_RNG_SetNoiseConfig(rng, DT_INST_PROP(0, noise_source_control));
+#endif /* noise_source_control */
+
 		LL_RNG_DisableCondReset(rng);
 		/* Wait for conditioning reset process to be completed */
 		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
