@@ -45,44 +45,32 @@ int icm4268x_channel_parse_readings(enum sensor_channel chan, int16_t readings[7
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		icm4268x_convert_accel(&val[0],
-			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 1], cfg);
-		icm4268x_convert_accel(&val[1],
-			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 1], cfg);
-		icm4268x_convert_accel(&val[2],
-			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 1], cfg);
+		icm4268x_convert_accel(&val[0], readings[0], cfg);
+		icm4268x_convert_accel(&val[1], readings[1], cfg);
+		icm4268x_convert_accel(&val[2], readings[2], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_X:
-		icm4268x_convert_accel(val,
-			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 1], cfg);
+		icm4268x_convert_accel(val, readings[0], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		icm4268x_convert_accel(val,
-			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 1], cfg);
+		icm4268x_convert_accel(val, readings[1], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		icm4268x_convert_accel(val,
-			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 1], cfg);
+		icm4268x_convert_accel(val, readings[2], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		icm4268x_convert_gyro(&val[0],
-			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 4], cfg);
-		icm4268x_convert_gyro(&val[1],
-			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 4], cfg);
-		icm4268x_convert_gyro(&val[2],
-			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 4], cfg);
+		icm4268x_convert_gyro(&val[0], readings[0], cfg);
+		icm4268x_convert_gyro(&val[1], readings[1], cfg);
+		icm4268x_convert_gyro(&val[2], readings[2], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_X:
-		icm4268x_convert_gyro(val,
-			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 4], cfg);
+		icm4268x_convert_gyro(val, readings[0], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_Y:
-		icm4268x_convert_gyro(val,
-			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 4], cfg);
+		icm4268x_convert_gyro(val, readings[1], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_Z:
-		icm4268x_convert_gyro(val,
-			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 4], cfg);
+		icm4268x_convert_gyro(val, readings[2], cfg);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		icm4268x_convert_temp(val, readings[0]);
@@ -362,12 +350,6 @@ void icm4268x_unlock(const struct device *dev)
 		.interrupt1_fifo_full = false,					\
 		.pin9_function = ICM4268X_PIN9_FUNCTION_INT2,			\
 		.rtc_freq = 32000,						\
-		.axis_align[0].index = DT_INST_PROP(inst, axis_align_x),	\
-		.axis_align[1].index = DT_INST_PROP(inst, axis_align_y),	\
-		.axis_align[2].index = DT_INST_PROP(inst, axis_align_z),	\
-		.axis_align[0].sign = DT_INST_PROP(inst, axis_align_x_sign)-1,	\
-		.axis_align[1].sign = DT_INST_PROP(inst, axis_align_y_sign)-1,	\
-		.axis_align[2].sign = DT_INST_PROP(inst, axis_align_z_sign)-1	\
 	}
 
 #define ICM4268X_DEFINE_DATA(inst)                                                                 \

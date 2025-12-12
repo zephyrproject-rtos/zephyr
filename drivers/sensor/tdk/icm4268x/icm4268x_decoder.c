@@ -213,9 +213,6 @@ int icm4268x_encode(const struct device *dev, const struct sensor_chan_spec *con
 	edata->header.variant = data->cfg.variant;
 	edata->header.accel_fs = data->cfg.accel_fs;
 	edata->header.gyro_fs = data->cfg.gyro_fs;
-	edata->header.axis_align[0] = data->cfg.axis_align[0];
-	edata->header.axis_align[1] = data->cfg.axis_align[1];
-	edata->header.axis_align[2] = data->cfg.axis_align[2];
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
@@ -459,18 +456,10 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			}
 
 			data->readings[count].timestamp_delta = ts_delta;
-
-			q31_t reading[3];
-
 			for (int i = 0; i < 3; i++) {
 				rc |= icm4268x_read_imu_from_packet(
-					buffer, true, edata->header.accel_fs, i, &reading[i]);
-			}
-
-			for (int i = 0; i < 3; i++) {
-				data->readings[count].values[i] =
-					edata->header.axis_align[i].sign*
-					reading[edata->header.axis_align[i].index];
+					buffer, true, edata->header.accel_fs, i,
+					&data->readings[count].values[i]);
 			}
 
 			if (rc != 0) {
@@ -507,18 +496,10 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			}
 
 			data->readings[count].timestamp_delta = ts_delta;
-
-			q31_t reading[3];
-
 			for (int i = 0; i < 3; i++) {
 				rc |= icm4268x_read_imu_from_packet(
-					buffer, false, edata->header.gyro_fs, i, &reading[i]);
-			}
-
-			for (int i = 0; i < 3; i++) {
-				data->readings[count].values[i] =
-					edata->header.axis_align[i].sign*
-					reading[edata->header.axis_align[i].index];
+					buffer, false, edata->header.gyro_fs, i,
+					&data->readings[count].values[i]);
 			}
 
 			if (rc != 0) {

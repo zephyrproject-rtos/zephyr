@@ -17,7 +17,6 @@ struct icm4268x_decoder_header {
 	uint8_t gyro_fs: 3;
 	uint8_t accel_fs: 3;
 	uint8_t variant: 1;
-	struct alignment axis_align[3];
 };
 
 struct icm4268x_fifo_data {

@@ -350,7 +350,6 @@ struct icm4268x_cfg {
 	bool interrupt1_drdy;
 	bool interrupt1_fifo_ths;
 	bool interrupt1_fifo_full;
-	struct alignment axis_align[3];
 	uint8_t pin9_function;
 	uint16_t rtc_freq;
 };
