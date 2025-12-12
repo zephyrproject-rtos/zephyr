@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	actuator_fake: actuator_fake {
+		compatible = "zephyr,actuator-fake";
+		status = "okay";
+	};
+};
