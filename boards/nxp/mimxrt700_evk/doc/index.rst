@@ -253,3 +253,18 @@ for a list). The display sample can be built for this module like so:
    :zephyr-app: samples/drivers/display
    :goals: build
    :compact:
+
+NXP LCD_PAR_S035
+================
+
+The :ref:`lcd_par_s035` connects to the board's LCD socket J4 pin 1 to pin 28
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/lcd_par_s035/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: lcd_par_s035_8080
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
