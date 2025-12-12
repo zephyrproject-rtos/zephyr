@@ -1390,6 +1390,25 @@ void npcx_espi_disable_interrupts(const struct device *dev)
 	npcx_miwu_irq_disable(&config->espi_rst_wui);
 }
 
+extern int host_espi_npcx_interrupt_config(uint32_t espi_flags, uint32_t espi_vendor_flags);
+
+int espi_npcx_interrupt_config(const struct device *dev, uint32_t espi_flags,
+				    uint32_t espi_vendor_flags)
+{
+	host_espi_npcx_interrupt_config(espi_flags, espi_vendor_flags);
+
+	/* Enable host interface interrupts if its interface is eSPI */
+	if (IS_ENABLED(CONFIG_ESPI)) {
+		if (espi_flags & ESPI_BUS_EVENTS) {
+			npcx_espi_enable_interrupts(dev);
+		} else {
+			npcx_espi_disable_interrupts(dev);
+		}
+	}
+
+	return 0;
+}
+
 /* eSPI driver registration */
 static int espi_npcx_init(const struct device *dev);
 
@@ -1401,6 +1420,7 @@ static DEVICE_API(espi, espi_npcx_driver_api) = {
 	.manage_callback = espi_npcx_manage_callback,
 	.read_lpc_request = espi_npcx_read_lpc_request,
 	.write_lpc_request = espi_npcx_write_lpc_request,
+	.interrupt_config = espi_npcx_interrupt_config,
 #if defined(CONFIG_ESPI_OOB_CHANNEL)
 	.send_oob = espi_npcx_send_oob,
 	.receive_oob = espi_npcx_receive_oob,
