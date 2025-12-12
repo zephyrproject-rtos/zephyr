@@ -244,10 +244,6 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :board: nucleo_u083rc
    :goals: debug
 
-Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
-(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-(which is used for initialization) is available in the PATH.
-
 .. _NUCLEO_U083RC website:
    https://www.st.com/en/evaluation-tools/nucleo-u083rc.html
 
