@@ -1,0 +1,8 @@
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr OTP memory emulation peripheral
+
+compatible: "zephyr,otp-emul"
+
+include: base.yaml

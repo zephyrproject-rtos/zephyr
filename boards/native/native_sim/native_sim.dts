@@ -145,6 +145,12 @@
 		#size-cells = <0>;
 	};
 
+	otp0: otp@1000 {
+		compatible = "zephyr,otp-emul";
+		reg = <0x1000 DT_SIZE_K(1)>;
+		status = "okay";
+	};
+
 	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-pty-uart";
