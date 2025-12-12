@@ -85,6 +85,10 @@ Ethernet
   is needed. There you need to specify the fixed link parameters using the ``default-speeds``
   property (:github:`100454`).
 
+* The ``reset-gpios`` property of :dtcompatible:`microchip,ksz8081` has been
+  reworked to be used as active low, you may have to set the pin as
+  ``GPIO_ACTIVE_LOW`` in devicetree (:github:`100751`).
+
 MDIO
 ====
 
