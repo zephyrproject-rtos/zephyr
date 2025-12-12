@@ -1360,7 +1360,9 @@ isr_rx_next_subevent:
 
 		hcto -= jitter_us;
 
-		start_us = hcto;
+		/* +1 us radio_tmr_start_us compensation */
+		start_us = hcto - 1U;
+
 		hcto = radio_tmr_start_us(0U, start_us);
 		LL_ASSERT_ERR(hcto == (start_us + 1U));
 
@@ -1377,7 +1379,9 @@ isr_rx_next_subevent:
 		 */
 		hcto += radio_tmr_ready_restore();
 
-		start_us = hcto;
+		/* +1 us radio_tmr_start_us compensation */
+		start_us = hcto - 1U;
+
 		hcto = radio_tmr_start_us(0U, start_us);
 		LL_ASSERT_ERR(hcto == (start_us + 1U));
 
