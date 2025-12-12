@@ -6,6 +6,7 @@
 
 #include "openthread/platform/mdns_socket.h"
 #include <openthread/nat64.h>
+#include <openthread/platform/messagepool.h>
 #include "openthread/instance.h"
 #include "openthread_border_router.h"
 #include "platform-zephyr.h"
@@ -24,6 +25,7 @@
 
 #define MULTICAST_PORT 5353
 #define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_MDNS_SERVICES
+#define PKT_THRESHOLD_VAL CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_BUFFER_THRESHOLD
 
 static struct zsock_pollfd sockfd_udp[MAX_SERVICES];
 static int mdns_sock_v6 = -1;
@@ -385,6 +387,28 @@ static void process_mdns_message(struct otbr_msg_ctx *msg_ctx_ptr)
 {
 	otMessageSettings ot_message_settings = {true, OT_MESSAGE_PRIORITY_NORMAL};
 	otMessage *ot_message = NULL;
+	otBufferInfo buffer_info;
+	uint16_t req_buff_num;
+
+	/** In large networks with high traffic, we have observed that mDNS module
+	 * might jump to assert when trying to allocate OT message buffers for a new
+	 * query/response that has to be sent.
+	 * Here, we calculate the approximate number of OT message buffers that will be required
+	 * to hold the incoming mDNS packet. If the number of free OT message buffers will drop
+	 * below the imposed limit after the conversion has been perfomed, the incoming packet
+	 * will be silently dropped.
+	 * A possible scenario would be when multipackets (TC bit set) are received from multiple
+	 * hosts, as mDNS module stores the incoming messages for a period of time.
+	 * This mechanism tries to make sure that there are enough free buffers for mDNS module
+	 * to perform it's execution.
+	 */
+
+	req_buff_num = (msg_ctx_ptr->length /
+			(CONFIG_OPENTHREAD_MESSAGE_BUFFER_SIZE - sizeof(otMessageBuffer))) + 1;
+	otMessageGetBufferInfo(ot_instance_ptr, &buffer_info);
+
+	VerifyOrExit((buffer_info.mFreeBuffers - req_buff_num) >=
+		     ((PKT_THRESHOLD_VAL * CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS) / 100));
 
 	ot_message = otIp6NewMessage(ot_instance_ptr, &ot_message_settings);
 	VerifyOrExit(ot_message);
