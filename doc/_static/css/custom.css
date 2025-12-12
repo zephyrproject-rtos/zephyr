@@ -78,6 +78,7 @@ body,
 
 a {
     color: var(--link-color);
+    text-decoration: underline dotted;
 }
 
 a:hover {
@@ -705,6 +706,12 @@ kbd, .kbd,
     letter-spacing: 0.75px;
 }
 
+/* Breadcrumbs */
+
+.wy-breadcrumbs a {
+    text-decoration: none;
+}
+
 /* Mobile navigation */
 
 .wy-nav-top,
@@ -723,6 +730,7 @@ kbd, .kbd,
 
 .wy-menu-vertical a {
     color: var(--navbar-level-1-color);
+    text-decoration: none;
 }
 
 .wy-menu-vertical a:hover {
@@ -1100,6 +1108,7 @@ div.graphviz > object {
     transform: translateY(-50%);
     cursor: pointer;
     opacity: 0.8;
+    padding: 10px;
 }
 
 #search-se-menu {
