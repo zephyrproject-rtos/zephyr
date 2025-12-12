@@ -257,6 +257,7 @@ config OPENTHREAD_CUSTOM_PARAMETERS
 
 config OPENTHREAD_NUM_MESSAGE_BUFFERS
 	int "The number of message buffers in the buffer pool"
+	default 512 if OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	default 128
 	help
 	  "The number of message buffers in the buffer pool."
@@ -438,6 +439,15 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM
 	help
 	  This value represents the maximum number of messages from backbone interface
 	  that could be stored without being processed.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_BUFFER_THRESHOLD
+	int "Threshold value to determine if an mDNS packet will be processed"
+	default 40
+	help
+	  This value is used to calculate if OpenThread mDNS module should
+	  accept an incoming message or not. It is used to determine if
+	  number of available OT message buffers will drop under a certain
+	  threshold if the mDNS packet is accepted and processed.
 
 endif # OPENTHREAD_ZEPHYR_BORDER_ROUTER
 
