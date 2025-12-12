@@ -7,6 +7,14 @@
 
 #include "bstests.h"
 
+extern struct bst_test_list *test_bap_broadcast_sink_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_bap_broadcast_source_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_bap_central_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_bap_peripheral_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_broadcast_sink_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_broadcast_source_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_central_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_cap_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ccp_central_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ccp_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_csip_central_install(struct bst_test_list *tests);
@@ -19,6 +27,8 @@ extern struct bst_test_list *test_mcp_central_install(struct bst_test_list *test
 extern struct bst_test_list *test_mcp_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_central_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_peripheral_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_pbp_sink_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_pbp_source_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_tmap_central_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_tmap_peripheral_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_vcp_central_install(struct bst_test_list *tests);
@@ -27,6 +37,14 @@ extern struct bst_test_list *test_iso_broadcaster_install(struct bst_test_list *
 extern struct bst_test_list *test_iso_sync_receiver_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
+	test_bap_broadcast_sink_install,
+	test_bap_broadcast_source_install,
+	test_bap_central_install,
+	test_cap_broadcast_sink_install,
+	test_cap_broadcast_source_install,
+	test_bap_peripheral_install,
+	test_cap_central_install,
+	test_cap_peripheral_install,
 	test_ccp_central_install,
 	test_ccp_peripheral_install,
 	test_csip_central_install,
@@ -39,6 +57,8 @@ bst_test_install_t test_installers[] = {
 	test_mcp_peripheral_install,
 	test_micp_central_install,
 	test_micp_peripheral_install,
+	test_pbp_sink_install,
+	test_pbp_source_install,
 	test_tmap_central_install,
 	test_tmap_peripheral_install,
 	test_vcp_central_install,
