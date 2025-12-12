@@ -108,6 +108,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:member:`user_data` added to :c:struct:`bt_ccp_call_control_client_cb`
+
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
