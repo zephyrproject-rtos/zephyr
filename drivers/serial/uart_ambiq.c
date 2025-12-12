@@ -96,10 +96,37 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 #endif
 	struct uart_ambiq_data *data = dev->data;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	/*
+	 * Apollo3 HAL uses a combined ui32FifoLevels bitfield rather than separate
+	 * eTXFifoLevel/eRXFifoLevel.
+	 */
+	data->hal_cfg.ui32FifoLevels =
+		AM_HAL_UART_TX_FIFO_1_2 | AM_HAL_UART_RX_FIFO_1_2 | AM_HAL_UART_FIFO_ENABLE;
+#else
 	data->hal_cfg.eTXFifoLevel = AM_HAL_UART_FIFO_LEVEL_16;
 	data->hal_cfg.eRXFifoLevel = AM_HAL_UART_FIFO_LEVEL_16;
+#endif
 	data->hal_cfg.ui32BaudRate = cfg->baudrate;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_5;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_6;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_7;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		data->hal_cfg.ui32DataBits = AM_HAL_UART_DATA_BITS_8;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#else
 	switch (cfg->data_bits) {
 	case UART_CFG_DATA_BITS_5:
 		data->hal_cfg.eDataBits = AM_HAL_UART_DATA_BITS_5;
@@ -116,7 +143,20 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 	default:
 		return -ENOTSUP;
 	}
+#endif
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		data->hal_cfg.ui32StopBits = AM_HAL_UART_ONE_STOP_BIT;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		data->hal_cfg.ui32StopBits = AM_HAL_UART_TWO_STOP_BITS;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#else
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		data->hal_cfg.eStopBits = AM_HAL_UART_ONE_STOP_BIT;
@@ -127,7 +167,20 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 	default:
 		return -ENOTSUP;
 	}
+#endif
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		data->hal_cfg.ui32FlowControl = AM_HAL_UART_FLOW_CTRL_NONE;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		data->hal_cfg.ui32FlowControl = AM_HAL_UART_FLOW_CTRL_RTS_CTS;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#else
 	switch (cfg->flow_ctrl) {
 	case UART_CFG_FLOW_CTRL_NONE:
 		data->hal_cfg.eFlowControl = AM_HAL_UART_FLOW_CTRL_NONE;
@@ -138,7 +191,23 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 	default:
 		return -ENOTSUP;
 	}
+#endif
 
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		data->hal_cfg.ui32Parity = AM_HAL_UART_PARITY_NONE;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		data->hal_cfg.ui32Parity = AM_HAL_UART_PARITY_EVEN;
+		break;
+	case UART_CFG_PARITY_ODD:
+		data->hal_cfg.ui32Parity = AM_HAL_UART_PARITY_ODD;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#else
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
 		data->hal_cfg.eParity = AM_HAL_UART_PARITY_NONE;
@@ -152,6 +221,7 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 	default:
 		return -ENOTSUP;
 	}
+#endif
 
 #ifdef CONFIG_SOC_SERIES_APOLLO5X
 	switch (config->clk_src) {
@@ -267,7 +337,7 @@ static int uart_ambiq_err_check(const struct device *dev)
 	if (UARTn(cfg->inst_idx)->RSR & AM_HAL_UART_RSR_FESTAT) {
 		errors |= UART_ERROR_FRAMING;
 	}
-#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+#elif defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO3X)
 	if (UARTn(cfg->inst_idx)->RSR & UART0_RSR_OESTAT_Msk) {
 		errors |= UART_ERROR_OVERRUN;
 	}
