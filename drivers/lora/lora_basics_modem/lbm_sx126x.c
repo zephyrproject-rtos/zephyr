@@ -493,12 +493,49 @@ int lbm_driver_remove_dio1_gpio_callback(const struct device *dev,
 	return 0;
 }
 
-static int sx126x_init(const struct device *dev)
+int lbm_driver_radio_init(const struct device *dev)
 {
 	const struct lbm_sx126x_config *config = dev->config;
 	struct lbm_sx126x_data *data = dev->data;
 	ral_status_t status;
 	int ret;
+
+	/* Reset chip */
+	status = ral_reset(&config->lbm_common.ralf.ral);
+	if (status != RAL_STATUS_OK) {
+		LOG_ERR("Reset failure (%d)", status);
+		return -EIO;
+	}
+
+	/* Wait for chip to be ready */
+	ret = sx126x_ensure_device_ready(dev, K_MSEC(100));
+	if (ret) {
+		LOG_ERR("Failed to return to ready after reset");
+		return -EIO;
+	}
+
+	/* Common structure init */
+	ret = lbm_lora_common_init(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure and enable interrupts */
+	gpio_init_callback(&data->dio1_callback, sx126x_dio1_callback, BIT(config->dio1.pin));
+	if (gpio_add_callback(config->dio1.port, &data->dio1_callback) < 0) {
+		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
+		return -EIO;
+	}
+	gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+
+	LOG_INF("Radio initialized");
+	return 0;
+}
+
+static int sx126x_init(const struct device *dev)
+{
+	const struct lbm_sx126x_config *config = dev->config;
+	struct lbm_sx126x_data *data = dev->data;
 
 	/* Validate hardware is ready */
 	if (!spi_is_ready_dt(&config->spi)) {
@@ -523,32 +560,15 @@ static int sx126x_init(const struct device *dev)
 		gpio_pin_configure_dt(&config->rx_enable, GPIO_OUTPUT_INACTIVE);
 	}
 
-	/* Configure interrupts */
-	gpio_init_callback(&data->dio1_callback, sx126x_dio1_callback, BIT(config->dio1.pin));
-	if (gpio_add_callback(config->dio1.port, &data->dio1_callback) < 0) {
-		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
-		return -EIO;
+	/* Initialize data structure */
+	data->dev = dev;
+
+	if (!IS_ENABLED(CONFIG_LORA_BASICS_MODEM_DEFERRED_INIT)) {
+		return lbm_driver_radio_init(dev);
 	}
 
-	/* Reset chip on boot */
-	status = ral_reset(&config->lbm_common.ralf.ral);
-	if (status != RAL_STATUS_OK) {
-		LOG_ERR("Reset failure (%d)", status);
-		return -EIO;
-	}
-
-	/* Wait for chip to be ready */
-	ret = sx126x_ensure_device_ready(dev, K_MSEC(100));
-	if (ret) {
-		LOG_ERR("Failed to return to ready after reset");
-		return -EIO;
-	}
-
-	/* Enable interrupts */
-	gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
-
-	/* Common structure init */
-	return lbm_lora_common_init(dev);
+	LOG_INF("Device initialized (radio initialization deferred)");
+	return 0;
 }
 
 #define SX126X_DEFINE(node_id, sx_variant)                                                         \

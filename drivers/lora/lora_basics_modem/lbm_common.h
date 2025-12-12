@@ -65,6 +65,8 @@ struct lbm_lora_data_common {
 	/* Current modem state */
 	atomic_t modem_state;
 	enum lbm_modem_mode modem_mode;
+	/* Radio initialization state */
+	bool radio_initialized;
 };
 
 /**
@@ -76,6 +78,19 @@ struct lbm_lora_data_common {
  * @retval -errno On failure
  */
 int lbm_lora_common_init(const struct device *dev);
+
+/**
+ * @brief Initialize radio hardware
+ *
+ * Called by lbm_lora_config on first configuration to defer radio
+ * initialization until needed. Each driver must implement this function.
+ *
+ * @param dev Modem to initialize
+ *
+ * @retval 0 On success
+ * @retval -errno On failure
+ */
+int lbm_driver_radio_init(const struct device *dev);
 
 /**
  * @brief Configure modem for a given mode
