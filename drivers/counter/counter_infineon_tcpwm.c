@@ -15,16 +15,25 @@
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ifx_tcpwm_counter, CONFIG_COUNTER_LOG_LEVEL);
 
+#include <infineon_kconfig.h>
 #include <cy_sysclk.h>
 #include <cy_tcpwm_counter.h>
 
+#define PSOC4_TCPWM_BASE_OFFSET 0x100
+
 struct ifx_tcpwm_counter_config {
 	struct counter_config_info counter_info;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	TCPWM_Type * base;
+	TCPWM_Type *reg_base;
+#else
 	TCPWM_GRP_CNT_Type *reg_base;
+#endif
 	uint32_t index;
 	bool resolution_32_bits;
 	IRQn_Type irq_num;
@@ -46,6 +55,7 @@ struct ifx_tcpwm_counter_data {
 	uint32_t guard_period;
 	struct ifx_cat1_clock clock;
 	uint8_t clock_peri_group;
+	uint32_t freq;
 };
 
 static const cy_stc_tcpwm_counter_config_t counter_default_config = {
@@ -57,7 +67,11 @@ static const cy_stc_tcpwm_counter_config_t counter_default_config = {
 	.compare0 = 16384,
 	.compare1 = 16384,
 	.enableCompareSwap = false,
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	.interruptSources = CY_TCPWM_INT_ON_CC_OR_TC,
+#else
 	.interruptSources = CY_TCPWM_INT_NONE,
+#endif
 	.captureInputMode = 0x3U,
 	.captureInput = CY_TCPWM_INPUT_0,
 	.reloadInputMode = 0x3U,
@@ -69,6 +83,30 @@ static const cy_stc_tcpwm_counter_config_t counter_default_config = {
 	.countInputMode = 0x3U,
 	.countInput = CY_TCPWM_INPUT_1,
 };
+
+static uint32_t ifx_tcpwm_counter_prescaler_div(uint32_t prescaler)
+{
+	switch (prescaler) {
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_1:
+		return 1U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_2:
+		return 2U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_4:
+		return 4U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_8:
+		return 8U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_16:
+		return 16U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_32:
+		return 32U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_64:
+		return 64U;
+	case CY_TCPWM_COUNTER_PRESCALER_DIVBY_128:
+		return 128U;
+	default:
+		return 1U;
+	}
+}
 
 typedef enum {
 	/* No interrupt handled */
@@ -88,14 +126,20 @@ static void counter_enable_event(const struct device *dev, counter_event_t event
 	uint32_t old_mask = IFX_TCPWM_GetInterruptMask(config->reg_base);
 	uint32_t new_event;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	if (enable) {
+		Cy_TCPWM_ClearInterrupt(config->base, config->index, ~old_mask & event);
+	}
+	new_event = enable ? (old_mask | event) : (old_mask & ~event);
+	Cy_TCPWM_SetInterruptMask(config->base, config->index, new_event);
+#else
 	if (enable) {
 		/* Clear any newly enabled events so that old IRQs don't trigger ISRs */
 		IFX_TCPWM_ClearInterrupt(config->reg_base, ~old_mask & event);
 	}
-
 	new_event = enable ? (old_mask | event) : (old_mask & ~event);
 	IFX_TCPWM_SetInterruptMask(config->reg_base, new_event);
-
+#endif
 	Cy_SysLib_ExitCriticalSection(savedIntrStatus);
 }
 
@@ -105,8 +149,11 @@ static void counter_isr_handler(const struct device *dev)
 	const struct ifx_tcpwm_counter_config *const config = dev->config;
 	uint32_t pending_int;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	pending_int = Cy_TCPWM_GetInterruptStatusMasked(config->base, config->index);
+#else
 	pending_int = IFX_TCPWM_GetInterruptStatusMasked(config->reg_base);
-	IFX_TCPWM_ClearInterrupt(config->reg_base, pending_int);
+#endif
 	NVIC_ClearPendingIRQ(config->irq_num);
 
 	/* Alarm compare/capture interrupt */
@@ -133,13 +180,17 @@ static void counter_isr_handler(const struct device *dev)
 
 static int ifx_tcpwm_counter_init(const struct device *dev)
 {
+
 	__ASSERT_NO_MSG(dev != NULL);
 
 	cy_rslt_t rslt;
 	struct ifx_tcpwm_counter_data *const data = dev->data;
 	const struct ifx_tcpwm_counter_config *config = dev->config;
-	uint32_t clk_connection;
 	cy_stc_tcpwm_counter_config_t counter_config = counter_default_config;
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1)
+
+	uint32_t clk_connection;
 
 	/* Calculate clock connection based on TCPWM index */
 	if (config->resolution_32_bits) {
@@ -156,6 +207,71 @@ static int ifx_tcpwm_counter_init(const struct device *dev)
 					config->divider_sel);
 
 	Cy_SysClk_PeriPclkAssignDivider(clk_connection, config->divider_type, config->divider_sel);
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+
+	en_clk_dst_t clk_connection = (en_clk_dst_t)(PCLK_TCPWM_CLOCKS0 + config->index);
+
+	Cy_SysClk_PeriphDisableDivider(config->divider_type, config->divider_sel);
+	Cy_SysClk_PeriphSetDivider(config->divider_type, config->divider_sel, config->divider_val);
+	Cy_SysClk_PeriphEnableDivider(config->divider_type, config->divider_sel);
+
+	/* Assign divider to TCPWM block channel */
+	Cy_SysClk_PeriphAssignDivider(clk_connection, config->divider_type, config->divider_sel);
+#else
+#error "Unsupported Infineon SOC family"
+#endif
+
+	uint32_t freq = 0U;
+	uint32_t hf_freq;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	hf_freq = Cy_SysClk_ClkHfGetFrequency(); /* PSOC4 doesn't take any arguments  */
+#else
+	hf_freq = Cy_SysClk_ClkHfGetFrequency(0); /* CAT1 requires clkHf index */
+#endif
+
+	if (hf_freq != 0U) {
+		uint32_t integer = 0U;
+		uint32_t fraction = 0U;
+		bool fractional_div = (config->divider_type == CY_SYSCLK_DIV_16_5_BIT) ||
+				      (config->divider_type == CY_SYSCLK_DIV_24_5_BIT);
+
+		if (fractional_div) {
+			Cy_SysClk_PeriphGetFracDivider(config->divider_type, config->divider_sel,
+						       &integer, &fraction);
+
+			uint32_t denominator = ((integer + 1U) * 32U) + fraction;
+
+			if (denominator != 0U) {
+				uint64_t scaled = (uint64_t)hf_freq * 32U;
+
+				freq = (uint32_t)(scaled / denominator);
+			}
+		} else {
+			integer = Cy_SysClk_PeriphGetDivider(config->divider_type,
+							     config->divider_sel);
+
+			uint32_t denominator = integer + 1U;
+
+			if (denominator != 0U) {
+				freq = hf_freq / denominator;
+			}
+		}
+
+		if (freq != 0U) {
+			uint32_t prescaler =
+				ifx_tcpwm_counter_prescaler_div(counter_config.clockPrescaler);
+
+			if (prescaler > 1U) {
+				freq /= prescaler;
+			}
+		}
+	}
+
+	if (freq == 0U) {
+		freq = config->counter_info.freq;
+	}
+
+	data->freq = freq;
 
 	/* Initialize counter structure */
 	data->alarm_irq_flag = false;
@@ -182,7 +298,6 @@ static int ifx_tcpwm_counter_init(const struct device *dev)
 
 	/* This must be called after IFX_TCPWM_Counter_Init */
 	IFX_TCPWM_Counter_SetCounter(config->reg_base, data->value);
-
 	/* enable the counter interrupt */
 	config->irq_enable_func(dev);
 
@@ -195,8 +310,13 @@ static int ifx_tcpwm_counter_start(const struct device *dev)
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_TCPWM_Counter_Enable(config->base, config->index);
+	Cy_TCPWM_TriggerStart(config->base, BIT(config->index));
+#else
 	IFX_TCPWM_Counter_Enable(config->reg_base);
 	IFX_TCPWM_TriggerStart_Single(config->reg_base);
+#endif
 
 	return 0;
 }
@@ -219,7 +339,11 @@ static int ifx_tcpwm_counter_get_value(const struct device *dev, uint32_t *ticks
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	*ticks = Cy_TCPWM_Counter_GetCounter(config->base, config->index);
+#else
 	*ticks = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+#endif
 
 	return 0;
 }
@@ -252,13 +376,19 @@ static int ifx_tcpwm_counter_set_top_value(const struct device *dev,
 		data->value = IFX_TCPWM_Counter_GetCounter(config->reg_base);
 	}
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_TCPWM_Counter_SetPeriod(config->base, config->index, cfg->ticks);
+#else
 	IFX_TCPWM_Block_SetPeriod(config->reg_base, cfg->ticks);
+#endif
 
 	/* Register an top_value terminal count event callback handler if
 	 * callback is not NULL.
 	 */
 	if (cfg->callback != NULL) {
 		counter_enable_event(dev, COUNTER_IRQ_TERMINAL_COUNT, true);
+	} else {
+		counter_enable_event(dev, COUNTER_IRQ_TERMINAL_COUNT, false);
 	}
 
 	return 0;
@@ -328,6 +458,12 @@ static int ifx_tcpwm_counter_set_alarm(const struct device *dev, uint8_t chan_id
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t curr = Cy_TCPWM_Counter_GetCounter(config->base, config->index);
+#else
+	uint32_t curr = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+#endif
+
 	if (absolute) {
 		max_rel_val = top_val - data->guard_period;
 		irq_on_late = ((flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) == 0) ? false : true;
@@ -344,14 +480,12 @@ static int ifx_tcpwm_counter_set_alarm(const struct device *dev, uint8_t chan_id
 
 		/* limit max to detect short relative being set too late. */
 		max_rel_val = irq_on_late ? (top_val / 2U) : top_val;
-		compare_value = counter_ticks_add(IFX_TCPWM_Counter_GetCounter(config->reg_base),
-						  compare_value, top_val);
+		compare_value = counter_ticks_add(curr, compare_value, top_val);
 	}
 
 	/* Decrement value to detect the case when compare_value == counter_read(dev). Otherwise,
 	 * condition would need to include comparing diff against 0.
 	 */
-	uint32_t curr = IFX_TCPWM_Counter_GetCounter(config->reg_base);
 	uint32_t diff = counter_ticks_sub((compare_value - 1), curr, top_val);
 
 	if ((absolute && (compare_value < curr)) || (diff > max_rel_val)) {
@@ -376,12 +510,15 @@ static int ifx_tcpwm_counter_set_alarm(const struct device *dev, uint8_t chan_id
 		 * counter value with current value of counter (read by
 		 * IFX_TCPWM_Counter_GetCounter function).
 		 */
-		data->value = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+		data->value = curr;
 		data->compare_value = compare_value;
 
 		/* Reconfigure timer */
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		Cy_TCPWM_Counter_SetCompare0(config->base, config->index, compare_value);
+#else
 		IFX_TCPWM_Block_SetCC0Val(config->reg_base, compare_value);
-
+#endif
 		counter_enable_event(dev, COUNTER_IRQ_CAPTURE_COMPARE, true);
 	}
 
@@ -394,6 +531,7 @@ static int ifx_tcpwm_counter_cancel_alarm(const struct device *dev, uint8_t chan
 	__ASSERT_NO_MSG(dev != NULL);
 
 	counter_enable_event(dev, COUNTER_IRQ_CAPTURE_COMPARE, false);
+
 	return 0;
 }
 
@@ -402,8 +540,11 @@ static uint32_t ifx_tcpwm_counter_get_pending_int(const struct device *dev)
 	__ASSERT_NO_MSG(dev != NULL);
 
 	const struct ifx_tcpwm_counter_config *const config = dev->config;
+	uint32_t pending = 0U;
 
-	return NVIC_GetPendingIRQ(config->irq_num);
+	pending = IFX_TCPWM_GetInterruptStatusMasked(config->reg_base);
+
+	return (pending & CY_TCPWM_INT_ON_CC) ? COUNTER_IRQ_CAPTURE_COMPARE : 0U;
 }
 
 static uint32_t ifx_tcpwm_counter_get_guard_period(const struct device *dev, uint32_t flags)
@@ -426,7 +567,17 @@ static int ifx_tcpwm_counter_set_guard_period(const struct device *dev, uint32_t
 	struct ifx_tcpwm_counter_data *const data = dev->data;
 
 	data->guard_period = guard;
+
 	return 0;
+}
+
+static uint32_t ifx_tcpwm_counter_get_frequency(const struct device *dev)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+
+	struct ifx_tcpwm_counter_data *const data = dev->data;
+
+	return data->freq;
 }
 
 static DEVICE_API(counter, counter_api) = {
@@ -440,12 +591,23 @@ static DEVICE_API(counter, counter_api) = {
 	.get_top_value = ifx_tcpwm_counter_get_top_value,
 	.get_guard_period = ifx_tcpwm_counter_get_guard_period,
 	.set_guard_period = ifx_tcpwm_counter_set_guard_period,
+	.get_freq = ifx_tcpwm_counter_get_frequency,
 };
 
 #define DT_INST_GET_CYHAL_GPIO_OR(inst, gpios_prop, default)                                       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, gpios_prop),                                       \
 		    (DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_INST(inst, DT_DRV_COMPAT), gpios_prop)),   \
 		    (default))
+
+/* Base address macro depending on SOC family */
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define IFX_TCPWM_BASE_INIT(n)                                                                     \
+	.base = (TCPWM_Type *)(DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n))) -                         \
+			       PSOC4_TCPWM_BASE_OFFSET),                                           \
+	.reg_base = (TCPWM_Type *)(DT_REG_ADDR(DT_INST_PARENT(n)))
+#else
+#define IFX_TCPWM_BASE_INIT(n) .reg_base = (TCPWM_GRP_CNT_Type *)(DT_REG_ADDR(DT_INST_PARENT(n)))
+#endif
 
 /* Counter driver init macros */
 #define INFINEON_TCPWM_COUNTER_INIT(n)                                                             \
@@ -461,21 +623,21 @@ static DEVICE_API(counter, counter_api) = {
 		.clock =                                                                           \
 			{                                                                          \
 				.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                         \
-					DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),    \
+					DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1), \
 					DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),             \
-				.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, div_num),            \
+				.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),            \
 			},                                                                         \
-		.clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),        \
+		.clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),     \
 	};                                                                                         \
                                                                                                    \
 	static const struct ifx_tcpwm_counter_config ifx_tcpwm_counter##n##_config = {             \
 		.counter_info = {.max_top_value = (DT_PROP(DT_INST_PARENT(n), resolution) == 32)   \
 							  ? UINT32_MAX                             \
 							  : UINT16_MAX,                            \
-				 .freq = DT_INST_PROP(n, clock_frequency),                         \
+				 .freq = DT_INST_PROP_OR(n, clock_frequency, 0),                   \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
-		.reg_base = (TCPWM_GRP_CNT_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                  \
+		IFX_TCPWM_BASE_INIT(n),                                                            \
 		.index = (DT_REG_ADDR(DT_INST_PARENT(n)) -                                         \
 			  DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /                             \
 			 DT_REG_SIZE(DT_INST_PARENT(n)),                                           \

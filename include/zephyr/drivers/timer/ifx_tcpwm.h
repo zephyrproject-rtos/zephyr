@@ -17,6 +17,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_IFX_TCPWM_TIMER_H
 
 #include <stdint.h>
+#include <infineon_kconfig.h>
 #include "cy_tcpwm.h"
 
 /** @cond INTERNAL_HIDDEN */
