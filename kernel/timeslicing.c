@@ -85,13 +85,33 @@ void z_reset_time_slice(struct k_thread *thread)
 	}
 }
 
+static ALWAYS_INLINE bool thread_defines_time_slice_size(struct k_thread *thread)
+{
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	return (thread->base.slice_ticks != 0);
+#else  /* !CONFIG_TIMESLICE_PER_THREAD */
+	return false;
+#endif /* !CONFIG_TIMESLICE_PER_THREAD */
+}
+
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
-	K_SPINLOCK(&_sched_spinlock) {
-		slice_ticks = k_ms_to_ticks_ceil32(slice);
-		slice_max_prio = prio;
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	slice_ticks = k_ms_to_ticks_ceil32(slice);
+	slice_max_prio = prio;
+
+	/*
+	 * Threads that define their own time slice size should not have
+	 * their time slices reset here as a thread-specific time slice size
+	 * take precedence over the global time slice size.
+	 */
+
+	if (!thread_defines_time_slice_size(_current)) {
 		z_reset_time_slice(_current);
 	}
+
+	k_spin_unlock(&_sched_spinlock, key);
 }
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
