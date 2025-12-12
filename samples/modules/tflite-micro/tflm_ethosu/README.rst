@@ -150,3 +150,33 @@ compact, machine-parseable style:
    ethosu_pmu_cntr2 : 111744
    ethosu_pmu_cntr3 : 0
    # (if supported, counters 4..7 are also printed.)
+
+
+Timing Adapters (TA)
+********************
+
+The timing adapters allows the platform to simulate user provided memory
+bandwidth and latency constraints on platforms that support it (FVP/FPGA).
+This sample does **not** auto-add overlays; apply a TA overlay explicitly with
+``-DDTC_OVERLAY_FILE=...``.
+
+For a full overview of TA behavior, controls, and usage guidance, see the
+`Evaluation Kit documentation: Timing Adapters <https://gitlab.arm.com/artificial-intelligence/ethos-u/ml-embedded-evaluation-kit/-/blob/main/docs/sections/timing_adapters.md>`_.
+
+TA overlay only (Corstone-320)
+------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/tflite-micro/tflm_ethosu
+   :board: mps4/corstone320/fvp
+   :goals: run
+   :gen-args: -DDTC_OVERLAY_FILE=boards/mps4_corstone320_fvp.ta.overlay
+
+TA overlay only (Corstone-300)
+------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/tflite-micro/tflm_ethosu
+   :board: mps3/corstone300/fvp
+   :goals: run
+   :gen-args: -DDTC_OVERLAY_FILE=boards/mps3_corstone300_fvp.ta.overlay
