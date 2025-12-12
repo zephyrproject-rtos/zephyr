@@ -282,6 +282,9 @@ typedef uintptr_t mem_addr_t;
  * This functions takes the designated bit starting from addr and tests its
  * current setting. It will return the current setting.
  *
+ * This function is deprecated and one should consider using sys_io_test_bit()
+ * instead is order to get an essentially boolean value instead of a bit mask.
+ *
  * @param addr the memory address from where to look for the bit
  * @param bit the designated bit to test (from 0 to 31)
  *
@@ -296,6 +299,9 @@ typedef uintptr_t mem_addr_t;
  * This functions takes the designated bit starting from addr, tests its
  * current setting and sets it. It will return the previous setting.
  *
+ * This function is deprecated and one should consider using sys_io_test_and_set_bit()
+ * instead is order to get an essentially boolean value instead of a bit mask.
+ *
  * @param addr the memory address from where to look for the bit
  * @param bit the designated bit to test and set (from 0 to 31)
  *
@@ -309,6 +315,9 @@ typedef uintptr_t mem_addr_t;
  *
  * This functions takes the designated bit starting from addr, test its
  * current setting and clears it. It will return the previous setting.
+ *
+ * This function is deprecated and one should consider using sys_io_test_and_clear_bit()
+ * instead is order to get an essentially boolean value instead of a bit mask.
  *
  * @param addr the memory address from where to look for the bit
  * @param bit the designated bit to test and clear (from 0 to 31)

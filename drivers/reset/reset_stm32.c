@@ -24,8 +24,8 @@ static int reset_stm32_status(const struct device *dev, uint32_t id,
 {
 	const struct reset_stm32_config *config = dev->config;
 
-	*status = !!sys_test_bit(config->base + STM32_RESET_SET_OFFSET(id),
-				 STM32_RESET_REG_BIT(id));
+	*status = sys_io_test_bit(config->base + STM32_RESET_SET_OFFSET(id),
+				  STM32_RESET_REG_BIT(id));
 
 	return 0;
 }

@@ -28,8 +28,8 @@ static int reset_mss_status(const struct device *dev, uint32_t id, uint8_t *stat
 	const struct reset_mss_config *config = dev->config;
 
 	/* Device is in reset if the clock is turned off or held in soft reset */
-	*status = sys_test_bit(config->base + SUBBLK_CLOCK_CR_OFFSET, RESET_MSS_REG_BIT(id)) == 0 ||
-		  sys_test_bit(config->base + SOFT_RESET_CR_OFFSET, RESET_MSS_REG_BIT(id) != 0);
+	*status = !sys_io_test_bit(config->base + SUBBLK_CLOCK_CR_OFFSET, RESET_MSS_REG_BIT(id)) ||
+		  sys_io_test_bit(config->base + SOFT_RESET_CR_OFFSET, RESET_MSS_REG_BIT(id);
 
 	return 0;
 }

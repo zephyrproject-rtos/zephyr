@@ -117,7 +117,7 @@ static int stm32_tsc_handle_incoming_data(const struct device *dev)
 {
 	const struct stm32_tsc_config *config = dev->config;
 
-	if (sys_test_bit((mem_addr_t)&config->tsc->ISR, TSC_ISR_MCEF_Pos)) {
+	if (sys_io_test_bit((mem_addr_t)&config->tsc->ISR, TSC_ISR_MCEF_Pos)) {
 		/* clear max count error flag */
 		sys_set_bit((mem_addr_t)&config->tsc->ICR, TSC_ICR_MCEIC_Pos);
 		LOG_ERR("%s: max count error", dev->name);
@@ -125,7 +125,7 @@ static int stm32_tsc_handle_incoming_data(const struct device *dev)
 		return -EIO;
 	}
 
-	if (sys_test_bit((mem_addr_t)&config->tsc->ISR, TSC_ISR_EOAF_Pos)) {
+	if (sys_io_test_bit((mem_addr_t)&config->tsc->ISR, TSC_ISR_EOAF_Pos)) {
 		/* clear end of acquisition flag */
 		sys_set_bit((mem_addr_t)&config->tsc->ICR, TSC_ICR_EOAIC_Pos);
 
