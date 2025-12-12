@@ -943,7 +943,6 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	 * If all backends are ready periodic wake up is not needed.
 	 */
 	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
-	bool processed_any = false;
 	thread_set(k_current_get());
 
 	/* Logging thread is periodically waken up until all backends that
@@ -966,15 +965,12 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 				z_log_links_activate(links_active_mask, &domain_offset);
 		}
 
-
-		if (log_process() == false) {
-			if (processed_any) {
-				processed_any = false;
+		if (buffered_cnt != 0) {
+			if (log_process() == false) {
 				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 			}
-			(void)k_sem_take(&log_process_thread_sem, timeout);
 		} else {
-			processed_any = true;
+			(void)k_sem_take(&log_process_thread_sem, timeout);
 		}
 	}
 }
