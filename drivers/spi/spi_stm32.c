@@ -859,8 +859,6 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);
 #endif
-
-	spi_stm32_pm_policy_state_lock_put(dev);
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -1337,6 +1335,7 @@ static int transceive(const struct device *dev,
 
 end:
 #endif /* CONFIG_SPI_RTIO */
+	spi_stm32_pm_policy_state_lock_put(dev);
 
 	spi_context_release(&data->ctx, ret);
 
@@ -1636,9 +1635,9 @@ static int transceive_dma(const struct device *dev,
 #endif /* CONFIG_SPI_SLAVE */
 
 end:
-	spi_context_release(&data->ctx, ret);
-
 	spi_stm32_pm_policy_state_lock_put(dev);
+
+	spi_context_release(&data->ctx, ret);
 
 	return ret;
 }
@@ -1739,7 +1738,6 @@ static int spi_stm32_pm_action(const struct device *dev,
 		if (err < 0) {
 			return err;
 		}
-		spi_context_unlock_unconditionally(&data->ctx);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Stop device clock. */
@@ -1805,6 +1803,8 @@ static int spi_stm32_init(const struct device *dev)
 #ifdef CONFIG_SPI_RTIO
 	spi_rtio_init(data->rtio_ctx, dev);
 #endif /* CONFIG_SPI_RTIO */
+
+	spi_context_unlock_unconditionally(&data->ctx);
 
 	return pm_device_driver_init(dev, spi_stm32_pm_action);
 }
