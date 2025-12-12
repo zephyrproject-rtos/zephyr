@@ -16,6 +16,14 @@
 
 LOG_MODULE_REGISTER(lbm_driver, CONFIG_LORA_LOG_LEVEL);
 
+/* When Symbol Time exceeds 16.38 ms (6.1.1.4 SX1261/2 datasheet), enable LDRO
+ * Symbol Rate is bw / (2 ^ sf) so Symbol time is (2 ^ sf) / bw (6.1.1.1 SX1261/2 datasheet)
+ * Additionally, enable LDRO in additional situations described in Lora Basic Modem lr1mac
+ * where t < 16 from ral_compute_lora_ldro: Bandwidth less than 41 Khz, and SF9 with BW 41 KHz
+ */
+#define LORA_LDRO(sf, bw) ((((1 << sf) / bw) >= 16 ? 1 : 0) \
+	| (bw < BW_41_KHZ || (bw == BW_41_KHZ && sf == SF_9) ? 1 : 0))
+
 /**
  * @brief Attempt to acquire the modem for operations
  *
@@ -73,7 +81,7 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 		.mod_params = {
 			.sf = lora_config->datarate,
 			.cr = lora_config->coding_rate,
-			.ldro = 0,
+			.ldro = LORA_LDRO(lora_config->datarate, lora_config->bandwidth),
 		},
 		.pkt_params = {
 			.preamble_len_in_symb = lora_config->preamble_len,
