@@ -209,6 +209,18 @@ static inline void ospi_unlock_thread(const struct device *dev)
 	k_sem_give(&dev_data->sem);
 }
 
+static inline void ospi_get(const struct device *dev)
+{
+	ospi_lock_thread(dev);
+	ospi_pm_get(dev);
+}
+
+static inline void ospi_put(const struct device *dev)
+{
+	ospi_pm_put(dev);
+	ospi_unlock_thread(dev);
+}
+
 static int ospi_send_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
@@ -1218,7 +1230,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		return -ENOTSUP;
 	}
 
-	ospi_lock_thread(dev);
+	ospi_get(dev);
 
 #ifdef CONFIG_STM32_MEMMAP
 	if (stm32_ospi_is_memorymap(dev)) {
@@ -1241,8 +1253,6 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		.DQSMode = HAL_OSPI_DQS_DISABLE,
 		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
 	};
-
-	ospi_pm_get(dev);
 
 	if (stm32_ospi_mem_ready(dev_data,
 		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
@@ -1358,9 +1368,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 	goto end_erase;
 
 end_erase:
-	ospi_pm_put(dev);
-
-	ospi_unlock_thread(dev);
+	ospi_put(dev);
 
 	return ret;
 }
@@ -1460,15 +1468,12 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	}
 
 	LOG_DBG("OSPI: read %zu data", size);
-	ospi_lock_thread(dev);
 
-	ospi_pm_get(dev);
+	ospi_get(dev);
 
 	ret = ospi_read_access(dev, &cmd, data, size);
 
-	ospi_pm_put(dev);
-
-	ospi_unlock_thread(dev);
+	ospi_put(dev);
 
 #endif /* CONFIG_STM32_MEMMAP */
 	return ret;
@@ -1497,9 +1502,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	ospi_lock_thread(dev);
-
-	ospi_pm_get(dev);
+	ospi_get(dev);
 
 #ifdef CONFIG_STM32_MEMMAP
 	if (stm32_ospi_is_memorymap(dev)) {
@@ -1564,9 +1567,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	ret = stm32_ospi_mem_ready(dev_data,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
 	if (ret != 0) {
-		ospi_pm_put(dev);
-
-		ospi_unlock_thread(dev);
+		ospi_put(dev);
 		LOG_ERR("OSPI: write not ready");
 		return -EIO;
 	}
@@ -1613,9 +1614,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	goto end_write;
 
 end_write:
-	ospi_pm_put(dev);
-
-	ospi_unlock_thread(dev);
+	ospi_put(dev);
 
 	return ret;
 }
