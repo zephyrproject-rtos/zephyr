@@ -38,6 +38,8 @@ static bool ipc_done(const struct device *dev, void *arg)
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/ipc/backends/intel_adsp_host_ipc.h>
 
+typedef bool (*intel_adsp_ipc_done_t)(const struct device *dev, void *arg);
+
 struct ipc_ept host_ipc_ept;
 
 void ipc_receive_cb(const void *data, size_t len, void *priv)
@@ -45,27 +47,17 @@ void ipc_receive_cb(const void *data, size_t len, void *priv)
 	struct intel_adsp_ipc_ept_priv_data *priv_data =
 		(struct intel_adsp_ipc_ept_priv_data *)priv;
 
-	if (len == INTEL_ADSP_IPC_CB_MSG) {
-		const struct intel_adsp_ipc_msg *msg = (const struct intel_adsp_ipc_msg *)data;
+	const uint32_t *msg = (const uint32_t *)data;
 
-		zassert_equal(msg->data, msg->ext_data, "unequal message data/ext_data");
-		zassert_true(msg->data == RETURN_MSG_SYNC_VAL ||
-			     msg->data == RETURN_MSG_ASYNC_VAL, "unexpected msg data");
+	ARG_UNUSED(priv_data);
 
-		msg_flag = true;
+	zassert_equal(len, sizeof(uint32_t) * 2, "unexpected IPC message length");
+	zassert_not_null(data, "IPC payload pointer is NULL");
 
-		if (msg->data == RETURN_MSG_SYNC_VAL) {
-			priv_data->cb_ret = INTEL_ADSP_IPC_CB_RET_OKAY;
-		} else {
-			priv_data->cb_ret = -EINVAL;
-		}
-	} else if (len == INTEL_ADSP_IPC_CB_DONE) {
-		zassert_false(done_flag, "done called unexpectedly");
-
-		done_flag = true;
-
-		priv_data->cb_ret = INTEL_ADSP_IPC_CB_RET_OKAY;
-	}
+	zassert_equal(msg[0], msg[1], "unequal message data/ext_data");
+	zassert_true(msg[0] == RETURN_MSG_SYNC_VAL ||
+		     msg[0] == RETURN_MSG_ASYNC_VAL, "unexpected msg data");
+	msg_flag = true;
 }
 
 static struct intel_adsp_ipc_ept_priv_data host_ipc_priv_data;
@@ -78,41 +70,63 @@ struct ipc_ept_cfg host_ipc_ept_cfg = {
 	.priv = &host_ipc_priv_data,
 };
 
+static void intel_adsp_ipc_set_done_handler(const struct device *dev,
+					    intel_adsp_ipc_done_t fn,
+					    void *arg)
+{
+	struct intel_adsp_ipc_data *devdata = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&devdata->lock);
+
+	devdata->done_notify = fn;
+	devdata->done_arg = arg;
+	k_spin_unlock(&devdata->lock, key);
+}
+
+static bool host_ipc_done(const struct device *dev, void *arg)
+{
+	ARG_UNUSED(dev);
+
+	zassert_is_null(arg, "wrong done arg");
+	zassert_false(done_flag, "done called unexpectedly");
+	done_flag = true;
+
+	return false;
+}
+
 static void intel_adsp_ipc_complete(const struct device *dev)
 {
 	int ret;
 
-	ret = ipc_service_send(&host_ipc_ept, NULL, INTEL_ADSP_IPC_SEND_DONE);
-
-	ARG_UNUSED(ret);
+	ARG_UNUSED(dev);
+	ret = ipc_service_release_rx_buffer(&host_ipc_ept, NULL);
+	zassert_equal(ret, 0, "ipc_service_release_rx_buffer() failed: %d", ret);
 }
 
 static bool intel_adsp_ipc_is_complete(const struct device *dev)
 {
-	int ret;
-
-	ret = ipc_service_send(&host_ipc_ept, NULL, INTEL_ADSP_IPC_SEND_IS_COMPLETE);
-
-	return ret == 0;
+	ARG_UNUSED(dev);
+	return ipc_service_get_tx_buffer_size(&host_ipc_ept) > 0;
 }
 
 int intel_adsp_ipc_send_message(const struct device *dev, uint32_t data, uint32_t ext_data)
 {
-	struct intel_adsp_ipc_msg msg = {.data = data, .ext_data = ext_data};
-	int ret;
+	ARG_UNUSED(dev);
+	uint32_t msg[2] = {data, ext_data};
 
-	ret = ipc_service_send(&host_ipc_ept, &msg, INTEL_ADSP_IPC_SEND_MSG);
-
-	return ret;
+	return ipc_service_send(&host_ipc_ept, &msg, sizeof(msg));
 }
 
 static int intel_adsp_ipc_send_message_sync(const struct device *dev, uint32_t data,
 					    uint32_t ext_data, k_timeout_t timeout)
 {
-	struct intel_adsp_ipc_msg msg = {.data = data, .ext_data = ext_data, .timeout = timeout};
-	int ret;
+	uint32_t msg[2] = {data, ext_data};
+	struct intel_adsp_ipc_data *devdata = dev->data;
 
-	ret = ipc_service_send(&host_ipc_ept, &msg, INTEL_ADSP_IPC_SEND_MSG_SYNC);
+	int ret = ipc_service_send(&host_ipc_ept, &msg, sizeof(msg));
+
+	if (ret == 0) {
+		k_sem_take(&devdata->sem, timeout);
+	}
 
 	return ret;
 }
@@ -129,6 +143,7 @@ ZTEST(intel_adsp, test_host_ipc)
 	ret = ipc_service_register_endpoint(INTEL_ADSP_IPC_HOST_DEV, &host_ipc_ept,
 					    &host_ipc_ept_cfg);
 	zassert_equal(ret, 0, "cannot register IPC endpoint");
+	intel_adsp_ipc_set_done_handler(INTEL_ADSP_IPC_HOST_DEV, host_ipc_done, NULL);
 #endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 	/* Just send a message and wait for it to complete */
@@ -191,10 +206,10 @@ ZTEST(intel_adsp, test_host_ipc)
 	zassert_true(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV),
 		"sync message incomplete");
 
+	intel_adsp_ipc_set_done_handler(INTEL_ADSP_IPC_HOST_DEV, NULL, NULL);
 #ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
 	/* Clean up. Further tests might want to use IPC */
 	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, NULL, NULL);
-	intel_adsp_ipc_set_done_handler(INTEL_ADSP_IPC_HOST_DEV, NULL, NULL);
 #else /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 	ret = ipc_service_deregister_endpoint(&host_ipc_ept);
 	zassert_equal(ret, 0, "cannot de-register IPC endpoint");
