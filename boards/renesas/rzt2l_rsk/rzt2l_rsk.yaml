@@ -10,4 +10,5 @@ toolchain:
 supported:
   - uart
   - gpio
+  - pwm
 vendor: renesas
