@@ -6,3 +6,15 @@ config BOARD_NXP_SPSDK_IMAGE
 	help
 	  Generate bootable firmware image with NXP Secure
 	  Provisioning SDK (SPSDK).
+
+config BOARD_NXP_LPDDR4
+	bool "On-board memory is LPDDR4x memory"
+	help
+	  The on-board memory is LPDDR4x memory and will use
+	  LPDDR4x boot firmware.
+
+config BOARD_NXP_LPDDR5
+	bool "On-board memory is LPDDR5 memory"
+	help
+	  The on-board memory is LPDDR5 memory and will use
+	  LPDDR5 boot firmware.

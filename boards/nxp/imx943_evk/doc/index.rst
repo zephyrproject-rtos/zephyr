@@ -203,6 +203,65 @@ Then the following log could be found on UART1 console:
 
 .. include:: ../../common/board-footer.rst.inc
 
+Option 3. Boot Zephyr by Using SPSDK Runner
+===========================================
+
+SPSDK runner leverages SPSDK tools (https://spsdk.readthedocs.io), it builds an
+bootable flash image ``flash.bin`` which includes all necessary firmware components,
+such as ELE+V2X firmware, System Manager, DDR OEI, TF-A images etc. Using west flash
+command will download the boot image flash.bin to DDR memory, or burn the boot image
+to SD card or eMMC flash. By using flash.bin, as no U-Boot image is available, so TF-A
+will boot up Zephyr on the first Cortex-A55 Core directly.
+
+In order to use SPSDK runner, it requires fetching binary blobs, which can be achieved
+by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
+SPSDK runner is enabled by configure item :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE`, currently
+it is not enabled by default for i.MX943 EVK board, so use this configuration to enable
+it, for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55
+   :goals: build
+   :gen-args: -DCONFIG_BOARD_NXP_SPSDK_IMAGE=y
+
+If :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE` is available and enabled for the board variant,
+``flash.bin`` will be built automatically. The programming could be through below commands.
+Before that, switch SW4[3:0] should be configured to 0b1001 for USB download mode
+to boot, and USB1 and DBG ports should be connected to PC. There are 4 serial ports
+enumerated (115200 8n1), and we use the third one for A55 Zephyr and the fourth for
+M33 System Manager.
+(The flasher is spsdk which already installed via scripts/requirements.txt.
+On linux host, usb device permission should be configured per Installation Guide
+of https://spsdk.readthedocs.io)
+
+.. code-block:: none
+
+   # load and run without programming. for next flashing, execute 'reset' in the
+   # fourth serail port
+   $ west flash -r spsdk
+
+   # program to SD card, then set SW4[3:0]=0b1011 and reboot the board from SD
+   $ west flash -r spsdk --bootdevice sd
+
+   # program to emmc card, then set SW4[3:0]=0b1010 and reboot the board from eMMC
+   $ west flash -r spsdk --bootdevice=emmc
+
+Then Zephyr log could be found in the third serial port's Console.
+
+**Notes**: the default boot image is for LPDDR5 EVK board, enable configure item
+:kconfig:option:`CONFIG_BOARD_NXP_LPDDR4` to build the boot image for LPDDR4 EVK board.
+
 Programming and Debugging (M33 in NETC MIX, M7_0 in M7MIX0, M7_1 in M7MIX1)
 ***************************************************************************
 
