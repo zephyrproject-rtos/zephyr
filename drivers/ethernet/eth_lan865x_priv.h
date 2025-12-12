@@ -50,7 +50,6 @@ struct lan865x_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;
-	int32_t timeout;
 	struct net_eth_mac_config mac_cfg;
 
 	/* MAC */
