@@ -1100,6 +1100,7 @@ div.graphviz > object {
     transform: translateY(-50%);
     cursor: pointer;
     opacity: 0.8;
+    padding: 10px;
 }
 
 #search-se-menu {
