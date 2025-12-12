@@ -252,6 +252,7 @@
 };
 
 #include <zephyr/dt-bindings/sensor/icm42686.h>
+#include <zephyr/dt-bindings/sensor/sensor_axis_align.h>
 
 &lpspi1 {
 	status = "okay";

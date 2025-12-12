@@ -4,7 +4,7 @@
 
 description: Sensor Device
 
-include: base.yaml
+include: [base.yaml, sensor-axis-align.yaml]
 
 properties:
   friendly-name:

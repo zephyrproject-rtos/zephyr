@@ -47,7 +47,6 @@ description: |
       axis-align-z-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
     };
 
-include: base.yaml
 properties:
   axis-align-x:
     type: int

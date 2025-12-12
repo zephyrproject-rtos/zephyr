@@ -82,6 +82,9 @@ config SENSOR_SHELL_MAX_TRIGGER_DEVICES
 config SENSOR_INFO
 	bool "Sensor Info iterable section"
 
+config SENSOR_THREE_AXIS_REF
+	bool "Enable sensor 3-axis reference for data alignment"
+
 source "drivers/sensor/Kconfig.sensor_clock"
 
 comment "Device Drivers"
