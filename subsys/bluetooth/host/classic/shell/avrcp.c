@@ -1327,8 +1327,8 @@ static void avrcp_passthrough_req(struct bt_avrcp_tg *tg, uint8_t tid, struct ne
 
 	tg_tid = tid;
 	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
-	opid = BT_AVRCP_PASSTHROUGH_GET_STATE(cmd);
-	state = BT_AVRCP_PASSTHROUGH_GET_OPID(cmd);
+	state = BT_AVRCP_PASSTHROUGH_GET_STATE(cmd);
+	opid = BT_AVRCP_PASSTHROUGH_GET_OPID(cmd);
 
 	if (cmd->data_len > 0U) {
 		if (buf->len < sizeof(struct bt_avrcp_passthrough_opvu_data)) {
