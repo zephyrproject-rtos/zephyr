@@ -195,7 +195,7 @@
 			compatible = "nxp,mcux-edma";
 			reg = <0x42000000 0x4000>;
 			#dma-cells = <2>;
-			nxp,version = <5>;
+			nxp,version = <4>;
 			dma-channels = <64>;
 			dma-requests = <92>;
 			no-error-irq;
