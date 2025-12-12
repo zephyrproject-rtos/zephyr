@@ -37,7 +37,6 @@ zephyr_compile_definitions(
   SLI_SI91X_MCU_INTERFACE
   SLI_SI917
   SLI_SI917B0
-  CLOCK_ROMDRIVER_PRESENT
 )
 
 zephyr_include_directories(
@@ -90,14 +89,8 @@ zephyr_library_sources(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/clock_update.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ipmu.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_rtc.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/hal/src/sl_si91x_hal_soc_soft_reset.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/ipmu_apis.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/rsi_system_config_917.c
@@ -119,6 +112,43 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
 )
+
+# FIXME: Replace sli_si91x_clock_manager.c by native Zephyr access to the clocks
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+  zephyr_compile_definitions(
+    ULPSS_CLOCK_ROMDRIVER_PRESENT # replace rsi_ulpss_clk.c
+    CLOCK_ROMDRIVER_PRESENT # replace rsi_pll.c
+  )
+  zephyr_library_sources(
+    # Some functions are not provided by ULPSS_CLOCK_ROMDRIVER_PRESENT
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c
+    # Some functions are not provided by CLOCK_ROMDRIVER_PRESENT
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
+  )
+endif()
+
+# FIXME: Only silabs,rtc-siwx91x should access to sysrtc
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_RTC_SILABS_SIWX91X)
+  zephyr_library_sources(
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_rtc.c
+  )
+endif()
+
+# FIXME: Only silabs,rtc-siwx91x should access to sysrtc
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_SILABS_SISDK_SLEEPTIMER)
+  zephyr_library_sources(
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
+  )
+endif()
+
+# FIXME: These services should rely in Zephyr RTC API
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_RTC_SILABS_SIWX91X OR
+   CONFIG_SILABS_SISDK_SLEEPTIMER OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+  zephyr_library_sources(
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
+  )
+endif()
 
 zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
   UDMA_ROMDRIVER_PRESENT # replace rsi_udma.c and rsi_udma_wrapper.c
