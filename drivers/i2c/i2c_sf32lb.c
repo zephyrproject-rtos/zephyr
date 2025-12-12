@@ -327,6 +327,8 @@ static void i2c_sf32lb_rx_done(const struct device *dev, void *arg, uint32_t cha
 	const struct i2c_sf32lb_config *config = device->config;
 	struct i2c_sf32lb_data *data = device->data;
 
+	LOG_DBG("I2C RX DMA transfer completed\n");
+
 	// sys_write32(0, config->base + I2C_IER);
 
 	// k_sem_give(&data->i2c_compl);
@@ -337,6 +339,8 @@ static void i2c_sf32lb_tx_done(const struct device *dev, void *arg, uint32_t cha
 	const struct device *device = arg;
 	const struct i2c_sf32lb_config *config = device->config;
 	struct i2c_sf32lb_data *data = device->data;
+
+	LOG_DBG("I2C TX DMA transfer completed\n");
 
 	// sys_write32(0, config->base + I2C_IER);
 
@@ -385,6 +389,8 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 		return -ENOTSUP;
 	}
 
+	LOG_DBG("I2C master send DMA len=%d", msg->len);
+
 	if (addr_sent) {
 		ret = i2c_sf32lb_send_addr(dev, addr, msg);
 		if (ret < 0) {
@@ -392,14 +398,15 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 		}
 	}
 
+	// __ASM("B .");
+
 	if (stop_needed) {
-		sys_set_bit(config->base + I2C_CR, I2C_CR_LASTSTOP_Pos);
+		sys_set_bits(config->base + I2C_CR, I2C_CR_LASTSTOP);
 	}
 
 	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
-	sys_write8(msg->len, config->base + I2C_DNR);
-	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
 	sys_set_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
+	sys_set_bits(config->base + I2C_CR, I2C_CR_MSDE);
 
 	ret = i2c_sf32lb_dma_tx_config(dev, msg);
 	if (ret < 0) {
@@ -411,6 +418,8 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 		return ret;
 	}
 
+	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_write8(msg->len, config->base + I2C_DNR);
 	sys_write32(I2C_TCR_TXREQ, config->base + I2C_TCR);
 
 	ret = k_sem_take(&data->i2c_compl, K_FOREVER);
@@ -418,12 +427,22 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 		LOG_ERR("master send timeout");
 		return ret;
 	}
+
+	/* Cleanup - same as recv_dma */
 	sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+
+	/* Wait for bus idle if stop was issued */
 	if (stop_needed) {
-		sys_clear_bit(config->base + I2C_CR, I2C_CR_LASTSTOP_Pos);
+		while (sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos)) {
+			k_sleep(K_MSEC(1));
+		}
+		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTSTOP | I2C_CR_MSDE);
 	}
 
-	return ret;
+	sf32lb_dma_stop_dt(&config->dma_tx);
+
+	return 0;
 }
 
 static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
@@ -439,6 +458,8 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	if (msg->len > 512U) {
 		return -ENOTSUP;
 	}
+
+	LOG_DBG("I2C master recv DMA len=%d", msg->len);
 
 	if (addr_sent) {
 		ret = i2c_sf32lb_send_addr(dev, addr, msg);
@@ -814,6 +835,9 @@ static int i2c_sf32lb_init(const struct device *dev)
 	sf32lb_dma_config_init_dt(&config->dma_tx, &tx_dma_cfg);
 	sf32lb_dma_config_init_dt(&config->dma_rx, &rx_dma_cfg);
 
+	// __ASM("B .");
+
+	/* TX DMA configuration */
 	tx_dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	tx_dma_cfg.block_count = 1U;
 	tx_dma_cfg.source_data_size = 1U;
@@ -828,6 +852,8 @@ static int i2c_sf32lb_init(const struct device *dev)
 
 	sf32lb_dma_config_dt(&config->dma_tx, &tx_dma_cfg);
 
+	/* RX DMA configuration - reset dma_blk for RX settings */
+	memset(&dma_blk, 0, sizeof(dma_blk));
 	rx_dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	rx_dma_cfg.block_count = 1U;
 	rx_dma_cfg.source_data_size = 1U;
