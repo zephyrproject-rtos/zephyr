@@ -113,11 +113,14 @@ endchoice
 
 config BOOTLOADER_REGION_PROTECTION_ENABLE
 	bool "Protect unmapped memory regions from unintended accesses"
-	default y
+	default y if !RISCV_PMP && !MCUBOOT
 	help
 	  Protects the unmapped memory regions of the entire address space from unintended accesses.
 	  This will ensure that an exception will be triggered whenever the CPU performs a memory
 	  operation on unmapped regions of the address space.
+
+	  Automatically disabled when RISCV_PMP is enabled since Zephyr manages PMP directly.
+	  Also disabled for MCUboot builds since the bootloader handles its own region protection.
 
 config SPI_FLASH_HPM_ENABLE
 	bool
