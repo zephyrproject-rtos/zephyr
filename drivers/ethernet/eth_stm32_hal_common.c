@@ -429,9 +429,6 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 		.Init = {
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
-			.AutoNegotiation = ETH_STM32_AUTO_NEGOTIATION_ENABLE ?
-					   ETH_AUTONEGOTIATION_ENABLE : ETH_AUTONEGOTIATION_DISABLE,
-			.PhyAddress = DT_REG_ADDR(DT_INST_PHANDLE(0, phy_handle)),
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
