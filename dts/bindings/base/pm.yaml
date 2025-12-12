@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Intel Corporation.
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 # Properties for Power Management (PM)
@@ -26,3 +27,14 @@ properties:
     type: phandles
     description: |
       List of power states that will disable this device power.
+
+  wakeup-ctrls:
+    type: phandle-array
+    description: |
+      Phandle to the wakeup controller used by this device.
+
+  '#wakeup-ctrl-cells':
+    type: int
+    const: 1
+    description: |
+      Number of cells in wakeup-ctrl property.
