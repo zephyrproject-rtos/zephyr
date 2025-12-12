@@ -10,7 +10,7 @@
  *
  */
 
-#define DT_DRV_COMPAT infineon_cat1_uart
+#define DT_DRV_COMPAT infineon_uart
 
 #include <string.h>
 #include <zephyr/irq.h>

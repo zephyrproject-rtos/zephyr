@@ -9,7 +9,7 @@
  * @brief ADC driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_adc
+#define DT_DRV_COMPAT infineon_adc
 
 #include <zephyr/drivers/adc.h>
 #include <cyhal_adc.h>

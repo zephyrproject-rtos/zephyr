@@ -6,7 +6,7 @@
 config SPI_INFINEON_CAT1_HAL
 	bool "Infineon CAT1 SPI driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_SPI_ENABLED
+	depends on DT_HAS_INFINEON_SPI_ENABLED
 	depends on USE_INFINEON_LEGACY_HAL
 	select USE_INFINEON_SPI
 	select PINCTRL
@@ -17,7 +17,7 @@ config SPI_INFINEON_CAT1_HAL
 config SPI_INFINEON_CAT1_PDL
 	bool "Infineon CAT1 SPI driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_SPI_ENABLED
+	depends on DT_HAS_INFINEON_SPI_ENABLED
 	depends on !USE_INFINEON_LEGACY_HAL
 	select USE_INFINEON_SPI
 	select PINCTRL

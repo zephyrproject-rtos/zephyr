@@ -1,5 +1,5 @@
 spi1: &scb3 {
-	compatible = "infineon,cat1-spi";
+	compatible = "infineon,spi";
 	status = "okay";
 
 	pinctrl-0 = <&p6_0_scb3_spi_m_mosi &p6_1_scb3_spi_m_miso &p6_2_scb3_spi_m_clk>;

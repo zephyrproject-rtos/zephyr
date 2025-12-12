@@ -8,7 +8,7 @@
 config DMA_INFINEON_CAT1_HAL
 	bool "Infineon CAT1 DMA Legacy HAL-based driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_DMA_ENABLED
+	depends on DT_HAS_INFINEON_DMA_ENABLED
 	depends on USE_INFINEON_LEGACY_HAL
 	select USE_INFINEON_DMA
 	help
@@ -17,7 +17,7 @@ config DMA_INFINEON_CAT1_HAL
 config DMA_INFINEON_CAT1_PDL
 	bool "Infineon CAT1 DMA PDL-based driver"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_DMA_ENABLED
+	depends on DT_HAS_INFINEON_DMA_ENABLED
 	depends on !USE_INFINEON_LEGACY_HAL
 	select USE_INFINEON_DMA
 	help

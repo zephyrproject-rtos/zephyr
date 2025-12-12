@@ -6,7 +6,7 @@
 
 description: Infineon CAT1 GPIO Port
 
-compatible: "infineon,cat1-gpio"
+compatible: "infineon,gpio"
 
 include: [gpio-controller.yaml, base.yaml, "infineon,system-interrupts.yaml"]
 

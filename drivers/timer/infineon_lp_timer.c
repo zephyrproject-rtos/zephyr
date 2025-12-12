@@ -9,7 +9,7 @@
  * @brief Low Power timer driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_lp_timer
+#define DT_DRV_COMPAT infineon_lp_timer
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>

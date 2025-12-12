@@ -71,7 +71,7 @@
 
 	 */
 	flash_controller: flash_controller@40250000 {
-		compatible = "infineon,cat1-qspi-flash";
+		compatible = "infineon,qspi-flash";
 		reg = <0x40250000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;

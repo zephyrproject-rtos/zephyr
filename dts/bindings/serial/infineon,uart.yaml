@@ -7,12 +7,12 @@
 
 description: Infineon CAT1 UART
 
-compatible: "infineon,cat1-uart"
+compatible: "infineon,uart"
 
 include:
   - name: uart-controller.yaml
   - name: pinctrl-device.yaml
-  - name: "infineon,cat1-scb.yaml"
+  - name: "infineon,scb.yaml"
   - name: "infineon,system-interrupts.yaml"
 
 properties:

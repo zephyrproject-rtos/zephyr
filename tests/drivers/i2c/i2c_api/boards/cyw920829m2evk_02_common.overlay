@@ -15,7 +15,7 @@
 i2c0: &scb0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,cat1-i2c";
+	compatible = "infineon,i2c";
 	status = "okay";
 	pinctrl-0 = <&p0_2_scb0_i2c_scl &p0_3_scb0_i2c_sda>;
 	pinctrl-names = "default";

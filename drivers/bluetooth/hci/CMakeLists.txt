@@ -21,7 +21,7 @@ if(CONFIG_DT_HAS_SILABS_BT_HCI_EFR32_ENABLED)
   zephyr_blobs_verify(MODULE hal_silabs REQUIRED)
 endif()
 
-if(CONFIG_DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED)
+if(CONFIG_DT_HAS_INFINEON_BLESS_HCI_ENABLED)
   zephyr_blobs_verify(MODULE hal_infineon REQUIRED)
 endif()
 
