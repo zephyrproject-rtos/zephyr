@@ -17,8 +17,11 @@
 /* Macro defining the minimum counter compare offset */
 #define HAL_TICKER_CNTR_CMP_OFFSET_MIN 1
 
-/* Macro defining the max. counter update latency in ticks */
-#define HAL_TICKER_CNTR_SET_LATENCY 4
+/* Macro defining the max. counter update latency in ticks
+ * NOTE: Lets use similar CPU latency margin for GRTC as used for RTC h/w setup. There is potential
+ *       to tune this in the future.
+ */
+#define HAL_TICKER_CNTR_SET_LATENCY 30
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #define HAL_TICKER_CNTR_CLK_UNIT_FSEC 30517578125UL
@@ -32,7 +35,11 @@
 /* Macro defining the minimum counter compare offset */
 #define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
 
-/* Macro defining the max. counter update latency in ticks */
+/* Macro defining the max. counter update latency in ticks
+ * NOTE: Up to one 32 KHz tick or 30.517 us of the 3 ticks in HAL_TICKER_CNTR_CMP_OFFSET_MIN
+ *       is sufficient CPU latency margin to successfully setup the compare register, hence it is
+ *       ok to have 0 here.
+ */
 #define HAL_TICKER_CNTR_SET_LATENCY 0
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
