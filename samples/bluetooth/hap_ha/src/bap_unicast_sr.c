@@ -29,6 +29,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_internal.h"
+
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -128,6 +130,17 @@ static void print_qos(const struct bt_bap_qos_cfg *qos)
 	       "rtn %u latency %u pd %u\n",
 	       qos->interval, qos->framing, qos->phy, qos->sdu,
 	       qos->rtn, qos->latency, qos->pd);
+}
+
+/**
+ * @brief check for connection
+ * 
+ *
+ * @param bool return true if there is a connection. 
+ */
+bool bap_unicast_sr_has_connection(void)
+{
+	return default_conn != NULL;
 }
 
 /**
@@ -375,6 +388,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected: %s\n", addr);
 	default_conn = bt_conn_ref(conn);
+
+	bap_broadcast_snk_signal_connected();
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
