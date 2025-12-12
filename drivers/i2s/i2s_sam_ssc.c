@@ -30,6 +30,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
@@ -52,18 +53,12 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define SAM_SSC_WORD_PER_FRAME_MIN    1
 #define SAM_SSC_WORD_PER_FRAME_MAX   16
 
-struct queue_item {
-	void *mem_block;
-	size_t size;
-};
+#define ENTRY_SIZE (sizeof(struct queue_item_serialized))
 
-/* Minimal ring buffer implementation */
-struct ring_buffer {
-	struct queue_item *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
+struct queue_item_serialized {
+	uintptr_t ptr;
+	uint32_t size;
+} __packed;
 
 /* Device constant configuration parameters */
 struct i2s_sam_dev_cfg {
@@ -83,7 +78,7 @@ struct stream {
 	uint8_t word_size_bytes;
 	bool last_block;
 	struct i2s_config cfg;
-	struct ring_buffer mem_block_queue;
+	struct ring_buf mem_block_queue;
 	void *mem_block;
 	int (*stream_start)(struct stream *, Ssc *const,
 			    const struct device *);
@@ -110,56 +105,74 @@ static void rx_stream_disable(struct stream *, Ssc *const,
 static void tx_stream_disable(struct stream *, Ssc *const,
 			      const struct device *);
 
+static uint8_t rx_0_ring_buf[(CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1) * ENTRY_SIZE];
+static uint8_t tx_0_ring_buf[(CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1) * ENTRY_SIZE];
+
 /*
- * Get data from the queue
+ * sys/ring_buffer.c compatibility wrapper functions
  */
-static int queue_get(struct ring_buffer *rb, void **mem_block, size_t *size)
+
+static void ring_buf_compat_init(struct ring_buf *rb, uint8_t *buf, size_t buf_size)
 {
-	unsigned int key;
+	__ASSERT((buf_size % ENTRY_SIZE) == 0,
+		     "Ring-buffer backing array must be multiple of ENTRY_SIZE");
+	ring_buf_init(rb, buf_size, buf);
+}
 
-	key = irq_lock();
+/* get serial data item and unpack into pointer and size format */
+static int ring_buf_compat_get(struct ring_buf *rb, void **mem_block, size_t *data_size)
+{
+	struct queue_item_serialized s1;
+	size_t read_dat;
 
-	if (rb->tail == rb->head) {
-		/* Ring buffer is empty */
-		irq_unlock(key);
+	unsigned int key = irq_lock();
+
+	read_dat = ring_buf_get(rb, (uint8_t *)&s1, ENTRY_SIZE);
+	irq_unlock(key);
+
+	if (read_dat != ENTRY_SIZE) {
 		return -ENOMEM;
 	}
 
-	*mem_block = rb->buf[rb->tail].mem_block;
-	*size = rb->buf[rb->tail].size;
-	MODULO_INC(rb->tail, rb->len);
-
-	irq_unlock(key);
+	*mem_block = (void *)(uintptr_t)s1.ptr;
+	*data_size = (size_t)s1.size;
 
 	return 0;
+}
+
+/* take pointer+size and pack it into a serial entry that goes into ring_buf */
+static int ring_buf_compat_put(struct ring_buf *rb, void *mem_block, size_t data_size)
+{
+	struct queue_item_serialized s2;
+	size_t written_dat;
+
+	s2.ptr = (uintptr_t)mem_block;
+	s2.size = (uint32_t)data_size;
+
+	unsigned int key = irq_lock();
+
+	written_dat = ring_buf_put(rb, (const uint8_t *)&s2, ENTRY_SIZE);
+	irq_unlock(key);
+
+	return (written_dat == ENTRY_SIZE) ? 0 : -ENOMEM;
+}
+
+/* Wrapper functions end here */
+
+/*
+ * Get data from the queue
+ */
+static int queue_get(struct ring_buf *rb, void **mem_block, size_t *size)
+{
+	return ring_buf_compat_get(rb, mem_block, size);
 }
 
 /*
  * Put data in the queue
  */
-static int queue_put(struct ring_buffer *rb, void *mem_block, size_t size)
+static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 {
-	uint16_t head_next;
-	unsigned int key;
-
-	key = irq_lock();
-
-	head_next = rb->head;
-	MODULO_INC(head_next, rb->len);
-
-	if (head_next == rb->tail) {
-		/* Ring buffer is full */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	rb->buf[rb->head].mem_block = mem_block;
-	rb->buf[rb->head].size = size;
-	rb->head = head_next;
-
-	irq_unlock(key);
-
-	return 0;
+	return ring_buf_compat_put(rb, mem_block, size);
 }
 
 static int reload_dma(const struct device *dev_dma, uint32_t channel,
@@ -982,6 +995,9 @@ static int i2s_sam_initialize(const struct device *dev)
 	/* Reset the module, disable receiver & transmitter */
 	ssc->SSC_CR = SSC_CR_RXDIS | SSC_CR_TXDIS | SSC_CR_SWRST;
 
+	ring_buf_compat_init(&dev_data->rx.mem_block_queue, rx_0_ring_buf, sizeof(rx_0_ring_buf));
+	ring_buf_compat_init(&dev_data->tx.mem_block_queue, tx_0_ring_buf, sizeof(tx_0_ring_buf));
+
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
@@ -1022,30 +1038,29 @@ static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];
-struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
-
 static struct i2s_sam_dev_data i2s0_sam_data = {
 	.rx = {
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
-		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
-		.mem_block_queue.buf = rx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_0_ring_buf),
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.set_data_format = set_rx_data_format,
-	},
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
+			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
+			/* .mem_block_queue.buffer = rx_0_ring_buf,
+			 * .mem_block_queue.size = ARRAY_SIZE(rx_0_ring_buf),
+			 */
+			.stream_start = rx_stream_start,
+			.stream_disable = rx_stream_disable,
+			.queue_drop = rx_queue_drop,
+			.set_data_format = set_rx_data_format,
+		},
 	.tx = {
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
-		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
-		.mem_block_queue.buf = tx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_0_ring_buf),
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.set_data_format = set_tx_data_format,
-	},
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
+			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
+			/* .mem_block_queue.buffer = tx_0_ring_buf,
+			 * .mem_block_queue.size = ARRAY_SIZE(tx_0_ring_buf),
+			 */
+			.stream_start = tx_stream_start,
+			.stream_disable = tx_stream_disable,
+			.queue_drop = tx_queue_drop,
+			.set_data_format = set_tx_data_format,
+		},
 };
 
 DEVICE_DT_INST_DEFINE(0, &i2s_sam_initialize, NULL,
