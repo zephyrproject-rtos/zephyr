@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
 
 / {
 	#address-cells = <1>;
@@ -93,6 +94,17 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		/*
+		 * ESP32-C6 ROM region containing libc functions.
+		 * PMP protection for this region is configured via
+		 * PMP_SOC_REGION_DEFINE in pmp_regions.c
+		 */
+		soc_rom: memory@40000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x40000000 DT_SIZE_K(320)>;
+			zephyr,memory-region = "SOC_ROM";
+		};
 
 		sramhp: memory@40800000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
