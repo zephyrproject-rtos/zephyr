@@ -180,6 +180,10 @@ New APIs and options
 
   * :c:macro:`COND_CASE_1`
 
+* Timeutil
+
+  * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
