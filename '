@@ -19,7 +19,6 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include <zephyr/cache.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 
@@ -368,33 +367,32 @@ static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv);
 
 static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
 
-static int stm32_sdmmc_pm_policy_state_lock_get(const struct device *dev)
-{
+static int stm32_sdmmc_pm_policy_state_lock_get(const struct device *dev) 
+{ 
 	int err = 0;
 
-	if (IS_ENABLED(CONFIG_PM)) {
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-		err = pm_device_runtime_get(dev);
+	if (IS_ENABLED(CONFIG_PM)) { 
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES); 
+		err = pm_device_runtime_get(dev); 
 		if (err) {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES); 
 		}
-	}
+	} 
 
 	return err;
+} 
+
+static void stm32_sdmmc_pm_policy_state_lock_put(const struct device *dev) 
+{ 
+	if (IS_ENABLED(CONFIG_PM)) { 
+		pm_device_runtime_put(dev); 
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES); 
+	} 
 }
 
-static void stm32_sdmmc_pm_policy_state_lock_put(const struct device *dev)
+static int stm32_sdmmc_hw_activate(struct stm32_sdmmc_priv *priv) 
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		pm_device_runtime_put(dev);
-		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	}
-}
-
-static int stm32_sdmmc_hw_activate(struct stm32_sdmmc_priv *priv)
-{
-	int err;
-	HAL_StatusTypeDef hal_ret;
+	int err; 
 
 	err = stm32_sdmmc_pwr_on(priv);
 	if (err) {
@@ -470,38 +468,29 @@ out_pwr_off:
 	return err;
 }
 
-static int stm32_sdmmc_hw_deactivate(struct stm32_sdmmc_priv *priv)
+static int stm32_sdmmc_hw_deactivate(struct stm32_sdmmc_priv *priv) 
 {
-	int err = 0;
-	HAL_StatusTypeDef hal_ret;
-
 #if STM32_SDMMC_USE_DMA
-	err = stm32_sdmmc_dma_deinit(priv);
-	if (err) {
-		LOG_ERR("DMA deinit failed");
-		return err;
-	}
+	(void)stm32_sdmmc_dma_deinit(priv);
 #endif
 
 #if defined(CONFIG_SDMMC_STM32_EMMC)
 	hal_ret = HAL_MMC_DeInit(&priv->hsd);
 #else
 	hal_ret = HAL_SD_DeInit(&priv->hsd);
+	stm32_sdmmc_clock_disable(priv);
 #endif
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("failed to deinit stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
-		return -EIO;
-	}
-	/* Gate SDMMC clocks and reset peripheral to kill any latent state */
-	(void)stm32_sdmmc_clock_disable(priv);
-	err = reset_line_toggle_dt(&priv->reset);
-	if (err) {
-		LOG_ERR("failed to reset peripheral");
-		k_sem_give(&priv->thread_lock);
-		return err;
+		err = -EIO;
+		goto out_pm_unlock;
 	}
 
 	stm32_sdmmc_pwr_off(priv);
+
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
+	stm32_sdmmc_card_detect_uninit(priv);
+#endif
 	return 0;
 }
 
@@ -509,6 +498,7 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
+	HAL_StatusTypeDef hal_ret;
 	int err;
 
 	/* Card detect and presence is independent of power */
@@ -526,17 +516,17 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 
 	priv->status = DISK_STATUS_UNINIT;
 
-	/* Now we know card is present, block the system from going to sleep.
-	 * This is needed for SDMMC to work in STM32 devices when PM is enabled.
+	/* Now we know card is preset, block the system from going to sleep. 
+	 * This is needed for SDMMC to work in STM32 devices when PM is enabled. 
 	 */
 	err = stm32_sdmmc_pm_policy_state_lock_get(dev);
 	if (err) {
 		return err;
 	}
 
-	/* If CONFIG_PM_DEVICE_RUNTIME is enabled, stm32_sdmmc_pm_policy_state_lock_get
-	 * calls stm32_sdmmc_pm_action which configures power, pins, clocks, etc.
-	 * However, if PM is not enabled, manual bring up is needed.
+	/* If CONFIG_PM_DEVICE_RUNTIME is enabled, stm32_sdmmc_pm_policy_state_lock_get 
+	 * calls stm32_sdmmc_pm_action which configures power, pins, clocks, etc. 
+	 * However, if PM is not enabled, manual bring up is needed. 
 	 */
 #if !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
 	err = stm32_sdmmc_hw_activate(priv);
@@ -559,22 +549,23 @@ out_unlock:
 
 static int stm32_sdmmc_access_deinit(const struct device *dev)
 {
+	HAL_StatusTypeDef hal_ret;
 	struct stm32_sdmmc_priv *priv = dev->data;
-#if !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
 	int err;
 
-	err = stm32_sdmmc_hw_deactivate(priv);
+	err = stm32_sdmmc_pm_policy_state_lock_get(dev);
 	if (err) {
 		return err;
 	}
-#endif /* !CONFIG_PM_DEVICE_RUNTIME */
 
-#if !defined(CONFIG_SDMMC_STM32_EMMC)
-	stm32_sdmmc_card_detect_uninit(priv);
-#endif
+	/* serialize against read/write */
+	k_sem_take(&priv->thread_lock, K_FOREVER);
 
 	priv->status = DISK_STATUS_UNINIT;
 
+out_pm_unlock:
+	k_sem_give(&priv->thread_lock);
+	stm32_sdmmc_pm_policy_state_lock_put(dev);
 	return 0;
 }
 
@@ -649,14 +640,6 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	}
 #endif
 
-#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
-	/* A flush is performed before the DMA operation, to prevent accidental data
-	 * loss when the buffer is not properly aligned to the cache-line (e.g:
-	 * 32-bytes for STM32H7).
-	 */
-	sys_cache_data_flush_and_invd_range((void *)data_buf, BLOCKSIZE * num_sector);
-#endif
-
 	err = stm32_sdmmc_read_blocks(&priv->hsd, data_buf, start_sector, num_sector);
 	if (err != 0) {
 #if STM32_SDMMC_USE_DMA_SHARED
@@ -666,17 +649,6 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	}
 
 	k_sem_take(&priv->sync, K_FOREVER);
-
-#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
-	/* Invalidate again after the operation is complete, to protect against
-	 * speculative / spurious reads. Note that this is slightly unsafe when
-	 * `data_buf` is not aligned to the cache line, and shares the cache line
-	 * with other data... Hopefully the previous (otherwise unnecessary) flush &
-	 * invalidate reduces this risk enough.
-	 * This is a balance between forcing callers to have aligned buffers.
-	 */
-	sys_cache_data_invd_range((void *)data_buf, BLOCKSIZE * num_sector);
-#endif
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	if (HAL_DMA_DeInit(&priv->dma_txrx_handle) != HAL_OK) {
@@ -756,10 +728,6 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 	}
 #endif
 
-#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
-	sys_cache_data_flush_range((void *)data_buf, BLOCKSIZE * num_sector);
-#endif
-
 	err = stm32_sdmmc_write_blocks(&priv->hsd, (uint8_t *)data_buf, start_sector, num_sector);
 	if (err != 0) {
 #if STM32_SDMMC_USE_DMA_SHARED
@@ -793,9 +761,9 @@ out_pm_unlock:
 	return err;
 }
 
-static int stm32_sdmmc_get_card_info(const struct device *dev, HandleTypeDef *hsd, CardInfoTypeDef *info)
+static int stm32_sdmmc_get_card_info(struct device *dev, HandleTypeDef *hsd, CardInfoTypeDef *info)
 {
-	int err;
+	int err; 
 
 	err = stm32_sdmmc_pm_policy_state_lock_get(dev);
 	if (err) {
@@ -1060,11 +1028,10 @@ static int stm32_sdmmc_activate(const struct device *dev)
 	struct stm32_sdmmc_priv *priv = dev->data;
 	int err = 0;
 
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	/* serialize against read/write */
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
-	err = stm32_sdmmc_hw_activate(priv);
+	err = stm32_sdmmc_hw_activate(priv);	
 	if (err) {
 		goto out;
 	}
@@ -1075,16 +1042,13 @@ static int stm32_sdmmc_activate(const struct device *dev)
 
 out:
 	k_sem_give(&priv->thread_lock);
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	return err;
 }
 
 static int stm32_sdmmc_suspend(const struct device *dev)
 {
 	struct stm32_sdmmc_priv *priv = dev->data;
-	int err;
 
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	/* serialize against read/write */
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
@@ -1092,10 +1056,25 @@ static int stm32_sdmmc_suspend(const struct device *dev)
 	irq_disable(DT_INST_IRQN(0));
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 
-	err = stm32_sdmmc_hw_deactivate(priv);
-	if (err) {
-		LOG_ERR("Failed to suspend SDMMC");
-	}
+	/* DeInit HAL (if it was ever init’d) */
+#ifdef CONFIG_SDMMC_STM32_EMMC
+	(void)HAL_MMC_DeInit(&priv->hsd);
+#else
+	(void)HAL_SD_DeInit(&priv->hsd);
+#endif
+
+	/* DMA fully idle (and detach from HAL) */
+#if STM32_SDMMC_USE_DMA
+	(void)stm32_sdmmc_dma_deinit(priv);
+#endif
+
+	/* Gate SDMMC clocks and reset peripheral to kill any latent state */
+	(void)stm32_sdmmc_clock_disable(priv);
+	__HAL_RCC_SDMMC1_FORCE_RESET();
+	__HAL_RCC_SDMMC1_RELEASE_RESET();
+
+	/* Optionally cut card power (if you wired pwr_gpios) */
+	stm32_sdmmc_pwr_off(priv);
 
 	/* If HSI48 was used only for SDMMC, system PM may turn it off later.
 	   If you want to force it off right here (safe if USB not used): */
@@ -1109,8 +1088,7 @@ static int stm32_sdmmc_suspend(const struct device *dev)
 #endif
 
 	k_sem_give(&priv->thread_lock);
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	return err;
+	return 0;
 }
 
 int stm32_sdmmc_pm_action(const struct device *dev, enum pm_device_action action)
