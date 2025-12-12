@@ -38,9 +38,21 @@ extern "C" {
  * higher data rates but typically reduce sensitivity and range.
  */
 enum lora_signal_bandwidth {
-	BW_125_KHZ = 0,	/**< 125 kHz */
-	BW_250_KHZ,	/**< 250 kHz */
-	BW_500_KHZ,	/**< 500 kHz */
+	BW_7_KHZ = 7,		/**< 7.81 kHz */
+	BW_10_KHZ = 10,		/**< 10.42 kHz */
+	BW_15_KHZ = 15,		/**< 15.63 kHz */
+	BW_20_KHZ = 20,		/**< 20.83 kHz */
+	BW_31_KHZ = 31,		/**< 31.25 kHz */
+	BW_41_KHZ = 41,		/**< 41.67 kHz */
+	BW_62_KHZ = 62,		/**< 62.5 kHz */
+	BW_125_KHZ = 125,	/**< 125 kHz */
+	BW_200_KHZ = 200,	/**< 203 kHz */
+	BW_250_KHZ = 250,	/**< 250 kHz */
+	BW_400_KHZ = 400,	/**< 406 kHz */
+	BW_500_KHZ = 500,	/**< 500 kHz */
+	BW_800_KHZ = 800,	/**< 812 kHz */
+	BW_1000_KHZ = 1000,	/**< 1000 kHz */
+	BW_1600_KHZ = 1600,	/**< 1625 kHz */
 };
 
 /**
@@ -52,13 +64,14 @@ enum lora_signal_bandwidth {
  * symbol). Higher values result in lower data rates but increased range and robustness.
  */
 enum lora_datarate {
-	SF_6 = 6, /**< Spreading factor 6 (fastest, shortest range) */
-	SF_7,     /**< Spreading factor 7 */
-	SF_8,     /**< Spreading factor 8 */
-	SF_9,     /**< Spreading factor 9 */
-	SF_10,    /**< Spreading factor 10 */
-	SF_11,    /**< Spreading factor 11 */
-	SF_12,    /**< Spreading factor 12 (slowest, longest range) */
+	SF_5 = 5,	/**< Spreading factor 5 (fastest, shortest range) */
+	SF_6 = 6,	/**< Spreading factor 6 */
+	SF_7 = 7,	/**< Spreading factor 7 */
+	SF_8 = 8,	/**< Spreading factor 8 */
+	SF_9 = 9,	/**< Spreading factor 9 */
+	SF_10 = 10,	/**< Spreading factor 10 */
+	SF_11 = 11,	/**< Spreading factor 11 */
+	SF_12 = 12,	/**< Spreading factor 12 (slowest, longest range) */
 };
 
 /**
