@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT	nxp_imx_flexspi_mx25um51345g
 
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
-#include "spi_nor.h"
 #include "memc_mcux_flexspi.h"
 
 #ifdef CONFIG_HAS_MCUX_CACHE

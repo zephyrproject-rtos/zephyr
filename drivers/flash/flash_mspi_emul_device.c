@@ -13,7 +13,7 @@
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/mspi_emul.h>
 #include <zephyr/drivers/flash.h>
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 
 LOG_MODULE_REGISTER(zephyr_mspi_emul_flash, CONFIG_FLASH_LOG_LEVEL);
 

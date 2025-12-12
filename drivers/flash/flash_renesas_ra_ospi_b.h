@@ -8,12 +8,12 @@
 #define ZEPHYR_DRIVERS_FLASH_RENESAS_RA_OSPI_B_H_
 
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <r_spi_flash_api.h>
 #include <r_ospi_b.h>
 #include "spi_nor_s28hx512t.h"
-#include "spi_nor.h"
 
 /* Device node */
 #define RA_OSPI_B_NOR_NODE DT_INST(0, renesas_ra_ospi_b_nor)
