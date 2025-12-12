@@ -1860,7 +1860,8 @@ static int cmd_send_passthrough_rsp(const struct shell *sh, int32_t argc, char *
 		shell_error(sh, "Failed to send passthrough response: %d", err);
 		goto failed;
 	} else {
-		shell_print(sh, "Passthrough opid=0x%02x, state=%s", opid, argv[2]);
+		shell_print(sh, "Passthrough opid=0x%02x (%s), state=%s sent successfully", opid,
+			    is_op_vu ? "VENDOR_UNIQUE" : "STANDARD", argv[3]);
 		return 0;
 	}
 
@@ -1987,18 +1988,34 @@ static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv
 static int cmd_passthrough(const struct shell *sh, bt_avrcp_opid_t opid, const uint8_t *payload,
 			   uint8_t len)
 {
+	int err;
+
 	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
 		return -ENOEXEC;
 	}
 
-	if (default_ct != NULL) {
-		bt_avrcp_ct_passthrough(default_ct, get_next_tid(), opid, BT_AVRCP_BUTTON_PRESSED,
-					payload, len);
-		bt_avrcp_ct_passthrough(default_ct, get_next_tid(), opid, BT_AVRCP_BUTTON_RELEASED,
-					payload, len);
-	} else {
+	if (default_ct == NULL) {
 		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
 	}
+
+	err = bt_avrcp_ct_passthrough(default_ct, get_next_tid(), opid, BT_AVRCP_BUTTON_PRESSED,
+				      payload, len);
+	if (err < 0) {
+		shell_error(sh, "Failed to send passthrough PRESSED command: opid=0x%02x, err=%d",
+			    opid, err);
+		return err;
+	}
+	shell_print(sh, "Passthrough PRESSED command sent successfully: opid=0x%02x", opid);
+
+	err = bt_avrcp_ct_passthrough(default_ct, get_next_tid(), opid, BT_AVRCP_BUTTON_RELEASED,
+				      payload, len);
+	if (err < 0) {
+		shell_error(sh, "Failed to send passthrough RELEASED command: opid=0x%02x, err=%d",
+			    opid, err);
+		return err;
+	}
+	shell_print(sh, "Passthrough RELEASED command sent successfully: opid=0x%02x", opid);
 
 	return 0;
 }
@@ -2016,6 +2033,7 @@ static int cmd_pause(const struct shell *sh, int32_t argc, char *argv[])
 static int cmd_get_caps(const struct shell *sh, int32_t argc, char *argv[])
 {
 	const char *cap_id;
+	int err;
 
 	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
 		return -ENOEXEC;
@@ -2027,10 +2045,27 @@ static int cmd_get_caps(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	cap_id = argv[1];
+
 	if (!strcmp(cap_id, "company")) {
-		bt_avrcp_ct_get_caps(default_ct, get_next_tid(), BT_AVRCP_CAP_COMPANY_ID);
+		err = bt_avrcp_ct_get_caps(default_ct, get_next_tid(), BT_AVRCP_CAP_COMPANY_ID);
+		if (err < 0) {
+			shell_error(sh, "Failed to send get_caps command: cap_id=company, err=%d",
+				    err);
+			return err;
+		}
+		shell_print(sh, "Get capabilities command sent successfully: cap_id=company");
 	} else if (!strcmp(cap_id, "events")) {
-		bt_avrcp_ct_get_caps(default_ct, get_next_tid(), BT_AVRCP_CAP_EVENTS_SUPPORTED);
+		err = bt_avrcp_ct_get_caps(default_ct, get_next_tid(),
+					   BT_AVRCP_CAP_EVENTS_SUPPORTED);
+		if (err < 0) {
+			shell_error(sh, "Failed to send get_caps command: cap_id=events, err=%d",
+				    err);
+			return err;
+		}
+		shell_print(sh, "Get capabilities command sent successfully: cap_id=events");
+	} else {
+		shell_error(sh, "Invalid capability ID: %s (expected: company or events)", cap_id);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -3043,7 +3078,7 @@ static int cmd_tg_send_get_curr_player_app_setting_val_rsp(const struct shell *s
 		goto failed;
 	}
 
-	shell_print(sh, "Send get curr player app setting val rsp sent (num=%u)", rsp->num_attrs);
+	shell_print(sh, "Send get curr player app setting val rsp (num=%u)", rsp->num_attrs);
 	return 0;
 
 failed:
