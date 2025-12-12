@@ -1,0 +1,285 @@
+/*
+ * Copyright (c) 2025, FocalTech Systems CO.,Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/focaltech_ft9001_clocks.h>
+#include <zephyr/dt-bindings/reset/focaltech_ft9001_reset.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(160)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(224)>;
+		};
+
+		sramd0: memory@1fff8000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x1fff8000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		pinctrl: pin-controller@40000000 {
+			compatible = "focaltech,ft9001-pinctrl";
+			reg = <0x40000000 0x1000>;
+			clocks = <&cpm FOCALTECH_CLOCK_IO_CTRL>;
+			status = "disabled";
+		};
+
+		ccm: ccm@40001000 {
+			compatible = "focaltech,ft9001-ccm";
+			reg = <0x40001000 0x1000>;
+			status = "disabled";
+		};
+
+		cpm: cpm@40004000 {
+			compatible = "focaltech,ft9001-cpm";
+			reg = <0x40004000 0x1000>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "focaltech,ft9001-cpm-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
+		};
+
+		flash_ctrl: flash-controller@40003000 {
+			compatible = "focaltech,ft9001-flash-controller";
+			reg = <0x40003000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash0: flash@10000000 {
+				compatible = "focaltech,ft9001-nv-flash", "soc-nv-flash";
+				reg = <0x10000000 0x200000>;
+				write-block-size = <1>;
+			};
+		};
+
+		usart2: usart@40014000 {
+			compatible = "focaltech,ft9001-usart";
+			reg = <0x40014000 0x1000>;
+			interrupts = <33 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_SCI2>;
+			resets = <&rctl FOCALTECH_RESET_SCI2>;
+			status = "disabled";
+		};
+
+		usart3: usart@4001d000 {
+			compatible = "focaltech,ft9001-usart";
+			reg = <0x4001d000 0x1000>;
+			interrupts = <61 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_SCI3>;
+			resets = <&rctl FOCALTECH_RESET_SCI3>;
+			status = "disabled";
+		};
+
+		eport0: eport@40019000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40019000 0x1000>;
+			interrupts = <41 0>,
+				     <42 0>,
+				     <43 0>,
+				     <44 0>,
+				     <45 0>,
+				     <46 0>,
+				     <47 0>,
+				     <48 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT0>;
+			resets = <&rctl FOCALTECH_RESET_EPORT0>;
+			mask = <0xff>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport1: eport@4001a000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x4001a000 0x1000>;
+			interrupts = <49 0>,
+				     <50 0>,
+				     <51 0>,
+				     <52 0>,
+				     <53 0>,
+				     <54 0>,
+				     <55 0>,
+				     <56 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT1>;
+			resets = <&rctl FOCALTECH_RESET_EPORT1>;
+			mask = <0x20>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport2: eport@40024000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40024000 0x1000>;
+			interrupts = <92 0>,
+				     <93 0>,
+				     <94 0>,
+				     <95 0>,
+				     <96 0>,
+				     <97 0>,
+				     <98 0>,
+				     <99 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT2>;
+			resets = <&rctl FOCALTECH_RESET_EPORT2>;
+			mask = <0xff>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport3: gpio@40025000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			reg = <0x40025000 0x1000>;
+			#gpio-cells = <2>;
+			interrupts = <100 0>,
+				     <101 0>,
+				     <102 0>,
+				     <103 0>,
+				     <104 0>,
+				     <105 0>,
+				     <106 0>,
+				     <107 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT3>;
+			resets = <&rctl FOCALTECH_RESET_EPORT3>;
+			mask = <0xff>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport4: eport@40026000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40026000 0x1000>;
+			interrupts = <108 0>,
+				     <109 0>,
+				     <110 0>,
+				     <111 0>,
+				     <112 0>,
+				     <113 0>,
+				     <114 0>,
+				     <115 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT4>;
+			resets = <&rctl FOCALTECH_RESET_EPORT4>;
+			mask = <0xff>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport5: eport@40027000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40027000 0x1000>;
+			interrupts = <116 0>,
+				     <117 0>,
+				     <118 0>,
+				     <119 0>,
+				     <120 0>,
+				     <121 0>,
+				     <122 0>,
+				     <123 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT5>;
+			resets = <&rctl FOCALTECH_RESET_EPORT5>;
+			mask = <0xff>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport6: eport@40028000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40028000 0x1000>;
+			interrupts = <124 0>,
+				     <125 0>,
+				     <126 0>,
+				     <127 0>,
+				     <128 0>,
+				     <129 0>,
+				     <130 0>,
+				     <131 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT6>;
+			resets = <&rctl FOCALTECH_RESET_EPORT6>;
+			mask = <0xff>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		eport7: eport@40029000 {
+			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40029000 0x1000>;
+			interrupts = <132 0>,
+				     <133 0>,
+				     <134 0>,
+				     <135 0>,
+				     <136 0>,
+				     <137 0>,
+				     <138 0>,
+				     <139 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_EPORT7>;
+			resets = <&rctl FOCALTECH_RESET_EPORT7>;
+			mask = <0x3c>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		wdt0: watchdog@40005000 {
+			compatible = "focaltech,ft9001-wdt";
+			reg = <0x40005000 0x1000>;
+			clocks = <&cpm FOCALTECH_CLOCK_WDT>;
+			resets = <&rctl FOCALTECH_RESET_WDT>;
+			status = "disabled";
+		};
+
+		tc0: timer@40006000 {
+			compatible = "focaltech,ft9001-timer";
+			reg = <0x40006000 0x1000>;
+			interrupts = <2 0>;
+			clocks = <&cpm FOCALTECH_CLOCK_TC>;
+			resets = <&rctl FOCALTECH_RESET_TC>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
