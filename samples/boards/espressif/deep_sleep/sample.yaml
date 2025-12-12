@@ -14,8 +14,6 @@ tests:
       - esp8684_devkitm
   sample.esp32.deep_sleep.dut:
     extra_args:
-      - CONFIG_EXAMPLE_EXT1_WAKEUP=n
-      - CONFIG_EXAMPLE_GPIO_WAKEUP=n
       - CONFIG_EXAMPLE_WAKEUP_TIME_SEC=1
       - CONFIG_ESP32_USE_UNSUPPORTED_REVISION=y
     platform_allow:
