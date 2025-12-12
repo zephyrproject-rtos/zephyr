@@ -1,0 +1,8 @@
+identifier: am261x_lp/am2612/r5f0_0
+name: TI AM261X LaunchPad R5F0_0
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 1536
+vendor: ti
