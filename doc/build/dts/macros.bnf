@@ -22,6 +22,8 @@ node-macro =  property-macro
 node-macro =/ pinctrl-macro
 ; A macro about the GPIO hog properties in a node.
 node-macro =/ gpiohogs-macro
+; A macro about the map properties in a node.
+node-macro =/ map-macro
 ; EXISTS macro: node exists in the devicetree
 node-macro =/ %s"DT_N" path-id %s"_EXISTS"
 ; Bus macros: the plain BUS is a way to access a node's bus controller.
@@ -232,6 +234,71 @@ gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags_EXIST
 ;   #define DT_N_<node-1 path>_GPIO_HOGS_IDX_1_VAL_flags 0x20
 ;   #define DT_N_<node-2 path>_GPIO_HOGS_IDX_0_VAL_flags 0x30
 gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags"
+
+
+; --------------------------------------------------------------------
+; map-macro: a macro related to map properties
+;
+; Macros are generated when there is a property ending with '-map' as shown below.
+;
+; connector {
+;     ...
+;     interrupt-map = <0 1 &intc0 2 3>;
+; };
+;
+; The existence of map entry;
+;
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_EXISTS 1
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_EXISTS"
+;
+; The child address length, value, and existence.
+;
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_CHILD_ADDRESS_LEN 1
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_CHILD_ADDRESS_IDX_0 0
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_CHILD_ADDRESS_IDX_0_EXISTS 1
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_CHILD_ADDRESS_LEN"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_CHILD_ADDRESS_IDX_" DIGIT
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_CHILD_ADDRESS_IDX_" DIGIT %s"_EXISTS"
+;
+; The length of child specifiers length, value, and existence.
+;
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_CHILD_SPECIFIER_LEN 1
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_CHILD_SPECIFIER_IDX_0_EXISTS 1
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_CHILD_SPECIFIER_IDX_0 0
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_CHILD_SPECIFIER_LEN"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_CHILD_SPECIFIER_IDX_" DIGIT
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_CHILD_SPECIFIER_IDX_" DIGIT %s"_EXISTS"
+;
+; The parent node of this map.
+;
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT DT_N_S_gpio_emul
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT"
+;
+; The length of parent address, value, and existence.
+;
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT_ADDRESS_LEN 1
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT_ADDRESS_IDX_0 2
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT_ADDRESS_IDX_0_EXISTS 1
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT_ADDRESS_LEN"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT_ADDRESS_IDX_" DIGIT
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT_ADDRESS_IDX_" DIGIT %s"_EXISTS"
+;
+; The length of parent specifiers length, value, and existence.
+;
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT_SPECIFIER_LEN 1
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT_SPECIFIER_IDX_0_EXISTS 1
+; #define DT_N_S_connector_P_interrupt_map_MAP_ENTRY_0_PARENT_SPECIFIER_IDX_0 3
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT_SPECIFIER_LEN"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT_SPECIFIER_IDX_" DIGIT
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_ENTRY_" DIGIT %s"_PARENT_SPECIFIER_IDX_" DIGIT %s"_EXISTS"
+;
+; Iteration helpers for map.
+;
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_MAP_ENTRY"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_MAP_ENTRY_SEP"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_MAP_ENTRY_VARGS"
+map-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_MAP_ENTRY_SEP_VARGS"
+
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property
