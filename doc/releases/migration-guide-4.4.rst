@@ -200,6 +200,9 @@ USB
 
   * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
 
+  * ``CONFIG_USBD_VIDEO_MAX_FRMIVAL`` is replaced by :kconfig:option:`CONFIG_USB_VIDEO_MAX_FRMIVAL`
+    for both host and device_next stack.
+
 .. zephyr-keep-sorted-stop
 
 Video
