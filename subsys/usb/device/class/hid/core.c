@@ -699,7 +699,7 @@ int hid_int_ep_write(const struct device *dev, const uint8_t *data, uint32_t dat
 		return usb_write(cfg->endpoint[HID_INT_IN_EP_IDX].ep_addr, data,
 			 data_len, bytes_ret);
 	} else {
-		LOG_WRN("Device is not configured");
+		LOG_WRN("Device is not configured or is suspended");
 		return -EAGAIN;
 	}
 
