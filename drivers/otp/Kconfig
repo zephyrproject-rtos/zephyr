@@ -18,6 +18,8 @@ module-str = otp
 
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/otp/Kconfig.emu"
+
 config OTP_INIT_PRIORITY
 	int "OTP init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
