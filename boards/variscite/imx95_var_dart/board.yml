@@ -1,0 +1,6 @@
+board:
+  name: imx95_var_dart
+  full_name: DART-MX95
+  vendor: variscite
+  socs:
+  - name: mimx9596
