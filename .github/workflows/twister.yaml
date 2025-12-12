@@ -6,7 +6,7 @@ on:
       - main
       - v*-branch
       - collab-*
-  pull_request_target:
+  pull_request:
     branches:
       - main
       - v*-branch
@@ -56,14 +56,14 @@ jobs:
           echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
 
       - name: Clone cached Zephyr repository
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         continue-on-error: true
         run: |
           git clone --shared /repo-cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
 
       - name: Environment Setup
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         run: |
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
@@ -87,7 +87,7 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Generate Test Plan with Twister
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         id: test-plan
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -103,7 +103,7 @@ jobs:
       - name: Determine matrix size
         id: output-services
         run: |
-          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+          if [ "${{github.event_name}}" = "pull_request" ]; then
             if [ -n "${TWISTER_NODES}" ]; then
               subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
             else
@@ -180,7 +180,7 @@ jobs:
 
       - name: Environment Setup
         run: |
-          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+          if [ "${{github.event_name}}" = "pull_request" ]; then
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
@@ -236,7 +236,7 @@ jobs:
             fi
           fi
 
-      - if: github.event_name == 'pull_request_target'
+      - if: github.event_name == 'pull_request'
         name: Run Tests with Twister (Pull Request)
         run: |
           rm -f testplan.json
@@ -301,9 +301,6 @@ jobs:
 
   twister-test-results:
     name: "Publish Unit Tests Results"
-    env:
-      ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
-      ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
     needs: twister-build
     runs-on: ubuntu-22.04
     # the build-and-test job might be skipped, we don't need to run this job then
@@ -322,20 +319,6 @@ jobs:
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           path: artifacts
-
-      - if: github.event_name == 'push' || github.event_name == 'schedule'
-        name: Upload to opensearch
-        run: |
-          pip3 install elasticsearch
-          # set run date on upload to get consistent and unified data across the matrix.
-          run_date=`date --iso-8601=minutes`
-          if [ "${{github.event_name}}" = "push" ]; then
-            python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
-              --index zephyr-main-ci-push-1 artifacts/*/*/twister.json
-          elif [ "${{github.event_name}}" = "schedule" ]; then
-            python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
-              --index zephyr-main-ci-weekly-1 artifacts/*/*/twister.json
-          fi
 
       - name: Merge Test Results
         run: |
