@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_J722S_MCU_R5F0_0
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 19200000
+
+config NUM_IRQS
+	default 512
+
+endif # SOC_J722S_MCU_R5F0_0
