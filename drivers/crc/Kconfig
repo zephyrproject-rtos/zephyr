@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Brill Power Ltd.
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CRC_DRIVER
@@ -20,6 +21,7 @@ config CRC_DRIVER_INIT_PRIORITY
 	  CRC driver device initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/crc/Kconfig.nxp"
 source "drivers/crc/Kconfig.renesas_ra"
 source "drivers/crc/Kconfig.sf32lb"
 # zephyr-keep-sorted-stop
