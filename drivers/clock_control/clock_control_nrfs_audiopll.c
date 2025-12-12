@@ -147,6 +147,22 @@ static int shim_nrfs_request_freq_sync(const struct device *dev, uint16_t freq_f
 	return dev_data->evt == NRFS_AUDIOPLL_EVT_FREQ_CONFIRMED ? 0 : -EIO;
 }
 
+static int shim_nrfs_request_disable_sync(const struct device *dev)
+{
+	struct shim_data *dev_data = dev->data;
+	nrfs_err_t err;
+
+	LOG_DBG("send disable request");
+
+	err = nrfs_audiopll_disable_request(dev_data);
+	if (err != NRFS_SUCCESS) {
+		return -EIO;
+	}
+
+	k_sem_take(&dev_data->evt_sem, K_FOREVER);
+	return dev_data->evt == NRFS_AUDIOPLL_EVT_DISABLED ? 0 : -EIO;
+}
+
 static int shim_nrfs_request_prescaler_sync(const struct device *dev,
 					    enum audiopll_prescaler_div div)
 {
@@ -271,6 +287,13 @@ static int shim_init(const struct device *dev)
 	ret = shim_nrfs_request_freq_sync(dev, freq_fraction);
 	if (ret) {
 		LOG_ERR("failed to set freq_fraction");
+		return ret;
+	}
+
+	/* Requesting freq or prescaler automatically enables clock, disable it */
+	ret = shim_nrfs_request_disable_sync(dev);
+	if (ret) {
+		LOG_ERR("failed to disable clock");
 		return ret;
 	}
 
