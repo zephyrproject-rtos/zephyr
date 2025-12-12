@@ -15,6 +15,16 @@ config MSPM0_PERIPH_STARTUP_DELAY
 	int
 	default 8
 
+# MSPM0 shares the NVIC interrupt 0 and 1 up to 8 IP blocks each,
+# called interrupt groups 0 and 1 respectively.
+# These IP blocks are not either/or but always in such group
+# so up to these blocks to select the right group they are in.
+config SOC_TI_MSPM0_INT_GROUP_0
+	bool
+
+config SOC_TI_MSPM0_INT_GROUP_1
+	bool
+
 config HWINFO
 	bool
 	default y if POWEROFF
