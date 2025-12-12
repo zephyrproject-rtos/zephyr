@@ -206,6 +206,50 @@ ZTEST(devicetree_api, test_inst_props)
 }
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_reg_holder_2
+ZTEST(devicetree_api, test_any_inst_reg_names)
+{
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(bar), 1, "");
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 5, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_1(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 5, "");
+	zassert_true(IS_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo)), "");
+	zassert_true(!IS_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz)), "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo), (1)) + 1, 2, "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz), (1)) + 1, 1, "");
+}
+
+ZTEST(devicetree_api, test_all_inst_reg_names)
+{
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(bar), 0, "");
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 5, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_1(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 5, "");
+	zassert_true(IS_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo)), "");
+	zassert_true(!IS_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz)), "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo), (1)) + 1, 2, "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz), (1)) + 1, 1, "");
+}
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_device_with_props
 ZTEST(devicetree_api, test_any_inst_prop)
 {
