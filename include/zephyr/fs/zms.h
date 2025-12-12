@@ -232,7 +232,8 @@ ssize_t zms_calc_free_space(struct zms_fs *fs);
  *
  * @param fs Pointer to the file system.
  *
- * @retval >=0 Number of free bytes in the currently active sector
+ * @retval >=0 Number of free bytes in the currently active sector. On success, it will be equal
+ * to the number of bytes that can be written without automatically advancing to the next sector.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -EINVAL if `fs` is NULL.
  */
