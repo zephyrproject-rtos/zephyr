@@ -131,12 +131,7 @@
 
 		slot1_partition: partition@8000 {
 			label = "image-1";
-			reg = <0x00008000 DT_SIZE_K(16)>;
-		};
-
-		scratch_partition: partition@c000 {
-			label = "image-scratch";
-			reg = <0x0000c000 DT_SIZE_K(16)>;
+			reg = <0x00008000 DT_SIZE_K(20)>;
 		};
 	};
 };

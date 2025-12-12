@@ -354,13 +354,10 @@ zephyr_udc0: &usbotg_fs {
 
 		slot1_partition: partition@78000 {
 			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
+			reg = <0x00078000 DT_SIZE_K(424)>;
 		};
 
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 DT_SIZE_K(64)>;
-		};
+		/* Range [0xe2000..0xf0000] is unused. */
 
 		storage_partition: partition@f0000 {
 			label = "storage";
