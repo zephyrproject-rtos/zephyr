@@ -1444,6 +1444,7 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 	}
 
 	caps->min_vbuf_count = 1;
+	caps->buf_align = 16;
 
 	return 0;
 }
