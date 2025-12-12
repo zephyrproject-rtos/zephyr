@@ -36,7 +36,9 @@
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
-#include "ll_sw/ull_tx_queue.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -50,11 +52,21 @@
 #include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_sched_internal.h"
 
 #include "ll_feat.h"
 
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
+			    uint32_t *ticks_to_offset_next,
+			    uint16_t conn_interval, uint8_t *offset_max,
+			    uint8_t *win_offset);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CENTRAL)
 static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
@@ -63,6 +75,7 @@ static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 static bool ticker_match_cen_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
 				   uint32_t ticks_to_expire, void *op_context);
 #endif /* CONFIG_BT_CENTRAL */
+#endif /* CONFIG_BT_CONN */
 
 typedef struct ull_hdr *(*ull_hdr_get_func)(uint8_t ticker_id,
 					    uint32_t *ticks_slot);
@@ -200,12 +213,16 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 			remainder_us;
 	}
 }
-#endif /* CONFIG_BT_CENTRAL */
 
 void ull_sched_mfy_win_offset_use(void *param)
 {
+	/*
+	 * TODO: update when updating the connection update procedure
+	 */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	struct ll_conn *conn = param;
 	uint32_t ticks_slot_overhead;
+	uint16_t win_offset;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = MAX(conn->ull.ticks_active_to_start,
@@ -214,11 +231,42 @@ void ull_sched_mfy_win_offset_use(void *param)
 		ticks_slot_overhead = 0U;
 	}
 
-	/*
-	 * TODO: update calculationg of the win_offset
-	 * when updating the connection update procedure
-	 * see the legacy code from Zephyr v3.3 for inspiration
-	 */
+	after_cen_offset_get(conn->lll.interval,
+			     (ticks_slot_overhead + conn->ull.ticks_slot),
+			     conn->llcp.conn_upd.ticks_anchor,
+			     &conn->llcp_cu.win_offset_us);
+
+	win_offset = conn->llcp_cu.win_offset_us / CONN_INT_UNIT_US;
+
+	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
+
+	conn->llcp.conn_upd.select_conn_interval = conn->lll.interval;
+
+	/* move to offset calculated state */
+	conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+}
+#endif /* CONFIG_BT_CENTRAL */
+
+uint16_t ull_sched_offset_at_instant(uint16_t offset, uint16_t reference,
+				     uint16_t instant, uint16_t interval_old,
+				     uint16_t interval_new)
+{
+	uint16_t elapsed_old, elapsed_new, offset_at_instant;
+	uint16_t latency_old, latency_new;
+
+	latency_old = instant - reference;
+	elapsed_old = latency_old * interval_old;
+
+	latency_new = DIV_ROUND_UP(elapsed_old, interval_new);
+	elapsed_new = latency_new * interval_new;
+
+	offset_at_instant = offset + (elapsed_new - elapsed_old);
+	while (offset_at_instant >= interval_new) {
+		offset_at_instant -= interval_new;
+	}
+
+	return offset_at_instant;
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -227,33 +275,389 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 	uint32_t ticks_to_offset_default = 0U;
 	uint32_t *ticks_to_offset_next;
 
+	/*
+	 * TODO: update when updating the connection update procedure
+	 */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	uint8_t offset_max = 6U;
+	struct ll_conn *conn = param;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 	ticks_to_offset_next = &ticks_to_offset_default;
 
 	/*
 	 * TODO: update when updating the connection update procedure
-	 * see the legacy code from Zephyr v3.3 for inspiration
 	 */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
+		conn->llcp_conn_param.ticks_to_offset_next =
+			conn->periph.ticks_to_offset;
+
+		ticks_to_offset_next =
+			&conn->llcp_conn_param.ticks_to_offset_next;
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+	win_offset_calc(conn, 0, ticks_to_offset_next,
+			conn->llcp_conn_param.interval_max, &offset_max,
+			(void *)conn->llcp_conn_param.pdu_win_offset0);
+
+	/* move to offset calculated state */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_OFFS_RDY;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 }
 
 void ull_sched_mfy_win_offset_select(void *param)
 {
+	/*
+	 * TODO: update when updating the connection update procedure
+	 */
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #define OFFSET_S_MAX 6
 #define OFFSET_M_MAX 6
 
-	/*
-	 * TODO: update calculation of win_offset when
-	 * updating the connection update procedure
-	 * see the legacy code from Zephyr v3.3 for inspiration
-	 */
+	uint16_t win_offset_m[OFFSET_M_MAX] = {0, };
+	uint8_t offset_m_max = OFFSET_M_MAX;
+	struct ll_conn *conn = param;
+	uint8_t offset_index_s = 0U;
+	uint8_t has_offset_s = 0U;
+	uint16_t win_offset_s;
+	uint32_t ticks_to_offset;
+	uint16_t win_offset;
 
+	win_offset = ull_sched_offset_at_instant(
+		conn->llcp_conn_param.offset0,
+		conn->llcp_conn_param.reference_conn_event_count,
+		conn->llcp.conn_upd.select_conn_event_count,
+		conn->lll.interval,
+		conn->llcp_cu.interval);
+
+	ticks_to_offset = HAL_TICKER_US_TO_TICKS(win_offset * CONN_INT_UNIT_US);
+
+	win_offset_calc(conn, 1, &ticks_to_offset,
+			conn->llcp_conn_param.interval_max, &offset_m_max,
+			(void *)win_offset_m);
+
+	while (offset_index_s < OFFSET_S_MAX) {
+		uint8_t offset_index_m = 0U;
+
+		win_offset_s =
+			sys_get_le16((uint8_t *)&conn->llcp_conn_param.offset0 +
+				     (sizeof(uint16_t) * offset_index_s));
+
+		win_offset = ull_sched_offset_at_instant(win_offset_s,
+			conn->llcp_conn_param.reference_conn_event_count,
+			conn->llcp.conn_upd.select_conn_event_count,
+			conn->lll.interval,
+			conn->llcp_cu.interval);
+
+		while (offset_index_m < offset_m_max) {
+			if (win_offset_s != 0xffff) {
+				if (win_offset ==
+				    win_offset_m[offset_index_m]) {
+					break;
+				}
+
+				has_offset_s = 1U;
+			}
+
+			offset_index_m++;
+		}
+
+		if (offset_index_m < offset_m_max) {
+			break;
+		}
+
+		offset_index_s++;
+	}
+
+	if (offset_index_s < OFFSET_S_MAX) {
+		conn->llcp_cu.win_offset_us = win_offset_s * CONN_INT_UNIT_US;
+		sys_put_le16(win_offset_s,
+			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+		conn->llcp.conn_upd.select_conn_event_count =
+			conn->llcp_conn_param.reference_conn_event_count;
+		conn->llcp.conn_upd.select_conn_interval = conn->llcp_cu.interval;
+		/* move to offset calculated state */
+		conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
+	} else if (!has_offset_s) {
+		conn->llcp_cu.win_offset_us = win_offset_m[0] *
+					      CONN_INT_UNIT_US;
+		sys_put_le16(win_offset_m[0],
+			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+		conn->llcp.conn_upd.select_conn_interval = conn->lll.interval;
+		/* move to offset calculated state */
+		conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
+	} else {
+		struct pdu_data *pdu_ctrl_tx;
+
+		/* send reject_ind_ext */
+		pdu_ctrl_tx = CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					   struct pdu_data,
+					   llctrl.conn_update_ind.win_offset);
+		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
+		pdu_ctrl_tx->len =
+			offsetof(struct pdu_data_llctrl, reject_ext_ind) +
+			sizeof(struct pdu_data_llctrl_reject_ext_ind);
+		pdu_ctrl_tx->llctrl.opcode =
+			PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+		pdu_ctrl_tx->llctrl.reject_ext_ind.reject_opcode =
+			PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+		pdu_ctrl_tx->llctrl.reject_ext_ind.error_code =
+			BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
+		/* move to conn param reject */
+		conn->llcp_cu.state = LLCP_CUI_STATE_REJECT;
+	}
 #undef OFFSET_S_MAX
 #undef OFFSET_M_MAX
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 }
 
-/*
- * TODO: probably we need a function for calculating the window offset
- * see the legacy code from Zephyr v3.3 for inspiration
- */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
+			    uint32_t *ticks_to_offset_next,
+			    uint16_t conn_interval, uint8_t *offset_max,
+			    uint8_t *win_offset)
+{
+	uint32_t ticks_prepare_reduced = 0U;
+	uint32_t ticks_to_expire_prev;
+	uint32_t ticks_slot_abs_prev;
+	uint32_t ticks_slot_abs = 0U;
+	uint32_t ticks_anchor_prev;
+	uint32_t ticks_to_expire;
+	uint8_t ticker_id_prev;
+	uint32_t ticks_anchor;
+	uint8_t offset_index;
+	uint8_t ticker_id;
+	uint16_t offset;
+
+	bool is_conn_interval = false;
+	bool is_after_conn_interval = false;
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+	if (conn_curr->ull.ticks_prepare_to_start & XON_BITMASK) {
+		uint32_t ticks_prepare_to_start =
+			MAX(conn_curr->ull.ticks_active_to_start,
+			    conn_curr->ull.ticks_preempt_to_start);
+
+		ticks_slot_abs = conn_curr->ull.ticks_prepare_to_start &
+				 ~XON_BITMASK;
+		ticks_prepare_reduced = ticks_slot_abs - ticks_prepare_to_start;
+	} else
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+	{
+		uint32_t ticks_prepare_to_start =
+			MAX(conn_curr->ull.ticks_active_to_start,
+			    conn_curr->ull.ticks_prepare_to_start);
+
+		ticks_slot_abs = ticks_prepare_to_start;
+	}
+#endif
+
+	ticks_slot_abs += conn_curr->ull.ticks_slot;
+	if (conn_curr->lll.role) {
+		ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
+	}
+
+	if (ticks_slot_abs < HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING)) {
+		ticks_slot_abs =
+			HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
+	}
+
+	ticker_id = ticker_id_prev = TICKER_NULL;
+	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
+		ticks_anchor_prev = offset_index = offset = 0U;
+	ticks_slot_abs_prev = 0U;
+	do {
+		uint32_t ticks_slot_abs_curr = 0U;
+		uint32_t ticks_slot_margin = 0U;
+		uint32_t ticks_to_expire_normal;
+		uint32_t volatile ret_cb;
+		struct ull_hdr *hdr;
+		uint32_t ticks_slot;
+		uint32_t ret;
+		bool success;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
+					   TICKER_USER_ID_ULL_LOW,
+					   &ticker_id, &ticks_anchor,
+					   &ticks_to_expire, ticker_op_cb,
+					   (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		/* Using a local variable to address the Coverity rule:
+		 * Incorrect expression  (ASSERT_SIDE_EFFECT)
+		 * Argument "ret_cb" of LL_ASSERT() has a side effect
+		 * because the variable is volatile.  The containing function
+		 * might work differently in a non-debug build.
+		 */
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
+
+		if (ticker_id == TICKER_NULL) {
+			break;
+		}
+
+		/* ticks_anchor shall not change during this loop */
+		if ((ticker_id_prev != TICKER_NULL) &&
+		    (ticks_anchor != ticks_anchor_prev)) {
+			LL_ASSERT(0);
+		}
+
+		/* Save the reference anchor and ticker id to check updated
+		 * ticker list.
+		 */
+		ticks_anchor_prev = ticks_anchor;
+		ticker_id_prev = ticker_id;
+
+		/* Get ULL header and time reservation for non-overlapping
+		 * tickers.
+		 */
+		hdr = ull_hdr_get_cb(ticker_id, &ticks_slot);
+		if (!hdr) {
+			/* TODO: check overlapping scanner */
+			LL_ASSERT(!is_select);
+
+			continue;
+		}
+
+		ticks_to_expire_normal = ticks_to_expire +
+					 ticks_prepare_reduced;
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
+			const uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_preempt_to_start);
+
+			ticks_slot_abs_curr = hdr->ticks_prepare_to_start &
+					      ~XON_BITMASK;
+			ticks_to_expire_normal -= ticks_slot_abs_curr -
+						  ticks_prepare_to_start;
+		} else
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+		{
+			const uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_prepare_to_start);
+
+			ticks_slot_abs_curr = ticks_prepare_to_start;
+		}
+#endif
+
+		if (ticker_id >= TICKER_ID_CONN_BASE) {
+			struct ll_conn *conn;
+
+			conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
+			if (!is_select && conn->lll.role) {
+				continue;
+			}
+
+			if (is_select &&
+			    (conn->lll.interval != conn_interval)) {
+				ticks_slot_abs_curr += ticks_slot_abs;
+			} else if (is_select) {
+				is_conn_interval = true;
+			}
+
+			if (conn->lll.role) {
+				ticks_slot_margin =
+					HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
+				ticks_slot_abs_curr += ticks_slot_margin;
+			}
+		}
+
+		if ((!is_select || is_after_conn_interval) &&
+		    (*ticks_to_offset_next < ticks_to_expire_normal)) {
+			if (ticks_to_expire_prev <
+			    *ticks_to_offset_next) {
+				ticks_to_expire_prev =
+					*ticks_to_offset_next;
+			}
+
+			while ((offset_index < *offset_max) &&
+			       (ticker_ticks_diff_get(
+						ticks_to_expire_normal,
+						ticks_to_expire_prev) >=
+				(ticks_slot_abs_prev + ticks_slot_abs +
+				 ticks_slot_margin))) {
+				offset = DIV_ROUND_UP(
+					(ticks_to_expire_prev +
+					 ticks_slot_abs_prev),
+					 HAL_TICKER_US_TO_TICKS(
+						CONN_INT_UNIT_US));
+				while (offset >= conn_interval) {
+					offset -= conn_interval;
+				}
+
+				sys_put_le16(offset,
+					     (win_offset +
+					      (sizeof(uint16_t) *
+					       offset_index)));
+				offset_index++;
+
+				ticks_to_expire_prev +=
+					HAL_TICKER_US_TO_TICKS(
+						CONN_INT_UNIT_US);
+			}
+
+			*ticks_to_offset_next = ticks_to_expire_prev;
+		}
+
+		if (is_conn_interval) {
+			is_after_conn_interval = true;
+		}
+
+		ticks_slot_abs_curr += ticks_slot;
+
+		ticks_to_expire_prev = ticks_to_expire_normal;
+		ticks_slot_abs_prev = ticks_slot_abs_curr;
+	} while (offset_index < *offset_max);
+
+	if (ticker_id == TICKER_NULL) {
+		if (ticks_to_expire_prev < *ticks_to_offset_next) {
+			ticks_to_expire_prev = *ticks_to_offset_next;
+		}
+
+		while (offset_index < *offset_max) {
+			offset = DIV_ROUND_UP(
+				(ticks_to_expire_prev + ticks_slot_abs_prev),
+				 HAL_TICKER_US_TO_TICKS(CONN_INT_UNIT_US));
+			if (offset >= conn_interval) {
+				if (!is_select || !is_after_conn_interval) {
+					break;
+				}
+
+				while (offset >= conn_interval) {
+					offset -= conn_interval;
+				}
+			}
+
+			sys_put_le16(offset, (win_offset + (sizeof(uint16_t) *
+							    offset_index)));
+			offset_index++;
+
+			ticks_to_expire_prev += HAL_TICKER_US_TO_TICKS(
+							CONN_INT_UNIT_US);
+		}
+
+		*ticks_to_offset_next = ticks_to_expire_prev;
+	}
+
+	*offset_max = offset_index;
+}
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CENTRAL)
