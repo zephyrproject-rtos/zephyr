@@ -11,4 +11,11 @@ description: |
 
 compatible: "st,stm32h7-ethernet"
 
-include: st,stm32-ethernet-common.yaml
+include:
+  - "st,stm32-ethernet-common.yaml"
+  - "memory-region.yaml"
+
+properties:
+  memory-regions:
+    description: |
+      Reference to SRAM node used for Ethernet DMA buffer and descriptor.
