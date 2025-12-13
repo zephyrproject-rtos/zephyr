@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023,2025 Nordic Semiconductor ASA
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -418,7 +417,8 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 
 	err = usbh_req_desc_cfg(udev, idx, cfg_desc.wTotalLength, udev->cfg_desc);
 	if (err) {
-		LOG_ERR("Failed to read configuration descriptor");
+		LOG_ERR("Failed to read configuration descriptor of %u bytes: %d",
+			cfg_desc.wTotalLength, err);
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		goto error;
 	}
