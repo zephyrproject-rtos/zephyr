@@ -189,6 +189,22 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	}
 #endif /* CONFIG_COMPARATOR_NXP_HSCMP */
 
+#if defined(CONFIG_ADC_NXP_SAR_ADC)
+	switch ((uint32_t)sub_system) {
+	case MCUX_ADC0_CLK:
+		CLOCK_EnableClock(kCLOCK_Adc0);
+		break;
+	case MCUX_ADC1_CLK:
+		CLOCK_EnableClock(kCLOCK_Adc1);
+		break;
+	case MCUX_ADC2_CLK:
+		CLOCK_EnableClock(kCLOCK_Adc2);
+		break;
+	default:
+		break;
+	}
+#endif /* CONFIG_ADC_NXP_SAR_ADC */
+
 	return 0;
 }
 
@@ -278,7 +294,17 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		*rate = CLOCK_GetStmClkFreq(1);
 		break;
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
+
+#if defined(CONFIG_ADC_NXP_SAR_ADC)
+	case MCUX_ADC0_CLK:
+	case MCUX_ADC1_CLK:
+	case MCUX_ADC2_CLK:
+		*rate = CLOCK_GetCoreClkFreq();
+		break;
+
+#endif /* CONFIG_ADC_NXP_SAR_ADC */
 	}
+
 	return 0;
 }
 
