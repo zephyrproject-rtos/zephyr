@@ -204,3 +204,7 @@
 &swt_0 {
 	status = "okay";
 };
+
+&adc_0 {
+	status = "okay";
+};
