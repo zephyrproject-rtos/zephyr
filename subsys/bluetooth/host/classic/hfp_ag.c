@@ -5286,6 +5286,13 @@ int bt_hfp_ag_voice_recognition(struct bt_hfp_ag *ag, bool activate)
 	}
 	hfp_ag_unlock(ag);
 
+	feature = BOTH_SUPT_FEAT(ag, BT_HFP_HF_FEATURE_VOICE_RECG,
+				 BT_HFP_AG_FEATURE_VOICE_RECG);
+	if (!feature) {
+		LOG_WRN("VR feature is unsupported");
+		return -ENOTSUP;
+	}
+
 	if (activate && atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
 		LOG_WRN("VR has been activated");
 		return -ENOTSUP;
