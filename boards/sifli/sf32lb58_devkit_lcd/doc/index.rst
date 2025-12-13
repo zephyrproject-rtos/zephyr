@@ -73,7 +73,14 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Refer to `sftool website`_ for more information.
+to use `JLink`_::
+
+  west debug -r jlink`
+
+to use sftool::
+
+  west flash -r sftool -- --port /dev/ttyACM1 # or your specified serial port
+
 
 References
 **********
@@ -85,3 +92,6 @@ References
 
 .. _sftool website:
    https://github.com/OpenSiFli/sftool
+
+.. _JLink:
+   https://github.com/zephyrproject-rtos/zephyr/pull/100788#issuecomment-3649508761
