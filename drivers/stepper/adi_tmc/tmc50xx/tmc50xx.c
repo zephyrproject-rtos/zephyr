@@ -165,7 +165,7 @@ static void rampstat_work(const struct device *dev)
 
 	if (ramp_stat_values > 0) {
 		switch (ramp_stat_values) {
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER
+#ifdef CONFIG_TMC50XX_STEPPER
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", data->dev->name);
 			tmc50xx_stepper_trigger_cb(
@@ -189,7 +189,7 @@ static void rampstat_work(const struct device *dev)
 				STEPPER_EVENT_STEPS_COMPLETED);
 			break;
 #endif
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER_DRV
+#ifdef CONFIG_TMC50XX_STEPPER_DRV
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", data->dev->name);
 			tmc50xx_stepper_stallguard_enable(data->dev, false);
