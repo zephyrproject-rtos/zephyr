@@ -81,7 +81,8 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 		.mod_params = {
 			.sf = lora_config->datarate,
 			.cr = lora_config->coding_rate,
-			.ldro = LORA_LDRO(lora_config->datarate, lora_config->bandwidth),
+			.ldro = LORA_LDRO(lora_config->datarate, lora_config->bandwidth)
+				| (config->force_ldro ? 1 : 0),
 		},
 		.pkt_params = {
 			.preamble_len_in_symb = lora_config->preamble_len,
