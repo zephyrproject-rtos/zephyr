@@ -557,12 +557,6 @@ static int cmd_stepper_info(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	stepper_cmds,
-	SHELL_CMD_ARG(enable, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_enable, 2, 0),
-	SHELL_CMD_ARG(disable, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_disable, 2, 0),
-	SHELL_CMD_ARG(set_micro_step_res, &dsub_pos_stepper_motor_name_microstep,
-		      "<device> <resolution>", cmd_stepper_set_micro_step_res, 3, 0),
-	SHELL_CMD_ARG(get_micro_step_res, &dsub_pos_stepper_motor_name, "<device>",
-		      cmd_stepper_get_micro_step_res, 2, 0),
 	SHELL_CMD_ARG(set_reference_position, &dsub_pos_stepper_controller_name,
 		      "<device> <position>", cmd_stepper_set_reference_position, 3, 0),
 	SHELL_CMD_ARG(get_actual_position, &dsub_pos_stepper_controller_name, "<device>",
@@ -576,9 +570,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(run, &dsub_pos_stepper_controller_name_dir, "<device> <direction>",
 		      cmd_stepper_run, 3, 0),
 	SHELL_CMD_ARG(stop, &dsub_pos_stepper_controller_name, "<device>", cmd_stepper_stop, 2, 0),
-	SHELL_CMD_ARG(control_info, &dsub_pos_stepper_controller_name, "<device>",
+	SHELL_CMD_ARG(info, &dsub_pos_stepper_controller_name, "<device>",
 		      cmd_stepper_control_info, 2, 0),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_CMD_REGISTER(stepper, &stepper_cmds, "Stepper commands", NULL);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	stepper_drv_cmds,
+	SHELL_CMD_ARG(enable, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_enable, 2, 0),
+	SHELL_CMD_ARG(disable, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_disable, 2, 0),
+	SHELL_CMD_ARG(set_micro_step_res, &dsub_pos_stepper_motor_name_microstep,
+		      "<device> <resolution>", cmd_stepper_set_micro_step_res, 3, 0),
+	SHELL_CMD_ARG(get_micro_step_res, &dsub_pos_stepper_motor_name, "<device>",
+		      cmd_stepper_get_micro_step_res, 2, 0),
 	SHELL_CMD_ARG(info, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_info, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(stepper, &stepper_cmds, "Stepper motor commands", NULL);
+SHELL_CMD_REGISTER(stepper_drv, &stepper_drv_cmds, "Stepper-Drv commands", NULL);
