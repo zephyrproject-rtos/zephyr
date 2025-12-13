@@ -181,6 +181,7 @@ struct ll_conn {
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
 			uint8_t  drift_skip;
+			uint16_t latency_oust;
 			uint32_t force;
 			uint32_t ticks_to_offset;
 		} periph;
