@@ -7,3 +7,10 @@ config SPI_SF32LB
 	depends on DT_HAS_SIFLI_SF32LB_SPI_ENABLED
 	help
 	  Enable SPI driver for SF32LB MCUs
+
+config SPI_SF32LB_INTERRUPT
+	bool "SF32LB MCU SPI Interrupt Support"
+	depends on SPI_SF32LB
+	default y if SPI_ASYNC
+	help
+	  Enable interrupt support for SF32LB MCU SPI driver.
