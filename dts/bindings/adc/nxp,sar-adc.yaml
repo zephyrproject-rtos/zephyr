@@ -1,7 +1,8 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP SAR ADC controller
+description: |
+  NXP successive-approximation ADC (SAR ADC) controller.
 
 compatible: "nxp,sar-adc"
 
@@ -12,7 +13,36 @@ properties:
     required: true
 
   interrupts:
+    type: array
     required: true
+
+  num-precision-channels:
+    type: int
+    required: true
+    description: |
+      Number of precision channels (PCDR entries) implemented.
+
+  num-standard-channels:
+    type: int
+    required: true
+    description: |
+      Number of standard channels (ICDR entries) implemented.
+
+  overwrite:
+    type: boolean
+    description: |
+      Enable overwrite of conversion results when the result registers are full.
+
+  auto-clock-off:
+    type: boolean
+    description: |
+      Reduces power consumption by turning off the clock of the analog part of
+      ADC when it is in Idle state.
+
+  hw-average-support:
+    type: boolean
+    description: |
+      Indicates whether the ADC hardware supports averaging of conversion results.
 
   "#io-channel-cells":
     const: 1

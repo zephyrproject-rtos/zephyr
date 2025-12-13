@@ -172,6 +172,8 @@
 			reg = <0x44530000 DT_SIZE_K(64)>;
 			interrupts = <219 0>;
 			status = "disabled";
+			num-precision-channels = <8>;
+			num-standard-channels = <16>;
 			#io-channel-cells = <1>;
 			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
 		};
