@@ -32,23 +32,34 @@
 	#size-cells = <1>;
 
 	adc_0: adc@a0000 {
-		compatible = "nxp,adc";
+		compatible = "nxp,sar-adc";
 		reg = <0xa0000 0x3d4>;
 		interrupts = <180 0>;
+		has-external-channels;
+		#io-channel-cells = <1>;
+		clocks = <&mc_cgm MCUX_ADC0_CLK>;
+		hw-average-support;
 		status = "disabled";
 	};
 
 	adc_1: adc@a4000 {
-		compatible = "nxp,adc";
+		compatible = "nxp,sar-adc";
 		reg = <0xa4000 0x3d4>;
 		interrupts = <181 0>;
+		has-external-channels;
+		#io-channel-cells = <1>;
+		clocks = <&mc_cgm MCUX_ADC1_CLK>;
+		hw-average-support;
 		status = "disabled";
 	};
 
 	adc_2: adc@a8000 {
-		compatible = "nxp,adc";
+		compatible = "nxp,sar-adc";
 		reg = <0xa8000 0x3d4>;
 		interrupts = <182 0>;
+		#io-channel-cells = <1>;
+		clocks = <&mc_cgm MCUX_ADC2_CLK>;
+		hw-average-support;
 		status = "disabled";
 	};
 
