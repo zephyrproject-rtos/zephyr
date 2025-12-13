@@ -324,7 +324,7 @@ static void rampstat_work_handler(struct k_work *work)
 
 	if (ramp_stat_values > 0) {
 		switch (ramp_stat_values) {
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER
+#ifdef CONFIG_TMC51XX_STEPPER
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", dev->name);
 			tmc51xx_stepper_trigger_cb(motion_controller,
@@ -344,15 +344,15 @@ static void rampstat_work_handler(struct k_work *work)
 			tmc51xx_stepper_trigger_cb(motion_controller,
 						     STEPPER_EVENT_STEPS_COMPLETED);
 			break;
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER */
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRV
+#endif /* CONFIG_TMC51XX_STEPPER */
+#ifdef CONFIG_TMC51XX_STEPPER_DRV
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", dev->name);
 			tmc51xx_stepper_stallguard_enable(dev, false);
 			tmc51xx_stepper_drv_trigger_cb(stepper_driver,
 				STEPPER_DRV_EVENT_STALL_DETECTED);
 			break;
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRV */
+#endif /* CONFIG_TMC51XX_STEPPER_DRV */
 		default:
 			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
 			break;

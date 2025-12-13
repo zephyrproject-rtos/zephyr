@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /** Common Registers for TMC50XX and TMC51XX */
-#if defined(CONFIG_STEPPER_ADI_TMC50XX) || defined(CONFIG_STEPPER_ADI_TMC51XX)
+#if defined(CONFIG_TMC50XX) || defined(CONFIG_TMC51XX)
 
 #define TMC5XXX_WRITE_BIT        0x80U
 #define TMC5XXX_ADDRESS_MASK     0x7FU
@@ -110,7 +110,7 @@ extern "C" {
 
 #endif
 
-#ifdef CONFIG_STEPPER_ADI_TMC50XX
+#ifdef CONFIG_TMC50XX
 
 #define TMC50XX_MOTOR_ADDR_PWM(m) ((m) << 3)
 
@@ -147,9 +147,9 @@ extern "C" {
 #define TMC50XX_MSCNT(motor)      (0x6A | TMC50XX_MOTOR_ADDR_DRV(motor))
 #define TMC50XX_MSCURACT(motor)   (0x6B | TMC50XX_MOTOR_ADDR_DRV(motor))
 
-#endif /* CONFIG_STEPPER_ADI_TMC50XX */
+#endif /* CONFIG_TMC50XX */
 
-#ifdef CONFIG_STEPPER_ADI_TMC51XX
+#ifdef CONFIG_TMC51XX
 
 #define TMC51XX_GCONF_EN_PWM_MODE_SHIFT        2
 #define TMC51XX_GCONF_SHAFT_SHIFT              4
@@ -182,7 +182,7 @@ extern "C" {
 #define TMC51XX_COOLCONF	TMC50XX_COOLCONF(0)
 #define TMC51XX_DRVSTATUS	TMC50XX_DRVSTATUS(0)
 
-#endif /* CONFIG_STEPPER_ADI_TMC51XX */
+#endif /* CONFIG_TMC51XX */
 
 /**
  * @}
