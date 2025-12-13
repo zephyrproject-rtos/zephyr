@@ -147,6 +147,7 @@
 	pinctrl-names = "default";
 	phy-connection-type = "mii";
 	phy-handle = <&eth_phy>;
+	memory-regions = <&sram3>;
 };
 
 &mdio {

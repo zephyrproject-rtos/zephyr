@@ -109,6 +109,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30020000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "SRAM2";
+		#memory-region-cells = <0>;
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM3 in D2 domain */
@@ -116,6 +117,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30040000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "SRAM3";
+		#memory-region-cells = <0>;
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */

@@ -219,6 +219,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	memory-regions = <&sram3>;
 };
 
 &mdio {

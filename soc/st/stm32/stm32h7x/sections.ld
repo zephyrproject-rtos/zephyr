@@ -4,13 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram3))
-#define sram_eth_node	DT_NODELABEL(sram3)
-#else
-#define sram_eth_node	DT_NODELABEL(sram2)
-#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac)) && \
+    DT_NODE_HAS_PROP(DT_NODELABEL(mac), memory_regions)
+#define sram_eth_node DT_PHANDLE(DT_NODELABEL(mac), memory_regions)
 
 #if DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
 SECTION_DATA_PROLOGUE(eth_stm32,(NOLOAD),)

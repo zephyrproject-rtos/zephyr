@@ -21,13 +21,9 @@ static const struct arm_mpu_region mpu_regions[] = {
 					REGION_512K |
 					MPU_RASR_XN_Msk | P_RW_U_NA_Msk) }),
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram3))
-#define sram_eth_node	DT_NODELABEL(sram3)
-#else
-#define sram_eth_node	DT_NODELABEL(sram2)
-#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac)) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(mac), memory_regions)
+#define sram_eth_node DT_PHANDLE(DT_NODELABEL(mac), memory_regions)
 
 #if DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
 	MPU_REGION_ENTRY("SRAM_ETH_BUF",
@@ -39,6 +35,12 @@ static const struct arm_mpu_region mpu_regions[] = {
 #endif
 #endif
 };
+
+#ifdef sram_eth_node
+BUILD_ASSERT(!DT_SAME_NODE(sram_eth_node, DT_CHOSEN(zephyr_sram)),
+	     "Remove property memory-regions from 'mac' node "
+	     "to locate ethernet buffers in system RAM.");
+#endif
 
 const struct arm_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),

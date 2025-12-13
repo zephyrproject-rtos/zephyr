@@ -32,5 +32,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30040000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "SRAM3";
+		#memory-region-cells = <0>;
 	};
 };
