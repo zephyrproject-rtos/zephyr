@@ -23,14 +23,22 @@
 
 #include "lbm_common.h"
 
-#define SX1261_TX_PWR_MAX 15
-#define SX1261_TX_PWR_MIN -17
-#define SX1262_TX_PWR_MAX 22
-#define SX1262_TX_PWR_MIN -9
+#define SX1261_TX_PWR_MAX	15
+#define SX1261_TX_PWR_MIN	-17
+#define SX1262_TX_PWR_MAX	22
+#define SX1262_TX_PWR_MIN	-9
+#define SX126X_MIN_SF		5
+#define SX126X_MAX_SF		12
+#define SX126X_MIN_FREQ		MHZ(150)
+#define SX126X_MAX_FREQ		MHZ(960)
+#define SX1268_MIN_FREQ		MHZ(410)
+#define SX1268_MAX_FREQ		MHZ(810)
 
 enum sx126x_variant {
 	VARIANT_SX1261,
 	VARIANT_SX1262,
+	VARIANT_SX1268,
+	VARIANT_LLCC68,
 };
 
 /* Copied from LBM sx126x.c */
@@ -498,10 +506,101 @@ static int sx126x_init(const struct device *dev)
 	return lbm_lora_common_init(dev);
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1262) || DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1261) \
+	|| DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1268) || DT_HAS_COMPAT_STATUS_OKAY(semtech_llcc68)
+
+static int sx126x_cfg_validator_VARIANT_SX1262(struct lora_modem_config *lora_config)
+{
+	if (lora_config->frequency < SX126X_MIN_FREQ || lora_config->frequency > SX126X_MAX_FREQ) {
+		LOG_ERR("Frequency is invalid for this modem (%d>=x<=%d)",
+			SX126X_MIN_FREQ, SX126X_MAX_FREQ);
+		return -EINVAL;
+	}
+	if (lora_config->bandwidth == BW_200_KHZ
+		|| lora_config->bandwidth == BW_400_KHZ
+		|| lora_config->bandwidth > BW_500_KHZ) {
+		LOG_ERR("Bandwidth is invalid for this modem (7 to 500KHz, excluding 200 and 400)");
+		return -EINVAL;
+	}
+	if (lora_config->tx_power < SX1262_TX_PWR_MIN
+		|| lora_config->tx_power > SX1262_TX_PWR_MAX) {
+		LOG_ERR("Transmission Power is invalid for this modem (%d>=x<=%d)",
+			SX1262_TX_PWR_MIN, SX1262_TX_PWR_MAX);
+		return -EINVAL;
+	}
+	if (lora_config->datarate < SX126X_MIN_SF || lora_config->datarate > SX126X_MAX_SF) {
+		LOG_ERR("Spreading Factor is invalid for this modem (%d>=x<=%d)",
+			SX126X_MIN_SF, SX126X_MAX_SF);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1261)
+
+static int sx126x_cfg_validator_VARIANT_SX1261(struct lora_modem_config *lora_config)
+{
+	if (lora_config->tx_power < SX1261_TX_PWR_MIN
+		|| lora_config->tx_power > SX1261_TX_PWR_MAX) {
+		LOG_ERR("Transmission Power is invalid for this modem (%d>=x<=%d)",
+			SX1261_TX_PWR_MIN, SX1261_TX_PWR_MAX);
+		return -EINVAL;
+	}
+	return sx126x_cfg_validator_VARIANT_SX1262(lora_config);
+}
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1268)
+
+static int sx126x_cfg_validator_VARIANT_SX1268(struct lora_modem_config *lora_config)
+{
+	if (lora_config->frequency < SX1268_MIN_FREQ || lora_config->frequency > SX1268_MAX_FREQ) {
+		LOG_ERR("Frequency is invalid for this modem (%d>=x<=%d)",
+			SX1268_MIN_FREQ, SX1268_MAX_FREQ);
+		return -EINVAL;
+	}
+	return sx126x_cfg_validator_VARIANT_SX1262(lora_config);
+}
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_llcc68)
+
+static int sx126x_cfg_validator_VARIANT_LLCC68(struct lora_modem_config *lora_config)
+{
+	if (lora_config->bandwidth != BW_125_KHZ
+		&& lora_config->bandwidth != BW_250_KHZ
+		&& lora_config->bandwidth != BW_500_KHZ) {
+		LOG_ERR("Bandwidth is invalid for this modem (Must be 125, 250, or 500KHz)");
+		return -EINVAL;
+	}
+	if (lora_config->bandwidth == BW_125_KHZ && lora_config->datarate > 9) {
+		LOG_ERR("Spreading Factor is invalid for this modem (Can be 5 to 9 at 125KHz BW)");
+		return -EINVAL;
+	}
+	if (lora_config->bandwidth == BW_250_KHZ && lora_config->datarate > 10) {
+		LOG_ERR("Spreading Factor is invalid for this modem (Can be 5 to 10 at 250KHz BW)");
+		return -EINVAL;
+	}
+	if (lora_config->bandwidth == BW_500_KHZ && lora_config->datarate > 11) {
+		LOG_ERR("Spreading Factor is invalid for this modem (Can be 5 to 11 at 500KHz BW)");
+		return -EINVAL;
+	}
+	return sx126x_cfg_validator_VARIANT_SX1262(lora_config);
+}
+
+#endif
+
+#define SX126X_VALIDATOR(sx_variant) CONCAT(sx126x_cfg_validator_, sx_variant)
+
 #define SX126X_DEFINE(node_id, sx_variant)                                                         \
 	static const struct lbm_sx126x_config config_##node_id = {                                 \
 		.lbm_common.ralf = RALF_SX126X_INSTANTIATE(DEVICE_DT_GET(node_id)),                \
 		.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                             \
+		.lbm_common.config_validator = SX126X_VALIDATOR(sx_variant),                       \
 		.spi = SPI_DT_SPEC_GET(                                                            \
 			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB),         \
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
@@ -523,8 +622,10 @@ static int sx126x_init(const struct device *dev)
 
 #define SX1261_DEFINE(node_id) SX126X_DEFINE(node_id, VARIANT_SX1261)
 #define SX1262_DEFINE(node_id) SX126X_DEFINE(node_id, VARIANT_SX1262)
+#define SX1268_DEFINE(node_id) SX126X_DEFINE(node_id, VARIANT_SX1268)
+#define LLCC68_DEFINE(node_id) SX126X_DEFINE(node_id, VARIANT_LLCC68)
 
 DT_FOREACH_STATUS_OKAY(semtech_sx1261, SX1261_DEFINE);
 DT_FOREACH_STATUS_OKAY(semtech_sx1262, SX1262_DEFINE);
-DT_FOREACH_STATUS_OKAY(semtech_sx1268, SX1262_DEFINE);
-DT_FOREACH_STATUS_OKAY(semtech_llcc68, SX1262_DEFINE);
+DT_FOREACH_STATUS_OKAY(semtech_sx1268, SX1268_DEFINE);
+DT_FOREACH_STATUS_OKAY(semtech_llcc68, LLCC68_DEFINE);

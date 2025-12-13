@@ -30,11 +30,15 @@ enum lbm_modem_mode {
 	MODE_CAD = 5,
 };
 
+/* Typedef for configuration validation function */
+typedef int(*lbm_lora_validate_config_t)(struct lora_modem_config *lora_config);
+
 /* Common LBM modem configuration, must be first element of device config */
 struct lbm_lora_config_common {
 	/* LBM radio abstration layer structure */
 	ralf_t ralf;
 	bool force_ldro;
+	lbm_lora_validate_config_t config_validator;
 };
 
 /* Common LBM modem data, must be first element of device data */

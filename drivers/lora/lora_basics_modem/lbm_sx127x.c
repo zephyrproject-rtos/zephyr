@@ -23,6 +23,26 @@
 
 #include "lbm_common.h"
 
+#define SX127X_MIN_SF		6
+#define SX127X_MAX_SF		12
+#define SX127x_MIN_DBM_BOOST	2
+#define SX127x_MAX_DBM_BOOST	17
+#define SX127x_20DBM_BOOST	3
+#define SX1272_MIN_DBM_RFO	-1
+#define SX1272_MAX_DBM_RFO	14
+#define SX1276_MIN_DBM_RFO	-4
+#define SX1276_MAX_DBM_RFO	15
+#define SX1272_MIN_FREQ		MHZ(860)
+#define SX1276_MIN_FREQ		MHZ(137)
+#define SX127X_MAX_FREQ		MHZ(1020)
+#define SX1278_MAX_FREQ		MHZ(525)
+
+enum sx127x_variant {
+	VARIANT_SX1272,
+	VARIANT_SX1276,
+	VARIANT_SX1278,
+};
+
 struct lbm_sx127x_config {
 	struct lbm_lora_config_common lbm_common;
 	struct spi_dt_spec spi;
@@ -34,6 +54,8 @@ struct lbm_sx127x_config {
 	struct gpio_dt_spec tcxo_power;
 	const struct gpio_dt_spec *dios;
 	uint8_t num_dios;
+	uint8_t power_amplifier_output;
+	enum sx127x_variant variant;
 };
 
 struct lbm_sx127x_dio_package {
@@ -94,13 +116,16 @@ static int sx127x_read(const struct device *dev, uint8_t reg_addr, uint8_t *data
 
 sx127x_radio_id_t sx127x_hal_get_radio_id(const sx127x_t *radio)
 {
-#if defined(SX1272)
-	return SX127X_RADIO_ID_SX1272;
-#elif defined(SX1276)
-	return SX127X_RADIO_ID_SX1276;
-#else
-#error "Please define the radio to be used"
-#endif
+	const struct device *dev = radio->hal_context;
+	const struct lbm_sx127x_config *config = dev->config;
+
+	if (config->variant == VARIANT_SX1272) {
+		return SX127X_RADIO_ID_SX1272;
+	} else if (config->variant == VARIANT_SX1278) {
+		return SX127X_RADIO_ID_SX1278;
+	} else {
+		return SX127X_RADIO_ID_SX1276;
+	}
 }
 
 sx127x_hal_status_t sx127x_hal_write(const sx127x_t *radio, const uint16_t address,
@@ -218,25 +243,25 @@ void ral_sx127x_bsp_get_tx_cfg(const void *context,
 
 	if (config->power_amplifier_output == SX127X_PA_SELECT_BOOST) {
 		output_params->pa_cfg.pa_select = SX127X_PA_SELECT_BOOST;
-		if (power > 17) {
+		if (power > SX127x_MAX_DBM_BOOST) {
 			output_params->pa_cfg.is_20_dbm_output_on = true;
-			power = MAX(power, 5);
-			power = MIN(power, 20);
+			power = MAX(power, SX127x_MIN_DBM_BOOST + SX127x_20DBM_BOOST);
+			power = MIN(power, SX127x_MAX_DBM_BOOST + SX127x_20DBM_BOOST);
 		} else {
 			output_params->pa_cfg.is_20_dbm_output_on = false;
-			power = MAX(power, 2);
-			power = MIN(power, 17);
+			power = MAX(power, SX127x_MIN_DBM_BOOST);
+			power = MIN(power, SX127x_MAX_DBM_BOOST);
 		}
 	} else {
 		output_params->pa_cfg.pa_select = SX127X_PA_SELECT_RFO;
 		output_params->pa_cfg.is_20_dbm_output_on = false;
-#if defined(SX1272)
-			power = MAX(power, -1);
-			power = MIN(power, 14);
-#elif defined(SX1276)
-			power = MAX(power, -4);
-			power = MIN(power, 15);
-#endif
+		if (config->variant == VARIANT_SX1272) {
+			power = MAX(power, SX1272_MIN_DBM_RFO);
+			power = MIN(power, SX1272_MAX_DBM_RFO);
+		} else {
+			power = MAX(power, SX1276_MIN_DBM_RFO);
+			power = MIN(power, SX1276_MAX_DBM_RFO);
+		}
 	}
 
 	output_params->chip_output_pwr_in_dbm_configured = power;
@@ -425,12 +450,86 @@ static int sx127x_driver_init(const struct device *dev)
 	return lbm_lora_common_init(dev);
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1272)
+
+static int sx127x_cfg_validator_VARIANT_SX1272(struct lora_modem_config *lora_config)
+{
+	if (lora_config->frequency > SX127X_MAX_FREQ || lora_config->frequency < SX1272_MIN_FREQ) {
+		LOG_ERR("Frequency is invalid for this modem (%d>=x<=%d)",
+			SX1272_MIN_FREQ, SX127X_MAX_FREQ);
+		return -EINVAL;
+	}
+	if (lora_config->bandwidth != BW_125_KHZ
+		&& lora_config->bandwidth != BW_250_KHZ
+		&& lora_config->bandwidth != BW_500_KHZ) {
+		LOG_ERR("Bandwidth is invalid for this modem (Must be 125, 250, or 500KHz)");
+		return -EINVAL;
+	}
+	if (lora_config->tx_power < SX127x_MIN_DBM_BOOST + SX127x_20DBM_BOOST
+		|| lora_config->tx_power > SX127x_MAX_DBM_BOOST + SX127x_20DBM_BOOST) {
+		LOG_ERR("Transmission Power is invalid for this modem (%d>=x<=%d)",
+			SX127x_MIN_DBM_BOOST + SX127x_20DBM_BOOST,
+			SX127x_MAX_DBM_BOOST + SX127x_20DBM_BOOST);
+		return -EINVAL;
+	}
+	if (lora_config->datarate < SX127X_MIN_SF || lora_config->datarate > SX127X_MAX_SF) {
+		LOG_ERR("Spreading Factor is invalid for this modem (%d>=x<=%d)",
+			SX127X_MIN_SF, SX127X_MAX_SF);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1276) || DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1278)
+
+static int sx127x_cfg_validator_VARIANT_SX1276(struct lora_modem_config *lora_config)
+{
+	if (lora_config->frequency > SX127X_MAX_FREQ || lora_config->frequency < SX1276_MIN_FREQ) {
+		LOG_ERR("Frequency is invalid for this modem (%d>=x<=%d)",
+			SX1276_MIN_FREQ, SX127X_MAX_FREQ);
+		return -EINVAL;
+	}
+	if (lora_config->bandwidth == BW_200_KHZ
+		|| lora_config->bandwidth == BW_400_KHZ
+		|| lora_config->bandwidth > BW_500_KHZ) {
+		LOG_ERR("Bandwidth is invalid for this modem (7 to 500KHz, excluding 200 and 400)");
+		return -EINVAL;
+	}
+
+	if (lora_config->datarate < SX127X_MIN_SF || lora_config->datarate > SX127X_MAX_SF) {
+		LOG_ERR("Spreading Factor is invalid for this modem (%d>=x<=%d)",
+			SX127X_MIN_SF, SX127X_MAX_SF);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1278)
+
+static int sx127x_cfg_validator_VARIANT_SX1278(struct lora_modem_config *lora_config)
+{
+	if (lora_config->frequency > SX1278_MAX_FREQ || lora_config->frequency < SX1276_MIN_FREQ) {
+		LOG_ERR("Frequency is invalid for this modem (%d>=x<=%d)",
+			SX1276_MIN_FREQ, SX1278_MAX_FREQ);
+		return -EINVAL;
+	}
+	return sx127x_cfg_validator_VARIANT_SX1276(lora_config);
+}
+
+#endif
+
 #define SX127X_DIO_GPIO_ELEM(idx, node_id) GPIO_DT_SPEC_GET_BY_IDX(node_id, dio_gpios, idx)
 
 #define SX127X_DIO_GPIO_INIT(node_id)                                                              \
 	LISTIFY(DT_PROP_LEN(node_id, dio_gpios), SX127X_DIO_GPIO_ELEM, (,), node_id)
 
-#define SX127X_DEFINE(node_id)                                                                     \
+#define SX127X_VALIDATOR(sx_variant) CONCAT(sx127x_cfg_validator_, sx_variant)
+
+#define SX127X_DEFINE(node_id, sx_variant)                                                         \
 	static const struct gpio_dt_spec sx127x_dios_##node_id[] = {                               \
 		SX127X_DIO_GPIO_INIT(node_id)};                                                    \
 	BUILD_ASSERT(ARRAY_SIZE(sx127x_dios_##node_id) >= 1);                                      \
@@ -438,6 +537,7 @@ static int sx127x_driver_init(const struct device *dev)
 	static const struct lbm_sx127x_config config_##node_id = {                                 \
 		.lbm_common.ralf = RALF_SX127X_INSTANTIATE(&data_##node_id.radio),                 \
 		.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                             \
+		.lbm_common.config_validator = SX127X_VALIDATOR(sx_variant),                       \
 		.spi = SPI_DT_SPEC_GET(                                                            \
 			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB),         \
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
@@ -448,10 +548,16 @@ static int sx127x_driver_init(const struct device *dev)
 		.tcxo_power = GPIO_DT_SPEC_GET_OR(node_id, tcxo_power_gpios, {0}),                 \
 		.dios = sx127x_dios_##node_id,                                                     \
 		.num_dios = ARRAY_SIZE(sx127x_dios_##node_id),                                     \
+		.power_amplifier_output = DT_ENUM_IDX(node_id, power_amplifier_output),            \
+		.variant = sx_variant,                                                             \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node_id, sx127x_driver_init, NULL, &data_##node_id, &config_##node_id,    \
 			 POST_KERNEL, CONFIG_LORA_INIT_PRIORITY, &lbm_lora_api)
 
-DT_FOREACH_STATUS_OKAY(semtech_sx1272, SX127X_DEFINE);
-DT_FOREACH_STATUS_OKAY(semtech_sx1276, SX127X_DEFINE);
-DT_FOREACH_STATUS_OKAY(semtech_sx1278, SX127X_DEFINE);
+#define SX1272_DEFINE(node_id) SX127X_DEFINE(node_id, VARIANT_SX1272)
+#define SX1276_DEFINE(node_id) SX127X_DEFINE(node_id, VARIANT_SX1276)
+#define SX1278_DEFINE(node_id) SX127X_DEFINE(node_id, VARIANT_SX1278)
+
+DT_FOREACH_STATUS_OKAY(semtech_sx1272, SX1272_DEFINE);
+DT_FOREACH_STATUS_OKAY(semtech_sx1276, SX1276_DEFINE);
+DT_FOREACH_STATUS_OKAY(semtech_sx1278, SX1278_DEFINE);

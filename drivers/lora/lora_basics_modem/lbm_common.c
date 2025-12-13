@@ -155,6 +155,11 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 		goto release;
 	}
 
+	ret = config->config_validator(lora_config);
+	if (ret < 0) {
+		goto release;
+	}
+
 	/* Store TX parameters for use in the TX functions */
 	data->mod_params = params.mod_params;
 	data->pkt_params = params.pkt_params;
