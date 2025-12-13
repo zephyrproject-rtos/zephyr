@@ -11,7 +11,5 @@ toolchain:
   - zephyr
 ram: 1024
 supported:
-  - arduino_gpio
-  - arduino_serial
-  - gpio
+  - uart
 vendor: sifli
