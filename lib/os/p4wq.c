@@ -11,6 +11,8 @@
 /* private kernel APIs */
 #include <ksched.h>
 #include <wait_q.h>
+#include <kswap.h>
+#include <timeout_q.h>
 
 LOG_MODULE_REGISTER(p4wq, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -72,6 +74,35 @@ static inline bool item_lessthan(struct k_p4wq_work *a, struct k_p4wq_work *b)
 	return false;
 }
 
+/* P4WQ-specific unpend: get first thread from simple FIFO waitq */
+static inline struct k_thread *p4wq_unpend_first_thread(sys_dlist_t *waitq)
+{
+	struct k_thread *thread = NULL;
+
+	__ASSERT_EVAL(, int key = arch_irq_lock(); arch_irq_unlock(key),
+		      !arch_irq_unlocked(key), "");
+
+	LOCK_SCHED_SPINLOCK {
+		sys_dnode_t *node = sys_dlist_peek_head(waitq);
+
+		if (unlikely(node != NULL)) {
+			thread = CONTAINER_OF(node, struct k_thread, base.qnode_dlist);
+			sys_dlist_remove(node);
+			z_mark_thread_as_not_pending(thread);
+		}
+	}
+
+	return thread;
+
+}
+
+/* P4WQ-specific pend: add current thread to simple FIFO waitq */
+static inline void p4wq_pend_current(struct k_spinlock *lock, k_spinlock_key_t key,
+				     sys_dlist_t *waitq)
+{
+	z_pend_curr_no_sorted(lock, key, waitq, K_FOREVER);
+}
+
 static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 {
 	ARG_UNUSED(p1);
@@ -114,7 +145,7 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 				}
 			}
 		} else {
-			z_pend_curr(&queue->lock, k, &queue->waitq, K_FOREVER);
+			p4wq_pend_current(&queue->lock, k, &queue->waitq);
 			k = k_spin_lock(&queue->lock);
 		}
 	}
@@ -133,7 +164,7 @@ int k_p4wq_wait(struct k_p4wq_work *work, k_timeout_t timeout)
 void k_p4wq_init(struct k_p4wq *queue)
 {
 	memset(queue, 0, sizeof(*queue));
-	z_waitq_init(&queue->waitq);
+	sys_dlist_init(&queue->waitq);
 	queue->queue.lessthan_fn = rb_lessthan;
 	sys_dlist_init(&queue->active);
 }
@@ -284,7 +315,7 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	 * error: we are breaking our promise about run order.
 	 * Complain.
 	 */
-	struct k_thread *th = z_unpend_first_thread(&queue->waitq);
+	struct k_thread *th = p4wq_unpend_first_thread(&queue->waitq);
 
 	if (th == NULL) {
 		LOG_WRN("Out of worker threads, priority guarantee violated");
