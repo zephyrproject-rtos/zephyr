@@ -18,7 +18,7 @@
 #define HAL_TICKER_CNTR_CMP_OFFSET_MIN 1
 
 /* Macro defining the max. counter update latency in ticks */
-#define HAL_TICKER_CNTR_SET_LATENCY 4
+#define HAL_TICKER_CNTR_SET_LATENCY 5
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #define HAL_TICKER_CNTR_CLK_UNIT_FSEC 30517578125UL
@@ -30,10 +30,10 @@
 #define HAL_TICKER_CNTR_MASK 0x00FFFFFF
 
 /* Macro defining the minimum counter compare offset */
-#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 2
 
 /* Macro defining the max. counter update latency in ticks */
-#define HAL_TICKER_CNTR_SET_LATENCY 0
+#define HAL_TICKER_CNTR_SET_LATENCY 1
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #define HAL_TICKER_FSEC_PER_USEC      1000000000UL
