@@ -330,7 +330,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_ADC_MCUX_SAR_ADC
+#ifdef CONFIG_ADC_NXP_SAR_ADC
 	case IMX_CCM_SAR_ADC1_CLK:
 		clock_root = kCLOCK_Root_Adc + instance;
 		break;

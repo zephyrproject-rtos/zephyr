@@ -37,6 +37,14 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+* Renamed the :kconfig:option:`CONFIG_ADC_MCUX_SAR_ADC` to :kconfig:option:`CONFIG_ADC_NXP_SAR_ADC`.
+* Renamed the driver file from :zephyr_file:`adc_mcux_sar_adc.c` to :zephyr_file:`adc_nxp_sar_adc.c`.
+* Applications using the NXP SAR ADC driver need to update their device tree nodes to include the
+  new properties ``num-precision-channels`` and ``num-standard-channels`` to specify the number of
+  precision and standard channels supported by the ADC hardware. The driver changed the reference
+  from 'ADC_REF_INTERNAL' to 'ADC_REF_VDD_1' for these channels, so applications need to update
+  their device tree nodes accordingly. (:github:`100978`)
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Controller Area Network (CAN)
