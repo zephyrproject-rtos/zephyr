@@ -467,6 +467,7 @@ static int sx127x_driver_init(const struct device *dev)
 	static struct lbm_sx127x_data data_##node_id;                                              \
 	static const struct lbm_sx127x_config config_##node_id = {                                 \
 		.lbm_common.ralf = RALF_SX127X_INSTANTIATE(&data_##node_id.radio),                 \
+		.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                             \
 		.spi = SPI_DT_SPEC_GET(                                                            \
 			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB),         \
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \

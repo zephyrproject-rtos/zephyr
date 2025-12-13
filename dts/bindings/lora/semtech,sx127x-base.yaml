@@ -61,3 +61,9 @@ properties:
     type: int
     description: |
       Delay which has to be applied after enabling TCXO power.
+
+  force-ldro:
+    type: boolean
+    description: |
+      Force usage of Low Data Rate Optimization even in cases where the symbol time is shorter than
+      16.38ms. Useful for designs using no TCXO or with bad heat dissipation.
