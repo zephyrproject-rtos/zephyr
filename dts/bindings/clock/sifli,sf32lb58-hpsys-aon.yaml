@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sifli SF32LB58 HPSYS AON register
+
+compatible: "sifli,sf32lb58-hpsys-aon"
+
+include: [clock-controller.yaml, base.yaml]
+
+clock-cells:
+  - subsys

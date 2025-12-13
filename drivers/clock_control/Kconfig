@@ -77,6 +77,7 @@ source "drivers/clock_control/Kconfig.stm32"
 source "drivers/clock_control/Kconfig.tisci"
 source "drivers/clock_control/Kconfig.wch_rcc"
 source "drivers/clock_control/Kconfig.xec"
+source "drivers/clock_control/sf32lb58/Kconfig.sf32lb58"
 # zephyr-keep-sorted-stop
 
 endif # CLOCK_CONTROL
