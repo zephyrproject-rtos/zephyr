@@ -211,35 +211,31 @@ void ral_sx127x_bsp_get_tx_cfg(const void *context,
 			       ral_sx127x_bsp_tx_cfg_output_params_t *output_params)
 
 {
+	const sx127x_t *radio = context;
+	const struct device *dev = radio->hal_context;
+	const struct lbm_sx127x_config *config = dev->config;
 	int16_t power = input_params->system_output_pwr_in_dbm;
-#if defined(SX1272)
-	output_params->pa_cfg.pa_select = SX127X_PA_SELECT_RFO;
-	output_params->pa_cfg.is_20_dbm_output_on = false;
-#elif defined(SX1276)
-	if (input_params->freq_in_hz > RF_FREQUENCY_MID_BAND_THRESHOLD) {
-		output_params->pa_cfg.pa_select = SX127X_PA_SELECT_BOOST;
-		output_params->pa_cfg.is_20_dbm_output_on = true;
-	} else {
-		output_params->pa_cfg.pa_select = SX127X_PA_SELECT_RFO;
-		output_params->pa_cfg.is_20_dbm_output_on = false;
-	}
-#endif
 
-	if (output_params->pa_cfg.pa_select == SX127X_PA_SELECT_BOOST) {
-		if (output_params->pa_cfg.is_20_dbm_output_on == true) {
+	if (config->power_amplifier_output == SX127X_PA_SELECT_BOOST) {
+		output_params->pa_cfg.pa_select = SX127X_PA_SELECT_BOOST;
+		if (power > 17) {
+			output_params->pa_cfg.is_20_dbm_output_on = true;
 			power = MAX(power, 5);
 			power = MIN(power, 20);
 		} else {
+			output_params->pa_cfg.is_20_dbm_output_on = false;
 			power = MAX(power, 2);
 			power = MIN(power, 17);
 		}
 	} else {
+		output_params->pa_cfg.pa_select = SX127X_PA_SELECT_RFO;
+		output_params->pa_cfg.is_20_dbm_output_on = false;
 #if defined(SX1272)
-		power = MAX(power, -1);
-		power = MIN(power, 14);
+			power = MAX(power, -1);
+			power = MIN(power, 14);
 #elif defined(SX1276)
-		power = MAX(power, -4);
-		power = MIN(power, 15);
+			power = MAX(power, -4);
+			power = MIN(power, 15);
 #endif
 	}
 
