@@ -171,6 +171,12 @@ Programming and Debugging
 Nucleo U031R8 board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 
+.. warning::
+   The onboard ST-LINK/V3 debug probe cannot be `converted into a JLink probe`_;
+   as such, usage of the JLink runner requires an external JLink debug probe.
+   For debugging using the onboard probe only the ST-Link GDB Server runner
+   is supported.
+
 Flashing
 ========
 
@@ -223,7 +229,6 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default flasher for this board is openocd. It could be used in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
@@ -249,3 +254,6 @@ Note: Check the ``build/tfm`` directory to ensure that the commands required by 
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _converted into a JLink probe:
+   https://www.segger.com/products/debug-probes/j-link/models/other-j-links/st-link-on-board/
