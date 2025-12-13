@@ -572,6 +572,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(get_micro_step_res, &dsub_pos_stepper_driver_name,
 		      SHELL_HELP("Get micro-step resolution", "<device>"),
 		      cmd_stepper_get_micro_step_res, 2, 0),
+	SHELL_CMD_ARG(info, &dsub_pos_stepper_driver_name,
+		      SHELL_HELP("Show stepper hardware driver info", "<device>"),
+		      cmd_stepper_info, 2, 0),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_CMD_REGISTER(stepper, &stepper_cmds, "Stepper hardware driver commands", NULL);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	stepper_ctrl_cmds,
 	SHELL_CMD_ARG(set_reference_position, &dsub_pos_stepper_controller_name,
 		      SHELL_HELP("Set reference position", "<device> <position>"),
 		      cmd_stepper_ctrl_set_reference_position, 3, 0),
@@ -594,11 +603,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      SHELL_HELP("Stop motor", "<device>"),
 		      cmd_stepper_ctrl_stop, 2, 0),
 	SHELL_CMD_ARG(control_info, &dsub_pos_stepper_controller_name,
-		      SHELL_HELP("Show controller info", "<device>"),
+		      SHELL_HELP("Show stepper motion controller info", "<device>"),
 		      cmd_stepper_control_info, 2, 0),
-	SHELL_CMD_ARG(info, &dsub_pos_stepper_driver_name,
-		      SHELL_HELP("Show stepper info", "<device>"),
-		      cmd_stepper_info, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(stepper, &stepper_cmds, "Stepper motor commands", NULL);
+SHELL_CMD_REGISTER(stepper_ctrl, &stepper_ctrl_cmds, "Stepper motion controller commands", NULL);
