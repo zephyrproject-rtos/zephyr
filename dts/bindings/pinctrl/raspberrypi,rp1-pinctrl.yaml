@@ -1,0 +1,184 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+title: Raspberry Pi RP1 Pin Controller
+
+description: |
+  RP1 I/O controller pinmux and pad configuration. The RP1 is the
+  peripheral controller used on the Raspberry Pi 5. Each controller bank
+  manages a group of GPIO pins and exposes the function selection and pad
+  control registers for those pins.
+
+compatible: "raspberrypi,rp1-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Pin controller state node.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - input-enable
+          - input-schmitt-enable
+          - output-disable
+          - drive-strength
+          - slew-rate
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selections, encoded using RP1_PINMUX() or the helper
+          RP1_BANKn_PIN() macros defined in
+          :zephyr_file:`include/zephyr/dt-bindings/pinctrl/rp1-pinctrl.h`.
+      drive-strength:
+        enum:
+          - 2
+          - 4
+          - 8
+          - 12
+        default: 4
+        description: |
+          Drive strength in mA. The value is encoded as an index in the
+          driver.
+      slew-rate:
+        enum:
+          - 0
+          - 1
+        default: 0
+        description: |
+          Slew rate of a pin. 0 selects slow, 1 selects fast.
+
+      raspberrypi,f-m:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+        default: 4
+
+      raspberrypi,oe-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override output-enable for a pin.
+
+          - 0 - drive output enable from selected peripheral signal.
+          - 1 - drive output enable from inverse of selected peripheral
+            signal.
+          - 2 - disable output.
+          - 3 - enable output.
+
+          The default value is 0, as this is the power on reset value.
+      raspberrypi,out-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override output for a pin.
+
+          - 0 - drive output from selected peripheral signal.
+          - 1 - drive output from inverse of selected peripheral signal.
+          - 2 - drive output low.
+          - 3 - drive output high.
+
+          The default value is 0, as this is the power on reset value.
+      raspberrypi,in-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override input for a pin.
+
+          - 0 - input comes from the selected pin.
+          - 1 - input comes from the inverse of the selected pin.
+          - 2 - force input low.
+          - 3 - force input high.
+
+          The default value is 0, as this is the power on reset value.
+      raspberrypi,irq-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override interrupt signal for a pin.
+
+          - 0 - interrupt signal from the selected pin.
+          - 1 - interrupt signal from the inverse of the selected pin.
+          - 2 - force interrupt low.
+          - 3 - force interrupt high.
+
+          The default value is 0, as this is the power on reset value.
+
+      raspberrypi,irqmask-edge-low:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-edge-high:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-level-low:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-level-high:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-f-edge-low:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-f-edge-high:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-db-level-low:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
+
+      raspberrypi,irqmask-db-level-high:
+        type: boolean
+        description: |
+          Override interrupt signal for a pin.
