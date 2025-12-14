@@ -24,12 +24,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <zephyr/drivers/flash.h>
 #include <soc.h>
-
 #ifdef CONFIG_ESP_FLASH_ASYNC_IPM
 #include <zephyr/drivers/ipm.h>
 #endif
@@ -130,12 +131,6 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 #define flash_esp32_sem_give(dev) do {} while (0)
 
 #endif /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
-
-#include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/sys/util.h>
-#include <stdint.h>
-#include <string.h>
 
 #ifdef CONFIG_ESP_FLASH_HOST
 #ifndef CONFIG_MCUBOOT

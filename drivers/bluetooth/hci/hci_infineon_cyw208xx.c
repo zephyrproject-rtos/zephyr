@@ -72,7 +72,6 @@
 #include "cyhal_syspm.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cyw208xx);
 
 #define DT_DRV_COMPAT infineon_cyw208xx_hci

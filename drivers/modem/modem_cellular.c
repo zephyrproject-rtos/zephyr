@@ -17,7 +17,6 @@
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/net/ppp.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
 

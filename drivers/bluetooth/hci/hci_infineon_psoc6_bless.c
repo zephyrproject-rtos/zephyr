@@ -24,7 +24,6 @@
 #include <zephyr/logging/log.h>
 
 #define LOG_LEVEL      CONFIG_BT_HCI_DRIVER_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(psoc6_bless);
 
 #include "cy_ble_stack_pvt.h"

@@ -19,7 +19,6 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket_service.h>
-#include <openthread/nat64.h>
 #include "sockets_internal.h"
 #include <errno.h>
 

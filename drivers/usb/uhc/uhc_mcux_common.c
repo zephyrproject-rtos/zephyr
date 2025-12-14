@@ -11,7 +11,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/init.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/uhc.h>
 
 #include "uhc_common.h"

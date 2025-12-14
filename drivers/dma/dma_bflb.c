@@ -14,7 +14,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_bflb, CONFIG_DMA_LOG_LEVEL);
 
-#include <soc.h>
 #include <bflb_soc.h>
 #include <glb_reg.h>
 #include <common_defines.h>

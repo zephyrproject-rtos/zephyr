@@ -13,7 +13,6 @@
 #include <kernel_internal.h>
 #include <zephyr/debug/thread_analyzer.h>
 #include <zephyr/debug/stack.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <zephyr/init.h>

@@ -35,7 +35,6 @@
 #ifdef CONFIG_ADC_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/toolchain.h>
 #include <stm32_ll_dma.h>
 #endif
 
@@ -54,7 +53,6 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <stm32_ll_system.h>
 #endif
 
 #include <zephyr/linker/linker-defs.h>

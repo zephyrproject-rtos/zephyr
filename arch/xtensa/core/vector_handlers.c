@@ -16,7 +16,6 @@
 #include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
-#include <kernel_internal.h>
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 

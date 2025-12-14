@@ -14,7 +14,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <zephyr/dfu/mcuboot.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/storage/stream_flash.h>
 

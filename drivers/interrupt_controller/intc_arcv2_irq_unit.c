@@ -19,7 +19,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
-#include <zephyr/device.h>
 
 #define DT_DRV_COMPAT snps_arcv2_intc
 
