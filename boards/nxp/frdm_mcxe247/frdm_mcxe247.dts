@@ -136,6 +136,10 @@
 	clock-div = <4>;
 };
 
+&fircdiv1_clk {
+	clock-div = <8>;
+};
+
 &fircdiv2_clk {
 	clock-div = <1>;
 };
@@ -211,5 +215,9 @@
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&ftm0 {
 	status = "okay";
 };
