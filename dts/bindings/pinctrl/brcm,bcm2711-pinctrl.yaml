@@ -1,0 +1,41 @@
+# Copyright (c) 2025 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom BCM2711 pin controller
+
+compatible: "brcm,bcm2711-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Pin configuration state nodes.
+
+  child-binding:
+    description: |
+      Pin configuration group.
+
+      Each group within a pin configuration state contains pins that share
+      the same bias (pull-up/pull-down) configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+        description: |
+          An array of pins for this group. Each element is encoded as:
+          - Bits 0-7: Pin number (0-57)
+          - Bits 8-10: Function select (0-7)
+
+          Use BCM2711_PINMUX(pin, func) to construct values.
