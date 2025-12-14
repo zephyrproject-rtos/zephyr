@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_NXP_LPCMP
+	bool "NXP LPCMP comparator driver"
+	default y
+	depends on DT_HAS_NXP_LPCMP_ENABLED
+	select CLOCK_CONTROL
