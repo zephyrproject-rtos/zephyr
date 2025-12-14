@@ -306,7 +306,7 @@ static int ssd1306_write_sh1106(const struct device *dev, const uint16_t x, cons
 			return -1;
 		}
 
-		if (ssd1306_write_bus(dev, buf_ptr, desc->width, false)) {
+		if (ssd1306_write_bus(dev, buf_ptr, desc->pitch, false)) {
 			return -1;
 		}
 
@@ -326,7 +326,7 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	const struct ssd1306_config *config = dev->config;
 	size_t buf_len;
 
-	if (desc->pitch < desc->width) {
+	if (desc->pitch < desc->width / 8) {
 		LOG_ERR("Pitch is smaller than width");
 		return -1;
 	}
@@ -337,7 +337,7 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 		return -1;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch > desc->width / 8) {
 		LOG_ERR("Unsupported mode");
 		return -1;
 	}

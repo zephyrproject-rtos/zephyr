@@ -344,7 +344,29 @@ int main(void)
 	(void)memset(buf, bg_color, buf_size);
 
 	buf_desc.buf_size = buf_size;
-	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_PITCH_ALIGN);
+	switch (capabilities.current_pixel_format) {
+	case PIXEL_FORMAT_ARGB_8888:
+		buf_desc.pitch = capabilities.x_resolution * 4;
+		break;
+	case PIXEL_FORMAT_RGB_888:
+		buf_desc.pitch = capabilities.x_resolution * 3;
+		break;
+	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_AL_88:
+		buf_desc.pitch = capabilities.x_resolution * 2;
+		break;
+	case PIXEL_FORMAT_L_8:
+		buf_desc.pitch = capabilities.x_resolution;
+		break;
+	case PIXEL_FORMAT_MONO01:
+	case PIXEL_FORMAT_MONO10:
+		buf_desc.pitch = DIV_ROUND_UP(capabilities.x_resolution, NUM_BITS(uint8_t));
+		break;
+	default:
+		break;
+	}
+	buf_desc.pitch = ROUND_UP(buf_desc.pitch, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
@@ -376,7 +398,29 @@ int main(void)
 		}
 	}
 
-	buf_desc.pitch = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
+	switch (capabilities.current_pixel_format) {
+	case PIXEL_FORMAT_ARGB_8888:
+		buf_desc.pitch = rect_w * 4;
+		break;
+	case PIXEL_FORMAT_RGB_888:
+		buf_desc.pitch = rect_w * 3;
+		break;
+	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_AL_88:
+		buf_desc.pitch = rect_w * 2;
+		break;
+	case PIXEL_FORMAT_L_8:
+		buf_desc.pitch = rect_w;
+		break;
+	case PIXEL_FORMAT_MONO01:
+	case PIXEL_FORMAT_MONO10:
+		buf_desc.pitch = DIV_ROUND_UP(rect_w, NUM_BITS(uint8_t));
+		break;
+	default:
+		break;
+	}
+	buf_desc.pitch = ROUND_UP(buf_desc.pitch, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = rect_w;
 	buf_desc.height = rect_h;
 

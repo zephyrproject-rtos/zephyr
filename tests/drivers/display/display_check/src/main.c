@@ -336,7 +336,7 @@ int test_display(void)
 	(void)memset(buf, bg_color, buf_size);
 
 	buf_desc.buf_size = buf_size;
-	buf_desc.pitch = capabilities.x_resolution;
+	buf_desc.pitch = DIV_ROUND_UP(capabilities.x_resolution * DISPLAY_BITS_PER_PIXEL(capabilities.current_pixel_format), NUM_BITS(uint8_t));
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
@@ -360,7 +360,7 @@ int test_display(void)
 		display_write(display_dev, 0, idx, &buf_desc, buf);
 	}
 
-	buf_desc.pitch = rect_w;
+	buf_desc.pitch = DIV_ROUND_UP(rect_w * DISPLAY_BITS_PER_PIXEL(capabilities.current_pixel_format), NUM_BITS(uint8_t));
 	buf_desc.width = rect_w;
 	buf_desc.height = rect_h;
 

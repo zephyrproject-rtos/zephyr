@@ -328,8 +328,8 @@ static int st7567_write(const struct device *dev, const uint16_t x, const uint16
 {
 	size_t buf_len;
 
-	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+	if (desc->pitch < desc->width / 8) {
+		LOG_ERR("Pitch is smaller than width in bytes");
 		return -EINVAL;
 	}
 
@@ -339,7 +339,7 @@ static int st7567_write(const struct device *dev, const uint16_t x, const uint16
 		return -EINVAL;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch > desc->width / 8) {
 		LOG_ERR("Unsupported mode");
 		return -EINVAL;
 	}

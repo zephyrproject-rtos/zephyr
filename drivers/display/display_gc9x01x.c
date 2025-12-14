@@ -516,8 +516,8 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <= desc->buf_size,
+	__ASSERT(desc->width * data->bytes_per_pixel <= desc->pitch, "Pitch is smaller than width");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height, x, y);
@@ -526,7 +526,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 		return ret;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch > desc->width * data->bytes_per_pixel) {
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
@@ -540,7 +540,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 
 	mipi_desc.width = desc->width;
 	/* Per MIPI API, pitch must always match width */
-	mipi_desc.pitch = desc->width;
+	mipi_desc.pitch = desc->width * data->bytes_per_pixel;
 	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
 	ret = gc9x01x_transmit(dev, GC9X01X_CMD_MEMWR, NULL, 0);
@@ -558,7 +558,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 			return ret;
 		}
 
-		write_data_start += desc->pitch * data->bytes_per_pixel;
+		write_data_start += desc->pitch;
 	}
 
 	return 0;
