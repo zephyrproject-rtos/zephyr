@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(rtc_sf32lb, CONFIG_RTC_LOG_LEVEL);
 #define SYS_CFG_RTC_TR offsetof(HPSYS_CFG_TypeDef, RTC_TR)
 #define SYS_CFG_RTC_DR offsetof(HPSYS_CFG_TypeDef, RTC_DR)
 
+#define RTC_SF32LB_RSF_TIMEOUT_US 3000U
+
 /*
  * The RTC clock, CLK_RTC, can be configured to use the LXT32 (32.768 kHz) or
  * LRC10 (9.8 kHz). The prescaler values need to be set such that the CLK1S
@@ -118,6 +120,8 @@ static inline void rtc_sf32lb_wait_for_sync(const struct device *dev)
 	const struct rtc_sf32lb_config *config = dev->config;
 
 	sys_clear_bit(config->base + RTC_ISR, RTC_ISR_RSF_Pos);
+
+	k_busy_wait(RTC_SF32LB_RSF_TIMEOUT_US);
 }
 
 static int rtc_sf32lb_set_time(const struct device *dev, const struct rtc_time *timeptr)
@@ -175,7 +179,17 @@ static int rtc_sf32lb_get_time(const struct device *dev, struct rtc_time *timept
 	reg = sys_read32(config->cfg + SYS_CFG_RTC_DR);
 
 	if (reg & RTC_DR_CB) { /* 20th century */
-		timeptr->tm_year = bcd2bin(FIELD_GET(RTC_DR_YT_Msk | RTC_DR_YU_Msk, reg));
+		uint8_t year = bcd2bin(FIELD_GET(RTC_DR_YT_Msk | RTC_DR_YU_Msk, reg));
+
+		if (year < 70) {
+			/* Year is 00-69, which should be 2000-2069. Clear CB bit */
+			sys_clear_bit(config->base + RTC_DATER, RTC_DR_CB_Pos);
+
+			timeptr->tm_year = year + 100;
+		} else {
+			/* Year is 70-99, which is 1970-1999. Keep CB bit set */
+			timeptr->tm_year = year;
+		}
 	} else {
 		timeptr->tm_year = bcd2bin(FIELD_GET(RTC_DR_YT_Msk | RTC_DR_YU_Msk, reg)) + 100;
 	}
