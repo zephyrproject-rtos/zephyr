@@ -802,7 +802,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<src_device> <dst_device> <src_offset> <dst_offset> <size>", cmd_copy, 5, 5),
 	SHELL_CMD_ARG(erase, &dsub_device_name, "[<device>] <page address> [<size>]", cmd_erase, 2,
 		      2),
-	SHELL_CMD_ARG(read, &dsub_device_name, "[<device>] <address> [<Dword count>]", cmd_read, 2,
+	SHELL_CMD_ARG(read, &dsub_device_name, "[<device>] <address> [<byte count>]", cmd_read, 2,
 		      2),
 	SHELL_CMD_ARG(test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
 		      cmd_test, 4, 1),
