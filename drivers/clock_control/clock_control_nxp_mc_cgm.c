@@ -173,6 +173,22 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	}
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 
+#if defined(CONFIG_COMPARATOR_NXP_LPCMP)
+	switch ((uint32_t)sub_system) {
+	case MCUX_CMP0_CLK:
+		CLOCK_EnableClock(kCLOCK_Lpcmp0);
+		break;
+	case MCUX_CMP1_CLK:
+		CLOCK_EnableClock(kCLOCK_Lpcmp1);
+		break;
+	case MCUX_CMP2_CLK:
+		CLOCK_EnableClock(kCLOCK_Lpcmp2);
+		break;
+	default:
+		break;
+	}
+#endif /* CONFIG_COMPARATOR_NXP_HSCMP */
+
 	return 0;
 }
 
