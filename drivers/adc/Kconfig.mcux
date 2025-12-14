@@ -37,13 +37,13 @@ config ADC_MCUX_LPADC
 	help
 	  Enable the MCUX LPADC driver.
 
-config ADC_MCUX_SAR_ADC
-	bool "MCUX SAR ADC driver"
+config ADC_NXP_SAR_ADC
+	bool "NXP SAR ADC driver"
 	default y
 	select ADC_CONFIGURABLE_INPUTS
 	depends on DT_HAS_NXP_SAR_ADC_ENABLED
 	help
-	  Enable the MCUX SAR ADC driver.
+	  Enable the NXP SAR ADC driver.
 
 config ADC_MCUX_GAU
 	bool "MCUX GAU ADC driver"
@@ -121,18 +121,30 @@ config LPADC_CHANNEL_COUNT
 	  15 ADC channels. This value corresponds to how many of the CMD
 	  registers can be configured within the ADC.
 
-
 endif # ADC_MCUX_LPADC
 
-if ADC_MCUX_SAR_ADC
+if ADC_NXP_SAR_ADC
 
-config SAR_ADC_CHANNEL_COUNT
-	int "SAR_ADC channel count"
-	default 8
-	range 1 8
+config ADC_NXP_SAR_ADC_INTERRUPT
+	bool "NXP SAR ADC interrupt-driven mode"
 	help
-	  Amount of hardware channels to use, reduce to save RAM.
-	  The user can reduce this value if their application uses fewer than
-	  8 ADC channels.
+	  Use interrupt-driven conversions. When enabled the driver waits
+	  on the hardware end-of-conversion interrupt for each sample.
 
-endif # ADC_MCUX_SAR_ADC
+config ADC_NXP_SAR_ADC_INTERRUPT_TIMEOUT
+	int "NXP SAR ADC interrupt timeout in us"
+	default 0
+	depends on ADC_NXP_SAR_ADC_INTERRUPT
+	help
+	  Timeout in microseconds to wait for the ECH interrupt.
+	  Set to 0 to wait forever.
+
+config ADC_NXP_SAR_ADC_POLL_TIMEOUT
+	int "NXP SAR ADC poll timeout in us"
+	default 1000
+	depends on !ADC_NXP_SAR_ADC_INTERRUPT
+	help
+	  Timeout in microseconds for polling mode conversions.
+	  Only used when ADC_NXP_SAR_ADC_INTERRUPT is not enabled.
+
+endif # ADC_NXP_SAR_ADC
