@@ -234,7 +234,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 2) {
-		cnt = strtoul(argv[2], NULL, 16);
+		cnt = strtoul(argv[2], NULL, 0);
 	} else {
 		cnt = 1;
 	}
