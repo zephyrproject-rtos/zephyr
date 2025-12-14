@@ -1,0 +1,11 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COUNTER_MCHP_TC_G2
+	bool "Microchip Timer Counter (TC) g2 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_TC_G2_COUNTER_ENABLED
+	help
+	  Enable the Microchip Timer Counter g2 driver.
