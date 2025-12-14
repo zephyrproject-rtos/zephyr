@@ -53,7 +53,7 @@ ZTEST(shell_flash, test_flash_read)
 	ret = flash_write(flash_dev, test_base, data, test_size);
 	zassert_equal(0, ret, "flash_write() failed: %d", ret);
 
-	ret = shell_execute_cmd(NULL, "flash read 0 23");
+	ret = shell_execute_cmd(NULL, "flash read 0 0x23");
 	zassert_equal(0, ret, "flash read failed: %d", ret);
 
 	buf = shell_backend_dummy_get_output(sh, &size);
