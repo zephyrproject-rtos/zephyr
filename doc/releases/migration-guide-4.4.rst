@@ -60,6 +60,14 @@ ADC
   used when working with the EK-RA2A1 board, which provides a 16-bit ADC
   resolution.
 
+* Renamed the :kconfig:option:`CONFIG_ADC_MCUX_SAR_ADC` to :kconfig:option:`CONFIG_ADC_NXP_SAR_ADC`.
+* Renamed the driver file from ``adc_mcux_sar_adc.c`` to :zephyr_file:`drivers/adc/adc_nxp_sar_adc.c`.
+* Applications using the SAR ADC driver need to update the nodes in the devicetree to include
+  ``zephyr,input-positive`` to specify the hardware channel. For SoCs that currently support SAR ADC,
+  the reference voltage should use ``ADC_REF_VDD_1`` instead of ``ADC_REF_INTERNAL``. This driver
+  update also corrects this issue, so users also need to update the value of this property in the
+  devicetree accordingly. (:github:`100978`)
+
 Controller Area Network (CAN)
 =============================
 
