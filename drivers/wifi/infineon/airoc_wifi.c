@@ -231,12 +231,33 @@ static whd_security_t convert_zephyr_security_to_whd(int security)
 	return whd_security;
 }
 
+static uint8_t convert_whd_band_to_zephyr(whd_802_11_band_t band)
+{
+	uint8_t zephyr_band = WIFI_FREQ_BAND_UNKNOWN;
+
+	switch (band) {
+	case WHD_802_11_BAND_2_4GHZ:
+		zephyr_band = WIFI_FREQ_BAND_2_4_GHZ;
+		break;
+
+	case WHD_802_11_BAND_5GHZ:
+		zephyr_band = WIFI_FREQ_BAND_5_GHZ;
+		break;
+
+	case WHD_802_11_BAND_6GHZ:
+		zephyr_band = WIFI_FREQ_BAND_6_GHZ;
+		break;
+	}
+	return zephyr_band;
+}
+
 static void parse_scan_result(whd_scan_result_t *p_whd_result, struct wifi_scan_result *p_zy_result)
 {
 	if (p_whd_result->SSID.length != 0) {
 		p_zy_result->ssid_length = p_whd_result->SSID.length;
 		strncpy(p_zy_result->ssid, p_whd_result->SSID.value, p_whd_result->SSID.length);
 		p_zy_result->channel = p_whd_result->channel;
+		p_zy_result->band = convert_whd_band_to_zephyr(p_whd_result->band);
 		p_zy_result->security = convert_whd_security_to_zephyr(p_whd_result->security);
 		p_zy_result->rssi = (int8_t)p_whd_result->signal_strength;
 		p_zy_result->mac_length = 6;
