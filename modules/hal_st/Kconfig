@@ -162,7 +162,7 @@ config USE_STDC_LSM303AH
 config USE_STDC_LSM6DS3
 	bool
 
-config USE_STDC_LSM6DS3TR
+config USE_STDC_LSM6DS3TR_C
 	bool
 
 config USE_STDC_LSM6DSL
