@@ -52,8 +52,8 @@
 			status = "okay";
 		};
 
-		gpio: gpio@fe200000 {
-			compatible = "simple-bus";
+		pinctrl: pin-controller@fe200000 {
+			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
