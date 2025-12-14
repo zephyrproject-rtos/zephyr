@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h>
+
+#include "../common/rpi-pinctrl-common.dtsi"
+
+&pinctrl {
+	uart2_gpio0: uart2-gpio0 {
+		group1 {
+			pinmux = <UART2_TX_GPIO0>,
+				 <UART2_RX_GPIO1>;
+		};
+	};
+
+	uart3_gpio4: uart3-gpio4 {
+		group1 {
+			pinmux = <UART3_TX_GPIO4>,
+				 <UART3_RX_GPIO5>;
+		};
+	};
+
+	uart4_gpio8: uart4-gpio8 {
+		group1 {
+			pinmux = <UART4_TX_GPIO8>,
+				 <UART4_RX_GPIO9>;
+		};
+	};
+
+	uart5_gpio12: uart5-gpio12 {
+		group1 {
+			pinmux = <UART5_TX_GPIO12>,
+				 <UART5_RX_GPIO13>;
+		};
+	};
+};
