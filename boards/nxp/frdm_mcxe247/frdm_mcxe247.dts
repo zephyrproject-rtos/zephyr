@@ -213,3 +213,7 @@
 &counter_rtc {
 	status = "okay";
 };
+
+&wdog {
+	status = "okay";
+};

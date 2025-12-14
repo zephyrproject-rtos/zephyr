@@ -11,3 +11,4 @@ supported:
   - flash
   - gpio
   - uart
+  - watchdog
