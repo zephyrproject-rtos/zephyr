@@ -52,7 +52,7 @@ config AIROC_WLAN_MFG_FIRMWARE
 	  Enable WLAN Manufacturing Firmware.
 
 config WHD_WIFI_COUNTRY
-	string "Wifi couuntry option"
+	string "Wifi country option"
 	default "WHD_COUNTRY_UNITED_STATES" if CYW55572 || CYW55500
 	default "WHD_COUNTRY_AUSTRALIA"
 	help
