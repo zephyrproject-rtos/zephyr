@@ -14,12 +14,6 @@
 #define STATE_BUSY    1
 #define STATE_CLEANUP 2
 
-/* LoRa sync words, taken from the legacy loramac-node sx1272.h/sx1276.h */
-enum lbm_modem_lora_sync_word {
-	LBM_LORA_SYNC_WORD_PRIVATE = 0x12,
-	LBM_LORA_SYNC_WORD_PUBLIC = 0x34,
-};
-
 /* Current operation mode of the LBM modem */
 enum lbm_modem_mode {
 	MODE_SLEEP = 0,

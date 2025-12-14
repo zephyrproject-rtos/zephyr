@@ -112,6 +112,8 @@ struct lora_modem_config {
 	 */
 	bool iq_inverted;
 
+#ifdef CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE
+
 	/**
 	 * Sets the sync-byte to use:
 	 *  - false: for using the private network sync-byte
@@ -122,6 +124,26 @@ struct lora_modem_config {
 	 * interacting with a public network.
 	 */
 	bool public_network;
+
+#else
+
+	/**
+	 * Sets the LoRa sync word.
+	 * The recommended values are as follow:
+	 *  - 0x12: for the private network
+	 *  - 0x34: for the public network
+	 * On SX126x, SX128x, and LLCC68, they are recomposed as 0x1424 and 0x3444 to ensure
+	 * compatibility with SX127x using the relevant registers' default values.
+	 * Later chips like LR1121 and LR2021 go back to using a single byte word.
+	 * The public network sync-byte is only intended for advanced usage.
+	 * Normally the private network sync-byte should be used for peer
+	 * to peer communications and the LoRaWAN APIs should be used for
+	 * interacting with a public network.
+	 * You may use another value like 0x71 or 0xF1 to filter out other private traffic.
+	 */
+	uint8_t sync_word;
+
+#endif
 };
 
 /**
