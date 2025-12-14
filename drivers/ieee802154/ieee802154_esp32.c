@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/debug/stack.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 

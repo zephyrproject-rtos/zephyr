@@ -28,7 +28,6 @@
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
 #endif
-#include <zephyr/sys/util.h>
 
 /* ADXL345 communication commands */
 #define ADXL345_WRITE_CMD          0x00

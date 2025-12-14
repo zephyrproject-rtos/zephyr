@@ -20,9 +20,7 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
-#include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/class/usbd_uvc.h>
 
 #include "usbd_uvc.h"

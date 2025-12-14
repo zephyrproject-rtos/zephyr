@@ -45,7 +45,6 @@
 #endif
 
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
-#include <stdio.h>
 #include <zephyr/version.h>
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
@@ -53,7 +52,6 @@
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <bootutil/boot_status.h>
 #endif
-#include <mgmt/mcumgr/util/zcbor_bulk.h>
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 #include <zephyr/net/hostname.h>
 #elif defined(CONFIG_BT)

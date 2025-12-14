@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_INF);
 #include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
-#include "bstests.h"
 #include "bs_pc_backchannel.h"
 #include "argparse.h"
 

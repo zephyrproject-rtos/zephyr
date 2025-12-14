@@ -38,7 +38,6 @@
 #endif /* CONFIG_NRF70_STA_MODE */
 
 #include <system/fmac_api.h>
-#include <zephyr/net/conn_mgr_connectivity.h>
 #else
 #include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */

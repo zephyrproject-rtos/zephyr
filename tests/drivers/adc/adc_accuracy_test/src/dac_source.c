@@ -6,7 +6,6 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/dac.h>
-#include <zephyr/drivers/adc.h>
 #include <zephyr/ztest.h>
 
 #define DIV 2

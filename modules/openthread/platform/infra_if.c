@@ -21,11 +21,9 @@
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/net/icmp.h>
 #include <icmpv6.h>
 
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
-#include <zephyr/net/icmp.h>
 #include <zephyr/net/net_pkt_filter.h>
 #include <openthread/nat64.h>
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
