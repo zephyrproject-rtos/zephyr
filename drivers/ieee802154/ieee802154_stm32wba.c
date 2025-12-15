@@ -35,6 +35,7 @@
 #endif
 
 #include <linklayer_plat_local.h>
+#include <hci_if.h>
 #include "ieee802154_stm32wba.h"
 #include <stm32wba_802154_intf.h>
 
@@ -684,6 +685,9 @@ static int stm32wba_802154_stop(const struct device *dev)
 static int stm32wba_802154_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	/* Initialization of the thread dedicated to Link Layer Controller IP */
+	stm32wba_ll_ctlr_thread_init();
 
 	k_fifo_init(&stm32wba_802154_data.rx_fifo);
 	k_sem_init(&stm32wba_802154_data.tx_wait, 0, 1);
