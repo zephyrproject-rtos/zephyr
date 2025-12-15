@@ -703,7 +703,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	 * from the conn tx_queue). It would be 2 if the
 	 * tx_data_pull kept it on the tx_queue for segmentation.
 	 */
-	__ASSERT_NO_MSG((buf->ref == 1) || (buf->ref == 2));
+	__ASSERT_NO_MSG((atomic_get(&buf->ref) == 1) || (atomic_get(&buf->ref) == 2));
 
 	/* The reference is always transferred to the frag, so when
 	 * the frag is destroyed, the parent reference is decremented.

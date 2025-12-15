@@ -344,7 +344,7 @@ success:
 		buf->__buf = NULL;
 	}
 
-	buf->ref   = 1U;
+	atomic_set(&buf->ref, 1);
 	buf->flags = 0U;
 	buf->frags = NULL;
 	buf->size  = size;
@@ -446,18 +446,18 @@ void net_buf_unref(struct net_buf *buf)
 		struct net_buf *frags = buf->frags;
 		struct net_buf_pool *pool;
 
-		__ASSERT(buf->ref, "buf %p double free", buf);
-		if (!buf->ref) {
+		__ASSERT(atomic_get(&buf->ref) > 0, "buf %p double free", buf);
+		if (atomic_get(&buf->ref) == 0) {
 #if defined(CONFIG_NET_BUF_LOG)
 			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
 				    buf);
 #endif
 			return;
 		}
-		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, buf->ref,
+		NET_BUF_DBG("buf %p ref %ld pool_id %u frags %p", buf, atomic_get(&buf->ref),
 			    buf->pool_id, buf->frags);
 
-		if (--buf->ref > 0) {
+		if (atomic_dec(&buf->ref) != 1) {
 			return;
 		}
 
@@ -485,9 +485,9 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 {
 	__ASSERT_NO_MSG(buf);
 
-	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
-		    buf, buf->ref, buf->pool_id);
-	buf->ref++;
+	NET_BUF_DBG("buf %p (old) ref %ld pool_id %u",
+		    buf, atomic_get(&buf->ref), buf->pool_id);
+	atomic_inc(&buf->ref);
 	return buf;
 }
 

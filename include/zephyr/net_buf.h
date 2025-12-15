@@ -1011,7 +1011,7 @@ struct net_buf {
 	struct net_buf *frags;
 
 	/** Reference count. */
-	uint8_t ref;
+	atomic_t ref;
 
 	/** Bit-field of buffer flags. */
 	uint8_t flags;
