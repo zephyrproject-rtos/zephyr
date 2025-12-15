@@ -25,7 +25,7 @@ char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd', ' '
 int main(void)
 {
 	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
-	struct lora_modem_config config;
+	struct lora_modem_config config = {0};
 	int ret;
 
 	if (!device_is_ready(lora_dev)) {
