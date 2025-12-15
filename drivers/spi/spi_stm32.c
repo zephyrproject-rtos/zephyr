@@ -1715,7 +1715,7 @@ static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 static int spi_stm32_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
-	struct spi_stm32_data *data = dev->data;
+	__maybe_unused struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
