@@ -6,13 +6,21 @@
 
 /**
  * @file
- * @brief SCMI power domain protocol helpers
+ * @ingroup scmi_power
+ * @brief Header file for the SCMI Power Domain Protocol.
  */
 
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_
 #define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
+
+/**
+ * @brief Power domain state management via SCMI
+ * @defgroup scmi_power Power Domain Protocol
+ * @ingroup scmi_protocols
+ * @{
+ */
 
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
 
@@ -102,5 +110,9 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg);
  * @retval negative errno if failure
  */
 int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state);
+
+/**
+ * @}
+ */
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_ */
