@@ -17,6 +17,7 @@ Developing with Zephyr
    flash_debug/index
    modules.rst
    west/index
+   manifest/index.rst
    test/index
    sca/index
    toolchains/index
