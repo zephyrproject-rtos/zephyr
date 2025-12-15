@@ -9,6 +9,7 @@
 #include "display_renesas_ra.h"
 #include "r_glcdc.h"
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
@@ -432,11 +433,9 @@ static int display_init(const struct device *dev)
 #define RENESAS_RA_FRAME_BUFFER_LEN(id)                                                            \
 	(RENESAS_RA_GLCDC_PIXEL_BYTE_SIZE(id) * DT_INST_PROP(id, height) * DT_INST_PROP(id, width))
 
-#ifdef CONFIG_RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION
-#define FRAME_BUFFER_SECTION Z_GENERIC_SECTION(CONFIG_RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION)
-#else
-#define FRAME_BUFFER_SECTION
-#endif /* CONFIG_RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION */
+#define FRAME_BUFFER_SECTION(n)                                                                    \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ext_ram),                                             \
+	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, ext_ram)))), ())
 
 #define RENESAS_RA_GLCDC_DEVICE_PINCTRL_INIT(n)                                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0), (PINCTRL_DT_INST_DEFINE(n)), ())
@@ -448,7 +447,8 @@ static int display_init(const struct device *dev)
 #define RENESAS_RA_DEVICE_INIT(id)                                                                 \
 	RENESAS_RA_GLCDC_DEVICE_PINCTRL_INIT(id);                                                  \
 	IRQ_CONFIGURE_FUNC(id)                                                                     \
-	FRAME_BUFFER_SECTION static uint8_t __aligned(64)                                          \
+	FRAME_BUFFER_SECTION(id)                                                                   \
+	static uint8_t __aligned(8)                                                                \
 	fb_background##id[CONFIG_RENESAS_RA_GLCDC_FB_NUM * RENESAS_RA_FRAME_BUFFER_LEN(id)];       \
 	static const glcdc_extended_cfg_t display_extend_cfg##id = {                               \
 		.tcon_hsync = RENESAS_RA_GLCDC_TCON_HSYNC_PIN(id),                                 \
