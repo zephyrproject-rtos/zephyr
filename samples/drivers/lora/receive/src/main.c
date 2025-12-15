@@ -55,12 +55,16 @@ int main(void)
 
 	config.frequency = 865100000;
 	config.bandwidth = BW_125_KHZ;
-	config.datarate = SF_10;
+	config.datarate = SF_9;
 	config.preamble_len = 8;
 	config.coding_rate = CR_4_5;
 	config.iq_inverted = false;
+#ifdef CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE
 	config.public_network = false;
-	config.tx_power = 14;
+#else
+	config.sync_word = 0x12;
+#endif
+	config.tx_power = 0;
 	config.tx = false;
 
 	ret = lora_config(lora_dev, &config);
