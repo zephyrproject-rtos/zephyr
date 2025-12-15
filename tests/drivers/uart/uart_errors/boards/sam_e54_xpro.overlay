@@ -37,19 +37,3 @@ dut_aux: &sercom5 {
 	dmas = <&dmac 0x5 0xe>, <&dmac 0x6 0xf>;
 	dma-names = "rx", "tx";
 };
-
-&pinctrl {
-	sercom1_uart_default: sercom1_uart_default {
-		group1 {
-			pinmux = <PC22C_SERCOM1_PAD0>,
-				 <PC23C_SERCOM1_PAD1>;
-		};
-	};
-
-	sercom5_uart_default: sercom5_uart_default {
-		group1 {
-			pinmux = <PB16C_SERCOM5_PAD0>,
-				 <PB17C_SERCOM5_PAD1>;
-		};
-	};
-};
