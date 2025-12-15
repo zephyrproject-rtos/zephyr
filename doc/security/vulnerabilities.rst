@@ -2088,7 +2088,20 @@ This has been fixed in main for v4.3.0
 :cve:`2025-12035`
 -----------------
 
-Under embargo until 2025-12-13
+Bluetooth: Integer Overflow in Bluetooth Classic (BR/EDR) L2CAP
+
+An integer overflow condition exists in Bluetooth Host stack, within the bt_br_acl_recv routine a
+critical path for processing inbound BR/EDR L2CAP traffic.
+
+
+- `Zephyr project bug tracker GHSA-p793-3456-h7w3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p793-3456-h7w3>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 97370 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97370>`_
+
 
 :cve:`2025-12890`
 -----------------
