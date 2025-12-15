@@ -343,8 +343,6 @@ ZTEST_USER(userspace, test_write_kernram)
 	zassert_unreachable("Write to kernel RAM did not fault");
 }
 
-extern int _k_neg_eagain;
-
 #include <zephyr/linker/linker-defs.h>
 
 /**
@@ -357,7 +355,7 @@ ZTEST_USER(userspace, test_write_kernro)
 	bool in_rodata;
 
 	/* Try to write to kernel RO. */
-	const char *const ptr = (const char *const)&_k_neg_eagain;
+	const char *const ptr = (const char *const)&_k_syscall_table;
 
 	in_rodata = ptr < __rodata_region_end &&
 		    ptr >= __rodata_region_start;
@@ -370,11 +368,12 @@ ZTEST_USER(userspace, test_write_kernro)
 #endif
 
 	zassert_true(in_rodata,
-		     "_k_neg_eagain is not in rodata");
+		     "_k_syscall_table is not in rodata");
 
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	_k_neg_eagain = -EINVAL;
+	/* Attempt to write to the syscall table (should fault) */
+	*((_k_syscall_handler_t *)&_k_syscall_table[0]) = NULL;
 	zassert_unreachable("Write to kernel RO did not fault");
 }
 
