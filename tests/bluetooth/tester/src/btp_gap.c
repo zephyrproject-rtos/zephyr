@@ -1789,6 +1789,39 @@ static uint8_t pair_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *r
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t br_unpair(const struct btp_gap_unpair_cmd *cp)
+{
+	struct bt_conn *conn;
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		conn = bt_conn_lookup_addr_br(&cp->address.a);
+	} else {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (conn == NULL) {
+		LOG_INF("Unknown connection");
+		goto keys;
+	}
+
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	bt_conn_unref(conn);
+
+	if (err < 0) {
+		LOG_ERR("Failed to disconnect: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+keys:
+	err = bt_br_unpair(&cp->address.a);
+	if (err < 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t unpair(const void *cmd, uint16_t cmd_len,
 		      void *rsp, uint16_t *rsp_len)
 {
@@ -1797,11 +1830,7 @@ static uint8_t unpair(const void *cmd, uint16_t cmd_len,
 	int err;
 
 	if (cp->address.type == BTP_BR_ADDRESS_TYPE) {
-		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-			conn = bt_conn_lookup_addr_br(&cp->address.a);
-		} else {
-			return BTP_STATUS_FAILED;
-		}
+		return br_unpair(cp);
 	} else {
 		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	}
