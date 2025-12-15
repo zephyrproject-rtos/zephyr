@@ -1,0 +1,41 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+
+/ {
+	soc {
+		sram: sram@28000000 {
+			ranges = <0x28000000 0x28000000 0x8000>;
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+		};
+
+		aon_peripheral: aon_peripheral@a0000000 {
+			ranges = <0x0 0xa0000000 0x10000000>;
+		};
+	};
+};
+
+#include "nxp_mcxl.dtsi"
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+	};
+};
+
+&fmu {
+	flash: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_K(128)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <128>;
+	};
+};
