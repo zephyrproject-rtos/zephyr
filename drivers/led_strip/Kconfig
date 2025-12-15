@@ -31,6 +31,7 @@ config LED_STRIP_RGB_SCRATCH
 source "drivers/led_strip/Kconfig.apa102"
 source "drivers/led_strip/Kconfig.lpd880x"
 source "drivers/led_strip/Kconfig.modulino"
+source "drivers/led_strip/Kconfig.tlc59116"
 source "drivers/led_strip/Kconfig.tlc5971"
 source "drivers/led_strip/Kconfig.tlc59731"
 source "drivers/led_strip/Kconfig.ws2812"

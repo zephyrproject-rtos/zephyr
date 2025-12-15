@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Tridonic GmbH & Co KG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TLC59116_STRIP
+	bool "TLC59116 (and compatible) LED strip driver"
+	depends on I2C
+	depends on DT_HAS_TI_TLC59116_ENABLED
+	default y
+	help
+	  Enable LED strip driver for TLC59116 devices
