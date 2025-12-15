@@ -8,6 +8,7 @@ board:
   revision:
     format: custom
     exact: true
+    default: "C7"
     revisions:
       - name: "C5"
       - name: "C7"
