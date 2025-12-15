@@ -143,6 +143,42 @@
 	clock-frequency = <48000000>;
 };
 
+&sercom0 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &sercom2 {
 	status = "okay";
 	compatible = "microchip,sercom-g1-uart";
@@ -161,6 +197,24 @@
 	pinctrl-names = "default";
 };
 
+&sercom5 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &tcc0 {
 	compatible = "microchip,tcc-g1-pwm";
 	status = "okay";
@@ -170,4 +224,13 @@
 	max-bit-width = <24>;
 	prescaler = <8>;
 	channels = <6>;
+};
+
+ext1_serial: &sercom0 {
+};
+
+ext2_serial: &sercom5 {
+};
+
+ext3_serial: &sercom1 {
 };
