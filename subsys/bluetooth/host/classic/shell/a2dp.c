@@ -295,7 +295,7 @@ static void app_connected(struct bt_a2dp *a2dp, int err)
 		default_a2dp = a2dp;
 		bt_shell_print("a2dp connected");
 	} else {
-		bt_shell_print("a2dp connecting fail");
+		bt_shell_error("a2dp connecting fail");
 	}
 }
 
@@ -342,7 +342,7 @@ static void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to configure");
 	} else {
-		bt_shell_print("fail to configure");
+		bt_shell_error("fail to configure");
 	}
 }
 
@@ -358,7 +358,7 @@ static void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_cod
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to establish");
 	} else {
-		bt_shell_print("fail to establish");
+		bt_shell_error("fail to establish");
 	}
 }
 
@@ -374,7 +374,7 @@ static void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to release");
 	} else {
-		bt_shell_print("fail to release");
+		bt_shell_error("fail to release");
 	}
 }
 
@@ -390,7 +390,7 @@ static void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to start");
 	} else {
-		bt_shell_print("fail to start");
+		bt_shell_error("fail to start");
 	}
 }
 
@@ -406,7 +406,7 @@ static void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to suspend");
 	} else {
-		bt_shell_print("fail to suspend");
+		bt_shell_error("fail to suspend");
 	}
 }
 
@@ -462,7 +462,7 @@ static void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to send report delay");
 	} else {
-		bt_shell_print("fail to send report delay");
+		bt_shell_error("fail to send report delay");
 	}
 }
 #endif
@@ -546,8 +546,8 @@ static struct bt_a2dp_cb a2dp_cb = {
 static int check_cb_registration(const struct shell *sh)
 {
 	if (!a2dp_cb_registered) {
-		bt_shell_print("need to register a2dp connection callbacks");
-		return -EIO;
+		bt_shell_error("need to register a2dp connection callbacks");
+		return -ENOENT;
 	}
 
 	return 0;
@@ -564,10 +564,10 @@ static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
 		if (!err) {
 			bt_shell_print("success");
 		} else {
-			bt_shell_print("fail");
+			bt_shell_error("fail");
 		}
 	} else {
-		bt_shell_print("already registered");
+		bt_shell_error("already registered");
 	}
 
 	return 0;
@@ -641,7 +641,7 @@ static int cmd_register_ep(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (err) {
-		bt_shell_print("fail to register endpoint");
+		bt_shell_error("fail to register endpoint");
 	}
 
 	return 0;
@@ -736,7 +736,7 @@ static int cmd_reconfigure(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_reconfig(&sbc_stream, &sbc_cfg_default) != 0) {
-		bt_shell_print("fail");
+		bt_shell_error("fail");
 	}
 	return 0;
 }
@@ -798,7 +798,7 @@ static int cmd_establish(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_establish(&sbc_stream) != 0) {
-		bt_shell_print("fail");
+		bt_shell_error("fail");
 	}
 	return 0;
 }
@@ -810,7 +810,7 @@ static int cmd_release(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_release(&sbc_stream) != 0) {
-		bt_shell_print("fail");
+		bt_shell_error("fail");
 	}
 	return 0;
 }
@@ -822,7 +822,7 @@ static int cmd_start(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_start(&sbc_stream) != 0) {
-		bt_shell_print("fail");
+		bt_shell_error("fail");
 	}
 	return 0;
 }
@@ -834,7 +834,7 @@ static int cmd_suspend(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_suspend(&sbc_stream) != 0) {
-		bt_shell_print("fail");
+		bt_shell_error("fail");
 	}
 	return 0;
 }
@@ -846,7 +846,7 @@ static int cmd_abort(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_abort(&sbc_stream) != 0) {
-		bt_shell_print("fail");
+		bt_shell_error("fail");
 	}
 	return 0;
 }
@@ -881,7 +881,7 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 
 	ret = bt_a2dp_stream_send(&sbc_stream, buf, 0U, 0U);
 	if (ret < 0) {
-		printk("  Failed to send SBC audio data on streams(%d)\n", ret);
+		bt_shell_error("  Failed to send SBC audio data on streams(%d)\n", ret);
 		net_buf_unref(buf);
 	}
 #endif
@@ -899,7 +899,7 @@ static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *arg
 
 	err = bt_a2dp_stream_delay_report(&sbc_stream, 1);
 	if (err < 0) {
-		bt_shell_print("fail to send delay report (%d)\n", err);
+		bt_shell_error("fail to send delay report (%d)\n", err);
 	}
 
 	return 0;
@@ -931,7 +931,7 @@ static int cmd_get_conn(const struct shell *sh, int32_t argc, char *argv[])
 		bt_shell_print("a2dp conn is: %p", conn);
 		bt_conn_unref(conn);
 	} else {
-		bt_shell_print("a2dp conn is: NULL");
+		bt_shell_error("a2dp conn is: NULL");
 	}
 
 	return 0;
