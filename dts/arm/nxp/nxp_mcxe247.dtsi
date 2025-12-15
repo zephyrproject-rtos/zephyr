@@ -37,6 +37,8 @@
 };
 
 &ftfc {
+	status = "okay";
+
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0 DT_SIZE_K(1536)>;
