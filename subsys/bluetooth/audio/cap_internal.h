@@ -25,6 +25,10 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
+#define SUBPROC_SUPPORT                                                                            \
+	(defined(CONFIG_BT_CAP_INITIATOR_UNICAST) ||                                               \
+	 (defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT) && defined(CONFIG_BT_CAP_COMMANDER)))
+
 bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid);
 bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
 				 uint8_t ccid_cnt);
@@ -80,6 +84,8 @@ enum bt_cap_common_subproc_type {
 	BT_CAP_COMMON_SUBPROC_TYPE_DISABLE,
 	BT_CAP_COMMON_SUBPROC_TYPE_STOP,
 	BT_CAP_COMMON_SUBPROC_TYPE_RELEASE,
+	BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC,
+	BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC,
 };
 
 struct bt_cap_unicast_group {
@@ -114,8 +120,10 @@ struct bt_cap_initiator_proc_param {
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 struct cap_broadcast_reception_start {
-
 	bt_addr_le_t addr;
+	bool write_pending: 1;
+	bool waiting_for_notification: 1;
+	bool started_recvd: 1;
 	uint8_t adv_sid;
 	uint32_t broadcast_id;
 	uint16_t pa_interval;
@@ -126,6 +134,10 @@ struct cap_broadcast_reception_start {
 struct cap_broadcast_reception_stop {
 	uint8_t src_id;
 	uint8_t num_subgroups;
+	bool write_pending: 1;
+	bool waiting_for_notification: 1;
+	bool stopped_recvd: 1;
+	bool removed_recvd: 1;
 	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
@@ -217,17 +229,6 @@ struct bt_cap_handover_proc_param {
 			/* Advertising type of broadcast_source*/
 			uint8_t adv_type;
 
-			/* States used to determine when the broadcast source can be deleted */
-			bool broadcast_stopped;
-			bool reception_stopped;
-
-			/* Array of connection objects that we are waiting for a receive state with
-			 * a BIG sync lost event
-			 */
-			struct bt_conn *pending_recv_state_conns[MIN(
-				CONFIG_BT_MAX_CONN,
-				CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT)];
-
 			/* Unicast group create param from caller */
 			struct bt_cap_unicast_group_param *unicast_group_param;
 
@@ -269,15 +270,15 @@ struct bt_cap_common_proc {
 	size_t proc_cnt;
 	/* Number of items where a subprocedure have been started */
 	size_t proc_initiated_cnt;
-	/* Number of items done with the procedure */
+	/* Number of items done with the procedure, including failures */
 	size_t proc_done_cnt;
 	enum bt_cap_common_proc_type proc_type;
 	int err;
 	struct bt_conn *failed_conn;
 	struct bt_cap_common_proc_param proc_param;
-#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
+#if defined(SUBPROC_SUPPORT)
 	enum bt_cap_common_subproc_type subproc_type;
-#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+#endif /* SUBPROC_SUPPORT */
 };
 
 struct bt_cap_common_client {
@@ -339,6 +340,7 @@ void bt_cap_handover_complete(void);
 void bt_cap_handover_unicast_to_broadcast_setup_broadcast(void);
 void bt_cap_handover_unicast_to_broadcast_reception_start(void);
 void bt_cap_handover_unicast_proc_complete(void);
+void bt_cap_handover_commander_proc_complete(void);
 void bt_cap_handover_broadcast_source_stopped(uint8_t reason);
 void bt_cap_handover_broadcast_audio_stopped(void);
 void bt_cap_handover_receive_state_updated(const struct bt_conn *conn,

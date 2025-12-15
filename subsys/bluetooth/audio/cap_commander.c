@@ -101,44 +101,350 @@ int bt_cap_commander_discover(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
-static void
-copy_broadcast_reception_start_param(struct bt_bap_broadcast_assistant_add_src_param *add_src_param,
-				     struct cap_broadcast_reception_start *start_param)
+
+static struct bt_cap_commander_proc_param *
+broadcast_reception_get_next_start_proc_param(struct bt_cap_common_proc *active_proc)
 {
-	bt_addr_le_copy(&add_src_param->addr, &start_param->addr);
-	add_src_param->adv_sid = start_param->adv_sid;
-	add_src_param->broadcast_id = start_param->broadcast_id;
-	add_src_param->pa_sync = true;
-	add_src_param->pa_interval = start_param->pa_interval;
-	add_src_param->num_subgroups = start_param->num_subgroups;
-	add_src_param->subgroups = start_param->subgroups;
+	struct bt_cap_commander_proc_param *proc_param = NULL;
+
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		const struct cap_broadcast_reception_start *start_param =
+			&active_proc->proc_param.commander[i].broadcast_reception_start;
+
+		if (start_param->write_pending) {
+			/* If we have a write pending on any device, we will always wait
+			 * before starting the next write request to minimize the amount of
+			 * ATT buffers required
+			 *
+			 * If we cannot get an ATT buffer immediately for the next TX, the
+			 * procedure aborts.
+			 */
+			return NULL;
+		}
+
+		if (proc_param == NULL && !start_param->started_recvd &&
+		    !start_param->write_pending && !start_param->waiting_for_notification) {
+			proc_param = &active_proc->proc_param.commander[i];
+		}
+	}
+
+	return proc_param;
 }
 
-static void cap_commander_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
+static struct bt_cap_commander_proc_param *
+broadcast_reception_get_next_stop_proc_param(struct bt_cap_common_proc *active_proc)
+{
+	struct bt_cap_commander_proc_param *proc_param = NULL;
+
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		const struct cap_broadcast_reception_stop *stop_param =
+			&active_proc->proc_param.commander[i].broadcast_reception_stop;
+
+		const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
+
+		if (stop_param->write_pending) {
+			/* If we have a write pending on any device, we will always wait
+			 * before starting the next write request to minimize the amount of
+			 * ATT buffers required
+			 *
+			 * If we cannot get an ATT buffer immediately for the next TX, the
+			 * procedure aborts.
+			 */
+			return NULL;
+		}
+
+		/* If none are ready for the next write request, we just return NULL */
+		if (subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC) {
+			if (proc_param == NULL && !stop_param->stopped_recvd &&
+			    !stop_param->waiting_for_notification) {
+				proc_param = &active_proc->proc_param.commander[i];
+			}
+		} else { /* BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC */
+			__ASSERT_NO_MSG(subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+			if (proc_param == NULL && !stop_param->removed_recvd &&
+			    !stop_param->waiting_for_notification) {
+				proc_param = &active_proc->proc_param.commander[i];
+			}
+		}
+	}
+
+	return proc_param;
+}
+
+/**
+ * @brief Gets the next stream for the active procedure.
+ *
+ * It will find the first proc_param that isn't completed nor waiting for a write response or a
+ * notification. It will also consider if any other procedure is in progress, and will only allow
+ * one active write request at any one time to keep the ATT buffer requirements low
+ *
+ * Returns NULL if there are no proc_param available
+ */
+static struct bt_cap_commander_proc_param *
+broadcast_reception_get_next_proc_param(struct bt_cap_common_proc *active_proc)
+{
+	const enum bt_cap_common_proc_type proc_type = active_proc->proc_type;
+	struct bt_cap_commander_proc_param *proc_param = NULL;
+
+	if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START) {
+		proc_param = broadcast_reception_get_next_start_proc_param(active_proc);
+	} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
+		proc_param = broadcast_reception_get_next_stop_proc_param(active_proc);
+	} else {
+		__ASSERT(false, "Invalid proc type %d", proc_type);
+	}
+
+	return proc_param;
+}
+
+static size_t broadcast_reception_get_start_proc_done_cnt(struct bt_cap_common_proc *active_proc)
+{
+	size_t proc_done_cnt = 0U;
+
+	/* To support state changes by the server, we cannot rely simply on the number of
+	 * BAP procedures we have initiated. For the start CAP procedures we use
+	 * the states to determine how far we are.
+	 */
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		struct bt_cap_commander_proc_param *proc_param =
+			&active_proc->proc_param.commander[i];
+		struct cap_broadcast_reception_start *start_param =
+			&proc_param->broadcast_reception_start;
+
+		if (start_param->started_recvd && !start_param->waiting_for_notification &&
+		    !start_param->write_pending) {
+			proc_done_cnt++;
+		} else if (active_proc->failed_conn != NULL &&
+			   proc_param->conn == active_proc->failed_conn) {
+			/* Mark failed connection as done to trigger the
+			 * bt_cap_common_proc_all_handled check for
+			 * bt_cap_common_proc_is_aborted
+			 */
+			proc_done_cnt++;
+		} else {
+			/* no op */
+		}
+	}
+
+	return proc_done_cnt;
+}
+
+static size_t broadcast_reception_get_stop_proc_done_cnt(struct bt_cap_common_proc *active_proc)
+{
+	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
+	size_t proc_done_cnt = 0U;
+
+	/* To support state changes by the server, we cannot rely simply on the number of
+	 * BAP procedures we have initiated. For the stop CAP procedures we use
+	 * the states to determine how far we are.
+	 */
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		struct bt_cap_commander_proc_param *proc_param =
+			&active_proc->proc_param.commander[i];
+		struct cap_broadcast_reception_stop *stop_param =
+			&proc_param->broadcast_reception_stop;
+
+		if (active_proc->failed_conn != NULL &&
+		    proc_param->conn == active_proc->failed_conn) {
+			/* Mark failed connection as done to trigger the
+			 * bt_cap_common_proc_all_handled check for
+			 * bt_cap_common_proc_is_aborted
+			 */
+			proc_done_cnt++;
+		} else if (stop_param->waiting_for_notification || stop_param->write_pending) {
+			continue;
+		} else if (subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC) {
+			if (stop_param->stopped_recvd) {
+				proc_done_cnt++;
+			}
+		} else { /* BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC */
+			__ASSERT_NO_MSG(subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+			if (stop_param->removed_recvd) {
+				proc_done_cnt++;
+			}
+		}
+	}
+
+	return proc_done_cnt;
+}
+
+static void broadcast_reception_update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
+{
+	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
+	const enum bt_cap_common_proc_type proc_type = active_proc->proc_type;
+	size_t proc_done_cnt = 0U;
+
+	/* To support state changes by the server, we cannot rely simply on the number of
+	 * BAP procedures we have initiated. For the start and stop CAP procedures we use
+	 * the states to determine how far we are.
+	 */
+	if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START) {
+		proc_done_cnt = broadcast_reception_get_start_proc_done_cnt(active_proc);
+	} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
+		proc_done_cnt = broadcast_reception_get_stop_proc_done_cnt(active_proc);
+	} else {
+		__ASSERT(false, "Invalid proc type %d", proc_type);
+	}
+
+	__ASSERT(proc_done_cnt >= active_proc->proc_done_cnt &&
+			 proc_done_cnt <= active_proc->proc_cnt,
+		 "Unexpected proc_done_cnt %zu (%zu %zu)", proc_done_cnt,
+		 active_proc->proc_done_cnt, active_proc->proc_cnt);
+
+	LOG_DBG("proc %d subproc %d: %zu/%zu (was %zu/%zu)", proc_type, subproc_type, proc_done_cnt,
+		active_proc->proc_cnt, active_proc->proc_done_cnt, active_proc->proc_cnt);
+
+	active_proc->proc_done_cnt = proc_done_cnt;
+}
+
+static struct bt_cap_commander_proc_param *get_proc_param_by_conn(const struct bt_conn *conn)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-	struct bt_bap_broadcast_assistant_add_src_param add_src_param = {0};
 
-	LOG_DBG("conn %p", (void *)conn);
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		if (active_proc->proc_param.commander[i].conn == conn) {
+			return &active_proc->proc_param.commander[i];
+		}
+	}
+
+	return NULL;
+}
+
+static int broadcast_reception_start_add_src(struct bt_cap_commander_proc_param *proc_param)
+{
+	struct cap_broadcast_reception_start *start_param = &proc_param->broadcast_reception_start;
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_bap_broadcast_assistant_add_src_param add_src_param = {0};
+	struct bt_conn *conn;
+	int err;
+
+	__ASSERT_NO_MSG(!start_param->write_pending);
+	__ASSERT_NO_MSG(!start_param->started_recvd);
+
+	conn = proc_param->conn;
+
+	bt_addr_le_copy(&add_src_param.addr, &start_param->addr);
+	add_src_param.adv_sid = start_param->adv_sid;
+	add_src_param.broadcast_id = start_param->broadcast_id;
+	add_src_param.pa_sync = true;
+	add_src_param.pa_interval = start_param->pa_interval;
+	add_src_param.num_subgroups = start_param->num_subgroups;
+	add_src_param.subgroups = start_param->subgroups;
+
+	active_proc->proc_initiated_cnt++;
+	start_param->write_pending = true;
+	start_param->waiting_for_notification = true;
+
+	LOG_DBG("Adding source for conn %p", conn);
+	err = bt_bap_broadcast_assistant_add_src(conn, &add_src_param);
+	if (err != 0) {
+		active_proc->proc_initiated_cnt--;
+		start_param->write_pending = false;
+		start_param->waiting_for_notification = false;
+
+		LOG_DBG("Failed to add_src for conn %p: %d", conn, err);
+	}
+
+	return err;
+}
+
+static int broadcast_reception_stop_mod_src(struct bt_cap_commander_proc_param *proc_param)
+{
+	struct cap_broadcast_reception_stop *stop_param = &proc_param->broadcast_reception_stop;
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = {0};
+	struct bt_conn *conn;
+	int err;
+
+	__ASSERT_NO_MSG(!stop_param->write_pending);
+	__ASSERT_NO_MSG(!stop_param->stopped_recvd);
+
+	conn = proc_param->conn;
+
+	mod_src_param.src_id = stop_param->src_id;
+	mod_src_param.pa_sync = false;
+	mod_src_param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
+	mod_src_param.num_subgroups = stop_param->num_subgroups;
+
+	mod_src_param.subgroups = stop_param->subgroups;
+
+	active_proc->proc_initiated_cnt++;
+	stop_param->write_pending = true;
+	stop_param->waiting_for_notification = true;
+
+	LOG_DBG("Modifying source with id 0x%02X for conn %p", mod_src_param.src_id, conn);
+	err = bt_bap_broadcast_assistant_mod_src(conn, &mod_src_param);
+	if (err != 0) {
+		active_proc->proc_initiated_cnt--;
+		stop_param->write_pending = false;
+		stop_param->waiting_for_notification = false;
+
+		LOG_DBG("Failed to mod_src for conn %p: %d", conn, err);
+	}
+
+	return err;
+}
+
+static int broadcast_reception_stop_rem_src(struct bt_cap_commander_proc_param *proc_param)
+{
+	struct cap_broadcast_reception_stop *stop_param = &proc_param->broadcast_reception_stop;
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_conn *conn;
+	int err;
+
+	__ASSERT_NO_MSG(!stop_param->write_pending);
+	__ASSERT_NO_MSG(!stop_param->removed_recvd);
+
+	conn = proc_param->conn;
+
+	active_proc->proc_initiated_cnt++;
+	stop_param->write_pending = true;
+	stop_param->waiting_for_notification = true;
+
+	LOG_DBG("Removing source with id 0x%02X for conn %p", stop_param->src_id, conn);
+	err = bt_bap_broadcast_assistant_rem_src(conn, stop_param->src_id);
+	if (err != 0) {
+		active_proc->proc_initiated_cnt--;
+		stop_param->write_pending = false;
+		stop_param->waiting_for_notification = false;
+
+		LOG_DBG("Failed to rem_src for conn %p: %d", conn, err);
+	}
+
+	return err;
+}
+
+static void cap_commander_ba_add_src_cb(struct bt_conn *conn, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct cap_broadcast_reception_start *start_param;
+	struct bt_cap_commander_proc_param *proc_param;
 
 	if (!bt_cap_common_conn_in_active_proc(conn)) {
-
 		/* State change happened outside of a procedure; ignore */
 		return;
 	}
 
+	if (!bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START)) {
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(conn, -EBADMSG);
+		return;
+	}
+
+	proc_param = get_proc_param_by_conn(conn);
+	__ASSERT(proc_param != NULL, "Invalid proc_param from conn %p", conn);
+	start_param = &proc_param->broadcast_reception_start;
+	start_param->write_pending = false;
+
 	if (err != 0) {
-		LOG_DBG("Failed to add source: %d", err);
-		LOG_DBG("Aborting the proc %d %d", active_proc->proc_done_cnt,
-			active_proc->proc_initiated_cnt);
+		LOG_DBG("Failed to add source on %p: %d", conn, err);
 
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
-		LOG_DBG("Conn %p broadcast source added (%zu/%zu streams done)", (void *)conn,
-			active_proc->proc_done_cnt, active_proc->proc_cnt);
+		LOG_DBG("Conn %p broadcast add source accepted", (void *)conn);
 	}
+
+	broadcast_reception_update_proc_done_cnt(active_proc);
 
 	if (bt_cap_common_proc_is_aborted()) {
 		if (bt_cap_common_proc_all_handled()) {
@@ -149,20 +455,17 @@ static void cap_commander_broadcast_assistant_add_src_cb(struct bt_conn *conn, i
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		struct bt_cap_commander_proc_param *proc_param;
+		proc_param = broadcast_reception_get_next_proc_param(active_proc);
 
-		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
-		conn = proc_param->conn;
-		copy_broadcast_reception_start_param(&add_src_param,
-						     &proc_param->broadcast_reception_start);
-
-		active_proc->proc_initiated_cnt++;
-		err = bt_bap_broadcast_assistant_add_src(conn, &add_src_param);
-		if (err != 0) {
-			LOG_DBG("Failed to perform broadcast reception start for conn %p: %d",
-				(void *)conn, err);
-			bt_cap_common_abort_proc(conn, err);
-			cap_commander_proc_complete();
+		/* If proc_param is NULL we have to wait for a receive state notification
+		 * before executing next write request
+		 */
+		if (proc_param != NULL) {
+			err = broadcast_reception_start_add_src(proc_param);
+			if (err != 0) {
+				bt_cap_common_abort_proc(conn, err);
+				cap_commander_proc_complete();
+			}
 		}
 	} else {
 		cap_commander_proc_complete();
@@ -310,10 +613,8 @@ static bool valid_broadcast_reception_start_param(
 int cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param)
 {
-	struct bt_bap_broadcast_assistant_add_src_param add_src_param = {0};
 	struct bt_cap_commander_proc_param *proc_param;
 	struct bt_cap_common_proc *active_proc;
-	struct bt_conn *conn;
 	int err;
 
 	cap_commander_register_broadcast_assistant_callbacks();
@@ -351,22 +652,11 @@ int cap_commander_broadcast_reception_start(
 		       sizeof(struct bt_bap_bass_subgroup) * member_param->num_subgroups);
 	}
 
-	active_proc->proc_initiated_cnt++;
-
 	proc_param = &active_proc->proc_param.commander[0];
 
-	conn = proc_param->conn;
-	copy_broadcast_reception_start_param(&add_src_param,
-					     &proc_param->broadcast_reception_start);
-
 	/* TODO: what to do if we are adding a source that has already been added? */
-	err = bt_bap_broadcast_assistant_add_src(conn, &add_src_param);
+	err = broadcast_reception_start_add_src(proc_param);
 	if (err != 0) {
-		LOG_DBG("Failed to start broadcast reception for conn %p: %d", (void *)conn, err);
-
-		active_proc->err = err;
-		active_proc->failed_conn = conn;
-
 		return -ENOEXEC;
 	}
 
@@ -396,81 +686,29 @@ int bt_cap_commander_broadcast_reception_start(
 	return err;
 }
 
-static void
-copy_broadcast_reception_stop_param(struct bt_bap_broadcast_assistant_mod_src_param *mod_src_param,
-				    struct cap_broadcast_reception_stop *stop_param)
+static void reception_start_recv_state_cb(struct bt_cap_common_proc *active_proc,
+					  struct bt_conn *conn, bool big_synced,
+					  const struct bt_bap_scan_delegator_recv_state *state)
 {
-	mod_src_param->src_id = stop_param->src_id;
-	mod_src_param->pa_sync = false;
-	mod_src_param->pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
-	mod_src_param->num_subgroups = stop_param->num_subgroups;
+	struct bt_cap_commander_proc_param *proc_param = get_proc_param_by_conn(conn);
 
-	mod_src_param->subgroups = stop_param->subgroups;
-}
+	__ASSERT(proc_param != NULL, "Invalid proc_param from conn %p", conn);
+	struct cap_broadcast_reception_start *start_param = &proc_param->broadcast_reception_start;
 
-static void cap_commander_broadcast_assistant_recv_state_cb(
-	struct bt_conn *conn, int err, const struct bt_bap_scan_delegator_recv_state *state)
-{
-	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-
+	/* state == NULL indicates a removal of a source */
 	if (state == NULL) {
-		/* Empty receive state, indicating that the source has been removed
-		 */
-		return;
-	}
+		/* just an extra notification that we ignore */
+	} else if (state->pa_sync_state == BT_BAP_PA_STATE_SYNCED && big_synced &&
+		   !start_param->started_recvd) {
+		start_param->started_recvd = true;
+		start_param->waiting_for_notification = false;
 
-	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
-		bt_cap_handover_receive_state_updated(conn, state);
-	}
-
-	if (bt_cap_common_conn_in_active_proc(conn) &&
-	    active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
-
-		LOG_DBG("BASS recv state: conn %p, src_id %u", (void *)conn, state->src_id);
-
-		for (uint8_t i = 0; i < state->num_subgroups; i++) {
-			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
-
-			/* if bis_sync not equals 0 we can not remove the source (yet)
-			 * and we need to wait for another notification
-			 */
-			if (subgroup->bis_sync != 0) {
-				return;
-			}
-		}
-
-		LOG_DBG("Removing source for conn %p", (void *)conn);
-		err = bt_bap_broadcast_assistant_rem_src(conn, state->src_id);
-		if (err != 0) {
-			LOG_DBG("Failed to rem_src for conn %p: %d", (void *)conn, err);
-			bt_cap_common_abort_proc(conn, err);
-			cap_commander_proc_complete();
-		}
-	}
-}
-
-static void cap_commander_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
-{
-	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = {0};
-
-	if (!bt_cap_common_conn_in_active_proc(conn)) {
-		/* State change happened outside of a procedure; ignore */
-		return;
-	}
-
-	if (err != 0) {
-		LOG_DBG("Failed removing source: %d", err);
-		LOG_DBG("Aborting the proc %d %d", active_proc->proc_done_cnt,
-			active_proc->proc_initiated_cnt);
-
-		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
-		LOG_DBG("Conn %p broadcast source removed (%zu/%zu streams done)", (void *)conn,
-			active_proc->proc_done_cnt, active_proc->proc_cnt);
+		/* it is just an extra notification that we ignore */
+		return;
 	}
+
+	broadcast_reception_update_proc_done_cnt(active_proc);
 
 	if (bt_cap_common_proc_is_aborted()) {
 		if (bt_cap_common_proc_all_handled()) {
@@ -481,46 +719,294 @@ static void cap_commander_broadcast_assistant_rem_src_cb(struct bt_conn *conn, i
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		struct bt_cap_commander_proc_param *proc_param;
+		proc_param = broadcast_reception_get_next_proc_param(active_proc);
 
-		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
-		conn = proc_param->conn;
-		copy_broadcast_reception_stop_param(&mod_src_param,
-						    &proc_param->broadcast_reception_stop);
-		active_proc->proc_initiated_cnt++;
-		err = bt_bap_broadcast_assistant_mod_src(conn, &mod_src_param);
-		if (err != 0) {
-			LOG_DBG("Failed to mod_src for conn %p: %d", (void *)conn, err);
-			bt_cap_common_abort_proc(conn, err);
-			cap_commander_proc_complete();
+		/* If proc_param is NULL we have to wait for a write
+		 * response before starting a new write request for the next scan delegator
+		 */
+		if (proc_param != NULL) {
+			int err;
+
+			err = broadcast_reception_start_add_src(proc_param);
+			if (err != 0) {
+				bt_cap_common_abort_proc(conn, err);
+				cap_commander_proc_complete();
+			}
 		}
 	} else {
 		cap_commander_proc_complete();
 	}
 }
 
-static void cap_commander_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
+static void reception_stop_recv_state_cb(struct bt_cap_common_proc *active_proc,
+					 struct bt_conn *conn, bool big_synced,
+					 const struct bt_bap_scan_delegator_recv_state *state)
+{
+	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
+	struct bt_cap_commander_proc_param *proc_param = get_proc_param_by_conn(conn);
+	struct cap_broadcast_reception_stop *stop_param;
+
+	__ASSERT(proc_param != NULL, "Invalid proc_param from conn %p", conn);
+
+	stop_param = &proc_param->broadcast_reception_stop;
+
+	/* state == NULL indicates a removal of a source */
+	if (state == NULL) {
+		if (!stop_param->removed_recvd) {
+			stop_param->removed_recvd = true;
+			stop_param->waiting_for_notification = false;
+		} /* else it is just an extra notification that we ignore */
+	} else if (state->pa_sync_state != BT_BAP_PA_STATE_SYNCED && !big_synced &&
+		   !stop_param->stopped_recvd) {
+		stop_param->stopped_recvd = true;
+		stop_param->waiting_for_notification = false;
+	} else {
+		/* it is just an extra notification that we ignore */
+		return;
+	}
+
+	broadcast_reception_update_proc_done_cnt(active_proc);
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_commander_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		proc_param = broadcast_reception_get_next_proc_param(active_proc);
+
+		/* If proc_param is NULL we have to wait for a write
+		 * response before starting a new write request for the next scan delegator
+		 */
+		if (proc_param != NULL) {
+			int err;
+
+			if (subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC) {
+				err = broadcast_reception_stop_mod_src(proc_param);
+			} else { /* BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC */
+				__ASSERT_NO_MSG(subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+				err = broadcast_reception_stop_rem_src(proc_param);
+			}
+
+			if (err != 0) {
+				bt_cap_common_abort_proc(conn, err);
+				cap_commander_proc_complete();
+			}
+		}
+	} else {
+		if (subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC) {
+			bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+
+			/* The servers may actually remove the sources themselves, so verify
+			 * that we haven't received empty (removed) receive states yet after
+			 * setting the new subproc
+			 */
+			if (!bt_cap_common_proc_is_done()) {
+				int err;
+
+				proc_param = broadcast_reception_get_next_proc_param(active_proc);
+				__ASSERT(proc_param != NULL,
+					 "proc is not done, but could not get next proc_param");
+
+				err = broadcast_reception_stop_rem_src(proc_param);
+				if (err != 0) {
+					bt_cap_common_abort_proc(conn, err);
+					cap_commander_proc_complete();
+				}
+			} else {
+				cap_commander_proc_complete();
+			}
+		} else {
+			__ASSERT_NO_MSG(subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+			cap_commander_proc_complete();
+		}
+	}
+}
+
+static void cap_commander_ba_recv_state_cb(struct bt_conn *conn, int err,
+					   const struct bt_bap_scan_delegator_recv_state *state)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	bool big_synced = false;
+
+	__ASSERT(err == 0, "err != 0 for notification");
+
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		return;
+	}
+
+	if (state == NULL) {
+		LOG_DBG("BASS recv state: conn %p removed", (void *)conn);
+	} else {
+		LOG_DBG("BASS recv state: conn %p, src_id %u pa_sync_state %u", (void *)conn,
+			state->src_id, state->pa_sync_state);
+
+		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
+
+			LOG_DBG("Subgroup[%u].bis_sync: 0x%08X", i, subgroup->bis_sync);
+			if (subgroup->bis_sync != 0) {
+				big_synced = true;
+			}
+		}
+	}
+
+	if (active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START) {
+		reception_start_recv_state_cb(active_proc, conn, big_synced, state);
+	} else if (active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
+		reception_stop_recv_state_cb(active_proc, conn, big_synced, state);
+	} else {
+		/* No active procedure that cares about these updates */
+	}
+}
+
+static void cap_commander_ba_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
+{
+	/* Reuse the recv_state_cb to handle removed receive states */
+	cap_commander_ba_recv_state_cb(conn, 0, NULL);
+}
+
+static void cap_commander_ba_rem_src_cb(struct bt_conn *conn, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct cap_broadcast_reception_stop *stop_param;
+	struct bt_cap_commander_proc_param *proc_param;
 
 	if (!bt_cap_common_conn_in_active_proc(conn)) {
 		/* State change happened outside of a procedure; ignore */
 		return;
 	}
 
+	if (!bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP)) {
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(conn, -EBADMSG);
+		return;
+	}
+
+	proc_param = get_proc_param_by_conn(conn);
+	__ASSERT(proc_param != NULL, "Invalid proc_param from conn %p", conn);
+	stop_param = &proc_param->broadcast_reception_stop;
+	__ASSERT_NO_MSG(stop_param->write_pending);
+	stop_param->write_pending = false;
+
 	if (err != 0) {
-		LOG_DBG("Failed modifying source: %d", err);
-		LOG_DBG("Aborting the proc %d %d", active_proc->proc_done_cnt,
-			active_proc->proc_initiated_cnt);
+		LOG_DBG("Failed removing source: %d", err);
 
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		LOG_DBG("Conn %p broadcast source modified (%zu/%zu streams done)", (void *)conn,
-			active_proc->proc_done_cnt, active_proc->proc_cnt);
+		LOG_DBG("Conn %p broadcast remove source accepted", (void *)conn);
 	}
+
+	broadcast_reception_update_proc_done_cnt(active_proc);
 
 	if (bt_cap_common_proc_is_aborted()) {
 		if (bt_cap_common_proc_all_handled()) {
+			cap_commander_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		proc_param = broadcast_reception_get_next_proc_param(active_proc);
+
+		/* If proc_param is NULL we have to wait for a receive state notification
+		 * before executing next write request
+		 */
+		if (proc_param != NULL) {
+			err = broadcast_reception_stop_rem_src(proc_param);
+
+			if (err != 0) {
+				bt_cap_common_abort_proc(conn, err);
+				cap_commander_proc_complete();
+			}
+		}
+	} else {
+		cap_commander_proc_complete();
+	}
+}
+
+static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_cap_commander_proc_param *proc_param;
+	struct cap_broadcast_reception_stop *stop_param;
+
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP)) {
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(conn, -EBADMSG);
+		return;
+	}
+
+	proc_param = get_proc_param_by_conn(conn);
+	__ASSERT(proc_param != NULL, "Invalid proc_param from conn %p", conn);
+	stop_param = &proc_param->broadcast_reception_stop;
+
+	__ASSERT_NO_MSG(stop_param->write_pending);
+	stop_param->write_pending = false;
+
+	if (err != 0) {
+		LOG_DBG("Failed to modify source on %p: %d", conn, err);
+
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		LOG_DBG("Conn %p broadcast source modify accepted", (void *)conn);
+	}
+
+	broadcast_reception_update_proc_done_cnt(active_proc);
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_commander_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		proc_param = broadcast_reception_get_next_proc_param(active_proc);
+
+		/* If proc_param is NULL we have to wait for a write
+		 * response before starting a new write request for the next scan delegator
+		 */
+		if (proc_param != NULL) {
+			err = broadcast_reception_stop_mod_src(proc_param);
+			if (err != 0) {
+				bt_cap_common_abort_proc(conn, err);
+				cap_commander_proc_complete();
+			}
+		}
+	} else {
+		/* Once we are doing modifying the sources to stop the broadcast, we start removing
+		 * them
+		 */
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
+
+		/* The servers may actually remove the sources themselves, so verify that we haven't
+		 * received empty (removed) receive states yet after setting the new subproc
+		 */
+		if (!bt_cap_common_proc_is_done()) {
+			proc_param = broadcast_reception_get_next_proc_param(active_proc);
+			__ASSERT(proc_param != NULL,
+				 "proc is not done, but could not get next proc_param");
+
+			/* If proc_param is NULL we have to wait for a write
+			 * response before starting a new write request for the next scan delegator
+			 */
+			err = broadcast_reception_stop_rem_src(proc_param);
+			if (err != 0) {
+				bt_cap_common_abort_proc(conn, err);
+				cap_commander_proc_complete();
+			}
+		} else {
 			cap_commander_proc_complete();
 		}
 	}
@@ -597,15 +1083,14 @@ bool bt_cap_commander_valid_broadcast_reception_stop_param(
 int cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param)
 {
-	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = {0};
 	struct bt_cap_commander_proc_param *proc_param;
 	struct bt_cap_common_proc *active_proc;
-	struct bt_conn *conn;
 	int err;
 
 	cap_commander_register_broadcast_assistant_callbacks();
 
 	bt_cap_common_set_proc(BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP, param->count);
+	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC);
 
 	active_proc = bt_cap_common_get_active_proc();
 
@@ -638,15 +1123,8 @@ int cap_commander_broadcast_reception_stop(
 
 	proc_param = &active_proc->proc_param.commander[0];
 
-	conn = proc_param->conn;
-	copy_broadcast_reception_stop_param(&mod_src_param, &proc_param->broadcast_reception_stop);
-
-	active_proc->proc_initiated_cnt++;
-
-	err = bt_bap_broadcast_assistant_mod_src(conn, &mod_src_param);
+	err = broadcast_reception_stop_mod_src(proc_param);
 	if (err != 0) {
-		LOG_DBG("Failed to stop broadcast reception for conn %p: %d", (void *)conn, err);
-
 		return -ENOEXEC;
 	}
 
@@ -676,7 +1154,7 @@ int bt_cap_commander_broadcast_reception_stop(
 	return err;
 }
 
-static void cap_commander_broadcast_assistant_set_broadcast_code_cb(struct bt_conn *conn, int err)
+static void cap_commander_ba_set_broadcast_code_cb(struct bt_conn *conn, int err)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 
@@ -687,13 +1165,12 @@ static void cap_commander_broadcast_assistant_set_broadcast_code_cb(struct bt_co
 		return;
 	}
 
+	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to distribute broadcast code: %d", err);
 
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
 		LOG_DBG("Conn %p broadcast code set (%zu/%zu done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
@@ -861,11 +1338,12 @@ void cap_commander_register_broadcast_assistant_callbacks(void)
 
 	if (!broadcast_assistant_cb_registered) {
 		static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cb = {
-			.add_src = cap_commander_broadcast_assistant_add_src_cb,
-			.mod_src = cap_commander_broadcast_assistant_mod_src_cb,
-			.rem_src = cap_commander_broadcast_assistant_rem_src_cb,
-			.recv_state = cap_commander_broadcast_assistant_recv_state_cb,
-			.broadcast_code = cap_commander_broadcast_assistant_set_broadcast_code_cb,
+			.add_src = cap_commander_ba_add_src_cb,
+			.mod_src = cap_commander_ba_mod_src_cb,
+			.rem_src = cap_commander_ba_rem_src_cb,
+			.recv_state = cap_commander_ba_recv_state_cb,
+			.recv_state_removed = cap_commander_ba_recv_state_removed_cb,
+			.broadcast_code = cap_commander_ba_set_broadcast_code_cb,
 		};
 		int err;
 
@@ -889,30 +1367,7 @@ static void cap_commander_proc_complete(void)
 	proc_type = active_proc->proc_type;
 
 	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
-		if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START) {
-			/* Complete unicast to broadcast handover procedure. At this point we do not
-			 * know if the remote device will attempt to use PAST or scan for itself, so
-			 * it's best to leave this up to the application layer
-			 */
-
-			bt_cap_handover_complete();
-		} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
-			if (err != 0) {
-				bt_cap_handover_complete();
-			} else {
-				/* We've successfully stopped broadcast reception on all the
-				 * acceptors. We can now stop and delete the broadcast source before
-				 * starting the unicast audio
-				 */
-				err = bt_cap_handover_broadcast_reception_stopped();
-				if (err != 0) {
-					bt_cap_handover_complete();
-				}
-			}
-		} else {
-			__ASSERT(false, "invalid proc_type %d", proc_type);
-		}
-
+		bt_cap_handover_commander_proc_complete();
 		return;
 	}
 
@@ -1091,12 +1546,11 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 		return;
 	}
 
+	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set volume: %d", err);
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
 		LOG_DBG("Conn %p volume updated (%zu/%zu streams done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
@@ -1271,12 +1725,11 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 		return;
 	}
 
+	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set volume: %d", err);
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
 		LOG_DBG("Conn %p volume updated (%zu/%zu streams done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
@@ -1481,12 +1934,11 @@ static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
 		return;
 	}
 
+	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set offset: %d", err);
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
 		LOG_DBG("Conn %p offset updated (%zu/%zu streams done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
@@ -1711,12 +2163,11 @@ static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, in
 		return;
 	}
 
+	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to change microphone mute: %d", err);
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
 		LOG_DBG("Conn %p mute updated (%zu/%zu streams done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
@@ -1915,12 +2366,11 @@ static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
 		return;
 	}
 
+	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set gain: %d", err);
 		bt_cap_common_abort_proc(conn, err);
 	} else {
-		active_proc->proc_done_cnt++;
-
 		LOG_DBG("Conn %p gain updated (%zu/%zu streams done)", (void *)conn,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
 	}
