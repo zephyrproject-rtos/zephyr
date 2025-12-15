@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the IS31FL3743 LED driver
+  name: IS31FL3743 sample
+tests:
+  sample.drivers.led.is31fl3743:
+    filter: dt_compat_enabled("issi,is31fl3743")
+    tags: LED
+    depends_on: i2c

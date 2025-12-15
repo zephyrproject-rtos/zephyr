@@ -148,6 +148,11 @@
 				reg = <0x10>;
 			};
 
+			is31fl3743@20 {
+				compatible = "issi,is31fl3743";
+				reg = <0x20>;
+			};
+
 			axp192@11 {
 				compatible = "x-powers,axp192";
 				reg = <0x11>;
