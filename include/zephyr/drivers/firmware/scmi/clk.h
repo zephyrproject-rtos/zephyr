@@ -6,13 +6,21 @@
 
 /**
  * @file
- * @brief SCMI clock protocol helpers
+ * @ingroup scmi_clk
+ * @brief Header file for the SCMI Clock Protocol.
  */
 
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_
 #define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
+
+/**
+ * @brief Clock management operations via SCMI
+ * @defgroup scmi_clk Clock Protocol
+ * @ingroup scmi_protocols
+ * @{
+ */
 
 #define SCMI_CLK_CONFIG_DISABLE_ENABLE_MASK GENMASK(1, 0)
 #define SCMI_CLK_CONFIG_ENABLE_DISABLE(x)\
@@ -148,5 +156,9 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
  * @retval negative errno if failure
  */
 int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t parent_id);
+
+/**
+ * @}
+ */
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_ */

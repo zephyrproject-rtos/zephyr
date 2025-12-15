@@ -6,11 +6,19 @@
 
 /**
  * @file
- * @brief SCMI protocol generic functions and structures
+ * @ingroup scmi_interface
+ * @brief Header file for the SCMI (System Control and Management Interface) driver API.
  */
 
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_
 #define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_
+
+/**
+ * @brief Interfaces for ARM System Control and Management Interface (SCMI)
+ * @defgroup scmi_interface SCMI
+ * @ingroup io_interfaces
+ * @{
+ */
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/firmware/scmi/util.h>
@@ -183,5 +191,15 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
  * @retval negative errno if failure
  */
 int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version);
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Standard SCMI Protocol definitions
+ * @defgroup scmi_protocols Protocols
+ * @ingroup scmi_interface
+ */
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */
