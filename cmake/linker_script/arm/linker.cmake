@@ -198,7 +198,6 @@ zephyr_linker_symbol(SYMBOL ARM_LIB_STACKHEAP EXPR "(${RAM_ADDR} + ${RAM_SIZE})"
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
-  math(EXPR VECTOR_ALIGN "4 * (16 + ${CONFIG_NUM_IRQS})")
   # Calculate minimum alignment based on architecture variant
   # This matches the logic in arch/arm/core/vector_table.ld
   if(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -213,10 +212,15 @@ if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
     set(MIN_VECTOR_ALIGN 128)
   endif()
 
+  if(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN)
+    set(VECTOR_ALIGN ${CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN})
+  else()
+    math(EXPR VECTOR_ALIGN "4 * (16 + ${CONFIG_NUM_IRQS})")
+    pow2round(VECTOR_ALIGN)
+  endif()
+
   if(${VECTOR_ALIGN} LESS ${MIN_VECTOR_ALIGN})
     set(VECTOR_ALIGN ${MIN_VECTOR_ALIGN})
-  else()
-    pow2round(VECTOR_ALIGN)
   endif()
 endif()
 
