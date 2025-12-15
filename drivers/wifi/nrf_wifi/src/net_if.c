@@ -780,6 +780,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (!rpu_ctx_zep) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL",
 			__func__);
+		ret = -EIO;
 		goto out;
 	}
 
@@ -795,6 +796,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: nrf_wifi_fmac_dev_add_zep failed",
 				__func__);
+			ret = -EIO;
 			goto out;
 		}
 		fmac_dev_added = true;
@@ -820,6 +822,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (vif_ctx_zep->vif_idx >= MAX_NUM_VIFS) {
 		LOG_ERR("%s: FMAC returned invalid interface index",
 			__func__);
+		ret = -EIO;
 		goto dev_rem;
 	}
 
@@ -837,6 +840,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: Failed to get MAC address",
 				__func__);
+			ret = -EIO;
 			goto del_vif;
 		}
 		net_if_set_link_addr(vif_ctx_zep->zep_net_if_ctx,
@@ -854,6 +858,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: MAC address change failed",
 			__func__);
+		ret = -EIO;
 		goto del_vif;
 	}
 
@@ -875,6 +880,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_vif_state failed",
 			__func__);
+		ret = -EIO;
 		goto del_vif;
 	}
 
@@ -889,6 +895,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_sys_fmac_set_power_save failed",
 			__func__);
+		ret = -EIO;
 		goto dev_rem;
 	}
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
