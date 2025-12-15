@@ -1,0 +1,185 @@
+# Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC35XX I2S controller
+
+compatible: "ti,cc35xx-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+# The audio clock (ACLK) is the output of the ADFS. This is used by the I2S
+# hardware module when the I2S driver is opened in Controller mode.
+# The I2S hardware module will divide the ACLK to generate the I2S clocks
+# (BCLK (SCK), WCLK (Ws) and CCLK).
+# The ACLK therefore directly determines the possible sample rates, i.e. the
+# frequency of WCLK.
+#
+# To achieve a desired sample frequency (f_s), the following requirements must
+# be met, where f_aclk is the frequency of the ACLK:
+# - f_aclk/f_s must be an integer. I.e. f_aclk = n * f_s, where n is an
+#     integer.
+# - The total number of bits per frame must evenly divide into f_aclk/f_s
+#
+# For example, if f_s = 44.1 kHz, then the first requirement is met if for
+# example f_aclk = 11.2896 MHz = 256 * 44.1 kHz. The second requirement is met
+# if for example the number of bits per frame is 32, because it evenly divides
+# into 256.
+#
+# If the requirements are not met, the closest possible sampling frequency to
+# the desired sampling frequency will be used.
+#
+# The frequencies most suited to be used with I2S are listed below:
+# - 12.288 MHz:
+#   - This can be used to achieve sample rates of 8 kHz, 16 kHz, 24 kHz, 32
+#     kHz and 48 kHz.
+#     - For 8 kHz, 16 kHz and 32 kHz the number of bits per frame must be of
+#         the form: 2^n * 3^k, where n is an integer and k is either 0 or 1.
+#         The range of valid values of n for 8 kHz, 16 kHz and 32 kHz is [0-9],
+#         [0-8] and [0-7] respectively.
+#     - For 24 kHz and 48 kHz the number of bits per frame must be of the
+#         form: 2^n, where n is an integer. The range of valid values of n for
+#         24 kHz and 48 kHz is [0-9] and [0-8] respectively.
+# - 11.2896 MHz:
+#   - This can be used to achieve sample rates of 22.05 kHz and 44.1 kHz. The
+#     number of bits per frame must be of the form: 2^n, where n is an
+#     integer. The range of valid values of n for 22.05 kHz and 44.1 kHz is
+#     [0-9] and [0-8] respectively.
+#
+# ## Using the ADFS ##
+# The ADFS is used to generate an arbitrary clock frequency from a given input
+# clock by division and adaptive swallowing. The resultant clock frequency mean
+# is equal to the desired value although a significant jitter may occur. The
+# best results are achieved when there is a large factor between the input
+# clock frequency (Fref) and the desired output frequency (Freq).
+#
+# In I2S, the ADFS is used to divide the clock source into an ACLK that is a
+# multiple of the most common sample rates. To achieve this, the ADFS is
+# configured with the following parameters:
+# - adfs_tref: Freq period in picoseconds, represented as a fixed-point number
+#     with 17 integer bits and 4 fractional bits.
+# - adfs_div: Divisor used to approximate the ratio between Fref and Freq.
+#     It is calculated to minimize the error (delta) between the actual
+#     and desired frequency ratios.
+#     Should be an integer higher or equal than 1.
+# - adfs_delta: Error in picoseconds that quantifies how far
+#     the achieved period (using the chosen divider) deviates
+#     from the desired period.
+#     It is represented as a fixed-point number with 13 integer bits
+#     and 4 fractional bits.
+# - adfs_delta_sign: Represents whether delta is negative (1)
+#     or non-negative (0).
+#
+# The next equations can be used to compute the parameters:
+#
+# adfs_tref = floor((1 / Fref) * 16)
+#
+# div_temp1 = floor(Fref / Freq);
+# div_temp2 = ceil(Fref / Freq);
+#
+# delta_temp1 = ((1/(Freq*div_temp1))-(1/Fref));
+# delta_temp2 = ((1/(Freq*div_temp2))-(1/Fref));
+#
+# if (abs(delta_temp1) < abs(delta_temp2))
+# {
+#     adfs_div = div_temp1;
+#     adfs_delta = delta_temp1;
+# }
+# else
+# {
+#     adfs_div = div_temp2;
+#     adfs_delta = delta_temp2;
+# }
+#
+# adfs_delta_sign = (adfs_delta < 0) ? 1 : 0;
+#
+# The actual output frequency in hertz should be computed with the
+# following formula (Fref must be in hertz):
+#
+# if (adfs_delta_sign == 0)
+# {
+#     adfs_audio_clock_freq = 1E12 / (((1E12 / Fref) + (adfs_delta/16))
+#       * adfs_div);
+# }
+# else
+# {
+#     adfs_audio_clock_freq = 1E12 / (((1E12 / Fref) - (adfs_delta/16))
+#       * adfs_div);
+# }
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pin-dir-sd0:
+    type: int
+    default: 2
+    description: |
+      SD0 audio interface pin direction.
+      If not specified defaults to TI_CC35XX_I2S_PIN_DIR_OUTPUT.
+      For all options see dt-bindings/i2s/ti-cc35xx-i2s.h
+
+  pin-dir-sd1:
+    type: int
+    default: 1
+    description: |
+      SD1 audio interface pin direction.
+      If not specified defaults to TI_CC35XX_I2S_PIN_DIR_INPUT.
+      For all options see dt-bindings/i2s/ti-cc35xx-i2s.h
+
+  clock-source:
+    type: int
+    default: 0x20
+    description: |
+      I2S peripheral core clock.
+      If not specified defaults to TI_CC35XX_I2S_CLK_SRC_SOC_PLL_CLK.
+      For all options see dt-bindings/i2s/ti-cc35xx-i2s.h
+
+  startup-delay:
+    type: int
+    default: 2
+    description: Number of WS cycles to wait before the first transfer.
+
+  cclk-divider:
+    type: int
+    default: 40
+    description: |
+      Frequency divider for the CCLK signal.
+      Final value of CCLK is audio clock source / cclk_divider.
+      Value must be selected between 2 and 1024 (inclusive).
+
+  adfs-tref:
+    type: int
+    default: 100000
+    description: |
+      Freq period in picoseconds, represented as a fixed-point number with
+      17 integer bits and 4 fractional bits.
+
+  adfs-div:
+    type: int
+    default: 13
+    description: |
+      Divisor used to approximate the ratio between Fref and Freq.
+      It is calculated to minimize the error (delta) between the actual
+      and desired frequency ratios. Should be an integer higher or equal than 1.
+
+  adfs-delta:
+    type: int
+    default: 160
+    description: |
+      Error in picoseconds that quantifies how far the achieved period
+      (using the chosen divider) deviates from the desired period.
+      It is represented as a fixed-point number with 13 integer bits
+      and 4 fractional bits.
+
+  adfs-delta-sign:
+    type: int
+    default: 0
+    description: Represents whether delta is negative (1) or non-negative (0).
+
+  adfs-audio-clock-freq:
+    type: int
+    default: 12288031
+    description: The actual output frequency in hertz of the ADFS module.

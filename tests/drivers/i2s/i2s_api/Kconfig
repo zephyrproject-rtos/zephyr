@@ -45,3 +45,9 @@ config I2S_TEST_ALLOW_VARIABLE_OFFSET
 	  If the data offset is not consistent between reads because of
 	  timing variations in the hardware, enable this option to
 	  always recalculate the offset.
+
+config I2S_TEST_DATA_FORMAT_LJF
+	bool "Left justified data format"
+
+config I2S_TEST_DATA_FORMAT_RJF
+	bool "Right justified data format"

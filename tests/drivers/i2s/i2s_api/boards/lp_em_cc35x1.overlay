@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};

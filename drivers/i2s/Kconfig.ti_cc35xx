@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_TI_CC35XX
+	bool "TI CC35XX I2S controller driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_I2S_ENABLED
+	help
+	  Enable TI CC35XX I2S controller.
+
+if I2S_TI_CC35XX
+
+config I2S_TI_CC35XX_RXQ_SIZE
+	int "Max number of messages on RX queue"
+	default 64
+
+config I2S_TI_CC35XX_TXQ_SIZE
+	int "Max number of messages on TX queue"
+	default 64
+
+endif # I2S_TI_CC35XX

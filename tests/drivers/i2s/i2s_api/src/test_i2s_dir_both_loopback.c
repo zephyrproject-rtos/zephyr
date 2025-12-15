@@ -59,9 +59,20 @@ ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_short)
 	zassert_equal(ret, TC_PASS);
 	TC_PRINT("%d<-OK\n", 2);
 
+#ifndef CONFIG_I2S_TI_CC35XX
+	/*
+	 * As per the Zephyr I2S API docs
+	 * the DRAIN trigger when applied to RX stream
+	 * should have the same effect as STOP trigger.
+	 * This means the stream is stopped after currently
+	 * running transaction.
+	 * The TI CC35XX I2S driver follows this guideline
+	 * so there's only single read transaction after DRAIN.
+	 */
 	ret = rx_block_read(dev_i2s, 2);
 	zassert_equal(ret, TC_PASS);
 	TC_PRINT("%d<-OK\n", 3);
+#endif
 
 	/* TODO: Verify the interface is in READY state when i2s_state_get
 	 * function is available.
@@ -172,9 +183,20 @@ ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_restart)
 	zassert_equal(ret, TC_PASS);
 	TC_PRINT("%d<-OK\n", 2);
 
+#ifndef CONFIG_I2S_TI_CC35XX
+	/*
+	 * As per the Zephyr I2S API docs
+	 * the DRAIN trigger when applied to RX stream
+	 * should have the same effect as STOP trigger.
+	 * This means the stream is stopped after currently
+	 * running transaction.
+	 * The TI CC35XX I2S driver follows this guideline
+	 * so there's only single read transaction after DRAIN.
+	 */
 	ret = rx_block_read(dev_i2s, 2);
 	zassert_equal(ret, TC_PASS);
 	TC_PRINT("%d<-OK\n", 3);
+#endif
 }
 
 /** @brief RX buffer overrun.
@@ -188,6 +210,17 @@ ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_restart)
  */
 ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_rx_overrun)
 {
+	/*
+	 * On TI CC35XX the RX buffer overrun isn't possible to be verified
+	 * with this test.
+	 *
+	 * When RX overrun occurs (PTR_ERR condition in the IP core)
+	 * the TX stream is also halted by the HW,
+	 * so the test case will fail during the TX part
+	 * and will not verify the RX overrun handling.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_SOC_CC3551E);
+
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
 		ztest_test_skip();

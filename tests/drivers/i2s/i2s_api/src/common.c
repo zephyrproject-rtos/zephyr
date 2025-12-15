@@ -182,10 +182,17 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 {
 	int ret;
 	struct i2s_config i2s_cfg = {0};
+#ifdef CONFIG_I2S_TEST_DATA_FORMAT_LJF
+	uint32_t data_format = I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED;
+#elif CONFIG_I2S_TEST_DATA_FORMAT_RJF
+	uint32_t data_format = I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED;
+#else
+	uint32_t data_format = I2S_FMT_DATA_FORMAT_I2S;
+#endif
 
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	i2s_cfg.format = data_format;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = TIMEOUT;
@@ -195,9 +202,14 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
 				| I2S_OPT_BIT_CLK_CONTROLLER;
 	} else if (dir == I2S_DIR_RX) {
+#ifdef CONFIG_I2S_TI_CC35XX
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
+				| I2S_OPT_BIT_CLK_CONTROLLER;
+#else
 		/* Configure the Receive port as Target */
 		i2s_cfg.options = I2S_OPT_FRAME_CLK_TARGET
 				| I2S_OPT_BIT_CLK_TARGET;
+#endif
 	} else { /* dir == I2S_DIR_BOTH */
 		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
 				| I2S_OPT_BIT_CLK_CONTROLLER;

@@ -46,3 +46,33 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.i2s.gpio_loopback.left_justified:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_allow:
+      - lp_em_cc35x1
+    harness_config:
+      fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_I2S_TEST_DATA_FORMAT_LJF=y
+  drivers.i2s.gpio_loopback.right_justified:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - userspace
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    harness: ztest
+    platform_allow:
+      - lp_em_cc35x1
+    harness_config:
+      fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_I2S_TEST_DATA_FORMAT_RJF=y
