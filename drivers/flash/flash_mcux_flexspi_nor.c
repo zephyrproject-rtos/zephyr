@@ -592,6 +592,15 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_JUMP_ON_CS, kFLEXSPI_1PAD, 0x2,
+				kFLEXSPI_Command_JUMP_ON_CS, kFLEXSPI_1PAD, 0x2);
+		flexspi_lut[SCRATCH_CMD][2] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][3] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
 				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
