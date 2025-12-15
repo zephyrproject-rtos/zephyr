@@ -36,4 +36,8 @@ else()
   add_subdirectory_ifdef(CONFIG_HAS_MCUX mcux)
 endif()
 
+if(CONFIG_WIFI_NXP)
+  add_subdirectory(wifi)
+endif()
+
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/src hal_nxp)
