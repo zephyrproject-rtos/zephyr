@@ -280,6 +280,36 @@
 	};
 };
 
+&sercom0 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &sercom2 {
 	compatible = "microchip,sercom-g1-uart";
 	#address-cells = <1>;
@@ -294,6 +324,21 @@
 	pinctrl-names = "default";
 	dmas = <&dmac 1 8>, <&dmac 2 9>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&sercom5 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -349,4 +394,13 @@
 	prescaler = <4>;
 	pinctrl-0 = <&adc1_default>;
 	pinctrl-names = "default";
+};
+
+ext1_serial: &sercom0 {
+};
+
+ext2_serial: &sercom5 {
+};
+
+ext3_serial: &sercom1 {
 };

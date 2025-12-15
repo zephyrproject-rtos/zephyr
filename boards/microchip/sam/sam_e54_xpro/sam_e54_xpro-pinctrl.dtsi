@@ -7,10 +7,31 @@
 #include <dt-bindings/sam/sam_d5x_e5x/atsame54/atsame54p20a-pinctrl.h>
 
 &pinctrl {
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PA5D_SERCOM0_PAD1>,
+				 <PA4D_SERCOM0_PAD0>;
+		};
+	};
+
+	sercom1_uart_default: sercom1_uart_default {
+		group1 {
+			pinmux = <PC23C_SERCOM1_PAD1>,
+				 <PC22C_SERCOM1_PAD0>;
+		};
+	};
+
 	sercom2_uart_default: sercom2_uart_default {
 		group1 {
 			pinmux = <PB25D_SERCOM2_PAD0>,
 				 <PB24D_SERCOM2_PAD1>;
+		};
+	};
+
+	sercom5_uart_default: sercom5_uart_default {
+		group1 {
+			pinmux = <PB17C_SERCOM5_PAD1>,
+				 <PB16C_SERCOM5_PAD0>;
 		};
 	};
 
