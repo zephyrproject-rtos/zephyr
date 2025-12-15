@@ -17,3 +17,27 @@ config CACHE_NXP_CACHE64_INIT_PRIORITY
 	  run after the FlexSPI NOR flash driver, which typically uses
 	  CONFIG_FLASH_INIT_PRIORITY (often 80). Choose a value greater than the
 	  flash init priority to ensure FlexSPI reset does not wipe cache settings.
+
+config CACHE_NXP_SYSCON_LPCAC
+	bool "NXP external cache driver for NXP syscon lpcac controller"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_SYSCON_LPCAC
+	help
+	  This option enables the syscon lpcac driver for NXP SoCs.
+
+config CACHE_NXP_XCACHE
+	bool "NXP external cache driver for xcache controller"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_XCACHE
+	help
+	  This option enables the XCACHE driver for NXP SOC's.
+
+config CACHE_NXP_LMEM_CACHE
+	bool "NXP LMEM cache driver"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_LMEM_CACHE
+	help
+	  This option enables the LMEM cache driver for NXP SOCs.
