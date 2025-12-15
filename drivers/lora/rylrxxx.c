@@ -520,7 +520,7 @@ exit:
 	return ret;
 }
 
-int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
+int rylr_recv_async(const struct device *dev, const struct lora_recv_async_callbacks *cb)
 {
 	int err = 0;
 	struct rylr_data *data = dev->data;
@@ -531,9 +531,17 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 		return err;
 	}
 
-	/* This is not a user error but the documeted way to cancel async reception in lora api*/
+	/* This is not a user error but the documented way to cancel async reception in lora api */
 	if (cb == NULL) {
 		goto bail;
+	}
+
+	if (cb->recv == NULL) {
+		err = -EINVAL;
+		goto bail;
+	}
+	if (cb->preamble_detected || cb->header_valid) {
+		LOG_DBG("Only the `recv` callback supported");
 	}
 
 	if (data->is_tx) {
@@ -542,8 +550,8 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 		goto bail;
 	}
 
-	data->async_rx_cb = cb;
-	data->async_user_data = user_data;
+	data->async_rx_cb = cb->recv;
+	data->async_user_data = cb->user_data;
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
 		LOG_ERR("pending async operation");
 		err = -EBUSY;

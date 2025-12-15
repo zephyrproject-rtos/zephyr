@@ -286,6 +286,12 @@ Libsbc
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
 
+LoRa/LoRaWAN
+============
+
+* The ``recv`` and ``user_data`` arguments previously supplied to :c:func:`lora_recv_async` are now
+  fields of a single struct (:c:struct:`lora_recv_async_callbacks`), which is provided by reference.
+
 Tracing
 ========
 

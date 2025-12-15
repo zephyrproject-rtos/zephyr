@@ -11,8 +11,8 @@
 
 /* LoRa interrupts from the RAL library */
 #define RAL_IRQ_LORA                                                                               \
-	RAL_IRQ_TX_DONE | RAL_IRQ_RX_DONE | RAL_IRQ_RX_HDR_ERROR | RAL_IRQ_RX_CRC_ERROR |          \
-		RAL_IRQ_CAD_DONE | RAL_IRQ_CAD_OK
+	(RAL_IRQ_TX_DONE | RAL_IRQ_RX_DONE | RAL_IRQ_RX_HDR_ERROR | RAL_IRQ_RX_CRC_ERROR |         \
+	 RAL_IRQ_CAD_DONE | RAL_IRQ_CAD_OK)
 
 LOG_MODULE_REGISTER(lbm_driver, CONFIG_LORA_LOG_LEVEL);
 
@@ -289,14 +289,19 @@ release:
 	return ret;
 }
 
-int lbm_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
+int lbm_lora_recv_async(const struct device *dev, const struct lora_recv_async_callbacks *cb)
 {
 	const struct lbm_lora_config_common *config = dev->config;
 	struct lbm_lora_data_common *data = dev->data;
+	ral_irq_t irqs = RAL_IRQ_LORA;
 	ral_status_t status;
 
 	/* Cancel ongoing reception */
 	if (cb == NULL) {
+		if (data->rx_state.async.preamble_detected || data->rx_state.async.header_valid) {
+			/* Reset IRQ state */
+			(void)ral_set_dio_irq_params(&config->ralf.ral, irqs);
+		}
 		if (!modem_release(dev)) {
 			/* Not receiving or already being stopped */
 			return -EINVAL;
@@ -304,9 +309,29 @@ int lbm_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_da
 		return 0;
 	}
 
+	if (cb->recv == NULL) {
+		return -EINVAL;
+	}
+
 	/* Ensure available */
 	if (!modem_acquire(dev)) {
 		return -EBUSY;
+	}
+
+	/* Configure interrupts for desired events */
+	if (cb->preamble_detected) {
+		irqs |= RAL_IRQ_RX_PREAMBLE_DETECTED;
+	}
+	if (cb->header_valid) {
+		irqs |= RAL_IRQ_RX_HDR_OK;
+	}
+	if (irqs != RAL_IRQ_LORA) {
+		status = ral_set_dio_irq_params(&config->ralf.ral, irqs);
+		if (status != RAL_STATUS_OK) {
+			modem_release(dev);
+			LOG_ERR("RAL DIO init failure (%d)", status);
+			return -EIO;
+		}
 	}
 
 	/* Configure modem for asynchronous RX */
@@ -314,8 +339,7 @@ int lbm_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_da
 	data->modem_mode = MODE_RX_ASYNC;
 
 	/* Store user state */
-	data->rx_state.async.rx_cb = cb;
-	data->rx_state.async.user_data = user_data;
+	data->rx_state.async = *cb;
 
 	/* Start the reception in continuous mode */
 	status = ral_set_rx(&config->ralf.ral, RAL_RX_TIMEOUT_CONTINUOUS_MODE);
@@ -436,8 +460,8 @@ static void op_done_async_rx(const struct device *dev)
 		       : pkt_status.signal_rssi_pkt_in_dbm;
 
 	/* Run the user callback */
-	data->rx_state.async.rx_cb(dev, rx_buffer, size, rssi, pkt_status.snr_pkt_in_db,
-				   data->rx_state.async.user_data);
+	data->rx_state.async.recv(dev, rx_buffer, size, rssi, pkt_status.snr_pkt_in_db,
+				  data->rx_state.async.user_data);
 }
 
 static void op_done_work_handler(struct k_work *work)
@@ -454,7 +478,25 @@ static void op_done_work_handler(struct k_work *work)
 	bool error_irq;
 	int ret = 0;
 
-	LOG_DBG("%d", data->modem_mode);
+	/* Get and reset the current IRQ state */
+	(void)ral_get_irq_status(&config->ralf.ral, &irq_state);
+	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
+	error_irq = irq_state & (RAL_IRQ_RX_TIMEOUT | RAL_IRQ_RX_HDR_ERROR | RAL_IRQ_RX_CRC_ERROR);
+
+	LOG_DBG("%d: IRQ %08X", data->modem_mode, irq_state);
+
+	if ((irq_state & RAL_IRQ_RX_PREAMBLE_DETECTED) && data->rx_state.async.preamble_detected) {
+		LOG_DBG("Preamble detected IRQ");
+		/* Run the user callback */
+		data->rx_state.async.preamble_detected(dev, data->rx_state.async.user_data);
+		return;
+	}
+	if ((irq_state & RAL_IRQ_RX_HDR_OK) && data->rx_state.async.header_valid) {
+		LOG_DBG("Header valid IRQ");
+		/* Run the user callback */
+		data->rx_state.async.header_valid(dev, data->rx_state.async.user_data);
+		return;
+	}
 
 	switch (data->modem_mode) {
 	case MODE_SLEEP:
@@ -489,15 +531,7 @@ static void op_done_work_handler(struct k_work *work)
 		break;
 	}
 
-	/* Get and reset the current IRQ state */
-	(void)ral_get_irq_status(&config->ralf.ral, &irq_state);
-	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
-	error_irq = irq_state & (RAL_IRQ_RX_TIMEOUT | RAL_IRQ_RX_HDR_ERROR | RAL_IRQ_RX_CRC_ERROR);
-
-	/* Release the modem before running the user callback so that the notified thread can
-	 * immediately start another operation before the work item terminates. This requires
-	 * preserving the operation_done pointer, since modem_release clears it.
-	 */
+	/* Preserve the operation_done pointer, since modem_release clears it */
 	sig_done = data->operation_done;
 
 	/* Modem should return to idle */
