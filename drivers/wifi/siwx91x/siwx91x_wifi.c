@@ -454,6 +454,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 {
 	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	sl_wifi_advanced_client_configuration_t client_config = {
+		.max_retry_attempts = 1,
+		.scan_interval = 0,
+		.beacon_missed_count = 0,
+		.first_time_retry_enable = 0,
+	};
 	int ret;
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
@@ -472,6 +478,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {
 		LOG_ERR("Failed to set max tx power:%x", ret);
+		return;
+	}
+
+	ret = sl_wifi_set_advanced_client_configuration(SL_WIFI_CLIENT_INTERFACE, &client_config);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set advanced client config: 0x%x", ret);
 		return;
 	}
 
