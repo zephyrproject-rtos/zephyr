@@ -60,7 +60,7 @@ static inline int ring_have_data(const volatile struct gdb_sram_ring *ring)
 static volatile struct gdb_sram_ring *rx;
 static volatile struct gdb_sram_ring *tx;
 
-#ifndef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
 static int gdb_get_debug_slot(void)
 {
 	struct adsp_dw_desc slot_desc = { .type = ADSP_DW_SLOT_GDB_STUB, };
@@ -83,6 +83,7 @@ static int gdb_get_debug_slot(void)
 
 	return 0;
 }
+#else
 #define RX_UNCACHED (uint8_t *) (HP_SRAM_WIN2_BASE + SOF_GDB_WINDOW_OFFSET)
 #define TX_UNCACHED (uint8_t *) (RX_UNCACHED + sizeof(struct gdb_sram_ring))
 #endif
