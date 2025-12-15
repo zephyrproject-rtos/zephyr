@@ -21,13 +21,3 @@ dut: &sercom1 {
 	dmas = <&dmac 0x3 0x6>, <&dmac 0x4 0x7>;
 	dma-names = "rx", "tx";
 };
-
-/* Pin configuration */
-&pinctrl {
-	sercom1_uart_default: sercom1_uart_default {
-		group1 {
-			pinmux = <PC22C_SERCOM1_PAD0>,
-				 <PC23C_SERCOM1_PAD1>;
-		};
-	};
-};
