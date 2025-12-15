@@ -480,15 +480,11 @@ static int a2dp_ctrl_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uin
 
 static int a2dp_open_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
 {
-	struct bt_a2dp_ep *ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_ctrl_req_cb req_cb;
-	bt_a2dp_ctrl_done_cb done_cb;
 
 	__ASSERT(sep, "Invalid sep");
 	req_cb = a2dp_cb != NULL ? a2dp_cb->establish_req : NULL;
-	done_cb = (ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->established
-								  : NULL;
-	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb);
+	return a2dp_ctrl_ind(session, sep, errcode, req_cb, NULL);
 }
 
 static int a2dp_start_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
@@ -1025,13 +1021,9 @@ static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a
 
 static int bt_a2dp_open_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
-	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->establish_rsp : NULL;
-	bt_a2dp_done_cb done_cb = (ep->stream != NULL && ep->stream->ops != NULL)
-					  ? ep->stream->ops->established
-					  : NULL;
 
-	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb);
+	return bt_a2dp_ctrl_cb(req, rsp_cb, NULL);
 }
 
 static int bt_a2dp_start_cb(struct bt_avdtp_req *req, struct net_buf *buf)
@@ -1397,32 +1389,6 @@ int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
 }
 #endif
 
-int a2dp_endpoint_released(struct bt_avdtp_sep *sep)
-{
-	struct bt_a2dp_ep *ep;
-
-	__ASSERT(sep, "Invalid sep");
-	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
-
-	if (ep->stream != NULL) {
-		struct bt_a2dp_stream_ops *ops;
-		struct bt_a2dp_stream *stream = ep->stream;
-
-		ops = stream->ops;
-		/* Many places set ep->stream as NULL like abort and close.
-		 * it should be OK without lock protection because
-		 * all the related callbacks are in the same zephyr task context.
-		 */
-		ep->stream = NULL;
-
-		if ((ops != NULL) && (ops->released != NULL)) {
-			ops->released(stream);
-		}
-	}
-
-	return 0;
-}
-
 static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.connected = a2dp_connected,
 	.disconnected = a2dp_disconnected,
@@ -1441,6 +1407,54 @@ static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.delay_report_ind = a2dp_delay_report_ind,
 #endif
 };
+
+static void stream_connected(struct bt_avdtp_sep *sep)
+{
+	struct bt_a2dp_ep *ep;
+	struct bt_a2dp_stream *stream;
+
+	__ASSERT(sep, "Invalid sep");
+	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	if (ep->stream == NULL) {
+		return;
+	}
+
+	stream = ep->stream;
+	if (stream->ops != NULL && stream->ops->established != NULL) {
+		stream->ops->established(stream);
+	}
+}
+
+static void stream_disconnected(struct bt_avdtp_sep *sep)
+{
+	struct bt_a2dp_ep *ep;
+	struct bt_a2dp_stream *stream;
+
+	__ASSERT(sep, "Invalid sep");
+	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	if (ep->stream == NULL) {
+		return;
+	}
+
+	stream = ep->stream;
+	ep->stream = NULL;
+	if (stream->ops != NULL && stream->ops->released != NULL) {
+		stream->ops->released(stream);
+	}
+}
+
+static const struct bt_avdtp_sep_ops source_sep_ops = {
+	.connected = stream_connected,
+	.disconnected = stream_disconnected,
+};
+
+#if defined(CONFIG_BT_A2DP_SINK)
+static const struct bt_avdtp_sep_ops sink_sep_ops = {
+	.connected = stream_connected,
+	.disconnected = stream_disconnected,
+	.media_data_cb = bt_a2dp_media_data_callback,
+};
+#endif
 
 int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
 {
@@ -1522,15 +1536,14 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
 
 #if defined(CONFIG_BT_A2DP_SINK)
 	if (sep_type == BT_AVDTP_SINK) {
-		ep->sep.media_data_cb = bt_a2dp_media_data_callback;
+		ep->sep.ops = &sink_sep_ops;
 	} else {
-		ep->sep.media_data_cb = NULL;
+		ep->sep.ops = &source_sep_ops;
 	}
 #else
-	ep->sep.media_data_cb = NULL;
+	ep->sep.ops = &source_sep_ops;
 #endif
 
-	ep->sep.endpoint_released = a2dp_endpoint_released;
 	err = bt_avdtp_register_sep(media_type, sep_type, &(ep->sep));
 	if (err < 0) {
 		return err;
