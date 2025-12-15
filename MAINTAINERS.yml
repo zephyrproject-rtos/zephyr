@@ -1184,6 +1184,7 @@ Display drivers:
     - jfischer-no
     - danieldegrasse
     - VynDragon
+    - KATE-WANG-NXP
   files:
     - drivers/display/
     - dts/bindings/display/
