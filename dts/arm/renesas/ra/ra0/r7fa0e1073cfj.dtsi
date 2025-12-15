@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/ra/ra0/r7fa0e10x.dtsi>
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(64)>;
+	erase-blocks = <&flash 32 2048>;
+};
