@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USB controller
+
+description: |
+  Microchip USB G1 in device mode
+
+compatible: "microchip,usb-g1"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: Register base address and size for the USB peripheral.
+
+  interrupts:
+    required: true
+    description: Interrupt specifier for the USB peripheral.
+
+  num-bidir-endpoints:
+    required: true
+    description: Number of bi-directional endpoints available in the USB peripheral.
+
+  maximum-speed:
+    required: true
+    description: Maximum speed[hs/fs] supported by the USB peripheral.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
