@@ -1,0 +1,33 @@
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2017-2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_FLEXCOMM_NB
+	bool "MCUX FLEXCOMM SPI driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SPI_ENABLED
+	select PINCTRL
+	select RESET
+	help
+	  Enable support for mcux flexcomm spi driver.
+
+if SPI_MCUX_FLEXCOMM_NB
+	config SPI_MCUX_FLEXCOMM_DMA
+		bool "MCUX FLEXCOMM SPI DMA Support"
+		select DMA
+		help
+		  Enable the SPI DMA mode for SPI instances
+		  that enable dma channels in their device tree node.
+
+	if SPI_MCUX_FLEXCOMM_DMA && SPI_ASYNC
+		config DMA_NO_WAIT
+			bool "Don't wait for DMA transfer to finish"
+			default n
+			help
+				By default the SPI_MCUX_FLEXCOMM driver waits for the
+				DMA transfer to be done and the SPI TX FIFO to be empty.
+				When this option is enabled, the driver will not wait
+				to finish and will return immediately.
+	endif # SPI_MCUX_FLEXCOMM_DMA && SPI_ASYNC
+
+endif # SPI_MCUX_FLEXCOMM

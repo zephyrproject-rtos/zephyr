@@ -36,8 +36,6 @@ extern "C" {
  * @{
  */
 
-/** RFC 1034 Section 3.1 */
-#define DNS_SD_INSTANCE_MIN_SIZE 1
 /** RFC 1034 Section 3.1, RFC 6763 Section 7.2 */
 #define DNS_SD_INSTANCE_MAX_SIZE 63
 /** RFC 6763 Section 7.2 - inclusive of underscore */

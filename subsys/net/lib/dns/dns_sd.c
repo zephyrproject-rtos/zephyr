@@ -149,18 +149,11 @@ static bool instance_is_valid(const char *instance)
 	size_t instance_size;
 
 	if (instance == NULL) {
-		NET_DBG("instance is NULL");
-		return false;
+		/* Instance can be empty in case of query */
+		return true;
 	}
 
 	instance_size = strlen(instance);
-	if (instance_size < DNS_SD_INSTANCE_MIN_SIZE) {
-		NET_DBG("instance '%s' is too small (%zu, min: %u)",
-			instance, instance_size,
-			DNS_SD_INSTANCE_MIN_SIZE);
-		return false;
-	}
-
 	if (instance_size > DNS_SD_INSTANCE_MAX_SIZE) {
 		NET_DBG("instance '%s' is too big (%zu, max: %u)",
 			instance, instance_size,
@@ -179,7 +172,7 @@ static bool instance_is_valid(const char *instance)
 		}
 	}
 
-	return instance_size;
+	return true;
 }
 
 static bool service_is_valid(const char *service)
@@ -580,6 +573,13 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 	size_t label_size;
 	uint16_t inst_offs;
 	uint16_t offset = buf_offset;
+	const char *hostname = net_hostname_get();
+
+    if (inst->alias) {
+		NET_DBG("used alias '%s' i.s.o. hostname '%s'",
+			inst->alias, hostname);
+        hostname = inst->alias;
+    }
 
     if (inst->alias) {
 		NET_DBG("used alias '%s' i.s.o. hostname '%s'",
@@ -604,9 +604,9 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 		/* pointer to .<Instance>.<Service>.<Protocol>.local. */
 		DNS_POINTER_SIZE + sizeof(*rr)
 		+ sizeof(*rdata)
-		/* .<Instance> */
+		/* .<Hostname> */
 		+ DNS_LABEL_LEN_SIZE
-		+ strlen(inst->instance)
+		+ strlen(hostname)
 		/* pointer to .local. */
 		+ DNS_POINTER_SIZE;
 
@@ -627,9 +627,9 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 	rr->type = htons(DNS_RR_TYPE_SRV);
 	rr->class_ = htons(DNS_CLASS_IN | DNS_CLASS_FLUSH);
 	rr->ttl = htonl(ttl);
-	/* .<Instance>.local. */
+	/* .<Hostname>.local. */
 	rr->rdlength = htons(sizeof(*rdata) + DNS_LABEL_LEN_SIZE
-			     + strlen(inst->instance) +
+			     + strlen(hostname) +
 			     DNS_POINTER_SIZE);
 	offset += sizeof(*rr);
 
@@ -641,9 +641,9 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 
 	*host_offset = offset;
 
-	label_size = strlen(inst->instance);
+	label_size = strlen(hostname);
 	buf[offset++] = label_size;
-	memcpy(&buf[offset], inst->instance, label_size);
+	memcpy(&buf[offset], hostname, label_size);
 	offset += label_size;
 
 	domain_offset |= DNS_SD_PTR_MASK;
@@ -1028,36 +1028,30 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		}
 	}
 
-	if (query_size <= DNS_MSG_HEADER_SIZE) {
-		NET_DBG("query size %zu is less than DNS_MSG_HEADER_SIZE %d", query_size,
-			DNS_MSG_HEADER_SIZE);
-		return -EINVAL;
-	}
-
-	query += DNS_MSG_HEADER_SIZE;
-	query_size -= DNS_MSG_HEADER_SIZE;
-	offset = DNS_MSG_HEADER_SIZE;
+	offset = 0;
 	dns_sd_create_wildcard_filter(record);
 	/* valid record must have non-NULL port */
 	record->port = &dns_sd_port_zero;
 
+    if (query[0] == '.') {
+        query++;
+    }
+
 	/* also counts labels */
 	for (i = 0, qlabels = 0; query_size > 0;) {
-		qsize = *query;
-		++offset;
-		++query;
-		--query_size;
-
+        qsize = 0;
+        while (qsize < query_size && query[qsize] != '.' && query[qsize] != '\0') {
+		    qsize++;
+	    }
 		if (qsize == 0) {
+			NET_DBG("empty label in query");
+			++query;
+			--query_size;
+			++offset;
 			break;
 		}
 
 		++qlabels;
-		if (qsize >= query_size) {
-			NET_DBG("claimed query size %zu > query buffer size %zu", qsize,
-				query_size);
-			return -EINVAL;
-		}
 
 		if (qsize >= size[i]) {
 			NET_DBG("qsize %zu >= size[%zu] %zu", qsize, i, size[i]);
@@ -1075,6 +1069,15 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		offset += qsize;
 		query += qsize;
 		query_size -= qsize;
+
+		if (query_size && *query == '.') {
+			++query;
+			--query_size;
+			++offset;
+		} else if (strlen(query) == 0) {
+			/* end of query string */
+			break;
+		}
 	}
 
 	/* write-out the actual number of labels in 'n' */
