@@ -673,7 +673,7 @@ static void flash_cpu01_receive_cb(const struct device *ipm, void *user_data, ui
 				volatile void *shm)
 {
 	struct flash_esp32_dev_data *data = (struct flash_esp32_dev_data *) user_data;
-	struct flash_req *req = (struct flash_req *) shm;
+	volatile struct flash_req *req = (volatile struct flash_req *)shm;
 
 #ifdef CONFIG_ESP_FLASH_HOST
 	if (id == CMD_REQUEST) {
