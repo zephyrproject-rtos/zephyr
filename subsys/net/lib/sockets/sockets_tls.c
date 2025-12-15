@@ -2189,17 +2189,38 @@ static int tls_opt_ciphersuite_list_get(struct tls_context *context,
 	return 0;
 }
 
+static struct tls_session_context *get_latest_session(struct tls_context *context)
+{
+	struct tls_session_context *session_ctx = NULL;
+	struct tls_session_context *latest_session_ctx = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&context->sessions, session_ctx, node) {
+		if ((latest_session_ctx == NULL) ||
+		    (session_ctx->handshake_timestamp >
+		     latest_session_ctx->handshake_timestamp)) {
+			latest_session_ctx = session_ctx;
+		}
+	}
+
+	return latest_session_ctx;
+}
+
 static int tls_opt_ciphersuite_used_get(struct tls_context *context,
 					void *optval, net_socklen_t *optlen)
 {
+	struct tls_session_context *session_ctx;
 	const char *ciph;
 
 	if (*optlen != sizeof(int)) {
 		return -EINVAL;
 	}
 
+	session_ctx = get_latest_session(context);
+	if (session_ctx == NULL) {
+		return -ENOTCONN;
+	}
 
-	ciph = mbedtls_ssl_get_ciphersuite(&context->active_session->ssl);
+	ciph = mbedtls_ssl_get_ciphersuite(&session_ctx->ssl);
 	if (ciph == NULL) {
 		return -ENOTCONN;
 	}
@@ -2385,6 +2406,7 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 						     net_socklen_t *optlen)
 {
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+	struct tls_session_context *session_ctx;
 	int enabled = false;
 	int ret;
 	size_t optlen_local;
@@ -2393,8 +2415,12 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 		return -ENOTCONN;
 	}
 
-	ret = mbedtls_ssl_get_peer_cid(&context->active_session->ssl, &enabled,
-				       optval, &optlen_local);
+	session_ctx = get_latest_session(context);
+	if (session_ctx == NULL) {
+		return -ENOTCONN;
+	}
+
+	ret = mbedtls_ssl_get_peer_cid(&session_ctx->ssl, &enabled, optval, &optlen_local);
 	if (enabled) {
 		*optlen = optlen_local;
 	} else {
@@ -2410,6 +2436,7 @@ static int tls_opt_dtls_connection_id_status_get(struct tls_context *context,
 					  void *optval, net_socklen_t *optlen)
 {
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+	struct tls_session_context *session_ctx;
 	struct tls_dtls_cid cid;
 	int ret;
 	int val;
@@ -2425,9 +2452,13 @@ static int tls_opt_dtls_connection_id_status_get(struct tls_context *context,
 		return -ENOTCONN;
 	}
 
-	ret = mbedtls_ssl_get_peer_cid(&context->active_session->ssl, &enabled,
-				       cid.cid,
-				       &cid.cid_len);
+	session_ctx = get_latest_session(context);
+	if (session_ctx == NULL) {
+		return -ENOTCONN;
+	}
+
+	ret = mbedtls_ssl_get_peer_cid(&session_ctx->ssl, &enabled,
+				       cid.cid, &cid.cid_len);
 	if (ret) {
 		/* Handshake is not complete */
 		return -EAGAIN;
@@ -2555,11 +2586,18 @@ static int tls_opt_session_cache_get(struct tls_context *context,
 static int tls_opt_cert_verify_result_get(struct tls_context *context,
 					  void *optval, net_socklen_t *optlen)
 {
+	struct tls_session_context *session_ctx;
+
 	if (*optlen != sizeof(uint32_t)) {
 		return -EINVAL;
 	}
 
-	*(uint32_t *)optval = mbedtls_ssl_get_verify_result(&context->active_session->ssl);
+	session_ctx = get_latest_session(context);
+	if (session_ctx == NULL) {
+		return -ENOTCONN;
+	}
+
+	*(uint32_t *)optval = mbedtls_ssl_get_verify_result(&session_ctx->ssl);
 
 	return 0;
 }
