@@ -47,6 +47,7 @@ source "drivers/led/Kconfig.pca9633"
 source "drivers/led/Kconfig.pwm"
 source "drivers/led/Kconfig.sct2024"
 source "drivers/led/Kconfig.tlc59108"
+source "drivers/led/Kconfig.tlc59116"
 source "drivers/led/Kconfig.xec"
 # zephyr-keep-sorted-stop
 

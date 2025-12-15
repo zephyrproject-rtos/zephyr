@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Tridonic GmbH & Co KG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TLC59116
+	bool "TLC59116 LED driver"
+	default y
+	depends on DT_HAS_TI_TLC59116_ENABLED
+	depends on I2C
+	help
+	  Enable LED driver for TLC59116.
