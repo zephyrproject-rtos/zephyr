@@ -9,12 +9,20 @@
 
 /**
  * @file
- * @brief SCMI System Power Management Protocol
+ * @ingroup scmi_system
+ * @brief Header file for the SCMI System Power Management Protocol.
  */
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 #include <stdint.h>
+
+/**
+ * @brief System-wide power state management via SCMI
+ * @defgroup scmi_system System Power Protocol
+ * @ingroup scmi_protocols
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,5 +157,9 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_SYSTEM_H_ */
