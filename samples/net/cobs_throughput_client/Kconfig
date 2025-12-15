@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SLIP Throughput Client Configuration"
+
+source "Kconfig.zephyr"
+
+config SLIP_THROUGHPUT_PACKET_SIZE
+	int "Default packet size in bytes"
+	default 512
+	range 16 1472
+	help
+	  Default size of packets to send during throughput test.
+	  Maximum is 1472 bytes (MTU 1500 - IP header - UDP header).
+
+config SLIP_THROUGHPUT_SERVER_IP
+	string "Default server IP address"
+	default "192.168.7.1"
+	help
+	  Default IP address of the throughput server.
+
+config SLIP_THROUGHPUT_DURATION_SEC
+	int "Default test duration in seconds"
+	default 60
+	range 1 3600
+	help
+	  Default duration of the throughput test in seconds.
+
+config SLIP_THROUGHPUT_AUTO_START
+	bool "Auto-start throughput test on boot"
+	default n
+	help
+	  If enabled, the throughput test will automatically start
+	  5 seconds after the SLIP interface comes up.
+
