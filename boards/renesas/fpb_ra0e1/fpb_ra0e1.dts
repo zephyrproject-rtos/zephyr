@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra0/r7fa0e1073cfj.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include "fpb_ra0e1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas FPB-RA0E1";
+	compatible = "renesas,ra0e1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport0 8 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport0 9 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport2 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&subclk {
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&port_irq0 {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(1)>;
+		};
+	};
+};
