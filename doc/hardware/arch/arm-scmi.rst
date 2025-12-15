@@ -140,6 +140,7 @@ Protocols
 Currently, Zephyr has support for the following standard protocols:
 
 #. **Power domain management**
+#. **System power management**
 #. **Clock management**
 #. **Pin Control**
 
@@ -157,6 +158,16 @@ example, ``POWER_STATE_GET`` and ``POWER_STATE_SET``.
 .. note::
 	This driver is vendor-agnostic. As such, it may be used on any
 	system that uses SCMI for power domain management operations.
+
+System power management
+-----------------------
+
+This protocol is intended for system power management. This is done via a set
+of functions implementing various commands, for example, ``SYSTEM_POWER_STATE_SET``.
+
+.. note::
+	This driver is vendor-agnostic. As such, it may be used on any
+	system that uses SCMI for system power management operations.
 
 Clock management
 ----------------
