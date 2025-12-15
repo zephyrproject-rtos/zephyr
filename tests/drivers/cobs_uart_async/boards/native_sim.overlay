@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#size-cells = <0>;
+
+	/* UART emulator devices for SLIP interfaces 
+	 * Larger buffers to handle high-throughput test without overflow
+	 */
+	uart_emul0: uart-emul0 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+	};
+
+	uart_emul1: uart-emul1 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+	};
+
+	cobs0: cobs@0 {
+		compatible = "zephyr,cobs-uart-async";
+		reg = <0>;
+		uart = <&uart_emul0>;
+		status = "okay";
+	};
+
+	cobs1: cobs@1 {
+		compatible = "zephyr,cobs-uart-async";
+		reg = <1>;
+		uart = <&uart_emul1>;
+		status = "okay";
+	};
+};

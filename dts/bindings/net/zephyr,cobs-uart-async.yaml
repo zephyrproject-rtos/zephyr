@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Martin Schröder
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  COBS network interface using UART async API with COBS framing.
+
+  This binding creates a network interface instance that uses a UART
+  device for transport. Multiple instances can be created, each using
+  a different UART.
+
+  Example devicetree usage:
+
+    cobs0: cobs@0 {
+      compatible = "zephyr,cobs-uart-async";
+      reg = <0>;
+      uart = <&uart1>;
+      status = "okay";
+    };
+
+    cobs1: cobs@1 {
+      compatible = "zephyr,cobs-uart-async";
+      reg = <1>;
+      uart = <&uart2>;
+      status = "okay";
+    };
+
+    &uart1 {
+      status = "okay";
+      current-speed = <115200>;
+    };
+
+    &uart2 {
+      status = "okay";
+      current-speed = <115200>;
+    };
+
+compatible: "zephyr,cobs-uart-async"
+
+properties:
+  reg:
+    type: int
+    required: true
+    description: |
+      Instance identifier. Must match the unit address.
+      Parent node must have #size-cells = <0>.
+
+  uart:
+    type: phandle
+    required: true
+    description: |
+      UART device to use for this COBS interface.
+      The UART must support async API.
+
+  label:
+    type: string
+    description: Human-readable label for the interface
+

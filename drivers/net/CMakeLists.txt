@@ -8,6 +8,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_CANBUS canbus.c)
 if(CONFIG_NET_NATIVE)
 zephyr_library_sources_ifdef(CONFIG_SLIP slip.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PPP ppp.c)
+zephyr_library_sources_ifdef(CONFIG_COBS_UART_ASYNC cobs_uart_async.c)
 endif()
 
 if(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
