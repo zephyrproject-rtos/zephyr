@@ -13,15 +13,15 @@ some highlights of the STM32F4DISCOVERY board:
 - On-board ST-LINK/V2 debugger/programmer with SWD connector
 - Flexible board power supply:
 
-       - USB VBUS or external source(3.3V, 5V, 7 - 12V)
-       - Power management access point
+  - USB VBUS or external source(3.3V, 5V, 7 - 12V)
+  - Power management access point
 
 - Eight LEDs:
 
-       - USB communication (LD1)
-       - 3.3 V power on (LD2)
-       - Four user LEDs: orange (LD3), green (LD4), red (LD5), and blue (LD6)
-       - 2 USB OTG LEDs for VBUS (LD7) and over-current (LD8)
+  - USB communication (LD1)
+  - 3.3 V power on (LD2)
+  - Four user LEDs: orange (LD3), green (LD4), red (LD5), and blue (LD6)
+  - 2 USB OTG LEDs for VBUS (LD7) and over-current (LD8)
 
 - Two push-buttons: USER and RESET
 - USB OTG FS with micro-AB connector
@@ -63,8 +63,9 @@ STM32F4DISCOVERY Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F407VG can be found here:
-       - `STM32F407VG on www.st.com`_
-       - `STM32F407 reference manual`_
+
+- `STM32F407VG on www.st.com`_
+- `STM32F407 reference manual`_
 
 Supported Features
 ==================
