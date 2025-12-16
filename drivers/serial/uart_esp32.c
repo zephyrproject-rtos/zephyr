@@ -81,6 +81,8 @@ struct uart_esp32_config {
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
 	uint8_t rx_dma_channel;
+	bool uhci_slip_tx;
+	bool uhci_slip_rx;
 #endif
 };
 
@@ -1047,6 +1049,11 @@ static int uart_esp32_init(const struct device *dev)
 		clock_control_on(config->clock_dev, (clock_control_subsys_t)ESP32_UHCI0_MODULE);
 		uhci_ll_init(data->uhci_dev);
 		uhci_ll_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
+
+		/* Configure SLIP encoding/decoding */
+		data->uhci_dev->escape_conf.tx_c0_esc_en = config->uhci_slip_tx ? 1 : 0;
+		data->uhci_dev->escape_conf.rx_c0_esc_en = config->uhci_slip_rx ? 1 : 0;
+
 		uhci_ll_attach_uart_port(data->uhci_dev, uart_hal_get_port_num(&data->hal));
 		data->uart_dev = dev;
 
@@ -1095,7 +1102,9 @@ static DEVICE_API(uart, uart_esp32_api) = {
 #define ESP_UART_DMA_INIT(n)                                                                       \
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(n, tx),                                                  \
 	.tx_dma_channel = ESP32_DT_INST_DMA_CELL(n, tx, channel),                                  \
-	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel)
+	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel),                                  \
+	.uhci_slip_tx = DT_INST_PROP_OR(n, uhci_slip_tx, false),                                   \
+	.uhci_slip_rx = DT_INST_PROP_OR(n, uhci_slip_rx, false)
 
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
