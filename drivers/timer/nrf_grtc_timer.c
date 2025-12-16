@@ -194,6 +194,23 @@ int32_t z_nrf_grtc_timer_chan_alloc(void)
 	return (int32_t)chan;
 }
 
+int32_t z_nrf_grtc_timer_ext_chan_alloc(void)
+{
+	uint8_t chan;
+	int err_code;
+
+	/* Prevent allocating all available channels - one must be left for system purposes. */
+	if (ext_channels_allocated >= EXT_CHAN_COUNT) {
+		return -ENOMEM;
+	}
+	err_code = nrfx_grtc_extended_channel_alloc(&chan);
+	if (err_code < 0) {
+		return -ENOMEM;
+	}
+	ext_channels_allocated++;
+	return (int32_t)chan;
+}
+
 void z_nrf_grtc_timer_chan_free(int32_t chan)
 {
 	IS_CHANNEL_ALLOWED_ASSERT(chan);
@@ -274,6 +291,49 @@ static int compare_set(int32_t chan, uint64_t target_time,
 	compare_int_unlock(chan, key);
 
 	return ret;
+}
+
+static void interval_set_nolocks(int32_t chan, uint32_t initial_val, uint32_t interval_value,
+				z_nrf_grtc_timer_compare_handler_t handler, void *user_data)
+{
+	nrfx_grtc_syscounter_cc_interval_set(chan, initial_val, interval_value);
+	if (handler) {
+		nrfx_grtc_channel_t user_channel_data = {
+			.handler = handler,
+			.p_context = user_data,
+			.channel = chan,
+		};
+		nrfx_grtc_channel_callback_set(chan, user_channel_data.handler,
+					user_channel_data.p_context);
+	}
+}
+
+static void interval_set(int32_t chan, uint32_t initial_val, uint32_t interval_value,
+				z_nrf_grtc_timer_compare_handler_t handler, void *user_data)
+{
+	bool key = compare_int_lock(chan);
+
+	interval_set_nolocks(chan, initial_val, interval_value, handler, user_data);
+
+	compare_int_unlock(chan, key);
+}
+
+int z_nrf_grtc_timer_interval_set(int32_t chan, uint32_t initial_value, uint32_t interval_value,
+				z_nrf_grtc_timer_compare_handler_t handler, void *user_data)
+{
+	if (NRFX_BIT((uint32_t)chan) && NRFX_GRTC_CONFIG_EXTENDED_CC_CHANNELS_MASK == 0) {
+		return -EPERM;
+	}
+
+	interval_set(chan, initial_value, interval_value,
+			(nrfx_grtc_cc_handler_t)handler, user_data);
+
+	return 0;
+}
+
+void z_nrf_grtc_timer_interval_stop(int32_t chan)
+{
+	nrfx_grtc_syscounter_cc_interval_reset(chan);
 }
 
 int z_nrf_grtc_timer_set(int32_t chan, uint64_t target_time,

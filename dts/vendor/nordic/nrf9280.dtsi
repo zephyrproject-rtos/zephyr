@@ -800,6 +800,7 @@
 				cc-num = <16>;
 				clocks = <&lfclk>, <&fll16m>;
 				clock-names = "lfclock", "hfclock";
+				extended-channels = <0>;
 			};
 
 			dppic133: dppic@9a1000 {
