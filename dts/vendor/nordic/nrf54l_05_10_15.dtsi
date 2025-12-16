@@ -574,6 +574,7 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			dppic30: dppic@102000 {

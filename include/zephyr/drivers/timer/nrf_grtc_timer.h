@@ -36,6 +36,22 @@ typedef void (*z_nrf_grtc_timer_compare_handler_t)(int32_t id, uint64_t expire_t
  */
 int32_t z_nrf_grtc_timer_chan_alloc(void);
 
+/** @brief Allocate GRTC extended capture/compare channel.
+ *
+ * @note The periodic CC event (interval) is the special feature, that requires
+ *       allocating channel in this way. See @ref z_nrf_grtc_timer_interval_set.
+ * @note The channels supporting special features are defined by the hardware.
+ *       Refer to Product Specification for more details.
+ * @note Routines that allocate and free the GRTC channels are independent
+ *       from the rest of the driver. In particular, the driver does not need
+ *       to be initialized when this function is called.
+ * @note To free the special channel, just use @ref z_nrf_grtc_timer_chan_free.
+ *
+ * @retval >=0 Non-negative indicates allocated channel ID.
+ * @retval -ENOMEM if channel cannot be allocated.
+ */
+int32_t z_nrf_grtc_timer_ext_chan_alloc(void);
+
 /** @brief Free GRTC capture/compare channel.
  *
  * @param chan Previously allocated channel ID.
@@ -123,7 +139,40 @@ int z_nrf_grtc_timer_compare_read(int32_t chan, uint64_t *val);
  * @retval -EPERM if either channel is unavailable or SYSCOUNTER is not running.
  */
 int z_nrf_grtc_timer_set(int32_t chan, uint64_t target_time,
-			 z_nrf_grtc_timer_compare_handler_t handler, void *user_data);
+				z_nrf_grtc_timer_compare_handler_t handler, void *user_data);
+
+/** @brief Configure periodic interval compare event.
+ *
+ * @note This function configures a periodic compare event for the given channel.
+ *       The event will be generated every @p interval_value ticks until
+ *	 @ref z_nrf_grtc_timer_interval_stop is called.
+ *
+ * @param chan Channel ID.
+ *
+ * @param initial_value Relative compare value (in GRTC ticks) after which
+ *                      the first interval event is generated.
+ *
+ * @param interval_value Relative interval value in GRTC ticks.
+ *
+ * @param handler User callback executed in the GRTC interrupt context.
+ *
+ * @param user_data Data passed to the handler.
+ *
+ * @retval 0 If successful.
+ * @retval -EPERM If the given channel does not support extended features.
+ */
+int z_nrf_grtc_timer_interval_set(int32_t chan, uint32_t initial_value, uint32_t interval_value,
+				z_nrf_grtc_timer_compare_handler_t handler, void *user_data);
+
+/**
+ * @brief Function for stopping the interval periodic event generation for given channel.
+ *
+ * @note This function stops a periodic compare event mode initiated by
+ *       @ref z_nrf_grtc_timer_interval_set.
+ *
+ * @param[in] chan Channel.
+ */
+void z_nrf_grtc_timer_interval_stop(int32_t chan);
 
 /** @brief Abort a timer requested with z_nrf_grtc_timer_set().
  *
