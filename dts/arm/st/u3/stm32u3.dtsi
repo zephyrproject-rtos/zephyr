@@ -418,7 +418,7 @@
 			reg = <0x40015404 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
 			dmas = <&gpdma1 1 36 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -429,7 +429,7 @@
 			reg = <0x40015424 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
 			dmas = <&gpdma1 0 37 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 

@@ -43,7 +43,7 @@
 		reg = <0x2000e000 0x1000>;
 		zephyr,memory-region = "MEM_CACHEABLE_SW_MULTI_ATTR";
 		zephyr,memory-attr = <(DT_MEM_CACHEABLE | DT_MEM_DMA |
-				      DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA)>;
+				       DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA)>;
 	};
 };
 
