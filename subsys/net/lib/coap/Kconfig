@@ -1,6 +1,7 @@
 # CoAP implementation for Zephyr
 
 # Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2026 Siemens AG
 # SPDX-License-Identifier: Apache-2.0
 
 config COAP
@@ -271,6 +272,39 @@ config COAP_SERVER_SHELL
 	depends on SHELL
 	help
 	  Enable CoAP service shell commands.
+
+config COAP_SERVER_OSCORE
+	bool "OSCORE encryption"
+	depends on UOSCORE
+	help
+	  Encrypt all CoAP communication using OSCORE.
+
+if COAP_SERVER_OSCORE
+
+config COAP_SERVER_OSCORE_RECIPIENT_ID
+	string "OSCORE recipient ID (ASCII string)"
+	default "0"
+
+config COAP_SERVER_OSCORE_SENDER_ID
+	string "OSCORE sender ID (ASCII string)"
+	default "1"
+
+config EDHOC_SERVER_STACK_SIZE
+	int "EDHOC server thread stack size"
+	default 1024
+
+config COAP_SERVER_EDHOC_TIMEOUT
+	int "EDHOC library timeout in milliseconds"
+	default 1000
+	help
+	  Timeout value for the EDHOC library to calculate
+	  a response after receiving the request from the initiator.
+	  During this time, the CoAP server is blocked and
+	  cannot process other requests.
+	  The value mainly depends on the speed of the cryptographic
+	  operations on your platform.
+
+endif
 
 endif
 

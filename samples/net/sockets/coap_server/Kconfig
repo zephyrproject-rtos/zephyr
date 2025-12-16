@@ -15,6 +15,12 @@ config NET_SAMPLE_COAP_SERVER_SERVICE_PORT
 	default 5684 if NET_SAMPLE_COAPS_SERVICE
 	default 5683
 
+config NET_SAMPLE_COAP_SERVER_OSCORE
+	bool "Enable OSCORE/EDHOC support"
+	help
+	  Enable OSCORE/EDHOC support.
+	  Use overlay-oscore.conf to enable.
+
 if NET_SAMPLE_COAPS_SERVICE
 
 config NET_SAMPLE_PSK_HEADER_FILE

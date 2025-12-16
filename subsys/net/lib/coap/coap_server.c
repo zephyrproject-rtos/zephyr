@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Basalte bv
+ * Copyright (c) 2026 Siemens AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,13 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_service.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/zvfs/eventfd.h>
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+#include <oscore.h>
+#endif
+
+#ifdef CONFIG_COAP_SERVER_OSCORE
+#include <zephyr/net/edhoc-oscore.h>
+#endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -137,6 +145,7 @@ static int coap_server_process(int sock_fd)
 	ssize_t received;
 	int ret;
 	int flags = ZSOCK_MSG_DONTWAIT;
+	bool request_is_oscore = false;
 
 	if (IS_ENABLED(CONFIG_COAP_SERVER_TRUNCATE_MSGS)) {
 		flags |= ZSOCK_MSG_TRUNC;
@@ -153,6 +162,8 @@ static int coap_server_process(int sock_fd)
 		return -errno;
 	}
 
+	/* In the OSCORE case, we need to parse it here to check for the outer OSCORE option.
+	   In the plaintext case, this is the only parsing. */
 	ret = coap_packet_parse(&request, buf, MIN(received, sizeof(buf)), options, opt_num);
 	if (ret < 0) {
 		LOG_ERR("Failed To parse coap message (%d)", ret);
@@ -210,6 +221,34 @@ static int coap_server_process(int sock_fd)
 		goto unlock;
 	}
 
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+	/* Store this info in a separate variable so we don't have to
+	   keep the encrypted outer packet (only the cleartext inner one) */
+	request_is_oscore = packet_is_oscore(&request);
+	if (request_is_oscore) {
+		LOG_DBG("Received OSCORE protected message len=%u", received);
+
+		static uint8_t decrypted_coap[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+		size_t coap_len = sizeof(decrypted_coap);
+
+		/* First decrypt the raw packet (OSCORE -> CoAP), then parse it */
+		ret = oscore2coap(buf, MIN(received, sizeof(buf)),
+						  decrypted_coap, &coap_len,
+						  &(service->data->edhoc_oscore_ctx.oscore_ctx));
+		if (ret != 0) {
+			LOG_ERR("Failed to decrypt using OSCORE ret=%i", ret);
+			goto unlock;
+		}
+		/* Overwrite the encrypted outer packet (request) with the decrypted inner
+		packet to keep consistency with parsing logic of non-OSCORE packets. */
+		ret = coap_packet_parse(&request, decrypted_coap, coap_len, options, opt_num);
+		if (ret < 0) {
+			LOG_ERR("Failed to parse coap message (%d)", ret);
+			goto unlock;
+		}
+	}
+#endif
+
 	pending = coap_pending_received(&request, service->data->pending, MAX_PENDINGS);
 	if (pending) {
 		uint8_t token[COAP_TOKEN_MAX_LEN];
@@ -253,6 +292,88 @@ static int coap_server_process(int sock_fd)
 		}
 
 		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+#ifdef CONFIG_COAP_SERVER_OSCORE
+		/* The EDHOC handshake uses the ".well-known/edhoc" resource as URI */
+	} else if (coap_header_get_code(&request) == COAP_METHOD_POST &&
+		   coap_uri_path_match(COAP_WELL_KNOWN_EDHOC_PATH, options, opt_num)) {
+		/* CoAP payload buffers */
+		const uint8_t *edhoc_request = NULL;
+		uint16_t edhoc_request_size = 0;
+		static uint8_t edhoc_response[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+		uint16_t edhoc_response_size = sizeof(edhoc_response);
+
+		/* ACK packet buffer */
+		static uint8_t response_pkt_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+
+		edhoc_request = coap_packet_get_payload(&request, &edhoc_request_size);
+		if (edhoc_request == NULL || edhoc_request_size == 0) {
+			LOG_ERR("EDHOC request has no payload");
+			goto unlock;
+		}
+		/* Pass the received EDHOC request to the EDHOC thread */
+		if (edhoc_rx_enqueue(&(service->data->edhoc_oscore_ctx), edhoc_request, edhoc_request_size) != 0) {
+			LOG_ERR("Failed to enqueue EDHOC request");
+			goto unlock;
+		}
+
+		/* Block here until the EDHOC thread is done calculating
+		   an EDHOC response, so we can reply right here. */
+
+		bool timeout = false;
+		uint32_t start_time = k_uptime_get_32();
+
+		/* Get the response from the EDHOC thread and send it */
+		while (edhoc_tx_dequeue(&(service->data->edhoc_oscore_ctx), edhoc_response, &edhoc_response_size) != 0 && !timeout) {
+			k_sleep(K_MSEC(100));
+			timeout = (k_uptime_get_32() - start_time) > CONFIG_COAP_SERVER_EDHOC_TIMEOUT;
+		}
+		if (!timeout) {
+			struct coap_packet response;
+			int ret;
+
+			ret = coap_ack_init(&response, &request, response_pkt_buf, sizeof(response_pkt_buf), COAP_RESPONSE_CODE_CHANGED);
+			if (ret < 0) {
+				LOG_ERR("Failed to init EDHOC response (%d)", ret);
+				goto unlock;
+			}
+
+			ret = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT, COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ);
+			if (ret < 0) {
+				LOG_ERR("coap_append_option_int failed");
+				goto unlock;
+			}
+
+			ret = coap_packet_append_payload_marker(&response);
+			if (ret < 0) {
+				LOG_ERR("coap_packet_append_payload_marker failed");
+				goto unlock;
+			}
+
+			ret = coap_packet_append_payload(&response, edhoc_response, edhoc_response_size);
+			if (ret < 0) {
+				LOG_ERR("coap_packet_append_payload failed");
+				goto unlock;
+			}
+
+			COAP_SERVICE_FOREACH(svc) {
+				if (svc->data->sock_fd < 0) {
+					continue;
+				}
+				ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+				if (ret < 0) {
+					LOG_ERR("Failed to send EDHOC response (%d)", ret);
+					goto unlock;
+				}
+			}
+		} else {
+			/* This happens on slow hardware (increase CONFIG_COAP_SERVER_EDHOC_TIMEOUT)
+			   or more likely because the EDHOC thread failed to parse the request.
+			   In this case we continue so we can still use unencrypted CoAP or try
+			   EDHOC again. */
+			LOG_ERR("EDHOC response timeout");
+			goto unlock;
+		}
+#endif
 	} else {
 		ret = coap_handle_request_len(&request, service->res_begin,
 					      COAP_SERVICE_RESOURCE_COUNT(service),
@@ -283,7 +404,15 @@ static int coap_server_process(int sock_fd)
 				goto unlock;
 			}
 
-			ret = coap_service_send(service, &ack, &client_addr, client_addr_len, NULL);
+			/* If the request was OSCORE protected, mark the response as such too.
+			   Note that for resource responses (replies with body), this
+			   is handled elsewhere. */
+			struct coap_transmission_parameters params = {
+#ifdef CONFIG_COAP_SERVER_OSCORE
+				.is_oscore = request_is_oscore,
+#endif
+			};
+			ret = coap_service_send(service, &ack, &client_addr, client_addr_len, &params);
 		}
 	}
 
@@ -427,6 +556,14 @@ int coap_service_start(const struct coap_service *service)
 		ret = -EALREADY;
 		goto end;
 	}
+	/* Register this CoAP service's EDHOC context with the EDHOC server */
+#ifdef CONFIG_COAP_SERVER_OSCORE
+		ret = edhoc_register_ctx(&service->data->edhoc_oscore_ctx);
+		if (ret != 0) {
+			LOG_ERR("Failed to init EDHOC for service (%d)", ret);
+			goto end;
+		}
+#endif
 
 	/* set the default address (in6addr_any / NET_INADDR_ANY are all 0) */
 	addr_storage = (struct net_sockaddr_storage){0};
@@ -639,10 +776,32 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 		coap_server_update_services();
 	}
 
+#ifdef CONFIG_COAP_SERVER_OSCORE
+	static uint8_t oscore_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t oscore_len = sizeof(oscore_buf);
+
+	if (params && params->is_oscore) {
+		/* Encrypt the CoAP packet before sending it */
+		ret = coap2oscore(cpkt->data, cpkt->offset, oscore_buf, &oscore_len, &(service->data->edhoc_oscore_ctx.oscore_ctx));
+		if (ret != 0) {
+			LOG_ERR("Failed to encrypt packet using OSCORE ret=%i", ret);
+			return ret;
+		}
+		LOG_DBG("Sending OSCORE protected response len=%u", oscore_len);
+	}
+#endif
+
 send:
 	(void)k_mutex_unlock(&lock);
-
+#ifdef CONFIG_COAP_SERVER_OSCORE
+	if (params && params->is_oscore) {
+		ret = zsock_sendto(service->data->sock_fd, oscore_buf, oscore_len, 0, addr, addr_len);
+	} else {
+#endif
 	ret = zsock_sendto(service->data->sock_fd, cpkt->data, cpkt->offset, 0, addr, addr_len);
+#ifdef CONFIG_COAP_SERVER_OSCORE
+	}
+#endif
 	if (ret < 0) {
 		LOG_ERR("Failed to send CoAP message (%d)", ret);
 		return ret;
