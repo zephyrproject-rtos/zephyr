@@ -120,8 +120,8 @@
 		 * https://github.com/zephyrproject-rtos/trusted-firmware-m/blob/master/platform/ext/target/arm/mps2/an521/partition/flash_layout.h
 		 */
 
-		code: memory@38B000 {
-			reg = <0x0038B000 DT_SIZE_K(468)>;
+		code: memory@38b000 {
+			reg = <0x0038b000 DT_SIZE_K(468)>;
 		};
 
 		/* This ram memory region's base address is chosen to avoid

@@ -19,9 +19,9 @@
 	status = "okay";
 	is-ram;
 	dev-size = <DT_SIZE_M(64)>;
-	dev-type = <0x5D>;
-	dev-id = <0x0D>;
-	dev-density = <0xE040>;
+	dev-type = <0x5d>;
+	dev-id = <0x0d>;
+	dev-density = <0xe040>;
 	reset-delay-us = <50>;
 	read-cs-idle-min-ns = <18>;
 	tcem-max-us = <2>;
@@ -30,7 +30,7 @@
 	extra-byte-enable;
 	extra-byte = <0x0>;
 	dummy-bytes-count = "dummy-bytes-count2";
-	read-cmd = <0xEB>;
+	read-cmd = <0xeb>;
 	write-cmd = <0x38>;
 	rx-inst-mode = "quad-spi";
 	rx-addr-mode = "quad-spi";

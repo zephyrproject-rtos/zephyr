@@ -12,9 +12,9 @@
 /delete-node/ &sdram0;
 
 / {
-	sram@80007F00 {
+	sram@80007f00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x80007F00 0x100>;
+		reg = <0x80007f00 0x100>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 

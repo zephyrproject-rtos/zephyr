@@ -39,7 +39,7 @@
 
 		app_partition: partition@1000 {
 			label = "app";
-			reg = <0x00001000 0x001FF000>;
+			reg = <0x00001000 0x001ff000>;
 		};
 	};
 };

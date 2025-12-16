@@ -5,9 +5,9 @@
  */
 
 / {
-	sram@2000F000 {
+	sram@2000f000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000F000 0x1000>;
+		reg = <0x2000f000 0x1000>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 

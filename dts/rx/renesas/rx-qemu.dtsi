@@ -111,7 +111,7 @@
 		pclkblock: pclkblock@80010 {
 			compatible = "renesas,rx-cgc-pclk-block";
 			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
-			      <0x0008001C 4>;
+			      <0x0008001c 4>;
 			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -209,8 +209,8 @@
 			cmt1: timer@88008 {
 				compatible = "renesas,rx-timer-cmt";
 				reg = <0x00088008 0x02>,
-				      <0x0008800A 0x02>,
-				      <0x0008800C 0x02>;
+				      <0x0008800a 0x02>,
+				      <0x0008800c 0x02>;
 				reg-names = "CMCR", "CMCNT", "CMCOR";
 				interrupts = <29 1>;
 				interrupt-names = "cmi";

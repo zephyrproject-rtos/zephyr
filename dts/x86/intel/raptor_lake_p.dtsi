@@ -77,7 +77,7 @@
 		uart1: uart1 {
 			compatible = "ns16550";
 			vendor-id = <0x8086>;
-			device-id = <0x51A9>;
+			device-id = <0x51a9>;
 			reg-shift = <2>;
 			clock-frequency = <1843200>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;

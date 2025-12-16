@@ -28,9 +28,9 @@
 };
 
 &flashctrl {
-	flash0: flash@A0000000 {
+	flash0: flash@a0000000 {
 		compatible = "soc-nv-flash", "gd,25lq32d";
-		reg = <0xA0000000 (0x400000 - 0x2000)>;
+		reg = <0xa0000000 (0x400000 - 0x2000)>;
 		write-block-size = <256>;
 		erase-block-size = <DT_SIZE_K(4)>;
 

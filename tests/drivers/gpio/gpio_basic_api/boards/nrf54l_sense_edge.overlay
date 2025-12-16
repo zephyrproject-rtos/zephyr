@@ -5,5 +5,5 @@
  */
 
 &gpio1 {
-	sense-edge-mask = <0xC00>;
+	sense-edge-mask = <0xc00>;
 };

@@ -190,9 +190,9 @@
 		 * if enabled.
 		 */
 
-		storage_partition: partition@fA000 {
+		storage_partition: partition@fa000 {
 			label = "storage";
-			reg = <0x000fA000 0x00006000>;
+			reg = <0x000fa000 0x00006000>;
 		};
 	};
 };

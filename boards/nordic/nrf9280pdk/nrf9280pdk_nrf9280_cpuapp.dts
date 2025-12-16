@@ -133,7 +133,7 @@
 	 *  - Bell 18: cpurad
 	 *  - Bells 24, 25, 29, 31: cpucell
 	 */
-	nordic,interrupt-mapping = <0xA3042041 0>;
+	nordic,interrupt-mapping = <0xa3042041 0>;
 };
 
 &cpurad_bellboard {

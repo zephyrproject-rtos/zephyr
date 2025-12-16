@@ -89,7 +89,7 @@
 
 		pinctrl: pin-controller@8c11f {
 			compatible = "renesas,rx-pinctrl";
-			reg = <0x0008C11F 0x3c0>;
+			reg = <0x0008c11f 0x3c0>;
 			status = "okay";
 		};
 
@@ -270,11 +270,11 @@
 			#gpio-cells = <0x02>;
 			ngpios = <8>;
 			port = <0>;
-			reg = <0x0008C000 0x01>,
-			      <0x0008C020 0x01>,
-			      <0x0008C040 0x01>,
-			      <0x0008C060 0x01>,
-			      <0x0008C0C0 0x01>;
+			reg = <0x0008c000 0x01>,
+			      <0x0008c020 0x01>,
+			      <0x0008c040 0x01>,
+			      <0x0008c060 0x01>,
+			      <0x0008c0c0 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR";
 			pinmux = <&pinmux0>;
 			status = "disabled";
@@ -286,14 +286,14 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <1>;
-			reg = <0x0008C001 0x01>,
-			      <0x0008C021 0x01>,
-			      <0x0008C041 0x01>,
-			      <0x0008C061 0x01>,
-			      <0x0008C082 0x01>,
-			      <0x0008C083 0x01>,
-			      <0x0008C0C1 0x01>,
-			      <0x0008C0E1 0x01>;
+			reg = <0x0008c001 0x01>,
+			      <0x0008c021 0x01>,
+			      <0x0008c041 0x01>,
+			      <0x0008c061 0x01>,
+			      <0x0008c082 0x01>,
+			      <0x0008c083 0x01>,
+			      <0x0008c0c1 0x01>,
+			      <0x0008c0e1 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux1>;
 			port-irqs = <&port_irq2 &port_irq3 &port_irq4
@@ -319,14 +319,14 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <2>;
-			reg = <0x0008C002 0x01>,
-			      <0x0008C022 0x01>,
-			      <0x0008C042 0x01>,
-			      <0x0008C062 0x01>,
-			      <0x0008C084 0x01>,
-			      <0x0008C085 0x01>,
-			      <0x0008C0C2 0x01>,
-			      <0x0008C0E2 0x01>;
+			reg = <0x0008c002 0x01>,
+			      <0x0008c022 0x01>,
+			      <0x0008c042 0x01>,
+			      <0x0008c062 0x01>,
+			      <0x0008c084 0x01>,
+			      <0x0008c085 0x01>,
+			      <0x0008c0c2 0x01>,
+			      <0x0008c0e2 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux2>;
 			status = "disabled";
@@ -338,14 +338,14 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <3>;
-			reg = <0x0008C003 0x01>,
-			      <0x0008C023 0x01>,
-			      <0x0008C043 0x01>,
-			      <0x0008C063 0x01>,
-			      <0x0008C086 0x01>,
-			      <0x0008C087 0x01>,
-			      <0x0008C0C3 0x01>,
-			      <0x0008C0E3 0x01>;
+			reg = <0x0008c003 0x01>,
+			      <0x0008c023 0x01>,
+			      <0x0008c043 0x01>,
+			      <0x0008c063 0x01>,
+			      <0x0008c086 0x01>,
+			      <0x0008c087 0x01>,
+			      <0x0008c0c3 0x01>,
+			      <0x0008c0e3 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux3>;
 			port-irqs = <&port_irq0 &port_irq1 &port_irq2 &port_irq3 &port_irq4>;
@@ -368,11 +368,11 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <4>;
-			reg = <0x0008C004 0x01>,
-			      <0x0008C024 0x01>,
-			      <0x0008C044 0x01>,
-			      <0x0008C064 0x01>,
-			      <0x0008C0C4 0x01>;
+			reg = <0x0008c004 0x01>,
+			      <0x0008c024 0x01>,
+			      <0x0008c044 0x01>,
+			      <0x0008c064 0x01>,
+			      <0x0008c0c4 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR";
 			pinmux = <&pinmux4>;
 			status = "disabled";
@@ -384,12 +384,12 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <5>;
-			reg = <0x0008C005 0x01>,
-			      <0x0008C025 0x01>,
-			      <0x0008C045 0x01>,
-			      <0x0008C065 0x01>,
-			      <0x0008C0C5 0x01>,
-			      <0x0008C0E5 0x01>;
+			reg = <0x0008c005 0x01>,
+			      <0x0008c025 0x01>,
+			      <0x0008c045 0x01>,
+			      <0x0008c065 0x01>,
+			      <0x0008c0c5 0x01>,
+			      <0x0008c0e5 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR", "DSCR";
 			pinmux = <&pinmux5>;
 			status = "disabled";
@@ -401,14 +401,14 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <10>;
-			reg = <0x0008C00A 0x01>,
-			      <0x0008C02A 0x01>,
-			      <0x0008C04A 0x01>,
-			      <0x0008C06A 0x01>,
-			      <0x0008C094 0x01>,
-			      <0x0008C095 0x01>,
-			      <0x0008C0CA 0x01>,
-			      <0x0008C0EA 0x01>;
+			reg = <0x0008c00a 0x01>,
+			      <0x0008c02a 0x01>,
+			      <0x0008c04a 0x01>,
+			      <0x0008c06a 0x01>,
+			      <0x0008c094 0x01>,
+			      <0x0008c095 0x01>,
+			      <0x0008c0ca 0x01>,
+			      <0x0008c0ea 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmuxa>;
 			port-irqs = <&port_irq5 &port_irq6>;
@@ -425,14 +425,14 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <11>;
-			reg = <0x0008C00B 0x01>,
-			      <0x0008C02B 0x01>,
-			      <0x0008C04B 0x01>,
-			      <0x0008C06B 0x01>,
-			      <0x0008C096 0x01>,
-			      <0x0008C097 0x01>,
-			      <0x0008C0CB 0x01>,
-			      <0x0008C0EB 0x01>;
+			reg = <0x0008c00b 0x01>,
+			      <0x0008c02b 0x01>,
+			      <0x0008c04b 0x01>,
+			      <0x0008c06b 0x01>,
+			      <0x0008c096 0x01>,
+			      <0x0008c097 0x01>,
+			      <0x0008c0cb 0x01>,
+			      <0x0008c0eb 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmuxb>;
 			port-irqs = <&port_irq4>;
@@ -447,14 +447,14 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <12>;
-			reg = <0x0008C00C 0x01>,
-			      <0x0008C02C 0x01>,
-			      <0x0008C04C 0x01>,
-			      <0x0008C06C 0x01>,
-			      <0x0008C098 0x01>,
-			      <0x0008C099 0x01>,
-			      <0x0008C0CC 0x01>,
-			      <0x0008C0EC 0x01>;
+			reg = <0x0008c00c 0x01>,
+			      <0x0008c02c 0x01>,
+			      <0x0008c04c 0x01>,
+			      <0x0008c06c 0x01>,
+			      <0x0008c098 0x01>,
+			      <0x0008c099 0x01>,
+			      <0x0008c0cc 0x01>,
+			      <0x0008c0ec 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmuxc>;
 			status = "disabled";
@@ -466,13 +466,13 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <13>;
-			reg = <0x0008C00D 0x01>,
-			      <0x0008C02D 0x01>,
-			      <0x0008C04D 0x01>,
-			      <0x0008C06D 0x01>,
-			      <0x0008C09A 0x01>,
-			      <0x0008C0CD 0x01>,
-			      <0x0008C0ED 0x01>;
+			reg = <0x0008c00d 0x01>,
+			      <0x0008c02d 0x01>,
+			      <0x0008c04d 0x01>,
+			      <0x0008c06d 0x01>,
+			      <0x0008c09a 0x01>,
+			      <0x0008c0cd 0x01>,
+			      <0x0008c0ed 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxd>;
 			port-irqs = <&port_irq0 &port_irq1 &port_irq2
@@ -503,13 +503,13 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <14>;
-			reg = <0x0008C00E 0x01>,
-			      <0x0008C02E 0x01>,
-			      <0x0008C04E 0x01>,
-			      <0x0008C06E 0x01>,
-			      <0x0008C09C 0x01>,
-			      <0x0008C0CE 0x01>,
-			      <0x0008C0EE 0x01>;
+			reg = <0x0008c00e 0x01>,
+			      <0x0008c02e 0x01>,
+			      <0x0008c04e 0x01>,
+			      <0x0008c06e 0x01>,
+			      <0x0008c09c 0x01>,
+			      <0x0008c0ce 0x01>,
+			      <0x0008c0ee 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxe>;
 			port-irqs = <&port_irq5 &port_irq6 &port_irq7>;
@@ -528,12 +528,12 @@
 			#gpio-cells = <2>;
 			ngpios = <8>;
 			port = <17>;
-			reg = <0x0008C011 0x01>,
-			      <0x0008C031 0x01>,
-			      <0x0008C051 0x01>,
-			      <0x0008C071 0x01>,
-			      <0x0008C0D1 0x01>,
-			      <0x0008C0F1 0x01>;
+			reg = <0x0008c011 0x01>,
+			      <0x0008c031 0x01>,
+			      <0x0008c051 0x01>,
+			      <0x0008c071 0x01>,
+			      <0x0008c0d1 0x01>,
+			      <0x0008c0f1 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR", "DSCR";
 			pinmux = <&pinmuxh>;
 			port-irqs = <&port_irq0 &port_irq1>;
@@ -550,13 +550,13 @@
 			#gpio-cells = <0x2>;
 			ngpios = <8>;
 			port = <18>;
-			reg = <0x0008C012 0x01>,
-			      <0x0008C032 0x01>,
-			      <0x0008C052 0x01>,
-			      <0x0008C072 0x01>,
-			      <0x0008C0A4 0x01>,
-			      <0x0008C0D2 0x01>,
-			      <0x0008C0F2 0x01>;
+			reg = <0x0008c012 0x01>,
+			      <0x0008c032 0x01>,
+			      <0x0008c052 0x01>,
+			      <0x0008c072 0x01>,
+			      <0x0008c0a4 0x01>,
+			      <0x0008c0d2 0x01>,
+			      <0x0008c0f2 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxj>;
 			status = "disabled";
@@ -566,7 +566,7 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <215 1>, <216 1>, <217 1>, <214 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8A000 0x20>;
+			reg = <0x8a000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
 			channel = <0>;
 			dtc = <&dtc>;
@@ -582,7 +582,7 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <219 1>, <220 1>, <221 1>, <218 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8A020 0x20>;
+			reg = <0x8a020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
 			channel = <1>;
 			dtc = <&dtc>;
@@ -598,7 +598,7 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <223 1>, <224 1>, <225 1>, <222 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8A0A0 0x20>;
+			reg = <0x8a0a0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
 			channel = <5>;
 			dtc = <&dtc>;
@@ -614,7 +614,7 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <227 1>, <228 1>, <229 1>, <226 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8A0C0 0x20>;
+			reg = <0x8a0c0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
 			channel = <6>;
 			dtc = <&dtc>;
@@ -630,7 +630,7 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <231 1>, <232 1>, <233 1>, <230 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8A100 0x20>;
+			reg = <0x8a100 0x20>;
 			clocks = <&pclkb MSTPC 27>;
 			channel = <8>;
 			dtc = <&dtc>;
@@ -785,7 +785,7 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <235 1>, <236 1>, <237 1>, <234 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8A120 0x20>;
+			reg = <0x8a120 0x20>;
 			clocks = <&pclkb MSTPC 26>;
 			status = "disabled";
 			channel = <9>;
@@ -832,8 +832,8 @@
 			cmt1: timer@88008 {
 				compatible = "renesas,rx-timer-cmt";
 				reg = <0x00088008 0x02>,
-				      <0x0008800A 0x02>,
-				      <0x0008800C 0x02>;
+				      <0x0008800a 0x02>,
+				      <0x0008800c 0x02>;
 				reg-names = "CMCR", "CMCNT", "CMCOR";
 				interrupts = <29 1>;
 				interrupt-names = "cmi";
@@ -867,7 +867,7 @@
 
 		ctsu: ctsu@a0900 {
 			compatible = "renesas,rx-ctsu";
-			reg = <0x000A0900 0x100>;
+			reg = <0x000a0900 0x100>;
 			clocks = <&pclkb MSTPD 10>;
 			interrupts = <60 1>, <61 1>, <62 1>;
 			interrupt-names = "ctsuwr", "ctsurd", "ctsufn";
@@ -876,7 +876,7 @@
 
 		lvd0: lvd@800e0 {
 			compatible = "renesas,rx-lvd";
-			reg = <0x000800E0 0x02>;
+			reg = <0x000800e0 0x02>;
 			channel = <0>;
 			interrupts = <88 1>;
 			interrupt-names = "lvd";
@@ -885,7 +885,7 @@
 
 		lvd1: lvd@800e2 {
 			compatible = "renesas,rx-lvd";
-			reg = <0x000800E2 0x02>;
+			reg = <0x000800e2 0x02>;
 			channel = <1>;
 			interrupts = <89 1>;
 			interrupt-names = "lvd";
@@ -895,7 +895,7 @@
 
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
-			reg = <0xFFFFFF80 0x0F>;
+			reg = <0xffffff80 0x0f>;
 			zephyr,memory-region = "OFSM";
 			status = "okay";
 		};

@@ -103,7 +103,7 @@
 
 		code_partition: partition@4000 {
 			label = "code";
-			reg = <0x4000 0x3C000>;
+			reg = <0x4000 0x3c000>;
 			read-only;
 		};
 	};

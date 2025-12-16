@@ -230,7 +230,7 @@
 		iic0: iic0@4025e000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;
-			reg = <0x4025E000 0x100>;
+			reg = <0x4025e000 0x100>;
 			status = "disabled";
 		};
 
@@ -239,7 +239,7 @@
 			channel = <1>;
 			interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x4025E100 0x100>;
+			reg = <0x4025e100 0x100>;
 			status = "disabled";
 		};
 

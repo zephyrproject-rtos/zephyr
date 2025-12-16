@@ -273,7 +273,7 @@ test_spi_bmi08x_accel: bmi08x@23 {
 	int-gpios = <&test_gpio 0 0>;
 	int1-map-io = <0x01>;
 	int2-map-io = <0x00>;
-	int1-conf-io = <0x0A>;
+	int1-conf-io = <0x0a>;
 	int2-conf-io = <0x17>;
 	accel-hz = "800";
 	accel-fs = <4>;

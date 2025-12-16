@@ -240,7 +240,7 @@
 		};
 
 		slot0_partition: partition@c000 {
-			reg = <0x0000C000 DT_SIZE_K(472)>;
+			reg = <0x0000c000 DT_SIZE_K(472)>;
 			label = "image-0";
 		};
 
@@ -249,8 +249,8 @@
 			label = "image-1";
 		};
 
-		storage_partition: partition@F8000 {
-			reg = <0x000F8000 DT_SIZE_K(32)>;
+		storage_partition: partition@f8000 {
+			reg = <0x000f8000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
 	};

@@ -88,10 +88,10 @@
 		zephyr,memory-region = "SRAM1";
 	};
 
-	sram3: memory@205C0000 {
+	sram3: memory@205c0000 {
 		compatible = "mmio-sram";
 		/* Only use 256K, align with SDK */
-		reg = <0x205C0000 DT_SIZE_K(256)>;
+		reg = <0x205c0000 DT_SIZE_K(256)>;
 	};
 
 	sram4: memory@20600000 {

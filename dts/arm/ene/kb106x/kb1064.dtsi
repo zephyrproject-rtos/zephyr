@@ -57,7 +57,7 @@
 
 	pwm10: pwm@402100a0 {
 		compatible = "ene,kb106x-pwm";
-		reg = <0x402100A0 0x10>;
+		reg = <0x402100a0 0x10>;
 		pwm-channel = <10>;
 		#pwm-cells = <3>;
 		status = "disabled";
@@ -65,7 +65,7 @@
 
 	pwm11: pwm@402100b0 {
 		compatible = "ene,kb106x-pwm";
-		reg = <0x402100B0 0x10>;
+		reg = <0x402100b0 0x10>;
 		pwm-channel = <11>;
 		#pwm-cells = <3>;
 		status = "disabled";
@@ -73,7 +73,7 @@
 
 	pwm12: pwm@402100c0 {
 		compatible = "ene,kb106x-pwm";
-		reg = <0x402100C0 0x10>;
+		reg = <0x402100c0 0x10>;
 		pwm-channel = <12>;
 		#pwm-cells = <3>;
 		status = "disabled";
@@ -81,7 +81,7 @@
 
 	pwm13: pwm@402100d0 {
 		compatible = "ene,kb106x-pwm";
-		reg = <0x402100D0 0x10>;
+		reg = <0x402100d0 0x10>;
 		pwm-channel = <13>;
 		#pwm-cells = <3>;
 		status = "disabled";
@@ -89,7 +89,7 @@
 
 	pwm14: pwm@402100e0 {
 		compatible = "ene,kb106x-pwm";
-		reg = <0x402100E0 0x10>;
+		reg = <0x402100e0 0x10>;
 		pwm-channel = <14>;
 		#pwm-cells = <3>;
 		status = "disabled";
@@ -97,7 +97,7 @@
 
 	pwm15: pwm@402100f0 {
 		compatible = "ene,kb106x-pwm";
-		reg = <0x402100F0 0x10>;
+		reg = <0x402100f0 0x10>;
 		pwm-channel = <15>;
 		#pwm-cells = <3>;
 		status = "disabled";

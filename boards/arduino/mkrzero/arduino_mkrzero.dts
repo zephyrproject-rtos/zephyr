@@ -135,7 +135,7 @@ zephyr_i2c: &sercom0 {
 
 		code_partition: partition@2000 {
 			label = "code";
-			reg = <0x2000 0x3A000>;
+			reg = <0x2000 0x3a000>;
 			read-only;
 		};
 

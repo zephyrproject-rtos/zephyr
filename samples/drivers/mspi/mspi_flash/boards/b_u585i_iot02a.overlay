@@ -45,9 +45,9 @@
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_DUAL"; /* as first step */
 				mspi-hardware-ce-num = <0>;
-				read-command = <0xEE11>;                /* ReaD 4Bytes */
+				read-command = <0xee11>;                /* ReaD 4Bytes */
 				command-length = "INSTR_2_BYTE";
-				write-command = <0x12ED>; /* WRite 4Bytes */
+				write-command = <0x12ed>; /* WRite 4Bytes */
 				rx-dummy = <20>;
 				jedec-id = [c2 85 3a];
 				status = "okay";

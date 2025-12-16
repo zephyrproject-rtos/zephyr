@@ -15,8 +15,8 @@
 			reg = <0x2f0bf800 DT_SIZE_K(1)>;
 		};
 
-		cpurad_cpuapp_ipc_shm_b: memory@2f0bfC00 {
-			reg = <0x2f0bfC00 DT_SIZE_K(1)>;
+		cpurad_cpuapp_ipc_shm_b: memory@2f0bfc00 {
+			reg = <0x2f0bfc00 DT_SIZE_K(1)>;
 		};
 	};
 

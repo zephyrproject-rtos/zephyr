@@ -35,8 +35,8 @@
 		};
 	};
 
-	flash0: flash@2000B400 {
-		reg = <0x2000B400 0x40000>;
+	flash0: flash@2000b400 {
+		reg = <0x2000b400 0x40000>;
 	};
 
 	sram0: memory@20050000 {
@@ -94,7 +94,7 @@
 			interrupts = <196 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR0_CLKPWR>;
 			clock-names = "tmr32";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <25000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -107,7 +107,7 @@
 			interrupts = <197 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR1_CLKPWR>;
 			clock-names = "tmr32";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <25000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -120,7 +120,7 @@
 			interrupts = <198 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR2_CLKPWR>;
 			clock-names = "tmr32";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <25000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -133,7 +133,7 @@
 			interrupts = <199 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR3_CLKPWR>;
 			clock-names = "tmr32";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <25000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -146,7 +146,7 @@
 			interrupts = <200 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR4_CLKPWR>;
 			clock-names = "tmr32";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <25000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -159,7 +159,7 @@
 			interrupts = <201 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR5_CLKPWR>;
 			clock-names = "tmr32";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <25000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -173,20 +173,20 @@
 			reg = <0x400b1000 0x200		/* espi target */
 			       0x400a0400 0x01c		/* port80 */
 			       0x400a0200 0x1c			/* ACPI */
-			       0x400A021C 0x1C			/* PROMT0 */
-			       0x400A0238 0x1C			/* PROMT1 */
-			       0x400A0254 0x1C			/* PROMT2 */
-			       0x400A0270 0x1C			/* PROMT3 */
+			       0x400a021c 0x1c			/* PROMT0 */
+			       0x400a0238 0x1c			/* PROMT1 */
+			       0x400a0254 0x1c			/* PROMT2 */
+			       0x400a0270 0x1c			/* PROMT3 */
 			       0x40082000 0x14			/* EMI0 */
 			       0x40082020 0x14			/* EMI1 */
 			       0x40082040 0x14			/* EMI2 */
 			       0x40082060 0x14			/* EMI3 */
 			       0x40082080 0x14			/* EMI4 */
-			       0x400820A0 0x14			/* EMI5 */
-			       0x400820C0 0x14			/* EMI6 */
-			       0x400820E0 0x14			/* EMI7 */
+			       0x400820a0 0x14			/* EMI5 */
+			       0x400820c0 0x14			/* EMI6 */
+			       0x400820e0 0x14			/* EMI7 */
 			       0x400a0100 0x1c			/* KBC */
-			       0x400B1600 0xd0>;		/* MBX */
+			       0x400b1600 0xd0>;		/* MBX */
 
 			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
 				    "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
@@ -250,7 +250,7 @@
 			interrupts = <202 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_SLWTMR0_CLKPWR>;
 			clock-names = "slwtmr";
-			max-value = <0xFFFFFFFF>;
+			max-value = <0xffffffff>;
 			clock-frequency = <1000000>;
 			prescaler = <0>;
 			status = "disabled";
@@ -277,7 +277,7 @@
 			#size-cells = <0>;
 			compatible = "realtek,rts5912-spi";
 			clocks = <&sccon RTS5912_SCCON_SYS 0>;
-			reg = <0x40010400 0x3C>;
+			reg = <0x40010400 0x3c>;
 			status = "disabled";
 		};
 

@@ -375,7 +375,7 @@
 		};
 
 		/* 256K */
-		slot1_ns_partition: partition@A0000 {
+		slot1_ns_partition: partition@a0000 {
 			label = "image-1-nonsecure";
 		};
 

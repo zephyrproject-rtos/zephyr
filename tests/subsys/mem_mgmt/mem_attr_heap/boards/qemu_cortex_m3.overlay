@@ -17,30 +17,30 @@
 		zephyr,memory-attr = <(DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE)>;
 	};
 
-	mem_noncache_sw: memory@2000A000 {
+	mem_noncache_sw: memory@2000a000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000A000 0x1000>;
+		reg = <0x2000a000 0x1000>;
 		zephyr,memory-region = "MEM_NON_CACHEABLE_SW";
 		zephyr,memory-attr = <DT_MEM_SW_ALLOC_NON_CACHE>;
 	};
 
-	mem_dma_sw: memory@2000B000 {
+	mem_dma_sw: memory@2000b000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000B000 0x1000>;
+		reg = <0x2000b000 0x1000>;
 		zephyr,memory-region = "MEM_DMA_SW";
 		zephyr,memory-attr = <(DT_MEM_DMA | DT_MEM_SW_ALLOC_DMA)>;
 	};
 
-	mem_cache_sw_big: memory@2000C000 {
+	mem_cache_sw_big: memory@2000c000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000C000 0x2000>;
+		reg = <0x2000c000 0x2000>;
 		zephyr,memory-region = "MEM_CACHEABLE_SW_BIG";
 		zephyr,memory-attr = <(DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE)>;
 	};
 
-	mem_cache_cache_dma_multi: memory@2000E000 {
+	mem_cache_cache_dma_multi: memory@2000e000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000E000 0x1000>;
+		reg = <0x2000e000 0x1000>;
 		zephyr,memory-region = "MEM_CACHEABLE_SW_MULTI_ATTR";
 		zephyr,memory-attr = <(DT_MEM_CACHEABLE | DT_MEM_DMA |
 				      DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA)>;

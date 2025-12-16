@@ -86,7 +86,7 @@
 		 */
 		bbram: bb-ram@400af001 {
 			compatible = "nuvoton,npcx-bbram";
-			reg = <0x400af001 0x7F
+			reg = <0x400af001 0x7f
 			       0x400af100 0x1>;
 			reg-names = "memory", "status";
 		};
@@ -106,7 +106,7 @@
 		uart1: serial@400e0000 {
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART1 register, Index 1: MDMA1 register */
-			reg = <0x400E0000 0x2000 0x40011100 0x100>;
+			reg = <0x400e0000 0x2000 0x40011100 0x100>;
 			interrupts = <33 4>;
 			/* Index 0: UART1 clock, Index 1: MDMA1 clock */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4
@@ -118,7 +118,7 @@
 		uart2: serial@400e2000 {
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART2 register, Index 1: MDMA2 register */
-			reg = <0x400E2000 0x2000 0x40011200 0x100>;
+			reg = <0x400e2000 0x2000 0x40011200 0x100>;
 			interrupts = <32 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6
 				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 1>;
@@ -129,7 +129,7 @@
 		uart3: serial@400e4000 {
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART3 register, Index 1: MDMA3 register */
-			reg = <0x400E4000 0x2000 0x40011300 0x100>;
+			reg = <0x400e4000 0x2000 0x40011300 0x100>;
 			interrupts = <38 4>;
 			/* Index 0: UART3 clock, Index 1: MDMA3 clock */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4
@@ -141,7 +141,7 @@
 		uart4: serial@400e6000 {
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART4 register, Index 1: MDMA4 register */
-			reg = <0x400E6000 0x2000 0x40011400 0x100>;
+			reg = <0x400e6000 0x2000 0x40011400 0x100>;
 			interrupts = <39 4>;
 			/* Index 0: UART4 clock, Index 1: MDMA4 clock */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3
@@ -386,7 +386,7 @@
 			interrupts = <22 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 3>;
 			vref-mv = <3300>;
-			speed-conf = <0x03 0x8B07 0x0100 0x0001>;
+			speed-conf = <0x03 0x8b07 0x0100 0x0001>;
 			channel-count = <26>;
 			threshold-count = <6>;
 			status = "disabled";
@@ -582,6 +582,6 @@
 	soc-id {
 		family-id = <0x23>;
 		chip-id = <0x0a>;
-		revision-reg = <0x0000FFFC 4>;
+		revision-reg = <0x0000fffc 4>;
 	};
 };

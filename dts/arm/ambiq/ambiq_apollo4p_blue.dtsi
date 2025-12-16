@@ -84,7 +84,7 @@
 	/* SRAM */
 	sram0: memory@10010000 {
 		compatible = "mmio-sram";
-		reg = <0x10010000 0x2B0000>;
+		reg = <0x10010000 0x2b0000>;
 	};
 
 	soc {
@@ -203,7 +203,7 @@
 
 		timer5: timer@400080a0 {
 			compatible = "ambiq,timer";
-			reg = <0x400080A0 0x20>;
+			reg = <0x400080a0 0x20>;
 			interrupts = <72 0>;
 			clk-source = "CLK_SELECT_HFRC_DIV64";
 
@@ -221,7 +221,7 @@
 
 		timer6: timer@400080c0 {
 			compatible = "ambiq,timer";
-			reg = <0x400080C0 0x20>;
+			reg = <0x400080c0 0x20>;
 			interrupts = <73 0>;
 			clk-source = "CLK_SELECT_HFRC_DIV64";
 
@@ -239,7 +239,7 @@
 
 		timer7: timer@400080e0 {
 			compatible = "ambiq,timer";
-			reg = <0x400080E0 0x20>;
+			reg = <0x400080e0 0x20>;
 			interrupts = <74 0>;
 			clk-source = "CLK_SELECT_HFRC_DIV64";
 
@@ -347,7 +347,7 @@
 
 		timer13: timer@400081a0 {
 			compatible = "ambiq,timer";
-			reg = <0x400081A0 0x20>;
+			reg = <0x400081a0 0x20>;
 			interrupts = <80 0>;
 			clk-source = "CLK_SELECT_HFRC_DIV64";
 
@@ -365,7 +365,7 @@
 
 		timer14: timer@400081c0 {
 			compatible = "ambiq,timer";
-			reg = <0x400081C0 0x20>;
+			reg = <0x400081c0 0x20>;
 			interrupts = <81 0>;
 			clk-source = "CLK_SELECT_HFRC_DIV64";
 
@@ -383,7 +383,7 @@
 
 		timer15: timer@400081e0 {
 			compatible = "ambiq,timer";
-			reg = <0x400081E0 0x20>;
+			reg = <0x400081e0 0x20>;
 			interrupts = <82 0>;
 			clk-source = "CLK_SELECT_HFRC_DIV64";
 
@@ -651,7 +651,7 @@
 
 		usb: usb@400b0000 {
 			compatible = "ambiq,usb";
-			reg = <0x400B0000 0x4100>;
+			reg = <0x400b0000 0x4100>;
 			interrupts = <27 0>;
 			num-bidir-endpoints = <6>;
 			maximum-speed = "full-speed";
