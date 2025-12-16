@@ -116,14 +116,6 @@ const ether_extended_cfg_t g_ether0_extended_cfg_t = {
 const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg = {
 	.p_target_init = ETHER_DEFAULT, .p_target_link_partner_ability_get = ETHER_DEFAULT};
 
-const ether_phy_cfg_t g_ether_phy0_cfg;
-
-ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
-
-const ether_phy_instance_t g_ether_phy0 = {.p_ctrl = &g_ether_phy0_ctrl,
-					   .p_cfg = &g_ether_phy0_cfg,
-					   .p_api = &g_ether_phy_on_ether_phy};
-
 const ether_cfg_t g_ether0_cfg = {
 	.channel = ETHER_CHANNEL0,
 	.zerocopy = ETHER_ZEROCOPY_DISABLE,
@@ -141,7 +133,6 @@ const ether_cfg_t g_ether0_cfg = {
 	.irq = DT_INST_IRQN(0),
 	.interrupt_priority = DT_INST_IRQ(0, priority),
 	.p_callback = ETHER_DEFAULT,
-	.p_ether_phy_instance = &g_ether_phy0,
 	.p_context = ETHER_DEFAULT,
 	.p_extend = &g_ether0_extended_cfg_t,
 };
