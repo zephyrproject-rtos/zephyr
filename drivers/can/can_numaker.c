@@ -16,15 +16,12 @@
 #include <soc.h>
 #include <NuMicro.h>
 
-#if defined(CONFIG_SOC_SERIES_M55M1X)
-#include <zephyr/dt-bindings/clock/numaker_m55m1x_clock.h>
-#endif
-
 LOG_MODULE_REGISTER(can_numaker, CONFIG_CAN_LOG_LEVEL);
 
 /* Implementation notes
+ *
  * 1. Use Bosch M_CAN driver (m_can) as backend
- * 2. Need to modify can_numaker_get_core_clock() for new SOC support
+ * 2. For new SoC series port, add CAN in clock_control_get_rate()
  */
 
 struct can_numaker_config {
@@ -44,81 +41,15 @@ static int can_numaker_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_numaker_config *config = mcan_config->custom;
-	uint32_t clksrc_rate_idx;
-	uint32_t clkdiv_divider;
-	__typeof__(CANFD0_MODULE) clk_modidx_real;
+	struct numaker_scc_subsys scc_subsys = {.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC,
+						.pcc.clk_modidx = config->clk_modidx};
+	int rc;
 
-#if defined(CONFIG_SOC_SERIES_M55M1X)
-	switch (config->clk_modidx) {
-	case NUMAKER_CANFD0_MODULE:
-		clk_modidx_real = CANFD0_MODULE;
-		break;
-	case NUMAKER_CANFD1_MODULE:
-		clk_modidx_real = CANFD1_MODULE;
-		break;
-	default:
-		LOG_ERR("Invalid clock module index");
-		return -EIO;
+	rc = clock_control_get_rate(config->clk_dev, (clock_control_subsys_t)&scc_subsys, rate);
+	if (rc < 0) {
+		LOG_ERR("Failed clock_control_get_rate(): %d", rc);
+		return rc;
 	}
-#else
-	clk_modidx_real = config->clk_modidx;
-#endif
-
-	/* Module clock source rate */
-	clksrc_rate_idx = CLK_GetModuleClockSource(clk_modidx_real);
-	/* Module clock divider */
-	clkdiv_divider = CLK_GetModuleClockDivider(clk_modidx_real) + 1;
-
-	switch (clksrc_rate_idx) {
-#if defined(CONFIG_SOC_SERIES_M46X) || defined(CONFIG_SOC_SERIES_M333X)
-	case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = __HXT / clkdiv_divider;
-		break;
-	case (CLK_CLKSEL0_CANFD0SEL_PLL_DIV2 >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = (CLK_GetPLLClockFreq() / 2) / clkdiv_divider;
-		break;
-	case (CLK_CLKSEL0_CANFD0SEL_HCLK >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = CLK_GetHCLKFreq() / clkdiv_divider;
-		break;
-	case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = __HIRC / clkdiv_divider;
-		break;
-#elif defined(CONFIG_SOC_SERIES_M2L31X)
-	case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = __HXT / clkdiv_divider;
-		break;
-	case (CLK_CLKSEL0_CANFD0SEL_HIRC48M >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = __HIRC48 / clkdiv_divider;
-		break;
-	case (CLK_CLKSEL0_CANFD0SEL_HCLK >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = CLK_GetHCLKFreq() / clkdiv_divider;
-		break;
-	case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
-		*rate = __HIRC / clkdiv_divider;
-		break;
-#elif defined(CONFIG_SOC_SERIES_M55M1X)
-	case (CLK_CANFDSEL_CANFD0SEL_HXT >> CLK_CANFDSEL_CANFD0SEL_Pos):
-		*rate = __HXT / clkdiv_divider;
-		break;
-	case (CLK_CANFDSEL_CANFD0SEL_APLL0_DIV2 >> CLK_CANFDSEL_CANFD0SEL_Pos):
-		*rate = (CLK_GetAPLL0ClockFreq() / 2) / clkdiv_divider;
-		break;
-	case (CLK_CANFDSEL_CANFD0SEL_HCLK0 >> CLK_CANFDSEL_CANFD0SEL_Pos):
-		*rate = CLK_GetHCLK0Freq() / clkdiv_divider;
-		break;
-	case (CLK_CANFDSEL_CANFD0SEL_HIRC >> CLK_CANFDSEL_CANFD0SEL_Pos):
-		*rate = __HIRC / clkdiv_divider;
-		break;
-	case (CLK_CANFDSEL_CANFD0SEL_HIRC48M_DIV4 >> CLK_CANFDSEL_CANFD0SEL_Pos):
-		*rate = (__HIRC48M / 4) / clkdiv_divider;
-		break;
-#endif
-	default:
-		LOG_ERR("Invalid clock source rate index");
-		return -EIO;
-	}
-
-	LOG_DBG("Clock rate index/divider: %d/%d", clksrc_rate_idx, clkdiv_divider);
 
 	return 0;
 }
