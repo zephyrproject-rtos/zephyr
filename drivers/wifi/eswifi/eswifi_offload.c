@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 static int eswifi_off_bind(struct net_context *context,
 			   const struct net_sockaddr *addr,
-			   socklen_t addrlen)
+			   net_socklen_t addrlen)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
@@ -98,7 +98,7 @@ static void eswifi_off_connect_work(struct k_work *work)
 
 static int eswifi_off_connect(struct net_context *context,
 			      const struct net_sockaddr *addr,
-			      socklen_t addrlen,
+			      net_socklen_t addrlen,
 			      net_context_connect_cb_t cb,
 			      int32_t timeout,
 			      void *user_data)
@@ -295,7 +295,7 @@ static int eswifi_off_send(struct net_pkt *pkt,
 
 static int eswifi_off_sendto(struct net_pkt *pkt,
 			     const struct net_sockaddr *dst_addr,
-			     socklen_t addrlen,
+			     net_socklen_t addrlen,
 			     net_context_send_cb_t cb,
 			     int32_t timeout,
 			     void *user_data)
@@ -446,7 +446,7 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 
 	if (!strncmp(msg, msg_tcp_accept, sizeof(msg_tcp_accept) - 1)) {
 		struct eswifi_off_socket *socket = NULL;
-		struct in_addr *sin_addr;
+		struct net_in_addr *sin_addr;
 		uint8_t ip[4];
 		uint16_t port = 0;
 		char *str;
@@ -488,7 +488,7 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 
 		sin_addr = &peer->sin_addr;
 		memcpy(&sin_addr->s4_addr, ip, 4);
-		peer->sin_port = htons(port);
+		peer->sin_port = net_htons(port);
 		peer->sin_family = NET_AF_INET;
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 		socket->usage++;
