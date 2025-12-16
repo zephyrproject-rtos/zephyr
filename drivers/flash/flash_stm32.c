@@ -13,9 +13,9 @@
 #define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <zephyr/cache.h>
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/init.h>
@@ -28,6 +28,14 @@
 #include "flash_stm32.h"
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
+
+#ifdef CONFIG_STM32_HAL2
+#define STM32_FLASH_KEY1	LL_FLASH_KEY1
+#define STM32_FLASH_KEY2	LL_FLASH_KEY2
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_FLASH_KEY1	FLASH_KEY1
+#define STM32_FLASH_KEY2	FLASH_KEY2
+#endif /* CONFIG_STM32_HAL2 */
 
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
@@ -70,8 +78,8 @@ static int flash_stm32_check_status(const struct device *dev)
 			(unsigned long)FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
 							FLASH_STM32_SR_ERRORS);
 		/* Clear errors to unblock usage of the flash */
-		FLASH_STM32_REGS(dev)->FLASH_STM32_SR = FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
-							FLASH_STM32_SR_ERRORS;
+		FLASH_STM32_REGS(dev)->FLASH_STM32_CCR = FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+							 FLASH_STM32_SR_ERRORS;
 		return -EIO;
 	}
 
@@ -257,8 +265,8 @@ int flash_stm32_cr_lock(const struct device *dev, bool enable)
 		regs->NSCR |= FLASH_STM32_NSLOCK;
 	} else {
 		if (regs->NSCR & FLASH_STM32_NSLOCK) {
-			regs->NSKEYR = FLASH_KEY1;
-			regs->NSKEYR = FLASH_KEY2;
+			regs->NSKEYR = STM32_FLASH_KEY1;
+			regs->NSKEYR = STM32_FLASH_KEY2;
 		}
 	}
 #elif defined(FLASH_CR_LOCK)
@@ -266,8 +274,8 @@ int flash_stm32_cr_lock(const struct device *dev, bool enable)
 		regs->CR |= FLASH_CR_LOCK;
 	} else {
 		if (regs->CR & FLASH_CR_LOCK) {
-			regs->KEYR = FLASH_KEY1;
-			regs->KEYR = FLASH_KEY2;
+			regs->KEYR = STM32_FLASH_KEY1;
+			regs->KEYR = STM32_FLASH_KEY2;
 		}
 	}
 #else
@@ -371,20 +379,24 @@ static int flash_stm32_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
 	 * This is required on STM32H5, where the manufacturing flash must be
 	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
 	 */
 	cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
 
+#ifdef CONFIG_STM32_HAL2
+	*size = (uint64_t)FLASH_SIZE;
+#else /* CONFIG_STM32_HAL2 */
 	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+#endif /* CONFIG_STM32_HAL2 */
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
 	cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
 
 	return 0;
 }
