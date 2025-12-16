@@ -60,17 +60,6 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_PERM_MASK (PMP_R | PMP_W | PMP_X)
 
-/**
- * @brief Decodes PMP configuration and address registers into a memory region's
- * start/end addresses.
- *
- * @param cfg_byte The PMP configuration byte (pmpcfg_n).
- * @param pmp_addr A pointer to the full array of PMP address registers (pmpaddr_n).
- * @param index The current PMP entry index.
- * @param start Pointer to where the calculated start address should be stored.
- * @param end Pointer to where the calculated end address should be stored.
- */
-IF_DISABLED(CONFIG_ZTEST, (static))
 void pmp_decode_region(uint8_t cfg_byte, unsigned long *pmp_addr, unsigned int index,
 		       unsigned long *start, unsigned long *end)
 {

@@ -49,4 +49,19 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm);
  */
 void z_riscv_pmp_clear_all(void);
 
+/**
+ * @brief Decodes PMP configuration and address registers into a memory region's
+ * start/end addresses.
+ *
+ * @kconfig_dep{CONFIG_RISCV_PMP}
+ *
+ * @param cfg_byte The PMP configuration byte (pmpcfg_n).
+ * @param pmp_addr A pointer to the full array of PMP address registers (pmpaddr_n).
+ * @param index The current PMP entry index.
+ * @param start Pointer to where the calculated start address should be stored.
+ * @param end Pointer to where the calculated end address should be stored.
+ */
+void pmp_decode_region(uint8_t cfg_byte, unsigned long *pmp_addr, unsigned int index,
+		       unsigned long *start, unsigned long *end);
+
 #endif /* ZEPHYR_INCLUDE_RISCV_PMP_H_ */
