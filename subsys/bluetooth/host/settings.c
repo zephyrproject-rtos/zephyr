@@ -33,45 +33,28 @@
 LOG_MODULE_REGISTER(bt_settings);
 
 #if defined(CONFIG_BT_SETTINGS_USE_PRINTK)
-int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
+void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    const bt_addr_le_t *addr, const char *key)
 {
-	int err;
-
 	if (key) {
-		err = snprintk(path, path_size, "bt/%s/%02x%02x%02x%02x%02x%02x%u/%s", subsys,
-			       addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
-			       addr->a.val[1], addr->a.val[0], addr->type, key);
+		snprintk(path, path_size,
+			 "bt/%s/%02x%02x%02x%02x%02x%02x%u/%s", subsys,
+			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
+			 addr->type, key);
 	} else {
-		err = snprintk(path, path_size, "bt/%s/%02x%02x%02x%02x%02x%02x%u", subsys,
-			       addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
-			       addr->a.val[1], addr->a.val[0], addr->type);
-	}
-
-	if (err < 0) {
-		return -EINVAL;
+		snprintk(path, path_size,
+			 "bt/%s/%02x%02x%02x%02x%02x%02x%u", subsys,
+			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
+			 addr->type);
 	}
 
 	LOG_DBG("Encoded path %s", path);
-
-	return 0;
 }
-
-static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const char *key)
-{
-	int err;
-
-	err = snprintk(path, path_size, "bt/%s", key);
-	if (err < 0) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-#else /* !CONFIG_BT_SETTINGS_USE_PRINTK */
-int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			   const bt_addr_le_t *addr, const char *key)
+#else
+void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
+			    const bt_addr_le_t *addr, const char *key)
 {
 	size_t len = 3;
 
@@ -81,75 +64,44 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 		 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
 		 */
 		strcpy(path, "bt/");
-
-		/* Concatenate subsys and addr */
-		if (subsys != NULL) {
-			/* Concatenate subsys as much the free space permits */
-			strncpy(&path[len], subsys, path_size - len);
-			len = strlen(path);
-
-			/* If there is more free space, postfix '/' */
-			if (len < path_size) {
-				path[len] = '/';
-				len++;
-			}
-
-			/* Concatenate addr as much the free space permits */
-			for (int8_t i = 5; i >= 0 && len < path_size; i--) {
-				len += bin2hex(&addr->a.val[i], 1, &path[len],
-					       path_size - len);
-			}
-
-			/* If there is more free space, postfix type */
-			if (len < path_size) {
-				/* Type can be either BT_ADDR_LE_PUBLIC or
-				 * BT_ADDR_LE_RANDOM (value 0 or 1)
-				 */
-				path[len] = '0' + addr->type;
-				len++;
-			}
-		} else {
-			/* Decrement len so that we remove '/' */
-			len--;
-		}
-
-		/* Concatenate key */
-		if (key && len < path_size) {
-			/* Prefix `/` if concatenating the key */
+		strncpy(&path[len], subsys, path_size - len);
+		len = strlen(path);
+		if (len < path_size) {
 			path[len] = '/';
 			len++;
-
-			/* Concatenate key as much the free space permits */
-			strncpy(&path[len], key, path_size - len);
-			len += strlen(&path[len]);
-		} else {
-			/* Restore back the removed '/' if both subsys and key were not added. */
-			if (len < 3) {
-				len++;
-			}
 		}
 
-		/* If path string is full, always null terminate at path_size */
+		for (int8_t i = 5; i >= 0 && len < path_size; i--) {
+			len += bin2hex(&addr->a.val[i], 1, &path[len],
+				       path_size - len);
+		}
+
+		if (len < path_size) {
+			/* Type can be either BT_ADDR_LE_PUBLIC or
+			 * BT_ADDR_LE_RANDOM (value 0 or 1)
+			 */
+			path[len] = '0' + addr->type;
+			len++;
+		}
+
+		if (key && len < path_size) {
+			path[len] = '/';
+			len++;
+			strncpy(&path[len], key, path_size - len);
+			len += strlen(&path[len]);
+		}
+
 		if (len >= path_size) {
 			/* Truncate string */
 			path[path_size - 1] = '\0';
 		}
-
 	} else if (path_size > 0) {
-		/* path_size not sufficient for "bt/" */
 		*path = '\0';
 	}
 
 	LOG_DBG("Encoded path %s", path);
-
-	return 0;
 }
-
-static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const char *key)
-{
-	return bt_settings_encode_key(path, path_size, NULL, NULL, key);
-}
-#endif /* !CONFIG_BT_SETTINGS_USE_PRINTK */
+#endif
 
 int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 {
@@ -372,23 +324,21 @@ __weak void bt_testing_settings_delete_hook(const char *key)
 int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, const void *value,
 		      size_t val_len)
 {
-	char key_str[BT_SETTINGS_KEY_MAX];
-	char id_str[4];
 	int err;
+	char id_str[4];
+	char key_str[BT_SETTINGS_KEY_MAX];
 
 	if (addr) {
 		if (id) {
 			u8_to_dec(id_str, sizeof(id_str), id);
 		}
 
-		err = bt_settings_encode_key(key_str, sizeof(key_str), key, addr,
-					     (id ? id_str : NULL));
+		bt_settings_encode_key(key_str, sizeof(key_str), key, addr, (id ? id_str : NULL));
 	} else {
-		err = bt_settings_encode_key_no_addr(key_str, sizeof(key_str), key);
-	}
-
-	if (err != 0) {
-		return err;
+		err = snprintk(key_str, sizeof(key_str), "bt/%s", key);
+		if (err < 0) {
+			return -EINVAL;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
@@ -400,23 +350,21 @@ int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, con
 
 int bt_settings_delete(const char *key, uint8_t id, const bt_addr_le_t *addr)
 {
-	char key_str[BT_SETTINGS_KEY_MAX];
-	char id_str[4];
 	int err;
+	char id_str[4];
+	char key_str[BT_SETTINGS_KEY_MAX];
 
 	if (addr) {
 		if (id) {
 			u8_to_dec(id_str, sizeof(id_str), id);
 		}
 
-		err = bt_settings_encode_key(key_str, sizeof(key_str), key, addr,
-					     (id ? id_str : NULL));
+		bt_settings_encode_key(key_str, sizeof(key_str), key, addr, (id ? id_str : NULL));
 	} else {
-		err = bt_settings_encode_key_no_addr(key_str, sizeof(key_str), key);
-	}
-
-	if (err != 0) {
-		return err;
+		err = snprintk(key_str, sizeof(key_str), "bt/%s", key);
+		if (err < 0) {
+			return -EINVAL;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
