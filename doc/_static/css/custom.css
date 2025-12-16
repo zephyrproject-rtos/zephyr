@@ -121,94 +121,6 @@ hr,
     border-color: var(--hr-color);
 }
 
-/* JavaScript documentation directives */
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list) > dt {
-    background-color: var(--admonition-note-background-color);
-    border-color: var(--admonition-note-title-background-color);
-    color: var(--admonition-note-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl dt {
-    background-color: transparent;
-    border-color: transparent;
-    color: var(--footer-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute dt {
-    font-weight: 600;
-    padding: 0 8px;
-    margin-bottom: 1px;
-    width: 100%;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class > dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function > dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method > dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute > dt {
-    font-family: var(--monospace-font-family);
-    font-variant-ligatures: none;
-    font-size: 90%;
-    font-weight: normal;
-    margin-bottom: 16px;
-    padding: 6px 8px;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-prename.descclassname {
-    color: var(--highlight-type2-color);
-    font-weight: normal;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-name.descname {
-    color: var(--highlight-function-color);
-    font-weight: 700;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-paren,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
-    color: var(--highlight-operator-color) !important;
-    font-weight: normal;
-    padding: 0 2px;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
-    font-style: italic;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > em {
-    color: var(--code-literal-color);
-    font-style: normal;
-    padding: 0 4px;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .k {
-    font-style: normal;
-}
-html.writer-html5 .rst-content dl:not(.docutils) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
-    border-top-color: var(--highlight-background-emph-color);
-    background: var(--highlight-background-color);
-}
-html.writer-html5 .rst-content dl:not(.docutils) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
-    border-left-color: var(--highlight-background-emph-color);
-    background: var(--highlight-background-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > .optional ~ em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > .optional ~ em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > .optional ~ em {
-    color: var(--highlight-number-color);
-    font-style: italic;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em.property {
-    color: var(--highlight-keyword-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink {
-    color: var(--link-color) !important;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink:visited {
-    color: var(--link-color-visited);
-}
-html.writer-html5 .rst-content dl.field-list > dd strong {
-    font-family: var(--monospace-font-family);
-    font-variant-ligatures: none;
-}
 
 footer,
 #search-results .context {
@@ -605,6 +517,31 @@ kbd, .kbd,
 .rst-content section > h5 {
     border-color: transparent;
     font-weight: 100;
+}
+
+/* Definition lists */
+.rst-content dl {
+    border-left: 4px solid var(--admonition-note-background-color);
+}
+
+.rst-content dl:not(.field-list) > dt {
+    position: relative;
+    padding-left: 1rem;
+    line-height: 1.8rem;
+    background: var(--highlight-background-color);
+    border-radius: 0 16px 16px 0;
+}
+
+.rst-content dl:not(.field-list) > dt::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+    background: var(--admonition-note-title-background-color);
+    border-radius: 50%;
+    border: 4px solid var(--content-background-color);
 }
 
 /* Buttons */
