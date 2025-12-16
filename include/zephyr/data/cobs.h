@@ -123,30 +123,16 @@ struct cobs_decode_state {
 /**
  * @brief Initialize a COBS streaming encoder context
  *
- * @param self        Pointer to the COBS encoder state machine context
+ * @param self        Pointer to the COBS encoder state machine context (must not be NULL)
  */
 void cobs_encode_init(struct cobs_encode_state *self);
 
 /**
- * @brief Reset a COBS streaming encoder context
- *
- * @param self        Pointer to the COBS encoder state machine context
- */
-void cobs_encode_reset(struct cobs_encode_state *self);
-
-/**
  * @brief Initialize a COBS streaming decoder context
  *
- * @param self        Pointer to the COBS decoder state machine context
+ * @param self        Pointer to the COBS decoder state machine context (must not be NULL)
  */
 void cobs_decode_init(struct cobs_decode_state *self);
-
-/**
- * @brief Reset a COBS streaming decoder context
- *
- * @param self        Pointer to the COBS decoder state machine context
- */
-void cobs_decode_reset(struct cobs_decode_state *self);
 
 /**
  * @brief Encode data using a COBS streaming state machine
@@ -159,12 +145,13 @@ void cobs_decode_reset(struct cobs_decode_state *self);
  * @param src         Source buffer to encode (data is pulled from it)
  * @param dst         Destination buffer for encoded data
  * @param dst_len     On input: capacity of dst; On output: bytes written
+ * @param delimiter   Delimiter byte value (typically COBS_DEFAULT_DELIMITER)
  *
  * @retval 0        Success
- * @retval -EINVAL  Invalid parameters
+ * @retval -EINVAL  Invalid parameters or delimiter conflicts with overhead byte
  */
 int cobs_encode_stream(struct cobs_encode_state *self, struct net_buf *src,
-			uint8_t *dst, size_t *dst_len);
+			uint8_t *dst, size_t *dst_len, uint8_t delimiter);
 
 /**
  * @brief Finalize COBS encoding and flush remaining data
@@ -174,12 +161,14 @@ int cobs_encode_stream(struct cobs_encode_state *self, struct net_buf *src,
  * @param self        Pointer to the COBS encoder state machine context
  * @param dst         Destination buffer for encoded data
  * @param dst_len     On input: capacity of dst; On output: bytes written
+ * @param delimiter   Delimiter byte value (typically COBS_DEFAULT_DELIMITER)
  *
  * @retval 0        Success (encoder is reset)
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid parameters
  */
-int cobs_encode_finalize(struct cobs_encode_state *self, uint8_t *dst, size_t *dst_len);
+int cobs_encode_finalize(struct cobs_encode_state *self, uint8_t *dst, size_t *dst_len,
+			 uint8_t delimiter);
 
 /**
  * @brief Decode data using a COBS streaming state machine
@@ -192,13 +181,14 @@ int cobs_encode_finalize(struct cobs_encode_state *self, uint8_t *dst, size_t *d
  * @param src         Source buffer fragment to decode
  * @param src_len     Length of source data
  * @param dst         Destination net_buf for decoded data
+ * @param delimiter   Delimiter byte value (typically COBS_DEFAULT_DELIMITER)
  *
  * @retval >0       Number of bytes processed (frame may be complete)
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid COBS structure or unexpected delimiter
  */
 int cobs_decode_stream(struct cobs_decode_state *self, const uint8_t *src,
-			size_t src_len, struct net_buf *dst);
+			size_t src_len, struct net_buf *dst, uint8_t delimiter);
 
 /** @} */
 #ifdef __cplusplus

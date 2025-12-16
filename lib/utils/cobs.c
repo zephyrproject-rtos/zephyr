@@ -10,199 +10,109 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/data/cobs.h>
 
-/* ========================================================================
- * Block-based Encoding Helpers
- * ======================================================================== */
-
-/* Check if destination buffer has sufficient space */
-static inline int validate_encode_space(const struct net_buf *src, 
-					const struct net_buf *dst, 
-					uint32_t flags)
-{
-	size_t max_encoded_size = cobs_max_encoded_len(src->len, flags);
-
-	if (net_buf_tailroom(dst) < max_encoded_size) {
-		return -ENOMEM;
-	}
-	
-	return 0;
-}
-
-/* Handle delimiter found during encoding */
-static inline void handle_delimiter(uint8_t **code_ptr, uint8_t *code, 
-				    struct net_buf *dst)
-{
-	**code_ptr = *code;
-	*code_ptr = net_buf_add(dst, 1);
-	*code = 1;
-}
-
-/* Handle data byte during encoding */
-static inline void handle_data_byte(uint8_t data, uint8_t **code_ptr, 
-				    uint8_t *code, struct net_buf *dst,
-				    const struct net_buf *src)
-{
-	net_buf_add_u8(dst, data);
-	(*code)++;
-
-	/* If we've reached maximum block size, start a new block */
-	if (*code == 0xFF && src->len > 0) {
-		handle_delimiter(code_ptr, code, dst);
-	}
-}
-
-/* Add trailing delimiter if requested */
-static inline void add_trailing_delimiter(struct net_buf *dst, uint32_t flags, 
-					  uint8_t delimiter)
-{
-	if (flags & COBS_FLAG_TRAILING_DELIMITER) {
-		net_buf_add_u8(dst, delimiter);
-	}
-}
+/* Block-based Encoding */
 
 int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
-	int ret = validate_encode_space(src, dst, flags);
+	uint8_t delimiter = COBS_FLAG_CUSTOM_DELIMITER(flags);
+	size_t max_encoded_size = cobs_max_encoded_len(src->len, flags);
+	if (net_buf_tailroom(dst) < max_encoded_size) {
+		return -ENOMEM;
+	}
+
+	/* Empty input encodes as {0x01} */
+	if (src->len == 0) {
+		net_buf_add_u8(dst, 0x01);
+		if ((flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+			net_buf_add_u8(dst, delimiter);
+		}
+		return 0;
+	}
+
+	/* Use streaming encoder */
+	struct cobs_encode_state state = {0};
+
+	cobs_encode_init(&state);
+
+	uint8_t *encode_buf = net_buf_tail(dst);
+	size_t encode_capacity = net_buf_tailroom(dst);
+	size_t encoded_len = encode_capacity;
+
+	int ret = cobs_encode_stream(&state, src, encode_buf, &encoded_len, delimiter);
+
 	if (ret != 0) {
 		return ret;
 	}
 
-	uint8_t delimiter = COBS_FLAG_CUSTOM_DELIMITER(flags);
-	uint8_t *code_ptr = net_buf_add(dst, 1);
-	uint8_t code = 1;
+	/* Finalize encoding */
+	size_t finalize_capacity = encode_capacity - encoded_len;
+	size_t finalized_len = finalize_capacity;
 
-	/* Process all input bytes */
-	while (src->len > 0) {
-		uint8_t data = net_buf_pull_u8(src);
-		
-		if (data == delimiter) {
-			handle_delimiter(&code_ptr, &code, dst);
-		} else {
-			handle_data_byte(data, &code_ptr, &code, dst, src);
-		}
+	ret = cobs_encode_finalize(&state, encode_buf + encoded_len,
+				   &finalized_len, delimiter);
+	if (ret != 0) {
+		return ret;
 	}
 
-	*code_ptr = code;
-	add_trailing_delimiter(dst, flags, delimiter);
+	net_buf_add(dst, encoded_len + finalized_len);
+	net_buf_pull(src, src->len);
 
-	return 0;
-}
-
-/* ========================================================================
- * Block-based Decoding Helpers
- * ======================================================================== */
-
-/* Validate and remove trailing delimiter if present */
-static inline int validate_trailing_delimiter(struct net_buf *src, 
-					      const uint32_t flags,
-					      const uint8_t delimiter)
-{
-	if (!(flags & COBS_FLAG_TRAILING_DELIMITER)) {
-		return 0;
-	}
-
-	uint8_t end_delim = net_buf_remove_u8(src);
-	if (end_delim != delimiter) {
-		return -EINVAL;
-	}
-	
-	return 0;
-}
-
-/* Validate offset byte */
-static inline int validate_offset(const uint8_t offset, const uint8_t delimiter, 
-				  const uint32_t flags)
-{
-	if (offset == delimiter && !(flags & COBS_FLAG_TRAILING_DELIMITER)) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
-/* Verify sufficient data available for block */
-static inline int verify_block_data(const struct net_buf *src, uint8_t offset)
-{
-	if (src->len < (offset - 1)) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
-/* Copy data bytes from encoded block */
-static inline int copy_block_data_bytes(struct net_buf *src, struct net_buf *dst,
-					uint8_t count, const uint8_t delimiter)
-{
-	for (uint8_t i = 0; i < count; i++) {
-		uint8_t byte = net_buf_pull_u8(src);
-
-		if (byte == delimiter) {
-			return -EINVAL;
-		}
-		net_buf_add_u8(dst, byte);
-	}
-	
-	return 0;
-}
-
-/* Insert delimiter between blocks if needed */
-static inline void insert_delimiter_if_needed(struct net_buf *dst, uint8_t offset,
-					      const struct net_buf *src,
-					      const uint8_t delimiter)
-{
-	/* If this wasn't a maximum offset and we have more data,
-	 * there was a delimiter here in the original data
-	 */
-	if (offset != 0xFF && src->len > 0) {
+	if ((flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
 		net_buf_add_u8(dst, delimiter);
 	}
+
+	return 0;
 }
+
+/* Block-based Decoding */
 
 int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 {
 	uint8_t delimiter = COBS_FLAG_CUSTOM_DELIMITER(flags);
 
-	int ret = validate_trailing_delimiter(src, flags, delimiter);
-	if (ret != 0) {
+	/* Handle trailing delimiter if present */
+	if ((flags & COBS_FLAG_TRAILING_DELIMITER) != 0U) {
+		if (src->len == 0) {
+			return -EINVAL;
+		}
+		uint8_t end_delim = net_buf_remove_u8(src);
+		if (end_delim != delimiter) {
+			return -EINVAL;
+		}
+	}
+
+	/* Add synthetic delimiter for streaming decoder */
+	struct cobs_decode_state state = {0};
+
+	cobs_decode_init(&state);
+
+	uint8_t temp_buf[src->len + 1];
+
+	memcpy(temp_buf, src->data, src->len);
+	temp_buf[src->len] = delimiter;
+
+	int ret = cobs_decode_stream(&state, temp_buf, src->len + 1, dst, delimiter);
+
+	if (ret < 0) {
 		return ret;
 	}
 
-	while (src->len > 0) {
-		/* Pull the COBS offset byte */
-		uint8_t offset = net_buf_pull_u8(src);
-
-		ret = validate_offset(offset, delimiter, flags);
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = verify_block_data(src, offset);
-		if (ret != 0) {
-			return ret;
-		}
-
-		/* Copy offset-1 bytes */
-		ret = copy_block_data_bytes(src, dst, offset - 1, delimiter);
-		if (ret != 0) {
-			return ret;
-		}
-
-		insert_delimiter_if_needed(dst, offset, src, delimiter);
+	if (state.frame_complete == false || ret < (ssize_t)src->len) {
+		return -EINVAL;
 	}
 
+	net_buf_pull(src, src->len);
 	return 0;
 }
 
-/* ========================================================================
- * Streaming Encoder Implementation
- * ======================================================================== */
+/* Streaming Encoder */
 
 void cobs_encode_init(struct cobs_encode_state *self)
 {
-	if (!self) {
-		return;
-	}
+	__ASSERT(self != NULL, "self must not be NULL");
 
 	self->src_frag = NULL;
 	self->src_offset = 0;
@@ -210,43 +120,15 @@ void cobs_encode_init(struct cobs_encode_state *self)
 	self->block_pos = 0;
 }
 
-void cobs_encode_reset(struct cobs_encode_state *self)
+/* Skip empty fragments and peek at current byte */
+static inline bool peek_byte(struct cobs_encode_state *self, uint8_t *byte_out)
 {
-	if (!self) {
-		return;
-	}
-
-	self->src_frag = NULL;
-	self->src_offset = 0;
-	self->block_code = 0;
-	self->block_pos = 0;
-}
-
-/* ========================================================================
- * Source Navigation Helpers
- * ======================================================================== */
-
-/* Skip empty fragments to find next available data */
-static inline void skip_empty_fragments(struct cobs_encode_state *self)
-{
-	while (self->src_frag && self->src_offset >= self->src_frag->len) {
+	while ((self->src_frag != NULL) && (self->src_offset >= self->src_frag->len)) {
 		self->src_frag = self->src_frag->frags;
 		self->src_offset = 0;
 	}
-}
 
-/* Check if more source data is available */
-static inline bool has_source_data(const struct cobs_encode_state *self)
-{
-	return (self->src_frag && self->src_offset < self->src_frag->len);
-}
-
-/* Peek at byte at current position without consuming */
-static inline bool peek_byte(struct cobs_encode_state *self, uint8_t *byte_out)
-{
-	skip_empty_fragments(self);
-
-	if (!has_source_data(self)) {
+	if (self->src_frag == NULL || self->src_offset >= self->src_frag->len) {
 		return false;
 	}
 
@@ -254,371 +136,204 @@ static inline bool peek_byte(struct cobs_encode_state *self, uint8_t *byte_out)
 	return true;
 }
 
-/* Advance to next byte */
 static inline void advance_byte(struct cobs_encode_state *self)
 {
 	self->src_offset++;
-	skip_empty_fragments(self);
 }
 
-/* ========================================================================
- * Block Code Scanning
- * ======================================================================== */
-
-/* Scan single fragment for delimiter or max bytes */
-static inline uint8_t scan_fragment(const uint8_t *data, const size_t len, 
-				    size_t offset, uint8_t count, 
-				    const uint8_t delimiter)
-{
-	while (offset < len && count < 0xFF) {
-		if (data[offset] == delimiter) {
-			return count;
-		}
-		offset++;
-		count++;
-	}
-	return count;
-}
-
-/* Scan ahead from current position to find code byte */
-static uint8_t scan_for_code_byte(const struct cobs_encode_state *self, 
+/* Scan ahead to find code byte value */
+static uint8_t scan_for_code_byte(const struct cobs_encode_state *self,
 				  const uint8_t delimiter)
 {
 	struct net_buf *frag = self->src_frag;
 	size_t offset = self->src_offset;
-	uint8_t count = 1; /* Code byte is 1 + number of data bytes */
+	uint8_t count = 1;
 
-	/* Scan up to 254 bytes or until we find delimiter */
-	while (frag && count < 0xFF) {
-		count = scan_fragment(frag->data, frag->len, offset, 
-				      count, delimiter);
-		
-		if (count < 0xFF || offset >= frag->len) {
-			/* Found delimiter or exhausted fragment */
-			if (offset < frag->len && frag->data[offset] == delimiter) {
+	while ((frag != NULL) && (count < 0xFF)) {
+		while (offset < frag->len && count < 0xFF) {
+			if (frag->data[offset] == delimiter) {
 				return count;
 			}
-			/* Move to next fragment */
+			offset++;
+			count++;
+		}
+
+		if (offset >= frag->len) {
 			frag = frag->frags;
 			offset = 0;
 		}
 	}
-	
+
 	return count;
 }
 
-/* ========================================================================
- * Encoding Operations
- * ======================================================================== */
-
-/* Initialize source on first call */
-static inline void init_source_if_needed(struct cobs_encode_state *self, 
-					 struct net_buf *src)
-{
-	if (!self->src_frag) {
-		self->src_frag = src;
-		self->src_offset = 0;
-	}
-}
-
-/* Check if we can write to destination */
-static inline bool can_write(size_t written, size_t capacity)
-{
-	return written < capacity;
-}
-
-/* Start a new COBS block */
-static inline int start_new_block(struct cobs_encode_state *self, uint8_t *dst,
-				  size_t *written, size_t capacity, 
-				  const uint8_t delimiter)
-{
-	if (!can_write(*written, capacity)) {
-		return -ENOMEM;
-	}
-
-	self->block_code = scan_for_code_byte(self, delimiter);
-	dst[(*written)++] = self->block_code;
-	
-	return 0;
-}
-
-/* Process a single data byte in current block */
-static inline bool process_data_byte(struct cobs_encode_state *self, uint8_t byte,
-				     uint8_t *dst, size_t *written, 
-				     const uint8_t delimiter)
-{
-	if (byte == delimiter) {
-		/* Found the delimiter that ends this block */
-		advance_byte(self);
-		self->block_pos = 0;
-		return false; /* Block complete */
-	}
-	
-	dst[(*written)++] = byte;
-	advance_byte(self);
-	self->block_pos++;
-	
-	return true; /* Continue processing */
-}
-
-/* Copy data bytes for current block */
-static inline void copy_block_data(struct cobs_encode_state *self, uint8_t *dst,
-				   size_t *written, size_t capacity, 
-				   const uint8_t delimiter)
-{
-	uint8_t byte;
-	
-	while (peek_byte(self, &byte) && 
-	       self->block_pos < self->block_code - 1 && 
-	       can_write(*written, capacity)) {
-		
-		if (!process_data_byte(self, byte, dst, written, delimiter)) {
-			break;
-		}
-	}
-}
-
-/* Finalize current block if complete */
-static inline void finalize_block_if_complete(struct cobs_encode_state *self)
-{
-	uint8_t byte;
-	
-	if (self->block_pos == self->block_code - 1) {
-		/* Block complete, skip delimiter if present */
-		if (peek_byte(self, &byte) && byte == COBS_DEFAULT_DELIMITER) {
-			advance_byte(self);
-		}
-		self->block_pos = 0;
-	}
-}
-
 int cobs_encode_stream(struct cobs_encode_state *self, struct net_buf *src,
-		       uint8_t *dst, size_t *dst_len)
+		       uint8_t *dst, size_t *dst_len, uint8_t delimiter)
 {
-	if (!self || !src || !dst || !dst_len) {
+	if (self == NULL || src == NULL || dst == NULL || dst_len == NULL) {
 		return -EINVAL;
 	}
 
-	const uint8_t delimiter = COBS_DEFAULT_DELIMITER;
 	const size_t capacity = *dst_len;
 	size_t written = 0;
+	bool last_block_ended_with_delimiter = false;
 
-	init_source_if_needed(self, src);
+	/* Initialize source on first call */
+	if (self->src_frag == NULL) {
+		self->src_frag = src;
+		self->src_offset = 0;
+	}
 
 	uint8_t byte;
 
-	/* Process source data and encode into destination */
-	while (peek_byte(self, &byte) && can_write(written, capacity)) {
-		/* Starting a new block? */
+	while ((peek_byte(self, &byte) != false) && (written < capacity)) {
+		/* Start new block if needed */
 		if (self->block_pos == 0) {
-			int ret = start_new_block(self, dst, &written, 
-						  capacity, delimiter);
-			if (ret != 0) {
+			if (written >= capacity) {
 				break;
 			}
+			self->block_code = scan_for_code_byte(self, delimiter);
+			dst[written++] = self->block_code;
 		}
 
 		/* Copy data bytes for this block */
-		copy_block_data(self, dst, &written, capacity, delimiter);
+		while ((peek_byte(self, &byte) != false) &&
+		       (self->block_pos < self->block_code - 1) &&
+		       (written < capacity)) {
+
+			if (byte == delimiter) {
+				advance_byte(self);
+				self->block_pos = 0;
+				break;
+			}
+
+			dst[written++] = byte;
+			advance_byte(self);
+			self->block_pos++;
+		}
 
 		/* Check if block is complete */
-		finalize_block_if_complete(self);
+		if (self->block_pos == self->block_code - 1) {
+			last_block_ended_with_delimiter = false;
+
+			if ((self->block_code != 0xFF) && (peek_byte(self, &byte) != false) &&
+			    (byte == delimiter)) {
+				advance_byte(self);
+				last_block_ended_with_delimiter = true;
+			}
+			self->block_pos = 0;
+		}
 	}
+
+	/* Store whether we need final code byte in finalize */
+	self->src_frag = (last_block_ended_with_delimiter != false) ? src : NULL;
 
 	*dst_len = written;
 	return 0;
 }
 
-int cobs_encode_finalize(struct cobs_encode_state *self, uint8_t *dst, size_t *dst_len)
+int cobs_encode_finalize(struct cobs_encode_state *self, uint8_t *dst, size_t *dst_len,
+			 uint8_t delimiter)
 {
-	if (!self || !dst || !dst_len) {
+	if (self == NULL || dst == NULL || dst_len == NULL) {
 		return -EINVAL;
 	}
 
-	/* With the streaming design where we scan ahead and pull from source,
-	 * by the time the source is empty, all blocks are complete.
-	 * Just reset state for next use.
-	 */
+	size_t written = 0;
+	size_t capacity = *dst_len;
+
+	/* Write final code byte if last block ended with delimiter */
+	if (self->src_frag != NULL) {
+		if (capacity < 1) {
+			return -ENOMEM;
+		}
+		dst[written++] = 0x01;
+	}
+
+	/* Reset state */
 	self->block_code = 0;
 	self->block_pos = 0;
-	*dst_len = 0;
-	
+	self->src_frag = NULL;
+	self->src_offset = 0;
+
+	*dst_len = written;
 	return 0;
 }
 
-/* ========================================================================
- * Streaming Decoder Implementation
- * ======================================================================== */
+/* Streaming Decoder */
 
 void cobs_decode_init(struct cobs_decode_state *self)
 {
-	if (!self) {
-		return;
-	}
-
-	/* Start in ready-to-decode state. COBS frames always begin with a code byte
-	 * (never a delimiter), so we can start decoding immediately. If we encounter
-	 * invalid data or are mid-stream, the decoder will detect errors and resync.
-	 */
-	self->bytes_left = 0;
-	self->need_delimiter = false;
-	self->frame_complete = false;
-}
-
-void cobs_decode_reset(struct cobs_decode_state *self)
-{
-	if (!self) {
-		return;
-	}
+	__ASSERT(self != NULL, "self must not be NULL");
 
 	self->bytes_left = 0;
 	self->need_delimiter = false;
 	self->frame_complete = false;
 }
 
-/* ========================================================================
- * Decoding Operations
- * ======================================================================== */
-
-/* Check if destination has space */
 static inline int check_dst_space(const struct net_buf *dst)
 {
-	if (net_buf_tailroom(dst) < 1) {
-		return -ENOMEM;
-	}
-	return 0;
+	return (net_buf_tailroom(dst) < 1) ? -ENOMEM : 0;
 }
 
-/* Insert pending delimiter before next block */
-static inline int insert_pending_delimiter(struct cobs_decode_state *self,
-					   const uint8_t *src, size_t *processed,
-					   struct net_buf *dst, 
-					   const uint8_t delimiter)
+/* Process code byte and insert delimiter if needed */
+static inline int process_code_byte(struct cobs_decode_state *self,
+				    const uint8_t *src, size_t *processed,
+				    struct net_buf *dst,
+				    const uint8_t delimiter)
 {
-	/* Peek at next byte */
-	if (src[*processed] == delimiter) {
-		/* Frame ends - don't insert delimiter */
-		(*processed)++;
+	/* Insert pending delimiter before reading new code */
+	if (self->need_delimiter != false) {
+		if (src[*processed] == delimiter) {
+			(*processed)++;
+			self->need_delimiter = false;
+			self->frame_complete = true;
+			return 1;
+		}
+
+		int ret = check_dst_space(dst);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		net_buf_add_u8(dst, delimiter);
 		self->need_delimiter = false;
-		self->frame_complete = true;
-		return 1; /* Signal frame complete */
 	}
-	
-	/* Insert delimiter before next block */
-	int ret = check_dst_space(dst);
-	if (ret != 0) {
-		return ret;
-	}
-	
-	net_buf_add_u8(dst, delimiter);
-	self->need_delimiter = false;
-	
-	return 0;
-}
 
-/* Read and validate code byte */
-static inline int read_code_byte(struct cobs_decode_state *self, 
-				 const uint8_t *src, size_t *processed,
-				 const uint8_t delimiter)
-{
+	/* Read code byte */
 	uint8_t code = src[(*processed)++];
 
-	/* Check for frame delimiter */
 	if (code == delimiter) {
 		self->frame_complete = true;
-		return 1; /* Signal frame complete */
+		return 1;
 	}
 
-	/* Validate code byte */
 	if (code == 0) {
 		return -EINVAL;
 	}
 
-	/* Set up block processing */
 	self->bytes_left = code - 1;
 	self->need_delimiter = (code != 0xFF);
-	
-	return 0;
-}
 
-/* Process code byte (insert delimiter if needed, read new code) */
-static inline int process_code_byte(struct cobs_decode_state *self,
-				    const uint8_t *src, size_t *processed,
-				    struct net_buf *dst, 
-				    const uint8_t delimiter)
-{
-	/* Insert pending delimiter from previous block before reading code */
-	if (self->need_delimiter) {
-		int ret = insert_pending_delimiter(self, src, processed, 
-						    dst, delimiter);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-
-	return read_code_byte(self, src, processed, delimiter);
-}
-
-/* Copy a single data byte from block */
-static inline int copy_data_byte(struct cobs_decode_state *self,
-				 const uint8_t *src, size_t *processed,
-				 struct net_buf *dst, 
-				 const uint8_t delimiter)
-{
-	uint8_t byte = src[(*processed)++];
-
-	/* Unexpected delimiter in data */
-	if (byte == delimiter) {
-		return -EINVAL;
-	}
-
-	int ret = check_dst_space(dst);
-	if (ret != 0) {
-		return ret;
-	}
-
-	net_buf_add_u8(dst, byte);
-	self->bytes_left--;
-	
-	return 0;
-}
-
-/* Copy data bytes from current block */
-static inline int copy_block_bytes(struct cobs_decode_state *self,
-				   const uint8_t *src, size_t *processed,
-				   const size_t src_len, struct net_buf *dst,
-				   const uint8_t delimiter)
-{
-	while (self->bytes_left > 0 && *processed < src_len) {
-		int ret = copy_data_byte(self, src, processed, dst, delimiter);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-	
 	return 0;
 }
 
 int cobs_decode_stream(struct cobs_decode_state *self, const uint8_t *src,
-		       size_t src_len, struct net_buf *dst)
+		       size_t src_len, struct net_buf *dst, uint8_t delimiter)
 {
-	if (!self || !src || !dst) {
+	if (self == NULL || src == NULL || dst == NULL) {
 		return -EINVAL;
 	}
 
-	const uint8_t delimiter = COBS_DEFAULT_DELIMITER;
 	size_t processed = 0;
-
-	/* Clear frame_complete flag at start of each call */
 	self->frame_complete = false;
 
 	while (processed < src_len) {
 		/* Read new code byte if needed */
 		if (self->bytes_left == 0) {
-			int ret = process_code_byte(self, src, &processed, 
-						    dst, delimiter);
+			int ret = process_code_byte(self, src, &processed, dst, delimiter);
 			if (ret == 1) {
-				/* Frame complete */
 				return (ssize_t)processed;
 			}
 			if (ret < 0) {
@@ -627,10 +342,20 @@ int cobs_decode_stream(struct cobs_decode_state *self, const uint8_t *src,
 		}
 
 		/* Copy data bytes from block */
-		int ret = copy_block_bytes(self, src, &processed, src_len, 
-					   dst, delimiter);
-		if (ret != 0) {
-			return ret;
+		while ((self->bytes_left > 0) && (processed < src_len)) {
+			uint8_t byte = src[processed++];
+
+			if (byte == delimiter) {
+				return -EINVAL;
+			}
+
+			int ret = check_dst_space(dst);
+			if (ret != 0) {
+				return ret;
+			}
+
+			net_buf_add_u8(dst, byte);
+			self->bytes_left--;
 		}
 	}
 

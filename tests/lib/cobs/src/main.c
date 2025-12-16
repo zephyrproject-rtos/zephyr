@@ -86,6 +86,16 @@ struct cobs_test_item {
 	 .encoded_len = sizeof(e),                                                                 \
 	 .delimiter = del}
 
+/* Generate 253-byte sequence programmatically */
+static void generate_sequence(uint8_t *buf, size_t len)
+{
+	static const char pattern[] = "0123456789ABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrst";
+
+	for (size_t i = 0; i < len; i++) {
+		buf[i] = pattern[i % strlen(pattern)];
+	}
+}
+
 static const struct cobs_test_item cobs_dataset[] = {
 	COBS_ITEM(U8({}), U8({0x01}), COBS_DEFAULT_DELIMITER, "Empty"),
 	COBS_ITEM(U8({'1'}), U8({0x02, '1'}), COBS_DEFAULT_DELIMITER, "One char"),
@@ -110,1080 +120,533 @@ static const struct cobs_test_item cobs_dataset[] = {
 	COBS_ITEM(U8({0x7F, 0x7F}), U8({0x01, 0x01, 0x01}), 0x7F, "Two 0x7F delimiters"),
 	COBS_ITEM(U8({0x7F, 0x7F, 0x7F}), U8({0x01, 0x01, 0x01, 0x01}), 0x7F,
 		  "Three 0x7F delimiters"),
-	COBS_ITEM(
-		U8({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-		    'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b',
-		    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-		    's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-		    'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
-		    'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		    'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		    'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-		    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3'}),
-		U8({0xfe, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-		    'F',  'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a',
-		    'b',  'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-		    'r',  's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
-		    'D',  'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		    'p',  'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-		    'B',  'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-		    'R',  'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-		    'n',  'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		    'P',  'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-		    'l',  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6',
-		    '7',  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-		    'N',  'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3'}),
-		COBS_DEFAULT_DELIMITER, "253 Chars"),
-	COBS_ITEM(
-		U8({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-		    'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b',
-		    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-		    's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-		    'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
-		    'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		    'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		    'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-		    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4'}),
-		U8({0xff, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-		    'F',  'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a',
-		    'b',  'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-		    'r',  's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
-		    'D',  'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		    'p',  'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-		    'B',  'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-		    'R',  'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-		    'n',  'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		    'P',  'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-		    'l',  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6',
-		    '7',  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-		    'N',  'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4'}),
-		COBS_DEFAULT_DELIMITER, "254 Chars"),
-	COBS_ITEM(
-		U8({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-		    'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b',
-		    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-		    's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-		    'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
-		    'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		    'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		    'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-		    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4', '5'}),
-		U8({0xff, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3',
-		    '4',  '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-		    'J',  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd',
-		    'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-		    't',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4',
-		    0x02, '5'}),
-		COBS_DEFAULT_DELIMITER, "255 Chars"),
-	COBS_ITEM(U8({0x00, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		      'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		      'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		      'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		      '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		      'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		      'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3',
-		      '4',  '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-		      'J',  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd',
-		      'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-		      't',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		      'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		      'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		      'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		      '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		      'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		      'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4',
-		      '5'}),
-		  U8({0x01, 0xff, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
-		      'D',  'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		      'S',  'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-		      'n',  'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		      '8',  '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-		      'N',  'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-		      'i',  'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2',
-		      '3',  '4',  '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-		      'I',  'J',  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c',
-		      'd',  'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-		      's',  't',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
-		      'D',  'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		      'S',  'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-		      'n',  'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		      '8',  '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-		      'N',  'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-		      'i',  'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3',
-		      '4',  0x02, '5'}),
-		  COBS_DEFAULT_DELIMITER, "Leading zero 255 chars"),
-	COBS_ITEM(
-		U8({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-		    'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b',
-		    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-		    's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-		    'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
-		    'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		    'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		    'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-		    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', 0x00}),
-		U8({0xfe, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-		    'F',  'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a',
-		    'b',  'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-		    'r',  's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
-		    'D',  'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		    'p',  'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-		    'B',  'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-		    'R',  'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-		    'n',  'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		    'P',  'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-		    'l',  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6',
-		    '7',  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-		    'N',  'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', 0x01}),
-		COBS_DEFAULT_DELIMITER, "Ending zero 253 chars"),
-	COBS_ITEM(
-		U8({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-		    'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b',
-		    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-		    's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-		    'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
-		    'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		    'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		    'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-		    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7',
-		    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4', 0x00}),
-		U8({0xff, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3',
-		    '4',  '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-		    'J',  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd',
-		    'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-		    't',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		    'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		    'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		    'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		    '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		    'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		    'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4',
-		    0x01, 0x01}),
-		COBS_DEFAULT_DELIMITER, "Ending zero 254 chars"),
-	COBS_ITEM(U8({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-		      'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		      'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		      'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		      'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4',
-		      '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-		      'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e',
-		      'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-		      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-		      'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-		      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		      'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		      'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-		      'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4', '5',
-		      0x00}),
-		  U8({0xff, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		      'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		      'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		      'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		      '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		      'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		      'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '0', '1', '2', '3',
-		      '4',  '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-		      'J',  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd',
-		      'e',  'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-		      't',  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-		      'E',  'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-		      'T',  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		      'o',  'p', 'q', 'r', 's', 't', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-		      '9',  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-		      'O',  'P', 'Q', 'R', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-		      'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', '1', '2', '3', '4',
-		      0x02, '5', 0x01}),
-		  COBS_DEFAULT_DELIMITER, "Ending zero 255 chars"),
 };
 
 ZTEST_SUITE(cobs_tests, NULL, cobs_test_setup, cobs_test_before, NULL, cobs_test_teardown);
 
-ZTEST_F(cobs_tests, test_encode)
+/* Helper: test encode/decode roundtrip with flags */
+static void test_roundtrip(struct cobs_tests_fixture *fixture, const struct cobs_test_item *item,
+			   uint32_t flags)
 {
-	int ret;
+	uint8_t delimiter = item->delimiter;
+	size_t expected_len = item->encoded_len + ((flags & COBS_FLAG_TRAILING_DELIMITER) ? 1 : 0);
 
+	/* Arrange & Act: Encode */
+	net_buf_add_mem(fixture->test_data, item->decoded, item->decoded_len);
+	int ret = cobs_encode(fixture->test_data, fixture->encoded, flags);
+
+	/* Assert: Encoding results */
+	zassert_ok(ret, "Encode failed: %s", item->name);
+	zassert_equal(fixture->encoded->len, expected_len, "Encoded len: %s", item->name);
+	zassert_mem_equal(fixture->encoded->data, item->encoded, item->encoded_len,
+			  "Encoded data: %s", item->name);
+	zassert_equal(fixture->test_data->len, 0, "Encode consumed input: %s", item->name);
+	if (flags & COBS_FLAG_TRAILING_DELIMITER) {
+		zassert_equal(fixture->encoded->data[item->encoded_len], delimiter,
+			      "Trailing delim: %s", item->name);
+	}
+
+	/* Act: Decode */
+	ret = cobs_decode(fixture->encoded, fixture->decoded, flags);
+
+	/* Assert: Decoding results */
+	zassert_ok(ret, "Decode failed: %s", item->name);
+	zassert_equal(fixture->decoded->len, item->decoded_len, "Decoded len: %s", item->name);
+	zassert_mem_equal(fixture->decoded->data, item->decoded, item->decoded_len,
+			  "Decoded data: %s", item->name);
+	zassert_equal(fixture->encoded->len, 0, "Decode consumed input: %s", item->name);
+}
+
+/* Helper: test stream encode/decode roundtrip */
+static void test_stream_roundtrip_helper(struct cobs_tests_fixture *fixture,
+					 const uint8_t *input, size_t input_len,
+					 uint8_t delimiter, const char *name)
+{
+	struct cobs_encode_state enc;
+	struct cobs_decode_state dec;
+	uint8_t encoded[256];
+
+	/* Arrange & Act: Encode */
+	net_buf_add_mem(fixture->test_data, input, input_len);
+	cobs_encode_init(&enc);
+	size_t enc_len = sizeof(encoded) - 1;
+
+	int ret = cobs_encode_stream(&enc, fixture->test_data, encoded, &enc_len, delimiter);
+	zassert_ok(ret, "Stream encode: %s", name);
+	encoded[enc_len++] = delimiter;
+
+	/* Act: Decode */
+	cobs_decode_init(&dec);
+	ret = cobs_decode_stream(&dec, encoded, enc_len, fixture->decoded, delimiter);
+
+	/* Assert: Roundtrip results */
+	zassert_true(ret > 0, "Stream decode: %s", name);
+	zassert_equal(fixture->decoded->len, input_len, "Stream len: %s", name);
+	zassert_mem_equal(fixture->decoded->data, input, input_len, "Stream data: %s", name);
+	zassert_true(dec.frame_complete, "Frame complete: %s", name);
+}
+
+ZTEST_F(cobs_tests, test_block_encode_decode)
+{
 	ARRAY_FOR_EACH(cobs_dataset, idx) {
-		uint8_t delimiter = cobs_dataset[idx].delimiter;
-
-		net_buf_add_mem(fixture->test_data, cobs_dataset[idx].decoded,
-				cobs_dataset[idx].decoded_len);
-
-		ret = cobs_encode(fixture->test_data, fixture->encoded,
-				  COBS_FLAG_CUSTOM_DELIMITER(delimiter));
-		zassert_ok(ret, "COBS encoding failed for %s", cobs_dataset[idx].name);
-		zassert_equal(cobs_dataset[idx].encoded_len, fixture->encoded->len,
-			      "Encoded length does not match expected for %s",
-			      cobs_dataset[idx].name);
-		zassert_mem_equal(cobs_dataset[idx].encoded, fixture->encoded->data,
-				  cobs_dataset[idx].encoded_len,
-				  "Encoded data does not match expected for %s",
-				  cobs_dataset[idx].name);
-
-		zassert_equal(fixture->test_data->len, 0, "Encode input not empty for %s",
-			      cobs_dataset[idx].name);
-		net_buf_reset(fixture->test_data);
-		net_buf_reset(fixture->encoded);
-		net_buf_reset(fixture->decoded);
+		test_roundtrip(fixture, &cobs_dataset[idx],
+			       COBS_FLAG_CUSTOM_DELIMITER(cobs_dataset[idx].delimiter));
+		cobs_test_before(fixture);
 	}
 }
 
-ZTEST_F(cobs_tests, test_decode)
+ZTEST_F(cobs_tests, test_block_trailing_delimiter)
 {
-	int ret;
-
 	ARRAY_FOR_EACH(cobs_dataset, idx) {
-		uint8_t delimiter = cobs_dataset[idx].delimiter;
-
-		net_buf_add_mem(fixture->test_data, cobs_dataset[idx].decoded,
-				cobs_dataset[idx].decoded_len);
-
-		ret = cobs_decode(fixture->encoded, fixture->test_data,
-				  COBS_FLAG_CUSTOM_DELIMITER(delimiter));
-		zassert_ok(ret, "COBS decoding failed for %s", cobs_dataset[idx].name);
-		zassert_equal(cobs_dataset[idx].decoded_len, fixture->test_data->len,
-			      "Decoded length does not match expected for %s",
-			      cobs_dataset[idx].name);
-		zassert_mem_equal(cobs_dataset[idx].decoded, fixture->test_data->data,
-				  cobs_dataset[idx].decoded_len,
-				  "Decoded data does not match expected for %s",
-				  cobs_dataset[idx].name);
-
-		zassert_equal(fixture->encoded->len, 0, "Decode input not empty for %s",
-			      cobs_dataset[idx].name);
-		net_buf_reset(fixture->test_data);
-		net_buf_reset(fixture->encoded);
-		net_buf_reset(fixture->decoded);
+		test_roundtrip(fixture, &cobs_dataset[idx],
+			       COBS_FLAG_TRAILING_DELIMITER |
+			       COBS_FLAG_CUSTOM_DELIMITER(cobs_dataset[idx].delimiter));
+		cobs_test_before(fixture);
 	}
 }
 
-ZTEST_F(cobs_tests, test_encode_trailing_delimiter)
+ZTEST_F(cobs_tests, test_block_boundary_conditions)
 {
-	int ret;
+	uint8_t large_data[255];
+	struct {
+		size_t len;
+		size_t encoded_len;
+		uint8_t first_code;
+		bool test_decode;
+	} cases[] = {
+		{253, 254, 0xFE, false}, /* Max without split */
+		{254, 255, 0xFF, false}, /* Max block */
+		{255, 256, 0xFF, true},  /* Requires split + verify roundtrip */
+	};
 
-	ARRAY_FOR_EACH(cobs_dataset, idx) {
-		uint8_t delimiter = cobs_dataset[idx].delimiter;
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		/* Arrange */
+		generate_sequence(large_data, cases[i].len);
+		net_buf_add_mem(fixture->test_data, large_data, cases[i].len);
 
-		net_buf_add_mem(fixture->test_data, cobs_dataset[idx].decoded,
-				cobs_dataset[idx].decoded_len);
+		/* Act: Encode */
+		int ret = cobs_encode(fixture->test_data, fixture->encoded, 0);
 
-		ret = cobs_encode(fixture->test_data, fixture->encoded,
-				  COBS_FLAG_TRAILING_DELIMITER |
-					  COBS_FLAG_CUSTOM_DELIMITER(delimiter));
-		zassert_ok(ret, "COBS encoding failed for %s", cobs_dataset[idx].name);
-		zassert_equal(cobs_dataset[idx].encoded_len + 1, fixture->encoded->len,
-			      "Encoded length does not match expected for %s",
-			      cobs_dataset[idx].name);
-		zassert_mem_equal(cobs_dataset[idx].encoded, fixture->encoded->data,
-				  cobs_dataset[idx].encoded_len,
-				  "Encoded data does not match expected for %s",
-				  cobs_dataset[idx].name);
+		/* Assert: Encoding */
+		zassert_ok(ret, "%zu-byte encoding failed", cases[i].len);
+		zassert_equal(fixture->encoded->data[0], cases[i].first_code,
+			      "%zu-byte code wrong", cases[i].len);
 
-		zassert_equal(fixture->encoded->data[cobs_dataset[idx].encoded_len], delimiter,
-			      "Encoded data does not have proper trailing delimiter");
+		if (cases[i].test_decode) {
+			/* Act: Decode */
+			ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
 
-		zassert_equal(fixture->test_data->len, 0, "Encode input not empty for %s",
-			      cobs_dataset[idx].name);
-		net_buf_reset(fixture->test_data);
-		net_buf_reset(fixture->encoded);
-		net_buf_reset(fixture->decoded);
+			/* Assert: Roundtrip */
+			zassert_ok(ret, "%zu-byte decoding failed", cases[i].len);
+			zassert_equal(fixture->decoded->len, cases[i].len,
+				      "%zu-byte decoded length wrong", cases[i].len);
+			zassert_mem_equal(fixture->decoded->data, large_data, cases[i].len,
+					  "%zu-byte roundtrip failed", cases[i].len);
+		}
+		cobs_test_before(fixture);
 	}
 }
 
-ZTEST_F(cobs_tests, test_decode_trailing_delimiter)
+ZTEST_F(cobs_tests, test_block_decode_errors)
 {
-	int ret;
+	const struct {
+		const uint8_t *data;
+		size_t len;
+		const char *name;
+	} error_cases[] = {
+		{U8({0x02, 0x00, 0x01}), 3, "Invalid delimiter position"},
+		{U8({0x01, 0x00, 0x00, 0x01}), 4, "Consecutive delimiters"},
+		{U8({0x03, 0x01}), 2, "Overrun"},
+	};
 
-	ARRAY_FOR_EACH(cobs_dataset, idx) {
-		uint8_t delimiter = cobs_dataset[idx].delimiter;
+	for (size_t i = 0; i < ARRAY_SIZE(error_cases); i++) {
+		/* Arrange */
+		net_buf_add_mem(fixture->encoded, error_cases[i].data, error_cases[i].len);
 
-		net_buf_add_mem(fixture->test_data, cobs_dataset[idx].decoded,
-				cobs_dataset[idx].decoded_len);
+		/* Act */
+		int ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
 
-		net_buf_add_u8(fixture->encoded, delimiter);
-
-		ret = cobs_decode(fixture->encoded, fixture->test_data,
-				  COBS_FLAG_TRAILING_DELIMITER |
-					  COBS_FLAG_CUSTOM_DELIMITER(delimiter));
-		zassert_ok(ret, "COBS decoding failed for %s", cobs_dataset[idx].name);
-		zassert_equal(cobs_dataset[idx].decoded_len, fixture->test_data->len,
-			      "Decoded length does not match expected for %s",
-			      cobs_dataset[idx].name);
-		zassert_mem_equal(cobs_dataset[idx].decoded, fixture->test_data->data,
-				  cobs_dataset[idx].decoded_len,
-				  "Decoded data does not match expected for %s",
-				  cobs_dataset[idx].name);
-
-		zassert_equal(fixture->encoded->len, 0, "Decode input not empty for %s",
-			      cobs_dataset[idx].name);
-		net_buf_reset(fixture->test_data);
-		net_buf_reset(fixture->encoded);
-		net_buf_reset(fixture->decoded);
+		/* Assert */
+		zassert_equal(ret, -EINVAL, "%s not caught", error_cases[i].name);
+		cobs_test_before(fixture);
 	}
-}
-
-ZTEST_F(cobs_tests, test_cobs_invalid_delim_pos)
-{
-	int ret;
-	const char data_enc[] = {0x02, 0x00, 0x01};
-
-	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
-	ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
-	zassert_true(ret == -EINVAL, "Decoding invalid delimiter caught");
-}
-
-ZTEST_F(cobs_tests, test_cobs_consecutive_delims)
-{
-	int ret;
-	const char data_enc[] = {0x01, 0x00, 0x00, 0x01};
-
-	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
-	ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
-	zassert_true(ret == -EINVAL, "Decoding consecutive delimiters not caught");
-}
-
-ZTEST_F(cobs_tests, test_cobs_invalid_overrun)
-{
-	int ret;
-	const char data_enc[] = {0x03, 0x01};
-
-	net_buf_add_mem(fixture->encoded, data_enc, sizeof(data_enc));
-	ret = cobs_decode(fixture->encoded, fixture->decoded, 0);
-	zassert_true(ret == -EINVAL, "Decoding insufficient data not caught");
 }
 
 /* ========================================================================
  * Streaming Encoder Tests
- * ======================================================================== */
+ * ========================================================================
+ */
 
-ZTEST_F(cobs_tests, test_stream_encode_simple)
+ZTEST_F(cobs_tests, test_stream_encode_basic)
 {
 	struct cobs_encode_state enc;
 	uint8_t output[64];
-	size_t out_len;
-	int ret;
+	const struct {
+		const uint8_t *input;
+		size_t input_len;
+		const uint8_t *expected;
+		size_t expected_len;
+		const char *name;
+	} cases[] = {
+		{U8({'H', 'e', 'l', 'l', 'o'}), 5,
+		 U8({0x06, 'H', 'e', 'l', 'l', 'o', 0x00}), 7, "Simple string"},
+		{U8({0x01, 0x00, 0x02, 0x00, 0x00}), 5,
+		 U8({0x02, 0x01, 0x02, 0x02, 0x01, 0x00}), 6, "Embedded zeros"},
+	};
 
-	/* Test data: "Hello" -> [0x06, 'H', 'e', 'l', 'l', 'o'] (without delimiter)
-	 * For stream transmission, user must add 0x00 delimiter after encoding
-	 */
-	const uint8_t input[] = {'H', 'e', 'l', 'l', 'o'};
-	const uint8_t expected_encoded[] = {0x06, 'H', 'e', 'l', 'l', 'o'};
-	const uint8_t expected_frame[] = {0x06, 'H', 'e', 'l', 'l', 'o', 0x00};
-	net_buf_add_mem(fixture->test_data, input, sizeof(input));
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		/* Arrange */
+		net_buf_add_mem(fixture->test_data, cases[i].input, cases[i].input_len);
+		cobs_encode_init(&enc);
+		size_t out_len = sizeof(output);
 
-	cobs_encode_init(&enc);
-	zassert_equal(enc.block_code, 0, "Encoder state not initialized");
+		/* Act */
+		int ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len,
+					     COBS_DEFAULT_DELIMITER);
+		output[out_len++] = 0x00;
 
-	out_len = sizeof(output);
-	ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len);
-	
-	/* Verify return value and output length (without delimiter) */
-	zassert_equal(ret, 0, "Encoding failed");
-	zassert_equal(out_len, sizeof(expected_encoded), "Wrong output length");
-	
-	/* Verify encoded output (without delimiter) */
-	zassert_mem_equal(output, expected_encoded, sizeof(expected_encoded), 
-			  "Encoded output mismatch");
-	
-	/* Note: New non-destructive encoder does NOT consume source */
-	zassert_equal(fixture->test_data->len, sizeof(input), 
-		      "Non-destructive encoder preserves source");
-	
-	/* Simulate adding delimiter for stream transmission */
-	output[out_len++] = 0x00;
-	
-	/* Verify complete frame format that would be transmitted */
-	zassert_equal(out_len, sizeof(expected_frame), "Wrong complete frame length");
-	zassert_mem_equal(output, expected_frame, sizeof(expected_frame), 
-			  "Complete frame format mismatch");
-}
-
-ZTEST_F(cobs_tests, test_stream_encode_with_delimiter)
-{
-	struct cobs_encode_state enc;
-	uint8_t output[64];
-	size_t out_len;
-	int ret;
-
-	/* Test data: [0x01, 0x00, 0x02] -> encoded: [0x02, 0x01, 0x02, 0x02]
-	 *                                -> wire: [0x02, 0x01, 0x02, 0x02, 0x00]
-	 */
-	const uint8_t input[] = {0x01, 0x00, 0x02};
-	const uint8_t expected_encoded[] = {0x02, 0x01, 0x02, 0x02};
-	const uint8_t expected_wire[] = {0x02, 0x01, 0x02, 0x02, 0x00};
-	net_buf_add_mem(fixture->test_data, input, sizeof(input));
-
-	cobs_encode_init(&enc);
-
-	out_len = sizeof(output);
-	ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len);
-	
-	/* Verify return value and encoded length (without frame delimiter) */
-	zassert_equal(ret, 0, "Encoding failed");
-	zassert_equal(out_len, sizeof(expected_encoded), "Wrong encoded output length");
-	
-	/* Verify exact encoded output (without frame delimiter) */
-	zassert_mem_equal(output, expected_encoded, sizeof(expected_encoded), 
-			  "Encoded data mismatch");
-	
-	/* Note: Non-destructive encoder preserves source */
-	zassert_equal(fixture->test_data->len, sizeof(input), 
-		      "Non-destructive encoder preserves source");
-	
-	/* Add frame delimiter for stream transmission */
-	output[out_len++] = 0x00;
-	
-	/* Verify complete wire format */
-	zassert_equal(out_len, sizeof(expected_wire), "Wrong wire format length");
-	zassert_mem_equal(output, expected_wire, sizeof(expected_wire),
-			  "Complete wire format mismatch");
+		/* Assert */
+		zassert_ok(ret, "Encode failed: %s", cases[i].name);
+		zassert_equal(out_len, cases[i].expected_len, "Length: %s", cases[i].name);
+		zassert_mem_equal(output, cases[i].expected, cases[i].expected_len,
+				  "Data: %s", cases[i].name);
+		cobs_test_before(fixture);
+	}
 }
 
 ZTEST_F(cobs_tests, test_stream_encode_fragmented)
 {
 	struct cobs_encode_state enc;
-	uint8_t output[32];
-	size_t out_len;
-	int ret;
-
-	/* Test encoding with output spanning multiple buffers
-	 * Single input [0x01, 0x02, 0x03, 0x04, 0x05]
-	 * Expected output: [0x06, 0x01, 0x02, 0x03, 0x04, 0x05]
-	 */
-	const uint8_t input[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-	net_buf_add_mem(fixture->test_data, input, sizeof(input));
-
-	cobs_encode_init(&enc);
-
-	/* Single call should encode entire input */
-	out_len = sizeof(output);
-	ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len);
-	zassert_equal(ret, 0, "Encoding failed");
-	zassert_equal(out_len, 6, "Should produce 6 bytes");
-	
-	/* Verify output */
-	const uint8_t expected[] = {0x06, 0x01, 0x02, 0x03, 0x04, 0x05};
-	zassert_mem_equal(output, expected, sizeof(expected), "Output mismatch");
-	
-	/* Source should be preserved (non-destructive) */
-	zassert_equal(fixture->test_data->len, sizeof(input), 
-		      "Non-destructive encoder preserves source");
-}
-
-ZTEST_F(cobs_tests, test_stream_encode_small_buffer)
-{
-	struct cobs_encode_state enc;
 	uint8_t output[3];
-	size_t out_len;
-	int ret;
-
-	/* Test output buffer too small for complete encoding
-	 * Input: [0x01, 0x02, 0x03, 0x04, 0x05] needs 6 bytes encoded
-	 * But output buffer only has 3 bytes
-	 */
 	const uint8_t input[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-	const uint8_t expected[] = {0x06, 0x01, 0x02};  /* Partial: code + first 2 data bytes */
+
+	/* Arrange */
 	net_buf_add_mem(fixture->test_data, input, sizeof(input));
-
 	cobs_encode_init(&enc);
+	size_t out_len = sizeof(output);
 
-	out_len = sizeof(output);
-	ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len);
-	
-	/* Verify return value */
-	zassert_equal(ret, 0, "Encoding should succeed with partial output");
-	
-	/* Verify output length */
-	zassert_equal(out_len, sizeof(expected), "Wrong partial output length");
-	
-	/* Verify partial output contents */
-	zassert_mem_equal(output, expected, sizeof(expected), "Partial output mismatch");
-	
-	/* Source preserved (non-destructive) */
-	zassert_equal(fixture->test_data->len, sizeof(input), 
-		      "Non-destructive encoder preserves source");
-	
-	/* Verify encoder state tracks progress */
-	zassert_equal(enc.block_code, 0x06, "Encoder should remember block code");
-	zassert_equal(enc.block_pos, 2, "Encoder should track position within block");
+	/* Act: Encode with limited output buffer */
+	int ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len,
+				     COBS_DEFAULT_DELIMITER);
+
+	/* Assert: Partial encoding state */
+	zassert_ok(ret, "Fragmented encode");
+	zassert_equal(out_len, 3, "Partial output length");
+	zassert_equal(output[0], 0x06, "Block code");
+	zassert_equal(enc.block_pos, 2, "Encoder state preserved");
 }
 
 ZTEST_F(cobs_tests, test_stream_encode_max_block)
 {
 	struct cobs_encode_state enc;
 	uint8_t output[256];
-	size_t out_len;
-	int ret;
 
-	/* Create 254 non-zero bytes (max block size) */
+	/* Arrange: 254-byte non-zero sequence */
 	for (int i = 0; i < 254; i++) {
 		net_buf_add_u8(fixture->test_data, (uint8_t)(i + 1));
 	}
-
 	cobs_encode_init(&enc);
+	size_t out_len = sizeof(output);
 
-	out_len = sizeof(output);
-	ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len);
-	
-	/* Verify return value and output length */
-	zassert_equal(ret, 0, "Encoding failed");
-	zassert_equal(out_len, 255, "Wrong output length for max block");
-	
-	/* Verify code byte */
-	zassert_equal(output[0], 0xFF, "Code byte should be 0xFF for max block");
-	
-	/* Verify data bytes match input */
-	for (int i = 0; i < 254; i++) {
-		zassert_equal(output[i + 1], (uint8_t)(i + 1), 
-			      "Data byte %d mismatch", i);
-	}
-	
-	/* Source preserved (non-destructive) */
-	zassert_equal(fixture->test_data->len, 254, 
-		      "Non-destructive encoder preserves source");
-}
+	/* Act */
+	int ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len,
+				     COBS_DEFAULT_DELIMITER);
 
-ZTEST_F(cobs_tests, test_stream_encode_empty)
-{
-	struct cobs_encode_state enc;
-	uint8_t output[64];
-	size_t out_len;
-	int ret;
-
-	cobs_encode_init(&enc);
-
-	out_len = sizeof(output);
-	ret = cobs_encode_stream(&enc, fixture->test_data, output, &out_len);
-	zassert_equal(ret, 0, "Encoding failed");
-	zassert_equal(out_len, 0, "Should produce no output for empty input");
-}
-
-ZTEST_F(cobs_tests, test_stream_transmission_format)
-{
-	struct cobs_encode_state enc;
-	struct cobs_decode_state dec;
-	uint8_t tx_buffer[64];
-	size_t tx_len;
-	int ret;
-
-	/* Test complete transmission format: encode + delimiter + decode
-	 * This validates what actually goes over the wire in a stream protocol
-	 */
-	const uint8_t original_data[] = {0x11, 0x00, 0x22, 0x00, 0x33};
-	/* Expected wire format: [0x02, 0x11, 0x02, 0x22, 0x02, 0x33, 0x00]
-	 *                        ^-code ^data ^code ^data ^code ^data ^delimiter
-	 */
-	const uint8_t expected_wire_format[] = {0x02, 0x11, 0x02, 0x22, 0x02, 0x33, 0x00};
-	
-	net_buf_add_mem(fixture->test_data, original_data, sizeof(original_data));
-
-	/* Step 1: Encode the data */
-	cobs_encode_init(&enc);
-
-	tx_len = sizeof(tx_buffer);
-	ret = cobs_encode_stream(&enc, fixture->test_data, tx_buffer, &tx_len);
-	zassert_equal(ret, 0, "Encoding failed");
-	
-	/* Step 2: Add frame delimiter for stream transmission */
-	tx_buffer[tx_len++] = 0x00;
-	
-	/* Step 3: Verify complete wire format */
-	zassert_equal(tx_len, sizeof(expected_wire_format), 
-		      "Wire format length mismatch");
-	zassert_mem_equal(tx_buffer, expected_wire_format, sizeof(expected_wire_format),
-			  "Wire format bytes mismatch");
-	
-	/* Step 4: Decode the received frame (as receiver would) */
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, tx_buffer, tx_len, fixture->decoded);
-	zassert_equal(ret, tx_len, "Decoding failed");
-	
-	/* Step 5: Verify roundtrip integrity */
-	zassert_equal(fixture->decoded->len, sizeof(original_data), 
-		      "Decoded length mismatch");
-	zassert_mem_equal(fixture->decoded->data, original_data, sizeof(original_data),
-			  "Decoded data doesn't match original");
+	/* Assert: Max block encoding */
+	zassert_ok(ret, "Max block encoding");
+	zassert_equal(out_len, 255, "Max block length");
+	zassert_equal(output[0], 0xFF, "Max block code");
 }
 
 /* ========================================================================
  * Streaming Decoder Tests
- * ======================================================================== */
+ * ========================================================================
+ */
 
-ZTEST_F(cobs_tests, test_stream_decode_simple)
+ZTEST_F(cobs_tests, test_stream_decode_basic)
 {
 	struct cobs_decode_state dec;
-	int ret;
 
-	/* Encoded: [0x06, 'H', 'e', 'l', 'l', 'o', 0x00] -> ['H', 'e', 'l', 'l', 'o'] */
-	const uint8_t input[] = {0x06, 'H', 'e', 'l', 'l', 'o', 0x00};
-	const uint8_t expected[] = {'H', 'e', 'l', 'l', 'o'};
+	const struct {
+		const uint8_t *input;
+		size_t input_len;
+		const uint8_t *expected;
+		size_t expected_len;
+	} cases[] = {
+		{U8({0x06, 'H', 'e', 'l', 'l', 'o', 0x00}), 7,
+		 U8({'H', 'e', 'l', 'l', 'o'}), 5},
+		{U8({0x02, 0x01, 0x02, 0x02, 0x00}), 5, U8({0x01, 0x00, 0x02}), 3},
+		{U8({0x05, 0x01, 0x02, 0x03, 0x04, 0x00}), 6, U8({0x01, 0x02, 0x03, 0x04}), 4},
+	};
 
-	cobs_decode_init(&dec);
-	zassert_equal(dec.bytes_left, 0, "Decoder not properly initialized");
-	zassert_false(dec.need_delimiter, "Decoder not properly initialized");
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		/* Arrange */
+		cobs_decode_init(&dec);
 
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	
-	/* Verify return value: should be bytes processed */
-	zassert_equal(ret, sizeof(input), "Should process all bytes including delimiter");
-	
-	/* Verify output length */
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	
-	/* Verify exact decoded output */
-	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
-	
-	/* Verify decoder state after complete frame */
-	zassert_equal(dec.bytes_left, 0, "State should be reset after frame end");
-	zassert_false(dec.need_delimiter, "Delimiter flag should be cleared");
-}
+		/* Act */
+		int ret = cobs_decode_stream(&dec, cases[i].input, cases[i].input_len,
+					     fixture->decoded, COBS_DEFAULT_DELIMITER);
 
-ZTEST_F(cobs_tests, test_stream_decode_with_delimiter)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Encoded: [0x02, 0x01, 0x02, 0x02, 0x00] -> [0x01, 0x00, 0x02] */
-	const uint8_t input[] = {0x02, 0x01, 0x02, 0x02, 0x00};
-	const uint8_t expected[] = {0x01, 0x00, 0x02};
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	
-	/* Verify return value */
-	zassert_equal(ret, sizeof(input), "Should process all bytes");
-	
-	/* Verify output length and contents */
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
-	
-	/* Verify state after complete frame */
-	zassert_equal(dec.bytes_left, 0, "State not reset after frame");
-	zassert_false(dec.need_delimiter, "Delimiter flag not cleared");
+		/* Assert */
+		zassert_true(ret > 0, "Decode failed: %zu", i);
+		zassert_equal(fixture->decoded->len, cases[i].expected_len, "Length: %zu", i);
+		zassert_mem_equal(fixture->decoded->data, cases[i].expected,
+				  cases[i].expected_len, "Data: %zu", i);
+		zassert_true(dec.frame_complete, "Frame complete: %zu", i);
+		cobs_test_before(fixture);
+	}
 }
 
 ZTEST_F(cobs_tests, test_stream_decode_fragmented)
 {
 	struct cobs_decode_state dec;
-	int ret;
-
-	/* Encoded: [0x05, 0x01, 0x02, 0x03, 0x04, 0x00] */
-	/* Feed in 3 fragments */
-	const uint8_t frag1[] = {0x05, 0x01};
-	const uint8_t frag2[] = {0x02, 0x03};
-	const uint8_t frag3[] = {0x04, 0x00};
+	const uint8_t fragments[][3] = {{0x05, 0x01, 0x02}, {0x03, 0x04}, {0x00}};
+	const size_t frag_lens[] = {3, 2, 1};
 	const uint8_t expected[] = {0x01, 0x02, 0x03, 0x04};
 
+	/* Arrange */
 	cobs_decode_init(&dec);
 
-	ret = cobs_decode_stream(&dec, frag1, sizeof(frag1), fixture->decoded);
-	zassert_equal(ret, sizeof(frag1), "Fragment 1 processing failed");
-
-	ret = cobs_decode_stream(&dec, frag2, sizeof(frag2), fixture->decoded);
-	zassert_equal(ret, sizeof(frag2), "Fragment 2 processing failed");
-
-	ret = cobs_decode_stream(&dec, frag3, sizeof(frag3), fixture->decoded);
-	zassert_equal(ret, sizeof(frag3), "Fragment 3 processing failed");
-
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
-}
-
-ZTEST_F(cobs_tests, test_stream_decode_max_block)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Create encoded max block: [0xFF, 254 bytes of data, 0x00] */
-	uint8_t input[256];
-	input[0] = 0xFF;
-	for (int i = 1; i < 255; i++) {
-		input[i] = (uint8_t)i;
+	/* Act: Process fragments */
+	for (size_t i = 0; i < ARRAY_SIZE(fragments); i++) {
+		int ret = cobs_decode_stream(&dec, fragments[i], frag_lens[i],
+					     fixture->decoded, COBS_DEFAULT_DELIMITER);
+		zassert_true(ret > 0, "Fragment %zu failed", i);
 	}
-	input[255] = 0x00;
 
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	zassert_equal(ret, sizeof(input), "Should process all bytes");
-	zassert_equal(fixture->decoded->len, 254, "Wrong decoded length for max block");
-}
-
-ZTEST_F(cobs_tests, test_stream_decode_multiple_blocks)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Two blocks: [0x03, 0x01, 0x02, 0x03, 0x03, 0x04, 0x00] -> [0x01, 0x02, 0x00, 0x03, 0x04] */
-	const uint8_t input[] = {0x03, 0x01, 0x02, 0x03, 0x03, 0x04, 0x00};
-	const uint8_t expected[] = {0x01, 0x02, 0x00, 0x03, 0x04};
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	zassert_equal(ret, sizeof(input), "Should process all bytes");
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
+	/* Assert */
+	zassert_equal(fixture->decoded->len, sizeof(expected), "Length mismatch");
 	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
+	zassert_true(dec.frame_complete, "Frame not complete");
 }
 
-ZTEST_F(cobs_tests, test_stream_decode_frame_end_detection)
+ZTEST_F(cobs_tests, test_stream_decode_errors)
 {
 	struct cobs_decode_state dec;
-	int ret;
 
-	/* Single frame with extra data: [0x03, 0x01, 0x02, 0x00, 0xFF, 0xFF] */
-	const uint8_t input[] = {0x03, 0x01, 0x02, 0x00, 0xFF, 0xFF};
-	const uint8_t expected[] = {0x01, 0x02};
+	/* Arrange: Invalid delimiter in data stream */
+	const uint8_t bad_delim[] = {0x03, 0x01, 0x00};
 
 	cobs_decode_init(&dec);
 
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	zassert_equal(ret, 4, "Should stop at frame delimiter");
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
-}
+	/* Act */
+	int ret = cobs_decode_stream(&dec, bad_delim, sizeof(bad_delim),
+				     fixture->decoded, COBS_DEFAULT_DELIMITER);
 
-ZTEST_F(cobs_tests, test_stream_decode_invalid_delimiter_in_data)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Invalid: delimiter in data stream [0x03, 0x01, 0x00] */
-	const uint8_t input[] = {0x03, 0x01, 0x00};
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	zassert_equal(ret, -EINVAL, "Should detect unexpected delimiter");
-}
-
-ZTEST_F(cobs_tests, test_stream_decode_invalid_zero_code)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Invalid: zero code byte (not at expected delimiter position) */
-	const uint8_t input[] = {0x00, 0x01, 0x02};
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	/* 0x00 at start is a valid frame delimiter, so this returns 1 */
-	zassert_equal(ret, 1, "Empty frame should be valid");
-}
-
-ZTEST_F(cobs_tests, test_stream_decode_incomplete_frame)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Incomplete frame: [0x05, 0x01, 0x02, 0x03] - missing 2 bytes and delimiter */
-	const uint8_t input[] = {0x05, 0x01, 0x02, 0x03};
-	const uint8_t expected[] = {0x01, 0x02, 0x03};
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	zassert_equal(ret, sizeof(input), "Should process all available bytes");
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	
-	/* Verify state allows continuation */
-	zassert_equal(dec.bytes_left, 1, "Should be waiting for 1 more byte");
-}
-
-ZTEST_F(cobs_tests, test_stream_decode_continue_after_incomplete)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* First fragment: [0x05, 0x01, 0x02] */
-	const uint8_t frag1[] = {0x05, 0x01, 0x02};
-	/* Second fragment: [0x03, 0x04, 0x00] */
-	const uint8_t frag2[] = {0x03, 0x04, 0x00};
-	const uint8_t expected[] = {0x01, 0x02, 0x03, 0x04};
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, frag1, sizeof(frag1), fixture->decoded);
-	zassert_equal(ret, sizeof(frag1), "Fragment 1 failed");
-
-	ret = cobs_decode_stream(&dec, frag2, sizeof(frag2), fixture->decoded);
-	zassert_equal(ret, sizeof(frag2), "Fragment 2 failed");
-
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
-}
-
-ZTEST_F(cobs_tests, test_stream_encode_decode_roundtrip)
-{
-	struct cobs_encode_state enc;
-	struct cobs_decode_state dec;
-	uint8_t encoded[128];
-	size_t enc_len;
-	int ret;
-
-	/* Test various patterns */
-	const uint8_t input[] = {0x01, 0x00, 0x02, 0x00, 0x00, 0x03};
-	net_buf_add_mem(fixture->test_data, input, sizeof(input));
-
-	cobs_encode_init(&enc);
-
-	enc_len = sizeof(encoded) - 1;  /* Reserve space for delimiter */
-	ret = cobs_encode_stream(&enc, fixture->test_data, encoded, &enc_len);
-	zassert_equal(ret, 0, "Encoding failed");
-	
-	/* Add frame delimiter */
-	encoded[enc_len++] = 0x00;
-
-	cobs_decode_init(&dec);
-
-	ret = cobs_decode_stream(&dec, encoded, enc_len, fixture->decoded);
-	zassert_true(ret > 0, "Decoding failed");
-	zassert_equal(fixture->decoded->len, sizeof(input), "Roundtrip length mismatch");
-	zassert_mem_equal(fixture->decoded->data, input, sizeof(input), "Roundtrip data mismatch");
-}
-
-ZTEST_F(cobs_tests, test_stream_reset)
-{
-	struct cobs_encode_state enc;
-	struct cobs_decode_state dec;
-
-	/* Initialize and use */
-	cobs_encode_init(&enc);
-	enc.block_code = 100;  /* Modify state */
-
-	/* Reset should clear state */
-	cobs_encode_reset(&enc);
-	zassert_equal(enc.block_code, 0, "Encoder state not reset");
-
-	/* Same for decoder */
-	cobs_decode_init(&dec);
-	dec.bytes_left = 50;
-	dec.need_delimiter = true;
-	dec.frame_complete = true;
-
-	cobs_decode_reset(&dec);
-	zassert_equal(dec.bytes_left, 0, "Decoder bytes_left not reset");
-	zassert_false(dec.need_delimiter, "Decoder need_delimiter not reset");
-	zassert_false(dec.frame_complete, "Decoder frame_complete not reset");
-}
-
-/* ========================================================================
- * Boundary Condition Tests
- * ======================================================================== */
-
-ZTEST_F(cobs_tests, test_stream_decode_delimiter_at_boundary)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	/* Critical case: delimiter exactly at chunk boundary
-	 * Chunk 1: [0x09, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x00]
-	 * The 0x00 delimiter is the last byte - this is an important edge case!
-	 */
-	const uint8_t input[] = {0x09, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x00};
-	const uint8_t expected[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-
-	cobs_decode_init(&dec);
-	zassert_false(dec.frame_complete, "frame_complete should start false");
-
-	ret = cobs_decode_stream(&dec, input, sizeof(input), fixture->decoded);
-	
-	/* Verify all bytes processed */
-	zassert_equal(ret, sizeof(input), "Should process all bytes including delimiter");
-	
-	/* Verify frame_complete flag is set */
-	zassert_true(dec.frame_complete, "frame_complete should be TRUE when delimiter found");
-	
-	/* Verify decoded data */
-	zassert_equal(fixture->decoded->len, sizeof(expected), "Wrong decoded length");
-	zassert_mem_equal(fixture->decoded->data, expected, sizeof(expected), "Data mismatch");
+	/* Assert */
+	zassert_equal(ret, -EINVAL, "Unexpected delimiter not caught");
 }
 
 ZTEST_F(cobs_tests, test_stream_decode_frame_complete_flag)
 {
 	struct cobs_decode_state dec;
-	int ret;
+	const struct {
+		const uint8_t *data;
+		size_t len;
+		bool should_be_complete;
+		const char *stage;
+	} stages[] = {
+		{U8({0x05, 0x01, 0x02, 0x03}), 4, false, "Incomplete frame"},
+		{U8({0x04, 0x00}), 2, true, "Complete frame"},
+		{U8({0x03, 0xAA, 0xBB}), 3, false, "New frame resets"},
+	};
 
 	cobs_decode_init(&dec);
 
-	/* Test 1: Incomplete frame - no delimiter */
-	const uint8_t partial[] = {0x05, 0x01, 0x02, 0x03};
-	ret = cobs_decode_stream(&dec, partial, sizeof(partial), fixture->decoded);
-	zassert_equal(ret, sizeof(partial), "Should process all bytes");
-	zassert_false(dec.frame_complete, "frame_complete should be FALSE for partial frame");
-
-	/* Test 2: Complete the frame with delimiter */
-	const uint8_t completion[] = {0x04, 0x00};
-	ret = cobs_decode_stream(&dec, completion, sizeof(completion), fixture->decoded);
-	zassert_equal(ret, sizeof(completion), "Should process completion bytes");
-	zassert_true(dec.frame_complete, "frame_complete should be TRUE after delimiter");
-
-	/* Test 3: Start new frame - flag should clear */
-	net_buf_reset(fixture->decoded);
-	const uint8_t next_frame[] = {0x03, 0xAA, 0xBB};
-	ret = cobs_decode_stream(&dec, next_frame, sizeof(next_frame), fixture->decoded);
-	zassert_equal(ret, sizeof(next_frame), "Should process next frame start");
-	zassert_false(dec.frame_complete, "frame_complete should reset for new frame");
-}
-
-ZTEST_F(cobs_tests, test_stream_decode_multi_chunk_frame)
-{
-	struct cobs_decode_state dec;
-	int ret;
-
-	cobs_decode_init(&dec);
-
-	/* Build a large frame: 100 bytes of test data */
-	uint8_t large_input[100];
-	for (int i = 0; i < 100; i++) {
-		large_input[i] = (uint8_t)(i + 1);
-	}
-	net_buf_add_mem(fixture->test_data, large_input, sizeof(large_input));
-
-	/* Encode it */
-	struct cobs_encode_state enc;
-	uint8_t encoded[110];  /* Slightly larger for COBS overhead */
-	size_t enc_len = sizeof(encoded) - 1;
-	
-	cobs_encode_init(&enc);
-	
-	ret = cobs_encode_stream(&enc, fixture->test_data, encoded, &enc_len);
-	zassert_equal(ret, 0, "Encoding failed");
-	
-	/* Add delimiter */
-	encoded[enc_len++] = 0x00;
-
-	const size_t chunk_size = 16;  /* Smaller chunks to test boundary conditions */
-	size_t offset = 0;
-	bool frame_complete = false;
-
-	while (offset < enc_len && !frame_complete) {
-		size_t remaining = enc_len - offset;
-		size_t to_process = (remaining < chunk_size) ? remaining : chunk_size;
-
-		ret = cobs_decode_stream(&dec, encoded + offset, to_process, fixture->decoded);
-		zassert_true(ret > 0, "Decode failed at offset %zu", offset);
-		
-		offset += ret;
-		frame_complete = dec.frame_complete;
-		
-		/* If delimiter not found, should process entire chunk */
-		if (!frame_complete && ret < to_process) {
-			zassert_true(false, "Partial processing without frame completion");
+	for (size_t i = 0; i < ARRAY_SIZE(stages); i++) {
+		if (i == 2) {
+			cobs_test_before(fixture); /* Reset for new frame */
 		}
-	}
 
-	/* Verify frame was completed */
-	zassert_true(frame_complete, "Frame should be marked complete");
-	zassert_equal(offset, enc_len, "Should have processed all encoded data");
-	
-	/* Verify roundtrip integrity */
-	zassert_equal(fixture->decoded->len, sizeof(large_input), "Decoded length mismatch");
-	zassert_mem_equal(fixture->decoded->data, large_input, sizeof(large_input),
-			  "Decoded data doesn't match original");
+		/* Act */
+		int ret = cobs_decode_stream(&dec, stages[i].data, stages[i].len,
+					     fixture->decoded, COBS_DEFAULT_DELIMITER);
+
+		/* Assert */
+		zassert_true(ret > 0, "%s failed", stages[i].stage);
+		zassert_equal(dec.frame_complete, stages[i].should_be_complete,
+			      "Flag wrong: %s", stages[i].stage);
+	}
 }
 
-ZTEST_F(cobs_tests, test_stream_decode_delimiter_variations)
+ZTEST_F(cobs_tests, test_stream_roundtrip)
+{
+	const uint8_t input[] = {0x01, 0x00, 0x02, 0x00, 0x00, 0x03};
+	test_stream_roundtrip_helper(fixture, input, sizeof(input),
+				      COBS_DEFAULT_DELIMITER, "Basic roundtrip");
+}
+
+/* ========================================================================
+ * Custom Delimiter Tests
+ * ========================================================================
+ */
+
+ZTEST_F(cobs_tests, test_custom_delimiter_support)
+{
+	const uint8_t input[] = {'T', 'e', 's', 't'};
+	const uint8_t test_delimiters[] = {0x01, 0x7F, 0xFF};
+
+	for (size_t i = 0; i < ARRAY_SIZE(test_delimiters); i++) {
+		uint8_t delim = test_delimiters[i];
+
+		/* Test block roundtrip */
+		net_buf_add_mem(fixture->test_data, input, sizeof(input));
+		int ret = cobs_encode(fixture->test_data, fixture->encoded,
+				      COBS_FLAG_CUSTOM_DELIMITER(delim));
+		zassert_ok(ret, "Block encode: 0x%02X", delim);
+
+		ret = cobs_decode(fixture->encoded, fixture->decoded,
+				  COBS_FLAG_CUSTOM_DELIMITER(delim));
+		zassert_ok(ret, "Block decode: 0x%02X", delim);
+		zassert_mem_equal(fixture->decoded->data, input, sizeof(input),
+				  "Block roundtrip: 0x%02X", delim);
+
+		cobs_test_before(fixture);
+
+		/* Test stream roundtrip */
+		test_stream_roundtrip_helper(fixture, input, sizeof(input), delim,
+					     "Stream roundtrip");
+		cobs_test_before(fixture);
+	}
+}
+
+/* ========================================================================
+ * Multiple Frame Tests
+ * ========================================================================
+ */
+
+/* Helper: decode multiple frames from stream and verify */
+static void decode_frames_helper(struct cobs_tests_fixture *fixture,
+				 const uint8_t *stream, size_t stream_len,
+				 const uint8_t expected[][16], const size_t exp_lens[],
+				 size_t num_frames, uint8_t delimiter)
 {
 	struct cobs_decode_state dec;
-	int ret;
+	size_t offset = 0;
 
-	/* Test various delimiter positions to ensure flag works correctly */
-	
-	/* Case 1: Delimiter in middle of chunk */
-	const uint8_t case1[] = {0x03, 0x11, 0x22, 0x00, 0xFF, 0xFF};
-	cobs_decode_init(&dec);
-	ret = cobs_decode_stream(&dec, case1, sizeof(case1), fixture->decoded);
-	zassert_equal(ret, 4, "Should stop after delimiter");
-	zassert_true(dec.frame_complete, "Flag should be set - delimiter in middle");
-	
-	/* Case 2: Delimiter at start */
-	net_buf_reset(fixture->decoded);
-	const uint8_t case2[] = {0x00, 0x03, 0x11, 0x22};
-	cobs_decode_init(&dec);
-	ret = cobs_decode_stream(&dec, case2, sizeof(case2), fixture->decoded);
-	zassert_equal(ret, 1, "Should stop after first byte");
-	zassert_true(dec.frame_complete, "Flag should be set - delimiter at start");
-	
-	/* Case 3: Delimiter at end (the critical case) */
-	net_buf_reset(fixture->decoded);
-	const uint8_t case3[] = {0x03, 0x11, 0x22, 0x00};
-	cobs_decode_init(&dec);
-	ret = cobs_decode_stream(&dec, case3, sizeof(case3), fixture->decoded);
-	zassert_equal(ret, sizeof(case3), "Should process all bytes");
-	zassert_true(dec.frame_complete, "Flag should be set - delimiter at end (CRITICAL)");
-	
-	/* Case 4: No delimiter (frame continues) */
-	net_buf_reset(fixture->decoded);
-	const uint8_t case4[] = {0x05, 0x11, 0x22, 0x33};
-	cobs_decode_init(&dec);
-	ret = cobs_decode_stream(&dec, case4, sizeof(case4), fixture->decoded);
-	zassert_equal(ret, sizeof(case4), "Should process all bytes");
-	zassert_false(dec.frame_complete, "Flag should be FALSE - no delimiter");
+	for (size_t i = 0; i < num_frames; i++) {
+		cobs_decode_init(&dec);
+
+		/* Act */
+		int ret = cobs_decode_stream(&dec, stream + offset, stream_len - offset,
+					     fixture->decoded, delimiter);
+
+		/* Assert */
+		zassert_true(ret > 0, "Frame %zu decode failed", i);
+		zassert_true(dec.frame_complete, "Frame %zu not complete", i);
+		zassert_equal(fixture->decoded->len, exp_lens[i], "Frame %zu length", i);
+		zassert_mem_equal(fixture->decoded->data, expected[i], exp_lens[i],
+				  "Frame %zu data", i);
+
+		offset += ret;
+		cobs_test_before(fixture);
+	}
+
+	zassert_equal(offset, stream_len, "Not all stream data consumed");
+}
+
+ZTEST_F(cobs_tests, test_multiple_frames_stream_decode)
+{
+	/* Arrange: Three frames "Hi" + "OK" + "End" */
+	const uint8_t stream[] = {
+		0x03, 'H', 'i', 0x00, 0x03, 'O', 'K', 0x00, 0x04, 'E', 'n', 'd', 0x00
+	};
+	const uint8_t expected[][16] = {{'H', 'i'}, {'O', 'K'}, {'E', 'n', 'd'}};
+	const size_t lens[] = {2, 2, 3};
+
+	decode_frames_helper(fixture, stream, sizeof(stream), expected, lens, 3,
+			     COBS_DEFAULT_DELIMITER);
+}
+
+ZTEST_F(cobs_tests, test_multiple_frames_with_custom_delimiter)
+{
+	struct cobs_encode_state enc;
+	uint8_t stream[128];
+	size_t stream_len = 0;
+	const uint8_t frames[][16] = {{'A', 'B', 'C'}, {0x7F, 0x7F}, {'X', 'Y', 'Z', '!'}};
+	const size_t frame_lens[] = {3, 2, 4};
+	const uint8_t delim = 0x7F;
+
+	/* Arrange: Encode multiple frames into stream */
+	for (size_t i = 0; i < ARRAY_SIZE(frames); i++) {
+		net_buf_add_mem(fixture->test_data, frames[i], frame_lens[i]);
+		cobs_encode_init(&enc);
+
+		size_t chunk_len = sizeof(stream) - stream_len;
+		int ret = cobs_encode_stream(&enc, fixture->test_data, stream + stream_len,
+					     &chunk_len, delim);
+		zassert_ok(ret, "Encode frame %zu", i);
+		stream_len += chunk_len;
+
+		chunk_len = sizeof(stream) - stream_len;
+		ret = cobs_encode_finalize(&enc, stream + stream_len, &chunk_len, delim);
+		zassert_ok(ret, "Finalize frame %zu", i);
+		stream_len += chunk_len;
+		stream[stream_len++] = delim;
+
+		cobs_test_before(fixture);
+	}
+
+	/* Act & Assert: Decode all frames */
+	decode_frames_helper(fixture, stream, stream_len, frames, frame_lens,
+			     ARRAY_SIZE(frames), delim);
+}
+
+ZTEST_F(cobs_tests, test_multiple_frames_with_empty_frames)
+{
+	/* Arrange: empty + "Hi" + empty + "OK" + empty */
+	const uint8_t stream[] = {
+		0x01, 0x00, 0x03, 'H', 'i', 0x00, 0x01, 0x00,
+		0x03, 'O', 'K', 0x00, 0x01, 0x00
+	};
+	const uint8_t expected[][16] = {{}, {'H', 'i'}, {}, {'O', 'K'}, {}};
+	const size_t lens[] = {0, 2, 0, 2, 0};
+
+	decode_frames_helper(fixture, stream, sizeof(stream), expected, lens, 5,
+			     COBS_DEFAULT_DELIMITER);
+}
+
+ZTEST_F(cobs_tests, test_multiple_frames_error_recovery)
+{
+	struct cobs_decode_state dec;
+	const struct {
+		const uint8_t *frame;
+		size_t len;
+		int expected_ret;
+		size_t expected_len;
+	} cases[] = {
+		{U8({0x03, 'O', 'K', 0x00}), 4, 4, 2},           /* Good */
+		{U8({0x04, 'B', 'A', 0x00}), 4, -EINVAL, 0},    /* Bad: embedded delim */
+		{U8({0x05, 'G', 'o', 'o', 'd', 0x00}), 6, 6, 4} /* Good after error */
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		/* Arrange */
+		cobs_decode_init(&dec);
+
+		/* Act */
+		int ret = cobs_decode_stream(&dec, cases[i].frame, cases[i].len,
+					     fixture->decoded, COBS_DEFAULT_DELIMITER);
+
+		/* Assert */
+		zassert_equal(ret, cases[i].expected_ret, "Frame %zu ret code", i);
+		if (ret > 0) {
+			zassert_true(dec.frame_complete, "Frame %zu complete", i);
+			zassert_equal(fixture->decoded->len, cases[i].expected_len,
+				      "Frame %zu length", i);
+		}
+		cobs_test_before(fixture);
+	}
+}
+
+ZTEST_F(cobs_tests, test_multiple_frames_continuous_processing)
+{
+	/* Arrange: Four single-char frames without decoder reset between them */
+	const uint8_t stream[] = {0x02, 'A', 0x00, 0x02, 'B', 0x00,
+				  0x02, 'C', 0x00, 0x02, 'D', 0x00};
+	const uint8_t expected[][16] = {{'A'}, {'B'}, {'C'}, {'D'}};
+	const size_t lens[] = {1, 1, 1, 1};
+
+	decode_frames_helper(fixture, stream, sizeof(stream), expected, lens, 4,
+			     COBS_DEFAULT_DELIMITER);
 }
