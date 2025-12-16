@@ -401,6 +401,16 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@40007800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40007800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
+			prescaler = <32768>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
 		sai1_a: sai1@40015404 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
