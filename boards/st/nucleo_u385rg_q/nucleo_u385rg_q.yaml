@@ -22,5 +22,6 @@ supported:
   - watchdog
   - pwm
   - counter
+  - rtc
 ram: 256
 flash: 1024
