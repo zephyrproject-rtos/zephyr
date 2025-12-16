@@ -21,14 +21,16 @@ include_guard(GLOBAL)
 
 # Internal helper function for creation of Kconfig files.
 function(kconfig_gen bin_dir file dirs comment)
-  set(kconfig_header "# Load ${comment} descriptions.\n")
+  set(kconfig_output "# Load ${comment} descriptions.\n")
   set(kconfig_file ${KCONFIG_BINARY_DIR}/${bin_dir}/${file})
-  file(WRITE ${kconfig_file} "${kconfig_header}")
 
   foreach(dir ${dirs})
     cmake_path(CONVERT "${dir}" TO_CMAKE_PATH_LIST dir)
-    file(APPEND ${kconfig_file} "osource \"${dir}/${file}\"\n")
+    string(APPEND kconfig_output "osource \"${dir}/${file}\"\n")
   endforeach()
+
+  file(WRITE ${kconfig_file}.tmp "${kconfig_output}")
+  file(COPY_FILE ${kconfig_file}.tmp ${kconfig_file} ONLY_IF_DIFFERENT)
 endfunction()
 
 # 'SOC_ROOT' and 'ARCH_ROOT' are prioritized lists of directories where their
