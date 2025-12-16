@@ -108,7 +108,7 @@ static int mcux_lpi2c_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = k_sem_take(&data->lock, SEM_LOCK_TIMEOUT);
+	ret = k_sem_take(&data->lock, k_SEM_LOCK_TIMEOUT);
 	if (ret) {
 		ret = -ETIMEDOUT;
 		return ret;
