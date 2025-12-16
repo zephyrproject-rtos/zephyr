@@ -56,9 +56,11 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 		speed = USB_SPEED_SPEED_FS;
 	}
 
-	udev = usbh_connect_device(ctx, speed);
-	if (udev == NULL) {
-		return;
+	udev = usbh_device_alloc(ctx);
+
+	if (udev != NULL) {
+		udev->speed = speed;
+		usbh_connect_device(ctx, udev);
 	}
 }
 

@@ -43,8 +43,8 @@ bool usbh_device_is_root(struct usbh_context *const ctx,
 			struct usb_device *const udev);
 
 /* Connect a new USB device */
-struct usb_device *usbh_connect_device(struct usbh_context *const ctx,
-				       uint8_t device_speed);
+void usbh_connect_device(struct usbh_context *const ctx,
+			 struct usb_device *const udev);
 /* Disconnect USB device */
 void usbh_disconnect_device(struct usbh_context *ctx, struct usb_device *udev);
 
