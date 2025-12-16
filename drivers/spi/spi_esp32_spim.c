@@ -191,7 +191,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
 
 #if defined(SOC_GDMA_SUPPORTED)
-	if (cfg->dma_enabled && hal_trans->rcv_buffer && hal_trans->send_buffer) {
+	if (cfg->dma_enabled && hal_trans->rcv_buffer) {
 		/* setup DMA channels via DMA driver */
 		spi_ll_dma_rx_fifo_reset(hal->hw);
 		spi_ll_infifo_full_clr(hal->hw);
@@ -202,7 +202,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 		if (err) {
 			goto free;
 		}
+	}
 
+	if (cfg->dma_enabled && hal_trans->send_buffer) {
 		spi_ll_dma_tx_fifo_reset(hal->hw);
 		spi_ll_outfifo_empty_clr(hal->hw);
 		spi_ll_dma_tx_enable(hal->hw, 1);
