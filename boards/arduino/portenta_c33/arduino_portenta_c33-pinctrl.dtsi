@@ -107,9 +107,7 @@
 
 	ether_default: ether_default {
 		group1 {
-			psels = <RA_PSEL(RA_PSEL_ETH_RMII, 2, 14)>, /* ET0_MDC */
-				<RA_PSEL(RA_PSEL_ETH_RMII, 2, 11)>, /* ET0_MDIO */
-				<RA_PSEL(RA_PSEL_ETH_RMII, 4, 5)>, /* RMII0_TXD_EN_B */
+			psels = <RA_PSEL(RA_PSEL_ETH_RMII, 4, 5)>, /* RMII0_TXD_EN_B */
 				<RA_PSEL(RA_PSEL_ETH_RMII, 4, 6)>, /* RMII0_TXD1_BR */
 				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 0)>, /* RMII0_TXD0_B */
 				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 1)>, /* REF50CK0_B */
@@ -117,6 +115,14 @@
 				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 3)>, /* RMII0_RXD1_B */
 				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 4)>, /* RMII0_RX_ER_B */
 				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 5)>; /* RMII0_CRS_DV_B */
+			drive-strength = "high";
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_RMII, 2, 14)>, /* ET0_MDC */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 2, 11)>; /* ET0_MDIO */
 			drive-strength = "high";
 		};
 	};
