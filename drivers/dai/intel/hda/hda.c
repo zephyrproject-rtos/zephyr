@@ -92,6 +92,25 @@ static const struct dai_properties *dai_hda_get_properties(const struct device *
 	return prop;
 }
 
+static int dai_hda_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_hda_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static int dai_hda_probe(const struct device *dev)
 {
 	LOG_DBG("%s", __func__);
@@ -139,6 +158,7 @@ static DEVICE_API(dai, dai_intel_hda_api_funcs) = {
 	.config_get		= dai_hda_config_get,
 	.trigger		= dai_hda_trigger,
 	.get_properties		= dai_hda_get_properties,
+	.get_properties_copy	= dai_hda_get_properties_copy,
 };
 
 #define DAI_INTEL_HDA_DEVICE_INIT(n)				\
