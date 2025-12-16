@@ -427,7 +427,21 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	hal_dev->cs_pin_id = ctx->config->slave;
+	/*
+	 * CS handling:
+	 * - When using GPIO CS (cs-gpios property), the spi_context manages
+	 *   chip select via GPIO. Hardware CS must be disabled by setting
+	 *   cs_pin_id outside valid range (0-2). Any value > 2 disables all
+	 *   hardware CS lines per documentation.
+	 * - When using hardware CS (directly via pinctrl), the slave
+	 *   number maps to the hardware CS pin (CS0, CS1, CS2).
+	 */
+	if (spi_cs_is_gpio(spi_cfg)) {
+		hal_dev->cs_pin_id = -1;
+	} else {
+		hal_dev->cs_pin_id = ctx->config->slave;
+	}
+
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret) {
