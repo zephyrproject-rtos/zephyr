@@ -1,0 +1,20 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+title: Broadcom BCM2712 Pin Controller
+
+description: |
+  BCM2712 SoC pinmux and pad control. Each controller bank manages a group
+  of GPIO pins and exposes the function selection and pad control registers
+  for those pins.
+
+compatible: "brcm,bcm2712-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: RP1 pin controller pin group.
