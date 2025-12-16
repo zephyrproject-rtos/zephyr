@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_ESP_SERIAL_FLASHER_MODULE
+	bool
+
+config ESP_SERIAL_FLASHER
+	bool "ESP Serial Flasher library"
+	depends on ZEPHYR_ESP_SERIAL_FLASHER_MODULE
+	select CONSOLE_SUBSYS
+	help
+	  esp-serial-flasher library
+
+if ESP_SERIAL_FLASHER
+
+config ESP_SERIAL_FLASHER_UART_BUFSIZE
+	int "ESP Serial Flasher UART buffer size"
+	default 512
+	help
+	  Buffer size for UART TX and RX packets
+
+endif # ESP_SERIAL_FLASHER
