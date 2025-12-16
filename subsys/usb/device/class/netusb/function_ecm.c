@@ -227,13 +227,13 @@ static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 		return 0;
 	}
 
-	switch (ntohs(hdr->type)) {
+	switch (net_ntohs(hdr->type)) {
 	case NET_ETH_PTYPE_IP:
 	case NET_ETH_PTYPE_ARP:
-		ip_len = ntohs(((struct net_ipv4_hdr *)ip_data)->len);
+		ip_len = net_ntohs(((struct net_ipv4_hdr *)ip_data)->len);
 		break;
 	case NET_ETH_PTYPE_IPV6:
-		ip_len = ntohs(((struct net_ipv6_hdr *)ip_data)->len);
+		ip_len = net_ntohs(((struct net_ipv6_hdr *)ip_data)->len);
 		break;
 	default:
 		LOG_DBG("Unknown hdr type 0x%04x", hdr->type);
