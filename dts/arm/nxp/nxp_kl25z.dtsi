@@ -25,9 +25,9 @@
 		};
 	};
 
-	sram0: memory@1FFFF000 {
+	sram0: memory@1ffff000 {
 		compatible = "mmio-sram";
-		reg = <0x1FFFF000 DT_SIZE_K(16)>;
+		reg = <0x1ffff000 DT_SIZE_K(16)>;
 	};
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
@@ -82,9 +82,9 @@
 			status = "disabled";
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007F000 0x1000>;
+			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {

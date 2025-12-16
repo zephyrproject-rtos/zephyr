@@ -72,7 +72,7 @@
 			/* PIO1_0 to PIO1_31. */
 			pio1: pio1@60 {
 				compatible = "nxp,lpc-iocon-pio";
-				reg = <0x60 0x7C>;
+				reg = <0x60 0x7c>;
 			};
 
 			/* PIO2_0 to PIO2_23. */
@@ -151,7 +151,7 @@
 			compatible = "nxp,lpc11u6x-uart";
 			clocks = <&syscon LPC11U6X_CLOCK_USART1>;
 			interrupts = <11 0>;
-			reg = <0x4006C000 0x30>;
+			reg = <0x4006c000 0x30>;
 			status = "disabled";
 		};
 
@@ -175,7 +175,7 @@
 			compatible = "nxp,lpc11u6x-uart";
 			clocks = <&syscon LPC11U6X_CLOCK_USART4>;
 			interrupts = <11 0>;
-			reg = <0x4004C000 0x30>;
+			reg = <0x4004c000 0x30>;
 			status = "disabled";
 		};
 

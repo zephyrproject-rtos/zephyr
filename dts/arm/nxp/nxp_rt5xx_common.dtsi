@@ -59,9 +59,9 @@
 				 * LPOSC, SRAM's, FlexSPI0 SRAM powered on
 				 * during deep sleep mode.
 				 */
-				deep-sleep-config = <0xC800>,
+				deep-sleep-config = <0xc800>,
 						    <0x80000004>,
-						    <0xFFFFFFFF>,
+						    <0xffffffff>,
 						    <0>;
 			};
 		};

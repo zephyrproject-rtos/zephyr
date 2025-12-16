@@ -145,8 +145,8 @@
 		uid: device_uid@40030f00 {
 			compatible = "elan,em32-uid";
 			reg = <0x40030f00 0x4 /* Chip ID */
-			       0x100A6020 0x4 /* Device ID */
-			       0x100A6024 0x4 /* IC Version */ >;
+			       0x100a6020 0x4 /* Device ID */
+			       0x100a6024 0x4 /* IC Version */ >;
 			reg-names = "chip_id", "device_id", "ic_version";
 			status = "disabled";
 		};

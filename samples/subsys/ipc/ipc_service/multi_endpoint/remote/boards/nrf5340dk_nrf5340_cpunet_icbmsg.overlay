@@ -27,8 +27,8 @@
 			reg = <0x20078000 0x4000>;
 		};
 
-		sram_ipc1_tx: memory@2007C000 {
-			reg = <0x2007C000 0x4000>;
+		sram_ipc1_tx: memory@2007c000 {
+			reg = <0x2007c000 0x4000>;
 		};
 	};
 

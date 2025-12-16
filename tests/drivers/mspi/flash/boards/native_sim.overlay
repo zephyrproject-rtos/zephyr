@@ -25,7 +25,7 @@
 		mspi-io-mode = "MSPI_IO_MODE_QUAD";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
 		mspi-hardware-ce-num = <0>;
-		read-command = <0x0B>;
+		read-command = <0x0b>;
 		write-command = <0x02>;
 		command-length = "INSTR_1_BYTE";
 		address-length = "ADDR_4_BYTE";
@@ -44,7 +44,7 @@
 		mspi-hardware-ce-num = <1>;
 		mspi-dqs-enable;
 		read-command = <0x20>;
-		write-command = <0xAA>;
+		write-command = <0xaa>;
 		command-length = "INSTR_2_BYTE";
 		address-length = "ADDR_3_BYTE";
 		rx-dummy = <6>;

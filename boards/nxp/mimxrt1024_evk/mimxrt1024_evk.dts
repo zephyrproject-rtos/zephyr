@@ -127,9 +127,9 @@ arduino_serial: &lpuart2 {
 			reg = <0x00201000 DT_SIZE_K(1924)>;
 		};
 
-		storage_partition: partition@3E2000 {
+		storage_partition: partition@3e2000 {
 			label = "storage";
-			reg = <0x003E2000 DT_SIZE_K(120)>;
+			reg = <0x003e2000 DT_SIZE_K(120)>;
 		};
 	};
 };

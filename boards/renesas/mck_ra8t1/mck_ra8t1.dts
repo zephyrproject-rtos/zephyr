@@ -167,7 +167,7 @@
 
 		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0X0 DT_SIZE_K(12)>;
+			reg = <0x0 DT_SIZE_K(12)>;
 		};
 	};
 };
@@ -200,7 +200,7 @@
 };
 
 &eth {
-	local-mac-address = [74 90 50 6D 81 75];
+	local-mac-address = [74 90 50 6d 81 75];
 	status = "okay";
 	phy-handle = <&phy>;
 };

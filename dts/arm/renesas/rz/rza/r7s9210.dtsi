@@ -328,7 +328,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_ADC, RZA2M_CLK_P1C)>;
 			status = "disabled";
 		};

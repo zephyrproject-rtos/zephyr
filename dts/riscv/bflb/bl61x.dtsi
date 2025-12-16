@@ -114,7 +114,7 @@
 
 		mtimer: timer@e000bff8 {
 			compatible = "riscv,machine-timer";
-			reg = <0xE000BFF8 0x8 0xE0004000 0x8>;
+			reg = <0xe000bff8 0x8 0xe0004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 
 			interrupts-extended = <&clic 7 1>;
@@ -168,7 +168,7 @@
 
 		adc0: adc@20002000 {
 			compatible = "bflb,adc";
-			reg = <0x20002000 0x400 0x2000F000 0x1000>;
+			reg = <0x20002000 0x400 0x2000f000 0x1000>;
 			#io-channel-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -330,7 +330,7 @@
 
 		sram0: memory@62fc0000 {
 			compatible = "mmio-sram";
-			reg = <0x62FC0000 DT_SIZE_K(320)>;
+			reg = <0x62fc0000 DT_SIZE_K(320)>;
 		};
 
 		sram1: memory@63010000 {

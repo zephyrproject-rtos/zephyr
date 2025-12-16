@@ -166,7 +166,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			status = "disabled";
 		};
 
@@ -178,7 +178,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			status = "disabled";
 		};
 
@@ -190,7 +190,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			status = "disabled";
 		};
 

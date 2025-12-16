@@ -48,7 +48,7 @@
 				     <GIC_PPI 14 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 11 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 10 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-			reg = <0x12c10200 0x1C>;
+			reg = <0x12c10200 0x1c>;
 			label = "arch_timer";
 		};
 
@@ -205,7 +205,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			status = "disabled";
 		};
 

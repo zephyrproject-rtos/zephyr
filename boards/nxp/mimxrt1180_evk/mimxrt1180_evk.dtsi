@@ -232,9 +232,9 @@
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
 
-			storage_partition: partition@E20000 {
+			storage_partition: partition@e20000 {
 				label = "storage";
-				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};
