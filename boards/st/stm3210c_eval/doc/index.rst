@@ -19,10 +19,12 @@ Hardware
 
 STM3210C-EVAL provides the following hardware components:
 
-- Three 5 V power supply options:
-    - Power jack
-    - USB connector
-    - daughterboard
+- Three 5 V power supply options
+
+  - Power jack
+  - USB connector
+  - Daughterboard
+
 - Boot from user Flash, system memory or SRAM.
 - I2S audio DAC, stereo audio jack.
 - 2 GByte (or more) microSD CardTM.
@@ -44,7 +46,8 @@ STM3210C-EVAL provides the following hardware components:
 - Extension connector for daughterboard or wrapping board.
 
 More information about STM32F107VCT can be found here:
-       - `STM32F107VCT reference manual`_
+
+- `STM32F107VCT reference manual`_
 
 
 Supported Features

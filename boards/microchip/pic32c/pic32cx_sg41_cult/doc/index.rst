@@ -23,7 +23,9 @@ Hardware
 - 64 Mbit Quad SPI Flash
 - AT24MAC402 Serial EEPROM with EUI-48™ MAC address
 - Ethernet 10/100 Mbps
-   - RMII Interface with modular PHY Header
+
+  - RMII Interface with modular PHY Header
+
 - SD/SDIO card connector
 - Two CAN interfaces with on-board transceivers
 - I²C-based temperature sensor
@@ -31,9 +33,13 @@ Hardware
 - mikroBUS header connector
 - Arduino Uno header connectors
 - CoreSight 10 connector
-   - 10-pin Cortex® Debug header (SWD)
+
+  - 10-pin Cortex® Debug header (SWD)
+
 - CoreSight 20 connector
-   - 20-pin Cortex Debug + ETM Connector (SWD and 4-bit Trace)
+
+  - 20-pin Cortex Debug + ETM Connector (SWD and 4-bit Trace)
+
 - Virtual COM port (CDC)
 - USB powered
 - Power Header and Barrel Jack connector for external power sources
