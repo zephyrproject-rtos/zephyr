@@ -607,7 +607,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, AF_PACKET, ETH_P_ALL, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, NET_AF_PACKET, ETH_P_ALL, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("%s: Unable to allocate net packet buffer", __func__);
 		goto out;
