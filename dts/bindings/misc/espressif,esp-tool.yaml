@@ -1,0 +1,63 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP tool is device that communicates with the target using either
+  UART or SPI, selected via devicetree.
+  ESP tool is multipurpose interface based on ESP Serial Flasher library.
+  Interface needs UART or SPI peripheral, together with boot and reset pins.
+  PIO pins. It is used to program and control external
+  target device.
+
+compatible: "espressif,esp-tool"
+
+include:
+  - base.yaml
+
+properties:
+  uart:
+    type: phandle
+    required: false
+    description: UART used for communication
+
+  spi:
+    type: phandle
+    required: false
+    description: SPI controller used for communication
+
+  cs-gpios:
+    type: phandle-array
+    required: false
+    description: Chip select GPIO (required for SPI mode)
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Target reset GPIO
+
+  boot-gpios:
+    type: phandle-array
+    required: true
+    description: Target boot GPIO
+
+  initial-baudrate:
+    type: int
+    required: false
+
+  higher-baudrate:
+    type: int
+    required: false
+
+  num-trials:
+    type: int
+    required: true
+
+  sync-timeout-ms:
+    type: int
+    required: true
+
+# additionalProperties: false
+#
+#oneOf:
+#  - required: [ uart ]
+#  - required: [ spi ]
