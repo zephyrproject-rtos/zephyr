@@ -24,7 +24,7 @@
 			group_efgh0: group-efgh0-map {
 				irq = <11>;
 				irq-prio = <3>;
-				group-mask = <0xF0>;
+				group-mask = <0xf0>;
 			};
 		};
 

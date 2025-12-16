@@ -61,7 +61,7 @@
 
 		pclkblock: pclkblock@80010 {
 			compatible = "renesas,rx-cgc-pclk-block";
-			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>, <0x0008001C 4>;
+			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>, <0x0008001c 4>;
 			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;

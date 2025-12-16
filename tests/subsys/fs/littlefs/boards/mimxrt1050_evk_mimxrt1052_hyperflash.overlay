@@ -18,9 +18,9 @@
 			reg = <0x03800000 DT_SIZE_M(4)>;
 		};
 
-		small_partition: partition@3C00000 {
+		small_partition: partition@3c00000 {
 			label = "small";
-			reg = <0x03C00000 DT_SIZE_M(4)>;
+			reg = <0x03c00000 DT_SIZE_M(4)>;
 		};
 	};
 };

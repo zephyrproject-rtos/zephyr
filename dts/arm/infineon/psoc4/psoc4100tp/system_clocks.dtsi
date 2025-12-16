@@ -191,7 +191,7 @@
 		peri0_group10_16bit_0: peri0_group10_16bit_0 {
 			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
-			peri-group = [00 0A];
+			peri-group = [00 0a];
 			div-type = <DIV_16_BIT>;
 			channel = <0>;
 			clock-div = <1>;
@@ -201,7 +201,7 @@
 		peri0_group11_16bit_0: peri0_group11_16bit_0 {
 			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
-			peri-group = [00 0B];
+			peri-group = [00 0b];
 			div-type = <DIV_16_BIT>;
 			channel = <0>;
 			clock-div = <1>;

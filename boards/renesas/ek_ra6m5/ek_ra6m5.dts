@@ -284,7 +284,7 @@
 
 		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0X0 DT_SIZE_K(8)>;
+			reg = <0x0 DT_SIZE_K(8)>;
 		};
 	};
 };
@@ -316,7 +316,7 @@ arduino_spi: &spi0 {};
 };
 
 &eth {
-	local-mac-address = [74 90 50 B0 6D 5C];
+	local-mac-address = [74 90 50 b0 6d 5c];
 	status = "okay";
 	phy-handle = <&phy>;
 };

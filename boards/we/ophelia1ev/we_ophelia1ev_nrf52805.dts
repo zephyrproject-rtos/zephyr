@@ -117,7 +117,7 @@
 
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0xd000>;
+			reg = <0x0000c000 0xd000>;
 		};
 
 		slot1_partition: partition@19000 {

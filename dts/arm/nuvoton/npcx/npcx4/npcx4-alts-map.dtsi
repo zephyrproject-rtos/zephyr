@@ -37,35 +37,35 @@
 
 		/* SCFG DEVALT E */
 		alte_cr_sin4_sl: alte6 {
-			alts = <&scfg 0x0E 0x6 0>;
+			alts = <&scfg 0x0e 0x6 0>;
 		};
 
 		alte_cr_sout4_sl: alte7 {
-			alts = <&scfg 0x0E 0x7 0>;
+			alts = <&scfg 0x0e 0x7 0>;
 		};
 
 		/* SCFG DEVALT F */
 		altf_adc10_sl: altf5 {
-			alts = <&scfg 0x0F 0x5 0>;
+			alts = <&scfg 0x0f 0x5 0>;
 		};
 
 		altf_adc11_sl: altf6 {
-			alts = <&scfg 0x0F 0x6 0>;
+			alts = <&scfg 0x0f 0x6 0>;
 		};
 
 		/* SCFG DEVALT A */
 		alta_32kclkin_sl: alta3 {
-			alts = <&scfg 0x0A 0x3 0>;
+			alts = <&scfg 0x0a 0x3 0>;
 		};
 
 		/* SCFG DEVALT C */
 		altc_gpio97_sl_inv: altc2-inv {
-			alts = <&scfg 0x0C 0x2 1>;
+			alts = <&scfg 0x0c 0x2 1>;
 		};
 
 		/* SCFG DEVALT F */
 		altf_adc12_sl: altf7 {
-			alts = <&scfg 0x0F 0x7 0>;
+			alts = <&scfg 0x0f 0x7 0>;
 		};
 
 		/* SCFG DEVALT G */

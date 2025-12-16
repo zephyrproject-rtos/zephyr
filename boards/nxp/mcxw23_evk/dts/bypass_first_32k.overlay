@@ -5,5 +5,5 @@
  */
 
 &sram0 {
-	reg = <0x2000C000 DT_SIZE_K(80)>;
+	reg = <0x2000c000 DT_SIZE_K(80)>;
 };

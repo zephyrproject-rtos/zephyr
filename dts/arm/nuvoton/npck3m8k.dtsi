@@ -18,13 +18,13 @@
 
 	sram0: memory@200c0000 {
 		compatible = "mmio-sram";
-		reg = <0x200C0000 DT_SIZE_K(62)>;
+		reg = <0x200c0000 DT_SIZE_K(62)>;
 	};
 
 	/* RAM space used by Booter */
 	bootloader_ram: memory@200c7800 {
 		compatible = "mmio-sram";
-		reg = <0x200C7800 DT_SIZE_K(2)>;
+		reg = <0x200c7800 DT_SIZE_K(2)>;
 	};
 
 	soc-id {

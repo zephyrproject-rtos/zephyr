@@ -114,9 +114,9 @@
 		status = "disabled";
 	};
 
-	reset: reset-controller@10D11000 {
+	reset: reset-controller@10d11000 {
 		compatible = "intel,socfpga-reset";
-		reg = <0x10D11000 0x100>;
+		reg = <0x10d11000 0x100>;
 		active-low;
 		#reset-cells = <1>;
 		status = "okay";
@@ -125,7 +125,7 @@
 	sdmmc: sdmmc@10808000 {
 		compatible = "cdns,sdhc";
 		reg = <0x10808000 0x1000>,
-		      <0x10B92000 0x1000>;
+		      <0x10b92000 0x1000>;
 		reg-names = "reg_base", "combo_phy";
 		clock-frequency = <200000000>;
 		power-delay-ms = <1000>;
@@ -135,7 +135,7 @@
 		status = "disabled";
 	};
 
-	timer0: timer@10C03000 {
+	timer0: timer@10c03000 {
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
@@ -146,7 +146,7 @@
 		status = "disabled";
 	};
 
-	timer1: timer@10C03100 {
+	timer1: timer@10c03100 {
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
@@ -157,23 +157,23 @@
 		status = "disabled";
 	};
 
-	timer2: timer@10D00000 {
+	timer2: timer@10d00000 {
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		reg = <0x10D00000 0x100>;
+		reg = <0x10d00000 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
 		status = "disabled";
 	};
 
-	timer3: timer@10D00100 {
+	timer3: timer@10d00100 {
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		reg = <0x10D00100 0x100>;
+		reg = <0x10d00100 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
 	};
@@ -226,9 +226,9 @@
 	};
 
 	/* cadence Nand Flash controller*/
-	nand: nand@10B80000 {
+	nand: nand@10b80000 {
 		compatible = "cdns,nand";
-		reg = <0x10B80000 0X10000>,
+		reg = <0x10b80000 0x10000>,
 		      <0x10840000 0x10000>;
 		reg-names = "nand_reg", "sdma";
 		interrupt-parent = <&gic>;
@@ -240,10 +240,10 @@
 		status = "disabled";
 	};
 
-	dma0: dma@10DB0000 {
+	dma0: dma@10db0000 {
 		compatible = "snps,designware-dma-axi";
 		#dma-cells = <1>;
-		reg = <0x10DB0000 0x1000>;
+		reg = <0x10db0000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
@@ -258,10 +258,10 @@
 		status = "disabled";
 	};
 
-	dma1: dma@10DC0000 {
+	dma1: dma@10dc0000 {
 		compatible = "snps,designware-dma-axi";
 		#dma-cells = <1>;
-		reg = <0x10DC0000 0x1000>;
+		reg = <0x10dc0000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 166 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,

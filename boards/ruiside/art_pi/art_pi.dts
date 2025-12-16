@@ -30,7 +30,7 @@
 	sdram1: memory@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
-		reg = <0xC0000000 0x00600000>; /* Use 6 MB  MAX 32MB */
+		reg = <0xc0000000 0x00600000>; /* Use 6 MB  MAX 32MB */
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -196,9 +196,9 @@
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
-	def-back-color-red = <0X00>;
-	def-back-color-green = <0X00>;
-	def-back-color-blue = <0X00>;
+	def-back-color-red = <0x00>;
+	def-back-color-green = <0x00>;
+	def-back-color-blue = <0x00>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -352,7 +352,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
-	local-mac-address = [00 80 E1 2A 75 01];
+	local-mac-address = [00 80 e1 2a 75 01];
 	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_crs_dv_pa7
 		     &eth_rxd0_pc4

@@ -17,62 +17,62 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	fake_driver_label: fakedriver@E0000000 {
+	fake_driver_label: fakedriver@e0000000 {
 		compatible = "fakedriver";
-		reg = <0xE0000000 0x2000>;
+		reg = <0xe0000000 0x2000>;
 		status = "okay";
 	};
 
-	fakedriver@E1000000 {
+	fakedriver@e1000000 {
 		compatible = "fakedriver";
-		reg = <0xE1000000 0x2000>;
+		reg = <0xe1000000 0x2000>;
 		status = "okay";
 	};
 
-	fakedriver@E2000000 {
+	fakedriver@e2000000 {
 		compatible = "fakedriver";
-		reg = <0xE2000000 0x2000>;
+		reg = <0xe2000000 0x2000>;
 		status = "okay";
 	};
 
-	fakedriver@E3000000 {
+	fakedriver@e3000000 {
 		compatible = "fakedriver";
-		reg = <0xE3000000 0x2000>;
+		reg = <0xe3000000 0x2000>;
 		status = "okay";
 	};
 
-	fakedriver@E4000000 {
+	fakedriver@e4000000 {
 		compatible = "fakedriver";
-		reg = <0xE4000000 0x2000>;
+		reg = <0xe4000000 0x2000>;
 		status = "okay";
 	};
 
-	fakedriver_multireg@E5000000 {
+	fakedriver_multireg@e5000000 {
 		compatible = "fakedriver_multireg";
-		reg = <0xE5000000 0x1000>,
-		      <0xE6000000 0x1000>;
+		reg = <0xe5000000 0x1000>,
+		      <0xe6000000 0x1000>;
 		reg-names = "chip",
 			    "dale";
 		status = "okay";
 	};
 
-	fakedeferdriver@E7000000 {
+	fakedeferdriver@e7000000 {
 		compatible = "fakedeferdriver";
-		reg = <0xE7000000 0x2000>;
+		reg = <0xe7000000 0x2000>;
 		status = "okay";
 		zephyr,deferred-init;
 	};
 
-	fakedeferdriver@E8000000 {
+	fakedeferdriver@e8000000 {
 		compatible = "fakedeferdriver";
-		reg = <0xE8000000 0x2000>;
+		reg = <0xe8000000 0x2000>;
 		status = "okay";
 		zephyr,deferred-init;
 	};
 
-	fakedeferdriver@F9000000 {
+	fakedeferdriver@f9000000 {
 		compatible = "fakedeferdriver";
-		reg = <0xF9000000 0x2000>;
+		reg = <0xf9000000 0x2000>;
 		status = "okay";
 		zephyr,deferred-init;
 	};

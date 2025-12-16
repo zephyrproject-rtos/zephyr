@@ -304,9 +304,9 @@
 			reg = <0x88889999 0x1000>;
 			status = "okay";
 
-			test-i3c-dev@420000ABCD12345678 {
+			test-i3c-dev@420000abcd12345678 {
 				compatible = "vnd,i3c-device";
-				reg = <0x42 0xABCD 0x12345678>;
+				reg = <0x42 0xabcd 0x12345678>;
 			};
 
 			test-i3c-i2c-dev@380000000000000050 {

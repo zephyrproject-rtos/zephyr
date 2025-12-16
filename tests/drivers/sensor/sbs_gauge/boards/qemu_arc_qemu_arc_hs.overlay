@@ -24,7 +24,7 @@
 
 	smartbattery0: smartbattery@b {
 		compatible = "sbs,sbs-gauge";
-		reg = <0x0B>;
+		reg = <0x0b>;
 		status = "okay";
 	};
 };

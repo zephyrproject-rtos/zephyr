@@ -116,7 +116,7 @@
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 10 IRQ_TYPE_EDGE
 				      IRQ_DEFAULT_PRIORITY>;
-			reg = <0xfffec200 0x1C>;
+			reg = <0xfffec200 0x1c>;
 			clocks = <&osc1>;
 		};
 

@@ -48,10 +48,10 @@
 	ivshmem0: ivshmem@0 {
 		compatible = "qemu,ivshmem";
 		ivshmem-v2;
-		vendor-id = <0x110A>;           /* Siemens */
+		vendor-id = <0x110a>;           /* Siemens */
 		device-id = <0x4106>;           /* IVSHMEM */
-		class-rev = <0xFF000100>;       /* PCI_CLASS_OTHERS | IVSHMEM_PROTO_NET */
-		class-rev-mask = <0xFFFFFF00>;  /* PCI_CLASS_MASK | IVSHMEM_PROTO_MASK */
+		class-rev = <0xff000100>;       /* PCI_CLASS_OTHERS | IVSHMEM_PROTO_NET */
+		class-rev-mask = <0xffffff00>;  /* PCI_CLASS_MASK | IVSHMEM_PROTO_MASK */
 		interrupt-parent = <&pcie>;
 		interrupts = <1 2 3 4>;
 		reg = <0x00 0x00 0x00 0x00 0x01>;
