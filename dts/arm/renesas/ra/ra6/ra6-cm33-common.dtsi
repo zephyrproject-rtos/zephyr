@@ -565,6 +565,7 @@
 		eth: ethernet@40114100 {
 			compatible = "renesas,ra-ethernet";
 			reg = <0x40114100 0xfc>;
+			clocks = <&pclka MSTPB 15>;
 			interrupts = <51 12>;
 			local-mac-address = [00 11 22 33 44 55];
 			phy-connection-type = "rmii";

@@ -63,7 +63,10 @@ struct renesas_ra_eth_context {
 
 struct renesas_ra_eth_config {
 	const ether_cfg_t *p_cfg;
+	const struct pinctrl_dev_config *pincfg;
 	const struct device *phy_dev;
+	const struct device *clk_dev;
+	const struct clock_control_ra_subsys_cfg clk_subsys;
 };
 
 /*
@@ -142,9 +145,6 @@ const ether_cfg_t g_ether0_cfg = {
 	.p_context = ETHER_DEFAULT,
 	.p_extend = &g_ether0_extended_cfg_t,
 };
-
-static struct renesas_ra_eth_config eth_0_config = {
-	.p_cfg = &g_ether0_cfg, .phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};
 
 /* Driver functions */
 static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device *dev)
@@ -401,6 +401,18 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 int renesas_ra_eth_init(const struct device *dev)
 {
 	struct renesas_ra_eth_context *ctx = dev->data;
+	const struct renesas_ra_eth_config *cfg = dev->config;
+	int ret;
+
+	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&cfg->clk_subsys);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		return ret;
+	}
 
 	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
 	case 0: /* mii */
@@ -432,6 +444,17 @@ int renesas_ra_eth_init(const struct device *dev)
 
 #define ETHER_RA_INIT(idx)                                                                         \
 	PINCTRL_DT_INST_DEFINE(0);                                                                 \
+	static struct renesas_ra_eth_config eth_0_config = {                                       \
+		.p_cfg = &g_ether0_cfg,                                                            \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),                                       \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),                                  \
+		.clk_subsys =                                                                      \
+			{                                                                          \
+				.mstp = DT_INST_CLOCKS_CELL(0, mstp),                              \
+				.stop_bit = DT_INST_CLOCKS_CELL(0, stop_bit),                      \
+			},                                                                         \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),                          \
+	};                                                                                         \
 	static struct renesas_ra_eth_context eth_0_context = {                                     \
 		.mac = DT_INST_PROP(0, local_mac_address),                                         \
 		.rx_sem = Z_SEM_INITIALIZER(eth_0_context.rx_sem, 0, UINT_MAX),                    \
