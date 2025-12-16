@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "benchmarking options"
+config ZTEST_BENCHMARK
+	bool "ztest benchmarking features"
+	select TIMING_FUNCTIONS
+	help
+		Enable features for benchmarking purposes.
+
+endmenu

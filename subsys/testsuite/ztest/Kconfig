@@ -260,3 +260,5 @@ config ZTRESS_REPORT_PROGRESS_MS
 	help
 	  Use 0 to disable.
 endif # ZTRESS
+
+rsource "benchmark/Kconfig"
