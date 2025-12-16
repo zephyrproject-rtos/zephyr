@@ -60,11 +60,11 @@ RING_BUF_DECLARE(mdm_recv_pool, CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES);
 struct hl78xx_dns_info {
 #ifdef CONFIG_NET_IPV4
 	char v4_string[NET_IPV4_ADDR_LEN];
-	struct in_addr v4;
+	struct net_in_addr v4;
 #endif
 #ifdef CONFIG_NET_IPV6
 	char v6_string[NET_IPV6_ADDR_LEN];
-	struct in6_addr v6;
+	struct net_in6_addr v6;
 #endif
 	bool ready;
 };
@@ -72,19 +72,19 @@ struct hl78xx_dns_info {
 /* IPv4 information is optional and only present when IPv4 is enabled */
 #ifdef CONFIG_NET_IPV4
 struct hl78xx_ipv4_info {
-	struct in_addr addr;
-	struct in_addr subnet;
-	struct in_addr gateway;
-	struct in_addr new_addr;
+	struct net_in_addr addr;
+	struct net_in_addr subnet;
+	struct net_in_addr gateway;
+	struct net_in_addr new_addr;
 };
 #endif
 /* IPv6 information is optional and only present when IPv6 is enabled */
 #ifdef CONFIG_NET_IPV6
 struct hl78xx_ipv6_info {
-	struct in6_addr addr;
-	struct in6_addr subnet;
-	struct in6_addr gateway;
-	struct in6_addr new_addr;
+	struct net_in6_addr addr;
+	struct net_in6_addr subnet;
+	struct net_in6_addr gateway;
+	struct net_in6_addr new_addr;
 };
 #endif
 /* TLS information is optional and only present when TLS is enabled */
@@ -1776,7 +1776,7 @@ static void check_tcp_state_if_needed(struct hl78xx_socket_data *socket_data,
 {
 	const char *check_ktcp_stat = "AT+KTCPSTAT";
 	/* Only check for TCP sockets */
-	if (sock->type != SOCK_STREAM) {
+	if (sock->type != NET_SOCK_STREAM) {
 		return;
 	}
 	if (atomic_test_and_clear_bit(&socket_data->mdata_global->state_leftover,
@@ -2229,7 +2229,7 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	ssize_t sent = 0;
-	struct iovec bkp_iovec = {0};
+	struct net_iovec bkp_iovec = {0};
 	struct net_msghdr crafted_msg = {
 		.msg_name = msg->msg_name,
 		.msg_namelen = msg->msg_namelen
