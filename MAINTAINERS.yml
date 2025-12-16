@@ -3493,6 +3493,7 @@ NXP Platform Drivers:
     - dbaluta
     - Holt-Sun
     - zejiang0jason
+    - butok
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
