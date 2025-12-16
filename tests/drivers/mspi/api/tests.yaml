@@ -13,6 +13,7 @@ tests:
     filter: dt_compat_enabled("zephyr,mspi-emul-controller")
     platform_allow:
       - native_sim
+      - sam_e54_xpro
     integration_platforms:
       - native_sim
   drivers.mspi.api.ambiq:
