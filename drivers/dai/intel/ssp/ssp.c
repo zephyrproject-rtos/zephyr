@@ -2558,6 +2558,10 @@ static int dai_ssp_get_properties_copy(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
 	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
 
 	return 0;
