@@ -142,6 +142,7 @@ if(CONFIG_SOC_FLASH_STM32)
       zephyr_library_sources(flash_stm32.c)
 
 # zephyr-keep-sorted-start
+      zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32C5_FLASH_CONTROLLER_ENABLED flash_stm32c5x.c)
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F1_FLASH_CONTROLLER_ENABLED flash_stm32f1x.c)
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F2_FLASH_CONTROLLER_ENABLED flash_stm32f2x.c)
       zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F4_FLASH_CONTROLLER_ENABLED flash_stm32f4x.c)
