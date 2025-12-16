@@ -7,19 +7,27 @@
 / {
 	ipc {
 		cpusec_cpuapp_ipc: ipc-1-2 {
-			compatible = "nordic,ironside-call";
+			compatible = "nordic,ironside-ipc";
 			status = "disabled";
-			memory-region = <&cpusec_cpuapp_ipc_shm>;
+			memory-regions = <&cpusec_cpuapp_ipc_shm>,
+					 <&cpuapp_ironside_se_event_report>;
+			memory-region-names = "call", "event";
 			mboxes = <&cpusec_bellboard 12>,
-				 <&cpuapp_bellboard 0>;
+				 <&cpuapp_bellboard 0>,
+				 <&cpuapp_bellboard 1>;
+			mbox-names = "tx", "rx", "event";
 		};
 
 		cpusec_cpurad_ipc: ipc-1-3 {
-			compatible = "nordic,ironside-call";
+			compatible = "nordic,ironside-ipc";
 			status = "disabled";
-			memory-region = <&cpusec_cpurad_ipc_shm>;
+			memory-regions = <&cpusec_cpurad_ipc_shm>,
+					 <&cpurad_ironside_se_event_report>;
+			memory-region-names = "call", "event";
 			mboxes = <&cpusec_bellboard 18>,
-				 <&cpurad_bellboard 0>;
+				 <&cpurad_bellboard 0>,
+				 <&cpurad_bellboard 1>;
+			mbox-names = "tx", "rx", "event";
 		};
 
 		cpuapp_cpurad_ipc: ipc-2-3 {

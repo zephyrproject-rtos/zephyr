@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: IPC configuration for Nordic IronSide SE
+
+compatible: "nordic,ironside-se-ipc"
+
+include: base.yaml
+
+properties:
+  memory-regions:
+    type: phandle-array
+    required: true
+    description: phandles to shared memory regions, two needed.
+
+  memory-region-names:
+    type: string-array
+    required: true
+    description: Names of the memory regions (must be called "call" and "event")
+
+  mboxes:
+    required: true
+    description: MBOX channel specifiers (TX, RX and event are required)
+
+  mbox-names:
+    required: true
+    description: MBOX channel names (must be called "tx", "rx" and "event")

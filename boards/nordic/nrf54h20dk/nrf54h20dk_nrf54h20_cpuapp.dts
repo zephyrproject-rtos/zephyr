@@ -118,12 +118,13 @@
 	interrupt-names = "irq0";
 	/* irq0:
 	 *  - 0:  cpuapp-cpusec
+	 *  - 1:  cpuapp-cpusec
 	 *  - 6:  cpuapp-cpusys
 	 *  - 13: cpuapp-cpuppr
 	 *  - 14: cpuapp-cpuflpr
 	 *  - 18: cpuapp-cpurad
 	 */
-	nordic,interrupt-mapping = <0x00046041 0>;
+	nordic,interrupt-mapping = <0x00046043 0>;
 };
 
 &cpurad_bellboard {
