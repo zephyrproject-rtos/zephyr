@@ -224,9 +224,9 @@ struct esp_data {
 	enum wifi_conn_status conn_status;
 
 	/* addresses  */
-	struct in_addr ip;
-	struct in_addr gw;
-	struct in_addr nm;
+	struct net_in_addr ip;
+	struct net_in_addr gw;
+	struct net_in_addr nm;
 	uint8_t mac_addr[6];
 #if defined(ESP_MAX_DNS)
 	struct net_sockaddr_in dns_addresses[ESP_MAX_DNS];
