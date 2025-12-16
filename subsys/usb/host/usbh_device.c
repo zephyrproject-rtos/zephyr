@@ -476,32 +476,23 @@ bool usbh_device_is_root(struct usbh_context *const ctx,
 	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
 }
 
-struct usb_device *usbh_connect_device(struct usbh_context *const ctx,
-					    uint8_t speed)
+void usbh_connect_device(struct usbh_context *const ctx,
+			 struct usb_device *const udev)
 {
-	struct usb_device *udev;
+	int err;
 
 	LOG_DBG("Device connected event");
 
-	/* Allocate new device */
-	udev = usbh_device_alloc(ctx);
-	if (udev == NULL) {
-		LOG_ERR("Failed allocate new device");
-		return NULL;
-	}
-
 	udev->state = USB_STATE_DEFAULT;
-	udev->speed = speed;
 
-	if (usbh_device_init(udev)) {
+	err = usbh_device_init(udev);
+	if (err != 0) {
 		LOG_ERR("Failed to init new USB device");
 		usbh_device_free(udev);
-		return NULL;
+		return;
 	}
 
 	usbh_class_probe_device(udev);
-
-	return udev;
 }
 
 void usbh_disconnect_device(struct usbh_context *ctx, struct usb_device *udev)
