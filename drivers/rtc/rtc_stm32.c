@@ -132,8 +132,8 @@ struct rtc_stm32_data {
 
 static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 {
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX) 
+	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
 #else
 	int ret;
 
@@ -146,8 +146,8 @@ static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 
 static inline void exti_clear_rtc_alarm_flag(uint32_t line_num)
 {
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
 #else
 	if (stm32_exti_is_pending(line_num)) {
 		stm32_exti_clear_pending(line_num);
@@ -506,8 +506,10 @@ static int rtc_stm32_init(const struct device *dev)
  * Enabling RTC is done directly via the RCC APB register bit.
  * On STM32WB0 series, LL_RCC_EnableRTC is not provided by STM32CubeWB0,
  * but RTC IP clock has already been turned on - skip the call as well.
+ * On STM32U3 series, LL_RCC_EnableRTC is not provided by STM32CubeU3,
+ * but RTC IP clock has already been turned on - skip the call as well.
  */
-#if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X) && !defined(CONFIG_SOC_SERIES_STM32U3X)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_EnableRTC();
