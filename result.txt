@@ -1,0 +1,648 @@
+✅ [1/46] No diagnostic errors in boards/actinius/icarus/actinius_icarus_nrf9160_ns.dts
+✅ 	[1/11]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/11]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/11]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/11]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/11]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/11]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/11]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+❌ 	[8/11]  boards/actinius/icarus/actinius_icarus_common.dtsi
+		 line: 114 col=14 endLine: 114 endColumn=28 No node with that reference "uart0_default" has been defined
+❌ 	 	 line: 115 col=14 endLine: 115 endColumn=26 No node with that reference "uart0_sleep" has been defined
+❌ 	 	 line: 114 col=14 endLine: 114 endColumn=28 Unable to resolve handle
+❌ 	 	 line: 115 col=14 endLine: 115 endColumn=26 Unable to resolve handle
+✅ 	[9/11]  No diagnostic errors in boards/actinius/icarus/actinius_icarus_common-pinctrl.dtsi
+✅ 	[10/11] No diagnostic errors in boards/actinius/icarus/feather_connector.dtsi
+✅ 	[11/11] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [2/46] No diagnostic errors in boards/actinius/icarus_bee/actinius_icarus_bee_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/actinius/icarus_bee/actinius_icarus_bee_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/actinius/icarus_bee/actinius_icarus_bee_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [3/46] No diagnostic errors in boards/actinius/icarus_som/actinius_icarus_som_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/actinius/icarus_som/actinius_icarus_som_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/actinius/icarus_som/actinius_icarus_som_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [4/46] No diagnostic errors in boards/actinius/icarus_som_dk/actinius_icarus_som_dk_nrf9160_ns.dts
+✅ 	[1/11]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/11]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/11]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/11]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/11]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/11]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/11]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/11]  No diagnostic errors in boards/actinius/icarus_som_dk/actinius_icarus_som_dk_common.dtsi
+✅ 	[9/11]  No diagnostic errors in boards/actinius/icarus_som_dk/actinius_icarus_som_dk_common-pinctrl.dtsi
+✅ 	[10/11] No diagnostic errors in boards/actinius/icarus_som_dk/arduino_connector.dtsi
+✅ 	[11/11] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [5/46] No diagnostic errors in boards/circuitdojo/feather/circuitdojo_feather_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/circuitdojo/feather/circuitdojo_feather_nrf9160_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/circuitdojo/feather/circuitdojo_feather_nrf9160_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [6/46] No diagnostic errors in boards/ct/ctcc/ctcc_nrf9161_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9161_ns_laca.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ct/ctcc/ctcc_nrf9161_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ct/ctcc/ctcc_nrf9161-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [7/46] No diagnostic errors in boards/ezurio/bl5340_dvk/bl5340_dvk_nrf5340_cpuapp_ns.dts
+✅ 	[1/12]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi
+✅ 	[2/12]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns.dtsi
+✅ 	[3/12]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/12]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/12]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/12]  No diagnostic errors in dts/arm/nordic/override.dtsi
+⚠️ 	[7/12]  dts/arm/nordic/nrf5340_cpuapp_peripherals.dtsi
+		 line: 479 col=26 endLine: 479 endColumn=47 Unable to find mapping range for address
+✅ 	[8/12]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ipc.dtsi
+✅ 	[9/12]  No diagnostic errors in boards/ezurio/bl5340_dvk/bl5340_dvk_nrf5340_cpuapp_common.dtsi
+✅ 	[10/12] No diagnostic errors in boards/ezurio/bl5340_dvk/bl5340_dvk_nrf5340_cpuapp_common-pinctrl.dtsi
+✅ 	[11/12] No diagnostic errors in boards/ezurio/bl5340_dvk/bl5340_dvk_nrf5340_cpuapp_partition_conf.dtsi
+✅ 	[12/12] No diagnostic errors in boards/ezurio/bl5340_dvk/bl5340_dvk_nrf5340_shared_sram_planning_conf.dtsi
+✅ [8/46] No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l10_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l10_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l10.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/nrf54l_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l10_cpuapp_partition.dtsi
+✅ [9/46] No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l10_cpuapp_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l10_cpuapp_ns.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l10_cpuapp_ns.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/nrf54l_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l10_cpuapp_ns_partition.dtsi
+✅ [10/46] No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l15_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/nrf54l_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
+✅ [11/46] No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l15_cpuapp_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/nrf54l_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ezurio/bl54l15_dvk/bl54l15_dvk_nrf54l_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns_partition.dtsi
+✅ [12/46] No diagnostic errors in boards/ezurio/bl54l15u_dvk/bl54l15u_dvk_nrf54l15_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/ezurio/bl54l15u_dvk/nrf54l15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ezurio/bl54l15u_dvk/bl54l15u_dvk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ezurio/bl54l15u_dvk/bl54l15u_dvk_nrf54l15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
+✅ [13/46] No diagnostic errors in boards/ezurio/bl54l15u_dvk/bl54l15u_dvk_nrf54l15_cpuapp_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/ezurio/bl54l15u_dvk/nrf54l15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/ezurio/bl54l15u_dvk/bl54l15u_dvk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/ezurio/bl54l15u_dvk/bl54l15u_dvk_nrf54l15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns_partition.dtsi
+⚠️ [14/46] boards/holyiot/holyiot_25008/holyiot_25008_nrf54l15_cpuapp.dts
+	 line: 30 col=9 endLine: 30 endColumn=41 Unable to resolve include
+❌  	 line: 23 col=26 endLine: 23 endColumn=42 No node with that reference "slot0_partition" has been defined
+✅ 	[1/8] No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/8] No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/8] No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/8] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/8] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/8] No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+❌ 	[7/8] boards/holyiot/holyiot_25008/holyiot_25008_common.dtsi
+		 line: 140 col=28 endLine: 140 endColumn=41 Binding should be used on bus types: i2c
+✅ 	[8/8] No diagnostic errors in boards/holyiot/holyiot_25008/holyiot_25008_nrf54l15-pinctrl.dtsi
+✅ [15/46] No diagnostic errors in boards/innblue/innblue21/innblue21_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/innblue/innblue21/innblue21_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/innblue/innblue21/innblue21_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [16/46] No diagnostic errors in boards/innblue/innblue22/innblue22_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/innblue/innblue22/innblue22_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/innblue/innblue22/innblue22_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+❌ [17/46] boards/native/nrf_bsim/nrf54l15bsim_nrf54l15_cpuapp.dts
+	 line: 13  endLine: 13 endColumn=1 The following node "cpus" shall be present in "/" node.
+❌  	 line: 26 col=15 endLine: 26 endColumn=21 Cannot delete a node before it has been defined
+❌  	 line: 30 col=16 endLine: 30 endColumn=31 Cannot delete a node before it has been defined
+❌  	 line: 34 col=17 endLine: 34 endColumn=26 Cannot delete a node before it has been defined
+❌  	 line: 35 col=17 endLine: 35 endColumn=46 Cannot delete a node before it has been defined
+❌  	 line: 134 col=19 endLine: 134 endColumn=31 Cannot delete a property before it has been defined
+✅ 	[1/7] No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/7] No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/7] No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/7] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/7] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/7] No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/7] No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi
+❌ [18/46] boards/native/nrf_bsim/nrf54lm20bsim_nrf54lm20a_cpuapp.dts
+	 line: 13  endLine: 13 endColumn=1 The following node "cpus" shall be present in "/" node.
+❌  	 line: 26 col=15 endLine: 26 endColumn=21 Cannot delete a node before it has been defined
+❌  	 line: 30 col=16 endLine: 30 endColumn=31 Cannot delete a node before it has been defined
+❌  	 line: 34 col=17 endLine: 34 endColumn=46 Cannot delete a node before it has been defined
+❌  	 line: 139 col=19 endLine: 139 endColumn=31 Cannot delete a property before it has been defined
+✅ 	[1/5] No diagnostic errors in dts/arm/nordic/nrf54lm20a_enga_cpuapp.dtsi
+✅ 	[2/5] No diagnostic errors in dts/vendor/nordic/nrf54lm20a.dtsi
+✅ 	[3/5] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[4/5] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[5/5] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi
+✅ [19/46] No diagnostic errors in boards/nordic/nrf5340_audio_dk/nrf5340_audio_dk_nrf5340_cpuapp_ns.dts
+✅ 	[1/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi
+✅ 	[2/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns.dtsi
+✅ 	[3/14]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/14]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/14]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/14]  No diagnostic errors in dts/arm/nordic/override.dtsi
+⚠️ 	[7/14]  dts/arm/nordic/nrf5340_cpuapp_peripherals.dtsi
+		 line: 479 col=26 endLine: 479 endColumn=47 Unable to find mapping range for address
+✅ 	[8/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ipc.dtsi
+✅ 	[9/14]  No diagnostic errors in boards/nordic/nrf5340_audio_dk/nrf5340_audio_dk_nrf5340_cpuapp_common.dtsi
+✅ 	[10/14] No diagnostic errors in boards/nordic/nrf5340_audio_dk/nrf5340_audio_dk_nrf5340_cpuapp_common-pinctrl.dtsi
+✅ 	[11/14] No diagnostic errors in boards/nordic/nrf5340_audio_dk/nrf5340_audio_dk_nrf5340_shared.dtsi
+✅ 	[12/14] No diagnostic errors in dts/vendor/nordic/nrf5340_cpuapp_ns_partition.dtsi
+✅ 	[13/14] No diagnostic errors in dts/vendor/nordic/nrf5340_sram_partition.dtsi
+✅ 	[14/14] No diagnostic errors in dts/vendor/nordic/nrf5340_shared_sram_partition.dtsi
+✅ [20/46] No diagnostic errors in boards/nordic/nrf5340dk/nrf5340dk_nrf5340_cpuapp_ns.dts
+✅ 	[1/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi
+✅ 	[2/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns.dtsi
+✅ 	[3/14]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/14]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/14]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/14]  No diagnostic errors in dts/arm/nordic/override.dtsi
+⚠️ 	[7/14]  dts/arm/nordic/nrf5340_cpuapp_peripherals.dtsi
+		 line: 479 col=26 endLine: 479 endColumn=47 Unable to find mapping range for address
+✅ 	[8/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ipc.dtsi
+✅ 	[9/14]  No diagnostic errors in boards/nordic/nrf5340dk/nrf5340_cpuapp_common.dtsi
+✅ 	[10/14] No diagnostic errors in boards/nordic/nrf5340dk/nrf5340dk_common.dtsi
+✅ 	[11/14] No diagnostic errors in boards/nordic/nrf5340dk/nrf5340_cpuapp_common-pinctrl.dtsi
+✅ 	[12/14] No diagnostic errors in dts/vendor/nordic/nrf5340_cpuapp_ns_partition.dtsi
+✅ 	[13/14] No diagnostic errors in dts/vendor/nordic/nrf5340_sram_partition.dtsi
+✅ 	[14/14] No diagnostic errors in dts/vendor/nordic/nrf5340_shared_sram_partition.dtsi
+✅ [21/46] No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l05_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l05_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l05.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l_05_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l05_partition.dtsi
+✅ [22/46] No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l10_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l10_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l10.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l_05_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l10_cpuapp_partition.dtsi
+⚠️ [23/46] boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l10_cpuapp_ns.dts
+	 line: 11 col=9 endLine: 11 endColumn=45 Unable to resolve include
+❌  	 line: 14  endLine: 14 endColumn=1 The following node "cpus" shall be present in "/" node.
+❌  	 line: 24 col=15 endLine: 24 endColumn=18 Cannot delete a node before it has been defined
+❌  	 line: 31  endLine: 31 endColumn=7 No node with that reference "uart30" has been defined
+❌  	 line: 19 col=26 endLine: 19 endColumn=45 No node with that reference "slot0_ns_partition" has been defined
+❌  	 line: 20 col=16 endLine: 20 endColumn=25 No node with that reference "sram0_ns" has been defined
+❌  	 line: 14  endLine: 14 endColumn=1 Property "#address-cells" is required
+❌  	 line: 14  endLine: 14 endColumn=1 Property "#size-cells" is required
+❌ 	[1/4] boards/nordic/nrf54l15dk/nrf54l_05_10_15_cpuapp_common.dtsi
+		 line: 50 col=27 endLine: 50 endColumn=46 Unknown macro name
+❌ 	 	 line: 116 col=22 endLine: 116 endColumn=37 Unknown macro name
+❌ 	 	 line: 135 col=26 endLine: 135 endColumn=41 Unknown macro name
+❌ 	 	 line: 30  endLine: 30 endColumn=12 No node with that reference "cpuapp_sram" has been defined
+❌ 	 	 line: 34  endLine: 34 endColumn=5 No node with that reference "lfxo" has been defined
+❌ 	 	 line: 39  endLine: 39 endColumn=5 No node with that reference "hfxo" has been defined
+❌ 	 	 line: 44  endLine: 44 endColumn=11 No node with that reference "regulators" has been defined
+❌ 	 	 line: 48  endLine: 48 endColumn=9 No node with that reference "vregmain" has been defined
+❌ 	 	 line: 53  endLine: 53 endColumn=5 No node with that reference "grtc" has been defined
+❌ 	 	 line: 60  endLine: 60 endColumn=7 No node with that reference "uart20" has been defined
+❌ 	 	 line: 64  endLine: 64 endColumn=5 No node with that reference "nfct" has been defined
+❌ 	 	 line: 68  endLine: 68 endColumn=6 No node with that reference "gpio0" has been defined
+❌ 	 	 line: 72  endLine: 72 endColumn=6 No node with that reference "gpio1" has been defined
+❌ 	 	 line: 76  endLine: 76 endColumn=6 No node with that reference "gpio2" has been defined
+❌ 	 	 line: 80  endLine: 80 endColumn=9 No node with that reference "gpiote20" has been defined
+❌ 	 	 line: 84  endLine: 84 endColumn=9 No node with that reference "gpiote30" has been defined
+❌ 	 	 line: 88  endLine: 88 endColumn=6 No node with that reference "radio" has been defined
+❌ 	 	 line: 92  endLine: 92 endColumn=11 No node with that reference "ieee802154" has been defined
+❌ 	 	 line: 96  endLine: 96 endColumn=5 No node with that reference "temp" has been defined
+❌ 	 	 line: 100  endLine: 100 endColumn=6 No node with that reference "clock" has been defined
+❌ 	 	 line: 104  endLine: 104 endColumn=10 No node with that reference "gpregret1" has been defined
+❌ 	 	 line: 114  endLine: 114 endColumn=6 No node with that reference "spi00" has been defined
+❌ 	 	 line: 139  endLine: 139 endColumn=4 No node with that reference "adc" has been defined
+❌ 	 	 line: 13 col=19 endLine: 13 endColumn=26 No node with that reference "uart20" has been defined
+❌ 	 	 line: 14 col=22 endLine: 14 endColumn=29 No node with that reference "uart20" has been defined
+❌ 	 	 line: 15 col=23 endLine: 15 endColumn=30 No node with that reference "uart20" has been defined
+❌ 	 	 line: 16 col=23 endLine: 16 endColumn=30 No node with that reference "uart20" has been defined
+❌ 	 	 line: 17 col=23 endLine: 17 endColumn=30 No node with that reference "uart20" has been defined
+❌ 	 	 line: 18 col=28 endLine: 18 endColumn=44 No node with that reference "rram_controller" has been defined
+❌ 	 	 line: 19 col=17 endLine: 19 endColumn=29 No node with that reference "cpuapp_rram" has been defined
+❌ 	 	 line: 20 col=22 endLine: 20 endColumn=33 No node with that reference "ieee802154" has been defined
+❌ 	 	 line: 21 col=21 endLine: 21 endColumn=32 No node with that reference "boot_mode0" has been defined
+❌ 	 	 line: 11  endLine: 11 endColumn=1 Property "#address-cells" is required
+❌ 	 	 line: 11  endLine: 11 endColumn=1 Property "#size-cells" is required
+❌ 	[2/4] boards/nordic/nrf54l15dk/nrf54l15dk_common.dtsi
+		 line: 14 col=21 endLine: 14 endColumn=37 Unknown macro name
+❌ 	 	 line: 19 col=22 endLine: 19 endColumn=38 Unknown macro name
+❌ 	 	 line: 24 col=21 endLine: 24 endColumn=37 Unknown macro name
+❌ 	 	 line: 29 col=22 endLine: 29 endColumn=38 Unknown macro name
+❌ 	 	 line: 44 col=20 endLine: 44 endColumn=28 Unknown macro name
+❌ 	 	 line: 44 col=33 endLine: 44 endColumn=52 Unknown macro name
+❌ 	 	 line: 52 col=23 endLine: 52 endColumn=35 Unknown macro name
+❌ 	 	 line: 52 col=38 endLine: 52 endColumn=53 Unknown macro name
+❌ 	 	 line: 54 col=18 endLine: 54 endColumn=29 Unknown macro name
+❌ 	 	 line: 58 col=22 endLine: 58 endColumn=34 Unknown macro name
+❌ 	 	 line: 58 col=37 endLine: 58 endColumn=52 Unknown macro name
+❌ 	 	 line: 60 col=18 endLine: 60 endColumn=29 Unknown macro name
+❌ 	 	 line: 64 col=22 endLine: 64 endColumn=34 Unknown macro name
+❌ 	 	 line: 64 col=37 endLine: 64 endColumn=52 Unknown macro name
+❌ 	 	 line: 66 col=18 endLine: 66 endColumn=29 Unknown macro name
+❌ 	 	 line: 70 col=22 endLine: 70 endColumn=34 Unknown macro name
+❌ 	 	 line: 70 col=37 endLine: 70 endColumn=52 Unknown macro name
+❌ 	 	 line: 72 col=18 endLine: 72 endColumn=29 Unknown macro name
+❌ 	 	 line: 90  endLine: 90 endColumn=7 No node with that reference "uart20" has been defined
+❌ 	 	 line: 97  endLine: 97 endColumn=7 No node with that reference "uart30" has been defined
+❌ 	 	 line: 104  endLine: 104 endColumn=6 No node with that reference "pwm20" has been defined
+❌ 	 	 line: 112 col=10 endLine: 112 endColumn=16 No node with that reference "spi22" has been defined
+❌ 	 	 line: 14 col=12 endLine: 14 endColumn=18 No node with that reference "gpio2" has been defined
+❌ 	 	 line: 19 col=12 endLine: 19 endColumn=18 No node with that reference "gpio1" has been defined
+❌ 	 	 line: 24 col=12 endLine: 24 endColumn=18 No node with that reference "gpio2" has been defined
+❌ 	 	 line: 29 col=12 endLine: 29 endColumn=18 No node with that reference "gpio1" has been defined
+❌ 	 	 line: 44 col=11 endLine: 44 endColumn=17 No node with that reference "pwm20" has been defined
+❌ 	 	 line: 52 col=12 endLine: 52 endColumn=18 No node with that reference "gpio1" has been defined
+❌ 	 	 line: 58 col=12 endLine: 58 endColumn=18 No node with that reference "gpio1" has been defined
+❌ 	 	 line: 64 col=12 endLine: 64 endColumn=18 No node with that reference "gpio1" has been defined
+❌ 	 	 line: 70 col=12 endLine: 70 endColumn=18 No node with that reference "gpio0" has been defined
+❌ 	 	 line: 86 col=14 endLine: 86 endColumn=20 No node with that reference "wdt31" has been defined
+❌ 	 	 line: 9  endLine: 9 endColumn=1 Property "#address-cells" is required
+❌ 	 	 line: 9  endLine: 9 endColumn=1 Property "#size-cells" is required
+❌ 	 	 line: 14 col=12 endLine: 14 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 19 col=12 endLine: 19 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 24 col=12 endLine: 24 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 29 col=12 endLine: 29 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 44 col=11 endLine: 44 endColumn=17 Unable to resolve handle
+❌ 	 	 line: 52 col=12 endLine: 52 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 58 col=12 endLine: 58 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 64 col=12 endLine: 64 endColumn=18 Unable to resolve handle
+❌ 	 	 line: 70 col=12 endLine: 70 endColumn=18 Unable to resolve handle
+❌ 	[3/4] boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi
+		 line: 9 col=12 endLine: 9 endColumn=20 Unknown macro name
+❌ 	 	 line: 10 col=5 endLine: 10 endColumn=13 Unknown macro name
+❌ 	 	 line: 14 col=12 endLine: 14 endColumn=20 Unknown macro name
+❌ 	 	 line: 15 col=5 endLine: 15 endColumn=13 Unknown macro name
+❌ 	 	 line: 22 col=12 endLine: 22 endColumn=20 Unknown macro name
+❌ 	 	 line: 23 col=5 endLine: 23 endColumn=13 Unknown macro name
+❌ 	 	 line: 24 col=5 endLine: 24 endColumn=13 Unknown macro name
+❌ 	 	 line: 29 col=12 endLine: 29 endColumn=20 Unknown macro name
+❌ 	 	 line: 37 col=12 endLine: 37 endColumn=20 Unknown macro name
+❌ 	 	 line: 38 col=5 endLine: 38 endColumn=13 Unknown macro name
+❌ 	 	 line: 42 col=12 endLine: 42 endColumn=20 Unknown macro name
+❌ 	 	 line: 43 col=5 endLine: 43 endColumn=13 Unknown macro name
+❌ 	 	 line: 50 col=12 endLine: 50 endColumn=20 Unknown macro name
+❌ 	 	 line: 51 col=5 endLine: 51 endColumn=13 Unknown macro name
+❌ 	 	 line: 52 col=5 endLine: 52 endColumn=13 Unknown macro name
+❌ 	 	 line: 53 col=5 endLine: 53 endColumn=13 Unknown macro name
+❌ 	 	 line: 60 col=12 endLine: 60 endColumn=20 Unknown macro name
+❌ 	 	 line: 61 col=5 endLine: 61 endColumn=13 Unknown macro name
+❌ 	 	 line: 62 col=5 endLine: 62 endColumn=13 Unknown macro name
+❌ 	 	 line: 68 col=12 endLine: 68 endColumn=20 Unknown macro name
+❌ 	 	 line: 69 col=5 endLine: 69 endColumn=13 Unknown macro name
+❌ 	 	 line: 70 col=5 endLine: 70 endColumn=13 Unknown macro name
+❌ 	 	 line: 77 col=12 endLine: 77 endColumn=20 Unknown macro name
+❌ 	 	 line: 83 col=12 endLine: 83 endColumn=20 Unknown macro name
+❌ 	 	 line: 90 col=12 endLine: 90 endColumn=20 Unknown macro name
+❌ 	 	 line: 91 col=5 endLine: 91 endColumn=13 Unknown macro name
+❌ 	 	 line: 97 col=12 endLine: 97 endColumn=20 Unknown macro name
+❌ 	 	 line: 98 col=5 endLine: 98 endColumn=13 Unknown macro name
+❌ 	 	 line: 6  endLine: 6 endColumn=8 No node with that reference "pinctrl" has been defined
+❌ 	[4/4] dts/vendor/nordic/nrf54l10_cpuapp_ns_partition.dtsi
+		 line: 23 col=13 endLine: 23 endColumn=22 Unknown macro name
+❌ 	 	 line: 24 col=20 endLine: 24 endColumn=29 Unknown macro name
+❌ 	 	 line: 31 col=17 endLine: 31 endColumn=26 Unknown macro name
+❌ 	 	 line: 32 col=24 endLine: 32 endColumn=33 Unknown macro name
+❌ 	 	 line: 50 col=20 endLine: 50 endColumn=29 Unknown macro name
+❌ 	 	 line: 55 col=21 endLine: 55 endColumn=30 Unknown macro name
+❌ 	 	 line: 60 col=21 endLine: 60 endColumn=30 Unknown macro name
+❌ 	 	 line: 65 col=21 endLine: 65 endColumn=30 Unknown macro name
+❌ 	 	 line: 70 col=21 endLine: 70 endColumn=30 Unknown macro name
+❌ 	 	 line: 75 col=21 endLine: 75 endColumn=30 Unknown macro name
+❌ 	 	 line: 18  endLine: 18 endColumn=12 No node with that reference "cpuapp_sram" has been defined
+❌ 	 	 line: 36  endLine: 36 endColumn=12 No node with that reference "cpuapp_rram" has been defined
+✅ [24/46] No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l15_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l_05_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
+✅ [25/46] No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l15_cpuapp_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l_05_10_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns_partition.dtsi
+✅ [26/46] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a_cpuapp.dts
+✅ 	[1/8] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20a_cpuapp_common.dtsi
+✅ 	[2/8] No diagnostic errors in dts/arm/nordic/nrf54lm20a_enga_cpuapp.dtsi
+✅ 	[3/8] No diagnostic errors in dts/vendor/nordic/nrf54lm20a.dtsi
+✅ 	[4/8] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/8] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/8] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-common.dtsi
+✅ 	[7/8] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi
+✅ 	[8/8] No diagnostic errors in dts/vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi
+✅ [27/46] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a_cpuapp_ns.dts
+✅ 	[1/8] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20a_cpuapp_common.dtsi
+✅ 	[2/8] No diagnostic errors in dts/arm/nordic/nrf54lm20a_enga_cpuapp.dtsi
+✅ 	[3/8] No diagnostic errors in dts/vendor/nordic/nrf54lm20a.dtsi
+✅ 	[4/8] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/8] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/8] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-common.dtsi
+✅ 	[7/8] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi
+✅ 	[8/8] No diagnostic errors in dts/vendor/nordic/nrf54lm20a_cpuapp_ns_partition.dtsi
+✅ [28/46] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a_cpuflpr.dts
+✅ 	[1/6] No diagnostic errors in dts/riscv/nordic/nrf54lm20a_enga_cpuflpr.dtsi
+✅ 	[2/6] No diagnostic errors in dts/vendor/nordic/nrf54lm20a.dtsi
+✅ 	[3/6] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[4/6] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[5/6] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-common.dtsi
+✅ 	[6/6] No diagnostic errors in boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi
+✅ [29/46] No diagnostic errors in boards/nordic/nrf9131ek/nrf9131ek_nrf9131_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9131_ns_laca.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf9131ek/nrf9131ek_nrf9131_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf9131ek/nrf9131ek_nrf9131_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [30/46] No diagnostic errors in boards/nordic/nrf9151dk/nrf9151dk_nrf9151_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9151_ns_laca.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf9151dk/nrf9151dk_nrf9151_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf9151dk/nrf9151dk_nrf9151_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [31/46] No diagnostic errors in boards/nordic/nrf9160dk/nrf9160dk_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf9160dk/nrf9160dk_nrf9160_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf9160dk/nrf9160dk_nrf9160_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [32/46] No diagnostic errors in boards/nordic/nrf9161dk/nrf9161dk_nrf9161_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9161_ns_laca.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/nordic/nrf9161dk/nrf9161dk_nrf9161_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/nordic/nrf9161dk/nrf9161dk_nrf9161_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [33/46] No diagnostic errors in boards/nordic/thingy53/thingy53_nrf5340_cpuapp_ns.dts
+✅ 	[1/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi
+✅ 	[2/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns.dtsi
+✅ 	[3/14]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/14]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/14]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/14]  No diagnostic errors in dts/arm/nordic/override.dtsi
+⚠️ 	[7/14]  dts/arm/nordic/nrf5340_cpuapp_peripherals.dtsi
+		 line: 479 col=26 endLine: 479 endColumn=47 Unable to find mapping range for address
+✅ 	[8/14]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ipc.dtsi
+✅ 	[9/14]  No diagnostic errors in boards/nordic/thingy53/thingy53_nrf5340_common.dtsi
+✅ 	[10/14] No diagnostic errors in boards/nordic/thingy53/thingy53_nrf5340_common-pinctrl.dtsi
+✅ 	[11/14] No diagnostic errors in boards/common/usb/cdc_acm_serial.dtsi
+✅ 	[12/14] No diagnostic errors in dts/vendor/nordic/nrf5340_cpuapp_ns_partition.dtsi
+✅ 	[13/14] No diagnostic errors in dts/vendor/nordic/nrf5340_sram_partition.dtsi
+✅ 	[14/14] No diagnostic errors in dts/vendor/nordic/nrf5340_shared_sram_partition.dtsi
+✅ [34/46] No diagnostic errors in boards/norik/octopus_io_board/octopus_io_board_nrf9160_ns.dts
+✅ 	[1/12]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/12]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/12]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/12]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/12]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/12]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/12]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/12]  No diagnostic errors in boards/norik/octopus_io_board/octopus_io_board_common.dtsi
+✅ 	[9/12]  No diagnostic errors in boards/norik/octopus_io_board/octopus_io_board_common-pinctrl.dtsi
+✅ 	[10/12] No diagnostic errors in boards/norik/octopus_som/octopus_som_common.dtsi
+✅ 	[11/12] No diagnostic errors in boards/norik/octopus_som/octopus_som_common-pinctrl.dtsi
+✅ 	[12/12] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [35/46] No diagnostic errors in boards/norik/octopus_som/octopus_som_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/norik/octopus_som/octopus_som_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/norik/octopus_som/octopus_som_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [36/46] No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
+✅ [37/46] No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15_cpuapp_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/panasonic/panb611evb/panb611evb_nrf54l15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns_partition.dtsi
+✅ [38/46] No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15_nrf54l15_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
+✅ [39/46] No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15_nrf54l15_cpuapp_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15_cpuapp_common.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/raytac/an54lq_db_15/raytac_an54lq_db_15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_ns_partition.dtsi
+✅ [40/46] No diagnostic errors in boards/raytac/mdbt53_db_40/raytac_mdbt53_db_40_nrf5340_cpuapp_ns.dts
+✅ 	[1/13]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi
+✅ 	[2/13]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns.dtsi
+✅ 	[3/13]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/13]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/13]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/13]  No diagnostic errors in dts/arm/nordic/override.dtsi
+⚠️ 	[7/13]  dts/arm/nordic/nrf5340_cpuapp_peripherals.dtsi
+		 line: 479 col=26 endLine: 479 endColumn=47 Unable to find mapping range for address
+✅ 	[8/13]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ipc.dtsi
+✅ 	[9/13]  No diagnostic errors in boards/raytac/mdbt53_db_40/raytac_mdbt53_db_40_nrf5340_cpuapp_common.dtsi
+✅ 	[10/13] No diagnostic errors in boards/raytac/mdbt53_db_40/raytac_mdbt53_db_40_nrf5340_cpuapp_common-pinctrl.dtsi
+✅ 	[11/13] No diagnostic errors in dts/vendor/nordic/nrf5340_cpuapp_ns_partition.dtsi
+✅ 	[12/13] No diagnostic errors in dts/vendor/nordic/nrf5340_sram_partition.dtsi
+✅ 	[13/13] No diagnostic errors in dts/vendor/nordic/nrf5340_shared_sram_partition.dtsi
+✅ [41/46] No diagnostic errors in boards/raytac/mdbt53v_db_40/raytac_mdbt53v_db_40_nrf5340_cpuapp_ns.dts
+✅ 	[1/13]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi
+✅ 	[2/13]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ns.dtsi
+✅ 	[3/13]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/13]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/13]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/13]  No diagnostic errors in dts/arm/nordic/override.dtsi
+⚠️ 	[7/13]  dts/arm/nordic/nrf5340_cpuapp_peripherals.dtsi
+		 line: 479 col=26 endLine: 479 endColumn=47 Unable to find mapping range for address
+✅ 	[8/13]  No diagnostic errors in dts/arm/nordic/nrf5340_cpuapp_ipc.dtsi
+✅ 	[9/13]  No diagnostic errors in boards/raytac/mdbt53v_db_40/raytac_mdbt53v_db_40_nrf5340_cpuapp_common.dtsi
+✅ 	[10/13] No diagnostic errors in boards/raytac/mdbt53v_db_40/raytac_mdbt53v_db_40_nrf5340_cpuapp_common-pinctrl.dtsi
+✅ 	[11/13] No diagnostic errors in dts/vendor/nordic/nrf5340_cpuapp_ns_partition.dtsi
+✅ 	[12/13] No diagnostic errors in dts/vendor/nordic/nrf5340_sram_partition.dtsi
+✅ 	[13/13] No diagnostic errors in dts/vendor/nordic/nrf5340_shared_sram_partition.dtsi
+✅ [42/46] No diagnostic errors in boards/seeed/xiao_nrf54l15/xiao_nrf54l15_nrf54l15_cpuapp.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/10]  No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/10]  No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/10]  No diagnostic errors in boards/seeed/xiao_nrf54l15/seeed_xiao_connector.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/seeed/xiao_nrf54l15/xiao_nrf54l15_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/seeed/xiao_nrf54l15/xiao_nrf54l15-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
+✅ [43/46] No diagnostic errors in boards/sparkfun/thing_plus/sparkfun_thing_plus_nrf9160_ns.dts
+✅ 	[1/10]  No diagnostic errors in dts/arm/nordic/nrf9160_ns_sica.dtsi
+❌ 	[2/10]  dts/arm/nordic/nrf91_ns.dtsi
+		 line: 42 col=2 endLine: 42 endColumn=21 Property "reg" is required
+✅ 	[3/10]  No diagnostic errors in dts/arm/armv8-m.dtsi
+✅ 	[4/10]  No diagnostic errors in dts/common/skeleton.dtsi
+✅ 	[5/10]  No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[6/10]  No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[7/10]  No diagnostic errors in dts/arm/nordic/nrf91_peripherals.dtsi
+✅ 	[8/10]  No diagnostic errors in boards/sparkfun/thing_plus/sparkfun_thing_plus_nrf9160_common.dtsi
+✅ 	[9/10]  No diagnostic errors in boards/sparkfun/thing_plus/sparkfun_thing_plus_nrf9160_common-pinctrl.dtsi
+✅ 	[10/10] No diagnostic errors in dts/vendor/nordic/nrf91xx_partition.dtsi
+✅ [44/46] No diagnostic errors in boards/we/ophelia4ev/ophelia4ev_nrf54l15_cpuapp.dts
+✅ 	[1/9] No diagnostic errors in dts/arm/nordic/nrf54l15_cpuapp.dtsi
+✅ 	[2/9] No diagnostic errors in dts/vendor/nordic/nrf54l15.dtsi
+✅ 	[3/9] No diagnostic errors in dts/vendor/nordic/nrf54l_05_10_15.dtsi
+✅ 	[4/9] No diagnostic errors in dts/vendor/nordic/nrf_common.dtsi
+✅ 	[5/9] No diagnostic errors in dts/arm/nordic/override.dtsi
+✅ 	[6/9] No diagnostic errors in dts/arm/nordic/nrf54l_05_10_15_cpuapp.dtsi
+✅ 	[7/9] No diagnostic errors in boards/we/ophelia4ev/ophelia4ev_common.dtsi
+✅ 	[8/9] No diagnostic errors in boards/we/ophelia4ev/ophelia4ev_nrf54l15-pinctrl.dtsi
+✅ 	[9/9] No diagnostic errors in dts/vendor/nordic/nrf54l15_cpuapp_partition.dtsi
