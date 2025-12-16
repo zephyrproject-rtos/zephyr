@@ -324,8 +324,8 @@ static int winc1500_get(net_sa_family_t family,
  * This function is called when user wants to bind to local IP address.
  */
 static int winc1500_bind(struct net_context *context,
-			 const struct sockaddr *addr,
-			 socklen_t addrlen)
+			 const struct net_sockaddr *addr,
+			 net_socklen_t addrlen)
 {
 	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
@@ -381,8 +381,8 @@ static int winc1500_listen(struct net_context *context, int backlog)
  * to a peer host.
  */
 static int winc1500_connect(struct net_context *context,
-			    const struct sockaddr *addr,
-			    socklen_t addrlen,
+			    const struct net_sockaddr *addr,
+			    net_socklen_t addrlen,
 			    net_context_connect_cb_t cb,
 			    int32_t timeout,
 			    void *user_data)
@@ -483,8 +483,8 @@ out:
  * This function is called when user wants to send data to peer host.
  */
 static int winc1500_sendto(struct net_pkt *pkt,
-			   const struct sockaddr *dst_addr,
-			   socklen_t addrlen,
+			   const struct net_sockaddr *dst_addr,
+			   net_socklen_t addrlen,
 			   net_context_send_cb_t cb,
 			   int32_t timeout,
 			   void *user_data)
@@ -590,7 +590,7 @@ static int winc1500_put(struct net_context *context)
 	struct socket_data *sd = &w1500_data.socket_data[sock];
 	int ret;
 
-	memset(&(context->remote), 0, sizeof(struct sockaddr_in));
+	memset(&(context->remote), 0, sizeof(struct net_sockaddr_in));
 	context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
 	ret = winc1500_close(sock);
 
@@ -652,7 +652,7 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 static void handle_wifi_dhcp_conf(void *pvMsg)
 {
 	uint8_t *pu8IPAddress = (uint8_t *)pvMsg;
-	struct in_addr addr;
+	struct net_in_addr addr;
 	uint8_t i;
 
 	/* Connected and got IP address*/
@@ -916,8 +916,8 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		a_sd->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
 		sd->accept_cb(a_sd->context,
-			      (struct sockaddr *)&accept_msg->strAddr,
-			      sizeof(struct sockaddr_in),
+			      (struct net_sockaddr *)&accept_msg->strAddr,
+			      sizeof(struct net_sockaddr_in),
 			      (accept_msg->sock > 0) ?
 			      0 : accept_msg->sock,
 			      sd->accept_user_data);
