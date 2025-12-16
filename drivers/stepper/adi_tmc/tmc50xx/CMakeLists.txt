@@ -4,4 +4,4 @@
 
 zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC50XX tmc50xx.c)
 zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC50XX_STEPPER tmc50xx_stepper.c)
-zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC50XX_STEPPER_DRV tmc50xx_stepper_drv.c)
+zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC50XX_STEPPER_AMP tmc50xx_stepper_amp.c)

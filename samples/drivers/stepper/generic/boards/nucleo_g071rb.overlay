@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		stepper-drv = &tmc2209;
+		stepper-amp = &tmc2209;
 		stepper = &step_dir_motion_control;
 	};
 
@@ -23,6 +23,6 @@
 		step-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>; /* D8 */
 		dir-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>; /* D9 */
 		invert-direction;
-		stepper-drv = <&tmc2209>;
+		stepper-amp = <&tmc2209>;
 	};
 };

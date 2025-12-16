@@ -10,11 +10,11 @@ Stepper-DRV API
 
 The stepper driver API provides a common interface for stepper drivers.
 
-- Configure **micro-stepping resolution** using :c:func:`stepper_drv_set_micro_step_res`
-  and :c:func:`stepper_drv_get_micro_step_res`.
-- **Enable** the stepper driver using :c:func:`stepper_drv_enable`.
-- **Disable** the stepper driver using :c:func:`stepper_drv_disable`.
-- Register an **event callback** using :c:func:`stepper_drv_set_event_cb`.
+- Configure **micro-stepping resolution** using :c:func:`stepper_amp_set_micro_step_res`
+  and :c:func:`stepper_amp_get_micro_step_res`.
+- **Enable** the stepper driver using :c:func:`stepper_amp_enable`.
+- **Disable** the stepper driver using :c:func:`stepper_amp_disable`.
+- Register an **event callback** using :c:func:`stepper_amp_set_event_cb`.
 
 Stepper API
 ***********
@@ -96,11 +96,11 @@ have been skipped.
 API Reference
 *************
 
-.. _stepper-drv-api-reference:
+.. _stepper-amp-api-reference:
 
-A common set of functions which should be implemented by all stepper drivers.
+A common set of functions which should be implemented by all stepper amplifiers a.k.a drivers.
 
-.. doxygengroup:: stepper_drv_interface
+.. doxygengroup:: stepper_amp_interface
 
 .. _stepper-api-reference:
 

@@ -8,13 +8,13 @@
 
 / {
 	aliases {
-		stepper-drv = &adi_tmc2209;
+		stepper-amp = &ti_drv84xx;
 	};
 
-	adi_tmc2209: adi_tmc2209 {
+	ti_drv84xx: ti_drv84xx {
 		status = "okay";
-		compatible = "adi,tmc2209";
-		micro-step-res = <32>;
+		compatible = "ti,drv84xx";
+		sleep-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		en-gpios = <&gpio2 1 0>;
 		m0-gpios = <&gpio3 0 0>;
 		m1-gpios = <&gpio4 1 0>;

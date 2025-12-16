@@ -20,7 +20,7 @@ description: |
 
             tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
               idx = <0>;
-              compatible = "adi,tmc50xx-stepper-drv";
+              compatible = "adi,tmc50xx-stepper-amp";
               micro-step-res = <256>;
               /* ADI TMC stallguard settings specific to TMC50XX */
               stallguard2-threshold=<30>;

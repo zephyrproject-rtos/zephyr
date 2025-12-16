@@ -44,7 +44,7 @@
 			compatible = "zephyr,gpio-step-dir-stepper";
 			step-gpios = <&test_gpio 0 0>;
 			dir-gpios = <&test_gpio 0 0>;
-			stepper-drv = <&adi_tmc2209>;
+			stepper-amp = <&adi_tmc2209>;
 		};
 
 		zephyr_gpio_step_dir_counter: zephyr_gpio_step_dir_counter {
@@ -52,7 +52,7 @@
 			step-gpios = <&test_gpio 0 0>;
 			dir-gpios = <&test_gpio 0 0>;
 			counter = <&counter0>;
-			stepper-drv = <&ti_drv84xx>;
+			stepper-amp = <&ti_drv84xx>;
 		};
 
 		zephyr_h_bridge_stepper_workq: zephyr_h_bridge_stepper_workq {

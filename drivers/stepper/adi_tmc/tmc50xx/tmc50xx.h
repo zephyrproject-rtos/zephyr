@@ -43,7 +43,7 @@ void tmc50xx_stepper_trigger_cb(const struct device *dev, const enum stepper_eve
  * @param dev Pointer to the TMC50XX stepper driver device.
  * @param event The stepper driver event that occurred.
  */
-void tmc50xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper_drv_event event);
+void tmc50xx_stepper_amp_trigger_cb(const struct device *dev, const enum stepper_amp_event event);
 
 /**
  * @brief Enable or disable stallguard feature.

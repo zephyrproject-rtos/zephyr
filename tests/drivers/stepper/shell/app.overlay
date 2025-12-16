@@ -6,7 +6,7 @@
 
 / {
 	fake_stepper_driver: fake_stepper_driver {
-		compatible = "zephyr,fake-stepper-drv";
+		compatible = "zephyr,fake-stepper-amp";
 		status = "okay";
 	};
 
