@@ -1137,6 +1137,7 @@
 				cc-num = <16>;
 				clocks = <&lfclk>, <&fll16m>;
 				clock-names = "lfclock", "hfclock";
+				extended-channels = <0>;
 			};
 
 			ppib133: ppib@99d000 {
