@@ -132,8 +132,9 @@ struct rtc_stm32_data {
 
 static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 {
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
 #else
 	int ret;
 
@@ -146,8 +147,9 @@ static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 
 static inline void exti_clear_rtc_alarm_flag(uint32_t line_num)
 {
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
 #else
 	if (stm32_exti_is_pending(line_num)) {
 		stm32_exti_clear_pending(line_num);
@@ -502,18 +504,24 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 /*
- * On STM32WBAX series, there is no bit in BCDR register to enable RTC.
- * Enabling RTC is done directly via the RCC APB register bit.
- * On STM32WB0 series, LL_RCC_EnableRTC is not provided by STM32CubeWB0,
- * but RTC IP clock has already been turned on - skip the call as well.
+ * On certain series, there is no bit in BCDR register to enable RTC;
+ * a single bit in RCC controls both the RTC and bus interface. On
+ * such series, the LL_RCC_EnableRTC function is usually not provided
+ * by the STM32Cube package, but it's fine to skip calling it since
+ * the RTC is already accessible thanks to clock_control_on() above.
  */
 #if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	/* STM32U3 series uses LL_RCC_RTC_ClockEnable instead of LL_RCC_EnableRTC */
+	LL_RCC_RTC_ClockEnable();
+#else
 	LL_RCC_EnableRTC();
+#endif /* CONFIG_SOC_SERIES_STM32U3X */
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif /* CONFIG_SOC_SERIES_STM32WBAX */
+#endif /* !STM32WBAX && !STM32WB0X */
 
 	err = rtc_stm32_configure(dev);
 
