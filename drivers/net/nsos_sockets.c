@@ -46,6 +46,7 @@ struct nsos_socket;
 struct nsos_socket_poll {
 	struct nsos_mid_pollfd mid;
 	struct k_poll_signal signal;
+	struct k_condvar *cond;
 
 	sys_dnode_t node;
 };
@@ -287,6 +288,10 @@ static void pollcb(struct nsos_mid_pollfd *mid)
 	struct nsos_socket_poll *poll = CONTAINER_OF(mid, struct nsos_socket_poll, mid);
 
 	k_poll_signal_raise(&poll->signal, poll->mid.revents);
+
+	if (poll->cond) {
+		k_condvar_signal(poll->cond);
+	}
 }
 
 static int nsos_poll_prepare(struct nsos_socket *sock, struct zsock_pollfd *pfd,
@@ -568,8 +573,21 @@ static int nsos_wait_for_poll(struct nsos_socket *sock, int events,
 	struct k_poll_event poll_events[1];
 	struct k_poll_event *pev = poll_events;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
-	struct nsos_socket_poll socket_poll = {};
+	struct k_mutex *lock = NULL;
+	struct k_condvar cond;
+	struct nsos_socket_poll socket_poll = {
+		.cond = &cond,
+	};
+	bool lock_acquired;
 	int ret;
+
+	lock_acquired = zvfs_get_obj_lock_and_cond(sock,
+						   &nsos_socket_fd_op_vtable.fd_vtable,
+						   &lock, NULL);
+	__ASSERT(lock_acquired, "zvfs_get_obj_lock_and_cond() failed");
+	__ASSERT_NO_MSG(lock != NULL);
+
+	k_condvar_init(&cond);
 
 	ret = nsos_adapt_dup(sock->poll.mid.fd);
 	if (ret < 0) {
@@ -586,7 +604,7 @@ static int nsos_wait_for_poll(struct nsos_socket *sock, int events,
 		goto close_dup;
 	}
 
-	ret = k_poll(poll_events, ARRAY_SIZE(poll_events), timeout);
+	ret = k_condvar_wait(&cond, lock, timeout);
 	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 		goto poll_update;
 	}
