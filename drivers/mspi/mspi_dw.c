@@ -1108,6 +1108,8 @@ static int start_next_packet(const struct device *dev)
 	dev_data->ctrlr0 &= ~(CTRLR0_TMOD_MASK)
 			  & ~(CTRLR0_DFS_MASK)
 			  & ~(CTRLR0_DFS32_MASK);
+	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
+				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
 
 	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_WAIT_CYCLES_MASK;
 
@@ -1824,7 +1826,6 @@ static int dev_pm_action_cb(const struct device *dev,
 
 static int dev_init(const struct device *dev)
 {
-	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
 	const struct gpio_dt_spec *ce_gpio;
 	int rc;
@@ -1833,12 +1834,11 @@ static int dev_init(const struct device *dev)
 
 	vendor_specific_init(dev);
 
-	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
-				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
-
 	dev_config->irq_config();
 
 #if defined(CONFIG_MULTITHREADING)
+	struct mspi_dw_data *dev_data = dev->data;
+
 	dev_data->dev = dev;
 	k_sem_init(&dev_data->finished, 0, 1);
 	k_sem_init(&dev_data->cfg_lock, 1, 1);
