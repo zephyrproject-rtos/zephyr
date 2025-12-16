@@ -163,6 +163,26 @@ void soc_gpio_configure(const struct soc_gpio_pin *pin)
 		break;
 #endif
 
+	case SOC_GPIO_FUNC_E: // extra
+	case SOC_GPIO_FUNC_F: // system
+	case SOC_GPIO_FUNC_G: // lpm
+	case SOC_GPIO_FUNC_H: // wakeup
+		/* Disable the interrupt. */
+		pio->PIO_IDR = mask;
+		/* Disable pull-up. */
+		pio->PIO_PUDR = mask;
+#if defined(CONFIG_SOC_SERIES_SAM4S) || \
+	defined(CONFIG_SOC_SERIES_SAM4E) || \
+	defined(CONFIG_SOC_SERIES_SAMX7X)
+		/* Disable pull-down. */
+		pio->PIO_PPDDR = mask;
+#endif
+		/* Let the PIO control the pin (instead of a peripheral). */
+		pio->PIO_PER = mask;
+		/* Disable output. */
+		pio->PIO_ODR = mask;
+		break;
+
 	case SOC_GPIO_FUNC_IN:
 		/* Enable module's clock */
 		soc_pmc_peripheral_enable(periph_id);

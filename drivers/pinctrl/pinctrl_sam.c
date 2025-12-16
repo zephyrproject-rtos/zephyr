@@ -68,9 +68,24 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	soc_pin.mask = 1 << SAM_PINMUX_PIN_GET(pin);
 	soc_pin.flags = SAM_PINCTRL_FLAGS_GET(pin) << SOC_GPIO_FLAGS_POS;
 
-	if (port_func == SAM_PINMUX_FUNC_periph) {
-		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
-				  << SOC_GPIO_FUNC_POS);
+	switch(port_func)
+	{
+		case SAM_PINMUX_FUNC_periph:
+			soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
+					<< SOC_GPIO_FUNC_POS);
+			break;
+		case SAM_PINMUX_FUNC_extra:
+			soc_pin.flags |= SOC_GPIO_FUNC_E;
+			break;
+		case SAM_PINMUX_FUNC_system:
+			soc_pin.flags |= SOC_GPIO_FUNC_F;
+			break;
+		case SAM_PINMUX_FUNC_lpm:
+			soc_pin.flags |= SOC_GPIO_FUNC_G;
+			break;
+		case SAM_PINMUX_FUNC_wakeup:
+			soc_pin.flags |= SOC_GPIO_FUNC_H;
+			break;
 	}
 
 	soc_gpio_configure(&soc_pin);
