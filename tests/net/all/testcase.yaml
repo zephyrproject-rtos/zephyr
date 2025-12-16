@@ -19,8 +19,6 @@ tests:
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
       - CONFIG_POSIX_API=n
-      - CONFIG_SHELL_GETOPT=n
-      - CONFIG_NET_L2_WIFI_SHELL=n
   net.build.compat_namespacing:
     platform_allow: qemu_x86
     extra_configs:
@@ -33,8 +31,6 @@ tests:
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
       - CONFIG_POSIX_API=n
-      - CONFIG_SHELL_GETOPT=n
-      - CONFIG_NET_L2_WIFI_SHELL=n
       - CONFIG_NET_CANBUS=y
       - CONFIG_CAN=y
       - CONFIG_NET_SOCKETS_CAN=y
@@ -50,8 +46,6 @@ tests:
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
       - CONFIG_POSIX_API=n
-      - CONFIG_SHELL_GETOPT=n
-      - CONFIG_NET_L2_WIFI_SHELL=n
       - CONFIG_NET_L2_OPENTHREAD=y
       - CONFIG_CPP=y
       - CONFIG_NET_SLIP_TAP=n
