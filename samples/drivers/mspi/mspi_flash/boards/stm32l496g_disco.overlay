@@ -44,7 +44,7 @@
 				mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
 				mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
 				mspi-hardware-ce-num = <0>;
-				read-command = <0xEB>;
+				read-command = <0xeb>;
 				write-command = <0x38>; /* PP_1_4_4 */
 				mspi-hardware-ce-num = <0>;
 				command-length = "INSTR_1_BYTE";

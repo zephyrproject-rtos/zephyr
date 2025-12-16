@@ -35,9 +35,9 @@
 				border-waveform = <0x33>;
 				dummy-line = <0x1a>;
 				gate-line-width = <0x08>;
-				lut = [50 AA 55 AA 11 00 00 00
+				lut = [50 aa 55 aa 11 00 00 00
 				       00 00 00 00 00 00 00 00
-				       00 00 00 00 FF FF 1F 00
+				       00 00 00 00 ff ff 1f 00
 				       00 00 00 00 00 00];
 			};
 

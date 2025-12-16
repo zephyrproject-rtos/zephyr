@@ -42,8 +42,8 @@
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Mbits */
 				status = "okay";
-				read-command = <0xEE11>;
-				write-command = <0x12ED>;
+				read-command = <0xee11>;
+				write-command = <0x12ed>;
 				rx-dummy = <20>;
 				mspi-max-frequency = <DT_FREQ_M(50)>;
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";

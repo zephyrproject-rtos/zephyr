@@ -259,7 +259,7 @@ pmod_spi: &spi4 {
 		status = "okay";
 
 		port1 {
-			local-mac-address = [00 E0 22 FE DA C9];
+			local-mac-address = [00 e0 22 fe da c9];
 		};
 
 		mdio {
@@ -305,7 +305,7 @@ pmod_spi: &spi4 {
 		 * HPB doesn't support 7-clock latency which is default
 		 */
 		config-regs = <0x1000>;
-		config-reg-vals = <0x801F>;
+		config-reg-vals = <0x801f>;
 	};
 
 	mem@1 {
@@ -325,7 +325,7 @@ pmod_spi: &spi4 {
 		 * HPB doesn't support 7-clock latency which is default
 		 */
 		config-regs = <0x1000>;
-		config-reg-vals = <0x801F>;
+		config-reg-vals = <0x801f>;
 	};
 };
 

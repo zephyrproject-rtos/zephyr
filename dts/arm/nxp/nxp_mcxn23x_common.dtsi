@@ -1052,9 +1052,9 @@
 		#dma-cells = <0>;
 	};
 
-	ewm0: ewm@C0000 {
+	ewm0: ewm@c0000 {
 		compatible = "nxp,ewm";
-		reg = <0xC0000 0x6>;
+		reg = <0xc0000 0x6>;
 		status = "disabled";
 		interrupts = <100 0>;
 		clk-divider = <0x0>;

@@ -148,9 +148,9 @@
 			status = "disabled";
 		};
 
-		uart1: serial@801400C0 {
+		uart1: serial@801400c0 {
 			compatible = "telink,b91-uart";
-			reg = <0x801400C0 0x40>;
+			reg = <0x801400c0 0x40>;
 			interrupts = <18 1>;
 			interrupt-parent = <&plic0>;
 			status = "disabled";
@@ -178,9 +178,9 @@
 			#pwm-cells = <3>;
 		};
 
-		hspi: spi@81FFFFC0 {
+		hspi: spi@81ffffc0 {
 			compatible = "telink,b91-spi";
-			reg = <0x81FFFFC0 0x40>;
+			reg = <0x81ffffc0 0x40>;
 			peripheral-id = "HSPI_MODULE";
 			cs0-pin = "0";
 			cs1-pin = "0";
@@ -222,7 +222,7 @@
 			compatible = "telink,b91-pinctrl";
 			reg = <0x80140330 0x28
 			       0x80140306 0x28
-			       0x0000000e 0x0C>;
+			       0x0000000e 0x0c>;
 			reg-names = "pin_mux",
 				    "gpio_en",
 				    "pull_up_en";

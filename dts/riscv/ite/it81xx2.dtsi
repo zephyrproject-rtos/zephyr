@@ -66,7 +66,7 @@
 			func3-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 				     0xf02032 0xf02032 0xf016f0 0xf016f0>;
 			func3-en-mask = <0 0 0 0
-					 0x02 0x02 0x10 0x0C>;
+					 0x02 0x02 0x10 0x0c>;
 			func4-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 				     NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4-en-mask = <0 0 0 0

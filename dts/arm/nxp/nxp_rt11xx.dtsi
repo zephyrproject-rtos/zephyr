@@ -957,7 +957,7 @@
 
 		wdog1: wdog@40030000 {
 			compatible = "nxp,imx-wdog";
-			reg = <0x40030000 0xA>;
+			reg = <0x40030000 0xa>;
 			status = "disabled";
 			interrupts = <112 0>;
 		};
@@ -1059,7 +1059,7 @@
 			nxp,a-on;
 			reg = <0x40070000 0x4000>,
 			      <0x40074000 0x4000>;
-			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
+			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7c 0x000000c0>;
 			status = "disabled";
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
 				     <4 0>, <5 0>, <6 0>, <7 0>,
@@ -1078,7 +1078,7 @@
 			nxp,a-on;
 			reg = <0x40c14000 0x4000>,
 			      <0x40c18000 0x4000>;
-			clocks = <&ccm IMX_CCM_EDMA_LPSR_CLK 0x7C 0x000000C0>;
+			clocks = <&ccm IMX_CCM_EDMA_LPSR_CLK 0x7c 0x000000c0>;
 			status = "disabled";
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
 				     <4 0>, <5 0>, <6 0>, <7 0>,

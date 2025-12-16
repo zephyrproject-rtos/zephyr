@@ -109,12 +109,12 @@
 
 		slot1_partition: partition@8c000 {
 			label = "image-1";
-			reg = <0x0008C000 DT_SIZE_K(432)>;
+			reg = <0x0008c000 DT_SIZE_K(432)>;
 		};
 
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 DT_SIZE_K(16)>;
+			reg = <0x000f8000 DT_SIZE_K(16)>;
 		};
 
 		storage_partition: partition@fc000 {
@@ -184,11 +184,11 @@
 		spi-oa-protection;
 
 		port1 {
-			local-mac-address = [00 E0 22 FE DA C9];
+			local-mac-address = [00 e0 22 fe da c9];
 		};
 
 		port2 {
-			local-mac-address = [00 E0 22 FE DA D9];
+			local-mac-address = [00 e0 22 fe da d9];
 		};
 
 		mdio {

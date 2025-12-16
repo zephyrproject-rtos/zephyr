@@ -222,7 +222,7 @@
 			dma-requests = <92>;
 			no-error-irq;
 			interrupts = <128 0>, <129 0>, <143 0>;
-			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000C 0x00000000
+			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000c 0x00000000
 						    0x00000030 0x00000000>;
 			status = "disabled";
 		};

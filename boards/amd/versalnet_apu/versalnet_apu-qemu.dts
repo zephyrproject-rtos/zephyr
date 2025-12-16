@@ -694,7 +694,7 @@
 				phandle = <0xc9>;
 			};
 
-			loader_write_cpu0_0x1@0xF1110880 {
+			loader_write_cpu0_0x1@0xf1110880 {
 				compatible = "loader";
 				addr = <0xf1110880>;
 				data = <0x01>;
@@ -706,7 +706,7 @@
 				phandle = <0xca>;
 			};
 
-			loader_write_cpu0_0x5@0xFD1A0050 {
+			loader_write_cpu0_0x5@0xfd1a0050 {
 				compatible = "loader";
 				addr = <0xfd1a0050>;
 				data = <0x05>;
@@ -718,7 +718,7 @@
 				phandle = <0xcb>;
 			};
 
-			loader_write_cpu0_0xFF@0xF111010C {
+			loader_write_cpu0_0xFF@0xf111010c {
 				compatible = "loader";
 				addr = <0xf111010c>;
 				data = <0xff>;
@@ -744,7 +744,7 @@
 				phandle = <0x2c>;
 			};
 
-			loader_write_cpu0_0x80C@0xF12B0100 {
+			loader_write_cpu0_0x80C@0xf12b0100 {
 				compatible = "loader";
 				addr = <0xf12b0100>;
 				data = <0x80c>;
@@ -1394,7 +1394,7 @@
 				phandle = <0xb7>;
 			};
 
-			rpu_pcil@0xEB420000 {
+			rpu_pcil@0xeb420000 {
 				compatible = "xlnx,rpu_pcil";
 				reg = <0x00 0xeb420000 0x00 0x10000 0x00>;
 				gpio-controller;
@@ -1564,7 +1564,7 @@
 				phandle = <0x4e>;
 			};
 
-			pki_rng@0x20400040000ULL {
+			pki_rng@0x20400040000ull {
 				compatible = "xlnx,psx-pki-rng";
 				reg = <0x204 0x40000 0x00 0x20000 0x00>;
 				interrupts = <0x9c>;
@@ -2143,7 +2143,7 @@ Cannot continue.Try installing libgcrypt.";
 				phandle = <0x6e>;
 			};
 
-			pmc_sha1@0xF1800000 {
+			pmc_sha1@0xf1800000 {
 				doc-status = "complete";
 				compatible = "zynqmp,csu-sha3";
 				reg = <0x00 0xf1800000 0x00 0x10000 0x00>;
@@ -2224,7 +2224,7 @@ Cannot continue.Try installing libgcrypt.";
 				phandle = <0x76>;
 			};
 
-			pmc_err_mng@0xF1130000 {
+			pmc_err_mng@0xf1130000 {
 				compatible = "xlnx,PmcErrMngmnt";
 				reg = <0x00 0xf1130000 0x00 0x10000 0x00>;
 				interrupts = <0xbca>;
@@ -2975,7 +2975,7 @@ Cannot continue.Try installing libgcrypt.";
 			xlnx,use-io-bus = <0x01>;
 			phandle = <0x139>;
 
-			pmc_ppu0_intc@0C {
+			pmc_ppu0_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -3191,7 +3191,7 @@ Cannot continue.Try installing libgcrypt.";
 			xlnx,use-io-bus = <0x01>;
 			phandle = <0x143>;
 
-			pmc_ppu1_intc@0C {
+			pmc_ppu1_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -3407,7 +3407,7 @@ Cannot continue.Try installing libgcrypt.";
 			container = <0x92>;
 			phandle = <0x14d>;
 
-			psm0_intc@0C {
+			psm0_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -3554,7 +3554,7 @@ Cannot continue.Try installing libgcrypt.";
 			priority = <0xffffffff>;
 			phandle = <0x153>;
 
-			ddrmc0_intc@0C {
+			ddrmc0_intc@0c {
 				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
 				interrupt-controller;
@@ -3865,7 +3865,7 @@ Cannot continue.Try installing libgcrypt.";
 		phandle = <0xba>;
 	};
 
-	memory@0x50000000000ULL {
+	memory@0x50000000000ull {
 		compatible = "qemu:memory-region";
 		device_type = "memory";
 		container = <0x0b>;
@@ -4668,7 +4668,7 @@ Cannot continue.Try installing libgcrypt.";
 		phandle = <0x7f>;
 	};
 
-	ddr_2@0x800000000ULL {
+	ddr_2@0x800000000ull {
 		compatible = "qemu:memory-region-spec";
 		container = <0xba>;
 		qemu,ram = <0x01>;

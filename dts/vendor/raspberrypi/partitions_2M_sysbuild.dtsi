@@ -28,12 +28,12 @@
 			reg = <0x10000 0xd0000>;
 		};
 
-		slot1_partition: partition@E0000 {
+		slot1_partition: partition@e0000 {
 			label = "image-1";
 			reg = <0xe0000 0xd0000>;
 		};
 
-		storage_partition: partition@1B0000 {
+		storage_partition: partition@1b0000 {
 			label = "storage";
 			reg = <0x1b0000 0x50000>;
 		};

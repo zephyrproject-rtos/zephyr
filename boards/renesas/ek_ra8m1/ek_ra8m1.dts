@@ -371,7 +371,7 @@ mikrobus_spi: &spi1 {};
 
 		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0X0 DT_SIZE_K(12)>;
+			reg = <0x0 DT_SIZE_K(12)>;
 		};
 	};
 };
@@ -397,7 +397,7 @@ pmod_serial: &pmod1_serial {};
 pmod_header: &pmod1_header {};
 
 &eth {
-	local-mac-address = [74 90 50 B0 6D 5A];
+	local-mac-address = [74 90 50 b0 6d 5a];
 	status = "okay";
 	phy-handle = <&phy>;
 };

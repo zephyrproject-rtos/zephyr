@@ -1106,7 +1106,7 @@
 
 		sar_adc0: adc@402c0000 {
 			compatible = "nxp,s32-adc-sar";
-			reg = <0x402C0000 0x1000>;
+			reg = <0x402c0000 0x1000>;
 			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 169 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -1282,7 +1282,7 @@
 			compatible = "nxp,s32-emios";
 			reg = <0x420b0000 0x4000>;
 			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
-			internal-cnt = <0xFFFFFFFF>;
+			internal-cnt = <0xffffffff>;
 			interrupts = <GIC_SPI 284 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 285 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 286 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1325,35 +1325,35 @@
 				emios0_bus_a: emios0_bus_a {
 					channel = <23>;
 					bus-type = "BUS_A";
-					channel-mask = <0xFF7FFFFF>;
+					channel-mask = <0xff7fffff>;
 					status = "disabled";
 				};
 
 				emios0_bus_b: emios0_bus_b {
 					channel = <0>;
 					bus-type = "BUS_B";
-					channel-mask = <0x000000FE>;
+					channel-mask = <0x000000fe>;
 					status = "disabled";
 				};
 
 				emios0_bus_c: emios0_bus_c {
 					channel = <8>;
 					bus-type = "BUS_C";
-					channel-mask = <0x0000FE00>;
+					channel-mask = <0x0000fe00>;
 					status = "disabled";
 				};
 
 				emios0_bus_d: emios0_bus_d {
 					channel = <16>;
 					bus-type = "BUS_D";
-					channel-mask = <0x00FE0000>;
+					channel-mask = <0x00fe0000>;
 					status = "disabled";
 				};
 
 				emios0_bus_e: emios0_bus_e {
 					channel = <24>;
 					bus-type = "BUS_E";
-					channel-mask = <0xFE000000>;
+					channel-mask = <0xfe000000>;
 					status = "disabled";
 				};
 			};
@@ -1369,7 +1369,7 @@
 			compatible = "nxp,s32-emios";
 			reg = <0x400b0000 0x4000>;
 			clocks = <&clock NXP_S32_P0_REG_INTF_CLK>;
-			internal-cnt = <0xFFFFFFFF>;
+			internal-cnt = <0xffffffff>;
 			interrupts = <GIC_SPI 314 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 315 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 316 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1411,34 +1411,34 @@
 				emios1_bus_a: emios1_bus_a {
 					channel = <23>;
 					bus-type = "BUS_A";
-					channel-mask = <0xFF7FFFFF>;
+					channel-mask = <0xff7fffff>;
 					status = "disabled";
 				};
 
 				emios1_bus_b: emios1_bus_b {
 					channel = <0>;
 					bus-type = "BUS_B";
-					channel-mask = <0x000000FE>;
+					channel-mask = <0x000000fe>;
 					status = "disabled";
 				};
 
 				emios1_bus_c: emios1_bus_c {
 					channel = <8>;
 					bus-type = "BUS_C";
-					channel-mask = <0x0000FE00>;
+					channel-mask = <0x0000fe00>;
 					status = "disabled";
 				};
 
 				emios1_bus_d: emios1_bus_d {
 					channel = <16>;
 					bus-type = "BUS_D";
-					channel-mask = <0x00FE0000>;
+					channel-mask = <0x00fe0000>;
 					status = "disabled";
 				};
 
 				emios1_bus_e: emios1_bus_e {
 					channel = <24>;
-					channel-mask = <0xFE000000>;
+					channel-mask = <0xfe000000>;
 					bus-type = "BUS_E";
 					status = "disabled";
 				};

@@ -805,7 +805,7 @@
 			clocks = <&clock NXP_S32_EMIOS0_IPG_CLK>;
 			interrupt-names = "0_5", "0_4", "0_3",
 					  "0_2", "0_1", "0_0";
-			internal-cnt = <0xFFFFFF>;
+			internal-cnt = <0xffffff>;
 			global-timebase-provider = <&emios0>;
 			status = "disabled";
 
@@ -813,35 +813,35 @@
 				emios0_bus_a: emios0_bus_a {
 					channel = <23>;
 					bus-type = "BUS_A";
-					channel-mask = <0x07FFFFF>;
+					channel-mask = <0x07fffff>;
 					status = "disabled";
 				};
 
 				emios0_bus_b: emios0_bus_b {
 					channel = <0>;
 					bus-type = "BUS_B";
-					channel-mask = <0x00000FE>;
+					channel-mask = <0x00000fe>;
 					status = "disabled";
 				};
 
 				emios0_bus_c: emios0_bus_c {
 					channel = <8>;
 					bus-type = "BUS_C";
-					channel-mask = <0x0000FE00>;
+					channel-mask = <0x0000fe00>;
 					status = "disabled";
 				};
 
 				emios0_bus_d: emios0_bus_d {
 					channel = <16>;
 					bus-type = "BUS_D";
-					channel-mask = <0x00FE0000>;
+					channel-mask = <0x00fe0000>;
 					status = "disabled";
 				};
 
 				emios0_bus_f: emios0_bus_f {
 					channel = <22>;
 					bus-type = "BUS_F";
-					channel-mask = <0x0BFFFFF>;
+					channel-mask = <0x0bfffff>;
 					status = "disabled";
 				};
 			};
@@ -859,7 +859,7 @@
 			clocks = <&clock NXP_S32_EMIOS1_IPG_CLK>;
 			interrupt-names = "0_5", "0_4", "0_3",
 					  "0_2", "0_1", "0_0";
-			internal-cnt = <0xFFFFFF>;
+			internal-cnt = <0xffffff>;
 			global-timebase-provider = <&emios1>;
 			status = "disabled";
 
@@ -867,34 +867,34 @@
 				emios1_bus_a: emios1_bus_a {
 					channel = <23>;
 					bus-type = "BUS_A";
-					channel-mask = <0x07FFFFF>;
+					channel-mask = <0x07fffff>;
 					status = "disabled";
 				};
 
 				emios1_bus_b: emios1_bus_b {
 					channel = <0>;
 					bus-type = "BUS_B";
-					channel-mask = <0x00000FE>;
+					channel-mask = <0x00000fe>;
 					status = "disabled";
 				};
 
 				emios1_bus_c: emios1_bus_c {
 					channel = <8>;
 					bus-type = "BUS_C";
-					channel-mask = <0x0000FE00>;
+					channel-mask = <0x0000fe00>;
 					status = "disabled";
 				};
 
 				emios1_bus_d: emios1_bus_d {
 					channel = <16>;
 					bus-type = "BUS_D";
-					channel-mask = <0x00FE0000>;
+					channel-mask = <0x00fe0000>;
 					status = "disabled";
 				};
 
 				emios1_bus_f: emios1_bus_f {
 					channel = <22>;
-					channel-mask = <0x0BFFFFF>;
+					channel-mask = <0x0bfffff>;
 					bus-type = "BUS_F";
 					status = "disabled";
 				};
@@ -913,7 +913,7 @@
 			clocks = <&clock NXP_S32_EMIOS2_IPG_CLK>;
 			interrupt-names = "0_5", "0_4", "0_3",
 					  "0_2", "0_1", "0_0";
-			internal-cnt = <0xFFFFFF>;
+			internal-cnt = <0xffffff>;
 			global-timebase-provider = <&emios2>;
 			status = "disabled";
 
@@ -921,35 +921,35 @@
 				emios2_bus_a: emios2_bus_a {
 					channel = <23>;
 					bus-type = "BUS_A";
-					channel-mask = <0x07FFFFF>;
+					channel-mask = <0x07fffff>;
 					status = "disabled";
 				};
 
 				emios2_bus_b: emios2_bus_b {
 					channel = <0>;
 					bus-type = "BUS_B";
-					channel-mask = <0x00000FE>;
+					channel-mask = <0x00000fe>;
 					status = "disabled";
 				};
 
 				emios2_bus_c: emios2_bus_c {
 					channel = <8>;
 					bus-type = "BUS_C";
-					channel-mask = <0x0000FE00>;
+					channel-mask = <0x0000fe00>;
 					status = "disabled";
 				};
 
 				emios2_bus_d: emios2_bus_d {
 					channel = <16>;
 					bus-type = "BUS_D";
-					channel-mask = <0x00FE0000>;
+					channel-mask = <0x00fe0000>;
 					status = "disabled";
 				};
 
 				emios2_bus_f: emios2_bus_f {
 					channel = <22>;
 					bus-type = "BUS_F";
-					channel-mask = <0x0BFFFFF>;
+					channel-mask = <0x0bfffff>;
 					status = "disabled";
 				};
 			};

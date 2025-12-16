@@ -26,7 +26,7 @@
 			#dma-cells = <1>;
 			reg = <0x0007d000 0x1000>;
 			shim = <0x00078500 0x100>;
-			interrupts = <0x0F 0 0>;
+			interrupts = <0x0f 0 0>;
 			interrupt-parent = <&cavs_intc3>;
 			dma-buf-size-alignment = <4>;
 			dma-copy-alignment = <4>;

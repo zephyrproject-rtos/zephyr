@@ -339,7 +339,7 @@
 		status = "disabled";
 	};
 
-	usbhfs: usbhfs@A2000 {
+	usbhfs: usbhfs@a2000 {
 		compatible = "nxp,uhc-ohci";
 		reg = <0xa2000 0x1000>;
 		interrupts = <28 1>;
@@ -347,7 +347,7 @@
 		status = "disabled";
 	};
 
-	usbhhs: usbhhs@A3000 {
+	usbhhs: usbhhs@a3000 {
 		compatible = "nxp,uhc-ip3516hs";
 		reg = <0xa3000 0x1000>;
 		interrupts = <47 1>;

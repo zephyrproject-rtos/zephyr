@@ -9,9 +9,9 @@
 		/delete-property/ zephyr,boot-mode;
 	};
 
-	sram@2003F000 {
+	sram@2003f000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2003F000 DT_SIZE_K(4)>;
+		reg = <0x2003f000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 
