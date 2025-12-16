@@ -13,13 +13,13 @@ Here are some highlights of the BLACK_F407ZG_PRO board:
   board and easy probing
 - Flexible board power supply:
 
-       - USB VBUS or external source (3.3V, 5V)
-       - Power management access point
+  - USB VBUS or external source (3.3V, 5V)
+  - Power management access point
 
 - Three LEDs:
 
-       - 3.3 V power on (LD0)
-       - Two user LEDs: green (LD1), green (LD2)
+  - 3.3 V power on (LD0)
+  - Two user LEDs: green (LD1), green (LD2)
 
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
@@ -73,7 +73,7 @@ BLACK_F407ZG_PRO board provides the following hardware components:
 - Dimensions: 102.5mm x 74.56mm
 
 More information about STM32F407ZG SOC can be found here:
-       - `STM32F407ZG on www.st.com`_
+- `STM32F407ZG on www.st.com`_
 
 Supported Features
 ==================
