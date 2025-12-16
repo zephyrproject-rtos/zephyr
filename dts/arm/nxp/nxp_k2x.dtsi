@@ -81,9 +81,9 @@
 			clock-frequency = <32768>;
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007F000 0x1000>;
+			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {
@@ -284,7 +284,7 @@
 			compatible = "nxp,dspi";
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -294,7 +294,7 @@
 			compatible = "nxp,dspi";
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 13>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -312,7 +312,7 @@
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-				 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103c 24>;
 			prescaler = <16>;
 			status = "disabled";
 		};
@@ -322,7 +322,7 @@
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-				 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103c 25>;
 			prescaler = <16>;
 			status = "disabled";
 		};
@@ -332,7 +332,7 @@
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-				 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103c 26>;
 			prescaler = <16>;
 			status = "disabled";
 		};
@@ -342,7 +342,7 @@
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
-				 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
+				 <&sim KINETIS_SIM_BUS_CLK 0x103c 6>;
 			prescaler = <16>;
 			status = "disabled";
 		};

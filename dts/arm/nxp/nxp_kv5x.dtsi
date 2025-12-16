@@ -40,9 +40,9 @@
 			status = "disabled";
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007F000 0x1000>;
+			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {

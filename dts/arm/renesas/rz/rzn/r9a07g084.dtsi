@@ -87,19 +87,19 @@
 
 				loader_param: partition@0 {
 					label = "loader-param";
-					reg = <0x00000000 0x4C>;
+					reg = <0x00000000 0x4c>;
 					read-only;
 				};
 
-				loader_program: partition@4C {
+				loader_program: partition@4c {
 					label = "loader-program";
-					reg = <0x0000004C (DT_SIZE_K(56) - 0x4C)>;
+					reg = <0x0000004c (DT_SIZE_K(56) - 0x4C)>;
 					read-only;
 				};
 
-				slot0_partition: partition@E000 {
+				slot0_partition: partition@e000 {
 					label = "image-0";
-					reg = <0x0000E000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
+					reg = <0x0000e000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
 					read-only;
 				};
 			};
@@ -218,7 +218,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0xF>;
+			channel-available-mask = <0xf>;
 			status = "disabled";
 		};
 
@@ -230,7 +230,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			status = "disabled";
 		};
 

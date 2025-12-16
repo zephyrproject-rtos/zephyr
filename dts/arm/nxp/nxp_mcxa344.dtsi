@@ -519,9 +519,9 @@
 			interrupts = <18 0>;
 		};
 
-		cmc: system-modules@4008B000 {
+		cmc: system-modules@4008b000 {
 			compatible = "nxp,cmc";
-			reg = <0x4008B000 0x1000>;
+			reg = <0x4008b000 0x1000>;
 			interrupts = <1 0>;
 		};
 
