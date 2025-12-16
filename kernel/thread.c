@@ -794,9 +794,8 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 {
 	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
-#ifdef CONFIG_VALIDATE_THREAD_STACK_POINTER
-	z_check_thread_stack(stack, stack_size, options);
-#endif
+	__ASSERT(k_thread_stack_is_valid(stack, stack_size, options), "Invalid Stack pointer"
+		    " passed to k_thread_create()");
 
 	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);

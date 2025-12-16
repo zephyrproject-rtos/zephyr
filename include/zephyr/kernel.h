@@ -391,6 +391,21 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
 __syscall int k_thread_stack_free(k_thread_stack_t *stack);
 
 /**
+ * @brief Validate if stack is valid and can be used for thread creation.
+ *
+ * @param stack Pointer to the thread stack.
+ * @param stack_size Stack size in bytes.
+ * @param options Thread options.
+ *
+ * @retval true if the stack is valid.
+ * @retval false otherwise.
+ *
+ * @see @kconfig{CONFIG_VALIDATE_THREAD_STACK_POINTER}
+ */
+__syscall bool k_thread_stack_is_valid(k_thread_stack_t *stack, size_t stack_size,
+				       uint32_t options);
+
+/**
  * @brief Create a thread.
  *
  * This routine initializes a thread, then schedules it for execution.
