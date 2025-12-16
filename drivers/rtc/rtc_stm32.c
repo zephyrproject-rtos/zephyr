@@ -132,7 +132,8 @@ struct rtc_stm32_data {
 
 static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 {
-#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX) 
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX) 
 	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm event is not routed to EXTI */
 #else
 	int ret;
@@ -146,7 +147,8 @@ static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 
 static inline void exti_clear_rtc_alarm_flag(uint32_t line_num)
 {
-#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U3, STM32U5 & STM32WBAX series, RTC Alarm (EXTI event) is not routed to EXTI */
 #else
 	if (stm32_exti_is_pending(line_num)) {
