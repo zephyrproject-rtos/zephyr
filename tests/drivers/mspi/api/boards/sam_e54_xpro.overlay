@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &qspi0;
+	};
+};
+
+&qspi0 {
+	mspi_flash0: mspi-flash0@0 {
+		status = "okay";
+		compatible = "zephyr,emul-device-mspi";
+		/* DQS not supported on SAMD5x/SAME5x - property must exist for DT_PROP() macro */
+		/* Test code excludes DQS config via MSPI_TEST_DEV_CFG_MASK at line 93 */
+	};
+};
