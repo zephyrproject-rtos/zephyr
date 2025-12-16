@@ -27,20 +27,13 @@ struct k_work_q ll_work_q;
 static bool ll_work_q_initialized;
 uint8_t ll_state_busy;
 
-/* TODO: More tests to be done to optimize thread stacks' sizes */
 #if defined(CONFIG_BT_STM32WBA)
-#define BLE_CTRL_THREAD_STACK_SIZE (256 * 7)
-#define BLE_CTRL_THREAD_PRIO (14)
-#endif /* CONFIG_BT_STM32WBA */
-#define LL_THREAD_STACK_SIZE (256 * 7)
+BUILD_ASSERT(CONFIG_STM32WBA_LL_THREAD_PRIO < CONFIG_STM32WBA_BLE_CTLR_THREAD_PRIO,
+	"priority of the Link Layer thread must be higher than the priority of BLE Ctlr thread");
 
-/* The LL thread has higher priority than the BLE CTRL thread and the Zephyr BLE stack threads */
-#define LL_THREAD_PRIO (4)
-
-#if defined(CONFIG_BT_STM32WBA)
-K_THREAD_STACK_DEFINE(ble_ctlr_work_area, BLE_CTRL_THREAD_STACK_SIZE);
+K_THREAD_STACK_DEFINE(ble_ctlr_work_area, CONFIG_STM32WBA_BLE_CTLR_THREAD_STACK_SIZE);
 #endif /* CONFIG_BT_STM32WBA */
-K_THREAD_STACK_DEFINE(ll_work_area, LL_THREAD_STACK_SIZE);
+K_THREAD_STACK_DEFINE(ll_work_area, CONFIG_STM32WBA_LL_THREAD_STACK_SIZE);
 
 #if defined(CONFIG_BT_STM32WBA)
 void HostStack_Process(void);
@@ -81,8 +74,9 @@ int stm32wba_ll_ctlr_thread_init(void)
 		ll_work_q_initialized = true;
 		k_work_queue_init(&ll_work_q);
 		k_work_queue_start(&ll_work_q, ll_work_area,
-				K_THREAD_STACK_SIZEOF(ll_work_area),
-				LL_THREAD_PRIO, &ll_cfg);
+				   K_THREAD_STACK_SIZEOF(ll_work_area),
+				   K_PRIO_COOP(CONFIG_STM32WBA_LL_THREAD_PRIO),
+				   &ll_cfg);
 	}
 	return 0;
 }
@@ -96,8 +90,9 @@ int stm32wba_ble_ctlr_thread_init(void)
 		ble_ctlr_work_q_initialized = true;
 		k_work_queue_init(&ble_ctlr_work_q);
 		k_work_queue_start(&ble_ctlr_work_q, ble_ctlr_work_area,
-				K_THREAD_STACK_SIZEOF(ble_ctlr_work_area),
-				BLE_CTRL_THREAD_PRIO, &ble_ctlr_cfg);
+				   K_THREAD_STACK_SIZEOF(ble_ctlr_work_area),
+				   K_PRIO_COOP(CONFIG_STM32WBA_BLE_CTLR_THREAD_PRIO),
+				   &ble_ctlr_cfg);
 
 		k_work_init(&ble_ctlr_stack_work, &ble_ctlr_stack_handler);
 		k_work_init(&bpka_work, &bpka_work_handler);

@@ -22,3 +22,39 @@ config SOC_SERIES_STM32WBAX
 	select PM_DEVICE if PM
 	select PM_DEVICE_RUNTIME if PM
 	select PM_DEVICE_SYSTEM_MANAGED if PM
+
+if SOC_SERIES_STM32WBAX
+
+config STM32WBA_LL_THREAD_STACK_SIZE
+	int "Stack size of the Link Layer thread"
+	default 1536
+	depends on BT_STM32WBA || IEEE802154_STM32WBA
+	help
+	  Link Layer thread stack size in bytes.
+
+config STM32WBA_LL_THREAD_PRIO
+	int "Link Layer thread priority"
+	default 4
+	depends on BT_STM32WBA || IEEE802154_STM32WBA
+	help
+	  This option sets the cooperative priority of the Link Layer thread.
+	  The LL thread shall have a higher priority than the BLE CTLR thread and the upper layer
+	  Zephyr stack threads associated to the BLE and IEEE 802.15.4 protocols such as the
+	  BT Rx thread (BT_RX_PRIO), the BT long workqueue (BT_LONG_WQ_PRIO), the net mgmt thread,
+	  the connection manager monitor thread, the udp thread...
+
+config STM32WBA_BLE_CTLR_THREAD_STACK_SIZE
+	int "Stack size of the BLE Controller thread"
+	default 512
+	depends on BT_STM32WBA
+	help
+	  BLE Controller thread stack size in bytes.
+
+config STM32WBA_BLE_CTLR_THREAD_PRIO
+	int "BLE Controller thread priority"
+	depends on BT_STM32WBA
+	default 14
+	help
+	  This option sets the cooperative priority of the BLE Controller thread.
+
+endif # SOC_SERIES_STM32WBAX
