@@ -256,7 +256,7 @@ static void eswifi_scan(struct eswifi_dev *eswifi)
 static int eswifi_connect(struct eswifi_dev *eswifi)
 {
 	char connect[] = "C0\r";
-	struct in_addr addr;
+	struct net_in_addr addr;
 	char *rsp;
 	int err;
 
