@@ -504,10 +504,8 @@ static int rtc_stm32_init(const struct device *dev)
 /*
  * On STM32WBAX series, there is no bit in BCDR register to enable RTC.
  * Enabling RTC is done directly via the RCC APB register bit.
- * On STM32WB0 series, LL_RCC_EnableRTC is not provided by STM32CubeWB0,
- * but RTC IP clock has already been turned on - skip the call as well.
  */
-#if !defined(CONFIG_SOC_SERIES_STM32WBAX) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_EnableRTC();
