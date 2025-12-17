@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -323,77 +323,6 @@ static void uart_max32_rx_refresh_timeout(struct k_work *work)
 	uart_max32_pm_policy_state_lock_put(data->uart_dev, MAX32_UART_PM_POLICY_STATE_RX_FLAG);
 }
 #endif
-
-static int uart_max32_init(const struct device *dev)
-{
-	int ret;
-	const struct max32_uart_config *const cfg = dev->config;
-	mxc_uart_regs_t *regs = cfg->regs;
-	struct max32_uart_data *data = dev->data;
-
-	if (!device_is_ready(cfg->clock)) {
-		LOG_ERR("Clock control device not ready");
-		return -ENODEV;
-	}
-
-	ret = MXC_UART_Shutdown(regs);
-	if (ret) {
-		return ret;
-	}
-
-	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-	if (ret != 0) {
-		LOG_ERR("Cannot enable UART clock");
-		return ret;
-	}
-
-	ret = Wrap_MXC_UART_SetClockSource(regs, cfg->perclk.clk_src);
-	if (ret != 0) {
-		LOG_ERR("Cannot set UART clock source");
-		return ret;
-	}
-
-	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
-	}
-
-	ret = api_configure(dev, &cfg->uart_conf);
-	if (ret) {
-		return ret;
-	}
-
-	ret = Wrap_MXC_UART_Init(regs);
-	if (ret) {
-		return ret;
-	}
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-	/* Clear any pending UART RX/TX interrupts */
-	MXC_UART_ClearFlags(regs, (ADI_MAX32_UART_INT_RX | ADI_MAX32_UART_INT_TX));
-	cfg->irq_config_func(dev);
-#endif
-
-	data->uart_dev = dev;
-
-#if CONFIG_UART_ASYNC_API
-	k_work_init_delayable(&data->async.tx.timeout_work, uart_max32_async_tx_timeout);
-	k_work_init_delayable(&data->async.rx.timeout_work, uart_max32_async_rx_timeout);
-	data->async.rx.len = 0;
-	data->async.rx.offset = 0;
-#endif
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	k_timer_init(&data->timer, &uart_max32_soft_isr, NULL);
-	k_timer_user_data_set(&data->timer, (void *)dev);
-#endif
-
-#if defined(CONFIG_PM) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
-	k_work_init_delayable(&data->rx_refresh_timeout_work, uart_max32_rx_refresh_timeout);
-#endif
-
-	return ret;
-}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -1067,7 +996,75 @@ static void uart_max32_async_rx_timeout(struct k_work *work)
 
 #endif
 
-#ifdef CONFIG_PM_DEVICE
+static int uart_max32_pm_resume(const struct device *dev)
+{
+	int ret;
+	const struct max32_uart_config *const cfg = dev->config;
+
+	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret != 0) {
+		LOG_ERR("Cannot enable UART clock");
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		return ret;
+	}
+
+	if (MXC_UART_GetRXThreshold(cfg->regs) == 0) {
+		ret = Wrap_MXC_UART_SetClockSource(cfg->regs, cfg->perclk.clk_src);
+		if (ret != 0) {
+			LOG_ERR("Cannot set UART clock source");
+			return ret;
+		}
+
+		ret = Wrap_MXC_UART_Init(cfg->regs);
+		if (ret) {
+			return ret;
+		}
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+		/* Clear any pending UART RX/TX interrupts */
+		MXC_UART_ClearFlags(cfg->regs, (ADI_MAX32_UART_INT_RX | ADI_MAX32_UART_INT_TX));
+		cfg->irq_config_func(dev);
+#endif
+
+		ret = api_configure(dev, &cfg->uart_conf);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int uart_max32_pm_suspend(const struct max32_uart_config *const cfg)
+{
+	int ret;
+
+	/* Move pins to sleep state */
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_SLEEP);
+	if ((ret < 0) && (ret != -ENOENT)) {
+		/*
+		 * If returning -ENOENT, no pins where defined for sleep mode :
+		 * Do not output on console (might sleep already) when going to sleep,
+		 * "(LP)UART pinctrl sleep state not available"
+		 * and don't block PM suspend.
+		 * Else return the error.
+		 */
+		return ret;
+	}
+
+	/* Disable clock */
+	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret != 0) {
+		LOG_ERR("cannot disable UART clock");
+	}
+
+	return ret;
+}
+
 static int uart_max32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
@@ -1075,16 +1072,7 @@ static int uart_max32_pm_action(const struct device *dev, enum pm_device_action 
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-
-		/* Enable clock */
-		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-		if (ret != 0) {
-			LOG_ERR("cannot enable UART clock");
-			return ret;
-		}
-
-		/* Set pins to active state */
-		ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
+		ret = uart_max32_pm_resume(dev);
 		if (ret) {
 			return ret;
 		}
@@ -1095,23 +1083,8 @@ static int uart_max32_pm_action(const struct device *dev, enum pm_device_action 
 		while (MXC_UART_ReadyForSleep(cfg->regs) != E_NO_ERROR) {
 		}
 
-		/* Move pins to sleep state */
-		ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_SLEEP);
-		if ((ret < 0) && (ret != -ENOENT)) {
-			/*
-			 * If returning -ENOENT, no pins where defined for sleep mode :
-			 * Do not output on console (might sleep already) when going to sleep,
-			 * "(LP)UART pinctrl sleep state not available"
-			 * and don't block PM suspend.
-			 * Else return the error.
-			 */
-			return ret;
-		}
-
-		/* Disable clock */
-		ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-		if (ret != 0) {
-			LOG_ERR("cannot disable UART clock");
+		ret = uart_max32_pm_suspend(cfg);
+		if (ret) {
 			return ret;
 		}
 
@@ -1122,7 +1095,44 @@ static int uart_max32_pm_action(const struct device *dev, enum pm_device_action 
 
 	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
+
+static int uart_max32_init(const struct device *dev)
+{
+	int ret;
+	const struct max32_uart_config *const cfg = dev->config;
+	mxc_uart_regs_t *regs = cfg->regs;
+	struct max32_uart_data *data = dev->data;
+
+	if (!device_is_ready(cfg->clock)) {
+		LOG_ERR("Clock control device not ready");
+		return -ENODEV;
+	}
+
+	ret = MXC_UART_Shutdown(regs);
+	if (ret) {
+		return ret;
+	}
+
+	data->uart_dev = dev;
+
+#if CONFIG_UART_ASYNC_API
+	k_work_init_delayable(&data->async.tx.timeout_work, uart_max32_async_tx_timeout);
+	k_work_init_delayable(&data->async.rx.timeout_work, uart_max32_async_rx_timeout);
+	data->async.rx.len = 0;
+	data->async.rx.offset = 0;
+#endif
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	k_timer_init(&data->timer, &uart_max32_soft_isr, NULL);
+	k_timer_user_data_set(&data->timer, (void *)dev);
+#endif
+
+#if defined(CONFIG_PM) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
+	k_work_init_delayable(&data->rx_refresh_timeout_work, uart_max32_rx_refresh_timeout);
+#endif
+
+	return pm_device_driver_init(dev, uart_max32_pm_action);
+}
 
 static DEVICE_API(uart, uart_max32_driver_api) = {
 	.poll_in = api_poll_in,
