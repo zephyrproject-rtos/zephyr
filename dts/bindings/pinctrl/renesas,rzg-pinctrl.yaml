@@ -34,12 +34,6 @@ description: |
 compatible: "renesas,rzg-pinctrl"
 
 include: base.yaml
-properties:
-  reg:
-    required: true
-
-  reg-names:
-    required: true
 
 child-binding:
   description: |
