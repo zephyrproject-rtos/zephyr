@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright (c) 2021, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,36 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 	SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 	data->configured_chan++;
 	return 0;
+}
+
+static void mcux_sctimer_pwm_update_polarity(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	uint32_t period_event = data->event_number[channel];
+	uint32_t pulse_event = period_event + 1;
+
+	/* clear polarity setting*/
+	config->base->OUTPUT &= ~(1UL << channel);
+	config->base->OUT[channel].SET &= ~((1UL << pulse_event) | (1UL << period_event));
+	config->base->OUT[channel].CLR &= ~((1UL << pulse_event) | (1UL << period_event));
+
+	/* Set polarity based on channel level configuration */
+	if (data->channel[channel].level == kSCTIMER_HighTrue) {
+		/* Set the initial output level to low which is the inactive state */
+		config->base->OUTPUT &= ~(1UL << channel);
+		/* Set the output when we reach the PWM period */
+		SCTIMER_SetupOutputSetAction(config->base, channel, period_event);
+		/* Clear the output when we reach the PWM pulse value */
+		SCTIMER_SetupOutputClearAction(config->base, channel, pulse_event);
+	} else {
+		/* Set the initial output level to high which is the inactive state */
+		config->base->OUTPUT |= (1UL << channel);
+		 /* Clear the output when we reach the PWM period */
+		SCTIMER_SetupOutputClearAction(config->base, channel, period_event);
+		/* Set the output when we reach the PWM pulse value */
+		SCTIMER_SetupOutputSetAction(config->base, channel, pulse_event);
+	}
 }
 
 static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
@@ -177,11 +207,18 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		 * (which the SDK will setup as the pulse match event)
 		 */
 		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+		/* Update polarity */
+		mcux_sctimer_pwm_update_polarity(dev, channel);
+		config->base->MATCH[period_event] = period_cycles - 1U;
 		config->base->MATCHREL[period_event] = period_cycles - 1U;
+		config->base->MATCH[period_event + 1] = pulse_cycles - 1U;
 		config->base->MATCHREL[period_event + 1] = pulse_cycles - 1U;
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 		data->match_period = period_cycles;
 	} else {
+		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+		/* Update polarity */
+		mcux_sctimer_pwm_update_polarity(dev, channel);
 		/* Only duty cycle needs to be updated */
 		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
 					   data->event_number[channel]);
