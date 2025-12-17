@@ -32,10 +32,12 @@ LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);
  */
 #define NRFX_TDM_STATUS_TRANSFER_STOPPED BIT(1)
 
+#if NRF_ERRATA_STATIC_CHECK(54H, 39)
 /* Due to hardware limitations, the TDM peripheral requires the rx/tx size
  * to be greater than 8 bytes.
  */
 #define NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED 8
+#endif
 
 /* Maximum clock divider value. Corresponds to CKDIV2. */
 #define NRFX_TDM_MAX_SCK_DIV_VALUE TDM_CONFIG_SCK_DIV_SCKDIV_Max
@@ -480,12 +482,14 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 
 	__ASSERT_NO_MSG(tdm_cfg->mem_slab != NULL && tdm_cfg->block_size != 0);
 
-	if ((tdm_cfg->block_size % sizeof(uint32_t)) != 0 ||
+#if NRF_ERRATA_STATIC_CHECK(54H, 39)
+	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 39) || (tdm_cfg->block_size % sizeof(uint32_t)) != 0 ||
 		tdm_cfg->block_size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
 		LOG_ERR("This device can only transmit full 32-bit words greater than %u bytes.",
 			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
 		return -EINVAL;
 	}
+#endif
 
 	switch (tdm_cfg->word_size) {
 	case 8:
@@ -686,11 +690,14 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-	if ((size % sizeof(uint32_t)) != 0 || size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
+#if NRF_ERRATA_STATIC_CHECK(54H, 39)
+	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 39) || (size % sizeof(uint32_t)) != 0 ||
+		size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
 		LOG_ERR("This device can only write full 32-bit words greater than %u bytes.",
 			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
 		return -EIO;
 	}
+#endif
 
 	ret = dmm_buffer_out_prepare(drv_cfg->mem_reg, buf.mem_block, buf.size,
 				     (void **)&buf.dmm_buf);
