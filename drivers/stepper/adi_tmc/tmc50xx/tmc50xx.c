@@ -8,7 +8,8 @@
 
 #include <stdlib.h>
 
-#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper.h>
+#include <zephyr/drivers/stepper/stepper_ctrl.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
 #include <adi_tmc_spi.h>
@@ -165,36 +166,36 @@ static void rampstat_work(const struct device *dev)
 
 	if (ramp_stat_values > 0) {
 		switch (ramp_stat_values) {
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER
+#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER_CTRL
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", data->dev->name);
-			tmc50xx_stepper_trigger_cb(
+			tmc50xx_stepper_ctrl_trigger_cb(
 				config->motion_controllers[data->work_index],
-				STEPPER_EVENT_LEFT_END_STOP_DETECTED);
+				STEPPER_CTRL_EVENT_LEFT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", data->dev->name);
-			tmc50xx_stepper_trigger_cb(
+			tmc50xx_stepper_ctrl_trigger_cb(
 				config->motion_controllers[data->work_index],
-				STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
+				STEPPER_CTRL_EVENT_RIGHT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
 		case TMC5XXX_POS_REACHED:
 		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", data->dev->name);
-			tmc50xx_stepper_trigger_cb(
+			tmc50xx_stepper_ctrl_trigger_cb(
 				config->motion_controllers[data->work_index],
-				STEPPER_EVENT_STEPS_COMPLETED);
+				STEPPER_CTRL_EVENT_STEPS_COMPLETED);
 			break;
 #endif
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER_DRV
+#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER_DRIVER
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", data->dev->name);
-			tmc50xx_stepper_stallguard_enable(data->dev, false);
-			tmc50xx_stepper_drv_trigger_cb(config->stepper_drivers[data->work_index],
-						  STEPPER_DRV_EVENT_STALL_DETECTED);
+			tmc50xx_stepper_ctrl_stallguard_enable(data->dev, false);
+			tmc50xx_stepper_driver_trigger_cb(config->stepper_drivers[data->work_index],
+							  STEPPER_EVENT_STALL_DETECTED);
 			break;
 #endif
 		default:
@@ -215,7 +216,7 @@ static void rampstat_work_handler(struct k_work *work)
 	const struct tmc50xx_config *config = dev->config;
 
 	for (uint8_t i = 0; i < config->num_stepper_drivers; i++) {
-		data->work_index = tmc50xx_stepper_index(config->motion_controllers[i]);
+		data->work_index = tmc50xx_stepper_ctrl_index(config->motion_controllers[i]);
 		rampstat_work(dev);
 	}
 }
@@ -276,9 +277,9 @@ static int tmc50xx_init(const struct device *dev)
 
 #define TMC50XX_DEFINE(inst)                                                                       \
 	static const struct device *tmc50xx_stepper_drivers_##inst[] =                             \
-		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_drv);                        \
+		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_driver);                     \
 	static const struct device *tmc50xx_motion_controllers_##inst[] =                          \
-		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper);                            \
+		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_ctrl);                      \
 	BUILD_ASSERT(ARRAY_SIZE(tmc50xx_motion_controllers_##inst) <= 2,                           \
 		     "tmc50xx can drive two steppers at max");                                     \
 	BUILD_ASSERT(ARRAY_SIZE(tmc50xx_stepper_drivers_##inst) <= 2,                              \

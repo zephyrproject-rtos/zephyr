@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		stepper-drv = &ti_drv84xx;
+		stepper = &ti_drv84xx;
 	};
 
 	ti_drv84xx: ti_drv84xx {
