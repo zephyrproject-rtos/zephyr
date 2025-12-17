@@ -6,6 +6,14 @@
 #include <nxp/kinetis/MKE15Z256VLL7-pinctrl.h>
 
 &pinctrl {
+	adc0_default: adc0_default {
+		group0 {
+			pinmux = <ADC0_SE0_PTA0>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
 	lpuart1_default: lpuart1_default {
 		group0 {
 			pinmux = <LPUART1_RX_PTC6>,
