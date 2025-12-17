@@ -46,6 +46,18 @@
 		};
 	};
 
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <LPSPI1_SOUT_PTD2>,
+				 <LPSPI1_SCK_PTB14>,
+				 <LPSPI1_SIN_PTB15>,
+				 <LPSPI1_PCS2_PTA16>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_adc0: pinmux_adc0 {
 		group0 {
 			pinmux = <ADC0_SE1_PTA1>,
