@@ -428,7 +428,7 @@ static int i2c_silabs_dev_init(const struct device *dev)
 
 	/* Enable clock */
 	ret = clock_control_on(config->clock, (clock_control_subsys_t)&config->clock_cfg);
-	if (ret < 0) {
+	if (ret < 0 && ret != -EALREADY) {
 		return ret;
 	}
 
