@@ -1,20 +1,22 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
   Renesas RZ GPIO controller.
-  Sample of usage:
-    gpio-consumer{
-          out-gpio = <&gpio8 2 (GPIO_PULL_UP);
-        };
-    &gpio8{
-          irq = <2 10>, <9 1>;
-          status = "okay";
-        };
-  Example above will configure pin 2 port 8:
-  - Using interrupt TINT10
-  - Set Pullup
 
+  The following example configures pull-up for pin 2 port 8 and maps it to GPIO interrupt TINT10
+    gpio-consumer {
+      out-gpio = <&gpio8 2 (GPIO_PULL_UP)>;
+    };
+
+    &gpio8 {
+      irqs = <&tint10 2>;
+      status = "okay";
+    };
+
+  Note that for RZ/T, RZ/N series ("gpio-common-v2" compatible), please replace "&tint10" with
+  a "renesas,rz-ext-irq" node to map the pin to an external interrupt.
+  For example, setting "irqs = <&irq10 2>" maps the pin to IRQ10.
 
 compatible: "renesas,rz-gpio"
 
@@ -32,8 +34,8 @@ properties:
     description: GPIO port number
 
   irqs:
-    type: array
-    description: pin-irq pairs
+    type: phandle-array
+    description: Interrupts corresponding to pins
 
   "#gpio-cells":
     const: 2
