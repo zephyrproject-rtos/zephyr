@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESP_TOOL
+	bool "ESP Serial Flasher Loader using UART"
+	depends on DT_HAS_ESPRESSIF_ESP_TOOL_ENABLED
+	depends on SERIAL
+	depends on GPIO
+	help
+	  Enable the Espressif ESP Tool driver.
+
+if ESP_TOOL
+
+config ESP_TOOL_SHELL
+	bool "ESP tool shell"
+	help
+	  Enables the ESP tool shell
+
+config ESP_TOOL_FW_ARRAYS
+	bool "User provided firmware(s) array"
+	help
+	  Generates static arrays from provided binary files.
+
+endif # ESP_TOOL
