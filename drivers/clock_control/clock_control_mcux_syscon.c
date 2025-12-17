@@ -682,7 +682,8 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif /* defined(CONFIG_I2S_MCUX_FLEXCOMM) */
 
-#if (defined(CONFIG_UART_MCUX_LPUART) && CONFIG_SOC_FAMILY_MCXA)
+#if (defined(CONFIG_UART_MCUX_LPUART) && (defined(CONFIG_SOC_FAMILY_MCXA) || \
+	defined(CONFIG_SOC_FAMILY_MCXL)))
 	case MCUX_LPUART0_CLK:
 		*rate = CLOCK_GetLpuartClkFreq(0);
 		break;
