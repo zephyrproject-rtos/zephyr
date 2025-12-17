@@ -240,6 +240,12 @@
 	status = "okay";
 };
 
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
 &edma {
 	status = "okay";
 };
