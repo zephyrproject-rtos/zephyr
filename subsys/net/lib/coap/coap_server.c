@@ -487,6 +487,16 @@ int coap_service_start(const struct coap_service *service)
 			ret = -errno;
 			goto close;
 		}
+#if defined(CONFIG_COAP_SERVER_CLIENT_VERIFY)
+		const int peer_required = TLS_PEER_VERIFY_REQUIRED;
+		ret = zsock_setsockopt(service->data->sock_fd, SOL_TLS, TLS_PEER_VERIFY,
+				       &peer_required, sizeof(peer_required));
+		if (ret < 0) {
+			ret = -errno;
+			goto close;
+		}
+#endif
+
 
 		ret = zsock_setsockopt(service->data->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE,
 				       &role, sizeof(role));
