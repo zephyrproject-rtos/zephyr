@@ -48,7 +48,9 @@ static int soc_clock_set_rate_and_parent(struct soc_clk *sclk)
 
 	return scmi_clock_rate_set(proto, &clk_cfg);
 }
+#endif
 
+#if DT_NUM_INST_STATUS_OKAY(nxp_mcux_i2s) > 0
 static int soc_clock_enable(struct soc_clk *sclk)
 {
 	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(scmi_clk));
