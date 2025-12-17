@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - i2c
   - gpio
   - adc
   - arduino_gpio
