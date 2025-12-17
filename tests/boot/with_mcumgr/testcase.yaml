@@ -44,9 +44,11 @@ tests:
       - nucleo_u385rg_q
       - nucleo_wb55rg
       - nucleo_wba55cg
+      - nucleo_wba65ri
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32u083c_dk
+      - stm32wba65i_dk1
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
