@@ -342,7 +342,7 @@ static void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to configure");
 	} else {
-		bt_shell_error("fail to configure");
+		bt_shell_error("fail to configure (err code %u)", rsp_err_code);
 	}
 }
 
@@ -358,7 +358,7 @@ static void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_cod
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to establish");
 	} else {
-		bt_shell_error("fail to establish");
+		bt_shell_error("fail to establish (err code %u)", rsp_err_code);
 	}
 }
 
@@ -374,7 +374,7 @@ static void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to release");
 	} else {
-		bt_shell_error("fail to release");
+		bt_shell_error("fail to release (err code %u)", rsp_err_code);
 	}
 }
 
@@ -390,7 +390,7 @@ static void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to start");
 	} else {
-		bt_shell_error("fail to start");
+		bt_shell_error("fail to start (err code %u)", rsp_err_code);
 	}
 }
 
@@ -406,7 +406,7 @@ static void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to suspend");
 	} else {
-		bt_shell_error("fail to suspend");
+		bt_shell_error("fail to suspend (err code %u)", rsp_err_code);
 	}
 }
 
@@ -462,7 +462,7 @@ static void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to send report delay");
 	} else {
-		bt_shell_error("fail to send report delay");
+		bt_shell_error("fail to send report delay (err code %u)", rsp_err_code);
 	}
 }
 #endif
@@ -513,7 +513,7 @@ static void app_abort_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to abort");
 	} else {
-		bt_shell_error("fail to abort");
+		bt_shell_error("fail to abort (err code %u)", rsp_err_code);
 	}
 }
 
