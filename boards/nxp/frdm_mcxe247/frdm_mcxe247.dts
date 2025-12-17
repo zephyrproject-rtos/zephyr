@@ -22,6 +22,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		rtc = &counter_rtc;
+		accel0 = &fxls8974;
 	};
 
 	chosen {
@@ -218,6 +219,24 @@
 };
 
 &lpit0_channel3 {
+	status = "okay";
+};
+
+&lpi2c0 {
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
+	};
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
