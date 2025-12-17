@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
-
+from runners.st_common import STM32CubeCLI
 
 class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
     """Runner front-end for STM32CubeProgrammer CLI."""
@@ -92,6 +92,13 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
     @staticmethod
     def _get_stm32cubeprogrammer_path() -> Path:
         """Obtain path of the STM32CubeProgrammer CLI tool."""
+
+        # Attempt to find using STM32CubeCLI
+        stm32cubecli = STM32CubeCLI()
+        if stm32cubecli.available():
+            programmer = stm32cubecli.search_tool("programmer")
+            if programmer is not None:
+                return programmer
 
         if platform.system() == "Linux":
             cmd = shutil.which("STM32_Programmer_CLI")
