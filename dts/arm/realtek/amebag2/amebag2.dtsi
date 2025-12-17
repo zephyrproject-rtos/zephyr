@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv8.1-m.dtsi>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m55";
+			reg = <0>;
+			d-cache-line-size = <32>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	clocks {
+		clk_sys: clk_sys {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(240)>;
+		};
+	};
+
+	soc {
+		sram0: memory@20006040 {
+			compatible = "mmio-sram";
+			reg = <0x20006040 0x49fc0>;
+		};
+
+		ram_image2_entry: memory@20006020 {
+			compatible = "zephyr,memory-region";
+			reg = <0x20006020 0x20>;
+			zephyr,memory-region = "KM4TZ_IMG2_ENTRY";
+		};
+
+		pinctrl: pinctrl@4080a800 {
+			compatible = "realtek,ameba-pinctrl";
+			reg = <0x4080a800 0x200>;
+			status = "disabled";
+		};
+
+		loguart: serial@40810000 {
+			compatible = "realtek,ameba-loguart";
+			reg = <0x40810000 0x100>;
+			interrupts = <24 0>;
+			current-speed = <1500000>;
+			status = "disabled";
+		};
+
+		gpioa: gpio@40811000 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x40811000 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <25 0>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@40811400 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x40811400 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@40811800 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x40811800 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		spic: flash-controller@4011d000 {
+			compatible = "realtek,ameba-flash-controller";
+			reg = <0x4011d000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			flash0: flash@4000020 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
