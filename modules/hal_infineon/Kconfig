@@ -51,6 +51,11 @@ config USE_INFINEON_I3C
 	help
 	  Enable Improved Inter-Integrated Circuit Interface (I3C) HAL module driver for Infineon devices
 
+config USE_INFINEON_I2S
+	bool
+	help
+	  Enable Inter-Integrated Sound Interface (I2S) HAL module driver for Infineon devices
+
 config USE_INFINEON_RTC
 	bool
 	help
