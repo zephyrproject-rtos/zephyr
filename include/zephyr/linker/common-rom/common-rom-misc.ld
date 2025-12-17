@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <zephyr/linker/iterable_sections.h>
 
@@ -75,4 +79,8 @@
 
 #if defined(CONFIG_GNSS_RTK)
 	ITERABLE_SECTION_ROM(gnss_rtk_data_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_GNSS_VELNED)
+	ITERABLE_SECTION_ROM(gnss_velned_callback, Z_LINK_ITERABLE_SUBALIGN)
 #endif

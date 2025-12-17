@@ -229,6 +229,37 @@ struct gnss_satellites_callback {
 	gnss_satellites_callback_t callback;
 };
 
+/** GNSS velocity structure */
+struct gnss_velned {
+	/** Velocity North in cm/s */
+	int32_t velocity_n;
+	/** Velocity East in cm/s */
+	int32_t velocity_e;
+	/** Velocity Down in cm/s */
+	int32_t velocity_d;
+	/** Speed in cm/s */
+	uint32_t speed;
+	/** Ground speed in cm/s */
+	uint32_t ground_speed;
+	/** Heading in degrees */
+	int32_t heading;
+	/** Speed accuracy in cm/s */
+	uint32_t speed_acc;
+	/** Heading accuracy in degrees */
+	uint32_t heading_acc;
+};
+
+/** Template for GNSS velocity callback */
+typedef void (*gnss_velned_callback_t)(const struct device *dev, const struct gnss_velned *velned);
+
+/** GNSS callback structure */
+struct gnss_velned_callback {
+	/** Filter callback to GNSS data from this device if not NULL */
+	const struct device *dev;
+	/** Callback called when GNSS velocity is published */
+	gnss_velned_callback_t callback;
+};
+
 /**
  * @brief Set the GNSS fix rate
  *
@@ -449,6 +480,23 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 	}
 #else
 #define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)
+#endif
+
+/**
+ * @brief Register a callback structure for GNSS velocity published
+ *
+ * @param _dev Device pointer
+ * @param _callback The callback function
+ */
+#if CONFIG_GNSS_VELNED
+#define GNSS_VELNED_CALLBACK_DEFINE(_dev, _callback)                                            \
+	static const STRUCT_SECTION_ITERABLE(gnss_velned_callback,                              \
+					     _gnss_velned_callback__##_callback) = {            \
+		.dev = _dev,                                                                    \
+		.callback = _callback,                                                          \
+	}
+#else
+#define GNSS_VELNED_CALLBACK_DEFINE(_dev, _callback)
 #endif
 
 /**
