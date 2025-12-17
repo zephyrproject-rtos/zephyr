@@ -118,21 +118,29 @@ def main():
         for label in node.labels:
             cmake_props.append(f'"DT_NODELABEL|{label}" "{node.path}"')
 
-        for item in node.props:
-            # We currently do not support phandles for edt -> cmake conversion.
-            if "phandle" not in node.props[item].type:
-                if "array" in node.props[item].type:
-                    # Convert array to CMake list
-                    cmake_value = ''
-                    for val in node.props[item].val:
-                        cmake_value = f'{cmake_value}{val};'
-                else:
-                    cmake_value = node.props[item].val
+        if node.props:
+            for item in node.props:
+                # We currently do not support phandles for edt -> cmake conversion.
+                if "phandle" not in node.props[item].type:
+                    if "array" in node.props[item].type:
+                        # Convert array to CMake list
+                        cmake_value = ''
+                        for val in node.props[item].val:
+                            cmake_value = f'{cmake_value}{val};'
+                    else:
+                        cmake_value = node.props[item].val
 
-                # Encode node's property 'item' as a CMake target property
-                # with a name like 'DT_PROP|<path>|<property>'.
-                cmake_prop = f'DT_PROP|{node.path}|{item}'
-                cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+                    # Encode node's property 'item' as a CMake target property
+                    # with a name like 'DT_PROP|<path>|<property>'.
+                    cmake_prop = f'DT_PROP|{node.path}|{item}'
+                    cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+        elif node.compats:
+            # Manually output compatibles for nodes that have no properties
+            cmake_value = ''
+            for val in node.compats:
+                cmake_value = f'{cmake_value}{val};'
+            cmake_prop = f'DT_PROP|{node.path}|compatible'
+            cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
 
         for comp in node.compats:
             compatible2paths[comp].append(node.path)
