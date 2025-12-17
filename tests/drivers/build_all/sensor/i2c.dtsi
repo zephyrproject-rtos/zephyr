@@ -1482,3 +1482,9 @@ test_i2c_opt3004: opt3004@c4 {
 	compatible = "ti,opt3004";
 	reg = <0xc4>;
 };
+
+test_i2c_max30210: max30210@c5 {
+	compatible = "adi,max30210";
+	reg = <0xc5>;
+	interrupt-gpios = <&test_gpio 0 0>;
+};
