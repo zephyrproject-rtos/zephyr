@@ -8,7 +8,8 @@
 
 #include <stdlib.h>
 
-#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper.h>
+#include <zephyr/drivers/stepper/stepper_ctrl.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
 #include <adi_tmc_bus.h>
@@ -166,7 +167,7 @@ int tmc51xx_read_actual_position(const struct device *dev, int32_t *position)
 	if (config->comm_type == TMC_COMM_UART) {
 		bool is_moving;
 
-		err = stepper_is_moving(motion_controller, &is_moving);
+		err = stepper_ctrl_is_moving(motion_controller, &is_moving);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -324,35 +325,35 @@ static void rampstat_work_handler(struct k_work *work)
 
 	if (ramp_stat_values > 0) {
 		switch (ramp_stat_values) {
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER_CTRL
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", dev->name);
-			tmc51xx_stepper_trigger_cb(motion_controller,
-						     STEPPER_EVENT_LEFT_END_STOP_DETECTED);
+			tmc51xx_stepper_ctrl_trigger_cb(motion_controller,
+						     STEPPER_CTRL_EVENT_LEFT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", dev->name);
-			tmc51xx_stepper_trigger_cb(motion_controller,
-						     STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
+			tmc51xx_stepper_ctrl_trigger_cb(motion_controller,
+						     STEPPER_CTRL_EVENT_RIGHT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
 		case TMC5XXX_POS_REACHED:
 		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", dev->name);
-			tmc51xx_stepper_trigger_cb(motion_controller,
-						     STEPPER_EVENT_STEPS_COMPLETED);
+			tmc51xx_stepper_ctrl_trigger_cb(motion_controller,
+						     STEPPER_CTRL_EVENT_STEPS_COMPLETED);
 			break;
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER */
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRV
+#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_CTRL */
+#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRIVER
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", dev->name);
-			tmc51xx_stepper_stallguard_enable(dev, false);
-			tmc51xx_stepper_drv_trigger_cb(stepper_driver,
-				STEPPER_DRV_EVENT_STALL_DETECTED);
+			tmc51xx_stepper_ctrl_stallguard_enable(dev, false);
+			tmc51xx_stepper_driver_trigger_cb(stepper_driver,
+				STEPPER_EVENT_STALL_DETECTED);
 			break;
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRV */
+#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRIVER */
 		default:
 			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
 			break;
@@ -528,9 +529,9 @@ static int tmc51xx_init(const struct device *dev)
 				    : 0)),                                                         \
 		 .clock_frequency = DT_INST_PROP(inst, clock_frequency),                           \
 		 .motion_controller = DEVICE_DT_GET_OR_NULL(DT_CHILD_BY_COMPATIBLE(                \
-			 DT_DRV_INST(inst), adi_tmc51xx_stepper)),                                 \
+			 DT_DRV_INST(inst), adi_tmc51xx_stepper_ctrl)),                           \
 		 .stepper_driver = DEVICE_DT_GET_OR_NULL(                                          \
-			 DT_CHILD_BY_COMPATIBLE(DT_DRV_INST(inst), adi_tmc51xx_stepper_drv))};     \
+			 DT_CHILD_BY_COMPATIBLE(DT_DRV_INST(inst), adi_tmc51xx_stepper_driver))};  \
 	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,                      \
 			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
 			      NULL);

@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC51XX_H
 #define ZEPHYR_DRIVERS_STEPPER_ADI_TMC51XX_H
 
+#include <zephyr/drivers/stepper/stepper_ctrl.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
 /**
@@ -15,7 +16,7 @@
  * @param dev Pointer to the stepper driver device.
  * @param event The stepper driver event that occurred.
  */
-void tmc51xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper_drv_event event);
+void tmc51xx_stepper_driver_trigger_cb(const struct device *dev, const enum stepper_event event);
 
 /**
  * @brief Trigger the registered callback for stepper events.
@@ -23,7 +24,7 @@ void tmc51xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper
  * @param dev Pointer to the stepper device.
  * @param event The stepper event that occurred.
  */
-void tmc51xx_stepper_trigger_cb(const struct device *dev, const enum stepper_event event);
+void tmc51xx_stepper_ctrl_trigger_cb(const struct device *dev, const enum stepper_ctrl_event event);
 
 /**
  * @brief Enable or disable stallguard feature.
@@ -32,7 +33,7 @@ void tmc51xx_stepper_trigger_cb(const struct device *dev, const enum stepper_eve
  * @param enable true to enable, false to disable
  * @retval -EIO on failure, -EAGAIN if velocity is too low, 0 on success
  */
-int tmc51xx_stepper_stallguard_enable(const struct device *dev, const bool enable);
+int tmc51xx_stepper_ctrl_stallguard_enable(const struct device *dev, const bool enable);
 
 /**
  * @brief Read the actual position from the TMC51xx device.

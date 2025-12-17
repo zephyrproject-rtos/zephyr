@@ -2506,7 +2506,6 @@ Documentation Infrastructure:
   files:
     - drivers/stepper/
     - include/zephyr/drivers/stepper/
-    - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper/
     - samples/drivers/stepper/

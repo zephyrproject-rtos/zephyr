@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_stepper_common, CONFIG_STEPPER_LOG_LEVEL);
 
-void gpio_stepper_trigger_callback(const struct device *dev, enum stepper_event event)
+void gpio_stepper_trigger_callback(const struct device *dev, enum stepper_ctrl_event event)
 {
 	struct gpio_stepper_common_data *data = dev->data;
 
@@ -44,7 +44,7 @@ static void gpio_stepper_work_event_handler(struct k_work *work)
 {
 	struct gpio_stepper_common_data *data =
 		CONTAINER_OF(work, struct gpio_stepper_common_data, event_callback_work);
-	enum stepper_event event;
+	enum stepper_ctrl_event event;
 	int ret;
 
 	ret = k_msgq_get(&data->event_msgq, &event, K_NO_WAIT);
@@ -80,7 +80,7 @@ int gpio_stepper_common_init(const struct device *dev)
 #ifdef CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS
 	struct gpio_stepper_common_data *data = dev->data;
 
-	k_msgq_init(&data->event_msgq, data->event_msgq_buffer, sizeof(enum stepper_event),
+	k_msgq_init(&data->event_msgq, data->event_msgq_buffer, sizeof(enum stepper_ctrl_event),
 		    CONFIG_STEPPER_GPIO_STEPPER_EVENT_QUEUE_LEN);
 	k_work_init(&data->event_callback_work, gpio_stepper_work_event_handler);
 #endif /* CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS */
