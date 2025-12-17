@@ -294,6 +294,21 @@ static uint32_t secproxy_mailbox_max_channels_get(const struct device *dev)
 	return MAILBOX_MAX_CHANNELS;
 }
 
+static void secproxy_mailbox_flush_thread(const struct device *dev, uint32_t channel)
+{
+	struct secproxy_thread spt;
+
+	spt.target_data = SEC_PROXY_THREAD(DEV_TDATA(dev), channel);
+	spt.rt = SEC_PROXY_THREAD(DEV_RT(dev), channel);
+	spt.scfg = SEC_PROXY_THREAD(DEV_SCFG(dev), channel);
+
+	/* Drain all pending messages from the thread. Blocking call */
+	while ((sys_read32(spt.rt + RT_THREAD_STATUS) & RT_THREAD_STATUS_CUR_CNT_MASK) > 0) {
+		/* Read from the last data register to consume one message */
+		(void)sys_read32(spt.target_data + SEC_PROXY_DATA_END_OFFS);
+	}
+}
+
 static int secproxy_mailbox_set_enabled(const struct device *dev, uint32_t channel, bool enable)
 {
 	struct secproxy_mailbox_data *data = DEV_DATA(dev);
@@ -317,6 +332,7 @@ static int secproxy_mailbox_set_enabled(const struct device *dev, uint32_t chann
 	data->channel_enable[channel] = enable;
 
 	if (enable) {
+		secproxy_mailbox_flush_thread(dev, channel);
 		irq_enable(config->interrupts[channel]);
 	} else {
 		irq_disable(config->interrupts[channel]);
