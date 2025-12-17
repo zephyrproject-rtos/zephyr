@@ -62,11 +62,16 @@ struct pdu_ctx {
 	struct bt_mesh_net_rx *rx;
 };
 
+/* Suppress `net_val is less aligned than bt_mesh_key` clang warning.
+ * dev_key is handled in the source code according to it's alignment
+ */
+TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNALIGNED_ACCESS)
 /* Mesh network information for persistent storage. */
 struct net_val {
 	uint16_t primary_addr;
 	struct bt_mesh_key dev_key;
 } __packed;
+TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNALIGNED_ACCESS)
 
 /* Sequence number information for persistent storage. */
 struct seq_val {
