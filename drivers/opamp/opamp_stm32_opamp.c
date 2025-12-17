@@ -384,7 +384,8 @@ static int stm32_opamp_set_functional_mode(const struct device *dev)
 	return 0;
 }
 
-static uint32_t stm32_opamp_get_calout(const struct device *dev, struct adc_sequence *adc_seq)
+static int stm32_opamp_get_calout(const struct device *dev, struct adc_sequence *adc_seq,
+				  uint32_t *calout)
 {
 	const struct stm32_opamp_config *cfg = dev->config;
 	OPAMP_TypeDef *opamp = cfg->opamp;
@@ -392,12 +393,14 @@ static uint32_t stm32_opamp_get_calout(const struct device *dev, struct adc_sequ
 
 	if (LL_OPAMP_GetInternalOutput(opamp) == OPAMP_INTERNAL_OUTPUT_DISABLED || adc_ch == NULL) {
 		/* Internal output to ADC is disabled - use CALOUT transition check */
-		return LL_OPAMP_IsCalibrationOutputSet(opamp);
+		*calout = LL_OPAMP_IsCalibrationOutputSet(opamp);
+		return 0;
 	}
 
 	if (adc_read_dt(adc_ch, adc_seq) < 0) {
 		LOG_ERR("%s: could not read adc channel #%d", adc_ch->dev->name,
 			adc_ch->channel_id);
+		return -EIO;
 	}
 
 	/*
@@ -406,7 +409,8 @@ static uint32_t stm32_opamp_get_calout(const struct device *dev, struct adc_sequ
 	 * ADC output (the ADC works as a comparator connected to the OPAMP output).
 	 * source: RM0440 Rev 9 pp. 785/2140
 	 */
-	return (uint32_t)sys_read16((mem_addr_t)adc_seq->buffer);
+	*calout = (uint32_t)sys_read16((mem_addr_t)adc_seq->buffer);
+	return 0;
 }
 
 /**
@@ -470,7 +474,10 @@ static int stm32_opamp_self_calibration(const struct device *dev)
 
 		LL_OPAMP_SetCalibrationSelection(opamp, trimming_type[i]);
 		while (trimming_value < STM32_OPAMP_TRIM_VAL_MAX && !calib_done) {
-			calout = stm32_opamp_get_calout(dev, &adc_seq);
+			ret = stm32_opamp_get_calout(dev, &adc_seq, &calout);
+			if (ret < 0) {
+				break;
+			}
 			LL_OPAMP_SetTrimmingValue(opamp, trimming_type[i], trimming_value);
 			/* Wait for offset trimming max time (tOFFTRIMmax >= 2 ms) */
 			k_msleep(2);
@@ -499,8 +506,15 @@ static int stm32_opamp_self_calibration(const struct device *dev)
 
 			calout_prev = calout;
 		}
-		LOG_DBG("Calibration done, trimming value: 0x%x", trimming_min);
-		LL_OPAMP_SetTrimmingValue(opamp, trimming_type[i], trimming_min);
+
+		if (ret == 0) {
+			LL_OPAMP_SetTrimmingValue(opamp, trimming_type[i], trimming_min);
+			LOG_DBG("%s: calibration succeed, trimming value: 0x%x", dev->name,
+				trimming_min);
+		} else {
+			LOG_DBG("%s: calibration failed", dev->name);
+			break;
+		}
 	}
 
 	/* Revert register values */
@@ -508,7 +522,7 @@ static int stm32_opamp_self_calibration(const struct device *dev)
 	LL_OPAMP_SetMode(opamp, LL_OPAMP_MODE_FUNCTIONAL);
 	LL_OPAMP_Disable(opamp);
 
-	return 0;
+	return ret;
 }
 
 static int stm32_opamp_init(const struct device *dev)
