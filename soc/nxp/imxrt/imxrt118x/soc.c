@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 extern char __start[];
 extern char _flash_used[];
-extern char __rom_start_address[];
+extern char __rom_region_start[];
 const __imx_boot_container_section container boot_header = {
 	.hdr = {
 		CNT_VERSION,
@@ -48,7 +48,7 @@ const __imx_boot_container_section container boot_header = {
 		{
 			(uint32_t)(-1 * CONFIG_IMAGE_CONTAINER_OFFSET),
 			(uint32_t)_flash_used,
-			(uint32_t)__rom_start_address,
+			(uint32_t)__rom_region_start,
 			0x00000000,
 			(uint32_t)__start,
 			0x00000000,
