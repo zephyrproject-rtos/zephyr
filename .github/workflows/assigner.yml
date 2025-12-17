@@ -63,7 +63,7 @@ jobs:
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"
         if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          if [ "${{ github.base_ref }}" != "main" ]; then
+          if [ "${{ github.base_ref }}" = "main" ]; then
             FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
           else
             FLAGS+=" -P ${{ github.event.pull_request.number }}"
