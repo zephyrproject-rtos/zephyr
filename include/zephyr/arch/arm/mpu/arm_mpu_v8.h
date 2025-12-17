@@ -67,6 +67,9 @@
 /* Attribute flag for not-allowing execution (eXecute Never) */
 #define NOT_EXEC MPU_RBAR_XN_Msk
 
+/* Executable flag for RAM */
+#define RAM_EXEC        COND_CODE_1(CONFIG_EXECUTABLE_RAM, (0), (NOT_EXEC))
+
 /* To prevent execution of MPU region in privileged mode */
 #define PRIV_EXEC_NEVER (1)
 
@@ -236,17 +239,12 @@
 		.attr = p_attr(p_base, p_size),                                                    \
 	}
 
-/* On Cortex-M, we can only set the XN bit when CONFIG_XIP=y. When
- * CONFIG_XIP=n, the entire image will be linked to SRAM, so we need to keep
- * the SRAM region XN bit clear or the application code will not be executable.
- */
 /* clang-format off */
 #define REGION_RAM_ATTR(base, size)                                                                \
 	{                                                                                          \
-		.rbar = IF_ENABLED(CONFIG_XIP, (NOT_EXEC |)) P_RW_U_NA_Msk |                       \
-			NON_SHAREABLE_Msk,                /* AP, XN, SH */                         \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,          /* Cache-ability */                      \
-		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+		.rbar = RAM_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk,  /* AP, XN, SH */            \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,                       /* Cache-ability */         \
+		.r_limit = REGION_LIMIT_ADDR(base, size),              /* Region Limit */          \
 		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
 	}
 
