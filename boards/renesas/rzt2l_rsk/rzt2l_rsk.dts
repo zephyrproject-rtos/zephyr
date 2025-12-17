@@ -74,7 +74,7 @@
 };
 
 &gpio16 {
-	irqs = <3 7>;
+	irqs = <&irq7 3>;
 	status = "okay";
 };
 
