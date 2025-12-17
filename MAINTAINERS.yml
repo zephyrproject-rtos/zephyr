@@ -1253,6 +1253,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - anangl
+    - ZhaoxiangJin
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
