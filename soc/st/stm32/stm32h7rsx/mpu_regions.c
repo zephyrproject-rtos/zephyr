@@ -10,6 +10,13 @@
 
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
+#define sram_eth_node DT_PHANDLE(DT_NODELABEL(mac), memory_regions)
+
+BUILD_ASSERT(!DT_SAME_NODE(sram_eth_node, DT_CHOSEN(zephyr_sram)),
+	     "Ethernet buffer memory-region cannot be located in Zephyr system RAM.");
+#endif /* mac node enabled */
+
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Use first region to prevent speculative access in entire memory space */
 	/* Region 0 */
@@ -30,15 +37,12 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 4 - Ready only flash with unique device id, package code and VREF/TS calib*/
 	MPU_REGION_ENTRY("ID", 0x08FFF800, REGION_IO_ATTR(REGION_512B)),
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
-#define sram_eth_node DT_NODELABEL(sram2)
-#if DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
+#if defined(sram_eth_node) && DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
 	/* Region 5 - Ethernet DMA buffer RAM */
 	MPU_REGION_ENTRY("SRAM_ETH_BUF", DT_REG_ADDR(sram_eth_node),
 			 REGION_RAM_NOCACHE_ATTR(REGION_16K)),
 	/* Region 6 - Ethernet DMA descriptor RAM (overlays the first 256B of SRAM_ETH_BUF)*/
 	MPU_REGION_ENTRY("SRAM_ETH_DESC", DT_REG_ADDR(sram_eth_node), REGION_PPB_ATTR(REGION_256B)),
-#endif
 #endif
 };
 
