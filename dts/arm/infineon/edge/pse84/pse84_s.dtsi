@@ -1157,5 +1157,27 @@
 			clk-dst = <0x10300>;
 			status = "disabled";
 		};
+
+		i2s0: tdm@54418000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x54418000 0x200>;
+			interrupts = <158 4>, /* RX Structure */
+				     <159 4>; /* TX Structure */
+			clk-dst = <0x00010100>;
+			status = "disabled";
+		};
+
+		i2s1: tdm@54418200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x54418200 0x200>;
+			interrupts = <160 4>, /* RX Structure */
+				     <161 4>; /* TX Structure */
+			clk-dst = <0x00010101>;
+			status = "disabled";
+		};
 	};
 };
