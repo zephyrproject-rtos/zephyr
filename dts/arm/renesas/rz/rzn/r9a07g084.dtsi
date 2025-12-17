@@ -7,10 +7,11 @@
 #include <freq.h>
 #include <arm/armv8-r.dtsi>
 #include <freq.h>
-#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
+#include <zephyr/dt-bindings/gpio/renesas-rztn-gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -41,6 +42,11 @@
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(25)>;
 		#clock-cells = <0>;
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "renesas,rzt-pinctrl";
 	};
 
 	soc {
@@ -364,9 +370,15 @@
 			};
 		};
 
-		pinctrl: pinctrl@800a0000 {
-			compatible = "renesas,rzn-pinctrl";
-			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
+		gpio: gpio@800a0000 {
+			compatible = "renesas,rz-gpio-common-v2";
+			reg = <0x800a0000 0x1000>,
+			      <0x81030000 0x1000>,
+			      <0x81030c00 0x64>,
+			      <0x0 0x19>,
+			      <0x200 0x32>,
+			      <0x600 0x64>;
+			reg-names = "base_ns", "base_s", "rselp", "p", "pm", "pfc";
 			#address-cells = <1>;
 			#size-cells = <0>;
 
