@@ -616,6 +616,88 @@ before opening a new Pull Request:
    Set the default app to Strawberry Perl. By default the executable is
    installed at ``C:\Strawberry\perl\bin\perl.exe``.
 
+KeepSorted Check
+^^^^^^^^^^^^^^^^
+
+The KeepSorted check ensures that specified blocks of code, configuration, or
+documentation remain in sorted order.
+
+To use the KeepSorted check, wrap your sorted content between dedicated lines
+containing start and stop markers, typically using comments:
+
+.. code-block:: c
+
+   // zephyr-keep-sorted-start
+   option_a
+   option_b
+   option_c
+   // zephyr-keep-sorted-stop
+
+KeepSorted Marker Options
+"""""""""""""""""""""""""
+
+The sorting behavior of each block can be customized in several ways.
+To do this, one or more of the following parameters can be added on
+the same line as the start marker itself:
+
+**re(regex_pattern)**
+   Enables regex mode where only lines matching the specified regular expression
+   are checked for sorting. Other lines are ignored.
+
+   Example checking sorted properties in a yaml file:
+
+   .. code-block:: yaml
+
+      # zephyr-keep-sorted-start re(^\s+\- name:)
+      projects:
+        - name: application
+          revision: main
+        - name: library1
+          revision: feature-branch
+        - name: library2
+          revision: main
+      # zephyr-keep-sorted-stop
+
+**strip(characters)**
+   Strips the specified characters from lines before performing the sort comparison.
+   This is useful when lines have optional prefixes or suffixes that should be
+   ignored during sorting.
+
+   Example stripping quotes from yaml dictionary keys:
+
+   .. code-block:: yaml
+
+      # zephyr-keep-sorted-start strip(":)
+      ACPI:
+        status: odd fixes
+      "West project: acpica":
+        status: odd fixes
+      # zephyr-keep-sorted-stop
+
+**nofold**
+   Disables line folding. By default, indented lines following a main line are
+   concatenated (folded) together for sorting comparison. The ``nofold`` option
+   disables this behavior and ignores indented lines.
+
+**ignorecase**
+   Enables case-insensitive sorting using Python's `str.casefold`_. This allows
+   mixing uppercase and lowercase items in sorted blocks without causing sort
+   order violations. Defaults to Python's string ordering if omitted.
+
+.. _str.casefold: https://docs.python.org/3/library/stdtypes.html#str.casefold
+
+Multiple options can be combined on the same marker line:
+
+.. code-block:: rst
+
+   .. zephyr-keep-sorted-start re(^\* \w) ignorecase
+   * Shell
+     Some important message about the shell.
+
+   * STM32
+     Updates for this vendor.
+   .. zephyr-keep-sorted-stop
+
 twister
 -------
 
