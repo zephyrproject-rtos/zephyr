@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,61 @@
 #include "memc_mcux_flexspi.h"
 
 LOG_MODULE_REGISTER(memc_flexspi_is66wvs8m8, CONFIG_MEMC_LOG_LEVEL);
+
+/*
+ * Example PSRAM and FlexSPI Controller DTS setting.
+ *
+	/ {
+		// Add External PSRAM to the Linker Map.
+		psram0: psram_region@90800000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "EXT_PSRAM";
+			device_type = "memory";
+			reg = <0x90800000 0x800000>;
+		};
+	};
+
+	&flexspi {
+		status = "okay";
+		pinctrl-0 = <&pinmux_flexspi>;
+		pinctrl-names = "default";
+		rx-clock-source = <1>;
+		/delete-property/ combination-mode;
+		/delete-property/ ahb-cacheable;
+		/delete-property/ ahb-bufferable;
+		/delete-property/ ahb-prefetch;
+		/delete-property/ ahb-read-addr-opt;
+
+		// Account for both the memories (w25q64jvssiq & is66wvs8m8)
+		// on the FlexSPI controller.
+		reg = <0x500c8000 0x1000>,
+		<0x90000000 DT_SIZE_M(16)>;
+
+		w25q64jvssiq: w25q64jvssiq@0 {
+			........
+		}
+
+		is66wvs8m8: is66wvs8m8@2 {
+			compatible = "nxp,imx-flexspi-is66wvs8m8";
+			// IS66WVS8M8 is 8MB, 64MBit SerialRAM
+			size = <DT_SIZE_M(64)>;
+			reg = <2>;
+			spi-max-frequency = <100000000>;
+			// PSRAM cannot be enabled while board is in default XIP
+			// configuration, as it will conflict with flash chip.
+			//
+			status = "okay";
+			cs-interval-unit = <1>;
+			cs-interval = <3>;
+			cs-hold-time = <3>;
+			cs-setup-time = <3>;
+			data-valid-time = <1>;
+			column-space = <0>;
+			ahb-write-wait-unit = <2>;
+			ahb-write-wait-interval = <1>;
+		};
+	};
+*/
 
 /* Vendor ID for ISSI device */
 #define ISSI_VENDOR_ID 0x9D
