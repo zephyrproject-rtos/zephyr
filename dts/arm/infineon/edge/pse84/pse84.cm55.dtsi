@@ -173,6 +173,16 @@
 	interrupts = <120 4>;
 };
 
+&i2s0 {
+	interrupts = <135 4>, /* RX Structure */
+		     <136 4>; /* TX Structure */
+};
+
+&i2s1 {
+	interrupts = <137 4>, /* RX Structure */
+		     <138 4>; /* TX Structure */
+};
+
 &i3c0 {
 	interrupts = <153 4>;
 };
