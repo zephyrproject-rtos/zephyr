@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Gabriele Zampieri <opensource@arsenaling.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_MAX31331
+	bool "Maxim MAX31331 RTC driver"
+	default y
+	depends on DT_HAS_ADI_MAX31331_ENABLED
+	select I2C
+	help
+	    Enable Maxim MAX31331 RTC driver.
