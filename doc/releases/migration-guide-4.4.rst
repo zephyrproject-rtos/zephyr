@@ -257,12 +257,12 @@ USB
 
   * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
 
-.. zephyr-keep-sorted-stop
-
 Video
 ===
 
 * CONFIG_VIDEO_OV7670 is now gone and replaced by CONFIG_VIDEO_OV767X.  This allows supporting both the OV7670 and 0V7675.
+
+.. zephyr-keep-sorted-stop
 
 Bluetooth
 *********
