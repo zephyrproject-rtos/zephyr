@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RZ Interrupt Controller
-compatible: "renesas,rz-intc"
+compatible: "renesas,rz-intc-v2"
 
 include: base.yaml
 
