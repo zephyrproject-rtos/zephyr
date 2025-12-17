@@ -25,6 +25,7 @@ config SOC_AMEBA_NP_IMAGE
 	bool "DeepSleep"
 	help
 	  DeepSleep prebuilt image is executed on the NP core of the Ameba multi-core MCU.
+
 endchoice
 
 endif # SOC_FAMILY_REALTEK_AMEBA
