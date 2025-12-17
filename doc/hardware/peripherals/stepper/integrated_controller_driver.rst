@@ -4,10 +4,10 @@ Integrated Stepper Motion Control and Driver
 ############################################
 
 Devices which comprise of both motion controller and a stepper driver in a single IC. These devices
-have to be modelled as multi-functional-device in device tree, implementing both :c:group:`stepper_interface`
-and :c:group:`stepper_drv_interface` APIs. An example of such a device is :dtcompatible:`adi,tmc50xx`.
-:c:group:`stepper_interface` API is implemented by :dtcompatible:`adi,tmc50xx-stepper` and
-:c:group:`stepper_drv_interface` API is implemented by :dtcompatible:`adi,tmc50xx-stepper-drv`.
+have to be modelled as multi-functional-device in device tree, implementing both :c:group:`stepper_motor_interface`
+and :c:group:`stepper_driver_interface` APIs. An example of such a device is :dtcompatible:`adi,tmc50xx`.
+:c:group:`stepper_driver_interface` API is implemented by :dtcompatible:`adi,tmc50xx-stepper-driver` and
+:c:group:`stepper_motor_interface` API is implemented by :dtcompatible:`adi,tmc50xx-stepper-motor`.
 
 .. code-block:: dts
 
@@ -32,19 +32,19 @@ and :c:group:`stepper_drv_interface` APIs. An example of such a device is :dtcom
            poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
 
-           /* DEVICE_API: stepper_drv api */
+           /* DEVICE_API: stepper api */
            tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
                idx = <0>;
-                compatible = "adi,tmc50xx-stepper-drv";
+                compatible = "adi,tmc50xx-stepper-driver";
                 micro-step-res = <256>;
                 /* ADI TMC stallguard settings specific to TMC50XX */
                 stallguard2-threshold=<30>;
             };
 
-           /* DEVICE_API: stepper api */
+           /* DEVICE_API: stepper_motor api */
            tmc50xx_0_motion_controller: tmc50xx_0_motion_controller {
                idx = <0>;
-               compatible = "adi,tmc50xx-stepper";
+               compatible = "adi,tmc50xx-stepper-motor";
                ...
                vmax = <900000>;
                amax = <50000>;
@@ -53,19 +53,19 @@ and :c:group:`stepper_drv_interface` APIs. An example of such a device is :dtcom
                ...
             };
 
-           /* DEVICE_API: stepper_drv api */
+           /* DEVICE_API: stepper api */
            tmc50xx_1_stepper_driver: tmc50xx_1_stepper_driver {
                idx = <1>;
-                compatible = "adi,tmc50xx-stepper-drv";
+                compatible = "adi,tmc50xx-stepper-driver";
                 micro-step-res = <256>;
                 /* ADI TMC stallguard settings specific to TMC50XX */
                 stallguard2-threshold=<30>;
             };
 
-           /* DEVICE_API: stepper api */
+           /* DEVICE_API: stepper_motor api */
            tmc50xx_1_motion_controller: tmc50xx_1_motion_controller {
                idx = <1>;
-               compatible = "adi,tmc50xx-stepper";
+               compatible = "adi,tmc50xx-stepper-motor";
                ...
                vstart = <1000>;
                ...
@@ -79,12 +79,12 @@ as follows:
 
 .. code-block:: c
 
-   static const struct device *x_stepper = DEVICE_DT_GET(DT_ALIAS(x_axis_stepper_motor));
-   static const struct device *x_stepper_drv = DEVICE_DT_GET(DT_ALIAS(x_axis_stepper_driver));
-   static const struct device *y_stepper = DEVICE_DT_GET(DT_ALIAS(y_axis_stepper_motor));
-   static const struct device *y_stepper_drv = DEVICE_DT_GET(DT_ALIAS(y_axis_stepper_driver));
+   static const struct device *x_stepper_motor = DEVICE_DT_GET(DT_ALIAS(x_axis_stepper_motor));
+   static const struct device *x_stepper_driver = DEVICE_DT_GET(DT_ALIAS(x_axis_stepper_driver));
+   static const struct device *y_stepper_motor = DEVICE_DT_GET(DT_ALIAS(y_axis_stepper_motor));
+   static const struct device *y_stepper_driver = DEVICE_DT_GET(DT_ALIAS(y_axis_stepper_driver));
    ...
-   stepper_move_to(x_stepper, 200);
-   stepper_stop(x_stepper);
-   stepper_drv_disable(x_stepper_drv);
-   stepper_drv_disable(y_stepper_drv);
+   stepper_motor_move_to(x_stepper_motor, 200);
+   stepper_motor_stop(x_stepper_motor);
+   stepper_disable(x_stepper_driver);
+   stepper_disable(y_stepper_driver);

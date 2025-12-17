@@ -8,16 +8,15 @@
 
 / {
 	aliases {
-		stepper-drv = &allegro_a4979;
+		stepper = &adi_tmc2209;
 	};
 
-	allegro_a4979: allegro_a4979 {
+	adi_tmc2209: adi_tmc2209 {
 		status = "okay";
-		compatible = "allegro,a4979";
-		micro-step-res = <1>;
-		reset-gpios = <&gpio4 0 0>;
+		compatible = "adi,tmc2209";
+		micro-step-res = <32>;
 		en-gpios = <&gpio2 1 0>;
 		m0-gpios = <&gpio3 0 0>;
-		m1-gpios = <&gpio3 1 0>;
+		m1-gpios = <&gpio4 1 0>;
 	};
 };

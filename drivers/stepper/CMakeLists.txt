@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper.h)
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper_motor.h)
 
 # zephyr-keep-sorted-start
 add_subdirectory(adi_tmc)

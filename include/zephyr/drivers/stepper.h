@@ -13,15 +13,6 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
 
-/**
- * @brief Interfaces for stepper motor controllers.
- * @defgroup stepper_interface Stepper
- * @since 4.0
- * @version 0.8.0
- * @ingroup io_interfaces
- * @{
- */
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <errno.h>
@@ -31,11 +22,15 @@ extern "C" {
 #endif
 
 /**
- * @brief Interface for stepper drivers
- * @defgroup stepper_interface Stepper-Drv
+ * @brief Interfaces for stepper motor controllers and driver.
+ * @defgroup stepper_interface Stepper
+ * @ingroup io_interfaces
+ *
+ * @defgroup stepper_driver_interface Stepper Driver Interface
+ * @brief Interfaces for stepper drivers
+ * @ingroup stepper_interface
  * @since 4.0
  * @version 0.8.0
- * @ingroup io_interfaces
  * @{
  */
 

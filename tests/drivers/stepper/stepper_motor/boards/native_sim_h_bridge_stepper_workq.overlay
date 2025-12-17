@@ -11,7 +11,7 @@
 	};
 
 	h_bridge_stepper: h_bridge_stepper {
-		compatible = "zephyr,h-bridge-stepper";
+		compatible = "zephyr,h-bridge-stepper-motor";
 		status = "okay";
 		lut-step-gap = <1>;
 		gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,

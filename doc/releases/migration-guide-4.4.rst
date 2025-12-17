@@ -569,43 +569,50 @@ Stepper
 * For :dtcompatible:`adi,tmc2209`, the property ``msx-gpios`` is now replaced by ``m0-gpios`` and
   ``m1-gpios`` for consistency with other step/dir stepper drivers.
 
-* Since :github:`91979`, All stepper-drv driver APIs have been refactored out of the stepper API.
-  The following APIs have been moved from :c:group:`stepper_interface` to :c:group:`stepper_drv_interface`:
+* Since :github:`91979`, All stepper motor driver APIs have been refactored out of the stepper API.
+  The following APIs have been moved from :c:group:`stepper_driver_interface` to :c:group:`stepper_motor_interface`:
 
-  * :c:func:`stepper_enable` is replaced by :c:func:`stepper_drv_enable`.
-  * :c:func:`stepper_disable` is replaced by :c:func:`stepper_drv_disable`.
-  * :c:func:`stepper_set_micro_step_res` is replaced by :c:func:`stepper_drv_set_micro_step_res`.
-  * :c:func:`stepper_get_micro_step_res` is replaced by :c:func:`stepper_drv_get_micro_step_res`.
+  * :c:func:`stepper_move_by` is replaced by :c:func:`stepper_motor_move_by`.
+  * :c:func:`stepper_move_to` is replaced by :c:func:`stepper_motor_move_to`.
+  * :c:func:`stepper_is_moving` is replaced by :c:func:`stepper_motor_is_moving`.
+  * :c:func:`stepper_run` is replaced by :c:func:`stepper_motor_run`.
+  * :c:func:`stepper_stop` is replaced by :c:func:`stepper_motor_stop`.
+  * :c:func:`stepper_set_reference_position` is replaced by :c:func:`stepper_motor_set_reference_position`.
+  * :c:func:`stepper_get_actual_position` is replaced by :c:func:`stepper_motor_get_actual_position`.
+  * :c:func:`stepper_set_microstep_interval` is replaced by :c:func:`stepper_motor_set_microstep_interval`.
 
-* :c:enum:`stepper_micro_step_resolution` is replaced by :c:enum:`stepper_drv_micro_step_resolution`.
-* ``STEPPER_DRV_EVENT_STALL_DETECTED`` and ``STEPPER_DRV_EVENT_FAULT_DETECTED`` events have been
-  refactored to :c:enum:`stepper_drv_event`.
+* Following events have been from :c:enum:`stepper_event` to :c:enum:`stepper_motor_event`:
 
-* :dtcompatible:`zephyr,gpio-step-dir-stepper` implements :c:group:`stepper_interface` for
+  * ``STEPPER_EVENT_STEPS_COMPLETED`` is replaced by ``STEPPER_MOTOR_EVENT_STEPS_COMPLETED``.
+  * ``STEPPER_EVENT_LEFT_END_STOP_DETECTED`` is replaced by ``STEPPER_MOTOR_EVENT_LEFT_END_STOP_DETECTED```.
+  * ``STEPPER_EVENT_RIGHT_END_STOP_DETECTED`` is replaced by ``STEPPER_MOTOR_EVENT_RIGHT_END_STOP_DETECTED``.
+  * ``STEPPER_EVENT_STOPPED`` is replaced by ``STEPPER_MOTOR_EVENT_STOPPED``.
+
+* :dtcompatible:`zephyr,gpio-step-dir-stepper-motor` implements :c:group:`stepper_motor_interface` for
   controlling stepper motors via GPIO step and direction signals. Refer to
   :ref:`stepper-individual-controller-driver` for more details.
 
   * ``step-gpios``, ``dir-gpios``, ``invert-direction`` and ``counter`` properties are removed
     from :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`,
-    these are now are implemented by :dtcompatible:`zephyr,gpio-step-dir-stepper`.
-  * :c:func:`stepper_move_by`, :c:func:`stepper_move_to`, :c:func:`stepper_run`,
-    :c:func:`stepper_stop`, :c:func:`stepper_is_moving`, :c:func:`stepper_set_microstep_interval`
-    and :c:func:`stepper_set_event_callback` APIs are removed from :dtcompatible:`adi,tmc2209`,
+    these are now are implemented by :dtcompatible:`zephyr,gpio-step-dir-stepper-motor`.
+  * :c:func:`stepper_motor_move_by`, :c:func:`stepper_motor_move_to`, :c:func:`stepper_motor_run`,
+    :c:func:`stepper_motor_stop`, :c:func:`stepper_motor_is_moving`, :c:func:`stepper_motor_set_microstep_interval`
+    and :c:func:`stepper_motor_set_event_callback` APIs are not implemented by :dtcompatible:`adi,tmc2209`,
     :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`.
   * :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`
-    implement :c:group:`stepper_drv_interface`.
+    implement :c:group:`stepper_driver_interface`.
 
 * :c:func:`stepper_enable`, :c:func:`stepper_disable`, :c:func:`stepper_set_micro_step_res` and
-  :c:func:`stepper_get_micro_step_res` APIs are removed from :dtcompatible:`zephyr,h-bridge-stepper`.
-* ``en-gpios`` property is removed from :dtcompatible:`zephyr,h-bridge-stepper`.
+  :c:func:`stepper_get_micro_step_res` APIs are removed from :dtcompatible:`zephyr,h-bridge-stepper-motor`.
+* ``en-gpios`` property is removed from :dtcompatible:`zephyr,h-bridge-stepper-motor`.
 * ``micro-step-res`` property is replaced by ``lut-step-gap`` property in
-  :dtcompatible:`zephyr,h-bridge-stepper`.
+  :dtcompatible:`zephyr,h-bridge-stepper-motor`.
 
 * :dtcompatible:`adi,tmc50xx` and :dtcompatible:`adi,tmc51xx` devices are now modeled as MFDs.
-* :dtcompatible:`adi,tmc50xx-stepper` and :dtcompatible:`adi,tmc51xx-stepper` drivers implement
-  :c:group:`stepper_interface`.
-* :dtcompatible:`adi,tmc50xx-stepper-drv` and :dtcompatible:`adi,tmc51xx-stepper-drv` drivers implement
-  :c:group:`stepper_drv_interface`.
+* :dtcompatible:`adi,tmc50xx-stepper-motor` and :dtcompatible:`adi,tmc51xx-stepper-motor` drivers implement
+  :c:group:`stepper_motor_interface`.
+* :dtcompatible:`adi,tmc50xx-stepper-driver` and :dtcompatible:`adi,tmc51xx-stepper-driver` drivers implement
+  :c:group:`stepper_driver_interface`.
 
 STM32
 =====

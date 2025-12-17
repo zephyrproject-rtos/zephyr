@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
 # SPDX-License-Identifier: Apache-2.0
 
-compatible: "adi,tmc51xx-stepper"
+compatible: "adi,tmc50xx-stepper-motor"
 
 include:
   - name: adi,trinamic-stallguard.yaml
@@ -20,10 +20,13 @@ include:
       - d1
       - vstop
       - tzerowait
-      - thigh
-      - tcoolthrs
-      - tpwmthrs
-      - tpowerdown
+      - vhigh
+      - vcoolthrs
       - ihold
       - irun
       - iholddelay
+
+properties:
+  idx:
+    type: int
+    required: true
