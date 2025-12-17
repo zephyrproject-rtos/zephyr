@@ -61,6 +61,7 @@
 		reg = <0x30000000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM1";
+		#memory-region-cells = <0>;
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
@@ -69,6 +70,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30004000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM2";
+		#memory-region-cells = <0>;
 		/* Disable SRAM2 by default to avoid unintended access.
 		 * To enable it, explicitly define zephyr,memory-attr
 		 * to configure MPU attributes.
@@ -937,6 +939,7 @@
 				clock-names = "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB1, 16)>,
 					 <&rcc STM32_CLOCK(AHB1, 17)>;
+				memory-regions = <&sram2>;
 				status = "disabled";
 			};
 
