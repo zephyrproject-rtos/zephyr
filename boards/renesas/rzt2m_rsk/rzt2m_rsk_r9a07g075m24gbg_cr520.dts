@@ -94,7 +94,7 @@
 };
 
 &gpio10 {
-	irqs = <5 2>;
+	irqs = <&irq2 5>;
 	status = "okay";
 };
 
