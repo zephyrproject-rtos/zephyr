@@ -19,4 +19,5 @@ supported:
   - adc
   - arduino_gpio
   - comparator
+  - dma
 vendor: nxp
