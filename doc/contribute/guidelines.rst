@@ -597,10 +597,10 @@ Running CI Tests Locally
 check_compliance.py
 -------------------
 
-The ``check_compliance.py`` script serves as a valuable tool for assessing code
-compliance with Zephyr's established guidelines and best practices. The script
-acts as wrapper for a suite of tools that performs various checks, including
-linters and formatters.
+The :zephyr_file:`scripts/ci/check_compliance.py` script serves as a valuable
+tool for assessing code compliance with Zephyr's established guidelines and
+best practices. The script acts as wrapper for a suite of tools that performs
+various checks, including linters and formatters.
 
 Developers are encouraged to run the script locally to validate their changes
 before opening a new Pull Request:
