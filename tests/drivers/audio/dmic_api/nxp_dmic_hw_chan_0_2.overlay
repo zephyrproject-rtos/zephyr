@@ -1,0 +1,19 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2026 NXP
+ */
+
+/* Sparse layout: only hardware channels 0 and 2 enabled. They belong to
+ * different PDM units, so no stereo pair can be formed and only one
+ * channel is usable.
+ */
+&dmic0 {
+	dmic-channel@1 {
+		status = "disabled";
+	};
+
+	dmic-channel@3 {
+		status = "disabled";
+	};
+};
