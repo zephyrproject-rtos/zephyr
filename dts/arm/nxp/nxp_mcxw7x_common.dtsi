@@ -334,7 +334,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2d000 0x10>;
 		interrupts = <34 0>;
-		clock-frequency = <DT_FREQ_K(32)>;
+		clock-frequency = <32768>;
 		clk-source = <2>;
 		prescale-glitch-filter = <0>;
 		resolution = <32>;
@@ -345,7 +345,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2e000 0x10>;
 		interrupts = <35 0>;
-		clock-frequency = <DT_FREQ_K(32)>;
+		clock-frequency = <32768>;
 		clk-source = <2>;
 		prescale-glitch-filter = <0>;
 		resolution = <32>;

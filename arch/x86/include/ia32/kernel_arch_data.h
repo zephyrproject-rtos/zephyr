@@ -53,7 +53,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

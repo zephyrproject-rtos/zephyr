@@ -21,7 +21,7 @@ static struct {
 	FILL_METER_TABLE(OCPP_OMM_CURRENT_TO_EV,
 			 "Current.Import", "A"),
 	FILL_METER_TABLE(OCPP_OMM_CURRENT_MAX_OFFERED_TO_EV,
-			 "Current.OfferedMaximum", "A"),
+			 "Current.Offered", "A"),
 	FILL_METER_TABLE(OCPP_OMM_ACTIVE_ENERGY_FROM_EV,
 			 "Energy.Active.Export.Register", "Wh"),
 	FILL_METER_TABLE(OCPP_OMM_ACTIVE_ENERGY_TO_EV,

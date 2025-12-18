@@ -123,27 +123,22 @@ static int netc_eth_rx(const struct device *dev)
 #endif
 	netc_frame_attr_t attr = {0};
 	struct net_pkt *pkt;
-	int key;
 	int ret = 0;
 	status_t result;
 	status_t rx_result;
 	uint32_t length;
 
-	key = irq_lock();
-
 	/* Check rx frame */
 	rx_result = EP_GetRxFrameSize(&data->handle, 0, &length);
 	if (rx_result == kStatus_NETC_RxFrameEmpty) {
-		ret = -ENOBUFS;
-		goto out;
+		return -ENOBUFS;
 	}
 
 	if (rx_result != kStatus_NETC_RxTsrResp &&
 	    rx_result != kStatus_NETC_RxHRNotZeroFrame &&
 	    rx_result != kStatus_Success) {
 		LOG_ERR("Error on received frame");
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
@@ -154,20 +149,18 @@ static int netc_eth_rx(const struct device *dev)
 		result = netc_eth_get_tx_response(dev, &tsr);
 		if (result != kStatus_Success) {
 			LOG_ERR("Error on received TX timestamp response frame");
-			ret = -ENOBUFS;
-			goto out;
+			return -ENOBUFS;
 		}
 
 		dsa_netc_port_twostep_timestamp(dsa_switch_ctx, tsr.txtsid, tsr.timestamp);
-		goto out;
+		return ret;
 	}
 #endif
 	/* Receive frame */
 	result = EP_ReceiveFrameCopy(&data->handle, 0, data->rx_frame, length, &attr);
 	if (result != kStatus_Success) {
 		LOG_ERR("Error on received frame");
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
@@ -179,15 +172,14 @@ static int netc_eth_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(iface_dst, length, NET_AF_UNSPEC, 0, NETC_TIMEOUT);
 	if (pkt == NULL) {
 		eth_stats_update_errors_rx(iface_dst);
-		ret = -ENOBUFS;
-		goto out;
+		return -ENOBUFS;
 	}
 
 	ret = net_pkt_write(pkt, data->rx_frame, length);
 	if (ret != 0) {
 		eth_stats_update_errors_rx(iface_dst);
 		net_pkt_unref(pkt);
-		goto out;
+		return ret;
 	}
 
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
@@ -209,8 +201,6 @@ static int netc_eth_rx(const struct device *dev)
 		net_pkt_unref(pkt);
 		LOG_ERR("Failed to enqueue frame into rx queue: %d", ret);
 	}
-out:
-	irq_unlock(key);
 	return ret;
 }
 

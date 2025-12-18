@@ -42,6 +42,16 @@
 #define LSM6DSO_DT_ODR_6667Hz			0xa
 #define LSM6DSO_DT_ODR_1Hz6			0xb
 
+/* Low pass filter dividers */
+#define LSM6DSO_DT_LP_ODR_DIV_2			0
+#define LSM6DSO_DT_LP_ODR_DIV_10		1
+#define LSM6DSO_DT_LP_ODR_DIV_20		2
+#define LSM6DSO_DT_LP_ODR_DIV_45		3
+#define LSM6DSO_DT_LP_ODR_DIV_100		4
+#define LSM6DSO_DT_LP_ODR_DIV_200		5
+#define LSM6DSO_DT_LP_ODR_DIV_400		6
+#define LSM6DSO_DT_LP_ODR_DIV_800		7
+
 /* Tap mode */
 #define LSM6DSO_DT_SINGLE_TAP			0
 #define LSM6DSO_DT_SINGLE_DOUBLE_TAP		1

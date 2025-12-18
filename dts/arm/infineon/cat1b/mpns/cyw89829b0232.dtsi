@@ -14,7 +14,7 @@
 /* QSPI Flash is included in the processor package for this part. */
 / {
 	qspi_flash: qspi_flash@40890000 {
-		compatible = "infineon,cat1-qspi-flash";
+		compatible = "infineon,qspi-flash";
 		reg = <0x40890000 0x30000>;
 		#address-cells = <1>;
 		#size-cells = <1>;

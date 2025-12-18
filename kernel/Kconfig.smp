@@ -98,7 +98,7 @@ config IPI_OPTIMIZE
 
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
-	depends on ARCH_HAS_COHERENCE
+	depends on CACHE_CAN_SAY_MEM_COHERENCE
 	default y if SMP && MP_MAX_NUM_CPUS > 1
 	select THREAD_STACK_INFO
 	help

@@ -11,7 +11,11 @@ flash: 1024
 ram: 256
 supported:
   - clock_control
+  - dma
+  - flash
   - gpio
   - pinctrl
+  - pwm
+  - rtc
   - uart
 vendor: microchip

@@ -26,4 +26,11 @@
 			pinmux = <PC18F_TCC0_WO2>;
 		};
 	};
+
+	tc0_pwm_default: tc0_pwm_default {
+		group1 {
+			pinmux = <PA4E_TC0_WO0>,
+				 <PA5E_TC0_WO1>;
+		};
+	};
 };

@@ -89,7 +89,7 @@
 	status = "okay";
 	width = <480>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	bl-ctrl-gpios = <&dsi_lcd_qsh_030 53 GPIO_ACTIVE_HIGH>;
 

@@ -60,6 +60,7 @@ enum npf_test_type {
 	NPF_TEST_TYPE_ETH_TYPE_UNMATCH,
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,
+	NPF_TEST_TYPE_LOCAL_IN_MATCH,
 };
 
 #if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
@@ -236,19 +237,19 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
  *                <tt>NET_OK</tt> or <tt>NET_DROP</tt>.
  * @param ... List of conditions for this rule.
  */
-#define NPF_RULE(_name, _result, ...) \
-	struct npf_rule _name = { \
-		.result = (_result), \
-		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1, \
+#define NPF_RULE(_name, _result, ...)					  \
+	struct npf_rule _name = {					  \
+		.result = (_result),					  \
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,	  \
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
 	}
 
-#define NPF_PRIORITY(_name, _priority, ...)                                                        \
-	struct npf_rule _name = {                                                                  \
-		.result = NET_CONTINUE,                                                            \
-		.priority = (_priority),                                                           \
-		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,                                   \
-		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},                            \
+#define NPF_PRIORITY(_name, _priority, ...)				\
+	struct npf_rule _name = {					\
+		.result = NET_CONTINUE,					\
+		.priority = (_priority),				\
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,	\
+		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},	\
 	}
 
 #define Z_NPF_TEST_ADDR(arg) &arg.test
@@ -680,6 +681,48 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "!eth vlan type",		\
 			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,)) \
+	}
+
+/**
+ * @typedef npf_local_in_fn_t
+ *
+ * @brief Function that is called to get the verdict what should happen to
+ * the network packet.
+ *
+ * @param pkt Pointer to the network packet to be evaluated
+ * @param user_data A valid pointer to user data or NULL
+ *
+ * @return True if the packet matches, false otherwise
+ */
+typedef bool (npf_local_in_fn_t)(struct net_pkt *pkt, void *user_data);
+
+/** @cond INTERNAL_HIDDEN */
+
+extern npf_test_fn_t npf_local_in_match;
+
+struct npf_test_local_in {
+	struct npf_test test;
+	npf_local_in_fn_t *fn; /* local_in hook function */
+	void *user_data;       /* optional user data */
+};
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "local_in match" packet filter condition
+ *
+ * @param _name Name of the condition
+ * @param _handler Function to call for the local_in hook
+ * @param _user_data Optional user data pointer passed to the handler
+ */
+#define NPF_LOCAL_IN_MATCH(_name, _handler, _user_data)			\
+	struct npf_test_local_in _name = {				\
+		.test.fn = npf_local_in_match,				\
+		.fn = (_handler),					\
+		.user_data = (_user_data),				\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "local_in",			\
+			    .test.type = NPF_TEST_TYPE_LOCAL_IN_MATCH,)) \
 	}
 
 /** Type of the packet filter rule. */

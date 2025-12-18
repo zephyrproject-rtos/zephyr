@@ -196,7 +196,7 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 
 void *gnttab_get_pages(unsigned int npages)
 {
-	int ret;
+	int ret = 0;
 	void *page_addr;
 	unsigned int removed;
 	xen_pfn_t gfn;

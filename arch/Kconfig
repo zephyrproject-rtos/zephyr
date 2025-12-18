@@ -137,6 +137,8 @@ config XTENSA
 	select THREAD_STACK_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
+	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
+	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
 	help
 	  Xtensa architecture
 
@@ -758,13 +760,6 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 config ARCH_HAS_GDBSTUB
 	bool
 
-config ARCH_HAS_COHERENCE
-	bool
-	help
-	  When selected, the architecture supports the
-	  arch_mem_coherent() API and can link into incoherent/cached
-	  memory using the ".cached" linker section.
-
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
@@ -1083,10 +1078,22 @@ config ICACHE
 	help
 	  This option enables the support for the instruction cache (i-cache).
 
+config CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	bool "Mirrored memory region(s) for both cached and uncached access"
+	depends on CPU_CACHE_INCOHERENT
+	help
+	  Enable this if hardware has mirrored memory regions at different
+	  addressed when accessing one would go through cache, but accessing
+	  the other would go to memory directly. A pointer can be cheaply
+	  converted to cached or uncached access.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_MAX_NUM_CPUS > 1.
+
 config CACHE_DOUBLEMAP
 	bool "Cache double-mapping support"
-	depends on CPU_CACHE_INCOHERENT
-	default y
+	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	select DEPRECATED
 	help
 	  Double-mapping behavior where a pointer can be cheaply converted to
 	  point to the same cached/uncached memory at different locations.
@@ -1164,12 +1171,28 @@ config ARCH_CACHE
 	help
 	  Integrated on-core cache controller
 
+config SOC_CACHE
+	bool "SoC specific cache controller"
+	depends on SOC_HAS_CACHE_FUNCTIONS
+	help
+	  SoC specific cache controller.
+
+	  This requires soc_cache.h file to exist in search path.
+
 config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
 	  External cache controller
 
 endchoice
+
+config CACHE_CAN_SAY_MEM_COHERENCE
+	bool
+	help
+	  sys_cache_is_mem_coherent() is defined when enabled. This function can be
+	  used to determine if a pointer lies inside "coherence regions" and can be
+	  safely used in multiprocessor code without explicit flush or invalidate
+	  operations.
 
 endif # CACHE_MANAGEMENT
 

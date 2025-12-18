@@ -81,6 +81,7 @@
 		lptim3: timers@44004800 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB3, 12)>;
+			resets = <&rctl STM32_RESET(APB3, 12)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004800 0x400>;
@@ -92,6 +93,7 @@
 		lptim4: timers@44004c00 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB3, 13)>;
+			resets = <&rctl STM32_RESET(APB3, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004c00 0x400>;
@@ -103,6 +105,7 @@
 		lptim5: timers@44005000 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB3, 14)>;
+			resets = <&rctl STM32_RESET(APB3, 14)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44005000 0x400>;
@@ -114,6 +117,7 @@
 		lptim6: timers@44005400 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB3, 15)>;
+			resets = <&rctl STM32_RESET(APB3, 15)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44005400 0x400>;
@@ -128,7 +132,7 @@
 			#size-cells = <0>;
 			reg = <0x40015404 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 1 53 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
 			status = "disabled";
@@ -140,7 +144,7 @@
 			#size-cells = <0>;
 			reg = <0x40015424 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 0 54 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
 			status = "disabled";
@@ -258,6 +262,7 @@
 			reg = <0x40014c00 0x400>;
 			interrupts = <82 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 19)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -268,6 +273,7 @@
 			reg = <0x44002000 0x400>;
 			interrupts = <83 5>;
 			clocks = <&rcc STM32_CLOCK(APB3, 5)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -278,6 +284,7 @@
 			reg = <0x40015000 0x400>;
 			interrupts = <84 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 

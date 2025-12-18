@@ -784,6 +784,7 @@ xingbangda	Shenzhen Xingbangda Display Technology Co., Ltd
 xinpeng	Shenzhen Xinpeng Technology Co., Ltd
 xiphera	Xiphera Ltd.
 xlnx	Xilinx
+xmc	Wuhan Xinxin Semiconductor Manufacturing Co., Ltd.
 xnano	Xnano
 xptek	Shenzhen Xptek Technology Co., Ltd
 xuantie	Alibaba Xuantie

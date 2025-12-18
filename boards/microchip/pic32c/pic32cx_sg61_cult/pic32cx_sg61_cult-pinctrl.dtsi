@@ -13,4 +13,10 @@
 				 <PB13C_SERCOM4_PAD1>;
 		};
 	};
+
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PC21F_TCC0_WO5>;
+		};
+	};
 };

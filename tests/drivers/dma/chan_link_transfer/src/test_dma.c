@@ -24,19 +24,21 @@
 #define TEST_DMA_CHANNEL_0 (0)
 #define TEST_DMA_CHANNEL_1 (1)
 #define RX_BUFF_SIZE (48)
+#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
 
 #ifdef CONFIG_NOCACHE_MEMORY
-static __aligned(32) char tx_data[RX_BUFF_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) char tx_data[RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache")));
 static const char TX_DATA[] = "It is harder to be kind than to be wise........";
-static __aligned(32) char rx_data[RX_BUFF_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data[RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
-static __aligned(32) char rx_data2[RX_BUFF_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data2[RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
-static const char tx_data[] = "It is harder to be kind than to be wise........";
-static char rx_data[RX_BUFF_SIZE] = { 0 };
-static char rx_data2[RX_BUFF_SIZE] = { 0 };
+static __aligned(DMA_DATA_ALIGNMENT) const char tx_data[] =
+	"It is harder to be kind than to be wise........";
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data[RX_BUFF_SIZE] = { 0 };
+static __aligned(DMA_DATA_ALIGNMENT) char rx_data2[RX_BUFF_SIZE] = { 0 };
 #endif
 
 static void test_done(const struct device *dma_dev, void *arg, uint32_t id,
@@ -53,7 +55,7 @@ static int test_task(int minor, int major)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
+	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");

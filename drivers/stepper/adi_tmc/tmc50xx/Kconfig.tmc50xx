@@ -3,9 +3,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config STEPPER_ADI_TMC50XX
-	bool "Activate trinamic tmc50xx stepper driver"
+	bool "Activate trinamic tmc50xx"
 	depends on DT_HAS_ADI_TMC50XX_ENABLED
 	select STEPPER_ADI_TMC_SPI
+	default y
+
+config STEPPER_ADI_TMC50XX_STEPPER
+	bool "Activate trinamic tmc50xx motion controller"
+	depends on DT_HAS_ADI_TMC50XX_STEPPER_ENABLED && STEPPER_ADI_TMC50XX
+	default y
+
+config STEPPER_ADI_TMC50XX_STEPPER_DRV
+	bool "Activate trinamic tmc50xx stepper driver"
+	depends on DT_HAS_ADI_TMC50XX_STEPPER_DRV_ENABLED && STEPPER_ADI_TMC50XX
 	default y
 
 if STEPPER_ADI_TMC50XX

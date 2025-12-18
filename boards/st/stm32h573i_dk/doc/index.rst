@@ -149,6 +149,50 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Zephyr board options
+====================
+
+The STM32H573 is an SoC with Cortex-M33 architecture. Zephyr provides support
+for building for both Secure and Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++-----------------------------------------+------------------------------------------------------------------+
+| BOARD                                   | Description                                                      |
++=========================================+==================================================================+
+| stm32h573i_dk                           | For building firmware with TrustZone disabled for internal flash |
++-----------------------------------------+------------------------------------------------------------------+
+| stm32h573i_dk/stm32h573xx/ext_flash_app | For building firmware with TrustZone disabled for external flash |
++-----------------------------------------+------------------------------------------------------------------+
+| stm32h573i_dk/stm32h573xx/ns            | For building Non-Secure firmware for internal flash              |
++-----------------------------------------+------------------------------------------------------------------+
+
+Here are the instructions to build Zephyr with a non-secure configuration,
+using :zephyr:code-sample:`tfm_ipc` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/tfm_ipc
+   :board: stm32h573i_dk/stm32h573xx/ns
+   :goals: build
+
+Once done, before flashing, you need to first run a generated script that
+will set platform Option Bytes config and erase platform (among others,
+Option Byte TZEN will be set).
+
+   .. code-block:: bash
+
+      $ ./build/tfm/api_ns/regression.sh
+      $ west flash
+
+Please note that, after having run a TF-M sample on the board, you will need to
+use STM32CubeProgrammer_ to return the board to a state with TrustZone disabled
+and be able to run usual binaries without TrustZone and TF-M. For example,
+when using a device in Open Product State, one can disable TZEN with:
+
+   .. code-block:: bash
+
+      $ STM32_Programmer_CLI -c port=swd -ob TZEN=0xC3
+
 Connections and IOs
 ===================
 

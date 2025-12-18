@@ -12,6 +12,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include "oa_tc6.h"
 
@@ -50,6 +51,7 @@ struct lan865x_config {
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;
 	int32_t timeout;
+	struct net_eth_mac_config mac_cfg;
 
 	/* MAC */
 	bool tx_cut_through_mode; /* 1 - tx cut through, 0 - Store and forward */

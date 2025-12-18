@@ -489,3 +489,9 @@ test_spi_adxl345: adxl345@3a {
 	int1-gpios = <&test_gpio 0 0>;
 	fifo-watermark = <1>;
 };
+
+test_spi_as5048: as5048@3b {
+	compatible = "ams,as5048";
+	reg = <0x3b>;
+	spi-max-frequency = <0>;
+};

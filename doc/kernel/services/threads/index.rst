@@ -93,7 +93,7 @@ thread self-exits, or the target thread aborts (either due to a
 
 Once a thread has terminated, the kernel guarantees that no use will
 be made of the thread struct.  The memory of such a struct can then be
-re-used for any purpose, including spawning a new thread.  Note that
+reused for any purpose, including spawning a new thread.  Note that
 the thread must be fully terminated, which presents race conditions
 where a thread's own logic signals completion which is seen by another
 thread before the kernel processing is complete.  Under normal
@@ -286,6 +286,14 @@ to preempt all other threads (and other meta-IRQ threads) at lower
 priorities, even if those threads are cooperative and/or have taken a
 scheduler lock. Meta-IRQ threads are still threads, however,
 and can still be interrupted by any hardware interrupt.
+
+.. note::
+   When a cooperative (or schedule-locked) thread that was preempted by a
+   meta-IRQ thread resumes its execution after the meta-IRQ thread completes,
+   it will be on the same CPU--assuming it was neither suspended nor aborted.
+   This helps ensure that these threads are not unexpectedly shuffled to
+   another CPU while in the midst of querying the properties associated
+   with their own CPU.
 
 This behavior makes the act of unblocking a meta-IRQ thread (by any
 means, e.g. creating it, calling k_sem_give(), etc.) into the
@@ -555,7 +563,7 @@ The following code illustrates the ways a thread can terminate.
     }
 
 If :kconfig:option:`CONFIG_USERSPACE` is enabled, aborting a thread will additionally
-mark the thread and stack objects as uninitialized so that they may be re-used.
+mark the thread and stack objects as uninitialized so that they may be reused.
 
 Runtime Statistics
 ******************

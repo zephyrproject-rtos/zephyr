@@ -52,9 +52,9 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #endif /* CONFIG_SCAN_SELF */
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP                5
-#define NAME_LEN                    sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
-#define BROADCAST_DATA_ELEMENT_SIZE sizeof(int16_t)
+#define PA_SYNC_SKIP                      5
+#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
+#define BROADCAST_DATA_ELEMENT_SIZE       sizeof(int16_t)
 
 static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
 static K_SEM_DEFINE(sem_connected, 0U, 1U);
@@ -404,8 +404,7 @@ static void pa_timer_handler(struct k_work *work)
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(req_recv_state->src_id,
-						   pa_state);
+		bt_bap_scan_delegator_set_pa_state(req_recv_state->src_id, pa_state);
 	}
 
 	printk("PA timeout\n");
@@ -438,7 +437,7 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 
 static int pa_sync_past(struct bt_conn *conn, uint16_t pa_interval)
 {
-	struct bt_le_per_adv_sync_transfer_param param = { 0 };
+	struct bt_le_per_adv_sync_transfer_param param = {0};
 	int err;
 
 	param.skip = PA_SYNC_SKIP;
@@ -461,7 +460,7 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 	printk("Receive state updated, pa sync state: %u, encrypt_state %u\n",
 	       recv_state->pa_sync_state, recv_state->encrypt_state);
 
-	for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
+	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
 		printk("subgroup %d bis_sync: 0x%08x\n", i, recv_state->subgroups[i].bis_sync);
 	}
 
@@ -518,7 +517,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 	printk("PA sync termination req, pa sync state: %u\n", recv_state->pa_sync_state);
 
-	for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
+	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
 		printk("subgroup %d bis_sync: 0x%08x\n", i, recv_state->subgroups[i].bis_sync);
 	}
 
@@ -559,7 +558,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	(void)memset(requested_bis_sync, 0, sizeof(requested_bis_sync));
 
-	for (uint8_t subgroup = 0; subgroup < recv_state->num_subgroups; subgroup++) {
+	for (uint8_t subgroup = 0U; subgroup < recv_state->num_subgroups; subgroup++) {
 
 		printk("bis_sync_req[%u] = 0x%0x\n", subgroup, bis_sync_req[subgroup]);
 		if (bis_sync_req[subgroup] != 0) {
@@ -606,10 +605,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		}
 
 		/* The stream stopped callback will be called as part of this,
-		* and we do not need to wait for any events from the
-		* controller. Thus, when this returns, the `big_synced`
-		* is back to false.
-		*/
+		 * and we do not need to wait for any events from the
+		 * controller. Thus, when this returns, the `big_synced`
+		 * is back to false.
+		 */
 		err = bt_bap_broadcast_sink_stop(broadcast_sink);
 		if (err != 0) {
 			printk("Failed to stop Broadcast Sink: %d\n", err);
@@ -736,7 +735,7 @@ static bool is_substring(const char *substr, const char *str)
 		return false;
 	}
 
-	for (size_t pos = 0; pos < str_len; pos++) {
+	for (size_t pos = 0U; pos < str_len; pos++) {
 		if (pos + sub_str_len > str_len) {
 			return false;
 		}
@@ -853,7 +852,6 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.term = bap_pa_sync_terminated_cb,
 };
 
-
 static int init(void)
 {
 	const struct bt_pacs_register_param pacs_param = {
@@ -965,8 +963,7 @@ static int start_adv(void)
 {
 	const struct bt_data ad[] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-		BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-			      BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
+		BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
 			      BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)),
 		BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
 		BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
@@ -1025,9 +1022,21 @@ static int stop_adv(void)
 static int pa_sync_create(void)
 {
 	struct bt_le_per_adv_sync_param create_params = {0};
+	struct bt_le_local_features feature;
+	int err;
+
+	err = bt_le_get_local_features(&feature);
+	if (err < 0) {
+		printk("Failed to get local le features (err %d)\n", err);
+		return err;
+	}
 
 	bt_addr_le_copy(&create_params.addr, &broadcaster_addr);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	if (BT_FEAT_LE_PER_ADV_ADI_SUPP(feature.features)) {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	} else {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
+	}
 	create_params.sid = broadcaster_info.sid;
 	create_params.skip = PA_SYNC_SKIP;
 	create_params.timeout = interval_to_sync_timeout(broadcaster_info.interval);
@@ -1040,7 +1049,7 @@ static uint32_t keep_n_least_significant_ones(uint32_t bitfield, uint8_t n)
 {
 	uint32_t result = 0U;
 
-	for (uint8_t i = 0; i < n && bitfield != 0; i++) {
+	for (uint8_t i = 0U; i < n && bitfield != 0; i++) {
 		uint32_t lsb = bitfield & -bitfield; /* extract lsb */
 
 		result |= lsb;
@@ -1108,7 +1117,7 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 				/* Partial match */
 				printk("Channel allocation match, partial %d\n", combine_alloc);
 			} else {
-				 /* No action required */
+				/* No action required */
 			}
 		}
 
@@ -1120,7 +1129,7 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 #else  /* !CONFIG_TARGET_BROADCAST_CHANNEL */
 	bool bis_sync_req_no_pref = false;
 
-	for (uint8_t i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+	for (uint8_t i = 0U; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		if (bis_sync_req[i] != 0) {
 			if (bis_sync_req[i] == BT_BAP_BIS_SYNC_NO_PREF) {
 				bis_sync_req_no_pref = true;
@@ -1208,8 +1217,7 @@ int main(void)
 				 * should start scanning, or wait for PAST
 				 */
 				printk("Waiting for PA sync request\n");
-				err = k_sem_take(&sem_pa_request,
-						 BROADCAST_ASSISTANT_TIMEOUT);
+				err = k_sem_take(&sem_pa_request, BROADCAST_ASSISTANT_TIMEOUT);
 				if (err != 0) {
 					printk("sem_pa_request timed out, resetting\n");
 					continue;
@@ -1230,8 +1238,7 @@ int main(void)
 
 		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 		if (err != 0 && err != -EALREADY) {
-			printk("Unable to start scan for broadcast sources: %d\n",
-			       err);
+			printk("Unable to start scan for broadcast sources: %d\n", err);
 			return 0;
 		}
 

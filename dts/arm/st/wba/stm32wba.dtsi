@@ -295,6 +295,7 @@
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
+			interrupts = <27 0>;
 			status = "disabled";
 		};
 
@@ -340,6 +341,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <45 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -350,6 +352,7 @@
 			reg = <0x46002000 0x400>;
 			interrupts = <63 5>;
 			clocks = <&rcc STM32_CLOCK(APB7, 5)>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
@@ -517,6 +520,7 @@
 			#size-cells = <0>;
 			reg = <0x46004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB7, 11)>;
+			resets = <&rctl STM32_RESET(APB7, 11)>;
 			interrupts = <49 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
@@ -528,6 +532,7 @@
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
+			resets = <&rctl STM32_RESET(APB1H, 5)>;
 			interrupts = <50 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";

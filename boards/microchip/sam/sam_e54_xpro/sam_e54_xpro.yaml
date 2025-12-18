@@ -16,11 +16,13 @@ supported:
   - entropy
   - flash
   - gpio
+  - hwinfo
   - i2c
   - mcuboot
   - pinctrl
   - pwm
   - reset
+  - rtc
   - shell
   - uart
 vendor: microchip

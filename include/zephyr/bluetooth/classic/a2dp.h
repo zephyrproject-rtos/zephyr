@@ -68,8 +68,7 @@ extern "C" {
 #define BT_A2DP_SOURCE_EP_INIT(_codec, _capability, _delay_report)                                 \
 	BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability, _delay_report)
 
-/** @brief define the SBC sink endpoint that can be used as
- * bt_a2dp_register_endpoint's parameter.
+/** @brief define the SBC sink endpoint that can be used as bt_a2dp_register_ep's parameter.
  *
  * SBC is mandatory as a2dp specification, BT_A2DP_SBC_SINK_EP_DEFAULT
  * is more convenient for user to register SBC endpoint.
@@ -99,8 +98,7 @@ extern "C" {
 	static struct bt_a2dp_ep _name =                                                           \
 		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, (&bt_a2dp_ep_cap_ie##_name), _delay_report)
 
-/** @brief define the SBC source endpoint that can be used as bt_a2dp_register_endpoint's
- * parameter.
+/** @brief define the SBC source endpoint that can be used as bt_a2dp_register_ep's parameter.
  *
  * SBC is mandatory as a2dp specification, BT_A2DP_SBC_SOURCE_EP_DEFAULT
  * is more convenient for user to register SBC endpoint.
@@ -129,8 +127,7 @@ extern "C" {
 	static struct bt_a2dp_ep _name =                                                           \
 		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, _delay_report)
 
-/** @brief define the default SBC sink endpoint that can be used as
- * bt_a2dp_register_endpoint's parameter.
+/** @brief define the default SBC sink endpoint that can be used as bt_a2dp_register_ep's parameter.
  *
  * SBC is mandatory as a2dp specification, BT_A2DP_SBC_SINK_EP_DEFAULT
  * is more convenient for user to register SBC endpoint.
@@ -149,7 +146,7 @@ extern "C" {
 	static struct bt_a2dp_ep _name =                                                           \
 		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, true)
 
-/** @brief define the default SBC source endpoint that can be used as bt_a2dp_register_endpoint's
+/** @brief define the default SBC source endpoint that can be used as bt_a2dp_register_ep's
  * parameter.
  *
  * SBC is mandatory as a2dp specification, BT_A2DP_SBC_SOURCE_EP_DEFAULT

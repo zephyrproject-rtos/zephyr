@@ -18,11 +18,15 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &sercom4;
 		zephyr,shell-uart = &sercom4;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &nvmctrl;
 	};
 
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		pwm-led0 = &pwm_led0;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -39,6 +43,15 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 5 PWM_MSEC(20) 0>;
+			status = "okay";
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -50,6 +63,11 @@
 	};
 };
 
+&rtc {
+	prescaler = <1024>;
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -57,9 +75,21 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@7c000 {
-			label = "storage";
-			reg = <0x0007c000 0x4000>;
+		boot_partition: partition@0 {
+			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
+		};
+
+		slot1_partition: partition@80000 {
+			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
+		};
+
+		storage_partition: partition@f0000 {
+			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
 		};
 	};
 };
@@ -134,6 +164,16 @@
 	};
 };
 
+&tcc0 {
+	compatible = "microchip,tcc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tcc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <24>;
+	prescaler = <8>;
+	status = "okay";
+};
+
 &porta {
 	status = "okay";
 };
@@ -158,5 +198,9 @@
 	txpo = <0>;
 	pinctrl-0 = <&sercom4_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dmac {
 	status = "okay";
 };

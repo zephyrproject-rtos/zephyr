@@ -1,6 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Dipak Shetty
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 / {
 	aliases {
-		stepper = &tmc_stepper;
+		stepper-drv = &tmc_stepper_driver;
+		stepper = &tmc_motion_controller;
 	};
 };
 
@@ -15,25 +22,21 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(1)>; /* Maximum SPI bus frequency */
 
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		clock-frequency = <DT_FREQ_M(10)>; /* Internal/External Clock frequency */
 
-		tmc_stepper: tmc_stepper@0 {
-			status = "okay";
-			reg = <0>;
-
-			/* common stepper controller settings */
+		/* common stepper controller settings */
+		tmc_stepper_driver: stepper_driver {
 			micro-step-res = <256>;
-
+			idx = <0>;
+			compatible = "adi,tmc50xx-stepper-drv";
 			/* ADI TMC stallguard settings specific to TMC50XX */
-			activate-stallguard2;
-			stallguard-velocity-check-interval-ms = <1000>;
 			stallguard2-threshold = <30>;
-			stallguard-threshold-velocity = <200000>;
+		};
 
-			/* ADI TMC ramp generator as well as current settings */
+		/* ADI TMC ramp generator as well as current settings */
+		tmc_motion_controller: motion_controller {
+			compatible = "adi,tmc50xx-stepper";
+			idx = <0>;
 			vstart = <1000>;
 			vstop = <10>;
 			a1 = <10000>;
@@ -48,6 +51,9 @@
 			ihold = <1>;
 			irun = <10>;
 			iholddelay = <1>;
+			activate-stallguard2;
+			stallguard-velocity-check-interval-ms = <1000>;
+			stallguard-threshold-velocity = <200000>;
 		};
 	};
 };

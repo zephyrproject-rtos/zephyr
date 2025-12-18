@@ -42,7 +42,7 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 				       ZSOCK_SO_BINDTODEVICE, &ifname,
 				       sizeof(struct net_ifreq));
 		if (ret < 0) {
-			NET_ERR("Failed to bind ot interface %s error (%d)",
+			NET_ERR("Failed to bind to interface %s (%d)",
 				ifname.ifr_name, -errno);
 			goto error;
 		}

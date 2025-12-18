@@ -279,6 +279,7 @@
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
+			interrupts = <27 0>;
 			status = "disabled";
 		};
 
@@ -351,6 +352,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <59 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -361,6 +363,7 @@
 			reg = <0x40003800 0x400>;
 			interrupts = <60 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -371,6 +374,7 @@
 			reg = <0x46002000 0x400>;
 			interrupts = <99 5>;
 			clocks = <&rcc STM32_CLOCK(APB3, 5)>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
@@ -428,6 +432,7 @@
 			#size-cells = <0>;
 			reg = <0x46004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
 			interrupts = <67 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
@@ -439,6 +444,7 @@
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
+			resets = <&rctl STM32_RESET(APB1H, 5)>;
 			interrupts = <68 0>;
 			interrupt-names = "global";
 			status = "disabled";
@@ -450,6 +456,7 @@
 			#size-cells = <0>;
 			reg = <0x46004800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 12)>;
+			resets = <&rctl STM32_RESET(APB3, 12)>;
 			interrupts = <98 0>;
 			interrupt-names = "global";
 			status = "disabled";
@@ -461,6 +468,7 @@
 			#size-cells = <0>;
 			reg = <0x46004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 13)>;
+			resets = <&rctl STM32_RESET(APB3, 13)>;
 			interrupts = <110 0>;
 			interrupt-names = "global";
 			status = "disabled";
@@ -927,7 +935,7 @@
 		};
 
 		pwr: power@46020800 {
-			compatible = "st,stm32-dualreg-pwr", "st,stm32-pwr";
+			compatible = "st,stm32u5-pwr", "st,stm32-dualreg-pwr", "st,stm32-pwr";
 			reg = <0x46020800 0x400>; /* PWR register bank */
 			status = "disabled";
 

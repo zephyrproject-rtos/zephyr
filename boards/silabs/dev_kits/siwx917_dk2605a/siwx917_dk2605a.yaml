@@ -23,4 +23,5 @@ supported:
   - rtc
   - counter
   - pwm
+  - memc
 vendor: silabs

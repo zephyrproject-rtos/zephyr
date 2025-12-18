@@ -232,6 +232,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
 			interrupts = <35 5>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -242,6 +243,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <36 5>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -252,6 +254,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
 			interrupts = <51 5>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -262,6 +265,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
 			interrupts = <84 5>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -272,6 +276,7 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
 			interrupts = <85 5>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 

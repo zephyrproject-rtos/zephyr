@@ -81,6 +81,11 @@
 				#power-domain-cells = <1>;
 			};
 
+			scmi_system: protocol@12 {
+				compatible = "arm,scmi-system";
+				reg = <0x12>;
+			};
+
 			scmi_clk: protocol@14 {
 				compatible = "arm,scmi-clock";
 				reg = <0x14>;

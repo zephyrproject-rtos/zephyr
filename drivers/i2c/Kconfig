@@ -22,6 +22,14 @@ config I2C_SHELL
 	  The I2C shell supports scanning, bus recovery, I2C read and write
 	  operations.
 
+config I2C_SHELL_BUFFER_SIZE
+	int "I2C shell buffer size"
+	default 16
+	help
+	  Size of the buffer used by some I2C commands, will determine the
+	  maximum size for read/write operations. Note that this is allocated
+	  on the stack.
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS
@@ -39,6 +47,7 @@ config I2C_DUMP_MESSAGES_ALLOWLIST
 	bool "Use allowlist for logging of I2C transactions"
 	depends on I2C_DUMP_MESSAGES
 	depends on DT_HAS_ZEPHYR_I2C_DUMP_ALLOWLIST_ENABLED
+	default y
 	help
 	  Use allowlist to specify which devices transactions should be logged.
 	  The allowlist is defined in the devicetree using the compatible string of
@@ -132,8 +141,8 @@ source "drivers/i2c/Kconfig.esp32"
 source "drivers/i2c/Kconfig.gd32"
 source "drivers/i2c/Kconfig.gpio"
 source "drivers/i2c/Kconfig.i2c_emul"
-source "drivers/i2c/Kconfig.ifx_cat1"
-source "drivers/i2c/Kconfig.ifx_xmc4"
+source "drivers/i2c/Kconfig.infineon"
+source "drivers/i2c/Kconfig.infineon_xmc4"
 source "drivers/i2c/Kconfig.it51xxx"
 source "drivers/i2c/Kconfig.it8xxx2"
 source "drivers/i2c/Kconfig.litex"

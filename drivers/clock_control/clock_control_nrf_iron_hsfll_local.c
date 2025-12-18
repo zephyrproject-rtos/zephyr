@@ -14,31 +14,31 @@ LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "multiple instances not supported");
 
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
-#include <nrf_ironside/dvfs.h>
+#ifdef CONFIG_IRONSIDE_SE_DVFS
+#include <ironside_zephyr/se/dvfs.h>
 
 #define HSFLL_FREQ_LOW    MHZ(64)
 #define HSFLL_FREQ_MEDLOW MHZ(128)
 #define HSFLL_FREQ_HIGH   MHZ(320)
 
-#define IRONSIDE_DVFS_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL_DVFS_TIMEOUT_MS)
+#define IRONSIDE_SE_DVFS_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL_DVFS_TIMEOUT_MS)
 
 /* Clock options sorted from lowest to highest frequency */
 static const struct clock_options {
 	uint32_t frequency;
-	enum ironside_dvfs_oppoint setting;
+	enum ironside_se_dvfs_oppoint setting;
 } clock_options[] = {
 	{
 		.frequency = HSFLL_FREQ_LOW,
-		.setting = IRONSIDE_DVFS_OPP_LOW,
+		.setting = IRONSIDE_SE_DVFS_OPP_LOW,
 	},
 	{
 		.frequency = HSFLL_FREQ_MEDLOW,
-		.setting = IRONSIDE_DVFS_OPP_MEDLOW,
+		.setting = IRONSIDE_SE_DVFS_OPP_MEDLOW,
 	},
 	{
 		.frequency = HSFLL_FREQ_HIGH,
-		.setting = IRONSIDE_DVFS_OPP_HIGH,
+		.setting = IRONSIDE_SE_DVFS_OPP_HIGH,
 	},
 };
 
@@ -57,17 +57,17 @@ static void hsfll_update_timeout_handler(struct k_timer *timer)
 static void hsfll_work_handler(struct k_work *work)
 {
 	struct hsfll_dev_data *dev_data = CONTAINER_OF(work, struct hsfll_dev_data, clk_cfg.work);
-	enum ironside_dvfs_oppoint required_setting;
+	enum ironside_se_dvfs_oppoint required_setting;
 	uint8_t to_activate_idx;
 	int rc;
 
 	to_activate_idx = clock_config_update_begin(work);
 	required_setting = clock_options[to_activate_idx].setting;
 
-	k_timer_start(&dev_data->timer, IRONSIDE_DVFS_TIMEOUT, K_NO_WAIT);
+	k_timer_start(&dev_data->timer, IRONSIDE_SE_DVFS_TIMEOUT, K_NO_WAIT);
 
 	/* Request the DVFS service to change the OPP point. */
-	rc = ironside_dvfs_change_oppoint(required_setting);
+	rc = ironside_se_dvfs_change_oppoint(required_setting);
 	k_timer_stop(&dev_data->timer);
 	clock_config_update_end(&dev_data->clk_cfg, rc);
 }
@@ -123,12 +123,12 @@ static struct onoff_manager *hsfll_find_mgr_by_spec(const struct device *dev,
 	idx = hsfll_resolve_spec_to_idx(spec);
 	return idx < 0 ? NULL : hsfll_get_mgr_by_idx(dev, idx);
 }
-#endif /* CONFIG_NRF_IRONSIDE_DVFS_SERVICE */
+#endif /* CONFIG_IRONSIDE_SE_DVFS */
 
 static int api_request_hsfll(const struct device *dev, const struct nrf_clock_spec *spec,
 			     struct onoff_client *cli)
 {
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
+#ifdef CONFIG_IRONSIDE_SE_DVFS
 	struct onoff_manager *mgr = hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
@@ -143,7 +143,7 @@ static int api_request_hsfll(const struct device *dev, const struct nrf_clock_sp
 
 static int api_release_hsfll(const struct device *dev, const struct nrf_clock_spec *spec)
 {
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
+#ifdef CONFIG_IRONSIDE_SE_DVFS
 	struct onoff_manager *mgr = hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
@@ -159,7 +159,7 @@ static int api_release_hsfll(const struct device *dev, const struct nrf_clock_sp
 static int api_cancel_or_release_hsfll(const struct device *dev, const struct nrf_clock_spec *spec,
 				       struct onoff_client *cli)
 {
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
+#ifdef CONFIG_IRONSIDE_SE_DVFS
 	struct onoff_manager *mgr = hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
@@ -175,7 +175,7 @@ static int api_cancel_or_release_hsfll(const struct device *dev, const struct nr
 static int api_resolve_hsfll(const struct device *dev, const struct nrf_clock_spec *req_spec,
 			     struct nrf_clock_spec *res_spec)
 {
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
+#ifdef CONFIG_IRONSIDE_SE_DVFS
 	int idx;
 
 	idx = hsfll_resolve_spec_to_idx(req_spec);
@@ -192,7 +192,7 @@ static int api_resolve_hsfll(const struct device *dev, const struct nrf_clock_sp
 
 static int hsfll_init(const struct device *dev)
 {
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
+#ifdef CONFIG_IRONSIDE_SE_DVFS
 	struct hsfll_dev_data *dev_data = dev->data;
 	int rc;
 
@@ -220,14 +220,14 @@ static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 	.resolve = api_resolve_hsfll,
 };
 
-#ifdef CONFIG_NRF_IRONSIDE_DVFS_SERVICE
+#ifdef CONFIG_IRONSIDE_SE_DVFS
 static struct hsfll_dev_data hsfll_data;
 #endif
 
 #ifdef CONFIG_CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL_REQ_LOW_FREQ
 static int dvfs_low_init(void)
 {
-	static const k_timeout_t timeout = IRONSIDE_DVFS_TIMEOUT;
+	static const k_timeout_t timeout = IRONSIDE_SE_DVFS_TIMEOUT;
 	static const struct device *hsfll_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(cpu)));
 	static const struct nrf_clock_spec clk_spec = {.frequency = HSFLL_FREQ_LOW};
 
@@ -238,7 +238,7 @@ SYS_INIT(dvfs_low_init, APPLICATION, 0);
 #endif
 
 DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,
-		      COND_CODE_1(CONFIG_NRF_IRONSIDE_DVFS_SERVICE,
+		      COND_CODE_1(CONFIG_IRONSIDE_SE_DVFS,
 				  (&hsfll_data),
 				  (NULL)), NULL, PRE_KERNEL_1,
 				   CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &hsfll_drv_api);

@@ -215,7 +215,7 @@ struct bt_hfp_hf {
 	/* SCO Channel */
 	struct bt_sco_chan chan;
 	/* SCO connect */
-	struct bt_conn *sco_conn;
+	atomic_ptr_t sco_conn;
 
 	/* SDP discover params */
 	struct bt_sdp_discover_params sdp_param;

@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Croxel Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_MAX32
+	bool "Analog Devices MAX32 series I2S driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_I2S_ENABLED
+	select DMA
+	help
+	  Enable support for Analog Devices MAX32 series I2S driver.
+
+if I2S_MAX32
+
+config I2S_MAX32_QUEUE_SIZE
+	int "Queue size"
+	default 8
+	help
+	  Size of the Tx/Rx pending block queue. This is the maximum number of
+	  blocks that can be queued for transmission or reception.
+
+endif # I2S_MAX32

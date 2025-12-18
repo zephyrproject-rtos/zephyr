@@ -75,6 +75,19 @@ void __weak sys_trace_gpio_fire_callbacks_enter_user(sys_slist_t *list, const st
 						     gpio_pin_t pins) {}
 void __weak sys_trace_gpio_fire_callback_user(const struct device *port,
 					      struct gpio_callback *callback) {}
+void __weak sys_trace_timer_init_user(struct k_timer *timer) {}
+void __weak sys_trace_timer_start_user(struct k_timer *timer, k_timeout_t duration,
+							    k_timeout_t period)
+{}
+void __weak sys_trace_timer_stop_user(struct k_timer *timer) {}
+void __weak sys_trace_timer_status_sync_enter_user(struct k_timer *timer) {}
+void __weak sys_trace_timer_status_sync_blocking_user(struct k_timer *timer, k_timeout_t timeout)
+{}
+void __weak sys_trace_timer_status_sync_exit_user(struct k_timer *timer, uint32_t result) {}
+void __weak sys_trace_timer_expiry_enter_user(struct k_timer *timer) {}
+void __weak sys_trace_timer_expiry_exit_user(struct k_timer *timer) {}
+void __weak sys_trace_timer_stop_fn_expiry_enter_user(struct k_timer *timer) {}
+void __weak sys_trace_timer_stop_fn_expiry_exit_user(struct k_timer *timer) {}
 
 void __weak sys_trace_rtio_submit_enter_user(const struct rtio *r, uint32_t wait_count)
 {
@@ -462,4 +475,54 @@ void sys_trace_rtio_chain_next_enter(const struct rtio *r, const struct rtio_iod
 void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
 {
 	sys_trace_rtio_chain_next_exit_user(r, iodev_sqe);
+}
+
+void sys_trace_timer_init(struct k_timer *timer)
+{
+	sys_trace_timer_init_user(timer);
+}
+
+void sys_trace_timer_start(struct k_timer *timer, k_timeout_t duration, k_timeout_t period)
+{
+	sys_trace_timer_start_user(timer, duration, period);
+}
+
+void sys_trace_timer_stop(struct k_timer *timer)
+{
+	sys_trace_timer_stop_user(timer);
+}
+
+void sys_trace_timer_status_sync_enter(struct k_timer *timer)
+{
+	sys_trace_timer_status_sync_enter_user(timer);
+}
+
+void sys_trace_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout)
+{
+	sys_trace_timer_status_sync_blocking_user(timer, timeout);
+}
+
+void sys_trace_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
+{
+	sys_trace_timer_status_sync_exit_user(timer, result);
+}
+
+void sys_trace_timer_expiry_enter(struct k_timer *timer)
+{
+	sys_trace_timer_expiry_enter_user(timer);
+}
+
+void sys_trace_timer_expiry_exit(struct k_timer *timer)
+{
+	sys_trace_timer_expiry_exit_user(timer);
+}
+
+void sys_trace_timer_stop_fn_expiry_enter(struct k_timer *timer)
+{
+	sys_trace_timer_stop_fn_expiry_enter_user(timer);
+}
+
+void sys_trace_timer_stop_fn_expiry_exit(struct k_timer *timer)
+{
+	sys_trace_timer_stop_fn_expiry_exit_user(timer);
 }

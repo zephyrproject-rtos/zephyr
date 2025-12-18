@@ -202,11 +202,8 @@ static uint32_t mcux_lptmr_get_pending_int(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
 	uint32_t mask = LPTMR_CSR_TCF_MASK | LPTMR_CSR_TIE_MASK;
-	uint32_t flags;
 
-	flags = LPTMR_GetStatusFlags(config->base);
-
-	return ((flags & mask) == mask);
+	return (uint32_t)!!((config->base->CSR & mask) == mask);
 }
 
 static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
@@ -250,6 +247,7 @@ static void mcux_lptmr_isr(const struct device *dev)
 		uint32_t current_count = LPTMR_GetCurrentTimerCount(config->base);
 
 		LPTMR_StopTimer(config->base);
+		LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
 
 		callback(dev, 0, current_count, user_data);
 

@@ -116,6 +116,7 @@
 				compatible = "st,stm32f4-nv-flash", "st,stm32-nv-flash",
 					     "soc-nv-flash";
 
+				erase-block-size = <256>;
 				write-block-size = <4>;
 				/* maximum erase time(ms) for a 128B half-page
 				 */
@@ -238,6 +239,7 @@
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
 			interrupts = <35 0>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
@@ -248,6 +250,7 @@
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 0>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 

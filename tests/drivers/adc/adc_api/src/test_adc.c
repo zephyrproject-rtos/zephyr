@@ -136,6 +136,9 @@ static int test_task_one_channel(void)
 	struct adc_sequence sequence = {
 		.buffer = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	init_adc();
@@ -163,6 +166,9 @@ static int test_task_multiple_channels(void)
 	struct adc_sequence sequence = {
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	init_adc();
@@ -210,6 +216,9 @@ static int test_task_asynchronous_call(void)
 		.options     = &options,
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 	struct k_poll_event  async_evt =
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -272,6 +281,9 @@ static int test_task_with_interval(void)
 		.options     = &options,
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	init_adc();
@@ -349,6 +361,9 @@ static int test_task_repeated_samplings(void)
 		.options     = &options,
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	init_adc();
@@ -383,6 +398,9 @@ static int test_task_invalid_request(void)
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
 		.resolution  = 0, /* intentionally invalid value */
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	init_adc();

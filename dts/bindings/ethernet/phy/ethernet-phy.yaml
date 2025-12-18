@@ -1,4 +1,4 @@
-# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 # Common fields for MIIPHY devices
@@ -7,34 +7,16 @@ description: Generic MII PHY
 
 compatible: "ethernet-phy"
 
-include: ethernet-phy-common.yaml
+include:
+  - name: ethernet-phy-common.yaml
+  - name: ethernet-phy-reset-gpios.yaml
+
+on-bus: mdio
 
 properties:
   no-reset:
     type: boolean
     description: Do not reset the PHY during initialization
-  fixed-link:
-    type: string
-    description: This link is fixed and does not require PHY configuration
-    enum:
-      - "10BASE-T Half-Duplex"
-      - "10BASE-T Full-Duplex"
-      - "100BASE-T Half-Duplex"
-      - "100BASE-T Full-Duplex"
-      - "1000BASE-T Half-Duplex"
-      - "1000BASE-T Full-Duplex"
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
-  reset-gpios:
-    type: phandle-array
-    description: Reset pin.
-      Optional GPIO used to reset the PHY
-  reset-assert-duration-us:
-    type: int
-    description:
-      Minimum duration in microseconds to assert the reset-gpios pin.
-  reset-deassertion-timeout-ms:
-    type: int
-    description:
-      Timeout in milliseconds after the reset-gpios pin is deasserted.

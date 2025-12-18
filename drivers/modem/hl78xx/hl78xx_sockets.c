@@ -828,12 +828,12 @@ static int validate_socket(const struct modem_socket *sock, struct hl78xx_socket
 		return -1;
 	}
 
-	bool not_connected = (!sock->is_connected && sock->type != SOCK_DGRAM);
+	bool not_connected = (!sock->is_connected && sock->type != NET_SOCK_DGRAM);
 	bool tcp_disconnected =
-		(sock->type == SOCK_STREAM &&
+		(sock->type == NET_SOCK_STREAM &&
 		 !socket_data->tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_connected);
 	bool udp_not_created =
-		(sock->type == SOCK_DGRAM &&
+		(sock->type == NET_SOCK_DGRAM &&
 		 !socket_data->udp_conn_status[HL78XX_UDP_STATUS_ID(sock->id)].is_created);
 
 	if (not_connected || tcp_disconnected || udp_not_created) {
@@ -1959,7 +1959,7 @@ static int validate_and_prepare(struct modem_socket *sock, const struct net_sock
 		errno = EINVAL;
 		return -1;
 	}
-	if (sock->type != SOCK_DGRAM && !sock->is_connected) {
+	if (sock->type != NET_SOCK_DGRAM && !sock->is_connected) {
 		errno = ENOTCONN;
 		return -1;
 	}
@@ -1967,7 +1967,7 @@ static int validate_and_prepare(struct modem_socket *sock, const struct net_sock
 		*dst_addr = &sock->dst;
 	}
 	if (*buf_len > MDM_MAX_DATA_LENGTH) {
-		if (sock->type == SOCK_DGRAM) {
+		if (sock->type == NET_SOCK_DGRAM) {
 			errno = EMSGSIZE;
 			return -1;
 		}
@@ -2137,7 +2137,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	 * destination address is provided or the socket has a stored dst. The
 	 * helper validate_and_prepare will supply sock->dst for UDP when needed.
 	 */
-	if (sock->type != SOCK_DGRAM && !sock->is_connected) {
+	if (sock->type != NET_SOCK_DGRAM && !sock->is_connected) {
 		errno = ENOTCONN;
 		return -1;
 	}

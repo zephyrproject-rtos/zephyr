@@ -9,6 +9,14 @@
 
 void soc_early_init_hook(void)
 {
+#if CONFIG_XIP && CONFIG_ICACHE
+	/* Since caching is enabled before z_data_copy(), RAM functions may still be cached
+	 * in the d-cache instead of being written to SRAM. In this case, the i-cache will
+	 * fetch the wrong content from SRAM. Thus, using "fence.i" to fix it.
+	 */
+	__asm__ volatile("fence.i" ::: "memory");
+#endif
+
 	/* AHB ~200Mhz / 3 = 66MHz AHB , ~66Mhz / 2 / 2 = 18Mhz APB */
 	sys_write32(0x01 | 0x20 | 0x02, 0xF0100004U);
 

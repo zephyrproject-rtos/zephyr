@@ -8,7 +8,7 @@
 
 &display_i2c {
 	dsi_panel: waveshare_panel@45 {
-		compatible = "waveshare,7inch-dsi-lcd-c";
+		compatible = "waveshare,dsi2dpi";
 		reg = <0x45>;
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;

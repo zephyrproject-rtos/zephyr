@@ -328,6 +328,20 @@ static void rules_cb(struct npf_rule_list *rules, enum npf_rule_type type,
 	}
 }
 
+#ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
+bool npf_local_in_match(struct npf_test *test, struct net_pkt *pkt)
+{
+	struct npf_test_local_in *test_local_in =
+			CONTAINER_OF(test, struct npf_test_local_in, test);
+
+	if (test_local_in->fn == NULL) {
+		return true;
+	}
+
+	return test_local_in->fn(pkt, test_local_in->user_data);
+}
+#endif /* CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
+
 void npf_rules_foreach(npf_rule_cb_t cb, void *user_data)
 {
 	rules_cb(&npf_send_rules, NPF_RULE_TYPE_SEND, cb, user_data);
@@ -462,6 +476,13 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 			CONTAINER_OF(test, struct npf_test_eth_type, test);
 
 		snprintk(buf, len, "[0x%04x]", net_ntohs(test_eth->type));
+
+	} else if (test->type == NPF_TEST_TYPE_LOCAL_IN_MATCH) {
+		struct npf_test_local_in *test_local_in =
+			CONTAINER_OF(test, struct npf_test_local_in, test);
+
+		snprintk(buf, len, "[fn=%p, data=%p]",
+			 test_local_in->fn, test_local_in->user_data);
 	}
 
 out:

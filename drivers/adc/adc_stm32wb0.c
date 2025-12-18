@@ -1230,8 +1230,11 @@ static struct adc_stm32wb0_data adc_data = {
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
 		.dest_data_size = STM32_DMA_CONFIG_MEMORY_DATA_SIZE(
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
-		.source_burst_length = 1,	/* SINGLE transfer */
-		.dest_burst_length = 1,		/* SINGLE transfer */
+		/* single transfers (burst length = data size) */
+		.source_burst_length = STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
+		.dest_burst_length = STM32_DMA_CONFIG_MEMORY_DATA_SIZE(
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
 		.block_count = 1,
 		.dma_callback = adc_stm32wb0_dma_callback,
 		/* head_block and user_data are initialized at runtime */

@@ -529,6 +529,16 @@ struct ethernet_config {
 
 /** @endcond */
 
+/** Ethernet statistics type (bitmap) */
+enum ethernet_stats_type {
+	/** Common statistics only (excludes vendor statistics) */
+	ETHERNET_STATS_TYPE_COMMON = BIT(0),
+	/** Vendor statistics only */
+	ETHERNET_STATS_TYPE_VENDOR = BIT(1),
+	/** All statistics */
+	ETHERNET_STATS_TYPE_ALL = 0xFFFFFFFFU,
+};
+
 /** Ethernet L2 API operations. */
 struct ethernet_api {
 	/**
@@ -543,6 +553,14 @@ struct ethernet_api {
 	 */
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth *(*get_stats)(const struct device *dev);
+
+	/** Optional function to collect ethernet specific statistics with
+	 * type filter. If NULL, get_stats() will be called instead, which
+	 * is equivalent to calling this with ETHERNET_STATS_TYPE_ALL.
+	 * @param type Bitmask of ethernet_stats_type values.
+	 */
+	struct net_stats_eth *(*get_stats_type)(const struct device *dev,
+						 uint32_t type);
 #endif
 
 	/** Start the device */
@@ -1423,14 +1441,13 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
  * @param node_id Node identifier.
  */
 #define NET_ETH_MAC_DT_CONFIG_INIT(node_id)                                                        \
-	COND_CODE_1(DT_PROP(node_id, zephyr_random_mac_address),                                   \
+	COND_CASE_1(DT_PROP(node_id, zephyr_random_mac_address),                                   \
 		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_RANDOM(node_id)),                                \
-		    (COND_CODE_1(DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),                    \
-				 (Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)),                    \
-				 (COND_CODE_1(DT_NODE_HAS_PROP(node_id, local_mac_address),        \
-					      (Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)),      \
-					      (Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)))))))
-
+		    DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),                                 \
+		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)),                                 \
+		    DT_NODE_HAS_PROP(node_id, local_mac_address),                                  \
+		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)),                                \
+		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)))
 
 /**
  * @brief Like NET_ETH_MAC_DT_CONFIG_INIT for an instance of a DT_DRV_COMPAT compatible

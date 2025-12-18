@@ -35,6 +35,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,edac = &erm0;
 	};
 
 	leds {
@@ -126,6 +127,18 @@
 };
 
 &ctimer0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&erm0 {
 	status = "okay";
 };
 

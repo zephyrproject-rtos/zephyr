@@ -231,6 +231,7 @@
 		lptim1: timers@44004400 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004400 0x400>;
@@ -242,6 +243,7 @@
 		lptim2: timers@40009400 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
+			resets = <&rctl STM32_RESET(APB1H, 5)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
@@ -289,6 +291,7 @@
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
+			interrupts = <35 0>;
 			status = "disabled";
 		};
 
@@ -508,6 +511,7 @@
 			interrupts = <55 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -519,6 +523,7 @@
 			interrupts = <56 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI2_SEL(0)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -530,6 +535,7 @@
 			interrupts = <57 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI3_SEL(0)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 

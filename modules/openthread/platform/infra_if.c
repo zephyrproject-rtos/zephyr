@@ -21,11 +21,10 @@
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/net/icmp.h>
 #include <icmpv6.h>
 
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
-#include <zephyr/net/icmp.h>
+#include <zephyr/net/net_pkt_filter.h>
 #include <openthread/nat64.h>
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
@@ -44,9 +43,20 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
 
 static struct zsock_pollfd sockfd_raw[MAX_SERVICES];
 static void raw_receive_handler(struct net_socket_service_event *evt);
+static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len);
+static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt);
 static int raw_infra_if_sock = -1;
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(handle_infra_if_raw_recv, raw_receive_handler, MAX_SERVICES);
+
+struct ot_nat64_pkt_filter_test {
+	struct npf_test test;
+};
+/* Packet filtering rules for NAT64 translator section */
+static struct ot_nat64_pkt_filter_test ot_nat64_drop_rule_check = {
+	.test.fn = infra_if_nat64_try_consume_packet};
+/* Drop all traffic destined to and consumed by NAT64 translator */
+static NPF_RULE(ot_nat64_drop_pkt_process, NET_DROP, ot_nat64_drop_rule_check);
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDestAddress,
@@ -317,6 +327,9 @@ otError infra_if_nat64_init(void)
 						 ARRAY_SIZE(sockfd_raw), NULL) == 0,
 		     error = OT_ERROR_FAILED);
 
+	npf_insert_ipv4_recv_rule(&ot_nat64_drop_pkt_process);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
+
 exit:
 	return error;
 }
@@ -360,10 +373,100 @@ otError infra_if_send_raw_message(uint8_t *buf, uint16_t len)
 {
 	otError error = OT_ERROR_NONE;
 
+	remove_checksums_for_eth_offloading(buf, len);
+
 	VerifyOrExit(zsock_send(raw_infra_if_sock, buf, len, 0) > 0,
 		     error = OT_ERROR_FAILED);
 
 exit:
 	return error;
 }
+
+static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len)
+{
+	struct net_ipv4_hdr *ipv4_hdr = (struct net_ipv4_hdr *)buf;
+	uint8_t *pkt_cursor = NULL;
+	struct ethernet_config config;
+
+	if ((net_eth_get_hw_capabilities(ail_iface_ptr) & ETHERNET_HW_TX_CHKSUM_OFFLOAD) == 0) {
+		return; /* No checksum offload capabilities*/
+	}
+
+	if (net_eth_get_hw_config(ail_iface_ptr, ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
+				  &config) != 0) {
+		return; /* No TX checksum capabilities*/
+	}
+
+	pkt_cursor = buf + (ipv4_hdr->vhl & 0x0F) * 4;
+
+	if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_HEADER) != 0) {
+		ipv4_hdr->chksum = 0;
+	}
+
+	switch (ipv4_hdr->proto) {
+	case NET_IPPROTO_ICMP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_ICMP) != 0) {
+			struct net_icmp_hdr *icmp_hdr = (struct net_icmp_hdr *)pkt_cursor;
+
+			icmp_hdr->chksum = 0;
+		}
+	break;
+	case NET_IPPROTO_UDP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_UDP) != 0) {
+			struct net_udp_hdr *udp_hdr = (struct net_udp_hdr *)pkt_cursor;
+
+			udp_hdr->chksum = 0;
+		}
+	break;
+	case NET_IPPROTO_TCP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_TCP) != 0) {
+			struct net_tcp_hdr *tcp_hdr = (struct net_tcp_hdr *)pkt_cursor;
+
+			tcp_hdr->chksum = 0;
+		}
+	break;
+	default:
+		break;
+	}
+}
+
+static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt)
+{
+	ARG_UNUSED(test);
+
+	struct net_buf *buf = NULL;
+	otMessage *message = NULL;
+	otMessageSettings settings;
+
+	openthread_mutex_lock();
+
+	if (ot_instance == NULL ||
+	    otNat64GetTranslatorState(ot_instance) != OT_NAT64_STATE_ACTIVE) {
+		ExitNow();
+	}
+
+	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+	settings.mLinkSecurityEnabled = true;
+
+	message = otIp4NewMessage(ot_instance, &settings);
+	VerifyOrExit(message != NULL);
+
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
+			otMessageFree(message);
+			ExitNow();
+		}
+	}
+
+	if (otNat64Send(ot_instance, message) == OT_ERROR_NONE) {
+		net_pkt_unref(pkt);
+		openthread_mutex_unlock();
+		return true;
+	}
+
+exit:
+	openthread_mutex_unlock();
+	return false;
+}
+
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */

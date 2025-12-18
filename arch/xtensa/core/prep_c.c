@@ -85,6 +85,9 @@ FUNC_NORETURN void z_prep_c(void)
 #if CONFIG_ARCH_CACHE
 	arch_cache_init();
 #endif
+#if CONFIG_SOC_CACHE
+	soc_cache_init();
+#endif
 
 #ifdef CONFIG_XTENSA_MMU
 	xtensa_mmu_init();

@@ -604,12 +604,20 @@
 			#io-channel-cells = <0>;
 			power-domains = <&peripheral_domain>;
 		};
+
+		acomp: acomp@38400 {
+			compatible = "nxp,acomp";
+			reg = <0x38400 0x4c>;
+			interrupts = <110 0>;
+			status = "disabled";
+		};
 	};
 
 	os_timer: timers@13b000 {
 		compatible = "nxp,os-timer";
 		reg = <0x13b000 0x1000>;
 		interrupts = <41 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 27)>;
 		status = "disabled";
 	};
 

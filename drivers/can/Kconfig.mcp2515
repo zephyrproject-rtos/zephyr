@@ -27,9 +27,9 @@ config CAN_MCP2515_INT_THREAD_PRIO
 	  Priority level of the internal thread which is ran for
 	  interrupt handling and incoming packets.
 
-config CAN_MAX_FILTER
+config CAN_MCP2515_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
-	default 5
+	default 16
 	range 1 32
 	help
 	  Defines the array size of the callback/msgq pointers.

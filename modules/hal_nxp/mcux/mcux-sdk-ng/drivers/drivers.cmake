@@ -64,6 +64,8 @@ set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_V3      CONFIG_MCUX_COMPONENT_driver.dma
 set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_V4      CONFIG_MCUX_COMPONENT_driver.edma4)
 set_variable_ifdef(CONFIG_DMA_NXP_EDMA          CONFIG_MCUX_COMPONENT_driver.edma_rev2)
 set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_V5      CONFIG_MCUX_COMPONENT_driver.edma4)
+set_variable_ifdef(CONFIG_EDAC_NXP_EIM          CONFIG_MCUX_COMPONENT_driver.eim)
+set_variable_ifdef(CONFIG_EDAC_NXP_ERM          CONFIG_MCUX_COMPONENT_driver.erm)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_RNGA     CONFIG_MCUX_COMPONENT_driver.rnga)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_TRNG     CONFIG_MCUX_COMPONENT_driver.trng)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_CAAM     CONFIG_MCUX_COMPONENT_driver.caam)
@@ -107,11 +109,7 @@ set_variable_ifdef(CONFIG_WDT_MCUX_COP          CONFIG_MCUX_COMPONENT_driver.cop
 set_variable_ifdef(CONFIG_HAS_MCUX_RDC          CONFIG_MCUX_COMPONENT_driver.rdc)
 set_variable_ifdef(CONFIG_UART_MCUX_IUART       CONFIG_MCUX_COMPONENT_driver.iuart)
 set_variable_ifdef(CONFIG_ADC_MCUX_12B1MSPS_SAR CONFIG_MCUX_COMPONENT_driver.adc_12b1msps_sar)
-set_variable_ifdef(CONFIG_HWINFO_MCUX_MCX_CMC   CONFIG_MCUX_COMPONENT_driver.mcx_cmc)
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC       CONFIG_MCUX_COMPONENT_driver.src)
-set_variable_ifdef(CONFIG_DT_HAS_NXP_SPC_ENABLED CONFIG_MCUX_COMPONENT_driver.spc)
-set_variable_ifdef(CONFIG_DT_HAS_NXP_CMC_ENABLED CONFIG_MCUX_COMPONENT_driver.cmc)
-set_variable_ifdef(CONFIG_DT_HAS_NXP_VBAT_ENABLED CONFIG_MCUX_COMPONENT_driver.vbat)
 set_variable_ifdef(CONFIG_DT_HAS_NXP_WUU_ENABLED CONFIG_MCUX_COMPONENT_driver.wuu)
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SIM       CONFIG_MCUX_COMPONENT_driver.sim)
 set_variable_ifdef(CONFIG_HWINFO_MCUX_RCM       CONFIG_MCUX_COMPONENT_driver.rcm)
@@ -155,6 +153,7 @@ set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_NXP_TMPSNS                CONFIG_MCUX_COMPONENT_driver.tempsensor)
 set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP          CONFIG_MCUX_COMPONENT_driver.opamp)
 set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST     CONFIG_MCUX_COMPONENT_driver.opamp_fast)
+set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc)
 
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
@@ -191,6 +190,26 @@ endif()
 
 if(CONFIG_SOC_FAMILY_MCXN OR CONFIG_SOC_FAMILY_MCXA)
   set(CONFIG_MCUX_COMPONENT_driver.mcx_spc ON)
+endif()
+
+if(CONFIG_DT_HAS_NXP_SPC_ENABLED AND CONFIG_SOC_FAMILY_MCXW)
+  set(CONFIG_MCUX_COMPONENT_driver.spc ON)
+endif()
+
+if(CONFIG_DT_HAS_NXP_CMC_ENABLED OR CONFIG_HWINFO_MCUX_MCX_CMC)
+  if(CONFIG_SOC_FAMILY_MCXN OR CONFIG_SOC_FAMILY_MCXA)
+    set(CONFIG_MCUX_COMPONENT_driver.mcx_cmc ON)
+  else() # KW, MCXW
+    set(CONFIG_MCUX_COMPONENT_driver.cmc ON)
+  endif()
+endif()
+
+if(CONFIG_DT_HAS_NXP_VBAT_ENABLED)
+  if(CONFIG_SOC_FAMILY_MCXN OR CONFIG_SOC_FAMILY_MCXA)
+    set(CONFIG_MCUX_COMPONENT_driver.mcx_vbat ON)
+  else() # KW, MCXW
+    set(CONFIG_MCUX_COMPONENT_driver.vbat ON)
+  endif()
 endif()
 
 if(((${MCUX_DEVICE} MATCHES "MIMXRT1[0-9][0-9][0-9]") AND (NOT (CONFIG_SOC_MIMXRT1166_CM4 OR CONFIG_SOC_MIMXRT1176_CM4 OR CONFIG_SOC_MIMXRT1189_CM33))) OR

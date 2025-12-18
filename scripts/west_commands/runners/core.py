@@ -324,6 +324,11 @@ class RunnerCaps:
                        # to allow other commands to use the rtt address
     dry_run: bool = False
     skip_load: bool = False
+    batch_debug: bool = False # In batch mode, GDB exits with status 0 after loading;
+                              # for automated debugging, add --batch with 'monitor go',
+                              # 'disconnect', and 'quit' commands (named batch_debug in west),
+                              # unlike interactive debug mode (default),
+                              # which stops and waits for user input
 
     def __post_init__(self):
         if self.mult_dev_ids and not self.dev_id:
@@ -650,6 +655,10 @@ class ZephyrBinaryRunner(abc.ABC):
                             help=("load image on target before 'west debug' session"
                                   if caps.skip_load else argparse.SUPPRESS),
                             default=True)
+
+        parser.add_argument('--batch', action=argparse.BooleanOptionalAction,
+                            help="enable west debug batch mode"
+                            if caps.batch_debug else argparse.SUPPRESS)
 
         # Runner-specific options.
         cls.do_add_parser(parser)

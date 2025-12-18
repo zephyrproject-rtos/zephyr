@@ -521,11 +521,6 @@ static int stm32_jpeg_init(const struct device *dev)
 	/* Run IRQ init */
 	cfg->irq_config(dev);
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_JPEG,
-					      RIF_ATTRIBUTE_PRIV | RIF_ATTRIBUTE_SEC);
-#endif
-
 	/* Initialise default input / output formats */
 	k_mutex_init(&data->lock);
 	k_fifo_init(&data->m2m.in.fifo_in);

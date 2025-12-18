@@ -15,6 +15,7 @@
 			disk-name = "SD";
 			status = "okay";
 		};
+
 		spi-max-frequency = <25000000>;
 		spi-clock-mode-cpol;
 		spi-clock-mode-cpha;

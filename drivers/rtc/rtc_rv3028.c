@@ -83,9 +83,12 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 
 #define RV3028_CLKOUT_FD_LOW            0x7
 
+#define RV3028_OFFSET_SIGN_BIT_INDEX    8
+
 #define RV3028_BACKUP_TCE               BIT(5)
 #define RV3028_BACKUP_TCR               GENMASK(1, 0)
 #define RV3028_BACKUP_BSM               GENMASK(3, 2)
+#define RV3028_BACKUP_OFFSET_BIT_INDEX  7
 
 #define RV3028_BSM_LEVEL                0x3
 #define RV3028_BSM_DIRECT               0x1
@@ -122,6 +125,23 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 
 /* The RV3028 enumerates months 1 to 12 */
 #define RV3028_MONTH_OFFSET 1
+
+/* Convert part per billion calibration value to a number of clock pulses added or removed each
+ * 2^20 clock cycles so it is suitable for the EEOffset register field
+ *
+ * nb_pulses = ppb * 2^20 / 10^9 = ppb * 2^11 / 5^9 = ppb * 2048 / 1953125
+ */
+#define PPB_TO_NB_PULSES(ppb) DIV_ROUND_CLOSEST((ppb) * 2048, 1953125)
+
+/* Convert EEOffset register value (number of clock pulses added or removed each 2^20 clock cycles)
+ * to part ber billion calibration value
+ *
+ * ppb = nb_pulses * 10^9 / 2^20 = nb_pulses * 5^9 / 2^11 = nb_pulses * 1953125 / 2048
+ */
+#define NB_PULSES_TO_PPB(pulses) DIV_ROUND_CLOSEST((pulses) * 1953125, 2048)
+
+#define MAX_PPB NB_PULSES_TO_PPB(255)
+#define MIN_PPB NB_PULSES_TO_PPB(-256)
 
 #define RV3028_EEBUSY_READ_POLL_MS      1
 #define RV3028_EEBUSY_WRITE_POLL_MS     10
@@ -761,6 +781,86 @@ unlock:
 
 #endif /* RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
 
+#ifdef CONFIG_RTC_CALIBRATION
+static int rv3028_set_calibration(const struct device *dev, int32_t freq_ppb)
+{
+	int err;
+	int32_t nb_pulses;
+	uint16_t offset;
+	uint8_t val_backup;
+
+	if ((freq_ppb > MAX_PPB) || (freq_ppb < MIN_PPB)) {
+		/* out of supported range */
+		return -EINVAL;
+	}
+
+	nb_pulses = PPB_TO_NB_PULSES(freq_ppb);
+	offset = nb_pulses & 0x1FF;
+
+	LOG_DBG("Set calibration: frequency ppb: %d, offset value: %d", NB_PULSES_TO_PPB(nb_pulses),
+		offset);
+
+	/* Refresh the settings in the RAM with the settings from the EEPROM */
+	err = rv3028_enter_eerd(dev);
+	if (err) {
+		return -ENODEV;
+	}
+	err = rv3028_refresh(dev);
+	if (err) {
+		rv3028_exit_eerd(dev);
+		return err;
+	}
+
+	err = rv3028_read_reg8(dev, RV3028_REG_BACKUP, &val_backup);
+	if (err) {
+		rv3028_exit_eerd(dev);
+		return err;
+	}
+
+	/* LSB of offset is stored in BACKUP register */
+	val_backup &= ~BIT(RV3028_BACKUP_OFFSET_BIT_INDEX);
+	val_backup |= (offset & 0x01) << RV3028_BACKUP_OFFSET_BIT_INDEX;
+
+	err = rv3028_write_reg8(dev, RV3028_REG_BACKUP, val_backup);
+	if (err) {
+		rv3028_exit_eerd(dev);
+		return err;
+	}
+
+	err = rv3028_write_reg8(dev, RV3028_REG_OFFSET, offset >> 1);
+	if (err) {
+		rv3028_exit_eerd(dev);
+		return err;
+	}
+
+	return rv3028_update(dev);
+}
+
+static int rv3028_get_calibration(const struct device *dev, int32_t *freq_ppb)
+{
+	uint8_t regs[2];
+	int err;
+	uint16_t offset;
+	int32_t nb_pulses;
+
+	/* Read OFFSET and BACKUP register */
+	err = rv3028_read_regs(dev, RV3028_REG_OFFSET, regs, sizeof(regs));
+	if (err) {
+		return err;
+	}
+
+	/* LSB of offset is stored in BACKUP register */
+	offset = (regs[0] << 1) | ((regs[1] & BIT(RV3028_BACKUP_OFFSET_BIT_INDEX)) >>
+				   RV3028_BACKUP_OFFSET_BIT_INDEX);
+	nb_pulses = sign_extend(offset, RV3028_OFFSET_SIGN_BIT_INDEX);
+	*freq_ppb = NB_PULSES_TO_PPB(nb_pulses);
+
+	LOG_DBG("Get calibration: frequency ppb: %d, offset value: %d", *freq_ppb, offset);
+
+	return 0;
+}
+#endif /* CONFIG_RTC_CALIBRATION */
+
 static int rv3028_init(const struct device *dev)
 {
 	const struct rv3028_config *config = dev->config;
@@ -908,6 +1008,10 @@ static DEVICE_API(rtc, rv3028_driver_api) = {
 #if RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
 	.update_set_callback = rv3028_update_set_callback,
 #endif /* RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
+#ifdef CONFIG_RTC_CALIBRATION
+	.set_calibration = rv3028_set_calibration,
+	.get_calibration = rv3028_get_calibration
+#endif /* CONFIG_RTC_CALIBRATION */
 };
 
 #define RV3028_BSM_FROM_DT_INST(inst)                                                              \

@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_STM32_NUM_FILTER_BANKS (14)
 #define CAN_STM32_MAX_FILTER_ID \
-	(CONFIG_CAN_MAX_EXT_ID_FILTER + CONFIG_CAN_MAX_STD_ID_FILTER * 2)
+	(CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS + CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS * 2)
 
 #define CAN_STM32_FIRX_STD_IDE_POS   (3U)
 #define CAN_STM32_FIRX_STD_RTR_POS   (4U)
@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 #define CAN_STM32_FIRX_EXT_STD_ID_POS (21U)
 #define CAN_STM32_FIRX_EXT_EXT_ID_POS (3U)
 
-#if (CONFIG_CAN_MAX_STD_ID_FILTER + CONFIG_CAN_MAX_EXT_ID_FILTER * 2) > \
+#if (CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS + CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS * 2) > \
 						(CAN_STM32_NUM_FILTER_BANKS * 2)
 #error Number of configured filters exceeds available filter bank slots.
 #endif
@@ -54,10 +54,10 @@ struct can_stm32_data {
 	struct can_stm32_mailbox mb0;
 	struct can_stm32_mailbox mb1;
 	struct can_stm32_mailbox mb2;
-	can_rx_callback_t rx_cb_std[CONFIG_CAN_MAX_STD_ID_FILTER];
-	can_rx_callback_t rx_cb_ext[CONFIG_CAN_MAX_EXT_ID_FILTER];
-	void *cb_arg_std[CONFIG_CAN_MAX_STD_ID_FILTER];
-	void *cb_arg_ext[CONFIG_CAN_MAX_EXT_ID_FILTER];
+	can_rx_callback_t rx_cb_std[CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS];
+	can_rx_callback_t rx_cb_ext[CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS];
+	void *cb_arg_std[CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS];
+	void *cb_arg_ext[CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS];
 	enum can_state state;
 };
 
@@ -130,11 +130,11 @@ static inline void can_stm32_rx_isr_handler(const struct device *dev)
 
 		can_stm32_rx_fifo_pop(mbox, &frame);
 
-		if (filter_id < CONFIG_CAN_MAX_EXT_ID_FILTER) {
+		if (filter_id < CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS) {
 			callback = data->rx_cb_ext[filter_id];
 			cb_arg = data->cb_arg_ext[filter_id];
 		} else if (filter_id < CAN_STM32_MAX_FILTER_ID) {
-			index = filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER;
+			index = filter_id - CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS;
 			callback = data->rx_cb_std[index];
 			cb_arg = data->cb_arg_std[index];
 		}
@@ -586,9 +586,9 @@ static int can_stm32_get_max_filters(const struct device *dev, bool ide)
 	ARG_UNUSED(dev);
 
 	if (ide) {
-		return CONFIG_CAN_MAX_EXT_ID_FILTER;
+		return CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS;
 	} else {
-		return CONFIG_CAN_MAX_STD_ID_FILTER;
+		return CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS;
 	}
 }
 
@@ -643,15 +643,17 @@ static int can_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	/* configure scale of filter banks < CONFIG_CAN_MAX_EXT_ID_FILTER for ext ids */
-	/* We have to have set filters after initializing master CAN */
+	/*
+	 * Configure scale of filter banks < CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS for ext ids
+	 * We have to have set filters after initializing master CAN
+	 */
 	if (cfg->can == cfg->master_can) {
 		cfg->master_can->FMR |= CAN_FMR_FINIT;
-		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1);
+		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS) - 1);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
 		/* reserve ext_id filters on slave CAN device */
-		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1)
+		cfg->master_can->FS1R |= ((1U << CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS) - 1)
 					 << CAN_STM32_NUM_FILTER_BANKS;
 #endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
 
@@ -863,7 +865,7 @@ static void can_stm32_set_filter_bank(int filter_id, CAN_FilterRegister_TypeDef 
 		filter_reg->FR1 = id;
 		filter_reg->FR2 = mask;
 	} else {
-		if ((filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER) % 2 == 0) {
+		if ((filter_id - CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS) % 2 == 0) {
 			/* even std filter id: first 1/2 bank */
 			filter_reg->FR1 = id | (mask << 16);
 		} else {
@@ -919,7 +921,7 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct ca
 	}
 
 	if ((filter->flags & CAN_FILTER_IDE) != 0) {
-		for (int i = 0; i < CONFIG_CAN_MAX_EXT_ID_FILTER; i++) {
+		for (int i = 0; i < CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS; i++) {
 			if (data->rx_cb_ext[i] == NULL) {
 				id = can_stm32_filter_to_ext_id(filter);
 				mask = can_stm32_filter_to_ext_mask(filter);
@@ -929,12 +931,13 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct ca
 			}
 		}
 	} else {
-		for (int i = 0; i < CONFIG_CAN_MAX_STD_ID_FILTER; i++) {
+		for (int i = 0; i < CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS; i++) {
 			if (data->rx_cb_std[i] == NULL) {
 				id = can_stm32_filter_to_std_id(filter);
 				mask = can_stm32_filter_to_std_mask(filter);
-				filter_id = CONFIG_CAN_MAX_EXT_ID_FILTER + i;
-				bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER + i / 2;
+				filter_id = CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS + i;
+				bank_num = bank_offset + CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS +
+					i / 2;
 				break;
 			}
 		}
@@ -965,7 +968,7 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct ca
  * This driver uses masked mode for all filters (CAN_FM1R left at reset value
  * 0x00) in order to simplify mapping between filter match index from the FIFOs
  * and array index for the callbacks. All ext ID filters are stored in the
- * banks below CONFIG_CAN_MAX_EXT_ID_FILTER, followed by the std ID filters,
+ * banks below CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS, followed by the std ID filters,
  * which consume only 1/2 bank per filter.
  *
  * The more complicated list mode must be implemented if someone requires more
@@ -993,8 +996,9 @@ static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 			data->rx_cb_ext[filter_id] = cb;
 			data->cb_arg_ext[filter_id] = cb_arg;
 		} else {
-			data->rx_cb_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb;
-			data->cb_arg_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb_arg;
+			data->rx_cb_std[filter_id - CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS] = cb;
+			data->cb_arg_std[filter_id - CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS] =
+				cb_arg;
 		}
 	}
 
@@ -1026,7 +1030,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 		bank_offset = CAN_STM32_NUM_FILTER_BANKS;
 	}
 
-	if (filter_id < CONFIG_CAN_MAX_EXT_ID_FILTER) {
+	if (filter_id < CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS) {
 		ide = true;
 		bank_num = bank_offset + filter_id;
 
@@ -1035,18 +1039,18 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 
 		bank_unused = true;
 	} else {
-		int filter_index = filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER;
+		int filter_index = filter_id - CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS;
 
 		ide = false;
-		bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER +
-			  (filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER) / 2;
+		bank_num = bank_offset + CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS +
+			  (filter_id - CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS) / 2;
 
 		data->rx_cb_std[filter_index] = NULL;
 		data->cb_arg_std[filter_index] = NULL;
 
 		if (filter_index % 2 == 1) {
 			bank_unused = data->rx_cb_std[filter_index - 1] == NULL;
-		} else if (filter_index + 1 < CONFIG_CAN_MAX_STD_ID_FILTER) {
+		} else if (filter_index + 1 < CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS) {
 			bank_unused = data->rx_cb_std[filter_index + 1] == NULL;
 		} else {
 			bank_unused = true;

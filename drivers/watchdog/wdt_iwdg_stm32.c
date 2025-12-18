@@ -54,6 +54,39 @@
 #define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
 				 MSEC_PER_SEC / LSI_VALUE)
 
+#ifdef CONFIG_IWDG_STM32_EARLY_WAKEUP
+
+void iwdg_stm32_isr(const struct device *dev)
+{
+	struct iwdg_stm32_data *data = dev->data;
+	IWDG_TypeDef *iwdg = ((const struct iwdg_stm32_config *)dev->config)->instance;
+
+	if (LL_IWDG_IsEnabledIT_EWI(iwdg) && LL_IWDG_IsActiveFlag_EWIF(iwdg)) {
+		LL_IWDG_ClearFlag_EWIF(iwdg);
+		if (data->callback != NULL) {
+			data->callback(dev, 0);
+		}
+	}
+}
+
+static void iwdg_stm32_irq_config(const struct device *dev)
+{
+	IWDG_TypeDef *idg = ((const struct iwdg_stm32_config *)dev->config)->instance;
+
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), iwdg_stm32_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+
+	irq_enable(DT_INST_IRQN(0));
+
+	LL_IWDG_ClearFlag_EWIF(idg);
+
+	while (LL_IWDG_IsActiveFlag_EWU(idg)) {
+	}
+	LL_IWDG_EnableIT_EWI(idg);
+}
+
+#endif /* CONFIG_IWDG_STM32_EARLY_WAKEUP */
+
 /**
  * @brief Calculates prescaler & reload values.
  *
@@ -125,6 +158,27 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 
 	tickstart = k_uptime_get_32();
 
+#ifdef CONFIG_IWDG_STM32_EARLY_WAKEUP
+	if (data->reload < 2U) {
+		/* Early wake-up is not possible if counter is
+		 * reloaded with value 1 as the system will be
+		 * reset immediately when the counter decrements.
+		 * (Note: reload=1 is NOT RECOMMENDED per RefMan)
+		 */
+		return -EINVAL;
+	}
+
+	/* If Kconfig is higher than reload, set early wake-up
+	 * as high as possible (= reload - 1); otherwise, set
+	 * to the requested value.
+	 */
+	uint32_t ewi_time = MIN(CONFIG_IWDG_STM32_EWI_TIME, data->reload);
+
+	LL_IWDG_SetEwiTime(cfg->instance, ewi_time);
+
+	iwdg_stm32_irq_config(dev);
+#endif /* CONFIG_IWDG_STM32_EARLY_WAKEUP */
+
 	/* Wait for the update operation completed */
 	while (LL_IWDG_IsReady(cfg->instance) == 0) {
 		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
@@ -155,7 +209,11 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 	uint32_t reload = 0U;
 
 	if (config->callback != NULL) {
-		return -ENOTSUP;
+		if (IS_ENABLED(CONFIG_IWDG_STM32_EARLY_WAKEUP)) {
+			data->callback = config->callback;
+		} else {
+			return -ENOTSUP;
+		}
 	}
 	if (data->reload) {
 		/* Timeout has already been configured */
@@ -260,7 +318,10 @@ static int iwdg_stm32_init(const struct device *dev)
 static const struct iwdg_stm32_config iwdg_stm32_dev_cfg = {
 	.instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0),
 };
-static struct iwdg_stm32_data iwdg_stm32_dev_data;
+
+static struct iwdg_stm32_data iwdg_stm32_dev_data = {
+	.callback = NULL,
+};
 
 DEVICE_DT_INST_DEFINE(0, iwdg_stm32_init, NULL,
 		    &iwdg_stm32_dev_data, &iwdg_stm32_dev_cfg,

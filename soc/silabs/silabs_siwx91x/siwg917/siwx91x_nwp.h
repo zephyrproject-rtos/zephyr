@@ -28,6 +28,17 @@
 int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hidden_ssid,
 			    uint8_t max_num_sta);
 
+/*
+ * @brief Apply the power profile for the NWP.
+ *
+ * This function applies the power profile for the NWP.
+ *
+ * @param[in] dev           NWP device.
+ *
+ * @return 0 on success, negative error code on failure.
+ */
+int siwx91x_nwp_apply_power_profile(const struct device *dev);
+
 /**
  * @brief Map an ISO/IEC 3166-1 alpha-2 country code to a Wi-Fi region code.
  *

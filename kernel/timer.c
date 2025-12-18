@@ -84,7 +84,13 @@ void z_timer_expiration_handler(struct _timeout *t)
 	if (timer->expiry_fn != NULL) {
 		/* Unlock for user handler. */
 		k_spin_unlock(&lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
+
 		timer->expiry_fn(timer);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
+
 		key = k_spin_lock(&lock);
 	}
 
@@ -207,7 +213,11 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	}
 
 	if (timer->stop_fn != NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
+
 		timer->stop_fn(timer);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
 	}
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {

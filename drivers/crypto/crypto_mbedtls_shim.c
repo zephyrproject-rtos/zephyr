@@ -84,6 +84,7 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 	psa_status_t status;
+	size_t out_len;
 
 	/* For security reasons, ECB mode should not be used to encrypt/decrypt
 	 * more than one block. Use CBC mode instead.
@@ -97,13 +98,15 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		status = psa_cipher_encrypt(session->key_id, session->psa_alg,
 					    pkt->in_buf, pkt->in_len,
 					    pkt->out_buf, pkt->out_buf_max,
-					    (size_t *) &pkt->out_len);
+					    &out_len);
 	} else {
 		status = psa_cipher_decrypt(session->key_id, session->psa_alg,
 					    pkt->in_buf, pkt->in_len,
 					    pkt->out_buf, pkt->out_buf_max,
-					    (size_t *) &pkt->out_len);
+					    &out_len);
 	}
+
+	pkt->out_len = out_len;
 
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_[en|de]crypt() failed (%d)", status);
@@ -306,10 +309,16 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 		break;
 #endif /* CONFIG_PSA_WANT_ALG_CBC_NO_PADDING */
 #if CONFIG_PSA_WANT_ALG_CCM
-	case CRYPTO_CIPHER_MODE_CCM:
-		session->psa_alg = PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, 8);
+	case CRYPTO_CIPHER_MODE_CCM: {
+		uint16_t tag_len = ctx->mode_params.ccm_info.tag_len;
+
+		if (tag_len > PSA_AEAD_TAG_MAX_SIZE) {
+			return -EINVAL;
+		}
+		session->psa_alg = PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, tag_len);
 		ctx->ops.ccm_crypt_hndlr = mbedtls_aead;
 		break;
+	}
 #endif /* CONFIG_PSA_WANT_ALG_CCM */
 #if CONFIG_PSA_WANT_ALG_GCM
 	case CRYPTO_CIPHER_MODE_GCM:

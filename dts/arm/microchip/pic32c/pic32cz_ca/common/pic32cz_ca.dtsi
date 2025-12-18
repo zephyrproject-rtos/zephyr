@@ -36,40 +36,47 @@
 			compatible = "mmio-sram";
 		};
 
-		porta: gpio@44840000 {
-			status = "disabled";
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x44840000 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
-		};
+		pinctrl: pinctrl@44840000 {
+			compatible = "microchip,port-g1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x44840000 0x44840000 0x380>;
 
-		portb: gpio@44840080 {
-			status = "disabled";
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x44840080 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
-		};
+			porta: gpio@44840000 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840000 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
 
-		portc: gpio@44840100 {
-			status = "disabled";
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x44840100 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
-		};
+			portb: gpio@44840080 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840080 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
 
-		portd: gpio@44840180 {
-			status = "disabled";
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x44840180 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
+			portc: gpio@44840100 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840100 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
+
+			portd: gpio@44840180 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840180 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
 		};
 	};
 };

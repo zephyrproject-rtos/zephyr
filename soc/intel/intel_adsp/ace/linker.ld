@@ -3,7 +3,10 @@
  */
 
 #include <zephyr/linker/devicetree_regions.h>
-#include <ace-link.ld>
+
+#ifdef CONFIG_INTEL_ADSP_MEMORY_IS_MIRRORED
+#include <linker/ace-link-mirrored.ld>
+#endif
 
 MEMORY
 {

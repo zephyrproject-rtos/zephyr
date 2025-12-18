@@ -41,11 +41,27 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+* :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
+  <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
+
 API Changes
 ***********
 
 ..
   Only removed, deprecated and new APIs. Changes go in migration guide.
+
+* Architectures
+
+  * Xtensa
+
+    * Removed as these are architectural features:
+
+      * :kconfig:option:`CONFIG_XTENSA_MMU_DOUBLE_MAP`
+      * :kconfig:option:`CONFIG_XTENSA_RPO_CACHE`
+      * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
+      * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
 
 Removed APIs and options
 ========================
@@ -78,6 +94,18 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Architectures
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS`
+
+* Audio
+
+  * :c:macro:`PDM_DT_IO_CFG_GET`
+  * :c:macro:`PDM_DT_HAS_LEFT_CHANNEL`
+  * :c:macro:`PDM_DT_HAS_RIGHT_CHANNEL`
+
 * Bluetooth
 
   * Host
@@ -102,10 +130,22 @@ New APIs and options
     * :c:struct:`net_eth_mac_config`
     * :c:macro:`NET_ETH_MAC_DT_CONFIG_INIT` and :c:macro:`NET_ETH_MAC_DT_INST_CONFIG_INIT`
 
+  * Added :c:enum:`ethernet_stats_type` and optional ``get_stats_type`` callback in
+    :c:struct:`ethernet_api` to allow filtering of ethernet statistics by type
+    (common, vendor, or all). Drivers that support vendor-specific statistics can
+    implement ``get_stats_type`` to skip expensive FW queries when only common stats
+    are requested. The existing ``get_stats`` API remains unchanged for backward
+    compatibility.
+
 * Flash
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
+
+* Modem
+
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AIRVANTAGE`
 
 * NVMEM
 
@@ -114,10 +154,31 @@ New APIs and options
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
 
+* PWM
+
+  * Extended API with PWM events
+
+    * :c:struct:`pwm_event_callback` to hold a pwm event callback
+    * :c:func:`pwm_init_event_callback` to help initialize a :c:struct:`pwm_event_callback` object
+    * :c:func:`pwm_add_event_callback` to add a callback
+    * :c:func:`pwm_remove_event_callback` to remove a callback
+    * :c:member:`manage_event_callback` in :c:struct:`pwm_driver_api` to manage pwm events
+    * :kconfig:option:`CONFIG_PWM_EVENT`
+
+* Power
+
+  * The new ``voltage-scale`` property of :dtcompatible:`st,stm32u5-pwr` can be used to
+    select the voltage scale manually on STM32U5 series via Devicetree. This notably
+    enables usage of the USB controller at lower system clock frequencies.
+
 * Settings
 
-   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
-   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
+  * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
+  * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
+
+* Sys
+
+  * :c:macro:`COND_CASE_1`
 
 .. zephyr-keep-sorted-stop
 
@@ -129,6 +190,11 @@ New Boards
   it visible to people who might be looking at the working draft of the release notes. However, note
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
+
+* Ai-Thinker Co., Ltd.
+
+   * :zephyr:board:`ai_m61_32s_kit` (``ai_m61_32s_kit``)
+   * Rename ai_m62_12f and ai_wb2_12f to ai_m62_12f_kit and ai_wb2_12f_kit
 
 New Shields
 ***********
@@ -145,8 +211,8 @@ New Drivers
 
 * Radio
 
-   * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
-   * :dtcompatible:`radio-gpio-coex` (renamed from ``gpio-radio-coex``)
+  * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
+  * :dtcompatible:`radio-gpio-coex` (renamed from ``gpio-radio-coex``)
 
 New Samples
 ***********
@@ -157,12 +223,26 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+DeviceTree
+**********
+
+* :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
+* :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 
 Libraries / Subsystems
 **********************
 
+* LoRa/LoRaWAN
+
+   * :c:func:`lora_airtime`
+
 Other notable changes
 *********************
+
+* TF-M was updated to version 2.2.2 (from 2.2.0). The release notes can be found at:
+
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

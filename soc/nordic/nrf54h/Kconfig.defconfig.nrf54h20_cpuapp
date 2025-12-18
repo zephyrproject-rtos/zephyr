@@ -17,4 +17,7 @@ config POWER_DOMAIN
 config CODE_DATA_RELOCATION
 	default y if (PM || POWEROFF) && !MCUBOOT
 
+config NRF_PERIPHCONF_SECTION
+	default y
+
 endif # SOC_NRF54H20_CPUAPP

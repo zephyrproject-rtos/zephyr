@@ -28,7 +28,7 @@ config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
 	  Maximum number of wait loop iterations for the MCUX FlexCAN HAL when entering/leaving
 	  freeze mode.
 
-config CAN_MAX_MB
+config CAN_MCUX_FLEXCAN_MAX_MB
 	int "Maximum number of message buffers for concurrent active instances"
 	default 16
 	depends on SOC_SERIES_S32K3 || SOC_SERIES_S32K1 || SOC_SERIES_S32ZE
@@ -39,9 +39,9 @@ config CAN_MAX_MB
 	help
 	  Defines maximum number of message buffers for concurrent active instances.
 
-config CAN_MAX_FILTER
+config CAN_MCUX_FLEXCAN_MAX_FILTERS
 	int "Maximum number of concurrent active RX filters"
-	default 5
+	default 13
 	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
 	range 1 13 if (SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX) && CAN_MCUX_FLEXCAN_FD
 	range 1 63 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX

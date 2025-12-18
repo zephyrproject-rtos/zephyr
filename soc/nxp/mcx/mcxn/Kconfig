@@ -44,6 +44,7 @@ config SOC_MCXN236
 	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
 	select HAS_CPU_FREQ
+	select HAS_PM
 
 if SOC_FAMILY_MCXN
 

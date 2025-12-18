@@ -8,7 +8,7 @@ zephyr_library_compile_definitions(SX127X_TRANSCEIVER)
 if(CONFIG_DT_HAS_SEMTECH_SX1272_ENABLED)
   zephyr_library_compile_definitions(SX1272)
 endif()
-if(CONFIG_DT_HAS_SEMTECH_SX1276_ENABLED)
+if(CONFIG_DT_HAS_SEMTECH_SX1276_ENABLED OR CONFIG_DT_HAS_SEMTECH_SX1278_ENABLED)
   zephyr_library_compile_definitions(SX1276)
 endif()
 

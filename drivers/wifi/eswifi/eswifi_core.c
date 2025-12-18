@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/ethernet.h>
 #include <net_private.h>
 #include <zephyr/net/net_core.h>
-#include <zephyr/net/net_pkt.h>
 
 #include <stdio.h>
 #include <stdlib.h>

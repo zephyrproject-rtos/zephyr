@@ -17,6 +17,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 
@@ -561,12 +562,31 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	}
 #endif
 
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
+	/* A flush is performed before the DMA operation, to prevent accidental data
+	 * loss when the buffer is not properly aligned to the cache-line (e.g:
+	 * 32-bytes for STM32H7).
+	 */
+	sys_cache_data_flush_and_invd_range((void *)data_buf, BLOCKSIZE * num_sector);
+#endif
+
 	err = stm32_sdmmc_read_blocks(&priv->hsd, data_buf, start_sector, num_sector);
 	if (err != 0) {
 		goto end;
 	}
 
 	k_sem_take(&priv->sync, K_FOREVER);
+
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
+	/* Invalidate again after the operation is complete, to protect against
+	 * speculative / spurious reads. Note that this is slightly unsafe when
+	 * `data_buf` is not aligned to the cache line, and shares the cache line
+	 * with other data... Hopefully the previous (otherwise unnecessary) flush &
+	 * invalidate reduces this risk enough.
+	 * This is a balance between forcing callers to have aligned buffers.
+	 */
+	sys_cache_data_invd_range((void *)data_buf, BLOCKSIZE * num_sector);
+#endif
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	if (HAL_DMA_DeInit(&priv->dma_txrx_handle) != HAL_OK) {
@@ -640,6 +660,10 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 		err = -EIO;
 		goto end;
 	}
+#endif
+
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
+	sys_cache_data_flush_range((void *)data_buf, BLOCKSIZE * num_sector);
 #endif
 
 	err = stm32_sdmmc_write_blocks(&priv->hsd, (uint8_t *)data_buf, start_sector, num_sector);

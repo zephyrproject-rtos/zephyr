@@ -176,6 +176,24 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hscmp0))
+	if ((uint32_t)sub_system == MCUX_HSCMP0_CLK) {
+		CLOCK_EnableClock(kCLOCK_Hscmp0);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hscmp1))
+	if ((uint32_t)sub_system == MCUX_HSCMP1_CLK) {
+		CLOCK_EnableClock(kCLOCK_Hscmp1);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hscmp2))
+	if ((uint32_t)sub_system == MCUX_HSCMP2_CLK) {
+		CLOCK_EnableClock(kCLOCK_Hscmp2);
+	}
+#endif
+
 #ifdef CONFIG_SOC_FAMILY_MCXN
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(trng), okay)
 	if ((uint32_t)sub_system == MCUX_ELS_CLK) {

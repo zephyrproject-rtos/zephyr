@@ -28,6 +28,7 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,canbus = &can1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -234,4 +235,38 @@ zephyr_udc0: &usbotg_fs {
 
 &vbat {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* set  4* 32KB */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+
+		storage_partition: partition@20000 {
+			label = "storage";
+			reg = <0x00020000 DT_SIZE_K(256)>;
+		};
+
+		slot0_partition: partition@60000 {
+			label = "image-0";
+			reg = <0x00060000 DT_SIZE_K(128)>;
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(128)>;
+		};
+
+		scratch_partition: partition@a0000 {
+			label = "image-scratch";
+			reg = <0x000a0000 DT_SIZE_K(256)>;
+		};
+	};
 };

@@ -409,7 +409,6 @@ void ztest_skip_failed_assumption(void)
  */
 #include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b*/
 #include <signal.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define FAIL_FAST 0

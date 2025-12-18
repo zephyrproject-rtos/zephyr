@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 /* Memory pool management - unified pool-based API */
 #if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
 /* Use global system heap */
-extern struct sys_heap _system_heap;
+extern struct k_heap _system_heap;
 static struct k_heap * const wifi_ctrl_pool = &_system_heap;
 static struct k_heap * const wifi_data_pool = &_system_heap;
 #else

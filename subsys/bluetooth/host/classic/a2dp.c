@@ -1474,7 +1474,7 @@ int bt_a2dp_init(void)
 		return err;
 	}
 
-	for (uint8_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+	ARRAY_FOR_EACH(connection, i) {
 		memset(&connection[i], 0, sizeof(struct bt_a2dp));
 	}
 

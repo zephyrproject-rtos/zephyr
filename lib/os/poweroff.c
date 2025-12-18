@@ -10,5 +10,9 @@ void sys_poweroff(void)
 {
 	(void)irq_lock();
 
+#if defined(CONFIG_ZERO_LATENCY_IRQS)
+	(void)arch_zli_lock();
+#endif /* CONFIG_ZERO_LATENCY_IRQS */
+
 	z_sys_poweroff();
 }

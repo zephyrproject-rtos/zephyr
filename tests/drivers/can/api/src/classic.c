@@ -1393,7 +1393,8 @@ ZTEST_USER(can_classic, test_set_timing_while_started)
 	int err;
 
 	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, TEST_SAMPLE_POINT);
-	zassert_ok(err, "failed to calculate timing (err %d)", err);
+	zassert_true(err >= 0, "failed to calculate timing (err %d)", err);
+	zassert_true(err <= CONFIG_CAN_SAMPLE_POINT_MARGIN, "sample point error %d too large", err);
 
 	err = can_set_timing(can_dev, &timing);
 	zassert_not_equal(err, 0, "changed timing while started");

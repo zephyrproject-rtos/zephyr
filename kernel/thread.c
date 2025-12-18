@@ -625,13 +625,13 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	/* Check that the thread object is safe, but that the stack is
 	 * still cached!
 	 */
-	__ASSERT_NO_MSG(arch_mem_coherent(new_thread));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(new_thread));
 
 	/* When dynamic thread stack is available, the stack may come from
 	 * uncached area.
 	 */
 #ifndef CONFIG_DYNAMIC_THREAD
-	__ASSERT_NO_MSG(!arch_mem_coherent(stack));
+	__ASSERT_NO_MSG(!sys_cache_is_mem_coherent(stack));
 #endif  /* CONFIG_DYNAMIC_THREAD */
 
 #endif /* CONFIG_KERNEL_COHERENCE */

@@ -97,6 +97,8 @@ config SEGGER_RTT_SECTION_CUSTOM
 
 config SEGGER_RTT_SECTION_CUSTOM_DTS_REGION
 	bool "Place RTT data in custom linker section defined by a memory region in DTS"
+	help
+	  The DTS memory section needs to have the "rtt_custom_section" alias.
 
 endif
 

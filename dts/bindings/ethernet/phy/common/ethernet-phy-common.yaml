@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MIIPHY devices
+
+include:
+  - name: phy.yaml
+  - name: ethernet-phy-default-speeds.yaml
+
+properties:
+  reg:
+    required: true
+    description: PHY address

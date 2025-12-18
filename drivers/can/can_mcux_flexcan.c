@@ -34,8 +34,8 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 #endif
 
 /* The maximum number of message buffers for concurrent active instances */
-#ifdef CONFIG_CAN_MAX_MB
-#define MCUX_FLEXCAN_MAX_MB CONFIG_CAN_MAX_MB
+#ifdef CONFIG_CAN_MCUX_FLEXCAN_MAX_MB
+#define MCUX_FLEXCAN_MAX_MB CONFIG_CAN_MCUX_FLEXCAN_MAX_MB
 #else
 #define MCUX_FLEXCAN_MAX_MB FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0)
 #endif
@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
  * RX message buffers (filters) will take up the first N message
  * buffers. The rest are available for TX use.
  */
-#define MCUX_FLEXCAN_MAX_RX (CONFIG_CAN_MAX_FILTER + RX_START_IDX)
+#define MCUX_FLEXCAN_MAX_RX (CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS + RX_START_IDX)
 #define MCUX_FLEXCAN_MAX_TX (MCUX_FLEXCAN_MAX_MB - MCUX_FLEXCAN_MAX_RX)
 
 /*
@@ -144,7 +144,7 @@ static int mcux_flexcan_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS;
 }
 
 static int mcux_flexcan_set_timing(const struct device *dev,
@@ -311,8 +311,13 @@ static int mcux_flexcan_start(const struct device *dev)
 	timing.phaseSeg2 = data->timing.phase_seg2 - 1U;
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
 	     FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-	/* No propagation segment configuration, so prop_seg must be 0 */
-	timing.propSeg = data->timing.prop_seg;
+	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
+		/* No propagation segment configuration, so prop_seg must be 0 */
+		timing.propSeg = data->timing.prop_seg;
+	} else {
+		/* Use standard configuration for classic CAN mode */
+		timing.propSeg = data->timing.prop_seg - 1U;
+	}
 #else
 	timing.propSeg = data->timing.prop_seg - 1U;
 #endif
@@ -1262,13 +1267,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	flexcan_config.enableListenOnlyMode = true;
 
 	flexcan_config.timingConfig.rJumpwidth = data->timing.sjw - 1U;
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
-	     FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-	/* No propagation segment configuration, so prop_seg must be 0 */
-	flexcan_config.timingConfig.propSeg = data->timing.prop_seg;
-#else
 	flexcan_config.timingConfig.propSeg = data->timing.prop_seg - 1U;
-#endif
 	flexcan_config.timingConfig.phaseSeg1 = data->timing.phase_seg1 - 1U;
 	flexcan_config.timingConfig.phaseSeg2 = data->timing.phase_seg2 - 1U;
 
@@ -1276,6 +1275,11 @@ static int mcux_flexcan_init(const struct device *dev)
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
+	     FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
+		/* No propagation segment configuration, so prop_seg must be 0 */
+		flexcan_config.timingConfig.propSeg = data->timing.prop_seg;
+#endif
 		flexcan_config.timingConfig.frJumpwidth = data->timing_data.sjw - 1U;
 		flexcan_config.timingConfig.fpropSeg = data->timing_data.prop_seg;
 		flexcan_config.timingConfig.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
