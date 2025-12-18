@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/classic/sco.h>
 
 #include <common/bt_str.h>
 

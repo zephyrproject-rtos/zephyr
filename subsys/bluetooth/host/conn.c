@@ -26,6 +26,7 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/classic/sco.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
