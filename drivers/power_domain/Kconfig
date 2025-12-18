@@ -102,6 +102,7 @@ config POWER_DOMAIN_SOC_PM_STATE
 config POWER_DOMAIN_TISCI
 	bool "TISCI managed power domain"
 	default y
+	depends on TISCI
 	depends on DT_HAS_TI_SCI_PM_DOMAIN_ENABLED
 	help
 	  TISCI managed power domain control to turn on/off devices when the
