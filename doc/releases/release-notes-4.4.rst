@@ -169,6 +169,10 @@ New APIs and options
       generating slot 1 images automatically in sysbuild projects when using MCUboot in
       direct-xip mode.
 
+* CPUFreq
+
+  * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE`
+
 * Display
 
   * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
@@ -348,6 +352,7 @@ New Samples
 ***********
 
 * :zephyr:code-sample:`ble_peripheral_ans`
+* :zephyr:code-sample:`cpu_freq_pressure`
 
 ..
   Same as above, this will also be recomputed at the time of the release.
