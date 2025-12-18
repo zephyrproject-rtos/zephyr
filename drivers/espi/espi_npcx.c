@@ -713,6 +713,8 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 		espi_vw_notify_host_warning(dev, signal);
 	} else if (signal == ESPI_VWIRE_SIGNAL_PLTRST) {
 		espi_vw_notify_plt_rst(dev);
+	} else {
+		LOG_WRN("Unhandled VW signal: %d", signal);
 	}
 }
 
@@ -1050,7 +1052,6 @@ static int espi_npcx_send_oob(const struct device *dev,
 	inst->OOBCTL = oob_data;
 
 	while (IS_BIT_SET(inst->OOBCTL, NPCX_OOBCTL_OOB_AVAIL)) {
-		;
 	}
 
 	LOG_DBG("%s issued!!", __func__);
