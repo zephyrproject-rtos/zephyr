@@ -785,11 +785,14 @@ config BT_MESH_ACCESS_LAYER_MSG
 	  might wear out persistent memory.
 
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
-	bool "Force vendor model to use the corresponding CID field message"
-	default y
+	bool "Force vendor model to use opcodes with matching CID"
+	default n
 	help
-	  This option forces vendor model to use messages for the
-	  corresponding CID field.
+	  This option forces vendor models to only use opcodes with a CID field
+	  matching the models CID, making it possible for the stack to slightly
+	  optimize message handling in applications that use vendor models, where
+	  each model only needs to deal with opcodes specific to itself, and no
+	  other opcodes.
 
 config BT_MESH_MODEL_EXTENSIONS
 	bool "Support for Model extensions"
