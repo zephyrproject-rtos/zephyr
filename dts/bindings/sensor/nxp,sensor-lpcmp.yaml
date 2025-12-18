@@ -3,7 +3,7 @@
 
 description: NXP low-power analog comparator (LPCMP)
 
-compatible: "nxp,lpcmp"
+compatible: "nxp,sensor-lpcmp"
 
 include: [sensor-device.yaml, pinctrl-device.yaml]
 

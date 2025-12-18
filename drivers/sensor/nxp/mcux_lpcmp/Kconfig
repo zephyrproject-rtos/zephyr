@@ -6,7 +6,7 @@
 config MCUX_LPCMP
 	bool "NXP LPCMP driver"
 	default y
-	depends on DT_HAS_NXP_LPCMP_ENABLED
+	depends on DT_HAS_NXP_SENSOR_LPCMP_ENABLED
 	select PINCTRL
 	help
 	  Enable the MCUX LPCMP driver.
