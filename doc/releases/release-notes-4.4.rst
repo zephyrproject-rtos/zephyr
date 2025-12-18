@@ -122,6 +122,10 @@ New APIs and options
 
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
 
+* CPUFreq
+
+  * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE`
+
 * Ethernet
 
   * Driver MAC address configuration with support for NVMEM cell.
@@ -222,6 +226,7 @@ New Samples
 ***********
 
 * :zephyr:code-sample:`ble_peripheral_ans`
+* :zephyr:code-sample:`cpu_freq_pressure`
 
 ..
   Same as above, this will also be recomputed at the time of the release.
