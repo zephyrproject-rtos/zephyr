@@ -373,13 +373,9 @@ class TestPlan:
 
     def report(self):
         if self.options.test_tree:
-            if not self.options.detailed_test_id:
-                logger.info("Test tree is always shown with detailed test-id.")
             self.report_test_tree()
             return 0
         elif self.options.list_tests:
-            if not self.options.detailed_test_id:
-                logger.info("Test list is always shown with detailed test-id.")
             self.report_test_list()
             return 0
         elif self.options.list_tags:
@@ -501,18 +497,18 @@ class TestPlan:
             for _, ts in self.testsuites.items():
                 if ts.tags.intersection(tag_filter):
                     for case in ts.testcases:
-                        testcases.append(case.detailed_name)
+                        testcases.append(case.name)
         else:
             for _, ts in self.testsuites.items():
                 for case in ts.testcases:
-                    testcases.append(case.detailed_name)
+                    testcases.append(case.name)
 
         if exclude_tag := self.options.exclude_tag:
             for _, ts in self.testsuites.items():
                 if ts.tags.intersection(exclude_tag):
                     for case in ts.testcases:
-                        if case.detailed_name in testcases:
-                            testcases.remove(case.detailed_name)
+                        if case.name in testcases:
+                            testcases.remove(case.name)
         return testcases
 
     def _is_testsuite_selected(self, suite: TestSuite, testsuite_filter, testsuite_patterns_r):
