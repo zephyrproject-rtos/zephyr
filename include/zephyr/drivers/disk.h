@@ -26,6 +26,11 @@
  * @version 1.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup disk_driver_interface_ext Device-specific Disk Access API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <zephyr/kernel.h>
