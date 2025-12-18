@@ -670,7 +670,7 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 	/* Find and stop associated auxiliary scan contexts */
 	for (uint8_t aux_handle = 0; aux_handle < CONFIG_BT_CTLR_SCAN_AUX_SET;
 	     aux_handle++) {
-		struct lll_scan_aux *aux_scan_lll;
+		struct lll_scan *aux_scan_lll;
 		struct ll_scan_set *aux_scan;
 		struct ll_scan_aux_set *aux;
 
