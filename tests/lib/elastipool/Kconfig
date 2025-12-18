@@ -1,0 +1,14 @@
+# Copyright (c) 2025, Friedt Professional Engineering Services, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_ELASTIC_POOL_MAX_ELEMS
+	int "Maximum number of elements for elastic pool testing"
+	default 1024
+	help
+	  The maximum number of elements for elastic pool testing.
+
+	  This number should be non-trivial. If runtime were not a constraint,
+	  then it would ideally be -1, i.e. no limit.
+
+source "Kconfig.zephyr"

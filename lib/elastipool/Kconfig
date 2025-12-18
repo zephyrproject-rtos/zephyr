@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_ELASTIPOOL
+	bool "Elastic memory pool"
+	help
+	  Say 'y' here to enable the elastic memory pool ("elastipool") API.
+
+	  The elastic memory pool API supports allocation of fixed-size objects from either
+	  a statically allocated pool of objects, or dynamically allocation from the heap, or
+	  both, up to a maximum number of allocations.
