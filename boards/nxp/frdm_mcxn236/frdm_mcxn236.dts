@@ -279,10 +279,6 @@ zephyr_udc0: &usb1 {
 	tx-cal-45-dm-ohms = <7>;
 };
 
-&lpcmp0 {
-	status = "okay";
-};
-
 &i3c1 {
 	status = "okay";
 };
@@ -399,11 +395,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 &lpadc0 {
 	pinctrl-0 = <&pinmux_lpadc0>;
-	pinctrl-names = "default";
-};
-
-&lpcmp0 {
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 
