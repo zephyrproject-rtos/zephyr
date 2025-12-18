@@ -347,6 +347,36 @@
 			reg = <0x500c0000 0x1000>;
 		};
 
+		lptim1: lptim@500c1000 {
+			compatible = "sifli,sf32lb-lptim";
+			reg = <0x500c1000 0x1000>;
+			interrupts = <73 0>;
+			#pwm-cells = <3>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_LRC10>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		lptim2: lptim@500c2000 {
+			compatible = "sifli,sf32lb-lptim";
+			reg = <0x500c2000 0x1000>;
+			interrupts = <74 0>;
+			#pwm-cells = <3>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_LRC10>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		pmuc: syscon@500ca000 {
 			compatible = "sifli,sf32lb-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
