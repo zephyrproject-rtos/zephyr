@@ -1089,6 +1089,137 @@ quit:
 	return ret;
 }
 
+static int dns_validate_additional_record(struct dns_resolve_context *ctx,
+					  struct dns_msg_t *dns_msg, struct dns_addrinfo *info)
+{
+	enum dns_rr_type answer_type = DNS_RR_TYPE_INVALID;
+	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
+	uint8_t *addr, *pos, *src;
+	int ret, address_size;
+
+	/* dname_ptr no longer seems to be used. So just passing 0. */
+	ret = dns_unpack_answer(dns_msg, 0, &ttl, &answer_type);
+	if (ret < 0) {
+		return DNS_EAI_SYSTEM;
+	}
+
+	switch (dns_msg->response_type) {
+	case DNS_RESPONSE_DATA:
+	case DNS_RESPONSE_IP: {
+		if (answer_type == DNS_RR_TYPE_A) {
+			address_size = DNS_IPV4_LEN;
+			addr = (uint8_t *)&net_sin(&info->ai_addr)->sin_addr;
+			info->ai_family = NET_AF_INET;
+			info->ai_addr.sa_family = NET_AF_INET;
+			info->ai_addrlen = sizeof(struct net_sockaddr_in);
+		} else if (answer_type == DNS_RR_TYPE_AAAA) {
+/* We cannot resolve IPv6 address if IPv6 is
+ * disabled. The reason being that
+ * "struct net_sockaddr" does not have enough space
+ * for IPv6 address in that case.
+ */
+#if defined(CONFIG_NET_IPV6)
+			address_size = DNS_IPV6_LEN;
+			addr = (uint8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
+			info->ai_family = NET_AF_INET6;
+			info->ai_addr.sa_family = NET_AF_INET6;
+			info->ai_addrlen = sizeof(struct net_sockaddr_in6);
+#else
+			return DNS_EAI_FAMILY;
+#endif
+		} else {
+			return DNS_EAI_SYSTEM;
+		}
+
+		if (dns_msg->response_length < address_size) {
+			/* it seems this is a malformed message */
+			errno = EMSGSIZE;
+			return DNS_EAI_SYSTEM;
+		}
+
+		if ((dns_msg->response_position + address_size) > dns_msg->msg_size) {
+			/* Too short message */
+			errno = EMSGSIZE;
+			return DNS_EAI_SYSTEM;
+		}
+
+		src = dns_msg->msg + dns_msg->response_position;
+		memcpy(addr, src, address_size);
+
+		break;
+	}
+	case DNS_RESPONSE_TXT:
+		pos = dns_msg->msg + dns_msg->response_position;
+
+		info->ai_family = NET_AF_UNSPEC;
+		info->ai_extension = DNS_RESOLVE_TXT;
+		info->ai_txt.textlen = MIN(dns_msg->response_length, DNS_MAX_TEXT_SIZE);
+		memcpy(info->ai_txt.text, pos, info->ai_txt.textlen);
+		info->ai_txt.text[info->ai_txt.textlen] = '\0';
+		break;
+
+	case DNS_RESPONSE_SRV: {
+		int priority;
+		int weight;
+		int port;
+		struct net_buf *target;
+
+		address_size = MIN(dns_msg->response_length, 6 + DNS_MAX_NAME_SIZE);
+		if (address_size < 6) {
+			/* 3 tuples of be16 - priority, weight, port */
+			errno = EMSGSIZE;
+			return DNS_EAI_SYSTEM;
+		}
+
+		/* Temporary buffer that is needed by dns_unpack_name()
+		 * to unpack the target.
+		 */
+		target = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
+		if (target == NULL) {
+			NET_DBG("Cannot allocate buffer for DNS query target");
+			return DNS_EAI_MEMORY;
+		}
+
+		pos = dns_msg->msg + dns_msg->response_position;
+
+		priority = dns_unpack_srv_priority(pos);
+		weight = dns_unpack_srv_weight(pos);
+		port = dns_unpack_srv_port(pos);
+
+		ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, pos + 6, target, NULL);
+		if (ret < 0) {
+			errno = -ret;
+			net_buf_unref(target);
+			return DNS_EAI_SYSTEM;
+		}
+
+		info->ai_family = NET_AF_UNSPEC;
+		info->ai_extension = DNS_RESOLVE_SRV;
+		info->ai_srv.priority = priority;
+		info->ai_srv.weight = weight;
+		info->ai_srv.port = port;
+		info->ai_srv.targetlen = MIN(target->len, DNS_MAX_NAME_SIZE);
+		memcpy(info->ai_srv.target, target->data, info->ai_srv.targetlen);
+		info->ai_srv.target[info->ai_srv.targetlen] = '\0';
+
+		net_buf_unref(target);
+
+		break;
+	}
+	case DNS_RESPONSE_CNAME_NO_IP:
+		/* Instead of using the QNAME at DNS_QUERY_POS,
+		 * we will use this CNAME
+		 */
+		break;
+	}
+
+	/* Update the answer offset to point to the next RR (answer) */
+	dns_msg->answer_offset += dns_msg->response_position - dns_msg->answer_offset;
+	dns_msg->answer_offset += dns_msg->response_length;
+
+	return 0;
+}
+
 /* Unit test needs to be able to call this function */
 #if !defined(CONFIG_NET_TEST)
 static
@@ -1507,6 +1638,22 @@ rr_qtype_aaaa:
 
 			ret = DNS_EAI_AGAIN;
 			goto quit;
+		}
+	}
+
+	/* Deal with Additional records. Only for DNS-SD right now. */
+	if (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_PTR) {
+		for (server_idx = 0; server_idx < dns_header_nscount(dns_msg->msg) +
+							  dns_header_arcount(dns_msg->msg);
+		     server_idx++) {
+			ret = dns_validate_additional_record(ctx, dns_msg, &info);
+			/* Ignore errors when parsing additional records */
+			if (ret < 0) {
+				NET_WARN("Failed to parse additional record");
+				continue;
+			}
+
+			invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
 		}
 	}
 
