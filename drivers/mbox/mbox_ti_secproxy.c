@@ -116,16 +116,12 @@ static inline int secproxy_verify_thread(struct secproxy_thread *spt, uint8_t di
 	return 0;
 }
 
-static void secproxy_mailbox_isr(const struct device *dev, uint32_t channel)
+static int secproxy_mailbox_receive(const struct device *dev, uint32_t channel)
 {
 	struct secproxy_mailbox_data *data = DEV_DATA(dev);
 	struct secproxy_thread spt;
 	uint32_t data_word;
 	mem_addr_t data_reg;
-
-	if (!data->channel_enable[channel]) {
-		return;
-	}
 
 	spt.target_data = SEC_PROXY_THREAD(DEV_TDATA(dev), channel);
 	spt.rt = SEC_PROXY_THREAD(DEV_RT(dev), channel);
@@ -133,7 +129,7 @@ static void secproxy_mailbox_isr(const struct device *dev, uint32_t channel)
 
 	if (secproxy_verify_thread(&spt, THREAD_IS_RX)) {
 		/* Silent failure */
-		return;
+		return -EIO;
 	}
 
 	data_reg = spt.target_data + SEC_PROXY_DATA_START_OFFS;
@@ -144,12 +140,12 @@ static void secproxy_mailbox_isr(const struct device *dev, uint32_t channel)
 
 	if (!rx_data || !rx_data->buf) {
 		LOG_ERR("No buffer provided for channel %d", channel);
-		return;
+		return -EINVAL;
 	}
 
 	if (rx_data->size < MAILBOX_MBOX_SIZE) {
 		LOG_ERR("Buffer too small for channel %d", channel);
-		return;
+		return -ENOBUFS;
 	}
 
 	uint8_t *buf = (uint8_t *)rx_data->buf;
@@ -185,6 +181,19 @@ static void secproxy_mailbox_isr(const struct device *dev, uint32_t channel)
 	if (data->cb[channel]) {
 		data->cb[channel](dev, channel, data->user_data[channel], NULL);
 	}
+
+	return 0;
+}
+
+static void secproxy_mailbox_isr(const struct device *dev, uint32_t channel)
+{
+	struct secproxy_mailbox_data *data = DEV_DATA(dev);
+
+	if (!data->channel_enable[channel]) {
+		return;
+	}
+
+	(void)secproxy_mailbox_receive(dev, channel);
 }
 
 static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
@@ -347,6 +356,36 @@ static DEVICE_API(mbox, secproxy_mailbox_driver_api) = {
 	.max_channels_get = secproxy_mailbox_max_channels_get,
 	.set_enabled = secproxy_mailbox_set_enabled,
 };
+
+int secproxy_mailbox_send_then_poll_rx(const struct device *dev, uint32_t rx_channel,
+					  uint32_t tx_channel, const struct mbox_msg *tx_msg)
+{
+	const struct secproxy_mailbox_config *cfg = DEV_CFG(dev);
+	mem_addr_t rx_rt = SEC_PROXY_THREAD(DEV_RT(dev), rx_channel);
+	int rv;
+
+	irq_disable(cfg->interrupts[rx_channel]);
+
+	rv = secproxy_mailbox_send(dev, tx_channel, tx_msg);
+	if (rv != 0) {
+		LOG_ERR("failed to send message on channel %u", tx_channel);
+		return rv;
+	}
+
+	/* blocking call */
+	while (!(sys_read32(rx_rt + RT_THREAD_STATUS) & RT_THREAD_STATUS_CUR_CNT_MASK)) {
+	}
+
+	rv = secproxy_mailbox_receive(dev, rx_channel);
+	if (rv != 0) {
+		LOG_ERR("failed to receive message on channel %u", tx_channel);
+		return rv;
+	}
+
+	irq_enable(cfg->interrupts[rx_channel]);
+
+	return 0;
+}
 
 #define SECPROXY_THREAD_ISR(i, idx)                                                                \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(idx, DT_CAT(rx_, i)),                                     \
