@@ -1,0 +1,12 @@
+# Copyright (c) 2025, Benjamin Klaric <benjamin.klaric01@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32H5 Ethernet
+
+  This binding file describes the device tree properties required to configure
+  and use the Ethernet controller on STM32H5 series microcontrollers.
+
+compatible: "st,stm32h5-ethernet"
+
+include: st,stm32-ethernet-common.yaml
