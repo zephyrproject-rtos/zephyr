@@ -7,3 +7,4 @@ tests:
   drivers.i2c.i2c_async:
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg41_cult
