@@ -7,3 +7,4 @@ CPU Frequency Scaling Policies
    :maxdepth: 1
 
    on_demand.rst
+   pressure.rst
