@@ -48,10 +48,10 @@ struct pwm_mcux_sctimer_data {
 };
 
 static void mcux_sctimer_save_chn_config(const struct device *dev,
-							uint32_t channel,
-							uint32_t period_cycles,
-							uint32_t pulse_cycles,
-							pwm_flags_t flags);
+					 uint32_t channel,
+					 uint32_t period_cycles,
+					 uint32_t pulse_cycles,
+					 pwm_flags_t flags);
 
 static void mcux_sctimer_restore_chn_config(const struct device *dev);
 
@@ -115,7 +115,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	}
 
 	mcux_sctimer_save_chn_config(dev, channel, period_cycles,
-							pulse_cycles, flags);
+				     pulse_cycles, flags);
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
 		data->channel[channel].level = kSCTIMER_HighTrue;
@@ -228,10 +228,10 @@ static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
 }
 
 static void mcux_sctimer_save_chn_config(const struct device *dev,
-						uint32_t channel,
-						uint32_t period_cycles,
-						uint32_t pulse_cycles,
-						pwm_flags_t flags)
+					 uint32_t channel,
+					 uint32_t period_cycles,
+					 uint32_t pulse_cycles,
+					 pwm_flags_t flags)
 {
 	struct pwm_mcux_sctimer_data *data = dev->data;
 
@@ -247,10 +247,12 @@ static void mcux_sctimer_restore_chn_config(const struct device *dev)
 	uint8_t channel;
 
 	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
-		mcux_sctimer_pwm_set_cycles(dev, channel,
+		if (data->pwm_channel_config[channel].duty_cycles != 0) {
+			mcux_sctimer_pwm_set_cycles(dev, channel,
 			data->pwm_channel_config[channel].period_cycles,
 			data->pwm_channel_config[channel].duty_cycles,
 			data->pwm_channel_config[channel].flags);
+		}
 	}
 }
 
@@ -292,20 +294,27 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 
 static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct pwm_mcux_sctimer_config *config = dev->config;
 	const struct pwm_mcux_sctimer_data *data = dev->data;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		break;
-	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
-	case PM_DEVICE_ACTION_TURN_ON:
 		mcux_sctimer_pwm_init_common(dev);
 		if (data->pwm_channel_active == true) {
 			mcux_sctimer_restore_chn_config(dev);
 		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->pwm_channel_active == true) {
+			/* Halt the timer counters and disable the source clock */
+			SCTIMER_Deinit(config->base);
+			/* Force all outputs to inactive state */
+			config->base->OUTPUT = 0;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
 		break;
 	default:
 		return -ENOTSUP;
@@ -337,7 +346,7 @@ static DEVICE_API(pwm, pwm_mcux_sctimer_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};										\
-	PM_DEVICE_DT_INST_DEFINE(n, mcux_sctimer_pwm_pm_action);\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_sctimer_pwm_pm_action);			\
 	DEVICE_DT_INST_DEFINE(n,							\
 			      mcux_sctimer_pwm_init,					\
 			      PM_DEVICE_DT_INST_GET(n),					\
