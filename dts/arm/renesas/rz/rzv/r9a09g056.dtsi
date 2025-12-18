@@ -418,11 +418,306 @@
 		};
 
 		intc: intc@40400000 {
-			compatible = "renesas,rz-intc";
-			reg = <0x40400000 DT_SIZE_K(64)>;
+			compatible = "renesas,rz-intc-v2";
+			reg = <0x40400000 DT_SIZE_K(64)>,
+			      <0x20 0x4>,
+			      <0x28 0x4>,
+			      <0x30 0x4>,
+			      <0x200 0xac>;
+			reg-names = "intc", "tscr", "titsr0", "tssr0", "intsel";
+			gpioint-table = <0 8 14 16 24 32 40 48 56 64 72 80>;
+			max-gpioint = <85>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupt-parent = <&nvic>;
+
+			tint0: tint0@0 {
+				compatible = "renesas,rz-tint";
+				reg = <0x0>;
+				interrupts = <353 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint1: tint1@1 {
+				compatible = "renesas,rz-tint";
+				reg = <0x1>;
+				interrupts = <354 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint2: tint2@2 {
+				compatible = "renesas,rz-tint";
+				reg = <0x2>;
+				interrupts = <355 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint3: tint3@3 {
+				compatible = "renesas,rz-tint";
+				reg = <0x3>;
+				interrupts = <356 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint4: tint4@4 {
+				compatible = "renesas,rz-tint";
+				reg = <0x4>;
+				interrupts = <357 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint5: tint5@5 {
+				compatible = "renesas,rz-tint";
+				reg = <0x5>;
+				interrupts = <358 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint6: tint6@6 {
+				compatible = "renesas,rz-tint";
+				reg = <0x6>;
+				interrupts = <359 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint7: tint7@7 {
+				compatible = "renesas,rz-tint";
+				reg = <0x7>;
+				interrupts = <360 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint8: tint8@8 {
+				compatible = "renesas,rz-tint";
+				reg = <0x8>;
+				interrupts = <361 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint9: tint9@9 {
+				compatible = "renesas,rz-tint";
+				reg = <0x9>;
+				interrupts = <362 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint10: tint10@a {
+				compatible = "renesas,rz-tint";
+				reg = <0xa>;
+				interrupts = <363 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint11: tint11@b {
+				compatible = "renesas,rz-tint";
+				reg = <0xb>;
+				interrupts = <364 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint12: tint12@c {
+				compatible = "renesas,rz-tint";
+				reg = <0xc>;
+				interrupts = <365 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint13: tint13@d {
+				compatible = "renesas,rz-tint";
+				reg = <0xd>;
+				interrupts = <366 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint14: tint14@e {
+				compatible = "renesas,rz-tint";
+				reg = <0xe>;
+				interrupts = <367 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint15: tint15@f {
+				compatible = "renesas,rz-tint";
+				reg = <0xf>;
+				interrupts = <368 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint16: tint16@10 {
+				compatible = "renesas,rz-tint";
+				reg = <0x10>;
+				interrupts = <369 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint17: tint17@11 {
+				compatible = "renesas,rz-tint";
+				reg = <0x11>;
+				interrupts = <370 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint18: tint18@12 {
+				compatible = "renesas,rz-tint";
+				reg = <0x12>;
+				interrupts = <371 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint19: tint19@13 {
+				compatible = "renesas,rz-tint";
+				reg = <0x13>;
+				interrupts = <372 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint20: tint20@14 {
+				compatible = "renesas,rz-tint";
+				reg = <0x14>;
+				interrupts = <373 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint21: tint21@15 {
+				compatible = "renesas,rz-tint";
+				reg = <0x15>;
+				interrupts = <374 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint22: tint22@16 {
+				compatible = "renesas,rz-tint";
+				reg = <0x16>;
+				interrupts = <375 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint23: tint23@17 {
+				compatible = "renesas,rz-tint";
+				reg = <0x17>;
+				interrupts = <376 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint24: tint24@18 {
+				compatible = "renesas,rz-tint";
+				reg = <0x18>;
+				interrupts = <377 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint25: tint25@19 {
+				compatible = "renesas,rz-tint";
+				reg = <0x19>;
+				interrupts = <378 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint26: tint26@1a {
+				compatible = "renesas,rz-tint";
+				reg = <0x1a>;
+				interrupts = <379 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint27: tint27@1b {
+				compatible = "renesas,rz-tint";
+				reg = <0x1b>;
+				interrupts = <380 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint28: tint28@1c {
+				compatible = "renesas,rz-tint";
+				reg = <0x1c>;
+				interrupts = <381 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint29: tint29@1d {
+				compatible = "renesas,rz-tint";
+				reg = <0x1d>;
+				interrupts = <382 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint30: tint30@1e {
+				compatible = "renesas,rz-tint";
+				reg = <0x1e>;
+				interrupts = <383 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint31: tint31@1f {
+				compatible = "renesas,rz-tint";
+				reg = <0x1f>;
+				interrupts = <384 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		sci0: sci0@42800c00 {
