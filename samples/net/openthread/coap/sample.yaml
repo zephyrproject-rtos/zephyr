@@ -6,14 +6,45 @@ common:
   depends_on: openthread
   min_flash: 140
   build_only: true
-  platform_allow:
-    - cc1352p7_lp
-    - nrf52840dk/nrf52840
 sample:
   description: Runs the OpenThread stack as FTD with CoAP
   name: OpenThread FTD CoAP
 tests:
-  sample.net.openthread.ftd.coap.client: {}
+  sample.net.openthread.ftd.coap.client:
+    platform_allow:
+      - cc1352p7_lp
+      - nrf52840dk/nrf52840
   sample.net.openthread.ftd.coap.server:
+    platform_allow:
+      - cc1352p7_lp
+      - nrf52840dk/nrf52840
     extra_configs:
+      - CONFIG_OT_COAP_SAMPLE_SERVER=y
+  sample.net.openthread.ftd.coap.client.esp:
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+  sample.net.openthread.ftd.coap.server.esp:
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_OT_COAP_SAMPLE_SERVER=y
+  sample.net.openthread.ftd.coap.client.esp_rcp_host:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-esp.conf"
+  sample.net.openthread.ftd.coap.server.esp_rcp_host:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-esp.conf"
       - CONFIG_OT_COAP_SAMPLE_SERVER=y
