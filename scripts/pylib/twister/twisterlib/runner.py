@@ -1257,7 +1257,7 @@ class ProjectBuilder(FilterBuilder):
                                 f"not present in: {self.instance.testsuite.ztest_suite_names}"
                             )
                         test_func_name = m_[2].replace("test_", "", 1)
-                        testcase_id = self.instance.compose_case_name(
+                        testcase_id = self.instance.testsuite.compose_case_name(
                             f"{new_ztest_suite}.{test_func_name}"
                         )
                         detected_cases.append(testcase_id)
