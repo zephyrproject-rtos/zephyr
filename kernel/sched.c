@@ -193,7 +193,11 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	struct k_thread *mirqp = _current_cpu->metairq_preempted;
 
 	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
-		thread = mirqp;
+		if (z_is_thread_ready(mirqp)) {
+			thread = mirqp;
+		} else {
+			_current_cpu->metairq_preempted = NULL;
+		}
 	}
 #endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 
