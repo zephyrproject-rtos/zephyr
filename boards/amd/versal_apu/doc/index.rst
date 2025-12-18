@@ -60,6 +60,17 @@ QEMU Emulation
 
 For QEMU target, XSDB (Xilinx System Debugger) is not used and therefore PDI (Programmable Device Image) is not required. QEMU provides direct emulation without needing hardware initialization files.
 
+
+.. note::
+
+   **Known QEMU Limitation with TF-A:**
+   When running with ARM Trusted Firmware (TF-A) on QEMU, there is a known limitation where
+   only simple applications like hello_world work by default. For other applications to work
+   properly with QEMU, you need to disable the secure/non-secure transition by adding
+   ``CONFIG_ARMV8_A_NS=n`` to your configuration.
+
+   This limitation does not affect real hardware deployment.
+
 Build and run with QEMU:
 
 .. zephyr-app-commands::
