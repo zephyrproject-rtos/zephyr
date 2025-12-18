@@ -888,7 +888,7 @@ TEST_DATA_7 = [
         "START - test_testcase",
         [],
         {},
-        { 'testcase': { 'count': 1 } },
+        { 'dummy.test_id.testcase': { 'count': 1 } },
         TwisterStatus.PASS,
         False,
         TwisterStatus.PASS,
@@ -929,7 +929,7 @@ def test_test_handle(
     mock_testsuite.ztest_suite_names = []
     mock_testsuite.detailed_test_id = detailed_id
     mock_testsuite.source_dir_rel = "dummy_suite"
-    mock_testsuite.compose_case_name.return_value = TestSuite.compose_case_name_(mock_testsuite, "testcase")
+    mock_testsuite.compose_case_name.return_value = TestSuite.compose_case_name(mock_testsuite, "testcase")
 
     outdir = tmp_path / "ztest_out"
     with mock.patch('twisterlib.testsuite.TestSuite.get_unique', return_value="dummy_suite"):

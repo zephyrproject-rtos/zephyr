@@ -305,9 +305,6 @@ The ``--no-detailed-test-id`` command line option modifies the above rules in th
 #. With short Test Suite names in this mode, all corresponding Test Scenario names
    must be unique for the Twister execution scope.
 
-#. **Ztest** Test Case names have only Ztest components ``<Ztest suite name>.<Ztest test name>``.
-   Its parent Test Suite name equals to the corresponding Test Scenario identifier.
-
 
 The following is an example test configuration with a few options that are
 explained in this document.
