@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/audio/codec.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <string.h>
 
 #define I2S_RX_NODE  DT_ALIAS(i2s_rx)

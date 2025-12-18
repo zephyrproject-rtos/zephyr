@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include "i2s_api_test.h"
 
 K_MEM_SLAB_DEFINE(rx_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);

@@ -10,8 +10,8 @@
  * @brief Main header file for I2S (Inter-IC Sound) driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_I2S_H_
-#define ZEPHYR_INCLUDE_DRIVERS_I2S_H_
+#ifndef ZEPHYR_INCLUDE_AUDIO_I2S_H_
+#define ZEPHYR_INCLUDE_AUDIO_I2S_H_
 
 /**
  * @defgroup i2s_interface I2S
@@ -561,4 +561,4 @@ static inline int i2s_get_caps(const struct device *dev, struct audio_caps *caps
 
 #include <zephyr/syscalls/i2s.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_I2S_H_ */
+#endif /* ZEPHYR_INCLUDE_AUDIO_I2S_H_ */

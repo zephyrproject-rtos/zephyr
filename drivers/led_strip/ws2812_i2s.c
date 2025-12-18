@@ -24,7 +24,7 @@
 LOG_MODULE_REGISTER(ws2812_i2s);
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>

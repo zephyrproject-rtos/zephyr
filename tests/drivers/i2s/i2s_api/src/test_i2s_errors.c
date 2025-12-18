@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 
 #include <zephyr/audio/audio_caps.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 #include "i2s_api_test.h"
 

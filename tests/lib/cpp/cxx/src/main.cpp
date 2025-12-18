@@ -47,7 +47,7 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/led.h>

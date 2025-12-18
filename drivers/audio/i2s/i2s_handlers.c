@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 
 static inline int z_vrfy_i2s_configure(const struct device *dev,

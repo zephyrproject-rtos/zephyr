@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <stdlib.h>
 #include <string.h>
 #define AUDIO_SAMPLE_FREQ (44100)

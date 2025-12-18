@@ -9,7 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 const static struct device *mbox = DEVICE_DT_GET(DT_ALIAS(mbox));
 static mbox_channel_id_t mbox_ch;

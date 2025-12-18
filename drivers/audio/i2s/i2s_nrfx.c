@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nordic_nrf_i2s
 
 #include <stdlib.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>

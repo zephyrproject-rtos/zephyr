@@ -9,7 +9,7 @@
 #define I2S_API_TEST_H
 
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 extern struct k_mem_slab rx_mem_slab;
 extern struct k_mem_slab tx_mem_slab;

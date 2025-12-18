@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 #define SAMPLE_NO      32
 #define TIMEOUT        2000

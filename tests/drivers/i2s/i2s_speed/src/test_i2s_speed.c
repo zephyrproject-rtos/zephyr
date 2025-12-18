@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #define I2S_DEV_NODE_RX DT_ALIAS(i2s_node0)

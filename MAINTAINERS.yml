@@ -1854,7 +1854,7 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/audio/i2s/
     - dts/bindings/i2s/
-    - include/zephyr/drivers/i2s.h
+    - include/zephyr/audio/i2s.h
     - tests/drivers/i2s/
     - samples/drivers/i2s/
   labels:

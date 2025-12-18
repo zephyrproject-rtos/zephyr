@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <string.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 int z_impl_i2s_buf_read(const struct device *dev, void *buf, size_t *size)
 {

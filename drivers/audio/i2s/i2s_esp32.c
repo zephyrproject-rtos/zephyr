@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT espressif_esp32_i2s
 
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>

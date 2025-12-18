@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include <zephyr/logging/log.h>

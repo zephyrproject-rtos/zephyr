@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>

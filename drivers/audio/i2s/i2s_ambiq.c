@@ -11,7 +11,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>

@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include "i2s_api_test.h"
 
 /* The test cases here are copied from test_i2s_loopback.c and adapted for use

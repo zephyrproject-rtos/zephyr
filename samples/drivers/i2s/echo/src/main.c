@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include "codec.h"
 #include <zephyr/sys/printk.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/audio/codec.h>
 #include <string.h>

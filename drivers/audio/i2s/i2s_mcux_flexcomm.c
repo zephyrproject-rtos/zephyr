@@ -8,7 +8,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_i2s.h>
 #include <fsl_dma.h>

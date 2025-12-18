@@ -8,7 +8,7 @@
 #define _I2S_LITEI2S__H
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 

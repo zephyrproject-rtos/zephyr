@@ -13,7 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_uac2.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);

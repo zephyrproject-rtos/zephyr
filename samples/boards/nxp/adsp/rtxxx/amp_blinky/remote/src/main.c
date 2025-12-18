@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 #define SLEEP_TIME_MS 1000
 #define LED_NODE      DT_ALIAS(led1)

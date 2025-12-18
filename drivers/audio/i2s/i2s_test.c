@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT vnd_i2s
 
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 
 static int vnd_i2s_configure(const struct device *dev, enum i2s_dir dir,
 			     const struct i2s_config *i2s_cfg)

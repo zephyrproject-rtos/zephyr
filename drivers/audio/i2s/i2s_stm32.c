@@ -8,7 +8,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/i2s.h>
+#include <zephyr/audio/i2s.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
