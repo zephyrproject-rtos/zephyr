@@ -267,7 +267,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -305,7 +305,7 @@
 		interrupts = <36 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -349,7 +349,7 @@
 		interrupts = <37 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -393,7 +393,7 @@
 		interrupts = <38 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -431,7 +431,7 @@
 		interrupts = <39 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -475,7 +475,7 @@
 		interrupts = <40 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -513,7 +513,7 @@
 		interrupts = <41 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -551,7 +551,7 @@
 		interrupts = <42 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -589,7 +589,7 @@
 		interrupts = <43 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -627,7 +627,7 @@
 		interrupts = <44 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 

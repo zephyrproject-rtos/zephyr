@@ -97,7 +97,7 @@
 			#size-cells = <1>;
 
 			pbridge2: pbridge2@0 {
-				ranges = <>;
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
