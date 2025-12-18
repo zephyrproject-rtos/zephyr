@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <mem.h>
 
+#include <zephyr/dt-bindings/clock/sf32lb-pmuc-clocks.h>
 #include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
 #include <zephyr/dt-bindings/clock/sf32lb-pmuc-clocks.h>
 #include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
@@ -354,6 +355,36 @@
 		aon: syscon@500c0000 {
 			compatible = "sifli,sf32lb-aon", "syscon";
 			reg = <0x500c0000 0x1000>;
+		};
+
+		lptim1: lptim@500c1000 {
+			compatible = "sifli,sf32lb-lptim";
+			reg = <0x500c1000 0x1000>;
+			interrupts = <73 0>;
+			#pwm-cells = <3>;
+			clocks = <&pmuc_clk SF32LB_PMUC_CLOCK_LRC10>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		lptim2: lptim@500c2000 {
+			compatible = "sifli,sf32lb-lptim";
+			reg = <0x500c2000 0x1000>;
+			interrupts = <74 0>;
+			#pwm-cells = <3>;
+			clocks = <&pmuc_clk SF32LB52X_CLOCK_LRC10>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		pmuc: syscon@500ca000 {
