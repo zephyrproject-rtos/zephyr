@@ -15,6 +15,7 @@ tests:
   drivers.audio.build.i2s:
     extra_args: DTC_OVERLAY_FILE="i2s_devices.overlay"
     extra_configs:
+      - CONFIG_AUDIO=y
       - CONFIG_I2S=y
     platform_allow:
       - native_sim

@@ -25,6 +25,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "Device Drivers"
 
-source "drivers/i2s/Kconfig.*"
+source "drivers/audio/i2s/Kconfig.*"
 
 endif # I2S
