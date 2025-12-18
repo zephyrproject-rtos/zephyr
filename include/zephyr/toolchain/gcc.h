@@ -321,6 +321,10 @@ do {                                                                    \
 #define __attribute_nonnull(...) __attribute__((nonnull(__VA_ARGS__)))
 #endif
 
+#ifndef __cleanup
+#define __cleanup(x) __attribute__((cleanup(x)))
+#endif
+
 /* Builtins with availability that depend on the compiler version. */
 #if __GNUC__ >= 5
 #define HAS_BUILTIN___builtin_add_overflow 1
