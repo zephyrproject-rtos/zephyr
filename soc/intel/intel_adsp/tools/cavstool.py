@@ -229,7 +229,7 @@ def map_regs(log_only):
                       0x7ad0, 0xa0c8 ]
     ace15 = did in [ 0x7728, 0x7f50, 0x7e28 ]
     ace20 = did in [ 0xa828 ]
-    ace30 = did in [ 0xe428 ]
+    ace30 = did in [ 0xe428, 0x4d28 ]
     ace40 = did in [ 0x6e50 ]
 
     # Check sysfs for a loaded driver and remove it
