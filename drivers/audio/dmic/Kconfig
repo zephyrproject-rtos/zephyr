@@ -1,0 +1,31 @@
+# Digital Microphone (Audio) configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig AUDIO_DMIC
+	bool "Digital Microphone (Audio) Drivers"
+	help
+	  Enable Digital Microphone Driver Configuration
+
+if AUDIO_DMIC
+
+config AUDIO_DMIC_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Audio Digital Microphone device driver initialization priority.
+
+module = AUDIO_DMIC
+module-str = audio_dmic
+source "subsys/logging/Kconfig.template.log_config"
+
+# zephyr-keep-sorted-start
+source "drivers/audio/dmic/Kconfig.dmic_ambiq_pdm"
+source "drivers/audio/dmic/Kconfig.dmic_mcux"
+source "drivers/audio/dmic/Kconfig.dmic_nxp_micfil"
+source "drivers/audio/dmic/Kconfig.dmic_pdm_nrfx"
+source "drivers/audio/dmic/Kconfig.mpxxdtyy"
+# zephyr-keep-sorted-stop
+
+endif # AUDIO_DMIC
