@@ -100,8 +100,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x0>;
 				interrupts = <GIC_SPI 6 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -109,8 +108,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x1>;
 				interrupts = <GIC_SPI 7 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -118,8 +116,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x2>;
 				interrupts = <GIC_SPI 8 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -127,8 +124,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x3>;
 				interrupts = <GIC_SPI 9 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -136,8 +132,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x4>;
 				interrupts = <GIC_SPI 10 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -145,8 +140,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x5>;
 				interrupts = <GIC_SPI 11 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -154,8 +148,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x6>;
 				interrupts = <GIC_SPI 12 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -163,8 +156,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x7>;
 				interrupts = <GIC_SPI 13 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -172,8 +164,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x8>;
 				interrupts = <GIC_SPI 14 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -181,8 +172,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x9>;
 				interrupts = <GIC_SPI 15 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -190,8 +180,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xa>;
 				interrupts = <GIC_SPI 16 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -199,8 +188,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xb>;
 				interrupts = <GIC_SPI 17 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -208,8 +196,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xc>;
 				interrupts = <GIC_SPI 18 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -217,8 +204,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xd>;
 				interrupts = <GIC_SPI 19 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -226,8 +212,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xe>;
 				interrupts = <GIC_SPI 394 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -235,8 +220,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xf>;
 				interrupts = <GIC_SPI 395 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 		};
