@@ -2312,6 +2312,7 @@ static int nrf_wifi_iftype_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep, int 
 		goto out;
 	}
 
+	vif_ctx_zep->if_type = iftype;
 	ret = nrf_wifi_vif_state_change(vif_ctx_zep, NRF_WIFI_FMAC_IF_OP_STATE_UP);
 	if (ret) {
 		LOG_ERR("%s: Failed to set interface up", __func__);
