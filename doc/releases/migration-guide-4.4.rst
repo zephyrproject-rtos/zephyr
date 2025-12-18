@@ -86,6 +86,55 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. _nxp_devicetree_layout:
+
+.. rubric:: NXP Devicetree layout
+
+* The number of NXP DTSI files is growing rapidly, with over 150 files currently.
+  To improve maintainability and discoverability, we reorganized NXP DTSI files by
+  moving them into family-specific subdirectories under ``dts/arm/nxp``. This directory
+  structure is now consistent with the structure under ``soc/nxp``. (:github:`101243`)
+
+* Files that were previously located at ``dts/arm/nxp/nxp_*.dtsi`` have been moved into
+  family folders such as:
+
+  - ``dts/arm/nxp/imx``
+  - ``dts/arm/nxp/imxrt``
+  - ``dts/arm/nxp/kinetis``
+  - ``dts/arm/nxp/lpc``
+  - ``dts/arm/nxp/mcx``
+  - ``dts/arm/nxp/rw``
+  - ``dts/arm/nxp/s32``
+
+* Devicetree include paths must be updated for moved files. For example, update includes
+  of the form ``#include <nxp/nxp_*.dtsi>`` to use the new family subdirectory.
+
+* Example:
+
+  Before:
+
+  .. code-block:: dts
+
+    #include <nxp/nxp_rt1060.dtsi>
+
+  After:
+
+  .. code-block:: dts
+
+    #include <nxp/imxrt/nxp_rt1060.dtsi>
+
+* Notes and migration tips:
+
+  - This change only applies to the NXP ARM architecture SoC include files that were moved from
+    ``dts/arm/nxp`` into the new family subdirectories. Do not change includes for DTSI files
+    that live in other locations (for example, under ``dts/arm64/nxp`` or ``dts/xtensa/nxp``).
+  - If you need help locating affected includes, start by searching for the old include prefix
+    and update each match to the correct family subdirectory.
+
+    .. code-block:: console
+
+      git grep "#include <nxp/nxp_" -- '*.dtsi' '*.dts' '*.overlay'
+
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
 ADC
