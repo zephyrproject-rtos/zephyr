@@ -380,6 +380,9 @@ Other notable changes
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
 
+* NXP SoC DTSI files have been reorganized by moving them into family-specific
+  subdirectories under ``dts/arm/nxp``.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
