@@ -1,16 +1,13 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RZ external interrupt controller
 
 compatible: "renesas,rz-ext-irq"
 
-include: [interrupt-controller.yaml, base.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-  "#interrupt-cells":
-    const: 2
-
   trigger-type:
     required: true
     type: string
@@ -21,3 +18,10 @@ properties:
       - "rising"
       - "both_edges"
       - "low_level"
+
+  "#irq-cells":
+    type: int
+    const: 1
+
+irq-cells:
+  - pin
