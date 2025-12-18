@@ -4,11 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended Disk API of STM32 SDMMC
+ * @ingroup stm32_sdmmc_disk_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_
 
 #include <zephyr/device.h>
 #include <stdint.h>
+
+/**
+ * @brief STM32 SDMMC controller
+ * @defgroup stm32_sdmmc_disk_interface STM32 SDMMC
+ * @ingroup disk_driver_interface_ext
+ * @{
+ */
 
 /**
  * @brief Get the CID (Card Identification) information from the SD/MMC card.
@@ -45,5 +58,7 @@ void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4]);
  * @param csd Pointer to an array where the CSD data will be stored.
  */
 void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4]);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_ */
