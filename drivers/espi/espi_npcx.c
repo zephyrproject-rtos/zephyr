@@ -628,6 +628,7 @@ static void espi_vw_notify_host_warning(const struct device *dev,
 #endif
 		default:
 			break;
+		}
 	}
 }
 
