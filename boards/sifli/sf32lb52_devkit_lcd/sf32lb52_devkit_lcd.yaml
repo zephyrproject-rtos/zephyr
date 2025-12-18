@@ -15,4 +15,5 @@ supported:
   - watchdog
   - bluetooth
   - audio
+  - rtc
 vendor: sifli
