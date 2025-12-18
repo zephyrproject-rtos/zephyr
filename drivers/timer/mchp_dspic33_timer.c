@@ -23,8 +23,8 @@
 
 #define TIMER1_BASE            DT_REG_ADDR(DT_NODELABEL(timer1))
 #define MAX_TIMER_CLOCK_CYCLES 0xFFFFFFFFU
-#define TMRx_OFFSET            (uint32_t)(&TMR1 - &T1CON) * sizeof(int)
-#define PRx_OFFSET             (uint32_t)(&PR1 - &T1CON) * sizeof(int)
+#define TMRX_OFFSET            (uint32_t)(&TMR1 - &T1CON) * sizeof(int)
+#define PRX_OFFSET             (uint32_t)(&PR1 - &T1CON) * sizeof(int)
 #define BIT_ON                 _T1CON_ON_MASK
 
 static struct k_spinlock lock;
@@ -37,7 +37,7 @@ const int32_t z_sys_timer_irq_for_test = DT_INST_IRQN(0);
 #endif
 
 /* Timer configuration from DeviceTree */
-static volatile uint32_t *TxCON = (uint32_t *)TIMER1_BASE;
+static volatile uint32_t *tx_con = (uint32_t *)TIMER1_BASE;
 
 /* Map prescaler value to bits */
 static uint8_t map_prescaler_to_bits(uint32_t val)
@@ -67,24 +67,24 @@ static uint8_t map_prescaler_to_bits(uint32_t val)
 /* Configure timer registers */
 static void configure_timer(uint32_t cycles)
 {
-	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
-	volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
+	volatile uint32_t *tmr_x = (uint32_t *)(TIMER1_BASE + TMRX_OFFSET);
+	volatile uint32_t *pr_x = (uint32_t *)(TIMER1_BASE + PRX_OFFSET);
 	/* Turn off timer and clear TMR register */
-	*TxCON &= ~(BIT_ON);
-	*TMRx = 0;
+	*tx_con &= ~(BIT_ON);
+	*tmr_x = 0;
 
 	/* set the timeout count */
-	*PRx = cycles - 1U;
+	*pr_x = cycles - 1U;
 
 	/* Start the timer. */
-	*TxCON |= BIT_ON;
+	*tx_con |= BIT_ON;
 }
 
 static void initialize_timer(void)
 {
 	/* Standard peripheral clock */
-	*TxCON &= ~(0x0002U);
-	*TxCON |= (map_prescaler_to_bits(DT_INST_PROP(0, prescaler)) << 4U);
+	*tx_con &= ~(0x0002U);
+	*tx_con |= (map_prescaler_to_bits(DT_INST_PROP(0, prescaler)) << 4U);
 
 	configure_timer(TIMER1_CYCLES_PER_TICK);
 }
@@ -104,14 +104,15 @@ void arch_busy_wait(uint32_t usec_to_wait)
  */
 uint32_t sys_clock_cycle_get_32(void)
 {
-	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
-	volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
+	volatile uint32_t *tmr_x = (uint32_t *)(TIMER1_BASE + TMRX_OFFSET);
+	volatile uint32_t *pr_x = (uint32_t *)(TIMER1_BASE + PRX_OFFSET);
 	uint32_t cycles;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&lock);
-	cycles = (uint32_t)total_cycles + (*PRx * (uint32_t)arch_dspic_irq_isset(DT_INST_IRQN(0))) +
-		 *TMRx;
+	cycles = (uint32_t)total_cycles +
+		 (*pr_x * (uint32_t)arch_dspic_irq_isset(DT_INST_IRQN(0))) +
+		 *tmr_x;
 	k_spin_unlock(&lock, key);
 
 	return cycles * 2U * DT_INST_PROP(0, prescaler);
@@ -119,7 +120,7 @@ uint32_t sys_clock_cycle_get_32(void)
 
 uint32_t sys_clock_elapsed(void)
 {
-	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
+	volatile uint32_t *tmr_x = (uint32_t *)(TIMER1_BASE + TMRX_OFFSET);
 	uint32_t ticks_elapsed;
 	k_spinlock_key_t key;
 
@@ -136,7 +137,7 @@ uint32_t sys_clock_elapsed(void)
 		 * Number of cycles per tick
 		 */
 		ticks_elapsed = ((uint32_t)(total_cycles - prev_announced_cycle) +
-				 (uint32_t)(*TMRx + (TIMER1_CYCLES_PER_TICK / 10U))) /
+				 (uint32_t)(*tmr_x + (TIMER1_CYCLES_PER_TICK / 10U))) /
 				((uint32_t)TIMER1_CYCLES_PER_TICK);
 		k_spin_unlock(&lock, key);
 	} while (0);
@@ -145,7 +146,7 @@ uint32_t sys_clock_elapsed(void)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
+	volatile uint32_t *tmr_x = (uint32_t *)(TIMER1_BASE + TMRX_OFFSET);
 	volatile uint32_t next_count;
 	k_spinlock_key_t key;
 
@@ -167,8 +168,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 				     : (uint32_t)((uint32_t)(ticks * TIMER1_CYCLES_PER_TICK) + 1U);
 
 		key = k_spin_lock(&lock);
-		total_cycles = total_cycles + (uint64_t)*TMRx;
-		un_announced_cycles = un_announced_cycles + *TMRx;
+		total_cycles = total_cycles + (uint64_t)*tmr_x;
+		un_announced_cycles = un_announced_cycles + *tmr_x;
 		configure_timer(next_count);
 		k_spin_unlock(&lock, key);
 	} while (0);
@@ -177,7 +178,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 /* ISR */
 static void timer1_isr(const void *arg)
 {
-	volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
+	volatile uint32_t *pr_x = (uint32_t *)(TIMER1_BASE + PRX_OFFSET);
 	uint32_t elapsed_ticks;
 	k_spinlock_key_t key;
 
@@ -188,19 +189,19 @@ static void timer1_isr(const void *arg)
 	 * Of cycles per tick. For tickles, the period would have been set
 	 * To the next event time.
 	 */
-	elapsed_ticks = (uint32_t)(un_announced_cycles + *PRx) / (uint32_t)TIMER1_CYCLES_PER_TICK;
+	elapsed_ticks = (uint32_t)(un_announced_cycles + *pr_x) / (uint32_t)TIMER1_CYCLES_PER_TICK;
 	key = k_spin_lock(&lock);
 
-	total_cycles = total_cycles + (uint64_t)*PRx;
+	total_cycles = total_cycles + (uint64_t)*pr_x;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* If not in tickles mode set the interrupt to happen at the next
 		 * Tick. Clear the timer1 counter register and set the period register
 		 * to the tick timeout value. This should be done with TIMER1 disabled.
 		 */
-		*TxCON &= ~(0x8000U);
-		*PRx = TIMER1_CYCLES_PER_TICK;
-		*TxCON |= 0x8000U;
+		*tx_con &= ~(0x8000U);
+		*pr_x = TIMER1_CYCLES_PER_TICK;
+		*tx_con |= 0x8000U;
 	}
 	k_spin_unlock(&lock, key);
 
@@ -208,8 +209,8 @@ static void timer1_isr(const void *arg)
 	 * sys_clock_announce(elapsed_ticks) to inform the kernel about the elapsed
 	 * system ticks. This keeps the Zephyr kernel’s time accounting accurate.
 	 */
-	if (*PRx != MAX_TIMER_CLOCK_CYCLES) {
-		*TxCON &= ~(0x8000U);
+	if (*pr_x != MAX_TIMER_CLOCK_CYCLES) {
+		*tx_con &= ~(0x8000U);
 		un_announced_cycles = 0;
 		prev_announced_cycle = total_cycles;
 		sys_clock_announce(elapsed_ticks);

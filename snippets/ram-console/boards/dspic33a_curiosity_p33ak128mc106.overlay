@@ -1,10 +1,16 @@
+/*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 / {
 	chosen {
 		zephyr,ram-console = &snippet_ram_console;
 	};
 
-    #address-cells = <1>;
-    #size-cells = <1>;
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	snippet_ram_console: memory@5000 {
 		compatible = "zephyr,memory-region";

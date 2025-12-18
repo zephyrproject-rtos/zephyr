@@ -41,7 +41,7 @@ MEMORY
  * After adding gc-section option compiler was discarding __start symbol
  * adding ENTRY directive avoid it from being discarded.
  */
-ENTRY(__start)
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
 {

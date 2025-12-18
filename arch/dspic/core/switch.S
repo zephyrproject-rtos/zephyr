@@ -4,20 +4,20 @@
  */
 
 /**
- * @file swap.S
+ * @file switch.S
  *
- * @brief handles thread swap logic for dsPIC33A devices
+ * @brief handles thread switch logic for dsPIC33A devices
  */
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <kernel_arch_swap_macro.S>
+#include <kernel_arch_switch_macro.S>
 
     .equ NUM_TEMP_REGS, 12
 
     .section .bss
     .align 4
-    .globl _swap_working_set
-_swap_working_set:
+    .globl _switch_working_set
+_switch_working_set:
     .space NUM_TEMP_REGS*4
 
 GTEXT(arch_swap)
@@ -40,10 +40,10 @@ SECTION_FUNC(TEXT, arch_swap)
     mov.l w2, [w1 + __thread_t_arch_cpu_level_OFFSET]
 
     /*move -EAGAIN to the member (2s compliment of 11)*/
-    mov.l #0xfffffff5, w2
-    mov.l w2, [w1 + __thread_t_arch_swap_return_value_OFFSET]
+    movs.l #0xfff5, w2
+    mov.l w2, [w1 + __thread_t_arch_switch_return_value_OFFSET]
     mov.l #1, w2
-    mov.l w2, [w1 + __thread_t_arch_swapped_from_thread_OFFSET]
+    mov.l w2, [w1 + __thread_t_arch_switched_from_thread_OFFSET]
 
     mov.l w1, w2
     mov.sl #__kernel_ready_q_cache_OFFSET, w0
@@ -51,7 +51,7 @@ SECTION_FUNC(TEXT, arch_swap)
     cp.l w1, w2
     bra z, 2f
 
-    z_dspic_do_swap
+    z_dspic_do_switch
     2:
 
     mov.l w1, [w15++]
@@ -63,20 +63,20 @@ SECTION_FUNC(TEXT, arch_swap)
     mov.sl #__kernel_current_OFFSET, w0
     mov.l [w0], w1
 
-    mov.l [w1 + __thread_t_arch_swapped_from_thread_OFFSET], w0
+    mov.l [w1 + __thread_t_arch_switched_from_thread_OFFSET], w0
     cp.l  w0, #0
     mov.l #0, w0
-    mov.l w0, [w1 + __thread_t_arch_swapped_from_thread_OFFSET]
+    mov.l w0, [w1 + __thread_t_arch_switched_from_thread_OFFSET]
     mov.l [--w15], w0
     bra z, 3f
 
-    mov.l [w1 + __thread_t_arch_swap_return_value_OFFSET], w0
+    mov.l [w1 + __thread_t_arch_switch_return_value_OFFSET], w0
     3:
     mov.l [w1 + __thread_t_arch_cpu_level_OFFSET], w1
     cp.l w1, #0x0
 
-    bra z, 2f
-    bset.b 0x71, #0x7
+    bra nz, 2f
+    DISICTL w1
     2:
     mov.l [--w15], w2
     mov.l [--w15], w1

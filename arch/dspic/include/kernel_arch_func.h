@@ -14,8 +14,6 @@
 #ifndef ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_FUNC_H_
 
-#ifndef _ASMLANGUAGE
-
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/platform/hooks.h>
@@ -72,14 +70,12 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	z_dspic_interrupt_init();
 	z_dspic_fault_init();
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
-	thread->arch.swap_return_value = value;
+	thread->arch.switch_return_value = value;
 }
 
 int arch_swap(unsigned int key);
@@ -87,7 +83,5 @@ int arch_swap(unsigned int key);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_FUNC_H_ */

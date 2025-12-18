@@ -5,8 +5,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/toolchain.h>
 
-#ifndef _ASMLANGUAGE
 #include <xc.h>
 #ifdef __cplusplus
 extern "C" {
@@ -16,13 +16,13 @@ LOG_MODULE_REGISTER(dspic, 4);
 
 volatile uint32_t reason, address;
 
-#define EXCEPTION_HANDLER __attribute__((interrupt, no_auto_psv, weak, naked))
+#define EXCEPTION_HANDLER __weak __attribute__((interrupt, no_auto_psv, naked))
 #define BUS_ERROR_MASK    0xF
 #define MATH_ERROR_MASK   0x1F
 #define STACK_ERROR_MASK   0x10
 #define GENERAL_TRAP_MASK 0x8000000Fu
 
-void __attribute__((weak)) TRAPS_halt_on_error(void);
+void TRAPS_halt_on_error(void);
 void EXCEPTION_HANDLER _BusErrorTrap(void);
 void EXCEPTION_HANDLER _AddressErrorTrap(void);
 void EXCEPTION_HANDLER _IllegalInstructionTrap(void);
@@ -34,12 +34,25 @@ void EXCEPTION_HANDLER _ReservedTrap7(void);
 
 void EXCEPTION_HANDLER _ReservedTrap0(void)
 {
-}
-void EXCEPTION_HANDLER _ReservedTrap7(void)
-{
+	/* Reserved trap 0 is not assigned to any fault source on dsPIC33A.
+	 * A handler must still be present in the vector table so that a
+	 * spurious assertion of this vector does not cause undefined behaviour.
+	 * No action is taken because there is no architectural definition for
+	 * this trap on the supported devices.
+	 */
 }
 
-void __attribute__((weak)) TRAPS_halt_on_error(void)
+void EXCEPTION_HANDLER _ReservedTrap7(void)
+{
+	/* Reserved trap 7 is not assigned to any fault source on dsPIC33A.
+	 * A handler must still be present in the vector table so that a
+	 * spurious assertion of this vector does not cause undefined behaviour.
+	 * No action is taken because there is no architectural definition for
+	 * this trap on the supported devices.
+	 */
+}
+
+void __weak TRAPS_halt_on_error(void)
 {
 	/* stay here forever */
 	while (1) {
@@ -129,5 +142,3 @@ void EXCEPTION_HANDLER _GeneralTrap(void)
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ASMLANGUAGE */

@@ -42,11 +42,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	 * set the pc to the zephyr common thread entry function
 	 * Z_thread_entry(entry, p1, p2, p3)
 	 */
-	init_frame->PC = (uint32_t)z_thread_entry;
-	/* FRAME pointer used as LR for initial swap function
-	 * In swap function we enter with one SP and exits with another SP
-	 * As the swap function is a naked function, it won't use FP but use that
-	 * place for LR (for the 1st swap, we need to populate initial LR in FP)
+	init_frame->PC = (uint32_t)&z_thread_entry;
+	/* FRAME pointer used as LR for initial switch function
+	 * In switch function we enter with one SP and exits with another SP
+	 * As the switch function is a naked function, it won't use FP but use that
+	 * place for LR (for the 1st switch, we need to populate initial LR in FP)
 	 */
 	init_frame->FRAME = (uint32_t)(void *)init_frame + (sizeof(struct arch_esf));
 
@@ -58,8 +58,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	thread->callee_saved.stack = (uint32_t)(void *)init_frame + (sizeof(struct arch_esf));
 	thread->callee_saved.frame = (uint32_t)thread->callee_saved.stack;
 	thread->callee_saved.splim = (uint32_t)(thread->stack_info.start + thread->stack_info.size);
-	/*Set the initial key for irq unlock*/
-	thread->arch.cpu_level = 1;
+	/*Set the initial cpu level to context 0*/
+	thread->arch.cpu_level = 0;
 }
 
 int arch_coprocessors_disable(struct k_thread *thread)

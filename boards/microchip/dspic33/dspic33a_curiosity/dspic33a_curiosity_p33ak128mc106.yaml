@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 identifier: dspic33a_curiosity/p33ak128mc106
 name: EV74H48A EVB DSPIC33AK128MC106
 type: mcu

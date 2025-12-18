@@ -76,7 +76,6 @@
 		led5 = &led5;
 		led6 = &led6;
 		led7 = &led7;
-
 	};
 };
 
@@ -99,5 +98,9 @@
 };
 
 &uart2 {
+	status = "okay";
+};
+
+&gpioc {
 	status = "okay";
 };

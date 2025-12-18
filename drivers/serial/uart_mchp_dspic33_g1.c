@@ -8,14 +8,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <soc.h>
 #include <math.h>
 #include <zephyr/sys/printk.h>
 #include "uart_mchp_dspic33_g1.h"
 
-#ifndef _ASMLANGUAGE
 #include <xc.h>
-#endif
 
 #define DT_DRV_COMPAT microchip_dspic33_uart
 
@@ -37,7 +34,7 @@ struct uart_dspic_config {
 #endif
 };
 
-static inline uint32_t CALCULATE_BRG(uint32_t baudrate)
+static inline uint32_t calculate_brg(uint32_t baudrate)
 {
 	double sys_clk = (double)sys_clock_hw_cycles_per_sec();
 	double divisor = (2.0 * (double)baudrate);
@@ -58,28 +55,23 @@ static void uart_dspic_isr(const struct device *dev)
 {
 	struct uart_dspic_data *data = dev->data;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
 	uint32_t instance = cfg->instance;
 
 	/* RX interrupt flag set check */
-	if ((bool)arch_dspic_irq_isset(cfg->rx_irq_num)) {
-		if ((bool)data->callback) {
-			data->callback(dev, data->user_data);
-		}
+	if ((bool)arch_dspic_irq_isset(cfg->rx_irq_num) && (bool)data->callback) {
+		data->callback(dev, data->user_data);
 	}
 
 	/* TX interrupt flag set check */
-	if ((bool)arch_dspic_irq_isset(cfg->tx_irq_num)) {
-		if ((bool)data->callback) {
-			data->callback(dev, data->user_data);
-		}
+	if ((bool)arch_dspic_irq_isset(cfg->tx_irq_num) && (bool)data->callback) {
+		data->callback(dev, data->user_data);
 	}
 
 	/* ERR interrupt flag set check */
 	if ((bool)arch_dspic_irq_isset(cfg->err_irq_num)) {
-
 		/* Clear error interrupt flag in uart status register */
-		*UxSTA &= ~(BIT_PERIF[instance] | BIT_ABDOVIF[instance] | BIT_CERIF[instance] |
+		*ux_sta &= ~(BIT_PERIF[instance] | BIT_ABDOVIF[instance] | BIT_CERIF[instance] |
 			    BIT_FERIF[instance] | BIT_RXBTIF[instance] | BIT_RXFOIF[instance] |
 			    BIT_TXCIF[instance]);
 		if ((bool)data->callback) {
@@ -171,13 +163,13 @@ static int uart_dspic_irq_tx_ready(const struct device *dev)
 {
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
 	uint32_t instance = cfg->instance;
 	int ret;
 
 	key = k_spin_lock(&lock);
 	/* Transmit buffer empty check */
-	ret = (*UxSTA & BIT_TXBE[instance]) ? 1 : 0;
+	ret = (*ux_sta & BIT_TXBE[instance]) ? 1 : 0;
 	k_spin_unlock(&lock, key);
 
 	return ret;
@@ -187,13 +179,13 @@ static int uart_dspic_irq_rx_ready(const struct device *dev)
 {
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
 	uint32_t instance = cfg->instance;
 	int ret;
 
 	key = k_spin_lock(&lock);
 	/* Receiver buffer not full check */
-	ret = (*UxSTA & BIT_RXBF[instance]) ? 0 : 1;
+	ret = (*ux_sta & BIT_RXBF[instance]) ? 0 : 1;
 	k_spin_unlock(&lock, key);
 
 	return ret;
@@ -224,15 +216,15 @@ static int uart_dspic_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 {
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
-	volatile uint32_t *UxRXREG = (void *)(cfg->base + OFFSET_RXREG);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_rxreg = (void *)(cfg->base + OFFSET_RXREG);
 	uint32_t instance = cfg->instance;
 	int num_read = 0;
 
 	/* Transmitting data of size bytes */
-	while ((num_read < size) && (!(*UxSTA & BIT_RXBE[instance]))) {
+	while ((num_read < size) && (!(*ux_sta & BIT_RXBE[instance]))) {
 		key = k_spin_lock(&lock);
-		rx_data[num_read] = *UxRXREG & BIT_MASK_RCVR[instance];
+		rx_data[num_read] = *ux_rxreg & BIT_MASK_RCVR[instance];
 		num_read++;
 		k_spin_unlock(&lock, key);
 	}
@@ -244,15 +236,15 @@ static int uart_dspic_fifo_fill(const struct device *dev, const uint8_t *tx_data
 {
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
-	volatile uint32_t *UxTXREG = (void *)(cfg->base + OFFSET_TXREG);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_txreg = (void *)(cfg->base + OFFSET_TXREG);
 	uint32_t instance = cfg->instance;
 	int num_sent = 0;
 
 	/* Receiving data of size bytes */
-	while ((num_sent < size) && (!(*UxSTA & BIT_TXBF[instance]))) {
+	while ((num_sent < size) && (!(*ux_sta & BIT_TXBF[instance]))) {
 		key = k_spin_lock(&lock);
-		*UxTXREG = tx_data[num_sent];
+		*ux_txreg = tx_data[num_sent];
 		num_sent++;
 		k_spin_unlock(&lock, key);
 	}
@@ -265,16 +257,15 @@ static void uart_dspic_poll_out(const struct device *dev, unsigned char c)
 {
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
-	volatile uint32_t *UxTXREG = (void *)(cfg->base + OFFSET_TXREG);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_txreg = (void *)(cfg->base + OFFSET_TXREG);
 	uint32_t instance = cfg->instance;
 
 	/* Wait until there is space in the TX FIFO */
-	while ((bool)(void *)((*UxSTA) & BIT_TXBF[instance])) {
-		;
+	while ((bool)(void *)((*ux_sta) & BIT_TXBF[instance])) {
 	}
 	key = k_spin_lock(&lock);
-	*UxTXREG = c;
+	*ux_txreg = c;
 	k_spin_unlock(&lock, key);
 }
 
@@ -282,19 +273,19 @@ static int uart_dspic_poll_in(const struct device *dev, unsigned char *c)
 {
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
-	volatile uint32_t *UxRXREG = (void *)(cfg->base + OFFSET_RXREG);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_rxreg = (void *)(cfg->base + OFFSET_RXREG);
 	uint32_t instance = cfg->instance;
 	int ret_val;
 
 	key = k_spin_lock(&lock);
 	/* If receiver buffer is empty, return -1 */
-	if ((*UxSTA & BIT_RXBE[instance]) != 0U) {
+	if ((*ux_sta & BIT_RXBE[instance]) != 0U) {
 		ret_val = -EPERM;
 	}
 
 	else {
-		*c = *UxRXREG & 0xFF;
+		*c = *ux_rxreg & 0xFF;
 		ret_val = 0;
 	}
 
@@ -305,32 +296,32 @@ static int uart_dspic_poll_in(const struct device *dev, unsigned char *c)
 static int uart_dspic_init(const struct device *dev)
 {
 	const struct uart_dspic_config *cfg = dev->config;
-	volatile uint32_t *UxCON = (void *)(cfg->base);
-	volatile uint32_t *UxBRG = (void *)(cfg->base + OFFSET_BRG);
-	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	volatile uint32_t *ux_con = (void *)(cfg->base);
+	volatile uint32_t *ux_brg = (void *)(cfg->base + OFFSET_BRG);
+	volatile uint32_t *ux_sta = (void *)(cfg->base + OFFSET_STA);
 	int ret = 0;
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret == 0) {
 		uint32_t instance = cfg->instance;
 		/* Setting the UART mode */
-		*UxCON |= (UART_MODE_ASYNC_8BIT << _U1CON_MODE_POSITION);
+		*ux_con |= (UART_MODE_ASYNC_8BIT << _U1CON_MODE_POSITION);
 
 		/* Setting the baudrate */
-		*UxCON |= BIT_CLOCK_MODE[instance];
-		*UxBRG |= CALCULATE_BRG(cfg->baudrate);
+		*ux_con |= BIT_CLOCK_MODE[instance];
+		*ux_brg |= calculate_brg(cfg->baudrate);
 
 		/* Enable UART */
-		*UxCON |= BIT_UARTEN[instance];
-		*UxCON |= BIT_TXEN[instance];
-		*UxCON |= BIT_RXEN[instance];
+		*ux_con |= BIT_UARTEN[instance];
+		*ux_con |= BIT_TXEN[instance];
+		*ux_con |= BIT_RXEN[instance];
 
 		/* Selecting the transmit and receive interrupt level bit */
-		*UxSTA |= ((uint32_t)UART_INTLVL_0 << BIT_TXWM_POS[instance]);
-		*UxSTA |= ((uint32_t)UART_INTLVL_0 << BIT_RXWM_POS[instance]);
+		*ux_sta |= ((uint32_t)UART_INTLVL_0 << BIT_TXWM_POS[instance]);
+		*ux_sta |= ((uint32_t)UART_INTLVL_0 << BIT_RXWM_POS[instance]);
 
 		/* Enable all UART error interrupts in one write */
-		*UxSTA |= (BIT_PERIE[instance] | BIT_ABDOVIE[instance] | BIT_CERIE[instance] |
+		*ux_sta |= (BIT_PERIE[instance] | BIT_ABDOVIE[instance] | BIT_CERIE[instance] |
 			   BIT_FERIE[instance] | BIT_RXBKIE[instance] | BIT_RXFOIE[instance] |
 			   BIT_TXCIE[instance]);
 
@@ -344,7 +335,7 @@ static int uart_dspic_init(const struct device *dev)
 	return ret;
 }
 
-static const struct uart_driver_api uart_dspic_api = {
+static DEVICE_API(uart, uart_dspic_api) = {
 	.poll_out = uart_dspic_poll_out,
 	.poll_in = uart_dspic_poll_in,
 

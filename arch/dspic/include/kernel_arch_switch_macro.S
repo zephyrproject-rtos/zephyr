@@ -5,14 +5,14 @@
 
 /**
  * @file
- * @brief Private kernel arch swap functions
+ * @brief Private kernel arch switch functions
  *
- * This file contains function helpers for dspic arch specific thread swap
+ * This file contains function helpers for dspic arch specific thread switch
  * helper functions
  */
 
-#ifndef ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_SWAP_H_
-#define ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_SWAP_H_
+#ifndef ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_SWITCH_H_
+#define ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_SWITCH_H_
 
 #include <zephyr/toolchain.h>
 #include <zephyr/offsets.h>
@@ -29,12 +29,12 @@
 .equ __thread_t_arch_cpu_level_OFFSET, ___thread_t_arch_OFFSET + ___thread_arch_t_cpu_level_OFFSET
 .equ __kernel_ready_q_cache_OFFSET, __kernel + ___kernel_t_ready_q_OFFSET + \
     ___ready_q_t_cache_OFFSET
-.equ __thread_t_arch_swap_return_value_OFFSET, ___thread_t_arch_OFFSET + \
-    ___thread_arch_t_swap_return_value_OFFSET
-.equ __thread_t_arch_swapped_from_thread_OFFSET, ___thread_t_arch_OFFSET + \
-    ___thread_arch_t_swapped_from_thread_OFFSET
+.equ __thread_t_arch_switch_return_value_OFFSET, ___thread_t_arch_OFFSET + \
+    ___thread_arch_t_switch_return_value_OFFSET
+.equ __thread_t_arch_switched_from_thread_OFFSET, ___thread_t_arch_OFFSET + \
+    ___thread_arch_t_switched_from_thread_OFFSET
 
-.extern _swap_working_set
+.extern _switch_working_set
 
 .macro z_dspic_save_caller_saved
     push RCOUNT
@@ -133,16 +133,6 @@
     mov.l [w2], [w1++]
     mov.l #CORCON, w2
     mov.l [w2], [w1++]
-    mov.l #MODCON, w2
-    mov.l [w2], [w1++]
-    mov.l #XMODSRT, w2
-    mov.l [w2], [w1++]
-    mov.l #XMODEND, w2
-    mov.l [w2], [w1++]
-    mov.l #YMODSRT, w2
-    mov.l [w2], [w1++]
-    mov.l #YMODEND, w2
-    mov.l [w2], [w1++]
     mov.l #XBREV, w2
     mov.l [w2], [w1++]
 
@@ -200,21 +190,9 @@
     mov.l [w1++], [w2]
     mov.l #CORCON, w2
     mov.l [w1++], [w2]
-    mov.l #MODCON, w2
-    mov.l [w1++], [w2]
-    mov.l #XMODSRT, w2
-    mov.l [w1++], [w2]
-    mov.l #XMODEND, w2
-    mov.l [w1++], [w2]
-    mov.l #YMODSRT, w2
-    mov.l [w1++], [w2]
-    mov.l #YMODEND, w2
-    mov.l [w1++], [w2]
     mov.l #XBREV, w2
     mov.l [w1++], [w2]
 
-    clr A
-    clr B
     llac.l [W1++], A
     lac.l [W1++], A
     luac.l [W1++], A
@@ -233,7 +211,7 @@
     mov.l w2, [w15++]
     mov.l w1, [w15++]
     mov.l w0, [w15++]
-    mov.l #_swap_working_set, w0
+    mov.l #_switch_working_set, w0
     mov.l [--w15], [w0++]
     mov.l [--w15], [w0++]
     mov.l [--w15], [w0]
@@ -270,16 +248,14 @@
     lnk #0x4
 .endm
 
-.macro z_dspic_do_swap
-    /* Set the SPLIM to end of RAM
-     * To avoid, stack overflow fault.
-     */
+.macro z_dspic_do_switch
 	/* Switch to context 0 before starting context save and restore
 	 * This Arch has 7 context and each has banked register sets for w0-w8
 	 * So in interrupt we are in ctx 1 and need to go to ctx 0 for tasks
 	 */
     ctxtswp #0x0
-
+    nop
+    nop
     /* Save the current context
      */
     z_dspic_stack_thread_to_irq
@@ -295,7 +271,7 @@
     mov.l w2, [w1]
 
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
-    /*Switch the TLS pointer for the task to be swapped*/
+    /*Switch the TLS pointer for the task to be switched*/
     mov.l [w2 + ___thread_t_tls_OFFSET], w0
     rcall __set_tls
 #endif
@@ -309,4 +285,4 @@
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_SWAP_H_ */
+#endif /* ZEPHYR_ARCH_DSPIC_INCLUDE_KERNEL_ARCH_SWITCH_H_ */

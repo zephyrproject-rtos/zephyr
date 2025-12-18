@@ -2,12 +2,19 @@
 set_compiler_property(PROPERTY debug -g)
 # Optimization for debug builds
 set_compiler_property(PROPERTY optimization_debug -O1)
-set_compiler_property(PROPERTY optimization_speed -O2)
+set_compiler_property(PROPERTY optimization_speed -O3)
 # Optimize for size
 set_compiler_property(PROPERTY optimization_size -O2)
 set_compiler_property(PROPERTY optimization_size_aggressive -Os)
+set_compiler_property(PROPERTY no_optimization -O0)
 # Basic warnings
-check_set_compiler_property(PROPERTY warning_base -Wall -Wformat -Wformat-security -Wno-format-zero-length -Wno-unused-but-set-variable )
+check_set_compiler_property(PROPERTY warning_base
+  -Wall
+  -Wformat
+  -Wformat-security
+  -Wno-format-zero-length
+  -Wno-unused-but-set-variable
+)
 # Compiler flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros -imacros)
 # Use the default C Language standard
@@ -25,7 +32,5 @@ list(APPEND TOOLCHAIN_C_FLAGS -msfr-warn=off)
 # Disable instruction scheduling (for stability)
 list(APPEND TOOLCHAIN_C_FLAGS -fno-schedule-insns -fno-schedule-insns2)
 list(APPEND TOOLCHAIN_C_FLAGS -fno-omit-frame-pointer)
-# list(APPEND TOOLCHAIN_C_FLAGS  -mdfp="${DFP_ROOT}/xc16")
-# list(APPEND TOOLCHAIN_ASM_FLAGS  -mdfp="${DFP_ROOT}/xc16")
 # assembler compiler flags for imacros. The specific header must be appended by user.
 set_property(TARGET asm PROPERTY imacros -imacros)

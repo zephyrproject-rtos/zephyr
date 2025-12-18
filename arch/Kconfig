@@ -189,14 +189,13 @@ config DSPIC
 	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select THREAD_LOCAL_STORAGE
 	select INIT_STACKS
-	select STACK_SENTINAL
 	select ATOMIC_OPERATIONS_C
 	select ARCH_HAS_VECTOR_TABLE_RELOCATION
 	select ARCH_HAS_STACK_PROTECTION
 	select TICKLESS_CAPABLE
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	help
-	  dspic architecture
+	  Microchip dsPIC architecture
 
 config ARCH_IS_SET
 	bool
@@ -426,11 +425,6 @@ config STACK_GROWS_UP
 	help
 	  Select this option if the architecture has upward growing thread
 	  stacks. This is not common.
-
-config STACK_SENTINAL
-	bool
-	help
-	  It is a debugging and safety feature at the boundaries of the stack.
 
 config NO_UNUSED_STACK_INSPECTION
 	bool

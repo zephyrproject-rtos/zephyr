@@ -5,14 +5,13 @@
 
 /**
  * @file
- * @brief Per-arch thread definition
+ * @brief dsPIC33A per-architecture thread definitions
  *
- * This file contains definitions for
+ * This file contains definitions for:
+ *  - struct _thread_arch
+ *  - struct _callee_saved
  *
- *  struct _thread_arch
- *  struct _callee_saved
- *
- * necessary to instantiate instances of struct k_thread.
+ * These are necessary to instantiate instances of struct k_thread.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_DSPIC_THREAD_H_
@@ -25,79 +24,127 @@
 extern "C" {
 #endif
 
-/*
- * The following structure defines the list of registers that need to be
- * saved/restored when a cooperative context switch occurs.
+/**
+ * @brief Callee-saved register context for dsPIC33A.
+ *
+ * Holds all registers that must be preserved across a cooperative
+ * context switch. Saved and restored by the context-switch assembly
+ * routines in sequential order.
  */
 struct _callee_saved {
-	uint32_t W8;  /* working register w8 */
-	uint32_t W9;  /* working register w9 */
-	uint32_t W10; /* working register w10 */
-	uint32_t W11; /* working register w11 */
-	uint32_t W12; /* working register w12 */
-	uint32_t W13; /* working register w13 */
-	uint32_t W14; /* working register w14 */
+	/** Working register w8 */
+	uint32_t w8;
+	/** Working register w9 */
+	uint32_t w9;
+	/** Working register w10 */
+	uint32_t w10;
+	/** Working register w11 */
+	uint32_t w11;
+	/** Working register w12 */
+	uint32_t w12;
+	/** Working register w13 */
+	uint32_t w13;
+	/** Working register w14 (frame pointer) */
+	uint32_t w14;
 
-	uint32_t F8;  /* Floating point register F8 */
-	uint32_t F9;  /* Floating point register F8 */
-	uint32_t F10; /* Floating point register F8 */
-	uint32_t F11; /* Floating point register F8 */
-	uint32_t F12; /* Floating point register F8 */
-	uint32_t F13; /* Floating point register F8 */
-	uint32_t F14; /* Floating point register F8 */
-	uint32_t F15; /* Floating point register F8 */
-	uint32_t F16; /* Floating point register F8 */
-	uint32_t F17; /* Floating point register F8 */
-	uint32_t F18; /* Floating point register F8 */
-	uint32_t F19; /* Floating point register F8 */
-	uint32_t F20; /* Floating point register F8 */
-	uint32_t F21; /* Floating point register F8 */
-	uint32_t F22; /* Floating point register F8 */
-	uint32_t F23; /* Floating point register F8 */
-	uint32_t F24; /* Floating point register F8 */
-	uint32_t F25; /* Floating point register F8 */
-	uint32_t F26; /* Floating point register F8 */
-	uint32_t F27; /* Floating point register F8 */
-	uint32_t F28; /* Floating point register F8 */
-	uint32_t F29; /* Floating point register F8 */
-	uint32_t F30; /* Floating point register F8 */
-	uint32_t F31; /* Floating point register F8 */
+	/** Floating-point register f8 */
+	uint32_t f8;
+	/** Floating-point register f9 */
+	uint32_t f9;
+	/** Floating-point register f10 */
+	uint32_t f10;
+	/** Floating-point register f11 */
+	uint32_t f11;
+	/** Floating-point register f12 */
+	uint32_t f12;
+	/** Floating-point register f13 */
+	uint32_t f13;
+	/** Floating-point register f14 */
+	uint32_t f14;
+	/** Floating-point register f15 */
+	uint32_t f15;
+	/** Floating-point register f16 */
+	uint32_t f16;
+	/** Floating-point register f17 */
+	uint32_t f17;
+	/** Floating-point register f18 */
+	uint32_t f18;
+	/** Floating-point register f19 */
+	uint32_t f19;
+	/** Floating-point register f20 */
+	uint32_t f20;
+	/** Floating-point register f21 */
+	uint32_t f21;
+	/** Floating-point register f22 */
+	uint32_t f22;
+	/** Floating-point register f23 */
+	uint32_t f23;
+	/** Floating-point register f24 */
+	uint32_t f24;
+	/** Floating-point register f25 */
+	uint32_t f25;
+	/** Floating-point register f26 */
+	uint32_t f26;
+	/** Floating-point register f27 */
+	uint32_t f27;
+	/** Floating-point register f28 */
+	uint32_t f28;
+	/** Floating-point register f29 */
+	uint32_t f29;
+	/** Floating-point register f30 */
+	uint32_t f30;
+	/** Floating-point register f31 */
+	uint32_t f31;
 
-	uint32_t Rcount;  /* repeat loop counter register */
-	uint32_t Corcon;  /* core mode control register */
-	uint32_t modcon;  /* Modulo addressing control register */
-	uint32_t xmodsrt; /* X AGU modulo addressing start register */
-	uint32_t xmodend; /* X AGU modulo addressing end register */
-	uint32_t ymodsrt; /* Y AGU modulo addressing start register */
-	uint32_t ymodend; /* Y AGU modulo addressing end register */
-	uint32_t Xbrev;   /*X AGU reversal addressing control register */
+	/** Repeat loop counter register (RCOUNT) */
+	uint32_t rcount;
+	/** Core control register (CORCON) */
+	uint32_t corcon;
+	/** X AGU bit-reversal addressing control register (XBREV) */
+	uint32_t xbrev;
 
-	uint32_t AccL; /* Lower 32 bits of accumulator A */
-	uint32_t AccH; /* Higher 32 bits of accumulator A */
-	uint32_t AccU; /* sign extended upper bits of Accumulator A */
-	uint32_t BccL; /* Lower 32 bits of accumulator B */
-	uint32_t BccH; /* Higher 32 bits of accumulator B */
-	uint32_t BccU; /* sign extended upper bits of Accumulator B */
+	/** Lower 32 bits of DSP accumulator A */
+	uint32_t acc_l;
+	/** Upper 32 bits of DSP accumulator A */
+	uint32_t acc_h;
+	/** Sign-extended guard bits of DSP accumulator A */
+	uint32_t acc_u;
+	/** Lower 32 bits of DSP accumulator B */
+	uint32_t bcc_l;
+	/** Upper 32 bits of DSP accumulator B */
+	uint32_t bcc_h;
+	/** Sign-extended guard bits of DSP accumulator B */
+	uint32_t bcc_u;
 
-	uint32_t splim; /* stack limit register */
-	uint32_t stack; /* stack pointer, W15 register*/
-	uint32_t frame; /* Frame pointer, w14 register */
+	/** Stack pointer limit register (SPLIM) */
+	uint32_t splim;
+	/** Stack pointer (W15) */
+	uint32_t stack;
+	/** Frame pointer (W14) */
+	uint32_t frame;
 };
+
+/** @brief Typedef for the callee-saved register context structure */
 typedef struct _callee_saved _callee_saved_t;
 
+/**
+ * @brief Architecture-specific thread state for dsPIC33A.
+ */
 struct _thread_arch {
-	/* current cpu priority level */
+	/** Current CPU interrupt priority level for this thread */
 	uint32_t cpu_level;
 
-	/* stack limit value for the thread */
+	/** Stack pointer limit (SPLIM) value for this thread */
 	uint32_t splim;
 
-	/* return value of z_swap */
-	uint32_t swap_return_value;
+	/** Return value to restore after a context switch */
+	uint32_t switch_return_value;
 
-	/* flag to test whether to load return value*/
-	uint32_t swapped_from_thread;
+	/** Non-zero when the thread was switched out and needs return value restored */
+	uint32_t switched_from_thread;
 };
+
+/** @brief Typedef for the architecture-specific thread state structure */
 typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */

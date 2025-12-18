@@ -4,49 +4,135 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Pin control definitions for Microchip dsPIC33AK512MPS512
+ *
+ * This header provides pin multiplexing macros and function definitions
+ * for the dsPIC33AK512MPS512 microcontroller, used in device tree bindings.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MCHP_P33AK512MPS512_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MCHP_P33AK512MPS512_PINCTRL_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 
-/* Masks & Shifts */
-#define DSPIC33_PORT_MASK  0x7U /* 2 bits for 0-3 */
+/**
+ * @name Pin multiplexing field masks and shifts
+ * @{
+ */
+
+/** Mask for port field (3 bits, ports 0-7) */
+#define DSPIC33_PORT_MASK  0x7U
+/** Bit position of port field in pinmux value */
 #define DSPIC33_PORT_SHIFT 29
 
-#define DSPIC33_PIN_MASK  0x0FU /* 4 bits for 0-11 */
+/** Mask for pin field (4 bits, pins 0-11) */
+#define DSPIC33_PIN_MASK  0x0FU
+/** Bit position of pin field in pinmux value */
 #define DSPIC33_PIN_SHIFT 24
 
-#define DSPIC33_FUNC_MASK  0xFFFFFFU /* 24 bits for 0-511 */
+/** Mask for function field (24 bits, functions 0-511) */
+#define DSPIC33_FUNC_MASK  0xFFFFFFU
+/** Bit position of function field in pinmux value */
 #define DSPIC33_FUNC_SHIFT 0
 
-/* Encode: pack port, pin, function */
+/** @} */
+
+/**
+ * @name Pin multiplexing encode/decode macros
+ * @{
+ */
+
+/**
+ * @brief Encode port, pin, and function into a single pinmux value
+ * @param port Port number (0-7)
+ * @param pin Pin number within port (0-11)
+ * @param func Peripheral function code
+ * @return Encoded 32-bit pinmux value
+ */
 #define DSPIC33_PINMUX(port, pin, func)                                                            \
 	((((port) & DSPIC33_PORT_MASK) << DSPIC33_PORT_SHIFT) |                                    \
 	 (((pin) & DSPIC33_PIN_MASK) << DSPIC33_PIN_SHIFT) |                                       \
 	 (((func) & DSPIC33_FUNC_MASK) << DSPIC33_FUNC_SHIFT))
 
-/* Decode: extract port, pin, function */
+/**
+ * @brief Extract port number from pinmux value
+ * @param pinmux Encoded pinmux value
+ * @return Port number (0-7)
+ */
 #define DSPIC33_PINMUX_PORT(pinmux) (((pinmux) >> DSPIC33_PORT_SHIFT) & DSPIC33_PORT_MASK)
+
+/**
+ * @brief Extract pin number from pinmux value
+ * @param pinmux Encoded pinmux value
+ * @return Pin number (0-11)
+ */
 #define DSPIC33_PINMUX_PIN(pinmux)  (((pinmux) >> DSPIC33_PIN_SHIFT) & DSPIC33_PIN_MASK)
+
+/**
+ * @brief Extract function code from pinmux value
+ * @param pinmux Encoded pinmux value
+ * @return Peripheral function code
+ */
 #define DSPIC33_PINMUX_FUNC(pinmux) (((pinmux) >> DSPIC33_FUNC_SHIFT) & DSPIC33_FUNC_MASK)
 
+/** @} */
+
+/**
+ * @name Register offset definitions
+ * @{
+ */
+
+/** Remappable peripheral output register offset */
 #define OFFSET_RPOR  0x3150
+/** Remappable peripheral input register offset */
 #define OFFSET_RPIN  0x30D4
+/** Port latch register offset */
 #define OFFSET_LATCH 0x0004
+/** Port tri-state register offset */
 #define OFFSET_TRIS  0x0008
+/** Analog select register offset */
 #define OFFSET_ANSEL 0x3440
 
-/* Port definitions */
+/** @} */
+
+/**
+ * @name Port identifiers
+ * @{
+ */
+
+/** Port A identifier */
 #define PORT_A 0
+/** Port B identifier */
 #define PORT_B 1
+/** Port C identifier */
 #define PORT_C 2
+/** Port D identifier */
 #define PORT_D 3
+/** Port E identifier */
 #define PORT_E 4
+/** Port F identifier */
 #define PORT_F 5
+/** Port G identifier */
 #define PORT_G 6
+/** Port H identifier */
 #define PORT_H 7
 
-/* Input Function Macros (for RPINRx register configuration) */
+/** @} */
+
+/**
+ * @name Input peripheral function codes
+ * @brief Function codes for RPINRx register configuration
+ *
+ * These values are used to configure remappable peripheral inputs.
+ * Each macro represents a peripheral input function that can be
+ * assigned to a remappable pin.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
 #define INT1     0x32D5
 #define INT2     0x32D6
 #define INT3     0x32D7
@@ -158,8 +244,22 @@
 #define PCI21    0x3341
 #define PCI22    0x3342
 
+/** @endcond */
 
-/* Output Function Macros (for RPnR register configuration) */
+/** @} */
+
+/**
+ * @name Output peripheral function codes
+ * @brief Function codes for RPnR register configuration
+ *
+ * These values are used to configure remappable peripheral outputs.
+ * Each macro represents a peripheral output function that can be
+ * assigned to a remappable pin.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
 #define DEFAULT_PORT 0x00
 #define PWM1H        0x01
 #define PWM1L        0x02
@@ -258,5 +358,9 @@
 #define APWM4L       0x5F
 #define APEVTA       0x60
 #define APEVTB       0x61
+
+/** @endcond */
+
+/** @} */
 
 #endif

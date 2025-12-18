@@ -6,7 +6,6 @@
 #include <zephyr/kernel.h>
 #include <kswap.h>
 
-#ifndef _ASMLANGUAGE
 #include <xc.h>
 
 #ifdef __cplusplus
@@ -16,8 +15,7 @@ extern "C" {
 void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
-	while (1) {
-	}
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 void arch_irq_enable(unsigned int irq)
@@ -58,7 +56,7 @@ bool arch_dspic_irq_isset(unsigned int irq)
 	unsigned int reg_index = irq / (sizeof(uint32_t) << 3);
 	unsigned int bit_pos = irq % (sizeof(uint32_t) << 3);
 
-	if ( (int_ifs_reg[reg_index] & (1u << bit_pos)) != 0u ) {
+	if ((int_ifs_reg[reg_index] & (1u << bit_pos)) != 0u) {
 		ret_ifs = true;
 	}
 	return ret_ifs;
@@ -78,5 +76,3 @@ void z_dspic_enter_irq(int irq)
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ASMLANGUAGE */

@@ -22,6 +22,7 @@
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	struct k_spinlock lock;
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

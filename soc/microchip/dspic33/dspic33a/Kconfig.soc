@@ -3,10 +3,9 @@
 
 config SOC_SERIES_DSPIC33A
 	bool
-
-select SOC_FAMILY_MICROCHIP_DSPIC33
+	select SOC_FAMILY_MICROCHIP_DSPIC33
 	help
-	Enable support for Microchip DSPIC33 DSC series
+	  Enable support for Microchip DSPIC33 DSC series
 
 config SOC_SERIES
 	default "dspic33a" if SOC_SERIES_DSPIC33A

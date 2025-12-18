@@ -118,7 +118,7 @@ static int dspic_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_dspic_api = {
+static DEVICE_API(gpio, gpio_dspic_api) = {
 	.pin_configure = dspic_pin_configure,
 	.port_toggle_bits = dspic_port_toggle_bits,
 	.port_get_raw = dspic_port_get_raw,

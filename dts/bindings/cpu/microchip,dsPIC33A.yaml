@@ -1,8 +1,8 @@
 # Copyright (c) 2025, Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_DSPIC33A
+description: Microchip dsPIC33A CPU
 
-	rsource "Kconfig.defconfig.p33ak*"
+compatible: "microchip,dsPIC33A"
 
-endif # SOC_SERIES_DSPIC33A
+include: cpu.yaml

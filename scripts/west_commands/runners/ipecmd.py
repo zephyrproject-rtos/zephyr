@@ -6,59 +6,25 @@
 
 import os
 import platform
-import sys
+import re
+import shutil
 from pathlib import Path
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
-COMMON_LOCATIONS = ["/opt", "/usr/local", "/home", "C:\\Program Files"]
+COMMON_LOCATIONS = ["/opt", "/usr/local", "/home", "/Applications", "C:\\Program Files"]
 
 
 class IpecmdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for Microchip's dspic33a_curiosity.'''
 
-    def __init__(self, cfg, device, flash_tool):
+    def __init__(self, cfg, dev_id, flash_tool, ipecmd_path=None, java_path=None):
         super().__init__(cfg)
-        self.elf = cfg.elf_file
-        self.ipecmd_cmd = None
-        self.mplabx_base = None
-        self.java_bin = None
-        self.ipecmd_jar = None
-
-        self.mplabx_base = self.find_mplabx_base()
-        if not self.mplabx_base:
-            print("Error: Could not locate mplabx base directory")
-            sys.exit(1)
-
-        version_path = self.find_latest_version_dir(self.mplabx_base)
-        if not version_path:
-            print("Error: No MPLAB X version directories found")
-            sys.exit(1)
-        if platform.system() == 'Linux':
-            self.java_bin = self.find_java_bin(version_path)
-            if not self.java_bin or not os.access(self.java_bin, os.X_OK):
-                print("Error: Java executable not found or not executable")
-                sys.exit(1)
-
-            self.ipecmd_jar = self.find_ipecmd(version_path, "ipecmd.jar")
-            if not self.ipecmd_jar:
-                print(f"Error: ipecmd.jar not found in {version_path}/mplab_platform/mplab_ipe/")
-                sys.exit(1)
-            else:
-                print(f'ipecmd: {self.ipecmd_jar}')
-        elif platform.system() == 'Windows':
-            self.ipecmd_exe = self.find_ipecmd(version_path, "ipecmd.exe")
-            if not self.ipecmd_exe:
-                print(f"Error: ipecmd.exe not found in {version_path}/mplab_platform/mplab_ipe/")
-                sys.exit(1)
-            else:
-                print(f'ipecmd: {self.ipecmd_exe}')
-        self.app_bin = cfg.bin_file
-        print(f'bin file: {cfg.bin_file}')
         self.hex_file = cfg.hex_file
-        print(f'hex file: {cfg.hex_file}')
-        self.device = device
+        self.dev_id = dev_id
         self.flash_tool = flash_tool
+        self.ipecmd_path = ipecmd_path
+        self.java_path = java_path
 
     @classmethod
     def name(cls):
@@ -66,53 +32,113 @@ class IpecmdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True, reset=True)
+        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True, reset=True)
 
     @classmethod
     def do_add_parser(cls, parser):
-        # Required
-        parser.add_argument('--device', required=True, help='soc')
         parser.add_argument('--flash-tool', required=True, help='hardware tool to program')
+        parser.add_argument(
+            '--ipecmd-path',
+            help='absolute path to ipecmd.jar (Linux) or ipecmd.exe (Windows); '
+            'skips auto-discovery when provided',
+        )
+        parser.add_argument(
+            '--java-path',
+            help='absolute path to java binary (Linux only); skips PATH lookup when provided',
+        )
 
         parser.set_defaults(reset=True)
 
     @classmethod
     def do_create(cls, cfg, args):
-        return IpecmdBinaryRunner(cfg, args.device, args.flash_tool)
+        return IpecmdBinaryRunner(
+            cfg,
+            args.dev_id,
+            args.flash_tool,
+            ipecmd_path=args.ipecmd_path,
+            java_path=args.java_path,
+        )
 
     def do_run(self, command, **kwargs):
-        print("***************Flashing*************")
         self.ensure_output('hex')
 
         self.logger.info(f'Flashing file: {self.hex_file}')
-        self.logger.info(f'flash tool: {self.flash_tool}, Device: {self.device}')
-        if self.hex_file is not None:
-            if platform.system() == 'Linux':
-                self.logger.info(f'flash cmd: {self.ipecmd_jar}')
-                cmd = [
-                    str(self.java_bin),
-                    '-jar',
-                    str(self.ipecmd_jar),
-                    '-TP' + self.flash_tool,
-                    '-P' + self.device,
-                    '-M',
-                    '-F' + self.hex_file,
-                    '-OL',
-                ]
-            elif platform.system() == 'Windows':
-                self.logger.info(f'flash cmd: {self.ipecmd_exe}')
-                cmd = [
-                    str(self.ipecmd_exe),
-                    '-TP' + self.flash_tool,
-                    '-P' + self.device,
-                    '-M',
-                    '-F' + self.hex_file,
-                    '-OL',
-                ]
-            self.require(cmd[0])
-            self.check_call(cmd)
+        self.logger.info(f'flash tool: {self.flash_tool}, Device: {self.dev_id}')
+
+        if platform.system() == 'Linux':
+            if self.java_path is not None:
+                java_bin = self.java_path
+            else:
+                java_bin = self.find_java_bin()
+                if java_bin is None:
+                    self.logger.error(f'java not found in PATH: {os.environ.get("PATH", "")}')
+                    raise RuntimeError('java not found')
+
+            if self.ipecmd_path is not None:
+                ipecmd_jar = Path(self.ipecmd_path)
+            else:
+                mplabx_base = self.find_mplabx_base()
+                if mplabx_base is None:
+                    self.logger.error(f'MPLABX installation not found in: {COMMON_LOCATIONS}')
+                    raise RuntimeError('MPLABX not found')
+
+                version_path = self.find_latest_version_dir(mplabx_base)
+                if version_path is None:
+                    self.logger.error(f'No versioned MPLABX directory found under: {mplabx_base}')
+                    raise RuntimeError('MPLABX version directory not found')
+
+                ipecmd_jar = self.find_ipecmd(version_path, 'ipecmd.jar')
+                if ipecmd_jar is None:
+                    ipe_dir = version_path / 'mplab_platform/mplab_ipe'
+                    self.logger.error(f'ipecmd.jar not found under: {ipe_dir}')
+                    raise RuntimeError('ipecmd.jar not found')
+
+            self.logger.info(f'flash cmd: {ipecmd_jar}')
+            cmd = [
+                str(java_bin),
+                '-jar',
+                str(ipecmd_jar),
+                '-TP' + self.flash_tool,
+                '-P' + self.dev_id,
+                '-M',
+                '-F' + self.hex_file,
+                '-OL',
+            ]
+        elif platform.system() == 'Windows':
+            if self.ipecmd_path is not None:
+                ipecmd_exe = Path(self.ipecmd_path)
+            else:
+                mplabx_base = self.find_mplabx_base()
+                if mplabx_base is None:
+                    self.logger.error(f'MPLABX installation not found in: {COMMON_LOCATIONS}')
+                    raise RuntimeError('MPLABX not found')
+
+                version_path = self.find_latest_version_dir(mplabx_base)
+                if version_path is None:
+                    self.logger.error(f'No versioned MPLABX directory found under: {mplabx_base}')
+                    raise RuntimeError('MPLABX version directory not found')
+
+                ipecmd_exe = self.find_ipecmd(version_path, 'ipecmd.exe')
+                if ipecmd_exe is None:
+                    ipe_dir = version_path / 'mplab_platform/mplab_ipe'
+                    self.logger.error(f'ipecmd.exe not found under: {ipe_dir}')
+                    raise RuntimeError('ipecmd.exe not found')
+
+            self.logger.info(f'flash cmd: {ipecmd_exe}')
+            cmd = [
+                str(ipecmd_exe),
+                '-TP' + self.flash_tool,
+                '-P' + self.dev_id,
+                '-M',
+                '-F' + self.hex_file,
+                '-OL',
+            ]
         else:
-            print("E: No HEX file found")
+            self.logger.error(f'Unsupported platform: {platform.system()}')
+            raise RuntimeError('Unsupported platform')
+
+        self.require(cmd[0])
+        self.check_call(cmd)
 
     def find_mplabx_base(self):
         for base in COMMON_LOCATIONS:
@@ -123,18 +149,17 @@ class IpecmdBinaryRunner(ZephyrBinaryRunner):
         return None
 
     def find_latest_version_dir(self, mplabx_base):
-        versions = sorted([p for p in mplabx_base.glob("v*/") if p.is_dir()])
+        def version_key(p):
+            return tuple(int(x) for x in re.findall(r'\d+', p.name))
+
+        versions = sorted(
+            [p for p in mplabx_base.glob("v*/") if p.is_dir()],
+            key=version_key,
+        )
         return versions[-1] if versions else None
 
-    def find_java_bin(self, version_path):
-        if platform.system() == 'Linux':
-            java_dirs = list(version_path.glob("sys/java/*/bin/java"))
-        elif platform.system() == 'Windows':
-            java_dirs = list(version_path.glob("sys/java/*/bin/java.exe"))
-        else:
-            self.logger.error("Platform not supported")
-            sys.exit(1)
-        return java_dirs[0] if java_dirs else None
+    def find_java_bin(self):
+        return shutil.which("java")
 
     def find_ipecmd(self, version_path, tool):
         ipe_dir = version_path / "mplab_platform/mplab_ipe"

@@ -11,9 +11,6 @@ config ARCH
 config GEN_ISR_TABLES
 	default y
 
-config DYNAMIC_INTERRUPTS
-	default n
-
 config GEN_IRQ_START_VECTOR
 	default 0
 
@@ -21,7 +18,7 @@ config ARCH_HAS_THREAD_ABORT
 	default y
 
 config ISR_STACK_SIZE
-    default 128
+	default 128
 
 config DSPIC33_IRQ_OFFLOAD_IRQ
 	int "IRQ number for irq_offload()"

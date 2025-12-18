@@ -11,24 +11,18 @@
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_IDLE:
-		__builtin_disable_interrupts();
+	if (state == PM_STATE_SUSPEND_TO_IDLE) {
+		/* Mask all interrupts using DISI */
+		__asm__ volatile("DISICTL #7\n\t");
 		Idle();
-		break;
-	default:
-		break;
 	}
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_IDLE:
-		__builtin_enable_interrupts();
-		break;
-	default:
-		break;
+	if (state == PM_STATE_SUSPEND_TO_IDLE) {
+		/* Unmask interrupts (clear DISI) */
+		__asm__ volatile("DISICTL #0\n\t");
 	}
 }

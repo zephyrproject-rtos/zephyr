@@ -1,1 +1,1 @@
-set (ARCH dspic)
+set(ARCH "dspic")

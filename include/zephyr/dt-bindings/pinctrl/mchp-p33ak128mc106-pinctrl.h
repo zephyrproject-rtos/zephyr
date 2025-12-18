@@ -4,45 +4,127 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Pin control definitions for Microchip dsPIC33AK128MC106
+ *
+ * This header provides pin multiplexing macros and function definitions
+ * for the dsPIC33AK128MC106 microcontroller, used in device tree bindings.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MCHP_P33AK128MC106_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_MCHP_P33AK128MC106_PINCTRL_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 
-/* Masks & Shifts */
-#define DSPIC33_PORT_MASK  0x3U /* 2 bits for 0-3 */
+/**
+ * @name Pin multiplexing field masks and shifts
+ * @{
+ */
+
+/** Mask for port field (2 bits, ports 0-3) */
+#define DSPIC33_PORT_MASK  0x3U
+/** Bit position of port field in pinmux value */
 #define DSPIC33_PORT_SHIFT 30
 
-#define DSPIC33_PIN_MASK  0x3FU /* 6 bits for 0-47 */
+/** Mask for pin field (6 bits, pins 0-47) */
+#define DSPIC33_PIN_MASK  0x3FU
+/** Bit position of pin field in pinmux value */
 #define DSPIC33_PIN_SHIFT 24
 
-#define DSPIC33_FUNC_MASK  0xFFFFFFU /* 24 bits for 0-511 */
+/** Mask for function field (24 bits, functions 0-511) */
+#define DSPIC33_FUNC_MASK  0xFFFFFFU
+/** Bit position of function field in pinmux value */
 #define DSPIC33_FUNC_SHIFT 0
 
-/* Encode: pack port, pin, function */
+/** @} */
+
+/**
+ * @name Pin multiplexing encode/decode macros
+ * @{
+ */
+
+/**
+ * @brief Encode port, pin, and function into a single pinmux value
+ * @param port Port number (0-3)
+ * @param pin Pin number within port (0-47)
+ * @param func Peripheral function code
+ * @return Encoded 32-bit pinmux value
+ */
 #define DSPIC33_PINMUX(port, pin, func)                                                            \
 	((((port) & DSPIC33_PORT_MASK) << DSPIC33_PORT_SHIFT) |                                    \
 	 (((pin) & DSPIC33_PIN_MASK) << DSPIC33_PIN_SHIFT) |                                       \
 	 (((func) & DSPIC33_FUNC_MASK) << DSPIC33_FUNC_SHIFT))
 
-/* Decode: extract port, pin, function */
+/**
+ * @brief Extract port number from pinmux value
+ * @param pinmux Encoded pinmux value
+ * @return Port number (0-3)
+ */
 #define DSPIC33_PINMUX_PORT(pinmux) (((pinmux) >> DSPIC33_PORT_SHIFT) & DSPIC33_PORT_MASK)
+
+/**
+ * @brief Extract pin number from pinmux value
+ * @param pinmux Encoded pinmux value
+ * @return Pin number (0-47)
+ */
 #define DSPIC33_PINMUX_PIN(pinmux)  (((pinmux) >> DSPIC33_PIN_SHIFT) & DSPIC33_PIN_MASK)
+
+/**
+ * @brief Extract function code from pinmux value
+ * @param pinmux Encoded pinmux value
+ * @return Peripheral function code
+ */
 #define DSPIC33_PINMUX_FUNC(pinmux) (((pinmux) >> DSPIC33_FUNC_SHIFT) & DSPIC33_FUNC_MASK)
 
+/** @} */
+
+/**
+ * @name Register offset definitions
+ * @{
+ */
+
+/** Remappable peripheral output register offset */
 #define OFFSET_RPOR  0x3780
+/** Remappable peripheral input register offset */
 #define OFFSET_RPIN  0x3704
+/** Port latch register offset */
 #define OFFSET_LATCH 0x0004
+/** Port tri-state register offset */
 #define OFFSET_TRIS  0x0008
+/** Analog select register offset */
 #define OFFSET_ANSEL 0x3440
 
-/* Port definitions */
+/** @} */
+
+/**
+ * @name Port identifiers
+ * @{
+ */
+
+/** Port A identifier */
 #define PORT_A 0
+/** Port B identifier */
 #define PORT_B 1
+/** Port C identifier */
 #define PORT_C 2
+/** Port D identifier */
 #define PORT_D 3
 
-/* Input Function Macros (for RPINRx register configuration) */
+/** @} */
+
+/**
+ * @name Input peripheral function codes
+ * @brief Function codes for RPINRx register configuration
+ *
+ * These values are used to configure remappable peripheral inputs.
+ * Each macro represents a peripheral input function that can be
+ * assigned to a remappable pin.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
 #define INT1     0x3905
 #define INT2     0x3906
 #define INT3     0x3907
@@ -101,7 +183,22 @@
 #define U2CTS    0x3959
 #define U3CTS    0x395A
 
-/* Output Function Macros (for RPnR register configuration) */
+/** @endcond */
+
+/** @} */
+
+/**
+ * @name Output peripheral function codes
+ * @brief Function codes for RPnR register configuration
+ *
+ * These values are used to configure remappable peripheral outputs.
+ * Each macro represents a peripheral output function that can be
+ * assigned to a remappable pin.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
 #define DEFAULT_PORT 0x00
 #define PWM1H        0x01
 #define PWM1L        0x02
@@ -155,5 +252,9 @@
 #define U1DTRn       0x43
 #define U2DTRn       0x44
 #define U3DTRn       0x45
+
+/** @endcond */
+
+/** @} */
 
 #endif

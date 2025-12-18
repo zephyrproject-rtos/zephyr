@@ -126,7 +126,7 @@ static inline int popcount(unsigned int x)
 #endif
 
 #ifndef __weak
-#define __weak __attribute__((__weak__))
+#define __weak __attribute__((weak))
 #endif
 
 #define _NODATA_SECTION(segment) __attribute__((section(#segment)))
@@ -244,10 +244,10 @@ static inline int popcount(unsigned int x)
 #if defined(_ASMLANGUAGE)
 
 .macro func_section sect sym
-	.section .&sect&.&sym&, keep, code, keep
+	.section .\sect\().\sym\(), keep, code, keep
 	.align 4
-	.type _&sym&, @function
-_&sym&:
+	.type _\sym\(), @function
+_\sym\() :
 .endm
 
 #define GTEXT(sym) .global _##sym

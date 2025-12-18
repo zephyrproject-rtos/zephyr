@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 _vector_start = .;
 KEEP(*(.exc_vector_table))
 KEEP(*(.exc_vector_table.*))

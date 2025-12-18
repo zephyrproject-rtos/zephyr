@@ -35,7 +35,6 @@
 		soc = &soc;
 	};
 
-
 	soc: soc {
 		compatible = "microchip,p33ak128mc106-soc";
 		#address-cells = <1>;
@@ -55,23 +54,23 @@
 
 		intc0: interrupt-controller@70 {
 			compatible = "microchip,dspic33-intc";
-			reg = <0x70 0xF0>;
-			ie-offset = <0xB4>;
+			reg = <0x70 0xf0>;
+			ie-offset = <0xb4>;
 			if-offset = <0x90>;
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 		};
 
-		timer1: timer@1E00 {
+		timer1: timer@1e00 {
 			compatible = "microchip,dspic33-timer";
-			reg = <0x1E00 0xC>;
+			reg = <0x1e00 0xc>;
 			clock-frequency = <4000000>;
 			prescaler = <8>;
 			interrupt-parent = <&intc0>;
 			interrupts = <48 1>;
 			label = "TIMER_1";
-			status = "okay";
+			status = "disabled";
 		};
 
 		uart0: uart@1700 {
@@ -84,7 +83,7 @@
 			current-speed = <115200>;
 			pinctrl-0 = <&uart0_tx_default &uart0_rx_default>;
 			pinctrl-names = "default";
-			status = "okay";
+			status = "disabled";
 		};
 
 		uart1: uart@1740 {
@@ -97,7 +96,7 @@
 			current-speed = <115200>;
 			pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
 			pinctrl-names = "default";
-			status = "okay";
+			status = "disabled";
 		};
 
 		uart2: uart@1780 {
@@ -110,12 +109,12 @@
 			current-speed = <115200>;
 			pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
 			pinctrl-names = "default";
-			status = "okay";
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@200 {
 			compatible = "microchip,dspic33-pinctrl";
-			reg = <0x0200 0x37D0>;
+			reg = <0x0200 0x37d0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
@@ -125,7 +124,7 @@
 				reg = <0x0200 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				status = "okay";
+				status = "disabled";
 			};
 
 			gpiob: gpio@214 {
@@ -133,7 +132,7 @@
 				reg = <0x0214 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				status = "okay";
+				status = "disabled";
 			};
 
 			gpioc: gpio@228 {
@@ -141,15 +140,15 @@
 				reg = <0x0228 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				status = "okay";
+				status = "disabled";
 			};
 
-			gpiod: gpio@23C {
+			gpiod: gpio@23c {
 				compatible = "microchip,dspic-gpio";
-				reg = <0x023C 0x20>;
+				reg = <0x023c 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				status = "okay";
+				status = "disabled";
 			};
 
 			uart0_tx_default: uart0_tx_default {
@@ -176,6 +175,5 @@
 				pinmux = <DSPIC33_PINMUX(PORT_B, 1, U3RX)>;
 			};
 		};
-
 	};
 };
