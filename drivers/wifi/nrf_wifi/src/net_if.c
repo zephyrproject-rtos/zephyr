@@ -454,15 +454,20 @@ int nrf_wifi_if_send(const struct device *dev,
 			goto drop;
 		}
 
-		/* VIF or per-peer depending on RA */
-		if (peer_id == MAX_PEERS) {
+		/* Use authorized from vif_ctx_zep for STA mode, or per-peer for AP/GO */
+		if (vif_ctx_zep->if_type == NRF_WIFI_IFTYPE_STATION) {
 			authorized = vif_ctx_zep->authorized;
-		} else {
+		} else if (peer_id != MAX_PEERS) {
 			authorized = sys_dev_ctx->tx_config.peers[peer_id].authorized;
+		} else {
+			/* non-STA modes always allow group frames */
+			authorized = true;
 		}
 
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
 		    (!authorized && !is_eapol(pkt))) {
+			LOG_DBG("%s: carrier state: %d, authorized: %d, is_eapol: %d",
+				__func__, vif_ctx_zep->if_carr_state, authorized, is_eapol(pkt));
 			ret = -EPERM;
 			goto drop;
 		}
