@@ -21,6 +21,9 @@
  * This structure **must** be placed first in the driver's config structure.
  */
 struct step_dir_stepper_common_config {
+	struct gpio_dt_spec en_pin;
+	struct gpio_dt_spec m0_pin;
+	struct gpio_dt_spec m1_pin;
 	uint32_t step_width_ns;
 	bool dual_edge;
 };
@@ -34,6 +37,9 @@ struct step_dir_stepper_common_config {
  */
 #define STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(node_id)                                            \
 	{                                                                                          \
+		.en_pin = GPIO_DT_SPEC_GET_OR(node_id, en_gpios, {0}),                             \
+		.m0_pin = GPIO_DT_SPEC_GET_OR(node_id, m0_gpios, {0}),                             \
+		.m1_pin = GPIO_DT_SPEC_GET_OR(node_id, m1_gpios, {0}),                             \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
 		.step_width_ns = DT_PROP(node_id, step_width_ns),                                  \
 	}
