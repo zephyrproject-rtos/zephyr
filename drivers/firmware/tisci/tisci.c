@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/mbox/mbox_ti_secproxy.h>
 #include <stdint.h>
 #include <stdio.h>
-#define DT_DRV_COMPAT ti_k2g_sci
+#define DT_DRV_COMPAT      ti_k2g_sci
+#define DT_SECPROXY_COMPAT ti_secure_proxy
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/device.h>
 #include "tisci.h"
@@ -19,6 +21,8 @@
 LOG_MODULE_REGISTER(ti_k2g_sci);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "There can only be one DMSC instance");
+
+#define DMSC_USES_SECPROXY (DT_NODE_HAS_COMPAT(DT_INST_PHANDLE(0, mboxes), DT_SECPROXY_COMPAT))
 
 /**
  * @struct tisci_config - TISCI device configuration structure
@@ -68,7 +72,9 @@ static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_
 {
 	struct tisci_data *data = dev->data;
 
-	k_sem_take(&data->data_sem, K_FOREVER);
+	if (!k_is_pre_kernel()) {
+		k_sem_take(&data->data_sem, K_FOREVER);
+	}
 
 	const struct tisci_config *config = dev->config;
 	struct tisci_xfer *xfer = &data->xfer;
@@ -105,7 +111,9 @@ static void callback(const struct device *dev, mbox_channel_id_t channel_id, voi
 {
 	struct rx_msg *msg = user_data;
 
-	k_sem_give(msg->response_ready_sem);
+	if (!k_is_pre_kernel()) {
+		k_sem_give(msg->response_ready_sem);
+	}
 }
 
 static bool tisci_is_response_ack(void *r)
@@ -130,10 +138,12 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 		return -EINVAL;
 	}
 
-	if (k_sem_take(data->rx_message.response_ready_sem, K_MSEC(config->max_rx_timeout_ms)) !=
-	    0) {
-		LOG_ERR("Timeout waiting for response");
-		return -ETIMEDOUT;
+	if (!k_is_pre_kernel()) {
+		if (k_sem_take(data->rx_message.response_ready_sem,
+			       K_MSEC(config->max_rx_timeout_ms)) != 0) {
+			LOG_ERR("Timeout waiting for response");
+			return -ETIMEDOUT;
+		}
 	}
 
 	if (xfer->rx_message.size > config->max_msg_size) {
@@ -155,7 +165,9 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 		return -EINVAL;
 	}
 
-	k_sem_give(&data->data_sem);
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&data->data_sem);
+	}
 	return 0;
 }
 
@@ -169,7 +181,18 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 	struct mbox_msg *msg = &xfer->tx_message;
 	int ret;
 
-	ret = mbox_send_dt(&config->mbox_tx, msg);
+	if (k_is_pre_kernel()) {
+#if DMSC_USES_SECPROXY
+		ret = secproxy_mailbox_send_then_poll_rx_dt(&config->mbox_rx, &config->mbox_tx,
+							    msg);
+#else
+		LOG_ERR("Cannot transceive messages during pre kernel\n");
+		return -ENOTSUP;
+#endif
+	} else {
+		ret = mbox_send_dt(&config->mbox_tx, msg);
+	}
+
 	if (ret < 0) {
 		LOG_ERR("Could not send (%d)\n", ret);
 		return ret;
