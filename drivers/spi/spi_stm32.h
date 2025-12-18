@@ -71,7 +71,12 @@ struct spi_stm32_data {
 #endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
+#if defined(CONFIG_SPI_RTIO)
+	struct k_timer tx_empty_timer;
+	const struct device *dev;
+#else
 	struct k_sem status_sem;
+#endif
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;

@@ -10,11 +10,23 @@
 	div-q = <8>;
 };
 
+&dmamux1 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
 /* Define PLL1_Q as SPI1 kernel clock source */
 &spi1 {
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
 		 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
+
+	dmas = <&dmamux1 0 38 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
