@@ -65,11 +65,6 @@ struct _callee_saved {
 
 	uint32_t Rcount;  /* repeat loop counter register */
 	uint32_t Corcon;  /* core mode control register */
-	uint32_t modcon;  /* Modulo addressing control register */
-	uint32_t xmodsrt; /* X AGU modulo addressing start register */
-	uint32_t xmodend; /* X AGU modulo addressing end register */
-	uint32_t ymodsrt; /* Y AGU modulo addressing start register */
-	uint32_t ymodend; /* Y AGU modulo addressing end register */
 	uint32_t Xbrev;   /*X AGU reversal addressing control register */
 
 	uint32_t AccL; /* Lower 32 bits of accumulator A */

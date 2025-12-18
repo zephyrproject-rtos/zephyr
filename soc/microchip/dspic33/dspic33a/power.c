@@ -13,7 +13,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		__builtin_disable_interrupts();
+		/* Mask all interrupts using DISI */
+		__asm__ volatile("DISICTL #7\n\t");
 		Idle();
 		break;
 	default:
@@ -26,7 +27,8 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		__builtin_enable_interrupts();
+		/* Unmask interrupts (clear DISI) */
+		__asm__ volatile("DISICTL #0\n\t");
 		break;
 	default:
 		break;

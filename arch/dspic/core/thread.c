@@ -58,8 +58,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	thread->callee_saved.stack = (uint32_t)(void *)init_frame + (sizeof(struct arch_esf));
 	thread->callee_saved.frame = (uint32_t)thread->callee_saved.stack;
 	thread->callee_saved.splim = (uint32_t)(thread->stack_info.start + thread->stack_info.size);
-	/*Set the initial key for irq unlock*/
-	thread->arch.cpu_level = 1;
+	/*Set the initial cpu level to context 0*/
+	thread->arch.cpu_level = 0;
 }
 
 int arch_coprocessors_disable(struct k_thread *thread)

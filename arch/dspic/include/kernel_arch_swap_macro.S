@@ -133,16 +133,6 @@
     mov.l [w2], [w1++]
     mov.l #CORCON, w2
     mov.l [w2], [w1++]
-    mov.l #MODCON, w2
-    mov.l [w2], [w1++]
-    mov.l #XMODSRT, w2
-    mov.l [w2], [w1++]
-    mov.l #XMODEND, w2
-    mov.l [w2], [w1++]
-    mov.l #YMODSRT, w2
-    mov.l [w2], [w1++]
-    mov.l #YMODEND, w2
-    mov.l [w2], [w1++]
     mov.l #XBREV, w2
     mov.l [w2], [w1++]
 
@@ -200,21 +190,9 @@
     mov.l [w1++], [w2]
     mov.l #CORCON, w2
     mov.l [w1++], [w2]
-    mov.l #MODCON, w2
-    mov.l [w1++], [w2]
-    mov.l #XMODSRT, w2
-    mov.l [w1++], [w2]
-    mov.l #XMODEND, w2
-    mov.l [w1++], [w2]
-    mov.l #YMODSRT, w2
-    mov.l [w1++], [w2]
-    mov.l #YMODEND, w2
-    mov.l [w1++], [w2]
     mov.l #XBREV, w2
     mov.l [w1++], [w2]
 
-    clr A
-    clr B
     llac.l [W1++], A
     lac.l [W1++], A
     luac.l [W1++], A

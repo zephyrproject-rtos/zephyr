@@ -83,22 +83,23 @@ static ALWAYS_INLINE void z_dspic_irq_priority_set(unsigned int irq, unsigned in
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-	if (key != 0U) {
-		__builtin_enable_interrupts();
+	if (key == 0U) {
+		/* Unmask interrupts (clear DISI) */
+		__asm__ volatile("DISICTL %0\n\t" : : "r"(key) :);
 	}
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	return key;
+	return (key == 0);
 }
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	volatile unsigned int key;
 
-	key = INTCON1bits.GIE;
-	__builtin_disable_interrupts();
+	/* Mask all interrupts using DISI */
+	__asm__ volatile("DISICTL #7, %0\n\t" : "=r"(key) : :);
 	return key;
 }
 

@@ -35,14 +35,15 @@ __COMMONInterrupt:
 
     call	w1
     mov.l [--w15], w0
-    call	_arch_dspic_irq_clear
+    lsr.l   w0,#3,w1
+    add.l   #IF_OFFSET,w1       ; Will not carry out, so sets SR.C = 0
+    bsw.bC  [w1], w0            ; Instruction ignores w0[31:3] bits for .b size
 
     /* Check and perform context switch
      */
     sub.l [w8],#1,w0
     mov.l w0,[w8]
     mov.l [--w15], w8
-    cp.l w0,#0
     bra	nz,.L2
     mov.sl #__kernel + ___kernel_t_ready_q_OFFSET,w1
     mov.l [w1],w1
@@ -87,24 +88,8 @@ __COMMONInterrupt:
     2:
     mov.l [--w15], w1
     mov.l [--w15], w2
-    nop
     retfie
 
 .L2:
     ulnk
     retfie
-
-
-GTEXT(arch_dspic_irq_clear)
-SECTION_FUNC(TEXT, arch_dspic_irq_clear)
-	lnk	#0
-	lsr.l	w0,#5,w1
-	sl.l	w1,#2,w1
-	add.l	#IF_OFFSET,w1
-	and.l	w0,#(0x1f&0x7F),w2
-	movs.l	#0x1,w0
-	sl.l	w0,w2,w0
-	com.l	w0,w0
-	and.l	w0,[w1],[w1]
-	ulnk	
-	return

@@ -40,7 +40,7 @@ SECTION_FUNC(TEXT, arch_swap)
     mov.l w2, [w1 + __thread_t_arch_cpu_level_OFFSET]
 
     /*move -EAGAIN to the member (2s compliment of 11)*/
-    mov.l #0xfffffff5, w2
+    movs.l #0xfff5, w2
     mov.l w2, [w1 + __thread_t_arch_swap_return_value_OFFSET]
     mov.l #1, w2
     mov.l w2, [w1 + __thread_t_arch_swapped_from_thread_OFFSET]
@@ -75,8 +75,8 @@ SECTION_FUNC(TEXT, arch_swap)
     mov.l [w1 + __thread_t_arch_cpu_level_OFFSET], w1
     cp.l w1, #0x0
 
-    bra z, 2f
-    bset.b 0x71, #0x7
+    bra nz, 2f
+    DISICTL w1
     2:
     mov.l [--w15], w2
     mov.l [--w15], w1
