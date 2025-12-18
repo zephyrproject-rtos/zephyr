@@ -354,7 +354,11 @@ static int pwm_suspend(const struct device *dev)
 	while (!nrfx_pwm_stopped_check(&data->pwm)) {
 	}
 
-	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
+	data->period_cycles = 0;
+	data->pwm_needed = 0;
+	data->prescaler = 0;
+	data->stop_requested = 0;
+
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 
 	return 0;
@@ -382,10 +386,6 @@ static int pwm_nrfx_init(const struct device *dev)
 	int err;
 
 	ANOMALY_109_EGU_IRQ_CONNECT(NRFX_PWM_NRF52_ANOMALY_109_EGU_INSTANCE);
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-	}
 
 	err = nrfx_pwm_init(&data->pwm, &config->initial_config, pwm_handler, dev->data);
 	if (err < 0) {
