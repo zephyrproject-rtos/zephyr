@@ -411,6 +411,7 @@
 		compatible = "nxp,lpcmp";
 		reg = <0x370000 0x50>;
 		interrupts = <183 0>;
+		clocks = <&mc_cgm MCUX_CMP0_CLK>;
 		status = "disabled";
 	};
 
@@ -418,6 +419,7 @@
 		compatible = "nxp,lpcmp";
 		reg = <0x374000 0x50>;
 		interrupts = <184 0>;
+		clocks = <&mc_cgm MCUX_CMP1_CLK>;
 		status = "disabled";
 	};
 
@@ -425,6 +427,7 @@
 		compatible = "nxp,lpcmp";
 		reg = <0x4e8000 0x50>;
 		interrupts = <185 0>;
+		clocks = <&mc_cgm MCUX_CMP2_CLK>;
 		status = "disabled";
 	};
 

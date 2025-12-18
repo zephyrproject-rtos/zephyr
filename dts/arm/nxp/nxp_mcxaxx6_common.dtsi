@@ -353,7 +353,7 @@
 			reg = <0x400b1000 0x1000>;
 			interrupts = <64 0>;
 			status = "disabled";
-			#io-channel-cells = <2>;
+			clocks = <&syscon MCUX_LPCMP0_CLK>;
 		};
 
 		lpcmp1: lpcmp@400b2000 {
@@ -361,7 +361,7 @@
 			reg = <0x400b2000 0x1000>;
 			interrupts = <65 0>;
 			status = "disabled";
-			#io-channel-cells = <2>;
+			clocks = <&syscon MCUX_LPCMP1_CLK>;
 		};
 
 		lpcmp2: lpcmp@400b3000 {
@@ -369,7 +369,7 @@
 			reg = <0x400b3000 0x1000>;
 			interrupts = <66 0>;
 			status = "disabled";
-			#io-channel-cells = <2>;
+			clocks = <&syscon MCUX_LPCMP2_CLK>;
 		};
 
 		opamp0: opamp@400b7000 {

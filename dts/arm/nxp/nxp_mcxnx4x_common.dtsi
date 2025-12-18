@@ -1062,7 +1062,6 @@
 		reg = <0x51000 0x1000>;
 		interrupts = <109 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	lpcmp1: lpcmp@52000 {
@@ -1070,7 +1069,6 @@
 		reg = <0x52000 0x1000>;
 		interrupts = <110 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	flexcan0: can@d4000 {
