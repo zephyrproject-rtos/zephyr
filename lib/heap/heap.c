@@ -39,6 +39,16 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 	CHECK(b->next != 0);
 	CHECK(h->avail_buckets & BIT(bidx));
 
+#ifdef CONFIG_SYS_HEAP_ASAN_POISONING
+	/* Unpoison the chunk when it's being removed from the free list
+	 * This is done before the chunk is allocated to allow safe access
+	 */
+	void *mem = chunk_mem(h, c);
+	size_t user_size = chunksz_to_bytes(h, chunk_size(h, c)) - chunk_header_bytes(h);
+
+	ASAN_UNPOISON_HEAP_MEMORY(mem, user_size);
+#endif
+
 	if (next_free_chunk(h, c) == c) {
 		/* this is the last chunk */
 		h->avail_buckets &= ~BIT(bidx);
@@ -89,6 +99,19 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 		set_next_free_chunk(h, first, c);
 		set_prev_free_chunk(h, second, c);
 	}
+
+#ifdef CONFIG_SYS_HEAP_ASAN_POISONING
+	void *mem = chunk_mem(h, c);
+	size_t user_size = chunksz_to_bytes(h, chunk_size(h, c)) - chunk_header_bytes(h);
+
+	/* Leave the free-list prev/next words unpoisoned so list maintenance can run */
+	if (user_size > 2 * sizeof(chunkid_t)) {
+		uint8_t *poison_start = (uint8_t *)mem + 2 * sizeof(chunkid_t);
+		size_t poison_size = user_size - 2 * sizeof(chunkid_t);
+
+		ASAN_POISON_HEAP_MEMORY(poison_start, poison_size);
+	}
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
@@ -188,6 +211,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes -= chunksz_to_bytes(h, chunk_size(h, c));
 #endif
+
+	/* Poison only the user data part of the chunk (not the chunk header) */
+	ASAN_POISON_HEAP_MEMORY(mem, sys_heap_usable_size(heap, mem));
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 	heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), mem,
@@ -473,6 +499,8 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	}
 
 	if (inplace_realloc(heap, ptr, bytes)) {
+		/* For in-place realloc, we need to ensure the memory is unpoisoned */
+		ASAN_UNPOISON_HEAP_MEMORY(ptr, sys_heap_usable_size(heap, ptr));
 		return ptr;
 	}
 
@@ -482,8 +510,11 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
+		/* Temporarily unpoison the memory before copying */
+		ASAN_UNPOISON_HEAP_MEMORY(ptr, prev_size);
 		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
+		/* Note: sys_heap_free will poison ptr after the copy */
 	}
 	return ptr2;
 }
@@ -504,6 +535,8 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 
 	if ((align == 0 || ((uintptr_t)ptr & (align - 1)) == 0) &&
 	    inplace_realloc(heap, ptr, bytes)) {
+		/* For in-place realloc, we need to ensure the memory is unpoisoned */
+		ASAN_UNPOISON_HEAP_MEMORY(ptr, sys_heap_usable_size(heap, ptr));
 		return ptr;
 	}
 
@@ -516,8 +549,11 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
+		/* Temporarily unpoison the memory before copying */
+		ASAN_UNPOISON_HEAP_MEMORY(ptr, prev_size);
 		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
+		/* Note: sys_heap_free will poison ptr after the copy */
 	}
 	return ptr2;
 }
@@ -534,6 +570,9 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 		__ASSERT(bytes / CHUNK_UNIT <= 0x7fffffffU, "heap size is too big");
 	}
 
+	/* Poison the entire heap memory initially to detect access to unallocated regions */
+	ASAN_POISON_HEAP_MEMORY(mem, bytes);
+
 	/* Reserve the end marker chunk's header */
 	__ASSERT(bytes > heap_footer_bytes(bytes), "heap size is too small");
 	bytes -= heap_footer_bytes(bytes);
@@ -547,6 +586,13 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	__ASSERT(heap_sz > chunksz(sizeof(struct z_heap)), "heap size is too small");
 
 	struct z_heap *h = (struct z_heap *)addr;
+
+	/*
+	 * Unpoison a minimal region first, set end_chunk,
+	 * then calculate and unpoison the full metadata.
+	 */
+	ASAN_UNPOISON_HEAP_MEMORY(h, sizeof(struct z_heap));
+
 	heap->heap = h;
 	h->end_chunk = heap_sz;
 	h->avail_buckets = 0;
@@ -567,9 +613,22 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 
 	__ASSERT(chunk0_size + min_chunk_size(h) <= heap_sz, "heap size is too small");
 
+#ifdef CONFIG_SYS_HEAP_ASAN_POISONING
+	/* Extend unpoisoning to cover full metadata including buckets array */
+	size_t metadata_size = sizeof(struct z_heap) +
+			       nb_buckets * sizeof(struct z_heap_bucket);
+	ASAN_UNPOISON_HEAP_MEMORY(h, metadata_size);
+#endif
+
 	for (int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].next = 0;
 	}
+
+	/* Unpoison chunk headers that will be set during initialization */
+	ASAN_UNPOISON_HEAP_MEMORY((void *)((uint8_t *)h + chunk0_size * CHUNK_UNIT),
+				    chunk_header_bytes(h));
+	ASAN_UNPOISON_HEAP_MEMORY((void *)((uint8_t *)h + heap_sz * CHUNK_UNIT),
+				    chunk_header_bytes(h));
 
 	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);

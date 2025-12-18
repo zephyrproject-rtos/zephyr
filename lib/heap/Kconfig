@@ -52,6 +52,32 @@ config SYS_HEAP_RUNTIME_STATS
 	help
 	  Gather system heap runtime statistics.
 
+config SYS_HEAP_ASAN_POISONING
+	bool "Address Sanitizer (ASAN) memory poisoning"
+	depends on ASAN && ARCH_POSIX
+	help
+	  Enables integration with Clang's Address Sanitizer (ASAN)
+	  to implement comprehensive memory poisoning for the heap allocator.
+
+	  This feature provides enhanced error detection by:
+	  - Poisoning unallocated memory to detect access to never-allocated regions
+	  - Poisoning freed memory to detect use-after-free errors
+	  - Maintaining boundary protection between allocated and free regions
+
+	  When enabled, the following types of memory errors can be detected:
+	  - Use-after-free: Accessing memory after it has been freed
+	  - Unallocated access: Accessing memory that was never allocated
+	  - Buffer overruns: Writing beyond allocated boundaries
+
+	  This feature is only available on POSIX-based simulation platforms
+	  (e.g., native_sim) where ASAN is supported.
+
+	  Use for debugging and validation only.
+	  Depends on compiler support for ASAN (typically Clang).
+
+	  Performance impact: Minimal overhead on allocation/free operations.
+	  The heap initialization will be slightly slower due to initial poisoning.
+
 config SYS_HEAP_ARRAY_SIZE
 	int "Size of array to store heap pointers"
 	default 0
