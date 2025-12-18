@@ -26,6 +26,11 @@ extern "C" {
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup dac_interface_ext Device-specific DAC API extensions
+ *
+ * @{
+ * @}
  */
 
 /**
