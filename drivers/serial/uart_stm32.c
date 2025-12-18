@@ -177,7 +177,6 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
-	struct uart_stm32_data *data = dev->data;
 
 	if (baud_rate == 0) {
 		return -EINVAL;
@@ -187,7 +186,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 
 	/* Get clock rate */
 	if (IS_ENABLED(STM32_UART_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
-		int ret = clock_control_get_rate(data->clock,
+		int ret = clock_control_get_rate(config->clock,
 						 (clock_control_subsys_t)&config->pclken[1],
 						 &clock_rate);
 		if (ret < 0) {
@@ -195,7 +194,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 			return ret;
 		}
 	} else {
-		int ret = clock_control_get_rate(data->clock,
+		int ret = clock_control_get_rate(config->clock,
 						 (clock_control_subsys_t)&config->pclken[0],
 						 &clock_rate);
 		if (ret < 0) {
@@ -875,14 +874,6 @@ static int uart_stm32_err_check(const struct device *dev)
 	}
 
 	return err;
-}
-
-static inline void __uart_stm32_get_clock(const struct device *dev)
-{
-	struct uart_stm32_data *data = dev->data;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	data->clock = clk;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -2201,18 +2192,15 @@ static DEVICE_API(uart, uart_stm32_driver_api) = {
 static int uart_stm32_clocks_enable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
-	struct uart_stm32_data *data = dev->data;
 	int err;
 
-	__uart_stm32_get_clock(dev);
-
-	if (!device_is_ready(data->clock)) {
+	if (!device_is_ready(config->clock)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	/* enable clock */
-	err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+	err = clock_control_on(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 	if (err != 0) {
 		LOG_ERR("Could not enable (LP)UART clock");
 		return err;
@@ -2418,7 +2406,6 @@ static void uart_stm32_suspend_setup(const struct device *dev)
 static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_stm32_config *config = dev->config;
-	struct uart_stm32_data *data = dev->data;
 	int err;
 
 	switch (action) {
@@ -2430,7 +2417,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 		}
 
 		/* Enable bus clock */
-		err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+		err = clock_control_on(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {
 			LOG_ERR("Could not enable (LP)UART clock");
 			return err;
@@ -2462,7 +2449,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 	case PM_DEVICE_ACTION_SUSPEND:
 		uart_stm32_suspend_setup(dev);
 		/* Stop device clock. Note: fixed clocks are not handled yet. */
-		err = clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+		err = clock_control_off(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {
 			LOG_ERR("Could not disable (LP)UART clock");
 			return err;
@@ -2658,6 +2645,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 										\
 	static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 		.usart = (USART_TypeDef *)DT_INST_REG_ADDR(index),		\
+		.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),		\
 		.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 		.pclken = pclken_##index,					\
 		.pclk_len = DT_INST_NUM_CLOCKS(index),				\
