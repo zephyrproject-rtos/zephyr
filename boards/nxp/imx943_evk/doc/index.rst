@@ -201,6 +201,25 @@ Then the following log could be found on UART1 console:
     *** Booting Zephyr OS build v4.1.0-3650-gdb71736adb68 ***
     Hello World! imx943_evk/mimx94398/a55
 
+Cortex-A55 SMP
+==============
+
+The default SMP variant runs on all four Cortex-A Core, it could be changed by
+disabling some A55 Core nodes in dts and change :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS`
+to the count of enabled A55 Cores in dts.
+
+Building SMP kernel, for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55/smp
+   :goals: build
+
+For different booting method, need to make sure SMP Zephyr to be started from the first
+CPU Core listed in "cpus" dts node, so the first A55 Core in default SMP variant dts
+is Core0, it could be booted by U-Boot "go" command,  J-Link runner or SPSDK runner.
+
 Programming and Debugging (M33 in NETC MIX, M7_0 in M7MIX0, M7_1 in M7MIX1)
 ***************************************************************************
 
