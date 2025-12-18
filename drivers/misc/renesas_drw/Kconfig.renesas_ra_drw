@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RA_DRW
+	bool "Renesas RA DRW Driver"
+	depends on DT_HAS_RENESAS_RA_DRW_ENABLED
+	select USE_RA_FSP_DRW
+	default y
+	help
+	  Enable config options for Renesas DRW driver
+
+if RENESAS_RA_DRW
+config RENESAS_DAVE2D_RUNTIME_HEAP_SIZE
+	int "Renesas DAVE2D runtime heap size"
+	default 8192
+	help
+	  Set the size of the runtime heap for DAVE2D driver.
+	  This heap is used for dynamic memory allocation during runtime.
+
+endif # RENESAS_RA_DRW

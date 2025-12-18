@@ -26,6 +26,9 @@ if LVGL
 config LV_Z_VDB_CUSTOM_SECTION
 	default y
 
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 4
+
 endif # LVGL
 
 endif # BOARD_EK_RA8D1

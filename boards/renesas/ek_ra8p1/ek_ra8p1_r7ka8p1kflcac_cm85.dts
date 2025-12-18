@@ -192,6 +192,13 @@
 &lcdif {
 	interrupts = <30 1>;
 	interrupt-names = "line";
+	status = "okay";
+};
+
+&drw {
+	interrupt-names = "drw";
+	interrupts = <23 12>;
+	status = "okay";
 };
 
 zephyr_lcdif: &lcdif {};
