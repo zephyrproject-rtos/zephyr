@@ -113,6 +113,7 @@ tests:
       - platform:mimxrt1060_evk@B/mimxrt1062/qspi:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
       - platform:mimxrt1060_evk@C/mimxrt1062/qspi:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
       - platform:mimxrt1064_evk/mimxrt1064:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay"
+      - platform:frdm_mcxe31b/mcxe31b:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
   drivers.uart.async_api.sam0:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_ATMEL_SAM0
     platform_allow:
