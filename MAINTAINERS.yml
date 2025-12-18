@@ -1511,7 +1511,7 @@ Documentation Infrastructure:
   files:
     - drivers/audio/dai/
     - doc/hardware/peripherals/audio/dai.rst
-    - include/zephyr/drivers/dai.h
+    - include/zephyr/audio/dai.h
     - include/zephyr/dt-bindings/dai/
     - dts/bindings/dai/
   labels:

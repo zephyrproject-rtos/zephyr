@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 #include <zephyr/internal/syscall_handler.h>
 
 /**

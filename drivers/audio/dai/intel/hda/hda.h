@@ -8,7 +8,7 @@
 #define __INTEL_DAI_DRIVER_HDA_H__
 
 #include <stdint.h>
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 
 #define dai_get_drvdata(dai) &dai->priv_data
 #define dai_base(dai) dai->plat_data.base

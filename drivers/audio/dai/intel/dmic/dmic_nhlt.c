@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 #include <adsp_clk.h>
 #include "dmic.h"
 #include <dmic_regs.h>

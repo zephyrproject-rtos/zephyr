@@ -29,7 +29,7 @@
 #endif
 
 #include <stdint.h>
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 #include "dai-params-intel-ipc3.h"
 #include "dai-params-intel-ipc4.h"
 

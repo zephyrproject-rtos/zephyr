@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 #include <zephyr/drivers/dma.h>
 #include <soc.h>
 

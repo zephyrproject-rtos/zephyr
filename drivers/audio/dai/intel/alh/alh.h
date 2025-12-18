@@ -8,7 +8,7 @@
 #define __INTEL_DAI_DRIVER_ALH_H__
 
 #include <stdint.h>
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 
 #include "alh_map.h"
 

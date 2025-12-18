@@ -30,7 +30,7 @@
 #include <zephyr/drivers/coredump.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/dac.h>
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 #include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/dma.h>

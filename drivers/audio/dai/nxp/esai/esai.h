@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_DAI_NXP_ESAI_H_
 
 #include <zephyr/logging/log.h>
-#include <zephyr/drivers/dai.h>
+#include <zephyr/audio/dai.h>
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/dai/esai.h>
 #include <zephyr/drivers/clock_control.h>

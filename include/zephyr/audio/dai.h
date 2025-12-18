@@ -10,8 +10,8 @@
  * @brief Main header file for DAI (Digital Audio Interface) driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DAI_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DAI_H_
+#ifndef ZEPHYR_INCLUDE_AUDIO_DAI_H_
+#define ZEPHYR_INCLUDE_AUDIO_DAI_H_
 
 /**
  * @defgroup dai_interface DAI
@@ -652,4 +652,4 @@ static inline int z_impl_dai_config_update(const struct device *dev,
 
 #include <zephyr/syscalls/dai.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DAI_H_ */
+#endif /* ZEPHYR_INCLUDE_AUDIO_DAI_H_ */
