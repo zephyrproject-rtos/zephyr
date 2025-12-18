@@ -30,9 +30,8 @@
 /**
  * @brief Interfaces for the tracing subsystem.
  *
- * The tracing subsystem provides that permits you to collect data from
- * your application and allows tools running on a host to visualize the
- * inner-working of the kernel and various other subsystems.
+ * The tracing subsystem permits you to collect data from your application and allows tools
+ * running on a host to visualize the inner-working of the kernel and various other subsystems.
  *
  * @defgroup subsys_tracing Tracing
  * @ingroup os_services
