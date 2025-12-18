@@ -260,7 +260,7 @@ USB
 .. zephyr-keep-sorted-stop
 
 Video
-===
+=====
 
 * CONFIG_VIDEO_OV7670 is now gone and replaced by CONFIG_VIDEO_OV767X.  This allows supporting both the OV7670 and 0V7675.
 
