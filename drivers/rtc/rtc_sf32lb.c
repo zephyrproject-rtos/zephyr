@@ -73,6 +73,7 @@ struct rtc_sf32lb_config {
 #endif
 };
 
+#ifdef CONFIG_RTC_ALARM
 static void rtc_irq_handler(const struct device *dev)
 {
 	const struct rtc_sf32lb_config *config = dev->config;
@@ -82,15 +83,14 @@ static void rtc_irq_handler(const struct device *dev)
 	if (isr & RTC_ISR_ALRMF) {
 		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
 
-#ifdef CONFIG_RTC_ALARM
-		atomic_set_bit(&data->is_pending, 0);
+		atomic_set_bit(data->is_pending, 0);
 
 		if (data->alarm_cb.cb) {
 			data->alarm_cb.cb(dev, 0, data->alarm_cb.user_data);
 		}
-#endif
 	}
 }
+#endif
 
 static inline int rtc_sf32lb_enter_init_mode(const struct device *dev)
 {
@@ -329,7 +329,7 @@ static int rtc_sf32lb_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	return (int)atomic_test_and_clear_bit(&data->is_pending, 0);
+	return (int)atomic_test_and_clear_bit(data->is_pending, 0);
 }
 
 static int rtc_sf32lb_alarm_set_callback(const struct device *dev, uint16_t id,
@@ -388,7 +388,8 @@ static int rtc_sf32lb_init(const struct device *dev)
 }
 
 #define RTC_SF32LB_DEFINE(n)                                                                       \
-	static void rtc_sf32lb_irq_config_func_##n(void);                                          \
+	IF_ENABLED(CONFIG_RTC_ALARM, (                                                             \
+		static void rtc_sf32lb_irq_config_func_##n(void);))                                \
 	static const struct rtc_sf32lb_config rtc_sf32lb_config_##n = {                            \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.cfg = DT_REG_ADDR(DT_INST_PHANDLE(n, sifli_cfg)),                                 \
