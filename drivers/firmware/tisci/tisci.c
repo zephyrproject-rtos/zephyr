@@ -15,7 +15,10 @@
 #include <zephyr/sys/util.h>
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(ti_k2g_sci);
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "There can only be one DMSC instance");
 
 /**
  * @struct tisci_config - TISCI device configuration structure
@@ -1576,27 +1579,24 @@ static int tisci_init(const struct device *dev)
 }
 
 /* Device Tree Instantiation */
-#define TISCI_DEFINE(_n)                                                                           \
-	static uint8_t rx_message_buf_##_n[MAILBOX_MBOX_SIZE] = {0};                               \
-	static struct k_sem response_ready_sem_##_n;                                               \
-	static struct tisci_data tisci_data_##_n = {                                               \
-		.seq = 0,                                                                          \
-		.rx_message =                                                                      \
-			{                                                                          \
-				.buf = rx_message_buf_##_n,                                        \
-				.size = sizeof(rx_message_buf_##_n),                               \
-				.response_ready_sem = &response_ready_sem_##_n,                    \
-			},                                                                         \
-		.data_sem = Z_SEM_INITIALIZER(tisci_data_##_n.data_sem, 1, 1),                     \
-	};                                                                                         \
-	static const struct tisci_config tisci_config_##_n = {                                     \
-		.mbox_tx = MBOX_DT_SPEC_INST_GET(_n, tx),                                          \
-		.mbox_rx = MBOX_DT_SPEC_INST_GET(_n, rx),                                          \
-		.host_id = DT_INST_PROP(_n, ti_host_id),                                           \
-		.max_msg_size = MAILBOX_MBOX_SIZE,                                                 \
-		.max_rx_timeout_ms = 10000,                                                        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_n, tisci_init, NULL, &tisci_data_##_n, &tisci_config_##_n,          \
-			      PRE_KERNEL_1, CONFIG_TISCI_INIT_PRIORITY, NULL);
+static uint8_t rx_message_buf[MAILBOX_MBOX_SIZE] = {0};
+static struct k_sem response_ready_sem;
+static struct tisci_data tisci_data = {
+	.seq = 0,
+	.rx_message = {
+		.buf = rx_message_buf,
+		.size = sizeof(rx_message_buf),
+		.response_ready_sem = &response_ready_sem,
+	},
+	.data_sem = Z_SEM_INITIALIZER(tisci_data.data_sem, 1, 1),
+};
+static const struct tisci_config tisci_config = {
+	.mbox_tx = MBOX_DT_SPEC_INST_GET(0, tx),
+	.mbox_rx = MBOX_DT_SPEC_INST_GET(0, rx),
+	.host_id = DT_INST_PROP(0, ti_host_id),
+	.max_msg_size = MAILBOX_MBOX_SIZE,
+	.max_rx_timeout_ms = 10000,
+};
 
-DT_INST_FOREACH_STATUS_OKAY(TISCI_DEFINE)
+DEVICE_DT_INST_DEFINE(0, tisci_init, NULL, &tisci_data, &tisci_config, PRE_KERNEL_1,
+		      CONFIG_TISCI_INIT_PRIORITY, NULL);
