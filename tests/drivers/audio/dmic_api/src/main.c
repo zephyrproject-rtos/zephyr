@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/audio/audio_caps.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/ztest.h>
 
@@ -295,6 +296,121 @@ ZTEST(dmic, test_bad_pair)
 	ret = dmic_configure(dmic_dev, &dmic_cfg);
 	zassert_not_equal(ret, 0, "DMIC configure should fail with "
 			  "non adjacent channels in map");
+}
+
+/**
+ * @brief Test the dmic_get_caps API function
+ *
+ * This test validates the DMIC get_caps API functionality by testing both
+ * successful operation and error handling scenarios.
+ */
+ZTEST(dmic, test_get_caps)
+{
+	int ret;
+	struct audio_caps caps;
+
+	zassert_true(device_is_ready(dmic_dev), "DMIC device is not ready");
+
+	/**
+	 * Test Case 1: Normal operation - Valid parameters
+	 * Expected: Function should return 0 (success) or -ENOSYS (not implemented)
+	 */
+	ret = dmic_get_caps(dmic_dev, &caps);
+
+	/* Handle case where driver doesn't implement get_caps */
+	if (ret == -ENOSYS) {
+		TC_PRINT("DMIC get_caps not implemented by driver\n");
+		ztest_test_skip();
+		return;
+	}
+
+	/* Verify successful execution */
+	zassert_equal(ret, 0, "dmic_get_caps should return 0, got %d", ret);
+
+	/**
+	 * Test Case 2: Capability value validation
+	 * Verify that returned capability values are within reasonable ranges
+	 */
+	zassert_true(caps.min_total_channels >= 1, "min_total_channels should be >= 1, got %d",
+		     caps.min_total_channels);
+
+	zassert_true(caps.max_total_channels >= caps.min_total_channels,
+		     "max_total_channels (%u) should be >= min_total_channels (%u)",
+		     caps.max_total_channels, caps.min_total_channels);
+
+	zassert_not_equal(caps.supported_sample_rates, 0, "supported_sample_rates should not be 0");
+
+	zassert_not_equal(caps.supported_bit_widths, 0, "supported_bit_widths should not be 0");
+
+	zassert_true(caps.min_num_buffers >= 1, "min_num_buffers should be >= 1, got %u",
+		     caps.min_num_buffers);
+
+	zassert_true(caps.max_frame_interval >= caps.min_frame_interval,
+		     "max_frame_interval (%u) should be >= min_frame_interval (%u)",
+		     caps.max_frame_interval, caps.min_frame_interval);
+
+	/**
+	 * Test Case 3: Error handling - NULL caps pointer
+	 * Expected: Function should return -EINVAL for invalid parameter
+	 */
+	ret = dmic_get_caps(dmic_dev, NULL);
+	zassert_equal(ret, -EINVAL,
+		      "dmic_get_caps should return -EINVAL for NULL caps pointer, got %d", ret);
+}
+
+/**
+ * @brief Verify that the DMIC can capture using the reported maximum channel count
+ *
+ * A driver that reports more channels than it can configure, or than are
+ * enabled in devicetree, fails here.
+ */
+ZTEST(dmic, test_get_caps_max_channels)
+{
+	const uint32_t pcm_rate = 16000;
+	struct audio_caps caps;
+	uint32_t frame_bytes;
+	uint32_t block_size;
+	enum pdm_lr lr;
+	int ret;
+
+	ret = dmic_get_caps(dmic_dev, &caps);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+	zassert_equal(ret, 0, "dmic_get_caps failed: %d", ret);
+	zassert_true(caps.max_total_channels >= 1, "No channels reported");
+
+	if ((caps.supported_sample_rates & AUDIO_SAMPLE_RATE_16000) == 0U) {
+		TC_PRINT("16 kHz not reported as supported, skipping\n");
+		ztest_test_skip();
+		return;
+	}
+
+	dmic_cfg.channel.req_num_chan = caps.max_total_channels;
+	dmic_cfg.channel.req_chan_map_lo = 0;
+	dmic_cfg.channel.req_chan_map_hi = 0;
+	for (uint8_t i = 0; i < caps.max_total_channels; i++) {
+		lr = ((i % 2) == 0) ? PDM_CHAN_LEFT : PDM_CHAN_RIGHT;
+		if (i < 8) {
+			dmic_cfg.channel.req_chan_map_lo |=
+				dmic_build_channel_map(i, PDM_CTL_IDX + (i >> 1), lr);
+		} else {
+			dmic_cfg.channel.req_chan_map_hi |=
+				dmic_build_channel_map(i, PDM_CTL_IDX + (i >> 1), lr);
+		}
+	}
+
+	/* Keep the block within the test slab while staying frame aligned */
+	frame_bytes = BYTES_PER_SAMPLE * caps.max_total_channels;
+	block_size = MIN(BLOCK_SIZE(pcm_rate, caps.max_total_channels),
+			 (MAX_BLOCK_SIZE / frame_bytes) * frame_bytes);
+
+	dmic_cfg.streams[0].pcm_rate = pcm_rate;
+	dmic_cfg.streams[0].block_size = block_size;
+	zassert_equal(do_pdm_transfer(dmic_dev, &dmic_cfg), 0,
+		      "Transfer with reported max_total_channels (%u) failed",
+		      caps.max_total_channels);
 }
 
 ZTEST_SUITE(dmic, NULL, NULL, NULL, NULL, NULL);
