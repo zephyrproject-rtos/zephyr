@@ -84,6 +84,20 @@ Deprecated APIs and options
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
 
+* Sensors
+
+  * NXP
+
+    * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
+      currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample.
+    * The new ``comparator_nxp_lpcmp`` driver (:zephyr_file:`drivers/comparator/comparator_nxp_lpcmp.c`) has
+      been introduced to support NXP LPCMP peripheral. SoCs and boards that previously supported the ``mcux_lpcmp``
+      driver and its associated sample have now migrated to use the ``comparator_nxp_lpcmp`` driver along with the
+      ``gpio_loopback`` test case (:zephyr_file:`tests/drivers/comparator/gpio_loopback/src/test.c`).
+    * The original :dtcompatible:`nxp,lpcmp` has been renamed to :dtcompatible:`nxp,sensor-lpcmp`, applications
+      using the old compatible must update their devicetree nodes to use the ``mcux_lpcmp`` driver. The
+      :dtcompatible:`nxp,lpcmp` now is used for the ``comparator_nxp_lpcmp`` driver. (:github:`100998`).
+
 New APIs and options
 ====================
 ..
