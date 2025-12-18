@@ -629,6 +629,20 @@ config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
 	  Hidden symbol to state if the toolchain can handle vla in
 	  statements.
 
+config TOOLCHAIN_SUPPORTS_VARIABLE_CLEANUP_ATTRIBUTE
+	bool
+	default y
+	help
+	  Hidden option to signal that toolchain supports the variable
+	  __cleanup(function) attribute.
+
+config SCOPE_CLEANUP_HELPERS
+	bool "Scope-based Cleanup Helpers"
+	depends on TOOLCHAIN_SUPPORTS_VARIABLE_CLEANUP_ATTRIBUTE
+	help
+	  This option enables scope-based cleanup helpers, which are macros making
+	  use of the variable cleanup function attribute.
+
 menu "Code Generation"
 
 choice COMPILER_CODEGEN_VLIW
