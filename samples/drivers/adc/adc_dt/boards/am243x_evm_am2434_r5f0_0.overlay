@@ -10,3 +10,7 @@
 			      <&adc0 6>, <&adc0 7>;
 	};
 };
+
+&adc0 {
+	status = "okay";
+};
