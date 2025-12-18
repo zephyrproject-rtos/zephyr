@@ -15,6 +15,9 @@ family:
       cpuclusters:
       - name: m4
       - name: a53
+    - name: am62l3
+      cpuclusters:
+      - name: a53
     - name: am6442
       cpuclusters:
       - name: m4
