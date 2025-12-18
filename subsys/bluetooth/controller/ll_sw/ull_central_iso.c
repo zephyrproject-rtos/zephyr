@@ -66,10 +66,17 @@
 #endif
 
 /* CIS Create Procedure uses 3 PDU transmissions, and one connection interval to process the LLCP
- * requested, hence minimum relative instant not be less than 4. I.e. the CIS_REQ PDU will be
- * transmitted in the next ACL interval.
- * The +1 also helps with the fact that currently we do not have Central implementation to handle
- * event latencies at the instant. Refer to `ull_conn_iso_start()` implementation.
+ * requested, hence ideally set the minimum relative instant not less than 4. I.e. the CIS_REQ PDU
+ * will be transmitted in the next ACL interval and the instant will be at the 4th ACL interval.
+ * This way both Central and Peripheral do not need to exercise any ACL interval latencies when
+ * establishing the CIG/CIS.
+ *
+ * BLUETOOTH CORE SPECIFICATION Version 6.2 | Vol 6, Part B, Section 2.4.2.29 LL_CIS_REQ
+ * "connEventCount should be set to a value greater than currEvent of the event in which the
+ * LL_CIS_REQ PDU is first transmitted."
+ *
+ * NOTE: The implementation can handle ACL latencies establishing the CIG/CIS with relative instant
+ *       of 0.
  */
 #define CIS_CREATE_INSTANT_DELTA_MIN 4U
 
