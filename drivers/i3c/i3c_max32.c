@@ -1425,9 +1425,6 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 		}
 	}
 
-	/* Disable controller interrupt while we configure IBI rules. */
-	MXC_I3C_Controller_DisableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
-
 	LOG_DBG("IBI enabling for 0x%02x (BCR 0x%02x)", target->dynamic_addr, target->bcr);
 
 	msb = (target->dynamic_addr & BIT(6)) == BIT(6);
@@ -1481,17 +1478,21 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 		idx = 0;
 	}
 
-	data->ibi.addr[idx] = target->dynamic_addr;
-	data->ibi.num_addr += 1U;
-
-	max32_i3c_ibi_rules_setup(data, regs);
+	/* Disable controller interrupt while we configure IBI rules. */
+	MXC_I3C_Controller_DisableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
 
 	/* Tell target to enable IBI */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		goto out;
 	}
+
+	data->ibi.addr[idx] = target->dynamic_addr;
+	data->ibi.num_addr += 1U;
+
+	max32_i3c_ibi_rules_setup(data, regs);
 
 out:
 	if (data->ibi.num_addr > 0U) {
@@ -1534,18 +1535,20 @@ int max32_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 	/* Disable controller interrupt while we configure IBI rules. */
 	MXC_I3C_Controller_DisableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
 
-	data->ibi.addr[idx] = 0U;
-	data->ibi.num_addr -= 1U;
-
 	/* Tell target to disable IBI */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		goto out;
 	}
+
+	data->ibi.addr[idx] = 0U;
+	data->ibi.num_addr -= 1U;
 
 	max32_i3c_ibi_rules_setup(data, regs);
 
+out:
 	if (data->ibi.num_addr > 0U) {
 		/*
 		 * Enable controller to raise interrupt when a target
@@ -1553,7 +1556,6 @@ int max32_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 		 */
 		MXC_I3C_Controller_EnableInt(regs, MXC_F_I3C_CONT_INTCLR_TARG_START);
 	}
-out:
 
 	return ret;
 }
