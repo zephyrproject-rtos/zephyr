@@ -990,7 +990,6 @@ const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_
 	}
 }
 
-#if defined(CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE)
 static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
 {
 	uint16_t cid;
@@ -1012,7 +1011,6 @@ static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
 
 	return 0;
 }
-#endif
 
 static void mod_init(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 		     bool vnd, bool primary, void *user_data)
