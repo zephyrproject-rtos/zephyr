@@ -13,6 +13,18 @@
 		};
 	};
 
+	pinmux_lpuart_2: pinmux_lpuart_2 {
+		group1 {
+			pinmux = <PTA9_LPUART2_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA8_LPUART2_RX>;
+			input-enable;
+		};
+	};
+
 	pinmux_lpuart_5: pinmux_lpuart_5 {
 		group1 {
 			pinmux = <PTE14_LPUART5_TX_O>;
