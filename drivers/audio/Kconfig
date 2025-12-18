@@ -12,5 +12,7 @@ if AUDIO
 
 source "drivers/audio/codec/Kconfig"
 source "drivers/audio/dmic/Kconfig"
+source "drivers/audio/dai/Kconfig"
 
 endif # AUDIO
+
