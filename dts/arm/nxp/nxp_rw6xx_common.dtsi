@@ -574,7 +574,7 @@
 	};
 
 	gau {
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
