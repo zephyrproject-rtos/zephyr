@@ -18,7 +18,11 @@
 #endif
 
 #define NUM_BLOCKS 20
+#if (CONFIG_I2S_TEST_USE_32_SAMPLES_PER_BLOCK)
+#define SAMPLE_NO 32
+#else
 #define SAMPLE_NO 64
+#endif
 
 /* The data_l represent a sine wave */
 static int16_t data_l[SAMPLE_NO] = {
@@ -26,10 +30,12 @@ static int16_t data_l[SAMPLE_NO] = {
 	 25329,  27244,  28897,  30272,  31356,  32137,  32609,  32767,
 	 32609,  32137,  31356,  30272,  28897,  27244,  25329,  23169,
 	 20787,  18204,  15446,  12539,   9511,   6392,   3211,      0,
+#if (!CONFIG_I2S_TEST_USE_32_SAMPLES_PER_BLOCK)
 	 -3212,  -6393,  -9512, -12540, -15447, -18205, -20788, -23170,
 	-25330, -27245, -28898, -30273, -31357, -32138, -32610, -32767,
 	-32610, -32138, -31357, -30273, -28898, -27245, -25330, -23170,
 	-20788, -18205, -15447, -12540,  -9512,  -6393,  -3212,     -1,
+#endif
 };
 
 /* The data_r represent a sine wave shifted by 90 deg to data_l sine wave */
@@ -38,10 +44,12 @@ static int16_t data_r[SAMPLE_NO] = {
 	 20787,  18204,  15446,  12539,   9511,   6392,   3211,      0,
 	 -3212,  -6393,  -9512, -12540, -15447, -18205, -20788, -23170,
 	-25330, -27245, -28898, -30273, -31357, -32138, -32610, -32767,
+#if (!CONFIG_I2S_TEST_USE_32_SAMPLES_PER_BLOCK)
 	-32610, -32138, -31357, -30273, -28898, -27245, -25330, -23170,
 	-20788, -18205, -15447, -12540,  -9512,  -6393,  -3212,     -1,
 	  3211,   6392,   9511,  12539,  15446,  18204,  20787,  23169,
 	 25329,  27244,  28897,  30272,  31356,  32137,  32609,  32767,
+#endif
 };
 
 #define BLOCK_SIZE (2 * sizeof(data_l))
@@ -88,7 +96,11 @@ static int verify_buf(int16_t *rx_block, int att)
 	int sample_no = SAMPLE_NO;
 
 #if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+#if (CONFIG_I2S_TEST_ALLOW_VARIABLE_OFFSET)
+	int offset = -1;
+#else
 	static ZTEST_DMEM int offset = -1;
+#endif
 
 	if (offset < 0) {
 		do {
@@ -99,7 +111,9 @@ static int verify_buf(int16_t *rx_block, int att)
 			}
 		} while (rx_block[2 * offset] != data_l[0] >> att);
 
+#if (!CONFIG_I2S_TEST_ALLOW_VARIABLE_OFFSET)
 		TC_PRINT("Using data offset: %d\n", offset);
+#endif
 	}
 
 	rx_block += 2 * offset;

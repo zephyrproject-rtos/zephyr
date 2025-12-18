@@ -41,7 +41,11 @@ static int verify_buf(int16_t *rx_block, int att)
 	int sample_no = SAMPLE_NO;
 
 #if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+#if (CONFIG_I2S_TEST_ALLOW_VARIABLE_OFFSET)
+	int offset = -1;
+#else
 	static ZTEST_DMEM int offset = -1;
+#endif
 
 	if (offset < 0) {
 		do {
@@ -52,7 +56,9 @@ static int verify_buf(int16_t *rx_block, int att)
 			}
 		} while (rx_block[2 * offset] != data_l[0] >> att);
 
+#if (!CONFIG_I2S_TEST_ALLOW_VARIABLE_OFFSET)
 		TC_PRINT("Using data offset: %d\n", offset);
+#endif
 	}
 
 	rx_block += 2 * offset;

@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&p21_3_tdm_i2s0_tx_mck &p21_2_tdm_i2s0_tx_sck
+		     &p12_3_tdm_i2s0_tx_fsync &p21_1_tdm_i2s0_tx_sd>;
+	pinctrl-names = "default";
+	clocks = <&peri1_group1_16_5bit_0>;
+	status = "okay";
+
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "tx", "rx";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&clk_hf7 {
+	status = "okay";
+	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+};
+
+&peri1_group1_16_5bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_TDM>;
+	resource-instance = <0>;
+	resource-channel = <0>;
+	clock-div = <4>;
+	div-frac-value = <28>;
+};
+
+&gpio_prt12 {
+	status = "okay";
+};
+
+&gpio_prt21 {
+	status = "okay";
+};
+
+&p21_3_tdm_i2s0_tx_mck {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&p21_2_tdm_i2s0_tx_sck {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&p12_3_tdm_i2s0_tx_fsync {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&p21_1_tdm_i2s0_tx_sd {
+	drive-push-pull;
+	drive-strength = "half";
+};
