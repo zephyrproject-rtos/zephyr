@@ -27,7 +27,8 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 19)>;
 
 			mac: ethernet {
-				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
+				compatible = "st,stm32h5-ethernet", "st,stm32h7-ethernet",
+					     "st,stm32-ethernet";
 				interrupts = <106 0>;
 				clock-names = "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB1, 20)>,
