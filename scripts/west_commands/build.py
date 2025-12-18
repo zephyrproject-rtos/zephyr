@@ -418,7 +418,7 @@ class Build(Forceable):
         if found_test_metadata:
             args = []
             if extra_conf_files:
-                args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+                args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
 
             if extra_dtc_overlay_files:
                 args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
