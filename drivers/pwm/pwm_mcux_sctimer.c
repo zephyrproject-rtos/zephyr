@@ -247,7 +247,10 @@ static void mcux_sctimer_restore_chn_config(const struct device *dev)
 	uint8_t channel;
 
 	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
-		if (data->pwm_channel_config[channel].duty_cycles != 0) {
+		/* Only restore the channels configured
+		 * before entering into a low power mode
+		 */
+		if (data->pwm_channel_config[channel].period_cycles != 0) {
 			mcux_sctimer_pwm_set_cycles(dev, channel,
 			data->pwm_channel_config[channel].period_cycles,
 			data->pwm_channel_config[channel].duty_cycles,
@@ -306,8 +309,8 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (data->pwm_channel_active == true) {
-			/* Halt the timer counters and disable the source clock */
-			SCTIMER_Deinit(config->base);
+			/* Halt the timer counters */
+			config->base->CTRL |= (SCT_CTRL_HALT_L_MASK | SCT_CTRL_HALT_H_MASK);
 			/* Force all outputs to inactive state */
 			config->base->OUTPUT = 0;
 		}
