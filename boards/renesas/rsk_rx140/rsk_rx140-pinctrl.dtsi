@@ -28,4 +28,11 @@
 				<RX_PSEL(RX_PSEL_PAnPFS_SSLA0, 10, 4)>;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_P1nPFS_SDA, 1, 3)>, /* SDA P13*/
+				<RX_PSEL(RX_PSEL_P1nPFS_SCL, 1, 2)>; /* SCL P12*/
+		};
+	};
 };
