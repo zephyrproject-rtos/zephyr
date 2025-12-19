@@ -224,3 +224,75 @@ int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb);
  */
 #define BT_SCO_CONN_CB_DEFINE(_name)								\
 	static const STRUCT_SECTION_ITERABLE(bt_sco_conn_cb, _CONCAT(bt_sco_conn_cb_, _name))
+
+/**
+ * @brief SCO HCI callback structure for handling SCO connection events
+ *
+ * This structure defines callback functions that are invoked during SCO
+ * (Synchronous Connection-Oriented) connection establishment process.
+ * It allows upper layer protocols to customize HCI command parameters
+ * before they are sent to the controller.
+ *
+ * The callbacks are typically used by audio profiles like HFP/HSP to
+ * configure codec parameters, packet types, and other connection-specific
+ * settings based on negotiated audio codec and quality requirements.
+ *
+ * @note Callbacks are optional and may be NULL if default behavior is desired
+ */
+struct bt_sco_hci_cb {
+	/**
+	 * @brief Setup callback for outgoing SCO connection
+	 *
+	 * Called before sending HCI_Setup_Synchronous_Connection command to monitor the HCI
+	 * activity of SCO connections.
+	 *
+	 * @param acl_conn Pointer to the underlying ACL connection.
+	 * @param cp Pointer to HCI setup synchronous connection command parameters.
+	 */
+	void (*setup)(struct bt_conn *acl_conn, struct bt_hci_cp_setup_sync_conn *cp);
+
+	/**
+	 * @brief Accept callback for incoming SCO connection
+	 *
+	 * Called before sending HCI_Accept_Synchronous_Connection_Request command to monitor the
+	 * HCI activity of SCO connections.
+	 *
+	 * @param cp Pointer to HCI accept synchronous connection request command parameters.
+	 */
+	void (*accept)(struct bt_hci_cp_accept_sync_conn_req *cp);
+
+	sys_snode_t _node;
+};
+
+/** @brief Register SCO HCI activity callbacks.
+ *
+ *  Register callbacks to monitor the HCI activity of SCO.
+ *
+ *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -EEXIST if @p cb was already registered.
+ */
+int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb);
+
+/**
+ * @brief Unregister SCO HCI activity callbacks.
+ *
+ * Unregister the HCI activity monitor of SCO callbacks.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb);
+
+/**
+ *  @brief Register a callback structure for SCO HCI activity.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_SCO_HCI_CB_DEFINE(_name) \
+	static const STRUCT_SECTION_ITERABLE(bt_sco_hci_cb, _CONCAT(bt_sco_hci_cb_, _name))
