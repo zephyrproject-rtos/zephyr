@@ -586,6 +586,28 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
+#ifdef CONFIG_THREAD_MONITOR
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
+
+#ifdef CONFIG_ASSERT
+	/* Check if the thread is already in the list */
+	for (struct k_thread *t = _kernel.threads; t; t = t->next_thread) {
+		if (t == new_thread) {
+			k_spin_unlock(&z_thread_monitor_lock, key);
+			__ASSERT(0, "thread %p is already in the running list\n", new_thread);
+		}
+	}
+#endif
+	new_thread->entry.pEntry = entry;
+	new_thread->entry.parameter1 = p1;
+	new_thread->entry.parameter2 = p2;
+	new_thread->entry.parameter3 = p3;
+
+	new_thread->next_thread = _kernel.threads;
+	_kernel.threads = new_thread;
+	k_spin_unlock(&z_thread_monitor_lock, key);
+#endif
+
 #ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
 	k_thread_abort_cleanup_check_reuse(new_thread);
 #endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
@@ -656,18 +678,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #ifdef CONFIG_EVENTS
 	new_thread->no_wake_on_timeout = false;
 #endif /* CONFIG_EVENTS */
-#ifdef CONFIG_THREAD_MONITOR
-	new_thread->entry.pEntry = entry;
-	new_thread->entry.parameter1 = p1;
-	new_thread->entry.parameter2 = p2;
-	new_thread->entry.parameter3 = p3;
-
-	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
-
-	new_thread->next_thread = _kernel.threads;
-	_kernel.threads = new_thread;
-	k_spin_unlock(&z_thread_monitor_lock, key);
-#endif /* CONFIG_THREAD_MONITOR */
 #ifdef CONFIG_THREAD_NAME
 	if (name != NULL) {
 		strncpy(new_thread->name, name,

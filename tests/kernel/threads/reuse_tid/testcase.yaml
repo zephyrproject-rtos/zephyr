@@ -1,0 +1,9 @@
+tests:
+  kernel.threads.reuse_tid:
+    tags:
+      - kernel
+      - threads
+    ignore_faults: true
+    integration_platforms:
+      - qemu_cortex_a53
+      - qemu_riscv32
