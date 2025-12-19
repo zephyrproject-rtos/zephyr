@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt1060.dtsi>
+#include <nxp/imxrt/nxp_rt1060.dtsi>
 #include "teensy4-pinctrl.dtsi"
 #include <freq.h>
 #include <mem.h>

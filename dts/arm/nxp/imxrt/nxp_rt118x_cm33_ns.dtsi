@@ -4,26 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
+#include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	soc {
-		itcm: memory@0 {
+		itcm: itcm@FFE0000 {
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
-			reg = <0x00000000 DT_SIZE_K(256)>;
+			reg = <0xFFE0000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "ITCM";
 		};
 
-		dtcm: memory@20000000 {
+		dtcm: dtcm@20000000 {
 			compatible = "zephyr,memory-region", "nxp,imx-dtcm";
-			reg = <0x20000000 DT_SIZE_K(256)>;
+			reg = <0x20000000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "DTCM";
 		};
 
 		memory: memory@20480000 {
 			ranges = <0x0 0x20480000 0x10000000>;
+		};
+
+		m7_itcm: itcm@203c0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "M7_ITCM";
+			reg = <0x203c0000 DT_SIZE_K(256)>;
 		};
 
 		peripheral: peripheral@40000000 {
@@ -41,27 +48,27 @@
 	};
 };
 
-#include <nxp/nxp_rt118x.dtsi>
+#include <nxp/imxrt/nxp_rt118x.dtsi>
 
 / {
 	cpus {
-		/delete-node/ cpu@0;
+		/delete-node/ cpu@1;
 	};
 };
 
 &peripheral {
-	mbox1_b: mbox@4230000 {
+	mbox1_a: mbox@4220000 {
 		compatible = "nxp,mbox-imx-mu";
-		reg = <0x4230000 0x4000>;
+		reg = <0x4220000 0x4000>;
 		interrupts = <21 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
 		status = "okay";
 	};
 
-	mbox2_b: mbox@2440000 {
+	mbox2_a: mbox@2430000 {
 		compatible = "nxp,mbox-imx-mu";
-		reg = <0x2440000 0x4000>;
+		reg = <0x2430000 0x4000>;
 		interrupts = <22 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
@@ -70,7 +77,7 @@
 };
 
 &nvic {
-	arm,num-irq-priority-bits = <4>;
+	arm,num-irq-priority-bits = <3>;
 };
 
 /*

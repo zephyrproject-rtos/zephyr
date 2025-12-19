@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt6xx_hifi4memsplit.dtsi>
+#include <nxp/imxrt/nxp_rt6xx_hifi4memsplit.dtsi>
 
 &dsp {
 	status = "okay";
