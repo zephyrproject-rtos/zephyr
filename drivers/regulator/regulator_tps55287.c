@@ -59,7 +59,7 @@ static int regulator_tps55287_list_voltage(const struct device *dev, unsigned in
 static int regulator_tps55287_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_tps55287_config *config = dev->config;
-	uint8_t buf[3] = {0};
+	uint8_t buf[3];
 	uint16_t idx;
 	uint8_t vout_fs_reg;
 	int ret;
@@ -107,7 +107,7 @@ static int regulator_tps55287_get_voltage(const struct device *dev, int32_t *vol
 {
 	const struct regulator_tps55287_config *config = dev->config;
 	uint8_t vout_fs_reg = 0;
-	uint8_t buf[2] = {0};
+	uint8_t buf[2];
 	uint16_t idx;
 	int ret;
 
