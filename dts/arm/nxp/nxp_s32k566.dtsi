@@ -729,5 +729,37 @@
 				status = "disabled";
 			};
 		};
+
+		lpe_edma: dma-controller@42008000 {
+			compatible = "nxp,mcux-edma";
+			nxp,version = <5>;
+			reg = <0x42008000 0x4000>, <0x42004000 0x4000>;
+			dma-channels = <12>;
+			dma-requests = <38>;
+			channels-shared-irq-mask = <0x00000003 0x0000000C
+				0x00000030 0x000000C0 0x00000300 0x00000C00>;
+			#dma-cells = <2>;
+			nxp,mem2mem;
+			no-error-irq;
+			nxp,a-on;
+			status = "disabled";
+		};
+
+		edma: dma-controller@40410000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x40410000 0x4000>, <0x4040C000 0x4000>, <0x40A08000 0x4000>;
+			nxp,version = <5>;
+			dma-channels = <32>;
+			dma-requests = <128>;
+			no-error-irq;
+			channels-shared-irq-mask = <0x00000003 0x0000000C 0x00000030 0x000000C0
+						    0x00000300 0x00000C00 0x00003000 0x0000C000
+						    0x00030000 0x000C0000 0x00300000 0x00C00000
+						    0x03000000 0x0C000000 0x30000000 0xC0000000>;
+			#dma-cells = <2>;
+			nxp,mem2mem;
+			nxp,a-on;
+			status = "disabled";
+		};
 	};
 };

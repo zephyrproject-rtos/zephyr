@@ -11,5 +11,7 @@ toolchain:
   - zephyr
 supported:
   - adc
+  - dma
   - gpio
+  - pwm
 vendor: nxp
