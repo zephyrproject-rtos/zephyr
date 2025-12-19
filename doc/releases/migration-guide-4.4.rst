@@ -451,6 +451,12 @@ Bluetooth Audio
   :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
   prior to performing any operations. (:github:`91587`)
 
+Bluetooth Mesh
+==============
+
+* :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` has been deprecated. Enabling it no
+  longer has any effect on message handling performance.
+
 Networking
 **********
 
