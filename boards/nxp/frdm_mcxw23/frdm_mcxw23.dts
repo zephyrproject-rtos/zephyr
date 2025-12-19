@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxw236_ns.dtsi>
+#include <nxp/mcx/nxp_mcxw236_ns.dtsi>
 #include "frdm_mcxw23_common.dtsi"
 
 / {

@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <nxp/nxp_mcxe24x_common.dtsi>
+#include <nxp/mcx/nxp_mcxe24x_common.dtsi>
 
 / {
 	/*

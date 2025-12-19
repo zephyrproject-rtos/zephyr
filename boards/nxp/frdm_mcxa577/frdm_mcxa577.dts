@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxa5x.dtsi>
+#include <nxp/mcx/nxp_mcxa5x.dtsi>
 #include "frdm_mcxa577-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
