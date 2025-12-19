@@ -48,7 +48,7 @@
 	};
 };
 
-#include <nxp/nxp_rt118x.dtsi>
+#include <nxp/imxrt/nxp_rt118x.dtsi>
 
 / {
 	cpus {

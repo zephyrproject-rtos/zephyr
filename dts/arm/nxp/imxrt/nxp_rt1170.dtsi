@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt11xx.dtsi>
+#include <nxp/imxrt/nxp_rt11xx.dtsi>
 
 /* Configure ARM PLL to 996MHz */
 &arm_pll {
