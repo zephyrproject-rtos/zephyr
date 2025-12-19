@@ -16,6 +16,13 @@ except ImportError:
     from yaml import SafeLoader     # type: ignore
 
 
+# Cache the event types for faster comparison
+MAPPING_START_EVENT = yaml.events.MappingStartEvent
+MAPPING_END_EVENT = yaml.events.MappingEndEvent
+SEQUENCE_START_EVENT = yaml.events.SequenceStartEvent
+SEQUENCE_END_EVENT = yaml.events.SequenceEndEvent
+SCALAR_EVENT = yaml.events.ScalarEvent
+
 HEADER = """\
 # Generated devicetree Kconfig
 #
@@ -56,28 +63,81 @@ def parse_args():
     return parser.parse_args()
 
 
+def compatible_from_yaml_file(path: str) -> str | None:
+    try:
+        with open(path, encoding="utf-8") as f:
+            mapping_depth = 0
+            expecting_key = False
+            pending_compat = False
+            skip = 0
+
+            for event in yaml.parse(f, Loader=SafeLoader):
+                t = event.__class__
+
+                if t is MAPPING_START_EVENT:
+                    mapping_depth += 1
+                    if skip:
+                        skip += 1
+                    elif mapping_depth == 1:
+                        expecting_key = True
+                    elif mapping_depth == 2 and not expecting_key:
+                        pending_compat = False
+                        skip = 1
+                    continue
+
+                if t is MAPPING_END_EVENT:
+                    if skip:
+                        skip -= 1
+                    mapping_depth -= 1
+                    if mapping_depth == 1 and skip == 0:
+                        expecting_key = True
+                    continue
+
+                if t is SEQUENCE_START_EVENT:
+                    if skip:
+                        skip += 1
+                    elif mapping_depth == 1 and not expecting_key:
+                        pending_compat = False
+                        skip = 1
+                    continue
+
+                if t is SEQUENCE_END_EVENT:
+                    if skip:
+                        skip -= 1
+                    if mapping_depth == 1 and skip == 0:
+                        expecting_key = True
+                    continue
+
+                if skip or mapping_depth != 1:
+                    continue
+
+                if t is SCALAR_EVENT:
+                    value = event.value
+                    if expecting_key:
+                        pending_compat = (value == "compatible")
+                        expecting_key = False
+                    else:
+                        if pending_compat:
+                            return value
+                        pending_compat = False
+                        expecting_key = True
+
+    except yaml.YAMLError as e:
+        print(f"WARNING: '{path}' appears in binding directories but isn't valid YAML: {e}")
+    except OSError as e:
+        print(f"WARNING: can't read '{path}': {e}")
+
+    return None
+
 def main():
     args = parse_args()
 
     compats = set()
 
     for binding_path in binding_paths(args.bindings_dirs):
-        with open(binding_path, encoding="utf-8") as f:
-            try:
-                # Parsed PyYAML representation graph. For our purpose,
-                # we don't need the whole file converted into a dict.
-                root = yaml.compose(f, Loader=SafeLoader)
-            except yaml.YAMLError as e:
-                print(f"WARNING: '{binding_path}' appears in binding "
-                      f"directories but isn't valid YAML: {e}")
-                continue
-
-        if not isinstance(root, yaml.MappingNode):
-            continue
-        for key, node in root.value:
-            if key.value == "compatible" and isinstance(node, yaml.ScalarNode):
-                compats.add(node.value)
-                break
+        compat = compatible_from_yaml_file(binding_path)
+        if compat is not None:
+            compats.add(compat)
 
     with open(args.kconfig_out, "w", encoding="utf-8") as kconfig_file:
         print(HEADER, file=kconfig_file)
