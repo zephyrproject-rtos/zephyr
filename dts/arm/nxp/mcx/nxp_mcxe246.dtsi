@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <nxp/nxp_mcxe24x_common.dtsi>
+#include <nxp/mcx/nxp_mcxe24x_common.dtsi>
 
 / {
 	/*
@@ -14,32 +14,32 @@
 	 * are not supported. Therefore two separate memory nodes
 	 * are created.
 	 */
-	sram_l: sram@1fff8000 {
+	sram_l: sram@1fff0000 {
 		compatible = "mmio-sram";
-		reg = <0x1fff8000 DT_SIZE_K(32)>;
+		reg = <0x1fff0000 DT_SIZE_K(64)>;
 	};
 
 	sram_u: sram@20000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20000000 DT_SIZE_K(28)>;
+		reg = <0x20000000 DT_SIZE_K(60)>;
 		zephyr,memory-region = "SRAMU";
 	};
 };
 
 &eim0_channel0 {
-	start-address = <0x1fff8000>;
-	size = <DT_SIZE_K(32)>;
+	start-address = <0x1fff0000>;
+	size = <DT_SIZE_K(64)>;
 };
 
 &eim0_channel1 {
 	start-address = <0x20000000>;
-	size = <DT_SIZE_K(28)>;
+	size = <DT_SIZE_K(60)>;
 };
 
 &ftfc {
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
-		reg = <0 DT_SIZE_K(512)>;
+		reg = <0 DT_SIZE_M(1)>;
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <8>;
 	};
@@ -51,10 +51,8 @@
 };
 
 &flexcan1 {
-	compatible = "nxp,flexcan";
-	interrupts = <85 0>, <86 0>, <88 0>;
-	interrupt-names = "ored-warning-bus-off", "error", "mb-0-15";
-	number-of-mb = <16>;
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
 };
 
 &flexcan2 {
@@ -66,8 +64,6 @@
 
 /delete-node/ &ftm4;
 /delete-node/ &ftm5;
-/delete-node/ &ftm6;
-/delete-node/ &ftm7;
 /delete-node/ &enet;
 /delete-node/ &lpi2c1;
 /delete-node/ &sai0;
