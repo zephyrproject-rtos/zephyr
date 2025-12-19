@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k32l2b3.dtsi>
+#include <nxp/kinetis/nxp_k32l2b3.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "frdm_k32l2b3-pinctrl.dtsi"

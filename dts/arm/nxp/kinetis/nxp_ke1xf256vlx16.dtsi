@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <freq.h>
-#include <nxp/nxp_ke1xf.dtsi>
+#include <nxp/kinetis/nxp_ke1xf.dtsi>
 
 / {
 	/* The on-chip SRAM is split into SRAM_L and SRAM_U regions that form a

@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_kv5xf512vlx24.dtsi>
+#include <nxp/kinetis/nxp_kv5xf512vlx24.dtsi>
