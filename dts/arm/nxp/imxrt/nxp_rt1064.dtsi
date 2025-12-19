@@ -1,89 +1,31 @@
 /*
  * Copyright (c) 2019, Linaro
+ * Copyright (c) 2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt10xx.dtsi>
+#include <nxp/imxrt/nxp_rt1060.dtsi>
 
 &flexram {
-	/* FlexRAM OCRAM is at a different address on RT1060 */
-	/delete-node/ ocram@20200000;
-
-	ocram: ocram@20280000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20280000 DT_SIZE_K(256)>;
-		zephyr,memory-region = "OCRAM";
-	};
-
 	flexram,num-ram-banks = <16>;
 };
 
-&ccm {
-	arm-podf {
-		clock-div = <2>;
-	};
+&flexspi2 {
+	status = "okay";
+	reg = <0x402a4000 0x4000>, <0x70000000 DT_SIZE_M(4)>;
+	rx-clock-source = <1>;
 
-	ipg-podf {
-		clock-div = <4>;
-	};
-};
-
-/ {
-	soc {
-		/* i.MX rt1060 has a second Ethernet controller. */
-		enet2: ethernet@402d4000 {
-			compatible = "nxp,enet";
-			reg = <0x402d4000 0x628>;
-			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
-
-			enet2_mac: ethernet {
-				compatible = "nxp,enet-mac";
-				interrupts = <152 0>;
-				interrupt-names = "COMMON";
-				nxp,mdio = <&enet2_mdio>;
-				ptp-clock = <&enet2_ptp_clock>;
-				status = "disabled";
-			};
-
-			enet2_mdio: mdio {
-				compatible = "nxp,enet-mdio";
-				status = "disabled";
-				#address-cells = <1>;
-				#size-cells = <0>;
-			};
-
-			enet2_ptp_clock: ptp_clock {
-				compatible = "nxp,enet-ptp-clock";
-				status = "disabled";
-				interrupts = <153 0>;
-				interrupt-names = "IEEE1588_TMR";
-				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
-			};
-		};
-
-		/* RT1060 has a dedicated OCRAM region */
-		ocram2: ocram@20200000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x20200000 DT_SIZE_K(512)>;
-			zephyr,memory-region = "OCRAM2";
-		};
-
-		flexio2: flexio@401b0000 {
-			compatible = "nxp,flexio";
-			reg = <0x401b0000 0x4000>;
-			status = "disabled";
-			interrupts = <91 0>;
-			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
-		};
-
-		flexio3: flexio@42020000 {
-			compatible = "nxp,flexio";
-			reg = <0x42020000 0x4000>;
-			status = "disabled";
-			interrupts = <156 0>;
-			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
-		};
+	/* WINBOND */
+	w25q32jvwj0: w25q32jvwj@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <33554432>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		status = "okay";
+		jedec-id = [ef 40 16];
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <1>;
 	};
 };
 
