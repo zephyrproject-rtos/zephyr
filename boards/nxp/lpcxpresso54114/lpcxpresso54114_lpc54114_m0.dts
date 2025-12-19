@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc54xxx_m0.dtsi>
+#include <nxp/lpc/nxp_lpc54xxx_m0.dtsi>
 #include "lpcxpresso54114.dtsi"
 
 / {
