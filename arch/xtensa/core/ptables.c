@@ -968,8 +968,14 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 	uint32_t *l2_table;
 
 	l2_table = alloc_l2_table();
+
+	/* Duplicating L2 tables is a must-have and must-success operation.
+	 * If we are running out of free L2 tables to be allocated, we cannot
+	 * continue.
+	 */
+	__ASSERT_NO_MSG(l2_table != NULL);
 	if (l2_table == NULL) {
-		return NULL;
+		arch_system_halt(K_ERR_KERNEL_PANIC);
 	}
 
 	switch (action) {
