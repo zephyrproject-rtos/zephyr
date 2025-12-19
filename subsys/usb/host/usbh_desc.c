@@ -22,7 +22,7 @@ bool usbh_desc_is_valid(const void *const desc,
 		return false;
 	}
 
-	/* Avoid too short bLength field */
+	/* Avoid too short bLength field or nil descriptor */
 	if (head->bLength < size) {
 		return false;
 	}
