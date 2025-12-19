@@ -87,9 +87,9 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 
 	/* Concatenate subsys as much the free space permits */
 	strncpy(&path[len], subsys, (path_size - len));
+	len += MIN(strlen(subsys), (path_size - len));
 
 	/* Postfix '/' if there is free space */
-	len = strlen(path);
 	if (len < path_size) {
 		path[len] = '/';
 		len++;
@@ -97,8 +97,7 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 
 	/* Concatenate addr as much the free space permits */
 	for (int8_t i = 5; i >= 0 && len < path_size; i--) {
-		len += bin2hex(&addr->a.val[i], 1, &path[len],
-			       path_size - len);
+		len += bin2hex(&addr->a.val[i], 1, &path[len], (path_size - len));
 	}
 
 	/* Postfix addr type if there is free space */
@@ -114,11 +113,11 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 	if ((key != NULL) && (len < path_size)) {
 		path[len] = '/';
 		len++;
-		strncpy(&path[len], key, path_size - len);
-		len += strlen(&path[len]);
+		strncpy(&path[len], key, (path_size - len));
+		len += MIN(strlen(key), (path_size - len));
 	}
 
-	/* Insufficient path_size, include null termination */
+	/* Insufficient path_size, including null termination */
 	if (len >= path_size) {
 		return -EINVAL;
 	}
@@ -143,10 +142,10 @@ static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const ch
 	strcpy(path, "bt/");
 
 	/* Concatenate key as much the free space permits */
-	strncpy(&path[len], key, path_size - len);
-	len = strlen(path);
+	strncpy(&path[len], key, (path_size - len));
+	len += MIN(strlen(key), (path_size - len));
 
-	/* Insufficient path_size, include null termination */
+	/* Insufficient path_size, including null termination */
 	if (len >= path_size) {
 		return -EINVAL;
 	}
