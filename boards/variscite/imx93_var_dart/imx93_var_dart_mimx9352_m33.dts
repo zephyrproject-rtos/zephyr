@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx93_m33.dtsi>
+#include <nxp/imx/nxp_imx93_m33.dtsi>
 #include "imx93_var_dart-pinctrl.dtsi"
 #include "imx93_var_dart-m33-common.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
