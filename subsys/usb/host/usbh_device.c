@@ -272,7 +272,7 @@ error:
 	return 0;
 }
 
-static int parse_configuration_descriptor(struct usb_device *const udev)
+int usbh_device_parse_cfg_desc(struct usb_device *const udev)
 {
 	struct usb_cfg_descriptor *cfg_desc = udev->cfg_desc;
 	struct usb_association_descriptor *iad = NULL;
@@ -285,7 +285,14 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	dhp = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->bLength);
 	desc_end = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->wTotalLength);
 
-	while ((void *)dhp < desc_end && (dhp->bDescriptorType != 0 || dhp->bLength != 0)) {
+	while ((void *)dhp < desc_end) {
+		if ((uint8_t *)dhp + sizeof(struct usb_desc_header) > (uint8_t *)desc_end ||
+		    (uint8_t *)dhp + dhp->bLength > (uint8_t *)desc_end ||
+		    dhp->bLength <= sizeof(struct usb_desc_header)) {
+			LOG_ERR("Invalid descriptor size %d.", dhp->bLength);
+			return -EINVAL;
+		}
+
 		if (dhp->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 			iad = (struct usb_association_descriptor *)dhp;
 			LOG_DBG("bFirstInterface %u", iad->bFirstInterface);
@@ -432,7 +439,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 	LOG_INF("Configuration %u bNumInterfaces %u",
 		cfg_desc.bConfigurationValue, cfg_desc.bNumInterfaces);
 
-	err = parse_configuration_descriptor(udev);
+	err = usbh_device_parse_cfg_desc(udev);
 	if (err) {
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		goto error;
