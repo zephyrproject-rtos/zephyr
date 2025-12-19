@@ -19,10 +19,11 @@
 #include <zephyr/bluetooth/classic/hfp_hf.h>
 #include <zephyr/settings/settings.h>
 
-#include "pcm.h"
+#include "voice.h"
 #include "codec.h"
 
 static struct bt_conn *active_sco_conn;
+uint8_t selected_codec_id = BT_HFP_HF_CODEC_CVSD;
 
 static void hf_connected(struct bt_conn *conn, struct bt_hfp_hf *hf)
 {
@@ -34,7 +35,7 @@ static void hf_disconnected(struct bt_hfp_hf *hf)
 	printk("HFP HF Disconnected!\n");
 }
 
-static void pcm_rx_cb(const uint8_t *data, uint32_t len)
+static void voice_rx_cb(const uint8_t *data, uint32_t len)
 {
 	int err;
 
@@ -44,7 +45,7 @@ static void pcm_rx_cb(const uint8_t *data, uint32_t len)
 
 	err = codec_tx(data, len);
 	if (err != 0) {
-		printk("Failed to transmit PCM data: %d\n", err);
+		printk("Failed to transmit VOICE data: %d\n", err);
 	}
 }
 
@@ -56,7 +57,7 @@ static void codec_rx_cb(const uint8_t *data, uint32_t len)
 		return;
 	}
 
-	err = pcm_tx(data, len);
+	err = voice_tx(data, len);
 	if (err != 0) {
 		printk("Failed to transmit Codec data: %d\n", err);
 	}
@@ -78,9 +79,9 @@ static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 
 	printk("SCO air mode %u\n", info.sco.air_mode);
 
-	err = pcm_init(info.sco.air_mode);
+	err = voice_init(sco_conn, info.sco.air_mode, selected_codec_id);
 	if (err != 0) {
-		printk("Failed to initialize PCM for air mode %u\n", info.sco.air_mode);
+		printk("Failed to initialize VOICE for air mode %u\n", info.sco.air_mode);
 		return;
 	}
 
@@ -90,9 +91,9 @@ static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 		return;
 	}
 
-	err = pcm_rx_start(pcm_rx_cb);
+	err = voice_rx_start(voice_rx_cb);
 	if (err != 0) {
-		printk("Failed to start PCM\n");
+		printk("Failed to start VOICE\n");
 		return;
 	}
 
@@ -113,14 +114,24 @@ static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 
 	bt_conn_drop(&active_sco_conn);
 
-	err = pcm_rx_stop();
+	err = voice_rx_stop();
 	if (err != 0) {
-		printk("Failed to stop PCM\n");
+		printk("Failed to stop VOICE\n");
 	}
 
 	err = codec_rx_stop();
 	if (err != 0) {
 		printk("Failed to stop CODEC\n");
+	}
+
+	err = codec_deinit();
+	if (err != 0) {
+		printk("Failed to deinit CODEC\n");
+	}
+
+	err = voice_deinit();
+	if (err != 0) {
+		printk("Failed to deinit VOICE\n");
 	}
 
 	printk("HF SCO disconnected\n");
@@ -203,6 +214,8 @@ static void hf_codec_negotiate(struct bt_hfp_hf *hf, uint8_t id)
 		printk("HF codec negotiate unknown codec\n");
 		return;
 	}
+
+	selected_codec_id = id;
 
 	err = bt_hfp_hf_select_codec(hf, id);
 	if (err != 0) {
