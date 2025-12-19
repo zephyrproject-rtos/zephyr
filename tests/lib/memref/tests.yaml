@@ -1,0 +1,8 @@
+common:
+  tags: memref
+
+tests:
+  libraries.memref:
+    integration_platforms:
+      - native_sim
+
