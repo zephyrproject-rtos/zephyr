@@ -7,14 +7,7 @@
 
 import argparse
 import os
-
-import yaml
-try:
-    # Use the C LibYAML parser if available, rather than the Python parser.
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader     # type: ignore
-
+import re
 
 HEADER = """\
 # Generated devicetree Kconfig
@@ -31,6 +24,18 @@ config DT_HAS_{COMPAT}_ENABLED
 
 # Character translation table used to derive Kconfig symbol names
 TO_UNDERSCORES = str.maketrans("-,.@/+", "______")
+
+# Matches lines like:
+#   compatible: "item1[,item2[,item3...]]"
+#
+# - One or more comma-separated items inside quotes
+# - Items must be non-empty and contain no whitespace, commas, or quotes
+# - No spaces allowed around commas
+# - Supports an arbitrary number of items
+#
+# Matches:     "foo", "foo1,foo2", "foo1,foo2,foo3"
+# Does not:    ",foo", "foo,", "foo1, foo2"
+COMPAT_RE = re.compile(br'^compatible: "([^\s",]+(?:,[^\s",]+)*)"\r?$', re.MULTILINE)
 
 
 def binding_paths(bindings_dirs):
@@ -62,22 +67,12 @@ def main():
     compats = set()
 
     for binding_path in binding_paths(args.bindings_dirs):
-        with open(binding_path, encoding="utf-8") as f:
-            try:
-                # Parsed PyYAML representation graph. For our purpose,
-                # we don't need the whole file converted into a dict.
-                root = yaml.compose(f, Loader=SafeLoader)
-            except yaml.YAMLError as e:
-                print(f"WARNING: '{binding_path}' appears in binding "
-                      f"directories but isn't valid YAML: {e}")
+        with open(binding_path, 'rb') as f:
+            matches = COMPAT_RE.findall(f.read())
+            if not matches:
                 continue
-
-        if not isinstance(root, yaml.MappingNode):
-            continue
-        for key, node in root.value:
-            if key.value == "compatible" and isinstance(node, yaml.ScalarNode):
-                compats.add(node.value)
-                break
+            for match in matches:
+                compats.add(match.decode("utf-8"))
 
     with open(args.kconfig_out, "w", encoding="utf-8") as kconfig_file:
         print(HEADER, file=kconfig_file)
