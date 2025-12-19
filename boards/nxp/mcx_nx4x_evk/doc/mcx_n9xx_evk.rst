@@ -41,10 +41,12 @@ Supported Features
 
 Shields for Supported Features
 ==============================
+
 Some features in the table above are tested with Zephyr shields.  These shields
 are tested on this board:
+
 - :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
-MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
+  MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
 
 Dual Core samples
 *****************
