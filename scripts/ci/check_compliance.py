@@ -2404,11 +2404,6 @@ class KeepSorted(ComplianceTest):
         return -1
 
     def check_file(self, file, fp):
-        mime_type = magic.from_file(os.fspath(file), mime=True)
-
-        if not mime_type.startswith("text/"):
-            return
-
         block_data = ""
         in_block = False
 
@@ -2462,7 +2457,16 @@ class KeepSorted(ComplianceTest):
 
     def run(self):
         for file in get_files(filter="d"):
-            with open(file) as fp:
+            file_path = GIT_TOP / file
+
+            mime_type = magic.from_file(os.fspath(file_path), mime=True)
+            if not mime_type.startswith("text/"):
+                continue
+
+            # Text in the Zephyr tree is UTF-8. On Windows, the default text
+            # encoding depends on the active code page (e.g. GBK), which can
+            # break local runs with UnicodeDecodeError.
+            with open(file_path, encoding="utf-8", errors="surrogateescape") as fp:
                 self.check_file(file, fp)
 
 
