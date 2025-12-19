@@ -201,7 +201,7 @@
 		};
 
 		mcwdt0: mcwdt@4220d000 {
-			compatible = "infineon,lp-timer";
+			compatible = "infineon,cat1-lp-timer-pdl";
 			reg = <0x4220d000 0x40>;
 			interrupts = <24 4>;
 			status = "disabled";
