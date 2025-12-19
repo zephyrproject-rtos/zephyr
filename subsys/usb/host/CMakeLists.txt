@@ -9,6 +9,7 @@ zephyr_library_sources(
   usbh_core.c
   usbh_api.c
   usbh_device.c
+  usbh_desc.c
 )
 
 zephyr_library_sources_ifdef(
