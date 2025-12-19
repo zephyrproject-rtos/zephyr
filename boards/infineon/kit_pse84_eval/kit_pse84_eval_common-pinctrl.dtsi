@@ -13,3 +13,75 @@
 &p6_5_scb2_uart_rx {
 	input-enable;
 };
+
+&p21_0_sdhc0_card_cmd {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_0_sdhc0_clk_card {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_1_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_2_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_4_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_5_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p7_0_sdhc1_card_cmd {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p7_1_sdhc1_clk_card {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p7_3_sdhc1_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p7_5_sdhc1_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p7_6_sdhc1_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p7_7_sdhc1_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
