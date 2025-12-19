@@ -1180,14 +1180,14 @@
  * @param fifo FIFO object
  * @param list Syslist object
  */
-#define sys_port_trace_k_fifo_alloc_put_slist_enter(fifo, list)
+#define sys_port_trace_k_fifo_put_slist_enter(fifo, list)
 
 /**
  * @brief Trace FIFO Queue put slist exit
  * @param fifo FIFO object
  * @param list Syslist object
  */
-#define sys_port_trace_k_fifo_alloc_put_slist_exit(fifo, list)
+#define sys_port_trace_k_fifo_put_slist_exit(fifo, list)
 
 /**
  * @brief Trace FIFO Queue get entry
