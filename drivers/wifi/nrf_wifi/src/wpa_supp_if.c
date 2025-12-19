@@ -546,7 +546,18 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 		scan_info->scan_params.num_scan_channels = indx;
 	}
 
-	if (params->num_ssids) {
+
+	if (params->filter_ssids) {
+		scan_info->scan_params.num_scan_ssids = params->num_filter_ssids;
+		for (indx = 0; indx < params->num_filter_ssids; indx++) {
+			memcpy(scan_info->scan_params.scan_ssids[indx].nrf_wifi_ssid,
+			       params->filter_ssids[indx].ssid,
+			       params->filter_ssids[indx].ssid_len);
+
+			scan_info->scan_params.scan_ssids[indx].nrf_wifi_ssid_len =
+				params->filter_ssids[indx].ssid_len;
+		}
+	} else if (params->num_ssids) {
 		scan_info->scan_params.num_scan_ssids = params->num_ssids;
 
 		for (indx = 0; indx < params->num_ssids; indx++) {
