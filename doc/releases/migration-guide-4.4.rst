@@ -46,6 +46,43 @@ Boards
   in the respective board CMakeLists.txt files. Applications that depended on these definitions
   being globally available may need to be updated. (:github:`101322`)
 
+* NXP has changed the scope of some in-tree compile flags to limit their visibility to only where
+  they are needed. Out-of-tree applications or boards that depended on these flags being globally
+  available may need to add them to their own CMakeLists.txt files to ensure they continue to build
+  correctly. (:github:`100252`)
+  The affected flags are listed below:
+
+  * For the RT10xx and RT11xx families, the compile flag ``BOARD_FLASH_SIZE``, originally defined in
+    ``boards/nxp/mimxrt10xx_evk/CMakeLists.txt`` and ``boards/nxp/mimxrt11xx_evk/CMakeLists.txt``, is
+    used only by the HAL header ``fsl_flexspi_nor_boot.h``, which is included by
+    :zephyr_file:`soc/nxp/imxrt/imxrt10xx/soc.c` and :zephyr_file:`soc/nxp/imxrt/imxrt11xx/soc.c`.
+    To avoid potential collisions with other global flags, the macro is now defined at the SoC layer
+    using ``zephyr_library_compile_definitions()`` in :zephyr_file:`soc/nxp/imxrt/imxrt10xx/CMakeLists.txt`
+    and :zephyr_file:`soc/nxp/imxrt/imxrt11xx/CMakeLists.txt`. This change has been applied to all
+    RTxxxx boards.
+
+  * For the RTxxx family, the compile flag ``BOARD_FLASH_SIZE``, originally defined in
+    ``boards/nxp/mimxrtxxx_evk/CMakeLists.txt``, is not used in the Zephyr tree and has
+    therefore been removed from all RTxxx board CMakeLists.txt files.
+
+  * For the RTxxx family, the compile flag ``BOOT_HEADER_ENABLE``, previously defined in
+    ``boards/nxp/mimxrtxxx_evk/CMakeLists.txt`` and used in ``boards/nxp/rtxxx/<boot_header>.c``,
+    has been replaced by a Kconfig option. Consequently, the line
+    ``zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)`` has been removed from the RTxxx board
+    CMakeLists.txt files.
+
+  * Removed compile flag ``BOOT_HEADER_ENABLE`` definition from :zephyr_file:`boards/nxp/rd_rw612_bga/CMakeLists.txt`,
+    as it is not used in the Zephyr tree.
+
+  * Originally, the compile flags ``XIP_BOOT_HEADER_ENABLE`` and ``XIP_BOOT_HEADER_DCD_ENABLE`` were
+    used in ``boards/nxp/rt1xxx/<boot_header>.c``. These flags have been converted to Kconfig options
+    across NXP RTxxxx evaluation boards, allowing boot-header configuration via the Kconfig build system
+    instead of compile-time defines. Consequently, we removed ``zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)``
+    and ``zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)`` from the RTxxxx board-level CMakeLists.txt files.
+    Because these macros are also required by ``hal_nxp/rt10xx/fsl_flexspi_nor_boot.h`` and
+    ``hal_nxp/rt11xx/fsl_flexspi_nor_boot.h``, they were added to the corresponding SoC-layer CMakeLists.txt files
+    using ``zephyr_library_compile_definitions()`` to limit their scope.
+
 Device Drivers and Devicetree
 *****************************
 
