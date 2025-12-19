@@ -6,7 +6,7 @@
 
 #include <arm/armv8-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
-#include <nxp/nxp_s32k566.dtsi>
+#include <nxp/s32/nxp_s32k566.dtsi>
 
 / {
 	cpus {
