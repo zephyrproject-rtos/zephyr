@@ -9,6 +9,7 @@
 #include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
@@ -173,6 +174,9 @@ struct can_stm32fd_config {
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t clock_divider;
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	const struct device *timestamp_counter_dev;
+#endif
 };
 
 static inline uint16_t can_stm32fd_remap_reg(uint16_t reg)
@@ -495,6 +499,33 @@ static int can_stm32fd_init(const struct device *dev)
 
 	can_mcan_enable_configuration_change(dev);
 
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	/* Internal Timestamp counter (TSS=1) with Prescaler /1 (TCP=0) */
+	uint32_t tscc_val = FIELD_PREP(CAN_MCAN_TSCC_TCP, 0) | FIELD_PREP(CAN_MCAN_TSCC_TSS, 0x1);
+
+	if (stm32fd_cfg->timestamp_counter_dev) {
+		if (!device_is_ready(stm32fd_cfg->timestamp_counter_dev)) {
+			LOG_ERR("Timestamp counter device not ready");
+			return -ENODEV;
+		}
+
+		ret = counter_start(stm32fd_cfg->timestamp_counter_dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to start timestamp counter (%d)", ret);
+			return ret;
+		}
+
+		/* Use External Timestamp counter (TSS=2) */
+		tscc_val = FIELD_PREP(CAN_MCAN_TSCC_TCP, 0) | FIELD_PREP(CAN_MCAN_TSCC_TSS, 0x2);
+	}
+
+	ret = can_mcan_write_reg(dev, CAN_MCAN_TSCC, tscc_val);
+	if (ret != 0) {
+		LOG_ERR("Failed to write TSCC register");
+		return ret;
+	}
+#endif /* CONFIG_CAN_RX_TIMESTAMP */
+
 	/* Setup STM32 FDCAN Global Filter Configuration register */
 	ret = can_mcan_read_reg(dev, CAN_STM32FD_RXGFC, &rxgfc);
 	if (ret != 0) {
@@ -610,6 +641,11 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 		.config_irq = config_can_##inst##_irq,				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.clock_divider = DT_INST_PROP_OR(inst, clk_divider, 0)		\
+		IF_ENABLED(CONFIG_CAN_RX_TIMESTAMP,				\
+			   (.timestamp_counter_dev = COND_CODE_1(		\
+				    DT_INST_NODE_HAS_PROP(inst, timestamp_counter), \
+				    (DEVICE_DT_GET(DT_INST_PHANDLE(inst, timestamp_counter))), \
+				    (NULL)),)) \
 	};									\
 										\
 	static const struct can_mcan_config can_mcan_cfg_##inst =		\
