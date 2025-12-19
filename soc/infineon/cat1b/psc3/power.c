@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
+ * Copyright (c) 2026 Infineon Technologies AG,
  * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -18,23 +18,6 @@
 #include <soc.h>
 
 LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
-
-uint32_t sleep_attempt_counts;
-uint32_t sleep_counts;
-uint32_t deepsleep_attempt_counts;
-uint32_t deepsleep_counts;
-int64_t last_sleep_start;
-int64_t last_sleep_duration;
-
-void get_sleep_info(uint32_t *sleepattempts, uint32_t *sleepcounts, uint32_t *deepsleepattempts,
-		    uint32_t *deepsleepcounts, int64_t *sleeptime)
-{
-	*sleepattempts = sleep_attempt_counts;
-	*sleepcounts = sleep_counts;
-	*deepsleepattempts = deepsleep_attempt_counts;
-	*deepsleepcounts = deepsleep_counts;
-	*sleeptime = last_sleep_duration;
-}
 
 /*
  * Called from pm_system_suspend(int32_t ticks) in subsys/power.c
@@ -57,19 +40,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 		LOG_DBG("Entering PM state suspend to idle");
-		sleep_attempt_counts++;
-		last_sleep_start = k_uptime_ticks();
-		if (Cy_SysPm_CpuEnterSleep(CY_SYSPM_WAIT_FOR_INTERRUPT) == CY_RSLT_SUCCESS) {
-			sleep_counts++;
-		}
+		Cy_SysPm_CpuEnterSleep(CY_SYSPM_WAIT_FOR_INTERRUPT);
 		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 		LOG_DBG("Entering PM state suspend to RAM");
-		deepsleep_attempt_counts++;
-		last_sleep_start = k_uptime_ticks();
-		if (Cy_SysPm_CpuEnterDeepSleep(CY_SYSPM_WAIT_FOR_INTERRUPT) == CY_RSLT_SUCCESS) {
-			deepsleep_counts++;
-		}
+		Cy_SysPm_CpuEnterDeepSleep(CY_SYSPM_WAIT_FOR_INTERRUPT);
 		/*
 		 * The HAL function doesn't clear this bit.  It is a problem
 		 * if the Zephyr idle function executes the wfi instruction
@@ -98,16 +73,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	/* Clear PRIMASK */
 	__enable_irq();
-
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_IDLE:
-	case PM_STATE_SUSPEND_TO_RAM:
-		last_sleep_duration = last_sleep_start - k_uptime_ticks();
-		break;
-
-	default:
-		break;
-	}
 }
 
 static int ifx_pm_init(void)
