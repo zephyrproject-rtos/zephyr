@@ -24,7 +24,13 @@
 		/* stdby_ram memory supports content retention in Standby mode */
 		stdby_ram: memory@20400000 {
 			compatible = "mmio-sram";
-			reg = <0x20400000 DT_SIZE_K(16)>;
+			reg = <0x20400000 DT_SIZE_K(32)>;
+		};
+
+		/* sram memory is available only in Run mode */
+		sram: memory@20408000 {
+			compatible = "mmio-sram";
+			reg = <0x20408000 DT_SIZE_K(64)>;
 		};
 
 		peripheral: peripheral@40000000 {
@@ -33,10 +39,10 @@
 	};
 };
 
-#include <nxp/nxp_mcxe31x_common.dtsi>
+#include <nxp/mcx/nxp_mcxe31x_common.dtsi>
 
 &program_flash {
-	reg = <0x400000 DT_SIZE_K(512)>;
+	reg = <0x400000 DT_SIZE_K(2048)>;
 };
 
 &flexcan_0 {
@@ -51,17 +57,22 @@
 	number-of-mb = <64>;
 };
 
+&flexcan_3 {
+	number-of-mb = <32>;
+};
+
+&flexcan_4 {
+	number-of-mb = <32>;
+};
+
+&flexcan_5 {
+	number-of-mb = <32>;
+};
+
 &peripheral {
-	/delete-node/ flexcan@310000;
-	/delete-node/ flexcan@314000;
-	/delete-node/ flexcan@318000;
 	/delete-node/ emac@480000;
 	/delete-node/ sai@36c000;
 	/delete-node/ sai@4dc000;
-	/delete-node/ lpuart@338000;
-	/delete-node/ lpuart@33c000;
-	/delete-node/ lpuart@340000;
-	/delete-node/ lpuart@344000;
 	/delete-node/ lpuart@48c000;
 	/delete-node/ lpuart@490000;
 	/delete-node/ lpuart@494000;
@@ -74,7 +85,6 @@
 	/delete-node/ lpspi@4c0000;
 	/delete-node/ qspi@4cc000;
 	/delete-node/ adc@a8000;
-	/delete-node/ lpcmp@374000;
 	/delete-node/ lpcmp@4e8000;
 	/delete-node/ pit@2fc000;
 	/delete-node/ stm@474000;
