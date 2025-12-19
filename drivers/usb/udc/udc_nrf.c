@@ -392,7 +392,7 @@ static void ev_usbreset_handler(void)
 {
 	m_bus_suspend = false;
 
-	LOG_INF("Reset");
+	LOG_DBG("Reset");
 	udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
 }
 
@@ -620,7 +620,7 @@ static void usbd_dmareq_process(void)
 		__ASSERT_NO_MSG(nrfx_is_in_ram(payload_buf));
 
 		if (received > payload_len) {
-			LOG_ERR("buffer too small: r: %u, l: %u", received, payload_len);
+			LOG_WRN("buffer too small: r: %u, l: %u", received, payload_len);
 		} else {
 			payload_len = received;
 		}
@@ -1235,7 +1235,7 @@ static void udc_event_xfer_in(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("ep 0x%02x queue is empty", ep);
+		LOG_WRN("ep 0x%02x queue is empty", ep);
 		__ASSERT_NO_MSG(false);
 		return;
 	}
@@ -1290,7 +1290,7 @@ static void udc_event_xfer_out(const struct device *dev, const uint8_t ep)
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("ep 0x%02x ok, queue is empty", ep);
+		LOG_WRN("ep 0x%02x ok, queue is empty", ep);
 		return;
 	}
 
@@ -1463,20 +1463,20 @@ static void udc_nrf_thread_handler(const struct device *dev)
 	evt = k_event_clear(&drv_evt, UINT32_MAX);
 
 	if (evt & BIT(UDC_NRF_EVT_SUSPEND)) {
-		LOG_INF("SUSPEND state detected");
+		LOG_DBG("SUSPEND state detected");
 		nrf_usbd_legacy_suspend();
 		udc_set_suspended(dev, true);
 		udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 	}
 
 	if (evt & BIT(UDC_NRF_EVT_RESUME)) {
-		LOG_INF("RESUMING from suspend");
+		LOG_DBG("RESUMING from suspend");
 		udc_set_suspended(dev, false);
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 	}
 
 	if (evt & BIT(UDC_NRF_EVT_WUREQ)) {
-		LOG_INF("Remote wakeup initiated");
+		LOG_DBG("Remote wakeup initiated");
 		udc_set_suspended(dev, false);
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 	}
@@ -1554,7 +1554,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_REMOVED, 0);
 		break;
 	default:
-		LOG_ERR("Unknown power event %d", pwr_evt);
+		LOG_WRN("Unknown power event %d", pwr_evt);
 	}
 }
 
@@ -1591,7 +1591,7 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	} else {
-		LOG_INF("ep 0x%02x queue is empty", cfg->addr);
+		LOG_DBG("ep 0x%02x queue is empty", cfg->addr);
 	}
 
 	udc_ep_set_busy(cfg, false);
@@ -1779,14 +1779,14 @@ static int udc_nrf_init(const struct device *dev)
 	nrfx_power_usbevt_init(&cfg->evt);
 
 	nrfx_power_usbevt_enable();
-	LOG_INF("Initialized");
+	LOG_DBG("Initialized");
 
 	return 0;
 }
 
 static int udc_nrf_shutdown(const struct device *dev)
 {
-	LOG_INF("shutdown");
+	LOG_DBG("shutdown");
 
 	nrfx_power_usbevt_disable();
 	nrfx_power_usbevt_uninit();
@@ -1799,7 +1799,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	struct udc_data *data = dev->data;
 	int err;
 
-	LOG_INF("Preinit");
+	LOG_DBG("Preinit");
 	udc_nrf_dev = dev;
 	k_mutex_init(&data->mutex);
 	k_thread_create(&drv_stack_data, drv_stack,

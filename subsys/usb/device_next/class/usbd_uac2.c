@@ -328,14 +328,14 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		/* This shouldn't really happen because netbuf should be large
 		 * enough, but if it does all we loose is just single packet.
 		 */
-		LOG_ERR("No netbuf for send");
+		LOG_WRN("No netbuf for send");
 		atomic_clear_bit(queued_bits, as_idx);
 		return -ENOMEM;
 	}
 
 	ret = usbd_ep_enqueue(cfg->c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_WRN("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		atomic_clear_bit(queued_bits, as_idx);
 	}
@@ -378,14 +378,14 @@ static void schedule_iso_out_read(struct usbd_class_data *const c_data,
 	/* Prepare transfer to read audio OUT data from host */
 	data_buf = ctx->ops->get_recv_buf(dev, terminal, mps, ctx->user_data);
 	if (!data_buf) {
-		LOG_ERR_RATELIMIT("No data buffer for terminal %d", terminal);
+		LOG_WRN_RATELIMIT("No data buffer for terminal %d", terminal);
 		atomic_clear_bit(queued_bits, as_idx);
 		return;
 	}
 
 	buf = uac2_buf_alloc(ep, data_buf, mps);
 	if (!buf) {
-		LOG_ERR("No netbuf for read");
+		LOG_WRN("No netbuf for read");
 		/* Netbuf pool should be large enough, but if for some reason
 		 * we are out of netbuf, there's nothing better to do than to
 		 * pass the buffer back to application.
@@ -398,7 +398,7 @@ static void schedule_iso_out_read(struct usbd_class_data *const c_data,
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_WRN("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		ctx->ops->data_recv_cb(dev, terminal,
 				       data_buf, 0, ctx->user_data);
@@ -422,7 +422,7 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 
 	buf = net_buf_alloc(&uac2_pool, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("No buf for feedback");
+		LOG_WRN("No buf for feedback");
 		return;
 	}
 
@@ -439,7 +439,7 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_WRN("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 	} else {
 		if (ctx->fb_queued & BIT(as_idx)) {
@@ -803,11 +803,9 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	bi = udc_get_buf_info(buf);
 	if (err) {
 		if (err == -ECONNABORTED) {
-			LOG_WRN("request ep 0x%02x, len %u cancelled",
-				bi->ep, buf->len);
+			LOG_DBG("request ep 0x%02x, len %u cancelled", bi->ep, buf->len);
 		} else {
-			LOG_ERR("request ep 0x%02x, len %u failed",
-				bi->ep, buf->len);
+			LOG_WRN("request ep 0x%02x, len %u failed", bi->ep, buf->len);
 		}
 	}
 
