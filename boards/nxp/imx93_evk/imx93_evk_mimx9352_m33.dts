@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx93_m33.dtsi>
+#include <nxp/imx/nxp_imx93_m33.dtsi>
 #include "imx93_evk-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

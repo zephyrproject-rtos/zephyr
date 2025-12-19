@@ -111,8 +111,9 @@ GPIO
 
 The pinmuxing for the GPIOs is the standard pinmuxing of the mimx8mp devicetree
 created by NXP and can be found at
-:zephyr_file:`dts/arm/nxp/nxp_imx8ml_m7.dtsi`. The Pinout of the phyBOARD-Polis
+:zephyr_file:`dts/arm/nxp/imx/nxp_imx8ml_m7.dtsi`. The Pinout of the phyBOARD-Polis
 can be found at the `PHYTEC website`_.
+
 
 I2C
 ---
