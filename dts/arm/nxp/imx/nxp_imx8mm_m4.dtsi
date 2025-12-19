@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx8m_m4.dtsi>
+#include <nxp/imx/nxp_imx8m_m4.dtsi>
 
 &pinctrl {
 	status = "okay";

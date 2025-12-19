@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx943_m33.dtsi>
+#include <nxp/imx/nxp_imx943_m33.dtsi>
 #include "imx943_evk-pinctrl.dtsi"
 #include "imx943_evk_mimx94398_cm.dtsi"
 
