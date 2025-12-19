@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(ifx_tcpwm_counter, CONFIG_COUNTER_LOG_LEVEL);
 
 struct ifx_tcpwm_counter_config {
 	struct counter_config_info counter_info;
-	TCPWM_GRP_CNT_Type *reg_base;
+	TCPWM_Type *reg_base;
 	uint32_t index;
 	bool resolution_32_bits;
 	IRQn_Type irq_num;
@@ -84,16 +84,16 @@ static void counter_enable_event(const struct device *dev, counter_event_t event
 {
 	const struct ifx_tcpwm_counter_config *const config = dev->config;
 	uint32_t savedIntrStatus = Cy_SysLib_EnterCriticalSection();
-	uint32_t old_mask = IFX_TCPWM_GetInterruptMask(config->reg_base);
+	uint32_t old_mask = Cy_TCPWM_GetInterruptMask(config->reg_base, config->index);
 	uint32_t new_event;
 
 	if (enable) {
 		/* Clear any newly enabled events so that old IRQs don't trigger ISRs */
-		IFX_TCPWM_ClearInterrupt(config->reg_base, ~old_mask & event);
+		Cy_TCPWM_ClearInterrupt(config->reg_base, config->index, ~old_mask & event);
 	}
 
 	new_event = enable ? (old_mask | event) : (old_mask & ~event);
-	IFX_TCPWM_SetInterruptMask(config->reg_base, new_event);
+	Cy_TCPWM_SetInterruptMask(config->reg_base, config->index, new_event);
 
 	Cy_SysLib_ExitCriticalSection(savedIntrStatus);
 }
@@ -104,8 +104,8 @@ static void counter_isr_handler(const struct device *dev)
 	const struct ifx_tcpwm_counter_config *const config = dev->config;
 	uint32_t pending_int;
 
-	pending_int = IFX_TCPWM_GetInterruptStatusMasked(config->reg_base);
-	IFX_TCPWM_ClearInterrupt(config->reg_base, pending_int);
+	pending_int = Cy_TCPWM_GetInterruptStatusMasked(config->reg_base, config->index);
+	Cy_TCPWM_ClearInterrupt(config->reg_base, config->index, pending_int);
 	NVIC_ClearPendingIRQ(config->irq_num);
 
 	/* Alarm compare/capture interrupt */
@@ -116,8 +116,9 @@ static void counter_isr_handler(const struct device *dev)
 		counter_enable_event(dev, COUNTER_IRQ_CAPTURE_COMPARE, false);
 
 		/* Call User callback for Alarm */
-		data->alarm_cfg.callback(dev, 1, IFX_TCPWM_Counter_GetCounter(config->reg_base),
-					 data->alarm_cfg.user_data);
+		data->alarm_cfg.callback(
+			dev, 1, Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index),
+			data->alarm_cfg.user_data);
 		data->alarm_irq_flag = false;
 	}
 
@@ -150,20 +151,20 @@ static int ifx_tcpwm_counter_init(const struct device *dev)
 	counter_config.compare0 = data->compare_value;
 
 	/* DeInit will clear the interrupt mask; save it now and restore after we re-nit */
-	uint32_t old_mask = IFX_TCPWM_GetInterruptMask(config->reg_base);
+	uint32_t old_mask = Cy_TCPWM_GetInterruptMask(config->reg_base, config->index);
 
-	IFX_TCPWM_Counter_DeInit(config->reg_base, &counter_config);
+	Cy_TCPWM_Counter_DeInit(config->reg_base, config->index, &counter_config);
 
-	rslt = (cy_rslt_t)IFX_TCPWM_Counter_Init(config->reg_base, &counter_config);
+	rslt = (cy_rslt_t)Cy_TCPWM_Counter_Init(config->reg_base, config->index, &counter_config);
 	if (rslt != CY_RSLT_SUCCESS) {
 		return -EIO;
 	}
 
-	IFX_TCPWM_Counter_Enable(config->reg_base);
-	IFX_TCPWM_SetInterruptMask(config->reg_base, old_mask);
+	Cy_TCPWM_Counter_Enable(config->reg_base, config->index);
+	Cy_TCPWM_SetInterruptMask(config->reg_base, config->index, old_mask);
 
-	/* This must be called after IFX_TCPWM_Counter_Init */
-	IFX_TCPWM_Counter_SetCounter(config->reg_base, data->value);
+	/* This must be called after Cy_TCPWM_Counter_Init */
+	Cy_TCPWM_Counter_SetCounter(config->reg_base, config->index, data->value);
 
 	/* enable the counter interrupt */
 	config->irq_enable_func(dev);
@@ -177,8 +178,8 @@ static int ifx_tcpwm_counter_start(const struct device *dev)
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
-	IFX_TCPWM_Counter_Enable(config->reg_base);
-	IFX_TCPWM_TriggerStart_Single(config->reg_base);
+	Cy_TCPWM_Counter_Enable(config->reg_base, config->index);
+	Cy_TCPWM_TriggerStart_Single(config->reg_base, config->index);
 
 	return 0;
 }
@@ -189,7 +190,7 @@ static int ifx_tcpwm_counter_stop(const struct device *dev)
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
-	IFX_TCPWM_Counter_Disable(config->reg_base);
+	Cy_TCPWM_Counter_Disable(config->reg_base, config->index);
 
 	return 0;
 }
@@ -219,7 +220,7 @@ static int ifx_tcpwm_counter_get_value(const struct device *dev, uint32_t *ticks
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
-	*ticks = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+	*ticks = Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
 
 	return 0;
 }
@@ -247,12 +248,12 @@ static int ifx_tcpwm_counter_set_top_value(const struct device *dev,
 		/* timer_configure resets timer counter register to value
 		 * defined in config structure 'data->value', so update
 		 * counter value with current value of counter (read by
-		 * IFX_TCPWM_Counter_GetCounter function).
+		 * Cy_TCPWM_Counter_GetCounter function).
 		 */
-		data->value = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+		data->value = Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
 	}
 
-	IFX_TCPWM_Block_SetPeriod(config->reg_base, cfg->ticks);
+	Cy_TCPWM_Block_SetPeriod(config->reg_base, config->index, cfg->ticks);
 
 	/* Register an top_value terminal count event callback handler if
 	 * callback is not NULL.
@@ -344,14 +345,15 @@ static int ifx_tcpwm_counter_set_alarm(const struct device *dev, uint8_t chan_id
 
 		/* limit max to detect short relative being set too late. */
 		max_rel_val = irq_on_late ? (top_val / 2U) : top_val;
-		compare_value = counter_ticks_add(IFX_TCPWM_Counter_GetCounter(config->reg_base),
-						  compare_value, top_val);
+		compare_value = counter_ticks_add(
+			Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index), compare_value,
+			top_val);
 	}
 
 	/* Decrement value to detect the case when compare_value == counter_read(dev). Otherwise,
 	 * condition would need to include comparing diff against 0.
 	 */
-	uint32_t curr = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+	uint32_t curr = Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
 	uint32_t diff = counter_ticks_sub((compare_value - 1), curr, top_val);
 
 	if ((absolute && (compare_value < curr)) || (diff > max_rel_val)) {
@@ -362,7 +364,8 @@ static int ifx_tcpwm_counter_set_alarm(const struct device *dev, uint8_t chan_id
 		if (irq_on_late) {
 			data->alarm_irq_flag = true;
 			counter_enable_event(dev, COUNTER_IRQ_CAPTURE_COMPARE, true);
-			IFX_TCPWM_SetInterrupt(config->reg_base, COUNTER_IRQ_CAPTURE_COMPARE);
+			Cy_TCPWM_SetInterrupt(config->reg_base, config->index,
+					      COUNTER_IRQ_CAPTURE_COMPARE);
 		}
 
 		if (absolute) {
@@ -374,13 +377,13 @@ static int ifx_tcpwm_counter_set_alarm(const struct device *dev, uint8_t chan_id
 		 * timer_configure resets timer counter register to value
 		 * defined in config structure 'data->value', so update
 		 * counter value with current value of counter (read by
-		 * IFX_TCPWM_Counter_GetCounter function).
+		 * Cy_TCPWM_Counter_GetCounter function).
 		 */
-		data->value = IFX_TCPWM_Counter_GetCounter(config->reg_base);
+		data->value = Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
 		data->compare_value = compare_value;
 
 		/* Reconfigure timer */
-		IFX_TCPWM_Block_SetCC0Val(config->reg_base, compare_value);
+		Cy_TCPWM_Block_SetCC0Val(config->reg_base, config->index, compare_value);
 
 		counter_enable_event(dev, COUNTER_IRQ_CAPTURE_COMPARE, true);
 	}
@@ -494,7 +497,7 @@ static DEVICE_API(counter, counter_api) = {
 							  : UINT16_MAX,                            \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
-		.reg_base = (TCPWM_GRP_CNT_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                  \
+		.reg_base = (TCPWM_Type *)DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n))),       \
 		.index = (DT_REG_ADDR(DT_INST_PARENT(n)) -                                         \
 			  DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /                             \
 			 DT_REG_SIZE(DT_INST_PARENT(n)),                                           \
