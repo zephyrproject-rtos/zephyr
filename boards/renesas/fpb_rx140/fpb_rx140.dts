@@ -79,5 +79,11 @@
 	pinctrl-0 = <&rspi0_default>;
 	pinctrl-names = "default";
 	ssl-assert = <0>;
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_K(400)>;
 	status = "okay";
 };
