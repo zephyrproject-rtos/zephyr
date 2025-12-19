@@ -92,6 +92,13 @@ config SETTINGS_ZMS_LL_CACHE_SIZE
 	help
 	  Number of entries in Settings ZMS linked list cache.
 
+config SETTINGS_ZMS_WIPE_ON_MOUNT_FAILURE
+	bool "ZMS wipe on mount failure"
+	default n
+	help
+	  Enable wiping of ZMS storage on mount failure to recover from
+	  corrupted data.
+
 endif # SETTINGS_ZMS
 
 config SETTINGS_FCB

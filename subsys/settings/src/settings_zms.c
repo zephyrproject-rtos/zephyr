@@ -680,13 +680,14 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 static int settings_zms_backend_init(struct settings_zms *cf)
 {
 	int rc;
+	bool wipe_on_failure = IS_ENABLED(CONFIG_SETTINGS_ZMS_WIPE_ON_MOUNT_FAILURE);
 
 	cf->cf_zms.flash_device = cf->flash_dev;
 	if (cf->cf_zms.flash_device == NULL) {
 		return -ENODEV;
 	}
 
-	rc = zms_mount(&cf->cf_zms);
+	rc = zms_mount(&cf->cf_zms, wipe_on_failure);
 	if (rc) {
 		return rc;
 	}
