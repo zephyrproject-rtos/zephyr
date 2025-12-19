@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <freq.h>
-#include <nxp/nxp_k6x.dtsi>
+#include <nxp/kinetis/nxp_k6x.dtsi>
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_M(2)>;
