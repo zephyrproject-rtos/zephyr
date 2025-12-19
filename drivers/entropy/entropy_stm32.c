@@ -943,5 +943,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    entropy_stm32_rng_init,
 		    PM_DEVICE_DT_INST_GET(0),
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
+		    KERNEL_PRIORITY, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_stm32_rng_api);

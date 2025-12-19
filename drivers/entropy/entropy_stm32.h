@@ -18,10 +18,12 @@
 #if IRQLESS_TRNG
 #define DT_DRV_COMPAT st_stm32_rng_noirq
 #define TRNG_GENERATION_DELAY	K_NSEC(DT_INST_PROP_OR(0, generation_delay_ns, 0))
+#define KERNEL_PRIORITY POST_KERNEL
 #else /* !IRQLESS_TRNG */
 #define DT_DRV_COMPAT st_stm32_rng
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
+#define KERNEL_PRIORITY PRE_KERNEL_1
 #endif /* IRQLESS_TRNG */
 
 /* Cross-series LL compatibility wrappers */
