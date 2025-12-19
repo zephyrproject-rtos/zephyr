@@ -2,7 +2,7 @@ Support Resources for Zephyr
 ============================
 - `NXP Board Support Status`_
 - `NXP Zephyr Downstream Software Development Kit`_
-- `MCUXpresso for VS Code`_, `wiki`_ documentation and `Zephyr lab guides`_
+- `MCUXpresso for VS Code documentation`_, and `Zephyr lab guides`_
 - `NXP Zephyr Knowledge Hub`_
 - `NXP’s Zephyr landing page`_  (including training resources)
 - `NXP Support Community forum for Zephyr`_
@@ -16,11 +16,11 @@ Support Resources for Zephyr
 .. _MCUXpresso for VS Code:
    https://www.nxp.com/design/design-center/software/embedded-software/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC?tid=vanMCUXPRESSO-VSC
 
-.. _wiki:
-   https://github.com/nxp-mcuxpresso/vscode-for-mcux/wiki
+.. _MCUXpresso for VS Code documentation:
+   https://mcuxpresso.nxp.com/mcux-vscode
 
 .. _Zephyr lab guides:
-   https://github.com/nxp-mcuxpresso/vscode-for-mcux/wiki/Training-Zephyr-Getting-Started
+   https://mcuxpresso.nxp.com/mcux-vscode/latest/html/Training-Zephyr-Getting-Started.html
 
 .. _NXP Zephyr Knowledge Hub:
    https://community.nxp.com/t5/Zephyr-Project-Knowledge-Base/Zephyr-Knowledge-Hub/ta-p/2008548
