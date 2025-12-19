@@ -6,5 +6,5 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rw6xx.dtsi>
+#include <nxp/rw/nxp_rw6xx.dtsi>
 #include "ubx_evk_iris_w1_common.dtsi"
