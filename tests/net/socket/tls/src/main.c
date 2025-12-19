@@ -697,7 +697,6 @@ static void test_dtls_sendmsg(net_sa_family_t family)
 {
 	int rv;
 	uint8_t buf[128 + 1] = { 0 };
-	uint8_t dummy_byte = 0;
 	static const char expected_str[] = "testtest";
 	struct net_iovec iov[3] = {
 		{
@@ -751,6 +750,38 @@ static void test_dtls_sendmsg(net_sa_family_t family)
 	zassert_mem_equal(buf, expected_str, sizeof(expected_str) - 1, "invalid rx data");
 
 	test_work_wait(&test_data.tx_work);
+
+	test_sockets_close();
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
+}
+
+static void test_dtls_sendmsg_overflow(net_sa_family_t family)
+{
+	int rv;
+	uint8_t buf[128 + 1] = { 0 };
+	uint8_t dummy_byte = 0;
+	struct net_iovec iov[3] = {
+		{
+			.iov_base = TEST_STR_SMALL,
+			.iov_len = sizeof(TEST_STR_SMALL) - 1,
+		},
+		{
+			.iov_base = TEST_STR_SMALL,
+			.iov_len = sizeof(TEST_STR_SMALL) - 1,
+		},
+		{},
+	};
+	struct net_msghdr msg = {};
+	struct test_sendmsg_data test_data = {
+		.msg = &msg,
+	};
+
+	test_prepare_dtls_connection(family);
+
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work, test_sendmsg_tx_work_handler);
 
 	/* sendmsg() with single fragment should still work even if larger than
 	 * intermediate buffer size
@@ -811,6 +842,26 @@ ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 	}
 
 	test_dtls_sendmsg(NET_AF_INET6);
+}
+
+ZTEST(net_socket_tls, test_v4_dtls_sendmsg_overflow)
+{
+	if ((CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE == 0) ||
+	     IS_ENABLED(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)) {
+		ztest_test_skip();
+	}
+
+	test_dtls_sendmsg_overflow(NET_AF_INET);
+}
+
+ZTEST(net_socket_tls, test_v6_dtls_sendmsg_overflow)
+{
+	if ((CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE == 0) ||
+	     IS_ENABLED(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)) {
+		ztest_test_skip();
+	}
+
+	test_dtls_sendmsg_overflow(NET_AF_INET6);
 }
 
 struct close_data {

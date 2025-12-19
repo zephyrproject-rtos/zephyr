@@ -72,8 +72,16 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 #define DTLS_SENDMSG_BUF_SIZE (CONFIG_NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE)
+
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+#define DTLS_CID_CHECK_BUF_SIZE (MBEDTLS_SSL_IN_CONTENT_LEN)
+#else
+#define DTLS_CID_CHECK_BUF_SIZE 0
+#endif /* CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
+
 #else
 #define DTLS_SENDMSG_BUF_SIZE 0
+#define DTLS_CID_CHECK_BUF_SIZE 0
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
@@ -280,6 +288,11 @@ __net_socket struct tls_context {
 #endif /* CONFIG_MBEDTLS */
 };
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+#define DTLS_HELPER_BUF_SIZE MAX(DTLS_SENDMSG_BUF_SIZE, DTLS_CID_CHECK_BUF_SIZE)
+static uint8_t dtls_helper_buf[DTLS_HELPER_BUF_SIZE];
+static K_MUTEX_DEFINE(dtls_helper_buf_lock);
+#endif
 
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
@@ -1135,11 +1148,8 @@ static int dtls_server_new_active_session(struct tls_context *tls_ctx,
 }
 
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
-static K_MUTEX_DEFINE(dtls_server_cid_check_lock);
-
 static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 {
-	static uint8_t tmp_buf[MBEDTLS_SSL_IN_CONTENT_LEN];
 	struct tls_session_context *session_ctx = NULL;
 	int result = -ENOENT;
 
@@ -1147,7 +1157,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(&dtls_server_cid_check_lock, K_FOREVER);
+	k_mutex_lock(&dtls_helper_buf_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&tls_ctx->sessions, session_ctx, node) {
 		struct net_sockaddr addr;
@@ -1178,7 +1188,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		 * avoid races in case multiple DTLS server sockets run in parallel.
 		 */
 		addrlen = sizeof(struct net_sockaddr);
-		len = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
+		len = zsock_recvfrom(tls_ctx->sock, &dtls_helper_buf, sizeof(dtls_helper_buf),
 				     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
 				     &addr, &addrlen);
 		if (len < 0) {
@@ -1186,7 +1196,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 			break;
 		}
 
-		ret = mbedtls_ssl_check_record(&session_ctx->ssl, tmp_buf, len);
+		ret = mbedtls_ssl_check_record(&session_ctx->ssl, dtls_helper_buf, len);
 		if (ret == 0) {
 			NET_DBG("Found matching session (CID) for [%s]:%d (was [%s]:%d)",
 				LOG_ADDR_PORT_HELPER(&addr),
@@ -1200,7 +1210,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		}
 	}
 
-	k_mutex_unlock(&dtls_server_cid_check_lock);
+	k_mutex_unlock(&dtls_helper_buf_lock);
 
 	return result;
 }
@@ -3174,40 +3184,42 @@ ssize_t ztls_sendto_ctx(struct tls_context *ctx, const void *buf, size_t len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 static ssize_t dtls_sendmsg_merge_and_send(struct tls_context *ctx,
 					   const struct net_msghdr *msg,
 					   int flags)
 {
-	static K_MUTEX_DEFINE(sendmsg_lock);
-	static uint8_t sendmsg_buf[DTLS_SENDMSG_BUF_SIZE];
 	ssize_t len = 0;
 
-	k_mutex_lock(&sendmsg_lock, K_FOREVER);
+	k_mutex_lock(&dtls_helper_buf_lock, K_FOREVER);
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		struct net_iovec *vec = msg->msg_iov + i;
 
 		if (vec->iov_len > 0) {
-			if (len + vec->iov_len > sizeof(sendmsg_buf)) {
-				k_mutex_unlock(&sendmsg_lock);
+			if (len + vec->iov_len > sizeof(dtls_helper_buf)) {
+				k_mutex_unlock(&dtls_helper_buf_lock);
 				errno = EMSGSIZE;
 				return -1;
 			}
 
-			memcpy(sendmsg_buf + len, vec->iov_base, vec->iov_len);
+			memcpy(dtls_helper_buf + len, vec->iov_base, vec->iov_len);
 			len += vec->iov_len;
 		}
 	}
 
 	if (len > 0) {
-		len = ztls_sendto_ctx(ctx, sendmsg_buf, len, flags,
+		len = ztls_sendto_ctx(ctx, dtls_helper_buf, len, flags,
 				      msg->msg_name, msg->msg_namelen);
 	}
 
-	k_mutex_unlock(&sendmsg_lock);
+	k_mutex_unlock(&dtls_helper_buf_lock);
 
 	return len;
 }
+#else
+#define dtls_sendmsg_merge_and_send(...) (-1)
+#endif
 
 static ssize_t tls_sendmsg_loop_and_send(struct tls_context *ctx,
 					 const struct net_msghdr *msg,
