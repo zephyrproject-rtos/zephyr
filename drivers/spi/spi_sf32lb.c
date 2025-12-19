@@ -405,12 +405,11 @@ static int spi_sf32lb_transceive(const struct device *dev, const struct spi_conf
 	return ret;
 }
 
-static int spi_sf32lb_transceive_async(const struct device *dev,
-				const struct spi_config *config,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				spi_callback_t cb,
-				void *userdata)
+#ifdef CONFIG_SPI_ASYNC
+static int spi_sf32lb_transceive_async(const struct device *dev, const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs, spi_callback_t cb,
+				       void *userdata)
 {
 	const struct spi_sf32lb_config *cfg = dev->config;
 	struct spi_sf32lb_data *data = dev->data;
@@ -456,6 +455,7 @@ static int spi_sf32lb_transceive_async(const struct device *dev,
 
 	return ret;
 }
+#endif
 
 static int spi_sf32lb_release(const struct device *dev, const struct spi_config *config)
 {
