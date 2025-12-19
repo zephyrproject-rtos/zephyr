@@ -386,7 +386,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: e9ea674ed02e8ee00548f1bb994d52df23c8068d
+      revision: 8b3158f4d4023fef9efa5648e6236875a2f058e5
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
