@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <arm/nxp/nxp_s32k566_m7.dtsi>
+#include <arm/nxp/s32/nxp_s32k566_m7.dtsi>
 #include "s32k5xxcvb_s32k566.dtsi"
 
 / {

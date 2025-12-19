@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <arm/nxp/nxp_s32z27x_rtu0_r52.dtsi>
+#include <arm/nxp/s32/nxp_s32z27x_rtu0_r52.dtsi>
 #include "s32z2xxdc2_s32z270.dtsi"
 
 / {

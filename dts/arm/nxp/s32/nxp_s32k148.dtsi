@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/clock/nxp_s32k148_clock.h>
-#include <nxp/nxp_s32k1xx.dtsi>
+#include <nxp/s32/nxp_s32k1xx.dtsi>
 
 / {
 	cpus {
