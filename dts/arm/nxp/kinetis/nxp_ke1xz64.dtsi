@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_ke1xz.dtsi>
+#include <nxp/kinetis/nxp_ke1xz.dtsi>
 
 /delete-node/ &sram_l;
 /delete-node/ &sram_u;
