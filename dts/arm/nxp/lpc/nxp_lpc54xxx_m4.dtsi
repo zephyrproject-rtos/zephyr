@@ -5,7 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <nxp/nxp_lpc54xxx.dtsi>
+#include <nxp/lpc/nxp_lpc54xxx.dtsi>
 
 / {
 	cpus {
