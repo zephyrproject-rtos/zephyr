@@ -1413,12 +1413,6 @@ static const struct bt_mesh_model_op *find_op(const struct bt_mesh_elem *elem,
 
 		const struct bt_mesh_model_op *op;
 
-		if (IS_ENABLED(CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE) &&
-		     cid != UINT32_MAX &&
-		     cid != models[i].vnd.company) {
-			continue;
-		}
-
 		*model = &models[i];
 
 		for (op = (*model)->op; op->func; op++) {

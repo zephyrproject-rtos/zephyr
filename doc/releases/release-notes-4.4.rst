@@ -77,6 +77,7 @@ Deprecated APIs and options
       :c:func:`bt_mesh_input_numeric` instead.
     * The callback :c:member:`output_number` in :c:struct:`bt_mesh_prov` structure was deprecated.
       Applications should use :c:member:`output_numeric` callback instead.
+    * The :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` option has been deprecated.
 
   * Host
 
