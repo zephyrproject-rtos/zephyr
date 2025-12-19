@@ -85,6 +85,13 @@
 #define sys_port_trace_k_thread_user_mode_enter()
 
 /**
+ * @brief Called when a resource pool is assigned to a thread
+ * @param thread Thread object
+ * @param heap Heap object
+ */
+#define sys_port_trace_k_thread_heap_assign(thread, heap)
+
+/**
  * @brief Called when entering a k_thread_join
  * @param thread Thread object
  * @param timeout Timeout period
