@@ -1,7 +1,6 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA
- * Copyright NXP
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -23,7 +22,7 @@ bool usbh_desc_is_valid(const void *const desc,
 		return false;
 	}
 
-	/* Avoid too short bLength field */
+	/* Avoid too short bLength field or nil descriptor terminator */
 	if (head->bLength < size) {
 		return false;
 	}
@@ -107,35 +106,52 @@ const void *usbh_desc_get_next_alt_setting(const void *const desc)
 
 const void *usbh_desc_get_iface(const struct usb_device *const udev, const uint8_t iface)
 {
-	struct usb_cfg_descriptor *const c_desc = udev->cfg_desc;
+	const struct usb_cfg_descriptor *const c_desc = udev->cfg_desc;
 
 	if (iface > c_desc->bNumInterfaces) {
-		LOG_ERR("Endpoint number %d above the maximum %d", iface, c_desc->bNumInterfaces);
+		LOG_ERR("Endpoint number %d above the maximum %d",
+			iface, c_desc->bNumInterfaces);
 		return NULL;
 	}
 
-	return udev->ifaces[iface].dhp;
+	for (unsigned int i = 0; i < c_desc->bNumInterfaces; i++) {
+		const struct usb_host_interface *const host_iface = &udev->ifaces[i];
+		const struct usb_if_descriptor *const if_d = (void *)host_iface->dhp;
+
+		if (if_d->bInterfaceNumber == iface) {
+			return host_iface->dhp;
+		}
+	}
+
+	return NULL;
 }
 
 const void *usbh_desc_get_endpoint(const struct usb_device *const udev, const uint8_t ep_addr)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep_addr);
 
-	if (ep_idx > UHC_ENDPOINTS_MAX) {
-		LOG_ERR("Endpoint number %d above the maximum %d", ep_idx, UHC_ENDPOINTS_MAX);
+	if (ep_idx > ARRAY_SIZE(udev->ep_in)) {
+		LOG_ERR("Endpoint number %d above the maximum %d",
+			ep_idx, ARRAY_SIZE(udev->ep_in));
 		return NULL;
 	}
 
 	return USB_EP_DIR_IS_IN(ep_addr) ? udev->ep_in[ep_idx].desc : udev->ep_out[ep_idx].desc;
 }
 
-const void *usbh_desc_get_iad(struct usb_device *const udev, const uint8_t iface)
+const void *usbh_desc_get_iad(const struct usb_device *const udev, const uint8_t iface)
 {
 	const struct usb_cfg_descriptor *const c_desc = udev->cfg_desc;
 
+	if (iface > c_desc->bNumInterfaces) {
+		LOG_ERR("Endpoint number %d above the maximum %d",
+			iface, c_desc->bNumInterfaces);
+		return NULL;
+	}
+
 	for (unsigned int i = 0; i < c_desc->bNumInterfaces; i++) {
-		struct usb_host_interface *const host_iface = &udev->ifaces[i];
-		struct usb_if_descriptor *const if_d = (void *)host_iface->dhp;
+		const struct usb_host_interface *const host_iface = &udev->ifaces[i];
+		const struct usb_if_descriptor *const if_d = (void *)host_iface->dhp;
 
 		if (if_d->bInterfaceNumber == iface && host_iface->iad != NULL) {
 			return host_iface->iad;
