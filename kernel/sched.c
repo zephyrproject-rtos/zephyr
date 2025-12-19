@@ -322,23 +322,24 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 #endif
 
+/**
+ * Returns pointer to _cpu if the thread is currently running on
+ * another CPU.
+ */
 static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 {
-	/* Returns pointer to _cpu if the thread is currently running on
-	 * another CPU. There are more scalable designs to answer this
-	 * question in constant time, but this is fine for now.
-	 */
 #ifdef CONFIG_SMP
-	int currcpu = _current_cpu->id;
+	int thread_cpu_id = thread->base.cpu;
+	struct _cpu *thread_cpu;
 
-	unsigned int num_cpus = arch_num_cpus();
+	__ASSERT_NO_MSG((thread_cpu_id >= 0) &&
+			(thread_cpu_id < arch_num_cpus()));
 
-	for (int i = 0; i < num_cpus; i++) {
-		if ((i != currcpu) &&
-		    (_kernel.cpus[i].current == thread)) {
-			return &_kernel.cpus[i];
-		}
+	thread_cpu = &_kernel.cpus[thread_cpu_id];
+	if ((thread_cpu->current == thread) && (thread_cpu != _current_cpu)) {
+		return thread_cpu;
 	}
+
 #endif /* CONFIG_SMP */
 	ARG_UNUSED(thread);
 	return NULL;
@@ -408,11 +409,13 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 static ALWAYS_INLINE void z_metairq_preempted_clear(struct k_thread *thread)
 {
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
-	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
-		if (_kernel.cpus[i].metairq_preempted == thread) {
-			_kernel.cpus[i].metairq_preempted = NULL;
-			break;
-		}
+	unsigned int cpu_id = 0;
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	cpu_id = thread->base.cpu;
+#endif
+	if (_kernel.cpus[cpu_id].metairq_preempted == thread) {
+		_kernel.cpus[cpu_id].metairq_preempted = NULL;
 	}
 #endif
 }
