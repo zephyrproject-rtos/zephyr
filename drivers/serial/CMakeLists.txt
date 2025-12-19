@@ -114,13 +114,11 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE uart_handlers.c)
 # zephyr-keep-sorted-stop
 
 if(CONFIG_UART_NATIVE_PTY)
-  zephyr_library_compile_definitions(NO_POSIX_CHEATS)
   zephyr_library_sources(uart_native_pty.c)
   target_sources(native_simulator INTERFACE uart_native_pty_bottom.c)
 endif()
 
 if(CONFIG_UART_NATIVE_TTY)
-  zephyr_library_compile_definitions(NO_POSIX_CHEATS)
   zephyr_library_sources(uart_native_tty.c)
   target_sources(native_simulator INTERFACE uart_native_tty_bottom.c)
 endif()
