@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt1060.dtsi>
+#include <nxp/imxrt/nxp_rt1060.dtsi>
 #include "mimxrt1062_fmurt6-pinctrl.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <freq.h>

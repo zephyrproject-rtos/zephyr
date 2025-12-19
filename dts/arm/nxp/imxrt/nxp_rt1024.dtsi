@@ -1,25 +1,27 @@
 /*
- * Copyright (c) 2019, Linaro
+ * Copyright (c) 2020, Linaro
  * Copyright (c) 2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt10xx.dtsi>
+#include <nxp/imxrt/nxp_rt10xx.dtsi>
 
 &flexram {
-	flexram,num-ram-banks = <5>;
-	/* Note: RT1015 has five flexram banks, but only 4 of the 5 can
-	 * be used at the same time, for a total of 128KB of RAM.
-	 */
+	flexram,num-ram-banks = <8>;
 };
 
 &sysclk {
 	clock-frequency = <DT_FREQ_M(500)>;
 };
 
+/* i.MX rt1024 default FlexRAM partition:
+ * ITCM: 64KB
+ * DTCM: 64KB
+ * OCRAM: 128KB
+ */
 &itcm {
-	reg = <0x00000000 DT_SIZE_K(32)>;
+	reg = <0x00000000 DT_SIZE_K(64)>;
 };
 
 &dtcm {
@@ -27,7 +29,7 @@
 };
 
 &ocram {
-	reg = <0x20200000 DT_SIZE_K(64)>;
+	reg = <0x20200000 DT_SIZE_K(128)>;
 };
 
 &ccm {
@@ -36,28 +38,33 @@
 	};
 };
 
-&gpt2 {
-	gptfreq = <DT_FREQ_K(12500)>;
-};
+&flexspi {
+	status = "okay";
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
 
-/* RT1015 only has two LPSPI blocks */
-/delete-node/ &lpspi3;
-/delete-node/ &lpspi4;
+	/* 32 megabit internal flash present on chip */
+	w25q32jvwj0: w25q32jvwj@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(4 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		status = "okay";
+		jedec-id = [ef 40 16];
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <1>;
+	};
+};
 
 / {
 	soc {
-		/* Remove ADC2, it doesn't exist on RT1015 */
-		/delete-node/ adc@400C8000;
-		/* GPIOS 4 and 6-9 are not preset on RT1015 */
+		/* GPIOS 4 and 6-9 are not preset on RT1024 */
 		/delete-node/ gpio@401c4000;
 		/delete-node/ gpio@42000000;
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
-		/* RT1015 has only one flexSPI controller */
+		/* RT1024 has only one flexSPI controller */
 		/delete-node/ spi@402a4000;
-		/* Remove Ethernet, it doesn't exist on RT1015 */
-		/delete-node/ enet@402d8000;
 	};
 };
 
@@ -84,22 +91,36 @@
 		 <&iomuxc_gpio_ad_b0_13_gpio1_io13>,
 		 <&iomuxc_gpio_ad_b0_14_gpio1_io14>,
 		 <&iomuxc_gpio_ad_b0_15_gpio1_io15>,
+		 <&iomuxc_gpio_ad_b1_06_gpio1_io22>,
+		 <&iomuxc_gpio_ad_b1_07_gpio1_io23>,
+		 <&iomuxc_gpio_ad_b1_08_gpio1_io24>,
+		 <&iomuxc_gpio_ad_b1_09_gpio1_io25>,
 		 <&iomuxc_gpio_ad_b1_10_gpio1_io26>,
 		 <&iomuxc_gpio_ad_b1_11_gpio1_io27>,
 		 <&iomuxc_gpio_ad_b1_12_gpio1_io28>,
 		 <&iomuxc_gpio_ad_b1_13_gpio1_io29>,
 		 <&iomuxc_gpio_ad_b1_14_gpio1_io30>,
 		 <&iomuxc_gpio_ad_b1_15_gpio1_io31>;
-	gpio-reserved-ranges = <16 10>;
+	gpio-reserved-ranges = <16 6>;
 };
 
 &gpio2 {
-	pinmux = <&iomuxc_gpio_emc_04_gpio2_io04>,
+	pinmux = <&iomuxc_gpio_emc_00_gpio2_io00>,
+		 <&iomuxc_gpio_emc_01_gpio2_io01>,
+		 <&iomuxc_gpio_emc_02_gpio2_io02>,
+		 <&iomuxc_gpio_emc_03_gpio2_io03>,
+		 <&iomuxc_gpio_emc_04_gpio2_io04>,
 		 <&iomuxc_gpio_emc_05_gpio2_io05>,
 		 <&iomuxc_gpio_emc_06_gpio2_io06>,
 		 <&iomuxc_gpio_emc_07_gpio2_io07>,
 		 <&iomuxc_gpio_emc_08_gpio2_io08>,
 		 <&iomuxc_gpio_emc_09_gpio2_io09>,
+		 <&iomuxc_gpio_emc_10_gpio2_io10>,
+		 <&iomuxc_gpio_emc_11_gpio2_io11>,
+		 <&iomuxc_gpio_emc_12_gpio2_io12>,
+		 <&iomuxc_gpio_emc_13_gpio2_io13>,
+		 <&iomuxc_gpio_emc_14_gpio2_io14>,
+		 <&iomuxc_gpio_emc_15_gpio2_io15>,
 		 <&iomuxc_gpio_emc_16_gpio2_io16>,
 		 <&iomuxc_gpio_emc_17_gpio2_io17>,
 		 <&iomuxc_gpio_emc_18_gpio2_io18>,
@@ -111,8 +132,11 @@
 		 <&iomuxc_gpio_emc_24_gpio2_io24>,
 		 <&iomuxc_gpio_emc_25_gpio2_io25>,
 		 <&iomuxc_gpio_emc_26_gpio2_io26>,
-		 <&iomuxc_gpio_emc_27_gpio2_io27>;
-	gpio-reserved-ranges = <0 4>, <10 6>;
+		 <&iomuxc_gpio_emc_27_gpio2_io27>,
+		 <&iomuxc_gpio_emc_28_gpio2_io28>,
+		 <&iomuxc_gpio_emc_29_gpio2_io29>,
+		 <&iomuxc_gpio_emc_30_gpio2_io30>,
+		 <&iomuxc_gpio_emc_31_gpio2_io31>;
 };
 
 &gpio3 {
@@ -120,6 +144,19 @@
 		 <&iomuxc_gpio_emc_33_gpio3_io01>,
 		 <&iomuxc_gpio_emc_34_gpio3_io02>,
 		 <&iomuxc_gpio_emc_35_gpio3_io03>,
+		 <&iomuxc_gpio_emc_36_gpio3_io04>,
+		 <&iomuxc_gpio_emc_37_gpio3_io05>,
+		 <&iomuxc_gpio_emc_38_gpio3_io06>,
+		 <&iomuxc_gpio_emc_39_gpio3_io07>,
+		 <&iomuxc_gpio_emc_40_gpio3_io08>,
+		 <&iomuxc_gpio_emc_41_gpio3_io09>,
+		 <&iomuxc_gpio_sd_b0_00_gpio3_io13>,
+		 <&iomuxc_gpio_sd_b0_01_gpio3_io14>,
+		 <&iomuxc_gpio_sd_b0_02_gpio3_io15>,
+		 <&iomuxc_gpio_sd_b0_03_gpio3_io16>,
+		 <&iomuxc_gpio_sd_b0_04_gpio3_io17>,
+		 <&iomuxc_gpio_sd_b0_05_gpio3_io18>,
+		 <&iomuxc_gpio_sd_b0_06_gpio3_io19>,
 		 <&iomuxc_gpio_sd_b1_00_gpio3_io20>,
 		 <&iomuxc_gpio_sd_b1_01_gpio3_io21>,
 		 <&iomuxc_gpio_sd_b1_02_gpio3_io22>,
@@ -132,10 +169,11 @@
 		 <&iomuxc_gpio_sd_b1_09_gpio3_io29>,
 		 <&iomuxc_gpio_sd_b1_10_gpio3_io30>,
 		 <&iomuxc_gpio_sd_b1_11_gpio3_io31>;
-	gpio-reserved-ranges = <4 16>;
+	gpio-reserved-ranges = <10 3>;
 };
 
 &gpio5 {
-	pinmux = <&iomuxc_snvs_pmic_on_req_gpio5_io01>;
-	gpio-reserved-ranges = <0 1>;
+	pinmux = <&iomuxc_snvs_wakeup_gpio5_io00>,
+		 <&iomuxc_snvs_pmic_on_req_gpio5_io01>,
+		 <&iomuxc_snvs_pmic_stby_req_gpio5_io02>;
 };

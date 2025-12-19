@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt10xx.dtsi>
+#include <nxp/imxrt/nxp_rt10xx.dtsi>
 
 &flexram {
 	flexram,num-ram-banks = <4>;
