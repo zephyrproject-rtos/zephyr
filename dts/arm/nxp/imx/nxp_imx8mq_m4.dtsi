@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx8m_m4.dtsi>
+#include <nxp/imx/nxp_imx8m_m4.dtsi>
 
 &ocram_code {
 	reg = <0x00900000 DT_SIZE_K(128)>;
