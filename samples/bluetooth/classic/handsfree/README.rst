@@ -28,20 +28,28 @@ After flashing, the device works as a Hands-Free unit. After the Bluetooth Host 
 initialized, connectable and discoverable modes will be automatically enabled. The peer device AG
 (Audio Gateway) can discover and connect to the device.
 
-When the SCO connection is established, the application will initialize the codec and pcm interface
-for voice streaming if the codec and pcm configurations are available.
+The application works as a Hands-Free unit. After the Bluetooth Host stack is initialized, the
+device will be automatically connectable and discoverable. The peer device AG (Audio Gateway) can
+discover and connect to the device.
 
-The HFP application requires the following optional configuration options:
-The codec depends on the devicetree alias named ``i2s-codec-rx`` and ``i2s-codec-tx``.
-The PCM interface depends on the devicetree alias named ``pcm-rxtx``, or ``pcm-tx`` and ``pcm-rx``.
+When the SCO connection is established, the application will initialize the codec and voice
+interface for voice streaming.
+If the :kconfig:option:`CONFIG_BT_VOICE_OVER_HCI` is enabled, the streaming voice will be sent over
+HCI. Or, the streaming voice will be sent over PCM.
+
+The HFP application has the following device tree requirements:
+The codec depends on the devicetree aliases named ``i2s-codec-rx`` and ``i2s-codec-tx``.
+The voice interface depends on the devicetree aliases named ``pcm-rxtx``, or ``pcm-tx`` and
+``pcm-rx`` when the :kconfig:option:`CONFIG_BT_VOICE_OVER_HCI` is disabled.
 
 This sample has been tested on :zephyr:board:`mimxrt1170_evk@B/mimxrt1176/cm7 <mimxrt1170_evk>`.
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+For the case where :kconfig:option:`CONFIG_BT_VOICE_OVER_HCI` is disabled, the following topology
+applies:
 
 
 .. graphviz::
-   :caption: Bluetooth Hands-Free voice streaming topology
+   :caption: Bluetooth Hands-Free voice streaming over PCM topology
 
 
    digraph bluetooth_hfp {
@@ -76,8 +84,55 @@ See :zephyr:code-sample-category:`bluetooth` samples for details.
        HFP_APP -> BT_HOST [label="HF APIs"];
        HFP_APP -> CODEC [label="Peer voice"];
        CODEC -> HFP_APP [label="Local voice"];
-       HFP_APP -> BT_CTRL [label="Local voice\nPCM output"];
-       BT_CTRL -> HFP_APP [label="Peer voice\nPCM input"];
+       HFP_APP -> BT_CTRL [label="Local voice\nVOICE output"];
+       BT_CTRL -> HFP_APP [label="Peer voice\nVOICE input"];
+       CODEC -> SPK [label="Audio output"]
+       MIC -> CODEC [label="Audio input"]
+   }
+
+
+For the case where :kconfig:option:`CONFIG_BT_VOICE_OVER_HCI` is enabled, the following topology
+applies:
+
+
+.. graphviz::
+   :caption: Bluetooth Hands-Free voice streaming over HCI topology
+
+
+   digraph bluetooth_hfp {
+       rankdir=LR;
+       node [shape=box, style=rounded];
+       edge [fontname=Courier, fontsize=9];
+       init [shape=point];
+
+       subgraph cluster_ag {
+           label="Audio Gateway (Phone/Car)";
+           style=filled;
+           AG [label="HFP AG"];
+       }
+
+       subgraph cluster_hf {
+           label="Zephyr HF Device";
+           style=filled;
+
+           BT_HOST [label="Host Stack"];
+           BT_CTRL [label="Controller"];
+           HFP_APP [label="HFP HF Application"];
+           CODEC [label="Audio Subsystem"];
+           SPK [label="Speaker"];
+           MIC [label="Microphone"];
+       }
+
+       AG -> BT_CTRL [label="SCO Link\n(BR/EDR)"];
+       BT_CTRL -> AG [label="SCO Link\n(BR/EDR)"];
+       BT_HOST -> BT_CTRL [label="HCI(ACL and SCO)"];
+       BT_CTRL -> BT_HOST [label="HCI(ACL and SCO)"];
+       BT_HOST -> HFP_APP [label="HF Callbacks"];
+       HFP_APP -> BT_HOST [label="HF APIs"];
+       HFP_APP -> CODEC [label="Peer voice"];
+       CODEC -> HFP_APP [label="Local voice"];
+       BT_HOST -> HFP_APP [label="SCO Stream Callbacks"];
+       HFP_APP -> BT_HOST [label="SCO Stream APIs"];
        CODEC -> SPK [label="Audio output"]
        MIC -> CODEC [label="Audio input"]
    }
