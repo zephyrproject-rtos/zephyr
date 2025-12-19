@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxa346.dtsi>
+#include <nxp/mcx/nxp_mcxa346.dtsi>
 #include "frdm_mcxa346-pinctrl.dtsi"
 #include "board_common.dtsi"
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_mcxc_common.dtsi>
+#include <nxp/mcx/nxp_mcxc_common.dtsi>
 
 &sram0 {
 	reg = <0x1ffff000 DT_SIZE_K(16)>;
@@ -14,6 +14,4 @@
 	reg = <0 DT_SIZE_K(64)>;
 };
 
-&usb {
-	no-voltage-regulator;
-};
+/delete-node/ &usb;

@@ -33,7 +33,7 @@
 	};
 };
 
-#include <nxp/nxp_mcxe31x_common.dtsi>
+#include <nxp/mcx/nxp_mcxe31x_common.dtsi>
 
 &program_flash {
 	reg = <0x400000 DT_SIZE_K(1024)>;
