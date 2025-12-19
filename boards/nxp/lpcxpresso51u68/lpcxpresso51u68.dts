@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc51u68.dtsi>
+#include <nxp/lpc/nxp_lpc51u68.dtsi>
 #include "lpcxpresso51u68-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
