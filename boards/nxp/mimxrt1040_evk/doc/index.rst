@@ -92,6 +92,25 @@ Supported Features
    Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
    already supported, which can also be re-used on this mimxrt1040_evk board.
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk043fn02h_ct` and :ref:`rk043fn66hs_ctg` - support the Display interface.
+- :ref:`nxp_m2_wifi_bt` - Rev C version is tested with this shield to attach any M.2 module
+  with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+  HCI driver or SDIO driver to perform firmware-load and other setup configurations
+  for NXP SoC IW416/IW612/IW610.
+
+For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
+
+- Solder 0 ohm resistors for R96, and R93.
+- Remove resistors from R497, R498, R456 and R457.
+
+And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
+
 Connections and IOs
 ===================
 
@@ -291,12 +310,6 @@ steps:
 
 Bluetooth Module
 ----------------
-
-For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
-Solder 0 ohm resistors for R96, and R93.
-Remove resistors from R497, R498, R456 and R457.
-
-And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
 
 For the debugger fails to connect with the following error, please refer to the next section.
 
