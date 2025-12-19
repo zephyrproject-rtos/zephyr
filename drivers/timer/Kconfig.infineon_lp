@@ -10,6 +10,7 @@ config INFINEON_LP_TIMER_HAL
 	default y
 	depends on DT_HAS_INFINEON_LP_TIMER_ENABLED
 	depends on USE_INFINEON_LEGACY_HAL
+	depends on PM
 	select USE_INFINEON_LPTIMER
 	select TICKLESS_CAPABLE
 	help
