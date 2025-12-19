@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from west.commands import WestCommand
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))

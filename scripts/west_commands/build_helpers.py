@@ -14,10 +14,11 @@ import os
 import sys
 from pathlib import Path
 
-import zcmake
 from west import log
 from west.configuration import config
 from west.util import escapes_directory
+
+import zcmake
 
 # Domains.py must be imported from the pylib directory, since
 # twister also uses the implementation

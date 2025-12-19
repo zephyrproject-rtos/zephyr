@@ -12,9 +12,8 @@ import re
 import shutil
 import sys
 
-from zephyr_ext_common import ZEPHYR_BASE
-
 from runners.core import RunnerCaps, ZephyrBinaryRunner
+from zephyr_ext_common import ZEPHYR_BASE
 
 DEFAULT_CAVSTOOL='soc/intel/intel_adsp/tools/cavstool_client.py'
 
