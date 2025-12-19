@@ -63,6 +63,10 @@ config ZVFS_EVENTFD_IGNORE_MIN
 	  precise minimum eventfd count is known for a given application. When
 	  enabled, the ZVFS_EVENTFD_MAX value is used as-is.
 
+config ZVFS_OPEN_ADD_SIZE_EVENTFD
+	int
+	default ZVFS_EVENTFD_MAX
+
 endif # ZVFS_EVENTFD
 
 config ZVFS_POLL

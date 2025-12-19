@@ -37,15 +37,15 @@ config SYS_HASH_MAP_OA_LP
 	  contiguous allocation which improves performance on systems with
 	  memory caching.
 
-config SYS_HASH_MAP_CXX
-	bool "C++ Hashmap"
-	select CPP
-	select REQUIRES_FULL_LIBCPP
-	select CPP_EXCEPTIONS
-	help
-	  This enables a C wrapper around the C++ std::unordered_map.
-
-	  It is mainly used for benchmarking purposes.
+# config SYS_HASH_MAP_CXX
+# 	bool "C++ Hashmap"
+# 	select CPP
+# 	select REQUIRES_FULL_LIBCPP
+# 	select CPP_EXCEPTIONS
+# 	help
+# 	  This enables a C wrapper around the C++ std::unordered_map.
+#
+# 	  It is mainly used for benchmarking purposes.
 
 choice SYS_HASH_MAP_CHOICE
 	prompt "Default hashmap implementation"
