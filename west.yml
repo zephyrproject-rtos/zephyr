@@ -344,7 +344,9 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 0f0c43748111c65800c6920f1c0690676423a351
+      revision: pull/11/head
+      remote: babblesim
+      repo-path: ext_nRF_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 9f09f0785f9fc716514d8956a2a446021697400c
