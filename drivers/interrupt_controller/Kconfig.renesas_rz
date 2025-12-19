@@ -20,3 +20,30 @@ config RENESAS_RZ_INTC_HAS_NMI
 	  Renesas RZ interrupt controller has NMI (Non Maskable Interrupt) pin
 
 endif
+
+config RENESAS_RZ_INTC_SELECT_INTERRUPT
+	bool "Renesas RZ INTC select interrupt"
+	default y
+	depends on DT_HAS_RENESAS_RZ_INTC_V2_ENABLED
+	help
+	  Renesas RZ INTC select interrupt
+
+config RENESAS_RZ_TINT
+	bool "Renesas RZ GPIO interrupt (TINT) controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_TINT_ENABLED
+	help
+	  Renesas RZ GPIO interrupt (TINT) controller driver
+
+if RENESAS_RZ_TINT
+
+config RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
+	bool "Renesas RZ TINT support status clear register"
+	default y
+	depends on DT_HAS_RENESAS_RZ_INTC_V2_ENABLED
+	help
+	  Renesas RZ/V2H, RZ/V2N support a Status Clear Register
+	  to reset interrupt flags, while the remaining SoCs
+	  reset interrupt flags in the Status Register.
+
+endif

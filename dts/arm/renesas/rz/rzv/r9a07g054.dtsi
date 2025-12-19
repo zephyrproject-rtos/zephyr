@@ -7,9 +7,10 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/clock/renesas_rzv_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/renesas_rzv_clock.h>
 #include <zephyr/dt-bindings/dma/renesas_rz_dma.h>
+#include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 
 / {
 	compatible = "renesas,r9a07g054";
@@ -39,6 +40,11 @@
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "renesas,rzv-pinctrl";
 	};
 
 	soc {
@@ -180,465 +186,455 @@
 			};
 		};
 
-		pinctrl: pin-controller@41030000 {
-			compatible = "renesas,rzv-pinctrl";
-			reg = <0x41030000 DT_SIZE_K(64)>;
-			reg-names = "pinctrl";
+		gpio: gpio@41030000 {
+			compatible = "renesas,rz-gpio-common";
+			reg = <0x41030000 DT_SIZE_K(64)>,
+			      <0x10 0x31>,
+			      <0x120 0x62>,
+			      <0x440 0xc4>;
+			reg-names = "base", "p", "pm", "pfc";
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-			gpio: gpio-common {
-				compatible = "renesas,rz-gpio-int";
-				interrupts = <444 10>, <445 10>, <446 10>, <447 10>,
-					     <448 10>, <449 10>, <450 10>, <451 10>,
-					     <452 10>, <453 10>, <454 10>, <455 10>,
-					     <456 10>, <457 10>, <458 10>, <459 10>,
-					     <460 10>, <461 10>, <462 10>, <463 10>,
-					     <464 10>, <465 10>, <466 10>, <467 10>,
-					     <468 10>, <469 10>, <470 10>, <471 10>,
-					     <472 10>, <473 10>, <474 10>, <475 10>;
-				#address-cells = <1>;
-				#size-cells = <0>;
+			gpio0: gpio@0 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x0>;
 				status = "disabled";
+			};
 
-				gpio0: gpio@0 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x0>;
-					status = "disabled";
-				};
+			gpio1: gpio@100 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x100>;
+				status = "disabled";
+			};
 
-				gpio1: gpio@100 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x100>;
-					status = "disabled";
-				};
+			gpio2: gpio@200 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x200>;
+				status = "disabled";
+			};
 
-				gpio2: gpio@200 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x200>;
-					status = "disabled";
-				};
+			gpio3: gpio@300 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x300>;
+				status = "disabled";
+			};
 
-				gpio3: gpio@300 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x300>;
-					status = "disabled";
-				};
+			gpio4: gpio@400 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x400>;
+				status = "disabled";
+			};
 
-				gpio4: gpio@400 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x400>;
-					status = "disabled";
-				};
+			gpio5: gpio@500 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x500>;
+				status = "disabled";
+			};
 
-				gpio5: gpio@500 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x500>;
-					status = "disabled";
-				};
+			gpio6: gpio@600 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x600>;
+				status = "disabled";
+			};
 
-				gpio6: gpio@600 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x600>;
-					status = "disabled";
-				};
+			gpio7: gpio@700 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x700>;
+				status = "disabled";
+			};
 
-				gpio7: gpio@700 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x700>;
-					status = "disabled";
-				};
+			gpio8: gpio@800 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x800>;
+				status = "disabled";
+			};
 
-				gpio8: gpio@800 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x800>;
-					status = "disabled";
-				};
+			gpio9: gpio@900 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x900>;
+				status = "disabled";
+			};
 
-				gpio9: gpio@900 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x900>;
-					status = "disabled";
-				};
+			gpio10: gpio@a00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0xa00>;
+				status = "disabled";
+			};
 
-				gpio10: gpio@a00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0xa00>;
-					status = "disabled";
-				};
+			gpio11: gpio@b00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0xb00>;
+				status = "disabled";
+			};
 
-				gpio11: gpio@b00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0xb00>;
-					status = "disabled";
-				};
+			gpio12: gpio@c00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0xc00>;
+				status = "disabled";
+			};
 
-				gpio12: gpio@c00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0xc00>;
-					status = "disabled";
-				};
+			gpio13: gpio@d00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0xd00>;
+				status = "disabled";
+			};
 
-				gpio13: gpio@d00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0xd00>;
-					status = "disabled";
-				};
+			gpio14: gpio@e00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0xe00>;
+				status = "disabled";
+			};
 
-				gpio14: gpio@e00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0xe00>;
-					status = "disabled";
-				};
+			gpio15: gpio@f00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0xf00>;
+				status = "disabled";
+			};
 
-				gpio15: gpio@f00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0xf00>;
-					status = "disabled";
-				};
+			gpio16: gpio@1000 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1000>;
+				status = "disabled";
+			};
 
-				gpio16: gpio@1000 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1000>;
-					status = "disabled";
-				};
+			gpio17: gpio@1100 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x1100>;
+				status = "disabled";
+			};
 
-				gpio17: gpio@1100 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x1100>;
-					status = "disabled";
-				};
+			gpio18: gpio@1200 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1200>;
+				status = "disabled";
+			};
 
-				gpio18: gpio@1200 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1200>;
-					status = "disabled";
-				};
+			gpio19: gpio@1300 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1300>;
+				status = "disabled";
+			};
 
-				gpio19: gpio@1300 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1300>;
-					status = "disabled";
-				};
+			gpio20: gpio@1400 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x1400>;
+				status = "disabled";
+			};
 
-				gpio20: gpio@1400 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x1400>;
-					status = "disabled";
-				};
+			gpio21: gpio@1500 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1500>;
+				status = "disabled";
+			};
 
-				gpio21: gpio@1500 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1500>;
-					status = "disabled";
-				};
+			gpio22: gpio@1600 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1600>;
+				status = "disabled";
+			};
 
-				gpio22: gpio@1600 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1600>;
-					status = "disabled";
-				};
+			gpio23: gpio@1700 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1700>;
+				status = "disabled";
+			};
 
-				gpio23: gpio@1700 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1700>;
-					status = "disabled";
-				};
+			gpio24: gpio@1800 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1800>;
+				status = "disabled";
+			};
 
-				gpio24: gpio@1800 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1800>;
-					status = "disabled";
-				};
+			gpio25: gpio@1900 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1900>;
+				status = "disabled";
+			};
 
-				gpio25: gpio@1900 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1900>;
-					status = "disabled";
-				};
+			gpio26: gpio@1a00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1a00>;
+				status = "disabled";
+			};
 
-				gpio26: gpio@1a00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1a00>;
-					status = "disabled";
-				};
+			gpio27: gpio@1b00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1b00>;
+				status = "disabled";
+			};
 
-				gpio27: gpio@1b00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1b00>;
-					status = "disabled";
-				};
+			gpio28: gpio@1c00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1c00>;
+				status = "disabled";
+			};
 
-				gpio28: gpio@1c00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1c00>;
-					status = "disabled";
-				};
+			gpio29: gpio@1d00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1d00>;
+				status = "disabled";
+			};
 
-				gpio29: gpio@1d00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1d00>;
-					status = "disabled";
-				};
+			gpio30: gpio@1e00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1e00>;
+				status = "disabled";
+			};
 
-				gpio30: gpio@1e00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1e00>;
-					status = "disabled";
-				};
+			gpio31: gpio@1f00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x1f00>;
+				status = "disabled";
+			};
 
-				gpio31: gpio@1f00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x1f00>;
-					status = "disabled";
-				};
+			gpio32: gpio@2000 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2000>;
+				status = "disabled";
+			};
 
-				gpio32: gpio@2000 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2000>;
-					status = "disabled";
-				};
+			gpio33: gpio@2100 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2100>;
+				status = "disabled";
+			};
 
-				gpio33: gpio@2100 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2100>;
-					status = "disabled";
-				};
+			gpio34: gpio@2200 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2200>;
+				status = "disabled";
+			};
 
-				gpio34: gpio@2200 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2200>;
-					status = "disabled";
-				};
+			gpio35: gpio@2300 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2300>;
+				status = "disabled";
+			};
 
-				gpio35: gpio@2300 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2300>;
-					status = "disabled";
-				};
+			gpio36: gpio@2400 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2400>;
+				status = "disabled";
+			};
 
-				gpio36: gpio@2400 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2400>;
-					status = "disabled";
-				};
+			gpio37: gpio@2500 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x2500>;
+				status = "disabled";
+			};
 
-				gpio37: gpio@2500 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x2500>;
-					status = "disabled";
-				};
+			gpio38: gpio@2600 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2600>;
+				status = "disabled";
+			};
 
-				gpio38: gpio@2600 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2600>;
-					status = "disabled";
-				};
+			gpio39: gpio@2700 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x2700>;
+				status = "disabled";
+			};
 
-				gpio39: gpio@2700 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x2700>;
-					status = "disabled";
-				};
+			gpio40: gpio@2800 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				reg = <0x2800>;
+				status = "disabled";
+			};
 
-				gpio40: gpio@2800 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <3>;
-					reg = <0x2800>;
-					status = "disabled";
-				};
+			gpio41: gpio@2900 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				reg = <0x2900>;
+				status = "disabled";
+			};
 
-				gpio41: gpio@2900 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <2>;
-					reg = <0x2900>;
-					status = "disabled";
-				};
+			gpio42: gpio@2a00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <5>;
+				reg = <0x2a00>;
+				status = "disabled";
+			};
 
-				gpio42: gpio@2a00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <5>;
-					reg = <0x2a00>;
-					status = "disabled";
-				};
+			gpio43: gpio@2b00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				reg = <0x2b00>;
+				status = "disabled";
+			};
 
-				gpio43: gpio@2b00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <4>;
-					reg = <0x2b00>;
-					status = "disabled";
-				};
+			gpio44: gpio@2c00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				reg = <0x2c00>;
+				status = "disabled";
+			};
 
-				gpio44: gpio@2c00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <4>;
-					reg = <0x2c00>;
-					status = "disabled";
-				};
+			gpio45: gpio@2d00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				reg = <0x2d00>;
+				status = "disabled";
+			};
 
-				gpio45: gpio@2d00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <4>;
-					reg = <0x2d00>;
-					status = "disabled";
-				};
+			gpio46: gpio@2e00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				reg = <0x2e00>;
+				status = "disabled";
+			};
 
-				gpio46: gpio@2e00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <4>;
-					reg = <0x2e00>;
-					status = "disabled";
-				};
+			gpio47: gpio@2f00 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				reg = <0x2f00>;
+				status = "disabled";
+			};
 
-				gpio47: gpio@2f00 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <4>;
-					reg = <0x2f00>;
-					status = "disabled";
-				};
-
-				gpio48: gpio@3000 {
-					compatible = "renesas,rz-gpio";
-					gpio-controller;
-					#gpio-cells = <2>;
-					ngpios = <5>;
-					reg = <0x3000>;
-					status = "disabled";
-				};
+			gpio48: gpio@3000 {
+				compatible = "renesas,rz-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <5>;
+				reg = <0x3000>;
+				status = "disabled";
 			};
 		};
 
@@ -873,7 +869,15 @@
 
 		intc: intc@410b0000 {
 			compatible = "renesas,rz-intc";
-			reg = <0x410b0000 DT_SIZE_K(64)>;
+			reg = <0x410b0000 DT_SIZE_K(64)>,
+			      <0x20 0x4>,
+			      <0x24 0x4>,
+			      <0x30 0x4>;
+			reg-names = "intc", "tscr", "titsr0", "tssr0";
+			gpioint-table = <0 2 4 6 8 10 13 15 18 21 23 25 27 29 32 34 36
+					 38 41 43 45 48 50 52 54 56 58 60 62 64 66 68 70 72
+					 74 76 78 80 83 85 88 91 93 98 102 106 110 114 118>;
+			max-gpioint = <122>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupt-parent = <&nvic>;
@@ -881,72 +885,352 @@
 			irq0: irq@0 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x0>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <1 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq1: irq@1 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x1>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <2 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq2: irq@2 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x2>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <3 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq3: irq@3 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x3>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <4 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq4: irq@4 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x4>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <5 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq5: irq@5 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x5>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <6 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq6: irq@6 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x6>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <7 1>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
 			irq7: irq@7 {
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x7>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
 				interrupts = <8 1>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint0: tint0@0 {
+				compatible = "renesas,rz-tint";
+				reg = <0x0>;
+				interrupts = <444 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint1: tint1@1 {
+				compatible = "renesas,rz-tint";
+				reg = <0x1>;
+				interrupts = <445 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint2: tint2@2 {
+				compatible = "renesas,rz-tint";
+				reg = <0x2>;
+				interrupts = <446 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint3: tint3@3 {
+				compatible = "renesas,rz-tint";
+				reg = <0x3>;
+				interrupts = <447 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint4: tint4@4 {
+				compatible = "renesas,rz-tint";
+				reg = <0x4>;
+				interrupts = <448 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint5: tint5@5 {
+				compatible = "renesas,rz-tint";
+				reg = <0x5>;
+				interrupts = <449 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint6: tint6@6 {
+				compatible = "renesas,rz-tint";
+				reg = <0x6>;
+				interrupts = <450 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint7: tint7@7 {
+				compatible = "renesas,rz-tint";
+				reg = <0x7>;
+				interrupts = <451 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint8: tint8@8 {
+				compatible = "renesas,rz-tint";
+				reg = <0x8>;
+				interrupts = <452 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint9: tint9@9 {
+				compatible = "renesas,rz-tint";
+				reg = <0x9>;
+				interrupts = <453 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint10: tint10@a {
+				compatible = "renesas,rz-tint";
+				reg = <0xa>;
+				interrupts = <454 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint11: tint11@b {
+				compatible = "renesas,rz-tint";
+				reg = <0xb>;
+				interrupts = <455 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint12: tint12@c {
+				compatible = "renesas,rz-tint";
+				reg = <0xc>;
+				interrupts = <456 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint13: tint13@d {
+				compatible = "renesas,rz-tint";
+				reg = <0xd>;
+				interrupts = <457 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint14: tint14@e {
+				compatible = "renesas,rz-tint";
+				reg = <0xe>;
+				interrupts = <458 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint15: tint15@f {
+				compatible = "renesas,rz-tint";
+				reg = <0xf>;
+				interrupts = <459 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint16: tint16@10 {
+				compatible = "renesas,rz-tint";
+				reg = <0x10>;
+				interrupts = <460 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint17: tint17@11 {
+				compatible = "renesas,rz-tint";
+				reg = <0x11>;
+				interrupts = <461 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint18: tint18@12 {
+				compatible = "renesas,rz-tint";
+				reg = <0x12>;
+				interrupts = <462 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint19: tint19@13 {
+				compatible = "renesas,rz-tint";
+				reg = <0x13>;
+				interrupts = <463 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint20: tint20@14 {
+				compatible = "renesas,rz-tint";
+				reg = <0x14>;
+				interrupts = <464 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint21: tint21@15 {
+				compatible = "renesas,rz-tint";
+				reg = <0x15>;
+				interrupts = <465 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint22: tint22@16 {
+				compatible = "renesas,rz-tint";
+				reg = <0x16>;
+				interrupts = <466 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint23: tint23@17 {
+				compatible = "renesas,rz-tint";
+				reg = <0x17>;
+				interrupts = <467 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint24: tint24@18 {
+				compatible = "renesas,rz-tint";
+				reg = <0x18>;
+				interrupts = <468 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint25: tint25@19 {
+				compatible = "renesas,rz-tint";
+				reg = <0x19>;
+				interrupts = <469 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint26: tint26@1a {
+				compatible = "renesas,rz-tint";
+				reg = <0x1a>;
+				interrupts = <470 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint27: tint27@1b {
+				compatible = "renesas,rz-tint";
+				reg = <0x1b>;
+				interrupts = <471 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint28: tint28@1c {
+				compatible = "renesas,rz-tint";
+				reg = <0x1c>;
+				interrupts = <472 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint29: tint29@1d {
+				compatible = "renesas,rz-tint";
+				reg = <0x1d>;
+				interrupts = <473 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint30: tint30@1e {
+				compatible = "renesas,rz-tint";
+				reg = <0x1e>;
+				interrupts = <474 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			tint31: tint31@1f {
+				compatible = "renesas,rz-tint";
+				reg = <0x1f>;
+				interrupts = <475 1>;
+				trigger-type = "rising";
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 		};
