@@ -14,8 +14,15 @@ config SOC_APOLLO510
 	help
 	  Apollo510
 
+config SOC_APOLLO510B
+	bool
+	select SOC_SERIES_APOLLO5X
+	help
+	  Apollo510 Blue
+
 config SOC_SERIES
 	default "apollo5x" if SOC_SERIES_APOLLO5X
 
 config SOC
 	default "apollo510" if SOC_APOLLO510
+	default "apollo510b" if SOC_APOLLO510B

@@ -8,6 +8,7 @@ common:
     - nrf52840dk/nrf52840
     - nrf5340dk/nrf5340/cpuapp
     - apollo510_evb
+    - apollo510b_evb
     - apollo510_eb
   tags:
     - mgmt

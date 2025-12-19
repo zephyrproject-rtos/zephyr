@@ -39,7 +39,7 @@ struct wdt_ambiq_data {
 uint32_t wdt_ambiq_clk_select[] =
 #if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X)
 	{128, 16, 1};
-#elif defined(CONFIG_SOC_APOLLO510)
+#elif defined(CONFIG_SOC_APOLLO510) || defined(CONFIG_SOC_APOLLO510B)
 	{128, 16, 1, 32768, 16384};
 #else
 	{112, 14};
@@ -97,7 +97,7 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 		cfg.eClockSource = AM_HAL_WDT_16HZ;
 	} else if (dev_cfg->clk_freq == 1) {
 		cfg.eClockSource = AM_HAL_WDT_1HZ;
-#if defined(CONFIG_SOC_APOLLO510)
+#if defined(CONFIG_SOC_APOLLO510) || defined(CONFIG_SOC_APOLLO510B)
 	} else if (dev_cfg->clk_freq == 32768) {
 		cfg.eClockSource = AM_HAL_WDT_XTAL_HS;
 	} else if (dev_cfg->clk_freq == 16384) {

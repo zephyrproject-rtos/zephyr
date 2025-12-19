@@ -14,10 +14,10 @@ on:
 
   push:
     branches:
-      - apollo510-dev
+      - ambiq-stable
   pull_request:
     branches:
-      - apollo510-dev
+      - ambiq-stable
   schedule:
     # Run at 02:00 UTC on every Sunday
     - cron: '0 2 * * 0'
@@ -45,7 +45,7 @@ jobs:
       BSIM_COMPONENTS_PATH: /data/bsim_west/bsim/components
       TESTS_PER_BUILDER: 500
       VENDOR_OPTIONS: ' --vendor ambiq'
-      PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb'
+      PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb --platform apollo510b_evb'
     steps:
       - name: Set event variables
         id: set-vars
@@ -123,7 +123,7 @@ jobs:
             git config --global user.name "Zephyr Bot"
             rm -fr ".git/rebase-apply"
             rm -fr ".git/rebase-merge"
-            git rebase origin/${BASE_REF}
+            git rebase "${BASE_SHA}"
             git clean -f -d
             git log  --pretty=oneline | head -n 10
           fi
@@ -199,7 +199,7 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 12'
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
       VENDOR_OPTIONS: ' --vendor ambiq'
-      PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb'
+      PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb --platform apollo510_evb'
       TEST_OPTIONS: '--west-flash --enable-slow --device-testing --hardware-map ${{ github.workspace }}/../../map.yml'
       FULLRUN: ${{ needs.twister-build-prep.outputs.fullrun }}
     steps:
@@ -272,7 +272,7 @@ jobs:
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
             rm -fr ".git/rebase-merge"
-            git rebase origin/${BASE_REF}
+            git rebase "${BASE_SHA}"
             git clean -f -d
             git log  --pretty=oneline | head -n 10
           fi

@@ -18,3 +18,5 @@ tests:
       type: one_line
       regex:
         - "Sending advertising data"
+    platform_allow:
+      - apollo510b_evb

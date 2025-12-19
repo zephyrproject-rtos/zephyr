@@ -20,3 +20,5 @@ tests:
         - "Start Extended Advertising"
         - "Set Periodic Advertising Data"
         - "Stop Extended Advertising"
+    platform_allow:
+      - apollo510b_evb

@@ -11,7 +11,7 @@ on:
         required: false
   push:
     branches:
-    - main
+    - ambiq-stable
     tags:
     - v*
   pull_request:
@@ -124,6 +124,7 @@ jobs:
         fi
         cd "zephyr"
         git fetch origin "${BASE_REF}"
+        echo "BASE_SHA=$(git rev-parse FETCH_HEAD)" >> $GITHUB_ENV
         git fetch origin "${GIT_REF}"
         git reset --hard "${GIT_REF}"
         git clean -fdx
@@ -146,7 +147,7 @@ jobs:
           git config --global user.name "Zephyr Builder"
           rm -fr ".git/rebase-apply"
           rm -fr ".git/rebase-merge"
-          git rebase origin/${BASE_REF}
+          git rebase "${BASE_SHA}"
           git clean -f -d
           git log  --pretty=oneline | head -n 10
         fi

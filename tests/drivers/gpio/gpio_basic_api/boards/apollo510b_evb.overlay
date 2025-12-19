@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0_31 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		in-gpios = <&gpio0_31 23 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};

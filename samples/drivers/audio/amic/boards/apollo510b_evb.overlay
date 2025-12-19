@@ -1,0 +1,13 @@
+/*****************************************************************************
+ * SPDX-FileCopyrightText: 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ***************************************************************************
+ */
+
+amic_dev: &audadc0 {
+	audadc-buf-location = "SRAM_NO_CACHE";
+	/* AUDADC DMA buffer and driver sample buffer size in samples. */
+	audadc-buf-size-samples = <640>;
+	status = "okay";
+};

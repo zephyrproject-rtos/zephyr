@@ -34,6 +34,7 @@ tests:
       - apollo4p_evb
       - apollo4p_blue_kxr_evb
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb
     timeout: 240
     extra_configs:

@@ -17,3 +17,5 @@ tests:
       type: one_line
       regex:
         - "iBeacon started"
+    platform_allow:
+      - apollo510b_evb

@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/delete-node/ xo32m_xtal;
+
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+
+	aliases {
+		button = &button0;
+		led = &led0;
+	};
+};
+
+&stimer0 {
+	clk-source = <6>;
+};
+
+&trng {
+	status = "disabled";
+};
+
+&mspi1 {
+	status = "disabled";
+};
+
+&sdio0 {
+	status = "disabled";
+};
+
+&sdio1 {
+	status = "disabled";
+};
+
+zephyr_udc0: &usb {
+	status = "disabled";
+};
+
+&audadc0 {
+	status = "disabled";
+};
+
+&uart0 {
+	zephyr,pm-device-runtime-auto;
+};

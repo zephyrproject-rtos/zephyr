@@ -1,0 +1,6 @@
+board:
+  name: apollo510b_evb
+  full_name: Apollo510 Blue SoC Evaluation Board
+  vendor: ambiq
+  socs:
+  - name: apollo510b

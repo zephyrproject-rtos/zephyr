@@ -4,6 +4,7 @@ tests:
       - nrf52840dk/nrf52840
       - qemu_cortex_m3
       - apollo510_evb
+      - apollo510b_evb
     min_ram: 8
     tags:
       - settings

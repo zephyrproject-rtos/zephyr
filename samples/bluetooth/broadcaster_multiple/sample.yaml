@@ -20,3 +20,5 @@ tests:
       regex:
         - "Started Extended Advertising"
         - "Exiting"
+    platform_allow:
+      - apollo510b_evb

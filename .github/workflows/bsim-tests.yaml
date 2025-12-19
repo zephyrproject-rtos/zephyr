@@ -1,9 +1,7 @@
 name: BabbleSim Tests
 
 on:
-  pull_request:
-    branches-ignore:
-      - apollo510-dev
+  workflow_dispatch:
     paths:
       - ".github/workflows/bsim-tests.yaml"
       - ".github/workflows/bsim-tests-publish.yaml"

@@ -6,6 +6,7 @@ tests:
     harness: bluetooth
     platform_allow:
       - apollo4p_blue_kxr_evb
+      - apollo510b_evb
     tags: bluetooth
   sample.bluetooth.peripheral_amota.console:
     harness: console
@@ -18,4 +19,5 @@ tests:
         - "Advertising successfully started"
     platform_allow:
       - apollo4p_blue_kxr_evb
+      - apollo510b_evb
     tags: bluetooth

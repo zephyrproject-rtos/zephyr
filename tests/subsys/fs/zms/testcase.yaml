@@ -5,6 +5,7 @@ tests:
     platform_allow:
       - qemu_x86
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb
   filesystem.zms.0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
@@ -25,6 +26,7 @@ tests:
     platform_allow:
       - native_sim
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb
   filesystem.zms.data_crc:
     extra_configs:
@@ -33,6 +35,7 @@ tests:
       - native_sim
       - qemu_x86
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb
   filesystem.zms.no_double_write:
     extra_configs:
@@ -41,6 +44,7 @@ tests:
       - native_sim
       - qemu_x86
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb
   filesystem.zms.no_double_write_cache:
     extra_configs:
@@ -51,6 +55,7 @@ tests:
       - native_sim
       - qemu_x86
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb
   filesystem.zms.id_64bit:
     extra_configs:
@@ -60,4 +65,5 @@ tests:
     platform_allow:
       - qemu_x86
       - apollo510_evb
+      - apollo510b_evb
       - apollo510_eb

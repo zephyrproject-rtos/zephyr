@@ -135,7 +135,7 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 #endif /* CONFIG_SOC_SERIES_APOLLO4X || CONFIG_SOC_SERIES_APOLLO5X */
 
 #if defined(CONFIG_SOC_SERIES_APOLLO4X) ||                                                         \
-	defined(CONFIG_SOC_APOLLO510)
+	defined(CONFIG_SOC_APOLLO510) || defined(CONFIG_SOC_APOLLO510B)
 	case 7:
 		ret = 500;
 		break;
@@ -161,7 +161,7 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 		break;
 #endif /* CONFIG_SOC_SERIES_APOLLO4X || CONFIG_SOC_APOLLO510/B */
 
-#if defined(CONFIG_SOC_APOLLO510)
+#if defined(CONFIG_SOC_APOLLO510) || defined(CONFIG_SOC_APOLLO510B)
 	case 18:
 		ret = 512;
 		break;

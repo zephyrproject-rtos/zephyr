@@ -3,7 +3,9 @@ name: Code Coverage with codecov
 on:
   push:
     branches:
-      - apollo510-dev
+      - main
+      - v*-branch
+      - collab-*
 
 permissions:
   contents: read

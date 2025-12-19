@@ -6,6 +6,8 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - apollo510_evb
+      - apollo510b_evb
     integration_platforms:
       - qemu_cortex_m3
       - apollo510_evb
+      - apollo510b_evb
