@@ -22,6 +22,7 @@
 LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 
 #define MIN_TIMEOUT 0xFF
+#define MAX_TIMEOUT WWDT_TC_COUNT_MASK
 
 struct mcux_wwdt_config {
 	WWDT_Type *base;
@@ -107,17 +108,20 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	data->wwdt_config.timeoutValue =
 		MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.max);
 
-	if (cfg->window.min) {
-		data->wwdt_config.windowValue =
-			MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
-	}
-
-	if ((data->wwdt_config.timeoutValue < MIN_TIMEOUT) ||
-	    ((data->wwdt_config.windowValue != 0xFFFFFFU) &&
-	     (data->wwdt_config.timeoutValue <
-	      data->wwdt_config.windowValue))) {
+	if (data->wwdt_config.timeoutValue > MAX_TIMEOUT ||
+	    data->wwdt_config.timeoutValue < MIN_TIMEOUT) {
+		LOG_ERR("Timeout value out of range");
 		return -EINVAL;
 	}
+
+	/*
+	 * WWDT uses a count-down counter.
+	 * Window value specifies the highest timer value in which a watchdog
+	 * feed can occur. Therefore, calculate the window value as:
+	 * windowValue = timeoutValue - min_window_ticks (maybe 0)
+	 */
+	data->wwdt_config.windowValue =
+		data->wwdt_config.timeoutValue - MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
 
 	if (cfg->flags & WDT_FLAG_RESET_SOC) {
 		data->wwdt_config.enableWatchdogReset = true;
