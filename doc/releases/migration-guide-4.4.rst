@@ -38,6 +38,12 @@ Boards
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
   PORT.C wiring.
 
+* Compile definitions 'XIP_EXTERNAL_FLASH', 'USE_HYPERRAM' and 'XIP_BOOT_HEADER_XMCD_ENABLE'
+  are only used in :zephyr_file:`boards/nxp/mimxrt1180_evk/xip/evkmimxrt1180_flexspi_nor_config.c`
+  and :zephyr_file:`boards/nxp/mimxrt1170_evk/xmcd/xmcd.c`, we have changed them to local scope
+  in the respective board CMakeLists.txt files. Applications that depended on these definitions
+  being globally available may need to be updated. (:github:`101322`)
+
 Device Drivers and Devicetree
 *****************************
 
