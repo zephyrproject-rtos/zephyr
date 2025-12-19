@@ -6,7 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
-#include <nxp/nxp_imx94x.dtsi>
+#include <nxp/imx/nxp_imx94x.dtsi>
 #include <freq.h>
 
 / {
