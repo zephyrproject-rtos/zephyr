@@ -603,7 +603,8 @@
 		qspi0: spi@40070000 {
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
-			girqs = <18 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 1)>;
+			pcr = <MCHP_XEC_SCR_ENCODE(4, 8)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
