@@ -37,7 +37,7 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
-.. zephyr-keep-sorted-start re(^\w)
+.. zephyr-keep-sorted-start re(^\w) ignorecase
 
 ADC
 ===
@@ -164,44 +164,6 @@ Radio
 
 * Device trees and overlays using the old compatible strings must be updated to use the new names.
 
-STM32
-=====
-
-* STM32 power supply configuration is now performed using Devicetree properties.
-  New bindings :dtcompatible:`st,stm32h7-pwr`, :dtcompatible:`st,stm32h7rs-pwr`
-  and :dtcompatible:`st,stm32-dualreg-pwr` have been introduced, and all Kconfig
-  symbols related to power supply configuration have been removed:
-
-  * ``CONFIG_POWER_SUPPLY_LDO``
-
-  * ``CONFIG_POWER_SUPPLY_DIRECT_SMPS``,
-
-  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO``
-
-  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO``,
-
-  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO``
-
-  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO``
-
-  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT``
-
-  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
-
-  * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
-
-* The ST-specific chosen property ``/chosen/zephyr,ccm`` is replaced by ``/chosen/zephyr,dtcm``.
-  Attribute macros ``__ccm_data_section``, ``__ccm_bss_section`` and ``__ccm_noinit_section`` are
-  deprecated, but retained for backwards compatibility; **they will be removed in Zephyr 4.5**.
-  The generic ``__dtcm_{data,bss,noinit}_section`` macros should be used instead. (:github:`100590`)
-
-* STM32 platforms now use the default MCUboot operating mode ``swap using offset``
-  (:kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET`). To support this bootloader mode,
-  some changes to the board devicetrees are required. Several boards already support this mode
-  (see :github:`100385`).
-  The previous ``swap using move`` mode can still be selected in sysbuild by enabling
-  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
-
 Shell
 =====
 
@@ -251,6 +213,44 @@ Stepper
   :c:group:`stepper_interface`.
 * :dtcompatible:`adi,tmc50xx-stepper-drv` and :dtcompatible:`adi,tmc51xx-stepper-drv` drivers implement
   :c:group:`stepper_drv_interface`.
+
+STM32
+=====
+
+* STM32 power supply configuration is now performed using Devicetree properties.
+  New bindings :dtcompatible:`st,stm32h7-pwr`, :dtcompatible:`st,stm32h7rs-pwr`
+  and :dtcompatible:`st,stm32-dualreg-pwr` have been introduced, and all Kconfig
+  symbols related to power supply configuration have been removed:
+
+  * ``CONFIG_POWER_SUPPLY_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_DIRECT_SMPS``,
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO``,
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
+
+  * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
+* The ST-specific chosen property ``/chosen/zephyr,ccm`` is replaced by ``/chosen/zephyr,dtcm``.
+  Attribute macros ``__ccm_data_section``, ``__ccm_bss_section`` and ``__ccm_noinit_section`` are
+  deprecated, but retained for backwards compatibility; **they will be removed in Zephyr 4.5**.
+  The generic ``__dtcm_{data,bss,noinit}_section`` macros should be used instead. (:github:`100590`)
+
+* STM32 platforms now use the default MCUboot operating mode ``swap using offset``
+  (:kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET`). To support this bootloader mode,
+  some changes to the board devicetrees are required. Several boards already support this mode
+  (see :github:`100385`).
+  The previous ``swap using move`` mode can still be selected in sysbuild by enabling
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
 
 USB
 ===
