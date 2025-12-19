@@ -46,6 +46,7 @@ tests:
       - slwrb4180a
       - xg27_rb4194a
       - xg29_rb4412a
+      - frdm_ke15z
       - frdm_mcxa346
       - frdm_mcxa266
       - frdm_mcxa366
