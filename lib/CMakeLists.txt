@@ -16,3 +16,5 @@ add_subdirectory_ifdef(CONFIG_SMF smf)
 add_subdirectory_ifdef(CONFIG_MIN_HEAP min_heap)
 add_subdirectory(uuid)
 add_subdirectory_ifdef(CONFIG_WORD_GRANULAR_ACCESS word_granular_access)
+add_subdirectory(memref)
+
