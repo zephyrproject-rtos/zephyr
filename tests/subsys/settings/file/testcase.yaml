@@ -12,6 +12,8 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
     integration_platforms:
       - native_sim
     tags:
