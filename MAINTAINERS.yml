@@ -3717,7 +3717,7 @@ NXP Platforms (MCU):
         - iia
       files:
         - boards/nxp/frdm_k32l2b3/
-        - dts/arm/nxp/nxp_k32l2b3.dtsi
+        - dts/arm/nxp/kinetis/nxp_k32l2b3.dtsi
         - soc/nxp/kinetis/k32lx/
   labels:
     - "platform: NXP MCU"

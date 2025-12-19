@@ -4,7 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_ke1xf256vlx16.dtsi>
-
-/delete-node/ &flexcan0;
-/delete-node/ &flexcan1;
+#include <nxp/kinetis/nxp_ke1xf256vlx16.dtsi>

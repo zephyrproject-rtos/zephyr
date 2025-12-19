@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <freq.h>
-#include <nxp/nxp_kv5x.dtsi>
+#include <nxp/kinetis/nxp_kv5x.dtsi>
 
 / {
 	/* 64KB ITCM @ 0, 64KB DTCM @ 20000000 */
