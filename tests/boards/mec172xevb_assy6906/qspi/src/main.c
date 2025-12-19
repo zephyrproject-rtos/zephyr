@@ -44,7 +44,7 @@ uint8_t buffer_tx_2[] = "abcdef\0";
 
 static uint8_t safbuf[TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[TEST_BUF_SIZE] __aligned(4);
-static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(spi0));
+static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(qspi0));
 
 /* static struct spi_buf spi_bufs[MAX_SPI_BUF]; */
 
