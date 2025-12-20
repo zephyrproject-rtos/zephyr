@@ -17,9 +17,11 @@ LOG_MODULE_REGISTER(tps55287, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define TPS55287_REG_REF     0x00U
 #define TPS55287_REG_VOUT_FS 0x04U
+#define TPS55287_REG_CDC     0x05U
 #define TPS55287_REG_MODE    0x06U
 
 #define TPS55287_REG_VOUT_FS_INTFB_MASK BIT_MASK(2)
+#define TPS55287_REG_CDC_CDC_MASK       BIT_MASK(3)
 #define TPS55287_REG_MODE_OE            BIT(7)
 #define TPS55287_REG_MODE_DISCHG        BIT(4)
 
@@ -38,6 +40,7 @@ struct regulator_tps55287_config {
 	struct regulator_common_config common;
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_gpio;
+	uint8_t cdc;
 };
 
 struct regulator_tps55287_data {
@@ -204,6 +207,14 @@ static int regulator_tps55287_init(const struct device *dev)
 		k_sleep(K_MSEC(RESET_DELAY_MS));
 	}
 
+	if (config->cdc > 0) {
+		ret = i2c_reg_update_byte_dt(&config->i2c, TPS55287_REG_CDC,
+					     TPS55287_REG_CDC_CDC_MASK, config->cdc);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	regulator_common_data_init(dev);
 
 	ret = regulator_common_init(dev, false);
@@ -231,6 +242,7 @@ static DEVICE_API(regulator, api) = {
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
+		.cdc = DT_INST_PROP(inst, cdc),                                                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, regulator_tps55287_init, NULL, &data_##inst, &config_##inst,   \

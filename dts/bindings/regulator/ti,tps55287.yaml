@@ -15,3 +15,18 @@ properties:
     description: |
       GPIOs connected to the EN/UVLO signal, used to reset the device at
       initialization.
+
+  cdc:
+    type: int
+    default: 0
+    description: |
+      Cable droop compensation:
+      0 = disabled (default)
+      1 = 0.1V output voltage raise with 50mV at Visp - Visn
+      2 = 0.2V output voltage raise with 50mV at Visp - Visn
+      3 = 0.3V output voltage raise with 50mV at Visp - Visn
+      4 = 0.4V output voltage raise with 50mV at Visp - Visn
+      5 = 0.5V output voltage raise with 50mV at Visp - Visn
+      6 = 0.6V output voltage raise with 50mV at Visp - Visn
+      7 = 0.7V output voltage raise with 50mV at Visp - Visn
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
