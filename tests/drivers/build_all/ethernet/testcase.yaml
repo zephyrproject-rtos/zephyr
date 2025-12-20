@@ -23,3 +23,12 @@ tests:
       - CONFIG_ETH_STM32_MULTICAST_FILTER=y
     platform_allow:
       - stm32h573i_dk
+
+  net.ethernet.build.stm32_dwmac:
+    extra_configs:
+      - CONFIG_ETH_STM32_HAL=n
+      - CONFIG_MDIO_ST_STM32_HAL=n
+      - CONFIG_ETH_DWMAC_STM32H7X=y
+      - CONFIG_ETH_PHY_DRIVER=n
+    platform_allow:
+      - stm32h735g_disco
