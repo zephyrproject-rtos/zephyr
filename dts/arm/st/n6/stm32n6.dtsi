@@ -747,7 +747,7 @@
 		};
 
 		dcmipp: dcmipp@58002000 {
-			compatible = "st,stm32n6-dcmipp", "st,stm32-dcmipp";
+			compatible = "st,stm32-dcmipp";
 			reg = <0x58002000 0x1000>;
 			clock-names = "dcmipp", "dcmipp-ker", "csi";
 			clocks = <&rcc STM32_CLOCK(APB5, 2)>,

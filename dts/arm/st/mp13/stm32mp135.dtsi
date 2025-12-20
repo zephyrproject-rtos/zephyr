@@ -12,7 +12,7 @@
 		compatible = "st,stm32mp135", "st,stm32mp13", "simple-bus";
 
 		dcmipp: dcmipp@5a000000 {
-			compatible = "st,stm32mp13-dcmipp", "st,stm32-dcmipp";
+			compatible = "st,stm32-dcmipp";
 			reg = <0x5a000000 0x400>;
 			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&rcc STM32_CLOCK(APB4, 1)>,
