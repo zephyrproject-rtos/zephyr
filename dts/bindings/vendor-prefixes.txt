@@ -30,6 +30,7 @@ adafruit	Adafruit Industries, LLC
 adapteva	Adapteva, Inc.
 adaptrum	Adaptrum, Inc.
 adh	AD Holdings Plc.
+adh-tech	ADH Technology Co. Ltd.
 adi	Analog Devices, Inc.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
