@@ -3,12 +3,11 @@
 # Copyright (c) 2021 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ETH_DWMAC
-	bool "Synopsys DesignWare MAC driver"
-	default y
+menu "Synopsys DesignWare MAC driver"
+
+config ETH_DWMAC
+	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
-	depends on (SOC_SERIES_STM32H7X && !ETH_STM32_HAL) || MMU
-	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	help
 	  This is a driver for the Synopsys DesignWare MAC, also referred to
 	  as "DesignWare Cores Ethernet Quality-of-Service". Hardware versions
@@ -25,19 +24,30 @@ menuconfig ETH_DWMAC
 	  - VLAN support
 	  - various hardware offloads (when available)
 
-if ETH_DWMAC
-
 config ETH_DWMAC_STM32H7X
-	bool
+	bool "Synopsys DesignWare MAC driver for STM32H7 series"
+	depends on !ETH_STM32_HAL
 	depends on SOC_SERIES_STM32H7X
+	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
+	select ETH_DWMAC
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
 	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on STM32H7 series
+	  SoCs.
 
 config ETH_DWMAC_MMU
-	bool
+	bool "Synopsys DesignWare MAC driver for MMU based platforms"
 	depends on MMU
+	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
+	select ETH_DWMAC
 	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on MMU based
+	  platforms.
+
+if ETH_DWMAC
 
 config DWMAC_NB_TX_DESCS
 	int "Number of entries in the transmit descriptor ring"
@@ -67,3 +77,5 @@ config DWMAC_NB_RX_DESCS
 	  dropped packets.
 
 endif # ETH_DWMAC
+
+endmenu
