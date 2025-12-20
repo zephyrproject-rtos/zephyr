@@ -7,3 +7,18 @@ config I2C_SF32LB
 	depends on DT_HAS_SIFLI_SF32LB_I2C_ENABLED
 	help
 	  Enable I2C driver for SiFli SF32LB.
+
+if I2C_SF32LB
+
+config I2C_SF32LB_INTERRUPT
+	bool "SF32LB I2C Interrupt Support"
+	help
+	  Enable interrupt-driven transfers for the SF32LB I2C driver.
+
+config I2C_SF32LB_DMA
+	bool "SF32LB I2C DMA Support"
+	depends on DMA
+	help
+	  Enable DMA support for the SF32LB I2C driver.
+
+endif # I2C_SF32LB
