@@ -7,8 +7,8 @@ from __future__ import annotations
 import logging
 import time
 
-from twister_harness.device.fifo_handler import FifoHandler
 from twister_harness.device.binary_adapter import BinaryAdapterBase
+from twister_harness.device.fifo_handler import FifoHandler
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.twister_harness_config import DeviceConfig
 
@@ -23,7 +23,14 @@ class QemuAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Set command to run."""
-        self.command = [self.west, 'build', '-d', str(self.device_config.app_build_dir), '-t', 'run']
+        self.command = [
+            self.west,
+            'build',
+            '-d',
+            str(self.device_config.app_build_dir),
+            '-t',
+            'run',
+        ]
         if 'stdin' in self.process_kwargs:
             self.process_kwargs.pop('stdin')
 
