@@ -1167,6 +1167,7 @@ static int ov5640_init_controls(const struct device *dev)
 	int ret;
 	struct ov5640_data *drv_data = dev->data;
 	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
+	struct video_ctrl *auto_ctrls = &ctrls->auto_gain;
 
 	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
@@ -1181,7 +1182,7 @@ static int ov5640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	video_auto_cluster_ctrl(&ctrls->auto_gain, 2, true);
+	video_auto_cluster_ctrl(auto_ctrls, 2, true);
 
 	ret = video_init_ctrl(
 		&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
