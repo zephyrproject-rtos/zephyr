@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+config BIOMETRICS_GT5X
+	bool "ADH GT5X Series Optical Fingerprint Sensor"
+	default y
+	depends on DT_HAS_ADH_TECH_GT5X_ENABLED
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable driver for ADH GT5X series optical fingerprint sensors.
+	  Supports GT-511C1R, GT-511C3, GT-521F32, and GT-521F52 models.
+
+if BIOMETRICS_GT5X
+
+config GT5X_TIMEOUT_MS
+	int "Default operation timeout in milliseconds"
+	default 5000
+	help
+	  Default timeout for enrollment and matching operations.
+
+endif # BIOMETRICS_GT5X

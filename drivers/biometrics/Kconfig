@@ -28,6 +28,7 @@ config BIOMETRICS_SHELL
 
 # zephyr-keep-sorted-start
 source "drivers/biometrics/Kconfig.emul"
+source "drivers/biometrics/Kconfig.gt5x"
 source "drivers/biometrics/Kconfig.zfm_x0"
 # zephyr-keep-sorted-stop
 
