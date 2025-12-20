@@ -5,6 +5,7 @@
 
 #define DT_DRV_COMPAT ti_tps55287
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/logging/log.h>
@@ -21,6 +22,9 @@ LOG_MODULE_REGISTER(tps55287, CONFIG_REGULATOR_LOG_LEVEL);
 #define TPS55287_REG_VOUT_FS_INTFB_MASK BIT_MASK(2)
 #define TPS55287_REG_MODE_OE            BIT(7)
 
+#define RESET_PULSE_TIME_MS 5
+#define RESET_DELAY_MS 100
+
 /* The order of the voltage ranges is important, as it maps to the VOUT_FS register */
 static const struct linear_range core_ranges[] = {
 	LINEAR_RANGE_INIT(800000u, 2500u, 0xf0, BIT_MASK(11)),
@@ -32,6 +36,7 @@ static const struct linear_range core_ranges[] = {
 struct regulator_tps55287_config {
 	struct regulator_common_config common;
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec en_gpio;
 };
 
 struct regulator_tps55287_data {
@@ -149,7 +154,27 @@ static int regulator_tps55287_disable(const struct device *dev)
 
 static int regulator_tps55287_init(const struct device *dev)
 {
+	const struct regulator_tps55287_config *config = dev->config;
 	int ret;
+
+	if (config->en_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->en_gpio)) {
+			LOG_ERR("%s is not ready", config->en_gpio.port->name);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("EN pin configuration failed: %d", ret);
+			return ret;
+		}
+
+		k_sleep(K_MSEC(RESET_PULSE_TIME_MS));
+
+		gpio_pin_set_dt(&config->en_gpio, 1);
+
+		k_sleep(K_MSEC(RESET_DELAY_MS));
+	}
 
 	regulator_common_data_init(dev);
 
@@ -175,6 +200,7 @@ static DEVICE_API(regulator, api) = {
 	static const struct regulator_tps55287_config config_##inst = {                            \
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, regulator_tps55287_init, NULL, &data_##inst, &config_##inst,   \
