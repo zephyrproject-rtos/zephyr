@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(tps55287, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define TPS55287_REG_VOUT_FS_INTFB_MASK BIT_MASK(2)
 #define TPS55287_REG_MODE_OE            BIT(7)
+#define TPS55287_REG_MODE_DISCHG        BIT(4)
 
 #define RESET_PULSE_TIME_MS 5
 #define RESET_DELAY_MS 100
@@ -137,6 +138,33 @@ static int regulator_tps55287_get_voltage(const struct device *dev, int32_t *vol
 	return ret;
 }
 
+static int regulator_tps55287_set_active_discharge(const struct device *dev,
+						   bool active_discharge)
+{
+	const struct regulator_tps55287_config *config = dev->config;
+
+	return i2c_reg_update_byte_dt(&config->i2c, TPS55287_REG_MODE,
+				      TPS55287_REG_MODE_DISCHG,
+				      active_discharge ? TPS55287_REG_MODE_DISCHG : 0);
+}
+
+static int regulator_tps55287_get_active_discharge(const struct device *dev,
+						   bool *active_discharge)
+{
+	const struct regulator_tps55287_config *config = dev->config;
+	uint8_t val;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, TPS55287_REG_MODE, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*active_discharge = val & TPS55287_REG_MODE_DISCHG;
+
+	return 0;
+}
+
 static int regulator_tps55287_enable(const struct device *dev)
 {
 	const struct regulator_tps55287_config *config = dev->config;
@@ -192,6 +220,8 @@ static DEVICE_API(regulator, api) = {
 	.list_voltage = regulator_tps55287_list_voltage,
 	.set_voltage = regulator_tps55287_set_voltage,
 	.get_voltage = regulator_tps55287_get_voltage,
+	.set_active_discharge = regulator_tps55287_set_active_discharge,
+	.get_active_discharge = regulator_tps55287_get_active_discharge,
 };
 
 #define REGULATOR_TPS55287_DEFINE_ALL(inst)                                                        \
