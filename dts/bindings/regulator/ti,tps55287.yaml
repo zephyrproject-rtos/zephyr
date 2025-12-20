@@ -8,3 +8,10 @@ compatible: "ti,tps55287"
 include:
   - name: i2c-device.yaml
   - name: regulator.yaml
+
+properties:
+  en-gpios:
+    type: phandle-array
+    description: |
+      GPIOs connected to the EN/UVLO signal, used to reset the device at
+      initialization.
