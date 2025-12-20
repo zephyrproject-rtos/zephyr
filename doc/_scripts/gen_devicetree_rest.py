@@ -819,12 +819,12 @@ def print_block(block, string_io):
 
     print(textwrap.dedent(block), file=string_io)
 
-def to_code_block(s, indent=0):
+def to_code_block(s, indent=0, language='none'):
     # Converts 's', a string, to an indented rst .. code-block::. The
     # 'indent' argument is a leading indent for each line in the code
     # block, in spaces.
     indent = indent * ' '
-    return ('.. code-block:: none\n\n' +
+    return ('.. code-block:: {language}\n\n' +
             textwrap.indent(s, indent + '   ') + '\n')
 
 def compatible_vnd(compatible):
