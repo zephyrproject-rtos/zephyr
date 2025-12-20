@@ -30,3 +30,9 @@ properties:
       6 = 0.6V output voltage raise with 50mV at Visp - Visn
       7 = 0.7V output voltage raise with 50mV at Visp - Visn
     enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  r-is-milliohm:
+    type: int
+    description: |
+      Value of the current sense shunt resistor in milliohm, required for
+      current limit APIs.

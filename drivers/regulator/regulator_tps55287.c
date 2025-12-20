@@ -15,11 +15,13 @@
 
 LOG_MODULE_REGISTER(tps55287, CONFIG_REGULATOR_LOG_LEVEL);
 
-#define TPS55287_REG_REF     0x00U
-#define TPS55287_REG_VOUT_FS 0x04U
-#define TPS55287_REG_CDC     0x05U
-#define TPS55287_REG_MODE    0x06U
+#define TPS55287_REG_REF        0x00U
+#define TPS55287_REG_IOUT_LIMIT 0x02U
+#define TPS55287_REG_VOUT_FS    0x04U
+#define TPS55287_REG_CDC        0x05U
+#define TPS55287_REG_MODE       0x06U
 
+#define TPS55287_REG_IOUT_LIMIT_MASK    BIT_MASK(7)
 #define TPS55287_REG_VOUT_FS_INTFB_MASK BIT_MASK(2)
 #define TPS55287_REG_CDC_CDC_MASK       BIT_MASK(3)
 #define TPS55287_REG_MODE_OE            BIT(7)
@@ -40,6 +42,7 @@ struct regulator_tps55287_config {
 	struct regulator_common_config common;
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_gpio;
+	int16_t r_is;
 	uint8_t cdc;
 };
 
@@ -141,6 +144,50 @@ static int regulator_tps55287_get_voltage(const struct device *dev, int32_t *vol
 	return ret;
 }
 
+static int regulator_tps55287_get_current_limit(const struct device *dev, int32_t *curr_ua)
+{
+	const struct regulator_tps55287_config *config = dev->config;
+	uint8_t val;
+	int ret;
+
+	if (config->r_is < 0) {
+		return -ENOENT;
+	}
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, TPS55287_REG_IOUT_LIMIT, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* 0.5mV units against the Ris shunt */
+	*curr_ua = (val & TPS55287_REG_IOUT_LIMIT_MASK) * 1000 * 1000 / 2 / config->r_is;
+
+	return 0;
+}
+
+static int regulator_tps55287_set_current_limit(const struct device *dev,
+						int32_t min_ua, int32_t max_ua)
+{
+	const struct regulator_tps55287_config *config = dev->config;
+	uint16_t idx;
+	int ret;
+
+	if (config->r_is < 0) {
+		return -ENOENT;
+	}
+
+	struct linear_range range = LINEAR_RANGE_INIT(0, 500 * 1000 / config->r_is,
+						      0, TPS55287_REG_IOUT_LIMIT_MASK);
+
+	ret = linear_range_group_get_win_index(&range, 1, min_ua, max_ua, &idx);
+	if (ret) {
+		return ret;
+	}
+
+	return i2c_reg_update_byte_dt(&config->i2c, TPS55287_REG_IOUT_LIMIT,
+				      TPS55287_REG_IOUT_LIMIT_MASK, idx);
+}
+
 static int regulator_tps55287_set_active_discharge(const struct device *dev,
 						   bool active_discharge)
 {
@@ -233,6 +280,8 @@ static DEVICE_API(regulator, api) = {
 	.get_voltage = regulator_tps55287_get_voltage,
 	.set_active_discharge = regulator_tps55287_set_active_discharge,
 	.get_active_discharge = regulator_tps55287_get_active_discharge,
+	.get_current_limit = regulator_tps55287_get_current_limit,
+	.set_current_limit = regulator_tps55287_set_current_limit,
 };
 
 #define REGULATOR_TPS55287_DEFINE_ALL(inst)                                                        \
@@ -242,6 +291,7 @@ static DEVICE_API(regulator, api) = {
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
+		.r_is = DT_INST_PROP_OR(inst, r_is_milliohm, -1),                                  \
 		.cdc = DT_INST_PROP(inst, cdc),                                                    \
 	};                                                                                         \
                                                                                                    \
