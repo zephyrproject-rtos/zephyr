@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_ADDRESSING_MODE		(SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
 #endif
 
+#define SSD1306_PPB_SHIFT	3
+
 union ssd1306_bus {
 	struct i2c_dt_spec i2c;
 	struct spi_dt_spec spi;
@@ -267,20 +269,20 @@ static int ssd1306_suspend(const struct device *dev)
 }
 
 static int ssd1306_write_default(const struct device *dev, const uint16_t x, const uint16_t y,
-				 const struct display_buffer_descriptor *desc, const void *buf,
+				 const struct display_buffer_descriptor *desc, uint8_t *buf,
 				 const size_t buf_len)
 {
 	const struct ssd1306_config *config = dev->config;
-	uint8_t x_off = config->segment_offset;
+	const uint8_t x_offset = x + config->segment_offset;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_MEM_ADDRESSING_MODE,
 		SSD1306_ADDRESSING_MODE,
 		SSD1306_SET_COLUMN_ADDRESS,
-		x + x_off,
-		(x + desc->width - 1) + x_off,
+		x_offset,
+		x_offset + desc->width - 1,
 		SSD1306_SET_PAGE_ADDRESS,
-		y/8,
-		((y + desc->height)/8 - 1)
+		y >> SSD1306_PPB_SHIFT,
+		(((y + desc->height) >> SSD1306_PPB_SHIFT) - 1)
 	};
 	int ret;
 
@@ -290,28 +292,28 @@ static int ssd1306_write_default(const struct device *dev, const uint16_t x, con
 		return ret;
 	}
 
-	return ssd1306_write_bus(dev, (uint8_t *)buf, buf_len, false);
+	return ssd1306_write_bus(dev, buf, buf_len, false);
 }
 
 static int ssd1306_write_sh1106(const struct device *dev, const uint16_t x, const uint16_t y,
-				const struct display_buffer_descriptor *desc, const void *buf,
+				const struct display_buffer_descriptor *desc, uint8_t *buf,
 				const size_t buf_len)
 {
 	const struct ssd1306_config *config = dev->config;
-	uint8_t x_offset = x + config->segment_offset;
+	const uint8_t x_offset = x + config->segment_offset;
+	const uint8_t y_offset = y >> SSD1306_PPB_SHIFT;
+	const uint8_t height = desc->height >> SSD1306_PPB_SHIFT;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_LOWER_COL_ADDRESS |
 			(x_offset & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
 		SSD1306_SET_HIGHER_COL_ADDRESS |
 			((x_offset >> 4) & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_SET_PAGE_START_ADDRESS | (y / 8)
+		SSD1306_SET_PAGE_START_ADDRESS | y_offset
 	};
-	uint8_t *buf_ptr = (uint8_t *)buf;
 	int ret = 0;
 
-	for (uint8_t n = 0; n < desc->height / 8; n++) {
-		cmd_buf[sizeof(cmd_buf) - 1] =
-			SSD1306_SET_PAGE_START_ADDRESS | (n + (y / 8));
+	for (uint8_t y_o = 0; y_o < height; y_o++) {
+		cmd_buf[sizeof(cmd_buf) - 1] = SSD1306_SET_PAGE_START_ADDRESS | (y_o + y_offset);
 		LOG_HEXDUMP_DBG(cmd_buf, sizeof(cmd_buf), "cmd_buf");
 
 		ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
@@ -320,16 +322,10 @@ static int ssd1306_write_sh1106(const struct device *dev, const uint16_t x, cons
 			return ret;
 		}
 
-		ret = ssd1306_write_bus(dev, buf_ptr, desc->width, false);
+		ret = ssd1306_write_bus(dev, &(buf[y_o * desc->width]), desc->width, false);
 		if (ret < 0) {
 			LOG_ERR("Failed to write pixel data");
 			return ret;
-		}
-
-		buf_ptr = buf_ptr + desc->width;
-		if (buf_ptr > ((uint8_t *)buf + buf_len)) {
-			LOG_ERR("Exceeded buffer length");
-			return -EINVAL;
 		}
 	}
 
@@ -340,22 +336,21 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 			 const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct ssd1306_config *config = dev->config;
-	size_t buf_len;
+	const size_t buf_len = (desc->height * desc->width) >> SSD1306_PPB_SHIFT;
 
-	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+	if (desc->pitch != desc->width) {
+		LOG_ERR("Pitch is not width");
 		return -EINVAL;
 	}
 
-	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
-	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+	if (buf == NULL) {
+		LOG_ERR("Display buffer is invalid");
 		return -ENODATA;
 	}
 
-	if (desc->pitch > desc->width) {
-		LOG_ERR("Unsupported mode");
-		return -EINVAL;
+	if (buf_len > desc->buf_size) {
+		LOG_ERR("Display buffer is too small");
+		return -ENODATA;
 	}
 
 	if ((y & 0x7) != 0U) {
@@ -363,14 +358,23 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
+	if ((desc->height & 0x7) != 0U) {
+		LOG_ERR("Unsupported height");
+		return -EINVAL;
+	}
+
+	if (desc->buf_size == 0U) {
+		return 0;
+	}
+
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	if (config->sh1106_compatible) {
-		return ssd1306_write_sh1106(dev, x, y, desc, buf, buf_len);
+		return ssd1306_write_sh1106(dev, x, y, desc, (uint8_t *)buf, buf_len);
 	}
 
-	return ssd1306_write_default(dev, x, y, desc, buf, buf_len);
+	return ssd1306_write_default(dev, x, y, desc, (uint8_t *)buf, buf_len);
 }
 
 static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast)
