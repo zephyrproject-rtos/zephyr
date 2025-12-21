@@ -2673,6 +2673,7 @@ ZTEST(net_socket_udp, test_ipv4_multicast_ifindex)
 	struct net_if_addr *ifaddr;
 	struct net_in_addr addr = { 0 };
 	struct net_ip_mreqn mreqn;
+	struct net_ip_mreqn mreqn_join;
 	struct net_ip_mreq mreq;
 	struct net_if *iface;
 	int server_sock;
@@ -2792,6 +2793,13 @@ ZTEST(net_socket_udp, test_ipv4_multicast_ifindex)
 	 */
 	server_sock = prepare_listen_sock_udp_v4(&saddr4);
 	zassert_not_equal(server_sock, -1, "Cannot create server socket (%d)", -errno);
+
+	memset(&mreqn_join, 0, sizeof(mreqn_join));
+	mreqn_join.imr_multiaddr = my_mcast_addr2;
+	mreqn_join.imr_ifindex = net_if_get_by_iface(net_if_get_default());
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreqn_join, sizeof(mreqn_join));
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
 
 	test_started = true;
 	loopback_enable_address_swap(false);
