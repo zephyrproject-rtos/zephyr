@@ -166,6 +166,7 @@ csq	Shenzen Chuangsiqi Technology Co.,Ltd.
 ct	CTHINGS.CO
 cubietech	Cubietech, Ltd.
 cypress	Cypress Semiconductor Corporation
+cytron	Cytron Technologies
 cznic	CZ.NIC, z.s.p.o.
 dallas	Maxim Integrated Products (formerly Dallas Semiconductor)
 dataimage	DataImage, Inc.
