@@ -5,6 +5,7 @@ zephyr_library()
 
 zephyr_library_sources(soc.c)
 zephyr_library_sources_ifdef(CONFIG_RISCV vector.S)
+zephyr_library_sources_ifdef(CONFIG_MPU mpu_regions.c)
 
 zephyr_include_directories(.)
 
