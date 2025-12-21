@@ -1470,6 +1470,23 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	/*
+	 * Enable the internal timestamp counter by default. SoC-specific driver frontends can
+	 * overwrite this if configured for using a SoC-specific, external timestamp counter.
+	 */
+	reg = FIELD_PREP(CAN_MCAN_TSCC_TCP, config->timestamp_prescaler - 1U) |
+		FIELD_PREP(CAN_MCAN_TSCC_TSS, 1U);
+#else /* CONFIG_CAN_RX_TIMESTAMP */
+	/* Disable timestamp counter */
+	reg = 0U;
+#endif /* !CONFIG_CAN_RX_TIMESTAMP */
+
+	err = can_mcan_write_reg(dev, CAN_MCAN_TSCC, reg);
+	if (err != 0) {
+		return err;
+	}
+
 	err = can_mcan_read_reg(dev, CAN_MCAN_TEST, &reg);
 	if (err != 0) {
 		return err;
