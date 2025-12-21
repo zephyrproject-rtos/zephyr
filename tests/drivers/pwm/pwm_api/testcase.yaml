@@ -20,6 +20,7 @@ tests:
       - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
       - platform:frdm_mcxa366/mcxa366:DTC_OVERLAY_FILE="boards/frdm_mcxa366_flexio_pwm.overlay"
       - platform:frdm_mcxa266/mcxa266:DTC_OVERLAY_FILE="boards/frdm_mcxa266_flexio_pwm.overlay"
+      - platform:frdm_mcxe247/mcxe247:DTC_OVERLAY_FILE="boards/frdm_mcxe247_flexio_pwm.overlay"
     platform_allow:
       - frdm_ke17z
       - frdm_ke17z512
@@ -28,6 +29,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm7
       - frdm_mcxa366/mcxa366
       - frdm_mcxa266/mcxa266
+      - frdm_mcxe247
     filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
