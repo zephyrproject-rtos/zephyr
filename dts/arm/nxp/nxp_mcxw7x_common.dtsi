@@ -336,7 +336,7 @@
 		interrupts = <34 0>;
 		clock-frequency = <32768>;
 		clk-source = <2>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -347,7 +347,7 @@
 		interrupts = <35 0>;
 		clock-frequency = <32768>;
 		clk-source = <2>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
 	};

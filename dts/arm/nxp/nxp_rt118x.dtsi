@@ -925,7 +925,7 @@
 		reg = <0x4300000 0x1000>;
 		interrupts = <18 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -936,7 +936,7 @@
 		reg = <0x24d0000 0x1000>;
 		interrupts = <67 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -947,7 +947,7 @@
 		reg = <0x2cd0000 0x1000>;
 		interrupts = <150 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
