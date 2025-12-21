@@ -599,7 +599,7 @@ bool z_impl_log_process(void)
 		last_failure_report += CONFIG_LOG_FAILURE_REPORT_PERIOD;
 	}
 
-	return z_log_msg_pending();
+	return msg != NULL && z_log_msg_pending();
 }
 
 #ifdef CONFIG_USERSPACE
