@@ -1,0 +1,281 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <skeleton.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "sifive,e51", "riscv";
+			device_type = "cpu";
+			reg = < 0x0 >;
+			riscv,isa = "rv64imac_zicsr_zifencei";
+			hlic0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@1 {
+			clock-frequency = <0>;
+			compatible = "sifive,u54", "riscv";
+			device_type = "cpu";
+			reg = < 0x1 >;
+			riscv,isa = "rv64gc";
+			hlic1: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@2 {
+			clock-frequency = <0>;
+			compatible = "sifive,u54", "riscv";
+			device_type = "cpu";
+			reg = < 0x2 >;
+			riscv,isa = "rv64gc";
+			hlic2: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@3 {
+			clock-frequency = <0>;
+			compatible = "sifive,u54", "riscv";
+			device_type = "cpu";
+			reg = < 0x3 >;
+			riscv,isa = "rv64gc";
+			hlic3: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@4 {
+			clock-frequency = <0>;
+			compatible = "sifive,u54", "riscv";
+			device_type = "cpu";
+			reg = < 0x4 >;
+			riscv,isa = "rv64gc";
+			hlic4: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sram0: memory@8000000 {
+			compatible = "mmio-sram";
+			reg = <0x8000000 0x80000>;
+		};
+
+		sram1: memory@80000000 {
+			compatible = "mmio-sram";
+			reg = <0x80000000 0x800000>;
+		};
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic0 3 &hlic0 7
+							&hlic1 3 &hlic1 7
+							&hlic2 3 &hlic2 7
+							&hlic3 3 &hlic3 7
+							&hlic4 3 &hlic4 7>;
+			interrupt-names = "soft0", "timer0", "soft1", "timer1",
+							"soft2", "timer2", "soft3", "timer3",
+							"soft4", "timer4";
+			reg = <0x2000000 0x10000>;
+		};
+
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			#interrupt-cells = <2>;
+			#address-cells = <1>;
+			interrupt-controller;
+			interrupts-extended = <&hlic0 11
+							&hlic1 11 &hlic1 9
+							&hlic2 11 &hlic2 9
+							&hlic3 11 &hlic3 9
+							&hlic4 11 &hlic4 9>;
+			reg = <0x0c000000 0x04000000>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <186>;
+		};
+
+		uart0: uart@20000000 {
+			compatible = "ns16550";
+			reg = <0x20000000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <90 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart1: uart@20100000 {
+			compatible = "ns16550";
+			reg = <0x20100000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <91 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart2: uart@20102000 {
+			compatible = "ns16550";
+			reg = <0x20102000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <92 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart3: uart@20104000 {
+			compatible = "ns16550";
+			reg = <0x20104000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <93 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart4: uart@20106000 {
+			compatible = "ns16550";
+			reg = <0x20106000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			interrupt-parent = <&plic>;
+			interrupts = <94 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		qspi0: spi@21000000 {
+			compatible = "microchip,pic64gx-qspi", "microchip,mpfs-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x21000000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <85 1>;
+			status = "disabled";
+			clock-frequency = <150000000>;
+		};
+
+		spi1: spi@20109000 {
+			compatible = "microchip,pic64gx-spi", "microchip,mpfs-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x20109000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <55 1>;
+			status = "disabled";
+			clock-frequency = <150000000>;
+		};
+
+		syscontroller_qspi: spi@37020100 {
+			compatible = "microchip,pic64gx-qspi", "microchip,mpfs-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x37020100 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <110 1>;
+			status = "disabled";
+			clock-frequency = <150000000>;
+		};
+
+		gpio0: gpio@20120000 {
+			compatible = "microchip,pic64gx-gpio", "microchip,mpfs-gpio";
+			reg = <0x20120000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <51 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@20121000 {
+			compatible = "microchip,pic64gx-gpio", "microchip,mpfs-gpio";
+			reg = <0x20121000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <52 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@20122000 {
+			compatible = "microchip,pic64gx-gpio", "microchip,mpfs-gpio";
+			reg = <0x20122000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@2010a000 {
+			compatible = "microchip,pic64gx-i2c", "microchip,mpfs-i2c";
+			reg = <0x2010a000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <58 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@2010b000 {
+			compatible = "microchip,pic64gx-i2c", "microchip,mpfs-i2c";
+			reg = <0x2010b000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <61 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+	};
+};

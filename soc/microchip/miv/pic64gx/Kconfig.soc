@@ -1,0 +1,25 @@
+# RISCV64_MIV Microchip PIC64GX configuration options
+
+# Copyright (c) 2024 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Microchip Polarfire SOC implementation"
+	depends on SOC_SERIES_PIC64GX
+
+config SOC_PIC64GX
+	bool "Microchip PIC64GX system implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_GP
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select CPU_HAS_FPU
+	select SCHED_IPI_SUPPORTED
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+endchoice

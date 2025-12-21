@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PIC64GX_CURIOSITY_KIT
+	bool "Microchip PIC64GX Curiosity kit"
+	depends on SOC_PIC64GX
+	select 64BIT
+	select SCHED_IPI_SUPPORTED
+	select CPU_HAS_FPU_DOUBLE_PRECISION

@@ -1,0 +1,12 @@
+identifier: pic64gx_curiosity_kit
+name: Microchip PIC64GX Curiosity kit
+type: mcu
+arch: riscv64
+toolchain:
+  - zephyr
+ram: 3840
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: microchip
