@@ -1087,7 +1087,7 @@
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -1097,7 +1097,7 @@
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};

@@ -508,7 +508,7 @@
 		reg = <0xab000 0x1000>;
 		interrupts = <55 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};
