@@ -264,6 +264,63 @@ static int adxl345_attr_set_odr(const struct device *dev,
 	return ret;
 }
 
+static int adxl345_set_range(const struct device *dev, uint8_t range)
+{
+	int rc;
+	struct adxl345_dev_data *data = dev->data;
+
+	rc = adxl345_reg_write_mask(dev, ADXL345_DATA_FORMAT_REG, ADXL345_DATA_FORMAT_RANGE_MSK,
+				    range);
+	if (rc < 0) {
+		LOG_ERR("Failed to set range.");
+		return -EIO;
+	}
+
+	data->selected_range = range;
+
+	return 0;
+}
+
+#if defined(CONFIG_ADXL345_ACCEL_RANGE_RUNTIME)
+static const struct adxl345_range {
+	uint8_t range;
+	uint8_t reg_val;
+} adxl345_acc_range_map[] = {
+	{2,	ADXL345_RANGE_2G},
+	{4,	ADXL345_RANGE_4G},
+	{8,	ADXL345_RANGE_8G},
+	{16, ADXL345_RANGE_16G},
+};
+
+static int adxl345_range_to_reg_val(uint8_t range)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(adxl345_acc_range_map); i++) {
+		if (range <= adxl345_acc_range_map[i].range) {
+			return adxl345_acc_range_map[i].reg_val;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int adxl345_attr_set_range(const struct device *dev, int32_t range)
+{
+	int range_reg;
+
+	range_reg = adxl345_range_to_reg_val(range);
+	if (range_reg < 0) {
+		LOG_ERR("Invalid range %d g", range);
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("Range set to ±%d g", range);
+
+	return adxl345_set_range(dev, range_reg);
+}
+#endif /* CONFIG_ADXL345_ACCEL_RANGE_RUNTIME */
+
 static int adxl345_attr_set(const struct device *dev,
 			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
@@ -272,6 +329,10 @@ static int adxl345_attr_set(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return adxl345_attr_set_odr(dev, chan, attr, val);
+#if defined(CONFIG_ADXL345_ACCEL_RANGE_RUNTIME)
+	case SENSOR_ATTR_FULL_SCALE:
+		return adxl345_attr_set_range(dev, sensor_ms2_to_g(val));
+#endif /* CONFIG_ADXL345_ACCEL_RANGE_RUNTIME */
 	case SENSOR_ATTR_UPPER_THRESH:
 		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, val->val1);
 	default:
@@ -460,13 +521,10 @@ static int adxl345_init(const struct device *dev)
 	}
 #endif
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_8G);
+	rc = adxl345_set_range(dev, cfg->range);
 	if (rc < 0) {
-		LOG_ERR("Data format set failed\n");
 		return -EIO;
 	}
-
-	data->selected_range = ADXL345_RANGE_8G;
 
 	rc = adxl345_reg_write_byte(dev, ADXL345_RATE_REG, ADXL345_RATE_25HZ);
 	if (rc < 0) {
@@ -598,6 +656,7 @@ static int adxl345_pm_action(const struct device *dev,
 
 #define ADXL345_CONFIG(inst)									   \
 		.odr = DT_INST_PROP(inst, odr),							   \
+		.range = DT_INST_PROP(inst, range),						   \
 		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,					   \
 		.fifo_config.fifo_trigger = ADXL345_INT2,					   \
 		.fifo_config.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0),
