@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/sys/byteorder.h>
 
 #ifdef CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
@@ -64,7 +65,7 @@ static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 	}
 
 	for (size_t idx = 0; idx < buf_size; idx += 4) {
-		*((uint32_t *)(buf + idx)) = color;
+		*((uint32_t *)(buf + idx)) = sys_cpu_to_le32(color);
 	}
 }
 
@@ -189,7 +190,7 @@ static void fill_buffer_al_88(enum corner corner, uint8_t grey, uint8_t *buf,
 	}
 
 	for (size_t idx = 0; idx < buf_size; idx += 2) {
-		*((uint16_t *)(buf + idx)) = color;
+		*((uint16_t *)(buf + idx)) = sys_cpu_to_le16(color);
 	}
 }
 
