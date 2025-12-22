@@ -47,236 +47,80 @@
 #define VIM_VEC_INT(n)      (VIM_BASE_ADDR + (0x2000) + ((n) * 0x4))
 
 /* RAW */
-
-#define VIM_GRP_RAW_STS_MASK                 (BIT_MASK(32))
-#define VIM_GRP_RAW_STS_SHIFT                (0x00000000U)
-#define VIM_GRP_RAW_STS_RESETVAL             (0x00000000U)
-#define VIM_GRP_RAW_STS_MAX                  (BIT_MASK(32))
-
-#define VIM_GRP_RAW_RESETVAL                 (0x00000000U)
+#define VIM_GRP_RAW_STS_MASK                 (BIT64_MASK(32))
 
 /* STS */
-
-#define VIM_GRP_STS_MSK_MASK                 (BIT_MASK(32))
-#define VIM_GRP_STS_MSK_SHIFT                (0x00000000U)
-#define VIM_GRP_STS_MSK_RESETVAL             (0x00000000U)
-#define VIM_GRP_STS_MSK_MAX                  (BIT_MASK(32))
-
-#define VIM_GRP_STS_RESETVAL                 (0x00000000U)
+#define VIM_GRP_STS_MSK_MASK                 (BIT64_MASK(32))
 
 /* INTR_EN_SET */
-
-#define VIM_GRP_INTR_EN_SET_MSK_MASK         (BIT_MASK(32))
-#define VIM_GRP_INTR_EN_SET_MSK_SHIFT        (0x00000000U)
-#define VIM_GRP_INTR_EN_SET_MSK_RESETVAL     (0x00000000U)
-#define VIM_GRP_INTR_EN_SET_MSK_MAX          (BIT_MASK(32))
-
-#define VIM_GRP_INTR_EN_SET_RESETVAL         (0x00000000U)
+#define VIM_GRP_INTR_EN_SET_MSK_MASK         (BIT64_MASK(32))
 
 /* INTR_EN_CLR */
-
-#define VIM_GRP_INTR_EN_CLR_MSK_MASK         (BIT_MASK(32))
-#define VIM_GRP_INTR_EN_CLR_MSK_SHIFT        (0x00000000U)
-#define VIM_GRP_INTR_EN_CLR_MSK_RESETVAL     (0x00000000U)
-#define VIM_GRP_INTR_EN_CLR_MSK_MAX          (BIT_MASK(32))
-
-#define VIM_GRP_INTR_EN_CLR_RESETVAL         (0x00000000U)
+#define VIM_GRP_INTR_EN_CLR_MSK_MASK         (BIT64_MASK(32))
 
 /* IRQSTS */
-
-#define VIM_GRP_IRQSTS_MSK_MASK              (BIT_MASK(32))
-#define VIM_GRP_IRQSTS_MSK_SHIFT             (0x00000000U)
-#define VIM_GRP_IRQSTS_MSK_RESETVAL          (0x00000000U)
-#define VIM_GRP_IRQSTS_MSK_MAX               (BIT_MASK(32))
-
-#define VIM_GRP_IRQSTS_RESETVAL              (0x00000000U)
+#define VIM_GRP_IRQSTS_MSK_MASK              (BIT64_MASK(32))
 
 /* FIQSTS */
-
-#define VIM_GRP_FIQSTS_MSK_MASK              (BIT_MASK(32))
-#define VIM_GRP_FIQSTS_MSK_SHIFT             (0x00000000U)
-#define VIM_GRP_FIQSTS_MSK_RESETVAL          (0x00000000U)
-#define VIM_GRP_FIQSTS_MSK_MAX               (BIT_MASK(32))
-
-#define VIM_GRP_FIQSTS_RESETVAL              (0x00000000U)
+#define VIM_GRP_FIQSTS_MSK_MASK              (BIT64_MASK(32))
 
 /* INTMAP */
-
-#define VIM_GRP_INTMAP_MSK_MASK              (BIT_MASK(32))
-#define VIM_GRP_INTMAP_MSK_SHIFT             (0x00000000U)
-#define VIM_GRP_INTMAP_MSK_RESETVAL          (0x00000000U)
-#define VIM_GRP_INTMAP_MSK_MAX               (BIT_MASK(32))
-
-#define VIM_GRP_INTMAP_RESETVAL              (0x00000000U)
+#define VIM_GRP_INTMAP_MSK_MASK              (BIT64_MASK(32))
 
 /* INTTYPE */
-
-#define VIM_GRP_INTTYPE_MSK_MASK             (BIT_MASK(32))
-#define VIM_GRP_INTTYPE_MSK_SHIFT            (0x00000000U)
-#define VIM_GRP_INTTYPE_MSK_RESETVAL         (0x00000000U)
-#define VIM_GRP_INTTYPE_MSK_MAX              (BIT_MASK(32))
-
-#define VIM_GRP_INTTYPE_RESETVAL             (0x00000000U)
+#define VIM_GRP_INTTYPE_MSK_MASK             (BIT64_MASK(32))
 
 /* INT */
-
 #define VIM_PRI_INT_VAL_MASK                 (BIT_MASK(4))
-#define VIM_PRI_INT_VAL_SHIFT                (0x00000000U)
-#define VIM_PRI_INT_VAL_RESETVAL             (BIT_MASK(4))
-#define VIM_PRI_INT_VAL_MAX                  (BIT_MASK(4))
-
-#define VIM_PRI_INT_RESETVAL                 (BIT_MASK(4))
 
 /* INT */
-
 #define VIM_VEC_INT_VAL_MASK                 (0xFFFFFFFCU)
-#define VIM_VEC_INT_VAL_SHIFT                (0x00000002U)
-#define VIM_VEC_INT_VAL_RESETVAL             (0x00000000U)
-#define VIM_VEC_INT_VAL_MAX                  (BIT_MASK(30))
-
-#define VIM_VEC_INT_RESETVAL                 (0x00000000U)
 
 /* INFO */
-
 #define VIM_INFO_INTERRUPTS_MASK             (BIT_MASK(11))
-#define VIM_INFO_INTERRUPTS_SHIFT            (0x00000000U)
-#define VIM_INFO_INTERRUPTS_RESETVAL         (0x00000400U)
-#define VIM_INFO_INTERRUPTS_MAX              (BIT_MASK(11))
-
-#define VIM_INFO_RESETVAL                    (0x00000400U)
 
 /* PRIIRQ */
-
 #define VIM_PRIIRQ_VALID_MASK                (0x80000000U)
-#define VIM_PRIIRQ_VALID_SHIFT               (BIT_MASK(5))
-#define VIM_PRIIRQ_VALID_RESETVAL            (0x00000000U)
-#define VIM_PRIIRQ_VALID_MAX                 (0x00000001U)
-
 #define VIM_PRIIRQ_VALID_VAL_TRUE            (0x1U)
 #define VIM_PRIIRQ_VALID_VAL_FALSE           (0x0U)
-
 #define VIM_PRIIRQ_PRI_MASK                  (0x000F0000U)
-#define VIM_PRIIRQ_PRI_SHIFT                 (0x00000010U)
-#define VIM_PRIIRQ_PRI_RESETVAL              (0x00000000U)
-#define VIM_PRIIRQ_PRI_MAX                   (BIT_MASK(4))
-
 #define VIM_PRIIRQ_NUM_MASK                  (BIT_MASK(10))
-#define VIM_PRIIRQ_NUM_SHIFT                 (0x00000000U)
-#define VIM_PRIIRQ_NUM_RESETVAL              (0x00000000U)
-#define VIM_PRIIRQ_NUM_MAX                   (BIT_MASK(10))
-
-#define VIM_PRIIRQ_RESETVAL                  (0x00000000U)
 
 /* PRIFIQ */
-
 #define VIM_PRIFIQ_VALID_MASK                (0x80000000U)
-#define VIM_PRIFIQ_VALID_SHIFT               (BIT_MASK(5))
-#define VIM_PRIFIQ_VALID_RESETVAL            (0x00000000U)
-#define VIM_PRIFIQ_VALID_MAX                 (0x00000001U)
-
 #define VIM_PRIFIQ_VALID_VAL_TRUE            (0x1U)
 #define VIM_PRIFIQ_VALID_VAL_FALSE           (0x0U)
-
 #define VIM_PRIFIQ_PRI_MASK                  (0x000F0000U)
-#define VIM_PRIFIQ_PRI_SHIFT                 (0x00000010U)
-#define VIM_PRIFIQ_PRI_RESETVAL              (0x00000000U)
-#define VIM_PRIFIQ_PRI_MAX                   (BIT_MASK(4))
-
 #define VIM_PRIFIQ_NUM_MASK                  (BIT_MASK(10))
-#define VIM_PRIFIQ_NUM_SHIFT                 (0x00000000U)
-#define VIM_PRIFIQ_NUM_RESETVAL              (0x00000000U)
-#define VIM_PRIFIQ_NUM_MAX                   (BIT_MASK(10))
-
-#define VIM_PRIFIQ_RESETVAL                  (0x00000000U)
 
 /* IRQGSTS */
-
-#define VIM_IRQGSTS_STS_MASK                 (BIT_MASK(32))
-#define VIM_IRQGSTS_STS_SHIFT                (0x00000000U)
-#define VIM_IRQGSTS_STS_RESETVAL             (0x00000000U)
-#define VIM_IRQGSTS_STS_MAX                  (BIT_MASK(32))
-
-#define VIM_IRQGSTS_RESETVAL                 (0x00000000U)
+#define VIM_IRQGSTS_STS_MASK                 (BIT64_MASK(32))
 
 /* FIQGSTS */
-
-#define VIM_FIQGSTS_STS_MASK                 (BIT_MASK(32))
-#define VIM_FIQGSTS_STS_SHIFT                (0x00000000U)
-#define VIM_FIQGSTS_STS_RESETVAL             (0x00000000U)
-#define VIM_FIQGSTS_STS_MAX                  (BIT_MASK(32))
-
-#define VIM_FIQGSTS_RESETVAL                 (0x00000000U)
+#define VIM_FIQGSTS_STS_MASK                 (BIT64_MASK(32))
 
 /* IRQVEC */
-
 #define VIM_IRQVEC_ADDR_MASK                 (0xFFFFFFFCU)
-#define VIM_IRQVEC_ADDR_SHIFT                (0x00000002U)
-#define VIM_IRQVEC_ADDR_RESETVAL             (0x00000000U)
-#define VIM_IRQVEC_ADDR_MAX                  (BIT_MASK(30))
-
-#define VIM_IRQVEC_RESETVAL                  (0x00000000U)
 
 /* FIQVEC */
-
 #define VIM_FIQVEC_ADDR_MASK                 (0xFFFFFFFCU)
-#define VIM_FIQVEC_ADDR_SHIFT                (0x00000002U)
-#define VIM_FIQVEC_ADDR_RESETVAL             (0x00000000U)
-#define VIM_FIQVEC_ADDR_MAX                  (BIT_MASK(30))
-
-#define VIM_FIQVEC_RESETVAL                  (0x00000000U)
 
 /* ACTIRQ */
-
 #define VIM_ACTIRQ_VALID_MASK                (0x80000000U)
-#define VIM_ACTIRQ_VALID_SHIFT               (BIT_MASK(5))
-#define VIM_ACTIRQ_VALID_RESETVAL            (0x00000000U)
-#define VIM_ACTIRQ_VALID_MAX                 (0x00000001U)
-
 #define VIM_ACTIRQ_VALID_VAL_TRUE            (0x1U)
 #define VIM_ACTIRQ_VALID_VAL_FALSE           (0x0U)
-
 #define VIM_ACTIRQ_PRI_MASK                  (0x000F0000U)
-#define VIM_ACTIRQ_PRI_SHIFT                 (0x00000010U)
-#define VIM_ACTIRQ_PRI_RESETVAL              (0x00000000U)
-#define VIM_ACTIRQ_PRI_MAX                   (BIT_MASK(4))
-
 #define VIM_ACTIRQ_NUM_MASK                  (BIT_MASK(10))
-#define VIM_ACTIRQ_NUM_SHIFT                 (0x00000000U)
-#define VIM_ACTIRQ_NUM_RESETVAL              (0x00000000U)
-#define VIM_ACTIRQ_NUM_MAX                   (BIT_MASK(10))
-
-#define VIM_ACTIRQ_RESETVAL                  (0x00000000U)
 
 /* ACTFIQ */
-
 #define VIM_ACTFIQ_VALID_MASK                (0x80000000U)
-#define VIM_ACTFIQ_VALID_SHIFT               (BIT_MASK(5))
-#define VIM_ACTFIQ_VALID_RESETVAL            (0x00000000U)
-#define VIM_ACTFIQ_VALID_MAX                 (0x00000001U)
-
 #define VIM_ACTFIQ_VALID_VAL_TRUE            (0x1U)
 #define VIM_ACTFIQ_VALID_VAL_FALSE           (0x0U)
-
 #define VIM_ACTFIQ_PRI_MASK                  (0x000F0000U)
-#define VIM_ACTFIQ_PRI_SHIFT                 (0x00000010U)
-#define VIM_ACTFIQ_PRI_RESETVAL              (0x00000000U)
-#define VIM_ACTFIQ_PRI_MAX                   (BIT_MASK(4))
-
 #define VIM_ACTFIQ_NUM_MASK                  (BIT_MASK(10))
-#define VIM_ACTFIQ_NUM_SHIFT                 (0x00000000U)
-#define VIM_ACTFIQ_NUM_RESETVAL              (0x00000000U)
-#define VIM_ACTFIQ_NUM_MAX                   (BIT_MASK(10))
-
-#define VIM_ACTFIQ_RESETVAL                  (0x00000000U)
 
 /* DEDVEC */
-
 #define VIM_DEDVEC_ADDR_MASK                 (0xFFFFFFFCU)
-#define VIM_DEDVEC_ADDR_SHIFT                (0x00000002U)
-#define VIM_DEDVEC_ADDR_RESETVAL             (0x00000000U)
-#define VIM_DEDVEC_ADDR_MAX                  (BIT_MASK(30))
-
-#define VIM_DEDVEC_RESETVAL                  (0x00000000U)
 
 /*
  * VIM Driver Interface Functions
