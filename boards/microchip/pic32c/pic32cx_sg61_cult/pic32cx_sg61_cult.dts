@@ -60,9 +60,15 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW1";
+			gpios = <&portd 00 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 1";
 			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&portd 01 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
@@ -214,6 +220,10 @@
 };
 
 &portc {
+	status = "okay";
+};
+
+&portd {
 	status = "okay";
 };
 
