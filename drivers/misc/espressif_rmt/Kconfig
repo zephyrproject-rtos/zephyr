@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Joel Guittet (joelguittet@gmail.com)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ESPRESSIF_RMT
+	bool "Espressif RMT driver"
+	help
+	  Enable config options for Espressif RMT driver.
+
+if ESPRESSIF_RMT
+
+config ESPRESSIF_RMT_INIT_PRIORITY
+	int "Espressir RMT init priority"
+	default 90
+	help
+	  Espressif RMT driver initialization priority in POST_KERNEL.
+
+module = ESPRESSIF_RMT
+module-str = espressif_rmt
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ESPRESSIF_RMT
