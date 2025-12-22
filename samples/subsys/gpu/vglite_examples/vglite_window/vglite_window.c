@@ -15,11 +15,11 @@
 #include <zephyr/kernel.h>
 
 #if USE_PSRAM_FRAMEBUFFER == 0
-__aligned(FRAME_BUFFER_ALIGN) static uint8_t s_frameBufferAddress[APP_BUFFER_COUNT][720 * 1280 * 2];
+__aligned(FRAME_BUFFER_ALIGN) static uint8_t s_frameBufferAddress[APP_BUFFER_COUNT][FRAME_BUFFER_SIZE];
 
 #else
-__aligned(128) __section(".lvgl_buf") uint8_t framebuffer0[720 * 1280 * 2];
-__aligned(128) __section(".lvgl_buf") uint8_t framebuffer1[720 * 1280 * 2];
+__aligned(128) __section(".lvgl_buf") uint8_t framebuffer0[FRAME_BUFFER_SIZE];
+__aligned(128) __section(".lvgl_buf") uint8_t framebuffer1[FRAME_BUFFER_SIZE];
 static const uint32_t s_frameBufferAddress[APP_BUFFER_COUNT] = {
 	framebuffer0,
 #if APP_BUFFER_COUNT > 1
