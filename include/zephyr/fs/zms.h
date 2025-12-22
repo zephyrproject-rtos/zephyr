@@ -92,6 +92,7 @@ typedef uint32_t zms_id_t;
  * @brief Mount a ZMS file system onto the device specified in `fs`.
  *
  * @param fs Pointer to the file system.
+ * @param wipe_on_failure If true, the partition will be wiped if mounting fails the first time.
  *
  * @retval 0 on success.
  * @retval -ENOTSUP if the detected file system is not ZMS.
@@ -100,7 +101,7 @@ typedef uint32_t zms_id_t;
  * @retval -ENXIO if there is a device error.
  * @retval -EIO if there is a memory read/write error.
  */
-int zms_mount(struct zms_fs *fs);
+int zms_mount(struct zms_fs *fs, bool wipe_on_failure);
 
 /**
  * @brief Clear the ZMS file system from device. The ZMS file system must be re-mounted after this
