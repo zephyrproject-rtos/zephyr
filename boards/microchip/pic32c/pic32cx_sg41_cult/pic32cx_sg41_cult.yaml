@@ -12,6 +12,7 @@ ram: 256
 supported:
   - clock_control
   - comparator
+  - counter
   - dma
   - flash
   - gpio
