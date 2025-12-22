@@ -72,6 +72,7 @@ struct mcux_tpm_capture_data {
 	bool first_chan_captured;
 	bool pulse_capture;
 	bool continuous_capture;
+	bool capture_active;
 };
 #endif /* CONFIG_PWM_CAPTURE */
 
@@ -95,7 +96,6 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 	TPM_Type *base = TPM_TYPE_BASE(dev, base);
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t pair = TPM_WHICH_PAIR(channel);
-	uint32_t irqs;
 #endif /* CONFIG_PWM_CAPTURE */
 
 	if (channel >= config->channel_count) {
@@ -113,15 +113,14 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 #ifdef CONFIG_PWM_CAPTURE
-	irqs = TPM_GetEnabledInterrupts(base);
-	if (irqs & BIT(TPM_PAIR_SECOND_CH(pair))) {
-		LOG_ERR("Cannot set PWM, capture in progress on pair %d", pair);
+	if (data->capture[pair].capture_active) {
+		LOG_ERR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
 
 	LOG_DBG("pulse_cycles=%d, period_cycles=%d, flags=%d", pulse_cycles, period_cycles, flags);
-
+	/* Set up PWM mode if not already configured */
 	if (period_cycles != data->period_cycles) {
 		uint32_t pwm_freq;
 		status_t status;
@@ -151,9 +150,9 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 
 		/* Set counter back to zero */
 		base->CNT = 0;
-
-		status = TPM_SetupPwm(base, data->channel,
-				      config->channel_count, config->mode,
+		/* Only set up PWM for specific channel */
+		status = TPM_SetupPwm(base, &data->channel[channel],
+				      1U, config->mode,
 				      pwm_freq, data->clock_freq);
 
 		if (status != kStatus_Success) {
@@ -161,6 +160,10 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			return -ENOTSUP;
 		}
 		TPM_StartTimer(base, config->tpm_clock_source);
+	} else {
+		/* Enable channel in PWM mode with existing configuration */
+		TPM_EnableChannel(base, channel, kTPM_ChnlMSBMask | (base->CONTROLS[channel].CnSC &
+			(TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)));
 	}
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0 &&
@@ -188,7 +191,7 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 				      pwm_capture_callback_handler_t cb,
 				      void *user_data)
 {
-	TPM_Type *base = TPM_TYPE_BASE(dev, base);
+	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
 	tpm_dual_edge_capture_param_t *param;
 	uint32_t pair = TPM_WHICH_PAIR(channel);
@@ -203,7 +206,7 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((TPM_GetEnabledInterrupts(base) & BIT(TPM_PAIR_SECOND_CH(pair))) != 0) {
+	if (data->capture[pair].capture_active) {
 		LOG_ERR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
@@ -255,6 +258,7 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 
 static int mcux_tpm_enable_capture(const struct device *dev, uint32_t channel)
 {
+	const struct mcux_tpm_config *config = dev->config;
 	TPM_Type *base = TPM_TYPE_BASE(dev, base);
 	struct mcux_tpm_data *data = dev->data;
 	uint32_t pair = TPM_WHICH_PAIR(channel);
@@ -274,10 +278,12 @@ static int mcux_tpm_enable_capture(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	if ((TPM_GetEnabledInterrupts(base) & BIT(TPM_PAIR_SECOND_CH(pair))) != 0) {
+	if (data->capture[pair].capture_active) {
 		LOG_ERR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
+
+	data->capture[pair].capture_active = true;
 
 	TPM_ClearStatusFlags(base, BIT(TPM_PAIR_FIRST_CH(pair)) |
 			     BIT(TPM_PAIR_SECOND_CH(pair)));
@@ -306,6 +312,8 @@ static int mcux_tpm_disable_capture(const struct device *dev, uint32_t channel)
 		LOG_ERR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
+
+	data->capture[pair].capture_active = false;
 
 	TPM_DisableInterrupts(base, BIT(TPM_PAIR_FIRST_CH(pair)) |
 			      BIT(TPM_PAIR_SECOND_CH(pair)));
@@ -571,6 +579,7 @@ static int mcux_tpm_init(const struct device *dev)
 
 #ifdef CONFIG_PWM_CAPTURE
 	config->irq_config_func(dev);
+	memset(data->capture, 0, sizeof(data->capture));
 	TPM_EnableInterrupts(base, kTPM_TimeOverflowInterruptEnable);
 	data->period_cycles = 0xFFFFU;
 	TPM_SetTimerPeriod(base, data->period_cycles);
