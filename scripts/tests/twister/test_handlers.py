@@ -759,6 +759,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial_pty=None,
                 serial=None,
+                use_rtt=False,
                 available=1,
                 failures=0,
                 counter_increment=mock.Mock(),
@@ -810,6 +811,7 @@ TESTDATA_10 = [
                 platform='dummy_platform',
                 serial_pty=None,
                 serial=None,
+                use_rtt=False,
                 available=1,
                 failures=0,
                 counter_increment=mock.Mock(),
@@ -1198,7 +1200,7 @@ def test_devicehandler_create_command(
         runner_params=['param1', 'param2']
     )
 
-    command = handler._create_command(runner, hardware)
+    command = handler._create_flash_command(runner, hardware)
 
     assert command == expected
 
@@ -1346,7 +1348,7 @@ def test_devicehandler_start_serial_pty(
     popen_mock = mock.Mock(side_effect=mock_popen)
 
     with mock.patch('subprocess.Popen', popen_mock):
-        result = handler._start_serial_pty(serial_pty, 'master')
+        result = handler._start_pty(serial_pty, 'master')
 
     if popen_exception:
         assert result is None
@@ -1367,8 +1369,8 @@ TESTDATA_17 = [
     (True, False, False, False, 0, True, False,
      TwisterStatus.NONE, None, ['Timed out while monitoring serial output on IPName']),
     (True, False, False, False, 0, False, True,
-     TwisterStatus.NONE, None, ["Terminating serial-pty:'Serial PTY'",
-                                "Terminated serial-pty:'Serial PTY', stdout:'', stderr:''"]),
+     TwisterStatus.NONE, None, ["Terminating pty:'slave name'",
+                                "Terminated pty:'slave name', stdout:'', stderr:''"]),
 ]
 
 @pytest.mark.parametrize(
@@ -1439,6 +1441,7 @@ def test_devicehandler_handle(
         runner='dummy runner',
         serial_pty='Serial PTY' if use_pty else None,
         serial='dummy serial',
+        use_rtt=False,
         pre_script='dummy pre script',
         post_script='dummy post script',
         post_flash_script='dummy post flash script',
@@ -1454,8 +1457,8 @@ def test_devicehandler_handle(
         west_runner=None,
         verbose=0
     )
-    handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
-    handler._create_command = mock.Mock(return_value=['dummy', 'command'])
+    handler._start_pty = mock.Mock(side_effect=mock_start_serial_pty)
+    handler._create_flash_command = mock.Mock(return_value=['dummy', 'command'])
     handler.run_custom_script = mock.Mock()
     handler._create_serial_connection = mock.Mock(
         side_effect=mock_create_serial

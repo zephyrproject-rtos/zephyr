@@ -179,8 +179,10 @@ Artificially long but functional example:
 
     run_group_option.add_argument(
         "--device-testing", action="store_true",
-        help="Test on device directly. Specify the serial device to "
-             "use with the --device-serial option.")
+        help="Test on device directly. Specify the serial device to use with "
+            "the --device-serial option or specify script to use with the "
+            "--device-serial-pty or specify to use with --device-rtt option.")
+
 
     parser.add_argument("--pre-script",
                         help="""specify a pre script. This will be executed
@@ -203,6 +205,15 @@ Artificially long but functional example:
 
                         E.g "twister --device-testing
                         --device-serial-pty <script>
+                        """)
+
+    device.add_argument("--device-rtt", action="store_true", default=False,
+                        help="""Use RTT as communication transport.
+                        Instead of using serial console, Twister will connect to the
+                        device with "west rtt" command to capture logs and interact with
+                        the test application. Setting this option automatically sets
+                        --flash-before option, as we can connect to the device only
+                        after it was flashed.
                         """)
 
     run_group_option.add_argument("--generate-hardware-map",
@@ -960,20 +971,23 @@ def parse_arguments(
 
     if (
         (not options.device_testing)
-        and (options.device_serial or options.device_serial_pty or options.hardware_map)
+        and (options.device_serial or options.device_serial_pty or options.device_rtt or
+             options.hardware_map)
     ):
         logger.error(
-            "Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map."
+            "Use --device-testing with --device-serial, or --device-serial-pty, or "
+            "--device-rtt, or --hardware-map."
         )
         sys.exit(1)
 
     if (
         options.device_testing
-        and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1
+        and (options.device_serial or options.device_serial_pty or
+             options.device_rtt) and len(options.platform) != 1
     ):
         logger.error("When --device-testing is used with --device-serial "
-                     "or --device-serial-pty, exactly one platform must "
-                     "be specified")
+                     "or --device-serial-pty, or --device-rtt, "
+                     "exactly one platform must be specified")
         sys.exit(1)
 
     if options.device_flash_with_test and not options.device_testing:

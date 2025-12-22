@@ -32,6 +32,12 @@ sequence:
         required: false
         sequence:
           - type: str
+      "rtt_runner":
+        type: str
+        required: false
+      "rtt":
+        type: bool
+        required: false
       "serial_pty":
         type: str
         required: false

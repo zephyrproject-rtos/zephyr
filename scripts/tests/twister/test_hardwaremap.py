@@ -249,7 +249,8 @@ def test_hardwaremap_add_device(is_pty):
     serial = 'dummy'
     platform = 'p0'
     pre_script = 'dummy pre script'
-    hm.add_device(serial, platform, pre_script, is_pty)
+    uses_rtt = False
+    hm.add_device(serial, platform, pre_script, is_pty, uses_rtt)
 
     assert len(hm.duts) == 1
     if is_pty:
@@ -682,11 +683,11 @@ TESTDATA_6 = [
         True,
         True,
 """
-| Platform   |   ID | Serial device   |
-|------------|------|-----------------|
-| p1         |    1 | s1              |
-| p3         |    3 | s3              |
-| p5         |    5 | s5              |
+| Platform   |   ID | Communication type   |
+|------------|------|----------------------|
+| p1         |    1 | Serial: s1           |
+| p3         |    3 | Serial: s3           |
+| p5         |    5 | Serial: s5           |
 """
     ),
     (
@@ -695,16 +696,16 @@ TESTDATA_6 = [
         False,
         False,
 """
-| ?   |   ?? | ???   |
-|-----|------|-------|
-| p1  |    1 | s1    |
-| p2  |    2 | s2    |
-| p3  |    3 | s3    |
-| p4  |    4 | s4    |
-| p5  |    5 | s5    |
-| p6  |    6 | s6    |
-| p7  |    7 | s7    |
-| p8  |    8 | s8    |
+| ?   |   ?? | ???        |
+|-----|------|------------|
+| p1  |    1 | Serial: s1 |
+| p2  |    2 | Serial: s2 |
+| p3  |    3 | Serial: s3 |
+| p4  |    4 | Serial: s4 |
+| p5  |    5 | Serial: s5 |
+| p6  |    6 | Serial: s6 |
+| p7  |    7 | Serial: s7 |
+| p8  |    8 | Serial: s8 |
 """
     ),
 ]
