@@ -16,3 +16,4 @@ config SOC_SERIES_RA8T1
 	select SOC_EARLY_INIT_HOOK
 	select GPIO_RA_HAS_VBTICTLR
 	select HAS_PM
+	select ARM_MPU
