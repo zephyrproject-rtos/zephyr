@@ -184,6 +184,10 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
 
+* Tracing
+
+  * :c:macro:`sys_trace_set_state` to set tracing state (i.e. enable/disable) from application
+
 .. zephyr-keep-sorted-stop
 
 New Boards
