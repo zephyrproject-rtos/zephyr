@@ -281,7 +281,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/libs/tiny_ttf/lv_tiny_ttf.c
     ${LVGL_DIR}/src/libs/tjpgd/lv_tjpgd.c
     ${LVGL_DIR}/src/libs/tjpgd/tjpgd.c
-    ${LVGL_DIR}/src/libs/vg_lite_driver/lv_vg_lite_hal/lv_vg_lite_hal.c
+    ${LVGL_DIR}/src/libs/vg_lite_driver/lv_vg_lite_hal/vg_lite_os.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLiteKernel/vg_lite_kernel.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLite/vg_lite.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLite/vg_lite_image.c
@@ -470,8 +470,9 @@ zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_INPUT input/lvgl_pointer_input.
 zephyr_library_sources_ifdef(CONFIG_LV_Z_BUTTON_INPUT input/lvgl_button_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_ENCODER_INPUT input/lvgl_encoder_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_KEYPAD_INPUT input/lvgl_keypad_input.c)
-zephyr_library_sources_ifdef(CONFIG_LV_USE_GPU_VG_LITE lvgl_vg_lite_zephyr.c)
 
+zephyr_library_sources_ifdef(CONFIG_LV_USE_GPU_VG_LITE gpus/lvgl_vg_lite_hal_zephyr.c)
+zephyr_library_sources_ifdef(CONFIG_LV_USE_GPU_VG_LITE gpus/lvgl_vg_lite_hal_stubs.c)
 
 zephyr_library_link_libraries(LVGL)
 target_link_libraries(LVGL INTERFACE zephyr_interface)

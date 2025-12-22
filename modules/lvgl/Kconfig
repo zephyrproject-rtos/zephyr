@@ -213,19 +213,26 @@ config LV_USE_GPU_NXP_PXP
 	bool
 	default y if LV_USE_PXP
 
-config LV_USE_DRAW_VG_LITE
-	bool
-
-config CONFIG_LV_USE_GPU_VG_LITE
-	bool
-	default y if LV_USE_DRAW_VG_LITE
-
 config LV_Z_PXP_INTERRUPT_PRIORITY
 	int "PXP interrupt priority"
 	depends on LV_USE_PXP
 	default 3
 	help
 	  Sets the interrupt priority for PXP
+
+config LV_USE_DRAW_VG_LITE
+	bool
+
+config LV_USE_GPU_VG_LITE
+	bool
+	default y if LV_USE_DRAW_VG_LITE
+
+config LV_Z_VG_LITE_INTERRUPT_PRIORITY
+	int "VG Lite interrupt priority"
+	depends on LV_USE_DRAW_VG_LITE
+	default 3
+	help
+	  Sets the interrupt priority for VG-Lite driver.
 
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
