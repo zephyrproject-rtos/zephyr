@@ -630,5 +630,16 @@
 			clocks = <&clock ESP32_AES_MODULE>;
 			status = "okay";
 		};
+
+		rmt: rmt@60016000 {
+			compatible = "espressif,esp32-rmt";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60016000 0x1000>;
+			interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_RMT_MODULE>;
+			status = "disabled";
+		};
 	};
 };
