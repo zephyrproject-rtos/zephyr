@@ -21,4 +21,10 @@
 			pinmux = <ULPUART_RX_ULP9>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group {
+			pinmux = <AGPIO_ULP1>;
+		};
+	};
 };

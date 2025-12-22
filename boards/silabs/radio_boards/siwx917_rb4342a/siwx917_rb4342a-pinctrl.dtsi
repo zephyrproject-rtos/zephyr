@@ -32,4 +32,10 @@
 			pinmux = <ULPUART_RX_ULP9>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group {
+			pinmux = <ADC_TOPGPIO_HP28>;
+		};
+	};
 };
