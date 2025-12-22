@@ -34,18 +34,27 @@ jobs:
     if: github.repository_owner == 'AmbiqMicro'
     runs-on: [self-hosted, Linux, zephyr-ci]
     outputs:
-      subset: ${{ steps.output-services.outputs.subset }}
-      size: ${{ steps.output-services.outputs.size }}
+      matrix: ${{ steps.test-plan.outputs.matrix }}
+      size: ${{ steps.test-plan.outputs.size }}
+      first_group: ${{ steps.test-plan.outputs.first_group }}
       fullrun: ${{ steps.output-full-run.outputs.fullrun }}
     env:
-      MATRIX_SIZE: 3
-      PUSH_MATRIX_SIZE: 20
-      WEEKLY_MATRIX_SIZE: 200
       BSIM_OUT_PATH: /data/bsim_west/bsim/
       BSIM_COMPONENTS_PATH: /data/bsim_west/bsim/components
       TESTS_PER_BUILDER: 500
       VENDOR_OPTIONS: ' --vendor ambiq'
-      PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb --platform apollo510b_evb'
+      GROUP_AP5: "apollo510_evb/apollo510 apollo510_eb/apollo510 apollo510b_evb/apollo510b"
+      GROUP_AP4: "apollo4p_blue_kxr_evb/apollo4p_blue apollo4p_evb/apollo4p"
+      GROUP_AP3: "apollo3p_evb/apollo3p_blue apollo3_evb/apollo3_blue"
+      GROUP_AP2: "apollo2_evb/apollo2"
+      RUNNER_AP5: '["self-hosted","Linux","zephyr-ci","ap5"]'
+      RUNNER_AP4: '["self-hosted","Linux","zephyr-ci","ap4"]'
+      RUNNER_AP3: '["self-hosted","Linux","zephyr-ci","ap3"]'
+      RUNNER_BUILD: '["self-hosted","Linux","zephyr-ci"]'
+      RUNNER_AP5_NODES: 3
+      RUNNER_AP4_NODES: 2
+      RUNNER_AP3_NODES: 1
+      RUNNER_BUILD_NODES: 6
     steps:
       - name: Set event variables
         id: set-vars
@@ -60,6 +69,15 @@ jobs:
             else
               echo "BASE_REF=${{ github.event.before }}" >> $GITHUB_ENV
             fi
+          fi
+
+          # Set device testing flag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "MANUAL_DISTR=${{ github.event.inputs.device_test }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "push" ] || [ "${{github.event_name}}" = "schedule" ]; then
+            echo "MANUAL_DISTR=true" >> $GITHUB_ENV
+          else
+            echo "MANUAL_DISTR=false" >> $GITHUB_ENV
           fi
 
       - name: Checkout
@@ -135,6 +153,28 @@ jobs:
           west update --path-cache "${CACHE_DEP}" 2>&1 1> west.update.log || west update --path-cache "${CACHE_DEP}" 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache "${CACHE_DEP}")
           west forall -c 'git reset --hard HEAD'
 
+      - name: Generate Platforms
+        working-directory: zephyr
+        id: test-platforms
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          if [ "$FULLRUN" = "true" ]; then
+            python3 ./scripts/ci/test_plan.py --no-detailed-test-id -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS}
+          else
+            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --no-detailed-test-id --pull-request -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS}
+          fi
+
+          if [ -s testplan.json ]; then
+            PLATFORMS=$(jq -r '.testsuites[].platform' testplan.json | sort -u)
+            echo "PLATFORMS=$PLATFORMS"
+            echo "PLATFORMS=${PLATFORMS}" > platforms.txt
+          else
+            echo "Nothing to run"
+          fi
+
+          rm -f testplan.json .testplan
+
       - name: Generate Test Plan with Twister
         env:
           FULLRUN: ${{ steps.output-full-run.outputs.fullrun }}
@@ -143,39 +183,84 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          if [ "$FULLRUN" = "true" ]; then
-            python3 ./scripts/ci/test_plan.py --no-detailed-test-id -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
-          else
-            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --no-detailed-test-id --pull-request -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+
+          if [ ! -s platforms.txt ]; then
+            echo "Nothing to run"
+            exit 0
           fi
 
-          if [ -s .testplan ]; then
-            TWISTER_NODES=$(grep '^TWISTER_NODES=' .testplan | cut -d= -f2)
-            TWISTER_TESTS=$(grep '^TWISTER_TESTS=' .testplan | cut -d= -f2)
-            if [ "$TWISTER_NODES" -lt 3 ] && [ "$TWISTER_TESTS" -gt 50 ]; then
-              TWISTER_NODES=${MATRIX_SIZE}
+          matrix=()
+          for group in GROUP_AP5 GROUP_AP4 GROUP_AP3; do
+            group_platforms=()
+            for plat in ${!group}; do
+              if grep -qx "$plat" platforms.txt; then
+                group_platforms+=("$plat")
+              fi
+            done
+
+            [ ${#group_platforms[@]} -eq 0 ] && continue
+
+            platforms_json=$(printf '%s\n' "${group_platforms[@]}" | jq -R . | jq -s .)
+            platform_args=$(printf -- ' --platform %s' "${group_platforms[@]}")
+
+            if [ "$FULLRUN" = "true" ]; then
+              python3 ./scripts/ci/test_plan.py --no-detailed-test-id -t $TESTS_PER_BUILDER ${platform_args}
+            else
+              python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --no-detailed-test-id --pull-request -t $TESTS_PER_BUILDER ${platform_args}
             fi
-          else
-            TWISTER_NODES=${MATRIX_SIZE}
-          fi
 
-          echo "TWISTER_NODES=$TWISTER_NODES"
-          echo "TWISTER_NODES=${TWISTER_NODES}" >> $GITHUB_ENV
+            if [ -s .testplan ]; then
+              TWISTER_NODES=$(grep '^TWISTER_NODES=' .testplan | cut -d= -f2)
+              TWISTER_TESTS=$(grep '^TWISTER_TESTS=' .testplan | cut -d= -f2)
+            else
+              echo "No testplan for ${group_platforms[@]}"
+              continue
+            fi
 
-          rm -f testplan.json .testplan
+            if [ "$MANUAL_DISTR" = "false" ]; then
+                runner="$RUNNER_BUILD"
+            else
+              case "$group" in
+                GROUP_AP5)
+                  runner="$RUNNER_AP5"
+                  MAX_NODES=${RUNNER_AP5_NODES}
+                  ;;
+                GROUP_AP4)
+                  runner="$RUNNER_AP4"
+                  MAX_NODES=${RUNNER_AP4_NODES}
+                  ;;
+                GROUP_AP3)
+                  runner="$RUNNER_AP3"
+                  MAX_NODES=${RUNNER_AP3_NODES}
+                  ;;
+              esac
+              if [ "$TWISTER_TESTS" -gt $(( TESTS_PER_BUILDER / 2 )) ]; then
+                TWISTER_NODES=${MAX_NODES}
+              fi
+            fi
 
-      - name: Determine matrix size
-        id: output-services
-        run: |
-          if [ -n "${TWISTER_NODES}" ]; then
-            subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
-          else
-            subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
-          fi
-          size=${TWISTER_NODES}
+            if [ "$TWISTER_NODES" -lt 1 ]; then
+              TWISTER_NODES=1
+            fi
 
-          echo "subset=${subset}" >> $GITHUB_OUTPUT
-          echo "size=${size}" >> $GITHUB_OUTPUT
+            # Add one matrix entry per chunk
+            for i in $(seq 1 $TWISTER_NODES); do
+              matrix+=("{\"group\":\"$group\",\"platforms\":$platforms_json,\"runner\":$runner,\"subset\":$i,\"total\":$TWISTER_NODES}")
+            done
+
+            rm -f testplan.json .testplan
+
+          done
+
+          json=$(printf '%s\n' "${matrix[@]}" | jq -s .)
+          first_group=$(echo "$json" | jq -r '.[0].group // empty')
+          {
+            echo "matrix<<EOF"
+            echo "$json"
+            echo "EOF"
+            echo "size=${#matrix[@]}"
+            echo "first_group=${first_group}"
+          } >> "$GITHUB_OUTPUT"
 
   twister-build:
     runs-on: [self-hosted, Linux, zephyr-ci]
@@ -184,7 +269,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
+        job: ${{ fromJSON(needs.twister-build-prep.outputs.matrix) }}
+    name: twister-build (${{ matrix.job.group }} ${{ matrix.job.subset }})
     timeout-minutes: 1440
     env:
       CCACHE_DIR: $HOME/.cache/ccache-zephyr
@@ -199,8 +285,8 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 12'
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
       VENDOR_OPTIONS: ' --vendor ambiq'
-      PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb --platform apollo510_evb'
-      TEST_OPTIONS: '--west-flash --enable-slow --device-testing --hardware-map ${{ github.workspace }}/../../map.yml'
+      PLATFORM_LIST: ${{ join(matrix.job.platforms, ' ') }}
+      TEST_OPTIONS: ' --west-flash --enable-slow --device-testing --hardware-map ${{ github.workspace }}/../../map.yml'
       FULLRUN: ${{ needs.twister-build-prep.outputs.fullrun }}
     steps:
       - name: Set event variables
@@ -226,6 +312,10 @@ jobs:
           else
             echo "DEVICE_TESTING=false" >> $GITHUB_ENV
           fi
+
+          platforms=($PLATFORM_LIST)
+          PLATFORM_OPTIONS=$(printf -- ' --platform %s' "${platforms[@]}")
+          echo "PLATFORM_OPTIONS=$PLATFORM_OPTIONS" >> $GITHUB_ENV
 
       - name: Checkout
         run: |
@@ -309,12 +399,12 @@ jobs:
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 
           if [ "$FULLRUN" = "true" ] && [ "${{github.event_name}}" = "workflow_dispatch" ]; then
-            python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${PLATFORM_OPTIONS}
           else
-            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --pull-request --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --pull-request --no-detailed-test-id ${PLATFORM_OPTIONS}
           fi
 
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PUSH_OPTIONS} ${TEST_OPTIONS}
+          ./scripts/twister --subset ${{ matrix.job.subset }}/${{ matrix.job.total }} --load-tests testplan.json ${TWISTER_COMMON} ${PUSH_OPTIONS} ${TEST_OPTIONS}
 
       - if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && env.DEVICE_TESTING != 'true') }}
         name: Run Tests with Twister (Pull Request)
@@ -326,12 +416,12 @@ jobs:
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 
           if [ "$FULLRUN" = "true" ] && [ "${{github.event_name}}" = "workflow_dispatch" ]; then
-            python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${PLATFORM_OPTIONS}
           else
-            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --pull-request --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --pull-request --no-detailed-test-id ${PLATFORM_OPTIONS}
           fi
 
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
+          ./scripts/twister --subset ${{ matrix.job.subset }}/${{ matrix.job.total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
 
       - if: ${{ github.event_name == 'schedule' }}
         name: Run Tests with Twister (Weekly)
@@ -340,9 +430,9 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${WEEKLY_OPTIONS} ${TEST_OPTIONS}
-          if [ "${{matrix.subset}}" = "1" ]; then
+          python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${PLATFORM_OPTIONS}
+          ./scripts/twister --subset ${{ matrix.job.subset }}/${{ matrix.job.total }} --load-tests testplan.json ${TWISTER_COMMON} ${WEEKLY_OPTIONS} ${TEST_OPTIONS}
+          if [ "${{ matrix.job.subset }}" = "1" ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
             if [ -s module_tests.args ]; then
               ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${WEEKLY_OPTIONS} ${TEST_OPTIONS}
@@ -358,7 +448,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: Unit Test Results (Subset ${{ matrix.subset }})
+          name: Unit Test Results ${{ matrix.job.group }}(Subset ${{ matrix.job.subset }})
           if-no-files-found: ignore
           path: |
             zephyr/twister-out/twister.xml
@@ -366,7 +456,7 @@ jobs:
             zephyr/module_tests/twister.xml
             zephyr/testplan.json
 
-      - if: matrix.subset == 1 && github.event_name == 'push'
+      - if: ${{ matrix.job.subset == 1 && github.event_name == 'push' && matrix.job.group == needs.twister-build-prep.outputs.first_group }}
         name: Save the list of Python packages
         shell: bash
         working-directory: zephyr
@@ -377,7 +467,7 @@ jobs:
           echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
           pip freeze | tee -a $FREEZE_FILE
 
-      - if: matrix.subset == 1 && github.event_name == 'push'
+      - if: ${{ matrix.job.subset == 1 && github.event_name == 'push' && matrix.job.group == needs.twister-build-prep.outputs.first_group }}
         name: Upload the list of Python packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
