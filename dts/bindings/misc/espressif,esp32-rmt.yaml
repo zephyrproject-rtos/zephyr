@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Espressif Remote Control Transceiver (RMT)
+
+    The RMT (Remote Control Transceiver) peripheral was designed to act as an infrared transceiver.
+    However, due to the flexibility of its data format, RMT can be extended to a versatile and
+    general-purpose transceiver, transmitting or receiving many other types of signals.
+
+    pinctrl is used to configure RMT channels and GPIO to be used.
+    When using ESP32 or ESP32S2 series, each RMT channel should be used once (eg. RMT_OUT0_GPIOxx
+    and RMT_IN0_GPIOxx can't be used at the same time, etc.). An error is displayed when trying to
+    create channels whith such configuration.
+    This limitation is due to the number of channels available. See
+    `SOC_RMT_TX_CANDIDATES_PER_GROUP`, `SOC_RMT_RX_CANDIDATES_PER_GROUP` and
+    `SOC_RMT_CHANNELS_PER_GROUP` for more details.
+
+    DMA feature is available only on ESP32S3 and with only one "tx" and one "rx" DMA channels
+    available. DMA channels are optional. Using DMA channels is activated configuring DMA channels
+    in the RMT peripheral and configuring pinctrl to use DMA capable RMT channels
+    (eg. RMT_OUT3_GPIOxx and RMT_OUT3_GPIOxx on ESP32S3).
+
+    Here is an example ESP32 configuration with a RMT device:
+
+    &pinctrl {
+      rmt_default: rmt_default {
+        group1 {
+          pinmux = <RMT_OUT3_GPIO13>;
+        };
+
+        group2 {
+          pinmux = <RMT_IN3_GPIO12>;
+        };
+      };
+    };
+
+    rmt: rmt@60016000 {
+        compatible = "espressif,esp32-rmt";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        reg = <0x60016000 0x1000>;
+        pinctrl-0 = <&rmt_default>;
+        pinctrl-names = "default";
+        dmas = <&dma 8>, <&dma 9>;
+        dma-names = "rx", "tx";
+        interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+        interrupt-parent = <&intc>;
+        clocks = <&clock ESP32_RMT_MODULE>;
+        status = "okay";
+    };
+
+compatible: "espressif,esp32-rmt"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: "espressif,esp32-rmt"
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-parent:
+    required: true
