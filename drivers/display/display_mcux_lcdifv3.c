@@ -254,7 +254,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 	lcdifv3_buffer_config_t buffer_config = config->buffer_config;
 	lcdifv3_display_config_t display_config = config->display_config;
 	/* Set the Pixel format */
-	if (config->pixel_format == PIXEL_FORMAT_BGR_565) {
+	if (config->pixel_format == PIXEL_FORMAT_RGB_565X) {
 		buffer_config.pixelFormat = kLCDIFV3_PixelFormatRGB565;
 	} else if (config->pixel_format == PIXEL_FORMAT_RGB_888) {
 		buffer_config.pixelFormat = kLCDIFV3_PixelFormatRGB888;
@@ -289,7 +289,7 @@ static const struct display_driver_api mcux_lcdifv3_api = {
 
 #define GET_PIXEL_FORMAT(id)                                                                       \
 	((DT_INST_ENUM_IDX(id, pixel_format) == 0)                                                 \
-		 ? PIXEL_FORMAT_BGR_565                                                            \
+		 ? PIXEL_FORMAT_RGB_565X                                                           \
 		 : ((DT_INST_ENUM_IDX(id, pixel_format) == 1) ? PIXEL_FORMAT_RGB_888               \
 							      : PIXEL_FORMAT_ARGB_8888))
 

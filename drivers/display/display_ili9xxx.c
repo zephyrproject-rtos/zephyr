@@ -294,7 +294,7 @@ ili9xxx_set_pixel_format(const struct device *dev,
 	uint8_t tx_data;
 	uint8_t bytes_per_pixel;
 
-	if (pixel_format == PIXEL_FORMAT_RGB_565  || pixel_format == PIXEL_FORMAT_BGR_565) {
+	if (pixel_format == PIXEL_FORMAT_RGB_565  || pixel_format == PIXEL_FORMAT_RGB_565X) {
 		bytes_per_pixel = 2U;
 		tx_data = ILI9XXX_PIXSET_MCU_16_BIT | ILI9XXX_PIXSET_RGB_16_BIT;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
@@ -323,7 +323,7 @@ static int ili9xxx_set_orientation(const struct device *dev,
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
-	uint8_t tx_data = data->pixel_format == PIXEL_FORMAT_BGR_565
+	uint8_t tx_data = data->pixel_format == PIXEL_FORMAT_RGB_565X
 			? ILI9XXX_MADCTL_BGR : 0;
 	if (config->quirks->cmd_set == CMD_SET_1) {
 		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
@@ -368,7 +368,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_BGR_565;
+		PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_RGB_565X;
 	capabilities->current_pixel_format = data->pixel_format;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
@@ -394,8 +394,8 @@ static int ili9xxx_configure(const struct device *dev)
 	/* pixel format */
 	if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565) {
 		pixel_format = PIXEL_FORMAT_RGB_565;
-	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_BGR_565) {
-		pixel_format = PIXEL_FORMAT_BGR_565;
+	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_565X) {
+		pixel_format = PIXEL_FORMAT_RGB_565X;
 	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_888) {
 		pixel_format = PIXEL_FORMAT_RGB_888;
 	} else {
