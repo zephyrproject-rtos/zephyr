@@ -70,6 +70,8 @@ New APIs and options
 
 * :c:func:`lora_recv_duty_cycle_async`
 
+* :c:macro:`sys_trace_set_state` to set tracing state (i.e. enable/disable) from application dynamically at runtime.
+
 .. zephyr-keep-sorted-stop
 
 New Boards
