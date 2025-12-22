@@ -22,8 +22,7 @@ config COUNTER_RTC_WITH_PPI_WRAP
 		 $(dt_nodelabel_bool_prop,rtc1,ppi-wrap) || \
 		 $(dt_nodelabel_bool_prop,rtc2,ppi-wrap)
 	depends on COUNTER_NRF_RTC
-	select NRFX_PPI if HAS_HW_NRF_PPI
-	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+	select NRFX_GPPI
 
 # Internal flag which detects if fixed top feature is enabled for any instance
 config COUNTER_RTC_CUSTOM_TOP_SUPPORT

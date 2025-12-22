@@ -119,12 +119,15 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 			return -EINVAL;
 		}
 		status->twt_capable = false;
-		status->link_mode = WIFI_4;
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
-		status->channel = sl_ap_cfg.channel.channel;
+		status->channel = wlan_info.channel_number;
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
+		status->link_mode = WIFI_4;
+		if (status->channel == 14) {
+			status->link_mode = WIFI_1;
+		}
 		wlan_info.sec_type = (uint8_t)sl_ap_cfg.security;
 		memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
 	} else {
@@ -264,9 +267,17 @@ sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 					     sl_wifi_buffer_t *buffer)
 {
 	sl_si91x_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
+	const struct net_eth_hdr *eth = (const struct net_eth_hdr *)si_pkt->data;
 	struct net_if *iface = net_if_get_first_wifi();
+	const struct net_linkaddr *ll = net_if_get_link_addr(iface);
 	struct net_pkt *pkt;
 	int ret;
+
+	/* NWP sometime echoes the Tx frames */
+	if (memcmp(eth->src.addr, ll->addr, sizeof(eth->src.addr)) == 0) {
+		LOG_DBG("Dropped packet (source MAC matches our MAC)");
+		return SL_STATUS_OK;
+	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, buffer->length, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
@@ -443,6 +454,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 {
 	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	sl_wifi_advanced_client_configuration_t client_config = {
+		.max_retry_attempts = 1,
+		.scan_interval = 0,
+		.beacon_missed_count = 0,
+		.first_time_retry_enable = 0,
+	};
 	int ret;
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
@@ -461,6 +478,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {
 		LOG_ERR("Failed to set max tx power:%x", ret);
+		return;
+	}
+
+	ret = sl_wifi_set_advanced_client_configuration(SL_WIFI_CLIENT_INTERFACE, &client_config);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set advanced client config: 0x%x", ret);
 		return;
 	}
 

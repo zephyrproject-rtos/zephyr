@@ -29,7 +29,7 @@ static int parse_common_args(const struct shell *sh, char **argv,
 	char *end_ptr;
 
 	*dev = shell_device_get_binding(argv[arg_idx_dev]);
-	if (!*dev) {
+	if (*dev == NULL) {
 		shell_error(sh,
 			    "LED device %s not found", argv[arg_idx_dev]);
 		return -ENODEV;

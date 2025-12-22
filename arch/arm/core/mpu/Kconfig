@@ -79,6 +79,12 @@ config ARM_MPU_PXN
 	  unprivileged mode and executing such region from privileged mode will
 	  result in a Memory Management fault.
 
+config ARM_MPU_SRAM_WRITE_THROUGH
+	bool "Use Write-Through cache policy for SRAM regions"
+	help
+	  When enabled, SRAM regions will use Write-Through cache policy
+	  instead of the default Write-Back policy.
+
 endif # ARM_MPU
 
 endif # CPU_HAS_MPU

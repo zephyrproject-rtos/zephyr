@@ -283,6 +283,15 @@ int mdm_sim7080_start_gnss(void);
  * @note The modem needs to be booted for this function to work.
  * Concurrent use of network and gnss is not possible.
  * @note If enabling xtra functionality fails a normal cold start will be performed.
+ * @warning On some modem firmware revisions (e.g. 1951B16SIM7080) power cycling the
+ *          gnss functionality with an xtra file can cause a hangup of the modem.
+ *          This can be triggered by calling mdm_sim7080_start_gnss_xtra(),
+ *          then turning off gnss by calling mdm_sim7080_stop_gnss() and then re-enabling gnss
+ *          by calling mdm_sim7080_start_gnss_xtra() again. In this case the modem will not
+ *          respond to commands anymore and every call of a modem function will result in a timeout.
+ *          In this case the whole modem needs to be power cycled by calling mdm_sim7080_power_off()
+ *          and mdm_sim7080_power_on(). It is advised to power cycle the modem before using the gnss
+ *          functionality to avoid hangups.
  */
 int mdm_sim7080_start_gnss_xtra(void);
 

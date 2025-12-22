@@ -1872,15 +1872,15 @@ static int tls_opt_dtls_connection_id_set(struct tls_context *context,
 	value = *((int *)optval);
 
 	switch (value) {
-	case TLS_DTLS_CID_DISABLED:
+	case ZSOCK_TLS_DTLS_CID_DISABLED:
 		context->options.dtls_cid.enabled = false;
 		context->options.dtls_cid.cid_len = 0;
 		break;
-	case TLS_DTLS_CID_SUPPORTED:
+	case ZSOCK_TLS_DTLS_CID_SUPPORTED:
 		context->options.dtls_cid.enabled = true;
 		context->options.dtls_cid.cid_len = 0;
 		break;
-	case TLS_DTLS_CID_ENABLED:
+	case ZSOCK_TLS_DTLS_CID_ENABLED:
 		context->options.dtls_cid.enabled = true;
 		if (context->options.dtls_cid.cid_len == 0) {
 			/* generate random self cid */
@@ -2001,15 +2001,15 @@ static int tls_opt_dtls_connection_id_status_get(struct tls_context *context,
 	have_peer_cid = (cid.cid_len != 0);
 
 	if (!context->options.dtls_cid.enabled) {
-		val = TLS_DTLS_CID_STATUS_DISABLED;
+		val = ZSOCK_TLS_DTLS_CID_STATUS_DISABLED;
 	} else if (have_self_cid && have_peer_cid) {
-		val = TLS_DTLS_CID_STATUS_BIDIRECTIONAL;
+		val = ZSOCK_TLS_DTLS_CID_STATUS_BIDIRECTIONAL;
 	} else if (have_self_cid) {
-		val = TLS_DTLS_CID_STATUS_DOWNLINK;
+		val = ZSOCK_TLS_DTLS_CID_STATUS_DOWNLINK;
 	} else if (have_peer_cid) {
-		val = TLS_DTLS_CID_STATUS_UPLINK;
+		val = ZSOCK_TLS_DTLS_CID_STATUS_UPLINK;
 	} else {
-		val = TLS_DTLS_CID_STATUS_DISABLED;
+		val = ZSOCK_TLS_DTLS_CID_STATUS_DISABLED;
 	}
 
 	*((int *)optval) = val;
@@ -2406,7 +2406,7 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct net_sockaddr *addr,
 		 * even for non-blocking socket.
 		 */
 		ret = tls_mbedtls_handshake(
-			ctx, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
+			ctx, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
 		if (ret < 0) {
 			if ((ret == -EAGAIN) && !is_non_block) {
 				ret = -ETIMEDOUT;
@@ -2468,8 +2468,12 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	 * non-blocking socket.
 	 */
 	ret = tls_mbedtls_handshake(
-		child, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
+		child, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
 	if (ret < 0) {
+		if ((ret == -EAGAIN) && is_blocking(parent->sock, 0)) {
+			ret = -ETIMEDOUT;
+		}
+
 		goto error;
 	}
 

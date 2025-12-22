@@ -19,6 +19,7 @@
 
 	qdec_loopbacks: loopbacks {
 		compatible = "test-qdec-loopbacks";
+
 		loopback0 {
 			qdec = <&qdec20>;
 			qenc-emul-gpios = <&phase_a &phase_b>;

@@ -9,8 +9,8 @@
 #include "m5stack_stamps3-pinctrl.dtsi"
 #include "m5stack_stamps3_connectors.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <dt-bindings/led/led.h>
-#include <dt-bindings/led/worldsemi_ws2812c.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp.dtsi>
 

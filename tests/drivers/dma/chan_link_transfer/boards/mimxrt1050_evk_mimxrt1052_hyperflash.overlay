@@ -5,4 +5,4 @@
  *
  */
 
-dma0: &edma0 {};
+tst_dma0: &edma0 {};

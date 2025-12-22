@@ -434,6 +434,12 @@ config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
 	help
 	  This option sets the timeout after the get ongoing calls callback notified
 
+config BT_HFP_AG_INBAND_RINGTONE
+	bool "In-band ring tone capability"
+	default y
+	help
+	  This option enables In-band ring tone capability
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
@@ -445,6 +451,7 @@ config BT_AVDTP
 config BT_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
 	select BT_AVDTP
+	imply LIBSBC
 	select EXPERIMENTAL
 	help
 	  This option enables the A2DP profile
@@ -524,6 +531,22 @@ config BT_AVRCP_BROWSING
 	help
 	  This option enables support for the AVRCP Browsing channel
 	  over Bluetooth BR/EDR.
+
+if BT_AVRCP_BROWSING
+
+config BT_AVRCP_BROWSING_L2CAP_MTU
+	int "L2CAP MTU for AVRCP Browsing Channel"
+	default 339
+	# For AVRCP Browsing Channel over L2CAP, including:
+	# 335 bytes - the minimum MTU for AVRCP Browsing Channel,
+	# 4 bytes - L2CAP Header,
+	range 339 4096
+	help
+	  Maximum size of L2CAP MTU for AVCTP Browsing Channel.
+	  RX MTU will be truncated to account for ACL data and type overhead, and
+	  the L2CAP PDUheader.
+
+endif # BT_AVRCP_BROWSING
 
 config BT_AVRCP_TG_COVER_ART
 	bool "Bluetooth AVRCP Target Cover Art support [EXPERIMENTAL]"

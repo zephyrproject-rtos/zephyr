@@ -11,6 +11,9 @@ zephyr_sources(
   bitmask.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_GETOPT getopt/getopt.c getopt/getopt_common.c)
+zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG getopt/getopt_long.c)
+
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
 
 zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)

@@ -374,6 +374,7 @@
 		adc0: adc@400d1000 {
 			channel-count = <12>;
 			threshold-count = <6>;
+			support-npcxn-v2;
 		};
 
 		/* FIU0 configuration in npcx9 series */

@@ -58,6 +58,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_g071rb
       - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
@@ -99,6 +100,7 @@ tests:
       - nucleo_f429zi
       - nucleo_f746zg
       - nucleo_f767zi
+      - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
       - nucleo_h753zi
@@ -124,6 +126,7 @@ tests:
       - nucleo_f429zi
       - nucleo_f746zg
       - nucleo_f767zi
+      - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
       - nucleo_h753zi
@@ -341,6 +344,7 @@ tests:
   drivers.spi.silabs_s2.loopback.no_async:
     filter: CONFIG_SOC_FAMILY_SILABS_S2
     platform_allow:
+      - xg23_rb4210a
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
@@ -350,6 +354,7 @@ tests:
   drivers.spi.silabs_s2.loopback.dma.no_async:
     filter: CONFIG_SOC_FAMILY_SILABS_S2
     platform_allow:
+      - xg23_rb4210a
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a

@@ -37,6 +37,7 @@ WINDOW_STRIDE_ACE = 0x8000
 
 DEBUG_SLOT_SIZE = 4096
 DEBUG_SLOT_SHELL = 0
+DEBUG_SLOT_SHELL_TYPE = 0x73686c6c
 SHELL_RX_SIZE = 256
 SHELL_MAX_VALID_SLOT_SIZE = 16777216
 
@@ -47,6 +48,9 @@ CRST   = 0
 CSTALL = 8
 SPA    = 16
 CPA    = 24
+
+# LCTL bits
+OFLEN  = 4
 
 class HDAStream:
     # creates an hda stream with at 2 buffers of buf_len
@@ -256,12 +260,14 @@ def map_regs(log_only):
     hda.SPBFCTL = 0x0704
     hda.PPCTL   = 0x0804
 
+    if ace20 or ace30:
+        hda.HDAML_I2S_LCTL = 0x0C40 + 0x40 * 3 + 4
+
     # Find the ID of the first output stream
     hda_ostream_id = (hda.GCAP >> 8) & 0x0f # number of input streams
     log.info(f"Selected output stream {hda_ostream_id} (GCAP = 0x{hda.GCAP:x})")
     hda.SD_SPIB = 0x0708 + (8 * hda_ostream_id)
     hda.freeze()
-
 
     # Standard HD Audio Stream Descriptor
     sd = Regs(hdamem + 0x0080 + (hda_ostream_id * 0x20))
@@ -394,8 +400,7 @@ def runx(cmd):
     return subprocess.check_output(cmd, shell=True).decode().rstrip()
 
 def mask(bit):
-    if cavs25:
-        return 0b1 << bit
+    return 0b1 << bit
 
 def load_firmware(fw_file):
     try:
@@ -537,6 +542,12 @@ def load_firmware_ace(fw_file):
     while not dsp.HFDSSCS & (1 << 24):
         log.info("Waiting for DSP subsystem power on")
         time.sleep(0.1)
+
+    if ace20 or ace30:
+        log.info(f"Enabling offload for I2S link")
+        # needed to allow DSP to access SSP DAI
+        hda.HDAML_I2S_LCTL |= mask(OFLEN)
+        log.debug(f"HDAML.I2S_LCTL 0x{hda.HDAML_I2S_LCTL:x}")
 
     log.info("Turning on Domain0")
     dsp.HFPWRCTL |= 0x1 # set SPA bit
@@ -769,19 +780,28 @@ def debug_slot_offset_by_type(the_type, timeout_s=0.2):
     return None
 
 def shell_base_offset():
-    return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
+    return debug_slot_offset_by_type(DEBUG_SLOT_SHELL_TYPE)
 
 def read_from_shell_memwindow_winstream(last_seq):
-    offset = shell_base_offset() + SHELL_RX_SIZE
-    (last_seq, output) = winstream_read(offset, last_seq)
-    if output:
-        os.write(shell_client_port, output.encode("utf-8"))
+    offset = shell_base_offset()
+    if offset is not None:
+        offset += SHELL_RX_SIZE
+        (last_seq, output) = winstream_read(offset, last_seq)
+        if output:
+            os.write(shell_client_port, output.encode("utf-8"))
+    else:
+        log.info("Shell debug window is not available")
+
     return last_seq
 
 def write_to_shell_memwindow_winstream():
     msg = os.read(shell_client_port, 1)
     if len(msg) > 0:
-        winstream_write(shell_base_offset(), msg)
+        offset = shell_base_offset()
+        if offset is not None:
+            winstream_write(offset, msg)
+        else:
+            log.info("Shell debug window is not available")
 
 def create_shell_pty():
     global shell_client_port

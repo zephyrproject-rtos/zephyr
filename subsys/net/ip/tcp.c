@@ -3947,9 +3947,9 @@ int net_tcp_connect(struct net_context *context,
 
 	NET_DBG("[%p] context: %p, local: %s, remote: %s", conn, context,
 		net_sprint_addr(local_addr->sa_family,
-				(const void *)&net_sin(local_addr)->sin_addr),
+				(const void *)&net_sin6(local_addr)->sin6_addr),
 		net_sprint_addr(remote_addr->sa_family,
-				(const void *)&net_sin(remote_addr)->sin_addr));
+				(const void *)&net_sin6(remote_addr)->sin6_addr));
 
 	conn->iface = net_context_get_iface(context);
 	tcp_derive_rto(conn);
@@ -4031,9 +4031,9 @@ int net_tcp_connect(struct net_context *context,
 
 	NET_DBG("[%p] src: %s, dst: %s", conn,
 		net_sprint_addr(conn->src.sa.sa_family,
-				(const void *)&conn->src.sin.sin_addr),
+				(const void *)&conn->src.sin6.sin6_addr),
 		net_sprint_addr(conn->dst.sa.sa_family,
-				(const void *)&conn->dst.sin.sin_addr));
+				(const void *)&conn->dst.sin6.sin6_addr));
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 

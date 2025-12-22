@@ -64,7 +64,7 @@ int snprintk(char *str, size_t size, const char *fmt, ...)
 	int ret;
 
 	va_start(ap, fmt);
-	ret = snprintf(str, size, fmt, ap);
+	ret = vsnprintf(str, size, fmt, ap);
 	va_end(ap);
 
 	return ret;

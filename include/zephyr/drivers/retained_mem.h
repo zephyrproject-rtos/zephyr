@@ -32,7 +32,7 @@ BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
  * @brief Interfaces for retained memory.
  * @defgroup retained_mem_interface Retained memory
  * @since 3.4
- * @version 0.8.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

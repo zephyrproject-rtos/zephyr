@@ -105,6 +105,31 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return key == 0U;
 }
 
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+
+static ALWAYS_INLINE unsigned int arch_zli_lock(void)
+{
+	unsigned int key;
+
+	key = __get_PRIMASK();
+
+	/*
+	 * The cpsid instruction is self synchronizing within the instruction stream, no need for
+	 * an explicit __ISB().
+	 */
+	__disable_irq();
+
+	return key;
+}
+
+static ALWAYS_INLINE void arch_zli_unlock(unsigned int key)
+{
+	__set_PRIMASK(key);
+	__ISB();
+}
+
+#endif /* CONFIG_ZERO_LATENCY_IRQS */
+
 #ifdef __cplusplus
 }
 #endif

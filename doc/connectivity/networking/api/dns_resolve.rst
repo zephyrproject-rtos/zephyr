@@ -10,8 +10,7 @@ DNS Resolve
 Overview
 ********
 
-The DNS resolver implements a basic DNS resolver according
-to `IETF RFC1035 on Domain Implementation and Specification <https://tools.ietf.org/html/rfc1035>`_.
+The DNS resolver implements a basic DNS resolver according to :rfc:`1035`.
 Supported DNS answers are IPv4/IPv6 addresses and CNAME.
 
 If a CNAME is received, the DNS resolver will create another DNS query.
@@ -20,20 +19,17 @@ The number of additional queries is controlled by the
 
 The multicast DNS (mDNS) client resolver support can be enabled by setting
 :kconfig:option:`CONFIG_MDNS_RESOLVER` Kconfig option.
-See `IETF RFC6762 <https://tools.ietf.org/html/rfc6762>`_ for more details
-about mDNS.
+See :rfc:`6762` for more details about mDNS.
 
 The link-local multicast name resolution (LLMNR) client resolver support can be
 enabled by setting the :kconfig:option:`CONFIG_LLMNR_RESOLVER` Kconfig variable.
-See `IETF RFC4795 <https://tools.ietf.org/html/rfc4795>`_ for more details
-about LLMNR.
+See :rfc:`4795` for more details about LLMNR.
 
 For more information about DNS configuration variables, see:
 :zephyr_file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
 :zephyr_file:`include/zephyr/net/dns_resolve.h`.
 
-DNS-based service discovery queries described in
-`IETF RFC6763 <https://datatracker.ietf.org/doc/html/rfc6763>`_
+DNS-based service discovery queries described in :rfc:`6763`
 can be done by :c:func:`dns_resolve_service` API.
 The returned service descriptions are passed to user supplied callback
 and the API sets the address family to :c:macro:`AF_LOCAL` to indicate that

@@ -16,7 +16,8 @@ config POSIX_SHARED_MEMORY_OBJECTS
 	bool "POSIX shared memory objects"
 	select SYS_HASH_FUNC32
 	select SYS_HASH_FUNC32_DJB2
-	select FDTABLE
+	select ZVFS
+	select ZVFS_FDTABLE
 	select POSIX_MAPPED_FILES
 	help
 	  Select 'y' here and Zephyr will provide implementations of shm_open() and shm_unlink().

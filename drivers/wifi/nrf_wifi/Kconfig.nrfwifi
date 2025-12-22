@@ -646,7 +646,7 @@ endif # NRF_WIFI_USE_VARIABLE_NET_BUFS
 config MAIN_STACK_SIZE
 	default 4096
 
-config SHELL_STACK_SIZE
+configdefault SHELL_STACK_SIZE
 	default 4096
 
 # Override the Wi-Fi subsystems WIFI_MGMT_SCAN_SSID_FILT_MAX parameter,

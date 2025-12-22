@@ -23,6 +23,17 @@ properties:
   "#gpio-cells":
     const: 2
 
+  irq-output-select:
+    type: int
+    default: 0
+    description: |
+      Select which IRQ line the GPIO controller outputs to.
+      0 = First IRQ line (default)
+      1 = Second IRQ line
+    enum:
+      - 0
+      - 1
+
 gpio-cells:
   - pin
   - flags

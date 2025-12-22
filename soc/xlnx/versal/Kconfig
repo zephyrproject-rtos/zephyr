@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2025 Space Cubics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_VERSAL_RPU
+	select ARM
+	select CPU_CORTEX_R5
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_DCLS
+	select SOC_RESET_HOOK

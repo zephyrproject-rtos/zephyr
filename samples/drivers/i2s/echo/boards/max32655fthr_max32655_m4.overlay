@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Croxel Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+i2s_rxtx: &i2s0 {
+	status = "okay";
+};
+
+&i2c1 {
+	max9867: max9867@18 {
+		compatible = "adi,max9867";
+		reg = <0x18>;
+	};
+};

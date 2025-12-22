@@ -197,9 +197,9 @@ zephyr_udc0: &usbotg_fs {
 		};
 
 		/* scratch slot: 256KB */
-		scratch_partition: partition@C0000 {
+		scratch_partition: partition@c0000 {
 			label = "image-scratch";
-			reg = <0x000C0000 DT_SIZE_K(256)>;
+			reg = <0x000c0000 DT_SIZE_K(256)>;
 		};
 	};
 };

@@ -1,5 +1,5 @@
 spi1: &scb3 {
-	compatible = "infineon,cat1-spi";
+	compatible = "infineon,spi";
 	status = "okay";
 
 	pinctrl-0 = <&p6_0_scb3_spi_m_mosi &p6_1_scb3_spi_m_miso &p6_2_scb3_spi_m_clk>;
@@ -11,6 +11,7 @@ spi1: &scb3 {
 		reg = <0>;
 		spi-max-frequency = <2000000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

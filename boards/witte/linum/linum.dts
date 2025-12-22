@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h753Xi.dtsi>
 #include <st/h7/stm32h753bitx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -55,12 +56,6 @@
 	aliases {
 		led0 = &green_led;
 		led1 = &blue_led;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5446>;
-		swap-xy;
 	};
 };
 
@@ -126,11 +121,21 @@
 };
 
 &pll2 {
-	div-m = <2>;
-	mul-n = <48>;
+	div-m = <5>;
+	mul-n = <96>;
 	div-p = <8>;
 	div-q = <40>;
-	div-r = <3>;
+	div-r = <10>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <5>;
+	mul-n = <128>;
+	div-p = <4>;
+	div-q = <4>;
+	div-r = <25>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -144,6 +149,14 @@
 	d2ppre1 = <2>;
 	d2ppre2 = <2>;
 	d3ppre = <2>;
+};
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
+	pinctrl-0 = <&rcc_mco_1_pa8>;
+	pinctrl-names = "default";
 };
 
 &usart1 {
@@ -203,6 +216,9 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioh 9 0>;
+		swapped-x-y;
+		screen-width = <1024>;
+		screen-height = <600>;
 	};
 };
 
@@ -230,16 +246,12 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
-		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
 &fdcan2 {
-	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
-		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan2_rx_pb12 &fdcan2_tx_pb13>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -377,7 +389,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 	width = <1024>;
 	height = <600>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -392,6 +404,7 @@ zephyr_udc0: &usbotg_fs {
 		hfront-porch = <160>;
 		vfront-porch = <12>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;
@@ -451,4 +464,8 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x000c0000 DT_SIZE_K(128)>;
 		};
 	};
+};
+
+&pwr {
+	power-supply = "ldo";
 };

@@ -58,6 +58,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -75,6 +80,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -87,6 +97,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		spi3: spi@40003c00 {
@@ -96,6 +111,7 @@
 			reg = <0X40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 5>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
@@ -172,6 +188,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 

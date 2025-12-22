@@ -13,6 +13,7 @@
 #define SF32LB_PORT_PA 1U
 
 /* PA00 */
+#define PA00_ANALOG             SF32LB_PINMUX_ANALOG(PA, 0U)
 #define PA00_GPIO               SF32LB_PINMUX(PA, 0U, 0U, 0U, 0U)
 #define PA00_LCDC1_SPI_RSTB     SF32LB_PINMUX(PA, 0U, 1U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -68,6 +69,7 @@
 #define PA00_LCDC1_8080_RSTB    SF32LB_PINMUX(PA, 0U, 7U, 0U, 0U)
 
 /* PA01 */
+#define PA01_ANALOG             SF32LB_PINMUX_ANALOG(PA, 1U)
 #define PA01_GPIO               SF32LB_PINMUX(PA, 1U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA01_I2C1_SDA           SF32LB_PINMUX(PA, 1U, 4U, 0x48U, 1U)
@@ -121,6 +123,7 @@
 /* PA_TIM functions end */
 
 /* PA02 */
+#define PA02_ANALOG             SF32LB_PINMUX_ANALOG(PA, 2U)
 #define PA02_GPIO               SF32LB_PINMUX(PA, 2U, 0U, 0U, 0U)
 #define PA02_LCDC1_SPI_TE       SF32LB_PINMUX(PA, 2U, 1U, 0U, 0U)
 #define PA02_I2S1_MCLK          SF32LB_PINMUX(PA, 2U, 3U, 0U, 0U)
@@ -178,6 +181,7 @@
 #define PA02_LCDC1_8080_TE      SF32LB_PINMUX(PA, 2U, 7U, 0U, 0U)
 
 /* PA03 */
+#define PA03_ANALOG             SF32LB_PINMUX_ANALOG(PA, 3U)
 #define PA03_GPIO               SF32LB_PINMUX(PA, 3U, 0U, 0U, 0U)
 #define PA03_LCDC1_SPI_CS       SF32LB_PINMUX(PA, 3U, 1U, 0U, 0U)
 #define PA03_I2S1_SDO           SF32LB_PINMUX(PA, 3U, 3U, 0U, 0U)
@@ -235,6 +239,7 @@
 #define PA03_LCDC1_8080_CS      SF32LB_PINMUX(PA, 3U, 7U, 0U, 0U)
 
 /* PA04 */
+#define PA04_ANALOG             SF32LB_PINMUX_ANALOG(PA, 4U)
 #define PA04_GPIO               SF32LB_PINMUX(PA, 4U, 0U, 0U, 0U)
 #define PA04_LCDC1_SPI_CLK      SF32LB_PINMUX(PA, 4U, 1U, 0U, 0U)
 #define PA04_I2S1_SDI           SF32LB_PINMUX(PA, 4U, 3U, 0U, 0U)
@@ -292,6 +297,7 @@
 #define PA04_LCDC1_8080_WR      SF32LB_PINMUX(PA, 4U, 7U, 0U, 0U)
 
 /* PA05 */
+#define PA05_ANALOG             SF32LB_PINMUX_ANALOG(PA, 5U)
 #define PA05_GPIO               SF32LB_PINMUX(PA, 5U, 0U, 0U, 0U)
 #define PA05_LCDC1_SPI_DIO0     SF32LB_PINMUX(PA, 5U, 1U, 0U, 0U)
 #define PA05_I2S1_BCK           SF32LB_PINMUX(PA, 5U, 3U, 0U, 0U)
@@ -349,6 +355,7 @@
 #define PA05_LCDC1_8080_RD      SF32LB_PINMUX(PA, 5U, 7U, 0U, 0U)
 
 /* PA06 */
+#define PA06_ANALOG             SF32LB_PINMUX_ANALOG(PA, 6U)
 #define PA06_GPIO               SF32LB_PINMUX(PA, 6U, 0U, 0U, 0U)
 #define PA06_LCDC1_SPI_DIO1     SF32LB_PINMUX(PA, 6U, 1U, 0U, 0U)
 #define PA06_I2S1_LRCK          SF32LB_PINMUX(PA, 6U, 3U, 0U, 0U)
@@ -406,6 +413,7 @@
 #define PA06_LCDC1_8080_DC      SF32LB_PINMUX(PA, 6U, 7U, 0U, 0U)
 
 /* PA07 */
+#define PA07_ANALOG             SF32LB_PINMUX_ANALOG(PA, 7U)
 #define PA07_GPIO               SF32LB_PINMUX(PA, 7U, 0U, 0U, 0U)
 #define PA07_LCDC1_SPI_DIO2     SF32LB_PINMUX(PA, 7U, 1U, 0U, 0U)
 #define PA07_PDM1_CLK           SF32LB_PINMUX(PA, 7U, 3U, 0U, 0U)
@@ -463,6 +471,7 @@
 #define PA07_LCDC1_8080_DIO0    SF32LB_PINMUX(PA, 7U, 7U, 0U, 0U)
 
 /* PA08 */
+#define PA08_ANALOG             SF32LB_PINMUX_ANALOG(PA, 8U)
 #define PA08_GPIO               SF32LB_PINMUX(PA, 8U, 0U, 0U, 0U)
 #define PA08_LCDC1_SPI_DIO3     SF32LB_PINMUX(PA, 8U, 1U, 0U, 0U)
 #define PA08_PDM1_DATA          SF32LB_PINMUX(PA, 8U, 3U, 0U, 0U)
@@ -520,6 +529,7 @@
 #define PA08_LCDC1_8080_DIO1    SF32LB_PINMUX(PA, 8U, 7U, 0U, 0U)
 
 /* PA09 */
+#define PA09_ANALOG             SF32LB_PINMUX_ANALOG(PA, 9U)
 #define PA09_GPIO               SF32LB_PINMUX(PA, 9U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA09_I2C1_SDA           SF32LB_PINMUX(PA, 9U, 4U, 0x48U, 1U)
@@ -573,6 +583,7 @@
 /* PA_TIM functions end */
 
 /* PA10 */
+#define PA10_ANALOG             SF32LB_PINMUX_ANALOG(PA, 10U)
 #define PA10_GPIO               SF32LB_PINMUX(PA, 10U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA10_I2C1_SDA           SF32LB_PINMUX(PA, 10U, 4U, 0x48U, 1U)
@@ -626,6 +637,7 @@
 /* PA_TIM functions end */
 
 /* PA11 */
+#define PA11_ANALOG             SF32LB_PINMUX_ANALOG(PA, 11U)
 #define PA11_GPIO               SF32LB_PINMUX(PA, 11U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA11_I2C1_SDA           SF32LB_PINMUX(PA, 11U, 4U, 0x48U, 1U)
@@ -679,6 +691,7 @@
 /* PA_TIM functions end */
 
 /* PA12 */
+#define PA12_ANALOG             SF32LB_PINMUX_ANALOG(PA, 12U)
 #define PA12_GPIO               SF32LB_PINMUX(PA, 12U, 0U, 0U, 0U)
 #define PA12_MPI2_CS            SF32LB_PINMUX(PA, 12U, 1U, 0U, 0U)
 #define PA12_SD1_DIO2           SF32LB_PINMUX(PA, 12U, 2U, 0U, 0U)
@@ -734,6 +747,7 @@
 /* PA_TIM functions end */
 
 /* PA13 */
+#define PA13_ANALOG             SF32LB_PINMUX_ANALOG(PA, 13U)
 #define PA13_GPIO               SF32LB_PINMUX(PA, 13U, 0U, 0U, 0U)
 #define PA13_MPI2_DIO1          SF32LB_PINMUX(PA, 13U, 1U, 0U, 0U)
 #define PA13_SD1_DIO3           SF32LB_PINMUX(PA, 13U, 2U, 0U, 0U)
@@ -789,6 +803,7 @@
 /* PA_TIM functions end */
 
 /* PA14 */
+#define PA14_ANALOG             SF32LB_PINMUX_ANALOG(PA, 14U)
 #define PA14_GPIO               SF32LB_PINMUX(PA, 14U, 0U, 0U, 0U)
 #define PA14_MPI2_DIO2          SF32LB_PINMUX(PA, 14U, 1U, 0U, 0U)
 #define PA14_SD1_CLK            SF32LB_PINMUX(PA, 14U, 2U, 0U, 0U)
@@ -844,6 +859,7 @@
 /* PA_TIM functions end */
 
 /* PA15 */
+#define PA15_ANALOG             SF32LB_PINMUX_ANALOG(PA, 15U)
 #define PA15_GPIO               SF32LB_PINMUX(PA, 15U, 0U, 0U, 0U)
 #define PA15_MPI2_DIO0          SF32LB_PINMUX(PA, 15U, 1U, 0U, 0U)
 #define PA15_SD1_CMD            SF32LB_PINMUX(PA, 15U, 2U, 0U, 0U)
@@ -899,6 +915,7 @@
 /* PA_TIM functions end */
 
 /* PA16 */
+#define PA16_ANALOG             SF32LB_PINMUX_ANALOG(PA, 16U)
 #define PA16_GPIO               SF32LB_PINMUX(PA, 16U, 0U, 0U, 0U)
 #define PA16_MPI2_CLK           SF32LB_PINMUX(PA, 16U, 1U, 0U, 0U)
 #define PA16_SD1_DIO0           SF32LB_PINMUX(PA, 16U, 2U, 0U, 0U)
@@ -954,6 +971,7 @@
 /* PA_TIM functions end */
 
 /* PA17 */
+#define PA17_ANALOG             SF32LB_PINMUX_ANALOG(PA, 17U)
 #define PA17_GPIO               SF32LB_PINMUX(PA, 17U, 0U, 0U, 0U)
 #define PA17_MPI2_DIO3          SF32LB_PINMUX(PA, 17U, 1U, 0U, 0U)
 #define PA17_SD1_DIO1           SF32LB_PINMUX(PA, 17U, 2U, 0U, 0U)
@@ -1009,6 +1027,7 @@
 /* PA_TIM functions end */
 
 /* PA18 */
+#define PA18_ANALOG             SF32LB_PINMUX_ANALOG(PA, 18U)
 #define PA18_GPIO               SF32LB_PINMUX(PA, 18U, 0U, 0U, 0U)
 #define PA18_SWDIO              SF32LB_PINMUX(PA, 18U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -1063,6 +1082,7 @@
 /* PA_TIM functions end */
 
 /* PA19 */
+#define PA19_ANALOG             SF32LB_PINMUX_ANALOG(PA, 19U)
 #define PA19_GPIO               SF32LB_PINMUX(PA, 19U, 0U, 0U, 0U)
 #define PA19_SWCLK              SF32LB_PINMUX(PA, 19U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -1117,6 +1137,7 @@
 /* PA_TIM functions end */
 
 /* PA20 */
+#define PA20_ANALOG             SF32LB_PINMUX_ANALOG(PA, 20U)
 #define PA20_GPIO               SF32LB_PINMUX(PA, 20U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA20_I2C1_SDA           SF32LB_PINMUX(PA, 20U, 4U, 0x48U, 1U)
@@ -1170,6 +1191,7 @@
 /* PA_TIM functions end */
 
 /* PA21 */
+#define PA21_ANALOG             SF32LB_PINMUX_ANALOG(PA, 21U)
 #define PA21_GPIO               SF32LB_PINMUX(PA, 21U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA21_I2C1_SDA           SF32LB_PINMUX(PA, 21U, 4U, 0x48U, 1U)
@@ -1223,6 +1245,7 @@
 /* PA_TIM functions end */
 
 /* PA22 */
+#define PA22_ANALOG             SF32LB_PINMUX_ANALOG(PA, 22U)
 #define PA22_GPIO               SF32LB_PINMUX(PA, 22U, 0U, 0U, 0U)
 #define PA22_PDM1_CLK           SF32LB_PINMUX(PA, 22U, 3U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -1278,6 +1301,7 @@
 #define PA22_XTAL32K_XI         SF32LB_PINMUX(PA, 22U, 8U, 0U, 0U)
 
 /* PA23 */
+#define PA23_ANALOG             SF32LB_PINMUX_ANALOG(PA, 23U)
 #define PA23_GPIO               SF32LB_PINMUX(PA, 23U, 0U, 0U, 0U)
 #define PA23_PDM1_DATA          SF32LB_PINMUX(PA, 23U, 3U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -1333,6 +1357,7 @@
 #define PA23_XTAL32K_XO         SF32LB_PINMUX(PA, 23U, 8U, 0U, 0U)
 
 /* PA24 */
+#define PA24_ANALOG             SF32LB_PINMUX_ANALOG(PA, 24U)
 #define PA24_GPIO               SF32LB_PINMUX(PA, 24U, 0U, 0U, 0U)
 #define PA24_SPI1_DIO           SF32LB_PINMUX(PA, 24U, 2U, 0U, 0U)
 #define PA24_I2S1_MCLK          SF32LB_PINMUX(PA, 24U, 3U, 0U, 0U)
@@ -1389,6 +1414,7 @@
 #define PA24_WKUP_PIN0          SF32LB_PINMUX(PA, 24U, 8U, 0U, 0U)
 
 /* PA25 */
+#define PA25_ANALOG             SF32LB_PINMUX_ANALOG(PA, 25U)
 #define PA25_GPIO               SF32LB_PINMUX(PA, 25U, 0U, 0U, 0U)
 #define PA25_SPI1_DI            SF32LB_PINMUX(PA, 25U, 2U, 0U, 0U)
 #define PA25_I2S1_SDO           SF32LB_PINMUX(PA, 25U, 3U, 0U, 0U)
@@ -1446,6 +1472,7 @@
 #define PA25_WKUP_PIN1          SF32LB_PINMUX(PA, 25U, 8U, 0U, 0U)
 
 /* PA26 */
+#define PA26_ANALOG             SF32LB_PINMUX_ANALOG(PA, 26U)
 #define PA26_GPIO               SF32LB_PINMUX(PA, 26U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA26_I2C1_SDA           SF32LB_PINMUX(PA, 26U, 4U, 0x48U, 1U)
@@ -1500,6 +1527,7 @@
 #define PA26_WKUP_PIN2          SF32LB_PINMUX(PA, 26U, 8U, 0U, 0U)
 
 /* PA27 */
+#define PA27_ANALOG             SF32LB_PINMUX_ANALOG(PA, 27U)
 #define PA27_GPIO               SF32LB_PINMUX(PA, 27U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA27_I2C1_SCL           SF32LB_PINMUX(PA, 27U, 4U, 0x48U, 0U)
@@ -1554,6 +1582,7 @@
 #define PA27_WKUP_PIN3          SF32LB_PINMUX(PA, 27U, 8U, 0U, 0U)
 
 /* PA28 */
+#define PA28_ANALOG             SF32LB_PINMUX_ANALOG(PA, 28U)
 #define PA28_GPIO               SF32LB_PINMUX(PA, 28U, 0U, 0U, 0U)
 #define PA28_SPI1_CLK           SF32LB_PINMUX(PA, 28U, 2U, 0U, 0U)
 #define PA28_I2S1_SDI           SF32LB_PINMUX(PA, 28U, 3U, 0U, 0U)
@@ -1610,6 +1639,7 @@
 #define PA28_GPADC_CH0          SF32LB_PINMUX(PA, 28U, 7U, 0U, 0U)
 
 /* PA29 */
+#define PA29_ANALOG             SF32LB_PINMUX_ANALOG(PA, 29U)
 #define PA29_GPIO               SF32LB_PINMUX(PA, 29U, 0U, 0U, 0U)
 #define PA29_SPI1_CS            SF32LB_PINMUX(PA, 29U, 2U, 0U, 0U)
 #define PA29_I2S1_BCK           SF32LB_PINMUX(PA, 29U, 3U, 0U, 0U)
@@ -1666,6 +1696,7 @@
 #define PA29_GPADC_CH1          SF32LB_PINMUX(PA, 29U, 7U, 0U, 0U)
 
 /* PA30 */
+#define PA30_ANALOG             SF32LB_PINMUX_ANALOG(PA, 30U)
 #define PA30_GPIO               SF32LB_PINMUX(PA, 30U, 0U, 0U, 0U)
 #define PA30_EFUSE_PWR          SF32LB_PINMUX(PA, 30U, 2U, 0U, 0U)
 #define PA30_I2S1_LRCK          SF32LB_PINMUX(PA, 30U, 3U, 0U, 0U)
@@ -1722,6 +1753,7 @@
 #define PA30_GPADC_CH2          SF32LB_PINMUX(PA, 30U, 7U, 0U, 0U)
 
 /* PA31 */
+#define PA31_ANALOG             SF32LB_PINMUX_ANALOG(PA, 31U)
 #define PA31_GPIO               SF32LB_PINMUX(PA, 31U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA31_I2C1_SCL           SF32LB_PINMUX(PA, 31U, 4U, 0x48U, 0U)
@@ -1776,6 +1808,7 @@
 #define PA31_GPADC_CH3          SF32LB_PINMUX(PA, 31U, 7U, 0U, 0U)
 
 /* PA32 */
+#define PA32_ANALOG             SF32LB_PINMUX_ANALOG(PA, 32U)
 #define PA32_GPIO               SF32LB_PINMUX(PA, 32U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA32_I2C1_SCL           SF32LB_PINMUX(PA, 32U, 4U, 0x48U, 0U)
@@ -1830,6 +1863,7 @@
 #define PA32_GPADC_CH4          SF32LB_PINMUX(PA, 32U, 7U, 0U, 0U)
 
 /* PA33 */
+#define PA33_ANALOG             SF32LB_PINMUX_ANALOG(PA, 33U)
 #define PA33_GPIO               SF32LB_PINMUX(PA, 33U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA33_I2C1_SCL           SF32LB_PINMUX(PA, 33U, 4U, 0x48U, 0U)
@@ -1884,6 +1918,7 @@
 #define PA33_GPADC_CH5          SF32LB_PINMUX(PA, 33U, 7U, 0U, 0U)
 
 /* PA34 */
+#define PA34_ANALOG             SF32LB_PINMUX_ANALOG(PA, 34U)
 #define PA34_GPIO               SF32LB_PINMUX(PA, 34U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA34_I2C1_SCL           SF32LB_PINMUX(PA, 34U, 4U, 0x48U, 0U)
@@ -1939,6 +1974,7 @@
 #define PA34_WKUP_PIN10         SF32LB_PINMUX(PA, 34U, 8U, 0U, 0U)
 
 /* PA35 */
+#define PA35_ANALOG             SF32LB_PINMUX_ANALOG(PA, 35U)
 #define PA35_GPIO               SF32LB_PINMUX(PA, 35U, 0U, 0U, 0U)
 #define PA35_USB11_DP           SF32LB_PINMUX(PA, 35U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -1994,6 +2030,7 @@
 #define PA35_WKUP_PIN11         SF32LB_PINMUX(PA, 35U, 8U, 0U, 0U)
 
 /* PA36 */
+#define PA36_ANALOG             SF32LB_PINMUX_ANALOG(PA, 36U)
 #define PA36_GPIO               SF32LB_PINMUX(PA, 36U, 0U, 0U, 0U)
 #define PA36_USB11_DM           SF32LB_PINMUX(PA, 36U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -2049,6 +2086,7 @@
 #define PA36_WKUP_PIN12         SF32LB_PINMUX(PA, 36U, 8U, 0U, 0U)
 
 /* PA37 */
+#define PA37_ANALOG             SF32LB_PINMUX_ANALOG(PA, 37U)
 #define PA37_GPIO               SF32LB_PINMUX(PA, 37U, 0U, 0U, 0U)
 #define PA37_SPI2_DIO           SF32LB_PINMUX(PA, 37U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -2105,6 +2143,7 @@
 #define PA37_WKUP_PIN13         SF32LB_PINMUX(PA, 37U, 8U, 0U, 0U)
 
 /* PA38 */
+#define PA38_ANALOG             SF32LB_PINMUX_ANALOG(PA, 38U)
 #define PA38_GPIO               SF32LB_PINMUX(PA, 38U, 0U, 0U, 0U)
 #define PA38_SPI2_DI            SF32LB_PINMUX(PA, 38U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -2161,6 +2200,7 @@
 #define PA38_WKUP_PIN14         SF32LB_PINMUX(PA, 38U, 8U, 0U, 0U)
 
 /* PA39 */
+#define PA39_ANALOG             SF32LB_PINMUX_ANALOG(PA, 39U)
 #define PA39_GPIO               SF32LB_PINMUX(PA, 39U, 0U, 0U, 0U)
 #define PA39_SPI2_CLK           SF32LB_PINMUX(PA, 39U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -2218,6 +2258,7 @@
 #define PA39_WKUP_PIN15         SF32LB_PINMUX(PA, 39U, 8U, 0U, 0U)
 
 /* PA40 */
+#define PA40_ANALOG             SF32LB_PINMUX_ANALOG(PA, 40U)
 #define PA40_GPIO               SF32LB_PINMUX(PA, 40U, 0U, 0U, 0U)
 #define PA40_SPI2_CS            SF32LB_PINMUX(PA, 40U, 2U, 0U, 0U)
 /* PA_I2C_UART functions start */
@@ -2275,6 +2316,7 @@
 #define PA40_WKUP_PIN16         SF32LB_PINMUX(PA, 40U, 8U, 0U, 0U)
 
 /* PA41 */
+#define PA41_ANALOG             SF32LB_PINMUX_ANALOG(PA, 41U)
 #define PA41_GPIO               SF32LB_PINMUX(PA, 41U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA41_I2C1_SCL           SF32LB_PINMUX(PA, 41U, 4U, 0x48U, 0U)
@@ -2331,6 +2373,7 @@
 #define PA41_WKUP_PIN17         SF32LB_PINMUX(PA, 41U, 8U, 0U, 0U)
 
 /* PA42 */
+#define PA42_ANALOG             SF32LB_PINMUX_ANALOG(PA, 42U)
 #define PA42_GPIO               SF32LB_PINMUX(PA, 42U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA42_I2C1_SCL           SF32LB_PINMUX(PA, 42U, 4U, 0x48U, 0U)
@@ -2387,6 +2430,7 @@
 #define PA42_WKUP_PIN18         SF32LB_PINMUX(PA, 42U, 8U, 0U, 0U)
 
 /* PA43 */
+#define PA43_ANALOG             SF32LB_PINMUX_ANALOG(PA, 43U)
 #define PA43_GPIO               SF32LB_PINMUX(PA, 43U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA43_I2C1_SCL           SF32LB_PINMUX(PA, 43U, 4U, 0x48U, 0U)
@@ -2443,6 +2487,7 @@
 #define PA43_WKUP_PIN19         SF32LB_PINMUX(PA, 43U, 8U, 0U, 0U)
 
 /* PA44 */
+#define PA44_ANALOG             SF32LB_PINMUX_ANALOG(PA, 44U)
 #define PA44_GPIO               SF32LB_PINMUX(PA, 44U, 0U, 0U, 0U)
 /* PA_I2C_UART functions start */
 #define PA44_I2C1_SCL           SF32LB_PINMUX(PA, 44U, 4U, 0x48U, 0U)
@@ -2495,5 +2540,86 @@
 #define PA44_ATIM1_ETR          SF32LB_PINMUX(PA, 44U, 5U, 0x80U, 2U)
 /* PA_TIM functions end */
 #define PA44_WKUP_PIN20         SF32LB_PINMUX(PA, 44U, 8U, 0U, 0U)
+
+/*
+ * SA port pins (SAIO_D0 - SAIO_D12)
+ * These are dedicated pins for MPI1 (PSRAM/NOR Flash) interface
+ */
+
+/* SA00 (SAIO_D0) */
+#define SA00_ANALOG             SF32LB_PINMUX_ANALOG(SA, 0U)
+#define SA00_MPI1_DM            SF32LB_PINMUX(SA, 0U, 1U, 0U, 0U)
+#define SA00_MPI1_DIO2          SF32LB_PINMUX(SA, 0U, 5U, 0U, 0U)
+
+/* SA01 (SAIO_D1) */
+#define SA01_ANALOG             SF32LB_PINMUX_ANALOG(SA, 1U)
+#define SA01_MPI1_DIO0          SF32LB_PINMUX(SA, 1U, 1U, 0U, 0U)
+#define SA01_MPI1_CS            SF32LB_PINMUX(SA, 1U, 5U, 0U, 0U)
+
+/* SA02 (SAIO_D2) */
+#define SA02_ANALOG             SF32LB_PINMUX_ANALOG(SA, 2U)
+#define SA02_MPI1_DIO1          SF32LB_PINMUX(SA, 2U, 1U, 0U, 0U)
+#define SA02_MPI1_DIO1_ALT      SF32LB_PINMUX(SA, 2U, 5U, 0U, 0U)
+
+/* SA03 (SAIO_D3) */
+#define SA03_ANALOG             SF32LB_PINMUX_ANALOG(SA, 3U)
+#define SA03_MPI1_DIO2          SF32LB_PINMUX(SA, 3U, 1U, 0U, 0U)
+#define SA03_MPI1_DIO2_ALT      SF32LB_PINMUX(SA, 3U, 5U, 0U, 0U)
+
+/* SA04 (SAIO_D4) */
+#define SA04_ANALOG             SF32LB_PINMUX_ANALOG(SA, 4U)
+#define SA04_MPI1_DIO3          SF32LB_PINMUX(SA, 4U, 1U, 0U, 0U)
+#define SA04_MPI1_CS            SF32LB_PINMUX(SA, 4U, 5U, 0U, 0U)
+
+/* SA05 (SAIO_D5) */
+#define SA05_ANALOG             SF32LB_PINMUX_ANALOG(SA, 5U)
+#define SA05_MPI1_CS            SF32LB_PINMUX(SA, 5U, 1U, 0U, 0U)
+#define SA05_MPI1_DIO4          SF32LB_PINMUX(SA, 5U, 3U, 0U, 0U)
+#define SA05_MPI1_DIO0          SF32LB_PINMUX(SA, 5U, 4U, 0U, 0U)
+
+/* SA06 (SAIO_D6) */
+#define SA06_ANALOG             SF32LB_PINMUX_ANALOG(SA, 6U)
+#define SA06_MPI1_CLKB          SF32LB_PINMUX(SA, 6U, 1U, 0U, 0U)
+#define SA06_MPI1_DIO5          SF32LB_PINMUX(SA, 6U, 3U, 0U, 0U)
+#define SA06_MPI1_DIO2          SF32LB_PINMUX(SA, 6U, 4U, 0U, 0U)
+
+/* SA07 (SAIO_D7) */
+#define SA07_ANALOG             SF32LB_PINMUX_ANALOG(SA, 7U)
+#define SA07_MPI1_CLK           SF32LB_PINMUX(SA, 7U, 1U, 0U, 0U)
+#define SA07_MPI1_DIO6          SF32LB_PINMUX(SA, 7U, 3U, 0U, 0U)
+#define SA07_MPI1_DIO1          SF32LB_PINMUX(SA, 7U, 4U, 0U, 0U)
+#define SA07_MPI1_DIO0          SF32LB_PINMUX(SA, 7U, 5U, 0U, 0U)
+
+/* SA08 (SAIO_D8) */
+#define SA08_ANALOG             SF32LB_PINMUX_ANALOG(SA, 8U)
+#define SA08_MPI1_DIO4          SF32LB_PINMUX(SA, 8U, 1U, 0U, 0U)
+#define SA08_MPI1_DIO7          SF32LB_PINMUX(SA, 8U, 3U, 0U, 0U)
+#define SA08_MPI1_CS            SF32LB_PINMUX(SA, 8U, 4U, 0U, 0U)
+#define SA08_MPI1_DIO3          SF32LB_PINMUX(SA, 8U, 5U, 0U, 0U)
+
+/* SA09 (SAIO_D9) */
+#define SA09_ANALOG             SF32LB_PINMUX_ANALOG(SA, 9U)
+#define SA09_MPI1_DIO5          SF32LB_PINMUX(SA, 9U, 1U, 0U, 0U)
+#define SA09_MPI1_DQSDM         SF32LB_PINMUX(SA, 9U, 3U, 0U, 0U)
+#define SA09_MPI1_CLK           SF32LB_PINMUX(SA, 9U, 4U, 0U, 0U)
+#define SA09_MPI1_CLK_ALT       SF32LB_PINMUX(SA, 9U, 5U, 0U, 0U)
+
+/* SA10 (SAIO_D10) */
+#define SA10_ANALOG             SF32LB_PINMUX_ANALOG(SA, 10U)
+#define SA10_MPI1_DIO6          SF32LB_PINMUX(SA, 10U, 1U, 0U, 0U)
+#define SA10_MPI1_CLK           SF32LB_PINMUX(SA, 10U, 3U, 0U, 0U)
+#define SA10_MPI1_DIO3          SF32LB_PINMUX(SA, 10U, 4U, 0U, 0U)
+#define SA10_MPI1_DIO3_ALT      SF32LB_PINMUX(SA, 10U, 5U, 0U, 0U)
+
+/* SA11 (SAIO_D11) */
+#define SA11_ANALOG             SF32LB_PINMUX_ANALOG(SA, 11U)
+#define SA11_MPI1_DIO7          SF32LB_PINMUX(SA, 11U, 1U, 0U, 0U)
+#define SA11_MPI1_CS            SF32LB_PINMUX(SA, 11U, 3U, 0U, 0U)
+#define SA11_MPI1_DIO0          SF32LB_PINMUX(SA, 11U, 5U, 0U, 0U)
+
+/* SA12 (SAIO_D12) */
+#define SA12_ANALOG             SF32LB_PINMUX_ANALOG(SA, 12U)
+#define SA12_MPI1_DQS           SF32LB_PINMUX(SA, 12U, 1U, 0U, 0U)
+#define SA12_MPI1_DQSDM         SF32LB_PINMUX(SA, 12U, 2U, 0U, 0U)
 
 #endif /* _INCLUDE_ZEPHYR_DT_BINDINGS_PINCTRL_SF32LB52X_PINCTRL_H_ */

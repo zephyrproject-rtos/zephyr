@@ -18,10 +18,10 @@ REFERENCE_OUTPUT = [
 REFERENCE_OUTPUT_INITLEVELS = [
         "EARLY",
         "PRE_KERNEL_1",
-        "__init___device_dts_ord_32: init_fn_0(__device_dts_ord_32)",
-        "__init___device_dts_ord_33: init_fn_1(__device_dts_ord_33)",
+        "__init___device_dts_ord_31: init_fn_0(__device_dts_ord_31)",
+        "__init___device_dts_ord_32: init_fn_1(__device_dts_ord_32)",
+        "__init___device_dts_ord_33: NULL(__device_dts_ord_33)",
         "__init___device_dts_ord_34: NULL(__device_dts_ord_34)",
-        "__init___device_dts_ord_35: NULL(__device_dts_ord_35)",
         "__init_posix_arch_console_init: posix_arch_console_init(NULL)",
         "PRE_KERNEL_2",
         "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",

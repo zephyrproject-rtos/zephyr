@@ -20,10 +20,6 @@
 #include "../../spinel_base/spinel.h"
 #include "../../src/include/nrf_802154_spinel.h"
 
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
-#include <nrf53_cpunet_mgmt.h>
-#endif
-
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME spinel_ipc_backend
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

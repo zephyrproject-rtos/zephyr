@@ -19,6 +19,7 @@
 	interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
+
 	dut: uart {
 		current-speed = <115200>;
 		status = "okay";

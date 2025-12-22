@@ -24,19 +24,36 @@ endif # LVGL
 
 # Takes good care of initialization priorities
 
+if REGULATOR_FIXED
+
+# Needs to init after MFD_AW9523B (80), since bus_5v uses aw9523b_gpio.
+config REGULATOR_FIXED_INIT_PRIORITY
+	default 81
+
+endif # REGULATOR_FIXED
+
 if REGULATOR_AXP192_AXP2101
+
+# Needs to init before the display (83), since AXP2101 powers it.
 config REGULATOR_AXP192_AXP2101_INIT_PRIORITY
 	default 81
+
 endif # REGULATOR_AXP192_AXP2101
 
 if MIPI_DBI
+
+# Needs to init after MFD_AW9523B (80), since reset-gpios uses aw9523b_gpio on this board.
 config MIPI_DBI_INIT_PRIORITY
 	default 82
+
 endif # MIPI_DBI
 
 if DISPLAY
+
+# Needs to init after REGULATOR_AXP192_AXP2101 (81) and MIPI_DBI (82).
 config DISPLAY_INIT_PRIORITY
 	default 83
+
 endif # DISPLAY
 
 endif # BOARD_M5STACK_CORES3_ESP32S3_PROCPU || BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE

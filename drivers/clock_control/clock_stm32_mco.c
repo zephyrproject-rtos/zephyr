@@ -69,21 +69,19 @@ static int stm32_mco_init(const struct device *dev)
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 
-#define STM32_MCO_INIT(inst)                                            \
-									\
-PINCTRL_DT_INST_DEFINE(inst);                                           \
-									\
-const static struct stm32_mco_config stm32_mco_config_##inst = {        \
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
-	.pclken = STM32_DT_INST_CLOCKS(inst),                           \
-	IF_ENABLED(HAS_PRESCALER,                                       \
-		(.prescaler = DT_PROP(DT_DRV_INST(inst), prescaler),))  \
-};                                                                      \
-									\
-DEVICE_DT_INST_DEFINE(inst, stm32_mco_init, NULL,                       \
-	NULL,                                                           \
-	&stm32_mco_config_##inst,                                       \
-	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,               \
-	NULL);
+#define STM32_MCO_INIT(inst)								\
+	PINCTRL_DT_INST_DEFINE(inst);							\
+											\
+	const static struct stm32_mco_config stm32_mco_config_##inst = {		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
+		.pclken = STM32_DT_INST_CLOCKS(inst),					\
+		IF_ENABLED(HAS_PRESCALER,						\
+			   (.prescaler = DT_PROP(DT_DRV_INST(inst), prescaler),))	\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, stm32_mco_init, NULL, NULL,				\
+			      &stm32_mco_config_##inst,					\
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_MCO_INIT);

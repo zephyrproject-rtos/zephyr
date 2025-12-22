@@ -465,6 +465,7 @@ error:
 static void telnet_server_cb(struct net_socket_service_event *evt)
 {
 	int sock_error;
+	int ret;
 	net_socklen_t optlen = sizeof(int);
 
 	if (sh_telnet == NULL) {
@@ -475,7 +476,14 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 	    (evt->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET,
 				       ZSOCK_SO_ERROR, &sock_error, &optlen);
-		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
+
+		ret = -sock_error;
+
+		if (ret == -ENETDOWN) {
+			LOG_INF("Network is down");
+		} else {
+			LOG_ERR("Telnet socket %d error (%d)", evt->event.fd, ret);
+		}
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
 			telnet_end_client_connection();

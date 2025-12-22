@@ -24,6 +24,7 @@
 
 		test_dac_leds {
 			compatible = "dac-leds";
+
 			test_dac_led0: test_dac_led_0 {
 				dac-dev = <&test_dac>;
 				channel = <0>;
@@ -45,6 +46,7 @@
 
 		test_gpio_leds {
 			compatible = "gpio-leds";
+
 			test_gpio_led0: test_gpio_led_0 {
 				gpios = <&test_gpio 0 0>;
 			};
@@ -128,6 +130,7 @@
 			is31fl3194@e {
 				compatible = "issi,is31fl3194";
 				reg = <0xe>;
+
 				led_rgb {
 					label = "led_rgb";
 					color-mapping = <0>, <1>, <2>;
@@ -209,9 +212,11 @@
 		test_pwm_leds {
 			compatible = "pwm-leds";
 			status = "okay";
+
 			test_pwm_led0: test_pwm_led_0 {
 				pwms = <&test_pwm 0 0 0>;
 			};
+
 			test_pwm_led1: test_pwm_led_1 {
 				pwms = <&test_pwm 1 0 0>;
 			};

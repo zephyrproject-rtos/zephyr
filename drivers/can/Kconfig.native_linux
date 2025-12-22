@@ -20,9 +20,9 @@ config CAN_NATIVE_LINUX_RX_THREAD_PRIORITY
 	  Priority level of the internal thread which is run for
 	  handling of incoming packets.
 
-config CAN_MAX_FILTER
+config CAN_NATIVE_LINUX_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
-	default 5
+	default 16
 	range 1 32
 	help
 	  Defines the array size of the callback/msgq pointers.

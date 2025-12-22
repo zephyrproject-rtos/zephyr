@@ -841,25 +841,6 @@ static const struct stm32_venc_config stm32_venc_config_0 = {
 	.irq_config = stm32_venc_irq_config_func,
 };
 
-static void risaf_config(void)
-{
-	/* Define and initialize the master configuration structure */
-	RIMC_MasterConfig_t rimc_master = {0};
-
-	/* Enable the clock for the RIFSC (RIF Security Controller) */
-	__HAL_RCC_RIFSC_CLK_ENABLE();
-
-	rimc_master.MasterCID = RIF_CID_1;
-	rimc_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-
-	/* Configure the master attributes for the video encoder peripheral (VENC) */
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_VENC, &rimc_master);
-
-	/* Set the secure and privileged attributes for the VENC as a slave */
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_VENC,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-}
-
 static int stm32_venc_init(const struct device *dev)
 {
 	const struct stm32_venc_config *config = dev->config;
@@ -889,8 +870,6 @@ static int stm32_venc_init(const struct device *dev)
 
 	/* Run IRQ init */
 	config->irq_config(dev);
-
-	risaf_config();
 
 	LOG_DBG("CPU frequency    : %d", HAL_RCC_GetCpuClockFreq() / 1000000);
 	LOG_DBG("sysclk frequency : %d", HAL_RCC_GetSysClockFreq() / 1000000);

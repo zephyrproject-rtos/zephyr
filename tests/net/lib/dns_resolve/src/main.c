@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#include "dns_pack.h"
 
 #if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -871,7 +872,7 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv4)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
 
-	struct net_in_addr addr = INADDR_LOOPBACK_INIT;
+	struct net_in_addr addr = NET_INADDR_LOOPBACK_INIT;
 	struct zsock_addrinfo hints = { 0 };
 	struct zsock_addrinfo *addrinfos;
 	const char *hostname = "localhost";
@@ -892,7 +893,7 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv6)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
 
-	struct net_in6_addr addr = IN6ADDR_LOOPBACK_INIT;
+	struct net_in6_addr addr = NET_IN6ADDR_LOOPBACK_INIT;
 	struct zsock_addrinfo hints = { 0 };
 	struct zsock_addrinfo *addrinfos;
 	const char *hostname = "localhost";
@@ -907,6 +908,145 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv6)
 	zassert_equal(memcmp(&net_sin6(addrinfos[0].ai_addr)->sin6_addr,
 			     &addr, sizeof(struct net_in6_addr)),
 		      0, "not loopback address");
+}
+
+NET_BUF_POOL_DEFINE(test_dns_qname_pool, 2, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+		    0, NULL);
+
+ZTEST(dns_resolve, test_dns_unpack_name)
+{
+	/* NULL string terminator serves a role of a final zero-length label */
+	static const uint8_t *test_records[] = {
+		/* example.com */
+		"\007example\003com",
+		/* www.zephyrproject.org */
+		"\003www\015zephyrproject\003org",
+		/* These records should barely fit (fills up the buffer size limit). */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\076very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx",
+	};
+	static const uint8_t *expected_names[] = {
+		"example.com",
+		"www.zephyrproject.org",
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx",
+
+	};
+	struct net_buf *result;
+	int ret;
+
+	zassert_equal(CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 255, "Invalid test configuration");
+
+	for (int i = 0; i < ARRAY_SIZE(test_records); i++) {
+		const uint8_t *end_of_label = NULL;
+
+		result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+		zassert_not_null(result, "Failed to allocate buffer");
+
+		/* +1 to include NULL as terminating label */
+		ret = dns_unpack_name(test_records[i], strlen(test_records[i]) + 1,
+				      test_records[i], result, &end_of_label);
+		zassert_equal(ret, strlen(expected_names[i]),
+			      "Error parsing records (%d)", ret);
+		zassert_str_equal(expected_names[i], result->data,
+				  "Parsed wrong name (%s)", result->data);
+		zassert_equal_ptr(test_records[i] + strlen(test_records[i]) + 1,
+				  end_of_label, "Wrong end of label");
+
+		net_buf_unref(result);
+	}
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_with_pointer)
+{
+	static const uint8_t test_records[] = {
+		/* www.example.com followed by ftp.example.com with pointer */
+		"\003www\007example\003com\000\003ftp\300\004" /* Last two bytes are pointer */
+	};
+	static const uint8_t *expected_names[] = {
+		"www.example.com",
+		"ftp.example.com",
+	};
+	const size_t offset_2nd_rec = 17;
+	const uint8_t *end_of_label = NULL;
+	struct net_buf *result;
+	int ret;
+
+	/* First name */
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[0]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[0], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_2nd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Second name with a pointer within */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_2nd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[1]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[1], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	/* -1 as end_of_label should point to the last byte in the buffer (pointer offset) */
+	zassert_equal_ptr(test_records + sizeof(test_records) - 1, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_overflow)
+{
+	static const uint8_t *test_records[] = {
+		/* 4 records 63 bytes (252 bytes) + 3 bytes for dot separators,
+		 * no space left for NULL terminator.
+		 */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx",
+		/* 4 records fit (251 bytes), 4 bytes for dot separators, 5th one-byte
+		 * record won't fit.
+		 */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\076very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx"
+		"\001x",
+		/* Single 64 byte record, that's forbidden (max record len is 63). */
+		"\100very_long_record_that_has_a_length_of_64_bytes_that_is_incorrect",
+	};
+	struct net_buf *result;
+	int ret;
+
+	zassert_equal(CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 255, "Invalid test configuration");
+
+	for (int i = 0; i < ARRAY_SIZE(test_records); i++) {
+		result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+		zassert_not_null(result, "Failed to allocate buffer");
+
+		/* +1 to include NULL as terminating label */
+		ret = dns_unpack_name(test_records[i], strlen(test_records[i]) + 1,
+				      test_records[i], result, NULL);
+		zassert_equal(ret, -EMSGSIZE, "Name parsing should've failed");
+
+		net_buf_unref(result);
+	}
 }
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

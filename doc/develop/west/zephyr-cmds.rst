@@ -220,6 +220,19 @@ the specific blobs that are fetched, by passing a regular expression::
   # For example, only download esp32 blobs, skip the other variants
   west blobs fetch hal_espressif --allow-regex 'lib/esp32/.*'
 
+An auto-cache directory can be provided via the ``--auto-cache`` cli argument
+or via the ``blobs.auto-cache`` config option. When enabled, the auto-cache
+directory is automatically populated whenever a blob is missing and downloaded.
+
+One or more additional cache directories (separated by ``;``) can be provided
+in ``--cache-dirs`` cli argument or ``blobs.cache-dirs`` config option.
+
+``west blobs fetch`` searches all configured cache directories (including the
+auto-cache) for a matching blob filename. Cached files may be stored either
+under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
+If found, the blob is copied from the cache to the blob path; otherwise
+it is downloaded from its url to the blob path.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``

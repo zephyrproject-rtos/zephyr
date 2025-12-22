@@ -22,15 +22,15 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
+
 #include <sys/errno.h>
 
-#include "bap_endpoint.h"
+#include "audio/bap_endpoint.h"
 #include "cap_initiator.h"
 #include "conn.h"
 #include "expects_util.h"
 #include "test_common.h"
-#include "ztest_assert.h"
-#include "ztest_test.h"
 
 struct cap_initiator_test_unicast_stop_fixture {
 	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];

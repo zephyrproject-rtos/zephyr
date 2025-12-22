@@ -14,7 +14,6 @@
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/dt-bindings/gpio/renesas-rzt2m-gpio.h>
 #include <soc.h>
-#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 
 static const struct device *const ns_portnf_md_dev = DEVICE_DT_GET(DT_NODELABEL(ns_portnf_md));

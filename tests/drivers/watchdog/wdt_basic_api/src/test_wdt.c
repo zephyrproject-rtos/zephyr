@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,8 +135,10 @@
 #define TIMEOUTS                   1
 #endif
 
+#if !(defined(CONFIG_HAS_WDT_NO_CALLBACKS) && CONFIG_HAS_WDT_NO_CALLBACKS)
 #define TEST_WDT_CALLBACK_1        (TIMEOUTS > 0)
 #define TEST_WDT_CALLBACK_2        (TIMEOUTS > 1)
+#endif
 
 
 static struct wdt_timeout_cfg m_cfg_wdt0;

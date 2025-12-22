@@ -35,7 +35,6 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

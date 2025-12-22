@@ -20,10 +20,11 @@
 
 	chosen {
 		zephyr,console = &uart136;
-		zephyr,code-partition = &cpuapp_slot0_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
+		zephyr,uart-mcumgr = &uart136;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 	};
@@ -143,14 +144,17 @@
 	status = "okay";
 };
 
+&cpusec_bellboard {
+	status = "okay";
+};
+
 &cpusys_vevif {
 	status = "okay";
 };
 
 &cpusec_cpuapp_ipc {
 	mbox-names = "tx", "rx";
-	tx-region = <&cpuapp_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpuapp_ipc_shm>;
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
@@ -184,12 +188,18 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
-&cpuapp_rx_partitions {
-	status = "okay";
+ironside_se_boot_report: &cpuapp_ironside_se_boot_report {};
+
+boot_partition: &cpuapp_boot_partition {
+	label = "mcuboot";
 };
 
-&cpuapp_rw_partitions {
-	status = "okay";
+slot0_partition: &cpuapp_slot0_partition {
+	label = "image-0";
+};
+
+slot1_partition: &cpuapp_slot1_partition {
+	label = "image-1";
 };
 
 &cpuppr_vpr {

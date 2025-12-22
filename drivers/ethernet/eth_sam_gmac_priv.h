@@ -265,7 +265,7 @@ struct eth_sam_dev_cfg {
 	const uint8_t num_queues;
 	const uint8_t phy_conn_type;
 	const uint8_t ref_clk_source;
-	const bool random_mac_addr;
+	const struct net_eth_mac_config mcfg;
 };
 
 /* Device run time data */

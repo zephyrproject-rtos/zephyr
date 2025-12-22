@@ -143,7 +143,7 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 			continue;
 		}
 
-		if (cfg->fds[0].revents & ZSOCK_POLLHUP) {
+		if (cfg->fds[0].revents & POLLHUP) {
 			LOG_DBG("Client #%d has disconnected", client);
 			break;
 		}

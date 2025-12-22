@@ -20,8 +20,6 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
 
 static struct zsock_pollfd sockfd_udp[CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES];
@@ -66,6 +64,9 @@ void udp_plat_deinit(void)
 			sockfd_udp[idx].fd = -1;
 		}
 	}
+
+	net_socket_service_register(&handle_udp_receive, sockfd_udp,
+				    ARRAY_SIZE(sockfd_udp), NULL);
 }
 
 otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
@@ -199,8 +200,8 @@ otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifId
 					     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
 			     error = OT_ERROR_FAILED);
 		memcpy(if_req.ifr_name, name, MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
-		VerifyOrExit(zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &if_req,
-					      sizeof(if_req)) == 0,
+		VerifyOrExit(zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+					      &if_req, sizeof(if_req)) == 0,
 			     error = OT_ERROR_FAILED);
 		break;
 	default:
@@ -272,10 +273,13 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	peer.sin6_port = net_htons(aMessageInfo->mPeerPort);
 	memcpy(&peer.sin6_addr, &aMessageInfo->mPeerAddr, sizeof(otIp6Address));
 
-	if (((aMessageInfo->mPeerAddr.mFields.m8[0] == 0xfe) &&
-	    ((aMessageInfo->mPeerAddr.mFields.m8[1] & 0xc0) == 0x80)) &&
-	    !aMessageInfo->mIsHostInterface) {
-		peer.sin6_scope_id = ail_iface_index;
+	if ((aMessageInfo->mPeerAddr.mFields.m8[0] == 0xfe) &&
+	    ((aMessageInfo->mPeerAddr.mFields.m8[1] & 0xc0) == 0x80)) {
+		if (aMessageInfo->mIsHostInterface) {
+			peer.sin6_scope_id = ail_iface_index;
+		} else {
+			peer.sin6_scope_id = ot_iface_index;
+		}
 	}
 
 	msg_hdr.msg_name = &peer;
@@ -304,7 +308,8 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 		cmsg_hdr->cmsg_type = ZSOCK_IPV6_PKTINFO;
 		cmsg_hdr->cmsg_len = NET_CMSG_LEN(sizeof(pktinfo));
 
-		pktinfo.ipi6_ifindex = aMessageInfo->mIsHostInterface ? 0 : ail_iface_index;
+		pktinfo.ipi6_ifindex = aMessageInfo->mIsHostInterface ?
+						ail_iface_index : ot_iface_index;
 
 		memcpy(&pktinfo.ipi6_addr, &aMessageInfo->mSockAddr, sizeof(otIp6Address));
 		memcpy(NET_CMSG_DATA(cmsg_hdr), &pktinfo, sizeof(pktinfo));
@@ -347,7 +352,7 @@ otError otPlatUdpJoinMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier a
 				    const otIp6Address *aAddress)
 {
 	otError error = OT_ERROR_NONE;
-	struct ipv6_mreq mreq = {0};
+	struct net_ipv6_mreq mreq = {0};
 	int sock;
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,

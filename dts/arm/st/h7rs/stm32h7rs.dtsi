@@ -88,14 +88,6 @@
 		zephyr,memory-region = "ITCM";
 	};
 
-	ext_memory: memory@70000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x70000000 DT_SIZE_M(256)>;
-		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
 	clocks {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -212,6 +204,15 @@
 			};
 		};
 
+		pwr: power@58024800 {
+			/* TODO:
+			 * Add "st,stm32-pwr" to compatible list
+			 * when support for wake-up pins is added
+			 */
+			compatible = "st,stm32h7rs-pwr";
+			reg = <0x58024800 0x400>;
+		};
+
 		exti: interrupt-controller@58000000 {
 			compatible = "st,stm32h7rs-exti", "st,stm32-exti";
 			interrupt-controller;
@@ -265,11 +266,11 @@
 				clocks = <&rcc STM32_CLOCK(AHB4, 2)>;
 			};
 
-			gpiod: gpio@58020C00 {
+			gpiod: gpio@58020c00 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x58020C00 0x400>;
+				reg = <0x58020c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB4, 3)>;
 			};
 
@@ -454,6 +455,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			interrupts = <58 0>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -465,6 +467,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <59 0>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -476,6 +479,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <60 0>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -486,6 +490,7 @@
 			reg = <0x42003400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
 			interrupts = <61 0>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -496,6 +501,7 @@
 			reg = <0x42005000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
 			interrupts = <62 0>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -588,6 +594,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -734,6 +745,57 @@
 			};
 		};
 
+		timers12: timers@40001800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 6)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 6)>;
+			interrupts = <113 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		timers13: timers@40001c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 7)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 7)>;
+			interrupts = <114 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		timers14: timers@40002000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40002000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 8)>;
+			interrupts = <115 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
 		timers15: timers@42004000 {
 			compatible = "st,stm32-timers";
 			reg = <0x42004000 0x400>;
@@ -806,6 +868,7 @@
 		lptim1: timers@40002400 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 9)>;
+			resets = <&rctl STM32_RESET(APB1L, 9)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40002400 0x400>;
@@ -955,8 +1018,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x08FFF814>;
-		ts-cal2-addr = <0x08FFF818>;
+		ts-cal1-addr = <0x08fff814>;
+		ts-cal2-addr = <0x08fff818>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;

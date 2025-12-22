@@ -32,7 +32,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/zvfs/eventfd.h>
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
@@ -1231,13 +1230,13 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
-	flags = zsock_fcntl(client_ctx->sock_fd, F_GETFL, 0);
+	flags = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_GETFL, 0);
 	if (flags == -1) {
 		ret = -errno;
 		LOG_ERR("zsock_fcntl(F_GETFL) failed (%d)", ret);
 		goto error;
 	}
-	ret = zsock_fcntl(client_ctx->sock_fd, F_SETFL, flags | O_NONBLOCK);
+	ret = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK);
 	if (ret == -1) {
 		ret = -errno;
 		LOG_ERR("zsock_fcntl(F_SETFL) failed (%d)", ret);

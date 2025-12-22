@@ -1,9 +1,6 @@
 # Copyright (c) 2025 Shan Pen <bricle031@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-# Enable SMPS
-CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 

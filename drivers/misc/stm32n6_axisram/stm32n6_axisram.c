@@ -53,8 +53,8 @@ static int axisram_stm32_init(const struct device *dev)
 #define STM32N6_AXISRAM_INIT(idx)							\
 	static const struct axisram_stm32_cfg axisram_stm32_cfg_##idx = {		\
 		.base = (RAMCFG_TypeDef *)DT_INST_REG_ADDR(idx),			\
-		.pclken_axisram = STM32_CLOCK_INFO_BY_NAME(idx, axisram),		\
-		.pclken_ramcfg = STM32_CLOCK_INFO_BY_NAME(idx, ramcfg),			\
+		.pclken_axisram = STM32_DT_INST_CLOCK_INFO_BY_NAME(idx, axisram),	\
+		.pclken_ramcfg = STM32_DT_INST_CLOCK_INFO_BY_NAME(idx, ramcfg),		\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(idx, &axisram_stm32_init, NULL,				\

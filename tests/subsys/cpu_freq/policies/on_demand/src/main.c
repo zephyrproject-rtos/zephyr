@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(cpu_freq_on_demand_test, LOG_LEVEL_INF);
 
-#define WAIT_US 1000
+#define WAIT_US 100000
 
 extern const struct pstate *soc_pstates[];
 extern const size_t soc_pstates_count;

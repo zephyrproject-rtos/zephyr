@@ -181,6 +181,7 @@
 			mfd-nct38xx@9 {
 				compatible = "nuvoton,nct38xx";
 				reg = <0x09>;
+
 				test_i2c_nct3807: nct3807 {
 					#address-cells = <1>;
 					#size-cells = <0>;
@@ -210,6 +211,7 @@
 			test_i2c_nct3808_p1: mfd-nct38xx@a {
 				compatible = "nuvoton,nct38xx";
 				reg = <0x0a>;
+
 				nct3808_0_P1 {
 					#address-cells = <1>;
 					#size-cells = <0>;
@@ -230,6 +232,7 @@
 			test_i2c_nct3808_p2: mfd-nct38xx@b {
 				compatible = "nuvoton,nct38xx";
 				reg = <0x0b>;
+
 				nct3808_0_P2 {
 					#address-cells = <1>;
 					#size-cells = <0>;

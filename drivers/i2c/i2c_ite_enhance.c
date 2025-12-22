@@ -1014,6 +1014,7 @@ done:
 }
 
 #ifdef CONFIG_I2C_TARGET
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 static void target_i2c_isr_dma(const struct device *dev,
 			       uint8_t interrupt_status)
 {
@@ -1077,51 +1078,73 @@ static void target_i2c_isr_dma(const struct device *dev,
 	/* Write clear the peripheral status */
 	IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
 }
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 
-static int target_i2c_isr_pio(const struct device *dev,
-			      uint8_t interrupt_status,
-			      uint8_t target_status)
+static void target_i2c_isr_pio(const struct device *dev, uint8_t interrupt_status,
+			       uint8_t target_status)
 {
 	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
 	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
-	int ret = 0;
 	uint8_t *base = config->base;
-	uint8_t val;
+	uint8_t val, handled_status = 0;
 
-	/* Target ID write flag */
-	if (interrupt_status & IT8XXX2_I2C_IDW_CLR) {
-		ret = target_cb->write_requested(data->target_cfg);
-	}
-	/* Target ID read flag */
-	else if (interrupt_status & IT8XXX2_I2C_IDR_CLR) {
-		if (!target_cb->read_requested(data->target_cfg, &val)) {
-			IT8XXX2_I2C_DTR(base) = val;
-		}
-	}
-	/* Byte transfer done */
-	else if (target_status & IT8XXX2_I2C_BYTE_DONE) {
-		/* Read of write */
-		if (target_status & IT8XXX2_I2C_RW) {
-			/* Host receiving, target transmitting */
-			if (!target_cb->read_processed(data->target_cfg, &val)) {
-				IT8XXX2_I2C_DTR(base) = val;
+	do {
+		/* Peripheral finish */
+		if (interrupt_status & IT8XXX2_I2C_P_CLR) {
+			/* Transfer done callback function */
+			if (target_cb->stop) {
+				target_cb->stop(data->target_cfg);
 			}
-		} else {
-			/* Host transmitting, target receiving */
-			val = IT8XXX2_I2C_DRR(base);
-			ret = target_cb->write_received(data->target_cfg, val);
-		}
-	}
 
-	return ret;
+			handled_status |= IT8XXX2_I2C_P_CLR;
+		}
+
+		if (interrupt_status & IT8XXX2_I2C_IDW_CLR) {
+			/* Target ID write flag */
+			if (target_cb->write_requested) {
+				target_cb->write_requested(data->target_cfg);
+			}
+
+			handled_status |= IT8XXX2_I2C_IDW_CLR;
+		} else if (interrupt_status & IT8XXX2_I2C_IDR_CLR) {
+			/* Target ID read flag */
+			if (target_cb->read_requested) {
+				target_cb->read_requested(data->target_cfg, &val);
+			}
+			IT8XXX2_I2C_DTR(base) = val;
+
+			handled_status |= IT8XXX2_I2C_IDR_CLR;
+		} else if (target_status & IT8XXX2_I2C_BYTE_DONE) {
+			/* Read of write */
+			if (target_status & IT8XXX2_I2C_RW) {
+				/* Host receiving, target transmitting */
+				if (target_cb->read_processed) {
+					target_cb->read_processed(data->target_cfg, &val);
+				}
+				IT8XXX2_I2C_DTR(base) = val;
+			} else {
+				/* Host transmitting, target receiving */
+				val = IT8XXX2_I2C_DRR(base);
+				if (target_cb->write_received) {
+					target_cb->write_received(data->target_cfg, val);
+				}
+			}
+		}
+
+		interrupt_status = IT8XXX2_I2C_IRQ_ST(base);
+		interrupt_status &= ~handled_status;
+	} while (interrupt_status != 0);
+
+	/* Write clear the peripheral status */
+	IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
+	/* Hardware reset */
+	IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 }
 
 static void target_i2c_isr(const struct device *dev)
 {
-	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
-	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
 	uint8_t *base = config->base;
 	uint8_t target_status = IT8XXX2_I2C_STR(base);
 
@@ -1129,6 +1152,10 @@ static void target_i2c_isr(const struct device *dev)
 	if (target_status & E_TARGET_ANY_ERROR) {
 		/* Hardware reset */
 		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
+		/* NACK */
+		IT8XXX2_I2C_CTR(base) &= ~IT8XXX2_I2C_ACK;
+		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_ACK;
+
 		return;
 	}
 
@@ -1138,30 +1165,11 @@ static void target_i2c_isr(const struct device *dev)
 
 		/* Determine whether the transaction uses PIO or DMA mode */
 		if (config->target_pio_mode) {
-			if (target_i2c_isr_pio(dev, interrupt_status, target_status) < 0) {
-				/* NACK */
-				IT8XXX2_I2C_CTR(base) &= ~IT8XXX2_I2C_ACK;
-				IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
-				data->target_nack = 1;
-			}
-			/* Peripheral finish */
-			if (interrupt_status & IT8XXX2_I2C_P_CLR) {
-				/* Transfer done callback function */
-				target_cb->stop(data->target_cfg);
-
-				if (data->target_nack) {
-					/* Set acknowledge */
-					IT8XXX2_I2C_CTR(base) |=
-						IT8XXX2_I2C_ACK;
-					data->target_nack = 0;
-				}
-			}
-			/* Write clear the peripheral status */
-			IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
-			/* Hardware reset */
-			IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
+			target_i2c_isr_pio(dev, interrupt_status, target_status);
 		} else {
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 			target_i2c_isr_dma(dev, interrupt_status);
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 		}
 	}
 }
@@ -1593,11 +1601,6 @@ static DEVICE_API(i2c, i2c_enhance_driver_api) = {
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
-
-#ifdef CONFIG_I2C_TARGET
-BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
-	     "When I2C target config is enabled, the buffer mode must be used.");
-#endif
 
 #define I2C_ITE_ENHANCE_INIT(inst)                                              \
 	PINCTRL_DT_INST_DEFINE(inst);                                           \

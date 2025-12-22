@@ -198,7 +198,7 @@ again:
 		}
 
 		nm_addr->nm_pid = mgmt->pid;
-		nm_addr->nm_family = AF_NET_MGMT;
+		nm_addr->nm_family = NET_AF_NET_MGMT;
 		nm_addr->nm_mask = raised_event;
 	}
 
@@ -394,5 +394,5 @@ static bool net_mgmt_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(af_net_mgmt, NET_SOCKET_DEFAULT_PRIO, AF_NET_MGMT,
+NET_SOCKET_REGISTER(af_net_mgmt, NET_SOCKET_DEFAULT_PRIO, NET_AF_NET_MGMT,
 		    net_mgmt_is_supported, znet_mgmt_socket);

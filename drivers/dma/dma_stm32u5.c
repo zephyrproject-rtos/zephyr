@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32u5_dma
 
 #define STM32U5_DMA_LINKED_LIST_NODE_SIZE (2)
+#define STM32U5_DMA_MAX_BURST_LENGTH      (64) /* Maximum number of beats in a burst */
 
 static const uint32_t table_src_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
@@ -403,6 +404,44 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_ERR("source and dest unit size error, %d",
 			config->source_data_size);
 		return -EINVAL;
+	}
+
+	if ((config->source_burst_length % config->source_data_size) != 0) {
+		LOG_ERR("Source burst length %d is not aligned to source data size %d",
+			config->source_burst_length, config->source_data_size);
+		return -EINVAL;
+	}
+
+	if ((config->dest_burst_length % config->dest_data_size) != 0) {
+		LOG_ERR("Destination burst length %d is not aligned to destination data size %d",
+			config->dest_burst_length, config->dest_data_size);
+		return -EINVAL;
+	}
+
+	uint32_t burst_beats = config->source_burst_length / config->source_data_size;
+
+	if (burst_beats > STM32U5_DMA_MAX_BURST_LENGTH) {
+		LOG_ERR("Source burst length %d is invalid", config->source_burst_length);
+		return -EINVAL;
+	} else if (burst_beats > 0) {
+		LL_DMA_SetSrcBurstLength(dma, dma_stm32_id_to_stream(id), burst_beats);
+	} else {
+		/* Default HW behavior (upon reset) is a single beat burst */
+		LOG_WRN("Accepting source burst length 0 for backwards compatibility");
+		LL_DMA_SetSrcBurstLength(dma, dma_stm32_id_to_stream(id), 1U);
+	}
+
+	burst_beats = config->dest_burst_length / config->dest_data_size;
+
+	if (burst_beats > STM32U5_DMA_MAX_BURST_LENGTH) {
+		LOG_ERR("Destination burst length %d is invalid", config->dest_burst_length);
+		return -EINVAL;
+	} else if (burst_beats > 0) {
+		LL_DMA_SetDestBurstLength(dma, dma_stm32_id_to_stream(id), burst_beats);
+	} else {
+		/* Default HW behavior (upon reset) is a single beat burst */
+		LOG_WRN("Accepting destination burst length 0 for backwards compatibility");
+		LL_DMA_SetDestBurstLength(dma, dma_stm32_id_to_stream(id), 1U);
 	}
 
 	stream->busy		= true;

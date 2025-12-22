@@ -337,7 +337,7 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 			 * a new nested exception triggered by FPU accessing (var_args).
 			 */
 			arch_flush_local_fpu();
-			write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
+			write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN);
 #endif
 			arch_curr_cpu()->arch.corrupted_sp = 0UL;
 			EXCEPTION_DUMP("STACK OVERFLOW FROM KERNEL,"

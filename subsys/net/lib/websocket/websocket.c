@@ -22,12 +22,7 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
-#if defined(CONFIG_POSIX_API)
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/socket.h>
-#else
 #include <zephyr/net/socket.h>
-#endif
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/websocket.h>
 
@@ -365,7 +360,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		key_len);
 
 	olen = MIN(sizeof(key_accept) - 1 - key_len, sizeof(WS_MAGIC) - 1);
-	strncpy(key_accept + key_len, WS_MAGIC, olen);
+	memcpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
 #ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT

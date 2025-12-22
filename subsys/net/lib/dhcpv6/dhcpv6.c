@@ -2358,7 +2358,7 @@ void net_dhcpv6_restart(struct net_if *iface)
 
 int net_dhcpv6_init(void)
 {
-	struct net_sockaddr unspec_addr;
+	struct net_sockaddr unspec_addr = {0};
 	int ret;
 
 	net_ipaddr_copy(&net_sin6(&unspec_addr)->sin6_addr,

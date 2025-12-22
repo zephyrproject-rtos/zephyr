@@ -202,7 +202,7 @@ testing:
   testing relating keywords to provide best coverage for the features of this
   board.
 
-.. _twister_default_testing_board:
+  .. _twister_default_testing_board:
 
   binaries:
     A list of custom binaries to be kept for device testing.
@@ -215,10 +215,9 @@ testing:
     tags.
   only_tags:
     Only execute tests with this list of tags on a specific platform.
-
-  .. _twister_board_timeout_multiplier:
-
   timeout_multiplier: <float> (default 1)
+    .. _twister_board_timeout_multiplier:
+
     Multiply each test scenario timeout by specified ratio. This option allows to tune timeouts only
     for required platform. It can be useful in case naturally slow platform I.e.: HW board with
     power-efficient but slow CPU or simulation platform which can perform instruction accurate

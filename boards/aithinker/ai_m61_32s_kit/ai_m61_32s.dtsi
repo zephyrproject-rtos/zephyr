@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl618.dtsi>
+#include "ai_m61_32s-pinctrl.dtsi"
+
+/ {
+	model = "Ai-Thinker M61-32S Module";
+	compatible = "bflb,bl618";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &sram1;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(320)>;
+};
+
+&flashctrl {
+	flash0: flash@A0000000 {
+		/* in-chip xmc flash die on ALL variant, NC pins noneffective
+		 * in-module SOIC-8 gigadevice flash on non-ALL variant, NC pins effective
+		 */
+		compatible = "soc-nv-flash", "xmc,xm25qw64", "gd,gd25q64e";
+		reg = <0xA0000000 (0x800000 - 0x2000)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 (0x700000 - 0x2000)>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};

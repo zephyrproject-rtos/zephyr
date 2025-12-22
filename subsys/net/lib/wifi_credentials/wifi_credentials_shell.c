@@ -117,14 +117,19 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"ssid", required_argument, 0, 's'},	 {"passphrase", required_argument, 0, 'p'},
-		{"key-mgmt", required_argument, 0, 'k'}, {"ieee-80211w", required_argument, 0, 'w'},
-		{"bssid", required_argument, 0, 'm'},	 {"band", required_argument, 0, 'b'},
-		{"channel", required_argument, 0, 'c'},	 {"timeout", required_argument, 0, 't'},
-		{"identity", required_argument, 0, 'a'}, {"key-passwd", required_argument, 0, 'K'},
-		{"help", no_argument, 0, 'h'},		 {0, 0, 0, 0}};
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"passphrase", sys_getopt_required_argument, 0, 'p'},
+		{"key-mgmt", sys_getopt_required_argument, 0, 'k'},
+		{"ieee-80211w", sys_getopt_required_argument, 0, 'w'},
+		{"bssid", sys_getopt_required_argument, 0, 'm'},
+		{"band", sys_getopt_required_argument, 0, 'b'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"timeout", sys_getopt_required_argument, 0, 't'},
+		{"identity", sys_getopt_required_argument, 0, 'a'},
+		{"key-passwd", sys_getopt_required_argument, 0, 'K'},
+		{"help", sys_getopt_no_argument, 0, 'h'},		 {0, 0, 0, 0}};
 	char *endptr;
 	bool secure_connection = false;
 	uint8_t band;
@@ -138,9 +143,9 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	long channel;
 	long mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h", long_options, &opt_index)) !=
-	       -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
+				      long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			creds.header.ssid_len = strlen(state->optarg);

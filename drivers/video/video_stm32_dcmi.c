@@ -45,6 +45,7 @@ struct video_stm32_dcmi_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct video_buffer *vbuf;
+	struct stream dma;
 };
 
 struct video_stm32_dcmi_config {
@@ -52,7 +53,6 @@ struct video_stm32_dcmi_config {
 	irq_config_func_t irq_config;
 	const struct pinctrl_dev_config *pctrl;
 	const struct device *sensor_dev;
-	const struct stream dma;
 };
 
 static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
@@ -130,12 +130,12 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 static int stm32_dma_init(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
+	struct stream *dma = &data->dma;
 	int ret;
 
 	/* Check if the DMA device is ready */
-	if (!device_is_ready(config->dma.dma_dev)) {
-		LOG_ERR("%s DMA device not ready", config->dma.dma_dev->name);
+	if (!device_is_ready(dma->dma_dev)) {
+		LOG_ERR("%s DMA device not ready", dma->dma_dev->name);
 		return -ENODEV;
 	}
 
@@ -147,16 +147,16 @@ static int stm32_dma_init(const struct device *dev)
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
-	struct dma_config dma_cfg = config->dma.cfg;
+	struct dma_config *dma_cfg = &dma->cfg;
 	static DMA_HandleTypeDef hdma;
 
 	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg.user_data = &hdma;
+	dma_cfg->user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(config->dma.dma_dev, config->dma.channel, &dma_cfg);
+	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
+	ret = dma_config(dma->dma_dev, dma->channel, dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", config->dma.channel);
+		LOG_ERR("Failed to configure DMA channel %d", dma->channel);
 		return ret;
 	}
 
@@ -170,8 +170,7 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
-	hdma.Instance			= STM32_DMA_GET_INSTANCE(config->dma.reg,
-								 config->dma.channel);
+	hdma.Instance			= STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
 #endif
@@ -482,8 +481,11 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.source_burst_length = 1,       /* SINGLE transfer */			\
-		.dest_burst_length = 1,         /* SINGLE transfer */			\
+		/* single transfers (burst length = data size) */			\
+		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+		.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 		.dma_callback = dcmi_dma_callback,					\
@@ -530,6 +532,7 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 				.LineSelectStart = DCMI_OELS_ODD,
 		},
 	},
+	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
@@ -539,7 +542,6 @@ static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.sensor_dev = SOURCE_DEV(0),
-	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
 };
 
 static int video_stm32_dcmi_init(const struct device *dev)

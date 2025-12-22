@@ -27,6 +27,7 @@ from pathlib import Path
 from queue import Empty, Queue
 
 import psutil
+from serial.tools import list_ports
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
 from twisterlib.hardwaremap import DUT
@@ -588,7 +589,7 @@ class DeviceHandler(Handler):
         command = ["west"]
         if self.options.verbose > 2:
             command.append(f"-{'v' * (self.options.verbose - 2)}")
-        command += ["flash", "--skip-rebuild", "-d", self.build_dir]
+        command += ["flash", "--no-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
         # There are three ways this option is used.
@@ -637,7 +638,8 @@ class DeviceHandler(Handler):
                     # --probe=<serial number> select by probe serial number
                     command.append(f"--probe={board_id}")
                 elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
-                    command.append(f"--tool-opt=sn={board_id}")
+                    command.append('--dev-id')
+                    command.append(board_id)
 
                 # Receive parameters from runner_params field.
                 if hardware.runner_params:
@@ -867,6 +869,16 @@ class DeviceHandler(Handler):
                     # Return to normal boot
                     ser.rts = False
                 else:
+                    # Wait for serial port to appear after flashing
+                    # To keep dependency between flash_timeout proposed 20% of this value
+                    # but not less than 10s. TO keep clarity of measurement,
+                    # declare new start time instead of using existing one start_time.
+                    serial_wait_timeout = max(10, int(flash_timeout * 0.2))
+                    flash_start_time = time.time()
+                    while ser.port not in (p.name for p in list_ports.comports()):
+                        time.sleep(0.1)
+                        if time.time() - flash_start_time > serial_wait_timeout:
+                            break
                     ser.open()
 
             except serial.SerialException as e:

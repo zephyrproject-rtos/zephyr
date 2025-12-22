@@ -38,12 +38,19 @@ config MQTT_SN_LIB_MAX_GATEWAYS
 
 config MQTT_SN_LIB_MAX_ADDR_SIZE
 	int "Maximum address size for the transport"
+	default 24 if NET_IPV6
+	default 8 if NET_IPV4
 	default 21
 	range 1 $(UINT8_MAX)
 	help
 	  The MQTT_SN library stores addresses internally and thus
 	  needs to know how long your addresses are. Set this to the maximum
 	  length in bytes of the address data structure for your implemented transport.
+
+	  A UDP transport requires at least 8 bytes on IPv4 and 24 bytes on
+	  IPv6, corresponding to the sizes of the sockaddr_in and sockaddr_in6
+	  structs. For an out-of-tree transport, you may need to adjust this
+	  value.
 
 config MQTT_SN_LIB_BROADCAST_RADIUS
 	int "Radius for broadcast messages"

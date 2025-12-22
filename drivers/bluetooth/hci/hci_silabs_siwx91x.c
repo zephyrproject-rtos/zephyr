@@ -13,6 +13,8 @@ LOG_MODULE_REGISTER(bt_hci_driver_siwg917);
 
 #include "rsi_ble.h"
 #include "rsi_ble_common_config.h"
+#include "siwx91x_nwp.h"
+
 #define BLE_RF_POWER_INDEX     0x0006
 #define BT_OP_VS_RF_POWER_MODE BT_OP(BT_OGF_VS, BLE_RF_POWER_INDEX)
 #define BT_LE_MODE             2
@@ -76,12 +78,20 @@ static int siwx91x_bt_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
+	const struct hci_config *hci_config = dev->config;
 	int err = rsi_bt_driver_send_tx_pwr_vs_cmd(dev, BT_LE_MODE, RSI_BLE_PWR_INX);
 
 	if (err < 0) {
 		LOG_ERR("Failed to send RF power config command: %d", err);
 		return err;
 	}
+
+	err = siwx91x_nwp_apply_power_profile(hci_config->nwp_dev);
+	if (err < 0) {
+		LOG_ERR("Failed to set power profile: %d", err);
+		return err;
+	}
+
 	return 0;
 }
 

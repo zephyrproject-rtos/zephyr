@@ -384,6 +384,11 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		goto err;
 	}
 
+	if (!net_if_is_up(net_pkt_iface(pkt))) {
+		ret = -ENETDOWN;
+		goto err;
+	}
+
 	net_pkt_trim_buffer(pkt);
 	net_pkt_cursor_init(pkt);
 
@@ -642,12 +647,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 static void init_rx_queues(void)
 {
+	net_tc_rx_init();
+
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
 	 */
 	net_if_init();
-
-	net_tc_rx_init();
 
 	/* This will take the interface up and start everything. */
 	net_if_post_init();

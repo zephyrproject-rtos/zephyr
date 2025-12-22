@@ -41,6 +41,15 @@ config SOC_MCXA366
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 
+config SOC_MCXA577
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_CACHE
+
 config SOC_MCXA344
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU

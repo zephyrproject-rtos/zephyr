@@ -992,7 +992,7 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 	struct net_sockaddr_in6 dest_addr;
 	struct net_if_addr *ifaddr;
 	ssize_t sent = 0;
-	struct ifreq ifreq = { 0 };
+	struct net_ifreq ifreq = { 0 };
 	char ifname[CONFIG_NET_INTERFACE_NAME_LEN];
 
 	/* embed ll interface addresses */
@@ -1033,7 +1033,7 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 	zassert_true(ret > 0, "cannot get interface name (%d/%s)", ret, strerror(-ret));
 
 	strncpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name));
-	ret = zsock_setsockopt(client_sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+	ret = zsock_setsockopt(client_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE, &ifreq,
 			       sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", -errno);
 

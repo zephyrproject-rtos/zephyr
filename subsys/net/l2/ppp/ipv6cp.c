@@ -274,7 +274,7 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
-			char dst[INET6_ADDRSTRLEN];
+			char dst[NET_INET6_ADDRSTRLEN];
 			char *addr_str;
 
 			net_sprint_ll_addr_buf(peer_lladdr.addr,
@@ -327,7 +327,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
-			char dst[INET6_ADDRSTRLEN];
+			char dst[NET_INET6_ADDRSTRLEN];
 			char *addr_str;
 
 			net_sprint_ll_addr_buf(ctx->ipv6cp.peer_options.iid,

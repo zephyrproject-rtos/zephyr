@@ -8,7 +8,9 @@
 #include <ksched.h>
 #include <ipi.h>
 
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
 static struct k_spinlock ipi_lock;
+#endif
 
 #ifdef CONFIG_TRACE_SCHED_IPI
 extern void z_trace_sched_ipi(void);

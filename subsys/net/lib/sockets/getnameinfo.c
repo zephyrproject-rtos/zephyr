@@ -13,10 +13,10 @@ int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen,
 		      char *serv, net_socklen_t servlen, int flags)
 {
 	/* Both net_sockaddr_in & _in6 have same offsets for family and address. */
-	struct net_sockaddr_in *a = (struct net_sockaddr_in *)addr;
+	const struct net_sockaddr_in6 *a = (const struct net_sockaddr_in6 *)addr;
 
 	if (host != NULL) {
-		void *res = zsock_inet_ntop(a->sin_family, &a->sin_addr,
+		void *res = zsock_inet_ntop(a->sin6_family, &a->sin6_addr,
 					    host, hostlen);
 
 		if (res == NULL) {
@@ -25,7 +25,7 @@ int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen,
 	}
 
 	if (serv != NULL) {
-		snprintk(serv, servlen, "%hu", net_ntohs(a->sin_port));
+		snprintk(serv, servlen, "%hu", net_ntohs(a->sin6_port));
 	}
 
 	return 0;

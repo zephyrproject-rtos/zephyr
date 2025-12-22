@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP)
-  board_runner_args(jlink "--device=cortex-m33" "--speed=4000")
+  board_runner_args(jlink "--device=nRF54LM20A_M33" "--speed=4000")
 elseif(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR)
-  board_runner_args(jlink "--speed=4000")
+  board_runner_args(jlink "--device=nRF54LM20A_RV32" "--speed=4000")
 endif()
 
 if(CONFIG_BOARD_NRF54LM20DK_NRF54LM20A_CPUAPP_NS)

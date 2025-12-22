@@ -918,10 +918,11 @@ void adxl367_temp_convert(struct sensor_value *val, int16_t value)
 static void adxl367_temp_convert(struct sensor_value *val, int16_t value)
 #endif /*CONFIG_SENSOR_ASYNC_API*/
 {
-	int64_t temp_data = (value - ADXL367_TEMP_25C);
+	int32_t temp_from_25 = value - ADXL367_TEMP_25C;
+	int32_t temp_data = temp_from_25 * ADXL367_TEMP_SCALE;
 
-	val->val1 = temp_data / 54 /*temp sensitivity LSB/C*/ + 25/*bias test conditions*/;
-	val->val2 = temp_data % 54 * 10000;
+	val->val1 = temp_data / 1000000 + 25;
+	val->val2 = temp_data % 1000000;
 }
 
 static int adxl367_channel_get(const struct device *dev,

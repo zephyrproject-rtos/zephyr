@@ -10,6 +10,9 @@ menu "IP stack"
 
 config NET_NAMESPACE_COMPAT_MODE
 	bool "Network namespace compatibility mode"
+	# Disable the compatibility mode for network tests. But if the tests
+	# uses POSIX APIs, then currently the compat mode is needed.
+	depends on !NET_TEST || POSIX_API
 	default y
 	help
 	  The networking APIs and code is now namespaced i.e., relevant network

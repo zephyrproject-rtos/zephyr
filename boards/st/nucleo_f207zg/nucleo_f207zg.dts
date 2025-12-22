@@ -20,6 +20,7 @@
 		zephyr,canbus = &can1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -247,12 +248,17 @@ zephyr_udc0: &usbotg_fs {
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x20000 DT_SIZE_K(448)>;
+			reg = <0x20000 DT_SIZE_K(384)>;
 		};
 
-		slot1_partition: partition@90000 {
+		slot1_partition: partition@60000 {
 			label = "image-1";
-			reg = <0x90000 DT_SIZE_K(448)>;
+			reg = <0x60000 DT_SIZE_K(384)>;
+		};
+
+		scratch_partition: partiimagtion@c0000 {
+			label = "image-scratch";
+			reg = <0xc0000 DT_SIZE_K(128)>;
 		};
 	};
 };

@@ -6,6 +6,7 @@
 
 #include "openthread/platform/mdns_socket.h"
 #include <openthread/nat64.h>
+#include <openthread/platform/messagepool.h>
 #include "openthread/instance.h"
 #include "openthread_border_router.h"
 #include "platform-zephyr.h"
@@ -18,15 +19,12 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket_service.h>
-#include <openthread/nat64.h>
 #include "sockets_internal.h"
+#include <errno.h>
 
 #define MULTICAST_PORT 5353
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
-#define MAX_SERVICES   2
-#else
-#define MAX_SERVICES 1
-#endif
+#define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_MDNS_SERVICES
+#define PKT_THRESHOLD_VAL CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_BUFFER_THRESHOLD
 
 static struct zsock_pollfd sockfd_udp[MAX_SERVICES];
 static int mdns_sock_v6 = -1;
@@ -108,13 +106,14 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 	struct net_ipv6_mreq mreq_v6 = {0};
 	int mcast_hops = 255;
 	int on = 1;
+	int mcast_join_ret = 0;
 
 	struct net_sockaddr_in6 addr = {.sin6_family = NET_AF_INET6,
-				    .sin6_port = net_htons(MULTICAST_PORT),
-				    .sin6_addr = {{{0}}},
-				    .sin6_scope_id = 0};
+					.sin6_port = net_htons(MULTICAST_PORT),
+					.sin6_addr = {{{0}}},
+					.sin6_scope_id = 0};
 
-	mdns_sock_v6 = zsock_socket(NET_AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	mdns_sock_v6 = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v6 >= 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(net_if_get_name(net_if_get_by_index(ail_iface_idx), name,
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
@@ -134,8 +133,9 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 		     error = OT_ERROR_FAILED);
 	mreq_v6.ipv6mr_ifindex = ail_iface_idx;
 	net_ipv6_addr_create(&mreq_v6.ipv6mr_multiaddr, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
-				      &mreq_v6, sizeof(mreq_v6)) == 0,
+	mcast_join_ret = zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
+					  &mreq_v6, sizeof(mreq_v6));
+	VerifyOrExit(mcast_join_ret == 0 || (mcast_join_ret == -1 && errno == EALREADY),
 		     error = OT_ERROR_FAILED);
 	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_LOOP,
 				      &on, sizeof(on)) == 0,
@@ -172,10 +172,11 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 	struct net_ip_mreqn mreq_v4 = {0};
 	int mcast_hops = 255;
 	int on = 1;
+	int mcast_join_ret = 0;
 
 	struct net_sockaddr_in addr = {.sin_family = NET_AF_INET,
-				   .sin_port = net_htons(MULTICAST_PORT),
-				   .sin_addr = {{{0}}}};
+				       .sin_port = net_htons(MULTICAST_PORT),
+				       .sin_addr = {{{0}}}};
 
 	mdns_sock_v4 = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v4 >= 0, error = OT_ERROR_FAILED);
@@ -194,8 +195,9 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 		     error = OT_ERROR_FAILED);
 	mreq_v4.imr_ifindex = ail_iface_idx;
 	mreq_v4.imr_multiaddr.s_addr = net_htonl(0xE00000FB);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
-				      &mreq_v4, sizeof(mreq_v4)) == 0,
+	mcast_join_ret = zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+					  &mreq_v4, sizeof(mreq_v4));
+	VerifyOrExit(mcast_join_ret == 0 || (mcast_join_ret == -1 && errno == EALREADY),
 		     error = OT_ERROR_FAILED);
 	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_LOOP,
 				      &on, sizeof(on)) == 0,
@@ -241,6 +243,10 @@ static otError mdns_socket_deinit(void)
 	sockfd_udp[1].fd = -1;
 	mdns_sock_v4 = -1;
 #endif /* CONFIG_NET_IPV4 */
+
+	VerifyOrExit(net_socket_service_register(&mdns_udp_service, sockfd_udp,
+						 ARRAY_SIZE(sockfd_udp), NULL) == 0,
+						 error = OT_ERROR_FAILED);
 exit:
 	return error;
 }
@@ -250,13 +256,13 @@ static void mdns_send_multicast(otMessage *message, uint32_t ail_iface_idx)
 	uint16_t length = otMessageGetLength(message);
 	struct otbr_msg_ctx *req = NULL;
 	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
-				       .sin6_port = net_htons(MULTICAST_PORT),
-				       .sin6_addr = NET_IN6ADDR_ANY_INIT,
-				       .sin6_scope_id = 0};
+					   .sin6_port = net_htons(MULTICAST_PORT),
+					   .sin6_addr = NET_IN6ADDR_ANY_INIT,
+					   .sin6_scope_id = 0};
 #if defined(CONFIG_NET_IPV4)
 	struct net_sockaddr_in addr_v4 = {.sin_family = NET_AF_INET,
-				      .sin_port = net_htons(MULTICAST_PORT),
-				      .sin_addr = NET_INADDR_ANY_INIT};
+					  .sin_port = net_htons(MULTICAST_PORT),
+					  .sin_addr = NET_INADDR_ANY_INIT};
 #endif /* CONFIG_NET_IPV4*/
 
 	VerifyOrExit(length <= OTBR_MESSAGE_SIZE);
@@ -271,11 +277,11 @@ static void mdns_send_multicast(otMessage *message, uint32_t ail_iface_idx)
 
 	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0,
 				  (struct net_sockaddr *)&addr_v6,
-		     sizeof(addr_v6)) > 0);
+				  sizeof(addr_v6)) > 0);
 #if defined(CONFIG_NET_IPV4)
 	VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0,
 				  (struct net_sockaddr *)&addr_v4,
-		     sizeof(addr_v4)) > 0);
+				  sizeof(addr_v4)) > 0);
 #endif /* CONFIG_NET_IPV4 */
 exit:
 	otMessageFree(message);
@@ -294,9 +300,9 @@ static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *a
 	struct net_sockaddr_in addr_v4 = {0};
 #endif /* CONFIG_NET_IPV4*/
 	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
-				       .sin6_port = net_htons(aAddress->mPort),
-				       .sin6_addr = NET_IN6ADDR_ANY_INIT,
-				       .sin6_scope_id = 0};
+					   .sin6_port = net_htons(aAddress->mPort),
+					   .sin6_addr = NET_IN6ADDR_ANY_INIT,
+					   .sin6_scope_id = 0};
 
 	VerifyOrExit(length <= OTBR_MESSAGE_SIZE);
 	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
@@ -314,7 +320,7 @@ static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *a
 
 	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0,
 				  (struct net_sockaddr *)&addr_v6,
-		     sizeof(addr_v6)) > 0);
+				  sizeof(addr_v6)) > 0);
 #if defined(CONFIG_NET_IPV4)
 	if (send_ipv4) {
 		VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0,
@@ -349,7 +355,7 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 	if (family == NET_AF_INET) {
 		addrlen = sizeof(addr_v4);
 		len = zsock_recvfrom(mdns_sock_v4, req->buffer, sizeof(req->buffer), 0,
-			       (struct net_sockaddr *)&addr_v4, &addrlen);
+				     (struct net_sockaddr *)&addr_v4, &addrlen);
 		VerifyOrExit(len > 0);
 		otIp4ToIp4MappedIp6Address((otIp4Address *)&addr_v4.sin_addr.s_addr,
 					   &req->addr_info.mAddress);
@@ -358,7 +364,7 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 #endif /* CONFIG_NET_IPV4 */
 		addrlen = sizeof(addr_v6);
 		len = zsock_recvfrom(mdns_sock_v6, req->buffer, sizeof(req->buffer), 0,
-			       (struct net_sockaddr *)&addr_v6, &addrlen);
+				     (struct net_sockaddr *)&addr_v6, &addrlen);
 		VerifyOrExit(len > 0);
 		memcpy(&req->addr_info.mAddress, &addr_v6.sin6_addr,
 		       sizeof(req->addr_info.mAddress));
@@ -380,6 +386,28 @@ static void process_mdns_message(struct otbr_msg_ctx *msg_ctx_ptr)
 {
 	otMessageSettings ot_message_settings = {true, OT_MESSAGE_PRIORITY_NORMAL};
 	otMessage *ot_message = NULL;
+	otBufferInfo buffer_info;
+	uint16_t req_buff_num;
+
+	/** In large networks with high traffic, we have observed that mDNS module
+	 * might jump to assert when trying to allocate OT message buffers for a new
+	 * query/response that has to be sent.
+	 * Here, we calculate the approximate number of OT message buffers that will be required
+	 * to hold the incoming mDNS packet. If the number of free OT message buffers will drop
+	 * below the imposed limit after the conversion has been perfomed, the incoming packet
+	 * will be silently dropped.
+	 * A possible scenario would be when multipackets (TC bit set) are received from multiple
+	 * hosts, as mDNS module stores the incoming messages for a period of time.
+	 * This mechanism tries to make sure that there are enough free buffers for mDNS module
+	 * to perform it's execution.
+	 */
+
+	req_buff_num = (msg_ctx_ptr->length /
+			(CONFIG_OPENTHREAD_MESSAGE_BUFFER_SIZE - sizeof(otMessageBuffer))) + 1;
+	otMessageGetBufferInfo(ot_instance_ptr, &buffer_info);
+
+	VerifyOrExit((buffer_info.mFreeBuffers - req_buff_num) >=
+		     ((PKT_THRESHOLD_VAL * CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS) / 100));
 
 	ot_message = otIp6NewMessage(ot_instance_ptr, &ot_message_settings);
 	VerifyOrExit(ot_message);

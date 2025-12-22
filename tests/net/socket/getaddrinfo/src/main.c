@@ -175,7 +175,7 @@ K_THREAD_DEFINE(dns_server_thread_id, STACK_SIZE,
 
 static void *test_getaddrinfo_setup(void)
 {
-	char str[INET6_ADDRSTRLEN], *addr_str;
+	char str[NET_INET6_ADDRSTRLEN], *addr_str;
 	struct net_sockaddr addr;
 	int ret;
 
@@ -545,7 +545,7 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_flags_numerichost)
 	int ret;
 	struct zsock_addrinfo *res = NULL;
 	struct zsock_addrinfo hints = {
-		.ai_flags = AI_NUMERICHOST,
+		.ai_flags = ZSOCK_AI_NUMERICHOST,
 	};
 
 	ret = zsock_getaddrinfo("foo.bar", "65534", &hints, &res);
@@ -605,7 +605,7 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_null_host)
 	struct zsock_addrinfo hints = {
 		.ai_family = NET_AF_INET,
 		.ai_socktype = NET_SOCK_STREAM,
-		.ai_flags = AI_PASSIVE
+		.ai_flags = ZSOCK_AI_PASSIVE
 	};
 	int ret;
 
@@ -635,7 +635,7 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_null_host)
 	saddr6 = net_sin6(res->ai_addr);
 	zassert_equal(saddr6->sin6_family, NET_AF_INET6, "");
 	zassert_equal(saddr6->sin6_port, net_htons(80), "");
-	zassert_equal(0, memcmp(&saddr6->sin6_addr, &in6addr_any, sizeof(in6addr_any)), "");
+	zassert_equal(0, memcmp(&saddr6->sin6_addr, &net_in6addr_any, sizeof(net_in6addr_any)), "");
 	zsock_freeaddrinfo(res);
 
 	/* Test IPv6 UDP */

@@ -452,8 +452,6 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 
-	mdio_bus_enable(config->mdio_dev);
-
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	/* Configure reset pin */
 	if (config->reset_gpio.port) {

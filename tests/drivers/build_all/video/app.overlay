@@ -133,6 +133,12 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_ov5642: ov5642@9 {
+				compatible = "ovti,ov5642";
+				reg = <0x9>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_hm01b0: hm01b0@24 {
 				compatible = "himax,hm01b0";
 				reg = <0x24>;
@@ -158,6 +164,13 @@
 						remote-endpoint-label = "";
 					};
 				};
+			};
+
+			test_i2c_ov7675: ov7675@9 {
+				compatible = "ovti,ov7675";
+				reg = <0x21>;
+				reset-gpios = <&test_gpio 0 1>;
+				pwdn-gpios = <&test_gpio 1 1>;
 			};
 		};
 

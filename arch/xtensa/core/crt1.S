@@ -30,19 +30,9 @@
 #if __XTENSA_CALL0_ABI__
 # define CALL	call0
 # define CALLX	callx0
-# define ARG1	a2	/* 1st outgoing call argument */
-# define ARG2	a3	/* 2nd outgoing call argument */
-# define ARG3	a4	/* 3rd outgoing call argument */
-# define ARG4	a5	/* 4th outgoing call argument */
-# define ARG5	a6	/* 5th outgoing call argument */
 #else
 # define CALL	call4
 # define CALLX	callx4
-# define ARG1	a6	/* 1st outgoing call argument */
-# define ARG2	a7	/* 2nd outgoing call argument */
-# define ARG3	a8	/* 3rd outgoing call argument */
-# define ARG4	a9	/* 4th outgoing call argument */
-# define ARG5	a10	/* 5th outgoing call argument */
 #endif
 
 	.text

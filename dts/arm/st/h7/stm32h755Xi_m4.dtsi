@@ -6,6 +6,8 @@
 
 #include <st/h7/stm32h755.dtsi>
 
+/delete-node/ &itcm;
+/delete-node/ &dtcm;
 /delete-node/ &flash0;
 
 / {

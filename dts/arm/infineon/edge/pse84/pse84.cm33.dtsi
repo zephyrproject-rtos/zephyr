@@ -6,6 +6,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
+
 / {
 	cpus {
 		#address-cells = <1>;

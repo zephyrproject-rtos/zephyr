@@ -29,7 +29,8 @@
 		base_accel_gyro: base-accel-gyro {
 			compatible = "zephyr,sensing-phy-3d-sensor";
 			status = "okay";
-			sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+			sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D
+					SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
 			friendly-name = "Base Accel Gyro Sensor";
 			minimal-interval = <625>;
 			underlying-device = <&bmi160_i2c>;
@@ -38,7 +39,8 @@
 		lid_accel_gyro: lid-accel-gyro {
 			compatible = "zephyr,sensing-phy-3d-sensor";
 			status = "okay";
-			sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
+			sensor-types = <SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D
+					SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D>;
 			friendly-name = "Lid Accel Gyro Sensor";
 			minimal-interval = <625>;
 			underlying-device = <&bmi160_spi>;

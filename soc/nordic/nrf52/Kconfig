@@ -92,11 +92,19 @@ config NRF52_ANOMALY_132_DELAY_US
 	  Additional drivers initialization increases initialization time and delay
 	  may be shortened. Workaround is disabled by setting delay to 0.
 
+config NRF52_ANOMALY_58_WORKAROUND
+	bool "Anomaly 58 workaround"
+	default y
+	depends on SOC_NRF52832
+	depends on NRFX_SPIM
+	help
+	  This anomaly causes SPIM to clock out 2 bytes when 1 byte transfer was requested.
+
 config NRF52_ANOMALY_198_WORKAROUND
 	bool "Anomaly 198 workaround"
 	default y
 	depends on SOC_NRF52840
-	depends on NRFX_SPIM3
+	depends on $(dt_nodelabel_enabled_with_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	help
 	  This anomaly applies to IC revisions "Engineering B" up to "3", the most
 	  recent one.

@@ -644,6 +644,7 @@ static int i2c_bflb_init(const struct device *dev)
 	return err;
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int i2c_bflb_deinit(const struct device *dev)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
@@ -674,6 +675,7 @@ static int i2c_bflb_deinit(const struct device *dev)
 
 	return 0;
 }
+#endif
 
 static void i2c_bflb_isr(const struct device *dev)
 {

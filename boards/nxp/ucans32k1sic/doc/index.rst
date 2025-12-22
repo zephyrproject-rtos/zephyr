@@ -12,18 +12,20 @@ Hardware
 ********
 
 - NXP S32K146
-    - Arm Cortex-M4F @ up to 112 Mhz
-    - 1 MB Flash
-    - 128 KB SRAM
-    - up to 127 I/Os
-    - 3x FlexCAN with 2x FD
-    - eDMA, 12-bit ADC, MPU, ECC and more.
+
+  - Arm Cortex-M4F @ up to 112 Mhz
+  - 1 MB Flash
+  - 128 KB SRAM
+  - up to 127 I/Os
+  - 3x FlexCAN with 2x FD
+  - eDMA, 12-bit ADC, MPU, ECC and more.
 
 - Interfaces:
-    - DCD-LZ debug interface with SWD + Console / UART
-    - Dual CAN FD PHYs with dual connectors for daisy chain operation
-    - JST-GH DroneCode compliant standard connectors and I/O headers
-    - user RGB LED and button.
+
+  - DCD-LZ debug interface with SWD + Console / UART
+  - Dual CAN FD PHYs with dual connectors for daisy chain operation
+  - JST-GH DroneCode compliant standard connectors and I/O headers
+  - User RGB LED and button.
 
 More information about the hardware and design resources can be found at
 `NXP UCANS32K1SIC`_ website.

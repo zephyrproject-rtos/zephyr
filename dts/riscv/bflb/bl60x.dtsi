@@ -7,10 +7,13 @@
 
 #include <freq.h>
 #include <mem.h>
-#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
-#include <dt-bindings/pinctrl/bl60x-pinctrl.h>
-#include <dt-bindings/clock/bflb_bl60x_clock.h>
+#include <zephyr/dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/bl60x-pinctrl.h>
+#include <zephyr/dt-bindings/clock/bflb_bl60x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/spi/spi.h>
 
 / {
 	#address-cells = <1>;
@@ -52,6 +55,10 @@
 			divider = <4>;
 			status = "okay";
 		};
+	};
+
+	chosen {
+		zephyr,flash-controller = &flashctrl;
 	};
 
 	cpus {
@@ -193,7 +200,7 @@
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "disabled";
+			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
@@ -202,7 +209,7 @@
 		dma0: dma@4000c000 {
 			compatible = "bflb,dma";
 			reg = <0x4000c000 0x1000>;
-			#dma-cells = <1>;
+			#dma-cells = <2>;
 			dma-channels = <4>;
 
 			interrupts = <31 0>;

@@ -7,8 +7,6 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
-void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size);
-
 /* Checks if the Machine Privilege Register Virtualization (MPRV) bit in mstatus is 1 (enabled). */
 static bool riscv_mprv_is_enabled(void)
 {

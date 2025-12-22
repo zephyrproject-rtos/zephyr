@@ -748,6 +748,7 @@ ZTEST_USER(timer_api, test_timeout_abs)
 	uint64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
 	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
 	uint64_t t0, t1;
+	uint32_t rpt;
 
 	/* Ensure second alignment for K_TIMEOUT_ABS_SEC */
 	zassert_true(exp_ms % MSEC_PER_SEC == 0);
@@ -811,16 +812,28 @@ ZTEST_USER(timer_api, test_timeout_abs)
 		k_usleep(1);
 	}
 
+	/* Attempt to read rem_ticks and a known point in time. If that is not possible,
+	 * due to target being slow and system clock being fast, then use known tick range to
+	 * validate rem_ticks.
+	 */
+	rpt = 4;
 	do {
 		t0 = k_uptime_ticks();
 		rem_ticks = k_timer_remaining_ticks(&remain_timer);
 		t1 = k_uptime_ticks();
-	} while (t0 != t1);
+		rpt--;
+	} while ((t0 != t1) && (rpt > 0));
 
-	zassert_true(t0 + rem_ticks == exp_ticks,
+	if (t0 == t1) {
+		zassert_true(t0 + rem_ticks == exp_ticks,
 		     "Wrong remaining: now %lld rem %lld expires %lld (%lld)",
-		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
-		     t0+rem_ticks-exp_ticks);
+		     t0, rem_ticks, exp_ticks, t0 + rem_ticks - exp_ticks);
+	} else {
+		zassert_true(IN_RANGE(exp_ticks, t0 + rem_ticks, t1 + rem_ticks),
+		     "Wrong remaining: now %lld-%lld rem %lld expires %lld",
+		     t0, t1, rem_ticks, exp_ticks);
+	}
+
 
 	k_timer_stop(&remain_timer);
 
@@ -837,16 +850,27 @@ ZTEST_USER(timer_api, test_timeout_abs)
 		k_usleep(1);
 	}
 
+	/* Attempt to read rem_ticks and a known point in time. If that is not possible,
+	 * due to target being slow and system clock being fast, then use known tick range to
+	 * validate rem_ticks.
+	 */
+	rpt = 4;
 	do {
 		t0 = k_uptime_ticks();
 		rem_ticks = k_timer_remaining_ticks(&remain_timer);
 		t1 = k_uptime_ticks();
-	} while (t0 != t1);
+		rpt--;
+	} while ((t0 != t1) && (rpt > 0));
 
-	zassert_true(t0 + rem_ticks == exp_ticks,
+	if (t0 == t1) {
+		zassert_true(t0 + rem_ticks == exp_ticks,
 		     "Wrong remaining: now %lld rem %lld expires %lld (%lld)",
-		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
-		     t0+rem_ticks-exp_ticks);
+		     t0, rem_ticks, exp_ticks, t0 + rem_ticks - exp_ticks);
+	} else {
+		zassert_true(IN_RANGE(exp_ticks, t0 + rem_ticks, t1 + rem_ticks),
+		     "Wrong remaining: now %lld-%lld rem %lld expires %lld",
+		     t0, t1, rem_ticks, exp_ticks);
+	}
 
 	k_timer_stop(&remain_timer);
 

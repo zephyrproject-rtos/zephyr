@@ -5,7 +5,7 @@
  *
  */
 
-#include <dt-bindings/usb-c/pd.h>
+#include <zephyr/dt-bindings/usb-c/pd.h>
 
 / {
 	aliases {
@@ -14,6 +14,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_ctl: g0 {
 			pwms = <&pwm15 1 PWM_USEC(50) PWM_POLARITY_INVERTED>;
 			label = "PWM CTL";
@@ -72,7 +73,8 @@
 			vbus = <&vbus1>;
 			power-role = "source";
 			typec-power-opmode = "3.0A";
-			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0) PDO_FIXED(15000, 100, 0)>;
+			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0)
+				       PDO_FIXED(15000, 100, 0)>;
 		};
 		/* usbc.rst usbc-port end */
 	};

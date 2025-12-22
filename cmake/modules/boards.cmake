@@ -141,7 +141,7 @@ Hints:
   endif()
 endforeach()
 
-if(NOT EXISTS ${BOARD_DIR}/board.yml)
+if(DEFINED BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/board.yml)
   message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
                   "Trying to find new location."
   )

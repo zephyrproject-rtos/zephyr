@@ -38,14 +38,6 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x2f012000 0x81000>;
 
-			cpusec_cpuapp_ipc_shm: memory@0 {
-				reg = <0x0 DT_SIZE_K(2)>;
-			};
-
-			cpuapp_cpusec_ipc_shm: memory@800 {
-				reg = <0x800 DT_SIZE_K(2)>;
-			};
-
 			cpuapp_data: memory@1000 {
 				reg = <0x1000 DT_SIZE_K(512)>;
 			};
@@ -98,12 +90,27 @@
 			};
 		};
 
-		cpuapp_cpusys_ipc_shm: memory@2f88fce0 {
-			reg = <0x2f88fce0 0x80>;
+		/* Workaround for a data cache related issue with SoC1.1, use secure addresses
+		 * for cpuapp_cpusys_ipc_shm, cpusys_cpuapp_ipc_shm and cpusec_cpuapp_ipc_shm.
+		 */
+		cpuapp_cpusys_ipc_shm: memory@3f88f600 {
+			reg = <0x3f88f600 0x80>;
 		};
 
-		cpusys_cpuapp_ipc_shm: memory@2f88fd60 {
-			reg = <0x2f88fd60 0x80>;
+		cpusys_cpuapp_ipc_shm: memory@3f88f680 {
+			reg = <0x3f88f680 0x80>;
+		};
+
+		cpusec_cpuapp_ipc_shm: memory@3f88fb80 {
+			reg = <0x3f88fb80 0x80>;
+		};
+
+		cpuapp_ironside_se_event_report: memory@2f88fc00 {
+			reg = <0x2f88fc00 0x100>;
+		};
+
+		cpuapp_ironside_se_boot_report: memory@2f88fd00 {
+			reg = <0x2f88fd00 0x200>;
 		};
 
 		cpurad_cpusys_ipc_shm: memory@2f88fe00 {
@@ -178,57 +185,64 @@
 };
 
 &mram1x {
-	cpurad_rx_partitions: cpurad-rx-partitions {
-		compatible = "nordic,owned-partitions", "fixed-partitions";
-		status = "disabled";
-		nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RXS>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		cpurad_slot0_partition: partition@402000 {
-			reg = <0x402000 DT_SIZE_K(256)>;
-		};
-	};
-
-	cpuapp_rx_partitions: cpuapp-rx-partitions {
-		compatible = "nordic,owned-partitions", "fixed-partitions";
-		status = "disabled";
-		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RXS>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		cpuapp_slot0_partition: partition@442000 {
-			reg = <0x442000 DT_SIZE_K(1024)>;
-		};
-
-		cpuppr_code_partition: partition@542000 {
-			reg = <0x542000 DT_SIZE_K(64)>;
-		};
-	};
-
-	cpuapp_rw_partitions: cpuapp-rw-partitions {
-		compatible = "nordic,owned-partitions", "fixed-partitions";
-		status = "disabled";
-		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		dfu_partition: partition@600000 {
-			reg = <0x600000 DT_SIZE_K(512)>;
-		};
-
-		storage_partition: partition@680000 {
-			reg = <0x680000 DT_SIZE_K(24)>;
-		};
-	};
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		cpuapp_boot_partition: partition@312000 {
+			reg = <0x312000 DT_SIZE_K(64)>;
+		};
+
+		cpuapp_slot0_partition: partition@322000 {
+			reg = <0x322000 DT_SIZE_K(336)>;
+		};
+
+		cpuapp_slot1_partition: partition@376000 {
+			reg = <0x376000 DT_SIZE_K(440)>;
+		};
+
+		cpuppr_code_partition: partition@3E4000 {
+			reg = <0x3E4000 DT_SIZE_K(64)>;
+		};
+
+		cpuflpr_code_partition: partition@3F4000 {
+			reg = <0x3F4000 DT_SIZE_K(48)>;
+		};
+
+		cpurad_slot0_partition: partition@400000 {
+			reg = <0x400000 DT_SIZE_K(336)>;
+		};
+
+		cpurad_slot1_partition: partition@454000 {
+			reg = <0x454000 DT_SIZE_K(336)>;
+		};
+
+		storage_partition: partition@600000 {
+			reg = <0x600000 DT_SIZE_K(40)>;
+		};
+
 		periphconf_partition: partition@60a000 {
 			reg = <0x60a000 DT_SIZE_K(8)>;
+		};
+
+		/* 0x60c000 was chosen for secure_storage_partition such that
+		 * it resides in the beginning of MRAM11 in storage partition.
+		 */
+		secure_storage_partition: partition@60c000 {
+			compatible = "fixed-subpartitions";
+			reg = <0x60c000 DT_SIZE_K(8)>;
+			ranges = <0x0 0x60c000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cpuapp_crypto_partition: partition@0 {
+				reg = <0x0 DT_SIZE_K(4)>;
+			};
+
+			cpuapp_its_partition: partition@1000 {
+				reg = <0x1000 DT_SIZE_K(4)>;
+			};
 		};
 	};
 };

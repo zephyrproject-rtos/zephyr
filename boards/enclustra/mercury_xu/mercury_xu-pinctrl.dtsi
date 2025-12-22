@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/pinctrl-zynqmp.h>
+#include <zephyr/dt-bindings/pinctrl/pinctrl-zynqmp.h>
 
 &pinctrl {
 	uart0_default: uart0_default {

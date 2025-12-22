@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 __net_socket struct modem_socket {
-	sa_family_t family;
+	net_sa_family_t family;
 	enum net_sock_type type;
 	int ip_proto;
 	struct net_sockaddr src;

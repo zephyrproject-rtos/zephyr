@@ -195,7 +195,7 @@ static void setup_packet_socket(int *sock, int type, int proto)
 	*sock = zsock_socket(NET_AF_PACKET, type, proto);
 	zassert_true(*sock >= 0, "Cannot create packet socket (%d)", -errno);
 
-	ret = zsock_setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(*sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	zassert_ok(ret, "setsockopt failed (%d)", errno);
 }
@@ -270,7 +270,7 @@ static void prepare_udp_socket(int *sock, struct net_sockaddr_in *sockaddr, uint
 	ret = zsock_bind(*sock, (struct net_sockaddr *) sockaddr, sizeof(*sockaddr));
 	zassert_equal(ret, 0, "Cannot bind DGRAM (UDP) socket (%d)", -errno);
 
-	ret = zsock_setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(*sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	zassert_ok(ret, "setsockopt failed (%d)", errno);
 }

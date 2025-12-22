@@ -78,7 +78,22 @@ void z_arm64_el3_init(void)
 	reg &= ~(CPTR_TTA_BIT |		/* Do not trap sysreg accesses */
 		 CPTR_TFP_BIT |		/* Do not trap SVE, SIMD and FP */
 		 CPTR_TCPAC_BIT);	/* Do not trap CPTR_EL2 / CPACR_EL1 accesses */
+
+#ifdef CONFIG_ARM64_SVE
+	/* Enable SVE for EL2 and below if SVE is implemented */
+	if (is_sve_implemented()) {
+		reg |= CPTR_EZ_BIT;		/* Enable SVE access for lower ELs */
+		write_cptr_el3(reg);
+
+		/* Initialize ZCR_EL3 for full SVE vector length */
+		/* ZCR_EL3.LEN = 0x1ff means full hardware vector length */
+		write_zcr_el3(0x1ff);
+	} else {
+		write_cptr_el3(reg);
+	}
+#else
 	write_cptr_el3(reg);
+#endif
 
 	reg = 0U;			/* Reset */
 #ifdef CONFIG_ARMV8_A_NS
@@ -156,8 +171,24 @@ void z_arm64_el2_init(void)
 	reg = 0U;			/* RES0 */
 	reg |= CPTR_EL2_RES1;		/* RES1 */
 	reg &= ~(CPTR_TFP_BIT |		/* Do not trap SVE, SIMD and FP */
-		 CPTR_TCPAC_BIT);	/* Do not trap CPACR_EL1 accesses */
+		 CPTR_TCPAC_BIT |	/* Do not trap CPACR_EL1 accesses */
+		 CPTR_EL2_TZ_BIT);	/* Do not trap SVE to EL2 */
+#ifdef CONFIG_ARM64_SVE
+	/* Enable SVE for EL1 and EL0 if SVE is implemented */
+	if (is_sve_implemented()) {
+		reg &= ~CPTR_EL2_ZEN_MASK;
+		reg |= (CPTR_EL2_ZEN_EL1_EN | CPTR_EL2_ZEN_EL0_EN);
+		write_cptr_el2(reg);
+
+		/* Initialize ZCR_EL2 for full SVE vector length */
+		/* ZCR_EL2.LEN = 0x1ff means full hardware vector length */
+		write_zcr_el2(0x1ff);
+	} else {
+		write_cptr_el2(reg);
+	}
+#else
 	write_cptr_el2(reg);
+#endif
 
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
 	zero_cnthctl_el2();
@@ -191,9 +222,22 @@ void z_arm64_el1_init(void)
 	barrier_isync_fence_full();
 
 	reg = 0U;			/* RES0 */
-	reg |= CPACR_EL1_FPEN_NOTRAP;	/* Do not trap NEON/SIMD/FP initially */
+	reg |= CPACR_EL1_FPEN;		/* Do not trap NEON/SIMD/FP initially */
 					/* TODO: CONFIG_FLOAT_*_FORBIDDEN */
+#ifdef CONFIG_ARM64_SVE
+	/* Enable SVE access if SVE is implemented */
+	if (is_sve_implemented()) {
+		reg |= CPACR_EL1_ZEN;	/* Do not trap SVE initially */
+		write_cpacr_el1(reg);
+
+		/* Initialize ZCR_EL1 SVE vector length */
+		write_zcr_el1(CONFIG_ARM64_SVE_VL_MAX/16 - 1);
+	} else {
+		write_cpacr_el1(reg);
+	}
+#else
 	write_cpacr_el1(reg);
+#endif
 
 	reg = read_sctlr_el1();
 	reg |= (SCTLR_EL1_RES1 |	/* RES1 */

@@ -147,12 +147,14 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
-#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
-	/* Attack clock for GAU and reset */
-	CLOCK_AttachClk(kMAIN_CLK_to_GAU_CLK);
-	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 1U);
+#if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU) || \
+	defined(CONFIG_COMPARATOR_NXP_ACOMP)
+	/* Set 64M GAU clock from T3 PLL 256M and reset */
+	CLOCK_AttachClk(kT3PLL_MCI_256M_to_GAU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 4U);
 	CLOCK_EnableClock(kCLOCK_Gau);
 	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
+	GAU_BG->CTRL &= ~BG_CTRL_PD_MASK;
 #endif /* GAU */
 
 /* Any flexcomm can be USART */
@@ -254,6 +256,11 @@ __weak __ramfunc void clock_init(void)
 	#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm14), nxp_lpc_i2s, okay))
 		CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM14);
 	#endif
+
+	/* attach AUDIO PLL clock to MCLK */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
+	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lcdic)) && CONFIG_MIPI_DBI_NXP_LCDIC

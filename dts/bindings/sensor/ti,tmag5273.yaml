@@ -134,6 +134,18 @@ properties:
 
       Only active if angle-magnitude-calculation is active.
 
+  mag-gain-correction:
+    type: int
+    default: 0
+    description: |
+      Gain value for axis determined by ch-mag-gain-correction.
+
+      The value is between 0 and 255, interpreted as a fractional
+      value between 0 and 1 (mag-gain-correction/256). Gain value of 0
+      is interpreted as 1.
+
+      The default corresponds to the reset value of the register field.
+
   average-mode:
     type: int
     default: 1

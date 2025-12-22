@@ -17,6 +17,8 @@
 #include <zephyr/stats/stats.h>
 #include <string.h>
 
+#include <zephyr/drivers/flash/flash_simulator.h>
+
 #ifdef CONFIG_ARCH_POSIX
 
 #include "flash_simulator_native.h"
@@ -158,6 +160,8 @@ static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
 #endif
 #endif /* CONFIG_ARCH_POSIX */
 
+uint8_t prog_unit_buf[FLASH_SIMULATOR_PROG_UNIT];
+
 static DEVICE_API(flash, flash_sim_api);
 
 static const struct flash_parameters flash_sim_parameters = {
@@ -169,6 +173,20 @@ static const struct flash_parameters flash_sim_parameters = {
 #endif
 	},
 };
+
+
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+static const struct flash_simulator_params flash_sim_params = {
+	.memory_size = FLASH_SIMULATOR_FLASH_SIZE,
+	.base_offset = FLASH_SIMULATOR_BASE_OFFSET,
+	.erase_unit = FLASH_SIMULATOR_ERASE_UNIT,
+	.prog_unit = FLASH_SIMULATOR_PROG_UNIT,
+	.explicit_erase = IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE),
+	.erase_value = FLASH_SIMULATOR_ERASE_VALUE,
+};
+static const struct flash_simulator_cb *flash_simulator_cbs;
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
+
 
 static int flash_range_is_valid(const struct device *dev, off_t offset,
 				size_t len)
@@ -217,7 +235,6 @@ static int flash_sim_read(const struct device *dev, const off_t offset,
 static int flash_sim_write(const struct device *dev, const off_t offset,
 			   const void *data, const size_t len)
 {
-	uint8_t buf[FLASH_SIMULATOR_PROG_UNIT];
 	ARG_UNUSED(dev);
 
 	if (!flash_range_is_valid(dev, offset, len)) {
@@ -231,14 +248,14 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 	FLASH_SIM_STATS_INC(flash_sim_stats, flash_write_calls);
 
-#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+#ifdef CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE
 	/* check if any unit has been already programmed */
-	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
+	memset(prog_unit_buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(prog_unit_buf));
 #else
-	memcpy(buf, MOCK_FLASH(offset), sizeof(buf));
+	memcpy(prog_unit_buf, MOCK_FLASH(offset), sizeof(prog_unit_buf));
 #endif
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
-		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
+		if (memcmp(prog_unit_buf, MOCK_FLASH(offset + i), sizeof(prog_unit_buf))) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
 			return -EIO;
@@ -264,6 +281,15 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 	}
 #endif
 
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+	flash_simulator_write_byte_cb_t write_cb = NULL;
+	const struct flash_simulator_cb *cb = flash_simulator_cbs;
+
+	if (cb != NULL) {
+		write_cb = cb->write_byte;
+	}
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
+
 	for (uint32_t i = 0; i < len; i++) {
 #ifdef CONFIG_FLASH_SIMULATOR_STATS
 		if (data_part_ignored) {
@@ -273,16 +299,28 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 		}
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
-		/* only pull bits to zero */
-#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+		uint8_t data_val = *((const uint8_t *)data + i);
+
+#ifdef CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
-		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
+		/* only pull bits to zero */
+		data_val &= *(MOCK_FLASH(offset + i));
 #else
-		*(MOCK_FLASH(offset + i)) |= *((uint8_t *)data + i);
+		/* only pull bits to one */
+		data_val |= *(MOCK_FLASH(offset + i));
 #endif
-#else
-		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
 #endif
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+		if (write_cb != NULL) {
+			int ret = write_cb(dev, offset + i, data_val);
+
+			if (ret < 0) {
+				return ret;
+			}
+			data_val = (uint8_t)ret;
+		}
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
+		*(MOCK_FLASH(offset + i)) = data_val;
 	}
 
 	FLASH_SIM_STATS_INCN(flash_sim_stats, bytes_written, len);
@@ -297,20 +335,31 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 	return 0;
 }
 
-static void unit_erase(const uint32_t unit)
+static int unit_erase(const struct device *dev, const uint32_t unit)
 {
 	const off_t unit_addr = unit * FLASH_SIMULATOR_ERASE_UNIT;
+
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+	flash_simulator_erase_unit_cb_t erase_cb = NULL;
+	const struct flash_simulator_cb *cb = flash_simulator_cbs;
+
+	if (cb != NULL) {
+		erase_cb = cb->erase_unit;
+	}
+	if (erase_cb != NULL) {
+		return erase_cb(dev, unit_addr);
+	}
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
 
 	/* erase the memory unit by setting it to erase value */
 	memset(MOCK_FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE,
 	       FLASH_SIMULATOR_ERASE_UNIT);
+	return 0;
 }
 
 static int flash_sim_erase(const struct device *dev, const off_t offset,
 			   const size_t len)
 {
-	ARG_UNUSED(dev);
-
 	if (!flash_range_is_valid(dev, offset, len)) {
 		return -EINVAL;
 	}
@@ -335,8 +384,13 @@ static int flash_sim_erase(const struct device *dev, const off_t offset,
 
 	/* erase as many units as necessary and increase their erase counter */
 	for (uint32_t i = 0; i < len / FLASH_SIMULATOR_ERASE_UNIT; i++) {
+		int ret;
+
 		ERASE_CYCLES_INC(unit_start + i);
-		unit_erase(unit_start + i);
+		ret = unit_erase(dev, unit_start + i);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
@@ -498,6 +552,26 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 	return mock_flash;
 }
 
+const struct flash_simulator_params *z_impl_flash_simulator_get_params(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+	return &flash_sim_params;
+#else
+	return NULL;
+#endif
+}
+
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+void z_impl_flash_simulator_set_callbacks(const struct device *dev,
+					  const struct flash_simulator_cb *cb)
+{
+	ARG_UNUSED(dev);
+	flash_simulator_cbs = cb;
+}
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
+
 #ifdef CONFIG_USERSPACE
 
 #include <zephyr/internal/syscall_handler.h>
@@ -508,6 +582,21 @@ void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
 
 	return z_impl_flash_simulator_get_memory(dev, mock_size);
+}
+
+void z_vrfy_flash_simulator_set_callbacks(const struct device *dev,
+					 const struct flash_simulator_cb *cb)
+{
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+
+	z_impl_flash_simulator_set_callbacks(dev, cb);
+}
+
+const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+
+	return z_impl_flash_simulator_get_params(dev);
 }
 
 #include <zephyr/syscalls/flash_simulator_get_memory_mrsh.c>

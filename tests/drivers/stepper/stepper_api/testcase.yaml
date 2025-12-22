@@ -7,66 +7,37 @@ common:
     - stepper
     - api
 tests:
-  drivers.stepper.stepper_api.adi_tmc2209:
+  drivers.stepper.stepper_api.gpio_step_dir:
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_gpio_step_dir.overlay"
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.adi_tmc2209_work_q:
+  drivers.stepper.stepper_api.gpio_step_dir_work_q:
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209_work_q.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_gpio_step_dir_workq.overlay"
     extra_configs:
       - CONFIG_GPIO=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=130
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.allegro_a4979:
+  drivers.stepper.stepper_api.h_bridge_stepper:
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_h_bridge_stepper.overlay"
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.allegro_a4979_work_q:
+  drivers.stepper.stepper_api.h_bridge_stepper_work_q:
     extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979_work_q.overlay"
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_h_bridge_stepper_workq.overlay"
     extra_configs:
       - CONFIG_GPIO=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=130
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.ti_drv84xx:
-    extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv84xx.overlay"
-    extra_configs:
-      - CONFIG_GPIO=y
-      - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
-    platform_allow:
-      - native_sim/native/64
-  drivers.stepper.stepper_api.ti_drv84xx_work_q:
-    extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv84xx_work_q.overlay"
-    extra_configs:
-      - CONFIG_GPIO=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
-      - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=130
-    platform_allow:
-      - native_sim/native/64
-  drivers.stepper.stepper_api.zephyr_gpio_stepper:
-    extra_args:
-      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_zephyr_h_bridge_stepper.overlay"
-      - platform:qemu_x86_64/atom:DTC_OVERLAY_FILE="boards/qemu_x86_64_zephyr_h_bridge_stepper.overlay"
-    extra_configs:
-      - CONFIG_GPIO=y
-    platform_allow:
-      - native_sim/native/64
-      - qemu_x86_64/atom

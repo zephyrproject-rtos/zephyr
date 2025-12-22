@@ -12,7 +12,6 @@
 #include "cy_syslib.h"
 #include "cy_gpio.h"
 #include "cy_scb_uart.h"
-#include "cy_syslib.h"
 #include "cy_syspm.h"
 #include "cy_sysclk.h"
 

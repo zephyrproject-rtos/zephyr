@@ -128,7 +128,7 @@ typedef void (*tftp_callback_t)(const struct tftp_evt *evt);
  */
 struct tftpc {
 	/** Socket address pointing to the remote TFTP server */
-	struct sockaddr server;
+	struct net_sockaddr server;
 
 	/** Event notification callback. No notification if NULL */
 	tftp_callback_t callback;

@@ -136,6 +136,19 @@ External Flash
 The on-board S26HS512T 512M-bit HyperFlash memory is connected to the QSPI controller
 port A1. This board configuration selects it as the default flash controller.
 
+CRYPTO
+======
+
+The Hardware Security Engine (HSE) supports cryptographic operations, including hashing and
+symmetric ciphers, with capabilities for ECB, CBC, and CTR modes using RAM-based key catalogs
+with 128-bit or 256-bit key lengths.
+
+.. note::
+   The driver assumes that the HSE Firmware has been installed and configured (i.e the key catalogs
+   has been formatted, used MU instances has been activated, etc). HSE Firmware installation and
+   configuration phase documented in HSE Firmware User Manual. Please contact NXP sales person or
+   NXP distributor in order to have access to that document.
+
 Programming and Debugging
 *************************
 

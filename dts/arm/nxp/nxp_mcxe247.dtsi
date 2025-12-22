@@ -26,7 +26,19 @@
 	};
 };
 
+&eim0_channel0 {
+	start-address = <0x1ffe0000>;
+	size = <DT_SIZE_K(128)>;
+};
+
+&eim0_channel1 {
+	start-address = <0x20000000>;
+	size = <DT_SIZE_K(124)>;
+};
+
 &ftfc {
+	status = "okay";
+
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0 DT_SIZE_K(1536)>;

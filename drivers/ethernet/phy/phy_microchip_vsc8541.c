@@ -442,7 +442,6 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	reg_addr &= 0x00ff;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
-	mdio_bus_enable(cfg->mdio_dev);
 
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
@@ -457,7 +456,6 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	ret = mdio_read(cfg->mdio_dev, cfg->addr, reg_addr, data);
 
 read_end:
-	mdio_bus_disable(cfg->mdio_dev);
 	k_mutex_unlock(&dev_data->mutex);
 
 	return ret;
@@ -493,7 +491,6 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 	reg_addr &= 0x00ff;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
-	mdio_bus_enable(cfg->mdio_dev);
 
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
@@ -508,7 +505,6 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 	ret = mdio_write(cfg->mdio_dev, cfg->addr, reg_addr, data);
 
 write_end:
-	mdio_bus_disable(cfg->mdio_dev);
 	k_mutex_unlock(&dev_data->mutex);
 
 	return ret;

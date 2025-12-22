@@ -22,4 +22,8 @@
 #include <zephyr/drivers/clock_control/mchp_clock_sam_d5x_e5x.h>
 #endif /* CLOCK_CONTROL_MCHP_SAM_D5X_E5X */
 
+#if CONFIG_CLOCK_CONTROL_MCHP_PIC32CM_JH
+#include <zephyr/drivers/clock_control/mchp_clock_pic32cm_jh.h>
+#endif /* CONFIG_CLOCK_CONTROL_MCHP_PIC32CM_JH */
+
 #endif /* INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_CONTROL_H_ */

@@ -7,9 +7,9 @@
 
 /dts-v1/;
 #include <common/freq.h>
-#include <dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
+#include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <dt-bindings/sam/sama7d6/sama7d65/sama7d65-pinctrl.h>
-#include <microchip/sam/sama7d6.dtsi>
+#include <microchip/sam/sama7/sama7d6/sama7d65.dtsi>
 
 / {
 	model = "SAMA7D65-Curiosity board";

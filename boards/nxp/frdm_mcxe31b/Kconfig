@@ -1,6 +1,9 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+config BOARD_FRDM_MCXE31B
+	select BOARD_EARLY_INIT_HOOK
+
 config BOARD_NXP_MCXE31X_BOOT_HEADER
 	bool "MCXE31x boot header support"
 	select SOC_NXP_MCXE31X_BOOT_HEADER
@@ -10,3 +13,15 @@ config BOARD_NXP_MCXE31X_BOOT_HEADER
 	  image. The boot header is required for proper operation of the
 	  on-chip bootloader.
 	  See the MCXE31x reference manual for more details.
+
+config CLEAR_DESTRUCTIVE_RESET_FLAG
+	hex "Clear destructive reset flag"
+	default 0x0
+	help
+	  Clear the destructive reset flag to ensure proper system initialization
+
+config CLEAR_FUNCTIONAL_RESET_FLAG
+	hex "Clear functional reset flag"
+	default 0x0
+	help
+	  Clear the functional reset flag to ensure proper system initialization

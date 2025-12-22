@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/usb/audio.h>
+#include <zephyr/dt-bindings/usb/audio.h>
 
 / {
 	uac2_headphones: usb_audio2 {

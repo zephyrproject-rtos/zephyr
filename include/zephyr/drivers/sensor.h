@@ -210,6 +210,9 @@ enum sensor_channel {
 	/** Gyroscope bias (X/Y/Z components in radians/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
 
+	/** Raw quadrature decoder count, in counts */
+	SENSOR_CHAN_ENCODER_COUNT,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 

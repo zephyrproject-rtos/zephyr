@@ -39,7 +39,6 @@
 		reg = <0x1e000 DT_SIZE_K(72)>;
 		zephyr,memory-region = "SRAM";
 	};
-
 };
 
 &scif0 {

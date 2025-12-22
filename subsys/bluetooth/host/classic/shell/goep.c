@@ -27,7 +27,11 @@
 #include "common/bt_shell_private.h"
 
 #define GOEP_MOPL CONFIG_BT_GOEP_RFCOMM_MTU
-
+#ifdef CONFIG_ZTEST
+#define STATIC
+#else
+#define STATIC static
+#endif
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_MAX_CONN, BT_RFCOMM_BUF_SIZE(GOEP_MOPL),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -41,7 +45,7 @@ struct bt_goep_app {
 	struct net_buf *tx_buf;
 };
 
-static struct bt_goep_app goep_app;
+STATIC struct bt_goep_app goep_app;
 
 static struct bt_goep_transport_rfcomm_server rfcomm_server;
 static struct bt_goep_transport_l2cap_server l2cap_server;
@@ -49,9 +53,9 @@ static struct bt_goep_transport_l2cap_server l2cap_server;
 #define TLV_COUNT       3
 #define TLV_BUFFER_SIZE 64
 
-static struct bt_obex_tlv tlvs[TLV_COUNT];
-static uint8_t tlv_buffers[TLV_COUNT][TLV_BUFFER_SIZE];
-static uint8_t tlv_count;
+STATIC struct bt_obex_tlv tlvs[TLV_COUNT];
+STATIC uint8_t tlv_buffers[TLV_COUNT][TLV_BUFFER_SIZE];
+STATIC uint8_t tlv_count;
 
 static struct bt_goep_app *goep_alloc(struct bt_conn *conn)
 {
@@ -180,7 +184,7 @@ static void goep_server_action(struct bt_obex_server *server, bool final, struct
 	goep_parse_headers(buf);
 }
 
-struct bt_obex_server_ops goep_server_ops = {
+STATIC struct bt_obex_server_ops goep_server_ops = {
 	.connect = goep_server_connect,
 	.disconnect = goep_server_disconnect,
 	.put = goep_server_put,
@@ -244,7 +248,7 @@ static void goep_client_action(struct bt_obex_client *client, uint8_t rsp_code,
 	goep_parse_headers(buf);
 }
 
-struct bt_obex_client_ops goep_client_ops = {
+STATIC struct bt_obex_client_ops goep_client_ops = {
 	.connect = goep_client_connect,
 	.disconnect = goep_client_disconnect,
 	.put = goep_client_put,

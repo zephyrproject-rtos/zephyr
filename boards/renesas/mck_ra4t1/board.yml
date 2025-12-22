@@ -1,0 +1,6 @@
+board:
+  name: mck_ra4t1
+  full_name: RA4T1 Motor Control Kit
+  vendor: renesas
+  socs:
+  - name: r7fa4t1bb3cfm

@@ -160,7 +160,7 @@ arduino_serial: &lpuart2 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
 		status = "okay";
-		reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 		int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
 	};

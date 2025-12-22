@@ -31,14 +31,14 @@ The scripts/net/run-sample-tests.sh shell script can be used in two ways:
 1. From a Zephyr network sample test directory.
    Example:
 
-   cd samples/net/gptp
+   cd samples/net/ethernet/gptp
    $ZEPHYR_BASE/scripts/net/run-sample-tests.sh
 
 2. By giving the test directories as parameters to the runner script.
    Example:
 
    cd $ZEPHYR_BASE
-   ./scripts/net/run-sample-tests.sh samples/net/gptp \
+   ./scripts/net/run-sample-tests.sh samples/net/ethernet/gptp \
                                      samples/net/sockets/echo_server
 
 User can see what samples are supported like this:

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -201,7 +201,7 @@
 		};
 	};
 
-	pwm2_default: pwm2_default{
+	pwm2_default: pwm2_default {
 		group1 {
 			pinmux = <CT30_P30>;
 			drive-open-drain;

@@ -264,9 +264,9 @@ zephyr_udc0: &usbotg_fs {
 		/*
 		 * Allocated 1 (256k) sector for image-scratch. Sector 11.
 		 */
-		scratch_partition: partition@1C0000 {
+		scratch_partition: partition@1c0000 {
 			label = "image-scratch";
-			reg = <0x001C0000 DT_SIZE_K(256)>;
+			reg = <0x001c0000 DT_SIZE_K(256)>;
 		};
 	};
 };

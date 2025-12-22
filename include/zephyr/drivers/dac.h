@@ -23,7 +23,7 @@ extern "C" {
  * @brief Interfaces for Digital-to-Analog Converters.
  * @defgroup dac_interface DAC
  * @since 2.3
- * @version 0.8.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

@@ -272,6 +272,14 @@
 			status = "disabled";
 		};
 
+		spi0: spi@40010400 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "realtek,rts5912-spi";
+			reg = <0x40010400 0x3C>;
+			status = "disabled";
+		};
+
 		uart0: uart@40010100 {
 			compatible = "ns16550";
 			reg = <0x40010100 0x100>;

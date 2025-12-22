@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -38,6 +39,7 @@
 			compatible = "nxp,lpc-syscon";
 			reg = <0x40091000 0x4000>;
 			#clock-cells = <1>;
+
 			reset: reset {
 				compatible = "nxp,lpc-syscon-reset";
 				#reset-cells = <1>;
@@ -244,7 +246,7 @@
 
 			reg = <0x40080000 0x1000>;
 			interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
-				<6 0>, <7 0>, <8 0>, <9 0>;
+				     <6 0>, <7 0>, <8 0>, <9 0>;
 			no-error-irq;
 			status = "disabled";
 		};
@@ -264,6 +266,7 @@
 			reg = <0x400a9000 0x1000>;
 			interrupt-names = "RELOAD-ERROR", "FAULT";
 			interrupts = <44 0>, <45 0>;
+
 			flexpwm0_pwm0: pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
@@ -303,6 +306,7 @@
 			reg = <0x400aa000 0x1000>;
 			interrupt-names = "RELOAD-ERROR", "FAULT";
 			interrupts = <79 0>, <80 0>;
+
 			flexpwm1_pwm0: pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
@@ -344,7 +348,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <0>;
 			offset-value-a = <0>;
@@ -360,7 +364,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <1>;
 			offset-value-a = <0>;
@@ -454,6 +458,7 @@
 			compatible = "nxp,os-timer";
 			reg = <0x400ad000 0x1000>;
 			interrupts = <57 0>;
+			resets = <&reset NXP_SYSCON_RESET(1, 1)>;
 			status = "disabled";
 		};
 

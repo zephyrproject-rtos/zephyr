@@ -146,19 +146,19 @@ static void listener(void *p1, void *p2, void *p3)
 			printk("DAD succeed for interface %d (%s)\n",
 			       event_addr.nm_ifindex,
 			       get_ip_addr(ipaddr, sizeof(ipaddr),
-					   NET_AF_INET6, hdr));
+					   AF_INET6, hdr));
 			break;
 		case NET_EVENT_IPV6_ADDR_ADD:
 			printk("IPv6 address added to interface %d (%s)\n",
 			       event_addr.nm_ifindex,
 			       get_ip_addr(ipaddr, sizeof(ipaddr),
-					   NET_AF_INET6, hdr));
+					   AF_INET6, hdr));
 			break;
 		case NET_EVENT_IPV6_ADDR_DEL:
 			printk("IPv6 address removed from interface %d (%s)\n",
 			       event_addr.nm_ifindex,
 			       get_ip_addr(ipaddr, sizeof(ipaddr),
-					   NET_AF_INET6, hdr));
+					   AF_INET6, hdr));
 			break;
 		}
 	}

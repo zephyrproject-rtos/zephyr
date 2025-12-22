@@ -30,8 +30,11 @@ tests:
     platform_allow: nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
-  sample.drivers.jesd216.nrf54lm20:
+  sample.drivers.jesd216.nrf54l:
     platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54l15dk/nrf54l05/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:
       - nrf54lm20dk/nrf54lm20a/cpuapp

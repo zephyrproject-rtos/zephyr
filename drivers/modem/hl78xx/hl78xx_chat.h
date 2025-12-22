@@ -31,6 +31,7 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 /* Wrapper helpers so other translation units don't need compile-time
  * visibility of the MODEM_CHAT_* macro-generated symbols.
  */
+const struct modem_chat_match *hl78xx_get_at_ready_match(void);
 const struct modem_chat_match *hl78xx_get_ok_match(void);
 const struct modem_chat_match *hl78xx_get_abort_matches(void);
 const struct modem_chat_match *hl78xx_get_unsol_matches(void);
@@ -47,6 +48,19 @@ int hl78xx_run_init_fail_script_async(struct hl78xx_data *data);
 int hl78xx_run_enable_ksup_urc_script_async(struct hl78xx_data *data);
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script_async(struct hl78xx_data *data);
+#if defined(CONFIG_MODEM_HL78XX_12) && defined(CONFIG_MODEM_HL78XX_RAT_GSM) ||                     \
+	defined(CONFIG_MODEM_HL78XX_AUTORAT)
+/* Run the LTE disable GSM enable registration status script */
+int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+/* Run the GSM disable LTE enable registration status script */
+int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data);
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/* FOTA-related script runners */
+int hl78xx_run_av_connect_accept_script_async(struct hl78xx_data *data);
+int hl78xx_run_fota_script_download_accept_async(struct hl78xx_data *data);
+int hl78xx_run_fota_script_install_accept_async(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 /* Async runners for init/periodic scripts */
 int hl78xx_run_init_script_async(struct hl78xx_data *data);
 int hl78xx_run_periodic_script_async(struct hl78xx_data *data);

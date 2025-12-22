@@ -1372,6 +1372,40 @@ struct net_buf_pool *net_buf_pool_get(int id);
  */
 int net_buf_id(const struct net_buf *buf);
 
+#if defined(CONFIG_NET_BUF_POOL_USAGE) || defined(__DOXYGEN__)
+/**
+ * @brief Get the number of buffers currently available to claim from a pool.
+ *
+ * Note that the number of available buffers might already have changed by the time this
+ * function returns if other threads are also allocating or freeing buffers from the
+ * pool.
+ *
+ * @kconfig_dep{CONFIG_NET_BUF_POOL_USAGE}
+ *
+ * @param pool Which pool to check
+ *
+ * @return Number of buffers currently available in the pool
+ */
+static inline size_t net_buf_get_available(struct net_buf_pool *pool)
+{
+	return (size_t)atomic_get(&pool->avail_count);
+}
+
+/**
+ * @brief Get the maximum number of buffers simultaneously claimed from a pool.
+ *
+ * @kconfig_dep{CONFIG_NET_BUF_POOL_USAGE}
+ *
+ * @param pool Which pool to check
+ *
+ * @return Maximum number of buffers simultaneously claimed from the pool
+ */
+static inline size_t net_buf_get_max_used(struct net_buf_pool *pool)
+{
+	return (size_t)pool->max_used;
+}
+#endif /* defined(CONFIG_NET_BUF_POOL_USAGE) || defined(__DOXYGEN__) */
+
 /**
  * @brief Allocate a new fixed buffer from a pool.
  *

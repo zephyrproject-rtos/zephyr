@@ -14,7 +14,6 @@
 #include <zephyr/dt-bindings/regulator/npm13xx.h>
 #include <zephyr/drivers/mfd/npm13xx.h>
 #include <zephyr/sys/printk.h>
-#include <getopt.h>
 
 #define SLEEP_TIME_MS  100
 #define UPDATE_TIME_MS 2000

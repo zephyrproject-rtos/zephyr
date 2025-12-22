@@ -140,6 +140,43 @@ static uint8_t unmute(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+static void set_register_params(uint8_t gain_mode, uint8_t step,
+				bool muted, uint8_t volume);
+
+static uint8_t register_vcs(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	static bool vcs_registered_flag;
+	const struct btp_vcs_register_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("Registering VCS");
+
+	if (vcs_registered_flag) {
+		return BTP_STATUS_FAILED;
+	}
+
+	bool muted = (cp->flags & BTP_VCS_REGISTER_FLAG_MUTED) != 0;
+
+	set_register_params(BT_AICS_MODE_MANUAL, cp->step, muted, cp->volume);
+
+	err = bt_vcp_vol_rend_register(&vcp_register_param);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_vcp_vol_rend_included_get(&included);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	aics_server_instance.aics_cnt = included.aics_cnt;
+	aics_server_instance.aics = included.aics;
+	vcs_registered_flag = true;
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	LOG_DBG("VCP state cb err (%d)", err);
@@ -186,6 +223,11 @@ static const struct btp_handler vcs_handlers[] = {
 		.opcode = BTP_VCS_UNMUTE,
 		.expect_len = 0,
 		.func = unmute,
+	},
+	{
+		.opcode = BTP_VCS_REGISTER,
+		.expect_len = sizeof(struct btp_vcs_register_cmd),
+		.func = register_vcs,
 	},
 };
 
@@ -463,7 +505,8 @@ struct bt_aics_cb aics_server_cb = {
 };
 
 /* General profile handling */
-static void set_register_params(uint8_t gain_mode)
+static void set_register_params(uint8_t gain_mode, uint8_t step,
+				bool muted, uint8_t volume)
 {
 	static char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT]
 			      [BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
@@ -495,31 +538,18 @@ static void set_register_params(uint8_t gain_mode)
 		vcp_register_param.aics_param[i].cb = &aics_server_cb;
 	}
 
-	vcp_register_param.step = 1;
-	vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
-	vcp_register_param.volume = 100;
+	vcp_register_param.step = step;
+	if (muted) {
+		vcp_register_param.mute = BT_VCP_STATE_MUTED;
+	} else {
+		vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
+	}
+	vcp_register_param.volume = volume;
 	vcp_register_param.cb = &vcs_cb;
 }
 
 uint8_t tester_init_vcs(void)
 {
-	int err;
-
-	set_register_params(BT_AICS_MODE_MANUAL);
-
-	err = bt_vcp_vol_rend_register(&vcp_register_param);
-	if (err) {
-		return BTP_STATUS_FAILED;
-	}
-
-	err = bt_vcp_vol_rend_included_get(&included);
-	if (err) {
-		return BTP_STATUS_FAILED;
-	}
-
-	aics_server_instance.aics_cnt = included.aics_cnt;
-	aics_server_instance.aics = included.aics;
-
 	tester_register_command_handlers(BTP_SERVICE_ID_VCS, vcs_handlers,
 					 ARRAY_SIZE(vcs_handlers));
 

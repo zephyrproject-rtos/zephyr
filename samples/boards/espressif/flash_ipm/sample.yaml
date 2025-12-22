@@ -1,0 +1,9 @@
+sample:
+  name: ESP32 Flash IPM Sample
+tests:
+  sample.espressif.flash_ipm:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    tags:
+      - samples
+      - ipm

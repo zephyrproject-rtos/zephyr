@@ -445,9 +445,11 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 			struct bt_avdtp_start_sig_hdr *start_hdr;
 			struct bt_avdtp_single_sig_hdr *sig_hdr;
 
+			__ASSERT_NO_MSG(buf->len >= sizeof(*sig_hdr));
 			sig_hdr = net_buf_pull_mem(buf, sizeof(*sig_hdr));
 			user_data->hdr = *sig_hdr;
 
+			__ASSERT_NO_MSG(net_buf_tailroom(frag) >= sizeof(*start_hdr));
 			start_hdr = net_buf_add(frag, sizeof(*start_hdr));
 			/* use same transaction label and message type */
 			start_hdr->hdr = (user_data->hdr.hdr & ~AVDTP_PKT_MASK) |
@@ -455,6 +457,7 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 			start_hdr->num_of_signal_pkts = user_data->frag_count;
 			start_hdr->signal_id = user_data->hdr.signal_id;
 
+			__ASSERT_NO_MSG(mtu >= sizeof(*start_hdr));
 			len = mtu - sizeof(*start_hdr);
 			if (len >= buf->len) {
 				LOG_ERR("The start packet can send all data");
@@ -468,11 +471,13 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 			uint8_t pkt_type = (user_data->frag_count == user_data->current_frag) ?
 					   BT_AVDTP_PACKET_TYPE_END : BT_AVDTP_PACKET_TYPE_CONTINUE;
 
+			__ASSERT_NO_MSG(net_buf_tailroom(frag) >= sizeof(*cont_hdr));
 			cont_hdr = net_buf_add(frag, sizeof(*cont_hdr));
 			/* use same transaction label and message type */
 			cont_hdr->hdr = (user_data->hdr.hdr & ~AVDTP_PKT_MASK) |
 					AVDTP_PKT_PREP(pkt_type);
 
+			__ASSERT_NO_MSG(mtu >= sizeof(*cont_hdr));
 			len = mtu - sizeof(*cont_hdr);
 			if (pkt_type == BT_AVDTP_PACKET_TYPE_CONTINUE && len >= buf->len) {
 				LOG_ERR("The continue packet can send all data");

@@ -25,3 +25,9 @@
 &gpio3 {
 	status = "okay";
 };
+
+&co5300_zc143ac72mipi {
+	ext-ram = <&sram1>;
+	addr-align = <64>;
+	pitch-align = <64>;
+};

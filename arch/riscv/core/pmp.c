@@ -58,6 +58,8 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_NONE 0
 
+#define PMP_PERM_MASK (PMP_R | PMP_W | PMP_X)
+
 /**
  * @brief Decodes PMP configuration and address registers into a memory region's
  * start/end addresses.
@@ -504,6 +506,87 @@ static unsigned int global_pmp_end_index[MODE_TOTAL];
 static unsigned long mem_attr_pmp_addr[CONFIG_PMP_SLOTS];
 #endif
 
+#ifdef CONFIG_MEM_ATTR
+int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
+{
+	if (perm & ~PMP_PERM_MASK) {
+		LOG_ERR("Invalid PMP permission 0x%x. Only R, W, X (0x%x) are allowed.", perm,
+			PMP_PERM_MASK);
+		return -EINVAL;
+	}
+
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	if (region_idx >= num_regions) {
+		LOG_ERR("region_idx %zu is out of bounds (num_regions: %zu)", region_idx,
+			num_regions);
+		return -EINVAL;
+	}
+
+	uintptr_t region_start_address = region[region_idx].dt_addr;
+	size_t region_size = region[region_idx].dt_size;
+	int entry_index = -1;
+
+	size_t pmp_cfg_size = CONFIG_PMP_SLOTS / PMPCFG_STRIDE;
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	unsigned long pmp_cfg[pmp_cfg_size];
+
+	/*
+	 * The PMP configuration update (reading and writing) must be performed with
+	 * interrupts disabled. This prevents thread preemption from splitting the
+	 * atomic read-modify-write operation, which could lead to a catastrophic
+	 * half-configured state. Unlike other PMP functions, this is not called
+	 * from an already-atomic context.
+	 */
+	unsigned int key = arch_irq_lock();
+
+	z_riscv_pmp_read_addr(pmp_addr, (size_t)(CONFIG_PMP_SLOTS));
+	z_riscv_pmp_read_config(pmp_cfg, pmp_cfg_size);
+
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+
+	for (unsigned int index = 0; index < CONFIG_PMP_SLOTS; ++index) {
+		unsigned long start, end;
+
+		pmp_decode_region(pmp_n_cfg[index], pmp_addr, index, &start, &end);
+		if (start == region_start_address &&
+		    end == (region_start_address + region_size - 1)) {
+			entry_index = index;
+			break;
+		}
+	}
+
+	if (entry_index == -1) {
+		LOG_ERR("PMP entry for address 0x%lx not found", region_start_address);
+		arch_irq_unlock(key);
+		return -ENOENT;
+	}
+
+	/*
+	 * Clear the old R/W/X bits while preserving all other bits and tet the new R/W/X bits from
+	 * the 'perm' variable.
+	 */
+	pmp_n_cfg[entry_index] &= ~PMP_PERM_MASK;
+	pmp_n_cfg[entry_index] |= perm;
+
+	/*
+	 * Disable (non-locked) PMP entries for m-mode while we update them.
+	 * While at it, also clear MSTATUS_MPP as it must be cleared for
+	 * MSTATUS_MPRV to be effective later.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
+	write_pmp_entries(entry_index, entry_index + 1, false, pmp_addr, pmp_cfg,
+			  ARRAY_SIZE(pmp_addr));
+	csr_set(mstatus, MSTATUS_MPRV);
+	arch_irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_MEM_ATTR */
+
 /**
  * @Brief Initialize the PMP with global entries on each CPU
  */
@@ -521,14 +604,15 @@ void z_riscv_pmp_init(void)
 	 * Use a PMP slot to make region (starting at address 0x0) inaccessible
 	 * for detecting null pointer dereferencing.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      0,
 		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
 	/* The read-only area is always there for every mode */
-	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
+	set_pmp_entry(&index,
+		      PMP_R | PMP_X | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)__rom_region_start,
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -537,21 +621,20 @@ void z_riscv_pmp_init(void)
 #ifdef CONFIG_MULTITHREADING
 	/*
 	 * Set the stack guard for this CPU's IRQ stack by making the bottom
-	 * addresses inaccessible. This will never change so we do it here
-	 * and lock it too.
+	 * addresses inaccessible. This will never change so we do it here.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #else
 	/* Without multithreading setup stack guards for IRQ and main stacks */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_interrupt_stacks,
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
+	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_main_stack,
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -569,7 +652,9 @@ void z_riscv_pmp_init(void)
 	 * the kernel mode memory attribute permission is fully operational.
 	 */
 	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif /* CONFIG_MEM_ATTR */
 
+#if defined(CONFIG_MEM_ATTR) || defined(CONFIG_PMP_NO_LOCK_GLOBAL)
 	/*
 	 * This early, we want to protect unlock PMP entries as soon as
 	 * possible. But we need a temporary default "catch all" PMP entry for

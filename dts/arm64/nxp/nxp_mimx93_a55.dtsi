@@ -617,6 +617,32 @@
 		prescaler = <1>;
 		status = "disabled";
 	};
+
+	usb1: usbd@4c100000 {
+		compatible = "nxp,ehci";
+		reg = <0x4c100000 DT_SIZE_K(4)>;
+		interrupts = <GIC_SPI 187 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "usb_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USB_CLK 2 3>,
+			 <&ccm IMX_CCM_USB_PHY_CLK 2 8>;
+		clock-rates = <134000000 50000000>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usb2: usbd@4c200000 {
+		compatible = "nxp,ehci";
+		reg = <0x4c200000 DT_SIZE_K(4)>;
+		interrupts = <GIC_SPI 188 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "usb_1";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USB_CLK 2 3>,
+			 <&ccm IMX_CCM_USB_PHY_CLK 2 8>;
+		clock-rates = <134000000 50000000>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
 };
 
 &gpio1 {

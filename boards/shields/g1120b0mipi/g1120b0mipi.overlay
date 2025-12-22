@@ -16,13 +16,6 @@
 		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft3267_g1120b0mipi>;
-		display = <&rm67162_g1120b0mipi>;
-		invert-y;
-	};
 };
 
 &nxp_mipi_i2c {
@@ -37,6 +30,9 @@
 		reg = <0x38>;
 		int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
+		inverted-y;
+		screen-width = <400>;
+		screen-height = <392>;
 	};
 };
 

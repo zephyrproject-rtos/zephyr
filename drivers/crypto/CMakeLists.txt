@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
 # zephyr-keep-sorted-start
@@ -13,11 +12,13 @@ zephyr_library_sources_ifdef(CONFIG_CRYPTO_INTEL_SHA crypto_intel_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_IT51XXX_SHA crypto_it51xxx_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_IT8XXX2_SHA crypto_it8xxx2_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_IT8XXX2_SHA_V2 crypto_it8xxx2_sha_v2.c)
-zephyr_library_sources_ifdef(CONFIG_CRYPTO_MBEDTLS_SHIM crypto_mtls_shim.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_MBEDTLS_SHIM crypto_mbedtls_shim.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCHP_SHA_G1 crypto_mchp_sha_g1.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCHP_XEC_SYMCR crypto_mchp_xec_symcr.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCUX_DCP crypto_mcux_dcp.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_NPCX_SHA crypto_npcx_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_NRF_ECB crypto_nrf_ecb.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_NXP_S32_HSE crypto_nxp_s32_hse.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_RTS5912_SHA crypto_rts5912_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SI32 crypto_si32.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SMARTBOND crypto_smartbond.c)

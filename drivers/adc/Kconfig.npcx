@@ -17,13 +17,16 @@ if ADC_NPCX
 
 config ADC_NPCX_CMP_V1
 	bool "ADC comparator version 1 support"
-	default y if SOC_SERIES_NPCX7 || SOC_SERIES_NPCX9
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_ADC),support-npcxn-v1,True) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_ADC),support-npcxn-v2,True)
 	help
 	  This option enables ADC comparator V1 support.
 
 config ADC_NPCX_CMP_V2
 	bool "ADC comparator version 2 support"
-	default y if SOC_SERIES_NPCX4
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_ADC),support-npcxn-v3,True)
 	help
 	  This option enables ADC comparator V2 support.
 

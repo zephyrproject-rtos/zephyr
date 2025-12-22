@@ -192,6 +192,16 @@ static void sx12xx_ev_rx_error(void)
 	}
 }
 
+uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
+{
+	return Radio.TimeOnAir(MODEM_LORA,
+			       dev_data.tx_cfg.bandwidth,
+			       dev_data.tx_cfg.datarate,
+			       dev_data.tx_cfg.coding_rate,
+			       dev_data.tx_cfg.preamble_len,
+			       0, data_len, !dev_data.tx_cfg.packet_crc_disable);
+}
+
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
@@ -214,13 +224,8 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	}
 
 	/* Calculate expected airtime of the packet */
-	air_time = Radio.TimeOnAir(MODEM_LORA,
-				   dev_data.tx_cfg.bandwidth,
-				   dev_data.tx_cfg.datarate,
-				   dev_data.tx_cfg.coding_rate,
-				   dev_data.tx_cfg.preamble_len,
-				   0, data_len, true);
-	LOG_DBG("Expected air time of %d bytes = %dms", data_len, air_time);
+	air_time = sx12xx_airtime(dev, data_len);
+	LOG_DBG("Expected air time of %u bytes = %u ms", data_len, air_time);
 
 	/* Wait for the packet to finish transmitting.
 	 * Use twice the tx duration to ensure that we are actually detecting
@@ -337,6 +342,8 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 int sx12xx_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
+	bool crc = !config->packet_crc_disable;
+
 	/* Ensure available, decremented after configuration */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
@@ -351,13 +358,13 @@ int sx12xx_lora_config(const struct device *dev,
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  config->bandwidth, config->datarate,
 				  config->coding_rate, config->preamble_len,
-				  false, true, 0, 0, config->iq_inverted, 4000);
+				  false, crc, 0, 0, config->iq_inverted, 4000);
 	} else {
 		/* TODO: Get symbol timeout value from config parameters */
 		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
 				  config->datarate, config->coding_rate,
 				  0, config->preamble_len, 10, false, 0,
-				  false, 0, 0, config->iq_inverted, true);
+				  crc, false, 0, config->iq_inverted, true);
 	}
 
 	Radio.SetPublicNetwork(config->public_network);

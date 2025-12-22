@@ -12,6 +12,6 @@ zephyr_include_directories(./)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 
-if(CONFIG_BT OR CONFIG_IEEE802154)
+if(CONFIG_NXP_NBU)
   zephyr_linker_sources(RAM_SECTIONS sections.ld)
 endif()

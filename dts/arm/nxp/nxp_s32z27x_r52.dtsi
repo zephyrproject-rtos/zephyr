@@ -1892,5 +1892,59 @@
 				};
 			};
 		};
+
+		hse: crypto {
+			compatible = "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mub0: mu@42200000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42200000 0x10000>;
+				status = "disabled";
+			};
+
+			mub1: mu@42210000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42210000 0x10000>;
+				status = "disabled";
+			};
+
+			mub2: mu@42220000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42220000 0x10000>;
+				status = "disabled";
+			};
+
+			mub3: mu@42230000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42230000 0x10000>;
+				status = "disabled";
+			};
+
+			mub4: mu@42240000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42240000 0x10000>;
+				status = "disabled";
+			};
+
+			mub5: mu@42250000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42250000 0x10000>;
+				status = "disabled";
+			};
+
+			mub6: mu@42260000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42260000 0x10000>;
+				status = "disabled";
+			};
+
+			mub7: mu@42270000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42270000 0x10000>;
+				status = "disabled";
+			};
+		};
 	};
 };

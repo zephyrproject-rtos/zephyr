@@ -6,19 +6,21 @@
 
 import struct
 import sys
-from packaging import version
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+from packaging import version
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
+
 
 class _Symbol:
     """
     Parent class for objects derived from an elf symbol.
     """
+
     def __init__(self, elf, sym):
         self.elf = elf
         self.sym = sym
@@ -29,16 +31,15 @@ class _Symbol:
 
     def _data_native_read(self, offset):
         (format, size) = self.elf.native_struct_format
-        return struct.unpack(format, self.data[offset:offset + size])[0]
+        return struct.unpack(format, self.data[offset : offset + size])[0]
+
 
 class DevicePM(_Symbol):
     """
     Represents information about device PM capabilities.
     """
-    required_ld_consts = [
-        "_PM_DEVICE_STRUCT_FLAGS_OFFSET",
-        "_PM_DEVICE_FLAG_PD"
-    ]
+
+    required_ld_consts = ["_PM_DEVICE_STRUCT_FLAGS_OFFSET", "_PM_DEVICE_FLAG_PD"]
 
     def __init__(self, elf, sym):
         super().__init__(elf, sym)
@@ -48,10 +49,12 @@ class DevicePM(_Symbol):
     def is_power_domain(self):
         return self.flags & (1 << self.elf.ld_consts["_PM_DEVICE_FLAG_PD"])
 
+
 class DeviceOrdinals(_Symbol):
     """
     Represents information about device dependencies.
     """
+
     DEVICE_HANDLE_SEP = -32768
     DEVICE_HANDLE_ENDS = 32767
     DEVICE_HANDLE_NULL = 0
@@ -59,15 +62,15 @@ class DeviceOrdinals(_Symbol):
     def __init__(self, elf, sym):
         super().__init__(elf, sym)
         format = "<" if self.elf.little_endian else ">"
-        format += "{:d}h".format(len(self.data) // 2)
+        format += f"{len(self.data) // 2:d}h"
         self._ordinals = struct.unpack(format, self.data)
         self._ordinals_split = []
 
         # Split ordinals on DEVICE_HANDLE_SEP
-        prev =  1
+        prev = 1
         for idx, val in enumerate(self._ordinals, 1):
             if val == self.DEVICE_HANDLE_SEP:
-                self._ordinals_split.append(self._ordinals[prev:idx-1])
+                self._ordinals_split.append(self._ordinals[prev : idx - 1])
                 prev = idx
         self._ordinals_split.append(self._ordinals[prev:])
 
@@ -79,14 +82,13 @@ class DeviceOrdinals(_Symbol):
     def ordinals(self):
         return self._ordinals_split
 
+
 class Device(_Symbol):
     """
     Represents information about a device object and its references to other objects.
     """
-    required_ld_consts = [
-        "_DEVICE_STRUCT_HANDLES_OFFSET",
-        "_DEVICE_STRUCT_PM_OFFSET"
-    ]
+
+    required_ld_consts = ["_DEVICE_STRUCT_HANDLES_OFFSET", "_DEVICE_STRUCT_PM_OFFSET"]
 
     def __init__(self, elf, sym):
         super().__init__(elf, sym)
@@ -117,16 +119,20 @@ class Device(_Symbol):
     def ordinal(self):
         return self.ordinals.self_ordinal
 
+
 class ZephyrElf:
     """
     Represents information about devices in an elf file.
     """
+
     def __init__(self, kernel, edt, device_start_symbol):
-        self.elf = ELFFile(open(kernel, "rb"))
+        self.elf = ELFFile(open(kernel, "rb"))  # noqa : SIM115
         self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
-        self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
+        self.ld_consts = self._symbols_find_value(
+            set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts])
+        )
         self._device_parse_and_link()
 
     @property
@@ -165,7 +171,7 @@ class ZephyrElf:
         # Validate data extraction
         assert offset + length <= len(data)
         # Extract symbol bytes from section
-        return bytes(data[offset:offset + length])
+        return bytes(data[offset : offset + length])
 
     def _symbols_find_value(self, names):
         symbols = {}
@@ -226,19 +232,24 @@ class ZephyrElf:
     def _device_parse_and_link(self):
         # Find all PM structs
         pm_structs = {}
+
         def _on_pm(sym):
             pm_structs[sym.entry.st_value] = DevicePM(self, sym)
+
         self._object_find_named('__pm_device_', _on_pm)
 
         # Find all ordinal arrays
         ordinal_arrays = {}
+
         def _on_ordinal(sym):
             ordinal_arrays[sym.entry.st_value] = DeviceOrdinals(self, sym)
+
         self._object_find_named('__devicedeps_', _on_ordinal)
 
         # Find all device structs
         def _on_device(sym):
             self.devices.append(Device(self, sym))
+
         self._object_find_named('__device_', _on_device)
 
         # Sort the device array by address (st_value) for handle calculation
@@ -271,15 +282,16 @@ class ZephyrElf:
         Construct a graphviz Digraph of the relationships between devices.
         """
         import graphviz
+
         dot = graphviz.Digraph(title, comment=comment)
         # Split iteration so nodes and edges are grouped in source
         for dev in self.devices:
             if dev.ordinal == DeviceOrdinals.DEVICE_HANDLE_NULL:
-                text = '{:s}\\nHandle: {:d}'.format(dev.sym.name, dev.handle)
+                text = f'{dev.sym.name:s}\\nHandle: {dev.handle:d}'
             else:
                 n = self.edt.dep_ord2node[dev.ordinal]
-                text = '{:s}\\nOrdinal: {:d} | Handle: {:d}\\n{:s}'.format(
-                    n.name, dev.ordinal, dev.handle, n.path
+                text = (
+                    f'{n.name:s}\\nOrdinal: {dev.ordinal:d} | Handle: {dev.handle:d}\\n{n.path:s}'
                 )
             dot.node(str(dev.ordinal), text)
         for dev in self.devices:

@@ -527,7 +527,7 @@ ZTEST(net_socket_tcp, test_v4_broken_link)
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in), "wrong addrlen");
 
-	rv = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	rv = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1288,12 +1288,12 @@ ZTEST(net_socket_tcp, test_so_type)
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6);
 
-	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optlen);
+	rv = zsock_getsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_TYPE, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, NET_SOCK_STREAM, "getsockopt got invalid type");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
-	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_TYPE, &optval, &optlen);
+	rv = zsock_getsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_TYPE, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, NET_SOCK_STREAM, "getsockopt got invalid type");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
@@ -1317,12 +1317,12 @@ ZTEST(net_socket_tcp, test_so_protocol)
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6);
 
-	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	rv = zsock_getsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_PROTOCOL, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, NET_IPPROTO_TCP, "getsockopt got invalid protocol");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
-	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	rv = zsock_getsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_PROTOCOL, &optval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, NET_IPPROTO_TCP, "getsockopt got invalid protocol");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
@@ -1345,26 +1345,26 @@ ZTEST(net_socket_tcp, test_so_rcvbuf)
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6);
 
-	rv = zsock_setsockopt(sock1, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", rv);
-	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_RCVBUF, &retval, &optlen);
+	rv = zsock_getsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &retval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", rv);
 	zassert_equal(retval, optval, "getsockopt got invalid rcvbuf");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
-	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", rv);
-	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_RCVBUF, &retval, &optlen);
+	rv = zsock_getsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &retval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", rv);
 	zassert_equal(retval, optval, "getsockopt got invalid rcvbuf");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
 	optval = -1;
-	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
 	optval = UINT16_MAX + 1;
-	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
 	test_close(sock1);
@@ -1398,7 +1398,7 @@ ZTEST(net_socket_tcp, test_so_rcvbuf_win_size)
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in), "wrong addrlen");
 
 	/* Lower server-side RX window size. */
-	rv = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	rv = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			      sizeof(buf_optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1434,26 +1434,26 @@ ZTEST(net_socket_tcp, test_so_sndbuf)
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock1, &bind_addr4);
 	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock2, &bind_addr6);
 
-	rv = zsock_setsockopt(sock1, SOL_SOCKET, SO_SNDBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", rv);
-	rv = zsock_getsockopt(sock1, SOL_SOCKET, SO_SNDBUF, &retval, &optlen);
+	rv = zsock_getsockopt(sock1, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &retval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", rv);
 	zassert_equal(retval, optval, "getsockopt got invalid rcvbuf");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
-	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_SNDBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", rv);
-	rv = zsock_getsockopt(sock2, SOL_SOCKET, SO_SNDBUF, &retval, &optlen);
+	rv = zsock_getsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &retval, &optlen);
 	zassert_equal(rv, 0, "getsockopt failed (%d)", rv);
 	zassert_equal(retval, optval, "getsockopt got invalid rcvbuf");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
 	optval = -1;
-	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_SNDBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
 	optval = UINT16_MAX + 1;
-	rv = zsock_setsockopt(sock2, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
 	test_close(sock1);
@@ -1479,7 +1479,7 @@ ZTEST(net_socket_tcp, test_so_sndbuf_win_size)
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
 
 	/* Lower client-side TX window size. */
-	rv = zsock_setsockopt(c_sock, SOL_SOCKET, SO_SNDBUF, &buf_optval,
+	rv = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &buf_optval,
 			      sizeof(buf_optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1542,12 +1542,12 @@ ZTEST(net_socket_tcp, test_v4_so_rcvtimeo)
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in), "wrong addrlen");
 
-	rv = zsock_setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	rv = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval.tv_usec = 0;
-	rv = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	rv = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1609,12 +1609,12 @@ ZTEST(net_socket_tcp, test_v6_so_rcvtimeo)
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in6), "wrong addrlen");
 
-	rv = zsock_setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	rv = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval.tv_usec = 0;
-	rv = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	rv = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1674,12 +1674,12 @@ ZTEST(net_socket_tcp, test_v4_so_sndtimeo)
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in), "wrong addrlen");
 
-	rv = zsock_setsockopt(c_sock, SOL_SOCKET, SO_SNDTIMEO, &timeo_optval,
+	rv = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDTIMEO, &timeo_optval,
 			      sizeof(timeo_optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	/* Simulate window full scenario with SO_RCVBUF option. */
-	rv = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	rv = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			      sizeof(buf_optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1735,12 +1735,12 @@ ZTEST(net_socket_tcp, test_v6_so_sndtimeo)
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in6), "wrong addrlen");
 
-	rv = zsock_setsockopt(c_sock, SOL_SOCKET, SO_SNDTIMEO, &timeo_optval,
+	rv = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDTIMEO, &timeo_optval,
 			      sizeof(timeo_optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	/* Simulate window full scenario with SO_RCVBUF option. */
-	rv = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+	rv = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &buf_optval,
 			      sizeof(buf_optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
@@ -1839,7 +1839,7 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
 	 */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
 			       sizeof(timeo_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -1916,7 +1916,7 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
 	 */
-	ret = zsock_setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
 			       sizeof(timeo_optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
@@ -2272,7 +2272,7 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_select)
 	zassert_true(ret > 0, "select failed, %d", errno);
 
 	/* Get the reason for the connect */
-	ret = zsock_getsockopt(fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	ret = zsock_getsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR, &optval, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
 
 	/* If SO_ERROR is 0, then it means that connect succeed. Any
@@ -2288,7 +2288,7 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_select)
  * make sure poll() returns proper error for the closed
  * connection.
  */
-ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
+void test_connect_and_wait_for_v4_poll_common(uint16_t events)
 {
 	struct net_sockaddr_in addr = { 0 };
 	struct zsock_pollfd fds[1];
@@ -2296,6 +2296,8 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	int fd, flags, ret, optval;
 	bool closed = false;
 	net_socklen_t optlen = sizeof(optval);
+	int64_t start_time, time_diff;
+	int timeout_ms = 1000;
 
 	fd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, 0);
 
@@ -2318,13 +2320,23 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	while (1) {
 		memset(fds, 0, sizeof(fds));
 		fds[0].fd = fd;
-		fds[0].events = ZSOCK_POLLOUT;
+		fds[0].events = events;
 
-		/* Check if the connection is there, this should timeout */
-		ret = zsock_poll(fds, 1, 10);
+		/* Peer should reject the connection with RST as port is closed.
+		 * Connection error should be notified as soon as it happens,
+		 * not after a timeout. Otherwise, blocking poll() would never
+		 * recover.
+		 */
+		start_time = k_uptime_get();
+
+		ret = zsock_poll(fds, 1, timeout_ms);
 		if (ret < 0) {
 			break;
 		}
+
+		time_diff = k_uptime_get() - start_time;
+
+		zassert(time_diff < timeout_ms, "poll() should quit before a timeout");
 
 		if (fds[0].revents > 0) {
 			if (fds[0].revents & ZSOCK_POLLERR) {
@@ -2337,7 +2349,7 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	zassert_true(closed, "poll failed, %d", errno);
 
 	/* Get the reason for the connect */
-	ret = zsock_getsockopt(fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	ret = zsock_getsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR, &optval, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
 
 	/* If SO_ERROR is 0, then it means that connect succeed. Any
@@ -2347,6 +2359,16 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 
 	ret = zsock_close(fd);
 	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll_pollout)
+{
+	test_connect_and_wait_for_v4_poll_common(ZSOCK_POLLOUT);
+}
+
+ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll_pollin)
+{
+	test_connect_and_wait_for_v4_poll_common(ZSOCK_POLLIN);
 }
 
 ZTEST(net_socket_tcp, test_so_keepalive_opt)
@@ -2359,18 +2381,18 @@ ZTEST(net_socket_tcp, test_so_keepalive_opt)
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock, &bind_addr4);
 
 	/* Keep-alive should be disabled by default. */
-	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_KEEPALIVE, &optval, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, 0, "getsockopt got invalid value");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
 
 	/* Enable keep-alive. */
 	optval = 1;
-	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_KEEPALIVE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
-	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_KEEPALIVE, &optval, &optlen);
 	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
 	zassert_equal(optval, 1, "getsockopt got invalid value");
 	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");

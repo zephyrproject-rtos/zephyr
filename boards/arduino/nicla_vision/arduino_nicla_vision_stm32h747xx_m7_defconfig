@@ -1,9 +1,6 @@
 # Copyright 2024 Felipe Neves
 # SPDX-License-Identifier: Apache-2.0
 
-# Disable the internal SMPS regulator
-CONFIG_POWER_SUPPLY_DIRECT_SMPS=n
-
 # Enable GPIO
 CONFIG_GPIO=y
 

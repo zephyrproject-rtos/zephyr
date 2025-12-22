@@ -23,7 +23,7 @@ description: |
        */
 
       /* include pre-defined combinations for the SoC variant used by the board */
-      #include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+      #include <zephyr/dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
 
       &pinctrl {
         uart0_default: uart0_default {

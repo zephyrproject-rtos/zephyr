@@ -77,6 +77,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
 &ulpuart {
 	pinctrl-0 = <&ulpuart_default>;
 	pinctrl-names = "default";

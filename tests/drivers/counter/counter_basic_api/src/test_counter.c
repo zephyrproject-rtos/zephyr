@@ -432,6 +432,62 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 	k_sem_give(&alarm_cnt_sem);
 }
 
+static void alarm_capable_handler(const struct device *dev, uint8_t chan_id,
+				    uint32_t counter,
+				    void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(counter);
+	ARG_UNUSED(user_data);
+
+	/* Intentionally empty - capability probe only */
+}
+
+/* Any non-zero error (including -ENOTSUP) is treated as "not supported",
+ * and only returns true when there are no errors throughout the entire process.
+ */
+static bool alarm_capable(const struct device *dev)
+{
+	struct counter_alarm_cfg cfg = {
+		.flags = 0U,
+		.ticks = counter_us_to_ticks(dev, 1000U),
+		.callback = alarm_capable_handler,
+		.user_data = NULL,
+	};
+
+	/* Avoid zero-tick requests on very low-frequency counters */
+	if (cfg.ticks == 0U) {
+		cfg.ticks = 1U;
+	}
+
+	int err;
+
+	if (counter_get_num_of_channels(dev) < 1U) {
+		return false;
+	}
+
+	err = counter_start(dev);
+	if (err != 0) {
+		return false;
+	}
+
+	err = counter_set_channel_alarm(dev, 0, &cfg);
+	if (err != 0) {
+		goto out_stop;
+	}
+
+	err = counter_cancel_channel_alarm(dev, 0);
+	if (err != 0) {
+		goto out_stop;
+	}
+
+out_stop:
+	(void)counter_stop(dev);
+
+	return err == 0;
+}
+
 static void test_single_shot_alarm_instance(const struct device *dev, bool set_top)
 {
 	int err;
@@ -524,13 +580,12 @@ void test_single_shot_alarm_top_instance(const struct device *dev)
 
 static bool single_channel_alarm_capable(const struct device *dev)
 {
-	return (counter_get_num_of_channels(dev) > 0);
+	return alarm_capable(dev);
 }
 
 static bool single_channel_alarm_and_custom_top_capable(const struct device *dev)
 {
-	return single_channel_alarm_capable(dev) &&
-		set_top_value_capable(dev);
+	return alarm_capable(dev) && set_top_value_capable(dev);
 }
 
 ZTEST(counter_basic, test_single_shot_alarm_notop)
@@ -652,7 +707,7 @@ static void test_multiple_alarms_instance(const struct device *dev)
 
 static bool multiple_channel_alarm_capable(const struct device *dev)
 {
-	return (counter_get_num_of_channels(dev) > 1);
+	return alarm_capable(dev) && (counter_get_num_of_channels(dev) > 1);
 }
 
 ZTEST(counter_basic, test_multiple_alarms)

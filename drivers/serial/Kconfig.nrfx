@@ -189,37 +189,25 @@ nrfx_uart_num = 137
 rsource "Kconfig.nrfx_uart_instance"
 endif
 
-config NRFX_TIMER0
+config NRFX_TIMER
 	default y
 	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 0 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 0 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 0
-
-config NRFX_TIMER1
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 1 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 1 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 1 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 1
-
-config NRFX_TIMER2
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 2 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 2 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 2 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 2
-
-config NRFX_TIMER3
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 3 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 3 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 3 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 3
-
-config NRFX_TIMER4
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 4 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 4 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 4 \
 		|| UART_3_NRF_HW_ASYNC_TIMER = 4

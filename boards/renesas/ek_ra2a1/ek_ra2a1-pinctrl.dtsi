@@ -45,6 +45,14 @@
 		};
 	};
 
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 5, 0)>;
+			renesas,analog-enable;
+		};
+	};
+
 	dac0_default: dac0_default {
 		group1 {
 			/* output */

@@ -41,10 +41,6 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "net_stats.h"
 #include "pmtu.h"
 
-#if defined(CONFIG_NET_TCP)
-#include "tcp_internal.h"
-#endif
-
 #ifdef CONFIG_NET_INITIAL_MCAST_TTL
 #define INITIAL_MCAST_TTL CONFIG_NET_INITIAL_MCAST_TTL
 #else
@@ -705,11 +701,11 @@ int net_context_unref(struct net_context *context)
 
 	net_context_set_state(context, NET_CONTEXT_UNCONNECTED);
 
+	k_mutex_unlock(&context->lock);
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
 	NET_DBG("Context %p released", context);
-
-	k_mutex_unlock(&context->lock);
 
 	return 0;
 }
@@ -728,9 +724,10 @@ int net_context_put(struct net_context *context)
 
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		context->flags &= ~NET_CONTEXT_IN_USE;
 		ret = net_offload_put(net_context_get_iface(context), context);
-		goto unlock;
+		k_mutex_unlock(&context->lock);
+		context->flags &= ~NET_CONTEXT_IN_USE;
+		return ret;
 	}
 
 	context->connect_cb = NULL;
@@ -740,11 +737,10 @@ int net_context_put(struct net_context *context)
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
 	net_tcp_put(context, false);
 
+	k_mutex_unlock(&context->lock);
+
 	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
-
-unlock:
-	k_mutex_unlock(&context->lock);
 
 	return ret;
 }
@@ -943,6 +939,12 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 			ptr = (struct net_in6_addr *)net_ipv6_unspecified_address();
 		} else {
 			struct net_if_addr *ifaddr;
+
+			if (net_ipv6_is_ll_addr(&addr6->sin6_addr)) {
+				if (iface == NULL) {
+					iface = net_if_get_by_index(addr6->sin6_scope_id);
+				}
+			}
 
 			ifaddr = net_if_ipv6_addr_lookup(
 					&addr6->sin6_addr,
@@ -2471,6 +2473,17 @@ static int context_sendto(struct net_context *context,
 					   (iface = net_if_get_by_index(
 						   context->options.ipv6_mcast_ifindex)));
 			}
+
+			if (net_ipv6_is_ll_addr(&addr6->sin6_addr) &&
+			    !net_context_is_bound_to_iface(context) &&
+			    COND_CODE_1(CONFIG_NET_IPV6,
+					(addr6->sin6_scope_id > 0), (false))) {
+				IF_ENABLED(CONFIG_NET_IPV6, (
+					   iface = net_if_get_by_index(addr6->sin6_scope_id)));
+				if (iface != NULL) {
+					net_context_set_iface(context, iface);
+				}
+			}
 		}
 
 		/* If application has not yet set the destination address
@@ -3251,6 +3264,23 @@ int net_context_recv(struct net_context *context,
 				net_sll_ptr(&context->local)->sll_halen;
 
 			if (net_sll_ptr(&context->local)->sll_addr != NULL) {
+				/* NET_AF_PACKET socket is bound to an iface as
+				 * context->local->sll_addr is valid.  Although the sll_addr
+				 * pointer correctly links to the iface net_linkaddr, the
+				 * sll_halen is a copy and doesn't track properly the iface
+				 * linkaddr len. For example, the linkaddr len can change
+				 * depending on the link address format with 802.15.4, between
+				 * extended (8 bytes) or short (2 bytes).
+				 *
+				 * Instead, use the iface link_addr directly. The socket is
+				 * bound to an interface as context->local->sll_addr is valid.
+				 */
+				struct net_linkaddr *link_addr = CONTAINER_OF(
+						(uint8_t(*)[NET_LINK_ADDR_MAX_LENGTH])
+						net_sll_ptr(&context->local)->sll_addr,
+						struct net_linkaddr, addr);
+
+				addr.sll_halen = link_addr->len;
 				memcpy(addr.sll_addr,
 				       net_sll_ptr(&context->local)->sll_addr,
 				       MIN(addr.sll_halen, sizeof(addr.sll_addr)));

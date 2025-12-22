@@ -40,6 +40,7 @@ source "drivers/mfd/Kconfig.npm2100"
 source "drivers/mfd/Kconfig.npm6001"
 source "drivers/mfd/Kconfig.pca9422"
 source "drivers/mfd/Kconfig.pf1550"
+source "drivers/mfd/Kconfig.rv3032_mfd"
 source "drivers/mfd/Kconfig.tle9104"
 # zephyr-keep-sorted-stop
 

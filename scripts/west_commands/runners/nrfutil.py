@@ -152,7 +152,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     def _exec_batch(self):
         # Use x-append-batch to get the JSON from nrfutil itself
-        json_file = Path(self.hex_).parent / 'generated_nrfutil_batch.json'
+        json_file = Path(self.cfg.build_dir) / 'zephyr' / 'generated_nrfutil_batch.json'
         json_file.unlink(missing_ok=True)
         for op in self._ops:
             self._append_batch(op, json_file)

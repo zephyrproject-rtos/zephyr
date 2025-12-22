@@ -7,6 +7,7 @@ menuconfig INPUT_GT911
 	default y
 	depends on DT_HAS_GOODIX_GT911_ENABLED
 	select I2C
+	select INPUT_TOUCH
 	help
 	  Enable driver for multiple Goodix capacitive touch panel controllers.
 	  This driver should support gt9110, gt912, gt927, gt9271, gt928,

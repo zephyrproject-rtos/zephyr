@@ -27,6 +27,7 @@ zephyr_library_sources_ifdef(CONFIG_MFD_NPM2100 mfd_npm2100.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_NPM6001 mfd_npm6001.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_PCA9422 mfd_pca9422.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_PF1550 mfd_pf1550.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_RV3032 mfd_rv3032.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_TLE9104 mfd_tle9104.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_LP_FLEXCOMM mfd_nxp_lp_flexcomm.c)
 # zephyr-keep-sorted-stop

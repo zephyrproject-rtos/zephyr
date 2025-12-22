@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s3-xtensa-intmux.h>
-#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
 	aliases {

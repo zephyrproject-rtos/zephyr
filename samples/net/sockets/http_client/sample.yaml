@@ -5,9 +5,11 @@ common:
     - http_client
   min_ram: 32
   depends_on: netif
+  harness: net
 sample:
   description: HTTP client sample
   name: http_client
 tests:
-  sample.net.sockets.http_client:
-    harness: net
+  sample.net.sockets.http_client: {}
+  sample.net.sockets.http_client.tls:
+    extra_args: EXTRA_CONF_FILE="overlay-tls.conf"

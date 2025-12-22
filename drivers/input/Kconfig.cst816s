@@ -20,7 +20,7 @@ config INPUT_CST816S_PERIOD
 
 config INPUT_CST816S_INTERRUPT
 	bool "Interrupt support"
-	default y
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_HYNITRON_CST816S),irq-gpios)
 	depends on GPIO
 	help
 	  Enable interrupt support (requires GPIO).

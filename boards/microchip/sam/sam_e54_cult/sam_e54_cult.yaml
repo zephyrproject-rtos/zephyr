@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sam_e54_cult
+name: SAM E54 Curiosity Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+flash: 1024
+ram: 256
+supported:
+  - gpio
+  - pinctrl
+  - shell
+  - uart
+vendor: microchip

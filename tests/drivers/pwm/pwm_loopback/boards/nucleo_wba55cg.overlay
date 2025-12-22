@@ -16,6 +16,7 @@
 /* 32-Bit timers */
 &timers2 {
 	status = "okay";
+
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pb6>; /* PB6 D3 */
@@ -25,6 +26,7 @@
 
 &timers3 {
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb5>; /* PB5 D1 */

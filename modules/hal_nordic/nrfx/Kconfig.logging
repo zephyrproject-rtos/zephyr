@@ -16,10 +16,6 @@ config NRFX_COMP_LOG
 	bool "COMP driver logging"
 	depends on NRFX_COMP
 
-config NRFX_DPPI_LOG
-	bool "DPPI driver logging"
-	depends on NRFX_DPPI
-
 config NRFX_EGU_LOG
 	bool "EGU driver logging"
 	depends on NRFX_EGU
@@ -63,14 +59,6 @@ config NRFX_PDM_LOG
 config NRFX_POWER_LOG
 	bool "POWER driver logging"
 	depends on NRFX_POWER
-
-config NRFX_PPI_LOG
-	bool "PPI driver logging"
-	depends on NRFX_PPI
-
-config NRFX_PPIB_LOG
-	bool "PPIB driver logging"
-	depends on NRFX_PPIB
 
 config NRFX_PRS_LOG
 	bool "PRS driver logging"

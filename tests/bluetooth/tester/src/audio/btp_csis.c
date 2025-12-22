@@ -90,6 +90,38 @@ static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, 
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t csis_set_sirk(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_csis_set_sirk_cmd *cp = cmd;
+	int err = -ENOENT;
+
+	LOG_DBG("Setting new SIRK");
+
+	if (csis_svc_inst != NULL) {
+		err = bt_csip_set_member_sirk(csis_svc_inst, cp->sirk);
+	} else {
+		LOG_DBG("No CSIS instance registered");
+	}
+
+	return BTP_STATUS_VAL(err);
+}
+
+static uint8_t csis_set_set_size(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_csis_set_set_size_cmd *cp = cmd;
+	int err = -ENOENT;
+
+	LOG_DBG("Setting new set size %u and rank %u", cp->set_size, cp->rank);
+
+	if (csis_svc_inst != NULL) {
+		err = bt_csip_set_member_set_size_and_rank(csis_svc_inst, cp->set_size, cp->rank);
+	} else {
+		LOG_DBG("No CSIS instance registered");
+	}
+
+	return BTP_STATUS_VAL(err);
+}
+
 static const struct btp_handler csis_handlers[] = {
 	{
 		.opcode = BTP_CSIS_READ_SUPPORTED_COMMANDS,
@@ -111,6 +143,16 @@ static const struct btp_handler csis_handlers[] = {
 		.opcode = BTP_CSIS_SET_SIRK_TYPE,
 		.expect_len = sizeof(struct btp_csis_sirk_set_type_cmd),
 		.func = csis_set_sirk_type,
+	},
+	{
+		.opcode = BTP_CSIS_SET_SIRK,
+		.expect_len = sizeof(struct btp_csis_set_sirk_cmd),
+		.func = csis_set_sirk,
+	},
+	{
+		.opcode = BTP_CSIS_SET_SET_SIZE,
+		.expect_len = sizeof(struct btp_csis_set_set_size_cmd),
+		.func = csis_set_set_size,
 	},
 };
 

@@ -191,7 +191,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
 
 #if defined(SOC_GDMA_SUPPORTED)
-	if (cfg->dma_enabled && hal_trans->rcv_buffer && hal_trans->send_buffer) {
+	if (cfg->dma_enabled && hal_trans->rcv_buffer) {
 		/* setup DMA channels via DMA driver */
 		spi_ll_dma_rx_fifo_reset(hal->hw);
 		spi_ll_infifo_full_clr(hal->hw);
@@ -202,7 +202,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 		if (err) {
 			goto free;
 		}
+	}
 
+	if (cfg->dma_enabled && hal_trans->send_buffer) {
 		spi_ll_dma_tx_fifo_reset(hal->hw);
 		spi_ll_outfifo_empty_clr(hal->hw);
 		spi_ll_dma_tx_enable(hal->hw, 1);
@@ -427,7 +429,21 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	hal_dev->cs_pin_id = ctx->config->slave;
+	/*
+	 * CS handling:
+	 * - When using GPIO CS (cs-gpios property), the spi_context manages
+	 *   chip select via GPIO. Hardware CS must be disabled by setting
+	 *   cs_pin_id outside valid range (0-2). Any value > 2 disables all
+	 *   hardware CS lines per documentation.
+	 * - When using hardware CS (directly via pinctrl), the slave
+	 *   number maps to the hardware CS pin (CS0, CS1, CS2).
+	 */
+	if (spi_cs_is_gpio(spi_cfg)) {
+		hal_dev->cs_pin_id = -1;
+	} else {
+		hal_dev->cs_pin_id = ctx->config->slave;
+	}
+
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret) {

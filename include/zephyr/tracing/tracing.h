@@ -1923,6 +1923,30 @@
  */
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)
 
+/**
+ * @brief Trace Timer expiry entry
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_expiry_enter(timer)
+
+/**
+ * @brief Trace Timer expiry exit
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_expiry_exit(timer)
+
+/**
+ * @brief Trace Timer stop function expiry entry
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)
+
+/**
+ * @brief Trace Timer stop function expiry exit
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)
+
 /** @} */ /* end of subsys_tracing_apis_timer */
 
 /**

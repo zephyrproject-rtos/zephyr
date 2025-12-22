@@ -55,16 +55,16 @@ Example building for the nrf52840dk/nrf52840 for RCP:
 There are configuration files for different boards and setups in the
 coprocessor directory:
 
-- :file:`prj.conf`
-  Generic NCP config file. Use this, if you want the NCP configuration.
+:file:`prj.conf`
+   Generic NCP config file. Use this, if you want the NCP configuration.
 
-- :file:`overlay-rcp.conf`
+:file:`overlay-rcp.conf`
    RCP overlay file. Use this in combination with prj.conf, if you want the RCP
    configuration.
 
-- :file:`overlay-tri-n4m-br.conf`
-  This is an overlay for the dedicated Thread Border Router hardware
-  https://www.tridonic.com/com/en/download/data_sheets/net4more_Borderrouter_PoE-Thread_en.pdf.
-  The board support is not part of the Zephyr repositories, but the
-  product is based on NXP K64 and AT86RF233. This file can be used as an
-  example for a development set-up based on development boards.
+:file:`overlay-tri-n4m-br.conf`
+   This is an overlay for the dedicated Thread Border Router hardware
+   https://www.tridonic.com/com/en/download/data_sheets/net4more_Borderrouter_PoE-Thread_en.pdf.
+   The board support is not part of the Zephyr repositories, but the
+   product is based on NXP K64 and AT86RF233. This file can be used as an
+   example for a development set-up based on development boards.

@@ -21,11 +21,10 @@
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/net/icmp.h>
 #include <icmpv6.h>
 
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
-#include <zephyr/net/icmp.h>
+#include <zephyr/net/net_pkt_filter.h>
 #include <openthread/nat64.h>
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
@@ -35,17 +34,29 @@ static uint32_t ail_iface_index;
 static struct net_icmp_ctx ra_ctx;
 static struct net_icmp_ctx rs_ctx;
 static struct net_icmp_ctx na_ctx;
+static struct net_in6_addr mcast_addr;
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr);
 static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
-#define MAX_SERVICES 1
+#define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_SERVICES
 
 static struct zsock_pollfd sockfd_raw[MAX_SERVICES];
 static void raw_receive_handler(struct net_socket_service_event *evt);
+static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len);
+static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt);
 static int raw_infra_if_sock = -1;
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(handle_infra_if_raw_recv, raw_receive_handler, MAX_SERVICES);
+
+struct ot_nat64_pkt_filter_test {
+	struct npf_test test;
+};
+/* Packet filtering rules for NAT64 translator section */
+static struct ot_nat64_pkt_filter_test ot_nat64_drop_rule_check = {
+	.test.fn = infra_if_nat64_try_consume_packet};
+/* Drop all traffic destined to and consumed by NAT64 translator */
+static NPF_RULE(ot_nat64_drop_pkt_process, NET_DROP, ot_nat64_drop_rule_check);
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDestAddress,
@@ -53,8 +64,8 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDe
 {
 	otError error = OT_ERROR_NONE;
 	struct net_pkt *pkt = NULL;
-	struct in6_addr dst = {0};
-	const struct in6_addr *src;
+	struct net_in6_addr dst = {0};
+	const struct net_in6_addr *src;
 
 	if (aBuffer[0] == NET_ICMPV6_RA) {
 		handle_ra_from_ot(aBuffer, aBufferLength);
@@ -133,18 +144,37 @@ otError otPlatGetInfraIfLinkLayerAddress(otInstance *aInstance, uint32_t aIfInde
 otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 {
 	otError error = OT_ERROR_NONE;
-	struct net_in6_addr addr = {0};
+	int ret;
 
 	ot_instance = instance;
 	ail_iface_ptr = ail_iface;
 	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface_ptr);
-	net_ipv6_addr_create_ll_allrouters_mcast(&addr);
-	VerifyOrExit(net_ipv6_mld_join(ail_iface, &addr) == 0, error = OT_ERROR_FAILED);
+
+	net_ipv6_addr_create_ll_allrouters_mcast(&mcast_addr);
+	ret = net_ipv6_mld_join(ail_iface, &mcast_addr);
+
+	VerifyOrExit((ret == 0 || ret == -EALREADY), error = OT_ERROR_FAILED);
 
 	for (uint8_t i = 0; i < MAX_SERVICES; i++) {
 		sockfd_raw[i].fd = -1;
 	}
 exit:
+	return error;
+}
+
+otError infra_if_deinit(void)
+{
+	otError error = OT_ERROR_NONE;
+
+	ot_instance = NULL;
+	ail_iface_index = 0;
+
+	VerifyOrExit(net_ipv6_mld_leave(ail_iface_ptr, &mcast_addr) == 0,
+		     error = OT_ERROR_FAILED);
+
+exit:
+	ail_iface_ptr = NULL;
+
 	return error;
 }
 
@@ -280,14 +310,14 @@ void infra_if_stop_icmp6_listener(void)
 otError infra_if_nat64_init(void)
 {
 	otError error = OT_ERROR_NONE;
-	struct sockaddr_in anyaddr = {.sin_family = AF_INET,
-				      .sin_port = 0,
-				      .sin_addr = INADDR_ANY_INIT};
+	struct net_sockaddr_in anyaddr = {.sin_family = NET_AF_INET,
+					  .sin_port = 0,
+					  .sin_addr = NET_INADDR_ANY_INIT};
 
-	raw_infra_if_sock = zsock_socket(AF_INET, SOCK_RAW, IPPROTO_IP);
+	raw_infra_if_sock = zsock_socket(NET_AF_INET, NET_SOCK_RAW, NET_IPPROTO_IP);
 	VerifyOrExit(raw_infra_if_sock >= 0, error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct sockaddr *)&anyaddr,
-				sizeof(struct sockaddr_in)) == 0,
+	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct net_sockaddr *)&anyaddr,
+				sizeof(struct net_sockaddr_in)) == 0,
 		     error = OT_ERROR_FAILED);
 
 	sockfd_raw[0].fd = raw_infra_if_sock;
@@ -296,6 +326,9 @@ otError infra_if_nat64_init(void)
 	VerifyOrExit(net_socket_service_register(&handle_infra_if_raw_recv, sockfd_raw,
 						 ARRAY_SIZE(sockfd_raw), NULL) == 0,
 		     error = OT_ERROR_FAILED);
+
+	npf_insert_ipv4_recv_rule(&ot_nat64_drop_pkt_process);
+	npf_append_ipv4_recv_rule(&npf_default_ok);
 
 exit:
 	return error;
@@ -315,7 +348,7 @@ static void raw_receive_handler(struct net_socket_service_event *evt)
 	len = zsock_recv(raw_infra_if_sock, req->buffer, sizeof(req->buffer), 0);
 	VerifyOrExit(len >= 0, error = OT_ERROR_FAILED);
 
-	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, AF_INET, 0, K_NO_WAIT);
+	ot_pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, len, NET_AF_INET, 0, K_NO_WAIT);
 	VerifyOrExit(ot_pkt != NULL, error = OT_ERROR_FAILED);
 
 	VerifyOrExit(net_pkt_write(ot_pkt, req->buffer, len) == 0, error = OT_ERROR_FAILED);
@@ -340,10 +373,100 @@ otError infra_if_send_raw_message(uint8_t *buf, uint16_t len)
 {
 	otError error = OT_ERROR_NONE;
 
+	remove_checksums_for_eth_offloading(buf, len);
+
 	VerifyOrExit(zsock_send(raw_infra_if_sock, buf, len, 0) > 0,
 		     error = OT_ERROR_FAILED);
 
 exit:
 	return error;
 }
+
+static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len)
+{
+	struct net_ipv4_hdr *ipv4_hdr = (struct net_ipv4_hdr *)buf;
+	uint8_t *pkt_cursor = NULL;
+	struct ethernet_config config;
+
+	if ((net_eth_get_hw_capabilities(ail_iface_ptr) & ETHERNET_HW_TX_CHKSUM_OFFLOAD) == 0) {
+		return; /* No checksum offload capabilities*/
+	}
+
+	if (net_eth_get_hw_config(ail_iface_ptr, ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
+				  &config) != 0) {
+		return; /* No TX checksum capabilities*/
+	}
+
+	pkt_cursor = buf + (ipv4_hdr->vhl & 0x0F) * 4;
+
+	if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_HEADER) != 0) {
+		ipv4_hdr->chksum = 0;
+	}
+
+	switch (ipv4_hdr->proto) {
+	case NET_IPPROTO_ICMP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_ICMP) != 0) {
+			struct net_icmp_hdr *icmp_hdr = (struct net_icmp_hdr *)pkt_cursor;
+
+			icmp_hdr->chksum = 0;
+		}
+	break;
+	case NET_IPPROTO_UDP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_UDP) != 0) {
+			struct net_udp_hdr *udp_hdr = (struct net_udp_hdr *)pkt_cursor;
+
+			udp_hdr->chksum = 0;
+		}
+	break;
+	case NET_IPPROTO_TCP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_TCP) != 0) {
+			struct net_tcp_hdr *tcp_hdr = (struct net_tcp_hdr *)pkt_cursor;
+
+			tcp_hdr->chksum = 0;
+		}
+	break;
+	default:
+		break;
+	}
+}
+
+static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt)
+{
+	ARG_UNUSED(test);
+
+	struct net_buf *buf = NULL;
+	otMessage *message = NULL;
+	otMessageSettings settings;
+
+	openthread_mutex_lock();
+
+	if (ot_instance == NULL ||
+	    otNat64GetTranslatorState(ot_instance) != OT_NAT64_STATE_ACTIVE) {
+		ExitNow();
+	}
+
+	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+	settings.mLinkSecurityEnabled = true;
+
+	message = otIp4NewMessage(ot_instance, &settings);
+	VerifyOrExit(message != NULL);
+
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
+			otMessageFree(message);
+			ExitNow();
+		}
+	}
+
+	if (otNat64Send(ot_instance, message) == OT_ERROR_NONE) {
+		net_pkt_unref(pkt);
+		openthread_mutex_unlock();
+		return true;
+	}
+
+exit:
+	openthread_mutex_unlock();
+	return false;
+}
+
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */

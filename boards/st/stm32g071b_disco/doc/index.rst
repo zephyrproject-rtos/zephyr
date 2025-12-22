@@ -26,16 +26,20 @@ as a USB Type-C |reg| and Power Delivery analyzer.
 - 3 LEDs for power and ST-LINK communication
 - 4-way joystick with selection button
 - 1 reset push-button
-- Board external connectors:
-    - USB Type-C |reg| plug cable
-    - USB Type-C |reg| receptacle connector
-    - 8-pin user extension connector including ADC, SPI, USART and
-      I2C communication signals
-    - USB with Micro-AB (ST-LINK)
+- Board external connectors
+
+  - USB Type-C |reg| plug cable
+  - USB Type-C |reg| receptacle connector
+  - 8-pin user extension connector including ADC, SPI, USART and
+    I2C communication signals
+  - USB with Micro-AB (ST-LINK)
+
 - Board internal connectors:
-    - 2 x 8-pin GPIOs free pins from microcontroller
-	  (accessible internally when case is removed)
-    - USB Type-C |reg| test points for main signals
+
+  - 2 x 8-pin GPIOs free pins from microcontroller
+    (accessible internally when case is removed)
+  - USB Type-C |reg| test points for main signals
+
 - Flexible power-supply options: ST-LINK USB VBUS or USB Type-C |reg| VBUS
 - On-board ST-LINK/V2-1 debugger/programmer with USB enumeration capability:
   mass storage, Virtual COM port and debug port

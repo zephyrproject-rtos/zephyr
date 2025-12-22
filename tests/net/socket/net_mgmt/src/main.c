@@ -363,7 +363,7 @@ static void test_net_mgmt_setup(void)
 	net_if_foreach(iface_cb, &default_iface);
 	zassert_not_null(default_iface, "Cannot find test interface");
 
-	fd = zsock_socket(AF_NET_MGMT, NET_SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
+	fd = zsock_socket(NET_AF_NET_MGMT, NET_SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
 	zassert_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
 
 #ifdef CONFIG_USERSPACE
@@ -378,7 +378,7 @@ static void test_net_mgmt_setup(void)
 
 	memset(&sockaddr, 0, sizeof(sockaddr));
 
-	sockaddr.nm_family = AF_NET_MGMT;
+	sockaddr.nm_family = NET_AF_NET_MGMT;
 	sockaddr.nm_ifindex = net_if_get_by_iface(default_iface);
 	sockaddr.nm_pid = (uintptr_t)k_current_get();
 	sockaddr.nm_mask = NET_EVENT_IPV6_DAD_SUCCEED |
@@ -395,7 +395,7 @@ static void test_net_mgmt_catch_events(void)
 {
 	struct net_sockaddr_nm event_addr;
 	net_socklen_t event_addr_len;
-	char ipaddr[INET6_ADDRSTRLEN];
+	char ipaddr[NET_INET6_ADDRSTRLEN];
 	uint8_t buf[MAX_BUF_LEN];
 	int event_count = 2;
 	int ret;

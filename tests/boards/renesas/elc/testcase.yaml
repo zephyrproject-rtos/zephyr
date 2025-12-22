@@ -5,5 +5,5 @@ tests:
       - drivers
       - misc
       - renesas_elc
-    filter: dt_node_enabled("renesas,ra-elc")
+    filter: dt_compat_enabled("renesas,ra-elc")
     harness: ztest
