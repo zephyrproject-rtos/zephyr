@@ -115,6 +115,13 @@ static int scmi_send_message_polling(struct scmi_protocol *proto,
 	int ret;
 	int status;
 
+	/* wait for channel to be free */
+	ret = k_mutex_lock(&proto->tx->lock, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("failed to acquire chan lock");
+		return -EBUSY;
+	}
+
 	/*
 	 * SCMI communication interrupt is enabled by default during setup_chan
 	 * to support interrupt-driven communication. When using polling mode
@@ -151,6 +158,8 @@ cleanup:
 	if (status >= 0) {
 		scmi_interrupt_enable(proto->tx, true);
 	}
+
+	k_mutex_unlock(&proto->tx->lock);
 
 	return ret;
 }
