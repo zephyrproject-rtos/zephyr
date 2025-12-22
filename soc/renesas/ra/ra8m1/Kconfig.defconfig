@@ -12,6 +12,12 @@ config BUILD_OUTPUT_HEX
 config CLOCK_CONTROL
 	default y
 
+config DCACHE
+	default n
+
+config CACHE_MANAGEMENT
+	default n
+
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE
 	default 128
