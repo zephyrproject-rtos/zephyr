@@ -70,7 +70,8 @@
 #define MAX_INSTALLABLE_TIMEOUTS (1)
 #define WDT_WINDOW_MAX_ALLOWED   (0x40001U)
 #define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
-#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X) ||					   \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
 #define WDT_TEST_FLAGS                                                                             \
 	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
 	 WDT_FLAG_RESET_CPU_CORE_SUPPORTED | WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED |           \
