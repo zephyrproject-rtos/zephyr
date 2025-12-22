@@ -36,6 +36,7 @@
 #include "lc3.h"
 #include "stream_rx.h"
 #include "usb.h"
+#include "audio_codec.h"
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
@@ -163,6 +164,14 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	struct bt_iso_info info;
 	int err;
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(codec0))
+	err = hw_codec_open();
+	if (err != 0) {
+		printk("Audio codec open failed (err %d)\n", err);
+		return;
+	}
+#endif
+
 	err = bt_iso_chan_get_info(bap_stream->iso, &info);
 	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
 
@@ -192,6 +201,9 @@ static void stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
 	if (err != 0) {
 		printk("Failed to take sem_stream_started: %d\n", err);
 	}
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(codec0))
+	hw_codec_close();
+#endif
 }
 
 static void stream_recv_cb(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_info *info,
