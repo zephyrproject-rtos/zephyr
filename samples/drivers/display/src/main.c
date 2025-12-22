@@ -119,8 +119,8 @@ static uint16_t get_rgb565_color(enum corner corner, uint8_t grey)
 	return color;
 }
 
-static void fill_buffer_bgr565(enum corner corner, uint8_t grey, uint8_t *buf,
-			       size_t buf_size)
+static void fill_buffer_rgb565x(enum corner corner, uint8_t grey, uint8_t *buf,
+				size_t buf_size)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
 
@@ -295,9 +295,9 @@ int main(void)
 		fill_buffer_fnc = fill_buffer_rgb565;
 		buf_size *= 2;
 		break;
-	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_RGB_565X:
 		bg_color = 0xFFu;
-		fill_buffer_fnc = fill_buffer_bgr565;
+		fill_buffer_fnc = fill_buffer_rgb565x;
 		buf_size *= 2;
 		break;
 	case PIXEL_FORMAT_L_8:

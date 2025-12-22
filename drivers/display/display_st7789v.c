@@ -184,8 +184,8 @@ static int st7789v_write(const struct device *dev,
 	}
 	if (IS_ENABLED(CONFIG_ST7789V_RGB565)) {
 		pixfmt = PIXEL_FORMAT_RGB_565;
-	} else if (IS_ENABLED(CONFIG_ST7789V_BGR565)) {
-		pixfmt = PIXEL_FORMAT_BGR_565;
+	} else if (IS_ENABLED(CONFIG_ST7789V_RGB565X)) {
+		pixfmt = PIXEL_FORMAT_RGB_565X;
 	} else {
 		pixfmt = PIXEL_FORMAT_RGB_888;
 	}
@@ -225,9 +225,9 @@ static void st7789v_get_capabilities(const struct device *dev,
 #ifdef CONFIG_ST7789V_RGB565
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
-#elif CONFIG_ST7789V_BGR565
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_BGR_565;
-	capabilities->current_pixel_format = PIXEL_FORMAT_BGR_565;
+#elif CONFIG_ST7789V_RGB565X
+	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
+	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565X;
 #else
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
@@ -240,8 +240,8 @@ static int st7789v_set_pixel_format(const struct device *dev,
 {
 #ifdef CONFIG_ST7789V_RGB565
 	if (pixel_format == PIXEL_FORMAT_RGB_565) {
-#elif CONFIG_ST7789V_BGR565
-	if (pixel_format == PIXEL_FORMAT_BGR_565) {
+#elif CONFIG_ST7789V_RGB565X
+	if (pixel_format == PIXEL_FORMAT_RGB_565X) {
 #else
 	if (pixel_format == PIXEL_FORMAT_RGB_888) {
 #endif
