@@ -1,9 +1,10 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
 # Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI CC23X0 16-channel ADC
+description: Texas Instruments LPF3 (CC23X0 & CC27XX) 16-channel ADC
 
-compatible: "ti,cc23x0-adc"
+compatible: "ti,lpf3-adc"
 
 include: [adc-controller.yaml, pinctrl-device.yaml]
 

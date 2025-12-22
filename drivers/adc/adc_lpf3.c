@@ -1,13 +1,14 @@
 /*
+ *  Copyright (c) 2025 Texas Instruments Incorporated
  * Copyright (c) 2024 BayLibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_cc23x0_adc
+#define DT_DRV_COMPAT ti_lpf3_adc
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
+LOG_MODULE_REGISTER(adc_lpf3, CONFIG_ADC_LOG_LEVEL);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
@@ -26,35 +27,35 @@ LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define ADC_CC23X0_CH_UNDEF 0xff
-#define ADC_CC23X0_CH_COUNT 16
-#define ADC_CC23X0_CH_MAX   (ADC_CC23X0_CH_COUNT - 1)
+#define ADC_LPF3_CH_UNDEF 0xff
+#define ADC_LPF3_CH_COUNT 16
+#define ADC_LPF3_CH_MAX   (ADC_LPF3_CH_COUNT - 1)
 
 /* ADC provides four result storage registers */
-#define ADC_CC23X0_MEM_COUNT 4
-#define ADC_CC23X0_MEM_MAX   (ADC_CC23X0_MEM_COUNT - 1)
+#define ADC_LPF3_MEM_COUNT 4
+#define ADC_LPF3_MEM_MAX   (ADC_LPF3_MEM_COUNT - 1)
 
-#define ADC_CC23X0_MAX_CYCLES 1023
+#define ADC_LPF3_MAX_CYCLES 1023
 
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-#define ADC_CC23X0_REG_GET(offset) (ADC_BASE + (offset))
-#define ADC_CC23X0_INT_MASK        ADC_INT_DMADONE
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
+#define ADC_LPF3_REG_GET(offset) (ADC_BASE + (offset))
+#define ADC_LPF3_INT_MASK        ADC_INT_DMADONE
 #else
-#define ADC_CC23X0_INT_MASK                                                                        \
+#define ADC_LPF3_INT_MASK                                                                          \
 	(ADC_INT_MEMRES_00 | ADC_INT_MEMRES_01 | ADC_INT_MEMRES_02 | ADC_INT_MEMRES_03)
 #endif
 
-#define ADC_CC23X0_INT_MEMRES(i) (ADC_INT_MEMRES_00 << (i))
+#define ADC_LPF3_INT_MEMRES(i) (ADC_INT_MEMRES_00 << (i))
 
-#define ADC_CC23X0_MEMCTL(base, i) HWREG((base) + ADC_O_MEMCTL0 + sizeof(uint32_t) * (i))
+#define ADC_LPF3_MEMCTL(base, i) HWREG((base) + ADC_O_MEMCTL0 + sizeof(uint32_t) * (i))
 
 static const uint8_t clk_dividers[] = {1, 2, 4, 8, 16, 24, 32, 48};
 
-struct adc_cc23x0_config {
+struct adc_lpf3_config {
 	const struct pinctrl_dev_config *pincfg;
 	void (*irq_cfg_func)(void);
 	uint32_t base;
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
 	const struct device *dma_dev;
 	uint8_t dma_channel;
 	uint8_t dma_trigsrc;
@@ -62,7 +63,7 @@ struct adc_cc23x0_config {
 };
 
 #ifdef CONFIG_PM_DEVICE
-struct adc_cc23x0_mem_cfg {
+struct adc_lpf3_mem_cfg {
 	bool configured;
 	uint8_t ch;
 	uint32_t ref;
@@ -71,23 +72,23 @@ struct adc_cc23x0_mem_cfg {
 };
 #endif
 
-struct adc_cc23x0_data {
+struct adc_lpf3_data {
 	struct adc_context ctx;
 	const struct device *dev;
 	uint32_t res;
-	uint32_t ref_volt[ADC_CC23X0_CH_COUNT];
+	uint32_t ref_volt[ADC_LPF3_CH_COUNT];
 	uint16_t clk_cycles;
 	uint8_t clk_div;
-	uint8_t ch_sel[ADC_CC23X0_MEM_COUNT];
+	uint8_t ch_sel[ADC_LPF3_MEM_COUNT];
 	uint8_t ch_count;
 	uint8_t mem_index;
 	uint16_t *buffer;
 #ifdef CONFIG_PM_DEVICE
-	struct adc_cc23x0_mem_cfg mem_cfg[ADC_CC23X0_MEM_COUNT];
+	struct adc_lpf3_mem_cfg mem_cfg[ADC_LPF3_MEM_COUNT];
 #endif
 };
 
-static inline void adc_cc23x0_pm_policy_state_lock_get(void)
+static inline void adc_lpf3_pm_policy_state_lock_get(void)
 {
 #ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
@@ -95,7 +96,7 @@ static inline void adc_cc23x0_pm_policy_state_lock_get(void)
 #endif
 }
 
-static inline void adc_cc23x0_pm_policy_state_lock_put(void)
+static inline void adc_lpf3_pm_policy_state_lock_put(void)
 {
 #ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
@@ -105,12 +106,12 @@ static inline void adc_cc23x0_pm_policy_state_lock_put(void)
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct adc_cc23x0_data *data = CONTAINER_OF(ctx, struct adc_cc23x0_data, ctx);
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-	const struct adc_cc23x0_config *cfg = data->dev->config;
+	struct adc_lpf3_data *data = CONTAINER_OF(ctx, struct adc_lpf3_data, ctx);
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
+	const struct adc_lpf3_config *cfg = data->dev->config;
 
 	struct dma_block_config block_cfg = {
-		.source_address = ADC_CC23X0_REG_GET(ADC_O_MEMRES0),
+		.source_address = ADC_LPF3_REG_GET(ADC_O_MEMRES0),
 		.dest_address = (uint32_t)(data->buffer),
 		.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
 		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
@@ -125,6 +126,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		.source_data_size = sizeof(uint32_t),
 		.dest_data_size = sizeof(*data->buffer),
 		.source_burst_length = block_cfg.block_size,
+		.dest_burst_length = block_cfg.block_size,
 		.dma_callback = NULL,
 		.user_data = NULL,
 	};
@@ -137,13 +139,13 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		return;
 	}
 
-	ADCEnableDMATrigger();
+	ADCEnableDmaTrigger();
 
 	dma_start(cfg->dma_dev, cfg->dma_channel);
 #else
 	data->mem_index = 0;
 #endif
-	adc_cc23x0_pm_policy_state_lock_get();
+	adc_lpf3_pm_policy_state_lock_get();
 
 	/* Set trigger source to software */
 	ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
@@ -161,22 +163,22 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
-	struct adc_cc23x0_data *data = CONTAINER_OF(ctx, struct adc_cc23x0_data, ctx);
+	struct adc_lpf3_data *data = CONTAINER_OF(ctx, struct adc_lpf3_data, ctx);
 
 	if (!repeat) {
 		data->buffer += data->ch_count;
 	}
 }
 
-static void adc_cc23x0_isr(const struct device *dev)
+static void adc_lpf3_isr(const struct device *dev)
 {
-	struct adc_cc23x0_data *data = dev->data;
-#ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
+	struct adc_lpf3_data *data = dev->data;
+#ifndef CONFIG_ADC_LPF3_DMA_DRIVEN
 	uint32_t adc_val;
 	uint8_t ch;
 #endif
 
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
 	/*
 	 * In DMA mode, do not compensate for the ADC internal gain with
 	 * ADCAdjustValueForGain() function. To perform this compensation,
@@ -185,7 +187,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 	 */
 	ADCClearInterrupt(ADC_INT_DMADONE);
 	LOG_DBG("DMA done");
-	adc_cc23x0_pm_policy_state_lock_put();
+	adc_lpf3_pm_policy_state_lock_put();
 	adc_context_on_sampling_done(&data->ctx, dev);
 #else
 	/*
@@ -202,7 +204,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 					ADCGetAdjustmentGain(data->ref_volt[ch]));
 	data->buffer[data->mem_index] = adc_val;
 
-	ADCClearInterrupt(ADC_CC23X0_INT_MEMRES(data->mem_index));
+	ADCClearInterrupt(ADC_LPF3_INT_MEMRES(data->mem_index));
 
 	LOG_DBG("Mem %u, Ch %u, Val %d", data->mem_index, ch, adc_val);
 
@@ -223,21 +225,21 @@ static void adc_cc23x0_isr(const struct device *dev)
 		 */
 		ADCStartConversion();
 	} else {
-		adc_cc23x0_pm_policy_state_lock_put();
+		adc_lpf3_pm_policy_state_lock_put();
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 #endif
 }
 
-static int adc_cc23x0_read_common(const struct device *dev, const struct adc_sequence *sequence,
-				  bool asynchronous, struct k_poll_signal *sig)
+static int adc_lpf3_read_common(const struct device *dev, const struct adc_sequence *sequence,
+				bool asynchronous, struct k_poll_signal *sig)
 {
-#ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
-	const struct adc_cc23x0_config *cfg = dev->config;
+#ifndef CONFIG_ADC_LPF3_DMA_DRIVEN
+	const struct adc_lpf3_config *cfg = dev->config;
 #endif
-	struct adc_cc23x0_data *data = dev->data;
+	struct adc_lpf3_data *data = dev->data;
 	uint32_t bitmask;
-	uint8_t ch_start = ADC_CC23X0_CH_UNDEF;
+	uint8_t ch_start = ADC_LPF3_CH_UNDEF;
 	uint8_t mem_index = 0;
 	size_t exp_size;
 	int ret;
@@ -281,16 +283,16 @@ static int adc_cc23x0_read_common(const struct device *dev, const struct adc_seq
 		/* Set adjustment offset for this channel */
 		ADCSetAdjustmentOffset(data->ref_volt[ch_start]);
 
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(0));
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
+		HWREG(ADC_BASE + ADC_O_IMASK2) |= ADC_LPF3_INT_MEMRES(0);
 #endif
-	} else if (data->ch_count <= ADC_CC23X0_MEM_COUNT) {
-		for (i = 0; i < ADC_CC23X0_CH_COUNT; i++) {
+	} else if (data->ch_count <= ADC_LPF3_MEM_COUNT) {
+		for (i = 0; i < ADC_LPF3_CH_COUNT; i++) {
 			if (!(bitmask & BIT(i))) {
 				continue;
 			}
 
-			if (ch_start == ADC_CC23X0_CH_UNDEF) {
+			if (ch_start == ADC_LPF3_CH_UNDEF) {
 				ch_start = i;
 			}
 
@@ -299,9 +301,9 @@ static int adc_cc23x0_read_common(const struct device *dev, const struct adc_seq
 			/* Set input channel */
 			ADCSetInput(data->ref_volt[i], i, mem_index);
 
-#ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#ifndef CONFIG_ADC_LPF3_DMA_DRIVEN
 			/* Set trigger policy so next conversion requires a trigger */
-			ADC_CC23X0_MEMCTL(cfg->base, mem_index) |= ADC_MEMCTL0_TRG;
+			ADC_LPF3_MEMCTL(cfg->base, mem_index) |= ADC_MEMCTL0_TRG;
 #endif
 
 			mem_index++;
@@ -314,15 +316,15 @@ static int adc_cc23x0_read_common(const struct device *dev, const struct adc_seq
 		/* Set adjustment offset for the first channel */
 		ADCSetAdjustmentOffset(data->ref_volt[ch_start]);
 
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
 		/*
 		 * DMA transfer will be triggered when the last storage register
 		 * of the sequence is loaded with a new conversion result
 		 */
-		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(mem_index - 1));
+		HWREG(ADC_BASE + ADC_O_IMASK2) |= ADC_LPF3_INT_MEMRES(mem_index - 1);
 #endif
 	} else {
-		LOG_ERR("Too many channels in the sequence, max %u", ADC_CC23X0_MEM_COUNT);
+		LOG_ERR("Too many channels in the sequence, max %u", ADC_LPF3_MEM_COUNT);
 		return -EINVAL;
 	}
 
@@ -347,20 +349,20 @@ static int adc_cc23x0_read_common(const struct device *dev, const struct adc_seq
 	return ret;
 }
 
-static int adc_cc23x0_read(const struct device *dev, const struct adc_sequence *sequence)
+static int adc_lpf3_read(const struct device *dev, const struct adc_sequence *sequence)
 {
-	return adc_cc23x0_read_common(dev, sequence, false, NULL);
+	return adc_lpf3_read_common(dev, sequence, false, NULL);
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_cc23x0_read_async(const struct device *dev, const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+static int adc_lpf3_read_async(const struct device *dev, const struct adc_sequence *sequence,
+			       struct k_poll_signal *async)
 {
-	return adc_cc23x0_read_common(dev, sequence, true, async);
+	return adc_lpf3_read_common(dev, sequence, true, async);
 }
 #endif
 
-static uint32_t adc_cc23x0_clkdiv_to_field(uint8_t clk_div)
+static uint32_t adc_lpf3_clkdiv_to_field(uint8_t clk_div)
 {
 	switch (clk_div) {
 	case 2:
@@ -382,12 +384,12 @@ static uint32_t adc_cc23x0_clkdiv_to_field(uint8_t clk_div)
 	}
 }
 
-static int adc_cc23x0_calc_clk_cfg(uint32_t acq_time_ns, uint8_t *clk_div, uint16_t *clk_cycles)
+static int adc_lpf3_calc_clk_cfg(uint32_t acq_time_ns, uint8_t *clk_div, uint16_t *clk_cycles)
 {
 	uint32_t samp_duration_ns;
 	uint32_t min_delta_res = UINT32_MAX;
 	uint32_t delta_res;
-	uint16_t min_cycles = ADC_CC23X0_MAX_CYCLES;
+	uint16_t min_cycles = ADC_LPF3_MAX_CYCLES;
 	uint16_t cycles;
 	uint8_t divider;
 	float clock_period_ns;
@@ -429,10 +431,10 @@ static int adc_cc23x0_calc_clk_cfg(uint32_t acq_time_ns, uint8_t *clk_div, uint1
 	return 0;
 }
 
-static int adc_cc23x0_channel_setup(const struct device *dev,
-				    const struct adc_channel_cfg *channel_cfg)
+static int adc_lpf3_channel_setup(const struct device *dev,
+				  const struct adc_channel_cfg *channel_cfg)
 {
-	struct adc_cc23x0_data *data = dev->data;
+	struct adc_lpf3_data *data = dev->data;
 	const uint8_t ch = channel_cfg->channel_id;
 	uint32_t ref;
 	uint32_t acq_time_ns;
@@ -442,8 +444,8 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 
 	LOG_DBG("Channel %u", ch);
 
-	if (ch > ADC_CC23X0_CH_MAX) {
-		LOG_ERR("Channel %u is not supported, max %u", ch, ADC_CC23X0_CH_MAX);
+	if (ch > ADC_LPF3_CH_MAX) {
+		LOG_ERR("Channel %u is not supported, max %u", ch, ADC_LPF3_CH_MAX);
 		return -EINVAL;
 	}
 
@@ -483,7 +485,7 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		break;
 	case ADC_ACQ_TIME_MICROSECONDS:
 		acq_time_ns = 1000 * (uint16_t)ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
-		ret = adc_cc23x0_calc_clk_cfg(acq_time_ns, &clk_div, &clk_cycles);
+		ret = adc_lpf3_calc_clk_cfg(acq_time_ns, &clk_div, &clk_cycles);
 		if (ret) {
 			LOG_DBG("No valid clock configuration found");
 			return ret;
@@ -491,7 +493,7 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		break;
 	case ADC_ACQ_TIME_NANOSECONDS:
 		acq_time_ns = (uint16_t)ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
-		ret = adc_cc23x0_calc_clk_cfg(acq_time_ns, &clk_div, &clk_cycles);
+		ret = adc_lpf3_calc_clk_cfg(acq_time_ns, &clk_div, &clk_cycles);
 		if (ret) {
 			LOG_DBG("No valid clock configuration found");
 			return ret;
@@ -506,14 +508,14 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 	data->mem_cfg[data->mem_index].configured = true;
 	data->mem_cfg[data->mem_index].ch = ch;
 	data->mem_cfg[data->mem_index].ref = ref;
-	data->mem_cfg[data->mem_index].clkdiv_field = adc_cc23x0_clkdiv_to_field(clk_div);
+	data->mem_cfg[data->mem_index].clkdiv_field = adc_lpf3_clkdiv_to_field(clk_div);
 	data->mem_cfg[data->mem_index].clk_cycles = clk_cycles;
 #endif
 
 	if (!data->clk_cycles) {
 		data->clk_div = clk_div;
 		data->clk_cycles = clk_cycles;
-		ADCSetSampleDuration(adc_cc23x0_clkdiv_to_field(clk_div), data->clk_cycles);
+		ADCSetSampleDuration(adc_lpf3_clkdiv_to_field(clk_div), data->clk_cycles);
 	} else if (clk_div != data->clk_div || clk_cycles != data->clk_cycles) {
 		LOG_ERR("Multiple sample durations are not supported");
 		return -EINVAL;
@@ -522,10 +524,10 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int adc_cc23x0_init(const struct device *dev)
+static int adc_lpf3_init(const struct device *dev)
 {
-	const struct adc_cc23x0_config *cfg = dev->config;
-	struct adc_cc23x0_data *data = dev->data;
+	const struct adc_lpf3_config *cfg = dev->config;
+	struct adc_lpf3_data *data = dev->data;
 	int ret;
 
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
@@ -541,9 +543,9 @@ static int adc_cc23x0_init(const struct device *dev)
 	CLKCTLEnable(CLKCTL_BASE, CLKCTL_ADC0);
 
 	/* Enable interrupts */
-	ADCEnableInterrupt(ADC_CC23X0_INT_MASK);
+	ADCEnableInterrupt(ADC_LPF3_INT_MASK);
 
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
 	}
@@ -556,9 +558,9 @@ static int adc_cc23x0_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 
-static int adc_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+static int adc_lpf3_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	struct adc_cc23x0_data *data = dev->data;
+	struct adc_lpf3_data *data = dev->data;
 	int i = 0;
 
 	switch (action) {
@@ -567,7 +569,7 @@ static int adc_cc23x0_pm_action(const struct device *dev, enum pm_device_action 
 		return 0;
 	case PM_DEVICE_ACTION_RESUME:
 		CLKCTLEnable(CLKCTL_BASE, CLKCTL_ADC0);
-		ADCEnableInterrupt(ADC_CC23X0_INT_MASK);
+		ADCEnableInterrupt(ADC_LPF3_INT_MASK);
 
 		/* Restore context for the channels that were configured before */
 		ARRAY_FOR_EACH_PTR(data->mem_cfg, mem_data) {
@@ -591,45 +593,45 @@ static DEVICE_API(adc, adc_lpf3_driver_api) = {
 	.channel_setup = adc_lpf3_channel_setup,
 	.read = adc_lpf3_read,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async = adc_cc23x0_read_async,
+	.read_async = adc_lpf3_read_async,
 #endif
 	.ref_internal = 1400,
 };
 
-#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-#define ADC_CC23X0_DMA_INIT(n)                                                                 \
+#ifdef CONFIG_ADC_LPF3_DMA_DRIVEN
+#define ADC_LPF3_DMA_INIT(n)                                                                       \
 	.dma_dev = DEVICE_DT_GET(TI_CC23X0_CC27XX_DT_INST_DMA_CTLR(n, dma)),                       \
 	.dma_channel = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, dma),                               \
 	.dma_trigsrc = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, dma),
 #else
-#define ADC_CC23X0_DMA_INIT(n)
+#define ADC_LPF3_DMA_INIT(n)
 #endif
 
-#define CC23X0_ADC_INIT(n)                                                                     \
+#define LPF3_ADC_INIT(n)                                                                           \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);                                         \
-                                                                                               \
-	static void adc_cc23x0_cfg_func_##n(void)                                                  \
+	PM_DEVICE_DT_INST_DEFINE(n, adc_lpf3_pm_action);                                           \
+                                                                                                   \
+	static void adc_lpf3_cfg_func_##n(void)                                                    \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_cc23x0_isr,             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_lpf3_isr,               \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
-                                                                                               \
-	static const struct adc_cc23x0_config adc_cc23x0_config_##n = {                            \
+                                                                                                   \
+	static const struct adc_lpf3_config adc_lpf3_config_##n = {                                \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.irq_cfg_func = adc_cc23x0_cfg_func_##n,                                           \
+		.irq_cfg_func = adc_lpf3_cfg_func_##n,                                             \
 		.base = DT_INST_REG_ADDR(n),                                                       \
-		ADC_CC23X0_DMA_INIT(n)};                                                           \
-                                                                                               \
-	static struct adc_cc23x0_data adc_cc23x0_data_##n = {                                      \
-		ADC_CONTEXT_INIT_TIMER(adc_cc23x0_data_##n, ctx),                                  \
-		ADC_CONTEXT_INIT_LOCK(adc_cc23x0_data_##n, ctx),                                   \
-		ADC_CONTEXT_INIT_SYNC(adc_cc23x0_data_##n, ctx),                                   \
+		ADC_LPF3_DMA_INIT(n)};                                                             \
+                                                                                                   \
+	static struct adc_lpf3_data adc_lpf3_data_##n = {                                          \
+		ADC_CONTEXT_INIT_TIMER(adc_lpf3_data_##n, ctx),                                    \
+		ADC_CONTEXT_INIT_LOCK(adc_lpf3_data_##n, ctx),                                     \
+		ADC_CONTEXT_INIT_SYNC(adc_lpf3_data_##n, ctx),                                     \
 	};                                                                                         \
-                                                                                                \
-	DEVICE_DT_INST_DEFINE(n, &adc_cc23x0_init, PM_DEVICE_DT_INST_GET(n), &adc_cc23x0_data_##n, \
-			      &adc_cc23x0_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
-			      &adc_cc23x0_driver_api);
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &adc_lpf3_init, PM_DEVICE_DT_INST_GET(n), &adc_lpf3_data_##n,     \
+			      &adc_lpf3_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,         \
+			      &adc_lpf3_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(CC23X0_ADC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(LPF3_ADC_INIT)

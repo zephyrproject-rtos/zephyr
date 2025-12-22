@@ -1,17 +1,18 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
 # Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-config ADC_CC23X0
-	bool "CC23X0 ADC driver"
+config ADC_LPF3
+	bool "LPF3 ADC driver"
 	default y
-	depends on DT_HAS_TI_CC23X0_ADC_ENABLED
+	depends on DT_HAS_TI_LPF3_ADC_ENABLED
 	select PINCTRL
 	help
-	  Enable the TI CC23X0 ADC driver.
+	  Enable ADC driver for Texas Instruments LPF3 MCUs (CC23x0 and CC27xx).
 
-config ADC_CC23X0_DMA_DRIVEN
-	bool "DMA support for TI CC23X0 ADC devices"
-	depends on ADC_CC23X0
+config ADC_LPF3_DMA_DRIVEN
+	bool "DMA support for ADC operation in Texas Instruments LPF3 MCUs (CC23x0 and CC27xx)"
+	depends on ADC_LPF3
 	select DMA
 	help
 	  DMA driven mode offloads data transfer tasks from the CPU
