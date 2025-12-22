@@ -407,6 +407,15 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 			__ASSERT(l2_table != NULL,
 				 "There is no l2 page table available to map 0x%08x\n", page);
 
+			if (l2_table == NULL) {
+				/* This function is called during boot. If this cannot
+				 * properly map all predefined memory regions, it is very
+				 * unlikely for anything to run correctly. So forcibly
+				 * halt the system in case assertion has been turned off.
+				 */
+				arch_system_halt(K_ERR_KERNEL_PANIC);
+			}
+
 			init_page_table(l2_table, L2_PAGE_TABLE_NUM_ENTRIES, PTE_L2_ILLEGAL);
 
 			xtensa_kernel_ptables[l1_pos] =
