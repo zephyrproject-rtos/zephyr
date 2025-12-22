@@ -348,6 +348,14 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 		if (channel == data->dma_tx.channel) {
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG;
+			// only run RX complete here if no RX DMA
+			if (data->ctx.current_rx == NULL) {
+				// Complete the transfer if TX only
+				spi_context_cs_control(&data->ctx, false);
+				spi_context_complete(&data->ctx, spi_dev, 0);
+				pm_policy_device_power_lock_put(dev);
+			}
+
 		} else if (channel == data->dma_rx.channel) {
 			/* The RX DMA interrupt will trigger once all of the data is transferred, so
 			 * we use that to call context complete.
