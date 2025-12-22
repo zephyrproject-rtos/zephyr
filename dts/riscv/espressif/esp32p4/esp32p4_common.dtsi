@@ -550,6 +550,7 @@
 
 		rmt: rmt@500a2000 {
 			compatible = "espressif,esp32-rmt";
+			#pulse-io-cells = <1>;
 			reg = <0x500a2000 DT_SIZE_K(4)>;
 			interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
