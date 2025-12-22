@@ -405,6 +405,10 @@ struct led_dt_spec {
 static inline int led_set_brightness_dt(const struct led_dt_spec *spec,
 					uint8_t value)
 {
+	if (spec->dev == NULL) {
+		return -ENODEV;
+	}
+
 	return led_set_brightness(spec->dev, spec->index, value);
 }
 
@@ -418,6 +422,10 @@ static inline int led_set_brightness_dt(const struct led_dt_spec *spec,
  */
 static inline int led_on_dt(const struct led_dt_spec *spec)
 {
+	if (spec->dev == NULL) {
+		return -ENODEV;
+	}
+
 	return led_on(spec->dev, spec->index);
 }
 
@@ -431,6 +439,10 @@ static inline int led_on_dt(const struct led_dt_spec *spec)
  */
 static inline int led_off_dt(const struct led_dt_spec *spec)
 {
+	if (spec->dev == NULL) {
+		return -ENODEV;
+	}
+
 	return led_off(spec->dev, spec->index);
 }
 
