@@ -32,7 +32,7 @@ concurrency:
 jobs:
   twister-build-prep:
     if: github.repository_owner == 'AmbiqMicro'
-    runs-on: [self-hosted, Linux, zephyr-ci]
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.test-plan.outputs.matrix }}
       size: ${{ steps.test-plan.outputs.size }}
@@ -50,7 +50,7 @@ jobs:
       RUNNER_AP5: '["self-hosted","Linux","zephyr-ci","ap5"]'
       RUNNER_AP4: '["self-hosted","Linux","zephyr-ci","ap4"]'
       RUNNER_AP3: '["self-hosted","Linux","zephyr-ci","ap3"]'
-      RUNNER_BUILD: '["self-hosted","Linux","zephyr-ci"]'
+      RUNNER_BUILD: '"ubuntu-24.04"'
       RUNNER_AP5_NODES: 3
       RUNNER_AP4_NODES: 2
       RUNNER_AP3_NODES: 1
@@ -80,17 +80,21 @@ jobs:
             echo "MANUAL_DISTR=false" >> $GITHUB_ENV
           fi
 
+          # For PRs on public repos, tune sharding to reduce overhead.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "TESTS_PER_BUILDER=800" >> $GITHUB_ENV
+          fi
+
       - name: Checkout
         run: |
           rm -rf "$GITHUB_WORKSPACE"/.??* "$GITHUB_WORKSPACE"/*
-          CACHE_DIR="/data/ambiqzephyrcache/zephyrproject/zephyr"
-          if [ -d "${CACHE_DIR}" ]; then
-            echo "Cloning from local cache (${CACHE_DIR}) at ${GIT_REF}…"
-            git clone --reference "${CACHE_DIR}" \
-                      --depth 50 \
-                      https://github.com/${{ github.repository }}.git "zephyr"
+          CACHE_DIR="/repo-cache/zephyrproject/zephyr"
+          if [ -d "${CACHE_DIR}/.git" ]; then
+            echo "Cloning from container repo-cache (${CACHE_DIR}) at ${GIT_REF}…"
+            git clone --shared "${CACHE_DIR}" "zephyr"
+            git -C "zephyr" remote set-url origin "https://github.com/${{ github.repository }}.git"
           else
-            echo "Cache not found; doing fresh shallow clone at ${GIT_REF}…"
+            echo "Repo-cache not found; doing fresh shallow clone at ${GIT_REF}…"
             git clone --depth 50 \
                       https://github.com/${{ github.repository }}.git "zephyr"
           fi
@@ -100,6 +104,14 @@ jobs:
           git fetch origin "${GIT_REF}"
           git reset --hard "${GIT_REF}"
           git clean -fdx
+
+      - name: Cache west path-cache
+        uses: actions/cache@4f5ea67f1cc87b2d4239690fa12a12fc32096d68 # v4.3.0
+        with:
+          path: ~/.cache/zephyrproject
+          key: west-path-cache-${{ runner.os }}-${{ hashFiles('zephyr/west.yml') }}
+          restore-keys: |
+            west-path-cache-${{ runner.os }}-
 
       - name: Determine full run
         id: output-full-run
@@ -128,10 +140,24 @@ jobs:
         working-directory: zephyr
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
+          # GitHub-hosted runners may not have west preinstalled.
+          python -m pip install --upgrade west
 
-      - name: Setup Zephyr project
+      - name: Ensure clean west workspace
         run: |
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-0.17.2" >> $GITHUB_ENV
+          rm -rf "$GITHUB_WORKSPACE/.west"
+
+      - name: Setup Zephyr SDK + toolchain
+        uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
+        with:
+          app-path: zephyr
+          toolchains: 'arm-zephyr-eabi'
+          west-group-filter: +ci,+optional
+          enable-ccache: false
+
+      - name: Export Zephyr SDK path
+        run: |
+          echo "ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk" >> $GITHUB_ENV
 
       - name: Environment Setup
         working-directory: zephyr
@@ -146,8 +172,8 @@ jobs:
             git log  --pretty=oneline | head -n 10
           fi
 
-          CACHE_DEP="/data/ambiqzephyrcache/zephyrproject/"
-          west init -l . || true
+          CACHE_DEP="$HOME/.cache/zephyrproject"
+          mkdir -p "${CACHE_DEP}"
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
           west update --path-cache "${CACHE_DEP}" 2>&1 1> west.update.log || west update --path-cache "${CACHE_DEP}" 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache "${CACHE_DEP}")
@@ -218,7 +244,8 @@ jobs:
             fi
 
             if [ "$MANUAL_DISTR" = "false" ]; then
-                runner="$RUNNER_BUILD"
+              runner="$RUNNER_BUILD"
+              MAX_NODES=${RUNNER_BUILD_NODES}
             else
               case "$group" in
                 GROUP_AP5)
@@ -234,9 +261,12 @@ jobs:
                   MAX_NODES=${RUNNER_AP3_NODES}
                   ;;
               esac
-              if [ "$TWISTER_TESTS" -gt $(( TESTS_PER_BUILDER / 2 )) ]; then
-                TWISTER_NODES=${MAX_NODES}
-              fi
+            fi
+
+            # Keep TWISTER_NODES primarily determined by test_plan.py (case count),
+            # and only clamp to the maximum parallelism available for the runner.
+            if [ -n "${MAX_NODES:-}" ] && [ "$TWISTER_NODES" -gt "$MAX_NODES" ]; then
+              TWISTER_NODES=$MAX_NODES
             fi
 
             if [ "$TWISTER_NODES" -lt 1 ]; then
@@ -263,19 +293,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   twister-build:
-    runs-on: [self-hosted, Linux, zephyr-ci]
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     strategy:
       fail-fast: false
       matrix:
         job: ${{ fromJSON(needs.twister-build-prep.outputs.matrix) }}
+    runs-on: ${{ matrix.job.runner }}
     name: twister-build (${{ matrix.job.group }} ${{ matrix.job.subset }})
     timeout-minutes: 1440
     env:
       CCACHE_DIR: $HOME/.cache/ccache-zephyr
-      CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
-      CCACHE_REMOTE_ONLY: "true"
       CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
       BSIM_OUT_PATH: /data/bsim_west/bsim/
       BSIM_COMPONENTS_PATH: /data/bsim_west/bsim/components
@@ -353,6 +381,8 @@ jobs:
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
           pip install -r scripts/requirements.txt
+          # Ensure west exists before running west init/update below.
+          python -m pip install --upgrade west
 
       - name: Environment Setup
         working-directory: zephyr
@@ -370,6 +400,10 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
           CACHE_DEP="/data/ambiqzephyrcache/zephyrproject/"
+          if [ ! -d "${CACHE_DEP}" ]; then
+            CACHE_DEP="$HOME/.cache/zephyrproject"
+          fi
+          mkdir -p "${CACHE_DEP}"
 
           if [ ! -d ../.west ]; then
             west init -l .
@@ -378,6 +412,32 @@ jobs:
           west config --global update.narrow true
           west update --path-cache "${CACHE_DEP}" 2>&1 1> west.update.log || west update --path-cache "${CACHE_DEP}" 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache "${CACHE_DEP}")
           west forall -c 'git reset --hard HEAD'
+
+      - name: Configure remote ccache (self-hosted only)
+        if: ${{ contains(toJson(matrix.job.runner), 'self-hosted') }}
+        run: |
+          echo 'CCACHE_REMOTE_STORAGE=redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3' >> $GITHUB_ENV
+          echo 'CCACHE_REMOTE_ONLY=true' >> $GITHUB_ENV
+
+      - name: Ensure clean west workspace (GitHub-hosted only)
+        if: ${{ !contains(toJson(matrix.job.runner), 'self-hosted') }}
+        run: |
+          rm -rf "$GITHUB_WORKSPACE/.west"
+
+      - name: Setup Zephyr SDK + toolchain (GitHub-hosted only)
+        if: ${{ !contains(toJson(matrix.job.runner), 'self-hosted') }}
+        uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
+        with:
+          app-path: zephyr
+          toolchains: 'arm-zephyr-eabi'
+          west-group-filter: +ci,+optional
+          enable-ccache: true
+          ccache-cache-key: twister-${{ matrix.job.group }}
+
+      - name: Export Zephyr SDK path (GitHub-hosted only)
+        if: ${{ !contains(toJson(matrix.job.runner), 'self-hosted') }}
+        run: |
+          echo "ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk" >> $GITHUB_ENV
 
       - name: Check Environment
         run: |
@@ -414,6 +474,8 @@ jobs:
           rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          JOBS=$(nproc 2>/dev/null || echo 4)
+          PR_OPTIONS="${PR_OPTIONS/-j 12/-j ${JOBS}}"
 
           if [ "$FULLRUN" = "true" ] && [ "${{github.event_name}}" = "workflow_dispatch" ]; then
             python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${PLATFORM_OPTIONS}
@@ -479,7 +541,7 @@ jobs:
     name: "Publish Unit Tests Results"
     needs:
       - twister-build
-    runs-on: [self-hosted, Linux, zephyr-ci]
+    runs-on: ubuntu-24.04
     permissions:
       checks: write # to create the check run entry with Twister test results
     # the build-and-test job might be skipped, we don't need to run this job then
@@ -543,7 +605,13 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          junitparser merge artifacts/*/*/twister.xml junit.xml
+          shopt -s globstar nullglob
+          xml_files=(artifacts/**/twister.xml)
+          if [ ${#xml_files[@]} -eq 0 ]; then
+            echo "No twister.xml files found under artifacts/; skipping merge."
+            exit 0
+          fi
+          junitparser merge "${xml_files[@]}" junit.xml
           junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results
@@ -572,7 +640,13 @@ jobs:
       - name: Analyze Twister Reports
         if: needs.twister-build.result == 'failure'
         run: |
-          ./zephyr/scripts/ci/twister_report_analyzer.py artifacts/*/*/twister.json --long-summary --platforms --output-md errors.md
+          shopt -s globstar nullglob
+          json_files=(artifacts/**/twister.json)
+          if [ ${#json_files[@]} -eq 0 ]; then
+            echo "No twister.json files found under artifacts/; skipping analysis."
+            exit 0
+          fi
+          ./zephyr/scripts/ci/twister_report_analyzer.py "${json_files[@]}" --long-summary --platforms --output-md errors.md
           if [[ -s "errors.md" ]]; then
             echo '### Error Summary! 🚀' >> $GITHUB_STEP_SUMMARY
             cat errors.md  >> $GITHUB_STEP_SUMMARY
