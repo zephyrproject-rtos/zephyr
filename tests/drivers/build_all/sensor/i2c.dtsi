@@ -1477,3 +1477,8 @@ test_i2c_as6221: as6221@c3 {
 	compatible = "ams,as6221";
 	reg = <0xc3>;
 };
+
+test_i2c_pmsa003i: pmsa003i@c4 {
+	compatible = "plantower,pmsa003i";
+	reg = <0xc4>;
+};
