@@ -24,13 +24,11 @@ static struct otInstance *ot_instance_ptr;
 static bool border_agent_is_init;
 
 #if defined(CONFIG_OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE)
-/* Byte values, 9 bytes for the key, one for null terminator. */
-static uint8_t ephemeral_key_string[10];
+static otBorderAgentEphemeralKeyTap eph_passcode;
 
 static uint32_t ephemeral_key_timeout;
 static bool epskc_active;
 
-static otError generate_ephemeral_key(void);
 static void handle_border_agent_ephemeral_key_callback(void *context);
 static otError border_agent_enable_epskc_service(uint32_t timeout);
 
@@ -125,29 +123,6 @@ __weak void print_ephemeral_key_expired_message(void)
 	otCliOutputFormat("\r\nEphemeral Key disabled.\r\n");
 }
 
-static otError generate_ephemeral_key(void)
-{
-	otError error = OT_ERROR_NONE;
-	uint8_t i = 0;
-	uint32_t random;
-	char verhoeff_checksum;
-
-	memset(ephemeral_key_string, 0, sizeof(ephemeral_key_string));
-
-	VerifyOrExit(otPlatEntropyGet((uint8_t *)&random, sizeof(random)) == OT_ERROR_NONE,
-		     error = OT_ERROR_FAILED);
-	random %= 100000000;
-	i += snprintf((char *)ephemeral_key_string, sizeof(ephemeral_key_string),
-		      "%08u", random);
-	VerifyOrExit(otVerhoeffChecksumCalculate((const char *)ephemeral_key_string,
-		     &verhoeff_checksum) == OT_ERROR_NONE,
-		     error = OT_ERROR_FAILED);
-	snprintf((char *)&ephemeral_key_string[i], sizeof(ephemeral_key_string) - i,
-		 "%c", verhoeff_checksum);
-exit:
-	return error;
-}
-
 static void handle_border_agent_ephemeral_key_callback(void *context)
 {
 	char formatted_epskc[12] = {0};
@@ -165,8 +140,8 @@ static void handle_border_agent_ephemeral_key_callback(void *context)
 
 	case OT_BORDER_AGENT_STATE_STARTED:
 		snprintf(formatted_epskc, sizeof(formatted_epskc), "%.3s %.3s %.3s",
-			 ephemeral_key_string, ephemeral_key_string + 3,
-			 ephemeral_key_string + 6);
+			 eph_passcode.mTap, eph_passcode.mTap + 3,
+			 eph_passcode.mTap + 6);
 		print_ephemeral_key(formatted_epskc, (uint32_t)(ephemeral_key_timeout / 1000UL));
 		epskc_active = true;
 		break;
@@ -189,9 +164,13 @@ static otError border_agent_enable_epskc_service(uint32_t timeout)
 				   timeout <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT) ?
 				   timeout : OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT;
 
-	VerifyOrExit((generate_ephemeral_key() == OT_ERROR_NONE), error = OT_ERROR_FAILED);
+	VerifyOrExit(otBorderAgentEphemeralKeyGenerateTap(&eph_passcode) == OT_ERROR_NONE,
+		     error = OT_ERROR_FAILED);
+	VerifyOrExit(otBorderAgentEphemeralKeyValidateTap(&eph_passcode) == OT_ERROR_NONE,
+		     error = OT_ERROR_FAILED);
+
 	error = otBorderAgentEphemeralKeyStart(ot_instance_ptr,
-					       (const char *)ephemeral_key_string,
+					       (const char *)eph_passcode.mTap,
 					       ephemeral_key_timeout, 0);
 
 exit:
