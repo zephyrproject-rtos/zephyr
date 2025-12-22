@@ -1024,7 +1024,8 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 	modem_cmux_log_received_frame(&cmux->frame);
 
 	if (is_connected(cmux) && cmux->frame.cr == cmux->initiator) {
-		LOG_DBG("Received a response frame");
+		LOG_DBG("Drop a response frame");
+		return;
 	}
 
 	switch (cmux->frame.type) {
