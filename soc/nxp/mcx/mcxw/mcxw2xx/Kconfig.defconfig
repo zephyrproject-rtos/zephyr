@@ -67,6 +67,13 @@ configdefault IDLE_STACK_SIZE
 configdefault TICKLESS_KERNEL
 	default y
 
+choice PM_PREWAKEUP_CONV_MODE
+	default PM_PREWAKEUP_CONV_MODE_CEIL
+endchoice # PM_PREWAKEUP_CONV_MODE
+
+configdefault MCUX_OS_TIMER_MIN_DELAY
+	default 100
+
 if BT
 choice PM_POLICY
 	default PM_POLICY_CUSTOM

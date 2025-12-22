@@ -17,7 +17,10 @@
 #endif /* CONFIG_PM_POLICY_CUSTOM */
 
 #ifdef CONFIG_BT
-#include "ll_intf.h"
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <ble_controller.h>
+#include <timeout_q.h>
 #endif /* CONFIG_BT */
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -53,17 +56,17 @@ __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t tic
 
 #ifdef CONFIG_BT
 	if (bt_is_ready()) {
-		uint32_t remaining_time;
-		ble_stat_t stat;
+		uint32_t ll_remaining_time;
+		blec_result_t stat;
 
-		stat = BLEController_GetRemainingTimeForNextEventUnsafe(&remaining_time);
+		stat = BLEController_GetRemainingTimeForNextEventUnsafe(&ll_remaining_time);
 		/* Is link layer busy? */
-		if ((stat != SUCCESS) || (remaining_time == 0)) {
+		if ((stat != kBLEC_Success) || (ll_remaining_time == 0)) {
 			return NULL;
 		}
 		/* Any future activity? */
-		if (remaining_time < 0xffffffff) {
-			ticks = MIN(ticks, k_us_to_ticks_floor32(remaining_time));
+		if (ll_remaining_time < 0xffffffff) {
+			ticks = MIN(ticks, k_us_to_ticks_floor32(ll_remaining_time));
 		}
 	}
 #endif /* CONFIG_BT */
@@ -138,6 +141,54 @@ static void pm_get_lowpower_resource_list(uint32_t *exclude_from_pd,
 #endif
 }
 
+static bool pm_connectivity_lp_prepare(enum pm_state state)
+{
+	bool ret = true;
+#ifdef CONFIG_BT
+	uint32_t ll_remaining_time;
+	blec_result_t ll_status;
+	int32_t timeout_expiry;
+	uint32_t exit_latency_ticks;
+	const struct pm_state_info *state_info;
+
+	do {
+		if (!bt_is_ready()) {
+			break;
+		}
+
+		state_info = pm_state_get(0, state, 0);
+		ll_status = BLEController_GetRemainingTimeForNextEventUnsafe(&ll_remaining_time);
+		timeout_expiry = z_get_next_timeout_expiry();
+		exit_latency_ticks = k_us_to_ticks_ceil32(state_info->exit_latency_us);
+
+		/* Is link layer busy? */
+		if ((ll_status != kBLEC_Success) || (ll_remaining_time == 0)) {
+			ret = false;
+			break;
+		}
+		/* Enough time to go to this state? */
+		if (ll_remaining_time <
+		    state_info->min_residency_us + state_info->exit_latency_us) {
+			ret = false;
+			break;
+		}
+
+		/* Convert to ticks */
+		ll_remaining_time = k_us_to_ticks_floor32(ll_remaining_time) - exit_latency_ticks;
+
+		/* Any close activity? */
+		if (ll_remaining_time < (uint32_t)timeout_expiry - exit_latency_ticks) {
+			if ((ll_remaining_time <= 1)) {
+				ret = false;
+				break;
+			}
+			sys_clock_set_timeout(ll_remaining_time, true);
+		}
+	} while (false);
+#endif
+	return ret;
+}
+
 __weak void pm_state_set(enum pm_state state, uint8_t id)
 {
 	ARG_UNUSED(id);
@@ -157,17 +208,21 @@ __weak void pm_state_set(enum pm_state state, uint8_t id)
 
 	case PM_STATE_SUSPEND_TO_IDLE:
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, false);
-		status = POWER_EnterDeepSleep(exclude_from_pd, wakeup_sources);
-		if (status != kStatus_Success) {
-			LOG_ERR("Failed to enter deep sleep mode: %d", status);
+		if (pm_connectivity_lp_prepare(PM_STATE_SUSPEND_TO_IDLE)) {
+			status = POWER_EnterDeepSleep(exclude_from_pd, wakeup_sources);
+			if (status != kStatus_Success) {
+				LOG_ERR("Failed to enter deep sleep mode: %d", status);
+			}
 		}
 		break;
 
 	case PM_STATE_STANDBY:
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, true);
-		status = POWER_EnterPowerDown(exclude_from_pd, wakeup_sources, 1);
-		if (status != kStatus_Success) {
-			LOG_ERR("Failed to enter power down mode: %d", status);
+		if (pm_connectivity_lp_prepare(PM_STATE_STANDBY)) {
+			status = POWER_EnterPowerDown(exclude_from_pd, wakeup_sources, 1);
+			if (status != kStatus_Success) {
+				LOG_ERR("Failed to enter power down mode: %d", status);
+			}
 		}
 		break;
 
