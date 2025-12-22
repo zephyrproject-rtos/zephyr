@@ -217,6 +217,13 @@
 	status = "okay";
 };
 
+&tc0 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <8>;
+	status = "okay";
+};
+
 &porta {
 	status = "okay";
 };
