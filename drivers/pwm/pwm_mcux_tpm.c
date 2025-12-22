@@ -176,10 +176,19 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 		TPM_UpdateChnlEdgeLevelSelect(base, channel, kTPM_LowTrue);
 	}
 
+	if (config->mode == kTPM_CenterAlignedPwm) {
+		pulse_cycles /= 2U;
+		period_cycles /= 2U;
+	}
+
 	if (pulse_cycles == period_cycles) {
 		pulse_cycles = period_cycles + 1U;
 	}
 
+	/* Assign the value directly to avoid re-calculating period_cycles based on
+	 * pwm_freq in TPM_SetupPwm, which could lead to precision loss.
+	 */
+	base->MOD = period_cycles;
 	base->CONTROLS[channel].CnV = pulse_cycles;
 
 	return 0;
@@ -195,6 +204,11 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 	struct mcux_tpm_data *data = dev->data;
 	tpm_dual_edge_capture_param_t *param;
 	uint32_t pair = TPM_WHICH_PAIR(channel);
+
+	if (config->mode != kTPM_EdgeAlignedPwm) {
+		LOG_ERR("PWM capture only supported in edge aligned mode");
+		return -ENOTSUP;
+	}
 
 	if ((channel & 0x1U) == 0x1U) {
 		LOG_ERR("PWM capture only supported on even channels");
@@ -262,6 +276,11 @@ static int mcux_tpm_enable_capture(const struct device *dev, uint32_t channel)
 	TPM_Type *base = TPM_TYPE_BASE(dev, base);
 	struct mcux_tpm_data *data = dev->data;
 	uint32_t pair = TPM_WHICH_PAIR(channel);
+
+	if (config->mode != kTPM_EdgeAlignedPwm) {
+		LOG_ERR("PWM capture only supported in edge aligned mode");
+		return -ENOTSUP;
+	}
 
 	if ((channel & 0x1U) == 0x1U) {
 		LOG_ERR("PWM capture only supported on even channels");
@@ -636,7 +655,7 @@ static void mcux_tpm_config_func_##n(const struct device *dev) \
 		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)), \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
 			DT_INST_REG_ADDR(n)), \
-		.mode = kTPM_EdgeAlignedPwm, \
+		.mode = DT_INST_PROP_OR(n, pwm_mode, 0),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 		CAPTURE_INIT \
 	}
