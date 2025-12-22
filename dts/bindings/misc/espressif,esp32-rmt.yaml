@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Joel Guittet (joelguittet@gmail.com)
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 RMT
+
+compatible: "espressif,esp32-rmt"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
