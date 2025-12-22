@@ -802,6 +802,13 @@
 			status = "disabled";
 		};
 
+		ceu: ceu@40348000 {
+			compatible = "renesas,ra-ceu";
+			reg = <0x40348000 0x8000>;
+			clocks = <&pclka MSTPC 16>;
+			status = "disabled";
+		};
+
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;
