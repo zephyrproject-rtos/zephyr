@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/siwg917m111mgtba.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-siwx91x-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -30,6 +31,7 @@
 		dht0 = &si7021;
 		led0 = &led0;
 		sw0 = &button0;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -47,6 +49,10 @@
 			gpios = <&uulpgpio 2 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
 	};
 };
 
@@ -116,5 +122,22 @@
 };
 
 &wifi0 {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	silabs,adc-ref-voltage = <3300>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP28>;
+	};
+
 	status = "okay";
 };
