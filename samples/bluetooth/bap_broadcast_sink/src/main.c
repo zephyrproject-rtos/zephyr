@@ -36,6 +36,7 @@
 #include "lc3.h"
 #include "stream_rx.h"
 #include "usb.h"
+#include "audio_codec.h"
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
@@ -192,6 +193,9 @@ static void stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
 	if (err != 0) {
 		printk("Failed to take sem_stream_started: %d\n", err);
 	}
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(codec0))
+	audio_codec_close();
+#endif
 }
 
 static void stream_recv_cb(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_info *info,
@@ -902,6 +906,14 @@ static int init(void)
 
 	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		usb_init();
+	}
+
+	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+		err = audio_codec_open();
+		if (err != 0) {
+			printk("Audio codec open failed (err %d)\n", err);
+			return err;
+		}
 	}
 
 	return 0;
