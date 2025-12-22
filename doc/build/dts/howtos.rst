@@ -362,7 +362,7 @@ child device on an existing bus node, do something like this:
 
 		/* Configure other SPI device properties as needed.
 		 * Find your device's DT binding for details. */
-		spi-max-frequency = <4000000>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
 	};
    };
 
