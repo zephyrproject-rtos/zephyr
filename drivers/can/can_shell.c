@@ -25,6 +25,12 @@ struct can_shell_rx_event {
 	const struct device *dev;
 };
 
+struct can_shell_dump_context {
+	int filter_id_std;
+	int filter_id_ext;
+	bool  started;
+};
+
 struct can_shell_mode_mapping {
 	const char *name;
 	can_mode_t mode;
@@ -63,6 +69,8 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 					K_POLL_MODE_NOTIFY_ONLY,
 					&can_shell_rx_msgq, 0)
 };
+
+static struct can_shell_dump_context can_shell_dump_ctx;
 
 /* Forward declarations */
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
@@ -430,6 +438,94 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "  ack errors:    %u", can_stats_get_ack_errors(dev));
 	shell_print(sh, "  rx overruns:   %u", can_stats_get_rx_overruns(dev));
 #endif /* CONFIG_CAN_STATS */
+
+	return 0;
+}
+
+#define ASCII_CTRL_C 0x03
+
+static void can_shell_dump_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+				     void *user_data)
+{
+	const struct device *dev = user_data;
+	int err;
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == ASCII_CTRL_C) {
+			if (can_shell_dump_ctx.started) {
+				err = can_stop(dev);
+				if (err != 0) {
+					shell_error(sh, "failed to stop CAN controller (err %d)",
+						    err);
+				}
+			}
+
+			if (can_shell_dump_ctx.filter_id_std >= 0) {
+				can_remove_rx_filter(dev, can_shell_dump_ctx.filter_id_std);
+			}
+
+
+			if (can_shell_dump_ctx.filter_id_ext >= 0) {
+				can_remove_rx_filter(dev, can_shell_dump_ctx.filter_id_ext);
+			}
+
+			shell_set_bypass(sh, NULL, NULL);
+			return;
+		}
+	}
+}
+
+static int cmd_can_dump(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = shell_device_get_binding(argv[1]);
+	const struct can_filter std_filter = {
+		.flags = 0U,
+		.id = 0U,
+		.mask = 0U
+	};
+	const struct can_filter ext_filter = {
+		.flags = CAN_FILTER_IDE,
+		.id = 0U,
+		.mask = 0U
+	};
+	int err;
+
+	if (!can_device_check(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	err = can_add_rx_filter(dev, can_shell_rx_callback, NULL, &std_filter);
+	if (err < 0) {
+		shell_warn(sh, "failed to add standard (11-bit) filter (err %d)", err);
+	}
+	can_shell_dump_ctx.filter_id_std = err;
+
+	err = can_add_rx_filter(dev, can_shell_rx_callback, NULL, &ext_filter);
+	if (err < 0) {
+		shell_warn(sh, "failed to add extended (29-bit) filter (err %d)", err);
+	}
+	can_shell_dump_ctx.filter_id_ext = err;
+
+	err = can_shell_rx_msgq_poll_submit(sh);
+	if (err != 0) {
+		shell_error(sh, "failed to start CAN RX message queue polling (err %d)", err);
+		return err;
+	}
+
+	can_shell_dump_ctx.started = true;
+
+	err = can_start(dev);
+	if (err == -EALREADY) {
+		can_shell_dump_ctx.started = false;
+	} else if (err != 0) {
+		shell_error(sh, "failed to start CAN controller (err %d)", err);
+		return err;
+	}
+
+	shell_set_bypass(sh, can_shell_dump_bypass_cb, (void *)dev);
+
+	shell_print(sh, "dumping CAN RX frames on device %s, press Ctrl+C to exit", dev->name);
 
 	return 0;
 }
@@ -1108,6 +1204,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 		"Manually recover CAN controller from bus-off state\n"
 		"Usage: can recover <device> [timeout ms]",
 		cmd_can_recover, 2, 1),
+	SHELL_CMD_ARG(dump, &dsub_can_device_name,
+		"Dump all CAN controller RX frames\n"
+		"Usage: can dump <device>",
+		cmd_can_dump, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
