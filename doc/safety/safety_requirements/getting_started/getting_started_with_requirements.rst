@@ -2,7 +2,8 @@
 
 Getting started with Requirements Management
 ############################################
-Zephyr's requirements management is powered by `StrictDoc <https://github.com/strictdoc-project/strictdoc>`_, a lightweight tool for writing, organizing, and publishing structured requirements. 
+
+Zephyr's requirements management is powered by `StrictDoc <https://github.com/strictdoc-project/strictdoc>`_, a lightweight tool for writing, organizing, and publishing structured requirements.
 This section explains how to set up and use the toolchain provided in the `reqmgmt <https://github.com/zephyrproject-rtos/reqmgmt>`_ repository.
 
 Overview
@@ -55,7 +56,7 @@ You should see something like
    Uvicorn running on http://127.0.0.1:5111 (Press CTRL+C to quit)
 
 
-Bring up your local browser and paste in the address above to access the browser-based editor 
+Bring up your local browser and paste in the address above to access the browser-based editor
 for navigating and editing requirements.
 
 
@@ -64,9 +65,9 @@ Structure
 
 The repository contains:
 
-- ``docs/`` — Requirements documents organized by subsystem
-- ``strictdoc.toml`` — Configuration file for StrictDoc
-- ``tasks.py`` — Automation helpers for building and validating requirements
+- `docs/` — Requirements documents organized by subsystem
+- `strictdoc.toml` — Configuration file for StrictDoc
+- `tasks.py` — Automation helpers for building and validating requirements
 
 Live Documentation
 ******************
@@ -78,9 +79,8 @@ You can view the published requirements online at:
 Next Steps
 **********
 
-- Explore the ``docs/`` folder to see example requirement files
+- Explore the `docs/` folder to see example requirement files
 - Use the web interface to create or edit your own
 - Link requirements to test cases or source modules for traceability
 
-``StrictDoc`` helps Zephyr move toward safety-critical readiness by formalizing the connection between system goals and software implementation.
-
+`StrictDoc` helps Zephyr move toward safety-critical readiness by formalizing the connection between system goals and software implementation.

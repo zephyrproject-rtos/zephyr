@@ -11,5 +11,5 @@ for ensuring safety is addressed within the Zephyr project.
    :glob:
 
    safety_overview.rst
-   safety_requirements/index
-   
+
+..   safety_requirements/index
