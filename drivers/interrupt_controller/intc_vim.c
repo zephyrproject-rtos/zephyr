@@ -65,6 +65,11 @@ void z_vim_irq_init(void)
 		 "(%" PRIu32 ") interrupts",
 		 CONFIG_NUM_IRQS, num_of_irqs);
 	LOG_DBG("VIM: Number of IRQs = %u\n", num_of_irqs);
+
+	/* Start with all interrupts masked */
+	for (int i = 0; i <= VIM_MAX_GROUP_NUM; i++) {
+		sys_write32(VIM_GRP_INTR_EN_CLR_MSK_MASK, VIM_INTR_EN_CLR(i));
+	}
 }
 
 void z_vim_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
