@@ -37,13 +37,13 @@
 		compatible = "gpio-leds";
 
 		led1: led_1 {
-			gpios = <&portc 21 GPIO_ACTIVE_HIGH>;
-			label = "Yellow LED";
+			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
+			label = "LED1";
 		};
 
 		led2: led_2 {
-			gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
-			label = "Yellow LED";
+			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
+			label = "LED2";
 		};
 	};
 
