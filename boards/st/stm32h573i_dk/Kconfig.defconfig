@@ -16,7 +16,7 @@ configdefault SDMMC_STM32_CLOCK_CHECK
 if DISPLAY
 
 choice ST7789V_PIXEL_FORMAT
-	default ST7789V_BGR565
+	default ST7789V_RGB565X
 endchoice
 
 # Required to enable LCD backlight

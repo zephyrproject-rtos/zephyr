@@ -28,7 +28,7 @@
 #define PANEL_PIXEL_FORMAT_MONO10    (0x1 << 2) /* 1=Black 0=White */
 #define PANEL_PIXEL_FORMAT_ARGB_8888 (0x1 << 3)
 #define PANEL_PIXEL_FORMAT_RGB_565   (0x1 << 4)
-#define PANEL_PIXEL_FORMAT_BGR_565   (0x1 << 5)
+#define PANEL_PIXEL_FORMAT_RGB_565X  (0x1 << 5)
 #define PANEL_PIXEL_FORMAT_L_8       (0x1 << 6)
 #define PANEL_PIXEL_FORMAT_AL_88     (0x1 << 7)
 

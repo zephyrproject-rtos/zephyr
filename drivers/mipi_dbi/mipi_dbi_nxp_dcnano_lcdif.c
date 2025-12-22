@@ -219,7 +219,7 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 		fbConfig.format = kLCDIF_PixelFormatARGB8888;
 		bytes_per_pixel = 4U;
 		break;
-	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_RGB_565X:
 		fbConfig.inOrder = kLCDIF_PixelInputOrderABGR;
 	case PIXEL_FORMAT_RGB_565:
 		fbConfig.format = kLCDIF_PixelFormatRGB565;

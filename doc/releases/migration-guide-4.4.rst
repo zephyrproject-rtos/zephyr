@@ -326,6 +326,20 @@ Display
 * For ILI9341 controller, display mirroring configuration has been updated to conform with
   the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
 
+* The ``PIXEL_FORMAT_BGR_565`` pixel format has been renamed to
+  :c:macro:`PIXEL_FORMAT_RGB_565X` to correctly reflect that it is a
+  byte-swapped version of RGB_565, not a channel-swapped format.
+  Applications using ``PIXEL_FORMAT_BGR_565`` must update to use
+  :c:macro:`PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+
+* The devicetree macro ``PANEL_PIXEL_FORMAT_BGR_565`` has been renamed to
+  :c:macro:`PANEL_PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+
+* The Kconfig options ``SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565`` and
+  ``ST7789V_BGR565`` have been renamed to
+  :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
+  respectively. (:github:`99276`)
+
 DMA
 ===
 
