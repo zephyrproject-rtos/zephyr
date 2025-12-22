@@ -62,16 +62,16 @@ enum display_pixel_format {
 	 */
 	PIXEL_FORMAT_RGB_565		= BIT(4),
 	/**
-	 * 16-bit RGB format packed into two bytes: 5 blue bits [15:11], 6
-	 * green bits [10:5], 5 red bits [4:0]. For example, in little-endian machine:
+	 * 16-bit RGB format packed into two bytes. Byte swapped version of
+	 * the PIXEL_FORMAT_RGB_565 format.
 	 *
 	 * @code{.unparsed}
 	 *   7......0 15.....8
-	 * | gggRrrrr BbbbbGgg | ...
+	 * | RrrrrGgg gggBbbbb | ...
 	 * @endcode
 	 *
 	 */
-	PIXEL_FORMAT_BGR_565		= BIT(5),
+	PIXEL_FORMAT_RGB_565X		= BIT(5),
 	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
 						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
@@ -90,7 +90,7 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
 	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
 	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
 
