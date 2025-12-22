@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
 #include <freq.h>
+#include "siwx917_rb4342a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs BRD4342A (SiWG917 Radio Board)";
@@ -45,35 +46,6 @@
 		button0: button_0 {
 			gpios = <&uulpgpio 2 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
-		};
-	};
-};
-
-&pinctrl0 {
-	psram_default: psram_default {
-		group {
-			pinmux = <PSRAM_CLK_HP52>,
-				 <PSRAM_D0_HP53>,
-				 <PSRAM_D1_HP54>,
-				 <PSRAM_D2_HP56>,
-				 <PSRAM_D3_HP57>,
-				 <PSRAM_CSN0_HP55>;
-		};
-	};
-
-	ulpi2c_default: ulpi2c_default {
-		group {
-			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
-		};
-	};
-
-	ulpuart_default: ulpuart_default {
-		out {
-			pinmux = <ULPUART_TX_ULP11>;
-		};
-
-		in {
-			pinmux = <ULPUART_RX_ULP9>;
 		};
 	};
 };
