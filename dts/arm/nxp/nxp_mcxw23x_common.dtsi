@@ -32,12 +32,47 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&idle &suspend &standby>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
 		};
+
+		power-states {
+			/* Idle mode maps to Sleep mode. */
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <60>;
+				exit-latency-us = <16>;
+				zephyr,pm-device-disabled;
+			};
+
+			/* Suspend mode maps to Deep Sleep mode. */
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1300>;
+				exit-latency-us = <749>;
+			};
+
+			/* Standby mode maps to Power Down mode with CPU retention . */
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <2000>;
+				exit-latency-us = <1345>;
+			};
+		};
+	};
+
+	/* For the resource which will be off and lose content. */
+	standby_off_domain: standby-off-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&standby>;
 	};
 
 	sysclk: system-clock {
@@ -175,6 +210,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 	};
 
 	ctimer1: ctimer@9000 {
@@ -187,6 +223,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 	};
 
 	ctimer2: ctimer@28000 {
@@ -199,6 +236,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 	};
 
 	ctimer3: ctimer@29000 {
@@ -211,6 +249,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 	};
 
 	ctimer4: ctimer@2a000 {
@@ -223,6 +262,7 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 	};
 
 	sc_timer: pwm@85000 {
@@ -232,6 +272,7 @@
 		status = "disabled";
 		clocks = <&syscon MCUX_SCTIMER_CLK>;
 		prescaler = <2>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		#pwm-cells = <3>;
 	};
 
@@ -251,6 +292,7 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
 		dmas = <&dma0 4 &dma0 5>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -262,6 +304,8 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
 		dmas = <&dma0 6 &dma0 7>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&standby_off_domain>;
 		status = "disabled";
 	};
 
@@ -273,6 +317,8 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
 		dmas = <&dma0 8 &dma0 9>;
 		dma-names = "rx", "tx";
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&standby_off_domain>;
 		status = "disabled";
 	};
 
@@ -288,6 +334,8 @@
 		reg = <0x82000 0x1000>;
 		interrupts = <1 1>;
 		dma-channels = <23>;
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&standby_off_domain>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -297,6 +345,8 @@
 		reg = <0xa7000 0x1000>;
 		interrupts = <58 1>;
 		dma-channels = <10>;
+		zephyr,disabling-power-states = <&suspend &standby>;
+		power-domains = <&standby_off_domain>;
 		status = "disabled";
 		#dma-cells = <1>;
 	};
@@ -329,6 +379,7 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 0)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 
 		mrt0_channel0: mrt0_channel@0 {
 			compatible = "nxp,mrt-channel";

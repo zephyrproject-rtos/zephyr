@@ -19,6 +19,7 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_boards.h>
 
 #include <cy_sysclk.h>
+#include <cy_gpio.h>
 
 #define DT_DRV_COMPAT infineon_fixed_clock
 
@@ -46,6 +47,7 @@ static void clock_startup_error(uint32_t error)
 #endif
 
 #define CY_CFG_SYSCLK_PLL_ERROR 3
+#define CY_CFG_SYSCLK_WCO_ERROR 5
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
@@ -123,6 +125,17 @@ static void clk_dpll_hp_init(cy_stc_dpll_hp_config_t dpll_hp_config)
 }
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco))
+static void clk_wco_init(void)
+{
+	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT0, 1U, 0x00U, 0x00U, HSIOM_SEL_GPIO);
+	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT0, 0U, 0x00U, 0x00U, HSIOM_SEL_GPIO);
+	if (CY_SYSCLK_SUCCESS != Cy_SysClk_WcoEnable(1000000UL)) {
+		clock_startup_error(CY_CFG_SYSCLK_WCO_ERROR);
+	}
+}
+#endif
+
 static int fixed_rate_clk_init(const struct device *dev)
 {
 	const struct fixed_rate_clock_config *const config = dev->config;
@@ -153,6 +166,12 @@ static int fixed_rate_clk_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_pilo))
 	case IFX_PILO:
 		Cy_SysClk_PiloEnable();
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco))
+	case IFX_WCO:
+		clk_wco_init();
 		break;
 #endif
 

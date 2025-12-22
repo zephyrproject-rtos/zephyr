@@ -371,7 +371,7 @@
 		};
 
 		adc1: adc@4005c200 {
-			compatible = "renesas,ra-adc";
+			compatible = "renesas,ra-adc12";
 			interrupts = <39 1>;
 			interrupt-names = "scanend";
 			unit = <1>;

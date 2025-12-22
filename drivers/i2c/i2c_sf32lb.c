@@ -46,12 +46,121 @@ struct i2c_sf32lb_config {
 	const struct pinctrl_dev_config *pincfg;
 	struct sf32lb_clock_dt_spec clock;
 	uint32_t bitrate;
+	void (*irq_cfg_func)(void);
 };
 
 struct i2c_sf32lb_data {
 	struct k_mutex lock;
 	uint8_t rw_flags;
+	struct k_sem i2c_compl;
+	struct i2c_msg *current_msg;
+	uint8_t *buf_ptr;
+	uint32_t remaining;
+	bool is_tx;
+	int error;
 };
+
+static void i2c_sf32lb_tx_helper(const struct device *dev, uint32_t sr)
+{
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct i2c_sf32lb_data *data = dev->data;
+	uint32_t tcr;
+
+	if (IS_BIT_SET(sr, I2C_SR_TE_Pos)) {
+		sys_set_bit(config->base + I2C_SR, I2C_SR_TE_Pos);
+		if (IS_BIT_SET(sr, I2C_SR_NACK_Pos)) {
+			data->error = -EIO;
+			sys_write32(0, config->base + I2C_IER);
+			data->current_msg = NULL;
+			k_sem_give(&data->i2c_compl);
+			return;
+		}
+
+		if (data->remaining > 0) {
+			sys_write8(*data->buf_ptr, config->base + I2C_DBR);
+			data->buf_ptr++;
+			data->remaining--;
+
+			tcr = I2C_TCR_TB;
+			if (data->remaining == 0 && i2c_is_stop_op(data->current_msg)) {
+				tcr |= I2C_TCR_STOP;
+			}
+			sys_write32(tcr, config->base + I2C_TCR);
+		} else {
+			sys_write32(0, config->base + I2C_IER);
+			data->current_msg = NULL;
+			k_sem_give(&data->i2c_compl);
+		}
+	}
+
+	if (IS_BIT_SET(sr, I2C_SR_MSD_Pos) && (data->remaining == 0)) {
+		sys_set_bit(config->base + I2C_SR, I2C_SR_MSD_Pos);
+		sys_write32(0, config->base + I2C_IER);
+		data->current_msg = NULL;
+		k_sem_give(&data->i2c_compl);
+	}
+}
+
+static void i2c_sf32lb_rx_helper(const struct device *dev, uint32_t sr)
+{
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct i2c_sf32lb_data *data = dev->data;
+	uint32_t tcr;
+
+	if (IS_BIT_SET(sr, I2C_SR_RF_Pos)) {
+		sys_set_bit(config->base + I2C_SR, I2C_SR_RF_Pos);
+
+		if (data->remaining > 0) {
+			if (IS_BIT_SET(sr, I2C_SR_NACK_Pos)) {
+				data->error = -EIO;
+				data->current_msg = NULL;
+				k_sem_give(&data->i2c_compl);
+				return;
+			}
+			*data->buf_ptr = sys_read8(config->base + I2C_DBR);
+			data->buf_ptr++;
+			data->remaining--;
+
+			tcr = I2C_TCR_TB;
+			if (data->remaining == 0) {
+				if (i2c_is_stop_op(data->current_msg)) {
+					tcr |= I2C_TCR_STOP;
+				}
+				tcr |= I2C_TCR_NACK;
+			}
+			sys_write32(tcr, config->base + I2C_TCR);
+		}
+	}
+
+	if (IS_BIT_SET(sr, I2C_SR_MSD_Pos) && (data->remaining == 0)) {
+		sys_set_bit(config->base + I2C_SR, I2C_SR_MSD_Pos);
+		sys_write32(0, config->base + I2C_IER);
+		data->current_msg = NULL;
+		k_sem_give(&data->i2c_compl);
+	}
+}
+
+static void i2c_sf32lb_isr(const struct device *dev)
+{
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct i2c_sf32lb_data *data = dev->data;
+	uint32_t sr = sys_read32(config->base + I2C_SR);
+
+	if (IS_BIT_SET(sr, I2C_SR_BED_Pos)) {
+		sys_set_bit(config->base + I2C_SR, I2C_SR_BED_Pos);
+		data->error = -EIO;
+		sys_write32(0, config->base + I2C_IER);
+		data->current_msg = NULL;
+		k_sem_give(&data->i2c_compl);
+		return;
+	}
+
+	if (data->is_tx) {
+		i2c_sf32lb_tx_helper(dev, sr);
+	} else {
+		i2c_sf32lb_rx_helper(dev, sr);
+	}
+}
 
 static int i2c_sf32lb_send_addr(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
 {
@@ -117,31 +226,43 @@ static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struc
 		}
 	}
 
-	for (uint32_t j = 0U; j < msg->len; j++) {
-		bool last = ((msg->len - j) == 1U) ? true : false;
-
-		if (last && stop_needed) {
-			tcr |= I2C_TCR_STOP;
-		}
-
-		sys_write8(msg->buf[j], cfg->base + I2C_DBR);
-
-		sys_write32(tcr, cfg->base + I2C_TCR);
-
-		while (!sys_test_bit(cfg->base + I2C_SR, I2C_SR_TE_Pos)) {
-		}
-
-		sys_set_bit(cfg->base + I2C_SR, I2C_SR_TE_Pos);
-
-		if (sys_test_bit(cfg->base + I2C_SR, I2C_SR_NACK_Pos)) {
-			ret = -EIO;
-			break;
-		}
+	if (msg->len == 0) {
+		/* Zero-length message already handled in send_addr */
+		return ret;
 	}
 
-	if (stop_needed) {
-		while (sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos)) {
-		}
+	data->current_msg = msg;
+	data->buf_ptr = msg->buf;
+	data->remaining = msg->len;
+	data->is_tx = true;
+	data->error = 0;
+
+	sys_set_bit(cfg->base + I2C_SR, I2C_SR_TE_Pos);
+
+	sys_write8(*data->buf_ptr, cfg->base + I2C_DBR);
+	data->buf_ptr++;
+	data->remaining--;
+
+	if (data->remaining == 0 && stop_needed) {
+		tcr |= I2C_TCR_STOP;
+	}
+	sys_write32(tcr, cfg->base + I2C_TCR);
+
+	sys_set_bit(cfg->base + I2C_IER, I2C_IER_TEIE_Pos);
+	sys_set_bit(cfg->base + I2C_IER, I2C_IER_MSDIE_Pos);
+	sys_set_bit(cfg->base + I2C_IER, I2C_IER_BEDIE_Pos);
+
+	if (k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000)) != 0) {
+		LOG_ERR("master sent timeout");
+		sys_write32(0, cfg->base + I2C_IER);
+		data->current_msg = NULL;
+		return -ETIMEDOUT;
+	}
+
+	sys_write32(0, cfg->base + I2C_IER);
+
+	if (data->error != 0) {
+		ret = data->error;
 	}
 
 	return ret;
@@ -149,7 +270,7 @@ static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struc
 
 static int i2c_sf32lb_master_recv(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
 {
-	int ret = 0;
+	int ret;
 	const struct i2c_sf32lb_config *cfg = dev->config;
 	struct i2c_sf32lb_data *data = dev->data;
 	uint32_t tcr = I2C_TCR_TB;
@@ -162,26 +283,40 @@ static int i2c_sf32lb_master_recv(const struct device *dev, uint16_t addr, struc
 		return ret;
 	}
 
-	for (uint32_t j = 0U; j < msg->len; j++) {
-		bool last = (j == (msg->len - 1U)) ? true : false;
-
-		if (last && stop_needed) {
-			tcr |= (I2C_TCR_STOP | I2C_TCR_NACK);
-		}
-
-		sys_write32(tcr, cfg->base + I2C_TCR);
-
-		while (!sys_test_bit(cfg->base + I2C_SR, I2C_SR_RF_Pos)) {
-		}
-
-		sys_set_bit(cfg->base + I2C_SR, I2C_SR_RF_Pos);
-
-		msg->buf[j] = sys_read8(cfg->base + I2C_DBR);
+	if (msg->len == 0) {
+		return ret;
 	}
 
-	if (stop_needed) {
-		while (sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos)) {
+	data->current_msg = msg;
+	data->buf_ptr = msg->buf;
+	data->remaining = msg->len;
+	data->is_tx = false;
+	data->error = 0;
+
+	sys_set_bit(cfg->base + I2C_SR, I2C_SR_RF_Pos);
+
+	if (data->remaining == 1) {
+		if (stop_needed) {
+			tcr |= I2C_TCR_STOP;
 		}
+		tcr |= I2C_TCR_NACK;
+	}
+	sys_write32(tcr, cfg->base + I2C_TCR);
+
+	sys_set_bit(cfg->base + I2C_CR, I2C_CR_MSDE_Pos);
+	sys_set_bits(cfg->base + I2C_IER, I2C_IER_RFIE | I2C_IER_MSDIE | I2C_IER_BEDIE);
+
+	if (k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000)) != 0) {
+		LOG_ERR("master recv timeout");
+		sys_write32(0, cfg->base + I2C_IER);
+		data->current_msg = NULL;
+		return -ETIMEDOUT;
+	}
+
+	sys_write32(0, cfg->base + I2C_IER);
+
+	if (data->error != 0) {
+		ret = data->error;
 	}
 
 	return ret;
@@ -354,21 +489,31 @@ static int i2c_sf32lb_init(const struct device *dev)
 
 	data->rw_flags = I2C_MSG_READ;
 
+	config->irq_cfg_func();
+
 	return ret;
 }
 
 #define I2C_SF32LB_DEFINE(n)                                                                       \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void i2c_sf32lb_irq_config_func_##n(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sf32lb_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	};                                                                                         \
 	static struct i2c_sf32lb_data i2c_sf32lb_data_##n = {                                      \
 		.lock = Z_MUTEX_INITIALIZER(i2c_sf32lb_data_##n.lock),                             \
+		.i2c_compl = Z_SEM_INITIALIZER(i2c_sf32lb_data_##n.i2c_compl, 0, 1),               \
 	};                                                                                         \
 	static const struct i2c_sf32lb_config i2c_sf32lb_config_##n = {                            \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET(n),                                         \
 		.bitrate = DT_INST_PROP_OR(n, clock_frequency, 100000),                            \
+		.irq_cfg_func = i2c_sf32lb_irq_config_func_##n,                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &i2c_sf32lb_init, NULL, &i2c_sf32lb_data_##n,                     \
+	DEVICE_DT_INST_DEFINE(n, i2c_sf32lb_init, NULL, &i2c_sf32lb_data_##n,                      \
 			      &i2c_sf32lb_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
 			      &i2c_sf32lb_driver_api);
 

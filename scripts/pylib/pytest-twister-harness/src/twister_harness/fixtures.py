@@ -97,7 +97,7 @@ def mcumgr(device_object: DeviceAdapter) -> Generator[MCUmgr, None, None]:
     """Fixture to create an MCUmgr instance for serial connection."""
     if not MCUmgr.is_available():
         pytest.skip('mcumgr not available')
-    yield MCUmgr.create_for_serial(device_object.device_config.serial)
+    yield MCUmgr.create_for_serial(device_object.device_config.serial_configs[0].port)
 
 
 @pytest.fixture()

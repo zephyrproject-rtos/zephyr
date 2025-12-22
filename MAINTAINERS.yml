@@ -2255,6 +2255,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - bjarki-andreasen
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/

@@ -40,6 +40,15 @@
 			status = "okay";
 		};
 
+		/* wco */
+		clk_wco: clk_wco {
+			#clock-cells = <0>;
+			compatible = "infineon,fixed-clock";
+			clock-frequency = <32768>;
+			system-clock = <IFX_WCO>;
+			status = "okay";
+		};
+
 		/* fll */
 		fll0: fll0 {
 			#clock-cells = <0>;
