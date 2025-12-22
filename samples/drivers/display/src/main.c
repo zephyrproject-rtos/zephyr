@@ -161,8 +161,29 @@ static void fill_buffer_mono(enum corner corner, uint8_t grey,
 
 static inline void fill_buffer_l_8(enum corner corner, uint8_t grey, uint8_t *buf, size_t buf_size)
 {
+	uint8_t color;
+
+	switch (corner) {
+	case TOP_LEFT:
+		color = 0x00u;
+		break;
+	case TOP_RIGHT:
+		/* Use 0xE0 since 0xFF leads to drawing white corner on white back-ground */
+		color = 0xE0u;
+		break;
+	case BOTTOM_RIGHT:
+		color = 0x88u;
+		break;
+	case BOTTOM_LEFT:
+		color = 0x00u | grey;
+		break;
+	default:
+		color = 0;
+		break;
+	}
+
 	for (size_t idx = 0; idx < buf_size; idx += 1) {
-		*(uint8_t *)(buf + idx) = grey;
+		*(uint8_t *)(buf + idx) = color;
 	}
 }
 
