@@ -121,6 +121,12 @@
 					status = "okay";
 				};
 			};
+
+			test_max31331: max31331@d {
+				compatible = "adi,max31331";
+				reg = <0xd>;
+				interrupt-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
