@@ -191,6 +191,12 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 		return -EINVAL;
 	}
 
+	if (chan_cfg->reference == ADC_REF_INTERNAL &&
+	    DEVICE_API_GET(adc, dev)->ref_internal == 0) {
+		LOG_ERR("Voltage reference must be provided for ADC_REF_INTERNAL");
+		return -EINVAL;
+	}
+
 	if (cfg->oversampling[chan] > TI_ADC_STEPCONFIG_AVERAGING_MAX) {
 		LOG_ERR("Invalid oversampling value");
 		return -EINVAL;
@@ -374,7 +380,7 @@ static void ti_adc_isr(const struct device *dev)
 	static DEVICE_API(adc, ti_adc_driver_api_##n) = {                                          \
 		.channel_setup = ti_adc_channel_setup,                                             \
 		.read = ti_adc_read,                                                               \
-		.ref_internal = DT_INST_PROP(n, ti_vrefp),                                         \
+		.ref_internal = DT_INST_PROP_OR(n, ti_vrefp, 0),                                   \
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = ti_adc_read_async,)) };                \
                                                                                                    \
 	static void ti_adc_irq_setup_##n(const struct device *dev)                                 \
