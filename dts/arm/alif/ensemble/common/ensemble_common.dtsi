@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
 
 / {
 	clocks {
@@ -60,6 +61,66 @@
 			compatible = "alif,pinctrl";
 			reg = <0x1a603000 0x1000>, <0x42007000 0x1000>;
 			reg-names = "pinctrl", "lpgpio_pinctrl";
+		};
+
+		uart0: uart@49018000 {
+			compatible = "ns16550";
+			reg = <0x49018000 0x1000>;
+			clocks = <&clockctrl ALIF_UART0_SYST_PCLK>;
+			interrupts = <124 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: uart@49019000 {
+			compatible = "ns16550";
+			reg = <0x49019000 0x1000>;
+			clocks = <&clockctrl ALIF_UART1_SYST_PCLK>;
+			interrupts = <125 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: uart@4901a000 {
+			compatible = "ns16550";
+			reg = <0x4901a000 0x1000>;
+			clocks = <&clockctrl ALIF_UART2_SYST_PCLK>;
+			interrupts = <126 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart3: uart@4901b000 {
+			compatible = "ns16550";
+			reg = <0x4901b000 0x1000>;
+			clocks = <&clockctrl ALIF_UART3_SYST_PCLK>;
+			interrupts = <127 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart4: uart@4901c000 {
+			compatible = "ns16550";
+			reg = <0x4901c000 0x1000>;
+			clocks = <&clockctrl ALIF_UART4_SYST_PCLK>;
+			interrupts = <128 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart5: uart@4901d000 {
+			compatible = "ns16550";
+			reg = <0x4901d000 0x1000>;
+			clocks = <&clockctrl ALIF_UART5_SYST_PCLK>;
+			interrupts = <129 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
 		};
 	};
 };
