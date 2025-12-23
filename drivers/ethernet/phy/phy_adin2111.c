@@ -146,7 +146,7 @@ static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t dev
 	return mdio_write(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS_CNTRL, devad | BIT(14));
 }
 
-static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
+static int phy_adin2111_c45_read(const struct device *dev, uint8_t devad,
 				 uint16_t reg, uint16_t *val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
@@ -167,7 +167,7 @@ static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
 	return rval;
 }
 
-static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad,
+static int phy_adin2111_c45_write(const struct device *dev, uint8_t devad,
 				  uint16_t reg, uint16_t val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
@@ -640,6 +640,8 @@ static DEVICE_API(ethphy, phy_adin2111_api) = {
 	.link_cb_set = phy_adin2111_link_cb_set,
 	.read = phy_adin2111_reg_read,
 	.write = phy_adin2111_reg_write,
+	.read_c45 = phy_adin2111_c45_read,
+	.write_c45 = phy_adin2111_c45_write,
 };
 
 #if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios)
