@@ -248,3 +248,15 @@ zephyr_udc0: &usb1 {
 &sai1 {
 	status = "okay";
 };
+
+&flexpwm0_pwm0 {
+	status = "okay";
+};
+
+&flexpwm0_pwm1 {
+	status = "okay";
+};
+
+&flexpwm0_pwm2 {
+	status = "okay";
+};
