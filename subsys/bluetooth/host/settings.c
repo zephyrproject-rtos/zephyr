@@ -48,7 +48,8 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			       addr->a.val[1], addr->a.val[0], addr->type);
 	}
 
-	if (err < 0) {
+	if ((err < 0) || (err >= path_size)) {
+		/* Error or output was truncated */
 		return -EINVAL;
 	}
 
@@ -62,7 +63,8 @@ static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const ch
 	int err;
 
 	err = snprintk(path, path_size, "bt/%s", key);
-	if (err < 0) {
+	if ((err < 0) || (err >= path_size)) {
+		/* Error or output was truncated */
 		return -EINVAL;
 	}
 
@@ -73,54 +75,60 @@ static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const ch
 int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			   const bt_addr_le_t *addr, const char *key)
 {
-	size_t len = 3;
-
-	/* path_size is less than or equal 3; strlen("bt/") */
-	if (path_size <= len) {
-		return -EINVAL;
-	}
-
 	/* Key format:
 	 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
 	 */
-	strcpy(path, "bt/");
+	const char delimiter = '/';
+	const char null_term = '\0';
+	const size_t prefix_len = sizeof("bt") - 1U;
+	const size_t subsys_len = strlen(subsys);
+	const size_t addr_str_len = sizeof("554433221100t") - 1U;
+	const size_t key_len = (key == NULL) ? 0U : strlen(key);
+	const size_t total_len = prefix_len +
+				 sizeof(delimiter) + subsys_len +
+				 sizeof(delimiter) + addr_str_len +
+				 ((key == NULL) ? 0U : (sizeof(delimiter) + key_len)) +
+				 sizeof(null_term);
+	size_t offset = 0U;
+	int err;
 
-	/* Concatenate subsys as much the free space permits */
-	strncpy(&path[len], subsys, (path_size - len));
-	len += MIN(strlen(subsys), (path_size - len));
-
-	/* Postfix '/' if there is free space */
-	if (len < path_size) {
-		path[len] = '/';
-		len++;
-	}
-
-	/* Concatenate addr as much the free space permits */
-	for (int8_t i = 5; i >= 0 && len < path_size; i--) {
-		len += bin2hex(&addr->a.val[i], 1, &path[len], (path_size - len));
-	}
-
-	/* Postfix addr type if there is free space */
-	if (len < path_size) {
-		/* Type can be either BT_ADDR_LE_PUBLIC or
-		 * BT_ADDR_LE_RANDOM (value 0 or 1)
-		 */
-		path[len] = '0' + addr->type;
-		len++;
-	}
-
-	/* Postfix '/' and concatenate key as much the free space permits */
-	if ((key != NULL) && (len < path_size)) {
-		path[len] = '/';
-		len++;
-		strncpy(&path[len], key, (path_size - len));
-		len += MIN(strlen(key), (path_size - len));
-	}
-
-	/* Insufficient path_size, including null termination */
-	if (len >= path_size) {
+	if (path_size < total_len) {
 		return -EINVAL;
 	}
+
+	memcpy(path, "bt", prefix_len);
+	offset += prefix_len;
+
+	path[offset] = delimiter;
+	offset++;
+	memcpy(&path[offset], subsys, subsys_len);
+	offset += subsys_len;
+
+	path[offset] = delimiter;
+	offset++;
+	for (int8_t i = 5; i >= 0; i--) {
+		/* We supply valid 0-15 as input */
+		err = hex2char(addr->a.val[i] >> 4, &path[offset]);
+		__ASSERT_NO_MSG(err == 0);
+		offset++;
+		/* We supply valid 0-15 as input */
+		err = hex2char(addr->a.val[i] & 0xf, &path[offset]);
+		__ASSERT_NO_MSG(err == 0);
+		offset++;
+	}
+	/* We are not checking hex2char return value as we supply valid 0-1 as input */
+	err = hex2char(addr->type, &path[offset]);
+	__ASSERT_NO_MSG(err == 0);
+	offset++;
+
+	if (key != NULL) {
+		path[offset] = delimiter;
+		offset++;
+		memcpy(&path[offset], key, key_len);
+		offset += key_len;
+	}
+
+	path[offset] = null_term;
 
 	LOG_DBG("Encoded path %s", path);
 
@@ -129,26 +137,29 @@ int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 
 static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const char *key)
 {
-	size_t len = 3;
-
-	/* path_size is less than or equal 3; strlen("bt/") */
-	if (path_size <= len) {
-		return -EINVAL;
-	}
-
 	/* Key format:
 	 *  "bt/<key>"
 	 */
-	strcpy(path, "bt/");
+	const char delimiter = '/';
+	const char null_term = '\0';
+	const size_t prefix_len = sizeof("bt") - 1U;
+	const size_t key_len = strlen(key);
+	const size_t total_len = prefix_len + sizeof(delimiter) + key_len + sizeof(null_term);
+	size_t offset = 0U;
 
-	/* Concatenate key as much the free space permits */
-	strncpy(&path[len], key, (path_size - len));
-	len += MIN(strlen(key), (path_size - len));
-
-	/* Insufficient path_size, including null termination */
-	if (len >= path_size) {
+	if (path_size < total_len) {
 		return -EINVAL;
 	}
+
+	memcpy(path, "bt", prefix_len);
+	offset += prefix_len;
+
+	path[offset] = delimiter;
+	offset++;
+	memcpy(&path[offset], key, key_len);
+	offset += key_len;
+
+	path[offset] = null_term;
 
 	LOG_DBG("Encoded path %s", path);
 
@@ -202,7 +213,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 	len = settings_name_next(name, &next);
 
-	if (!strncmp(name, "id", len)) {
+	if ((len == 2) && (memcmp(name, "id", len) == 0)) {
 		/* Any previously provided identities supersede flash */
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
 			LOG_WRN("Ignoring identities stored in flash");
@@ -234,7 +245,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (!strncmp(name, "name", len)) {
+	if ((len == 4) && (memcmp(name, "name", len) == 0)) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			LOG_ERR("Failed to read device name from storage"
@@ -249,7 +260,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 #endif
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
-	if (!strncmp(name, "appearance", len)) {
+	if ((len == 10) && (memcmp(name, "appearance", len) == 0)) {
 		if (len_rd != sizeof(bt_dev.appearance)) {
 			LOG_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
 			return -EINVAL;
@@ -265,7 +276,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (!strncmp(name, "irk", len)) {
+	if ((len == 3) && (memcmp(name, "irk", len) == 0)) {
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
