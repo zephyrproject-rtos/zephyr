@@ -7,7 +7,7 @@
 
 #include "xmcd.h"
 
-#if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR)
 
 #if defined(XIP_BOOT_HEADER_XMCD_ENABLE) && (XIP_BOOT_HEADER_XMCD_ENABLE == 1)
 __attribute__((section(".boot_hdr.xmcd_data"), used))
@@ -31,4 +31,4 @@ const uint32_t xmcd_data[] = {
 	0x02};
 
 #endif /* XIP_BOOT_HEADER_XMCD_ENABLE */
-#endif /* XIP_BOOT_HEADER_ENABLE */
+#endif /* defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR) */
