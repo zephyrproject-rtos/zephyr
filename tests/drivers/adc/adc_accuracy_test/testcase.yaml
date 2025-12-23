@@ -20,6 +20,7 @@ tests:
       - frdm_k64f
       - ek_ra8d1
       - ek_ra8m1
+      - fpb_ra8e1
       - mck_ra8t1
       - ek_ra6e2
       - ek_ra6m1
