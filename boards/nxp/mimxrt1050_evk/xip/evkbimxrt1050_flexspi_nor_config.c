@@ -7,7 +7,7 @@
 
 #include "evkbimxrt1050_flexspi_nor_config.h"
 
-#if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR)
 __attribute__((section(".boot_hdr.conf"), used))
 
 const flexspi_nor_config_t hyperflash_config = {
@@ -224,4 +224,4 @@ const flexspi_nor_config_t hyperflash_config = {
 	.is_uniform_block_size = true,
 };
 
-#endif /* XIP_BOOT_HEADER_ENABLE */
+#endif /* defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR) */
