@@ -127,21 +127,21 @@
 				};
 			};
 
-			test_i2c_ov9655: ov9655@8 {
+			test_i2c_ov9655: ov9655@9 {
 				compatible = "ovti,ov9655";
-				reg = <0x8>;
-				reset-gpios = <&test_gpio 0 0>;
-			};
-
-			test_i2c_ov5642: ov5642@9 {
-				compatible = "ovti,ov5642";
 				reg = <0x9>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_hm01b0: hm01b0@24 {
+			test_i2c_ov5642: ov5642@a {
+				compatible = "ovti,ov5642";
+				reg = <0xa>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_hm01b0: hm01b0@b {
 				compatible = "himax,hm01b0";
-				reg = <0x24>;
+				reg = <0xb>;
 				status = "okay";
 				data-bits = <0x4>;
 
@@ -152,9 +152,9 @@
 				};
 			};
 
-			test_i2c_hm0360: hm0360@11 {
+			test_i2c_hm0360: hm0360@c {
 				compatible = "himax,hm0360";
-				reg = <0x24>;
+				reg = <0xc>;
 				status = "okay";
 				reset-gpios = <&test_gpio 0 0>;
 				pwdn-gpios = <&test_gpio 1 0>;
@@ -166,9 +166,9 @@
 				};
 			};
 
-			test_i2c_ov7675: ov7675@9 {
+			test_i2c_ov7675: ov7675@d {
 				compatible = "ovti,ov7675";
-				reg = <0x21>;
+				reg = <0xd>;
 				reset-gpios = <&test_gpio 0 1>;
 				pwdn-gpios = <&test_gpio 1 1>;
 			};
