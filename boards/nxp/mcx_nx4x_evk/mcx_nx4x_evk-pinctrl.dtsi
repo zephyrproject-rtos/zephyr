@@ -263,4 +263,31 @@
 			input-enable;
 		};
 	};
+
+	flexpwm0_pwm0_default: flexpwm0_pwm0_default {
+		group0 {
+			pinmux = <PWM0_X0_PIO3_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	flexpwm0_pwm1_default: flexpwm0_pwm1_default {
+		group0 {
+			pinmux = <PWM0_X1_PIO3_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	flexpwm0_pwm2_default: flexpwm0_pwm2_default {
+		group0 {
+			pinmux = <PWM0_X2_PIO3_4>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };
