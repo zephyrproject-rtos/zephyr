@@ -545,6 +545,8 @@ csi_interface: &dcmipp {
 	};
 };
 
+csi_capture_port: &pipe_main {};
+
 zephyr_h264enc: &venc {
 	status = "okay";
 };
