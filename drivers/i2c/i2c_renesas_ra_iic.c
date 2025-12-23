@@ -315,7 +315,8 @@ static void calc_iic_master_bitrate(const struct i2c_ra_iic_config *config, uint
 	const double fall_time_s = config->fall_time_s;
 	const uint32_t requested_duty = config->duty_cycle_percent;
 	const uint32_t peripheral_clock = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_PCLKB);
-	uint32_t constant_add = 0;
+	uint32_t constant_add;
+	uint32_t divided_pclk;
 
 	/* A constant is added to BRL and BRH in all formulas. This constand is 3 + nf
 	 * when CKS == 0, or 2 + nf when CKS != 0.
@@ -328,7 +329,7 @@ static void calc_iic_master_bitrate(const struct i2c_ra_iic_config *config, uint
 	}
 
 	/* Converts all divided numbers to double to avoid data loss. */
-	uint32_t divided_pclk = (peripheral_clock >> divider);
+	divided_pclk = (peripheral_clock >> divider);
 
 	result->bitrate =
 		1 / ((total_brl_brh + 2 * constant_add) / divided_pclk + rise_time_s + fall_time_s);
@@ -355,13 +356,14 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 					  iic_master_clock_settings_t *clk_cfg)
 {
 	const struct i2c_ra_iic_config *config = dev->config;
-	const uint32_t noise_filter_stage = config->noise_filter_stage;
+	struct ra_iic_master_bitrate bitrate = {};
 	const double rise_time_s = config->rise_time_s;
 	const double fall_time_s = config->fall_time_s;
+	const uint32_t noise_filter_stage = config->noise_filter_stage;
 	const uint32_t requested_duty = config->duty_cycle_percent;
 	const uint32_t peripheral_clock = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_PCLKB);
-
-	uint32_t requested_bitrate = 0;
+	uint32_t min_brh, min_brl_brh, total_brl_brh;
+	uint32_t divided_pclk, constant_add, requested_bitrate;
 
 	switch (fsp_i2c_rate) {
 	case I2C_MASTER_RATE_STANDARD:
@@ -375,16 +377,18 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 	}
 
 	/* Start with maximum possible bitrate. */
-	uint32_t min_brh = noise_filter_stage + 1;
-	uint32_t min_brl_brh = 2 * min_brh;
-	struct ra_iic_master_bitrate bitrate = {};
+	min_brh = noise_filter_stage + 1;
+	min_brl_brh = 2 * min_brh;
 
 	calc_iic_master_bitrate(config, min_brl_brh, min_brh, 0, &bitrate);
 
 	/* Start with the smallest divider because it gives the most resolution. */
-	uint32_t constant_add = 3 + noise_filter_stage;
+	constant_add = 3 + noise_filter_stage;
 
 	for (int temp_divider = 0; temp_divider <= 7; ++temp_divider) {
+		struct ra_iic_master_bitrate temp_bitrate = {};
+		uint32_t temp_brh;
+
 		if (1 == temp_divider) {
 			/* All dividers other than 0 use an addition of 2 + noise_filter_stages.
 			 */
@@ -393,8 +397,8 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 
 		/* If the requested bitrate cannot be achieved with this divider, continue.
 		 */
-		uint32_t divided_pclk = (peripheral_clock >> temp_divider);
-		uint32_t total_brl_brh =
+		divided_pclk = (peripheral_clock >> temp_divider);
+		total_brl_brh =
 			ceil(((1 / (double)requested_bitrate) - (rise_time_s + fall_time_s)) *
 				     divided_pclk -
 			     (2 * constant_add));
@@ -403,29 +407,24 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 			continue;
 		}
 
-		uint32_t temp_brh = total_brl_brh * requested_duty / 100;
+		temp_brh = total_brl_brh * requested_duty / 100;
 
 		if (temp_brh < min_brh) {
 			temp_brh = min_brh;
 		}
 
 		/* Calculate the actual bitrate and duty cycle. */
-		struct ra_iic_master_bitrate temp_bitrate = {};
-
 		calc_iic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
 					&temp_bitrate);
 
 		/* Adjust duty cycle down if it helps. */
-		struct ra_iic_master_bitrate test_bitrate = temp_bitrate;
-
-		while (test_bitrate.duty > requested_duty) {
-			temp_brh -= 1;
+		while (temp_bitrate.duty > requested_duty) {
+			struct ra_iic_master_bitrate new_bitrate = {};
+			temp_brh--;
 
 			if ((temp_brh < min_brh) || ((total_brl_brh - temp_brh) > 31)) {
 				break;
 			}
-
-			struct ra_iic_master_bitrate new_bitrate = {};
 
 			calc_iic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
 						&new_bitrate);
@@ -438,15 +437,14 @@ static void calc_iic_master_clock_setting(const struct device *dev, const uint32
 		}
 
 		/* Adjust duty cycle up if it helps. */
-		while (test_bitrate.duty < requested_duty) {
-			++temp_brh;
+		while (temp_bitrate.duty < requested_duty) {
+			struct ra_iic_master_bitrate new_bitrate = {};
+			temp_brh++;
 
 			if ((temp_brh > total_brl_brh) || (temp_brh > 31) ||
 			    ((total_brl_brh - temp_brh) < min_brh)) {
 				break;
 			}
-
-			struct ra_iic_master_bitrate new_bitrate = {};
 
 			calc_iic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
 						&new_bitrate);
