@@ -11,7 +11,8 @@
   "name": "TFM_SP_DP",
   "type": "APPLICATION-ROT",
   "priority": "NORMAL",
-  "model": "IPC",
+  "model": "${SPM_BACKEND}",
+  # entry_point below is ignored when using the SFN backend
   "entry_point": "tfm_dp_req_mngr_init",
   "stack_size": "0x800",
 
