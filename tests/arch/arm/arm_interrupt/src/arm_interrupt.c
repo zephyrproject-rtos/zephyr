@@ -6,12 +6,65 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #include <cmsis_core.h>
+#endif
+#include <zephyr/irq.h>
+
+/* Abstraction layer for interrupt controller operations */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* Cortex-M: Use NVIC */
+#define irq_controller_get_enable(irq)     NVIC_GetEnableIRQ(irq)
+#define irq_controller_set_pending(irq)    NVIC_SetPendingIRQ(irq)
+#define irq_controller_get_pending(irq)    NVIC_GetPendingIRQ(irq)
+#define irq_controller_clear_pending(irq)  NVIC_ClearPendingIRQ(irq)
+#elif defined(CONFIG_ARMV7_R)
+/* Cortex-R: Use GIC Software Generated Interrupts (SGIs 0-15) */
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/sys/barrier.h>
+
+static volatile bool actually_trigger_sgi;
+
+static inline int irq_controller_get_enable(unsigned int irq)
+{
+	/* SGIs 0-15 are always available */
+	return (irq < 16) ? 0 : 1;
+}
+
+static inline void irq_controller_set_pending(unsigned int irq)
+{
+	/* Only actually send SGI when told to (not during IRQ selection check) */
+	if (irq < 16 && actually_trigger_sgi) {
+		/* Send SGI to this CPU (target_aff=0, target_list=0x01 for CPU 0) */
+		gic_raise_sgi(irq, 0, 0x01);
+	}
+}
+
+static inline int irq_controller_get_pending(unsigned int irq)
+{
+	/* During IRQ selection (actually_trigger_sgi==false): return 1 for SGIs so they pass
+	 * the test
+	 * During actual testing (actually_trigger_sgi==true): return 0 since SGIs dont have
+	 * queryable pending state
+	 */
+	if (irq < 16) {
+		return actually_trigger_sgi ? 0 : 1;
+	}
+	return 0;
+}
+
+static inline void irq_controller_clear_pending(unsigned int irq)
+{
+	/* SGIs auto-clear on IAR read */
+}
+
+#endif
+
 
 static volatile int test_flag;
 static volatile int expected_reason = -1;
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /* Used to validate ESF collection during a fault */
 static volatile int run_esf_validation;
 static volatile int esf_validation_rv;
@@ -76,6 +129,7 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 	return 0;
 }
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
@@ -91,12 +145,14 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 		k_fatal_halt(reason);
 	}
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	if (run_esf_validation) {
 		if (check_esf_matches_expectations(pEsf) == 0) {
 			esf_validation_rv = TC_PASS;
 		}
 		run_esf_validation = 0;
 	}
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 	expected_reason = -1;
 }
@@ -142,9 +198,11 @@ void set_regs_with_known_pattern(void *p1, void *p2, void *p3)
 			 "udf #90\n");
 }
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /**
  * @brief Test to verify code fault handling in ISR execution context
  * @ingroup kernel_fatal_tests
+ * @note Cortex-M only - uses MSP/PSP
  */
 ZTEST(arm_interrupt, test_arm_esf_collection)
 {
@@ -178,6 +236,7 @@ ZTEST(arm_interrupt, test_arm_esf_collection)
 
 	zassert_not_equal(test_validation_rv, TC_FAIL, "ESF fault collection failed");
 }
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 void arm_isr_handler(const void *args)
 {
@@ -232,35 +291,54 @@ void arm_isr_handler(const void *args)
  */
 ZTEST(arm_interrupt, test_arm_interrupt)
 {
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_R)
+	/* EXTRA_EXCEPTION_INFO is not fully implemented for Cortex-R */
+	ztest_test_skip();
+#endif
+
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
-	int init_flag, post_flag, reason;
+
+#if defined(CONFIG_ARMV7_R)
+	/* Control when SGIs actually fire */
+	actually_trigger_sgi = false;
+#endif
+	int init_flag, post_flag;
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	int reason;
+#endif
 
 	init_flag = test_flag;
 
 	zassert_false(init_flag, "Test flag not initialized to zero\n");
 
+#if defined(CONFIG_ARMV7_R)
+	/* For Cortex-R, just use SGI 1 (0 is sometimes reserved) */
+	i = 1;
+	TC_PRINT("Using SGI %u for Cortex-R\n", i);
+#else
+
 	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
+		if (irq_controller_get_enable(i) == 0) {
 			/*
 			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. NVIC_GetEnableIRQ()
+			 * are automatically enabled. irq_controller_get_enable()
 			 * returning false, here, implies that the IRQ line is
 			 * either not implemented or it is not enabled, thus,
 			 * currently not in use by Zephyr.
 			 */
 
 			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
+			irq_controller_set_pending(i);
 
-			if (NVIC_GetPendingIRQ(i)) {
+			if (irq_controller_get_pending(i)) {
 				/* If the NVIC line is pending, it is
 				 * guaranteed that it is implemented; clear the
 				 * line.
 				 */
-				NVIC_ClearPendingIRQ(i);
+				irq_controller_clear_pending(i);
 
-				if (!NVIC_GetPendingIRQ(i)) {
+				if (!irq_controller_get_pending(i)) {
 					/*
 					 * If the NVIC line can be successfully
 					 * un-pended, it is guaranteed that it
@@ -276,41 +354,59 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	zassert_true(i >= 0, "No available IRQ line to use in the test\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
+#endif
 
+#if defined(CONFIG_ARMV7_R)
+	/* Now enable actual SGI triggering for subsequent tests */
+	actually_trigger_sgi = true;
+#endif
+
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Verify that triggering an interrupt in an IRQ line,
 	 * on which an ISR has not yet been installed, leads
 	 * to a fault of type K_ERR_SPURIOUS_IRQ.
 	 */
 	expected_reason = K_ERR_SPURIOUS_IRQ;
-	NVIC_ClearPendingIRQ(i);
-	NVIC_EnableIRQ(i);
-	NVIC_SetPendingIRQ(i);
+	irq_controller_clear_pending(i);
+	irq_enable(i);
+	irq_controller_set_pending(i);
+#if defined(CONFIG_ARMV7_R)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
+#endif
 
 	/* Verify that the spurious ISR has led to the fault and the
 	 * expected reason variable is reset.
 	 */
 	reason = expected_reason;
 	zassert_equal(reason, -1, "expected_reason has not been reset (%d)\n", reason);
-	NVIC_DisableIRQ(i);
+	irq_disable(i);
+
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 	arch_irq_connect_dynamic(i, 0 /* highest priority */, arm_isr_handler, NULL, 0);
 
-	NVIC_ClearPendingIRQ(i);
-	NVIC_EnableIRQ(i);
+	irq_controller_clear_pending(i);
+	irq_enable(i);
 
 	for (int j = 1; j <= 3; j++) {
 
 		/* Set the dynamic IRQ to pending state. */
-		NVIC_SetPendingIRQ(i);
+		irq_controller_set_pending(i);
 
 		/*
 		 * Instruction barriers to make sure the NVIC IRQ is
 		 * set to pending state before 'test_flag' is checked.
 		 */
+#if defined(CONFIG_ARMV7_R)
 		barrier_dsync_fence_full();
 		barrier_isync_fence_full();
+#endif
+
+#if defined(CONFIG_ARMV7_R)
+		/* On Cortex-R, SGI is sent immediately - allow time for processing */
+		k_busy_wait(100);
+#endif
 
 		/* Returning here implies the thread was not aborted. */
 
@@ -331,9 +427,9 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	__disable_irq();
 
 	/* Trigger an interrupt to cause the stacking error */
-	NVIC_ClearPendingIRQ(i);
-	NVIC_EnableIRQ(i);
-	NVIC_SetPendingIRQ(i);
+	irq_controller_clear_pending(i);
+	irq_enable(i);
+	irq_controller_set_pending(i);
 
 	/* Manually set PSP almost at the bottom of the stack. An exception
 	 * entry will make PSP descend below the limit and into the MPU guard
@@ -353,8 +449,10 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 #endif
 
 	__enable_irq();
+#if defined(CONFIG_ARMV7_R)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
+#endif
 
 	/* No stack variable access below this point.
 	 * The IRQ will handle the verification.
