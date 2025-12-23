@@ -22,6 +22,7 @@
 		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	cpus {
@@ -71,6 +72,7 @@
 
 	esp32_bt_hci: esp32_bt_hci {
 		compatible = "espressif,esp32-bt-hci";
+		bt-hci-vs-ext;
 		status = "disabled";
 	};
 

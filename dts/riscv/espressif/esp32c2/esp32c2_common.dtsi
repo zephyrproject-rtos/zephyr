@@ -53,6 +53,7 @@
 
 	esp32_bt_hci: esp32_bt_hci {
 		compatible = "espressif,esp32-bt-hci";
+		bt-hci-vs-ext;
 		status = "disabled";
 	};
 
