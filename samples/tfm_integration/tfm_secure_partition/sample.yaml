@@ -29,3 +29,9 @@ tests:
     tags:
       - trusted-firmware-m
       - mcuboot
+  sample.tfm.secure_partition.sfn:
+    tags:
+      - trusted-firmware-m
+      - mcuboot
+    extra_configs:
+      - CONFIG_TFM_SFN=y
