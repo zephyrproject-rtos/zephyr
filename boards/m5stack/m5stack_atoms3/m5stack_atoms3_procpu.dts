@@ -38,7 +38,7 @@
 		/* This is the button that's underneath the LCD display  */
 		user_button_0: button_0 {
 			label = "User button 0";
-			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>; // G42
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>; // G41
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
