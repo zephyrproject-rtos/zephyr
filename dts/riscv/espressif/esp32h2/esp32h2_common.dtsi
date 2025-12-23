@@ -370,5 +370,11 @@
 			clocks = <&clock ESP32_AES_MODULE>;
 			status = "okay";
 		};
+
+		rmt: rmt@60007000 {
+			compatible = "espressif,esp32-rmt";
+			reg = <0x60007000 0x1000>;
+			status = "disabled";
+		};
 	};
 };
