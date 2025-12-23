@@ -1801,6 +1801,16 @@ struct k_timer {
 	 */
 };
 
+#ifdef CONFIG_TIMER_OBSERVER
+struct k_timer_observer {
+	void (*on_init)(struct k_timer *timer);
+	void (*on_start)(struct k_timer *timer, k_timeout_t duration,
+			 k_timeout_t period);
+	void (*on_stop)(struct k_timer *timer);
+	void (*on_expiry)(struct k_timer *timer);
+};
+#endif /* CONFIG_TIMER_OBSERVER */
+
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -1871,6 +1881,38 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	STRUCT_SECTION_ITERABLE(k_timer, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
+
+
+#ifdef CONFIG_TIMER_OBSERVER
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define Z_TIMER_OBSERVER_INITIALIZER(name, init, start, stop, expiry) \
+	{ \
+	.on_init = init, \
+	.on_start = start, \
+	.on_stop = stop, \
+	.on_expiry = expiry \
+	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Statically define and initialize a timer observer.
+ *
+ * @param name Name of the k_timer_observer variable.
+ * @param init Pointer to initialization callback (or NULL).
+ * @param start Pointer to start callback (or NULL).
+ * @param stop Pointer to stop callback (or NULL).
+ * @param expiry Pointer to expiry callback (or NULL).
+ */
+#define K_TIMER_OBSERVER_DEFINE(name, init, start, stop, expiry) \
+	static const STRUCT_SECTION_ITERABLE(k_timer_observer, name) = \
+		Z_TIMER_OBSERVER_INITIALIZER(name, init, start, stop, expiry)
+
+#endif /* CONFIG_TIMER_OBSERVER */
 
 /**
  * @brief Initialize a timer.

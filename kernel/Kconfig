@@ -717,6 +717,13 @@ config TIMESLICE_PER_THREAD
 	  a per-thread basis, with an application callback invoked when
 	  a thread reaches the end of its timeslice.
 
+config TIMER_OBSERVER
+	bool "Support extension points for k_timer lifecycle"
+	help
+	  This enables an iterable-section based observer interface for k_timer
+	  lifecycle events (init/start/stop/expiry). External modules can
+	  register additional functionality without modifying kernel internals.
+	  Runs expiry hooks in ISR context.
 endmenu
 
 menu "Other Kernel Object Options"

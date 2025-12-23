@@ -19,6 +19,45 @@ static struct k_spinlock lock;
 static struct k_obj_type obj_type_timer;
 #endif /* CONFIG_OBJ_CORE_TIMER */
 
+#if defined(CONFIG_TIMER_OBSERVER)
+static inline void z_timer_observer_on_init(struct k_timer *timer)
+{
+	STRUCT_SECTION_FOREACH(k_timer_observer, obs) {
+		if (obs->on_init != NULL) {
+			obs->on_init(timer);
+		}
+	}
+}
+
+static inline void z_timer_observer_on_start(struct k_timer *timer, k_timeout_t duration,
+					     k_timeout_t period)
+{
+	STRUCT_SECTION_FOREACH(k_timer_observer, obs) {
+		if (obs->on_start != NULL) {
+			obs->on_start(timer, duration, period);
+		}
+	}
+}
+
+static inline void z_timer_observer_on_stop(struct k_timer *timer)
+{
+	STRUCT_SECTION_FOREACH(k_timer_observer, obs) {
+		if (obs->on_stop != NULL) {
+			obs->on_stop(timer);
+		}
+	}
+}
+
+static inline void z_timer_observer_on_expiry(struct k_timer *timer)
+{
+	STRUCT_SECTION_FOREACH(k_timer_observer, obs) {
+		if (obs->on_expiry != NULL) {
+			obs->on_expiry(timer);
+		}
+	}
+}
+#endif /* CONFIG_TIMER_OBSERVER */
+
 /**
  * @brief Handle expiration of a kernel timer object.
  *
@@ -80,6 +119,13 @@ void z_timer_expiration_handler(struct _timeout *t)
 	/* update timer's status */
 	timer->status += 1U;
 
+#if defined(CONFIG_TIMER_OBSERVER)
+	/* Notify observers - keep this minimal as we're in ISR context
+	 * Consider: Only notify critical observers here, defer others to work queue
+	 */
+	z_timer_observer_on_expiry(timer);
+#endif /* CONFIG_TIMER_OBSERVER */
+
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
 		/* Unlock for user handler. */
@@ -133,6 +179,10 @@ void k_timer_init(struct k_timer *timer,
 	SYS_PORT_TRACING_OBJ_INIT(k_timer, timer);
 
 	timer->user_data = NULL;
+
+#if defined(CONFIG_TIMER_OBSERVER)
+	z_timer_observer_on_init(timer);
+#endif /* CONFIG_TIMER_OBSERVER */
 
 	k_object_init(timer);
 
@@ -188,6 +238,10 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 		     duration);
 
+#if defined(CONFIG_TIMER_OBSERVER)
+	z_timer_observer_on_start(timer, duration, period);
+#endif /* CONFIG_TIMER_OBSERVER */
+
 	k_spin_unlock(&lock, key);
 }
 
@@ -207,6 +261,10 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
 	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
+
+#if defined(CONFIG_TIMER_OBSERVER)
+	z_timer_observer_on_stop(timer);
+#endif /* CONFIG_TIMER_OBSERVER */
 
 	if (inactive) {
 		return;
