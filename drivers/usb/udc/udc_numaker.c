@@ -2378,6 +2378,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	uint8_t ep;
 	struct numaker_usbd_ep *ep_cur;
 	struct udc_ep_config *ep_cfg;
+	uint8_t ep_type;
 	struct net_buf *buf;
 	uint8_t *data_ptr;
 	uint32_t data_len;
@@ -2387,6 +2388,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 
 	ep = msg->out.ep;
 	ep_cfg = udc_get_ep_cfg(dev, ep);
+	ep_type = ep_cfg->attributes & USB_EP_TRANSFER_TYPE_MASK;
 
 	udc_ep_set_busy(ep_cfg, false);
 
@@ -2432,10 +2434,10 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 		goto next_xfer;
 	}
 
-	/* To submit the peeked buffer */
-	udc_buf_get(ep_cfg);
-
 	if (ep == USB_CONTROL_EP_OUT) {
+		/* To submit the peeked buffer */
+		udc_buf_get(ep_cfg);
+
 		if (udc_ctrl_stage_is_status_out(dev)) {
 			/* s-in-status finished */
 			err = udc_ctrl_submit_status(dev, buf);
@@ -2456,7 +2458,18 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 				return err;
 			}
 		}
-	} else {
+	} else if ((net_buf_tailroom(buf) == 0) || (data_len < ep_cfg->mps) ||
+		   (ep_type == USB_EP_TYPE_ISO)) {
+		/* Fix submit condition for non-control transfer
+		 *
+		 * Do submit when any of the following conditions is met:
+		 * 1. Transfer buffer (net_buf) is full
+		 * 2. Last packet size is less than mps
+		 * 3. Isochronous transfer
+		 */
+		/* To submit the peeked buffer */
+		udc_buf_get(ep_cfg);
+
 		err = udc_submit_ep_event(dev, buf, 0);
 		if (err < 0) {
 			LOG_ERR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
