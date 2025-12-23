@@ -1,0 +1,17 @@
+/*
+ * Copyright (C) 2025 Texas Instruments Incorporated - https://www.ti.com/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wkup_pinctrl {
+	status = "okay";
+
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <K3_PINMUX(0x1b4, PIN_INPUT, MUX_MODE_0)>; /* (D13) UART0_RXD */
+	};
+
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <K3_PINMUX(0x1b8, PIN_OUTPUT, MUX_MODE_0)>; /* (C13) UART0_TXD */
+	};
+};
