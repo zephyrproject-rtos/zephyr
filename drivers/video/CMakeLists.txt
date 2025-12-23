@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources(video_buffer.c)
 zephyr_library_sources(video_common.c)
 zephyr_library_sources(video_ctrls.c)
 zephyr_library_sources(video_device.c)
@@ -16,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_HM0360 hm0360.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_IMX335 imx335.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_CSI video_mcux_csi.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX video_mcux_mipi_csi2rx.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_PXP	video_mcux_pxp.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_SDMA video_mcux_smartdma.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MT9M114 mt9m114.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV2640 ov2640.c)

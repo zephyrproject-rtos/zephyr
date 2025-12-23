@@ -270,7 +270,7 @@ static void sdl_display_write_al88(uint8_t *disp_buf,
 	}
 }
 
-static void sdl_display_write_rgb565(uint8_t *disp_buf,
+static void sdl_display_write_bgr565(uint8_t *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
 	uint32_t w_idx;
@@ -296,7 +296,7 @@ static void sdl_display_write_rgb565(uint8_t *disp_buf,
 	}
 }
 
-static void sdl_display_write_bgr565(uint8_t *disp_buf,
+static void sdl_display_write_rgb565(uint8_t *disp_buf,
 		const struct display_buffer_descriptor *desc, const void *buf)
 {
 	uint32_t w_idx;
