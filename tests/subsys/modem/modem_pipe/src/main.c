@@ -32,6 +32,8 @@ struct modem_backend_fake {
 
 	const uint8_t *transmit_buffer;
 	size_t transmit_buffer_size;
+	const uint8_t *extra_transmit_buffer;
+	size_t extra_transmit_buffer_size;
 
 	uint8_t *receive_buffer;
 	size_t receive_buffer_size;
@@ -76,13 +78,16 @@ static void modem_backend_fake_transmit_idle_handler(struct k_work *item)
 	modem_pipe_notify_transmit_idle(&backend->pipe);
 }
 
-static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t size)
+static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t size,
+				       const uint8_t *extra_buf, size_t extra_size)
 {
 	struct modem_backend_fake *backend = data;
 
 	backend->transmit_called = true;
 	backend->transmit_buffer = buf;
 	backend->transmit_buffer_size = size;
+	backend->extra_transmit_buffer = extra_buf;
+	backend->extra_transmit_buffer_size = extra_size;
 
 	if (backend->synchronous) {
 		modem_pipe_notify_transmit_idle(&backend->pipe);
