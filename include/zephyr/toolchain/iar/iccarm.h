@@ -82,8 +82,10 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
-#define CODE_UNREACHABLE __builtin_unreachable()
-#define FUNC_NORETURN    __attribute__((__noreturn__))
+#define CODE_UNREACHABLE \
+	/* [coverity : unreachable] */ \
+	__builtin_unreachable()
+#define FUNC_NORETURN __attribute__((__noreturn__))
 
 #define _NODATA_SECTION(segment)  __attribute__((section(#segment)))
 
