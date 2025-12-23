@@ -13,11 +13,11 @@ import pytest
 
 TEST_CASES = [
     {'r': [],
-     's': None, 'c': None},
+     's': None, 'c': []},
     {'r': ['source_dir'],
-     's': 'source_dir', 'c': None},
+     's': 'source_dir', 'c': []},
     {'r': ['source_dir', '--'],
-     's': 'source_dir', 'c': None},
+     's': 'source_dir', 'c': []},
     {'r': ['source_dir', '--', 'cmake_opt'],
      's': 'source_dir', 'c': ['cmake_opt']},
     {'r': ['source_dir', '--', 'cmake_opt', 'cmake_opt2'],
@@ -27,7 +27,7 @@ TEST_CASES = [
     {'r': ['thing_one', 'thing_two', 'thing_three'],
      's': 'thing_one', 'c': ['thing_two', 'thing_three']},
     {'r': ['--'],
-     's': None, 'c': None},
+     's': None, 'c': []},
     {'r': ['--', '--'],
      's': None, 'c': ['--']},
     {'r': ['--', 'cmake_opt'],
