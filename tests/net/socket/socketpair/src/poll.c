@@ -54,16 +54,16 @@ ZTEST_USER_F(net_socketpair, test_poll_timeout_nonblocking)
 {
 	int res;
 
-	res = zsock_fcntl(fixture->sv[0], F_GETFL, 0);
-	zassert_not_equal(res, -1, "fcntl failed: %d", errno);
+	res = zsock_fcntl(fixture->sv[0], ZVFS_F_GETFL, 0);
+	zassert_not_equal(res, -1, "zsock_fcntl() failed: %d", errno);
 
 	int flags = res;
 
-	res = zsock_fcntl(fixture->sv[0], F_SETFL, O_NONBLOCK | flags);
-	zassert_not_equal(res, -1, "fcntl failed: %d", errno);
+	res = zsock_fcntl(fixture->sv[0], ZVFS_F_SETFL, ZVFS_O_NONBLOCK | flags);
+	zassert_not_equal(res, -1, "zsock_fcntl() failed: %d", errno);
 
-	res = zsock_fcntl(fixture->sv[1], F_SETFL, O_NONBLOCK | flags);
-	zassert_not_equal(res, -1, "fcntl failed: %d", errno);
+	res = zsock_fcntl(fixture->sv[1], ZVFS_F_SETFL, ZVFS_O_NONBLOCK | flags);
+	zassert_not_equal(res, -1, "zsock_fcntl() failed: %d", errno);
 
 	test_socketpair_poll_timeout_common(fixture);
 }
