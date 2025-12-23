@@ -42,6 +42,11 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	15
 #define ISR5_OFFSET	16
 #define TRIG_CHECK_SIZE	17
+#elif defined(CONFIG_SOC_SERIES_NRF71) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#define ISR1_OFFSET	16
+#define ISR3_OFFSET	21
+#define ISR5_OFFSET	22
+#define TRIG_CHECK_SIZE	23
 #elif defined(CONFIG_SOC_NRF9280_CPUPPR)
 #define ISR1_OFFSET	14
 #define ISR3_OFFSET	15
