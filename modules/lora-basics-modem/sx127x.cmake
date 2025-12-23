@@ -15,7 +15,7 @@ endif()
 # Allow modem options
 set(ALLOW_CSMA_BUILD true)
 
-set(LBM_SX127X_LIB_DIR ${LBM_RADIO_DRIVERS_DIR}/sx127x_driver/src)
+set(LBM_SX127X_LIB_DIR ${LBM_LIB_RADIO_DRIVERS_DIR}/sx127x_driver/src)
 zephyr_include_directories(${LBM_SX127X_LIB_DIR})
 
 #-----------------------------------------------------------------------------
@@ -23,6 +23,6 @@ zephyr_include_directories(${LBM_SX127X_LIB_DIR})
 #-----------------------------------------------------------------------------
 zephyr_library_sources(
   ${LBM_SX127X_LIB_DIR}/sx127x.c
-  ${LBM_SMTC_MODEM_CORE_DIR}/smtc_ral/src/ral_sx127x.c
-  ${LBM_SMTC_MODEM_CORE_DIR}/smtc_ralf/src/ralf_sx127x.c
+  ${LBM_LIB_SMTC_MODEM_CORE_DIR}/smtc_ral/src/ral_sx127x.c
+  ${LBM_LIB_SMTC_MODEM_CORE_DIR}/smtc_ralf/src/ralf_sx127x.c
 )
