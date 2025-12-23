@@ -47,9 +47,10 @@ config NET_SAMPLE_LWM2M_SERVER
 
 config NET_SAMPLE_LWM2M_WAIT_DNS
 	bool "Wait DNS server addition before considering connection to be up"
-	depends on MODEM_HL7800 && !DNS_SERVER_IP_ADDRESSES
+	depends on (MODEM_HL7800 || MODEM_HL78XX) && !DNS_SERVER_IP_ADDRESSES
 	help
 	  Make sure we get DNS server addresses from the network
 	  before considering the connection to be up.
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

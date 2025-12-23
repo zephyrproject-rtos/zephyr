@@ -8,7 +8,7 @@ description: |
 
 compatible: "silabs,series2-radio"
 
-include: [base.yaml]
+include: [base.yaml, ble-radio.yaml, radio.yaml]
 
 properties:
   reg:

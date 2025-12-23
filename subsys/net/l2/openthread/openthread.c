@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
@@ -26,6 +28,14 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "openthread_utils.h"
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+#include "openthread_border_router.h"
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
 static struct net_linkaddr *ll_addr;
 static struct openthread_state_changed_callback ot_l2_state_changed_cb;
 
@@ -44,20 +54,21 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
-	if (cb->info == NULL || cb->info_length != sizeof(struct in6_addr)) {
+	if (cb->info == NULL || cb->info_length != sizeof(struct net_in6_addr)) {
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		add_ipv6_addr_to_ot(ot_context, (const struct in6_addr *)cb->info);
+		add_ipv6_addr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
 	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
-		add_ipv6_maddr_to_ot(ot_context, (const struct in6_addr *)cb->info);
+		add_ipv6_maddr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
 	}
 #else
 	NET_WARN("No address info provided with event, "
 		 "please enable CONFIG_NET_MGMT_EVENT_INFO");
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 }
+
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 #ifndef CONFIG_HDLC_RCP_IF
@@ -75,6 +86,8 @@ static void ot_l2_state_changed_handler(uint32_t flags, void *context)
 	struct openthread_state_changed_cb *entry, *next;
 
 #if defined(CONFIG_OPENTHREAD_INTERFACE_EARLY_UP)
+	bool is_up = otIp6IsEnabled(openthread_get_default_instance());
+
 	if (is_up) {
 		net_if_dormant_off(ot_context->iface);
 	} else {
@@ -144,7 +157,7 @@ static void ot_receive_handler(otMessage *message, void *context)
 	struct net_buf *pkt_buf;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ot_context->iface, otMessageGetLength(message),
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		NET_ERR("Failed to reserve net pkt");
 		goto out;
@@ -170,16 +183,21 @@ static void ot_receive_handler(otMessage *message, void *context)
 		}
 	}
 
-	NET_DBG("Injecting %s packet to Zephyr net stack",
-		PKT_IS_IPv4(pkt) ? "translated IPv4" : "Ip6");
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+	if (!openthread_border_router_check_packet_forwarding_rules(pkt)) {
+		NET_DBG("Not injecting packet to Zephyr net stack "
+			"Packet not compliant with forwarding rules!");
+		goto out;
+	}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
+	NET_DBG("Injecting IPv6 packet to Zephyr net stack");
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
-		if (IS_ENABLED(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) && PKT_IS_IPv4(pkt)) {
-			net_pkt_hexdump(pkt, "Received NAT64 IPv4 packet");
-		} else {
-			net_pkt_hexdump(pkt, "Received IPv6 packet");
-		}
+		net_pkt_hexdump(pkt, "Received IPv6 packet");
 	}
+
+	net_pkt_set_ll_proto_type(pkt, ETH_P_IPV6);
 
 	if (!pkt_list_is_full(ot_context)) {
 		if (pkt_list_add(ot_context, pkt) != 0) {
@@ -204,6 +222,32 @@ out:
 
 	otMessageFree(message);
 }
+
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+static void ot_receive_nat64_handler(otMessage *message, void *context)
+{
+	struct otbr_msg_ctx *req = NULL;
+	uint16_t len = otMessageGetLength(message);
+
+	NET_DBG("Injecting IPv4 packet to Zephyr net stack");
+
+	if (openthread_border_router_allocate_message((void **)&req) != 0) {
+		goto out;
+	}
+	if (otMessageRead(message, 0, req->buffer, len) != len) {
+		goto out;
+	}
+
+	infra_if_send_raw_message(req->buffer, len);
+
+out:
+	if (req != NULL) {
+		openthread_border_router_deallocate_message((void *)req);
+	}
+
+	otMessageFree(message);
+}
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 static bool is_ipv6_frag(struct net_pkt *pkt)
 {
@@ -261,6 +305,13 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 
 	net_capture_pkt(iface, pkt);
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+	if (!openthread_border_router_check_packet_forwarding_rules(pkt)) {
+		net_pkt_unref(pkt);
+		return len;
+	}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
 	if (notify_new_tx_frame(pkt) != 0) {
 		net_pkt_unref(pkt);
 	}
@@ -286,12 +337,21 @@ static int openthread_l2_init(struct net_if *iface)
 	ot_l2_context->iface = iface;
 
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
-		net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
-					     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD);
-		net_mgmt_add_event_callback(&ip6_addr_cb);
+		if (!IS_ENABLED(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)) {
+			net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
+						     NET_EVENT_IPV6_ADDR_ADD |
+						     NET_EVENT_IPV6_MADDR_ADD);
+			net_mgmt_add_event_callback(&ip6_addr_cb);
+		}
 		net_if_dormant_on(iface);
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+		openthread_set_nat64_receive_cb(ot_receive_nat64_handler, (void *)ot_l2_context);
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR*/
+		openthread_border_router_init(ot_l2_context);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 		/* To keep backward compatibility use the additional state change callback list from
 		 * the ot l2 context and register the callback to the openthread module.

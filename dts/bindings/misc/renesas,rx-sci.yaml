@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RX SCI controller
@@ -14,3 +14,7 @@ properties:
   channel:
     type: int
     required: true
+
+  dtc:
+    type: phandle
+    description: DTC controller

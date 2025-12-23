@@ -8,7 +8,7 @@ description: Sierra Wireless HL7800 Modem
 
 compatible: "swir,hl7800"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-wake-gpios:

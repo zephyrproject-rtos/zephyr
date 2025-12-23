@@ -151,8 +151,12 @@ static int pull_req_max(const struct bt_mesh_blob_srv *srv)
 			BLOB_CHUNK_SDU_LEN(srv->state.xfer.chunk_size),
 			BT_MESH_APP_SEG_SDU_MAX);
 
-		count = MIN(CONFIG_BT_MESH_BLOB_SRV_PULL_REQ_COUNT,
-			    bt_mesh.lpn.queue_size / segments_per_chunk);
+		/* It is possible that the friend node cannot hold all segments per chunk. In this
+		 * case, we should request at least 1 chunk. As requesting `0` would be invalid.
+		 */
+		count = MAX(1, MIN(CONFIG_BT_MESH_BLOB_SRV_PULL_REQ_COUNT,
+			    bt_mesh.lpn.queue_size / segments_per_chunk));
+
 	}
 #endif
 
@@ -821,7 +825,27 @@ static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_c
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MIN);
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MAX);
 	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	/* If friendship is established, then chunk size is according to friend's queue size.
+	 * Chunk size = (Queue size * Segment size) - (Opcode (1) - Chunk Number (2)
+	 *               - 8 byte MIC (max))
+	 */
+	if (bt_mesh_lpn_established() && bt_mesh.lpn.queue_size > 0) {
+		uint16_t chunk_size = (bt_mesh.lpn.queue_size * 12) - 11;
+
+		chunk_size = MIN(chunk_size, BLOB_RX_CHUNK_SIZE);
+		net_buf_simple_add_le16(&rsp, chunk_size);
+		if (bt_mesh.lpn.queue_size <= 2) {
+			LOG_WRN("FndQ too small %u", bt_mesh.lpn.queue_size);
+		}
+	} else {
+		net_buf_simple_add_le16(&rsp, BLOB_RX_CHUNK_SIZE);
+	}
+#else
 	net_buf_simple_add_le16(&rsp, BLOB_RX_CHUNK_SIZE);
+#endif
+
 	net_buf_simple_add_le32(&rsp, CONFIG_BT_MESH_BLOB_SIZE_MAX);
 	net_buf_simple_add_le16(&rsp, MTU_SIZE_MAX);
 	net_buf_simple_add_u8(&rsp, BT_MESH_BLOB_XFER_MODE_ALL);

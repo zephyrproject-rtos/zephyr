@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT st_stm32_aes
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)
 #define CRYPTO_DEV_COMPAT nxp_mcux_dcp
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_crypto_hse_mu)
+#define CRYPTO_DEV_COMPAT nxp_s32_crypto_hse_mu
 #elif CONFIG_CRYPTO_NRF_ECB
 #define CRYPTO_DEV_COMPAT nordic_nrf_ecb
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_smartbond_crypto)
@@ -32,6 +35,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT ti_cc23x0_aes
 #elif CONFIG_CRYPTO_SI32
 #define CRYPTO_DEV_COMPAT silabs_si32_aes
+#elif CONFIG_CRYPTO_ESP32_AES
+#define CRYPTO_DEV_COMPAT espressif_esp32_aes
 #else
 #error "You need to enable one crypto device"
 #endif

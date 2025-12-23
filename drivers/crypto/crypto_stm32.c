@@ -335,12 +335,12 @@ static int crypto_stm32_session_setup(const struct device *dev,
 
 	if (ctx->flags & ~(CRYP_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("Unsupported algo");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	/* The CRYP peripheral supports the AES ECB, CBC, CTR, CCM and GCM
@@ -356,7 +356,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	    (mode != CRYPTO_CIPHER_MODE_CBC) &&
 	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
 		LOG_ERR("Unsupported mode");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	/* The STM32F4 CRYP peripheral supports key sizes of 128, 192 and 256
@@ -368,7 +368,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 #endif
 	    (ctx->keylen != 32U)) {
 		LOG_ERR("%u key size is not supported", ctx->keylen);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ctx_idx = crypto_stm32_get_unused_session_index(dev);
@@ -556,10 +556,7 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 
 static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	}
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, NULL,

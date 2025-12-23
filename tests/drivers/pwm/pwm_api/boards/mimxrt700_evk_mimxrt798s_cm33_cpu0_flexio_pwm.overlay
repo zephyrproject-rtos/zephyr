@@ -6,18 +6,20 @@
 
 / {
 	aliases {
-		pwm-0 = &flexio0_pwm;
+		pwm-test = &flexio0_pwm;
 	};
 };
 
 &flexio {
 	status = "okay";
+
 	flexio0_pwm: flexio0_pwm {
 		compatible = "nxp,flexio-pwm";
 		#pwm-cells = <3>;
 		status = "okay";
 		pinctrl-0 = <&flexio_pwm_default>;
 		pinctrl-names = "default";
+
 		pwm_0 {
 			pin-id = <7>;
 			prescaler = <1>;

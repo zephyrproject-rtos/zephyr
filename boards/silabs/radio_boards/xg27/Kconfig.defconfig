@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XG27_RB4194A || BOARD_BG27_RB4110B || BOARD_BG27_RB4111B
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+config FPU
+	default y if SOC_GECKO_USE_RAIL || BT
+
+if BT
+
+config MAIN_STACK_SIZE
+	default 3072 if PM
+	default 2304
+
+endif # BT
+
+endif

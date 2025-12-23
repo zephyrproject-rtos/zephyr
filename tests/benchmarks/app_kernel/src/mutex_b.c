@@ -13,7 +13,7 @@
  */
 void mutex_test(void)
 {
-	uint32_t et; /* elapsed time */
+	uint64_t et; /* elapsed time */
 	int i;
 	timing_t  start;
 	timing_t  end;
@@ -25,8 +25,8 @@ void mutex_test(void)
 		k_mutex_unlock(&DEMO_MUTEX);
 	}
 	end = timing_timestamp_get();
-	et = (uint32_t)timing_cycles_get(&start, &end);
+	et = timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "average lock and unlock mutex",
-		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MUTEX_RUNS)));
+		timing_cycles_to_ns_avg(et, (2 * NR_OF_MUTEX_RUNS)));
 }

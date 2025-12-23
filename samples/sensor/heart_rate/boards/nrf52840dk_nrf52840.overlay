@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		heart-rate-sensor = &bh1790;
+		heart-rate-sensor = &max30101;
 	};
 };
 
@@ -19,6 +19,15 @@
 
 	bh1790: bh1790@5b {
 		compatible = "rohm,bh1790";
-		reg=<0x5b>;
+		reg = <0x5b>;
+	};
+
+	/* Example configuration of a MAX30101 device on an I2C bus. */
+	max30101: max30101@57 {
+		compatible = "maxim,max30101";
+		reg = <0x57>;
+		acq-mode = "multi-led";
+		led-slot = <3 0 0 0>;
+		irq-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 	};
 };

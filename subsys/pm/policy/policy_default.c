@@ -25,10 +25,13 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 	for (uint32_t i = 0; i < num_cpu_states; i++) {
 		const struct pm_state_info *state = &cpu_states[i];
-		uint32_t min_residency_ticks;
+		uint32_t min_residency_ticks = 0;
+		uint32_t min_residency_us = state->min_residency_us + state->exit_latency_us;
 
-		min_residency_ticks =
-			k_us_to_ticks_ceil32(state->min_residency_us + state->exit_latency_us);
+		/* If the input is zero, avoid 64-bit conversion from microseconds to ticks. */
+		if (min_residency_us > 0) {
+			min_residency_ticks = k_us_to_ticks_ceil32(min_residency_us);
+		}
 
 		if (ticks < min_residency_ticks) {
 			/* If current state has higher residency then use the previous state; */

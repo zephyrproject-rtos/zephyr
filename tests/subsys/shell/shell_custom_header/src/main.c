@@ -44,7 +44,7 @@ ZTEST(sh, test_shell_fprintf)
 	shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
 		      1, "2", '3');
 	buf = shell_backend_dummy_get_output(sh, &size);
-	zassert_true(size >= sizeof(expect), "Expected size > %u, got %d",
+	zassert_true(size >= sizeof(expect), "Expected size > %zu, got %zu",
 		     sizeof(expect), size);
 
 	/*

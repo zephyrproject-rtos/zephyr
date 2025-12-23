@@ -7,16 +7,18 @@ include: [gpio-controller.yaml, i2c-device.yaml]
 
 # Currently supported device:
 #   pca9538    pca9539
+#   pca9554    pca9555
+#   pca6408    pca6416
 #   pca9574    pca9575
 #   pcal9538   pcal9539
-#   pcal6408a  pcal6416a
+#   pcal6408   pcal6416
 #   pcal6524   pcal6534
 #
-#   PCA9538   compatible with  PCA9534   PCA9554
-#   PCA9539   compatible with  PCA9535   PCA9555
-#   PCAL9538  compatible with  PCAL9554  PCAL6408A(*a)
-#   PCAL9539  compatible with  PCAL9555  PCAL6416A(*a)
-#   (a) PCAL64xxA series support voltage level translation,
+#   PCA9538   compatible with  PCA9534   PCA9554   PCA6408(*a)
+#   PCA9539   compatible with  PCA9535   PCA9555   PCA6416(*a)
+#   PCAL9538  compatible with  PCAL9554  PCAL6408(*a)
+#   PCAL9539  compatible with  PCAL9555  PCAL6416(*a)
+#   (a) PCA(L)64xxA series support voltage level translation,
 #       but has no difference from driver's view.
 #   (b) PCAL6534 has 34 GPIO pins in 4x 8-bit port and 1x
 #       2-bit port. This driver only support 4x 8-bit port.

@@ -17,16 +17,21 @@ Pins Assignment of the Renesas RTK7EKA6M3B00001BU Display
 +-----------------+--------------------------+
 | Connector Pin   | Function                 |
 +=================+==========================+
-| 1               | Display backlight enable |
+| 39              | Display backlight enable |
 +-----------------+--------------------------+
-| 2               | Touch ctrl I2C SDA       |
+| 21              | Touch ctrl I2C SDA       |
 +-----------------+--------------------------+
-| 3               | External interrupt       |
+| 38              | External interrupt       |
 +-----------------+--------------------------+
-| 4               | Touch ctrl I2C SCL       |
+| 5               | Touch ctrl I2C SCL       |
 +-----------------+--------------------------+
-| 6               | Display reset            |
+| 35              | Display reset            |
 +-----------------+--------------------------+
+
+.. note::
+
+   - To use with EK-RA8D1 board, the :ref:`ek_ra8d1_rtk7eka6m3b00001bu` will be needed to connect this
+     shield to the Parallel Graphics Expansion Port (J57).
 
 Hardware Requirements:
 **********************

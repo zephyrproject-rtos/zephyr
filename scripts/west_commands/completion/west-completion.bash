@@ -751,6 +751,7 @@ __comp_west_build()
 		--target -t
 		--test-item -T
 		--build-opt -o
+		--domain
 	"
 
 	all_opts="$bool_opts $special_opts $dir_opts $other_opts"
@@ -841,7 +842,8 @@ __comp_west_runner_cmd()
 	# Common arguments for runners
 	local bool_opts="
 		--context -H
-		--skip-rebuild
+		--rebuild
+		--no-rebuild
 	"
 
 	local dir_opts="
@@ -1207,12 +1209,14 @@ __comp_west()
 		update
 		list
 		manifest
+		compare
 		diff
 		status
 		forall
+		grep
+		help
 		config
 		topdir
-		help
 	)
 
 	local zephyr_ext_cmds=(
@@ -1220,16 +1224,23 @@ __comp_west()
 		boards
 		shields
 		build
+		twister
 		sign
 		flash
 		debug
 		debugserver
 		attach
+		rtt
 		zephyr-export
 		spdx
 		blobs
-		twister
+		bindesc
+		robot
+		simulate
 		sdk
+		packages
+		patch
+		gtags
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

@@ -20,11 +20,6 @@
 		full-ohms = <940000>;
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&chsc6x_xiao_round_display>;
-	};
-
 	aliases {
 		rtc = &pcf8563_xiao_round_display;
 	};
@@ -63,7 +58,7 @@
 };
 
 &xiao_i2c {
-	clock-frequency = < I2C_BITRATE_FAST >;
+	clock-frequency = <I2C_BITRATE_FAST>;
 
 	pcf8563_xiao_round_display: pcf8563@51 {
 		status = "okay";
@@ -87,11 +82,13 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 			status = "okay";
 		};
+
 		spi-max-frequency = <DT_FREQ_M(24)>;
 	};
 };

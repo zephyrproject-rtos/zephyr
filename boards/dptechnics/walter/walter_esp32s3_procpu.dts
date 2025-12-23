@@ -45,6 +45,7 @@
 	hw-flow-control;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+
 	modem: modem {
 		status = "okay";
 		compatible = "sqn,gm02s";

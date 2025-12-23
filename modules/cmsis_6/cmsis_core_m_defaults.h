@@ -62,6 +62,8 @@ typedef enum {
 #define __CM23_REV       0
 #elif defined(CONFIG_CPU_CORTEX_M33)
 #define __CM33_REV       0
+#elif defined(CONFIG_CPU_CORTEX_M52)
+#define __CM52_REV       0
 #elif defined(CONFIG_CPU_CORTEX_M55)
 #define __CM55_REV       0
 #elif defined(CONFIG_CPU_CORTEX_M85)
@@ -135,12 +137,20 @@ typedef enum {
 #include <core_cm23.h>
 #elif defined(CONFIG_CPU_CORTEX_M33)
 #include <core_cm33.h>
+#elif defined(CONFIG_CPU_CORTEX_M52)
+#include <core_cm52.h>
 #elif defined(CONFIG_CPU_CORTEX_M55)
 #include <core_cm55.h>
 #elif defined(CONFIG_CPU_CORTEX_M85)
 #include <core_cm85.h>
 #else
 #error "Unknown Cortex-M device"
+#endif
+
+#ifdef CONFIG_ARM_PAC
+/* This provides apis to set/get PAC keys */
+#define __ARM_FEATURE_PAUTH 1
+#include <m-profile/armv81m_pac.h>
 #endif
 
 #endif /* ZEPHYR_MODULES_CMSIS_6_CMSIS_CORE_M_DEFAULTS_H_ */

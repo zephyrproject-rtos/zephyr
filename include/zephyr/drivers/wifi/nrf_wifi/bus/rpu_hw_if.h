@@ -31,6 +31,11 @@ enum {
 	NUM_MEM_BLOCKS
 };
 
+/* Keeping it high to avoid changing it often, but modify this value
+ * if rpu_7002_memmap is changed.
+ */
+#define NRF_WIFI_QSPI_SLAVE_MAX_LATENCY 4
+
 extern char blk_name[][15];
 extern uint32_t rpu_7002_memmap[][3];
 
@@ -48,6 +53,24 @@ int rpu_wrsr2(uint8_t data);
 int rpu_rdsr2(void);
 int rpu_rdsr1(void);
 int rpu_clks_on(void);
+
+/**
+ * @brief Read a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_read_reg(uint8_t reg_addr, uint8_t *reg_value);
+
+/**
+ * @brief Write a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_write_reg(uint8_t reg_addr, uint8_t reg_value);
 
 int rpu_init(void);
 int rpu_enable(void);

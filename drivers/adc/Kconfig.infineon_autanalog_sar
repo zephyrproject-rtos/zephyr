@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon AutAnalog SAR ADC configuration options
+
+config ADC_INFINEON_AUTANALOG_SAR
+	bool "Infineon AutAnalog SAR ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_SAR_ADC_ENABLED
+	select USE_INFINEON_AUTANALOG_SAR_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  This option enables the ADC driver for Infineon MCUs using AutAnalog SAR ADC.

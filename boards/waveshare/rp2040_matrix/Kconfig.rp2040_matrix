@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RP2040_MATRIX
+	select SOC_RP2040

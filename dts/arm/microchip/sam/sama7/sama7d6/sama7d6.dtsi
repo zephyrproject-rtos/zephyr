@@ -1,0 +1,421 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <arm/armv7-a.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/microchip_sam_pmc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Microchip SAMA7D65 family SoC";
+	compatible = "microchip,sama7d6";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0>;
+		};
+	};
+
+	clocks {
+		main_xtal: main_xtal {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+
+		slow_xtal: slow_xtal {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		sram: memory@100000 {
+			compatible = "mmio-sram";
+			reg = <0x00100000 DT_SIZE_K(128)>;
+		};
+
+		pinctrl: pinctrl@e0014000 {
+			compatible = "microchip,sama7g5-pinctrl";
+			reg = <0xe0014000 0x800>;
+		};
+
+		pmc: clock-controller@e0018000 {
+			compatible = "microchip,sam-pmc";
+			reg = <0xe0018000 0x200>;
+			#clock-cells = <2>;
+			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
+			clock-names = "td_slck", "md_slck", "main_xtal";
+		};
+
+		clk32k: clock-controller@e001d500 {
+			compatible = "microchip,sama7g5-sckc", "microchip,sam9x60-sckc";
+			reg = <0xe001d500 0x4>;
+			clocks = <&slow_xtal>;
+			#clock-cells = <1>;
+		};
+
+		rtc: rtc@e001d800 {
+			compatible = "atmel,sam-rtc";
+			reg = <0xe001d800 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk32k 1>;
+		};
+
+		pit64b0: timer@e1800000 {
+			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
+			reg = <0xe1800000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 66>, <&pmc PMC_TYPE_GCK 66>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		flx0: flexcom@e1820000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe1820000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe1820000 0x800>;
+			status = "disabled";
+
+			i2c0: i2c0@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 34>;
+				status = "disabled";
+			};
+
+			uart0: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 34>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx1: flexcom@e1824000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe1824000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe1824000 0x800>;
+			status = "disabled";
+
+			i2c1: i2c1@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
+				status = "disabled";
+			};
+
+			uart1: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx2: flexcom@e1828000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe1828000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe1828000 0x800>;
+			status = "disabled";
+
+			i2c2: i2c2@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 36>;
+				status = "disabled";
+			};
+
+			uart2: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 36>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx3: flexcom@e182c000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe182c000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe182c000 0x800>;
+			status = "disabled";
+
+			i2c3: i2c3@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
+				status = "disabled";
+			};
+
+			uart3: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx4: flexcom@e2018000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe2018000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe2018000 0x800>;
+			status = "disabled";
+
+			i2c4: i2c4@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
+				status = "disabled";
+			};
+
+			uart4: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx5: flexcom@e201c000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe201c000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe201c000 0x800>;
+			status = "disabled";
+
+			i2c5: i2c5@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
+				status = "disabled";
+			};
+
+			uart5: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx6: flexcom@e2020000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe2020000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe2020000 0x800>;
+			status = "disabled";
+
+			i2c6: i2c6@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
+				status = "disabled";
+			};
+
+			uart6: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx7: flexcom@e2024000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe2024000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe2024000 0x800>;
+			status = "disabled";
+
+			i2c7: i2c7@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
+				status = "disabled";
+			};
+
+			uart7: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx8: flexcom@e281c000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe281c000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe281c000 0x800>;
+			status = "disabled";
+
+			i2c8: i2c8@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 42>;
+				status = "disabled";
+			};
+
+			uart8: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 42>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx9: flexcom@e2820000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe2820000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe2820000 0x800>;
+			status = "disabled";
+
+			i2c9: i2c9@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
+				status = "disabled";
+			};
+
+			uart9: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		flx10: flexcom@e2824000 {
+			compatible = "microchip,sam-flexcom";
+			reg = <0xe2824000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe2824000 0x800>;
+			status = "disabled";
+
+			i2c10: i2c10@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
+				status = "disabled";
+			};
+
+			uart10: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		gic: interrupt-controller@e8c11000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0xe8c11000 0x1000>, <0xe8c12000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+		};
+	};
+};

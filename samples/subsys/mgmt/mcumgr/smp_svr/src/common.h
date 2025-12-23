@@ -5,3 +5,4 @@
  */
 
 void start_smp_bluetooth_adverts(void);
+int setup_udp_dtls(void);

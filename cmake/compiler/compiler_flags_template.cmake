@@ -17,6 +17,9 @@ set_compiler_property(PROPERTY optimization_size_aggressive)
 
 set_compiler_property(PROPERTY optimization_fast)
 
+set_compiler_property(PROPERTY optimization_lto)
+set_compiler_property(PROPERTY optimization_lto_st)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
@@ -68,6 +71,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp17)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23)
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)
@@ -170,3 +174,6 @@ set_compiler_property(PROPERTY no_function_sections)
 
 # Compiler flag for not placing variables in their own sections:
 set_compiler_property(PROPERTY no_data_sections)
+
+# Compiler flag to enable function instrumentation
+set_compiler_property(PROPERTY func_instrumentation)

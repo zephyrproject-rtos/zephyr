@@ -10,7 +10,7 @@
 	};
 };
 
- &i2c1 {
+&i2c1 {
 	status = "okay";
 
 	hs300x: hs300x@44 {

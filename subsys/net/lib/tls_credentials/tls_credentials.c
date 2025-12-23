@@ -13,8 +13,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(tls_credentials,
-		   CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
+LOG_MODULE_REGISTER(tls_credentials, CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
 
 /* Global pool of credentials shared among TLS contexts. */
 static struct tls_credential credentials[CONFIG_TLS_MAX_CREDENTIALS_NUMBER];

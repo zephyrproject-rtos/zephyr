@@ -84,6 +84,7 @@ static inline void cpr_active_reset(void)
 void ull_conn_past_sender_offset_request(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
+uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn);
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
 
 void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
@@ -137,4 +138,14 @@ void ull_conn_resume_rx_data(struct ll_conn *conn);
 /**
  * @brief Check if the lower link layer transmit queue is empty
  */
-uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn);
+bool ull_conn_lll_tx_queue_is_empty(struct ll_conn *conn);
+
+/**
+ * @brief Set path loss parameters
+ */
+void ull_path_loss_set_parameters(void);
+
+/**
+ * @brief Enable path loss reporting
+ */
+void ull_enable_path_loss_reporting(void);

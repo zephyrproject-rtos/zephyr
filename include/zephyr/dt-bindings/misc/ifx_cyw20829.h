@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_MISC_IFX_CYW20829_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_MISC_IFX_CYW20829_H_
+
+#define SRAM0_SAHB_BASE          0x20000000
+#define SRAM0_CBUS_BASE          0x04000000
+#define BOOTSTRAP_SIZE           DT_SIZE_K(16)
+#define BOOTSTRAP_BASE_OFFSET    (DT_SIZE_K(256) - BOOTSTRAP_SIZE)
+#define BOOTSTRAP_SAHB_BASE      (SRAM0_SAHB_BASE + BOOTSTRAP_BASE_OFFSET)
+#define BOOTSTRAP_CBUS_BASE      (SRAM0_CBUS_BASE + BOOTSTRAP_BASE_OFFSET)
+#define SRAM0_SIZE               (DT_SIZE_K(256) - BOOTSTRAP_SIZE)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_MISC_IFX_CYW20829_H_ */

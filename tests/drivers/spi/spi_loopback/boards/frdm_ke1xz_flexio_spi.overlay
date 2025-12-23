@@ -12,9 +12,9 @@
 	pinmux_flexio_spi0: pinmux_flexio_spi0 {
 		group0 {
 			pinmux = <FXIO_D6_PTA8>, /* cs */
-				<FXIO_D4_PTB8>, /* sck */
-				<FXIO_D7_PTC3>, /* sdo */
-				<FXIO_D1_PTB11>; /* sdi */
+				 <FXIO_D4_PTB8>, /* sck */
+				 <FXIO_D7_PTC3>, /* sdo */
+				 <FXIO_D1_PTB11>; /* sdi */
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -35,12 +35,14 @@
 		sck-pin = <4>;
 		pinctrl-0 = <&pinmux_flexio_spi0>;
 		pinctrl-names = "default";
+
 		slow@0 {
 			status = "okay";
 			compatible = "test-spi-loopback-slow";
 			reg = <0>;
 			spi-max-frequency = <500000>;
 		};
+
 		fast@0 {
 			compatible = "test-spi-loopback-fast";
 			reg = <0>;

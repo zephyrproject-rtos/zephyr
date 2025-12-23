@@ -1,13 +1,8 @@
 /*
+ * Copyright (c) 2025 Tenstorrent AI ULC
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	aliases {
-		dma0 = &dma0;
-	};
-};
-
-&dma0 {
+tst_dma0: &dma0 {
 	status = "okay";
 };

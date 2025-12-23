@@ -277,8 +277,8 @@ uint8_t ll_fal_remove(bt_addr_le_t *addr)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 void ll_rl_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type, uint8_t *id_addr)
 {
-	LL_ASSERT(rl_idx < CONFIG_BT_CTLR_RL_SIZE);
-	LL_ASSERT(rl[rl_idx].taken);
+	LL_ASSERT_DBG(rl_idx < CONFIG_BT_CTLR_RL_SIZE);
+	LL_ASSERT_DBG(rl[rl_idx].taken);
 
 	*id_addr_type = rl[rl_idx].id_addr_type;
 	(void)memcpy(id_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
@@ -607,7 +607,7 @@ bool ull_filter_ull_pal_listed(const uint8_t rl_idx, uint8_t *const addr_type,
 		return false;
 	}
 
-	LL_ASSERT(rl[rl_idx].taken);
+	LL_ASSERT_DBG(rl[rl_idx].taken);
 
 	if (rl[rl_idx].pal) {
 		uint8_t pal_idx = rl[rl_idx].pal - 1;
@@ -663,7 +663,7 @@ struct lll_filter *ull_filter_lll_get(bool filter)
 	}
 	return &rl_filter;
 #else
-	LL_ASSERT(filter);
+	LL_ASSERT_DBG(filter);
 	return &fal_filter;
 #endif
 }
@@ -752,7 +752,7 @@ void ull_filter_rpa_update(bool timeout)
 				sys_memcpy_swap(irk, peer_irks[rl[i].pirk_idx],
 						IRK_SIZE);
 				err = bt_rpa_create(irk, &rl[i].peer_rpa);
-				LL_ASSERT(!err);
+				LL_ASSERT_DBG(!err);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 				/* a new key was added,
 				 * invalidate the known/unknown peer RPA cache
@@ -766,7 +766,7 @@ void ull_filter_rpa_update(bool timeout)
 				bt_addr_t rpa;
 
 				err = bt_rpa_create(rl[i].local_irk, &rpa);
-				LL_ASSERT(!err);
+				LL_ASSERT_DBG(!err);
 				/* pointer read/write assumed to be atomic
 				 * so that if ISR fires the local_rpa pointer
 				 * will always point to a valid full RPA
@@ -805,7 +805,7 @@ const uint8_t *ull_filter_adva_get(uint8_t rl_idx)
 {
 	/* AdvA */
 	if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].lirk) {
-		LL_ASSERT(rl[rl_idx].rpas_ready);
+		LL_ASSERT_DBG(rl[rl_idx].rpas_ready);
 		return rl[rl_idx].local_rpa->val;
 	}
 
@@ -884,13 +884,13 @@ uint8_t ull_filter_lll_rl_idx(bool filter, uint8_t devmatch_id)
 	uint8_t i;
 
 	if (filter) {
-		LL_ASSERT(devmatch_id < ARRAY_SIZE(fal));
-		LL_ASSERT(fal[devmatch_id].taken);
+		LL_ASSERT_DBG(devmatch_id < ARRAY_SIZE(fal));
+		LL_ASSERT_DBG(fal[devmatch_id].taken);
 		i = fal[devmatch_id].rl_idx;
 	} else {
-		LL_ASSERT(devmatch_id < ARRAY_SIZE(rl));
+		LL_ASSERT_DBG(devmatch_id < ARRAY_SIZE(rl));
 		i = devmatch_id;
-		LL_ASSERT(rl[i].taken);
+		LL_ASSERT_DBG(rl[i].taken);
 	}
 
 	return i;
@@ -900,10 +900,10 @@ uint8_t ull_filter_lll_rl_irk_idx(uint8_t irkmatch_id)
 {
 	uint8_t i;
 
-	LL_ASSERT(irkmatch_id < peer_irk_count);
+	LL_ASSERT_DBG(irkmatch_id < peer_irk_count);
 	i = peer_irk_rl_ids[irkmatch_id];
-	LL_ASSERT(i < CONFIG_BT_CTLR_RL_SIZE);
-	LL_ASSERT(rl[i].taken);
+	LL_ASSERT_DBG(i < CONFIG_BT_CTLR_RL_SIZE);
+	LL_ASSERT_DBG(rl[i].taken);
 
 	return i;
 }
@@ -914,7 +914,7 @@ bool ull_filter_lll_irk_in_fal(uint8_t rl_idx)
 		return false;
 	}
 
-	LL_ASSERT(rl[rl_idx].taken);
+	LL_ASSERT_DBG(rl[rl_idx].taken);
 
 	return rl[rl_idx].fal;
 }
@@ -938,8 +938,8 @@ bool ull_filter_lll_rl_idx_allowed(uint8_t irkmatch_ok, uint8_t rl_idx)
 		return true;
 	}
 
-	LL_ASSERT(rl_idx < CONFIG_BT_CTLR_RL_SIZE);
-	LL_ASSERT(rl[rl_idx].taken);
+	LL_ASSERT_DBG(rl_idx < CONFIG_BT_CTLR_RL_SIZE);
+	LL_ASSERT_DBG(rl[rl_idx].taken);
 
 	return !rl[rl_idx].pirk || rl[rl_idx].dev;
 }

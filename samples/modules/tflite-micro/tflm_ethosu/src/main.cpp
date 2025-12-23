@@ -98,7 +98,7 @@ volatile int totalCompletedJobs = 0;
 /* TensorArena static initialisation */
 const size_t arenaSize = TENSOR_ARENA_SIZE_PER_INFERENCE;
 
-__attribute__((section("tflm_arena"), aligned(16)))
+TENSOR_ARENA_ATTR
 uint8_t inferenceProcessTensorArena[NUM_INFERENCE_TASKS][arenaSize];
 
 /* Allocate and initialize heap */
@@ -225,18 +225,15 @@ int main()
 	k_queue_init(&inferenceQueue);
 
 	/* inferenceSender tasks to create and queue the jobs */
+	const size_t inferenceSenderStackSize = 2048;
+	static K_THREAD_STACK_ARRAY_DEFINE(inferenceSenderStacks, NUM_JOB_TASKS,
+					   inferenceSenderStackSize);
 	for (int n = 0; n < NUM_JOB_TASKS; n++) {
-		const size_t stackSize = 2048;
-		k_thread_stack_t *stack = static_cast<k_thread_stack_t *>(k_malloc(stackSize));
-		if (stack == nullptr) {
-			printf("Failed to allocate stack to 'inferenceSenderTask%i'\n", n);
-			exit(1);
-		}
-
 		auto &thread = threads[nthreads];
 		string *name = new string("sender " + to_string(n));
 
-		thread.id = k_thread_create(&thread.thread, stack, stackSize, inferenceSenderTask,
+		thread.id = k_thread_create(&thread.thread, inferenceSenderStacks[n],
+					    inferenceSenderStackSize, inferenceSenderTask,
 					    name, heapPtr, &inferenceQueue, 3, 0, K_FOREVER);
 		if (thread.id == 0) {
 			printf("Failed to create 'inferenceSenderTask%i'\n", n);
@@ -248,21 +245,18 @@ int main()
 
 	/* Create inferenceProcess tasks to process the queued jobs */
 	InferenceProcessParams taskParams[NUM_INFERENCE_TASKS];
+	const size_t inferenceProcessStackSize = 8192;
+	static K_THREAD_STACK_ARRAY_DEFINE(inferenceProcessStacks, NUM_INFERENCE_TASKS,
+					   inferenceProcessStackSize);
 	for (int n = 0; n < NUM_INFERENCE_TASKS; n++) {
-		const size_t stackSize = 8192;
-		k_thread_stack_t *stack = static_cast<k_thread_stack_t *>(k_malloc(stackSize));
-		if (stack == nullptr) {
-			printf("Failed to allocate stack to 'inferenceSenderTask%i'\n", n);
-			exit(1);
-		}
-
 		auto &thread = threads[nthreads];
 		auto &taskParam = taskParams[n];
 		taskParam = InferenceProcessParams(&inferenceQueue, inferenceProcessTensorArena[n],
 						   arenaSize);
 		string *name = new string("runner " + to_string(n));
 
-		thread.id = k_thread_create(&thread.thread, stack, stackSize, inferenceProcessTask,
+		thread.id = k_thread_create(&thread.thread, inferenceProcessStacks[n],
+					    inferenceProcessStackSize, inferenceProcessTask,
 					    name, heapPtr, &taskParam, 2, 0, K_FOREVER);
 		if (thread.id == 0) {
 			printf("Failed to create 'inferenceProcessTask%i'\n", n);

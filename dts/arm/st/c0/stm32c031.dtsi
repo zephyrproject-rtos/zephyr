@@ -16,7 +16,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x50000c00 0x400>;
-				clocks = <&rcc STM32_CLOCK(IOP, 3U)>;
+				clocks = <&rcc STM32_CLOCK(IOP, 3)>;
 			};
 		};
 	};

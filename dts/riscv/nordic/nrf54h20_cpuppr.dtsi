@@ -7,9 +7,13 @@
 #include <nordic/nrf54h20.dtsi>
 
 cpu: &cpuppr {};
+
 clic: &cpuppr_clic {};
+
 cpuppr_vevif: &cpuppr_vevif_rx {};
+
 cpuflpr_vevif: &cpuflpr_vevif_tx {};
+
 cpusys_vevif: &cpusys_vevif_tx {};
 
 /delete-node/ &cpuapp;

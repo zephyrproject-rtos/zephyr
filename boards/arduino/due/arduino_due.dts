@@ -80,4 +80,4 @@
 	pinctrl-names = "default";
 };
 
-arduino_i2c: &twi1 { };
+arduino_i2c: &twi1 {};

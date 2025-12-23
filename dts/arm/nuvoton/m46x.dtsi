@@ -53,7 +53,7 @@
 			lxt = "enable";
 			hirc48m = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
-					 NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
+				       NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <200000000>;
 			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD>;
 
@@ -613,6 +613,19 @@
 			status = "disabled";
 			num-bidir-endpoints = <25>;
 			disallow-iso-in-out-same-number;
+		};
+
+		hsusbd: hsusbd@40019000 {
+			compatible = "nuvoton,numaker-hsusbd";
+			reg = <0x40019000 0x1000>;
+			interrupts = <65 0>;
+			resets = <&rst NUMAKER_HSUSBD_RST>;
+			clocks = <&pcc NUMAKER_HSUSBD_MODULE NUMAKER_MODULE_NoMsk
+				  NUMAKER_MODULE_NoMsk>;
+			dma-buffer-size = <4096>;
+			status = "disabled";
+			/* 2 more for Control OUT/IN */
+			num-bidir-endpoints = <14>;
 		};
 
 		wwdt: watchdog@40040100 {

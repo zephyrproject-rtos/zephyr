@@ -34,7 +34,7 @@ The ST25DV Discovery kit provides the following hardware components:
   - ST link mini USB
   - User micro USB
   - USB micro or mini connector for board powering
-  - Demonstration edition (optional add-on module) with Bluetooth Low Energy module,
+  - Demonstration edition (optional add-on module) with Bluetooth |reg| Low Energy module,
     Wi-Fi ® module and JTAG 20 pin connector
 
 It exists in two variants, MB1283 and MB1285.

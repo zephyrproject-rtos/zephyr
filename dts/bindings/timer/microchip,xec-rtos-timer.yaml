@@ -5,7 +5,7 @@ description: Microchip XEC RTOS timer
 
 compatible: "microchip,xec-rtos-timer"
 
-include: base.yaml
+include: ["base.yaml", "microchip,dmec-ecia-girq.yaml"]
 
 properties:
   reg:
@@ -14,10 +14,11 @@ properties:
   interrupts:
     required: true
 
-  girqs:
-    type: array
-    required: true
-    description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+  busy-wait-timer:
+    type: phandle
+    description: |
+      If custom busy wait Kconfig is enabled then this points to the 32-bit
+      basic timer node used to implement the 1 MHz busy wait timer.
 
   clock-frequency:
     type: int

@@ -87,7 +87,7 @@
 
 #include "phil_obj_abstract.h"
 
-#define fork(x) (forks[x])
+#define philosopher_fork(x) (forks[x])
 
 static void set_phil_state_pos(int id)
 {
@@ -149,11 +149,11 @@ void philosopher(void *id, void *unused1, void *unused2)
 
 	/* Dijkstra's solution: always pick up the lowest numbered fork first */
 	if (is_last_philosopher(my_id)) {
-		my_fork1 = fork(0);
-		my_fork2 = fork(my_id);
+		my_fork1 = philosopher_fork(0);
+		my_fork2 = philosopher_fork(my_id);
 	} else {
-		my_fork1 = fork(my_id);
-		my_fork2 = fork(my_id + 1);
+		my_fork1 = philosopher_fork(my_id);
+		my_fork2 = philosopher_fork(my_id + 1);
 	}
 
 	while (1) {
@@ -202,7 +202,7 @@ static void init_objects(void)
 {
 #if !STATIC_OBJS
 	for (int i = 0; i < NUM_PHIL; i++) {
-		fork_init(fork(i));
+		fork_init(philosopher_fork(i));
 	}
 #endif
 }
@@ -225,8 +225,8 @@ static void start_threads(void)
 		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "Philosopher %d", i);
 		k_thread_name_set(&threads[i], tname);
 #endif /* CONFIG_THREAD_NAME */
-		k_object_access_grant(fork(i), &threads[i]);
-		k_object_access_grant(fork((i + 1) % NUM_PHIL), &threads[i]);
+		k_object_access_grant(philosopher_fork(i), &threads[i]);
+		k_object_access_grant(philosopher_fork((i + 1) % NUM_PHIL), &threads[i]);
 
 		k_thread_start(&threads[i]);
 	}

@@ -12,8 +12,8 @@
 #include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 
-#include "icm42688_emul.h"
-#include "icm42688_reg.h"
+#include "icm4268x_emul.h"
+#include "icm4268x_reg.h"
 
 #define NODE DT_NODELABEL(icm42688)
 
@@ -42,7 +42,7 @@ ZTEST_F(icm42688, test_fetch_fail_no_ready_data)
 {
 	uint8_t status = 0;
 
-	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, &status, 1);
+	icm4268x_emul_set_reg(fixture->target, REG_INT_STATUS, &status, 1);
 	zassert_equal(-EBUSY, sensor_sample_fetch(fixture->dev));
 }
 
@@ -56,7 +56,7 @@ static void test_fetch_temp_mc(const struct icm42688_fixture *fixture, int16_t t
 
 	/* Set the INT_STATUS register to show we have data */
 	buffer[0] = BIT_DATA_RDY_INT;
-	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, buffer, 1);
+	icm4268x_emul_set_reg(fixture->target, REG_INT_STATUS, buffer, 1);
 
 	/*
 	 * Set the temperature data to 22.5C via:
@@ -65,7 +65,7 @@ static void test_fetch_temp_mc(const struct icm42688_fixture *fixture, int16_t t
 	temperature_reg = ((temperature_mc - 25000) * 13248) / 100000;
 	buffer[0] = (temperature_reg >> 8) & GENMASK(7, 0);
 	buffer[1] = temperature_reg & GENMASK(7, 0);
-	icm42688_emul_set_reg(fixture->target, REG_TEMP_DATA1, buffer, 2);
+	icm4268x_emul_set_reg(fixture->target, REG_TEMP_DATA1, buffer, 2);
 
 	/* Fetch the data */
 	zassert_ok(sensor_sample_fetch(fixture->dev));
@@ -96,7 +96,7 @@ static void test_fetch_accel_with_range(const struct icm42688_fixture *fixture,
 
 	/* Se the INT_STATUS register to show we have data */
 	register_buffer[0] = BIT_DATA_RDY_INT;
-	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, register_buffer, 1);
+	icm4268x_emul_set_reg(fixture->target, REG_INT_STATUS, register_buffer, 1);
 
 	/* Set accel range */
 	sensor_g_to_ms2(accel_range_g, &values[0]);
@@ -108,7 +108,7 @@ static void test_fetch_accel_with_range(const struct icm42688_fixture *fixture,
 		register_buffer[i * 2] = (accel_percent[i] >> 8) & GENMASK(7, 0);
 		register_buffer[i * 2 + 1] = accel_percent[i] & GENMASK(7, 0);
 	}
-	icm42688_emul_set_reg(fixture->target, REG_ACCEL_DATA_X1, register_buffer, 6);
+	icm4268x_emul_set_reg(fixture->target, REG_ACCEL_DATA_X1, register_buffer, 6);
 
 	/* Fetch the data */
 	zassert_ok(sensor_sample_fetch(fixture->dev));
@@ -158,7 +158,7 @@ static void test_fetch_gyro_with_range(const struct icm42688_fixture *fixture, i
 
 	/* Se the INT_STATUS register to show we have data */
 	register_buffer[0] = BIT_DATA_RDY_INT;
-	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, register_buffer, 1);
+	icm4268x_emul_set_reg(fixture->target, REG_INT_STATUS, register_buffer, 1);
 
 	/* Set gyro range */
 	sensor_degrees_to_rad((scale_mdps / 1000) + (scale_mdps % 1000 == 0 ? 0 : 1), &values[0]);
@@ -170,7 +170,7 @@ static void test_fetch_gyro_with_range(const struct icm42688_fixture *fixture, i
 		register_buffer[i * 2] = (gyro_percent[i] >> 8) & GENMASK(7, 0);
 		register_buffer[i * 2 + 1] = gyro_percent[i] & GENMASK(7, 0);
 	}
-	icm42688_emul_set_reg(fixture->target, REG_GYRO_DATA_X1, register_buffer, 6);
+	icm4268x_emul_set_reg(fixture->target, REG_GYRO_DATA_X1, register_buffer, 6);
 
 	/* Fetch the data */
 	zassert_ok(sensor_sample_fetch(fixture->dev));

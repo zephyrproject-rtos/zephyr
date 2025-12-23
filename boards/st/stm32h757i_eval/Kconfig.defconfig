@@ -6,14 +6,7 @@
 
 if BOARD_STM32H757I_EVAL
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
-
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
 
 endif # BOARD_STM32H757I_EVAL

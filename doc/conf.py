@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.programoutput",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
@@ -112,6 +113,15 @@ if not west_found:
     exclude_patterns.append("**/*west-apis*")
 else:
     exclude_patterns.append("**/*west-not-found*")
+
+# Ensure only one of the two top-level indexes ever gets included.
+# This is a workaround for Sphinx issuing INFO notices about being referenced in
+# multiple toctrees.
+if tags.has("convertimages"):  # pylint: disable=undefined-variable  # noqa: F821
+    exclude_patterns.append("index.rst")
+    root_doc = "index-tex"
+else:
+    exclude_patterns.append("index-tex.rst")
 
 pygments_style = "sphinx"
 highlight_language = "none"
@@ -199,8 +209,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
-        ("4.1.0", "/4.1.0/"),
-        ("4.0.0", "/4.0.0/"),
+        ("4.3.0", "/4.3.0/"),
+        ("4.2.0", "/4.2.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
     "display_gh_links": True,
@@ -209,6 +219,7 @@ html_context = {
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
+        "Glossary": f"{reference_prefix}/glossary.html",
     },
     # Set google_searchengine_id to your Search Engine ID to replace built-in search
     # engine with Google's Programmable Search Engine.
@@ -261,6 +272,7 @@ doxyrunner_projects = {
         "outdir_var": "DOXY_OUT",
     },
 }
+os.environ["DOXYGEN_SITEMAP_URL"] = f"{html_baseurl}doxygen/html"
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 

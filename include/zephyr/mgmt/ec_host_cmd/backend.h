@@ -7,10 +7,18 @@
 /**
  * @file
  * @brief Public APIs for Host Command backends that respond to host commands
+ * @ingroup ec_host_cmd_backend
  */
 
 #ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_BACKEND_H_
 #define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_BACKEND_H_
+
+/**
+ * @brief Interface to EC Host Command backends
+ * @defgroup ec_host_cmd_backend Backends
+ * @ingroup ec_host_cmd_interface
+ * @{
+ */
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/device.h>
@@ -22,19 +30,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief EC Host Command Backend
+ */
 struct ec_host_cmd_backend {
-	/** API provided by the backed. */
+	/** API provided by the backend. */
 	const struct ec_host_cmd_backend_api *api;
-	/** Context for the backed. */
+	/** Context for the backend. */
 	void *ctx;
 };
-
-/**
- * @brief EC Host Command Interface
- * @defgroup ec_host_cmd_interface EC Host Command Interface
- * @ingroup io_interfaces
- * @{
- */
 
 /**
  * @brief Context for host command backend and handler to pass rx data.
@@ -58,7 +62,7 @@ struct ec_host_cmd_rx_ctx {
  */
 struct ec_host_cmd_tx_buf {
 	/**
-	 * Data to write to the host The buffer is provided by the handler if
+	 * Data to write to the host. The buffer is provided by the handler if
 	 * CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE > 0. Otherwise, the backend should provide
 	 * the buffer on its own and overwrites @a buf pointer and @a len_max
 	 * in the init function.
@@ -157,6 +161,14 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_uart(const struct device *de
  * @retval The SPI backend pointer.
  */
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_spi(struct gpio_dt_spec *cs);
+
+/**
+ * @brief Signal event over USB
+ *
+ * Signal event using USB interrupt endpoint. It informs host that there is a pending event that has
+ * to be handled. The function performs remote wake-up if needed.
+ */
+void ec_host_cmd_backend_usb_trigger_event(void);
 
 /**
  * @}

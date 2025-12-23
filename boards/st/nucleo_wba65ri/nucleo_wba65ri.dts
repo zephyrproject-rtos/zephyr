@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -84,7 +85,6 @@
 };
 
 &clk_hse {
-	hse-div2;
 	status = "okay";
 };
 
@@ -94,12 +94,16 @@
 
 &rcc {
 	clocks = <&clk_hse>;
-	clock-frequency = <DT_FREQ_M(16)>;
+	clock-frequency = <DT_FREQ_M(32)>; /* Lowest value to manage radio events */
 	ahb-prescaler = <1>;
-	ahb5-prescaler = <2>;
+	ahb5-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <2>;
 	apb7-prescaler = <1>;
+};
+
+&pwr {
+	power-supply = "smps";
 };
 
 &iwdg {
@@ -109,7 +113,7 @@
 &rtc {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
-			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
 };
 
@@ -159,15 +163,48 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@1c0000 {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(960)>;
+		};
+
+		slot1_partition: partition@100000 {
+			label = "image-1";
+			reg = <0x00100000 DT_SIZE_K(968)>;
+		};
+
+		storage_partition: partition@1f2000 {
 			label = "storage";
-			reg = <0x001c0000 DT_SIZE_K(256)>;
+			reg = <0x001f2000 DT_SIZE_K(56)>;
 		};
 	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	clocks = <&rcc STM32_CLOCK(AHB2, 14)>,
+		 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
+	pinctrl-0 = <&usb_otg_hs_dm_pd7 &usb_otg_hs_dp_pd6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&otghs_phy {
+	/* OTG HS clock source is 32 MHz HSE */
+	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_32MHz";
+	status = "okay";
 };

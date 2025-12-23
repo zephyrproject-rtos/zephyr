@@ -223,7 +223,7 @@ ZTEST(sys_notify_api, test_callback)
 		      "flags not cleared");
 
 	res = ~set_res;
-	((sys_notify_generic_callback)cb)(&notify, &res);
+	((void (*)(struct sys_notify *, int *))cb)(&notify, &res);
 	zassert_equal(res, set_res,
 		      "result not set");
 }

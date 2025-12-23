@@ -7,8 +7,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hci_test_app)
 
 target_sources(app PRIVATE
-	src/main.c
-	../common/edtt_driver_bsim.c
+  src/main.c
+  ../common/edtt_driver_bsim.c
 )
 
 zephyr_library_include_directories(

@@ -17,6 +17,7 @@ ${ZEPHYR_BASE}/tests/bsim/bluetooth/tester/compile.sh
 
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf sysbuild=1  compile
 app=tests/bsim/bluetooth/ll/throughput sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-no_phy_update.conf sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/multiple_id sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf sysbuild=1 compile

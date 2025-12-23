@@ -8,18 +8,18 @@
 
 #include <ti/ti_am6234_a53.dtsi>
 #include "sk-am62_am6234_a53-pinctrl.dts"
+
 / {
 	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
 	compatible = "ti,am62x_a53_sk";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &main_uart0;
+		zephyr,shell-uart = &main_uart0;
 		zephyr,sram = &ddr0;
 	};
 
 	cpus {
-
 		cpu@0 {
 			status = "okay";
 		};
@@ -43,8 +43,7 @@
 	};
 };
 
-
-&uart0 {
+&main_uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";

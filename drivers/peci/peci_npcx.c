@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/peci.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
@@ -141,6 +142,12 @@ static int peci_npcx_transfer(const struct device *dev, struct peci_msg *msg)
 	enum peci_command_code cmd_code = msg->cmd_code;
 	int ret = 0;
 
+	/*
+	 * suspend-to-idle stops PECI module clocks (derived from APB2), which
+	 * must remain active during a transaction
+	 */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
 	k_sem_take(&data->lock, K_FOREVER);
 
 	if (peci_tx_buf->len > PECI_NPCX_MAX_TX_BUF_LEN ||
@@ -194,6 +201,7 @@ static int peci_npcx_transfer(const struct device *dev, struct peci_msg *msg)
 
 out:
 	k_sem_give(&data->lock);
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	return ret;
 }
 

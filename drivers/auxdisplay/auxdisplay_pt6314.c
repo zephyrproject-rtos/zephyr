@@ -313,8 +313,7 @@ static DEVICE_API(auxdisplay, auxdisplay_pt6314_auxdisplay_api) = {
 			},                                                                         \
 		.bus = SPI_DT_SPEC_INST_GET(n,                                                     \
 					    SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |   \
-						    SPI_TRANSFER_MSB | SPI_WORD_SET(8),            \
-					    0),                                                    \
+						    SPI_TRANSFER_MSB | SPI_WORD_SET(8))            \
 	};                                                                                         \
                                                                                                    \
 	static struct auxdisplay_pt6314_data auxdisplay_pt6314_data_##n = {                        \

@@ -316,10 +316,10 @@ function renderKconfigEntry(entry) {
 
     let locationPermalink = getGithubLink(entry.filename, entry.linenr, "blob", zephyr_version);
     if (locationPermalink) {
-        const locationPermalink = document.createElement('a');
-        locationPermalink.href = locationPermalink;
-        locationPermalink.appendChild(locationElement);
-        renderKconfigPropLiteralElement(props, 'Location', locationPermalink);
+        const locationPermalinkElement = document.createElement('a');
+        locationPermalinkElement.href = locationPermalink;
+        locationPermalinkElement.appendChild(locationElement);
+        renderKconfigPropLiteralElement(props, 'Location', locationPermalinkElement);
     } else {
         renderKconfigPropLiteralElement(props, 'Location', locationElement);
     }
@@ -349,28 +349,39 @@ function doSearch() {
     const regexes = input.value.trim().split(/\s+/).map(
         element => new RegExp(element.toLowerCase())
     );
-    let count = 0;
 
-    const searchResults = db.filter(entry => {
-        let matches = 0;
+    const scoredResults = db.map(entry => {
+        let nameMatches = 0;
+        let promptMatches = 0;
         const name = entry.name.toLowerCase();
         const prompt = entry.prompt ? entry.prompt.toLowerCase() : "";
 
         regexes.forEach(regex => {
-            if (name.search(regex) >= 0 || prompt.search(regex) >= 0) {
-                matches++;
-            }
+            if (name.search(regex) >= 0) nameMatches++;
+            if (prompt.search(regex) >= 0) promptMatches++;
         });
 
-        if (matches === regexes.length) {
-            count++;
-            if (count > searchOffset && count <= (searchOffset + maxResults)) {
-                return true;
-            }
+        const totalMatches = Math.max(nameMatches, promptMatches);
+        if (totalMatches < regexes.length) {
+            return null;
         }
 
-        return false;
-    });
+        const NAME_WEIGHT = 2.0;
+        const PROMPT_WEIGHT = 1.0;
+        /* Apply field-length normalization (the shorter the field, the higher its relevance) */
+        const nameFieldNorm = 1.0 / Math.sqrt(name.length);
+        const promptFieldNorm = prompt ? 1.0 / Math.sqrt(prompt.length) : 0;
+
+        const score = (nameMatches * NAME_WEIGHT * nameFieldNorm) +
+                      (promptMatches * PROMPT_WEIGHT * promptFieldNorm);
+
+        return { entry, score };
+    }).filter(result => result !== null)
+      .sort((a, b) => b.score - a.score);
+
+    const count = scoredResults.length;
+    const searchResults = scoredResults.slice(searchOffset, searchOffset + maxResults)
+                                       .map(result => result.entry);
 
     /* show results count and search tools */
     summaryText.nodeValue = `${count} options match your search.`;

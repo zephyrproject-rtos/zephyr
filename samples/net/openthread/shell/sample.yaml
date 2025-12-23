@@ -20,7 +20,22 @@ tests:
     extra_args:
       # Disabling monolithic since CI environment doesn't use blobs
       - CONFIG_NXP_MONOLITHIC_NBU=n
-      - EXTRA_CONF_FILE="overlay-ot-rcp-host-nxp.conf"
     platform_allow:
       - frdm_rw612
       - rd_rw612_bga
+  sample.net.openthread.shell.mcxw_openthread_host:
+    build_only: true
+    extra_args:
+      # Disabling monolithic since CI environment doesn't use blobs
+      - CONFIG_NXP_MONOLITHIC_NBU=n
+    platform_allow:
+      - frdm_mcxw71
+      - mcxw72_evk/mcxw727c/cpu0
+      - frdm_mcxw72/mcxw727c/cpu0
+  sample.net.openthread.shell.esp:
+    build_only: true
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm

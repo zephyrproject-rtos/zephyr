@@ -7,6 +7,7 @@ config UART_MSPM0
 	default y
 	depends on DT_HAS_TI_MSPM0_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select USE_MSPM0_DL_UART
 	select PINCTRL
 	help

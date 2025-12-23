@@ -16,10 +16,10 @@
 #ifdef CONFIG_UHC_NXP_EHCI
 #define USB_HOST_CONFIG_EHCI                 (2U)
 #define USB_HOST_CONFIG_EHCI_FRAME_LIST_SIZE (1024U)
-#define USB_HOST_CONFIG_EHCI_MAX_QH          (8U)
-#define USB_HOST_CONFIG_EHCI_MAX_QTD         (8U)
-#define USB_HOST_CONFIG_EHCI_MAX_ITD         (0U)
-#define USB_HOST_CONFIG_EHCI_MAX_SITD        (0U)
+#define USB_HOST_CONFIG_EHCI_MAX_QH          (16U)
+#define USB_HOST_CONFIG_EHCI_MAX_QTD         (16U)
+#define USB_HOST_CONFIG_EHCI_MAX_ITD         (16U)
+#define USB_HOST_CONFIG_EHCI_MAX_SITD        (16U)
 #else
 #define USB_HOST_CONFIG_EHCI (0U)
 #endif /* CONFIG_USB_DC_NXP_EHCI */

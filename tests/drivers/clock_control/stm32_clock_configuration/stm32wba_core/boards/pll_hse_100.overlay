@@ -17,6 +17,7 @@
 &pll1 {
 	div-m = <8>;
 	mul-n = <100>;
+	div-p = <2>;
 	div-q = <2>;
 	div-r = <4>;
 	clocks = <&clk_hse>;

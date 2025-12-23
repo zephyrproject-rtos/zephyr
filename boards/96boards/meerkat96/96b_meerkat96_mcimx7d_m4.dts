@@ -21,18 +21,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_0: led_0 {
 			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 			label = "User LED1";
 		};
+
 		green_led_1: led_1 {
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			label = "User LED2";
 		};
+
 		green_led_2: led_2 {
 			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 			label = "User LED3";
 		};
+
 		green_led_3: led_3 {
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			label = "User LED4";
@@ -40,10 +44,10 @@
 	};
 
 	aliases {
-		led0   = &green_led_0;
-		led1   = &green_led_1;
-		led2   = &green_led_2;
-		led3   = &green_led_3;
+		led0 = &green_led_0;
+		led1 = &green_led_1;
+		led2 = &green_led_2;
+		led3 = &green_led_3;
 	};
 };
 

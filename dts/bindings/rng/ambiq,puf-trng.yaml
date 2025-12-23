@@ -1,0 +1,16 @@
+# Copyright (c) 2025, Ambiq
+# Author: Richard S Wheatley
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    PUF TRNG (True Random Number Generator).
+
+    This module is a non-deterministic random number generator based on a full hardware solution.
+
+compatible: "ambiq,puf-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

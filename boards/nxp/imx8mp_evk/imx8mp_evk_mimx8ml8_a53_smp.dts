@@ -24,6 +24,7 @@
 		cpu@0 {
 			status = "disabled";
 		};
+
 		cpu@1 {
 			status = "disabled";
 		};
@@ -37,7 +38,6 @@
 	dram: memory@c0000000 {
 		reg = <0xc0000000 DT_SIZE_M(1)>;
 	};
-
 };
 
 &enet {
@@ -57,6 +57,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	phy: phy@1 {
 		compatible = "realtek,rtl8211f";
 		reg = <1>;

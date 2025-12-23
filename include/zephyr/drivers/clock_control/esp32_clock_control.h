@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,15 @@
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32H2)
+#include <zephyr/dt-bindings/clock/esp32h2_clock.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
 
 #define ESP32_CLOCK_CONTROL_SUBSYS_CPU 50
 #define ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST 51
 #define ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW 52
+#define ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST_NOMINAL 53
+#define ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW_NOMINAL 54
 
 struct esp32_cpu_clock_config {
 	int clk_src;

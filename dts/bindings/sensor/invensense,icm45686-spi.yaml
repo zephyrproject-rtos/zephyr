@@ -13,7 +13,7 @@ description: |
     &spi0 {
       ...
 
-      icm42688: icm45686@0 {
+      icm45686: icm45686@0 {
         ...
 
         accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;

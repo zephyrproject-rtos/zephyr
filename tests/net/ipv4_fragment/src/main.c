@@ -35,8 +35,8 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #define ALLOC_TIMEOUT K_MSEC(500)
 
 /* Dummy network addresses, 192.168.8.1 and 192.168.8.2 */
-static struct in_addr my_addr1 = { { { 0xc0, 0xa8, 0x08, 0x01 } } };
-static struct in_addr my_addr2 = { { { 0xc0, 0xa8, 0x08, 0x02 } } };
+static struct net_in_addr my_addr1 = { { { 0xc0, 0xa8, 0x08, 0x01 } } };
+static struct net_in_addr my_addr2 = { { { 0xc0, 0xa8, 0x08, 0x02 } } };
 
 /* IPv4 TCP packet header */
 static const unsigned char ipv4_tcp[] = {
@@ -220,8 +220,8 @@ static void check_ipv4_fragment_header(struct net_pkt *pkt, const uint8_t *orig_
 	zassert_mem_equal(hdr->dst, &orig_hdr[offsetof(struct net_ipv4_hdr, dst)],
 			  NET_IPV4_ADDR_SIZE, "IPv4 header destination IP mismatch");
 
-	pkt_len = ntohs(hdr->len);
-	pkt_offset = ntohs(*((uint16_t *)&hdr->offset));
+	pkt_len = net_ntohs(hdr->len);
+	pkt_offset = net_ntohs(*((uint16_t *)&hdr->offset));
 	pkt_flags = (pkt_offset & ~NET_IPV4_FRAGH_OFFSET_MASK) >> 13;
 	pkt_offset &= NET_IPV4_FRAGH_OFFSET_MASK;
 	pkt_offset *= 8;
@@ -392,8 +392,8 @@ static enum net_verdict udp_data_received(struct net_conn *conn, struct net_pkt 
 	zassert_mem_equal(hdr->dst, &ipv4_udp[offsetof(struct net_ipv4_hdr, src)],
 			  NET_IPV4_ADDR_SIZE, "IPv4 header destination IP mismatch");
 
-	pkt_len = ntohs(hdr->len);
-	pkt_offset = ntohs(*((uint16_t *)&hdr->offset));
+	pkt_len = net_ntohs(hdr->len);
+	pkt_offset = net_ntohs(*((uint16_t *)&hdr->offset));
 	pkt_flags = (pkt_offset & ~NET_IPV4_FRAGH_OFFSET_MASK) >> 13;
 	pkt_offset &= NET_IPV4_FRAGH_OFFSET_MASK;
 	pkt_offset *= 8;
@@ -473,8 +473,8 @@ static enum net_verdict tcp_data_received(struct net_conn *conn, struct net_pkt 
 	zassert_mem_equal(hdr->dst, &ipv4_tcp[offsetof(struct net_ipv4_hdr, src)],
 			  NET_IPV4_ADDR_SIZE, "IPv4 header destination IP mismatch");
 
-	pkt_len = ntohs(hdr->len);
-	pkt_offset = ntohs(*((uint16_t *)&hdr->offset));
+	pkt_len = net_ntohs(hdr->len);
+	pkt_offset = net_ntohs(*((uint16_t *)&hdr->offset));
 	pkt_flags = (pkt_offset & ~NET_IPV4_FRAGH_OFFSET_MASK) >> 13;
 	pkt_offset &= NET_IPV4_FRAGH_OFFSET_MASK;
 	pkt_offset *= 8;
@@ -524,41 +524,42 @@ static enum net_verdict tcp_data_received(struct net_conn *conn, struct net_pkt 
 	return NET_OK;
 }
 
-static void setup_udp_handler(const struct in_addr *raddr, const struct in_addr *laddr,
+static void setup_udp_handler(const struct net_in_addr *raddr, const struct net_in_addr *laddr,
 			      uint16_t remote_port, uint16_t local_port)
 {
 	static struct net_conn_handle *handle;
-	struct sockaddr remote_addr = { 0 };
-	struct sockaddr local_addr = { 0 };
+	struct net_sockaddr remote_addr = { 0 };
+	struct net_sockaddr local_addr = { 0 };
 	int ret;
 
 	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr, laddr);
-	local_addr.sa_family = AF_INET;
+	local_addr.sa_family = NET_AF_INET;
 
 	net_ipaddr_copy(&net_sin(&remote_addr)->sin_addr, raddr);
-	remote_addr.sa_family = AF_INET;
+	remote_addr.sa_family = NET_AF_INET;
 
-	ret = net_udp_register(AF_INET, &local_addr, &remote_addr, local_port, remote_port, NULL,
+	ret = net_udp_register(NET_AF_INET, &local_addr, &remote_addr,
+			       local_port, remote_port, NULL,
 			       udp_data_received, NULL, &handle);
 
 	zassert_equal(ret, 0, "Cannot register UDP connection");
 }
 
-static void setup_tcp_handler(const struct in_addr *raddr, const struct in_addr *laddr,
+static void setup_tcp_handler(const struct net_in_addr *raddr, const struct net_in_addr *laddr,
 			      uint16_t remote_port, uint16_t local_port)
 {
 	static struct net_conn_handle *handle;
-	struct sockaddr remote_addr = { 0 };
-	struct sockaddr local_addr = { 0 };
+	struct net_sockaddr remote_addr = { 0 };
+	struct net_sockaddr local_addr = { 0 };
 	int ret;
 
 	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr, laddr);
-	local_addr.sa_family = AF_INET;
+	local_addr.sa_family = NET_AF_INET;
 
 	net_ipaddr_copy(&net_sin(&remote_addr)->sin_addr, raddr);
-	remote_addr.sa_family = AF_INET;
+	remote_addr.sa_family = NET_AF_INET;
 
-	ret = net_conn_register(IPPROTO_TCP, SOCK_STREAM, AF_INET, &local_addr,
+	ret = net_conn_register(NET_IPPROTO_TCP, NET_SOCK_STREAM, NET_AF_INET, &local_addr,
 				&remote_addr, local_port, remote_port, NULL,
 				tcp_data_received, NULL, &handle);
 
@@ -608,8 +609,8 @@ ZTEST(net_ipv4_fragment, test_udp)
 	test_started = true;
 
 	/* Create packet */
-	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv4_udp) + IPV4_TEST_PACKET_SIZE, AF_INET,
-					IPPROTO_UDP, ALLOC_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv4_udp) + IPV4_TEST_PACKET_SIZE,
+					NET_AF_INET, NET_IPPROTO_UDP, ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "Packet creation failed");
 
 	/* Add IPv4 and UDP headers */
@@ -626,12 +627,12 @@ ZTEST(net_ipv4_fragment, test_udp)
 
 	/* Setup packet for insertion */
 	net_pkt_set_iface(pkt, iface1);
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	/* Update IPv4 headers */
 	packet_len = net_pkt_get_len(pkt);
-	NET_IPV4_HDR(pkt)->len = htons(packet_len);
+	NET_IPV4_HDR(pkt)->len = net_htons(packet_len);
 	NET_IPV4_HDR(pkt)->chksum = net_calc_chksum_ipv4(pkt);
 
 	net_pkt_cursor_init(pkt);
@@ -677,7 +678,7 @@ ZTEST(net_ipv4_fragment, test_tcp)
 	generate_dummy_data(tmp_buf, sizeof(tmp_buf));
 
 	pkt = net_pkt_alloc_with_buffer(iface1, (sizeof(ipv4_tcp) + IPV4_TEST_PACKET_SIZE),
-					AF_INET, IPPROTO_TCP, ALLOC_TIMEOUT);
+					NET_AF_INET, NET_IPPROTO_TCP, ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "Packet creation failure");
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
@@ -695,12 +696,12 @@ ZTEST(net_ipv4_fragment, test_tcp)
 	}
 
 	net_pkt_set_iface(pkt, iface1);
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	packet_len = net_pkt_get_len(pkt);
 
-	NET_IPV4_HDR(pkt)->len = htons(packet_len);
+	NET_IPV4_HDR(pkt)->len = net_htons(packet_len);
 	NET_IPV4_HDR(pkt)->chksum = net_calc_chksum_ipv4(pkt);
 
 	net_pkt_cursor_init(pkt);
@@ -745,11 +746,11 @@ ZTEST(net_ipv4_fragment, test_fragment_timeout)
 	test_started = true;
 
 	/* Create a packet for the test */
-	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv4_udp_frag), AF_INET,
-					IPPROTO_UDP, ALLOC_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv4_udp_frag), NET_AF_INET,
+					NET_IPPROTO_UDP, ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "Packet creation failure");
 
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	/* Create packet from base data */
@@ -822,7 +823,7 @@ ZTEST(net_ipv4_fragment, test_do_not_fragment)
 	/* Create packet */
 	pkt = net_pkt_alloc_with_buffer(iface1,
 					(sizeof(ipv4_udp_do_not_frag) + IPV4_TEST_PACKET_SIZE),
-					AF_INET, IPPROTO_UDP, ALLOC_TIMEOUT);
+					NET_AF_INET, NET_IPPROTO_UDP, ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "Packet creation failed");
 
 	/* Add IPv4 and UDP headers */
@@ -839,12 +840,12 @@ ZTEST(net_ipv4_fragment, test_do_not_fragment)
 
 	/* Setup packet for insertion */
 	net_pkt_set_iface(pkt, iface1);
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	/* Update IPv4 headers */
 	packet_len = net_pkt_get_len(pkt);
-	NET_IPV4_HDR(pkt)->len = htons(packet_len);
+	NET_IPV4_HDR(pkt)->len = net_htons(packet_len);
 	NET_IPV4_HDR(pkt)->chksum = net_calc_chksum_ipv4(pkt);
 
 	net_pkt_cursor_init(pkt);

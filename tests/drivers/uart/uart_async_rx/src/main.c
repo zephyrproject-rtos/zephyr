@@ -150,7 +150,7 @@ struct test_async_rx {
 	atomic_t total_pending_req;
 	bool in_chunks;
 	uint8_t exp_consume;
-	uint32_t byte_cnt;
+	size_t byte_cnt;
 	uint8_t curr_len;
 	uint8_t *curr_buf;
 	uint8_t *next_buf;
@@ -215,7 +215,7 @@ static bool consumer(void *user_data, uint32_t cnt, bool last, int prio)
 
 		for (int j = 0; j < len; j++) {
 			zassert_equal(buf[j], test_data->exp_consume,
-					"%02x (exp:%02x) len:%d, total:%d",
+					"%02x (exp:%02x) len:%zu, total:%zu",
 					buf[j], test_data->exp_consume, len, test_data->byte_cnt);
 			test_data->exp_consume++;
 		}
@@ -313,7 +313,7 @@ static void stress_test(bool in_chunks)
 				&test_data, 0, 0, Z_TIMEOUT_TICKS(20)),
 		       ZTRESS_THREAD(consumer, &test_data, 0, preempt, Z_TIMEOUT_TICKS(20)));
 
-	TC_PRINT("total bytes: %d\n", test_data.byte_cnt);
+	TC_PRINT("total bytes: %zu\n", test_data.byte_cnt);
 	ztress_set_timeout(K_NO_WAIT);
 }
 

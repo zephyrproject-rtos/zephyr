@@ -24,7 +24,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     zephyr_library_compile_definitions(CMSIS_NN)
   endif()
 
-  if (CONFIG_ETHOS_U)
+  if(CONFIG_ETHOS_U)
     set(ETHOSU_CO_PROCESSOR ethos_u)
   endif()
 

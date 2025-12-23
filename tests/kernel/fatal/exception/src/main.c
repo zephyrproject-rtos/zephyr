@@ -385,7 +385,7 @@ ZTEST(fatal_exception, test_fatal)
 
 #ifndef CONFIG_ARCH_POSIX
 
-#ifdef CONFIG_STACK_SENTINEL
+#if defined(CONFIG_STACK_SENTINEL) && !defined(CONFIG_HW_SHADOW_STACK)
 	TC_PRINT("test stack sentinel overflow - timer irq\n");
 	check_stack_overflow(stack_sentinel_timer, 0);
 

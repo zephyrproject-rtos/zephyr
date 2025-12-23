@@ -1,7 +1,7 @@
 /*
  * Xilinx AXI 1G / 2.5G Ethernet Subsystem
  *
- * Copyright(c) 2024, CISPA Helmholtz Center for Information Security
+ * Copyright (c) 2024, CISPA Helmholtz Center for Information Security
  * SPDX - License - Identifier : Apache-2.0
  */
 #include <zephyr/logging/log.h>
@@ -69,21 +69,6 @@ static uint32_t xilinx_axienet_read_mdio_register(const struct mdio_xilinx_axien
 
 	barrier_dmem_fence_full(); /* make sure that read commits */
 	return ret;
-}
-
-static void mdio_xilinx_axienet_bus_disable(const struct device *dev)
-{
-	const struct mdio_xilinx_axienet_config *config = dev->config;
-	struct mdio_xilinx_axienet_data *data = dev->data;
-
-	LOG_DBG("Disable MDIO Bus!");
-
-	xilinx_axienet_mdio_write_register(config, XILINX_AXIENET_MDIO_INTERRUPT_ENABLE_REG_OFFSET,
-					   XILINX_AXIENET_MDIO_INTERRUPT_DISABLE_ALL_MASK);
-
-	xilinx_axienet_mdio_write_register(config, XILINX_AXIENET_MDIO_SETUP_REG_OFFSET,
-					   XILINX_AXIENET_MDIO_SETUP_REG_MDIO_DISABLE_MASK);
-	data->bus_enabled = false;
 }
 
 static void enable_mdio_bus(const struct mdio_xilinx_axienet_config *config,
@@ -319,12 +304,12 @@ static int xilinx_axienet_mdio_probe(const struct device *dev)
 	LOG_INF("Enabling IRQ!");
 	config->config_func(data);
 
+	mdio_xilinx_axienet_bus_enable(dev);
+
 	return 0;
 }
 
 static DEVICE_API(mdio, mdio_xilinx_axienet_api) = {
-	.bus_disable = mdio_xilinx_axienet_bus_disable,
-	.bus_enable = mdio_xilinx_axienet_bus_enable,
 	.read = mdio_xilinx_axienet_read,
 	.write = mdio_xilinx_axienet_write,
 };

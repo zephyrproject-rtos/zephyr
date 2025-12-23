@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RZ Clock Generator Circuit
+
+  Usage example:
+
+    #include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
+
+    sci0: sci@xxx {
+        ...
+        channel = <0>;
+        /* Cell encodes HWIP, channel, clock source */
+        clocks = <&cgc RZ_CLOCK(RZ_IP_SCI, 0, RZ_CLOCK_PCLKSCI0)>;
+        ...
+    }
+
+compatible: "renesas,rz-cgc"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clk-id

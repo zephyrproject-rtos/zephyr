@@ -12,5 +12,5 @@ supported:
   - i2c
   - pwm
   - usart
-ram: 12
+ram: 8
 flash: 64

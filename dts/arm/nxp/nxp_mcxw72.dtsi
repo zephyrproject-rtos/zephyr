@@ -6,6 +6,20 @@
 
 #include "nxp_mcxw7x_common.dtsi"
 
+&fast_peripheral1 {
+	smu2: smu2@1c0000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		rpmsgmem: memory@220 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x220 0x1100>;
+			zephyr,memory-region = "rpmsg_sh_mem";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		};
+	};
+};
+
 &fmu {
 	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
 };

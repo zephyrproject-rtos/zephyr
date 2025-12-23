@@ -161,4 +161,82 @@ struct xen_remove_from_physmap {
 typedef struct xen_remove_from_physmap xen_remove_from_physmap_t;
 DEFINE_XEN_GUEST_HANDLE(xen_remove_from_physmap_t);
 
+/*
+ * Get the pages for a particular guest resource, so that they can be
+ * mapped directly by a tools domain.
+ */
+#define XENMEM_acquire_resource 28
+struct xen_mem_acquire_resource {
+	/* IN - The domain whose resource is to be mapped */
+	domid_t domid;
+	/* IN - the type of resource */
+	uint16_t type;
+
+#define XENMEM_resource_ioreq_server 0
+#define XENMEM_resource_grant_table 1
+#define XENMEM_resource_vmtrace_buf 2
+
+	/*
+	 * IN - a type-specific resource identifier, which must be zero
+	 *      unless stated otherwise.
+	 *
+	 * type == XENMEM_resource_ioreq_server -> id == ioreq server id
+	 * type == XENMEM_resource_grant_table -> id defined below
+	 */
+	uint32_t id;
+
+#define XENMEM_resource_grant_table_id_shared 0
+#define XENMEM_resource_grant_table_id_status 1
+
+	/*
+	 * IN/OUT
+	 *
+	 * As an IN parameter number of frames of the resource to be mapped.
+	 * This value may be updated over the course of the operation.
+	 *
+	 * When frame_list is NULL and nr_frames is 0, this is interpreted as a
+	 * request for the size of the resource, which shall be returned in the
+	 * nr_frames field.
+	 *
+	 * The size of a resource will never be zero, but a nonzero result doesn't
+	 * guarantee that a subsequent mapping request will be successful.  There
+	 * are further type/id specific constraints which may change between the
+	 * two calls.
+	 */
+	uint32_t nr_frames;
+	/*
+	 * Padding field, must be zero on input.
+	 * In a previous version this was an output field with the lowest bit
+	 * named XENMEM_rsrc_acq_caller_owned. Future versions of this interface
+	 * will not reuse this bit as an output with the field being zero on
+	 * input.
+	 */
+	uint32_t pad;
+	/*
+	 * IN - the index of the initial frame to be mapped. This parameter
+	 *      is ignored if nr_frames is 0.  This value may be updated
+	 *      over the course of the operation.
+	 */
+	uint64_t frame;
+
+#define XENMEM_resource_ioreq_server_frame_bufioreq 0
+#define XENMEM_resource_ioreq_server_frame_ioreq(n) (1 + (n))
+
+	/*
+	 * IN/OUT - If the tools domain is PV then, upon return, frame_list
+	 *          will be populated with the MFNs of the resource.
+	 *          If the tools domain is HVM then it is expected that, on
+	 *          entry, frame_list will be populated with a list of GFNs
+	 *          that will be mapped to the MFNs of the resource.
+	 *          If -EIO is returned then the frame_list has only been
+	 *          partially mapped and it is up to the caller to unmap all
+	 *          the GFNs.
+	 *          This parameter may be NULL if nr_frames is 0.  This
+	 *          value may be updated over the course of the operation.
+	 */
+	XEN_GUEST_HANDLE(xen_pfn_t) frame_list;
+};
+typedef struct xen_mem_acquire_resource xen_mem_acquire_resource_t;
+DEFINE_XEN_GUEST_HANDLE(xen_mem_acquire_resource_t);
+
 #endif /* __XEN_PUBLIC_MEMORY_H__ */

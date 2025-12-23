@@ -39,23 +39,29 @@ struct qdec_stm32_dev_cfg {
 /* Device run time data */
 struct qdec_stm32_dev_data {
 	uint32_t position;
+	uint32_t counts;
 };
 
 static int qdec_stm32_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct qdec_stm32_dev_data *dev_data = dev->data;
 	const struct qdec_stm32_dev_cfg *dev_cfg = dev->config;
+	uint32_t total_counter_value;
 	uint32_t counter_value;
 
-	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_ROTATION)) {
+	if ((chan != SENSOR_CHAN_ALL) &&
+	    (chan != SENSOR_CHAN_ROTATION) && (chan != SENSOR_CHAN_ENCODER_COUNT)) {
 		return -ENOTSUP;
 	}
+
+	total_counter_value = LL_TIM_GetCounter(dev_cfg->timer_inst);
+	dev_data->counts = total_counter_value;
 
 	/* We're only interested in the remainder between the current counter value and
 	 * counts_per_revolution. The integer part represents an entire rotation so it
 	 * can be ignored
 	 */
-	counter_value = LL_TIM_GetCounter(dev_cfg->timer_inst) % dev_cfg->counts_per_revolution;
+	counter_value = total_counter_value % dev_cfg->counts_per_revolution;
 
 	/* The angle calculated in the fixed-point format (Q26.6 format) */
 	dev_data->position = (counter_value * 23040) / dev_cfg->counts_per_revolution;
@@ -71,6 +77,9 @@ static int qdec_stm32_get(const struct device *dev, enum sensor_channel chan,
 	if (chan == SENSOR_CHAN_ROTATION) {
 		val->val1 = dev_data->position >> 6;
 		val->val2 = (dev_data->position & 0x3F) * 15625;
+	} else if (chan == SENSOR_CHAN_ENCODER_COUNT) {
+		val->val1 = dev_data->counts;
+		val->val2 = 0;
 	} else {
 		return -ENOTSUP;
 	}
@@ -78,11 +87,23 @@ static int qdec_stm32_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static void qdec_stm32_initialize_channel(const struct device *dev, uint32_t ll_channel)
+{
+	const struct qdec_stm32_dev_cfg *const dev_cfg = dev->config;
+
+	LL_TIM_IC_SetActiveInput(dev_cfg->timer_inst, ll_channel, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetFilter(dev_cfg->timer_inst, ll_channel,
+			    dev_cfg->input_filtering_level * LL_TIM_IC_FILTER_FDIV1_N2);
+	LL_TIM_IC_SetPrescaler(dev_cfg->timer_inst, ll_channel, LL_TIM_ICPSC_DIV1);
+	LL_TIM_IC_SetPolarity(dev_cfg->timer_inst, ll_channel,
+			      dev_cfg->is_input_polarity_inverted ? LL_TIM_IC_POLARITY_FALLING :
+								    LL_TIM_IC_POLARITY_RISING);
+}
+
 static int qdec_stm32_initialize(const struct device *dev)
 {
 	const struct qdec_stm32_dev_cfg *const dev_cfg = dev->config;
 	int retval;
-	LL_TIM_ENCODER_InitTypeDef init_props;
 	uint32_t max_counter_value;
 
 	retval = pinctrl_apply_state(dev_cfg->pin_config, PINCTRL_STATE_DEFAULT);
@@ -102,24 +123,6 @@ static int qdec_stm32_initialize(const struct device *dev)
 		return retval;
 	}
 
-	if (dev_cfg->counts_per_revolution < 1) {
-		LOG_ERR("Invalid number of counts per revolution (%d)",
-			dev_cfg->counts_per_revolution);
-		return -EINVAL;
-	}
-
-	LL_TIM_ENCODER_StructInit(&init_props);
-
-	init_props.EncoderMode = dev_cfg->encoder_mode;
-
-	if (dev_cfg->is_input_polarity_inverted) {
-		init_props.IC1Polarity = LL_TIM_IC_POLARITY_FALLING;
-		init_props.IC2Polarity = LL_TIM_IC_POLARITY_FALLING;
-	}
-
-	init_props.IC1Filter = dev_cfg->input_filtering_level * LL_TIM_IC_FILTER_FDIV1_N2;
-	init_props.IC2Filter = dev_cfg->input_filtering_level * LL_TIM_IC_FILTER_FDIV1_N2;
-
 	/* Ensure that the counter will always count up to a multiple of counts_per_revolution */
 	if (IS_TIM_32B_COUNTER_INSTANCE(dev_cfg->timer_inst)) {
 		max_counter_value = UINT32_MAX - (UINT32_MAX % dev_cfg->counts_per_revolution) - 1;
@@ -128,10 +131,12 @@ static int qdec_stm32_initialize(const struct device *dev)
 	}
 	LL_TIM_SetAutoReload(dev_cfg->timer_inst, max_counter_value);
 
-	if (LL_TIM_ENCODER_Init(dev_cfg->timer_inst, &init_props) != SUCCESS) {
-		LOG_ERR("Initalization failed");
-		return -EIO;
-	}
+	LL_TIM_SetClockSource(dev_cfg->timer_inst, dev_cfg->encoder_mode);
+
+	qdec_stm32_initialize_channel(dev, LL_TIM_CHANNEL_CH1);
+	qdec_stm32_initialize_channel(dev, LL_TIM_CHANNEL_CH2);
+
+	LL_TIM_CC_EnableChannel(dev_cfg->timer_inst, LL_TIM_CHANNEL_CH1 | LL_TIM_CHANNEL_CH2);
 
 	LL_TIM_EnableCounter(dev_cfg->timer_inst);
 
@@ -144,6 +149,9 @@ static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 };
 
 #define QDEC_STM32_INIT(n)                                                                         \
+	BUILD_ASSERT(DT_INST_PROP(n, st_counts_per_revolution) > 0,                                \
+		     "Counts per revolution must be above 0");                                     \
+                                                                                                   \
 	BUILD_ASSERT(!(DT_INST_PROP(n, st_encoder_mode) & ~TIM_SMCR_SMS),                          \
 		     "Encoder mode is not supported by this MCU");                                 \
                                                                                                    \
@@ -151,8 +159,7 @@ static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 	static const struct qdec_stm32_dev_cfg qdec##n##_stm32_config = {                          \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.timer_inst = ((TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n))),                     \
-		.pclken = {.bus = DT_CLOCKS_CELL(DT_INST_PARENT(n), bus),                          \
-			   .enr = DT_CLOCKS_CELL(DT_INST_PARENT(n), bits)},                        \
+		.pclken = STM32_CLOCK_INFO(0, DT_INST_PARENT(n)),				   \
 		.encoder_mode = DT_INST_PROP(n, st_encoder_mode),                                  \
 		.is_input_polarity_inverted = DT_INST_PROP(n, st_input_polarity_inverted),         \
 		.input_filtering_level = DT_INST_PROP(n, st_input_filter_level),                   \

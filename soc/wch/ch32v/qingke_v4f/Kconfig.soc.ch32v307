@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Thomas Boje
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH32V307
+	bool
+	select SOC_SERIES_QINGKE_V4F
+
+config SOC
+	default "ch32v307" if SOC_CH32V307

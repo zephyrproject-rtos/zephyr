@@ -15,8 +15,8 @@ zephyr_sources_ifdef(CONFIG_LIBLC3 ${unicast_client_path}/src/stream_lc3.c)
 zephyr_sources_ifdef(CONFIG_BT_AUDIO_TX ${unicast_client_path}/src/stream_tx.c)
 
 target_sources(app PRIVATE
-	src/unicast_client_sample_test.c
-	src/test_main.c
+  src/unicast_client_sample_test.c
+  src/test_main.c
 )
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)

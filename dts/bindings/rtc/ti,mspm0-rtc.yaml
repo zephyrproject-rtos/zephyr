@@ -1,0 +1,19 @@
+# Copyright 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments MSPM0 RTC Driver
+
+compatible: "ti,mspm0-rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  ti,rtc-x:
+    type: boolean
+    description: |
+      Indicate as Real-Time-Clock_x (RTC_x) instances.
+      RTC, RTC_x shares same features but RTC_x has additional features
+      which fall under Low-Frequency Subsystem(LFSS) peripherals.

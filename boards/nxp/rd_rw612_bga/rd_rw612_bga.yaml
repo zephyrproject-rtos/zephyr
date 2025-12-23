@@ -28,4 +28,8 @@ supported:
   - pwm
   - spi
   - usb_device
+  - usb_host
   - watchdog
+  - netif:eth
+  - netif:openthread
+vendor: nxp

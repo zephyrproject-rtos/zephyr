@@ -22,7 +22,3 @@ config BOARD_NSIM
 	select SOC_NSIM_SEM if BOARD_NSIM_NSIM_SEM
 	select SOC_NSIM_SEM if BOARD_NSIM_NSIM_SEM_MPU_STACK_GUARD
 	select SOC_NSIM_VPX5 if BOARD_NSIM_NSIM_VPX5
-	help
-	  The DesignWare ARC nSIM board is a virtual board based on
-	  the ARC nSIM simulator. It demonstrates the ARC core features
-	  and a console based on the ns16550 UART model.

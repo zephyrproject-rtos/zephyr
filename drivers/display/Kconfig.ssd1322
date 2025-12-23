@@ -8,3 +8,17 @@ config SSD1322
 	select MIPI_DBI
 	help
 	  Enable driver for SSD1322 display driver.
+
+if SSD1322
+
+config SSD1322_DEFAULT_GRAYSCALE
+	bool "SSD1322 default mode is grayscale"
+	help
+	  Sets grayscale mode as default mode
+
+config SSD1322_CONV_BUFFER_LINES
+	int "Number of lines the conversion buffer can hold"
+	default 16
+	range 1 128
+
+endif # SSD1322

@@ -447,7 +447,7 @@ static int paw32xx_pm_action(const struct device *dev,
 			      RES_MIN, RES_MAX), "invalid res-cpi");		\
 										\
 	static const struct paw32xx_config paw32xx_cfg_##n = {			\
-		.spi = SPI_DT_SPEC_INST_GET(n, PAW32XX_SPI_MODE, 0),		\
+		.spi = SPI_DT_SPEC_INST_GET(n, PAW32XX_SPI_MODE),		\
 		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),		\
 		.axis_x = DT_INST_PROP(n, zephyr_axis_x),			\
 		.axis_y = DT_INST_PROP(n, zephyr_axis_y),			\

@@ -12,13 +12,13 @@ easy expansion of the functionality of the STM32 Nucleo open development
 platform with a wide choice of specialized shields.
 
 - Ultra-low-power wireless STM32WBA55CG microcontroller based on the Arm®
-  Cortex®‑M33 core, featuring 1 Mbyte of flash memory and 128 Kbytes of SRAM in
+  Cortex®-M33 core, featuring 1 Mbyte of flash memory and 128 Kbytes of SRAM in
   a UFQFPN48 package
 
 - MCU RF board (MB1863):
 
   - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.3
-  - Arm® Cortex® M33 CPU with TrustZone®, MPU, DSP, and FPU
+  - Arm® Cortex®-M33 CPU with TrustZone®, MPU, DSP, and FPU
   - Integrated PCB antenna
 
 - Three user LEDs
@@ -146,11 +146,11 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooh support
-----------------
+Bluetooth |reg| support
+-----------------------
 
-BLE support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
-you first need to install Bluetooth Controller libraries available in Zephyr as binary
+Bluetooth |reg| Low Energy support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
+you first need to install Bluetooth |reg| Controller libraries available in Zephyr as binary
 blobs.
 
 To fetch Binary Blobs:

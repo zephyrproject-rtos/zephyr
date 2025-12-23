@@ -84,6 +84,21 @@ static void nxp_mcimx7_gpio_config(void)
 static void nxp_mcimx7_uart_config(void)
 {
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart1, RDC_DT_VAL(uart1), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart1, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart1);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart1, ccmClockNeededAll);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
 	/* We need to grasp board uart exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapUart2, RDC_DT_VAL(uart2), false, false);
@@ -99,6 +114,51 @@ static void nxp_mcimx7_uart_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateUart2, ccmClockNeededAll);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart3, RDC_DT_VAL(uart3), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart3, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart3);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart3, ccmClockNeededAll);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart4, RDC_DT_VAL(uart4), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart4, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart4);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart4, ccmClockNeededAll);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart5))
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart5, RDC_DT_VAL(uart5), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart5, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart5);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart5, ccmClockNeededAll);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart6))
 	/* We need to grasp board uart exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapUart6, RDC_DT_VAL(uart6), false, false);
@@ -112,6 +172,21 @@ static void nxp_mcimx7_uart_config(void)
 	 * So we need UART clock all the time
 	 */
 	CCM_ControlGate(CCM, ccmCcgrGateUart6, ccmClockNeededAll);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart7))
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart7, RDC_DT_VAL(uart7), false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart7, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart7);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart7, ccmClockNeededAll);
 #endif
 }
 #endif /* CONFIG_UART_IMX */

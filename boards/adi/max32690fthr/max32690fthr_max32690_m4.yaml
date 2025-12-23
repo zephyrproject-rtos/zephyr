@@ -15,5 +15,6 @@ supported:
   - feather_i2c
   - feather_spi
   - flash
-ram: 1024
+  - usbd
+ram: 128
 flash: 3072

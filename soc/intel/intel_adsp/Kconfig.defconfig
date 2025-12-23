@@ -8,14 +8,6 @@ if SOC_FAMILY_INTEL_ADSP
 rsource "*/Kconfig.defconfig.series"
 
 # A workaround for HWMv2 to recover SOF arch/xtensa defaults overridden by arch/host.
-if SOF
-config CORE_COUNT
-	int
-	default MP_MAX_NUM_CPUS
-endif
-
-config XTENSA_RPO_CACHE
-	def_bool y
 
 # console can't handle the amount of data coming from many tests, so introduce
 # a delay between testcases.
@@ -24,19 +16,10 @@ config ZTEST_TEST_DELAY_MS
 	default 100
 endif
 
-if XTENSA_RPO_CACHE
-config XTENSA_CACHED_REGION
-	default 5
-
-config XTENSA_UNCACHED_REGION
-	default 4
-
-endif # XTENSA_RPO_CACHE
-
 config CONSOLE
 	def_bool y
 
-if CONSOLE
+if CONSOLE && !SIMULATOR_XTENSA
 config WINSTREAM_CONSOLE
 	def_bool y
 endif
@@ -45,7 +28,7 @@ config CACHE_MANAGEMENT
 	def_bool y
 
 choice CACHE_TYPE
-	default ARCH_CACHE
+	default SOC_CACHE
 endchoice
 
 config DCACHE_LINE_SIZE

@@ -15,5 +15,5 @@ supported:
   - spi
   - uart
   - wifi
-# - usb_device (requires USB_DEVICE_STACK_NEXT)
+  - usbd
 vendor: arduino

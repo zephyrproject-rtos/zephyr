@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include "nrf54lm20a_cpuapp_common.dtsi"
+#include <nordic/nrf54lm20a_partition.dtsi>
 
 / {
 	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp";
@@ -18,12 +19,8 @@
 	};
 };
 
-&bt_hci_sdc {
-	status = "okay";
-};
-
 &bt_hci_controller {
-	status = "disabled";
+	status = "okay";
 };
 
 /* Get a node label for wi-fi spi to use in shield files */

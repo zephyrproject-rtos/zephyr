@@ -25,6 +25,7 @@
 
 &subghzspi {
 	status = "okay";
+
 	lora: radio@0 {
 		status = "okay";
 		antenna-enable-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>; /* RF_SW_VCC */

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-tst_dma0: &dma2 { };
+tst_dma0: &dma2 {};
 
 /* The test driver expects the SRAM0 region to be non-cachable */
 &sram0 {
-	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };

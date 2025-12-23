@@ -57,7 +57,6 @@
 			reg = <0x10000000 0x8000000>;
 		};
 
-
 		i2c0: i2c@f0004000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -151,7 +150,6 @@
 			max-xfer-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-
 		};
 
 		spi1: spi@f0007000 {
@@ -163,8 +161,6 @@
 			max-xfer-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-
 		};
-
 	};
 };

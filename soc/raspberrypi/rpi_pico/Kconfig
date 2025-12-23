@@ -8,4 +8,9 @@ if SOC_FAMILY_RPI_PICO
 
 rsource "*/Kconfig"
 
+config RPI_PICO_ROM_BOOTLOADER
+	bool
+	default y
+	depends on RETENTION_BOOT_MODE
+
 endif # SOC_FAMILY_RPI_PICO

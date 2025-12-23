@@ -16,6 +16,12 @@ config FLASH_BASE_ADDRESS
 config GIC_SAFE_CONFIG
 	default y
 
+config GIC_V3_RDIST_DMA_NONCOHERENT
+	default y
+
+config GIC_V3_ITS_DMA_NONCOHERENT
+	default y
+
 # Disable data cache until MMU is enabled when booting from EL2
 config ARM64_DCACHE_ALL_OPS
 	default y
@@ -26,8 +32,10 @@ config ARM64_BOOT_DISABLE_DCACHE
 config MCUX_CORE_SUFFIX
 	default "_ca55" if SOC_MIMX94398_A55
 
+# Reserve 8192 LPI interrupt ID starts from 8192 when ITS is enabled
 config NUM_IRQS
-	default 320
+	default 16384 if GIC_V3_ITS
+	default 437 if !GIC_V3_ITS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 24000000

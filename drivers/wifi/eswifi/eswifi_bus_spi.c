@@ -36,7 +36,7 @@ static const struct eswifi_spi_config eswifi_config_spi0 = {
 	.dr = GPIO_DT_SPEC_INST_GET(0, data_gpios),
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
 				    SPI_WORD_SET(16) | SPI_HOLD_ON_CS |
-				    SPI_LOCK_ON, 1000U),
+				    SPI_LOCK_ON),
 };
 
 static struct eswifi_spi_data eswifi_spi0;

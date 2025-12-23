@@ -12,6 +12,7 @@
 #include "ilm.h"
 #include <soc_common.h>
 #include "soc_espi.h"
+#include "soc_timer.h"
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
 /*
@@ -45,6 +46,22 @@ COND_CODE_1(DT_NODE_EXISTS(DT_INST(1, ite_it8xxx2_usbpd)), (2), (1))
 #define AUTO_CAL_ENABLE            BIT(1)
 #define PLL_FREQ_AUTO_CAL_START    BIT(0)
 #define AUTO_CAL_ENABLE_AND_START  (AUTO_CAL_ENABLE | PLL_FREQ_AUTO_CAL_START)
+
+#define SSPI_CLOCK_GATING      BIT(1)
+#define AUTO_SSPI_CLOCK_GATING BIT(4)
+
+#define CLK_DIV_HIGH_FIELDS(n) FIELD_PREP(GENMASK(7, 4), n)
+#define CLK_DIV_LOW_FIELDS(n)  FIELD_PREP(GENMASK(3, 0), n)
+
+#ifdef CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+#define ELPM_BASE_ADDR         DT_REG_ADDR(DT_INST(0, ite_it8xxx2_power_elpm))
+#define ELPMF1_WAKE_UP_CTRL_3  0xF1
+#define FIRMWARE_CTRL_EN       BIT(1)
+#define FIRMWARE_CTRL_OUTPUT_H BIT(0)
+
+#define ELPMF5_INPUT_EN         0xF5
+#define XLPIN_INPUT_ENABLE_MASK GENMASK(5, 0)
+#endif /* CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED */
 
 uint32_t chip_get_pll_freq(void)
 {
@@ -124,7 +141,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 	 * USB   div = 0 (PLL / 1 = 48 mhz)
 	 * UART  div = 1 (PLL / 2 = 24 mhz)
 	 * SMB   div = 1 (PLL / 2 = 24 mhz)
-	 * SSPI  div = 1 (PLL / 2 = 24 mhz)
+	 * SSPI  div = 0 (PLL / 1 = 48 mhz)
 	 * EC    div = 6 (FND / 6 =  8 mhz)
 	 * JTAG  div = 1 (PLL / 2 = 24 mhz)
 	 * PWM   div = 0 (PLL / 1 = 48 mhz)
@@ -136,7 +153,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 			  .div_usb = 0,
 			  .div_uart = 1,
 			  .div_smb = 1,
-			  .div_sspi = 1,
+			  .div_sspi = 0,
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
 			  .div_ec = 1,
 #else
@@ -152,7 +169,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 	 * USB   div = 1 (PLL / 2 = 48 mhz)
 	 * UART  div = 3 (PLL / 4 = 24 mhz)
 	 * SMB   div = 3 (PLL / 4 = 24 mhz)
-	 * SSPI  div = 3 (PLL / 4 = 24 mhz)
+	 * SSPI  div = 1 (PLL / 2 = 48 mhz)
 	 * EC    div = 6 (FND / 6 =  8 mhz)
 	 * JTAG  div = 3 (PLL / 4 = 24 mhz)
 	 * PWM   div = 1 (PLL / 2 = 48 mhz)
@@ -164,7 +181,7 @@ static const struct pll_config_t pll_configuration[PLL_FREQ_CNT] = {
 			  .div_usb = 1,
 			  .div_uart = 3,
 			  .div_smb = 3,
-			  .div_sspi = 3,
+			  .div_sspi = 1,
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
 			  .div_ec = 1,
 #else
@@ -203,8 +220,20 @@ void __soc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
 	chip_pll_ctrl(CHIP_PLL_DOZE);
 	/* USB and UART */
 	IT8XXX2_ECPM_SCDCR1 = (pll->div_usb << 4) | pll->div_uart;
-	/* SSPI and SMB */
-	IT8XXX2_ECPM_SCDCR2 = (pll->div_sspi << 4) | pll->div_smb;
+
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+	/* SMB and SSPI */
+	IT8XXX2_ECPM_SCDCR2 = CLK_DIV_HIGH_FIELDS(pll->div_sspi) | CLK_DIV_LOW_FIELDS(pll->div_smb);
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+	/* SMB */
+	IT8XXX2_ECPM_SCDCR2 = CLK_DIV_LOW_FIELDS(pll->div_smb);
+	/* SSPI */
+	IT8XXX2_ECPM_SCDCR8 =
+		CLK_DIV_HIGH_FIELDS(pll->div_sspi) | CLK_DIV_LOW_FIELDS(pll->div_sspi);
+#else
+	BUILD_ASSERT(false, "unknown sspi and smb clock divisor setting for register set version");
+#endif /* CONFIG_SOC_IT8XXX2_REG_SET_V1 */
+
 	/* USBPD and PWM */
 	IT8XXX2_ECPM_SCDCR4 = (pll->div_usbpd << 4) | pll->div_pwm;
 }
@@ -309,8 +338,26 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 */
 	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, true);
 #endif
+
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_ITE_ENHANCE)
+	/* All I2C Channel idle state will affect CPU entering sleep */
+	IT8XXX2_SMB_SMB01CHS |= IT8XXX2_SMB_GEOIITSC;
+#endif
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(mode);
+
+#if defined(CONFIG_I2C_ITE_ENHANCE) && defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+	/* If the event timer or free-run timer is close to expiration when system
+	 * enters idle with I2C target DMA mode enabled, the memory and CPU clocks
+	 * may become unsynchronized after wakeup. This causes CPU to fetch incorrect
+	 * data and eventually trigger SoC watchdog timeout.
+	 * Due to this hardware limitation, SoC should skip entering idle mode if
+	 * the remaining timer value is less than 150µs(safe margin).
+	 */
+	if (ite_ec_timer_block_idle()) {
+		goto __no_idle;
+	}
+#endif /* defined(CONFIG_I2C_ITE_ENHANCE) && defined(CONFIG_I2C_TARGET_BUFFER_MODE) */
 
 	do {
 #ifndef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
@@ -327,11 +374,19 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 		 */
 	} while (ite_intc_no_irq());
 
+#if defined(CONFIG_I2C_ITE_ENHANCE) && defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+__no_idle:
+#endif /* defined(CONFIG_I2C_ITE_ENHANCE) && defined(CONFIG_I2C_TARGET_BUFFER_MODE) */
 	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_LCVCO)) {
 		if (mode != CHIP_PLL_DOZE) {
 			IT8XXX2_ECPM_PFACC2R |= PLL_FREQ_AUTO_CAL_START;
 		}
 	}
+
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_ITE_ENHANCE)
+	/* All I2C Channel idle state will not affect CPU entering sleep */
+	IT8XXX2_SMB_SMB01CHS &= ~IT8XXX2_SMB_GEOIITSC;
+#endif
 
 #ifdef CONFIG_ESPI
 	/* CPU has been woken up, the interrupt is no longer needed */
@@ -379,6 +434,22 @@ void soc_prep_hook(void)
 	IT8XXX2_GPIO_GPCRB3 = GPCR_PORT_PIN_MODE_INPUT;
 	IT8XXX2_GPIO_GPCRB4 = GPCR_PORT_PIN_MODE_INPUT;
 #endif
+
+#ifdef CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+#if DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_power_elpm)
+	/* drive xlpout high and then enable elpm firmware control mode if
+	 * the elpm node is marked as okay.
+	 */
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3) | FIRMWARE_CTRL_OUTPUT_H,
+		   ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3);
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3) | FIRMWARE_CTRL_EN,
+		   ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_power_elpm) */
+
+	/* set gpio-q group as gpio by default */
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF5_INPUT_EN) & ~XLPIN_INPUT_ENABLE_MASK,
+		   ELPM_BASE_ADDR + ELPMF5_INPUT_EN);
+#endif /* CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED */
 }
 
 static int ite_it8xxx2_init(void)
@@ -454,6 +525,10 @@ static int ite_it8xxx2_init(void)
 	gpio_regs->GPIO_GCR1 |= IT8XXX2_GPIO_U2CTRL_SIN1_SOUT1_EN;
 
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
+
+	/* disable sspi clock and disable automatic clock gating */
+	IT8XXX2_ECPM_CGCTRL3R |= SSPI_CLOCK_GATING;
+	IT8XXX2_ECPM_AUTOCG &= ~AUTO_SSPI_CLOCK_GATING;
 
 #if (SOC_USBPD_ITE_PHY_PORT_COUNT > 0)
 	int port;

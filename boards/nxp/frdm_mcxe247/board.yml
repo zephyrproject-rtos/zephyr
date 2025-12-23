@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxe247
+  full_name: FRDM-MCXE247
+  vendor: nxp
+  socs:
+    - name: mcxe247

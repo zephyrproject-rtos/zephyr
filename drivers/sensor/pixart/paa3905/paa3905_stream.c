@@ -21,17 +21,28 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(PAA3905_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
+static inline void handle_result_on_error(const struct device *dev, int err)
+{
+	struct paa3905_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
+	data->stream.iodev_sqe = NULL;
+	rtio_iodev_sqe_err(iodev_sqe, err);
+}
+
 static void paa3905_chip_recovery_handler(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const struct device *dev = cfg->sensor;
+	struct paa3905_data *data = dev->data;
 	int err;
 
 	err = paa3905_recover(dev);
 
 	if (err) {
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		handle_result_on_error(dev, err);
 	} else {
+		data->stream.iodev_sqe = NULL;
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 	}
 }
@@ -48,6 +59,7 @@ static void start_drdy_backup_timer(const struct device *dev)
 
 static void paa3905_complete_result(struct rtio *ctx,
 				    const struct rtio_sqe *sqe,
+				    int err,
 				    void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -55,7 +67,6 @@ static void paa3905_complete_result(struct rtio *ctx,
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 	struct paa3905_encoded_data *edata = sqe->userdata;
 	struct rtio_cqe *cqe;
-	int err;
 
 	edata->header.events.drdy = true &&
 				    data->stream.settings.enabled.drdy;
@@ -74,6 +85,22 @@ static void paa3905_complete_result(struct rtio *ctx,
 		start_drdy_backup_timer(dev);
 	}
 
+	/* Flush RTIO bus CQEs */
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe != NULL) {
+			if (err >= 0) {
+				err = cqe->result;
+			}
+			rtio_cqe_release(ctx, cqe);
+		}
+	} while (cqe != NULL);
+
+	if (err < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
 	/** Attempt chip recovery if erratic behavior is detected  */
 	if (!REG_OBSERVATION_CHIP_OK(edata->observation)) {
 
@@ -82,7 +109,7 @@ static void paa3905_complete_result(struct rtio *ctx,
 
 		CHECKIF(!req) {
 			LOG_ERR("Failed to allocate RTIO work request");
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			handle_result_on_error(dev, -ENOMEM);
 			return;
 		}
 
@@ -90,15 +117,6 @@ static void paa3905_complete_result(struct rtio *ctx,
 	} else {
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 	}
-
-	/* Flush RTIO bus CQEs */
-	do {
-		cqe = rtio_cqe_consume(ctx);
-		if (cqe != NULL) {
-			err = cqe->result;
-			rtio_cqe_release(ctx, cqe);
-		}
-	} while (cqe != NULL);
 }
 
 static void paa3905_stream_get_data(const struct device *dev)
@@ -128,12 +146,8 @@ static void paa3905_stream_get_data(const struct device *dev)
 
 	/** Still throw an error even if asserts are off */
 	if (err) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to acquire buffer for encoded data: %d", err);
-
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		handle_result_on_error(dev, err);
 		return;
 	}
 
@@ -144,19 +158,15 @@ static void paa3905_stream_get_data(const struct device *dev)
 
 	err = sensor_clock_get_cycles(&cycles);
 	CHECKIF(err) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to get timestamp: %d", err);
-
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		handle_result_on_error(dev, err);
 		return;
 	}
 	buf->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	CHECKIF(!write_sqe || !read_sqe || !cb_sqe) {
 		LOG_ERR("Failed to acquire RTIO SQE's");
-		rtio_iodev_sqe_err(data->stream.iodev_sqe, -ENOMEM);
+		handle_result_on_error(dev, -ENOMEM);
 		return;
 	}
 
@@ -202,6 +212,7 @@ static void paa3905_gpio_callback(const struct device *gpio_dev,
 					      GPIO_INT_MODE_DISABLED);
 	if (err) {
 		LOG_ERR("Failed to disable interrupt");
+		handle_result_on_error(dev, err);
 		return;
 	}
 
@@ -222,6 +233,7 @@ static void paa3905_stream_drdy_timeout(struct k_timer *timer)
 					      GPIO_INT_MODE_DISABLED);
 	if (err) {
 		LOG_ERR("Failed to disable interrupt");
+		handle_result_on_error(dev, err);
 		return;
 	}
 
@@ -284,7 +296,7 @@ void paa3905_stream_submit(const struct device *dev,
 						      GPIO_INT_MODE_DISABLED);
 		if (err) {
 			LOG_ERR("Failed to disable interrupt");
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			handle_result_on_error(dev, err);
 			return;
 		}
 
@@ -292,7 +304,7 @@ void paa3905_stream_submit(const struct device *dev,
 		err = paa3905_bus_read(dev, REG_MOTION, motion_data, sizeof(motion_data));
 		if (err) {
 			LOG_ERR("Failed to read motion data");
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			handle_result_on_error(dev, err);
 			return;
 		}
 	}
@@ -302,7 +314,7 @@ void paa3905_stream_submit(const struct device *dev,
 						GPIO_INT_LEVEL_ACTIVE);
 	if (err) {
 		LOG_ERR("Failed to enable interrupt");
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		handle_result_on_error(dev, err);
 		return;
 	}
 

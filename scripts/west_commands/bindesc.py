@@ -120,6 +120,16 @@ class Bindesc(WestCommand):
                                  help='Target CPU is big endian')
         dump_parser.set_defaults(subcmd='dump', big_endian=False)
 
+        extract_parser = subparsers.add_parser('extract',
+                                                help='Extract the binary descriptor blob to a file')
+        extract_parser.add_argument('file', type=str, help='Executable file')
+        extract_parser.add_argument('out_file', type=str, help='Bindesc binary dump file')
+        extract_parser.add_argument('--file-type', type=str, choices=self.EXTENSIONS,
+                                     help='Input file type')
+        extract_parser.add_argument('-b', '--big-endian', action='store_true',
+                                     help='Target CPU is big endian')
+        extract_parser.set_defaults(subcmd='extract', big_endian=False)
+
         search_parser = subparsers.add_parser('search', help='Search for a specific descriptor')
         search_parser.add_argument('descriptor', type=str, help='Descriptor name')
         search_parser.add_argument('file', type=str, help='Executable file')
@@ -203,6 +213,29 @@ class Bindesc(WestCommand):
         if index == -1:
             self.die('Could not find binary descriptor magic')
         self.inf(f'{index} {hex(index)}')
+
+    def extract(self, args):
+        image = self.get_image_data(args.file)
+
+        magic = struct.pack('>Q' if self.is_big_endian else 'Q', self.MAGIC)
+        index = image.find(magic)
+        if index == -1:
+            self.die('Could not find binary descriptor magic')
+
+        index += len(magic) # index points to first descriptor
+        block_start = index
+        current_tag = self.bytes_to_short(image[index:index+2])
+        while current_tag != self.DESCRIPTORS_END:
+            index += 2 # index points to length
+            length = self.bytes_to_short(image[index:index+2])
+            # go to next tag
+            index = self.align(index + 2 + length, 4)
+            current_tag = self.bytes_to_short(image[index:index+2])
+        block_len = index - block_start
+
+        with open(args.out_file, 'wb') as out_file:
+            out_file.write(image[block_start:index])
+        self.inf(f'{block_start}+{block_len} {hex(block_start)}+{hex(block_len)}')
 
     def do_run(self, args, _):
         if MISSING_REQUIREMENTS:

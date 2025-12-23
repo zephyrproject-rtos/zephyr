@@ -29,7 +29,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 test_i2c_adt7420: adt7420@0 {
 	compatible = "adi,adt7420";
@@ -40,6 +41,8 @@ test_i2c_adt7420: adt7420@0 {
 test_i2c_adxl345: adxl345@1 {
 	compatible = "adi,adxl345";
 	reg = <0x1>;
+	int1-gpios = <&test_gpio 0 0>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_adxl372: adxl372@2 {
@@ -165,6 +168,7 @@ test_i2c_isl29035: isl29035@14 {
 test_i2c_max30101: max30101@15 {
 	compatible = "maxim,max30101";
 	reg = <0x15>;
+	acq-mode = "multi-led";
 };
 
 test_i2c_max44009: max44009@16 {
@@ -483,6 +487,7 @@ test_i2c_tmp11x: tmp11x@47 {
 	reg = <0x47>;
 	odr = <TMP11X_DT_ODR_125_MS>;
 	oversampling = <TMP11X_DT_OVERSAMPLING_32>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
@@ -527,14 +532,14 @@ test_i2c_itds_2533020201601: wsen_itds_2533020201601@4e {
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
 	odr = "400";
 	tap-threshold = <0>, <0>, <6>;
-	tap-latency = < 5 >;
-	tap-shock = < 2 >;
-	tap-quiet = < 1 >;
-	tap-mode = < 1 >;
-	freefall-duration = < 6 >;
-	freefall-threshold = < 10 >;
-	delta-duration = < 1 >;
-	delta-threshold = < 4 >;
+	tap-latency = <5>;
+	tap-shock = <2>;
+	tap-quiet = <1>;
+	tap-mode = <1>;
+	freefall-duration = <6>;
+	freefall-threshold = <10>;
+	delta-duration = <1>;
+	delta-threshold = <4>;
 	op-mode = "high-perf";
 	power-mode = "normal";
 };
@@ -588,6 +593,7 @@ test_i2c_fdc2x1x: fdc2x1x@54 {
 	sd-gpios = <&test_gpio 0 0>;
 	deglitch = <5>;
 	fref = <43360>;
+
 	channel_0 {
 		rcount = <7499>;
 		settlecount = <48>;
@@ -715,7 +721,7 @@ test_i2c_s11059: s11059@64 {
 test_i2c_wsen_pdus_25131308XXXXX: wsen_pdus_25131308XXXXX@65 {
 	compatible = "we,wsen-pdus-25131308XXXXX";
 	reg = <0x65>;
-	sensor-type = < 4 >;
+	sensor-type = <4>;
 };
 
 test_i2c_veml7700: veml7700@66 {
@@ -782,6 +788,7 @@ test_i2c_bmi08x_accel: bmi08x@6d {
 	int2-conf-io = <0x17>;
 	accel-hz = "800";
 	accel-fs = <4>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_bmi08x_gyro: bmi08x@6e {
@@ -792,6 +799,7 @@ test_i2c_bmi08x_gyro: bmi08x@6e {
 	int3-4-conf-io = <0x01>;
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_ist8310: ist8310@6f {
@@ -1126,7 +1134,7 @@ test_i2c_mmc56x3: mmc56x3@97 {
 test_i2c_tmp1075: tmp1075@98 {
 	compatible = "ti,tmp1075";
 	reg = <0x98>;
-	alert-gpios =  <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 	conversion-rate = <220000>;
 	lower-threshold = <27>;
 	upper-threshold = <28>;
@@ -1151,7 +1159,7 @@ apds_9306: apds9306@9a {
 	status = "okay";
 	gain = <1>;
 	resolution = <13>;
-	frequency = <2000>;
+	measurement-period = <2000>;
 };
 
 test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
@@ -1381,4 +1389,91 @@ test_i2c_adxl366: adxl366@b8 {
 test_i2c_lsm9ds1_mag: lsm9ds1_mag@b9 {
 	compatible = "st,lsm9ds1_mag";
 	reg = <0xb9>;
+};
+
+test_i2c_mb7040: mb7040@ba {
+	compatible = "maxbotix,mb7040";
+	reg = <0xba>;
+	status-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
+	compatible = "we,wsen-isds-2536030320001";
+	reg = <0xbb>;
+	accel-odr = "416";
+	gyro-odr = "416";
+	tap-threshold = <9>;
+	tap-latency = <5>;
+	tap-shock = <2>;
+	tap-quiet = <1>;
+	tap-mode = <1>;
+	tap-axis-enable = <0 0 1>;
+	events-interrupt-gpios = <&test_gpio 0 0>;
+	drdy-interrupt-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ina7xx: ina7xx@bc {
+	compatible = "ti,ina7xx";
+	reg = <0xbc>;
+	inatype = <2>;
+	convdly = <0x80>;
+	mode = <0xf>;
+	vbusct = <5>;
+	vsenct = <5>;
+	tct = <5>;
+	avg = <3>;
+};
+
+test_i2c_als31300: als31300@bd {
+	compatible = "allegro,als31300";
+	reg = <0xbd>;
+};
+
+test_i2c_hdc302x: hdc302x@be {
+	compatible = "ti,hdc302x";
+	reg = <0xbe>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_veml6046: veml6046@bf {
+	compatible = "vishay,veml6046";
+	reg = <0xbf>;
+};
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0xc0>;
+	sensor-type = <4>;
+};
+
+test_i2c_ina232: ina232@c1 {
+	compatible = "ti,ina232";
+	reg = <0xc1>;
+	current-lsb-microamps = <1000>;
+	rshunt-micro-ohms = <1000>;
+	mask = <0>;
+	alert-limit = <0>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_rv3032: rv3032c7@c2 {
+	compatible = "microcrystal,rv3032-mfd";
+	reg = <0xc2>;
+	int-gpios = <&test_gpio 0 0>;
+	evi-gpios = <&test_gpio 0 0>;
+	backup-switch-mode = "disabled";
+	always-on;
+	status = "okay";
+
+	test_rv3032_temp: rv3032_temp {
+		compatible = "microcrystal,rv3032-temp";
+		low-temp = <40>;
+		high-temp = <105>;
+		status = "okay";
+	};
+};
+
+test_i2c_as6221: as6221@c3 {
+	compatible = "ams,as6221";
+	reg = <0xc3>;
 };

@@ -57,7 +57,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		k_timeout_t next = timer->period;
 
 		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = MAX(next.ticks - 1, 0);
+		next.ticks = max(next.ticks - 1, 0);
 
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
@@ -84,7 +84,13 @@ void z_timer_expiration_handler(struct _timeout *t)
 	if (timer->expiry_fn != NULL) {
 		/* Unlock for user handler. */
 		k_spin_unlock(&lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
+
 		timer->expiry_fn(timer);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
+
 		key = k_spin_lock(&lock);
 	}
 
@@ -171,7 +177,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 		 * is consistent for both 32-bit k_ticks_t which are unsigned
 		 * and 64-bit k_ticks_t which are signed.
 		 */
-		duration.ticks = MAX(1, duration.ticks);
+		duration.ticks = max(1, duration.ticks);
 		duration.ticks = duration.ticks - 1;
 	}
 
@@ -207,7 +213,11 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	}
 
 	if (timer->stop_fn != NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
+
 		timer->stop_fn(timer);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
 	}
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {

@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MGM260P_RB4350A
+	select SOC_MGM260PD22VNA

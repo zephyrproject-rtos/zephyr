@@ -346,6 +346,16 @@ static int read_table(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+#if defined(CONFIG_ACPI_POWEROFF)
+
+static void cmd_acpi_poweroff(const struct shell *sh)
+{
+	if (acpi_poweroff()) {
+		shell_print(sh, "ACPI poweroff failed due to invalid PM1_CNT address");
+	}
+}
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_acpi,
 	SHELL_CMD(crs, NULL,
@@ -366,6 +376,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  get_acpi_dev_resource),
 	SHELL_CMD(rd_table, NULL, "read ACPI table (eg: acpi read_table APIC)",
 		  read_table),
+#if defined(CONFIG_ACPI_POWEROFF)
+	SHELL_CMD(poweroff, NULL, "poweroff the platform", cmd_acpi_poweroff),
+#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

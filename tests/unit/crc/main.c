@@ -6,14 +6,14 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/crc.h>
-#include "../../../lib/crc/crc8_sw.c"
-#include "../../../lib/crc/crc16_sw.c"
-#include "../../../lib/crc/crc32_sw.c"
-#include "../../../lib/crc/crc32c_sw.c"
-#include "../../../lib/crc/crc7_sw.c"
-#include "../../../lib/crc/crc24_sw.c"
-#include "../../../lib/crc/crc4_sw.c"
-#include "../../../lib/crc/crc32k_4_2_sw.c"
+#include "../../../subsys/crc/crc8_sw.c"
+#include "../../../subsys/crc/crc16_sw.c"
+#include "../../../subsys/crc/crc32_sw.c"
+#include "../../../subsys/crc/crc32c_sw.c"
+#include "../../../subsys/crc/crc7_sw.c"
+#include "../../../subsys/crc/crc24_sw.c"
+#include "../../../subsys/crc/crc4_sw.c"
+#include "../../../subsys/crc/crc32k_4_2_sw.c"
 
 ZTEST(crc, test_crc32_k_4_2)
 {
@@ -88,6 +88,15 @@ ZTEST(crc, test_crc24_pgp)
 	zassert_equal(crc24_pgp_update(CRC24_PGP_INITIAL_VALUE, test2, 3), 0x0009DF67);
 	zassert_equal(crc24_pgp_update(0x0009DF67, test2 + 3, 2), 0x00BA353A);
 	zassert_equal(crc24_pgp_update(0x00BA353A, test2 + 5, 4), 0x0021CF02);
+}
+
+ZTEST(crc, test_crc24q_rtcm3)
+{
+	uint8_t test1[] = {0xD3, 0x00, 0x04, 0x4C, 0xE0, 0x00, 0x80};
+	uint8_t test2[] = {0xD3, 0x00, 0x04, 0x4C, 0xE0, 0x00, 0x80, 0xED, 0xED, 0xD6};
+
+	zassert_equal(crc24q_rtcm3(test1, sizeof(test1)), 0xEDEDD6);
+	zassert_equal(crc24q_rtcm3(test2, sizeof(test2)), 0x000000);
 }
 
 ZTEST(crc, test_crc16)

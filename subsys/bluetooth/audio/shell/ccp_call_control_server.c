@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
 
 static struct bt_ccp_call_control_server_bearer
 	*bearers[CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT];
@@ -79,6 +80,81 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int validate_and_get_index(const struct shell *sh, const char *index_arg)
+{
+	unsigned long index;
+	int err = 0;
+
+	index = shell_strtoul(index_arg, 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse index: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (index >= CONFIG_BT_TBS_BEARER_COUNT) {
+		shell_error(sh, "Invalid index: %lu", index);
+
+		return -ENOEXEC;
+	}
+
+	return (int)index;
+}
+
+static int cmd_ccp_call_control_server_set_bearer_name(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	const char *name;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 2) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return index;
+		}
+	}
+
+	name = argv[argc - 1];
+
+	err = bt_ccp_call_control_server_set_bearer_provider_name(bearers[index], name);
+	if (err != 0) {
+		shell_error(sh, "Failed to set bearer[%d] name: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] name: %s", index, name);
+
+	return 0;
+}
+
+static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	const char *name;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 1) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return index;
+		}
+	}
+
+	err = bt_ccp_call_control_server_get_bearer_provider_name(bearers[index], &name);
+	if (err != 0) {
+		shell_error(sh, "Failed to get bearer[%d] name: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] name: %s", index, name);
+
+	return 0;
+}
+
 static int cmd_ccp_call_control_server(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -93,6 +169,11 @@ static int cmd_ccp_call_control_server(const struct shell *sh, size_t argc, char
 SHELL_STATIC_SUBCMD_SET_CREATE(ccp_call_control_server_cmds,
 			       SHELL_CMD_ARG(init, NULL, "Initialize CCP Call Control Server",
 					     cmd_ccp_call_control_server_init, 1, 0),
+			       SHELL_CMD_ARG(set_bearer_name, NULL,
+					     "Set bearer name [index] <name>",
+					     cmd_ccp_call_control_server_set_bearer_name, 2, 1),
+			       SHELL_CMD_ARG(get_bearer_name, NULL, "Get bearer name [index]",
+					     cmd_ccp_call_control_server_get_bearer_name, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(ccp_call_control_server, &ccp_call_control_server_cmds,

@@ -75,6 +75,30 @@ void xtensa_userspace_enter(k_thread_entry_t user_entry,
 bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write);
 
 /**
+ * @brief Handle DTLB multihit exception.
+ *
+ * Handle DTLB multihit exception by invalidating all auto-refilled DTLBs of
+ * a particular memory page.
+ */
+void xtensa_exc_dtlb_multihit_handle(void);
+
+/**
+ * @brief Check if it is a true load/store ring exception.
+ *
+ * When a page can be accessed by both kernel and user threads, the autofill DTLB
+ * may contain an entry for kernel thread. This will result in load/store ring
+ * exception when it is accessed by user thread later. In this case, this will
+ * invalidate all associated TLBs related to kernel access so hardware can reload
+ * the page table the correct permission for user thread.
+ *
+ * @param bsa_p Pointer to BSA struct.
+ *
+ * @retval True This is a true access violation.
+ * @retval False Access violation is due to incorrectly cached auto-refilled TLB.
+ */
+bool xtensa_exc_load_store_ring_error_check(void *bsa_p);
+
+/**
  * @}
  */
 

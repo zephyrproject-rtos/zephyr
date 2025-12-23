@@ -120,6 +120,7 @@ struct lwm2m_rd_client_info {
 	uint8_t engine_state;
 	uint8_t retries;
 	uint8_t retry_delay;
+	enum lwm2m_socket_states socket_state;
 
 	int64_t last_update;
 	int64_t last_tx;
@@ -168,6 +169,24 @@ struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void)
 		return NULL;
 	}
 	return &client.rd_message;
+}
+
+static bool ongoing_traffic(void)
+{
+	switch (client.socket_state) {
+	case LWM2M_SOCKET_STATE_NO_DATA:
+	case LWM2M_SOCKET_STATE_LAST:
+		return false;
+	default:
+		return true;
+	}
+}
+
+void lwm2m_rd_client_hint_socket_state(struct lwm2m_ctx *ctx, enum lwm2m_socket_states state)
+{
+	if (ctx && client.ctx == ctx) {
+		client.socket_state = state;
+	}
 }
 
 void engine_update_tx_time(void)
@@ -391,6 +410,7 @@ static void socket_fault_cb(int error)
 		sm_handle_timeout_state(ENGINE_NETWORK_ERROR);
 	} else if (client.engine_state != ENGINE_SUSPENDED &&
 		   !client.server_disabled) {
+		lwm2m_engine_stop(client.ctx);
 		sm_handle_timeout_state(ENGINE_IDLE);
 	}
 }
@@ -438,7 +458,7 @@ static inline const char *code2str(uint8_t code)
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 static int do_bootstrap_reply_cb(const struct coap_packet *response,
 				 struct coap_reply *reply,
-				 const struct sockaddr *from)
+				 const struct net_sockaddr *from)
 {
 	uint8_t code;
 
@@ -494,7 +514,7 @@ int engine_trigger_bootstrap(void)
 }
 static int do_registration_reply_cb(const struct coap_packet *response,
 				    struct coap_reply *reply,
-				    const struct sockaddr *from)
+				    const struct net_sockaddr *from)
 {
 	struct coap_option options[2];
 	uint8_t code;
@@ -560,7 +580,7 @@ static void do_registration_timeout_cb(struct lwm2m_message *msg)
 
 static int do_update_reply_cb(const struct coap_packet *response,
 			      struct coap_reply *reply,
-			      const struct sockaddr *from)
+			      const struct net_sockaddr *from)
 {
 	uint8_t code;
 
@@ -603,7 +623,7 @@ static void do_update_timeout_cb(struct lwm2m_message *msg)
 
 static int do_deregister_reply_cb(const struct coap_packet *response,
 				  struct coap_reply *reply,
-				  const struct sockaddr *from)
+				  const struct net_sockaddr *from)
 {
 	uint8_t code;
 
@@ -1143,7 +1163,11 @@ static int64_t next_update(void)
 static int64_t next_rx_off(void)
 {
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		return client.last_tx + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		if (!ongoing_traffic()) {
+			return client.last_tx + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		} else {
+			return k_uptime_get() + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		}
 	} else {
 		return next_update();
 	}
@@ -1152,7 +1176,7 @@ static int64_t next_rx_off(void)
 /** Return timestamp to next even whether it is RX_OFF or update event */
 static int64_t calc_next_event(void)
 {
-	return Z_MIN(next_update(), next_rx_off());
+	return min(next_update(), next_rx_off());
 }
 
 static void sm_registration_done(void)
@@ -1413,6 +1437,7 @@ static void sm_do_network_error(void)
 stop_engine:
 
 	/* We are out of options, stop engine */
+	lwm2m_engine_stop(client.ctx);
 	if (client.ctx->event_cb) {
 		if (client.ctx->bootstrap_mode) {
 			client.ctx->event_cb(client.ctx,

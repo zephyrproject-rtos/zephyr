@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: BAP Unicast Client"
+
+config INFO_REPORTING_INTERVAL
+	int "Number of SDUs received between each information report"
+	default 1000
+	help
+	  Determines how often information about received data is logged.
+	  Set to 0 to disable reporting.
+
+source "Kconfig.zephyr"

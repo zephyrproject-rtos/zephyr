@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025 Lukas Woodtli
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32tg840f32.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+
+/ {
+	model = "Silicon Labs EFM32TG STK3300 board";
+	compatible = "silabs,efm32tg_stk3300", "silabs,efm32tg";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiod 7 0>;
+			label = "LED 0";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpiod 8 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <32000000>;
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	location-tx = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(0)>;
+	location-rx = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(1)>;
+	status = "okay";
+};

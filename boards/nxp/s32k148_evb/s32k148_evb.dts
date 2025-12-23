@@ -95,7 +95,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <80000000>;
+	clock-frequency = <DT_FREQ_M(80)>;
 };
 
 &gpioa {

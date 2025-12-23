@@ -12,6 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
+#include <wsen_sensors_common.h>
 #include "wsen_itds_2533020201601.h"
 
 LOG_MODULE_REGISTER(WSEN_ITDS_2533020201601, CONFIG_SENSOR_LOG_LEVEL);
@@ -40,7 +41,11 @@ static const int itds_2533020201601_full_scale_list[] = {
 	16,
 };
 
-#define MAX_POLL_STEP_COUNT 10
+/* Map of dts binding power mode to enum power mode*/
+static const ITDS_powerMode_t power_mode_map[] = {
+	[0] = ITDS_lowPower,
+	[1] = ITDS_normalMode,
+};
 
 /* convert raw temperature to celsius */
 static inline int16_t itds_2533020201601_raw_temp_to_celsius(int16_t raw_temp)
@@ -67,6 +72,8 @@ static int itds_2533020201601_sample_fetch(const struct device *dev, enum sensor
 		return -ENOTSUP;
 	}
 
+	uint32_t step_sleep_duration = 0;
+
 	if (cfg->op_mode == ITDS_singleConversion) {
 		if (ITDS_startSingleDataConversion(&data->sensor_interface, ITDS_enable) !=
 		    WE_SUCCESS) {
@@ -75,6 +82,12 @@ static int itds_2533020201601_sample_fetch(const struct device *dev, enum sensor
 		}
 
 		k_sleep(K_MSEC(5));
+	} else {
+		if (!wsen_sensor_step_sleep_duration_milli_from_odr_hz(
+			    &itds_2533020201601_odr_list[data->sensor_odr], &step_sleep_duration)) {
+			LOG_ERR("Accelerometer is disabled.");
+			return -ENOTSUP;
+		}
 	}
 
 	ITDS_state_t acceleration_data_ready, temp_data_ready;
@@ -83,10 +96,6 @@ static int itds_2533020201601_sample_fetch(const struct device *dev, enum sensor
 
 	bool data_ready = false;
 	int step_count = 0;
-	uint32_t step_sleep_duration =
-		((uint32_t)1000000000 /
-		 (uint32_t)sensor_value_to_milli(&itds_2533020201601_odr_list[data->sensor_odr]) /
-		 MAX_POLL_STEP_COUNT);
 
 	while (1) {
 
@@ -594,109 +603,138 @@ int itds_2533020201601_init(const struct device *dev)
 	return 0;
 }
 
+/* clang-format off */
+
 #ifdef CONFIG_WSEN_ITDS_2533020201601_TRIGGER
-#define ITDS_2533020201601_CFG_EVENTS_IRQ(inst)                                                    \
-	.events_interrupt_gpio = GPIO_DT_SPEC_INST_GET(inst, events_interrupt_gpios),
-#define ITDS_2533020201601_CFG_DRDY_IRQ(inst)                                                      \
-	.drdy_interrupt_gpio = GPIO_DT_SPEC_INST_GET(inst, drdy_interrupt_gpios),
+#define ITDS_2533020201601_CFG_EVENTS_IRQ(inst) \
+	.events_interrupt_gpio = \
+		GPIO_DT_SPEC_INST_GET(inst, events_interrupt_gpios),
+
+#define ITDS_2533020201601_CFG_DRDY_IRQ(inst) \
+	.drdy_interrupt_gpio = \
+		GPIO_DT_SPEC_INST_GET(inst, drdy_interrupt_gpios),
 #else
 #define ITDS_2533020201601_CFG_EVENTS_IRQ(inst)
 #define ITDS_2533020201601_CFG_DRDY_IRQ(inst)
 #endif /* CONFIG_WSEN_ITDS_2533020201601_TRIGGER */
 
 #ifdef CONFIG_WSEN_ITDS_2533020201601_TAP
-#define ITDS_2533020201601_CONFIG_TAP(inst)                                                        \
-	.tap_mode = DT_INST_PROP(inst, tap_mode),                                                  \
-	.tap_threshold = DT_INST_PROP(inst, tap_threshold),                                        \
-	.tap_shock = DT_INST_PROP(inst, tap_shock),                                                \
-	.tap_latency = DT_INST_PROP(inst, tap_latency),                                            \
+#define ITDS_2533020201601_CONFIG_TAP(inst) \
+	.tap_mode = DT_INST_PROP(inst, tap_mode), \
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold), \
+	.tap_shock = DT_INST_PROP(inst, tap_shock), \
+	.tap_latency = DT_INST_PROP(inst, tap_latency), \
 	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
 #else
 #define ITDS_2533020201601_CONFIG_TAP(inst)
 #endif /* CONFIG_WSEN_ITDS_2533020201601_TAP */
 
 #ifdef CONFIG_WSEN_ITDS_2533020201601_FREEFALL
-#define ITDS_2533020201601_CONFIG_FREEFALL(inst)                                                   \
-	.freefall_duration = DT_INST_PROP(inst, freefall_duration),                                \
-	.freefall_threshold =                                                                      \
+#define ITDS_2533020201601_CONFIG_FREEFALL(inst) \
+	.freefall_duration = DT_INST_PROP(inst, freefall_duration), \
+	.freefall_threshold = \
 		(ITDS_FreeFallThreshold_t)DT_INST_ENUM_IDX(inst, freefall_threshold),
 #else
 #define ITDS_2533020201601_CONFIG_FREEFALL(inst)
 #endif /* CONFIG_WSEN_ITDS_2533020201601_FREEFALL */
 
 #ifdef CONFIG_WSEN_ITDS_2533020201601_DELTA
-#define ITDS_2533020201601_CONFIG_DELTA(inst)                                                      \
-	.delta_threshold = DT_INST_PROP(inst, delta_threshold),                                    \
-	.delta_duration = DT_INST_PROP(inst, delta_duration),                                      \
-	.delta_offsets = DT_INST_PROP(inst, delta_offsets),                                        \
+#define ITDS_2533020201601_CONFIG_DELTA(inst) \
+	.delta_threshold = DT_INST_PROP(inst, delta_threshold), \
+	.delta_duration = DT_INST_PROP(inst, delta_duration), \
+	.delta_offsets = DT_INST_PROP(inst, delta_offsets), \
 	.delta_offset_weight = DT_INST_PROP(inst, delta_offset_weight),
 #else
 #define ITDS_2533020201601_CONFIG_DELTA(inst)
 #endif /* CONFIG_WSEN_ITDS_2533020201601_DELTA */
 
-#define ITDS_2533020201601_CONFIG_LN(inst)                                                         \
-	.low_noise = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, low_noise),            \
-		((ITDS_state_t)ITDS_enable), ((ITDS_state_t)ITDS_disable)),
+#define ITDS_2533020201601_CONFIG_LN(inst) \
+	.low_noise = COND_CODE_1( \
+		DT_INST_NODE_HAS_PROP(inst, low_noise), \
+		((ITDS_state_t)ITDS_enable), \
+		((ITDS_state_t)ITDS_disable) \
+	),
 
-#define ITDS_2533020201601_CONFIG_COMMON(inst)                                                     \
-	.odr = (ITDS_outputDataRate_t)(DT_INST_ENUM_IDX(inst, odr) + 1),                           \
-	.op_mode = (ITDS_operatingMode_t)DT_INST_ENUM_IDX(inst, op_mode),                          \
-	.power_mode = (ITDS_powerMode_t)DT_INST_ENUM_IDX(inst, power_mode),                        \
-	.range = DT_INST_PROP(inst, range),                                                        \
-	ITDS_2533020201601_CONFIG_LN(inst)                                                         \
-	ITDS_2533020201601_CONFIG_TAP(inst)                                                        \
-	ITDS_2533020201601_CONFIG_FREEFALL(inst)                                                   \
-	ITDS_2533020201601_CONFIG_DELTA(inst)                                                      \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, events_interrupt_gpios),                           \
-		    (ITDS_2533020201601_CFG_EVENTS_IRQ(inst)), ())                                 \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_interrupt_gpios),                             \
-		    (ITDS_2533020201601_CFG_DRDY_IRQ(inst)), ())
-/*
- * Instantiation macros used when device is on SPI bus.
- */
+#define ITDS_2533020201601_CONFIG_COMMON(inst) \
+	.odr = (ITDS_outputDataRate_t)(DT_INST_ENUM_IDX(inst, odr) + 1), \
+	.op_mode = (ITDS_operatingMode_t)DT_INST_ENUM_IDX(inst, op_mode), \
+	.power_mode = power_mode_map[DT_INST_ENUM_IDX(inst, power_mode)], \
+	.range = DT_INST_PROP(inst, range), \
+	ITDS_2533020201601_CONFIG_LN(inst) \
+	ITDS_2533020201601_CONFIG_TAP(inst) \
+	ITDS_2533020201601_CONFIG_FREEFALL(inst) \
+	ITDS_2533020201601_CONFIG_DELTA(inst) \
+	COND_CODE_1( \
+		DT_INST_NODE_HAS_PROP(inst, events_interrupt_gpios), \
+		(ITDS_2533020201601_CFG_EVENTS_IRQ(inst)), \
+		() \
+	) \
+	COND_CODE_1( \
+		DT_INST_NODE_HAS_PROP(inst, drdy_interrupt_gpios), \
+		(ITDS_2533020201601_CFG_DRDY_IRQ(inst)), \
+		() \
+	)
 
-#define ITDS_2533020201601_SPI_OPERATION                                                           \
+/* SPI configuration */
+#define ITDS_2533020201601_SPI_OPERATION \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define ITDS_2533020201601_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \
 		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, ITDS_2533020201601_SPI_OPERATION, 0),   \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, ITDS_2533020201601_SPI_OPERATION),      \
 		 },                                                                                \
 	 ITDS_2533020201601_CONFIG_COMMON(inst)}
 
-/*
- * Instantiation macros used when device is on I2C bus.
- */
+/* I2C configuration */
+#define ITDS_2533020201601_CONFIG_I2C(inst) \
+	{ \
+		.bus_cfg = { \
+			.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		}, \
+		ITDS_2533020201601_CONFIG_COMMON(inst) \
+	}
 
-#define ITDS_2533020201601_CONFIG_I2C(inst)                                                        \
-	{.bus_cfg =                                                                                \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
-	 ITDS_2533020201601_CONFIG_COMMON(inst)}
+#define ITDS_2533020201601_CONFIG_WE_INTERFACE(inst) \
+	{ \
+		COND_CODE_1( \
+			DT_INST_ON_BUS(inst, i2c), \
+			(.sensor_interface = {.interfaceType = WE_i2c}), \
+			() \
+		) \
+		COND_CODE_1( \
+			DT_INST_ON_BUS(inst, spi), \
+			(.sensor_interface = {.interfaceType = WE_spi}), \
+			() \
+		) \
+	}
 
-#define ITDS_2533020201601_CONFIG_WE_INTERFACE(inst)                                               \
-	{COND_CODE_1(DT_INST_ON_BUS(inst, i2c), \
-	(.sensor_interface = {.interfaceType = WE_i2c}), \
-	()) COND_CODE_1(DT_INST_ON_BUS(inst, spi),  \
-	(.sensor_interface = {.interfaceType = WE_spi}), \
-	()) }
-
-/*
- * Main instantiation macro. Use of COND_CODE_1() selects the right
- * bus-specific macro at preprocessor time.
- */
-#define ITDS_2533020201601_DEFINE(inst)                                                            \
-	static struct itds_2533020201601_data itds_2533020201601_data_##inst =                     \
-		ITDS_2533020201601_CONFIG_WE_INTERFACE(inst);                                      \
-	static const struct itds_2533020201601_config itds_2533020201601_config_##inst =           \
-		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (ITDS_2533020201601_CONFIG_I2C(inst)), ())  \
-				COND_CODE_1(DT_INST_ON_BUS(inst, spi),                             \
-				    (ITDS_2533020201601_CONFIG_SPI(inst)), ());                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, itds_2533020201601_init, NULL,                          \
-				     &itds_2533020201601_data_##inst,                              \
-				     &itds_2533020201601_config_##inst, POST_KERNEL,               \
-				     CONFIG_SENSOR_INIT_PRIORITY, &itds_2533020201601_driver_api);
+/* Main instantiation macro */
+#define ITDS_2533020201601_DEFINE(inst) \
+	static struct itds_2533020201601_data itds_2533020201601_data_##inst = \
+		ITDS_2533020201601_CONFIG_WE_INTERFACE(inst); \
+	static const struct itds_2533020201601_config itds_2533020201601_config_##inst = \
+		COND_CODE_1( \
+			DT_INST_ON_BUS(inst, i2c), \
+			(ITDS_2533020201601_CONFIG_I2C(inst)), \
+			() \
+		) \
+		COND_CODE_1( \
+			DT_INST_ON_BUS(inst, spi), \
+			(ITDS_2533020201601_CONFIG_SPI(inst)), \
+			() \
+		); \
+	SENSOR_DEVICE_DT_INST_DEFINE( \
+		inst, \
+		itds_2533020201601_init, \
+		NULL, \
+		&itds_2533020201601_data_##inst, \
+		&itds_2533020201601_config_##inst, \
+		POST_KERNEL, \
+		CONFIG_SENSOR_INIT_PRIORITY, \
+		&itds_2533020201601_driver_api \
+	);
 
 DT_INST_FOREACH_STATUS_OKAY(ITDS_2533020201601_DEFINE)
+
+/* clang-format on */

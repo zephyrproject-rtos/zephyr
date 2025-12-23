@@ -20,15 +20,11 @@ LOG_MODULE_REGISTER(input_realtek_rts5912_kbd, CONFIG_INPUT_LOG_LEVEL);
 
 struct rts5912_kbd_config {
 	struct input_kbd_matrix_common_config common;
-	/* Keyboard scan controller base address */
 	volatile struct kbm_regs *base;
-	/* Keyboard scan input (KSI) wake-up irq */
 	uint32_t irq;
-	/* KSI/KSO keyboard scan alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clk_dev;
 	struct rts5912_sccon_subsys sccon_cfg;
-	/* For user ignore specific pin of kso*/
 	uint32_t kso_ignore_mask;
 };
 
@@ -47,18 +43,14 @@ static void rts5912_kbd_drive_column(const struct device *dev, int col)
 	uint32_t kso_val;
 	uint32_t key;
 
-	/* Tri-state all outputs */
 	if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
 		kso_val = kso_mask;
-		/* Assert all outputs */
 	} else if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL) {
 		kso_val = 0;
-		/* Assert a single output */
 	} else {
 		kso_val = kso_mask ^ BIT(col);
 	}
 
-	/* Set KSO output data */
 	key = irq_lock();
 	inst->scan_out = kso_val;
 	irq_unlock(key);
@@ -71,7 +63,6 @@ static kbd_row_t rts5912_kbd_read_row(const struct device *dev)
 	const struct input_kbd_matrix_common_config *common = &config->common;
 	const uint32_t ksi_mask = BIT_MASK(common->row_size);
 
-	/* Bits are active-low, so toggle it (return 1 means key pressed) */
 	return (inst->scan_in ^ ksi_mask);
 }
 
@@ -85,7 +76,6 @@ static void rts5912_intc_isr_clear(const struct device *dev)
 
 static void rts5912_kbd_isr(const struct device *dev)
 {
-	/* W/C interrupt status of KSI pins */
 	rts5912_intc_isr_clear(dev);
 	input_kbd_matrix_poll_start(dev);
 }
@@ -95,7 +85,6 @@ static void rts5912_kbd_set_detect_mode(const struct device *dev, bool enable)
 	const struct rts5912_kbd_config *config = dev->config;
 
 	if (enable) {
-		/* W/C interrupt status of KSI pins */
 		rts5912_intc_isr_clear(dev);
 
 		irq_enable(config->irq);
@@ -114,20 +103,14 @@ static int rts5912_kbd_init(const struct device *dev)
 	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
 	const uint32_t ksi_mask = BIT_MASK(common->row_size);
 
-	uint32_t status;
+	int ret;
 
-	/* Disable wakeup and interrupt of KSI pins before configuring */
 	rts5912_kbd_set_detect_mode(dev, false);
 
-	/*
-	 * Enable the internal pull-up and kbs mode of the KSI pins.
-	 * Enable the internal pull-up and kbs mode of the KSO pins.
-	 * Enable the open-drain mode of the KSO pins.
-	 */
-	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (status < 0) {
-		LOG_ERR("Failed to configure KSI and KSO pins");
-		return status;
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure KSI and KSO pins: %d", ret);
+		return ret;
 	}
 
 	if (!device_is_ready(config->clk_dev)) {
@@ -135,53 +118,154 @@ static int rts5912_kbd_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	status = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
-	if (status != 0) {
-		LOG_ERR("kbd clock power on fail");
-		return status;
+	ret = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
+	if (ret != 0) {
+		LOG_ERR("kbd clock power on fail: %d", ret);
+		return ret;
 	}
 
-	/* KSO pins output low */
 	inst->scan_out = 0x00;
 
-	/* Enable KSI 8 if RAW Size more than 8*/
 	if (ksi_mask & BIT(8)) {
 		inst->ctrl |= KBM_CTRL_KSI8EN_Msk;
 	}
 
-	/* Enable KSI 9 if RAW Size more than 9*/
 	if (ksi_mask & BIT(9)) {
 		inst->ctrl |= KBM_CTRL_KSI9EN_Msk;
 	}
 
-	/* Enable KSO 18 if COL Size more than 18*/
 	if (kso_mask & BIT(18)) {
 		inst->ctrl |= KBM_CTRL_KSO18EN_Msk;
 	}
 
-	/* Enable KSO 19 if COL Size more than 19*/
 	if (kso_mask & BIT(19)) {
 		inst->ctrl |= KBM_CTRL_KSO19EN_Msk;
 	}
 
-	/* Enable KSO OpenDrain Output Type */
 	inst->ctrl |= KBM_CTRL_KSOTYPE_Msk;
 
-	/* Enable Scan Interrupt*/
 	inst->int_en |= ksi_mask;
 
-	/* W/C interrupt status of KSI pins */
 	rts5912_intc_isr_clear(dev);
 
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 
-	/* Interrupts are enabled in the thread function */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    rts5912_kbd_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rts5912_kbd_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	return input_kbd_matrix_common_init(dev);
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int input_kbd_matrix_pm_action_suspend(const struct device *dev)
+{
+	const struct rts5912_kbd_config *config = dev->config;
+	const struct input_kbd_matrix_common_config *common = &config->common;
+	volatile struct kbm_regs *inst = config->base;
+	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
+	int ret;
+
+	ret = clock_control_off(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
+	if (ret != 0) {
+		LOG_ERR("clock_control_off failed: %d", ret);
+		return ret;
+	}
+	inst->int_en = 0;
+
+	rts5912_intc_isr_clear(dev);
+
+	if (kso_mask & BIT(18)) {
+		inst->ctrl &= ~KBM_CTRL_KSO18EN_Msk;
+	}
+
+	if (kso_mask & BIT(19)) {
+		inst->ctrl &= ~KBM_CTRL_KSO19EN_Msk;
+	}
+
+	inst->scan_out = 0x00;
+	inst->ctrl &= ~KBM_CTRL_KSOTYPE_Msk;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0) {
+		LOG_ERR("pinctrl_apply_state failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int input_kbd_matrix_pm_action_resume(const struct device *dev)
+{
+	const struct rts5912_kbd_config *config = dev->config;
+	const struct input_kbd_matrix_common_config *common = &config->common;
+	volatile struct kbm_regs *inst = config->base;
+	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
+	const uint32_t ksi_mask = BIT_MASK(common->row_size);
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("pinctrl_apply_state failed: %d", ret);
+		return ret;
+	}
+	inst->ctrl |= KBM_CTRL_KSOTYPE_Msk;
+
+	inst->scan_out = 0x00;
+
+	if (kso_mask & BIT(18)) {
+		inst->ctrl |= KBM_CTRL_KSO18EN_Msk;
+	}
+
+	if (kso_mask & BIT(19)) {
+		inst->ctrl |= KBM_CTRL_KSO19EN_Msk;
+	}
+	inst->int_en |= ksi_mask;
+	ret = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
+	if (ret != 0) {
+		LOG_ERR("clock_control_on failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int input_kbd_matrix_pm_action_rts5912(const struct device *dev,
+					      enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = input_kbd_matrix_pm_action_resume(dev);
+		if (ret != 0) {
+			LOG_ERR("kbd rts5912 resume fail: %d", ret);
+			return ret;
+		}
+		ret = input_kbd_matrix_pm_action(dev, action);
+		if (ret != 0) {
+			LOG_ERR("kbd pm resume fail: %d", ret);
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = input_kbd_matrix_pm_action_suspend(dev);
+		if (ret != 0) {
+			LOG_ERR("kbd rts5912 suspend fail: %d", ret);
+			return ret;
+		}
+		ret = input_kbd_matrix_pm_action(dev, action);
+		if (ret != 0) {
+			LOG_ERR("kbd pm suspend fail: %d", ret);
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 PINCTRL_DT_INST_DEFINE(0);
 
 INPUT_KBD_MATRIX_DT_INST_DEFINE(0);
@@ -207,7 +291,7 @@ static const struct rts5912_kbd_config rts5912_kbd_cfg_0 = {
 
 static struct rts5912_kbd_data rts5912_kbd_data_0;
 
-PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action);
+PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action_rts5912);
 
 DEVICE_DT_INST_DEFINE(0, &rts5912_kbd_init, PM_DEVICE_DT_INST_GET(0), &rts5912_kbd_data_0,
 		      &rts5912_kbd_cfg_0, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);

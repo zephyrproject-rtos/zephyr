@@ -1,0 +1,17 @@
+tests:
+  crypto.aes.mbedtls_shim:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
+    tags: crypto
+  crypto.aes:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+    tags: crypto

@@ -32,9 +32,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/encrypted_advertising` in the Zephyr tree.
-
 See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 This sample uses two applications, so two devices need to be setup.

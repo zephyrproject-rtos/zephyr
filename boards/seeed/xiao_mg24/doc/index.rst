@@ -78,6 +78,16 @@ used, or can be installed from the `OpenOCD Arduino Fork`_. When flashing, debug
 need to include ``--openocd=/usr/local/bin/openocd
 --openocd-search=/usr/local/share/openocd/scripts/`` options to the command.
 
+PyOCD can also be used by passing ``-r pyocd`` to the flashing and debugging commands. Add support
+for the XIAO MG24 by installing the CMSIS Device Family Pack if not already installed.
+
+.. code-block:: console
+
+   pyocd pack install EFR32MG24
+
+If the pack install command seems to hang indefinitely, ensure that the ``cmsis-pack-manager``
+Python package is updated to version ``0.6.0`` or newer.
+
 Flashing
 ========
 

@@ -409,7 +409,6 @@ void ztest_skip_failed_assumption(void)
  */
 #include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b*/
 #include <signal.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define FAIL_FAST 0
@@ -538,7 +537,7 @@ out:
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
 	if (ret == TC_SKIP && current_test_failed_assumption) {
-		test_status = 1;
+		test_status = ZTEST_STATUS_HAS_FAILURE;
 	}
 
 	return ret;
@@ -741,7 +740,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
 	if (ret == TC_SKIP && current_test_failed_assumption) {
-		test_status = 1;
+		test_status = ZTEST_STATUS_HAS_FAILURE;
 	}
 
 	return ret;
@@ -1168,7 +1167,7 @@ void ztest_verify_all_test_suites_ran(void)
 		if (test->stats->fail_count + test->stats->pass_count + test->stats->skip_count !=
 		    test->stats->run_count) {
 			PRINT_DATA("Bad stats for %s.%s\n", test->test_suite_name, test->name);
-			test_status = 1;
+			test_status = ZTEST_STATUS_HAS_FAILURE;
 		}
 	}
 }
@@ -1253,11 +1252,12 @@ static int cmd_runall(const struct shell *sh, size_t argc, char **argv)
 static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 {
 
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"suite_iter", required_argument, 0, 's'},
-					       {"case_iter", required_argument, 0, 'c'},
-					       {0, 0, 0, 0}};
+	static struct sys_getopt_option long_options[] = {
+		{"suite_iter", sys_getopt_required_argument, 0, 's'},
+		{"case_iter", sys_getopt_required_argument, 0, 'c'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -1265,8 +1265,8 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 	int suite_iter = 1;
 	int case_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			val = atoi(state->optarg);
@@ -1301,9 +1301,10 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"repeat_iter", required_argument, NULL, 'r'},
+	static struct sys_getopt_option long_options[] = {
+		{"repeat_iter", sys_getopt_required_argument, NULL, 'r'},
 		{NULL, 0, NULL, 0}};
 	int opt_index = 0;
 	int val;
@@ -1311,8 +1312,8 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	void *param = NULL;
 	int repeat_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'r':
 			val = atoi(state->optarg);

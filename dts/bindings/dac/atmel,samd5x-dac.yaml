@@ -1,0 +1,120 @@
+# Copyright (c) 2025 Daikin Comfort Technologies North America, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAMD5x/E5x family DAC
+
+  To enable the DAC peripheral, it must be enabled in the board dts, or in
+  subsequent overlay file. In addition, each channel must be configured
+  using the child-binding properties.
+
+  &dac0 {
+    status = "okay";
+    reference = "intref";
+
+    channel_0 {
+      oversampling = <0>;
+      refresh-period = <1>;
+      current-control = <2>;
+    };
+
+    channel_1 {
+      oversampling = <0>;
+      refresh-period = <1>;
+      current-control = <2>;
+    };
+  };
+
+compatible: "atmel,samd5x-dac"
+
+include:
+  - name: dac-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
+    required: true
+
+  reference:
+    type: string
+    description: Reference voltage source
+    enum:
+      - "vrefau"
+      - "vddana"
+      - "vrefab"
+      - "intref"
+
+  differential-mode:
+    type: boolean
+    description: |
+       Enable differential mode. When enabled, the DAC outputs the difference
+       between channel 0 and channel 1 on the VOUT0 pin.
+
+  "#io-channel-cells":
+    const: 1
+
+child-binding:
+  description: |
+    DAC Channel configuration. Each channel can be individually configured
+    with the following properties:
+
+  properties:
+    oversampling:
+      type: string
+      description: |
+        This field defines the oversampling ratio/interpolation depth:
+        - 0: 1x oversampling (no interpolation)
+        - 1: 2x oversampling
+        - 2: 4x oversampling
+        - 3: 8x oversampling
+        - 4: 16x oversampling
+        - 5: 32x oversampling
+        Higher oversampling ratios provide better noise reduction but
+        reduce the maximum update rate.
+      enum:
+        - "OSR_1"
+        - "OSR_2"
+        - "OSR_4"
+        - "OSR_8"
+        - "OSR_16"
+        - "OSR_32"
+
+    refresh-period:
+      type: int
+      description: |
+        Defines the refresh period for the DAC output. Only work when the
+        input data is not interpolated, i.e. the oversampling rate is zero.
+        - 0: Refresh mode disabled
+        - 1-15: Refresh period = REFRESH * 30µs
+
+    run-in-standby:
+      type: boolean
+      description: |
+        When enabled, the DAC channel continues to operate in standby mode.
+
+    current-control:
+      type: string
+      description: |
+        Select the output buffer current according to data rate, power
+        consumption can be reduced by controlling the output buffer
+        current, according to conversion rate.
+        - 0: GCLK_DAC ≤ 1.2MHz (100kSPS)
+        - 1: 1.2MHz < GCLK_DAC ≤ 6MHz (500kSPS)
+        - 2: 6MHz < GCLK_DAC ≤ 12MHz (1MSPS)
+      enum:
+        - "CC100K"
+        - "CC1M"
+        - "CC12M"

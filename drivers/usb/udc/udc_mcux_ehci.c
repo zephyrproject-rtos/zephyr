@@ -1,19 +1,21 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #define DT_DRV_COMPAT nxp_ehci
 
-#include <soc.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <soc.h>
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "udc_common.h"
 #include "usb.h"
@@ -34,6 +36,10 @@ LOG_MODULE_REGISTER(udc_mcux, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 #define PRV_DATA_HANDLE(_handle) CONTAINER_OF(_handle, struct udc_mcux_data, mcux_device)
 
+/* Required by DEVICE_MMIO_NAMED_* macros */
+#define DEV_CFG(_dev) ((const struct udc_mcux_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct udc_mcux_data *)(udc_get_private(_dev)))
+
 struct udc_mcux_config {
 	const usb_device_controller_interface_struct_t *mcux_if;
 	void (*irq_enable_func)(const struct device *dev);
@@ -41,12 +47,19 @@ struct udc_mcux_config {
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
-	uintptr_t base;
+	DEVICE_MMIO_NAMED_ROM(reg_base);
 	const struct pinctrl_dev_config *pincfg;
 	usb_phy_config_struct_t *phy_config;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_rate_t clock_rate;
+	const struct device *phy_clock_dev;
+	clock_control_subsys_t phy_clock_subsys;
+	clock_control_subsys_rate_t phy_clock_rate;
 };
 
 struct udc_mcux_data {
+	DEVICE_MMIO_NAMED_RAM(reg_base);
 	const struct device *dev;
 	usb_device_struct_t mcux_device;
 	struct k_work work;
@@ -690,10 +703,13 @@ static int udc_mcux_init(const struct device *dev)
 	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
 	struct udc_mcux_data *priv = udc_get_private(dev);
 	usb_status_t status;
+	uintptr_t base;
 
 	if (priv->controller_id == 0xFFu) {
 		return -ENOMEM;
 	}
+
+	base = (uintptr_t)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 #ifdef CONFIG_DT_HAS_NXP_USBPHY_ENABLED
 	if (config->phy_config != NULL) {
@@ -708,10 +724,16 @@ static int udc_mcux_init(const struct device *dev)
 		return -ENOMEM;
 	}
 
+	if (!IS_ENABLED(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)) {
+		USBHS_Type *usbBase = (USBHS_Type *)base;
+
+		usbBase->PORTSC1 |= USBHS_PORTSC1_PFSC_MASK;
+	}
+
 	/* enable USB interrupt */
 	config->irq_enable_func(dev);
 
-	LOG_DBG("Initialized USB controller %x", (uint32_t)config->base);
+	LOG_DBG("Initialized USB controller %x", (uint32_t)base);
 
 	return 0;
 }
@@ -735,9 +757,14 @@ static int udc_mcux_shutdown(const struct device *dev)
 	return 0;
 }
 
-static inline void udc_mcux_get_hal_driver_id(struct udc_mcux_data *priv,
-			const struct udc_mcux_config *config)
+static inline void udc_mcux_get_hal_driver_id(const struct device *dev)
 {
+	struct udc_data *data = dev->data;
+	struct udc_mcux_data *priv = data->priv;
+	uintptr_t base;
+
+	base = (uintptr_t)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
 	/*
 	 * MCUX USB controller drivers use an ID to tell the HAL drivers
 	 * which controller is being used. This part of the code converts
@@ -752,7 +779,7 @@ static inline void udc_mcux_get_hal_driver_id(struct udc_mcux_data *priv,
 	/* get the right controller id */
 	priv->controller_id = 0xFFu; /* invalid value */
 	for (uint8_t i = 0; i < ARRAY_SIZE(usb_base_addrs); i++) {
-		if (usb_base_addrs[i] == config->base) {
+		if (usb_base_addrs[i] == base) {
 			priv->controller_id = kUSB_ControllerEhci0 + i;
 			break;
 		}
@@ -766,9 +793,27 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	struct udc_mcux_data *priv = data->priv;
 	int err;
 
-	udc_mcux_get_hal_driver_id(priv, config);
+	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	udc_mcux_get_hal_driver_id(dev);
 	if (priv->controller_id == 0xFFu) {
 		return -ENOMEM;
+	}
+
+	if (config->clock_dev && config->clock_rate) {
+		clock_control_set_rate(
+			config->clock_dev,
+			config->clock_subsys,
+			config->clock_rate
+		);
+	}
+
+	if (config->phy_clock_dev && config->phy_clock_rate) {
+		clock_control_set_rate(
+			config->phy_clock_dev,
+			config->phy_clock_subsys,
+			config->phy_clock_rate
+		);
 	}
 
 	k_mutex_init(&data->mutex);
@@ -853,6 +898,28 @@ static const usb_device_controller_interface_struct_t udc_mcux_if = {
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 
+#define UDC_MCUX_USB_CLK_DEFINE(n)							\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(n, 0)),			\
+	.clock_subsys = (clock_control_subsys_t)					\
+		DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),					\
+	.clock_rate = (void *)(uintptr_t)DT_INST_PROP_BY_IDX(n, clock_rates, 0),
+
+#define UDC_MCUX_USB_CLK_DEFINE_OR(n)							\
+	IF_ENABLED(DT_INST_CLOCKS_HAS_IDX(n, 0),					\
+		   (IF_ENABLED(DT_INST_PROP_HAS_IDX(n, clock_rates, 0),			\
+			       (UDC_MCUX_USB_CLK_DEFINE(n)))))
+
+#define UDC_MCUX_USB_PHY_CLK_DEFINE(n)							\
+	.phy_clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(n, 1)),		\
+	.phy_clock_subsys = (clock_control_subsys_t)					\
+		DT_INST_CLOCKS_CELL_BY_IDX(n, 1, name),					\
+	.phy_clock_rate = (void *)(uintptr_t)DT_INST_PROP_BY_IDX(n, clock_rates, 1),
+
+#define UDC_MCUX_USB_PHY_CLK_DEFINE_OR(n)						\
+	IF_ENABLED(DT_INST_CLOCKS_HAS_IDX(n, 1),					\
+		   (IF_ENABLED(DT_INST_PROP_HAS_IDX(n, clock_rates, 1),			\
+			       (UDC_MCUX_USB_PHY_CLK_DEFINE(n)))))
+
 #define UDC_MCUX_PHY_DEFINE(n)								\
 static usb_phy_config_struct_t phy_config_##n = {					\
 	.D_CAL = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_d_cal, 0),		\
@@ -898,7 +965,7 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 	PINCTRL_DT_INST_DEFINE(n);							\
 											\
 	static struct udc_mcux_config priv_config_##n = {				\
-		.base = DT_INST_REG_ADDR(n),						\
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),			\
 		.irq_enable_func = udc_irq_enable_func##n,				\
 		.irq_disable_func = udc_irq_disable_func##n,				\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),			\
@@ -907,6 +974,8 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		.mcux_if = &udc_mcux_if,						\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.phy_config = UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),				\
+		UDC_MCUX_USB_CLK_DEFINE_OR(n)						\
+		UDC_MCUX_USB_PHY_CLK_DEFINE_OR(n)					\
 	};										\
 											\
 	static struct udc_mcux_data priv_data_##n = {					\

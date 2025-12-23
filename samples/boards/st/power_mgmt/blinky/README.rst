@@ -37,7 +37,7 @@ Build and flash Blinky as follows, changing ``stm32l562e_dk`` for your board:
    :compact:
 
 After flashing, the LED starts to blink with a fixed period (SLEEP_TIME_MS).
-When LPTIM input clock has a prescaler, longer perdiod (up to 64 seconds)
+When st,prescaler lptim property is defined, longer period (up to 64 seconds)
 of low power can be tested.
 
 .. warning::

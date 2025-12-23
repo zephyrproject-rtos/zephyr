@@ -15,7 +15,7 @@ config SAMPLE_UNICAST
 	select BT_KEYS_OVERWRITE_OLDEST
 	select BT_CSIP_SET_COORDINATOR
 	select BT_BAP_UNICAST_CLIENT
-	select BT_CTLR_CENTRAL_ISO if BT_CTLR
+	select BT_CTLR_CENTRAL_ISO if HAS_BT_CTLR
 	help
 	  If set to true, the sample will start advertising connectable for
 	  Broadcast Assistants.
@@ -26,7 +26,7 @@ config SAMPLE_BROADCAST
 	select BT_BROADCASTER
 	select BT_ISO_BROADCASTER
 	select BT_BAP_BROADCAST_SOURCE
-	select BT_CTLR_ADV_ISO if BT_CTLR
+	select BT_CTLR_ADV_ISO if HAS_BT_CTLR
 	help
 	  If set to true, the sample will start advertising syncable audio streams
 

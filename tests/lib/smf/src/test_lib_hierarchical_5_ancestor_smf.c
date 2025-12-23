@@ -411,10 +411,10 @@ ZTEST(smf_tests, test_smf_hierarchical_5_ancestors)
 {
 	test_obj.tv_idx = 0;
 	test_obj.transition_bits = 0;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}

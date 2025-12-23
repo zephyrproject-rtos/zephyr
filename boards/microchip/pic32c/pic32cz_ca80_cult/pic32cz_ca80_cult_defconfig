@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_BUILD_OUTPUT_HEX=y
+CONFIG_ARM_MPU=y

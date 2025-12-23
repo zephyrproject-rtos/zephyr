@@ -1,0 +1,23 @@
+identifier: xgm240_rb4317a
+name: xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

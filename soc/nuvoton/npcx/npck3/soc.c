@@ -12,6 +12,8 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+extern void scfg_init(void);
+
 void soc_early_init_hook(void)
 {
 	struct glue_reg *inst_glue = (struct glue_reg *)
@@ -29,4 +31,6 @@ void soc_early_init_hook(void)
 		/* Core debugging interface is disabled */
 		inst_scfg->DEVCNT |= BIT(1);
 	}
+
+	scfg_init();
 }

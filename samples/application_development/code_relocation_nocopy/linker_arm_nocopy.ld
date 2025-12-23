@@ -26,6 +26,14 @@
 #define EXTFLASH_SIZE	DT_PROP_OR(EXTFLASH_NODE, size_in_bytes, \
 				   DT_PROP(EXTFLASH_NODE, size) / 8)
 
+#elif defined(CONFIG_FLASH_ADI_MAX32_SPIXF) && DT_NODE_EXISTS(DT_INST(0, adi_max32_spixf_nor))
+
+/* On MAX32 SPIXF, external flash is mapped in XIP region at 0x8000_0000. */
+
+#define EXTFLASH_NODE	DT_INST(0, adi_max32_spixf_nor)
+#define EXTFLASH_ADDR	DT_REG_ADDR(DT_INST(0, adi_max32_spixf_nor))
+#define EXTFLASH_SIZE	DT_REG_SIZE(DT_INST(0, adi_max32_spixf_nor))
+
 #elif defined(CONFIG_STM32_MEMMAP) && DT_NODE_EXISTS(DT_INST(0, st_stm32_ospi_nor))
 /* On stm32 OSPI, external flash is mapped in XIP region at address given by the reg property. */
 

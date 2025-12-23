@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/xg26/xg26.dtsi>
+
+/ {
+	soc {
+		radio: radio@b0000000 {
+			compatible = "silabs,series2-radio";
+			reg = <0xb0000000 0x01000000>;
+			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
+					  "rac_rsm", "rac_seq", "hostmailbox", "synth", "rfeca0",
+					  "rfeca1";
+			interrupts = <46 1>, <47 1>, <48 1>, <49 1>, <50 1>, <51 1>, <52 1>,
+				     <53 1>, <54 1>, <55 1>, <86 1>, <87 1>;
+			pa-2p4ghz = "highest";
+			pa-initial-power-dbm = <10>;
+			pa-ramp-time-us = <10>;
+			pa-voltage-mv = <3300>;
+
+			pti: pti {
+				compatible = "silabs,pti";
+				clock-frequency = <DT_FREQ_K(1600)>;
+				mode = "uart";
+				status = "disabled";
+			};
+		};
+	};
+};

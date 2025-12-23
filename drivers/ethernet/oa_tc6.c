@@ -303,13 +303,19 @@ int oa_tc6_check_status(struct oa_tc6 *tc6)
 		 * The RESETC is handled separately as it requires per
 		 * device configuration.
 		 */
-		oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
+		if (oa_tc6_reg_read(tc6, OA_STATUS0, &sts) < 0) {
+			return -EIO;
+		}
+
 		if (sts != 0) {
 			oa_tc6_reg_write(tc6, OA_STATUS0, sts);
 			LOG_WRN("EXST: OA_STATUS0: 0x%x", sts);
 		}
 
-		oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
+		if (oa_tc6_reg_read(tc6, OA_STATUS1, &sts) < 0) {
+			return -EIO;
+		}
+
 		if (sts != 0) {
 			oa_tc6_reg_write(tc6, OA_STATUS1, sts);
 			LOG_WRN("EXST: OA_STATUS1: 0x%x", sts);

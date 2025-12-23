@@ -254,13 +254,9 @@ For Segger J-Link debug probes, follow the instructions in the
 :ref:`nordic_segger` page to install and configure all the necessary
 software. Further information can be found in :ref:`nordic_segger_flashing`.
 
-Locate the DTS file: :zephyr_file:`boards/nordic/nrf52840dongle/nrf52840dongle_nrf52840.dts`.
-This file requires a small modification to use a different partition table.
-Edit the include directive to include "fstab-debugger" instead of "fstab-stock".
-
-In addition, the Kconfig file in the same directory must be modified by setting
-``BOARD_HAS_NRF5_BOOTLOADER`` to be default ``n``, otherwise the code will be
-flashed with an offset.
+Use the ``nrf52840dongle/nrf52840/bare`` board variant to build your application.
+This variant uses a modified partition table, which does not reserve space for
+the onboard USB bootloader.
 
 Then build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -269,7 +265,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf52840dongle/nrf52840
+   :board: nrf52840dongle/nrf52840/bare
    :goals: build flash
 
 Observe the LED on the board blinking.

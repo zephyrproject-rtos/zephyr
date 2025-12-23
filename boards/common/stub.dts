@@ -9,6 +9,4 @@
 
 #include <skeleton.dtsi>
 
-/ {
-
-};
+/ {};

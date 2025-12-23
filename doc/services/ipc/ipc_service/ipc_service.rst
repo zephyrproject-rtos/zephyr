@@ -159,7 +159,7 @@ See the following example:
    }
 
 Backends
-********
+========
 
 The requirements needed for implementing backends give flexibility to the IPC
 service. These allow for the addition of dedicated backends having only a
@@ -188,14 +188,14 @@ backend.
    backends/ipc_service_icbmsg.rst
 
 API Reference
-*************
+=============
 
 IPC service API
-===============
+***************
 
 .. doxygengroup:: ipc_service_api
 
 IPC service backend API
-=======================
+***********************
 
 .. doxygengroup:: ipc_service_backend

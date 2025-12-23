@@ -536,6 +536,7 @@ static DEVICE_API(counter, agt_renesas_ra_driver_api) = {
 #define AGT_IRQ_CONFIG(inst, name, event, isr)                                                     \
 	IF_ENABLED(DT_IRQ_HAS_NAME(TIMER(inst), name),                                             \
 		   (R_ICU->IELSR[DT_IRQ_BY_NAME(TIMER(inst), name, irq)] = event;                  \
+		    BSP_ASSIGN_EVENT_TO_CURRENT_CORE(event);                                       \
 		    IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(inst), name, irq),                            \
 				DT_IRQ_BY_NAME(TIMER(inst), name, priority),                       \
 				isr, DEVICE_DT_INST_GET(inst), 0);                                 \

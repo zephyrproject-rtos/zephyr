@@ -282,7 +282,7 @@ ZTEST(sprintf, test_sprintf_double)
 	var.d = 0x1p800;
 	sprintf(buffer, "%.140f", var.d);
 	zassert_true((strlen(buffer) == 382),
-		     "sprintf(<large output>) - incorrect length %d\n",
+		     "sprintf(<large output>) - incorrect length %zu\n",
 		     strlen(buffer));
 	buffer[10] = 0;  /* log facility doesn't support %.10s */
 	zassert_true((strcmp(buffer, "6668014432") == 0),
@@ -297,7 +297,7 @@ ZTEST(sprintf, test_sprintf_double)
 	/* 3.872E-121 expressed as " 0.0...387" */
 	sprintf(buffer, "% .380f", var.d);
 	zassert_true((strlen(buffer) == 383),
-		     "sprintf(<large output>) - incorrect length %d\n",
+		     "sprintf(<large output>) - incorrect length %zu\n",
 		     strlen(buffer));
 	zassert_equal(strncmp(&buffer[119], "00003872", 8), 0,
 		      "sprintf(<large output>) - misplaced value\n");

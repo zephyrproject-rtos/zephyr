@@ -836,6 +836,52 @@ ZTEST(net_content_oma_tlv, test_get_string)
 		      "Invalid packet offset");
 }
 
+ZTEST(net_content_oma_tlv, test_get_string_truncate)
+{
+	int ret;
+	uint8_t buf[16];
+	struct test_payload_buffer payload = {
+		.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				sizeof("test_string") - 1,
+				't', 'e', 's', 't', '_', 's',
+				't', 'r', 'i', 'n', 'g'
+		},
+		.len = sizeof("test_string") - 1 + 3
+	};
+
+	test_payload_set(payload.data, payload.len);
+
+	ret = oma_tlv_reader.get_string(&test_in, buf, sizeof("test_string") - 1);
+	zassert_equal(ret, -ENOMEM, "Invalid length returned");
+}
+
+ZTEST(net_content_oma_tlv, test_get_string_utf8)
+{
+	int ret;
+	static const char test_string[] = "👨👩🤡";
+	uint8_t buf[16];
+	struct test_payload_buffer payload = {
+		.data = {TEST_TLV_RES_TYPE_ID_0_LEN_1, TEST_RESOURCE_ID_SHORT,
+			 sizeof(test_string) - 1, 0xf0, 0x9f, 0x91, 0xa8, 0xf0, 0x9f, 0x91, 0xa9,
+			 0xf0, 0x9f, 0xa4, 0xa1},
+		.len = sizeof(test_string) - 1 + 3};
+
+	test_payload_set(payload.data, payload.len);
+
+	ret = oma_tlv_reader.get_string(&test_in, buf, sizeof(buf));
+	zassert_equal(ret, payload.len, "Invalid length returned");
+	zassert_mem_equal(buf, test_string, strlen(test_string),
+			  "Invalid value parsed");
+	zassert_equal(test_in.offset, payload.len + 1,
+		      "Invalid packet offset");
+
+	test_payload_set(payload.data, payload.len);
+	ret = oma_tlv_reader.get_string(&test_in, buf, sizeof(test_string) - 1);
+	zassert_equal(ret, -ENOMEM, "Invalid error returned %d", ret);
+}
+
 ZTEST(net_content_oma_tlv_nodata, test_get_string_nodata)
 {
 	int ret;

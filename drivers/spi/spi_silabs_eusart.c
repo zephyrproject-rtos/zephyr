@@ -15,6 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -728,6 +729,9 @@ static DEVICE_API(spi, spi_silabs_eusart_api) = {
 	.transceive = spi_silabs_eusart_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_silabs_eusart_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_silabs_eusart_release,
 };

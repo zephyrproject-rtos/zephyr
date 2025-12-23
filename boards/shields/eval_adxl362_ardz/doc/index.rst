@@ -9,6 +9,10 @@ Overview
 The EVAL-ADXL362-ARDZ is a 3-axis digital accelerometer Arduino shield powered
 by the Analog Devices ADXL362.
 
+.. figure:: eval_adxl362_ardz.webp
+   :align: center
+   :alt: EVAL-ADXL362-ARDZ
+
 Programming
 ***********
 

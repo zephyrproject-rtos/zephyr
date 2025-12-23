@@ -21,6 +21,10 @@
 	 * is 1465, and the prescaler property is one less than that.
 	 */
 	prescaler = <1464>;
+};
+
+&pwm2 {
+	status = "okay";
 	pinctrl-0 = <&red_pwm_pinctrl>;
 	pinctrl-names = "default";
 };

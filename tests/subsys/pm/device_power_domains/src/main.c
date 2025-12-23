@@ -9,6 +9,9 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
+static int dev_pm_control_resume_ret;
+static int dev_pm_control_turn_on_ret;
+
 static int dev_init(const struct device *dev)
 {
 	if (!pm_device_is_powered(dev)) {
@@ -20,9 +23,26 @@ static int dev_init(const struct device *dev)
 int dev_pm_control(const struct device *dev, enum pm_device_action action)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(action);
 
-	return 0;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = dev_pm_control_resume_ret;
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = dev_pm_control_turn_on_ret;
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
 }
 
 PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
@@ -132,6 +152,30 @@ ZTEST(device_power_domain, test_device_power_domain)
 	zassert_equal(PM_DEVICE_STATE_OFF, state, "");
 	pm_device_state_get(reg_1, &state);
 	zassert_equal(PM_DEVICE_STATE_SUSPENDED, state, "");
+
+	/* Directly request the supported device but turn on fails */
+	dev_pm_control_turn_on_ret = -EBUSY;
+	pm_device_runtime_get(dev);
+	dev_pm_control_turn_on_ret = 0;
+	zassert_false(pm_device_is_powered(dev), "");
+	pm_device_state_get(dev, &state);
+	zassert_equal(PM_DEVICE_STATE_OFF, state, "");
+	pm_device_state_get(reg_1, &state);
+	zassert_equal(PM_DEVICE_STATE_SUSPENDED, state, "");
+	pm_device_state_get(reg_chained, &state);
+	zassert_equal(PM_DEVICE_STATE_OFF, state, "");
+
+	/* Directly request the supported device but resume fails */
+	dev_pm_control_resume_ret = -EBUSY;
+	pm_device_runtime_get(dev);
+	dev_pm_control_resume_ret = 0;
+	zassert_false(pm_device_is_powered(dev), "");
+	pm_device_state_get(dev, &state);
+	zassert_equal(PM_DEVICE_STATE_OFF, state, "");
+	pm_device_state_get(reg_1, &state);
+	zassert_equal(PM_DEVICE_STATE_SUSPENDED, state, "");
+	pm_device_state_get(reg_chained, &state);
+	zassert_equal(PM_DEVICE_STATE_OFF, state, "");
 
 	TC_PRINT("DONE\n");
 }

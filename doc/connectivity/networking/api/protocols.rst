@@ -15,5 +15,6 @@ Protocols
    lwm2m
    mqtt
    mqtt_sn
-   ptp
+   ocpp
    tftp
+   latmon

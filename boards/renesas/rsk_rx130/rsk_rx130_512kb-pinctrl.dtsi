@@ -33,4 +33,24 @@
 			psels = <RX_PSEL(RX_PSEL_P2nPFS_MTIOC1A, 2, 0)>; /* P20 MTIOC1A JA2-PIN22*/
 		};
 	};
+
+	adc_default: adc_default {
+		group1 {
+			/* input */
+			psels = <RX_PSEL(RX_PSEL_ADC, 4, 1)>;
+			renesas,analog-enable;
+		};
+	};
+
+	ctsu_default: ctsu_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_PHnPFS_TS7, 0x11, 3)>,
+				<RX_PSEL(RX_PSEL_PHnPFS_TS8, 0x11, 2)>,
+				<RX_PSEL(RX_PSEL_PHnPFS_TS9, 0x11, 1)>,
+				<RX_PSEL(RX_PSEL_PHnPFS_TS10, 0x11, 0)>,
+				<RX_PSEL(RX_PSEL_P5nPFS_TS11, 0x05, 5)>,
+				<RX_PSEL(RX_PSEL_P5nPFS_TS12, 0x05, 4)>,
+				<RX_PSEL(RX_PSEL_PCnPFS_TSCAP, 0x0c, 4)>;
+		};
+	};
 };

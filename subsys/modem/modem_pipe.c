@@ -136,7 +136,7 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
 int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
 {
 	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
-		return -EPERM;
+		return 0;
 	}
 
 	pipe_clear_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT);
@@ -146,7 +146,7 @@ int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size
 int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
 {
 	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
-		return -EPERM;
+		return 0;
 	}
 
 	pipe_clear_events(pipe, PIPE_EVENT_RECEIVE_READY_BIT);

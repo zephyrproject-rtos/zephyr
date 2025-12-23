@@ -314,8 +314,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v2.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1160_evk
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1160-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1160-evaluation-kit:MIMXRT1160-EVK

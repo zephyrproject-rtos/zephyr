@@ -8,9 +8,10 @@ config SOC_FAMILY_INTEL_ADSP
 	select ARCH_SUPPORTS_COREDUMP
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
-	select ARCH_HAS_USERSPACE if XTENSA_MMU
-	imply XTENSA_MMU_DOUBLE_MAP
 	select CPU_CACHE_INCOHERENT
+	select CACHE_CAN_SAY_MEM_COHERENCE
+	select SOC_HAS_CACHE_FUNCTIONS
+	select IPC_SERVICE if DT_HAS_INTEL_ADSP_HOST_IPC_ENABLED
 
 if SOC_FAMILY_INTEL_ADSP
 
@@ -22,26 +23,27 @@ config INTEL_ADSP_SIM
 	help
 	  Running this SoC family in a simulator.
 
-if INTEL_ADSP_SIM
-
-config INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW
-	bool "No secondary core flow."
+config INTEL_ADSP_FWREADY_MSG
+	bool "Send firmware ready message to host"
+	default y if INTEL_ADSP_SIM
 	help
-	  Select if simulator doesn't use the normal secondary core flow
-	  to initialise secondary clocks.
-
-endif # INTEL_ADSP_SIM
-
-DT_COMPAT_INTEL_ADSP_HOST_IPC := intel,adsp-host-ipc
-DT_COMPAT_INTEL_ADSP_IDC := intel,adsp-idc
+	  Send a firmware ready message to the host once the system is up
+	  and running.
 
 config INTEL_ADSP_IPC
 	bool "Driver for the host IPC interrupt delivery"
-	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ADSP_HOST_IPC)) if !SOF
-	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ADSP_IDC)) if !SOF
+	select DEPRECATED
 	help
-	  Driver for the host IPC interrupt delivery mechanism.
-	  Currently SOF has its own driver for this hardware.
+	  Deprecated config for IPC. Will be removed in the future.
+
+config INTEL_ADSP_IPC_OLD_INTERFACE
+	bool "Expose old interface for the IPC"
+	depends on IPC_SERVICE_BACKEND_INTEL_ADSP_HOST_IPC
+	default y
+	select INTEL_ADSP_IPC
+	help
+	  Expose the old IPC interface (intel_adsp_ipc_* functions) to
+	  maintain backward compatibility.
 
 config MEMORY_WIN_0_SIZE
 	int "Size of memory window 0"
@@ -61,11 +63,11 @@ config MEMORY_WIN_1_SIZE
 
 config MEMORY_WIN_2_SIZE
 	int "Size of memory window 2"
-	default 8192
+	default 12288
 	help
 	  Size of memory window 2.
 
-	  This window is used for debug.
+	  This window is used for debug, default size is 12288 bytes
 
 config MEMORY_WIN_3_SIZE
 	int "Size of memory window 3"
@@ -74,6 +76,15 @@ config MEMORY_WIN_3_SIZE
 	  Size of memory window 3.
 
 	  This window is used for trace.
+
+config INTEL_ADSP_DEBUG_SLOT_MANAGER
+	bool "Debug slot manager"
+	help
+	  If selected the debug slot allocation can be only done via
+	  the manager API, direct debug window access and tampering is
+	  forbidden.
+	  The API use allows dynamic slot allocation instead of static
+	  and error prone slot usage.
 
 config ADSP_CLOCK
 	bool
@@ -146,5 +157,27 @@ config ADSP_IDLE_CLOCK_GATING
 	  HW configuration of a DSP. Every time core goes to the WAITI state
 	  (wait for interrupt) during idle, the clock can be gated (however, this
 	  does not mean that this will happen).
+
+config INTEL_ADSP_MEMORY_IS_MIRRORED
+	bool
+	help
+	  When true, this indicates certain physical memory regions are mirrored
+	  at different addressed. Accessing one set of addressed is via CPU cache
+	  while the other is direct to memory. Selected by SoCs using this type of
+	  memory mapping.
+
+config INTEL_ADSP_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  This specifies which 512M region (0-7, as defined by the Xtensa
+	  Region Protection Option) contains the "cached" mapping.
+
+config INTEL_ADSP_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for INTEL_ADSP_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
 
 endif # SOC_FAMILY_INTEL_ADSP

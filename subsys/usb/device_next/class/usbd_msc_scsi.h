@@ -66,8 +66,7 @@ struct scsi_ctx {
 	const char *vendor;
 	const char *product;
 	const char *revision;
-	size_t (*read_cb)(struct scsi_ctx *ctx,
-			  uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE]);
+	size_t (*read_cb)(struct scsi_ctx *ctx, uint8_t *buf, size_t length);
 	size_t (*write_cb)(struct scsi_ctx *ctx, const uint8_t *buf, size_t length);
 	size_t remaining_data;
 	uint32_t lba;
@@ -92,8 +91,7 @@ size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,
 bool scsi_cmd_is_data_read(struct scsi_ctx *ctx);
 bool scsi_cmd_is_data_write(struct scsi_ctx *ctx);
 size_t scsi_cmd_remaining_data_len(struct scsi_ctx *ctx);
-size_t scsi_read_data(struct scsi_ctx *ctx,
-		      uint8_t data_in_buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE]);
+size_t scsi_read_data(struct scsi_ctx *ctx, uint8_t *data_in_buf, size_t length);
 size_t scsi_write_data(struct scsi_ctx *ctx, const uint8_t *buf, size_t length);
 
 enum scsi_status_code scsi_cmd_get_status(struct scsi_ctx *ctx);

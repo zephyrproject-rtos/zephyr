@@ -32,8 +32,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/subsys/fs/zms` in the Zephyr tree.
-
 The sample can be built for several platforms, but for the moment it has been tested only
 on native_sim target
 
@@ -43,7 +41,7 @@ on native_sim target
    :compact:
 
 After running the generated image on a native_sim target, the output on the console shows the
-multiple Iterations of read/write/delete exectuted.
+multiple Iterations of read/write/delete executed.
 
 Sample Output
 =============

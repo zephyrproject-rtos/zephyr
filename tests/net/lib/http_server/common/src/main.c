@@ -50,14 +50,14 @@ static struct http_resource_detail detail[] = {
  * the paths (and implementation-specific details) are known at compile time.
  */
 static const uint16_t service_A_port = 4242;
-HTTP_SERVICE_DEFINE(service_A, "a.service.com", &service_A_port, 4, 2, DETAIL(0), NULL);
+HTTP_SERVICE_DEFINE(service_A, "a.service.com", &service_A_port, 4, 2, DETAIL(0), NULL, NULL);
 HTTP_RESOURCE_DEFINE(resource_0, service_A, "/", RES(0));
 HTTP_RESOURCE_DEFINE(resource_1, service_A, "/index.html", RES(1));
 HTTP_RESOURCE_DEFINE(resource_2, service_A, "/fs/*", RES(5));
 
 /* ephemeral port of 0 */
 static uint16_t service_B_port;
-HTTP_SERVICE_DEFINE(service_B, "b.service.com", &service_B_port, 7, 3, DETAIL(1), NULL);
+HTTP_SERVICE_DEFINE(service_B, "b.service.com", &service_B_port, 7, 3, DETAIL(1), NULL, NULL);
 HTTP_RESOURCE_DEFINE(resource_3, service_B, "/foo.htm", RES(2));
 HTTP_RESOURCE_DEFINE(resource_4, service_B, "/bar/baz.php", RES(3));
 
@@ -67,11 +67,11 @@ HTTP_RESOURCE_DEFINE(resource_4, service_B, "/bar/baz.php", RES(3));
  * runtime.
  */
 static const uint16_t service_C_port = 5959;
-HTTP_SERVICE_DEFINE_EMPTY(service_C, "192.168.1.1", &service_C_port, 5, 9, DETAIL(2), NULL);
+HTTP_SERVICE_DEFINE_EMPTY(service_C, "192.168.1.1", &service_C_port, 5, 9, DETAIL(2), NULL, NULL);
 
 /* Wildcard resources */
 static uint16_t service_D_port = service_A_port + 1;
-HTTP_SERVICE_DEFINE(service_D, "2001:db8::1", &service_D_port, 7, 3, DETAIL(3), NULL);
+HTTP_SERVICE_DEFINE(service_D, "2001:db8::1", &service_D_port, 7, 3, DETAIL(3), NULL, NULL);
 HTTP_RESOURCE_DEFINE(resource_5, service_D, "/foo1.htm*", RES(0));
 HTTP_RESOURCE_DEFINE(resource_6, service_D, "/fo*", RES(1));
 HTTP_RESOURCE_DEFINE(resource_7, service_D, "/f[ob]o3.html", RES(1));
@@ -82,7 +82,7 @@ HTTP_RESOURCE_DEFINE(resource_12, service_D, "/foo/b?r", RES(3));
 
 /* Default resource in case of no match */
 static uint16_t service_E_port = 8080;
-HTTP_SERVICE_DEFINE(service_E, "192.0.2.1", &service_E_port, 1, 1, NULL, DETAIL(0));
+HTTP_SERVICE_DEFINE(service_E, "192.0.2.1", &service_E_port, 1, 1, NULL, DETAIL(0), NULL);
 HTTP_RESOURCE_DEFINE(resource_10, service_E, "/index.html", RES(4));
 
 ZTEST(http_service, test_HTTP_SERVICE_DEFINE)

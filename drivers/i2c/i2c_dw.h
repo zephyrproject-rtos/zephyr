@@ -140,6 +140,7 @@ struct i2c_dw_dev_config {
 	uint32_t request_bytes;
 	uint8_t xfr_flags;
 	bool support_hs_mode;
+	bool read_in_progress;
 #ifdef CONFIG_I2C_DW_LPSS_DMA
 	uintptr_t phy_addr;
 	uintptr_t base_addr;

@@ -1,0 +1,23 @@
+identifier: pg26_ek2711a
+name: EFM32PG26 Explorer Kit (PG26-EK2711A, BRD2711A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

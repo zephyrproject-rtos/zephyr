@@ -17,7 +17,6 @@
 		dac-resolution = <12>;
 		pressure-range-type = "D2";
 	};
-
 };
 
 &adc1 {
@@ -31,5 +30,4 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
-
 };

@@ -24,79 +24,6 @@ config TEST_EXTRA_STACK_SIZE
 	  Additional stack for tests on some platform where default is not
 	  enough.
 
-config HAS_COVERAGE_SUPPORT
-	bool
-	help
-	  The code coverage report generation is only available on boards
-	  with enough spare RAM to buffer the coverage data, or on boards
-	  based on the POSIX ARCH.
-
-config COVERAGE
-	bool "Create coverage data"
-	depends on HAS_COVERAGE_SUPPORT
-	help
-	  This option will build your application with the -coverage option
-	  which will generate data that can be used to create coverage reports.
-	  For more information see
-	  https://docs.zephyrproject.org/latest/guides/coverage.html
-
-choice
-	prompt "Coverage mode"
-	default COVERAGE_NATIVE_GCOV if NATIVE_BUILD
-	default COVERAGE_GCOV if !NATIVE_BUILD
-	depends on COVERAGE
-
-config COVERAGE_NATIVE_GCOV
-	bool "Host compiler gcov based code coverage"
-	depends on NATIVE_BUILD
-	help
-	  Build natively with the compiler standard `--coverage` options,
-	  that is with gcov/GCC-compatible coverage
-
-config COVERAGE_NATIVE_SOURCE
-	bool "Host compiler source based code coverage"
-	depends on NATIVE_BUILD
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
-	help
-	  Build natively with the compiler source based coverage options.
-	  Today this is only supported with LLVM
-
-config COVERAGE_GCOV
-	bool "Create Coverage data from hardware platform"
-	depends on !NATIVE_BUILD
-	help
-	  This option will select the custom gcov library. The reports will
-	  be available over serial. This serial dump can be passed to
-	  gen_gcov_files.py which creates the required .gcda files. These
-	  can be read by gcov utility. For more details see gcovr.com .
-
-endchoice
-
-config COVERAGE_GCOV_HEAP_SIZE
-	int "Size of heap allocated for gcov coverage data dump"
-	depends on COVERAGE_GCOV
-	default 32768 if X86 || SOC_SERIES_MPS2
-	default 16384
-	help
-	  This option configures the heap size allocated for gcov coverage
-	  data to be dumped over serial. If the value is 0, no buffer will be used,
-	  data will be dumped directly over serial.
-
-config COVERAGE_DUMP
-	bool "Dump coverage data on exit"
-	depends on COVERAGE_GCOV
-	help
-	  Dump collected coverage information to console on exit.
-
-config FORCE_COVERAGE
-	bool "Force coverage"
-	select HAS_COVERAGE_SUPPORT
-	help
-	  Regardless of platform support, it will enable coverage data production.
-	  If the platform does not support coverage by default, setting this config
-	  does not guarantee that coverage data will be gathered.
-	  Application may not fit memory or crash at runtime.
-
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
 	help
@@ -199,3 +126,6 @@ config TEST_BUSY_SIM
 	  with random intervals and random busy looping in the interrupt.
 
 endmenu
+
+
+rsource "Kconfig.coverage"

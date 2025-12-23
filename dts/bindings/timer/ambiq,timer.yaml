@@ -1,0 +1,58 @@
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq TIMER timer
+
+compatible: "ambiq,timer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-source:
+    type: string
+    required: true
+    enum:
+      - "CLK_SELECT_HFRC_DIV4"
+      - "CLK_SELECT_HFRC_DIV16"
+      - "CLK_SELECT_HFRC_DIV64"
+      - "CLK_SELECT_HFRC_DIV256"
+      - "CLK_SELECT_HFRC_DIV1024"
+      - "CLK_SELECT_HFRC_DIV4K"
+      - "CLK_SELECT_LFRC"
+      - "CLK_SELECT_LFRC_DIV2"
+      - "CLK_SELECT_LFRC_DIV32"
+      - "CLK_SELECT_LFRC_DIV1K"
+      - "CLK_SELECT_XT"
+      - "CLK_SELECT_XT_DIV2"
+      - "CLK_SELECT_XT_DIV4"
+      - "CLK_SELECT_XT_DIV8"
+      - "CLK_SELECT_XT_DIV16"
+      - "CLK_SELECT_XT_DIV32"
+      - "CLK_SELECT_XT_DIV128"
+      - "CLK_SELECT_RTC_100HZ"
+    description: |
+      Clock source selection: 32 KHz is available in deep sleep.
+      - AM_HAL_TIMER_CLOCK_HFRC_DIV4
+      - AM_HAL_TIMER_CLOCK_HFRC_DIV16
+      - AM_HAL_TIMER_CLOCK_HFRC_DIV64
+      - AM_HAL_TIMER_CLOCK_HFRC_DIV256
+      - AM_HAL_TIMER_CLOCK_HFRC_DIV1024
+      - AM_HAL_TIMER_CLOCK_HFRC_DIV4K
+      - AM_HAL_TIMER_CLOCK_LFRC
+      - AM_HAL_TIMER_CLOCK_LFRC_DIV2
+      - AM_HAL_TIMER_CLOCK_LFRC_DIV32
+      - AM_HAL_TIMER_CLOCK_LFRC_DIV1K
+      - AM_HAL_TIMER_CLOCK_XT
+      - AM_HAL_TIMER_CLOCK_XT_DIV2
+      - AM_HAL_TIMER_CLOCK_XT_DIV4
+      - AM_HAL_TIMER_CLOCK_XT_DIV8
+      - AM_HAL_TIMER_CLOCK_XT_DIV16
+      - AM_HAL_TIMER_CLOCK_XT_DIV32
+      - AM_HAL_TIMER_CLOCK_XT_DIV128
+      - AM_HAL_TIMER_CLOCK_RTC_100HZ

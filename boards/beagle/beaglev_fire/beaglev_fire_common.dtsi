@@ -12,8 +12,8 @@
 / {
 	model = "beagle,beaglev-fire";
 	compatible = "beagle,beaglev-fire", "microchip,mpfs";
-	aliases {
-	};
+
+	aliases {};
 
 	beaglev {
 		#address-cells = <2>;

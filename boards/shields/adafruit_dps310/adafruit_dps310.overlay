@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pressure-sensor = &adafruit_dps310;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_dps310: dps310@77 {
+		compatible = "infineon,dps310";
+		status = "okay";
+		reg = <0x77>;
+	};
+};

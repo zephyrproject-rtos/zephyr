@@ -1,0 +1,15 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MRCC Peripheral reset controller
+
+compatible: "nxp,mrcc-reset"
+
+include: [reset-controller.yaml]
+
+properties:
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id

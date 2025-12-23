@@ -242,7 +242,7 @@ Controller Area Network (CAN)
 =============================
 
 * The native Linux SocketCAN driver, which can now be used in both ``native_posix``
-  and :ref:`native_sim<native_sim>` with or without an embedded C-library, has been renamed to
+  and :zephyr:board:`native_sim<native_sim>` with or without an embedded C-library, has been renamed to
   reflect this:
 
   * The devicetree compatible was renamed from ``zephyr,native-posix-linux-can`` to

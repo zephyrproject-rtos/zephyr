@@ -1,0 +1,20 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_AXP2101
+	bool "AXP2101 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_X_POWERS_AXP2101_ENABLED
+	select I2C
+	help
+	  Enable the X-Powers AXP2101 PMIC multi-function device driver
+
+config MFD_AXP2101_POWER_BUTTON
+	bool "AXP2101 power button"
+	depends on INPUT
+	depends on MFD_AXP2101
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_X_POWERS_AXP2101),int-gpios)
+	help
+	  Enable support for the Power Button available on the AXP2101. This
+	  feature is based on IRQ support from AXP2101 which requires "int-gpios"
+	  device-tree property to be defined in AXP2101 device node.

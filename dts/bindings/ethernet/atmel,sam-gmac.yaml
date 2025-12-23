@@ -6,7 +6,3 @@ description: Atmel SAM-family GMAC Ethernet
 compatible: "atmel,sam-gmac"
 
 include: atmel,gmac-common.yaml
-
-properties:
-  clocks:
-    required: true

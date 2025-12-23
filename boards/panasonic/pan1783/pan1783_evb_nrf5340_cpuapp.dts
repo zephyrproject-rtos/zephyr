@@ -19,3 +19,6 @@
 		zephyr,sram-secure-partition = &sram0_s;
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_partition.dtsi>

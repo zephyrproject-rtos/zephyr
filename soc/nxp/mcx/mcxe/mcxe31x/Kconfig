@@ -1,0 +1,56 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXE31X
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select ARM
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
+	select CODE_DATA_RELOCATION
+
+if SOC_SERIES_MCXE31X
+
+if CODE_DATA_RELOCATION
+
+config SRAM_CONFIG_RELOCATE_MEM
+	string
+	default "ITCM"
+	help
+	  Select memory to relocate sram_config.c code
+
+endif # CODE_DATA_RELOCATION
+
+config SOC_NXP_MCXE31X_BOOT_HEADER
+	bool
+	help
+	  Enable boot header configuration for NXP MCXE31X SoC.
+	  This should be selected by boards that need boot header support.
+
+if SOC_NXP_MCXE31X_BOOT_HEADER
+
+config BOOT_HEADER_OFFSET
+	hex "Flash config data offset"
+	default 0x0
+	help
+	  The flash config offset provides the boot ROM with the on-board
+	  flash type and parameters. The boot ROM requires a fixed flash config
+	  offset for FlexSPI device.
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	hex "Image vector table offset"
+	default 0x1000
+	help
+	  The Image Vector Table (IVT) provides the boot ROM with pointers to
+	  the application entry point and device configuration data. The boot
+	  ROM requires a fixed IVT offset for each type of boot device.
+
+endif # SOC_NXP_MCXE31X_BOOT_HEADER
+
+endif # SOC_SERIES_MCXE31X

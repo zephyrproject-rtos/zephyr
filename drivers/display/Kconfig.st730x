@@ -1,0 +1,26 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config ST730X
+	bool "ST730x display controllers driver"
+	default y
+	depends on DT_HAS_SITRONIX_ST7305_ENABLED || DT_HAS_SITRONIX_ST7306_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ST730X series display controllers.
+
+if ST730X
+
+config ST730X_CONV_BUFFER_LINE_CNT
+	int "Size of the conversion buffer in lines"
+	default 8
+	range 1 1024
+	help
+	  Size of the conversion buffer in lines.
+
+config ST730X_POWERMODE_LOW
+	bool "Use low power mode"
+	help
+	  Enable this to use lower framerate LPM (Low Power Mode).
+
+endif # ST730X

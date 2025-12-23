@@ -17,6 +17,12 @@
 
 #else
 
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/netdb.h>
+
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
@@ -71,6 +77,7 @@ int main(void)
 	printf("Preparing HTTP GET request for http://" HTTP_HOST
 	       ":" HTTP_PORT HTTP_PATH "\n");
 
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	st = getaddrinfo(HTTP_HOST, HTTP_PORT, &hints, &res);
@@ -134,5 +141,7 @@ int main(void)
 	printf("\nClose socket\n");
 
 	(void)close(sock);
+	freeaddrinfo(res);
+
 	return 0;
 }

@@ -351,7 +351,7 @@ static int iis2mdc_init(const struct device *dev)
 
 #define IIS2MDC_CONFIG_SPI(inst)					\
 	{								\
-		.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),	\
+		.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP),	\
 		.bus_init = iis2mdc_spi_init,				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ())			\

@@ -1,10 +1,35 @@
 /* Copyright (c) 2024 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/types.h>
 #include <zephyr/ztest.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
 #include <psa/internal_trusted_storage.h>
 
 /* The flash must be erased after this test suite is run for the write-once entry test to pass. */
+#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_PAGE_LAYOUT) &&                        \
+	DT_HAS_CHOSEN(zephyr_flash_controller)
+static int erase_flash(void)
+{
+	const struct device *const fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	int rc;
+
+	rc = flash_flatten(fdev, FIXED_PARTITION_OFFSET(storage_partition),
+			   FIXED_PARTITION_SIZE(storage_partition));
+	if (rc < 0) {
+		TC_PRINT("Failed to flatten the storage partition (%d) !", rc);
+		return rc;
+	}
+
+	return 0;
+}
+
+/* Low priority to ensure we run after any flash drivers are initialized */
+SYS_INIT(erase_flash, POST_KERNEL, 100);
+
+#endif /* !CONFIG_BUILD_WITH_TFM && CONFIG_FLASH_PAGE_LAYOUT */
+
 ZTEST_SUITE(secure_storage_psa_its, NULL, NULL, NULL, NULL, NULL);
 
 #ifdef CONFIG_SECURE_STORAGE
@@ -119,8 +144,11 @@ ZTEST(secure_storage_psa_its, test_write_once_flag)
 	struct psa_storage_info_t info;
 
 	ret = psa_its_set(uid, sizeof(data), data, PSA_STORAGE_FLAG_WRITE_ONCE);
-	zassert_equal(ret, PSA_SUCCESS, "%s%d", (ret == PSA_ERROR_NOT_PERMITTED) ?
-		      "Has the flash been erased since this test ran? " : "", ret);
+	zassert_equal(ret, PSA_SUCCESS, "%s%d",
+		      (ret == PSA_ERROR_NOT_PERMITTED)
+			      ? "Has the flash been erased since this test ran? "
+			      : "",
+		      ret);
 
 	ret = psa_its_get_info(uid, &info);
 	zassert_equal(ret, PSA_SUCCESS);

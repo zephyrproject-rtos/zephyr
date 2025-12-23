@@ -1,0 +1,6 @@
+board:
+  name: scobc_v1
+  full_name: SC-OBC Module V1
+  vendor: sc
+  socs:
+  - name: versal_rpu

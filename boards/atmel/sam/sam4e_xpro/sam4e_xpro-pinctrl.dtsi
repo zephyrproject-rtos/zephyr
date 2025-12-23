@@ -12,6 +12,7 @@
 				 <PC13X_AFEC0_AD6>;
 		};
 	};
+
 	afec1_default: afec1_default {
 		group1 {
 			pinmux = <PB2X_AFEC1_AD0>,
@@ -70,18 +71,21 @@
 				 <PA10A_UART0_TXD>;
 		};
 	};
+
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <PA5C_UART1_RXD>,
 				 <PA6C_UART1_TXD>;
 		};
 	};
+
 	usart1_default: usart1_default {
 		group1 {
 			pinmux = <PA21A_USART1_RXD>,
 				 <PA24A_USART1_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PA22A_USART1_TXD>,
 				 <PA25A_USART1_CTS>;

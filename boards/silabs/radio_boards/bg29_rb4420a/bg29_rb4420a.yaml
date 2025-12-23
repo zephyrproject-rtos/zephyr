@@ -1,0 +1,23 @@
+identifier: bg29_rb4420a
+name: EFR32BG29 Bluetooth LE 4 dBm DCDC Boost WLCSP Radio Board (BG29-RB4420A, BRD4420A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

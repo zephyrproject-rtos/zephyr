@@ -28,14 +28,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_0: led_0 {
 			gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 			label = "USR0 LED";
 		};
+
 		green_led_1: led_1 {
 			gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
+
 		green_led_2: led_2 {
 			gpios = <&gpiog 1 GPIO_ACTIVE_HIGH>;
 			label = "USR2 LED";

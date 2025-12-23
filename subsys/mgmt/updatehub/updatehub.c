@@ -61,7 +61,7 @@ static struct updatehub_context {
 	struct coap_block_context block;
 	struct k_sem semaphore;
 	struct updatehub_storage_context storage_ctx;
-	updatehub_crypto_context_t crypto_ctx;
+	psa_hash_operation_t crypto_ctx;
 	enum updatehub_response code_status;
 	uint8_t hash[SHA256_BIN_DIGEST_SIZE];
 	uint8_t uri_path[MAX_PATH_SIZE];
@@ -113,7 +113,7 @@ static void prepare_fds(void)
 
 static int metadata_hash_get(char *metadata)
 {
-	updatehub_crypto_context_t local_crypto_ctx;
+	psa_hash_operation_t local_crypto_ctx;
 
 	if (updatehub_integrity_init(&local_crypto_ctx)) {
 		return -1;
@@ -175,20 +175,20 @@ static bool start_coap_client(void)
 	memset(&hints, 0, sizeof(hints));
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET6;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	}
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	int verify = TLS_PEER_VERIFY_REQUIRED;
 	sec_tag_t sec_list[] = { CA_CERTIFICATE_TAG };
-	int protocol = IPPROTO_DTLS_1_2;
+	int protocol = NET_IPPROTO_DTLS_1_2;
 	char port[] = "5684";
 #else
-	int protocol = IPPROTO_UDP;
+	int protocol = NET_IPPROTO_UDP;
 	char port[] = "5683";
 #endif
 
@@ -206,7 +206,7 @@ static bool start_coap_client(void)
 
 	ret = 1;
 
-	ctx.sock = zsock_socket(addr->ai_family, SOCK_DGRAM, protocol);
+	ctx.sock = zsock_socket(addr->ai_family, NET_SOCK_DGRAM, protocol);
 	if (ctx.sock < 0) {
 		LOG_ERR("Failed to create UDP socket");
 		goto error;
@@ -215,13 +215,14 @@ static bool start_coap_client(void)
 	ret = -1;
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-	if (zsock_setsockopt(ctx.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+	if (zsock_setsockopt(ctx.sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 			     sec_list, sizeof(sec_list)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
 		goto error;
 	}
 
-	if (zsock_setsockopt(ctx.sock, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(int)) < 0) {
+	if (zsock_setsockopt(ctx.sock, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+			     &verify, sizeof(int)) < 0) {
 		LOG_ERR("Failed to set TLS_PEER_VERIFY option");
 		goto error;
 	}

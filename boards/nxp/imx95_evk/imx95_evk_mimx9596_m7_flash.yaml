@@ -1,0 +1,18 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx95_evk/mimx9596/m7/flash
+name: NXP i.MX95 EVK NOR flash variant
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+vendor: nxp

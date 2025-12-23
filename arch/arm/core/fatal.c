@@ -13,6 +13,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/arch/exception.h>
 #include <kernel_arch_data.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -20,14 +21,14 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void esf_dump(const struct arch_esf *esf)
 {
-	LOG_ERR("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
+	EXCEPTION_DUMP("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
 		esf->basic.a1, esf->basic.a2, esf->basic.a3);
-	LOG_ERR("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
+	EXCEPTION_DUMP("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
-	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
+	EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	for (int i = 0; i < ARRAY_SIZE(esf->fpu.s); i += 4) {
-		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
+		EXCEPTION_DUMP("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
 			i, (uint32_t)esf->fpu.s[i],
 			i + 1, (uint32_t)esf->fpu.s[i + 1],
@@ -36,7 +37,7 @@ static void esf_dump(const struct arch_esf *esf)
 	}
 #ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
 	for (int i = 0; i < ARRAY_SIZE(esf->fpu.d); i += 4) {
-		LOG_ERR("d[%2d]:  0x%16llx  d[%2d]:  0x%16llx"
+		EXCEPTION_DUMP("d[%2d]:  0x%16llx  d[%2d]:  0x%16llx"
 			"  d[%2d]:  0x%16llx  d[%2d]:  0x%16llx",
 			i, (uint64_t)esf->fpu.d[i],
 			i + 1, (uint64_t)esf->fpu.d[i + 1],
@@ -44,24 +45,24 @@ static void esf_dump(const struct arch_esf *esf)
 			i + 3, (uint64_t)esf->fpu.d[i + 3]);
 	}
 #endif
-	LOG_ERR("fpscr:  0x%08x", esf->fpu.fpscr);
+	EXCEPTION_DUMP("fpscr:  0x%08x", esf->fpu.fpscr);
 #endif
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	const struct _callee_saved *callee = esf->extra_info.callee;
 
 	if (callee != NULL) {
-		LOG_ERR("r4/v1:  0x%08x  r5/v2:  0x%08x  r6/v3:  0x%08x",
+		EXCEPTION_DUMP("r4/v1:  0x%08x  r5/v2:  0x%08x  r6/v3:  0x%08x",
 			callee->v1, callee->v2, callee->v3);
-		LOG_ERR("r7/v4:  0x%08x  r8/v5:  0x%08x  r9/v6:  0x%08x",
+		EXCEPTION_DUMP("r7/v4:  0x%08x  r8/v5:  0x%08x  r9/v6:  0x%08x",
 			callee->v4, callee->v5, callee->v6);
-		LOG_ERR("r10/v7: 0x%08x  r11/v8: 0x%08x    psp:  0x%08x",
+		EXCEPTION_DUMP("r10/v7: 0x%08x  r11/v8: 0x%08x    psp:  0x%08x",
 			callee->v7, callee->v8, callee->psp);
 	}
 
-	LOG_ERR("EXC_RETURN: 0x%0x", esf->extra_info.exc_return);
+	EXCEPTION_DUMP("EXC_RETURN: 0x%0x", esf->extra_info.exc_return);
 
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
-	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
+	EXCEPTION_DUMP("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -79,7 +80,7 @@ void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	if (reason == K_ERR_SPURIOUS_IRQ) {
 		uint32_t irqn = __get_IPSR() - 16;
 
-		LOG_ERR("Unhandled IRQn: %d", irqn);
+		EXCEPTION_DUMP("Unhandled IRQn: %d", irqn);
 	}
 #endif
 

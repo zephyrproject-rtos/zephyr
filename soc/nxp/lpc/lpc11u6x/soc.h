@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Seagate
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <zephyr/sys/util.h>
 
 #include <cmsis_core_m_defaults.h>
+#include <soc_common.h>
 
 #endif /* !_ASMLANGUAGE */
 

@@ -59,8 +59,8 @@ struct sy1xx_mac_dev_config {
 	uint32_t base_addr;
 	/* optional - enable promiscuous mode */
 	bool promiscuous_mode;
-	/* optional - random mac */
-	bool use_zephyr_random_mac;
+
+	struct net_eth_mac_config mcfg;
 
 	/* phy config */
 	const struct device *phy_dev;
@@ -103,7 +103,7 @@ struct sy1xx_mac_dev_data {
 };
 
 /* prototypes */
-static int sy1xx_mac_set_mac_addr(const struct device *dev, uint8_t *mac_addr);
+static int sy1xx_mac_set_mac_addr(const struct device *dev);
 static int sy1xx_mac_set_promiscuous_mode(const struct device *dev, bool promiscuous_mode);
 static int sy1xx_mac_set_config(const struct device *dev, enum ethernet_config_type type,
 				const struct ethernet_config *config);
@@ -191,7 +191,6 @@ static int sy1xx_mac_start(const struct device *dev)
 {
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
-	uint8_t rand_mac_addr[6];
 
 	extern void sy1xx_udma_disable_clock(sy1xx_udma_module_t module, uint32_t instance);
 
@@ -203,14 +202,6 @@ static int sy1xx_mac_start(const struct device *dev)
 	/* reset mac controller */
 	sys_write32(0x0001, cfg->ctrl_addr + SY1XX_MAC_CTRL_REG);
 	sys_write32(0x0000, cfg->ctrl_addr + SY1XX_MAC_CTRL_REG);
-
-	if (cfg->use_zephyr_random_mac) {
-		/* prio 1 -- generate random, if set in device tree */
-		sys_rand_get(&data->mac_addr, 6);
-		/* Set MAC address locally administered, unicast (LAA) */
-		data->mac_addr[0] |= 0x02;
-
-	}
 
 	sy1xx_mac_set_mac_addr(dev);
 
@@ -313,9 +304,11 @@ static void sy1xx_mac_iface_init(struct net_if *iface)
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *const data = dev->data;
 
-	LOG_INF("Interface init %s (%.8x)", net_if_get_device(iface)->name, iface);
+	LOG_INF("Interface init %s (%p)", net_if_get_device(iface)->name, iface);
 
 	data->iface = iface;
+
+	(void)net_eth_mac_load(&cfg->mcfg, data->mac_addr);
 
 	ethernet_init(iface);
 
@@ -505,7 +498,7 @@ static int sy1xx_mac_receive_data(const struct device *dev, uint8_t *rx, uint16_
 	struct net_pkt *rx_pkt;
 	int ret;
 
-	rx_pkt = net_pkt_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
+	rx_pkt = net_pkt_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 	if (rx_pkt == NULL) {
 		LOG_ERR("rx packet allocation failed");
 		return -EINVAL;
@@ -572,14 +565,13 @@ const struct ethernet_api sy1xx_mac_driver_api = {
 		.base_addr = DT_INST_REG_ADDR_BY_NAME(n, data),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.promiscuous_mode = DT_INST_PROP_OR(n, promiscuous_mode, false),                   \
-		.use_zephyr_random_mac = DT_INST_NODE_HAS_PROP(n, zephyr_random_mac_address),      \
-		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};                         \
+		.mcfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                        \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))};                         \
                                                                                                    \
 	static struct sy1xx_mac_dma_buffers __attribute__((section(".udma_access")))               \
 	__aligned(4) sy1xx_mac_dma_buffers_##n;                                                    \
                                                                                                    \
 	static struct sy1xx_mac_dev_data sy1xx_mac_dev_data##n = {                                 \
-		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                            \
 		.dma_buffers = &sy1xx_mac_dma_buffers_##n,                                         \
 	};                                                                                         \
                                                                                                    \

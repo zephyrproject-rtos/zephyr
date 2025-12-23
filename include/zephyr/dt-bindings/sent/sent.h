@@ -8,9 +8,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_SENT_H_
 
 /**
- * @brief SENT Interface
- * @defgroup sent_interface SENT Interface
- * @ingroup io_interfaces
+ * @addtogroup sent_interface
  * @{
  */
 

@@ -1,0 +1,93 @@
+/* CTF 1.8 */
+typealias integer { size = 8; align = 8; signed = true; } := int8_t;
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 16; align = 8; signed = false; } := uint16_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+typealias integer { size = 32; align = 8; signed = true; } := int32_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+typealias integer { size = 5; signed = false; } := uint5_t;
+typealias integer { size = 1; signed = false; } := uint1_t;
+typealias integer { size = 2; signed = false; } := uint2_t;
+typealias integer { size = 3; signed = false; } := uint3_t;
+typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := string_t;
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+};
+
+
+struct event_header {
+	enum : uint8_t { META = 0, EVENT = 1 ... 7 } id;
+};
+
+
+stream {
+	event.header := struct event_header;
+};
+
+event {
+	name = func_entry_with_context;
+	id = 0;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint64_t timestamp;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		string_t thread_name[@CONFIG_THREAD_MAX_NAME_LEN@];
+	};
+};
+
+event {
+	name = func_exit_with_context;
+	id = 1;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint64_t timestamp;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		string_t thread_name[@CONFIG_THREAD_MAX_NAME_LEN@];
+	};
+};
+
+event {
+	name = profile;
+	id = 2;
+	fields := struct {
+		uint32_t callee;
+		uint64_t delta_t;
+	};
+};
+
+event {
+	name = sched_switched_in;
+	id = 3;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint64_t timestamp;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		string_t thread_name[@CONFIG_THREAD_MAX_NAME_LEN@];
+	};
+};
+
+event {
+	name = sched_switched_out;
+	id = 4;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint64_t timestamp;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		string_t thread_name[@CONFIG_THREAD_MAX_NAME_LEN@];
+	};
+};

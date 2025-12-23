@@ -78,7 +78,7 @@
 	};
 };
 
-&exmif{
+&exmif {
 	status = "disabled";
 };
 
@@ -110,6 +110,7 @@
 	memory-regions = <&dma_fast_region>;
 	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 	zephyr,pm-device-runtime-auto;
+
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
@@ -137,6 +138,6 @@ dut_spis: &spi131 {
 	pinctrl-1 = <&spis131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };

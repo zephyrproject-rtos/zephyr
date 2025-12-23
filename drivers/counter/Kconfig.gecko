@@ -3,6 +3,8 @@
 # Copyright (c) 2019, Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_SILABS_SLEEPTIMER := silabs,sleeptimer
+
 config COUNTER_GECKO_RTCC
 	bool "Silicon Labs Gecko Counter (RTCC) driver"
 	default y
@@ -16,8 +18,8 @@ config COUNTER_GECKO_RTCC
 config COUNTER_GECKO_STIMER
 	bool "Silicon Labs Gecko Counter Sleep Timer driver"
 	default y
-	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
-	select SOC_SILABS_SLEEPTIMER
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_SILABS_SLEEPTIMER))
+	select SILABS_SISDK_SLEEPTIMER
 	help
 	  Enable the counter driver for Sleep Timer module for Silicon Labs
 	  Gecko chips.

@@ -1,0 +1,6 @@
+board:
+  name: dnesp32s3b
+  full_name: DNESP32S3B
+  vendor: alientek
+  socs:
+    - name: esp32s3

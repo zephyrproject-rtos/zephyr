@@ -1,0 +1,12 @@
+identifier: roc_rk3588_pc
+name: Rockchip ROC RK3588 PC
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

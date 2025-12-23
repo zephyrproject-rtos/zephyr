@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ CMTW Timer
+
+compatible: "renesas,rz-cmtw"
+
+include: base.yaml
+
+properties:
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: Input clock prescaler. For RZ/T2M, RZ/N2L, only 8, 32, 128, 512 are supported.
+
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    required: true

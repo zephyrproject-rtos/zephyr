@@ -37,7 +37,7 @@
 			   <30 0 &gpio0 8 0>,	/* GPIO-I */
 			   <31 0 &gpio0 9 0>,	/* GPIO-J */
 			   <32 0 &gpio0 15 0>;	/* GPIO-K */
-			   /* GPIO-L not connected */
+		/* GPIO-L not connected */
 	};
 };
 
@@ -49,6 +49,7 @@
 /* disabled (used by Flash ROM by default) */
 &spi0 {
 	reg = <0x10040000 0x1000 0x20000000 0x2000000>;
+
 	flash0: flash@0 {
 		compatible = "issi,is25wp256d", "jedec,spi-nor";
 		status = "disabled";

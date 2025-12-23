@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra8/r7ka8t2xf.dtsi>
+
+/ {
+	soc {
+		mram-controller@4013c000 {
+			code_mram_cm85: mram@2000000 {
+				compatible = "renesas,ra-nv-mram";
+				reg = <0x2000000 DT_SIZE_M(1)>;
+				write-block-size = <1>;
+				erase-block-size = <32>;
+			};
+		};
+
+		sram0: memory@22000000 {
+			compatible = "mmio-sram";
+			reg = <0x22000000 DT_SIZE_K(1664)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};

@@ -24,10 +24,18 @@ config SMBUS_STATS
 
 config SMBUS_INIT_PRIORITY
 	int "Init priority"
-	default KERNEL_INIT_PRIORITY_DEFAULT
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  SMBus device driver initialization priority.
 
+config SMBUS_SOFT_PEC
+	bool "SMBus software PEC support"
+	select CRC
+	help
+	  Enable software Packet Error Checking (PEC) support.
+
+	  These generic functions can be used by SMBus drivers for transceivers that do not support
+	  PEC in hardware.
 
 module = SMBUS
 module-str = smbus
@@ -82,6 +90,8 @@ menuconfig SMBUS_STM32
 	default y
 	depends on DT_HAS_ST_STM32_SMBUS_ENABLED
 	depends on I2C_STM32
+	select PINCTRL
+	select SMBUS_SOFT_PEC
 	help
 	  Enable STM32 SMBus driver.
 

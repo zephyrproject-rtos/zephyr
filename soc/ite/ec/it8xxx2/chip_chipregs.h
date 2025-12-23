@@ -1256,6 +1256,7 @@ enum chip_pll_mode {
 #define IT8XXX2_ECPM_SCDCR2   ECREG(IT8XXX2_ECPM_BASE + 0x0e)
 #define IT8XXX2_ECPM_SCDCR3   ECREG(IT8XXX2_ECPM_BASE + 0x0f)
 #define IT8XXX2_ECPM_SCDCR4   ECREG(IT8XXX2_ECPM_BASE + 0x10)
+#define IT8XXX2_ECPM_SCDCR8   ECREG(IT8XXX2_ECPM_BASE + 0x18)
 #define IT8XXX2_ECPM_PFACC0R  ECREG(IT8XXX2_ECPM_BASE + 0x20)
 #define IT8XXX2_ECPM_PFACC1R  ECREG(IT8XXX2_ECPM_BASE + 0x21)
 #define IT8XXX2_ECPM_PFACC2R  ECREG(IT8XXX2_ECPM_BASE + 0x40)
@@ -1321,6 +1322,15 @@ enum chip_pll_mode {
 /* 0x80: SMCLK Timing Setting Register Bridge Slave */
 #define IT8XXX2_SMB_PREDEN      BIT(7)
 #endif
+
+/* SMBus register fields */
+/*
+ * it81xx2cx/dx:
+ * bit3@0xf01c20: Gating Enable of I2C Idle to Sleep Control
+ * it82xx2:
+ * bit3@0xf01c09: Gating Enable of I2C Idle to Sleep Control
+ */
+#define IT8XXX2_SMB_GEOIITSC BIT(3)
 
 /**
  * Enhanced SMBus/I2C Interface

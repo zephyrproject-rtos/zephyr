@@ -13,7 +13,3 @@ config SOC_SERIES_IMX6SX
 
 config SOC_MCIMX6X_M4
 	select HAS_IMX_HAL
-	select HAS_IMX_GPIO
-	select HAS_IMX_EPIT
-	select HAS_IMX_I2C
-	select HAS_IMX_IOMUXC

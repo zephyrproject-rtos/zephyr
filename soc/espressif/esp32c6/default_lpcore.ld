@@ -24,9 +24,9 @@ _aligned_coproc_mem = ALIGNED_COPROC_MEM;
 _vector_table_org = LPSRAM_IRAM_START;
 _vector_table_len = 0x80;
 _ram_org = _vector_table_org + _vector_table_len;
-_ram_len = _aligned_coproc_mem - _vector_table_len - ULP_SHARED_MEM;
-_shared_mem_org = _ram_org + _ram_len;
-_shared_mem_len = ULP_SHARED_MEM;
+_ram_len = _aligned_coproc_mem - _vector_table_len - ULP_SHARED_MEM_SIZE;
+_shared_mem_org = ULP_SHARED_MEM_ADDR;
+_shared_mem_len = ULP_SHARED_MEM_SIZE;
 
 ENTRY(reset_vector)
 

@@ -43,6 +43,5 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
-
 	};
 };

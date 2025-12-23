@@ -18,6 +18,7 @@
  */
 __customramfunc bool custom_ram_func(void)
 {
+	compiler_barrier();
 	return true;
 }
 
@@ -28,6 +29,7 @@ __customramfunc bool custom_ram_func(void)
  */
 __ramfunc bool ram_function(void)
 {
+	compiler_barrier();
 	return true;
 }
 

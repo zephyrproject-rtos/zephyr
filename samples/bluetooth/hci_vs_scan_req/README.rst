@@ -25,7 +25,4 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/hci_vs_scan_req`
-in the Zephyr tree.
-
 See :zephyr:code-sample-category:`bluetooth` samples for details.

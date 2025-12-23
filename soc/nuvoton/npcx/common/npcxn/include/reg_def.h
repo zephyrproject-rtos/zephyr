@@ -328,6 +328,9 @@ struct uart_reg {
 	volatile uint8_t reserved11;
 	/* 0x026: FIFO Mode Receive Control */
 	volatile uint8_t UFRCTL;
+	volatile uint8_t reserved12[5];
+	/* 0x02C: Common Mode Operation Control */
+	volatile uint8_t UCNTL;
 };
 
 /* UART register fields */
@@ -352,6 +355,9 @@ struct uart_reg {
 #define NPCX_UMDSL_ETD       4
 #define NPCX_UMDSL_ERD       5
 
+#define NPCX_UFRS_CHAR_DATA_BIT_8 0
+#define NPCX_UFRS_CHAR_DATA_BIT_7 1
+
 #define NPCX_UFTSTS_TEMPTY_LVL       FIELD(0, 5)
 #define NPCX_UFTSTS_TEMPTY_LVL_STS   5
 #define NPCX_UFTSTS_TFIFO_EMPTY_STS  6
@@ -367,6 +373,8 @@ struct uart_reg {
 #define NPCX_UFRCTL_RFULL_LVL_EN     5
 #define NPCX_UFRCTL_RNEMPTY_EN       6
 #define NPCX_UFRCTL_ERR_EN           7
+#define NPCX_UCNTL_CR_SIN_INV        0
+#define NPCX_UCNTL_CR_SOUT_INV       1
 
 /* Macro functions for MIWU multi-registers */
 #define NPCX_WKEDG(base, group)  (*(volatile uint8_t *)(base + NPCX_WKEDG_OFFSET(group)))
@@ -705,6 +713,7 @@ struct espi_reg {
 #define NPCX_ESPISTS_BMBURSTDONE         23
 #define NPCX_ESPISTS_ESPIRST_LVL         24
 #define NPCX_ESPISTS_AUTO_RD_DIS_STS     29
+#define NPCX_STATUS_IMG_VWIRE_AVAIL      6
 #define NPCX_VWSWIRQ_IRQ_NUM             FIELD(0, 7)
 #define NPCX_VWSWIRQ_IRQ_LVL             7
 #define NPCX_VWSWIRQ_INDEX               FIELD(8, 7)
@@ -739,7 +748,7 @@ struct espi_reg {
 #define NPCX_FLASHCFG_TRGFLEBLKSIZE      FIELD(16, 8)
 #define NPCX_FLASHCFG_FLREQSUP           FIELD(0, 3)
 #define NPCX_FLASHCTL_FLASH_NP_FREE      0
-#define NPCX_FLASHCTL_FLASH_TX_AVAIL     1
+#define NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL 1
 #define NPCX_FLASHCTL_STRPHDR            2
 #define NPCX_FLASHCTL_DMATHRESH          FIELD(3, 2)
 #define NPCX_FLASHCTL_AMTSIZE            FIELD(5, 8)
@@ -969,6 +978,8 @@ struct kbc_reg {
 #define NPCX_HICTRL_PMIOCIE 5
 #define NPCX_HICTRL_PMICIE  6
 #define NPCX_HICTRL_FW_OBF  7
+#define NPCX_HIIRQC_IRQ1B   0
+#define NPCX_HIIRQC_IRQ12B  1
 #define NPCX_HIKMST_OBF     0
 #define NPCX_HIKMST_IBF     1
 #define NPCX_HIKMST_F0      2
@@ -1475,6 +1486,7 @@ struct fiu_reg {
 };
 
 /* FIU register fields */
+#define NPCX_BURST_CFG_UNLIM_BURST     3
 #define NPCX_BURST_CFG_SPI_DEV_SEL     FIELD(4, 2)
 #define NPCX_RESP_CFG_IAD_EN           0
 #define NPCX_RESP_CFG_DEV_SIZE_EX      2
@@ -2185,5 +2197,85 @@ struct mdma_reg {
 
 /* Channel 0/1 Current Transfer Count Register (MDMA_CTCNT0/MDMA_CTCNT1) */
 #define NPCX_MDMA_CTCNT_CURRENT_TFR_CNT FIELD(0, 13)
+
+/* BBRM register fields */
+#define NPCX_BKUPSTS_VCC1_STS BIT(0)
+#define NPCX_BKUPSTS_VSBY_STS BIT(1)
+#define NPCX_BKUPSTS_IBBR     BIT(7)
+
+/* GDMA registers */
+struct gdma_reg {
+	/* 0x000: Channel Control */
+	volatile uint32_t CONTROL;
+	/* 0x004: Channel Source Base Address */
+	volatile uint32_t SRCB;
+	/* 0x008: Channel Destination Base Address */
+	volatile uint32_t DSTB;
+	/* 0x00C: Channel Transfer Count */
+	volatile uint32_t TCNT;
+	/* 0x010: Channel Current Source */
+	volatile uint32_t CSRC;
+	/* 0x014: Channel Current Destination */
+	volatile uint32_t CDST;
+	/* 0x018: Channel Current Transfer Count */
+	volatile uint32_t CTCNT;
+};
+
+/* DMA register fields */
+#define NPCX_DMACTL_GDMAEN               0
+#define NPCX_DMACTL_GPD                  1
+#define NPCX_DMACTL_GDMAMS               FIELD(2, 2)
+#define NPCX_DMACTL_DADIR                4
+#define NPCX_DMACTL_SADIR                5
+#define NPCX_DMACTL_DAFIX                6
+#define NPCX_DMACTL_SAFIX                7
+#define NPCX_DMACTL_SIEN                 8
+#define NPCX_DMACTL_BME                  9
+#define NPCX_DMACTL_TWS                  FIELD(12, 2)
+#define NPCX_DMACTL_GPS                  14
+#define NPCX_DMACTL_DM                   15
+#define NPCX_DMACTL_SOFTREQ              16
+#define NPCX_DMACTL_TC                   18
+#define NPCX_DMACTL_BMSAFIX              30
+#define NPCX_DMACTL_BMDAFIX              31
+
+/* LCT (Long Countdown Timer) registers */
+struct lct_reg {
+	/* 0x000-0x001 */
+	volatile uint8_t reserved1[2];
+	/* 0x002: LCT Control */
+	volatile uint8_t LCTCONT;
+	/* 0x003 */
+	volatile uint8_t reserved2;
+	/* 0x004: LCT Status */
+	volatile uint8_t LCTSTAT;
+	/* 0x005: LCT Seconds */
+	volatile uint8_t LCTSECOND;
+	/* 0x006: LCT Minutes */
+	volatile uint8_t LCTMINUTE;
+	/* 0x007 */
+	volatile uint8_t reserved3;
+	/* 0x008: LCT Hours */
+	volatile uint8_t LCTHOUR;
+	/* 0x009 */
+	volatile uint8_t reserved4;
+	/* 0x00A: LCT Days */
+	volatile uint8_t LCTDAY;
+	/* 0x00B */
+	volatile uint8_t reserved5;
+	/* 0x00C: LCT Weeks */
+	volatile uint8_t LCTWEEK;
+#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_lct_v2)
+	/* 0x00D: LCT Weeks MSB */
+	volatile uint8_t LCTWEEKM;
+#endif
+};
+
+#define NPCX_LCTCONT_LCTEN        0
+#define NPCX_LCTCONT_LCTEVEN      1
+#define NPCX_LCTCONT_LCTPSLEN     2
+#define NPCX_LCTCONT_LCT_CLK_EN   6
+#define NPCX_LCTCONT_LCT_VSBY_PWR 7
+#define NPCX_LCTSTAT_LCTEVST      0
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

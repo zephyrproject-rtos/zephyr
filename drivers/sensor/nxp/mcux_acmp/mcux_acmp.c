@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
- * Copyright 2022, 2024 NXP
+ * Copyright 2022, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,7 +176,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 	case SENSOR_ATTR_MCUX_ACMP_DAC_VALUE:
 		if (val1 >= 0 && val1 < MCUX_ACMP_DAC_LEVELS) {
 			LOG_DBG("dac = %d", val1);
-			data->dac.DACValue = val1;
+			data->dac.DACValue = val1 - 1;
 			ACMP_SetDACConfig(config->base, &data->dac);
 		} else {
 			return -EINVAL;
@@ -382,8 +382,6 @@ static int mcux_acmp_sample_fetch(const struct device *dev,
 	struct mcux_acmp_data *data = dev->data;
 	uint32_t status;
 
-	__ASSERT_NO_MSG(val != NULL);
-
 	if (chan != SENSOR_CHAN_ALL &&
 	    (int16_t)chan != SENSOR_CHAN_MCUX_ACMP_OUTPUT) {
 		return -ENOTSUP;
@@ -498,7 +496,9 @@ static int mcux_acmp_init(const struct device *dev)
 	ACMP_SetDiscreteModeConfig(config->base, &data->discrete_config);
 #endif
 
+#if MCUX_ACMP_HAS_WINDOW_MODE
 	ACMP_EnableWindowMode(config->base, config->window);
+#endif
 	ACMP_SetFilterConfig(config->base, &config->filter);
 	ACMP_SetChannelConfig(config->base, &data->channels);
 
@@ -534,7 +534,9 @@ static DEVICE_API(sensor, mcux_acmp_driver_api) = {
 static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	.base = (CMP_Type *)DT_INST_REG_ADDR(n),			\
 	.filter = {							\
-		.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n),	\
+		COND_CODE_1(MCUX_ACMP_HAS_SAMPLE_CLOCK_SELECTION,	\
+		(.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n),),	\
+		())							\
 		.filterCount = MCUX_ACMP_DT_INST_FILTER_COUNT(n),	\
 		.filterPeriod = MCUX_ACMP_DT_INST_FILTER_PERIOD(n),	\
 	},								\

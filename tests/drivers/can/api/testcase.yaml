@@ -17,6 +17,7 @@ tests:
     platform_allow:
       - esp32s3_devkitm/esp32s3/procpu
       - xiao_esp32s3/esp32s3/procpu
+      - esp32h2_devkitm
   drivers.can.api.nxp_s32_canxl.non_rx_fifo:
     extra_configs:
       - CONFIG_CAN_NXP_S32_RX_FIFO=n

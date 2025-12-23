@@ -5,5 +5,6 @@ config COUNTER_CC23X0_RTC
 	bool "CC23x0 Counter driver based on the RTC Timer"
 	default y
 	depends on DT_HAS_TI_CC23X0_RTC_ENABLED
+	depends on CC23X0_SYSTIM_TIMER
 	help
 	  Enable counter driver based on RTC timer for cc23x0

@@ -56,23 +56,20 @@
 			status = "disabled";
 		};
 
-		flcn: flash-controller@407ec000 {
-			reg = <0x407ec000 0x10000>;
-
+		flash: flash-controller@407e0000 {
+			compatible = "renesas,ra-flash-lp-controller";
+			reg = <0x407e0000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <30 1>;
+			interrupt-names = "frdyi";
+		};
 
-			flash0: code@0 {
-				compatible = "soc-nv-flash";
-				/* "reg" property should be defined in the
-				 * chip specific .dtsi file
-				 */
-			};
-
-			flash1: data@40100000 {
-				compatible = "soc-nv-flash";
-				reg = <0x40100000 DT_SIZE_K(8)>;
-			};
+		crc: crc@40074000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclkb MSTPC 1>;
+			status = "disabled";
 		};
 
 		ioport0: gpio@40040000 {
@@ -184,6 +181,14 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				status = "disabled";
+			};
 		};
 
 		sci1: sci1@40070020 {
@@ -194,6 +199,14 @@
 
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <1>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <1>;
 				status = "disabled";
 			};
@@ -210,6 +223,14 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				status = "disabled";
+			};
 		};
 
 		sci3: sci3@40070060 {
@@ -220,6 +241,14 @@
 
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <3>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <3>;
 				status = "disabled";
 			};
@@ -238,13 +267,14 @@
 				channel = <9>;
 				status = "disabled";
 			};
-		};
 
-		id_code: id_code@1010018 {
-			compatible = "zephyr,memory-region";
-			reg = <0x01010018 0x20>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <9>;
+				status = "disabled";
+			};
 		};
 
 		wdt: wdt@40044200 {
@@ -377,7 +407,7 @@
 			status = "disabled";
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
@@ -422,7 +452,8 @@
 		};
 
 		adc0: adc@4005c000 {
-			compatible = "renesas,ra-adc";
+			compatible = "renesas,ra-adc12";
+			unit = <0>;
 			reg = <0x4005c000 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
@@ -515,6 +546,39 @@
 			#port-irq-cells = <0>;
 			status = "disabled";
 		};
+
+		ctsu: ctsu2@40082000 {
+			compatible = "renesas,ra-ctsu";
+			reg = <0x40082000 0x70>;
+			clocks = <&pclkb MSTPC 3>;
+			variant = "ctsu2";
+			status = "disabled";
+		};
+
+		option_setting_ofs0: option-setting-ofs0@400 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000400 0x4>;
+			status = "okay";
+		};
+
+		option_setting_ofs1: option-setting-ofs1@404 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000404 0x4>;
+			status = "okay";
+		};
+
+		option_setting_secmpu: option-setting-secmpu@408 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000408 0x34>;
+			status = "okay";
+		};
+
+		option_setting_osis: option-setting-osis@1010018 {
+			compatible = "zephyr,memory-region";
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
+			reg = <0x01010018 0x1c>;
+			status = "okay";
+		};
 	};
 
 	clocks: clocks {
@@ -557,7 +621,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
 			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&hoco>;

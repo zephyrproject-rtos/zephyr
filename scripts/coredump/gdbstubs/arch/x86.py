@@ -3,6 +3,8 @@
 # Copyright (c) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# pylint: disable=duplicate-code
 
 import binascii
 import logging
@@ -10,11 +12,10 @@ import struct
 
 from gdbstubs.gdbstub import GdbStub
 
-
 logger = logging.getLogger("gdbstub")
 
 
-class RegNum():
+class RegNum:
     # Matches the enum i386_regnum in GDB
     EAX = 0
     ECX = 1
@@ -34,7 +35,7 @@ class RegNum():
     GS = 15
 
 
-class ExceptionVectors():
+class ExceptionVectors:
     # Matches arch/x86/include/kernel_arch_data.h
     IV_DIVIDE_ERROR = 0
     IV_DEBUG = 1

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- #include "pcie_ivshmem.dtsi"
+#include "pcie_ivshmem.dtsi"
 
 / {
 	ipm_ivshmem0: ipm_ivshmem {

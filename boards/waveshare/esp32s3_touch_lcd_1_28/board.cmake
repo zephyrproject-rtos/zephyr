@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(NOT "${OPENOCD}" MATCHES "^${ESPRESSIF_TOOLCHAIN_PATH}/.*")
-	set(OPENOCD OPENOCD-NOTFOUND)
+  set(OPENOCD OPENOCD-NOTFOUND)
 endif()
 find_program(OPENOCD openocd PATHS ${ESPRESSIF_TOOLCHAIN_PATH}/openocd-esp32/bin NO_DEFAULT_PATH)
 

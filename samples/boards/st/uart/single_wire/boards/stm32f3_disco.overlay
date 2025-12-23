@@ -5,7 +5,7 @@
  */
 
 / {
-	 aliases {
+	aliases {
 		single-line-uart1 = &usart2;
 		single-line-uart2 = &uart4;
 	};

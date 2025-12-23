@@ -234,7 +234,7 @@ static int cmd_backends(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_bacskpace_mode_backspace(const struct shell *sh, size_t argc,
+static int cmd_backspace_mode_backspace(const struct shell *sh, size_t argc,
 					char **argv)
 {
 	ARG_UNUSED(argc);
@@ -245,7 +245,7 @@ static int cmd_bacskpace_mode_backspace(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_bacskpace_mode_delete(const struct shell *sh, size_t argc,
+static int cmd_backspace_mode_delete(const struct shell *sh, size_t argc,
 				      char **argv)
 {
 	ARG_UNUSED(argc);
@@ -510,9 +510,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_shell_stats,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_backspace_mode,
 	SHELL_CMD_ARG(backspace, NULL, SHELL_HELP_BACKSPACE_MODE_BACKSPACE,
-			cmd_bacskpace_mode_backspace, 1, 0),
+			cmd_backspace_mode_backspace, 1, 0),
 	SHELL_CMD_ARG(delete, NULL, SHELL_HELP_BACKSPACE_MODE_DELETE,
-			cmd_bacskpace_mode_delete, 1, 0),
+			cmd_backspace_mode_delete, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

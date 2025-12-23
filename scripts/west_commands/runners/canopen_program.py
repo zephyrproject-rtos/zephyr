@@ -12,7 +12,7 @@ from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     import canopen
-    from progress.bar import Bar
+    from tqdm import tqdm
     MISSING_REQUIREMENTS = False
 except ImportError:
     MISSING_REQUIREMENTS = True
@@ -43,11 +43,6 @@ PROGRAM_CTRL_START = 0x01
 PROGRAM_CTRL_RESET = 0x02
 PROGRAM_CTRL_CLEAR = 0x03
 PROGRAM_CTRL_ZEPHYR_CONFIRM = 0x80
-
-class ToggleAction(argparse.Action):
-    '''Toggle argument parser'''
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, not option_string.startswith('--no-'))
 
 class CANopenBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for CANopen.'''
@@ -99,9 +94,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                             help=f'Python-CAN context to use (default: {DEFAULT_CAN_CONTEXT})')
         parser.add_argument('--program-number', type=int, default=DEFAULT_PROGRAM_NUMBER,
                             help=f'program number (default: {DEFAULT_PROGRAM_NUMBER})')
-        parser.add_argument('--confirm', '--no-confirm',
-                            dest='confirm', nargs=0,
-                            action=ToggleAction,
+        parser.add_argument('--confirm', action=argparse.BooleanOptionalAction,
                             help='confirm after starting? (default: yes)')
         parser.add_argument('--confirm-only', default=False, action='store_true',
                             help='confirm only, no program download (default: no)')
@@ -284,17 +277,17 @@ class CANopenProgramDownloader:
             outfile = self.data_sdo.open('wb', buffering=self.download_buffer_size,
                                          size=size, block_transfer=self.block_transfer)
 
-            progress = Bar('%(percent)d%%', max=size, suffix='%(index)d/%(max)dB')
+            progress = tqdm(total=size, unit='B', unit_scale=True)
             while True:
                 chunk = infile.read(self.download_buffer_size // 2)
                 if not chunk:
                     break
                 outfile.write(chunk)
-                progress.next(n=len(chunk))
+                progress.update(len(chunk))
         except Exception as err:
             raise ValueError('Failed to download program') from err
         finally:
-            progress.finish()
+            progress.close()
             infile.close()
             outfile.close()
 

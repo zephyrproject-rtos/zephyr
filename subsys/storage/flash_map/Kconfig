@@ -46,19 +46,20 @@ if FLASH_AREA_CHECK_INTEGRITY
 
 choice FLASH_AREA_CHECK_INTEGRITY_BACKEND
 	prompt "Crypto backend for the flash check functions"
-	default FLASH_AREA_CHECK_INTEGRITY_PSA if BUILD_WITH_TFM
-	default FLASH_AREA_CHECK_INTEGRITY_MBEDTLS if !BUILD_WITH_TFM
+	default FLASH_AREA_CHECK_INTEGRITY_PSA
 
 config FLASH_AREA_CHECK_INTEGRITY_PSA
 	bool "Use PSA"
 	select PSA_WANT_ALG_SHA_256
+	select PSA_CRYPTO
 	help
 	  Use the PSA API to perform the integrity check.
 
 config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
-	bool "Use Mbed TLS"
+	bool "Use Mbed TLS [DEPRECATED]"
 	select MBEDTLS
 	select MBEDTLS_SHA256
+	select DEPRECATED
 	help
 	  Use the Mbed TLS library to perform the integrity check.
 

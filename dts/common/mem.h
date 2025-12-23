@@ -9,6 +9,7 @@
 
 #define DT_SIZE_K(x) ((x) * 1024)
 #define DT_SIZE_M(x) (DT_SIZE_K(x) * 1024)
+#define DT_SIZE_G(x) (DT_SIZE_M(x) * 1024)
 
 /* concatenate the values of the arguments into one */
 #define _DT_DO_CONCAT(x, y) x ## y

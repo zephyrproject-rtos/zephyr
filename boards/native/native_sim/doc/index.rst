@@ -1,12 +1,4 @@
-.. _native_sim:
-
-Native simulator - native_sim
-#############################
-
-.. contents::
-   :depth: 1
-   :backlinks: entry
-   :local:
+.. zephyr:board:: native_sim
 
 Overview
 ********
@@ -190,6 +182,11 @@ but, accessing the host for test purposes from your embedded code will be more
 difficult, and you will have a limited choice of
 :ref:`drivers and backends to chose from<native_sim_peripherals_c_compat>`.
 
+Cross-compiling native_sim
+**************************
+
+It is possible to :ref:`cross compile native_sim<posix_arch_cross_compile>`.
+
 Rationale for this port and comparison with other options
 *********************************************************
 
@@ -293,7 +290,9 @@ All times are kept in microseconds.
 Peripherals
 ***********
 
-The following peripherals are currently provided with this board:
+.. zephyr:board-supported-hw::
+
+Here are more details on the peripherals that are currently provided with this board:
 
 **Interrupt controller**
   A simple yet generic interrupt controller is provided. It can nest interrupts
@@ -504,9 +503,12 @@ The following peripherals are currently provided with this board:
   enabled with :kconfig:option:`CONFIG_CAN_NATIVE_LINUX` and configured with the device tree binding
   :dtcompatible:`zephyr,native-linux-can`.
 
-  It is possible to specify which CAN interface will be used by the app using the ``--can-if``
-  command-line option. This option overrides **every** Linux SocketCAN driver instance to use the specified
-  interface.
+  By default, the native simulator expects a SocketCAN network device called ``zcan0``. It is
+  possible to specify which SocketCAN network device will be used by the app by using the
+  ``--can-if`` command-line option. This option overrides **every** Linux SocketCAN driver instance
+  to use the specified interface.
+
+  SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
 
 .. _native_ptty_uart:
 
@@ -521,7 +523,7 @@ By default one ready UART of this type is setup in DTS, but any number can be en
 Normally these UARTs are connected to new pseudoterminals PTYs, i.e. :file:`/dev/pts{<nbr>}`,
 but it is also possible to map one of them to the executable's ``stdin`` and ``stdout``.
 This can be done in two ways, either with the command line option ``--<uart_name>_stdinout``
-(where ``<uart_name>`` is the UART DTS node name), or, for the first PTY UART instance by chosing
+(where ``<uart_name>`` is the UART DTS node name), or, for the first PTY UART instance by choosing
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT` instead of the default
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_OWN_PTY`.
 For interactive use with the :ref:`shell_api`, it is recommended to choose the PTY option.
@@ -544,14 +546,24 @@ where :file:`/dev/{<ptyn>}` should be replaced with the actual PTY device.
 
 You may also chose to automatically attach a terminal emulator to any of these UARTs.
 To automatically attach one to all these UARTs, pass the command line option ``-attach_uart`` to the
-executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``
+executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``.
 The command used for attaching to the new shell can be set for all UARTs with the command line
 option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
 ``-<uart_name>_attach_uart_cmd``. Where the default command is given by
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
-This driver only supports poll mode. Interrupt and async mode are not supported.
+Note that these ``uart_cmd`` commands can be effectively any shell command including lists of
+commands. Therefore it is possible to invoke any other script or program from it.
+Those commands will be run right after the PTY is created.
+For example, if one wanted to create a link to the newly created PTY, and have it removed when the
+program ends, one could do:
+
+.. code-block:: console
+
+   $ zephyr.exe --uart_attach_uart_cmd='ln -s %s /tmp/somename' ; rm /tmp/somename
+
+This driver supports poll mode, interrupt mode and async mode.
 Neither runtime configuration or line control are supported.
 
 .. _native_tty_uart:
@@ -669,20 +681,25 @@ crashes, you can cleanup the stale mount point by using the program
 
    $ fusermount -u flash
 
-Note that this feature requires a 32-bit version of the FUSE library, with a
-minimal version of 2.6, on the host system and ``pkg-config`` settings to
-correctly pickup the FUSE install path and compiler flags.
+You can chose to use the v2 FUSE host library or the v3 with
+:kconfig:option:`CONFIG_FUSE_LIBRARY_VERSION`.
+When using the v2, a minimal version of 2.6 is necessary. For v3, 3.0 should suffice.
+You will also need ``pkg-config`` setup to correctly pickup the FUSE install path and compiler flags.
+Note that using this feature with the 32-bit native_sim variant requires the 32-bit version of the
+corresponding FUSE library.
 
-On a Ubuntu 22.04 host system, for example, install the ``pkg-config`` and
-``libfuse-dev:i386`` packages, and configure the pkg-config search path with
-these commands:
+For example, to use the v2 of the library, on a Ubuntu 24.04 host system, install the ``pkg-config``
+and ``libfuse-dev:i386`` for 32-bit builds, and ``libfuse-dev`` for 64-bit builds:
 
 .. code-block:: console
 
    $ sudo dpkg --add-architecture i386
    $ sudo apt update
-   $ sudo apt-get install pkg-config libfuse-dev:i386
+   $ sudo apt-get install pkg-config libfuse-dev:i386 libfuse-dev
    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+Similarly ``libfuse3-dev:i386`` and ``libfuse3-dev`` provide the 32 and 64-bit FUSE v3 library
+and headers.
 
 .. _native_sim_peripherals_c_compat:
 
@@ -708,6 +725,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
+     HWINFO, HWINFO native, :kconfig:option:`CONFIG_HWINFO_NATIVE`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
      Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
      Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All

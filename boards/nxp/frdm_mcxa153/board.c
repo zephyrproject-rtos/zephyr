@@ -173,6 +173,10 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO12M_to_LPUART2);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))
 	RESET_ReleasePeripheralReset(kPORT0_RST_SHIFT_RSTn);
 #endif

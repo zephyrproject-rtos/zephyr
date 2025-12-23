@@ -12,6 +12,7 @@
 			nxp,current-reference-control;
 			nxp,termination-resistor;
 		};
+
 		group2 {
 			pinmux = <LVDS_DSPI_10_SIN>;
 			input-enable;

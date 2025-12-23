@@ -5,6 +5,7 @@ config DMA_MCUX_LPC
 	bool "MCUX LPC DMAC driver"
 	default y
 	depends on DT_HAS_NXP_LPC_DMA_ENABLED
+	select NXP_INPUTMUX
 	help
 	  DMA driver for MCUX LPC MCUs.
 

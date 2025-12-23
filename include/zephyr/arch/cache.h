@@ -13,9 +13,8 @@
 #define ZEPHYR_INCLUDE_ARCH_CACHE_H_
 
 /**
- * @brief Cache Controller Interface
- * @defgroup cache_arch_interface Cache Controller Interface
- * @ingroup io_interfaces
+ * @defgroup arch-cache Architecture-specific cache controllers.
+ * @ingroup arch-interface
  * @{
  */
 
@@ -24,6 +23,9 @@
 #elif defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/cache.h>
 #endif
+
+#include <stddef.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
 
@@ -335,7 +337,7 @@ size_t arch_icache_line_size_get(void);
 
 #endif /* CONFIG_ICACHE || __DOXYGEN__ */
 
-#if CONFIG_CACHE_DOUBLEMAP  || __DOXYGEN__
+#if CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS  || __DOXYGEN__
 bool arch_cache_is_ptr_cached(void *ptr);
 #define cache_is_ptr_cached(ptr) arch_cache_is_ptr_cached(ptr)
 
@@ -347,10 +349,14 @@ void __sparse_cache *arch_cache_cached_ptr_get(void *ptr);
 
 void *arch_cache_uncached_ptr_get(void __sparse_cache *ptr);
 #define cache_uncached_ptr(ptr) arch_cache_uncached_ptr_get(ptr)
-#endif /* CONFIG_CACHE_DOUBLEMAP */
+#endif /* CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS */
 
 
 void arch_cache_init(void);
+
+#if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE) || defined(__DOXYGEN__)
+#define cache_is_mem_coherent(ptr) arch_mem_coherent(ptr)
+#endif
 
 /**
  * @}

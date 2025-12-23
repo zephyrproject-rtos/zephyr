@@ -324,7 +324,7 @@ class LFXOConfig:
             raise ValueError("Invalid LFXO startup time (not configured)")
 
         return cls(
-            accuracy_ppm=int(lfosc_lfxoconfig.enum_get("ACCURACY")[:3]),
+            accuracy_ppm=int(lfosc_lfxoconfig.enum_get("ACCURACY")[:-3]),
             mode=LFXOMode(lfosc_lfxoconfig.enum_get("MODE")),
             builtin_load_capacitors=builtin_load_capacitors,
             builtin_load_capacitance_pf=builtin_load_capacitance_pf,
@@ -391,8 +391,8 @@ class LFRCCalibrationConfig:
         if calibration_enabled:
             return cls(
                 calibration_enabled=calibration_enabled,
-                temp_meas_interval_seconds=lfosc_lfrcautocalconfig["TEMPINTERVAL"],
-                temp_delta_calibration_trigger_celsius=lfosc_lfrcautocalconfig["TEMPDELTA"],
+                temp_meas_interval_seconds=lfosc_lfrcautocalconfig["TEMPINTERVAL"] * 0.25,
+                temp_delta_calibration_trigger_celsius=lfosc_lfrcautocalconfig["TEMPDELTA"] * 0.25,
                 max_meas_interval_between_calibrations=lfosc_lfrcautocalconfig["INTERVALMAXNO"],
             )
         else:
@@ -431,8 +431,10 @@ class LFRCCalibrationConfig:
             "ENABLE", "Enabled" if self.calibration_enabled else "Disabled"
         )
         if self.calibration_enabled:
-            lfosc_lfrcautocalconfig["TEMPINTERVAL"] = self.temp_meas_interval_seconds
-            lfosc_lfrcautocalconfig["TEMPDELTA"] = self.temp_delta_calibration_trigger_celsius
+            lfosc_lfrcautocalconfig["TEMPINTERVAL"] = int(self.temp_meas_interval_seconds / 0.25)
+            lfosc_lfrcautocalconfig["TEMPDELTA"] = int(
+                self.temp_delta_calibration_trigger_celsius / 0.25
+            )
             lfosc_lfrcautocalconfig["INTERVALMAXNO"] = self.max_meas_interval_between_calibrations
 
     def to_json(self, buf: dict):

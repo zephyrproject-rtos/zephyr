@@ -55,12 +55,12 @@ example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: mixmrt1170_evk_cm7
+   :board: mimxrt1170_evk//cm7
    :shield: rk055hdmipi4m
    :goals: build
 
-.. include:: ../../../nxp/common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

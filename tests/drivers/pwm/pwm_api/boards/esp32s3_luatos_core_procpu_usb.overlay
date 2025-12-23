@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		pwm-0 = &ledc0;
+		pwm-test = &ledc0;
 	};
 };
 
@@ -27,6 +27,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;

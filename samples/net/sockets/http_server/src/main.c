@@ -19,6 +19,11 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/net/net_config.h>
+
+#if CONFIG_USB_DEVICE_STACK_NEXT
+#include <sample_usbd.h>
+#endif
 
 #include "ws.h"
 
@@ -248,7 +253,7 @@ struct http_resource_detail_websocket ws_netstats_resource_detail = {
 #if defined(CONFIG_NET_SAMPLE_HTTP_SERVICE)
 static uint16_t test_http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, NULL, &test_http_service_port,
-		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL);
+		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
 		     &index_html_gz_resource_detail);
@@ -281,7 +286,7 @@ static const sec_tag_t sec_tag_list_verify_none[] = {
 
 static uint16_t test_https_service_port = CONFIG_NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT;
 HTTPS_SERVICE_DEFINE(test_https_service, NULL, &test_https_service_port,
-		     CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, sec_tag_list_verify_none,
+		     CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL, sec_tag_list_verify_none,
 		     sizeof(sec_tag_list_verify_none));
 
 HTTP_RESOURCE_DEFINE(index_html_gz_resource_https, test_https_service, "/",
@@ -347,14 +352,27 @@ static void setup_tls(void)
 #endif /* defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE) */
 }
 
-#if defined(CONFIG_USB_DEVICE_STACK)
-int init_usb(void);
-#else
-static inline int init_usb(void)
+static int init_usb(void)
 {
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	struct usbd_context *sample_usbd;
+	int err;
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
+	if (err) {
+		return err;
+	}
+
+	(void)net_config_init_app(NULL, "Initializing network");
+#endif /* CONFIG_USB_DEVICE_STACK_NEXT */
+
 	return 0;
 }
-#endif /* CONFIG_USB_DEVICE_STACK */
 
 int main(void)
 {

@@ -28,3 +28,17 @@ tests:
     tags:
       - bluetooth
       - gatt
+  bluetooth.gatt.no_bt_conn_dynamic_callbacks:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+      - CONFIG_BT_CONN_DYNAMIC_CALLBACKS=n
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - gatt

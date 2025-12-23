@@ -5,6 +5,7 @@
  */
 
 cpu: &cpuflpr {};
+
 clic: &cpuflpr_clic {};
 
 /delete-node/ &cpuapp;

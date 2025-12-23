@@ -11,7 +11,7 @@
 
 / {
 	model = "Silicon Labs SiM3U1xx-B-DK";
-	compatible = "gardena,sim3u1xx-dk", "silabs,sim3u167","silabs,sim3u";
+	compatible = "gardena,sim3u1xx-dk", "silabs,sim3u167", "silabs,sim3u";
 
 	aliases {
 		led0 = &led_yellow;

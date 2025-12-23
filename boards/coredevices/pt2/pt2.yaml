@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pt2
+name: Pebble-Time-2
+vendor: coredevices
+type: mcu
+arch: arm
+ram: 512
+flash: 32704
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+  - watchdog

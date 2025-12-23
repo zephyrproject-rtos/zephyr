@@ -43,6 +43,10 @@
 	d3ppre = <1>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 /* USART1: Servo UART (console) */
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
@@ -68,7 +72,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 

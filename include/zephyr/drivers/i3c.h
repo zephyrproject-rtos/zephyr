@@ -5,14 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup i3c_interface
+ * @brief Main header file for I3C (Inter-Integrated Circuit) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I3C_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I3C_H_
 
 /**
- * @brief I3C Interface
- * @defgroup i3c_interface I3C Interface
+ * @brief Interfaces for Improved Inter-Integrated Circuit (I3C) controllers.
+ * @defgroup i3c_interface I3C
  * @since 3.2
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -35,6 +41,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Max and min Open Drain timings.
+ *        Standard I3C SDR and I2C FM speed
+ */
+#define I3C_OD_TLOW_MIN_NS            200
+#define I3C_OD_MIXED_BUS_THIGH_MAX_NS 41
+#define I3C_OD_FIRST_BC_THIGH_MIN_NS  200
 
 /**
  * @name Bus Characteristic Register (BCR)
@@ -457,6 +471,22 @@ struct i3c_config_controller {
 		/** SCL frequency (in Hz) for I2C transfers. */
 		uint32_t i2c;
 	} scl;
+
+	struct {
+		/**
+		 * Requested minimum SCL Open Drain High period in Nanoseconds
+		 *
+		 * Note:
+		 * - For the first broadcast message, spec requires tHIGH_OD >= 200 ns.
+		 * - For normal messages, tHIGH_OD must not exceed 41 ns (spec max).
+		 */
+		uint32_t high_ns;
+
+		/**
+		 * Requested minimum SCL Open-Drain LOW period in nanoseconds.
+		 */
+		uint32_t low_ns;
+	} scl_od_min;
 
 	/**
 	 * Bit mask of supported HDR modes (0 - 7).
@@ -2566,7 +2596,7 @@ void i3c_sec_handoffed(struct k_work *work);
  *
  * This allocates memory from a mem slab for a i3c_device_desc
  *
- * @retval Pointer to allocated i3c_device_desc
+ * @return Pointer to allocated i3c_device_desc
  * @retval NULL if no mem slabs available
  */
 struct i3c_device_desc *i3c_device_desc_alloc(void);
@@ -2719,6 +2749,18 @@ extern const struct rtio_iodev_api i3c_iodev_api;
 		.dev_id = I3C_DEVICE_ID_DT(node_id),				\
 	};									\
 	RTIO_IODEV_DEFINE(name, &i3c_iodev_api, (void *)&_i3c_iodev_data_##name)
+
+/**
+ * @brief Define an iodev for a devicetree instance on the bus
+ *
+ * This is equivalent to
+ * <tt>I3C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))</tt>.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param inst Devicetree instance number
+ */
+#define I3C_DT_INST_IODEV_DEFINE(name, inst)					\
+	I3C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))
 
 /**
  * @brief Copy the i3c_msgs into a set of RTIO requests

@@ -7,7 +7,6 @@
 #include <arm/nxp/nxp_s32z27x_r52.dtsi>
 
 / {
-
 	cpus {
 		/delete-node/ cpu@4;
 		/delete-node/ cpu@5;

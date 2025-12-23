@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+# Copyright (c) 2023-2025 Ambiq Micro Inc. <www.ambiq.com>
 
 if BOARD_APOLLO4P_BLUE_KXR_EVB
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768 if AMBIQ_STIMER_TIMER
+	default 96000000 if CORTEX_M_SYSTICK
 
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 1000000

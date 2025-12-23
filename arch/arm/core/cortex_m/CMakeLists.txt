@@ -2,20 +2,20 @@
 
 zephyr_library()
 
-if(CONFIG_ARMV8_1_M_PACBTI_STANDARD)
+if(CONFIG_ARM_PACBTI_STANDARD)
   zephyr_compile_options(-mbranch-protection=standard)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET)
+elseif(CONFIG_ARM_PACBTI_PACRET)
   zephyr_compile_options(-mbranch-protection=pac-ret)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF)
+elseif(CONFIG_ARM_PACBTI_PACRET_LEAF)
   zephyr_compile_options(-mbranch-protection=pac-ret+leaf)
-elseif(CONFIG_ARMV8_1_M_PACBTI_BTI)
+elseif(CONFIG_ARM_PACBTI_BTI)
   zephyr_compile_options(-mbranch-protection=bti)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_BTI)
+elseif(CONFIG_ARM_PACBTI_PACRET_BTI)
   zephyr_compile_options(-mbranch-protection=pac-ret+bti)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF_BTI)
+elseif(CONFIG_ARM_PACBTI_PACRET_LEAF_BTI)
   zephyr_compile_options(-mbranch-protection=pac-ret+leaf+bti)
-elseif(CONFIG_ARMV8_1_M_PACBTI_NONE)
-  #TODO: Enable this after Zephyr SDK updates to GCC version >=14.2
+elseif(CONFIG_ARM_PACBTI_NONE)
+  #TODO: Enable this after Zephyr SDK updates to the latest GCC version
   # zephyr_compile_options(-mbranch-protection=none)
 endif()
 
@@ -49,13 +49,13 @@ if(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 endif()
 
 if(CONFIG_CORTEX_M_DWT)
-	if (CONFIG_TIMING_FUNCTIONS)
-		zephyr_library_sources(timing.c)
-	endif()
+  if(CONFIG_TIMING_FUNCTIONS)
+    zephyr_library_sources(timing.c)
+  endif()
 endif()
 
-if (CONFIG_SW_VECTOR_RELAY)
-if (CONFIG_CPU_CORTEX_M_HAS_VTOR)
+if(CONFIG_SW_VECTOR_RELAY)
+if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
   set(relay_vector_table_sort_key relay_vectors)
 else()
 # Using 0x0 prefix will result in placing the relay vector table section
@@ -72,14 +72,14 @@ zephyr_linker_sources(
   )
 endif()
 
-if (CONFIG_SW_VECTOR_RELAY OR CONFIG_SW_VECTOR_RELAY_CLIENT)
+if(CONFIG_SW_VECTOR_RELAY OR CONFIG_SW_VECTOR_RELAY_CLIENT)
 zephyr_linker_sources(
   RAM_SECTIONS
   vt_pointer_section.ld
   )
 endif()
 
-if (CONFIG_CPU_CORTEX_M_HAS_VTOR)
+if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
 zephyr_linker_sources_ifdef(CONFIG_SRAM_VECTOR_TABLE
   RAM_SECTIONS
   # Maybe need to be changed in order to be placed at the beginning of RAM

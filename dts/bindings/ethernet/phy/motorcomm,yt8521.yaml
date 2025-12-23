@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Motorcomm YT8521 Ethernet PHY
+
+compatible: "motorcomm,yt8521"
+
+include: ethernet-phy-common.yaml
+
+properties:
+  motorcomm,rx-delay-sel:
+    type: int
+    description: |
+      RGMII RX_CLK delay train configuration, about 150ps per step.
+      See RGMII_Config1 (EXT_0xA003) register for details
+  motorcomm,tx-delay-sel:
+    type: int
+    description: |
+      RGMII RX_CLK delay train configuration, about 150ps per step.
+      See RGMII_Config1 (EXT_0xA003) register for details
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Full-Duplex"]

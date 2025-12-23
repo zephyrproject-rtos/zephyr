@@ -47,30 +47,30 @@ static uint8_t test_data_large[2000];
 static uint8_t verify_buf[2000];
 
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 2 addresses */
-static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Destination address for test packets (interface 1) */
-static struct in6_addr dst_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr dst_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 /* Destination address for test packets (interface 2) */
-static struct in6_addr dst_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr dst_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
-static struct in_addr in4addr_dst = { { { 192, 0, 2, 2 } } };
-static struct in_addr in4addr_my2 = { { { 192, 0, 42, 1 } } };
-static struct in_addr in4addr_dst2 = { { { 192, 0, 42, 2 } } };
+static struct net_in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr in4addr_dst = { { { 192, 0, 2, 2 } } };
+static struct net_in_addr in4addr_my2 = { { { 192, 0, 42, 1 } } };
+static struct net_in_addr in4addr_dst2 = { { { 192, 0, 42, 2 } } };
 
 /* Keep track of all ethernet interfaces. For native_sim board, we need
  * to increase the count as it has one extra network interface defined in
@@ -200,11 +200,11 @@ static void test_receiving(struct net_pkt *pkt)
 	/* Swap IP src and destination address so that we can receive
 	 * the packet and the stack will not reject it.
 	 */
-	if (net_pkt_family(pkt) == AF_INET6) {
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
 						      struct net_ipv6_hdr);
 		struct net_ipv6_hdr *ipv6_hdr;
-		struct in6_addr addr;
+		struct net_in6_addr addr;
 
 		ipv6_hdr = (struct net_ipv6_hdr *)
 					net_pkt_get_data(pkt, &ipv6_access);
@@ -217,7 +217,7 @@ static void test_receiving(struct net_pkt *pkt)
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access,
 						      struct net_ipv4_hdr);
 		struct net_ipv4_hdr *ipv4_hdr;
-		struct in_addr addr;
+		struct net_in_addr addr;
 
 		ipv4_hdr = (struct net_ipv4_hdr *)
 					net_pkt_get_data(pkt, &ipv4_access);
@@ -230,7 +230,7 @@ static void test_receiving(struct net_pkt *pkt)
 
 	if (!verify_fragment || fragment_count == 1) {
 		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt));
-		if (test_proto == IPPROTO_UDP) {
+		if (test_proto == NET_IPPROTO_UDP) {
 			NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(
 					udp_access, struct net_udp_hdr);
 			struct net_udp_hdr *udp_hdr;
@@ -246,8 +246,8 @@ static void test_receiving(struct net_pkt *pkt)
 			if (change_chksum) {
 				udp_hdr->chksum++;
 			}
-		} else if (test_proto == IPPROTO_ICMP ||
-			   test_proto == IPPROTO_ICMPV6) {
+		} else if (test_proto == NET_IPPROTO_ICMP ||
+			   test_proto == NET_IPPROTO_ICMPV6) {
 			NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(
 					icmp_access, struct net_icmp_hdr);
 			struct net_icmp_hdr *icmp_hdr;
@@ -290,11 +290,11 @@ static void test_fragment(struct net_pkt *pkt, bool offloaded)
 	}
 
 	if (fragment_count == 1) {
-		if (test_proto == IPPROTO_UDP) {
+		if (test_proto == NET_IPPROTO_UDP) {
 			chksum = get_udp_chksum(pkt);
 			hdr_offset += sizeof(struct net_udp_hdr);
-		} else if (test_proto == IPPROTO_ICMP ||
-			   test_proto == IPPROTO_ICMPV6) {
+		} else if (test_proto == NET_IPPROTO_ICMP ||
+			   test_proto == NET_IPPROTO_ICMPV6) {
 			chksum = get_icmp_chksum(pkt);
 			hdr_offset += sizeof(struct net_icmp_hdr) +
 				      sizeof(struct net_icmpv6_echo_req);
@@ -353,10 +353,10 @@ static int eth_tx_offloading_disabled(const struct device *dev,
 	if (test_started) {
 		uint16_t chksum = 0;
 
-		if (test_proto == IPPROTO_UDP) {
+		if (test_proto == NET_IPPROTO_UDP) {
 			chksum = get_udp_chksum(pkt);
-		} else if (test_proto == IPPROTO_ICMP ||
-			   test_proto == IPPROTO_ICMPV6) {
+		} else if (test_proto == NET_IPPROTO_ICMP ||
+			   test_proto == NET_IPPROTO_ICMPV6) {
 			chksum = get_icmp_chksum(pkt);
 		}
 
@@ -396,10 +396,10 @@ static int eth_tx_offloading_enabled(const struct device *dev,
 	if (test_started) {
 		uint16_t chksum = 0;
 
-		if (test_proto == IPPROTO_UDP) {
+		if (test_proto == NET_IPPROTO_UDP) {
 			chksum = get_udp_chksum(pkt);
-		} else if (test_proto == IPPROTO_ICMP ||
-			   test_proto == IPPROTO_ICMPV6) {
+		} else if (test_proto == NET_IPPROTO_ICMP ||
+			   test_proto == NET_IPPROTO_ICMPV6) {
 			chksum = get_icmp_chksum(pkt);
 		}
 
@@ -543,7 +543,7 @@ static void test_eth_setup(void)
 
 static void test_address_setup(void)
 {
-	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
+	struct net_in_addr netmask = { { { 255, 255, 255, 0 } } };
 	struct net_if_addr *ifaddr;
 	struct net_if *iface1, *iface2;
 
@@ -606,7 +606,7 @@ static void test_address_setup(void)
 	test_failed = false;
 }
 
-static void add_neighbor(struct net_if *iface, struct in6_addr *addr)
+static void add_neighbor(struct net_if *iface, struct net_in6_addr *addr)
 {
 	struct net_linkaddr lladdr;
 	struct net_nbr *nbr;
@@ -629,70 +629,70 @@ static void add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	}
 }
 
-static struct net_context *test_udp_context_prepare(sa_family_t family,
+static struct net_context *test_udp_context_prepare(net_sa_family_t family,
 						    bool offloaded,
-						    struct sockaddr *dst_addr)
+						    struct net_sockaddr *dst_addr)
 {
 	struct net_context *net_ctx;
 	struct eth_context *ctx; /* This is interface context */
-	struct sockaddr src_addr;
-	socklen_t addrlen;
+	struct net_sockaddr src_addr;
+	net_socklen_t addrlen;
 	struct net_if *iface;
 	int ret;
 
-	if (family == AF_INET6) {
-		struct sockaddr_in6 *dst_addr6 =
-					(struct sockaddr_in6 *)dst_addr;
-		struct sockaddr_in6 *src_addr6 =
-					(struct sockaddr_in6 *)&src_addr;
+	if (family == NET_AF_INET6) {
+		struct net_sockaddr_in6 *dst_addr6 =
+					(struct net_sockaddr_in6 *)dst_addr;
+		struct net_sockaddr_in6 *src_addr6 =
+					(struct net_sockaddr_in6 *)&src_addr;
 
-		dst_addr6->sin6_family = AF_INET6;
-		dst_addr6->sin6_port = htons(TEST_PORT);
-		src_addr6->sin6_family = AF_INET6;
+		dst_addr6->sin6_family = NET_AF_INET6;
+		dst_addr6->sin6_port = net_htons(TEST_PORT);
+		src_addr6->sin6_family = NET_AF_INET6;
 		src_addr6->sin6_port = 0;
 
 		if (offloaded) {
 			memcpy(&src_addr6->sin6_addr, &my_addr2,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 			memcpy(&dst_addr6->sin6_addr, &dst_addr2,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		} else {
 			memcpy(&src_addr6->sin6_addr, &my_addr1,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 			memcpy(&dst_addr6->sin6_addr, &dst_addr1,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		}
 
-		addrlen = sizeof(struct sockaddr_in6);
+		addrlen = sizeof(struct net_sockaddr_in6);
 	} else {
-		struct sockaddr_in *dst_addr4 =
-					(struct sockaddr_in *)dst_addr;
-		struct sockaddr_in *src_addr4 =
-					(struct sockaddr_in *)&src_addr;
+		struct net_sockaddr_in *dst_addr4 =
+					(struct net_sockaddr_in *)dst_addr;
+		struct net_sockaddr_in *src_addr4 =
+					(struct net_sockaddr_in *)&src_addr;
 
-		dst_addr4->sin_family = AF_INET;
-		dst_addr4->sin_port = htons(TEST_PORT);
-		src_addr4->sin_family = AF_INET;
+		dst_addr4->sin_family = NET_AF_INET;
+		dst_addr4->sin_port = net_htons(TEST_PORT);
+		src_addr4->sin_family = NET_AF_INET;
 		src_addr4->sin_port = 0;
 
 		if (offloaded) {
 			memcpy(&src_addr4->sin_addr, &in4addr_my2,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 			memcpy(&dst_addr4->sin_addr, &in4addr_dst2,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 		} else {
 			memcpy(&src_addr4->sin_addr, &in4addr_my,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 			memcpy(&dst_addr4->sin_addr, &in4addr_dst,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 		}
 
-		addrlen = sizeof(struct sockaddr_in6);
+		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
-	ret = net_context_get(family, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
+	ret = net_context_get(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP, &net_ctx);
 	zassert_equal(ret, 0, "Create %s UDP context failed",
-		      family == AF_INET6 ? "IPv6" : "IPv4");
+		      family == NET_AF_INET6 ? "IPv6" : "IPv4");
 
 	ret = net_context_bind(net_ctx, &src_addr, addrlen);
 	zassert_equal(ret, 0, "Context bind failure test failed");
@@ -713,20 +713,20 @@ static struct net_context *test_udp_context_prepare(sa_family_t family,
 	return net_ctx;
 }
 
-static void test_tx_chksum(sa_family_t family, bool offloaded)
+static void test_tx_chksum(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
-	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
-						   sizeof(struct sockaddr_in);
+	net_socklen_t addrlen = (family == NET_AF_INET6) ? sizeof(struct net_sockaddr_in6) :
+						   sizeof(struct net_sockaddr_in);
 	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	int ret, len;
 
 	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
-	test_proto = IPPROTO_UDP;
+	test_proto = NET_IPPROTO_UDP;
 
 	len = strlen(test_data);
 	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
@@ -743,38 +743,38 @@ static void test_tx_chksum(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6)
 {
-	test_tx_chksum(AF_INET6, false);
+	test_tx_chksum(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4)
 {
-	test_tx_chksum(AF_INET, false);
+	test_tx_chksum(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6)
 {
-	test_tx_chksum(AF_INET6, true);
+	test_tx_chksum(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4)
 {
-	test_tx_chksum(AF_INET, true);
+	test_tx_chksum(NET_AF_INET, true);
 }
 
-static void test_tx_chksum_udp_frag(sa_family_t family, bool offloaded)
+static void test_tx_chksum_udp_frag(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
-	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
-						   sizeof(struct sockaddr_in);
+	net_socklen_t addrlen = (family == NET_AF_INET6) ? sizeof(struct net_sockaddr_in6) :
+						   sizeof(struct net_sockaddr_in);
 	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	int ret, len;
 
 	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
-	test_proto = IPPROTO_UDP;
+	test_proto = NET_IPPROTO_UDP;
 	verify_fragment = true;
 
 	len = sizeof(test_data_large);
@@ -792,22 +792,22 @@ static void test_tx_chksum_udp_frag(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6_udp_frag)
 {
-	test_tx_chksum_udp_frag(AF_INET6, false);
+	test_tx_chksum_udp_frag(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4_udp_frag)
 {
-	test_tx_chksum_udp_frag(AF_INET, false);
+	test_tx_chksum_udp_frag(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6_udp_frag)
 {
-	test_tx_chksum_udp_frag(AF_INET6, true);
+	test_tx_chksum_udp_frag(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_udp_frag)
 {
-	test_tx_chksum_udp_frag(AF_INET, true);
+	test_tx_chksum_udp_frag(NET_AF_INET, true);
 }
 
 static int dummy_icmp_handler(struct net_icmp_ctx *ctx,
@@ -825,34 +825,34 @@ static int dummy_icmp_handler(struct net_icmp_ctx *ctx,
 	return 0;
 }
 
-static void test_icmp_init(sa_family_t family, bool offloaded,
-			   struct sockaddr *dst_addr, struct net_if **iface)
+static void test_icmp_init(net_sa_family_t family, bool offloaded,
+			   struct net_sockaddr *dst_addr, struct net_if **iface)
 {
-	if (family == AF_INET6) {
-		struct sockaddr_in6 *dst_addr6 =
-					(struct sockaddr_in6 *)dst_addr;
+	if (family == NET_AF_INET6) {
+		struct net_sockaddr_in6 *dst_addr6 =
+					(struct net_sockaddr_in6 *)dst_addr;
 
-		dst_addr6->sin6_family = AF_INET6;
+		dst_addr6->sin6_family = NET_AF_INET6;
 
 		if (offloaded) {
 			memcpy(&dst_addr6->sin6_addr, &dst_addr2,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		} else {
 			memcpy(&dst_addr6->sin6_addr, &dst_addr1,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		}
 	} else {
-		struct sockaddr_in *dst_addr4 =
-					(struct sockaddr_in *)dst_addr;
+		struct net_sockaddr_in *dst_addr4 =
+					(struct net_sockaddr_in *)dst_addr;
 
-		dst_addr4->sin_family = AF_INET;
+		dst_addr4->sin_family = NET_AF_INET;
 
 		if (offloaded) {
 			memcpy(&dst_addr4->sin_addr, &in4addr_dst2,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 		} else {
 			memcpy(&dst_addr4->sin_addr, &in4addr_dst,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 		}
 	}
 
@@ -863,22 +863,22 @@ static void test_icmp_init(sa_family_t family, bool offloaded,
 	}
 }
 
-static void test_tx_chksum_icmp_frag(sa_family_t family, bool offloaded)
+static void test_tx_chksum_icmp_frag(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
 	struct net_icmp_ping_params params = { 0 };
 	struct net_icmp_ctx ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	struct net_if *iface;
 	int ret;
 
 	test_icmp_init(family, offloaded, &dst_addr, &iface);
 
-	ret = net_icmp_init_ctx(&ctx, 0, 0, dummy_icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, family, 0, 0, dummy_icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	test_started = true;
-	test_proto = (family == AF_INET6) ? IPPROTO_ICMPV6 : IPPROTO_ICMP;
+	test_proto = (family == NET_AF_INET6) ? NET_IPPROTO_ICMPV6 : NET_IPPROTO_ICMP;
 	verify_fragment = true;
 
 	params.data = test_data_large;
@@ -897,22 +897,22 @@ static void test_tx_chksum_icmp_frag(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6_icmp_frag)
 {
-	test_tx_chksum_icmp_frag(AF_INET6, false);
+	test_tx_chksum_icmp_frag(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4_icmp_frag)
 {
-	test_tx_chksum_icmp_frag(AF_INET, false);
+	test_tx_chksum_icmp_frag(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6_icmp_frag)
 {
-	test_tx_chksum_icmp_frag(AF_INET6, true);
+	test_tx_chksum_icmp_frag(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_icmp_frag)
 {
-	test_tx_chksum_icmp_frag(AF_INET, true);
+	test_tx_chksum_icmp_frag(NET_AF_INET, true);
 }
 
 static void test_fragment_rx_udp(struct net_pkt *pkt,
@@ -950,7 +950,7 @@ static void recv_cb_offload_disabled(struct net_context *context,
 		zassert_equal(net_calc_verify_chksum_udp(pkt), 0, "Incorrect checksum");
 	}
 
-	if (net_pkt_family(pkt) == AF_INET) {
+	if (net_pkt_family(pkt) == NET_AF_INET) {
 		struct net_ipv4_hdr *ipv4 = NET_IPV4_HDR(pkt);
 
 		zassert_not_equal(ipv4->chksum, 0,
@@ -976,7 +976,7 @@ static void recv_cb_offload_enabled(struct net_context *context,
 	} else {
 		zassert_equal(proto_hdr->udp->chksum, 0, "Checksum is set");
 
-		if (net_pkt_family(pkt) == AF_INET) {
+		if (net_pkt_family(pkt) == NET_AF_INET) {
 			struct net_ipv4_hdr *ipv4 = NET_IPV4_HDR(pkt);
 
 			zassert_equal(ipv4->chksum, 0, "IPv4 checksum is set");
@@ -988,22 +988,22 @@ static void recv_cb_offload_enabled(struct net_context *context,
 	net_pkt_unref(pkt);
 }
 
-static void test_rx_chksum(sa_family_t family, bool offloaded)
+static void test_rx_chksum(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
 	net_context_recv_cb_t cb = offloaded ? recv_cb_offload_enabled :
 					       recv_cb_offload_disabled;
-	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
-						   sizeof(struct sockaddr_in);
+	net_socklen_t addrlen = (family == NET_AF_INET6) ? sizeof(struct net_sockaddr_in6) :
+						   sizeof(struct net_sockaddr_in);
 	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	int ret, len;
 
 	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
-	test_proto = IPPROTO_UDP;
+	test_proto = NET_IPPROTO_UDP;
 	start_receiving = true;
 
 	ret = net_context_recv(net_ctx, cb, K_NO_WAIT, NULL);
@@ -1027,40 +1027,40 @@ static void test_rx_chksum(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
 {
-	test_rx_chksum(AF_INET6, false);
+	test_rx_chksum(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4)
 {
-	test_rx_chksum(AF_INET, false);
+	test_rx_chksum(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6)
 {
-	test_rx_chksum(AF_INET6, true);
+	test_rx_chksum(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4)
 {
-	test_rx_chksum(AF_INET, true);
+	test_rx_chksum(NET_AF_INET, true);
 }
 
-static void test_rx_chksum_udp_frag(sa_family_t family, bool offloaded)
+static void test_rx_chksum_udp_frag(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
 	net_context_recv_cb_t cb = offloaded ? recv_cb_offload_enabled :
 					       recv_cb_offload_disabled;
-	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
-						   sizeof(struct sockaddr_in);
+	net_socklen_t addrlen = (family == NET_AF_INET6) ? sizeof(struct net_sockaddr_in6) :
+						   sizeof(struct net_sockaddr_in);
 	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	int ret, len;
 
 	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
-	test_proto = IPPROTO_UDP;
+	test_proto = NET_IPPROTO_UDP;
 	start_receiving = true;
 	verify_fragment = true;
 
@@ -1085,40 +1085,40 @@ static void test_rx_chksum_udp_frag(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6_udp_frag)
 {
-	test_rx_chksum_udp_frag(AF_INET6, false);
+	test_rx_chksum_udp_frag(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4_udp_frag)
 {
-	test_rx_chksum_udp_frag(AF_INET, false);
+	test_rx_chksum_udp_frag(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6_udp_frag)
 {
-	test_rx_chksum_udp_frag(AF_INET6, true);
+	test_rx_chksum_udp_frag(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4_udp_frag)
 {
-	test_rx_chksum_udp_frag(AF_INET, true);
+	test_rx_chksum_udp_frag(NET_AF_INET, true);
 }
 
-static void test_rx_chksum_udp_frag_bad(sa_family_t family, bool offloaded)
+static void test_rx_chksum_udp_frag_bad(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
 	net_context_recv_cb_t cb = offloaded ? recv_cb_offload_enabled :
 					       recv_cb_offload_disabled;
-	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
-						   sizeof(struct sockaddr_in);
+	net_socklen_t addrlen = (family == NET_AF_INET6) ? sizeof(struct net_sockaddr_in6) :
+						   sizeof(struct net_sockaddr_in);
 	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	int ret, len;
 
 	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
-	test_proto = IPPROTO_UDP;
+	test_proto = NET_IPPROTO_UDP;
 	start_receiving = true;
 	verify_fragment = true;
 	change_chksum = true;
@@ -1144,22 +1144,22 @@ static void test_rx_chksum_udp_frag_bad(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6_udp_frag_bad)
 {
-	test_rx_chksum_udp_frag_bad(AF_INET6, false);
+	test_rx_chksum_udp_frag_bad(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4_udp_frag_bad)
 {
-	test_rx_chksum_udp_frag_bad(AF_INET, false);
+	test_rx_chksum_udp_frag_bad(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6_udp_frag_bad)
 {
-	test_rx_chksum_udp_frag_bad(AF_INET6, true);
+	test_rx_chksum_udp_frag_bad(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_udp_frag_bad)
 {
-	test_rx_chksum_udp_frag_bad(AF_INET, true);
+	test_rx_chksum_udp_frag_bad(NET_AF_INET, true);
 }
 
 static int icmp_handler(struct net_icmp_ctx *ctx,
@@ -1181,7 +1181,7 @@ static int icmp_handler(struct net_icmp_ctx *ctx,
 	 */
 	zassert_not_equal(icmp_hdr->chksum, 0, "Checksum is not set");
 
-	if (test_proto == IPPROTO_ICMPV6) {
+	if (test_proto == NET_IPPROTO_ICMPV6) {
 		zassert_equal(net_calc_chksum_icmpv6(pkt), 0, "Incorrect checksum");
 	} else {
 		zassert_equal(net_calc_chksum_icmpv4(pkt), 0, "Incorrect checksum");
@@ -1199,25 +1199,25 @@ static int icmp_handler(struct net_icmp_ctx *ctx,
 	return 0;
 }
 
-static void test_rx_chksum_icmp_frag(sa_family_t family, bool offloaded)
+static void test_rx_chksum_icmp_frag(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
 	struct net_icmp_ping_params params = { 0 };
 	struct net_icmp_ctx ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	struct net_if *iface;
 	int ret;
 
 	test_icmp_init(family, offloaded, &dst_addr, &iface);
 
-	ret = net_icmp_init_ctx(&ctx,
-				family == AF_INET6 ? NET_ICMPV6_ECHO_REPLY :
+	ret = net_icmp_init_ctx(&ctx, family,
+				family == NET_AF_INET6 ? NET_ICMPV6_ECHO_REPLY :
 						     NET_ICMPV4_ECHO_REPLY,
 				0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	test_started = true;
-	test_proto = (family == AF_INET6) ? IPPROTO_ICMPV6 : IPPROTO_ICMP;
+	test_proto = (family == NET_AF_INET6) ? NET_IPPROTO_ICMPV6 : NET_IPPROTO_ICMP;
 	start_receiving = true;
 	verify_fragment = true;
 
@@ -1238,43 +1238,43 @@ static void test_rx_chksum_icmp_frag(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6_icmp_frag)
 {
-	test_rx_chksum_icmp_frag(AF_INET6, false);
+	test_rx_chksum_icmp_frag(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4_icmp_frag)
 {
-	test_rx_chksum_icmp_frag(AF_INET, false);
+	test_rx_chksum_icmp_frag(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6_icmp_frag)
 {
-	test_rx_chksum_icmp_frag(AF_INET6, true);
+	test_rx_chksum_icmp_frag(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4_icmp_frag)
 {
-	test_rx_chksum_icmp_frag(AF_INET, true);
+	test_rx_chksum_icmp_frag(NET_AF_INET, true);
 }
 
-static void test_rx_chksum_icmp_frag_bad(sa_family_t family, bool offloaded)
+static void test_rx_chksum_icmp_frag_bad(net_sa_family_t family, bool offloaded)
 {
 	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
 	struct net_icmp_ping_params params = { 0 };
 	struct net_icmp_ctx ctx;
-	struct sockaddr dst_addr;
+	struct net_sockaddr dst_addr;
 	struct net_if *iface;
 	int ret;
 
 	test_icmp_init(family, offloaded, &dst_addr, &iface);
 
-	ret = net_icmp_init_ctx(&ctx,
-				family == AF_INET6 ? NET_ICMPV6_ECHO_REPLY :
+	ret = net_icmp_init_ctx(&ctx, family,
+				family == NET_AF_INET6 ? NET_ICMPV6_ECHO_REPLY :
 						     NET_ICMPV4_ECHO_REPLY,
 				0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	test_started = true;
-	test_proto = (family == AF_INET6) ? IPPROTO_ICMPV6 : IPPROTO_ICMP;
+	test_proto = (family == NET_AF_INET6) ? NET_IPPROTO_ICMPV6 : NET_IPPROTO_ICMP;
 	start_receiving = true;
 	verify_fragment = true;
 	change_chksum = true;
@@ -1296,22 +1296,22 @@ static void test_rx_chksum_icmp_frag_bad(sa_family_t family, bool offloaded)
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6_icmp_frag_bad)
 {
-	test_rx_chksum_icmp_frag_bad(AF_INET6, false);
+	test_rx_chksum_icmp_frag_bad(NET_AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4_icmp_frag_bad)
 {
-	test_rx_chksum_icmp_frag_bad(AF_INET, false);
+	test_rx_chksum_icmp_frag_bad(NET_AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6_icmp_frag_bad)
 {
-	test_rx_chksum_icmp_frag_bad(AF_INET6, true);
+	test_rx_chksum_icmp_frag_bad(NET_AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4_icmp_frag_bad)
 {
-	test_rx_chksum_icmp_frag_bad(AF_INET, true);
+	test_rx_chksum_icmp_frag_bad(NET_AF_INET, true);
 }
 
 static void *net_chksum_offload_tests_setup(void)

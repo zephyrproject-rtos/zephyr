@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: panb611evb/nrf54l15/cpuapp/ns
+name: PANB611-EVB-nRF54l15-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 256
+flash: 1524
+supported:
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - adc
+  - i2s

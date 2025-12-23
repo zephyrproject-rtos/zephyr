@@ -107,7 +107,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	size_t sect_map_sz = ext->sect_cnt * sizeof(ldr->sect_map[0]);
 
-	ldr->sect_map = llext_alloc(sect_map_sz);
+	ldr->sect_map = llext_alloc_data(sect_map_sz);
 	if (!ldr->sect_map) {
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
@@ -125,7 +125,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		size_t sect_hdrs_sz = ext->sect_cnt * sizeof(ext->sect_hdrs[0]);
 
 		ext->sect_hdrs_on_heap = true;
-		ext->sect_hdrs = llext_alloc(sect_hdrs_sz);
+		ext->sect_hdrs = llext_alloc_data(sect_hdrs_sz);
 		if (!ext->sect_hdrs) {
 			LOG_ERR("Failed to allocate section headers, size %zu", sect_hdrs_sz);
 			return -ENOMEM;
@@ -177,24 +177,24 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 
 		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
 			strtab_ndx = shdr->sh_link;
 			table_cnt++;
 		} else if (shdr->sh_type == SHT_DYNSYM && ldr->hdr.e_type == ET_DYN) {
 			LOG_DBG("dynsym at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
 			strtab_ndx = shdr->sh_link;
 			table_cnt++;
 		} else if (shdr->sh_type == SHT_STRTAB && i == shstrtab_ndx) {
 			LOG_DBG("shstrtab at %d", i);
-			ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_SHSTRTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
 			table_cnt++;
 		} else if (shdr->sh_type == SHT_STRTAB && i == strtab_ndx) {
 			LOG_DBG("strtab at %d", i);
-			ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
+			memcpy(&ldr->sects[LLEXT_MEM_STRTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
 			table_cnt++;
 		}
@@ -204,6 +204,12 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
 		LOG_ERR("Some sections are missing or present multiple times!");
+		return -ENOEXEC;
+	}
+
+	if (ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != sizeof(elf_sym_t) ||
+	    ldr->sects[LLEXT_MEM_SYMTAB].sh_size % ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != 0) {
+		LOG_ERR("Invalid symbol table");
 		return -ENOEXEC;
 	}
 
@@ -312,6 +318,21 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		 * regions.
 		 */
 		if (ldr_parm->section_detached && ldr_parm->section_detached(shdr)) {
+			if (mem_idx == LLEXT_MEM_TEXT &&
+			    !INSTR_FETCHABLE(llext_peek(ldr, shdr->sh_offset), shdr->sh_size)) {
+#ifdef CONFIG_ARC
+				LOG_ERR("ELF buffer's detached text section %s not in instruction "
+					"memory: %p-%p",
+					name, (void *)(llext_peek(ldr, shdr->sh_offset)),
+					(void *)((char *)llext_peek(ldr, shdr->sh_offset) +
+						 shdr->sh_size));
+				return -ENOEXEC;
+#else
+				LOG_WRN("Unknown if ELF buffer's detached text section %s is in "
+					"instruction memory; proceeding...",
+					name);
+#endif
+			}
 			continue;
 		}
 
@@ -521,6 +542,8 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
+	elf_shdr_t *str_region = ldr->sects + LLEXT_MEM_STRTAB;
+	size_t str_reg_size = str_region->sh_size;
 	const char *name;
 	elf_sym_t sym;
 	int i, ret;
@@ -547,6 +570,12 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
+		if (sym.st_name >= str_reg_size) {
+			LOG_ERR("Invalid symbol name index %d in symbol %d",
+				sym.st_name, i);
+			return -ENOEXEC;
+		}
+
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		uint32_t sect = sym.st_shndx;
@@ -571,7 +600,7 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	struct llext_symtable *sym_tab = &ext->sym_tab;
 	size_t syms_size = sym_tab->sym_cnt * sizeof(struct llext_symbol);
 
-	sym_tab->syms = llext_alloc(syms_size);
+	sym_tab->syms = llext_alloc_data(syms_size);
 	if (!sym_tab->syms) {
 		return -ENOMEM;
 	}
@@ -604,7 +633,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 		return 0;
 	}
 
-	exp_tab->syms = llext_alloc(exp_tab->sym_cnt * sizeof(struct llext_symbol));
+	exp_tab->syms = llext_alloc_data(exp_tab->sym_cnt * sizeof(struct llext_symbol));
 	if (!exp_tab->syms) {
 		return -ENOMEM;
 	}
@@ -715,6 +744,25 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_validate_sections_name(struct llext_loader *ldr, struct llext *ext)
+{
+	const elf_shdr_t *shstrtab = ldr->sects + LLEXT_MEM_SHSTRTAB;
+	size_t shstrtab_size = shstrtab->sh_size;
+	int i;
+
+	for (i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_name >= shstrtab_size) {
+			LOG_ERR("Invalid section name index %d in section %d",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+	}
+
+	return 0;
+}
+
 /*
  * Load a valid ELF as an extension
  */
@@ -747,14 +795,6 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-#ifdef CONFIG_USERSPACE
-	ret = k_mem_domain_init(&ext->mem_domain, 0, NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to initialize extenion memory domain %d", ret);
-		goto out;
-	}
-#endif
-
 	LOG_DBG("Finding ELF tables...");
 	ret = llext_find_tables(ldr, ext);
 	if (ret != 0) {
@@ -766,6 +806,12 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
+		goto out;
+	}
+
+	ret = llext_validate_sections_name(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to validate ELF section names, ret %d", ret);
 		goto out;
 	}
 

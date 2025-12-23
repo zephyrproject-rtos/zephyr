@@ -29,8 +29,22 @@ LOG_MODULE_REGISTER(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 static const struct gpio_dt_spec host_irq_spec =
 GPIO_DT_SPEC_GET(NRF7002_NODE, host_irq_gpios);
 
+#if DT_NODE_HAS_PROP(NRF7002_NODE, iovdd_ctrl_gpios)
+
+#define NRF70_IOVDD_GPIO 1
 static const struct gpio_dt_spec iovdd_ctrl_spec =
 GPIO_DT_SPEC_GET(NRF7002_NODE, iovdd_ctrl_gpios);
+
+#elif DT_NODE_HAS_PROP(NRF7002_NODE, iovdd_regulator)
+
+#include <zephyr/drivers/regulator.h>
+
+static const struct device *iovdd_regulator =
+DEVICE_DT_GET(DT_PHANDLE(NRF7002_NODE, iovdd_regulator));
+
+#else
+#error "nRF70 device either needs iovdd-ctrl-gpios or iovdd-regulator property"
+#endif
 
 static const struct gpio_dt_spec bucken_spec =
 GPIO_DT_SPEC_GET(NRF7002_NODE, bucken_gpios);
@@ -173,10 +187,12 @@ static int rpu_gpio_config(void)
 {
 	int ret;
 
+#ifdef NRF70_IOVDD_GPIO
 	if (!device_is_ready(iovdd_ctrl_spec.port)) {
 		LOG_ERR("IOVDD GPIO %s is not ready", iovdd_ctrl_spec.port->name);
 		return -ENODEV;
 	}
+#endif
 
 	if (!device_is_ready(bucken_spec.port)) {
 		LOG_ERR("BUCKEN GPIO %s is not ready", bucken_spec.port->name);
@@ -189,12 +205,14 @@ static int rpu_gpio_config(void)
 		return ret;
 	}
 
+#ifdef NRF70_IOVDD_GPIO
 	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_OUTPUT);
 	if (ret) {
 		LOG_ERR("IOVDD GPIO configuration failed...");
 		gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
 		return ret;
 	}
+#endif
 
 	LOG_DBG("GPIO configuration done...\n");
 
@@ -211,11 +229,13 @@ static int rpu_gpio_remove(void)
 		return ret;
 	}
 
+#ifdef NRF70_IOVDD_GPIO
 	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_DISCONNECTED);
 	if (ret) {
 		LOG_ERR("IOVDD GPIO remove failed...");
 		return ret;
 	}
+#endif
 
 	LOG_DBG("GPIO remove done...\n");
 	return ret;
@@ -233,15 +253,20 @@ static int rpu_pwron(void)
 	/* Settling time is 50us (H0) or 100us (L0) */
 	k_msleep(1);
 
+#ifdef NRF70_IOVDD_GPIO
 	ret = gpio_pin_set_dt(&iovdd_ctrl_spec, 1);
+#else
+	ret = regulator_enable(iovdd_regulator);
+#endif
 	if (ret) {
-		LOG_ERR("IOVDD GPIO set failed...");
+		LOG_ERR("IOVDD enable failed...");
 		gpio_pin_set_dt(&bucken_spec, 0);
 		return ret;
 	}
 	/* Settling time for IOVDD */
 	k_msleep(DT_PROP(NRF7002_NODE, iovdd_power_up_delay_ms));
 
+#ifdef NRF70_IOVDD_GPIO
 	if ((bucken_spec.port == iovdd_ctrl_spec.port) &&
 	    (bucken_spec.pin == iovdd_ctrl_spec.pin)) {
 		/* When a single GPIO is used, we need a total wait time after bucken assertion
@@ -252,6 +277,11 @@ static int rpu_pwron(void)
 
 	LOG_DBG("Bucken = %d, IOVDD = %d", gpio_pin_get_dt(&bucken_spec),
 			gpio_pin_get_dt(&iovdd_ctrl_spec));
+#else
+	LOG_DBG("Bucken = %d, IOVDD = %d", gpio_pin_get_dt(&bucken_spec),
+			regulator_is_enabled(iovdd_regulator) ? 1 : 0);
+#endif
+
 
 	return ret;
 }
@@ -260,9 +290,13 @@ static int rpu_pwroff(void)
 {
 	int ret;
 
+#ifdef NRF70_IOVDD_GPIO
 	ret = gpio_pin_set_dt(&iovdd_ctrl_spec, 0); /* IOVDD CNTRL = 0 */
+#else
+	ret = regulator_disable(iovdd_regulator);
+#endif
 	if (ret) {
-		LOG_ERR("IOVDD GPIO set failed...");
+		LOG_ERR("IOVDD disable failed...");
 		return ret;
 	}
 
@@ -395,6 +429,37 @@ int rpu_rdsr1(void)
 #endif
 }
 
+/**
+ * @brief Read a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Pointer to store the read value
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_read_reg(uint8_t reg_addr, uint8_t *reg_value)
+{
+#if CONFIG_NRF70_ON_QSPI
+	return qspi_read_reg(&qspi_perip, reg_addr, reg_value);
+#else
+	return spim_read_reg_wrapper(NULL, reg_addr, reg_value);
+#endif
+}
+
+/**
+ * @brief Write a register via RPU hardware interface
+ *
+ * @param reg_addr Register address (opcode)
+ * @param reg_value Value to write
+ * @return int 0 on success, negative error code on failure
+ */
+int rpu_write_reg(uint8_t reg_addr, uint8_t reg_value)
+{
+#if CONFIG_NRF70_ON_QSPI
+	return qspi_write_reg(&qspi_perip, reg_addr, reg_value);
+#else
+	return spim_write_reg_wrapper(NULL, reg_addr, reg_value);
+#endif
+}
 
 int rpu_clks_on(void)
 {

@@ -26,6 +26,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button2: button_2 {
 			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2 (BUTTON2)";
@@ -76,6 +77,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	at25: at25df041b@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -124,6 +126,7 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x0000C000>;
 		};
+
 		/* 188K */
 		slot0_partition: partition@c000 {
 			label = "image-0";

@@ -7,6 +7,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/arpa/inet.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>

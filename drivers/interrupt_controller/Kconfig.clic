@@ -22,7 +22,7 @@ config NUCLEI_ECLIC
 	  Interrupt controller for Nuclei SoC core.
 
 config NRFX_CLIC
-	bool "VPR Core Local Interrpt Controller (CLIC)"
+	bool "VPR Core Local Interrupt Controller (CLIC)"
 	default y
 	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
 	select GEN_IRQ_VECTOR_TABLE

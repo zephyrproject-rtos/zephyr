@@ -104,7 +104,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 		return 1U;
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -117,12 +117,12 @@ void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		struct proc_ctx *ctx_header;
 
 		ctx_header = llcp_rr_peek(conn);
-		LL_ASSERT(ctx_header == ctx);
+		LL_ASSERT_DBG(ctx_header == ctx);
 
 		/* If we have a node rx it must not be marked RETAIN as
 		 * the memory referenced would leak
 		 */
-		LL_ASSERT(ctx->node_ref.rx == NULL ||
+		LL_ASSERT_DBG(ctx->node_ref.rx == NULL ||
 			  ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
 
 		rr_dequeue(conn);
@@ -319,7 +319,7 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -459,7 +459,7 @@ static void rr_act_run(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -475,7 +475,7 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -502,7 +502,7 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -515,7 +515,7 @@ static void rr_act_reject(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx = llcp_rr_peek(conn);
 
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
@@ -531,7 +531,7 @@ static void rr_act_unsupported(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx = llcp_rr_peek(conn);
 
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_UNSUPPORTED);
@@ -550,7 +550,7 @@ static void rr_act_complete(struct ll_conn *conn)
 	rr_set_collision(conn, 0U);
 
 	ctx = llcp_rr_peek(conn);
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	/* Stop procedure response timeout timer */
 	llcp_rr_prt_stop(conn);
@@ -777,7 +777,7 @@ static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 

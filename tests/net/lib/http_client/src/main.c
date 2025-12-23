@@ -15,7 +15,7 @@
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV6_ADDR,
-		    &test_http_service_port, 1, 10, NULL, NULL);
+		    &test_http_service_port, 1, 10, NULL, NULL, NULL);
 
 static const char static_resource_payload[] = LOREM_IPSUM_SHORT;
 struct http_resource_detail_static static_resource_detail = {
@@ -361,7 +361,7 @@ ZTEST(http_client, test_http1_client_post_payload_cb)
 
 static void client_tests_before(void *fixture)
 {
-	struct sockaddr_in6 sa;
+	struct net_sockaddr_in6 sa;
 	int ret;
 
 	ARG_UNUSED(fixture);
@@ -379,23 +379,23 @@ static void client_tests_before(void *fixture)
 		return;
 	}
 
-	ret = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	ret = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (ret < 0) {
 		printk("Failed to create client socket (%d)\n", errno);
 		return;
 	}
 	client_fd = ret;
 
-	sa.sin6_family = AF_INET6;
-	sa.sin6_port = htons(SERVER_PORT);
+	sa.sin6_family = NET_AF_INET6;
+	sa.sin6_port = net_htons(SERVER_PORT);
 
-	ret = zsock_inet_pton(AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
+	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
 	if (ret != 1) {
 		printk("inet_pton() failed to convert %s\n", SERVER_IPV6_ADDR);
 		return;
 	}
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	ret = zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printk("Failed to connect (%d)\n", errno);
 	}

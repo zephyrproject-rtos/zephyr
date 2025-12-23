@@ -67,7 +67,7 @@ static void rts5912_sha256_start(const struct device *dev)
 	sha2dma_regs->msk_block = 0x0;
 }
 
-static int rts5912_sha256_process(const struct device *dev, uint8_t *input, size_t blk_size)
+static int rts5912_sha256_process(const struct device *dev, const uint8_t *input, size_t blk_size)
 {
 	const struct rts5912_sha_config *cfg = dev->config;
 	volatile struct sha2_type *sha2_regs = (volatile struct sha2_type *)cfg->cfg_sha2_regs;
@@ -89,14 +89,16 @@ static int rts5912_sha256_process(const struct device *dev, uint8_t *input, size
 		uint32_t _wf_cycle_count =
 			k_us_to_cyc_ceil32(RTS5912_MAXIMUM_CRYPTO_POLLING_TIME_US);
 		uint32_t _wf_start = k_cycle_get_32();
+		uint32_t _wf_now = _wf_start;
 
 		while (!((sha2dma_regs->interrupt_status & INT_COMPLETE_MASK) != 0) &&
-		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {
+		       (_wf_cycle_count > (_wf_now - _wf_start))) {
 			k_msleep(1);
 			Z_SPIN_DELAY(10);
+			_wf_now = k_cycle_get_32();
 		}
 
-		if (_wf_cycle_count < (k_cycle_get_32() - _wf_start)) {
+		if (_wf_cycle_count < (_wf_now - _wf_start)) {
 			LOG_ERR("SHA2DMA reach timeout and breach");
 			return -EIO;
 		}
@@ -120,7 +122,7 @@ static int rts5912_sha256_process(const struct device *dev, uint8_t *input, size
 	return 0;
 }
 
-static int rts5912_sha256_update(const struct device *dev, uint8_t *input, size_t len)
+static int rts5912_sha256_update(const struct device *dev, const uint8_t *input, size_t len)
 {
 	struct rts5912_sha256_context *rts5912_sha256_ctx = dev->data;
 	uint32_t remain, fill, blk_size = 0, ret_val = 0;
@@ -266,7 +268,7 @@ static int rts5912_hash_begin_session(const struct device *dev, struct hash_ctx 
 		rts5912_sha256_start(dev);
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

@@ -598,12 +598,11 @@ static int ext2_stat(struct fs_mount_t *mountp, const char *path, struct fs_dire
 	}
 
 	uint32_t offset = args.offset;
-	struct ext2_inode *parent = args.parent;
-	struct ext2_file dir = {.f_inode = parent, .f_off = offset};
+	struct ext2_file dir = {.f_inode = args.parent ? args.parent : args.inode, .f_off = offset};
 
 	rc = ext2_get_direntry(&dir, entry);
 
-	ext2_inode_drop(parent);
+	ext2_inode_drop(args.parent);
 	ext2_inode_drop(args.inode);
 	return rc;
 }
@@ -647,6 +646,37 @@ static const struct fs_file_system_t ext2_fs = {
 #endif
 };
 
+#define DT_DRV_COMPAT zephyr_fstab_ext2
+
+#define DEFINE_FS(inst)                                                                            \
+	BUILD_ASSERT(DT_INST_PROP(inst, disk_access), "EXT2 needs disk-access");                   \
+	struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = {                                    \
+		.type = FS_EXT2,                                                                   \
+		.mnt_point = DT_INST_PROP(inst, mount_point),                                      \
+		.storage_dev = DT_INST_PROP(inst, disk_name),                                      \
+		.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)),                            \
+	};
+
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_FS);
+
+#ifdef CONFIG_EXT2_FSTAB_AUTOMOUNT
+#define REFERENCE_MOUNT(inst) (&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),
+
+static void automount_if_enabled(struct fs_mount_t *mountp)
+{
+	int ret = 0;
+
+	if ((mountp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0) {
+		ret = fs_mount(mountp);
+		if (ret < 0) {
+			LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
+		} else {
+			LOG_DBG("EXT2 Filesystem \"%s\" initialized", mountp->mnt_point);
+		}
+	}
+}
+#endif /* CONFIG_EXT2_FSTAB_AUTOMOUNT */
+
 static int ext2_init(void)
 {
 	int rc = fs_register(FS_EXT2, &ext2_fs);
@@ -656,8 +686,19 @@ static int ext2_init(void)
 	} else {
 		LOG_DBG("Ext2 fs registered\n");
 	}
+#ifdef CONFIG_EXT2_FSTAB_AUTOMOUNT
+	if (rc == 0) {
+		struct fs_mount_t *partitions[] = {DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)};
+
+		for (size_t i = 0; i < ARRAY_SIZE(partitions); i++) {
+			struct fs_mount_t *mpi = partitions[i];
+
+			automount_if_enabled(mpi);
+		}
+	}
+#endif /* CONFIG_EXT2_FSTAB_AUTOMOUNT */
 
 	return rc;
 }
 
-SYS_INIT(ext2_init, POST_KERNEL, 99);
+SYS_INIT(ext2_init, POST_KERNEL, CONFIG_FILE_SYSTEM_INIT_PRIORITY);

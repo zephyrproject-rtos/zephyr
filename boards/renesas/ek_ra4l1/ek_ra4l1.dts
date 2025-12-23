@@ -6,8 +6,8 @@
 /dts-v1/;
 
 #include <renesas/ra/ra4/r7fa4l1bd4cfp.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra4l1-pinctrl.dtsi"
 
@@ -22,6 +22,7 @@
 		zephyr,console = &uart5;
 		zephyr,shell-uart = &uart5;
 		zephyr,canbus = &canfd0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -224,4 +225,8 @@
 			reg = <0x0 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

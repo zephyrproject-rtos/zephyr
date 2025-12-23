@@ -22,6 +22,8 @@ check_set_linker_property(TARGET linker PROPERTY orphan_error
                           ${LINKERFLAGPREFIX},--orphan-handling=error
 )
 
+set_property(TARGET linker PROPERTY undefined ${LINKERFLAGPREFIX},--undefined=)
+
 check_set_linker_property(TARGET linker PROPERTY memusage "${LINKERFLAGPREFIX},--print-memory-usage")
 
 check_set_linker_property(TARGET linker PROPERTY sanitizer_undefined -fsanitize=undefined)
@@ -41,6 +43,7 @@ endif()
 set_property(TARGET linker PROPERTY partial_linking "-r")
 
 set_property(TARGET linker PROPERTY lto_arguments -flto=auto -fno-ipa-sra -ffunction-sections -fdata-sections)
+set_property(TARGET linker PROPERTY lto_arguments_st -flto=1 -fno-ipa-sra -ffunction-sections -fdata-sections)
 
 check_set_linker_property(TARGET linker PROPERTY no_relax ${LINKERFLAGPREFIX},--no-relax)
 

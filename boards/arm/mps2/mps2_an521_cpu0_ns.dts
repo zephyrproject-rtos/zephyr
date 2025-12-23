@@ -29,15 +29,18 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram;
-		zephyr,flash = &code;
+		zephyr,flash = &reserved_memory;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&gpio_led0 0>;
 			label = "USERLED0";
 		};
+
 		led_1: led_1 {
 			gpios = <&gpio_led0 1>;
 			label = "USERLED1";
@@ -46,11 +49,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "USERPB0";
 			gpios = <&gpio_button 0>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "USERPB1";
 			gpios = <&gpio_button 1>;
@@ -103,19 +108,49 @@
 		reg = <0x80000000 DT_SIZE_M(16)>;
 	};
 
-	reserved-memory {
+	reserved_memory: reserved-memory@0 {
+		compatible = "soc-nv-flash";
+		reg = <0x0 DT_SIZE_M(4)>;
+		erase-block-size = <4096>;
+		write-block-size = <4>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
-		/* This code memory region must match what the TF-M
-		 * project has defined for that board - a single image boot is
-		 * assumed. Please see the memory layout in:
-		 *
-		 * https://github.com/zephyrproject-rtos/trusted-firmware-m/blob/master/platform/ext/target/arm/mps2/an521/partition/flash_layout.h
-		 */
-		code: memory@100000 {
-			reg = <0x00100000 DT_SIZE_K(512)>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* This code memory region must match what the TF-M
+			 * project has defined for that board - the milti-image
+			 * boot is used in Zephyr. See memory layout details in:
+			 *
+			 * https://github.com/zephyrproject-rtos/trusted-firmware-m/blob/master/platform/ext/target/arm/mps2/an521/partition/flash_layout.h
+			 */
+			boot_partition: partition@0 {
+				reg = <0x00000000 DT_SIZE_K(512)>;
+				read-only;
+			};
+
+			slot0_partition: partition@80000 {
+				reg = <0x00080000 DT_SIZE_K(512)>;
+			};
+
+			slot0_ns_partition: partition@100000 {
+				reg = <0x00100000 DT_SIZE_K(512)>;
+			};
+
+			slot1_partition: partition@180000 {
+				reg = <0x00180000 DT_SIZE_K(512)>;
+			};
+
+			slot1_ns_partition: partition@200000 {
+				reg = <0x00200000 DT_SIZE_K(512)>;
+			};
+
+			scratch_partition: partition@280000 {
+				reg = <0x00280000 DT_SIZE_K(512)>;
+			};
 		};
 
 		/* This ram memory region's size is chosen to avoid conflict

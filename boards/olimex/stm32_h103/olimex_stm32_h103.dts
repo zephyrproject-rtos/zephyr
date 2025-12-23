@@ -21,6 +21,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_2 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
@@ -29,6 +30,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
@@ -100,7 +102,7 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
-		      &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	pinctrl-names = "default";
 	status = "disabled";
 };

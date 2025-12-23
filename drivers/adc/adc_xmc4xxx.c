@@ -334,7 +334,7 @@ static struct adc_xmc4xxx_data adc_xmc4xxx_data_##index = {			\
 };										\
 										\
 DEVICE_DT_INST_DEFINE(index,							\
-		    &adc_xmc4xxx_init, NULL,					\
+		    adc_xmc4xxx_init, NULL,					\
 		    &adc_xmc4xxx_data_##index, &adc_xmc4xxx_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,			\
 		    &api_xmc4xxx_driver_api);

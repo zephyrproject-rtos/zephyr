@@ -10,6 +10,10 @@
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("IO_REG", 0x10000000, 0x10000000,
 			      MT_DEVICE_nGnRnE | MT_RW | MT_DEFAULT_SECURE_STATE),
+	MMU_REGION_FLAT_ENTRY("SPI Multi Area", 0x20000000, 0x10000000,
+			      MT_NORMAL | MT_RW | MT_DEFAULT_SECURE_STATE),
+	MMU_REGION_FLAT_ENTRY("SRAM", 0x00000000, 0x00200000,
+			      MT_NORMAL | MT_RW | MT_DEFAULT_SECURE_STATE),
 };
 
 const struct arm_mmu_config mmu_config = {

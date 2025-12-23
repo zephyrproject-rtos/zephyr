@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pcie0 {
+		nvme0: nvme0 {
+			compatible = "nvme-controller";
+
+			vendor-id = <0x1B36>; /* Subject to change based on hardware used */
+			device-id = <0x0010>; /* Subject to change based on hardware used */
+
+			status = "okay";
+		};
+	};
+
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <192>;
+	};
+};

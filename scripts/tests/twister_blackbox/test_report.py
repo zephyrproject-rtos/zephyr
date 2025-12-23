@@ -8,22 +8,21 @@ Blackbox tests for twister's command line functions
 
 import importlib
 import json
-import mock
+from unittest import mock
 import os
 import pytest
 import shutil
 import sys
 import re
-
-from lxml import etree
+import xml.etree.ElementTree as etree
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from conftest import TEST_DATA, ZEPHYR_BASE, suite_filename_mock, clear_log_in_test
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestReport:
     TESTDATA_1 = [
         (
@@ -162,7 +161,7 @@ class TestReport:
 
             elif path.endswith(".xml"):
                 tree = etree.parse(path)
-                xml_text = etree.tostring(tree, encoding="utf-8").decode("utf-8")
+                xml_text = etree.tostring(tree.getroot(), encoding="unicode")
                 assert xml_text.strip(), f"XML file '{path}' is empty"
 
             elif path.endswith(".log"):

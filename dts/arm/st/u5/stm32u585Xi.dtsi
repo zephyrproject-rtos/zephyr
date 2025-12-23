@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <mem.h>
 #include <st/u5/stm32u585.dtsi>
 
 / {

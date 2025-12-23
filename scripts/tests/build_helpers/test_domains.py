@@ -6,47 +6,51 @@
 Tests for domains.py classes
 """
 
-import mock
 import os
-import pytest
 import sys
+from contextlib import nullcontext
+from unittest import mock
+
+import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 
-import domains
-
-from contextlib import nullcontext
-
+import domains  # noqa: E402
 
 TESTDATA_1 = [
     ('', False, 1, ['domains.yaml file not found: domains.yaml']),
     (
-"""
+        """
 default: None
 build_dir: some/dir
 domains: []
 """,
-        True, None, []
+        True,
+        None,
+        [],
     ),
 ]
+
 
 @pytest.mark.parametrize(
     'f_contents, f_exists, exit_code, expected_logs',
     TESTDATA_1,
-    ids=['no file', 'valid']
+    ids=['no file', 'valid'],
 )
 def test_from_file(caplog, f_contents, f_exists, exit_code, expected_logs):
     def mock_open(*args, **kwargs):
         if f_exists:
             return mock.mock_open(read_data=f_contents)(args, kwargs)
-        raise FileNotFoundError(f'domains.yaml not found.')
+        raise FileNotFoundError('domains.yaml not found.')
 
     init_mock = mock.Mock(return_value=None)
 
-    with mock.patch('domains.Domains.__init__', init_mock), \
-         mock.patch('builtins.open', mock_open), \
-         pytest.raises(SystemExit) if exit_code else nullcontext() as s_exit:
+    with (
+        mock.patch('domains.Domains.__init__', init_mock),
+        mock.patch('builtins.open', mock_open),
+        pytest.raises(SystemExit) if exit_code else nullcontext() as s_exit,
+    ):
         result = domains.Domains.from_file('domains.yaml')
 
     if exit_code:
@@ -60,7 +64,7 @@ def test_from_file(caplog, f_contents, f_exists, exit_code, expected_logs):
 
 TESTDATA_2 = [
     (
-"""
+        """
 default: some default
 build_dir: my/dir
 domains:
@@ -70,10 +74,14 @@ domains:
   build_dir: dir/3
 flash_order: I don\'t think this is correct
 """,
-        1, None, None, None, None
+        1,
+        None,
+        None,
+        None,
+        None,
     ),
     (
-"""
+        """
 build_dir: build/dir
 domains:
 - name: a domain
@@ -89,16 +97,15 @@ flash_order:
         'build/dir',
         [('default_domain', 'dir/2'), ('a domain', 'dir/1')],
         ('default_domain', 'dir/2'),
-        {'a domain': ('a domain', 'dir/1'),
-         'default_domain': ('default_domain', 'dir/2')}
+        {'a domain': ('a domain', 'dir/1'), 'default_domain': ('default_domain', 'dir/2')},
     ),
 ]
 
+
 @pytest.mark.parametrize(
-    'data, exit_code, expected_build_dir, expected_flash_order,' \
-    ' expected_default, expected_domains',
+    'data, exit_code, expected_build_dir, expected_flash_order, expected_default, expected_domains',
     TESTDATA_2,
-    ids=['invalid', 'valid']
+    ids=['invalid', 'valid'],
 )
 def test_from_yaml(
     caplog,
@@ -107,13 +114,15 @@ def test_from_yaml(
     expected_build_dir,
     expected_flash_order,
     expected_default,
-    expected_domains
+    expected_domains,
 ):
     def mock_domain(name, build_dir, *args, **kwargs):
         return name, build_dir
 
-    with mock.patch('domains.Domain', side_effect=mock_domain), \
-         pytest.raises(SystemExit) if exit_code else nullcontext() as exit_st:
+    with (
+        mock.patch('domains.Domain', side_effect=mock_domain),
+        pytest.raises(SystemExit) if exit_code else nullcontext() as exit_st,
+    ):
         doms = domains.Domains.from_yaml(data)
 
     if exit_code:
@@ -133,35 +142,40 @@ TESTDATA_3 = [
     (
         None,
         True,
-        [('some', os.path.join('dir', '2')),
-         ('order', os.path.join('dir', '1'))]
+        [
+            ('some', os.path.join('dir', '2')),
+            ('order', os.path.join('dir', '1')),
+        ],
     ),
     (
         None,
         False,
-        [('order', os.path.join('dir', '1')),
-         ('some', os.path.join('dir', '2'))]
+        [
+            ('order', os.path.join('dir', '1')),
+            ('some', os.path.join('dir', '2')),
+        ],
     ),
     (
         ['some'],
         False,
-        [('some', os.path.join('dir', '2'))]
+        [('some', os.path.join('dir', '2'))],
     ),
 ]
+
 
 @pytest.mark.parametrize(
     'names, default_flash_order, expected_result',
     TESTDATA_3,
-    ids=['order only', 'no parameters', 'valid']
+    ids=['order only', 'no parameters', 'valid'],
 )
 def test_get_domains(
     caplog,
     names,
     default_flash_order,
-    expected_result
+    expected_result,
 ):
     doms = domains.Domains(
-"""
+        """
 domains:
 - name: dummy
   build_dir: dummy
@@ -171,11 +185,11 @@ build_dir: dummy
     )
     doms._flash_order = [
         ('some', os.path.join('dir', '2')),
-        ('order', os.path.join('dir', '1'))
+        ('order', os.path.join('dir', '1')),
     ]
     doms._domains = {
         'order': ('order', os.path.join('dir', '1')),
-        'some': ('some', os.path.join('dir', '2'))
+        'some': ('some', os.path.join('dir', '2')),
     }
 
     result = doms.get_domains(names, default_flash_order)
@@ -183,36 +197,36 @@ build_dir: dummy
     assert result == expected_result
 
 
-
 TESTDATA_3 = [
     (
         'other',
         1,
         ['domain "other" not found, valid domains are: order, some'],
-        None
+        None,
     ),
     (
         'some',
         None,
         [],
-        ('some', os.path.join('dir', '2'))
+        ('some', os.path.join('dir', '2')),
     ),
 ]
+
 
 @pytest.mark.parametrize(
     'name, exit_code, expected_logs, expected_result',
     TESTDATA_3,
-    ids=['domain not found', 'valid']
+    ids=['domain not found', 'valid'],
 )
 def test_get_domain(
     caplog,
     name,
     exit_code,
     expected_logs,
-    expected_result
+    expected_result,
 ):
     doms = domains.Domains(
-"""
+        """
 domains:
 - name: dummy
   build_dir: dummy
@@ -222,11 +236,11 @@ build_dir: dummy
     )
     doms._flash_order = [
         ('some', os.path.join('dir', '2')),
-        ('order', os.path.join('dir', '1'))
+        ('order', os.path.join('dir', '1')),
     ]
     doms._domains = {
         'order': ('order', os.path.join('dir', '1')),
-        'some': ('some', os.path.join('dir', '2'))
+        'some': ('some', os.path.join('dir', '2')),
     }
 
     with pytest.raises(SystemExit) if exit_code else nullcontext() as s_exit:

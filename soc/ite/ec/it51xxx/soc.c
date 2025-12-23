@@ -117,6 +117,13 @@ void soc_prep_hook(void)
 	struct gpio_ite_ec_regs *const gpio_regs = GPIO_ITE_EC_REGS_BASE;
 	struct gctrl_ite_ec_regs *const gctrl_regs = GCTRL_ITE_EC_REGS_BASE;
 
+	/* USB pull down disable */
+	gpio_regs->GPIO_GCR35 &= ~IT51XXX_GPIO_USBPDEN;
+
+	/* Set FSPI pins are tri-state */
+	sys_write8(sys_read8(IT51XXX_SMFI_FLHCTRL3R) | IT51XXX_SMFI_FFSPITRI,
+		   IT51XXX_SMFI_FLHCTRL3R);
+
 	/* Scratch SRAM0 uses the 4KB based form 0x801000h */
 	gctrl_regs->GCTRL_SCR0BAR = IT51XXX_SEL_SRAM0_BASE_4K;
 

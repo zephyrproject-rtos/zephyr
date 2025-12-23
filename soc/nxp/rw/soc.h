@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023, 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,11 +19,10 @@
 #define nbu_handler             BLE_MCI_WAKEUP0_DriverIRQHandler
 #define nbu_wakeup_done_handler BLE_MCI_WAKEUP_DONE0_DriverIRQHandler
 
-/* Wrapper Function to deal with SDK differences in power API */
-static inline void EnableDeepSleepIRQ(IRQn_Type irq)
-{
-	POWER_EnableWakeup(irq);
-}
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) POWER_EnableWakeup(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) POWER_DisableWakeup(irqn)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) POWER_GetWakeupStatus(irqn)
 
 #ifdef CONFIG_MEMC
 int flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);

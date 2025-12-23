@@ -174,8 +174,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
    Hello World! twr_ke18f
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _TWR-KE18F Website:
    https://www.nxp.com/TWR-KE18F

@@ -22,12 +22,6 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 
-/* ADC speed/delay values during initialization */
-#define ADC_REGULAR_DLY_VAL	0x03
-#define ADC_REGULAR_ADCCNF2_VAL	0x8B07
-#define ADC_REGULAR_GENDLY_VAL	0x0100
-#define ADC_REGULAR_MEAST_VAL	0x0001
-
 /* ADC targeted operating frequency (2MHz) */
 #define NPCX_ADC_CLK 2000000
 
@@ -54,6 +48,12 @@ struct adc_npcx_config {
 	/* routine for configuring ADC's ISR */
 	void (*irq_cfg_func)(void);
 	const struct pinctrl_dev_config *pcfg;
+	/* ADC speed configurations */
+	uint16_t delay;
+	uint16_t speed;
+	uint16_t gen_delay;
+	uint16_t meast;
+
 };
 
 struct adc_npcx_threshold_control {
@@ -108,6 +108,13 @@ struct adc_npcx_data {
 	 * of this sequence.
 	 */
 	uint32_t channels;
+
+	/* Bit-mask indicating the V2T channels
+	 * 0: adc raw mode
+	 * 1: adc v2t mode
+	 */
+	uint32_t v2t_channels_msk;
+
 	/* ADC Device pointer used in api functions */
 	const struct device *adc_dev;
 	uint16_t *buffer;
@@ -157,10 +164,89 @@ static inline void adc_npcx_config_channels(const struct device *dev, uint32_t c
 
 	/* Only npcx4 and later series support over 16 ADC channels */
 	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
+#if (DT_INST_PROP(0, channel_count) > NPCX_ADCCS_MAX_CHANNEL_COUNT)
 		inst->ADCCS2 = (channels >> NPCX_ADCCS_MAX_CHANNEL_COUNT) &
 			       BIT_MASK(NPCX_ADCCS_MAX_CHANNEL_COUNT);
+#endif
 	}
 }
+
+#ifdef CONFIG_ADC_V2T_NPCX
+/* External function */
+int adc_npcx_v2t_set_channels(const struct device *dev, uint32_t channel_mask)
+{
+	struct adc_reg *const inst = HAL_INSTANCE(dev);
+	const struct adc_npcx_config *config = dev->config;
+	struct adc_npcx_data *const data = dev->data;
+
+	/* Check selected channel mask within range */
+	if (channel_mask & ~BIT_MASK(config->channel_count)) {
+		LOG_ERR("Invalid v2t channel_mask: %#x", channel_mask);
+		return -EINVAL;
+	}
+
+	/* Check V2T is disabled */
+	if (IS_BIT_SET(inst->V2T_CTRL, NPCX_V2T_CTRL_TEMP_EN)) {
+		LOG_ERR("Set v2t channel fail, v2t is enabled");
+		return -EINVAL;
+	}
+
+	/* Set V2T channel mask */
+	data->v2t_channels_msk = channel_mask & BIT_MASK(config->channel_count);
+
+	return 0;
+}
+
+/* External function */
+uint32_t adc_npcx_v2t_get_channels(const struct device *dev)
+{
+	struct adc_npcx_data *const data = dev->data;
+
+	return data->v2t_channels_msk;
+}
+
+static void adc_npcx_v2t_config_channel(const struct device *dev, uint32_t ch_bitmap)
+{
+	struct adc_reg *const inst = HAL_INSTANCE(dev);
+
+	inst->TEMP_CH = ch_bitmap;
+}
+
+static void adc_npcx_v2t_ch_apply(const struct device *dev, uint16_t enabled_ch)
+{
+	struct adc_reg *const inst = HAL_INSTANCE(dev);
+
+	/* Check V2T channel is configured */
+	if (enabled_ch == 0) {
+		return;
+	}
+
+	/* Check V2T is not enabled before configuration */
+	if (IS_BIT_SET(inst->V2T_CTRL, NPCX_V2T_CTRL_TEMP_EN)) {
+		LOG_ERR("V2T is enabled, apply fail, ch:%#x", enabled_ch);
+		return;
+	}
+
+	/* Enable ADC temperature channel (TEMP_CH) */
+	adc_npcx_v2t_config_channel(dev, enabled_ch);
+
+	/* Clear temperature end of cyclic conversion event status flag */
+	inst->ADCSTS |= BIT(NPCX_ADCSTS_TEOCCEV);
+
+	/* Disable ADC raw end of cyclic conversion event interrupt
+	 * For V2T, wait for TEOCCEV instead of the end of coversion flag of ADC raw.
+	 */
+	inst->ADCCNF &= ~BIT(NPCX_ADCCNF_INTECCEN);
+
+	/* Enable ADC temperature end of cyclic conversion event interrupt */
+	inst->V2T_CTRL |= BIT(NPCX_V2T_CTRL_TINTCC_EN);
+
+	/* Enable the voltage to temperature function */
+	inst->V2T_CTRL |= BIT(NPCX_V2T_CTRL_TEMP_EN);
+
+	LOG_DBG("ADC termperature channel TEMP_CH is %#x", inst->TEMP_CH);
+}
+#endif /* CONFIG_ADC_V2T_NPCX */
 
 static inline void adc_npcx_enable_threshold_detect(const struct device *dev, uint8_t th_sel,
 						    bool enable)
@@ -183,6 +269,7 @@ static inline void adc_npcx_enable_threshold_detect(const struct device *dev, ui
 	}
 }
 
+/* ADC isr handling */
 static void adc_npcx_isr(const struct device *dev)
 {
 	const struct adc_npcx_config *config = dev->config;
@@ -194,7 +281,7 @@ static void adc_npcx_isr(const struct device *dev)
 
 	/* Clear status pending bits first */
 	inst->ADCSTS = status;
-	LOG_DBG("%s: status is %04X\n", __func__, status);
+	LOG_DBG("%s: status is %04X", __func__, status);
 
 	/* Is end of conversion cycle event? ie. Scan conversion is done. */
 	if (IS_BIT_SET(status, NPCX_ADCSTS_EOCCEV) &&
@@ -239,6 +326,48 @@ static void adc_npcx_isr(const struct device *dev)
 		/* Inform sampling is done */
 		adc_context_on_sampling_done(&data->ctx, data->adc_dev);
 	}
+
+#ifdef CONFIG_ADC_V2T_NPCX
+	/* Handle ADC V2T temperature conversion event */
+	if (IS_BIT_SET(status, NPCX_ADCSTS_TEOCCEV) &&
+	    IS_BIT_SET(inst->V2T_CTRL, NPCX_V2T_CTRL_TINTCC_EN)) {
+
+		/* Get V2T data for each selected channel */
+		while (data->channels) {
+			channel = find_lsb_set(data->channels) - 1;
+			LOG_DBG("V2T_%d RAW data: is %04X",
+				channel, TCHNDAT(config->base, channel));
+			result = GET_FIELD(TCHNDAT(config->base, channel),
+				NPCX_V2T_TCHNDAT_DAT_FULL);
+
+			/* Save V2T result */
+			if (data->buffer < data->buf_end) {
+				*data->buffer++ = result;
+			}
+			data->channels &= ~BIT(channel);
+		}
+
+		/* Disable ADC temperature end of cyclic conversion event interrupt */
+		inst->V2T_CTRL &= ~BIT(NPCX_V2T_CTRL_TINTCC_EN);
+
+		/* Turn off V2T function */
+		inst->V2T_CTRL &= ~BIT(NPCX_V2T_CTRL_TEMP_EN);
+
+		/* Disable all adc and v2t channels */
+		adc_npcx_config_channels(dev, 0);
+		adc_npcx_v2t_config_channel(dev, 0);
+
+		/* Turn off ADC */
+		inst->ADCCNF &= ~BIT(NPCX_ADCCNF_ADCEN);
+
+#ifdef CONFIG_PM
+		adc_npcx_pm_policy_state_lock_put(data);
+#endif
+
+		/* Inform sampling is done */
+		adc_context_on_sampling_done(&data->ctx, data->adc_dev);
+	}
+#endif /* CONFIG_ADC_V2T_NPCX */
 
 	if (!(IS_ENABLED(CONFIG_ADC_CMP_NPCX) && t_data->active_thresholds)) {
 		return;
@@ -302,6 +431,7 @@ static void adc_npcx_start_scan(const struct device *dev)
 #ifdef CONFIG_PM
 	adc_npcx_pm_policy_state_lock_get(data);
 #endif
+
 	/* Turn on ADC first */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_ADCEN);
 
@@ -321,24 +451,37 @@ static void adc_npcx_start_scan(const struct device *dev)
 	/* Enable end of cyclic conversion event interrupt */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_INTECCEN);
 
+	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
+#if (DT_INST_PROP(0, channel_count) > NPCX_ADCCS_MAX_CHANNEL_COUNT)
+		LOG_DBG("ADC scan channels ADCCS, ADCCS2 are "
+			"(%04X,%04X)", inst->ADCCS, inst->ADCCS2);
+#endif
+	} else {
+		LOG_DBG("ADC scan channels ADCCS is (%04X)", inst->ADCCS);
+	}
+
+#ifdef CONFIG_ADC_V2T_NPCX
+	uint32_t v2t_ch_en_msk;
+
+	/* Apply V2T setting if V2T channel is configured */
+	v2t_ch_en_msk = data->channels & data->v2t_channels_msk;
+	if (v2t_ch_en_msk) {
+		adc_npcx_v2t_ch_apply(dev, (uint16_t)v2t_ch_en_msk);
+	}
+#endif /* CONFIG_ADC_V2T_NPCX */
+
 	/* Start conversion */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_START);
-
-	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
-		LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS, ADCCS2 are "
-			"(%04X,%04X,%04X)\n", inst->ADCCNF, inst->ADCCS, inst->ADCCS2);
-	} else {
-		LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS are (%04X,%04X)\n",
-			inst->ADCCNF, inst->ADCCS);
-	}
+	LOG_DBG("Start ADC scan conversion, ADCCNF is (%04X)", inst->ADCCNF);
 }
 
 static int adc_npcx_start_read(const struct device *dev,
-					const struct adc_sequence *sequence)
+			       const struct adc_sequence *sequence)
 {
 	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_data *const data = dev->data;
 	int error = 0;
+	uint32_t channel_type;
 
 	if (!sequence->channels ||
 	    (sequence->channels & ~BIT_MASK(config->channel_count))) {
@@ -361,6 +504,13 @@ static int adc_npcx_start_read(const struct device *dev,
 	/* Save ADC sequence sampling buffer and its end pointer address */
 	data->buffer = sequence->buffer;
 	data->buf_end = data->buffer + sequence->buffer_size / sizeof(uint16_t);
+
+	/* Check selected channel is the same mode (all ADC or all V2T) */
+	channel_type = sequence->channels & data->v2t_channels_msk;
+	if ((channel_type != 0) && (channel_type != sequence->channels)) {
+		LOG_ERR("ADC channel type unmatch");
+		return -EINVAL;
+	}
 
 	/* Start ADC conversion */
 	adc_context_start_read(&data->ctx, sequence);
@@ -809,12 +959,12 @@ static int adc_npcx_init(const struct device *dev)
 	SET_FIELD(inst->ATCTL, NPCX_ATCTL_SCLKDIV_FIELD, prescaler - 1);
 
 	/* Set regular ADC delay */
-	SET_FIELD(inst->ATCTL, NPCX_ATCTL_DLY_FIELD, ADC_REGULAR_DLY_VAL);
+	SET_FIELD(inst->ATCTL, NPCX_ATCTL_DLY_FIELD, config->delay);
 
 	/* Set ADC speed sequentially */
-	inst->ADCCNF2 = ADC_REGULAR_ADCCNF2_VAL;
-	inst->GENDLY = ADC_REGULAR_GENDLY_VAL;
-	inst->MEAST = ADC_REGULAR_MEAST_VAL;
+	inst->ADCCNF2 = config->speed;
+	inst->GENDLY = config->gen_delay;
+	inst->MEAST = config->meast;
 
 	/* Configure ADC interrupt and enable it */
 	config->irq_cfg_func();
@@ -858,6 +1008,10 @@ static int adc_npcx_init(const struct device *dev)
 		.threshold_count = DT_INST_PROP(n, threshold_count),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.irq_cfg_func = adc_npcx_irq_cfg_func_##n,			\
+		.delay = DT_INST_PROP_BY_IDX(n, speed_conf, 0),			\
+		.speed = DT_INST_PROP_BY_IDX(n, speed_conf, 1),			\
+		.gen_delay = DT_INST_PROP_BY_IDX(n, speed_conf, 2),		\
+		.meast = DT_INST_PROP_BY_IDX(n, speed_conf, 3),			\
 	};									\
 	static struct adc_npcx_threshold_data threshold_data_##n;		\
 	static struct adc_npcx_data adc_npcx_data_##n = {			\

@@ -44,11 +44,11 @@
 
 	ipc0: ipc {
 		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mbox4 0>, <&mbox4 1>;
+		mboxes = <&main_mbox4 0>, <&main_mbox4 1>;
 		mbox-names = "tx", "rx";
 	};
 };
 
-&timer10 {
+&main_timer10 {
 	status = "okay";
 };

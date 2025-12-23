@@ -26,8 +26,23 @@ if(CONFIG_BOARD_MPS4_CORSTONE315_FVP OR CONFIG_BOARD_MPS4_CORSTONE320_FVP)
     )
 endif()
 
+if(CONFIG_ARM_PAC OR CONFIG_ARM_BTI)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    -C mps4_board.subsystem.cpu0.CFGPACBTI=1
+  )
+endif()
+
 if(CONFIG_BUILD_WITH_TFM)
-  set(ARMFVP_FLAGS ${ARMFVP_FLAGS} -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex)
+  # Workaround: Use binary (.bin) format images until TF-M supports generating them in hex (.hex)
+  # format. The image load addresses are referred from the TF-M official documentation at:
+  # https://trustedfirmware-m.readthedocs.io/en/latest/platform/arm/mps4/corstone320/README.html
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    --data ${APPLICATION_BINARY_DIR}/tfm/bin/bl1_1.bin@0x11000000
+    --data ${APPLICATION_BINARY_DIR}/tfm/bin/cm_provisioning_bundle.bin@0x12024000
+    --data ${APPLICATION_BINARY_DIR}/tfm/bin/dm_provisioning_bundle.bin@0x1202aa00
+    --data ${APPLICATION_BINARY_DIR}/tfm/bin/bl2_signed.bin@0x12031400
+    -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex
+  )
 endif()
 
 # FVP Parameters

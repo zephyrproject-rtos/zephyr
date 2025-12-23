@@ -7,7 +7,7 @@ The STEVAL-MKSBOX1V1 (SensorTile.box) is a ready-to-use box kit for wireless
 IoT and wearable sensor platforms to help you use and develop apps based on
 remote motion and environmental sensor data.
 The SensorTile.box board fits into a small plastic box with a long-life rechargeable
-battery, and communicates with a standard smartphone through its Bluetooth interface,
+battery, and communicates with a standard smartphone through its Bluetooth |reg| interface,
 providing data coming from the sensors.
 
 More information about the board can be found at the `SensorTile.box website`_.
@@ -31,7 +31,7 @@ SensorTile.box provides the following hardware components:
 
 - Communication
 
-  - Bluetooth Smart connectivity v4.2 (SPBTLE-1S)
+  - Bluetooth |reg| Smart connectivity v4.2 (SPBTLE-1S)
   - 1 x USB OTG FS (SoC) with micro-B connector
     (USB device role only)
 

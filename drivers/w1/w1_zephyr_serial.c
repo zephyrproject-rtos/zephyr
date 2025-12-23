@@ -131,8 +131,9 @@ static int w1_serial_reset_bus(const struct device *dev)
 {
 	const struct w1_serial_config *cfg = dev->config;
 	struct w1_serial_data *data = dev->data;
-	uint8_t reset_byte = data->overdrive_active ?
-			     W1_SERIAL_OD_RESET_BYTE : W1_SERIAL_STD_RESET_BYTE;
+	const uint8_t reset_byte_tx =
+		data->overdrive_active ? W1_SERIAL_OD_RESET_BYTE : W1_SERIAL_STD_RESET_BYTE;
+	uint8_t reset_byte_rx = 0;
 	/* reset uses 115200/9600=12 slower baudrate,
 	 * adjust timeout accordingly, also valid for overdrive speed.
 	 */
@@ -145,7 +146,7 @@ static int w1_serial_reset_bus(const struct device *dev)
 		return -EIO;
 	}
 
-	if (serial_tx_rx(dev, &reset_byte, &reset_byte, 1, reset_timeout) < 0) {
+	if (serial_tx_rx(dev, &reset_byte_tx, &reset_byte_rx, 1, reset_timeout) < 0) {
 		LOG_ERR("tx_rx_error reset_present");
 		return -EIO;
 	}
@@ -157,10 +158,11 @@ static int w1_serial_reset_bus(const struct device *dev)
 		return -EIO;
 	}
 
-	/* At least 1 device is present on bus, if reset_byte is different
-	 * from 0xF0. But Bus probably shorted if reset_byte is 0x00.
+	/* At least 1 device is present on bus if reset_byte_rx is different
+	 * from reset_byte_tx (which varies depending on standard or overdrive mode).
+	 * Bus is probably shorted if reset_byte_rx is 0x00.
 	 */
-	return (reset_byte != W1_SERIAL_STD_RESET_BYTE) && (reset_byte != 0x00);
+	return (reset_byte_rx != reset_byte_tx) && (reset_byte_rx != 0x00);
 }
 
 static int w1_serial_read_bit(const struct device *dev)

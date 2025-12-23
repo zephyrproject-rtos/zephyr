@@ -1,7 +1,11 @@
 # Copyright (c) 2024 XuYang Shen  <shenxuyang@shlinyuantech.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: IST3931 65x132 display controller
+title: IST3931 65x132 display controller
+
+description: |
+    The Istech IST3931 is a monochrome STN LCD controller
+    with a maximum 132x65 resolution.
 
 compatible: "istech,ist3931"
 

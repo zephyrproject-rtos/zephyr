@@ -50,7 +50,9 @@ config ESP32_PHY_MAX_TX_POWER
 
 config ESP32_SW_COEXIST_ENABLE
 	bool "Software controls Wi-Fi/Bluetooth coexistence"
-	default y if (BT_ESP32 && WIFI_ESP32)
+	default y if (BT_ESP32 && WIFI_ESP32) || \
+		     (WIFI_ESP32 && IEEE802154_ESP32) || \
+		     (IEEE802154_ESP32 && BT_ESP32)
 	help
 	  If enabled, Wi-Fi & Bluetooth coexistence is controlled by software rather than hardware.
 	  Recommended for heavy traffic scenarios. Both coexistence configuration options are

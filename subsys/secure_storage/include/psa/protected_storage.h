@@ -12,8 +12,7 @@
 /** @cond INTERNAL_HIDDEN */
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
 #include "../internal/zephyr/secure_storage/its.h"
-#define ITS_UID (secure_storage_its_uid_t){.uid = uid, \
-					   .caller_id = SECURE_STORAGE_ITS_CALLER_PSA_PS}
+#define ITS_CALLER_ID SECURE_STORAGE_ITS_CALLER_PSA_PS
 #else
 #include "../internal/zephyr/secure_storage/ps.h"
 #endif
@@ -37,7 +36,7 @@
  * @retval PSA_ERROR_NOT_PERMITTED        An entry associated with the provided `uid` already
  *                                        exists and was created with `PSA_STORAGE_FLAG_WRITE_ONCE`.
  * @retval PSA_ERROR_NOT_SUPPORTED        One or more of the flags provided in `create_flags`
- *                                        are not supported or invalid.
+ *                                        are not supported or not valid.
  * @retval PSA_ERROR_INVALID_ARGUMENT     One or more arguments other than `create_flags` are
  *                                        invalid.
  * @retval PSA_ERROR_INSUFFICIENT_STORAGE There is insufficient space on the storage medium.
@@ -50,7 +49,7 @@ psa_status_t psa_ps_set(psa_storage_uid_t uid, size_t data_length,
 			const void *p_data, psa_storage_create_flags_t create_flags)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_set(ITS_UID, data_length, p_data, create_flags);
+	return secure_storage_its_set(ITS_CALLER_ID, uid, data_length, p_data, create_flags);
 #else
 	return secure_storage_ps_set(uid, data_length, p_data, create_flags);
 #endif
@@ -68,8 +67,8 @@ psa_status_t psa_ps_set(psa_storage_uid_t uid, size_t data_length,
  *
  * @retval PSA_SUCCESS                 The operation completed successfully.
  * @retval PSA_ERROR_GENERIC_ERROR     An unspecified internal failure happened.
- * @retval PSA_ERROR_INVALID_ARGUMENT  One or more of the arguments are invalid. This can also
- *                                     happen if `data_offset` is larger than the size of the data
+ * @retval PSA_ERROR_INVALID_ARGUMENT  One or more arguments are invalid. This can also happen
+ *                                     if `data_offset` is larger than the size of the data
  *                                     associated with `uid`.
  * @retval PSA_ERROR_DOES_NOT_EXIST    The provided `uid` was not found in the storage.
  * @retval PSA_ERROR_STORAGE_FAILURE   The physical storage has failed (fatal error).
@@ -83,7 +82,8 @@ psa_status_t psa_ps_get(psa_storage_uid_t uid, size_t data_offset,
 			size_t data_size, void *p_data, size_t *p_data_length)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_get(ITS_UID, data_offset, data_size, p_data, p_data_length);
+	return secure_storage_its_get(ITS_CALLER_ID, uid, data_offset,
+				      data_size, p_data, p_data_length);
 #else
 	return secure_storage_ps_get(uid, data_offset, data_size, p_data, p_data_length);
 #endif
@@ -98,7 +98,7 @@ psa_status_t psa_ps_get(psa_storage_uid_t uid, size_t data_offset,
  *
  * @retval PSA_SUCCESS                 The operation completed successfully.
  * @retval PSA_ERROR_GENERIC_ERROR     An unspecified internal failure happened.
- * @retval PSA_ERROR_INVALID_ARGUMENT  One or more of the arguments are invalid.
+ * @retval PSA_ERROR_INVALID_ARGUMENT  `uid` is invalid.
  * @retval PSA_ERROR_DOES_NOT_EXIST    The provided `uid` was not found in the storage.
  * @retval PSA_ERROR_STORAGE_FAILURE   The physical storage has failed (fatal error).
  * @retval PSA_ERROR_INVALID_SIGNATURE The data associated with `uid` failed authentication.
@@ -110,7 +110,7 @@ static ALWAYS_INLINE
 psa_status_t psa_ps_get_info(psa_storage_uid_t uid, struct psa_storage_info_t *p_info)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_get_info(ITS_UID, p_info);
+	return secure_storage_its_get_info(ITS_CALLER_ID, uid, p_info);
 #else
 	return secure_storage_ps_get_info(uid, p_info);
 #endif
@@ -138,7 +138,7 @@ static ALWAYS_INLINE
 psa_status_t psa_ps_remove(psa_storage_uid_t uid)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_remove(ITS_UID);
+	return secure_storage_its_remove(ITS_CALLER_ID, uid);
 #else
 	return secure_storage_ps_remove(uid);
 #endif
@@ -159,8 +159,8 @@ psa_status_t psa_ps_remove(psa_storage_uid_t uid)
  * @retval PSA_SUCCESS                    The operation completed successfully.
  * @retval PSA_ERROR_GENERIC_ERROR        An unspecified internal failure happened.
  * @retval PSA_ERROR_NOT_SUPPORTED        The implementation doesn't support this function or one
- *                                        or more of the flags provided in `create_flags` are not
- *                                        supported or invalid.
+ *                                        or more of the flags provided in `create_flags`
+ *                                        are not supported or not valid.
  * @retval PSA_ERROR_INVALID_ARGUMENT     `uid` is invalid.
  * @retval PSA_ERROR_ALREADY_EXISTS       An entry with the provided `uid` already exists.
  * @retval PSA_ERROR_INSUFFICIENT_STORAGE There is insufficient space on the storage medium.
@@ -198,7 +198,7 @@ psa_status_t psa_ps_create(psa_storage_uid_t uid, size_t capacity,
  * @retval PSA_ERROR_GENERIC_ERROR     An unspecified internal failure happened.
  * @retval PSA_ERROR_NOT_PERMITTED     The entry was created with `PSA_STORAGE_FLAG_WRITE_ONCE`.
  * @retval PSA_ERROR_NOT_SUPPORTED     The implementation doesn't support this function.
- * @retval PSA_ERROR_INVALID_ARGUMENT  One or more of the arguments are invalid.
+ * @retval PSA_ERROR_INVALID_ARGUMENT  One or more arguments are invalid.
  * @retval PSA_ERROR_DOES_NOT_EXIST    The provided `uid` was not found in the storage.
  * @retval PSA_ERROR_STORAGE_FAILURE   The physical storage has failed (fatal error).
  * @retval PSA_ERROR_INVALID_SIGNATURE The data associated with `uid` failed authentication.

@@ -52,6 +52,15 @@ config LOG_BACKEND_SWO_PROTOCOL_MANCHESTER
 
 endchoice
 
+config LOG_BACKEND_SWO_SYNC_PACKETS
+	bool "Synchronization packet transmission"
+	default y
+	help
+	  Generate synchronization packets with a unique pattern in the bitstream.
+	  If the SWO pin is used for simple UART text output on a generic terminal application,
+	  these packets show up as special characters in regular intervals.
+	  You can avoid that by disabling this setting.
+
 backend = SWO
 backend-str = swo
 source "subsys/logging/Kconfig.template.log_format_config"

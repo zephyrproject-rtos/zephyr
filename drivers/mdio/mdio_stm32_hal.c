@@ -38,8 +38,8 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 {
 	struct mdio_stm32_data *const dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef ret;
 	uint32_t read;
-	int ret;
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
@@ -59,7 +59,7 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 
 	*data = read & ADIN1100_REG_VALUE_MASK;
 
-	return ret;
+	return 0;
 }
 
 static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
@@ -67,7 +67,7 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 {
 	struct mdio_stm32_data *const dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	int ret;
+	HAL_StatusTypeDef ret;
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
@@ -85,7 +85,7 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 		return -EIO;
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_ETH_STM32_HAL_API_V1
@@ -184,8 +184,7 @@ static DEVICE_API(mdio, mdio_stm32_api) = {
 	};                                                                                         \
 	static struct mdio_stm32_config mdio_stm32_config_##inst = {                               \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), stm_eth, bus),      \
-			   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), stm_eth, bits)},    \
+		.pclken = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(inst), stm_eth),                 \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL, &mdio_stm32_data_##inst,               \
 			      &mdio_stm32_config_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \

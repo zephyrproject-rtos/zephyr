@@ -1,0 +1,194 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  events-interrupt-gpios:
+    type: phandle-array
+    description: |
+      Events Interrupt pin (Tap, Freefall, .. etc) (INT0 Pin).
+      Interrupts are active high by default.
+
+  drdy-interrupt-gpios:
+    type: phandle-array
+    description: |
+      DRDY Interrupt pin (INT1 Pin).
+      Interrupts are active high by default.
+
+  accel-odr:
+    type: string
+    required: true
+    enum:
+      - "0"     # Accelerometer turned off
+      - "12.5"
+      - "26"
+      - "52"
+      - "104"
+      - "208"
+      - "416"
+      - "833"
+      - "1660"
+      - "3330"
+      - "6660"
+      - "1.6"
+    description: Accelerometer output data rate in Hz
+
+  accel-range:
+    type: int
+    default: 2
+    enum:
+      - 2 #  2g
+      - 16 # 16g
+      - 4 #  4g
+      - 8 #  8g
+    description: Accelerometer range (full scale) in g. Defaults to 2, which is
+      the configuration at power-up.
+
+  gyro-odr:
+    type: string
+    required: true
+    enum:
+      - "0"     # Gyroscope turned off
+      - "12.5"
+      - "26"
+      - "52"
+      - "104"
+      - "208"
+      - "416"
+      - "833"
+      - "1660"
+      - "3330"
+      - "6660"
+    description: Gyroscope output data rate in Hz
+
+  gyro-range:
+    type: int
+    default: 250
+    enum:
+      - 250
+      - 125
+      - 500
+      - 1000
+      - 2000
+    description: Gyroscope range (full scale) in degrees per second. Defaults to 250,
+      which is the configuration at power-up.
+
+  tap-mode:
+    type: int
+    default: 0
+    enum:
+      - 0 # Only single tap
+      - 1 # Single and double tap
+    description: Tap mode (only single tap or single and double tap).
+      Defaults to 0, which is the configuration at power-up.
+
+  tap-threshold:
+    type: int
+    default: 0
+    description: |
+      Tap X/Y/Z axis threshold (unsigned 5-bit, ranging from 0x00 to 0x1F).
+      Defaults to zero, which is the configuration at power-up.
+
+      Threshold for tap recognition on the X/Y/Z axes depending on selected
+      measurement range (full scale).
+
+      Example:
+
+          tap-threshold = <6>
+
+      For FS=2g, this sets the threshold to 6 \* 2g/32 = 375mg.
+
+  tap-axis-enable:
+    type: array
+    default: [1, 1, 1]
+    description: |
+      Enable/disable tap recognition on X/Y/Z axis.
+
+      Defaults to "<1>, <1>, <1>", i.e. tap recognition enabled for all three axes.
+      Setting elements of this array to zero disables tap recognition for the
+      corresponding axes.
+
+  tap-shock:
+    type: int
+    default: 0x0
+    description: |
+      Maximum duration of over-threshold event when detecting taps (unsigned
+      2-bit, ranging from 0x0 to 0x3). Defaults to zero, which is the
+      configuration at power-up.
+
+      A value of 0 corresponds to 4 \* 1/ODR and 1 LSB = 8 \* 1/ODR.
+
+  tap-latency:
+    type: int
+    default: 0x0
+    description: |
+      Maximum duration time gap for double-tap recognition (unsigned 4-bit,
+      ranging from 0x0 to 0xF). Defaults to zero, which is the
+      configuration at power-up.
+
+      A value of 0 corresponds to 16 \* 1/ODR and 1 LSB = 32 \* 1/ODR.
+
+  tap-quiet:
+    type: int
+    default: 0x0
+    description: |
+      Expected quiet time for double-tap recognition (unsigned 2-bit, ranging
+      from 0x0 to 0x3). This defines the time after the first detected tap in
+      which there must not be any over-threshold event. Defaults to zero, which
+      is the configuration at power-up.
+
+      A value of 0 corresponds to 2 \* 1/ODR and 1 LSB = 4 \* 1/ODR.
+
+  freefall-duration:
+    type: int
+    default: 0x0
+    description: |
+      Minimum duration of free-fall event (unsigned 6-bit, ranging from 0x0
+      to 0x3F). Defaults to 0, which is the configuration at power-up.
+
+      1 LSB = 1 \* 1/ODR.
+
+  freefall-threshold:
+    type: int
+    default: 0x0
+    enum:
+      - 0  # 156 mg
+      - 1  # 219 mg
+      - 2  # 250 mg
+      - 3  # 312 mg
+      - 4  # 344 mg
+      - 5  # 406 mg
+      - 6  # 469 mg
+      - 7  # 500 mg
+    description: |
+      Free-fall threshold (amplitude of the "free-fall zone" around zero-g
+      level where the accelerations of all axes are small enough to generate
+      the free-fall interrupt). Defaults to 0, which is the configuration
+      at power-up.
+
+  delta-duration:
+    type: int
+    default: 0x0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Wake-up duration, i.e. minimum duration of wake-up event to be
+      recognized (unsigned 2-bit, ranging from 0x0 to 0x3).
+      Defaults to 0, which is the configuration at power-up.
+
+      1 LSB = 1 \* 1/ODR
+
+  delta-threshold:
+    type: int
+    default: 0x0
+    description: |
+      Wake-up threshold (unsigned 6-bit, ranging from 0x0 to 0x3F).
+      The threshold value is applicable to both positive and negative
+      acceleration data. A wake-up event is recognized, if at least
+      one of the acceleration axis values exceeds the threshold value.
+
+      Defaults to 0, which is the configuration at power-up.
+
+      1 LSB = 1/64 of measurement range (full scale).

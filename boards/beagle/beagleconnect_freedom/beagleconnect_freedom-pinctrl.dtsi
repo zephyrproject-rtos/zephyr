@@ -12,6 +12,7 @@
 		pinmux = <13 IOC_PORT_MCU_UART0_TX>;
 		bias-disable;
 	};
+
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <12 IOC_PORT_MCU_UART0_RX>;
 		bias-disable;
@@ -23,6 +24,7 @@
 		pinmux = <22 IOC_PORT_MCU_UART1_TX>;
 		bias-disable;
 	};
+
 	uart1_rx_default: uart1_rx_default {
 		pinmux = <21 IOC_PORT_MCU_UART1_RX>;
 		bias-disable;
@@ -36,16 +38,19 @@
 		drive-open-drain;
 		input-enable;
 	};
+
 	i2c0_sda_default: i2c0_sda_default {
 		pinmux = <26 IOC_PORT_MCU_I2C_MSSDA>;
 		bias-pull-up;
 		drive-open-drain;
 		input-enable;
 	};
+
 	i2c0_scl_sleep: i2c0_scl_sleep {
 		pinmux = <25 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	i2c0_sda_sleep: i2c0_sda_sleep {
 		pinmux = <26 IOC_PORT_GPIO>;
 		bias-disable;
@@ -56,23 +61,28 @@
 		pinmux = <10 IOC_PORT_MCU_SSI0_CLK>;
 		bias-disable;
 	};
+
 	spi0_mosi_default: spi0_mosi_default {
 		pinmux = <9 IOC_PORT_MCU_SSI0_TX>;
 		bias-disable;
 	};
+
 	spi0_miso_default: spi0_miso_default {
 		pinmux = <11 IOC_PORT_MCU_SSI0_RX>;
 		bias-disable;
 		input-enable;
 	};
+
 	spi0_cs0_default: spi0_cs0_default {
 		pinmux = <8 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	spi0_cs1_default: spi0_cs1_default {
 		pinmux = <28 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	spi0_cs2_default: spi0_cs2_default {
 		pinmux = <27 IOC_PORT_GPIO>;
 		bias-disable;
@@ -83,14 +93,17 @@
 		pinmux = <29 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	board_ant_tx_pa_on: board_ant_tx_pa_on {
 		pinmux = <29 IOC_PORT_RFC_GPO3>;
 		bias-disable;
 	};
+
 	board_ant_subg_off: board_ant_subg_off {
 		pinmux = <30 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	board_ant_subg_on: board_ant_subg_on {
 		pinmux = <30 IOC_PORT_RFC_GPO0>;
 		bias-disable;

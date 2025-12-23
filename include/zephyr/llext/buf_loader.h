@@ -78,7 +78,8 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
 			   IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE) ?                             \
 				LLEXT_STORAGE_WRITABLE : LLEXT_STORAGE_PERSISTENT)
 
-/* @brief Initialize an llext_buf_loader structure for a temporary buffer
+/**
+ * @brief Initialize an llext_buf_loader structure for a temporary buffer
  *
  * ELF data from the specified buffer can only be used during llext_load().
  * The LLEXT subsystem will copy all necessary data to internal buffers at load

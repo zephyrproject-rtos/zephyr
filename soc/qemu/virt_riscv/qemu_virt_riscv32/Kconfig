@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_QEMU_VIRT_RISCV32
-	select CPU_HAS_FPU
 	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_F
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_HAS_PLIC

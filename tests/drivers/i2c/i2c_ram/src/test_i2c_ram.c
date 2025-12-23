@@ -202,7 +202,7 @@ static void check_completion(struct rtio_cqe *cqe, const char *msg)
 	result = cqe->result;
 	rtio_cqe_release(&i2c_rtio, cqe);
 	if (result) {
-		zassert_ok(result, msg);
+		zassert_ok(result, "%s", msg);
 	}
 }
 

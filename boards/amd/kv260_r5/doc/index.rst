@@ -66,7 +66,7 @@ remoteproc support, it is based around 5.15 Xilinx maintained kernel, as describ
 https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#PetaLinux
 
 The other option is to use the reference image from the openAMP project, the link
-below points, betweem the options, to the kv260 target:
+below points, between the options, to the kv260 target:
 
 https://github.com/OpenAMP/openamp-ci-builds/releases/tag/v2022.12
 

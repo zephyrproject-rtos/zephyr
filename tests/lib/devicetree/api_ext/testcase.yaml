@@ -5,3 +5,4 @@ tests:
     # will mostly likely be the fastest.
     integration_platforms:
       - native_sim
+    platform_exclude: kit_psc3m5_evk

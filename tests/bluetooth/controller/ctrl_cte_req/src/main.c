@@ -758,31 +758,31 @@ ZTEST(cte_req, test_cte_req_ll_unknown_rsp_peripheral_local)
 /* Arbitrary value used for setting effective maximum number of TX/RX octets */
 #define PDU_PDU_MAX_OCTETS (PDU_DC_PAYLOAD_SIZE_MIN * 3)
 
-static void check_pref_phy_state(const struct ll_conn *conn, uint8_t phy_tx, uint8_t phy_rx)
+static void check_pref_phy_state(const struct ll_conn *llconn, uint8_t phy_tx, uint8_t phy_rx)
 {
-	zassert_equal(conn->phy_pref_rx, phy_rx,
-		      "Preferred RX PHY mismatch %d (actual) != %d (expected)", conn->phy_pref_rx,
-		      phy_rx);
-	zassert_equal(conn->phy_pref_tx, phy_tx,
-		      "Preferred TX PHY mismatch %d (actual) != %d (expected)", conn->phy_pref_tx,
-		      phy_tx);
+	zassert_equal(llconn->phy_pref_rx, phy_rx,
+		      "Preferred RX PHY mismatch %d (actual) != %d (expected)",
+		      llconn->phy_pref_rx, phy_rx);
+	zassert_equal(llconn->phy_pref_tx, phy_tx,
+		      "Preferred TX PHY mismatch %d (actual) != %d (expected)",
+		      llconn->phy_pref_tx, phy_tx);
 }
 
-static void check_current_phy_state(const struct ll_conn *conn, uint8_t phy_tx, uint8_t flags,
+static void check_current_phy_state(const struct ll_conn *llconn, uint8_t phy_tx, uint8_t flags,
 				    uint8_t phy_rx)
 {
-	zassert_equal(conn->lll.phy_rx, phy_rx,
-		      "Current RX PHY mismatch %d (actual) != %d (expected)", conn->lll.phy_rx,
+	zassert_equal(llconn->lll.phy_rx, phy_rx,
+		      "Current RX PHY mismatch %d (actual) != %d (expected)", llconn->lll.phy_rx,
 		      phy_rx);
-	zassert_equal(conn->lll.phy_tx, phy_tx,
-		      "Current TX PHY mismatch %d (actual) != %d (expected)", conn->lll.phy_tx,
+	zassert_equal(llconn->lll.phy_tx, phy_tx,
+		      "Current TX PHY mismatch %d (actual) != %d (expected)", llconn->lll.phy_tx,
 		      phy_tx);
-	zassert_equal(conn->lll.phy_flags, flags,
-		      "Current Flags mismatch %d (actual) != %d (expected)", conn->lll.phy_flags,
+	zassert_equal(llconn->lll.phy_flags, flags,
+		      "Current Flags mismatch %d (actual) != %d (expected)", llconn->lll.phy_flags,
 		      flags);
 }
 
-static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
+static bool is_instant_reached(struct ll_conn *llconn, uint16_t instant)
 {
 	/* Check if instant is in the past.
 	 *
@@ -791,15 +791,15 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 	 *       maximum positive difference between actual value of connection event counter and
 	 *       instant.
 	 */
-	return (uint16_t)(event_counter(conn) - instant) <= (uint16_t)0x7FFF;
+	return (uint16_t)(event_counter(llconn) - instant) <= (uint16_t)0x7FFF;
 }
 
-static uint16_t pu_event_counter(struct ll_conn *conn)
+static uint16_t pu_event_counter(struct ll_conn *llconn)
 {
 	struct lll_conn *lll;
 	uint16_t event_counter;
 
-	lll = &conn->lll;
+	lll = &llconn->lll;
 
 	/* Calculate current event counter */
 	event_counter = lll->event_counter + lll->latency_prepare;

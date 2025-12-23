@@ -23,6 +23,7 @@
  * @brief MSPI Emulation Interface
  * @defgroup mspi_emul_interface MSPI Emulation Interface
  * @ingroup io_emulators
+ * @ingroup mspi_interface
  * @{
  */
 

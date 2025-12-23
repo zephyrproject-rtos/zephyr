@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NATIVE
+	bool "HWINFO driver for native_sim"
+	default y
+	depends on ARCH_POSIX
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable native_sim HWINFO driver.

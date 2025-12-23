@@ -3,10 +3,14 @@ sample:
 tests:
   sample.sensor.apds9960:
     harness: console
-    platform_allow: reel_board
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+      - reel_board
     integration_platforms:
       - reel_board
     tags: sensors
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_apds9960"
     depends_on:
       - i2c
       - gpio
@@ -19,15 +23,20 @@ tests:
       fixture: fixture_i2c_apds9960
   sample.sensor.apds9960.trigger:
     harness: console
-    platform_allow: reel_board
+    platform_allow:
+      - reel_board
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_ir_gesture_click shield
     integration_platforms:
       - reel_board
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm
     tags: sensors
     depends_on:
       - i2c
       - gpio
     extra_configs:
       - CONFIG_APDS9960_TRIGGER_GLOBAL_THREAD=y
+    extra_args:
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_ir_gesture_click"
     harness_config:
       type: multi_line
       ordered: true

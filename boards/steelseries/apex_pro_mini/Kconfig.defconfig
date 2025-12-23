@@ -1,0 +1,20 @@
+# Steelseries Apex Pro Mini keyboard configuration
+
+# Copyright (c) 2025 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_APEX_PRO_MINI
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+config INPUT_KBD_MATRIX_16_BIT_ROW
+	default y if INPUT_GPIO_KBD_MATRIX
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if FLASH
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_APEX_PRO_MINI

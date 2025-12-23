@@ -1,0 +1,81 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright (c) 2023 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO17>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO18>;
+			bias-pull-up;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group1 {
+			pinmux = <UART2_TX_GPIO34>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART2_RX_GPIO33>;
+			bias-pull-up;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO11>,
+				 <SPIM2_SCLK_GPIO9>,
+				 <SPIM2_CSEL_GPIO8>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO10>;
+			output-low;
+		};
+	};
+
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO42>,
+				 <SPIM3_SCLK_GPIO41>, /* TFT_SCLK */
+				 <SPIM3_CSEL_GPIO38>; /* TFT_CS */
+		};
+
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO42>; /* TFT_MOSI */
+			output-low;
+		};
+	};
+
+	twai_default: twai_default {
+		group1 {
+			pinmux = <TWAI_TX_GPIO5>,
+				 <TWAI_RX_GPIO6>;
+		};
+	};
+};

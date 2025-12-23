@@ -18,6 +18,8 @@ config PSI5_INIT_PRIORITY
 	help
 	  PSI5 driver device initialization priority.
 
+# zephyr-keep-sorted-start
 source "drivers/psi5/Kconfig.nxp_s32"
+# zephyr-keep-sorted-stop
 
 endif # PSI5

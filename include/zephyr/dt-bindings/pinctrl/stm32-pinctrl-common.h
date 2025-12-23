@@ -27,9 +27,10 @@
 #define	STM32_PORTO 14
 #define	STM32_PORTP 15	/* IO port P (0xF) */
 #define	STM32_PORTQ 16	/* IO port Q (0x10) */
+#define	STM32_PORTZ 25  /* IO port Z (0x19) */
 
 #ifndef STM32_PORTS_MAX
-#define STM32_PORTS_MAX (STM32_PORTQ + 1)
+#define STM32_PORTS_MAX (STM32_PORTZ + 1)
 #endif
 
 /**

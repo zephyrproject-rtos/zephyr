@@ -1,0 +1,10 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: ST7306 display controller
+
+description: Sitronix ST7306 multi-mode 720x480 display controller
+
+compatible: "sitronix,st7306"
+
+include: sitronix,st730x-common.yaml

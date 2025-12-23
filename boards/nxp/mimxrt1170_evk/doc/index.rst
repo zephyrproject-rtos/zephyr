@@ -388,6 +388,11 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk
 
+.. note::
+   If you want to run any bluetooth sample on the mimxrt1170_evk@B device (build using
+   ``-DBOARD=mimxrt1170_evk@B/mimxrt1176/cm7``), the extended Bluetooth module needs to be
+   installed on the M.2 interface.
+
 ENET1G Driver
 =============
 
@@ -395,8 +400,7 @@ Current default of ethernet driver is to use 100M Ethernet instance ENET.
 To use the 1G Ethernet instance ENET1G, include the overlay to west build with
 the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1170-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1170-evaluation-kit:MIMXRT1170-EVK

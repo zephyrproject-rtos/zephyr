@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include  <nxp/kinetis/MKW40Z160VHT4-pinctrl.h>
+#include <nxp/kinetis/MKW40Z160VHT4-pinctrl.h>
 
 &pinctrl {
 	adc0_default: adc0_default {
@@ -17,7 +17,7 @@
 	lpuart0_default: lpuart0_default {
 		group0 {
 			pinmux = <UART0_RX_PTC6>,
-				<UART0_TX_PTC7>;
+				 <UART0_TX_PTC7>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};

@@ -87,10 +87,45 @@ Supported Features
 
 .. note::
 
-   - Other hardware features are currently not supported by the port.
+   - For using the Camera Expansion Port (J35) in DVP interface, please set switch SW4 as following configuration:
+
+     +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+     | SW4-1 PMOD1 | SW4-2 PMOD1 | SW4-3 Octo-SPI | SW4-4 Arduino | SW4-5 I3C | SW4-6 MIPI | SW4-7 USBFS | SW4-8 USBHS |
+     +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+     |     OFF     |     OFF     |      OFF       |     OFF       |     OFF   |     ON     |     OFF     |    OFF      |
+     +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+
+Dual Core Operation
+*******************
+
+The EK-RA8P1 supports dual core operation with both the Cortex-M85 (CPU0) and Cortex-M33 (CPU1) cores.
+By default, the CM85 core is the boot core and is responsible for initializing the system and
+starting the CM33 core.
+
+Memory Usage
+============
+
+By default, Flash (MRAM) and SRAM are split evenly between the two cores.
+Users can manually change the address and size for Flash and SRAM as follows node:
+
+   - CPU0: &flash0, &sram0
+   - CPU1: &flash1, &sram1
+
+.. note::
+
+   - Flash usable range: 0x0200_0000 ... 0x0290_0000
+   - SRAM usable range: 0x2200_0000 ... 0x221D_4000
+
+Dual Core Flashing
+==================
+
+When flashing or debugging dual-core samples, ensure that CONFIG_SOC_RA_ENABLE_START_SECOND_CORE is selected
+for the CM85 image. The CM85 core is responsible for starting the CM33 core in soc_late_init_hook.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``ek_ra8p1`` board configuration can be
 built, flashed, and debugged in the usual way. See
@@ -129,6 +164,79 @@ To flash the program to board
 	.. code-block:: console
 
 		west flash -r jlink
+
+MCUboot bootloader
+==================
+
+The sysbuild makes possible to build and flash all necessary images needed to
+bootstrap the board.
+
+To build the sample application using sysbuild use the command:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: ek_ra8p1/r7ka8p1kflcac/cm85
+   :goals: build flash
+   :west-args: --sysbuild
+   :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
+
+By default, Sysbuild creates MCUboot and user application images.
+
+Build directory structure created by sysbuild is different from traditional
+Zephyr build. Output is structured by the domain subdirectories:
+
+.. code-block::
+
+  build/
+  ├── hello_world
+  |    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       ├── zephyr.bin
+  │       ├── zephyr.signed.bin
+  │       └── zephyr.signed.hex
+  ├── mcuboot
+  │    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       └── zephyr.bin
+  └── domains.yaml
+
+.. note::
+
+   With ``--sysbuild`` option, MCUboot will be rebuilt and re-flashed
+   every time the pristine build is used.
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   $ west flash --domain hello_world
+
+For more information about the system build please read the :ref:`sysbuild` documentation.
+
+You should see the following message in the terminal:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-171-g8513be710e5e ***
+   *** Using Zephyr OS build v4.2.0-6156-ged85ac9ffda9 ***
+   I: Starting bootloader
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Boot source: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Bootloader chainload address offset: 0x10000
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build v4.2.0-6156-ged85ac9ffda9 ***
+   Hello World! ek_ra8p1/r7ka8p1kflcac/cm85
 
 References
 **********

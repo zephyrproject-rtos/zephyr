@@ -60,64 +60,232 @@ config SOC_XMC7200D_E272K8384_M7_1
 	select SOC_PACKAGE_XMC7200_272_BGA
 	select SOC_SERIES_XMC7200
 
+# Infineon T2G Body High series MCUs: CYT4BF8CES
+config SOC_CYT4BF8CES_M0PLUS
+	bool
+	select SOC_CYT4BF8CES
+
+config SOC_CYT4BF8CES_M7_0
+	bool
+	select SOC_CYT4BF8CES
+
+config SOC_CYT4BF8CES_M7_1
+	bool
+	select SOC_CYT4BF8CES
+
 config SOC_CYT4BF8CES
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+# Infineon T2G Body High series MCUs: CYT4BF8CEE
+config SOC_CYT4BF8CEE_M0PLUS
+	bool
+	select SOC_CYT4BF8CEE
+
+config SOC_CYT4BF8CEE_M7_0
+	bool
+	select SOC_CYT4BF8CEE
+
+config SOC_CYT4BF8CEE_M7_1
+	bool
+	select SOC_CYT4BF8CEE
 
 config SOC_CYT4BF8CEE
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+# Infineon T2G Body High series MCUs: CYT4BF8CDS
+config SOC_CYT4BF8CDS_M0PLUS
+	bool
+	select SOC_CYT4BF8CDS
+
+config SOC_CYT4BF8CDS_M7_0
+	bool
+	select SOC_CYT4BF8CDS
+
+config SOC_CYT4BF8CDS_M7_1
+	bool
+	select SOC_CYT4BF8CDS
 
 config SOC_CYT4BF8CDS
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+# Infineon T2G Body High series MCUs: CYT4BF8CDE
+config SOC_CYT4BF8CDE_M0PLUS
+	bool
+	select SOC_CYT4BF8CDE
+
+config SOC_CYT4BF8CDE_M7_0
+	bool
+	select SOC_CYT4BF8CDE
+
+config SOC_CYT4BF8CDE_M7_1
+	bool
+	select SOC_CYT4BF8CDE
 
 config SOC_CYT4BF8CDE
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_176_TEQFP
+
+# Infineon T2G Body High series MCUs: CYT4BFBCJS
+config SOC_CYT4BFBCJS_M0PLUS
+	bool
+	select SOC_CYT4BFBCJS
+
+config SOC_CYT4BFBCJS_M7_0
+	bool
+	select SOC_CYT4BFBCJS
+
+config SOC_CYT4BFBCJS_M7_1
+	bool
+	select SOC_CYT4BFBCJS
 
 config SOC_CYT4BFBCJS
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_272_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFBCJE
+config SOC_CYT4BFBCJE_M0PLUS
+	bool
+	select SOC_CYT4BFBCJE
+
+config SOC_CYT4BFBCJE_M7_0
+	bool
+	select SOC_CYT4BFBCJE
+
+config SOC_CYT4BFBCJE_M7_1
+	bool
+	select SOC_CYT4BFBCJE
 
 config SOC_CYT4BFBCJE
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_272_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFBCHS
+config SOC_CYT4BFBCHS_M0PLUS
+	bool
+	select SOC_CYT4BFBCHS
+
+config SOC_CYT4BFBCHS_M7_0
+	bool
+	select SOC_CYT4BFBCHS
+
+config SOC_CYT4BFBCHS_M7_1
+	bool
+	select SOC_CYT4BFBCHS
 
 config SOC_CYT4BFBCHS
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_272_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFBCHE
+config SOC_CYT4BFBCHE_M0PLUS
+	bool
+	select SOC_CYT4BFBCHE
+
+config SOC_CYT4BFBCHE_M7_0
+	bool
+	select SOC_CYT4BFBCHE
+
+config SOC_CYT4BFBCHE_M7_1
+	bool
+	select SOC_CYT4BFBCHE
 
 config SOC_CYT4BFBCHE
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_272_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFCCJS
+config SOC_CYT4BFCCJS_M0PLUS
+	bool
+	select SOC_CYT4BFCCJS
+
+config SOC_CYT4BFCCJS_M7_0
+	bool
+	select SOC_CYT4BFCCJS
+
+config SOC_CYT4BFCCJS_M7_1
+	bool
+	select SOC_CYT4BFCCJS
 
 config SOC_CYT4BFCCJS
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_320_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFCCJE
+config SOC_CYT4BFCCJE_M0PLUS
+	bool
+	select SOC_CYT4BFCCJE
+
+config SOC_CYT4BFCCJE_M7_0
+	bool
+	select SOC_CYT4BFCCJE
+
+config SOC_CYT4BFCCJE_M7_1
+	bool
+	select SOC_CYT4BFCCJE
 
 config SOC_CYT4BFCCJE
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_320_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFCCHS
+config SOC_CYT4BFCCHS_M0PLUS
+	bool
+	select SOC_CYT4BFCCHS
+
+config SOC_CYT4BFCCHS_M7_0
+	bool
+	select SOC_CYT4BFCCHS
+
+config SOC_CYT4BFCCHS_M7_1
+	bool
+	select SOC_CYT4BFCCHS
 
 config SOC_CYT4BFCCHS
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_320_BGA
+
+# Infineon T2G Body High series MCUs: CYT4BFCCHE
+config SOC_CYT4BFCCHE_M0PLUS
+	bool
+	select SOC_CYT4BFCCHE
+
+config SOC_CYT4BFCCHE_M7_0
+	bool
+	select SOC_CYT4BFCCHE
+
+config SOC_CYT4BFCCHE_M7_1
+	bool
+	select SOC_CYT4BFCCHE
 
 config SOC_CYT4BFCCHE
 	bool
 	select SOC_DIE_XMC7200
+	select SOC_SERIES_XMC7200
 	select SOC_PACKAGE_XMC7200_320_BGA
 
 config SOC

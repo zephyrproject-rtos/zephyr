@@ -4,3 +4,6 @@ family:
       - name: rmx
         socs:
           - name: rmx100
+      - name: rhx
+        socs:
+          - name: rhx100

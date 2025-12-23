@@ -18,12 +18,18 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+#include <zephyr/sys/sys_heap.h>
+#include <mgmt/mcumgr/transport/smp_internal.h>
+#endif
 
 #ifdef CONFIG_REBOOT
 #include <zephyr/sys/reboot.h>
@@ -39,7 +45,6 @@
 #endif
 
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
-#include <stdio.h>
 #include <zephyr/version.h>
 #if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
@@ -47,7 +52,6 @@
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <bootutil/boot_status.h>
 #endif
-#include <mgmt/mcumgr/util/zcbor_bulk.h>
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 #include <zephyr/net/hostname.h>
 #elif defined(CONFIG_BT)
@@ -117,8 +121,6 @@ struct datetime_parser {
 #define RTC_DATETIME_MINUTE_MAX 59
 #define RTC_DATETIME_SECOND_MIN 0
 #define RTC_DATETIME_SECOND_MAX 59
-#define RTC_DATETIME_MILLISECOND_MIN 0
-#define RTC_DATETIME_MILLISECOND_MAX 999
 
 /* Size used for datetime creation buffer */
 #ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
@@ -129,7 +131,7 @@ struct datetime_parser {
 
 /* Minimum/maximum size of a datetime string that a client can provide */
 #define RTC_DATETIME_MIN_STRING_SIZE 19
-#define RTC_DATETIME_MAX_STRING_SIZE 26
+#define RTC_DATETIME_MAX_STRING_SIZE 31
 #endif
 
 /* Specifies what the "all" ('a') of info parameter shows */
@@ -143,6 +145,22 @@ struct datetime_parser {
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
 extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+/* Specifies the maximum characters in the memory pool ID, allowing up to 999 outputs */
+#define MPSTAT_ID_KEY_SIZE 4
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS
+/* Number of items per memory pool output */
+#define MPSTAT_KEY_MAP_ENTRIES 3
+#else
+/* Number of items per memory pool output */
+#define MPSTAT_KEY_MAP_ENTRIES 4
+
+/* Specifies the block size of memory pools, zephyr used byte-level allocation */
+#define MPSTAT_BLOCK_SIZE 1
+#endif
 #endif
 
 /**
@@ -354,6 +372,76 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 	return 0;
 }
 #endif /* CONFIG_MCUMGR_GRP_OS_TASKSTAT */
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+/**
+ * Command handler: os mpstat
+ */
+static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	struct sys_heap **heap;
+	uint8_t key[MPSTAT_ID_KEY_SIZE] = { 0 };
+	int heap_elements;
+	int i = 0;
+	bool ok;
+
+	heap_elements = sys_heap_array_get(&heap);
+	ok = zcbor_tstr_put_lit(zse, "tasks") &&
+	     zcbor_map_start_encode(zse, heap_elements);
+
+	if (!ok) {
+		goto end;
+	}
+
+	while (i < heap_elements) {
+		struct sys_memory_stats heap_stats;
+		uint32_t heap_total_size;
+		int rc;
+		uint8_t key_size;
+
+		rc = sys_heap_runtime_stats_get(heap[i], &heap_stats);
+
+		if (rc != 0) {
+			ok = smp_mgmt_reset_zse(ctxt) &&
+			     smp_add_cmd_err(zse, MGMT_GROUP_ID_OS,
+					     OS_MGMT_ERR_HEAP_STATS_FETCH_FAILED);
+			LOG_ERR("Failed to get heap stats from address %p: %d", heap[i], rc);
+			goto end;
+		}
+
+		key_size = u8_to_dec(key, sizeof(key), i);
+		heap_total_size = heap_stats.allocated_bytes + heap_stats.free_bytes;
+
+		ok = zcbor_tstr_encode_ptr(zse, key, (size_t)key_size) &&
+		     zcbor_map_start_encode(zse, MPSTAT_KEY_MAP_ENTRIES) &&
+#ifndef CONFIG_MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS
+		     zcbor_tstr_put_lit(zse, "blksiz") &&
+		     zcbor_uint32_put(zse, MPSTAT_BLOCK_SIZE) &&
+#endif
+		     zcbor_tstr_put_lit(zse, "nblks") &&
+		     zcbor_uint32_put(zse, heap_total_size) &&
+		     zcbor_tstr_put_lit(zse, "nfree") &&
+		     zcbor_uint32_put(zse, heap_stats.free_bytes) &&
+		     zcbor_tstr_put_lit(zse, "min") &&
+		     zcbor_uint32_put(zse, (heap_total_size - heap_stats.max_allocated_bytes)) &&
+		     zcbor_map_end_encode(zse, MPSTAT_KEY_MAP_ENTRIES);
+
+		if (!ok) {
+			break;
+		}
+
+		++i;
+	}
+
+	if (ok == true) {
+		ok = zcbor_map_end_encode(zse, heap_elements);
+	}
+
+end:
+	return MGMT_RETURN_CHECK(ok);
+}
+#endif /* CONFIG_MCUMGR_GRP_OS_MPSTAT */
 
 #ifdef CONFIG_REBOOT
 /**
@@ -831,9 +919,13 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 
 	if (format_bitmask & OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM) {
 		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM
 			      (prior_output == true ? " %s%s%s" : "%s%s%s"), CONFIG_BOARD,
 			      (sizeof(CONFIG_BOARD_REVISION) > 1 ? "@" : ""),
 			      CONFIG_BOARD_REVISION);
+#else
+			      (prior_output == true ? " %s" : "%s"), CONFIG_BOARD_TARGET);
+#endif
 
 		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
 			goto fail;
@@ -965,7 +1057,7 @@ static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
 	bool ok = true;
 	char *pos;
 	char *new_pos;
-	char date_string[RTC_DATETIME_MAX_STRING_SIZE];
+	char date_string[RTC_DATETIME_MAX_STRING_SIZE + 1];
 	struct rtc_time new_time = {
 		.tm_wday = -1,
 		.tm_yday = -1,
@@ -1020,7 +1112,7 @@ static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
 	if (zcbor_map_decode_bulk(zsd, datetime_decode, ARRAY_SIZE(datetime_decode), &decoded)) {
 		return MGMT_ERR_EINVAL;
 	} else if (datetime.len < RTC_DATETIME_MIN_STRING_SIZE ||
-		   datetime.len >= RTC_DATETIME_MAX_STRING_SIZE) {
+		   datetime.len > RTC_DATETIME_MAX_STRING_SIZE) {
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -1056,16 +1148,20 @@ static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
 	}
 
 #ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
-	if (*(pos - 1) == '.' && *pos != '\0') {
-		/* Provided value has a ms value, extract it */
-		new_time.tm_nsec = strtol(pos, &new_pos, RTC_DATETIME_NUMERIC_BASE);
+	if (*(pos - 1) == '.') {
+		uint32_t msec = 0;
+		uint32_t mul = 100; /* first digit: 10^-1 second = 100 ms */
 
-		if (new_time.tm_nsec < RTC_DATETIME_MILLISECOND_MIN ||
-		    new_time.tm_nsec > RTC_DATETIME_MILLISECOND_MAX) {
-			return MGMT_ERR_EINVAL;
+		/* Parse up to 3 fractional digits */
+		while (isdigit((unsigned char)*pos) && mul >= 1) {
+			msec += (uint32_t)(*pos - '0') * mul;
+			mul /= 10;
+			pos++;
 		}
 
-		new_time.tm_nsec *= RTC_DATETIME_MS_TO_NS;
+		/* "." without digits yields 0 µs */
+
+		new_time.tm_nsec = msec * RTC_DATETIME_MS_TO_NS;
 	}
 #endif
 
@@ -1113,6 +1209,7 @@ static int os_mgmt_translate_error_code(uint16_t err)
 	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
 	case OS_MGMT_ERR_RTC_NOT_SET:
 	case OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID:
+	case OS_MGMT_ERR_HEAP_STATS_FETCH_FAILED:
 		rc = MGMT_ERR_ENOENT;
 		break;
 
@@ -1135,6 +1232,12 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
+	},
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_MPSTAT
+	[OS_MGMT_ID_MPSTAT] = {
+		os_mgmt_mpstat_read, NULL
 	},
 #endif
 

@@ -6,16 +6,17 @@
 
 / {
 	aliases {
-		pwm-0 = &pwm0;
+		pwm-test = &pwm0;
 	};
 };
 
 &tmr0_p0_6 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &timer0 {
 	status = "okay";
+
 	pwm0: pwm {
 		status = "okay";
 		pinctrl-0 = <&tmr0_p0_6>;

@@ -16,15 +16,26 @@
 #include "time_machine.h"
 #include "bstests.h"
 
-/* There are 13 iterations of PHY update every 3 seconds, and based on actual
- * simulation 10000 iterations are sufficient to finish these iterations with
+/* There are 13 iterations of PHY update every 5 seconds, and based on actual
+ * simulation COUNT iterations are sufficient to finish these iterations with
  * a stable 2M throughput value to be verified. If Central and Peripheral take
  * different duration to complete these iterations, the test will fail due to
  * the throughput calculated over one second duration will be low due to the
  * connection being disconnected before the other device could complete all the
  * iterations.
+ * If the PHY and connection update iterations complete before the below number
+ * of iterations, then a COUNT_THROUGHPUT number of write operations are
+ * performed and throughput calculated. Note, `count` value in the central and
+ * peripheral sample is referenced using a pointer and the pointer will be used
+ * to setup the throughput measurement countdown.
  */
-#define COUNT 10000
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#define COUNT_CENTRAL    17000U
+#define COUNT_PERIPHERAL 17600U
+#else /* !CONFIG_BT_USER_PHY_UPDATE */
+#define COUNT_CENTRAL    180000U
+#define COUNT_PERIPHERAL 180000U
+#endif /* !CONFIG_BT_USER_PHY_UPDATE */
 
 /* Write Throughput calculation:
  *  Measure interval = 1 s
@@ -64,7 +75,7 @@ static void test_central_main(void)
 {
 	uint32_t write_rate;
 
-	write_rate = central_gatt_write(COUNT);
+	write_rate = central_gatt_write(COUNT_CENTRAL);
 
 	printk("%s: Write Rate = %u bps\n", __func__, write_rate);
 	if (write_rate == WRITE_RATE) {
@@ -83,7 +94,7 @@ static void test_peripheral_main(void)
 {
 	uint32_t write_rate;
 
-	write_rate = peripheral_gatt_write(COUNT);
+	write_rate = peripheral_gatt_write(COUNT_PERIPHERAL);
 
 	printk("%s: Write Rate = %u bps\n", __func__, write_rate);
 	if (write_rate == WRITE_RATE) {
@@ -95,7 +106,7 @@ static void test_peripheral_main(void)
 
 static void test_gatt_write_init(void)
 {
-	bst_ticker_set_next_tick_absolute(60e6);
+	bst_ticker_set_next_tick_absolute(1500e6);
 	bst_result = In_progress;
 }
 

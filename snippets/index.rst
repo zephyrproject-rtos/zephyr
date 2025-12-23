@@ -7,4 +7,4 @@ Built-in snippets
    :maxdepth: 1
    :glob:
 
-   **/*
+   */*

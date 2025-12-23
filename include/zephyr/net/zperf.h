@@ -53,11 +53,11 @@ struct zperf_upload_params {
 	uint64_t unix_offset_us;
 	zperf_data_load_custom data_loader;
 	void *data_loader_ctx;
-	struct sockaddr peer_addr;
+	struct net_sockaddr peer_addr;
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
 	uint16_t packet_size;
-	char if_name[IFNAMSIZ];
+	char if_name[NET_IFNAMSIZ];
 	struct {
 		uint8_t tos;
 		int tcp_nodelay;
@@ -72,8 +72,8 @@ struct zperf_upload_params {
 
 struct zperf_download_params {
 	uint16_t port;
-	struct sockaddr addr;
-	char if_name[IFNAMSIZ];
+	struct net_sockaddr addr;
+	char if_name[NET_IFNAMSIZ];
 };
 
 /** @endcond */
@@ -90,6 +90,7 @@ struct zperf_results {
 	uint64_t client_time_in_us;   /**< Client connection time in microseconds */
 	uint32_t packet_size;         /**< Packet size */
 	uint32_t nb_packets_errors;   /**< Number of packet errors */
+	bool is_multicast;            /**< True if this session used IP multicast */
 };
 
 /**

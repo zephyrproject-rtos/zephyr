@@ -30,8 +30,8 @@ LOG_MODULE_REGISTER(ccp_call_control_client, CONFIG_LOG_DEFAULT_LEVEL);
 #define SEM_TIMEOUT K_SECONDS(10)
 
 static struct bt_conn *peer_conn;
-/* client is not static as it is used for testing purposes */
-struct bt_ccp_call_control_client *client;
+/* call_control_client is not static as it is used for testing purposes */
+struct bt_ccp_call_control_client *call_control_client;
 static struct bt_ccp_call_control_client_bearers client_bearers;
 
 static K_SEM_DEFINE(sem_conn_state_change, 0, 1);
@@ -61,7 +61,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(peer_conn);
 	peer_conn = NULL;
-	client = NULL;
+	call_control_client = NULL;
 	memset(&client_bearers, 0, sizeof(client_bearers));
 	k_sem_give(&sem_conn_state_change);
 }
@@ -207,6 +207,21 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 	k_sem_give(&sem_ccp_action_completed);
 }
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+static void ccp_call_control_client_read_bearer_provider_name_cb(
+	struct bt_ccp_call_control_client_bearer *bearer, int err, const char *name)
+{
+	if (err != 0) {
+		LOG_ERR("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p provider name: %s", (void *)bearer, name);
+
+	k_sem_give(&sem_ccp_action_completed);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
 static int reset_ccp_call_control_client(void)
 {
 	int err;
@@ -244,7 +259,7 @@ static int discover_services(void)
 
 	LOG_INF("Discovering GTBS and TBS");
 
-	err = bt_ccp_call_control_client_discover(peer_conn, &client);
+	err = bt_ccp_call_control_client_discover(peer_conn, &call_control_client);
 	if (err != 0) {
 		LOG_ERR("Failed to discover: %d", err);
 		return err;
@@ -259,13 +274,59 @@ static int discover_services(void)
 	return 0;
 }
 
+static int read_bearer_name(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_provider_name(bearer);
+	if (err != 0) {
+		return err;
+	}
+
+	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int read_bearer_names(void)
+{
+	int err;
+
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	err = read_bearer_name(client_bearers.gtbs_bearer);
+	if (err != 0) {
+		LOG_ERR("Failed to read name for GTBS bearer: %d", err);
+		return err;
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	for (size_t i = 0; i < client_bearers.tbs_count; i++) {
+		err = read_bearer_name(client_bearers.tbs_bearers[i]);
+		if (err != 0) {
+			LOG_ERR("Failed to read name for bearer[%zu]: %d", i, err);
+			return err;
+		}
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+
+	return 0;
+}
+
 static int init_ccp_call_control_client(void)
 {
-	static struct bt_le_scan_cb scan_cbs = {
-		.recv = scan_recv_cb,
-	};
 	static struct bt_ccp_call_control_client_cb ccp_call_control_client_cbs = {
 		.discover = ccp_call_control_client_discover_cb,
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+		.bearer_provider_name = ccp_call_control_client_read_bearer_provider_name_cb
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+	};
+	static struct bt_le_scan_cb scan_cbs = {
+		.recv = scan_recv_cb,
 	};
 	int err;
 
@@ -321,6 +382,13 @@ int main(void)
 		err = discover_services();
 		if (err != 0) {
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
+			err = read_bearer_names();
+			if (err != 0) {
+				continue;
+			}
 		}
 
 		/* Reset if disconnected */

@@ -7,7 +7,7 @@ description: |
 
   timer0: timer {
     pwm0: pwm {
-      compatible = "ti,mspm0g-timer-pwm";
+      compatible = "ti,mspm0-timer-pwm";
       #pwm-cells = <3>;
 
       ti,cc-index = <0>;
@@ -47,6 +47,18 @@ properties:
       - "EDGE_ALIGN"
       - "EDGE_ALIGN_UP"
       - "CENTER_ALIGN"
+
+  ti,cc-mode:
+    type: string
+    description: |
+      Select input capture mode:
+      - EDGE_TIME: capture edge time mode.
+
+      - PULSE_WIDTH: capture pulse width and/or period mode.
+
+    enum:
+      - "EDGE_TIME"
+      - "PULSE_WIDTH"
 
   ti,period:
     type: int

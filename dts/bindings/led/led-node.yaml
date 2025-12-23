@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for LED nodes
+
+properties:
+  label:
+    type: string
+    description: |
+      Human readable string describing the LED. It can be used by an
+      application to identify this LED or to retrieve its number/index
+      (i.e. child node number) on the parent device.
+  color-mapping:
+    type: array
+    description: |
+      Channel to color mapping of a multicolor LED. If a LED supports
+      several colors, then the color-mapping property can be used to
+      describe how the hardware channels and the colors are mapped.
+
+      For example the channel to color mapping of RGB LEDs would be
+
+         color-mapping =
+              <LED_COLOR_ID_RED>,
+              <LED_COLOR_ID_GREEN>,
+              <LED_COLOR_ID_BLUE>;

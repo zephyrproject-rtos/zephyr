@@ -10,7 +10,6 @@
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_kbd_matrix.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -309,7 +308,7 @@ static void input_kbd_matrix_poll(const struct device *dev)
 		} else {
 			poll_period_us = cfg->stable_poll_period_us;
 		}
-		wait_period_us = CLAMP(poll_period_us - k_cyc_to_us_floor32(cycles_diff),
+		wait_period_us = clamp(poll_period_us - k_cyc_to_us_floor32(cycles_diff),
 				       USEC_PER_MSEC, poll_period_us);
 
 		LOG_DBG("wait_period_us: %d", wait_period_us);

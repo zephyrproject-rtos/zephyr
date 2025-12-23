@@ -217,7 +217,7 @@ static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t s
 {
 	size_t  bytes_to_copy;
 
-	bytes_to_copy = MIN(dest_size, src_size);
+	bytes_to_copy = min(dest_size, src_size);
 	memcpy(dest, src, bytes_to_copy);
 
 	return bytes_to_copy;
@@ -495,11 +495,81 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	new_thread->stack_info.start = (uintptr_t)stack_buf_start;
 	new_thread->stack_info.size = stack_buf_size;
 	new_thread->stack_info.delta = delta;
+
+#ifdef CONFIG_THREAD_RUNTIME_STACK_SAFETY
+	new_thread->stack_info.usage.unused_threshold =
+		(CONFIG_THREAD_RUNTIME_STACK_SAFETY_DEFAULT_UNUSED_THRESHOLD_PCT *
+		 stack_buf_size) / 100;
+#endif
 #endif /* CONFIG_THREAD_STACK_INFO */
 	stack_ptr -= delta;
 
 	return stack_ptr;
 }
+
+#ifdef CONFIG_HW_SHADOW_STACK
+static void setup_shadow_stack(struct k_thread *new_thread,
+			 k_thread_stack_t *stack)
+{
+	int ret = -ENOENT;
+
+	STRUCT_SECTION_FOREACH(_stack_to_hw_shadow_stack, stk_to_hw_shstk) {
+		if (stk_to_hw_shstk->stack == stack) {
+			ret = k_thread_hw_shadow_stack_attach(new_thread,
+							      stk_to_hw_shstk->shstk_addr,
+							      stk_to_hw_shstk->size);
+			if (ret != 0) {
+				LOG_ERR("Could not set thread %p shadow stack %p, got error %d",
+					new_thread, stk_to_hw_shstk->shstk_addr, ret);
+				k_panic();
+			}
+			break;
+		}
+	}
+
+	/* Check if the stack isn't in a stack array, and use the corresponding
+	 * shadow stack.
+	 */
+	if (ret != -ENOENT) {
+		return;
+	}
+
+	STRUCT_SECTION_FOREACH(_stack_to_hw_shadow_stack_arr, stk_to_hw_shstk) {
+		if ((uintptr_t)stack >= stk_to_hw_shstk->stack_addr &&
+		    (uintptr_t)stack < stk_to_hw_shstk->stack_addr +
+		    stk_to_hw_shstk->stack_size * stk_to_hw_shstk->nmemb) {
+			/* Now we have to guess which index of the stack array is being used */
+			uintptr_t stack_offset = (uintptr_t)stack - stk_to_hw_shstk->stack_addr;
+			uintptr_t stack_index = stack_offset / stk_to_hw_shstk->stack_size;
+			uintptr_t addr;
+
+			if (stack_index >= stk_to_hw_shstk->nmemb) {
+				LOG_ERR("Could not find shadow stack for thread %p, stack %p",
+					new_thread, stack);
+				k_panic();
+			}
+
+			addr = stk_to_hw_shstk->shstk_addr +
+				stk_to_hw_shstk->shstk_size * stack_index;
+			ret = k_thread_hw_shadow_stack_attach(new_thread,
+							      (arch_thread_hw_shadow_stack_t *)addr,
+							      stk_to_hw_shstk->shstk_size);
+			if (ret != 0) {
+				LOG_ERR("Could not set thread %p shadow stack 0x%lx, got error %d",
+					new_thread, stk_to_hw_shstk->shstk_addr, ret);
+				k_panic();
+			}
+			break;
+		}
+	}
+
+	if (ret == -ENOENT) {
+		LOG_ERR("Could not find shadow stack for thread %p, stack %p",
+			new_thread, stack);
+		k_panic();
+	}
+}
+#endif
 
 /*
  * The provided stack_size value is presumed to be either the result of
@@ -547,17 +617,21 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
+#ifdef CONFIG_HW_SHADOW_STACK
+	setup_shadow_stack(new_thread, stack);
+#endif
+
 #ifdef CONFIG_KERNEL_COHERENCE
 	/* Check that the thread object is safe, but that the stack is
 	 * still cached!
 	 */
-	__ASSERT_NO_MSG(arch_mem_coherent(new_thread));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(new_thread));
 
 	/* When dynamic thread stack is available, the stack may come from
 	 * uncached area.
 	 */
 #ifndef CONFIG_DYNAMIC_THREAD
-	__ASSERT_NO_MSG(!arch_mem_coherent(stack));
+	__ASSERT_NO_MSG(!sys_cache_is_mem_coherent(stack));
 #endif  /* CONFIG_DYNAMIC_THREAD */
 
 #endif /* CONFIG_KERNEL_COHERENCE */
@@ -648,6 +722,68 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
+#ifdef CONFIG_THREAD_RUNTIME_STACK_SAFETY
+int z_impl_k_thread_runtime_stack_safety_unused_threshold_pct_set(struct k_thread *thread,
+								  uint32_t pct)
+{
+	size_t unused_threshold;
+
+	if (pct > 99) {
+		return -EINVAL;   /* 100% unused stack and up is invalid */
+	}
+
+	unused_threshold = (thread->stack_info.size * pct) / 100;
+
+	thread->stack_info.usage.unused_threshold = unused_threshold;
+
+	return 0;
+}
+
+int z_impl_k_thread_runtime_stack_safety_unused_threshold_set(struct k_thread *thread,
+							      size_t threshold)
+{
+	if (threshold > thread->stack_info.size) {
+		return -EINVAL;
+	}
+
+	thread->stack_info.usage.unused_threshold = threshold;
+
+	return 0;
+}
+
+size_t z_impl_k_thread_runtime_stack_safety_unused_threshold_get(struct k_thread *thread)
+{
+	return thread->stack_info.usage.unused_threshold;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_thread_runtime_stack_safety_unused_threshold_pct_set(struct k_thread *thread,
+								  uint32_t pct)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	return z_impl_k_thread_runtime_stack_safety_unused_threshold_pct_set(thread, pct);
+}
+#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_pct_set_mrsh.c>
+
+int z_vrfy_k_thread_runtime_stack_safety_unused_threshold_set(struct k_thread *thread,
+							      size_t threshold)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	return z_impl_k_thread_runtime_stack_safety_unused_threshold_set(thread, threshold);
+}
+#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_set_mrsh.c>
+
+size_t z_vrfy_k_thread_runtime_stack_safety_unused_threshold_get(struct k_thread *thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	return z_impl_k_thread_runtime_stack_safety_unused_threshold_get(thread);
+}
+#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_THREAD_RUNTIME_STACK_SAFETY */
 
 k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
@@ -853,6 +989,77 @@ int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_pt
 
 	return 0;
 }
+
+#ifdef CONFIG_THREAD_RUNTIME_STACK_SAFETY
+int k_thread_runtime_stack_safety_full_check(const struct k_thread *thread,
+					     size_t *unused_ptr,
+					     k_thread_stack_safety_handler_t handler,
+					     void *arg)
+{
+	int    rv;
+	size_t unused_space;
+
+	__ASSERT_NO_MSG(thread != NULL);
+
+	rv = z_stack_space_get((const uint8_t *)thread->stack_info.start,
+			       thread->stack_info.size, &unused_space);
+
+	if (rv != 0) {
+		return rv;
+	}
+
+	if (unused_ptr != NULL) {
+		*unused_ptr = unused_space;
+	}
+
+	if ((unused_space < thread->stack_info.usage.unused_threshold) &&
+	    (handler != NULL)) {
+		handler(thread, unused_space, arg);
+	}
+
+	return 0;
+}
+
+int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
+						  size_t *unused_ptr,
+						  k_thread_stack_safety_handler_t handler,
+						  void *arg)
+{
+	int    rv;
+	size_t unused_space;
+
+	__ASSERT_NO_MSG(thread != NULL);
+
+	rv = z_stack_space_get((const uint8_t *)thread->stack_info.start,
+			       thread->stack_info.usage.unused_threshold,
+			       &unused_space);
+
+	if (rv != 0) {
+		return rv;
+	}
+
+	if (unused_ptr != NULL) {
+		*unused_ptr = unused_space;
+	}
+
+	if ((unused_space < thread->stack_info.usage.unused_threshold) &&
+	    (handler != NULL)) {
+		handler(thread, unused_space, arg);
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_thread_runtime_stack_safety_unused_threshold_get(struct k_thread *thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	return z_impl_k_thread_runtime_stack_safety_unused_threshold_set(thread);
+}
+#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_THREAD_RUNTIME_STACK_SAFETY */
 
 int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
 				    size_t *unused_ptr)
@@ -1144,6 +1351,10 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 #else
 	dummy_thread->resource_pool = NULL;
 #endif /* K_HEAP_MEM_POOL_SIZE */
+
+#ifdef CONFIG_USE_SWITCH
+	dummy_thread->switch_handle = NULL;
+#endif /* CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	dummy_thread->base.slice_ticks = 0;

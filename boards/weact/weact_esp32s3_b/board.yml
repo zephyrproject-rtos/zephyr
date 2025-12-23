@@ -1,0 +1,6 @@
+board:
+  name: weact_esp32s3_b
+  full_name: WeAct Studio ESP32-S3-B
+  vendor: weact
+  socs:
+    - name: esp32s3

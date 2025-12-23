@@ -8,3 +8,170 @@ config SOC_SERIES_RX130
 	select CLOCK_CONTROL_RENESAS_RX_CGC if CLOCK_CONTROL
 	select HAS_RENESAS_RX_RDP
 	select CLOCK_CONTROL
+	select SOC_EARLY_INIT_HOOK
+	select HAS_PM
+
+if SOC_SERIES_RX130
+if WDT_RENESAS_RX_IWDT_AUTO_START_MODE
+
+choice
+	prompt "IWDT OFS0 Start Mode Select"
+	default WDT_RENESAS_RX_STARTMODE_HALT
+
+config WDT_RENESAS_RX_STARTMODE_AUTO_ACTIVATE
+	bool "IWDT is automatically activated in auto-start mode after a reset"
+
+config WDT_RENESAS_RX_STARTMODE_HALT
+	bool "IWDT is halted after a reset"
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_IWDTSTRT
+	int
+	default 0 if WDT_RENESAS_RX_STARTMODE_HALT
+	default 1 if WDT_RENESAS_RX_STARTMODE_AUTO_ACTIVATE
+
+choice
+	prompt "IWDT Timeout Period Select"
+	default WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_2048
+
+config WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_128
+	bool "128 cycles"
+
+config WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_512
+	bool "512 cycles"
+
+config WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_1024
+	bool "1024 cycles"
+
+config WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_2048
+	bool "2048 cycles"
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_TIMEOUT_IWDTTOPS
+	int
+	default 0 if WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_128
+	default 1 if WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_512
+	default 2 if WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_1024
+	default 3 if WDT_RENESAS_RX_OFS0_TIMEOUT_PERIOD_2048
+
+choice
+	prompt "IWDT Clock Divide Ratio Select"
+	default WDT_RENESAS_RX_OFS0_CLKDIV_128
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_1
+	bool "No division"
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_16
+	bool "Divide-by-16"
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_32
+	bool "Divide-by-32"
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_64
+	bool "Divide-by-64"
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_128
+	bool "Divide-by-128"
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_256
+	bool "Divide-by-256"
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_CLKDIV_IWDTCKS
+	int
+	default 0 if WDT_RENESAS_RX_OFS0_CLKDIV_1
+	default 2 if WDT_RENESAS_RX_OFS0_CLKDIV_16
+	default 3 if WDT_RENESAS_RX_OFS0_CLKDIV_32
+	default 4 if WDT_RENESAS_RX_OFS0_CLKDIV_64
+	default 15 if WDT_RENESAS_RX_OFS0_CLKDIV_128
+	default 5 if WDT_RENESAS_RX_OFS0_CLKDIV_256
+
+choice
+	prompt "IWDT Window Start Position Select"
+	default WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_100
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_25
+	bool "25%"
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_50
+	bool "50%"
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_75
+	bool "75%"
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_100
+	bool "100% (window start position is not specified.)"
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_WINDOW_STRT_IWDTRPSS
+	int
+	default 0 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_25
+	default 1 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_50
+	default 2 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_75
+	default 3 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_STRT_100
+
+choice
+	prompt "IWDT Window End Position Select"
+	default WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_0
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_75
+	bool "75%"
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_50
+	bool "50%"
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_25
+	bool "25%"
+
+config WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_0
+	bool "0% (window end position is not specified.)"
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_WINDOW_END_IWDTRPES
+	int
+	default 0 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_75
+	default 1 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_50
+	default 2 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_25
+	default 3 if WDT_RENESAS_RX_OFS0_IWDT_WINDOW_END_0
+
+choice
+	prompt "IWDT Reset Interrupt Request Select"
+	default WDT_RENESAS_RX_OFS0_IRQ_ENA
+
+config WDT_RENESAS_RX_OFS0_IRQ_ENA
+	bool "Non-maskable interrupt request output is enabled."
+
+config WDT_RENESAS_RX_OFS0_RESET_ENA
+	bool "Reset output is enabled."
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_IRQ_SEL_IWDTRSTIRQS
+	int
+	default 0 if WDT_RENESAS_RX_OFS0_IRQ_ENA
+	default 1 if WDT_RENESAS_RX_OFS0_RESET_ENA
+
+choice
+	prompt "IWDT Sleep Mode Count Stop Control"
+	default WDT_RENESAS_RX_OFS0_COUNT_STOP_DIS
+
+config WDT_RENESAS_RX_OFS0_COUNT_STOP_ENA
+	bool "Count stop is disabled"
+
+config WDT_RENESAS_RX_OFS0_COUNT_STOP_DIS
+	bool "Count is stopped at a transition to sleep mode, software standby mode, or deep sleep mode."
+
+endchoice
+
+config WDT_RENESAS_RX_OFS0_IWDTSLCSTP
+	int "IWDT Sleep Mode Count Stop Control"
+	default 0 if WDT_RENESAS_RX_OFS0_COUNT_STOP_DIS
+	default 1 if WDT_RENESAS_RX_OFS0_COUNT_STOP_ENA
+
+endif # WDT_RENESAS_RX_IWDT_AUTO_START_MODE
+endif # SOC_SERIES_RX130

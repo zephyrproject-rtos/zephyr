@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config IPC_SERVICE_BACKEND_INTEL_ADSP_HOST_IPC
+	bool "Backend for the Intel Audio DSP Host IPC"
+	default DT_HAS_INTEL_ADSP_HOST_IPC_ENABLED
+	help
+	  IPC Service Backend for Intel Audio DSP Host IPC.

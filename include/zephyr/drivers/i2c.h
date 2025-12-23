@@ -1,20 +1,21 @@
-/**
- * @file
- *
- * @brief Public APIs for the I2C drivers.
- */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup i2c_interface
+ * @brief Main header file for I2C (Inter-Integrated Circuit) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2C_H_
 
 /**
- * @brief I2C Interface
- * @defgroup i2c_interface I2C Interface
+ * @brief Interfaces for Inter-Integrated Circuit (I2C) controllers.
+ * @defgroup i2c_interface I2C
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -413,6 +414,34 @@ typedef int (*i2c_target_buf_read_requested_cb_t)(
  */
 typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
 
+/**
+ * @brief I2C error reasons.
+ *
+ * Values that correspond to events or errors responsible for stopping
+ * an I2C transfer.
+ */
+enum i2c_error_reason {
+	I2C_ERROR_TIMEOUT = 0,	/* Timeout error         */
+	I2C_ERROR_ARBITRATION,	/* Bus arbitration size  */
+	I2C_ERROR_SIZE,		/* Bad frame size        */
+	I2C_ERROR_DMA,		/* DMA transfer error    */
+	I2C_ERROR_GENERIC,	/* Any other bus error   */
+};
+
+/** @brief Function called when an error is detected on the I2C bus
+ * while acting as a target.
+ *
+ * This function is invoked by the controller when a bus error,
+ * arbitration lost, or other critical error is detected during
+ * a transaction addressed to this device.
+ *
+ * @param config the configuration structure associated with the
+ * device to which the operation is addressed.
+ * @param error_code an integer code identifying the error type.
+ */
+typedef void (*i2c_target_error_cb_t)(struct i2c_target_config *config,
+				      enum i2c_error_reason error_code);
+
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the I2C target API.
  *
@@ -429,6 +458,7 @@ struct i2c_target_callbacks {
 	i2c_target_buf_read_requested_cb_t buf_read_requested;
 #endif
 	i2c_target_stop_cb_t stop;
+	i2c_target_error_cb_t error;
 };
 
 /** @brief Structure describing a device that supports the I2C
@@ -952,7 +982,7 @@ static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
  * @param userdata Userdata passed to callback.
  *
  * @retval 0 if successful
- * @retval negative on error.
+ * @retval <0 negative on error.
  */
 static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
@@ -1086,6 +1116,8 @@ static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 extern const struct rtio_iodev_api i2c_iodev_api;
 
+#define I2C_CAT2(x, y) x ## y
+
 /**
  * @brief Define an iodev for a given dt node on the bus
  *
@@ -1101,6 +1133,18 @@ extern const struct rtio_iodev_api i2c_iodev_api;
 	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
 
 /**
+ * @brief Define an iodev for a devicetree instance on the bus
+ *
+ * This is equivalent to
+ * <tt>I2C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))</tt>.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param inst Devicetree instance number
+ */
+#define I2C_DT_INST_IODEV_DEFINE(name, inst)					\
+	I2C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))
+
+/**
  * @brief Define an iodev for a given i2c device on a bus
  *
  * These do not need to be shared globally but doing so
@@ -1111,11 +1155,11 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  * @param _addr I2C target address
  */
 #define I2C_IODEV_DEFINE(name, _bus, _addr)                                     \
-	const struct i2c_dt_spec _i2c_dt_spec_##name = {                        \
+	const struct i2c_dt_spec I2C_CAT2(_i2c_dt_spec_, name) = {     \
 		.bus = DEVICE_DT_GET(_bus),                                     \
 		.addr = _addr,                                                  \
 	};                                                                      \
-	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&I2C_CAT2(_i2c_dt_spec_, name))
 
 /**
  * @brief Validate that I2C bus is ready.

@@ -20,7 +20,7 @@ Building
 native_sim
 ==========
 
-You can build this sample for :ref:`native_sim <native_sim>` with:
+You can build this sample for :zephyr:board:`native_sim <native_sim>` with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
@@ -42,7 +42,7 @@ to the UART.
 With FUSE access in the host filesystem
 ---------------------------------------
 
-If you enable the :ref:`host FUSE filsystem access <native_fuse_flash>`
+If you enable the :ref:`host FUSE filesystem access <native_fuse_flash>`
 you will also have the flash filesystem mounted and accessible from your Linux host filesystem.
 
 Before starting a build, make sure that the i386 pkgconfig directory is in your
@@ -223,8 +223,8 @@ Remove a file or directory
 Flash Host Access
 =================
 
-For the :ref:`native sim board <native_sim>` the flash partitions can be accessed from the host
-Linux system.
+For the :zephyr:board:`native sim board <native_sim>` the flash partitions can be accessed from the
+host Linux system.
 
 By default the flash partitions are accessible through the directory *flash*
 relative to the directory where the build is started.

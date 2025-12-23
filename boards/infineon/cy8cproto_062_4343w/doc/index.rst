@@ -144,10 +144,10 @@ Errata
 +------------------------------------------------+----------------------------------------+
 
 .. _PSOC 62 MCU SoC Website:
-    https://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
+    https://www.infineon.com/products/microcontroller/32-bit-psoc-arm-cortex/psoc-6-m4-mcu/psoc-62
 
 .. _PSOC 62 MCU Datasheet:
-    https://www.cypress.com/documentation/datasheets/psoc-6-mcu-psoc-62-datasheet-programmable-system-chip-psoc-preliminary
+    https://www.infineon.com/assets/row/public/documents/30/49/infineon-psoc-6-mcu-cy8c62x8-cy8c62xa-datasheet-en.pdf
 
 .. _PSOC 62 MCU Architecture Reference Manual:
     https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-architecture-technical-reference-manual

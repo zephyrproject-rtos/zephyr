@@ -29,6 +29,8 @@ def parse_args(argv):
     )
 
     parser.add_argument("-p", "--pull-request", required=True, type=int, help="The PR number")
+    parser.add_argument("-o", "--org", default="zephyrproject-rtos", help="Github organization")
+    parser.add_argument("-r", "--repo", default="zephyr", help="Github repository")
 
     return parser.parse_args(argv)
 
@@ -46,7 +48,7 @@ def workflow_delay(repo, pr):
         completed = set()
         for run in runs:
             print(f"{run.name}: {run.status} {run.conclusion} {run.html_url}")
-            if run.status == "completed" and run.conclusion == "success":
+            if run.status == "completed":
                 completed.add(run.name)
 
         if WAIT_FOR_WORKFLOWS.issubset(completed):
@@ -60,12 +62,12 @@ def workflow_delay(repo, pr):
 def main(argv):
     args = parse_args(argv)
 
-    token = os.environ.get('GITHUB_TOKEN', None)
-    gh = github.Github(token)
+    auth = github.Auth.Token(os.environ.get('GITHUB_TOKEN', None))
+    gh = github.Github(auth=auth)
 
-    print_rate_limit(gh, "zephyrproject-rtos")
+    print_rate_limit(gh, args.org)
 
-    repo = gh.get_repo("zephyrproject-rtos/zephyr")
+    repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = repo.get_pull(args.pull_request)
 
     workflow_delay(repo, pr)
@@ -77,7 +79,7 @@ def main(argv):
     for label in pr.get_labels():
         print(f"label: {label.name}")
 
-        if label.name in DNM_LABELS:
+        if label.name in DNM_LABELS or label.name.startswith("block:"):
             print(f"Pull request is labeled as \"{label.name}\".")
             fail = True
 

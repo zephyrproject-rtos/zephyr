@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_BUILD_WITH_TFA)
+if(CONFIG_BUILD_WITH_TFA)
   set(TFA_BINARY_DIR ${CMAKE_BINARY_DIR}/tfa)
 
   file(MAKE_DIRECTORY ${TFA_BINARY_DIR})
@@ -22,10 +22,22 @@ if (CONFIG_BUILD_WITH_TFA)
     USES_TERMINAL_BUILD True
   )
 
-  if (CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
+  if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
     set(TFA_BUILD_DEBUG "1")
   else()
     set(TFA_BUILD_DEBUG "0")
+  endif()
+
+  # ARMv9-A is AArch64-only, disable AArch32 register context
+  if(CONFIG_ARMV9_A)
+    set(TFA_AARCH32_REGS "CTX_INCLUDE_AARCH32_REGS=0")
+  else()
+    set(TFA_AARCH32_REGS "")
+  endif()
+
+  # Set default TF-A build parameters that can be overridden by boards
+  if(NOT DEFINED TFA_EXTRA_ARGS)
+    set(TFA_EXTRA_ARGS "")
   endif()
 
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
@@ -34,6 +46,8 @@ if (CONFIG_BUILD_WITH_TFA)
             CROSS_COMPILE=${CROSS_COMPILE}
             BUILD_BASE=${TFA_BINARY_DIR} PLAT=${TFA_PLAT}
             BL33=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+            ${TFA_AARCH32_REGS}
+            ${TFA_EXTRA_ARGS}
             all fip
   )
 endif()

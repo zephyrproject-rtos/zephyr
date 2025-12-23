@@ -10,5 +10,6 @@ properties:
     type: int
     required: true
     description: |
-      Initial Pixel format for panel attached to this controller.
-      See dt-bindings/display/panel.h for a list
+      Initial Pixel format of this controller's output data, which is sent
+      to a panel directly or to an adapter.
+      See dt-bindings/display/panel.h for a list of pixel format.

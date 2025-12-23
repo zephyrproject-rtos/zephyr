@@ -1,0 +1,10 @@
+common:
+  tags: heap
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+tests:
+  libraries.heap_min: {}
+  libraries.heap_min.runtime_stats:
+    extra_configs:
+      - CONFIG_SYS_HEAP_RUNTIME_STATS=y

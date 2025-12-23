@@ -30,6 +30,8 @@
 
 /* Used on devices that have no explicit erase */
 #define LITTLEFS_DEFAULT_BLOCK_SIZE     4096
+/* Rounded up from minimal block size for littlefs working */
+#define LITTLEFS_MINIMUM_BLOCK_SIZE     128
 
 /* note: one of the next options have to be enabled, at least */
 BUILD_ASSERT(IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) ||
@@ -582,6 +584,25 @@ static int littlefs_statvfs(struct fs_mount_t *mountp,
 	return lfs_to_errno(ret);
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GC)
+
+static int littlefs_gc(struct fs_mount_t *mountp)
+{
+	ssize_t ret;
+	struct fs_littlefs *fs = mountp->fs_data;
+	struct lfs *lfs = &fs->lfs;
+
+	fs_lock(fs);
+
+	ret = lfs_fs_gc(lfs);
+
+	fs_unlock(fs);
+
+	return lfs_to_errno(ret);
+}
+
+#endif /* CONFIG_FILE_SYSTEM_GC */
+
 #ifdef CONFIG_FS_LITTLEFS_FMP_DEV
 
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
@@ -765,6 +786,12 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	if (block_size == 0) {
 		__ASSERT_NO_MSG(block_size != 0);
 		return -EINVAL;
+	}
+
+	if (block_size < LITTLEFS_MINIMUM_BLOCK_SIZE) {
+		LOG_WRN("LittleFS block_size of %d smaller than required minimum %d, rounding up.",
+			block_size, LITTLEFS_MINIMUM_BLOCK_SIZE);
+		block_size = LITTLEFS_MINIMUM_BLOCK_SIZE;
 	}
 
 	int32_t block_cycles = lcp->block_cycles;
@@ -1056,6 +1083,9 @@ static const struct fs_file_system_t littlefs_fs = {
 	.mkdir = littlefs_mkdir,
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_GC)
+	.gc = littlefs_gc,
+#endif
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
 	.mkfs = littlefs_mkfs,
 #endif
@@ -1101,7 +1131,7 @@ static struct fs_littlefs fs_data_##inst = { \
 }; \
 struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
-	.mnt_point = DT_INST_PROP(inst, mount_point), \
+	.mnt_point = FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst), \
 	.fs_data = &fs_data_##inst, \
 	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \

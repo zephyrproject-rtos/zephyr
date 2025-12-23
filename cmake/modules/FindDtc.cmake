@@ -19,7 +19,7 @@
 find_program(
   DTC
   dtc
-  )
+)
 
 if(DTC)
   # Parse the 'dtc --version' output to find the installed version.
@@ -29,7 +29,7 @@ if(DTC)
     OUTPUT_VARIABLE dtc_version_output
     ERROR_VARIABLE  dtc_error_output
     RESULT_VARIABLE dtc_status
-    )
+  )
 
   set(DTC_VERSION_STRING)
   if(${dtc_status} EQUAL 0)
@@ -39,8 +39,8 @@ if(DTC)
 endif()
 
 find_package_handle_standard_args(Dtc
-                                  REQUIRED_VARS DTC
-                                  VERSION_VAR DTC_VERSION_STRING
+  REQUIRED_VARS DTC
+  VERSION_VAR DTC_VERSION_STRING
 )
 
 if(NOT Dtc_FOUND)

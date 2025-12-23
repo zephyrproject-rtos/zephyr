@@ -18,6 +18,9 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
+config WDT_DISABLE_AT_BOOT
+	default y
+
 choice ADC_MCUX_ADC16_VREF
 	default ADC_MCUX_ADC16_VREF_ALTERNATE
 endchoice

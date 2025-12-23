@@ -32,16 +32,7 @@ static void thread2(void *arg)
 {
 	int flags = osEventFlagsSet((osEventFlagsId_t)arg, FLAG2);
 
-	/* Please note that as soon as the last flag that a thread is waiting
-	 * on is set, the control shifts to that thread and that thread may
-	 * choose to clear the flags as part of its osEventFlagsWait operation.
-	 * In this test case, the main thread is waiting for FLAG1 and FLAG2.
-	 * FLAG1 gets set first and then FLAG2 gets set. As soon as FLAG2 gets
-	 * set, control shifts to the waiting thread where osEventFlagsWait
-	 * clears FLAG1 and FLAG2 internally. When this thread eventually gets
-	 * scheduled we should hence check if FLAG2 is cleared.
-	 */
-	zassert_equal(flags & FLAG2, 0, "");
+	zassert_equal(flags & FLAG2, FLAG2, "");
 }
 
 static K_THREAD_STACK_DEFINE(test_stack1, STACKSZ);
@@ -232,4 +223,68 @@ ZTEST(cmsis_event_flags, test_event_flags_static_allocation)
 
 	zassert_true(osEventFlagsDelete(evt_id) == osOK, "EventFlagsDelete failed");
 }
+
+static K_THREAD_STACK_DEFINE(test_wait_stack1, STACKSZ);
+static osThreadAttr_t thread_wait_attr1 = {
+	.name = "ThrWait1",
+	.stack_mem = &test_wait_stack1,
+	.stack_size = STACKSZ,
+	.priority = osPriorityHigh,
+};
+
+static K_THREAD_STACK_DEFINE(test_wait_stack2, STACKSZ);
+static osThreadAttr_t thread_wait_attr2 = {
+	.name = "ThrWait2",
+	.stack_mem = &test_wait_stack2,
+	.stack_size = STACKSZ,
+	.priority = osPriorityHigh,
+};
+
+static osEventFlagsAttr_t event_wait_attrs = {
+	.name = "MyEvent",
+	.attr_bits = 0,
+	.cb_mem = NULL,
+	.cb_size = 0,
+};
+
+static void thread_wait1(void *arg)
+{
+	osEventFlagsWait(evt_id, FLAG2, osFlagsWaitAny, osWaitForever);
+}
+
+static void thread_wait2(void *arg)
+{
+	osEventFlagsWait(evt_id, FLAG1, osFlagsWaitAny, osWaitForever);
+}
+
+/*
+ * This test creates two threads that wait on the event flags. It previously
+ * discovered that it would fail on the old CMSIS V2 implementation of event
+ * flags that used polling. This test has been added to show that it no longer
+ * fails.
+ */
+ZTEST(cmsis_event_flags, test_concurrent_wait)
+{
+	evt_id = osEventFlagsNew(&event_wait_attrs);
+
+	/* Create 2 waiting threads */
+	osThreadId_t id1 = osThreadNew(thread_wait1, evt_id, &thread_wait_attr1);
+	osThreadId_t id2 = osThreadNew(thread_wait2, evt_id, &thread_wait_attr2);
+
+	zassert_true(id1 != NULL, "Failed creating thread1");
+	zassert_true(id2 != NULL, "Failed creating thread2");
+	osDelay(10);
+
+	int flags1 = osEventFlagsSet(evt_id, FLAG1);
+	int flags2 = osEventFlagsSet(evt_id, FLAG2);
+
+	osThreadJoin(id1);
+	osThreadJoin(id2);
+
+	zassert_true(flags1 & FLAG1, "");
+	zassert_true(flags2 & FLAG2, "");
+
+	osEventFlagsDelete(evt_id);
+}
+
 ZTEST_SUITE(cmsis_event_flags, NULL, NULL, NULL, NULL, NULL);

@@ -12,6 +12,7 @@ Bluetooth Classic Host and profiles
    hfp.rst
    rfcomm.rst
    sdp.rst
+   a2dp.rst
 
 Bluetooth LE Audio
 ==================

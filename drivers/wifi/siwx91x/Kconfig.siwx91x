@@ -6,7 +6,7 @@ config WIFI_SILABS_SIWX91X
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_WIFI_ENABLED
 	depends on NETWORKING
-	select WISECONNECT_NETWORK_STACK
+	select SILABS_SIWX91X_NWP
 	select EVENTS
 	select NET_L2_WIFI_MGMT
 	help
@@ -178,4 +178,30 @@ config WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN
 # This device supports filtering scan results for only one SSID.
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
+
+config WIFI_SILABS_SIWX91X_MFP
+	bool "802.11w Management Frame Protection (MFP) support"
+	default y
+	help
+	  Enable IEEE 802.11w Management Frame Protection (MFP) for secure
+	  handling of management frames.
+
+	  Note:
+	    - Required for WPA3-Personal and WPA3-Transition modes.
+	    - Disabling this frees memory used by MFP, improving TCP throughput
+	      by about 10–12% (≈1–2 Mbps).
+
+config WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK
+	bool "WPA/WPA2 (PSK) Security Support"
+	default y
+	help
+	  Enable WPA/WPA2 (PSK-based) security in client mode.
+	  Recommended for configurations requiring WPA, WPA2, or mixed security modes.
+	  Disabling this feature can reduce data buffer usage, potentially improving throughput.
+
+config WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS
+	bool "Hide PSK and Sensitive Credentials in Logs"
+	help
+	  When enabled, prevents printing sensitive credentials such as
+	  PSK, PMK, and EAP keys in debug or log messages.
 endif

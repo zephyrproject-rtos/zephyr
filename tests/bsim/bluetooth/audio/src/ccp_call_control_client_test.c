@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/ccp.h>
@@ -22,8 +23,10 @@ LOG_MODULE_REGISTER(ccp_call_control_client, CONFIG_LOG_DEFAULT_LEVEL);
 extern enum bst_result_t bst_result;
 
 CREATE_FLAG(flag_discovery_complete);
+CREATE_FLAG(flag_bearer_name_read);
 
-static struct bt_ccp_call_control_client *inst;
+static struct bt_ccp_call_control_client *call_control_client;
+static struct bt_ccp_call_control_client_bearers client_bearers;
 
 static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_client *client, int err,
 						struct bt_ccp_call_control_client_bearers *bearers)
@@ -41,8 +44,25 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 		return;
 	}
 
+	memcpy(&client_bearers, bearers, sizeof(client_bearers));
+
 	SET_FLAG(flag_discovery_complete);
 }
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+static void ccp_call_control_client_read_bearer_provider_name_cb(
+	struct bt_ccp_call_control_client_bearer *bearer, int err, const char *name)
+{
+	if (err != 0) {
+		FAIL("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p provider name: %s", (void *)bearer, name);
+
+	SET_FLAG(flag_bearer_name_read);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
 
 static void discover_tbs(void)
 {
@@ -50,7 +70,7 @@ static void discover_tbs(void)
 
 	UNSET_FLAG(flag_discovery_complete);
 
-	err = bt_ccp_call_control_client_discover(default_conn, &inst);
+	err = bt_ccp_call_control_client_discover(default_conn, &call_control_client);
 	if (err) {
 		FAIL("Failed to discover TBS: %d", err);
 		return;
@@ -59,10 +79,41 @@ static void discover_tbs(void)
 	WAIT_FOR_FLAG(flag_discovery_complete);
 }
 
+static void read_bearer_name(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	UNSET_FLAG(flag_bearer_name_read);
+
+	err = bt_ccp_call_control_client_read_bearer_provider_name(bearer);
+	if (err != 0) {
+		FAIL("Failed to read name of bearer %p: %d", bearer, err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_bearer_name_read);
+}
+
+static void read_bearer_names(void)
+{
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	read_bearer_name(client_bearers.gtbs_bearer);
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	for (size_t i = 0; i < client_bearers.tbs_count; i++) {
+		read_bearer_name(client_bearers.tbs_bearers[i]);
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+}
+
 static void init(void)
 {
 	static struct bt_ccp_call_control_client_cb ccp_call_control_client_cbs = {
 		.discover = ccp_call_control_client_discover_cb,
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+		.bearer_provider_name = ccp_call_control_client_read_bearer_provider_name_cb
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
 	};
 	int err;
 
@@ -94,6 +145,10 @@ static void test_main(void)
 
 	discover_tbs();
 	discover_tbs(); /* test that we can discover twice */
+
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
+		read_bearer_names();
+	}
 
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err != 0) {

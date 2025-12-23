@@ -42,7 +42,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			LOG_ERR("Failed to configure clocks for sleep mode");
 			goto out;
 		}
-		if (IS_ENABLED(CONFIG_WISECONNECT_NETWORK_STACK)) {
+		if (IS_ENABLED(CONFIG_SILABS_SIWX91X_NWP)) {
 			if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
 				if (!sl_si91x_is_device_initialized()) {
 					LOG_ERR("Device is not initialized");

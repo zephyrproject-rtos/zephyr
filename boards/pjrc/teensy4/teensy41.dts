@@ -16,10 +16,12 @@
 };
 
 /delete-node/ &w25q16jvuxim;
+
 &flexspi {
 	status = "okay";
 
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+
 	/* WINBOND flash memory*/
 	w25q64jvxgim: w25q64jvxgim@0 {
 		compatible = "nxp,imx-flexspi-nor";
@@ -47,6 +49,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		status = "okay";
 		compatible = "ti,dp83825";
@@ -69,6 +72,7 @@
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

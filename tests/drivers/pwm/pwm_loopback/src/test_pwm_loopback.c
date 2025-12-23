@@ -10,11 +10,6 @@
 
 #include "test_pwm_loopback.h"
 
-#define TEST_PWM_PERIOD_NSEC 100000000
-#define TEST_PWM_PULSE_NSEC   15000000
-#define TEST_PWM_PERIOD_USEC    100000
-#define TEST_PWM_PULSE_USEC      75000
-
 enum test_pwm_unit {
 	TEST_PWM_UNIT_NSEC,
 	TEST_PWM_UNIT_USEC,
@@ -96,61 +91,61 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 
 	if (flags & PWM_CAPTURE_TYPE_PERIOD) {
 		zassert_within(period_capture, period, period / 100,
-			       "period capture off by more than 1%");
+			       "period capture off by more than 1%%");
 	}
 
 	if (flags & PWM_CAPTURE_TYPE_PULSE) {
 		zassert_within(pulse_capture, pulse, pulse / 100,
-			       "pulse capture off by more than 1%");
+			       "pulse capture off by more than 1%%");
 	}
 }
 
 ZTEST_USER(pwm_loopback, test_pulse_capture)
 {
-	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_NSEC, CONFIG_TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_NORMAL);
-	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_USEC, CONFIG_TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_NORMAL);
 }
 
 ZTEST_USER(pwm_loopback, test_pulse_capture_inverted)
 {
-	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_NSEC, CONFIG_TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_INVERTED);
-	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_USEC, CONFIG_TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_INVERTED);
 }
 
 ZTEST_USER(pwm_loopback, test_period_capture)
 {
-	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_NSEC, CONFIG_TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_NORMAL);
-	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_USEC, CONFIG_TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_NORMAL);
 }
 
 ZTEST_USER(pwm_loopback, test_period_capture_inverted)
 {
-	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_NSEC, CONFIG_TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_INVERTED);
-	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_USEC, CONFIG_TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_INVERTED);
 }
 
 ZTEST_USER(pwm_loopback, test_pulse_and_period_capture)
 {
-	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_NSEC, CONFIG_TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_BOTH | PWM_POLARITY_NORMAL);
-	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
+	test_capture(CONFIG_TEST_PWM_PERIOD_USEC, CONFIG_TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_BOTH | PWM_POLARITY_NORMAL);
 }
@@ -234,8 +229,8 @@ ZTEST(pwm_loopback, test_continuous_capture)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_set(out.dev, out.pwm, PWM_USEC(TEST_PWM_PERIOD_USEC),
-		      PWM_USEC(TEST_PWM_PULSE_USEC), out.flags);
+	err = pwm_set(out.dev, out.pwm, PWM_USEC(CONFIG_TEST_PWM_PERIOD_USEC),
+		      PWM_USEC(CONFIG_TEST_PWM_PULSE_USEC), out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_configure_capture(in.dev, in.pwm,
@@ -259,7 +254,7 @@ ZTEST(pwm_loopback, test_continuous_capture)
 	err = pwm_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to enable pwm capture (err %d)", err);
 
-	err = k_sem_take(&data.sem, K_USEC(TEST_PWM_PERIOD_USEC * data.buffer_len * 10));
+	err = k_sem_take(&data.sem, K_USEC(CONFIG_TEST_PWM_PERIOD_USEC * data.buffer_len * 10));
 	zassert_equal(err, 0, "pwm capture timed out (err %d)", err);
 	zassert_equal(data.status, 0, "pwm capture failed (err %d)", err);
 
@@ -271,11 +266,13 @@ ZTEST(pwm_loopback, test_continuous_capture)
 		zassert_equal(err, 0, "failed to calculate usec (err %d)", err);
 
 		if (data.pulse_capture) {
-			zassert_within(usec, TEST_PWM_PULSE_USEC, TEST_PWM_PULSE_USEC / 100,
-				       "pulse capture off by more than 1%");
+			zassert_within(usec, CONFIG_TEST_PWM_PULSE_USEC,
+						CONFIG_TEST_PWM_PULSE_USEC / 100,
+				       "pulse capture off by more than 1%%");
 		} else {
-			zassert_within(usec, TEST_PWM_PERIOD_USEC, TEST_PWM_PERIOD_USEC / 100,
-				       "period capture off by more than 1%");
+			zassert_within(usec, CONFIG_TEST_PWM_PERIOD_USEC,
+						CONFIG_TEST_PWM_PERIOD_USEC / 100,
+				       "period capture off by more than 1%%");
 		}
 	}
 }

@@ -22,6 +22,10 @@
 	ITERABLE_SECTION_ROM(sensor_decoder_api, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_ADC_STREAM)
+	ITERABLE_SECTION_ROM(adc_decoder_api, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_MCUMGR)
 	ITERABLE_SECTION_ROM(mcumgr_handler, Z_LINK_ITERABLE_SUBALIGN)
 #endif
@@ -67,4 +71,8 @@
 
 #if defined(CONFIG_GNSS_SATELLITES)
 	ITERABLE_SECTION_ROM(gnss_satellites_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_GNSS_RTK)
+	ITERABLE_SECTION_ROM(gnss_rtk_data_callback, Z_LINK_ITERABLE_SUBALIGN)
 #endif

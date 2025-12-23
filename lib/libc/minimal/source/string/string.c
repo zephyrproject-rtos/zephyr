@@ -10,6 +10,20 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#if !defined(__mem_word_t_defined)
+#define __mem_word_t_defined
+
+/*
+ * The mem_word_t should match the optimal memory access word width
+ * on the target platform. Here we default it to uintptr_t.
+ */
+
+typedef uintptr_t mem_word_t;
+
+#define Z_MEM_WORD_T_WIDTH __INTPTR_WIDTH__
+
+#endif
+
 /**
  *
  * @brief Copy a string

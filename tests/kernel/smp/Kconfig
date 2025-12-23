@@ -9,3 +9,24 @@ config SMP_TEST_RUN_FACTOR
 	int "Run factor for stressing tests, such as 'switch torture', \
 		as a percentage"
 	default 100
+
+config SMP_IPI_NUM_ITERS
+	int "Number of iterations to run the SMP IPI test"
+	default 3
+	help
+	  Number of times to run the SMP IPI broadcast test.
+
+config SMP_IPI_WAIT_MS
+	int "Milliseconds to wait for SMP IPI per iteration"
+	default 100
+	help
+	  How long to wait for broadcast IPI to be processed
+	  on other processor(s).
+
+config SMP_IPI_WAIT_RETRIES
+	int "Retries to wait for SMP IPI per iteration"
+	default 3
+	help
+	  Number of retries waiting for broadcast IPI to be
+	  processed on other processor(s). Each retry the wait
+	  is for CONFIG_SMP_IPI_WAIT_MS milliseconds.

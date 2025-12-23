@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpioa 4 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpioa 5 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpioa 6 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioa 7 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioc 1 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioc 0 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpiob 7 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpiob 6 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpiob 3 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpiob 0 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioa 12 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioa 11 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpiob 1 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpiob 2 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpiob 4 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpiob 8 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpiob 9 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpiob 15 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpiob 14 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpiob 13 0>;
+	};
+};
+
+arduino_spi: &spi2 {};
+
+arduino_i2c: &i2c2 {};
+
+arduino_serial: &usart1 {};

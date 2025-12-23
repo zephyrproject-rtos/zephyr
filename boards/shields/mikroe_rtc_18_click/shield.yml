@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_rtc_18_click
+  full_name: RTC 18 Click
+  vendor: mikroe
+  supported_features:
+    - rtc

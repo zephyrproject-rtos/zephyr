@@ -1,0 +1,168 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <nxp/nxp_s32k566.dtsi>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <1>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <2>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <3>;
+			clock-frequency = <DT_FREQ_M(200)>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&eirq0 {
+	interrupts = <29 0>;
+};
+
+&eirq1 {
+	interrupts = <30 0>;
+};
+
+&eirq2 {
+	interrupts = <211 0>;
+};
+
+&eirq3 {
+	interrupts = <31 0>;
+};
+
+&eirq4 {
+	interrupts = <32 0>;
+};
+
+&lpe_lpuart0 {
+	interrupts = <233 0>;
+};
+
+&lpe_lpuart1 {
+	interrupts = <234 0>;
+};
+
+&lpe_lpuart2 {
+	interrupts = <235 0>;
+};
+
+&lpuart0 {
+	interrupts = <155 0>;
+};
+
+&lpuart1 {
+	interrupts = <156 0>;
+};
+
+&lpuart2 {
+	interrupts = <157 0>;
+};
+
+&lpuart3 {
+	interrupts = <158 0>;
+};
+
+&lpuart4 {
+	interrupts = <159 0>;
+};
+
+&lpuart5 {
+	interrupts = <160 0>;
+};
+
+&lpuart6 {
+	interrupts = <161 0>;
+};
+
+&lpuart7 {
+	interrupts = <162 0>;
+};
+
+&lpuart8 {
+	interrupts = <163 0>;
+};
+
+&lpuart9 {
+	interrupts = <164 0>;
+};
+
+&lpuart10 {
+	interrupts = <165 0>;
+};
+
+&lpuart11 {
+	interrupts = <166 0>;
+};
+
+&lpuart12 {
+	interrupts = <167 0>;
+};
+
+&lpuart13 {
+	interrupts = <168 0>;
+};
+
+&lpuart14 {
+	interrupts = <169 0>;
+};
+
+&lpuart15 {
+	interrupts = <170 0>;
+};
+
+&lpuart16 {
+	interrupts = <171 0>;
+};
+
+&lpuart17 {
+	interrupts = <172 0>;
+};
+
+&lpuart18 {
+	interrupts = <173 0>;
+};
+
+&lpuart19 {
+	interrupts = <174 0>;
+};
+
+&lpuart20 {
+	interrupts = <175 0>;
+};

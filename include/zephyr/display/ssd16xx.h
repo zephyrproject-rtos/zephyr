@@ -4,13 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended Display API of SSD16XX
+ * @ingroup ssd16xx_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DISPLAY_SSD16XX_H_
 #define ZEPHYR_INCLUDE_DISPLAY_SSD16XX_H_
+
+/**
+ * @brief Solomon SSD16xx EPD display controller
+ * @defgroup ssd16xx_interface SSD16xx
+ * @ingroup display_interface_ext
+ * @{
+ */
 
 #include <zephyr/drivers/display.h>
 
 /**
  * SSD16xx RAM type for direct RAM access
+ *
+ * @see ssd16xx_read_ram
  */
 enum ssd16xx_ram {
 	/** The black RAM buffer. This is typically the buffer used to
@@ -18,7 +33,7 @@ enum ssd16xx_ram {
 	 * refresh.
 	 */
 	SSD16XX_RAM_BLACK = 0,
-	/* The red RAM buffer. This is typically the old frame buffer
+	/** The red RAM buffer. This is typically the old frame buffer
 	 * when performing partial refreshes or an additional color
 	 * channel.
 	 */
@@ -26,7 +41,7 @@ enum ssd16xx_ram {
 };
 
 /**
- * @brief Read data directly from the display controller's internal
+ * @brief Read data directly from an SSD16xx display controller's internal
  * RAM.
  *
  * @param dev Pointer to device structure
@@ -36,11 +51,13 @@ enum ssd16xx_ram {
  * @param desc Structure describing the buffer layout
  * @param buf Output buffer
  *
- * @retval 0 on success, negative errno on failure.
+ * @return 0 on success, negative errno on failure.
  */
 int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
 		     const uint16_t x, const uint16_t y,
 		     const struct display_buffer_descriptor *desc,
 		     void *buf);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DISPLAY_SSD16XX_H_ */

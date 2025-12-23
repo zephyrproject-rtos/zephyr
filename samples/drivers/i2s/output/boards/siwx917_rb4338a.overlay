@@ -16,6 +16,7 @@
 			/* I2S0_CLK_HP25 - P25,  I2S0_DOUT0_HP28 - P31, I2S0_WS_HP26 - P27*/
 			pinmux = <I2S0_CLK_HP25>, <I2S0_DOUT0_HP28>, <I2S0_WS_HP26>;
 		};
+
 		in {
 			/* I2S0_DIN0_HP27 - P29 */
 			pinmux = <I2S0_DIN0_HP27>;
@@ -28,7 +29,7 @@
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
 
-	dmas =  <&dma0 15>, <&dma0 14>;
+	dmas = <&dma0 15>, <&dma0 14>;
 	dma-names = "tx", "rx";
 };
 

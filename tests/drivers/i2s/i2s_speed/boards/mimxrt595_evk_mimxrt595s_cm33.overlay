@@ -8,7 +8,6 @@
 		i2s-node0 = &i2s0;
 		i2s-node1 = &i2s1;
 	};
-
 };
 
 &i2s0 {

@@ -8,14 +8,23 @@
 #ifndef H_SHELL_MGMT_
 #define H_SHELL_MGMT_
 
+/**
+ * @brief MCUmgr Shell Management API
+ * @defgroup mcumgr_shell_mgmt Shell Management
+ * @ingroup mcumgr_mgmt_api
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Command IDs for shell management group.
+ * @name Command IDs for Shell Management group.
+ * @{
  */
-#define SHELL_MGMT_ID_EXEC   0
+#define SHELL_MGMT_ID_EXEC 0 /**< Shell command line execute */
+/** @} */
 
 /**
  * Command result codes for shell management group.
@@ -37,5 +46,9 @@ enum shell_mgmt_err_code_t {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* H_SHELL_MGMT_ */

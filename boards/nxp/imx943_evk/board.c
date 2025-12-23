@@ -10,7 +10,8 @@
 
 static int board_init(void)
 {
-#if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
+#if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0) \
+	&& !defined(CONFIG_CPU_CORTEX_A)
 	/*
 	 * PCS(Physical Coding Sublayer) protocols on link0-5,
 	 * xxxx xxxx xxxx xxx1: 1G SGMII

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025 Cactus Engineering S.L
  * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  * Copyright 2024 NXP
@@ -65,6 +66,7 @@ struct uc81xx_quirks {
 	uint16_t max_height;
 
 	bool auto_copy;
+	bool pon_after_softstart;
 
 	int (*set_cdi)(const struct device *dev, bool border);
 	int (*set_tres)(const struct device *dev);
@@ -225,6 +227,22 @@ static int uc81xx_set_profile(const struct device *dev,
 		if (uc81xx_write_array_opt(dev, UC81XX_CMD_BTST,
 					   &config->softstart)) {
 			return -EIO;
+		}
+
+		if (config->quirks->pon_after_softstart) {
+			/* UC8151D requires PON command after BTST for proper
+			 * power initialization
+			 */
+			LOG_DBG("Sending PON command after softstart");
+			if (uc81xx_write_cmd(dev, UC81XX_CMD_PON, NULL, 0)) {
+				return -EIO;
+			}
+
+			/* Wait for power stabilization and BUSY_N = HIGH */
+			k_sleep(K_MSEC(UC81XX_PON_DELAY));
+			uc81xx_busy_wait(dev);
+
+			LOG_DBG("PON command completed");
 		}
 
 		/*
@@ -660,6 +678,7 @@ static const struct uc81xx_quirks uc8175_quirks = {
 	.max_height = 160,
 
 	.auto_copy = false,
+	.pon_after_softstart = false,
 
 	.set_cdi = uc8176_set_cdi,
 	.set_tres = uc81xx_set_tres_8,
@@ -673,10 +692,89 @@ static const struct uc81xx_quirks uc8176_quirks = {
 	.max_height = 300,
 
 	.auto_copy = false,
+	.pon_after_softstart = false,
 
 	.set_cdi = uc8176_set_cdi,
 	.set_tres = uc81xx_set_tres_16,
 	.set_ptl = uc81xx_set_ptl_16,
+};
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d)
+static int uc8151d_set_tres(const struct device *dev)
+{
+	const struct uc81xx_config *config = dev->config;
+	/* Pass pixel coordinates directly; hardware interprets as byte+bit encoding
+	 * See UC8151D datasheet page 22 (TRES command, R61h)
+	 */
+	const struct uc8151d_tres tres = {
+		.hres = config->width,
+		.vres = sys_cpu_to_be16(config->height),
+	};
+
+	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
+
+	return uc81xx_write_cmd(dev, UC81XX_CMD_TRES,
+			       (const void *)&tres, sizeof(tres));
+}
+
+static int uc8151d_set_ptl(const struct device *dev, uint16_t x, uint16_t y,
+			   uint16_t x_end_idx, uint16_t y_end_idx,
+			   const struct display_buffer_descriptor *desc)
+{
+	/* Pass pixel coordinates directly; hardware interprets as byte+bit encoding
+	 * See UC8151D datasheet page 26 (Partial Window command, R90h)
+	 */
+	const struct uc8151d_ptl ptl = {
+		.hrst = x & BIT_MASK(8),
+		.hred = x_end_idx & BIT_MASK(8),
+		.vrst = sys_cpu_to_be16(y & BIT_MASK(9)),
+		.vred = sys_cpu_to_be16(y_end_idx & BIT_MASK(9)),
+		.pt_scan = UC81XX_PTL_FLAG_PT_SCAN,
+	};
+
+	/* Setup Partial Window and enable Partial Mode */
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
+
+	return uc81xx_write_cmd(dev, UC81XX_CMD_PTL,
+			       (const void *)&ptl, sizeof(ptl));
+}
+
+static int uc8151d_set_cdi(const struct device *dev, bool border)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_data *data = dev->data;
+	const struct uc81xx_profile *p = config->profiles[data->profile];
+	uint8_t cdi = UC8151D_CDI_DEFAULT;  /* Start with 0xD7 */
+
+	if (!p || !p->override_cdi) {
+		/* Use default CDI value if no profile override */
+		cdi = UC8151D_CDI_DEFAULT;
+	} else {
+		/* Keep VBD and DDX bits from default, use profile CDI interval */
+		cdi = (UC8151D_CDI_DEFAULT & (UC8151D_CDI_VBD_MASK | UC8151D_CDI_DDX_MASK)) |
+		      (p->cdi & UC8151D_CDI_MASK);
+	}
+
+	if (!border) {
+		/* Set VBD to floating for no border */
+		cdi = (cdi & ~UC8151D_CDI_VBD_MASK) | UC8151D_CDI_VBD_FLOATING;
+	}
+
+	LOG_DBG("CDI: %#hhx", cdi);
+	return uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI, cdi);
+}
+
+static const struct uc81xx_quirks uc8151d_quirks = {
+	.max_width = 160,      /* Actual max from datasheet */
+	.max_height = 296,     /* Actual max from datasheet */
+
+	.auto_copy = false,    /* Manual copy required */
+	.pon_after_softstart = true,
+
+	.set_cdi = uc8151d_set_cdi,
+	.set_tres = uc8151d_set_tres,
+	.set_ptl = uc8151d_set_ptl,
 };
 #endif
 
@@ -706,6 +804,7 @@ static const struct uc81xx_quirks uc8179_quirks = {
 	.max_height = 600,
 
 	.auto_copy = true,
+	.pon_after_softstart = false,
 
 	.set_cdi = uc8179_set_cdi,
 	.set_tres = uc81xx_set_tres_16,
@@ -812,6 +911,9 @@ DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8175, UC81XX_DEFINE,
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8176, UC81XX_DEFINE,
 			     &uc8176_quirks);
+
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8151d, UC81XX_DEFINE,
+			     &uc8151d_quirks);
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8179, UC81XX_DEFINE,
 			     &uc8179_quirks);

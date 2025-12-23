@@ -9,6 +9,9 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <fsl_clock.h>
+#if defined(CONFIG_SOC_MIMX9352)
+#include <soc.h>
+#endif
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -25,7 +28,7 @@ static int mcux_ccm_on(const struct device *dev,
 	switch (peripheral) {
 #ifdef CONFIG_ETH_NXP_ENET
 
-#ifdef CONFIG_SOC_MIMX9352
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 #define ENET1G_CLOCK	kCLOCK_Enet1
 #else
 #define ENET_CLOCK	kCLOCK_Enet
@@ -39,6 +42,13 @@ static int mcux_ccm_on(const struct device *dev,
 	case IMX_CCM_ENET1G_CLK:
 		CLOCK_EnableClock(ENET1G_CLOCK);
 		return 0;
+#endif
+#ifdef CONFIG_I2S_MCUX_SAI
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111)
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_EnableClock(kCLOCK_Sai1 + instance);
+		return 0;
+#endif
 #endif
 	default:
 		(void)instance;
@@ -124,12 +134,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_DMA_MCUX_EDMA_V4
+#if !defined(CONFIG_SOC_MIMX9352) && !defined(CONFIG_SOC_MIMX9131) && !defined(CONFIG_SOC_MIMX9111)
 	case IMX_CCM_EDMA3_CLK:
 		clock_root = kCLOCK_Root_M33;
 		break;
 	case IMX_CCM_EDMA4_CLK:
 		clock_root = kCLOCK_Root_Wakeup_Axi;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_PWM_MCUX
@@ -157,28 +169,55 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_I2S_MCUX_SAI
+#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111))
 	case IMX_CCM_SAI1_CLK:
-		clock_root =  kCLOCK_Root_Sai1;
+		clock_root = kCLOCK_Root_Sai1 + instance;
+		break;
+#else
+	case IMX_CCM_SAI1_CLK:
+		clock_root = kCLOCK_Root_Sai1;
 		break;
 	case IMX_CCM_SAI2_CLK:
-		clock_root =  kCLOCK_Root_Sai2;
+		clock_root = kCLOCK_Root_Sai2;
 		break;
 	case IMX_CCM_SAI3_CLK:
-		clock_root =  kCLOCK_Root_Sai3;
+		clock_root = kCLOCK_Root_Sai3;
 		break;
 	case IMX_CCM_SAI4_CLK:
-		clock_root =  kCLOCK_Root_Sai4;
+		clock_root = kCLOCK_Root_Sai4;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
 	case IMX_CCM_ENET1G_CLK:
-#ifdef CONFIG_SOC_MIMX9352
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 		clock_root = kCLOCK_Root_WakeupAxi;
 #else
 		clock_root = kCLOCK_Root_Bus;
 #endif
+		break;
+#endif
+
+#if defined(CONFIG_SOC_MIMX9352)
+	case IMX_CCM_MEDIA_AXI_CLK:
+		clock_root = kCLOCK_Root_MediaAxi;
+		break;
+	case IMX_CCM_MEDIA_APB_CLK:
+		clock_root = kCLOCK_Root_MediaApb;
+		break;
+	case IMX_CCM_MEDIA_DISP_PIX_CLK:
+		clock_root = kCLOCK_Root_MediaDispPix;
+		break;
+	case IMX_CCM_MEDIA_LDB_CLK:
+		clock_root = kCLOCK_Root_MediaLdb;
+		break;
+	case IMX_CCM_MIPI_PHY_CFG_CLK:
+		clock_root = kCLOCK_Root_MipiPhyCfg;
+		break;
+	case IMX_CCM_CAM_PIX_CLK:
+		clock_root = kCLOCK_Root_CamPix;
 		break;
 #endif
 
@@ -215,6 +254,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 			break;
 		default:
 			clock_root = (kCLOCK_Root_Tpm4 + instance - 3);
+		}
+		break;
+#elif defined(CONFIG_SOC_MIMX9352_A55) || defined(CONFIG_SOC_MIMX9352_M33)
+	case IMX_CCM_TPM_CLK:
+		switch (instance) {
+		case 2:
+			clock_root = kCLOCK_Root_BusWakeup;
+			break;
+		default:
+			clock_root = kCLOCK_Root_Tpm1 + instance;
 		}
 		break;
 #else
@@ -256,10 +305,34 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Bus + instance;
 		break;
 #endif
-
+#ifdef CONFIG_COUNTER_MCUX_LPIT
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPIT_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_Bus_Aon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_Bus_Wakeup;
+			break;
+		case 2:
+			clock_root = kCLOCK_Root_Lpit3;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+#endif
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC
 	case IMX_CCM_LPADC1_CLK:
 		clock_root = kCLOCK_Root_Adc1 + instance;
+		break;
+#endif
+
+#ifdef CONFIG_ADC_MCUX_SAR_ADC
+	case IMX_CCM_SAR_ADC1_CLK:
+		clock_root = kCLOCK_Root_Adc + instance;
 		break;
 #endif
 
@@ -281,10 +354,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
+#ifdef CONFIG_INPUT_MCUX_KPP
+	case IMX_CCM_KPP_CLK:
+		clock_root = kCLOCK_CpuClk;
+		break;
+#endif
+
 	default:
 		return -EINVAL;
 	}
-#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
+#if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) \
+	|| defined(CONFIG_SOC_MIMX9111)
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);
@@ -329,6 +409,55 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Ui, clock_rate);
 	case IMX_CCM_MIPI_CSI2RX_ESC_CLK:
 		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Esc, clock_rate);
+#endif
+
+#if defined(CONFIG_SOC_MIMX9352)
+	case IMX_CCM_MEDIA_AXI_CLK:
+	case IMX_CCM_MEDIA_APB_CLK:
+	case IMX_CCM_MEDIA_DISP_PIX_CLK:
+	case IMX_CCM_MEDIA_LDB_CLK:
+	case IMX_CCM_MIPI_PHY_CFG_CLK:
+	case IMX_CCM_CAM_PIX_CLK:
+		return common_clock_set_freq(clock_name, (uint32_t)clock_rate);
+#endif
+
+#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || \
+	defined(CONFIG_SOC_MIMX9111)) && defined(CONFIG_I2S_MCUX_SAI)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		uint32_t clock_root, instance;
+		clock_root_config_t saiClkCfg;
+		fracn_pll_init_t g_audioPllCfg;
+
+		instance = (clock_name & IMX_CCM_INSTANCE_MASK);
+		clock_root = kCLOCK_Root_Sai1 + instance;
+
+		/* Fixed AUDIO_PLL's frequency at 393216000 Hz */
+#define AUDIO_PLL_CLK_FREQ 393216000
+		g_clockSourceFreq[kCLOCK_AudioPll1Out] = AUDIO_PLL_CLK_FREQ;
+		g_clockSourceFreq[kCLOCK_AudioPll1] = AUDIO_PLL_CLK_FREQ;
+		g_audioPllCfg.rdiv = 1;
+		g_audioPllCfg.mfi = 163;
+		g_audioPllCfg.mfn = 84;
+		g_audioPllCfg.mfd = 100;
+		g_audioPllCfg.odiv = 10;
+
+		CLOCK_PllInit(AUDIOPLL, &g_audioPllCfg);
+
+		saiClkCfg.clockOff = false;
+		saiClkCfg.mux = 1;
+		saiClkCfg.div = (AUDIO_PLL_CLK_FREQ + (clock_rate - 1)) / clock_rate;
+
+		CLOCK_SetRootClock(clock_root, &saiClkCfg);
+
+		return 0;
+#endif
+
+#if defined(CONFIG_UDC_NXP_EHCI) && defined(CONFIG_SOC_MIMX9352_A55)
+	case IMX_CCM_USB_CLK:
+	case IMX_CCM_USB_PHY_CLK:
+		return common_clock_set_freq(clock_name, (uint32_t)clock_rate);
 #endif
 
 	default:

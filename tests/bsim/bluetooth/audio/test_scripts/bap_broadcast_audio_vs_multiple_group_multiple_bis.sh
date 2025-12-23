@@ -13,6 +13,14 @@ cd ${BSIM_OUT_PATH}/bin
 
 SIMULATION_ID="bap_broadcast_audio_vs_multiple_group_multiple_bis"
 
+# The test has been ignored for nrf54l15bsim until
+# https://github.com/zephyrproject-rtos/zephyr/issues/98941 has been fixed, as it currently won't
+# pass for nrf54l15bsim.
+if [ "${BOARD_TS}" == "nrf54l15bsim_nrf54l15_cpuapp" ]; then
+    echo "Skipping test for ${BOARD_TS}"
+    exit 0
+fi
+
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source \
   -RealEncryption=1 -rs=23 -D=2 -argstest subgroup_cnt 2 streams_per_subgroup_cnt 2 vs_codec

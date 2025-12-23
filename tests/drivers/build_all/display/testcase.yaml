@@ -16,3 +16,7 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
     extra_args:
       - SHIELD=rk055hdmipi4ma0
+
+  drivers.display.build.bflb_dbi:
+    platform_allow:
+      - ai_m62_12f_kit

@@ -250,6 +250,15 @@
 		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
 	}
 
+#define REGION_RAM_WT_ATTR(base, size)                                                            \
+	{                                                                                          \
+		.rbar = IF_ENABLED(CONFIG_XIP, (NOT_EXEC |)) P_RW_U_NA_Msk |                       \
+			NON_SHAREABLE_Msk,                /* AP, XN, SH */                         \
+		.mair_idx = MPU_MAIR_INDEX_FLASH,         /* Cache-ability */                      \
+		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
+	}
+
 #if defined(CONFIG_ARM_MPU_PXN)
 /* Use this attr to define an MPU region in RAM that has code intended to be executed in
  * un-privileged mode but not in privileged mode.
@@ -258,6 +267,14 @@
 	{                                                                                          \
 		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk,/* AP, XN, SH */			   \
 		.mair_idx = MPU_MAIR_INDEX_SRAM,          /* Cache-ability */                      \
+		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+		.pxn = PRIV_EXEC_NEVER,								   \
+	}
+
+#define REGION_RAM_WT_ATTR_PXN(base, size)                                                         \
+	{                                                                                          \
+		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk,/* AP, XN, SH */			   \
+		.mair_idx = MPU_MAIR_INDEX_FLASH,         /* Cache-ability */                      \
 		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
 		.pxn = PRIV_EXEC_NEVER,								   \
 	}

@@ -36,9 +36,9 @@
 			      8 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-parent = <&intc>;
 		wuc-base = <0xf01b20 0xf01b20 0xf01b20 0xf01b1c
-					0xf01b1c 0xf01b1c 0xf01b1c 0xf01b24>;
-		wuc-mask = <BIT(3)   BIT(4)   BIT(5)   BIT(0)
-			    BIT(1)   BIT(2)   BIT(3)   BIT(4)  >;
+			    0xf01b1c 0xf01b1c 0xf01b1c 0xf01b24>;
+		wuc-mask = <BIT(3) BIT(4) BIT(5) BIT(0)
+			    BIT(1) BIT(2) BIT(3) BIT(4)>;
 		has-volt-sel = <1 1 1 1 1 1 1 1>;
 		#gpio-cells = <2>;
 	};

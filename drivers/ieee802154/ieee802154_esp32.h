@@ -24,8 +24,6 @@ struct ieee802154_esp32_data {
 	/* CCA result. Holds information whether channel is free or not. */
 	bool channel_free;
 
-	bool is_started;
-
 	/* TX synchronization semaphore. Unlocked when frame has been
 	 * sent or send procedure failed.
 	 */

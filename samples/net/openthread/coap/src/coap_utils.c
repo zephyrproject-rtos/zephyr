@@ -10,6 +10,7 @@
 LOG_MODULE_DECLARE(coap);
 
 #include "coap_utils.h"
+#include <openthread/platform/radio.h>
 
 static uint8_t coap_buf[COAP_MAX_BUF_SIZE];
 static uint8_t coap_dev_id[COAP_DEVICE_ID_SIZE];

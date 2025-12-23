@@ -10,9 +10,7 @@ CONFIG_ARM_MPU=y
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
 
-# Enable uart driver
+# On M4, USART4 is used as the UART console backend by default
 CONFIG_SERIAL=y
-
-# Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y

@@ -7,16 +7,11 @@
 #define ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_
 
 #include <sys/types.h>
+
+#undef ZEPHYR_INCLUDE_NET_COMPAT_MODE_SYMBOLS
+#define ZEPHYR_INCLUDE_NET_COMPAT_MODE_SYMBOLS
 #include <zephyr/net/socket.h>
-
-#define SHUT_RD   ZSOCK_SHUT_RD
-#define SHUT_WR   ZSOCK_SHUT_WR
-#define SHUT_RDWR ZSOCK_SHUT_RDWR
-
-#define MSG_PEEK     ZSOCK_MSG_PEEK
-#define MSG_TRUNC    ZSOCK_MSG_TRUNC
-#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
-#define MSG_WAITALL  ZSOCK_MSG_WAITALL
+#undef ZEPHYR_INCLUDE_NET_COMPAT_MODE_SYMBOLS
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +21,21 @@ struct linger {
 	int  l_onoff;
 	int  l_linger;
 };
+
+#if !defined(CONFIG_NET_NAMESPACE_COMPAT_MODE)
+typedef uint32_t socklen_t;
+struct msghdr;
+struct sockaddr;
+
+#define MSG_PEEK     ZSOCK_MSG_PEEK
+#define MSG_TRUNC    ZSOCK_MSG_TRUNC
+#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+#define MSG_WAITALL  ZSOCK_MSG_WAITALL
+
+#define SHUT_RD   ZSOCK_SHUT_RD
+#define SHUT_WR   ZSOCK_SHUT_WR
+#define SHUT_RDWR ZSOCK_SHUT_RDWR
+#endif
 
 int accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 int bind(int sock, const struct sockaddr *addr, socklen_t addrlen);

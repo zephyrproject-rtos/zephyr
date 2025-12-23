@@ -123,6 +123,7 @@ static void pa_timer_handler(struct k_work *work)
 
 	if (state->recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
+		int err;
 
 		if (state->recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 			pa_state = BT_BAP_PA_STATE_NO_PAST;
@@ -130,8 +131,11 @@ static void pa_timer_handler(struct k_work *work)
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
-						   pa_state);
+		err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id, pa_state);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
 	}
 
 	FAIL("PA timeout\n");
@@ -209,6 +213,8 @@ static int pa_sync_term(struct sync_state *state)
 
 	printk("Deleting PA sync\n");
 
+	UNSET_FLAG(flag_pa_terminated);
+
 	err = bt_le_per_adv_sync_delete(state->pa_sync);
 	if (err != 0) {
 		FAIL("Could not delete per adv sync: %d\n", err);
@@ -216,6 +222,8 @@ static int pa_sync_term(struct sync_state *state)
 		state->pa_syncing = false;
 		state->pa_sync = NULL;
 	}
+
+	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	return err;
 }
@@ -286,7 +294,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
 								 BT_BAP_PA_STATE_INFO_REQ);
 			if (err != 0) {
-				printk("Failed to set INFO_REQ state: %d", err);
+				FAIL("Could not set PA sync state: %d\n", err);
+				return err;
 			}
 		}
 	} else {
@@ -426,6 +435,16 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
+	if (state->recv_state != NULL) {
+		int err;
+
+		err = bt_bap_scan_delegator_set_pa_state(state->src_id, BT_BAP_PA_STATE_SYNCED);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
+	}
+
 	k_work_cancel_delayable(&state->pa_timer);
 
 	SET_FLAG(flag_pa_synced);
@@ -442,6 +461,16 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 	if (state == NULL) {
 		FAIL("Could not get sync state from PA sync %p\n", sync);
 		return;
+	}
+
+	if (state->recv_state != NULL) {
+		int err;
+
+		err = bt_bap_scan_delegator_set_pa_state(state->src_id, BT_BAP_PA_STATE_NOT_SYNCED);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
 	}
 
 	k_work_cancel_delayable(&state->pa_timer);
@@ -541,6 +570,7 @@ static int add_source(struct sync_state *state)
 
 	bt_addr_le_copy(&param.addr, &sync_info.addr);
 	param.sid = sync_info.sid;
+	param.pa_state = BT_BAP_PA_STATE_SYNCED;
 	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	param.broadcast_id = g_broadcast_id;
 	param.num_subgroups = 1U;
@@ -657,6 +687,8 @@ static int remove_source(struct sync_state *state)
 		return err;
 	}
 
+	state->recv_state = NULL;
+
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
 	return 0;
@@ -680,13 +712,48 @@ static void remove_all_sources(void)
 
 			printk("[%zu]: Source removed with id %u\n",
 			       i, state->src_id);
+		}
+	}
+}
 
-			printk("Terminating PA sync\n");
-			err = pa_sync_term(state);
-			if (err) {
-				FAIL("[%zu]: PA sync term failed (err %d)\n", err);
-				return;
-			}
+static void terminate_all_pa(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		int err;
+		struct sync_state *state = &sync_states[i];
+
+		if (state->pa_sync == NULL) {
+			continue;
+		}
+
+		err = pa_sync_term(state);
+		if (err != 0) {
+			FAIL("[%zu]: PA sync term failed (err %d)\n", i, err);
+			return;
+		}
+	}
+}
+
+static void set_bis_sync_state(struct sync_state *state,
+			       uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	int err;
+
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, bis_sync_req);
+	if (err != 0) {
+		FAIL("Could not set BIS sync state: %d\n", err);
+		return;
+	}
+}
+
+static void set_all_bis_sync_states(uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+		struct sync_state *state = &sync_states[i];
+
+		if (state->recv_state != NULL) {
+			printk("[%zu]: Setting BIS sync state\n", i);
+			set_bis_sync_state(state, bis_sync_req);
 		}
 	}
 }
@@ -886,7 +953,12 @@ static void test_main_server_sync_server_rem(void)
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
-	/* Remote all sources, causing PA sync term request to trigger */
+	uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS] = {0};
+
+	set_all_bis_sync_states(bis_sync_req);
+	terminate_all_pa();
+
+	/* Remove all sources, causing PA sync term request to trigger */
 	remove_all_sources();
 
 	/* Wait for PA sync to be terminated */

@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Siratul Islam
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_tm1637: tm1637 {
+			compatible = "titanmec,tm1637";
+			clk-gpios = <&test_gpio 0 0>;
+			dio-gpios = <&test_gpio 1 0>;
+			bit-delay-us = <100>;
+			status = "okay";
+		};
+	};
+};

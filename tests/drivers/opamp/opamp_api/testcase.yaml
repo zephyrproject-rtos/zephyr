@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - opamp
+tests:
+  drivers.opamp.api.nxp:
+    depends_on: opamp
+    filter: dt_compat_enabled("nxp,opamp") or dt_compat_enabled("nxp,opamp-fast")

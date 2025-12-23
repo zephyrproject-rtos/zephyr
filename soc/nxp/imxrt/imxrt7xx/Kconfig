@@ -1,80 +1,15 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_MIMXRT798S_CM33_CPU0
-	select CPU_CORTEX_M33
-	select CLOCK_CONTROL
-	select CPU_CORTEX_M_HAS_DWT
-	select ARM
-	select CPU_HAS_ARM_SAU
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
-	select ARM_TRUSTZONE_M
-	select CPU_CORTEX_M_HAS_SYSTICK
-	select HAS_MCUX
-	select HAS_MCUX_SYSCON
-	select HAS_MCUX_XCACHE
-	select CACHE_MANAGEMENT
-	select CPU_HAS_ICACHE
-	select CPU_HAS_DCACHE
-	select INIT_ARCH_HW_AT_BOOT
-	select SOC_RESET_HOOK
-	select SOC_EARLY_INIT_HOOK
-	select HAS_MCUX_FLEXCOMM
-
-config SOC_MIMXRT798S_CM33_CPU1
-	select CPU_CORTEX_M33
-	select CLOCK_CONTROL
-	select CPU_CORTEX_M_HAS_DWT
-	select ARM
-	select CPU_HAS_ARM_SAU
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
-	select ARM_TRUSTZONE_M
-	select CPU_CORTEX_M_HAS_SYSTICK
-	select HAS_MCUX
-	select HAS_MCUX_SYSCON
-	select HAS_MCUX_FLEXCOMM
-
-config SOC_MIMXRT798S_HIFI4
-	select XTENSA
-	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
-	select XTENSA_RESET_VECTOR
-	select XTENSA_USE_CORE_CRT1
-	select XTENSA_GEN_HANDLERS
-	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
-	select GEN_ISR_TABLES
-	select HAS_MCUX
-
-config SOC_MIMXRT798S_HIFI1
-	select XTENSA
-	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
-	select XTENSA_RESET_VECTOR
-	select XTENSA_USE_CORE_CRT1
-	select XTENSA_GEN_HANDLERS
-	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
-	select GEN_ISR_TABLES
-	select HAS_MCUX
-
 if SOC_SERIES_IMXRT7XX
 
-if NXP_IMXRT_BOOT_HEADER
+rsource "*/Kconfig"
 
 config IMAGE_VECTOR_TABLE_OFFSET
-	default 0x4000
-
-endif # NXP_IMXRT_BOOT_HEADER
+	default 0x4000 if NXP_IMXRT_BOOT_HEADER
 
 config GLIKEY_MCUX_GLIKEY
 	default y
 	bool "Use glikey MCUX Driver"
-
-config MCUX_CORE_SUFFIX
-	default "_cm33_core0" if SOC_MIMXRT798S_CM33_CPU0
-	default "_cm33_core1" if SOC_MIMXRT798S_CM33_CPU1
-	default "_hifi4" if SOC_MIMXRT798S_HIFI4
-	default "_hifi1" if SOC_MIMXRT798S_HIFI1
 
 endif # SOC_SERIES_IMXRT7XX

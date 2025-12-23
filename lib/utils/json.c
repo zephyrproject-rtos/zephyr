@@ -462,17 +462,85 @@ static int skip_field(struct json_obj *obj, struct json_obj_key_value *kv)
 	return 0;
 }
 
+/**
+ * @brief Unescape a JSON string, can work in-place if src == dst
+ * @param src Source string with escape sequences
+ * @param dst Destination buffer for unescaped string (can be same as src)
+ * @param src_len Length of source string
+ * @param dst_size Size of destination buffer
+ * @return int Number of bytes written to destination, or -EINVAL on error
+ */
+static int json_unescape_string(const char *src, char *dst, size_t src_len, size_t dst_size)
+{
+	const char *src_end = src + src_len;
+	char *dst_start = dst;
+	char *dst_end = dst_start + dst_size - 1; /* Point to last available byte (for null) */
+
+	while (src < src_end && dst < dst_end) {
+		if (*src == '\\') {
+			src++;
+			if (src >= src_end) {
+				return -EINVAL;
+			}
+
+			switch (*src) {
+			case '"':
+				*dst++ = '"';
+				break;
+			case '\\':
+				*dst++ = '\\';
+				break;
+			case '/':
+				*dst++ = '/';
+				break;
+			case 'b':
+				*dst++ = '\b';
+				break;
+			case 'f':
+				*dst++ = '\f';
+				break;
+			case 'n':
+				*dst++ = '\n';
+				break;
+			case 'r':
+				*dst++ = '\r';
+				break;
+			case 't':
+				*dst++ = '\t';
+				break;
+			default:
+				/* Unknown escape sequence, copy as-is */
+				*dst++ = '\\';
+				*dst++ = *src;
+				break;
+			}
+			src++;
+		} else {
+			*dst++ = *src++;
+		}
+	}
+
+	*dst = '\0';
+	return dst - dst_start;
+}
+
 static int decode_string_buf(const struct json_token *token, char *str, size_t size)
 {
-	size_t len = token->end - token->start;
+	size_t escaped_len = token->end - token->start;
+	int ret;
 
-	/* buffer 'str' must be large enough to fit string and null-terminator */
-	if (size <= len) {
+	/* Safe approach: never copy more than (size - 1) bytes to leave room for null */
+	size_t safe_len = (escaped_len < size) ? escaped_len : (size - 1);
+
+	ret = json_unescape_string(token->start, str, safe_len, size);
+	if (ret < 0) {
 		return -EINVAL;
 	}
 
-	memcpy(str, token->start, len);
-	str[len] = '\0';
+	/* Check if we had to truncate due to the original escaped string being too long */
+	if (escaped_len >= size) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -780,6 +848,10 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 		return type2 == JSON_TOK_TRUE || type2 == JSON_TOK_FALSE;
 	}
 
+	if (type1 == JSON_TOK_ARRAY_START && type2 == JSON_TOK_MIXED_ARRAY) {
+		return true;
+	}
+
 	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT) {
 		return true;
 	}
@@ -814,6 +886,12 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 
 	if (type1 == JSON_TOK_STRING && type2 == JSON_TOK_STRING_BUF) {
 		return true;
+	}
+
+	if (type2 == JSON_TOK_ENCODED_OBJ) {
+		return (type1 == JSON_TOK_OBJECT_START ||
+			type1 == JSON_TOK_ARRAY_START ||
+			type1 == JSON_TOK_STRING);
 	}
 
 	if (type1 == JSON_TOK_ARRAY_START && type2 == JSON_TOK_OBJ_ARRAY) {
@@ -939,6 +1017,7 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_OBJ_ARRAY:
 		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
+	case JSON_TOK_ENCODED_OBJ:
 		return sizeof(char *);
 	case JSON_TOK_INT:
 	case JSON_TOK_UINT:
@@ -1217,6 +1296,10 @@ static int json_escape_internal(const char *str,
 {
 	const char *cur;
 	int ret = 0;
+
+	if (str == NULL) {
+		return ret;
+	}
 
 	for (cur = str; ret == 0 && *cur; cur++) {
 		char escaped = escape_as(*cur);
@@ -1771,6 +1854,369 @@ ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr,
 	int ret;
 
 	ret = json_arr_encode(descr, val, measure_bytes, &total);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return total;
+}
+
+
+static int mixed_arr_parse(struct json_obj *arr,
+			   const struct json_mixed_arr_descr *descr,
+			   size_t descr_len, void *val);
+int json_mixed_arr_encode(const struct json_mixed_arr_descr *descr,
+			  size_t descr_len, void *val,
+			  json_append_bytes_t append_bytes,
+			  void *data);
+
+static int extract_raw_json_data(struct json_obj *obj, struct json_token *value,
+				 char **field_ptr)
+{
+	char *start_pos = value->start;
+
+	switch (value->type) {
+	case JSON_TOK_OBJECT_START:
+	case JSON_TOK_ARRAY_START: {
+	struct json_obj_key_value kv = {
+		.key = NULL,
+		.key_len = 0,
+		.value = *value
+	};
+
+	int ret = skip_field(obj, &kv);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	char *end_pos = obj->lex.pos;
+	*end_pos = '\0';
+	*field_ptr = start_pos;
+
+	return 0;
+	}
+
+	case JSON_TOK_STRING:
+	*value->end = '\0';
+	*field_ptr = start_pos;
+	return 0;
+
+	default:
+	return -EINVAL;
+	}
+}
+
+static int64_t decode_mixed_value(struct json_obj *obj,
+				  const struct json_mixed_arr_descr *elem,
+				  struct json_token *value,
+				  void *field, void *val)
+{
+	if (!equivalent_types(value->type, elem->type)) {
+		return -EINVAL;
+	}
+
+	switch (elem->type) {
+	case JSON_TOK_OBJECT_START: {
+		return obj_parse(obj, elem->object.sub_descr,
+				 elem->object.sub_descr_len, field);
+	}
+	case JSON_TOK_ARRAY_START: {
+		const struct json_obj_descr *actual_elem_descr = elem->array.element_descr;
+		size_t actual_n_elements = elem->array.n_elements;
+
+		if (actual_elem_descr->type == JSON_TOK_ARRAY_START) {
+			actual_elem_descr = actual_elem_descr->array.element_descr;
+		}
+		return arr_parse(obj, actual_elem_descr, actual_n_elements, field, val);
+	}
+	case JSON_TOK_MIXED_ARRAY: {
+		return mixed_arr_parse(obj, elem->mixed_array.sub_descr,
+				       elem->mixed_array.sub_descr_len,
+				       field);
+	}
+	case JSON_TOK_FALSE:
+	case JSON_TOK_TRUE: {
+		bool *v = field;
+
+		*v = (value->type == JSON_TOK_TRUE);
+		return 0;
+	}
+	case JSON_TOK_NUMBER: {
+		int32_t *num32 = field;
+
+		return decode_int32(value, num32);
+	}
+	case JSON_TOK_INT: {
+		return decode_int(value, field, elem->primitive.size);
+	}
+	case JSON_TOK_UINT: {
+		return decode_uint(value, field, elem->primitive.size);
+	}
+	case JSON_TOK_INT64: {
+		int64_t *num64 = field;
+
+		return decode_int64(value, num64);
+	}
+	case JSON_TOK_UINT64: {
+		uint64_t *unum64 = field;
+
+		return decode_uint64(value, unum64);
+	}
+	case JSON_TOK_FLOAT_FP: {
+		float *f_num = field;
+
+		return decode_float(value, f_num);
+	}
+	case JSON_TOK_DOUBLE_FP: {
+		double *d_num = field;
+
+		return decode_double(value, d_num);
+	}
+	case JSON_TOK_STRING: {
+		char **str_ptr = field;
+
+		*value->end = '\0';
+		*str_ptr = value->start;
+		return 0;
+	}
+	case JSON_TOK_STRING_BUF: {
+		char *str_buf = field;
+
+		return decode_string_buf(value, str_buf, elem->primitive.size);
+	}
+	case JSON_TOK_OBJ_ARRAY: {
+		struct json_obj_token *obj_token = field;
+
+		obj_token->start = value->start;
+		return arr_data_parse(obj, obj_token);
+	}
+	case JSON_TOK_OPAQUE:
+	case JSON_TOK_FLOAT: {
+		struct json_obj_token *obj_token = field;
+
+		obj_token->start = value->start;
+		obj_token->length = value->end - value->start;
+		return 0;
+	}
+	case JSON_TOK_ENCODED_OBJ: {
+		char **str_ptr = field;
+
+		return extract_raw_json_data(obj, value, str_ptr);
+	}
+	case JSON_TOK_NULL: {
+		memset(field, 0, elem->primitive.size);
+		return 0;
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int encode_mixed_value(const struct json_mixed_arr_descr *elem,
+			      void *field, void *val,
+			      json_append_bytes_t append_bytes, void *data)
+{
+
+	switch (elem->type) {
+	case JSON_TOK_OBJECT_START: {
+		return json_obj_encode(elem->object.sub_descr,
+				       elem->object.sub_descr_len,
+				       field, append_bytes, data);
+	}
+	case JSON_TOK_ARRAY_START: {
+		const struct json_obj_descr *actual_elem_descr = elem->array.element_descr;
+
+		if (actual_elem_descr->type == JSON_TOK_ARRAY_START) {
+			actual_elem_descr = actual_elem_descr->array.element_descr;
+		}
+		return arr_encode(actual_elem_descr, field, val, append_bytes, data);
+	}
+	case JSON_TOK_MIXED_ARRAY: {
+		return json_mixed_arr_encode(elem->mixed_array.sub_descr,
+					   elem->mixed_array.sub_descr_len,
+					   field, append_bytes, data);
+	}
+	case JSON_TOK_FALSE:
+	case JSON_TOK_TRUE: {
+		return bool_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_STRING: {
+		return str_encode(*((char **)field), append_bytes, data);
+	}
+	case JSON_TOK_STRING_BUF: {
+		return str_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_NUMBER: {
+		return int32_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_INT: {
+		return int_encode(field, elem->primitive.size, append_bytes, data);
+	}
+	case JSON_TOK_UINT: {
+		return uint_encode(field, elem->primitive.size, append_bytes, data);
+	}
+	case JSON_TOK_INT64: {
+		return int64_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_UINT64: {
+		return uint64_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_FLOAT_FP: {
+		return float_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_DOUBLE_FP: {
+		return double_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_FLOAT: {
+		return float_ascii_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_OPAQUE: {
+		return opaque_string_encode(field, append_bytes, data);
+	}
+	case JSON_TOK_ENCODED_OBJ: {
+		return encoded_obj_encode((const char **)field, append_bytes, data);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int mixed_arr_parse(struct json_obj *arr,
+			   const struct json_mixed_arr_descr *descr,
+			   size_t descr_len, void *val)
+{
+	struct json_token tok;
+	size_t elem_idx = 0;
+	void *field_ptr;
+	int ret;
+
+	if (descr_len == 0) {
+		if (!arr_next(arr, &tok) && tok.type == JSON_TOK_ARRAY_END) {
+			return 0;
+		}
+		return -EINVAL;
+	}
+
+	while (!arr_next(arr, &tok)) {
+		if (tok.type == JSON_TOK_ARRAY_END) {
+			return elem_idx;
+		}
+
+		if (elem_idx >= descr_len) {
+			return -ENOSPC;
+		}
+
+		switch (descr[elem_idx].type) {
+		case JSON_TOK_OBJECT_START:
+			field_ptr = (char *)val + descr[elem_idx].object.offset;
+			break;
+		case JSON_TOK_ARRAY_START:
+			field_ptr = (char *)val + descr[elem_idx].array.offset;
+			break;
+		case JSON_TOK_MIXED_ARRAY:
+			field_ptr = (char *)val + descr[elem_idx].mixed_array.offset;
+			break;
+		default:
+			field_ptr = (char *)val + descr[elem_idx].primitive.offset;
+			break;
+		}
+
+		ret = decode_mixed_value(arr, &descr[elem_idx], &tok, field_ptr, val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		elem_idx++;
+	}
+
+	return elem_idx;
+}
+
+int json_mixed_arr_parse(char *json, size_t len,
+			 const struct json_mixed_arr_descr *descr,
+			 size_t descr_len, void *val)
+{
+	struct json_obj arr;
+	int ret;
+
+	ret = arr_init(&arr, json, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return mixed_arr_parse(&arr, descr, descr_len, val);
+}
+
+int json_mixed_arr_encode(const struct json_mixed_arr_descr *descr,
+			  size_t descr_len, void *val,
+			  json_append_bytes_t append_bytes,
+			  void *data)
+{
+	size_t *element_count;
+	size_t i;
+	int ret;
+	void *field_ptr;
+
+	if (descr_len == 0) {
+		return append_bytes("[]", 2, data);
+	}
+
+	element_count = (size_t *)((char *)val + descr[0].count_offset);
+
+	ret = append_bytes("[", 1, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (i = 0; i < *element_count && i < descr_len; i++) {
+		switch (descr[i].type) {
+		case JSON_TOK_OBJECT_START:
+			field_ptr = (char *)val + descr[i].object.offset;
+			break;
+		case JSON_TOK_ARRAY_START:
+			field_ptr = (char *)val + descr[i].array.offset;
+			break;
+		case JSON_TOK_MIXED_ARRAY:
+			field_ptr = (char *)val + descr[i].mixed_array.offset;
+			break;
+		default:
+			field_ptr = (char *)val + descr[i].primitive.offset;
+			break;
+		}
+
+		ret = encode_mixed_value(&descr[i], field_ptr, val, append_bytes, data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (i < *element_count - 1) {
+			ret = append_bytes(",", 1, data);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return append_bytes("]", 1, data);
+}
+
+int json_mixed_arr_encode_buf(const struct json_mixed_arr_descr *descr,
+			      size_t descr_len, void *val,
+			      char *buffer, size_t buf_size)
+{
+	struct appender appender = { .buffer = buffer, .size = buf_size };
+
+	return json_mixed_arr_encode(descr, descr_len, val, append_bytes_to_buf, &appender);
+}
+
+ssize_t json_calc_mixed_arr_len(const struct json_mixed_arr_descr *descr,
+				size_t descr_len, void *val)
+{
+	ssize_t total = 0;
+	int ret;
+
+	ret = json_mixed_arr_encode(descr, descr_len, val, measure_bytes, &total);
 	if (ret < 0) {
 		return ret;
 	}

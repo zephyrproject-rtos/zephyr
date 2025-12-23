@@ -8,6 +8,6 @@
 	resources {
 		compatible = "test-gpio-basic-api";
 		out-gpios = <&gpiod 8 0>; /* Arduino D2 */
-		in-gpios  = <&gpiod 9 0>; /* Arduino D3 */
+		in-gpios = <&gpiod 9 0>; /* Arduino D3 */
 	};
 };

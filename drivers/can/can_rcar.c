@@ -190,9 +190,9 @@ struct can_rcar_data {
 	uint8_t tx_tail;
 	uint8_t tx_unsent;
 	struct k_mutex rx_mutex;
-	can_rx_callback_t rx_callback[CONFIG_CAN_RCAR_MAX_FILTER];
-	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTER];
-	struct can_filter filter[CONFIG_CAN_RCAR_MAX_FILTER];
+	can_rx_callback_t rx_callback[CONFIG_CAN_RCAR_MAX_FILTERS];
+	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTERS];
+	struct can_filter filter[CONFIG_CAN_RCAR_MAX_FILTERS];
 	enum can_state state;
 };
 
@@ -364,7 +364,7 @@ static void can_rcar_rx_filter_isr(const struct device *dev,
 	}
 #endif /* !CONFIG_CAN_ACCEPT_RTR */
 
-	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
+	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTERS; i++) {
 		if (data->rx_callback[i] == NULL) {
 			continue;
 		}
@@ -957,7 +957,7 @@ static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
 	struct can_rcar_data *data = dev->data;
 	int i;
 
-	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
+	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTERS; i++) {
 		if (data->rx_callback[i] == NULL) {
 			data->rx_callback_arg[i] = cb_arg;
 			data->filter[i] = *filter;
@@ -991,7 +991,7 @@ static void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_rcar_data *data = dev->data;
 
-	if (filter_id < 0 || filter_id >= CONFIG_CAN_RCAR_MAX_FILTER) {
+	if (filter_id < 0 || filter_id >= CONFIG_CAN_RCAR_MAX_FILTERS) {
 		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
@@ -1142,7 +1142,7 @@ static int can_rcar_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_RCAR_MAX_FILTER;
+	return CONFIG_CAN_RCAR_MAX_FILTERS;
 }
 
 static DEVICE_API(can, can_rcar_driver_api) = {

@@ -25,7 +25,7 @@ config ENABLE_LC3
 	# By default let's enable it in the platforms we know are capable of supporting it
 	default y
 	depends on CPU_HAS_FPU && \
-		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP)
+		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || SOC_MIMXRT1062)
 	select LIBLC3
 	select FPU
 
@@ -63,6 +63,13 @@ config BROADCAST_ID
 	depends on STATIC_BROADCAST_ID
 	help
 	   This is the 3-octet broadcast ID advertised if static broadcast IDs are enabled.
+
+config BROADCAST_NAME
+	string "Bluetooth broadcast name"
+	default BT_DEVICE_NAME
+	help
+	   Bluetooth broadcast name. Can be used for scanning device that displays information on the
+	   available broadcast sources. Name length range is 4 to 32.
 
 # Source common USB sample options used to initialize new experimental USB device stack.
 # The scope of these options is limited to USB samples in project tree,

@@ -1,0 +1,14 @@
+sample:
+  description: Latency Benchmarking Tool
+  name: Latmon sample app
+common:
+  harness: net
+  tags:
+    - net
+    - latmon
+tests:
+  sample.net.latmon:
+    build_only: true
+    platform_allow:
+      - frdm_k64f
+    depends_on: eth

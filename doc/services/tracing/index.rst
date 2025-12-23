@@ -59,7 +59,7 @@ graphical (TraceCompass) variants already exist.
 
 CTF should look familiar to C programmers but adds stronger typing.
 See `CTF - A Flexible, High-performance Binary Trace Format
-<http://diamon.org/ctf/>`_.
+<https://diamon.org/ctf/>`_.
 
 
 CTF allows us to formally describe application specific payload and the
@@ -499,8 +499,8 @@ Using Tracing
 The sample :zephyr_file:`samples/subsys/tracing` demonstrates tracing with
 different formats and backends.
 
-To get started, the simplest way is to use the CTF format with the :ref:`native_sim <native_sim>`
-port, build the sample as follows:
+To get started, the simplest way is to use the CTF format with the
+:zephyr:board:`native_sim <native_sim>` port, build the sample as follows:
 
 .. zephyr-app-commands::
    :tool: all

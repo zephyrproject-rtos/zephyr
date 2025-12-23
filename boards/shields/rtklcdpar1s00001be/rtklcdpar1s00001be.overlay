@@ -9,11 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336_rtklcdpar1s00001be>;
+		zephyr,touch = &ft5336_rtklcdpar1s00001be;
 	};
 };
 
@@ -24,6 +20,9 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&renesas_parallel_graphics_connector 3 GPIO_ACTIVE_HIGH>;
+		swapped-x-y;
+		screen-width = <1024>;
+		screen-height = <600>;
 	};
 };
 

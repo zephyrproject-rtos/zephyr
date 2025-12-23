@@ -1,0 +1,28 @@
+sample:
+  description: AT Command Client - bidirectional UART bridge between
+    console and cellular modem for AT command communication
+  name: AT Command Client
+common:
+  min_ram: 8
+  min_flash: 32
+  tags:
+    - modem
+    - uart
+    - at_commands
+    - cellular
+  depends_on:
+    - uart
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Console UART pipe registered"
+      - "Modem pipe initialized and opened"
+      - "Console <-> Modem communication established"
+tests:
+  sample.modem.at_client:
+    tags:
+      - modem
+      - uart
+    filter: dt_chosen_enabled("zephyr,modem-uart")

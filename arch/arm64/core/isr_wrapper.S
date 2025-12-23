@@ -64,6 +64,14 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl	z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
+	/* Preserve original IAR value */
+	str	x0, [sp, #-16]!
+
+#if CONFIG_GIC_VER == 2 && defined(CONFIG_SMP)
+	/* Mask out GICC_IAR.CPUID [12:10] */
+	bic	x0, x0, #0x1c00
+#endif
+
 #if CONFIG_GIC_VER >= 3
 	/*
 	 * Ignore Special INTIDs 1020..1023 see 2.2.1 of Arm Generic Interrupt Controller
@@ -82,8 +90,6 @@ oob:
 	cmp	x0, x1
 	b.hi	spurious_continue
 
-	stp	x0, xzr, [sp, #-16]!
-
 	/* Retrieve the interrupt service routine */
 	ldr	x1, =_sw_isr_table
 	add	x1, x1, x0, lsl #4	/* table is 16-byte wide */
@@ -97,10 +103,12 @@ oob:
 	blr	x3
 	msr	daifset, #(DAIFSET_IRQ_BIT)
 
-	/* Signal end-of-interrupt */
-	ldp	x0, xzr, [sp], #16
-
 spurious_continue:
+
+	/* Retrieve original IAR value */
+	ldr	x0, [sp], #16
+
+	/* Signal end-of-interrupt */
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl	arm_gic_eoi
 #else

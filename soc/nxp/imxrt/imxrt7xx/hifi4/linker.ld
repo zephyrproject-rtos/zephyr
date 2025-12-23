@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,8 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/linker/sections.h>
 
-#define RAMABLE_REGION sdram0 :sdram0_phdr
-#define ROMABLE_REGION sdram0 :sdram0_phdr
+#define RAMABLE_REGION adsp_data :adsp_data_phdr
+#define ROMABLE_REGION adsp_data :adsp_data_phdr
 
 MEMORY
 {
@@ -69,12 +69,12 @@ MEMORY
   vector_double_text :
     org = XCHAL_DOUBLEEXC_VECTOR_PADDR_IRAM,
     len = MEM_VECT_TEXT_SIZE
-  iram_text_start :
+  adsp_text :
     org = XCHAL_DOUBLEEXC_VECTOR_PADDR_IRAM + MEM_VECT_TEXT_SIZE,
-    len = (IRAM_BASE + IRAM_SIZE) - (XCHAL_DOUBLEEXC_VECTOR_PADDR + MEM_VECT_TEXT_SIZE)
-  sdram0 :
-    org = SDRAM0_BASE,
-    len = SDRAM0_SIZE
+    len = TEXT_SIZE - MEM_VECT_TEXT_SIZE
+  adsp_data :
+    org = DATA_BASE,
+    len = DATA_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
     org = IDT_BASE,
@@ -102,42 +102,38 @@ PHDRS
   vector_user_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
   vector_double_lit_phdr PT_LOAD;
-  iram_text_start_phdr PT_LOAD;
-  sdram0_phdr PT_LOAD;
+  adsp_text_phdr PT_LOAD;
+  adsp_data_phdr PT_LOAD;
 }
-
-/*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
-
-_rom_store_table = 0;
 
 PROVIDE(_memmap_reset_vector = XCHAL_RESET_VECTOR0_PADDR_IRAM);
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_IRAM);
 
+ENTRY(CONFIG_KERNEL_ENTRY)
+
 /* Various memory-map dependent cache attribute settings: */
-_memmap_cacheattr_wb_base = 0x00000040;
-_memmap_cacheattr_wt_base = 0x00000010;
-_memmap_cacheattr_bp_base = 0x00000020;
-_memmap_cacheattr_unused_mask = 0xFFFFFF0F;
-_memmap_cacheattr_wb_trapnull = 0x22222244;
-_memmap_cacheattr_wba_trapnull = 0x2222224F;
-_memmap_cacheattr_wbna_trapnull = 0x2222225F;
-_memmap_cacheattr_wt_trapnull = 0x2222221F;
-_memmap_cacheattr_bp_trapnull = 0x2222222F;
-_memmap_cacheattr_wb_strict = 0xFFFFFF4F;
-_memmap_cacheattr_wt_strict = 0xFFFFFF1F;
-_memmap_cacheattr_bp_strict = 0xFFFFFF2F;
-_memmap_cacheattr_wb_allvalid = 0x22222242;
+_memmap_cacheattr_wb_base = 0x00000012;
+_memmap_cacheattr_wt_base = 0x00000012;
+_memmap_cacheattr_bp_base = 0x00000022;
+_memmap_cacheattr_unused_mask = 0xFFFFFF00;
+_memmap_cacheattr_wb_trapnull = 0x22222212;
+_memmap_cacheattr_wba_trapnull = 0x22222212;
+_memmap_cacheattr_wbna_trapnull = 0x22222212;
+_memmap_cacheattr_wt_trapnull = 0x22222212;
+_memmap_cacheattr_bp_trapnull = 0x22222222;
+_memmap_cacheattr_wb_strict = 0xFFFFFF12;
+_memmap_cacheattr_wt_strict = 0xFFFFFF12;
+_memmap_cacheattr_bp_strict = 0xFFFFFF22;
+_memmap_cacheattr_wb_allvalid = 0x22222212;
 _memmap_cacheattr_wt_allvalid = 0x22222212;
 _memmap_cacheattr_bp_allvalid = 0x22222222;
-_memmap_region_map = 0x00000002;
+_memmap_region_map = 0x00000003;
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_wb_trapnull);
 
 SECTIONS
 {
 
 #include <zephyr/linker/rel-sections.ld>
-
   .ResetVector.text : ALIGN(4)
   {
     _ResetVector_text_start = ABSOLUTE(.);
@@ -258,11 +254,55 @@ SECTIONS
   } >vector_double_text :vector_double_text_phdr
 
   .iram.text : ALIGN(4)
-   {
+  {
+    _stext = .;
     _iram_text_start = ABSOLUTE(.);
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     _iram_text_end = ABSOLUTE(.);
-   } >iram_text_start :iram_text_start_phdr
+  } >adsp_text :adsp_text_phdr
+
+  .rodata : ALIGN(4)
+  {
+    __rodata_region_start = ABSOLUTE(.);
+    *(.rodata)
+    *(.rodata.*)
+    *(.gnu.linkonce.r.*)
+    *(.rodata1)
+    __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
+    KEEP (*(.xt_except_table))
+    KEEP (*(.gcc_except_table .gcc_except_table.*))
+    *(.gnu.linkonce.e.*)
+    *(.gnu.version_r)
+    KEEP (*(.eh_frame))
+    KEEP (*crtbegin.o(.ctors))
+    KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
+    KEEP (*(SORT(.ctors.*)))
+    KEEP (*(.ctors))
+    KEEP (*crtbegin.o(.dtors))
+    KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
+    KEEP (*(SORT(.dtors.*)))
+    KEEP (*(.dtors))
+    __XT_EXCEPTION_DESCS__ = ABSOLUTE(.);
+    *(.xt_except_desc)
+    *(.gnu.linkonce.h.*)
+    __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
+    *(.xt_except_desc_end)
+    *(.dynamic)
+    *(.gnu.version_d)
+    . = ALIGN(4);
+    _bss_table_start = ABSOLUTE(.);
+    LONG(_bss_start)
+    LONG(_bss_end)
+    _bss_table_end = ABSOLUTE(.);
+    __rodata_region_end = ABSOLUTE(.);
+  } >adsp_data :adsp_data_phdr
+
+  .module_init : ALIGN(4)
+  {
+   _module_init_start = ABSOLUTE(.);
+    *(*.initcall)
+    _module_init_end = ABSOLUTE(.);
+  } >adsp_data :adsp_data_phdr
 
   .text : ALIGN(4)
   {
@@ -273,81 +313,32 @@ SECTIONS
     *(.entry.text)
     *(.init.literal)
     KEEP(*(.init))
-    *(.literal.sort.* SORT(.text.sort.*))
-    KEEP (*(.literal.keepsort.* SORT(.text.keepsort.*) .literal.keep.* .text.keep.* .literal.*personality* .text.*personality*))
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
-    . = ALIGN (4);
     _text_end = ABSOLUTE(.);
     _etext = .;
-  } >iram_text_start :iram_text_start_phdr
+  } >adsp_text :adsp_text_phdr
 
-  _memmap_mem_iram0_max = ABSOLUTE(.);
+#include <zephyr/linker/common-rom.ld>
 
-  .rodata : ALIGN(4)
+  .fw_ready : ALIGN(4)
   {
-    __rodata_region_start = ABSOLUTE(.);
-    *(.rodata)
-    *(SORT(.rodata.sort.*))
-    KEEP (*(SORT(.rodata.keepsort.*) .rodata.keep.*))
-    *(.rodata.*)
-    *(.gnu.linkonce.r.*)
-    *(.rodata1)
-    __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
-    KEEP (*(.xt_except_table))
-    KEEP (*(.gcc_except_table))
-    *(.gnu.linkonce.e.*)
-    *(.gnu.version_r)
-    PROVIDE (__eh_frame_start = .);
-    KEEP (*(.eh_frame))
-    PROVIDE (__eh_frame_end = .);
-    /*  C++ constructor and destructor tables, properly ordered:  */
-    KEEP (*crtbegin.o(.ctors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-    KEEP (*(SORT(.ctors.*)))
-    KEEP (*(.ctors))
-    KEEP (*crtbegin.o(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*(.dtors))
-    /*  C++ exception handlers table:  */
-    __XT_EXCEPTION_DESCS__ = ABSOLUTE(.);
-    *(.xt_except_desc)
-    *(.gnu.linkonce.h.*)
-    __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
-    *(.xt_except_desc_end)
-    *(.dynamic)
-    *(.gnu.version_d)
-    . = ALIGN(4);		/* this table MUST be 4-byte aligned */
-    _bss_table_start = ABSOLUTE(.);
-    LONG(_bss_start)
-    LONG(_bss_end)
-    _bss_table_end = ABSOLUTE(.);
-    . = ALIGN (4);
-    __rodata_region_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
-
-  .module_init : ALIGN(4)
-  {
-   _module_init_start = ABSOLUTE(.);
-    *(*.initcall)
-    _module_init_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+    KEEP(*(".fw_ready"));
+    KEEP (*(.fw_ready_metadata))
+  } >adsp_data :adsp_data_phdr
 
   .noinit : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .data : ALIGN(4)
   {
-    _data_start = ABSOLUTE(.);
+    __data_start = ABSOLUTE(.);
     *(.data)
-    *(SORT(.data.sort.*))
-    KEEP (*(SORT(.data.keepsort.*) .data.keep.*))
     *(.data.*)
     *(.gnu.linkonce.d.*)
     KEEP(*(.gnu.linkonce.d.*personality*))
@@ -359,28 +350,26 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
-    *(__llvm_prf_cnts)
-    *(__llvm_prf_data)
-    *(__llvm_prf_vnds)
-    . = ALIGN (4);
-    _data_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+    _trace_ctx_start = ABSOLUTE(.);
+    *(.trace_ctx)
+    _trace_ctx_end = ABSOLUTE(.);
+    . = ALIGN(4);
+    *(.gna_model)
+    *(NonCacheable)
+    __data_end = ABSOLUTE(.);
+    . = ALIGN(4096);
+  } >adsp_data :adsp_data_phdr
 
-  __llvm_prf_names : ALIGN(4)
+  .lit4 : ALIGN(4)
   {
-    __llvm_prf_names_start = ABSOLUTE(.);
-    *(__llvm_prf_names)
-    . = ALIGN (4);
-    __llvm_prf_names_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+    _lit4_start = ABSOLUTE(.);
+    *(*.lit4)
+    *(.lit4.*)
+    *(.gnu.linkonce.lit4.*)
+    _lit4_end = ABSOLUTE(.);
+  } >adsp_data :adsp_data_phdr
 
-  .note.gnu.build-id : ALIGN(4)
-  {
-    _note_gnu_build-id_start = ABSOLUTE(.);
-    *(.note.gnu.build-id)
-    . = ALIGN (4);
-    _note_gnu_build-id_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+#include <zephyr/linker/common-ram.ld>
 
   .bss (NOLOAD) : ALIGN(8)
   {
@@ -396,22 +385,12 @@ SECTIONS
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
     *(.bss)
-    *(SORT(.bss.sort.*))
-    KEEP (*(SORT(.bss.keepsort.*) .bss.keep.*))
     *(.bss.*)
     *(.gnu.linkonce.b.*)
     *(COMMON)
-    *(.clib.bss)
-    *(.clib.percpu.bss)
-    *(.rtos.percpu.bss)
-    *(.rtos.bss)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-    _end = ALIGN(0x8);
-    PROVIDE(end = ALIGN(0x8));
-    _stack_sentry = ALIGN(0x8);
-    _memmap_seg_dsp_core_end = ALIGN(0x8);
-  } >sdram0 :sdram0_phdr
+  } >adsp_data :adsp_data_phdr
 
   .heap_mem (NOLOAD) : ALIGN(8)
   {
@@ -419,22 +398,24 @@ SECTIONS
     _heap_mem_start = ABSOLUTE(.);
     *(*.heap_mem)
     _heap_mem_end = ABSOLUTE(.);
-  } >sdram0 :sdram0_phdr
+
+  } >adsp_data :adsp_data_phdr
 
   /* stack */
   _end = ALIGN (8);
 
-  _heap_sentry = SDRAM0_BASE + SDRAM0_SIZE - 0x1000;
-  __stack = SDRAM0_BASE + SDRAM0_SIZE - 0x1000;
+  /DISCARD/ : { *(.note.GNU-stack) }
+  _heap_sentry = DATA_BASE + DATA_SIZE;
+  __stack = DATA_BASE + DATA_SIZE - CONFIG_RT798_HIFI4_STACK_SIZE;
   .comment  0 :  { *(.comment) }
   .debug  0 :  { *(.debug) }
   .line  0 :  { *(.line) }
   .debug_srcinfo  0 :  { *(.debug_srcinfo) }
   .debug_sfnames  0 :  { *(.debug_sfnames) }
   .debug_aranges  0 :  { *(.debug_aranges) }
-  .debug_ranges   0 :  { *(.debug_ranges) }
   .debug_pubnames  0 :  { *(.debug_pubnames) }
   .debug_info  0 :  { *(.debug_info) }
+
   .debug_abbrev  0 :  { *(.debug_abbrev) }
   .debug_line  0 :  { *(.debug_line) }
   .debug_frame  0 :  { *(.debug_frame) }
@@ -445,6 +426,8 @@ SECTIONS
   .debug_funcnames  0 :  { *(.debug_funcnames) }
   .debug_typenames  0 :  { *(.debug_typenames) }
   .debug_varnames  0 :  { *(.debug_varnames) }
+  .debug_ranges  0 :  { *(.debug_ranges) }
+  .xtensa.info  0 :  { *(.xtensa.info) }
   .xt.insn 0 :
   {
     KEEP (*(.xt.insn))
@@ -452,41 +435,32 @@ SECTIONS
   }
   .xt.prop 0 :
   {
-    *(.xt.prop)
-    *(.xt.prop.*)
-    *(.gnu.linkonce.prop.*)
+    KEEP (*(.xt.prop))
+    KEEP (*(.xt.prop.*))
+    KEEP (*(.gnu.linkonce.prop.*))
   }
   .xt.lit 0 :
   {
-    *(.xt.lit)
-    *(.xt.lit.*)
-    *(.gnu.linkonce.p.*)
+    KEEP (*(.xt.lit))
+    KEEP (*(.xt.lit.*))
+    KEEP (*(.gnu.linkonce.p.*))
   }
-  .xtensa.info 0 :
+  .xt.profile_range 0 :
   {
-    *(.xtensa.info)
+    KEEP (*(.xt.profile_range))
+    KEEP (*(.gnu.linkonce.profile_range.*))
   }
-  .debug.xt.callgraph 0 :
+  .xt.profile_ranges 0 :
   {
-    KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
+    KEEP (*(.xt.profile_ranges))
+    KEEP (*(.gnu.linkonce.xt.profile_ranges.*))
   }
-  .comment 0 :
+  .xt.profile_files 0 :
   {
-    KEEP(*(.comment))
+    KEEP (*(.xt.profile_files))
+    KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
-  .note.GNU-stack 0 :
-  {
-    *(.note.GNU-stack)
-  }
-#include <zephyr/linker/common-rom.ld>
-/* Located in generated directory. This file is populated by calling
- * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
- */
-#include <snippets-rom-sections.ld>
-#include <zephyr/linker/common-ram.ld>
-
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
-
 }

@@ -11,7 +11,7 @@ Using virtual/TAP Ethernet driver
 *********************************
 
 This paragraph describes how to set up a virtual network between a (Linux) host
-and a Zephyr application running in a :ref:`native_sim <native_sim>` board.
+and a Zephyr application running in a :zephyr:board:`native_sim <native_sim>` board.
 
 In this example, the :zephyr:code-sample:`sockets-echo-server` sample application from
 the Zephyr source distribution is run in native_sim board. The Zephyr

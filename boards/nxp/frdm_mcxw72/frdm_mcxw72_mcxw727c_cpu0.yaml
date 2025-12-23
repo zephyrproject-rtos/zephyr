@@ -11,9 +11,14 @@ supported:
   - adc
   - can
   - counter
+  - dma
   - gpio
+  - flexio
   - i2c
   - pinctrl
   - pwm
   - spi
   - uart
+  - watchdog
+  - netif:openthread
+vendor: nxp

@@ -7,6 +7,10 @@
 #define DT_DRV_COMPAT nuvoton_npcx_fiu_qspi
 
 #include <zephyr/drivers/clock_control.h>
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_npcx_gdma.h>
+#endif
 #include <zephyr/drivers/flash/npcx_flash_api_ex.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
@@ -22,6 +26,10 @@ LOG_MODULE_REGISTER(npcx_fiu_qspi, CONFIG_FLASH_LOG_LEVEL);
 #define HAL_INSTANCE(dev) \
 	((struct fiu_reg *)((const struct npcx_qspi_fiu_config *)(dev)->config)->base)
 
+#if defined(CONFIG_ESPI_TAF)
+	static const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
+#endif
+
 /* Device config */
 struct npcx_qspi_fiu_config {
 	/* Flash interface unit base address */
@@ -33,6 +41,16 @@ struct npcx_qspi_fiu_config {
 	bool base_flash_inv;
 };
 
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+/* DMA data */
+struct gdma_data {
+	const struct device *dev;
+	uint32_t channel;
+	struct dma_config dma_cfg;
+	struct k_sem dma_sem;
+};
+#endif /* CONFIG_FLASH_NPCX_FIU_USE_DMA */
+
 /* Device data */
 struct npcx_qspi_fiu_data {
 	/* mutex of qspi bus controller */
@@ -43,6 +61,9 @@ struct npcx_qspi_fiu_data {
 	int sw_cs;
 	/* Current QSPI bus operation */
 	uint32_t operation;
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+	struct gdma_data dma;
+#endif /* CONFIG_FLASH_NPCX_FIU_USE_DMA */
 };
 
 /* NPCX SPI User Mode Access (UMA) functions */
@@ -58,13 +79,25 @@ static inline void qspi_npcx_uma_cs_level(const struct device *dev, uint8_t sw_c
 	}
 }
 
+static inline void npcx_uma_start(const struct device *dev, uint8_t code)
+{
+	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+
+#if defined(CONFIG_FLASH_NPCX_FIU_UMA_EX)
+	code &= ~BIT(NPCX_UMA_CTS_DEV_NUM);
+	inst->UMA_CTS = (inst->UMA_CTS & BIT(NPCX_UMA_CTS_DEV_NUM)) | code;
+#else
+	inst->UMA_CTS = code;
+#endif
+}
+
 static inline void qspi_npcx_uma_write_byte(const struct device *dev, uint8_t data)
 {
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Set data to UMA_CODE and trigger UMA */
 	inst->UMA_CODE = data;
-	inst->UMA_CTS = UMA_CODE_CMD_WR_ONLY;
+	npcx_uma_start(dev, UMA_CODE_CMD_WR_ONLY);
 	/* EXEC_DONE will be zero automatically if a UMA transaction is completed. */
 	while (IS_BIT_SET(inst->UMA_CTS, NPCX_UMA_CTS_EXEC_DONE)) {
 		continue;
@@ -76,7 +109,7 @@ static inline void qspi_npcx_uma_read_byte(const struct device *dev, uint8_t *da
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Trigger UMA and Get data from DB0 later */
-	inst->UMA_CTS = UMA_CODE_RD_BYTE(1);
+	npcx_uma_start(dev, UMA_CODE_RD_BYTE(1));
 	while (IS_BIT_SET(inst->UMA_CTS, NPCX_UMA_CTS_EXEC_DONE)) {
 		continue;
 	}
@@ -90,11 +123,23 @@ static inline void qspi_npcx_config_uma_mode(const struct device *dev,
 {
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 
+#if defined(CONFIG_FLASH_NPCX_FIU_UMA_EX)
+	if ((qspi_cfg->flags & NPCX_QSPI_SHD_FLASH_SL) != 0) {
+		inst->UMA_CTS |= BIT(NPCX_UMA_CTS_DEV_NUM);
+		inst->UMA_ECTS &= ~BIT(NPCX_UMA_ECTS_UMA_DEV_BKP);
+	} else if ((qspi_cfg->flags & NPCX_QSPI_PVT_FLASH_SL) != 0) {
+		inst->UMA_CTS &= ~BIT(NPCX_UMA_CTS_DEV_NUM);
+		inst->UMA_ECTS &= ~BIT(NPCX_UMA_ECTS_UMA_DEV_BKP);
+	} else if ((qspi_cfg->flags & NPCX_QSPI_BKP_FLASH_SL) != 0) {
+		inst->UMA_ECTS |= BIT(NPCX_UMA_ECTS_UMA_DEV_BKP);
+	}
+#else
 	if ((qspi_cfg->flags & NPCX_QSPI_SEC_FLASH_SL) != 0) {
 		inst->UMA_ECTS |= BIT(NPCX_UMA_ECTS_SEC_CS);
 	} else {
 		inst->UMA_ECTS &= ~BIT(NPCX_UMA_ECTS_SEC_CS);
 	}
+#endif /* CONFIG_FLASH_NPCX_FIU_UMA_EX */
 }
 
 static inline void qspi_npcx_config_dra_4byte_mode(const struct device *dev,
@@ -117,6 +162,16 @@ static inline void qspi_npcx_config_dra_4byte_mode(const struct device *dev,
 #elif defined(CONFIG_FLASH_NPCX_FIU_DRA_V2)
 	if (qspi_cfg->enter_4ba != 0) {
 		SET_FIELD(inst->SPI_DEV, NPCX_SPI_DEV_NADDRB, NPCX_DEV_NUM_ADDR_4BYTE);
+	}
+#elif defined(CONFIG_FLASH_NPCX_FIU_DRA_EX)
+	if (qspi_cfg->enter_4ba != 0) {
+		if ((qspi_cfg->flags & NPCX_QSPI_SHD_FLASH_SL) != 0) {
+			inst->FIU_4B_EN |= BIT(NPCX_MSR_FIU_4B_EN_SHD_4B);
+		} else if ((qspi_cfg->flags & NPCX_QSPI_PVT_FLASH_SL) != 0) {
+			inst->FIU_4B_EN |= BIT(NPCX_MSR_FIU_4B_EN_PVT_4B);
+		} else if ((qspi_cfg->flags & NPCX_QSPI_BKP_FLASH_SL) != 0) {
+			inst->FIU_4B_EN |= BIT(NPCX_MSR_FIU_4B_EN_BKP_4B);
+		}
 	}
 #endif
 #endif /* CONFIG_FLASH_NPCX_FIU_SUPP_DRA_4B_ADDR */
@@ -206,36 +261,119 @@ int qspi_npcx_fiu_uma_transceive(const struct device *dev, struct npcx_uma_cfg *
 	return 0;
 }
 
-void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev,
-					const struct npcx_qspi_cfg *cfg,
-					const uint32_t operation)
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+static void dma_callback(const struct device *dev, void *arg,
+			 uint32_t channel, int status)
+{
+	struct npcx_qspi_fiu_data *const data = arg;
+	struct gdma_data *dma = &data->dma;
+
+	if (status == DMA_STATUS_COMPLETE) {
+		k_sem_give(&dma->dma_sem);
+	}
+}
+
+static int qspi_npcx_fiu_dma_transfer(const struct device *dev, uint8_t *src, uint8_t *dest,
+				      size_t size)
+{
+	struct npcx_qspi_fiu_data *const data = dev->data;
+	struct gdma_data *dma = &data->dma;
+	struct dma_config dma_cfg;
+	struct dma_status status;
+
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+
+	/*
+	 * Check the address is 16 byte alignment when Read burst size is set to 16 bytes
+	 */
+	if (GET_FIELD(inst->BURST_CFG, NPCX_BURST_CFG_R_BURST) == NPCX_BURST_MODE_16_BYTE) {
+		if ((((uint32_t)src) & NPCX_DMA_ADDR_16B_ALIGN) != 0) {
+			LOG_ERR("Source address is not aligned to 16 Bytes");
+			return -EINVAL;
+		}
+	}
+#endif
+
+	/* Configure user setting */
+	dma_cfg = dma->dma_cfg;
+
+	dma_cfg.head_block->block_size = size;
+	dma_cfg.head_block->source_address = (uint32_t)src;
+	dma_cfg.head_block->dest_address = (uint32_t)dest;
+	dma_cfg.user_data = (void *)data;
+
+	if (dma_request_channel(dma->dev, (void *)&dma->channel) < 0) {
+		LOG_ERR("No available GDMA channel");
+		return -EINVAL;
+	}
+
+	if (dma_get_status(dma->dev, dma->channel, &status)) {
+		LOG_ERR("Get GDMA channel failed");
+		return -EINVAL;
+	}
+
+	if (status.busy) {
+		LOG_ERR("GDMA channel busy");
+		return -EBUSY;
+	}
+
+	if (dma_config(dma->dev, dma->channel, &dma_cfg)) {
+		LOG_ERR("GDMA configuration failed");
+		return -EINVAL;
+	}
+
+	if (dma_start(dma->dev, dma->channel)) {
+		LOG_ERR("GDMA transaction failed");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int qspi_npcx_fiu_dma_transfer_stop(const struct device *dev)
+{
+	struct npcx_qspi_fiu_data *const data = dev->data;
+	struct gdma_data *dma = &data->dma;
+
+	dma_stop(dma->dev, dma->channel);
+
+	dma_release_channel(dma->dev, dma->channel);
+
+	return 0;
+}
+
+int qspi_npcx_fiu_dma_transceive(const struct device *dev, uint8_t *src, uint8_t *dest, size_t size)
+{
+	struct npcx_qspi_fiu_data *const data = dev->data;
+	struct gdma_data *dma = &data->dma;
+	int ret;
+
+	if (dma->dev == NULL) {
+		LOG_ERR("GDMA transaction not supported!");
+		return -EINVAL;
+	}
+
+	ret = qspi_npcx_fiu_dma_transfer(dev, src, dest, size);
+
+	if (ret != 0) {
+		LOG_ERR("GDMA transaction failed");
+		return ret;
+	}
+
+	k_sem_take(&dma->dma_sem, K_FOREVER);
+
+	qspi_npcx_fiu_dma_transfer_stop(dev);
+
+	return ret;
+}
+#endif /* CONFIG_FLASH_NPCX_FIU_USE_DMA */
+
+void qspi_npcx_fiu_mutex_lock(const struct device *dev)
 {
 	struct npcx_qspi_fiu_data *const data = dev->data;
 
 	k_sem_take(&data->lock_sem, K_FOREVER);
-
-	/* If the current device is different from previous one, configure it */
-	if (data->cur_cfg != cfg) {
-		data->cur_cfg = cfg;
-
-		/* Apply pin-muxing and tri-state */
-		pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-
-		/* Configure User Mode Access (UMA) settings */
-		qspi_npcx_config_uma_mode(dev, cfg);
-
-		/* Configure for Direct Read Access (DRA) settings */
-		qspi_npcx_config_dra_mode(dev, cfg);
-
-		/* Save SW CS bit used in UMA mode */
-		data->sw_cs = find_lsb_set(cfg->flags & NPCX_QSPI_SW_CS_MASK) - 1;
-	}
-
-	/* Set QSPI bus operation */
-	if (data->operation != operation) {
-		qspi_npcx_fiu_set_operation(dev, operation);
-		data->operation = operation;
-	}
 }
 
 void qspi_npcx_fiu_mutex_unlock(const struct device *dev)
@@ -243,6 +381,47 @@ void qspi_npcx_fiu_mutex_unlock(const struct device *dev)
 	struct npcx_qspi_fiu_data *const data = dev->data;
 
 	k_sem_give(&data->lock_sem);
+}
+
+void qspi_npcx_fiu_apply_cfg(const struct device *dev,
+			     const struct npcx_qspi_cfg *cfg,
+			     const uint32_t operation)
+{
+	struct npcx_qspi_fiu_data *data = dev->data;
+
+	if (cfg == NULL) {
+		LOG_ERR("Invalid QSPI configuration");
+		return;
+	}
+
+	/* Apply pin-muxing and tri-state */
+	pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+
+	/* Configure User Mode Access (UMA) settings */
+	qspi_npcx_config_uma_mode(dev, cfg);
+
+	/* Configure for Direct Read Access (DRA) settings */
+	qspi_npcx_config_dra_mode(dev, cfg);
+
+	/* Save SW CS bit used in UMA mode */
+	data->sw_cs = find_lsb_set(cfg->flags & NPCX_QSPI_SW_CS_MASK) - 1;
+
+	/* Set QSPI bus operation */
+	if (data->operation != operation) {
+		qspi_npcx_fiu_set_operation(dev, operation);
+		data->operation = operation;
+	}
+
+	/* Updates the cur_cfg pointer to the new QSPI configuration */
+	data->cur_cfg = cfg;
+}
+
+void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev,
+					const struct npcx_qspi_cfg *cfg,
+					const uint32_t operation)
+{
+	qspi_npcx_fiu_mutex_lock(dev);
+	qspi_npcx_fiu_apply_cfg(dev, cfg, operation);
 }
 
 #if defined(CONFIG_FLASH_NPCX_FIU_DRA_V2)
@@ -263,6 +442,29 @@ void qspi_npcx_fiu_set_spi_size(const struct device *dev, const struct npcx_qspi
 	}
 }
 #endif
+
+int qspi_npcx_fiu_uma_block(const struct device *dev, bool lock_en)
+{
+#if defined(CONFIG_FLASH_NPCX_FIU_UMA_EX)
+	/* uma block for npck */
+	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+
+	if (lock_en) {
+		inst->FIU_MSR_IE_CFG |= BIT(NPCX_MSR_IE_CFG_UMA_BLOCK);
+	} else {
+		inst->FIU_MSR_IE_CFG &= ~BIT(NPCX_MSR_IE_CFG_UMA_BLOCK);
+	}
+#endif
+
+#if defined(CONFIG_ESPI_TAF)
+	if (espi_taf_npcx_block(espi_dev, lock_en) != 0) {
+		LOG_ERR("TAF block timeout, lock_en:%d", lock_en);
+		return -ETIMEDOUT;
+	}
+#endif
+
+	return 0;
+}
 
 static int qspi_npcx_fiu_init(const struct device *dev)
 {
@@ -287,6 +489,17 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	/* initialize mutex for qspi controller */
 	k_sem_init(&data->lock_sem, 1, 1);
 
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+	struct gdma_data *dma = &data->dma;
+
+	if (!device_is_ready(dma->dev)) {
+		LOG_ERR("GDMA device not ready");
+		return -EINVAL;
+	}
+
+	k_sem_init(&dma->dma_sem, 0, 1);
+#endif
+
 	/* Enable direct access for 2 external SPI devices */
 	if (config->en_direct_access_2dev) {
 #if defined(CONFIG_FLASH_NPCX_FIU_SUPP_DRA_2_DEV)
@@ -304,16 +517,55 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_SPI_FIU_INIT(n)							\
-static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {		\
-	.base = DT_INST_REG_ADDR(n),						\
-	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),					\
-	.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),	\
-	.base_flash_inv = DT_INST_PROP(n, flash_dev_inv),			\
-};										\
-static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n;			\
-DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL,				\
-		      &npcx_qspi_fiu_data_##n, &npcx_qspi_fiu_config_##n,	\
-		      PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, NULL);
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+#define QSPI_DMA_BLOCK_CONFIG(inst, name)                                                          \
+	.source_addr_adj = NPCX_GDMA_CONFIG_SRCADDR_ADJ(NPCX_GDMA_CHANNEL_CONFIG(inst, name)),     \
+	.dest_addr_adj = NPCX_GDMA_CONFIG_DSTADDR_ADJ(NPCX_GDMA_CHANNEL_CONFIG(inst, name)),
+
+#define QSPI_DMA_CHANNEL_INIT(inst, name)                                                          \
+	.dma = {                                                                                   \
+		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, name)),                       \
+		.channel = DT_INST_DMAS_CELL_BY_NAME(inst, name, channel),                         \
+		.dma_cfg =                                                                         \
+			{                                                                          \
+				.channel_direction = NPCX_GDMA_CONFIG_DIRECTION(                   \
+					NPCX_GDMA_CHANNEL_CONFIG(inst, name)),                     \
+				.source_burst_length = NPCX_GDMA_CONFIG_BURST_LENGTH(              \
+					NPCX_GDMA_CHANNEL_CONFIG(inst, name)),                     \
+				.dest_burst_length = NPCX_GDMA_CONFIG_BURST_LENGTH(                \
+					NPCX_GDMA_CHANNEL_CONFIG(inst, name)),                     \
+				.head_block = &npcx_dma_config_##inst,                             \
+				.dma_callback = dma_callback,                                      \
+			},                                                                         \
+	}
+
+#define QSPI_DMA_CHANNEL(inst, name)                                                               \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(inst, name), (QSPI_DMA_CHANNEL_INIT(inst, name)), (EMPTY))
+
+#define NPCX_SPI_FIU_INIT(n)                                                                       \
+	static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {                      \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                                \
+		.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),                   \
+		.base_flash_inv = DT_INST_PROP(n, flash_dev_inv),			           \
+	};                                                                                         \
+	static struct dma_block_config npcx_dma_config_##n = {QSPI_DMA_BLOCK_CONFIG(n, fiu_dma)};  \
+	static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n = {QSPI_DMA_CHANNEL(n, fiu_dma)};  \
+	DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL, &npcx_qspi_fiu_data_##n,                \
+			      &npcx_qspi_fiu_config_##n, PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, \
+			      NULL);
+#else
+#define NPCX_SPI_FIU_INIT(n)                                                                       \
+	static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {                      \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                                \
+		.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),                   \
+		.base_flash_inv = DT_INST_PROP(n, flash_dev_inv),			           \
+	};                                                                                         \
+	static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n;                                   \
+	DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL, &npcx_qspi_fiu_data_##n,                \
+			      &npcx_qspi_fiu_config_##n, PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, \
+			      NULL);
+#endif
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_SPI_FIU_INIT)

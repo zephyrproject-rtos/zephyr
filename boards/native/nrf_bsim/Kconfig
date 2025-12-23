@@ -5,7 +5,6 @@ config BOARD_NRF52_BSIM
 	bool
 	select SOC_SERIES_BSIM_NRF52X
 	select SOC_COMPATIBLE_NRF52833
-	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
 	help
 	  NRF52 simulation model
@@ -16,7 +15,6 @@ config BOARD_NRF5340BSIM_NRF5340_CPUNET
 	bool
 	select SOC_SERIES_BSIM_NRF53X
 	select SOC_COMPATIBLE_NRF5340_CPUNET
-	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
 	help
 	  Simulated NRF53 Network core
@@ -27,7 +25,6 @@ config BOARD_NRF5340BSIM_NRF5340_CPUAPP
 	bool
 	select SOC_SERIES_BSIM_NRF53X
 	select SOC_COMPATIBLE_NRF5340_CPUAPP
-	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
 	help
 	  Simulated NRF53 Application core
@@ -45,6 +42,16 @@ config BOARD_NRF54L15BSIM_NRF54L15_CPUAPP
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute
 
+config BOARD_NRF54LM20BSIM_NRF54LM20A_CPUAPP
+	bool
+	select SOC_SERIES_BSIM_NRF54LX
+	select SOC_COMPATIBLE_NRF54LM20A
+	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
+	select CLOCK_CONTROL
+	help
+	  Simulated NRF54LM20 Application core
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
 
 if SOC_SERIES_BSIM_NRFXX
 

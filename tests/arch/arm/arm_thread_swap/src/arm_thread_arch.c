@@ -36,10 +36,10 @@
 #define FPSCR_MASK (0xffffffffU)
 #endif
 
-extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
+extern void z_yield_testing_only(void);
 
 static struct k_thread alt_thread;
-static K_THREAD_STACK_DEFINE(alt_thread_stack, 1024);
+static K_THREAD_STACK_DEFINE(alt_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 /* Status variable to indicate that context-switch has occurred. */
 bool volatile switch_flag;
@@ -268,7 +268,7 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 	p_ztest_thread->arch.swap_return_value = SWAP_RETVAL;
 #endif
 
-	z_move_thread_to_end_of_prio_q(_current);
+	z_yield_testing_only();
 
 	/* Modify the callee-saved registers by zero-ing them.
 	 * The main test thread will, later, assert that they
@@ -482,7 +482,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 * explicitly required by the test.
 	 */
 	(void)irq_lock();
-	z_move_thread_to_end_of_prio_q(_current);
+	z_yield_testing_only();
 
 	/* Clear the thread's callee-saved registers' container.
 	 * The container will, later, be populated by the swap

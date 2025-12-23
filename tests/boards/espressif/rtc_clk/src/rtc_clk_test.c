@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,7 @@
 #define DT_CPU_COMPAT espressif_xtensa_lx6
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 #define DT_CPU_COMPAT espressif_xtensa_lx7
-#elif defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
-	defined(CONFIG_SOC_SERIES_ESP32C6)
+#elif defined(CONFIG_RISCV)
 #define DT_CPU_COMPAT espressif_riscv
 #endif
 
@@ -74,14 +73,22 @@ ZTEST(rtc_clk, test_cpu_xtal_src)
 }
 
 uint32_t rtc_pll_src_freq_mhz[] = {
+#if defined(ESP32_CLK_CPU_PLL_48M)
+	ESP32_CLK_CPU_PLL_48M,
+#endif
+#if defined(ESP32_CLK_CPU_PLL_80M)
 	ESP32_CLK_CPU_PLL_80M,
-#if defined(CONFIG_SOC_SERIES_ESP32C2)
+#endif
+#if defined(ESP32_CLK_CPU_PLL_96M)
+	ESP32_CLK_CPU_PLL_96M,
+#endif
+#if defined(ESP32_CLK_CPU_PLL_120M)
 	ESP32_CLK_CPU_PLL_120M,
-#else
+#endif
+#if defined(ESP32_CLK_CPU_PLL_160M)
 	ESP32_CLK_CPU_PLL_160M,
 #endif
-#if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C3) && \
-	!defined(CONFIG_SOC_SERIES_ESP32C6)
+#if defined(ESP32_CLK_CPU_PLL_240M)
 	ESP32_CLK_CPU_PLL_240M,
 #endif
 };
@@ -134,35 +141,54 @@ ZTEST(rtc_clk, test_rtc_fast_src)
 {
 	struct esp32_clock_config clk_cfg = {0};
 	int ret = 0;
-	uint32_t cpu_rate = 0;
+	uint32_t nominal_rate = 0;
+	uint32_t calibrated_rate = 0;
 
 	clk_cfg.cpu.xtal_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq) / MHZ(1));
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(rtc_rtc_fast_clk_src); i++) {
 		clk_cfg.rtc.rtc_fast_clock_src = rtc_rtc_fast_clk_src[i];
 
-		TC_PRINT("Testing RTC FAST CLK freq: %d MHz\n", rtc_rtc_fast_clk_src_freq_mhz[i]);
+		TC_PRINT("Testing RTC FAST CLK source: %d\n", rtc_rtc_fast_clk_src_freq_mhz[i]);
 
 		ret = clock_control_configure(
 			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST,
 			&clk_cfg);
-		zassert_false(ret, "Failed to set CPU clock source");
+		zassert_false(ret, "Failed to set RTC fast clock source");
 
+		/* Verify nominal frequency matches expected value for selected source */
+		ret = clock_control_get_rate(
+			clk_dev,
+			(clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST_NOMINAL,
+			&nominal_rate);
+		zassert_false(ret, "Failed to get RTC_FAST nominal clock rate");
+		zassert_equal(nominal_rate, rtc_rtc_fast_clk_src_freq_mhz[i],
+			      "Nominal rate mismatch (%d != %d)", nominal_rate,
+			      rtc_rtc_fast_clk_src_freq_mhz[i]);
+
+		/* Also retrieve calibrated value for informational purposes */
 		ret = clock_control_get_rate(
 			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST,
-			&cpu_rate);
-		zassert_false(ret, "Failed to get RTC_FAST clock rate");
-		zassert_equal(cpu_rate, rtc_rtc_fast_clk_src_freq_mhz[i],
-			      "CPU clock rate is not equal to configured frequency (%d != %d)",
-			      cpu_rate, rtc_rtc_fast_clk_src_freq_mhz[i]);
+			&calibrated_rate);
+		zassert_false(ret, "Failed to get RTC_FAST calibrated clock rate");
+
+		int32_t diff = (int32_t)calibrated_rate - (int32_t)nominal_rate;
+		int32_t deviation_tenths = (diff * 1000) / (int32_t)nominal_rate;
+
+		TC_PRINT("Nominal: %d Hz, Calibrated: %d Hz (deviation: %d.%d%%)\n", nominal_rate,
+			 calibrated_rate, deviation_tenths / 10,
+			 (deviation_tenths < 0 ? -deviation_tenths : deviation_tenths) % 10);
 	}
 }
 
 uint32_t rtc_rtc_slow_clk_src[] = {
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_SLOW)
 	ESP32_RTC_SLOW_CLK_SRC_RC_SLOW,
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC32K)
 	ESP32_RTC_SLOW_CLK_SRC_RC32K,
-#else
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256)
 	ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256,
 #endif
 #if CONFIG_FIXTURE_XTAL
@@ -171,10 +197,13 @@ uint32_t rtc_rtc_slow_clk_src[] = {
 };
 
 uint32_t rtc_rtc_slow_clk_src_freq[] = {
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ)
 	ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ,
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC32K_FREQ)
 	ESP32_RTC_SLOW_CLK_SRC_RC32K_FREQ,
-#else
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ)
 	ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ,
 #endif
 #if CONFIG_FIXTURE_XTAL
@@ -186,7 +215,8 @@ ZTEST(rtc_clk, test_rtc_slow_src)
 {
 	struct esp32_clock_config clk_cfg = {0};
 	int ret = 0;
-	uint32_t cpu_rate = 0;
+	uint32_t nominal_rate = 0;
+	uint32_t calibrated_rate = 0;
 
 	clk_cfg.cpu.xtal_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq) / MHZ(1));
 
@@ -200,13 +230,28 @@ ZTEST(rtc_clk, test_rtc_slow_src)
 			&clk_cfg);
 		zassert_false(ret, "Failed to set CPU clock source");
 
+		/* Verify nominal frequency matches expected value for selected source */
+		ret = clock_control_get_rate(
+			clk_dev,
+			(clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW_NOMINAL,
+			&nominal_rate);
+		zassert_false(ret, "Failed to get RTC_SLOW nominal clock rate");
+		zassert_equal(nominal_rate, rtc_rtc_slow_clk_src_freq[i],
+			      "Nominal rate mismatch (%d != %d)", nominal_rate,
+			      rtc_rtc_slow_clk_src_freq[i]);
+
+		/* Also retrieve calibrated value for informational purposes */
 		ret = clock_control_get_rate(
 			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW,
-			&cpu_rate);
-		zassert_false(ret, "Failed to get RTC_SLOW clock rate");
-		zassert_equal(cpu_rate, rtc_rtc_slow_clk_src_freq[i],
-			      "CPU clock rate is not equal to configured frequency (%d != %d)",
-			      cpu_rate, rtc_rtc_slow_clk_src_freq[i]);
+			&calibrated_rate);
+		zassert_false(ret, "Failed to get RTC_SLOW calibrated clock rate");
+
+		int32_t diff = (int32_t)calibrated_rate - (int32_t)nominal_rate;
+		int32_t deviation_tenths = (diff * 1000) / (int32_t)nominal_rate;
+
+		TC_PRINT("Nominal: %d Hz, Calibrated: %d Hz (deviation: %d.%d%%)\n", nominal_rate,
+			 calibrated_rate, deviation_tenths / 10,
+			 (deviation_tenths < 0 ? -deviation_tenths : deviation_tenths) % 10);
 	}
 }
 

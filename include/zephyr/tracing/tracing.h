@@ -3,10 +3,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup subsys_tracing
+ * @ingroup subsys_tracing_apis
+ * @brief Main header file for tracing subsystem API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACING_H_
-
-#include <zephyr/kernel.h>
 
 #include "tracking.h"
 
@@ -20,9 +26,9 @@
 #include "tracing_user.h"
 #else
 /**
- * @brief Tracing
+ * @brief Interfaces for the tracing subsystem.
  *
- * The tracing subsystem provides hooks that permits you to collect data from
+ * The tracing subsystem provides that permits you to collect data from
  * your application and allows tools running on a host to visualize the
  * inner-working of the kernel and various other subsystems.
  *
@@ -32,14 +38,18 @@
  */
 
 /**
- * @brief Tracing APIs
- * @defgroup subsys_tracing_apis Tracing APIs
+ * @defgroup subsys_tracing_apis Tracing hooks
+ * @ingroup subsys_tracing
+ * @brief Hook points used by tracing backends.
+ *
+ * Macros invoked across kernel and subsystem code to mark entry, blocking, exit, and various
+ * lifecycle events.
  * @{
  */
 
 /**
- * @brief Thread Tracing APIs
- * @defgroup subsys_tracing_apis_thread Thread Tracing APIs
+ * @brief Tracing hooks for thread events
+ * @defgroup subsys_tracing_apis_thread Thread
  * @{
  */
 
@@ -307,8 +317,8 @@
 /** @}c*/ /* end of subsys_tracing_apis_thread */
 
 /**
- * @brief Work Tracing APIs
- * @defgroup subsys_tracing_apis_work Work Tracing APIs
+ * @brief Tracing hooks for work item events
+ * @defgroup subsys_tracing_apis_work Work item
  * @{
  */
 
@@ -404,8 +414,8 @@
 /** @} */ /* end of subsys_tracing_apis_work */
 
 /**
- * @brief Work Queue Tracing APIs
- * @defgroup subsys_tracing_apis_work_q Work Queue Tracing APIs
+ * @brief Tracing hooks for work queue events
+ * @defgroup subsys_tracing_apis_work_q Work queue
  * @{
  */
 
@@ -478,8 +488,8 @@
 /** @} */ /* end of subsys_tracing_apis_work_q */
 
 /**
- * @brief Work Delayable Tracing APIs
- * @defgroup subsys_tracing_apis_work_delayable Work Delayable Tracing APIs
+ * @brief Tracing hooks for delayable work item events
+ * @defgroup subsys_tracing_apis_work_delayable Delayable work item
  * @{
  */
 
@@ -599,8 +609,8 @@
 /** @} */ /* end of subsys_tracing_apis_work_delayable */
 
 /**
- * @brief Work Poll Tracing APIs
- * @defgroup subsys_tracing_apis_work_poll Work Poll Tracing APIs
+ * @brief Tracing hooks for triggered work item events
+ * @defgroup subsys_tracing_apis_work_poll Triggered work item
  * @{
  */
 
@@ -672,8 +682,8 @@
 /** @} */ /* end of subsys_tracing_apis_work_poll */
 
 /**
- * @brief Poll Tracing APIs
- * @defgroup subsys_tracing_apis_poll Poll Tracing APIs
+ * @brief Tracing hooks for polling events
+ * @defgroup subsys_tracing_apis_poll Polling
  * @{
  */
 
@@ -724,8 +734,8 @@
 /** @} */ /* end of subsys_tracing_apis_poll */
 
 /**
- * @brief Semaphore Tracing APIs
- * @defgroup subsys_tracing_apis_sem Semaphore Tracing APIs
+ * @brief Tracing hooks for semaphore events
+ * @defgroup subsys_tracing_apis_sem Semaphore
  * @{
  */
 
@@ -779,8 +789,8 @@
 /** @} */ /* end of subsys_tracing_apis_sem */
 
 /**
- * @brief Mutex Tracing APIs
- * @defgroup subsys_tracing_apis_mutex Mutex Tracing APIs
+ * @brief Tracing hooks for mutex events
+ * @defgroup subsys_tracing_apis_mutex Mutex
  * @{
  */
 
@@ -827,8 +837,8 @@
 /** @} */ /* end of subsys_tracing_apis_mutex */
 
 /**
- * @brief Conditional Variable Tracing APIs
- * @defgroup subsys_tracing_apis_condvar Conditional Variable Tracing APIs
+ * @brief Tracing hooks for conditional variable events
+ * @defgroup subsys_tracing_apis_condvar Conditional variable
  * @{
  */
 
@@ -875,21 +885,23 @@
 /**
  * @brief Trace Conditional Variable wait enter
  * @param condvar Conditional Variable object
+ * @param timeout Timeout period
  */
-#define sys_port_trace_k_condvar_wait_enter(condvar)
+#define sys_port_trace_k_condvar_wait_enter(condvar, timeout)
 
 /**
  * @brief Trace Conditional Variable wait exit
  * @param condvar Conditional Variable object
+ * @param timeout Timeout period
  * @param ret Return value
  */
-#define sys_port_trace_k_condvar_wait_exit(condvar, ret)
+#define sys_port_trace_k_condvar_wait_exit(condvar, timeout, ret)
 
 /** @} */ /* end of subsys_tracing_apis_condvar */
 
 /**
- * @brief Queue Tracing APIs
- * @defgroup subsys_tracing_apis_queue Queue Tracing APIs
+ * @brief Tracing hooks for queue events
+ * @defgroup subsys_tracing_apis_queue Queue
  * @{
  */
 
@@ -1089,8 +1101,8 @@
 /** @} */ /* end of subsys_tracing_apis_queue */
 
 /**
- * @brief FIFO Tracing APIs
- * @defgroup subsys_tracing_apis_fifo FIFO Tracing APIs
+ * @brief Tracing hooks for FIFO events
+ * @defgroup subsys_tracing_apis_fifo FIFO
  * @{
  */
 
@@ -1221,8 +1233,8 @@
 /** @} */ /* end of subsys_tracing_apis_fifo */
 
 /**
- * @brief LIFO Tracing APIs
- * @defgroup subsys_tracing_apis_lifo LIFO Tracing APIs
+ * @brief Tracing hooks for LIFO events
+ * @defgroup subsys_tracing_apis_lifo LIFO
  * @{
  */
 
@@ -1285,8 +1297,8 @@
 /** @} */ /* end of subsys_tracing_apis_lifo */
 
 /**
- * @brief Stack Tracing APIs
- * @defgroup subsys_tracing_apis_stack Stack Tracing APIs
+ * @brief Tracing hooks for stack events
+ * @defgroup subsys_tracing_apis_stack Stack
  * @{
  */
 
@@ -1360,8 +1372,8 @@
 /** @} */ /* end of subsys_tracing_apis_stack */
 
 /**
- * @brief Message Queue Tracing APIs
- * @defgroup subsys_tracing_apis_msgq Message Queue Tracing APIs
+ * @brief Tracing hooks for message queue events
+ * @defgroup subsys_tracing_apis_msgq Message queue
  * @{
  */
 
@@ -1420,6 +1432,28 @@
 #define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)
 
 /**
+ * @brief Trace Message Queue put at front attempt entry
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_put_front_enter(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue put at front attempt blocking
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_put_front_blocking(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue put at front attempt outcome
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_put_front_exit(msgq, timeout, ret)
+
+/**
  * @brief Trace Message Queue get attempt entry
  * @param msgq Message Queue object
  * @param timeout Timeout period
@@ -1457,8 +1491,8 @@
 /** @} */ /* end of subsys_tracing_apis_msgq */
 
 /**
- * @brief Mailbox Tracing APIs
- * @defgroup subsys_tracing_apis_mbox Mailbox Tracing APIs
+ * @brief Tracing hooks for mailbox events
+ * @defgroup subsys_tracing_apis_mbox Mailbox
  * @{
  */
 
@@ -1550,8 +1584,8 @@
 /** @} */ /* end of subsys_tracing_apis_mbox */
 
 /**
- * @brief Pipe Tracing APIs
- * @defgroup subsys_tracing_apis_pipe Pipe Tracing APIs
+ * @brief Tracing hooks for pipe events
+ * @defgroup subsys_tracing_apis_pipe Pipe
  * @{
  */
 
@@ -1633,105 +1667,11 @@
  */
 #define sys_port_trace_k_pipe_read_exit(pipe, ret)
 
-/**
- * @brief Trace Pipe cleanup entry
- * @param pipe Pipe object
- */
-#define sys_port_trace_k_pipe_cleanup_enter(pipe)
-
-/**
- * @brief Trace Pipe cleanup exit
- * @param pipe Pipe object
- * @param ret Return value
- */
-#define sys_port_trace_k_pipe_cleanup_exit(pipe, ret)
-
-/**
- * @brief Trace Pipe alloc init entry
- * @param pipe Pipe object
- */
-#define sys_port_trace_k_pipe_alloc_init_enter(pipe)
-
-/**
- * @brief Trace Pipe alloc init exit
- * @param pipe Pipe object
- * @param ret Return value
- */
-#define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
-
-/**
- * @brief Trace Pipe flush entry
- * @param pipe Pipe object
- */
-#define sys_port_trace_k_pipe_flush_enter(pipe)
-
-/**
- * @brief Trace Pipe flush exit
- * @param pipe Pipe object
- */
-#define sys_port_trace_k_pipe_flush_exit(pipe)
-
-/**
- * @brief Trace Pipe buffer flush entry
- * @param pipe Pipe object
- */
-#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)
-
-/**
- * @brief Trace Pipe buffer flush exit
- * @param pipe Pipe object
- */
-#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)
-
-/**
- * @brief Trace Pipe put attempt entry
- * @param pipe Pipe object
- * @param timeout Timeout period
- */
-#define sys_port_trace_k_pipe_put_enter(pipe, timeout)
-
-/**
- * @brief Trace Pipe put attempt blocking
- * @param pipe Pipe object
- * @param timeout Timeout period
- */
-#define sys_port_trace_k_pipe_put_blocking(pipe, timeout)
-
-/**
- * @brief Trace Pipe put attempt outcome
- * @param pipe Pipe object
- * @param timeout Timeout period
- * @param ret Return value
- */
-#define sys_port_trace_k_pipe_put_exit(pipe, timeout, ret)
-
-/**
- * @brief Trace Pipe get attempt entry
- * @param pipe Pipe object
- * @param timeout Timeout period
- */
-#define sys_port_trace_k_pipe_get_enter(pipe, timeout)
-
-/**
- * @brief Trace Pipe get attempt blocking
- * @param pipe Pipe object
- * @param timeout Timeout period
- */
-#define sys_port_trace_k_pipe_get_blocking(pipe, timeout)
-
-/**
- * @brief Trace Pipe get attempt outcome
- * @param pipe Pipe object
- * @param timeout Timeout period
- * @param ret Return value
- */
-#define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
-
 /** @} */ /* end of subsys_tracing_apis_pipe */
 
 /**
- * @brief Heap Tracing APIs
- * @defgroup subsys_tracing_apis_heap Heap Tracing APIs
+ * @brief Tracing hooks for heap events
+ * @defgroup subsys_tracing_apis_heap Heap
  * @{
  */
 
@@ -1889,8 +1829,8 @@
 /** @} */ /* end of subsys_tracing_apis_heap */
 
 /**
- * @brief Memory Slab Tracing APIs
- * @defgroup subsys_tracing_apis_mslab Memory Slab Tracing APIs
+ * @brief Tracing hooks for memory slab events
+ * @defgroup subsys_tracing_apis_mslab Memory slab
  * @{
  */
 
@@ -1938,8 +1878,8 @@
 /** @} */ /* end of subsys_tracing_apis_mslab */
 
 /**
- * @brief Timer Tracing APIs
- * @defgroup subsys_tracing_apis_timer Timer Tracing APIs
+ * @brief Tracing hooks for timer events
+ * @defgroup subsys_tracing_apis_timer Timer
  * @{
  */
 
@@ -1983,11 +1923,35 @@
  */
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)
 
+/**
+ * @brief Trace Timer expiry entry
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_expiry_enter(timer)
+
+/**
+ * @brief Trace Timer expiry exit
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_expiry_exit(timer)
+
+/**
+ * @brief Trace Timer stop function expiry entry
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)
+
+/**
+ * @brief Trace Timer stop function expiry exit
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)
+
 /** @} */ /* end of subsys_tracing_apis_timer */
 
 /**
- * @brief Event Tracing APIs
- * @defgroup subsys_tracing_apis_event Event Tracing APIs
+ * @brief Tracing hooks for event events
+ * @defgroup subsys_tracing_apis_event Event
  * @{
  */
 
@@ -2042,8 +2006,8 @@
 /** @} */ /* end of subsys_tracing_apis_event */
 
 /**
- * @brief System PM Tracing APIs
- * @defgroup subsys_tracing_apis_pm_system System PM Tracing APIs
+ * @brief Tracing hooks for system power management events
+ * @defgroup subsys_tracing_apis_pm_system System PM
  * @{
  */
 
@@ -2063,8 +2027,8 @@
 /** @} */ /* end of subsys_tracing_apis_pm_system */
 
 /**
- * @brief PM Device Runtime Tracing APIs
- * @defgroup subsys_tracing_apis_pm_device_runtime PM Device Runtime Tracing APIs
+ * @brief Tracing hooks for device runtime power management events
+ * @defgroup subsys_tracing_apis_pm_device_runtime PM Device Runtime
  * @{
  */
 
@@ -2138,8 +2102,8 @@
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
 
 /**
- * @brief Network Core Tracing APIs
- * @defgroup subsys_tracing_apis_net Network Core Tracing APIs
+ * @brief Tracing hooks for network events
+ * @defgroup subsys_tracing_apis_net Network
  * @{
  */
 
@@ -2188,8 +2152,8 @@
 /** @} */ /* end of subsys_tracing_apis_net */
 
 /**
- * @brief Network Socket Tracing APIs
- * @defgroup subsys_tracing_apis_socket Network Socket Tracing APIs
+ * @brief Tracing hooks for network socket events
+ * @defgroup subsys_tracing_apis_socket Network socket
  * @{
  */
 
@@ -2486,12 +2450,12 @@
 /** @} */ /* end of subsys_tracing_apis_socket */
 
 /**
- * @brief Named Tracing APIs
- * @defgroup subsys_tracing_apis_named Named tracing APIs
+ * @brief Tracing hooks for user-defined named events
+ * @defgroup subsys_tracing_apis_named User-defined event
  * @{
  */
 
-/*
+/**
  * @brief Called by user to generate named events
  *
  * @param name name of event. Tracing subsystems may place a limit on
@@ -2504,8 +2468,8 @@
 /** @} */ /* end of subsys_tracing_apis_named */
 
 /**
- * @brief GPIO Tracing APIs
- * @defgroup subsys_tracing_apis_gpio GPIO Tracing APIs
+ * @brief Tracing hooks for GPIO events
+ * @defgroup subsys_tracing_apis_gpio GPIO
  * @{
  */
 
@@ -2715,6 +2679,121 @@
 #define sys_port_trace_gpio_fire_callback(port, callback)
 
 /** @} */ /* end of subsys_tracing_apis_gpio */
+
+/**
+ * @brief RTIO Tracing APIs
+ * @defgroup subsys_tracing_apis_rtio RTIO Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace RTIO Submit Enter API
+ * @param rtio RTIO context
+ * @param wait_count Number of submissions to wait for completion of.
+ */
+#define sys_port_trace_rtio_submit_enter(rtio, wait_count)
+
+/**
+ * @brief Trace RTIO Submit Exit API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_submit_exit(rtio)
+
+/**
+ * @brief Trace RTIO Submission Queue Event Acquire Enter API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_sqe_acquire_enter(rtio)
+
+/**
+ * @brief Trace RTIO Submission Queue Event Acquire Exit API
+ * @param rtio RTIO context
+ * @param sqe Submission Queue Event
+ */
+#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe)
+
+/**
+ * @brief Trace RTIO Submission Queue Event Cancel API
+ * @param sqe Submission Queue Event
+ */
+#define sys_port_trace_rtio_sqe_cancel(sqe)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Submit Enter API
+ * @param rtio RTIO context
+ * @param result Integer result code (could be -errno)
+ * @param flags Flags to use for the CQE see RTIO_CQE_FLAG_*
+ */
+#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Submit Exit API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_cqe_submit_exit(rtio)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Acquire Enter API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_cqe_acquire_enter(rtio)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Acquire Exit API
+ * @param rtio RTIO context
+ * @param cqe Complete Queue Event
+ */
+#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Release API
+ * @param rtio RTIO context
+ * @param cqe Complete Queue Event
+ */
+#define sys_port_trace_rtio_cqe_release(rtio, cqe)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Consume Enter API
+ * @param rtio RTIO context
+ */
+#define sys_port_trace_rtio_cqe_consume_enter(rtio)
+
+/**
+ * @brief Trace RTIO Completion Queue Event Consume Exit API
+ * @param rtio RTIO context
+ * @param cqe Complete Queue Event
+ */
+#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe)
+
+/**
+ * @brief Trace RTIO get next transaction Enter API
+ * @param rtio RTIO context
+ * @param iodev_sqe Current submission queue entry
+ */
+#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)
+
+/**
+ * @brief Trace RTIO get next transaction Exit API
+ * @param rtio RTIO context
+ * @param iodev_sqe Next submission queue entry
+ */
+#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
+
+/**
+ * @brief Trace RTIO get next sqe in chain Enter API
+ * @param rtio RTIO context
+ * @param iodev_sqe Current submission queue entry
+ */
+#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
+
+/**
+ * @brief Trace RTIO get next sqe in chain Exit API
+ * @param rtio RTIO context
+ * @param iodev_sqe Next submission queue entry
+ */
+#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
+
+/** @} */ /* end of subsys_tracing_apis_rtio */
 
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"

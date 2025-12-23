@@ -33,10 +33,12 @@
 		zephyr,flash = &flash0;
 		zephyr,ieee802154 = &ieee802154g;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &uart0;
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -67,6 +69,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; // 2.4GHz TX/RX
 		};
@@ -100,17 +103,19 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Allocate 128 KiB for mcuboot */
+		/* Allocate 56 KiB for mcuboot */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00020000>;
+			reg = <0x00000000 DT_SIZE_K(56)>;
 		};
 
-		/* Allocate 568 KiB for application (avoid touching CCFG) */
-		slot0_partition: partition@20000 {
+		/* Allocate 640 KiB for application */
+		slot0_partition: partition@e000 {
 			label = "image-0";
-			reg = <0x00020000 0x0008e000>;
+			reg = <0x0000e000 DT_SIZE_K(640)>;
 		};
+
+		/* (avoid touching CCFG) */
 	};
 };
 
@@ -158,18 +163,19 @@
 &spi0 {
 	status = "okay";
 	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
-		&spi0_miso_default &spi0_cs0_default
-		&spi0_cs1_default &spi0_cs2_default>;
+		     &spi0_miso_default &spi0_cs0_default
+		     &spi0_cs1_default &spi0_cs2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>, // SPI flash
-		<&gpio0 28 GPIO_ACTIVE_LOW>,  // mikroBUS port 1
-		<&gpio0 27 GPIO_ACTIVE_LOW>;  // mikroBUS port 2
+		   <&gpio0 28 GPIO_ACTIVE_LOW>,  // mikroBUS port 1
+		   <&gpio0 27 GPIO_ACTIVE_LOW>;  // mikroBUS port 2
 
 	spi_flash0: gd25q16c@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <2000000>;
-		size = <0x200000>;
+		// Size (2 MiB) is in bits
+		size = <0x1000000>;
 		//has-be32k;
 		has-dpd;
 		t-enter-dpd = <20000>;
@@ -181,22 +187,21 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			/* Allocate 568 KiB for application */
+			/* Allocate 640 KiB for application */
 			slot1_partition: partition@0 {
 				label = "image-1";
-				reg = <0x00000000 0x0008e000>;
+				reg = <0x00000000 DT_SIZE_K(640)>;
 			};
 
 			/* Allocate 128 KiB scratch for image swap */
-			scratch_partition: partition@8e000 {
+			scratch_partition: partition@A0000 {
 				label = "image-scratch";
-				reg = <0x0008e000 0x00020000>;
+				reg = <0x000a0000 DT_SIZE_K(128)>;
 			};
 
-			/* Allocate 1 MiB storage partition */
-			storage_partition: partition@ae000 {
+			storage_partition: partition@c0000 {
 				label = "storage";
-				reg = <0x000ae000 DT_SIZE_K(1024)>;
+				reg = <0x000c0000 DT_SIZE_K(1280)>;
 			};
 		};
 	};

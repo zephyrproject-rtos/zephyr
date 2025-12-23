@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STMicroelectronics LSM9DS1 9-axis IMU (Inertial Measurement Unit) sensor
-    accessed through I2C bus.
+    STMicroelectronics LSM9DS1-MAG 3-axis magnetometer accessed
+    through I2C bus.
 
     This binding describes only the magnetometer.
 

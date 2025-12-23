@@ -45,6 +45,9 @@ struct pwm_sam0_config {
 };
 
 #define COUNTER_8BITS 8U
+#define COUNTER_16BITS 16U
+#define SYNC_WAIT_TIMEOUT 5U
+
 
 /* Wait for the peripheral to finish all commands */
 static void wait_synchronization(Tc *regs, uint8_t counter_size)
@@ -52,9 +55,11 @@ static void wait_synchronization(Tc *regs, uint8_t counter_size)
 	if (COUNTER_8BITS == counter_size) {
 		while (regs->COUNT8.SYNCBUSY.reg != 0) {
 		}
-	} else {
+	} else if (COUNTER_16BITS == counter_size) {
 		while (regs->COUNT16.SYNCBUSY.reg != 0) {
 		}
+	} else {
+		WAIT_FOR((regs->COUNT32.SYNCBUSY.reg != 0), SYNC_WAIT_TIMEOUT, NULL);
 	}
 }
 
@@ -78,15 +83,14 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint3
 	const struct pwm_sam0_config *const cfg = dev->config;
 	Tc *regs = cfg->regs;
 	uint8_t counter_size = cfg->counter_size;
-	uint32_t top = 1 << counter_size;
+	uint64_t top = BIT64(counter_size);
 	uint32_t invert_mask = 1 << channel;
 	bool invert = ((flags & PWM_POLARITY_INVERTED) != 0);
 	bool inverted;
-
 	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
-	if (period_cycles >= top || pulse_cycles >= top) {
+	if ((uint64_t)period_cycles >= top || pulse_cycles >= top) {
 		return -EINVAL;
 	}
 
@@ -108,7 +112,7 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint3
 			regs->COUNT8.CTRLA.bit.ENABLE = 1;
 			wait_synchronization(regs, counter_size);
 		}
-	} else {
+	} else if (COUNTER_16BITS == counter_size) {
 		inverted = ((regs->COUNT16.DRVCTRL.vec.INVEN & invert_mask) != 0);
 		regs->COUNT16.CCBUF[0].reg = TC_COUNT16_CCBUF_CCBUF(period_cycles);
 		regs->COUNT16.CCBUF[1].reg = TC_COUNT16_CCBUF_CCBUF(pulse_cycles);
@@ -120,6 +124,20 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint3
 
 			regs->COUNT16.DRVCTRL.vec.INVEN ^= invert_mask;
 			regs->COUNT16.CTRLA.bit.ENABLE = 1;
+			wait_synchronization(regs, counter_size);
+		}
+	} else {
+		inverted = ((regs->COUNT32.DRVCTRL.vec.INVEN & invert_mask) != 0);
+		regs->COUNT32.CCBUF[0].reg = TC_COUNT32_CCBUF_CCBUF(period_cycles);
+		regs->COUNT32.CCBUF[1].reg = TC_COUNT32_CCBUF_CCBUF(pulse_cycles);
+		wait_synchronization(regs, counter_size);
+
+		if (invert != inverted) {
+			regs->COUNT32.CTRLA.bit.ENABLE = 0;
+			wait_synchronization(regs, counter_size);
+
+			regs->COUNT32.DRVCTRL.vec.INVEN ^= invert_mask;
+			regs->COUNT32	.CTRLA.bit.ENABLE = 1;
 			wait_synchronization(regs, counter_size);
 		}
 	}
@@ -161,7 +179,7 @@ static int pwm_sam0_init(const struct device *dev)
 
 		regs->COUNT8.CTRLA.bit.ENABLE = 1;
 		wait_synchronization(regs, counter_size);
-	} else {
+	} else if (COUNTER_16BITS == counter_size) {
 		regs->COUNT16.CTRLA.bit.SWRST = 1;
 		wait_synchronization(regs, counter_size);
 
@@ -172,6 +190,16 @@ static int pwm_sam0_init(const struct device *dev)
 
 		regs->COUNT16.CTRLA.bit.ENABLE = 1;
 		wait_synchronization(regs, cfg->counter_size);
+	} else {
+		regs->COUNT32.CTRLA.bit.SWRST = 1;
+		wait_synchronization(regs, counter_size);
+		regs->COUNT32.CTRLA.reg = cfg->prescaler | TC_CTRLA_MODE_COUNT32 |
+						TC_CTRLA_PRESCSYNC_PRESC;
+		regs->COUNT32.WAVE.reg = TC_WAVE_WAVEGEN_MPWM;
+		regs->COUNT32.CC[0].reg = TC_COUNT32_CC_CC(1);
+
+		regs->COUNT32.CTRLA.bit.ENABLE = 1;
+		wait_synchronization(regs, counter_size);
 	}
 
 	return 0;

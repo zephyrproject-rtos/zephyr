@@ -8,6 +8,9 @@
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/arpa/inet.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

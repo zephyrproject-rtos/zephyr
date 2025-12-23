@@ -7,12 +7,11 @@
 import argparse
 import sys
 
-from PIL import ImageFont
-from PIL import Image
-from PIL import ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 PRINTABLE_MIN = 32
 PRINTABLE_MAX = 126
+
 
 def generate_element(image, charcode):
     """Generate CFB font element for a given character code from an image"""
@@ -21,14 +20,14 @@ def generate_element(image, charcode):
 
     width, height = image.size
     if args.dump:
-        blackwhite.save("{}_{}.png".format(args.name, charcode))
+        blackwhite.save(f"{args.name}_{charcode}.png")
 
     if PRINTABLE_MIN <= charcode <= PRINTABLE_MAX:
-        char = " ({:c})".format(charcode)
+        char = f" ({charcode:c})"
     else:
         char = ""
 
-    args.output.write("""\t/* {:d}{} */\n\t{{\n""".format(charcode, char))
+    args.output.write(f"""\t/* {charcode:d}{char} */\n\t{{\n""")
 
     glyph = []
     if args.hpack:
@@ -64,9 +63,10 @@ def generate_element(image, charcode):
             bits.append(value)
             if not args.msb_first:
                 value = value[::-1]
-            args.output.write("0x{:02x},".format(int(value, 2)))
+            args.output.write(f"0x{int(value, 2):02x},")
         args.output.write("   /* {} */\n".format(''.join(bits).replace('0', ' ').replace('1', '#')))
     args.output.write("\t},\n")
+
 
 def extract_font_glyphs():
     """Extract font glyphs from a TrueType/OpenType font file"""
@@ -98,9 +98,9 @@ def extract_font_glyphs():
 
     # Diagnose inconsistencies with arguments
     if width != args.width:
-        raise Exception('text width {} mismatch with -x {}'.format(width, args.width))
+        raise Exception(f'text width {width} mismatch with -x {args.width}')
     if height != args.height:
-        raise Exception('text height {} mismatch with -y {}'.format(height, args.height))
+        raise Exception(f'text height {height} mismatch with -y {args.height}')
 
     for i in range(args.first, args.last + 1):
         image = Image.new('1', (width, height), 'white')
@@ -121,6 +121,7 @@ def extract_font_glyphs():
         draw.text((xpos, ypos), chr(i), font=font)
         generate_element(image, i)
 
+
 def extract_image_glyphs():
     """Extract font glyphs from an image file"""
     image = Image.open(args.input)
@@ -130,6 +131,7 @@ def extract_image_glyphs():
         glyph = image.crop((x_offset, 0, x_offset + args.width, args.height))
         generate_element(glyph, i)
         x_offset += args.width
+
 
 def generate_header():
     """Generate CFB font header file"""
@@ -150,7 +152,7 @@ def generate_header():
             continue
         if args.bindir and arg.startswith(args.bindir):
             # +1 to also strip '/' or '\' separator
-            striplen = min(len(args.bindir)+1, len(arg))
+            striplen = min(len(args.bindir) + 1, len(arg))
             clean_cmd.append(arg[striplen:])
             continue
 
@@ -159,8 +161,8 @@ def generate_header():
         else:
             clean_cmd.append(arg)
 
-
-    args.output.write("""/*
+    args.output.write(
+        """/*
  * This file was automatically generated using the following command:
  * {cmd}
  *
@@ -169,13 +171,15 @@ def generate_header():
 #include <zephyr/kernel.h>
 #include <zephyr/display/cfb.h>
 
-static const uint8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n"""
-                      .format(cmd=" ".join(clean_cmd),
-                              name=args.name,
-                              width=args.width,
-                              height=args.height,
-                              elem=args.last - args.first + 1,
-                              b=args.width / 8 * args.height))
+static const uint8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = {{\n""".format(
+            cmd=" ".join(clean_cmd),
+            name=args.name,
+            width=args.width,
+            height=args.height,
+            elem=args.last - args.first + 1,
+            b=args.width / 8 * args.height,
+        )
+    )
 
     if args.type == "font":
         extract_font_glyphs()
@@ -186,89 +190,132 @@ static const uint8_t cfb_font_{name:s}_{width:d}{height:d}[{elem:d}][{b:.0f}] = 
     else:
         extract_image_glyphs()
 
-    args.output.write("""
+    args.output.write(
+        f"""
 }};
 
-FONT_ENTRY_DEFINE({name}_{width}{height},
-		  {width},
-		  {height},
+FONT_ENTRY_DEFINE({args.name}_{args.width}{args.height},
+		  {args.width},
+		  {args.height},
 		  {caps},
-		  cfb_font_{name}_{width}{height},
-		  {first},
-		  {last}
+		  cfb_font_{args.name}_{args.width}{args.height},
+		  {args.first},
+		  {args.last}
 );
-""" .format(name=args.name, width=args.width, height=args.height,
-            caps=caps, first=args.first, last=args.last))
+"""  # noqa: E101
+    )
+
 
 def parse_args():
     """Parse arguments"""
     global args
     parser = argparse.ArgumentParser(
         description="Character Frame Buffer (CFB) font header file generator",
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
+
+    parser.add_argument("-z", "--zephyr-base", help="Zephyr base directory")
 
     parser.add_argument(
-        "-z", "--zephyr-base",
-        help="Zephyr base directory")
-
-    parser.add_argument(
-        "-d", "--dump", action="store_true",
-        help="dump generated CFB font elements as images for preview")
+        "-d",
+        "--dump",
+        action="store_true",
+        help="dump generated CFB font elements as images for preview",
+    )
 
     group = parser.add_argument_group("input arguments")
     group.add_argument(
-        "-i", "--input", required=True, type=argparse.FileType('rb'), metavar="FILE",
-        help="TrueType/OpenType file or image input file")
+        "-i",
+        "--input",
+        required=True,
+        type=argparse.FileType('rb'),
+        metavar="FILE",
+        help="TrueType/OpenType file or image input file",
+    )
     group.add_argument(
-        "-t", "--type", default="auto", choices=["auto", "font", "image"],
-        help="Input file type (default: %(default)s)")
+        "-t",
+        "--type",
+        default="auto",
+        choices=["auto", "font", "image"],
+        help="Input file type (default: %(default)s)",
+    )
 
     group = parser.add_argument_group("font arguments")
     group.add_argument(
-        "-s", "--size", type=int, default=10, metavar="POINTS",
-        help="TrueType/OpenType font size in points (default: %(default)s)")
+        "-s",
+        "--size",
+        type=int,
+        default=10,
+        metavar="POINTS",
+        help="TrueType/OpenType font size in points (default: %(default)s)",
+    )
 
     group = parser.add_argument_group("output arguments")
     group.add_argument(
-        "-o", "--output", type=argparse.FileType('w'), default="-", metavar="FILE",
-        help="CFB font header file (default: stdout)")
+        "-o",
+        "--output",
+        type=argparse.FileType('w'),
+        default="-",
+        metavar="FILE",
+        help="CFB font header file (default: stdout)",
+    )
     group.add_argument(
-        "--bindir", type=str,
-        help="CMAKE_BINARY_DIR for pure logging purposes. No trailing slash.")
+        "--bindir", type=str, help="CMAKE_BINARY_DIR for pure logging purposes. No trailing slash."
+    )
     group.add_argument(
-        "-x", "--width", required=True, type=int,
-        help="width of the CFB font elements in pixels")
+        "-x", "--width", required=True, type=int, help="width of the CFB font elements in pixels"
+    )
     group.add_argument(
-        "-y", "--height", required=True, type=int,
-        help="height of the CFB font elements in pixels")
+        "-y", "--height", required=True, type=int, help="height of the CFB font elements in pixels"
+    )
     group.add_argument(
-        "-n", "--name", default="custom",
-        help="name of the CFB font entry (default: %(default)s)")
+        "-n", "--name", default="custom", help="name of the CFB font entry (default: %(default)s)"
+    )
     group.add_argument(
-        "--first", type=int, default=PRINTABLE_MIN, metavar="CHARCODE",
-        help="character code mapped to the first CFB font element (default: %(default)s)")
+        "--first",
+        type=int,
+        default=PRINTABLE_MIN,
+        metavar="CHARCODE",
+        help="character code mapped to the first CFB font element (default: %(default)s)",
+    )
     group.add_argument(
-        "--last", type=int, default=PRINTABLE_MAX, metavar="CHARCODE",
-        help="character code mapped to the last CFB font element (default: %(default)s)")
+        "--last",
+        type=int,
+        default=PRINTABLE_MAX,
+        metavar="CHARCODE",
+        help="character code mapped to the last CFB font element (default: %(default)s)",
+    )
     group.add_argument(
-        "--center-x", action='store_true',
-        help="center character glyphs horizontally")
+        "--center-x", action='store_true', help="center character glyphs horizontally"
+    )
     group.add_argument(
-        "--y-offset", type=int, default=0,
-        help="vertical offset for character glyphs (default: %(default)s)")
+        "--y-offset",
+        type=int,
+        default=0,
+        help="vertical offset for character glyphs (default: %(default)s)",
+    )
     group.add_argument(
-        "--hpack", dest='hpack', default=False, action='store_true',
-        help="generate bytes encoding row data rather than column data (default: %(default)s)")
+        "--hpack",
+        dest='hpack',
+        default=False,
+        action='store_true',
+        help="generate bytes encoding row data rather than column data (default: %(default)s)",
+    )
     group.add_argument(
-        "--msb-first", action='store_true',
-        help="packed content starts at high bit of each byte (default: lsb-first)")
+        "--msb-first",
+        action='store_true',
+        help="packed content starts at high bit of each byte (default: lsb-first)",
+    )
 
     args = parser.parse_args()
+
 
 def main():
     """Parse arguments and generate CFB font header file"""
     parse_args()
     generate_header()
+
 
 if __name__ == "__main__":
     main()

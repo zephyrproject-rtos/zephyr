@@ -55,6 +55,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		ld_mio: led_mio {
 			gpios = <&psgpio_bank0 7 GPIO_ACTIVE_HIGH>;
 			label = "LD_MIO";
@@ -63,11 +64,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		btn4: btn4 {
 			gpios = <&psgpio_bank1 18 GPIO_ACTIVE_LOW>;
 			label = "BTN4";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		btn5: btn5 {
 			gpios = <&psgpio_bank1 19 GPIO_ACTIVE_LOW>;
 			label = "BTN5";

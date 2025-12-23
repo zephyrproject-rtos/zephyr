@@ -11,7 +11,7 @@
 		compatible = "test-pwm-loopback";
 		/* Connect P8A pin 3 and P8A pin 6 */
 		pwms = <&emios0_pwm 0 0 PWM_POLARITY_NORMAL>,
-			<&emios0_pwm 1 0 PWM_POLARITY_NORMAL>;
+		       <&emios0_pwm 1 0 PWM_POLARITY_NORMAL>;
 	};
 };
 

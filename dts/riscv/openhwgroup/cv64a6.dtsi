@@ -6,6 +6,7 @@
 
 #include <freq.h>
 #include "cva6.dtsi"
+
 /*
  * Application-class configuration of CVA6 64-bit CPUs:
  * FPU for 32-bit and 64-bit floats, SV39 MMU.

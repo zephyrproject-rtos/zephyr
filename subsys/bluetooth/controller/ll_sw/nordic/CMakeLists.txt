@@ -7,7 +7,7 @@ zephyr_library_sources(
   lll/lll.c
   lll/lll_clock.c
   )
-if (CONFIG_BT_BROADCASTER)
+if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
     lll/lll_adv.c
     )
@@ -122,5 +122,5 @@ zephyr_include_directories(
 
 zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
-  ${OPTIMIZE_FOR_SPEED_FLAG}
+  ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}
   )

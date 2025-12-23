@@ -4,16 +4,18 @@
 # on the arguments used.
 
 # Handle stripping
-if (STRIP_DEBUG OR STRIP_ALL)
+if(STRIP_DEBUG OR STRIP_ALL OR STRIP_UNNEEDED)
   if(STRIP_ALL)
     set(obj_copy_strip "-qs")
   elseif(STRIP_DEBUG)
     set(obj_copy_strip "-ql")
+  elseif(STRIP_UNNEEDED)
+    set(obj_copy_strip "-qlu")
   endif()
 
-  execute_process(
-      COMMAND ${STRIP} ${obj_copy_strip}
-      ${INFILE} ${FILEOUT})
+  # MWDT strip transforms input file in place with no output file option
+  configure_file(${INFILE} ${OUTFILE} COPYONLY)
+  execute_process(COMMAND ${STRIP} ${obj_copy_strip} ${OUTFILE})
 endif()
 
 # no support of --srec-len in mwdt

@@ -1,6 +1,6 @@
 .. zephyr:code-sample-category:: shields
    :name: Shields
    :show-listing:
-   :glob: **/*
+   :glob: */*
 
    Samples that demonstrate the use of shields in Zephyr.

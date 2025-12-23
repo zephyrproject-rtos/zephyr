@@ -1,0 +1,18 @@
+identifier: rak3112/esp32s3/procpu
+name: RAK3112 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - regulator
+  - uart
+  - pwm
+  - pinmux
+  - nvs
+  - display
+vendor: rakwireless

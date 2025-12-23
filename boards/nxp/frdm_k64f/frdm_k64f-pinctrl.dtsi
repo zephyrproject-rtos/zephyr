@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MK64FN1M0VLL12-pinctrl.h>
 
 &pinctrl {
@@ -29,12 +28,12 @@
 	pinmux_enet: pinmux_enet {
 		group1 {
 			pinmux = <RMII0_RXER_PTA5>,
-				<RMII0_RXD1_PTA12>,
-				<RMII0_RXD0_PTA13>,
-				<RMII0_CRS_DV_PTA14>,
-				<RMII0_TXEN_PTA15>,
-				<RMII0_TXD0_PTA16>,
-				<RMII0_TXD1_PTA17>;
+				 <RMII0_RXD1_PTA12>,
+				 <RMII0_RXD0_PTA13>,
+				 <RMII0_CRS_DV_PTA14>,
+				 <RMII0_TXEN_PTA15>,
+				 <RMII0_TXD0_PTA16>,
+				 <RMII0_TXD1_PTA17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -48,6 +47,7 @@
 			bias-pull-up;
 			slew-rate = "fast";
 		};
+
 		group1 {
 			pinmux = <RMII0_MDC_PTB1>;
 			drive-strength = "low";
@@ -58,8 +58,8 @@
 	pinmux_ptp: pinmux_ptp {
 		group0 {
 			pinmux = <ENET0_1588_TMR0_PTC16>,
-				<ENET0_1588_TMR1_PTC17>,
-				<ENET0_1588_TMR2_PTC18>;
+				 <ENET0_1588_TMR1_PTC17>,
+				 <ENET0_1588_TMR2_PTC18>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -72,6 +72,7 @@
 			bias-pull-up;
 			slew-rate = "fast";
 		};
+
 		group1 {
 			pinmux = <CAN0_TX_PTB18>;
 			drive-strength = "low";
@@ -90,7 +91,7 @@
 	ftm3_default: ftm3_default {
 		group0 {
 			pinmux = <FTM3_CH4_PTC8>,
-				<FTM3_CH5_PTC9>;
+				 <FTM3_CH5_PTC9>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -99,7 +100,7 @@
 	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <I2C0_SCL_PTE24>,
-				<I2C0_SDA_PTE25>;
+				 <I2C0_SDA_PTE25>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -110,8 +111,8 @@
 	ptp_default: ptp_default {
 		group0 {
 			pinmux = <ENET0_1588_TMR0_PTC16>,
-				<ENET0_1588_TMR1_PTC17>,
-				<ENET0_1588_TMR2_PTC18>;
+				 <ENET0_1588_TMR1_PTC17>,
+				 <ENET0_1588_TMR2_PTC18>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -121,9 +122,9 @@
 	spi0_default: spi0_default {
 		group0 {
 			pinmux = <SPI0_PCS0_PTD0>,
-				<SPI0_SCK_PTD1>,
-				<SPI0_SOUT_PTD2>,
-				<SPI0_SIN_PTD3>;
+				 <SPI0_SCK_PTD1>,
+				 <SPI0_SOUT_PTD2>,
+				 <SPI0_SIN_PTD3>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -132,19 +133,18 @@
 	spi1_default: spi1_default {
 		group0 {
 			pinmux = <SPI1_PCS0_PTE4>,
-				<SPI1_SCK_PTE2>,
-				<SPI1_SOUT_PTE3>,
-				<SPI1_SIN_PTE1>;
+				 <SPI1_SCK_PTE2>,
+				 <SPI1_SOUT_PTE3>,
+				 <SPI1_SIN_PTE1>;
 			drive-strength = "low";
 			slew-rate = "fast";
-	    };
+		};
 	};
-
 
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <UART0_RX_PTB16>,
-				<UART0_TX_PTB17>;
+				 <UART0_TX_PTB17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -154,9 +154,9 @@
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <UART2_CTS_b_PTD1>,
-				<UART2_RTS_b_PTD0>,
-				<UART2_RX_PTD2>,
-				<UART2_TX_PTD3>;
+				 <UART2_RTS_b_PTD0>,
+				 <UART2_RX_PTD2>,
+				 <UART2_TX_PTD3>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -166,10 +166,9 @@
 	uart3_default: uart3_default {
 		group0 {
 			pinmux = <UART3_RX_PTC16>,
-				<UART3_TX_PTC17>;
+				 <UART3_TX_PTC17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
 	};
-
 };

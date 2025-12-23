@@ -9,3 +9,6 @@ tests:
     filter: dt_alias_exists("prox-sensor0")
     integration_platforms:
       - nrf52840dk/nrf52840
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_proximity_9_click shield
+    extra_args:
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_proximity_9_click"

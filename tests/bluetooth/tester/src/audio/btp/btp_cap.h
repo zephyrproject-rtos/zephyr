@@ -11,12 +11,13 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
 /* CAP commands */
 #define BTP_CAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_cap_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_CAP_DISCOVER			0x02
@@ -41,7 +42,7 @@ struct btp_cap_unicast_setup_ase_cmd {
 	uint8_t presentation_delay[3];
 	uint8_t cc_ltvs_len;
 	uint8_t metadata_ltvs_len;
-	uint8_t ltvs[0];
+	uint8_t ltvs[];
 } __packed;
 
 #define BTP_CAP_UNICAST_AUDIO_START		0x04
@@ -55,13 +56,13 @@ struct btp_cap_unicast_audio_start_cmd {
 #define BTP_CAP_UNICAST_AUDIO_UPDATE		0x05
 struct btp_cap_unicast_audio_update_cmd {
 	uint8_t stream_count;
-	uint8_t update_data[0];
+	uint8_t update_data[];
 } __packed;
 struct btp_cap_unicast_audio_update_data {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t metadata_ltvs_len;
-	uint8_t metadata_ltvs[0];
+	uint8_t metadata_ltvs[];
 } __packed;
 
 #define BTP_CAP_UNICAST_AUDIO_STOP		0x06
@@ -80,7 +81,7 @@ struct btp_cap_broadcast_source_setup_stream_cmd {
 	uint16_t cid;
 	uint8_t cc_ltvs_len;
 	uint8_t metadata_ltvs_len;
-	uint8_t ltvs[0];
+	uint8_t ltvs[];
 } __packed;
 
 #define BTP_CAP_BROADCAST_SOURCE_SETUP_SUBGROUP	0x08
@@ -92,7 +93,7 @@ struct btp_cap_broadcast_source_setup_subgroup_cmd {
 	uint16_t cid;
 	uint8_t cc_ltvs_len;
 	uint8_t metadata_ltvs_len;
-	uint8_t ltvs[0];
+	uint8_t ltvs[];
 } __packed;
 
 #define BTP_CAP_BROADCAST_SOURCE_SETUP		0x09
@@ -145,7 +146,7 @@ struct btp_cap_broadcast_source_stop_cmd {
 struct btp_cap_broadcast_source_update_cmd {
 	uint8_t source_id;
 	uint8_t metadata_ltvs_len;
-	uint8_t metadata_ltvs[0];
+	uint8_t metadata_ltvs[];
 } __packed;
 
 /* CAP events */

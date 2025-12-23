@@ -14,7 +14,7 @@ else()
   target_sources(app PRIVATE src/board.c)
 endif()
 
-if (CONFIG_BUILD_WITH_TFM)
+if(CONFIG_BUILD_WITH_TFM)
   target_include_directories(app PRIVATE
     $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )

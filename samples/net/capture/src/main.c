@@ -8,7 +8,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture_sample, LOG_LEVEL_DBG);
 
+#if defined(CONFIG_NATIVE_LIBC)
+#define ARPHRD_CAN 280
+#define ARPHRD_PPP 512
+#else
 #include <zephyr/posix/net/if_arp.h>
+#endif
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/capture.h>
@@ -249,7 +254,7 @@ static int init_app(void)
 		link_types.count = MIN(ARRAY_SIZE(link_types.type),
 				       ARRAY_SIZE(link_types_to_monitor));
 
-		params.family = AF_UNSPEC;
+		params.family = NET_AF_UNSPEC;
 		memcpy(&params.link_types, &link_types,
 		       sizeof(struct virtual_interface_link_types));
 

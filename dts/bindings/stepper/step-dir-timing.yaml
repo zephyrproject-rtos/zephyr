@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: Step/Dir Control Signal Timing
+
+properties:
+  step-width-ns:
+    type: int
+    description: |
+      Minimum pulse width in nanoseconds for the step signal.

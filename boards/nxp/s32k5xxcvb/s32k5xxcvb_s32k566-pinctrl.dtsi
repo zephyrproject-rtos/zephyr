@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K56X-437BGA-pinctrl.h>
+
+&pinctrl {
+	eirq1_default: eirq1_default {
+		group1 {
+			pinmux = <PF3_SIUL1_EIRQ3>, <PF9_SIUL1_EIRQ9>;
+			input-enable;
+		};
+	};
+};

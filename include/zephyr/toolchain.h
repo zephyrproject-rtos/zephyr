@@ -247,6 +247,17 @@
 #endif
 
 /**
+ * @def TOOLCHAIN_WARNING_CAST_QUAL
+ * @brief Toolchain-specific warning for pointer casts removing a type qualifier.
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_CAST_QUAL
+#define TOOLCHAIN_WARNING_CAST_QUAL
+#endif
+
+/**
  * @def TOOLCHAIN_DISABLE_WARNING
  * @brief Disable the specified compiler warning for all compilers.
  */

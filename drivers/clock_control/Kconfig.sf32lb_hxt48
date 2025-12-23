@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SF32LB_HXT48
+	bool "SF32LB HXT48 clock control driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_HXT48_ENABLED
+	help
+	  Enable driver for SiFli SF32LB HXT48.

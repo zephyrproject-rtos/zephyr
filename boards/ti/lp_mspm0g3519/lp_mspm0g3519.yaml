@@ -1,0 +1,14 @@
+identifier: lp_mspm0g3519
+name: TI MSPM0G3519 Launchpad
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 512
+supported:
+  - uart
+  - gpio
+vendor: ti

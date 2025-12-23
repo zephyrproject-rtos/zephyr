@@ -11,6 +11,7 @@
 / {
 	model = "Cortex-R8 Virtual target";
 	compatible = "renode,cortex-r8-virtual";
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;

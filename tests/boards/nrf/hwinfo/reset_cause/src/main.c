@@ -134,6 +134,16 @@ static void print_supported_reset_cause(void)
 		} else {
 			LOG_INF("14: no support for RESET_TEMPERATURE");
 		}
+		if (supported & RESET_BOOTLOADER) {
+			LOG_INF("15: RESET_BOOTLOADER is supported");
+		} else {
+			LOG_INF("15: no support for RESET_BOOTLOADER");
+		}
+		if (supported & RESET_FLASH) {
+			LOG_INF("16: RESET_FLASH is supported");
+		} else {
+			LOG_INF("16: no support for RESET_FLASH");
+		}
 	} else if (ret == -ENOSYS) {
 		LOG_INF("hwinfo_get_supported_reset_cause() is NOT supported");
 		supported = 0;
@@ -196,6 +206,12 @@ static void print_current_reset_cause(uint32_t *cause)
 		}
 		if (*cause & RESET_TEMPERATURE) {
 			LOG_INF("14: reset due to RESET_TEMPERATURE");
+		}
+		if (*cause & RESET_BOOTLOADER) {
+			LOG_INF("15: reset due to RESET_BOOTLOADER");
+		}
+		if (*cause & RESET_FLASH) {
+			LOG_INF("16: reset due to RESET_FLASH");
 		}
 	} else if (ret == -ENOSYS) {
 		LOG_INF("hwinfo_get_reset_cause() is NOT supported");
@@ -297,7 +313,7 @@ void test_reset_watchdog(uint32_t cause)
 
 			/* Flush cache as reboot may invalidate all lines. */
 			sys_cache_data_flush_range((void *) &machine_state, sizeof(machine_state));
-			LOG_INF("Watchdog shall fire in ~%u miliseconds", watchdog_window);
+			LOG_INF("Watchdog shall fire in ~%u milliseconds", watchdog_window);
 			print_bar();
 			k_sleep(K_FOREVER);
 		} else {

@@ -117,7 +117,7 @@ int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 	k_spinlock_key_t key;
 	int ret;
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, wait, condvar);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, wait, condvar, timeout);
 
 	key = k_spin_lock(&lock);
 	k_mutex_unlock(mutex);
@@ -125,7 +125,7 @@ int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 	ret = z_pend_curr(&lock, key, &condvar->wait_q, timeout);
 	k_mutex_lock(mutex, K_FOREVER);
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, wait, condvar, ret);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, wait, condvar, timeout, ret);
 
 	return ret;
 }

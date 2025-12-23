@@ -3,13 +3,58 @@
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# This file is contains Zephyr build system Kconfig references and is not
+# This file contains Zephyr build system Kconfig references and is not
 # re-usable outside the Zephyr tree.
+
+# These SOC_COMPATIBLE_NRF* options are common between real and simulated targets.
+# Most code and kconfig options use the COMPATIBLE option, but the few places which are specific
+# for real HW or simulated HW will use the corresponding real SOC_NRF* or BSIM option.
+
+config SOC_COMPATIBLE_NRF
+	bool
+
+config SOC_COMPATIBLE_NRF52X
+	bool
+
+config SOC_COMPATIBLE_NRF53X
+	bool
+
+config SOC_COMPATIBLE_NRF54LX
+	bool
+
+config SOC_COMPATIBLE_NRF52833
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUNET
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUAPP
+	bool
+
+config SOC_COMPATIBLE_NRF54L15
+	bool
+
+config SOC_COMPATIBLE_NRF54L15_CPUAPP
+	bool
+
+config SOC_COMPATIBLE_NRF54LM20A
+	bool
+
+config SOC_COMPATIBLE_NRF54LM20A_CPUAPP
+	bool
 
 config SOC_FAMILY_NORDIC_NRF
 	select SOC_COMPATIBLE_NRF
 	select SOC_RESET_HOOK
 	select CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK if ARM
+
+if SOC_COMPATIBLE_NRF
+
+config SOC_NORDIC_BSP_NAME
+	string
+	default "stable"
+
+endif # SOC_COMPATIBLE_NRF
 
 if SOC_FAMILY_NORDIC_NRF
 
@@ -160,6 +205,15 @@ config NRF_SECURE_APPROTECT_USER_HANDLING
 
 endchoice
 
+config NRF_SKIP_CLOCK_CONFIG
+	bool
+	prompt "Skip clock frequency configuration" if TRUSTED_EXECUTION_SECURE
+	depends on NRF_PLATFORM_LUMOS
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  With this option, the CPU clock frequency is not set during system initialization.
+	  The CPU runs with the default, hardware-selected frequency.
+
 config NRF_TRACE_PORT
 	bool "nRF TPIU"
 	depends on !SOC_SERIES_NRF51X
@@ -174,5 +228,12 @@ config NRF_PLATFORM_HALTIUM
 	  SoC series based on the Nordic nRF Haltium platform need to select
 	  this option. This allows to easily enable common functionality on
 	  SoCs based on the Haltium platform.
+
+config NRF_PLATFORM_LUMOS
+	bool
+	help
+	  SoC series based on the Nordic nRF Lumos platform such as nRF54Lx
+	  series. This allows to easily enable common functionality on
+	  SoCs based on the Lumos platform.
 
 endif # SOC_FAMILY_NORDIC_NRF

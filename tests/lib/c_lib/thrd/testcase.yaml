@@ -9,7 +9,6 @@ common:
   platform_key:
     - arch
     - simulation
-  filter: not CONFIG_NATIVE_APPLICATION
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc

@@ -43,7 +43,7 @@ void soc_early_init_hook(void)
 
 	extern volatile uint16_t g_protect_counters[];
 
-	for (uint32_t i = 0; i < 4; i++) {
+	for (uint32_t i = 0; i < 5; i++) {
 		g_protect_counters[i] = 0;
 	}
 
@@ -57,6 +57,7 @@ void soc_early_init_hook(void)
 	R_PSCU->PSARD = 0;
 	R_PSCU->PSARE = 0;
 
+	R_CPSCU->ICUSARC = 0;
 	R_CPSCU->ICUSARG = 0;
 	R_CPSCU->ICUSARH = 0;
 	R_CPSCU->ICUSARI = 0;

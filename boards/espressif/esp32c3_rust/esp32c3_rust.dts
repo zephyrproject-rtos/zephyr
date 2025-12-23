@@ -34,6 +34,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button1: button_1 {
 			label = "User SW1";
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -43,12 +44,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_0: led_0 {
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD0";
 		};
 	};
-
 };
 
 &spi2 {
@@ -63,27 +64,26 @@
 	status = "okay";
 
 	led_strip: ws2812@0 {
-			compatible = "worldsemi,ws2812-spi";
+		compatible = "worldsemi,ws2812-spi";
 
-			/* SPI */
-			reg = <0>; /* ignored, but necessary for SPI bindings */
-			spi-max-frequency = <6400000>;
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
 
-			/* WS2812 */
-			chain-length = <1>; /* arbitrary; change at will */
-			spi-cpha;
-			spi-one-frame = <0xf0>; /* 11110000: 625 ns high and 625 ns low */
-			spi-zero-frame = <0xc0>; /* 11000000: 312.5 ns high and 937.5 ns low */
-			color-mapping = <LED_COLOR_ID_GREEN
-					LED_COLOR_ID_RED
-					LED_COLOR_ID_BLUE>;
+		/* WS2812 */
+		chain-length = <1>; /* arbitrary; change at will */
+		spi-cpha;
+		spi-one-frame = <0xf0>; /* 11110000: 625 ns high and 625 ns low */
+		spi-zero-frame = <0xc0>; /* 11000000: 312.5 ns high and 937.5 ns low */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
 	};
 };
 
 &usb_serial {
 	status = "okay";
 };
-
 
 &i2c0 {
 	status = "okay";

@@ -17,4 +17,4 @@ Requirements
 ************
 
 No hardware support is required besides sufficient memory for the video resolution
-declared by :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_SZ_MAX`.
+declared by :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`.

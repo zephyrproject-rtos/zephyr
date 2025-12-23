@@ -13,11 +13,8 @@ config USB_DEVICE_DRIVER
 	default y
 endif # USB_DEVICE_STACK
 
-if NETWORKING
-
-config NET_L2_ETHERNET
-	default y
-config TEST_RANDOM_GENERATOR
+configdefault NET_L2_ETHERNET
 	default y
 
-endif # NETWORKING
+configdefault TEST_RANDOM_GENERATOR
+	default y if NETWORKING

@@ -569,7 +569,7 @@ static int pmw3610_pm_action(const struct device *dev,
 			      RES_MIN, RES_MAX), "invalid res-cpi");		\
 										\
 	static const struct pmw3610_config pmw3610_cfg_##n = {			\
-		.spi = SPI_DT_SPEC_INST_GET(n, PMW3610_SPI_MODE, 0),		\
+		.spi = SPI_DT_SPEC_INST_GET(n, PMW3610_SPI_MODE),		\
 		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),		\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
 		.axis_x = DT_INST_PROP(n, zephyr_axis_x),			\

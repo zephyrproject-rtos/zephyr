@@ -22,6 +22,6 @@ config UVB_MAX_MESSAGES
 
 module = UVB
 module-str = USB virtual bus service
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 
 endif # UVB

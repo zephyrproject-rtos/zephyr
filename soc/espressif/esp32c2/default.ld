@@ -173,10 +173,7 @@ SECTIONS
   dram_size_field = LOADADDR(.dram0.end) - LOADADDR(.dram0.data);
 
   #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-#endif
 
   /* --- START OF IRAM --- */
 
@@ -214,10 +211,7 @@ SECTIONS
     *libzephyr.a:hw_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
-    *libsubsys__net.a:(.literal .text .literal.* .text.*)
+    *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
@@ -232,14 +226,11 @@ SECTIONS
     *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
-    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__picolib.a:string.*(.literal .text .literal.* .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
-    *libc.a:*(.literal .text .literal.* .text.*)
+    *librtc.a:(.literal .text .literal.* .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
@@ -276,8 +267,8 @@ SECTIONS
     *libzephyr.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_oct_flash_init*(.literal .literal.* .text .text.*)
+    *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -299,8 +290,6 @@ SECTIONS
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
     *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     /* [mapping:soc_pm] */
@@ -339,6 +328,8 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+    *libble_app.a:(.isr_iram1.* .conn_iram1.* .sleep_iram1.*)
+
     . = ALIGN(4) + 16;
 
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
@@ -366,7 +357,6 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hal_common.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_flash_spi_init.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
@@ -503,9 +493,9 @@ SECTIONS
     *libzephyr.a:memspi_host_driver.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_oct_flash_init.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.* .srodata .srodata.*)
@@ -524,13 +514,13 @@ SECTIONS
     *libzephyr.a:rtc_clk.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:systimer.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:mspi_timing_config.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:mspi_timing_tuning.*(.rodata .rodata.* .srodata .srodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.rodata .rodata.*)
     *(.rodata.esp_system_abort)
+
+    *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(4);
     #include <snippets-rwdata.ld>
@@ -556,14 +546,12 @@ SECTIONS
     *libzephyr.a:cpu_region_protect.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:clk.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_clk.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops_esp32c2.*(.rodata .rodata.* .srodata .srodata.*)
 
     *libzephyr.a:esp_gpio_reserve.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal_common.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(16);
@@ -604,6 +592,18 @@ SECTIONS
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_bss_start = ABSOLUTE(.);
+    *libbtbb.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_bss_end = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_controller_bss_start = ABSOLUTE(.);
+    *libble_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_controller_bss_end = ABSOLUTE(.);
 
     *(.dynsbss)
     *(.sbss)

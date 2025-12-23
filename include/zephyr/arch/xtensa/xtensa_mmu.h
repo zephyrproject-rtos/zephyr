@@ -155,6 +155,32 @@ void xtensa_mmu_tlb_ipi(void);
  */
 void xtensa_mmu_tlb_shootdown(void);
 
+#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
+/**
+ * Struct for reporting page table statistics.
+ */
+struct xtensa_mmu_page_table_stats {
+	/** Current number of L1 page tables allocated. */
+	uint32_t cur_num_l1_alloced;
+
+	/** Current number of L2 page tables allocated. */
+	uint32_t cur_num_l2_alloced;
+
+	/** Maximum number of L1 page tables allocated. */
+	uint32_t max_num_l1_alloced;
+
+	/** Maximum number of L2 page tables allocated. */
+	uint32_t max_num_l2_alloced;
+};
+
+/**
+ * @brief Get page table statistics.
+ *
+ * @param[out] Pointer to statistics struct to write into.
+ */
+void xtensa_mmu_page_table_stats_get(struct xtensa_mmu_page_table_stats *stats);
+#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+
 /**
  * @}
  */

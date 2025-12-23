@@ -11,7 +11,6 @@
 #ifdef CONFIG_CPU_CORTEX_M
 #include <cmsis_core.h>
 #endif
-#include <soc.h>
 
 #include <stddef.h>
 #include <zephyr/types.h>
@@ -22,7 +21,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/irq.h>
 #include <string.h>
 
@@ -51,7 +49,6 @@
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
@@ -129,7 +126,7 @@ static int i2c_dw_error_chk(const struct device *dev)
 		/* check 7bit NACK Tx Abort */
 		if (ic_txabrt_src.bits.ADDR7BNACK) {
 			dw->state |= I2C_DW_NACK;
-			LOG_ERR("NACK on %s", dev->name);
+			LOG_ERR_RATELIMIT("NACK on %s", dev->name);
 		}
 		/* check SDA stuck low Tx abort, need to do bus recover */
 		if (ic_txabrt_src.bits.SDASTUCKLOW) {
@@ -148,7 +145,7 @@ static int i2c_dw_error_chk(const struct device *dev)
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 		dw->need_setup = true;
 #endif
-		LOG_ERR("IO Fail on %s", dev->name);
+		LOG_ERR_RATELIMIT("IO Fail on %s", dev->name);
 		return -EIO;
 	}
 	return 0;
@@ -593,13 +590,28 @@ static void i2c_dw_isr(const struct device *port)
 			if (slave_activity) {
 				read_clr_rd_req(reg_base);
 				dw->state = I2C_DW_CMD_RECV;
-				if (slave_cb->read_requested) {
-					slave_cb->read_requested(dw->slave_cfg, &data);
-					i2c_dw_write_byte_non_blocking(port, data);
+
+				if (!dw->read_in_progress) {
+					if (slave_cb->read_requested) {
+						slave_cb->read_requested(dw->slave_cfg, &data);
+						i2c_dw_write_byte_non_blocking(port, data);
+					}
+					dw->read_in_progress = true;
+				} else {
+					if (slave_cb->read_processed) {
+						slave_cb->read_processed(dw->slave_cfg, &data);
+						i2c_dw_write_byte_non_blocking(port, data);
+					}
 				}
-				if (slave_cb->read_processed) {
-					slave_cb->read_processed(dw->slave_cfg, &data);
-				}
+			}
+		}
+
+		if (intr_stat.bits.stop_det) {
+			read_clr_stop_det(reg_base);
+			dw->state = I2C_DW_STATE_READY;
+			dw->read_in_progress = false;
+			if (slave_cb->stop) {
+				slave_cb->stop(dw->slave_cfg);
 			}
 		}
 #endif
@@ -1125,6 +1137,7 @@ static int i2c_dw_slave_register(const struct device *dev, struct i2c_target_con
 	uint32_t reg_base = get_regs(dev);
 	int ret;
 
+	dw->read_in_progress = false;
 	dw->slave_cfg = cfg;
 	ret = i2c_dw_set_slave_mode(dev, cfg->address);
 	write_intr_mask(DW_INTR_MASK_RX_FULL | DW_INTR_MASK_RD_REQ | DW_INTR_MASK_TX_ABRT |
@@ -1150,8 +1163,6 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_interrupt_register intr_stat;
 	uint32_t reg_base = get_regs(dev);
-
-	const struct i2c_target_callbacks *slave_cb = dw->slave_cfg->callbacks;
 
 	intr_stat.raw = read_intr_stat(reg_base);
 
@@ -1183,14 +1194,6 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 	if (intr_stat.bits.activity) {
 		read_clr_activity(reg_base);
 		dw->state = I2C_DW_STATE_READY;
-	}
-
-	if (intr_stat.bits.stop_det) {
-		read_clr_stop_det(reg_base);
-		dw->state = I2C_DW_STATE_READY;
-		if (slave_cb->stop) {
-			slave_cb->stop(dw->slave_cfg);
-		}
 	}
 
 	if (intr_stat.bits.start_det) {
@@ -1289,6 +1292,11 @@ static int i2c_dw_initialize(const struct device *dev)
 	uint32_t reg_base = get_regs(dev);
 
 	clear_bit_enable_en(reg_base);
+	/*
+	 * depending on the IP configuration, we may have to disable block mode in
+	 * controller mode
+	 */
+	clear_bit_enable_block(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {

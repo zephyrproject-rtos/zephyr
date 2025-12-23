@@ -14,211 +14,123 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 
-static inline void eth_stats_update_bytes_rx(struct net_if *iface,
-					     uint32_t bytes)
+static inline struct net_stats_eth *eth_stats_get_common(struct net_if *iface)
 {
 	const struct ethernet_api *api = (const struct ethernet_api *)
 		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
 
-	if (!api->get_stats) {
-		return;
+	if (api->get_stats_type != NULL) {
+		return api->get_stats_type(net_if_get_device(iface),
+					   ETHERNET_STATS_TYPE_COMMON);
+	} else if (api->get_stats != NULL) {
+		return api->get_stats(net_if_get_device(iface));
 	}
 
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->bytes.received += bytes;
+	return NULL;
 }
 
-static inline void eth_stats_update_bytes_tx(struct net_if *iface,
-					     uint32_t bytes)
+static inline void eth_stats_update_bytes_rx(struct net_if *iface, uint32_t bytes)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->bytes.received += bytes;
 	}
+}
 
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
+static inline void eth_stats_update_bytes_tx(struct net_if *iface, uint32_t bytes)
+{
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
+
+	if (stats != NULL) {
+		stats->bytes.sent += bytes;
 	}
-
-	stats->bytes.sent += bytes;
 }
 
 static inline void eth_stats_update_pkts_rx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->pkts.rx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->pkts.rx++;
 }
 
 static inline void eth_stats_update_pkts_tx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->pkts.tx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->pkts.tx++;
 }
 
 static inline void eth_stats_update_broadcast_rx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->broadcast.rx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->broadcast.rx++;
 }
 
 static inline void eth_stats_update_broadcast_tx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->broadcast.tx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->broadcast.tx++;
 }
 
 static inline void eth_stats_update_multicast_rx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->multicast.rx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->multicast.rx++;
 }
 
 static inline void eth_stats_update_multicast_tx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
-		net_if_get_device(iface)->api;
-	struct net_stats_eth *stats;
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->multicast.tx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->multicast.tx++;
 }
-
 
 static inline void eth_stats_update_errors_rx(struct net_if *iface)
 {
 	struct net_stats_eth *stats;
-	const struct ethernet_api *api;
 
 	if (!iface) {
 		return;
 	}
 
-	api = ((const struct ethernet_api *)
-	       net_if_get_device(iface)->api);
-
-	if (!api->get_stats) {
-		return;
+	stats = eth_stats_get_common(iface);
+	if (stats != NULL) {
+		stats->errors.rx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->errors.rx++;
 }
 
 static inline void eth_stats_update_errors_tx(struct net_if *iface)
 {
-	struct net_stats_eth *stats;
-	const struct ethernet_api *api = ((const struct ethernet_api *)
-		net_if_get_device(iface)->api);
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->errors.tx++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->errors.tx++;
 }
 
 static inline void eth_stats_update_unknown_protocol(struct net_if *iface)
 {
-	struct net_stats_eth *stats;
-	const struct ethernet_api *api = ((const struct ethernet_api *)
-		net_if_get_device(iface)->api);
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!api->get_stats) {
-		return;
+	if (stats != NULL) {
+		stats->unknown_protocol++;
 	}
-
-	stats = api->get_stats(net_if_get_device(iface));
-	if (!stats) {
-		return;
-	}
-
-	stats->unknown_protocol++;
 }
 
 #else /* CONFIG_NET_STATISTICS_ETHERNET */

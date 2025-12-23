@@ -42,6 +42,7 @@ dut: &uart21 {
 	pinctrl-1 = <&uart21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
+	timer = <&timer21>;
 };
 
 dut2: &uart00 {

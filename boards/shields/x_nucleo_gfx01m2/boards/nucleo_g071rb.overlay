@@ -8,7 +8,7 @@
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
 	dmas = <&dmamux1 0 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>,
-		<&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
+	       <&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
 	dma-names = "tx", "rx";
 };
 
@@ -16,7 +16,7 @@
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pc2 &spi2_mosi_pc3>;
 	pinctrl-names = "default";
 	dmas = <&dmamux1 2 19 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>,
-		<&dmamux1 3 18 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
+	       <&dmamux1 3 18 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
 	dma-names = "tx", "rx";
 };
 

@@ -7,8 +7,23 @@
 menuconfig POSIX_THREADS
 	bool "POSIX thread support"
 	help
-	  Select 'y' here to enable POSIX threads, mutexes, condition variables, and thread-specific
-	  storage.
+	  Select 'y' here to enable POSIX threads, mutexes, condition variables, and
+	  thread-specific storage.
+
+	  This option makes the following functions available:
+	  pthread_atfork(), pthread_attr_destroy(), pthread_attr_getdetachstate(),
+	  pthread_attr_getschedparam(), pthread_attr_init(), pthread_attr_setdetachstate(),
+	  pthread_attr_setschedparam(), pthread_cancel(), pthread_cleanup_pop(),
+	  pthread_cleanup_push(), pthread_cond_broadcast(), pthread_cond_destroy(),
+	  pthread_cond_init(), pthread_cond_signal(), pthread_cond_timedwait(),
+	  pthread_cond_wait(), pthread_condattr_destroy(), pthread_condattr_init(),
+	  pthread_create(), pthread_detach(), pthread_equal(), pthread_exit(),
+	  pthread_getspecific(), pthread_join(), pthread_key_create(), pthread_key_delete(),
+	  pthread_kill(), pthread_mutex_destroy(), pthread_mutex_init(), pthread_mutex_lock(),
+	  pthread_mutex_timedlock(), pthread_mutex_trylock(), pthread_mutex_unlock(),
+	  pthread_mutexattr_destroy(), pthread_mutexattr_init(), pthread_once(), pthread_self(),
+	  pthread_setcancelstate(), pthread_setcanceltype(), pthread_setspecific(),
+	  pthread_sigmask(), pthread_testcancel(), and sched_yield().
 
 	  For more information please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html

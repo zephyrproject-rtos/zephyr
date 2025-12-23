@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 struct net_icmpv4_hdr_opts_data {
 	struct net_pkt *reply;
-	const struct in_addr *src;
+	const struct net_in_addr *src;
 };
 
 int net_icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
@@ -83,10 +83,10 @@ int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum)
 static int icmpv4_update_record_route(uint8_t *opt_data,
 				      uint8_t opt_len,
 				      struct net_pkt *reply,
-				      const struct in_addr *src)
+				      const struct net_in_addr *src)
 {
 	uint8_t len = net_pkt_ipv4_opts_len(reply);
-	uint8_t addr_len = sizeof(struct in_addr);
+	uint8_t addr_len = sizeof(struct net_in_addr);
 	uint8_t ptr_offset = 4U;
 	uint8_t offset = 0U;
 	uint8_t skip;
@@ -191,10 +191,10 @@ drop:
 static int icmpv4_update_time_stamp(uint8_t *opt_data,
 				   uint8_t opt_len,
 				   struct net_pkt *reply,
-				   const struct in_addr *src)
+				   const struct net_in_addr *src)
 {
 	uint8_t len = net_pkt_ipv4_opts_len(reply);
-	uint8_t addr_len = sizeof(struct in_addr);
+	uint8_t addr_len = sizeof(struct net_in_addr);
 	uint8_t ptr_offset = 5U;
 	uint8_t offset = 0U;
 	uint8_t new_entry_len;
@@ -305,7 +305,7 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 
 	switch (flag) {
 	case NET_IPV4_TS_OPT_TS_ONLY:
-		if (net_pkt_write_be32(reply, htons(k_uptime_get_32()))) {
+		if (net_pkt_write_be32(reply, net_htons(k_uptime_get_32()))) {
 			goto drop;
 		}
 
@@ -321,7 +321,7 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 
 		len += addr_len;
 
-		if (net_pkt_write_be32(reply, htons(k_uptime_get_32()))) {
+		if (net_pkt_write_be32(reply, net_htons(k_uptime_get_32()))) {
 			goto drop;
 		}
 
@@ -369,7 +369,7 @@ static int icmpv4_reply_to_options(uint8_t opt_type,
 
 static int icmpv4_handle_header_options(struct net_pkt *pkt,
 					struct net_pkt *reply,
-					const struct in_addr *src)
+					const struct net_in_addr *src)
 {
 	struct net_icmpv4_hdr_opts_data ud;
 	uint8_t len;
@@ -402,7 +402,7 @@ static int icmpv4_handle_header_options(struct net_pkt *pkt,
 #else
 static int icmpv4_handle_header_options(struct net_pkt *pkt,
 					struct net_pkt *reply,
-					const struct in_addr *src)
+					const struct net_in_addr *src)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(reply);
@@ -420,8 +420,8 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
-	struct in_addr req_src, req_dst;
-	const struct in_addr *src;
+	struct net_in_addr req_src, req_dst;
+	const struct net_in_addr *src;
 	int16_t payload_len;
 
 	net_ipv4_addr_copy_raw(req_src.s4_addr, ip_hdr->src);
@@ -450,7 +450,7 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
 					  net_pkt_ipv4_opts_len(pkt) +
 					  payload_len,
-					  AF_INET, IPPROTO_ICMP,
+					  NET_AF_INET, NET_IPPROTO_ICMP,
 					  PKT_WAIT_TIME);
 	if (!reply) {
 		NET_DBG("DROP: No buffer");
@@ -489,7 +489,7 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	net_pkt_cursor_init(reply);
-	net_ipv4_finalize(reply, IPPROTO_ICMP);
+	net_ipv4_finalize(reply, NET_IPPROTO_ICMP);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
 		net_sprint_ipv4_addr(src),
@@ -517,7 +517,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	int err = -EIO;
 	struct net_ipv4_hdr *ip_hdr;
-	struct in_addr orig_src, orig_dst;
+	struct net_in_addr orig_src, orig_dst;
 	struct net_pkt *pkt;
 	size_t copy_len;
 
@@ -528,7 +528,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		goto drop_no_pkt;
 	}
 
-	if (ip_hdr->proto == IPPROTO_ICMP) {
+	if (ip_hdr->proto == NET_IPPROTO_ICMP) {
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 						      struct net_icmp_hdr);
 		struct net_icmp_hdr *icmp_hdr;
@@ -551,14 +551,14 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		 */
 		NET_DBG("Not sending error to bcast pkt from %s on proto %s",
 			net_sprint_ipv4_addr(&orig_src),
-			net_proto2str(AF_INET, ip_hdr->proto));
+			net_proto2str(NET_AF_INET, ip_hdr->proto));
 		goto drop_no_pkt;
 	}
 
-	if (ip_hdr->proto == IPPROTO_UDP) {
+	if (ip_hdr->proto == NET_IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_udp_hdr);
-	} else if (ip_hdr->proto == IPPROTO_TCP) {
+	} else if (ip_hdr->proto == NET_IPPROTO_TCP) {
 		copy_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_tcp_hdr);
 	} else {
@@ -567,7 +567,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 
 	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
 					copy_len + NET_ICMPV4_UNUSED_LEN,
-					AF_INET, IPPROTO_ICMP,
+					NET_AF_INET, NET_IPPROTO_ICMP,
 					PKT_WAIT_TIME);
 	if (!pkt) {
 		err =  -ENOMEM;
@@ -582,7 +582,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv4_finalize(pkt, IPPROTO_ICMP);
+	net_ipv4_finalize(pkt, NET_IPPROTO_ICMP);
 
 	net_linkaddr_set(net_pkt_lladdr_dst(pkt),
 			 net_pkt_lladdr_src(orig)->addr,
@@ -677,8 +677,8 @@ static int icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
 	uint16_t length = net_pkt_get_len(pkt);
 	struct net_pmtu_entry *entry;
-	struct sockaddr_in sockaddr_src = {
-		.sin_family = AF_INET,
+	struct net_sockaddr_in sockaddr_src = {
+		.sin_family = NET_AF_INET,
 	};
 	uint16_t mtu;
 	int ret;
@@ -710,7 +710,7 @@ static int icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 
 	net_pkt_acknowledge_data(pkt, &dst_unreach_access);
 
-	mtu = ntohs(dest_unreach_hdr->mtu);
+	mtu = net_ntohs(dest_unreach_hdr->mtu);
 
 	if (mtu < MIN_IPV4_MTU) {
 		NET_DBG("DROP: Unsupported MTU %u, min is %u",
@@ -718,9 +718,9 @@ static int icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_ipaddr_copy(&sockaddr_src.sin_addr, (struct in_addr *)&ip_hdr->src);
+	net_ipaddr_copy(&sockaddr_src.sin_addr, (struct net_in_addr *)&ip_hdr->src);
 
-	entry = net_pmtu_get_entry((struct sockaddr *)&sockaddr_src);
+	entry = net_pmtu_get_entry((struct net_sockaddr *)&sockaddr_src);
 	if (entry == NULL) {
 		NET_DBG("DROP: Cannot find PMTU entry for %s",
 			net_sprint_ipv4_addr(&ip_hdr->src));
@@ -766,14 +766,15 @@ void net_icmpv4_init(void)
 	static struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REQUEST, 0, icmpv4_handle_echo_request);
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET, NET_ICMPV4_ECHO_REQUEST, 0,
+				icmpv4_handle_echo_request);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV4_ECHO_REQUEST),
 			ret);
 	}
 
 #if defined(CONFIG_NET_IPV4_PMTU)
-	ret = net_icmp_init_ctx(&dst_unreach_ctx, NET_ICMPV4_DST_UNREACH, 0,
+	ret = net_icmp_init_ctx(&dst_unreach_ctx, NET_AF_INET, NET_ICMPV4_DST_UNREACH, 0,
 				icmpv4_handle_dst_unreach);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV4_DST_UNREACH),

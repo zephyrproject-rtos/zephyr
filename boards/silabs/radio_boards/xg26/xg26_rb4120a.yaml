@@ -1,0 +1,23 @@
+identifier: xg26_rb4120a
+name: EFR32xG26 2.4 GHz +10 dBm Radio Board (xG26-RB4120A, BRD4120A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

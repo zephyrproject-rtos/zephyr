@@ -344,8 +344,8 @@ static void stmpe811_report_touch(const struct device *dev)
 		y = (((int)data->touch_y - config->raw_y_min) * common->screen_height) /
 			(config->raw_y_max - config->raw_y_min);
 
-		x = CLAMP(x, 0, common->screen_width);
-		y = CLAMP(y, 0, common->screen_height);
+		x = clamp(x, 0, common->screen_width);
+		y = clamp(y, 0, common->screen_height);
 	}
 
 	input_touchscreen_report_pos(dev, x, y, K_FOREVER);

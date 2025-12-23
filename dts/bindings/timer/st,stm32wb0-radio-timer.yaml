@@ -1,0 +1,27 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32WB0 Bluetooth LE Radio Timer
+
+compatible: "st,stm32wb0-radio-timer"
+
+properties:
+  compensated-timer-freq:
+    type: int
+    required: true
+    const: 409600
+    description: |
+      Timer frequency resulting from LSI or LSE frequency with interpolated value from HSE with
+      a periodic temperature compensation algorithm.
+      It is independent of hardware oscillator variations due to temperature.
+      The timer resolution is equivalent to 625/256 μs (approximately 2.4414 μs).
+      The value is expressed in hertz (Hz).
+
+  max-hs-startup-time:
+    type: int
+    required: true
+    description: |
+      High speed crystal startup time. This is used by hardware to anticipate wake-up event
+      so that high speed crystal is ready at the desired time. This parameter depends on the board
+      and the crystal used. It is expressed in the unit of 625/256 μs (approximately 2.4414 μs).
+      For example, if the property is set to 320, it means approximately 781 μs are needed.

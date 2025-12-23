@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bindings for the ADI AD4190 Analog-to-Digital Converter.
+
+compatible: adi,ad4190-adc
+
+include: adi,ad4170-adc.yaml

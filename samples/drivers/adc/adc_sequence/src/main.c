@@ -48,6 +48,7 @@ int main(void)
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(channel_reading),
 		.resolution = CONFIG_SEQUENCE_RESOLUTION,
+		.oversampling = CONFIG_SEQUENCE_OVERSAMPLING,
 		.options = &options,
 	};
 
@@ -91,13 +92,30 @@ int main(void)
 			       CONFIG_SEQUENCE_SAMPLES);
 			for (size_t sample_index = 0U; sample_index < CONFIG_SEQUENCE_SAMPLES;
 			     sample_index++) {
+				uint8_t res = CONFIG_SEQUENCE_RESOLUTION;
 
-				val_mv = channel_reading[sample_index][channel_index];
-
+				/*
+				 * If using differential mode, the 16/32 bit value
+				 * in the ADC sample buffer should be a signed 2's
+				 * complement value.
+				 * Also reduce the resolution by 1 for the conversion
+				 */
+				if (channel_cfgs[channel_index].differential) {
+#ifdef CONFIG_SEQUENCE_32BITS_REGISTERS
+					val_mv = (int32_t)
+						channel_reading[sample_index][channel_index];
+#else
+					val_mv = (int32_t)((int16_t)channel_reading[sample_index]
+										   [channel_index]);
+#endif
+					res -= 1;
+				} else {
+					val_mv = channel_reading[sample_index][channel_index];
+				}
 				printf("- - %" PRId32, val_mv);
 				err = adc_raw_to_millivolts(vrefs_mv[channel_index],
 							    channel_cfgs[channel_index].gain,
-							    CONFIG_SEQUENCE_RESOLUTION, &val_mv);
+							    res, &val_mv);
 
 				/* conversion to mV may not be supported, skip if not */
 				if ((err < 0) || vrefs_mv[channel_index] == 0) {

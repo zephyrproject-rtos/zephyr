@@ -453,12 +453,12 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 		if (err != 0) {
 			LOG_DBG("Failed to get conn info, use default interval");
 
-			conn_info.le.interval = BT_GAP_INIT_CONN_INT_MIN;
+			conn_info.le.interval_us = BT_CONN_INTERVAL_TO_US(BT_GAP_INIT_CONN_INT_MIN);
 		}
 
 		/* Wait a connection interval to retry */
 		err = k_work_reschedule(&inst->bap_read_work,
-					K_USEC(BT_CONN_INTERVAL_TO_US(conn_info.le.interval)));
+					K_USEC(conn_info.le.interval_us));
 		if (err < 0) {
 			LOG_DBG("Failed to reschedule read work: %d", err);
 			bap_long_read_reset(inst);
@@ -581,7 +581,7 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	(void)memset(params, 0, sizeof(*params));
 
-	LOG_DBG("%s receive state", active_recv_state ? "Active " : "Inactive");
+	LOG_DBG("%s receive state", active_recv_state ? "Active" : "Inactive");
 
 	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
@@ -706,14 +706,20 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE) == 0) {
 			if (inst->recv_state_cnt <
 				CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
-				uint8_t idx = inst->recv_state_cnt++;
+				const uint8_t idx = inst->recv_state_cnt;
 
 				LOG_DBG("Receive State %u", inst->recv_state_cnt);
 				inst->recv_state_handles[idx] =
 					attr->handle + 1;
 				sub_params = &inst->recv_state_sub_params[idx];
 				sub_params->disc_params = &inst->recv_state_disc_params[idx];
+				inst->recv_state_cnt++;
 			}
+		} else {
+			LOG_DBG("Invalid UUID %s", bt_uuid_str(chrc->uuid));
+			bap_broadcast_assistant_discover_complete(conn, -EBADMSG, 0);
+
+			return BT_GATT_ITER_STOP;
 		}
 
 		if (sub_params != NULL) {
@@ -1401,7 +1407,9 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	/* Check if this operation would result in a duplicate before proceeding */
 	if (broadcast_src_is_duplicate(inst, param->broadcast_id, param->adv_sid,
 				       param->addr.type)) {
-		LOG_DBG("Broadcast source already exists");
+		LOG_DBG("Broadcast source already exists for broadcast_id 0x%06X, sid 0x%02X and "
+			"type 0x%02X",
+			param->broadcast_id, param->adv_sid, param->addr.type);
 
 		return -EINVAL;
 	}

@@ -28,10 +28,22 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #endif
 
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#ifdef CONFIG_HARVARD
+struct k_heap llext_instr_heap;
+struct k_heap llext_data_heap;
+#else
 struct k_heap llext_heap;
+#endif
 bool llext_heap_inited;
 #else
-K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
+#ifdef CONFIG_HARVARD
+Z_HEAP_DEFINE_IN_SECT(llext_instr_heap, (CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1)),
+		      __attribute__((section(".rodata.llext_instr_heap"))));
+Z_HEAP_DEFINE_IN_SECT(llext_data_heap, (CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1)),
+		      __attribute__((section(".data.llext_data_heap"))));
+#else
+K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * KB(1));
+#endif
 #endif
 
 /*
@@ -84,15 +96,19 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	 * program-accessible data (not to string tables, for example).
 	 */
 	if (region->sh_flags & SHF_ALLOC) {
-		if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
-			/* On ARM with an MPU, regions must be sized and
-			 * aligned to the same power of two (larger than 32).
+		if (IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)) {
+			/* Some MPU architectures (ARMv7-M, older ARC) require regions
+			 * to be sized and aligned to the same power of two.
 			 */
 			uintptr_t block_sz = MAX(MAX(region_alloc, region_align), LLEXT_PAGE_SIZE);
 
 			block_sz = 1 << LOG2CEIL(block_sz); /* align to next power of two */
 			region_alloc = block_sz;
 			region_align = block_sz;
+		} else if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
+			/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
+			region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+			region_align = MAX(region_align, LLEXT_PAGE_SIZE);
 		} else if (IS_ENABLED(CONFIG_MMU)) {
 			/* MMU targets map memory in page-sized chunks. Round
 			 * the region to multiples of those.
@@ -115,8 +131,10 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			/* Region has data in the file, check if peek() is supported */
 			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
-				if (IS_ALIGNED(ext->mem[mem_idx], region_align) ||
-				    ldr_parm->pre_located) {
+				if ((IS_ALIGNED(ext->mem[mem_idx], region_align) ||
+				     ldr_parm->pre_located) &&
+				    ((mem_idx != LLEXT_MEM_TEXT) ||
+				     INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc))) {
 					/* Map this region directly to the ELF buffer */
 					llext_init_mem_part(ext, mem_idx,
 							    (uintptr_t)ext->mem[mem_idx],
@@ -125,8 +143,18 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 					return 0;
 				}
 
-				LOG_WRN("Cannot peek region %d: %p not aligned to %#zx",
-					mem_idx, ext->mem[mem_idx], (size_t)region_align);
+				if ((mem_idx == LLEXT_MEM_TEXT) &&
+				    !INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc)) {
+					LOG_WRN("Cannot reuse ELF buffer for region %d, not "
+						"instruction memory: %p-%p",
+						mem_idx, ext->mem[mem_idx],
+						(void *)((uintptr_t)(ext->mem[mem_idx]) +
+							 region->sh_size));
+				}
+				if (!IS_ALIGNED(ext->mem[mem_idx], region_align)) {
+					LOG_WRN("Cannot peek region %d: %p not aligned to %#zx",
+						mem_idx, ext->mem[mem_idx], (size_t)region_align);
+				}
 			}
 		} else if (ldr_parm->pre_located) {
 			/*
@@ -149,7 +177,12 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	/* Allocate a suitably aligned area for the region. */
-	ext->mem[mem_idx] = llext_aligned_alloc(region_align, region_alloc);
+	if (region->sh_flags & SHF_EXECINSTR) {
+		ext->mem[mem_idx] = llext_aligned_alloc_instr(region_align, region_alloc);
+	} else {
+		ext->mem[mem_idx] = llext_aligned_alloc_data(region_align, region_alloc);
+	}
+
 	if (!ext->mem[mem_idx]) {
 		LOG_ERR("Failed allocating %zd bytes %zd-aligned for region %d",
 			(size_t)region_alloc, (size_t)region_align, mem_idx);
@@ -296,7 +329,13 @@ void llext_free_regions(struct llext *ext)
 #endif
 		if (ext->mem_on_heap[i]) {
 			LOG_DBG("freeing memory region %d", i);
-			llext_free(ext->mem[i]);
+
+			if (i == LLEXT_MEM_TEXT) {
+				llext_free_instr(ext->mem[i]);
+			} else {
+				llext_free(ext->mem[i]);
+			}
+
 			ext->mem[i] = NULL;
 		}
 	}
@@ -325,17 +364,36 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 #endif
 }
 
-int llext_heap_init(void *mem, size_t bytes)
+int llext_heap_init_harvard(void *instr_mem, size_t instr_bytes, void *data_mem, size_t data_bytes)
 {
-#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#if !defined(CONFIG_LLEXT_HEAP_DYNAMIC) || !defined(CONFIG_HARVARD)
+	return -ENOSYS;
+#else
 	if (llext_heap_inited) {
 		return -EEXIST;
 	}
-	k_heap_init(&llext_heap, mem, bytes);
+
+	k_heap_init(&llext_instr_heap, instr_mem, instr_bytes);
+	k_heap_init(&llext_data_heap, data_mem, data_bytes);
+
 	llext_heap_inited = true;
 	return 0;
-#else
+#endif
+}
+
+int llext_heap_init(void *mem, size_t bytes)
+{
+#if !defined(CONFIG_LLEXT_HEAP_DYNAMIC) || defined(CONFIG_HARVARD)
 	return -ENOSYS;
+#else
+	if (llext_heap_inited) {
+		return -EEXIST;
+	}
+
+	k_heap_init(&llext_heap, mem, bytes);
+
+	llext_heap_inited = true;
+	return 0;
 #endif
 }
 

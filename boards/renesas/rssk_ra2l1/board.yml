@@ -1,0 +1,6 @@
+board:
+  name: rssk_ra2l1
+  full_name: Capacitive Touch Evaluation System for RA2L1
+  vendor: renesas
+  socs:
+  - name: r7fa2l1abxxfp

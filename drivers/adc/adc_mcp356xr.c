@@ -1209,7 +1209,6 @@ static DEVICE_API(adc, adc_mcp356xr_api) = {
 	.ref_internal = 2400,
 };
 
-#define MCP356XR_SPI_CS_DELAY (1)
 #define MCP356XR_SPI_OPERATION                                                                     \
 	(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE)
 
@@ -1285,7 +1284,7 @@ static DEVICE_API(adc, adc_mcp356xr_api) = {
 
 #define ADC_MCP356XR_INIT(index)                                                                   \
 	static const struct adc_mcp356xr_config adc_mcp356xr_config_##index = {                    \
-		.spi = SPI_DT_SPEC_INST_GET(index, MCP356XR_SPI_OPERATION, MCP356XR_SPI_CS_DELAY), \
+		.spi = SPI_DT_SPEC_INST_GET(index, MCP356XR_SPI_OPERATION),                        \
 		.address = DT_INST_PROP(index, address),                                           \
 		.vref_settle_time = K_MSEC(DT_INST_PROP_OR(index, vref_settle_time_ms, 0)),        \
 		.init_reg_value =                                                                  \
@@ -1308,7 +1307,7 @@ static DEVICE_API(adc, adc_mcp356xr_api) = {
 		.dev = DEVICE_DT_INST_GET(index),                                                  \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &adc_mcp356xr_init, NULL, &adc_mcp356xr_data_##index,         \
+	DEVICE_DT_INST_DEFINE(index, adc_mcp356xr_init, NULL, &adc_mcp356xr_data_##index,          \
 			      &adc_mcp356xr_config_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
 			      &adc_mcp356xr_api);
 

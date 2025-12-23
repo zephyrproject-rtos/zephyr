@@ -56,31 +56,31 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 0 0>,	/* GP0 */
-			<1 0 &gpio0 1 0>,	/* GP1 */
-			<2 0 &gpio0 2 0>,	/* GP2 */
-			<3 0 &gpio0 3 0>,	/* GP3 */
-			<4 0 &gpio0 4 0>,	/* GP4 */
-			<5 0 &gpio0 5 0>,	/* GP5 */
-			<6 0 &gpio0 6 0>,	/* GP6 */
-			<7 0 &gpio0 7 0>,	/* GP7 */
-			<8 0 &gpio0 8 0>,	/* GP8 */
-			<9 0 &gpio0 9 0>,	/* GP9 */
-			<10 0 &gpio0 10 0>,	/* GP10 */
-			<11 0 &gpio0 11 0>,	/* GP11 */
-			<12 0 &gpio0 12 0>,	/* GP12 */
-			<13 0 &gpio0 13 0>,	/* GP13 */
-			<14 0 &gpio0 14 0>,	/* GP14 */
-			<15 0 &gpio0 15 0>,	/* GP15 */
-			<16 0 &gpio0 16 0>,	/* GP16 */
-			<17 0 &gpio0 17 0>,	/* GP17 */
-			<18 0 &gpio0 18 0>,	/* GP18 */
-			<19 0 &gpio0 19 0>,	/* GP19 */
-			<20 0 &gpio0 20 0>,	/* GP20 */
-			<21 0 &gpio0 21 0>,	/* GP21 */
-			<22 0 &gpio0 22 0>,	/* GP22 */
-			<26 0 &gpio0 26 0>,	/* GP26 */
-			<27 0 &gpio0 27 0>,	/* GP27 */
-			<28 0 &gpio0 28 0>;	/* GP28 */
+			   <1 0 &gpio0 1 0>,	/* GP1 */
+			   <2 0 &gpio0 2 0>,	/* GP2 */
+			   <3 0 &gpio0 3 0>,	/* GP3 */
+			   <4 0 &gpio0 4 0>,	/* GP4 */
+			   <5 0 &gpio0 5 0>,	/* GP5 */
+			   <6 0 &gpio0 6 0>,	/* GP6 */
+			   <7 0 &gpio0 7 0>,	/* GP7 */
+			   <8 0 &gpio0 8 0>,	/* GP8 */
+			   <9 0 &gpio0 9 0>,	/* GP9 */
+			   <10 0 &gpio0 10 0>,	/* GP10 */
+			   <11 0 &gpio0 11 0>,	/* GP11 */
+			   <12 0 &gpio0 12 0>,	/* GP12 */
+			   <13 0 &gpio0 13 0>,	/* GP13 */
+			   <14 0 &gpio0 14 0>,	/* GP14 */
+			   <15 0 &gpio0 15 0>,	/* GP15 */
+			   <16 0 &gpio0 16 0>,	/* GP16 */
+			   <17 0 &gpio0 17 0>,	/* GP17 */
+			   <18 0 &gpio0 18 0>,	/* GP18 */
+			   <19 0 &gpio0 19 0>,	/* GP19 */
+			   <20 0 &gpio0 20 0>,	/* GP20 */
+			   <21 0 &gpio0 21 0>,	/* GP21 */
+			   <22 0 &gpio0 22 0>,	/* GP22 */
+			   <26 0 &gpio0 26 0>,	/* GP26 */
+			   <27 0 &gpio0 27 0>,	/* GP27 */
+			   <28 0 &gpio0 28 0>;	/* GP28 */
 	};
 };
 
@@ -140,23 +140,24 @@
 	clock-frequency = <DT_FREQ_M(25)>;
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
-		pinctrl-names = "default";
+	pinctrl-names = "default";
 	cs-gpios = <&pico_header 13 GPIO_ACTIVE_LOW>;
 
 	lan8651: lan865x@0 {
 		compatible = "microchip,lan865x";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(25)>;
-		int-gpios = <&gpio0 21 (GPIO_ACTIVE_LOW)>;
+		int-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		rst-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		status = "okay";
-		local-mac-address = [ CA 2F B7 10 23 78];
+		local-mac-address = [CA 2F B7 10 23 78];
 
 		lan865x_mdio: lan865x_mdio {
 			compatible = "microchip,lan865x-mdio";
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			ethernet-phy@0 {
 				compatible = "microchip,t1s-phy";
 				reg = <0x0>;
@@ -206,6 +207,9 @@ zephyr_udc0: &usbd {
 };
 
 pico_spi: &spi1 {};
+
 pico_i2c0: &i2c0 {};
+
 pico_i2c1: &i2c1 {};
+
 pico_serial: &uart0 {};

@@ -109,9 +109,6 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 	lp_uart_ll_set_source_clk(data->hal.dev, cfg->lp_uart_source_clk);
 	lp_uart_ll_sclk_enable(0);
 
-	/* Initialize LP UART HAL with default parameters */
-	uart_hal_init(&data->hal, LP_UART_NUM_0);
-
 	/* Set protocol parameters from the configuration */
 	lp_uart_ll_set_baudrate(data->hal.dev, cfg->baud_rate, sclk_freq);
 	uart_hal_set_parity(&data->hal, cfg->parity);

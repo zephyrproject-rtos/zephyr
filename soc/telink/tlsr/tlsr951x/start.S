@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define NDS_MCACHE_CTL               0x7CA
-#define NDS_MMISC_CTL                0x7D0
-
 #include <zephyr/toolchain.h>
 
 	.option push
@@ -30,17 +27,6 @@ entry:
 	.align 2
 
 start:
-
-	/* Enable I/D-Cache */
-	csrr   t0,  NDS_MCACHE_CTL
-	ori    t0,  t0,  1        #/I-Cache
-	ori    t0,  t0,  2        #/D-Cache
-	csrw   NDS_MCACHE_CTL,  t0
-	fence.i
-
-	/* Enable misaligned access and non-blocking load */
-	li t0, (1 << 8) | (1 << 6)
-	csrs NDS_MMISC_CTL, t0
 
 _ZERO_AES:
 	lui    t0, 0

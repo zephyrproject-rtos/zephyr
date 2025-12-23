@@ -11,18 +11,18 @@
 	/* Define memory regions for IPC
 	 * Note that shared memory must have specific MPU attributes set.
 	 */
-	sram1_ipc0: memory@20060000{
+	sram1_ipc0: memory@20060000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20060000 DT_SIZE_K(16)>;
-		zephyr,memory-region="SRAM1_IPC0";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "SRAM1_IPC0";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
-	sram1_ipc1: memory@20064000{
+	sram1_ipc1: memory@20064000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20064000 DT_SIZE_K(16)>;
-		zephyr,memory-region="SRAM1_IPC1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "SRAM1_IPC1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	ipc {

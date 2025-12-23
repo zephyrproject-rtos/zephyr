@@ -8,7 +8,7 @@
 	ftm0_default: ftm0_default {
 		group0 {
 			pinmux = <FTM0_CH6_PTA17>,
-				<FTM0_CH2_PTB14>;
+				 <FTM0_CH2_PTB14>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -31,7 +31,7 @@
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		pwms = <&ftm0 2 0 PWM_POLARITY_NORMAL>, /* PTB14 J3 pin 11 */
-			<&pwt 1 0 PWM_POLARITY_NORMAL>; /* PTE11 J2 pin 2 */
+		       <&pwt 1 0 PWM_POLARITY_NORMAL>; /* PTE11 J2 pin 2 */
 	};
 };
 

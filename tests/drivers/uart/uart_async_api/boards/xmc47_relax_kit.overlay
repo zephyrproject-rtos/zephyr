@@ -12,7 +12,7 @@ dut: &usic1ch1 {
 	current-speed = <921600>;
 	interrupts = <90 1 91 1>;
 	interrupt-names = "tx", "rx";
-	dmas = <&dma0 2 0 XMC4XXX_SET_CONFIG(1,11)>, <&dma0 3 0 XMC4XXX_SET_CONFIG(3,12)>;
+	dmas = <&dma0 2 0 XMC4XXX_SET_CONFIG(1, 11)>, <&dma0 3 0 XMC4XXX_SET_CONFIG(3, 12)>;
 	dma-names = "tx", "rx";
 	pinctrl-0 = <&uart_tx_p3_15_u1c1 &uart_rx_p3_14_u1c1>;
 	pinctrl-names = "default";

@@ -83,6 +83,59 @@
 		zephyr,memory-region = "ISRAM";
 	};
 
+	/* The DDR4 node and zephyr,memory-region follow the naming convention
+	 * ddr4_$IDAUID_$SECURITY_FLAG except for the default region of board
+	 * which is named as "DDR4" to be compatible with existing
+	 * samples/tests that expect DDR4 node and region to be of the same name.
+	 */
+	ddr4_6_ns: memory@60000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x60000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_6_NS";
+	};
+
+	ddr4: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4";
+	};
+
+	ddr4_8_ns: memory@80000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x80000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_8_NS";
+	};
+
+	ddr4_9_s: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_9_S";
+	};
+
+	ddr4_a_ns: memory@a0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xa0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_A_NS";
+	};
+
+	ddr4_b_s: memory@b0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xb0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_B_S";
+	};
+
+	ddr4_c_ns: memory@c0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xc0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_C_NS";
+	};
+
+	ddr4_d_s: memory@d0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xd0000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "DDR4_D_S";
+	};
+
 	soc {
 		peripheral@50000000 {
 			#address-cells = <1>;

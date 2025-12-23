@@ -789,7 +789,7 @@ static int ism330dhcx_init(const struct device *dev)
 			    (.bus_init = ism330dhcx_spi_init,					\
 			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
 							 SPI_MODE_CPOL | SPI_MODE_CPHA |	\
-							 SPI_WORD_SET(8), 0),),			\
+							 SPI_WORD_SET(8)),),			\
 			    ())									\
 		COND_CODE_1(DT_INST_ON_BUS(inst, i2c),						\
 			    (.bus_init = ism330dhcx_i2c_init,					\

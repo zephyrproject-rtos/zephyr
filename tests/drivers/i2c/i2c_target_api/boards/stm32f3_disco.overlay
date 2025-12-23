@@ -10,8 +10,6 @@
  * Short Pin PB7 to PA10, and PB6 to PA9, for the test to pass.
  */
 
-
-
 &i2c1 {
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
@@ -26,5 +24,4 @@
 		reg = <0x56>;
 		size = <256>;
 	};
-
 };

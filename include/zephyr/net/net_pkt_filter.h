@@ -60,6 +60,7 @@ enum npf_test_type {
 	NPF_TEST_TYPE_ETH_TYPE_UNMATCH,
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,
+	NPF_TEST_TYPE_LOCAL_IN_MATCH,
 };
 
 #if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
@@ -85,10 +86,11 @@ struct npf_test {
 
 /** @brief filter rule structure */
 struct npf_rule {
-	sys_snode_t node;               /**< Slist rule list node */
-	enum net_verdict result;	/**< result if all tests pass */
-	uint32_t nb_tests;		/**< number of tests for this rule */
-	struct npf_test *tests[];	/**< pointers to @ref npf_test instances */
+	sys_snode_t node;           /**< Slist rule list node */
+	enum net_verdict result;    /**< result if all tests pass */
+	enum net_priority priority; /**< priority in case of NET_CONTINUE */
+	uint32_t nb_tests;          /**< number of tests for this rule */
+	struct npf_test *tests[];   /**< pointers to @ref npf_test instances */
 };
 
 /** @brief Default rule list termination for accepting a packet */
@@ -235,11 +237,19 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
  *                <tt>NET_OK</tt> or <tt>NET_DROP</tt>.
  * @param ... List of conditions for this rule.
  */
-#define NPF_RULE(_name, _result, ...) \
-	struct npf_rule _name = { \
-		.result = (_result), \
-		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1, \
+#define NPF_RULE(_name, _result, ...)					  \
+	struct npf_rule _name = {					  \
+		.result = (_result),					  \
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,	  \
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
+	}
+
+#define NPF_PRIORITY(_name, _priority, ...)				\
+	struct npf_rule _name = {					\
+		.result = NET_CONTINUE,					\
+		.priority = (_priority),				\
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,	\
+		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},	\
 	}
 
 #define Z_NPF_TEST_ADDR(arg) &arg.test
@@ -410,10 +420,10 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
- *against
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
  * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (AF_INET / AF_INET6) in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
  */
 #define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
 	struct npf_test_ip _name = {					\
@@ -433,10 +443,10 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
- *against
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
  * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (AF_INET / AF_INET6) in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
  */
 #define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
 	struct npf_test_ip _name = {					\
@@ -619,7 +629,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_TYPE_MATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_type_match,				\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "eth type",			\
@@ -634,7 +644,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_TYPE_UNMATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_type_unmatch,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "!eth type",			\
@@ -650,7 +660,7 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_VLAN_TYPE_MATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_vlan_type_match,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "eth vlan type",		\
@@ -666,11 +676,53 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
  */
 #define NPF_ETH_VLAN_TYPE_UNMATCH(_name, _type)				\
 	struct npf_test_eth_type _name = {				\
-		.type = htons(_type),					\
+		.type = net_htons(_type),				\
 		.test.fn = npf_eth_vlan_type_unmatch,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
 			   (.test.name = "!eth vlan type",		\
 			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,)) \
+	}
+
+/**
+ * @typedef npf_local_in_fn_t
+ *
+ * @brief Function that is called to get the verdict what should happen to
+ * the network packet.
+ *
+ * @param pkt Pointer to the network packet to be evaluated
+ * @param user_data A valid pointer to user data or NULL
+ *
+ * @return True if the packet matches, false otherwise
+ */
+typedef bool (npf_local_in_fn_t)(struct net_pkt *pkt, void *user_data);
+
+/** @cond INTERNAL_HIDDEN */
+
+extern npf_test_fn_t npf_local_in_match;
+
+struct npf_test_local_in {
+	struct npf_test test;
+	npf_local_in_fn_t *fn; /* local_in hook function */
+	void *user_data;       /* optional user data */
+};
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "local_in match" packet filter condition
+ *
+ * @param _name Name of the condition
+ * @param _handler Function to call for the local_in hook
+ * @param _user_data Optional user data pointer passed to the handler
+ */
+#define NPF_LOCAL_IN_MATCH(_name, _handler, _user_data)			\
+	struct npf_test_local_in _name = {				\
+		.test.fn = npf_local_in_match,				\
+		.fn = (_handler),					\
+		.user_data = (_user_data),				\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "local_in",			\
+			    .test.type = NPF_TEST_TYPE_LOCAL_IN_MATCH,)) \
 	}
 
 /** Type of the packet filter rule. */

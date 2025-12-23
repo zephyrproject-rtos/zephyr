@@ -5,7 +5,7 @@ description: WNC-M14A2A LTE-M modem
 
 compatible: "wnc,m14a2a"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-boot-mode-sel-gpios:

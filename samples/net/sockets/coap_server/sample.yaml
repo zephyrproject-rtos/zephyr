@@ -28,3 +28,6 @@ tests:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
       - nrf7002dk/nrf5340/cpuapp
+  sample.net.sockets.coap_server.802154.subg:
+    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    platform_allow: beagleconnect_freedom

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include <errno.h>
 
 #include <zephyr/sys/sys_io.h>
-
+#include <soc_common.h>
 #include <adsp/cache.h>
 
 #ifndef __INC_IMX_SOC_H

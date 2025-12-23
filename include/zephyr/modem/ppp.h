@@ -24,6 +24,8 @@ extern "C" {
 /**
  * @brief Modem PPP
  * @defgroup modem_ppp Modem PPP
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
@@ -48,27 +50,10 @@ enum modem_ppp_receive_state {
 };
 
 enum modem_ppp_transmit_state {
-	/* Idle */
 	MODEM_PPP_TRANSMIT_STATE_IDLE = 0,
-	/* Writing header */
 	MODEM_PPP_TRANSMIT_STATE_SOF,
-	MODEM_PPP_TRANSMIT_STATE_HDR_FF,
-	MODEM_PPP_TRANSMIT_STATE_HDR_7D,
-	MODEM_PPP_TRANSMIT_STATE_HDR_23,
-	/* Writing protocol */
-	MODEM_PPP_TRANSMIT_STATE_PROTOCOL_HIGH,
-	MODEM_PPP_TRANSMIT_STATE_ESCAPING_PROTOCOL_HIGH,
-	MODEM_PPP_TRANSMIT_STATE_PROTOCOL_LOW,
-	MODEM_PPP_TRANSMIT_STATE_ESCAPING_PROTOCOL_LOW,
-	/* Writing data */
+	MODEM_PPP_TRANSMIT_STATE_PROTOCOL,
 	MODEM_PPP_TRANSMIT_STATE_DATA,
-	MODEM_PPP_TRANSMIT_STATE_ESCAPING_DATA,
-	/* Writing FCS */
-	MODEM_PPP_TRANSMIT_STATE_FCS_LOW,
-	MODEM_PPP_TRANSMIT_STATE_ESCAPING_FCS_LOW,
-	MODEM_PPP_TRANSMIT_STATE_FCS_HIGH,
-	MODEM_PPP_TRANSMIT_STATE_ESCAPING_FCS_HIGH,
-	/* Writing end of frame */
 	MODEM_PPP_TRANSMIT_STATE_EOF,
 };
 
@@ -98,8 +83,6 @@ struct modem_ppp {
 	/* Packet being sent */
 	enum modem_ppp_transmit_state transmit_state;
 	struct net_pkt *tx_pkt;
-	uint8_t tx_pkt_escaped;
-	uint16_t tx_pkt_protocol;
 	uint16_t tx_pkt_fcs;
 
 	/* Ring buffer used for transmitting partial PPP frame */
@@ -119,6 +102,10 @@ struct modem_ppp {
 	struct modem_stats_buffer receive_buf_stats;
 	struct modem_stats_buffer transmit_buf_stats;
 #endif
+};
+
+struct modem_ppp_config {
+	const struct device *dev;
 };
 
 /**
@@ -170,13 +157,17 @@ int modem_ppp_init_internal(const struct device *dev);
  * network device instance, and binds the modem_ppp instance to the PPP L2
  * instance.
  *
+ * If underlying cellular device is given, the PPP interface will manage the
+ * power state of the cellular device when starting and stopping the PPP.
+ *
+ * @param _dev Cellular device instance for power management or NULL if not used
  * @param _name Name of the statically defined modem_ppp instance
  * @param _init_iface Hook for the PPP L2 network interface init function
  * @param _prio Initialization priority of the PPP L2 net iface
  * @param _mtu Max size of net_pkt data sent and received on PPP L2 net iface
  * @param _buf_size Size of partial PPP frame transmit and receive buffers
  */
-#define MODEM_PPP_DEFINE(_name, _init_iface, _prio, _mtu, _buf_size)                               \
+#define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _prio, _mtu, _buf_size)                     \
 	extern const struct ppp_api modem_ppp_ppp_api;                                             \
                                                                                                    \
 	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
@@ -188,10 +179,29 @@ int modem_ppp_init_internal(const struct device *dev);
 		.transmit_buf = _CONCAT(_name, _transmit_buf),                                     \
 		.buf_size = _buf_size,                                                             \
 	};                                                                                         \
+	static const struct modem_ppp_config _CONCAT(_name, _config) = {                           \
+		.dev = _dev,                                                                       \
+	};                                                                                         \
                                                                                                    \
-	NET_DEVICE_INIT(_CONCAT(ppp_net_dev_, _name), "modem_ppp_" # _name,                        \
-			modem_ppp_init_internal, NULL, &_name, NULL, _prio, &modem_ppp_ppp_api,    \
-			PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), _mtu)
+	NET_DEVICE_INIT(_CONCAT(ppp_net_dev_, _name), "modem_ppp_" #_name,                         \
+			modem_ppp_init_internal, NULL, &_name, &_CONCAT(_name, _config), _prio,    \
+			&modem_ppp_ppp_api, PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), _mtu)
+
+/**
+ * @brief Define a modem PPP module for cellular device tree instance.
+ *
+ * @see MODEM_DEV_PPP_DEFINE
+ */
+#define MODEM_DT_INST_PPP_DEFINE(inst, _name, _init_iface, _prio, _mtu, _buf_size)                 \
+	MODEM_DEV_PPP_DEFINE(DEVICE_DT_INST_GET(inst), _name, _init_iface, _prio, _mtu, _buf_size)
+
+/**
+ * @brief Define a modem PPP module without a device and bind it to a network interface.
+ *
+ * @see MODEM_DEV_PPP_DEFINE
+ */
+#define MODEM_PPP_DEFINE(_name, _init_iface, _prio, _mtu, _buf_size)                               \
+	MODEM_DEV_PPP_DEFINE(NULL, _name, _init_iface, _prio, _mtu, _buf_size)
 
 /**
  * @}

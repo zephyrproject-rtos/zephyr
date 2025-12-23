@@ -39,3 +39,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread->callee_saved.sp = (unsigned long)stack_init;
 }
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	return -ENOTSUP;
+}

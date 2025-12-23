@@ -1,0 +1,23 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_RPI_PICO
+	bool "Raspberry Pi Pico hwinfo driver"
+	default y
+	depends on SOC_FAMILY_RPI_PICO
+	select HWINFO_HAS_DRIVER
+	select PICOSDK_USE_FLASH
+	help
+	  Enable Raspberry Pi Pico hwinfo driver.
+
+config HWINFO_RPI_PICO_CHIP_ID
+	bool "Use chip ID as device ID for RP2350"
+	default n
+	depends on SOC_SERIES_RP2350
+	depends on HWINFO_RPI_PICO
+	help
+	  Use the chip ID as device ID for RP2350 instead of the default
+	  flash RUID. This is useful for RP2350 boards that do not have a
+	  flash, or when OTP ID is preferred over flash RUID.
+	  This option is recommended for new RP2350 designs, but defaults to n
+	  to prevent existing devices from changing their serial numbers.

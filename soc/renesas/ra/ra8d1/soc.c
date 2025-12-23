@@ -74,4 +74,6 @@ void soc_early_init_hook(void)
 
 	z_arm_nmi_set_handler(NMI_Handler);
 #endif /* CONFIG_RUNTIME_NMI */
+
+	cold_start_handler();
 }

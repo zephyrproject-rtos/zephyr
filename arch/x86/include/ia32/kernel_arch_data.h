@@ -11,8 +11,8 @@
  * This file contains private kernel structures definitions and various
  * other definitions for the Intel Architecture 32 bit (IA-32) processor
  * architecture.
- * The header include/kernel.h contains the public kernel interface
- * definitions, with include/arch/x86/ia32/arch.h supplying the
+ * The header include/zephyr/kernel.h contains the public kernel interface
+ * definitions, with include/zephyr/arch/x86/ia32/arch.h supplying the
  * IA-32 specific portions of the public kernel interface.
  *
  * This file is also included by assembly language files which must #define
@@ -30,6 +30,7 @@
 #include <zephyr/linker/sections.h>
 #include <ia32/exception.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/arch/x86/cet.h>
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/kernel.h>
@@ -52,7 +53,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,5 +72,15 @@ extern void z_x86_tls_update_gdt(struct k_thread *thread);
 #endif
 
 #endif /* _ASMLANGUAGE */
+
+#define X86_IRQ_SHADOW_STACK_DEFINE(name, size)							\
+	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)			\
+	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)					\
+	name[size / sizeof(arch_thread_hw_shadow_stack_t)] =					\
+		{ [size / sizeof(arch_thread_hw_shadow_stack_t) - 4] =				\
+			(uintptr_t)name + size - 2 * sizeof(arch_thread_hw_shadow_stack_t),	\
+		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 3] = 0,			\
+		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 2] = 0,			\
+		}
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_KERNEL_ARCH_DATA_H_ */

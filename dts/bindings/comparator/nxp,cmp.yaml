@@ -1,0 +1,147 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Comparator
+
+compatible: "nxp,cmp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  enable-high-speed-mode:
+    type: boolean
+    description: |
+      Enable CMP high speed mode.
+      False: In this mode, CMP has slower output propagation
+             delay and lower current consumption.
+      True: CMP has faster output propagation delay and
+            higher current consumption.
+
+  hysteresis-mode:
+    type: string
+    enum:
+      - "LEVEL0"
+      - "LEVEL1"
+      - "LEVEL2"
+      - "LEVEL3"
+    description: |
+      Select CMP Hysteresis level.
+
+  invert-output:
+    type: boolean
+    description: |
+      Invert CMP output.
+
+  enable-pin-out:
+    type: boolean
+    description: |
+      Enable CMP output to associated pin.
+
+  use-unfiltered-output:
+    type: boolean
+    description: |
+      Use unfiltered output as the final result.
+      If users need unfiltered output, enable this property, and
+      do not need to configure 'filter-count' and 'filter-period'.
+      If users need filtered output, disbable this property, and
+      configure 'filter-count' >= 1, 'filter-period' >= 1.
+
+  filter-count:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Represents the number of consecutive samples that must agree
+      prior to the comparator output filter accepting a new output state.
+      0: Filter is disabled, setting 'use-unfiltered-output' to enable
+         or disable has the same effect.
+      1: One sample must agree. The comparator output is simply sampled.
+      2: 2 consecutive samples must agree.
+      3: 3 consecutive samples must agree.
+      4: 4 consecutive samples must agree.
+      5: 5 consecutive samples must agree.
+      6: 6 consecutive samples must agree.
+      7: 7 consecutive samples must agree.
+
+  filter-period:
+    type: int
+    description: |
+      Specifies the sampling period, in bus clock cycles.
+      Valid range: 0 - 255.
+
+  dac-vref-source:
+    type: string
+    enum:
+      - "VIN1"
+      - "VIN2"
+    description: |
+      DAC reference source select.
+
+  dac-value:
+    type: int
+    description: |
+      Selects an output voltage from one of 64 distinct levels.
+      DACO = (Vin / 64) * (dac-value + 1) , so the DACO range is
+      from Vin/64 to Vin .
+
+  positive-mux-input:
+    type: string
+    enum:
+      - "IN0"
+      - "IN1"
+      - "IN2"
+      - "IN3"
+      - "IN4"
+      - "IN5"
+      - "IN6"
+      - "IN7"
+    description: |
+      Positive input mux, determines which input is selected for
+      positive minus input of the comparator.
+      IN0: Input 0
+      IN1: Input 1
+      IN2: Input 2
+      IN3: Input 3
+      IN4: Input 4
+      IN5: Input 5
+      IN6: Input 6
+      IN7: Input 7, DACO
+
+  negative-mux-input:
+    type: string
+    enum:
+      - "IN0"
+      - "IN1"
+      - "IN2"
+      - "IN3"
+      - "IN4"
+      - "IN5"
+      - "IN6"
+      - "IN7"
+    description: |
+      Positive input mux, determines which input is selected for
+      positive minus input of the comparator.
+      IN0: Input 0
+      IN1: Input 1
+      IN2: Input 2
+      IN3: Input 3
+      IN4: Input 4
+      IN5: Input 5
+      IN6: Input 6
+      IN7: Input 7, DACO

@@ -67,6 +67,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 62  k_msgq_cleanup             msgq=%I  | Returns %ErrCodePosix
 63  k_msgq_peek                msgq=%I, data=%p | Returns %ErrCodeMsg
 64  k_msgq_purge               msgq=%I
+134 k_msgq_put_front           msgq=%I, data=%p, Timeout=%TimeOut | Returns %ErrCodeMsg
 
 65  k_mbox_init                mbox=%I
 66  k_mbox_put                 mbox=%I, tx_msg=%p, Timeout=%TimeOut | Returns %ErrCodeMsg
@@ -76,9 +77,6 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 70  k_mbox_data_block_get      rx_msg=%p, pool=%p, block=%p,  Timeout=%TimeOut | Returns %ErrCodePosix
 
 71  k_pipe_init                pipe=%I, buffer=%p, size=%u
-72  k_pipe_cleanup             pipe=%I  | Returns %ErrCodePosix
-73  k_pipe_put                 pipe=%I, data=%p, bytes_to_write=%u, bytes_written=%u, min_xfer=%u, Timeout=%TimeOut            | Returns %ErrCodePosix
-74  k_pipe_get                 pipe=%I, data=%p, bytes_to_read=%u, bytes_read=%u, min_xfer=%u, Timeout=%TimeOut                | Returns %ErrCodePosix
 
 76  k_heap_init                heap=%I, mem=%p, bytes=%u
 77  k_heap_alloc               heap=%I, bytes=%u, Timeout=%TimeOut | Returns %p
@@ -172,3 +170,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 162 syscall                      name=%s
 
 163 named_event                   name=%s arg0=%u arg1=%u
+
+164 k_event_init                 event=%I
+165 k_event_post                 event=%I, events=%u, events_mask=%u
+166 k_event_wait                 event=%I, events=%u, options=%u, Timeout=%TimeOut

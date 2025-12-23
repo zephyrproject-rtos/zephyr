@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efm32pg12b500f1024gl125.dtsi>
+#include <silabs/xg12/efm32pg12b500f1024gl125.dtsi>
 #include "slstk3402a_common.dtsi"
 
 / {

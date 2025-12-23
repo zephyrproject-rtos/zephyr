@@ -1,0 +1,6 @@
+board:
+  name: maix_m0s_dock
+  full_name: Sipeed M0S Dock
+  vendor: sipeed
+  socs:
+    - name: bl616c50q2i

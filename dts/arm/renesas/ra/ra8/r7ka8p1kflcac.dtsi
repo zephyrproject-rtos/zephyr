@@ -9,18 +9,53 @@
 
 / {
 	soc {
-		flash-controller@4013c000 {
-			flash0: flash@2000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x2000000 DT_SIZE_M(1)>;
+		mram-controller@4013c000 {
+			code_mram_cm85: mram@2000000 {
+				compatible = "renesas,ra-nv-mram";
+				reg = <0x2000000 DT_SIZE_K(768)>;
+				write-block-size = <1>;
+				erase-block-size = <32>;
+			};
+
+			code_mram_cm33: mram@20c0000 {
+				compatible = "renesas,ra-nv-mram";
+				reg = <0x20c0000 DT_SIZE_K(256)>;
+				write-block-size = <1>;
+				erase-block-size = <32>;
 			};
 		};
 
-		sdram: sdram-controller@40002000 {
-			compatible = "renesas,ra-sdram";
+		sram0: memory@22000000 {
+			compatible = "mmio-sram";
+			reg = <0x22000000 DT_SIZE_K(1404)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40002000 0xFFF>;
+			#size-cells = <1>;
+		};
+
+		sram1: memory@2215f000 {
+			compatible = "mmio-sram";
+			reg = <0x2215f000 DT_SIZE_K(468)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		mbox0: ipc@400200c0 {
+			compatible = "renesas,ra-ipc-mbox";
+			reg = <0x400200c0 0x20>, <0x40020100 0x20>;
+			reg-names = "ipc00", "ipc10";
+			unit = <0>;
+			channel-mask = <0xff>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mbox1: ipc@400200e0 {
+			compatible = "renesas,ra-ipc-mbox";
+			reg = <0x400200e0 0x20>, <0x40020120 0x20>;
+			reg-names = "ipc01", "ipc11";
+			unit = <1>;
+			channel-mask = <0xff>;
+			#mbox-cells = <1>;
 			status = "disabled";
 		};
 

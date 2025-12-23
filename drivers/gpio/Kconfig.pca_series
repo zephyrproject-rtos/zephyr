@@ -8,22 +8,25 @@ menuconfig GPIO_PCA_SERIES
 	default y
 	depends on DT_HAS_NXP_PCA9538_ENABLED || DT_HAS_NXP_PCA9539_ENABLED || \
 			DT_HAS_NXP_PCA9554_ENABLED || DT_HAS_NXP_PCA9555_ENABLED || \
+			DT_HAS_NXP_PCA6408_ENABLED || DT_HAS_NXP_PCA6416_ENABLED || \
+			DT_HAS_NXP_PCAL9538_ENABLED || DT_HAS_NXP_PCAL9539_ENABLED || \
+			DT_HAS_NXP_PCAL6408_ENABLED || DT_HAS_NXP_PCAL6416_ENABLED || \
 			DT_HAS_NXP_PCAL6524_ENABLED || DT_HAS_NXP_PCAL6534_ENABLED
-	depends on I2C
+	select I2C
 	help
 	  Enable driver for PCA_SERIES I2C-based GPIO chip.
 
+if GPIO_PCA_SERIES
+
 config GPIO_PCA_SERIES_INIT_PRIORITY
 	int "Init priority"
-	default 70
-	depends on GPIO_PCA_SERIES
+	default I2C_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
 config GPIO_PCA_SERIES_INTERRUPT
 	bool "Interrupt enable"
 	default y
-	depends on GPIO_PCA_SERIES
 	help
 	  Enable interrupt support in PCA_SERIES driver.
 	  Note that the PCA_SERIES cannot reliably detect
@@ -32,10 +35,11 @@ config GPIO_PCA_SERIES_INTERRUPT
 config GPIO_PCA_SERIES_CACHE_ALL
 	bool "Cache all registers"
 	default y
-	depends on GPIO_PCA_SERIES
 	help
 	  Cache all registers in RAM for faster configuration.
 	  Enabled by default.
 	  When disabled, only output registers will be cached.
 	  On devices w/o interrupt status, it will also cache
 	  input state.
+
+endif # GPIO_PCA_SERIES

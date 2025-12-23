@@ -10,4 +10,6 @@ ram: 256
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - spi
 vendor: ti

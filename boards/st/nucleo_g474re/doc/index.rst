@@ -51,8 +51,8 @@ The STM32G474RE SoC provides the following hardware IPs:
 - Up to 86 fast I/Os, most 5 V-tolerant
 - Memories
 
-  - Up to 128 KB single bank Flash, proprietary code readout protection
-  - Up to 22 KB of SRAM including 16 KB with hardware parity check
+  - Up to 512 KB single bank Flash, proprietary code readout protection
+  - Up to 128 KB of SRAM including 32 KB with hardware parity check
 
 - Rich analog peripherals (independent supply)
 
@@ -72,7 +72,7 @@ The STM32G474RE SoC provides the following hardware IPs:
   - 1x SAI (serial audio interface)
   - USB 2.0 full-speed interface with LPM and BCD support
   - IRTIM (Infrared interface)
-  - USB Type-C™ /USB power delivery controller (UCPD)
+  - USB Type-C |reg| /USB power delivery controller (UCPD)
 
 - 12-channel DMA controller
 - True random number generator (RNG)

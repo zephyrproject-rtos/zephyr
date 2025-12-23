@@ -7,6 +7,7 @@ import io
 from logging import WARNING
 import os
 from pathlib import Path
+import textwrap
 
 import pytest
 
@@ -568,10 +569,26 @@ def test_binding_top_key():
     title = binding.title
     description = binding.description
     compatible = binding.compatible
+    examples = binding.examples[0]
 
     assert title == "Test binding"
     assert description == "Property default value test"
     assert compatible == "defaults"
+    assert examples == textwrap.dedent("""\
+    / {
+        leds {
+            compatible = "gpio-leds";
+
+            uled: led {
+                gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+            };
+        };
+
+        aliases {
+            led0 = &uled;
+        };
+    };
+    """)
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
@@ -826,7 +843,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'reg' property in <Node /sub in '{dts_file}'> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'reg' property in <Node /sub in {dts_file}:8> has length 4, which is not evenly divisible by 12 (= 4*(<#address-cells> (= 1) + <#size-cells> (= 2))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
     verify_error("""
 /dts-v1/;
@@ -843,7 +860,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'interrupts' property in <Node /sub in '{dts_file}'> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'interrupts' property in <Node /sub in {dts_file}:5> has length 4, which is not evenly divisible by 8 (= 4*<#interrupt-cells>). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
     verify_error("""
 /dts-v1/;
@@ -863,7 +880,7 @@ def test_slice_errs(tmp_path):
 };
 """,
                  dts_file,
-                 f"'ranges' property in <Node /sub-1 in '{dts_file}'> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
+                 f"'ranges' property in <Node /sub-1 in {dts_file}:7> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
 def test_bad_compatible(tmp_path):
     # An invalid compatible should cause an error, even on a node with

@@ -22,17 +22,34 @@ properties:
       Supported configurations:
 
         /* HSE */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
 
         /* HSE/2 */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) OTGHS_SEL(2)>;
 
         /* PLL1_P_CK */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc STM32_SRC_PLL1_P OTGHS_SEL(1)>;
 
         /* PLL1_P_CK/2 */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;
+
+  clock-reference:
+    type: string
+    required: true
+    enum:
+      - "SYSCFG_OTG_HS_PHY_CLK_16MHz"
+      - "SYSCFG_OTG_HS_PHY_CLK_19.2MHz"
+      - "SYSCFG_OTG_HS_PHY_CLK_20MHz"
+      - "SYSCFG_OTG_HS_PHY_CLK_24MHz"
+      - "SYSCFG_OTG_HS_PHY_CLK_26MHz"
+      - "SYSCFG_OTG_HS_PHY_CLK_32MHz"
+    description: |
+      OTG_HS PHY reference clock frequency selection.
+
+      This value selects the reference clock frequency to be used in the OTG_HS PHY PLL
+      in the SYSCFG OTG_HS PHY register (SYSCFG_OTGHSPHYCR). The selection of this value
+      should take in consideration the OTGHSSEL dependency to avoid miss configurations.

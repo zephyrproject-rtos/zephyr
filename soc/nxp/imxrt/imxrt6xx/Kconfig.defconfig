@@ -69,7 +69,7 @@ endif # SOC_MIMXRT685S_CM33
 if SOC_MIMXRT685S_HIFI4
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 198000000
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
 config MCUX_CORE_SUFFIX
 	default "_dsp"

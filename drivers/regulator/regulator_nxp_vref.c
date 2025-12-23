@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -27,6 +27,8 @@ struct regulator_nxp_vref_config {
 	uint16_t buf_start_delay;
 	uint16_t bg_start_time;
 	bool current_compensation_en;
+	bool chop_oscillator_en;
+	bool internal_voltage_regulator_en;
 };
 
 static int regulator_nxp_vref_enable(const struct device *dev)
@@ -37,6 +39,7 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 	volatile uint32_t *const csr = &base->CSR;
 
 	*csr |= VREF_CSR_LPBGEN_MASK | VREF_CSR_LPBG_BUF_EN_MASK;
+
 	/* Wait for bandgap startup */
 	k_busy_wait(config->bg_start_time);
 
@@ -48,9 +51,6 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 		;
 	}
 
-	/* Enable output buffer */
-	*csr |= VREF_CSR_BUF21EN_MASK;
-
 	return 0;
 }
 
@@ -60,10 +60,11 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 	VREF_Type *const base = config->base;
 
 	/*
-	 * Disable HC Bandgap, LP Bandgap, and Buf21
+	 * Disable HC Bandgap, LP Bandgap, Buf21, and Lp Bandgap Buffer
 	 * to achieve "Off" mode of VREF
 	 */
-	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK);
+	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK |
+					VREF_CSR_LPBGEN_MASK | VREF_CSR_LPBG_BUF_EN_MASK);
 
 	return 0;
 }
@@ -75,25 +76,12 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 	uint32_t csr = base->CSR;
 
 	if (mode == NXP_VREF_MODE_STANDBY) {
-		csr &= ~VREF_CSR_REGEN_MASK &
-			~VREF_CSR_CHOPEN_MASK &
-			~VREF_CSR_HI_PWR_LV_MASK &
-			~VREF_CSR_BUF21EN_MASK;
+		csr &= ~(VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
 	} else if (mode == NXP_VREF_MODE_LOW_POWER) {
-		csr &= ~VREF_CSR_REGEN_MASK &
-			~VREF_CSR_CHOPEN_MASK &
-			~VREF_CSR_HI_PWR_LV_MASK;
+		csr &= ~VREF_CSR_HI_PWR_LV_MASK;
 		csr |= VREF_CSR_BUF21EN_MASK;
 	} else if (mode == NXP_VREF_MODE_HIGH_POWER) {
-		csr &= ~VREF_CSR_REGEN_MASK &
-			~VREF_CSR_CHOPEN_MASK;
-		csr |= VREF_CSR_HI_PWR_LV_MASK &
-			VREF_CSR_BUF21EN_MASK;
-	} else if (mode == NXP_VREF_MODE_INTERNAL_REGULATOR) {
-		csr |= VREF_CSR_REGEN_MASK &
-			VREF_CSR_CHOPEN_MASK &
-			VREF_CSR_HI_PWR_LV_MASK &
-			VREF_CSR_BUF21EN_MASK;
+		csr |= (VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
 	} else {
 		return -EINVAL;
 	}
@@ -112,9 +100,7 @@ static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_
 	uint32_t csr = base->CSR;
 
 	/* Check bits to determine mode */
-	if (csr & VREF_CSR_REGEN_MASK) {
-		*mode = NXP_VREF_MODE_INTERNAL_REGULATOR;
-	} else if (csr & VREF_CSR_HI_PWR_LV_MASK) {
+	if ((csr & VREF_CSR_HI_PWR_LV_MASK) && (csr & VREF_CSR_BUF21EN_MASK)) {
 		*mode = NXP_VREF_MODE_HIGH_POWER;
 	} else if (csr & VREF_CSR_BUF21EN_MASK) {
 		*mode = NXP_VREF_MODE_LOW_POWER;
@@ -199,8 +185,16 @@ static int regulator_nxp_vref_init(const struct device *dev)
 		base->CSR |= VREF_CSR_ICOMPEN_MASK;
 	}
 
-	/* Workaround some chips not resetting the value correctly on reset */
-	base->UTRIM = 0;
+	if (config->chop_oscillator_en) {
+		base->CSR |= VREF_CSR_CHOPEN_MASK;
+	}
+
+	if (config->internal_voltage_regulator_en) {
+		base->CSR |= VREF_CSR_REGEN_MASK;
+	}
+
+	/* Clear VREF UTRIM[TRIM2V1] first. */
+	base->UTRIM &= ~VREF_UTRIM_TRIM2V1_MASK;
 
 	return regulator_common_init(dev, false);
 }
@@ -217,6 +211,10 @@ static int regulator_nxp_vref_init(const struct device *dev)
 				nxp_bandgap_startup_time_us),			\
 		.current_compensation_en = DT_INST_PROP(inst,			\
 				nxp_current_compensation_en),			\
+		.chop_oscillator_en = DT_INST_PROP(inst,			\
+				nxp_chop_oscillator_en),			\
+		.internal_voltage_regulator_en = DT_INST_PROP(inst,		\
+				nxp_internal_voltage_regulator_en),		\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst,\

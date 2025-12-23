@@ -8,7 +8,7 @@ Hardware
 ********
 
 - EFR32BG22 Blue Gecko Wireless SoC with upto 76.8 MHz operating frequency
-- ARM® Cortex® M33 core with 32 kB RAM and 512 kB Flash
+- ARM® Cortex®-M33 core with 32 kB RAM and 512 kB Flash
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor

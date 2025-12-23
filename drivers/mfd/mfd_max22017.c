@@ -375,7 +375,7 @@ fail:
 
 #define INST_DT_MAX22017(index)                                                                    \
 	static const struct max22017_config max22017_config_##index = {                            \
-		.spi = SPI_DT_SPEC_INST_GET(index, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),     \
+		.spi = SPI_DT_SPEC_INST_GET(index, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),         \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),                       \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {0}),                     \
 		.crc_mode = DT_INST_PROP_OR(index, crc_mode, 0),                                   \

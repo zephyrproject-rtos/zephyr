@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_lpcmp
+#define DT_DRV_COMPAT nxp_sensor_lpcmp
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
@@ -15,7 +15,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/sensor/mcux_lpcmp.h>
-#include <fsl_lpcmp.h>
 
 LOG_MODULE_REGISTER(mcux_lpcmp, CONFIG_SENSOR_LOG_LEVEL);
 

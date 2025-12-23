@@ -34,6 +34,14 @@ procpu_ext_ram_org = DCACHE1_START;
 procpu_ext_ram_len = DCACHE1_SIZE;
 #endif
 
+/* RTC RAM memory segments */
+rtc_slow_org = RCT_SLOW_RAM_START;
+rtc_slow_len = RCT_SLOW_RAM_SIZE;
+rtc_data_org = RCT_FAST_RAM_START;
+rtc_data_len = RCT_FAST_RAM_SIZE;
+rtc_iram_org = RCT_FAST_RAM_START + RTC_FAST_IRAM_DRAM_OFFSET;
+rtc_iram_len = RCT_FAST_RAM_SIZE;
+
 /* Aliases */
 #define FLASH_CODE_REGION irom0_0_seg
 #define RODATA_REGION     drom0_0_seg
@@ -87,9 +95,9 @@ MEMORY
   irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
   drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
-  rtc_iram_seg(RWX): org = 0x400c0000, len = 0x2000
-  rtc_slow_seg(RW):  org = 0x50000000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
-  rtc_data_seg(RW):  org = 0x3ff80000, len = 0x2000
+  rtc_iram_seg(RWX): org = rtc_iram_org, len = rtc_iram_len
+  rtc_slow_seg(RW):  org = rtc_slow_org, len = rtc_slow_len - CONFIG_RESERVE_RTC_MEM
+  rtc_data_seg(RW):  org = rtc_data_org, len = rtc_data_len
 
   /* We reduced the size of rtc_slow_seg by CONFIG_RESERVE_RTC_MEM value.
    *  It reserves the amount of RTC slow memory that we use for this memory segment.
@@ -98,7 +106,7 @@ MEMORY
    *  org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM
    */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
-  rtc_slow_reserved_seg(RW): org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
+  rtc_slow_reserved_seg(RW): org = rtc_slow_org + rtc_slow_len - CONFIG_RESERVE_RTC_MEM,
                              len = CONFIG_RESERVE_RTC_MEM
 #endif
 
@@ -199,10 +207,7 @@ SECTIONS
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-#endif
 
   /* --- RTC BEGIN --- */
 
@@ -339,6 +344,7 @@ SECTIONS
     *(.iram1 .iram1.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
+    *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
@@ -362,12 +368,9 @@ SECTIONS
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
-    *liblib__libc__picolib.a:abort.*(.literal .text .literal.* .text.*)
-    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
-    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
-    *libc.a:*(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+    *librtc.a:(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_psram] */
     *libzephyr.a:mmu_psram_flash.*(.literal .literal.* .text .text.*)
@@ -407,10 +410,10 @@ SECTIONS
     *libzephyr.a:spi_flash_chip_winbond.*(.literal .literal.* .text .text.*)
     *libzephyr.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_qio_mode.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -432,9 +435,6 @@ SECTIONS
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
@@ -443,14 +443,12 @@ SECTIONS
     *libzephyr.a:spi_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_slave_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:heap_caps_zephyr.*(.literal .literal.* .text .text.*)
 
     /* [mapping:soc_pm] */
     *(.literal.GPIO_HOLD_MASK .text.GPIO_HOLD_MASK)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_efuse.*(.literal .literal.* .text .text.*)
 
@@ -506,7 +504,6 @@ SECTIONS
     *libzephyr.a:flash_partitions.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hal_common.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_flash_spi_init.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
@@ -624,8 +621,6 @@ SECTIONS
     *libzephyr.a:ledc_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:i2c_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:wdt_hal_iram.*(.rodata .rodata.*)
-    *libzephyr.a:systimer_hal.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_hal_gpspi.*(.rodata .rodata.*)
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.rodata .rodata.*)
@@ -649,10 +644,10 @@ SECTIONS
     *libzephyr.a:spi_flash_chip_winbond.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:memspi_host_driver.*(.rodata .rodata.*)
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.*)
@@ -670,9 +665,6 @@ SECTIONS
     *libzephyr.a:esp_memory_utils.*(.rodata .rodata.*)
     *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.*)
-    *libzephyr.a:systimer.*(.rodata .rodata.*)
-    *libzephyr.a:mspi_timing_config.*(.rodata .rodata.*)
-    *libzephyr.a:mspi_timing_tuning.*(.rodata .rodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
 
     *libzephyr.a:cache_esp32.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -689,15 +681,13 @@ SECTIONS
     *libzephyr.a:spi_slave_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:memspi_host_driver.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    /* TODO: fix other socs */
-    *libzephyr.a:heap_caps_zephyr.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_spiflash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_wdt.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.*)
+
+    *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
@@ -727,7 +717,6 @@ SECTIONS
 
     *libzephyr.a:periph_ctrl.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
-    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     . = ALIGN(4);

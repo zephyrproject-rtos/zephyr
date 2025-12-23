@@ -25,7 +25,19 @@
       {%- endfor -%}
     {%- endfor -%}
     {{- feature_types|join(' ') -}}
-  " tabindex="0">
+  "
+  data-compatibles="
+    {%- set all_compatibles = [] -%}
+    {%- for target_compatibles in board.compatibles.values() -%}
+      {%- for compatible in target_compatibles -%}
+        {%- if compatible not in all_compatibles -%}
+          {%- set _ = all_compatibles.append(compatible) -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {{- all_compatibles|join(' ') -}}
+  "
+  tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
   {% if board.image -%}
   <img alt="A picture of the {{ board.full_name }} board"

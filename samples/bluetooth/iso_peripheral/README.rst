@@ -23,8 +23,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/iso_peripheral` in the Zephyr tree.
-
 1. Start the application.
    In the terminal window, check that it is advertising.
 

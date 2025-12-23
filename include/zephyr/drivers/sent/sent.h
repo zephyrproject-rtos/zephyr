@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Single Edge Nibble Transmission (SENT) driver API.
+ * @ingroup sent_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENT_H_
@@ -20,8 +21,8 @@ extern "C" {
 #endif
 
 /**
- * @brief SENT Interface
- * @defgroup sent_interface SENT Interface
+ * @brief Interfaces for Single Edge Nibble Transmission (SENT) peripherals.
+ * @defgroup sent_interface SENT
  * @since 4.2
  * @version 0.1.0
  * @ingroup io_interfaces

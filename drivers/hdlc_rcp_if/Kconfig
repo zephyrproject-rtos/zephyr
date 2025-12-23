@@ -14,9 +14,11 @@ menuconfig HDLC_RCP_IF
 
 if HDLC_RCP_IF
 
+# zephyr-keep-sorted-start
 source "drivers/hdlc_rcp_if/Kconfig.nxp"
 source "drivers/hdlc_rcp_if/Kconfig.spi"
 source "drivers/hdlc_rcp_if/Kconfig.uart"
+# zephyr-keep-sorted-stop
 
 config HDLC_RCP_IF_DRV_NAME
 	string "HDLC RCP Interface Driver's name"

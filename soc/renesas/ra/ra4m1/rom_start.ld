@@ -1,11 +1,17 @@
 /*
  * Copyright (c) 2024 TOKITA Hiroshi
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* ROM Registers start at address 0x00000400 */
-. = 0x400;
-KEEP(*(.rom_registers*))
-/* Reserving 0x100 bytes of space for ROM registers. */
-. = 0x500;
+#include <zephyr/devicetree.h>
+
+. = DT_REG_ADDR(DT_NODELABEL(option_setting_ofs0));
+KEEP(*(.option_setting_ofs0))
+
+. = DT_REG_ADDR(DT_NODELABEL(option_setting_ofs1));
+KEEP(*(.option_setting_ofs1))
+
+. = DT_REG_ADDR(DT_NODELABEL(option_setting_secmpu));
+KEEP(*(.option_setting_secmpu))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor
+ * Copyright (c) 2022-2025 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include "bsim_args_runner.h"
+#include "argparse.h"
 
 extern enum bst_result_t bst_result;
 
@@ -20,25 +22,63 @@ static struct bt_conn *default_conn;
 DEFINE_FLAG_STATIC(is_connected);
 DEFINE_FLAG_STATIC(chan_connected);
 DEFINE_FLAG_STATIC(data_received);
+DEFINE_FLAG_STATIC(data_sent);
 
-#define DATA_BYTE_VAL  0xBB
+static bool fixed;
+static const char *l2cap_data = "Hello";
 
-/* L2CAP channel buffer pool */
-NET_BUF_POOL_DEFINE(buf_pool, 1, BT_L2CAP_SDU_BUF_SIZE(16), CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+/* L2CAP dynamic channel buffer pool */
+NET_BUF_POOL_DEFINE(sdu_buf_pool, 1, BT_L2CAP_SDU_BUF_SIZE(16), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+		    NULL);
+
+#define FIXED_CID 0x21
+
+/* L2CAP fixed channel buffer pool */
+NET_BUF_POOL_DEFINE(pdu_buf_pool, 1, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+static void test_args(int argc, char *argv[])
+{
+	bs_args_struct_t args_struct[] = {
+		{
+			.dest = &fixed,
+			.type = 'b',
+			.name = "{0, 1}",
+			.option = "fixed",
+			.descript = "Use fixed (true) or dynamic (false) channel."
+		},
+	};
+
+	bs_args_parse_all_cmd_line(argc, argv, args_struct);
+}
 
 static void chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
 	struct net_buf *buf;
 	int err;
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(l2cap_chan);
+
+	/* If we're testing dynamic channels, skip sending data on the fixed channel. */
+	if (!fixed && le_chan->tx.cid == FIXED_CID) {
+		return;
+	}
 
 	/* Send data immediately on L2CAP connection */
-	buf = net_buf_alloc(&buf_pool, K_NO_WAIT);
+	if (fixed) {
+		buf = net_buf_alloc(&pdu_buf_pool, K_NO_WAIT);
+	} else {
+		buf = net_buf_alloc(&sdu_buf_pool, K_NO_WAIT);
+	}
 	if (!buf) {
 		TEST_FAIL("Buffer allocation failed");
 	}
 
-	(void)net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
-	(void)net_buf_add_u8(buf, DATA_BYTE_VAL);
+	if (fixed) {
+		(void)net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	} else {
+		(void)net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+	}
+	(void)net_buf_add_mem(buf, l2cap_data, strlen(l2cap_data) + 1);
 
 	/* Try to send data */
 	err = bt_l2cap_chan_send(l2cap_chan, buf);
@@ -60,7 +100,7 @@ static int chan_recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	(void)chan;
 
-	if ((buf->len != 1) || (buf->data[0] != DATA_BYTE_VAL)) {
+	if (strcmp(buf->data, l2cap_data) != 0) {
 		TEST_FAIL("Unexpected data received");
 	}
 
@@ -69,19 +109,27 @@ static int chan_recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
+static void chan_sent_cb(struct bt_l2cap_chan *chan)
+{
+	(void)chan;
+	SET_FLAG(data_sent);
+}
+
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.connected = chan_connected_cb,
 	.disconnected = chan_disconnected_cb,
 	.recv = chan_recv_cb,
+	.sent = chan_sent_cb,
 };
 
-static struct bt_l2cap_le_chan channel;
+static struct bt_l2cap_le_chan dyn_chan;
+static struct bt_l2cap_chan fixed_chan;
 
 static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		  struct bt_l2cap_chan **l2cap_chan)
 {
-	channel.chan.ops = &l2cap_ops;
-	*l2cap_chan = &channel.chan;
+	dyn_chan.chan.ops = &l2cap_ops;
+	*l2cap_chan = &dyn_chan.chan;
 
 	return 0;
 }
@@ -92,12 +140,28 @@ static struct bt_l2cap_server server = {
 	.psm = PSM,
 };
 
+static int l2cap_fixed_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	*chan = &fixed_chan;
+
+	**chan = (struct bt_l2cap_chan){
+		.ops = &l2cap_ops,
+	};
+
+	return 0;
+}
+
+BT_L2CAP_FIXED_CHANNEL_DEFINE(fixed_chan_1) = {
+	.cid = FIXED_CID,
+	.accept = l2cap_fixed_accept,
+};
+
 static void connect_l2cap_channel(void)
 {
-	struct bt_l2cap_chan *chans[] = {&channel.chan, NULL};
+	struct bt_l2cap_chan *chans[] = {&dyn_chan.chan, NULL};
 	int err;
 
-	channel.chan.ops = &l2cap_ops;
+	dyn_chan.chan.ops = &l2cap_ops;
 
 	if (IS_ENABLED(CONFIG_BT_L2CAP_ECRED)) {
 		err = bt_l2cap_ecred_chan_connect(default_conn, chans, server.psm);
@@ -105,7 +169,7 @@ static void connect_l2cap_channel(void)
 			TEST_FAIL("Failed to send ecred connection request (err %d)", err);
 		}
 	} else {
-		err = bt_l2cap_chan_connect(default_conn, &channel.chan, server.psm);
+		err = bt_l2cap_chan_connect(default_conn, &dyn_chan.chan, server.psm);
 		if (err) {
 			TEST_FAIL("Failed to send connection request (err %d)", err);
 		}
@@ -187,7 +251,9 @@ static void test_peripheral_main(void)
 		return;
 	}
 
-	register_l2cap_server();
+	if (!fixed) {
+		register_l2cap_server();
+	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
@@ -199,11 +265,13 @@ static void test_peripheral_main(void)
 
 	WAIT_FOR_FLAG(chan_connected);
 
+	WAIT_FOR_FLAG(data_sent);
+
 	WAIT_FOR_FLAG(data_received);
 
 	WAIT_FOR_FLAG_UNSET(is_connected);
 
-TEST_PASS("Test passed");
+	TEST_PASS("Test passed");
 }
 
 static void test_central_main(void)
@@ -222,8 +290,13 @@ static void test_central_main(void)
 
 	WAIT_FOR_FLAG(is_connected);
 
-	connect_l2cap_channel();
+	if (!fixed) {
+		connect_l2cap_channel();
+	}
+
 	WAIT_FOR_FLAG(chan_connected);
+
+	WAIT_FOR_FLAG(data_sent);
 
 	WAIT_FOR_FLAG(data_received);
 
@@ -242,11 +315,13 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral",
+		.test_args_f = test_args,
 		.test_main_f = test_peripheral_main,
 	},
 	{
 		.test_id = "central",
 		.test_descr = "Central",
+		.test_args_f = test_args,
 		.test_main_f = test_central_main,
 	},
 	BSTEST_END_MARKER,

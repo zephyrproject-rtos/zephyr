@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 """
 Runner for NXP S32 Debug Probe.
@@ -17,10 +17,8 @@ from pathlib import Path
 
 from runners.core import BuildConfiguration, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
-NXP_S32DBG_USB_CLASS = 'NXP Probes'
-NXP_S32DBG_USB_VID = 0x15a2
-NXP_S32DBG_USB_PID = 0x0067
-
+NXP_S32DBG_USB_VID = 0x1FC9
+NXP_S32DBG_USB_PID = 0x014D
 
 @dataclass
 class NXPS32DebugProbeConfig:
@@ -130,11 +128,13 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         """Return a list of debug probe serial numbers connected via USB to this host."""
         # use system's native commands to enumerate and retrieve the USB serial ID
         # to avoid bloating this runner with third-party dependencies that often
-        # require priviledged permissions to access the device info
+        # require privileged permissions to access the device info
         macaddr_pattern = r'(?:[0-9a-f]{2}[:]){5}[0-9a-f]{2}'
         if platform.system() == 'Windows':
-            cmd = f'pnputil /enum-devices /connected /class "{NXP_S32DBG_USB_CLASS}"'
-            serialid_pattern = f'instance id: +usb\\\\.*\\\\({macaddr_pattern})'
+            cmd = 'pnputil /enum-devices /connected'
+            serialid_pattern = 'instance id: +usb\\\\' \
+                               f'VID_{NXP_S32DBG_USB_VID:04X}&PID_{NXP_S32DBG_USB_PID:04X}\\\\' \
+                               f'({macaddr_pattern})'.lower()
         else:
             cmd = f'lsusb -v -d {NXP_S32DBG_USB_VID:x}:{NXP_S32DBG_USB_PID:x}'
             serialid_pattern = f'iserial +.*({macaddr_pattern})'
@@ -192,10 +192,11 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         """Execution environment used for the client process."""
         if platform.system() == 'Windows':
             python_lib = (self.s32ds_path / 'S32DS' / 'build_tools' / 'msys32'
-                        / 'mingw32' / 'lib' / 'python2.7')
+                / 'mingw64' / 'lib' / 'python3.10')
             return {
                 **os.environ,
-                'PYTHONPATH': f'{python_lib}{os.pathsep}{python_lib / "site-packages"}'
+                'PYTHONPATH': f'{python_lib}{os.pathsep}{python_lib / "site-packages"}{os.pathsep}'
+                              f'{python_lib / "lib-dynload"}'
             }
 
         return None

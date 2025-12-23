@@ -12,7 +12,12 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/settings/settings.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/mesh/msg.h>
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 /* Internal macros used to initialize array members */
 #define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED
@@ -29,6 +34,8 @@
 #else
 #define BT_MESH_MODEL_UUIDS_UNASSIGNED()
 #endif
+
+/** @endcond */
 
 #define BT_MESH_MODEL_RUNTIME_INIT(_user_data)			\
 	.rt = &(struct bt_mesh_model_rt_ctx){ .user_data = (_user_data) },
@@ -171,194 +178,6 @@ struct bt_mesh_elem {
 	const struct bt_mesh_model * const vnd_models;
 };
 
-/**
- * @name Foundation Models
- * @{
- */
-/** Configuration Server */
-#define BT_MESH_MODEL_ID_CFG_SRV                   0x0000
-/** Configuration Client */
-#define BT_MESH_MODEL_ID_CFG_CLI                   0x0001
-/** Health Server */
-#define BT_MESH_MODEL_ID_HEALTH_SRV                0x0002
-/** Health Client */
-#define BT_MESH_MODEL_ID_HEALTH_CLI                0x0003
-/** Remote Provisioning Server */
-#define BT_MESH_MODEL_ID_REMOTE_PROV_SRV           0x0004
-/** Remote Provisioning Client */
-#define BT_MESH_MODEL_ID_REMOTE_PROV_CLI           0x0005
-/** Bridge Configuration Sever */
-#define BT_MESH_MODEL_ID_BRG_CFG_SRV               0x0008
-/** Bridge Configuration Client */
-#define BT_MESH_MODEL_ID_BRG_CFG_CLI               0x0009
-/** Private Beacon Server */
-#define BT_MESH_MODEL_ID_PRIV_BEACON_SRV           0x000a
-/** Private Beacon Client */
-#define BT_MESH_MODEL_ID_PRIV_BEACON_CLI           0x000b
-/** SAR Configuration Server */
-#define BT_MESH_MODEL_ID_SAR_CFG_SRV               0x000e
-/** SAR Configuration Client */
-#define BT_MESH_MODEL_ID_SAR_CFG_CLI               0x000f
-/** Opcodes Aggregator Server */
-#define BT_MESH_MODEL_ID_OP_AGG_SRV                0x0010
-/** Opcodes Aggregator Client */
-#define BT_MESH_MODEL_ID_OP_AGG_CLI                0x0011
-/** Large Composition Data Server */
-#define BT_MESH_MODEL_ID_LARGE_COMP_DATA_SRV       0x0012
-/** Large Composition Data Client */
-#define BT_MESH_MODEL_ID_LARGE_COMP_DATA_CLI       0x0013
-/** Solicitation PDU RPL Configuration Client */
-#define BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV	   0x0014
-/** Solicitation PDU RPL Configuration Server */
-#define BT_MESH_MODEL_ID_SOL_PDU_RPL_CLI	   0x0015
-/** Private Proxy Server */
-#define BT_MESH_MODEL_ID_ON_DEMAND_PROXY_SRV	   0x000c
-/** Private Proxy Client */
-#define BT_MESH_MODEL_ID_ON_DEMAND_PROXY_CLI	   0x000d
-/**
- * @}
- */
-
-/**
- * @name Models from the Mesh Model Specification
- * @{
- */
-/** Generic OnOff Server */
-#define BT_MESH_MODEL_ID_GEN_ONOFF_SRV             0x1000
-/** Generic OnOff Client */
-#define BT_MESH_MODEL_ID_GEN_ONOFF_CLI             0x1001
-/** Generic Level Server */
-#define BT_MESH_MODEL_ID_GEN_LEVEL_SRV             0x1002
-/** Generic Level Client */
-#define BT_MESH_MODEL_ID_GEN_LEVEL_CLI             0x1003
-/** Generic Default Transition Time Server */
-#define BT_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV    0x1004
-/** Generic Default Transition Time Client */
-#define BT_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI    0x1005
-/** Generic Power OnOff Server */
-#define BT_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV       0x1006
-/** Generic Power OnOff Setup Server */
-#define BT_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV 0x1007
-/** Generic Power OnOff Client */
-#define BT_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI       0x1008
-/** Generic Power Level Server */
-#define BT_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV       0x1009
-/** Generic Power Level Setup Server */
-#define BT_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV 0x100a
-/** Generic Power Level Client */
-#define BT_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI       0x100b
-/** Generic Battery Server */
-#define BT_MESH_MODEL_ID_GEN_BATTERY_SRV           0x100c
-/** Generic Battery Client */
-#define BT_MESH_MODEL_ID_GEN_BATTERY_CLI           0x100d
-/** Generic Location Server */
-#define BT_MESH_MODEL_ID_GEN_LOCATION_SRV          0x100e
-/** Generic Location Setup Server */
-#define BT_MESH_MODEL_ID_GEN_LOCATION_SETUPSRV     0x100f
-/** Generic Location Client */
-#define BT_MESH_MODEL_ID_GEN_LOCATION_CLI          0x1010
-/** Generic Admin Property Server */
-#define BT_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV        0x1011
-/** Generic Manufacturer Property Server */
-#define BT_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV 0x1012
-/** Generic User Property Server */
-#define BT_MESH_MODEL_ID_GEN_USER_PROP_SRV         0x1013
-/** Generic Client Property Server */
-#define BT_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV       0x1014
-/** Generic Property Client */
-#define BT_MESH_MODEL_ID_GEN_PROP_CLI              0x1015
-/** Sensor Server */
-#define BT_MESH_MODEL_ID_SENSOR_SRV                0x1100
-/** Sensor Setup Server */
-#define BT_MESH_MODEL_ID_SENSOR_SETUP_SRV          0x1101
-/** Sensor Client */
-#define BT_MESH_MODEL_ID_SENSOR_CLI                0x1102
-/** Time Server */
-#define BT_MESH_MODEL_ID_TIME_SRV                  0x1200
-/** Time Setup Server */
-#define BT_MESH_MODEL_ID_TIME_SETUP_SRV            0x1201
-/** Time Client */
-#define BT_MESH_MODEL_ID_TIME_CLI                  0x1202
-/** Scene Server */
-#define BT_MESH_MODEL_ID_SCENE_SRV                 0x1203
-/** Scene Setup Server */
-#define BT_MESH_MODEL_ID_SCENE_SETUP_SRV           0x1204
-/** Scene Client */
-#define BT_MESH_MODEL_ID_SCENE_CLI                 0x1205
-/** Scheduler Server */
-#define BT_MESH_MODEL_ID_SCHEDULER_SRV             0x1206
-/** Scheduler Setup Server */
-#define BT_MESH_MODEL_ID_SCHEDULER_SETUP_SRV       0x1207
-/** Scheduler Client */
-#define BT_MESH_MODEL_ID_SCHEDULER_CLI             0x1208
-/** Light Lightness Server */
-#define BT_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV       0x1300
-/** Light Lightness Setup Server */
-#define BT_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV 0x1301
-/** Light Lightness Client */
-#define BT_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI       0x1302
-/** Light CTL Server */
-#define BT_MESH_MODEL_ID_LIGHT_CTL_SRV             0x1303
-/** Light CTL Setup Server */
-#define BT_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV       0x1304
-/** Light CTL Client */
-#define BT_MESH_MODEL_ID_LIGHT_CTL_CLI             0x1305
-/** Light CTL Temperature Server */
-#define BT_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV        0x1306
-/** Light HSL Server */
-#define BT_MESH_MODEL_ID_LIGHT_HSL_SRV             0x1307
-/** Light HSL Setup Server */
-#define BT_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV       0x1308
-/** Light HSL Client */
-#define BT_MESH_MODEL_ID_LIGHT_HSL_CLI             0x1309
-/** Light HSL Hue Server */
-#define BT_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV         0x130a
-/** Light HSL Saturation Server */
-#define BT_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV         0x130b
-/** Light xyL Server */
-#define BT_MESH_MODEL_ID_LIGHT_XYL_SRV             0x130c
-/** Light xyL Setup Server */
-#define BT_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV       0x130d
-/** Light xyL Client */
-#define BT_MESH_MODEL_ID_LIGHT_XYL_CLI             0x130e
-/** Light LC Server */
-#define BT_MESH_MODEL_ID_LIGHT_LC_SRV              0x130f
-/** Light LC Setup Server */
-#define BT_MESH_MODEL_ID_LIGHT_LC_SETUPSRV         0x1310
-/** Light LC Client */
-#define BT_MESH_MODEL_ID_LIGHT_LC_CLI              0x1311
-/**
- * @}
- */
-
-/**
- * @name Models from the Mesh Binary Large Object Transfer Model Specification
- * @{
- */
-/** BLOB Transfer Server */
-#define BT_MESH_MODEL_ID_BLOB_SRV                  0x1400
-/** BLOB Transfer Client */
-#define BT_MESH_MODEL_ID_BLOB_CLI                  0x1401
-/**
- * @}
- */
-
-/**
- *  @name Models from the Mesh Device Firmware Update Model Specification
- * @{
- */
-/** Firmware Update Server */
-#define BT_MESH_MODEL_ID_DFU_SRV                   0x1402
-/** Firmware Update Client */
-#define BT_MESH_MODEL_ID_DFU_CLI                   0x1403
-/** Firmware Distribution Server */
-#define BT_MESH_MODEL_ID_DFD_SRV                   0x1404
-/** Firmware Distribution Client */
-#define BT_MESH_MODEL_ID_DFD_CLI                   0x1405
-/**
- * @}
- */
-
 /** Model opcode handler. */
 struct bt_mesh_model_op {
 	/** OpCode encoded using the BT_MESH_MODEL_OP_* macros */
@@ -386,8 +205,11 @@ struct bt_mesh_model_op {
 			  struct net_buf_simple *buf);
 };
 
+/** Macro for encoding a 1-byte opcode (used by Bluetooth SIG defined models). */
 #define BT_MESH_MODEL_OP_1(b0) (b0)
+/** Macro for encoding a 2-byte opcode (used by Bluetooth SIG defined models). */
 #define BT_MESH_MODEL_OP_2(b0, b1) (((b0) << 8) | (b1))
+/** Macro for encoding a 3-byte opcode (vendor-specific message). */
 #define BT_MESH_MODEL_OP_3(b0, cid) ((((b0) << 16) | 0xc00000) | (cid))
 
 /** Macro for encoding exact message length for fixed-length messages.  */
@@ -780,13 +602,13 @@ struct bt_mesh_model_pub {
  *  BT_MESH_MODELS_METADATA_ENTRY macro.
  */
 struct bt_mesh_models_metadata_entry {
-	/* Length of the metadata */
+	/** Length of the metadata */
 	const uint16_t len;
 
-	/* ID of the metadata */
+	/** ID of the metadata */
 	const uint16_t id;
 
-	/* Pointer to raw data */
+	/** Pointer to raw data */
 	const void * const data;
 };
 

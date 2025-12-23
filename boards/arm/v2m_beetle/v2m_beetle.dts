@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include <arm/armv7-m.dtsi>
+
 / {
 	compatible = "arm,beetle";
 	#address-cells = <1>;

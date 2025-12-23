@@ -18,6 +18,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/cache.h>
@@ -55,7 +56,7 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #elif CONFIG_STM32_LTDC_RGB565
 #define STM32_LTDC_INIT_PIXEL_SIZE	2u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB565
-#define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_BGR_565
+#define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_565
 #else
 #error "Invalid LTDC pixel format chosen"
 #endif
@@ -106,13 +107,13 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
 				const enum display_pixel_format format)
 {
-	int err;
 	struct display_stm32_ltdc_data *data = dev->data;
+	HAL_StatusTypeDef err;
 
 	switch (format) {
-	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_RGB_565:
 		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_RGB565, 0);
-		data->current_pixel_format = PIXEL_FORMAT_BGR_565;
+		data->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		data->current_pixel_size = 2u;
 		break;
 	case PIXEL_FORMAT_RGB_888:
@@ -126,11 +127,14 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		data->current_pixel_size = 4u;
 		break;
 	default:
-		err = -ENOTSUP;
-		break;
+		return -ENOTSUP;
 	}
 
-	return err;
+	if (err != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int stm32_ltdc_set_orientation(const struct device *dev,
@@ -158,7 +162,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 				     data->hltdc.LayerCfg[0].WindowY0;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
 					PIXEL_FORMAT_RGB_888 |
-					PIXEL_FORMAT_BGR_565;
+					PIXEL_FORMAT_RGB_565;
 	capabilities->screen_info = 0;
 
 	capabilities->current_pixel_format = data->current_pixel_format;
@@ -176,6 +180,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	const uint8_t *pend_buf = NULL;
 	const uint8_t *src = buf;
 	uint16_t row;
+
+	/* Validate the given parameters */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
 
 	if ((x == 0) && (y == 0) &&
 	    (desc->width == config->width) &&
@@ -224,7 +234,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	data->pend_buf = pend_buf;
 
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
+
 	k_sem_take(&data->sem, K_FOREVER);
+
+	__HAL_LTDC_DISABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -239,6 +254,12 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	uint8_t *dst = buf;
 	const uint8_t *src = data->front_buf;
 	uint16_t row;
+
+	/* Validate the given parameters */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
 
 	/* src = pointer to upper left pixel of the rectangle to be read from frame buffer */
 	src += (x * data->current_pixel_size);
@@ -336,9 +357,6 @@ static int stm32_ltdc_init(const struct device *dev)
 	int err;
 	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	RIMC_MasterConfig_t rimc = {0};
-#endif
 
 	/* Configure and set display on/off GPIO */
 	if (config->disp_on_gpio.port) {
@@ -391,32 +409,6 @@ static int stm32_ltdc_init(const struct device *dev)
 		}
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
-	LL_RCC_PLLSAI_Disable();
-	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLSAIM_DIV_8,
-					192,
-					LL_RCC_PLLSAIR_DIV_4,
-					LL_RCC_PLLSAIDIVR_DIV_8);
-
-	LL_RCC_PLLSAI_Enable();
-	while (LL_RCC_PLLSAI_IsReady() != 1) {
-	}
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32F7X)
-	LL_RCC_PLLSAI_Disable();
-	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLM_DIV_25,
-					384,
-					LL_RCC_PLLSAIR_DIV_5,
-					LL_RCC_PLLSAIDIVR_DIV_8);
-
-	LL_RCC_PLLSAI_Enable();
-	while (LL_RCC_PLLSAI_IsReady() != 1) {
-	}
-#endif
-
 	/* reset LTDC peripheral */
 	(void)reset_line_toggle_dt(&config->reset);
 
@@ -464,23 +456,11 @@ static int stm32_ltdc_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Configure RIF for LTDC layer 1 */
-	rimc.MasterCID = RIF_CID_1;
-	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_LTDC1, &rimc);
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_LTDCL1,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-#endif
-
 	/* Disable layer 2, since it not used */
 	__HAL_LTDC_LAYER_DISABLE(&data->hltdc, LTDC_LAYER_2);
 
 	/* Set the line interrupt position */
 	LTDC->LIPCR = 0U;
-
-	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
-	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -553,19 +533,8 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 };
 
 #if DT_INST_NODE_HAS_PROP(0, ext_sdram)
-
-#if DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1))
-#define FRAME_BUFFER_SECTION __stm32_sdram1_section
-#elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram2))
-#define FRAME_BUFFER_SECTION __stm32_sdram2_section
-#elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(psram))
-#define FRAME_BUFFER_SECTION __stm32_psram_section
-#else
-#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM "\
-	"node"
-#define FRAME_BUFFER_SECTION
-#endif /* DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1)) */
-
+#define FRAME_BUFFER_SECTION	\
+	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(0, ext_sdram)))
 #else
 #define FRAME_BUFFER_SECTION
 #endif /* DT_INST_NODE_HAS_PROP(0, ext_sdram) */
@@ -590,6 +559,11 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 	/* frame buffer aligned to cache line width for optimal cache flushing */                  \
 	FRAME_BUFFER_SECTION static uint8_t __aligned(32)                                          \
 		frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM * STM32_LTDC_FRAME_BUFFER_LEN(inst)];
+#endif
+
+/* LTDC supports RGB888 and RGB666 for output however only RGB_888 is supported for now */
+#if DT_INST_PROP(0, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888
+#error "Only RGB_888 is supported as a LTDC output (aka panel or mipi-dsi input format)"
 #endif
 
 #define STM32_LTDC_DEVICE(inst)									\

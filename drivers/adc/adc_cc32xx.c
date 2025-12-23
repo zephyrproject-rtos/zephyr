@@ -312,7 +312,7 @@ static DEVICE_API(adc, cc32xx_driver_api) = {
 	};									 \
 										 \
 	DEVICE_DT_INST_DEFINE(index,						 \
-			      &adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,	 \
+			      adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,	 \
 			      &adc_cc32xx_cfg_##index, POST_KERNEL,		 \
 			      CONFIG_ADC_INIT_PRIORITY,				 \
 			      &cc32xx_driver_api);				 \

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AMS AS5048 magnetic rotary sensor
+
+    &spi3 {
+    status = "okay";
+
+    as5048@0 {
+      compatible = "ams,as5048";
+      reg = <0>;
+      spi-max-frequency = <4000000>;
+    };
+  };
+
+
+compatible: "ams,as5048"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  spi-max-frequency:
+    required: true

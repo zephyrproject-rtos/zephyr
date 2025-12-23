@@ -16,6 +16,7 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
+#include <kthread.h>
 #include <string.h>
 
 #ifndef _ASMLANGUAGE
@@ -31,41 +32,8 @@ void z_init_cpu(int id);
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 			uint32_t initial_state, unsigned int options);
 
-/* Early boot functions */
-void z_early_memset(void *dst, int c, size_t n);
-void z_early_memcpy(void *dst, const void *src, size_t n);
-
-void z_bss_zero(void);
-#ifdef CONFIG_XIP
-void z_data_copy(void);
-#else
-static inline void z_data_copy(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_XIP */
-
-#ifdef CONFIG_LINKER_USE_BOOT_SECTION
-void z_bss_zero_boot(void);
-#else
-static inline void z_bss_zero_boot(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-void z_bss_zero_pinned(void);
-#else
-static inline void z_bss_zero_pinned(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 FUNC_NORETURN void z_cstart(void);
-
-void z_device_state_init(void);
 
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
@@ -144,9 +112,6 @@ extern int z_stack_adjust_initialized;
 extern struct k_thread z_main_thread;
 
 
-#ifdef CONFIG_MULTITHREADING
-extern struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
-#endif /* CONFIG_MULTITHREADING */
 K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				    CONFIG_ISR_STACK_SIZE);
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);

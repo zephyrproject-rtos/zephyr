@@ -124,7 +124,9 @@ provisionee:
 
 * **Static OOB:** An authentication value is assigned to the device in
   production, which the provisioner can query in some application specific
-  way.
+  way. For secure provisioning with the BTM_ECDH_P256_HMAC_SHA256_AES_CCM
+  algorithm, the Static OOB value should contain more than 128 bits of entropy
+  to provide adequate security against attacks.
 * **Input OOB:** The user inputs the authentication value. The available input
   actions are listed in :c:enum:`bt_mesh_input_action_t`.
 * **Output OOB:** Show the user the authentication value. The available output
@@ -144,7 +146,7 @@ sequence should be repeated after a delay of three seconds or more.
 When an Input OOB action is selected, the user should be prompted when the
 application receives the :c:member:`bt_mesh_prov.input` callback. The user
 response should be fed back to the Provisioning API through
-:c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_number`. If
+:c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_numeric`. If
 no user response is recorded within 60 seconds, the Provisioning process is
 aborted.
 

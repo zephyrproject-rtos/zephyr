@@ -78,6 +78,16 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
   CONFIG_WNM
 )
 
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+  CONFIG_BGSCAN
+)
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+  CONFIG_BGSCAN_SIMPLE
+)
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+  CONFIG_BGSCAN_LEARN
+)
+
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${HOSTAP_BASE}/
@@ -156,6 +166,16 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/wnm_sta.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/bgscan.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/bgscan_simple.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/bgscan_learn.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WPA_CLI
   src/wpa_cli.c
 )
@@ -216,7 +236,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
   ${HOSTAP_SRC_BASE}/ap/ieee802_11_vht.c
 )
 
-if (CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO)
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO)
   zephyr_library_sources(${HOSTAP_SRC_BASE}/ap/mbo_ap.c)
 endif()
 
@@ -530,7 +550,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_IKEV2
   EAP_IKEV2
 )
 
-if (CONFIG_EAP_SIM OR CONFIG_EAP_AKA)
+if(CONFIG_EAP_SIM OR CONFIG_EAP_AKA)
   zephyr_library_sources(${HOSTAP_SRC_BASE}/eap_common/eap_sim_common.c)
 endif()
 
@@ -570,6 +590,10 @@ zephyr_library_sources_ifdef(CONFIG_EAP_FAST
 
 zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
   EAP_FAST
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_TLSV1_3
+  EAP_TLSV1_3
 )
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL

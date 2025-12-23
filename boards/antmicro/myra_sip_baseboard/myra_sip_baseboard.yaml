@@ -12,7 +12,6 @@ supported:
   - pwm
   - i2c
   - gpio
-  - usb device
   - spi
   - watchdog
   - dma

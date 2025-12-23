@@ -150,6 +150,7 @@
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
@@ -158,13 +159,13 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
-		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -177,23 +178,22 @@ stm32_lp_tick_source: &lptim1 {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(34)>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
-		slot0_partition: partition@8800 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00008800 DT_SIZE_K(240)>;
+			reg = <0x0000c000 DT_SIZE_K(228)>;
 		};
 
-		slot1_partition: partition@44800 {
+		slot1_partition: partition@45000 {
 			label = "image-1";
-			reg = <0x00044800 DT_SIZE_K(234)>;
+			reg = <0x00045000 DT_SIZE_K(230)>;
 		};
 
-		/* Set 4Kb of storage at the end of the 512Kb of flash */
-		storage_partition: partition@7f000 {
+		storage_partition: partition@7e800 {
 			label = "storage";
-			reg = <0x0007f000 DT_SIZE_K(4)>;
+			reg = <0x0007e800 DT_SIZE_K(6)>;
 		};
 	};
 };
@@ -225,7 +225,7 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 25)>,
 		 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";

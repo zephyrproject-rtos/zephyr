@@ -8,26 +8,27 @@ description: |
   tmc2209: tmc2209 {
       compatible = "adi,tmc2209";
       enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
-      msx-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
-                  <&gpio0 2 GPIO_ACTIVE_HIGH>;
-      step-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-      dir-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-      dual-edge-step;
+      m0-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      m1-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
   }
 
 compatible: "adi,tmc2209"
 
 include:
-  - name: stepper-controller.yaml
+  - name: stepper-driver.yaml
+  - name: step-dir-timing.yaml
 
 properties:
-  msx-gpios:
+  step-width-ns:
+    default: 100
+
+  m0-gpios:
     type: phandle-array
-    description: |
-      An array of GPIO pins for configuring the microstep resolution of the driver.
-      The pins should be listed in the following order:
-      - MS1
-      - MS2
+    description: Microstep configuration pin MS1.
+
+  m1-gpios:
+    type: phandle-array
+    description: Microstep configuration pin MS2.
 
   dual-edge-step:
     type: boolean

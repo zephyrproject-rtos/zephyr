@@ -88,7 +88,7 @@ struct hash_ctx {
 struct hash_pkt {
 
 	/** Start address of input buffer */
-	uint8_t *in_buf;
+	const uint8_t *in_buf;
 
 	/** Bytes to be operated upon */
 	size_t  in_len;

@@ -39,6 +39,7 @@ struct modem_pipe *modem_backend_uart_init(struct modem_backend_uart *backend,
 
 	memset(backend, 0x00, sizeof(*backend));
 	backend->uart = config->uart;
+	backend->dtr_gpio = config->dtr_gpio;
 	k_work_init_delayable(&backend->receive_ready_work,
 			      modem_backend_uart_receive_ready_handler);
 	k_work_init(&backend->transmit_idle_work, modem_backend_uart_transmit_idle_handler);

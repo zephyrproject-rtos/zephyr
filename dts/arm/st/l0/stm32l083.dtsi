@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l0/stm32l073.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l083", "st,stm32l0", "simple-bus";
+
+		aes: aes@40026000 {
+			compatible = "st,stm32-aes";
+			reg = <0x40026000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 16)>;
+			resets = <&rctl STM32_RESET(AHB1, 16)>;
+			interrupts = <31 0>;
+			status = "disabled";
+		};
+	};
+};

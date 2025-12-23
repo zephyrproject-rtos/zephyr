@@ -7,7 +7,8 @@
 /* Add SPI support on Particle Mesh via nRF52840 SPI1
  *
  * NOTE: This file is replicated in particle_{argon,xenon}.
- * Changes should be made in all instances. */
+ * Changes should be made in all instances.
+ */
 
 &pinctrl {
 	spi1_default: spi1_default {
@@ -36,4 +37,3 @@ feather_spi: &spi1 { /* feather SPI */
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 };
-

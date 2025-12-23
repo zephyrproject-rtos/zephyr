@@ -11,17 +11,19 @@ menuconfig GPIO_PCA95XX
 	help
 	  Enable driver for PCA95XX I2C-based GPIO chip.
 
+if GPIO_PCA95XX
+
 config GPIO_PCA95XX_INIT_PRIORITY
 	int "Init priority"
-	default 70
-	depends on GPIO_PCA95XX
+	default I2C_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
 config GPIO_PCA95XX_INTERRUPT
 	bool "Interrupt enable"
-	depends on GPIO_PCA95XX
 	help
 	  Enable interrupt support in PCA95XX driver.
 	  Note that the PCA95XX cannot reliably detect
 	  short-pulse interrupts due to its design.
+
+endif # GPIO_PCA95XX

@@ -22,6 +22,4 @@ and introspected to some degree, as well as unloaded when no longer needed.
 .. note::
 
    The LLEXT subsystem requires architecture-specific support. It is currently
-   available only on RISC-V, ARM, ARM64, ARC (experimental) and Xtensa cores.
-   Harvard architecture cores that separate code and data paths and have no
-   common memory are not supported.
+   available only on RISC-V, ARM, ARM64, ARC, x86, and Xtensa cores.

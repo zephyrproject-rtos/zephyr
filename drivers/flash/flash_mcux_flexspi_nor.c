@@ -1,5 +1,5 @@
 /*
- * Copyright 2020,2023 NXP
+ * Copyright 2020,2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,7 +77,11 @@ struct flash_flexspi_nor_data {
 	flexspi_port_t port;
 	bool legacy_poll;
 	uint64_t size;
+	/* Expected jedec-id property from devicetree */
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
+#endif
 	struct flash_parameters flash_parameters;
 };
 
@@ -166,7 +170,7 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		.SeqNumber = 1,
 		.seqIndex = READ_ID,
 		.data = &buffer,
-		.dataSize = 3,
+		.dataSize = JESD216_READ_ID_LEN,
 	};
 
 	LOG_DBG("Reading id");
@@ -176,17 +180,19 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		return ret;
 	}
 
-	memcpy(vendor_id, &buffer, 3);
+	memcpy(vendor_id, &buffer, JESD216_READ_ID_LEN);
 
 	return ret;
 }
 
-static int flash_flexspi_nor_read_id(const struct device *dev, uint8_t *vendor_id)
+#if defined(CONFIG_FLASH_JESD216_API)
+static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
 	return flash_flexspi_nor_read_id_helper(data, vendor_id);
 }
+#endif
 
 static int flash_flexspi_nor_read_status(struct flash_flexspi_nor_data *data,
 		uint32_t *status)
@@ -351,7 +357,9 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
-
+#ifdef CONFIG_HAS_MCUX_CACHE
+	size_t size = len;
+#endif
 	if (!buffer) {
 		return -EINVAL;
 	}
@@ -360,7 +368,6 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	size_t size = len;
 	uint8_t *src = (uint8_t *) buffer;
 	int i;
 	unsigned int key = 0;
@@ -368,6 +375,10 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
 						    data->port,
 						    offset);
+
+	if (!dst) {
+		return -EINVAL;
+	}
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/*
@@ -429,15 +440,15 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	const size_t num_sectors = size / SPI_NOR_SECTOR_SIZE;
-	const size_t num_blocks = size / SPI_NOR_BLOCK_SIZE;
-
-	int i;
 	unsigned int key = 0;
 
 	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
 						    data->port,
 						    offset);
+
+	if (!dst) {
+		return -EINVAL;
+	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid offset");
@@ -464,21 +475,40 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		flash_flexspi_nor_erase_chip(data);
 		flash_flexspi_nor_wait_bus_busy(data);
 		memc_flexspi_reset(&data->controller);
-	} else if ((0 == (offset % SPI_NOR_BLOCK_SIZE)) && (0 == (size % SPI_NOR_BLOCK_SIZE))) {
-		for (i = 0; i < num_blocks; i++) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_block(data, offset);
-			flash_flexspi_nor_wait_bus_busy(data);
-			memc_flexspi_reset(&data->controller);
-			offset += SPI_NOR_BLOCK_SIZE;
-		}
 	} else {
-		for (i = 0; i < num_sectors; i++) {
+		/* Increase erase efficiency: use block erase when possible,
+		 * sector erase for remainder.
+		 */
+		size_t remaining_size = size;
+		off_t current_offset = offset;
+		/* Step 1: Handle unaligned start - erase sectors until block aligned */
+		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0) {
 			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, offset);
+			flash_flexspi_nor_erase_sector(data, current_offset);
 			flash_flexspi_nor_wait_bus_busy(data);
 			memc_flexspi_reset(&data->controller);
-			offset += SPI_NOR_SECTOR_SIZE;
+			current_offset += SPI_NOR_SECTOR_SIZE;
+			remaining_size -= SPI_NOR_SECTOR_SIZE;
+		}
+
+		/* Step 2: Erase whole blocks */
+		while (remaining_size >= SPI_NOR_BLOCK_SIZE) {
+			flash_flexspi_nor_write_enable(data);
+			flash_flexspi_nor_erase_block(data, current_offset);
+			flash_flexspi_nor_wait_bus_busy(data);
+			memc_flexspi_reset(&data->controller);
+			current_offset += SPI_NOR_BLOCK_SIZE;
+			remaining_size -= SPI_NOR_BLOCK_SIZE;
+		}
+
+		/* Step 3: Erase remaining sectors */
+		while (remaining_size > 0) {
+			flash_flexspi_nor_write_enable(data);
+			flash_flexspi_nor_erase_sector(data, current_offset);
+			flash_flexspi_nor_wait_bus_busy(data);
+			memc_flexspi_reset(&data->controller);
+			current_offset += SPI_NOR_SECTOR_SIZE;
+			remaining_size -= SPI_NOR_SECTOR_SIZE;
 		}
 	}
 
@@ -622,8 +652,8 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR2,
 				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
-		/* Set bit 7 of status register 2 */
-		bit = BIT(7);
+		/* Set bit 1 of status register 2 */
+		bit = BIT(1);
 		rd_size = 1;
 		wr_size = 1;
 		break;
@@ -751,9 +781,41 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 	if (en4b & BIT(6)) {
 		/* Flash is always in 4 byte mode. We just need to configure LUT */
 		return 0;
-	} else if (en4b & BIT(5)) {
-		/* Dedicated vendor instruction set, which we don't support. Exit here */
-		return -ENOTSUP;
+	} else if (en4b & BIT(0)) {
+		/* Issue instruction 0xB7 */
+		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(&data->controller,
+					&config,
+					(uint32_t *)flexspi_lut,
+					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					data->port);
+		if (ret < 0) {
+			return ret;
+		}
+		transfer.dataSize = 0;
+		transfer.seqIndex = SCRATCH_CMD;
+		transfer.cmdType = kFLEXSPI_Command;
+		return memc_flexspi_transfer(&data->controller, &transfer);
+	} else if (en4b & BIT(1)) {
+		/* Issue write enable, then instruction 0xB7 */
+		flash_flexspi_nor_write_enable(data);
+		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(&data->controller,
+					&config,
+					(uint32_t *)flexspi_lut,
+					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					data->port);
+		if (ret < 0) {
+			return ret;
+		}
+		transfer.dataSize = 0;
+		transfer.seqIndex = SCRATCH_CMD;
+		transfer.cmdType = kFLEXSPI_Command;
+		return memc_flexspi_transfer(&data->controller, &transfer);
 	} else if (en4b & BIT(4)) {
 		/* Set bit 0 of 16 bit configuration register */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
@@ -783,43 +845,14 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		transfer.seqIndex = SCRATCH_CMD2;
 		transfer.cmdType = kFLEXSPI_Read;
 		return memc_flexspi_transfer(&data->controller, &transfer);
-	} else if (en4b & BIT(1)) {
-		/* Issue write enable, then instruction 0xB7 */
-		flash_flexspi_nor_write_enable(data);
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
-		if (ret < 0) {
-			return ret;
-		}
-		transfer.dataSize = 0;
-		transfer.seqIndex = SCRATCH_CMD;
-		transfer.cmdType = kFLEXSPI_Command;
-		return memc_flexspi_transfer(&data->controller, &transfer);
-	} else if (en4b & BIT(0)) {
-		/* Issue instruction 0xB7 */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
-		if (ret < 0) {
-			return ret;
-		}
-		transfer.dataSize = 0;
-		transfer.seqIndex = SCRATCH_CMD;
-		transfer.cmdType = kFLEXSPI_Command;
-		return memc_flexspi_transfer(&data->controller, &transfer);
 	}
-	/* Other methods not supported */
+
+	/* Other methods not supported. Include:
+	 *
+	 *	BIT(2): 8-bit volatile extended address register used to define A[31:24] bits.
+	 *	BIT(3): 8-bit volatile bank register used to define A[31:24] bits.
+	 *	BIT(5): Dedicated vendor instruction set.
+	 */
 	return -ENOTSUP;
 }
 
@@ -1086,6 +1119,19 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		return ret;
 	}
 
+	LOG_DBG("Jedec id: %02x %02x %02x", vendor_id & 0xff, (vendor_id>>8) & 0xff,
+		(vendor_id>>16) & 0xff);
+
+	if (data->jedec_id[0]) {
+		/* Check the JEDEC ID against the one from devicetree. */
+		if (memcmp((uint8_t *)&vendor_id, data->jedec_id, sizeof(data->jedec_id)) != 0) {
+			LOG_ERR("Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
+				vendor_id & 0xff, (vendor_id>>8) & 0xff, (vendor_id>>16) & 0xff,
+				data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
+			return -EINVAL;
+		}
+	}
+
 	/* Switch on manufacturer and vendor ID */
 	switch (vendor_id & 0xFFFFFF) {
 	case 0x16609d: /* IS25LP032 */
@@ -1293,6 +1339,40 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_WREN,
 				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
 		return 0;
+	case 0x1940C8: /* GD25Q256E */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 0x20);
+		/* Flash needs 15 dummy cycles */
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_MODE8_SDR, kFLEXSPI_4PAD, 0xF0,
+				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 0x04);
+		flexspi_lut[READ][2] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04);
+
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x20);
+
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x20);
+
+		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_4_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x20);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x04,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+
+		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
+						JESD216_DW15_QER_VAL_S2B1v6);
 
 	default:
 		return -ENOTSUP;
@@ -1419,7 +1499,6 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
-	uint32_t vendor_id;
 
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
@@ -1456,12 +1535,6 @@ static int flash_flexspi_nor_init(const struct device *dev)
 
 	memc_flexspi_reset(&data->controller);
 
-	if (flash_flexspi_nor_read_id(dev, (uint8_t *)&vendor_id)) {
-		LOG_ERR("Could not read vendor id");
-		return -EIO;
-	}
-	LOG_DBG("Vendor id: 0x%0x", vendor_id);
-
 	return 0;
 }
 
@@ -1476,7 +1549,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #endif
 #if defined(CONFIG_FLASH_JESD216_API)
 	.sfdp_read = flash_flexspi_nor_sfdp_read,
-	.read_jedec_id = flash_flexspi_nor_read_id,
+	.read_jedec_id = flash_flexspi_nor_read_jedec_id,
 #endif
 };
 
@@ -1522,13 +1595,16 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
 		.size = DT_INST_PROP(n, size) / 8,			\
-		.layout = {						\
+		.jedec_id = DT_INST_PROP_OR(n, jedec_id, {0}),	\
+		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
+		(.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
 				/ SPI_NOR_SECTOR_SIZE,			\
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
-		},							\
+		},))							\
 		.flash_parameters = {					\
-			.write_block_size = NOR_WRITE_SIZE,		\
+			.write_block_size = DT_INST_PROP_OR(n,		\
+				write_block_size, NOR_WRITE_SIZE),	\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\

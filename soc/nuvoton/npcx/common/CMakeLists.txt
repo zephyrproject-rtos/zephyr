@@ -10,16 +10,16 @@ zephyr_sources(
 zephyr_include_directories(${CONFIG_NPCX_SOC_VARIANT}/include)
 
 # Check for disabling header CRC.
-if (NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_HEADER_CRC)
+if(NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_HEADER_CRC)
     set(NPCX_HEADER_HCRC "-nohcrc")
 endif()
 
 # Check for disabling firmware CRC.
-if (NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_FIRMWARE_CRC)
+if(NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_FIRMWARE_CRC)
     set(NPCX_HEADER_FCRC "-nofcrc")
 endif()
 
-if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
+if(DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
   set(NPCX_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.bin)
   string(TOUPPER "${SOC_NAME}" soc_name_upper)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
@@ -33,7 +33,7 @@ if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
     -spimaxclk ${CONFIG_NPCX_HEADER_SPI_MAX_CLOCK}
     -spireadmode ${CONFIG_NPCX_HEADER_SPI_READ_MODE}
   )
-  if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_HEX)
+  if(DEFINED CONFIG_NPCX_IMAGE_OUTPUT_HEX)
     set(NPCX_HEX_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.hex)
     # Property magic which makes west flash choose right file.
     set_property(TARGET runners_yaml_props_target PROPERTY hex_file "${CONFIG_KERNEL_BIN_NAME}.npcx.hex")

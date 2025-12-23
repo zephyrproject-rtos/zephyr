@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +33,10 @@
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
+#if defined(CONFIG_ARM_PAC_PER_THREAD)
+GEN_OFFSET_SYM(_thread_arch_t, pac_keys);
+#endif
+
 #if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 GEN_OFFSET_SYM(_cpu_arch_t, exc_depth);
@@ -45,8 +50,9 @@ GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
 #endif
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_end);
+
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
 #endif
 #endif

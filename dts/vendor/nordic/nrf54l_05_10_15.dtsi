@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
-#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
@@ -87,6 +87,7 @@
 			reg = <0xffd000 0x1000>;
 		};
 #endif
+
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
@@ -101,11 +102,13 @@
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 #else
 		global_peripherals: peripheral@50000000 {
+			reg = <0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
@@ -243,7 +246,7 @@
 				ieee802154-supported;
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
-				cs-supported;
+				ble-cs-supported;
 
 				ieee802154: ieee802154 {
 					compatible = "nordic,nrf-ieee802154";
@@ -689,7 +692,7 @@
 				gpio-controller;
 				reg = <0x10a000 0x300>;
 				#gpio-cells = <2>;
-				ngpios = <5>;
+				ngpios = <7>;
 				status = "disabled";
 				port = <0>;
 				gpiote-instance = <&gpiote30>;
@@ -746,7 +749,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;

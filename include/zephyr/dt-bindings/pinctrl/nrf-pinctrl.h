@@ -186,6 +186,18 @@
 #define NRF_FUN_TDM_SDOUT        76U
 /** TDM MCK */
 #define NRF_FUN_TDM_MCK          77U
+/** SPI master CSN */
+#define NRF_FUN_SPIM_CSN         78U
+/** TPIU CLOCK */
+#define NRF_FUN_TPIU_CLOCK       79U
+/** TPIU DATA0 */
+#define NRF_FUN_TPIU_DATA0       80U
+/** TPIU DATA1 */
+#define NRF_FUN_TPIU_DATA1       81U
+/** TPIU DATA2 */
+#define NRF_FUN_TPIU_DATA2       82U
+/** TPIU DATA3 */
+#define NRF_FUN_TPIU_DATA3       83U
 
 /** @} */
 

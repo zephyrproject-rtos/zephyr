@@ -527,9 +527,9 @@ ZTEST(pthread_attr, test_pthread_attr_policy_and_priority_limits)
 			 *
 			 * Note: we relax this requirement
 			 */
-			zassert_true(pmax > pmin, "pmax (%d) <= pmin (%d)", pmax, pmin,
-				     "%s min/max inconsistency: pmin: %d pmax: %d",
-				     policy_names[policy], pmin, pmax);
+			zassert_true(pmax > pmin,
+				     "%s min/max inconsistency, pmax (%d) <= pmin (%d)",
+				     policy_names[policy], pmax, pmin);
 
 			/*
 			 * Getting into the weeds a bit (i.e. whitebox testing), Zephyr

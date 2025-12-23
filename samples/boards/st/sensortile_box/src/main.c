@@ -256,8 +256,7 @@ int main(void)
 	int cnt = 1;
 	uint32_t dtr = 0;
 
-	/* Application must enable USB by itself */
-	if (!device_is_ready(dev) || usb_enable(NULL)) {
+	if (!device_is_ready(dev)) {
 		return 0;
 	}
 

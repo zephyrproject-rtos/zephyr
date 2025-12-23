@@ -506,7 +506,6 @@ static int uart_sedi_line_ctrl_set(struct device *dev,
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	sedi_uart_config_t cfg;
-	uint32_t mask;
 	int ret;
 
 	k_mutex_lock(GET_MUTEX(dev), K_FOREVER);

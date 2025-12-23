@@ -7,11 +7,6 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 / {
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911>;
-	};
-
 	aliases {
 		accel0 = &gt911;
 	};
@@ -24,7 +19,7 @@
 
 &sdram1 {
 	/* Frame buffer memory cache will cause screen flickering. */
-	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };
 
 &zephyr_lcd_controller {
@@ -35,7 +30,7 @@
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	disp-on-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;

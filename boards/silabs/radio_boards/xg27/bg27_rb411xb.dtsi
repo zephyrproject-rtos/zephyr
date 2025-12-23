@@ -1,0 +1,250 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/xg27/efr32bg27c320f768gj39.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "bg27_rb411xb-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart1;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		spi-flash0 = &mx25r80;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&letimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpioa 4 0>,
+			   <4 0 &gpioc 5 0>,
+			   <6 0 &gpioc 3 0>,
+			   <7 0 &gpiob 2 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 6 0>,
+			   <12 0 &gpioa 5 0>,
+			   <14 0 &gpioa 6 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <76800000>;
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	swo-ref-frequency = <DT_FREQ_K(76800)>;
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	ctune = <63>;
+	precision = <50>;
+	status = "okay";
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_K(76800)>;
+	clocks = <&hfxo>;
+	dpll-autorecover;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-m = <1919>;
+	dpll-n = <3839>;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&rtccclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eusart0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		has-dpd;
+		jedec-id = [c2 28 14];
+		mxicy,mx25r-power-mode = "low-power";
+		size = <0x800000>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		t-enter-dpd = <0>;
+		zephyr,pm-device-runtime-auto;
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+
+	vcom-enable {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&rtcc0 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			reg = <0x0000c000 DT_SIZE_K(344)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@62000 {
+			reg = <0x00062000 DT_SIZE_K(344)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@b8000 {
+			reg = <0x000b8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};

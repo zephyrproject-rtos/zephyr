@@ -11,7 +11,7 @@
 		compatible = "test-pwm-loopback";
 		/* first index must be a 32-Bit timer */
 		pwms = <&pwm2 0 0 PWM_POLARITY_NORMAL>,
-			<&pwm5 0 0 PWM_POLARITY_NORMAL>;
+		       <&pwm5 0 0 PWM_POLARITY_NORMAL>;
 	};
 };
 
@@ -21,6 +21,7 @@
 			/* GTIOC5A */
 			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 15)>;
 		};
+
 		group2 {
 			/* GTIOC5B */
 			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 9)>;

@@ -311,8 +311,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS zephyr-v1.14.0 *****
    Hello World! lpcxpresso55s69
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _LPC55S69 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc5500-cortex-m33/high-efficiency-arm-cortex-m33-based-microcontroller-family:LPC55S6x

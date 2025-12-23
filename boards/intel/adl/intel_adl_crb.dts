@@ -17,6 +17,7 @@
 
 	aliases {
 		rtc = &rtc;
+		pwm-test = &pwm0;
 	};
 };
 

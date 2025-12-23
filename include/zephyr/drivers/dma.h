@@ -1,13 +1,13 @@
-/**
- * @file
- *
- * @brief Public APIs for the DMA drivers.
- */
-
 /*
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @ingroup dma_interface
+ * @brief Main header file for DMA (Direct Memory Access) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_H_
@@ -20,10 +20,9 @@
 extern "C" {
 #endif
 
-
 /**
- * @brief DMA Interface
- * @defgroup dma_interface DMA Interface
+ * @brief Interfaces for DMA (Direct Memory Access) controllers.
+ * @defgroup dma_interface DMA
  * @since 1.5
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -347,7 +346,7 @@ typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, ui
  * @param channel the channel id to use
  * @param filter_param filter function parameter, can be NULL
  *
- * @retval True on filter matched otherwise return False.
+ * @return True on filter matched otherwise return False.
  */
 typedef bool (*dma_api_chan_filter)(const struct device *dev,
 				int channel, void *filter_param);
@@ -391,7 +390,7 @@ __subsystem struct dma_driver_api {
  *                selected channel
  *
  * @retval 0 if successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 static inline int dma_config(const struct device *dev, uint32_t channel,
 			     struct dma_config *config)
@@ -413,7 +412,7 @@ static inline int dma_config(const struct device *dev, uint32_t channel,
  * @param size    size of DMA transfer
  *
  * @retval 0 if successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 #ifdef CONFIG_DMA_64BIT
 static inline int dma_reload(const struct device *dev, uint32_t channel,
@@ -450,11 +449,9 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  *                be processed
  *
  * @retval 0 if successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
-__syscall int dma_start(const struct device *dev, uint32_t channel);
-
-static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
+static inline int dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
@@ -478,11 +475,9 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  *                being processed
  *
  * @retval 0 if successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
-__syscall int dma_stop(const struct device *dev, uint32_t channel);
-
-static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
+static inline int dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
@@ -507,9 +502,7 @@ static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
  * @retval -EINVAL If invalid channel id or state.
  * @retval -errno Other negative errno code failure.
  */
-__syscall int dma_suspend(const struct device *dev, uint32_t channel);
-
-static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
+static inline int dma_suspend(const struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
 
@@ -535,9 +528,7 @@ static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
  * @retval -EINVAL If invalid channel id or state.
  * @retval -errno Other negative errno code failure.
  */
-__syscall int dma_resume(const struct device *dev, uint32_t channel);
-
-static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
+static inline int dma_resume(const struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
 
@@ -560,14 +551,10 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
  * @param dev Pointer to the device structure for the driver instance.
  * @param filter_param filter function parameter
  *
- * @retval dma channel if successful.
- * @retval Negative errno code if failure.
+ * @return dma channel if successful.
+ * @retval <0 Negative errno code if failure.
  */
-__syscall int dma_request_channel(const struct device *dev,
-				  void *filter_param);
-
-static inline int z_impl_dma_request_channel(const struct device *dev,
-					     void *filter_param)
+static inline int dma_request_channel(const struct device *dev, void *filter_param)
 {
 	int i = 0;
 	int channel = -EINVAL;
@@ -608,11 +595,7 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  * @param channel  channel number
  *
  */
-__syscall void dma_release_channel(const struct device *dev,
-				   uint32_t channel);
-
-static inline void z_impl_dma_release_channel(const struct device *dev,
-					      uint32_t channel)
+static inline void dma_release_channel(const struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
@@ -641,14 +624,10 @@ static inline void z_impl_dma_release_channel(const struct device *dev,
  * @param channel  channel number
  * @param filter_param filter attribute
  *
- * @retval Negative errno code if not support
+ * @retval <0 Negative errno code if not support
  *
  */
-__syscall int dma_chan_filter(const struct device *dev,
-				   int channel, void *filter_param);
-
-static inline int z_impl_dma_chan_filter(const struct device *dev,
-					      int channel, void *filter_param)
+static inline int dma_chan_filter(const struct device *dev, int channel, void *filter_param)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
@@ -673,8 +652,8 @@ static inline int z_impl_dma_chan_filter(const struct device *dev,
  *                being processed
  * @param stat   a non-NULL dma_status object for storing DMA status
  *
- * @retval non-negative if successful.
- * @retval Negative errno code if failure.
+ * @retval >=0 non-negative if successful.
+ * @retval <0 Negative errno code if failure.
  */
 static inline int dma_get_status(const struct device *dev, uint32_t channel,
 				 struct dma_status *stat)
@@ -703,8 +682,8 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
  * @param type    Numeric identification of the attribute
  * @param value   A non-NULL pointer to the variable where the read value is to be placed
  *
- * @retval non-negative if successful.
- * @retval Negative errno code if failure.
+ * @retval >=0 non-negative if successful.
+ * @retval <0 Negative errno code if failure.
  */
 static inline int dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
 {
@@ -728,7 +707,7 @@ static inline int dma_get_attribute(const struct device *dev, uint32_t type, uin
  *
  * @param size: width of bus (in bytes)
  *
- * @retval common DMA index to be placed into registers.
+ * @return common DMA index to be placed into registers.
  */
 static inline uint32_t dma_width_index(uint32_t size)
 {
@@ -757,7 +736,7 @@ static inline uint32_t dma_width_index(uint32_t size)
  *
  * @param burst: number of bytes to be sent in a single burst
  *
- * @retval common DMA index to be placed into registers.
+ * @return common DMA index to be placed into registers.
  */
 static inline uint32_t dma_burst_index(uint32_t burst)
 {
@@ -812,7 +791,5 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 #ifdef __cplusplus
 }
 #endif
-
-#include <zephyr/syscalls/dma.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_H_ */

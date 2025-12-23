@@ -6,7 +6,7 @@
 #
 
 # TODO: Use DTS generated Kconfig once the board support is added
-DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
+DT_COMPAT_NORDIC_WIFI71 := nordic,nrf7120
 
 menuconfig WIFI_NRF70
 	bool "nRF70 driver"
@@ -89,7 +89,7 @@ config NRF70_OFFLOADED_RAW_TX
 
 endchoice
 
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
 
 if NRF70_SYSTEM_MODE
@@ -107,6 +107,15 @@ config NRF70_AP_MODE
 	select NRF70_DATA_TX
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
+
+config NRF70_ENABLE_DUAL_VIF
+	bool "Dual virtual Wi-Fi interfaces"
+	default y if WIFI_NM_MAX_MANAGED_INTERFACES = 2
+	depends on (WIFI_NRF7002 || WIFI_NRF7001) && NET_L2_ETHERNET
+	help
+	  Enable support for two virtual Wi-Fi interfaces (VIFs).
+	  When enabled, the driver can operate two VIFs simultaneously,
+	  allowing use cases such as one interface in AP mode and another in STA mode.
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
@@ -165,6 +174,7 @@ config NRF_WIFI_LOW_POWER
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	bool "TCP/IP checksum offload"
+	depends on !NRF71_ON_IPC
 	default y
 
 config NRF70_REG_DOMAIN
@@ -438,6 +448,8 @@ config NRF70_BAND_UNII_4_UPPER_EDGE_BACKOFF_HE
 
 config NRF70_RX_NUM_BUFS
 	int "Number of RX buffers"
+	range 3 256
+	default 6 if !NRF70_DATA_TX
 	default 48
 
 config NRF70_MAX_TX_AGGREGATION
@@ -455,6 +467,8 @@ config NRF70_TX_MAX_DATA_SIZE
 
 config NRF70_RX_MAX_DATA_SIZE
 	int "Maximum size of RX data"
+	range 400 65536
+	default 1000 if !NRF70_DATA_TX
 	default 1600
 
 config NRF70_TX_DONE_WQ_ENABLED
@@ -528,7 +542,7 @@ config WIFI_FIXED_MAC_ADDRESS
 	help
 	  This option overrides the MAC address read from OTP. It is strictly for testing purposes only.
 
-choice
+choice WIFI_MAC_ADDRESS
 	prompt "Wi-Fi MAC address type"
 	default WIFI_FIXED_MAC_ADDRESS_ENABLED if WIFI_FIXED_MAC_ADDRESS != ""
 	default WIFI_OTP_MAC_ADDRESS
@@ -632,7 +646,7 @@ endif # NRF_WIFI_USE_VARIABLE_NET_BUFS
 config MAIN_STACK_SIZE
 	default 4096
 
-config SHELL_STACK_SIZE
+configdefault SHELL_STACK_SIZE
 	default 4096
 
 # Override the Wi-Fi subsystems WIFI_MGMT_SCAN_SSID_FILT_MAX parameter,
@@ -655,28 +669,27 @@ config WIFI_NRF70_SCAN_TIMEOUT_S
 	int "Scan timeout in seconds"
 	default 30
 
-menu "nRF Wi-Fi operation band(s)"
-	visible if !NRF70_2_4G_ONLY
+choice NRF_WIFI_OP_BAND
+	prompt "nRF Wi-Fi operation bands"
+	default NRF_WIFI_2G_BAND if NRF70_2_4G_ONLY
+	default NRF_WIFI_ALL_BAND
+
+config NRF_WIFI_ALL_BAND
+	bool "Set operation band to all supported bands"
 
 config NRF_WIFI_2G_BAND
 	bool "Set operation band to 2.4GHz"
-	default y if NRF70_2_4G_ONLY
 
 config NRF_WIFI_5G_BAND
 	bool "Set operation band to 5GHz"
-	depends on !NRF70_2_4G_ONLY
+if NRF71_ON_IPC
+config NRF_WIFI_6G_BAND
+	bool "Set operation band to 6GHz"
 
-config NRF_WIFI_OP_BAND
-	int "Options to set operation band"
-	default 1 if NRF_WIFI_2G_BAND
-	default 2 if NRF_WIFI_5G_BAND
-	default 3
-	help
-	  Set this option to select frequency band
-	  1 - 2.4GHz
-	  2 - 5GHz
-	  3 - All ( 2.4GHz and 5GHz )
-endmenu
+config NRF_WIFI_DUAL_BAND
+	bool "Set operation band to 2.4GHz and 5GHz"
+endif # NRF71_ON_IPC
+endchoice
 
 config NRF_WIFI_IFACE_MTU
 	int "MTU for Wi-Fi interface"
@@ -748,11 +761,12 @@ config NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS
 
 config NRF_WIFI_RPU_MIN_TIME_TO_ENTER_SLEEP_MS
 	int "Minimum idle time to enter sleep in milliseconds"
-	range 100 5000
-	default 1000
+	range 100 40000
+	default 5000
 	help
 	  Minimum time the host should de-assert WAKEUP_NOW and let RPU enter
-	  sleep mode, assuming there is no activity.
+	  sleep mode, assuming there is no activity. Please note that higher values
+	  of this value may increase the power consumption.
 
 config NRF_WIFI_RPU_RECOVERY_DEBUG
 	bool "RPU recovery debug logs"
@@ -839,7 +853,7 @@ if NRF_WIFI_FEAT_KEEPALIVE
 config NRF_WIFI_KEEPALIVE_PERIOD_S
 	int "Keepalive period in seconds"
 	range 30 3600
-	default 60
+	default 30
 	help
 	  Keepalive period in seconds to send keepalive packets to the AP.
 endif
@@ -933,4 +947,14 @@ config NRF_WIFI_DYNAMIC_ED
 	help
 	  This option enables support for proprietary algorithm to
 	  enhance performance in high-traffic channels.
+
+config NRF_WIFI_TWT_SETUP_TIMEOUT_MS
+	int "TWT setup timeout (ms)"
+	range 100 10000
+	default 250
+	help
+	  Timeout duration (in milliseconds) for the TWT setup procedure.
+	  The STA will transmit a TWT setup request every 100 milliseconds,
+	  continuing until this timeout value is reached. If no response is
+	  received before the timeout expires, the TWT setup is considered failed.
 endif # WIFI_NRF70

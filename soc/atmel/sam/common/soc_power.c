@@ -19,6 +19,7 @@ void sys_arch_reboot(int type)
 	Rstc *regs = (Rstc *)DT_REG_ADDR(SAM_DT_RSTC_DRIVER);
 
 	switch (type) {
+	case SYS_REBOOT_WARM:
 	case SYS_REBOOT_COLD:
 		regs->RSTC_CR = RSTC_CR_KEY_PASSWD
 			      | RSTC_CR_PROCRST

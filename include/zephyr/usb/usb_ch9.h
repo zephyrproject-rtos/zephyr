@@ -267,6 +267,7 @@ struct usb_association_descriptor {
 #define USB_BCC_MASS_STORAGE		0x08
 #define USB_BCC_CDC_DATA		0x0A
 #define USB_BCC_VIDEO			0x0E
+#define USB_BCC_MCTP			0x14
 #define USB_BCC_WIRELESS_CONTROLLER	0xE0
 #define USB_BCC_MISCELLANEOUS		0xEF
 #define USB_BCC_APPLICATION		0xFE

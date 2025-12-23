@@ -4,8 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	aliases {
 		sample-clock = &fll16m;
 	};
+};
+
+&fll16m {
+	status = "okay";
 };

@@ -10,7 +10,7 @@
 /**
  * @brief MSPI Devicetree related macros
  * @defgroup mspi_devicetree MSPI Devicetree related macros
- * @ingroup io_interfaces
+ * @ingroup mspi_interface
  * @{
  */
 

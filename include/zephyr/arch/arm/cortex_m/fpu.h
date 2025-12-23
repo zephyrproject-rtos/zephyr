@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_FPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_FPU_H_
 
+#include <stdint.h>
+#include <stdbool.h>
+
 struct fpu_ctx_full {
 	uint32_t caller_saved[16];
 	uint32_t callee_saved[16];

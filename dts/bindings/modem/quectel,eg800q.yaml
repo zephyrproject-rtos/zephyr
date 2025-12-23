@@ -2,7 +2,7 @@ description: Quectel EG800Q modem
 
 compatible: "quectel,eg800q"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:

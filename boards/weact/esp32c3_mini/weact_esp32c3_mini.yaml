@@ -1,0 +1,19 @@
+identifier: weact_esp32c3_mini
+name: WeAct Studio ESP32-C3-Mini
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - i2s
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+vendor: weact

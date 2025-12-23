@@ -31,6 +31,10 @@ properties:
         For example the WUI mapping on NPCX7 would be
            espi-rst-wui = <&wui_cr_sin1>;
 
+  rst-gpios:
+    type: phandle-array
+    description: Definition of the eSPI reset GPIO pin for the NPCKn variant.
+
   rx-plsize:
     type: int
     required: true
@@ -54,3 +58,27 @@ properties:
       For example, update the index of VWEVMS6 into 0x4A and the index of VWEVSM8 into 0x53
         vw-index-extend-set = < ESPI_NPCX_VW_EX_VAL(1, 6, 0x4A)
                                 ESPI_NPCX_VW_EX_VAL(0, 8, 0x53) >
+
+  support-npcxn-v1:
+    type: boolean
+    description: |
+      Support ESPI controller version 1 for npcxn variant.
+      This property is optional. If not provided, the default value is false.
+
+  support-npcxn-v2:
+    type: boolean
+    description: |
+      Support ESPI controller version 2 for npcxn variant.
+      This property is optional. If not provided, the default value is false.
+
+  support-npcxn-v3:
+    type: boolean
+    description: |
+      Support ESPI controller version 3 for npcxn variant.
+      This property is optional. If not provided, the default value is false.
+
+  support-npckn-v1:
+    type: boolean
+    description: |
+      Support ESPI controller version 1 for npckn variant.
+      This property is optional. If not provided, the default value is false.

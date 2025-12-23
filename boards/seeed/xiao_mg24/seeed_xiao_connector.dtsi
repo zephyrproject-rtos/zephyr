@@ -24,8 +24,8 @@
 	};
 };
 
-xiao_spi: &eusart1 {};
+xiao_spi: &eusart0 {};
 
-xiao_serial: &eusart0 {};
+xiao_serial: &eusart1 {};
 
 xiao_i2c: &i2c0 {};

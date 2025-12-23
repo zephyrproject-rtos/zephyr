@@ -46,6 +46,4 @@ The easiest way to connect is:
     $ telnet 192.0.2.1 4242
 
 After a connection is made, the application will echo back any line sent
-to it. The application implements a single-threaded server using blocking
-sockets, and currently is only implemented to serve only one client connection
-at time. After the current client disconnects, the next connection can proceed.
+to it.

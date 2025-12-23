@@ -132,3 +132,10 @@ config EC_HOST_CMD_BACKEND_UART_TIMEOUT
 	  chunk.
 
 endif # EC_HOST_CMD_BACKEND_UART
+
+config EC_HOST_CMD_BACKEND_USB
+	bool "Host commands support using USB"
+	default y
+	depends on USB_DEVICE_STACK_NEXT
+	help
+	  Enable support for Embedded Controller host commands using the USB.

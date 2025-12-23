@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 &arduino_spi {
 	status = "okay";
@@ -15,7 +16,7 @@
 		reg = <0x0>;
 		spi-max-frequency = <1000000>;
 		/* Uncomment to use IRQ instead of polling: */
-		/* drdyb-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; */
+		/* drdyb-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>; */
 		#io-channel-cells = <1>;
 
 		lmp90100_gpio: gpio {

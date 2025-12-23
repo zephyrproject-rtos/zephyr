@@ -24,16 +24,9 @@
 
 		storage_partition: partition@100000 {
 			label = "storage";
-			reg = <0x100000  DT_SIZE_M(1)>;
+			reg = <0x100000 DT_SIZE_M(1)>;
 		};
 	};
 };
 
-/ {
-	msc_disk0 {
-		compatible = "zephyr,flash-disk";
-		partition = <&storage_partition>;
-		disk-name = "NAND";
-		cache-size = <4096>;
-	};
-};
+#include "../flashdisk.overlay"

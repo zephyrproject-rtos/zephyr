@@ -1,0 +1,70 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MCXW7XX
+
+config NUM_IRQS
+	default 77 if SOC_MCXW727C
+	default 75
+
+config MCUX_LPTMR_TIMER
+	default y if PM
+
+DT_LPTMR_PATH := $(dt_nodelabel_path,lptmr0)
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 96000000 if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_LPTMR_PATH),clock-frequency) if MCUX_LPTMR_TIMER
+
+config MCUX_FLASH_K4_API
+	default y
+
+if BT
+
+config MAIN_STACK_SIZE
+	default 2560
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config BT_BUF_EVT_RX_COUNT
+	default 16
+
+config BT_BUF_ACL_TX_COUNT
+	default 12 if SOC_MCXW727C
+	default 8 if SOC_MCXW716C
+
+if SHELL
+
+config SHELL_STACK_SIZE
+	default 4096
+
+endif # SHELL
+
+# Include intercore messaging component
+config NXP_RF_IMU
+	default y
+
+#  Set the controller's public identity using NXP vendor command
+config BT_HCI_SET_PUBLIC_ADDR
+	default y
+
+# HCI RX buffers are received in ISR context. RX messages
+# need to be queued and processed by a dedicated thread
+config HCI_NXP_RX_THREAD
+	default y
+
+endif # BT
+
+if IEEE802154
+
+# Include intercore messaging component
+config NXP_RF_IMU
+	default y
+
+endif # IEEE802154
+
+endif

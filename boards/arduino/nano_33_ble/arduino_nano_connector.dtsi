@@ -37,5 +37,7 @@
 };
 
 arduino_nano_i2c: &i2c0 {};
+
 arduino_nano_spi: &spi2 {};
+
 arduino_nano_serial: &uart0 {};

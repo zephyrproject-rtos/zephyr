@@ -21,76 +21,76 @@
 		group1 {
 			/* SDRAM_DQM1 */
 			psels = <RA_PSEL(RA_PSEL_BUS, 1, 12)>,
-			/* SDRAM_CKE */
-			<RA_PSEL(RA_PSEL_BUS, 1, 13)>,
-			/* SDRAM_WE */
-			<RA_PSEL(RA_PSEL_BUS, 1, 14)>,
-			/* SDRAM_CS */
-			<RA_PSEL(RA_PSEL_BUS, 1, 15)>,
-			/* SDRAM_A0 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 0)>,
-			/* SDRAM_A1 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 1)>,
-			/* SDRAM_A2 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 2)>,
-			/* SDRAM_A3 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 3)>,
-			/* SDRAM_A4 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 4)>,
-			/* SDRAM_A5 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 5)>,
-			/* SDRAM_A6 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 6)>,
-			/* SDRAM_A7 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 7)>,
-			/* SDRAM_A8 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 8)>,
-			/* SDRAM_A9 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 9)>,
-			/* SDRAM_A10 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 10)>,
-			/* SDRAM_A11 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 11)>,
-			/* SDRAM_A12 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 12)>,
-			/* SDRAM_A13 */
-			<RA_PSEL(RA_PSEL_BUS, 3, 12)>,
-			/* SDRAM_A14 */
-			<RA_PSEL(RA_PSEL_BUS, 9, 5)>,
-			/* SDRAM_A15 */
-			<RA_PSEL(RA_PSEL_BUS, 9, 6)>,
-			/* SDRAM_D0 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 1)>,
-			/* SDRAM_D1 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 2)>,
-			/* SDRAM_D2 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 3)>,
-			/* SDRAM_D3 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 4)>,
-			/* SDRAM_D4 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 5)>,
-			/* SDRAM_D5 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 6)>,
-			/* SDRAM_D6 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 7)>,
-			/* SDRAM_D8 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 9)>,
-			/* SDRAM_D9 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 10)>,
-			/* SDRAM_D10 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 11)>,
-			/* SDRAM_D11 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 12)>,
-			/* SDRAM_D12 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 13)>,
-			/* SDRAM_D13 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 14)>,
-			/* SDRAM_D14 */
-			<RA_PSEL(RA_PSEL_BUS, 6, 15)>,
-			/* SDRAM_RAS */
-			<RA_PSEL(RA_PSEL_BUS, 9, 8)>,
-			/* SDRAM_CAS */
-			<RA_PSEL(RA_PSEL_BUS, 9, 9)>;
+				/* SDRAM_CKE */
+				<RA_PSEL(RA_PSEL_BUS, 1, 13)>,
+				/* SDRAM_WE */
+				<RA_PSEL(RA_PSEL_BUS, 1, 14)>,
+				/* SDRAM_CS */
+				<RA_PSEL(RA_PSEL_BUS, 1, 15)>,
+				/* SDRAM_A0 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 0)>,
+				/* SDRAM_A1 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 1)>,
+				/* SDRAM_A2 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 2)>,
+				/* SDRAM_A3 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 3)>,
+				/* SDRAM_A4 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 4)>,
+				/* SDRAM_A5 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 5)>,
+				/* SDRAM_A6 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 6)>,
+				/* SDRAM_A7 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 7)>,
+				/* SDRAM_A8 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 8)>,
+				/* SDRAM_A9 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 9)>,
+				/* SDRAM_A10 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 10)>,
+				/* SDRAM_A11 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 11)>,
+				/* SDRAM_A12 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 12)>,
+				/* SDRAM_A13 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 12)>,
+				/* SDRAM_A14 */
+				<RA_PSEL(RA_PSEL_BUS, 9, 5)>,
+				/* SDRAM_A15 */
+				<RA_PSEL(RA_PSEL_BUS, 9, 6)>,
+				/* SDRAM_D0 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 1)>,
+				/* SDRAM_D1 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 2)>,
+				/* SDRAM_D2 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 3)>,
+				/* SDRAM_D3 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 4)>,
+				/* SDRAM_D4 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 5)>,
+				/* SDRAM_D5 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 6)>,
+				/* SDRAM_D6 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 7)>,
+				/* SDRAM_D8 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 9)>,
+				/* SDRAM_D9 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 10)>,
+				/* SDRAM_D10 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 11)>,
+				/* SDRAM_D11 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 12)>,
+				/* SDRAM_D12 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 13)>,
+				/* SDRAM_D13 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 14)>,
+				/* SDRAM_D14 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 15)>,
+				/* SDRAM_RAS */
+				<RA_PSEL(RA_PSEL_BUS, 9, 8)>,
+				/* SDRAM_CAS */
+				<RA_PSEL(RA_PSEL_BUS, 9, 9)>;
 			drive-strength = "high";
 		};
 
@@ -103,10 +103,10 @@
 		group3 {
 			/* SDRAM_D7 */
 			psels = <RA_PSEL(RA_PSEL_BUS, 10, 0)>,
-			/* SDRAM_D15 */
-			<RA_PSEL(RA_PSEL_BUS, 10, 8)>,
-			/* SDRAM_DQM0 */
-			<RA_PSEL(RA_PSEL_BUS, 10, 10)>;
+				/* SDRAM_D15 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 8)>,
+				/* SDRAM_DQM0 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 10)>;
 			drive-strength = "high";
 		};
 	};
@@ -114,11 +114,11 @@
 	sdhc1_default: sdhc1_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_SDHI, 5, 3)>, /* SDCD */
-			<RA_PSEL(RA_PSEL_SDHI, 8, 11)>, /* SDCMD */
-			<RA_PSEL(RA_PSEL_SDHI, 8, 12)>, /* SDDATA0 */
-			<RA_PSEL(RA_PSEL_SDHI, 5, 0)>, /* SDDATA1 */
-			<RA_PSEL(RA_PSEL_SDHI, 5, 1)>, /* SDDATA2 */
-			<RA_PSEL(RA_PSEL_SDHI, 5, 2)>; /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 8, 11)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 8, 12)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 5, 0)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 5, 1)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 5, 2)>; /* SDDATA3 */
 			drive-strength = "high";
 		};
 

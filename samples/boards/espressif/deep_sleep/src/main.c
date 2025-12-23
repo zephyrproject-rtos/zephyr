@@ -6,16 +6,24 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/poweroff.h>
+#include <zephyr/drivers/retained_mem.h>
 #include <esp_sleep.h>
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include <driver/rtc_io.h>
+#endif
 
 #include <esp_attr.h>
 
-#define WAKEUP_TIME_SEC		(5)
+#define RETAINED_MEM_CONST 0x01234567
 
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
+#ifdef CONFIG_SOC_SERIES_ESP32H2
+#define EXT_WAKEUP_PIN_1	(10)
+#define EXT_WAKEUP_PIN_2	(11)
+#else
 #define EXT_WAKEUP_PIN_1	(2)
 #define EXT_WAKEUP_PIN_2	(4)
+#endif
 #endif
 
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
@@ -26,16 +34,84 @@ static const struct gpio_dt_spec wakeup_button = GPIO_DT_SPEC_GET(DT_ALIAS(wakeu
 #endif
 #endif
 
-/* keep data in RTC memory after deep-sleep */
-RTC_DATA_ATTR int s_rtc_data = 0;
+static void print_counter(__maybe_unused esp_sleep_wakeup_cause_t sleep_wakeup_cause)
+{
+#ifdef CONFIG_RETAINED_MEM
+	const struct device *retained_mem_device = DEVICE_DT_GET(DT_ALIAS(retainedmemdevice));
+
+	off_t offset;
+	uint32_t aux;
+	int err;
+
+	if (!device_is_ready(retained_mem_device)) {
+		printk("retained_mem device is not ready!\n");
+		return;
+	}
+
+	switch (sleep_wakeup_cause) {
+#ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
+	case ESP_SLEEP_WAKEUP_EXT1:
+#endif /* CONFIG_EXAMPLE_EXT1_WAKEUP */
+#ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
+	case ESP_SLEEP_WAKEUP_GPIO:
+#endif /* CONFIG_EXAMPLE_GPIO_WAKEUP */
+	case ESP_SLEEP_WAKEUP_TIMER:
+		offset = 0;
+		err = retained_mem_read(retained_mem_device, offset, (uint8_t *)&aux, sizeof(aux));
+		if (err < 0) {
+			printk("retained_mem_read() failed: %d\n", err);
+			return;
+		}
+
+		if (aux != RETAINED_MEM_CONST) {
+			printk("retained_mem_read() retrieved wrong value - expected: "
+				STRINGIFY(RETAINED_MEM_CONST) "; actual: 0x%" PRIx32 "\n", aux);
+			return;
+		}
+
+		offset += sizeof(aux);
+		err = retained_mem_read(retained_mem_device, offset, (uint8_t *)&aux, sizeof(aux));
+		if (err < 0) {
+			printk("retained_mem_read() failed: %d\n", err);
+			return;
+		}
+
+		printk("ESP32 deep sleep example, current counter is %" PRIu32 "\n", aux++);
+
+		err = retained_mem_write(retained_mem_device, offset, (uint8_t *)&aux, sizeof(aux));
+		if (err < 0) {
+			printk("retained_mem_write() failed: %d\n", err);
+			return;
+		}
+		break;
+	case ESP_SLEEP_WAKEUP_UNDEFINED:
+	default:
+		aux = RETAINED_MEM_CONST;
+		offset = 0;
+		err = retained_mem_write(retained_mem_device, offset, (uint8_t *)&aux, sizeof(aux));
+		if (err < 0) {
+			printk("retained_mem_write() failed: %d\n", err);
+			return;
+		}
+
+		aux = 1;
+		offset += sizeof(aux);
+		err = retained_mem_write(retained_mem_device, offset, (uint8_t *)&aux, sizeof(aux));
+		if (err < 0) {
+			printk("retained_mem_write() failed: %d\n", err);
+			return;
+		}
+	}
+#endif /* CONFIG_RETAINED_MEM */
+}
 
 int main(void)
 {
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-	printk("ESP32 deep sleep example, current counter is %d\r\n", s_rtc_data++);
-#endif
+	esp_sleep_wakeup_cause_t sleep_wakeup_cause = esp_sleep_get_wakeup_cause();
 
-	switch (esp_sleep_get_wakeup_cause()) {
+	print_counter(sleep_wakeup_cause);
+
+	switch (sleep_wakeup_cause) {
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
 	case ESP_SLEEP_WAKEUP_EXT1:
 	{
@@ -76,7 +152,7 @@ int main(void)
 
 	k_busy_wait(1000000);
 
-	const int wakeup_time_sec = WAKEUP_TIME_SEC;
+	const int wakeup_time_sec = CONFIG_EXAMPLE_WAKEUP_TIME_SEC;
 
 	printk("Enabling timer wakeup, %ds\n", wakeup_time_sec);
 	esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000000);
@@ -92,11 +168,13 @@ int main(void)
 	esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask,
 			ESP_EXT1_WAKEUP_ANY_HIGH);
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 	/* enable pull-down on ext1 pins to avoid random wake-ups */
 	rtc_gpio_pullup_dis(EXT_WAKEUP_PIN_1);
 	rtc_gpio_pulldown_en(EXT_WAKEUP_PIN_1);
 	rtc_gpio_pullup_dis(EXT_WAKEUP_PIN_2);
 	rtc_gpio_pulldown_en(EXT_WAKEUP_PIN_2);
+#endif
 #endif /* CONFIG_EXAMPLE_EXT1_WAKEUP */
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
 	if (!gpio_is_ready_dt(&wakeup_button)) {

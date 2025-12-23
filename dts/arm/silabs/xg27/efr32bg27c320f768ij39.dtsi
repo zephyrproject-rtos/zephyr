@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/xg27/efr32bg27.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,efr32bg27c320f768ij39", "silabs,efr32bg27", "silabs,xg27",
+			     "silabs,efr32", "simple-bus";
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(768)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};

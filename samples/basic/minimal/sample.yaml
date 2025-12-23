@@ -105,3 +105,15 @@ tests:
       - kernel
     integration_platforms:
       - qemu_riscv32
+  sample.minimal.no-mt-no-sw-isr-table.arm:
+    extra_args: EXTRA_CONF_FILE='common.conf;no-mt.conf;no-sw-isr-table.conf;arm.conf'
+    build_only: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+  sample.minimal.no-mt-no-sw-isr-table.riscv:
+    extra_args: CONF_FILE='common.conf;no-mt.conf;no-sw-isr-table.conf;riscv.conf'
+    build_only: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuflpr
+      - nrf54lm20dk/nrf54lm20a/cpuflpr

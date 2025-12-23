@@ -12,6 +12,25 @@ config BT_HCI_IPC
 config MAX_THREAD_BYTES
 	default 3 if USERSPACE
 
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+if !USE_DT_CODE_PARTITION
+
+# Application core firmware must start at this offset when not using MCUboot.
+# However, the default 'zephyr,code-partition' in DT is set for MCUboot.
+config FLASH_LOAD_OFFSET
+	default $(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition)
+
+# This is meant to span 'cpuapp_boot_partition' and 'cpuapp_slot0_partition'
+# in the default memory map.
+config FLASH_LOAD_SIZE
+	default $(add_hex, $(dt_nodelabel_reg_addr_hex,cpuapp_slot0_partition), \
+			   $(dt_nodelabel_reg_size_hex,cpuapp_slot0_partition), \
+			   -$(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition))
+
+endif # !USE_DT_CODE_PARTITION
+
 endif # BOARD_NRF54H20DK_NRF54H20_CPUAPP
 
 if BOARD_NRF54H20DK_NRF54H20_CPURAD
@@ -19,21 +38,7 @@ if BOARD_NRF54H20DK_NRF54H20_CPURAD
 config MAX_THREAD_BYTES
 	default 3 if USERSPACE
 
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
+
 endif # BOARD_NRF54H20DK_NRF54H20_CPURAD
-
-if BOARD_NRF54H20DK_NRF54H20_CPUAPP_IRON
-
-config ROM_START_OFFSET
-	default 0x800 if BOOTLOADER_MCUBOOT
-
-config FLASH_LOAD_OFFSET
-	default 0x2c000 if !USE_DT_CODE_PARTITION
-
-endif # BOARD_NRF54H20DK_NRF54H20_CPUAPP_IRON
-
-if BOARD_NRF54H20DK_NRF54H20_CPURAD_IRON
-
-config ROM_START_OFFSET
-	default 0x800 if BOOTLOADER_MCUBOOT
-
-endif # BOARD_NRF54H20DK_NRF54H20_CPURAD_IRON

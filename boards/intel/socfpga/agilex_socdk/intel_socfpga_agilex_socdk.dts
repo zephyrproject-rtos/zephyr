@@ -20,7 +20,6 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &mem0;
 	};
-
 };
 
 &uart0 {
@@ -30,6 +29,7 @@
 
 &qspi {
 	status = "okay";
+
 	mt25qu02g@0 {
 		compatible = "micron,mt25qu02g";
 		reg = <0>;

@@ -837,6 +837,205 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static void sdp_attr_value_print_uint(struct bt_sdp_attr_value *value)
+{
+	switch (value->uint.size) {
+	case sizeof(uint8_t):
+		bt_shell_print("\tATTR value (8-bit): %x", value->uint.u8);
+		break;
+	case sizeof(uint16_t):
+		bt_shell_print("\tATTR value (16-bit): %x", value->uint.u16);
+		break;
+	case sizeof(uint32_t):
+		bt_shell_print("\tATTR value (32-bit): %x", value->uint.u32);
+		break;
+	case sizeof(uint64_t):
+		bt_shell_print("\tATTR value (64-bit): %llx", value->uint.u64);
+		break;
+	case sizeof(value->uint.u128):
+		bt_shell_print("\tATTR value (128-bit):");
+		bt_shell_hexdump(value->uint.u128, sizeof(value->uint.u128));
+		break;
+	default:
+		bt_shell_error("\tInvalid size");
+		break;
+	}
+}
+
+static void sdp_attr_value_print_sint(struct bt_sdp_attr_value *value)
+{
+	switch (value->sint.size) {
+	case sizeof(int8_t):
+		bt_shell_print("\tATTR value (8-bit): %x", value->sint.s8);
+		break;
+	case sizeof(int16_t):
+		bt_shell_print("\tATTR value (16-bit): %x", value->sint.s16);
+		break;
+	case sizeof(int32_t):
+		bt_shell_print("\tATTR value (32-bit): %x", value->sint.s32);
+		break;
+	case sizeof(int64_t):
+		bt_shell_print("\tATTR value (64-bit): %llx", value->sint.s64);
+		break;
+	case sizeof(value->sint.s128):
+		bt_shell_print("\tATTR value (128-bit):");
+		bt_shell_hexdump(value->sint.s128, sizeof(value->sint.s128));
+		break;
+	default:
+		bt_shell_error("\tInvalid size");
+		break;
+	}
+}
+
+static void sdp_attr_value_print(struct bt_sdp_attr_value *value)
+{
+	switch (value->type) {
+	case BT_SDP_ATTR_VALUE_TYPE_NONE:
+		bt_shell_print("\tATTR has not value");
+		break;
+	case BT_SDP_ATTR_VALUE_TYPE_UINT:
+		sdp_attr_value_print_uint(value);
+		break;
+	case BT_SDP_ATTR_VALUE_TYPE_SINT:
+		sdp_attr_value_print_sint(value);
+		break;
+	case BT_SDP_ATTR_VALUE_TYPE_BOOL:
+		bt_shell_print("\tATTR value (bool): %s", value->value ? "true" : "false");
+		break;
+	case BT_SDP_ATTR_VALUE_TYPE_TEXT:
+		bt_shell_print("\tATTR value (TEXT):");
+		bt_shell_hexdump(value->text.text, value->text.len);
+		break;
+	case BT_SDP_ATTR_VALUE_TYPE_URL:
+		bt_shell_hexdump(value->url.url, value->url.len);
+		break;
+	default:
+		bt_shell_error("\tUnknown type %u", value->type);
+		break;
+	}
+}
+
+static bool sdp_attr_parse_cb(const struct bt_sdp_attr_value_pair *value, void *user_data)
+{
+	char str[BT_UUID_STR_LEN];
+
+	if (value == NULL) {
+		return true;
+	}
+
+	if (value->uuid != NULL) {
+		bt_uuid_to_str(value->uuid, str, sizeof(str));
+		bt_shell_print("\tATTR UUID %s found", str);
+	}
+
+	if (value->value != NULL) {
+		sdp_attr_value_print(value->value);
+	}
+
+	return true;
+}
+
+static bool sdp_record_parse_cb(const struct bt_sdp_attribute *attr, void *user_data)
+{
+	struct bt_sdp_attr_value value;
+	int err;
+
+	if (bt_sdp_attr_has_uuid(attr, BT_UUID_DECLARE_16(BT_SDP_PROTO_L2CAP))) {
+		err = bt_sdp_attr_read(attr, BT_UUID_DECLARE_16(BT_SDP_PROTO_L2CAP), &value);
+		if (err == 0) {
+			bt_shell_print("ATTR UUID %04x read:", BT_SDP_PROTO_L2CAP);
+			sdp_attr_value_print(&value);
+		}
+	}
+
+	bt_shell_print("ATTR ID %04x:", attr->id);
+
+	err = bt_sdp_attr_value_parse(attr, sdp_attr_parse_cb, NULL);
+	if (err != 0) {
+		bt_shell_error("Failed to parse SDP attribute: %d", err);
+	}
+
+	return true;
+}
+
+static uint8_t sdp_discover_general(struct bt_conn *conn, struct bt_sdp_client_result *result,
+				    const struct bt_sdp_discover_params *params)
+{
+	int err;
+	struct bt_sdp_attribute attr;
+	struct bt_sdp_attr_value value;
+
+	if ((result == NULL) || (result->resp_buf == NULL)) {
+		return BT_SDP_DISCOVER_UUID_CONTINUE;
+	}
+
+	if (bt_sdp_has_attr(result->resp_buf, BT_SDP_ATTR_PROTO_DESC_LIST)) {
+		bt_shell_print("ATTR ID %04x found", BT_SDP_ATTR_PROTO_DESC_LIST);
+
+		err = bt_sdp_get_attr(result->resp_buf, BT_SDP_ATTR_PROTO_DESC_LIST, &attr);
+		if (err < 0) {
+			bt_shell_error("\tFailed to get ATTR");
+			goto get_addl_proto;
+		}
+
+		bt_shell_print("ATTR UUID %04x read:", BT_SDP_PROTO_L2CAP);
+
+		err = bt_sdp_attr_read(&attr, BT_UUID_DECLARE_16(BT_SDP_PROTO_L2CAP), &value);
+		if (err < 0) {
+			bt_shell_print("\tNo ATTR Value");
+			goto get_addl_proto;
+		}
+
+		sdp_attr_value_print(&value);
+	} else {
+		bt_shell_print("ATTR ID %04x not found", BT_SDP_ATTR_PROTO_DESC_LIST);
+	}
+
+get_addl_proto:
+	if (bt_sdp_has_attr(result->resp_buf, BT_SDP_ATTR_ADD_PROTO_DESC_LIST)) {
+		ssize_t count;
+
+		bt_shell_print("ATTR ID %04x found", BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+
+		err = bt_sdp_get_attr(result->resp_buf, BT_SDP_ATTR_ADD_PROTO_DESC_LIST, &attr);
+		if (err < 0) {
+			bt_shell_error("\tFailed to get ATTR");
+			goto parse_record;
+		}
+
+		count = bt_sdp_attr_addl_proto_count(&attr);
+		if (count < 0) {
+			bt_shell_print("\tNo protocol descriptors found");
+			goto parse_record;
+		} else {
+			bt_shell_print("\tProtocol descriptors count %d", count);
+		}
+
+		for (uint16_t index = 0; index < count; index++) {
+			bt_shell_print("ATTR UUID %04x[%d] read:", BT_SDP_PROTO_L2CAP, index);
+			err = bt_sdp_attr_addl_proto_read(&attr, index,
+							  BT_UUID_DECLARE_16(BT_SDP_PROTO_L2CAP),
+							  &value);
+			if (err < 0) {
+				bt_shell_print("\tNo ATTR Value");
+				goto parse_record;
+			}
+
+			sdp_attr_value_print(&value);
+		}
+	} else {
+		bt_shell_print("ATTR ID %04x not found", BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+	}
+
+parse_record:
+	err = bt_sdp_record_parse(result->resp_buf, sdp_record_parse_cb, NULL);
+	if (err != 0) {
+		bt_shell_error("Failed to parse record %d", err);
+	}
+
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
 static uint8_t sdp_hfp_ag_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			       const struct bt_sdp_discover_params *params)
 {
@@ -950,51 +1149,210 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn, struct bt_sdp_client_result 
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	if (result && result->resp_buf) {
-		bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from remote %s",
-			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-			       addr);
-
-		/*
-		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
-		 * get A2SRC Server PSM Number.
-		 */
-		err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
-		if (err < 0) {
-			bt_shell_error("A2SRC PSM Number not found, err %d", err);
-			goto done;
-		}
-
-		bt_shell_print("A2SRC Server PSM Number param 0x%04x", param);
-
-		/*
-		 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
-		 * get profile version number.
-		 */
-		err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_ADVANCED_AUDIO_SVCLASS,
-						 &version);
-		if (err < 0) {
-			bt_shell_error("A2SRC version not found, err %d", err);
-			goto done;
-		}
-		bt_shell_print("A2SRC version param 0x%04x", version);
-
-		/*
-		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
-		 * get profile supported features mask.
-		 */
-		err = bt_sdp_get_features(result->resp_buf, &features);
-		if (err < 0) {
-			bt_shell_error("A2SRC Features not found, err %d", err);
-			goto done;
-		}
-		bt_shell_print("A2SRC Supported Features param 0x%04x", features);
-	} else {
+	if (result == NULL || result->resp_buf == NULL) {
 		bt_shell_print("No SDP A2SRC data from remote %s", addr);
+		goto done;
+	}
+
+	bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from remote %s",
+		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
+		       addr);
+
+	/*
+	 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
+	 * get A2SRC Server PSM Number.
+	 */
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
+	if (err < 0) {
+		bt_shell_error("A2SRC PSM Number not found, err %d", err);
+		goto done;
+	}
+
+	bt_shell_print("A2SRC Server PSM Number param 0x%04x", param);
+
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_UUID_AVDTP_VAL, &version);
+	if (err < 0) {
+		bt_shell_error("A2SRC AVDTP version not found, err %d", err);
+		goto done;
+	}
+
+	bt_shell_print("A2SRC Server AVDTP version 0x%04x", version);
+
+	/*
+	 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
+	 * get profile version number.
+	 */
+	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_ADVANCED_AUDIO_SVCLASS, &version);
+	if (err < 0) {
+		bt_shell_error("A2SRC version not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("A2SRC version param 0x%04x", version);
+
+	/*
+	 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
+	 * get profile supported features mask.
+	 */
+	err = bt_sdp_get_features(result->resp_buf, &features);
+	if (err < 0) {
+		bt_shell_error("A2SRC Features not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("A2SRC Supported Features param 0x%04x", features);
+
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+static uint8_t sdp_a2snk_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
+			      const struct bt_sdp_discover_params *params)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t param, version;
+	uint16_t features;
+	int err;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (result == NULL || result->resp_buf == NULL) {
+		bt_shell_print("No SDP A2SNK data from remote %s", addr);
+		goto done;
+	}
+
+	bt_shell_print("SDP A2SNK data@%p (len %u) hint %u from remote %s",
+		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
+		       addr);
+
+	/*
+	 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
+	 * get A2SNK Server PSM Number.
+	 */
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
+	if (err < 0) {
+		bt_shell_error("A2SNK PSM Number not found, err %d", err);
+		goto done;
+	}
+
+	bt_shell_print("A2SNK Server PSM Number param 0x%04x", param);
+
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_UUID_AVDTP_VAL, &version);
+	if (err < 0) {
+		bt_shell_error("A2SNK AVDTP version not found, err %d", err);
+		goto done;
+	}
+
+	bt_shell_print("A2SNK Server AVDTP version 0x%04x", version);
+
+	/*
+	 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
+	 * get profile version number.
+	 */
+	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_ADVANCED_AUDIO_SVCLASS, &version);
+	if (err < 0) {
+		bt_shell_error("A2SNK version not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("A2SNK version param 0x%04x", version);
+
+	/*
+	 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
+	 * get profile supported features mask.
+	 */
+	err = bt_sdp_get_features(result->resp_buf, &features);
+	if (err < 0) {
+		bt_shell_error("A2SNK Features not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("A2SNK Supported Features param 0x%04x", features);
+
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+static uint8_t sdp_avrcp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
+			      const struct bt_sdp_discover_params *params)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t param, version;
+	uint16_t features;
+	int err;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (result == NULL || result->resp_buf == NULL) {
+		bt_shell_print("No SDP AVRCP data from remote %s", addr);
+		return BT_SDP_DISCOVER_UUID_CONTINUE;
+	}
+
+	bt_shell_print("SDP AVRCP data@%p (len %u) hint %u from remote %s",
+		       result->resp_buf, result->resp_buf->len, result->next_record_hint, addr);
+
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
+	if (err < 0) {
+		bt_shell_error("AVRCP PSM not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("AVRCP L2CAP PSM param 0x%04x", param);
+
+	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_AV_REMOTE_SVCLASS, &version);
+	if (err < 0) {
+		bt_shell_error("AVRCP version not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("AVRCP version param 0x%04x", version);
+
+	err = bt_sdp_get_features(result->resp_buf, &features);
+	if (err < 0) {
+		bt_shell_error("AVRCP Features not found, err %d", err);
+		goto done;
+	}
+	bt_shell_print("AVRCP Supported Features param 0x%04x", features);
+
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
+			    const struct bt_sdp_discover_params *params)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t vendor_id, product_id;
+	int err;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if ((result != NULL) && (result->resp_buf != NULL)) {
+		bt_shell_print("SDP PNP data@%p (len %u) hint %u from remote %s", result->resp_buf,
+			       result->resp_buf->len, result->next_record_hint, addr);
+
+		err = bt_sdp_get_vendor_id(result->resp_buf, &vendor_id);
+		if (err < 0) {
+			bt_shell_error("PNP vendor id not found, err %d", err);
+			goto done;
+		}
+
+		bt_shell_print("PNP vendor id param 0x%04x", vendor_id);
+
+		err = bt_sdp_get_product_id(result->resp_buf, &product_id);
+		if (err < 0) {
+			bt_shell_error("PNP product id not found, err %d", err);
+			goto done;
+		}
+
+		bt_shell_print("PNP product id param 0x%04x", product_id);
+	} else {
+		bt_shell_print("No SDP PNP data from remote %s", addr);
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
 }
+
+static struct bt_sdp_discover_params discov_general = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_PROTO_L2CAP),
+	.func = sdp_discover_general,
+	.pool = &sdp_client_pool,
+};
 
 static struct bt_sdp_discover_params discov_hfpag = {
 	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
@@ -1017,6 +1375,34 @@ static struct bt_sdp_discover_params discov_a2src = {
 	.pool = &sdp_client_pool,
 };
 
+static struct bt_sdp_discover_params discov_a2snk = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_AUDIO_SINK_SVCLASS),
+	.func = sdp_a2snk_user,
+	.pool = &sdp_client_pool,
+};
+
+static struct bt_sdp_discover_params discov_pnp = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_PNP_INFO_SVCLASS),
+	.func = sdp_pnp_user,
+	.pool = &sdp_client_pool,
+};
+
+static struct bt_sdp_discover_params discov_avrcp_ct = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_AV_REMOTE_CONTROLLER_SVCLASS),
+	.func = sdp_avrcp_user,
+	.pool = &sdp_client_pool,
+};
+
+static struct bt_sdp_discover_params discov_avrcp_tg = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_AV_REMOTE_TARGET_SVCLASS),
+	.func = sdp_avrcp_user,
+	.pool = &sdp_client_pool,
+};
+
 static struct bt_sdp_discover_params discov;
 
 static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[])
@@ -1029,6 +1415,12 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 		return -ENOEXEC;
 	}
 
+	if (argc == 1) {
+		discov = discov_general;
+		action = "l2cap";
+		goto discover;
+	}
+
 	action = argv[1];
 
 	if (!strcmp(action, "HFPAG")) {
@@ -1037,11 +1429,20 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 		discov = discov_hfphf;
 	} else if (!strcmp(action, "A2SRC")) {
 		discov = discov_a2src;
+	} else if (!strcmp(action, "A2SNK")) {
+		discov = discov_a2snk;
+	} else if (!strcmp(action, "AVRCP_CT")) {
+		discov = discov_avrcp_ct;
+	} else if (!strcmp(action, "AVRCP_TG")) {
+		discov = discov_avrcp_tg;
+	} else if (!strcmp(action, "PNP")) {
+		discov = discov_pnp;
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
+discover:
 	shell_print(sh, "SDP UUID \'%s\' gets applied", action);
 
 	err = bt_sdp_discover(default_conn, &discov);
@@ -1207,6 +1608,219 @@ done:
 	return err;
 }
 
+void role_changed(struct bt_conn *conn, uint8_t status)
+{
+	struct bt_conn_info info;
+	int err;
+
+	bt_shell_print("Role changed (HCI status 0x%02x)", status);
+
+	err = bt_conn_get_info(conn, &info);
+	if (err) {
+		bt_shell_print("Failed to get info");
+		return;
+	}
+
+	bt_shell_print("Current role is: %s", get_conn_role_str(info.role));
+}
+
+static int cmd_switch_role(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	const char *action;
+	uint8_t role;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "central")) {
+		role = BT_HCI_ROLE_CENTRAL;
+	} else if (!strcmp(action, "peripheral")) {
+		role = BT_HCI_ROLE_PERIPHERAL;
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_br_switch_role(default_conn, role);
+
+	if (err) {
+		shell_error(sh, "fail to change role (err %d)", err);
+	}
+
+	return 0;
+}
+
+static int cmd_set_role_switchable(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	bool enable;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	enable = shell_strtobool(argv[1], 10, &err);
+	if (err) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_br_set_role_switch_enable(default_conn, enable);
+
+	if (err) {
+		shell_error(sh, "fail to set role switchable (err %d)", err);
+	} else {
+		shell_print(sh, "success");
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+static int cmd_set_sniff_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *action;
+	int err = 0;
+
+	action = argv[1];
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (!strcmp(action, "on")) {
+		uint16_t min_interval;
+		uint16_t max_interval;
+		uint16_t attempt;
+		uint16_t timeout;
+
+		min_interval = atoi(argv[2]);
+		max_interval = atoi(argv[3]);
+		attempt = atoi(argv[4]);
+		timeout = atoi(argv[5]);
+		err = bt_conn_br_enter_sniff_mode(default_conn, min_interval, max_interval, attempt,
+						  timeout);
+		if (err) {
+			shell_print(sh, "request enter sniff mode, err:%d", err);
+		} else {
+			shell_print(sh,
+				    "request enter sniff mode, min_interval:%d, max_interval:%d, "
+				    "attempt:%d, timeout:%d",
+				    min_interval, max_interval, attempt, timeout);
+		}
+	} else if (!strcmp(action, "off")) {
+		err = bt_conn_br_exit_sniff_mode(default_conn);
+		if (err) {
+			shell_print(sh, "request enter active mode, err:%d", err);
+		} else {
+			shell_print(sh, "request enter active mode success");
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+static void connless_recv(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
+{
+	bt_shell_print("Incoming connectionless data psm 0x%04x len %u", psm, buf->len);
+
+	if (buf->len > 0) {
+		bt_shell_hexdump(buf->data, buf->len);
+	}
+}
+
+static struct bt_l2cap_br_connless_cb connless_cb = {
+	.recv = connless_recv,
+};
+
+static int cmd_l2cap_connless_reg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint16_t psm;
+
+	psm = (uint16_t)strtoul(argv[1], NULL, 16);
+	shell_print(sh, "Register connectionless callbacks with PSM 0x%04x", psm);
+
+	connless_cb.psm = psm;
+
+	if (argc > 2) {
+		connless_cb.sec_level = (bt_security_t)strtoul(argv[2], NULL, 0);
+	} else {
+		connless_cb.sec_level = BT_SECURITY_L1;
+	}
+
+	err = bt_l2cap_br_connless_register(&connless_cb);
+	if (err) {
+		shell_error(sh, "Failed to register connectionless callback: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_connless_unreg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_l2cap_br_connless_unregister(&connless_cb);
+	if (err) {
+		shell_error(sh, "Failed to unregister connectionless callback: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_connless_send(const struct shell *sh, size_t argc, char *argv[])
+{
+	static uint8_t buf_data[DATA_BREDR_MTU];
+	int err, len = DATA_BREDR_MTU;
+	struct net_buf *buf;
+	uint16_t psm;
+
+	psm = (uint16_t)strtoul(argv[1], NULL, 16);
+
+	len = (int)strtoul(argv[2], NULL, 10);
+	if (len > DATA_BREDR_MTU) {
+		shell_error(sh, "Length exceeds TX MAX length for the channel");
+		return -ENOEXEC;
+	}
+
+	buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+	if (!buf) {
+		shell_error(sh, "Allocation timeout, stopping TX");
+		return -EAGAIN;
+	}
+	net_buf_reserve(buf, BT_L2CAP_CONNLESS_RESERVE);
+	for (int i = 0; i < len; i++) {
+		buf_data[i] = (uint8_t)i;
+	}
+
+	net_buf_add_mem(buf, buf_data, len);
+
+	shell_print(sh, "Sending connectionless data with PSM 0x%04x", psm);
+	err = bt_l2cap_br_connless_send(default_conn, psm, buf);
+	if (err < 0) {
+		shell_error(sh, "Unable to send connectionless data: %d", err);
+		net_buf_unref(buf);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -1237,6 +1851,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+SHELL_STATIC_SUBCMD_SET_CREATE(connless_cmds,
+	SHELL_CMD_ARG(register, NULL, "<psm> [sec level]", cmd_l2cap_connless_reg, 2, 1),
+	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_connless_unreg, 1, 0),
+	SHELL_CMD_ARG(send, NULL, "<psm> <length of data>", cmd_l2cap_connless_send, 3, 0),
+	SHELL_SUBCMD_SET_END
+);
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	SHELL_CMD_ARG(register, NULL, HELP_REG, cmd_l2cap_register, 3, 3),
@@ -1252,6 +1875,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(credits, NULL, HELP_NONE, cmd_l2cap_credits, 1, 0),
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 	SHELL_CMD(echo, &echo_cmds, "L2CAP BR ECHO commands", cmd_default_handler),
+#if defined(CONFIG_BT_L2CAP_CONNLESS)
+	SHELL_CMD(connless, &connless_cmds, "L2CAP connectionless commands", cmd_default_handler),
+#endif /* CONFIG_BT_L2CAP_CONNLESS */
 	SHELL_SUBCMD_SET_END
 );
 
@@ -1269,7 +1895,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD(l2cap, &l2cap_cmds, HELP_NONE, cmd_default_handler),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
-	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG, HFPHF>", cmd_sdp_find_record, 2, 0),
+	SHELL_CMD_ARG(sdp-find, NULL, "[HFPAG, HFPHF, A2SRC, A2SNK, PNP, AVRCP_CT, AVRCP_TG]",
+		      cmd_sdp_find_record, 1, 1),
+	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),
+	SHELL_CMD_ARG(set-role-switchable, NULL, "<value: enable, disable>",
+		      cmd_set_role_switchable, 2, 0),
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	SHELL_CMD_ARG(set_sniff_mode, NULL,
+		      "<value:on, off> [min_interval] [max_interval] [attempt] [timeout]",
+		      cmd_set_sniff_mode, 2, 4),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 

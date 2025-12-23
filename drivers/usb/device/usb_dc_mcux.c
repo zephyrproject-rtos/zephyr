@@ -9,7 +9,6 @@
 #include <string.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
-#include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -92,7 +91,7 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX) || \
 	defined(CONFIG_SOC_SERIES_IMXRT118X) || \
 	defined(CONFIG_SOC_SERIES_IMXRT10XX) || \
-	defined(CONFIG_SOC_SERIES_MCXN)
+	defined(CONFIG_SOC_FAMILY_MCXN)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1))
 #define CONTROLLER_ID kUSB_ControllerEhci0
 #elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2))

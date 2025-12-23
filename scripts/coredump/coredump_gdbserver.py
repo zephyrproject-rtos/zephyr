@@ -10,10 +10,9 @@ import os
 import socket
 import sys
 
-from coredump_parser.log_parser import CoredumpLogFile
-from coredump_parser.elf_parser import CoredumpElfFile
-
 import gdbstubs
+from coredump_parser.elf_parser import CoredumpElfFile
+from coredump_parser.log_parser import CoredumpLogFile
 
 LOGGING_FORMAT = "[%(levelname)s][%(name)s] %(message)s"
 
@@ -43,14 +42,10 @@ def parse_args():
 
     parser.add_argument("elffile", help="Zephyr ELF binary")
     parser.add_argument("logfile", help="Coredump binary log file")
-    parser.add_argument("--debug", action="store_true",
-                        help="Print extra debugging information")
-    parser.add_argument("--port", type=int, default=1234,
-                        help="GDB server port")
-    parser.add_argument("--pipe", action="store_true",
-                        help="Use stdio to communicate with gdb")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print more information")
+    parser.add_argument("--debug", action="store_true", help="Print extra debugging information")
+    parser.add_argument("--port", type=int, default=1234, help="GDB server port")
+    parser.add_argument("--pipe", action="store_true", help="Use stdio to communicate with gdb")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print more information")
 
     return parser.parse_args()
 

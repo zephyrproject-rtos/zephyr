@@ -42,7 +42,7 @@ config NET_SOCKETS_CONNECT_TIMEOUT
 config NET_SOCKETS_DNS_TIMEOUT
 	int "Timeout value in milliseconds for DNS queries"
 	default 2000
-	range 1000 300000
+	range 1000 300000 if !NET_TEST
 	depends on DNS_RESOLVER
 	help
 	  This variable specifies time in milliseconds after which DNS
@@ -69,6 +69,13 @@ config NET_SOCKETS_DNS_BACKOFF_INTERVAL
 	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
 	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
+config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
+	# Defaults to heap memory needed for a single getaddrinfo() call in
+	# a default configuration on 64-bit platform
+	int
+	default 280
+	depends on DNS_RESOLVER
+
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
 	default 10000
@@ -78,7 +85,8 @@ config NET_SOCKET_MAX_SEND_WAIT
 
 config NET_SOCKETS_SERVICE
 	bool "Socket service support"
-	select EVENTFD
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  The socket service can monitor multiple sockets and save memory
 	  by only having one thread listening socket data. If data is received
@@ -87,6 +95,13 @@ config NET_SOCKETS_SERVICE
 	  so that enough sockets entries can be serviced. This depends on
 	  system needs as multiple services can be activated at the same time
 	  depending on network configuration.
+
+config ZVFS_OPEN_ADD_SIZE_SOCKETS_SERVICE
+	int "Socket service file descriptor requirements"
+	default 1
+	help
+	  The socket service opens a permanent zvfs_eventfd, which consumes a file
+	  descriptor.
 
 config NET_SOCKETS_SERVICE_THREAD_PRIO
 	int "Priority of the socket service dispatcher thread"
@@ -115,8 +130,8 @@ config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
-	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
-	imply MBEDTLS_MD if !NET_L2_OPENTHREAD
+	imply MBEDTLS_SSL_PROTO_TLS1_2 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_MD_C if !NET_L2_OPENTHREAD
 	imply MBEDTLS_RSA_C if !NET_L2_OPENTHREAD
 	imply MBEDTLS_PKCS1_V15 if !NET_L2_OPENTHREAD
 	imply MBEDTLS_PKCS1_V21 if !NET_L2_OPENTHREAD
@@ -127,6 +142,15 @@ config NET_SOCKETS_SOCKOPT_TLS
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
+
+config NET_SOCKETS_TLS_CONNECT_TIMEOUT
+	int "Timeout value in milliseconds for TLS handshake"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	default 10000
+	range 0 60000
+	help
+	  This variable specifies the maximum time in milliseconds that a TLS
+	  handshake can take on a secure socket, before reporting a timeout.
 
 config NET_SOCKETS_TLS_PRIORITY
 	int "Default processing priority for TLS sockets"
@@ -155,7 +179,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	select MBEDTLS_DTLS if NET_NATIVE
+	select MBEDTLS_SSL_PROTO_DTLS if NET_NATIVE
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
@@ -208,6 +232,11 @@ config NET_SOCKETS_TLS_MAX_CONTEXTS
 	  "This variable specifies maximum number of TLS/DTLS contexts that can
 	   be allocated at the same time."
 
+config ZVFS_OPEN_ADD_SIZE_TLS
+	int "Number of TLS network sockets to allocate"
+	default NET_SOCKETS_TLS_MAX_CONTEXTS if NET_SOCKETS_SOCKOPT_TLS
+	default 0
+
 config NET_SOCKETS_TLS_MAX_CREDENTIALS
 	int "Maximum number of TLS/DTLS credentials per socket"
 	default 4
@@ -236,12 +265,12 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	  By default, no supported application layer protocol is set.
 
 config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
-	  int "Maximum number of stored client TLS/DTLS sessions"
-	  default 1
-	  depends on NET_SOCKETS_SOCKOPT_TLS
-	  help
-	    This variable specifies maximum number of stored TLS/DTLS sessions,
-	    used for TLS/DTLS session resumption.
+	int "Maximum number of stored client TLS/DTLS sessions"
+	default 1
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable specifies maximum number of stored TLS/DTLS sessions,
+	  used for TLS/DTLS session resumption.
 
 config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
 	bool "TLS certificate verification callback support"
@@ -315,7 +344,7 @@ config NET_SOCKETS_PACKET_DGRAM
 	  For AF_PACKET sockets with SOCK_DGRAM type, the L2 header
 	  is removed before the packet is passed to the user.  Packets sent
 	  through a SOCK_DGRAM packet socket get a suitable L2 header based
-	  on the information in the sockaddr_ll destination address before
+	  on the information in the net_sockaddr_ll destination address before
 	  they are queued.
 
 config NET_SOCKETS_INET_RAW

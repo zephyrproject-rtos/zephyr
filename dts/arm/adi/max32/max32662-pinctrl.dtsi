@@ -9,7 +9,6 @@
 / {
 	soc {
 		pinctrl: pin-controller@40008000 {
-
 			/omit-if-no-ref/ swdio_p0_0: swdio_p0_0 {
 				pinmux = <MAX32_PINMUX(0, 0, AF1)>;
 			};
@@ -265,8 +264,6 @@
 			/omit-if-no-ref/ ain0_p0_13: ain0_p0_13 {
 				pinmux = <MAX32_PINMUX(0, 13, AF4)>;
 			};
-
-
 
 			/omit-if-no-ref/ pt0a_p0_14: pt0a_p0_14 {
 				pinmux = <MAX32_PINMUX(0, 14, AF1)>;

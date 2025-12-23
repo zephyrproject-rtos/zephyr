@@ -2,32 +2,32 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Composite fuel-gauge constructed from analog input values
+  Composite fuel-gauge constructed from sensor devices
 
 compatible: "zephyr,fuel-gauge-composite"
 
 include: [fuel-gauge.yaml, battery.yaml]
 
 properties:
-  battery-voltage:
+  source-primary:
     type: phandle
     required: true
     description: |
-      Device to read battery voltage from.
+      Primary device to read sensor data from.
+      Device must implement the sensor API.
 
-      Device must implement the sensor API and provide the
-      `SENSOR_CHAN_VOLTAGE` channel.
-
-  battery-current:
+  source-secondary:
     type: phandle
     description: |
-      Device to read battery current from.
+      Secondary device to read sensor data from.
+      This device will be used if input-primary does not expose
+      a channel.
 
-      Device must implement the sensor API and provide the
-      `SENSOR_CHAN_CURRENT` channel.
+      Device must implement the sensor API.
 
-  device-chemistry:
-    required: true
-
-  ocv-capacity-table-0:
-    required: true
+  fuel-gauge-channels:
+    type: boolean
+    description: |
+      Sources should be queried by the sensor API fuel gauge
+      channels (SENSOR_CHAN_GAUGE_*), instead of the generic
+      channels (SENSOR_CHAN_VOLTAGE, etc).

@@ -28,6 +28,13 @@ uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
 
 volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
 
+#ifdef CONFIG_RUNTIME_NMI
+extern bsp_grp_irq_cb_t g_bsp_group_irq_sources[];
+extern void NMI_Handler(void);
+#endif /* CONFIG_RUNTIME_NMI */
+
+extern void cold_start_handler(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -40,7 +47,7 @@ void soc_early_init_hook(void)
 
 	extern volatile uint16_t g_protect_counters[];
 
-	for (uint32_t i = 0; i < 4; i++) {
+	for (uint32_t i = 0; i < 5; i++) {
 		g_protect_counters[i] = 0;
 	}
 
@@ -69,6 +76,7 @@ void soc_early_init_hook(void)
 
 	sys_cache_data_enable();
 #endif
+
 #endif /*CONFIG_CPU_CORTEX_M85*/
 
 #ifdef CONFIG_CPU_CORTEX_M33
@@ -90,4 +98,22 @@ void soc_early_init_hook(void)
 	R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
 #endif
 #endif /*CONFIG_CPU_CORTEX_M33*/
+#ifdef CONFIG_RUNTIME_NMI
+	for (uint32_t i = 0; i < 16; i++) {
+		g_bsp_group_irq_sources[i] = 0;
+	}
+
+	z_arm_nmi_set_handler(NMI_Handler);
+#endif /* CONFIG_RUNTIME_NMI */
+
+	cold_start_handler();
 }
+
+#ifdef CONFIG_SOC_LATE_INIT_HOOK
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_SOC_RA_ENABLE_START_SECOND_CORE
+	R_BSP_SecondaryCoreStart();
+#endif /* CONFIG_SOC_RA_ENABLE_START_SECOND_CORE */
+}
+#endif /* CONFIG_SOC_LATE_INIT_HOOK */

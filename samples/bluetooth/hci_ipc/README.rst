@@ -18,9 +18,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/hci_ipc`
-in the Zephyr tree.
-
 To use this application, you need a board with a Bluetooth controller
 and IPC support.
 You can then build this application and flash it onto your board in

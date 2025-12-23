@@ -13,7 +13,7 @@ import yaml
 from build_helpers import FIND_BUILD_DIR_DESCRIPTION, find_build_dir, is_zephyr_build, load_domains
 from west.commands import Verbosity
 from west.configuration import config
-from west.util import west_topdir
+from west.util import WestNotFound, west_topdir
 from west.version import __version__
 from zcmake import DEFAULT_CMAKE_GENERATOR, CMakeCache, run_build, run_cmake
 from zephyr_ext_common import Forceable
@@ -170,12 +170,8 @@ class Build(Forceable):
                            -DEXTRA_DTC_OVERLAY_FILE... cmake arguments: the results are
                            undefined''')
 
-        group = parser.add_mutually_exclusive_group()
-        group.add_argument('--sysbuild', action='store_true',
-                           help='''create multi domain build system''')
-        group.add_argument('--no-sysbuild', action='store_true',
-                           help='''do not create multi domain build system
-                                   (default)''')
+        group.add_argument('--sysbuild', action=argparse.BooleanOptionalAction,
+                           help='''create multi domain build system or disable it (default)''')
 
         group = parser.add_argument_group('pristine builds',
                                           PRISTINE_DESCRIPTION)
@@ -193,20 +189,6 @@ class Build(Forceable):
         # Store legacy -s option locally
         source_dir = self.args.source_dir
         self._parse_remainder(remainder)
-        # Parse testcase.yaml or sample.yaml files for additional options.
-        if self.args.test_item:
-            # we get path + testitem
-            item = os.path.basename(self.args.test_item)
-            if self.args.source_dir:
-                test_path = self.args.source_dir
-            else:
-                test_path = os.path.dirname(self.args.test_item)
-            if test_path and os.path.exists(test_path):
-                self.args.source_dir = test_path
-                if not self._parse_test_item(item):
-                    self.die("No test metadata found")
-            else:
-                self.die("test item path does not exist")
 
         if source_dir:
             if self.args.source_dir:
@@ -264,6 +246,22 @@ class Build(Forceable):
                 self.wrn(f'Failed to create info file: {build_info_file},', e)
 
         board, origin = self._find_board()
+
+        # Parse testcase.yaml or sample.yaml files for additional options.
+        if self.args.test_item:
+            # we get path + testitem
+            item = os.path.basename(self.args.test_item)
+            if self.args.source_dir:
+                test_path = self.args.source_dir
+            else:
+                test_path = os.path.dirname(self.args.test_item)
+            if test_path and os.path.exists(test_path):
+                self.args.source_dir = test_path
+                if not self._parse_test_item(item, board):
+                    self.die("No test metadata found")
+            else:
+                self.die("test item path does not exist")
+
         self._run_cmake(board, origin, self.args.cmake_opts)
         if args.cmake_only:
             return
@@ -285,11 +283,11 @@ class Build(Forceable):
             if board is not None:
                 return (board, origin)
 
-        if self.args.board:
+        if getattr(self.args, 'board', None):
             board, origin = self.args.board, 'command line'
         elif 'BOARD' in os.environ:
             board, origin = os.environ['BOARD'], 'env'
-        elif self.config_board is not None:
+        elif getattr(self, 'config_board', None):
             board, origin = self.config_board, 'configfile'
         return board, origin
 
@@ -311,7 +309,24 @@ class Build(Forceable):
         except IndexError:
             pass
 
-    def _parse_test_item(self, test_item):
+    def _parse_extra_entry(self, arg, board):
+        equals = arg.find('=')
+        colon = arg.rfind(':', 0, equals)
+        if colon != -1:
+            elem = arg.split(':')
+            if elem[0] != 'platform':
+                # conditional configs other than platform
+                # (xxx:yyy:CONFIG_FOO=bar) are not supported by 'west build'
+                self.wrn(f'"west build" does not support conditional config "{arg}". Add '
+                         f'"-D{arg[colon+1:]}" to the supplied CMake arguments if desired.')
+                return None
+            elif elem[1] not in board:
+                return None
+            return elem[2]
+        else:
+            return arg
+
+    def _parse_test_item(self, test_item, board):
         found_test_metadata = False
         for yp in ['sample.yaml', 'testcase.yaml']:
             yf = os.path.join(self.args.source_dir, yp)
@@ -359,24 +374,23 @@ class Build(Forceable):
                     if data == 'extra_configs':
                         args = []
                         for arg in arg_list:
-                            equals = arg.find('=')
-                            colon = arg.rfind(':', 0, equals)
-                            if colon != -1:
-                                # conditional configs (xxx:yyy:CONFIG_FOO=bar)
-                                # are not supported by 'west build'
-                                self.wrn('"west build" does not support '
-                                         f'conditional config "{arg}". Add "-D{arg[colon+1:]}" '
-                                         'to the supplied CMake arguments if '
-                                         'desired.')
-                                continue
-                            args.append("-D{}".format(arg.replace('"', '\"')))
+                            entry = self._parse_extra_entry(arg, board)
+                            if entry is not None:
+                                args.append("-D{}".format(entry.replace('"', '\"')))
                     elif data == 'extra_args':
                         # Retain quotes around config options
                         config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
-                        non_config_options = [
+                        non_config_option_candidates = [
                             arg for arg in arg_list if not arg.startswith("CONFIG_")
                         ]
                         args = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
+
+                        non_config_options = []
+                        for arg in non_config_option_candidates:
+                            entry = self._parse_extra_entry(arg, board)
+                            if entry is not None:
+                                non_config_options.append(entry)
+
                         args.extend([
                             "-D{}".format(arg.replace('"', '')) for arg in non_config_options
                         ])
@@ -438,16 +452,37 @@ class Build(Forceable):
         with contextlib.suppress(FileNotFoundError):
             self.cmake_cache = CMakeCache.from_build_dir(self.build_dir)
 
+    def _get_dir_fmt_context(self):
+        # Return a dictionary of build attributes which are used while
+        # substituting the placeholders in the build.dir-fmt format string.
+        source_dir = pathlib.Path(self._find_source_dir())
+        app = source_dir.name
+        board, _ = self._find_board()
+        try:
+            west_top_dir = west_topdir(source_dir)
+        except WestNotFound:
+            west_top_dir = pathlib.Path.cwd()
+        context = {
+            "west_topdir": str(west_top_dir),
+            "source_dir": str(source_dir),
+            "app": app,
+            "board": board,
+        }
+        if source_dir.is_relative_to(west_top_dir):
+            context['source_dir_workspace'] = str(source_dir.relative_to(west_top_dir))
+        else:
+            context['source_dir_workspace'] = str(source_dir.relative_to(source_dir.anchor))
+        self.dbg(f'dir-fmt context: {context}', level=Verbosity.DBG_EXTREME)
+        return context
+
     def _setup_build_dir(self):
         # Initialize build_dir and created_build_dir attributes.
         # If we created the build directory, we must run CMake.
         self.dbg('setting up build directory', level=Verbosity.DBG_EXTREME)
         # The CMake Cache has not been loaded yet, so this is safe
-        board, _ = self._find_board()
-        source_dir = self._find_source_dir()
-        app = os.path.split(source_dir)[1]
-        build_dir = find_build_dir(self.args.build_dir, board=board,
-                                   source_dir=source_dir, app=app)
+
+        context = self._get_dir_fmt_context()
+        build_dir = find_build_dir(self.args.build_dir, **context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
@@ -571,7 +606,7 @@ class Build(Forceable):
         self.check_force(
             not boards_mismatched or self.auto_pristine,
             f'Build directory {self.build_dir} targets board {cached_board}, '
-            'but board {self.args.board} was specified. '
+            f'but board {self.args.board} was specified. '
             '(Clean the directory, use --pristine, or use --build-dir to '
             'specify a different one.)')
 
@@ -600,6 +635,8 @@ class Build(Forceable):
         if not self.run_cmake:
             return
 
+        cmake_env = None
+
         self._banner('generating a build system')
 
         if board is not None and origin != 'CMakeCache.txt':
@@ -625,11 +662,12 @@ class Build(Forceable):
             cmake_opts.extend(shlex.split(user_args))
 
         config_sysbuild = config_getboolean('sysbuild', False)
-        if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
-            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}',
-                               f'-DAPP_DIR:PATH={self.source_dir}'])
+        if self.args.sysbuild is True or (config_sysbuild and self.args.sysbuild is not False):
+            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}'])
+            cmake_env = os.environ.copy()
+            cmake_env["APP_DIR"] = str(self.source_dir)
         else:
-            # self.args.no_sysbuild == True or config sysbuild False
+            # self.args.sysbuild == False or config sysbuild False
             cmake_opts.extend([f'-S{self.source_dir}'])
 
         # Invoke CMake from the current working directory using the
@@ -643,7 +681,7 @@ class Build(Forceable):
                             f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        run_cmake(final_cmake_args, dry_run=self.args.dry_run)
+        run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
 
     def _run_pristine(self):
         self._banner(f'making build dir {self.build_dir} pristine')

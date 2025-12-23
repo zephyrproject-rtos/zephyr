@@ -12,7 +12,7 @@
 
 / {
 	model = "NXP LPCXPRESSO51U68 board";
-	compatible = "nxp,lpc51xxx","nxp,lpc";
+	compatible = "nxp,lpc51xxx", "nxp,lpc";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -33,14 +33,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_0 {
 			gpios = <&gpio1 9 0>;
 			label = "Blue LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio1 10 0>;
 			label = "Green LED";
 		};
+
 		red_led: led_2 {
 			gpios = <&gpio0 29 0>;
 			label = "Red LED";
@@ -49,16 +52,19 @@
 
 	gpio-keys {
 		compatible = "gpio-keys";
+
 		btn_wk: button_0 {
 			label = "Wakeup button";
 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
+
 		isp0_button: button_1 {
 			label = "ISP0 button";
 			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		isp1_button: button_2 {
 			label = "ISP1 button";
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;

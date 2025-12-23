@@ -20,7 +20,7 @@
 	};
 
 	aliases {
-	/* Giving different names to the LEDs connected to the HPS side of the chip */
+		/* Giving different names to the LEDs connected to the HPS side of the chip */
 		led0 = &hps0;
 		led1 = &hps1;
 		led2 = &hps2;
@@ -30,31 +30,38 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		hps3: hps_led_3 {
 			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};
+
 		hps2: hps_led_2 {
 			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 		};
+
 		hps1: hps_led_1 {
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
+
 		hps0: hps_led_0 {
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	soc {
-		gmac1: ethernet@ff702000  {
+		gmac1: ethernet@ff702000 {
 			status = "okay";
 			local-mac-address = [e6 88 2d 82 1f d4];
 		};
+
 		gpio0: gpio@ff708000 {
 			status = "okay";
 		};
+
 		gpio1: gpio@ff709000 {
 			status = "okay";
 		};
+
 		gpio2: gpio@ff70a000 {
 			status = "okay";
 		};
@@ -81,11 +88,11 @@
 
 	/* Configuring Zephyr mandatory devices */
 	chosen {
-		zephyr,sram	   = &ddr0;
+		zephyr,sram = &ddr0;
 		/*zephyr,flash	= &flash0;*/
-		zephyr,console	= &uart0;
+		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,ocm		= &ocram;
+		zephyr,ocm = &ocram;
 	};
 };
 

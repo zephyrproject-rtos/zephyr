@@ -25,72 +25,14 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
 #include <math.h>
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-#include <zephyr/net/tls_credentials.h>
-enum wifi_enterprise_cert_sec_tags {
-	WIFI_CERT_CA_SEC_TAG = 0x1020001,
-	WIFI_CERT_CLIENT_KEY_SEC_TAG,
-	WIFI_CERT_SERVER_KEY_SEC_TAG,
-	WIFI_CERT_CLIENT_SEC_TAG,
-	WIFI_CERT_SERVER_SEC_TAG,
-	/* Phase 2 */
-	WIFI_CERT_CA_P2_SEC_TAG,
-	WIFI_CERT_CLIENT_KEY_P2_SEC_TAG,
-	WIFI_CERT_CLIENT_P2_SEC_TAG,
-};
 
-struct wifi_cert_data {
-	enum tls_credential_type type;
-	uint32_t sec_tag;
-	uint8_t **data;
-	size_t *len;
-};
-#else
-static const char ca_cert_test[] = {
-	#include <wifi_enterprise_test_certs/ca.pem.inc>
-	'\0'
-};
-
-static const char client_cert_test[] = {
-	#include <wifi_enterprise_test_certs/client.pem.inc>
-	'\0'
-};
-
-static const char client_key_test[] = {
-	#include <wifi_enterprise_test_certs/client-key.pem.inc>
-	'\0'
-};
-
-static const char ca_cert2_test[] = {
-	#include <wifi_enterprise_test_certs/ca2.pem.inc>
-	'\0'};
-
-static const char client_cert2_test[] = {
-	#include <wifi_enterprise_test_certs/client2.pem.inc>
-	'\0'};
-
-static const char client_key2_test[] = {
-	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
-	'\0'};
-
-static const char server_cert_test[] = {
-	#include <wifi_enterprise_test_certs/server.pem.inc>
-	'\0'
-};
-
-static const char server_key_test[] = {
-	#include <wifi_enterprise_test_certs/server-key.pem.inc>
-	'\0'
-};
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
+#include <zephyr/net/wifi_certs.h>
+#endif
 
 #define WIFI_SHELL_MODULE "wifi"
 
@@ -130,12 +72,6 @@ static struct {
 		};
 		uint8_t all;
 	};
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-	struct wifi_enterprise_creds_params enterprise_creds_params;
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 } context;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
@@ -160,7 +96,7 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 	int iface_index = -1;
 
 	/* Parse arguments manually to find -i or --iface,
-	 * it's intentional not to use getopt() here to avoid
+	 * it's intentional not to use sys_getopt() here to avoid
 	 * permuting the arguments.
 	 */
 	for (int i = 1; i < argc; i++) {
@@ -202,223 +138,6 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 
 	return iface;
 }
-
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
-{
-	for (size_t i = 0; i < cert_count; i++) {
-		int err;
-		size_t len = 0;
-		uint8_t *cert_tmp;
-
-		err = tls_credential_get(certs[i].sec_tag, certs[i].type, NULL, &len);
-		if (err != -EFBIG) {
-			LOG_ERR("Failed to get credential tag: %d length, err: %d",
-				certs[i].sec_tag, err);
-			return err;
-		}
-
-		cert_tmp = k_malloc(len);
-		if (!cert_tmp) {
-			LOG_ERR("Failed to allocate memory for credential tag: %d",
-				certs[i].sec_tag);
-			return -ENOMEM;
-		}
-
-		err = tls_credential_get(certs[i].sec_tag, certs[i].type, cert_tmp, &len);
-		if (err) {
-			LOG_ERR("Failed to get credential tag: %d", certs[i].sec_tag);
-			k_free(cert_tmp);
-			return err;
-		}
-
-		*certs[i].data = cert_tmp;
-		*certs[i].len = len;
-	}
-
-	return 0;
-}
-
-static void set_enterprise_creds_params(struct wifi_enterprise_creds_params *params,
-					bool is_ap)
-{
-	struct wifi_cert_data certs_common[] = {
-		{
-			.type = TLS_CREDENTIAL_CA_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CA_SEC_TAG,
-			.data = &params->ca_cert,
-			.len = &params->ca_cert_len,
-		},
-	};
-
-	struct wifi_cert_data certs_sta[] = {
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_CLIENT_KEY_SEC_TAG,
-			.data = &params->client_key,
-			.len = &params->client_key_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CLIENT_SEC_TAG,
-			.data = &params->client_cert,
-			.len = &params->client_cert_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_CA_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CA_P2_SEC_TAG,
-			.data = &params->ca_cert2,
-			.len = &params->ca_cert2_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_CLIENT_KEY_P2_SEC_TAG,
-			.data = &params->client_key2,
-			.len = &params->client_key2_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CLIENT_P2_SEC_TAG,
-			.data = &params->client_cert2,
-			.len = &params->client_cert2_len,
-		},
-	};
-
-	struct wifi_cert_data certs_ap[] = {
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_SERVER_SEC_TAG,
-			.data = &params->server_cert,
-			.len = &params->server_cert_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_SERVER_KEY_SEC_TAG,
-			.data = &params->server_key,
-			.len = &params->server_key_len,
-		},
-	};
-
-	memset(params, 0, sizeof(*params));
-
-	/* Process common certificates */
-	if (process_certificates(certs_common, ARRAY_SIZE(certs_common)) != 0) {
-		goto cleanup;
-	}
-
-	/* Process STA-specific certificates */
-	if (!is_ap) {
-		if (process_certificates(certs_sta, ARRAY_SIZE(certs_sta)) != 0) {
-			goto cleanup;
-		}
-	}
-
-	/* Process AP-specific certificates if is_ap is true */
-	if (is_ap) {
-		if (process_certificates(certs_ap, ARRAY_SIZE(certs_ap)) != 0) {
-			goto cleanup;
-		}
-	}
-
-	memcpy(&context.enterprise_creds_params, params, sizeof(*params));
-	return;
-
-cleanup:
-	for (size_t i = 0; i < ARRAY_SIZE(certs_common); i++) {
-		if (certs_common[i].data) {
-			k_free(*certs_common[i].data);
-		}
-	}
-
-	if (!is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_sta); i++) {
-			if (certs_sta[i].data) {
-				k_free(*certs_sta[i].data);
-			}
-		}
-	}
-
-	if (is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_ap); i++) {
-			if (certs_ap[i].data) {
-				k_free(*certs_ap[i].data);
-			}
-		}
-	}
-}
-
-static void clear_enterprise_creds_params(struct wifi_enterprise_creds_params *params)
-{
-	size_t i;
-
-	if (!params) {
-		return;
-	}
-
-	const uint8_t *certs[] = {
-		params->ca_cert,
-		params->client_cert,
-		params->client_key,
-		params->server_cert,
-		params->server_key,
-		params->ca_cert2,
-		params->client_cert2,
-		params->client_key2,
-	};
-
-	for (i = 0; i < ARRAY_SIZE(certs); i++) {
-		k_free((void *)certs[i]);
-	}
-	memset(params, 0, sizeof(*params));
-}
-#else
-static void set_enterprise_creds_params(struct wifi_enterprise_creds_params *params,
-										bool is_ap)
-{
-		params->ca_cert = (uint8_t *)ca_cert_test;
-		params->ca_cert_len = ARRAY_SIZE(ca_cert_test);
-
-		if (!is_ap) {
-			params->client_cert = (uint8_t *)client_cert_test;
-			params->client_cert_len = ARRAY_SIZE(client_cert_test);
-			params->client_key = (uint8_t *)client_key_test;
-			params->client_key_len = ARRAY_SIZE(client_key_test);
-			params->ca_cert2 = (uint8_t *)ca_cert2_test;
-			params->ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
-			params->client_cert2 = (uint8_t *)client_cert2_test;
-			params->client_cert2_len = ARRAY_SIZE(client_cert2_test);
-			params->client_key2 = (uint8_t *)client_key2_test;
-			params->client_key2_len = ARRAY_SIZE(client_key2_test);
-
-			return;
-		}
-
-		params->server_cert = (uint8_t *)server_cert_test;
-		params->server_cert_len = ARRAY_SIZE(server_cert_test);
-		params->server_key = (uint8_t *)server_key_test;
-		params->server_key_len = ARRAY_SIZE(server_key_test);
-}
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-
-static int wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface,
-				    bool is_ap)
-{
-	struct wifi_enterprise_creds_params params = {0};
-
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-	clear_enterprise_creds_params(&context.enterprise_creds_params);
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-	set_enterprise_creds_params(&params, is_ap);
-	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
-		PR_WARNING("Set enterprise credentials failed\n");
-		return -1;
-	}
-
-	return 0;
-}
-#endif
 
 static bool parse_number(const struct shell *sh, long *param, char *str,
 			 char *pname, long min, long max)
@@ -863,44 +582,46 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"ssid", required_argument, 0, 's'},
-		{"passphrase", required_argument, 0, 'p'},
-		{"key-mgmt", required_argument, 0, 'k'},
-		{"ieee-80211w", required_argument, 0, 'w'},
-		{"bssid", required_argument, 0, 'm'},
-		{"band", required_argument, 0, 'b'},
-		{"channel", required_argument, 0, 'c'},
-		{"timeout", required_argument, 0, 't'},
-		{"anon-id", required_argument, 0, 'a'},
-		{"bandwidth", required_argument, 0, 'B'},
-		{"key1-pwd", required_argument, 0, 'K'},
-		{"key2-pwd", required_argument, 0, 'K'},
-		{"wpa3-enterprise", required_argument, 0, 'S'},
-		{"TLS-cipher", required_argument, 0, 'T'},
-		{"verify-peer-cert", required_argument, 0, 'A'},
-		{"eap-version", required_argument, 0, 'V'},
-		{"eap-id1", required_argument, 0, 'I'},
-		{"eap-id2", required_argument, 0, 'I'},
-		{"eap-id3", required_argument, 0, 'I'},
-		{"eap-id4", required_argument, 0, 'I'},
-		{"eap-id5", required_argument, 0, 'I'},
-		{"eap-id6", required_argument, 0, 'I'},
-		{"eap-id7", required_argument, 0, 'I'},
-		{"eap-id8", required_argument, 0, 'I'},
-		{"eap-pwd1", required_argument, 0, 'P'},
-		{"eap-pwd2", required_argument, 0, 'P'},
-		{"eap-pwd3", required_argument, 0, 'P'},
-		{"eap-pwd4", required_argument, 0, 'P'},
-		{"eap-pwd5", required_argument, 0, 'P'},
-		{"eap-pwd6", required_argument, 0, 'P'},
-		{"eap-pwd7", required_argument, 0, 'P'},
-		{"eap-pwd8", required_argument, 0, 'P'},
-		{"ignore-broadcast-ssid", required_argument, 0, 'g'},
-		{"ieee-80211r", no_argument, 0, 'R'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"passphrase", sys_getopt_required_argument, 0, 'p'},
+		{"key-mgmt", sys_getopt_required_argument, 0, 'k'},
+		{"ieee-80211w", sys_getopt_required_argument, 0, 'w'},
+		{"bssid", sys_getopt_required_argument, 0, 'm'},
+		{"band", sys_getopt_required_argument, 0, 'b'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"timeout", sys_getopt_required_argument, 0, 't'},
+		{"anon-id", sys_getopt_required_argument, 0, 'a'},
+		{"bandwidth", sys_getopt_required_argument, 0, 'B'},
+		{"key1-pwd", sys_getopt_required_argument, 0, 'K'},
+		{"key2-pwd", sys_getopt_required_argument, 0, 'K'},
+		{"wpa3-enterprise", sys_getopt_required_argument, 0, 'S'},
+		{"TLS-cipher", sys_getopt_required_argument, 0, 'T'},
+		{"verify-peer-cert", sys_getopt_required_argument, 0, 'A'},
+		{"eap-version", sys_getopt_required_argument, 0, 'V'},
+		{"eap-id1", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id2", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id3", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id4", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id5", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id6", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id7", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id8", sys_getopt_required_argument, 0, 'I'},
+		{"eap-pwd1", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd2", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd3", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd4", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd5", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd6", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd7", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd8", sys_getopt_required_argument, 0, 'P'},
+		{"ignore-broadcast-ssid", sys_getopt_required_argument, 0, 'g'},
+		{"ieee-80211r", sys_getopt_no_argument, 0, 'R'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"server-cert-domain-exact", sys_getopt_required_argument, 0, 'e'},
+		{"server-cert-domain-suffix", sys_getopt_required_argument, 0, 'x'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
 	int idx = 1;
@@ -928,9 +649,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			params->ssid = state->optarg;
@@ -945,6 +666,14 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->security = atoi(state->optarg);
 			if (params->security) {
 				secure_connection = true;
+			}
+			/* WPA3 security types (SAE) require MFP (802.11w) as required,
+			 * if not otherwise set.
+			 */
+			if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
+			    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+				params->mfp = WIFI_MFP_REQUIRED;
 			}
 			break;
 		case 'p':
@@ -1091,6 +820,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'S':
 			params->wpa3_ent_mode = atoi(state->optarg);
+			if (params->wpa3_ent_mode != WIFI_WPA3_ENTERPRISE_NA) {
+				params->mfp = WIFI_MFP_REQUIRED;
+			}
 			break;
 		case 'T':
 			params->TLS_cipher = atoi(state->optarg);
@@ -1152,6 +884,16 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
+		case 'e':
+			params->server_cert_domain_exact = state->optarg;
+			params->server_cert_domain_exact_len =
+					strlen(params->server_cert_domain_exact);
+			break;
+		case 'x':
+			params->server_cert_domain_suffix = state->optarg;
+			params->server_cert_domain_suffix_len =
+					strlen(params->server_cert_domain_suffix);
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -1172,16 +914,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	if (!params->ssid) {
 		PR_ERROR("SSID not provided\n");
 		return -EINVAL;
-	}
-
-	if (params->security == WIFI_SECURITY_TYPE_SAE_HNP
-		|| params->security == WIFI_SECURITY_TYPE_SAE_H2E
-		|| params->security == WIFI_SECURITY_TYPE_SAE_AUTO
-		|| params->wpa3_ent_mode != WIFI_WPA3_ENTERPRISE_NA) {
-		if (params->mfp != WIFI_MFP_REQUIRED) {
-			PR_ERROR("MFP is required for WPA3 mode\n");
-			return -EINVAL;
-		}
 	}
 
 	if (iface_mode == WIFI_MODE_AP && params->channel == WIFI_CHANNEL_ANY) {
@@ -1239,7 +971,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_creds(sh, iface, 0);
+		wifi_set_enterprise_credentials(iface, 0);
 	}
 #endif
 
@@ -1283,7 +1015,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
 	/* Clear the certificates */
-	clear_enterprise_creds_params(&context.enterprise_creds_params);
+	wifi_clear_enterprise_credentials();
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 	return 0;
@@ -1297,26 +1029,26 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"bands", required_argument, 0, 'b'},
-		{"dwell_time_active", required_argument, 0, 'a'},
-		{"dwell_time_passive", required_argument, 0, 'p'},
-		{"ssid", required_argument, 0, 's'},
-		{"max_bss", required_argument, 0, 'm'},
-		{"chans", required_argument, 0, 'c'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"bands", sys_getopt_required_argument, 0, 'b'},
+		{"dwell_time_active", sys_getopt_required_argument, 0, 'a'},
+		{"dwell_time_passive", sys_getopt_required_argument, 0, 'p'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"max_bss", sys_getopt_required_argument, 0, 'm'},
+		{"chans", sys_getopt_required_argument, 0, 'c'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	int val;
 	int opt_num = 0;
 
 	*do_scan = true;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (!strncasecmp(state->optarg, "passive", 7)) {
@@ -1489,7 +1221,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 		PR("DTIM: %d\n", status.dtim_period);
 		PR("TWT: %s\n",
 		   status.twt_capable ? "Supported" : "Not supported");
-		PR("Current PHY TX rate (Mbps) : %d\n", status.current_phy_tx_rate);
+		PR("Current PHY TX rate (Mbps) : %.1f\n", (double)status.current_phy_tx_rate);
 	}
 
 	return 0;
@@ -2009,36 +1741,36 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	long value;
 	double twt_mantissa_scale = 0.0;
 	double twt_interval_scale = 0.0;
 	uint16_t scale = 1000;
 	int exponent = 0;
-	static const struct option long_options[] = {
-		{"negotiation-type", required_argument, 0, 'n'},
-		{"setup-cmd", required_argument, 0, 'c'},
-		{"dialog-token", required_argument, 0, 't'},
-		{"flow-id", required_argument, 0, 'f'},
-		{"responder", required_argument, 0, 'r'},
-		{"trigger", required_argument, 0, 'T'},
-		{"implicit", required_argument, 0, 'I'},
-		{"announce", required_argument, 0, 'a'},
-		{"wake-interval", required_argument, 0, 'w'},
-		{"interval", required_argument, 0, 'p'},
-		{"wake-ahead-duration", required_argument, 0, 'D'},
-		{"info-disable", required_argument, 0, 'd'},
-		{"exponent", required_argument, 0, 'e'},
-		{"mantissa", required_argument, 0, 'm'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	static const struct sys_getopt_option long_options[] = {
+		{"negotiation-type", sys_getopt_required_argument, 0, 'n'},
+		{"setup-cmd", sys_getopt_required_argument, 0, 'c'},
+		{"dialog-token", sys_getopt_required_argument, 0, 't'},
+		{"flow-id", sys_getopt_required_argument, 0, 'f'},
+		{"responder", sys_getopt_required_argument, 0, 'r'},
+		{"trigger", sys_getopt_required_argument, 0, 'T'},
+		{"implicit", sys_getopt_required_argument, 0, 'I'},
+		{"announce", sys_getopt_required_argument, 0, 'a'},
+		{"wake-interval", sys_getopt_required_argument, 0, 'w'},
+		{"interval", sys_getopt_required_argument, 0, 'p'},
+		{"wake-ahead-duration", sys_getopt_required_argument, 0, 'D'},
+		{"info-disable", sys_getopt_required_argument, 0, 'd'},
+		{"exponent", sys_getopt_required_argument, 0, 'e'},
+		{"mantissa", sys_getopt_required_argument, 0, 'm'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	params->operation = WIFI_TWT_SETUP;
 
-	while ((opt = getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'n':
 			if (!parse_number(sh, &value, state->optarg, NULL,
@@ -2307,7 +2039,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_creds(sh, iface, 1);
+		wifi_set_enterprise_credentials(iface, 1);
 	}
 #endif
 
@@ -2341,7 +2073,7 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
 	/* Clear the certificates */
-	clear_enterprise_creds_params(&context.enterprise_creds_params);
+	wifi_clear_enterprise_credentials();
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 	return 0;
@@ -2418,22 +2150,22 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"max_inactivity", required_argument, 0, 't'},
-		{"max_num_sta", required_argument, 0, 's'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"max_inactivity", sys_getopt_required_argument, 0, 't'},
+		{"max_num_sta", sys_getopt_required_argument, 0, 's'},
 #if defined(CONFIG_WIFI_NM_HOSTAPD_AP)
-		{"ht_capab", required_argument, 0, 'n'},
-		{"vht_capab", required_argument, 0, 'c'},
+		{"ht_capab", sys_getopt_required_argument, 0, 'n'},
+		{"vht_capab", sys_getopt_required_argument, 0, 'c'},
 #endif
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "t:s:n:c:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "t:s:n:c:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (!parse_number(sh, &val, state->optarg, "max_inactivity",
@@ -2545,14 +2277,14 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	bool force = false;
 	bool verbose = false;
 	int opt_index = 0;
-	static const struct option long_options[] = {
-		{"force", no_argument, 0, 'f'},
-		{"verbose", no_argument, 0, 'v'},
-		{"iface", required_argument, 0, 'i'},
+	static const struct sys_getopt_option long_options[] = {
+		{"force", sys_getopt_no_argument, 0, 'f'},
+		{"verbose", sys_getopt_no_argument, 0, 'v'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{NULL, 0, NULL, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
+	while ((opt = sys_getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
 		switch (opt) {
 		case 'f':
 			force = true;
@@ -2568,24 +2300,25 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		}
 	}
 
-	if (optind == argc) {
+	if (sys_getopt_optind == argc) {
 		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
-	} else if (optind == argc - 1) {
-		if (strlen(argv[optind]) != 2) {
+	} else if (sys_getopt_optind == argc - 1) {
+		if (strlen(argv[sys_getopt_optind]) != 2) {
 			PR_WARNING("Invalid reg domain: Length should be two letters/digits\n");
 			return -ENOEXEC;
 		}
 
 		/* Two letter country code with special case of 00 for WORLD */
-		if (((argv[optind][0] < 'A' || argv[optind][0] > 'Z') ||
-			(argv[optind][1] < 'A' || argv[optind][1] > 'Z')) &&
-			(argv[optind][0] != '0' || argv[optind][1] != '0')) {
-			PR_WARNING("Invalid reg domain %c%c\n", argv[optind][0], argv[optind][1]);
+		if (((argv[sys_getopt_optind][0] < 'A' || argv[sys_getopt_optind][0] > 'Z') ||
+			(argv[sys_getopt_optind][1] < 'A' || argv[sys_getopt_optind][1] > 'Z')) &&
+			(argv[sys_getopt_optind][0] != '0' || argv[sys_getopt_optind][1] != '0')) {
+			PR_WARNING("Invalid reg domain %c%c\n", argv[sys_getopt_optind][0],
+				   argv[sys_getopt_optind][1]);
 			return -ENOEXEC;
 		}
-		regd.country_code[0] = argv[optind][0];
-		regd.country_code[1] = argv[optind][1];
+		regd.country_code[0] = argv[sys_getopt_optind][0];
+		regd.country_code[1] = argv[sys_getopt_optind][1];
 		regd.force = force;
 		regd.oper = WIFI_MGMT_SET;
 	} else {
@@ -2914,20 +2647,20 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int opt_index = 0;
 	int opt_num = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", required_argument, 0, 'i'},
-		{"sta", no_argument, 0, 's'},
-		{"monitor", no_argument, 0, 'm'},
-		{"ap", no_argument, 0, 'a'},
-		{"softap", no_argument, 0, 'k'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"sta", sys_getopt_no_argument, 0, 's'},
+		{"monitor", sys_getopt_no_argument, 0, 'm'},
+		{"ap", sys_getopt_no_argument, 0, 'a'},
+		{"softap", sys_getopt_no_argument, 0, 'k'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	mode->oper = WIFI_MGMT_GET;
-	while ((opt = getopt_long(argc, argv, "i:smtpakh",
+	while ((opt = sys_getopt_long(argc, argv, "i:smtpakh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			mode->mode |= WIFI_STA_MODE;
@@ -3017,17 +2750,17 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", optional_argument, 0, 'i'},
-		{"channel", required_argument, 0, 'c'},
-		{"get", no_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_optional_argument, 0, 'i'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"get", sys_getopt_no_argument, 0, 'g'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:c:gh",
+	while ((opt = sys_getopt_long(argc, argv, "i:c:gh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			channel->channel = (uint16_t)atoi(state->optarg);
@@ -3115,21 +2848,21 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", required_argument, 0, 'i'},
-		{"capture-len", optional_argument, 0, 'b'},
-		{"all", no_argument, 0, 'a'},
-		{"mgmt", no_argument, 0, 'm'},
-		{"ctrl", no_argument, 0, 'c'},
-		{"data", no_argument, 0, 'd'},
-		{"get", no_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"capture-len", sys_getopt_optional_argument, 0, 'b'},
+		{"all", sys_getopt_no_argument, 0, 'a'},
+		{"mgmt", sys_getopt_no_argument, 0, 'm'},
+		{"ctrl", sys_getopt_no_argument, 0, 'c'},
+		{"data", sys_getopt_no_argument, 0, 'd'},
+		{"get", sys_getopt_no_argument, 0, 'g'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:b:amcdgh",
+	while ((opt = sys_getopt_long(argc, argv, "i:b:amcdgh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'a':
 			filter->filter |= WIFI_PACKET_FILTER_ALL;
@@ -3239,20 +2972,20 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"peer", required_argument, 0, 'p'},
-		{"role", required_argument, 0, 'r'},
-		{"configurator", required_argument, 0, 'c'},
-		{"mode", required_argument, 0, 'm'},
-		{"ssid", required_argument, 0, 's'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"role", sys_getopt_required_argument, 0, 'r'},
+		{"configurator", sys_getopt_required_argument, 0, 'c'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'p':
 			params->auth_init.peer = shell_strtol(state->optarg, 10, &ret);
@@ -3291,17 +3024,17 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"own", required_argument, 0, 'o'},
-		{"freq", required_argument, 0, 'f'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"own", sys_getopt_required_argument, 0, 'o'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "o:f:i:",
+	while ((opt = sys_getopt_long(argc, argv, "o:f:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'o':
 			params->chirp.id = shell_strtol(state->optarg, 10, &ret);
@@ -3331,17 +3064,17 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"role", required_argument, 0, 'r'},
-		{"freq", required_argument, 0, 'f'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"role", sys_getopt_required_argument, 0, 'r'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "r:f:i:",
+	while ((opt = sys_getopt_long(argc, argv, "r:f:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'r':
 			params->listen.role = shell_strtol(state->optarg, 10, &ret);
@@ -3371,19 +3104,19 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"opclass", required_argument, 0, 'o'},
-		{"channel", required_argument, 0, 'h'},
-		{"mac", required_argument, 0, 'a'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"opclass", sys_getopt_required_argument, 0, 'o'},
+		{"channel", sys_getopt_required_argument, 0, 'h'},
+		{"mac", sys_getopt_required_argument, 0, 'a'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "t:o:h:a:i:",
+	while ((opt = sys_getopt_long(argc, argv, "t:o:h:a:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			params->bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
@@ -3437,18 +3170,18 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"configurator", required_argument, 0, 'c'},
-		{"mode", required_argument, 0, 'm'},
-		{"ssid", required_argument, 0, 's'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"configurator", sys_getopt_required_argument, 0, 'c'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			params->configurator_set.configurator =
@@ -3729,10 +3462,10 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"peer", required_argument, 0, 'p'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 	struct net_if *iface = get_iface(IFACE_TYPE_SAP, argc, argv);
@@ -3740,9 +3473,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 
 	params.action = WIFI_DPP_AUTH_INIT;
 
-	while ((opt = getopt_long(argc, argv, "p:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'p':
 			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
@@ -3809,6 +3542,199 @@ static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[
 
 	return 0;
 }
+
+static int cmd_wifi_set_bss_max_idle_period(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	unsigned short bss_max_idle_period = 0;
+	int idx = 1;
+	unsigned long val = 0;
+
+	if (!parse_number(sh, &val, argv[idx++], "bss_max_idle_period", 0, USHRT_MAX)) {
+		return -EINVAL;
+	}
+
+	bss_max_idle_period = (unsigned short)val;
+
+	if (net_mgmt(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD, iface,
+		     &bss_max_idle_period, sizeof(bss_max_idle_period))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting BSS maximum idle period failed.\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "BSS max idle period: %hu\n", bss_max_idle_period);
+
+	return 0;
+}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+				      struct wifi_bgscan_params *params)
+{
+	int err;
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"short-interval", sys_getopt_required_argument, 0, 's'},
+		{"rss-threshold", sys_getopt_required_argument, 0, 'r'},
+		{"long-interval", sys_getopt_required_argument, 0, 'l'},
+		{"btm-queries", sys_getopt_required_argument, 0, 'b'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{0, 0, 0, 0}};
+	unsigned long uval;
+	long val;
+
+	while ((opt = sys_getopt_long(argc, argv, "t:s:r:l:b:i:", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 't':
+			if (strcmp("simple", state->optarg) == 0) {
+				params->type = WIFI_BGSCAN_SIMPLE;
+			} else if (strcmp("learn", state->optarg) == 0) {
+				params->type = WIFI_BGSCAN_LEARN;
+			} else if (strcmp("none", state->optarg) == 0) {
+				params->type = WIFI_BGSCAN_NONE;
+			} else {
+				PR_ERROR("Invalid type %s\n", state->optarg);
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+			break;
+		case 's':
+			uval = shell_strtoul(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid short interval %s\n", state->optarg);
+				return err;
+			}
+			params->short_interval = uval;
+			break;
+		case 'l':
+			uval = shell_strtoul(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid long interval %s\n", state->optarg);
+				return err;
+			}
+			params->long_interval = uval;
+			break;
+		case 'b':
+			uval = shell_strtoul(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid BTM queries %s\n", state->optarg);
+				return err;
+			}
+			params->btm_queries = uval;
+			break;
+		case 'r':
+			val = shell_strtol(state->optarg, 10, &err);
+			if (err < 0) {
+				PR_ERROR("Invalid RSSI threshold %s\n", state->optarg);
+				return err;
+			}
+			params->rssi_threshold = val;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_set_bgscan(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_bgscan_params bgscan_params = {
+		.type = WIFI_BGSCAN_NONE,
+		.short_interval = 30,
+		.long_interval = 300,
+		.rssi_threshold = 0,
+		.btm_queries = 0,
+	};
+	int ret;
+
+	if (wifi_bgscan_args_to_params(sh, argc, argv, &bgscan_params) != 0) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_BGSCAN, iface, &bgscan_params,
+		       sizeof(struct wifi_bgscan_params));
+	if (ret != 0) {
+		PR_WARNING("Setting background scanning parameters failed: %s\n", strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
+
+static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+					 struct wifi_config_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"okc", sys_getopt_required_argument, 0, 'o'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{0, 0, 0, 0}};
+	long val;
+
+	while ((opt = sys_getopt_long(argc, argv, "o:i:",
+				  long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'o':
+			if (!parse_number(sh, &val, state->optarg, "okc", 0, 1)) {
+				return -EINVAL;
+			}
+			params->okc = val;
+			params->type |= WIFI_CONFIG_PARAM_OKC;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_config_params(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_config_params config_params = { 0 };
+	int ret = -1;
+
+	context.sh = sh;
+
+	if (wifi_config_args_to_params(sh, argc, argv, &config_params)) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_CONFIG_PARAM, iface,
+		       &config_params, sizeof(struct wifi_config_params));
+	if (ret) {
+		PR_WARNING("Setting STA parameter failed: %s\n",
+			   strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL, "Disable Access Point mode.\n"
@@ -3932,7 +3858,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		" The total number of '0, 1, ..., x' is session_num\n"
 		"[-i, --iface=<interface index>] : Interface index.\n",
 		cmd_wifi_btwt_setup,
-		13, 2),
+		13, 12),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
@@ -4116,10 +4042,12 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		 "[-P, --eap-pwd1]: Client Password.\n"
 		 "Default no password for eap user.\n"
 		 "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect."
+		 "[-e, --server-cert-domain-exact]: Full domain names for server certificate match.\n"
+		 "[-x, --server-cert-domain-suffix]: Domain name suffixes for server certificate match.\n"
 		 "[-h, --help]: Print out the help for the connect command.\n"
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_connect,
-		 2, 42);
+		 2, 46);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "Disconnect from the Wi-Fi AP.\n"
@@ -4217,7 +4145,7 @@ SHELL_SUBCMD_ADD((wifi), rts_threshold, NULL,
 	"<rts_threshold: rts threshold/off>.\n"
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_set_rts_threshold,
-		 2, 2);
+		 1, 2);
 
 SHELL_SUBCMD_ADD((wifi), scan, NULL,
 		 "Scan for Wi-Fi APs\n"
@@ -4286,6 +4214,32 @@ SHELL_SUBCMD_ADD((wifi), ps_exit_strategy, NULL,
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_ps_exit_strategy,
 		 2, 2);
+
+SHELL_SUBCMD_ADD((wifi), bss_max_idle_period, NULL,
+		 "<BSS max idle period preference: timeout(in seconds)>.\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_set_bss_max_idle_period,
+		 2, 2);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+SHELL_SUBCMD_ADD((wifi), bgscan, NULL,
+		 "Configure background scanning.\n"
+		 "<-t, --type simple/learn/none> : The scanning type, use none to disable.\n"
+		 "[-s, --short-interval <val>] : Short scan interval (default: 30).\n"
+		 "[-l, --long-interval <val>] : Long scan interval (default: 300).\n"
+		 "[-r, --rssi-threshold <val>] : Signal strength threshold (default: disabled).\n"
+		 "[-b, --btm-queries <val>] : BTM queries before scanning (default: disabled).\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_set_bgscan,
+		 2, 6);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN */
+
+SHELL_SUBCMD_ADD((wifi), config, NULL,
+		 "Configure STA parameters.\n"
+		 "-o, --okc=<0/1>: Opportunistic Key Caching. 0: disable, 1: enable\n"
+		 "[-i, --iface=<interface index>] : Interface index.\n",
+		 cmd_wifi_config_params,
+		 3, 12);
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 

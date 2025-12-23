@@ -696,7 +696,7 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 			 * sync role.
 			 */
 			parent = aux->parent;
-			LL_ASSERT(!parent || (parent != aux_scan_lll));
+			LL_ASSERT_DBG(!parent || (parent != aux_scan_lll));
 		}
 	}
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
@@ -727,7 +727,7 @@ void ull_scan_done(struct node_rx_event_done *done)
 	lll->duration_reload = 0U;
 
 	handle = ull_scan_handle_get(scan);
-	LL_ASSERT(handle < BT_CTLR_SCAN_SET);
+	LL_ASSERT_DBG(handle < BT_CTLR_SCAN_SET);
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	/* Prevent duplicate terminate event if ull_scan_done get called by
@@ -751,8 +751,8 @@ void ull_scan_done(struct node_rx_event_done *done)
 			  (TICKER_ID_SCAN_BASE + handle), ticker_stop_ext_op_cb,
 			  scan);
 
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 
 void ull_scan_term_dequeue(uint8_t handle)
@@ -760,7 +760,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 	struct ll_scan_set *scan;
 
 	scan = ull_scan_set_get(handle);
-	LL_ASSERT(scan);
+	LL_ASSERT_DBG(scan);
 
 	scan->is_enabled = 0U;
 
@@ -773,7 +773,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 			uint8_t err;
 
 			err = disable(SCAN_HANDLE_PHY_CODED);
-			LL_ASSERT(!err);
+			LL_ASSERT_ERR(!err);
 		}
 	} else {
 		struct ll_scan_set *scan_1m;
@@ -783,7 +783,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 			uint8_t err;
 
 			err = disable(SCAN_HANDLE_1M);
-			LL_ASSERT(!err);
+			LL_ASSERT_ERR(!err);
 		}
 	}
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -924,7 +924,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&scan->ull);
-	LL_ASSERT(ref);
+	LL_ASSERT_DBG(ref);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
@@ -937,7 +937,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (lll->duration_expire) {
@@ -955,7 +955,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 						scan->duration_lazy - elapsed;
 
 				handle = ull_scan_handle_get(scan);
-				LL_ASSERT(handle < BT_CTLR_SCAN_SET);
+				LL_ASSERT_DBG(handle < BT_CTLR_SCAN_SET);
 
 				ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 						    TICKER_USER_ID_ULL_HIGH,
@@ -963,8 +963,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 						     handle), 0, 0, 0, 0,
 						    duration_lazy, 0,
 						    NULL, NULL);
-				LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-					  (ret == TICKER_STATUS_BUSY));
+				LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+					      (ret == TICKER_STATUS_BUSY));
 			}
 
 			lll->duration_expire = 0U;
@@ -973,15 +973,15 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		uint8_t handle;
 
 		handle = ull_scan_handle_get(scan);
-		LL_ASSERT(handle < BT_CTLR_SCAN_SET);
+		LL_ASSERT_DBG(handle < BT_CTLR_SCAN_SET);
 
 		lll->duration_expire = lll->duration_reload;
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    (TICKER_ID_SCAN_BASE + handle),
 				    0, 0, 0, 0, 1, 1, NULL, NULL);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+			      (ret == TICKER_STATUS_BUSY));
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1105,7 +1105,7 @@ static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void ext_disable(void *param)
@@ -1126,14 +1126,14 @@ static void ext_disable(void *param)
 		/* Setup disabled callback to be called when ref count
 		 * returns to zero.
 		 */
-		LL_ASSERT(!hdr->disabled_cb);
+		LL_ASSERT_ERR(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = ext_disabled_cb;
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
-		LL_ASSERT(!ret);
+		LL_ASSERT_ERR(!ret);
 	} else {
 		/* No pending LLL events */
 		ext_disabled_cb(&scan->lll);

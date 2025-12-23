@@ -9,16 +9,27 @@ Runner that implements flashing with SiLabs Simplicity Commander binary tool.
 See SiLabs UG162: "Simplicity Commander Reference Guide" for more info.
 """
 
+import ipaddress
 import os
+import re
 import shlex
 
 from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_APP = 'commander'
 
+def is_ip(ip):
+    if not ip:
+        return False
+    try:
+        ipaddress.ip_address(ip.split(':')[0])
+    except ValueError:
+        return False
+    return True
 
 class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
-    def __init__(self, cfg, device, dev_id, commander, dt_flash, erase, speed, tool_opt):
+    def __init__(self, cfg, device, dev_id, commander, dt_flash, erase, speed, tool_opt,
+                 dev_id_type):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -31,10 +42,32 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
         self.dt_flash = dt_flash
         self.erase = erase
         self.speed = speed
+        self.dev_id_type = dev_id_type
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
             self.tool_opt += opts
+
+    @staticmethod
+    def _detect_dev_id_type(dev_id):
+        """Detect device type based on dev_id pattern."""
+        if not dev_id:
+            return None
+
+        # Check if dev_id is numeric (serialno)
+        if re.match(r'^[0-9]+$', dev_id):
+            return 'serialno'
+
+        # Check if dev_id is an existing file (tty)
+        if os.path.exists(dev_id):
+            return 'tty'
+
+        # Check if dev_id is a valid IPv4
+        if is_ip(dev_id):
+            return 'ip'
+
+        # No match found
+        return None
 
     @classmethod
     def name(cls):
@@ -48,8 +81,10 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def dev_id_help(cls) -> str:
-        return '''Device identifier. Use it to select the J-Link Serial Number
-                  of the device connected over USB.'''
+        return '''Device identifier. Can be either a serial number (for a USB connection), a path
+                  to a tty device, an IP address or a tunnel address. User can enforce the type of
+                  the identifier with --dev-id-type.
+                  If not specified, the first USB device detected is used. '''
 
     @classmethod
     def tool_opt_help(cls) -> str:
@@ -66,6 +101,9 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
                             help='path to Simplicity Commander executable')
         parser.add_argument('--speed', default=None,
                             help='JTAG/SWD speed to use')
+        parser.add_argument('--dev-id-type', choices=['auto', 'serialno', 'tty', 'ip'],
+                            default='auto', help='Device type. "auto" (default) auto-detects '
+                            'the type, or specify explicitly')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -76,7 +114,8 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
                 dt_flash=args.dt_flash,
                 erase=args.erase,
                 speed=args.speed,
-                tool_opt=args.tool_opt)
+                tool_opt=args.tool_opt,
+                dev_id_type=args.dev_id_type)
 
     def do_run(self, command, **kwargs):
         self.require(self.commander)
@@ -85,7 +124,26 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
         if self.erase:
             opts.append('--masserase')
         if self.dev_id:
-            opts.extend(['--serialno', self.dev_id])
+            # Determine dev_id_type
+            if self.dev_id_type == 'auto':
+                # Auto-detect device type
+                detected_type = self._detect_dev_id_type(self.dev_id)
+            else:
+                # Use manually specified device type
+                detected_type = self.dev_id_type
+
+            # Add appropriate option based on device type
+            if detected_type == 'serialno':
+                opts.extend(['--serialno', self.dev_id])
+            elif detected_type == 'tty':
+                opts.extend(['--identifybyserialport', self.dev_id])
+            elif detected_type == 'ip':
+                opts.extend(['--ip', self.dev_id])
+            else:
+                # Fallback to legacy behavior (serialno)
+                opts.extend(['--serialno', self.dev_id])
+                self.logger.warning(f'"{self.dev_id}" does not match any known pattern')
+
         if self.speed is not None:
             opts.extend(['--speed', self.speed])
 

@@ -3,7 +3,7 @@
 USB
 ###
 
-**USB device support**
+**Legacy USB device support**
 
 .. toctree::
    :maxdepth: 1
@@ -11,12 +11,13 @@ USB
    device/usb_device.rst
    device/api/index.rst
 
-**New experimental USB support**
+**USB support**
 
 .. toctree::
    :maxdepth: 1
 
    device_next/usb_device.rst
+   device_next/vid_pid.rst
    device_next/api/index.rst
    host/api/index.rst
    host/usbip.rst

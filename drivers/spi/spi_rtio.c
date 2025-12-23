@@ -255,8 +255,8 @@ int spi_rtio_copy(struct rtio *r,
 					    NULL);
 			tx++;
 			if (tx < tx_count) {
-				tx_buf = rx_bufs->buffers[rx].buf;
-				tx_len = rx_bufs->buffers[rx].len;
+				tx_buf = tx_bufs->buffers[tx].buf;
+				tx_len = tx_bufs->buffers[tx].len;
 			} else {
 				tx_buf = NULL;
 				tx_len = 0;
@@ -415,6 +415,10 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 	int err = 0;
 	int ret;
 
+	if (tx_bufs == NULL && rx_bufs == NULL) {
+		return -EINVAL;
+	}
+
 	dt_spec->config = *config;
 
 	ret = spi_rtio_copy(ctx->r, &ctx->iodev, tx_bufs, rx_bufs, &sqe);
@@ -427,6 +431,11 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 
 	while (ret > 0) {
 		cqe = rtio_cqe_consume(ctx->r);
+		if (cqe == NULL) {
+			err = -EIO;
+			break;
+		}
+
 		if (cqe->result < 0) {
 			err = cqe->result;
 		}

@@ -43,8 +43,7 @@ int eth_adin2111_unlock(const struct device *dev);
 /**
  * @brief Writes host MAC interface register over SPI
  *
- * @note The caller is responsible for device lock.
- *       Shall not be called from ISR.
+ * @note Shall not be called from ISR.
  *
  * @param[in] dev ADIN2111 device.
  * @param reg Register address.
@@ -58,8 +57,7 @@ int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg, uint32_
 /**
  * @brief Reads host MAC interface register over SPI
  *
- * @note The caller is responsible for device lock.
- *       Shall not be called from ISR.
+ * @note Shall not be called from ISR.
  *
  * @param[in] dev ADIN2111 device.
  * @param reg Register address.
@@ -73,8 +71,7 @@ int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg, uint32_t
 /**
  * @brief Update host MAC interface register over SPI
  *
- * @note The caller is responsible for device lock.
- *       Shall not be called from ISR.
+ * @note Shall not be called from ISR.
  *
  * @param[in] dev ADIN2111 device.
  * @param reg Register address.

@@ -1,5 +1,22 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timers1 {
+	st,prescaler = <79>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
 &timers2 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -7,6 +24,17 @@
 
 &timers3 {
 	st,prescaler = <79>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timers4 {
+	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -14,6 +42,8 @@
 
 &timers6 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -21,6 +51,17 @@
 
 &timers7 {
 	st,prescaler = <79>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timers8 {
+	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -28,6 +69,8 @@
 
 &timers15 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -35,6 +78,8 @@
 
 &timers16 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -42,6 +87,8 @@
 
 &timers17 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};

@@ -15,6 +15,7 @@
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
@@ -25,7 +26,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 
-#define DEFAULT_NET_EVENT_INFO_SIZE 32
+#define DEFAULT_NET_EVENT_INFO_SIZE CONFIG_NET_MGMT_EVENT_INFO_DEFAULT_DATA_SIZE
 /* NOTE: Update this union with all *big* event info structs */
 union net_mgmt_events {
 #if defined(CONFIG_NET_DHCPV4)
@@ -96,11 +97,12 @@ extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
 extern bool net_context_is_v6only_set(struct net_context *context);
 extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
+extern bool net_context_is_recv_hoplimit_set(struct net_context *context);
 extern bool net_context_is_timestamping_set(struct net_context *context);
 extern void net_pkt_init(void);
 int net_context_get_local_addr(struct net_context *context,
-			       struct sockaddr *addr,
-			       socklen_t *addrlen);
+			       struct net_sockaddr *addr,
+			       net_socklen_t *addrlen);
 #else
 static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
@@ -124,6 +126,11 @@ static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
 	ARG_UNUSED(context);
 	return false;
 }
+static inline bool net_context_is_recv_hoplimit_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
+}
 static inline bool net_context_is_timestamping_set(struct net_context *context)
 {
 	ARG_UNUSED(context);
@@ -131,8 +138,8 @@ static inline bool net_context_is_timestamping_set(struct net_context *context)
 }
 
 static inline int net_context_get_local_addr(struct net_context *context,
-					     struct sockaddr *addr,
-					     socklen_t *addrlen)
+					     struct net_sockaddr *addr,
+					     net_socklen_t *addrlen)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(addr);
@@ -167,7 +174,7 @@ extern int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 #include <zephyr/net/socket_service.h>
 extern int dns_resolve_init_with_svc(struct dns_resolve_context *ctx,
 				     const char *servers[],
-				     const struct sockaddr *servers_sa[],
+				     const struct net_sockaddr *servers_sa[],
 				     const struct net_socket_service_desc *svc,
 				     uint16_t port, int interfaces[]);
 #endif /* CONFIG_DNS_RESOLVER */
@@ -177,25 +184,21 @@ extern void loopback_enable_address_swap(bool swap_addresses);
 #endif /* CONFIG_NET_TEST */
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
+enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv6_input(struct net_pkt *pkt);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 #else
-static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
 
-static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
@@ -206,13 +209,33 @@ static inline void net_tc_rx_init(void) { }
 enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
 					       k_timeout_t timeout);
 extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
+extern int net_tc_tx_thread_priority(int tc);
+extern int net_tc_rx_thread_priority(int tc);
+static inline bool net_tc_tx_is_immediate(int tc, int prio)
+{
+	ARG_UNUSED(prio);
+	bool high_prio = (tc == NET_TC_TX_EFFECTIVE_COUNT - 1);
+	bool skipping = IS_ENABLED(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO);
+	bool no_queues = (0 == NET_TC_TX_COUNT);
+
+	return no_queues || (high_prio && skipping);
+}
+static inline bool net_tc_rx_is_immediate(int tc, int prio)
+{
+	ARG_UNUSED(prio);
+	bool high_prio = (tc == NET_TC_RX_EFFECTIVE_COUNT - 1);
+	bool skipping = IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO);
+	bool no_queues = (0 == NET_TC_RX_COUNT);
+
+	return no_queues || (high_prio && skipping);
+}
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
-char *net_sprint_addr(sa_family_t af, const void *addr);
+char *net_sprint_addr(net_sa_family_t af, const void *addr);
 
-#define net_sprint_ipv4_addr(_addr) net_sprint_addr(AF_INET, _addr)
+#define net_sprint_ipv4_addr(_addr) net_sprint_addr(NET_AF_INET, _addr)
 
-#define net_sprint_ipv6_addr(_addr) net_sprint_addr(AF_INET6, _addr)
+#define net_sprint_ipv6_addr(_addr) net_sprint_addr(NET_AF_INET6, _addr)
 
 #if defined(CONFIG_COAP)
 /**
@@ -326,29 +349,29 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 
 static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
 {
-	return net_calc_chksum(pkt, IPPROTO_ICMPV6);
+	return net_calc_chksum(pkt, NET_IPPROTO_ICMPV6);
 }
 
 static inline uint16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
 {
-	return net_calc_chksum(pkt, IPPROTO_ICMP);
+	return net_calc_chksum(pkt, NET_IPPROTO_ICMP);
 }
 
 static inline uint16_t net_calc_chksum_udp(struct net_pkt *pkt)
 {
-	uint16_t chksum = net_calc_chksum(pkt, IPPROTO_UDP);
+	uint16_t chksum = net_calc_chksum(pkt, NET_IPPROTO_UDP);
 
 	return chksum == 0U ? 0xffff : chksum;
 }
 
 static inline uint16_t net_calc_verify_chksum_udp(struct net_pkt *pkt)
 {
-	return net_calc_chksum(pkt, IPPROTO_UDP);
+	return net_calc_chksum(pkt, NET_IPPROTO_UDP);
 }
 
 static inline uint16_t net_calc_chksum_tcp(struct net_pkt *pkt)
 {
-	return net_calc_chksum(pkt, IPPROTO_TCP);
+	return net_calc_chksum(pkt, NET_IPPROTO_TCP);
 }
 
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
@@ -414,3 +437,10 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
 
 	printk("\n");
 }
+
+/**
+ * Initialize externally allocated TX packet.
+ *
+ * @param pkt The network packet to initialize.
+ */
+void net_pkt_tx_init(struct net_pkt *pkt);

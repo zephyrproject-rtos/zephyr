@@ -1,0 +1,18 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL61X
+	select CLOCK_CONTROL
+	select CODE_DATA_RELOCATION
+	select DCACHE
+	select FLOAT_HARD
+	select FPU
+	select ICACHE
+	select RISCV
+	select RISCV_ISA_EXT_F
+	select SOC_EARLY_INIT_HOOK
+	select SYSCON
+	select XIP
+	select CPU_XUANTIE_E907
+	select CACHE_MANAGEMENT

@@ -161,8 +161,7 @@ struct _cpu {
 	struct _ready_q ready_q;
 #endif
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
 	/* Coop thread preempted by current metairq, or NULL */
 	struct k_thread *metairq_preempted;
 #endif
@@ -194,6 +193,10 @@ struct _cpu {
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
 	struct k_obj_core  obj_core;
+#endif
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+	sys_dlist_t ipi_workq;
 #endif
 
 	/* Per CPU architecture specifics */

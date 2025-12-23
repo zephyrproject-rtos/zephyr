@@ -289,7 +289,7 @@ ZTEST(net_websocket, test_recv_two_msg)
 	test_recv_2(sizeof(frame1) + FRAME1_HDR_SIZE / 2);
 }
 
-int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
+int verify_sent_and_received_msg(struct net_msghdr *msg, bool split_msg)
 {
 	static struct websocket_context ctx;
 	uint32_t msg_type = -1;

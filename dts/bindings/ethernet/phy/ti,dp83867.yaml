@@ -5,7 +5,7 @@ description: TI DP83867 Ethernet PHY device
 
 compatible: "ti,dp83867"
 
-include: ethernet-phy.yaml
+include: ethernet-phy-common.yaml
 
 properties:
   reset-gpios:
@@ -33,3 +33,6 @@ properties:
       - "rgmii-id"
       - "rgmii-rxid"
       - "rgmii-txid"
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]

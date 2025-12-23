@@ -822,7 +822,7 @@ static int hci_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 
 	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_REQ_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, buf, &rsp);
 	if (err) {
 		return err;
 	}

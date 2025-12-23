@@ -35,7 +35,6 @@ config DEVICE_DT_METADATA
 
 config DEVICE_DEINIT_SUPPORT
 	bool "Support device de-initialization"
-	default y
 	help
 	  In very specific case, it might be necessary to de-initialize
 	  a device at runtime. This is possible by providing a function

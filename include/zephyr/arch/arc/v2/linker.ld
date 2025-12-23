@@ -80,10 +80,7 @@ MEMORY {
 SECTIONS {
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
 	GROUP_START(ROMABLE_REGION)
 
@@ -95,7 +92,10 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rom-start.ld>
-		*(.text .text.*)
+
+		*(.text)
+		*(.text.*)
+		*(.text$*)
 		*(.gnu.linkonce.t.*)
 
 	. = ALIGN(4);
@@ -113,7 +113,9 @@ SECTIONS {
 #ifdef __MWDT_LINKER_CMD__
 	SECTION_DATA_PROLOGUE(tdata,,)
 	{
-		*(.tls .tls.*);
+		*(.tls);
+		*(.tls.*);
+		*(.tls$*);
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	#ifdef CONFIG_XIP
@@ -134,6 +136,7 @@ SECTIONS {
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
 		*(".rodata")
 		*(".rodata.*")
+		*(".rodata$*")
 		*(.gnu.linkonce.r.*)
 
 /* Located in generated directory. This file is populated by the
@@ -189,9 +192,16 @@ SECTIONS {
 		__data_region_start = .;
 		__data_start = .;
 		__kernel_ram_start = .;
+
 		*(".data")
 		*(".data.*")
+		*(".data$*")
 		*(".kernel.*")
+
+/* This is an MWDT-specific section, created when -Hccm option is enabled */
+		*(".rodata_in_data")
+		*(".rodata_in_data.*")
+		*(".rodata_in_data$*")
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -231,8 +241,10 @@ SECTIONS {
 		 */
 		. = ALIGN(4);
 		__bss_start = .;
+
 		*(".bss")
 		*(".bss.*")
+		*(".bss$*")
 		*(COMMON)
 		*(".kernel_bss.*")
 
@@ -291,6 +303,7 @@ SECTIONS {
 	SECTION_PROLOGUE(.arcextmap, 0,) {
 		*(.arcextmap)
 		*(.arcextmap.*)
+		*(.arcextmap$*)
 		*(.gnu.linkonce.arcextmap.*)
 	}
 

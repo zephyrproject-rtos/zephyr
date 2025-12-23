@@ -12,9 +12,6 @@
 
 LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
-/* Maximum acceptable deviation in sample point location (permille) */
-#define SAMPLE_POINT_MARGIN 50
-
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
@@ -402,7 +399,7 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 		return ret;
 	}
 
-	if (ret > SAMPLE_POINT_MARGIN) {
+	if (ret > CONFIG_CAN_SAMPLE_POINT_MARGIN) {
 		return -ERANGE;
 	}
 
@@ -448,7 +445,7 @@ int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 		return ret;
 	}
 
-	if (ret > SAMPLE_POINT_MARGIN) {
+	if (ret > CONFIG_CAN_SAMPLE_POINT_MARGIN) {
 		return -ERANGE;
 	}
 

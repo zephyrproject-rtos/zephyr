@@ -61,31 +61,7 @@ and Colibri Evaluation Board, see these references:
 Supported Features
 ==================
 
-The Colibri iMX7D Computer on Module with Colibri Evaluation Board configuration
-supports the following hardware features on the Cortex M4 Core:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/toradex/colibri_imx7d/colibri_imx7d_mcimx7d_m4_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -304,7 +280,7 @@ from its currently loaded dtb file.
    };
 
    #Add these definitions under / { } just before the __symbols__
-   #Disgard the comments with #-->
+   #Discard the comments with #-->
    reserved-memory {
       #address-cells = <0x01>;
       #size-cells = <0x01>;

@@ -7,8 +7,11 @@
 #include <nordic/nrf9280.dtsi>
 
 cpu: &cpuppr {};
+
 clic: &cpuppr_clic {};
+
 cpuppr_vevif: &cpuppr_vevif_rx {};
+
 cpusys_vevif: &cpusys_vevif_tx {};
 
 /delete-node/ &cpuapp;

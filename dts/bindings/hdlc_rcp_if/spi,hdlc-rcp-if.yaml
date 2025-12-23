@@ -28,8 +28,3 @@ properties:
     type: int
     default: 0
     description: The delay (in ms) after reset de-assertion.
-
-  cs-delay:
-    type: int
-    default: 0
-    description: The delay (in ms) for the RCP radio chip select.

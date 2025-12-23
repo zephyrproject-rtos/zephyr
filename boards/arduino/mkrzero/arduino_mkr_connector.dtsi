@@ -11,31 +11,33 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <ARDUINO_MKR_HEADER_D0  0 &porta 22 0>,  /* D0 */
-			   <ARDUINO_MKR_HEADER_D1  0 &porta 23 0>,  /* D1 */
-			   <ARDUINO_MKR_HEADER_D2  0 &porta 10 0>,  /* D2 */
-			   <ARDUINO_MKR_HEADER_D3  0 &porta 11 0>,  /* D3 */
-			   <ARDUINO_MKR_HEADER_D4  0 &portb 10 0>,  /* D4 */
-			   <ARDUINO_MKR_HEADER_D5  0 &portb 11 0>,  /* D5 */
-			   <ARDUINO_MKR_HEADER_D6  0 &porta 20 0>,  /* D6 */
-			   <ARDUINO_MKR_HEADER_D7  0 &porta 21 0>,  /* D7 */
-			   <ARDUINO_MKR_HEADER_D8  0 &porta 16 0>,  /* D8  / SPI-COPI */
-			   <ARDUINO_MKR_HEADER_D9  0 &porta 17 0>,  /* D9  / SPI-SCK  */
+		gpio-map = <ARDUINO_MKR_HEADER_D0 0 &porta 22 0>,  /* D0 */
+			   <ARDUINO_MKR_HEADER_D1 0 &porta 23 0>,  /* D1 */
+			   <ARDUINO_MKR_HEADER_D2 0 &porta 10 0>,  /* D2 */
+			   <ARDUINO_MKR_HEADER_D3 0 &porta 11 0>,  /* D3 */
+			   <ARDUINO_MKR_HEADER_D4 0 &portb 10 0>,  /* D4 */
+			   <ARDUINO_MKR_HEADER_D5 0 &portb 11 0>,  /* D5 */
+			   <ARDUINO_MKR_HEADER_D6 0 &porta 20 0>,  /* D6 */
+			   <ARDUINO_MKR_HEADER_D7 0 &porta 21 0>,  /* D7 */
+			   <ARDUINO_MKR_HEADER_D8 0 &porta 16 0>,  /* D8  / SPI-COPI */
+			   <ARDUINO_MKR_HEADER_D9 0 &porta 17 0>,  /* D9  / SPI-SCK  */
 			   <ARDUINO_MKR_HEADER_D10 0 &porta 19 0>,  /* D10 / SPI-CIPO */
-			   <ARDUINO_MKR_HEADER_D11 0 &porta  8 0>,  /* D11 / I2C-SDA  */
-			   <ARDUINO_MKR_HEADER_D12 0 &porta  9 0>,  /* D12 / I2C-SCL  */
+			   <ARDUINO_MKR_HEADER_D11 0 &porta 8 0>,  /* D11 / I2C-SDA  */
+			   <ARDUINO_MKR_HEADER_D12 0 &porta 9 0>,  /* D12 / I2C-SCL  */
 			   <ARDUINO_MKR_HEADER_D13 0 &portb 23 0>,  /* D13 / UART-RX  */
 			   <ARDUINO_MKR_HEADER_D14 0 &portb 22 0>,  /* D14 / UART-TX  */
-			   <ARDUINO_MKR_HEADER_A0  0 &porta  2 0>,  /* D15 / A0 */
-			   <ARDUINO_MKR_HEADER_A1  0 &portb  2 0>,  /* D16 / A1 */
-			   <ARDUINO_MKR_HEADER_A2  0 &portb  3 0>,  /* D17 / A2 */
-			   <ARDUINO_MKR_HEADER_A3  0 &porta  4 0>,  /* D18 / A3 */
-			   <ARDUINO_MKR_HEADER_A4  0 &porta  5 0>,  /* D19 / A4 */
-			   <ARDUINO_MKR_HEADER_A5  0 &porta  6 0>,  /* D20 / A5 */
-			   <ARDUINO_MKR_HEADER_A6  0 &porta  7 0>;  /* D21 / A6 */
+			   <ARDUINO_MKR_HEADER_A0 0 &porta 2 0>,  /* D15 / A0 */
+			   <ARDUINO_MKR_HEADER_A1 0 &portb 2 0>,  /* D16 / A1 */
+			   <ARDUINO_MKR_HEADER_A2 0 &portb 3 0>,  /* D17 / A2 */
+			   <ARDUINO_MKR_HEADER_A3 0 &porta 4 0>,  /* D18 / A3 */
+			   <ARDUINO_MKR_HEADER_A4 0 &porta 5 0>,  /* D19 / A4 */
+			   <ARDUINO_MKR_HEADER_A5 0 &porta 6 0>,  /* D20 / A5 */
+			   <ARDUINO_MKR_HEADER_A6 0 &porta 7 0>;  /* D21 / A6 */
 	};
 };
 
 arduino_mkr_i2c: &sercom0 {};
+
 arduino_mkr_spi: &sercom1 {};
+
 arduino_mkr_serial: &sercom5 {};

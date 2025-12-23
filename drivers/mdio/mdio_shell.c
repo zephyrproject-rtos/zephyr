@@ -32,8 +32,13 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-static int parse_device_arg(const struct shell *sh, char **argv, const struct device **dev)
+static int parse_device_arg(const struct shell *sh, size_t argc,
+			    char **argv, const struct device **dev)
 {
+	if (argc < 2) {
+		shell_error(sh, "not enough arguments");
+		return -EINVAL;
+	}
 	*dev = shell_device_get_binding(argv[1]);
 	if (!*dev) {
 		shell_error(sh, "device %s not found", argv[1]);
@@ -55,12 +60,12 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 	uint16_t reg_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (argc >= 2) {
+	if (argc >= 3) {
 		reg_addr = strtol(argv[2], NULL, 16);
 	} else {
 		reg_addr = 0;
@@ -71,8 +76,6 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 		    reg_addr);
 	cnt = 0;
 
-	mdio_bus_enable(dev);
-
 	for (int i = 0; i < 32; i++) {
 		data = 0;
 		if (mdio_read(dev, i, reg_addr, &data) >= 0 &&
@@ -81,8 +84,6 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 			shell_print(sh, "Found MDIO device @ 0x%x", i);
 		}
 	}
-
-	mdio_bus_disable(dev);
 
 	shell_print(sh, "%u devices found on %s", cnt, dev->name);
 
@@ -98,7 +99,7 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	uint16_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -107,16 +108,11 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	reg_addr = strtol(argv[3], NULL, 16);
 	data = strtol(argv[4], NULL, 16);
 
-	mdio_bus_enable(dev);
-
 	if (mdio_write(dev, port_addr, reg_addr, data) < 0) {
 		shell_error(sh, "Failed to write to device: %s", dev->name);
-		mdio_bus_disable(dev);
 
 		return -EIO;
 	}
-
-	mdio_bus_disable(dev);
 
 	return 0;
 }
@@ -130,7 +126,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	uint16_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -138,16 +134,11 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	port_addr = strtol(argv[2], NULL, 16);
 	reg_addr = strtol(argv[3], NULL, 16);
 
-	mdio_bus_enable(dev);
-
 	if (mdio_read(dev, port_addr, reg_addr, &data) < 0) {
 		shell_error(sh, "Failed to read from device: %s", dev->name);
-		mdio_bus_disable(dev);
 
 		return -EIO;
 	}
-
-	mdio_bus_disable(dev);
 
 	shell_print(sh, "%x[%x]: 0x%x", port_addr, reg_addr, data);
 
@@ -164,7 +155,7 @@ static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
 	uint8_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -174,16 +165,11 @@ static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
 	reg_addr = strtol(argv[4], NULL, 16);
 	data = strtol(argv[5], NULL, 16);
 
-	mdio_bus_enable(dev);
-
 	if (mdio_write_c45(dev, port_addr, dev_addr, reg_addr, data) < 0) {
 		shell_error(sh, "Failed to write to device: %s", dev->name);
-		mdio_bus_disable(dev);
 
 		return -EIO;
 	}
-
-	mdio_bus_disable(dev);
 
 	return 0;
 }
@@ -198,7 +184,7 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 	uint8_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -207,16 +193,11 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 	dev_addr = strtol(argv[3], NULL, 16);
 	reg_addr = strtol(argv[4], NULL, 16);
 
-	mdio_bus_enable(dev);
-
 	if (mdio_read_c45(dev, port_addr, dev_addr, reg_addr, &data) < 0) {
 		shell_error(sh, "Failed to read from device: %s", dev->name);
-		mdio_bus_disable(dev);
 
 		return -EIO;
 	}
-
-	mdio_bus_disable(dev);
 
 	shell_print(sh, "%x[%x:%x]: 0x%x", port_addr, dev_addr, reg_addr, data);
 
@@ -226,7 +207,7 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
 		"Scan MDIO bus for devices: scan <device> [<reg_addr>]",
-		cmd_mdio_scan, 1, 1),
+		cmd_mdio_scan, 2, 1),
 	SHELL_CMD_ARG(read, &dsub_device_name,
 		"Read from MDIO device: read <device> <phy_addr> <reg_addr>",
 		cmd_mdio_read, 4, 0),

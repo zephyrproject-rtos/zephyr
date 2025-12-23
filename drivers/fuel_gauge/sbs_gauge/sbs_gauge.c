@@ -22,6 +22,22 @@
 
 LOG_MODULE_REGISTER(sbs_gauge);
 
+#define SBS_GAUGE_DELAY 1000
+
+struct sbs_gauge_battery_cutoff_config {
+	/* Size of the payload array */
+	size_t payload_size;
+	/* Array SMBus word values to write to cut off the battery */
+	uint32_t payload[SBS_GAUGE_CUTOFF_PAYLOAD_MAX_SIZE];
+	/* Register to write cutoff payload */
+	uint8_t reg;
+};
+
+struct sbs_gauge_config {
+	struct i2c_dt_spec i2c;
+	const struct sbs_gauge_battery_cutoff_config *cutoff_cfg;
+};
+
 static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *val)
 {
 	const struct sbs_gauge_config *cfg;
@@ -51,7 +67,7 @@ static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_
 }
 
 static int sbs_cmd_buffer_read(const struct device *dev, uint8_t reg_addr, char *buffer,
-			      const uint8_t buffer_size)
+			       const uint8_t buffer_size)
 {
 	const struct sbs_gauge_config *cfg;
 	int status;
@@ -199,32 +215,26 @@ static int sbs_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			      union fuel_gauge_prop_val val)
 {
 	int rc = 0;
-	uint16_t tmp_val = 0;
 
 	switch (prop) {
 
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS,
 				       val.sbs_mfr_access_word);
-		val.sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM,
 				       val.sbs_remaining_capacity_alarm);
-		val.sbs_remaining_capacity_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_TIME_ALARM,
 				       val.sbs_remaining_time_alarm);
-		val.sbs_remaining_time_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_MODE:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, val.sbs_mode);
-		val.sbs_mode = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, val.sbs_at_rate);
-		val.sbs_at_rate = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -233,9 +243,8 @@ static int sbs_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return rc;
 }
 
-static int sbs_gauge_get_buffer_prop(const struct device *dev,
-				    fuel_gauge_prop_t prop_type, void *dst,
-				    size_t dst_len)
+static int sbs_gauge_get_buffer_prop(const struct device *dev, fuel_gauge_prop_t prop_type,
+				     void *dst, size_t dst_len)
 {
 	int rc = 0;
 
@@ -243,7 +252,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	case FUEL_GAUGE_MANUFACTURER_NAME:
 		if (dst_len == sizeof(struct sbs_gauge_manufacturer_name)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_MANUFACTURER_NAME, (char *)dst,
-						dst_len);
+						 dst_len);
 		} else {
 			rc = -EINVAL;
 		}
@@ -251,7 +260,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	case FUEL_GAUGE_DEVICE_NAME:
 		if (dst_len == sizeof(struct sbs_gauge_device_name)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_DEVICE_NAME, (char *)dst,
-						dst_len);
+						 dst_len);
 		} else {
 			rc = -EINVAL;
 		}
@@ -259,7 +268,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	case FUEL_GAUGE_DEVICE_CHEMISTRY:
 		if (dst_len == sizeof(struct sbs_gauge_device_chemistry)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_DEVICE_CHEMISTRY, (char *)dst,
-						dst_len);
+						 dst_len);
 		} else {
 			rc = -EINVAL;
 		}

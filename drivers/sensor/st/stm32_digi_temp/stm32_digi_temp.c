@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT st_stm32_digi_temp
 
+#include <stm32_bitops.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -54,7 +55,7 @@ static void stm32_digi_temp_isr(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Clear interrupt */
-	SET_BIT(dts->ICIFR, DTS_ICIFR_TS1_CITEF);
+	stm32_reg_set_bits(&dts->ICIFR, DTS_ICIFR_TS1_CITEF);
 
 	/* Give semaphore */
 	k_sem_give(&data->sem_isr);
@@ -73,19 +74,19 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	/* Wait for the sensor to be ready (~40µS delay after enabling it) */
-	while (READ_BIT(dts->SR, DTS_SR_TS1_RDY) == 0) {
+	while (stm32_reg_read_bits(&dts->SR, DTS_SR_TS1_RDY) == 0) {
 		k_yield();
 	}
 
 	/* Trigger a measurement */
-	SET_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
+	stm32_reg_set_bits(&dts->CFGR1, DTS_CFGR1_TS1_START);
+	stm32_reg_clear_bits(&dts->CFGR1, DTS_CFGR1_TS1_START);
 
 	/* Wait for interrupt */
 	k_sem_take(&data->sem_isr, K_FOREVER);
 
 	/* Read value */
-	data->raw = READ_REG(dts->DR);
+	data->raw = stm32_reg_read(&dts->DR);
 
 	k_mutex_unlock(&data->mutex);
 
@@ -119,20 +120,20 @@ static void stm32_digi_temp_configure(const struct device *dev)
 	 * Allowed values are between 0 and 127.
 	 */
 	clk_div = MIN(DIV_ROUND_UP(data->pclk_freq, ONE_MHZ), 127);
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
-		   clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
+			      clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
 
 	/* Select PCLK as reference clock */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
-		   0 << DTS_CFGR1_REFCLK_SEL_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
+			      0 << DTS_CFGR1_REFCLK_SEL_Pos);
 
 	/* Select trigger */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
-		   0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
+			      0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
 
 	/* Set sampling time */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
-		   SAMPLING_TIME << DTS_CFGR1_TS1_SMP_TIME_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
+			      SAMPLING_TIME << DTS_CFGR1_TS1_SMP_TIME_Pos);
 }
 
 static void stm32_digi_temp_enable(const struct device *dev)
@@ -141,10 +142,10 @@ static void stm32_digi_temp_enable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Enable the sensor */
-	SET_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	stm32_reg_set_bits(&dts->CFGR1, DTS_CFGR1_TS1_EN);
 
 	/* Enable interrupt */
-	SET_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	stm32_reg_set_bits(&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -154,10 +155,10 @@ static void stm32_digi_temp_disable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Disable interrupt */
-	CLEAR_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	stm32_reg_clear_bits(&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 
 	/* Disable the sensor */
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	stm32_reg_clear_bits(&dts->CFGR1, DTS_CFGR1_TS1_EN);
 }
 #endif
 
@@ -262,33 +263,30 @@ static DEVICE_API(sensor, stm32_digi_temp_driver_api) = {
 	.channel_get = stm32_digi_temp_channel_get,
 };
 
-#define STM32_DIGI_TEMP_INIT(index)							\
-static void stm32_digi_temp_irq_config_func_##index(const struct device *dev)		\
-{											\
-	IRQ_CONNECT(DT_INST_IRQN(index),						\
-		    DT_INST_IRQ(index, priority),					\
-		    stm32_digi_temp_isr, DEVICE_DT_INST_GET(index), 0);			\
-	irq_enable(DT_INST_IRQN(index));						\
-}											\
-											\
-static struct stm32_digi_temp_data stm32_digi_temp_dev_data_##index;			\
-											\
-static const struct stm32_digi_temp_config stm32_digi_temp_dev_config_##index = {	\
-	.base = (DTS_TypeDef *)DT_INST_REG_ADDR(index),					\
-	.pclken = {									\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),				\
-		.bus = DT_INST_CLOCKS_CELL(index, bus)					\
-	},										\
-	.irq_config = stm32_digi_temp_irq_config_func_##index,				\
-};											\
-											\
-PM_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_pm_action);				\
-											\
-SENSOR_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_init,				\
-			     PM_DEVICE_DT_INST_GET(index),				\
-			     &stm32_digi_temp_dev_data_##index,				\
-			     &stm32_digi_temp_dev_config_##index,			\
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-			     &stm32_digi_temp_driver_api);				\
+#define STM32_DIGI_TEMP_INIT(index)								\
+	static void stm32_digi_temp_irq_config_func_##index(const struct device *dev)		\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(index),						\
+			    DT_INST_IRQ(index, priority),					\
+			    stm32_digi_temp_isr, DEVICE_DT_INST_GET(index), 0);			\
+		irq_enable(DT_INST_IRQN(index));						\
+	}											\
+												\
+	static struct stm32_digi_temp_data stm32_digi_temp_dev_data_##index;			\
+												\
+	static const struct stm32_digi_temp_config stm32_digi_temp_dev_config_##index = {	\
+		.base = (DTS_TypeDef *)DT_INST_REG_ADDR(index),					\
+		.pclken = STM32_DT_INST_CLOCK_INFO(index),					\
+		.irq_config = stm32_digi_temp_irq_config_func_##index,				\
+	};											\
+												\
+	PM_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_pm_action);				\
+												\
+	SENSOR_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_init,				\
+				     PM_DEVICE_DT_INST_GET(index),				\
+				     &stm32_digi_temp_dev_data_##index,				\
+				     &stm32_digi_temp_dev_config_##index,			\
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+				     &stm32_digi_temp_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DIGI_TEMP_INIT)

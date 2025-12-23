@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GNSS_RTK
+	bool "GNSS RTK client"
+	select EXPERIMENTAL
+	help
+	  Enable GNSS RTK data-correction clients
+
+if GNSS_RTK
+
+rsource "protocol/Kconfig"
+rsource "serial/Kconfig"
+
+module = GNSS_RTK
+module-str = GNSS RTK
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

@@ -747,7 +747,7 @@ static int bmi270_init(const struct device *dev)
 		k_usleep(BMI270_CONFIG_FILE_POLL_PERIOD_US);
 	}
 
-	if (tries == BMI270_CONFIG_FILE_RETRIES) {
+	if (tries > BMI270_CONFIG_FILE_RETRIES) {
 		return -EIO;
 	}
 
@@ -808,7 +808,7 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 /* Initializes a struct bmi270_config for an instance on a SPI bus. */
 #define BMI270_CONFIG_SPI(inst)				\
 	.bus.spi = SPI_DT_SPEC_INST_GET(		\
-		inst, BMI270_SPI_OPERATION, 0),		\
+		inst, BMI270_SPI_OPERATION),		\
 	.bus_io = &bmi270_bus_io_spi,
 
 /* Initializes a struct bmi270_config for an instance on an I2C bus. */

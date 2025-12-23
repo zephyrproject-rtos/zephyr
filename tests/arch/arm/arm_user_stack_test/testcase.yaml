@@ -1,0 +1,18 @@
+common:
+  tags:
+    - arm
+  timeout: 120
+  # TODO: remove the platform_exclude once the issue with MPS2/AN385 is fixed.
+  platform_exclude:
+    - mps2/an385
+tests:
+  arch.arm.user.stack:
+    filter: CONFIG_CPU_CORTEX_M
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  arch.arm.user.stack.float:
+    filter: CONFIG_CPU_CORTEX_M and CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y

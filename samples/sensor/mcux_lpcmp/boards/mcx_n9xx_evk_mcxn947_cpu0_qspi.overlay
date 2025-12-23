@@ -9,6 +9,14 @@
  * Apply input voltage to LPCMP on header J1-pin 14 (P1_2)
  */
 /delete-node/ &lpcmp0;
+
 lpcmp0: &lpcmp2 {
+	/delete-property/ compatible;
+	/delete-property/ clocks;
+	#io-channel-cells = <2>;
+	compatible = "nxp,sensor-lpcmp";
 	function-clock = "CMP_CLOCK";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+	status = "okay";
 };

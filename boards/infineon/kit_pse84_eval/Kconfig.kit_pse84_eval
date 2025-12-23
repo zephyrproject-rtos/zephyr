@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# PSOC E84 Configuration
+
+config BOARD_KIT_PSE84_EVAL
+	select SOC_PSE846GPS2DBZC4A_M33 if BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33
+	select SOC_PSE846GPS2DBZC4A_M55 if BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55

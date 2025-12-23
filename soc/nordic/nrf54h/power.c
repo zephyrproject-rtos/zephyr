@@ -10,6 +10,7 @@
 #include <zephyr/arch/common/pm_s2ram.h>
 #include <hal/nrf_resetinfo.h>
 #include <hal/nrf_memconf.h>
+#include <hal/nrf_cache.h>
 #include <zephyr/cache.h>
 #include <power.h>
 #include <soc_lrcconf.h>
@@ -87,18 +88,48 @@ void nrf_poweroff(void)
 	CODE_UNREACHABLE;
 }
 
-static void s2idle_enter(uint8_t substate_id)
+#if CONFIG_MCUBOOT
+static __ramfunc
+#else
+static __attribute__((__used__, noinline))
+#endif
+void cache_retain_and_sleep(void)
 {
+	nrf_cache_task_trigger(NRF_DCACHE, NRF_CACHE_TASK_SAVE);
+	nrf_cache_task_trigger(NRF_ICACHE, NRF_CACHE_TASK_SAVE);
+	while (nrf_cache_busy_check(NRF_DCACHE) ||
+		  nrf_cache_busy_check(NRF_ICACHE)) {
+
+	}
+
+	__set_BASEPRI(0);
+	__ISB();
+	__DSB();
+	__WFI();
+
+	nrf_cache_task_trigger(NRF_ICACHE, NRF_CACHE_TASK_RESTORE);
+	nrf_cache_task_trigger(NRF_DCACHE, NRF_CACHE_TASK_RESTORE);
+	while (nrf_cache_busy_check(NRF_DCACHE) ||
+		  nrf_cache_busy_check(NRF_ICACHE)) {
+
+	}
+}
+
+void s2idle_enter(uint8_t substate_id)
+{
+#if !defined(CONFIG_SOC_NRF54H20_CPURAD)
+	soc_lrcconf_poweron_request(&soc_node, NRF_LRCCONF_POWER_MAIN);
+#endif
 	switch (substate_id) {
 	case 0:
 		/* Substate for idle with cache powered on - not implemented yet. */
 		break;
-	case 1: /* Substate for idle with cache retained - not implemented yet. */
-		break;
+	case 1: /* Substate for idle with cache retained. */
+		soc_lrcconf_poweron_release(&soc_node, NRF_LRCCONF_POWER_DOMAIN_0);
+		nrf_soc_memconf_retain_set(true);
+		cache_retain_and_sleep();
+		return;
 	case 2: /* Substate for idle with cache disabled. */
-#if !defined(CONFIG_SOC_NRF54H20_CPURAD)
-		soc_lrcconf_poweron_request(&soc_node, NRF_LRCCONF_POWER_MAIN);
-#endif
 		common_suspend();
 		break;
 	default: /* Unknown substate. */
@@ -117,17 +148,19 @@ static void s2idle_exit(uint8_t substate_id)
 	case 0:
 		/* Substate for idle with cache powered on - not implemented yet. */
 		break;
-	case 1: /* Substate for idle with cache retained - not implemented yet. */
+	case 1: /* Substate for idle with cache retained. */
+		nrf_soc_memconf_retain_set(false);
 		break;
 	case 2: /* Substate for idle with cache disabled. */
 		nrf_power_up_cache();
-		common_resume();
-#if !defined(CONFIG_SOC_NRF54H20_CPURAD)
-		soc_lrcconf_poweron_release(&soc_node, NRF_LRCCONF_POWER_MAIN);
-#endif
+		break;
 	default: /* Unknown substate. */
 		return;
 	}
+	common_resume();
+#if !defined(CONFIG_SOC_NRF54H20_CPURAD)
+	soc_lrcconf_poweron_release(&soc_node, NRF_LRCCONF_POWER_MAIN);
+#endif
 }
 
 #if defined(CONFIG_PM_S2RAM)

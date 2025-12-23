@@ -71,8 +71,13 @@
 
 /* Due to limited available memory, don't enable gpiod and gpiof */
 /* (Test cases fail due to 'SRAM' region overflow) */
-&gpiod {status = "disabled";};
-&gpioh {status = "disabled";};
+&gpiod {
+	status = "disabled";
+};
+
+&gpioh {
+	status = "disabled";
+};
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;

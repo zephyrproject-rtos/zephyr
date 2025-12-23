@@ -272,6 +272,10 @@ static int rpl_set(const char *name, size_t len_rd,
 	int err;
 	uint16_t src;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;

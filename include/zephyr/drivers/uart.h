@@ -7,15 +7,17 @@
 
 /**
  * @file
- * @brief Public APIs for UART drivers
+ * @ingroup uart_interface
+ * @brief Main header file for UART driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_UART_H_
 #define ZEPHYR_INCLUDE_DRIVERS_UART_H_
 
 /**
- * @brief UART Interface
- * @defgroup uart_interface UART Interface
+ * @brief Interfaces for Universal Asynchronous Receiver/Transmitter (UART)
+ *        controllers.
+ * @defgroup uart_interface UART
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -145,7 +147,7 @@ typedef void (*uart_irq_callback_user_data_t)(const struct device *dev,
  *
  * @defgroup uart_async Async UART API
  * @since 1.14
- * @version 0.8.0
+ * @version 1.0.0
  * @{
  */
 

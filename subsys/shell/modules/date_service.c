@@ -13,12 +13,6 @@
 
 #include <zephyr/sys/timeutil.h>
 
-#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
-#include <time.h>
-#else
-#include <zephyr/posix/time.h>
-#endif
-
 #define HELP_NONE      "[none]"
 #define HELP_DATE_SET  "[Y-m-d] <H:M:S>"
 
@@ -144,7 +138,7 @@ static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 	struct tm tm;
 	int ret;
 
-	clock_gettime(CLOCK_REALTIME, &tp);
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &tp);
 
 	gmtime_r(&tp.tv_sec, &tm);
 
@@ -177,7 +171,7 @@ static int cmd_date_set(const struct shell *sh, size_t argc, char **argv)
 	}
 	tp.tv_nsec = 0;
 
-	ret = clock_settime(CLOCK_REALTIME, &tp);
+	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &tp);
 	if (ret != 0) {
 		shell_error(sh, "Could not set date %d", ret);
 		return -EINVAL;
@@ -193,7 +187,7 @@ static int cmd_date_get(const struct shell *sh, size_t argc, char **argv)
 	struct timespec tp;
 	struct tm tm;
 
-	clock_gettime(CLOCK_REALTIME, &tp);
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &tp);
 
 	gmtime_r(&tp.tv_sec, &tm);
 

@@ -338,7 +338,7 @@ static inline bool onoff_has_error(const struct onoff_manager *mgr)
  * passes a pointer object associated with an incomplete service
  * operation.
  *
- * @retval non-negative the observed state of the machine at the time
+ * @retval >=0 the observed state of the machine at the time
  * the request was processed, if successful.
  * @retval -EIO if service has recorded an error.
  * @retval -EINVAL if the parameters are invalid.
@@ -359,7 +359,7 @@ int onoff_request(struct onoff_manager *mgr,
  *
  * @param mgr the manager for which a request was successful.
  *
- * @retval non-negative the observed state (ONOFF_STATE_ON) of the
+ * @retval >=0 the observed state (ONOFF_STATE_ON) of the
  * machine at the time of the release, if the release succeeds.
  * @retval -EIO if service has recorded an error.
  * @retval -ENOTSUP if the machine is not in a state that permits
@@ -389,7 +389,7 @@ int onoff_release(struct onoff_manager *mgr);
  * @param cli a pointer to the same client state that was provided
  * when the operation to be cancelled was issued.
  *
- * @retval non-negative the observed state of the machine at the time
+ * @retval >=0 the observed state of the machine at the time
  * of the cancellation, if the cancellation succeeds.  On successful
  * cancellation ownership of @c *cli reverts to the client.
  * @retval -EINVAL if the parameters are invalid.
@@ -430,7 +430,7 @@ int onoff_cancel(struct onoff_manager *mgr,
  *
  * @retval -EINVAL if the parameters are invalid.
  *
- * @retval negative other errors produced by onoff_release().
+ * @retval <0 other errors produced by onoff_release().
  */
 static inline int onoff_cancel_or_release(struct onoff_manager *mgr,
 					  struct onoff_client *cli)
@@ -472,7 +472,7 @@ static inline int onoff_cancel_or_release(struct onoff_manager *mgr,
  * if cli references an object associated with an incomplete service
  * operation.
  *
- * @retval non-negative the observed state of the machine at the time
+ * @retval >=0 the observed state of the machine at the time
  * of the reset, if the reset succeeds.
  * @retval -ENOTSUP if reset is not supported by the service.
  * @retval -EINVAL if the parameters are invalid.

@@ -9,7 +9,6 @@
 / {
 	soc {
 		pinctrl: pin-controller@40008000 {
-
 			/omit-if-no-ref/ swdio_p0_0: swdio_p0_0 {
 				pinmux = <MAX32_PINMUX(0, 0, AF1)>;
 			};
@@ -361,7 +360,6 @@
 			/omit-if-no-ref/ tmr3c_ia_p0_30: tmr3c_ia_p0_30 {
 				pinmux = <MAX32_PINMUX(0, 30, AF3)>;
 			};
-
 		};
 	};
 };

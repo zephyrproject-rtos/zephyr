@@ -24,6 +24,5 @@
 		dmamux1: dmamux@40020800 {
 			dma-channels = <12>;
 		};
-
 	};
 };

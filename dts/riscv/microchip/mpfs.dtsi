@@ -15,12 +15,14 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "sifive,e51", "riscv";
 			device_type = "cpu";
-			reg = < 0x0 >;
+			reg = <0x0>;
 			riscv,isa = "rv64imac_zicsr_zifencei";
+
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -33,8 +35,9 @@
 			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
-			reg = < 0x1 >;
+			reg = <0x1>;
 			riscv,isa = "rv64gc";
+
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -47,8 +50,9 @@
 			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
-			reg = < 0x2 >;
+			reg = <0x2>;
 			riscv,isa = "rv64gc";
+
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -61,8 +65,9 @@
 			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
-			reg = < 0x3 >;
+			reg = <0x3>;
 			riscv,isa = "rv64gc";
+
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -75,8 +80,9 @@
 			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
-			reg = < 0x4 >;
+			reg = <0x4>;
 			riscv,isa = "rv64gc";
+
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -105,23 +111,23 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			interrupts-extended = <&hlic0 3 &hlic0 7
-							&hlic1 3 &hlic1 7
-							&hlic2 3 &hlic2 7
-							&hlic3 3 &hlic3 7
-							&hlic4 3 &hlic4 7>;
+					       &hlic1 3 &hlic1 7
+					       &hlic2 3 &hlic2 7
+					       &hlic3 3 &hlic3 7
+					       &hlic4 3 &hlic4 7>;
 			interrupt-names = "soft0", "timer0", "soft1", "timer1",
-							"soft2", "timer2", "soft3", "timer3",
-							"soft4", "timer4";
+					  "soft2", "timer2", "soft3", "timer3",
+					  "soft4", "timer4";
 			reg = <0x2000000 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
 			interrupts-extended = <&hlic0 7
-						&hlic1 7
-						&hlic2 7
-						&hlic3 7
-						&hlic4 7>;
+					       &hlic1 7
+					       &hlic2 7
+					       &hlic3 7
+					       &hlic4 7>;
 			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
@@ -132,10 +138,10 @@
 			#address-cells = <1>;
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
-							&hlic1 11 &hlic1 9
-							&hlic2 11 &hlic2 9
-							&hlic3 11 &hlic3 9
-							&hlic4 11 &hlic4 9>;
+					       &hlic1 11 &hlic1 9
+					       &hlic2 11 &hlic2 9
+					       &hlic3 11 &hlic3 9
+					       &hlic4 11 &hlic4 9>;
 			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <186>;
@@ -144,7 +150,7 @@
 		mbox: mailbox@37020000 {
 			compatible = "microchip,mpfs-mailbox";
 			reg = <0x37020000 0x58>, <0x2000318C 0x40>,
-				<0x37020800 0x100>;
+			      <0x37020800 0x100>;
 			interrupt-parent = <&plic>;
 			interrupts = <96 1>;
 			#mbox-cells = <1>;
@@ -154,6 +160,7 @@
 		mpfs_top_sysreg: syscon@20002000 {
 			compatible = "syscon";
 			reg = <0x20002000 0x1000>;
+
 			reset: reset {
 				compatible = "microchip,mpfs-reset";
 				#reset-cells = <1>;

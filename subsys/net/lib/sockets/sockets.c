@@ -74,7 +74,7 @@ static inline void *get_sock_vtable(int sock,
 	return ctx;
 }
 
-size_t msghdr_non_empty_iov_count(const struct msghdr *msg)
+size_t msghdr_non_empty_iov_count(const struct net_msghdr *msg)
 {
 	size_t non_empty_iov_count = 0;
 
@@ -110,7 +110,7 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		int ret;
 
 		if (sock_family->family != family &&
-		    sock_family->family != AF_UNSPEC) {
+		    sock_family->family != NET_AF_UNSPEC) {
 			continue;
 		}
 
@@ -215,7 +215,7 @@ static inline int z_vrfy_zsock_shutdown(int sock, int how)
 #include <zephyr/syscalls/zsock_shutdown_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+int z_impl_zsock_bind(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -229,22 +229,22 @@ int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr,
-				    socklen_t addrlen)
+static inline int z_vrfy_zsock_bind(int sock, const struct net_sockaddr *addr,
+				    net_socklen_t addrlen)
 {
-	struct sockaddr_storage dest_addr_copy;
+	struct net_sockaddr_storage dest_addr_copy;
 
 	K_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
 	K_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
 
-	return z_impl_zsock_bind(sock, (struct sockaddr *)&dest_addr_copy,
+	return z_impl_zsock_bind(sock, (struct net_sockaddr *)&dest_addr_copy,
 				addrlen);
 }
 #include <zephyr/syscalls/zsock_bind_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_connect(int sock, const struct sockaddr *addr,
-			socklen_t addrlen)
+int z_impl_zsock_connect(int sock, const struct net_sockaddr *addr,
+			net_socklen_t addrlen)
 {
 	int ret;
 
@@ -258,15 +258,15 @@ int z_impl_zsock_connect(int sock, const struct sockaddr *addr,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_zsock_connect(int sock, const struct sockaddr *addr,
-			socklen_t addrlen)
+int z_vrfy_zsock_connect(int sock, const struct net_sockaddr *addr,
+			net_socklen_t addrlen)
 {
-	struct sockaddr_storage dest_addr_copy;
+	struct net_sockaddr_storage dest_addr_copy;
 
 	K_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
 	K_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
 
-	return z_impl_zsock_connect(sock, (struct sockaddr *)&dest_addr_copy,
+	return z_impl_zsock_connect(sock, (struct net_sockaddr *)&dest_addr_copy,
 				   addrlen);
 }
 #include <zephyr/syscalls/zsock_connect_mrsh.c>
@@ -293,7 +293,7 @@ static inline int z_vrfy_zsock_listen(int sock, int backlog)
 #include <zephyr/syscalls/zsock_listen_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+int z_impl_zsock_accept(int sock, struct net_sockaddr *addr, net_socklen_t *addrlen)
 {
 	int new_sock;
 
@@ -304,27 +304,27 @@ int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, accept, new_sock, addr, addrlen,
 				       new_sock < 0 ? -errno : 0);
 
-	(void)sock_obj_core_alloc_find(sock, new_sock, SOCK_STREAM);
+	(void)sock_obj_core_alloc_find(sock, new_sock, NET_SOCK_STREAM);
 
 	return new_sock;
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
-				      socklen_t *addrlen)
+static inline int z_vrfy_zsock_accept(int sock, struct net_sockaddr *addr,
+				      net_socklen_t *addrlen)
 {
-	socklen_t addrlen_copy;
+	net_socklen_t addrlen_copy;
 	int ret;
 
 	K_OOPS(addrlen && k_usermode_from_copy(&addrlen_copy, addrlen,
-					   sizeof(socklen_t)));
+					   sizeof(net_socklen_t)));
 	K_OOPS(addr && K_SYSCALL_MEMORY_WRITE(addr, addrlen ? addrlen_copy : 0));
 
-	ret = z_impl_zsock_accept(sock, (struct sockaddr *)addr,
+	ret = z_impl_zsock_accept(sock, (struct net_sockaddr *)addr,
 				  addrlen ? &addrlen_copy : NULL);
 
 	K_OOPS(ret >= 0 && addrlen && k_usermode_to_copy(addrlen, &addrlen_copy,
-						     sizeof(socklen_t)));
+						     sizeof(net_socklen_t)));
 
 	return ret;
 }
@@ -332,7 +332,7 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #endif /* CONFIG_USERSPACE */
 
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
-			   const struct sockaddr *dest_addr, socklen_t addrlen)
+			   const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	int bytes_sent;
 
@@ -351,9 +351,9 @@ ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 
 #ifdef CONFIG_USERSPACE
 ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
-			   const struct sockaddr *dest_addr, socklen_t addrlen)
+			   const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
-	struct sockaddr_storage dest_addr_copy;
+	struct net_sockaddr_storage dest_addr_copy;
 
 	K_OOPS(K_SYSCALL_MEMORY_READ(buf, len));
 	if (dest_addr) {
@@ -363,13 +363,13 @@ ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	}
 
 	return z_impl_zsock_sendto(sock, (const void *)buf, len, flags,
-			dest_addr ? (struct sockaddr *)&dest_addr_copy : NULL,
+			dest_addr ? (struct net_sockaddr *)&dest_addr_copy : NULL,
 			addrlen);
 }
 #include <zephyr/syscalls/zsock_sendto_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
+ssize_t z_impl_zsock_sendmsg(int sock, const struct net_msghdr *msg, int flags)
 {
 	int bytes_sent;
 
@@ -387,10 +387,10 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 
 #ifdef CONFIG_USERSPACE
 static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
-					   const struct msghdr *msg,
+					   const struct net_msghdr *msg,
 					   int flags)
 {
-	struct msghdr msg_copy;
+	struct net_msghdr msg_copy;
 	size_t i;
 	int ret;
 
@@ -400,7 +400,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 	msg_copy.msg_control = NULL;
 
 	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov,
-				       msg->msg_iovlen * sizeof(struct iovec));
+				       msg->msg_iovlen * sizeof(struct net_iovec));
 	if (!msg_copy.msg_iov) {
 		errno = ENOMEM;
 		goto fail;
@@ -436,7 +436,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 		}
 	}
 
-	ret = z_impl_zsock_sendmsg(sock, (const struct msghdr *)&msg_copy,
+	ret = z_impl_zsock_sendmsg(sock, (const struct net_msghdr *)&msg_copy,
 				   flags);
 
 	k_free(msg_copy.msg_name);
@@ -475,7 +475,7 @@ fail:
 #endif /* CONFIG_USERSPACE */
 
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
-			     struct sockaddr *src_addr, socklen_t *addrlen)
+			     struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	int bytes_received;
 
@@ -494,9 +494,9 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 #ifdef CONFIG_USERSPACE
 ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
-			      struct sockaddr *src_addr, socklen_t *addrlen)
+			      struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
-	socklen_t addrlen_copy;
+	net_socklen_t addrlen_copy;
 	ssize_t ret;
 
 	if (K_SYSCALL_MEMORY_WRITE(buf, max_len)) {
@@ -506,17 +506,17 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 	if (addrlen) {
 		K_OOPS(k_usermode_from_copy(&addrlen_copy, addrlen,
-					sizeof(socklen_t)));
+					sizeof(net_socklen_t)));
 	}
 	K_OOPS(src_addr && K_SYSCALL_MEMORY_WRITE(src_addr, addrlen_copy));
 
 	ret = z_impl_zsock_recvfrom(sock, (void *)buf, max_len, flags,
-				   (struct sockaddr *)src_addr,
+				   (struct net_sockaddr *)src_addr,
 				   addrlen ? &addrlen_copy : NULL);
 
 	if (addrlen) {
 		K_OOPS(k_usermode_to_copy(addrlen, &addrlen_copy,
-				      sizeof(socklen_t)));
+				      sizeof(net_socklen_t)));
 	}
 
 	return ret;
@@ -524,7 +524,7 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 #include <zephyr/syscalls/zsock_recvfrom_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
+ssize_t z_impl_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 {
 	int bytes_received;
 
@@ -541,9 +541,9 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
+ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 {
-	struct msghdr msg_copy;
+	struct net_msghdr msg_copy;
 	size_t iovlen;
 	size_t i;
 	int ret;
@@ -566,7 +566,7 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 	msg_copy.msg_control = NULL;
 
 	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov,
-				       msg->msg_iovlen * sizeof(struct iovec));
+				       msg->msg_iovlen * sizeof(struct net_iovec));
 	if (!msg_copy.msg_iov) {
 		errno = ENOMEM;
 		goto fail;
@@ -576,7 +576,7 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 	 * next loop fails, we do not try to free non allocated memory
 	 * in fail branch.
 	 */
-	memset(msg_copy.msg_iov, 0, msg->msg_iovlen * sizeof(struct iovec));
+	memset(msg_copy.msg_iov, 0, msg->msg_iovlen * sizeof(struct net_iovec));
 
 	for (i = 0; i < iovlen; i++) {
 		/* TODO: In practice we do not need to copy the actual data
@@ -805,7 +805,7 @@ static inline int z_vrfy_zsock_ioctl_impl(int sock, unsigned long request, va_li
 #include <zephyr/syscalls/zsock_ioctl_impl_mrsh.c>
 #endif
 
-int z_impl_zsock_inet_pton(sa_family_t family, const char *src, void *dst)
+int z_impl_zsock_inet_pton(net_sa_family_t family, const char *src, void *dst)
 {
 	if (net_addr_pton(family, src, dst) == 0) {
 		return 1;
@@ -815,20 +815,20 @@ int z_impl_zsock_inet_pton(sa_family_t family, const char *src, void *dst)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
+static inline int z_vrfy_zsock_inet_pton(net_sa_family_t family,
 					 const char *src, void *dst)
 {
 	int dst_size;
 	char src_copy[NET_IPV6_ADDR_LEN];
-	char dst_copy[sizeof(struct in6_addr)];
+	char dst_copy[sizeof(struct net_in6_addr)];
 	int ret;
 
 	switch (family) {
-	case AF_INET:
-		dst_size = sizeof(struct in_addr);
+	case NET_AF_INET:
+		dst_size = sizeof(struct net_in_addr);
 		break;
-	case AF_INET6:
-		dst_size = sizeof(struct in6_addr);
+	case NET_AF_INET6:
+		dst_size = sizeof(struct net_in6_addr);
 		break;
 	default:
 		errno = EAFNOSUPPORT;
@@ -845,7 +845,7 @@ static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
 #endif
 
 int z_impl_zsock_getsockopt(int sock, int level, int optname,
-			    void *optval, socklen_t *optlen)
+			    void *optval, net_socklen_t *optlen)
 {
 	int ret;
 
@@ -860,9 +860,9 @@ int z_impl_zsock_getsockopt(int sock, int level, int optname,
 
 #ifdef CONFIG_USERSPACE
 int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
-			    void *optval, socklen_t *optlen)
+			    void *optval, net_socklen_t *optlen)
 {
-	socklen_t kernel_optlen = *(socklen_t *)optlen;
+	net_socklen_t kernel_optlen = *(net_socklen_t *)optlen;
 	void *kernel_optval;
 	int ret;
 
@@ -880,7 +880,7 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 
 	K_OOPS(k_usermode_to_copy((void *)optval, kernel_optval, kernel_optlen));
 	K_OOPS(k_usermode_to_copy((void *)optlen, &kernel_optlen,
-			      sizeof(socklen_t)));
+			      sizeof(net_socklen_t)));
 
 	k_free(kernel_optval);
 
@@ -890,7 +890,7 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_zsock_setsockopt(int sock, int level, int optname,
-			    const void *optval, socklen_t optlen)
+			    const void *optval, net_socklen_t optlen)
 {
 	int ret;
 
@@ -906,7 +906,7 @@ int z_impl_zsock_setsockopt(int sock, int level, int optname,
 
 #ifdef CONFIG_USERSPACE
 int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
-			    const void *optval, socklen_t optlen)
+			    const void *optval, net_socklen_t optlen)
 {
 	void *kernel_optval;
 	int ret;
@@ -924,8 +924,8 @@ int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
 #include <zephyr/syscalls/zsock_setsockopt_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_getpeername(int sock, struct sockaddr *addr,
-			     socklen_t *addrlen)
+int z_impl_zsock_getpeername(int sock, struct net_sockaddr *addr,
+			     net_socklen_t *addrlen)
 {
 	int ret;
 
@@ -940,26 +940,26 @@ int z_impl_zsock_getpeername(int sock, struct sockaddr *addr,
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_getpeername(int sock, struct sockaddr *addr,
-					   socklen_t *addrlen)
+static inline int z_vrfy_zsock_getpeername(int sock, struct net_sockaddr *addr,
+					   net_socklen_t *addrlen)
 {
-	socklen_t addrlen_copy;
+	net_socklen_t addrlen_copy;
 	int ret;
 
 	K_OOPS(k_usermode_from_copy(&addrlen_copy, (void *)addrlen,
-				sizeof(socklen_t)));
+				sizeof(net_socklen_t)));
 
 	if (K_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {
 		errno = EFAULT;
 		return -1;
 	}
 
-	ret = z_impl_zsock_getpeername(sock, (struct sockaddr *)addr,
+	ret = z_impl_zsock_getpeername(sock, (struct net_sockaddr *)addr,
 				       &addrlen_copy);
 
 	if (ret == 0 &&
 	    k_usermode_to_copy((void *)addrlen, &addrlen_copy,
-			   sizeof(socklen_t))) {
+			   sizeof(net_socklen_t))) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -969,8 +969,8 @@ static inline int z_vrfy_zsock_getpeername(int sock, struct sockaddr *addr,
 #include <zephyr/syscalls/zsock_getpeername_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
-			     socklen_t *addrlen)
+int z_impl_zsock_getsockname(int sock, struct net_sockaddr *addr,
+			     net_socklen_t *addrlen)
 {
 	int ret;
 
@@ -985,26 +985,26 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_getsockname(int sock, struct sockaddr *addr,
-					   socklen_t *addrlen)
+static inline int z_vrfy_zsock_getsockname(int sock, struct net_sockaddr *addr,
+					   net_socklen_t *addrlen)
 {
-	socklen_t addrlen_copy;
+	net_socklen_t addrlen_copy;
 	int ret;
 
 	K_OOPS(k_usermode_from_copy(&addrlen_copy, (void *)addrlen,
-				sizeof(socklen_t)));
+				sizeof(net_socklen_t)));
 
 	if (K_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {
 		errno = EFAULT;
 		return -1;
 	}
 
-	ret = z_impl_zsock_getsockname(sock, (struct sockaddr *)addr,
+	ret = z_impl_zsock_getsockname(sock, (struct net_sockaddr *)addr,
 				       &addrlen_copy);
 
 	if (ret == 0 &&
 	    k_usermode_to_copy((void *)addrlen, &addrlen_copy,
-			   sizeof(socklen_t))) {
+			   sizeof(net_socklen_t))) {
 		errno = EINVAL;
 		return -1;
 	}

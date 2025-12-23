@@ -31,9 +31,9 @@ extern "C" {
 
 /** IGMP parameters */
 struct igmp_param {
-	struct in_addr *source_list; /**< List of sources to include or exclude */
-	size_t sources_len;          /**< Length of source list */
-	bool include;                /**< Source list filter type */
+	struct net_in_addr *source_list; /**< List of sources to include or exclude */
+	size_t sources_len;              /**< Length of source list */
+	bool include;                    /**< Source list filter type */
 };
 
 /**
@@ -46,10 +46,10 @@ struct igmp_param {
  * @return Return 0 if joining was done, <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV4_IGMP)
-int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
+int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 		       const struct igmp_param *param);
 #else
-static inline int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
+static inline int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 				     const struct igmp_param *param)
 {
 	ARG_UNUSED(iface);
@@ -69,10 +69,10 @@ static inline int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr 
  * @return Return 0 if leaving is done, <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV4_IGMP)
-int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr);
+int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr);
 #else
 static inline int net_ipv4_igmp_leave(struct net_if *iface,
-				      const struct in_addr *addr)
+				      const struct net_in_addr *addr)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(addr);

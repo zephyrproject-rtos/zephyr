@@ -7,17 +7,17 @@
 / {
 	ipc {
 		cpusec_cpuapp_ipc: ipc-1-2 {
-			compatible = "zephyr,ipc-icmsg";
+			compatible = "nordic,ironside-call";
 			status = "disabled";
-			dcache-alignment = <32>;
+			memory-region = <&cpusec_cpuapp_ipc_shm>;
 			mboxes = <&cpusec_bellboard 12>,
 				 <&cpuapp_bellboard 0>;
 		};
 
 		cpusec_cpurad_ipc: ipc-1-3 {
-			compatible = "zephyr,ipc-icmsg";
+			compatible = "nordic,ironside-call";
 			status = "disabled";
-			dcache-alignment = <32>;
+			memory-region = <&cpusec_cpurad_ipc_shm>;
 			mboxes = <&cpusec_bellboard 18>,
 				 <&cpurad_bellboard 0>;
 		};
@@ -33,6 +33,7 @@
 		cpuapp_cpusys_ipc: ipc-2-12 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
+			unbound = "enable";
 			dcache-alignment = <32>;
 			mboxes = <&cpuapp_bellboard 6>,
 				 <&cpusys_vevif 12>;

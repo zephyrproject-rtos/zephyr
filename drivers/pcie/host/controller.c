@@ -17,6 +17,21 @@ LOG_MODULE_REGISTER(pcie_core, LOG_LEVEL_INF);
 
 /* arch agnostic PCIe API implementation */
 
+static void pcie_ctrl_set_cmd(const struct device *dev, pcie_bdf_t bdf, uint32_t bits, bool on)
+{
+	uint32_t cmdstat;
+
+	cmdstat = pcie_ctrl_conf_read(dev, bdf, PCIE_CONF_CMDSTAT);
+
+	if (on) {
+		cmdstat |= bits;
+	} else {
+		cmdstat &= ~bits;
+	}
+
+	pcie_ctrl_conf_write(dev, bdf, PCIE_CONF_CMDSTAT, cmdstat);
+}
+
 uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
 {
 	const struct device *dev;
@@ -77,7 +92,7 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 		bool found_mem64 = false;
 		bool found_mem = false;
 
-		data = scratch = pcie_conf_read(bdf, reg);
+		data = scratch = pcie_ctrl_conf_read(ctrl_dev, bdf, reg);
 
 		if (PCIE_CONF_BAR_INVAL_FLAGS(data)) {
 			continue;
@@ -87,7 +102,8 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 			found_mem = true;
 			if (PCIE_CONF_BAR_64(data)) {
 				found_mem64 = true;
-				scratch |= ((uint64_t)pcie_conf_read(bdf, reg + 1)) << 32;
+				scratch |= ((uint64_t)pcie_ctrl_conf_read(ctrl_dev, bdf, reg + 1))
+					   << 32;
 				if (PCIE_CONF_BAR_ADDR(scratch) == PCIE_CONF_BAR_INVAL64) {
 					continue;
 				}
@@ -98,14 +114,14 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 			}
 		}
 
-		pcie_conf_write(bdf, reg, 0xFFFFFFFF);
-		size = pcie_conf_read(bdf, reg);
-		pcie_conf_write(bdf, reg, scratch & 0xFFFFFFFF);
+		pcie_ctrl_conf_write(ctrl_dev, bdf, reg, 0xFFFFFFFF);
+		size = pcie_ctrl_conf_read(ctrl_dev, bdf, reg);
+		pcie_ctrl_conf_write(ctrl_dev, bdf, reg, scratch & 0xFFFFFFFF);
 
 		if (found_mem64) {
-			pcie_conf_write(bdf, reg + 1, 0xFFFFFFFF);
-			size |= ((uint64_t)pcie_conf_read(bdf, reg + 1)) << 32;
-			pcie_conf_write(bdf, reg + 1, scratch >> 32);
+			pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, 0xFFFFFFFF);
+			size |= ((uint64_t)pcie_ctrl_conf_read(ctrl_dev, bdf, reg + 1)) << 32;
+			pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, scratch >> 32);
 		}
 
 		if (!PCIE_CONF_BAR_ADDR(size)) {
@@ -140,9 +156,9 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 				bar_bus_addr, bar_bus_addr + bar_size - 1,
 				bar_phys_addr, bar_phys_addr + bar_size - 1);
 
-			pcie_conf_write(bdf, reg, bar_bus_addr & 0xFFFFFFFF);
+			pcie_ctrl_conf_write(ctrl_dev, bdf, reg, bar_bus_addr & 0xFFFFFFFF);
 			if (found_mem64) {
-				pcie_conf_write(bdf, reg + 1, bar_bus_addr >> 32);
+				pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, bar_bus_addr >> 32);
 			}
 		} else {
 			LOG_INF("[%02x:%02x.%x] BAR%d size 0x%lx Failed memory allocation.",
@@ -159,56 +175,59 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 static bool pcie_generic_ctrl_enumerate_type1(const struct device *ctrl_dev, pcie_bdf_t bdf,
 					      unsigned int bus_number)
 {
-	uint32_t class = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
+	uint32_t class = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_CONF_CLASSREV);
 
 	/* Handle only PCI-to-PCI bridge for now */
 	if (PCIE_CONF_CLASSREV_CLASS(class) == 0x06 &&
 	    PCIE_CONF_CLASSREV_SUBCLASS(class) == 0x04) {
-		uint32_t number = pcie_conf_read(bdf, PCIE_BUS_NUMBER);
+		uint32_t number = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_BUS_NUMBER);
 		uintptr_t bar_base_addr;
 
 		pcie_generic_ctrl_enumerate_bars(ctrl_dev, bdf, 2);
 
 		/* Configure bus number registers */
-		pcie_conf_write(bdf, PCIE_BUS_NUMBER,
-				PCIE_BUS_NUMBER_VAL(PCIE_BDF_TO_BUS(bdf),
-						    bus_number,
-						    0xff, /* set max until we finished scanning */
-						    PCIE_SECONDARY_LATENCY_TIMER(number)));
+		pcie_ctrl_conf_write(
+			ctrl_dev, bdf, PCIE_BUS_NUMBER,
+			PCIE_BUS_NUMBER_VAL(PCIE_BDF_TO_BUS(bdf), bus_number,
+					    0xff, /* set max until we finished scanning */
+					    PCIE_SECONDARY_LATENCY_TIMER(number)));
 
 		/* I/O align on 4k boundary */
 		if (pcie_ctrl_region_get_allocate_base(ctrl_dev, bdf, false, false,
 						       KB(4), &bar_base_addr)) {
-			uint32_t io = pcie_conf_read(bdf, PCIE_IO_SEC_STATUS);
-			uint32_t io_upper = pcie_conf_read(bdf, PCIE_IO_BASE_LIMIT_UPPER);
+			uint32_t io = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_IO_SEC_STATUS);
+			uint32_t io_upper =
+				pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_IO_BASE_LIMIT_UPPER);
 
-			pcie_conf_write(bdf, PCIE_IO_SEC_STATUS,
-					PCIE_IO_SEC_STATUS_VAL(PCIE_IO_BASE(io),
-							       PCIE_IO_LIMIT(io),
-							       PCIE_SEC_STATUS(io)));
+			pcie_ctrl_conf_write(ctrl_dev, bdf, PCIE_IO_SEC_STATUS,
+					     PCIE_IO_SEC_STATUS_VAL(PCIE_IO_BASE(io),
+								    PCIE_IO_LIMIT(io),
+								    PCIE_SEC_STATUS(io)));
 
-			pcie_conf_write(bdf, PCIE_IO_BASE_LIMIT_UPPER,
+			pcie_ctrl_conf_write(
+				ctrl_dev, bdf, PCIE_IO_BASE_LIMIT_UPPER,
 				PCIE_IO_BASE_LIMIT_UPPER_VAL(PCIE_IO_BASE_UPPER(io_upper),
 							     PCIE_IO_LIMIT_UPPER(io_upper)));
 
-			pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_IO, true);
+			pcie_ctrl_set_cmd(ctrl_dev, bdf, PCIE_CONF_CMDSTAT_IO, true);
 		}
 
 		/* MEM align on 1MiB boundary */
 		if (pcie_ctrl_region_get_allocate_base(ctrl_dev, bdf, true, false,
 						       MB(1), &bar_base_addr)) {
-			uint32_t mem = pcie_conf_read(bdf, PCIE_MEM_BASE_LIMIT);
+			uint32_t mem = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_MEM_BASE_LIMIT);
 
-			pcie_conf_write(bdf, PCIE_MEM_BASE_LIMIT,
-					PCIE_MEM_BASE_LIMIT_VAL((bar_base_addr & 0xfff00000) >> 16,
-								PCIE_MEM_LIMIT(mem)));
+			pcie_ctrl_conf_write(
+				ctrl_dev, bdf, PCIE_MEM_BASE_LIMIT,
+				PCIE_MEM_BASE_LIMIT_VAL((bar_base_addr & 0xfff00000) >> 16,
+							PCIE_MEM_LIMIT(mem)));
 
-			pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM, true);
+			pcie_ctrl_set_cmd(ctrl_dev, bdf, PCIE_CONF_CMDSTAT_MEM, true);
 		}
 
 		/* TODO: add support for prefetchable */
 
-		pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MASTER, true);
+		pcie_ctrl_set_cmd(ctrl_dev, bdf, PCIE_CONF_CMDSTAT_MASTER, true);
 
 		return true;
 	}
@@ -219,11 +238,11 @@ static bool pcie_generic_ctrl_enumerate_type1(const struct device *ctrl_dev, pci
 static void pcie_generic_ctrl_post_enumerate_type1(const struct device *ctrl_dev, pcie_bdf_t bdf,
 						   unsigned int bus_number)
 {
-	uint32_t number = pcie_conf_read(bdf, PCIE_BUS_NUMBER);
+	uint32_t number = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_BUS_NUMBER);
 	uintptr_t bar_base_addr;
 
 	/* Configure bus subordinate */
-	pcie_conf_write(bdf, PCIE_BUS_NUMBER,
+	pcie_ctrl_conf_write(ctrl_dev, bdf, PCIE_BUS_NUMBER,
 			PCIE_BUS_NUMBER_VAL(PCIE_BUS_PRIMARY_NUMBER(number),
 				PCIE_BUS_SECONDARY_NUMBER(number),
 				bus_number - 1,
@@ -232,27 +251,29 @@ static void pcie_generic_ctrl_post_enumerate_type1(const struct device *ctrl_dev
 	/* I/O align on 4k boundary */
 	if (pcie_ctrl_region_get_allocate_base(ctrl_dev, bdf, false, false,
 					       KB(4), &bar_base_addr)) {
-		uint32_t io = pcie_conf_read(bdf, PCIE_IO_SEC_STATUS);
-		uint32_t io_upper = pcie_conf_read(bdf, PCIE_IO_BASE_LIMIT_UPPER);
+		uint32_t io = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_IO_SEC_STATUS);
+		uint32_t io_upper = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_IO_BASE_LIMIT_UPPER);
 
-		pcie_conf_write(bdf, PCIE_IO_SEC_STATUS,
-				PCIE_IO_SEC_STATUS_VAL(PCIE_IO_BASE(io),
-					((bar_base_addr - 1) & 0x0000f000) >> 16,
-					PCIE_SEC_STATUS(io)));
+		pcie_ctrl_conf_write(
+			ctrl_dev, bdf, PCIE_IO_SEC_STATUS,
+			PCIE_IO_SEC_STATUS_VAL(PCIE_IO_BASE(io),
+					       ((bar_base_addr - 1) & 0x0000f000) >> 16,
+					       PCIE_SEC_STATUS(io)));
 
-		pcie_conf_write(bdf, PCIE_IO_BASE_LIMIT_UPPER,
-				PCIE_IO_BASE_LIMIT_UPPER_VAL(PCIE_IO_BASE_UPPER(io_upper),
-					((bar_base_addr - 1) & 0xffff0000) >> 16));
+		pcie_ctrl_conf_write(
+			ctrl_dev, bdf, PCIE_IO_BASE_LIMIT_UPPER,
+			PCIE_IO_BASE_LIMIT_UPPER_VAL(PCIE_IO_BASE_UPPER(io_upper),
+						     ((bar_base_addr - 1) & 0xffff0000) >> 16));
 	}
 
 	/* MEM align on 1MiB boundary */
 	if (pcie_ctrl_region_get_allocate_base(ctrl_dev, bdf, true, false,
 					       MB(1), &bar_base_addr)) {
-		uint32_t mem = pcie_conf_read(bdf, PCIE_MEM_BASE_LIMIT);
+		uint32_t mem = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_MEM_BASE_LIMIT);
 
-		pcie_conf_write(bdf, PCIE_MEM_BASE_LIMIT,
-				PCIE_MEM_BASE_LIMIT_VAL(PCIE_MEM_BASE(mem),
-					(bar_base_addr - 1) >> 16));
+		pcie_ctrl_conf_write(
+			ctrl_dev, bdf, PCIE_MEM_BASE_LIMIT,
+			PCIE_MEM_BASE_LIMIT_VAL(PCIE_MEM_BASE(mem), (bar_base_addr - 1) >> 16));
 	}
 
 	/* TODO: add support for prefetchable */
@@ -275,13 +296,13 @@ static bool pcie_generic_ctrl_enumerate_endpoint(const struct device *ctrl_dev,
 
 	*skip_next_func = false;
 
-	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	id = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_CONF_ID);
 	if (id == PCIE_ID_NONE) {
 		return false;
 	}
 
-	class = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
-	data = pcie_conf_read(bdf, PCIE_CONF_TYPE);
+	class = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_CONF_CLASSREV);
+	data = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_CONF_TYPE);
 
 	multifunction_device = PCIE_CONF_MULTIFUNCTION(data);
 	layout_type_1 = PCIE_CONF_TYPE_BRIDGE(data);

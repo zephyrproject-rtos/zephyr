@@ -1,59 +1,7 @@
 # Copyright (c) 2021-2025 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
 #
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_HAL_BOUFFALOLAB_MODULE
 	bool
-
-config HAS_BFLB_HAL
-	bool
-
-if HAS_BFLB_HAL
-
-config USE_BFLB_ACOMP
-	bool
-	help
-	  Enable BFLB Analog Comparator (ACOMP) HAL module driver
-
-config USE_BFLB_ADC
-	bool
-	help
-	  Enable BFLB Analog-to-Digital Converter (ADC) HAL module driver
-
-config USE_BFLB_DAC
-	bool
-	help
-	  Enable BFLB Digital-to-Analog Converter (DAC) HAL module driver
-
-config USE_BFLB_DMA
-	bool
-	help
-	  Enable BFLB Direct Memory Access controller (DMA) HAL module driver
-
-config USE_BFLB_I2C
-	bool
-	help
-	  Enable BFLB Inter-Integrated Circuit Interface (I2C) HAL module driver
-
-config USE_BFLB_IR
-	bool
-	help
-	  Enable BFLB Infrared Remote controller (IR) HAL module driver
-
-config USE_BFLB_PWM
-	bool
-	help
-	  Enable BFLB Pulse Width Modulation (PMU) HAL module driver
-
-config USE_BFLB_SPI
-	bool
-	help
-	  Enable BFLB Serial Peripheral Interface(SPI) HAL module driver
-
-config USE_BFLB_UART
-	bool
-	help
-	  Enable BFLB Universal Asynchronous Receiver/Transmitter (UART)
-	  HAL module driver
-
-endif # HAS_BFLB_HAL

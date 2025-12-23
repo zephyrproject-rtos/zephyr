@@ -1,11 +1,153 @@
-__constant U32 _CPUCONF_ADDR = 0x53011000;
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+__constant U32 _CPUCONF_ADDR = 0x52011000;
 __constant U32 _CPUCONF_CPUWAIT_OFFSET = 0x50C;
+
+// ATBFUNNEL
+__constant U32 _ATBFUNNEL211_ADDR = 0xBF04D000;
+__constant U32 _ATBFUNNEL212_ADDR = 0xBF04E000;
+__constant U32 _ATBFUNNEL_CTRLREG_OFFSET = 0x0;
+__constant U32 _ATBFUNNEL_HOLDTIME_MASK = 0x700;
+__constant U32 _HOLDTIME_4 = 0x300;
+__constant U32 _ENS0 = 0x1; // Application Core
+__constant U32 _ENS1 = 0x2; // Radio Core
+
+// ATBREPLICATOR
+__constant U32 _ATBREPLICATOR212_ADDR = 0xBF04A000;
+__constant U32 _ATBREPLICATOR213_ADDR = 0xBF04B000;
+__constant U32 _ATBREPLICATOR_IDFILTER0_OFFSET = 0x0;
+__constant U32 _ATBREPLICATOR_IDFILTER1_OFFSET = 0x4;
+__constant U32 _ATBREPLICATOR_IDFILTER_ETM = 0x2; // ETM has 0x10 TRACEID
+
+// TPIU
+__constant U32 _TPIU_ADDR = 0xBF043000;
+__constant U32 _CURRENTPORTSIZE_OFFSET = 0x4;
+__constant U32 _FFCR_OFFSET = 0x304;
+__constant U32 _FSCR_OFFSET = 0x308;
+__constant U32 _ENFCONT = 0x02;
+__constant U32 _FONFLIN = 0x10;
+__constant U32 _ENFTC = 0x1;
+__constant U32 _TPIU_SYNC_FRAME_COUNT = 0x8;
+__constant U32 _CURRENTPORTSIZE_4 = 0x8;
+
+// CoreSight general
+__constant U32 _CORESIGHT_LAR_OFFSET = 0xFB0;
+__constant U32 _CORESIGHT_UNLOCK_KEY = 0xC5ACCE55;
+
+// Used to check if we have already set up tracing
+int _needCoresightSetup = 1;
+
+// Unlock a CoreSight peripheral
+void _CSUnlock(U32 addr)
+{
+	JLINK_MEM_WriteU32(addr + _CORESIGHT_LAR_OFFSET, _CORESIGHT_UNLOCK_KEY);
+}
+
+// Lock a CoreSight peripheral
+void _CSLock(U32 addr)
+{
+	JLINK_MEM_WriteU32(addr + _CORESIGHT_LAR_OFFSET, 0);
+}
+
+// Set up CoreSight and other necessary configuration so to enable ETM -> TPIU tracing.
+int _SetupETMTPIUTrace(void)
+{
+	U32 ctrlreg_old;
+	U32 ctrlreg_new;
+	U32 idfilter0_old;
+	U32 idfilter1_old;
+	U32 idfilter0_new;
+	U32 idfilter1_new;
+
+	// Set up ATB funnels/replicators to route ApplicationDomain ETM to TPIU
+
+	_CSUnlock(_ATBFUNNEL212_ADDR);
+	ctrlreg_old = JLINK_MEM_ReadU32(_ATBFUNNEL212_ADDR + _ATBFUNNEL_CTRLREG_OFFSET);
+	ctrlreg_new = (ctrlreg_old & ~_ATBFUNNEL_HOLDTIME_MASK) | _HOLDTIME_4 | _ENS1;
+	JLINK_MEM_WriteU32(_ATBFUNNEL212_ADDR + _ATBFUNNEL_CTRLREG_OFFSET, ctrlreg_new);
+	_CSLock(_ATBFUNNEL212_ADDR);
+
+	_CSUnlock(_ATBREPLICATOR212_ADDR);
+	idfilter0_old = JLINK_MEM_ReadU32(_ATBREPLICATOR212_ADDR + _ATBREPLICATOR_IDFILTER0_OFFSET);
+	idfilter1_old = JLINK_MEM_ReadU32(_ATBREPLICATOR212_ADDR + _ATBREPLICATOR_IDFILTER1_OFFSET);
+
+	idfilter0_new = idfilter0_old | _ATBREPLICATOR_IDFILTER_ETM;  // SET for output 0
+	idfilter1_new = idfilter1_old & ~_ATBREPLICATOR_IDFILTER_ETM; // CLEAR for output 1
+
+	JLINK_MEM_WriteU32(_ATBREPLICATOR212_ADDR + _ATBREPLICATOR_IDFILTER0_OFFSET, idfilter0_new);
+	JLINK_MEM_WriteU32(_ATBREPLICATOR212_ADDR + _ATBREPLICATOR_IDFILTER1_OFFSET, idfilter1_new);
+	_CSLock(_ATBREPLICATOR212_ADDR);
+
+	_CSUnlock(_ATBFUNNEL211_ADDR);
+	ctrlreg_old = JLINK_MEM_ReadU32(_ATBFUNNEL211_ADDR + _ATBFUNNEL_CTRLREG_OFFSET);
+	ctrlreg_new = (ctrlreg_old & ~_ATBFUNNEL_HOLDTIME_MASK) | _HOLDTIME_4 | _ENS1;
+	JLINK_MEM_WriteU32(_ATBFUNNEL211_ADDR + _ATBFUNNEL_CTRLREG_OFFSET, ctrlreg_new);
+	_CSLock(_ATBFUNNEL211_ADDR);
+
+	_CSUnlock(_ATBREPLICATOR213_ADDR);
+	idfilter0_old = JLINK_MEM_ReadU32(_ATBREPLICATOR213_ADDR + _ATBREPLICATOR_IDFILTER0_OFFSET);
+	idfilter1_old = JLINK_MEM_ReadU32(_ATBREPLICATOR213_ADDR + _ATBREPLICATOR_IDFILTER1_OFFSET);
+
+	idfilter0_new = idfilter0_old & ~_ATBREPLICATOR_IDFILTER_ETM;  // CLEAR for output 0
+	idfilter1_new = idfilter1_old | _ATBREPLICATOR_IDFILTER_ETM;   // SET for output 1
+
+	JLINK_MEM_WriteU32(_ATBREPLICATOR213_ADDR + _ATBREPLICATOR_IDFILTER0_OFFSET, idfilter0_new);
+	JLINK_MEM_WriteU32(_ATBREPLICATOR213_ADDR + _ATBREPLICATOR_IDFILTER1_OFFSET, idfilter1_new);
+	_CSLock(_ATBREPLICATOR213_ADDR);
+
+	// Configure TPIU for port size 4, continuous formatting
+	_CSUnlock(_TPIU_ADDR);
+	JLINK_MEM_WriteU32(_TPIU_ADDR + _CURRENTPORTSIZE_OFFSET, _CURRENTPORTSIZE_4);
+	JLINK_MEM_WriteU32(_TPIU_ADDR + _FFCR_OFFSET, _ENFCONT | _FONFLIN | _ENFTC);
+	JLINK_MEM_WriteU32(_TPIU_ADDR + _FSCR_OFFSET, _TPIU_SYNC_FRAME_COUNT);
+	_CSLock(_TPIU_ADDR);
+
+	return 0;
+}
 
 int ConfigTargetSettings(void)
 {
 	JLINK_ExecCommand("CORESIGHT_AddAP = Index=1 Type=AHB-AP");
 	CORESIGHT_IndexAHBAPToUse = 1;
 
+	// Adjust trace sample delay to compensate for timing when using 320MHz
+	JLINK_ExecCommand("TraceSampleAdjust TD = 1000");
+
+	JLINK_ExecCommand("CORESIGHT_SetTPIUBaseAddr = 0xBF043000");
+
+	return 0;
+}
+
+int StartTPIU(void)
+{
+	/* We sort this ourselves in _SetupETMTPIUTrace, don't let JLink touch it */
+	return 0;
+}
+
+int StopTPIU(void)
+{
+	return 0;
+}
+
+
+int OnTraceStart(void)
+{
+	// Set up CoreSight if not already configured
+	if (_needCoresightSetup) {
+		_SetupETMTPIUTrace();
+		_needCoresightSetup = 0;
+	}
+
+	return 0;
+}
+
+int AfterResetTarget(void)
+{
+	_needCoresightSetup = 1;
 	return 0;
 }
 
@@ -16,5 +158,10 @@ int SetupTarget(void)
 	// Disable CPU wait
 	JLINK_MEM_WriteU32(_CPUCONF_ADDR + _CPUCONF_CPUWAIT_OFFSET, 0);
 
+	return 0;
+}
+
+int InitEMU(void) {
+	JLINK_ExecCommand("EnableLowPowerHandlingMode");
 	return 0;
 }

@@ -4,8 +4,15 @@
 properties:
   iovdd-ctrl-gpios:
     type: phandle-array
-    required: true
-    description: GPIO of the SoC controlling IO_VDD Control pin of the nRF70
+    description: |
+      GPIO of the SoC controlling IO_VDD Control pin of the nRF70, either this
+      or iovdd-regulator needs to be set.
+
+  iovdd-regulator:
+    type: phandle
+    description: |
+      Regulator controlling IO_VDD of the nRF70, either this or iovdd-ctrl-gpios
+      needs to be set.
 
   bucken-gpios:
     type: phandle-array

@@ -31,10 +31,18 @@
 #else
 #include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */
-
+#ifdef CONFIG_NRF71_ON_IPC
+#include <nrf71_wifi_ctrl.h>
+#else
 #include <host_rpu_umac_if.h>
+#endif /* CONFIG_NRF71_ON_IPC */
 
 #define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING
+
+/* Calculate compile-time maximum for vendor stats */
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+#define MAX_VENDOR_STATS ((sizeof(struct rpu_sys_fw_stats) / sizeof(uint32_t)) + 1)
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 
 #ifndef CONFIG_NRF70_OFFLOADED_RAW_TX
 #ifndef CONFIG_NRF70_RADIO_TEST
@@ -52,6 +60,7 @@ struct nrf_wifi_vif_ctx_zep {
 	uint16_t max_bss_cnt;
 	unsigned int scan_res_cnt;
 	struct k_work_delayable scan_timeout_work;
+	struct k_work disp_scan_res_work;
 
 	struct net_eth_addr mac_addr;
 	int if_type;
@@ -60,8 +69,15 @@ struct nrf_wifi_vif_ctx_zep {
 	bool set_if_event_received;
 	int set_if_status;
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	struct net_stats_eth_vendor eth_stats_vendor_data[MAX_VENDOR_STATS];
+	char vendor_key_strings[MAX_VENDOR_STATS][16];
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 	struct net_stats_eth eth_stats;
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+#if defined(CONFIG_NRF70_STA_MODE) || defined(CONFIG_NRF70_RAW_DATA_RX)
+	bool authorized;
+#endif
 #ifdef CONFIG_NRF70_STA_MODE
 	unsigned int assoc_freq;
 	enum nrf_wifi_fmac_if_carr_state if_carr_state;
@@ -72,7 +88,6 @@ struct nrf_wifi_vif_ctx_zep {
 	unsigned char twt_flow_in_progress_map;
 	struct wifi_ps_config *ps_info;
 	bool ps_config_info_evnt;
-	bool authorized;
 	bool cookie_resp_received;
 #ifdef CONFIG_NRF70_DATA_TX
 	struct k_work nrf_wifi_net_iface_work;
@@ -88,6 +103,7 @@ struct nrf_wifi_vif_ctx_zep {
 	struct k_work_delayable nrf_wifi_rpu_recovery_bringup_work;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 	int rts_threshold_value;
+	unsigned short bss_max_idle_period;
 };
 
 struct nrf_wifi_vif_ctx_map {
@@ -118,6 +134,8 @@ struct nrf_wifi_ctx_zep {
 	unsigned int rpu_recovery_retries;
 	int rpu_recovery_success;
 	int rpu_recovery_failure;
+	int wdt_irq_received;
+	int wdt_irq_ignored;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 

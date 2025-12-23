@@ -1,0 +1,6 @@
+[tool.mypy]
+ignore_missing_imports = true
+mypy_path = "."
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

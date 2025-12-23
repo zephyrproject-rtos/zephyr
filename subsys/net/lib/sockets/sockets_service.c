@@ -28,7 +28,7 @@ static K_CONDVAR_DEFINE(wait_start);
 STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
-static struct service_context {
+static struct service {
 	struct zsock_pollfd events[CONFIG_ZVFS_POLL_MAX];
 	int count;
 } ctx;
@@ -260,7 +260,7 @@ restart:
 		}
 
 		/* Relocate after trigger work so the work gets done before restarting */
-		if (ret > 0 && ctx.events[0].revents) {
+		if (ctx.events[0].revents) {
 			zvfs_eventfd_read(ctx.events[0].fd, &value);
 			ctx.events[0].revents = 0;
 			NET_DBG("Received restart event.");

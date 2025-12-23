@@ -70,6 +70,7 @@ struct ti_dp83867_config {
 	uint32_t ti_rx_internal_delay;
 	uint32_t ti_tx_internal_delay;
 	enum dp83826_interface phy_iface;
+	enum phy_link_speed default_speeds;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -294,8 +295,10 @@ static int phy_ti_dp83867_reset(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
 	}
-
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 done:
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+
 	/* POR release time (minimum specified is T4=195us) */
 	k_busy_wait(PHY_TI_DP83867_POR_DELAY);
 
@@ -312,7 +315,7 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	const struct ti_dp83867_config *config = dev->config;
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
-	uint32_t val;
+	__maybe_unused uint32_t val;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
 		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
@@ -464,8 +467,6 @@ static int phy_ti_dp83867_init(const struct device *dev)
 		return ret;
 	}
 
-	mdio_bus_enable(config->mdio_dev);
-
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (config->reset_gpio.port) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
@@ -575,6 +576,9 @@ skip_int_gpio:
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 	phy_ti_dp83867_monitor_work_handler(&data->phy_monitor_work.work);
 
+	/* Advertise default speeds */
+	phy_ti_dp83867_cfg_link(dev, config->default_speeds, 0);
+
 	return 0;
 }
 
@@ -607,6 +611,7 @@ static DEVICE_API(ethphy, ti_dp83867_phy_api) = {
 		.ti_tx_internal_delay = DT_INST_PROP_OR(n, ti_tx_internal_delay,                   \
 							 DP83867_RGMII_RX_CLK_DELAY_INV),          \
 		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                               \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct ti_dp83867_data ti_dp83867_##n##_data;                                       \

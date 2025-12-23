@@ -575,7 +575,17 @@ unpackdone:
 	 * all CPENABLE bits must be set, even though they may not always
 	 * correspond to a coprocessor.
 	 */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	/*
+	 * Disable HiFi coprocessor by default. Should a thread try using
+         * the HiFi coprocessor, it will trigger an exception to both enable
+	 * it AND save/restore the HiFi state.
+	 */
+
+	movi	a2, 0xFF & ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+#else
 	movi	a2, 0xFF	 /* enable *all* bits, to allow dynamic TIE */
+#endif
 	wsr	a2, CPENABLE
 # endif
 

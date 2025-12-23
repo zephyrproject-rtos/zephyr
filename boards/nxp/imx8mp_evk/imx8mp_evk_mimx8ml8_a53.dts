@@ -27,9 +27,11 @@
 		cpu@0 {
 			status = "disabled";
 		};
+
 		cpu@1 {
 			status = "disabled";
 		};
+
 		cpu@2 {
 			status = "disabled";
 		};
@@ -39,7 +41,7 @@
 		reg = <0xc0000000 DT_SIZE_M(1)>;
 	};
 
-	can_phy1: can-phy1{
+	can_phy1: can-phy1 {
 		compatible = "nxp,tja1048", "can-transceiver-gpio";
 		enable-gpios = <&gpio_exp1 2 GPIO_ACTIVE_LOW>;
 		standby-gpios = <&gpio5 5 GPIO_ACTIVE_LOW>;
@@ -48,7 +50,7 @@
 		status = "okay";
 	};
 
-	can_phy2: can-phy2{
+	can_phy2: can-phy2 {
 		compatible = "nxp,tja1048", "can-transceiver-gpio";
 		enable-gpios = <&gpio_exp1 3 GPIO_ACTIVE_HIGH>;
 		standby-gpios = <&gpio4 27 GPIO_ACTIVE_LOW>;
@@ -75,6 +77,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	phy: phy@1 {
 		compatible = "realtek,rtl8211f";
 		reg = <1>;
@@ -115,7 +118,8 @@
 		reg = <0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		interrupt-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		ngpios = <16>;
+		int-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

@@ -19,7 +19,7 @@ extern "C" {
 
 
 struct shell_history {
-	struct ring_buf *ring_buf;
+	struct k_heap *heap;
 	sys_dlist_t list;
 	sys_dnode_t *current;
 };
@@ -28,27 +28,14 @@ struct shell_history {
  * @brief Create shell history instance.
  *
  * @param _name History instance name.
- * @param _size Memory dedicated for shell history.
+ * @param _size Memory size dedicated for shell history.
  */
-#define Z_SHELL_HISTORY_DEFINE(_name, _size)			  \
-	static uint8_t __noinit __aligned(sizeof(void *))	  \
-			_name##_ring_buf_data[_size];		  \
-	static struct ring_buf _name##_ring_buf =		  \
-		{						  \
-			.size = _size,				  \
-			.buffer = _name##_ring_buf_data		  \
-		};						  \
-	static struct shell_history _name = {			  \
-		.ring_buf = &_name##_ring_buf			  \
+#define Z_SHELL_HISTORY_DEFINE(_name, _size)			\
+	K_HEAP_DEFINE(_name##_heap, _size);			\
+	static struct shell_history _name = {			\
+		.heap = &_name##_heap,				\
+		.list = SYS_DLIST_STATIC_INIT(&_name.list),	\
 	}
-
-
-/**
- * @brief Initialize shell history module.
- *
- * @param history Shell history instance.
- */
-void z_shell_history_init(struct shell_history *history);
 
 /**
  * @brief Purge shell history.

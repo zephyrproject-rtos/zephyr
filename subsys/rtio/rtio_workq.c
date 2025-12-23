@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Croxel Inc.
+ * Copyright (c) 2025 Croxel Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,37 +8,15 @@
 #include <zephyr/rtio/work.h>
 #include <zephyr/kernel.h>
 
-#define RTIO_WORKQ_PRIO_MED		CONFIG_RTIO_WORKQ_PRIO_MED
-#define RTIO_WORKQ_PRIO_HIGH		RTIO_WORKQ_PRIO_MED - 1
-#define RTIO_WORKQ_PRIO_LOW		RTIO_WORKQ_PRIO_MED + 1
-
 K_MEM_SLAB_DEFINE_STATIC(rtio_work_items_slab,
 			 sizeof(struct rtio_work_req),
 			 CONFIG_RTIO_WORKQ_POOL_ITEMS,
 			 4);
-
-static void rtio_work_req_done_handler(struct k_p4wq_work *work)
-{
-	struct rtio_work_req *req = CONTAINER_OF(work,
-						 struct rtio_work_req,
-						 work);
-	k_mem_slab_free(&rtio_work_items_slab, req);
-}
-
-K_P4WQ_DEFINE_WITH_DONE_HANDLER(rtio_workq,
-	      CONFIG_RTIO_WORKQ_THREADS_POOL,
-	      CONFIG_RTIO_WORKQ_STACK_SIZE,
-		  rtio_work_req_done_handler);
-
-static void rtio_work_handler(struct k_p4wq_work *work)
-{
-	struct rtio_work_req *req = CONTAINER_OF(work,
-						 struct rtio_work_req,
-						 work);
-	struct rtio_iodev_sqe *iodev_sqe = req->iodev_sqe;
-
-	req->handler(iodev_sqe);
-}
+static K_THREAD_STACK_ARRAY_DEFINE(rtio_workq_threads_stack,
+				   CONFIG_RTIO_WORKQ_THREADS_POOL,
+				   CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE);
+static struct k_thread rtio_work_threads[CONFIG_RTIO_WORKQ_THREADS_POOL];
+static K_QUEUE_DEFINE(rtio_workq);
 
 struct rtio_work_req *rtio_work_req_alloc(void)
 {
@@ -48,12 +27,6 @@ struct rtio_work_req *rtio_work_req_alloc(void)
 	if (err) {
 		return NULL;
 	}
-
-	/** Initialize work item before using it as it comes
-	 * from a Memory slab (no-init region).
-	 */
-	req->work.thread = NULL;
-	(void)k_sem_init(&req->work.done_sem, 1, 1);
 
 	return req;
 }
@@ -71,31 +44,52 @@ void rtio_work_req_submit(struct rtio_work_req *req,
 		return;
 	}
 
-	struct k_p4wq_work *work = &req->work;
-	struct rtio_sqe *sqe = &iodev_sqe->sqe;
-
-	/** Link the relevant info so that we can get it on the k_p4wq_work work item.
-	 */
 	req->iodev_sqe = iodev_sqe;
 	req->handler = handler;
 
-	/** Set the required information to handle the action */
-	work->handler = rtio_work_handler;
-	work->deadline = 0;
-
-	if (sqe->prio == RTIO_PRIO_LOW) {
-		work->priority = RTIO_WORKQ_PRIO_LOW;
-	} else if (sqe->prio == RTIO_PRIO_HIGH) {
-		work->priority = RTIO_WORKQ_PRIO_HIGH;
-	} else {
-		work->priority = RTIO_WORKQ_PRIO_MED;
-	}
-
-	/** Decoupling action: Let the P4WQ execute the action. */
-	k_p4wq_submit(&rtio_workq, work);
+	/** For now we're simply treating this as a FIFO queue. It may be
+	 * desirable to expand this to handle queue ordering based on RTIO
+	 * SQE priority.
+	 */
+	k_queue_append(&rtio_workq, req);
 }
 
 uint32_t rtio_work_req_used_count_get(void)
 {
 	return k_mem_slab_num_used_get(&rtio_work_items_slab);
 }
+
+static void rtio_workq_thread_fn(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	while (true) {
+		struct rtio_work_req *req = k_queue_get(&rtio_workq, K_FOREVER);
+
+		if (req != NULL) {
+			req->handler(req->iodev_sqe);
+
+			k_mem_slab_free(&rtio_work_items_slab, req);
+		}
+	}
+}
+
+static int static_init(void)
+{
+	for (size_t i = 0 ; i < ARRAY_SIZE(rtio_work_threads) ; i++) {
+		k_thread_create(&rtio_work_threads[i],
+				rtio_workq_threads_stack[i],
+				CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE,
+				rtio_workq_thread_fn,
+				NULL, NULL, NULL,
+				CONFIG_RTIO_WORKQ_THREADS_POOL_PRIO,
+				0,
+				K_NO_WAIT);
+	}
+
+	return 0;
+}
+
+SYS_INIT(static_init, POST_KERNEL, 1);

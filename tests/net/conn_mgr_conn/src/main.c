@@ -897,6 +897,51 @@ ZTEST(conn_mgr_conn, test_timeout_invalid)
 		"Getting timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnone");
 }
 
+/* Verify that idle timeout get/set functions operate correctly (A/B) */
+ZTEST(conn_mgr_conn, test_idle_timeout)
+{
+	struct conn_mgr_conn_binding *ifa1_binding = conn_mgr_if_get_binding(ifa1);
+
+	/* Try setting idle timeout */
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifa1, 99), 0,
+		      "Setting idle timeout should succeed for ifa1");
+
+	/* Verify success */
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifa1), 99,
+		      "Idle timeout should be set to 99 for ifa1");
+
+	/* Verify that the conn struct agrees, since this is what implementations may use */
+	zassert_equal(ifa1_binding->idle_timeout, 99, "Idle timeout set should affect conn struct");
+
+	/* Try unsetting idle timeout */
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifa1, CONN_MGR_IF_NO_TIMEOUT), 0,
+		      "Unsetting idle timeout should succeed for ifa1");
+
+	/* Verify success */
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifa1), CONN_MGR_IF_NO_TIMEOUT,
+		      "Idle timeout should be unset for ifa1");
+
+	/* Verify that the conn struct agrees, since this is what implementations may use */
+	zassert_equal(ifa1_binding->idle_timeout, CONN_MGR_IF_NO_TIMEOUT,
+		      "Idle timeout unset should affect conn struct");
+}
+
+/* Verify that idle timeout get/set fail and behave as expected respectively for invalid ifaces */
+ZTEST(conn_mgr_conn, test_idle_timeout_invalid)
+{
+	/* Verify set failure */
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifnull, 99), -ENOTSUP,
+		      "Setting idle timeout should fail for ifnull");
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifnone, 99), -ENOTSUP,
+		      "Setting idle timeout should fail for ifnone");
+
+	/* Verify get graceful behavior */
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifnull), CONN_MGR_IF_NO_TIMEOUT,
+		      "Getting idle timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnull");
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifnone), CONN_MGR_IF_NO_TIMEOUT,
+		      "Getting idle timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnone");
+}
+
 /* Verify that auto-connect works as expected. */
 ZTEST(conn_mgr_conn, test_auto_connect)
 {

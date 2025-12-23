@@ -864,36 +864,34 @@ static DEVICE_API(dma, dma_funcs) = {
 #define BDMA_STM32_OFFSET_INIT(index)
 #endif /* CONFIG_DMAMUX_STM32 */
 
-#define BDMA_STM32_INIT_DEV(index)					\
-static struct bdma_stm32_channel					\
-	bdma_stm32_channels_##index[BDMA_STM32_##index##_CHANNEL_COUNT];\
-									\
-const struct bdma_stm32_config bdma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
-	.config_irq = bdma_stm32_config_irq_##index,			\
-	.base = DT_INST_REG_ADDR(index),				\
-	.support_m2m = DT_INST_PROP(index, st_mem2mem),			\
-	.max_channels = BDMA_STM32_##index##_CHANNEL_COUNT,		\
-	.channels = bdma_stm32_channels_##index,			\
-	BDMA_STM32_OFFSET_INIT(index)					\
-};									\
-									\
-static struct bdma_stm32_data bdma_stm32_data_##index = {		\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(index,							\
-		    bdma_stm32_init,						\
-		    NULL,							\
-		    &bdma_stm32_data_##index, &bdma_stm32_config_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
-		    &dma_funcs)
+#define BDMA_STM32_INIT_DEV(index)						\
+	static struct bdma_stm32_channel					\
+		bdma_stm32_channels_##index[BDMA_STM32_##index##_CHANNEL_COUNT];\
+										\
+	const struct bdma_stm32_config bdma_stm32_config_##index = {		\
+		.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
+		.config_irq = bdma_stm32_config_irq_##index,			\
+		.base = DT_INST_REG_ADDR(index),				\
+		.support_m2m = DT_INST_PROP(index, st_mem2mem),			\
+		.max_channels = BDMA_STM32_##index##_CHANNEL_COUNT,		\
+		.channels = bdma_stm32_channels_##index,			\
+		BDMA_STM32_OFFSET_INIT(index)					\
+	};									\
+										\
+	static struct bdma_stm32_data bdma_stm32_data_##index;			\
+										\
+	DEVICE_DT_INST_DEFINE(index, bdma_stm32_init, NULL,			\
+			      &bdma_stm32_data_##index,				\
+			      &bdma_stm32_config_##index,			\
+			      PRE_KERNEL_1,					\
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+			      &dma_funcs)
 
-#define BDMA_STM32_DEFINE_IRQ_HANDLER(bdma, chan)			\
-static void bdma_stm32_irq_##bdma##_##chan(const struct device *dev)	\
-{									\
-	bdma_stm32_irq_handler(dev, chan);				\
-}
+#define BDMA_STM32_DEFINE_IRQ_HANDLER(bdma, chan)				\
+	static void bdma_stm32_irq_##bdma##_##chan(const struct device *dev)	\
+	{									\
+		bdma_stm32_irq_handler(dev, chan);				\
+	}
 
 
 #define BDMA_STM32_IRQ_CONNECT(bdma, chan)				\

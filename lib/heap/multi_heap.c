@@ -75,8 +75,11 @@ const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_
 
 	/* Now i stores the index of the heap after our target (even
 	 * if it's invalid and our target is the last!)
-	 * FIXME: return -ENOENT when a proper heap is not found
 	 */
+	if (i == 0) {
+		return NULL;
+	}
+
 	return &mheap->heaps[i-1];
 }
 
@@ -120,7 +123,7 @@ void *sys_multi_heap_aligned_realloc(struct sys_multi_heap *mheap, void *cfg,
 	/* Otherwise, allocate a new block and copy the data */
 	new_ptr = sys_multi_heap_aligned_alloc(mheap, cfg, align, bytes);
 	if (new_ptr != NULL) {
-		memcpy(new_ptr, ptr, MIN(old_size, bytes));
+		memcpy(new_ptr, ptr, min(old_size, bytes));
 		sys_multi_heap_free(mheap, ptr);
 	}
 

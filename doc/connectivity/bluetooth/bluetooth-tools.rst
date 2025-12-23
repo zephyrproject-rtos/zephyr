@@ -84,7 +84,7 @@ Running on QEMU or native_sim
 *****************************
 
 It's possible to run Bluetooth applications using either the :ref:`QEMU
-emulator<application_run_qemu>` or :ref:`native_sim <native_sim>`.
+emulator<application_run_qemu>` or :zephyr:board:`native_sim <native_sim>`.
 
 In either case, a Bluetooth controller needs to be exported from
 the host OS (Linux) to the emulator. For this purpose you will need some tools
@@ -103,7 +103,7 @@ The host OS's Bluetooth controller is connected in the following manner:
   command-line option passed to the native_sim executable: ``--bt-dev=hci0``
 
 On the host side, BlueZ allows you to export its Bluetooth controller
-through a so-called user channel for QEMU and :ref:`native_sim <native_sim>` to use.
+through a so-called user channel for QEMU and :zephyr:board:`native_sim <native_sim>` to use.
 
 .. note::
    You only need to run ``btproxy`` when using QEMU. native_sim handles
@@ -147,7 +147,7 @@ building and running a sample:
   the :literal:`bt-server-bredr` UNIX socket, letting the application
   access the Bluetooth controller.
 
-* To run a Bluetooth application in :ref:`native_sim <native_sim>`, first build it:
+* To run a Bluetooth application in :zephyr:board:`native_sim <native_sim>`, first build it:
 
   .. zephyr-app-commands::
      :zephyr-app: samples/bluetooth/<sample>

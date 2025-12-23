@@ -1,6 +1,10 @@
 # Copyright (c) 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+# As Zephyr doesn't (yet) support driver variants as Linux does, this file
+# contains common definitions for each variant of the i.MX RTxxx DSP control
+# driver. This file is then included in each particular binding.
+
 include: [base.yaml]
 
 compatible: "nxp,rtxxx-dsp-ctrl"

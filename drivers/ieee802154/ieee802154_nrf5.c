@@ -34,7 +34,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/debug/stack.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 
@@ -179,7 +178,12 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
-		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
+			LOG_ERR("Received a frame exceeding the buffer size (%u): %u",
+				CONFIG_NET_BUF_DATA_SIZE, pkt_len);
+			LOG_HEXDUMP_ERR(rx_frame->psdu, rx_frame->psdu[0] + 1, "Received PSDU");
+			goto drop;
+		}
 #endif
 
 		LOG_DBG("Frame received");
@@ -191,7 +195,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * thus stops acknowledging consecutive frames).
 		 */
 		pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, pkt_len,
-						   AF_UNSPEC, 0, K_FOREVER);
+						   NET_AF_UNSPEC, 0, K_FOREVER);
 
 		if (net_pkt_write(pkt, rx_frame->psdu + 1, pkt_len)) {
 			goto drop;
@@ -232,7 +236,9 @@ drop:
 		rx_frame->psdu = NULL;
 		nrf_802154_buffer_free_raw(psdu);
 
-		net_pkt_unref(pkt);
+		if (pkt) {
+			net_pkt_unref(pkt);
+		}
 	}
 }
 
@@ -337,7 +343,7 @@ static int nrf5_set_pan_id(const struct device *dev, uint16_t pan_id)
 	sys_put_le16(pan_id, pan_id_le);
 	nrf_802154_pan_id_set(pan_id_le);
 
-	LOG_DBG("0x%x", pan_id);
+	LOG_DBG("pan_id 0x%x", pan_id);
 
 	return 0;
 }
@@ -351,7 +357,7 @@ static int nrf5_set_short_addr(const struct device *dev, uint16_t short_addr)
 	sys_put_le16(short_addr, short_addr_le);
 	nrf_802154_short_address_set(short_addr_le);
 
-	LOG_DBG("0x%x", short_addr);
+	LOG_DBG("short_addr 0x%x", short_addr);
 
 	return 0;
 }
@@ -374,7 +380,7 @@ static int nrf5_filter(const struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter)
 {
-	LOG_DBG("Applying filter %u", type);
+	LOG_DBG("Applying filter %u set=%d", type, set);
 
 	if (!set) {
 		return -ENOTSUP;
@@ -426,7 +432,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	}
 
 	ack_pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, ack_len,
-					       AF_UNSPEC, 0, K_NO_WAIT);
+					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -492,7 +498,9 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 	};
 
-	return nrf_802154_transmit_raw(payload, &metadata);
+	nrf_802154_tx_error_t result = nrf_802154_transmit_raw(payload, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
 }
 
 #if NRF_802154_CSMA_CA_ENABLED
@@ -509,7 +517,9 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 		},
 	};
 
-	return nrf_802154_transmit_csma_ca_raw(payload, &metadata);
+	nrf_802154_tx_error_t result = nrf_802154_transmit_csma_ca_raw(payload, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
 }
 #endif
 
@@ -566,7 +576,9 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
 		net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC);
 
-	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
+	nrf_802154_tx_error_t result = nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
@@ -1114,8 +1126,12 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].lqi = lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.rx_frames[i].time =
-			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
+		if (time != NRF_802154_NO_TIMESTAMP) {
+			nrf5_data.rx_frames[i].time =
+				nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
+		} else {
+			nrf5_data.rx_frames[i].time = 0;
+		}
 #endif
 
 		nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;

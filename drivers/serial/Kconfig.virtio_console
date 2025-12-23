@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_VIRTIO_CONSOLE
+	bool "VIRTIO console paravirtualization device driver"
+	default y
+	depends on VIRTIO && DT_HAS_VIRTIO_CONSOLE_ENABLED && \
+		!(X86_VERY_EARLY_CONSOLE || EARLY_CONSOLE || BOOT_BANNER)
+
+if UART_VIRTIO_CONSOLE
+
+config UART_VIRTIO_CONSOLE_RX_BUFSIZE
+	int "VIRTIO console receive buffer length"
+	default 1
+
+config UART_VIRTIO_CONSOLE_TX_BUFSIZE
+	int "VIRTIO console transmit buffer length"
+	default 2
+
+config UART_VIRTIO_CONSOLE_F_MULTIPORT
+	bool "Support multiple VIRTIO console ports"
+	default n
+	help
+	  The VIRTIO console device can support multiple i/o ports simultaneously
+	  (up to 31 in the case of QEMU). Select to enable this feature. Otherwise
+	  only one will be used.
+
+if UART_VIRTIO_CONSOLE_F_MULTIPORT
+
+config UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE
+	int "VIRTIO console receive buffer length (for control messages)"
+	default 16
+	help
+	  This will set the size of the control receive buffer and its corresponding
+	  virtqueue. Keep in mind that control messages are sent in quick succession
+	  and thus some may never be received if this value is too low. Try increasing
+	  this value if you're experiencing issues with the multiport feature.
+
+config UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE
+	int "VIRTIO console transmit buffer length (for control messages)"
+	default 8
+	help
+	  This will set the size of the control transmit buffer and its corresponding
+	  virtqueue. Keep in mind that control messages are sent in quick succession
+	  and this buffer may fill up fast if this value is too low. Try increasing
+	  this value if you're experiencing issues with the multiport feature.
+
+endif
+
+config UART_VIRTIO_CONSOLE_NAME_BUFSIZE
+	int "VIRTIO console maximum port name length"
+	default 0 if UART_LOG_LEVEL < 3
+	default 16
+	help
+	  Ports can be assigned human-readable names, which are then printed in logs.
+
+endif

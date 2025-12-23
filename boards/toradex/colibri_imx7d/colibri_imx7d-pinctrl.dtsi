@@ -10,7 +10,7 @@
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <&mx7d_pad_uart2_rx_data__uart2_dce_rx>,
-				<&mx7d_pad_uart2_tx_data__uart2_dce_tx>;
+				 <&mx7d_pad_uart2_tx_data__uart2_dce_tx>;
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			input-schmitt-enable;
@@ -22,7 +22,7 @@
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <&mx7d_pad_i2c1_scl__i2c1_scl>,
-				<&mx7d_pad_i2c1_sda__i2c1_sda>;
+				 <&mx7d_pad_i2c1_sda__i2c1_sda>;
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			input-schmitt-enable;
@@ -34,7 +34,7 @@
 	i2c2_default: i2c2_default {
 		group0 {
 			pinmux = <&mx7d_pad_i2c2_scl__i2c2_scl>,
-				<&mx7d_pad_i2c2_sda__i2c2_sda>;
+				 <&mx7d_pad_i2c2_sda__i2c2_sda>;
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			input-schmitt-enable;
@@ -46,7 +46,7 @@
 	i2c3_default: i2c3_default {
 		group0 {
 			pinmux = <&mx7d_pad_i2c3_scl__i2c3_scl>,
-				<&mx7d_pad_i2c3_sda__i2c3_sda>;
+				 <&mx7d_pad_i2c3_sda__i2c3_sda>;
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			input-schmitt-enable;
@@ -58,7 +58,7 @@
 	i2c4_default: i2c4_default {
 		group0 {
 			pinmux = <&mx7d_pad_i2c4_scl__i2c4_scl>,
-				<&mx7d_pad_i2c4_sda__i2c4_sda>;
+				 <&mx7d_pad_i2c4_sda__i2c4_sda>;
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			input-schmitt-enable;
@@ -110,5 +110,4 @@
 			drive-strength = "x1";
 		};
 	};
-
 };

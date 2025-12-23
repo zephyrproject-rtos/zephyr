@@ -9,3 +9,11 @@ config IPM_SEDI
 	  This option enables the Intel SEDI IPM(IPC) driver.
 	  This driver is simply a shim driver built upon the SEDI
 	  bare metal IPC driver in the hal-intel module
+
+config IPM_CALLBACK_ASYNC
+	bool "Deliver callbacks asynchronously"
+	help
+	  When selected, the driver supports "asynchronous" command
+	  delivery.  Commands will stay active after the ISR returns,
+	  until the application expressly "completes" the command
+	  later.

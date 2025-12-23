@@ -20,11 +20,11 @@
 
 	chosen {
 		zephyr,console = &uart136;
-		zephyr,code-partition = &cpuapp_slot0_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
-		zephyr,ieee802154 = &cpuapp_ieee802154;
+		zephyr,uart-mcumgr = &uart136;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 	};
@@ -144,14 +144,17 @@
 	status = "okay";
 };
 
+&cpusec_bellboard {
+	status = "okay";
+};
+
 &cpusys_vevif {
 	status = "okay";
 };
 
 &cpusec_cpuapp_ipc {
 	mbox-names = "tx", "rx";
-	tx-region = <&cpuapp_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpuapp_ipc_shm>;
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
@@ -185,12 +188,18 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
-&cpuapp_rx_partitions {
-	status = "okay";
+ironside_se_boot_report: &cpuapp_ironside_se_boot_report {};
+
+boot_partition: &cpuapp_boot_partition {
+	label = "mcuboot";
 };
 
-&cpuapp_rw_partitions {
-	status = "okay";
+slot0_partition: &cpuapp_slot0_partition {
+	label = "image-0";
+};
+
+slot1_partition: &cpuapp_slot1_partition {
+	label = "image-1";
 };
 
 &cpuppr_vpr {
@@ -253,13 +262,14 @@ ipc0: &cpuapp_cpurad_ipc {
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];
-		sfdp-bfp = [
-			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 10 d8
-			00 ff 00 ff  87 79 01 00  84 12 00 c4  cc 04 67 46
-			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
-			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
-		];
+		sfdp-bfp = [e5 20 8a ff ff ff ff 03 00 ff 00 ff 00 ff 00 ff
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 10 d8
+			    00 ff 00 ff 87 79 01 00 84 12 00 c4 cc 04 67 46
+			    30 b0 30 b0 f4 bd d5 5c 00 00 00 ff 10 10 00 20
+			    00 00 00 00 00 00 7c 23 48 00 00 00 00 00 88 88];
+		sfdp-ff05 = [00 ee c0 69 72 72 71 71 00 d8 f7 f6 00 0a 00 00
+			     14 45 98 80];
+		sfdp-ff84 = [43 06 0f 00 21 dc ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
@@ -276,10 +286,6 @@ ipc0: &cpuapp_cpurad_ipc {
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
 	};
-};
-
-&cpuapp_ieee802154 {
-	status = "okay";
 };
 
 zephyr_udc0: &usbhs {

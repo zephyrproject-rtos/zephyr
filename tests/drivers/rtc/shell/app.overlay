@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	fake_rtc: fake_rtc {
 		compatible = "zephyr,fake-rtc";
 		status = "okay";

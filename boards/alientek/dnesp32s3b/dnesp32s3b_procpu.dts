@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "dnesp32s3b-pinctrl.dtsi"
+
+/ {
+	model = "DNESP32S3B PROCPU";
+	compatible = "alientek,dnesp32s3b";
+
+	aliases {
+		led0 = &ledb;
+		led1 = &ledr;
+		sw0 = &b0;
+		sw1 = &k1;
+		sw2 = &k2;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		ledb: led_blue {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "LEDB";
+		};
+
+		ledr: led_red {
+			gpios = <&io_expander 8 GPIO_ACTIVE_LOW>;
+			label = "LEDR";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		b0: button_b0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		k1: button_k1 {
+			gpios = <&io_expander 4 GPIO_ACTIVE_LOW>;
+			label = "KEY1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		k2: button_k2 {
+			gpios = <&io_expander 3 GPIO_ACTIVE_LOW>;
+			label = "KEY2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	io_expander: xl9555@20 {
+		compatible = "nxp,pca9555";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		int-gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/__assert.h>
 
 #include "adxl345.h"
@@ -271,6 +272,8 @@ static int adxl345_attr_set(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return adxl345_attr_set_odr(dev, chan, attr, val);
+	case SENSOR_ATTR_UPPER_THRESH:
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, val->val1);
 	default:
 		return -ENOTSUP;
 	}
@@ -310,14 +313,22 @@ int adxl345_read_sample(const struct device *dev,
 	return 0;
 }
 
-void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
+static void adxl345_accel_convert(struct sensor_value *val, int16_t sample,
+				  uint8_t selected_range)
 {
+	const int32_t sensitivity[] = {
+		[ADXL345_RANGE_2G] = INT32_C(SENSOR_G / 256),
+		[ADXL345_RANGE_4G] = INT32_C(SENSOR_G / 128),
+		[ADXL345_RANGE_8G] = INT32_C(SENSOR_G / 64),
+		[ADXL345_RANGE_16G] = INT32_C(SENSOR_G / 32),
+	};
+
 	if (sample & BIT(9)) {
 		sample |= ADXL345_COMPLEMENT;
 	}
 
-	val->val1 = ((sample * SENSOR_G) / 32) / 1000000;
-	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
+	val->val1 = (sample * sensitivity[selected_range]) / 1000000;
+	val->val2 = (sample * sensitivity[selected_range]) % 1000000;
 }
 
 static int adxl345_sample_fetch(const struct device *dev,
@@ -347,18 +358,26 @@ static int adxl345_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl345_accel_convert(val, data->samples.x);
+		adxl345_accel_convert(val, data->samples.x,
+				      data->selected_range);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl345_accel_convert(val, data->samples.y);
+		adxl345_accel_convert(val, data->samples.y,
+				      data->selected_range);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl345_accel_convert(val, data->samples.z);
+		adxl345_accel_convert(val, data->samples.z,
+				      data->selected_range);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(val++, data->samples.x);
-		adxl345_accel_convert(val++, data->samples.y);
-		adxl345_accel_convert(val,   data->samples.z);
+		adxl345_accel_convert(val, data->samples.x,
+				      data->selected_range);
+		val++;
+		adxl345_accel_convert(val, data->samples.y,
+				      data->selected_range);
+		val++;
+		adxl345_accel_convert(val, data->samples.z,
+				      data->selected_range);
 		break;
 	default:
 		return -ENOTSUP;
@@ -393,7 +412,7 @@ static int adxl345_interrupt_config(const struct device *dev,
 	int ret;
 	const struct adxl345_dev_config *cfg = dev->config;
 
-	ret = adxl345_reg_write_byte(dev, ADXL345_INT_MAP, int1);
+	ret = adxl345_reg_write_byte(dev, ADXL345_INT_MAP, cfg->route_to_int2 ? int1 : ~int1);
 	if (ret) {
 		return ret;
 	}
@@ -470,6 +489,9 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Initialize op_mode to reflect current state */
+	data->op_mode = ADXL345_MEASURE;
+
 #ifdef CONFIG_ADXL345_TRIGGER
 	rc = adxl345_init_interrupt(dev);
 	if (rc < 0) {
@@ -485,6 +507,10 @@ static int adxl345_init(const struct device *dev)
 	if (rc) {
 		return rc;
 	}
+	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_ACT_MSK);
+	if (rc) {
+		return rc;
+	}
 #endif
 
 	rc = adxl345_reg_read_byte(dev, ADXL345_DATA_FORMAT_REG, &full_res);
@@ -494,9 +520,47 @@ static int adxl345_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int adxl345_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	struct adxl345_dev_data *data = dev->data;
+	int rc;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Resume to measurement mode */
+		rc = adxl345_set_op_mode(dev, ADXL345_MEASURE);
+		if (rc == 0) {
+			data->op_mode = ADXL345_MEASURE;
+		}
+		return rc;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Enter standby mode for low power */
+		rc = adxl345_set_op_mode(dev, ADXL345_STANDBY);
+		if (rc == 0) {
+			data->op_mode = ADXL345_STANDBY;
+		}
+		return rc;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_ADXL345_TRIGGER
+
 #define ADXL345_CFG_IRQ(inst)									   \
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int2_gpios),
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),					   \
+		(										   \
+			.interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),			   \
+			.route_to_int2 = false,							   \
+		),										   \
+		(										   \
+			.interrupt = GPIO_DT_SPEC_INST_GET(inst, int2_gpios),			   \
+			.route_to_int2 = true,							   \
+		))
+
 #else
 #define ADXL345_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL345_TRIGGER */
@@ -505,7 +569,7 @@ static int adxl345_init(const struct device *dev)
 	COND_CODE_1(CONFIG_SPI_RTIO,								   \
 			(SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst),		   \
 			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |					   \
-			SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);),					   \
+			SPI_MODE_CPOL | SPI_MODE_CPHA);),					   \
 			())
 
 #define ADXL345_RTIO_I2C_DEFINE(inst)								   \
@@ -544,13 +608,13 @@ static int adxl345_init(const struct device *dev)
 						    SPI_WORD_SET(8) |				   \
 						    SPI_TRANSFER_MSB |				   \
 						    SPI_MODE_CPOL |				   \
-						    SPI_MODE_CPHA,				   \
-						    0)},					   \
+						    SPI_MODE_CPHA)},				   \
 		.bus_is_ready = adxl345_bus_is_ready_spi,					   \
 		.reg_access = adxl345_reg_access_spi,						   \
 		.bus_type = ADXL345_BUS_SPI,							   \
 		ADXL345_CONFIG(inst)								   \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),				   \
+		COND_CODE_1(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),			   \
+				    DT_INST_NODE_HAS_PROP(inst, int2_gpios)),			   \
 		(ADXL345_CFG_IRQ(inst)), ())							   \
 	}
 
@@ -561,7 +625,8 @@ static int adxl345_init(const struct device *dev)
 		.reg_access = adxl345_reg_access_i2c,						   \
 		.bus_type = ADXL345_BUS_I2C,							   \
 		ADXL345_CONFIG(inst)								   \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),				   \
+		COND_CODE_1(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),			   \
+				    DT_INST_NODE_HAS_PROP(inst, int2_gpios)),			   \
 		(ADXL345_CFG_IRQ(inst)), ())							   \
 	}
 
@@ -587,7 +652,8 @@ static int adxl345_init(const struct device *dev)
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),		   \
 			    (ADXL345_CONFIG_I2C(inst)));					   \
 												   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,					   \
+	PM_DEVICE_DT_INST_DEFINE(inst, adxl345_pm_action);					   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, PM_DEVICE_DT_INST_GET(inst),		   \
 			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,	   \
 			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);
 

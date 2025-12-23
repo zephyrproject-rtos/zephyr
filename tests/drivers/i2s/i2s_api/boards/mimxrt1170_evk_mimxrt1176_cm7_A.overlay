@@ -13,8 +13,8 @@
 /* Enable SAI4, and set clocks to match SAI1 */
 &sai4 {
 	status = "okay";
-	clocks = < &ccm 0x2003 0x2184 0x6 >;
-	podf = < 0x4 >;
+	clocks = <&ccm 0x2003 0x2184 0x6>;
+	podf = <0x4>;
 	pinctrl-0 = <&pinmux_sai4>;
 	pinctrl-names = "default";
 };

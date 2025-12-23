@@ -19,4 +19,4 @@ config EXPECTED_APP_TEST_FOO_VAL
 	help
 	  Expected application value for the test.
 
-source "${ZEPHYR_BASE}/share/sysbuild/Kconfig"
+source "$(ZEPHYR_BASE)/share/sysbuild/Kconfig"

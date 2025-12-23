@@ -37,7 +37,6 @@
 			compatible = "snps,archs38";
 			reg = <3>;
 		};
-
 	};
 
 	intc: arcv2-intc {
@@ -45,7 +44,6 @@
 		interrupt-controller;
 		#interrupt-cells = <2>;
 	};
-
 
 	idu_intc: idu-interrupt-controller {
 		compatible = "snps,archs-idu-intc";
@@ -92,7 +90,7 @@
 			reg-shift = <2>;
 		};
 
-		uart1: uart@f0026000{
+		uart1: uart@f0026000 {
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
 			reg = <0xf0026000 0x1000>;
@@ -210,6 +208,5 @@
 			max-xfer-size = <16>;
 			status = "disabled";
 		};
-
 	};
 };

@@ -1,0 +1,133 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Sitronix ST730x display controllers common properties
+
+description: |
+    The ST730x display controllers are mostly monochrome low power LCD controllers.
+    These displays have extreme clarity and contrast, and refresh rate up to 51 Hz.
+    They use a unusual data format that requires conversion from standard ones, and
+    necessitate rounding X axis values to 12, including width which sometimes need
+    to be rounded to the next multiple of 12 to fill the display.
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  start-line:
+    type: int
+    required: true
+    description: Start line (first gate) of display RAM to be displayed.
+
+  start-column:
+    type: int
+    required: true
+    description: Start column of display RAM to be displayed. Must be multiple of 12.
+
+  nvm-load:
+    type: uint8-array
+    required: true
+    description: NVM Load settings, 2 bytes.
+
+  gate-voltages:
+    type: uint8-array
+    required: true
+    description: Gate Voltages, 5 bits each, 2 bytes.
+
+  vsh:
+    type: uint8-array
+    required: true
+    description: High positive voltage in different modes. 4 bytes.
+      On LCDs the high and low voltages affect contrast.
+
+  vsl:
+    type: uint8-array
+    required: true
+    description: Low positive voltage in different modes. 4 bytes.
+      On LCDs the high and low voltages affect contrast.
+
+  vshn:
+    type: uint8-array
+    required: true
+    description: High negative voltage in different modes. 4 bytes.
+      On LCDs the high and low voltages affect contrast.
+
+  vsln:
+    type: uint8-array
+    required: true
+    description: Low negative voltage in different modes. 4 bytes.
+      On LCDs the high and low voltages affect contrast.
+
+  osc-settings:
+    type: int
+    required: true
+    description: |
+      Oscillator settings, 1 byte such as:
+      - [7]: enabled or disabled
+      - [5][2-1]: Max framerate: 000 = 51Hz, 111 = 32Hz
+      - [6][4-3][0]: 0
+
+  framerate:
+    type: int
+    required: true
+    description: |
+      Framerate settings, 1 byte such as:
+      - [4]: High power mode framerate, max framerate is 000, 0=25.5Hz, 1=51Hz, else 0=16Hz, 1=32Hz.
+      - [2-0]: Low power mode framerate, 0:0.25Hz, 1:0.5Hz, 2:1Hz, 3:2hz, 4:4Hz, 5:8Hz.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Specify how many gate lines the display uses times 4, so typically y-size / 4;
+
+  source-voltage:
+    type: int
+    required: true
+    description: |
+      Source voltage selection [1-0]:
+      - 00: VSHPA1/ VSLPA1/ VSHNA1/ VSLNA1
+      - 01: VSHPA2/ VSLPA2/ VSHNA2/ VSLNA2
+      - 10: VSHPA3/ VSLPA3/ VSHNA3/ VSLNA3
+      - 11: VSHPA4/ VSLPA4/ VSHNA4/ VSLNA4
+
+  remap-value:
+    type: int
+    required: true
+    description: |
+      Remap memory data access and so flip the display:
+      - [7]: Page address order flip
+      - [6]: Column address order flip
+      - [5]: Page/Column order flip
+      - [3]: Data output order flip
+      - [2]: Gate scan order flip
+
+  panel-settings:
+    type: int
+    required: true
+    description: |
+      Set panel and gate layout:
+      - [7][4]: 0
+      - [6-5]: Column dot inversion: 00: Column inversion, 01: 1-Dot inversion, 10: 2-Dot inversion
+      - [3-2]: Gate scan mode: 00: 2 line interval, 01: 1 line interval, 10: frame interval
+      - [1-0]: Panel layout: 00: 2 line interlace, 01: 1 line interlace, 10: no interlacing
+
+  hpm-gate-waveform:
+    type: uint8-array
+    default: [0xE5, 0xF6, 0x05, 0x46, 0x77, 0x77, 0x77, 0x77, 0x76, 0x45]
+    description: |
+      Waveform used to drive LCD in high power mode. 10 bytes total:
+      - 1 byte: 0xA5 (disable) or 0xE5 (enable), tells if waveform is enabled or disabled
+      - 1 byte: 0xF6
+      - 8 bytes: [7][3]: 0, [6-4]: GPCHPUx, [2-0]: GPCHPUx+1. Please See datasheet.
+      The default is the default values of the controller.
+
+  lpm-gate-waveform:
+    type: uint8-array
+    default: [0x05, 0x46, 0x77, 0x77, 0x77, 0x77, 0x76, 0x45]
+    description: |
+      Waveform used to drive LCD in low power mode. 8 bytes total:
+      - 8 bytes: [7][3]: 0, [6-4]: GPCLPUx, [2-0]: GPCLPUx+1. Please See datasheet.
+      The default is the default values of the controller.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting

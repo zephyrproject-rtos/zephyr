@@ -10,10 +10,25 @@ if SOC_SERIES_CC23X0
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
-config SYS_CLOCK_TICKS_PER_SEC
-	default 1000
+if CC23X0_RTC_TIMER
+	config SYS_CLOCK_HW_CYCLES_PER_SEC
+		default 32768
+
+	config SYS_CLOCK_TICKS_PER_SEC
+		default 125375
+endif
+if CC23X0_SYSTIM_TIMER
+	config SYS_CLOCK_HW_CYCLES_PER_SEC
+		default 48000000
+
+	config SYS_CLOCK_TICKS_PER_SEC
+		default 1000
+endif
 
 config NUM_IRQS
 	default 19
+
+config BUILD_OUTPUT_BIN
+	default n
 
 endif

@@ -188,7 +188,7 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Integer multiplication 32-bit conversion */
 #define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)	\
-	(uint32_t) ((__t)*((__to_hz) / (__from_hz)))
+	((uint32_t) ((__t)*((__to_hz) / (__from_hz))))
 
 /* General 32-bit conversion */
 #define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
@@ -212,9 +212,9 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* Slow 64-bit conversion. This avoids overflowing the multiply */
 #define z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t) / (__from_hz))*(__to_hz) +			\
-	 (((uint64_t) (__t) % (__from_hz))*(__to_hz) +		\
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+	((((uint64_t) (__t) / (__from_hz))*(__to_hz)) +			\
+	 (((((uint64_t) (__t) % (__from_hz))*(__to_hz)) +		\
+	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
 
 /* General 64-bit conversion. Uses one of the two above macros */
 #define z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \

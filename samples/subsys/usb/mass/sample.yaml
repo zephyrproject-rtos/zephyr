@@ -1,25 +1,7 @@
 sample:
   name: Mass Storage
 tests:
-  sample.usb.mass_ram_none:
-    min_ram: 128
-    depends_on: usb_device
-    arch_exclude: posix
-    extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
-    extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
-    tags:
-      - msd
-      - usb
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "No file system selected"
-        - "The device is put in USB mass storage mode."
-  sample.usb_device_next.mass_ram_none:
+  sample.usbd.mass_ram_none:
     min_ram: 128
     depends_on: usbd
     integration_platforms:
@@ -32,12 +14,8 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - max32690evkit/max32690/m4
     extra_args:
-      - CONF_FILE="usbd_next_prj.conf"
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
-    extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
     tags:
-      - msd
       - usb
     harness: console
     harness_config:
@@ -45,18 +23,23 @@ tests:
       ordered: true
       regex:
         - "No file system selected"
-        - "The device is put in USB mass storage mode."
-  sample.usb.mass_ram_fat:
+        - "The device is put in USB mass storage mode"
+  sample.usbd.mass_ram_fat:
     min_ram: 128
-    depends_on: usb_device
-    arch_exclude: posix
+    depends_on: usbd
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk/mimxrt1062/qspi
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_RAM=y
     tags:
-      - msd
       - usb
     harness: console
     harness_config:
@@ -64,33 +47,8 @@ tests:
       ordered: true
       regex:
         - "End of files"
-        - "The device is put in USB mass storage mode."
-  sample.usb.mass_flash_fatfs:
-    min_ram: 32
-    modules:
-      - fatfs
-    depends_on: usb_device
-    filter: dt_compat_enabled("nordic,qspi-nor")
-    platform_allow:
-      - nrf52840dk/nrf52840
-      - nrf5340dk/nrf5340/cpuapp
-      - adafruit_feather_nrf52840/nrf52840/sense
-    integration_platforms:
-      - nrf52840dk/nrf52840
-    extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
-      - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
-    tags:
-      - msd
-      - usb
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "End of files"
-        - "The device is put in USB mass storage mode."
-  sample.usb_device_next.mass_flash_fatfs:
+        - "The device is put in USB mass storage mode"
+  sample.usbd.mass_flash_fatfs:
     min_ram: 32
     modules:
       - fatfs
@@ -102,12 +60,9 @@ tests:
       - adafruit_feather_nrf52840/nrf52840/sense
     integration_platforms:
       - nrf52840dk/nrf52840
-    extra_args: CONF_FILE="usbd_next_prj.conf"
     extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags:
-      - msd
       - usb
     harness: console
     harness_config:
@@ -115,30 +70,8 @@ tests:
       ordered: true
       regex:
         - "End of files"
-        - "The device is put in USB mass storage mode."
-  sample.usb.mass_sdhc_fatfs:
-    min_ram: 32
-    filter: dt_compat_enabled("zephyr,sdmmc-disk")
-    modules:
-      - fatfs
-    depends_on:
-      - usb_device
-      - sdhc
-    extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
-      - CONFIG_APP_MSC_STORAGE_SDCARD=y
-    tags:
-      - msd
-      - usb
-    harness: console
-    harness_config:
-      fixture: fixture_sdcard
-      type: multi_line
-      ordered: true
-      regex:
-        - "End of files"
-        - "The device is put in USB mass storage mode."
-  sample.usb_device_next.mass_sdhc_fatfs:
+        - "The device is put in USB mass storage mode"
+  sample.usbd.mass_sdhc_fatfs:
     min_ram: 32
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
     modules:
@@ -147,11 +80,8 @@ tests:
       - usbd
       - sdhc
     extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_SDCARD=y
-    extra_args: CONF_FILE="usbd_next_prj.conf"
     tags:
-      - msd
       - usb
     harness: console
     harness_config:
@@ -160,12 +90,12 @@ tests:
       ordered: true
       regex:
         - "End of files"
-        - "The device is put in USB mass storage mode."
-  sample.usb.mass_flash_littlefs:
+        - "The device is put in USB mass storage mode"
+  sample.usbd.mass_flash_littlefs:
     modules:
       - littlefs
     min_ram: 32
-    depends_on: usb_device
+    depends_on: usbd
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow:
       - nrf52840dk/nrf52840
@@ -174,10 +104,8 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_configs:
-      - CONFIG_LOG_DEFAULT_LEVEL=3
       - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
     tags:
-      - msd
       - usb
     harness: console
     harness_config:
@@ -185,4 +113,4 @@ tests:
       ordered: true
       regex:
         - "End of files"
-        - "The device is put in USB mass storage mode."
+        - "The device is put in USB mass storage mode"

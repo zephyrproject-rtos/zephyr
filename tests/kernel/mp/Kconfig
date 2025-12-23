@@ -6,6 +6,6 @@
 # the shared variables in cached/incoherent memory.
 config KERNEL_COHERENCE
 	bool
-	default y if ARCH_HAS_COHERENCE
+	default y if CACHE_CAN_SAY_MEM_COHERENCE
 
 source "Kconfig.zephyr"

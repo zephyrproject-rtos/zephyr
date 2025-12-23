@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_EFR32MG24 || SOC_SERIES_MGM24
+if SOC_SILABS_XG24
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used

@@ -23,9 +23,9 @@ config VIDEO_INIT_PRIORITY
 	help
 	  System initialization priority for video drivers.
 
-config VIDEO_BUFFER_POOL_SZ_MAX
-	int "Size of the largest buffer in the video pool"
-	default 1048576
+config VIDEO_BUFFER_POOL_HEAP_SIZE
+	int "Size in byte of the video buffer pool"
+	default 2097152
 
 config VIDEO_BUFFER_POOL_NUM_MAX
 	int "Number of maximum sized buffer in the video pool"
@@ -35,9 +35,20 @@ config VIDEO_BUFFER_POOL_ALIGN
 	int "Alignment of the video pool’s buffer"
 	default 64
 
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION
+	bool "Place video buffer pool in a Zephyr memory-region"
+	help
+	  Place video buffer pool in a region, automatically
+	  created from a 'zephyr,memory-region' compatible node,
+	  whose name is specified in CONFIG_VIDEO_BUFFER_ZEPHYR_REGION_NAME.
+
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
+	string "Name of the zephyr memory-region for video buffer pool"
+	help
+	  Name of the Zephyr memory-region where video buffer pool is placed.
+
 config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
 	bool "Use shared multi heap for video buffer"
-	default n
 
 config VIDEO_BUFFER_SMH_ATTRIBUTE
 	int "Shared multi heap attribute for video buffer"
@@ -58,42 +69,39 @@ config VIDEO_I2C_RETRY_NUM
 	  The default is to not retry. Board configuration files or user project can then
 	  use the number of retries that matches their situation.
 
-source "drivers/video/Kconfig.esp32_dvp"
+config VIDEO_ENCODER_H264
+	bool "H264 video encoder support"
 
-source "drivers/video/Kconfig.mcux_csi"
+config VIDEO_ENCODER_JPEG
+	bool "JPEG video encoder support"
 
-source "drivers/video/Kconfig.mcux_mipi_csi2rx"
-
-source "drivers/video/Kconfig.shell"
-
-source "drivers/video/Kconfig.sw_generator"
-
-source "drivers/video/Kconfig.mt9m114"
-
-source "drivers/video/Kconfig.ov7725"
-
-source "drivers/video/Kconfig.ov2640"
-
-source "drivers/video/Kconfig.stm32_dcmi"
-
-source "drivers/video/Kconfig.ov5640"
-
-source "drivers/video/Kconfig.ov7670"
-
-source "drivers/video/Kconfig.ov9655"
-
-source "drivers/video/Kconfig.gc2145"
-
-source "drivers/video/Kconfig.mcux_sdma"
-
+# zephyr-keep-sorted-start
 source "drivers/video/Kconfig.emul_imager"
-
 source "drivers/video/Kconfig.emul_rx"
-
+source "drivers/video/Kconfig.esp32_dvp"
+source "drivers/video/Kconfig.gc2145"
+source "drivers/video/Kconfig.hm01b0"
+source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx335"
-
+source "drivers/video/Kconfig.mcux_csi"
+source "drivers/video/Kconfig.mcux_mipi_csi2rx"
+source "drivers/video/Kconfig.mcux_sdma"
+source "drivers/video/Kconfig.mt9m114"
+source "drivers/video/Kconfig.ov2640"
+source "drivers/video/Kconfig.ov5640"
+source "drivers/video/Kconfig.ov7725"
+source "drivers/video/Kconfig.ov9655"
+source "drivers/video/Kconfig.renesas_ra_ceu"
+source "drivers/video/Kconfig.shell"
 source "drivers/video/Kconfig.st_mipid02"
-
+source "drivers/video/Kconfig.stm32_dcmi"
 source "drivers/video/Kconfig.stm32_dcmipp"
+source "drivers/video/Kconfig.stm32_jpeg"
+source "drivers/video/Kconfig.stm32_venc"
+source "drivers/video/Kconfig.sw_generator"
+# zephyr-keep-sorted-stop
+
+source "drivers/video/Kconfig.ov5642"
+source "drivers/video/Kconfig.ov767x"
 
 endif # VIDEO

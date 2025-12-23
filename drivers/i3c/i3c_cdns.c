@@ -1088,10 +1088,21 @@ static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_d
 	sir_cfg = SIR_MAP_DEV_ROLE(I3C_BCR_DEVICE_ROLE(target->bcr)) |
 		  SIR_MAP_DEV_DA(target->dynamic_addr);
 	if (i3c_ibi_has_payload(target)) {
-		sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
+		/*
+		 * the I3C spec says that a len of 0x00, means no limit, but the cdns i3c doesn't
+		 * reconigize stops when loading a new word in the FIFO, so if multiple ibis come in
+		 * quick succession, then they may be all in the same fifo word and may not be read
+		 * correctly.
+		 */
+		if (target->data_length.max_ibi == 0x00) {
+			sir_cfg |= SIR_MAP_DEV_PL(
+				MIN(SIR_MAP_PL_MAX, CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE));
+		} else {
+			sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
+		}
 	} else {
-		/* Set to 1 for MDB */
-		sir_cfg |= SIR_MAP_DEV_PL(1);
+		/* Set to 0 for no ibi payload */
+		sir_cfg |= SIR_MAP_DEV_PL(0);
 	}
 	/* ACK if there is an ibi tir cb or if it is controller capable*/
 	if ((target->ibi_cb != NULL) || i3c_device_is_controller_capable(target)) {
@@ -2763,7 +2774,9 @@ static void cdns_i3c_target_sdr_tx_thr_int_handler(const struct device *dev,
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_USE_IBI) || defined(CONFIG_I3C_TARGET)
 	struct cdns_i3c_data *data = dev->data;
+#endif
 #ifdef CONFIG_I3C_CONTROLLER
 	uint32_t int_st = sys_read32(config->base + MST_ISR);
 

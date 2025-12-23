@@ -12,7 +12,7 @@ zephyr_library_sources(src/os_mgmt.c)
 
 zephyr_library_include_directories(include)
 
-if (CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+if(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
     zephyr_include_directories(
         ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/bootutil/include
     )

@@ -26,13 +26,6 @@ config MCUX_ELCDIF_FB_NUM
 	  implements double framebuffering by always calling display_write with
 	  a buffer equal in size to the connected panel.
 
-	  NOTE: when no framebuffers are allocated, the ELCDIF will be
-	  set to display an empty buffer during initialization. This means
-	  the display will show what is effectively a dump of
-	  system RAM until a new framebuffer is written. If the security
-	  implications of this concern you, leave at least one driver
-	  framebuffer enabled.
-
 config MCUX_ELCDIF_FB_SIZE
 	int "Framebuffer size required by the eLCDIF driver"
 	default 3686400
@@ -42,6 +35,13 @@ config MCUX_ELCDIF_FB_SIZE
 	  The default value is set to afford for a default resolution of 1280x720 and
 	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
 	  according to the actual used resolution and format to optimize the heap size.
+
+config MCUX_ELCDIF_START_ON_INIT
+	bool "Start the ELCDIF display driver during initialization"
+	default y if MCUX_ELCDIF_FB_NUM != 0
+	help
+	  Optionally start the ELCDIF display driver from the initialization step,
+	  which can be required for some connected display controllers to function properly.
 
 config MCUX_ELCDIF_PXP
 	bool "Use PXP for display rotation"

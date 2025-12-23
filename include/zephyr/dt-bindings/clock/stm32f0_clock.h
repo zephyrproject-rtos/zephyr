@@ -27,8 +27,9 @@
 #define STM32_SRC_HSI48		(STM32_SRC_HSI14 + 1)
 /** Bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSI48 + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
 /** PLL clock */
-#define STM32_SRC_PLLCLK	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLLCLK	(STM32_SRC_TIMPCLK1 + 1)
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR1_REG               0x04
@@ -39,17 +40,17 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR3 devices */
-#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CFGR3_REG)
-#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 4, CFGR3_REG)
-#define CEC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 6, CFGR3_REG)
-#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 7, CFGR3_REG)
-#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CFGR3_REG)
-#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 18, CFGR3_REG)
+#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CFGR3_REG)
+#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 4, 4, CFGR3_REG)
+#define CEC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 6, CFGR3_REG)
+#define USB_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 7, CFGR3_REG)
+#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CFGR3_REG)
+#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 19, 18, CFGR3_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xF, 24, CFGR1_REG)
-#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 28, CFGR1_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR1_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 30, 28, CFGR1_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F0_CLOCK_H_ */

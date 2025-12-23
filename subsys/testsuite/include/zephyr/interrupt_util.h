@@ -7,6 +7,8 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
+#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1);
+
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
 
@@ -57,7 +59,7 @@ static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) ||                       \
 	defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1) ||                      \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -74,7 +76,7 @@ static inline void trigger_irq(int irq)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 
 	/* Ensure that the specified IRQ number is a valid SGI interrupt ID */
 	zassert_true(irq <= 15, "%u is not a valid SGI interrupt ID", irq);
@@ -96,7 +98,7 @@ static inline void trigger_irq(int irq)
 #elif defined(CONFIG_ARC)
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
 
@@ -163,11 +165,20 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
+#if defined(CONFIG_HAZARD3_INTC)
+#include <hardware/irq.h>
+#endif
+
 #if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
 void riscv_clic_irq_set_pending(uint32_t irq);
 static inline void trigger_irq(int irq)
 {
 	riscv_clic_irq_set_pending(irq);
+}
+#elif defined(CONFIG_HAZARD3_INTC)
+static inline void trigger_irq(int irq)
+{
+	irq_set_pending(irq);
 }
 #else
 static inline void trigger_irq(int irq)
@@ -183,19 +194,19 @@ static inline void trigger_irq(int irq)
 #if XCHAL_NUM_INTERRUPTS > 32
 	switch (irq >> 5) {
 	case 0:
-		z_xt_set_intset(1 << irq);
+		z_xt_set_intset(1 << (irq & 0x1f));
 		break;
 	case 1:
-		z_xt_set_intset1(1 << irq);
+		z_xt_set_intset1(1 << (irq & 0x1f));
 		break;
 #if XCHAL_NUM_INTERRUPTS > 64
 	case 2:
-		z_xt_set_intset2(1 << irq);
+		z_xt_set_intset2(1 << (irq & 0x1f));
 		break;
 #endif
 #if XCHAL_NUM_INTERRUPTS > 96
 	case 3:
-		z_xt_set_intset3(1 << irq);
+		z_xt_set_intset3(1 << (irq & 0x1f));
 		break;
 #endif
 	default:
@@ -222,7 +233,7 @@ static inline void trigger_irq(int irq)
 	z_mips_enter_irq(irq);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_VIM)
+#elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_TI_VIM)
 
 extern void z_vim_arm_enter_irq(int);
 

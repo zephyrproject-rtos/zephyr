@@ -16,6 +16,7 @@ choice  ETHOS_U_NPU_CONFIG
 	default ETHOS_U55_128 if SOC_SERIES_MPS3
 	default ETHOS_U65_256 if SOC_MPS4_CORSTONE315
 	default ETHOS_U85_256 if SOC_MPS4_CORSTONE320
+	default ETHOS_U55_256 if SOC_SERIES_M55M1X
 config ETHOS_U55_64
 	bool "using Ethos-U55 with 64 macs"
 config ETHOS_U55_128
@@ -60,7 +61,7 @@ config ETHOS_U_NPU_NAME
 choice "ETHOS_U_LOG_LEVEL_CHOICE"
 	prompt "Max compiled-in log level for ETHOS_U"
 	default ETHOS_U_LOG_LEVEL_WRN
-	depends on STDOUT_CONSOLE
+	depends on LOG
 
 config ETHOS_U_LOG_LEVEL_NONE
 	bool "None"
@@ -84,7 +85,9 @@ endchoice
 
 config ETHOS_U_LOG_LEVEL
 	int
-	depends on STDOUT_CONSOLE
+	# Always define the symbol so C compiles cleanly even if LOG/console is off.
+	# When LOG is off, fall back to NONE (0).
+	default 0 if !LOG
 	default 0 if ETHOS_U_LOG_LEVEL_NONE
 	default 1 if ETHOS_U_LOG_LEVEL_ERR
 	default 2 if ETHOS_U_LOG_LEVEL_WRN

@@ -70,3 +70,49 @@ properties:
     description: |
      Raw ADC readings below this threshold are treated as noise and
      reported as 0 uA. The default value of 0 disables the threshold.
+
+  gain-extended-range:
+    type: string
+    description: |
+      Alternate gain to use if primary measurement hits limit:
+      - ADC_GAIN_1_6: x 1/6
+      - ADC_GAIN_1_5: x 1/5
+      - ADC_GAIN_1_4: x 1/4
+      - ADC_GAIN_1_3: x 1/3
+      - ADC_GAIN_2_5: x 2/5
+      - ADC_GAIN_1_2: x 1/2
+      - ADC_GAIN_2_3: x 2/3
+      - ADC_GAIN_4_5: x 4/5
+      - ADC_GAIN_1:   x 1
+      - ADC_GAIN_2:   x 2
+      - ADC_GAIN_3:   x 3
+      - ADC_GAIN_4:   x 4
+      - ADC_GAIN_6:   x 6
+      - ADC_GAIN_8:   x 8
+      - ADC_GAIN_12:  x 12
+      - ADC_GAIN_16:  x 16
+      - ADC_GAIN_24:  x 24
+      - ADC_GAIN_32:  x 32
+      - ADC_GAIN_64:  x 64
+      - ADC_GAIN_128: x 128
+    enum:
+      - "ADC_GAIN_1_6"
+      - "ADC_GAIN_1_5"
+      - "ADC_GAIN_1_4"
+      - "ADC_GAIN_1_3"
+      - "ADC_GAIN_2_5"
+      - "ADC_GAIN_1_2"
+      - "ADC_GAIN_2_3"
+      - "ADC_GAIN_4_5"
+      - "ADC_GAIN_1"
+      - "ADC_GAIN_2"
+      - "ADC_GAIN_3"
+      - "ADC_GAIN_4"
+      - "ADC_GAIN_6"
+      - "ADC_GAIN_8"
+      - "ADC_GAIN_12"
+      - "ADC_GAIN_16"
+      - "ADC_GAIN_24"
+      - "ADC_GAIN_32"
+      - "ADC_GAIN_64"
+      - "ADC_GAIN_128"

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config USBD_MSC_CLASS
-	bool "USB Mass Storage Device class support [EXPERIMENTAL]"
+	bool "USB Mass Storage Device class support"
 	select DISK_ACCESS
 	help
 	  USB Mass Storage device class support.
@@ -29,6 +29,13 @@ config USBD_MSC_SCSI_BUFFER_SIZE
 	help
 	  Buffer size must be able to hold at least one sector. All LUNs within
 	  single instance share the SCSI buffer.
+
+config USBD_MSC_DOUBLE_BUFFERING
+	bool "SCSI double buffering"
+	default y
+	help
+	  Allocate two SCSI buffers instead of one to increase throughput by
+	  using one buffer by disk subsystem and one by USB at the same time.
 
 module = USBD_MSC
 module-str = usbd msc

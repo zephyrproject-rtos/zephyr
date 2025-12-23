@@ -122,7 +122,7 @@ public:
      * @param[in] data A pointer to buffer containing the HDLC message to decode.
      * @param[in] len  The length (number of bytes) in the message.
      */
-    void ProcessRxData(uint8_t *data, uint16_t len);
+    void ProcessRxData(const uint8_t *data, uint16_t len);
 
     /**
      * This method is called when RCP failure detected and resets internal states of the interface.
@@ -186,7 +186,7 @@ private:
     uint32_t    TryReadAndDecode(bool fullRead);
     void        HandleHdlcFrame(otError aError);
     static void HandleHdlcFrame(void *aContext, otError aError);
-    static void HdlcRxCallback(uint8_t *data, uint16_t len, void *param);
+    static void HdlcRxCallback(const uint8_t *data, uint16_t len, void *param);
 
     const otRcpInterfaceMetrics *GetRcpInterfaceMetrics(void) const { return nullptr;}
     uint32_t                     GetBusSpeed(void) const { return 0; }

@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 Sebastian Viviani
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&arduino_i2c {
+	zephyr,concat-buf-size = <4096>;
+};

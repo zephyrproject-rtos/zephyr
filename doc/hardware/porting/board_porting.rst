@@ -250,7 +250,7 @@ board directory to a separate repository once it's working.)
 .. note::
 
   The board directory name does not need to match the name of the board.
-  Multiple boards can even defined be in one directory.
+  Multiple boards can even be defined in one directory.
 
 Your board directory should look like this:
 
@@ -367,12 +367,11 @@ If multiple boards are placed in the same board folder, then the file
 Write your devicetree
 *********************
 
-The devicetree file :file:`boards/<vendor>/plank/plank.dts` or
-:file:`boards/<vendor>/plank/plank_<qualifiers>.dts` describes your board
+The devicetree file :file:`boards/<vendor>/plank/plank_<qualifiers>.dts` describes your board
 hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
 your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
-In general, :file:`plank.dts` should look like this:
+In general, :file:`plank_<qualifiers>.dts` should look like this:
 
 .. code-block:: devicetree
 
@@ -422,16 +421,9 @@ In general, :file:`plank.dts` should look like this:
            status = "okay";
    };
 
-Only one ``.dts`` file will be used, and the most specific file which exists
-will be used.
-
-This means that if both :file:`plank.dts` and :file:`plank_soc1_foo.dts` exist,
-then when building for ``plank`` / ``plank/soc1``, then :file:`plank.dts` is
-used. When building for ``plank//foo`` / ``plank/soc1/foo`` the
-:file:`plank_soc1_foo.dts` is used.
-
-This allows board maintainers to write a base devicetree file for the board
-or write specific devicetree files for a given board's SoC or variant.
+In the case a board has only a single SoC, without any board variants then the dts file can be
+named :file:`<plank>.dts` instead, however this is not recommended due to the file silently be
+unused if a variant or other SoC is added to the board.
 
 If you're in a hurry, simple hardware can usually be supported by copy/paste
 followed by trial and error. If you want to understand details, you will need
@@ -516,7 +508,6 @@ files for a board named ``plank``:
    ├── Kconfig
    ├── Kconfig.plank
    ├── Kconfig.defconfig
-   ├── plank_defconfig
    └── plank_<qualifiers>_defconfig
 
 :file:`Kconfig.plank`
@@ -524,7 +515,7 @@ files for a board named ``plank``:
   Kconfig trees.
 
   This file selects the SoC in the Kconfig tree and potential other SoC related
-  Kconfig settings. This file must not select anything outside the re-usable
+  Kconfig settings. This file must not select anything outside the reusable
   Kconfig board and SoC trees.
 
   A :file:`Kconfig.plank` may look like this:
@@ -573,23 +564,28 @@ files for a board named ``plank``:
              default y
 
      if NETWORKING
+
      config SOC_ETHERNET_DRIVER
              default y
+
      endif # NETWORKING
 
      endif # BOARD_PLANK
 
-:file:`plank_defconfig` / :file:`plank_<qualifiers>_defconfig`
+:file:`plank_<qualifiers>_defconfig` (or :file:`plank_defconfig` in limited circumstances)
   A Kconfig fragment that is merged as-is into the final build directory
   :file:`.config` whenever an application is compiled for your board.
 
-  If both the common :file:`plank_defconfig` file and one or more board
-  qualifiers specific :file:`plank_<qualifiers>_defconfig` files exist, then
-  all matching files will be used.
-  This allows you to place configuration which is common for all board SoCs,
-  CPU clusters, and board variants in the base :file:`plank_defconfig` and only
-  place the adjustments specific for a given SoC or board variant in the
-  :file:`plank_<qualifiers>_defconfig`.
+  :file:`plank_defconfig` can only be used with boards that have no qualifiers, no variants and a
+  single SoC present, though this style of naming is not recommended due to samples/tests or
+  downstream usage breaking suddenly without warning if a new SoC or board variant/qualifier is
+  added to an board in upstream Zephyr.
+
+.. note::
+  Multiple files are not merged and there is no fallback mechanism for files, this means if there
+  is a board with 2 different SoCs and each one has 2 board variants, a :file:`plank_defconfig`
+  file would be wholly unused, for the first qualifier and variant
+  :file:`plank_<soc1>_<variant1>_defconfig` will be used, it will not include other file.
 
   The ``_defconfig`` should contain mandatory settings for your UART,
   console, etc. The results are architecture-specific, but typically look
@@ -629,50 +625,51 @@ also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 General recommendations
 ***********************
 
-For consistency and to make it easier for users to build generic applications
-that are not board specific for your board, please follow these guidelines
-while porting.
+For consistency and to make it easier for users to build applications which remain board agnostic,
+please follow these guidelines when porting a board you intend to contribute to Zephyr:
 
-- Unless explicitly recommended otherwise by this section, leave peripherals
-  and their drivers disabled by default.
+Enable valuable components in Devicetree
+  Devicetree nodes for valuable onboard components (LEDs, buttons, sensors, onboard
+  USB/Ethernet/BLE/Wi-Fi, etc.) must be **enabled by default** and have correct pin control and
+  driver configuration so that they work out of the box.
 
-- Configure and enable a system clock, along with a tick source.
+Keep subsystems disabled by default (Kconfig)
+  Do not enable subsystems in the board defconfig unless they are strictly required for basic board
+  operation, or are explicitly listed as exceptions in these recommendations.
 
-- Provide pin and driver configuration that matches the board's valuable
-  components such as sensors, buttons or LEDs, and communication interfaces
-  such as USB, Ethernet connector, or Bluetooth/Wi-Fi chip.
+Configure system clock and tick source
+  Set up a functioning system clock and tick source.
 
-- If your board uses a well-known connector standard (like Arduino, Mikrobus,
-  Grove, or 96Boards connectors), add connector nodes to your DTS and configure
-  pin muxes accordingly.
+Provide a default console
+  Use the ``zephyr,console`` chosen node to point to the UART controller used for console output.
 
-- Configure components that enable the use of these pins, such as
-  configuring an SPI instance to use the usual Arduino SPI pins.
+  Boards with built-in debug or a USB-to-UART adapter should set the console to the UART controller
+  connected to that adapter.
 
-- If available, configure and enable a serial output for the console
-  using the ``zephyr,console`` chosen node in the devicetree.
-  Development boards with a built-in debug adapter or USB-to-UART adapter should
-  by default configure and use the UART controller connected to that adapter.
-  For boards like :zephyr:board:`nrf52840dongle`, that do not
-  have a debug adapter, but a USB device controller, there is a common
-  :zephyr_file:`Kconfig file <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>`
-  that must be included in the board's Kconfig.defconfig file and
-  :zephyr_file:`devicetree file <boards/common/usb/cdc_acm_serial.dtsi>`
-  that must be included if the board's devicetree, if the board want to use the
-  CDC ACM UART as the default backend for logging and shell.
+  USB-only boards without any debug adapter must include the common USB CDC-ACM
+  :zephyr_file:`Kconfig <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>` and :zephyr_file:`DTS
+  <boards/common/usb/cdc_acm_serial.dtsi>` fragments to enable CDC-ACM UART as a default backend
+  for logging and shell.
 
-- If your board supports networking, configure a default interface.
+Add :ref:`shield interface <shield-interfaces>` definitions
+  For boards exposing standard expansion headers, add connector nodes and pin-muxing. Enable only
+  the peripherals needed for the expected/standard connector functionality.
 
-- Enable all GPIO ports connected to peripherals or expansion connectors.
+Configure pins and peripheral instances
+  Map peripherals to the correct pins (e.g., SPI on Arduino SPI pins) and provide default pinmux
+  entries supporting the board's features.
 
-- If available, enable pinmux and interrupt controller drivers.
+Enable networking interfaces
+  If networking hardware is present, configure default interfaces for each supported technology so
+  that networking samples work out of the box.
 
-- It is recommended to enable the MPU by default, if there is support for it
-  in hardware. For boards with limited memory resources it is acceptable to
-  disable it. When the MPU is enabled, it is recommended to also enable
-  hardware stack protection (CONFIG_HW_STACK_PROTECTION=y) and, thus, allow the
-  kernel to detect stack overflows when the system is running in privileged
-  mode.
+Enable GPIO controllers
+  All GPIO ports connected to onboard components or expansion headers should be enabled.
+
+Enable MPU and stack protection
+  It is recommended to enable the MPU when available (unless memory resources are too limited).
+  When the MPU is enabled, it is recommended to also enable hardware stack protection
+  (:kconfig:option:`CONFIG_HW_STACK_PROTECTION`) to ease debugging by allowing the kernel to detect stack overflows.
 
 .. _flash-and-debug-support:
 
@@ -974,50 +971,3 @@ extending a board.
    ├── Kconfig.plank
    ├── Kconfig.defconfig
    └── plank_<new-qualifiers>.yaml
-
-Board extensions (Old hardware model)
-*************************************
-
-.. note::
-
-  This extension mechanism is intended for boards in old hardware description
-  format. For boards described in new hardware model format, use the extension
-  feature described in :ref:`extend-board`.
-
-Boards already supported by Zephyr can be extended by downstream users, such as
-``example-application`` or vendor SDKs. In some situations, certain hardware
-description or :ref:`choices <devicetree-chosen-nodes>` can not be added in the
-upstream Zephyr repository, but they can be in a downstream project, where
-custom bindings or driver classes can also be created. This feature may also be
-useful in development phases, when the board skeleton lives upstream, but other
-features are developed in a downstream module.
-
-Board extensions are board fragments that can be present in an out-of-tree board
-root folder, under ``${BOARD_ROOT}/boards/extensions``. Here is an example
-structure of an extension for the ``plank`` board and its revisions:
-
-.. code-block:: none
-
-   boards/extensions/plank
-   ├── plank.conf                # optional
-   ├── plank_<revision>.conf     # optional
-   ├── plank.overlay             # optional
-   └── plank_<revision>.overlay  # optional
-
-A board extension directory must follow the naming structure of the original
-board it extends. It may contain Kconfig fragments and/or devicetree overlays.
-Extensions are, by default, automatically loaded and applied on top of board
-files, before anything else. There is no guarantee on which order extensions are
-applied, in case multiple exist. This feature can be disabled by passing
-``-DBOARD_EXTENSIONS=OFF`` when building.
-
-Note that board extensions need to follow the
-:ref:`same guidelines <porting-general-recommendations>` as regular boards. For
-example, it is wrong to enable extra peripherals or subsystems in a board
-extension.
-
-.. warning::
-
-   Board extensions are not allowed in any module referenced in Zephyr's
-   ``west.yml`` manifest file. Any board changes are required to be submitted to
-   the main Zephyr repository.

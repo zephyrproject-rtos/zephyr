@@ -173,6 +173,7 @@ static void unicast_stream_started(struct bt_bap_stream *stream)
 	test_stream->valid_rx_cnt = 0U;
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
 
 	printk("Started stream %p\n", stream);
 
@@ -644,6 +645,50 @@ static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group
 	}
 }
 
+static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, void *user_data)
+{
+	const uint32_t expected_pd = cap_stream->bap_stream.qos->pd;
+	struct bt_cap_unicast_group *unicast_group = user_data;
+	struct bt_bap_unicast_group_info bap_info;
+	struct bt_cap_unicast_group_info cap_info;
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	err = bt_bap_ep_get_info(cap_stream->bap_stream.ep, &ep_info);
+	if (err != 0) {
+		FAIL("Failed to get EP info: %d\n", err);
+		return true;
+	}
+
+	err = bt_cap_unicast_group_get_info(unicast_group, &cap_info);
+	if (err != 0) {
+		FAIL("Failed to get CAP unicast group info: %d\n", err);
+		return true;
+	}
+
+	err = bt_bap_unicast_group_get_info(cap_info.unicast_group, &bap_info);
+	if (err != 0) {
+		FAIL("Failed to get BAP unicast group info: %d\n", err);
+		return true;
+	}
+
+	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+		if (bap_info.sink_pd != expected_pd) {
+			FAIL("Unexpected sink PD %u (expected %u)\n", bap_info.sink_pd,
+			     expected_pd);
+			return true;
+		}
+	} else {
+		if (bap_info.source_pd != expected_pd) {
+			FAIL("Unexpected source PD %u (expected %u)\n", bap_info.source_pd,
+			     expected_pd);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool wait)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_param[2];
@@ -676,6 +721,13 @@ static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool
 		WAIT_FOR_FLAG(flag_started);
 		/* let other devices know we have started what we wanted */
 		backchannel_sync_send_all();
+
+		err = bt_cap_unicast_group_foreach_stream(
+			unicast_group, unicast_group_foreach_stream_cb, unicast_group);
+		if (err != 0) {
+			FAIL("Failed iterate on unicast group: %d\n", err);
+			return;
+		}
 	}
 }
 
@@ -761,7 +813,7 @@ static void unicast_audio_update(void)
 	WAIT_FOR_FLAG(flag_updated);
 }
 
-static void unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
+static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_stop_param param;
 	int err;
@@ -854,6 +906,17 @@ static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 	}
 }
 
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+	ARRAY_FOR_EACH_PTR(unicast_client_source_streams, test_stream) {
+		if (audio_test_stream_is_streaming(test_stream)) {
+			WAIT_FOR_FLAG(test_stream->flag_audio_received);
+		}
+	}
+	printk("Data received\n");
+}
+
 static void test_main_cap_initiator_unicast(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
@@ -879,14 +942,15 @@ static void test_main_cap_initiator_unicast(void)
 		for (size_t j = 0U; j < iterations; j++) {
 			printk("\nRunning iteration j=%zu\n\n", i);
 
-			UNSET_FLAG(flag_audio_received);
+			ARRAY_FOR_EACH_PTR(unicast_client_sink_streams, test_stream) {
+				UNSET_FLAG(test_stream->flag_audio_received);
+			}
 
 			unicast_audio_start(unicast_group, true);
 
 			unicast_audio_update();
 
-			printk("Waiting for data\n");
-			WAIT_FOR_FLAG(flag_audio_received);
+			wait_for_data();
 
 			/* Due to how the backchannel sync is implemented for LE Audio we cannot
 			 * easily tell the remote (CAP acceptor) how many times to wait for data,
@@ -897,7 +961,7 @@ static void test_main_cap_initiator_unicast(void)
 				backchannel_sync_wait_all();
 			}
 
-			unicast_audio_stop(unicast_group);
+			cap_initiator_unicast_audio_stop(unicast_group);
 		}
 
 		unicast_group_delete(unicast_group);
@@ -930,14 +994,12 @@ static void test_main_cap_initiator_unicast_inval(void)
 	unicast_audio_update_inval();
 	unicast_audio_update();
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
-	printk("Data received\n");
+	wait_for_data();
 
 	/* Wait until acceptors have received expected data */
 	backchannel_sync_wait_all();
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete_inval();
 	unicast_group_delete(unicast_group);
@@ -978,7 +1040,7 @@ static void test_cap_initiator_unicast_timeout(void)
 
 		WAIT_FOR_FLAG(flag_start_timeout);
 
-		unicast_audio_stop(unicast_group);
+		cap_initiator_unicast_audio_stop(unicast_group);
 	}
 
 	unicast_group_delete(unicast_group);
@@ -1040,14 +1102,12 @@ static void test_cap_initiator_unicast_ase_error(void)
 	/* Without invalid metadata type, start should pass */
 	unicast_audio_start(unicast_group, true);
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
-	printk("Data received\n");
+	wait_for_data();
 
 	/* Wait until acceptors have received expected data */
 	backchannel_sync_wait_all();
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;
@@ -1436,10 +1496,10 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 
 	if (expect_rx) {
 		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		wait_for_data();
 	}
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;

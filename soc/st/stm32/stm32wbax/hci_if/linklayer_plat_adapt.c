@@ -10,7 +10,8 @@
 
 #include <stm32_backup_domain.h>
 
-#include "scm.h"
+#include <app_conf.h>
+#include <bsp.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(linklayer_plat_adapt);
@@ -36,7 +37,6 @@ static uint32_t primask_bit;
 
 /* Radio SW low ISR global variable */
 volatile uint8_t radio_sw_low_isr_is_running_high_prio;
-
 
 void LINKLAYER_PLAT_DelayUs(uint32_t delay)
 {
@@ -95,8 +95,15 @@ void radio_low_prio_isr(void)
 }
 
 
-void link_layer_register_isr(void)
+void link_layer_register_isr(bool force)
 {
+	static bool is_isr_registered;
+
+	if (!force && is_isr_registered) {
+		return;
+	}
+	is_isr_registered = true;
+
 	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_INTR_NUM, 0, 0, reschedule);
 
 	/* Ensure the IRQ is disabled before enabling it at run time */
@@ -245,8 +252,6 @@ void LINKLAYER_PLAT_StartRadioEvt(void)
 	__HAL_RCC_RADIO_CLK_SLEEP_ENABLE();
 
 	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z);
-
-	scm_notifyradiostate(SCM_RADIO_ACTIVE);
 }
 
 void LINKLAYER_PLAT_StopRadioEvt(void)
@@ -254,8 +259,6 @@ void LINKLAYER_PLAT_StopRadioEvt(void)
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 
 	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_LOW_Z);
-
-	scm_notifyradiostate(SCM_RADIO_NOT_ACTIVE);
 }
 
 /* Link Layer notification for RCO calibration start */
@@ -286,6 +289,16 @@ void LINKLAYER_PLAT_DisableOSContextSwitch(void)
 	 * that the link layer is running a critical radio job (radio channels' calibration);
 	 * A sequence of radio ISRs will appear in the next few milli seconds.
 	 **/
+}
+
+uint32_t LINKLAYER_PLAT_GetSTCompanyID(void)
+{
+	return LL_FLASH_GetSTCompanyID();
+}
+
+uint32_t LINKLAYER_PLAT_GetUDN(void)
+{
+	return LL_FLASH_GetUDN();
 }
 
 void LINKLAYER_PLAT_EnableBackupDomainAccess(void)

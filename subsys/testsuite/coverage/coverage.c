@@ -9,7 +9,10 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <zephyr/posix/fnmatch.h>
 #include "coverage.h"
+#include <zephyr/arch/common/semihost.h>
+#include <sys/types.h>
 
 K_HEAP_DEFINE(gcov_heap, CONFIG_COVERAGE_GCOV_HEAP_SIZE);
 
@@ -279,6 +282,7 @@ void gcov_reset_all_counts(void)
 #endif
 }
 
+#ifdef CONFIG_COVERAGE_DUMP
 void dump_on_console_start(const char *filename)
 {
 	printk("\n%c", FILE_START_INDICATOR);
@@ -297,6 +301,7 @@ void dump_on_console_data(char *ptr, size_t len)
 	}
 }
 
+
 /**
  * Retrieves gcov coverage data and sends it over the given interface.
  */
@@ -308,32 +313,40 @@ void gcov_coverage_dump(void)
 	struct gcov_info *gcov_list_first = gcov_info_head;
 	struct gcov_info *gcov_list = gcov_info_head;
 
-	if (!k_is_in_isr()) {
 #ifdef CONFIG_MULTITHREADING
+	if (!k_is_in_isr()) {
 		k_sched_lock();
-#endif
 	}
+#endif
 	printk("\nGCOV_COVERAGE_DUMP_START");
 	while (gcov_list) {
+		if ((strlen(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE) > 0) &&
+		    (fnmatch(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE, gcov_list->filename, 0) == 0)) {
+			/* Don't print a note here, it would be interpreted as dump data */
+			goto file_dump_end;
+		}
 
 		dump_on_console_start(gcov_list->filename);
 		size = gcov_calculate_buff_size(gcov_list);
 
 		buffer = k_heap_alloc(&gcov_heap, size, K_NO_WAIT);
 		if (CONFIG_COVERAGE_GCOV_HEAP_SIZE > 0 && !buffer) {
-			printk("No Mem available to continue dump\n");
+			printk("No memory available to continue dump\n");
+			k_heap_free(&gcov_heap, buffer);
 			goto coverage_dump_end;
 		}
 
 		written_size = gcov_populate_buffer(buffer, gcov_list);
 		if (written_size != size) {
-			printk("Write Error on buff\n");
+			printk("Write Error on buffer\n");
+			k_heap_free(&gcov_heap, buffer);
 			goto coverage_dump_end;
 		}
 
 		dump_on_console_data(buffer, size);
 
 		k_heap_free(&gcov_heap, buffer);
+file_dump_end:
 		gcov_list = gcov_list->next;
 		if (gcov_list_first == gcov_list) {
 			goto coverage_dump_end;
@@ -341,13 +354,82 @@ void gcov_coverage_dump(void)
 	}
 coverage_dump_end:
 	printk("\nGCOV_COVERAGE_DUMP_END\n");
-	if (!k_is_in_isr()) {
 #ifdef CONFIG_MULTITHREADING
+	if (!k_is_in_isr()) {
 		k_sched_unlock();
-#endif
 	}
+#endif
 	return;
 }
+
+#elif CONFIG_COVERAGE_SEMIHOST
+/**
+ * Retrieves gcov coverage data and sends it over the given interface.
+ */
+void gcov_coverage_semihost(void)
+{
+	uint8_t *buffer;
+	size_t size;
+	size_t written_size;
+	struct gcov_info *gcov_list_first = gcov_info_head;
+	struct gcov_info *gcov_list = gcov_info_head;
+
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_in_isr()) {
+		k_sched_lock();
+	}
+#endif
+	while (gcov_list) {
+
+		int fd = semihost_open(gcov_list->filename, SEMIHOST_OPEN_WB);
+
+		if (fd < 0) {
+			printk("Failed to open file: %s\n", gcov_list->filename);
+			goto coverage_dump_end;
+		}
+
+		size = gcov_calculate_buff_size(gcov_list);
+
+		buffer = k_heap_alloc(&gcov_heap, size, K_NO_WAIT);
+		if (CONFIG_COVERAGE_GCOV_HEAP_SIZE > 0 && !buffer) {
+			printk("No memory available to continue dump\n");
+			semihost_close(fd);
+			k_heap_free(&gcov_heap, buffer);
+			goto coverage_dump_end;
+		}
+
+		written_size = gcov_populate_buffer(buffer, gcov_list);
+		if (written_size != size) {
+			printk("Write Error on buffer\n");
+			semihost_close(fd);
+			k_heap_free(&gcov_heap, buffer);
+			goto coverage_dump_end;
+		}
+
+		int ret = semihost_write(fd, (const void *)buffer, size);
+
+		if (ret < 0) {
+			printk("Failed to write data to file: %s\n", gcov_list->filename);
+			semihost_close(fd);
+			k_heap_free(&gcov_heap, buffer);
+			goto coverage_dump_end;
+		}
+
+		k_heap_free(&gcov_heap, buffer);
+		gcov_list = gcov_list->next;
+		if (gcov_list_first == gcov_list) {
+			semihost_close(fd);
+			goto coverage_dump_end;
+		}
+	}
+coverage_dump_end:
+#ifdef CONFIG_MULTITHREADING
+	if (!k_is_in_isr()) {
+		k_sched_unlock();
+	}
+#endif
+}
+#endif
 
 struct gcov_info *gcov_get_list_head(void)
 {

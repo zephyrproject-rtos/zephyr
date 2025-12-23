@@ -239,6 +239,7 @@ static int gpio_aw9523b_port_toggle_bits(const struct device *dev, gpio_port_pin
 	return gpio_aw9523b_port_read_write_toggle(dev, pins, NULL, TOGGLE);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 static __maybe_unused void gpio_aw9523b_interrupt_worker(struct k_work *work)
 {
 	struct gpio_aw9523b_data *const data =
@@ -355,6 +356,7 @@ static __maybe_unused void gpio_aw9523b_int_handler(const struct device *gpio_de
 
 	k_work_submit(&data->intr_worker);
 }
+#endif
 
 static DEVICE_API(gpio, gpio_aw9523b_api) = {
 	.pin_configure = gpio_aw9523b_pin_configure,
@@ -467,7 +469,7 @@ end_hw_reset:
 		return err;
 	}
 
-	if (!config->port0_push_pull) {
+	if (config->port0_push_pull) {
 		/* Configure port0 to push-pull mode */
 		err = i2c_reg_update_byte_dt(&config->i2c, AW9523B_REG_CTL, AW9523B_GPOMD, 0xFF);
 		if (err) {

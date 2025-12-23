@@ -49,7 +49,6 @@
 	};
 };
 
-
 &gpio1 {
 	status = "okay";
 };
@@ -62,6 +61,7 @@
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 	zephyr,pm-device-runtime-auto;
+
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
@@ -76,6 +76,6 @@ dut_spis: &spi21 {
 	pinctrl-0 = <&spi21_default_alt>;
 	pinctrl-1 = <&spi21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };

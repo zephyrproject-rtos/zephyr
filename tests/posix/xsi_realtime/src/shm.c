@@ -9,9 +9,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sys/stat.h>
 #include <zephyr/sys/fdtable.h>
 
 #include <zephyr/ztest.h>
+
+#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (CONFIG_POSIX_PAGE_SIZE))
 
 #define SHM_SIZE 8
 
@@ -29,10 +33,10 @@
 #define OPEN_FLAGS    (VALID_FLAGS & ~O_CREAT)
 
 /* account for stdin, stdout, stderr */
-#define N (CONFIG_ZVFS_OPEN_MAX - 3)
+#define N (ZVFS_OPEN_SIZE - 3)
 
 /* we need to have at least 2 shared memory objects */
-BUILD_ASSERT(N >= 2, "CONFIG_ZVFS_OPEN_MAX must be > 4");
+BUILD_ASSERT(N >= 2, "ZVFS_OPEN_SIZE must be > 4");
 
 #define S_TYPEISSHM(st) (((st)->st_mode & ZVFS_MODE_IFMT) == ZVFS_MODE_IFSHM)
 
@@ -164,19 +168,19 @@ ZTEST(xsi_realtime, test_shm_mmap)
 
 		if (i == 0) {
 			/* cannot map shm of size zero */
-			zassert_not_ok(mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+			zassert_not_ok(mmap(NULL, _page_size, PROT_READ | PROT_WRITE, MAP_SHARED,
 					    fd[0], 0));
 
-			zassert_ok(ftruncate(fd[0], PAGE_SIZE));
+			zassert_ok(ftruncate(fd[0], _page_size));
 		}
 
-		addr[i] = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd[i], 0);
+		addr[i] = mmap(NULL, _page_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd[i], 0);
 		zassert_not_equal(MAP_FAILED, addr[i], "mmap() failed: %d", errno);
 
 		if ((i & 1) == 0) {
-			memset(addr[0], i & 0xff, PAGE_SIZE);
+			memset(addr[0], i & 0xff, _page_size);
 		} else {
-			zassert_mem_equal(addr[i], addr[i - 1], PAGE_SIZE);
+			zassert_mem_equal(addr[i], addr[i - 1], _page_size);
 		}
 	}
 
@@ -185,7 +189,7 @@ ZTEST(xsi_realtime, test_shm_mmap)
 	}
 
 	for (size_t i = N; i > 0; --i) {
-		zassert_ok(munmap(addr[i - 1], PAGE_SIZE));
+		zassert_ok(munmap(addr[i - 1], _page_size));
 		/*
 		 * Note: for some reason, in Zephyr, unmapping a physical page once, removes all
 		 * virtual mappings. When that behaviour changes, remove the break below and adjust

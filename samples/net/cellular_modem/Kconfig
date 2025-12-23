@@ -9,4 +9,52 @@ config SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
 	string "Endpoint hostname"
 	default "test-endpoint.com"
 
+config SAMPLE_CELLULAR_MODEM_AUTO_APN
+	bool "Autodetect APN from SIM IMSI"
+	help
+	  If enabled, the sample derives the APN from the SIM’s MCC + MNC.
+
+menu "APN profiles for the application"
+	depends on SAMPLE_CELLULAR_MODEM_AUTO_APN
+
+config SAMPLE_CELLULAR_APN_0
+	string "APN for profile #0"
+	default ""
+	help
+	  Leave empty to disable the profile.
+
+config SAMPLE_CELLULAR_IMSI_LIST_0
+	string "IMSI prefix list for profile #0"
+	default ""
+	help
+	  Space separated list of 5- or 6-digit MCC+MNC codes
+	  that should use the APN above.
+	  Example: 22801 22802 90143
+
+config SAMPLE_CELLULAR_APN_1
+	string "APN for profile #1"
+	default ""
+
+config SAMPLE_CELLULAR_IMSI_LIST_1
+	string "IMSI prefix list for profile #1"
+	default ""
+
+config SAMPLE_CELLULAR_APN_2
+	string "APN for profile #2"
+	default ""
+
+config SAMPLE_CELLULAR_IMSI_LIST_2
+	string "IMSI prefix list for profile #2"
+	default ""
+
+config SAMPLE_CELLULAR_APN_3
+	string "APN for profile #3"
+	default ""
+
+config SAMPLE_CELLULAR_IMSI_LIST_3
+	string "IMSI prefix list for profile #3"
+	default ""
+
+endmenu
+
 source "Kconfig.zephyr"

@@ -1,0 +1,55 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Fast slew rate Operational Amplifier (opamp_fast)
+
+include:
+  - name: opamp-controller.yaml
+
+compatible: "nxp,opamp-fast"
+
+properties:
+  bias-current:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    default: 0
+    description: |
+      Bias current config selection, change power consumption.
+      Reasons why set default value to 0:
+      1. Matches the value after register reset.
+      2. If there is no special power consumption requirement,
+      there is no need to change the bias current.
+      The actual meaning of each option:
+      0: Default value. Keep power consumption constant
+      1: Reduce power consumption to 1/4
+      2: Reduce power consumption to 1/2
+      3: Double the power consumption
+
+  compensation-capcitor:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    default: 0
+    description: |
+      Compensation capcitor config selection,
+      choose different bits to fit different gains.
+      The actual meaning of each option:
+      0: Fit 2X gains
+      1: Fit 4X gains
+      2: Fit 8X gains
+      3: Fit 16X gains
+      Reasons why set default value to 0:
+      1. Matches the value after register reset.
+
+  is-reference-source:
+    type: boolean
+    description: |
+      Indicates whether works as other OPAMPs' reference source.

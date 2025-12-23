@@ -1,8 +1,37 @@
 # Copyright (c) 2024 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-# This file extends Kconfig.psa (which is automatically generated) by adding
-# some logic between PSA_WANT symbols.
+config PSA_CRYPTO
+	bool "PSA Crypto API"
+	help
+	  Enable a PSA Crypto API provider in the build. If TF-M is enabled then
+	  it will be used for this scope, otherwise Mbed TLS will be used.
+	  PSA_CRYPTO_PROVIDER_CUSTOM can be selected to use an out-of-tree
+	  implementation.
+
+choice PSA_CRYPTO_PROVIDER
+	prompt "PSA Crypto API provider"
+	depends on PSA_CRYPTO
+
+config PSA_CRYPTO_PROVIDER_TFM
+	bool "Use TF-M"
+	depends on BUILD_WITH_TFM
+	select TFM_PARTITION_CRYPTO
+
+config PSA_CRYPTO_PROVIDER_MBEDTLS
+	bool "Use Mbed TLS"
+	depends on !BUILD_WITH_TFM
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+
+config PSA_CRYPTO_PROVIDER_CUSTOM
+	bool "Use an out-of-tree library"
+	depends on !BUILD_WITH_TFM
+
+endchoice # PSA_CRYPTO_PROVIDER
+
+# The following section extends Kconfig.psa.auto (which is automatically
+# generated) by adding some logic between PSA_WANT symbols.
 
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 	bool

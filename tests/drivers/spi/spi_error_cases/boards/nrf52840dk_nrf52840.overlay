@@ -40,7 +40,6 @@
 			low-power-enable;
 		};
 	};
-
 };
 
 &spi3 {
@@ -50,6 +49,7 @@
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;

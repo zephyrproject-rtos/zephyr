@@ -52,7 +52,7 @@ if((DEFINED ZEPHYR_BASE) OR (DEFINED ENV_ZEPHYR_BASE))
   # ZEPHYR_BASE was set in cache from earlier run or in environment (first run),
   # meaning the package version must be ignored and the Zephyr pointed to by
   # ZEPHYR_BASE is to be used regardless of version.
-  if (${ZEPHYR_BASE}/share/zephyr-package/cmake STREQUAL ${CMAKE_CURRENT_LIST_DIR})
+  if(${ZEPHYR_BASE}/share/zephyr-package/cmake STREQUAL ${CMAKE_CURRENT_LIST_DIR})
     # We are the Zephyr to be used
 
     set(NO_PRINT_VERSION True)
@@ -74,7 +74,7 @@ if((DEFINED ZEPHYR_BASE) OR (DEFINED ENV_ZEPHYR_BASE))
         set(PACKAGE_VERSION "ignored (ZEPHYR_BASE is set)")
       endif()
     endif()
-  elseif ((NOT IS_INCLUDED) AND (DEFINED ZEPHYR_BASE))
+  elseif((NOT IS_INCLUDED) AND (DEFINED ZEPHYR_BASE))
     check_zephyr_package(ZEPHYR_BASE ${ZEPHYR_BASE} VERSION_CHECK)
   else()
     # User has pointed to a different Zephyr installation, so don't use this version
@@ -100,7 +100,7 @@ set(ZEPHYR_BASE)
 
 # Do we share common index, if so, this is the correct version to check.
 string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_ZEPHYR_DIR}/" COMMON_INDEX)
-if (COMMON_INDEX EQUAL 0)
+if(COMMON_INDEX EQUAL 0)
   # Project is a Zephyr repository app.
 
   check_zephyr_version()
@@ -111,7 +111,7 @@ if(NOT IS_INCLUDED)
   # Only do this if we are an installed CMake Config package and checking for workspace candidates.
 
   string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${CURRENT_WORKSPACE_DIR}/" COMMON_INDEX)
-  if (COMMON_INDEX EQUAL 0)
+  if(COMMON_INDEX EQUAL 0)
     # Project is a Zephyr workspace app.
     # This means this Zephyr is likely the correct one, but there could be an alternative installed along-side
     # Thus, check if there is an even better candidate.

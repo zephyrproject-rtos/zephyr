@@ -6,7 +6,6 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/dac.h>
-#include <zephyr/drivers/adc.h>
 #include <zephyr/ztest.h>
 
 #define DIV 2
@@ -43,6 +42,9 @@ static int test_dac_to_adc(void)
 	struct adc_sequence sequence = {
 		.buffer      = &sample_buffer,
 		.buffer_size = sizeof(sample_buffer),
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	const struct device *dac_dev = init_dac();

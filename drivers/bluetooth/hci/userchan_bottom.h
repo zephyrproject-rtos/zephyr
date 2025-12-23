@@ -17,6 +17,7 @@ bool user_chan_rx_ready(int fd);
 int user_chan_is_ipaddr_ok(char ip_addr[]);
 int user_chan_socket_open(unsigned short bt_dev_index);
 int user_chan_net_connect(char ip_addr[], unsigned int port);
+int user_chan_unix_connect(char socket_path[]);
 
 #ifdef __cplusplus
 }

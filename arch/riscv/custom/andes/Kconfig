@@ -1,0 +1,73 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_HAS_ANDES_EXECIT
+	bool
+	help
+	  The AndesCore supports EXEC.IT instruction.
+
+config RISCV_CUSTOM_CSR_ANDES_EXECIT
+	bool "Andes V5 EXEC.IT extension"
+	depends on CPU_HAS_ANDES_EXECIT
+	depends on RISCV_ISA_EXT_C
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on !LINKER_USE_NO_RELAX
+	help
+	  The EXEC.IT extension (Execution on Instruction Table) generate
+	  a look-up table and replaces suitable 32-bit instructions with
+	  the 16-bit "exec.it <INDEX>".
+
+config RISCV_CUSTOM_CSR_ANDES_NEXECIT
+	bool "Andes V5 New EXEC.IT opcode encoding"
+	depends on RISCV_CUSTOM_CSR_ANDES_EXECIT
+	help
+	  The New EXEC.IT instruction is an alias of EXEC.IT with different
+	  opcode encoding.
+
+config CPU_HAS_ANDES_HWDSP
+	bool
+	help
+	  The AndesCore supports hardware DSP extension.
+
+config RISCV_CUSTOM_CSR_ANDES_HWDSP
+	bool "AndeStar V5 DSP ISA"
+	depends on CPU_HAS_ANDES_HWDSP
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	help
+	  This option enables the AndeStar v5 hardware DSP, in order to
+	  support using the DSP instructions.
+
+config CPU_HAS_ANDES_PFT
+	bool
+	help
+	  The AndesCore supports PowerBrake extension.
+
+config RISCV_CUSTOM_CSR_ANDES_PFT
+	bool "Andes V5 PowerBrake extension"
+	depends on CPU_HAS_ANDES_PFT
+	help
+	  The PowerBrake extension throttles performance by reducing instruction
+	  executing rate.
+
+config CPU_HAS_ANDES_PMA
+	bool
+	help
+	  The AndesCore supports Programmable PMA.
+
+config RISCV_CUSTOM_CSR_ANDES_PMA
+	bool "Andes V5 Physical Memory Attribute (PMA)"
+	depends on CPU_HAS_ANDES_PMA
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  This option enables the Andes V5 PMA, in order to support SW to
+	  configure physical memory attribute by PMA CSRs. The address
+	  matching of Andes V5 PMA is like RISC-V PMP NAPOT mode
+	  (power-of-two alignment).
+
+config RISCV_CUSTOM_CSR_ANDES_PMA_NAPOT_GRANULARITY
+	int
+	depends on RISCV_CUSTOM_CSR_ANDES_PMA
+	default 4096
+	help
+	  Minimum size (and alignment) of an PMA region. Use this symbol
+	  to guarantee minimum size and alignment of PMA regions.

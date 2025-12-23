@@ -15,6 +15,10 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - can
   - counter
   - dac
@@ -24,6 +28,7 @@ supported:
   - i2c
   - i2s
   - i3c
+  - netif:eth
   - nvs
   - pwm
   - regulator
@@ -31,5 +36,6 @@ supported:
   - sdhc
   - spi
   - usb_device
+  - video
   - watchdog
 vendor: nxp

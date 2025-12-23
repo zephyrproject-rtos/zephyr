@@ -345,7 +345,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(),
-						   rndis.in_pkt_len, AF_UNSPEC,
+						   rndis.in_pkt_len, NET_AF_UNSPEC,
 						   0, K_NO_WAIT);
 		if (!pkt) {
 			/* In case of low memory: skip the whole packet
@@ -931,7 +931,7 @@ static int rndis_send(struct net_pkt *pkt)
 	size_t len = net_pkt_get_len(pkt);
 	int ret;
 
-	LOG_DBG("send pkt %p len %u", pkt, len);
+	LOG_DBG("send pkt %p len %zu", pkt, len);
 
 	if (rndis.media_status == RNDIS_OBJECT_ID_MEDIA_DISCONNECTED) {
 		LOG_DBG("Media disconnected, drop pkt %p", pkt);

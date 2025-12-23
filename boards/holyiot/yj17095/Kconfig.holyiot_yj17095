@@ -1,0 +1,7 @@
+# Holyiot YJ-17095 board configuration
+
+# Copyright (c) 2025 Marc Lasch <mlasch@mailbox.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HOLYIOT_YJ17095
+	select SOC_NRF52832_QFAA

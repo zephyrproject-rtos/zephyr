@@ -110,7 +110,7 @@ uint32_t cntr_start(void)
 
 uint32_t cntr_stop(void)
 {
-	LL_ASSERT(_refcount);
+	LL_ASSERT_ERR(_refcount);
 
 	if (--_refcount) {
 		return 1;

@@ -7,7 +7,7 @@
 #include "spi_nrfx_common.h"
 #include <zephyr/kernel.h>
 
-int spi_nrfx_wake_init(const nrfx_gpiote_t *gpiote, uint32_t wake_pin)
+int spi_nrfx_wake_init(nrfx_gpiote_t *gpiote, uint32_t wake_pin)
 {
 	nrf_gpio_pin_pull_t pull_config = NRF_GPIO_PIN_PULLDOWN;
 	uint8_t ch;
@@ -20,23 +20,23 @@ int spi_nrfx_wake_init(const nrfx_gpiote_t *gpiote, uint32_t wake_pin)
 		.p_trigger_config = &trigger_config,
 		.p_handler_config = NULL,
 	};
-	nrfx_err_t res;
+	int res;
 
 	res = nrfx_gpiote_channel_alloc(gpiote, &ch);
-	if (res != NRFX_SUCCESS) {
-		return -ENODEV;
+	if (res < 0) {
+		return res;
 	}
 
 	res = nrfx_gpiote_input_configure(gpiote, wake_pin, &input_config);
-	if (res != NRFX_SUCCESS) {
+	if (res < 0) {
 		nrfx_gpiote_channel_free(gpiote, ch);
-		return -EIO;
+		return res;
 	}
 
 	return 0;
 }
 
-int spi_nrfx_wake_request(const nrfx_gpiote_t *gpiote, uint32_t wake_pin)
+int spi_nrfx_wake_request(nrfx_gpiote_t *gpiote, uint32_t wake_pin)
 {
 	nrf_gpiote_event_t trigger_event = nrfx_gpiote_in_event_get(gpiote, wake_pin);
 	uint32_t start_cycles;

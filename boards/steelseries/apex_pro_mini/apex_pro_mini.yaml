@@ -1,0 +1,17 @@
+identifier: apex_pro_mini
+name: SteelSeries Apex Pro Mini
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 40
+flash: 64
+supported:
+  - gpio
+  - usb
+  - spi
+  - flash
+  - kbd-matrix
+vendor: steelseries

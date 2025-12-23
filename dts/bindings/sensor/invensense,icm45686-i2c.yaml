@@ -13,7 +13,7 @@ description: |
     &i2c0 {
       ...
 
-      icm42688: icm45686@68 {
+      icm45686: icm45686@68 {
         ...
 
         accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;

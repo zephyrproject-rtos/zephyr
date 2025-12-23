@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(flash_mcux);
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfl))
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfc))
+#define DT_DRV_COMPAT nxp_kinetis_ftfc
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc55))
 #define DT_DRV_COMPAT nxp_iap_fmc55
 #define SOC_HAS_IAP 1
@@ -43,7 +45,7 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
-#elif defined(CONFIG_SOC_SERIES_MCXA)
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
 #include "fsl_romapi.h"
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
@@ -118,7 +120,13 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 #endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_SERIES_LPC55XXX */
 
 #define SOC_FLASH_NEED_CLEAR_CACHES 1
-#ifdef CONFIG_SOC_SERIES_MCXW
+#ifdef CONFIG_SOC_FAMILY_MCXW
+#ifdef CONFIG_SOC_SERIES_MCXW2XX
+static void clear_flash_caches(void)
+{
+	FLASH_CacheClear();
+}
+#else
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
@@ -128,7 +136,8 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*mcm_cpcr2 |= BIT(0);
 }
-#elif CONFIG_SOC_SERIES_MCXN
+#endif
+#elif CONFIG_SOC_FAMILY_MCXN
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const nvm_ctrl = (volatile uint32_t *)0x40000400;
@@ -138,7 +147,7 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*lpcac_ctrl |= BIT(1);
 }
-#elif CONFIG_SOC_SERIES_MCXA
+#elif CONFIG_SOC_FAMILY_MCXA
 static void clear_flash_caches(void)
 {
 	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);

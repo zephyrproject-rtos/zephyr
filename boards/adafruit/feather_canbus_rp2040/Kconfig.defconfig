@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Peter Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADAFRUIT_FEATHER_CANBUS_RP2040
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 125
+
+endif # I2C_DW
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_ADAFRUIT_FEATHER_CANBUS_RP2040

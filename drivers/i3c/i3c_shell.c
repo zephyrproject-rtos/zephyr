@@ -81,6 +81,7 @@ struct i3c_ctrl {
 	I3C_LIST_DEV_GET_FN(node_id)
 
 /* zephyr-keep-sorted-start */
+DT_FOREACH_STATUS_OKAY(adi_max32_i3c, I3C_CTRL_FN)
 DT_FOREACH_STATUS_OKAY(cdns_i3c, I3C_CTRL_FN)
 DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cm, I3C_CTRL_FN)
 DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cs, I3C_CTRL_FN)
@@ -101,6 +102,7 @@ DT_FOREACH_STATUS_OKAY(st_stm32_i3c, I3C_CTRL_FN)
 
 const struct i3c_ctrl i3c_list[] = {
 	/* zephyr-keep-sorted-start */
+	DT_FOREACH_STATUS_OKAY(adi_max32_i3c, I3C_CTRL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(cdns_i3c, I3C_CTRL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cm, I3C_CTRL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cs, I3C_CTRL_LIST_ENTRY)
@@ -295,7 +297,7 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-/* i3c speed <device> <speed> */
+/* i3c speed <device> <speed> [<od_min high_ns>] [<od_min low_ns>] */
 static int cmd_i3c_speed(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -318,6 +320,12 @@ static int cmd_i3c_speed(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	config.scl.i3c = speed;
+
+	if (argc == 5) {
+		/* This sets open-drain SCL high and low periods */
+		config.scl_od_min.high_ns = strtol(argv[ARGV_DEV + 2], NULL, 10);
+		config.scl_od_min.low_ns  = strtol(argv[ARGV_DEV + 3], NULL, 10);
+	}
 
 	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &config);
 	if (ret != 0) {
@@ -2388,8 +2396,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_i3c_info, 2, 1),
 	SHELL_CMD_ARG(speed, &dsub_i3c_device_name,
 		      "Set I3C device speed\n"
-		      "Usage: speed <device> <speed>",
-		      cmd_i3c_speed, 3, 0),
+		      "Usage: speed <device> <speed> [<od_min high_ns>] [<od_min low_ns>]",
+		      cmd_i3c_speed, 3, 2),
 	SHELL_CMD_ARG(recover, &dsub_i3c_device_name,
 		      "Recover I3C bus\n"
 		      "Usage: recover <device>",

@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
-#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
@@ -96,10 +96,14 @@
 			#nordic,ficr-cells = <1>;
 		};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		/* intentionally empty because UICR is hardware fixed to Secure */
+#else
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
 		};
+#endif
 
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
@@ -117,10 +121,19 @@
 			ranges = <0x0 0x20067c00 DT_SIZE_K(96)>;
 		};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		global_peripherals: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+#else
 		global_peripherals: peripheral@50000000 {
+			reg = <0x50000000 0x10000000>;
 			ranges = <0x0 0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+#endif
 
 			dppic00: dppic@42000 {
 				compatible = "nordic,nrf-dppic";
@@ -211,7 +224,7 @@
 
 			usbhs: usbhs@5a000 {
 				compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
-				reg = <0x5a000 0x1000>, <0x50020000 0x1a000>;
+				reg = <0x5a000 0x1000>, <0x20000 0x1a000>;
 				reg-names = "wrapper", "core";
 				interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
 				num-in-eps = <16>;
@@ -267,7 +280,7 @@
 				ieee802154-supported;
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
-				cs-supported;
+				ble-cs-supported;
 
 				ieee802154: ieee802154 {
 					compatible = "nordic,nrf-ieee802154";
@@ -277,11 +290,6 @@
 				/* Note: In the nRF Connect SDK the SoftDevice Controller
 				 * is added and set as the default Bluetooth Controller.
 				 */
-				bt_hci_sdc: bt_hci_sdc {
-					compatible = "nordic,bt-hci-sdc";
-					status = "disabled";
-				};
-
 				bt_hci_controller: bt_hci_controller {
 					compatible = "zephyr,bt-hci-ll-sw-split";
 					status = "disabled";
@@ -608,8 +616,6 @@
 				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				clocks = <&pclk32m>;
-				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
-							 <NRF_FUN_TDM_MCK>;
 			};
 
 			i2c23: i2c@ed000 {
@@ -752,12 +758,16 @@
 				interrupts = <262 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+			/* intentionally empty because WDT30 is hardware fixed to Secure */
+#else
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
 				interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
+#endif
 
 			wdt31: watchdog@109000 {
 				compatible = "nordic,nrf-wdt";
@@ -800,19 +810,19 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				gpregret1: gpregret1@51c {
+				gpregret1: gpregret1@500 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
-					reg = <0x51c 0x1>;
+					reg = <0x500 0x1>;
 					status = "disabled";
 				};
 
-				gpregret2: gpregret2@520 {
+				gpregret2: gpregret2@504 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
-					reg = <0x520 0x1>;
+					reg = <0x504 0x1>;
 					status = "disabled";
 				};
 			};
@@ -856,11 +866,20 @@
 			};
 		};
 
+		nrf_mpc: memory@50041000 {
+			compatible = "nordic,nrf-mpc";
+			reg = <0x50041000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			override-num = <5>;
+			override-granularity = <4096>;
+		};
+
 		cpuapp_ppb: cpuapp-ppb-bus {
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;

@@ -26,6 +26,7 @@ testing.
 
 	GTEXT(int_stub)
 SECTION_FUNC(TEXT, int_stub)
+        endbr32
         pushl   $0
         pushl   $isr_handler
         jmp     _interrupt_enter

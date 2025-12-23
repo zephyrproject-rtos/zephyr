@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <st/u5/stm32u595.dtsi>
+
+/ {
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_M(2)>;
+			};
+		};
+	};
+};

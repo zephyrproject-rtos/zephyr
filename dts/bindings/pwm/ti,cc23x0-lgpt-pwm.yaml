@@ -1,0 +1,34 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC23x0 LGPT PWM Controller Node
+
+    &lgpt0 {
+      status = "okay";
+    };
+
+    &pwm0 {
+      status = "okay";
+      pinctrl-0 = <&pwm0_default>;
+      pinctrl-names = "default";
+    };
+
+  Note: PWM0-PWM8 are 16bit without prescale, max timeout is 1365100 ns
+        PWM9-PWM11 are 24bit without prescale, max timeout is 349519750 ns
+
+compatible: "ti,cc23x0-lgpt-pwm"
+
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+pwm-cells:
+  - channel
+  - period
+  - flags

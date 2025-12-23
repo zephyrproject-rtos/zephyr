@@ -116,6 +116,27 @@ static void *flash_stm32_setup(void)
 	return NULL;
 }
 
+static void flash_stm32_teardown(void *fixture)
+{
+/* disable write protection to prevent subsequent tests from failing
+ * if write protection was not disabled during test execution.
+ */
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+	struct flash_stm32_ex_op_sector_wp_in wp_request;
+	int rc;
+
+	wp_request.disable_mask = sector_mask;
+	wp_request.enable_mask = 0;
+
+	rc = flash_ex_op(flash_dev, FLASH_STM32_EX_OP_SECTOR_WP, (uintptr_t)&wp_request, NULL);
+	if (rc != 0) {
+		TC_PRINT(" Failed to disable write protection .\n");
+	} else {
+		TC_PRINT(" Successfully disabled write protection.\n");
+	}
+#endif
+}
+
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 ZTEST(flash_stm32, test_stm32_write_protection)
 {
@@ -257,6 +278,16 @@ ZTEST(flash_stm32, test_stm32_block_registers)
 	TC_PRINT("Try to unlock blocked OPT\n");
 	__set_FAULTMASK(1);
 	flash_stm32_option_bytes_lock(flash_dev, false);
+
+	/* Ensure the Imprecise Bus Fault caused by the illegal
+	 * access is seen now while BusFault is still masked by
+	 * triggering a Context synchronization event. This is
+	 * notably required on series such as STM32H7 when Icache
+	 * is enabled - the Imprecise Bus Fault is reported after
+	 * we unmask BusFault and triggers a kernel panic.
+	 */
+	barrier_isync_fence_full();
+
 	/* Clear Bus Fault pending bit */
 	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;
 	barrier_dsync_fence_full();
@@ -283,4 +314,4 @@ ZTEST(flash_stm32, test_stm32_block_registers)
 }
 #endif
 
-ZTEST_SUITE(flash_stm32, NULL, flash_stm32_setup, NULL, NULL, NULL);
+ZTEST_SUITE(flash_stm32, NULL, flash_stm32_setup, NULL, NULL, flash_stm32_teardown);

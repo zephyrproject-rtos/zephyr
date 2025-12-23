@@ -13,5 +13,7 @@ config SOC_SERIES_MSPM0G
 	select BUILD_OUTPUT_BIN
 	select BUILD_OUTPUT_HEX
 	select HAS_MSPM0_SDK
+	select HAS_PM
+	select HAS_POWEROFF
 	select CLOCK_CONTROL
 	select SOC_EARLY_INIT_HOOK

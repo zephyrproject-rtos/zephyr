@@ -819,13 +819,16 @@ static int pinnacle_init(const struct device *dev)
 	value = PINNACLE_FEED_CONFIG1_FEED_ENABLE;
 	if (!config->relative_mode) {
 		value |= PINNACLE_FEED_CONFIG1_DATA_MODE_ABSOLUTE;
-		if (config->invert_x) {
-			value |= PINNACLE_FEED_CONFIG1_X_INVERT;
-		}
-		if (config->invert_y) {
-			value |= PINNACLE_FEED_CONFIG1_Y_INVERT;
-		}
 	}
+
+	/* Datasheet states these are absolute only, but they also work in rel mode */
+	if (config->invert_x) {
+		value |= PINNACLE_FEED_CONFIG1_X_INVERT;
+	}
+	if (config->invert_y) {
+		value |= PINNACLE_FEED_CONFIG1_Y_INVERT;
+	}
+
 	rc = pinnacle_write(dev, PINNACLE_REG_FEED_CONFIG1, value);
 	if (rc) {
 		LOG_ERR("Failed to enable Feed in FeedConfig1");
@@ -861,7 +864,7 @@ static int pinnacle_init(const struct device *dev)
 #define PINNACLE_SPI_OP (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPHA | SPI_WORD_SET(8))
 #define PINNACLE_CONFIG_BUS_SPI(inst)                                                              \
 	.bus = {                                                                                   \
-		.spi = SPI_DT_SPEC_INST_GET(inst, PINNACLE_SPI_OP, 0U),                            \
+		.spi = SPI_DT_SPEC_INST_GET(inst, PINNACLE_SPI_OP),                                \
 		.is_ready = pinnacle_is_ready_spi,                                                 \
 		.write = pinnacle_write_spi,                                                       \
 		.seq_write = pinnacle_seq_write_spi,                                               \

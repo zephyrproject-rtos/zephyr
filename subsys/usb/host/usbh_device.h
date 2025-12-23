@@ -20,12 +20,12 @@ typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
  * connection without hub support, this is the device connected directly to the
  * host controller.
  */
-struct usb_device *usbh_device_get_any(struct usbh_contex *const ctx);
+struct usb_device *usbh_device_get_any(struct usbh_context *const ctx);
 
-struct usb_device *usbh_device_get(struct usbh_contex *const uhs_ctx, const uint8_t addr);
+struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr);
 
 /* Allocate/free USB device */
-struct usb_device *usbh_device_alloc(struct usbh_contex *const uhs_ctx);
+struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx);
 void usbh_device_free(struct usb_device *const udev);
 
 /* Reset and configure new USB device */
@@ -42,7 +42,7 @@ static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   usbh_udev_cb_t cb,
 						   void *const cb_priv)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_xfer_alloc(ctx->dev, ep, udev, cb, cb_priv);
 }
@@ -51,7 +51,7 @@ static inline int usbh_xfer_buf_add(const struct usb_device *udev,
 				    struct uhc_transfer *const xfer,
 				    struct net_buf *buf)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_xfer_buf_add(ctx->dev, xfer, buf);
 }
@@ -59,7 +59,7 @@ static inline int usbh_xfer_buf_add(const struct usb_device *udev,
 static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
 						  const size_t size)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_xfer_buf_alloc(ctx->dev, size);
 }
@@ -67,7 +67,7 @@ static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
 static inline int usbh_xfer_free(const struct usb_device *udev,
 				 struct uhc_transfer *const xfer)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_xfer_free(ctx->dev, xfer);
 }
@@ -75,7 +75,7 @@ static inline int usbh_xfer_free(const struct usb_device *udev,
 static inline void usbh_xfer_buf_free(const struct usb_device *udev,
 				      struct net_buf *const buf)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	uhc_xfer_buf_free(ctx->dev, buf);
 }
@@ -83,7 +83,7 @@ static inline void usbh_xfer_buf_free(const struct usb_device *udev,
 static inline int usbh_xfer_enqueue(const struct usb_device *udev,
 				    struct uhc_transfer *const xfer)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_ep_enqueue(ctx->dev, xfer);
 }
@@ -91,7 +91,7 @@ static inline int usbh_xfer_enqueue(const struct usb_device *udev,
 static inline int usbh_xfer_dequeue(const struct usb_device *udev,
 				    struct uhc_transfer *const xfer)
 {
-	struct usbh_contex *const ctx = udev->ctx;
+	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_ep_dequeue(ctx->dev, xfer);
 }

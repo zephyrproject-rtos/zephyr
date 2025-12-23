@@ -21,4 +21,7 @@ config FLASH_BASE_ADDRESS
 config SYS_CLOCK_EXISTS
 	default y
 
+config ROMSTART_RELOCATION_ROM
+	default y
+
 endif # SOC_R9A09G057H44GBG_CR8

@@ -4,5 +4,6 @@
 config SOC_ATOM
 	select X86
 	select CPU_ATOM
+	select HAS_POWEROFF if ACPI_POWEROFF
 	imply X86_MMU
 	select ARCH_HAS_RESERVED_PAGE_FRAMES

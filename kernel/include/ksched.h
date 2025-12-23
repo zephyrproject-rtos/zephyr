@@ -44,12 +44,15 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define LOCK_SCHED_SPINLOCK   K_SPINLOCK(&_sched_spinlock)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
 
 void z_sched_init(void);
-void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
@@ -65,13 +68,11 @@ void *z_get_next_switch_handle(void *interrupted);
 
 void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
-void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
-void z_thread_abort(struct k_thread *thread);
-void move_thread_to_end_of_prio_q(struct k_thread *thread);
+void move_current_to_end_of_prio_q(void);
 bool thread_is_sliceable(struct k_thread *thread);
 
 static inline void z_reschedule_unlocked(void)
@@ -136,16 +137,6 @@ static inline bool _is_valid_prio(int prio, k_thread_entry_t entry_point)
 	}
 
 	return true;
-}
-
-static inline void z_sched_lock(void)
-{
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1U, "");
-
-	--_current->base.sched_locked;
-
-	compiler_barrier();
 }
 
 static ALWAYS_INLINE _wait_q_t *pended_on_thread(struct k_thread *thread)
@@ -346,5 +337,9 @@ static inline void z_sched_usage_switch(struct k_thread *thread)
 	z_sched_usage_start(thread);
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

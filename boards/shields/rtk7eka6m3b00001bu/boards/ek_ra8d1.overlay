@@ -4,20 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	renesas_parallel_graphics_connector: parallel-graphics-connector {
-		compatible = "renesas,ra-parallel-graphics-header";
-		#gpio-cells = <2>;
-		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1 0 &ioport4 4 0>,	/* DISP_BLEN */
-				<2 0 &ioport5 11 0>,	/* IIC_SDA */
-				<3 0 &ioport5 10 0>,	/* DISP_INT */
-				<4 0 &ioport5 12 0>,	/* IIC_SCL */
-				<6 0 &ioporta 1 0>;	/* DISP_RST */
-	};
-};
-
 &port_irq3 {
 	interrupts = <90 1>;
 	status = "okay";

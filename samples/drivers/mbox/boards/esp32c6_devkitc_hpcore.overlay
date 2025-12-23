@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &shmlp;
+		zephyr,ipc = &mbox0;
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&mbox0 {
+	status = "okay";
+};
+
+&lp_uart {
+	status = "okay";
+};

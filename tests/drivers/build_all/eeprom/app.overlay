@@ -10,8 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
- #include <freq.h>
- #include <mem.h>
+#include <freq.h>
+#include <mem.h>
 
 / {
 	test {
@@ -98,6 +98,13 @@
 				reg = <0x1>;
 				spi-max-frequency = <DT_FREQ_M(25)>;
 				size = <DT_SIZE_K(128)>;
+			};
+
+			test_spi_fm25xxx: fm25xxx@2 {
+				compatible = "infineon,fm25xxx";
+				reg = <0x2>;
+				spi-max-frequency = <DT_FREQ_M(20)>;
+				size = <8000>;
 			};
 		};
 	};

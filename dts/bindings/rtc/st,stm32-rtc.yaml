@@ -14,6 +14,28 @@ properties:
   reg:
     required: true
 
+  sync-prescaler:
+    type: int
+    description: |
+      RTC synchronous prescaler value. Optional, if not set defaulted in code to:
+      - Selected to give 1 Hz tick rate, based on source clock frequency and asynchronous
+        prescaler value.
+
+  async-prescaler:
+    type: int
+    description: |
+      RTC asynchronous prescaler value. Optional, if not set defaulted in code to:
+      - 0x7F if RTC source clock is LSE/LSI
+      - 1 if using counter with CONFIG_COUNTER_RTC_STM32_SUBSECONDS option
+      - 0x7C if RTC source clock is HSE
+
+  hse-prescaler:
+    type: int
+    description: |
+      RTC HSE prescaler value. Applies only when RTC source clock is HSE.
+      Optional, defaulting to the value calculated based on HSE clock frequency
+      to give the highest possibly prescaled source frequency below 1MHz.
+
   calib-out-freq:
     type: int
     description: |

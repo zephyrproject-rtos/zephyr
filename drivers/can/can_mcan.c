@@ -10,6 +10,7 @@
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
@@ -322,8 +323,30 @@ int can_mcan_start(const struct device *dev)
 	}
 
 	data->common.started = true;
+	pm_device_busy_set(dev);
 
 	return err;
+}
+
+static bool can_mcan_rx_filters_exist(const struct device *dev)
+{
+	const struct can_mcan_config *config = dev->config;
+	const struct can_mcan_callbacks *cbs = config->callbacks;
+	int i;
+
+	for (i = 0; i < cbs->num_std; i++) {
+		if (cbs->std[i].function != NULL) {
+			return true;
+		}
+	}
+
+	for (i = 0; i < cbs->num_ext; i++) {
+		if (cbs->ext[i].function != NULL) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 int can_mcan_stop(const struct device *dev)
@@ -367,6 +390,12 @@ int can_mcan_stop(const struct device *dev)
 			k_sem_give(&data->tx_sem);
 		}
 	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!can_mcan_rx_filters_exist(dev)) {
+		pm_device_busy_clear(dev);
+	}
+	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -1184,6 +1213,8 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		filter_id = can_mcan_add_rx_filter_std(dev, callback, user_data, filter);
 	}
 
+	pm_device_busy_set(dev);
+
 	return filter_id;
 }
 
@@ -1228,6 +1259,10 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 		if (err != 0) {
 			LOG_ERR("failed to clear std filter element (err %d)", err);
 		}
+	}
+
+	if (!can_mcan_rx_filters_exist(dev) && !data->common.started) {
+		pm_device_busy_clear(dev);
 	}
 
 	k_mutex_unlock(&data->lock);

@@ -114,7 +114,7 @@ static struct net_pkt *esp_socket_prepare_pkt(struct esp_socket *sock,
 	struct net_pkt *pkt;
 	size_t to_copy;
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->net_iface, len, AF_UNSPEC,
+	pkt = net_pkt_rx_alloc_with_buffer(data->net_iface, len, NET_AF_UNSPEC,
 					   0, RX_NET_PKT_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
@@ -180,7 +180,7 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 	pkt = esp_socket_prepare_pkt(sock, buf, offset, len);
 	if (!pkt) {
 		LOG_ERR("Failed to get net_pkt: len %zu", len);
-		if (esp_socket_type(sock) == SOCK_STREAM) {
+		if (esp_socket_type(sock) == NET_SOCK_STREAM) {
 			if (!esp_socket_flags_test_and_set(sock,
 						ESP_SOCK_CLOSE_PENDING)) {
 				esp_socket_work_submit(sock, &sock->close_work);

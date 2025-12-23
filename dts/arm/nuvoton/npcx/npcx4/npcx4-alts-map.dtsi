@@ -16,6 +16,7 @@
 		alt0_f_spi_cs1: alt04 {
 			alts = <&scfg 0x00 0x4 0>;
 		};
+
 		alt0_f_spi_quad: alt06 {
 			alts = <&scfg 0x00 0x6 0>;
 		};
@@ -29,6 +30,7 @@
 		alt5_jen_lk: alt51 {
 			alts = <&scfg 0x05 0x1 0>;
 		};
+
 		alt5_gp_lk: alt57 {
 			alts = <&scfg 0x05 0x7 0>;
 		};
@@ -37,6 +39,7 @@
 		alte_cr_sin4_sl: alte6 {
 			alts = <&scfg 0x0E 0x6 0>;
 		};
+
 		alte_cr_sout4_sl: alte7 {
 			alts = <&scfg 0x0E 0x7 0>;
 		};
@@ -45,6 +48,7 @@
 		altf_adc10_sl: altf5 {
 			alts = <&scfg 0x0F 0x5 0>;
 		};
+
 		altf_adc11_sl: altf6 {
 			alts = <&scfg 0x0F 0x6 0>;
 		};
@@ -68,12 +72,15 @@
 		altg_vcc1_rst_pud: altg4 {
 			alts = <&scfg 0x10 0x4 0>;
 		};
+
 		altg_vcc1_rst_pud_lk: altg5 {
 			alts = <&scfg 0x10 0x5 0>;
 		};
+
 		altg_psl_out_sl: altg6 {
 			alts = <&scfg 0x10 0x6 0>;
 		};
+
 		altg_psl_gpo_sl: altg7 {
 			alts = <&scfg 0x10 0x7 0>;
 		};
@@ -82,12 +89,15 @@
 		alth_fcsi_typ: alth1 {
 			alts = <&scfg 0x11 0x1 0>;
 		};
+
 		alth_flm_quad: alth5 {
 			alts = <&scfg 0x11 0x5 0>;
 		};
+
 		alth_flm_mon_md: alth6-inv {
 			alts = <&scfg 0x11 0x6 1>;
 		};
+
 		alth_flm_sl: alth7 {
 			alts = <&scfg 0x11 0x7 0>;
 		};
@@ -100,24 +110,31 @@
 		altj_cr_sin1_sl1: altj0 {
 			alts = <&scfg 0x12 0x0 0>;
 		};
+
 		altj_cr_sout1_sl1: altj1 {
 			alts = <&scfg 0x12 0x1 0>;
 		};
-		altj_cr_sin1_sl2:  altj2 {
+
+		altj_cr_sin1_sl2: altj2 {
 			alts = <&scfg 0x12 0x2 0>;
 		};
+
 		altj_cr_sout1_sl2: altj3 {
 			alts = <&scfg 0x12 0x3 0>;
 		};
+
 		altj_cr_sin2_sl: altj4 {
 			alts = <&scfg 0x12 0x4 0>;
 		};
+
 		altj_cr_sout2_sl: altj5 {
 			alts = <&scfg 0x12 0x5 0>;
 		};
+
 		altj_cr_sin3_sl: altj6 {
 			alts = <&scfg 0x12 0x6 0>;
 		};
+
 		altj_cr_sout3_sl: altj7 {
 			alts = <&scfg 0x12 0x7 0>;
 		};
@@ -131,24 +148,31 @@
 		altl_adc13_sl: altl0 {
 			alts = <&scfg 0x14 0x0 0>;
 		};
+
 		altl_adc14_sl: altl1 {
 			alts = <&scfg 0x14 0x1 0>;
 		};
-		altl_adc15_sl:  altl2 {
+
+		altl_adc15_sl: altl2 {
 			alts = <&scfg 0x14 0x2 0>;
 		};
+
 		altl_adc16_sl: altl3 {
 			alts = <&scfg 0x14 0x3 0>;
 		};
+
 		altl_adc17_sl: altl4 {
 			alts = <&scfg 0x14 0x4 0>;
 		};
+
 		altl_adc18_sl: altl5 {
 			alts = <&scfg 0x14 0x5 0>;
 		};
+
 		altl_adc19_sl: altl6 {
 			alts = <&scfg 0x14 0x6 0>;
 		};
+
 		altl_adc20_sl: altl7 {
 			alts = <&scfg 0x14 0x7 0>;
 		};
@@ -157,15 +181,19 @@
 		altm_adc21_sl: altm0 {
 			alts = <&scfg 0x15 0x0 0>;
 		};
+
 		altm_adc22_sl: altm1 {
 			alts = <&scfg 0x15 0x1 0>;
 		};
-		altm_adc23_sl:  altm2 {
+
+		altm_adc23_sl: altm2 {
 			alts = <&scfg 0x15 0x2 0>;
 		};
+
 		altm_adc24_sl: altm3 {
 			alts = <&scfg 0x15 0x3 0>;
 		};
+
 		altm_adc25_sl: altm4 {
 			alts = <&scfg 0x15 0x4 0>;
 		};
@@ -174,10 +202,12 @@
 		altn_i3c1_sl: altn0 {
 			alts = <&scfg 0x16 0x0 0>;
 		};
+
 		altn_i3c2_sl: altn1 {
 			alts = <&scfg 0x16 0x1 0>;
 		};
-		altn_i3c3_sl:  altn2 {
+
+		altn_i3c3_sl: altn2 {
 			alts = <&scfg 0x16 0x2 0>;
 		};
 	};

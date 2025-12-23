@@ -283,8 +283,7 @@ Configuring a Debug Probe
 For the RT1064, J47/J48 are the SWD isolation jumpers, J42 is the DFU
 mode jumper, and J21 is the 20 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ for more
 details.
@@ -387,8 +386,7 @@ If the west flash or debug commands fail, and the command hangs while executing
 runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the EVK properly.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1064-EVK Website:
    https://www.nxp.com/support/developer-resources/run-time-software/i.mx-developer-resources/mimxrt1064-evk-i.mx-rt1064-evaluation-kit:MIMXRT1064-EVK

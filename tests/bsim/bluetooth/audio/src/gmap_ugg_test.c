@@ -187,6 +187,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	test_stream->valid_rx_cnt = 0U;
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
 
 	printk("Started stream %p\n", stream);
 
@@ -531,6 +532,29 @@ static void init(void)
 	}
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_cap_initiator_unregister_cb(&cap_cb);
+	if (err != 0) {
+		FAIL("Failed to unregister CAP callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_bap_unicast_client_unregister_cb(&unicast_client_cbs);
+	if (err != 0) {
+		FAIL("Failed to unregister BAP callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks (err %d)\n", err);
+		return;
+	}
+}
+
 static void scan_and_connect(void)
 {
 	int err;
@@ -759,7 +783,7 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 			 * location bit accordingly
 			 */
 			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
-				const int err = bt_audio_codec_cfg_set_chan_allocation(
+				err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
 				if (err < 0) {
@@ -785,7 +809,7 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 			 * location bit accordingly
 			 */
 			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
-				const int err = bt_audio_codec_cfg_set_chan_allocation(
+				err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
 				if (err < 0) {
@@ -900,7 +924,7 @@ static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 	return 0;
 }
 
-static void unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
+static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_stop_param param;
 	int err;
@@ -933,6 +957,20 @@ static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 		FAIL("Failed to create group: %d\n", err);
 		return;
 	}
+}
+
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+
+	ARRAY_FOR_EACH_PTR(unicast_streams, unicast_stream) {
+		if (bap_stream_rx_can_recv(&unicast_stream->stream.stream.bap_stream) &&
+		    audio_test_stream_is_streaming(&unicast_stream->stream)) {
+			WAIT_FOR_FLAG(unicast_stream->stream.flag_audio_received);
+		}
+	}
+
+	printk("Data received\n");
 }
 
 static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
@@ -994,11 +1032,10 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 	}
 
 	if (expect_rx) {
-		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		wait_for_data();
 	}
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;
@@ -1014,6 +1051,8 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 		bt_conn_unref(connected_conns[i]);
 		connected_conns[i] = NULL;
 	}
+
+	deinit();
 
 	PASS("GMAP UGG passed for %s with Sink Preset %s and Source Preset %s\n", param->name,
 	     param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
@@ -1221,6 +1260,8 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 
 	stop_and_delete_extended_adv(adv);
 	adv = NULL;
+
+	deinit();
 
 	PASS("CAP initiator broadcast passed\n");
 

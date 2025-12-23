@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP RSTCTL get reset cause flags
+
+compatible: "nxp,rstctl-hwinfo"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

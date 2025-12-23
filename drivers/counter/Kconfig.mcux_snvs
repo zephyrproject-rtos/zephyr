@@ -16,10 +16,3 @@ config COUNTER_MCUX_SNVS_SRTC
 	default y
 	help
 	  Enable the low power SRTC in SNVS to synchronise.
-
-config COUNTER_MCUX_SNVS_SRTC_WAKE
-	bool "IMX SNVS wake-up on SRTC alarm"
-	depends on COUNTER_MCUX_SNVS_SRTC
-	default y
-	help
-	  Assert Wake-Up Interrupt on SRTC alarm

@@ -40,6 +40,11 @@ void _mwmutex_create(_lock_t *mutex_ptr)
 		k_panic();
 	}
 
+#ifdef CONFIG_USERSPACE
+	/* Some of the locks are shared across the library */
+	k_object_access_all_grant(*mutex_ptr);
+#endif
+
 	k_mutex_init((struct k_mutex *)*mutex_ptr);
 }
 

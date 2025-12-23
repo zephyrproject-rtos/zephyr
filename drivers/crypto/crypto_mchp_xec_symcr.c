@@ -358,7 +358,7 @@ static int xec_symcr_do_hash(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 		hs->blklen = 0; /* consumed */
 	}
 
-	ret = mchp_xec_rom_hash_feed_wrapper(c, (const uint8_t *)pkt->in_buf, fill_len);
+	ret = mchp_xec_rom_hash_feed_wrapper(c, pkt->in_buf, fill_len);
 	if (ret) {
 		LOG_ERR("ROM hash feed error %d", ret);
 		return ret;
@@ -405,13 +405,13 @@ static int xec_symcr_hash_session_begin(const struct device *dev, struct hash_ct
 
 	if (ctx->flags & ~(MCHP_XEC_SYMCR_CAPS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	rom_algo = lookup_hash_alg(algo);
 	if (rom_algo == MCHP_ROM_HASH_ALG_NONE) {
 		LOG_ERR("Unsupported algo %d", algo);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	session_idx = mchp_xec_get_unused_session_index(data);

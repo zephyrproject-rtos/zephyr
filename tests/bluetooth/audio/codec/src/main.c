@@ -19,9 +19,8 @@
 #include <zephyr/fff.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-
-#include <ztest_test.h>
-#include <ztest_assert.h>
+#include <zephyr/ztest_test.h>
+#include <zephyr/ztest_assert.h>
 
 DEFINE_FFF_GLOBALS;
 

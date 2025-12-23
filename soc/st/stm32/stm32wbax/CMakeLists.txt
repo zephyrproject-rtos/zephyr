@@ -9,11 +9,11 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
-if(CONFIG_BT_STM32WBA)
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+if(CONFIG_BT_STM32WBA OR CONFIG_IEEE802154_STM32WBA)
   zephyr_include_directories(hci_if)
-
   zephyr_sources(hci_if/linklayer_plat_adapt.c)
-  zephyr_sources(hci_if/bleplat.c)
+  zephyr_sources(hci_if/sys_wireless_plat.c)
   zephyr_sources(hci_if/host_stack_if.c)
   zephyr_sources(hci_if/ll_sys_if_adapt.c)
   zephyr_sources(hci_if/stm32_timer.c)

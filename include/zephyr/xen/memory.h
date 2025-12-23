@@ -3,6 +3,9 @@
  * Copyright (c) 2023 EPAM Systems
  */
 
+#ifndef ZEPHYR_XEN_MEMORY_H_
+#define ZEPHYR_XEN_MEMORY_H_
+
 #include <zephyr/kernel.h>
 #include <zephyr/xen/public/memory.h>
 #include <zephyr/xen/public/xen.h>
@@ -64,3 +67,25 @@ int xendom_remove_from_physmap(int domid, xen_pfn_t gpfn);
 int xendom_populate_physmap(int domid, unsigned int extent_order,
 			    unsigned int nr_extents, unsigned int mem_flags,
 			    xen_pfn_t *extent_start);
+
+/**
+ * @brief Acquire a resource mapping for the Xen domain.
+ *
+ * Issues the XENMEM_acquire_resource hypercall to map a resource buffer
+ * (e.g., I/O request server, grant table, VM trace buffer) into the
+ * specified domain's physmap, or query its total size.
+ *
+ * @param domid        Target domain identifier. Use DOMID_SELF for the calling domain.
+ * @param type         Resource type identifier (e.g., XENMEM_resource_ioreq_server).
+ * @param id           Resource-specific identifier (e.g., server ID or table ID).
+ * @param frame        Starting frame number for mapping, or ignored if *nr_frames == 0.
+ * @param nr_frames    [in,out] On input, number of frames to map; on return,
+ *                     number of frames actually mapped (or total frames if queried).
+ * @param frame_list   Guest frame list buffer: input GFNs for HVM guests,
+ *                     output MFNs for PV guests.
+ * @return             Zero on success, or a negative errno code on failure.
+ */
+int xendom_acquire_resource(domid_t domid, uint16_t type, uint32_t id, uint64_t frame,
+			    uint32_t *nr_frames, xen_pfn_t *frame_list);
+
+#endif /* ZEPHYR_XEN_MEMORY_H_ */

@@ -8,15 +8,24 @@
 #ifndef H_STAT_MGMT_
 #define H_STAT_MGMT_
 
+/**
+ * @brief MCUmgr Statistics Management API
+ * @defgroup mcumgr_stat_mgmt Statistics Management
+ * @ingroup mcumgr_mgmt_api
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Command IDs for statistics management group.
+ * @name Command IDs for Statistics Management group.
+ * @{
  */
-#define STAT_MGMT_ID_SHOW   0
-#define STAT_MGMT_ID_LIST   1
+#define STAT_MGMT_ID_SHOW 0 /**< Group data */
+#define STAT_MGMT_ID_LIST 1 /**< List groups */
+/** @} */
 
 /**
  * Command result codes for statistics management group.
@@ -45,12 +54,19 @@ enum stat_mgmt_err_code_t {
  * @brief Represents a single value in a statistics group.
  */
 struct stat_mgmt_entry {
+	/** Name of the statistic */
 	const char *name;
+
+	/** Value of the statistic */
 	uint64_t value;
 };
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* H_STAT_MGMT_ */

@@ -9,11 +9,17 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Sequence
 
 import colorama
 from colorama import Fore
 from twisterlib.coverage import run_coverage
-from twisterlib.environment import TwisterEnv
+from twisterlib.environment import (
+    TwisterEnv,
+    add_parse_arguments,
+    parse_arguments,
+    python_version_guard,
+)
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import close_logging, setup_logging
 from twisterlib.package import Artifacts
@@ -27,7 +33,25 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def twister(options: argparse.Namespace, default_options: argparse.Namespace):
+def catch_system_exit_exception(func):
+    """Decorator to catch SystemExit exception."""
+
+    def _inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except SystemExit as exc:
+            if isinstance(exc.code, int):
+                return exc.code
+            if exc.code is None:
+                return 0
+            # if exc.code is not int/None consider it is not zero
+            return 1
+
+    return _inner
+
+
+@catch_system_exit_exception
+def twister(options: argparse.Namespace, default_options: argparse.Namespace) -> int:
     start_time = time.time()
 
     # Configure color output
@@ -61,7 +85,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
             for i in range(1, 100):
                 new_out = options.outdir + f".{i}"
                 if not os.path.exists(new_out):
-                    print(f"Renaming output directory to {new_out}")
+                    print(f"Renaming previous output directory to {new_out}")
                     shutil.move(options.outdir, new_out)
                     break
             else:
@@ -114,7 +138,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
             if i.status in [TwisterStatus.SKIP,TwisterStatus.FILTER]:
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
-                # Filtered tests should be visable only when verbosity > 1
+                # Filtered tests should be visible only when verbosity > 1
                 if options.verbose < 2 and i.status == TwisterStatus.FILTER:
                     continue
                 res = i.reason
@@ -158,7 +182,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
 
     if options.dry_run:
         duration = time.time() - start_time
-        logger.info(f"Completed in {duration} seconds")
+        logger.info(f"Completed in {duration:.2f} seconds")
         return 0
 
     if options.short_build_path:
@@ -230,9 +254,17 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
     return 0
 
 
-def main(options: argparse.Namespace, default_options: argparse.Namespace):
+def main(argv: Sequence[str] | None = None) -> int:
+    """Main function to run twister."""
     try:
-        return_code = twister(options, default_options)
+        python_version_guard()
+
+        parser = add_parse_arguments()
+        options = parse_arguments(parser, argv)
+        default_options = parse_arguments(parser, [], on_init=False)
+        return twister(options, default_options)
     finally:
         close_logging()
-    return return_code
+        if (os.name != "nt") and os.isatty(1):
+            # (OS is not Windows) and (stdout is interactive)
+            os.system("stty sane <&1")

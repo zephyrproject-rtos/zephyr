@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fpb_rx261
+name: Renesas RX261 Fast Prototyping Board
+type: mcu
+arch: rx
+toolchain:
+  - cross-compile
+supported:
+  - gpio
+  - serial
+  - timer
+ram: 128
+flash: 512
+testing:
+  timeout_multiplier: 5

@@ -1,0 +1,13 @@
+identifier: holyiot_yj17095
+name: Holyiot YJ-17095
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - ble
+  - pwm
+  - watchdog
+ram: 64
+flash: 512

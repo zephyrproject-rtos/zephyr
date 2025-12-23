@@ -1,0 +1,32 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <mem.h>
+#include <ti/mspm0/g/mspm0gx51x.dtsi>
+
+/ {
+	soc {
+		/*
+		 * Sram Bank 0 (sram0) has ECC checking
+		 * Sram Bank 1 (sram1) is unchecked
+		 */
+		sram0: memory@20000000 {
+			reg = <0x20000000 DT_SIZE_K(64)>;
+		};
+
+		sram1: memory@20210000 {
+			reg = <0x20210000 DT_SIZE_K(64)>;
+		};
+
+		flash0: serial-flash@0 {
+			reg = <0x0 DT_SIZE_K(128)>;
+		};
+
+		flash1: serial-flash@40000 {
+			reg = <0x40000 DT_SIZE_K(128)>;
+		};
+
+		flash2: serial-flash@41e00000 {
+			reg = <0x41E00000 DT_SIZE_K(16)>;
+		};
+	};
+};

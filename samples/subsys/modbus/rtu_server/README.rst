@@ -51,9 +51,6 @@ implementing custom USB class or driver.
 Building and Running
 ********************
 
-This sample can be found under
-:zephyr_file:`samples/subsys/modbus/rtu_server` in the Zephyr tree.
-
 The following commands build and flash RTU server sample.
 
 .. zephyr-app-commands::

@@ -104,5 +104,4 @@
 			low-power-enable;
 		};
 	};
-
 };

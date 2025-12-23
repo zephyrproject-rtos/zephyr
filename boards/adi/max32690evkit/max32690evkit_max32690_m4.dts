@@ -28,10 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "LED0";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
 			label = "LED1";
@@ -40,6 +42,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb0: pb0 {
 			gpios = <&gpio4 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2";
@@ -52,7 +55,7 @@
 		led1 = &green_led;
 		sw0 = &pb0;
 		watchdog0 = &wdt0;
-	 };
+	};
 
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
@@ -90,7 +93,7 @@
 
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status="okay";
+		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio2 25 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
@@ -109,8 +112,8 @@
 
 &hpb {
 	pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_rwds_p1_14 &hyp_d0_p1_12 &hyp_d1_p1_15
-				 &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
-				 &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
+		     &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
+		     &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
 	pinctrl-names = "default";
 	enable-emcc;
 
@@ -118,7 +121,7 @@
 		reg = <0>;
 		base-address = <0x60000000>;
 		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
-		config-regs =     <1>;
+		config-regs = <1>;
 		config-reg-vals = <2>;
 	};
 };

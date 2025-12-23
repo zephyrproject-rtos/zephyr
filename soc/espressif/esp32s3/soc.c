@@ -16,7 +16,7 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/sys/printk.h>
 
-extern void z_prep_c(void);
+extern FUNC_NORETURN void z_prep_c(void);
 extern void esp_reset_reason_init(void);
 
 static void IRAM_ATTR esp_errata(void)

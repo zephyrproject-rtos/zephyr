@@ -122,20 +122,6 @@ static int mdio_sam_write_c45(const struct device *dev, uint8_t prtad,
 	return err;
 }
 
-static void mdio_sam_bus_enable(const struct device *dev)
-{
-	const struct mdio_sam_dev_config *const cfg = dev->config;
-
-	cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
-}
-
-static void mdio_sam_bus_disable(const struct device *dev)
-{
-	const struct mdio_sam_dev_config *const cfg = dev->config;
-
-	cfg->regs->GMAC_NCR &= ~GMAC_NCR_MPE;
-}
-
 static int mdio_sam_initialize(const struct device *dev)
 {
 	const struct mdio_sam_dev_config *const cfg = dev->config;
@@ -147,6 +133,8 @@ static int mdio_sam_initialize(const struct device *dev)
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	/* Enable GMAC module's clock */
 	(void) clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t) &cfg->clock_cfg);
+#elif defined(CONFIG_SOC_SAMA7G54)
+	/* Already configured, do nothing here */
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -154,6 +142,10 @@ static int mdio_sam_initialize(const struct device *dev)
 #endif
 
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval >= 0) {
+		/* Enable MDIO */
+		cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
+	}
 
 	return retval;
 }
@@ -163,18 +155,18 @@ static DEVICE_API(mdio, mdio_sam_driver_api) = {
 	.write = mdio_sam_write,
 	.read_c45 = mdio_sam_read_c45,
 	.write_c45 = mdio_sam_write_c45,
-	.bus_enable = mdio_sam_bus_enable,
-	.bus_disable = mdio_sam_bus_disable,
 };
 
 #define MDIO_SAM_CLOCK(n)						\
 	COND_CODE_1(CONFIG_SOC_FAMILY_ATMEL_SAM,			\
-		(.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),), ()	\
+		(.clock_cfg =						\
+			SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(n)),),	\
+		()							\
 	)
 
 #define MDIO_SAM_CONFIG(n)						\
 static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {	\
-	.regs = (Gmac *)DT_INST_REG_ADDR(n),				\
+	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	MDIO_SAM_CLOCK(n)						\
 };

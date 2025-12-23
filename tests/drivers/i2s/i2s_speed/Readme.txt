@@ -46,3 +46,10 @@ These are the HW changes required to run this test on MIMXRT1060-EVK[B/C]:
 
 - NOTE: these connections cause contention with the following signals/features:
 	- camera CSI_D[2-7]
+
+FRDM-MCXN236:
+This board uses CONFIG_I2S_TEST_SEPARATE_DEVICES=y and connects two SAI peripherals by shorting
+signals externally on the EVK.  These are the HW changes required to run this test:
+        - Short BCLK J1-pin9  (SAI1_RX_BCLK/P3_18) to J8-pin25 (SAI0_TX_BCLK/P3_8)
+        - Short SYNC J1-pin13 (SAI1_RX_FS/P1_7)    to J8-pin26 (SAI0_TX_FS/P3_9)
+        - Short Data J1-pin15 (SAI1_RXD0/P2_9)     to J8-pin27  (SAI0_TXD0/P3_10)

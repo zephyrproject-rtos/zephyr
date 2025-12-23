@@ -1,0 +1,18 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if MCTP_USB
+
+config MCTP_USB_TX_TIMEOUT
+	int "MCTP USB transmit timeout (ms)"
+	default 1000
+	help
+	  Set the MCTP USB transmit timeout, in milliseconds.
+
+module = MCTP_USB_CLASS
+module-str = mctp usb class
+default-count = 1
+
+source "subsys/usb/device_next/class/Kconfig.template.instances_count"
+
+endif

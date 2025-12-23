@@ -228,6 +228,7 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 		return;
 	}
 
+	printf("Waiting for bind\n");
 	k_sem_take(&ipc1_bound_sem, K_FOREVER);
 
 	/*

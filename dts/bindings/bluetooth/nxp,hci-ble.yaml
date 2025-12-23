@@ -11,4 +11,4 @@ properties:
   bt-hci-name:
     default: "BT NXP"
   bt-hci-bus:
-    default: "ipm"
+    default: "ipc"

@@ -166,6 +166,12 @@ typedef struct {
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
+/* The minimum duration in ticks strictly greater than that of K_NO_WAIT */
+#define K_TICK_MIN ((k_ticks_t)1)
+
+/* The maximum duration in ticks strictly and semantically "less than" K_FOREVER */
+#define K_TICK_MAX ((k_ticks_t)(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX : UINT32_MAX - 1))
+
 /** @endcond */
 
 #ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
@@ -254,7 +260,7 @@ typedef struct {
  *
  * @param timeout Timeout value relative to current time (may also be
  *                `K_FOREVER` or `K_NO_WAIT`).
- * @retval Timepoint value corresponding to given timeout
+ * @return Timepoint value corresponding to given timeout
  *
  * @see sys_timepoint_timeout()
  * @see sys_timepoint_expired()
@@ -270,7 +276,7 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
  * `K_FOREVER` is returned.
  *
  * @param timepoint Timepoint for which a timeout value is wanted.
- * @retval Corresponding timeout value.
+ * @return Corresponding timeout value.
  *
  * @see sys_timepoint_calc()
  */
@@ -378,7 +384,10 @@ static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
 /** @cond INTERNAL_HIDDEN */
 /* forward declaration as workaround for time.h */
 struct timespec;
-/** @endcond INTERNAL_HIDDEN */
+
+/* Convert a POSIX clock (cast to int) to a sys_clock identifier */
+int sys_clock_from_clockid(int clock_id);
+/** INTERNAL_HIDDEN @endcond */
 
 /**
  * @brief Get the offset @ref SYS_CLOCK_REALTIME with respect to @ref SYS_CLOCK_MONOTONIC

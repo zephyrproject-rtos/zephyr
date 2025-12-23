@@ -26,7 +26,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq1 &port_irq2 &port_irq3
-	&port_irq4>;
+		     &port_irq4>;
 	port-irq-names = "port-irq1",
 			 "port-irq2",
 			 "port-irq3",
@@ -57,7 +57,7 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7>;
+		     &port_irq6 &port_irq7>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",

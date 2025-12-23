@@ -17,8 +17,8 @@ menuconfig UPDATEHUB
 	select REQUIRES_FULL_LIBC
 	select IMG_ENABLE_IMAGE_CHECK
 	select MPU_ALLOW_FLASH_WRITE
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_SHA256 if !PSA_CRYPTO_CLIENT
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_SHA_256
 	help
 	  UpdateHub is an enterprise-grade solution which makes simple to
 	  remotely update all your embedded devices in the field. It

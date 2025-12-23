@@ -63,7 +63,6 @@
 			label = "storage";
 			reg = <0x003e2000 DT_SIZE_K(120)>;
 		};
-
 	};
 };
 
@@ -81,5 +80,10 @@
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&otghs_phy {
+	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
 	status = "okay";
 };

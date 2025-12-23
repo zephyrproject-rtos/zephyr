@@ -1,0 +1,163 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: SAM_D5x_E5x FDPLL clock
+
+description: |
+  Digital Phase Locked Loop (FDPLL), 96 MHz to 200 MHz output frequency from a 32 kHz to 3.2 MHz
+  reference clock.
+
+include: [base.yaml]
+
+compatible: "microchip,sam-d5x-e5x-fdpll"
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    fdpll-on-demand-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        0: The oscillator is always on
+        1: The oscillator is running when a peripheral is requesting the oscillator to be used as a
+        clock source. The oscillator is not running if no peripheral is requesting the clock source.
+        Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait
+        for the clock to be on, if there is no peripheral request for the clock in the sequence of
+        clock Initialization. If required, better to turn on the clock using API, instead of
+        enabling both during startup.
+
+    fdpll-run-in-standby-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 1
+      description: |
+        0: The DPLLn is not running in standby sleep mode if no peripheral requests the clock.
+        1: The DPLLn is running in standby sleep mode.
+        If ONDEMAND is one, the DPLLn will be running when a peripheral is requesting the clock. If
+        ONDEMAND is false, the clock source will always be running in standby sleep mode.
+
+    fdpll-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Oscillator Enable
+
+    fdpll-divider-ratio-int:
+      type: int
+      default: 0
+      description: |
+        Set the integer part of the frequency multiplier. (0 - 4095)
+
+    fdpll-divider-ratio-frac:
+      type: int
+      default: 0
+      description: |
+        Set the fractional part of the frequency multiplier. (0 - 31)
+
+    fdpll-xosc-clock-divider:
+      type: int
+      default: 0
+      description: |
+        Set the XOSC clock division factor (0 - 2047)
+
+    fdpll-dco-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        DCO Filter Enable
+        0: to disable, 1: to enable
+
+    fdpll-dco-filter-select:
+      type: string
+      enum:
+        - "3.21mhz"
+        - "1.6mhz"
+        - "1.1mhz"
+        - "0.8mhz"
+        - "0.64mhz"
+        - "0.55mhz"
+        - "0.45mhz"
+        - "0.4mhz"
+      default: "3.21mhz"
+      description: |
+        Sigma-Delta DCO Filter Selection, Bandwidth Fn (MHz)
+
+    fdpll-lock-bypass-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Lock Bypass
+        0: to disable, 1: to enable
+
+    fdpll-src:
+      type: string
+      enum:
+        - "gclk0"
+        - "gclk1"
+        - "gclk2"
+        - "gclk3"
+        - "gclk4"
+        - "gclk5"
+        - "gclk6"
+        - "gclk7"
+        - "gclk8"
+        - "gclk9"
+        - "gclk10"
+        - "gclk11"
+        - "xosc32k"
+        - "xosc0"
+        - "xosc1"
+      default: "xosc0"
+      description: |
+        Reference source clock selection
+
+    fdpll-wakeup-fast-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Wake Up Fast
+        0: to disable, 1: to enable
+
+    fdpll-pi-filter-type:
+      type: string
+      enum:
+        - "92.7khz-0.76damp"
+        - "131khz-1.08damp"
+        - "46.4khz-0.38damp"
+        - "65.6khz-0.54damp"
+        - "131khz-0.56damp"
+        - "185khz-0.79damp"
+        - "65.6khz-0.28damp"
+        - "92.7khz-0.39damp"
+        - "46.4khz-1.49damp"
+        - "65.6khz-2.11damp"
+        - "23.2khz-0.75damp"
+        - "32.8khz-1.06damp"
+        - "65.6khz-1.07damp"
+        - "92.7khz-1.51damp"
+        - "32.8khz-0.53damp"
+        - "46.4khz-0.75damp"
+      default: "92.7khz-0.76damp"
+      description: |
+        Proportional Integral Filter Selection

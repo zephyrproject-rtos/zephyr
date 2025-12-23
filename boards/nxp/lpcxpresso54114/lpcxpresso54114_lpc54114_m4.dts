@@ -14,7 +14,7 @@
 	model = "NXP LPCXpresso54114 board";
 	compatible = "nxp,lpc54xxx", "nxp,lpc";
 
-	aliases{
+	aliases {
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
@@ -31,16 +31,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_3: button_2 {
 			label = "User SW3";
 			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -61,7 +64,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &mailbox0 {
@@ -101,10 +104,12 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		slot0_partition: partition@0 {
 			label = "image-0";
 			reg = <0x00000000 DT_SIZE_K(196)>;
 		};
+
 		storage_partition: partition@30000 {
 			label = "storage";
 			reg = <0x00030000 DT_SIZE_K(64)>;

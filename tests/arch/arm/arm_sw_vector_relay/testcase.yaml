@@ -6,3 +6,12 @@ tests:
     arch_allow: arm
     integration_platforms:
       - mps2/an385
+  arch.arm.sw_vector_relay.sram_vector_table:
+    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    tags:
+      - vector_relay
+    arch_allow: arm
+    integration_platforms:
+      - mps2/an385
+    extra_configs:
+      - CONFIG_SRAM_VECTOR_TABLE=y

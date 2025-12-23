@@ -121,7 +121,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	/* adding one to fit the terminating null character */
 	char value[CONFIG_BT_DEVICE_NAME_MAX + 1] = {};
 
-	if (offset >= CONFIG_BT_DEVICE_NAME_MAX) {
+	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
@@ -155,21 +155,18 @@ static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr 
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
 {
-	uint16_t appearance_le = sys_cpu_to_le16(bt_get_appearance());
-	char * const appearance_le_bytes = (char *)&appearance_le;
 	uint16_t appearance;
 	int err;
 
-	if (offset >= sizeof(appearance_le)) {
+	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if ((offset + len) > sizeof(appearance_le)) {
+	if (len != sizeof(appearance)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&appearance_le_bytes[offset], buf, len);
-	appearance = sys_le16_to_cpu(appearance_le);
+	appearance = sys_get_le16(buf);
 
 	err = bt_set_appearance(appearance);
 
@@ -755,6 +752,8 @@ static int db_hash_finish(struct gen_hash_state *state)
 	size_t mac_length;
 	psa_status_t ret = psa_mac_sign_finish(&(state->operation), db_hash.hash, 16, &mac_length);
 
+	psa_destroy_key(state->key);
+
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("CMAC finish failed %d", ret);
 		return -EIO;
@@ -1115,6 +1114,19 @@ static bool is_host_managed_ccc(const struct bt_gatt_attr *attr)
 	return (attr->write == bt_gatt_attr_write_ccc);
 }
 
+#if defined(CONFIG_BT_SETTINGS)
+static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr);
+#else
+static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
+{
+	/* This function shall never be used without CONFIG_BT_SETTINGS. */
+	__ASSERT_NO_MSG(false);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_SETTINGS */
+
+
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
 /** Struct used to store both the id and the random address of a device when replacing
  * random addresses in the ccc attribute's cfg array with the device's id address after
@@ -1163,7 +1175,7 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 
 	/* Store the ccc */
 	if (is_bonded) {
-		bt_gatt_store_ccc(conn->id, &conn->le.dst);
+		gatt_store_ccc(conn->id, &conn->le.dst);
 	}
 
 	/* Update the cf addresses and store it if we get a match */
@@ -1181,7 +1193,7 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 {
 	if (bonded) {
 		/* Store the ccc and cf data */
-		bt_gatt_store_ccc(conn->id, &(conn->le.dst));
+		gatt_store_ccc(conn->id, &(conn->le.dst));
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
 	}
 }
@@ -1496,7 +1508,7 @@ static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
 		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) ||
 		    (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE) && el &&
 		     atomic_test_and_clear_bit(el->flags, DELAYED_STORE_CCC))) {
-			bt_gatt_store_ccc(id, peer_addr);
+			gatt_store_ccc(id, peer_addr);
 		}
 
 		if (!IS_ENABLED(CONFIG_BT_SETTINGS_CF_STORE_ON_WRITE) ||
@@ -1510,6 +1522,17 @@ static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr)
 		}
 	}
 }
+
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+BT_CONN_CB_DEFINE(gatt_conn_cb) = {
+	/* Also update the address of CCC or CF writes that happened before the
+	 * identity resolution. Note that to increase security in the future, we
+	 * might want to explicitly not do this and treat a bonded device as a
+	 * brand-new peer.
+	 */
+	.identity_resolved = bt_gatt_identity_resolved,
+};
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 
 static void bt_gatt_service_init(void)
 {
@@ -1567,17 +1590,6 @@ void bt_gatt_init(void)
 	 * and CF storage on pairing complete.
 	 */
 	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
-
-	static struct bt_conn_cb gatt_conn_cb = {
-		.identity_resolved = bt_gatt_identity_resolved,
-	};
-
-	/* Also update the address of CCC or CF writes that happened before the
-	 * identity resolution. Note that to increase security in the future, we
-	 * might want to explicitly not do this and treat a bonded device as a
-	 * brand-new peer.
-	 */
-	bt_conn_cb_register(&gatt_conn_cb);
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
@@ -1611,6 +1623,19 @@ submit:
 void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 {
 	sys_slist_append(&callback_list, &cb->node);
+}
+
+int bt_gatt_cb_unregister(struct bt_gatt_cb *cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&callback_list, &cb->node)) {
+		return -ENOENT;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
@@ -1681,7 +1706,7 @@ static void gatt_unregister_ccc(struct bt_gatt_ccc_managed_user_data *ccc)
 
 			if (IS_ENABLED(CONFIG_BT_SETTINGS) && store &&
 			    bt_le_bond_exists(cfg->id, &cfg->peer)) {
-				bt_gatt_store_ccc(cfg->id, &cfg->peer);
+				gatt_store_ccc(cfg->id, &cfg->peer);
 			}
 
 			clear_ccc_cfg(cfg);
@@ -1723,7 +1748,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
 	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
-		LOG_ERR("Can't register service after init and before settings are loaded.");
+		LOG_DBG("Can't register service after init and before settings are loaded.");
 		return -EINVAL;
 	}
 
@@ -1827,7 +1852,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if (value_len != 0U && value == NULL) {
-		LOG_WRN("value_len of %u provided for NULL value", value_len);
+		LOG_DBG("value_len of %u provided for NULL value", value_len);
 
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
@@ -2525,7 +2550,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 	/* Confirm that the connection has the correct level of security */
 	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
-		LOG_WRN("Link is not encrypted");
+		LOG_DBG("Link is not encrypted");
 		return -EPERM;
 	}
 
@@ -2535,7 +2560,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 		 * but follows its spirit.
 		 */
 		if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_NOTIFY)) {
-			LOG_WRN("Device is not subscribed to characteristic");
+			LOG_DBG("Device is not subscribed to characteristic");
 			return -EINVAL;
 		}
 	}
@@ -2554,7 +2579,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY,
 				sizeof(*nfy) + params->len);
 	if (!buf) {
-		LOG_WRN("No buffer available to send notification");
+		LOG_DBG("No buffer available to send notification");
 		return -ENOMEM;
 	}
 
@@ -2689,7 +2714,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 
 	/* Confirm that the connection has the correct level of security */
 	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
-		LOG_WRN("Link is not encrypted");
+		LOG_DBG("Link is not encrypted");
 		return -EPERM;
 	}
 
@@ -2699,7 +2724,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 		 * but follows its spirit.
 		 */
 		if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_INDICATE)) {
-			LOG_WRN("Device is not subscribed to characteristic");
+			LOG_DBG("Device is not subscribed to characteristic");
 			return -EINVAL;
 		}
 	}
@@ -2719,7 +2744,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE, len);
 	if (!buf) {
-		LOG_WRN("No buffer available to send indication");
+		LOG_DBG("No buffer available to send indication");
 		bt_att_req_free(req);
 		return -ENOMEM;
 	}
@@ -2812,7 +2837,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		/* Confirm that the connection has the correct level of security */
 		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
-			LOG_WRN("Link is not encrypted");
+			LOG_DBG("Link %p is not encrypted", (void *)conn);
 			bt_conn_unref(conn);
 			continue;
 		}
@@ -3013,7 +3038,7 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 		if (bt_gatt_check_perm(conn, params[i].attr,
 				       BT_GATT_PERM_READ_ENCRYPT |
 				       BT_GATT_PERM_READ_AUTHEN)) {
-			LOG_WRN("Link is not encrypted");
+			LOG_DBG("Link %p is not encrypted", (void *)conn);
 			return -EPERM;
 		}
 
@@ -4739,7 +4764,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_ATTRIBUTE:
 		return gatt_find_info(conn, params);
 	default:
-		LOG_ERR("Invalid discovery type: %u", params->type);
+		LOG_DBG("Invalid discovery type: %u", params->type);
 	}
 
 	return -EINVAL;
@@ -4761,6 +4786,15 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 		uint16_t handle;
 		uint16_t len;
 
+		len = MIN(rsp->len, length);
+		if (len < sizeof(struct bt_att_data)) {
+			LOG_WRN("Bad peer: ATT read-by-uuid rsp: invalid ATTR PDU len %u", len);
+			params->func(conn, BT_ATT_ERR_INVALID_PDU, params, NULL, 0);
+			return;
+		}
+
+		len -= sizeof(struct bt_att_data);
+
 		handle = sys_le16_to_cpu(data->handle);
 
 		/* Handle 0 is invalid */
@@ -4768,8 +4802,6 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 			LOG_ERR("Invalid handle");
 			return;
 		}
-
-		len = rsp->len > length ? length - 2 : rsp->len - 2;
 
 		LOG_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);
 
@@ -5093,7 +5125,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 {
 	struct net_buf *buf;
 	struct bt_att_write_cmd *cmd;
-	size_t write;
+	__maybe_unused size_t write;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(handle, "invalid parameters\n");
@@ -5124,11 +5156,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	cmd->handle = sys_cpu_to_le16(handle);
 
 	write = net_buf_append_bytes(buf, length, data, K_NO_WAIT, NULL, NULL);
-	if (write != length) {
-		LOG_WRN("Unable to allocate length %u: only %zu written", length, write);
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
+	__ASSERT(write == length, "Unable to allocate length %u: only %zu written", length, write);
 
 	LOG_DBG("handle 0x%04x length %u", handle, length);
 
@@ -6005,9 +6033,9 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
-	struct bt_gatt_cb *cb;
+	struct bt_gatt_cb *cb, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, cb, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&callback_list, cb, tmp, node) {
 		if (cb->att_mtu_updated) {
 			cb->att_mtu_updated(conn, tx, rx);
 		}
@@ -6151,7 +6179,7 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
+static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct ccc_save save;
 	size_t len;
@@ -6571,4 +6599,55 @@ void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
 	 * just drop it here. Feel free to add this capability to other
 	 * request types if needed.
 	 */
+}
+
+/* Descriptor of application-specific authorization callbacks that are used
+ * with the CONFIG_BT_GATT_AUTHORIZATION_CUSTOM Kconfig enabled.
+ */
+static const struct bt_gatt_authorization_cb *authorization_cb;
+
+bool bt_gatt_attr_read_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return true;
+	}
+
+	if (!authorization_cb || !authorization_cb->read_authorize) {
+		return true;
+	}
+
+	return authorization_cb->read_authorize(conn, attr);
+}
+
+bool bt_gatt_attr_write_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return true;
+	}
+
+	if (!authorization_cb || !authorization_cb->write_authorize) {
+		return true;
+	}
+
+	return authorization_cb->write_authorize(conn, attr);
+}
+
+int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return -ENOSYS;
+	}
+
+	if (!cb) {
+		authorization_cb = NULL;
+		return 0;
+	}
+
+	if (authorization_cb) {
+		return -EALREADY;
+	}
+
+	authorization_cb = cb;
+
+	return 0;
 }

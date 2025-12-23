@@ -286,6 +286,11 @@ do {                                                                    \
  */
 #endif
 
+#ifndef __deprecated_version
+#define __deprecated_version(version) \
+	__attribute__((deprecated("planned removal in v" #version)))
+#endif
+
 #ifndef __attribute_const__
 #define __attribute_const__ __attribute__((__const__))
 #endif
@@ -344,7 +349,7 @@ do {                                                                    \
 #define __WARN1(s) _Pragma(#s)
 
 /* Generic message */
-#ifndef CONFIG_DEPRECATION_TEST
+#if !(defined(CONFIG_DEPRECATION_TEST) || !defined(CONFIG_WARN_DEPRECATED))
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 /* When adding this, remember to follow the instructions in
  * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
@@ -528,7 +533,7 @@ do {                                                                    \
  * to generate named symbol/value pairs for kconfigs.
  */
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || (defined(CONFIG_ARCH_POSIX) && defined(__arm__))
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not
@@ -548,19 +553,9 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
 
-#elif defined(CONFIG_X86)
-
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%c0"                              \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
-		"\n\t.equ\t" #name "," #value       \
-		"\n\t.type\t" #name ",@object")
-
-#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64) \
+	|| defined(CONFIG_ARCH_POSIX) /*&& (__x86_64 or __i*86 or __aarch64__)*/ \
+	|| defined(CONFIG_X86)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
@@ -584,17 +579,6 @@ do {                                                                    \
 	__asm__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
-
-#elif defined(CONFIG_ARCH_POSIX)
-#define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%c0"                              \
-		"\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
-		"\n\t.equ\t" #name "," #value       \
-		"\n\t.type\t" #name ",@object")
 
 #elif defined(CONFIG_SPARC)
 #define GEN_ABSOLUTE_SYM(name, value)			\
@@ -625,49 +609,6 @@ do {                                                                    \
 #define compiler_barrier() do { \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while (false)
-
-/** @brief Return larger value of two provided expressions.
- *
- * Macro ensures that expressions are evaluated only once.
- *
- * @note Macro has limited usage compared to the standard macro as it cannot be
- *	 used:
- *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
- *	 - static variable, e.g. array like static uint8_t array[Z_MAX(...)];
- */
-#define Z_MAX(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		(_value_a_ > _value_b_) ? _value_a_ : _value_b_; \
-	})
-
-/** @brief Return smaller value of two provided expressions.
- *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
- * macro limitations.
- */
-#define Z_MIN(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		(_value_a_ < _value_b_) ? _value_a_ : _value_b_; \
-	})
-
-/** @brief Return a value clamped to a given range.
- *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
- * macro limitations.
- */
-#define Z_CLAMP(val, low, high) ({                                             \
-		/* random suffix to avoid naming conflict */                   \
-		__typeof__(val) _value_val_ = (val);                           \
-		__typeof__(low) _value_low_ = (low);                           \
-		__typeof__(high) _value_high_ = (high);                        \
-		(_value_val_ < _value_low_)  ? _value_low_ :                   \
-		(_value_val_ > _value_high_) ? _value_high_ :                  \
-					       _value_val_;                    \
-	})
 
 /**
  * @brief Calculate power of two ceiling for some nonzero value
@@ -710,6 +651,12 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
+#if defined(CONFIG_INSTRUMENTATION)
+#define __no_instrumentation__ __attribute__((__no_instrument_function__))
+#else
+#define __no_instrumentation__ /**/
+#endif
+
 #endif /* !_LINKER */
 
 #define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER "-Waddress-of-packed-member"
@@ -721,6 +668,7 @@ do {                                                                    \
 #define TOOLCHAIN_WARNING_SHADOW                   "-Wshadow"
 #define TOOLCHAIN_WARNING_UNUSED_LABEL             "-Wunused-label"
 #define TOOLCHAIN_WARNING_UNUSED_VARIABLE          "-Wunused-variable"
+#define TOOLCHAIN_WARNING_CAST_QUAL                "-Wcast-qual"
 
 /* GCC-specific warnings that aren't in clang. */
 #if defined(__GNUC__) && !defined(__clang__)

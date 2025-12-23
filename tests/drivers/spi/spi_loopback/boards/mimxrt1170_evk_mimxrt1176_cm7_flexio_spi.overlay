@@ -10,7 +10,6 @@
 	status = "disabled";
 };
 
-
 &pinctrl {
 	pinmux_flexio2spi1: pinmux_flexio2spi1 {
 		group0 {
@@ -20,11 +19,9 @@
 				 <&iomuxc_gpio_ad_31_flexio2_flexio31>; /* sdi */
 			drive-strength = "high";
 			slew-rate = "slow";
-
 		};
 	};
 };
-
 
 &flexio2 {
 	status = "okay";
@@ -46,6 +43,7 @@
 			reg = <0>;
 			spi-max-frequency = <500000>;
 		};
+
 		fast@0 {
 			compatible = "test-spi-loopback-fast";
 			reg = <0>;

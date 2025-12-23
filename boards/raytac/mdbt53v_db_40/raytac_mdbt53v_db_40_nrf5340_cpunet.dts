@@ -8,6 +8,7 @@
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
 #include "raytac_mdbt53v_db_40_nrf5340_cpunet-pinctrl.dtsi"
 #include "raytac_mdbt53v_db_40_nrf5340_cpunet_common.dts"
+
 / {
 	model = "Raytac MDBT53V-DB-40 NRF5340 Network";
 	compatible = "raytac,raytac-mdbt53v-db-40-nrf5340-cpunet";
@@ -23,7 +24,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci-ipc = &ipc0;
 	};
-
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {

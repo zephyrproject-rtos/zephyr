@@ -408,6 +408,10 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 	case SENSOR_CHAN_DIE_TEMP:
 		lis2dw12_sample_fetch_temp(dev);
 		break;
+	case SENSOR_CHAN_ALL:
+		lis2dw12_sample_fetch_accel(dev);
+		lis2dw12_sample_fetch_temp(dev);
+		break;
 	default:
 		LOG_DBG("Channel not supported");
 		return -ENOTSUP;
@@ -661,8 +665,7 @@ static int lis2dw12_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&lis2dw12_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LIS2DW12_SPI_OPERATION,	\
-					   0),				\
+					   LIS2DW12_SPI_OPERATION)	\
 		},							\
 		LIS2DW12_CONFIG_COMMON(inst)				\
 	}

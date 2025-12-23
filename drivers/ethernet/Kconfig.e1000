@@ -43,4 +43,16 @@ config ETH_E1000_PTP_CLOCK_SRC_HZ
 	  Set the frequency in Hz sourced to the PTP timer.
 	  If the value is set properly, the timer will be accurate.
 
+config ETH_E1000_RX_QUEUE_SIZE
+	int "Size of receive queue"
+	default 8
+	help
+	  Sets size of receive descriptor queue. It has to be a multiple of 8.
+
+config ETH_E1000_TX_QUEUE_SIZE
+	int "Size of transmit queue"
+	default 8
+	help
+	  Sets size of transmit descriptor queue. It has to be a multiple of 8.
+
 endif # ETH_E1000

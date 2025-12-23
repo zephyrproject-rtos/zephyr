@@ -479,7 +479,25 @@ Save settings request header fields:
     | ``2``  | ``3``        | ``3``          |
     +--------+--------------+----------------+
 
-The command sends an empty CBOR map as data.
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        (str,opt)"name" : (str)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +--------+---------------------------------------------------------------------------------------+
+    | "name" | If provided, contains the settings subtree name to save (can also be a single setting |
+    |        | name if :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION` is |
+    |        | enabled), if not then will save all settings.                                         |
+    +--------+---------------------------------------------------------------------------------------+
+
 
 Save settings response
 ======================

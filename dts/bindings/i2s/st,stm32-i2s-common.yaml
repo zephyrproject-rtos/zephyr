@@ -29,3 +29,7 @@ properties:
     description: |
       Master Clock Output function.
       An mck pin must be listed within pinctrl-0 when enabling this property.
+
+  ioswp:
+    type: boolean
+    description: Swap I2S data input and output pins

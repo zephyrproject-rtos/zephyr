@@ -147,3 +147,12 @@ properties:
       Specify the FIFO watermark level in frame count.
       Default is power-up configuration (disabled).
       Valid range: 0 - 104
+
+  fifo-watermark-equals:
+    type: boolean
+    description: |
+      This value changes the FIFO watermark interrupt behavior by only triggering when the number
+      of samples is equal to the threshold (count = watermark).
+
+      Otherwise, it will generate interrupts when the level is greater or equals the FIFO Watermark
+      Threshold (count >= watermark).

@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/delete-node/ &sram0_shared;
+
 / {
 	chosen {
 		/delete-property/ zephyr,ipc_shm;
 	};
 
 	reserved-memory {
-		/delete-node/ memory@20070000;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		sram_tx: memory@20070000 {
 			reg = <0x20070000 0x0800>;

@@ -267,10 +267,17 @@ static DEVICE_API(gpio, gpio_rx_drv_api_funcs) = {
 	.irq_info_size = DT_PROP_LEN_OR(DT_NODELABEL(ioport##suffix), port_irq_names, 0),
 #endif
 
+#define GPIO_RX_PORT_IRQ_DECL(node)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, port_irq_names),                                        \
+		    (DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RX_DECL_PINS)), ())
+
+#define GPIO_RX_PORT_IRQ_ELEM(node)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, port_irq_names),                                        \
+		    (DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RX_IRQ_INFO)), ())
+
 #define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                          \
-	DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RX_DECL_PINS);                             \
-	struct gpio_rx_irq_info gpio_rx_irq_info_##suffix[] = {                                    \
-		DT_FOREACH_PROP_ELEM(node, port_irq_names, GPIO_RX_IRQ_INFO)};                     \
+	GPIO_RX_PORT_IRQ_DECL(node);                                                               \
+	struct gpio_rx_irq_info gpio_rx_irq_info_##suffix[] = {GPIO_RX_PORT_IRQ_ELEM(node)};       \
 	static const struct gpio_rx_config gpio_rx_config_##suffix = {                             \
 		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(8U)},                   \
 		.port_num = port_number,                                                           \

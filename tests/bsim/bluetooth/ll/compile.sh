@@ -41,5 +41,6 @@ app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
 
 app=tests/bsim/bluetooth/ll/multiple_id compile
 app=tests/bsim/bluetooth/ll/throughput compile
+app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-no_phy_update.conf compile
 
 wait_for_background_jobs

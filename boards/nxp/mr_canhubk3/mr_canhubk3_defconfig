@@ -3,9 +3,6 @@
 
 CONFIG_BUILD_OUTPUT_HEX=y
 
-# Use Systick as system clock
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=160000000
-
 # Run from internal Flash
 CONFIG_XIP=y
 

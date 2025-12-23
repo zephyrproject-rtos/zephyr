@@ -67,10 +67,28 @@ static int destroy_called;
 static void buf_destroy(struct net_buf *buf);
 static void fixed_destroy(struct net_buf *buf);
 static void var_destroy(struct net_buf *buf);
+static void var_destroy_aligned(struct net_buf *buf);
+static void var_destroy_aligned_small(struct net_buf *buf);
+
+#define VAR_POOL_ALIGN 8
+#define VAR_POOL_ALIGN_SMALL 4
+#define VAR_POOL_DATA_COUNT 4
+#define VAR_POOL_DATA_SIZE (VAR_POOL_DATA_COUNT * 64)
 
 NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, USER_DATA_HEAP, buf_destroy);
 NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, FIXED_BUFFER_SIZE, USER_DATA_FIXED, fixed_destroy);
 NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, USER_DATA_VAR, var_destroy);
+
+/* Two pools, one with aligned to 8 bytes and one with aligned to 4 bytes
+ * buffers. The aligned pools are used to test that the alignment works
+ * correctly.
+ */
+NET_BUF_POOL_VAR_ALIGN_DEFINE(var_pool_aligned, VAR_POOL_DATA_COUNT,
+			      VAR_POOL_DATA_SIZE, USER_DATA_VAR,
+			      var_destroy_aligned, VAR_POOL_ALIGN);
+NET_BUF_POOL_VAR_ALIGN_DEFINE(var_pool_aligned_small, VAR_POOL_DATA_COUNT,
+			      VAR_POOL_DATA_SIZE, USER_DATA_VAR,
+			      var_destroy_aligned_small, VAR_POOL_ALIGN_SMALL);
 
 static void buf_destroy(struct net_buf *buf)
 {
@@ -99,6 +117,24 @@ static void var_destroy(struct net_buf *buf)
 	net_buf_destroy(buf);
 }
 
+static void var_destroy_aligned(struct net_buf *buf)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	destroy_called++;
+	zassert_equal(pool, &var_pool_aligned, "Invalid free pointer in buffer");
+	net_buf_destroy(buf);
+}
+
+static void var_destroy_aligned_small(struct net_buf *buf)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	destroy_called++;
+	zassert_equal(pool, &var_pool_aligned_small, "Invalid free pointer in buffer");
+	net_buf_destroy(buf);
+}
+
 static const char example_data[] = "0123456789"
 				   "abcdefghijklmnopqrstuvxyz"
 				   "!#¤%&/()=?";
@@ -110,14 +146,20 @@ ZTEST(net_buf_tests, test_net_buf_1)
 	int i;
 
 	for (i = 0; i < bufs_pool.buf_count; i++) {
+		zassert_equal(bufs_pool.buf_count - i, net_buf_get_available(&bufs_pool));
+		/* Assertion requires that this test runs first */
+		zassert_equal(i, net_buf_get_max_used(&bufs_pool));
 		buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
 		zassert_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bufs); i++) {
+		zassert_equal(i, net_buf_get_available(&bufs_pool));
+		zassert_equal(ARRAY_SIZE(bufs), net_buf_get_max_used(&bufs_pool));
 		net_buf_unref(bufs[i]);
 	}
+	zassert_equal(bufs_pool.buf_count, net_buf_get_available(&bufs_pool));
 
 	zassert_equal(destroy_called, ARRAY_SIZE(bufs),
 		      "Incorrect destroy callback count");
@@ -170,7 +212,7 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(sema);
 }
 
-static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024);
+static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 ZTEST(net_buf_tests, test_net_buf_3)
 {
@@ -252,7 +294,6 @@ ZTEST(net_buf_tests, test_net_buf_4)
 
 		if ((i % 2) && next) {
 			net_buf_frag_del(frag, next);
-			net_buf_unref(next);
 			removed++;
 		} else {
 			frag = next;
@@ -276,7 +317,6 @@ ZTEST(net_buf_tests, test_net_buf_4)
 		struct net_buf *frag2 = buf->frags;
 
 		net_buf_frag_del(buf, frag2);
-		net_buf_unref(frag2);
 		removed++;
 	}
 
@@ -1082,6 +1122,45 @@ ZTEST(net_buf_tests, test_net_buf_linearize)
 
 	net_buf_unref(buf);
 	zassert_equal(destroy_called, 4, "Incorrect destroy callback count");
+}
+
+ZTEST(net_buf_tests, test_net_buf_var_pool_aligned)
+{
+	struct net_buf *buf1, *buf2, *buf3;
+
+	destroy_called = 0;
+
+	zassert_equal(var_pool_aligned.alloc->alignment, VAR_POOL_ALIGN,
+		      "Expected %d-byte alignment for variable pool",
+		      VAR_POOL_ALIGN);
+
+	buf1 = net_buf_alloc_len(&var_pool_aligned, 20, K_NO_WAIT);
+	zassert_not_null(buf1, "Failed to get buffer");
+
+	zassert_true(IS_ALIGNED((uintptr_t)buf1->data, VAR_POOL_ALIGN),
+		     "Buffer data pointer is not aligned to %d bytes",
+		     VAR_POOL_ALIGN);
+
+	buf2 = net_buf_alloc_len(&var_pool_aligned_small, 29, K_NO_WAIT);
+	zassert_not_null(buf2, "Failed to get buffer");
+
+	zassert_true(IS_ALIGNED((uintptr_t)buf2->data, VAR_POOL_ALIGN_SMALL),
+		     "Buffer data pointer is not aligned to %d bytes",
+		     VAR_POOL_ALIGN_SMALL);
+
+	buf3 = net_buf_alloc_len(&var_pool_aligned, VAR_POOL_ALIGN_SMALL, K_NO_WAIT);
+	zassert_is_null(buf3,
+			"Managed to get buffer even if alignment %d is larger than size %d",
+			VAR_POOL_ALIGN, VAR_POOL_ALIGN_SMALL);
+
+	buf3 = net_buf_alloc_len(&var_pool_aligned, VAR_POOL_ALIGN, K_NO_WAIT);
+	zassert_not_null(buf3, "Failed to get buffer");
+
+	net_buf_unref(buf1);
+	net_buf_unref(buf2);
+	net_buf_unref(buf3);
+
+	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
 }
 
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);

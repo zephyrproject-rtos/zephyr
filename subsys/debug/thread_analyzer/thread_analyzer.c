@@ -13,7 +13,6 @@
 #include <kernel_internal.h>
 #include <zephyr/debug/thread_analyzer.h>
 #include <zephyr/debug/stack.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <zephyr/init.h>
@@ -90,12 +89,64 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt);
 #endif
+
+#ifdef CONFIG_THREAD_ANALYZER_STACK_SAFETY
+	switch (info->stack_safety) {
+	case THREAD_ANALYZE_STACK_SAFETY_THRESHOLD_EXCEEDED:
+		THREAD_ANALYZER_PRINT(
+			THREAD_ANALYZER_FMT(
+				" %-20s: Stack Safety Warning: Threshold crossed"),
+			" ");
+		break;
+	case THREAD_ANALYZE_STACK_SAFETY_AT_LIMIT:
+		THREAD_ANALYZER_PRINT(
+			THREAD_ANALYZER_FMT(
+				" %-20s: Stack Safety Alert: Stack exhausted"),
+			" ");
+		break;
+	case THREAD_ANALYZE_STACK_SAFETY_OVERFLOW:
+		THREAD_ANALYZER_PRINT(
+			THREAD_ANALYZER_FMT(
+				" %-20s: Stack Safety Breach: Stack overflowed"),
+			" ");
+		break;
+	default:
+		break;
+	}
+
+#endif
 }
 
 struct ta_cb_user_data {
 	thread_analyzer_cb cb;
 	unsigned int cpu;
 };
+
+#ifdef CONFIG_THREAD_ANALYZER_STACK_SAFETY
+void thread_analyzer_stack_safety_handler_default(struct k_thread *thread,
+						  size_t unused_space,
+						  uint32_t *stack_issue)
+{
+	/*
+	 * Since the handler was called, the configured threshold must at
+	 * least have been crossed. Custom handlers may even be able to detect
+	 * some stack overflow conditions, but the default handler cannot.
+	 */
+
+	*stack_issue = (unused_space == 0) ?
+			THREAD_ANALYZE_STACK_SAFETY_AT_LIMIT :
+			THREAD_ANALYZE_STACK_SAFETY_THRESHOLD_EXCEEDED;
+}
+
+static thread_analyzer_stack_safety_handler stack_safety_handler =
+		thread_analyzer_stack_safety_handler_default;
+
+void thread_analyzer_stack_safety_handler_set(thread_analyzer_stack_safety_handler handler)
+{
+	stack_safety_handler = (handler != NULL) ? handler :
+				thread_analyzer_stack_safety_handler_default;
+}
+#endif
 
 static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 {
@@ -120,7 +171,15 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 		snprintk(hexname, sizeof(hexname), "%p", (void *)thread);
 	}
 
+#ifdef CONFIG_THREAD_ANALYZER_STACK_SAFETY
+	info.stack_safety = 0;
+	err = k_thread_runtime_stack_safety_full_check(thread, &unused,
+			(k_thread_stack_safety_handler_t) stack_safety_handler,
+			&info.stack_safety);
+#else
 	err = k_thread_stack_space_get(thread, &unused);
+#endif
+
 	if (err) {
 		THREAD_ANALYZER_PRINT(
 			THREAD_ANALYZER_FMT(
@@ -170,6 +229,11 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	ARG_UNUSED(ret);
 
 	cb(&info);
+
+#ifdef CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
+	k_thread_runtime_stats_longest_frame_reset(thread);
+#endif
+
 }
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
@@ -252,7 +316,7 @@ void thread_analyzer_auto(void *a, void *b, void *c)
 	}
 }
 
-#if IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)
+#ifdef CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES
 
 static K_THREAD_STACK_ARRAY_DEFINE(analyzer_thread_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE);

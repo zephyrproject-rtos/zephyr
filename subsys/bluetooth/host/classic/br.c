@@ -143,6 +143,10 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	key_size = rp->key_size;
 	net_buf_unref(rsp);
 
+	if (conn->br.link_key) {
+		conn->br.link_key->enc_key_size = key_size;
+	}
+
 	LOG_DBG("Encryption key size is %u", key_size);
 
 	if (conn->sec_level == BT_SECURITY_L4) {
@@ -211,6 +215,12 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	}
 
 	sco_conn->handle = handle;
+	sco_conn->sco.air_mode = evt->air_mode;
+
+	if (sco_conn->sco.link_type != evt->link_type) {
+		LOG_WRN("link type mismatch %u != %u", sco_conn->sco.link_type, evt->link_type);
+		sco_conn->sco.link_type = evt->link_type;
+	}
 	bt_conn_set_state(sco_conn, BT_CONN_CONNECTED);
 	bt_conn_unref(sco_conn);
 }
@@ -681,24 +691,58 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x role %u addr %s", evt->status, evt->role, bt_addr_str(&evt->bdaddr));
 
-	if (evt->status) {
-		return;
-	}
-
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
-	if (evt->role) {
-		conn->role = BT_CONN_ROLE_PERIPHERAL;
-	} else {
-		conn->role = BT_CONN_ROLE_CENTRAL;
+	if (evt->status == 0) {
+		if (evt->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->role = BT_CONN_ROLE_PERIPHERAL;
+		} else {
+			conn->role = BT_CONN_ROLE_CENTRAL;
+		}
 	}
+
+	bt_conn_role_changed(conn, evt->status);
 
 	bt_conn_unref(conn);
 }
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_hci_link_mode_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_mode_change *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint16_t interval = sys_le16_to_cpu(evt->interval);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (!conn) {
+		LOG_ERR("Can't find conn for handle 0x%x", handle);
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		LOG_ERR("Invalid state %d", conn->state);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (evt->status) {
+		LOG_ERR("Error %d, type %d", evt->status, conn->type);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	LOG_DBG("hdl 0x%x mode %d intervel %d", handle, evt->mode, interval);
+
+	conn->br.mode = evt->mode;
+	bt_conn_notify_mode_changed(conn, evt->mode, interval);
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 static int read_ext_features(void)
 {
@@ -800,7 +844,10 @@ int bt_br_init(void)
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	struct bt_hci_write_local_name *name_cp;
+	struct bt_hci_rp_read_default_link_policy_settings *rp;
+	struct net_buf *rsp;
 	int err;
+	uint16_t default_link_policy_settings;
 
 	/* Read extended local features */
 	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
@@ -901,6 +948,38 @@ int bt_br_init(void)
 		sc_cp->sc_support = 0x01;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf, NULL);
+		if (err) {
+			return err;
+		}
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_DEFAULT_LINK_POLICY_SETTINGS, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	default_link_policy_settings = rp->default_link_policy_settings;
+
+	bool should_enable = IS_ENABLED(CONFIG_BT_DEFAULT_ROLE_SWITCH_ENABLE);
+	bool is_enabled = (default_link_policy_settings &
+			   BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH);
+
+	/* Enable/Disable the default role switch */
+	if (should_enable != is_enabled) {
+		struct bt_hci_cp_write_default_link_policy_settings *policy_cp;
+
+		default_link_policy_settings ^= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
+
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		policy_cp = net_buf_add(buf, sizeof(*policy_cp));
+		policy_cp->default_link_policy_settings = default_link_policy_settings;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY_SETTINGS, buf, NULL);
 		if (err) {
 			return err;
 		}

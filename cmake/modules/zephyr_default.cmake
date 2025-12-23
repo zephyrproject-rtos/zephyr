@@ -55,13 +55,11 @@ if(${CMAKE_VERSION} VERSION_EQUAL 3.22.1 OR ${CMAKE_VERSION} VERSION_EQUAL 3.22.
   # It seems only pip-installed builds are affected so we test to see if we are affected
   cmake_path(GET ZEPHYR_BASE PARENT_PATH test_cmake_path)
   if(ZEPHYR_BASE STREQUAL test_cmake_path)
-    message(FATAL_ERROR "The CMake version ${CMAKE_VERSION} installed suffers"
-            " the \n 'cmake_path(... PARENT_PATH)' bug, see: \n"
-	    "https://gitlab.kitware.com/cmake/cmake/-/issues/23187\n"
-	    "https://github.com/scikit-build/cmake-python-distributions/issues/221\n"
-	    "Please install another CMake version or use a build of CMake that"
-	    " does not come from PyPI."
-    )
+    message(FATAL_ERROR "The CMake version ${CMAKE_VERSION} installed suffers the \n"
+      " 'cmake_path(... PARENT_PATH)' bug, see:\n"
+      "https://gitlab.kitware.com/cmake/cmake/-/issues/23187\n"
+      "https://github.com/scikit-build/cmake-python-distributions/issues/221\n"
+      "Please install another CMake version or use a build of CMake that does not come from PyPI.")
   endif()
 endif()
 

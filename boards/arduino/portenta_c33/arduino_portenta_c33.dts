@@ -6,8 +6,8 @@
 /dts-v1/;
 
 #include <renesas/ra/ra6/r7fa6m5bh3cfc.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -37,12 +37,12 @@
 		};
 
 		led2: led2 {
-			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&ioport4 0 GPIO_ACTIVE_LOW>;
 			label = "LEDG";
 		};
 
 		led3: led3 {
-			gpios = <&ioport8 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&ioport8 0 GPIO_ACTIVE_LOW>;
 			label = "LEDB";
 		};
 	};
@@ -95,15 +95,39 @@
 	};
 };
 
-&option_setting_s {
+&option_setting_ofs0 {
 	status = "disabled";
 };
 
-&option_setting_sas {
+&option_setting_dualsel {
 	status = "disabled";
 };
 
-&option_setting_ofs {
+&option_setting_ofs1_sec {
+	status = "disabled";
+};
+
+&option_setting_banksel_sec {
+	status = "disabled";
+};
+
+&option_setting_bps_sec {
+	status = "disabled";
+};
+
+&option_setting_pbps_sec {
+	status = "disabled";
+};
+
+&option_setting_ofs1_sel {
+	status = "disabled";
+};
+
+&option_setting_banksel_sel {
+	status = "disabled";
+};
+
+&option_setting_bps_sel {
 	status = "disabled";
 };
 
@@ -138,7 +162,7 @@
 		   <&ioport1 4 GPIO_ACTIVE_LOW>;
 
 	esp_hosted@1 {
-		status = "ok";
+		status = "okay";
 		compatible = "espressif,esp-hosted";
 		reg = <0x1>;
 		spi-max-frequency = <DT_FREQ_M(5)>;

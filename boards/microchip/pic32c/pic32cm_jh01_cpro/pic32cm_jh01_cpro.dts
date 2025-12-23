@@ -1,0 +1,144 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cm_jh/pic32cm_jh01/pic32cm5164jh01100.dtsi>
+#include "pic32cm_jh01_cpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CM JH01 Curiosity Pro";
+	compatible = "pic32cmjh01,cpro", "microchip,pic32cm5164jh01100", "microchip,pic32cm";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &sercom4;
+		zephyr,shell-uart = &sercom4;
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 0x4000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&clock {
+	compatible = "microchip,pic32cm-jh-clock";
+
+	/* If cpu sourced from osc48m, use 3 for CPU frequency above 24Mhz */
+	flash-wait-states = <2>;
+
+	xosc: xosc {
+		compatible = "microchip,pic32cm-jh-xosc";
+		xosc-frequency = <32000000>;
+		xosc-en = <1>;
+		xosc-xtal-en = <1>;
+		xosc-run-in-standby-en = <1>;
+	};
+
+	fdpll: fdpll {
+		compatible = "microchip,pic32cm-jh-fdpll";
+		fdpll-xosc-clock-divider = <15>;
+		fdpll-divider-ratio-frac = <0>;
+		fdpll-divider-ratio-int = <95>;
+		fdpll-output-prescalar = "div2";
+		fdpll-src = "xosc";
+		fdpll-run-in-standby-en = <1>;
+		fdpll-en = <1>;
+	};
+
+	xosc32k: xosc32k {
+		compatible = "microchip,pic32cm-jh-xosc32k";
+		xosc32k-32khz-en = <1>;
+		xosc32k-xtal-en = <1>;
+		xosc32k-startup-time = "122-us";
+		xosc32k-run-in-standby-en = <1>;
+		xosc32k-en = <1>;
+	};
+
+	osc32k: osc32k {
+		compatible = "microchip,pic32cm-jh-osc32k";
+		osc32k-32khz-en = <1>;
+		osc32k-startup-time = "183-us";
+		osc32k-run-in-standby-en = <1>;
+		osc32k-en = <0>;
+	};
+
+	gclkgen: gclkgen {
+		compatible = "microchip,pic32cm-jh-gclkgen";
+
+		gclkgen0 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+			gclkgen-div-factor = <1>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "fdpll";
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph: gclkperiph {
+		compatible = "microchip,pic32cm-jh-gclkperiph";
+		#clock-cells = <1>;
+
+		sercom4 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+	};
+};
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <3>;
+	txpo = <1>;
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

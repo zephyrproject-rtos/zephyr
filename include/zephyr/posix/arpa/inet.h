@@ -24,6 +24,13 @@ char *inet_ntoa(struct in_addr in);
 char *inet_ntop(sa_family_t family, const void *src, char *dst, size_t size);
 int inet_pton(sa_family_t family, const char *src, void *dst);
 
+#define ntohs(x)  net_ntohs(x)
+#define ntohl(x)  net_ntohl(x)
+#define ntohll(x) net_ntohll(x)
+#define htons(x)  net_htons(x)
+#define htonl(x)  net_htonl(x)
+#define htonll(x) net_htonll(x)
+
 #ifdef __cplusplus
 }
 #endif

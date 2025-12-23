@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 /**
- * @brief PSI5 Interface
- * @defgroup psi5_interface PSI5 Interface
+ * @brief Interfaces for Peripheral Sensor Interface (PSI5).
+ * @defgroup psi5_interface PSI5
  * @since 4.2
  * @version 0.1.0
  * @ingroup io_interfaces

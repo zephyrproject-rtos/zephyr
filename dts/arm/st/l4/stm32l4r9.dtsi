@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/l4/stm32l4r5.dtsi>
 #include <zephyr/dt-bindings/display/panel.h>
 
@@ -17,8 +16,8 @@
 			reg = <0x40016800 0x200>;
 			interrupts = <91 0>, <92 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB2, 26U)>;
-			resets = <&rctl STM32_RESET(APB2, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
+			resets = <&rctl STM32_RESET(APB2, 26)>;
 			status = "disabled";
 		};
 	};

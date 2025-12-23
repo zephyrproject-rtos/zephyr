@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(nsos_sockets);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/dlist.h>
 
@@ -62,22 +61,25 @@ struct nsos_socket {
 
 static sys_dlist_t nsos_polls = SYS_DLIST_STATIC_INIT(&nsos_polls);
 
+/* Forward declaration of the interface */
+NET_IF_DECLARE(nsos_socket, 0);
+
 static int socket_family_to_nsos_mid(int family, int *family_mid)
 {
 	switch (family) {
-	case AF_UNSPEC:
+	case NET_AF_UNSPEC:
 		*family_mid = NSOS_MID_AF_UNSPEC;
 		break;
-	case AF_INET:
+	case NET_AF_INET:
 		*family_mid = NSOS_MID_AF_INET;
 		break;
-	case AF_INET6:
+	case NET_AF_INET6:
 		*family_mid = NSOS_MID_AF_INET6;
 		break;
-	case AF_UNIX:
+	case NET_AF_UNIX:
 		*family_mid = NSOS_MID_AF_UNIX;
 		break;
-	case AF_PACKET:
+	case NET_AF_PACKET:
 		*family_mid = NSOS_MID_AF_PACKET;
 		break;
 	default:
@@ -90,31 +92,31 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 {
 	switch (proto) {
-	case IPPROTO_IP:
+	case NET_IPPROTO_IP:
 		*proto_mid = NSOS_MID_IPPROTO_IP;
 		break;
-	case IPPROTO_ICMP:
+	case NET_IPPROTO_ICMP:
 		*proto_mid = NSOS_MID_IPPROTO_ICMP;
 		break;
-	case IPPROTO_IGMP:
+	case NET_IPPROTO_IGMP:
 		*proto_mid = NSOS_MID_IPPROTO_IGMP;
 		break;
-	case IPPROTO_IPIP:
+	case NET_IPPROTO_IPIP:
 		*proto_mid = NSOS_MID_IPPROTO_IPIP;
 		break;
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		*proto_mid = NSOS_MID_IPPROTO_TCP;
 		break;
-	case IPPROTO_UDP:
+	case NET_IPPROTO_UDP:
 		*proto_mid = NSOS_MID_IPPROTO_UDP;
 		break;
-	case IPPROTO_IPV6:
+	case NET_IPPROTO_IPV6:
 		*proto_mid = NSOS_MID_IPPROTO_IPV6;
 		break;
-	case IPPROTO_RAW:
+	case NET_IPPROTO_RAW:
 		*proto_mid = NSOS_MID_IPPROTO_RAW;
 		break;
-	case htons(IPPROTO_ETH_P_ALL):
+	case net_htons(NET_IPPROTO_ETH_P_ALL):
 		*proto_mid = NSOS_MID_IPPROTO_ETH_P_ALL;
 		break;
 	default:
@@ -127,13 +129,13 @@ static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 static int socket_type_to_nsos_mid(int type, int *type_mid)
 {
 	switch (type) {
-	case SOCK_STREAM:
+	case NET_SOCK_STREAM:
 		*type_mid = NSOS_MID_SOCK_STREAM;
 		break;
-	case SOCK_DGRAM:
+	case NET_SOCK_DGRAM:
 		*type_mid = NSOS_MID_SOCK_DGRAM;
 		break;
-	case SOCK_RAW:
+	case NET_SOCK_RAW:
 		*type_mid = NSOS_MID_SOCK_RAW;
 		break;
 	default:
@@ -383,7 +385,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 	case ZFD_IOCTL_POLL_OFFLOAD:
 		return -EOPNOTSUPP;
 
-	case F_GETFL: {
+	case ZVFS_F_GETFL: {
 		int flags;
 
 		flags = nsos_adapt_fcntl_getfl(sock->poll.mid.fd);
@@ -391,7 +393,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 		return fl_from_nsos_mid(flags);
 	}
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 		int flags = va_arg(args, int);
 		int ret;
 
@@ -418,7 +420,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 	return -EINVAL;
 }
 
-static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
+static int sockaddr_to_nsos_mid(const struct net_sockaddr *addr, net_socklen_t addrlen,
 				struct nsos_mid_sockaddr **addr_mid, size_t *addrlen_mid)
 {
 	if (!addr || !addrlen) {
@@ -429,9 +431,9 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 	}
 
 	switch (addr->sa_family) {
-	case AF_INET: {
-		const struct sockaddr_in *addr_in =
-			(const struct sockaddr_in *)addr;
+	case NET_AF_INET: {
+		const struct net_sockaddr_in *addr_in =
+			(const struct net_sockaddr_in *)addr;
 		struct nsos_mid_sockaddr_in *addr_in_mid =
 			(struct nsos_mid_sockaddr_in *)*addr_mid;
 
@@ -447,9 +449,9 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 
 		return 0;
 	}
-	case AF_INET6: {
-		const struct sockaddr_in6 *addr_in =
-			(const struct sockaddr_in6 *)addr;
+	case NET_AF_INET6: {
+		const struct net_sockaddr_in6 *addr_in =
+			(const struct net_sockaddr_in6 *)addr;
 		struct nsos_mid_sockaddr_in6 *addr_in_mid =
 			(struct nsos_mid_sockaddr_in6 *)*addr_mid;
 
@@ -467,9 +469,9 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 
 		return 0;
 	}
-	case AF_UNIX: {
-		const struct sockaddr_un *addr_un =
-			(const struct sockaddr_un *)addr;
+	case NET_AF_UNIX: {
+		const struct net_sockaddr_un *addr_un =
+			(const struct net_sockaddr_un *)addr;
 		struct nsos_mid_sockaddr_un *addr_un_mid =
 			(struct nsos_mid_sockaddr_un *)*addr_mid;
 
@@ -485,9 +487,9 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 
 		return 0;
 	}
-	case AF_PACKET: {
-		const struct sockaddr_ll *addr_ll =
-			(const struct sockaddr_ll *)addr;
+	case NET_AF_PACKET: {
+		const struct net_sockaddr_ll *addr_ll =
+			(const struct net_sockaddr_ll *)addr;
 		struct nsos_mid_sockaddr_ll *addr_ll_mid =
 			(struct nsos_mid_sockaddr_ll *)*addr_mid;
 
@@ -513,7 +515,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 	return -NSI_ERRNO_MID_EINVAL;
 }
 
-static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
+static int sockaddr_from_nsos_mid(struct net_sockaddr *addr, net_socklen_t *addrlen,
 				  const struct nsos_mid_sockaddr *addr_mid, size_t addrlen_mid)
 {
 	if (!addr || !addrlen) {
@@ -524,9 +526,9 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 	case NSOS_MID_AF_INET: {
 		const struct nsos_mid_sockaddr_in *addr_in_mid =
 			(const struct nsos_mid_sockaddr_in *)addr_mid;
-		struct sockaddr_in addr_in;
+		struct net_sockaddr_in addr_in;
 
-		addr_in.sin_family = AF_INET;
+		addr_in.sin_family = NET_AF_INET;
 		addr_in.sin_port = addr_in_mid->sin_port;
 		addr_in.sin_addr.s_addr = addr_in_mid->sin_addr;
 
@@ -538,9 +540,9 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 	case NSOS_MID_AF_INET6: {
 		const struct nsos_mid_sockaddr_in6 *addr_in_mid =
 			(const struct nsos_mid_sockaddr_in6 *)addr_mid;
-		struct sockaddr_in6 addr_in;
+		struct net_sockaddr_in6 addr_in;
 
-		addr_in.sin6_family = AF_INET6;
+		addr_in.sin6_family = NET_AF_INET6;
 		addr_in.sin6_port = addr_in_mid->sin6_port;
 		memcpy(addr_in.sin6_addr.s6_addr, addr_in_mid->sin6_addr,
 		       sizeof(addr_in.sin6_addr.s6_addr));
@@ -626,7 +628,7 @@ static int nsos_poll_if_blocking(struct nsos_socket *sock, int events,
 	return 0;
 }
 
-static int nsos_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int nsos_bind(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -691,8 +693,9 @@ clear_nonblock:
 	return ret;
 }
 
-static int nsos_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int nsos_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
+	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
@@ -718,6 +721,7 @@ return_ret:
 		errno = nsi_errno_from_mid(-ret);
 		return -1;
 	}
+	conn_mgr_if_used(iface);
 
 	return ret;
 }
@@ -736,8 +740,9 @@ static int nsos_listen(void *obj, int backlog)
 	return ret;
 }
 
-static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
+static int nsos_accept(void *obj, struct net_sockaddr *addr, net_socklen_t *addrlen)
 {
+	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_socket *accept_sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
@@ -782,6 +787,7 @@ static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 
 	zvfs_finalize_typed_fd(zephyr_fd, conn_sock, &nsos_socket_fd_op_vtable.fd_vtable,
 			       ZVFS_MODE_IFSOCK);
+	conn_mgr_if_used(iface);
 
 	return zephyr_fd;
 
@@ -797,8 +803,9 @@ return_ret:
 }
 
 static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
-			   const struct sockaddr *addr, socklen_t addrlen)
+			   const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
+	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
@@ -832,11 +839,13 @@ return_ret:
 		return -1;
 	}
 
+	conn_mgr_if_used(iface);
 	return ret;
 }
 
-static ssize_t nsos_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static ssize_t nsos_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
+	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
@@ -893,12 +902,14 @@ return_ret:
 		return -1;
 	}
 
+	conn_mgr_if_used(iface);
 	return ret;
 }
 
 static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
-			     struct sockaddr *addr, socklen_t *addrlen)
+			     struct net_sockaddr *addr, net_socklen_t *addrlen)
 {
+	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
 	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
@@ -932,10 +943,11 @@ return_ret:
 		return -1;
 	}
 
+	conn_mgr_if_used(iface);
 	return ret;
 }
 
-static ssize_t nsos_recvmsg(void *obj, struct msghdr *msg, int flags)
+static ssize_t nsos_recvmsg(void *obj, struct net_msghdr *msg, int flags)
 {
 	errno = ENOTSUP;
 	return -1;
@@ -945,13 +957,13 @@ static int socket_type_from_nsos_mid(int type_mid, int *type)
 {
 	switch (type_mid) {
 	case NSOS_MID_SOCK_STREAM:
-		*type = SOCK_STREAM;
+		*type = NET_SOCK_STREAM;
 		break;
 	case NSOS_MID_SOCK_DGRAM:
-		*type = SOCK_DGRAM;
+		*type = NET_SOCK_DGRAM;
 		break;
 	case NSOS_MID_SOCK_RAW:
-		*type = SOCK_RAW;
+		*type = NET_SOCK_RAW;
 		break;
 	default:
 		return -NSI_ERRNO_MID_ESOCKTNOSUPPORT;
@@ -964,31 +976,31 @@ static int socket_proto_from_nsos_mid(int proto_mid, int *proto)
 {
 	switch (proto_mid) {
 	case NSOS_MID_IPPROTO_IP:
-		*proto = IPPROTO_IP;
+		*proto = NET_IPPROTO_IP;
 		break;
 	case NSOS_MID_IPPROTO_ICMP:
-		*proto = IPPROTO_ICMP;
+		*proto = NET_IPPROTO_ICMP;
 		break;
 	case NSOS_MID_IPPROTO_IGMP:
-		*proto = IPPROTO_IGMP;
+		*proto = NET_IPPROTO_IGMP;
 		break;
 	case NSOS_MID_IPPROTO_IPIP:
-		*proto = IPPROTO_IPIP;
+		*proto = NET_IPPROTO_IPIP;
 		break;
 	case NSOS_MID_IPPROTO_TCP:
-		*proto = IPPROTO_TCP;
+		*proto = NET_IPPROTO_TCP;
 		break;
 	case NSOS_MID_IPPROTO_UDP:
-		*proto = IPPROTO_UDP;
+		*proto = NET_IPPROTO_UDP;
 		break;
 	case NSOS_MID_IPPROTO_IPV6:
-		*proto = IPPROTO_IPV6;
+		*proto = NET_IPPROTO_IPV6;
 		break;
 	case NSOS_MID_IPPROTO_RAW:
-		*proto = IPPROTO_RAW;
+		*proto = NET_IPPROTO_RAW;
 		break;
 	case NSOS_MID_IPPROTO_ETH_P_ALL:
-		*proto = htons(IPPROTO_ETH_P_ALL);
+		*proto = net_htons(NET_IPPROTO_ETH_P_ALL);
 		break;
 	default:
 		return -NSI_ERRNO_MID_EPROTONOSUPPORT;
@@ -1001,19 +1013,19 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 {
 	switch (family_mid) {
 	case NSOS_MID_AF_UNSPEC:
-		*family = AF_UNSPEC;
+		*family = NET_AF_UNSPEC;
 		break;
 	case NSOS_MID_AF_INET:
-		*family = AF_INET;
+		*family = NET_AF_INET;
 		break;
 	case NSOS_MID_AF_INET6:
-		*family = AF_INET6;
+		*family = NET_AF_INET6;
 		break;
 	case NSOS_MID_AF_UNIX:
-		*family = AF_UNIX;
+		*family = NET_AF_UNIX;
 		break;
 	case NSOS_MID_AF_PACKET:
-		*family = AF_PACKET;
+		*family = NET_AF_PACKET;
 		break;
 	default:
 		return -NSI_ERRNO_MID_EAFNOSUPPORT;
@@ -1023,7 +1035,7 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 }
 
 static int nsos_getsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int nsos_mid_optname,
-			       void *optval, socklen_t *optlen)
+			       void *optval, net_socklen_t *optlen)
 {
 	size_t nsos_mid_optlen = sizeof(int);
 	int err;
@@ -1046,14 +1058,14 @@ static int nsos_getsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int
 }
 
 static int nsos_getsockopt(void *obj, int level, int optname,
-			   void *optval, socklen_t *optlen)
+			   void *optval, net_socklen_t *optlen)
 {
 	struct nsos_socket *sock = obj;
 
 	switch (level) {
-	case SOL_SOCKET:
+	case ZSOCK_SOL_SOCKET:
 		switch (optname) {
-		case SO_ERROR: {
+		case ZSOCK_SO_ERROR: {
 			int nsos_mid_err;
 			int err;
 
@@ -1073,7 +1085,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_TYPE: {
+		case ZSOCK_SO_TYPE: {
 			int nsos_mid_type;
 			int err;
 
@@ -1097,7 +1109,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_PROTOCOL: {
+		case ZSOCK_SO_PROTOCOL: {
 			int nsos_mid_proto;
 			int err;
 
@@ -1121,7 +1133,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_DOMAIN: {
+		case ZSOCK_SO_DOMAIN: {
 			int nsos_mid_family;
 			int err;
 
@@ -1145,53 +1157,53 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_RCVBUF:
+		case ZSOCK_SO_RCVBUF:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_RCVBUF,
 						   optval, optlen);
-		case SO_SNDBUF:
+		case ZSOCK_SO_SNDBUF:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_SNDBUF,
 						   optval, optlen);
-		case SO_REUSEADDR:
+		case ZSOCK_SO_REUSEADDR:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEADDR,
 						   optval, optlen);
-		case SO_REUSEPORT:
+		case ZSOCK_SO_REUSEPORT:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEPORT,
 						   optval, optlen);
-		case SO_KEEPALIVE:
+		case ZSOCK_SO_KEEPALIVE:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
 						   optval, optlen);
 		}
 		break;
 
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		switch (optname) {
-		case TCP_NODELAY:
+		case ZSOCK_TCP_NODELAY:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_NODELAY,
 						   optval, optlen);
-		case TCP_KEEPIDLE:
+		case ZSOCK_TCP_KEEPIDLE:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPIDLE,
 						   optval, optlen);
-		case TCP_KEEPINTVL:
+		case ZSOCK_TCP_KEEPINTVL:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPINTVL,
 						   optval, optlen);
-		case TCP_KEEPCNT:
+		case ZSOCK_TCP_KEEPCNT:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
 						   optval, optlen);
 		}
 		break;
 
-	case IPPROTO_IPV6:
+	case NET_IPPROTO_IPV6:
 		switch (optname) {
-		case IPV6_V6ONLY:
+		case ZSOCK_IPV6_V6ONLY:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
 						   optval, optlen);
@@ -1204,7 +1216,7 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 }
 
 static int nsos_setsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int nsos_mid_optname,
-			       const void *optval, socklen_t optlen)
+			       const void *optval, net_socklen_t optlen)
 {
 	int err;
 
@@ -1224,14 +1236,14 @@ static int nsos_setsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int
 }
 
 static int nsos_setsockopt(void *obj, int level, int optname,
-			   const void *optval, socklen_t optlen)
+			   const void *optval, net_socklen_t optlen)
 {
 	struct nsos_socket *sock = obj;
 
 	switch (level) {
-	case SOL_SOCKET:
+	case ZSOCK_SOL_SOCKET:
 		switch (optname) {
-		case SO_PRIORITY: {
+		case ZSOCK_SO_PRIORITY: {
 			int nsos_mid_priority;
 			int err;
 
@@ -1252,7 +1264,7 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_RCVTIMEO: {
+		case ZSOCK_SO_RCVTIMEO: {
 			const struct zsock_timeval *tv = optval;
 			struct nsos_mid_timeval nsos_mid_tv;
 			int err;
@@ -1281,7 +1293,7 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_SNDTIMEO: {
+		case ZSOCK_SO_SNDTIMEO: {
 			const struct zsock_timeval *tv = optval;
 			struct nsos_mid_timeval nsos_mid_tv;
 			int err;
@@ -1310,57 +1322,57 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 
 			return 0;
 		}
-		case SO_RCVBUF:
+		case ZSOCK_SO_RCVBUF:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_RCVBUF,
 						   optval, optlen);
-		case SO_SNDBUF:
+		case ZSOCK_SO_SNDBUF:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_SNDBUF,
 						   optval, optlen);
-		case SO_REUSEADDR:
+		case ZSOCK_SO_REUSEADDR:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEADDR,
 						   optval, optlen);
-		case SO_REUSEPORT:
+		case ZSOCK_SO_REUSEPORT:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEPORT,
 						   optval, optlen);
-		case SO_LINGER:
+		case ZSOCK_SO_LINGER:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_LINGER,
 						   optval, optlen);
-		case SO_KEEPALIVE:
+		case ZSOCK_SO_KEEPALIVE:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
 						   optval, optlen);
 		}
 		break;
 
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		switch (optname) {
-		case TCP_NODELAY:
+		case ZSOCK_TCP_NODELAY:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_NODELAY,
 						   optval, optlen);
-		case TCP_KEEPIDLE:
+		case ZSOCK_TCP_KEEPIDLE:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPIDLE,
 						   optval, optlen);
-		case TCP_KEEPINTVL:
+		case ZSOCK_TCP_KEEPINTVL:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPINTVL,
 						   optval, optlen);
-		case TCP_KEEPCNT:
+		case ZSOCK_TCP_KEEPCNT:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_TCP, NSOS_MID_TCP_KEEPCNT,
 						   optval, optlen);
 		}
 		break;
 
-	case IPPROTO_IPV6:
+	case NET_IPPROTO_IPV6:
 		switch (optname) {
-		case IPV6_V6ONLY:
+		case ZSOCK_IPV6_V6ONLY:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
 						   optval, optlen);
@@ -1414,12 +1426,12 @@ static bool nsos_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_OFFLOAD_REGISTER(nsos, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+NET_SOCKET_OFFLOAD_REGISTER(nsos, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,
 			    nsos_is_supported, nsos_socket_create);
 
 struct zsock_addrinfo_wrap {
 	struct zsock_addrinfo addrinfo;
-	struct sockaddr_storage addr_storage;
+	struct net_sockaddr_storage addr_storage;
 	struct nsos_mid_addrinfo *addrinfo_mid;
 };
 
@@ -1470,7 +1482,7 @@ static int addrinfo_from_nsos_mid(struct nsos_mid_addrinfo *nsos_res,
 		wrap->addrinfo.ai_protocol = res_p->ai_protocol;
 
 		wrap->addrinfo.ai_addr =
-			(struct sockaddr *)&wrap->addr_storage;
+			(struct net_sockaddr *)&wrap->addr_storage;
 		wrap->addrinfo.ai_addrlen = sizeof(wrap->addr_storage);
 
 		sockaddr_from_nsos_mid(wrap->addrinfo.ai_addr, &wrap->addrinfo.ai_addrlen,
@@ -1492,6 +1504,7 @@ static int nsos_getaddrinfo(const char *node, const char *service,
 			    const struct zsock_addrinfo *hints,
 			    struct zsock_addrinfo **res)
 {
+	struct net_if *iface = NET_IF_GET(nsos_socket, 0);
 	struct nsos_mid_addrinfo hints_mid;
 	struct nsos_mid_addrinfo *res_mid;
 	int system_errno;
@@ -1525,6 +1538,7 @@ static int nsos_getaddrinfo(const char *node, const char *service,
 		errno = -ret;
 		return DNS_EAI_SYSTEM;
 	}
+	conn_mgr_if_used(iface);
 
 	return ret;
 }
@@ -1651,6 +1665,14 @@ static int nsos_net_if_disconnect(struct conn_mgr_conn_binding *const binding)
 	LOG_INF("NSOS: dormant");
 	k_work_cancel_delayable(&data->work);
 	net_if_dormant_on(binding->iface);
+
+	if (conn_mgr_binding_get_flag(binding, CONN_MGR_IF_PERSISTENT) &&
+	    !conn_mgr_binding_get_flag(binding, CONN_MGR_IF_DISCONNECTING)) {
+		/* Interface marked as persistent, application didn't request the disconnect */
+		LOG_INF("NSOS: reconnecting");
+		k_work_reschedule(&data->work, data->connect_delay);
+	}
+
 	return 0;
 }
 

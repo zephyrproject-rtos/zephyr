@@ -25,7 +25,7 @@ Features
 ********
 By using this fuel gauge you can get the following information:
 
-  * Read all public fuel gauge properties except ``FUEL_GAUGE_BATTERY_CUTOFF``
+  * Read all public fuel gauge properties
   * Battery charge status as percentage (periodically)
   * Battery voltage (periodically)
 

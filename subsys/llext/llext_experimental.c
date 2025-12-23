@@ -51,7 +51,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext)
 
 int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_ext)
 {
-	struct llext_elf_sect_map **map = llext_alloc(sizeof(*map) * n_ext);
+	struct llext_elf_sect_map **map = llext_alloc_data(sizeof(*map) * n_ext);
 	struct llext *next, *tmp, *first = ext[0], *last = ext[n_ext - 1];
 	unsigned int i, j, n_map, n_exp_tab;
 	int ret;
@@ -69,7 +69,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 	 */
 	for (n_map = 0, n_exp_tab = 0; n_map < n_ext; n_map++) {
 		/* Need to allocate individually, because that's how they're freed */
-		map[n_map] = llext_alloc(sizeof(**map) * ext[n_map]->sect_cnt);
+		map[n_map] = llext_alloc_data(sizeof(**map) * ext[n_map]->sect_cnt);
 		if (!map[n_map]) {
 			LOG_ERR("cannot allocate section map of %zu",
 				sizeof(**map) * ext[n_map]->sect_cnt);
@@ -84,7 +84,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 	}
 
 	/* Array of pointers to exported symbol tables. Can be NULL if n_exp_tab == 0 */
-	struct llext_symbol **exp_tab = llext_alloc(sizeof(*exp_tab) * n_exp_tab);
+	struct llext_symbol **exp_tab = llext_alloc_data(sizeof(*exp_tab) * n_exp_tab);
 
 	if (n_exp_tab) {
 		if (!exp_tab) {
@@ -99,7 +99,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 			if (ext[i]->exp_tab.sym_cnt) {
 				size_t size = sizeof(**exp_tab) * ext[i]->exp_tab.sym_cnt;
 
-				exp_tab[j] = llext_alloc(size);
+				exp_tab[j] = llext_alloc_data(size);
 				if (!exp_tab[j]) {
 					LOG_ERR("cannot allocate exported symbol table of %zu",
 						size);
@@ -115,7 +115,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 
 	/* Allocate extensions and add them to the global list */
 	for (i = 0, j = 0; i < n_ext; i++) {
-		next = llext_alloc(sizeof(*next));
+		next = llext_alloc_data(sizeof(*next));
 		if (!next) {
 			LOG_ERR("cannot allocate LLEXT of %zu", sizeof(*next));
 			ret = -ENOMEM;

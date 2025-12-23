@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Andrew Featherstone <andrew.featherstone@gmail.com>
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-external-pulldown";
+		/* Choice of pin on the header is arbitrary. */
+		gpios = <&pico_header 15 GPIO_ACTIVE_HIGH>;
+	};
+};

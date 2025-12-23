@@ -14,6 +14,7 @@
 /**
  * @defgroup devicetree-pinctrl Pin control
  * @ingroup devicetree
+ * @ingroup pinctrl_interface
  * @{
  */
 

@@ -12,9 +12,14 @@ tests:
   sample.sensor.accel_trig:
     filter: dt_alias_exists("accel0")
     harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+          \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
       fixture: fixture_sensor_accel_int
     integration_platforms:
-      - frdm_k64f                       # fxos8700
+      - frdm_k64f                          # fxos8700
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_lsm6dsl_click shield
     platform_exclude:
       - sensortile_box
       - stm32f3_disco
@@ -23,6 +28,8 @@ tests:
       - disco_l475_iot1
       - stm32l562e_dk
       - stm32wb5mm_dk
+    extra_args:
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_lsm6dsl_click"
   sample.sensor.accel_trig.adxl345-trigger:
     extra_args:
       - SHIELD=pmod_acl

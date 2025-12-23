@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/usb/audio.h>
+#include <zephyr/dt-bindings/usb/audio.h>
 
 / {
 	uac2_headset: usb_audio2 {
 		compatible = "zephyr,uac2";
 		status = "okay";
 		full-speed;
+		high-speed;
 		audio-function = <AUDIO_FUNCTION_HEADSET>;
 
 		uac_aclk: aclk {

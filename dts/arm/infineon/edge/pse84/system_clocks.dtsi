@@ -1,0 +1,539 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DIV_8_BIT    00
+#define DIV_16_BIT	 01
+#define DIV_16_5_BIT 02
+#define DIV_24_5_BIT 03
+
+#include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_pse8xx.h>
+
+/ {
+	/* iho */
+	clk_iho: clk_iho {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <50000000>;
+		system-clock = <IFX_IHO>;
+		status = "okay";
+	};
+
+	/* pilo */
+	clk_pilo: clk_pilo {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <32768>;
+		system-clock = <IFX_PILO>;
+		status = "okay";
+	};
+
+	dpll_hp: dpll_hp {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_DPLL500>;
+		status = "disabled";
+	};
+
+	dpll_lp0: dpll_lp0 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_DPLL250_0>;
+		status = "disabled";
+	};
+
+	dpll_lp1: dpll_lp1 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_DPLL250_1>;
+		status = "disabled";
+	};
+
+	path_mux0: path_mux0 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_PATHMUX>;
+		instance = <0>;
+		source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+		status = "disabled";
+	};
+
+	path_mux1: path_mux1 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_PATHMUX>;
+		instance = <1>;
+		source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+		status = "disabled";
+	};
+
+	path_mux2: path_mux2 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_PATHMUX>;
+		instance = <2>;
+		source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+		status = "disabled";
+	};
+
+	path_mux3: path_mux3 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_PATHMUX>;
+		instance = <3>;
+		source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+		status = "disabled";
+	};
+
+	path_mux4: path_mux4 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_PATHMUX>;
+		instance = <4>;
+		source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+		status = "disabled";
+	};
+
+	path_mux5: path_mux5 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_PATHMUX>;
+		instance = <5>;
+		source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+		status = "disabled";
+	};
+
+	clk_hf0: clk_hf0 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <0>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf1: clk_hf1 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <1>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf2: clk_hf2 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <2>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf3: clk_hf3 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <3>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf4: clk_hf4 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <4>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf5: clk_hf5 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <5>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf6: clk_hf6 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <6>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf7: clk_hf7 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <7>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf8: clk_hf8 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <8>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf9: clk_hf9 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <9>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf10: clk_hf10 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <10>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf11: clk_hf11 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <11>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf12: clk_hf12 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <12>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	clk_hf13: clk_hf13 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		clock-div = <IFX_CLK_HF_NO_DIVIDE>;
+		system-clock = <IFX_HF>;
+		instance = <13>;
+		source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+		status = "disabled";
+	};
+
+	peri0: peri0 {
+		/* Peripheral 0, Clock Group 1 */
+		/* 8-bit */
+		peri0_group1_8bit_0: peri0_group1_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_1: peri0_group1_8bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_2: peri0_group1_8bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <2>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_3: peri0_group1_8bit_3 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <3>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_8bit_4: peri0_group1_8bit_4 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <4>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* 16-bit */
+		peri0_group1_16bit_0: peri0_group1_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_1: peri0_group1_16bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_2: peri0_group1_16bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <2>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_3: peri0_group1_16bit_3 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <3>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* 16.5-bit */
+		peri0_group1_16_5bit_0: peri0_group1_16_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16_5bit_1: peri0_group1_16_5bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* 24.5-bit */
+		peri0_group1_24_5bit_0: peri0_group1_24_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 01]; /* inst#, group# */
+			div-type = <DIV_24_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 2 */
+		/* 8-bit */
+		peri0_group2_8bit_0: peri0_group2_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 02]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group2_8bit_1: peri0_group2_8bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 02]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group2_8bit_2: peri0_group2_8bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 02]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <2>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri0_group2_8bit_3: peri0_group2_8bit_3 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 02]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <3>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 3 */
+		/* 8-bit */
+		peri0_group3_8bit_0: peri0_group3_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 03]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 4 */
+		/* 8-bit */
+		peri0_group4_8bit_0: peri0_group4_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 04]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 7 */
+		/* 16.5-bit */
+		peri0_group7_16_5bit_0: peri0_group7_16_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 07]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 8 */
+		/* 16-bit */
+		peri0_group8_16bit_0: peri0_group8_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 08]; /* inst#, group# */
+			div-type = <DIV_16_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 0, Clock Group 9 */
+		/* 8-bit */
+		peri0_group9_8bit_0: peri0_group9_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [00 09]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+	};
+
+	peri1: peri1 {
+		/* Peripheral 1, Clock Group 1 */
+		/* 16.5-bit */
+		peri1_group1_16_5bit_0: peri1_group1_16_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [01 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri1_group1_16_5bit_1: peri1_group1_16_5bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [01 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <1>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		peri1_group1_16_5bit_2: peri1_group1_16_5bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [01 01]; /* inst#, group# */
+			div-type = <DIV_16_5_BIT>;
+			channel = <2>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 1, Clock Group 2 */
+		/* 8-bit */
+		peri1_group2_8bit_0: peri1_group2_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [01 02]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+
+		/* Peripheral 1, Clock Group 3 */
+		/* 8-bit */
+		peri1_group3_8bit_0: peri1_group3_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group = [01 03]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+	};
+};

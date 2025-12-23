@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Disk Driver Interface
+ * @ingroup disk_driver_interface
+ * @brief Main header file for disk driver API.
  *
  * This file contains interface for disk access. Apart from disks, various
  * other storage media like Flash and RAM disks may implement this interface to
@@ -19,12 +20,17 @@
 #define ZEPHYR_INCLUDE_DRIVERS_DISK_H_
 
 /**
- * @brief Disk Driver Interface
- * @defgroup disk_driver_interface Disk Driver Interface
+ * @brief Interfaces for disks.
+ * @defgroup disk_driver_interface Disk Access
  * @since 1.6
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup disk_driver_interface_ext Device-specific Disk Access API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <zephyr/kernel.h>
@@ -109,6 +115,7 @@ struct disk_operations {
 		    uint32_t start_sector, uint32_t num_sector);
 	int (*write)(struct disk_info *disk, const uint8_t *data_buf,
 		     uint32_t start_sector, uint32_t num_sector);
+	int (*erase)(struct disk_info *disk, uint32_t start_sector, uint32_t num_sector);
 	int (*ioctl)(struct disk_info *disk, uint8_t cmd, void *buff);
 };
 

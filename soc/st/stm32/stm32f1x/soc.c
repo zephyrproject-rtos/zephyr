@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 
 #include <stm32_ll_system.h>
-#include <stm32f1xx_ll_bus.h>
+#include <stm32_ll_bus.h>
 
 #include <cmsis_core.h>
 
@@ -24,7 +24,7 @@
  */
 void soc_early_init_hook(void)
 {
-#ifdef FLASH_ACR_PRFTBE
+#if defined(FLASH_ACR_PRFTBE) && defined(CONFIG_STM32_FLASH_PREFETCH)
 	/* Enable ART Accelerator prefetch */
 	LL_FLASH_EnablePrefetch();
 #endif

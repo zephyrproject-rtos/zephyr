@@ -42,7 +42,7 @@ void disable_mpu_rasr_xn(void)
 
 /* override the default memcpy as zephyr will call this before relocation happens */
 __boot_func
-void  z_early_memcpy(void *dst, const void *src, size_t n)
+void  arch_early_memcpy(void *dst, const void *src, size_t n)
 {
 	/* attempt word-sized copying only if buffers have identical alignment */
 	unsigned char *d_byte = (unsigned char *)dst;
@@ -56,7 +56,7 @@ void  z_early_memcpy(void *dst, const void *src, size_t n)
 }
 
 __boot_func
-void z_early_memset(void *dst, int c, size_t n)
+void arch_early_memset(void *dst, int c, size_t n)
 {
 	/* do byte-sized initialization until word-aligned or finished */
 

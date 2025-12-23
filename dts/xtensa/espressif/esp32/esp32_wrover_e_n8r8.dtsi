@@ -10,7 +10,7 @@
 &gpio0 {
 	gpio-reserved-ranges = <20 1>, <24 1>, <28 4>;
 	gpio-reserved-ranges = <6 6>, <16 2>,  // flash&psram
-			<20 1>, <24 1>, <28 4>; // NC
+			       <20 1>, <24 1>, <28 4>; // NC
 };
 
 &gpio1 {

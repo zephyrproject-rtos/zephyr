@@ -15,14 +15,17 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <inttypes.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
+#include <cortex_m/debug.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
-#define PR_EXC(...)              LOG_ERR(__VA_ARGS__)
+#define PR_EXC(...)              EXCEPTION_DUMP(__VA_ARGS__)
 #define STORE_xFAR(reg_var, reg) uint32_t reg_var = (uint32_t)reg
 #else
 #define PR_EXC(...)

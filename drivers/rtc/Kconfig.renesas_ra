@@ -1,0 +1,12 @@
+# Renesas RA Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_RENESAS_RA
+	bool "Renesas RA RTC"
+	default y
+	depends on DT_HAS_RENESAS_RA_RTC_ENABLED
+	select USE_RA_FSP_RTC
+	help
+	  Enable Renesas RA RTC Driver.

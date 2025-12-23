@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_MCUX_QTMR
@@ -9,3 +9,23 @@ config PWM_MCUX_QTMR
 	select PINCTRL
 	help
 	  Enable QTMR based pwm driver.
+
+config PWM_CAPTURE_MCUX_QTMR_FILTER_PERIOD
+	int "MCUX QMTR PWM Input Filter Sample Period"
+	depends on PWM_MCUX_QTMR && PWM_CAPTURE
+	range 0 255
+	default 0
+	help
+	  Indicates the sampling period (in IP bus clock cycles) of
+	  the TMR input signals. If the value is 0x00 (default), then
+	  the input filter is bypassed.
+
+config PWM_CAPTURE_MCUX_QTMR_FILTER_COUNT
+	int "MCUX QMTR PWM Input Filter Sample Count"
+	depends on PWM_MCUX_QTMR && PWM_CAPTURE
+	range 0 7
+	default 0
+	help
+	  Indicates the number of consecutive samples that must agree prior to the
+	  input filter accepting an input transition. The real number of samples is
+	  (value +3). For example, a value of 0x0 indicates 3 samples.

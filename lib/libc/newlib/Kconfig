@@ -70,4 +70,14 @@ config NEWLIB_LIBC_CUSTOM_SBRK
 	  Allow user to define custom version of the _sbrk function. Some application
 	  may need to use the remaining RAM for also other purposes than heap.
 
+config NEWLIB_LIBC_USE_POSIX_LIMITS_H
+	bool "Use Zephyr's posix_limits.h header"
+	default y
+	help
+	  The newlib provided by the Zephyr SDK does not include all mandatory POSIX limits.
+	  However, some external newlib-based toolchains do.
+
+	  Disable this option if your toolchain's newlib already includes all mandatory POSIX
+	  limits.
+
 endif # NEWLIB_LIBC

@@ -45,6 +45,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(wch_iwdg)
 #define WDT_ALLOW_CALLBACK 0
 #define WDT_OPT            0
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_wdt)
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_OPT            0
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK

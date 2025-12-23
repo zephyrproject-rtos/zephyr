@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2025 Space Cubics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_VERSAL_RPU
+	bool
+	help
+	  AMD Versal RPU
+
+config SOC
+	default "versal_rpu" if SOC_VERSAL_RPU

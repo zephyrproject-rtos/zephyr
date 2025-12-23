@@ -12,6 +12,7 @@
 
 #include "icm45686.h"
 #include "icm45686_bus.h"
+#include "icm45686_reg.h"
 #include "icm45686_trigger.h"
 
 #include <zephyr/logging/log.h>
@@ -42,7 +43,7 @@ static void icm45686_thread_cb(const struct device *dev)
 	(void)k_mutex_lock(&data->triggers.lock, K_FOREVER);
 
 	if (data->triggers.entry.handler) {
-		data->triggers.entry.handler(dev, &data->triggers.entry.trigger);
+		data->triggers.entry.handler(dev, data->triggers.entry.trigger);
 	}
 
 	(void)k_mutex_unlock(&data->triggers.lock);
@@ -79,16 +80,17 @@ static void icm45686_work_handler(struct k_work *work)
 
 static int icm45686_enable_drdy(const struct device *dev, bool enable)
 {
+	struct icm45686_data *data = dev->data;
 	uint8_t val;
 	int err;
 
-	err = icm45686_bus_read(dev, REG_INT1_CONFIG0, &val, 1);
+	err = icm45686_reg_read_rtio(&data->bus, REG_INT1_CONFIG0 | REG_READ_BIT, &val, 1);
 	if (err) {
 		return err;
 	}
 
 	val &= ~REG_INT1_CONFIG0_STATUS_EN_DRDY(true);
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+	err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 	if (err) {
 		return err;
 	}
@@ -97,7 +99,7 @@ static int icm45686_enable_drdy(const struct device *dev, bool enable)
 		val |= REG_INT1_CONFIG0_STATUS_EN_DRDY(true);
 	}
 
-	return icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+	return icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 }
 
 int icm45686_trigger_set(const struct device *dev,
@@ -111,7 +113,7 @@ int icm45686_trigger_set(const struct device *dev,
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		data->triggers.entry.trigger = *trig;
+		data->triggers.entry.trigger = trig;
 		data->triggers.entry.handler = handler;
 
 		if (handler) {
@@ -197,7 +199,7 @@ int icm45686_trigger_init(const struct device *dev)
 		LOG_ERR("Failed to configure interrupt");
 	}
 
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+	err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 	if (err) {
 		LOG_ERR("Failed to disable all INTs");
 	}
@@ -205,7 +207,7 @@ int icm45686_trigger_init(const struct device *dev)
 	val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
 	      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
 
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG2, &val, 1);
+	err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG2, &val, 1);
 	if (err) {
 		LOG_ERR("Failed to configure INT as push-pull: %d", err);
 	}

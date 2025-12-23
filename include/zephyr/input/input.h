@@ -4,16 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Main header file for Input driver API
+ * @ingroup input_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_H_
 #define ZEPHYR_INCLUDE_INPUT_H_
 
 /**
- * @brief Input Interface
- * @defgroup input_interface Input Interface
+ * @brief Interfaces for input devices.
+ * @defgroup input_interface Input
  * @since 3.4
  * @version 0.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup input_interface_ext Device-specific Input API extensions
+ * @brief Interfaces for input devices with extended functionality beyond the standard Input API.
+ * @{
+ * @}
  */
 
 #include <stdint.h>
@@ -64,7 +75,7 @@ struct input_event {
  * @param timeout Timeout for reporting the event, ignored if
  *                @kconfig{CONFIG_INPUT_MODE_SYNCHRONOUS} is used.
  * @retval 0 if the message has been processed.
- * @retval negative if @kconfig{CONFIG_INPUT_MODE_THREAD} is enabled and the
+ * @retval <0 negative if @kconfig{CONFIG_INPUT_MODE_THREAD} is enabled and the
  *         message failed to be enqueued.
  */
 int input_report(const struct device *dev,

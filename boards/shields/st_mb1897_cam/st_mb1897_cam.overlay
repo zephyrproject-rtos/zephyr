@@ -9,7 +9,7 @@
 
 / {
 	chosen {
-		zephyr,camera = &csi_capture_port;
+		zephyr,camera = &pipe_dump;
 	};
 };
 

@@ -27,3 +27,27 @@ tests:
     filter: dt_chosen_enabled("zephyr,camera")
     integration_platforms:
       - arduino_nicla_vision/stm32h747xx/m7
+  sample.subsys.usb.uvc.encoder.h264:
+    depends_on:
+      - usbd
+    tags: usb video
+    extra_configs:
+      - CONFIG_VIDEO_ENCODER_H264=y
+    extra_args:
+      - platform:stm32n6570_dk/stm32n657xx/sb:EXTRA_DTC_OVERLAY_FILE="app_h264enc.overlay"
+      - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
+    filter: dt_chosen_enabled("zephyr,camera")
+    integration_platforms:
+      - stm32n6570_dk/stm32n657xx/sb
+  sample.subsys.usb.uvc.encoder.jpeg:
+    depends_on:
+      - usbd
+    tags: usb video
+    extra_configs:
+      - CONFIG_VIDEO_ENCODER_JPEG=y
+    extra_args:
+      - platform:stm32n6570_dk/stm32n657xx/sb:EXTRA_DTC_OVERLAY_FILE="app_jpegenc.overlay"
+      - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
+    filter: dt_chosen_enabled("zephyr,camera")
+    integration_platforms:
+      - stm32n6570_dk/stm32n657xx/sb

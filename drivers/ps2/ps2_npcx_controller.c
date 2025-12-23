@@ -252,7 +252,11 @@ static void ps2_npcx_ctrl_isr(const struct device *dev)
 	 * ACH = 5 : Channel 3
 	 */
 	active_ch = GET_FIELD(inst->PSTAT, NPCX_PSTAT_ACH);
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+	active_ch = active_ch > 2 ? (active_ch - 1) : active_ch;
+#else
 	active_ch = active_ch > 2 ? (active_ch - 2) : (active_ch - 1);
+#endif
 	LOG_DBG("ACH: %d\n", active_ch);
 
 	/*
