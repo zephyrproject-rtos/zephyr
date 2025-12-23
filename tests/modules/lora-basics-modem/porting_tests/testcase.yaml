@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - lora
+    - lora-basics-modem
+  harness: ztest
+  build_only: true
+  modules:
+    - lora-basics-modem
+
+tests:
+  modules.lora-basics-modem.porting_tests:
+    platform_allow: nrf52840dk/nrf52840
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay
+      - SHIELD=semtech_sx1261mb2bas
