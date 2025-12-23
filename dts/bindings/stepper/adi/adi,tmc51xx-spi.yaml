@@ -18,14 +18,14 @@ description: |
             en-pwm-mode, shaft; /* ADI TMC Global configuration flags */
 
             tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
-              compatible = "adi,tmc51xx-stepper-drv";
+              compatible = "adi,tmc51xx-stepper-driver";
               micro-step-res = <256>;
               /* ADI TMC stallguard settings specific to TMC51XX */
               stallguard2-threshold=<9>;
             };
 
             tmc51xx_1_motion_controller: tmc51xx_1_motion_controller {
-              compatible = "adi,tmc51xx-stepper";
+              compatible = "adi,tmc51xx-stepper-motor";
 
               /* ADI TMC stallguard settings specific to TMC5160 */
               activate-stallguard2;

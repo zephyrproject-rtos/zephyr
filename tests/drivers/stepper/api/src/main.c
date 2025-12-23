@@ -13,31 +13,31 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio/gpio_emul.h>
 
-struct stepper_drv_fixture {
+struct stepper_fixture {
 	const struct device *dev;
 };
 
-struct gpio_dt_spec en_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper_drv), en_gpios, {0});
-struct gpio_dt_spec slp_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper_drv), sleep_gpios, {0});
-struct gpio_dt_spec m0_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper_drv), m0_gpios, {0});
-struct gpio_dt_spec m1_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper_drv), m1_gpios, {0});
+struct gpio_dt_spec en_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper), en_gpios, {0});
+struct gpio_dt_spec slp_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper), sleep_gpios, {0});
+struct gpio_dt_spec m0_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper), m0_gpios, {0});
+struct gpio_dt_spec m1_pin = GPIO_DT_SPEC_GET_OR(DT_ALIAS(stepper), m1_gpios, {0});
 
-static void *stepper_drv_setup(void)
+static void *stepper_setup(void)
 {
-	static struct stepper_drv_fixture fixture = {
-		.dev = DEVICE_DT_GET(DT_ALIAS(stepper_drv)),
+	static struct stepper_fixture fixture = {
+		.dev = DEVICE_DT_GET(DT_ALIAS(stepper)),
 	};
 
 	zassert_not_null(fixture.dev);
 	return &fixture;
 }
 
-ZTEST_F(stepper_drv, test_enable_gpio_pins)
+ZTEST_F(stepper, test_enable_gpio_pins)
 {
 	int value = 0;
 	int err;
 
-	err = stepper_drv_enable(fixture->dev);
+	err = stepper_enable(fixture->dev);
 	if (err == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -52,7 +52,7 @@ ZTEST_F(stepper_drv, test_enable_gpio_pins)
 	}
 
 	/* As enable is supported, disable must also be supported */
-	zassert_ok(stepper_drv_disable(fixture->dev));
+	zassert_ok(stepper_disable(fixture->dev));
 
 	if (en_pin.port != NULL) {
 		value = gpio_emul_output_get(en_pin.port, en_pin.pin);
@@ -64,12 +64,12 @@ ZTEST_F(stepper_drv, test_enable_gpio_pins)
 	}
 }
 
-ZTEST_F(stepper_drv, test_micro_step_res_set)
+ZTEST_F(stepper, test_micro_step_res_set)
 {
-	enum stepper_drv_micro_step_resolution res;
+	enum stepper_micro_step_resolution res;
 	int value = 0;
 
-	zassert_ok(stepper_drv_set_micro_step_res(fixture->dev, CONFIG_MICRO_STEP_RESOLUTION));
+	zassert_ok(stepper_set_micro_step_res(fixture->dev, CONFIG_MICRO_STEP_RESOLUTION));
 
 	if (m0_pin.port == NULL || m1_pin.port == NULL) {
 		ztest_test_skip();
@@ -83,17 +83,17 @@ ZTEST_F(stepper_drv, test_micro_step_res_set)
 	zassert_equal(value, CONFIG_MICRO_STEP_RESOLUTION_M1, "M1 pin should be 1",
 		      CONFIG_MICRO_STEP_RESOLUTION_M1);
 
-	zassert_ok(stepper_drv_get_micro_step_res(fixture->dev, &res));
+	zassert_ok(stepper_get_micro_step_res(fixture->dev, &res));
 	zassert_equal(res, CONFIG_MICRO_STEP_RESOLUTION,
 		      "Micro step resolution not set correctly, should be %d but is %d",
 		      CONFIG_MICRO_STEP_RESOLUTION, res);
 }
 
-ZTEST_F(stepper_drv, test_set_micro_step_res_invalid)
+ZTEST_F(stepper, test_set_micro_step_res_invalid)
 {
-	int ret = stepper_drv_set_micro_step_res(fixture->dev, 127);
+	int ret = stepper_set_micro_step_res(fixture->dev, 127);
 
 	zassert_equal(ret, -EINVAL, "Invalid micro step resolution should return -EINVAL");
 }
 
-ZTEST_SUITE(stepper_drv, NULL, stepper_drv_setup, NULL, NULL, NULL);
+ZTEST_SUITE(stepper, NULL, stepper_setup, NULL, NULL, NULL);

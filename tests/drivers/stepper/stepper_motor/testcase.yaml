@@ -7,7 +7,7 @@ common:
     - stepper
     - api
 tests:
-  drivers.stepper.stepper_api.gpio_step_dir:
+  drivers.stepper.stepper_motor.gpio_step_dir:
     extra_args:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_gpio_step_dir.overlay"
     extra_configs:
@@ -16,7 +16,7 @@ tests:
       - CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.gpio_step_dir_work_q:
+  drivers.stepper.stepper_motor.gpio_step_dir_work_q:
     extra_args:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_gpio_step_dir_workq.overlay"
     extra_configs:
@@ -24,7 +24,7 @@ tests:
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=130
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.h_bridge_stepper:
+  drivers.stepper.stepper_motor.h_bridge_stepper:
     extra_args:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_h_bridge_stepper.overlay"
     extra_configs:
@@ -33,7 +33,7 @@ tests:
       - CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
-  drivers.stepper.stepper_api.h_bridge_stepper_work_q:
+  drivers.stepper.stepper_motor.h_bridge_stepper_work_q:
     extra_args:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_h_bridge_stepper_workq.overlay"
     extra_configs:

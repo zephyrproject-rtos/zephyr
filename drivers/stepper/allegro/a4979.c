@@ -22,7 +22,7 @@ struct a4979_config {
 };
 
 struct a4979_data {
-	enum stepper_drv_micro_step_resolution micro_step_res;
+	enum stepper_micro_step_resolution micro_step_res;
 };
 
 STEP_DIR_STEPPER_STRUCT_CHECK(struct a4979_config);
@@ -91,7 +91,7 @@ static int a4979_disable(const struct device *dev)
 }
 
 static int a4979_set_micro_step_res(const struct device *dev,
-				    const enum stepper_drv_micro_step_resolution micro_step_res)
+				    const enum stepper_micro_step_resolution micro_step_res)
 {
 	const struct a4979_config *config = dev->config;
 	struct a4979_data *data = dev->data;
@@ -101,19 +101,19 @@ static int a4979_set_micro_step_res(const struct device *dev,
 	uint8_t m1_value = 0;
 
 	switch (micro_step_res) {
-	case STEPPER_DRV_MICRO_STEP_1:
+	case STEPPER_MICRO_STEP_1:
 		m0_value = 0;
 		m1_value = 0;
 		break;
-	case STEPPER_DRV_MICRO_STEP_2:
+	case STEPPER_MICRO_STEP_2:
 		m0_value = 1;
 		m1_value = 0;
 		break;
-	case STEPPER_DRV_MICRO_STEP_4:
+	case STEPPER_MICRO_STEP_4:
 		m0_value = 0;
 		m1_value = 1;
 		break;
-	case STEPPER_DRV_MICRO_STEP_16:
+	case STEPPER_MICRO_STEP_16:
 		m0_value = 1;
 		m1_value = 1;
 		break;
@@ -136,7 +136,7 @@ static int a4979_set_micro_step_res(const struct device *dev,
 }
 
 static int a4979_get_micro_step_res(const struct device *dev,
-				    enum stepper_drv_micro_step_resolution *micro_step_res)
+				    enum stepper_micro_step_resolution *micro_step_res)
 {
 	const struct a4979_data *data = dev->data;
 
@@ -214,7 +214,7 @@ static int a4979_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper_drv, a4979_stepper_api) = {
+static DEVICE_API(stepper, a4979_stepper_api) = {
 	.enable = a4979_enable,
 	.disable = a4979_disable,
 	.set_micro_step_res = a4979_set_micro_step_res,

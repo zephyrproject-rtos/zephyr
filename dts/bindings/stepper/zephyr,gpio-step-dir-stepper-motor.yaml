@@ -6,16 +6,16 @@ description: |
   It is used to generate step and direction signals for a stepper motor driver.
   Example:
   step_dir_motion_control: step_dir_motion_control {
-      compatible = "zephyr,gpio-step-dir-stepper";
+      compatible = "zephyr,gpio-step-dir-stepper-motor";
       step-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
       dir-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
       invert-direction;
       counter = <&counter1>;
-      stepper-drv = <&tmc2209>; /* Optional stepper-drv driver reference */
+      stepper = <&tmc2209>; /* Optional stepper driver reference */
   };
 
 
-compatible: "zephyr,gpio-step-dir-stepper"
+compatible: "zephyr,gpio-step-dir-stepper-motor"
 
 properties:
   invert-direction:
@@ -47,7 +47,7 @@ properties:
             - Setting a new top value
             - Attaching an ISR to the turnaround
 
-  stepper-drv:
+  stepper-driver:
     type: phandle
     description: |
       Reference to the stepper driver device.
