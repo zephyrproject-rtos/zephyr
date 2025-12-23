@@ -61,8 +61,8 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 		struct virtq_buf buf[] = {
 			{.addr = data->buf, .len = MIN(length, ENTROPY_BUFFER_MAX_LEN)}};
 
-		data->received_len = 0;
 		k_mutex_lock(&data->buf_mutex, K_FOREVER);
+		data->received_len = 0;
 		ret = virtq_add_buffer_chain(vq, buf, 1, 0, entropy_virtio_virtq_recv_cb, data,
 					     K_FOREVER);
 		if (ret) {
@@ -83,9 +83,9 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 		}
 
 		memcpy(buffer, data->buf, data->received_len);
-		k_mutex_unlock(&data->buf_mutex);
 		buffer += data->received_len;
 		length -= data->received_len;
+		k_mutex_unlock(&data->buf_mutex);
 	}
 
 	return 0;
