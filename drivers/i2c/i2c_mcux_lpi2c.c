@@ -25,6 +25,10 @@
 #include <zephyr/drivers/gpio.h>
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
+#ifdef CONFIG_PM_DEVICE
+#include <zephyr/pm/device.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcux_lpi2c);
 
@@ -542,6 +546,54 @@ static int mcux_lpi2c_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int mcux_lpi2c_suspend(const struct device *dev)
+{
+	int ret;
+	const struct mcux_lpi2c_config *config = dev->config;
+
+	ret = clock_control_off(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		LOG_ERR("failed clock off lpi2c");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int mcux_lpi2c_resume(const struct device *dev)
+{
+	int ret;
+	const struct mcux_lpi2c_config *config = dev->config;
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		LOG_ERR("failed clock on lpi2c");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int mcux_lpi2c_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = mcux_lpi2c_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = mcux_lpi2c_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 	.configure = mcux_lpi2c_configure,
 	.transfer = mcux_lpi2c_transfer,
@@ -612,7 +664,12 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 									\
 	static struct mcux_lpi2c_data mcux_lpi2c_data_##n;		\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
+	IF_ENABLED(CONFIG_PM_DEVICE,					\
+			(PM_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_pm_action)));	\
+									\
+	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init,			\
+		COND_CODE_1(CONFIG_PM_DEVICE,				\
+			(PM_DEVICE_DT_INST_GET(n)), (NULL)),		\
 				&mcux_lpi2c_data_##n,			\
 				&mcux_lpi2c_config_##n, POST_KERNEL,	\
 				CONFIG_I2C_INIT_PRIORITY,		\
