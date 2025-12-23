@@ -318,3 +318,421 @@ void smtc_modem_hal_set_ant_switch(bool is_tx_on)
 {
 	/* No antenna switch is used. */
 }
+
+/**
+ * @brief Check if the radio is free.
+ *
+ * @remark Except a very specific application, this function should always
+ *         return false. This function is used to check if the radio is used
+ *         by an external stack.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return false Radio is free (default)
+ */
+bool smtc_modem_external_stack_currently_use_radio(void)
+{
+	/* Not implemented yet */
+	return false;
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- RESET MANAGEMENT ----------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Resets the MCU.
+ *
+ * @remark Not implemented yet.
+ */
+void smtc_modem_hal_reset_mcu(void)
+{
+	/* Not implemented yet */
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- WATCHDOG MANAGEMENT -------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Reloads watchdog counter.
+ *
+ * @remark Application has to call this function periodically. The call period
+ *         must be less than WATCHDOG_RELOAD_PERIOD.
+ *
+ * @remark Not implemented yet.
+ */
+void smtc_modem_hal_reload_wdog(void)
+{
+	/* Not implemented yet */
+}
+
+/**
+ * @brief Set an offset into the RTC counter.
+ *
+ * @remark Used for debug purpose such as wrapping issue.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] offset_to_test_wrapping Offset value to add
+ */
+void smtc_modem_hal_set_offset_to_test_wrapping(const uint32_t offset_to_test_wrapping)
+{
+	/* Not implemented yet */
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- CONTEXT SAVING MANAGEMENT -------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Restores the data context.
+ *
+ * @remark This function is used to restore Modem data from a non volatile memory.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in]  ctx_type Type of modem context that need to be restored
+ * @param [in]  offset   Memory offset after ctx_type address
+ * @param [out] buffer   Buffer pointer to write to
+ * @param [in]  size     Buffer size to read in bytes
+ */
+void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_t offset,
+				    uint8_t *buffer, const uint32_t size)
+{
+	/* Not implemented yet */
+}
+
+/**
+ * @brief Stores the data context.
+ *
+ * @remark This function is used to store Modem data in a non volatile memory.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] ctx_type Type of modem context that need to be saved
+ * @param [in] offset   Memory offset after ctx_type address
+ * @param [in] buffer   Buffer pointer to write from
+ * @param [in] size     Buffer size to write in bytes
+ */
+void smtc_modem_hal_context_store(const modem_context_type_t ctx_type, uint32_t offset,
+				  const uint8_t *buffer, const uint32_t size)
+{
+	/* Not implemented yet */
+}
+
+/**
+ * @brief Erase a chosen number of flash pages of a context.
+ *
+ * @remark This function is only used with CONTEXT_STORE_AND_FORWARD.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] ctx_type Type of modem context that need to be erased
+ * @param [in] offset   Memory offset after ctx_type address
+ * @param [in] nb_page  Number of pages to erase
+ */
+void smtc_modem_hal_context_flash_pages_erase(const modem_context_type_t ctx_type,
+					      uint32_t offset, uint8_t nb_page)
+{
+	/* Not implemented yet */
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- PANIC MANAGEMENT ----------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Action to be taken in case of modem panic.
+ *
+ * @remark In case Device Management is used, it is recommended to perform the
+ *         crashlog storage and status update in this function.
+ *
+ * @param [in] func The name of the function where the panic occurs
+ * @param [in] line The line number where the panic occurs
+ * @param [in] fmt  String format
+ * @param [in] ...  String arguments
+ */
+void smtc_modem_hal_on_panic(uint8_t *func, uint32_t line, const char *fmt, ...)
+{
+	LOG_ERR("LBM panic: %s:%u", func, line);
+	k_panic();
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- ENVIRONMENT MANAGEMENT ----------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Return the battery level.
+ *
+ * @remark According to LoRaWAN 1.0.4 spec:
+ *         0: The end-device is connected to an external power source.
+ *         1..254: Battery level, where 1 is the minimum and 254 is the maximum.
+ *         255: The end-device was not able to measure the battery level.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Battery level for LoRaWAN stack (255 = not able to measure)
+ */
+uint8_t smtc_modem_hal_get_battery_level(void)
+{
+	/* Not implemented yet */
+	return 255;
+}
+
+/**
+ * @brief Return board wake up delay in milliseconds.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Board wake up delay in ms (0 = no delay)
+ */
+int8_t smtc_modem_hal_get_board_delay_ms(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- TRACE MANAGEMENT ----------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Prints debug trace.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] fmt  String format
+ * @param [in] ...  String arguments
+ */
+void smtc_modem_hal_print_trace(const char *fmt, ...)
+{
+	/* Not implemented yet */
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- FUOTA MANAGEMENT ----------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Get hardware version for FUOTA.
+ *
+ * @remark Only used if FMP package is activated.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Hardware version as defined in FMP Alliance package TS006-1.0.0
+ */
+uint32_t smtc_modem_hal_get_hw_version_for_fuota(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Get firmware version for FUOTA.
+ *
+ * @remark Only used if FMP package is activated.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Firmware version as defined in FMP Alliance package TS006-1.0.0
+ */
+uint32_t smtc_modem_hal_get_fw_version_for_fuota(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Get firmware status available for FUOTA.
+ *
+ * @remark Only used if FMP package is activated.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Firmware status field as defined in FMP Alliance package TS006-1.0.0
+ */
+uint8_t smtc_modem_hal_get_fw_status_available_for_fuota(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Get firmware delete status for FUOTA.
+ *
+ * @remark Only used if FMP package is activated.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] fw_to_delete_version Firmware version to delete
+ *
+ * @return Firmware status field as defined in FMP Alliance package TS006-1.0.0
+ */
+uint8_t smtc_modem_hal_get_fw_delete_status_for_fuota(uint32_t fw_to_delete_version)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Get next firmware version for FUOTA.
+ *
+ * @remark Only used if FMP package is activated.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Firmware version that will be running once upgrade is installed
+ */
+uint32_t smtc_modem_hal_get_next_fw_version_for_fuota(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- DEVICE MANAGEMENT ---------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief Return temperature in Celsius.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Temperature in Celsius (0 = dummy value)
+ */
+int8_t smtc_modem_hal_get_temperature(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Return MCU voltage in millivolts.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return MCU voltage in mV (0 = dummy value)
+ */
+uint16_t smtc_modem_hal_get_voltage_mv(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Stores the crashlog.
+ *
+ * @remark This function is used to store the Modem crashlog in a non volatile
+ *         memory.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] crash_string        Crashlog string to be stored
+ * @param [in] crash_string_length Crashlog string length
+ */
+void smtc_modem_hal_crashlog_store(const uint8_t *crash_string, uint8_t crash_string_length)
+{
+	/* Not implemented yet */
+}
+
+/**
+ * @brief Restores the crashlog.
+ *
+ * @remark This function is used to restore the Modem crashlog from a non
+ *         volatile memory.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [out] crash_string        Crashlog string to be restored
+ * @param [out] crash_string_length Crashlog string length
+ */
+void smtc_modem_hal_crashlog_restore(uint8_t *crash_string, uint8_t *crash_string_length)
+{
+	/* Not implemented yet */
+}
+
+/**
+ * @brief Stores the crashlog status.
+ *
+ * @remark This function is used to store the Modem crashlog status in a non
+ *         volatile memory. This status will allow the Modem to handle crashlog
+ *         send task if needed after a crash.
+ *
+ * @remark Not implemented yet.
+ *
+ * @param [in] available True if a crashlog is available, false otherwise
+ */
+void smtc_modem_hal_crashlog_set_status(bool available)
+{
+	/* Not implemented yet */
+}
+
+/**
+ * @brief Get the previously stored crashlog status.
+ *
+ * @remark This function is used to get the Modem crashlog status from a non
+ *         volatile memory. This status will allow the Modem to handle crashlog
+ *         send task if needed after a crash.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return false No crashlog available (default)
+ */
+bool smtc_modem_hal_crashlog_get_status(void)
+{
+	/* Not implemented yet */
+	return false;
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- STORE AND FORWARD ---------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief The number of reserved pages in flash for the Store and Forward service.
+ *
+ * @remark The number must be at least 3 pages.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Number of flash pages (0 = dummy value)
+ */
+uint16_t smtc_modem_hal_store_and_forward_get_number_of_pages(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/**
+ * @brief Gives the size of a flash page in bytes.
+ *
+ * @remark Not implemented yet.
+ *
+ * @return Flash page size in bytes (0 = dummy value)
+ */
+uint16_t smtc_modem_hal_flash_get_page_size(void)
+{
+	/* Not implemented yet */
+	return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* --- RTOS COMPATIBILITY --------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief This function is called by the LBM stack on each LBM interruption
+ *        (radio interrupt or low-power timer interrupt).
+ *
+ * @remark It could be convenient in the case of an RTOS implementation to
+ *         notify the thread that manages the LBM stack.
+ *
+ * @remark Not implemented yet.
+ */
+void smtc_modem_hal_user_lbm_irq(void)
+{
+	/* Not implemented yet */
+}
