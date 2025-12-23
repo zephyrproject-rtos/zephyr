@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample demonstrates how to use the :ref:`Espressif RMT driver API <rmt_api>`.
+This sample demonstrates how to use the :Espressif RMT driver API.
 
 You  should connect a WS2812 strip to the RMT output of the board.
 
@@ -34,7 +34,7 @@ Sample output
 
    *** Booting Zephyr OS build v4.3.0-2805-g63ff14e3d8d0 ***
    Create RMT TX channel
-   I (141) gpio: GPIO[12]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+   I (141) gpio: GPIO[12]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
    Install led strip encoder
    Enable RMT TX channel
    Start LED rainbow chase
