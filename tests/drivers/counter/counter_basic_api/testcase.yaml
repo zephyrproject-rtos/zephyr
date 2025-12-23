@@ -8,6 +8,7 @@ tests:
     platform_exclude:
       - nucleo_f302r8
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     timeout: 600
   drivers.counter.basic_api.nrf_zli:
     tags:
@@ -75,7 +76,10 @@ tests:
     tags:
       - drivers
       - counter
-    platform_allow: sam_e54_xpro
+    depends_on: counter
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg41_cult
     timeout: 600
     extra_args:
       DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
