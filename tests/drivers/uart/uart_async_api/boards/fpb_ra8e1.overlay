@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sci2 {
+	status = "okay";
+
+	dut: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
