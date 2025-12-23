@@ -9,6 +9,8 @@ else()
   zephyr_library_named(lora_basics_modem)
 endif()
 
+zephyr_include_directories(.)
+
 zephyr_library_sources(lbm_common.c)
 
 # zephyr-keep-sorted-start
