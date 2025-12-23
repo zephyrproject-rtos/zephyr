@@ -13,10 +13,6 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sys/select.h>
 
-/* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
-FILE *zvfs_fdopen(int fd, const char *mode);
-int zvfs_fileno(FILE *file);
-
 static struct fd_op_vtable posix_op_vtable = {
 	.read = zvfs_read_vmeth,
 	.write = zvfs_write_vmeth,
@@ -52,6 +48,11 @@ int close(int fd)
 FUNC_ALIAS(close, _close, int);
 #endif
 
+#ifndef CONFIG_PICOLIBC
+/* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
+FILE *zvfs_fdopen(int fd, const char *mode);
+int zvfs_fileno(FILE *file);
+
 FILE *fdopen(int fd, const char *mode)
 {
 	return zvfs_fdopen(fd, mode);
@@ -61,6 +62,7 @@ int fileno(FILE *file)
 {
 	return zvfs_fileno(file);
 }
+#endif
 
 static int posix_mode_to_zephyr(int mf)
 {
