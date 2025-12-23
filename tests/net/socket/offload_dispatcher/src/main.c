@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>
@@ -473,12 +472,12 @@ ZTEST(net_socket_offload_udp, test_fcntl_not_bound)
 {
 	int ret;
 
-	ret = zsock_fcntl(test_sock, F_SETFL, 0);
-	zassert_equal(0, ret, "fcntl() failed");
+	ret = zsock_fcntl(test_sock, ZVFS_F_SETFL, 0);
+	zassert_equal(0, ret, "zsock_fcntl() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
 	zassert_true(test_socket_ctx[OFFLOAD_1].ioctl_called,
-		     "fcntl() should've been dispatched");
+		     "zsock_fcntl() should've been dispatched");
 }
 
 /* Verify that socket is automatically dispatched to a default socket
