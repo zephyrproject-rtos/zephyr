@@ -20,7 +20,6 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   # This flash configuration block may need modification if another
   # flash chip is used on your custom board. See NXP AN13304 for more
   # information.
-  zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)
   zephyr_library_sources(flash_config/flash_config.c)
   zephyr_library_include_directories(flash_config)
 endif()
