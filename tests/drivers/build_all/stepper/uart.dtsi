@@ -18,7 +18,7 @@ adi_tmc51xx_uart: adi_tmc51xx {
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	tmc51xx_stepper_driver: stepper_driver {
-		compatible = "adi,tmc51xx-stepper-drv";
+		compatible = "adi,tmc51xx-stepper-amp";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC51XX */
 		stallguard2-threshold = <9>;

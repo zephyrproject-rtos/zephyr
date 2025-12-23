@@ -18,7 +18,7 @@ struct zephyr_gpio_step_dir_stepper_config {
 	struct gpio_stepper_common_config common;
 	const struct gpio_dt_spec step_pin;
 	const struct gpio_dt_spec dir_pin;
-	const struct device *stepper_drv;
+	const struct device *stepper_amp;
 };
 
 struct zephyr_gpio_step_dir_stepper_data {
@@ -255,10 +255,10 @@ static int gpio_step_dir_stepper_init(const struct device *dev)
 		return ret;
 	}
 
-	if (config->stepper_drv) {
-		if (device_is_ready(config->stepper_drv)) {
+	if (config->stepper_amp) {
+		if (device_is_ready(config->stepper_amp)) {
 			const struct step_dir_stepper_common_config *drv_config =
-								config->stepper_drv->config;
+								config->stepper_amp->config;
 			data->step_width_ns = drv_config->step_width_ns;
 			data->dual_edge = drv_config->dual_edge;
 		} else {
@@ -290,7 +290,7 @@ static DEVICE_API(stepper, gpio_step_dir_stepper_api) = {
 		.common.timing_source_cb = stepper_handle_timing_signal,                           \
 		.step_pin = GPIO_DT_SPEC_INST_GET(inst, step_gpios),                               \
 		.dir_pin = GPIO_DT_SPEC_INST_GET(inst, dir_gpios),                                 \
-		.stepper_drv = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_DRV_INST(inst), stepper_drv)),  \
+		.stepper_amp = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_DRV_INST(inst), stepper_amp)),  \
 	};                                                                                         \
 	static struct zephyr_gpio_step_dir_stepper_data gpio_step_dir_data_##inst = {              \
 		.common = GPIO_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                             \

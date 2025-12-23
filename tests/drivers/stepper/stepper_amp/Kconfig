@@ -7,10 +7,10 @@ config ENTROPY_GENERATOR
 	default y
 
 config MICRO_STEP_RESOLUTION
-	int "Microstep resolution for stepper_drv driver tests"
+	int "Microstep resolution for stepper_amp driver tests"
 	help
 	  Set the microstep resolution (number of microsteps per full step)
-	  for the stepper_drv driver tests.
+	  for the stepper_amp driver tests.
 
 config MICRO_STEP_RESOLUTION_M0
 	int "Set Value for pin M0 for the given microstep resolution"

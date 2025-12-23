@@ -25,7 +25,7 @@ adi_tmc50xx: adi_tmc50xx@0 {
 
 	tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
 		idx = <0>;
-		compatible = "adi,tmc50xx-stepper-drv";
+		compatible = "adi,tmc50xx-stepper-amp";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		stallguard2-threshold = <30>;
@@ -56,7 +56,7 @@ adi_tmc50xx: adi_tmc50xx@0 {
 
 	tmc50xx_1_stepper_driver: tmc50xx_1_stepper_driver {
 		idx = <1>;
-		compatible = "adi,tmc50xx-stepper-drv";
+		compatible = "adi,tmc50xx-stepper-amp";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		stallguard2-threshold = <9>;
@@ -100,7 +100,7 @@ adi_tmc51xx_1: adi_tmc51xx@1 {
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
-		compatible = "adi,tmc51xx-stepper-drv";
+		compatible = "adi,tmc51xx-stepper-amp";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC51XX */
 		stallguard2-threshold = <9>;
@@ -149,7 +149,7 @@ adi_tmc51xx_2: adi_tmc51xx@2 {
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	tmc51xx_2_stepper_driver: tmc51xx_2_stepper_driver {
-		compatible = "adi,tmc51xx-stepper-drv";
+		compatible = "adi,tmc51xx-stepper-amp";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC51XX */
 		stallguard2-threshold = <9>;

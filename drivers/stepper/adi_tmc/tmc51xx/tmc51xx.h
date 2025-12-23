@@ -15,7 +15,7 @@
  * @param dev Pointer to the stepper driver device.
  * @param event The stepper driver event that occurred.
  */
-void tmc51xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper_drv_event event);
+void tmc51xx_stepper_amp_trigger_cb(const struct device *dev, const enum stepper_amp_event event);
 
 /**
  * @brief Trigger the registered callback for stepper events.

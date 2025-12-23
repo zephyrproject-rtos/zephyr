@@ -12,26 +12,26 @@
 #include <zephyr/ztest.h>
 #endif /* CONFIG_ZTEST */
 
-struct fake_stepper_drv_data {
-	enum stepper_drv_micro_step_resolution micro_step_res;
+struct fake_stepper_amp_data {
+	enum stepper_amp_micro_step_resolution micro_step_res;
 };
 
 struct fake_stepper_data {
 	int32_t actual_position;
 };
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_drv_enable, const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_amp_enable, const struct device *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_drv_disable, const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_amp_disable, const struct device *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_drv_set_micro_step_res, const struct device *,
-		       enum stepper_drv_micro_step_resolution);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_amp_set_micro_step_res, const struct device *,
+		       enum stepper_amp_micro_step_resolution);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_drv_get_micro_step_res, const struct device *,
-		       enum stepper_drv_micro_step_resolution *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_amp_get_micro_step_res, const struct device *,
+		       enum stepper_amp_micro_step_resolution *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_drv_set_event_cb, const struct device *,
-		       stepper_drv_event_cb_t, void *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_amp_set_event_cb, const struct device *,
+		       stepper_amp_event_cb_t, void *);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
 
@@ -53,20 +53,20 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_event_callback, const struct device
 		       stepper_event_callback_t, void *);
 
 static int
-fake_stepper_drv_set_micro_step_res_delegate(const struct device *dev,
-					     const enum stepper_drv_micro_step_resolution res)
+fake_stepper_amp_set_micro_step_res_delegate(const struct device *dev,
+					     const enum stepper_amp_micro_step_resolution res)
 {
-	struct fake_stepper_drv_data *data = dev->data;
+	struct fake_stepper_amp_data *data = dev->data;
 
 	data->micro_step_res = res;
 
 	return 0;
 }
 
-static int fake_stepper_drv_get_micro_step_res_delegate(const struct device *dev,
-							enum stepper_drv_micro_step_resolution *res)
+static int fake_stepper_amp_get_micro_step_res_delegate(const struct device *dev,
+							enum stepper_amp_micro_step_resolution *res)
 {
-	struct fake_stepper_drv_data *data = dev->data;
+	struct fake_stepper_amp_data *data = dev->data;
 
 	*res = data->micro_step_res;
 
@@ -97,11 +97,11 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 	ARG_UNUSED(test);
 	ARG_UNUSED(fixture);
 
-	RESET_FAKE(fake_stepper_drv_enable);
-	RESET_FAKE(fake_stepper_drv_disable);
-	RESET_FAKE(fake_stepper_drv_set_micro_step_res);
-	RESET_FAKE(fake_stepper_drv_get_micro_step_res);
-	RESET_FAKE(fake_stepper_drv_set_event_cb);
+	RESET_FAKE(fake_stepper_amp_enable);
+	RESET_FAKE(fake_stepper_amp_disable);
+	RESET_FAKE(fake_stepper_amp_set_micro_step_res);
+	RESET_FAKE(fake_stepper_amp_get_micro_step_res);
+	RESET_FAKE(fake_stepper_amp_set_event_cb);
 	RESET_FAKE(fake_stepper_move_by);
 	RESET_FAKE(fake_stepper_is_moving);
 	RESET_FAKE(fake_stepper_set_microstep_interval);
@@ -112,10 +112,10 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 	RESET_FAKE(fake_stepper_stop);
 
 	/* Install custom fakes for the setter and getter functions */
-	fake_stepper_drv_set_micro_step_res_fake.custom_fake =
-		fake_stepper_drv_set_micro_step_res_delegate;
-	fake_stepper_drv_get_micro_step_res_fake.custom_fake =
-		fake_stepper_drv_get_micro_step_res_delegate;
+	fake_stepper_amp_set_micro_step_res_fake.custom_fake =
+		fake_stepper_amp_set_micro_step_res_delegate;
+	fake_stepper_amp_get_micro_step_res_fake.custom_fake =
+		fake_stepper_amp_get_micro_step_res_delegate;
 	fake_stepper_set_reference_position_fake.custom_fake =
 		fake_stepper_set_reference_position_delegate;
 	fake_stepper_get_actual_position_fake.custom_fake =
@@ -127,10 +127,10 @@ ZTEST_RULE(fake_stepper_reset_rule, fake_stepper_reset_rule_before, NULL);
 
 static int fake_stepper_driver_init(const struct device *dev)
 {
-	fake_stepper_drv_set_micro_step_res_fake.custom_fake =
-		fake_stepper_drv_set_micro_step_res_delegate;
-	fake_stepper_drv_get_micro_step_res_fake.custom_fake =
-		fake_stepper_drv_get_micro_step_res_delegate;
+	fake_stepper_amp_set_micro_step_res_fake.custom_fake =
+		fake_stepper_amp_set_micro_step_res_delegate;
+	fake_stepper_amp_get_micro_step_res_fake.custom_fake =
+		fake_stepper_amp_get_micro_step_res_delegate;
 
 	return 0;
 }
@@ -145,12 +145,12 @@ static int fake_stepper_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper_drv, fake_stepper_drv_api) = {
-	.enable = fake_stepper_drv_enable,
-	.disable = fake_stepper_drv_disable,
-	.set_micro_step_res = fake_stepper_drv_set_micro_step_res,
-	.get_micro_step_res = fake_stepper_drv_get_micro_step_res,
-	.set_event_cb = fake_stepper_drv_set_event_cb,
+static DEVICE_API(stepper_amp, fake_stepper_amp_api) = {
+	.enable = fake_stepper_amp_enable,
+	.disable = fake_stepper_amp_disable,
+	.set_micro_step_res = fake_stepper_amp_set_micro_step_res,
+	.get_micro_step_res = fake_stepper_amp_get_micro_step_res,
+	.set_event_cb = fake_stepper_amp_set_event_cb,
 };
 
 static DEVICE_API(stepper, fake_stepper_api) = {
@@ -165,13 +165,13 @@ static DEVICE_API(stepper, fake_stepper_api) = {
 	.set_event_callback = fake_stepper_set_event_callback,
 };
 
-#define FAKE_STEPPER_DRV_INIT(inst)                                                                \
+#define FAKE_STEPPER_AMP_INIT(inst)                                                                \
                                                                                                    \
-	static struct fake_stepper_drv_data fake_stepper_drv_data_##inst;                          \
+	static struct fake_stepper_amp_data fake_stepper_amp_data_##inst;                          \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fake_stepper_driver_init, NULL,                                \
-			      &fake_stepper_drv_data_##inst, NULL, POST_KERNEL,                    \
-			      CONFIG_STEPPER_INIT_PRIORITY, &fake_stepper_drv_api);
+			      &fake_stepper_amp_data_##inst, NULL, POST_KERNEL,                    \
+			      CONFIG_STEPPER_INIT_PRIORITY, &fake_stepper_amp_api);
 
 #define FAKE_STEPPER_INIT(inst)                                                                    \
                                                                                                    \
@@ -181,8 +181,8 @@ static DEVICE_API(stepper, fake_stepper_api) = {
 			      &fake_stepper_data_##inst, NULL, POST_KERNEL,                        \
 			      CONFIG_STEPPER_INIT_PRIORITY, &fake_stepper_api);
 
-#define DT_DRV_COMPAT zephyr_fake_stepper_drv
-DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_DRV_INIT)
+#define DT_DRV_COMPAT zephyr_fake_stepper_amp
+DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_AMP_INIT)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT zephyr_fake_stepper

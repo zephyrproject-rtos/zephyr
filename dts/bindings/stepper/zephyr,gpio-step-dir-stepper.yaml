@@ -11,7 +11,7 @@ description: |
       dir-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
       invert-direction;
       counter = <&counter1>;
-      stepper-drv = <&tmc2209>; /* Optional stepper-drv driver reference */
+      stepper-amp = <&tmc2209>; /* Optional stepper-amp driver reference */
   };
 
 
@@ -47,7 +47,7 @@ properties:
             - Setting a new top value
             - Attaching an ISR to the turnaround
 
-  stepper-drv:
+  stepper-amp:
     type: phandle
     description: |
       Reference to the stepper driver device.

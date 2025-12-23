@@ -18,7 +18,7 @@ description: |
             en-pwm-mode, shaft; /* ADI TMC Global configuration flags */
 
             tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
-              compatible = "adi,tmc51xx-stepper-drv";
+              compatible = "adi,tmc51xx-stepper-amp";
               micro-step-res = <256>;
               /* ADI TMC stallguard settings specific to TMC51XX */
               stallguard2-threshold=<9>;

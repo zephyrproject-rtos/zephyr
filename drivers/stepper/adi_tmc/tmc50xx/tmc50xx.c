@@ -189,12 +189,12 @@ static void rampstat_work(const struct device *dev)
 				STEPPER_EVENT_STEPS_COMPLETED);
 			break;
 #endif
-#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER_DRV
+#ifdef CONFIG_STEPPER_ADI_TMC50XX_STEPPER_AMP
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", data->dev->name);
 			tmc50xx_stepper_stallguard_enable(data->dev, false);
-			tmc50xx_stepper_drv_trigger_cb(config->stepper_drivers[data->work_index],
-						  STEPPER_DRV_EVENT_STALL_DETECTED);
+			tmc50xx_stepper_amp_trigger_cb(config->stepper_drivers[data->work_index],
+						  STEPPER_AMP_EVENT_STALL_DETECTED);
 			break;
 #endif
 		default:
@@ -276,7 +276,7 @@ static int tmc50xx_init(const struct device *dev)
 
 #define TMC50XX_DEFINE(inst)                                                                       \
 	static const struct device *tmc50xx_stepper_drivers_##inst[] =                             \
-		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_drv);                        \
+		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_amp);                        \
 	static const struct device *tmc50xx_motion_controllers_##inst[] =                          \
 		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper);                            \
 	BUILD_ASSERT(ARRAY_SIZE(tmc50xx_motion_controllers_##inst) <= 2,                           \

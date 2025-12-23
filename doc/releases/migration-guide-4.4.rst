@@ -180,17 +180,17 @@ Stepper
 * For :dtcompatible:`adi,tmc2209`, the property ``msx-gpios`` is now replaced by ``m0-gpios`` and
   ``m1-gpios`` for consistency with other step/dir stepper drivers.
 
-* Since :github:`91979`, All stepper-drv driver APIs have been refactored out of the stepper API.
-  The following APIs have been moved from :c:group:`stepper_interface` to :c:group:`stepper_drv_interface`:
+* Since :github:`91979`, All stepper-amp driver APIs have been refactored out of the stepper API.
+  The following APIs have been moved from :c:group:`stepper_interface` to :c:group:`stepper_amp_interface`:
 
-  * :c:func:`stepper_enable` is replaced by :c:func:`stepper_drv_enable`.
-  * :c:func:`stepper_disable` is replaced by :c:func:`stepper_drv_disable`.
-  * :c:func:`stepper_set_micro_step_res` is replaced by :c:func:`stepper_drv_set_micro_step_res`.
-  * :c:func:`stepper_get_micro_step_res` is replaced by :c:func:`stepper_drv_get_micro_step_res`.
+  * :c:func:`stepper_enable` is replaced by :c:func:`stepper_amp_enable`.
+  * :c:func:`stepper_disable` is replaced by :c:func:`stepper_amp_disable`.
+  * :c:func:`stepper_set_micro_step_res` is replaced by :c:func:`stepper_amp_set_micro_step_res`.
+  * :c:func:`stepper_get_micro_step_res` is replaced by :c:func:`stepper_amp_get_micro_step_res`.
 
-* :c:enum:`stepper_micro_step_resolution` is replaced by :c:enum:`stepper_drv_micro_step_resolution`.
-* ``STEPPER_DRV_EVENT_STALL_DETECTED`` and ``STEPPER_DRV_EVENT_FAULT_DETECTED`` events have been
-  refactored to :c:enum:`stepper_drv_event`.
+* :c:enum:`stepper_micro_step_resolution` is replaced by :c:enum:`stepper_amp_micro_step_resolution`.
+* ``STEPPER_AMP_EVENT_STALL_DETECTED`` and ``STEPPER_AMP_EVENT_FAULT_DETECTED`` events have been
+  refactored to :c:enum:`stepper_amp_event`.
 
 * :dtcompatible:`zephyr,gpio-step-dir-stepper` implements :c:group:`stepper_interface` for
   controlling stepper motors via GPIO step and direction signals. Refer to
@@ -204,7 +204,7 @@ Stepper
     and :c:func:`stepper_set_event_callback` APIs are removed from :dtcompatible:`adi,tmc2209`,
     :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`.
   * :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`
-    implement :c:group:`stepper_drv_interface`.
+    implement :c:group:`stepper_amp_interface`.
 
 * :c:func:`stepper_enable`, :c:func:`stepper_disable`, :c:func:`stepper_set_micro_step_res` and
   :c:func:`stepper_get_micro_step_res` APIs are removed from :dtcompatible:`zephyr,h-bridge-stepper`.
@@ -215,8 +215,8 @@ Stepper
 * :dtcompatible:`adi,tmc50xx` and :dtcompatible:`adi,tmc51xx` devices are now modeled as MFDs.
 * :dtcompatible:`adi,tmc50xx-stepper` and :dtcompatible:`adi,tmc51xx-stepper` drivers implement
   :c:group:`stepper_interface`.
-* :dtcompatible:`adi,tmc50xx-stepper-drv` and :dtcompatible:`adi,tmc51xx-stepper-drv` drivers implement
-  :c:group:`stepper_drv_interface`.
+* :dtcompatible:`adi,tmc50xx-stepper-amp` and :dtcompatible:`adi,tmc51xx-stepper-amp` drivers implement
+  :c:group:`stepper_amp_interface`.
 
 STM32
 =====

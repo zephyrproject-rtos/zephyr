@@ -44,21 +44,21 @@ static void *stepper_shell_setup(void)
 
 ZTEST_SUITE(stepper_shell, NULL, stepper_shell_setup, NULL, NULL, NULL);
 
-ZTEST(stepper_shell, test_stepper_drv_enable)
+ZTEST(stepper_shell, test_stepper_amp_enable)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err = shell_execute_cmd(sh, "stepper enable " FAKE_STEPPER_DRIVER);
 
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_drv_enable_fake, fake_stepper_driver_dev, err);
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_amp_enable_fake, fake_stepper_driver_dev, err);
 	zassert_equal(err, 0, "stepper enable could not be executed");
 }
 
-ZTEST(stepper_shell, test_stepper_drv_disable)
+ZTEST(stepper_shell, test_stepper_amp_disable)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err = shell_execute_cmd(sh, "stepper disable " FAKE_STEPPER_DRIVER);
 
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_drv_disable_fake, fake_stepper_driver_dev, err);
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_amp_disable_fake, fake_stepper_driver_dev, err);
 	zassert_equal(err, 0, "stepper disable could not be executed");
 }
 
@@ -83,18 +83,18 @@ ZTEST(stepper_shell, test_stepper_set_microstep_interval)
 		      "wrong step_interval value");
 }
 
-ZTEST(stepper_shell, test_stepper_drv_set_micro_step_res)
+ZTEST(stepper_shell, test_stepper_amp_set_micro_step_res)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err = shell_execute_cmd(sh, "stepper set_micro_step_res " FAKE_STEPPER_DRIVER " 64");
 
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_drv_set_micro_step_res_fake,
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_amp_set_micro_step_res_fake,
 				   fake_stepper_driver_dev, err);
-	zassert_equal(fake_stepper_drv_set_micro_step_res_fake.arg1_val, 64,
+	zassert_equal(fake_stepper_amp_set_micro_step_res_fake.arg1_val, 64,
 		      "wrong micro steps resolution value");
 }
 
-ZTEST(stepper_shell, test_stepper_drv_set_micro_step_res_invalid_value)
+ZTEST(stepper_shell, test_stepper_amp_set_micro_step_res_invalid_value)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err = shell_execute_cmd(sh, "stepper set_micro_step_res " FAKE_STEPPER_DRIVER " 111");
@@ -102,12 +102,12 @@ ZTEST(stepper_shell, test_stepper_drv_set_micro_step_res_invalid_value)
 	zassert_not_equal(err, 0, " executed set_micro_step_res with invalid micro steps value");
 }
 
-ZTEST(stepper_shell, test_stepper_drv_get_micro_step_res)
+ZTEST(stepper_shell, test_stepper_amp_get_micro_step_res)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	int err = shell_execute_cmd(sh, "stepper get_micro_step_res " FAKE_STEPPER_DRIVER);
 
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_drv_get_micro_step_res_fake,
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_amp_get_micro_step_res_fake,
 				   fake_stepper_driver_dev, err);
 }
 
@@ -187,6 +187,6 @@ ZTEST(stepper_shell, test_stepper_info)
 
 	zassert_ok(err, "failed to execute shell command (err %d)", err);
 
-	zassert_equal(fake_stepper_drv_get_micro_step_res_fake.call_count, 1,
+	zassert_equal(fake_stepper_amp_get_micro_step_res_fake.call_count, 1,
 		      "get_micro_step_res function not called");
 }

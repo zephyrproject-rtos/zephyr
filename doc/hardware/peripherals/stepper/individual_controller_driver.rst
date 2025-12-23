@@ -4,7 +4,7 @@ Individual Stepper Motion Controller and Driver
 ###############################################
 
 A motion control driver implements :c:group:`stepper_interface` API, for instance,
-:dtcompatible:`zephyr,gpio-step-dir-stepper` and a hardware driver implements :c:group:`stepper_drv_interface`
+:dtcompatible:`zephyr,gpio-step-dir-stepper` and a hardware driver implements :c:group:`stepper_amp_interface`
 API, for instance, :dtcompatible:`adi,tmc2209`.
 
 Following is an example of a device tree configuration for a stepper driver with a dedicated stepper motion
@@ -14,11 +14,11 @@ controller:
 
     / {
         aliases {
-            stepper_drv = &tmc2209
+            stepper_amp = &tmc2209
             stepper = &step_dir_motion_control;
         };
 
-        /* DEVICE_API: stepper_drv api */
+        /* DEVICE_API: stepper_amp api */
         tmc2209: tmc2209 {
             compatible = "adi,tmc2209";
             enable-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
@@ -32,7 +32,7 @@ controller:
             step-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
             dir-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
             invert-direction;
-            stepper-drv = <&tmc2209>;
+            stepper-amp = <&tmc2209>;
         };
     };
 
@@ -42,8 +42,8 @@ as follows:
 .. code-block:: c
 
    static const struct device *stepper = DEVICE_DT_GET(DT_ALIAS(stepper));
-   static const struct device *stepper_drv = DEVICE_DT_GET(DT_ALIAS(stepper_drv));
+   static const struct device *stepper_amp = DEVICE_DT_GET(DT_ALIAS(stepper_amp));
    ...
    stepper_move_to(stepper, 200);
    stepper_stop(stepper);
-   stepper_drv_disable(stepper_drv);
+   stepper_amp_disable(stepper_amp);

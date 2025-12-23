@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(stepper_generic, CONFIG_STEPPER_LOG_LEVEL);
 
 static const struct device *stepper = DEVICE_DT_GET(DT_ALIAS(stepper));
-static const struct device *stepper_drv = DEVICE_DT_GET(DT_ALIAS(stepper_drv));
+static const struct device *stepper_amp = DEVICE_DT_GET(DT_ALIAS(stepper_amp));
 
 enum stepper_mode {
 	STEPPER_MODE_ENABLE,
@@ -28,7 +28,7 @@ enum stepper_mode {
 static atomic_t stepper_mode = ATOMIC_INIT(STEPPER_MODE_DISABLE);
 
 static int32_t ping_pong_target_position = CONFIG_STEPS_PER_REV * CONFIG_PING_PONG_N_REV *
-					   DT_PROP_OR(DT_ALIAS(stepper_drv), micro_step_res, 1);
+					   DT_PROP_OR(DT_ALIAS(stepper_amp), micro_step_res, 1);
 
 static K_SEM_DEFINE(stepper_generic_sem, 0, 1);
 
@@ -80,7 +80,7 @@ int main(void)
 		k_sem_take(&stepper_generic_sem, K_FOREVER);
 		switch (atomic_get(&stepper_mode)) {
 		case STEPPER_MODE_ENABLE:
-			stepper_drv_enable(stepper_drv);
+			stepper_amp_enable(stepper_amp);
 			LOG_INF("mode: enable");
 			break;
 		case STEPPER_MODE_PING_PONG_RELATIVE:
@@ -106,7 +106,7 @@ int main(void)
 			LOG_INF("mode: stop");
 			break;
 		case STEPPER_MODE_DISABLE:
-			stepper_drv_disable(stepper_drv);
+			stepper_amp_disable(stepper_amp);
 			LOG_INF("mode: disable");
 			break;
 		default:

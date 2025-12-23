@@ -13,10 +13,10 @@
 LOG_MODULE_REGISTER(stepper_tmc50xx, CONFIG_STEPPER_LOG_LEVEL);
 
 static const struct device *stepper = DEVICE_DT_GET(DT_ALIAS(stepper));
-static const struct device *stepper_drv = DEVICE_DT_GET(DT_ALIAS(stepper_drv));
+static const struct device *stepper_amp = DEVICE_DT_GET(DT_ALIAS(stepper_amp));
 
 int32_t ping_pong_target_position = CONFIG_STEPS_PER_REV * CONFIG_PING_PONG_N_REV *
-				    DT_PROP(DT_ALIAS(stepper_drv), micro_step_res);
+				    DT_PROP(DT_ALIAS(stepper_amp), micro_step_res);
 
 K_SEM_DEFINE(steps_completed_sem, 0, 1);
 
@@ -42,11 +42,11 @@ int main(void)
 	LOG_DBG("stepper is %p, name is %s", stepper, stepper->name);
 
 	stepper_set_event_callback(stepper, stepper_callback, NULL);
-	stepper_drv_enable(stepper);
+	stepper_amp_enable(stepper);
 
-	enum stepper_drv_micro_step_resolution micro_step_res;
+	enum stepper_amp_micro_step_resolution micro_step_res;
 
-	stepper_drv_get_micro_step_res(stepper_drv, &micro_step_res);
+	stepper_amp_get_micro_step_res(stepper_amp, &micro_step_res);
 	LOG_DBG("Microstep resolution is %d", micro_step_res);
 
 	stepper_set_reference_position(stepper, 0);
