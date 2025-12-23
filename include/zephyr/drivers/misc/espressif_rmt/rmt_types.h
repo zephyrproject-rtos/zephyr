@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,11 +13,18 @@
 #ifndef ZEPHYR_DRIVERS_MISC_ESPRESSIF_RMT_RMT_TYPES_H_
 #define ZEPHYR_DRIVERS_MISC_ESPRESSIF_RMT_RMT_TYPES_H_
 
+/**
+ * @brief Espressif RMT types.
+ * @defgroup espressif_rmt_types Espressif RMT types
+ * @ingroup misc_interfaces
+ * @{
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "hal/rmt_types.h"
-#include "hal/gpio_types.h" // for gpio_num_t
+#include "hal/gpio_types.h"
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
@@ -43,7 +50,7 @@ typedef struct rmt_encoder_t *rmt_encoder_handle_t;
  * @brief Type of RMT TX done event data
  */
 typedef struct {
-    size_t num_symbols; /*!< The number of transmitted RMT symbols, including one EOF symbol, which is appended by the driver to mark the end of a transmission.
+    size_t num_symbols; /**< The number of transmitted RMT symbols, including one EOF symbol, which is appended by the driver to mark the end of a transmission.
                              For a loop transmission, this value only counts for one round. */
 } rmt_tx_done_event_data_t;
 
@@ -62,8 +69,8 @@ typedef bool (*rmt_tx_done_callback_t)(rmt_channel_handle_t tx_chan, const rmt_t
  * @brief Type of RMT RX done event data
  */
 typedef struct {
-    rmt_symbol_word_t *received_symbols; /*!< Point to the received RMT symbols */
-    size_t num_symbols;                  /*!< The number of received RMT symbols */
+    rmt_symbol_word_t *received_symbols; /**< Point to the received RMT symbols */
+    size_t num_symbols;                  /**< The number of received RMT symbols */
 } rmt_rx_done_event_data_t;
 
 /**
@@ -77,12 +84,12 @@ typedef struct {
  */
 typedef bool (*rmt_rx_done_callback_t)(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_ctx);
 
-/**
- * @}
- */
- 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_DRIVERS_MISC_ESPRESSIF_RMT_RMT_TYPES_H_ */
