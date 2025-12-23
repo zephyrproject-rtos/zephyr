@@ -1,0 +1,100 @@
+# Copyright (c) 2025
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_ASAN_DEMO_CRASH_USE_AFTER_FREE
+	bool "Enable use-after-free crash test"
+	help
+	  Demonstrates ASAN detection of use-after-free errors in the heap
+	  allocator test suite.
+
+	  This crash test is part of the comprehensive heap_asan_demo test that
+	  validates ASAN memory poisoning integration. When enabled, it includes
+	  a test case that deliberately accesses freed memory to verify ASAN
+	  correctly detects and reports the error.
+
+	  Test scenario:
+	  1. Allocate memory block
+	  2. Free the memory block (heap poisons it)
+	  3. Attempt to read from the freed block
+	  4. ASAN detects the access and terminates with error
+
+	  Expected result: AddressSanitizer: use-after-poison on address 0x...
+
+	  WARNING: This test will intentionally crash the program!
+	  Only enable ONE crash test configuration at a time.
+
+config HEAP_ASAN_DEMO_CRASH_UNALLOCATED
+	bool "Enable unallocated memory access crash test"
+	help
+	  Demonstrates ASAN detection of accessing never-allocated memory in the
+	  heap allocator test suite.
+
+	  This crash test is part of the comprehensive heap_asan_demo test that
+	  validates ASAN memory poisoning integration. When enabled, it includes
+	  a test case that deliberately accesses heap memory that was never
+	  allocated to verify ASAN correctly detects and reports the error.
+
+	  Test scenario:
+	  1. Identify address within heap bounds but never allocated
+	  2. Verify the memory is poisoned using ASAN API
+	  3. Attempt to read from the unallocated region
+	  4. ASAN detects the access and terminates with error
+
+	  Expected result: AddressSanitizer: use-after-poison on address 0x...
+
+	  WARNING: This test will intentionally crash the program!
+	  Only enable ONE crash test configuration at a time.
+
+config HEAP_ASAN_DEMO_CRASH_BUFFER_OVERFLOW
+	bool "Enable buffer overflow crash test"
+	help
+	  Demonstrates ASAN detection of buffer overflow errors in the heap
+	  allocator test suite.
+
+	  This crash test is part of the comprehensive heap_asan_demo test that
+	  validates ASAN memory poisoning integration. When enabled, it includes
+	  a test case that deliberately writes beyond allocated buffer boundaries
+	  to verify ASAN correctly detects and reports the error when the overflow
+	  reaches a poisoned adjacent region.
+
+	  Test scenario:
+	  1. Allocate two adjacent memory blocks
+	  2. Free the second block (heap poisons it)
+	  3. Write beyond first block's boundary into freed region
+	  4. ASAN detects the overflow and terminates with error
+
+	  Expected result: AddressSanitizer: use-after-poison on address 0x...
+	  (if the overflow reaches the poisoned adjacent region)
+
+	  WARNING: This test will intentionally crash the program!
+	  Only enable ONE crash test configuration at a time.
+
+config HEAP_ASAN_DEMO_CRASH_USE_AFTER_REALLOC
+	bool "Enable use-after-realloc crash test"
+	help
+	  Demonstrates ASAN detection of use-after-realloc errors in the heap
+	  allocator test suite.
+
+	  This crash test is part of the comprehensive heap_asan_demo test that
+	  validates ASAN memory poisoning integration. When enabled, it includes
+	  a test case that demonstrates detection of accessing the old memory
+	  location after realloc() has moved the allocation to a new address.
+
+	  Test scenario:
+	  1. Allocate memory at address A
+	  2. Call realloc() to expand, forcing relocation to address B
+	  3. The old address A is freed and poisoned
+	  4. Attempt to access the old address A
+	  5. ASAN detects the access and terminates with error
+
+	  This demonstrates a common programming error where code maintains
+	  multiple pointers to the same memory, and only one pointer is updated
+	  after realloc(), leaving stale references to the freed memory.
+
+	  Expected result: AddressSanitizer: use-after-poison on address 0x...
+
+	  WARNING: This test will intentionally crash the program!
+	  Only enable ONE crash test configuration at a time.
+
+source "Kconfig.zephyr"
