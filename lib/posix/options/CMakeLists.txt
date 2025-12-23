@@ -165,7 +165,7 @@ if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
+zephyr_library_sources_ifdef(CONFIG_XSI_STREAMS stropts.c)
 
 if(NOT CONFIG_TC_PROVIDES_XSI_SINGLE_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_XSI_SINGLE_PROCESS
