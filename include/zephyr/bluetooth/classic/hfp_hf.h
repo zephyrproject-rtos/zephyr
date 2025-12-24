@@ -493,7 +493,8 @@ struct bt_hfp_hf_cb {
 	 *  If this callback is provided it will be called whenever the
 	 *  result code `+CLCC: <idx>,<dir>,<status>,<mode>,<mprty>[,<number>,<type>]`
 	 *  is received from AG.
-	 *  If the request is failed or no active calls, the callback will not be called.
+	 *  If the request is finished (success or fail), the callback will be called
+	 *  with call set to NULL.
 	 *  If the @ref bt_hfp_hf_current_call::number is NULL, the
 	 *  @ref bt_hfp_hf_current_call::type shall be ignored.
 	 *

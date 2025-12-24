@@ -522,6 +522,11 @@ static int clcc_finish(struct at_client *hf_at, enum at_result result,
 		clear_call_without_clcc(hf);
 	}
 
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_CMD) &&
+	    (bt_hf->query_call != NULL)) {
+		bt_hf->query_call(hf, NULL);
+	}
+
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_CMD);
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
 
