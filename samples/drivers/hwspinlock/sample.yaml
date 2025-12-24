@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: hwspinlock sample
+
+common:
+  sysbuild: true
+  tags:
+    - drivers
+    - hwspinlock
+    - mbox
+
+tests:
+  sample.drivers.hwspinlock:
+    filter: dt_compat_enabled("nxp,sema42")
+    platform_allow:
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn947/mcxn947/cpu0
+    integration_platforms:
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn947/mcxn947/cpu0
