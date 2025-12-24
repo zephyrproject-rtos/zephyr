@@ -63,3 +63,129 @@
 	phy-connection-type = "rgmii";
 	status = "disabled";
 };
+
+&lpi2c3 {
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	mux_pca9548a: pca9548a@77 {
+		compatible = "ti,tca9548a";
+		reg = <0x77>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		mux_i2c@0 {
+			compatible = "ti,tca9548a-channel";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@1 {
+			compatible = "ti,tca9548a-channel";
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@2 {
+			compatible = "ti,tca9548a-channel";
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@3 {
+			compatible = "ti,tca9548a-channel";
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@4 {
+			compatible = "ti,tca9548a-channel";
+			reg = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			audio_codec: wm8962@1a {
+				compatible = "wolfson,wm8962";
+				reg = <0x1a>;
+				clock-source = "MCLK";
+				clocks = <&scmi_clk IMX943_CLK_SAI1>;
+				clock-names = "mclk";
+				status = "disabled";
+			};
+		};
+
+		mux_i2c@5 {
+			compatible = "ti,tca9548a-channel";
+			reg = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@6 {
+			compatible = "ti,tca9548a-channel";
+			reg = <6>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@7 {
+			compatible = "ti,tca9548a-channel";
+			reg = <7>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&lpi2c6 {
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	mux_pca9544a: pca9544a@77 {
+		compatible = "ti,tca9544a";
+		reg = <0x77>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		mux_i2c@0 {
+			compatible = "ti,tca9544a-channel";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@1 {
+			compatible = "ti,tca9544a-channel";
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@2 {
+			compatible = "ti,tca9544a-channel";
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		mux_i2c@3 {
+			compatible = "ti,tca9544a-channel";
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&i2s1 {
+	pinctrl-0 = <&sai1_default>;
+	pinctrl-names = "default";
+};
