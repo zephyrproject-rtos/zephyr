@@ -135,7 +135,6 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 };
 
 &trng0 {
