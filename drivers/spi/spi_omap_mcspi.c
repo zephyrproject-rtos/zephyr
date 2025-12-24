@@ -11,6 +11,9 @@ LOG_MODULE_REGISTER(omap_mcspi);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "spi_context.h"
+#include <zephyr/sys/util_macro.h>
+
+#include <zephyr/drivers/dma.h>
 
 /* Max clock divisor for granularity of 1 (12-bit) */
 #define OMAP_MCSPI_CLK_1_MAX_DIV   (4096)
@@ -64,6 +67,8 @@ struct omap_mcspi_regs {
 #define OMAP_MCSPI_CHCONF_IS          BIT(18)         /* Input select */
 #define OMAP_MCSPI_CHCONF_DPE1        BIT(17)         /* Transmission enabled for data line 1 */
 #define OMAP_MCSPI_CHCONF_DPE0        BIT(16)         /* Transmission enabled for data line 0 */
+#define OMAP_MCSPI_CHCONF_DMAR        BIT(15)         /* Enable DMA Read Request */
+#define OMAP_MCSPI_CHCONF_DMAW        BIT(14)         /* Enable DMA Write Request */
 #define OMAP_MCSPI_CHCONF_TRM         GENMASK(13, 12) /* TX/RX mode */
 #define OMAP_MCSPI_CHCONF_TRM_TX_ONLY BIT(13)         /* TX/RX mode - Transmit only */
 #define OMAP_MCSPI_CHCONF_TRM_RX_ONLY BIT(12)         /* TX/RX mode - Receive only */
@@ -86,10 +91,39 @@ struct omap_mcspi_regs {
 
 /*  FIFO transfer level register */
 #define OMAP_MCSPI_XFERLEVEL_WCNT GENMASK(31, 16) /* Word counter for transfer */
+#define OMAP_MCSPI_XFERLEVEL_AFL  GENMASK(15, 8)  /* Buffer Almost Full Trig level */
+#define OMAP_MCSPI_XFERLEVEL_AEL  GENMASK(7, 0)   /* Buffer Almost Empty Trig level */
 
 #define DEV_CFG(dev)  ((const struct omap_mcspi_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct omap_mcspi_data *)(dev)->data)
 #define DEV_REGS(dev) ((struct omap_mcspi_regs *)DEVICE_MMIO_GET(dev))
+
+#ifdef CONFIG_SPI_OMAP_DMA
+struct omap_mcspi_work_struct {
+	struct k_work work;
+	const struct device *spi_dev;
+};
+
+struct omap_dma_data {
+	const struct device *dma_dev;
+	uint32_t dma_channel;
+	struct dma_config dma_cfg;
+	struct dma_block_config blk_cfg;
+};
+
+struct omap_mcspi_channel_data {
+	uint32_t ch_num; /* McSPI Channel Number */
+	struct omap_dma_data tx_dma_data;
+	struct omap_dma_data rx_dma_data;
+	uint8_t dma_completion_flags; /* Stores the necessary completion status of DMA */
+	uint8_t dma_status_flags;     /* Stores the status of DMA transfer */
+	struct k_sem dma_completion_sem;
+};
+#endif /* CONFIG_SPI_OMAP_DMA */
+
+#define DMA_CHANNEL_RX_DONE_FLAG BIT(0)
+#define DMA_CHANNEL_TX_DONE_FLAG BIT(1)
+#define DMA_CHANNEL_ERROR_FLAG   BIT(2)
 
 struct omap_mcspi_cfg {
 	DEVICE_MMIO_ROM;
@@ -106,7 +140,38 @@ struct omap_mcspi_data {
 	uint32_t chconf;
 	uint32_t chctrl;
 	uint8_t dfs; /* data frame size - word length in bytes */
+#ifdef CONFIG_SPI_OMAP_DMA
+	struct omap_mcspi_channel_data chan_data[OMAP_MCSPI_NUM_CHANNELS];
+	struct omap_mcspi_work_struct work_struct;
+#endif /* CONFIG_SPI_OMAP_DMA */
 };
+
+#ifdef CONFIG_SPI_OMAP_DMA
+static void spi_dma_callback(const struct device *dma_dev, void *arg, uint32_t dma_channel,
+			     int status)
+{
+	struct omap_mcspi_channel_data *chan_data = (struct omap_mcspi_channel_data *)arg;
+
+	if (dma_channel == chan_data->tx_dma_data.dma_channel) {
+		if (status == DMA_STATUS_COMPLETE) {
+			chan_data->dma_status_flags |= DMA_CHANNEL_TX_DONE_FLAG;
+		}
+	} else if (dma_channel == chan_data->rx_dma_data.dma_channel) {
+		if (status == DMA_STATUS_COMPLETE) {
+			chan_data->dma_status_flags |= DMA_CHANNEL_RX_DONE_FLAG;
+		}
+	} else {
+		LOG_ERR("Unexpected error in dma callback function for DMA channel %d.",
+			dma_channel);
+		chan_data->dma_status_flags |= DMA_CHANNEL_ERROR_FLAG;
+		k_sem_give(&(chan_data->dma_completion_sem));
+	}
+
+	if (chan_data->dma_status_flags == chan_data->dma_completion_flags) {
+		k_sem_give(&(chan_data->dma_completion_sem));
+	}
+}
+#endif /* CONFIG_SPI_OMAP_DMA */
 
 static void omap_mcspi_channel_enable(const struct device *dev, bool enable)
 {
@@ -471,7 +536,200 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 	return count;
 }
 
-static int omap_mcspi_transceive_one(const struct device *dev)
+#ifdef CONFIG_SPI_OMAP_DMA
+static int spi_dma_rx_tx_done(struct omap_mcspi_channel_data *chan_data)
+{
+	int ret;
+
+	ret = k_sem_take(&chan_data->dma_completion_sem, K_FOREVER);
+	if (ret != 0) {
+		LOG_ERR("Sem take error %d", ret);
+		return ret;
+	}
+	if (chan_data->dma_status_flags & DMA_CHANNEL_ERROR_FLAG) {
+		LOG_ERR("Unexpected IO error");
+		return -EIO;
+	}
+	if (chan_data->dma_status_flags == chan_data->dma_completion_flags) {
+		return 0;
+	}
+	return ret;
+}
+static int omap_mcspi_transceive_dma(const struct device *dev, size_t *count)
+{
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct omap_mcspi_regs *regs = DEV_REGS(dev);
+	struct spi_context *ctx = &data->ctx;
+	const uint8_t chan = ctx->config->slave;
+	const uint8_t dfs = data->dfs;
+	const uint8_t *tx_buf = ctx->tx_buf;
+	uint8_t *rx_buf = ctx->rx_buf;
+	struct omap_dma_data *rx_dma = NULL, *tx_dma = NULL;
+	struct omap_mcspi_channel_data *chan_data = &data->chan_data[chan];
+
+	k_sem_reset(&chan_data->dma_completion_sem); /* Reset DMA Semaphore */
+
+	volatile uint32_t *tx_reg = &regs->CHAN[chan].TX;
+
+	uint32_t ret;
+	uint32_t rx_burst_len = 1, tx_burst_len = 1;
+	uint32_t num_words_transferred = 0;
+
+	if (FIELD_GET(OMAP_MCSPI_CHCONF_FFER, regs->CHAN[chan].CHCONF) &&
+	    FIELD_GET(OMAP_MCSPI_CHCONF_FFEW, regs->CHAN[chan].CHCONF)) {
+		rx_burst_len = tx_burst_len = data->fifo_depth / (2 * dfs);
+	} else if (FIELD_GET(OMAP_MCSPI_CHCONF_FFER, regs->CHAN[chan].CHCONF)) {
+		rx_burst_len = data->fifo_depth / (dfs);
+	} else if (FIELD_GET(OMAP_MCSPI_CHCONF_FFEW, regs->CHAN[chan].CHCONF)) {
+		tx_burst_len = data->fifo_depth / (dfs);
+	}
+
+	/* DMA Rx channel config */
+	if (rx_buf) {
+		while (ctx->current_rx->len % rx_burst_len) {
+			rx_burst_len--;
+		}
+		rx_dma = &(chan_data->rx_dma_data);
+		rx_dma->dma_cfg.source_data_size = dfs;
+		rx_dma->dma_cfg.dest_data_size = dfs;
+		rx_dma->dma_cfg.source_burst_length = rx_burst_len;
+		rx_dma->dma_cfg.dest_burst_length = rx_burst_len;
+		rx_dma->dma_cfg.user_data = (void *)chan_data;
+
+		rx_dma->blk_cfg.source_address = (uint32_t)&(regs->CHAN[chan].RX);
+		rx_dma->blk_cfg.dest_address = (uint32_t)ctx->current_rx->buf;
+		rx_dma->blk_cfg.block_size = ctx->current_rx->len;
+	}
+	/* DMA Tx channel config */
+	if (tx_buf) {
+		while (ctx->current_tx->len % tx_burst_len) {
+			tx_burst_len--;
+		}
+
+		tx_dma = &(chan_data->tx_dma_data);
+		tx_dma->dma_cfg.source_data_size = dfs;
+		tx_dma->dma_cfg.dest_data_size = dfs;
+		tx_dma->dma_cfg.source_burst_length = tx_burst_len;
+		tx_dma->dma_cfg.dest_burst_length = tx_burst_len;
+		tx_dma->dma_cfg.user_data = (void *)chan_data;
+
+		tx_dma->blk_cfg.source_address = (uint32_t)ctx->current_tx->buf;
+		tx_dma->blk_cfg.dest_address = ((uint32_t)&(regs->CHAN[chan].TX));
+		tx_dma->blk_cfg.block_size = ctx->current_tx->len;
+	}
+
+	/* Add DMA Trigger level for Rx and Tx */
+	regs->XFERLEVEL = (OMAP_MCSPI_XFERLEVEL_WCNT & regs->XFERLEVEL) |
+			  FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AFL, (rx_burst_len * dfs - 1)) |
+			  FIELD_PREP(OMAP_MCSPI_XFERLEVEL_AEL, (tx_burst_len * dfs - 1));
+
+	/* RX only */
+	if (!tx_buf) {
+		/* write dummy value of 0 to TX FIFO */
+		*tx_reg = 0;
+
+		/* Set expected completion flag, reset the status flag */
+		chan_data->dma_completion_flags = DMA_CHANNEL_RX_DONE_FLAG;
+		chan_data->dma_status_flags = 0;
+
+		/* Start Rx DMA Transfer */
+		ret = dma_config(rx_dma->dma_dev, rx_dma->dma_channel, &rx_dma->dma_cfg);
+		if (ret) {
+			LOG_ERR("Rx DMA configuration failed.");
+			return ret;
+		}
+		ret = dma_start(rx_dma->dma_dev, rx_dma->dma_channel);
+		if (ret) {
+			LOG_ERR("Rx DMA start failed.");
+			return ret;
+		}
+
+		num_words_transferred = rx_dma->blk_cfg.block_size / dfs;
+
+		/* TX only */
+	} else if (!rx_buf) {
+
+		/* Set expected completion flag, reset the status flag */
+		chan_data->dma_completion_flags = DMA_CHANNEL_TX_DONE_FLAG;
+		chan_data->dma_status_flags = 0;
+
+		/* Start Tx DMA transfer */
+		ret = dma_config(tx_dma->dma_dev, tx_dma->dma_channel, &tx_dma->dma_cfg);
+		if (ret) {
+			LOG_ERR("Tx DMA configuration failed.");
+			return ret;
+		}
+		ret = dma_start(tx_dma->dma_dev, tx_dma->dma_channel);
+		if (ret) {
+			LOG_ERR("Tx DMA start failed.");
+			return ret;
+		}
+		num_words_transferred = tx_dma->blk_cfg.block_size / dfs;
+
+		/* Both RX and TX */
+	} else {
+		/* Set expected completion flag, reset the status flag */
+		chan_data->dma_completion_flags =
+			DMA_CHANNEL_RX_DONE_FLAG | DMA_CHANNEL_TX_DONE_FLAG;
+		chan_data->dma_status_flags = 0;
+
+		ret = dma_config(rx_dma->dma_dev, rx_dma->dma_channel, &rx_dma->dma_cfg);
+		if (ret) {
+			LOG_ERR("Rx DMA configuration failed.");
+			return ret;
+		}
+		ret = dma_config(tx_dma->dma_dev, tx_dma->dma_channel, &tx_dma->dma_cfg);
+		if (ret) {
+			LOG_ERR("Tx DMA configuration failed.");
+			return ret;
+		}
+
+		/* Start Rx DMA first */
+		ret = dma_start(rx_dma->dma_dev, rx_dma->dma_channel);
+		if (ret) {
+			LOG_ERR("Rx DMA start failed.");
+			return ret;
+		}
+
+		/* Start Tx DMA */
+		ret = dma_start(tx_dma->dma_dev, tx_dma->dma_channel);
+		if (ret) {
+			LOG_ERR("Tx DMA start failed.");
+			return ret;
+		}
+		num_words_transferred = tx_dma->blk_cfg.block_size / dfs;
+	}
+	/* Enable channel */
+	omap_mcspi_channel_enable(dev, true);
+
+	ret = spi_dma_rx_tx_done(chan_data);
+	if (ret) {
+		return ret;
+	}
+	*count = *count - num_words_transferred;
+
+	/* Disable channel */
+	omap_mcspi_channel_enable(dev, false);
+
+	/* update rx buffer */
+	spi_context_update_rx(ctx, data->dfs, num_words_transferred);
+
+	/* update tx buffer */
+	spi_context_update_tx(ctx, data->dfs, num_words_transferred);
+
+	/* Stop DMA */
+	if (rx_buf) {
+		dma_stop(rx_dma->dma_dev, rx_dma->dma_channel);
+	}
+	if (tx_buf) {
+		dma_stop(tx_dma->dma_dev, tx_dma->dma_channel);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_SPI_OMAP_DMA */
+
+static int omap_mcspi_transceive_one(const struct device *dev, bool asynchronous)
 {
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
@@ -513,11 +771,23 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 		data->chconf &= ~OMAP_MCSPI_CHCONF_FFEW;
 	}
 
+	/* Don't let Turbo Mode interfere with SPI+DMA */
+#ifndef CONFIG_SPI_OMAP_DMA
 	if (count > 1) {
 		data->chconf |= OMAP_MCSPI_CHCONF_TURBO;
 	} else {
 		data->chconf &= ~OMAP_MCSPI_CHCONF_TURBO;
 	}
+#endif /* CONFIG_SPI_OMAP_DMA */
+
+#ifdef CONFIG_SPI_OMAP_DMA
+	if (rx_buf) {
+		data->chconf |= OMAP_MCSPI_CHCONF_DMAR;
+	}
+	if (tx_buf) {
+		data->chconf |= OMAP_MCSPI_CHCONF_DMAW;
+	}
+#endif
 
 	/* write chconf and chctrl */
 	regs->CHAN[chan].CHCONF = data->chconf;
@@ -526,12 +796,27 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 	/* write WCNT */
 	regs->XFERLEVEL = FIELD_PREP(OMAP_MCSPI_XFERLEVEL_WCNT, count);
 
+#ifdef CONFIG_SPI_OMAP_DMA
+	if (asynchronous) {
+		/*
+		 * NOTE: Only one channel of McSPI can use FIFO
+		 * DFS length may vary among channels if using multiple channels at a time
+		 * Consider moving dfs size to specific channel data struct
+		 */
+		while (count > 0) {
+			rv = omap_mcspi_transceive_dma(dev, &count);
+			if (rv) {
+				LOG_ERR("DMA transceive failed");
+				return rv;
+			}
+		}
+		return 0;
+	}
+#endif /* CONFIG_SPI_OMAP_DMA*/
+
 	/* enable channel */
 	omap_mcspi_channel_enable(dev, true);
 
-	/* we only support PIO for now
-	 * TODO: add DMA
-	 */
 	rv = omap_mcspi_transceive_pio(dev, count);
 	if (rv) {
 		return -EIO;
@@ -546,6 +831,33 @@ exit:
 
 	return 0;
 }
+
+#ifdef CONFIG_SPI_OMAP_DMA
+static void omap_mcspi_transceive_work_handler(struct k_work *work)
+{
+	struct omap_mcspi_work_struct *work_struct =
+		CONTAINER_OF(work, struct omap_mcspi_work_struct, work);
+	const struct device *dev = work_struct->spi_dev;
+	int ret = 0;
+
+	struct omap_mcspi_data *data = DEV_DATA(dev);
+	struct spi_context *ctx = &data->ctx;
+
+	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
+		ret = omap_mcspi_transceive_one(dev, true);
+		if (ret < 0) {
+			LOG_ERR("Transaction failed, TX/RX left: %zu/%zu",
+				spi_context_tx_len_left(ctx, data->dfs),
+				spi_context_rx_len_left(ctx, data->dfs));
+			break;
+		}
+	}
+
+cleanup:
+	spi_context_cs_control(ctx, false);
+	spi_context_complete(ctx, dev, ret);
+}
+#endif /* CONFIG_SPI_OMAP_DMA */
 
 static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
@@ -572,8 +884,21 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 
 	spi_context_cs_control(ctx, true);
 
+#ifdef CONFIG_SPI_OMAP_DMA
+	if (asynchronous) {
+		k_work_init(&(data->work_struct.work), omap_mcspi_transceive_work_handler);
+		ret = k_work_submit(&(data->work_struct.work));
+
+		if (ret < 0) {
+			LOG_ERR("Failed to submit workqueue");
+			goto cleanup;
+		}
+		return 0;
+	}
+#endif
+
 	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
-		ret = omap_mcspi_transceive_one(dev);
+		ret = omap_mcspi_transceive_one(dev, false);
 		if (ret < 0) {
 			LOG_ERR("Transaction failed, TX/RX left: %zu/%zu",
 				spi_context_tx_len_left(ctx, data->dfs),
@@ -588,6 +913,7 @@ cleanup:
 	if (!(config->operation & SPI_LOCK_ON)) {
 		spi_context_release(ctx, ret);
 	}
+
 	return ret;
 }
 
@@ -605,7 +931,7 @@ static int omap_mcspi_transceive_async(const struct device *dev, const struct sp
 				       void *userdata)
 {
 	/* wait for DMA to be implemented to use IRQ and ASYNC */
-	return -ENOTSUP;
+	return omap_mcspi_transceive_all(dev, config, tx_bufs, rx_bufs, true, callback, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -642,6 +968,22 @@ static int omap_mcspi_init(const struct device *dev)
 
 	data->fifo_depth = FIELD_GET(OMAP_MCSPI_HWINFO_FFNBYTE, regs->HWINFO) << 4;
 
+#ifdef CONFIG_SPI_OMAP_DMA
+	/* Ensure work_struct is pointing back to spi_dev */
+	data->work_struct.spi_dev = dev;
+
+	struct omap_mcspi_channel_data *chan_data;
+
+	for (int i = 0; i < OMAP_MCSPI_NUM_CHANNELS; i++) {
+		chan_data = &data->chan_data[i];
+		k_sem_init(&chan_data->dma_completion_sem, 0, 1);
+
+		chan_data->tx_dma_data.dma_cfg.head_block = &(chan_data->tx_dma_data.blk_cfg);
+		chan_data->rx_dma_data.dma_cfg.head_block = &(chan_data->rx_dma_data.blk_cfg);
+	}
+
+#endif
+
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -655,6 +997,47 @@ static int omap_mcspi_release(const struct device *dev, const struct spi_config 
 
 	return 0;
 }
+
+#if defined(CONFIG_SPI_OMAP_DMA)
+
+#define SPI_DMA_CHANNEL_INIT(n, dir, ch_dir, burst_len)                                            \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, dir)),                               \
+	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(n, dir, channel),                                 \
+	.dma_cfg = {                                                                               \
+		.channel_direction = ch_dir,                                                       \
+		.source_data_size = 1,                                                             \
+		.dest_data_size = 1,                                                               \
+		.source_burst_length = burst_len,                                                  \
+		.dest_burst_length = burst_len,                                                    \
+		.block_count = 1,                                                                  \
+		.dma_callback = spi_dma_callback,                                                  \
+		.complete_callback_en = true,                                                      \
+	},
+
+#define SPI_DMA_CHANNEL(n, dir, ch_dir, burst_len)                                                 \
+	.dir##_dma_data = {COND_CODE_1(                                                           \
+		DT_INST_DMAS_HAS_NAME(n, dir),                                                 \
+		(SPI_DMA_CHANNEL_INIT(n, dir, ch_dir, burst_len)), (NULL))},
+
+#define SPI_CHAN_DATA_STRUCT_INIT(index, n)                                                        \
+	{.ch_num = index,                                                                          \
+	 SPI_DMA_CHANNEL(n, rx, PERIPHERAL_TO_MEMORY, 1)                                           \
+		 SPI_DMA_CHANNEL(n, tx, MEMORY_TO_PERIPHERAL, 1)}
+
+#define SPI_CHAN_NUM_DUMMY_MACRO(i, _) i
+#define SPI_CHAN_DATA_INIT(n)                                                                      \
+	.chan_data = {FOR_EACH_FIXED_ARG(SPI_CHAN_DATA_STRUCT_INIT, (,), n,                        \
+					 LISTIFY(4, SPI_CHAN_NUM_DUMMY_MACRO, (,)))}
+
+#else
+#define SPI_CHAN_DATA_INIT(n)
+#endif /* CONFIG_SPI_OMAP_DMA */
+
+/*
+ * TODO: Every channel in McSPI has a unique pair of DMA channels
+ * In DTS, need to define as rx0, tx0, rx1, tx1...
+ * How to pull SPI Channel number from DTS?
+ */
 
 static DEVICE_API(spi, omap_mcspi_api) = {
 	.transceive = omap_mcspi_transceive,
@@ -677,7 +1060,7 @@ static DEVICE_API(spi, omap_mcspi_api) = {
 	static struct omap_mcspi_data omap_mcspi_data_##n = {                                      \
 		SPI_CONTEXT_INIT_LOCK(omap_mcspi_data_##n, ctx),                                   \
 		SPI_CONTEXT_INIT_SYNC(omap_mcspi_data_##n, ctx),                                   \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) SPI_CHAN_DATA_INIT(n)};       \
                                                                                                    \
 	SPI_DEVICE_DT_INST_DEFINE(n, omap_mcspi_init, NULL, &omap_mcspi_data_##n,                  \
 				  &omap_mcspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
