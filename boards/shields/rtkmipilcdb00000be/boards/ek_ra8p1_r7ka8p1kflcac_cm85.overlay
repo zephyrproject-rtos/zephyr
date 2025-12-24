@@ -13,6 +13,10 @@
 	clock-frequency = <DT_FREQ_K(100)>;
 };
 
+&zephyr_lcdif {
+	ext-ram = <&sdram1>;
+};
+
 &zephyr_mipi_dsi {
 	pll-div = <3>;
 	pll-mul-int = <125>;
