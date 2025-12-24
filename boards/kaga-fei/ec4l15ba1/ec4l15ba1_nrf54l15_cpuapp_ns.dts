@@ -13,8 +13,8 @@
 #include "ec4l15ba1-pinctrl.dtsi"
 
 / {
-	compatible = "nordic,nrf54l15dk_nrf54l15-cpuapp";
-	model = "Nordic nRF54L15 DK nRF54L15 Application MCU";
+	compatible = "kaga-fei,ec4l15ba1-cpuapp";
+	model = "kafa-fei_ec4l15ba1";
 
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;

@@ -12,8 +12,8 @@
 /delete-node/ &cpuflpr_sram;
 
 / {
-	model = "Nordic nRF54L15 DK nRF54L15 FLPR MCU";
-	compatible = "nordic,nrf54l15dk_nrf54l15-cpuflpr";
+	compatible = "kaga-fei,ec4l15ba1-cpuapp";
+	model = "kafa-fei_ec4l15ba1-cpuflpr";
 
 	chosen {
 		zephyr,console = &uart30;
