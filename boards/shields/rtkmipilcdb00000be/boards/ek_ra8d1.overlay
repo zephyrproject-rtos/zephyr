@@ -24,6 +24,10 @@
 	pinctrl-names = "default";
 };
 
+&zephyr_lcdif {
+	ext-ram = <&sdram1>;
+};
+
 &mipi_dsi {
 	status = "okay";
 	pll-div = <1>;

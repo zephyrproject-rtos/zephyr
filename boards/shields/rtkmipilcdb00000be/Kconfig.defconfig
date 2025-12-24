@@ -44,4 +44,6 @@ endif # LVGL
 
 endif # DISPLAY
 
+orsource "boards/*.defconfig"
+
 endif # SHIELD_RTKMIPILCDB00000BE
