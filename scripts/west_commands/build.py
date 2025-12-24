@@ -263,7 +263,7 @@ class Build(Forceable):
             else:
                 self.die("test item path does not exist")
 
-        self._run_cmake(board, origin, self.args.cmake_opts)
+        self._run_cmake(board, origin)
         if args.cmake_only:
             return
 
@@ -625,7 +625,7 @@ class Build(Forceable):
                 self.source_dir = self._find_source_dir()
                 self._sanity_check_source_dir()
 
-    def _run_cmake(self, board, origin, cmake_opts):
+    def _run_cmake(self, board, origin):
         if board is None and config_getboolean('board_warn', True):
             self.wrn('This looks like a fresh build and BOARD is unknown;',
                     "so it probably won't work. To fix, use",
