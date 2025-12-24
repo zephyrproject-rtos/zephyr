@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020-2023 IoT.bzh
+ * Copyright (c) 2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +40,24 @@ struct gpio_rcar_data {
 	sys_slist_t cb;
 };
 
+#if (SOC_SERIES == rcar_gen4)
+#define IOINTSEL 0x180 /* General IO/Interrupt Switching Register */
+#define INOUTSEL 0x184 /* General Input/Output Switching Register */
+#define OUTDT    0x188 /* General Output Register */
+#define INDT     0x18c /* General Input Register */
+#define INTDT    0x190 /* Interrupt Display Register */
+#define INTCLR   0x194 /* Interrupt Clear Register */
+#define INTMSK   0x198 /* Interrupt Mask Register */
+#define MSKCLR   0x19c /* Interrupt Mask Clear Register */
+#define POSNEG   0x1a0 /* Positive/Negative Logic Select Register */
+#define EDGLEVEL 0x1a4 /* Edge/level Select Register */
+#define FILONOFF 0x1a8 /* Chattering Prevention On/Off Register */
+#define OUTDTSEL 0x1c0 /* Output Data Select Register */
+#define BOTHEDGE 0x1cc /* One Edge/Both Edge Select Register */
+#define INEN     0x1d0 /* General Input Enable Register */
+#define DM0PR    0x020 /* Domain protection register 0 */
+#define PMMR     0x000 /* LSI Multiplexed Pin Setting Mask Register */
+#else
 #define IOINTSEL 0x00   /* General IO/Interrupt Switching Register */
 #define INOUTSEL 0x04   /* General Input/Output Switching Register */
 #define OUTDT    0x08   /* General Output Register */
@@ -52,7 +71,24 @@ struct gpio_rcar_data {
 #define FILONOFF 0x28   /* Chattering Prevention On/Off Register */
 #define OUTDTSEL 0x40   /* Output Data Select Register */
 #define BOTHEDGE 0x4c   /* One Edge/Both Edge Select Register */
-#define INEN     0x50	/* General Input Enable Register */
+#define INEN     0x50   /* General Input Enable Register */
+#endif
+
+#if (SOC_SERIES == rcar_gen4)
+#define UNPROTECT_BUS_DOMAIN(dev)                                               \
+	{                                                                           \
+		sys_write32(0x0, DEVICE_MMIO_NAMED_GET(dev, reg_base) + PMMR);          \
+		sys_write32(0xFFFFFFFF, DEVICE_MMIO_NAMED_GET(dev, reg_base) + DM0PR);  \
+	}
+#define PROTECT_BUS_DOMAIN(dev)                                                 \
+	{                                                                           \
+		sys_write32(0xFFFFFFFF, DEVICE_MMIO_NAMED_GET(dev, reg_base) + PMMR);   \
+		sys_write32(0x0, DEVICE_MMIO_NAMED_GET(dev, reg_base) + DM0PR);         \
+	}
+#else
+#define UNPROTECT_BUS_DOMAIN(dev)
+#define PROTECT_BUS_DOMAIN(dev)
+#endif
 
 static inline uint32_t gpio_rcar_read(const struct device *dev, uint32_t offs)
 {
@@ -61,7 +97,9 @@ static inline uint32_t gpio_rcar_read(const struct device *dev, uint32_t offs)
 
 static inline void gpio_rcar_write(const struct device *dev, uint32_t offs, uint32_t value)
 {
+	UNPROTECT_BUS_DOMAIN(dev);
 	sys_write32(value, DEVICE_MMIO_NAMED_GET(dev, reg_base) + offs);
+	PROTECT_BUS_DOMAIN(dev);
 }
 
 static void gpio_rcar_modify_bit(const struct device *dev,
@@ -92,6 +130,8 @@ static void gpio_rcar_port_isr(const struct device *dev)
 		gpio_fire_callbacks(&data->cb, dev, BIT(fsb));
 		gpio_rcar_write(dev, INTCLR, BIT(fsb));
 	}
+	/* Gen4 only: Keep the bus unprotected for next IRQs */
+	UNPROTECT_BUS_DOMAIN(dev);
 }
 
 static void gpio_rcar_config_general_input_output_mode(
@@ -242,6 +282,9 @@ static int gpio_rcar_pin_interrupt_configure(const struct device *dev,
 	}
 
 	gpio_rcar_write(dev, MSKCLR, BIT(pin));
+
+	/* Gen4 only: Need to unprotect the bus for the IRQ to happen */
+	UNPROTECT_BUS_DOMAIN(dev);
 
 	return 0;
 }
