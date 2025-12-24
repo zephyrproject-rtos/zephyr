@@ -8,3 +8,11 @@ config SPI_OMAP_MCSPI
 	select PINCTRL
 	help
 	  Enable support for TI OMAP MCSPI driver.
+
+config SPI_DMA
+	bool "SPI DMA enabled"
+	default n
+	depends on SPI_ASYNC
+	depends on DMA
+	help
+		Enable DMA for SPI
