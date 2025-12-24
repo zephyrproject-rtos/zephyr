@@ -257,6 +257,17 @@
 			status = "disabled";
 		};
 
+		ac: ac@42002000 {
+			compatible = "microchip,ac-g1-comparator";
+			reg = <0x42002000 0x26>;
+			interrupts = <122 0>;
+			interrupt-names = "ac";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_AC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
 		tcc3: tcc@42001000 {
 			compatible = "microchip,tcc-g1";
 			reg = <0x42001000 0x2000>;
