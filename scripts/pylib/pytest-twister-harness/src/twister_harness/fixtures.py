@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Generator, Type, Callable
 
 import pytest
-import time
 
 from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.device.factory import DeviceFactory
@@ -80,9 +79,6 @@ def shell(dut: DeviceAdapter) -> Shell:
     if not shell.wait_for_prompt():
         pytest.fail('Prompt not found')
     if dut.device_config.type == 'hardware':
-        # after booting up the device, there might appear additional logs
-        # after first prompt, so we need to wait and clear the buffer
-        time.sleep(0.5)
         dut.clear_buffer()
     return shell
 
