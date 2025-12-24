@@ -74,3 +74,8 @@
 &edma0 {
 	status = "okay";
 };
+
+&sema42 {
+	domain-id = <4>;
+	status = "okay";
+};
