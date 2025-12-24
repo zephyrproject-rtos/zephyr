@@ -361,6 +361,12 @@ static int spi_esp32_init(const struct device *dev)
 	}
 #endif
 
+	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		LOG_ERR("Failed to configure SPI pins");
+		return err;
+	}
+
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
 		return err;
@@ -442,13 +448,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		hal_dev->cs_pin_id = -1;
 	} else {
 		hal_dev->cs_pin_id = ctx->config->slave;
-	}
-
-	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-
-	if (ret) {
-		LOG_ERR("Failed to configure SPI pins");
-		return ret;
 	}
 
 	/* input parameters to calculate timing configuration */
