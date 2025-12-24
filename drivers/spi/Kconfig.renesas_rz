@@ -47,6 +47,13 @@ config SPI_USE_HW_SS
 	help
 	  Use Hardware Peripheral Select instead of Software Peripheral Select.
 
+config SPI_RENESAS_RZ_DMA
+	bool "RZ SPI DMA Support"
+	select SPI_RENESAS_RZ_INTERRUPT if CPU_CORTEX_R52
+	select USE_RZ_FSP_DMAC
+	help
+	  Enable the SPI DMA mode for SPI instances
+
 endif # SPI_RENESAS_RZ
 
 if SPI_RTIO
