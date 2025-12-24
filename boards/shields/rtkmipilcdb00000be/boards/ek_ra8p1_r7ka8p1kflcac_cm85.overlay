@@ -13,10 +13,6 @@
 	clock-frequency = <DT_FREQ_K(100)>;
 };
 
-&zephyr_lcdif {
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-};
-
 &zephyr_mipi_dsi {
 	pll-div = <3>;
 	pll-mul-int = <125>;

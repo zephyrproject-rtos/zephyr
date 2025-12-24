@@ -42,7 +42,7 @@
 	status = "okay";
 	width = <480>;
 	height = <854>;
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
