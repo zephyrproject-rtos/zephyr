@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MCHP_COMMON
+	bool
+	help
+	  Common option for microchip DAC drivers
+
+config DAC_MCHP_G1
+	bool "Microchip DAC Driver for DAC G1 Peripherals"
+	depends on DT_HAS_MICROCHIP_DAC_G1_ENABLED
+	default y
+	select DAC_MCHP_COMMON
+	select PINCTRL
+	help
+	  Enable support for the Microchip DAC driver on G1 DAC peripherals.
+
+if DAC_MCHP_COMMON
+
+config DAC_MCHP_DIFFERENTIAL
+	bool "Differential Mode Enable"
+	help
+	  Enable Differential Mode support
+
+endif # DAC_MCHP_COMMON
