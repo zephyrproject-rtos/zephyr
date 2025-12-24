@@ -24,7 +24,6 @@
 #include <icmpv6.h>
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
-#include <zephyr/net/icmp.h>
 #include <zephyr/net/net_pkt_filter.h>
 #include <openthread/nat64.h>
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
@@ -39,6 +38,7 @@ static struct net_in6_addr mcast_addr;
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr);
 static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
+
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 #define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_SERVICES
 
@@ -155,12 +155,6 @@ otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 	ret = net_ipv6_mld_join(ail_iface, &mcast_addr);
 
 	VerifyOrExit((ret == 0 || ret == -EALREADY), error = OT_ERROR_FAILED);
-
-#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
-	for (uint8_t i = 0; i < MAX_SERVICES; i++) {
-		sockfd_raw[i].fd = -1;
-	}
-#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 exit:
 	return error;
 }
@@ -174,17 +168,6 @@ otError infra_if_deinit(void)
 
 	VerifyOrExit(net_ipv6_mld_leave(ail_iface_ptr, &mcast_addr) == 0,
 		     error = OT_ERROR_FAILED);
-
-#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
-	VerifyOrExit(raw_infra_if_sock != -1);
-	VerifyOrExit(zsock_close(raw_infra_if_sock) == 0);
-
-	sockfd_raw[0].fd = -1;
-	raw_infra_if_sock = -1;
-
-	net_socket_service_register(&handle_infra_if_raw_recv, sockfd_raw,
-				    ARRAY_SIZE(sockfd_raw), NULL);
-#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 
 exit:
 	ail_iface_ptr = NULL;
@@ -328,6 +311,10 @@ otError infra_if_nat64_init(void)
 					  .sin_port = 0,
 					  .sin_addr = NET_INADDR_ANY_INIT};
 
+	for (uint8_t i = 0; i < MAX_SERVICES; i++) {
+		sockfd_raw[i].fd = -1;
+	}
+
 	raw_infra_if_sock = zsock_socket(NET_AF_INET, NET_SOCK_RAW, NET_IPPROTO_IP);
 	VerifyOrExit(raw_infra_if_sock >= 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(zsock_bind(raw_infra_if_sock, (struct net_sockaddr *)&anyaddr,
@@ -343,6 +330,28 @@ otError infra_if_nat64_init(void)
 
 	npf_insert_ipv4_recv_rule(&ot_nat64_drop_pkt_process);
 	npf_append_ipv4_recv_rule(&npf_default_ok);
+
+exit:
+	return error;
+}
+
+otError infra_if_nat64_deinit(void)
+{
+	otError error = OT_ERROR_NONE;
+
+	VerifyOrExit(raw_infra_if_sock != -1, error = OT_ERROR_INVALID_STATE);
+	VerifyOrExit(zsock_close(raw_infra_if_sock) == 0, error = OT_ERROR_FAILED);
+
+	sockfd_raw[0].fd = -1;
+	raw_infra_if_sock = -1;
+
+	VerifyOrExit(net_socket_service_register(&handle_infra_if_raw_recv, sockfd_raw,
+						 ARRAY_SIZE(sockfd_raw), NULL) == 0,
+		     error = OT_ERROR_FAILED);
+
+	VerifyOrExit(npf_remove_ipv4_recv_rule(&ot_nat64_drop_pkt_process) &&
+		     npf_remove_ipv4_recv_rule(&npf_default_ok),
+		     error = OT_ERROR_FAILED);
 
 exit:
 	return error;
