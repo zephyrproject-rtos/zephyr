@@ -8,10 +8,12 @@
 #include "posix_clock.h"
 #include "posix_internal.h"
 
+#include <pthread.h>
+#include <sys/types.h>
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/sem.h>
 
@@ -20,6 +22,12 @@ LOG_MODULE_REGISTER(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
 static SYS_SEM_DEFINE(lock, 1, 1);
 
 #define MUTEX_MAX_REC_LOCK 32767
+
+struct pthread_mutexattr {
+	unsigned char type: 2;
+	bool initialized: 1;
+};
+BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
 
 /*
  *  Default mutex attrs.
@@ -137,6 +145,7 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 
 	if (owner == k_current_get()) {
 		switch (type) {
+		case PTHREAD_MUTEX_DEFAULT:
 		case PTHREAD_MUTEX_NORMAL:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				LOG_DBG("Timeout locking mutex %p", m);
@@ -312,6 +321,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 	return 0;
 }
 
+#if defined(_POSIX_THREAD_PRIO_PROTECT)
 /**
  * @brief Read protocol attribute for mutex.
  *
@@ -350,6 +360,7 @@ int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol)
 		return EINVAL;
 	}
 }
+#endif
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
@@ -413,6 +424,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 	case PTHREAD_MUTEX_NORMAL:
 	case PTHREAD_MUTEX_RECURSIVE:
 	case PTHREAD_MUTEX_ERRORCHECK:
+	case PTHREAD_MUTEX_DEFAULT:
 		a->type = type;
 		return 0;
 	default:
@@ -465,6 +477,7 @@ static int pthread_mutex_pool_init(void)
 	for (i = 0; i < CONFIG_MAX_PTHREAD_MUTEX_COUNT; ++i) {
 		err = k_mutex_init(&posix_mutex_pool[i]);
 		__ASSERT_NO_MSG(err == 0);
+		posix_mutex_type[i] = PTHREAD_MUTEX_DEFAULT;
 	}
 
 	return 0;
