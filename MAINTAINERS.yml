@@ -2189,8 +2189,6 @@ Documentation Infrastructure:
   maintainers:
     - manuargue
     - Dat-NguyenDuy
-  collaborators:
-    - congnguyenhuu
   files:
     - drivers/psi5/
     - include/zephyr/drivers/psi5/
@@ -2340,8 +2338,6 @@ Documentation Infrastructure:
   maintainers:
     - manuargue
     - Dat-NguyenDuy
-  collaborators:
-    - congnguyenhuu
   files:
     - drivers/sent/
     - include/zephyr/drivers/sent/
@@ -3718,7 +3714,6 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
-    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
