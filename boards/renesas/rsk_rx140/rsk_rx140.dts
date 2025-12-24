@@ -9,6 +9,7 @@
 #include <renesas/r5f51406.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx140-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 
 / {
@@ -34,6 +35,16 @@
 		led3: led3 {
 			gpios = <&ioport0 7 GPIO_ACTIVE_LOW>;
 			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: button {
+			label = "sw1";
+			gpios = <&ioport3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -69,6 +80,10 @@
 };
 
 &ioport3 {
+	status = "okay";
+};
+
+&port_irq1 {
 	status = "okay";
 };
 
