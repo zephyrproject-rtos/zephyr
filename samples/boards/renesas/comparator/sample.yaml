@@ -6,4 +6,5 @@ tests:
     platform_allow:
       - ek_ra8m1
       - ek_ra8d1
+      - fpb_ra8e1
     tags: comparator
