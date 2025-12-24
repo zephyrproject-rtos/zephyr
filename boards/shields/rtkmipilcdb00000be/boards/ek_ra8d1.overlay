@@ -24,10 +24,6 @@
 	pinctrl-names = "default";
 };
 
-&zephyr_lcdif {
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-};
-
 &mipi_dsi {
 	status = "okay";
 	pll-div = <1>;
