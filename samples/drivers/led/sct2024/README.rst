@@ -9,9 +9,11 @@ Overview
 
 This sample controls up to 16 LEDs connected to a SCT2024 driver.
 
-In an infinite loop, a test pattern is applied to each LED one by one. The
-pattern is a sequence of turning each LED on; when all LEDs are on, each of the
-LEDs is turned off.
+In an infinite loop, a test pattern is applied to each LED one at a time. The pattern consists of
+turning each LED on individually. Once all LEDs are on, they are all switched off simultaneously,
+followed by being switched on simultaneously twice. After this, each LED is turned off one at a
+time in sequence. And then all LEDs are again turned on and off simultaneously twice. Then the
+pattern is repeated.
 
 Building and Running
 ********************
