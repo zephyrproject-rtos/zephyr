@@ -4775,6 +4775,14 @@ Settings:
         - subsys/settings/src/settings_tfm_psa*
         - tests/subsys/settings/functional/tfm_psa/
         - tests/subsys/settings/tfm_psa/
+    - name: ZMS backend
+      collaborators:
+        - rghaddab
+      files:
+        - subsys/settings/src/settings_zms.c
+        - subsys/settings/include/settings/settings_zms.h
+        - tests/subsys/settings/zms/
+        - tests/subsys/settings/functional/zms/
   labels:
     - "area: Settings"
   tests:
