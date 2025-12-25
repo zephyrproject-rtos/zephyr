@@ -146,8 +146,8 @@ static int paj7620_sample_fetch(const struct device *dev, enum sensor_channel ch
 	const struct paj7620_config *config = dev->config;
 	uint8_t gest_data[2];
 
-	if (chan != SENSOR_CHAN_ALL
-		&& ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
+	if (chan != SENSOR_CHAN_ALL &&
+	    ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
 		return -ENOTSUP;
 	}
 
@@ -168,9 +168,8 @@ static int paj7620_sample_fetch(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static int paj7620_channel_get(const struct device *dev,
-				enum sensor_channel chan,
-				struct sensor_value *val)
+static int paj7620_channel_get(const struct device *dev, enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	struct paj7620_data *data = dev->data;
 
@@ -187,15 +186,13 @@ static int paj7620_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int paj7620_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int paj7620_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int ret;
 
-	if (chan != SENSOR_CHAN_ALL
-		&& ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
+	if (chan != SENSOR_CHAN_ALL &&
+	    ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
 		return -ENOTSUP;
 	}
 
@@ -265,6 +262,97 @@ static int paj7620_init(const struct device *dev)
 	return 0;
 }
 
+static int paj7620_suspend(const struct device *dev)
+{
+
+	int ret;
+	uint8_t reg_addr;
+	uint8_t reg_val;
+	const struct paj7620_config *config = dev->config;
+
+	/*Send Suspend settings sequence*/
+	for (int i = 0; i < ARRAY_SIZE(suspend_register_array); i++) {
+
+		reg_addr = suspend_register_array[i][0];
+		reg_val = suspend_register_array[i][1];
+		ret = i2c_reg_write_byte_dt(config->i2c, reg_addr, reg_val);
+		if (ret < 0) {
+			LOG_ERR("Failed to send suspend settings sequence");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int paj7620_resume(const struct device *dev)
+{
+
+	int ret;
+	uint8_t reg_addr;
+	uint8_t reg_val;
+	uint8_t part_val[2];
+	const struct paj7620_config *config = dev->config;
+	/*perform initial device wake-up*/
+	/*select bank 0*/
+	(void)paj7620_select_register_bank(dev, PAJ7620_MEMBANK_0); /*HW ID on bank 0*/
+				  
+	ret = paj7620_get_hw_id(dev, &hw_id); /*performing device wake-up by reading device part_ID*/
+	if (ret < 0) {
+		LOG_ERR("Failed to wake-up device after suspend ");
+		return ret;
+	}
+
+	/*Send first resume settings sequence*/
+	for (int i = 0; i < ARRAY_SIZE(resume_register1_array); i++) {
+
+		reg_addr = resume_register1_array[i][0];
+		reg_val = resume_register1_array[i][1];
+		ret = i2c_reg_write_byte_dt(config->i2c, reg_addr, reg_val);
+		if (ret < 0) {
+			LOG_ERR("Failed to send first resume settings sequence ");
+			return ret;
+		}
+	}
+
+	k_usleep(RESUME_TIME_US); /* Wait a delay of 500us according to the datasheet section 8.7*/
+
+	/*Send second resume settings sequence*/
+	for (int i = 0; i < ARRAY_SIZE(resume_register2_array); i++) {
+
+		reg_addr = resume_register2_array[i][0];
+		reg_val = resume_register2_array[i][1];
+		ret = i2c_reg_write_byte_dt(config->i2c, reg_addr, reg_val);
+		if (ret < 0) {
+			LOG_ERR("Failed to send second resume settings sequence ");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int paj7620_pm_action(const struct device *dev, enum paj7620_pm_mode pwmode)
+{
+
+	int ret;
+
+	switch (pwmode) {
+	case PAJ7620_NORMAL_MODE:
+		ret = paj7620_resume(dev);
+		break;
+	case PAJ7620_SLEEP_MODE:
+		ret = paj7620_suspend(dev);
+		break;
+
+	default:
+		LOG_ERR("Unsupported Power Mode");
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+
 static DEVICE_API(sensor, paj7620_driver_api) = {
 	.sample_fetch = paj7620_sample_fetch,
 	.channel_get = paj7620_channel_get,
@@ -274,22 +362,16 @@ static DEVICE_API(sensor, paj7620_driver_api) = {
 #endif
 };
 
-#define PAJ7620_INIT(n)                                                                    \
-	static const struct paj7620_config paj7620_config_##n = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(n),					           \
+#define PAJ7620_INIT(n)                                                                            \
+	static const struct paj7620_config paj7620_config_##n = {                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		IF_ENABLED(CONFIG_PAJ7620_TRIGGER,                                         \
-				(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}))) \
-	};                                                                                 \
-                                                                                           \
-	static struct paj7620_data paj7620_data_##n;                                       \
-                                                                                           \
-	SENSOR_DEVICE_DT_INST_DEFINE(n,                                                    \
-				paj7620_init,                                              \
-				NULL,                                                      \
-				&paj7620_data_##n,                                         \
-				&paj7620_config_##n,                                       \
-				POST_KERNEL,                                               \
-				CONFIG_SENSOR_INIT_PRIORITY,                               \
-				&paj7620_driver_api);
+				(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}))) };    \
+                                                                                                   \
+	static struct paj7620_data paj7620_data_##n;                                               \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, paj7620_init, NULL, &paj7620_data_##n,                     \
+				     &paj7620_config_##n, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &paj7620_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PAJ7620_INIT);

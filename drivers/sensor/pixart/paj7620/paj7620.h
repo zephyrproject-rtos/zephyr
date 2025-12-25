@@ -34,6 +34,11 @@ enum paj7620_mem_bank {
 	PAJ7620_MEMBANK_1,
 };
 
+enum paj7620_pm_mode {
+	PAJ7620_NORMAL_MODE =0,
+	PAJ7620_SLEEP_MODE
+};
+
 struct paj7620_config {
 	const struct i2c_dt_spec i2c;
 #if CONFIG_PAJ7620_TRIGGER
