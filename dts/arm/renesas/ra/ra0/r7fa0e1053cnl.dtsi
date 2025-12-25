@@ -8,6 +8,7 @@
 
 /delete-node/ &ioport4;
 /delete-node/ &ioport9;
+/delete-node/ &sau1;
 
 &flash0 {
 	reg = <0x0 DT_SIZE_K(32)>;
