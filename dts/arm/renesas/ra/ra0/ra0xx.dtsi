@@ -191,6 +191,104 @@
 			reg = <0x01010018 0x20>;
 			status = "okay";
 		};
+
+		sau0: sau@400a2000 {
+			compatible = "renesas,ra-sau";
+			reg = <0x400a2000 0x13a>;
+			unit = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sau_ch00: ch@0 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <0>;
+				interrupts = <18 1>;
+				clocks = <&sau_ck00 MSTPB 6>;
+				#sau-channel-cells = <0>;
+			};
+
+			sau_ch01: ch@1 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <1>;
+				interrupts = <27 1>;
+				clocks = <&sau_ck00 MSTPB 6>;
+				#sau-channel-cells = <0>;
+			};
+
+			sau_ch02: ch@2 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <2>;
+				clocks = <&sau_ck00 MSTPB 6>;
+				interrupts = <22 1>;
+				#sau-channel-cells = <0>;
+			};
+
+			sau_ch03: ch@3 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <3>;
+				clocks = <&sau_ck00 MSTPB 6>;
+				interrupts = <23 1>;
+				#sau-channel-cells = <0>;
+			};
+
+			sau-uart {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				uart0: sau-uart@0 {
+					compatible = "renesas,ra-uart-sau";
+					interrupts = <20 1>;
+					sau-channels = <&sau_ch00>, <&sau_ch01>;
+					reg = <0>;
+					status = "disabled";
+				};
+
+				uart1: sau-uart@1 {
+					compatible = "renesas,ra-uart-sau";
+					interrupts = <24 1>;
+					sau-channels = <&sau_ch02>, <&sau_ch03>;
+					reg = <1>;
+					status = "disabled";
+				};
+			};
+		};
+
+		sau1: sau@400a2200 {
+			compatible = "renesas,ra-sau";
+			reg = <0x400a2200 0x13a>;
+			unit = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sau_ch10: ch@0 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <0>;
+				clocks = <&sau_ck10 MSTPB 7>;
+				interrupts = <12 1>;
+				#sau-channel-cells = <0>;
+			};
+
+			sau_ch11: ch@1 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <1>;
+				clocks = <&sau_ck10 MSTPB 7>;
+				interrupts = <13 1>;
+				#sau-channel-cells = <0>;
+			};
+
+			sau-uart {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				uart2: sau-uart@2 {
+					compatible = "renesas,ra-uart-sau";
+					interrupts = <14 1>;
+					sau-channels = <&sau_ch10>, <&sau_ch11>;
+					reg = <2>;
+					status = "disabled";
+				};
+			};
+		};
 	};
 };
 
