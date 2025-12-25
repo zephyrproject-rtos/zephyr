@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+ * Copyright (c) 2025 Mohamed Haggouna <mohamed.haggouna@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor/paj7620.h>
+
+#ifdef CONFIG_PM_DEVICE
+#include <zephyr/pm/device.h>
+#endif
 
 #include "paj7620.h"
 #include "paj7620_reg.h"
@@ -186,7 +191,100 @@ static int paj7620_channel_get(const struct device *dev,
 
 	return 0;
 }
+#ifdef CONFIG_PM_DEVICE
+static int paj7620_send_pm_sequence(const struct device *dev,
+			    const uint8_t pm_register_array[][2], size_t size)
+{
 
+	int ret;
+	uint8_t reg_addr;
+	uint8_t reg_val;
+	const struct paj7620_config *config = dev->config;
+
+	/*Send Suspend settings sequence*/
+	for (int i = 0; i < size; i++) {
+		reg_addr = pm_register_array[i][0];
+		reg_val = pm_register_array[i][1];
+		ret = i2c_reg_write_byte_dt(&config->i2c, reg_addr, reg_val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	return 0;
+}
+static int paj7620_suspend(const struct device *dev)
+{
+
+	int ret;
+	/*Send Suspend settings sequence*/
+	ret = paj7620_send_pm_sequence(dev, suspend_register_array,
+				  ARRAY_SIZE(suspend_register_array));
+	if (ret < 0) {
+		LOG_ERR("Failed to send suspend settings sequence");
+		return ret;
+	}
+	return 0;
+}
+
+static int paj7620_resume(const struct device *dev)
+{
+
+	int ret;
+	uint16_t hw_id;
+
+	ret = paj7620_select_register_bank(dev, PAJ7620_MEMBANK_0); /*HW ID on bank 0*/
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = paj7620_get_hw_id(dev,
+				&hw_id); /*performing device wake-up by reading device part_ID*/
+	if (ret < 0) {
+		LOG_ERR("Failed to wake-up device after suspend ");
+		return ret;
+	}
+
+	/*Send first resume settings sequence*/
+	ret = paj7620_send_pm_sequence(dev, resume_register1_array,
+				  ARRAY_SIZE(resume_register1_array));
+	if (ret < 0) {
+		LOG_ERR("Failed to send first resume settings sequence ");
+		return ret;
+	}
+
+	k_usleep(PAJ7620_RESUME_TIME_US);
+
+	/*Send second resume settings sequence*/
+	ret = paj7620_send_pm_sequence(dev, resume_register2_array,
+				  ARRAY_SIZE(resume_register2_array));
+	if (ret < 0) {
+		LOG_ERR("Failed to send second resume settings sequence ");
+		return ret;
+	}
+	return 0;
+}
+
+static int paj7620_pm_action(const struct device *dev, enum pm_device_action pwmode)
+{
+
+	int ret;
+
+	switch (pwmode) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = paj7620_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = paj7620_suspend(dev);
+		break;
+
+	default:
+		LOG_ERR("Unsupported Power Mode");
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+#endif
 static int paj7620_attr_set(const struct device *dev,
 			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
@@ -282,10 +380,11 @@ static DEVICE_API(sensor, paj7620_driver_api) = {
 	};                                                                                 \
                                                                                            \
 	static struct paj7620_data paj7620_data_##n;                                       \
-                                                                                           \
+	IF_ENABLED(CONFIG_PM_DEVICE,							\
+				(PM_DEVICE_DT_INST_DEFINE(n, paj7620_pm_action);))              \
 	SENSOR_DEVICE_DT_INST_DEFINE(n,                                                    \
 				paj7620_init,                                              \
-				NULL,                                                      \
+				PM_DEVICE_DT_INST_GET(n),                                                      \
 				&paj7620_data_##n,                                         \
 				&paj7620_config_##n,                                       \
 				POST_KERNEL,                                               \
