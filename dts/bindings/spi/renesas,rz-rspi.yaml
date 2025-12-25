@@ -37,7 +37,7 @@ description: |
 
 compatible: "renesas,rz-rspi"
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml, memory-region.yaml]
 
 properties:
   reg:
