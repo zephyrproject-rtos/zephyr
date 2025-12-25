@@ -1136,6 +1136,8 @@ Devicetree:
 
 Devicetree Bindings:
   status: odd fixes
+  collaborators:
+    - JarmouniA
   files-regex:
     - ^dts/bindings/.*zephyr.*
   files:
