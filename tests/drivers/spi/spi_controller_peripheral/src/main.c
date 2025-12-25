@@ -22,6 +22,12 @@
 				| SPI_MODE_CPOL)
 #endif
 
+#if CONFIG_DCACHE_LINE_SIZE != 0
+#define __BUF_ALIGN __aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __BUF_ALIGN
+#endif
+
 #define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
 #define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
 
@@ -49,8 +55,8 @@ static struct k_poll_event async_evt_spim =
 				 ())),                                                             \
 		    ())
 
-static uint8_t spim_buffer[32] MEMORY_SECTION(DT_BUS(DT_NODELABEL(dut_spi_dt)));
-static uint8_t spis_buffer[32] MEMORY_SECTION(DT_NODELABEL(dut_spis));
+static __BUF_ALIGN uint8_t spim_buffer[32] MEMORY_SECTION(DT_BUS(DT_NODELABEL(dut_spi_dt)));
+static __BUF_ALIGN uint8_t spis_buffer[32] MEMORY_SECTION(DT_NODELABEL(dut_spis));
 
 struct test_data {
 	struct k_work_delayable test_work;
