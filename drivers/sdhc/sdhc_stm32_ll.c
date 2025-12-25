@@ -15,6 +15,23 @@ LOG_MODULE_REGISTER(sdhc_stm32_ll, CONFIG_SDHC_LOG_LEVEL);
 #define IS_SDIO_FUNCTION(FN)             (((FN) >= 0U) && ((FN) <= 7U))
 
 /**
+ * @brief Get the SDMMC peripheral clock frequency
+ *
+ * @return Clock frequency in Hz
+ */
+static uint32_t sdhc_stm32_ll_get_clock_freq(void)
+{
+	uint32_t clk_freq = HAL_RCCEx_GetPeriphCLKFreq(SDHC_STM32_RCC_PERIPHCLK);
+
+	/* Safety check: if clock frequency is 0, something is wrong with RCC config */
+	if (clk_freq == 0U) {
+		LOG_ERR("Failed to get SDMMC peripheral clock frequency");
+	}
+
+	return clk_freq;
+}
+
+/**
  * @brief Tx Transfer completed callbacks
  * @param hsd: Pointer to SD handle
  * @retval None
@@ -1189,54 +1206,6 @@ static uint32_t sdhc_stm32_ll_convert_block_size(sdhc_stm32_ll_handle_t *hsd, ui
 		return map[i].code;
 
 	return SDMMC_DATABLOCK_SIZE_512B; /* default */
-}
-
-/**
- * @brief Get the SDMMC peripheral clock frequency
- *
- * This function returns the clock frequency for the SDMMC peripheral
- * based on the STM32 series.
- *
- * @return Clock frequency in Hz
- */
-static uint32_t sdhc_stm32_ll_get_clock_freq(void)
-{
-	uint32_t clk_freq = 0U;
-
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
-
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC12);
-
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
-      defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-      defined(CONFIG_SOC_SERIES_STM32N6X)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC1);
-
-#elif defined(CONFIG_SOC_SERIES_STM32U3X)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_ICLK);
-
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDIO);
-
-#else
-	/* Unsupported series - try common SDMMC clock as fallback */
-#if defined(RCC_PERIPHCLK_SDMMC)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC);
-#elif defined(RCC_PERIPHCLK_SDMMC1)
-	clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SDMMC1);
-#else
-	#warning "SDMMC clock frequency not defined for this STM32 series"
-#endif
-#endif
-
-	/* if clock frequency is 0, something is wrong with RCC config */
-	if (clk_freq == 0U) {
-		LOG_ERR("Failed to get SDMMC peripheral clock frequency");
-	}
-
-	return clk_freq;
 }
 
 /**

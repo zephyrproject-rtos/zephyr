@@ -44,6 +44,33 @@ typedef uint32_t SDMMC_CardStateTypeDef;
 #define SDMMC_INIT_FREQ  400000U /* Initialization phase: max 400 kHz */
 
 /**
+ * @brief RCC peripheral clock constant for SDMMC/SDIO based on STM32 series
+ */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDMMC
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDMMC12
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
+      defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
+      defined(CONFIG_SOC_SERIES_STM32N6X)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDMMC1
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_ICLK
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDIO
+#else
+/* Unsupported series - try common SDMMC clock as fallback */
+#if defined(RCC_PERIPHCLK_SDMMC)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDMMC
+#elif defined(RCC_PERIPHCLK_SDMMC1)
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDMMC1
+#else
+#warning "SDMMC clock frequency not defined for this ST\M32 series"
+#define SDHC_STM32_RCC_PERIPHCLK RCC_PERIPHCLK_SDMMC /* Default fallback */
+#endif
+#endif
+
+/**
  * @brief SDMMC state definitions
  */
 #define SDMMC_STATE_RESET       0x00000000U /* SDIO not yet initialized or disabled */
