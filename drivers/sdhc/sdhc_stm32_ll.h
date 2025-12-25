@@ -209,7 +209,8 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks(sdhc_stm32_ll_handle_t *hsd, uint8
 					      uint32_t timeout);
 SDMMC_StatusTypeDef sdhc_stm32_ll_erase(sdhc_stm32_ll_handle_t *hsd, uint32_t block_start,
 					uint32_t block_end);
-uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t speed_mode);
+uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t switch_arg,
+				    uint8_t *status);
 uint32_t sdhc_stm32_ll_find_scr(sdhc_stm32_ll_handle_t *hsd, uint32_t *scr);
 void sdhc_stm32_ll_irq_handler(sdhc_stm32_ll_handle_t *hsd);
 SDMMC_StatusTypeDef sdhc_stm32_ll_config_freq(sdhc_stm32_ll_handle_t *hsd, uint32_t clock_speed);

@@ -343,15 +343,16 @@ uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t *pCardS
 }
 
 /**
- * @brief  Switches the SD card to High Speed mode.
- *         This API must be used after "Transfer State"
- * @note   This operation should be followed by the configuration
- *         of PLL to have SDMMCCK clock between 25 and 50 MHz
+ * @brief  Sends SD SWITCH command (CMD6) and retrieves switch status.
+ *         This function handles the data transfer for CMD6 and returns
+ *         the 64-byte switch status.
  * @param  hsd: SD handle
- * @param  SwitchSpeedMode: SD speed mode(SDMMC_SDR12_SWITCH_PATTERN, SDMMC_SDR25_SWITCH_PATTERN)
+ * @param  switch_arg: CMD6 argument containing mode and function settings
+ * @param  status: Pointer to buffer for 64-byte switch status response
  * @retval SD Card error state
  */
-uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t SwitchSpeedMode)
+uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t switch_arg,
+				    uint8_t *status)
 {
 	uint32_t errorstate = SDMMC_ERROR_NONE;
 	SDMMC_DataInitTypeDef sdmmc_datainitstructure;
@@ -360,77 +361,66 @@ uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t Switch
 	uint32_t loop = 0;
 	uint32_t Timeout = HAL_GetTick();
 
-	if (hsd->SdCard.CardSpeed == CARD_NORMAL_SPEED) {
-		/* Standard Speed Card <= 12.5Mhz  */
-		return SDMMC_ERROR_REQUEST_NOT_APPLICABLE;
+	/* Initialize the Data control register */
+	hsd->Instance->DCTRL = 0;
+	errorstate = SDMMC_CmdBlockLength(hsd->Instance, 64U);
+
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return errorstate;
 	}
 
-	if (hsd->SdCard.CardSpeed >= CARD_HIGH_SPEED) {
-		/* Initialize the Data control register */
-		hsd->Instance->DCTRL = 0;
-		errorstate = SDMMC_CmdBlockLength(hsd->Instance, 64U);
+	/* Configure the SD DPSM (Data Path State Machine) */
+	sdmmc_datainitstructure.DataTimeOut = SDMMC_DATATIMEOUT;
+	sdmmc_datainitstructure.DataLength = 64U;
+	sdmmc_datainitstructure.DataBlockSize = SDMMC_DATABLOCK_SIZE_64B;
+	sdmmc_datainitstructure.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
+	sdmmc_datainitstructure.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	sdmmc_datainitstructure.DPSM = SDMMC_DPSM_ENABLE;
 
-		if (errorstate != SDMMC_ERROR_NONE) {
-			return errorstate;
-		}
+	(void)SDMMC_ConfigData(hsd->Instance, &sdmmc_datainitstructure);
 
-		/* Configure the SD DPSM (Data Path State Machine) */
-		sdmmc_datainitstructure.DataTimeOut = SDMMC_DATATIMEOUT;
-		sdmmc_datainitstructure.DataLength = 64U;
-		sdmmc_datainitstructure.DataBlockSize = SDMMC_DATABLOCK_SIZE_64B;
-		sdmmc_datainitstructure.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
-		sdmmc_datainitstructure.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
-		sdmmc_datainitstructure.DPSM = SDMMC_DPSM_ENABLE;
+	errorstate = SDMMC_CmdSwitch(hsd->Instance, switch_arg);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return errorstate;
+	}
 
-		(void)SDMMC_ConfigData(hsd->Instance, &sdmmc_datainitstructure);
-
-		errorstate = SDMMC_CmdSwitch(hsd->Instance, SwitchSpeedMode);
-		if (errorstate != SDMMC_ERROR_NONE) {
-			return errorstate;
-		}
-
-		while (!__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL |
-								SDMMC_FLAG_DTIMEOUT |
-								SDMMC_FLAG_DBCKEND |
-								SDMMC_FLAG_DATAEND)) {
-			if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF)) {
-				for (count = 0U; count < 8U; count++) {
-					SD_hs[(8U * loop) + count] = SDMMC_ReadFIFO(hsd->Instance);
-				}
-				loop++;
+	while (!__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL |
+							SDMMC_FLAG_DTIMEOUT |
+							SDMMC_FLAG_DBCKEND |
+							SDMMC_FLAG_DATAEND)) {
+		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXFIFOHF)) {
+			for (count = 0U; count < 8U; count++) {
+				SD_hs[(8U * loop) + count] = SDMMC_ReadFIFO(hsd->Instance);
 			}
-			if ((HAL_GetTick() - Timeout) >= SDMMC_SWDATATIMEOUT) {
-				hsd->ErrorCode = SDMMC_ERROR_TIMEOUT;
-				hsd->State = SDMMC_STATE_READY;
-				return SDMMC_ERROR_TIMEOUT;
-			}
+			loop++;
 		}
-
-		if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT);
-
-			return errorstate;
-		} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL);
-
-			errorstate = SDMMC_ERROR_DATA_CRC_FAIL;
-
-			return errorstate;
-		} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR)) {
-			__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR);
-
-			errorstate = SDMMC_ERROR_RX_OVERRUN;
-
-			return errorstate;
+		if ((HAL_GetTick() - Timeout) >= SDMMC_SWDATATIMEOUT) {
+			hsd->ErrorCode = SDMMC_ERROR_TIMEOUT;
+			hsd->State = SDMMC_STATE_READY;
+			return SDMMC_ERROR_TIMEOUT;
 		}
+	}
 
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_DATA_FLAGS);
+	if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DTIMEOUT);
 
-		/* Test if the switch mode HS is ok */
-		if ((((uint8_t *)SD_hs)[13] & 2U) != 2U) {
-			errorstate = SDMMC_ERROR_UNSUPPORTED_FEATURE;
-		}
+		return SDMMC_ERROR_DATA_TIMEOUT;
+	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_DCRCFAIL);
+
+		return SDMMC_ERROR_DATA_CRC_FAIL;
+	} else if (__SDMMC_GET_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR)) {
+		__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_FLAG_RXOVERR);
+
+		return SDMMC_ERROR_RX_OVERRUN;
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(hsd->Instance, SDMMC_STATIC_DATA_FLAGS);
+
+	/* Copy switch status to output buffer */
+	if (status != NULL) {
+		memcpy(status, SD_hs, 64U);
 	}
 
 	return errorstate;
@@ -447,12 +437,6 @@ uint32_t sdhc_stm32_ll_find_scr(sdhc_stm32_ll_handle_t *hsd, uint32_t *pSCR)
 
 	/* Set Block Size To 8 Bytes */
 	errorstate = SDMMC_CmdBlockLength(hsd->Instance, 8U);
-	if (errorstate != SDMMC_ERROR_NONE) {
-		return errorstate;
-	}
-
-	/* Send CMD55 APP_CMD with argument as card's RCA */
-	errorstate = SDMMC_CmdAppCommand(hsd->Instance, (uint32_t)((hsd->SdCard.RelCardAdd)));
 	if (errorstate != SDMMC_ERROR_NONE) {
 		return errorstate;
 	}

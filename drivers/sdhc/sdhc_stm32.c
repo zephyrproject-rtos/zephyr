@@ -681,7 +681,7 @@ static bool sdhc_stm32_is_read_write_opcode(struct sdhc_command *cmd)
 {
 	return ((cmd->opcode == SD_READ_SINGLE_BLOCK) || (cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
 		(cmd->opcode == SD_WRITE_SINGLE_BLOCK) || (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) ||
-		(cmd->opcode == SDIO_RW_EXTENDED) || (cmd->opcode == SDIO_RW_DIRECT));
+		(cmd->opcode == SDIO_RW_EXTENDED));
 }
 
 static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config,
@@ -759,7 +759,8 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_SWITCH:
-		res = sdhc_stm32_ll_switch_speed(config->hsd, cmd->arg);
+		__ASSERT_NO_MSG(data != NULL);
+		sdmmc_res = sdhc_stm32_ll_switch_speed(config->hsd, cmd->arg, data->data);
 		break;
 
 	case SD_APP_CMD:
