@@ -11,3 +11,4 @@ supported:
   - uart
   - gpio
   - i2c
+  - spi
