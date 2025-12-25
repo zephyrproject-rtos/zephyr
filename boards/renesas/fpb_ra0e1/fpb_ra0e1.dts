@@ -18,6 +18,8 @@
 		zephyr,sram = &sram0;
 		zephyr,flash-controller = &flash;
 		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 	};
 
 	leds {
@@ -76,4 +78,15 @@
 			reg = <0x0 DT_SIZE_K(1)>;
 		};
 	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
 };
