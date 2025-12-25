@@ -20,6 +20,12 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 	help
 	  Toggle power to SD card to clear DAT3 pull when pulling line low
 
+config IMX_USDHC_DAT3_DETECT_RETRY
+	int "Number of retries for DAT3-based card detection"
+	default 1
+	help
+	  Number of retries for DAT3 card detection to reduce false negatives
+
 config IMX_USDHC_DMA_SUPPORT
 	bool "DMA support for USDHC"
 	default y
