@@ -219,7 +219,7 @@ static int spi_sf32lb_wait_not_busy(const struct device *dev)
 	const struct spi_sf32lb_config *cfg = dev->config;
 
 	if (!WAIT_FOR(!sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_BSY_Pos),
-		SPI_MAX_BUSY_WAIT_US), NULL) {
+		SPI_MAX_BUSY_WAIT_US, NULL)) {
 		return -ETIMEDOUT;
 	}
 
