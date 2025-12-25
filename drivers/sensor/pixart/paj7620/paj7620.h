@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+ * Copyright (c) 2025 Mohamed Haggouna <mohamed.haggouna@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +29,7 @@
  * with an I2C write. This value was obtained experimentally
  */
 #define PAJ7620_WAKEUP_TIME_US 200
+#define PAJ7620_RESUME_TIME_US 500
 
 enum paj7620_mem_bank {
 	PAJ7620_MEMBANK_0 = 0,
