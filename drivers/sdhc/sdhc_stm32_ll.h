@@ -50,7 +50,7 @@ typedef uint32_t SDMMC_CardStateTypeDef;
 #define SDMMC_STATE_READY       0x00000001U /* SDIO initialized and ready for use */
 #define SDMMC_STATE_BUSY        0x00000002U /* SDIO operation ongoing */
 #define SDMMC_STATE_ERROR       0x00000004U /* SDIO error state */
-#define SDMMC_STATE_PROGRAMMING 0x00000004U /* SDIO error state */
+#define SDMMC_STATE_PROGRAMMING 0x00000005U /* SDIO error state */
 
 /**
  * @brief SDMMC return status codes

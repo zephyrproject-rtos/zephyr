@@ -206,9 +206,12 @@ static SDMMC_StatusTypeDef sdhc_stm32_ll_handle_data_error(sdhc_stm32_ll_handle_
  */
 static inline void sdhc_stm32_ll_disable_data_interrupts(sdhc_stm32_ll_handle_t *hsd)
 {
-	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL |
-					  SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
-					  SDMMC_IT_RXOVERR | SDMMC_IT_TXFIFOHE |
+	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_DATAEND |
+					  SDMMC_IT_DCRCFAIL |
+					  SDMMC_IT_DTIMEOUT |
+					  SDMMC_IT_TXUNDERR |
+					  SDMMC_IT_RXOVERR |
+					  SDMMC_IT_TXFIFOHE |
 					  SDMMC_IT_RXFIFOHF);
 	__SDMMC_DISABLE_IT(hsd->Instance, SDMMC_IT_IDMABTC);
 }
@@ -528,7 +531,7 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks(sdhc_stm32_ll_handle_t *hsd,
 	uint32_t add = BlockAdd;
 	uint8_t *tempbuff = pData;
 
-	if (NULL == pData) {
+	if (pData == NULL) {
 		hsd->ErrorCode |= SDMMC_ERROR_INVALID_PARAMETER;
 		return SDMMC_ERROR;
 	}
@@ -659,7 +662,7 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks(sdhc_stm32_ll_handle_t *hsd, cons
 	uint32_t add = BlockAdd;
 	uint8_t *tempbuff = (uint8_t *)pData;
 
-	if (NULL == pData) {
+	if (pData == NULL) {
 		hsd->ErrorCode |= SDMMC_ERROR_INVALID_PARAMETER;
 		return SDMMC_ERROR;
 	}
@@ -790,7 +793,7 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks_dma(sdhc_stm32_ll_handle_t *hsd,
 	uint32_t errorstate;
 	uint32_t add = BlockAdd;
 
-	if (NULL == pData) {
+	if (pData == NULL) {
 		hsd->ErrorCode |= SDMMC_ERROR_INVALID_PARAMETER;
 		return SDMMC_ERROR;
 	}
@@ -851,8 +854,10 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_write_blocks_dma(sdhc_stm32_ll_handle_t *hsd,
 		}
 
 		/* Enable transfer interrupts */
-		__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-						  SDMMC_IT_TXUNDERR | SDMMC_IT_DATAEND));
+		__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL |
+						  SDMMC_IT_DTIMEOUT |
+						  SDMMC_IT_TXUNDERR |
+						  SDMMC_IT_DATAEND));
 
 		return SDMMC_OK;
 	} else {
@@ -880,7 +885,7 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks_dma(sdhc_stm32_ll_handle_t *hsd, u
 	uint32_t errorstate;
 	uint32_t add = BlockAdd;
 
-	if (NULL == pData) {
+	if (pData == NULL) {
 		hsd->ErrorCode |= SDMMC_ERROR_INVALID_PARAMETER;
 		return SDMMC_ERROR;
 	}
@@ -940,8 +945,10 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_read_blocks_dma(sdhc_stm32_ll_handle_t *hsd, u
 		}
 
 		/* Enable transfer interrupts */
-		__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-						  SDMMC_IT_RXOVERR | SDMMC_IT_DATAEND));
+		__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL |
+						  SDMMC_IT_DTIMEOUT |
+						  SDMMC_IT_RXOVERR  |
+						  SDMMC_IT_DATAEND));
 
 		return SDMMC_OK;
 	} else {
@@ -1156,62 +1163,32 @@ void sdhc_stm32_ll_irq_handler(sdhc_stm32_ll_handle_t *hsd)
  */
 static uint32_t sdhc_stm32_ll_convert_block_size(sdhc_stm32_ll_handle_t *hsd, uint32_t block_size)
 {
-	uint32_t datablock_size = SDMMC_DATABLOCK_SIZE_1B;
+	static const struct {
+	uint32_t size;
+	uint32_t code;
+	} map[] = {
+		{ 1,      SDMMC_DATABLOCK_SIZE_1B },
+		{ 2,      SDMMC_DATABLOCK_SIZE_2B },
+		{ 4,      SDMMC_DATABLOCK_SIZE_4B },
+		{ 8,      SDMMC_DATABLOCK_SIZE_8B },
+		{ 16,     SDMMC_DATABLOCK_SIZE_16B },
+		{ 32,     SDMMC_DATABLOCK_SIZE_32B },
+		{ 64,     SDMMC_DATABLOCK_SIZE_64B },
+		{ 128,    SDMMC_DATABLOCK_SIZE_128B },
+		{ 256,    SDMMC_DATABLOCK_SIZE_256B },
+		{ 512,    SDMMC_DATABLOCK_SIZE_512B },
+		{ 1024,   SDMMC_DATABLOCK_SIZE_1024B },
+		{ 2048,   SDMMC_DATABLOCK_SIZE_2048B },
+		{ 4096,   SDMMC_DATABLOCK_SIZE_4096B },
+		{ 8192,   SDMMC_DATABLOCK_SIZE_8192B },
+		{ 16384,  SDMMC_DATABLOCK_SIZE_16384B },
+	};
 
-	/* Find the matching SDMMC_DATABLOCK_SIZE_* constant */
-	switch (block_size) {
-	case 1:
-		datablock_size = SDMMC_DATABLOCK_SIZE_1B;
-		break;
-	case 2:
-		datablock_size = SDMMC_DATABLOCK_SIZE_2B;
-		break;
-	case 4:
-		datablock_size = SDMMC_DATABLOCK_SIZE_4B;
-		break;
-	case 8:
-		datablock_size = SDMMC_DATABLOCK_SIZE_8B;
-		break;
-	case 16:
-		datablock_size = SDMMC_DATABLOCK_SIZE_16B;
-		break;
-	case 32:
-		datablock_size = SDMMC_DATABLOCK_SIZE_32B;
-		break;
-	case 64:
-		datablock_size = SDMMC_DATABLOCK_SIZE_64B;
-		break;
-	case 128:
-		datablock_size = SDMMC_DATABLOCK_SIZE_128B;
-		break;
-	case 256:
-		datablock_size = SDMMC_DATABLOCK_SIZE_256B;
-		break;
-	case 512:
-		datablock_size = SDMMC_DATABLOCK_SIZE_512B;
-		break;
-	case 1024:
-		datablock_size = SDMMC_DATABLOCK_SIZE_1024B;
-		break;
-	case 2048:
-		datablock_size = SDMMC_DATABLOCK_SIZE_2048B;
-		break;
-	case 4096:
-		datablock_size = SDMMC_DATABLOCK_SIZE_4096B;
-		break;
-	case 8192:
-		datablock_size = SDMMC_DATABLOCK_SIZE_8192B;
-		break;
-	case 16384:
-		datablock_size = SDMMC_DATABLOCK_SIZE_16384B;
-		break;
-	default:
-		/* Default to 512 bytes if invalid */
-		datablock_size = SDMMC_DATABLOCK_SIZE_512B;
-		break;
-	}
+	for (size_t i = 0; i < sizeof(map)/sizeof(map[0]); i++)
+	if (map[i].size == block_size)
+		return map[i].code;
 
-	return datablock_size;
+	return SDMMC_DATABLOCK_SIZE_512B; /* default */
 }
 
 /**
@@ -2011,7 +1988,9 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_read_extended_dma(sdhc_stm32_ll_handle_t 
 	}
 
 	/* Enable interrupts for DMA transfer */
-	__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT | SDMMC_IT_RXOVERR |
+	__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL |
+					  SDMMC_IT_DTIMEOUT |
+					  SDMMC_IT_RXOVERR  |
 					  SDMMC_IT_DATAEND));
 
 	return SDMMC_OK;
@@ -2115,8 +2094,10 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_sdio_write_extended_dma(sdhc_stm32_ll_handle_t
 	}
 
 	/* Enable interrupts for DMA transfer */
-	__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-					  SDMMC_IT_TXUNDERR | SDMMC_IT_DATAEND));
+	__SDMMC_ENABLE_IT(hsd->Instance, (SDMMC_IT_DCRCFAIL |
+					  SDMMC_IT_DTIMEOUT |
+					  SDMMC_IT_TXUNDERR |
+					  SDMMC_IT_DATAEND));
 
 	return SDMMC_OK;
 }

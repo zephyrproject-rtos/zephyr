@@ -472,22 +472,22 @@ static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *d
 	if (!WAIT_FOR(sdhc_stm32_ll_get_card_state(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
 		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
-		return SDMMC_ERROR;
+		return -EIO;
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 
 		ret = sdhc_stm32_ll_write_blocks_dma(config->hsd, data->data, data->block_addr,
-					    data->blocks);
+						     data->blocks);
 	} else {
 		ret = sdhc_stm32_ll_write_blocks(config->hsd, data->data, data->block_addr, data->blocks,
-					data->timeout_ms);
+						 data->timeout_ms);
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		if (k_sem_take(&dev_data->device_sync_sem, SDHC_CMD_TIMEOUT) != 0) {
-			LOG_ERR("Failed to acquire Semaphore\n");
+			LOG_ERR("Failed to acquire Semaphore");
 			return -ETIMEDOUT;
 		}
 	}
@@ -522,12 +522,12 @@ static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *da
 		ret = sdhc_stm32_ll_read_blocks_dma(config->hsd, data->data, data->block_addr, data->blocks);
 	} else {
 		ret = sdhc_stm32_ll_read_blocks(config->hsd, data->data, data->block_addr, data->blocks,
-				       data->timeout_ms);
+						data->timeout_ms);
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
 		if (k_sem_take(&dev_data->device_sync_sem, SDHC_CMD_TIMEOUT) != 0) {
-			LOG_ERR("Failed to acquire Semaphore\n");
+			LOG_ERR("Failed to acquire Semaphore");
 			return -ETIMEDOUT;
 		}
 		sys_cache_data_invd_range(data->data, data->blocks * data->block_size);
@@ -550,7 +550,7 @@ static int sdhc_stm32_erase_block(const struct device *dev, struct sdhc_data *da
 	if (!WAIT_FOR(sdhc_stm32_ll_get_card_state(config->hsd) == SDMMC_CARD_TRANSFER, SD_TIMEOUT,
 		      k_usleep(1))) {
 		LOG_ERR("SD Card is busy now");
-		return SDMMC_ERROR;
+		return -EIO;
 	}
 
 	return res == SDMMC_OK ? 0 : -EIO;
@@ -640,7 +640,7 @@ static uint32_t sdhc_stm32_get_sd_status(sdhc_stm32_ll_handle_t *hsd, uint32_t c
 	/* Send Status command */
 	res = SDMMC_CmdSendStatus(hsd->Instance, (uint32_t)(card_relative_address));
 	if (res != SDMMC_ERROR_NONE) {
-		LOG_ERR("Get Card status failed\n");
+		LOG_ERR("Get Card status failed");
 		return -EIO;
 	}
 
@@ -834,7 +834,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 
 	if ((sdmmc_res != 0U) || (res != 0)) {
 		res = -EIO;
-		LOG_ERR("Command Failed, opcode:%d", cmd->opcode);
+		LOG_DBG("Command Failed, opcode:%d", cmd->opcode);
 		sdhc_stm32_log_err_type(config->hsd);
 	}
 
@@ -1030,15 +1030,6 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return res == SDMMC_OK ? 0 : -EIO;
 }
 
-static DEVICE_API(sdhc, sdhc_stm32_api) = {
-	.request = sdhc_stm32_request,
-	.set_io = sdhc_stm32_set_io,
-	.get_host_props = sdhc_stm32_get_host_props,
-	.get_card_present = sdhc_stm32_get_card_present,
-	.card_busy = sdhc_stm32_card_busy,
-	.reset = sdhc_stm32_reset,
-};
-
 static void sdhc_stm32_clear_icr_flags(const struct sdhc_stm32_config *config)
 {
 	uint32_t icr_clear_flag = 0;
@@ -1145,6 +1136,15 @@ static int sdhc_stm32_init(const struct device *dev)
 	return ret;
 }
 
+static DEVICE_API(sdhc, sdhc_stm32_api) = {
+	.request = sdhc_stm32_request,
+	.set_io = sdhc_stm32_set_io,
+	.get_host_props = sdhc_stm32_get_host_props,
+	.get_card_present = sdhc_stm32_get_card_present,
+	.card_busy = sdhc_stm32_card_busy,
+	.reset = sdhc_stm32_reset,
+};
+
 #ifdef CONFIG_PM_DEVICE
 static int sdhc_stm32_suspend(const struct device *dev)
 {
@@ -1196,7 +1196,7 @@ static int sdhc_stm32_pm_action(const struct device *dev, enum pm_device_action 
                                                                                                    \
 	STM32_SDHC_IRQ_HANDLER(index)                                                              \
                                                                                                    \
-	static sdhc_stm32_ll_handle_t hsd_##index;                                                    \
+	static sdhc_stm32_ll_handle_t hsd_##index;                                                 \
                                                                                                    \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
                                                                                                    \
