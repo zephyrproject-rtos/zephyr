@@ -13,7 +13,6 @@ properties:
     required: true
 
   interrupts:
-    type: array
     required: true
 
   has-external-channels:
