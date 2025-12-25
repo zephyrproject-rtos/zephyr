@@ -18,3 +18,16 @@ properties:
     type: int
     required: true
     description: maximum load value supported
+
+child-binding:
+  description: |
+    PIT individual timer channels
+  compatible: "nxp,pit-channel"
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+        - interrupts
+  properties:
+    reg:
+      required: true
