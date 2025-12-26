@@ -146,3 +146,13 @@ tests:
     platform_allow:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
+  drivers.pwm.s32k5xxcvb_s32k566_ftm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/s32k5xxcvb_s32k566_ftm.overlay"
+    platform_allow:
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
+    depends_on: pwm
