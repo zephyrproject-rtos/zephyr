@@ -140,6 +140,24 @@
 				status = "disabled";
 			};
 		};
+
+		swt0: watchdog@4105c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x4105c000 0x4000>;
+			interrupts = <GIC_SPI 265 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SWT0_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt1: watchdog@4113c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x4113c000 0x4000>;
+			interrupts = <GIC_SPI 266 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SWT1_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
 	};
 };
 
@@ -415,4 +433,12 @@
 &canxl {
 	interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-names = "rx_tx_mru_error";
+};
+
+&lpe_swt {
+	interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&swt_startup {
+	interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
