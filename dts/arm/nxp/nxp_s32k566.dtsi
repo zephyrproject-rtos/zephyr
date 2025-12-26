@@ -780,6 +780,22 @@
 			status = "disabled";
 		};
 
+		lpe_swt: watchdog@4207c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x4207c000 0x4000>;
+			clocks = <&clock NXP_S32_SAFE_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt_startup: watchdog@404a8000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x404a8000 0x4000>;
+			clocks = <&clock NXP_S32_SWT_STARTUP_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
 		sar_adc0: adc@40698000 {
 			compatible = "nxp,s32-adc-sar";
 			reg = <0x40698000 0x4000>;

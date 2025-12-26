@@ -216,6 +216,43 @@
 				status = "disabled";
 			};
 		};
+
+		/* SWT_0 -> SWT_3 for Cortex-M7_0 -> Cortex-M7_3 */
+		swt0: watchdog@40b18000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b18000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT0_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt1: watchdog@40b1c000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b1c000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT1_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt2: watchdog@40b20000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b20000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT2_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
+
+		swt3: watchdog@40b24000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x40b24000 0x4000>;
+			interrupts = <28 0>;
+			clocks = <&clock NXP_S32_SWT3_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
 	};
 };
 
@@ -465,4 +502,12 @@
 &canxl {
 	interrupts = <97 0>;
 	interrupt-names = "rx_tx_mru_error";
+};
+
+&lpe_swt {
+	interrupts = <210 0>;
+};
+
+&swt_startup {
+	interrupts = <27 0>;
 };
