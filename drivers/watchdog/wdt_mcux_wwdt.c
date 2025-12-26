@@ -128,13 +128,23 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		LOG_DBG("Enabling SoC reset");
 	}
 
-	if (cfg->callback && (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0)) {
-		data->callback = cfg->callback;
-		data->wwdt_config.warningValue = CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
-	} else if (cfg->callback) {
-		return -ENOTSUP;
+	/*
+	 * The user callback is only invoked from the WWDT warning interrupt.
+	 * If CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG is 0, the warning interrupt
+	 * is disabled (no warningValue programmed), so a callback would never fire.
+	 * Reject this configuration to avoid a silent no-op.
+	 */
+	if (cfg->callback) {
+		if (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0) {
+			data->callback = cfg->callback;
+			data->wwdt_config.warningValue =
+				CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
+		} else {
+			LOG_ERR("Warning interrupt callback requires "
+				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
+			return -ENOTSUP;
+		}
 	}
-
 
 	data->timeout_valid = true;
 	LOG_DBG("Installed timeout (timeoutValue = %d)",
