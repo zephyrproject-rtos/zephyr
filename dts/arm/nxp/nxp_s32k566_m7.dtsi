@@ -457,3 +457,7 @@
 &lpi2c3 {
 	interrupts = <146 0>;
 };
+
+&lpe_ftm {
+	interrupts = <223 0>;
+};
