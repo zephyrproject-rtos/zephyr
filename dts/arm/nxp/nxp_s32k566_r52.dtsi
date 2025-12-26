@@ -48,6 +48,98 @@
 			#interrupt-cells = <4>;
 			status = "okay";
 		};
+
+		stm0: stm@410a4000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x410a4000 0x4000>;
+			interrupts = <GIC_SPI 283 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_STM0_IPG_CLK>;
+			status = "disabled";
+		};
+
+		stm1: stm@41154000 {
+			compatible = "nxp,s32-sys-timer";
+			reg = <0x41154000 0x4000>;
+			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_STM1_IPG_CLK>;
+			status = "disabled";
+		};
+
+		pit0: pit@410a0000 {
+			compatible = "nxp,pit";
+			reg = <0x410a0000 0x4000>;
+			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				interrupts = <GIC_SPI 271 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			pit0_channel2: pit0_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				interrupts = <GIC_SPI 273 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			pit0_channel3: pit0_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				interrupts = <GIC_SPI 274 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		pit1: pit@41150000 {
+			compatible = "nxp,pit";
+			reg = <0x41150000 0x4000>;
+			clocks = <&clock NXP_S32_PLTDIV2_CLK>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit1_channel0: pit1_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				interrupts = <GIC_SPI 275 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			pit1_channel1: pit1_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				interrupts = <GIC_SPI 276 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			pit1_channel2: pit1_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				interrupts = <GIC_SPI 277 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			pit1_channel3: pit1_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				interrupts = <GIC_SPI 278 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
