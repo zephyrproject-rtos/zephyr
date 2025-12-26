@@ -166,3 +166,75 @@
 &lpuart20 {
 	interrupts = <175 0>;
 };
+
+&lpe_flexcan {
+	interrupts = <228 0>, <229 0>;
+};
+
+&flexcan0 {
+	interrupts = <106 0>, <107 0>;
+};
+
+&flexcan1 {
+	interrupts = <108 0>, <109 0>;
+};
+
+&flexcan2 {
+	interrupts = <110 0>, <111 0>;
+};
+
+&flexcan3 {
+	interrupts = <112 0>, <113 0>;
+};
+
+&flexcan4 {
+	interrupts = <114 0>, <115 0>;
+};
+
+&flexcan5 {
+	interrupts = <116 0>, <117 0>;
+};
+
+&flexcan6 {
+	interrupts = <118 0>, <119 0>;
+};
+
+&flexcan7 {
+	interrupts = <120 0>, <121 0>;
+};
+
+&flexcan8 {
+	interrupts = <122 0>, <123 0>;
+};
+
+&flexcan9 {
+	interrupts = <124 0>, <125 0>;
+};
+
+&flexcan10 {
+	interrupts = <126 0>, <127 0>;
+};
+
+&flexcan11 {
+	interrupts = <128 0>, <129 0>;
+};
+
+&flexcan12 {
+	interrupts = <130 0>, <131 0>;
+};
+
+&flexcan13 {
+	interrupts = <132 0>, <133 0>;
+};
+
+&flexcan14 {
+	interrupts = <134 0>, <135 0>;
+};
+
+&flexcan15 {
+	interrupts = <136 0>, <137 0>;
+};
+
+&flexcan16 {
+	interrupts = <138 0>, <139 0>;
+};
