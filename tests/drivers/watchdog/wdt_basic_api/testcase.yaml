@@ -18,6 +18,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/r52
       - mps2/an383
       - mps2/an385
       - mps2/an386
@@ -147,6 +148,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/r52
       - mr_canhubk3
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
