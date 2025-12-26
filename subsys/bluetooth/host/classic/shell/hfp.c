@@ -307,6 +307,7 @@ void hf_subscriber_number(struct bt_hfp_hf *hf, const char *number, uint8_t type
 void hf_query_call(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call)
 {
 	if (call == NULL) {
+		bt_shell_print("CLCC finished");
 		return;
 	}
 
