@@ -46,7 +46,7 @@ void usbh_class_init_all(struct usbh_context *const uhs_ctx);
  *
  * @param[in] udev USB device to probe.
  */
-void usbh_class_probe_device(struct usb_device *const udev);
+int usbh_class_probe_device(struct usb_device *const udev);
 
 /**
  * @brief Call the device removal handler for every class configured with it

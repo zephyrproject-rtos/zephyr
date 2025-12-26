@@ -491,8 +491,6 @@ void usbh_connect_device(struct usbh_context *const ctx,
 		usbh_device_free(udev);
 		return;
 	}
-
-	usbh_class_probe_device(udev);
 }
 
 void usbh_disconnect_device(struct usbh_context *ctx, struct usb_device *udev)
@@ -586,9 +584,19 @@ int usbh_device_init(struct usb_device *const udev)
 		goto error;
 	}
 
-	err = usbh_device_set_configuration(udev, 1);
-	if (err) {
-		LOG_ERR("Failed to configure new device with address %u", udev->addr);
+	for (uint32_t i = 0; i < udev->dev_desc.bNumConfigurations; i++) {
+		err = usbh_device_set_configuration(udev, i + 1);
+		if (err) {
+			LOG_ERR("Failed to configure new device with address %u", udev->addr);
+		} else {
+			err = usbh_class_probe_device(udev);
+			if (!err) {
+				break;
+			}
+			if (err == -ENOTSUP) {
+				LOG_WRN("No supported class found for configuration %u", i + 1);
+			}
+		}
 	}
 
 error:
