@@ -205,6 +205,12 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	}
 #endif /* CONFIG_ADC_NXP_SAR_ADC */
 
+#if defined(CONFIG_NXP_TEMPSENSE)
+	if ((uint32_t)sub_system == MCUX_TEMPSENSE_CLK) {
+		CLOCK_EnableClock(kCLOCK_TempSensor);
+	}
+#endif /* CONFIG_NXP_TEMPSENSE */
+
 	return 0;
 }
 
