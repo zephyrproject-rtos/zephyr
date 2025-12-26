@@ -789,6 +789,15 @@
 			status = "disabled";
 		};
 
+		lpe_ftm: ftm@42158000 {
+			compatible = "nxp,ftm-pwm";
+			reg = <0x42158000 0x4000>;
+			clocks = <&clock NXP_S32_LPE_FTM_IPG_CLK>;
+			prescaler = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		sar_adc0: adc@40698000 {
 			compatible = "nxp,s32-adc-sar";
 			reg = <0x40698000 0x4000>;
