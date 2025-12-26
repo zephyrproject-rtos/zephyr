@@ -13,4 +13,16 @@
 			input-enable;
 		};
 	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PF1_CAN0_TX>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PF5_CAN0_RX>;
+			input-enable;
+		};
+	};
 };
