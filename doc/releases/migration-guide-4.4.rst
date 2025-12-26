@@ -93,6 +93,139 @@ Controller Area Network (CAN)
   * :kconfig:option:`CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS` for :dtcompatible:`st,stm32-fdcan`
   * :kconfig:option:`CONFIG_CAN_XMC4XXX_MAX_FILTERS` for :dtcompatible:`infineon,xmc4xxx-can-node`
 
+Counter
+=======
+
+* The NXP LPTMR driver (:dtcompatible:`nxp,lptmr`) has been updated to fix incorrect
+  prescaler and glitch filter configuration:
+
+  * The ``prescale-glitch-filter`` property valid range changed from ``[0-16]`` to ``[0-15]``.
+    The value ``16`` was invalid for pulse counter mode and has been removed. Device trees using
+    value ``16`` must be updated to use values in the range ``[0-15]``.
+
+  * A new boolean property ``prescale-glitch-filter-bypass`` has been introduced to explicitly
+    control prescaler/glitch filter bypass. Previously, setting ``prescale-glitch-filter = <0>``
+    implicitly enabled bypass mode, which was ambiguous.
+
+    In v4.4 and later, bypass is controlled only by the presence of
+    ``prescale-glitch-filter-bypass``. If the property is absent, the prescaler/glitch filter is
+    active and ``prescale-glitch-filter`` is applied.
+
+  * The prescaler/glitch filter behavior has been clarified:
+
+    * In Time Counter mode: prescaler divides the clock by ``2^(prescale-glitch-filter + 1)``
+    * In Pulse Counter mode: glitch filter recognizes change after ``2^prescale-glitch-filter``
+      rising edges (value 0 is not supported for glitch filtering)
+
+  * All in-tree device tree nodes have been updated to use ``prescale-glitch-filter-bypass;``
+    instead of ``prescale-glitch-filter = <0>;``. Out-of-tree boards should be updated
+    accordingly.
+
+  * If both ``prescale-glitch-filter-bypass`` and ``prescale-glitch-filter`` are set,
+    bypass mode takes precedence and the ``prescale-glitch-filter`` value is ignored.
+
+  Example migration:
+
+  .. code-block:: devicetree
+
+     /* Old (deprecated) */
+     lptmr0: counter@40040000 {
+         compatible = "nxp,lptmr";
+         /* Implicitly bypassed */
+         prescale-glitch-filter = <0>;
+     };
+
+     /* New (correct) */
+     lptmr0: counter@40040000 {
+         compatible = "nxp,lptmr";
+         /* Explicitly bypassed */
+         prescale-glitch-filter-bypass;
+     };
+
+  .. rubric:: Examples of using ``prescale-glitch-filter``
+
+  .. note::
+
+     ``prescale-glitch-filter-bypass`` is a boolean. If present, bypass is enabled. If absent,
+     bypass is disabled and ``prescale-glitch-filter`` is applied.
+
+     In Pulse Counter mode, ``prescale-glitch-filter = <0>`` is not a supported glitch filter
+     configuration. To request no filtering, use ``prescale-glitch-filter-bypass;``.
+
+  * Time Counter mode: divide the counter clock
+
+    In Time Counter mode the prescaler divides by ``2^(N + 1)``.
+
+    .. code-block:: devicetree
+
+       /* Divide by 2^(0+1) = 2 */
+       lptmr0: counter@40040000 {
+           compatible = "nxp,lptmr";
+           /* Time Counter mode */
+           timer-mode-sel = <0>;
+           clk-source = <1>;
+           clock-frequency = <32768>;
+           /* /2 */
+           prescale-glitch-filter = <0>;
+           resolution = <16>;
+       };
+
+       /* Divide by 2^(3+1) = 16 */
+       lptmr1: counter@40041000 {
+           compatible = "nxp,lptmr";
+           /* Time Counter mode */
+           timer-mode-sel = <0>;
+           clk-source = <1>;
+           clock-frequency = <32768>;
+           /* /16 */
+           prescale-glitch-filter = <3>;
+           resolution = <16>;
+       };
+
+  * Time Counter mode: explicit bypass (no division)
+
+    .. code-block:: devicetree
+
+       lptmr0: counter@40040000 {
+           compatible = "nxp,lptmr";
+           /* Time Counter mode */
+           timer-mode-sel = <0>;
+           clk-source = <1>;
+           clock-frequency = <32768>;
+           /* no prescaler */
+           prescale-glitch-filter-bypass;
+           resolution = <16>;
+       };
+
+  * Pulse Counter mode: glitch filtering
+
+    In Pulse Counter mode the glitch filter recognizes a change after ``2^N`` rising edges.
+    Value ``0`` is not supported for glitch filtering; use bypass if you want no filtering.
+
+    .. code-block:: devicetree
+
+       /* Recognize change after 2^2 = 4 rising edges */
+       lptmr0: counter@40040000 {
+           compatible = "nxp,lptmr";
+           /* Pulse Counter mode */
+           timer-mode-sel = <1>;
+           clk-source = <1>;
+           input-pin = <0>;
+           prescale-glitch-filter = <2>;
+           resolution = <16>;
+       };
+
+       /* No filtering (explicit bypass) */
+       lptmr1: counter@40041000 {
+           compatible = "nxp,lptmr";
+           /* Pulse Counter mode */
+           timer-mode-sel = <1>;
+           clk-source = <1>;
+           input-pin = <0>;
+           prescale-glitch-filter-bypass;
+           resolution = <16>;
+       };
+
 Ethernet
 ========
 
