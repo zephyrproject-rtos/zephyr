@@ -22,5 +22,10 @@ if(CONFIG_SECOND_CORE_MCUX_REMOTE_DIR)
   zephyr_include_directories(${CONFIG_SECOND_CORE_MCUX_REMOTE_DIR})
 endif()
 
+if(CONFIG_NXP_IMXRT_BOOT_HEADER)
+  if(CONFIG_BOOT_FLEXSPI_NOR)
+    zephyr_library_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
+  endif()
+endif()
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
