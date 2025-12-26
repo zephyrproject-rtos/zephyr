@@ -546,5 +546,203 @@
 			reg = <0x406f4000 0x4000>;
 			status = "disabled";
 		};
+
+		lpe_flexcan: can@42174000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x42174000 0x4000>;
+			clocks = <&clock NXP_S32_LPE_FLEXCAN_PE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan0: can@40290000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x40290000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN0_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan1: can@40294000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x40294000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN1_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan2: can@40298000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x40298000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN2_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan3: can@4029c000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x4029c000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN3_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan4: can@402a0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x402a0000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN4_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan5: can@402a4000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x402a4000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN5_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan6: can@402a8000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x402a8000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN6_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan7: can@402ac000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x402ac000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN7_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan8: can@406b0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x406b0000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN8_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan9: can@406b4000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x406b4000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN9_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan10: can@406ac000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x406ac000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN10_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan11: can@4089c000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x4089c000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN11_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan12: can@408a0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x408a0000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN12_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan13: can@408a4000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x408a4000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN13_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan14: can@408a8000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x408a8000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN14_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan15: can@408ac000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x408ac000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN15_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
+
+		flexcan16: can@408b0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x408b0000 0x4000>;
+			clocks = <&clock NXP_S32_FLEXCAN16_PE_NOGATE_CLK>;
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			interrupt-names = "ored", "ored_0_96_mb";
+			status = "disabled";
+		};
 	};
 };
