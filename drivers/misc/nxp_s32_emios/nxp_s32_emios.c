@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,14 +49,37 @@ static int nxp_s32_emios_init(const struct device *dev)
 #define NXP_S32_EMIOS_GET_INSTANCE(n)								\
 	LISTIFY(__DEBRACKET eMIOS_INSTANCE_COUNT, NXP_S32_EMIOS_INSTANCE_CHECK, (|), n)
 
+#define NXP_S32_EMIOS_GTBE_SELECTED_CHECK(idx, addr)						\
+	((addr == IP_EMIOS_##idx##_BASE) ? EMIOS_IP_EMIOS##idx##_SELECTED : 0)
+
+#define NXP_S32_EMIOS_GTBE_SELECTED(addr)							\
+	LISTIFY(__DEBRACKET eMIOS_INSTANCE_COUNT, NXP_S32_EMIOS_GTBE_SELECTED_CHECK, (|), addr)
+
+#if defined(CONFIG_SOC_SERIES_S32K5)
+#define NXP_S32_EMIOS_GTBE_CHECK(n)								\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, global_timebase_provider),			\
+		"global-timebase-provider is required");
+#define NXP_S32_EMIOS_GTBE_CFG(n)								\
+	.selectGlobalTimeBaseEnable = NXP_S32_EMIOS_GTBE_SELECTED(				\
+		DT_REG_ADDR(DT_INST_PHANDLE(n, global_timebase_provider))),
+#else
+#define NXP_S32_EMIOS_GTBE_CHECK(n)								\
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(n, global_timebase_provider),			\
+		"global-timebase-provider is defined in DTS, but not supported by this SoC");
+#define NXP_S32_EMIOS_GTBE_CFG(n)
+#endif
+
+
 #define NXP_S32_EMIOS_GENERATE_GLOBAL_CONFIG(n)							\
 	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, clock_divider),					\
 			      MIN_GLOB_PRESCALER, MAX_GLOB_PRESCALER),				\
 		     "Divider for eMIOS global prescaler is out of range");			\
+	NXP_S32_EMIOS_GTBE_CHECK(n)								\
 	const Emios_Ip_GlobalConfigType nxp_s32_emios_##n##_global_config = {			\
 		.allowDebugMode = true,								\
 		.clkDivVal = DT_INST_PROP(n, clock_divider) - 1U,				\
-		.enableGlobalTimeBase = true							\
+		.enableGlobalTimeBase = true,							\
+		NXP_S32_EMIOS_GTBE_CFG(n)							\
 	};
 
 #define NXP_S32_EMIOS_MASTER_BUS_CONFIG(node_id)						\
