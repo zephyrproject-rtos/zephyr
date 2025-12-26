@@ -18,26 +18,40 @@ struct crc_nxp_lpc_config {
 };
 
 struct crc_nxp_lpc_data {
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem lock;
+#endif
 };
 
 static inline void crc_nxp_lpc_lock(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct crc_nxp_lpc_data *data = dev->data;
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+#else
+	ARG_UNUSED(dev);
+
+#endif
 }
 
 static inline void crc_nxp_lpc_unlock(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct crc_nxp_lpc_data *data = dev->data;
 
 	k_sem_give(&data->lock);
+
+#else
+	ARG_UNUSED(dev);
+
+#endif
 }
 
-static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *cfg, bool *use32)
+static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *cfg)
 {
-	if ((ctx == NULL) || (cfg == NULL) || (use32 == NULL)) {
+	if ((ctx == NULL) || (cfg == NULL)) {
 		return -EINVAL;
 	}
 
@@ -54,7 +68,6 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		}
 		cfg->polynomial = kCRC_Polynomial_CRC_16;
 		cfg->seed &= 0xFFFFU;
-		*use32 = false;
 		break;
 	case CRC16_CCITT:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
@@ -62,7 +75,6 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		}
 		cfg->polynomial = kCRC_Polynomial_CRC_CCITT;
 		cfg->seed &= 0xFFFFU;
-		*use32 = false;
 		break;
 	case CRC32_IEEE:
 		if (ctx->polynomial != CRC32_IEEE_POLY) {
@@ -71,7 +83,6 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		cfg->polynomial = kCRC_Polynomial_CRC_32;
 		/* IEEE uses final XOR */
 		cfg->complementOut = true;
-		*use32 = true;
 		break;
 	default:
 		return -ENOTSUP;
@@ -84,7 +95,6 @@ static int crc_nxp_lpc_begin(const struct device *dev, struct crc_ctx *ctx)
 {
 	const struct crc_nxp_lpc_config *config = dev->config;
 	crc_config_t cfg;
-	bool use32 = false;
 	int ret;
 
 	if ((ctx == NULL) || (ctx->state != CRC_STATE_IDLE)) {
@@ -93,7 +103,7 @@ static int crc_nxp_lpc_begin(const struct device *dev, struct crc_ctx *ctx)
 
 	crc_nxp_lpc_lock(dev);
 
-	ret = crc_nxp_lpc_prepare_config(ctx, &cfg, &use32);
+	ret = crc_nxp_lpc_prepare_config(ctx, &cfg);
 	if (ret != 0) {
 		crc_nxp_lpc_unlock(dev);
 		return ret;
@@ -120,13 +130,14 @@ static int crc_nxp_lpc_update(const struct device *dev, struct crc_ctx *ctx, con
 		return -EINVAL;
 	}
 
-	/* Allow zero-length updates */
+	/* Validate buffer pointer when bufsize is non-zero */
 	if ((bufsize > 0U) && (buffer == NULL)) {
 		ctx->state = CRC_STATE_IDLE;
 		crc_nxp_lpc_unlock(dev);
 		return -EINVAL;
 	}
 
+	/* Process data only if bufsize > 0 (allows zero-length updates) */
 	if (bufsize > 0U) {
 		/*
 		 * Hardware processes data in 8-bit chunks internally.
@@ -176,19 +187,29 @@ static DEVICE_API(crc, crc_nxp_lpc_driver_api) = {
 
 static int crc_nxp_lpc_init(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct crc_nxp_lpc_data *data = dev->data;
+	int ret;
 
-	k_sem_init(&data->lock, 1, 1);
+	ret = k_sem_init(&data->lock, 1, 1);
+	if (ret != 0) {
+		return ret;
+	}
+
+#else
+	ARG_UNUSED(dev);
+
+#endif
 	return 0;
 }
 
-#define CRC_NXP_LPC_INIT(inst)                                                           \
-	static struct crc_nxp_lpc_data crc_nxp_lpc_data_##inst;                          \
-	static const struct crc_nxp_lpc_config crc_nxp_lpc_config_##inst = {             \
-		.base = (CRC_Type *)DT_INST_REG_ADDR(inst),                              \
-	};                                                                               \
-	DEVICE_DT_INST_DEFINE(inst, crc_nxp_lpc_init, NULL, &crc_nxp_lpc_data_##inst,    \
-			      &crc_nxp_lpc_config_##inst, POST_KERNEL,                   \
+#define CRC_NXP_LPC_INIT(inst)                                                                     \
+	static struct crc_nxp_lpc_data crc_nxp_lpc_data_##inst;                                    \
+	static const struct crc_nxp_lpc_config crc_nxp_lpc_config_##inst = {                       \
+		.base = (CRC_Type *)DT_INST_REG_ADDR(inst),                                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, crc_nxp_lpc_init, NULL, &crc_nxp_lpc_data_##inst,              \
+			      &crc_nxp_lpc_config_##inst, POST_KERNEL,                             \
 			      CONFIG_CRC_DRIVER_INIT_PRIORITY, &crc_nxp_lpc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CRC_NXP_LPC_INIT)
