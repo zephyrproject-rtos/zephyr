@@ -38,6 +38,18 @@ properties:
     description: |
       Indicates whether the ADC hardware supports averaging of conversion results.
 
+  conv-clk-freq-div-factor:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      Select ADC conversion clock frequency division factor.
+      ADC conversion clock = ADC module clock ÷ (1 << conv-clk-freq-div-factor)
+      - 0: ADC module clock frequency
+      - 1: ADC module clock frequency divided by 2
+      - 2: ADC module clock frequency divided by 4
+      - 3: ADC module clock frequency divided by 8
+      NOTE: This property is not available on I.MX devices.
+
   "#io-channel-cells":
     const: 1
 
