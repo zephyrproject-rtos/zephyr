@@ -2267,8 +2267,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		 * ticker's ticks_slot_window. Do not track if the node is
 		 * being rescheduled.
 		 */
-		if ((state == 2U) && (skip_collision == 0U) && !TICKER_RESCHEDULE_PENDING(ticker) &&
-		    TICKER_HAS_SLOT_WINDOW(ticker) && (ticker->ticks_slot == 0U)) {
+		if ((state == TICKER_NODE_STATE_EXPIRED) && (skip_collision == 0U) &&
+		    !TICKER_RESCHEDULE_PENDING(ticker) && TICKER_HAS_SLOT_WINDOW(ticker) &&
+		    (ticker->ticks_slot == 0U)) {
 			uint32_t ticks_slot;
 
 			instance->ticker_id_slot_window_previous = id_expired;
@@ -3006,18 +3007,19 @@ static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
  *                    handle user operation inserts
  * @internal
  */
-static inline void ticker_job_list_insert(struct ticker_instance *instance,
-					  uint8_t insert_head)
+static inline uint8_t ticker_job_list_insert(struct ticker_instance *instance, uint8_t insert_head)
 {
-	struct ticker_node *node;
 	struct ticker_user *users;
+	struct ticker_node *node;
 	uint8_t count_user;
+	uint8_t pending;
 
 	node = &instance->nodes[0];
 	users = &instance->users[0];
 	count_user = instance->count_user;
 
 	/* Iterate through all user ids */
+	pending = 0U;
 	while (count_user--) {
 		struct ticker_user_op *user_ops;
 		struct ticker_user *user;
@@ -3055,7 +3057,6 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				if (first == user->count_user_op) {
 					first = 0U;
 				}
-				user_ops_first = first;
 
 				id_insert = user_op->id;
 				ticker = &node[id_insert];
@@ -3063,6 +3064,7 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 					/* User operation is not start - skip
 					 * to next operation
 					 */
+					user_ops_first = first;
 					continue;
 				}
 
@@ -3074,14 +3076,32 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				state = ticker_state_get(ticker);
 
 				if (state != TICKER_NODE_STATE_IDLE) {
-					ticker_job_op_cb(user_op,
-							 TICKER_STATUS_FAILURE);
+					/* Check if expired while here in ticker_job */
+					if (state == TICKER_NODE_STATE_EXPIRED) {
+						/* sched job to run after worker bottom half.
+						 */
+						instance->sched_cb(TICKER_CALL_ID_JOB,
+								   TICKER_CALL_ID_JOB, 1,
+								   instance);
+
+						pending = 1U;
+						break;
+					}
+
+					/* Already requested to start */
+					ticker_job_op_cb(user_op, TICKER_STATUS_FAILURE);
+
+					/* Continue to next operation */
+					user_ops_first = first;
 					continue;
 				}
 
 				/* Prepare ticker for start */
 				status = ticker_job_op_start(instance, ticker, user_op,
 						    instance->ticks_current);
+
+				/* Continue to next operation */
+				user_ops_first = first;
 			}
 
 			if (!status) {
@@ -3114,6 +3134,8 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 	*/
 
 	}
+
+	return pending;
 }
 
 #if defined(CONFIG_BT_TICKER_JOB_IDLE_GET) || \
@@ -3477,7 +3499,7 @@ void ticker_job(void *param)
 		}
 
 		/* Handle insertions */
-		ticker_job_list_insert(instance, insert_head);
+		pending |= ticker_job_list_insert(instance, insert_head);
 
 #if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) &&\
 	!defined(CONFIG_BT_TICKER_LOW_LAT)
@@ -3489,7 +3511,7 @@ void ticker_job(void *param)
 #endif /* CONFIG_BT_TICKER_EXT */
 	} else {
 		/* Handle insertions */
-		ticker_job_list_insert(instance, insert_head);
+		pending |= ticker_job_list_insert(instance, insert_head);
 	}
 
 	/* Detect change in head of the list */
