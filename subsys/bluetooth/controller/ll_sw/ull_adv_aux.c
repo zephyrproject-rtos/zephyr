@@ -2749,8 +2749,10 @@ uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
 #if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 {
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, mfy_aux_offset_get};
+	static struct mayfly mfy[CONFIG_BT_CTLR_ADV_AUX_SET];
+	static memq_link_t link[CONFIG_BT_CTLR_ADV_AUX_SET];
+	struct ll_adv_aux_set *aux;
+	uint8_t aux_handle;
 	uint32_t ret;
 
 	/* NOTE: Single mayfly instance is sufficient as primary channel PDUs
@@ -2758,9 +2760,14 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 	 *       the radio event. Multiple advertising sets do not need
 	 *       independent mayfly allocations.
 	 */
-	mfy.param = adv;
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
-			     &mfy);
+	aux = HDR_LLL2ULL(adv->lll.aux);
+	aux_handle = ull_adv_aux_handle_get(aux);
+	if (mfy[aux_handle]._link == NULL) {
+		mfy[aux_handle]._link = &link[aux_handle];
+	}
+	mfy[aux_handle].param = adv;
+	mfy[aux_handle].fp = mfy_aux_offset_get;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1, &mfy[aux_handle]);
 	LL_ASSERT_ERR(!ret);
 }
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
