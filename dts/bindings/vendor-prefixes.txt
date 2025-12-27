@@ -253,6 +253,7 @@ fintek	Feature Integration Technology Inc.
 firefly	Firefly
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
+framework	Framework Computer, Inc.
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
