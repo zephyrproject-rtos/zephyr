@@ -42,9 +42,16 @@
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
 /* These lengths can be adjusted, if necessary: */
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32c2 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0xA000
+#define BOOTLOADER_IRAM_SEG_LEN        0x8800
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x7000
+#else
 #define BOOTLOADER_DRAM_SEG_LEN        0xb000
 #define BOOTLOADER_IRAM_SEG_LEN        0xc800
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1400
+#endif
 
 /* Base address used for calculating memory layout
  * counted from Dbus backwards and back to the Ibus
@@ -54,10 +61,17 @@
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_IRAM_LOADER_SEG_START \
 	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN - IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_SEG_START \
+	(BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN + IRAM_DRAM_OFFSET)
+#else
 #define BOOTLOADER_IRAM_SEG_START \
 	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
 #define BOOTLOADER_DRAM_SEG_START \
 	(BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN - IRAM_DRAM_OFFSET)
+#endif
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE

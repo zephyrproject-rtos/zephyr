@@ -55,9 +55,16 @@
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32s3 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0xA000
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x6000
+#define BOOTLOADER_IRAM_SEG_LEN        0xA000
+#else
 #define BOOTLOADER_DRAM_SEG_LEN        0x15000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1a00
 #define BOOTLOADER_IRAM_SEG_LEN        0xc000
+#endif
 
 /* Base address used for calculating memory layout
  * counted from Dbus backwards and back to the Ibus
@@ -67,9 +74,16 @@
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_IRAM_LOADER_SEG_START                                                           \
 	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN - IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_SEG_START \
+	(BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN + IRAM_DRAM_OFFSET)
+#else
 #define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
 #define BOOTLOADER_DRAM_SEG_END   (BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET)
 #define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_DRAM_SEG_END - BOOTLOADER_DRAM_SEG_LEN)
+#endif
 
 /* The "USER_IRAM_END" represents the end of staticaly allocated memory.
  * This address is where 2nd stage bootloader starts allocating memory,
@@ -80,6 +94,8 @@
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 #define USER_DRAM_END BOOTLOADER_USER_DRAM_END
+#elif defined(CONFIG_MCUBOOT_ESPRESSIF)
+#define USER_DRAM_END BOOTLOADER_DRAM_SEG_START
 #else
 #define USER_DRAM_END (BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET)
 #endif

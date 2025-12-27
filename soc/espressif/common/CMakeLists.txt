@@ -13,8 +13,8 @@ endif()
 
 # Continue to prepare the build environment
 zephyr_include_directories(include)
-
-if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
+if(NOT CONFIG_MCUBOOT AND NOT CONFIG_MCUBOOT_ESPRESSIF AND
+    NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
   zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
 endif()
 
@@ -29,10 +29,10 @@ endif()
 
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
-if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
+if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT OR CONFIG_MCUBOOT_ESPRESSIF) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
   if(CONFIG_BUILD_OUTPUT_BIN)
     set(ELF2IMAGE_ARG "")
-    if(NOT CONFIG_MCUBOOT)
+    if(NOT CONFIG_MCUBOOT AND NOT CONFIG_MCUBOOT_ESPRESSIF)
       set(ELF2IMAGE_ARG "--ram-only-header")
     endif()
 
@@ -59,14 +59,26 @@ if(DEFINED CONFIG_BUILD_OUTPUT_ADJUST_LMA)
   math(EXPR image_off "${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}")
 endif()
 
-board_runner_args(esp32 "--esp-app-address=${image_off}")
+# Get boot partition address
+dt_nodelabel(dts_boot_partition_path NODELABEL "boot_partition")
+dt_reg_addr(boot_off PATH ${dts_boot_partition_path})
+
+# Select the image origin depending on the boot configuration
+if(CONFIG_MCUBOOT OR CONFIG_MCUBOOT_ESPRESSIF)
+  # In this case, it means that the current build is the bootloader,
+  # either MCUboot or MCUboot Espressif Port
+  board_runner_args(esp32 "--esp-app-address=${boot_off}")
+  message(STATUS "Image partition address: ${boot_off}")
+else()
+  board_runner_args(esp32 "--esp-app-address=${image_off}")
+  message(STATUS "Image partition address: ${image_off}")
+endif()
+
 board_runner_args(esp32 "--esp-flash-size=${esptoolpy_flashsize}MB")
 board_runner_args(esp32 "--esp-flash-freq=${CONFIG_ESPTOOLPY_FLASHFREQ}")
 board_runner_args(esp32 "--esp-flash-mode=${CONFIG_ESPTOOLPY_FLASHMODE}")
 board_runner_args(esp32 "--esp-idf-path=${ESP_IDF_PATH}")
 board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
-
-message(STATUS "Image partition address: ${image_off}")
 
 # Look for cross references between bootloader sections
 if(CONFIG_MCUBOOT)
@@ -85,6 +97,10 @@ endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/mcuboot.ld CACHE INTERNAL "")
+elseif(CONFIG_MCUBOOT_ESPRESSIF)
+  # building bootloader MCUboot Espressif Port uses its linker script existing
+  # in MCUboot repo
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/empty.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_appcpu.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32C6_LPCORE)

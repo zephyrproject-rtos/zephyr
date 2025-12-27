@@ -40,9 +40,16 @@
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
 /* These lengths can be adjusted, if necessary: FIXME: optimize ram usage */
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+/* Match MCUboot Espressif Port esp32h2 defaults */
+#define BOOTLOADER_DRAM_SEG_LEN        0xA000
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x7000
+#define BOOTLOADER_IRAM_SEG_LEN        0x8800
+#else
 #define BOOTLOADER_DRAM_SEG_LEN        0xA000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x3000
 #define BOOTLOADER_IRAM_SEG_LEN        0xC000
+#endif
 
 /* Base address used for calculating memory layout
  * counted from Dbus backwards and back to the Ibus
@@ -51,8 +58,13 @@
 
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_SRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
+#ifdef CONFIG_MCUBOOT_ESPRESSIF
+#define BOOTLOADER_DRAM_SEG_START    (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
+#define BOOTLOADER_IRAM_SEG_START    (BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
+#else
 #define BOOTLOADER_IRAM_SEG_START       (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
 #define BOOTLOADER_DRAM_SEG_START        (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
+#endif
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE

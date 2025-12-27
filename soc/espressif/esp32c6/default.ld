@@ -17,6 +17,8 @@
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 user_sram_end = DRAM_BUFFERS_START;
+#elif defined(CONFIG_MCUBOOT_ESPRESSIF)
+user_sram_end = BOOTLOADER_DRAM_SEG_START;
 #else
 user_sram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
