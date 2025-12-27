@@ -38,6 +38,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	leds {
