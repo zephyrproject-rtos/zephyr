@@ -1,0 +1,5 @@
+boards:
+- name: framework_laptop16_keyboard
+  vendor: framework
+  socs:
+  - name: rp2040
