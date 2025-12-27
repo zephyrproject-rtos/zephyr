@@ -370,6 +370,13 @@ static int ili9806e_init(const struct device *dev)
 	struct mipi_dsi_device mdev;
 	int ret;
 
+	if (cfg->backlight.port != NULL) {
+		if(!gpio_is_ready_dt(&cfg->backlight)){
+			LOG_ERR("Backlight GPIO device is not ready!");
+			return -ENODEV;
+		}
+	}
+
 	if (cfg->reset.port) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
 			LOG_ERR("Reset GPIO device is not ready!");
