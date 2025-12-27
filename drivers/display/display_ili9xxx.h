@@ -70,6 +70,7 @@ struct ili9xxx_config {
 	const struct ili9xxx_quirks *quirks;
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
+	const struct gpio_dt_spec backlight;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;

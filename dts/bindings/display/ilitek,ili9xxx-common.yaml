@@ -42,3 +42,9 @@ properties:
     description:
       Display inversion mode. Every bit is inverted from the frame memory to
       the display.
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.

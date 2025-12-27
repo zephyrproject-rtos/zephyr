@@ -275,13 +275,37 @@ static int ili9xxx_read(const struct device *dev, const uint16_t x,
 
 static int ili9xxx_display_blanking_off(const struct device *dev)
 {
+	const struct ili9xxx_config *config = dev->config;
+	int ret;
+
 	LOG_DBG("Turning display blanking off");
+
+	if (config->backlight.port != NULL) {
+		ret = gpio_pin_set_dt(&config->backlight, 1);
+		if (ret) {
+			LOG_ERR("Enable backlight failed! (%d)", ret);
+			return ret;
+		}
+	}
+
 	return ili9xxx_transmit(dev, ILI9XXX_DISPON, NULL, 0);
 }
 
 static int ili9xxx_display_blanking_on(const struct device *dev)
 {
+	const struct ili9xxx_config *config = dev->config;
+	int ret;
+
 	LOG_DBG("Turning display blanking on");
+
+	if (config->backlight.port != NULL) {
+		ret = gpio_pin_set_dt(&config->backlight, 0);
+		if (ret) {
+			LOG_ERR("Disable backlight failed! (%d)", ret);
+			return ret;
+		}
+	}
+
 	return ili9xxx_transmit(dev, ILI9XXX_DISPOFF, NULL, 0);
 }
 
@@ -474,6 +498,19 @@ static int ili9xxx_init(const struct device *dev)
 
 	k_sleep(K_MSEC(ILI9XXX_RESET_WAIT_TIME));
 
+	if (config->backlight.port != NULL) {
+		LOG_DBG("Configuring backlight");
+		if(!gpio_is_ready_dt(&config->backlight)){
+			LOG_ERR("Backlight GPIO device is not ready!");
+			return -ENODEV;
+		}
+		r = gpio_pin_configure_dt(&config->backlight, GPIO_OUTPUT_ACTIVE);
+		if (r < 0) {
+			LOG_ERR("Could not configure backlight GPIO (%d)", r);
+			return r;
+		}
+	}
+
 	ili9xxx_display_blanking_on(dev);
 
 	r = ili9xxx_configure(dev);
@@ -545,6 +582,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 						SPI_WORD_SET(8),               \
 						0),                            \
 		},                                                             \
+		.backlight = GPIO_DT_SPEC_INST_GET_OR(n, bl_gpios, {0}),       \
 		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),  \
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
 		.x_resolution = ILI##t##_X_RES,                                \
