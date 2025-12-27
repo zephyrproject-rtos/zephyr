@@ -108,5 +108,11 @@ properties:
       accepting commands. Defaults to 40ms (found by trial and error) if not
       provided.
 
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.
+
   mipi-mode:
     required: true

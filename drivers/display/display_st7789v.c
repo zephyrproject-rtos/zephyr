@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(display_st7789v);
 struct st7789v_config {
 	const struct device *mipi_dbi;
 	const struct mipi_dbi_config dbi_config;
+	const struct gpio_dt_spec backlight;
 	uint8_t vcom;
 	uint8_t gctrl;
 	bool vdv_vrh_enable;
@@ -115,11 +116,37 @@ static int st7789v_reset_display(const struct device *dev)
 
 static int st7789v_blanking_on(const struct device *dev)
 {
+	const struct st7789v_config *config = dev->config;
+	int ret;
+
+	LOG_DBG("Turning display blanking on");
+
+	if (config->backlight.port != NULL) {
+		ret = gpio_pin_set_dt(&config->backlight, 0);
+		if (ret) {
+			LOG_ERR("Disable backlight failed! (%d)", ret);
+			return ret;
+		}
+	}
+
 	return st7789v_transmit(dev, ST7789V_CMD_DISP_OFF, NULL, 0);
 }
 
 static int st7789v_blanking_off(const struct device *dev)
 {
+	const struct st7789v_config *config = dev->config;
+	int ret;
+
+	LOG_DBG("Turning display blanking off");
+
+	if (config->backlight.port != NULL) {
+		ret = gpio_pin_set_dt(&config->backlight, 1);
+		if (ret) {
+			LOG_ERR("Enable backlight failed! (%d)", ret);
+			return ret;
+		}
+	}
+	
 	return st7789v_transmit(dev, ST7789V_CMD_DISP_ON, NULL, 0);
 }
 
@@ -410,6 +437,18 @@ static int st7789v_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->backlight.port != NULL) {
+		if(!gpio_is_ready_dt(&config->backlight)){
+			LOG_ERR("Backlight GPIO device is not ready!");
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&config->backlight, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Could not configure backlight GPIO (%d)", ret);
+			return ret;
+		}
+	}
+
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
 	ret = st7789v_reset_display(dev);
@@ -479,6 +518,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
 						      ST7789V_WORD_SIZE(inst) |         \
 						      SPI_OP_MODE_MASTER, 0),           \
+		.backlight = GPIO_DT_SPEC_INST_GET_OR(inst, bl_gpios, {0}), \
 		.vcom = DT_INST_PROP(inst, vcom),					\
 		.gctrl = DT_INST_PROP(inst, gctrl),					\
 		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\
