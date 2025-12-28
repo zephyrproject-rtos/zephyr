@@ -1149,10 +1149,12 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 
 static void mcux_flexcan_isr(const struct device *dev)
 {
+	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base = get_base(dev);
 
-	FLEXCAN_TransferHandleIRQ(base, &data->handle);
+	FLEXCAN_BusoffErrorHandleIRQ(base, &data->handle);
+	FLEXCAN_MbHandleIRQ(base, &data->handle, 0U, config->number_of_mb);
 }
 
 static int mcux_flexcan_init(const struct device *dev)
