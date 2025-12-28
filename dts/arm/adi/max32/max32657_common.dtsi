@@ -331,6 +331,11 @@
 			compatible = "adi,max32-wut";
 			status = "disabled";
 		};
+
+		timer {
+			compatible = "adi,max32-wut-timer";
+			status = "disabled";
+		};
 	};
 
 	wut1: timer@6600 {
@@ -342,6 +347,11 @@
 
 		counter {
 			compatible = "adi,max32-wut";
+			status = "disabled";
+		};
+
+		timer {
+			compatible = "adi,max32-wut-timer";
 			status = "disabled";
 		};
 	};
