@@ -6,6 +6,7 @@
 if SOC_MAX32657
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MAX32_WUT_TIMER
 	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
 
 config NUM_IRQS
