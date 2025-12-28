@@ -41,6 +41,29 @@
 			clocks = <&lcdclk MSTPC 10>;
 			status = "disabled";
 		};
+
+		usbhs: usbhs@40351000 {
+			compatible = "renesas,ra-usbhs";
+			reg = <0x40351000 0x2000>;
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&u60clk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
+		ceu: ceu@40348000 {
+			compatible = "renesas,ra-ceu";
+			reg = <0x40348000 0x8000>;
+			clocks = <&pclka MSTPC 16>;
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
@@ -282,31 +305,6 @@
 				#clock-cells = <2>;
 				status = "disabled";
 			};
-		};
-	};
-
-	soc {
-		usbhs: usbhs@40351000 {
-			compatible = "renesas,ra-usbhs";
-			reg = <0x40351000 0x2000>;
-			interrupts = <54 12>;
-			interrupt-names = "usbhs-ir";
-			num-bidir-endpoints = <10>;
-			phys = <&usbhs_phy>;
-			phys-clock = <&uclk>, <&u60clk>;
-			status = "disabled";
-
-			udc {
-				compatible = "renesas,ra-udc";
-				status = "disabled";
-			};
-		};
-
-		ceu: ceu@40348000 {
-			compatible = "renesas,ra-ceu";
-			reg = <0x40348000 0x8000>;
-			clocks = <&pclka MSTPC 16>;
-			status = "disabled";
 		};
 	};
 
