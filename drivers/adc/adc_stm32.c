@@ -1107,8 +1107,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	data->repeat_buffer = data->buffer;
 
 #ifdef CONFIG_ADC_STM32_DMA
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	/* Make sure DMA bit of ADC register CR2 is set to 0 before starting a DMA transfer */
+	/*Reseting the dma buffer after every sequence just like for stm32f4 to avoid channel shifting*/
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
 #endif
 	adc_stm32_dma_start(dev, data->buffer, data->channel_count);
