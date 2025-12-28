@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Aleksandr Senin <al@meshium.net>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 TRNG (True Random Number Generator)
+
+compatible: "gd,gd32-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    type: phandle-array
+    description: Optional reset line for the TRNG peripheral.
