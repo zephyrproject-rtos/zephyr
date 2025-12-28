@@ -230,7 +230,7 @@ static int rangematch(const char **pattern, char test, int flags)
 			}
 
 			if (flags & FNM_CASEFOLD) {
-				c2 = tolower(c2);
+				c2 = tolower((int)c2);
 			}
 
 			if (c <= test && test <= c2) {
