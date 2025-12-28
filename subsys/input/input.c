@@ -16,6 +16,10 @@ LOG_MODULE_REGISTER(input, CONFIG_INPUT_LOG_LEVEL);
 K_MSGQ_DEFINE(input_msgq, sizeof(struct input_event),
 	      CONFIG_INPUT_QUEUE_MAX_MSGS, 4);
 
+#ifdef CONFIG_INPUT_THREAD_SIGNAL_SYNC
+K_SEM_DEFINE(input_sync_sem, 0, 1);
+#endif
+
 #endif
 
 static void input_process(struct input_event *evt)
@@ -58,11 +62,25 @@ int input_report(const struct device *dev,
 		timeout = K_NO_WAIT;
 	}
 
+#ifdef CONFIG_INPUT_THREAD_SIGNAL_SYNC
+	/* If the queue is full, we must wake the input thread to drain it.
+	 */
+	if (k_msgq_num_free_get(&input_msgq) == 0) {
+		k_sem_give(&input_sync_sem);
+	}
+#endif
+
 	ret = k_msgq_put(&input_msgq, &evt, timeout);
 	if (ret < 0) {
 		LOG_WRN("Event dropped, queue full, not blocking in syswq.");
 		return ret;
 	}
+
+#ifdef CONFIG_INPUT_THREAD_SIGNAL_SYNC
+	if (sync) {
+		k_sem_give(&input_sync_sem);
+	}
+#endif
 
 	return 0;
 #else
@@ -80,6 +98,17 @@ static void input_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct input_event evt;
+
+#ifdef CONFIG_INPUT_THREAD_SIGNAL_SYNC
+	while (true) {
+		/* Sleep until sync event happens or msgq is full */
+		k_sem_take(&input_sync_sem, K_FOREVER);
+
+		while (k_msgq_get(&input_msgq, &evt, K_NO_WAIT) == 0) {
+			input_process(&evt);
+		}
+	}
+#else
 	int ret;
 
 	while (true) {
@@ -91,6 +120,7 @@ static void input_thread(void *p1, void *p2, void *p3)
 
 		input_process(&evt);
 	}
+#endif
 }
 
 #define INPUT_THREAD_PRIORITY \

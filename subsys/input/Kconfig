@@ -65,6 +65,14 @@ config INPUT_THREAD_STACK_SIZE
 	  Stack size for the thread processing the input events, must have
 	  enough space for executing the registered callbacks.
 
+config INPUT_THREAD_SIGNAL_SYNC
+	bool "Signal input thread on sync event"
+	default n
+	help
+	  Waits for a sync event before waking the input thread to process
+	  the queue. This batches events (e.g. X, Y, Touch), reducing
+	  context switching overhead.
+
 endif # INPUT_MODE_THREAD
 
 config INPUT_EVENT_DUMP
