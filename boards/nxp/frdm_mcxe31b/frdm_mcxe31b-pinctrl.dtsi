@@ -13,6 +13,42 @@
 		};
 	};
 
+	pinmux_flexcan_0: pinmux_flexcan_0 {
+		group1 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexcan_1: pinmux_flexcan_1 {
+		group1 {
+			pinmux = <PTA11_CAN1_TX>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA12_CAN1_RX>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexcan_2: pinmux_flexcan_2 {
+		group1 {
+			pinmux = <PTE24_CAN2_TX>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE25_CAN2_RX>;
+			input-enable;
+		};
+	};
+
 	pinmux_lpuart_5: pinmux_lpuart_5 {
 		group1 {
 			pinmux = <PTE14_LPUART5_TX_O>;
