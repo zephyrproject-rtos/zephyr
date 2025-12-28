@@ -83,7 +83,7 @@
 		};
 
 		/* Generated code for AFE devices */
-		#include "afe-mt8188.dts"
+		#include "afe-mt8188.dtsi"
 	}; /* soc */
 
 	chosen {};
