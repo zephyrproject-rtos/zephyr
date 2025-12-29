@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Meta
+# Copyright (c) 2026 Paul Wedeck <paulwedeck@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - logging
+    - backend
+    - can
+  filter: dt_chosen_enabled("zephyr,canbus")
+  integration_platforms:
+    - qemu_x86
+tests:
+  logging.backend.can:
+    tags:
+      - can
