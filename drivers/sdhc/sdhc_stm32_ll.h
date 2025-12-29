@@ -212,6 +212,8 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_erase(sdhc_stm32_ll_handle_t *hsd, uint32_t bl
 uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t switch_arg,
 				    uint8_t *status);
 uint32_t sdhc_stm32_ll_find_scr(sdhc_stm32_ll_handle_t *hsd, uint32_t *scr);
+uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t card_rca,
+				   uint32_t *card_status);
 void sdhc_stm32_ll_irq_handler(sdhc_stm32_ll_handle_t *hsd);
 SDMMC_StatusTypeDef sdhc_stm32_ll_config_freq(sdhc_stm32_ll_handle_t *hsd, uint32_t clock_speed);
 SDMMC_StatusTypeDef sdhc_stm32_ll_init(sdhc_stm32_ll_handle_t *hsd);

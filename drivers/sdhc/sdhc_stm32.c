@@ -632,24 +632,6 @@ static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config,
 	return res;
 }
 
-static uint32_t sdhc_stm32_get_sd_status(sdhc_stm32_ll_handle_t *hsd, uint32_t card_relative_address,
-					 uint32_t *card_status_resp)
-{
-	uint32_t res;
-
-	/* Send Status command */
-	res = SDMMC_CmdSendStatus(hsd->Instance, (uint32_t)(card_relative_address));
-	if (res != SDMMC_ERROR_NONE) {
-		LOG_ERR("Get Card status failed");
-		return -EIO;
-	}
-
-	/* Get SD card status */
-	*card_status_resp = SDMMC_GetResponse(hsd->Instance, SDMMC_RESP1);
-
-	return 0;
-}
-
 static bool sdhc_stm32_is_card_ready(const struct sdhc_stm32_config *config)
 {
 	if (sdhc_stm32_ll_get_state(config->hsd) != SDMMC_STATE_READY) {
@@ -825,7 +807,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_SEND_STATUS:
-		res = sdhc_stm32_get_sd_status(config->hsd, cmd->arg, &cmd->response[0]);
+		sdmmc_res = sdhc_stm32_ll_send_status(config->hsd, cmd->arg, &cmd->response[0]);
 		break;
 
 	default:

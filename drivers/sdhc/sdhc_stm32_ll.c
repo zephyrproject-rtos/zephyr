@@ -322,7 +322,8 @@ SDMMC_StatusTypeDef sdhc_stm32_ll_erase(sdhc_stm32_ll_handle_t *hsd, uint32_t Bl
 	}
 }
 
-uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t *pCardStatus)
+uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t card_rca,
+				   uint32_t *pCardStatus)
 {
 	uint32_t errorstate;
 
@@ -331,7 +332,7 @@ uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t *pCardS
 	}
 
 	/* Send Status command */
-	errorstate = SDMMC_CmdSendStatus(hsd->Instance, (uint32_t)(hsd->SdCard.RelCardAdd));
+	errorstate = SDMMC_CmdSendStatus(hsd->Instance, card_rca);
 	if (errorstate != SDMMC_ERROR_NONE) {
 		return errorstate;
 	}
@@ -501,7 +502,7 @@ SDMMC_CardStateTypeDef sdhc_stm32_ll_get_card_state(sdhc_stm32_ll_handle_t *hsd)
 	uint32_t errorstate;
 	uint32_t resp1 = 0;
 
-	errorstate = sdhc_stm32_ll_send_status(hsd, &resp1);
+	errorstate = sdhc_stm32_ll_send_status(hsd, (uint32_t)(hsd->SdCard.RelCardAdd), &resp1);
 	if (errorstate != SDMMC_ERROR_NONE) {
 		hsd->ErrorCode |= errorstate;
 	}
