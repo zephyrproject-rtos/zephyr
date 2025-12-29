@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon PSOC4 SAR ADC
+
+compatible: "infineon,psoc4-adc"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the PSOC4 SAR ADC registers
+
+  interrupts:
+    required: true
+    description: Interrupt configuration for the PSOC4 SAR ADC
+
+  "#io-channel-cells":
+    const: 1
+    description: Number of cells in an io-channel specifier
+
+  vref-src:
+    type: string
+    default: "internal"
+    enum:
+      - "internal"
+      - "vdda"
+      - "vdda_by_2"
+      - "external"
+    description: |
+      Selects which voltage reference to use for the ADC.
+      "internal": Internal Bandgap (1.2V)
+      "vdda": VDDA
+      "vdda_by_2": VDDA / 2
+      "external": External Ref pin
+
+  vref-mv:
+    type: int
+    default: 1200
+    description: |
+      Reference voltage in millivolts.
+      For "internal" source, this is typically 1200.
+      For "vdda" or "external", this should match the actual voltage applied.
+
+  clk-dst:
+    type: int
+    required: true
+    description: Peripheral clock destination for the ADC.
+
+io-channel-cells:
+  - input
