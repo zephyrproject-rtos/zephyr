@@ -1,6 +1,6 @@
 {#
-  Copyright (c) 2024-2025, The Linux Foundation.
-  SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2024-2025, The Linux Foundation.
+SPDX-License-Identifier: Apache-2.0
 #}
 
 <form class="filter-form" aria-label="Filter boards & shields by name, architecture, and vendor">
@@ -50,7 +50,8 @@
       <select id="vendor">
         <option value="" disabled selected>Select a vendor</option>
         {# Only show those vendors that have actual boards or shields in the catalog.
-           Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code later #}
+        Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code
+        later #}
         {% set board_vendors = boards | items | map(attribute='1.vendor') | unique | list %}
         {% set shield_vendors = shields | items | map(attribute='1.vendor') | unique | list %}
         {% for vendor in (board_vendors + shield_vendors) | unique -%}
@@ -78,13 +79,11 @@
   <div class="form-group" style="flex-basis: 100%">
     <label for="hwcaps-input">Supported Hardware Capabilities</label>
     <div class="tag-container" id="hwcaps-tags">
-      <input list="tag-list" class="tag-input" id="hwcaps-input"
-             placeholder="{% if hw_features_present -%}
+      <input list="tag-list" class="tag-input" id="hwcaps-input" placeholder="{% if hw_features_present -%}
                Type a hardware capability, e.g. &quot;display&quot;, &quot;sensor&quot;, &hellip;
              {%- else -%}
                List of supported hardware capabilities is not available
-             {%- endif %}"
-             {% if not hw_features_present %}disabled{% endif %}>
+             {%- endif %}" {% if not hw_features_present %}disabled{% endif %}>
       <datalist id="tag-list"></datalist>
     </div>
   </div>
@@ -92,32 +91,40 @@
   <div class="form-group" style="flex-basis: 100%">
     <label for="compatibles-input">Supported devices (compatible strings, supports wildcards)</label>
     <div class="tag-container" id="compatibles-tags">
-      <input list="compatibles-list" class="tag-input" id="compatibles-input"
-        placeholder="{% if hw_features_present -%}
+      <input list="compatibles-list" class="tag-input" id="compatibles-input" placeholder="{% if hw_features_present -%}
           Type a compatible, e.g. &quot;ti,hdc2080&quot; or wildcard like &quot;bosch,bmp*&quot;
         {%- else -%}
           List of supported devices is not available
-        {%- endif %}"
-        {% if not hw_features_present %}disabled{% endif %}>
+        {%- endif %}" {% if not hw_features_present %}disabled{% endif %}>
       <datalist id="compatibles-list"></datalist>
+    </div>
+  </div>
+
+  <div class="form-group" style="flex-basis: 100%">
+    <label>Scope</label>
+    <div class="scope-options" style="display: flex; gap: 20px; align-items: center;">
+      <div class="toggle-group">
+        <input type="radio" id="scope-all" name="scope" value="all" checked onchange="filterBoards()">
+        <label for="scope-all">All</label>
+      </div>
+      <div class="toggle-group">
+        <input type="radio" id="scope-on-board" name="scope" value="on-board" onchange="filterBoards()">
+        <label for="scope-on-board">On-Board</label>
+      </div>
+      <div class="toggle-group">
+        <input type="radio" id="scope-on-chip" name="scope" value="on-chip" onchange="filterBoards()">
+        <label for="scope-on-chip">On-Chip</label>
+      </div>
     </div>
   </div>
 
 </form>
 
 <div id="form-options" style="text-align: center; margin-bottom: 20px">
-  <button
-    id="reset-filters"
-    class="btn btn-info btn-disabled fa fa-times"
-    tabindex="0"
-    onclick="resetForm()">
+  <button id="reset-filters" class="btn btn-info btn-disabled fa fa-times" tabindex="0" onclick="resetForm()">
     Reset Filters
   </button>
-  <button
-    id="toggle-compact"
-    class="btn btn-info fa fa-bars"
-    tabindex="0"
-    onclick="toggleDisplayMode(this)">
+  <button id="toggle-compact" class="btn btn-info fa fa-bars" tabindex="0" onclick="toggleDisplayMode(this)">
     Switch to Compact View
   </button>
 </div>

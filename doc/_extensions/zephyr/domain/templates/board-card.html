@@ -37,6 +37,32 @@
     {%- endfor -%}
     {{- all_compatibles|join(' ') -}}
   "
+  data-compatibles-onboard="
+    {%- set onboard_compatibles = [] -%}
+    {%- for target_features in board.supported_features.values() -%}
+      {%- for type_features in target_features.values() -%}
+        {%- for compat, feature in type_features.items() -%}
+          {%- if 'board' in feature.locations and compat not in onboard_compatibles -%}
+            {%- set _ = onboard_compatibles.append(compat) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {{- onboard_compatibles|join(' ') -}}
+  "
+  data-compatibles-onchip="
+    {%- set onchip_compatibles = [] -%}
+    {%- for target_features in board.supported_features.values() -%}
+      {%- for type_features in target_features.values() -%}
+        {%- for compat, feature in type_features.items() -%}
+          {%- if 'soc' in feature.locations and compat not in onchip_compatibles -%}
+             {%- set _ = onchip_compatibles.append(compat) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {{- onchip_compatibles|join(' ') -}}
+  "
   tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
   {% if board.image -%}
