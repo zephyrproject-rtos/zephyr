@@ -307,6 +307,9 @@ void draw_cube(vg_lite_buffer_t *rt)
 			yrot = 40;
 			rotxyz = 0;
 		}
+	} else {
+		/* Defensive: reset to known state if rotxyz has unexpected value */
+		rotxyz = 0;
 	}
 
 	/* Compute the new cube vertex coordinates transformed by the rotation matrix */
