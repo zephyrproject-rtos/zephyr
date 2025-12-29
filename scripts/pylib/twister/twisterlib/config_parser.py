@@ -5,6 +5,7 @@
 
 import copy
 import warnings
+from collections.abc import Callable
 from typing import Any
 
 import scl
@@ -91,19 +92,19 @@ class TwisterConfigParser:
         "sysbuild": {"type": "bool", "default": False}
     }
 
-    def __init__(self, filename: str, schema: dict[str, Any]) -> None:
+    def __init__(self, filename: str, schema_validator: Callable[[dict[str, Any]], None]) -> None:
         """Instantiate a new TwisterConfigParser object
 
         @param filename Source .yaml file to read
         """
-        self.schema = schema
-        self.filename = filename
+        self.schema_validator: Callable[[dict[str, Any]], None] = schema_validator
+        self.filename: str = filename
         self.data: dict[str, Any] = {}
         self.scenarios: dict[str, Any] = {}
         self.common: dict[str, Any] = {}
 
     def load(self) -> dict[str, Any]:
-        data = scl.yaml_load_verify(self.filename, self.schema)
+        data = scl.yaml_load_verify(self.filename, self.schema_validator)
         self.data = data
 
         if 'tests' in self.data:

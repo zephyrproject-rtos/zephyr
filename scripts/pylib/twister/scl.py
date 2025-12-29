@@ -1,23 +1,24 @@
-#! /usr/bin/python
+#!/usr/bin/env python3
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # Zephyr's Twister library
-#
-# pylint: disable=unused-import
 #
 # Set of code that other projects can also import to do things on
 # Zephyr's sanity check testcases.
 
+import functools
 import logging
+from collections.abc import Callable
+from typing import Any
+
 import yaml
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # It's much faster.
-    from yaml import CLoader as Loader
     from yaml import CSafeLoader as SafeLoader
-    from yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Loader, SafeLoader, Dumper
+    from yaml import SafeLoader
 
 log = logging.getLogger("scl")
 
@@ -26,8 +27,6 @@ class EmptyYamlFileException(Exception):
     pass
 
 
-#
-#
 def yaml_load(filename):
     """
     Safely load a YAML document
@@ -51,39 +50,49 @@ def yaml_load(filename):
                   e.note, cmark.name, cmark.line, cmark.column, e.context)
         raise
 
-# If pykwalify is installed, then the validate function will work --
-# otherwise, it is a stub and we'd warn about it.
-try:
-    import pykwalify.core
-    # Don't print error messages yourself, let us do it
-    logging.getLogger("pykwalify.core").setLevel(50)
+def make_yaml_validator(schema_path: str) -> Callable[[dict[str, Any]], None]:
+    """
+    Create a reusable validator function for a fixed schema.
+    The returned callable validates a loaded YAML document and returns None.
+    :param schema_path: Path to YAML validator schema file
+    """
+    if not schema_path:
+        return lambda _: None
 
-    def _yaml_validate(data, schema):
-        if not schema:
-            return
-        c = pykwalify.core.Core(source_data=data, schema_data=schema)
-        c.validate(raise_exception=True)
+    schema = yaml_load(schema_path)
 
-except ImportError as e:
-    log.warning("can't import pykwalify; won't validate YAML (%s)", e)
-    def _yaml_validate(data, schema):
-        pass
+    try:
+        import pykwalify.core
+        logging.getLogger("pykwalify.core").setLevel(50)
 
-def yaml_load_verify(filename, schema):
+        core = pykwalify.core.Core(source_data={}, schema_data=schema)
+
+        def _validate(data: dict[str, Any]) -> None:
+            core.source = data
+            core.validate(raise_exception=True)
+
+        return functools.partial(_validate)
+
+    except ImportError as e:
+        log.warning("can't import pykwalify; won't validate YAML (%s)", e)
+        return lambda _: None
+
+
+def yaml_load_verify(filename: str, validate: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
     """
     Safely load a testcase/sample yaml document and validate it
     against the YAML schema, returning in case of success the YAML data.
 
     :param str filename: name of the file to load and process
-    :param dict schema: loaded YAML schema (can load with :func:`yaml_load`)
+    :param validate: A callable which verifies the YAML file
 
-    # 'document.yaml' contains a single YAML document.
     :raises yaml.scanner.ScannerError: on YAML parsing error
     :raises pykwalify.errors.SchemaError: on Schema violation error
+    :raises EmptyYamlFileException: on empty YAML file
     """
     # 'document.yaml' contains a single YAML document.
     y = yaml_load(filename)
     if not y:
         raise EmptyYamlFileException('No data in YAML file: %s' % filename)
-    _yaml_validate(y, schema)
+    validate(y)
     return y
