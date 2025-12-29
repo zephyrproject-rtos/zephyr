@@ -19,5 +19,6 @@ rsource "Kconfig.uart"
 rsource "Kconfig.xtensa_sim"
 rsource "Kconfig.multidomain"
 rsource "Kconfig.semihost"
+rsource "Kconfig.can"
 
 endmenu

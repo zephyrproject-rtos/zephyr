@@ -1,0 +1,15 @@
+sample:
+  description: This application showcases various features of the CAN logging backend.
+  name: logger can sample
+tests:
+  sample.logger.can:
+    tags: logging can
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "<inf> sample_main: example message 9"
