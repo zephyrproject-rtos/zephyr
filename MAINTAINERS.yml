@@ -302,7 +302,7 @@ Aesc Platform:
   files-regex:
     - ^drivers/.*aesc(\.c)?$
   labels:
-    - "area: Aesc Silicon Platform"
+    - "platform: Aesc Silicon"
 
 Ambiq Platforms:
   status: maintained
