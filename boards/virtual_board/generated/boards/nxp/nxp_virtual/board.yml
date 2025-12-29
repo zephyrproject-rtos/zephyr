@@ -1,0 +1,161 @@
+board:
+  name: nxp_virtual
+  full_name: NXP Virtual Board (SoC template)
+  vendor: nxp
+  socs:
+  - name: mcimx6x
+    variants:
+    - name: m4
+      cpucluster: 'm4'
+  - name: mcimx7d
+    variants:
+    - name: m4
+      cpucluster: 'm4'
+  - name: mcxa153
+  - name: mcxa156
+  - name: mcxa266
+  - name: mcxa344
+  - name: mcxa346
+  - name: mcxa366
+  - name: mcxa577
+  - name: mcxc141
+  - name: mcxc142
+  - name: mcxc242
+  - name: mcxc444
+  - name: mcxe245
+  - name: mcxe246
+  - name: mcxe247
+  - name: mcxe315
+  - name: mcxe316
+  - name: mcxe317
+  - name: mcxe31b
+  - name: mcxn236
+  - name: mcxn547
+    variants:
+    - name: cpu0
+      cpucluster: 'cpu0'
+    - name: cpu1
+      cpucluster: 'cpu1'
+  - name: mcxn947
+    variants:
+    - name: cpu0
+      cpucluster: 'cpu0'
+    - name: cpu1
+      cpucluster: 'cpu1'
+  - name: mcxw235
+  - name: mcxw236
+  - name: mcxw716c
+  - name: mcxw727c
+    variants:
+    - name: cpu0
+      cpucluster: 'cpu0'
+    - name: cpu1
+      cpucluster: 'cpu1'
+  - name: mimx8ml8
+    variants:
+    - name: adsp
+      cpucluster: 'adsp'
+    - name: a53
+      cpucluster: 'a53'
+    - name: m7
+      cpucluster: 'm7'
+  - name: mimx8mm6
+    variants:
+    - name: a53
+      cpucluster: 'a53'
+    - name: m4
+      cpucluster: 'm4'
+  - name: mimx8mn6
+    variants:
+    - name: a53
+      cpucluster: 'a53'
+  - name: mimx8mq6
+    variants:
+    - name: m4
+      cpucluster: 'm4'
+  - name: mimx8qm6
+    variants:
+    - name: adsp
+      cpucluster: 'adsp'
+  - name: mimx8qx6
+    variants:
+    - name: adsp
+      cpucluster: 'adsp'
+  - name: mimx8ud7
+    variants:
+    - name: adsp
+      cpucluster: 'adsp'
+  - name: mimx9111
+  - name: mimx9131
+  - name: mimx9352
+    variants:
+    - name: a55
+      cpucluster: 'a55'
+    - name: m33
+      cpucluster: 'm33'
+  - name: mimx94398
+    variants:
+    - name: a55
+      cpucluster: 'a55'
+    - name: m33
+      cpucluster: 'm33'
+    - name: m7_0
+      cpucluster: 'm7_0'
+    - name: m7_1
+      cpucluster: 'm7_1'
+  - name: mimx9596
+    variants:
+    - name: a55
+      cpucluster: 'a55'
+    - name: m7
+      cpucluster: 'm7'
+  - name: mimxrt1011
+  - name: mimxrt1015
+  - name: mimxrt1021
+  - name: mimxrt1024
+  - name: mimxrt1042
+  - name: mimxrt1052
+  - name: mimxrt1062
+  - name: mimxrt1064
+  - name: mimxrt1166
+    variants:
+    - name: cm7
+      cpucluster: 'cm7'
+    - name: cm4
+      cpucluster: 'cm4'
+  - name: mimxrt1176
+    variants:
+    - name: cm7
+      cpucluster: 'cm7'
+    - name: cm4
+      cpucluster: 'cm4'
+  - name: mimxrt1189
+    variants:
+    - name: cm33
+      cpucluster: 'cm33'
+    - name: cm7
+      cpucluster: 'cm7'
+  - name: mimxrt595s
+    variants:
+    - name: cm33
+      cpucluster: 'cm33'
+    - name: f1
+      cpucluster: 'f1'
+  - name: mimxrt685s
+    variants:
+    - name: cm33
+      cpucluster: 'cm33'
+    - name: hifi4
+      cpucluster: 'hifi4'
+  - name: mimxrt798s
+    variants:
+    - name: cm33_cpu0
+      cpucluster: 'cm33_cpu0'
+    - name: cm33_cpu1
+      cpucluster: 'cm33_cpu1'
+    - name: hifi4
+      cpucluster: 'hifi4'
+    - name: hifi1
+      cpucluster: 'hifi1'
+  - name: rw610
+  - name: rw612

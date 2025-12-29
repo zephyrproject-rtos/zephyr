@@ -1,0 +1,14 @@
+identifier: nxp_virtual/mimxrt1176/cm4
+name: NXP Virtual (nxp_virtual/mimxrt1176/cm4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - dac
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - pwm
+vendor: nxp

@@ -1,0 +1,9 @@
+identifier: nxp_virtual/mimx8ml8/adsp
+name: NXP Virtual (nxp_virtual/mimx8ml8/adsp)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - uart
+vendor: nxp

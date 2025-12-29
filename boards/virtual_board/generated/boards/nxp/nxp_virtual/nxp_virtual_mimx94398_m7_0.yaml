@@ -1,0 +1,9 @@
+identifier: nxp_virtual/mimx94398/m7_0
+name: NXP Virtual (nxp_virtual/mimx94398/m7_0)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart
+vendor: nxp

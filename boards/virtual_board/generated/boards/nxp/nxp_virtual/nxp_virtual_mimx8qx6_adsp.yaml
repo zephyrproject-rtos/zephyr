@@ -1,0 +1,7 @@
+identifier: nxp_virtual/mimx8qx6/adsp
+name: NXP Virtual (nxp_virtual/mimx8qx6/adsp)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+vendor: nxp

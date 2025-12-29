@@ -1,0 +1,7 @@
+identifier: nxp_virtual/mcxw727c/cpu1
+name: NXP Virtual (nxp_virtual/mcxw727c/cpu1)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: nxp

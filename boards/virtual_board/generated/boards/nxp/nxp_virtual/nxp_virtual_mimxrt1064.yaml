@@ -1,0 +1,27 @@
+identifier: nxp_virtual/mimxrt1064
+name: NXP Virtual (nxp_virtual/mimxrt1064)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_serial
+  - can
+  - counter
+  - display
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
+  - sdhc
+  - spi
+  - usb_device
+  - video
+  - watchdog
+  - rtc
+vendor: nxp

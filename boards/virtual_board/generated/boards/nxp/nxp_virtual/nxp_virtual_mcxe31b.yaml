@@ -1,0 +1,13 @@
+identifier: nxp_virtual/mcxe31b
+name: NXP Virtual (nxp_virtual/mcxe31b)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - arduino_gpio
+  - gpio
+  - rtc
+  - watchdog
+  - adc
+vendor: nxp

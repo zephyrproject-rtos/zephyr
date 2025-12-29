@@ -1,0 +1,15 @@
+identifier: nxp_virtual/mimxrt798s/cm33_cpu1
+name: NXP Virtual (nxp_virtual/mimxrt798s/cm33_cpu1)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - counter
+  - gpio
+  - uart
+  - adc
+  - i3c
+  - flash
+  - memc
+vendor: nxp

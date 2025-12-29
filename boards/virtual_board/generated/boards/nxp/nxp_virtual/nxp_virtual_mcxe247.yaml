@@ -1,0 +1,16 @@
+identifier: nxp_virtual/mcxe247
+name: NXP Virtual (nxp_virtual/mcxe247)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - i2c
+  - spi
+  - gpio
+  - adc
+  - arduino_gpio
+  - comparator
+  - dma
+vendor: nxp

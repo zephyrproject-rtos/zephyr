@@ -1,0 +1,19 @@
+identifier: nxp_virtual/mcxa266
+name: NXP Virtual (nxp_virtual/mcxa266)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - flash
+  - adc
+  - i2c
+  - spi
+  - watchdog
+  - counter
+  - dma
+  - i3c
+  - entropy
+vendor: nxp

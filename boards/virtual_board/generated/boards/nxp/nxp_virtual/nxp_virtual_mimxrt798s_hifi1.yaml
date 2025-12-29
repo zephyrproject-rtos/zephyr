@@ -1,0 +1,20 @@
+identifier: nxp_virtual/mimxrt798s/hifi1
+name: NXP Virtual (nxp_virtual/mimxrt798s/hifi1)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - counter
+  - gpio
+  - i2c
+  - uart
+  - sdhc
+  - spi
+  - adc
+  - usb_device
+  - watchdog
+  - hwinfo
+  - flash
+  - memc
+vendor: nxp

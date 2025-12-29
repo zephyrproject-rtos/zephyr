@@ -1,0 +1,32 @@
+identifier: nxp_virtual/mcxn947/cpu0
+name: NXP Virtual (nxp_virtual/mcxn947/cpu0)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - can
+  - counter
+  - dac
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - i2s
+  - i3c
+  - netif:eth
+  - nvs
+  - pwm
+  - regulator
+  - rtc
+  - sdhc
+  - spi
+  - usb_device
+  - video
+  - watchdog
+vendor: nxp

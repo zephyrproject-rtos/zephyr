@@ -1,0 +1,116 @@
+{
+  "board": {
+    "name": "nxp_virtual",
+    "full_name": "NXP Virtual Board (SoC template)",
+    "vendor": "nxp"
+  },
+  "soc_ymls": [
+    "soc/nxp/mcx/soc.yml",
+    "soc/nxp/rw/soc.yml",
+    "soc/nxp/imxrt/soc.yml",
+    "soc/nxp/imx/soc.yml"
+  ],
+  "include_all_cpuclusters": true,
+  "filters": {
+    "mcx": {
+      "prefixes": ["mcxa", "mcxc", "mcxe", "mcxn", "mcxw"],
+      "exclude_cpuclusters": ["a9", "a7"]
+    }
+  },
+
+  "output": {
+    "root": "boards/virtual_board/generated",
+    "board_relpath": "boards/nxp/nxp_virtual"
+  },
+
+  "dts_labels": {
+    "sim": "sim",
+    "osc": "osc",
+    "cpu0": "cpu0"
+  },
+
+  "master_platforms": {
+    "mcxa": "frdm_mcxa153",
+    "mcxc": "frdm_mcxc242",
+    "mcxn": "mcx_n9xx_evk/mcxn947/cpu0",
+    "mcxw": "frdm_mcxw23",
+    "rw61x": "frdm_rw612",
+
+    "imxrt10xx": "mimxrt1024_evk",
+    "imxrt11xx": {"cm7": "mimxrt1170_evk@A/mimxrt1176/cm7", "cm4": "mimxrt1170_evk@A/mimxrt1176/cm4"},
+    "imxrt118x": {"cm33": "mimxrt1180_evk/mimxrt1189/cm33", "cm7": "mimxrt1180_evk/mimxrt1189/cm7"},
+    "imxrt5xx": {"cm33": "mimxrt595_evk/mimxrt595s/cm33", "f1": "mimxrt595_evk/mimxrt595s/f1"},
+    "imxrt6xx": {"cm33": "mimxrt685_evk/mimxrt685s/cm33", "hifi4": "mimxrt685_evk/mimxrt685s/hifi4"},
+    "imxrt7xx": "mimxrt700_evk/mimxrt798s/cm33_cpu0",
+
+    "imx8": "imx8qm_mek/mimx8qm6/adsp",
+    "imx8x": "imx8qxp_mek/mimx8qx6/adsp",
+    "imx8ulp": "imx8ulp_evk/mimx8ud7/adsp",
+    "imx8m": "imx8mp_evk/mimx8ml8/a53",
+    "imx9": "imx93_evk/mimx9352/a55"
+  },
+
+  "overrides": {
+    "master_platform": {
+      "rw610": "frdm_rw612",
+      "mcxw716c": "frdm_mcxw71",
+
+      "mcxa156": "frdm_mcxa156",
+      "mcxa344": "frdm_mcxa344",
+      "mcxa266": "frdm_mcxa266",
+      "mcxa346": "frdm_mcxa346",
+      "mcxa366": "frdm_mcxa366",
+      "mcxa577": "frdm_mcxa577"
+    },
+    "cpuclusters": {
+      "mcimx6x": ["m4"],
+      "mcimx7d": ["m4"]
+    },
+    "dtsi": {
+      "mcimx6x/m4": "template:imx6sx_m4",
+      "mcimx7d/m4": "template:imx7d_m4",
+
+      "mcxn947": "nxp/nxp_mcxn94x.dtsi",
+      "mcxn547": "nxp/nxp_mcxn54x.dtsi",
+      "mcxn236": "nxp/nxp_mcxn23x.dtsi",
+
+      "rw610": "nxp/nxp_rw6xx.dtsi",
+      "rw612": "nxp/nxp_rw6xx.dtsi",
+
+      "mimx9352/a55": "nxp/nxp_mimx93_a55.dtsi",
+      "mimx9352/m33": "nxp/nxp_imx93_m33.dtsi",
+
+      "mimx94398/a55": "nxp/nxp_mimx943_a55.dtsi",
+      "mimx94398/m33": "nxp/nxp_imx94x.dtsi",
+      "mimx94398/m7_0": "nxp/nxp_imx943_m7_0.dtsi",
+      "mimx94398/m7_1": "nxp/nxp_imx943_m7_1.dtsi",
+
+      "mimx9596/a55": "nxp/nxp_mimx95_a55.dtsi",
+      "mimx9596/m7": "nxp/nxp_imx95_m7.dtsi",
+
+      "mimx8qm6/adsp": "nxp/nxp_imx8qm.dtsi",
+      "mimx8qx6/adsp": "nxp/nxp_imx8qxp.dtsi",
+      "mimx8ud7/adsp": "nxp/nxp_imx8ulp.dtsi",
+      "mimx8ml8/adsp": "nxp/nxp_imx8m.dtsi",
+
+      "mimxrt685s/cm33": "nxp/nxp_rt6xx.dtsi",
+      "mimxrt685s/hifi4": "nxp/nxp_rt685_hifi4.dtsi",
+
+      "mimxrt595s/cm33": "nxp/nxp_rt5xx.dtsi",
+      "mimxrt595s/f1": "template:rt595_f1",
+
+      "mimxrt798s/cm33_cpu0": "nxp/nxp_rt7xx_cm33_cpu0.dtsi",
+      "mimxrt798s/cm33_cpu1": "nxp/nxp_rt7xx_cm33_cpu1.dtsi",
+      "mimxrt798s/hifi4": "nxp/nxp_imxrt700_hifi4.dtsi",
+      "mimxrt798s/hifi1": "nxp/nxp_imxrt700_hifi1.dtsi",
+
+      "mimxrt1189/cm33": "nxp/nxp_rt118x_cm33.dtsi",
+      "mimxrt1189/cm7": "nxp/nxp_rt118x_cm7.dtsi",
+
+      "mimxrt1176/cm7": "nxp/nxp_rt1170_cm7.dtsi",
+      "mimxrt1176/cm4": "nxp/nxp_rt1170_cm4.dtsi",
+      "mimxrt1166/cm7": "nxp/nxp_rt1160_cm7.dtsi",
+      "mimxrt1166/cm4": "nxp/nxp_rt1160_cm4.dtsi"
+    }
+  }
+}

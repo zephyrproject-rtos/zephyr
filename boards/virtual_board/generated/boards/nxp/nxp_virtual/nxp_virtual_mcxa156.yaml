@@ -1,0 +1,23 @@
+identifier: nxp_virtual/mcxa156
+name: NXP Virtual (nxp_virtual/mcxa156)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - arduino_gpio
+  - flash
+  - gpio
+  - can
+  - counter
+  - dac
+  - dma
+  - i2c
+  - i3c
+  - pwm
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
+vendor: nxp

@@ -1,0 +1,17 @@
+identifier: nxp_virtual/mimx9352/a55
+name: NXP Virtual (nxp_virtual/mimx9352/a55)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+supported:
+  - counter
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - net
+  - watchdog
+  - usbd
+vendor: nxp

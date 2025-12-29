@@ -1,0 +1,12 @@
+identifier: nxp_virtual/mimx9352/m33
+name: NXP Virtual (nxp_virtual/mimx9352/m33)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - pwm
+  - adc
+vendor: nxp
