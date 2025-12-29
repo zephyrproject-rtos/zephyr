@@ -52,6 +52,10 @@ cpusys_vevif: &cpusys_vevif_tx {};
 	compatible = "nordic,nrf-bellboard-tx";
 };
 
+&gpiote130 {
+	interrupts = <104 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
 &grtc {
 	interrupts = <108 NRF_DEFAULT_IRQ_PRIORITY>;
 };
