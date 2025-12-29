@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 			fw-download-primary-speed = <115200>;
 			fw-download-secondary-speed = <3000000>;
 			fw-download-secondary-flowcontrol;
+			wakeup-bt-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
