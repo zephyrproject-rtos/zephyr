@@ -118,6 +118,9 @@ static uint32_t idle_timer_pre_idle;
  */
 static uint32_t idle_timer_scheduled_sleep_ticks;
 
+/* Captured by the alarm callback (ISR context) */
+static volatile uint32_t idle_timer_alarm_fired_ticks;
+
 /* Idle timer used for timer while entering the idle state */
 static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
 
@@ -127,8 +130,9 @@ static void idle_timer_alarm_stub(const struct device *dev, uint8_t chan_id,
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan_id);
-	ARG_UNUSED(ticks);
 	ARG_UNUSED(user_data);
+
+	idle_timer_alarm_fired_ticks = ticks;
 }
 #endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 #endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
@@ -190,7 +194,7 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	uint32_t idle_timer_post, idle_timer_diff, idle_timer_top;
 	bool idle_timer_int_pending, idle_timer_wrap;
 
-	counter_get_value(idle_timer, &idle_timer_post);
+	idle_timer_post = idle_timer_alarm_fired_ticks;
 	idle_timer_int_pending = counter_get_pending_int(idle_timer) ? true : false;
 	idle_timer_top = counter_get_top_value(idle_timer);
 
