@@ -1,0 +1,77 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use LPTMR as the low power idle timer / wake source */
+&lptmr0 {
+	/delete-property/ prescale-glitch-filter-bypass;
+	prescale-glitch-filter = <4>;
+	status = "okay";
+};
+
+&idle {
+	exit-latency-us = <100>;
+};
+
+&stop {
+	exit-latency-us = <500>;
+};
+
+&pstop1 {
+	exit-latency-us = <300>;
+};
+
+&pstop2 {
+	exit-latency-us = <200>;
+};
+
+/* Disable other potential wake sources/peripherals */
+&adc0 {
+	status = "disabled";
+};
+
+&cmp0 {
+	status = "disabled";
+};
+
+&lpi2c0 {
+	status = "disabled";
+};
+
+&lpi2c1 {
+	status = "disabled";
+};
+
+&lpspi0 {
+	status = "disabled";
+};
+
+&lpspi1 {
+	status = "disabled";
+};
+
+&lpit0 {
+	status = "disabled";
+};
+
+&flexio {
+	status = "disabled";
+};
+
+&tsi0 {
+	status = "disabled";
+};
+
+&tsi1 {
+	status = "disabled";
+};
+
+&gpios0 {
+	status = "disabled";
+};
+
+&gpios1 {
+	status = "disabled";
+};
