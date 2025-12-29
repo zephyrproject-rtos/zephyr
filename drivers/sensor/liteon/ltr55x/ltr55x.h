@@ -24,7 +24,7 @@
 #define LTR55X_ALS_DATA_CH1_1 0x89
 #define LTR55X_ALS_DATA_CH0_0 0x8A
 #define LTR55X_ALS_DATA_CH0_1 0x8B
-#define LTR55X_ALS_STATUS     0x8C
+#define LTR55X_ALS_PS_STATUS  0x8C
 
 /* Bit masks and shifts for ALS_CONTR register */
 #define LTR55X_ALS_CONTR_MODE_MASK      BIT(0)
@@ -51,14 +51,20 @@
 #define LTR55X_MANUFAC_ID_IDENTIFICATION_SHIFT 0
 
 /* Bit masks and shifts for ALS_STATUS register */
-#define LTR55X_ALS_STATUS_DATA_MASK        GENMASK(7, 0)
-#define LTR55X_ALS_STATUS_DATA_SHIFT       0
-#define LTR55X_ALS_STATUS_DATA_READY_MASK  BIT(2)
-#define LTR55X_ALS_STATUS_DATA_READY_SHIFT 2
-#define LTR55X_ALS_STATUS_DATA_GAIN_MASK   GENMASK(6, 4)
-#define LTR55X_ALS_STATUS_DATA_GAIN_SHIFT  4
-#define LTR55X_ALS_STATUS_DATA_VALID_MASK  BIT(7)
-#define LTR55X_ALS_STATUS_DATA_VALID_SHIFT 7
+#define LTR55X_ALS_PS_STATUS_PS_DATA_STATUS_MASK   BIT(0)
+#define LTR55X_ALS_PS_STATUS_PS_DATA_STATUS_SHIFT  0
+#define LTR55X_ALS_PS_STATUS_PS_INTR_STATUS_MASK   BIT(1)
+#define LTR55X_ALS_PS_STATUS_PS_INTR_STATUS_SHIFT  1
+#define LTR55X_ALS_PS_STATUS_ALS_DATA_STATUS_MASK  BIT(2)
+#define LTR55X_ALS_PS_STATUS_ALS_DATA_STATUS_SHIFT 2
+#define LTR55X_ALS_PS_STATUS_ALS_INTR_STATUS_MASK  BIT(3)
+#define LTR55X_ALS_PS_STATUS_ALS_INTR_STATUS_SHIFT 3
+#define LTR55X_ALS_PS_STATUS_ALS_GAIN_MASK         GENMASK(6, 4)
+#define LTR55X_ALS_PS_STATUS_ALS_GAIN_SHIFT        4
+#define LTR55X_ALS_PS_STATUS_ALS_DATA_VALID_MASK   BIT(7)
+#define LTR55X_ALS_PS_STATUS_ALS_DATA_VALID_SHIFT  7
+
+#define LTR553_ALS_CONTR_MODE_ACTIVE 0x1
 
 /* Expected sensor IDs */
 #define LTR329_PART_ID_VALUE         0xA0
@@ -68,22 +74,30 @@
 #define LTR55X_INIT_STARTUP_MS        100
 #define LTR55X_WAKEUP_FROM_STANDBY_MS 10
 
+/* Convert als-gain value in device-tree to register values */
+#define LTR55X_ALS_GAIN_VALUE_1  0
+#define LTR55X_ALS_GAIN_VALUE_2  1
+#define LTR55X_ALS_GAIN_VALUE_4  2
+#define LTR55X_ALS_GAIN_VALUE_8  3
+#define LTR55X_ALS_GAIN_VALUE_48 6
+#define LTR55X_ALS_GAIN_VALUE_96 7
+
 /* Macros to set and get register fields */
-#define LTR55X_REG_SET(reg, field, value)                               \
-        (((value) << reg##_##field##_SHIFT) & reg##_##field##_MASK)
-#define LTR55X_REG_GET(reg, field, value)                               \
-        (((value) & reg##_##field##_MASK) >> reg##_##field##_SHIFT)
+#define LTR55X_REG_SET(reg, field, value)                                                          \
+	(((value) << LTR55X_##reg##_##field##_SHIFT) & LTR55X_##reg##_##field##_MASK)
+#define LTR55X_REG_GET(reg, field, value)                                                          \
+	(((value) & LTR55X_##reg##_##field##_MASK) >> LTR55X_##reg##_##field##_SHIFT)
 
 struct ltr55x_config {
-        const struct i2c_dt_spec bus;
-        uint8_t gain;
-        uint8_t integration_time;
-        uint8_t measurement_rate;
+	const struct i2c_dt_spec bus;
+	uint8_t als_gain;
+	uint8_t als_integration_time;
+	uint8_t als_measurement_rate;
 };
 
 struct ltr55x_data {
-        uint16_t ch0;
-        uint16_t ch1;
+	uint16_t als_ch0;
+	uint16_t als_ch1;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LITEON_LTR55X_LTR55X_H_ */

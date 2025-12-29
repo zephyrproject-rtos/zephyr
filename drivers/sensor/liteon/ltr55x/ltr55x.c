@@ -42,12 +42,13 @@ static int ltr55x_check_device_id(const struct i2c_dt_spec *bus)
 	return 0;
 }
 
-static int ltr55x_init_registers(const struct i2c_dt_spec *bus, const struct ltr55x_config *cfg)
+static int ltr55x_init_als_registers(const struct ltr55x_config *cfg)
 {
-	const uint8_t control_reg = LTR55X_REG_SET(LTR55X_ALS_CONTR, MODE, 1) |
-				    LTR55X_REG_SET(LTR55X_ALS_CONTR, GAIN, cfg->gain);
-	const uint8_t meas_reg = LTR55X_REG_SET(LTR55X_MEAS_RATE, REPEAT, cfg->measurement_rate) |
-				 LTR55X_REG_SET(LTR55X_MEAS_RATE, INT_TIME, cfg->integration_time);
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	const uint8_t control_reg = LTR55X_REG_SET(ALS_CONTR, MODE, LTR553_ALS_CONTR_MODE_ACTIVE) |
+				    LTR55X_REG_SET(ALS_CONTR, GAIN, cfg->als_gain);
+	const uint8_t meas_reg = LTR55X_REG_SET(MEAS_RATE, REPEAT, cfg->als_measurement_rate) |
+				 LTR55X_REG_SET(MEAS_RATE, INT_TIME, cfg->als_integration_time);
 	uint8_t buffer;
 	int rc;
 
@@ -69,14 +70,14 @@ static int ltr55x_init_registers(const struct i2c_dt_spec *bus, const struct ltr
 		LOG_ERR("Failed to read back MEAS_RATE register");
 		return rc;
 	}
-	if (LTR55X_REG_GET(LTR55X_MEAS_RATE, REPEAT, buffer) != cfg->measurement_rate) {
-		LOG_ERR("Measurement rate mismatch: expected %u, got %u", cfg->measurement_rate,
-			(uint8_t)LTR55X_REG_GET(LTR55X_MEAS_RATE, REPEAT, buffer));
+	if (LTR55X_REG_GET(MEAS_RATE, REPEAT, buffer) != cfg->als_measurement_rate) {
+		LOG_ERR("Measurement rate mismatch: expected %u, got %u", cfg->als_measurement_rate,
+			(uint8_t)LTR55X_REG_GET(MEAS_RATE, REPEAT, buffer));
 		return -ENODEV;
 	}
-	if (LTR55X_REG_GET(LTR55X_MEAS_RATE, INT_TIME, buffer) != cfg->integration_time) {
-		LOG_ERR("Integration time mismatch: expected %u, got %u", cfg->integration_time,
-			(uint8_t)LTR55X_REG_GET(LTR55X_MEAS_RATE, INT_TIME, buffer));
+	if (LTR55X_REG_GET(MEAS_RATE, INT_TIME, buffer) != cfg->als_integration_time) {
+		LOG_ERR("Integration time mismatch: expected %u, got %u", cfg->als_integration_time,
+			(uint8_t)LTR55X_REG_GET(MEAS_RATE, INT_TIME, buffer));
 		return -ENODEV;
 	}
 
@@ -102,7 +103,7 @@ static int ltr55x_init(const struct device *dev)
 	}
 
 	/* Init register to enable sensor to active mode */
-	rc = ltr55x_init_registers(&cfg->bus, cfg);
+	rc = ltr55x_init_als_registers(cfg);
 	if (rc < 0) {
 		return rc;
 	}
@@ -115,13 +116,13 @@ static int ltr55x_check_data_ready(const struct i2c_dt_spec *bus)
 	uint8_t status;
 	int rc;
 
-	rc = i2c_reg_read_byte_dt(bus, LTR55X_ALS_STATUS, &status);
+	rc = i2c_reg_read_byte_dt(bus, LTR55X_ALS_PS_STATUS, &status);
 	if (rc < 0) {
 		LOG_ERR("Failed to read ALS_STATUS register");
 		return rc;
 	}
 
-	if (!LTR55X_REG_GET(LTR55X_ALS_STATUS, DATA_READY, status)) {
+	if (!LTR55X_REG_GET(ALS_PS_STATUS, ALS_DATA_STATUS, status)) {
 		LOG_WRN("Data not ready");
 		return -EBUSY;
 	}
@@ -141,8 +142,8 @@ static int ltr55x_read_als_data(const struct i2c_dt_spec *bus, struct ltr55x_dat
 		return rc;
 	}
 
-	data->ch1 = sys_get_le16(buff);
-	data->ch0 = sys_get_le16(buff + 2);
+	data->als_ch1 = sys_get_le16(buff);
+	data->als_ch0 = sys_get_le16(buff + 2);
 
 	return 0;
 }
@@ -212,17 +213,17 @@ static int ltr55x_channel_get(const struct device *dev, enum sensor_channel chan
 		return -ENOTSUP;
 	}
 
-	if (ltr55x_get_mapped_gain(cfg->gain, &gain_value) != 0) {
+	if (ltr55x_get_mapped_gain(cfg->als_gain, &gain_value) != 0) {
 		LOG_ERR("Invalid gain configuration");
 		return -EINVAL;
 	}
 
-	if (ltr55x_get_mapped_int_time(cfg->integration_time, &integration_time_value) != 0) {
+	if (ltr55x_get_mapped_int_time(cfg->als_integration_time, &integration_time_value) != 0) {
 		LOG_ERR("Invalid integration time configuration");
 		return -EINVAL;
 	}
 
-	if ((data->ch0 == 0) && (data->ch1 == 0)) {
+	if ((data->als_ch0 == 0) && (data->als_ch1 == 0)) {
 		LOG_WRN("Both channels are zero; cannot compute ratio");
 		return -EINVAL;
 	}
@@ -230,14 +231,15 @@ static int ltr55x_channel_get(const struct device *dev, enum sensor_channel chan
 	/* Calculate lux value according to the appendix A of the datasheet. */
 	uint64_t lux;
 	/* The calculation is scaled by 1000000 to avoid floating point. */
-	uint64_t scaled_ratio = (data->ch1 * UINT64_C(1000000)) / (uint64_t)(data->ch0 + data->ch1);
+	uint64_t scaled_ratio =
+		(data->als_ch1 * UINT64_C(1000000)) / (uint64_t)(data->als_ch0 + data->als_ch1);
 
 	if (scaled_ratio < UINT64_C(450000)) {
-		lux = (UINT64_C(1774300) * data->ch0 + UINT64_C(1105900) * data->ch1);
+		lux = (UINT64_C(1774300) * data->als_ch0 + UINT64_C(1105900) * data->als_ch1);
 	} else if (scaled_ratio < UINT64_C(640000)) {
-		lux = (UINT64_C(4278500) * data->ch0 - UINT64_C(1954800) * data->ch1);
+		lux = (UINT64_C(4278500) * data->als_ch0 - UINT64_C(1954800) * data->als_ch1);
 	} else if (scaled_ratio < UINT64_C(850000)) {
-		lux = (UINT64_C(592600) * data->ch0 + UINT64_C(118500) * data->ch1);
+		lux = (UINT64_C(592600) * data->als_ch0 + UINT64_C(118500) * data->als_ch1);
 	} else {
 		LOG_WRN("Invalid ratio: %llu", scaled_ratio);
 		return -EINVAL;
@@ -260,16 +262,26 @@ static DEVICE_API(sensor, ltr55x_driver_api) = {
 	.channel_get = ltr55x_channel_get,
 };
 
-#define DEFINE_LTR55X(_num)									\
-	static struct ltr55x_data ltr55x_data_##_num;						\
-	static const struct ltr55x_config ltr55x_config_##_num = {				\
-		.bus = I2C_DT_SPEC_INST_GET(_num),						\
-		.gain = DT_INST_PROP(_num, gain),						\
-		.integration_time = DT_INST_PROP(_num, integration_time),			\
-		.measurement_rate = DT_INST_PROP(_num, measurement_rate),			\
-	};											\
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, ltr55x_init, NULL, &ltr55x_data_##_num,		\
-				     &ltr55x_config_##_num, POST_KERNEL,			\
+#define LTR55X_ALS_GAIN_REG(n)                                                                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(n, gain), (DT_PROP(n, gain)),                                 \
+		    (UTIL_CAT(LTR55X_ALS_GAIN_VALUE_, DT_PROP_OR(n, als_gain, 1))))
+#define LTR55X_ALS_INT_TIME_REG(n)                                                                 \
+	COND_CODE_1(DT_NODE_HAS_PROP(n, integration_time), (DT_PROP(n, integration_time)),         \
+		    (DT_ENUM_IDX_OR(n, als_integration_time, 0)))
+#define LTR55X_ALS_MEAS_RATE_REG(n)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(n, measurement_rate), (DT_PROP(n, measurement_rate)),         \
+		    (DT_ENUM_IDX_OR(n, als_measurement_rate, 3)))
+
+#define DEFINE_LTR55X(_num)                                                                        \
+	static struct ltr55x_data ltr55x_data_##_num;                                              \
+	static const struct ltr55x_config ltr55x_config_##_num = {                                 \
+		.bus = I2C_DT_SPEC_INST_GET(_num),                                                 \
+		.als_gain = LTR55X_ALS_GAIN_REG(_num),                                             \
+		.als_integration_time = LTR55X_ALS_INT_TIME_REG(_num),                             \
+		.als_measurement_rate = LTR55X_ALS_MEAS_RATE_REG(_num),                            \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, ltr55x_init, NULL, &ltr55x_data_##_num,                 \
+				     &ltr55x_config_##_num, POST_KERNEL,                           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ltr55x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_LTR55X)
