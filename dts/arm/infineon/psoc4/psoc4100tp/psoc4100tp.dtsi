@@ -166,6 +166,14 @@
 			#io-channel-cells = <1>;
 			clocks = <&peri_clk_div4>;
 			clk-dst = <0xc>;
+		};
+
+		dma0: dma@40101000 {
+			#dma-cells = <1>;
+			compatible = "infineon,dmac";
+			reg = <0x40101000 0x900>;
+			interrupts = <14 1>;
+			dma-channels = <8>;
 			status = "disabled";
 		};
 
