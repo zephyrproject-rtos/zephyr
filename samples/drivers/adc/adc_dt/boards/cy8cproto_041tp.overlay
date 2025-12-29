@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ADC Channel to GPIO Pin Mapping for Testing:
+ *
+ * Channel	ADC Pin	Routing Type	GPIO Pin	Test Pin (V+)	Test Pin (V-)
+ * Channel 0	0	SARMUX		P2.0		P2.0		GND
+ * Channel 1	2, 3	SARMUX (differential)	P2.2 (V+), P2.3 (V-)	P2.2	P2.3
+ * Channel 2	20	AMUXBUS_A	P2.4		P2.4		GND
+ * Channel 3	11	AMUXBUS_B	P1.3		P1.3		GND
+ *
+ * Note: For AMUXBUS mode, input-positive = (port * 8) + pin
+ *       P2.4 = (2 * 8) + 4 = 20
+ *       P1.3 = (1 * 8) + 3 = 11
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 3>;
+	};
+};
+
+&pinctrl {
+	p2_0_adc: p2_0_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_GPIO)>;
+	};
+
+	p2_2_adc: p2_2_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 2, HSIOM_SEL_GPIO)>;
+	};
+
+	p2_3_adc: p2_3_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 3, HSIOM_SEL_GPIO)>;
+	};
+
+	p2_4_adc: p2_4_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 4, HSIOM_SEL_AMUXA)>;
+	};
+
+	p1_3_adc: p1_3_adc {
+		pinmux = <DT_CAT1_PINMUX(1, 3, HSIOM_SEL_AMUXB)>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&p2_0_adc &p2_2_adc &p2_3_adc &p2_4_adc &p1_3_adc>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,differential;
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <2>;
+		zephyr,input-negative = <3>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <20>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <11>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+};
