@@ -85,3 +85,14 @@ properties:
       for Time-Counter mode or for Pulse mode.
       0 <- LPTMR is configured for Time Counter Mode.
       1 <- LPTMR is configured for Pulse Mode.
+
+  run-mode:
+    type: string
+    description: |
+      Selects how the LPTMR counter behaves on compare events.
+      - restart(default): Counter resets after matching the compare value.
+      - free-run: Compare events do not reset the counter; it resets on overflow.
+    enum:
+      - restart
+      - free-run
+    default: restart
