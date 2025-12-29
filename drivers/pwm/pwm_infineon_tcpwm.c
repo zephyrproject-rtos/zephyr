@@ -56,8 +56,10 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 		.countInput = CY_TCPWM_INPUT_1,
 		.enableCompareSwap = true,
 		.enablePeriodSwap = true,
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 		.line_out_sel = CY_TCPWM_OUTPUT_PWM_SIGNAL,
 		.linecompl_out_sel = CY_TCPWM_OUTPUT_INVERTED_PWM_SIGNAL
+#endif
 	};
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -86,7 +88,11 @@ static inline bool is_ifx_tcpwm_pwm_not_running(const struct ifx_tcpwm_pwm_confi
 {
 	uint32_t pwm_status = Cy_TCPWM_PWM_GetStatus(config->reg_base, config->tcpwm_index);
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	return (pwm_status & CY_TCPWM_PWM_STATUS_COUNTER_RUNNING) == 0;
+#else
 	return (pwm_status & TCPWM_GRP_CNT_V2_STATUS_RUNNING_Msk) == 0;
+#endif
 }
 
 /* Set period value */
@@ -101,25 +107,46 @@ static inline void ifx_tcpwm_pwm_set_period(const struct ifx_tcpwm_pwm_config *c
 static inline void ifx_tcpwm_pwm_set_compare(const struct ifx_tcpwm_pwm_config *config,
 					     uint32_t compare_value)
 {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_TCPWM_PWM_SetCompare1(config->reg_base, config->tcpwm_index, compare_value);
+#else
 	Cy_TCPWM_PWM_SetCompare0BufVal(config->reg_base, config->tcpwm_index, compare_value);
+#endif
 }
 
 /* Trigger capture/swap */
 static inline void ifx_tcpwm_trigger_swap(const struct ifx_tcpwm_pwm_config *config)
 {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_TCPWM_TriggerCaptureOrSwap(config->reg_base, BIT(config->tcpwm_index));
+#else
 	Cy_TCPWM_TriggerCaptureOrSwap_Single(config->reg_base, config->tcpwm_index);
+#endif
 }
 
 /* Trigger start */
 static inline void ifx_tcpwm_trigger_start(const struct ifx_tcpwm_pwm_config *config)
 {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_TCPWM_TriggerStart(config->reg_base, BIT(config->tcpwm_index));
+#else
 	Cy_TCPWM_TriggerStart_Single(config->reg_base, config->tcpwm_index);
+#endif
 }
 
 /* Set polarity */
 static inline void ifx_tcpwm_pwm_set_polarity(const struct ifx_tcpwm_pwm_config *config,
 					      pwm_flags_t flags)
 {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED) {
+		TCPWM_CNT_CTRL(config->reg_base, config->tcpwm_index) |=
+			TCPWM_CNT_CTRL_QUADRATURE_MODE_Msk;
+	} else {
+		TCPWM_CNT_CTRL(config->reg_base, config->tcpwm_index) &=
+			~TCPWM_CNT_CTRL_QUADRATURE_MODE_Msk;
+	}
+#else
 /* Macro to get pointer to counter cat1 struct from base address and counter number */
 #define IFX_CAT1_TCPWM_GRP_CNT_PTR(base, cntNum)                                                   \
 	(((TCPWM_Type *)(base))->GRP + TCPWM_GRP_CNT_GET_GRP(cntNum))->CNT + ((cntNum) % 256U);
@@ -139,6 +166,7 @@ static inline void ifx_tcpwm_pwm_set_polarity(const struct ifx_tcpwm_pwm_config 
 	cnt_ptr->CTRL = ctrl_temp |
 			_VAL2FLD(TCPWM_GRP_CNT_V2_CTRL_PWM_DISABLE_MODE,
 				 (flags & PWM_IFX_TCPWM_OUTPUT_MASK) >> PWM_IFX_TCPWM_OUTPUT_POS);
+#endif
 }
 
 /* Set initial period/compare values when PWM is not running */
@@ -147,7 +175,11 @@ static inline void ifx_tcpwm_pwm_set_initial_values(const struct ifx_tcpwm_pwm_c
 {
 	if ((period_cycles != 0) && (pulse_cycles != 0)) {
 		Cy_TCPWM_PWM_SetPeriod0(config->reg_base, config->tcpwm_index, period_cycles - 1);
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		Cy_TCPWM_PWM_SetCompare0(config->reg_base, config->tcpwm_index, pulse_cycles);
+#else
 		Cy_TCPWM_PWM_SetCompare0Val(config->reg_base, config->tcpwm_index, pulse_cycles);
+#endif
 	}
 }
 
@@ -261,10 +293,14 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 		}
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define TCPWM_PWM_IDX(n) .tcpwm_index = DT_NODE_CHILD_IDX(DT_INST_PARENT(n))
+#else
 #define TCPWM_PWM_IDX(n)                                                                           \
 	.tcpwm_index =                                                                             \
 		(DT_REG_ADDR(DT_INST_PARENT(n)) - DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /     \
 		DT_REG_SIZE(DT_INST_PARENT(n))
+#endif
 
 #define INFINEON_TCPWM_PWM_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
