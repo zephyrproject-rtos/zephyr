@@ -423,7 +423,8 @@ extern char __flexspi2_end[];
 
 static int init_vg_psram(void)
 {
-	memset(__flexspi2_start, 0, __flexspi2_end - __flexspi2_start);
+	size_t region_size = (size_t)__flexspi2_end - (size_t)__flexspi2_start;
+	memset(__flexspi2_start, 0, region_size);
 	return 0;
 }
 
