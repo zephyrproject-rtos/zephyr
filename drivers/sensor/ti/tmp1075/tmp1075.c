@@ -282,8 +282,8 @@ static int tmp1075_init(const struct device *dev)
 #define TMP1075_INST(inst)                                                                         \
 	static struct tmp1075_data tmp1075_data_##inst;                                            \
 	static const struct tmp1075_config tmp1075_config_##inst = {                               \
-		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),                                     \
-		.cf = DT_INST_ENUM_IDX(inst, consecutive_fault_measurements),                      \
+		.cr = DT_INST_NODE_HAS_PROP(inst, conversion_rate),                        \
+		.cf = DT_INST_NODE_HAS_PROP(inst, consecutive_fault_measurements),               \
 		.alert_pol = DT_INST_PROP(inst, alert_pin_active_high),                            \
 		.interrupt_mode = DT_INST_PROP(inst, interrupt_mode),                              \
 		.shutdown_mode = DT_INST_PROP(inst, shutdown_mode),                                \
