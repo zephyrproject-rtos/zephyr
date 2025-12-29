@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon PSOC4 SAR ADC configuration options
+
+config ADC_INFINEON_PSOC4
+	bool "Infineon PSOC4 ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_PSOC4_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select USE_INFINEON_ADC
+	help
+	This option enables the ADC driver for Infineon PSOC4 family.
