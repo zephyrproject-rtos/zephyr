@@ -20,6 +20,7 @@ struct mcux_lptmr_config {
 	lptmr_prescaler_clock_select_t clk_source;
 	lptmr_prescaler_glitch_value_t prescaler_glitch;
 	bool bypass_prescaler_glitch;
+	bool free_running;
 	lptmr_timer_mode_t mode;
 	lptmr_pin_select_t pin;
 	lptmr_pin_polarity_t polarity;
@@ -269,7 +270,7 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	LPTMR_GetDefaultConfig(&lptmr_config);
 	lptmr_config.timerMode = config->mode;
-	lptmr_config.enableFreeRunning = false;
+	lptmr_config.enableFreeRunning = config->free_running;
 	lptmr_config.prescalerClockSource = config->clk_source;
 	lptmr_config.bypassPrescaler = config->bypass_prescaler_glitch;
 	lptmr_config.value = config->prescaler_glitch;
@@ -323,6 +324,9 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 			(DT_INST_PROP(n, clock_frequency) / MCUX_LPTMR_TIME_DIV(n)) : \
 			(DT_INST_PROP(n, clock_frequency) / MCUX_LPTMR_PULSE_DIV(n))))
 
+/* DT run-mode enum order: restart(0), free-run(1). Default: restart(0). */
+#define MCUX_LPTMR_IS_FREE_RUN(n) (DT_INST_ENUM_IDX_OR(n, run_mode, 0) == 1)
+
 #define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
 	static void mcux_lptmr_irq_config_##n(const struct device *dev)		\
 	{									\
@@ -358,6 +362,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
 		.clk_source = DT_INST_PROP(n, clk_source),			\
 		.bypass_prescaler_glitch = MCUX_LPTMR_BYPASS(n),	\
+		.free_running = MCUX_LPTMR_IS_FREE_RUN(n),			\
 		.mode = DT_INST_PROP(n, timer_mode_sel),			\
 		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
 		.polarity = DT_INST_PROP(n, active_low),			\
