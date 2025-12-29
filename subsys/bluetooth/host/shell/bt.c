@@ -5179,12 +5179,6 @@ int ead_update_ad(void)
 		/* the data_len from bt_data struct doesn't include the size of the type */
 		ad->data_len = bt_shell_ead_data[idx] - 1;
 
-		if (ad->data_len < 0) {
-			/* if the len is less than 0 that mean there is not even a type field */
-			bt_shell_error("Failed to update AD due to malformed AD.");
-			return -ENOEXEC;
-		}
-
 		ad->type = bt_shell_ead_data[idx + 1];
 
 		if (ad->data_len > 0) {
