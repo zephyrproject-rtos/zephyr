@@ -208,7 +208,7 @@ static void vglite_task(void *arg1, void *arg2, void *arg3)
 		}
 	}
 
-	uint32_t startTime, time, n = 0, fps_x_1000; /* start, end, elapsed; */
+	uint32_t startTime, time, n = 0, fps_x_1000;
 
 	startTime = getTime();
 	while (1) {
