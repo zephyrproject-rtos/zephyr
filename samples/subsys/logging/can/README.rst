@@ -31,6 +31,9 @@ Under common Linux systems, a virtual can device can be created using:
 
 If no zcan0 device exists, the example might segfault.
 
+Listen to the output using candump -a or scripts/logging/can/recv_can_log.py.
+Example usage: recv_can_log.py 7ff 1234abcd
+
 Sample Output
 =============
 
