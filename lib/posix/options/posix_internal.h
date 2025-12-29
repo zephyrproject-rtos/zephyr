@@ -44,6 +44,9 @@ struct posix_thread_attr
 	bool cancelstate: 1;
 	bool canceltype: 1;
 	bool detachstate: 1;
+#ifdef CONFIG_SHARED_MULTI_HEAP
+	bool insmh: 1;
+#endif
 };
 
 struct posix_thread {

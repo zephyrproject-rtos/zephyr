@@ -551,6 +551,23 @@ int pthread_spin_unlock(pthread_spinlock_t *lock);
 
 #endif
 
+#ifdef CONFIG_SHARED_MULTI_HEAP
+/**
+ * @brief Set if a pthread attr_t's stack is in the
+ *        shared multi-heap.
+ *
+ * Sets the insmh property, which is used to determine
+ * the free method of the attr's block.
+ * pthread_attr_setstack should be called beforehand.
+ *
+ * @param attr pthread_attr_t to modify
+ * @param val value to set insmh to
+ * @retval 0 Success
+ * @retval EINVAL attr is not initialized
+ */
+int pthread_attr_setinsmh(pthread_attr_t *_attr, bool val);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

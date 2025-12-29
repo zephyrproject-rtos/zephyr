@@ -20,6 +20,9 @@
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#ifdef CONFIG_SHARED_MULTI_HEAP
+#include <zephyr/multi_heap/shared_multi_heap.h>
+#endif
 
 #define ZEPHYR_TO_POSIX_PRIORITY(_zprio)                                                           \
 	(((_zprio) < 0) ? (-1 * ((_zprio) + 1)) : (CONFIG_NUM_PREEMPT_PRIORITIES - (_zprio)-1))
@@ -962,6 +965,11 @@ int pthread_attr_init(pthread_attr_t *_attr)
 		}
 	}
 
+#ifdef CONFIG_SHARED_MULTI_HEAP
+	/* by default, the pthread is not allocated in the shared multi-heap */
+	attr->insmh = false;
+#endif
+
 	/* caller responsible for destroying attr */
 	attr->initialized = true;
 
@@ -1422,7 +1430,16 @@ int pthread_attr_destroy(pthread_attr_t *_attr)
 		return EINVAL;
 	}
 
+#ifdef CONFIG_SHARED_MULTI_HEAP
+	if (attr->insmh) {
+		shared_multi_heap_free(attr->stack);
+		ret = 0;
+	} else {
+		ret = k_thread_stack_free(attr->stack);
+	}
+#else
 	ret = k_thread_stack_free(attr->stack);
+#endif
 	if (ret == 0) {
 		LOG_DBG("Freed attr %p thread stack %zu@%p", _attr, __get_attr_stacksize(attr),
 			attr->stack);
@@ -1433,6 +1450,20 @@ int pthread_attr_destroy(pthread_attr_t *_attr)
 
 	return 0;
 }
+
+#ifdef CONFIG_SHARED_MULTI_HEAP
+int pthread_attr_setinsmh(pthread_attr_t *_attr, bool val)
+{
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
+
+	if (!__attr_is_initialized(attr)) {
+		return EINVAL;
+	}
+	attr->insmh = val;
+	LOG_DBG("Set insmh %s %p", val ? "true" : "false", _attr);
+	return 0;
+}
+#endif
 
 int pthread_setname_np(pthread_t thread, const char *name)
 {
