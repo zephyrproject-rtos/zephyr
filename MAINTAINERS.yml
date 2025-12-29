@@ -1145,7 +1145,7 @@ Devicetree Bindings:
     - include/zephyr/dt-bindings/
     - scripts/bindings_properties_allowlist.yaml
   labels:
-    - "area: Devicetree Bindings"
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
