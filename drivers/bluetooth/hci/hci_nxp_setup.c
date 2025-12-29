@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,40 @@ static struct nxp_ctlr_dev_data uart_dev_data;
 
 static unsigned long crc_table[256U];
 static bool made_table;
+#if (defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT) && defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK))
+#define LED0_NODE DT_ALIAS(led0)
+
+static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+#define BLINK_ONOFF K_MSEC(1000)
+static struct k_work_delayable led_blink_work;
+static void led_blink_cb(struct k_work *work)
+{
+	int current_state = gpio_pin_get_dt(&led_gpio);
+
+	if (current_state == 0) {
+		/* LED is OFF, turn it ON briefly */
+		gpio_pin_set_dt(&led_gpio, 1);
+		k_work_reschedule(&led_blink_work, BLINK_ONOFF);
+	} else {
+		/* LED is ON, turn it OFF and keep it OFF */
+		gpio_pin_set_dt(&led_gpio, 0);
+		/* Don't reschedule - wait for next interrupt */
+	}
+}
+
+#endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT && CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK */
+
+#if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
+static struct gpio_callback bt_wakeup_callback;
+static void gpio_wakeup_callback_bt(const struct device *port, struct gpio_callback *cb,
+				 gpio_port_pins_t pins)
+{
+#if (defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK))
+	/* Schedule LED blink when activity is detected on wake-up IO */
+	k_work_schedule(&led_blink_work, BLINK_ONOFF);
+#endif
+}
+#endif
 
 static void fw_upload_gen_crc32_table(void)
 {
@@ -1467,7 +1501,61 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 			LOG_ERR("Fail to load annex-100 calibration data");
 			return err;
 		}
+#if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_bt_gpios)
+	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_bt_gpios);
 
+	LOG_DBG("Configuring Wakeup IOs\n");
+	if (!gpio_is_ready_dt(&wakeup)) {
+		LOG_ERR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
+			wakeup.pin);
+		return -EIO;
+	}
+
+	/* Configure wakeup gpio as input  */
+	err = gpio_pin_configure_dt(&wakeup, GPIO_INPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure wakeup %s pin %d", err,
+			wakeup.port->name, wakeup.pin);
+		return err;
+	}
+
+	err = gpio_pin_set_dt(&wakeup, 0);
+	if (err) {
+		return err;
+	}
+
+	/* Configure wakeup gpio interrupt */
+	err = gpio_pin_interrupt_configure_dt(&wakeup, GPIO_INT_EDGE_FALLING);
+	if (err) {
+		return err;
+	}
+
+	/* Set wakeup gpio callback function */
+	gpio_init_callback(&bt_wakeup_callback, gpio_wakeup_callback_bt, BIT(wakeup.pin));
+	err = gpio_add_callback_dt(&wakeup, &bt_wakeup_callback);
+	if (err) {
+		return err;
+	}
+#endif
+
+#if (defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK))
+	LOG_DBG("Configuring LED0 for BT Activity\n");
+	if (!gpio_is_ready_dt(&led_gpio)) {
+		return 0;
+	}
+
+	err = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err < 0) {
+		return 0;
+	}
+
+	/* Setting the default value for LED0 to off*/
+	gpio_pin_set_dt(&led_gpio, 0);
+
+	k_work_init_delayable(&led_blink_work, led_blink_cb);
+#endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK */
+#endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT */
 		fw_upload.is_setup_done = true;
 	}
 

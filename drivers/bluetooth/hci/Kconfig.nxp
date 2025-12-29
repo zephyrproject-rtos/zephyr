@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -11,6 +11,19 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 	  Auto sleep mode means the Controller will handle its low power state automatically.
 	  Enabling this feature will allow to save power at the cost of some latency when sending a HCI
 	  message to the Controller as the Host will need to wake it up.
+
+config BT_NXP_CTRL_WAKE_ON_BT
+	bool "Config to enable/disable wake on BT/BLE for NXP controllers"
+	help
+	  Enable/Disable BT wakeup IO triggers for NXP BT IW416/NW612/IW610 SOC.
+
+config BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK
+	bool "Config LED0 to blink upon observing activity on BT wakeup IO"
+	depends on BT_NXP_CTRL_WAKE_ON_BT
+	depends on $(dt_alias_enabled,led0)
+	help
+	  Enable LED blinking to indicate Bluetooth activity when wake-on-BT
+	  is triggered. Requires led0 alias to be defined in device tree.
 
 config HCI_NXP_SET_CAL_DATA
 	bool "Bluetooth Controller calibration data"
