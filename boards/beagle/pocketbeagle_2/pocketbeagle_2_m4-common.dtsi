@@ -57,6 +57,10 @@
 		mboxes = <&mbox0 0>, <&mbox0 1>;
 		mbox-names = "tx", "rx";
 	};
+
+	rpmsg0: rpmsg0 {
+		compatible = "rpmsg-uart";
+	};
 };
 
 &uart0 {
