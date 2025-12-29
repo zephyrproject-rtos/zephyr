@@ -125,6 +125,17 @@ void gradient_cache_free(void)
 					vg_lite_clear_grad(
 						&g_grad_cache[i]
 							 .grad_data.linear_basic.basic_gradient);
+				} else {
+					/*
+					 * Unexpected gradient type or chip ID combination.
+					 * This could be:
+					 * - Radial gradient on chip 0x255 (not supported)
+					 * - Unknown gradient type
+					 * - Uninitialized cache entry
+					 */
+					printk("Warning: Unhandled gradient cache entry: "
+					       "type=%d, chip_id=0x%X\n",
+					       g_grad_cache[i].type, g_chip_id);
 				}
 			}
 		}
@@ -228,6 +239,17 @@ vg_lite_error_t gradient_cache_find(void *grad, int type, vg_lite_matrix_t *tran
 		vg_lite_clear_radial_grad(&cachedGradient->grad_data.rg.rGradient);
 	} else if (cachedGradient->type == eLinearGradientCacheEntry && g_chip_id == 0x255) {
 		vg_lite_clear_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
+	} else {
+		/*
+		 * Unexpected gradient type or chip ID combination.
+		 * This could be:
+		 * - Radial gradient on chip 0x255 (not supported)
+		 * - Unknown gradient type
+		 * - Uninitialized cache entry
+		 */
+		printk("Warning: Unhandled gradient cache entry: "
+			"type=%d, chip_id=0x%X\n",
+			cachedGradient->type, g_chip_id);  // ← Use cachedGradient, not g_grad_cache[i]
 	}
 
 	vg_lite_uint32_t colors[MAX_GRADIENT_STOP_POINTS];
@@ -305,14 +327,22 @@ vg_lite_error_t gradient_cache_find(void *grad, int type, vg_lite_matrix_t *tran
 		}
 	} else if (type == eRadialGradientCacheEntry && g_chip_id == 0x255) {
 		printk("Error: Radial gradient is not supported for ChipId: 0x%X\r\n", g_chip_id);
+	} else {
+		/*
+		 * Unexpected combination of gradient type and chip ID.
+		 * This could be:
+		 * - Invalid gradient type (not Linear or Radial)
+		 * - Unsupported chip ID
+		 */
+		printk("Error: Invalid gradient configuration: type=%d, chip_id=0x%X\r\n",
+			type, g_chip_id);
+		return VG_LITE_INVALID_ARGUMENT;
 	}
 
 	if (is_matrix_identical(&cachedGradient->grad_data.linear_basic.basic_gradient.matrix,
 				transform_matrix) == 0) {
 		cachedGradient->grad_data.linear_basic.basic_gradient.matrix = *transform_matrix;
 		error = vg_lite_update_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
-	} else if (type == eRadialGradientCacheEntry && g_chip_id == 0x255) {
-		printk("Error: Radial gradient is not supported for ChipId: 0x%X\r\n", g_chip_id);
 	}
 
 	if (error != VG_LITE_SUCCESS) {
@@ -490,6 +520,8 @@ vg_lite_error_t layer_font_glyph_cache_find(font_info_t *font, uint16_t g_u16,
 				gIdx = gIdx - 1;
 			}
 			break;
+		} else {
+			/* Current glyph doesn't match - continue searching */
 		}
 	}
 
