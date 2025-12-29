@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan0;
 		zephyr,code-cpu1-partition = &slot1_partition;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	aliases {
