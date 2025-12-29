@@ -158,8 +158,8 @@ static void redraw()
 	vg_lite_buffer_t *rt = VGLITE_GetRenderTarget(&window);
 	if (rt == NULL) {
 		printk("vg_lite_get_renderTarget error\r\n");
-		while (1)
-			;
+		while (1) {
+		}
 	}
 	vg_lite_identity(&matrix);
 	vg_lite_translate(window.width / 2.0f, window.height / 2.0f, &matrix);
@@ -217,8 +217,8 @@ static void vglite_task(void *arg1, void *arg2, void *arg3)
 	error = init_vg_lite(&my_display);
 	if (error) {
 		printk("init_vg_lite failed: init_vg_lite() returned error %d\n", error);
-		while (1)
-			;
+		while (1) {
+		}
 	}
 
 	uint32_t startTime, time, n = 0;
