@@ -1130,12 +1130,12 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 		return err;
 	}
 
-	k_mutex_unlock(&data->lock);
-
-	LOG_DBG("Attached std filter at %d", filter_id);
-
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
+
+	k_mutex_unlock(&data->lock);
+
+	LOG_DBG("added std filter at index %d", filter_id);
 
 	return filter_id;
 }
@@ -1181,12 +1181,12 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 		return err;
 	}
 
-	k_mutex_unlock(&data->lock);
-
-	LOG_DBG("Attached ext filter at %d", filter_id);
-
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
+
+	k_mutex_unlock(&data->lock);
+
+	LOG_DBG("added ext filter at index %d", filter_id);
 
 	return filter_id;
 }
