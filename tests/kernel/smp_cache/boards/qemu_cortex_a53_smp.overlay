@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@0 {
+			d-cache-line-size = <64>;
+			i-cache-line-size = <64>;
+		};
+
+		cpu@1 {
+			d-cache-line-size = <64>;
+			i-cache-line-size = <64>;
+		};
+	};
+};
