@@ -799,9 +799,9 @@ The build system will print this at CMake configuration time:
 This allows you to only create revision configuration files for board revision
 numbers that introduce incompatible changes.
 
-Similar for ``letter`` where revision ``A``, ``D``, and ``F`` could be defined
-and the user builds for ``plank@E``, the build system will target revision ``D``
-.
+Similarly for ``letter`` revision format, if revisions ``A``, ``D``, and ``F``
+are defined and the user builds for ``plank@E``, the build system will target
+revision ``D``.
 
 Exact revision matching
 =======================
