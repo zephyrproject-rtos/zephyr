@@ -180,14 +180,12 @@ static void tdm_irq_handler(const struct device *dev)
 	const struct tdm_drv_cfg *drv_cfg = dev->config;
 	NRF_TDM_Type *p_reg = drv_cfg->p_reg;
 	tdm_ctrl_t *ctrl_data = drv_cfg->control_data;
-	uint32_t event_mask = 0;
 
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_MAXCNT)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_MAXCNT);
 	}
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_TXPTRUPD)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_TXPTRUPD);
-		event_mask |= NRFY_EVENT_TO_INT_BITMASK(NRF_TDM_EVENT_TXPTRUPD);
 		ctrl_data->tx_ready = true;
 		if (ctrl_data->use_tx && ctrl_data->buffers_needed) {
 			ctrl_data->buffers_reused = true;
@@ -195,7 +193,6 @@ static void tdm_irq_handler(const struct device *dev)
 	}
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_RXPTRUPD)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_RXPTRUPD);
-		event_mask |= NRFY_EVENT_TO_INT_BITMASK(NRF_TDM_EVENT_RXPTRUPD);
 		ctrl_data->rx_ready = true;
 		if (ctrl_data->use_rx && ctrl_data->buffers_needed) {
 			ctrl_data->buffers_reused = true;
@@ -203,7 +200,6 @@ static void tdm_irq_handler(const struct device *dev)
 	}
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_STOPPED)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_STOPPED);
-		event_mask |= NRFY_EVENT_TO_INT_BITMASK(NRF_TDM_EVENT_STOPPED);
 		nrf_tdm_int_disable(p_reg, NRF_TDM_INT_STOPPED_MASK_MASK);
 		nrf_tdm_disable(p_reg);
 		/* When stopped, release all buffers, including these scheduled for
