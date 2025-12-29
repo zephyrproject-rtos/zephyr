@@ -1126,6 +1126,7 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 				  &filter_element, sizeof(filter_element));
 	if (err != 0) {
 		LOG_ERR("failed to write std filter element (err %d)", err);
+		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
@@ -1176,6 +1177,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 				  &filter_element, sizeof(filter_element));
 	if (err != 0) {
 		LOG_ERR("failed to write std filter element (err %d)", err);
+		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
