@@ -10,7 +10,7 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
   gain:
     type: int
-    default: 0
+    deprecated: true
     description: |
       This parameter adjusts the ADC gain factor, impacting the sensor's
       light sensitivity range. The default setting, corresponding to the
@@ -26,7 +26,7 @@ properties:
 
   integration-time:
     type: int
-    default: 0
+    deprecated: true
     description: |
       ALS Integration Time is the measurement time for each ALS cycle.
       Default value is a register reset value (100ms).
@@ -43,7 +43,7 @@ properties:
 
   measurement-rate:
     type: int
-    default: 3
+    deprecated: true
     description: |
       ALS Measurement Rate is the rate at which the sensor
       takes measurements in the active mode. This is the interval
@@ -61,3 +61,34 @@ properties:
       - 4 # 1000ms
       - 5 # 2000ms
     enum: [0, 1, 2, 3, 4, 5]
+
+  als-gain:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8, 48, 96]
+    description: |
+      This parameter adjusts the ADC gain factor, impacting the sensor's
+      light sensitivity range. The default setting, corresponding to the
+      register reset value (1X).
+
+  als-integration-time:
+    type: int
+    default: 100
+    enum: [100, 50, 200, 400, 150, 250, 300, 350]
+    description: |
+      ALS Integration Time is the measurement time for each ALS cycle.
+      Default value is a register reset value (100ms).
+
+  als-measurement-rate:
+    type: int
+    default: 500
+    enum: [50, 100, 200, 500, 1000, 2000]
+    description: |
+      ALS Measurement Rate is the rate at which the sensor
+      takes measurements in the active mode. This is the interval
+      between ALS_DATA registers update. ALS Measurement Repeat Rate
+      must be set to be equal or larger than the Integration Time.
+      If ALS Measurement Repeat Rate  is set to be smaller than
+      ALS Integration Time, it will automatically be reset to be
+      equal to ALS Integration Time by the IC internally. Default value
+      is a register reset value (500ms).
