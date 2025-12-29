@@ -23,3 +23,16 @@ config SOC_PIC64GX
 	select RISCV_ISA_EXT_ZIFENCEI
 
 endchoice
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_RSCTABLE_MEM := zephyr,rsctable-mem
+
+config DT_HAS_CHOSEN_Z_RSCTABLE_MEM_ENABLED
+        def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_RSCTABLE_MEM))
+
+config PIC64GX_RELOCATE_RESOURCE_TABLE
+	bool "Relocate resource table"
+	depends on OPENAMP_RSC_TABLE && DT_HAS_CHOSEN_Z_RSCTABLE_MEM_ENABLED
+	help
+          Copy resource table into a specific memory selected with the chosen node
+          zephyr,rsctable-mem
