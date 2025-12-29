@@ -11,8 +11,11 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/logging/log.h>
 
 #include "cortex_m_systick.h"
+
+LOG_MODULE_REGISTER(cortex_m_systick, CONFIG_KERNEL_LOG_LEVEL);
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -138,9 +141,18 @@ static void idle_timer_alarm_stub(const struct device *dev, uint8_t chan_id,
  */
 void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 {
+	uint32_t ticks = counter_us_to_ticks(idle_timer, max_lpm_time_us);
+
+	/* For very short timeouts, rounding may yield 0 ticks. Treat as ASAP. */
+	if (ticks == 0U) {
+		LOG_WRN("idle-timer: max_lpm_time_us=%llu rounded to 0 ticks, clamping to 1",
+				max_lpm_time_us);
+		ticks = 1U;
+	}
+
 	struct counter_alarm_cfg cfg = {
 		.callback = idle_timer_alarm_stub,
-		.ticks = counter_us_to_ticks(idle_timer, max_lpm_time_us),
+		.ticks = ticks,
 		.user_data = NULL,
 		.flags = 0,
 	};
@@ -154,7 +166,13 @@ void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * Needed rump-up/setting time, lower accurency etc. should be
 	 * included in the exit-latency in the power state definition.
 	 */
-	counter_set_channel_alarm(idle_timer, 0, &cfg);
+	int err = counter_set_channel_alarm(idle_timer, 0, &cfg);
+
+	if (err != 0) {
+		LOG_ERR("idle-timer set alarm failed: %d (ticks=%u us=%llu)",
+			err, cfg.ticks, max_lpm_time_us);
+		return;
+	}
 
 	/* Store current value of the selected timer to calculate a
 	 * difference in measurements after exiting the idle state.
