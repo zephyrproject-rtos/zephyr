@@ -135,6 +135,15 @@
 			status = "disabled";
 		};
 
+		dma0: dma@40101000 {
+			#dma-cells = <1>;
+			compatible = "infineon,dmac";
+			reg = <0x40101000 0x900>;
+			interrupts = <14 1>;
+			dma-channels = <8>;
+			status = "disabled";
+		};
+
 		tcpwm0: tcpwm0@40200000 {
 			reg = <0x40200000 0x280>;
 			#address-cells = <1>;
