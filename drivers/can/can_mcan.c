@@ -1053,7 +1053,6 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		}
 	}
 
-	__ASSERT_NO_MSG(put_idx < cbs->num_tx);
 	cbs->tx[put_idx].function = callback;
 	cbs->tx[put_idx].user_data = user_data;
 
@@ -1134,7 +1133,6 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 
 	LOG_DBG("Attached std filter at %d", filter_id);
 
-	__ASSERT_NO_MSG(filter_id < cbs->num_std);
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
 
@@ -1185,7 +1183,6 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 
 	LOG_DBG("Attached ext filter at %d", filter_id);
 
-	__ASSERT_NO_MSG(filter_id < cbs->num_ext);
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
 
