@@ -6,7 +6,7 @@ description: |
   of generating deprecation warnings, which are errors in some
   configurations.
 
-compatible: vnd,non-deprecated-label
+compatible: "vnd,non-deprecated-label"
 
 properties:
   label:

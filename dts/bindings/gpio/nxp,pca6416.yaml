@@ -1,7 +1,7 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 description: NXP PCA6416 I2C GPIO expander
-compatible: nxp,pca6416
+compatible: "nxp,pca6416"
 include: nxp,pca_series.yaml
 
 properties:
