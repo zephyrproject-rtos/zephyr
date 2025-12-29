@@ -15,7 +15,7 @@ config UART_MCUX_LPUART
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_ISR_SUPPORT
-	bool
+	bool "MCUX LPUART interrupt support"
 	default y if UART_INTERRUPT_DRIVEN || PM || UART_ASYNC_API
 	help
 	  Enable UART interrupt service routine.

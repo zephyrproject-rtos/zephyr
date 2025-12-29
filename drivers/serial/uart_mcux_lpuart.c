@@ -178,7 +178,7 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_lpuart_config *config = dev->config;
 	unsigned int key;
-#ifdef CONFIG_PM
+#if defined(CONFIG_PM) && defined(CONFIG_UART_MCUX_LPUART_ISR_SUPPORT)
 	struct mcux_lpuart_data *data = dev->data;
 #endif
 
@@ -193,7 +193,9 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 	 * transmission completes. Set the power constraint, and enable
 	 * the transmission complete interrupt so we know when transmission is
 	 * completed.
+	 * Only use the TC interrupt + PM constraint if ISR support exists.
 	 */
+#if defined(CONFIG_UART_MCUX_LPUART_ISR_SUPPORT)
 	if (!data->tx_poll_stream_on && !data->tx_int_stream_on) {
 		data->tx_poll_stream_on = true;
 		mcux_lpuart_pm_policy_state_lock_get(dev);
@@ -202,10 +204,21 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 			kLPUART_TransmissionCompleteInterruptEnable);
 
 	}
+#endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 #endif /* CONFIG_PM */
 
 	LPUART_WriteByte(config->base, c);
 	irq_unlock(key);
+#ifdef CONFIG_PM
+#if !defined(CONFIG_UART_MCUX_LPUART_ISR_SUPPORT)
+	/*
+	 * No ISR support: ensure the byte fully leaves the shifter without using IRQs.
+	 * This avoids entering deep power states mid-transmit.
+	 */
+	while (!(LPUART_GetStatusFlags(config->base) & kLPUART_TransmissionCompleteFlag)) {
+	}
+#endif
+#endif
 }
 
 static int mcux_lpuart_err_check(const struct device *dev)
