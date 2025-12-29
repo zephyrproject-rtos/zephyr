@@ -3,7 +3,7 @@
 
 description: NXP EHCI USB device mode
 
-compatible: nxp,ehci
+compatible: "nxp,ehci"
 
 include: "nxp,mcux-usbd.yaml"
 

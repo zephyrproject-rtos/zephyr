@@ -3,7 +3,7 @@
 
 description: nRF7002 Wi-Fi chip with QSPI interface.
 
-compatible: nordic,nrf7002-qspi
+compatible: "nordic,nrf7002-qspi"
 
 include:
   - "nordic,nrf70-qspi.yaml"
