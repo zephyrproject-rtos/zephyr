@@ -27,7 +27,7 @@
 LOG_MODULE_REGISTER(pwm_ifx_tcpwm, CONFIG_PWM_LOG_LEVEL);
 
 struct ifx_tcpwm_pwm_config {
-	TCPWM_GRP_CNT_Type *reg_base;
+	TCPWM_Type *reg_base;
 	const struct pinctrl_dev_config *pcfg;
 	bool resolution_32_bits;
 	uint32_t tcpwm_index;
@@ -57,7 +57,8 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 		.enableCompareSwap = true,
 		.enablePeriodSwap = true,
 		.line_out_sel = CY_TCPWM_OUTPUT_PWM_SIGNAL,
-		.linecompl_out_sel = CY_TCPWM_OUTPUT_INVERTED_PWM_SIGNAL};
+		.linecompl_out_sel = CY_TCPWM_OUTPUT_INVERTED_PWM_SIGNAL
+	};
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -71,24 +72,89 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 	}
 
 	/* Configure the TCPWM to be a PWM */
-	status = IFX_TCPWM_PWM_Init(config->reg_base, &pwm_config);
+	status = Cy_TCPWM_PWM_Init(config->reg_base, config->tcpwm_index, &pwm_config);
 	if (status != CY_TCPWM_SUCCESS) {
+		LOG_ERR("PWM init failed for counter %u: 0x%08x", config->tcpwm_index, status);
 		return -ENOTSUP;
 	}
 
 	return 0;
 }
 
-static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
-				    uint32_t period_cycles, uint32_t pulse_cycles,
-				    pwm_flags_t flags)
+/* Common PWM status checking */
+static inline bool is_ifx_tcpwm_pwm_not_running(const struct ifx_tcpwm_pwm_config *config)
 {
-	ARG_UNUSED(channel);
+	uint32_t pwm_status = Cy_TCPWM_PWM_GetStatus(config->reg_base, config->tcpwm_index);
 
-	const struct ifx_tcpwm_pwm_config *config = dev->config;
-	uint32_t pwm_status;
+	return (pwm_status & TCPWM_GRP_CNT_V2_STATUS_RUNNING_Msk) == 0;
+}
+
+/* Set period value */
+static inline void ifx_tcpwm_pwm_set_period(const struct ifx_tcpwm_pwm_config *config,
+					    uint32_t period_cycles)
+{
+	Cy_TCPWM_PWM_SetPeriod1(config->reg_base, config->tcpwm_index,
+				period_cycles > 0 ? period_cycles - 1 : 0);
+}
+
+/* Set compare value */
+static inline void ifx_tcpwm_pwm_set_compare(const struct ifx_tcpwm_pwm_config *config,
+					     uint32_t compare_value)
+{
+	Cy_TCPWM_PWM_SetCompare0BufVal(config->reg_base, config->tcpwm_index, compare_value);
+}
+
+/* Trigger capture/swap */
+static inline void ifx_tcpwm_trigger_swap(const struct ifx_tcpwm_pwm_config *config)
+{
+	Cy_TCPWM_TriggerCaptureOrSwap_Single(config->reg_base, config->tcpwm_index);
+}
+
+/* Trigger start */
+static inline void ifx_tcpwm_trigger_start(const struct ifx_tcpwm_pwm_config *config)
+{
+	Cy_TCPWM_TriggerStart_Single(config->reg_base, config->tcpwm_index);
+}
+
+/* Set polarity */
+static inline void ifx_tcpwm_pwm_set_polarity(const struct ifx_tcpwm_pwm_config *config,
+					      pwm_flags_t flags)
+{
+/* Macro to get pointer to counter cat1 struct from base address and counter number */
+#define IFX_CAT1_TCPWM_GRP_CNT_PTR(base, cntNum)                                                   \
+	(((TCPWM_Type *)(base))->GRP + TCPWM_GRP_CNT_GET_GRP(cntNum))->CNT + ((cntNum) % 256U);
+
 	uint32_t ctrl_temp;
+	TCPWM_GRP_CNT_Type *cnt_ptr =
+		IFX_CAT1_TCPWM_GRP_CNT_PTR(config->reg_base, config->tcpwm_index);
 
+	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED) {
+		cnt_ptr->CTRL |= TCPWM_GRP_CNT_V2_CTRL_QUAD_ENCODING_MODE_Msk;
+	} else {
+		cnt_ptr->CTRL &= ~TCPWM_GRP_CNT_V2_CTRL_QUAD_ENCODING_MODE_Msk;
+	}
+
+	ctrl_temp = cnt_ptr->CTRL & ~TCPWM_GRP_CNT_V2_CTRL_PWM_DISABLE_MODE_Msk;
+
+	cnt_ptr->CTRL = ctrl_temp |
+			_VAL2FLD(TCPWM_GRP_CNT_V2_CTRL_PWM_DISABLE_MODE,
+				 (flags & PWM_IFX_TCPWM_OUTPUT_MASK) >> PWM_IFX_TCPWM_OUTPUT_POS);
+}
+
+/* Set initial period/compare values when PWM is not running */
+static inline void ifx_tcpwm_pwm_set_initial_values(const struct ifx_tcpwm_pwm_config *config,
+						    uint32_t period_cycles, uint32_t pulse_cycles)
+{
+	if ((period_cycles != 0) && (pulse_cycles != 0)) {
+		Cy_TCPWM_PWM_SetPeriod0(config->reg_base, config->tcpwm_index, period_cycles - 1);
+		Cy_TCPWM_PWM_SetCompare0Val(config->reg_base, config->tcpwm_index, pulse_cycles);
+	}
+}
+
+/* Validate cycles based on resolution */
+static inline int ifx_tcpwm_pwm_validate_cycles(const struct ifx_tcpwm_pwm_config *config,
+						uint32_t period_cycles, uint32_t pulse_cycles)
+{
 	if (!config->resolution_32_bits &&
 	    ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX))) {
 		/* 16-bit resolution */
@@ -100,27 +166,31 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		}
 		return -EINVAL;
 	}
-	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED) {
-		config->reg_base->CTRL |= TCPWM_GRP_CNT_V2_CTRL_QUAD_ENCODING_MODE_Msk;
-	} else {
-		config->reg_base->CTRL &= ~TCPWM_GRP_CNT_V2_CTRL_QUAD_ENCODING_MODE_Msk;
+	return 0;
+}
+
+static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
+				    uint32_t period_cycles, uint32_t pulse_cycles,
+				    pwm_flags_t flags)
+{
+	ARG_UNUSED(channel);
+
+	const struct ifx_tcpwm_pwm_config *config = dev->config;
+	int ret;
+
+	/* Validate cycles based on resolution */
+	ret = ifx_tcpwm_pwm_validate_cycles(config, period_cycles, pulse_cycles);
+	if (ret != 0) {
+		LOG_ERR("PWM cycles validation failed");
+		return -EINVAL;
 	}
 
-	ctrl_temp = config->reg_base->CTRL & ~TCPWM_GRP_CNT_V2_CTRL_PWM_DISABLE_MODE_Msk;
+	/* Set polarity based on flags */
+	ifx_tcpwm_pwm_set_polarity(config, flags);
 
-	config->reg_base->CTRL = ctrl_temp | _VAL2FLD(TCPWM_GRP_CNT_V2_CTRL_PWM_DISABLE_MODE,
-						      (flags & PWM_IFX_TCPWM_OUTPUT_MASK) >>
-							      PWM_IFX_TCPWM_OUTPUT_POS);
-
-	/* If the PWM is not yet running, write the period and compare directly pwm won't start
-	 * correctly.
-	 */
-	pwm_status = IFX_TCPWM_PWM_GetStatus(config->reg_base);
-	if ((pwm_status & TCPWM_GRP_CNT_V2_STATUS_RUNNING_Msk) == 0) {
-		if ((period_cycles != 0) && (pulse_cycles != 0)) {
-			IFX_TCPWM_PWM_SetPeriod0(config->reg_base, period_cycles - 1);
-			IFX_TCPWM_PWM_SetCompare0Val(config->reg_base, pulse_cycles);
-		}
+	/* If the PWM is not yet running, write the period and compare directly */
+	if (is_ifx_tcpwm_pwm_not_running(config)) {
+		ifx_tcpwm_pwm_set_initial_values(config, period_cycles, pulse_cycles);
 	}
 
 	/* Special case, if period_cycles is 0, set the period and compare to zero.  If we were to
@@ -128,26 +198,26 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	 * the zero duty cycle state instead.
 	 */
 	if (period_cycles == 0) {
-		IFX_TCPWM_PWM_SetPeriod1(config->reg_base, 0);
-		IFX_TCPWM_PWM_SetCompare0BufVal(config->reg_base, 0);
-		IFX_TCPWM_TriggerCaptureOrSwap_Single(config->reg_base);
+		ifx_tcpwm_pwm_set_period(config, 0);
+		ifx_tcpwm_pwm_set_compare(config, 0);
+		ifx_tcpwm_trigger_swap(config);
 	} else {
 		/* Update period and compare values using buffer registers so the new values take
 		 * effect on the next TC event.  This prevents glitches in PWM output depending on
 		 * where in the PWM cycle the update occurs.
 		 */
-		IFX_TCPWM_PWM_SetPeriod1(config->reg_base, period_cycles - 1);
-		IFX_TCPWM_PWM_SetCompare0BufVal(config->reg_base, pulse_cycles);
-
+		ifx_tcpwm_pwm_set_period(config, period_cycles);
+		ifx_tcpwm_pwm_set_compare(config, pulse_cycles);
 		/* Trigger the swap by writing to the SW trigger command register.
 		 */
-		IFX_TCPWM_TriggerCaptureOrSwap_Single(config->reg_base);
+		ifx_tcpwm_trigger_swap(config);
 	}
+
 	/* Enable the TCPWM for PWM mode of operation */
-	IFX_TCPWM_PWM_Enable(config->reg_base);
+	Cy_TCPWM_PWM_Enable(config->reg_base, config->tcpwm_index);
 
 	/* Start the TCPWM block */
-	IFX_TCPWM_TriggerStart_Single(config->reg_base);
+	ifx_tcpwm_trigger_start(config);
 
 	return 0;
 }
@@ -191,16 +261,19 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 		}
 #endif
 
+#define TCPWM_PWM_IDX(n)                                                                           \
+	.tcpwm_index =                                                                             \
+		(DT_REG_ADDR(DT_INST_PARENT(n)) - DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /     \
+		DT_REG_SIZE(DT_INST_PARENT(n))
+
 #define INFINEON_TCPWM_PWM_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
 	static struct ifx_tcpwm_pwm_data ifx_tcpwm_pwm##n##_data = {PWM_PERI_CLOCK_INIT(n)};       \
                                                                                                    \
 	static const struct ifx_tcpwm_pwm_config pwm_tcpwm_config_##n = {                          \
-		.reg_base = (TCPWM_GRP_CNT_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                  \
-		.tcpwm_index = (DT_REG_ADDR(DT_INST_PARENT(n)) -                                   \
-				DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /                       \
-			       DT_REG_SIZE(DT_INST_PARENT(n)),                                     \
+		.reg_base = (TCPWM_Type *)(DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))),             \
+		TCPWM_PWM_IDX(n),                                                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.resolution_32_bits =                                                              \
 			(DT_PROP(DT_INST_PARENT(n), resolution) == 32) ? true : false,             \
