@@ -38,7 +38,9 @@ static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
 static struct log_backend_net_ctx {
 	int sock;
+#if defined(CONFIG_NET_TCP)
 	bool is_tcp;
+#endif
 } ctx = {
 	.sock = -1,
 };
@@ -49,6 +51,7 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 	struct net_msghdr msg = { 0 };
 	struct net_iovec io_vector[2];
 	int pos = 0;
+	int sock_flags = ZSOCK_MSG_DONTWAIT;
 	int ret;
 
 	if (ctx == NULL) {
@@ -63,10 +66,8 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 		io_vector[pos].iov_base = (void *)len;
 		io_vector[pos].iov_len = strlen(len);
 		pos++;
-	}
-#else
-	if (ctx->is_tcp) {
-		return -ENOTSUP;
+
+		sock_flags = 0;
 	}
 #endif
 
@@ -77,7 +78,7 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = pos;
 
-	ret = zsock_sendmsg(ctx->sock, &msg, ctx->is_tcp ? 0 : ZSOCK_MSG_DONTWAIT);
+	ret = zsock_sendmsg(ctx->sock, &msg, sock_flags);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -107,10 +108,12 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_NET_TCP)
 	if (ctx->is_tcp) {
 		proto = NET_IPPROTO_TCP;
 		type = NET_SOCK_STREAM;
 	}
+#endif
 
 	ret = zsock_socket(server_addr.sa_family, type, proto);
 	if (ret < 0) {
@@ -279,7 +282,11 @@ static void init_net(struct log_backend const *const backend)
 
 		if (memcmp(server, "tcp://", sizeof("tcp://") - 1) == 0) {
 			server += sizeof("tcp://") - 1;
+#if defined(CONFIG_NET_TCP)
 			ctx.is_tcp = true;
+#else
+			LOG_ERR("tcp:// server requires CONFIG_NET_TCP. Using UDP");
+#endif
 		}
 
 		ret = log_backend_net_set_addr(server);
