@@ -843,7 +843,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 		uint32_t ticker_ticks_slot;
 
 		if (TICKER_HAS_SLOT_WINDOW(ticker) && !ticker->ticks_slot) {
-			ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
+			ticker_ticks_slot = HAL_TICKER_TICKS_SLOT_MARGIN;
 		} else {
 			ticker_ticks_slot = ticker->ticks_slot;
 		}
@@ -874,7 +874,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			if (TICKER_HAS_SLOT_WINDOW(ticker_next) &&
 			    (ticker_next->ticks_slot == 0U)) {
 				ticker_next_ticks_slot =
-					HAL_TICKER_RESCHEDULE_MARGIN;
+					HAL_TICKER_TICKS_SLOT_MARGIN;
 			} else {
 				ticker_next_ticks_slot =
 					ticker_next->ticks_slot;
@@ -1344,7 +1344,7 @@ void ticker_worker(void *param)
 
 		if (TICKER_HAS_SLOT_WINDOW(ticker) &&
 		    (ticker->ticks_slot == 0U)) {
-			ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
+			ticker_ticks_slot = HAL_TICKER_TICKS_SLOT_MARGIN;
 		} else {
 			ticker_ticks_slot = ticker->ticks_slot;
 		}
@@ -2129,21 +2129,13 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			instance->ticks_slot_previous = 0U;
 		}
 
-		uint32_t ticker_ticks_slot;
-
-		if (TICKER_HAS_SLOT_WINDOW(ticker) && !ticker->ticks_slot) {
-			ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
-		} else {
-			ticker_ticks_slot = ticker->ticks_slot;
-		}
-
 		/* If a reschedule is set pending, we will need to keep
 		 * the slot_previous information
 		 */
-		if (ticker_ticks_slot && (state == 2U) && !skip_collision &&
-		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+		if ((ticker->ticks_slot != 0U) && (state == 2U) &&
+		    !skip_collision && !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
-			instance->ticks_slot_previous = ticker_ticks_slot;
+			instance->ticks_slot_previous = ticker->ticks_slot;
 		}
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
@@ -2505,8 +2497,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		}
 
 		/* Window start after intersection with already active node */
-		window_start_ticks = instance->ticks_slot_previous +
-				     HAL_TICKER_RESCHEDULE_MARGIN;
+		window_start_ticks = instance->ticks_slot_previous;
+		window_start_ticks += HAL_TICKER_RESCHEDULE_MARGIN;
 
 		/* If drift was applied to this node, this must be
 		 * taken into consideration. Reduce the window with
@@ -2568,7 +2560,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 			/* Calculate end of window. Since window may be aligned
 			 * with expiry of next node, we add a margin
 			 */
-			if (ticks_to_expire_offset >
+			if (ticks_to_expire_offset >=
 			    HAL_TICKER_RESCHEDULE_MARGIN) {
 				window_end_ticks =
 					MIN(ticks_slot_window,
