@@ -275,6 +275,13 @@ Counter
      GPT now uses explicit devicetree properties rather than hardcoded values, allowing
      per-instance customization.
 
+DMA
+===
+
+* Removed the :kconfig:option:`CONFIG_DMA_MCUX_EDMA_V5` (:github:`100341`). This macro previously distinguished between
+  nxp,version(5) and nxp,version(4). It now supports unified maintenance for both versions.
+  Users can modify ``DMA_MCUX_EDMA_V5`` to ``DMA_MCUX_EDMA_V4``.
+
 EEPROM
 ======
 
