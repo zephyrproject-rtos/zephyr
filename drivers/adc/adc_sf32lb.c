@@ -216,6 +216,7 @@ static int adc_sf32lb_read(const struct device *dev, const struct adc_sequence *
 	return error;
 }
 
+#ifdef CONFIG_ADC_ASYNC
 static int adc_sf32lb_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
@@ -243,6 +244,7 @@ static int adc_sf32lb_read_async(const struct device *dev, const struct adc_sequ
 
 	return error;
 }
+#endif /* CONFIG_ADC_ASYNC */
 
 static DEVICE_API(adc, adc_sf32lb_driver_api) = {
 	.channel_setup = adc_sf32lb_channel_setup,
