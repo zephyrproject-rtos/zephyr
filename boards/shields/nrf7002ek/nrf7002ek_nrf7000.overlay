@@ -20,8 +20,8 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 
-		/* Include common nRF70 overlays */
-		#include "nrf7002ek_common.dtsi"
-		#include "nrf7002ek_common_5g.dtsi"
+/* Include common nRF70 overlays */
+#include "nrf7002ek_common.dtsi"
+#include "nrf7002ek_common_5g.dtsi"
 	};
 };
