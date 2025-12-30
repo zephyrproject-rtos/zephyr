@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
+#include <arm/renesas/rz/rzg/r9a09g047.dtsi>
+#include "rzg3e_smarc-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RZ/G3E SMARC";
+	compatible = "renesas,rzg3e-smarc";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	aliases {
+		sw0 = &sw1;
+		sw1 = &sw2;
+		sw2 = &sw3;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: sw1 {
+			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		sw2: sw2 {
+			gpios = <&gpio8 4 GPIO_ACTIVE_LOW>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		sw3: sw3 {
+			gpios = <&gpio8 5 GPIO_ACTIVE_LOW>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	sram: memory@8003000 {
+		compatible = "mmio-sram";
+		reg = <0x08003000 DT_SIZE_K(245)>;
+	};
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart4: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&tint0 {
+	status = "okay";
+};
+
+&gpio3 {
+	irqs = <&tint0 1>;
+	status = "okay";
+};
+
+&gpio8 {
+	status = "okay";
+};
