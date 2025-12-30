@@ -39,7 +39,7 @@ static int cmd_cycles(const struct shell *sh, size_t argc, char **argv)
 	int err;
 
 	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
 	}
@@ -72,7 +72,7 @@ static int cmd_usec(const struct shell *sh, size_t argc, char **argv)
 	int err;
 
 	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
 	}
@@ -104,7 +104,7 @@ static int cmd_nsec(const struct shell *sh, size_t argc, char **argv)
 	int err;
 
 	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
 	}
@@ -121,6 +121,35 @@ static int cmd_nsec(const struct shell *sh, size_t argc, char **argv)
 	if (err) {
 		shell_error(sh, "failed to setup PWM (err %d)", err);
 		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_pwm_info(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint32_t channel;
+	uint64_t cycles_per_sec;
+	int err;
+
+	dev = shell_device_get_binding(argv[args_indx.device]);
+	if (dev == NULL) {
+		shell_error(sh, "PWM device not found");
+		return -EINVAL;
+	}
+
+	channel = strtoul(argv[args_indx.channel], NULL, 0);
+
+	shell_print(sh, "PWM Info");
+	shell_print(sh, "Device: %s", dev->name);
+	shell_print(sh, "Channel: %"PRIu32, channel);
+
+	err = pwm_get_cycles_per_sec(dev, channel, &cycles_per_sec);
+	if (err < 0) {
+		shell_warn(sh, "failed to get PWM cycles/sec (err %d)", err);
+	} else {
+		shell_print(sh, "Cycles/sec: %"PRIu64, cycles_per_sec);
 	}
 
 	return 0;
@@ -159,6 +188,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
 		SHELL_HELP("Set PWM period and pulse width in nanoseconds.",
 			   "<device> <channel> <period> <pulse width> [flags]"),
 		cmd_nsec, 5, 1),
+	SHELL_CMD_ARG(
+		info, &dsub_device_name,
+		SHELL_HELP("Show information for a PWM channel.",
+			   "<device> <channel>"),
+		cmd_pwm_info, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
