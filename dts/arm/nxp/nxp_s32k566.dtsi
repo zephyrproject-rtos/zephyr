@@ -766,6 +766,12 @@
 			compatible = "nxp,lpi2c";
 			reg = <0x408b4000 0x4000>;
 			clocks = <&clock NXP_S32_LPI2C3_CLK>;
+			status = "disabled";
+		};
+
+		xspi0: xspi@40ba4000 {
+			compatible = "nxp,s32-xspi";
+			reg = <0x40ba4000 0x8000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

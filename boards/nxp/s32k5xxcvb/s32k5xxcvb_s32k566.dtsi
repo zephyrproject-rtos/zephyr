@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "s32k5xxcvb_s32k566-pinctrl.dtsi"
+#include <zephyr/dt-bindings/xspi/nxp-s32-xspi.h>
 
 / {
 	aliases {
@@ -87,4 +88,86 @@
 
 &swt_startup {
 	status = "okay";
+};
+
+&xspi0 {
+	pinctrl-0 = <&xspi0_default>;
+	pinctrl-names = "default";
+	data-rate = "DDR";
+	column-space = <3>;
+	word-addressable;
+	cs-hold-time = <6>;
+	cs-setup-time = <4>;
+	hold-time-2x;
+	sample-delay-half-cycle;
+	a-dll-ref-counter = <2>;
+	a-dll-resolution = <8>;
+	a-dll-coarse-delay = <6>;
+	a-dll-fine-delay = <7>;
+	a-dll-tap-select = <2>;
+	a-dll-mode = "BYPASSED";
+	a-rx-clock-source = "EXTERNAL_DQS";
+	a-io2-idle-high;
+	a-io3-idle-high;
+	enable-hresp-mask;
+	ahb-buffers-masters = <0 1 2 3>;
+	ahb-buffers-sizes = <1024 1024 1024 1024>;
+	ahb-buffers-all-masters;
+	a-differential-clock;
+	ahb-timeout = <3>;
+	dqs-as-an-output;
+	error-payload-high = <0x12345678>;
+	error-payload-low = <0x87654321>;
+	transaction-timeout = <0xFFFFFFFF>;
+	arbitration-timeout = <0xFFFFFFFF>;
+	status = "okay";
+
+	sfp_mdad {
+		compatible = "nxp,s32-xspi-sfp-mdad";
+
+		mdad_0: mdad_0 {
+			domain-id = <0>;
+			secure-attribute = <(NXP_S32_XSPI_NON_SECURE | NXP_S32_XSPI_SECURE)>;
+		};
+	};
+
+	sfp_frad {
+		compatible = "nxp,s32-xspi-sfp-frad";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		frad_0: frad@0 {
+			reg = <0x0 0xFFFFFFFF>;
+			master-domain-acp-policy = <(NXP_S32_XSPI_NON_SECURE |
+						    NXP_S32_XSPI_SECURE |
+						    NXP_S32_XSPI_PRIVILEGE)>;
+		};
+	};
+
+	/* HyperRAM IS66WVH8M8DAL */
+	is66wvh8m8dall: flash-controller@0 {
+		compatible = "nxp,s32-xspi-hyperram";
+		reg = <0>;
+		jedec-id = [0c 83 0c 83 0c 83 0c 83 0c 83];
+		device-id-word-addr = <0x000>;
+		size = <DT_SIZE_M(512)>;
+		write-block-size = <2>;
+		initial-latency-cycles = <7>;
+		master-clock-type = "SINGLE_ENDED";
+		max-program-buffer-size = <256>;
+		drive-strength-ohm = <34>;
+		refresh-interval-multiplier = "1";
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x00000 0x10000>;
+			};
+		};
+	};
 };

@@ -25,4 +25,31 @@
 			input-enable;
 		};
 	};
+
+	xspi0_default: xspi0_default {
+		group1 {
+			pinmux = <(PB1_XSPI_DQSFA_I | PB1_XSPI_DQSFA_O)>,
+				 <PA10_XSPI_INTA>,
+				 <(PC9_XSPI_IOFA0_I | PC9_XSPI_IOFA0_O)>,
+				 <(PB8_XSPI_IOFA1_I | PB8_XSPI_IOFA1_O)>,
+				 <(PB15_XSPI_IOFA2_I | PB15_XSPI_IOFA2_O)>,
+				 <(PC8_XSPI_IOFA3_I | PC8_XSPI_IOFA3_O)>,
+				 <(PC0_XSPI_IOFA4_I | PC0_XSPI_IOFA4_O)>,
+				 <(PB9_XSPI_IOFA5_I | PB9_XSPI_IOFA5_O)>,
+				 <(PC10_XSPI_IOFA6_I | PC10_XSPI_IOFA6_O)>,
+				 <(PA11_XSPI_IOFA7_I | PA11_XSPI_IOFA7_O)>;
+			output-enable;
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <PA9_XSPI_SCKFA>,
+				 <PA15_XSPI_SCKFA>,
+				 <PB0_XSPI_PCSFA1>,
+				 <PC1_XSPI_PCSFA2>;
+			output-enable;
+			bias-pull-up;
+		};
+	};
 };

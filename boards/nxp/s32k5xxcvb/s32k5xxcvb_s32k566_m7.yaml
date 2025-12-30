@@ -17,4 +17,5 @@ supported:
   - counter
   - i2c
   - watchdog
+  - flash
 vendor: nxp
