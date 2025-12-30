@@ -45,14 +45,12 @@ static inline size_t lpspi_rx_buf_write_words(const struct device *dev, uint8_t 
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	size_t buf_len = ctx->rx_len;
-	uint8_t words_read = 0;
+	size_t words_read = MIN(ctx->rx_len, (size_t)max_read);
 	size_t offset = 0;
 
-	while (buf_len-- > 0 && max_read-- > 0) {
+	for (size_t i = 0; i < words_read; i++) {
 		lpspi_rx_word_write_bytes(dev, offset);
 		offset += lpspi_data->word_size_bytes;
-		words_read++;
 	}
 
 	return words_read;
