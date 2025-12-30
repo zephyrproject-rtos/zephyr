@@ -12,12 +12,6 @@ config MCUX_LPCMP
 	help
 	  Enable the MCUX LPCMP driver.
 
-	  This driver is deprecated and will be removed in a future release.
-	  It is currently scheduled to be removed in Zephyr 4.6.
-	  We will implement a new LPCMP driver based on the comparator driver
-	  API and enable test cases for boards/SoCs that previously supported
-	  the mcux_lpcmp driver and sample.
-
 config MCUX_LPCMP_TRIGGER
 	bool "Trigger support [DEPRECATED]"
 	depends on MCUX_LPCMP
