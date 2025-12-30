@@ -590,7 +590,7 @@ New Boards
 
 * ITE Tech. Inc.
 
-   * :zephyr:board:`it515xx_evb` (``it515xx_evb``)
+   * :zephyr:board:`it51xxx_evb` (``it51xxx_evb``)
 
 * KWS Computersysteme Gmbh
 
