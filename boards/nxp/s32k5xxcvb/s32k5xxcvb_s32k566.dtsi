@@ -88,3 +88,7 @@
 &swt_startup {
 	status = "okay";
 };
+
+&edma {
+	status = "okay";
+};
