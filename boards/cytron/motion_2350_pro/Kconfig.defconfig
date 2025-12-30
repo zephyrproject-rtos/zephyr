@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Stephano Cetola
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MOTION_2350_PRO
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_MOTION_2350_PRO
