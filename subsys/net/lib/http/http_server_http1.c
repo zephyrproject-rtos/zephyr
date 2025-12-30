@@ -38,6 +38,11 @@ static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 static const char final_chunk[] = "0\r\n\r\n";
 static const char *crlf = &final_chunk[3];
 
+static bool is_client_http10(const struct http_client_ctx *client)
+{
+	return ((client->parser.http_major == 1) && (client->parser.http_minor == 0));
+}
+
 static int send_http1_error_common(struct http_client_ctx *client,
 				   const char *response, size_t len)
 {
@@ -198,6 +203,7 @@ static int handle_http1_static_resource(
 #define RESPONSE_TEMPLATE_DYNAMIC_PART1                                                            \
 	"HTTP/1.1 %d%s%s\r\n"                                                                      \
 	"Transfer-Encoding: chunked\r\n"
+#define RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE "HTTP/1.1 %d%s%s\r\n"
 
 static const char *http_status_str(enum http_status status)
 {
@@ -234,15 +240,25 @@ static const char *http_status_str(enum http_status status)
 #define REASON_PHRASE_MAX_LENGTH 0
 #endif
 
+#define RESPONSE_TEMPLATE_SIZE_HTTP10                                                              \
+	(sizeof(RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE) + REASON_PHRASE_MAX_LENGTH)
+#define RESPONSE_TEMPLATE_SIZE_DYNAMIC                                                             \
+	(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx") + REASON_PHRASE_MAX_LENGTH)
+
+#define MAX_RESPONSE_TEMPLATE_SIZE                                                                 \
+	MAX(RESPONSE_TEMPLATE_SIZE_HTTP10, RESPONSE_TEMPLATE_SIZE_DYNAMIC)
+
+#define HTTP_RESPONSE_BUF_SIZE                                                                     \
+	MAX(MAX_RESPONSE_TEMPLATE_SIZE, CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)
+
 static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
 			      const struct http_header *headers, size_t header_count,
 			      struct http_resource_detail_dynamic *dynamic_detail)
 {
 	int ret;
 	bool content_type_sent = false;
-	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx") +
-			       REASON_PHRASE_MAX_LENGTH,
-			       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
+	char http_response[HTTP_RESPONSE_BUF_SIZE];
+	const char *header_template;
 
 	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
 		LOG_DBG("Invalid HTTP status code: %d", status);
@@ -254,8 +270,11 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 		return -EINVAL;
 	}
 
+	header_template = is_client_http10(client) ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
+						   : RESPONSE_TEMPLATE_DYNAMIC_PART1;
+
 	/* Send response code and transfer encoding */
-	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status,
+	snprintk(http_response, sizeof(http_response), header_template, status,
 		 IS_ENABLED(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES) ? " " : "",
 		 http_status_str(status));
 
@@ -358,10 +377,15 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 
 	/* Send body data if provided */
 	if (rsp->body != NULL && rsp->body_len > 0) {
-		ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
-		ret = http_server_sendall(client, tmp, ret);
-		if (ret < 0) {
-			return ret;
+
+		/* Check if the client expects HTTP/1.0 compatible response */
+		if (!is_client_http10(client)) {
+			/* Use Transfer-Encoding: chunked */
+			ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
+			ret = http_server_sendall(client, tmp, ret);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		ret = http_server_sendall(client, rsp->body, rsp->body_len);
@@ -369,7 +393,10 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			return ret;
 		}
 
-		(void)http_server_sendall(client, crlf, 2);
+		if (!is_client_http10(client)) {
+			/* Use Transfer-Encoding: chunked */
+			(void)http_server_sendall(client, crlf, 2);
+		}
 	}
 
 	return 0;
@@ -410,10 +437,12 @@ static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_deta
 
 	dynamic_detail->holder = NULL;
 
-	ret = http_server_sendall(client, final_chunk,
-				  sizeof(final_chunk) - 1);
-	if (ret < 0) {
-		return ret;
+	/* Only send the 0\r\n\r\n if the client is NOT HTTP/1.0 */
+	if (!is_client_http10(client)) {
+		ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -490,10 +519,12 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 			}
 		}
 
-		ret = http_server_sendall(client, final_chunk,
-					sizeof(final_chunk) - 1);
-		if (ret < 0) {
-			return ret;
+		/* HTTP/1.0 client does not expect CRLF in the response */
+		if (!is_client_http10(client)) {
+			ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		dynamic_detail->holder = NULL;
@@ -1111,7 +1142,12 @@ not_found: ; /* Add extra semicolon to make clang to compile when using label */
 	client->data_len -= parsed;
 
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		if ((client->parser.flags & F_CONNECTION_CLOSE) == 0) {
+		/* FORCE CLOSE for HTTP/1.0 clients so they know the data is done */
+		if (is_client_http10(client)) {
+			LOG_DBG("HTTP/1.0 request complete, closing connection");
+			enter_http_done_state(client);
+		} else if ((client->parser.flags & F_CONNECTION_CLOSE) == 0) {
+			/* Standard HTTP/1.1 Keep-Alive logic */
 			LOG_DBG("Waiting for another request, client %p", client);
 			client->server_state = HTTP_SERVER_PREFACE_STATE;
 		} else {
