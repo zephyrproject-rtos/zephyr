@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(adc_sf32lb, CONFIG_ADC_LOG_LEVEL);
 
 #define SYS_CFG_ANAU_CR offsetof(HPSYS_CFG_TypeDef, ANAU_CR)
 
-#define ADC_MAX_CH (8U)
+#define ADC_MAX_CH       (8U)
 #define ADC_RDATAX(n)    (ADC_RDATA + (((n) >> 1) * 4U))
 #define ADC_SLOT_REGX(n) (ADC_SLOT_REG + (n) * 4U)
 
@@ -127,16 +127,14 @@ static int adc_sf32lb_channel_setup(const struct device *dev,
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct adc_sf32lb_data *data =
-		CONTAINER_OF(ctx, struct adc_sf32lb_data, ctx);
+	struct adc_sf32lb_data *data = CONTAINER_OF(ctx, struct adc_sf32lb_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence,
-			     uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -146,8 +144,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 	return 0;
@@ -218,8 +216,7 @@ static int adc_sf32lb_read(const struct device *dev, const struct adc_sequence *
 	return error;
 }
 
-static int adc_sf32lb_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
+static int adc_sf32lb_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
 	struct adc_sf32lb_data *data = dev->data;
@@ -276,7 +273,7 @@ static int adc_sf32lb_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	/* enable bandgap*/
+	/* enable bandgap */
 	sys_set_bit(config->cfg_base + SYS_CFG_ANAU_CR, HPSYS_CFG_ANAU_CR_EN_BG_Pos);
 
 	value = sys_read32(config->base + ADC_CTRL_REG);
