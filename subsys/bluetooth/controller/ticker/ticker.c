@@ -877,7 +877,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 		uint32_t ticker_ticks_slot;
 
 		if (TICKER_HAS_SLOT_WINDOW(ticker) && (ticker->ticks_slot == 0U)) {
-			ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
+			ticker_ticks_slot = HAL_TICKER_TICKS_SLOT_MARGIN;
 		} else {
 			ticker_ticks_slot = ticker->ticks_slot;
 		}
@@ -2245,7 +2245,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			uint32_t ticker_ticks_slot;
 
 			if (TICKER_HAS_SLOT_WINDOW(ticker) && (ticker->ticks_slot == 0U)) {
-				ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
+				ticker_ticks_slot = HAL_TICKER_TICKS_SLOT_MARGIN;
 			} else {
 				ticker_ticks_slot = ticker->ticks_slot;
 			}
@@ -2764,11 +2764,20 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 
 			/* Calculate new ticks_to_expire as end of window minus
 			 * slot size.
+			 * NOTE: A ticker with no reserved time is resolved in
+			 *       ticker_resolve_collision() using a slot margin
+			 *       against the current expiry of the next node,
+			 *       hence use the same here to not be ousted.
 			 */
-			if (((window_start_ticks + ticker_resched->ticks_slot) <=
-			     window_end_ticks_max) &&
-			    (window_end_ticks_min >= (ticks_start_offset +
-						      ticker_resched->ticks_slot))) {
+			if ((ticker_resched->ticks_slot == 0U) &&
+			    ((window_start_ticks + HAL_TICKER_TICKS_SLOT_MARGIN) >
+			     window_end_ticks_min)) {
+				/* No space in window - try the next node */
+				ticks_to_expire = 0U;
+			} else if (((window_start_ticks + ticker_resched->ticks_slot) <=
+				    window_end_ticks_max) &&
+				   (window_end_ticks_min >= (ticks_start_offset +
+							     ticker_resched->ticks_slot))) {
 				if ((ticker_resched->ticks_slot == 0U) ||
 				    ((ext_data->is_drift_in_window != 0U) &&
 				     (ext_data->dir_drift_in_window == 0U))) {
