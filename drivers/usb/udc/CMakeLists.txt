@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2025 ELAN Microelectronics Corp.
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
@@ -22,3 +22,4 @@ zephyr_library_sources_ifdef(CONFIG_UDC_AMBIQ udc_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_RENESAS_RA udc_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_MAX32 udc_max32.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_SAM0 udc_sam0.c)
+zephyr_library_sources_ifdef(CONFIG_UDC_ELAN_ELANDEV udc_elan_elandev.c)
