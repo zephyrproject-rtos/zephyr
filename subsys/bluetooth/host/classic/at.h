@@ -114,5 +114,5 @@ int at_list_get_string(struct at_client *at, char *name, uint8_t len);
 int at_close_list(struct at_client *at);
 int at_open_list(struct at_client *at);
 bool at_has_next_list(struct at_client *at);
-char *at_get_string(struct at_client *at);
+const char *at_get_string(struct at_client *at);
 char *at_get_raw_string(struct at_client *at, size_t *string_len);
