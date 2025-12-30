@@ -18,7 +18,7 @@ typedef int mtx_t;
 typedef int thrd_t;
 typedef int tss_t;
 typedef struct {
-	char flag;
+	unsigned long flag;
 } once_flag;
 
 #ifdef __cplusplus
