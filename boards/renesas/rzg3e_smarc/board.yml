@@ -1,0 +1,6 @@
+board:
+  name: rzg3e_smarc
+  full_name: RZ/G3E Evaluation Board Kit
+  vendor: renesas
+  socs:
+  - name: r9a09g047a57gbg
