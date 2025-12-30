@@ -11,8 +11,8 @@
 #include <ite/it51xxx-pinctrl-map.dtsi>
 
 / {
-	model = "IT515XX EV-Board";
-	compatible = "ite,it515xx-evb";
+	model = "IT51XXX EV-Board";
+	compatible = "ite,it51xxx-evb";
 
 	aliases {
 		i2c-0 = &i2c0;

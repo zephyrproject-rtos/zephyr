@@ -94,6 +94,8 @@ Boards
   * :kconfig:option:`CONFIG_SOC_SERIES_NRF91X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF91`
   * :kconfig:option:`CONFIG_SOC_SERIES_NRF92X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF92`
 
+* ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
+
 Device Drivers and Devicetree
 *****************************
 

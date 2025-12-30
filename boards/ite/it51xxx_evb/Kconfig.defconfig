@@ -1,7 +1,7 @@
 # Copyright (c) 2025 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_IT515XX_EVB
+if BOARD_IT51XXX_EVB
 
 if PM
 
@@ -14,4 +14,4 @@ endchoice
 
 endif # PM
 
-endif # BOARD_IT515XX_EVB
+endif # BOARD_IT51XXX_EVB
