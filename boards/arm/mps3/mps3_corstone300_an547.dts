@@ -90,7 +90,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
 
-			#include "mps3_common_soc_peripheral.dtsi"
+#include "mps3_common_soc_peripheral.dtsi"
 		};
 	};
 };
