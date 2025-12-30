@@ -1,0 +1,213 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ * Copyright (c) 2017 STMicroelectronics.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/*
+ * This file is derived from STM32Cube HAL (stm32XXxx_hal_sd.h and stm32XXxx_hal_sdio.h)
+ * with refactoring to align with Zephyr coding style and architecture.
+ */
+
+#ifndef ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_
+#define ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_
+
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+/**
+ * @brief SDMMC card state enumeration
+ */
+typedef uint32_t SDMMC_CardStateTypeDef;
+#define SDMMC_CARD_READY          0x00000001U /* Card state is ready */
+#define SDMMC_CARD_IDENTIFICATION 0x00000002U /* Card is in identification state */
+#define SDMMC_CARD_STANDBY        0x00000003U /* Card is in standby state */
+#define SDMMC_CARD_TRANSFER       0x00000004U /* Card is in transfer state */
+#define SDMMC_CARD_SENDING        0x00000005U /* Card is sending an operation */
+#define SDMMC_CARD_RECEIVING      0x00000006U /* Card is receiving operation information */
+#define SDMMC_CARD_PROGRAMMING    0x00000007U /* Card is in programming state */
+#define SDMMC_CARD_DISCONNECTED   0x00000008U /* Card is disconnected */
+#define SDMMC_CARD_ERROR          0x000000FFU /* Card response error */
+
+/**
+ * @brief SDMMC context flags
+ */
+#define SDMMC_CONTEXT_NONE                 0x00000000U /* No context */
+#define SDMMC_CONTEXT_READ_SINGLE_BLOCK    0x00000001U /* Read single block operation */
+#define SDMMC_CONTEXT_READ_MULTIPLE_BLOCK  0x00000002U /* Read multiple blocks operation */
+#define SDMMC_CONTEXT_WRITE_SINGLE_BLOCK   0x00000010U /* Write single block operation */
+#define SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK 0x00000020U /* Write multiple blocks operation */
+#define SDMMC_CONTEXT_IT                   0x00000008U /* Process in interrupt mode */
+#define SDMMC_CONTEXT_DMA                  0x00000080U /* Process in DMA mode */
+
+/*
+ * @brief SDMMC Timing and block definitions
+ */
+#define SD_TIMEOUT       0x00100000U
+#define SDHC_CMD_TIMEOUT K_MSEC(200)
+#define SDMMC_INIT_FREQ  400000U /* Initialization phase: max 400 kHz */
+
+/**
+ * @brief SDMMC state definitions
+ */
+#define SDMMC_STATE_RESET       0x00000000U /* SDIO not yet initialized or disabled */
+#define SDMMC_STATE_READY       0x00000001U /* SDIO initialized and ready for use */
+#define SDMMC_STATE_BUSY        0x00000002U /* SDIO operation ongoing */
+#define SDMMC_STATE_ERROR       0x00000004U /* SDIO error state */
+#define SDMMC_STATE_PROGRAMMING 0x00000005U /* SDIO error state */
+
+/**
+ * @brief SDMMC card status
+ */
+typedef struct {
+	__IO uint8_t DataBusWidth;          /* Currently defined data bus width */
+	__IO uint8_t SecuredMode;           /* Card secured mode status */
+	__IO uint16_t CardType;             /* Card type information */
+	__IO uint32_t ProtectedAreaSize;    /* Capacity of protected area */
+	__IO uint8_t SpeedClass;            /* Speed class of the card */
+	__IO uint8_t PerformanceMove;       /* Performance move indicator */
+	__IO uint8_t AllocationUnitSize;    /* Allocation unit size */
+	__IO uint16_t EraseSize;            /* Number of AUs erased per operation */
+	__IO uint8_t EraseTimeout;          /* Timeout for AU erase */
+	__IO uint8_t EraseOffset;           /* Erase offset */
+	__IO uint8_t UhsSpeedGrade;         /* UHS speed grade */
+	__IO uint8_t UhsAllocationUnitSize; /* UHS card allocation unit size */
+	__IO uint8_t VideoSpeedClass;       /* Video speed class */
+} SDMMC_CardStatusTypeDef;
+
+/**
+ * @brief SDMMC lock type definition
+ */
+typedef enum {
+	SDMMC_UNLOCKED = 0x00,
+	SDMMC_LOCKED = 0x01
+} SDMMC_LockTypeDef;
+
+/**
+ * @brief SD Card Information Structure definition
+ */
+typedef struct {
+	uint32_t CardType; /* Specifies the card Type */
+
+	uint32_t CardVersion; /* Specifies the card version */
+
+	uint32_t Class; /* Specifies the class of the card class */
+
+	uint32_t RelCardAdd; /* Specifies the Relative Card Address */
+
+	uint32_t BlockNbr; /* Specifies the Card Capacity in blocks */
+
+	uint32_t BlockSize; /* Specifies one block size in bytes */
+
+	uint32_t LogBlockNbr; /* Specifies the Card logical Capacity in blocks */
+
+	uint32_t LogBlockSize; /* Specifies logical block size in bytes */
+
+	uint32_t CardSpeed; /* Specifies the card Speed */
+
+} sdhc_stm32_card_info_t;
+
+/**
+ * @brief SD handle Structure definition
+ */
+typedef struct {
+	SDMMC_TypeDef *Instance; /* SD registers base address */
+
+	SDMMC_InitTypeDef Init; /* SD required parameters */
+
+	const uint8_t *pTxBuffPtr; /* Pointer to SD Tx transfer Buffer */
+
+	uint32_t TxXferSize; /* SD Tx Transfer size */
+
+	uint8_t *pRxBuffPtr; /* Pointer to SD Rx transfer Buffer */
+
+	uint32_t RxXferSize; /* SD Rx Transfer size */
+
+	__IO uint32_t Context; /* SD transfer context */
+
+	__IO uint32_t State; /* SD card State */
+
+	__IO uint32_t ErrorCode; /* SD Card Error codes */
+
+	sdhc_stm32_card_info_t SdCard; /* SD Card information */
+
+	uint32_t CSD[4]; /* SD card specific data table */
+
+	uint32_t block_size; /* Block size for SDIO data transfer */
+
+	uint32_t sdmmc_clk; /* SDMMC peripheral clock frequency in Hz */
+} sdhc_stm32_ll_handle_t;
+
+/**
+ * @brief SDIO Direct Command argument structure (for CMD52)
+ */
+typedef struct {
+	uint32_t Reg_Addr;       /* Register address to read/write */
+	uint32_t ReadAfterWrite; /* Read after write flag */
+	uint32_t IOFunctionNbr;  /* IO function number */
+} sdhc_stm32_sdio_direct_cmd_t;
+
+/**
+ * @brief SDIO Extended Command argument structure (for CMD53)
+ */
+typedef struct {
+	uint32_t Reg_Addr;      /* Register address */
+	uint32_t IOFunctionNbr; /* IO function number */
+	uint32_t Block_Mode;    /* Block or byte mode */
+	uint32_t OpCode;        /* Operation code (increment/fixed address) */
+} sdhc_stm32_sdio_ext_cmd_t;
+
+/**
+ * @brief SD/MMC Functions Prototypes
+ */
+SDMMC_CardStateTypeDef sdhc_stm32_ll_get_card_state(sdhc_stm32_ll_handle_t *hsd);
+int sdhc_stm32_ll_write_blocks_dma(sdhc_stm32_ll_handle_t *hsd, const uint8_t *data,
+						   uint32_t block_addr, uint32_t num_blocks);
+int sdhc_stm32_ll_write_blocks(sdhc_stm32_ll_handle_t *hsd, const uint8_t *data,
+					       uint32_t block_addr, uint32_t num_blocks,
+					       uint32_t timeout);
+int sdhc_stm32_ll_read_blocks_dma(sdhc_stm32_ll_handle_t *hsd, uint8_t *data,
+						  uint32_t block_addr, uint32_t num_blocks);
+int sdhc_stm32_ll_read_blocks(sdhc_stm32_ll_handle_t *hsd, uint8_t *data,
+					      uint32_t block_addr, uint32_t num_blocks,
+					      uint32_t timeout);
+int sdhc_stm32_ll_erase(sdhc_stm32_ll_handle_t *hsd, uint32_t block_start,
+					uint32_t block_end);
+uint32_t sdhc_stm32_ll_switch_speed(sdhc_stm32_ll_handle_t *hsd, uint32_t switch_arg,
+				    uint8_t *status, uint32_t block_size);
+uint32_t sdhc_stm32_ll_find_scr(sdhc_stm32_ll_handle_t *hsd, uint32_t *scr, uint32_t block_size);
+uint32_t sdhc_stm32_ll_send_status(sdhc_stm32_ll_handle_t *hsd, uint32_t card_rca,
+				   uint32_t *pCardStatus);
+void sdhc_stm32_ll_irq_handler(sdhc_stm32_ll_handle_t *hsd);
+int sdhc_stm32_ll_config_freq(sdhc_stm32_ll_handle_t *hsd, uint32_t clock_speed);
+int sdhc_stm32_ll_init(sdhc_stm32_ll_handle_t *hsd);
+int sdhc_stm32_ll_deinit(sdhc_stm32_ll_handle_t *hsd);
+uint32_t sdhc_stm32_ll_get_state(const sdhc_stm32_ll_handle_t *hsd);
+uint32_t sdhc_stm32_ll_get_error(const sdhc_stm32_ll_handle_t *hsd);
+
+/**
+ * @brief SDIO Functions Prototypes
+ */
+int sdhc_stm32_ll_sdio_read_direct(sdhc_stm32_ll_handle_t *hsd,
+						   sdhc_stm32_sdio_direct_cmd_t *arg,
+						   uint8_t *data);
+int sdhc_stm32_ll_sdio_write_direct(sdhc_stm32_ll_handle_t *hsd,
+						    sdhc_stm32_sdio_direct_cmd_t *arg,
+						    uint8_t data);
+int sdhc_stm32_ll_sdio_read_extended(sdhc_stm32_ll_handle_t *hsd,
+						     sdhc_stm32_sdio_ext_cmd_t *arg, uint8_t *data,
+						     uint32_t size, uint32_t timeout_ms);
+int sdhc_stm32_ll_sdio_write_extended(sdhc_stm32_ll_handle_t *hsd,
+						      sdhc_stm32_sdio_ext_cmd_t *arg, uint8_t *data,
+						      uint32_t size, uint32_t timeout_ms);
+int sdhc_stm32_ll_sdio_read_extended_dma(sdhc_stm32_ll_handle_t *hsd,
+							 sdhc_stm32_sdio_ext_cmd_t *arg,
+							 uint8_t *data, uint32_t size);
+int sdhc_stm32_ll_sdio_write_extended_dma(sdhc_stm32_ll_handle_t *hsd,
+							  sdhc_stm32_sdio_ext_cmd_t *arg,
+							  uint8_t *data, uint32_t size);
+int sdhc_stm32_ll_sdio_card_reset(sdhc_stm32_ll_handle_t *hsd);
+void sdhc_stm32_ll_sdio_irq_handler(sdhc_stm32_ll_handle_t *hsd);
+
+#endif /* ZEPHYR_DRIVERS_SDHC_SDHC_STM32_LL_H_ */
