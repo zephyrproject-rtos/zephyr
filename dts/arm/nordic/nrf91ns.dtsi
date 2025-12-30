@@ -44,8 +44,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 
-			/* Common nRF91 peripherals description. */
-			#include "nrf91_peripherals.dtsi"
+#include "nrf91_peripherals.dtsi"
 		};
 
 		/*

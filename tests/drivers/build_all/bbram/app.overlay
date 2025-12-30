@@ -18,7 +18,7 @@
 			status = "okay";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 
-			#include "i2c.dtsi"
+#include "i2c.dtsi"
 		};
 	};
 };
