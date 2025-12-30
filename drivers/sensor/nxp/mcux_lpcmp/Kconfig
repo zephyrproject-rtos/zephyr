@@ -5,8 +5,8 @@
 
 config MCUX_LPCMP
 	bool "NXP LPCMP driver [DEPRECATED]"
-	default y
-	depends on DT_HAS_NXP_SENSOR_LPCMP_ENABLED
+	depends on DT_HAS_NXP_LPCMP_ENABLED
+	depends on !COMPARATOR_NXP_LPCMP
 	select PINCTRL
 	select DEPRECATED
 	help
