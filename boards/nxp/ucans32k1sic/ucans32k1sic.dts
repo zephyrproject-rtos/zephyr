@@ -8,7 +8,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <arm/nxp/nxp_s32k146.dtsi>
+#include <arm/nxp/s32/nxp_s32k146.dtsi>
 #include "ucans32k1sic-pinctrl.dtsi"
 
 / {

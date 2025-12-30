@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8ml_m7.dtsi>
+#include <nxp/imx/nxp_imx8ml_m7.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include "phyboard_pollux-pinctrl.dtsi"
 
