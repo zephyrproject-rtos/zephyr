@@ -33,6 +33,8 @@ LOG_MODULE_REGISTER(adc_sf32lb, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_SF32LB_DEFAULT_VREF_INTERNAL 3300
 
+#define SF32LB_ADC_WAIT_TIME_US 200
+
 struct adc_sf32lb_data {
 	struct adc_context ctx;
 	const struct device *dev;
@@ -106,6 +108,9 @@ static int adc_sf32lb_channel_setup(const struct device *dev,
 		LOG_ERR("External reference is not supported");
 		return -ENOTSUP;
 	}
+
+	adc_slot &= ~(GPADC_ADC_SLOT0_REG_NCHNL_SEL | GPADC_ADC_SLOT0_REG_PCHNL_SEL |
+		      GPADC_ADC_SLOT0_REG_ACC_NUM | GPADC_ADC_SLOT0_REG_SLOT_EN);
 
 	if (channel_cfg->differential) {
 		adc_slot |= FIELD_PREP(GPADC_ADC_SLOT0_REG_PCHNL_SEL, channel_id);
@@ -256,6 +261,7 @@ static int adc_sf32lb_init(const struct device *dev)
 	const struct adc_sf32lb_config *config = dev->config;
 	struct adc_sf32lb_data *data = dev->data;
 	int ret;
+	uint32_t value;
 
 	if (!sf32lb_clock_is_ready_dt(&config->clock)) {
 		return -ENODEV;
@@ -273,14 +279,22 @@ static int adc_sf32lb_init(const struct device *dev)
 	/* enable bandgap*/
 	sys_set_bit(config->cfg_base + SYS_CFG_ANAU_CR, HPSYS_CFG_ANAU_CR_EN_BG_Pos);
 
-	sys_clear_bits(config->base + ADC_CTRL_REG, GPADC_ADC_CTRL_REG_TIMER_TRIG_EN |
-		GPADC_ADC_CTRL_REG_DMA_EN);
-	sys_set_bits(config->base + ADC_CTRL_REG, GPADC_ADC_CTRL_REG_FRC_EN_ADC |
-		GPADC_ADC_CTRL_REG_CHNL_SEL_FRC_EN);
+	value = sys_read32(config->base + ADC_CTRL_REG);
+	/* Clear timer trigger and DMA enable bits */
+	value &= ~(GPADC_ADC_CTRL_REG_GPIO_TRIG_EN | GPADC_ADC_CTRL_REG_TIMER_TRIG_EN |
+		   GPADC_ADC_CTRL_REG_INIT_TIME | GPADC_ADC_CTRL_REG_DATA_SAMP_DLY |
+		   GPADC_ADC_CTRL_REG_FRC_EN_ADC);
+
+	value |= FIELD_PREP(GPADC_ADC_CTRL_REG_INIT_TIME_Msk, 8);
+	value |= FIELD_PREP(GPADC_ADC_CTRL_REG_DATA_SAMP_DLY_Msk, 2);
+
+	sys_write32(value, config->base + ADC_CTRL_REG);
+
 	/* enable ref ldo */
 	sys_set_bits(config->base + ADC_CFG_REG1, GPADC_ADC_CFG_REG1_ANAU_GPADC_SE |
-		GPADC_ADC_CFG_REG1_ANAU_GPADC_LDOREF_EN);
-
+							  GPADC_ADC_CFG_REG1_ANAU_GPADC_EN_V18 |
+							  GPADC_ADC_CFG_REG1_ANAU_GPADC_LDOREF_EN);
+	k_busy_wait(SF32LB_ADC_WAIT_TIME_US); /* wait for stable */
 	/* disable all slots */
 	for (uint8_t i = 0; i < 8U; i++) {
 		sys_clear_bit(config->base + ADC_SLOT_REGX(i), GPADC_ADC_SLOT0_REG_SLOT_EN_Pos);
