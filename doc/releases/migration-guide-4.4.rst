@@ -83,6 +83,8 @@ Boards
     ``hal_nxp/rt11xx/fsl_flexspi_nor_boot.h``, they were added to the corresponding SoC-layer CMakeLists.txt files
     using ``zephyr_library_compile_definitions()`` to limit their scope.
 
+* ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
+
 Device Drivers and Devicetree
 *****************************
 

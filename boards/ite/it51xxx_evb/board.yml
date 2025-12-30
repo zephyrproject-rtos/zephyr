@@ -1,5 +1,5 @@
 board:
-  name: it515xx_evb
+  name: it51xxx_evb
   full_name: IT51XXX series
   vendor: ite
   socs:
