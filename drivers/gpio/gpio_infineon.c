@@ -172,10 +172,7 @@ static void gpio_isr_handler(const struct device *dev)
 		Cy_GPIO_ClearInterrupt(base, i);
 	}
 
-	if (dev) {
-		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev,
-				    pins);
-	}
+	gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev, pins);
 }
 #endif
 
