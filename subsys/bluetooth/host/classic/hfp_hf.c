@@ -905,7 +905,7 @@ static int bvra_handle(struct at_client *hf_at)
 	int err;
 	uint32_t activate;
 	uint32_t state;
-	char *id;
+	const char *id;
 	char text_id[BT_HFP_BVRA_TEXT_ID_MAX_LEN + 1];
 	size_t id_len;
 	uint32_t type;
@@ -946,7 +946,7 @@ static int bvra_handle(struct at_client *hf_at)
 
 #if defined(CONFIG_BT_HFP_HF_VOICE_RECG_TEXT)
 	id = at_get_raw_string(hf_at, &id_len);
-	if (!id) {
+	if (id == NULL) {
 		LOG_INF("Error getting text ID");
 		return 0;
 	}
@@ -1726,7 +1726,7 @@ static int get_chld_feature(const char *name)
 int chld_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *value;
+	const char *value;
 	uint32_t chld_features = 0;
 	int err;
 
@@ -1738,7 +1738,7 @@ int chld_handle(struct at_client *hf_at)
 
 	while (at_has_next_list(hf_at)) {
 		value = at_get_raw_string(hf_at, NULL);
-		if (!value) {
+		if (value == NULL) {
 			LOG_ERR("Could not get value");
 			goto error;
 		}
@@ -1780,10 +1780,10 @@ static int cnum_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
-	char *alpha;
+	__maybe_unused const char *alpha;
 	const char *number;
 	uint32_t type;
-	char *speed;
+	__maybe_unused const char *speed;
 	uint32_t service = 4;
 
 	alpha = at_get_raw_string(hf_at, NULL);
