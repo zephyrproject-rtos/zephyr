@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_sensor_lpcmp
+#define DT_DRV_COMPAT nxp_lpcmp
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
