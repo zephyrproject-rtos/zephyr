@@ -10,6 +10,7 @@ flash: 32768
 toolchain:
   - zephyr
 supported:
+  - adc
   - can
   - gpio
 vendor: nxp
