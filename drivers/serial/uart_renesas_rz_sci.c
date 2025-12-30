@@ -508,8 +508,9 @@ static int uart_rz_init(const struct device *dev)
 				.negation_time = 1,                                                \
 			},                                                                         \
 		COND_CODE_1(CONFIG_UART_RENESAS_RZ_SCI_B,                                          \
-			(.half_data_setting = {.enable = 0}),                                   \
-			(.clock_source = SCI_UART_CLOCK_SOURCE_SCI0ASYNCCLK)) };                \
+			(.half_data_setting = {.enable = 0},                                       \
+			 .p_reg = (void *)DT_REG_ADDR(SCI_NODE(n))),                               \
+			(.clock_source = SCI_UART_CLOCK_SOURCE_SCI0ASYNCCLK)) };  \
 	static uart_cfg_t g_uart##n##_cfg = {                                                      \
 		.channel = DT_PROP(SCI_NODE(n), channel),                                          \
 		.p_extend = &g_uart##n##_cfg_extend,                                               \
