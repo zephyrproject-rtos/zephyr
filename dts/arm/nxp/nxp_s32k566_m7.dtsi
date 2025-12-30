@@ -238,3 +238,15 @@
 &flexcan16 {
 	interrupts = <138 0>, <139 0>;
 };
+
+&sar_adc0 {
+	interrupts = <64 0>;
+};
+
+&sar_adc1 {
+	interrupts = <65 0>;
+};
+
+&lpe_sar_adc {
+	interrupts = <217 0>;
+};

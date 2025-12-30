@@ -744,5 +744,26 @@
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
+
+		sar_adc0: adc@40698000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x40698000 0x4000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		sar_adc1: adc@4088c000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x4088c000 0x4000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		lpe_sar_adc: adc@4213c000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x4213c000 0x4000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
