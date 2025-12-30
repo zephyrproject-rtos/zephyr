@@ -98,7 +98,7 @@
 
 /* UART connected to KitProg3 */
 uart5: &scb5 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
@@ -114,7 +114,7 @@ uart5: &scb5 {
 };
 
 uart2: &scb2 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 
 	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
