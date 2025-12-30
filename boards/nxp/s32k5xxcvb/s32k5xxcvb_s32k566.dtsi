@@ -84,3 +84,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&edma {
+	status = "okay";
+};
