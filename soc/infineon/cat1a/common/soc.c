@@ -126,6 +126,11 @@ static int init_cycfg_platform_wraper(void)
 
 	/* Initializes the system */
 	SystemInit();
+
+#if defined(CONFIG_SOC_FAMILY_PSOC6_M0)
+	Cy_SysEnableCM4(DT_REG_ADDR(DT_NODELABEL(flash_m0)) +
+		DT_REG_SIZE(DT_NODELABEL(flash_m0)));
+#endif
 	return 0;
 }
 
