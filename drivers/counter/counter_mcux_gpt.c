@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited.
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@ struct mcux_gpt_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	bool enable_free_run;
 	void (*irq_config_func)(void);
 };
 
@@ -204,7 +205,7 @@ static int mcux_gpt_init(const struct device *dev)
 	}
 
 	GPT_GetDefaultConfig(&gptConfig);
-	gptConfig.enableFreeRun = true; /* Do not reset on compare */
+	gptConfig.enableFreeRun = config->enable_free_run;
 	gptConfig.clockSource = kGPT_ClockSource_Periph;
 	gptConfig.divider = clock_freq / config->info.freq;
 	base = get_base(dev);
@@ -235,6 +236,7 @@ static DEVICE_API(counter, mcux_gpt_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.enable_free_run = (DT_INST_ENUM_IDX_OR(n, run_mode, 0) == 1),\
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
 			.freq = DT_INST_PROP(n, gptfreq),           \
