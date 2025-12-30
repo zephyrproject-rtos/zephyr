@@ -755,7 +755,7 @@ char *at_get_string(struct at_client *at)
 	skip_space(at);
 	next_list(at);
 
-	return data.start;
+	return (char *)data.start;
 }
 
 struct get_raw_string_data {
@@ -800,5 +800,5 @@ char *at_get_raw_string(struct at_client *at, size_t *string_len)
 	skip_space(at);
 	next_list(at);
 
-	return data.start;
+	return (char *)data.start;
 }
