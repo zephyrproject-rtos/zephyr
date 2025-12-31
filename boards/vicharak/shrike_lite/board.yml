@@ -1,0 +1,5 @@
+board:
+  name: shrike_lite
+  vendor: vicharak
+  socs:
+  - name: rp2040
