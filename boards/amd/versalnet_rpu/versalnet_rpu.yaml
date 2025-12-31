@@ -11,3 +11,4 @@ vendor: amd
 supported:
   - sdhc
   - mbox
+  - dma
