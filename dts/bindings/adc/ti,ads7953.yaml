@@ -1,0 +1,7 @@
+description: TI ADS7953-Q1 SPI ADC
+
+compatible: "ti,ads7953"
+
+include: ti,ads79xx-base.yaml
+
+

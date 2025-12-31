@@ -1,0 +1,7 @@
+description: TI ADS7961-Q1 SPI ADC
+
+compatible: "ti,ads7961"
+
+include: ti,ads79xx-base.yaml
+
+
