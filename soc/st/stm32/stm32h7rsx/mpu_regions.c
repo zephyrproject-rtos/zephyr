@@ -34,14 +34,17 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 3 */
 	MPU_REGION_ENTRY("SRAM_0", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 
-	/* Region 4 - Ready only flash with unique device id, package code and VREF/TS calib*/
+	/* Region 4 - OTP area */
+	MPU_REGION_ENTRY("OTP", 0x08FFF000, REGION_IO_ATTR(REGION_1K)),
+
+	/* Region 5 - Read-only area provisioned by ST */
 	MPU_REGION_ENTRY("ID", 0x08FFF800, REGION_IO_ATTR(REGION_512B)),
 
 #if defined(sram_eth_node) && DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
-	/* Region 5 - Ethernet DMA buffer RAM */
+	/* Region 6 - Ethernet DMA buffer RAM */
 	MPU_REGION_ENTRY("SRAM_ETH_BUF", DT_REG_ADDR(sram_eth_node),
 			 REGION_RAM_NOCACHE_ATTR(REGION_16K)),
-	/* Region 6 - Ethernet DMA descriptor RAM (overlays the first 256B of SRAM_ETH_BUF)*/
+	/* Region 7 - Ethernet DMA descriptor RAM (overlays the first 256B of SRAM_ETH_BUF) */
 	MPU_REGION_ENTRY("SRAM_ETH_DESC", DT_REG_ADDR(sram_eth_node), REGION_PPB_ATTR(REGION_256B)),
 #endif
 };
