@@ -1,7 +1,7 @@
 /* obex.c - IrDA Oject Exchange Protocol handling */
 
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -991,6 +991,9 @@ static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, 
 		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
 	}
 
+	atomic_set(&client->_pre_opcode, BT_OBEX_OPCODE_CONNECT);
+	atomic_ptr_set(&client->obex->_last_client, client);
+
 	if (client->ops->connect) {
 		client->ops->connect(client, rsp_code, version, mopl, buf);
 	}
@@ -1021,6 +1024,9 @@ static int obex_client_disconn(struct bt_obex_client *client, uint8_t rsp_code, 
 		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
 	}
 
+	atomic_set(&client->_pre_opcode, BT_OBEX_OPCODE_DISCONN);
+	atomic_ptr_set(&client->obex->_last_client, client);
+
 	if (client->ops->disconnect) {
 		client->ops->disconnect(client, rsp_code, buf);
 	}
@@ -1048,6 +1054,8 @@ static int obex_client_put_common(struct bt_obex_client *client, uint8_t rsp_cod
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_set(&client->_pre_opcode, atomic_get(&client->_opcode));
+		atomic_ptr_set(&client->obex->_last_client, client);
 		atomic_clear(&client->_opcode);
 		atomic_ptr_clear(&client->obex->_active_client);
 	}
@@ -1089,6 +1097,8 @@ static int obex_client_get_common(struct bt_obex_client *client, uint8_t rsp_cod
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_set(&client->_pre_opcode, atomic_get(&client->_opcode));
+		atomic_ptr_set(&client->obex->_last_client, client);
 		atomic_clear(&client->_opcode);
 		atomic_ptr_clear(&client->obex->_active_client);
 	}
@@ -1130,6 +1140,8 @@ static int obex_client_setpath(struct bt_obex_client *client, uint8_t rsp_code, 
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_set(&client->_pre_opcode, atomic_get(&client->_opcode));
+		atomic_ptr_set(&client->obex->_last_client, client);
 		atomic_clear(&client->_opcode);
 		atomic_ptr_clear(&client->obex->_active_client);
 	}
@@ -1159,6 +1171,8 @@ static int obex_client_action_common(struct bt_obex_client *client, uint8_t rsp_
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_set(&client->_pre_opcode, atomic_get(&client->_opcode));
+		atomic_ptr_set(&client->obex->_last_client, client);
 		atomic_clear(&client->_opcode);
 		atomic_ptr_clear(&client->obex->_active_client);
 	}
@@ -1207,13 +1221,13 @@ static int obex_client_abort(struct bt_obex_client *client, uint8_t rsp_code, ui
 		int err = -EINVAL;
 
 		handler = obex_client_find_handler(atomic_get(&client->_pre_opcode));
-		if (handler) {
+		if (handler != NULL) {
 			err = handler->handler(client, rsp_code, len, buf);
 			if (err) {
 				LOG_WRN("Handler err %d", err);
 			}
+			return err;
 		}
-		return err;
 	}
 
 	if (client->ops->abort == NULL) {
@@ -1221,6 +1235,8 @@ static int obex_client_abort(struct bt_obex_client *client, uint8_t rsp_code, ui
 		return -ENOTSUP;
 	}
 
+	atomic_clear(&client->_pre_opcode);
+	atomic_ptr_clear(&client->obex->_last_client);
 	atomic_clear(&client->_opcode);
 	atomic_ptr_clear(&client->obex->_active_client);
 
@@ -1266,6 +1282,30 @@ static struct client_handler *obex_client_find_handler(uint8_t opcode)
 	return NULL;
 }
 
+static struct bt_obex_client *obex_get_last_client(struct bt_obex *obex)
+{
+	struct bt_obex_client *client;
+
+	client = atomic_ptr_get(&obex->_last_client);
+	if (client == NULL) {
+		LOG_WRN("Last client not found");
+		return NULL;
+	}
+
+	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_ABORT)) {
+		LOG_WRN("opcode cannot be set");
+		return NULL;
+	}
+
+	if (!atomic_cas(&client->_pre_opcode, BT_OBEX_OPCODE_ABORT, 0)) {
+		LOG_WRN("Last opcode is not ABORT");
+		(void)atomic_cas(&client->_opcode, BT_OBEX_OPCODE_ABORT, 0);
+		return NULL;
+	}
+
+	return client;
+}
+
 static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 {
 	struct client_handler *handler;
@@ -1277,6 +1317,11 @@ static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 	if (buf->len < sizeof(*hdr)) {
 		LOG_WRN("Too small header size (%d < %d)", buf->len, sizeof(*hdr));
 		return -EINVAL;
+	}
+
+	if (client == NULL) {
+		LOG_WRN("No active OBEX client.");
+		client = obex_get_last_client(obex);
 	}
 
 	if (client == NULL) {
@@ -1316,6 +1361,7 @@ int bt_obex_transport_connected(struct bt_obex *obex)
 	}
 
 	atomic_ptr_clear(&obex->_active_client);
+	atomic_ptr_clear(&obex->_last_client);
 
 	return 0;
 }
@@ -1327,6 +1373,7 @@ int bt_obex_transport_disconnected(struct bt_obex *obex)
 
 	obex->_transport_ops = NULL;
 	atomic_ptr_clear(&obex->_active_client);
+	atomic_ptr_clear(&obex->_last_client);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_clients, client, cnext, _node) {
 		atomic_clear(&client->_opcode);
