@@ -76,7 +76,7 @@ static int obex_transport_disconn(struct bt_obex *obex)
 	if (err) {
 		LOG_ERR("Fail to disconnect transport (err %d)", err);
 	}
-	return -EINVAL;
+	return err;
 }
 
 struct bt_obex_has_header {
