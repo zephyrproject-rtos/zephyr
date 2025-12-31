@@ -203,6 +203,13 @@
 			status = "disabled";
 		};
 
+		audcodec: audio-codec@50088000 {
+			compatible = "sifli,sf32lb-audcodec";
+			reg = <0x50088000 0x400>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_AUDCODEC>;
+			status = "disabled";
+		};
+
 		tsen: tsen@50089000 {
 			compatible = "sifli,sf32lb-tsen";
 			reg = <0x50089000 0x1000>;

@@ -187,6 +187,12 @@ if(CONFIG_HAS_SIFLI_HAL)
           ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/ipc_queue/sf32lb52x
         )
       endif()
+      set(LCPU_PATCH_FILE "${ZEPHYR_HAL_SIFLI_MODULE_DIR}/zephyr/blobs/sf32lb52_lcpu.h")
+      if(EXISTS ${LCPU_PATCH_FILE})
+        zephyr_compile_definitions(SF32LB_LCPU_PATCH)
+      else()
+        message(WARNING  "Patch ${LCPU_INSTALL_FILE} is not available, please call: west blobs fetch hal_sifli")
+      endif()
     endif()
 
     if(CONFIG_USE_SIFLI_HAL_AES OR CONFIG_USE_SIFLI_HAL_HASH)
