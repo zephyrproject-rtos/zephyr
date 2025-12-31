@@ -798,7 +798,7 @@ static int clcc_handle(struct at_client *hf_at)
 	uint32_t status;
 	uint32_t mode;
 	uint32_t mpty;
-	char *number = NULL;
+	const char *number;
 	uint32_t type = 0;
 	bool incoming = false;
 	bool new_call = false;
@@ -910,7 +910,7 @@ static int bvra_handle(struct at_client *hf_at)
 	size_t id_len;
 	uint32_t type;
 	uint32_t operation;
-	char *text;
+	const char *text;
 
 	err = at_get_number(hf_at, &activate);
 	if (err < 0) {
@@ -972,14 +972,13 @@ static int bvra_handle(struct at_client *hf_at)
 	}
 
 	text = at_get_string(hf_at);
-	if (!text) {
+	if (text == NULL) {
 		LOG_INF("Error getting text string");
 		return 0;
 	}
 
 	if (bt_hf->textual_representation) {
-		bt_hf->textual_representation(hf, text_id, (uint8_t)type,
-			(uint8_t)operation, text);
+		bt_hf->textual_representation(hf, text_id, (uint8_t)type, (uint8_t)operation, text);
 	}
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG_TEXT */
 	return 0;
@@ -1483,7 +1482,7 @@ int ring_handle(struct at_client *hf_at)
 int clip_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *number;
+	const char *number;
 	uint32_t type;
 	int err;
 	struct bt_hfp_hf_call *call;
@@ -1669,7 +1668,7 @@ static int btrh_handle(struct at_client *hf_at)
 static int ccwa_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *number;
+	const char *number;
 	uint32_t type;
 	int err;
 	struct bt_hfp_hf_call *call;
@@ -1782,7 +1781,7 @@ static int cnum_handle(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
 	char *alpha;
-	char *number;
+	const char *number;
 	uint32_t type;
 	char *speed;
 	uint32_t service = 4;
@@ -2538,7 +2537,7 @@ static int cops_handle(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t mode;
 	uint32_t format;
-	char *operator;
+	const char *operator;
 	int err;
 
 	err = at_get_number(hf_at, &mode);
@@ -2614,7 +2613,7 @@ int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf)
 static int binp_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *number;
+	const char *number;
 
 	number = at_get_string(hf_at);
 
