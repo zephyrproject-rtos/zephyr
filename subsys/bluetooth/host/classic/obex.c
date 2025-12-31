@@ -2757,7 +2757,13 @@ int bt_obex_add_header_end_body(struct net_buf *buf, uint16_t len, const uint8_t
 {
 	size_t total;
 
-	if (!buf || !body || !len) {
+	/*
+	 * OBEX Version 1.5, section 2.2.9 Body, End-of-Body
+	 * The `body` could be a NULL, so the `len` of the name could 0.
+	 * In some cases, the object body data is generated on the fly and the end cannot
+	 * be anticipated, so it is legal to send a zero length End-of-Body header.
+	 */
+	if ((buf == NULL) || ((len != 0) && (body == NULL))) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
