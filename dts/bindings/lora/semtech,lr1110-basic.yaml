@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Hasan Albinsaid (mail@hasanabs.com)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech LR1110 LoRa transceiver
+
+compatible: "semtech,lr1110-basic"
+
+include:
+  - spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description:   |
+      GPIO connected to the LR1110 NRESET pin.
+      This signal is active-low.
+
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the LR1110 BUSY pin.
+      Indicates when the device is processing commands.
+
+  event-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the LR1110 EVENT (DIO9) pin.
+      Used to signal interrupts and radio events.
