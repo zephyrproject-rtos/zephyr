@@ -57,6 +57,7 @@ static void adc_sf32lb_isr(const struct device *dev)
 	struct adc_sf32lb_data *data = dev->data;
 	uint16_t channel;
 	uint32_t adc_data;
+	uint32_t channels;
 
 	if (!sys_test_bit(config->base + GPADC_IRQ, GPADC_GPADC_IRQ_GPADC_IRSR_Pos)) {
 		return;
@@ -64,8 +65,9 @@ static void adc_sf32lb_isr(const struct device *dev)
 
 	sys_set_bit(config->base + GPADC_IRQ, GPADC_GPADC_IRQ_GPADC_ICR_Pos);
 
-	while (data->channels) {
-		channel = find_lsb_set(data->channels) - 1;
+	channels = data->channels;
+	while (channels) {
+		channel = find_lsb_set(channels) - 1;
 		adc_data = sys_read32(config->base + ADC_RDATAX(channel));
 
 		if (channel & 1) {
@@ -74,7 +76,7 @@ static void adc_sf32lb_isr(const struct device *dev)
 			*data->buffer++ = FIELD_GET(GPADC_ADC_RDATA0_SLOT0_RDATA, adc_data);
 		}
 
-		data->channels &= ~BIT(channel);
+		channels &= ~BIT(channel);
 	}
 
 	adc_context_on_sampling_done(&data->ctx, dev);
