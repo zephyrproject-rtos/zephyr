@@ -685,7 +685,10 @@ config BT_GOEP_L2CAP_MTU
 	# For GOEP over L2CAP, including,
 	# 255 bytes - the minimum MTU of GOEP,
 	# 4 bytes - L2CAP Header,
-	range 259 BT_BUF_ACL_RX_SIZE
+	# 6 bytes - Field length of L2CAP I-frame, including,
+	#   4 bytes - extended control field,
+	#   2 bytes - FCS field.
+	range 265 BT_BUF_ACL_RX_SIZE
 	help
 	  Maximum size of L2CAP MTU for GOEP.
 	  RX MTU will be truncated to account for ACL data and type overhead, and the L2CAP PDU
