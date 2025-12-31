@@ -17,11 +17,13 @@ if SOC_FLASH_SILABS_S2
 
 config SOC_FLASH_SILABS_S2_DMA_WRITE
 	bool "Use DMA for flash write operations"
-	depends on DMA
-	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_SERIES2_FLASH_CONTROLLER),dmas)
+	default y
+	select DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_SERIES2_FLASH_CONTROLLER),dmas)
 
 config SOC_FLASH_SILABS_S2_DMA_READ
 	bool "Use DMA for flash read operations"
-	depends on DMA
+	select DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_SERIES2_FLASH_CONTROLLER),dmas)
 
 endif
