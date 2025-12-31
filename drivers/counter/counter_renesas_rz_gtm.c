@@ -601,6 +601,7 @@ void counter_rz_gtm_ovf_isr(const struct device *dev)
 	static gtm_extended_cfg_t g_timer##inst##_extend = {                                       \
 		.generate_interrupt_when_starts = GTM_GIWS_TYPE_DISABLED,                          \
 		.gtm_mode = GTM_TIMER_MODE_FREERUN,                                                \
+		.p_reg = (void *)DT_REG_ADDR(RZ_GTM(inst)),                                        \
 	};                                                                                         \
 	static timer_cfg_t g_timer##inst##_cfg = {                                                 \
 		.mode = TIMER_MODE_PERIODIC,                                                       \
