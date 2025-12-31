@@ -29,7 +29,7 @@ static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t of
 	uint8_t *buf = ctx->rx_buf + offset;
 	uint32_t word = base->RDR;
 
-	if (!spi_context_rx_buf_on(ctx) && spi_context_rx_on(ctx)) {
+	if (!spi_context_rx_buf_on(ctx)) {
 		/* receive no actual data if rx buf is NULL */
 		return;
 	}
