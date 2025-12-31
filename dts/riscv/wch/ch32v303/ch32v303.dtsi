@@ -242,6 +242,13 @@
 			status = "okay";
 		};
 
+		rng: rng@40023c00 {
+			compatible = "wch,rng";
+			reg = <0x40023c00 12>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_RNG>;
+			status = "disabled";
+		};
+
 		dma1: dma@40020000 {
 			compatible = "wch,wch-dma";
 			reg = <0x40020000 0x90>;
