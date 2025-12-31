@@ -1177,8 +1177,14 @@ static inline int bt_obex_add_header_body_or_end_body(struct net_buf *buf, uint1
 	uint16_t tx_len;
 	int err;
 
-	if ((buf == NULL) || (body == NULL) || (added_len == NULL) || (mopl < BT_OBEX_MIN_MTU) ||
-	    (len == 0)) {
+	/*
+	 * OBEX Version 1.5, section 2.2.9 Body, End-of-Body
+	 * The `body` could be a NULL, so the `len` of the name could 0.
+	 * In some cases, the object body data is generated on the fly and the end cannot
+	 * be anticipated, so it is legal to send a zero length End-of-Body header.
+	 */
+	if ((buf == NULL) || ((len != 0) && (body == NULL)) || (added_len == NULL) ||
+	    (mopl < BT_OBEX_MIN_MTU)) {
 		return -EINVAL;
 	}
 
