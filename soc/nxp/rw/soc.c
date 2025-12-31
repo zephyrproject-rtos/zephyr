@@ -149,9 +149,9 @@ __weak __ramfunc void clock_init(void)
 
 #if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU) || \
 	defined(CONFIG_COMPARATOR_NXP_ACOMP)
-	/* Attack clock for GAU and reset */
-	CLOCK_AttachClk(kMAIN_CLK_to_GAU_CLK);
-	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 1U);
+	/* Set 64M GAU clock from T3 PLL 256M and reset */
+	CLOCK_AttachClk(kT3PLL_MCI_256M_to_GAU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 4U);
 	CLOCK_EnableClock(kCLOCK_Gau);
 	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
 	GAU_BG->CTRL &= ~BG_CTRL_PD_MASK;

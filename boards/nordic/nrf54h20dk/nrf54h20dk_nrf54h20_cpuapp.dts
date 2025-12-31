@@ -219,9 +219,10 @@ slot3_partition: &cpurad_slot1_partition {
 	memory-regions = <&cpuapp_dma_region>;
 };
 
+/* Leave one channel for CPURAD */
 &gpiote130 {
 	status = "okay";
-	owned-channels = <0 1 2 3 4 5 6 7>;
+	owned-channels = <0 1 2 3 4 5 6>;
 };
 
 &gpio0 {

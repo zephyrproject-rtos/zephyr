@@ -54,7 +54,7 @@ struct counter_alarm_cfg alarm_cfg;
 #endif
 #define TIMER DT_CHOSEN(silabs_sleeptimer)
 #elif defined(CONFIG_COUNTER_INFINEON_CAT1) || defined(CONFIG_COUNTER_INFINEON_TCPWM)
-#define TIMER DT_NODELABEL(counter0_0)
+#define TIMER DT_NODELABEL(counter0_1)
 #elif defined(CONFIG_COUNTER_AMBIQ)
 #ifdef TIMER
 #undef TIMER

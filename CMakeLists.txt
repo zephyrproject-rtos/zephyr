@@ -166,7 +166,7 @@ if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
 endif()
 
-if(CONFIG_DEPRECATION_TEST)
+if(CONFIG_DEPRECATION_TEST OR NOT CONFIG_WARN_DEPRECATED)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_deprecation_warning>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_deprecation_warning>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,no_deprecation_warning>>)

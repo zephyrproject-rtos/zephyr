@@ -237,10 +237,6 @@ zephyr_udc0: &usb1 {
 	tx-cal-45-dm-ohms = <7>;
 };
 
-&lpcmp0 {
-	status = "okay";
-};
-
 &lptmr0 {
 	status = "okay";
 };

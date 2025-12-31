@@ -240,7 +240,7 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 			goto error;
 		}
 
-		if (zsock_setsockopt(sock, SOL_SOCKET, SO_PRIORITY,
+		if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_PRIORITY,
 				     &prio,
 				     sizeof(prio)) != 0) {
 			NET_WARN("Failed to set SOL_SOCKET - SO_PRIORITY socket option.");

@@ -99,7 +99,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 
 	if (port > 0U) {
 		if (dns_result.ai_family == NET_AF_INET) {
-			net_sin(&dns_result_addr)->sin_port = htons(port);
+			net_sin(&dns_result_addr)->sin_port = net_htons(port);
 		}
 	}
 
@@ -111,7 +111,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	}
 
 	/* user flagged node as numeric host, but we failed net_addr_pton */
-	if (hints && hints->ai_flags & AI_NUMERICHOST) {
+	if (hints && hints->ai_flags & ZSOCK_AI_NUMERICHOST) {
 		return DNS_EAI_NONAME;
 	}
 

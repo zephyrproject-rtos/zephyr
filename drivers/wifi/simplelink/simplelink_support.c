@@ -97,7 +97,7 @@ static int32_t configure_simplelink(void)
 	uint8_t power;
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
-	struct in_addr addr4;
+	struct net_in_addr addr4;
 	SlNetCfgIpV4Args_t ipV4;
 
 	memset(&ipV4, 0, sizeof(ipV4));

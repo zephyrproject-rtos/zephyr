@@ -221,6 +221,39 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
+	if ((uint32_t)sub_system == MCUX_LPCMP0_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateCMP0);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+#else
+		CLOCK_EnableClock(kCLOCK_Lpcmp0);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp1))
+	if ((uint32_t)sub_system == MCUX_LPCMP1_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateCMP1);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+#else
+		CLOCK_EnableClock(kCLOCK_Lpcmp1);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp2))
+	if ((uint32_t)sub_system == MCUX_LPCMP2_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateCMP2);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+#else
+		CLOCK_EnableClock(kCLOCK_Lpcmp2);
+#endif
+	}
+#endif
+
 	return 0;
 }
 

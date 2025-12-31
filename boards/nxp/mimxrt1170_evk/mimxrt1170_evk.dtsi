@@ -236,6 +236,11 @@ arduino_spi: &lpspi1 {
 	pinctrl-names = "default";
 };
 
+&sai3 {
+	pinctrl-0 = <&pinmux_sai3>;
+	pinctrl-names = "default";
+};
+
 &lpadc1 {
 	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";

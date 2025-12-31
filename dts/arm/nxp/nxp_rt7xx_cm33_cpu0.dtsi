@@ -306,7 +306,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -345,7 +345,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -384,7 +384,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -423,7 +423,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -462,7 +462,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -501,7 +501,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -540,7 +540,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -579,7 +579,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -618,7 +618,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -657,7 +657,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -696,7 +696,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -735,7 +735,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -774,7 +774,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -813,7 +813,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 

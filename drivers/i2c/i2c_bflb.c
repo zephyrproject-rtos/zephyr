@@ -222,7 +222,7 @@ static int i2c_bflb_configure_freqs(const struct device *dev, uint32_t frequency
 	return 0;
 }
 
-static void i2c_bflb_trigger(const struct device *dev)
+static inline void i2c_bflb_trigger(const struct device *dev)
 {
 	uint32_t tmp = 0;
 	const struct i2c_bflb_cfg *config = dev->config;
@@ -232,7 +232,7 @@ static void i2c_bflb_trigger(const struct device *dev)
 	sys_write32(tmp, config->base + I2C_CONFIG_OFFSET);
 }
 
-static void i2c_bflb_detrigger(const struct device *dev)
+static inline void i2c_bflb_detrigger(const struct device *dev)
 {
 	uint32_t tmp = 0;
 	const struct i2c_bflb_cfg *config = dev->config;
@@ -253,7 +253,7 @@ static void i2c_bflb_detrigger(const struct device *dev)
 	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
 }
 
-static int i2c_bflb_triggered(const struct device *dev)
+static inline int i2c_bflb_triggered(const struct device *dev)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 
@@ -376,7 +376,7 @@ static void i2c_bflb_set_address(const struct device *dev, uint32_t address, boo
 	sys_write32(tmp, config->base + I2C_CONFIG_OFFSET);
 }
 
-static bool i2c_bflb_busy(const struct device *dev)
+static inline bool i2c_bflb_busy(const struct device *dev)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_BUS_BUSY_OFFSET);
@@ -384,7 +384,7 @@ static bool i2c_bflb_busy(const struct device *dev)
 	return (tmp & I2C_STS_I2C_BUS_BUSY) != 0;
 }
 
-static bool i2c_bflb_ended(const struct device *dev)
+static inline bool i2c_bflb_ended(const struct device *dev)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_INT_STS_OFFSET);
@@ -392,7 +392,7 @@ static bool i2c_bflb_ended(const struct device *dev)
 	return (tmp & I2C_END_INT) != 0;
 }
 
-static bool i2c_bflb_nacked(const struct device *dev)
+static inline bool i2c_bflb_nacked(const struct device *dev)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_INT_STS_OFFSET);
@@ -400,7 +400,7 @@ static bool i2c_bflb_nacked(const struct device *dev)
 	return (tmp & I2C_NAK_INT) != 0;
 }
 
-static bool i2c_bflb_errored(const struct device *dev)
+static inline bool i2c_bflb_errored(const struct device *dev)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_INT_STS_OFFSET);
@@ -408,11 +408,10 @@ static bool i2c_bflb_errored(const struct device *dev)
 	return (tmp & I2C_ARB_INT) != 0 || (tmp & I2C_FER_INT) != 0;
 }
 
-static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
+static inline int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
-	/* Very important volatile! GCC will break this code if this is not volatile! */
-	volatile uint32_t tmp;
+	uint32_t tmp;
 	k_timepoint_t end_timeout;
 	uint8_t j;
 
@@ -446,11 +445,10 @@ static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 	return 0;
 }
 
-static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
+static inline int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
-	/* Very important volatile! GCC will break this code if this is not volatile! */
-	volatile uint32_t tmp;
+	uint32_t tmp;
 	k_timepoint_t end_timeout;
 	uint8_t j;
 
@@ -482,7 +480,7 @@ static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 	return 0;
 }
 
-static int i2c_bflb_prepare_transfer(const struct device *dev,
+static inline int i2c_bflb_prepare_transfer(const struct device *dev,
 				     struct i2c_msg *msgs, uint8_t num_msgs)
 {
 	struct i2c_bflb_data *data = dev->data;
@@ -528,14 +526,14 @@ static int i2c_bflb_prepare_transfer(const struct device *dev,
 	return i;
 }
 
-static int i2c_bflb_transfer(const struct device *dev,
+/* GCC somehow keeps mangling that function into nonfunctionality. Nuke optimization. */
+__no_optimization static int i2c_bflb_transfer(const struct device *dev,
 			     struct i2c_msg *msgs,
 			     uint8_t num_msgs,
 			     uint16_t addr)
 {
 	struct i2c_bflb_data *data = dev->data;
-	/* Very important volatile! GCC will break this code if this is not volatile! */
-	volatile k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
 	bool addr_10b = false;
 	int ret;
 	uint8_t *p;

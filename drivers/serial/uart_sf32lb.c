@@ -38,6 +38,9 @@
 #define UART_BRR_MIN 0x10U
 
 struct uart_sf32lb_data {
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uart_config uart_config;
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_callback;
 	void *cb_data;
@@ -71,6 +74,9 @@ static void uart_sf32lb_isr(const struct device *dev)
 static int uart_sf32lb_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_sf32lb_config *config = dev->config;
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uart_sf32lb_data *data = dev->data;
+#endif
 	enum uart_config_data_bits data_bits = cfg->data_bits;
 	uint32_t cr1, cr2, cr3, brr, miscr;
 
@@ -163,12 +169,12 @@ static int uart_sf32lb_configure(const struct device *dev, const struct uart_con
 	miscr = sys_read32(config->base + UART_MISCR);
 	miscr &= ~USART_MISCR_SMPLINI_Msk;
 
-	brr = 48000000UL / config->uart_cfg.baudrate;
+	brr = 48000000UL / cfg->baudrate;
 	if (brr < UART_BRR_MIN) {
 		cr1 |= USART_CR1_OVER8;
 		sys_write32(cr1, config->base + UART_CR1);
 		/* recalculate brr with reduced oversampling */
-		brr = (48000000UL * 2U) / config->uart_cfg.baudrate;
+		brr = (48000000UL * 2U) / cfg->baudrate;
 		miscr |= FIELD_PREP(USART_MISCR_SMPLINI_Msk, 2U);
 	} else {
 		miscr |= FIELD_PREP(USART_MISCR_SMPLINI_Msk, 6U);
@@ -177,6 +183,9 @@ static int uart_sf32lb_configure(const struct device *dev, const struct uart_con
 	sys_write32(miscr, config->base + UART_MISCR);
 	sys_write32(brr, config->base + UART_BRR);
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	data->uart_config = *cfg;
+#endif
 	return 0;
 }
 
@@ -231,6 +240,22 @@ static int uart_sf32lb_err_check(const struct device *dev)
 
 	return err;
 }
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_sf32lb_configure_set(const struct device *dev, const struct uart_config *cfg)
+{
+	return uart_sf32lb_configure(dev, cfg);
+}
+
+static int uart_sf32lb_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct uart_sf32lb_data *data = dev->data;
+
+	*cfg = data->uart_config;
+
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_sf32lb_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
@@ -355,6 +380,10 @@ static const struct uart_driver_api uart_sf32lb_api = {
 	.poll_in = uart_sf32lb_poll_in,
 	.poll_out = uart_sf32lb_poll_out,
 	.err_check = uart_sf32lb_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_sf32lb_configure_set,
+	.config_get = uart_sf32lb_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_sf32lb_fifo_fill,
 	.fifo_read = uart_sf32lb_fifo_read,

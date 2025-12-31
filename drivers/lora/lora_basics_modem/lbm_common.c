@@ -90,6 +90,15 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 	ral_status_t status;
 	int ret;
 
+	/* Perform deferred radio initialization on first config */
+	if (IS_ENABLED(CONFIG_LORA_BASICS_MODEM_DEFERRED_INIT) && !data->radio_initialized) {
+		ret = lbm_driver_radio_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+		data->radio_initialized = true;
+	}
+
 	/* Ensure available, decremented after configuration */
 	if (!modem_acquire(dev)) {
 		return -EBUSY;

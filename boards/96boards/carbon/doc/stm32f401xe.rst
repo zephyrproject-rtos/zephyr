@@ -67,8 +67,9 @@ Hardware
 - Bluetooth LE over SPI, provided by nRF51822
 
 More information about STM32F401RE can be found here:
-       - `STM32F401RE on www.st.com`_
-       - `STM32F401 reference manual`_
+
+- `STM32F401RE on www.st.com`_
+- `STM32F401 reference manual`_
 
 Supported Features
 ==================

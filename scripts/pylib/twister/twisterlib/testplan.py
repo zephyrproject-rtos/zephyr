@@ -746,7 +746,7 @@ class TestPlan:
         except FileNotFoundError as e:
             logger.error(f"{e}")
             return 1
-        self.apply_changes_for_required_applications(loaded_from_file=True)
+        self.apply_changes_for_required_applications()
 
     def check_platform(self, platform, platform_list):
         return any(p in platform.aliases for p in platform_list)
@@ -1225,6 +1225,20 @@ class TestPlan:
         build_list_duration = time.time() - build_list_start
         logger.info(f"Built testsuite list in {build_list_duration:.2f} seconds")
 
+    def _should_instance_be_processed(self, instance: TestInstance) -> bool:
+        """Check if instance will be added to processing queue by runner."""
+        # Based on add_tasks_to_queue from runner.py,
+        # removed FILTER status to process HW with build_only
+        do_not_process = [
+            TwisterStatus.PASS,
+            TwisterStatus.SKIP,
+            TwisterStatus.NOTRUN
+        ]
+        if not self.options.retry_build_errors:
+            do_not_process.append(TwisterStatus.ERROR)
+
+        return instance.status not in do_not_process
+
     def _find_required_instance(self, required_app, instance: TestInstance) -> TestInstance | None:
         if req_platform := required_app.get("platform", None):
             platform = self.get_platform(req_platform)
@@ -1238,7 +1252,9 @@ class TestPlan:
 
         for inst in self.instances.values():
             if required_app["name"] == inst.testsuite.id and req_platform == inst.platform.name:
-                return inst
+                if self._should_instance_be_processed(inst):
+                    return inst
+                break
         return None
 
     def _find_required_application_in_outdir(self, required_app,
@@ -1267,7 +1283,7 @@ class TestPlan:
         logger.debug(f"Found existing build directory for required app: {build_dirs[0]}")
         return build_dirs[0]
 
-    def apply_changes_for_required_applications(self, loaded_from_file=False) -> None:
+    def apply_changes_for_required_applications(self) -> None:
         # check if required applications are in scope
         for instance in self.instances.values():
             if not instance.testsuite.required_applications:
@@ -1312,10 +1328,12 @@ class TestPlan:
 
                 if req_instance.status == TwisterStatus.FILTER:
                     # check if required application is filtered because is not runnable
-                    if loaded_from_file or (
-                            self.options.device_testing and not req_instance.run
-                            and len(req_instance.filters) == 1
-                            and req_instance.reason == "Not runnable on device"):
+                    if (
+                        self.options.device_testing
+                        and not req_instance.run
+                        and len(req_instance.filters) == 1
+                        and req_instance.reason == "Not runnable on device"
+                    ):
                         # clear status flag to build required application
                         self.instances[req_instance.name].status = TwisterStatus.NONE
                     else:

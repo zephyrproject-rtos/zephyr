@@ -7,6 +7,7 @@
 #include <soc.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/reset/mchp_rstc_g1.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hwinfo_mchp_g1, LOG_LEVEL_ERR);
@@ -64,25 +65,25 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		return -EINVAL;
 	}
 
-	if ((rcause & RSTC_RCAUSE_POR_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_POR)) != 0) {
 		result |= RESET_POR;
 	}
-	if ((rcause & RSTC_RCAUSE_BODCORE_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_BOD12)) != 0) {
 		result |= RESET_BROWNOUT;
 	}
-	if ((rcause & RSTC_RCAUSE_BODVDD_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_BOD33)) != 0) {
 		result |= RESET_BROWNOUT;
 	}
-	if ((rcause & RSTC_RCAUSE_EXT_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_EXT)) != 0) {
 		result |= RESET_PIN | RESET_USER;
 	}
-	if ((rcause & RSTC_RCAUSE_WDT_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_WDT)) != 0) {
 		result |= RESET_WATCHDOG;
 	}
-	if ((rcause & RSTC_RCAUSE_SYST_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_SYST)) != 0) {
 		result |= RESET_SOFTWARE;
 	}
-	if ((rcause & RSTC_RCAUSE_BACKUP_Msk) != 0) {
+	if ((rcause & BIT(RSTC_G1_RCAUSE_BACKUP)) != 0) {
 		result |= RESET_LOW_POWER_WAKE;
 	}
 

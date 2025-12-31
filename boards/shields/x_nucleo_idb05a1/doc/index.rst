@@ -67,7 +67,8 @@ X-NUCLEO-IDB05A1 provides a SPBTLE-RF chip with the following key features:
  - Chip antenna
 
 More information about X-NUCLEO-IDB05A1 can be found here:
-       - `X-NUCLEO-IDB05A1 databrief`_
+
+- `X-NUCLEO-IDB05A1 databrief`_
 
 Programming
 ***********

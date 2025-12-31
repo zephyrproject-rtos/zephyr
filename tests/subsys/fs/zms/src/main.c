@@ -975,8 +975,11 @@ ZTEST_F(zms, test_zms_id_64bit)
 {
 	int err;
 	ssize_t len;
-	uint64_t data;
-	uint64_t filling_id = 0xdeadbeefULL;
+	uint64_t data_wra;
+	uint64_t filling_id_1 = 0xdeadbeefULL;
+	uint64_t filling_id_2 = 0xdefacedbULL;
+	uint64_t data_1;
+	uint32_t data_2;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_ZMS_ID_64BIT);
 
@@ -985,27 +988,333 @@ ZTEST_F(zms, test_zms_id_64bit)
 
 	/* Fill the first sector with writes of different IDs */
 
-	while (fixture->fs.data_wra + sizeof(data) + sizeof(struct zms_ate) <=
+	while (fixture->fs.data_wra + sizeof(data_1) + sizeof(struct zms_ate) <=
 	       fixture->fs.ate_wra) {
-		data = filling_id;
-		len = zms_write(&fixture->fs, (zms_id_t)filling_id, &data, sizeof(data));
-		zassert_true(len == sizeof(data), "zms_write failed: %d", len);
+		data_1 = filling_id_1;
+		len = zms_write(&fixture->fs, (zms_id_t)filling_id_1, &data_1, sizeof(data_1));
+		zassert_true(len == sizeof(data_1), "zms_write failed: %d", len);
 
 		/* Choose the next ID so that its lower 32 bits stay invariant.
 		 * The purpose is to test that ZMS doesn't mistakenly cast the
 		 * 64 bit ID to a 32 bit one somewhere.
 		 */
-		filling_id += BIT64(32);
+		filling_id_1 += BIT64(32);
+	}
+
+	/* Fill the second sector similarly, except with small data in ATE */
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+
+	data_wra = fixture->fs.data_wra;
+	while (data_wra + sizeof(data_2) + sizeof(struct zms_ate) <= fixture->fs.ate_wra) {
+		/* Again, the lower 32 bits are invariant, so use the upper bits
+		 * to get unique data contents.
+		 */
+		data_2 = (uint32_t)(filling_id_2 >> 32);
+		len = zms_write(&fixture->fs, (zms_id_t)filling_id_2, &data_2, sizeof(data_2));
+		zassert_true(len == sizeof(data_2), "zms_write failed: %d", len);
+
+		/* Expect no data to be stored outside of the ATE */
+		zassert_equal(data_wra, fixture->fs.data_wra, "data_wra should not have changed");
+
+		filling_id_2 += BIT64(32);
 	}
 
 	/* Read back the written entries and check that they're all unique */
 
-	for (uint64_t id = 0xdeadbeefULL; id < filling_id; id += BIT64(32)) {
-		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data, sizeof(data), 0);
-		zassert_true(len == sizeof(data), "zms_read_hist unexpected failure: %d", len);
-		zassert_equal(data, id, "read unexpected data: %llx instead of %llx", data, id);
+	for (uint64_t id = 0xdeadbeefULL; id < filling_id_1; id += BIT64(32)) {
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_1, sizeof(data_1), 0);
+		zassert_true(len == sizeof(data_1), "zms_read_hist unexpected failure: %d", len);
+		zassert_equal(id, data_1, "read unexpected data for id %llx: %llx", id, data_1);
 
-		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data, sizeof(data), 1);
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_1, sizeof(data_1), 1);
 		zassert_true(len == -ENOENT, "zms_read_hist unexpected failure: %d", len);
 	}
+
+	for (uint64_t id = 0xdefacedbULL; id < filling_id_2; id += BIT64(32)) {
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_2, sizeof(data_2), 0);
+		zassert_true(len == sizeof(data_2), "zms_read_hist unexpected failure: %d", len);
+		zassert_equal((uint32_t)(id >> 32), data_2, "read unexpected data for id %llx: %x",
+			      id, data_2);
+
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_2, sizeof(data_2), 1);
+		zassert_true(len == -ENOENT, "zms_read_hist unexpected failure: %d", len);
+	}
+}
+
+/*
+ * Test zms_active_sector_free_space() and zms_calc_free_space().
+ */
+ZTEST_F(zms, test_zms_free_space)
+{
+	const size_t max_space_in_sector = fixture->fs.sector_size - sizeof(struct zms_ate) * 5;
+	size_t free_space_sector;
+	size_t free_space_total;
+	size_t write_len;
+	ssize_t len;
+	zms_id_t id;
+	int err;
+	char write_buf[max_space_in_sector + 1];
+
+	fixture->fs.sector_count = 2;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Set and verify the initial values of free_space_sector and free_space_total */
+
+	free_space_sector = max_space_in_sector;
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "unexpected free space in empty sector");
+	free_space_total = max_space_in_sector;
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected free space in empty filesystem");
+
+	id = 0;
+
+	len = zms_write(&fixture->fs, id, write_buf, sizeof(write_buf));
+	zassert_true(len == -EINVAL, "zms_write unexpected failure: %d", len);
+
+	do {
+		/* fill the filesystem with a single entry */
+		write_len = free_space_total;
+		len = zms_write(&fixture->fs, id, write_buf, write_len);
+		zassert_true(len == write_len, "zms_write failed: %d", len);
+		zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+			      "expected sector to appear full");
+		zassert_equal(0, zms_calc_free_space(&fixture->fs),
+			      "expected filesystem to appear full");
+
+		/* no space in filesystem -> next write must fail */
+		len = zms_write(&fixture->fs, id + 1, write_buf, 1);
+		zassert_true(len == -ENOSPC, "zms_write unexpected failure: %d", len);
+
+		/* drop the filler entry; expect delete ATE to fit in the active sector */
+		err = zms_delete(&fixture->fs, id);
+		zassert_true(err == 0, "zms_delete call failure: %d", err);
+		zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+			      "expected sector to appear full");
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "unexpected total free space");
+
+		/* Check cases where the active sector is filled in such a way
+		 * that there is only room for one ATE, and there is more space
+		 * for data to be stored within that ATE, than outside of it.
+		 * The calculated free space shall be ZMS_DATA_IN_ATE_SIZE.
+		 */
+		write_len -= sizeof(struct zms_ate);
+		while (write_len > ZMS_DATA_IN_ATE_SIZE) {
+			len = zms_write(&fixture->fs, id, write_buf, write_len);
+			zassert_true(len == write_len, "zms_write failed: %d", len);
+			zassert_equal(ZMS_DATA_IN_ATE_SIZE,
+				      zms_active_sector_free_space(&fixture->fs),
+				      "unexpected free space in active sector");
+			zassert_equal(ZMS_DATA_IN_ATE_SIZE, zms_calc_free_space(&fixture->fs),
+				      "unexpected total free space");
+
+			/* no space for data outside of ATE -> next write must fail */
+			len = zms_write(&fixture->fs, id + 1, write_buf, ZMS_DATA_IN_ATE_SIZE + 1);
+			zassert_true(len == -ENOSPC, "zms_write unexpected failure: %d", len);
+
+			/* add ATE with data inside it */
+			len = zms_write(&fixture->fs, id + 1, write_buf, ZMS_DATA_IN_ATE_SIZE);
+			zassert_true(len == ZMS_DATA_IN_ATE_SIZE, "zms_write failed: %d", len);
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "expected sector to appear full");
+			zassert_equal(0, zms_calc_free_space(&fixture->fs),
+				      "expected filesystem to appear full");
+
+			/* cleanup; expect delete ATE to fit in the active sector */
+			err = zms_delete(&fixture->fs, id + 1);
+			zassert_true(err == 0, "zms_delete call failure: %d", err);
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "expected sector to appear full");
+			zassert_equal(ZMS_DATA_IN_ATE_SIZE, zms_calc_free_space(&fixture->fs),
+				      "unexpected total free space");
+
+			err = zms_delete(&fixture->fs, id);
+			zassert_true(err == 0, "zms_delete call failure: %d", err);
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "expected sector to appear full");
+			zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+				      "unexpected total free space");
+
+			write_len -= fixture->fs.flash_parameters->write_block_size;
+
+			if (write_len <
+			    (free_space_total - sizeof(struct zms_ate) - ZMS_DATA_IN_ATE_SIZE)) {
+				break;
+			}
+		}
+
+		/* add small data ATE with unique ID; these will accumulate until the loop ends */
+		len = zms_write(&fixture->fs, id, write_buf, 1);
+		zassert_true(len == 1, "zms_write failed: %d", len);
+		id++;
+
+		free_space_sector -= sizeof(struct zms_ate);
+		zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+			      "unexpected free space in active sector");
+		free_space_total = free_space_sector;
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "unexpected total free space");
+	} while (free_space_total > 0);
+
+	/* Filesystem is filled with small data ATEs, now delete them all */
+
+	for (zms_id_t delete_id = 0; delete_id < id; delete_id++) {
+		err = zms_delete(&fixture->fs, delete_id);
+		zassert_true(err == 0, "zms_delete call failure: %d", err);
+
+		free_space_total += sizeof(struct zms_ate);
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "unexpected total free space");
+
+		if (free_space_sector == 0) {
+			free_space_sector = free_space_total;
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "unexpected free space in active sector");
+		} else {
+			free_space_sector -= sizeof(struct zms_ate);
+			zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+				      "unexpected free space in active sector");
+		}
+	}
+	zassert_equal(free_space_total, max_space_in_sector, "expected file system to be empty");
+
+	/* Trigger garbage-collection */
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+
+	free_space_sector = max_space_in_sector;
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "unexpected free space in empty sector");
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Finally, fill the active sector with redundant entries */
+
+	write_len = 64;
+	len = zms_write(&fixture->fs, id, write_buf, write_len);
+	zassert_true(len == write_len, "zms_write failed: %d", len);
+
+	free_space_sector -= (write_len + sizeof(struct zms_ate));
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "unexpected free space in active sector");
+	free_space_total -= (write_len + sizeof(struct zms_ate));
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+#ifndef CONFIG_ZMS_NO_DOUBLE_WRITE
+	while (free_space_sector >= (write_len + sizeof(struct zms_ate))) {
+		len = zms_write(&fixture->fs, id, write_buf, write_len);
+		zassert_true(len == write_len, "zms_write failed: %d", len);
+
+		free_space_sector -= (write_len + sizeof(struct zms_ate));
+		zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+			      "unexpected free space in active sector");
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "total free space should not have changed");
+	}
+#else
+	/* With no double write, the above loop would never terminate */
+	len = zms_write(&fixture->fs, id, write_buf, write_len);
+	zassert_true(len == 0, "zms_write failed: %d", len);
+
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "active sector free space should not have changed");
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+#endif
+}
+
+/*
+ * Test zms_calc_free_space() with more than 2 sectors.
+ * This is to exercise its handling of closed sectors.
+ */
+ZTEST_F(zms, test_zms_free_space_5sectors)
+{
+	const size_t max_space_in_sector = fixture->fs.sector_size - sizeof(struct zms_ate) * 5;
+	size_t free_space_total;
+	int err;
+	char write_buf[max_space_in_sector];
+
+	fixture->fs.sector_count = 5;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	free_space_total = max_space_in_sector * (fixture->fs.sector_count - 1);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected free space in empty filesystem");
+
+	/* Sector 1: add 3 new ATEs */
+
+	zms_write(&fixture->fs, 0, write_buf, 100);
+	zms_write(&fixture->fs, 1, write_buf, 200);
+	zms_write(&fixture->fs, 2, write_buf, 300);
+
+	free_space_total -= (100 + 200 + 300 + 3 * sizeof(struct zms_ate));
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Sector 2: add 1 new ATE and update 1 existing ATE */
+
+	zms_write(&fixture->fs, 3, write_buf, 100);
+	zms_write(&fixture->fs, 1, write_buf, 800);
+
+	free_space_total -= (100 + (800 - 200) + sizeof(struct zms_ate));
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Sector 3: add 2 new ATEs */
+
+	zms_write(&fixture->fs, 4, write_buf, max_space_in_sector - sizeof(struct zms_ate));
+	zms_write(&fixture->fs, 5, write_buf, ZMS_DATA_IN_ATE_SIZE);
+
+	free_space_total -= max_space_in_sector;
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Sector 4: update 1 existing ATE */
+
+	zms_write(&fixture->fs, 4, write_buf, max_space_in_sector);
+
+	free_space_total -= sizeof(struct zms_ate);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* GC all sectors and verify relation with zms_active_sector_free_space() */
+
+	free_space_total = 0;
+	for (int i = 0; i < fixture->fs.sector_count - 1; i++) {
+		free_space_total += zms_active_sector_free_space(&fixture->fs);
+
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	}
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space did not match sum of gc'd sectors");
 }

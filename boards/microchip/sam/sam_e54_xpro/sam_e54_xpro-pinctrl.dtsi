@@ -33,4 +33,20 @@
 				 <PA5E_TC0_WO1>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA3B_ADC0_AIN1>,	/* EXT2 pin 4 */
+				 <PB0B_ADC0_AIN12>;	/* EXT2 pin 3 */
+		};
+	};
+
+	adc1_default: adc1_default {
+		group1 {
+			pinmux = <PB4B_ADC1_AIN6>,	/* EXT1 pin 3 */
+				 <PB5B_ADC1_AIN7>,	/* EXT1 pin 4 */
+				 <PC2B_ADC1_AIN4>,	/* EXT3 pin 3 */
+				 <PC3B_ADC1_AIN5>;	/* EXT3 pin 4 */
+		};
+	};
 };

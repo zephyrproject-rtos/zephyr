@@ -15,8 +15,6 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include "xlnx_psttc_timer_priv.h"
 
-#define TIMER_INDEX		CONFIG_XLNX_PSTTC_TIMER_INDEX
-
 #define TIMER_IRQ		DT_INST_IRQN(0)
 #define TIMER_BASE_ADDR		DT_INST_REG_ADDR(0)
 #define TIMER_CLOCK_FREQUECY	DT_INST_PROP(0, clock_frequency)

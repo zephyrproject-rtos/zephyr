@@ -49,6 +49,9 @@ CSTALL = 8
 SPA    = 16
 CPA    = 24
 
+# LCTL bits
+OFLEN  = 4
+
 class HDAStream:
     # creates an hda stream with at 2 buffers of buf_len
     def __init__(self, stream_id: int):
@@ -199,7 +202,7 @@ class HDAStream:
         log.info(f"Reset stream {self.stream_id}")
 
 def adsp_is_ace():
-    return ace15 or ace20 or ace30
+    return ace15 or ace20 or ace30 or ace40
 
 def adsp_mem_window_config():
     if adsp_is_ace():
@@ -220,13 +223,14 @@ def map_regs(log_only):
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
-    global cavs25, ace15, ace20, ace30
+    global cavs25, ace15, ace20, ace30, ace40
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
     cavs25 = did in [ 0x43c8, 0x4b55, 0x4b58, 0x51c8, 0x51ca, 0x51cb, 0x51ce, 0x51cf, 0x54c8,
                       0x7ad0, 0xa0c8 ]
     ace15 = did in [ 0x7728, 0x7f50, 0x7e28 ]
     ace20 = did in [ 0xa828 ]
-    ace30 = did in [ 0xe428 ]
+    ace30 = did in [ 0xe428, 0x4d28 ]
+    ace40 = did in [ 0x6e50 ]
 
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):
@@ -257,12 +261,14 @@ def map_regs(log_only):
     hda.SPBFCTL = 0x0704
     hda.PPCTL   = 0x0804
 
+    if ace20 or ace30 or ace40:
+        hda.HDAML_I2S_LCTL = 0x0C40 + 0x40 * 3 + 4
+
     # Find the ID of the first output stream
     hda_ostream_id = (hda.GCAP >> 8) & 0x0f # number of input streams
     log.info(f"Selected output stream {hda_ostream_id} (GCAP = 0x{hda.GCAP:x})")
     hda.SD_SPIB = 0x0708 + (8 * hda_ostream_id)
     hda.freeze()
-
 
     # Standard HD Audio Stream Descriptor
     sd = Regs(hdamem + 0x0080 + (hda_ostream_id * 0x20))
@@ -395,8 +401,7 @@ def runx(cmd):
     return subprocess.check_output(cmd, shell=True).decode().rstrip()
 
 def mask(bit):
-    if cavs25:
-        return 0b1 << bit
+    return 0b1 << bit
 
 def load_firmware(fw_file):
     try:
@@ -538,6 +543,12 @@ def load_firmware_ace(fw_file):
     while not dsp.HFDSSCS & (1 << 24):
         log.info("Waiting for DSP subsystem power on")
         time.sleep(0.1)
+
+    if ace20 or ace30 or ace40:
+        log.info(f"Enabling offload for I2S link")
+        # needed to allow DSP to access SSP DAI
+        hda.HDAML_I2S_LCTL |= mask(OFLEN)
+        log.debug(f"HDAML.I2S_LCTL 0x{hda.HDAML_I2S_LCTL:x}")
 
     log.info("Turning on Domain0")
     dsp.HFPWRCTL |= 0x1 # set SPA bit
