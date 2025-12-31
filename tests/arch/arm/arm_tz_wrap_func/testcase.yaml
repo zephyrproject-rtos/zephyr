@@ -8,3 +8,4 @@ tests:
     filter: CONFIG_CPU_CORTEX_M
     integration_platforms:
       - mps2/an385
+      - ek_ra4m2
