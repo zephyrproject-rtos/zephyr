@@ -717,6 +717,7 @@ static int spi_rz_rspi_init(const struct device *dev)
 		.ssl_level_keep = RSPI_SSL_LEVEL_KEEP_DISABLE,                                     \
 		.rx_trigger_level = RSPI_RX_TRIGGER_24,                                            \
 		.tx_trigger_level = RSPI_TX_TRIGGER_4,                                             \
+		.p_reg = (void *)DT_INST_REG_ADDR(n),                                              \
 	};                                                                                         \
 	IF_ENABLED(CONFIG_SPI_RENESAS_RZ_RSPI_DMAC,                                           \
 				    (RSPI_DMA_RZG_DEFINE(n, tx, TI, DT_INST_PROP(n, channel))))    \
