@@ -40,6 +40,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("SRAM_ETH_DESC", DT_REG_ADDR(sram_eth_node), REGION_PPB_ATTR(REGION_256B)),
 #endif
 #endif
+	/* Region 7 - OTP area defined as flash region */
+	MPU_REGION_ENTRY("OTP", 0x08FFF000, REGION_FLASH_ATTR(REGION_1K)),
 };
 
 const struct arm_mpu_config mpu_config = {
