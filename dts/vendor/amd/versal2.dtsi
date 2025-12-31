@@ -204,5 +204,93 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+
+		adma0: dma-controller@ebd00000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd00000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma1: dma-controller@ebd10000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd10000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma2: dma-controller@ebd20000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd20000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma3: dma-controller@ebd30000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd30000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma4: dma-controller@ebd40000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd40000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma5: dma-controller@ebd50000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd50000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma6: dma-controller@ebd60000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd60000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
+
+		adma7: dma-controller@ebd70000 {
+			compatible = "amd,versal2-dma-1.0";
+			status = "disabled";
+			reg = <0xebd70000 0x10000>;
+			#dma-cells = <1>;
+			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			clock-names = "clk_main", "clk_apb";
+			xlnx,bus-width = <64>;
+		};
 	};
 };
