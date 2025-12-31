@@ -19,3 +19,9 @@ thread_stack_size = 1024
 source "drivers/sensor/Kconfig.trigger_template"
 
 endif # PAJ7620
+
+config PAJ7620_POWER_MODES
+	bool "PAJ7620 power modes"
+	default y
+	help
+	  Enable different power modes for PAJ7620 gesture sensor.

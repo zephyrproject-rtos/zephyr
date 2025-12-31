@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+ * Copyright (c) 2025 Mohamed Haggouna <mohamed.haggouna@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -149,25 +150,34 @@ static const uint8_t initial_register_array[][2] = {
 };
 
 static const uint8_t resume_register1_array[][2] = {
-	/* first resume setting sequence to send as peer  Section 8 in previous mentionned datasheet*/
-	{0xEF,0x01},
-	{0x72,0x01},
-	{0x73,0x35},
-	{0xEF,0x00}, 
-	{0x5E,0x12},
+	/**
+	 * First resume setting sequence to send as peer
+	 * Section 8 in previous mentionned datasheet
+	 */
+	{0xEF, 0x01},
+	{0x72, 0x01},
+	{0x73, 0x35},
+	{0xEF, 0x00},
+	{0x5E, 0x12},
 };
 
 static const uint8_t resume_register2_array[][2] = {
-	/* 2nd resume setting sequence to send after a delay of 500us as peer  Section 8 in previous mentionned datasheet*/
-	{0xEE,0x07},
-	{0x5E,0x10},
+	/**
+	 * 2nd resume setting sequence to send after a delay of 500us as peer
+	 * Section 8 in previous mentionned datasheet
+	 */
+	{0xEE, 0x07},
+	{0x5E, 0x10},
 };
 
 static const uint8_t suspend_register_array[][2] = {
-	/* suspend setting sequence to send as peer  Section 8 in previous mentionned datasheet*/
-	{0xEF,0x01}, 
-	{0x72,0x00}, 
-	{0xEF,0x00}, 
-	{0x03,0x01},
+	/**
+	 * Suspend setting sequence to send as peer
+	 * Section 8 in previous mentionned datasheet
+	 */
+	{0xEF, 0x01},
+	{0x72, 0x00},
+	{0xEF, 0x00},
+	{0x03, 0x01},
 };
 #endif /* ZEPHYR_DRIVERS_SENSOR_PAJ7620_REG_H_ */
