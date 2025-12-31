@@ -11,6 +11,7 @@ See build.py for the build command itself.
 '''
 
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -144,6 +145,12 @@ def is_zephyr_build(path):
     return False
 
 
+def quote_path(path):
+    '''quote path only when it looks numeric (int/float) or is numeric type'''
+    s = str(path)
+    return f'"{s}"' if isinstance(path, (int, float)) or re.fullmatch(r'[+-]?\d+(\.\d+)?', s) else s
+
+
 def load_domains(path):
     '''Load domains from a domains.yaml.
 
@@ -155,10 +162,10 @@ def load_domains(path):
     if not domains_file.is_file():
         return Domains.from_yaml(f'''\
 default: app
-build_dir: {path}
+build_dir: {quote_path(path)}
 domains:
   - name: app
-    build_dir: {path}
+    build_dir: {quote_path(path)}
 flash_order:
   - app
 ''')
