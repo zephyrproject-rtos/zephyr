@@ -37,6 +37,31 @@ Zephyr supports both, native IEEE 802.15.4 and Thread, with 6LoWPAN. Zephyr's
 <https://openthread.io/>`_. The IPv6 header compression in 6LoWPAN is used for
 native IEEE 802.15.4.
 
+IEEE 802.15.4 Drivers Overview
+******************************
+
+This section provides a high-level overview of the IEEE 802.15.4 radio drivers
+available in Zephyr. It is intended as an initial reference to help users
+identify supported drivers and their general characteristics. Detailed feature
+support and board compatibility may vary per driver and are documented in the
+corresponding driver sources.
+
+.. list-table:: Available IEEE 802.15.4 radio drivers (initial list)
+   :header-rows: 1
+
+   * - Driver
+     - Vendor / SoC family
+     - Notes
+   * - nrf5
+     - Nordic Semiconductor nRF52 / nRF53
+     - Widely used 2.4 GHz IEEE 802.15.4 radio driver
+   * - kw41z
+     - NXP KW41Z
+     - IEEE 802.15.4 radio driver for NXP KW series
+   * - cc13xx_cc26xx
+     - Texas Instruments CC13xx / CC26xx
+     - Supports 2.4 GHz and Sub-GHz configurations
+
 API Reference
 *************
 
