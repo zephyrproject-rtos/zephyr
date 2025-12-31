@@ -14,6 +14,12 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,ocm = &ocm;
 	};
+
+	adma_ref_clk: adma_ref_clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <450000000>;
+	};
 };
 
 &cpu0 {
@@ -41,4 +47,44 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+};
+
+&adma0 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma1 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma2 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma3 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma4 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma5 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma6 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+};
+
+&adma7 {
+	status = "okay";
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
 };
