@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025 Paul Timke <ptimkec@live.com>
- *
+ * Copyright (c) 2025  Mohamed Haggouna <mohamed.haggouna@gmail.com>
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 
