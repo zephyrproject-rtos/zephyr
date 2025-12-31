@@ -31,10 +31,12 @@ The CY8CKIT-062S2-AI board supports multiple core configurations:
 - **Dual-core**: ``cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0`` + ``cy8ckit_062s2_ai/cy8c624abzi_s2d44/m4_dual``
   - Both cores run simultaneously
   - Memory partitioning:
-    - M0+: 512 KB flash (0x10000000-0x10080000), 128 KB SRAM (0x08000000-0x08020000)
-    - M4: 1536 KB flash (0x10080000-0x10200000), 892 KB SRAM (0x08021000-0x080FF000)
-    - Shared: 4 KB SRAM (0x08020000-0x08021000) for inter-core communication
-  - See :zephyr-sample:`boards.infineon.cy8ckit_062s2_ai_dual_core` for a dual-core example
+
+    * M0+: 512 KB flash (0x10000000-0x10080000), 128 KB SRAM (0x08000000-0x08020000)
+    * M4: 1536 KB flash (0x10080000-0x10200000), 892 KB SRAM (0x08021000-0x080FF000)
+    * Shared: 4 KB SRAM (0x08020000-0x08021000) for inter-core communication
+
+  - See :zephyr:code-sample:`sysbuild.hello_world` for a dual-core example
 
 Hardware
 ********
@@ -104,9 +106,9 @@ To build a dual-core application using Zephyr's sysbuild system:
 
 .. code-block:: console
 
-   west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0 samples/boards/infineon/cy8ckit_062s2_ai_dual_core --sysbuild
+   west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0 samples/sysbuild/hello_world --sysbuild
 
-See :zephyr-sample:`boards.infineon.cy8ckit_062s2_ai_dual_core` for more details on dual-core operation.
+See :zephyr:code-sample:`sysbuild.hello_world` for more details on dual-core operation.
 
 Programming and Debugging
 *************************
