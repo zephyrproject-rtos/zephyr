@@ -1072,12 +1072,14 @@
 	};
 
 	flexcan0: can@d4000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xd4000 0x4000>;
 		interrupts = <62 0>;
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
+		number-of-mb-fd = <7>;
 		status = "disabled";
 	};
 
@@ -1086,7 +1088,7 @@
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -1096,7 +1098,7 @@
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};

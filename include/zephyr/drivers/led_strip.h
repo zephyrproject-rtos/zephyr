@@ -22,6 +22,11 @@
  * @defgroup led_strip_interface LED Strip
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup led_strip_interface_ext Device-specific LED Strip API extensions
+ * @{
+ * @}
+ *
  */
 
 #include <errno.h>

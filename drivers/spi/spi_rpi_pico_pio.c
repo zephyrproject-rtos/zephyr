@@ -68,8 +68,8 @@ struct spi_pico_pio_data {
 	uint32_t tx_count;
 	uint32_t rx_count;
 	size_t pio_sm;
-	pio_program_t *pio_tx_program;
-	pio_program_t *pio_rx_program;
+	const pio_program_t *pio_tx_program;
+	const pio_program_t *pio_rx_program;
 	uint32_t pio_tx_offset;
 	uint32_t pio_rx_offset;
 	uint32_t pio_rx_wrap_target;

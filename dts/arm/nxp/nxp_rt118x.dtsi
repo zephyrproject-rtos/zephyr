@@ -786,6 +786,8 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
 		clk-source = <0>;
+		number-of-mb = <96>;
+		number-of-mb-fd = <21>;
 		status = "disabled";
 	};
 
@@ -796,6 +798,8 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
 		clk-source = <0>;
+		number-of-mb = <96>;
+		number-of-mb-fd = <21>;
 		status = "disabled";
 	};
 
@@ -806,6 +810,8 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
 		clk-source = <0>;
+		number-of-mb = <96>;
+		number-of-mb-fd = <21>;
 		status = "disabled";
 	};
 
@@ -919,7 +925,7 @@
 		reg = <0x4300000 0x1000>;
 		interrupts = <18 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -930,7 +936,7 @@
 		reg = <0x24d0000 0x1000>;
 		interrupts = <67 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -941,7 +947,7 @@
 		reg = <0x2cd0000 0x1000>;
 		interrupts = <150 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";

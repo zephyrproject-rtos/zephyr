@@ -39,6 +39,18 @@
 	reg = <0x400000 DT_SIZE_K(512)>;
 };
 
+&flexcan_0 {
+	number-of-mb = <64>;
+};
+
+&flexcan_1 {
+	number-of-mb = <64>;
+};
+
+&flexcan_2 {
+	number-of-mb = <64>;
+};
+
 &peripheral {
 	/delete-node/ flexcan@310000;
 	/delete-node/ flexcan@314000;

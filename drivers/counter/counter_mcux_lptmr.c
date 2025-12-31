@@ -300,6 +300,29 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.get_freq = mcux_lptmr_get_freq,
 };
 
+/*
+ * Devicetree mapping notes
+ * - In time counter mode, prescaler divides by 2^(value + 1)
+ * - In pulse counter mode, glitch filter recognizes a change after 2^value edges
+ * - prescale-glitch-filter-bypass bypasses prescaler/glitch filter entirely
+ */
+#define MCUX_LPTMR_PRESCALE_GLITCH_VAL(n) DT_INST_PROP(n, prescale_glitch_filter)
+#define MCUX_LPTMR_MODE(n) DT_INST_PROP(n, timer_mode_sel)
+/*
+ * Default must be false so prescale-glitch-filter can be used without requiring
+ * an explicit bypass property.
+ */
+#define MCUX_LPTMR_BYPASS(n) DT_INST_PROP_OR(n, prescale_glitch_filter_bypass, false)
+
+#define MCUX_LPTMR_TIME_DIV(n) BIT(MCUX_LPTMR_PRESCALE_GLITCH_VAL(n) + 1)
+#define MCUX_LPTMR_PULSE_DIV(n) BIT(MCUX_LPTMR_PRESCALE_GLITCH_VAL(n))
+
+#define MCUX_LPTMR_EFFECTIVE_FREQ(n) \
+	(MCUX_LPTMR_BYPASS(n) ? DT_INST_PROP(n, clock_frequency) : \
+		((MCUX_LPTMR_MODE(n) == kLPTMR_TimerModeTimeCounter) ? \
+			(DT_INST_PROP(n, clock_frequency) / MCUX_LPTMR_TIME_DIV(n)) : \
+			(DT_INST_PROP(n, clock_frequency) / MCUX_LPTMR_PULSE_DIV(n))))
+
 #define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
 	static void mcux_lptmr_irq_config_##n(const struct device *dev)		\
 	{									\
@@ -312,8 +335,13 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	static void mcux_lptmr_irq_config_##n(const struct device *dev);	\
 										\
 	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&			\
-		DT_INST_PROP(n, prescale_glitch_filter) == 16),			\
-		"Pulse mode cannot have a glitch value of 16");			\
+		DT_INST_PROP(n, prescale_glitch_filter) > 15),			\
+		"prescale-glitch-filter must be in range 0..15");			\
+								\
+	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&			\
+		!MCUX_LPTMR_BYPASS(n) &&				\
+		DT_INST_PROP(n, prescale_glitch_filter) == 0),			\
+		"Pulse mode: prescale-glitch-filter=0 is invalid unless bypass is enabled");\
 										\
 	BUILD_ASSERT(DT_INST_PROP(n, resolution) <= 32 &&			\
 		DT_INST_PROP(n, resolution) > 0,				\
@@ -323,22 +351,18 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.info = {							\
 			.max_top_value =					\
 				GENMASK(DT_INST_PROP(n, resolution) - 1, 0),	\
-			.freq = DT_INST_PROP(n, clock_frequency) /		\
-				BIT(DT_INST_PROP(n, prescale_glitch_filter)),	\
+			.freq = MCUX_LPTMR_EFFECTIVE_FREQ(n),			\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
 			.channels = 1,						\
 		},								\
 		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
 		.clk_source = DT_INST_PROP(n, clk_source),			\
-		.bypass_prescaler_glitch = (DT_INST_PROP(n,			\
-			prescale_glitch_filter) == 0),				\
+		.bypass_prescaler_glitch = MCUX_LPTMR_BYPASS(n),	\
 		.mode = DT_INST_PROP(n, timer_mode_sel),			\
 		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
 		.polarity = DT_INST_PROP(n, active_low),			\
-		.prescaler_glitch = (DT_INST_PROP(n,				\
-			prescale_glitch_filter) == 0) ? 0 : DT_INST_PROP(n,	\
-			prescale_glitch_filter) + DT_INST_PROP(n,		\
-			timer_mode_sel) - 1,					\
+		.prescaler_glitch = (lptmr_prescaler_glitch_value_t)		\
+			MCUX_LPTMR_PRESCALE_GLITCH_VAL(n),			\
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
 	};									\
 										\

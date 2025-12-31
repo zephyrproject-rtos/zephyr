@@ -917,6 +917,8 @@
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
 			clk-source = <0>;
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -927,6 +929,8 @@
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
 			clk-source = <0>;
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -937,6 +941,8 @@
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
 			clk-source = <0>;
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 

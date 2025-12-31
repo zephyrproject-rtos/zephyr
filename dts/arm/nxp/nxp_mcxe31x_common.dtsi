@@ -1110,6 +1110,8 @@
 	tempsense: tempsense@37c000 {
 		compatible = "nxp,tempsense";
 		reg = <0x37c000 0x30>;
+		clocks = <&mc_cgm MCUX_TEMPSENSE_CLK>;
+		expose-ground;
 		status = "disabled";
 	};
 

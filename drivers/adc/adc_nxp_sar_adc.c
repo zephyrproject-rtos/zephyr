@@ -38,6 +38,7 @@ struct nxp_sar_adc_config {
 	bool has_external_channels;
 	bool overwrite;
 	bool auto_clock_off;
+	uint8_t conv_clk_freq_div_factor;
 #if IS_ENABLED(CONFIG_ADC_NXP_SAR_ADC_INTERRUPT)
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -458,9 +459,10 @@ static int nxp_sar_adc_init(const struct device *dev)
 		return err;
 	}
 
-	base->MCR = ((base->MCR & ~(ADC_MCR_PWDN_MASK | ADC_MCR_OWREN_MASK |
-		      ADC_MCR_ACKO_MASK)) | ADC_MCR_OWREN(config->overwrite ? 1U : 0U) |
-		      ADC_MCR_ACKO(config->auto_clock_off ? 1U : 0U));
+	base->MCR = ((base->MCR & ~(ADC_MCR_OWREN_MASK | ADC_MCR_ACKO_MASK |
+		      ADC_MCR_ADCLKSEL_MASK)) | ADC_MCR_OWREN(config->overwrite ? 1U : 0U) |
+		      ADC_MCR_ACKO(config->auto_clock_off ? 1U : 0U) |
+		      ADC_MCR_ADCLKSEL(config->conv_clk_freq_div_factor));
 
 	/* Disable global and all channels' interrupt. */
 	base->IMR = 0U;
@@ -508,6 +510,8 @@ static int nxp_sar_adc_init(const struct device *dev)
 	}
 #endif
 
+	base->MCR &= ~ADC_MCR_PWDN_MASK;
+
 	return 0;
 }
 
@@ -541,6 +545,7 @@ static const struct adc_driver_api nxp_sar_adc_api = {
 		.has_external_channels = DT_INST_PROP(inst, has_external_channels),		\
 		.overwrite = DT_INST_PROP(inst, overwrite),					\
 		.auto_clock_off = DT_INST_PROP(inst, auto_clock_off),				\
+		.conv_clk_freq_div_factor = DT_INST_PROP_OR(inst, conv_clk_freq_div_factor, 0), \
 		NXP_SAR_ADC_IRQ_FUNC(inst)							\
 	};											\
 												\

@@ -146,42 +146,46 @@ static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t dev
 	return mdio_write(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS_CNTRL, devad | BIT(14));
 }
 
-static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
+static int phy_adin2111_c45_read(const struct device *dev, uint8_t devad,
 				 uint16_t reg, uint16_t *val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
 
-	if (cfg->mii) {
+	rval = mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
+
+	if (rval == -ENOSYS) {
 		/* Using C22 -> devad bridge */
 		rval = phy_adin2111_c45_setup_dev_reg(dev, devad, reg);
 		if (rval < 0) {
 			return rval;
 		}
 
-		return mdio_read(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS, val);
+		rval = mdio_read(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS, val);
 	}
 
-	return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
+	return rval;
 }
 
-static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad,
+static int phy_adin2111_c45_write(const struct device *dev, uint8_t devad,
 				  uint16_t reg, uint16_t val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
 
-	if (cfg->mii) {
+	rval = mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
+
+	if (rval == -ENOSYS) {
 		/* Using C22 -> devad bridge */
 		rval = phy_adin2111_c45_setup_dev_reg(dev, devad, reg);
 		if (rval < 0) {
 			return rval;
 		}
 
-		return mdio_write(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS, val);
+		rval = mdio_write(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS, val);
 	}
 
-	return mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
+	return rval;
 }
 
 static int phy_adin2111_reg_read(const struct device *dev, uint16_t reg_addr,
@@ -636,6 +640,8 @@ static DEVICE_API(ethphy, phy_adin2111_api) = {
 	.link_cb_set = phy_adin2111_link_cb_set,
 	.read = phy_adin2111_reg_read,
 	.write = phy_adin2111_reg_write,
+	.read_c45 = phy_adin2111_c45_read,
+	.write_c45 = phy_adin2111_c45_write,
 };
 
 #if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios)
