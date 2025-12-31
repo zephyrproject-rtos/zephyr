@@ -988,27 +988,11 @@ static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *bu
 		return pdu_len;
 	}
 
-	/* MPS is Max PDU Size.
-	 * PDU of I-frame includes the Control, L2CAP SDU Length (when present),
-	 * Information Payload, and frame check sequence (FCS) (when present) fields.
-	 */
-	actual_mps = br_chan->tx.mps - BT_L2CAP_RT_FC_SDU_HDR_SIZE(br_chan) -
-		     BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan);
-
-	/* To get the max available space,
-	 * assume SDU field is no present.
-	 */
-	actual_mps += BT_L2CAP_RT_FC_SDU_LEN_SIZE;
+	/* MPS is Max PDU Size. */
+	actual_mps = br_chan->tx.mps;
 
 	if (pdu_len <= actual_mps) {
 		return pdu_len;
-	}
-
-	if (start_seg) {
-		/* The max mps length cannot meet the requirement.
-		 * Deduct the SDU length field for Max length could be used for seg.
-		 */
-		return actual_mps - BT_L2CAP_RT_FC_SDU_LEN_SIZE;
 	}
 
 	return actual_mps;
