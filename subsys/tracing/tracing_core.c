@@ -235,3 +235,11 @@ int tracing_backends_flush(void)
 
 	return ret;
 }
+
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMER
+#include <../ctf/ctf_top.h>
+int tracing_set_ctf_timestamp_func(uint64_t (*ctf_timestamp_func)(void))
+{
+	return ctf_set_timestamp_func(ctf_timestamp_func);
+}
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */

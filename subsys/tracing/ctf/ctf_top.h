@@ -58,6 +58,18 @@ static inline uint64_t ctf_top_timestamp_get(void)
 	return timing_ns_get();
 }
 
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMER
+typedef uint64_t (*ctf_timestamp_get_t)(void);
+int ctf_set_timestamp_func(ctf_timestamp_get_t timestamp_getter);
+uint64_t ctf_timestamp_get(void);
+#else /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
+static inline uint64_t ctf_timestamp_get(void)
+{
+	return ctf_top_timestamp_get();
+}
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
+
+
 #define CTF_EVENT(...)                                                                             \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
@@ -66,7 +78,7 @@ static inline uint64_t ctf_top_timestamp_get(void)
 		int key = irq_lock();                                                              \
 		const uint16_t stream_id = 0;                                                      \
 		uint16_t packet_size = 0;                                                          \
-		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
+		const uint64_t tstamp = ctf_timestamp_get();                                       \
                                                                                                    \
 		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
 					 ##__VA_ARGS__));                                          \
