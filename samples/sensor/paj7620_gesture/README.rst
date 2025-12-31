@@ -28,7 +28,7 @@ Polling Mode
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :boards: nucleo_f334r8, nrf52840dk_nrf52840
+   :boards: nucleo_f334r8, nrf52840dk/nrf52840
    :goals: build
    :compact:
 
@@ -42,7 +42,7 @@ between using a global thread (``CONFIG_PAJ7620_TRIGGER_GLOBAL_THREAD``) or a de
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :boards: nucleo_f334r8, nrf52840dk_nrf52840
+   :boards: nucleo_f334r8, nrf52840dk/nrf52840
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE=trigger.conf
    :compact:
@@ -56,10 +56,11 @@ detecting gestures and enter a low power state as peer PAJ7620 sensor technical 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :boards: nrf52840dk_nrf52840
+   :boards: nrf52840dk/nrf52840
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE=powermodes.conf
    :compact:
+
 Sample Output
 =============
 

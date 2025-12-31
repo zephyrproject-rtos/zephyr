@@ -3,7 +3,9 @@ sample:
 common:
   min_ram: 12
   tags: sensors
-  platform_allow: nucleo_f334r8, nrf52840dk_nrf52840
+  platform_allow: 
+  - nucleo_f334r8 
+  - nrf52840dk/nrf52840
   filter: dt_compat_enabled("pixart,paj7620")
 tests:
   sample.sensor.paj7620_gesture_trig:
