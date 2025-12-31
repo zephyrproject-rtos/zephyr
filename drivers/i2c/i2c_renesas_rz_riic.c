@@ -580,6 +580,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 		.spi_irq = DT_INST_IRQ_BY_NAME(index, spi, irq),                                   \
 		.ali_irq = DT_INST_IRQ_BY_NAME(index, ali, irq),                                   \
 		.tmoi_irq = DT_INST_IRQ_BY_NAME(index, tmoi, irq),                                 \
+		.p_reg = (void *)DT_INST_REG_ADDR(index),                                          \
 	};
 #endif /* CONFIG_I2C_RENESAS_RZ_RIIC */
 
