@@ -475,6 +475,8 @@ static int obex_server_get_final(struct bt_obex_server *server, uint16_t len, st
 	return obex_server_get_common(server, true, len, buf);
 }
 
+#define BT_OBEX_SETPATH_FLAGS_MASK (BIT(0) | BIT(1))
+
 static int obex_server_setpath(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
@@ -509,7 +511,7 @@ static int obex_server_setpath(struct bt_obex_server *server, uint16_t len, stru
 	}
 
 	req_hdr = net_buf_pull_mem(buf, sizeof(*req_hdr));
-	server->ops->setpath(server, req_hdr->flags, buf);
+	server->ops->setpath(server, req_hdr->flags & BT_OBEX_SETPATH_FLAGS_MASK, buf);
 	return 0;
 
 failed:
@@ -2234,7 +2236,7 @@ int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf
 	}
 
 	req_hdr = net_buf_push(buf, sizeof(*req_hdr));
-	req_hdr->flags = flags;
+	req_hdr->flags = flags & BT_OBEX_SETPATH_FLAGS_MASK;
 	req_hdr->constants = 0;
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = BT_OBEX_OPCODE_SETPATH;
