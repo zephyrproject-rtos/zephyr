@@ -1,0 +1,10 @@
+identifier: lpc845brk
+name: LPC845 Breakout Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+vendor: nxp
