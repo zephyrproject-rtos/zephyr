@@ -5969,20 +5969,6 @@ static void bt_l2cap_br_ret_fc_i_recv(struct bt_l2cap_br_chan *br_chan, struct n
 	}
 
 valid_frame:
-	switch (sar) {
-	case BT_L2CAP_CONTROL_SAR_START:
-		if (buf->len < 2) {
-			LOG_WRN("Too short data packet");
-			bt_l2cap_chan_disconnect(&br_chan->chan);
-			return;
-		}
-		break;
-	case BT_L2CAP_CONTROL_SAR_UNSEG:
-	case BT_L2CAP_CONTROL_SAR_END:
-	case BT_L2CAP_CONTROL_SAR_CONTI:
-		break;
-	}
-
 	/* Redirect to experimental API. */
 	IF_ENABLED(CONFIG_BT_L2CAP_SEG_RECV, ({
 		if (br_chan->chan.ops->seg_recv) {
@@ -6074,6 +6060,7 @@ static void bt_l2cap_br_ret_fc_recv(struct bt_l2cap_br_chan *br_chan, struct net
 	uint16_t control;
 	uint32_t ext_control;
 	uint8_t type;
+	uint8_t sar = BT_L2CAP_CONTROL_SAR_UNSEG;
 	struct net_buf_simple_state state;
 
 	hdr = (struct bt_l2cap_hdr *)buf->data;
@@ -6100,26 +6087,50 @@ static void bt_l2cap_br_ret_fc_recv(struct bt_l2cap_br_chan *br_chan, struct net
 	/* Pull L2CAP Header from received frame */
 	net_buf_pull_mem(buf, sizeof(*hdr));
 
-	if (buf->len > br_chan->rx.mps) {
-		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, br_chan->rx.mps);
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-		return;
-	}
-
 	net_buf_simple_save(&buf->b, &state);
 	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) ||
 	    (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_STREAM)) {
 		if (br_chan->rx.extended_control) {
 			ext_control = net_buf_pull_le32(buf);
 			type = (uint8_t)BT_L2CAP_S_FRAME_EXT_CONTROL_GET_TYPE(ext_control);
+			if (type == BT_L2CAP_CONTROL_TYPE_I) {
+				sar = (uint8_t)BT_L2CAP_I_FRAME_EXT_CONTROL_GET_SAR(ext_control);
+			}
 		} else {
 			control = net_buf_pull_le16(buf);
 			type = (uint8_t)BT_L2CAP_S_FRAME_ENH_CONTROL_GET_TYPE(control);
+			if (type == BT_L2CAP_CONTROL_TYPE_I) {
+				sar = (uint8_t)BT_L2CAP_I_FRAME_ENH_CONTROL_GET_SAR(control);
+			}
 		}
 	} else {
 		control = net_buf_pull_le16(buf);
 		type = (uint8_t)BT_L2CAP_S_FRAME_STD_CONTROL_GET_TYPE(control);
+		if (type == BT_L2CAP_CONTROL_TYPE_I) {
+			sar = (uint8_t)BT_L2CAP_I_FRAME_STD_CONTROL_GET_SAR(control);
+		}
 	}
+
+	if (sar == BT_L2CAP_CONTROL_SAR_START) {
+		__maybe_unused uint16_t sdu_length;
+
+		if (buf->len < sizeof(sdu_length)) {
+			LOG_WRN("Too short data packet");
+			bt_l2cap_chan_disconnect(&br_chan->chan);
+			return;
+		}
+
+		sdu_length = net_buf_pull_le16(buf);
+
+		LOG_DBG("New segment i-frame arrived (SDU Len %u)", sdu_length);
+	}
+
+	if (buf->len > br_chan->rx.mps) {
+		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, br_chan->rx.mps);
+		bt_l2cap_chan_disconnect(&br_chan->chan);
+		return;
+	}
+
 	net_buf_simple_restore(&buf->b, &state);
 
 	if (type == BT_L2CAP_CONTROL_TYPE_S) {
