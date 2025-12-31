@@ -3,9 +3,6 @@
 Xedge
 #####
 
-Introduction
-************
-
 Xedge is a secure, embedded web and IoT edge framework designed for
 resource-constrained devices and RTOS environments. It is built on the
 Barracuda App Server technology and provides a high-level, Lua-based
@@ -62,8 +59,8 @@ mixed expertise levels.
 Getting Started
 ***************
 
-For build instructions, platform support, and integration details,
-refer to the Xedge for Zephyr repository:
+For build instructions, refer to the official `Xedge for Zephyr`_ repository.
+
 
 .. _Xedge for Zephyr:
     https://github.com/RealTimeLogic/Xedge4Zephyr
@@ -71,10 +68,17 @@ refer to the Xedge for Zephyr repository:
 Additional Resources
 ********************
 
+- `Real Time Logic`_
+- `Xedge Introduction`_
+- `Barracuda App Server`_
+
 .. target-notes::
 
 .. _Real Time Logic:
     https://realtimelogic.com
+
+.. _Xedge Introduction:
+    https://realtimelogic.com/products/xedge/
 
 .. _Barracuda App Server:
     https://realtimelogic.com/products/barracuda-application-server/
