@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Advance Micro devices
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA TEST"
+
+source "Kconfig.zephyr"
+
+config DMA_TRANSFER_CHANNEL
+	int "DMA channel to use"
+	default 8
+
+config DMA_TEST_SG_MODE
+	bool "Enable DMA Scatter-Gather mode"
+	help
+	  Enable scatter-gather mode testing. When enabled, the test will
+	  use multiple blocks per transfer. when disabled, simple mode
+	  with single block transfer will be used.
+
+config DMA_TEST_SG_BLOCK_COUNT
+	int "Number of SG blocks per channel"
+	depends on DMA_TEST_SG_MODE
+	default 4
+	range 2 32
+	help
+	  Number of scatter-gather blocks to use per DMA channel.
+	  Each block will be BUFFER_SIZE bytes.

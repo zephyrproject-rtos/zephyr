@@ -7,6 +7,7 @@ supported:
   - scsi
   - ufs
   - mbox
+  - dma
 testing:
   ignore_tags:
     - net

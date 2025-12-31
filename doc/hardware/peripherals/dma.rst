@@ -78,6 +78,14 @@ for reference.
        SUSPENDED -> CONFIGURED [label=dma_stop];
    }
 
+Samples
+*******
+
+.. toctree::
+   :maxdepth: 1
+
+   ../../../samples/drivers/dma/dmatest/README.rst
+
 API Reference
 *************
 

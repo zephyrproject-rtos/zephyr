@@ -1,0 +1,18 @@
+sample:
+  description: DMA direct mode transfer
+  name: DMA driver sample
+common:
+  tags: drivers
+  depends_on: dma
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "DMA transfer verified all on channels"
+tests:
+  sample.drivers.dma:
+    tags: dma
+    filter: dt_nodelabel_enabled("adma0")
+    integration_platforms:
+      - versalnet_rpu
+      - versal2_rpu
