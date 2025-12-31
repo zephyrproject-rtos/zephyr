@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2070,6 +2070,41 @@ static void l2cap_br_conf_add_opt(struct net_buf *buf, const struct bt_l2cap_con
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
+static uint16_t l2cap_br_get_rx_mtu(struct bt_l2cap_br_chan *br_chan)
+{
+	uint16_t rx_mtu;
+
+	rx_mtu = BT_L2CAP_RX_MTU;
+
+	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) && !br_chan->rx.optional) {
+		return rx_mtu;
+	}
+
+	/* Discount the overhead of the I-frame for non-basic modes. */
+	if (IS_ENABLED(CONFIG_BT_L2CAP_ENH_RET) || IS_ENABLED(CONFIG_BT_L2CAP_STREAM)) {
+		/* Due to the extended_control being used if any one side of the L2CAP entities
+		 * supports Extended Window Size option, discount the maximum size of control
+		 * field to avoid the issue that the MTU exceeding the maximum payload of the
+		 * I-frame.
+		 */
+		rx_mtu -= BT_L2CAP_EXT_CONTROL_SIZE;
+	} else {
+		rx_mtu -= BT_L2CAP_STD_CONTROL_SIZE;
+	}
+
+	/* Due to the FCS field being used if any one side of the L2CAP entities does not
+	 * support the FCS option, discount the FCS size to avoid the issue that the MTU
+	 * exceeding the maximum payload of the I-frame.
+	 */
+	rx_mtu -= BT_L2CAP_FCS_SIZE;
+
+	__ASSERT(rx_mtu >= L2CAP_BR_MIN_MTU,
+		 "Invalid MTU (%u < %u). Please increase CONFIG_BT_BUF_ACL_RX_SIZE.", rx_mtu,
+		 L2CAP_BR_MIN_MTU);
+
+	return rx_mtu;
+}
+
 static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_l2cap_chan *chan_sig;
@@ -2087,8 +2122,8 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 
 	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
 
-	/* Disable segment/reassemble of l2cap rx pdu */
-	br_chan->rx.mtu = MIN(br_chan->rx.mtu, BT_L2CAP_RX_MTU);
+	br_chan->rx.mtu = MIN(br_chan->rx.mtu, l2cap_br_get_rx_mtu(br_chan));
+	/* Disable segment/reassemble of l2cap rx pdu by default. */
 	br_chan->rx.mps = br_chan->rx.mtu;
 
 	br_chan->tx.mps = CONFIG_BT_L2CAP_MPS;
