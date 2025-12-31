@@ -28,7 +28,7 @@
 
 		/* Pinctrl node for Infineon PSOC4 SoC */
 		pinctrl0: pinctrl@40310000 {
-			compatible = "infineon,cat1-pinctrl";
+			compatible = "infineon,pinctrl";
 			reg = <0x40310000 0x1000>;
 			status = "okay";
 		};
