@@ -59,6 +59,12 @@ config I2C_CQ_MODE_MAX_PAYLOAD_SIZE
 	  This is the command queue mode payload size which size
 	  up to 2k bytes.
 
+config I2C_CODE_IN_RAM
+	bool "Ram code functions"
+	help
+	  Place critical functions into RAM section to ensure they run with
+	  minimal latency.
+
 endif # I2C_ITE_ENHANCE
 
 if I2C_TARGET

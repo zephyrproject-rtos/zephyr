@@ -45,6 +45,30 @@
 	reg = <0x400000 DT_SIZE_K(2048)>;
 };
 
+&flexcan_0 {
+	number-of-mb = <64>;
+};
+
+&flexcan_1 {
+	number-of-mb = <64>;
+};
+
+&flexcan_2 {
+	number-of-mb = <64>;
+};
+
+&flexcan_3 {
+	number-of-mb = <32>;
+};
+
+&flexcan_4 {
+	number-of-mb = <32>;
+};
+
+&flexcan_5 {
+	number-of-mb = <32>;
+};
+
 &peripheral {
 	/delete-node/ emac@480000;
 	/delete-node/ sai@36c000;

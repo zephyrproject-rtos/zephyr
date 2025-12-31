@@ -46,3 +46,18 @@
 		write-block-size = <8>;
 	};
 };
+
+&flexcan0 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};
+
+&flexcan1 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};
+
+&flexcan2 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};

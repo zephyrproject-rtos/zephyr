@@ -164,3 +164,9 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/nucleo_h723zg.overlay;boards/nucleo_h723zg_nocachemem.overlay"
       - EXTRA_CONF_FILE=stm32_nocache_mem_dt.conf
+  drivers.uart.async_api.mchp:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC
+    platform_allow:
+      - sam_e54_xpro
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y

@@ -42,6 +42,8 @@ enum transfer_callback_status {
 #define IMX_USDHC_STANDARD_TUNING_COUNTER (60U)
 /* Default transfer timeout in ms for tuning */
 #define IMX_USDHC_DEFAULT_TIMEOUT         (5000U)
+/* USDHC DAT3 detect delay */
+#define IMX_USDHC_DAT3_DETECT_DELAY_US    (1000U)
 
 #define DEV_CFG(_dev)  ((const struct usdhc_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct usdhc_data *)(_dev)->data)
@@ -905,12 +907,22 @@ static int imx_usdhc_get_card_present(const struct device *dev)
 		 * Power line toggling would reset SD card
 		 */
 		if (!data->card_present) {
+			int attempts;
 			/* Detect card presence with DAT3 line pull */
 			imx_usdhc_dat3_pull(cfg, false);
 			USDHC_CardDetectByData3(base, true);
-			/* Delay to ensure host has time to detect card */
-			k_busy_wait(1000);
-			data->card_present = USDHC_DetectCardInsert(base);
+			/* Add retry loop for DAT3 card detection to avoid false negatives
+			 * caused by transient states during initialization.
+			 */
+			for (attempts = 0; attempts < CONFIG_IMX_USDHC_DAT3_DETECT_RETRY;
+			     attempts++) {
+				/* Delay to ensure host has time to detect card */
+				k_busy_wait(IMX_USDHC_DAT3_DETECT_DELAY_US);
+				data->card_present = USDHC_DetectCardInsert(base);
+				if (data->card_present) {
+					break;
+				}
+			}
 			/* Clear card detection and pull */
 			imx_usdhc_dat3_pull(cfg, true);
 			USDHC_CardDetectByData3(base, false);

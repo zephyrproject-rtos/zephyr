@@ -258,6 +258,7 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 			clk-source = <0>;
+			number-of-mb = <32>;
 			status = "disabled";
 		};
 
@@ -448,7 +449,7 @@
 			reg = <0x400ab000 0x1000>;
 			interrupts = <55 0>;
 			clock-frequency = <16000>;
-			prescale-glitch-filter = <0>;
+			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";
