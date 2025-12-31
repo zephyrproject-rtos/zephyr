@@ -122,6 +122,10 @@ int adxl345_trigger_set(const struct device *dev,
 		drv_data->act_handler = handler;
 		drv_data->act_trigger = trig;
 		int_mask = ADXL345_INT_MAP_ACT_MSK;
+		/* ACT_AC_DC=1: AC-coupled mode compares delta from reference value
+		 * ACT_AC_DC=0: DC-coupled mode compares absolute acceleration with threshold
+		 * Setting AC-coupled (bit D7=1) for activity detection
+		 */
 		ret = adxl345_reg_write_byte(dev, ADXL345_ACT_INACT_CTL_REG,
 					ADXL345_ACT_AC_DC | ADXL345_ACT_X_EN |
 					ADXL345_ACT_Y_EN | ADXL345_ACT_Z_EN);
@@ -135,7 +139,7 @@ int adxl345_trigger_set(const struct device *dev,
 	}
 
 	if (handler) {
-		int_en = ADXL345_INT_MAP_DATA_RDY_MSK;
+		int_en = int_mask;
 	} else {
 		int_en = 0U;
 	}
@@ -149,13 +153,18 @@ int adxl345_trigger_set(const struct device *dev,
 		return ret;
 	}
 
+	/* INT_MAP register: 0=route to INT1, 1=route to INT2
+	 * Logic: if route_to_int2, set bits (send to INT2), else clear bits (send to INT1)
+	 */
 	ret = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, int_mask,
 				     cfg->route_to_int2 ? int_en : ~int_en);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Clear status and read sample-set to clear interrupt flag */
+	/* Clear status and read sample-set to clear interrupt flag
+	 * Per datasheet: interrupt functions are cleared by reading data registers (0x32-0x37)
+	 */
 	(void)adxl345_read_sample(dev, &sample);
 
 	ret = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
