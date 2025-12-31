@@ -702,6 +702,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 		.capture_filter_gtioca = GPT_CAPTURE_FILTER_NONE,                                  \
 		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
 		.p_pwm_cfg = NULL,                                                                 \
+		.p_reg = (void *)DT_REG_ADDR(GPT(inst)),                                           \
 	};                                                                                         \
 	static timer_cfg_t g_timer##inst##_cfg = {                                                 \
 		.mode = TIMER_MODE_PWM,                                                            \
