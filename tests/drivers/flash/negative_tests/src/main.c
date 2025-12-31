@@ -32,6 +32,11 @@
 #elif defined(CONFIG_SOC_NRF54H20)
 #define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
 #define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+/* For PSoC4, storage_partition is a child of partitions, which is a child of flash0 */
+/* We need to go up two levels: storage_partition -> partitions -> flash0 */
+#define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
 #else
 #error "Missing definition of TEST_FLASH_START and TEST_FLASH_SIZE for this target"
 #endif
