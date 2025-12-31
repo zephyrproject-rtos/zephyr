@@ -401,6 +401,7 @@ litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
 logictechno	Logic Technologies Limited
+longan	Longan Labs (Shenzhen Longan Technology Co., Ltd.)
 longcheer	Longcheer Technology (Shanghai) Co., Ltd.
 lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
