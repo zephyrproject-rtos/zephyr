@@ -49,7 +49,9 @@ static int clock_control_renesas_ra_on(const struct device *dev, clock_control_s
 {
 	struct clock_control_ra_subsys_cfg *subsys_clk = (struct clock_control_ra_subsys_cfg *)sys;
 
-	if (!dev || !sys) {
+	ARG_UNUSED(dev);
+
+	if (!subsys_clk) {
 		return -EINVAL;
 	}
 	WRITE_BIT(*mstp_regs[subsys_clk->mstp], subsys_clk->stop_bit, false);
@@ -60,7 +62,9 @@ static int clock_control_renesas_ra_off(const struct device *dev, clock_control_
 {
 	struct clock_control_ra_subsys_cfg *subsys_clk = (struct clock_control_ra_subsys_cfg *)sys;
 
-	if (!dev || !sys) {
+	ARG_UNUSED(dev);
+
+	if (!subsys_clk) {
 		return -EINVAL;
 	}
 
@@ -77,7 +81,7 @@ static int clock_control_renesas_ra_get_rate(const struct device *dev, clock_con
 	uint32_t clk_src_rate;
 	uint32_t clk_div_val;
 
-	if (!dev || !rate) {
+	if (!rate) {
 		return -EINVAL;
 	}
 
