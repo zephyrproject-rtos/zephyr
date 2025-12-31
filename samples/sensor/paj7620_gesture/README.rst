@@ -28,7 +28,7 @@ Polling Mode
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :board: nucleo_f334r8
+   :boards: nucleo_f334r8, nrf52840dk_nrf52840
    :goals: build
    :compact:
 
@@ -42,11 +42,24 @@ between using a global thread (``CONFIG_PAJ7620_TRIGGER_GLOBAL_THREAD``) or a de
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :board: nucleo_f334r8
+   :boards: nucleo_f334r8, nrf52840dk_nrf52840
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE=trigger.conf
    :compact:
 
+Power Management Mode
+============
+
+In power management mode, the sample application includes Power modes functions (Suspend, Resume)
+control upon button press,therefore GPIO support must be enabled. When in suspend the device stops 
+detecting gestures and enter a low power state as peer PAJ7620 sensor technical specification section 4.3.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/paj7620_gesture
+   :boards: nrf52840dk_nrf52840
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=powermodes.conf
+   :compact:
 Sample Output
 =============
 
@@ -56,3 +69,7 @@ Sample Output
    Gesture RIGHT
    Gesture UP
    Gesture DOWN
+   Gesture FORWARD
+   Gesture BACKWARD
+   Gesture CLOCKWISE
+   Gesture COUNTER CLOCKWISE
