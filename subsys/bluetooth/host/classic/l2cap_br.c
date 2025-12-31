@@ -221,10 +221,10 @@ static void br_tx_buf_destroy(struct net_buf *buf)
 	bt_tx_irq_raise();
 }
 
-/* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
+/* Pool for outgoing BR/EDR RET/FC transmit PDUs (I-frames/S-frames) */
 NET_BUF_POOL_FIXED_DEFINE(br_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
-			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_MPS), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-			  br_tx_buf_destroy);
+			  BT_L2CAP_RT_FC_MAX_SDU_BUF_SIZE(CONFIG_BT_L2CAP_MPS),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_tx_buf_destroy);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 /* BR/EDR L2CAP signalling channel specific context */
