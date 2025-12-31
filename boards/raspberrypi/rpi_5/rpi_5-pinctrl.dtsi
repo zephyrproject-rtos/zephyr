@@ -10,3 +10,60 @@
 	/* Not yet implemented BCM2712 side pinctrl. Put a stub definition at this time. */
 	uart10_default: uart10_default {};
 };
+
+&rp1_pinctrl {
+	rp1_uart0_default: rp1_uart0_default {
+		group1 {
+			pinmux = <RP1_UART0_TX_P14>;
+		};
+
+		group2 {
+			pinmux = <RP1_UART0_RX_P15>;
+			input-enable;
+		};
+	};
+
+	rp1_uart1_default: rp1_uart1_default {
+		group1 {
+			pinmux = <RP1_UART1_TX_P0>;
+		};
+
+		group2 {
+			pinmux = <RP1_UART1_RX_P1>;
+			input-enable;
+		};
+	};
+
+	rp1_uart2_default: rp1_uart2_default {
+		group1 {
+			pinmux = <RP1_UART2_TX_P4>;
+		};
+
+		group2 {
+			pinmux = <RP1_UART2_RX_P5>;
+			input-enable;
+		};
+	};
+
+	rp1_uart3_default: rp1_uart3_default {
+		group1 {
+			pinmux = <RP1_UART3_TX_P8>;
+		};
+
+		group2 {
+			pinmux = <RP1_UART3_RX_P9>;
+			input-enable;
+		};
+	};
+
+	rp1_uart4_default: rp1_uart4_default {
+		group1 {
+			pinmux = <RP1_UART4_TX_P12>;
+		};
+
+		group2 {
+			pinmux = <RP1_UART4_RX_P13>;
+			input-enable;
+		};
+	};
+};
