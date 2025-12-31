@@ -452,7 +452,7 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 	struct hci_data *data = dev->data;
 	int ret = 0;
 
-	link_layer_register_isr();
+	link_layer_register_isr(false);
 
 	ret = bt_ble_ctlr_init();
 	if (ret == 0) {
@@ -563,7 +563,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 #if defined(CONFIG_PM_S2RAM)
 		if (LL_PWR_IsActiveFlag_SB() == 1U) {
 			/* Put the radio in active state */
-			link_layer_register_isr();
+			link_layer_register_isr(true);
 		}
 #endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIExit();

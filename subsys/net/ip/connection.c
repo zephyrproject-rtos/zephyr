@@ -780,7 +780,7 @@ enum net_verdict net_conn_can_input(struct net_pkt *pkt, uint8_t proto)
 	net_conn_cb_t cb = NULL;
 	void *user_data = NULL;
 
-	/* Only accept input with AF_CAN family and CAN_RAW protocol. */
+	/* Only accept input with NET_AF_CAN family and NET_CAN_RAW protocol. */
 	if (net_pkt_family(pkt) != NET_AF_CAN || proto != NET_CAN_RAW) {
 		return NET_DROP;
 	}

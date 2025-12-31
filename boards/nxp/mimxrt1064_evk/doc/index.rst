@@ -98,6 +98,15 @@ this board with new support for Zephyr features.
 
 .. zephyr:board-supported-hw::
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk043fn02h_ct` and :ref:`rk043fn66hs_ctg` - support the Display interface.
+- :ref:`dvp_fpc24_mt9m114` - supports the CSI video/camera interface.
+
 Connections and I/Os
 ====================
 

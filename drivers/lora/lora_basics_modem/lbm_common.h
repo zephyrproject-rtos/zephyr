@@ -65,6 +65,8 @@ struct lbm_lora_data_common {
 	/* Current modem state */
 	atomic_t modem_state;
 	enum lbm_modem_mode modem_mode;
+	/* Radio initialization state */
+	bool radio_initialized;
 };
 
 /**
@@ -76,6 +78,19 @@ struct lbm_lora_data_common {
  * @retval -errno On failure
  */
 int lbm_lora_common_init(const struct device *dev);
+
+/**
+ * @brief Initialize radio hardware
+ *
+ * Called by lbm_lora_config on first configuration to defer radio
+ * initialization until needed. Each driver must implement this function.
+ *
+ * @param dev Modem to initialize
+ *
+ * @retval 0 On success
+ * @retval -errno On failure
+ */
+int lbm_driver_radio_init(const struct device *dev);
 
 /**
  * @brief Configure modem for a given mode
@@ -105,3 +120,40 @@ static inline int lbm_optional_gpio_set_dt(const struct gpio_dt_spec *spec, int 
 
 /* Common LBM implementation of the LoRa API */
 extern const struct lora_driver_api lbm_lora_api;
+
+/**
+ * @brief Add a GPIO callback for DIO1 interrupts
+ *
+ * This function registers a user callback that will be invoked from interrupt
+ * context when the DIO1 interrupt fires. The user must provide a pre-allocated
+ * gpio_callback structure. The driver will initialize the callback with the
+ * provided handler and the correct pin mask for the DIO1 pin.
+ *
+ * @param dev Modem device
+ * @param callback GPIO callback structure (will be initialized by driver)
+ * @param handler Callback handler function to be invoked on DIO1 interrupt
+ *
+ * @retval 0 On success
+ * @retval -ENODEV If device is not ready
+ * @retval -EINVAL If callback or handler is NULL
+ * @retval -ENOTSUP If GPIO driver doesn't support callbacks
+ * @retval -errno Other negative errno code on failure
+ */
+int lbm_driver_add_dio1_gpio_callback(const struct device *dev,
+				      struct gpio_callback *callback,
+				      gpio_callback_handler_t handler);
+
+/**
+ * @brief Remove a GPIO callback for DIO1 interrupts
+ *
+ * Remove a previously added GPIO callback.
+ *
+ * @param dev Modem device
+ * @param callback GPIO callback structure to remove
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If callback not found
+ * @retval -errno Negative errno code on failure
+ */
+int lbm_driver_remove_dio1_gpio_callback(const struct device *dev,
+					 struct gpio_callback *callback);

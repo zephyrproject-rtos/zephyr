@@ -1166,6 +1166,11 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		return ret;
 	}
 
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret) {
+		return ret;
+	}
+
 	LPUART_Init(config->base, &uart_config, clock_freq);
 
 #ifdef LPUART_HAS_MODEM

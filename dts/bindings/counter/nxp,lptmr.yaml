@@ -52,21 +52,29 @@ properties:
     required: true
     description: Represents the width of the counter in bits.
 
+  prescale-glitch-filter-bypass:
+    type: boolean
+    description: |
+      Controls the clocking of Counter (CNR). If false, the output of the prescaler
+      or glitch filter clocks CNR. If true, the selected prescaler clock in Time
+      Counter mode, or the selected input source in Pulse Counter mode, directly
+      clocks CNR.
+
   prescale-glitch-filter:
     type: int
     default: 0
-    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     description: |
-      When in prescaler mode, if prescale-glitch-filter is 0, the prescaler
-        is bypassed, the selected prescaler clock increments Counter (CNR) on every
-        clock cycle. Otherwise the counter is incremented every
-        2 ^ [prescaler-glitch-filter] clock cycles.
-      When in pulse mode, if prescale-glitch-filter is 0, the glitch filter
-        is bypassed, the selected input source increments the value of Counter(CNR)
-        every time it asserts. Otherwise the counter is incremented every
-        2 ^ [prescaler-glitch-filter] rising edges detected by the pin configured
-        from the input-pin value.
-      Note, that the pulse mode cannot be 2 ^ 16.
+      Configures the size of the prescaler in Time Counter mode and the width of the
+      glitch filter in Pulse Counter mode.
+
+      Note: If ``prescale-glitch-filter-bypass`` is set, this property is ignored.
+      When in prescaler mode, prescaler divides the prescaler clock by
+        2^(prescaler-glitch-filter + 1)
+      When in pulse mode, prescale-glitch-filter = 0 is not supported for glitch
+        filtering. To request no filtering, set ``prescale-glitch-filter-bypass``.
+        If prescale-glitch-filter is greater than 0, glitch filter recognizes change
+        on input pin after 2^prescale-glitch-filter rising clock edges.
 
   timer-mode-sel:
     type: int

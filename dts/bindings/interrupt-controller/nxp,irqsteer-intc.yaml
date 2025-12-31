@@ -7,3 +7,24 @@ include: [base.yaml]
 properties:
   reg:
     required: true
+
+  nxp,irq-offset:
+    type: int
+    description: |
+      irq offset in isr table for an irqsteer instance.
+      e.g There are 1000 irq entries(IRQ0-IRQ999) in isr table.
+      IRQ0 - IRQ299 are level1 interrupts(direct interrupts).
+      IRQ300 - IRQ500 are level2 interrupts from irqsteer instance 0.
+      IRQ501 - IRQ999 are level2 interrupts from irqsteer instance 1.
+      So for irqsteer instance 0, irq offset is 300.
+      For irqsteer instance 1, irq offset is 501.
+
+  nxp,num-irqs:
+    required: true
+    type: int
+    description: |
+      Totoal number of second level interrupt numbers supported by an irqsteer instance.
+      e.g. In i.MX943,
+      For irqsteerm7, irqsteera55 and irqsteerm33, there are 15 output masters
+      (some masters are reserved). 64 input interrupts are connected to one output
+      master. So the second level interrupt numbers are 64 x 15 = 960.

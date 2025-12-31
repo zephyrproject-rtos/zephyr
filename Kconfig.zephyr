@@ -1021,7 +1021,8 @@ config WARN_DEPRECATED
 	prompt "Warn on deprecated usage"
 	help
 	  Print a warning when the Kconfig tree is parsed if any deprecated
-	  features are enabled.
+	  features are enabled, or at compile time, when deprecated macros or
+	  symbols are used.
 
 config EXPERIMENTAL
 	bool

@@ -752,6 +752,86 @@ static int flash_flexspi_nor_octal_enable(struct flash_flexspi_nor_data *data,
 	/* Wait for QE bit to complete programming */
 	return flash_flexspi_nor_wait_bus_busy(data);
 }
+
+static int flash_flexspi_nor_octal_enable_s2b3(struct flash_flexspi_nor_data *data,
+					       uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
+{
+	int ret;
+	uint32_t buffer = 0;
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0x02,
+		.port = data->port,
+		.SeqNumber = 1,
+		.data = &buffer,
+	};
+	const flexspi_device_config_t config = {
+		.flexspiRootClk = MHZ(50),
+		.flashSize = FLEXSPI_FLSHCR0_FLSHSZ_MASK,
+		.ARDSeqNumber = 1,
+		.ARDSeqIndex = READ,
+	};
+
+	flexspi_lut[SCRATCH_CMD][0] =
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x65,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x08);
+	flexspi_lut[SCRATCH_CMD][1] =
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 0x08,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+	flexspi_lut[SCRATCH_CMD2][0] =
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR2,
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x01);
+
+	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
+					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					     data->port);
+	if (ret < 0) {
+		return ret;
+	}
+
+	transfer.dataSize = 1;
+	transfer.seqIndex = SCRATCH_CMD;
+	transfer.cmdType = kFLEXSPI_Read;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((buffer & BIT(3)) != 0U) {
+		return 0;
+	}
+
+	ret = flash_flexspi_nor_write_enable(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	buffer |= BIT(3);
+	transfer.deviceAddress = 0;
+	transfer.seqIndex = SCRATCH_CMD2;
+	transfer.cmdType = kFLEXSPI_Write;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return flash_flexspi_nor_wait_bus_busy(data);
+}
+
+static int
+flash_flexspi_nor_handle_octal_requirements(struct flash_flexspi_nor_data *data,
+					    uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
+					    uint8_t oer)
+{
+	switch (oer) {
+	case JESD216_DW19_OER_VAL_NONE:
+		return 0;
+	case JESD216_DW19_OER_VAL_S2B3:
+		return flash_flexspi_nor_octal_enable_s2b3(data, flexspi_lut);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 /*
  * This function enables 4 byte addressing, when supported. Otherwise it
  * returns an error.
@@ -874,8 +954,10 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	struct jesd216_bfp_dw16 dw16;
 	struct jesd216_bfp_dw15 dw15;
 	struct jesd216_bfp_dw14 dw14;
+	struct jesd216_bfp_dw19 dw19;
 	uint8_t addr_width;
 	uint8_t mode_cmd;
+	uint8_t octal_enable_req = JESD216_DW19_OER_VAL_NONE;
 	int ret;
 
 	/* Read DW14 to determine the polling method we should use while programming */
@@ -901,6 +983,10 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	addr_width = jesd216_bfp_addrbytes(bfp) ==
 		JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B ? 32 : 24;
 
+	if (jesd216_bfp_decode_dw19(&header->phdr[0], bfp, &dw19) == 0) {
+		octal_enable_req = dw19.octal_enable_req;
+	}
+
 	/* Check to see if we can enable 4 byte addressing */
 	ret = jesd216_bfp_decode_dw16(&header->phdr[0], bfp, &dw16);
 	if (ret == 0) {
@@ -924,6 +1010,39 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	/* Extract the read command.
 	 * Note- enhanced XIP not currently supported, nor is 4-4-4 mode.
 	 */
+	ret = jesd216_bfp_read_support(&header->phdr[0], bfp,
+				       JESD216_MODE_188, &instr);
+	if (ret > 0) {
+		ret = flash_flexspi_nor_handle_octal_requirements(data, flexspi_lut,
+								  octal_enable_req);
+		if (ret < 0) {
+			if (ret != -ENOTSUP) {
+				return ret;
+			}
+		} else {
+			LOG_DBG("Enable 188 mode");
+			if (instr.mode_clocks == 2) {
+				mode_cmd = kFLEXSPI_Command_MODE8_SDR;
+			} else if (instr.mode_clocks == 1) {
+				mode_cmd = kFLEXSPI_Command_MODE4_SDR;
+			} else if (instr.mode_clocks == 0) {
+				mode_cmd = kFLEXSPI_Command_DUMMY_SDR;
+			} else {
+				return -ENOTSUP;
+			}
+			flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, instr.instr,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_8PAD, addr_width);
+			flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(mode_cmd, kFLEXSPI_8PAD, 0x00,
+							       kFLEXSPI_Command_DUMMY_SDR,
+							       kFLEXSPI_8PAD, instr.wait_states);
+			flexspi_lut[READ][2] =
+				FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_8PAD, 0x04,
+						kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+			return 0;
+		}
+	}
+
 	if (jesd216_bfp_read_support(&header->phdr[0], bfp,
 	    JESD216_MODE_144, &instr) > 0) {
 		LOG_DBG("Enable 144 mode");

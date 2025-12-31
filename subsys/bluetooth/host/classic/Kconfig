@@ -434,6 +434,12 @@ config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
 	help
 	  This option sets the timeout after the get ongoing calls callback notified
 
+config BT_HFP_AG_INBAND_RINGTONE
+	bool "In-band ring tone capability"
+	default y
+	help
+	  This option enables In-band ring tone capability
+
 endif # BT_HFP_AG
 
 config BT_AVDTP

@@ -1,4 +1,42 @@
-description: ESP32 SPI
+description: |
+  ESP32 SPI controller
+
+  Hardware chip select is directly handled via pinctrl. The reg property of
+  a child SPI device node corresponds to the hardware CS pin number configured
+  in pinctrl. ESP32 supports CS0-CS2, while ESP32-S2/S3/C2/C3/C6/H2 support
+  CS0-CS5.
+
+  Alternatively, GPIO-based chip selects can be used via the cs-gpios property.
+  When cs-gpios is defined, the hardware CS lines are disabled and the driver
+  uses GPIO pins for chip select control. In this case, the reg property of
+  child nodes corresponds to the index in the cs-gpios array.
+
+  Example with hardware CS (directly via pinctrl):
+
+    &spi2 {
+        pinctrl-0 = <&spim2_default>;  /* Must include CS signal */
+        pinctrl-names = "default";
+
+        device@0 {
+            reg = <0>;  /* Uses hardware CS0 */
+        };
+    };
+
+  Example with GPIO CS:
+
+    &spi2 {
+        pinctrl-0 = <&spim2_default>;  /* CS signal optional */
+        pinctrl-names = "default";
+        cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
+                   <&gpio0 6 GPIO_ACTIVE_LOW>;
+
+        device@0 {
+            reg = <0>;  /* Uses first GPIO (gpio0 pin 5) */
+        };
+        device@1 {
+            reg = <1>;  /* Uses second GPIO (gpio0 pin 6) */
+        };
+    };
 
 compatible: "espressif,esp32-spi"
 

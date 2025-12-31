@@ -756,6 +756,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -771,6 +773,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -786,6 +790,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -801,6 +807,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -816,6 +824,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -831,6 +841,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -846,6 +858,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -861,6 +875,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -876,6 +892,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -891,6 +909,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -906,6 +926,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -921,6 +943,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -936,6 +960,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -951,6 +977,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -966,6 +994,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -981,6 +1011,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -996,6 +1028,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1011,6 +1045,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1026,6 +1062,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1041,6 +1079,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1056,6 +1096,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1071,6 +1113,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1086,6 +1130,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1101,6 +1147,8 @@
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb",
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
+			number-of-mb = <128>;
+			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 

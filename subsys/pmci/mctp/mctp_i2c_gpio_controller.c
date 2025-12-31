@@ -43,7 +43,7 @@ static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, int result
 	struct mctp_i2c_gpio_controller_cb *cb = b->inflight_rx;
 
 	/* Re-enable the GPIO interrupt */
-	gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[cb->index], GPIO_INT_ENABLE);
+	gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[cb->index], GPIO_INT_LEVEL_ACTIVE);
 
 	/* Try and start the next transfer if one is pending */
 	mctp_start_rx(b, true);
@@ -232,7 +232,7 @@ int mctp_i2c_gpio_controller_start(struct mctp_binding *binding)
 	mctp_binding_set_tx_enabled(binding, true);
 
 	for (int i = 0; i < b->num_endpoints; i++) {
-		gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[i], GPIO_INT_LEVEL_HIGH);
+		gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[i], GPIO_INT_LEVEL_ACTIVE);
 	}
 
 	LOG_DBG("started");

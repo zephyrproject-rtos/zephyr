@@ -9,7 +9,7 @@
 #include <zephyr/sys/reboot.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(scmi_reboot, CONFIG_PM_LOG_LEVEL);
+LOG_MODULE_REGISTER(scmi_reboot);
 
 static int scmi_reboot_handler(int type)
 {

@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <mem.h>
 #include <freq.h>
@@ -519,6 +523,7 @@
 					  "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
 			clk-source = <1>;
+			number-of-mb = <16>;
 			status = "disabled";
 		};
 

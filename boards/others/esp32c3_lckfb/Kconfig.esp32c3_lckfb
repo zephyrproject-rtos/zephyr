@@ -1,0 +1,7 @@
+# ESP32C3 LCKFB board configuration
+#
+# Copyright (c) 2025 LCKFB
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32C3_LCKFB
+	select SOC_ESP32C3

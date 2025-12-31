@@ -25,7 +25,7 @@ typedef struct pinctrl_cfg_data_t {
 	uint32_t filonoff_reg: 1;
 	uint32_t filnum_reg: 2;
 	uint32_t filclksel_reg: 2;
-	uint32_t pfc_reg: 3;
+	uint32_t pfc_reg: 4;
 } pinctrl_cfg_data_t;
 
 typedef struct pinctrl_soc_pin_t {

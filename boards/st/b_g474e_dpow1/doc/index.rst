@@ -23,10 +23,12 @@ the STLINK-V3E debugger and programmer.
 - 3 LEDs for power and ST-LINK communication
 - 4-direction joystick with a selection button
 - Reset push-button
-- Board connectors:
-    - USB Type-C |reg|
-    - USB Micro-B
-    - 2 x 32-pin header, 2.54 mm pitch, daughterboard extension connector for breadboard connection
+- Board connectors
+
+  - USB Type-C |reg|
+  - USB Micro-B
+  - 2 x 32-pin header, 2.54 mm pitch, daughterboard extension connector for breadboard connection
+
 - Flexible power-supply options: ST-LINK USB VBUS or USB Type-C |reg| VBUS or external source
 - On-board STLINK-V3E debugger/programmer with USB re-enumeration capability: mass storage,
   Virtual COM port, and debug port

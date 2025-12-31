@@ -22,8 +22,8 @@ MCTP_I2C_GPIO_CONTROLLER_DT_DEFINE(mctp_i2c_ctrl, DT_NODELABEL(mctp_i2c));
 static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data, void *msg,
 		       size_t len)
 {
-	LOG_INF("received message %s from endpoint %d to %d, msg_tag %d, len %zu", (char *)msg, eid,
-		LOCAL_EID, msg_tag, len);
+	LOG_INF("received message \"%s\" from endpoint %d to %d, msg_tag %d, len %zu", (char *)msg,
+		eid, LOCAL_EID, msg_tag, len);
 }
 
 int main(void)
@@ -33,6 +33,7 @@ int main(void)
 
 	LOG_INF("MCTP Host EID:%d on %s\n", LOCAL_EID, CONFIG_BOARD_TARGET);
 
+	mctp_set_alloc_ops(malloc, free, realloc);
 	mctp_ctx = mctp_init();
 	__ASSERT_NO_MSG(mctp_ctx != NULL);
 	mctp_register_bus(mctp_ctx, &mctp_i2c_ctrl.binding, LOCAL_EID);
@@ -50,7 +51,7 @@ int main(void)
 					" errno %d\n", mctp_i2c_ctrl.endpoint_ids[i], rc);
 			}
 
-			k_msleep(500);
+			k_msleep(1000);
 		}
 	}
 

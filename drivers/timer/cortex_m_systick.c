@@ -556,7 +556,14 @@ void sys_clock_idle_exit(void)
 			last_load = CYC_PER_TICK;
 			SysTick->LOAD = last_load - 1;
 			SysTick->VAL = 0; /* resets timer to last_load */
-			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+			if (!IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)) {
+				SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+			} else {
+				NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+				SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
+						  SysTick_CTRL_TICKINT_Msk |
+						  SysTick_CTRL_CLKSOURCE_Msk);
+			}
 		}
 	}
 }

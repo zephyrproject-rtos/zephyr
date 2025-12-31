@@ -74,6 +74,63 @@
 			compatible = "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
+
+		irqsteer: interrupt-controller@44770000 {
+			compatible = "nxp,irqsteer-intc";
+			#size-cells = <0>;
+			#address-cells = <1>;
+			reg = <0x44770000 DT_SIZE_K(64)>;
+			nxp,irq-offset = <407>;
+			nxp,num-irqs = <960>;
+
+			irqsteer_master0: interrupt-controller@0 {
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 224 0>;
+			};
+
+			irqsteer_master1: interrupt-controller@1 {
+				compatible = "nxp,irqsteer-master";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 225 0>;
+			};
+
+			irqsteer_master2: interrupt-controller@2 {
+				compatible = "nxp,irqsteer-master";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 226 0>;
+			};
+
+			irqsteer_master3: interrupt-controller@3 {
+				compatible = "nxp,irqsteer-master";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 227 0>;
+			};
+
+			irqsteer_master4: interrupt-controller@4 {
+				compatible = "nxp,irqsteer-master";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 228 0>;
+			};
+
+			irqsteer_master5: interrupt-controller@5 {
+				compatible = "nxp,irqsteer-master";
+				reg = <5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 229 0>;
+			};
+		};
 	};
 
 	mailbox_m33s_m70_for_m33s_as_master: ipm-mbox0 {
