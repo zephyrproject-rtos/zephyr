@@ -1745,6 +1745,15 @@ bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str);
  */
 bool bt_obex_has_header(struct net_buf *buf, uint8_t id);
 
+/** @brief Check whether the buf has the specified application parameter
+ *
+ *  @param buf Buffer needs to be sent.
+ *  @param id The tag id of the application parameter.
+ *
+ *  @return true if the tag is found or false otherwise.
+ */
+bool bt_obex_has_app_param(struct net_buf *buf, uint8_t id);
+
 #ifdef __cplusplus
 }
 #endif

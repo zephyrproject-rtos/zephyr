@@ -3647,6 +3647,47 @@ int bt_obex_get_header_app_param(struct net_buf *buf, uint16_t *len, const uint8
 	return 0;
 }
 
+struct bt_obex_has_app_param {
+	uint8_t id;
+	bool found;
+};
+
+static bool bt_obex_has_app_param_cb(struct bt_obex_tlv *tlv, void *user_data)
+{
+	struct bt_obex_has_app_param *data = user_data;
+
+	if (tlv->type == data->id) {
+		data->found = true;
+		return false;
+	}
+	return true;
+}
+
+bool bt_obex_has_app_param(struct net_buf *buf, uint8_t id)
+{
+	struct bt_obex_has_app_param ap;
+	uint16_t len = 0;
+	const uint8_t *data = NULL;
+	int err;
+
+	if (bt_obex_get_header_app_param(buf, &len, &data) != 0) {
+		return false;
+	}
+	if (len == 0U || data == NULL) {
+		return false;
+	}
+
+	ap.id = id;
+	ap.found = false;
+
+	err = bt_obex_tlv_parse(len, data, bt_obex_has_app_param_cb, &ap);
+	if (err != 0) {
+		return false;
+	}
+
+	return ap.found;
+}
+
 int bt_obex_get_header_auth_challenge(struct net_buf *buf, uint16_t *len, const uint8_t **auth)
 {
 	struct bt_obex_find_header_data data;
