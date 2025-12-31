@@ -8,6 +8,7 @@
 
 #include <broadcom/bcm2712.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include "rpi_5-pinctrl.dtsi"
 
 / {
 	compatible = "raspberrypi,5-model-b", "brcm,bcm2712";
@@ -44,6 +45,8 @@
 &uart10 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart10_default>;
+	pinctrl-names = "default";
 };
 
 &gpio0_0 {

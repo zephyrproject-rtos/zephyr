@@ -84,6 +84,12 @@
 			clocks = <&clk_uart>;
 			status = "disabled";
 		};
+
+		pinctrl: pinctrl@107d504100 {
+			compatible = "brcm,bcm2712-pinctrl";
+			reg = <0x10 0x7d504100 0x200>;
+			status = "okay";
+		};
 	};
 
 	clocks {
@@ -129,11 +135,20 @@
 				#address-cells = <2>;
 				#size-cells = <1>;
 
-				gpio0: gpio@1f000d0000 {
-					compatible = "simple-bus";
-					reg = <0x1f 0xd0000 0x30000>;
+				rp1_uartclk: uartclk {
+					compatible = "fixed-clock";
+					clock-frequency = <50000000>;
+					#clock-cells = <0>;
+				};
+
+				rp1_pinctrl: pinctrl@1f000d0000 {
+					compatible = "raspberrypi,rp1-pinctrl";
+					reg = <0x1f 0xd0000 0x128>,
+					      <0x1f 0xf0004 0x70>;
+					reg-names = "gpio", "pads";
 					#address-cells = <1>;
 					#size-cells = <0>;
+					status = "okay";
 
 					gpio0_0: gpio@0 {
 						compatible = "raspberrypi,rp1-gpio";
