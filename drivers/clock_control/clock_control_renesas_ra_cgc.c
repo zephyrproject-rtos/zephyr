@@ -114,7 +114,7 @@ static int clock_control_ra_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(clock_control, clock_control_reneas_ra_api) = {
+static DEVICE_API(clock_control, clock_control_renesas_ra_api) = {
 	.on = clock_control_renesas_ra_on,
 	.off = clock_control_renesas_ra_off,
 	.get_rate = clock_control_renesas_ra_get_rate,
@@ -131,7 +131,7 @@ static DEVICE_API(clock_control, clock_control_reneas_ra_api) = {
 		    DEVICE_DT_DEFINE(node_id, &clock_control_ra_init_pclk, NULL, NULL,             \
 				     &node_id##_cfg, PRE_KERNEL_1,                                 \
 				     CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,                          \
-				     &clock_control_reneas_ra_api)));
+				     &clock_control_renesas_ra_api)));
 
 DEVICE_DT_DEFINE(DT_NODELABEL(pclkblock), &clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
 		 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);
