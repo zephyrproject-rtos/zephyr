@@ -97,3 +97,30 @@ ZTEST_BENCHMARK(math_benchmarks, csrand, 100)
 		sys_csrand_get(buffer, sizeof(buffer));
 	}
 }
+
+ZTEST_BENCHMARK_TIMED(math_benchmarks, csrand_timed, 1000)
+{
+	sys_csrand_get(buffer, sizeof(buffer));
+}
+
+ZTEST_BENCHMARK_TIMED(math_benchmarks, add, 1000)
+{
+	int a = 1;
+	int b = 2;
+	int c = a + b;
+}
+
+ZTEST_BENCHMARK_TIMED(math_benchmarks, benchmark_pure_asm_add_timed, 1000)
+{
+	__asm__ volatile (
+#if defined(CONFIG_X86)
+		"add %eax, %eax\n\t"
+#elif defined(CONFIG_ARM)
+		"add r0, r0, r0\n\t"
+#elif defined(CONFIG_RISCV)
+		"add a0, a0, a0\n\t"
+#else
+	#error "Unsupported architecture for pure assembly benchmark"
+#endif
+	);
+}

@@ -45,6 +45,17 @@ struct ztest_benchmark {
 	const struct ztest_benchmark_suite *suite;
 };
 
+struct ztest_benchmark_timed {
+	const char *name;
+	size_t iterations;
+	uint64_t duration_cycles;
+	ztest_benchmark_fn_t setup;
+	ztest_benchmark_fn_t run;
+	ztest_benchmark_fn_t teardown;
+	const struct ztest_benchmark_suite *suite;
+	size_t duration_ms;
+};
+
 /**
  * @defgroup ztest_benchmark Zephyr Benchmarking Framework
  * @ingroup testing
@@ -90,6 +101,28 @@ struct ztest_benchmark {
 	};											\
 	static void benchmark##_fn(void)
 
+
+/** * @brief Define a timed benchmark with setup and teardown functions
+ *
+ * @param testsuite Name of the suite the benchmark belongs to
+ * @param benchmark Name of the benchmark
+ * @param duration Duration in milliseconds to run the benchmark
+ * @param setup_fn Function to run before the benchmark
+ * @param teardown_fn Function to run after the benchmark
+ */
+#define ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(testsuite, benchmark, duration, setup_fn, teardown_fn)\
+	static void benchmark##_fn(void);							\
+	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed, benchmark) =		\
+	{											\
+		.name = #benchmark,								\
+		.duration_ms = duration,							\
+		.setup = setup_fn,								\
+		.run = benchmark##_fn,								\
+		.teardown = teardown_fn,							\
+		.suite = &testsuite,								\
+	};											\
+	static void benchmark##_fn(void)
+
 /** * @brief Define a benchmark without setup and teardown functions
  *
  * @param suite Name of the suite the benchmark belongs to
@@ -99,6 +132,15 @@ struct ztest_benchmark {
 #define ZTEST_BENCHMARK(suite, benchmark, samples) \
 	ZTEST_BENCHMARK_SETUP_TEARDOWN(suite, benchmark, samples, NULL, NULL)
 
+
+/** * @brief Define a timed benchmark without setup and teardown functions
+ *
+ * @param suite Name of the suite the benchmark belongs to
+ * @param benchmark Name of the benchmark
+ * @param duration Duration in milliseconds to run the benchmark
+ */
+#define ZTEST_BENCHMARK_TIMED(suite, benchmark, duration) \
+	ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(suite, benchmark, duration, NULL, NULL)
 /**
  * @brief Run all defined benchmarks and print the results
  */
