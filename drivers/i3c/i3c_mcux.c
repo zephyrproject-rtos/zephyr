@@ -1018,8 +1018,9 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		 * Wait for controller to say the operation is done.
 		 * Save time by not clearing the bit.
 		 */
-		ret = mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
-		if (ret != 0) {
+		int ret2 = mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
+
+		if (ret2 != 0) {
 			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
 				__func__, addr, buf_sz);
 			emit_stop = true;
