@@ -21,12 +21,14 @@ config APP_MSC_STORAGE_RAM
 	bool "Use RAM disk and FAT file system"
 	imply FILE_SYSTEM
 	imply FAT_FILESYSTEM_ELM
+	imply FS_FATFS_EXTRA_NATIVE_API
 
 config APP_MSC_STORAGE_FLASH_FATFS
 	bool "Use FLASH disk and FAT file system"
 	imply DISK_DRIVER_FLASH
 	imply FILE_SYSTEM
 	imply FAT_FILESYSTEM_ELM
+	imply FS_FATFS_EXTRA_NATIVE_API
 
 config APP_MSC_STORAGE_FLASH_LITTLEFS
 	bool "Use FLASH disk and LittleFS"
@@ -39,6 +41,7 @@ config APP_MSC_STORAGE_SDCARD
 	imply DISK_DRIVER_SDMMC
 	imply FILE_SYSTEM
 	imply FAT_FILESYSTEM_ELM
+	imply FS_FATFS_EXTRA_NATIVE_API
 
 endchoice
 
