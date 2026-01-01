@@ -26,9 +26,21 @@ This sample outputs data to the console. It requires a PAJ7620 sensor.
 Polling Mode
 ============
 
+Build and Running for nucleo_f334r8
+-----------------------------------
+
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :boards: nucleo_f334r8, nrf52840dk/nrf52840
+   :boards: nucleo_f334r8
+   :goals: build
+   :compact:
+
+Build and Running for nrf52840dk/nrf52840
+-----------------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/paj7620_gesture
+   :boards: nrf52840dk/nrf52840
    :goals: build
    :compact:
 
@@ -40,15 +52,26 @@ support must be enabled. Just like every sensor supporting trigger mode, it is p
 between using a global thread (``CONFIG_PAJ7620_TRIGGER_GLOBAL_THREAD``) or a dedicated thread
 (``CONFIG_PAJ7620_TRIGGER_OWN_THREAD``) for the interrupt handling.
 
+Build and Running for nucleo_f334r8
+-----------------------------------
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/paj7620_gesture
-   :boards: nucleo_f334r8, nrf52840dk/nrf52840
+   :boards: nucleo_f334r8
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=trigger.conf
+   :compact:
+
+Build and Running for nrf52840dk/nrf52840
+-----------------------------------------
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/paj7620_gesture
+   :boards: nrf52840dk/nrf52840
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE=trigger.conf
    :compact:
 
 Power Management Mode
-============
+=====================
 
 In power management mode, the sample application includes Power modes functions (Suspend, Resume)
 control upon button press,therefore GPIO support must be enabled. When in suspend the device stops 
