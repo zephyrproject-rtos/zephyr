@@ -1,0 +1,10 @@
+sample:
+  description: Demonstration of the SCT2024 LED driver
+  name: SCT2024 sample
+tests:
+  sample.drivers.led.sct2024:
+    tags: led
+    harness: TBD
+    platform_allow: nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
