@@ -854,7 +854,7 @@ static int mcux_i3c_recover_bus(const struct device *dev)
  * @return Number of bytes read, or negative if error.
  */
 static int mcux_i3c_do_one_xfer_read(I3C_Type *base, struct mcux_i3c_data *data,
-				     uint8_t *buf, uint8_t buf_sz, bool ibi)
+				     uint8_t *buf, size_t buf_sz, bool ibi)
 {
 	int ret = 0;
 	int offset = 0;
