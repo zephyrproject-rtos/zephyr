@@ -187,11 +187,13 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 	char cmd_string[sizeof("AT+KCNXCFG=,\"\",\"\"") + sizeof(uint8_t) +
 			MODEM_HL78XX_ADDRESS_FAMILY_FORMAT_LEN + MDM_APN_MAX_LENGTH] = {0};
 	int cmd_max_len = sizeof(cmd_string) - 1;
-	int apn_size = strlen(apn);
+	int apn_size;
 
 	if (apn == NULL || size >= MDM_APN_MAX_LENGTH) {
 		return -EINVAL;
 	}
+
+	apn_size = strlen(apn);
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 	if (strncmp(data->identity.apn, apn, apn_size) != 0) {
