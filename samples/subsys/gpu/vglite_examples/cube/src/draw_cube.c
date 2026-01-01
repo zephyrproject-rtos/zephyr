@@ -71,6 +71,22 @@ static int rotxyz;
 static int fb_width = DEMO_PANEL_WIDTH;
 static int fb_height = DEMO_PANEL_HEIGHT;
 
+/* Structure to hold path drawing transformation parameters */
+typedef struct {
+	vg_lite_float_t translate_x;
+	vg_lite_float_t translate_y;
+	vg_lite_float_t scale_x;
+	vg_lite_float_t scale_y;
+	vg_lite_float_t rotate_deg;
+} path_transform_t;
+
+/* Structure to hold path drawing data */
+typedef struct {
+	vg_lite_path_t *paths;
+	uint32_t *colors;
+	int count;
+} path_data_t;
+
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -198,10 +214,8 @@ static int allocate_image_buffer(vg_lite_buffer_t *buffer)
 	return 1;
 }
 
-static int draw_path(vg_lite_buffer_t *buffer, vg_lite_color_t back_color, vg_lite_path_t path[],
-		     uint32_t color_data[], int path_count, vg_lite_float_t translate_x,
-		     vg_lite_float_t translate_y, vg_lite_float_t scale_x, vg_lite_float_t scale_y,
-		     vg_lite_float_t rotate_deg)
+static int draw_path(vg_lite_buffer_t *buffer, vg_lite_color_t back_color,
+		     const path_data_t *path_data, const path_transform_t *transform)
 {
 	vg_lite_error_t error = VG_LITE_SUCCESS;
 	vg_lite_matrix_t matrix;
@@ -209,19 +223,19 @@ static int draw_path(vg_lite_buffer_t *buffer, vg_lite_color_t back_color, vg_li
 	/* Draw the path using the matrix. */
 	vg_lite_identity(&matrix);
 	vg_lite_translate(buffer->width / 2.0, buffer->height / 2.0, &matrix);
-	vg_lite_rotate(rotate_deg, &matrix);
+	vg_lite_rotate(transform->rotate_deg, &matrix);
 	vg_lite_translate(-buffer->width / 2.0, -buffer->height / 2.0, &matrix);
-	vg_lite_translate(translate_x, translate_y, &matrix);
-	vg_lite_scale(scale_x, scale_y, &matrix);
+	vg_lite_translate(transform->translate_x, transform->translate_y, &matrix);
+	vg_lite_scale(transform->scale_x, transform->scale_y, &matrix);
 	vg_lite_clear(buffer, NULL, back_color);
 
-	for (uint8_t count = 0; count < path_count; count++) {
-		error = vg_lite_draw(buffer, &path[count], VG_LITE_FILL_EVEN_ODD, &matrix,
-				     VG_LITE_BLEND_NONE, color_data[count]);
+	for (uint8_t count = 0; count < path_data->count; count++) {
+		error = vg_lite_draw(buffer, &path_data->paths[count], VG_LITE_FILL_EVEN_ODD,
+				     &matrix, VG_LITE_BLEND_NONE, path_data->colors[count]);
 		if (error) {
 			printk("vg_lite_draw() returned error %d\r\n", error);
 			for (uint8_t i = 0; i < count; i++) {
-				vg_lite_clear_path(&path[i]);
+				vg_lite_clear_path(&path_data->paths[i]);
 			}
 			vg_lite_close();
 			return -1;
@@ -330,9 +344,13 @@ void draw_cube(vg_lite_buffer_t *rt)
 	transform_normalZ(&rotate_3D, &normal2376, &nz7623);
 	transform_normalZ(&rotate_3D, &normal0154, &nz0154);
 
+	path_data_t tiger_data = {tiger_path, tiger_color_data, tiger_path_count};
+	path_data_t nxp_data = {nxp_path, nxp_color_data, nxp_path_count};
+	path_transform_t transform;
+
 	if (nz0321 > 0.0f) {
-		draw_path(&image, 0xFFFF0000U, tiger_path, tiger_color_data, tiger_path_count, 90.0f,
-			  90.0f, 1.5f, 1.5f, rot0);
+		transform = (path_transform_t){90.0f, 90.0f, 1.5f, 1.5f, rot0};
+		draw_path(&image, 0xFFFF0000U, &tiger_data, &transform);
 
 		/*
 		 * Compute 3x3 image transform matrix to map a rectangle image (w,h) to
@@ -345,8 +363,8 @@ void draw_cube(vg_lite_buffer_t *rt)
 
 	if (nz4567 > 0.0f) {
 		/* Draw NXP logo on the image1 */
-		if (draw_path(&image, 0xFFFFFFFFU, nxp_path, nxp_color_data, nxp_path_count, 25.0f,
-			      80.5f, 3.0f, 3.0f, 0.0f) != 1) {
+		transform = (path_transform_t){25.0f, 80.5f, 3.0f, 3.0f, 0.0f};
+		if (draw_path(&image, 0xFFFFFFFFU, &nxp_data, &transform) != 1) {
 			printk("load image1 file error\n");
 		}
 		/*
@@ -360,8 +378,8 @@ void draw_cube(vg_lite_buffer_t *rt)
 	}
 
 	if (nz5126 > 0.0f) {
-		draw_path(&image, 0xFFE7BFC8U, tiger_path, tiger_color_data, tiger_path_count, 90.0f,
-			  90.0f, 1.5f, 1.5f, rot2);
+		transform = (path_transform_t){90.0f, 90.0f, 1.5f, 1.5f, rot2};
+		draw_path(&image, 0xFFE7BFC8U, &tiger_data, &transform);
 		/*
 		 * Compute 3x3 image transform matrix to map a rectangle image (w,h) to
 		 * a parallelogram (x0,y0), (x1,y1), (x2,y2), (x3,y3) counterclock wise.
@@ -386,8 +404,8 @@ void draw_cube(vg_lite_buffer_t *rt)
 	}
 
 	if (nz7623 > 0.0f) {
-		draw_path(&image, 0xFFEAD999U, tiger_path, tiger_color_data, tiger_path_count, 90.0f,
-			  90.0f, 1.5f, 1.5f, rot4);
+		transform = (path_transform_t){90.0f, 90.0f, 1.5f, 1.5f, rot4};
+		draw_path(&image, 0xFFEAD999U, &tiger_data, &transform);
 		/*
 		 * Compute 3x3 image transform matrix to map a rectangle image (w,h) to
 		 * a parallelogram (x0,y0), (x1,y1), (x2,y2), (x3,y3) counterclock wise.
