@@ -836,31 +836,44 @@ int layer_draw(vg_lite_buffer_t *rt, UILayers_t *layer, vg_lite_matrix_t *transf
 }
 
 
-int layer_init(UILayers_t *layer)
+static vg_lite_error_t init_stroke_for_path(vg_lite_path_t *handle, stroke_info_t *stroke_info)
 {
-	int i;
 	vg_lite_error_t vg_err;
 
-	if (layer == NULL) {
-		return VG_LITE_INVALID_ARGUMENT;
+	vg_err = vg_lite_set_stroke(handle, stroke_info->linecap, stroke_info->linejoin,
+				     stroke_info->strokeWidth, stroke_info->miterlimit,
+				     stroke_info->dashPattern, stroke_info->dashPatternCnt,
+				     stroke_info->dashPhase,
+				     ARGB_2_VGLITE_COLOR(stroke_info->strokeColor));
+
+	if (vg_err != VG_LITE_SUCCESS) {
+		printk("\r\nERROR: %d Failed to initialize graphic artifacts!\r\n\r\n",
+		       __LINE__);
+		return vg_err;
 	}
 
-	layer->handle = (vg_lite_path_t *)vg_lite_os_malloc(layer->img_info->path_count *
-							    sizeof(vg_lite_path_t));
-	if (layer->handle == NULL) {
-		printk("\r\nERROR: Memory allocation failed for path!\r\n\r\n");
-		return VG_LITE_OUT_OF_MEMORY;
+	vg_err = vg_lite_set_path_type(handle, VG_LITE_DRAW_STROKE_PATH);
+	if (vg_err != VG_LITE_SUCCESS) {
+		printk("\r\nERROR: Invalid path type!\r\n\r\n");
+		return vg_err;
 	}
-	memset(layer->handle, 0, layer->img_info->path_count * sizeof(vg_lite_path_t));
-	layer->matrix = (vg_lite_matrix_t *)vg_lite_os_malloc(layer->img_info->path_count *
-							      sizeof(vg_lite_matrix_t));
-	if (layer->matrix == NULL) {
-		printk("\r\nERROR: Memory allocation failed for matrix!\r\n\r\n");
-		return VG_LITE_OUT_OF_MEMORY;
+
+	vg_err = vg_lite_update_stroke(handle);
+	if (vg_err != VG_LITE_SUCCESS) {
+		printk("\r\nERROR: %d Failed to initialize graphic artifacts!\r\n\r\n",
+		       __LINE__);
+		return vg_err;
 	}
+
+	return VG_LITE_SUCCESS;
+}
+
+static vg_lite_error_t init_path_handles(UILayers_t *layer)
+{
+	vg_lite_error_t vg_err;
 	uint32_t data_size;
 
-	for (i = 0; i < layer->img_info->path_count; i++) {
+	for (int i = 0; i < layer->img_info->path_count; i++) {
 		path_info_t *path_info = &layer->img_info->paths_info[i];
 
 		data_size = vg_lite_get_path_length(path_info->path_cmds, path_info->path_length,
@@ -890,36 +903,43 @@ int layer_init(UILayers_t *layer)
 				    VG_LITE_DRAW_FILL_STROKE_PATH) {
 				stroke_info_t *stroke_info = &layer->img_info->stroke_info[i];
 
-				vg_err = vg_lite_set_stroke(
-					&layer->handle[i], stroke_info->linecap,
-					stroke_info->linejoin, stroke_info->strokeWidth,
-					stroke_info->miterlimit, stroke_info->dashPattern,
-					stroke_info->dashPatternCnt, stroke_info->dashPhase,
-					ARGB_2_VGLITE_COLOR(stroke_info->strokeColor));
-
+				vg_err = init_stroke_for_path(&layer->handle[i], stroke_info);
 				if (vg_err != VG_LITE_SUCCESS) {
-					printk("\r\nERROR: %d Failed to initialize graphic "
-					       "artifacts!\r\n\r\n",
-					       __LINE__);
-					return vg_err;
-				}
-
-				vg_err = vg_lite_set_path_type(&layer->handle[i],
-							       VG_LITE_DRAW_STROKE_PATH);
-				if (vg_err != VG_LITE_SUCCESS) {
-					printk("\r\nERROR: Invalid path type!\r\n\r\n");
-					return vg_err;
-				}
-
-				vg_err = vg_lite_update_stroke(&layer->handle[i]);
-				if (vg_err != VG_LITE_SUCCESS) {
-					printk("\r\nERROR: %d Failed to initialize graphic "
-					       "artifacts!\r\n\r\n",
-					       __LINE__);
 					return vg_err;
 				}
 			}
 		}
+	}
+
+	return VG_LITE_SUCCESS;
+}
+
+int layer_init(UILayers_t *layer)
+{
+	vg_lite_error_t vg_err;
+
+	if (layer == NULL) {
+		return VG_LITE_INVALID_ARGUMENT;
+	}
+
+	layer->handle = (vg_lite_path_t *)vg_lite_os_malloc(layer->img_info->path_count *
+							    sizeof(vg_lite_path_t));
+	if (layer->handle == NULL) {
+		printk("\r\nERROR: Memory allocation failed for path!\r\n\r\n");
+		return VG_LITE_OUT_OF_MEMORY;
+	}
+	memset(layer->handle, 0, layer->img_info->path_count * sizeof(vg_lite_path_t));
+
+	layer->matrix = (vg_lite_matrix_t *)vg_lite_os_malloc(layer->img_info->path_count *
+							      sizeof(vg_lite_matrix_t));
+	if (layer->matrix == NULL) {
+		printk("\r\nERROR: Memory allocation failed for matrix!\r\n\r\n");
+		return VG_LITE_OUT_OF_MEMORY;
+	}
+
+	vg_err = init_path_handles(layer);
+	if (vg_err != VG_LITE_SUCCESS) {
+		return vg_err;
 	}
 
 	vg_err = layer_create_image_buffers(layer);
@@ -934,6 +954,7 @@ int layer_init(UILayers_t *layer)
 
 	return VG_LITE_SUCCESS;
 }
+
 
 vg_lite_error_t layer_free(UILayers_t *layer)
 {
