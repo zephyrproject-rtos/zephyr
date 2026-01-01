@@ -6363,6 +6363,7 @@ Xilinx Platforms:
     - henrikbrixandersen
     - ibirnbaum
     - kedareswararao
+    - neeliajay
   files:
     - boards/amd/
     - drivers/*/*xilinx*
