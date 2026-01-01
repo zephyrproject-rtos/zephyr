@@ -1514,7 +1514,7 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	uint32_t intmask;
 	int xfered_len;
 
-	if (dev == NULL || payload == NULL) {
+	if (payload == NULL) {
 		return -EINVAL;
 	}
 
