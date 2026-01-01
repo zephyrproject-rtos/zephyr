@@ -16,6 +16,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/arch/cpu.h>
 
 #include <errno.h>
 
@@ -47,6 +48,9 @@ struct uart_cc23x0_config {
 	uint32_t reg;
 	uint32_t sys_clk_freq;
 	const struct pinctrl_dev_config *pcfg;
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
+	unsigned int irq;
+#endif
 #ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
 	const struct device *dma_dev;
 	uint8_t dma_channel_tx;
@@ -303,6 +307,15 @@ static void uart_cc23x0_irq_tx_enable(const struct device *dev)
 	uart_cc23x0_pm_policy_state_lock_get(dev->data, UART_CC23X0_PM_LOCK_TX);
 
 	UARTEnableInt(config->reg, UART_INT_TX);
+
+	/* TI UART hardware doesn't generate TX interrupts when interrupts are enabled
+	 * while the TX FIFO is already empty/ready. Interrupts only fire on state
+	 * transitions (ready -> busy -> ready). If TX is currently ready, manually
+	 * trigger the interrupt to start the transmission flow.
+	 */
+	if (UARTSpaceAvailable(config->reg)) {
+		NVIC_SetPendingIRQ(config->irq);
+	}
 }
 
 static void uart_cc23x0_irq_tx_disable(const struct device *dev)
@@ -906,8 +919,12 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (false)
 
+#define UART_CC23X0_IRQ_INIT(n) .irq = DT_INST_IRQN(n),
+#define UART_CC23X0_INT_FIELDS .callback = NULL, .user_data = NULL,
 #else
 #define UART_CC23X0_IRQ_CFG(n)
+#define UART_CC23X0_IRQ_INIT(n)
+#define UART_CC23X0_INT_FIELDS
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN */
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
@@ -1006,29 +1023,36 @@ static int uart_cc23x0_pm_action(const struct device *dev, enum pm_device_action
 #define UART_CC23X0_DMA_INIT(n)
 #endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
 
-#define UART_CC23X0_INIT(n)                                                                        \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	PM_DEVICE_DT_INST_DEFINE(n, uart_cc23x0_pm_action);                                        \
-	UART_CC23X0_INIT_FUNC(n);                                                                  \
-                                                                                                   \
-	static struct uart_cc23x0_config uart_cc23x0_config_##n = {                                \
-		.reg = DT_INST_REG_ADDR(n),                                                        \
-		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
+#define UART_CC23X0_DEVICE_DEFINE(n)								\
+												\
+	DEVICE_DT_INST_DEFINE(n, uart_cc23x0_init_##n,						\
+			      PM_DEVICE_DT_INST_GET(n),						\
+			      &uart_cc23x0_data_##n, &uart_cc23x0_config_##n, PRE_KERNEL_1,	\
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_cc23x0_driver_api)
+
+#define UART_CC23X0_INIT(n)									\
+	PINCTRL_DT_INST_DEFINE(n);								\
+	PM_DEVICE_DT_INST_DEFINE(n, uart_cc23x0_pm_action);					\
+	UART_CC23X0_INIT_FUNC(n);								\
+												\
+	static const struct uart_cc23x0_config uart_cc23x0_config_##n = {			\
+		.reg = DT_INST_REG_ADDR(n),							\
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		UART_CC23X0_DMA_INIT(n)                                                            \
-		};                                                                                 \
-                                                                                                   \
-	static struct uart_cc23x0_data uart_cc23x0_data_##n = {                                    \
-		.uart_config =                                                                     \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = DT_INST_ENUM_IDX(n, parity),                             \
-				.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                       \
-				.data_bits = DT_INST_ENUM_IDX(n, data_bits),                       \
-				.flow_ctrl = DT_INST_PROP(n, hw_flow_control),                     \
-			},                                                                         \
-		UART_CC23X0_INT_FIELDS                                                             \
-		};                                                                                 \
+		UART_CC23X0_IRQ_INIT(n)								\
+		UART_CC23X0_DMA_INIT(n)};							\
+												\
+	static struct uart_cc23x0_data uart_cc23x0_data_##n = {					\
+		.uart_config =									\
+			{									\
+				.baudrate = DT_INST_PROP(n, current_speed),			\
+				.parity = DT_INST_ENUM_IDX(n, parity),					\
+				.stop_bits =  DT_INST_ENUM_IDX(n, stop_bits),				\
+				.data_bits = DT_INST_ENUM_IDX(n, data_bits),				\
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control),				\
+			},									\
+		UART_CC23X0_INT_FIELDS};							\
+												\
 	UART_CC23X0_DEVICE_DEFINE(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_CC23X0_INIT)

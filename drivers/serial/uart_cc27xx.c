@@ -15,6 +15,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/arch/cpu.h>
 
 #include <errno.h>
 
@@ -45,6 +46,9 @@
 struct uart_cc27xx_config {
 	uint32_t reg;
 	uint32_t sys_clk_freq;
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC27XX_DMA_DRIVEN
+	unsigned int irq;
+#endif
 #ifdef CONFIG_UART_CC27XX_DMA_DRIVEN
 	const struct device *dma_dev;
 	uint8_t dma_channel_tx;
@@ -302,6 +306,15 @@ static void uart_cc27xx_irq_tx_enable(const struct device *dev)
 	uart_cc27xx_pm_policy_state_lock_get(dev->data, UART_CC27XX_PM_LOCK_TX);
 
 	UARTEnableInt(config->reg, UART_INT_TX);
+
+	/* TI UART hardware doesn't generate TX interrupts when interrupts are enabled
+	 * while the TX FIFO is already empty/ready. Interrupts only fire on state
+	 * transitions (ready -> busy -> ready). If TX is currently ready, manually
+	 * trigger the interrupt to start the transmission flow.
+	 */
+	if (UARTSpaceAvailable(config->reg)) {
+		NVIC_SetPendingIRQ(config->irq);
+	}
 }
 
 static void uart_cc27xx_irq_tx_disable(const struct device *dev)
@@ -883,9 +896,11 @@ static const struct uart_driver_api uart_cc27xx_driver_api = {
 		irq_enable(DT_INST_IRQN(n));							\
 	} while (false)
 
+#define UART_CC27XX_IRQ_INIT(n) .irq = DT_INST_IRQN(n),
 #define UART_CC27XX_INT_FIELDS .callback = NULL, .user_data = NULL,
 #else
 #define UART_CC27XX_IRQ_CFG(n)
+#define UART_CC27XX_IRQ_INIT(n)
 #define UART_CC27XX_INT_FIELDS
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC27XX_DMA_DRIVEN */
 
@@ -987,6 +1002,7 @@ static int uart_cc27xx_pm_action(const struct device *dev, enum pm_device_action
 	static const struct uart_cc27xx_config uart_cc27xx_config_##n = {			\
 		.reg = DT_INST_REG_ADDR(n),							\
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),		\
+		UART_CC27XX_IRQ_INIT(n)								\
 		UART_CC27XX_DMA_INIT(n)};							\
 												\
 	static struct uart_cc27xx_data uart_cc27xx_data_##n = {					\
