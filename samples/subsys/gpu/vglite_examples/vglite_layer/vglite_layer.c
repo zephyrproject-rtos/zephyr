@@ -191,15 +191,175 @@ void _gradient_stop_color_to_vglite_color(int32_t num_stop_points, stopValue_t *
 	}
 }
 
+static vg_lite_error_t setup_linear_gradient_legacy(gradient_cache_entry_t *cachedGradient,
+						     linearGradient_t *gradient,
+						     vg_lite_matrix_t *transform_matrix)
+{
+	vg_lite_error_t error;
+	vg_lite_uint32_t colors[MAX_GRADIENT_STOP_POINTS];
+	vg_lite_uint32_t stops[MAX_GRADIENT_STOP_POINTS];
+
+	memset(&cachedGradient->grad_data.linear_basic.basic_gradient, 0,
+	       sizeof(vg_lite_linear_gradient_t));
+	error = vg_lite_init_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
+	if (error) {
+		printk("\r\nERROR: vg_lite_init_grad() failed (err=%d)!\r\n\r\n", error);
+		return error;
+	}
+
+	_gradient_stop_color_to_vglite_color(gradient->num_stop_points, gradient->stops,
+					     cachedGradient->vgColorRamp);
+
+	prepare_legacy_gradient_data(cachedGradient->vgColorRamp, gradient->num_stop_points,
+				     colors, stops);
+
+	cachedGradient->grad_data.linear_basic.basic_gradient.count = gradient->num_stop_points;
+	error = vg_lite_set_grad(&cachedGradient->grad_data.linear_basic.basic_gradient,
+				 cachedGradient->grad_data.linear_basic.basic_gradient.count,
+				 colors, stops);
+	if (error != VG_LITE_SUCCESS) {
+		return error;
+	}
+
+	if (is_matrix_identical(&cachedGradient->grad_data.linear_basic.basic_gradient.matrix,
+				transform_matrix) == 0) {
+		cachedGradient->grad_data.linear_basic.basic_gradient.matrix = *transform_matrix;
+		error = vg_lite_update_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
+	}
+
+	return error;
+}
+
+static vg_lite_error_t setup_linear_gradient_extended(gradient_cache_entry_t *cachedGradient,
+						       linearGradient_t *gradient,
+						       vg_lite_matrix_t *transform_matrix)
+{
+	vg_lite_error_t error;
+
+	_gradient_stop_color_to_vglite_color(gradient->num_stop_points, gradient->stops,
+					     cachedGradient->vgColorRamp);
+
+	cachedGradient->grad_data.lg.lGradient.count = gradient->num_stop_points;
+	cachedGradient->grad_data.lg.params = gradient->linear_gradient;
+	error = vg_lite_set_linear_grad(&cachedGradient->grad_data.lg.lGradient,
+					cachedGradient->grad_data.lg.lGradient.count,
+					cachedGradient->vgColorRamp,
+					cachedGradient->grad_data.lg.params,
+					VG_LITE_GRADIENT_SPREAD_PAD, 1);
+	if (error != VG_LITE_SUCCESS) {
+		return error;
+	}
+
+	if (is_matrix_identical(&cachedGradient->grad_data.lg.lGradient.matrix,
+				transform_matrix) == 0) {
+		cachedGradient->grad_data.lg.lGradient.matrix = *transform_matrix;
+		error = vg_lite_update_linear_grad(&cachedGradient->grad_data.lg.lGradient);
+	}
+
+	return error;
+}
+
+static vg_lite_error_t setup_radial_gradient(gradient_cache_entry_t *cachedGradient,
+					      radialGradient_t *gradient,
+					      vg_lite_matrix_t *transform_matrix)
+{
+	vg_lite_error_t error;
+
+	_gradient_stop_color_to_vglite_color(gradient->num_stop_points, gradient->stops,
+					     cachedGradient->vgColorRamp);
+
+	cachedGradient->grad_data.rg.rGradient.count = gradient->num_stop_points;
+	cachedGradient->grad_data.rg.params = gradient->radial_gradient;
+
+	error = vg_lite_set_radial_grad(&cachedGradient->grad_data.rg.rGradient,
+					cachedGradient->grad_data.rg.rGradient.count,
+					cachedGradient->vgColorRamp,
+					cachedGradient->grad_data.rg.params,
+					VG_LITE_GRADIENT_SPREAD_PAD, 1);
+	if (error != VG_LITE_SUCCESS) {
+		return error;
+	}
+
+	if (is_matrix_identical(&cachedGradient->grad_data.rg.rGradient.matrix,
+				transform_matrix) == 0) {
+		cachedGradient->grad_data.rg.rGradient.matrix = *transform_matrix;
+		error = vg_lite_update_rad_grad(&cachedGradient->grad_data.rg.rGradient);
+	}
+
+	return error;
+}
+
+static void clear_cached_gradient(gradient_cache_entry_t *cachedGradient)
+{
+	if (cachedGradient->type == eLinearGradientCacheEntry && g_chip_id != 0x255) {
+		vg_lite_clear_linear_grad(&cachedGradient->grad_data.lg.lGradient);
+	} else if (cachedGradient->type == eRadialGradientCacheEntry && g_chip_id != 0x255) {
+		vg_lite_clear_radial_grad(&cachedGradient->grad_data.rg.rGradient);
+	} else if (cachedGradient->type == eLinearGradientCacheEntry && g_chip_id == 0x255) {
+		vg_lite_clear_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
+	} else {
+		printk("Warning: Unhandled gradient cache entry: type=%d, chip_id=0x%X\n",
+		       cachedGradient->type, g_chip_id);
+	}
+}
+
+static int find_gradient_in_cache(void *grad)
+{
+	for (int i = 0; i < MAX_GRADIENT_CACHE; i++) {
+		if (g_grad_cache[i].g == grad) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int find_unused_cache_slot(void)
+{
+	for (int i = 1; i < MAX_GRADIENT_CACHE; i++) {
+		if (g_grad_cache[i].g == NULL) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static vg_lite_error_t setup_gradient_by_type(gradient_cache_entry_t *cachedGradient,
+					       void *grad, int type,
+					       vg_lite_matrix_t *transform_matrix)
+{
+	if (type == eLinearGradientCacheEntry && g_chip_id != 0x255) {
+		return setup_linear_gradient_extended(cachedGradient,
+						      (linearGradient_t *)grad,
+						      transform_matrix);
+	}
+
+	if (type == eRadialGradientCacheEntry && g_chip_id != 0x255) {
+		return setup_radial_gradient(cachedGradient, (radialGradient_t *)grad,
+					      transform_matrix);
+	}
+
+	if (type == eLinearGradientCacheEntry && g_chip_id == 0x255) {
+		return setup_linear_gradient_legacy(cachedGradient, (linearGradient_t *)grad,
+						    transform_matrix);
+	}
+
+	if (type == eRadialGradientCacheEntry && g_chip_id == 0x255) {
+		printk("Error: Radial gradient is not supported for ChipId: 0x%X\r\n", g_chip_id);
+		return VG_LITE_NOT_SUPPORT;
+	}
+
+	printk("Error: Invalid gradient configuration: type=%d, chip_id=0x%X\r\n",
+	       type, g_chip_id);
+	return VG_LITE_INVALID_ARGUMENT;
+}
+
 vg_lite_error_t gradient_cache_find(void *grad, int type, vg_lite_matrix_t *transform_matrix,
 				    gradient_cache_entry_t **ppcachedEntry)
 {
-	int unused_idx;
-	int i;
-	vg_lite_error_t error = VG_LITE_SUCCESS;
+	vg_lite_error_t error;
+	int cache_idx;
 	gradient_cache_entry_t *cachedGradient = NULL;
 
-	/* Reset output pointer to NULL by default, indicating cache search failed. */
 	*ppcachedEntry = NULL;
 
 	if (grad == NULL) {
@@ -210,150 +370,35 @@ vg_lite_error_t gradient_cache_find(void *grad, int type, vg_lite_matrix_t *tran
 		return VG_LITE_INVALID_ARGUMENT;
 	}
 
-	/* Check if path object for given gradient exists */
-	for (i = 0; i < MAX_GRADIENT_CACHE; i++) {
-		cachedGradient = &g_grad_cache[i];
-		if (cachedGradient->g == grad) {
-			*ppcachedEntry = cachedGradient;
-			return VG_LITE_SUCCESS;
-		}
+	/* Check if gradient already exists in cache */
+	cache_idx = find_gradient_in_cache(grad);
+	if (cache_idx >= 0) {
+		*ppcachedEntry = &g_grad_cache[cache_idx];
+		return VG_LITE_SUCCESS;
 	}
 
-	/* Find un-used descriptor */
-	unused_idx = -1;
-	for (i = 1; i < MAX_GRADIENT_CACHE; i++) {
-		cachedGradient = &g_grad_cache[i];
-		if (cachedGradient->g == NULL) {
-			unused_idx = i;
-		}
-	}
-	if (unused_idx == -1) {
+	/* Find unused cache slot */
+	cache_idx = find_unused_cache_slot();
+	if (cache_idx == -1) {
 		return VG_LITE_OUT_OF_MEMORY;
 	}
 
-	cachedGradient = &g_grad_cache[unused_idx];
-	/* Release memory of last gradient */
-	if (cachedGradient->type == eLinearGradientCacheEntry && g_chip_id != 0x255) {
-		vg_lite_clear_linear_grad(&cachedGradient->grad_data.lg.lGradient);
-	} else if (cachedGradient->type == eRadialGradientCacheEntry && g_chip_id != 0x255) {
-		vg_lite_clear_radial_grad(&cachedGradient->grad_data.rg.rGradient);
-	} else if (cachedGradient->type == eLinearGradientCacheEntry && g_chip_id == 0x255) {
-		vg_lite_clear_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
-	} else {
-		/*
-		 * Unexpected gradient type or chip ID combination.
-		 * This could be:
-		 * - Radial gradient on chip 0x255 (not supported)
-		 * - Unknown gradient type
-		 * - Uninitialized cache entry
-		 */
-		printk("Warning: Unhandled gradient cache entry: "
-			"type=%d, chip_id=0x%X\n",
-			cachedGradient->type, g_chip_id);  // ← Use cachedGradient, not g_grad_cache[i]
-	}
+	cachedGradient = &g_grad_cache[cache_idx];
 
-	vg_lite_uint32_t colors[MAX_GRADIENT_STOP_POINTS];
-	vg_lite_uint32_t stops[MAX_GRADIENT_STOP_POINTS];
+	/* Clear previous gradient if exists */
+	clear_cached_gradient(cachedGradient);
 
-	/* Allocate and cache requested gradient descriptor */
-	if (type == eLinearGradientCacheEntry && g_chip_id != 0x255) {
-		linearGradient_t *gradient = (linearGradient_t *)grad;
-
-		_gradient_stop_color_to_vglite_color(gradient->num_stop_points, gradient->stops,
-						     cachedGradient->vgColorRamp);
-
-		cachedGradient->grad_data.lg.lGradient.count = gradient->num_stop_points;
-		cachedGradient->grad_data.lg.params = gradient->linear_gradient;
-		error = vg_lite_set_linear_grad(
-			&cachedGradient->grad_data.lg.lGradient,
-			cachedGradient->grad_data.lg.lGradient.count, cachedGradient->vgColorRamp,
-			cachedGradient->grad_data.lg.params, VG_LITE_GRADIENT_SPREAD_PAD, 1);
-		if (error != VG_LITE_SUCCESS) {
-			return error;
-		}
-
-		if (is_matrix_identical(&cachedGradient->grad_data.lg.lGradient.matrix,
-					transform_matrix) == 0) {
-			cachedGradient->grad_data.lg.lGradient.matrix = *transform_matrix;
-			error = vg_lite_update_linear_grad(&cachedGradient->grad_data.lg.lGradient);
-		}
-	} else if (type == eRadialGradientCacheEntry && g_chip_id != 0x255) {
-		radialGradient_t *gradient = (radialGradient_t *)grad;
-
-		_gradient_stop_color_to_vglite_color(gradient->num_stop_points, gradient->stops,
-						     cachedGradient->vgColorRamp);
-
-		cachedGradient->grad_data.rg.rGradient.count = gradient->num_stop_points;
-		cachedGradient->grad_data.rg.params = gradient->radial_gradient;
-
-		error = vg_lite_set_radial_grad(
-			&cachedGradient->grad_data.rg.rGradient,
-			cachedGradient->grad_data.rg.rGradient.count, cachedGradient->vgColorRamp,
-			cachedGradient->grad_data.rg.params, VG_LITE_GRADIENT_SPREAD_PAD, 1);
-		if (error != VG_LITE_SUCCESS) {
-			return error;
-		}
-
-		if (is_matrix_identical(&cachedGradient->grad_data.rg.rGradient.matrix,
-					transform_matrix) == 0) {
-			cachedGradient->grad_data.rg.rGradient.matrix = *transform_matrix;
-			error = vg_lite_update_rad_grad(&cachedGradient->grad_data.rg.rGradient);
-		}
-	} else if (type == eLinearGradientCacheEntry && g_chip_id == 0x255) {
-		linearGradient_t *gradient = (linearGradient_t *)grad;
-
-		memset(&cachedGradient->grad_data.linear_basic.basic_gradient, 0,
-		       sizeof(vg_lite_linear_gradient_t));
-		error = vg_lite_init_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
-		if (error) {
-			printk("\r\nERROR: vg_lite_init_grad() failed (err=%d)!\r\n\r\n", error);
-			return error;
-		}
-		_gradient_stop_color_to_vglite_color(gradient->num_stop_points, gradient->stops,
-						     cachedGradient->vgColorRamp);
-
-		/* Prepare data for legacy API */
-		prepare_legacy_gradient_data(cachedGradient->vgColorRamp, gradient->num_stop_points,
-					     colors, stops);
-
-		/* Setup legacy linear_basic gradient */
-		cachedGradient->grad_data.linear_basic.basic_gradient.count =
-			gradient->num_stop_points;
-		error = vg_lite_set_grad(
-			&cachedGradient->grad_data.linear_basic.basic_gradient,
-			cachedGradient->grad_data.linear_basic.basic_gradient.count, colors, stops);
-		if (error != VG_LITE_SUCCESS) {
-			return error;
-		}
-	} else if (type == eRadialGradientCacheEntry && g_chip_id == 0x255) {
-		printk("Error: Radial gradient is not supported for ChipId: 0x%X\r\n", g_chip_id);
-	} else {
-		/*
-		 * Unexpected combination of gradient type and chip ID.
-		 * This could be:
-		 * - Invalid gradient type (not Linear or Radial)
-		 * - Unsupported chip ID
-		 */
-		printk("Error: Invalid gradient configuration: type=%d, chip_id=0x%X\r\n",
-			type, g_chip_id);
-		return VG_LITE_INVALID_ARGUMENT;
-	}
-
-	if (is_matrix_identical(&cachedGradient->grad_data.linear_basic.basic_gradient.matrix,
-				transform_matrix) == 0) {
-		cachedGradient->grad_data.linear_basic.basic_gradient.matrix = *transform_matrix;
-		error = vg_lite_update_grad(&cachedGradient->grad_data.linear_basic.basic_gradient);
-	}
-
+	/* Setup new gradient based on type and chip ID */
+	error = setup_gradient_by_type(cachedGradient, grad, type, transform_matrix);
 	if (error != VG_LITE_SUCCESS) {
 		return error;
 	}
 
+	/* Update cache entry */
 	cachedGradient->g = grad;
 	cachedGradient->type = (GradientCacheEntry_t)type;
-	;
-
 	*ppcachedEntry = cachedGradient;
+
 	return VG_LITE_SUCCESS;
 }
 
