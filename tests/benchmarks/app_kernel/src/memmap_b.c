@@ -27,7 +27,7 @@ void memorymap_test(void)
 		alloc_status = k_mem_slab_alloc(&MAP1, &p, K_FOREVER);
 		if (alloc_status != 0) {
 			PRINT_F(FORMAT,
-				"Error: Slab allocation failed.", (int64_t)alloc_status);
+				"Error: Slab allocation failed.", (uint64_t)alloc_status);
 			break;
 		}
 		k_mem_slab_free(&MAP1, p);
