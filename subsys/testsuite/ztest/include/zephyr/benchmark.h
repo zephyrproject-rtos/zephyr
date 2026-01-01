@@ -35,6 +35,14 @@ struct ztest_benchmark_stats {
 	struct ztest_extream_value max;
 };
 
+struct ztest_benchmark_counter;
+typedef void (*ztest_benchmark_counter_fn_t)(struct ztest_benchmark_counter *counter);
+
+struct ztest_benchmark_counter {
+	ztest_benchmark_counter_fn_t count;
+	ztest_benchmark_counter_fn_t print;
+};
+
 struct ztest_benchmark {
 	const char *name;
 	size_t iterations;
@@ -42,6 +50,7 @@ struct ztest_benchmark {
 	ztest_benchmark_fn_t run;
 	ztest_benchmark_fn_t teardown;
 	struct ztest_benchmark_stats *stats;
+	struct ztest_benchmark_counter *counter;
 	const struct ztest_benchmark_suite *suite;
 };
 
@@ -61,6 +70,16 @@ struct ztest_benchmark_timed {
  * @ingroup testing
  * @{
  */
+
+#define ZTEST_BENCHMARK_COUNTER_INITIALIZER(count_fn, result_fn)	\
+	{								\
+		.count = count_fn,					\
+		.print = result_fn,					\
+	}
+
+#define ZTEST_BENCHMARK_COUNTER_DEFINE(counter_name, count_fn, result_fn)	\
+	static struct ztest_benchmark_counter counter_name =			\
+		ZTEST_BENCHMARK_COUNTER_INITIALIZER(count_fn, result_fn);
 
 /**
  * @brief Define a benchmark suite
@@ -85,8 +104,10 @@ struct ztest_benchmark_timed {
  * @param samples Number of iterations to run the benchmark
  * @param setup_fn Function to run before the benchmark
  * @param teardown_fn Function to run after the benchmark
+ * @param counter_ptr Pointer to a benchmark counter structure
  */
-#define ZTEST_BENCHMARK_SETUP_TEARDOWN(suite_name, benchmark, samples, setup_fn, teardown_fn)	\
+#define ZTEST_BENCHMARK_SETUP_TEARDOWN(suite_name, benchmark, samples, setup_fn, teardown_fn,\
+		counter_ptr)	\
 	static void benchmark##_fn(void);							\
 	static struct ztest_benchmark_stats benchmark##_stats;					\
 	static const STRUCT_SECTION_ITERABLE(ztest_benchmark, benchmark) =			\
@@ -98,6 +119,7 @@ struct ztest_benchmark_timed {
 		.teardown = teardown_fn,							\
 		.suite = &suite_name,								\
 		.stats = &benchmark##_stats,							\
+		.counter = counter_ptr,								\
 	};											\
 	static void benchmark##_fn(void)
 
@@ -130,7 +152,7 @@ struct ztest_benchmark_timed {
  * @param samples Number of iterations to run the benchmark
  */
 #define ZTEST_BENCHMARK(suite, benchmark, samples) \
-	ZTEST_BENCHMARK_SETUP_TEARDOWN(suite, benchmark, samples, NULL, NULL)
+	ZTEST_BENCHMARK_SETUP_TEARDOWN(suite, benchmark, samples, NULL, NULL, NULL)
 
 
 /** * @brief Define a timed benchmark without setup and teardown functions

@@ -72,6 +72,10 @@ static void ztest_benchmark_print_results(struct ztest_benchmark *benchmark, dou
 		stats->min.sample);
 	printk("\tMax: %lld (run #%llu)\n", discrete_noise_correction(stats->max.value, ctrl),
 		stats->max.sample);
+
+	if (benchmark->counter && benchmark->counter->print) {
+		benchmark->counter->print(benchmark->counter);
+	}
 }
 
 static void update_metrics(struct ztest_benchmark_stats *stats, uint64_t cycles)
@@ -116,6 +120,9 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 		benchmark->run();
 		end = timing_counter_get();
 		update_metrics(benchmark->stats, timing_cycles_get(&start, &end));
+		if (benchmark->counter && benchmark->counter->count) {
+			benchmark->counter->count(benchmark->counter);
+		}
 	}
 	if (benchmark->teardown) {
 		benchmark->teardown();

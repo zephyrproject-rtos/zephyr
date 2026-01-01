@@ -64,12 +64,13 @@ static void teardown_fn(void)
 	memset(&data, 0, sizeof(data));
 }
 
-ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, global_subtraction, 100, setup_fn, teardown_fn)
+ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, global_subtraction, 100, setup_fn,
+		teardown_fn, NULL)
 {
 	data.res = data.a - data.b;
 }
 
-ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, global_addition, 100, setup_fn, teardown_fn)
+ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, global_addition, 100, setup_fn, teardown_fn, NULL)
 {
 	data.res = data.a + data.b;
 }
@@ -123,4 +124,32 @@ ZTEST_BENCHMARK_TIMED(math_benchmarks, benchmark_pure_asm_add_timed, 1000)
 	#error "Unsupported architecture for pure assembly benchmark"
 #endif
 	);
+}
+
+struct stupid_counter {
+	uint64_t iterations;
+	struct ztest_benchmark_counter c;
+};
+
+static void count_fn(struct ztest_benchmark_counter *counter)
+{
+	struct stupid_counter *sc = CONTAINER_OF(counter, struct stupid_counter, c);
+
+	sc->iterations++;
+}
+static void print_fn(struct ztest_benchmark_counter *counter)
+{
+	struct stupid_counter *sc = CONTAINER_OF(counter, struct stupid_counter, c);
+
+	printk("Total iterations counted: %llu\n", sc->iterations);
+}
+
+struct stupid_counter sc = {
+	.iterations = 0,
+	.c = ZTEST_BENCHMARK_COUNTER_INITIALIZER(count_fn, print_fn),
+};
+
+ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, addition_counter, 100, setup_fn, teardown_fn, &sc.c)
+{
+	data.res = data.a + data.b;
 }
