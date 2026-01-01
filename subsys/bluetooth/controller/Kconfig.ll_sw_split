@@ -1350,7 +1350,7 @@ config BT_TICKER_NEXT_SLOT_GET_MATCH
 config BT_TICKER_EXT
 	bool "Ticker extensions"
 	depends on !BT_TICKER_LOW_LAT
-	default y if BT_BROADCASTER
+	default y if BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
 	help
 	  This option enables ticker extensions such as re-scheduling of
 	  ticker nodes with slot_window set to non-zero. Ticker extensions
