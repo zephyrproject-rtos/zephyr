@@ -63,10 +63,6 @@ elseif(DEFINED NATIVE_TARGET_HOST)
 endif()
 
 zephyr_compile_options(
-  ${ARCH_FLAG}
-  )
-
-zephyr_compile_options(
   -fvisibility=hidden
 )
 
