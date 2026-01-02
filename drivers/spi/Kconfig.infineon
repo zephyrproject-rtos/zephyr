@@ -39,6 +39,33 @@ config IFX_CAT1_SPI_DMA_TX_AUTO_TRIGGER
 	depends on IFX_CAT1_SPI_DMA
 	select DMA
 	help
-		Automatically trigger SPI Tx DMA after config
+	  Automatically trigger SPI Tx DMA after config
+
+config IFX_CAT1_SPI_OVERSAMPLE_DEFAULT
+	int "Default SPI oversample value"
+	default 16 if SOC_FAMILY_INFINEON_PSOC4
+	default 4
+	range 1 32
+	help
+	  Default oversample value for SPI clock generation.
+	  Higher values provide better clock accuracy but lower maximum frequency.
+
+config IFX_CAT1_SPI_MIN_DATA_WIDTH
+	int "Minimum SPI data width (bits)"
+	default 4 if SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_INFINEON_PSOC4
+	default 8
+	range 1 32
+	help
+	  Minimum supported data width for SPI transactions.
+	  Some devices have hardware limitations on minimum data width.
+
+config IFX_CAT1_SPI_MAX_DATA_WIDTH
+	int "Maximum SPI data width (bits)"
+	default 16 if SOC_FAMILY_INFINEON_PSOC4
+	default 32
+	range 4 32
+	help
+	  Maximum supported data width for SPI transactions.
+	  PSoC4 devices typically support up to 16 bits, while others support 32 bits.
 
 endif # USE_INFINEON_SPI
