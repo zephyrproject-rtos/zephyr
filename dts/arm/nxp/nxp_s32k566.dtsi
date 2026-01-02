@@ -974,5 +974,93 @@
 			status = "disabled";
 			clocks = <&clock NXP_S32_CAN_PE_CLK>;
 		};
+
+		lpe_lpspi0: spi@4217c000 {
+			compatible = "nxp,lpspi";
+			reg = <0x4217c000 0x4000>;
+			clocks = <&clock NXP_S32_LPE_LPSPI_MOD_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpe_lpspi1: spi@42180000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42180000 0x4000>;
+			clocks = <&clock NXP_S32_LPE_LPSPI_MOD_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpspi0: spi@400d8000 {
+			compatible = "nxp,lpspi";
+			reg = <0x400d8000 0x4000>;
+			clocks = <&clock NXP_S32_LPSPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@400dc000 {
+			compatible = "nxp,lpspi";
+			reg = <0x400dc000 0x4000>;
+			clocks = <&clock NXP_S32_LPSPI1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpspi2: spi@402b4000 {
+			compatible = "nxp,lpspi";
+			reg = <0x402b4000 0x4000>;
+			clocks = <&clock NXP_S32_LPSPI2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpspi3: spi@406c4000 {
+			compatible = "nxp,lpspi";
+			reg = <0x406c4000 0x4000>;
+			clocks = <&clock NXP_S32_LPSPI3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpspi4: spi@406c8000 {
+			compatible = "nxp,lpspi";
+			reg = <0x406c8000 0x4000>;
+			clocks = <&clock NXP_S32_LPSPI4_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
+
+		lpspi5: spi@408b8000 {
+			compatible = "nxp,lpspi";
+			reg = <0x408b8000 0x4000>;
+			clocks = <&clock NXP_S32_LPSPI5_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			status = "disabled";
+		};
 	};
 };

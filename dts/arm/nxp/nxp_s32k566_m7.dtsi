@@ -511,3 +511,35 @@
 &swt_startup {
 	interrupts = <27 0>;
 };
+
+&lpe_lpspi0 {
+	interrupts = <231 0>;
+};
+
+&lpe_lpspi1 {
+	interrupts = <232 0>;
+};
+
+&lpspi0 {
+	interrupts = <147 0>;
+};
+
+&lpspi1 {
+	interrupts = <148 0>;
+};
+
+&lpspi2 {
+	interrupts = <149 0>;
+};
+
+&lpspi3 {
+	interrupts = <150 0>;
+};
+
+&lpspi4 {
+	interrupts = <151 0>;
+};
+
+&lpspi5 {
+	interrupts = <152 0>;
+};
