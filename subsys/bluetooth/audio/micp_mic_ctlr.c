@@ -242,7 +242,6 @@ static void micp_mic_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 
 	if (mic_ctlr == NULL) {
 		LOG_ERR("Could not lookup mic_ctlr from aics");
-		micp_mic_ctlr_discover_complete(mic_ctlr, BT_GATT_ERR(BT_ATT_ERR_UNLIKELY));
 
 		return;
 	}
