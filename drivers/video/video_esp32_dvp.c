@@ -297,9 +297,19 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_esp32_data *data = dev->data;
+	int ret;
 
 	vbuf->bytesused = data->video_format.pitch * data->video_format.height;
 	vbuf->line_offset = 0;
+
+	if (data->is_streaming && data->active_vbuf == NULL) {
+		data->active_vbuf = vbuf;
+		ret = video_esp32_reload_dma(data);
+		if (ret == 0) {
+			return 0;
+		}
+		data->active_vbuf = NULL;
+	}
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
