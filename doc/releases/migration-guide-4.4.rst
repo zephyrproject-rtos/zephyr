@@ -456,6 +456,11 @@ Networking
   code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
   code calling a network API.
 
+* The HTTP server now reports for dynamic resources the ``HTTP_SERVER_DATA_COMPLETE`` status when
+  the response has been sent completely to the client. Applications should now also handle this
+  status in the handler callback to properly reset resource state after successful response
+  transmission.
+
 Modem
 *****
 
