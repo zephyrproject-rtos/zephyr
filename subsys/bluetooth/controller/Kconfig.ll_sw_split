@@ -1258,6 +1258,17 @@ config BT_CTLR_SCAN_UNRESERVED
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
 
+config BT_CTLR_SCAN_SLOT_WINDOW
+	bool "Scan window within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_OBSERVER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place primary scan window within a slot window to avoid overlapping
+	  with other periodically scheduled states/roles; and be placed after
+	  such overlapping states/roles at the end of the slot window so that it
+	  does not take the interval of the overlapped state/role.
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y
