@@ -256,6 +256,14 @@ config RISCV_HAS_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
+config RISCV_HAS_AIA
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for the Advanced Interrupt Architecture (AIA),
+	  which includes APLIC (Advanced Platform-Level Interrupt Controller) and
+	  IMSIC (Incoming Message-Signaled Interrupt Controller).
+
 config CLIC_SUPPORT_INTERRUPT_LEVEL
 	bool
 	depends on RISCV_HAS_CLIC
