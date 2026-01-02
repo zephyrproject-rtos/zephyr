@@ -206,3 +206,47 @@ static void imsic_mext_isr(const void *arg)
 
 	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
 }
+
+#ifdef CONFIG_SMP
+/**
+ * @brief Initialize IMSIC on secondary CPUs
+ *
+ * This function is called on each secondary CPU during SMP boot to initialize
+ * the IMSIC interrupt controller on that CPU. It configures the EIDELIVERY
+ * and EITHRESHOLD CSRs to enable interrupt delivery.
+ *
+ * This follows the same pattern as smp_timer_init() for the CLINT timer.
+ *
+ * Note: IMSIC CSRs (accessed via ISELECT/IREG) are local to each CPU.
+ * When this function executes on CPU N, it configures that CPU's IMSIC file.
+ */
+void z_riscv_imsic_secondary_init(void)
+{
+	LOG_DBG("IMSIC secondary init on CPU %u", arch_proc_id());
+
+	/* Enable interrupt delivery in MMSI mode */
+	/* EIDELIVERY[0] = 1: Enable delivery */
+	/* EIDELIVERY[30:29] = 10: MMSI mode (0x40000000) */
+	uint32_t eidelivery_value = EIDELIVERY_ENABLE | EIDELIVERY_MODE_MMSI;
+
+	icsr_write(ICSR_EIDELIVERY, eidelivery_value);
+
+	/* Set EITHRESHOLD to 0 to allow all interrupt priorities */
+	icsr_write(ICSR_EITHRESH, 0);
+
+	/* Enable MEXT interrupt on this CPU */
+	irq_enable(RISCV_IRQ_MEXT);
+
+	/* Read back to verify initialization */
+	unsigned long eidelivery_readback = icsr_read(ICSR_EIDELIVERY);
+
+	LOG_DBG("CPU %u IMSIC initialized: EIDELIVERY=0x%08lx EITHRESH=0x%08lx", arch_proc_id(),
+		eidelivery_readback, (unsigned long)icsr_read(ICSR_EITHRESH));
+
+	/* Sanity check: verify EIDELIVERY enable bit is set */
+	if (!(eidelivery_readback & EIDELIVERY_ENABLE)) {
+		LOG_ERR("CPU %u IMSIC EIDELIVERY enable bit not set! Got 0x%08lx", arch_proc_id(),
+			eidelivery_readback);
+	}
+}
+#endif /* CONFIG_SMP */
