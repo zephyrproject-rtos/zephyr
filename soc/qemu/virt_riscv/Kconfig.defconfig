@@ -29,3 +29,24 @@ config PMP_SLOTS
 	default 16
 
 endif # SOC_FAMILY_QEMU_VIRT_RISCV
+
+# AIA variant configuration
+if SOC_QEMU_VIRT_RISCV32_AIA
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 10000000
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+# AIA uses direct EIID addressing (no multi-level encoding)
+config NUM_IRQS
+	default 256
+
+config GEN_IRQ_START_VECTOR
+	default 0
+
+config PMP_SLOTS
+	default 16
+
+endif # SOC_QEMU_VIRT_RISCV32_AIA

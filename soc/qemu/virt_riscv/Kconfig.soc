@@ -3,6 +3,8 @@
 
 config SOC_FAMILY_QEMU_VIRT_RISCV
 	bool
+	default y
+	depends on BOARD_QEMU_RISCV32
 
 config SOC_FAMILY
 	default "qemu_virt_riscv" if SOC_FAMILY_QEMU_VIRT_RISCV
