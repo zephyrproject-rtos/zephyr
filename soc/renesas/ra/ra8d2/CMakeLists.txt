@@ -3,20 +3,11 @@
 
 zephyr_include_directories(.)
 
-zephyr_sources(
-  soc.c
-)
-
 zephyr_sources_ifdef(CONFIG_PM
   power.c
 )
 
 if(CONFIG_CMAKE_LINKER_GENERATOR)
-  if(CONFIG_USE_RA_FSP_DTC)
-    zephyr_linker_section(NAME .fsp_dtc_vector_table GROUP RAM)
-    zephyr_linker_section_configure(SECTION .fsp_dtc_vector_table KEEP INPUT ".fsp_dtc_vector_table*")
-  endif()
-
   if((NOT CONFIG_BOOTLOADER_MCUBOOT) AND (NOT CONFIG_SOC_RA_SECOND_CORE_BUILD))
     dt_nodelabel(option_setting_ofs0 NODELABEL "option_setting_ofs0")
     dt_nodelabel(option_setting_ofs2 NODELABEL "option_setting_ofs2")
@@ -98,10 +89,7 @@ elseif(CONFIG_LD_LINKER_TEMPLATE)
   if((NOT CONFIG_BOOTLOADER_MCUBOOT) AND (NOT CONFIG_SOC_RA_SECOND_CORE_BUILD))
     zephyr_linker_sources(SECTIONS sections.ld)
   endif()
-  zephyr_linker_sources(RAM_SECTIONS ram_sections.ld)
 
 else()
   message(WARNING "Unsupported linker template.")
 endif()
-
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

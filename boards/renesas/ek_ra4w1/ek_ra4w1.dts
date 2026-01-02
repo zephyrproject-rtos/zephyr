@@ -56,10 +56,6 @@
 	};
 };
 
-&subclk {
-	status = "okay";
-};
-
 &sci0 {
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
