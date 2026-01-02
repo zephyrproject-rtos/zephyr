@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qemu_riscv32/qemu_virt_riscv32_aia
+name: QEMU Emulation for RISC-V 32-bit (AIA)
+type: qemu
+simulation:
+  - name: qemu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - netif
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
