@@ -62,6 +62,11 @@ elseif(DEFINED NATIVE_TARGET_HOST)
   )
 endif()
 
+# We tell the compiler to mark all symbols to have hidden visibility by default.
+# Later, after the image from all embedded code has been built, all these symbols will be made local
+# (i.e. not linkable anymore from outside that embedded code library).
+# If users want to be able to link to a symbol from outside the embedded image, they should annotate
+# it with one of NATIVE_SIMULATOR_IF*
 zephyr_compile_options(
   -fvisibility=hidden
 )
@@ -95,15 +100,13 @@ if(NOT CONFIG_EXTERNAL_LIBC)
     $<TARGET_PROPERTY:compiler,freestanding>
     $<TARGET_PROPERTY:compiler,no_builtin>
   )
+else()
+  # No freestanding compilation, i.e. we use the compiler default C library
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
 endif()
 
 if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
-endif()
-
-if(CONFIG_EXTERNAL_LIBC)
-  # @Intent: Obtain compiler specific flags for no freestanding compilation
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
 endif()
 
 if(CONFIG_EXTERNAL_LIBCPP)
