@@ -79,6 +79,7 @@ config VIDEO_ENCODER_JPEG
 source "drivers/video/Kconfig.emul_imager"
 source "drivers/video/Kconfig.emul_rx"
 source "drivers/video/Kconfig.esp32_dvp"
+source "drivers/video/Kconfig.gc0308"
 source "drivers/video/Kconfig.gc2145"
 source "drivers/video/Kconfig.hm01b0"
 source "drivers/video/Kconfig.hm0360"

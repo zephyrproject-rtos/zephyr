@@ -56,4 +56,12 @@ config DISPLAY_INIT_PRIORITY
 
 endif # DISPLAY
 
+if VIDEO
+
+# Needs to init after MFD_AW9523B (80), since camera reset uses aw9523b_gpio on this board.
+config VIDEO_INIT_PRIORITY
+	default 84
+
+endif # VIDEO
+
 endif # BOARD_M5STACK_CORES3_ESP32S3_PROCPU || BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE
