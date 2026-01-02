@@ -256,8 +256,7 @@ static void async_packet_work_handler(struct k_work *work)
 }
 #endif /* defined(CONFIG_MULTITHREADING) */
 
-static void tx_data(const struct device *dev,
-		    const struct mspi_xfer_packet *packet)
+static void tx_data(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
@@ -365,14 +364,13 @@ static bool tx_dummy_bytes(const struct device *dev, bool *repeat)
 	return true;
 }
 
-static bool read_rx_fifo(const struct device *dev,
-			 const struct mspi_xfer_packet *packet)
+static bool read_rx_fifo(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
 	uint8_t bytes_to_discard = dev_data->bytes_to_discard;
 	uint8_t *buf_pos = dev_data->buf_pos;
-	const uint8_t *buf_end = &packet->data_buf[packet->num_bytes];
+	const uint8_t *buf_end = dev_data->buf_end;
 	uint8_t bytes_per_frame_exp = dev_data->bytes_per_frame_exp;
 	uint32_t remaining_frames;
 	uint32_t in_fifo = FIELD_GET(RXFLR_RXTFL_MASK, read_rxflr(dev));
@@ -456,7 +454,7 @@ static void handle_fifos(const struct device *dev)
 
 	if (packet->dir == MSPI_TX) {
 		if (dev_data->buf_pos < dev_data->buf_end) {
-			tx_data(dev, packet);
+			tx_data(dev);
 		} else {
 			/* It may happen that at this point the controller is
 			 * still shifting out the last frame (the last interrupt
@@ -489,7 +487,7 @@ static void handle_fifos(const struct device *dev)
 			 * has no chance to get new entries, hence no further
 			 * interrupts are generated and the transfer gets stuck.
 			 */
-			if (read_rx_fifo(dev, packet)) {
+			if (read_rx_fifo(dev)) {
 				finished = true;
 				break;
 			}
@@ -1366,7 +1364,7 @@ static int start_next_packet(const struct device *dev)
 		if (dev_data->dummy_bytes && tx_dummy_bytes(dev, NULL)) {
 			imr = IMR_RXFIM_BIT;
 		} else if (packet->dir == MSPI_TX && packet->num_bytes) {
-			tx_data(dev, packet);
+			tx_data(dev);
 		}
 
 		/* Enable interrupts now and wait until the packet is done unless async. */
