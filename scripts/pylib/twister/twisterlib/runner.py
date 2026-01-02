@@ -1198,7 +1198,7 @@ class ProjectBuilder(FilterBuilder):
                     mode == "passed"
                     or (mode == "all" and self.instance.reason != "CMake build failure")
                 ):
-                    self.cleanup_artifacts(self.options.keep_artifacts)
+                    self.cleanup_artifacts()
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
@@ -1314,6 +1314,7 @@ class ProjectBuilder(FilterBuilder):
             ]
 
         allow += additional_keep
+        allow += self.options.keep_artifacts
 
         if self.options.runtime_artifact_cleanup == 'all':
             allow += [os.path.join('twister', 'testsuite_extra.conf')]
