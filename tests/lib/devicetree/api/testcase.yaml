@@ -9,6 +9,6 @@ tests:
       - qemu_x86
       - qemu_x86_64
       - qemu_cortex_m3
-      - qemu_riscv32
+      - qemu_riscv32/qemu_virt_riscv32
     integration_platforms:
       - native_sim
