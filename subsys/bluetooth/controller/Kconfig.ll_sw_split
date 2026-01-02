@@ -467,6 +467,18 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_SLOT_WINDOW
+	bool "Advertising Primary PDUs within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place Advertising Primary PDUs within a slot window to avoid
+	  overlapping with other periodically scheduled states/roles; and be
+	  placed after such overlapping states/roles at the end of the slot
+	  window so that it does not take the interval of the overlapped state/
+	  role.
+
 config BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT
 	bool "Drift Extended Advertising Auxiliary PDUs within a slot window"
 	depends on BT_TICKER_EXT && \
