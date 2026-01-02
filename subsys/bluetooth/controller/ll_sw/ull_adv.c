@@ -1305,7 +1305,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_TICKER_EXT)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		ll_adv_ticker_ext[handle].ticks_slot_window = 0;
-#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
@@ -1522,8 +1522,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_TICKER_EXT)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+#if defined(CONFIG_BT_CTLR_ADV_SLOT_WINDOW)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
 			ULL_ADV_RANDOM_DELAY + ticks_slot;
+#else /* !CONFIG_BT_CTLR_ADV_SLOT_WINDOW */
+		ll_adv_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* !CONFIG_BT_CTLR_ADV_SLOT_WINDOW */
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
