@@ -32,7 +32,7 @@ tests:
     integration_platforms:
       - qemu_x86
     platform_allow:
-      - qemu_riscv32
+      - qemu_riscv32/qemu_virt_riscv32
       - qemu_riscv64
       - qemu_x86
       - qemu_x86_64

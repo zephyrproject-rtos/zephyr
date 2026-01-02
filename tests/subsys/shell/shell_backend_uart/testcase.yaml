@@ -8,4 +8,4 @@ tests:
       - uart
     platform_allow:
       - qemu_x86
-      - qemu_riscv32
+      - qemu_riscv32/qemu_virt_riscv32

@@ -3,4 +3,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "qemu_riscv32.overlay"
+#include "qemu_riscv32_qemu_virt_riscv32.overlay"
