@@ -35,7 +35,7 @@ properties:
       takes measurements in the active mode. This is the interval
       between ALS_DATA registers update. ALS Measurement Repeat Rate
       must be set to be equal or larger than the Integration Time.
-      If ALS Measurement Repeat Rate  is set to be smaller than
+      If ALS Measurement Repeat Rate is set to be smaller than
       ALS Integration Time, it will automatically be reset to be
       equal to ALS Integration Time by the IC internally. Default value
       is a register reset value (500ms).
