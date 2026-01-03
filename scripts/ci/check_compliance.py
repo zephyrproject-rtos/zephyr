@@ -2494,7 +2494,7 @@ class Ruff(ComplianceTest):
             for m in messages:
                 self.fmtd_failure(
                     "error",
-                    f'Python lint error ({m.get("code")}) see {m.get("url")}',
+                    f'Python lint error ({m.get("code")}) see {m.get("url")} ',
                     m.get("filename"),
                     line=m.get("location", {}).get("row"),
                     col=m.get("location", {}).get("column"),
