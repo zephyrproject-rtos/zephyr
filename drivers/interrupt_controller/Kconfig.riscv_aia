@@ -29,3 +29,13 @@ config RISCV_APLIC_MSI
 	help
 	  Enable MSI delivery mode for the APLIC.
 	  Routes wired interrupts to IMSIC as Message-Signaled Interrupts.
+
+config RISCV_AIA
+	bool "RISC-V AIA unified coordinator"
+	default y
+	depends on RISCV_APLIC_MSI
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Unified AIA coordinator providing a PLIC-like second-level interrupt
+	  controller API while hiding APLIC and IMSIC implementation details.
