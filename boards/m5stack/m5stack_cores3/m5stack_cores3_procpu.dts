@@ -52,9 +52,14 @@
 	status = "okay";
 };
 
+&i2c1 {
+	/* GPIO2 is used for CAM_CLK (XCLK). */
+	status = "disabled";
+};
+
 &lcd_cam {
 	status = "okay";
-	cam-clk = <10000000>;
+	cam-clk = <20000000>;
 	data-width = <8>;
 	pinctrl-0 = <&lcd_cam_default>;
 	pinctrl-names = "default";

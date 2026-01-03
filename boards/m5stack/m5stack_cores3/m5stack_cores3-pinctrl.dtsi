@@ -79,6 +79,11 @@
 
 	lcd_cam_default: lcd_cam_default {
 		group1 {
+			pinmux = <LCD_CAM_CAM_CLK_GPIO2>;
+			output-enable;
+		};
+
+		group2 {
 			pinmux = <LCD_CAM_V_SYNC_CAM_GPIO46>,
 				 <LCD_CAM_H_ENABLE_CAM_GPIO38>,
 				 <LCD_CAM_CAM_PCLK_GPIO45>,
