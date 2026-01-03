@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources(ltr329.c)
+zephyr_library_sources(ltr55x.c)
