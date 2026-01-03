@@ -6,9 +6,8 @@
  */
 
 #include <arm/armv6-m.dtsi>
-#include "../psoc6_02/psoc6_02.124-bga.dtsi"
-
 #define PSOC6_02_DEFAULT_IRQ_PRIORITY 3
+#include "../psoc6_02/psoc6_02.124-bga.dtsi"
 
 &nvic {
 	arm,num-irq-priority-bits = <2>;
