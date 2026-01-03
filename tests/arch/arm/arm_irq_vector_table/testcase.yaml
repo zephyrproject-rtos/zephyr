@@ -14,3 +14,4 @@ tests:
       - imx95_evk/mimx9596/m7
       - imx95_evk/mimx9596/m7/ddr
       - imx95_evk/mimx9596/m7/flash
+      - cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0

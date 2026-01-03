@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Arrow Electronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Changed default interrupts priority for GPIO to 4 */
+&gpio_prt5 {
+	interrupts = <5 4>;
+};
+
+&gpio_prt10 {
+	interrupts = <10 4>;
+};
