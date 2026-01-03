@@ -1,6 +1,7 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_IDLE_TIMER := zephyr,cortex-m-idle-timer
@@ -110,3 +111,16 @@ config CORTEX_M_SYSTICK_RESET_BY_LPM
 	  active in low-power mode, since SysTick cannot be used for timekeeping.
 
 	  Refer to CONFIG_CORTEX_M_SYSTICK_LPM_TIMER for more details.
+
+config CORTEX_M_SYSTICK_STOP_IN_LPM
+	bool "Stop SysTick during low-power idle (use LPM timer for timekeeping)"
+	depends on !CORTEX_M_SYSTICK_LPM_TIMER_NONE
+	depends on !CORTEX_M_SYSTICK_RESET_BY_LPM
+	depends on TICKLESS_KERNEL && PM
+	help
+	  Some SoCs keep SysTick running in low-power modes, but a pending SysTick
+	  interrupt can prevent entering STOP/WAIT or cause early wakeups.
+
+	  When enabled, the SysTick driver will stop SysTick while entering low-power
+	  idle and rely on the selected LPM timer for timekeeping.
+	  SysTick will be restarted on idle exit.
