@@ -54,6 +54,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led0: led_0 {
 			label = "LED_0";
 			gpios = <&gpio_prt5 3 GPIO_ACTIVE_HIGH>;
@@ -135,7 +136,7 @@ uart2: &scb2 {
 		murata-1dx {
 			status = "okay";
 			compatible = "infineon,cyw43xxx-bt-hci";
-			bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 
 			/* Configuration UART speeds for firmware download (fw-download-speed)
 			 * and HCI operation (hci-operation-speed).
@@ -169,7 +170,7 @@ uart2: &scb2 {
 
 	/* SDIO pins */
 	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
-			 &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
+		     &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
 	pinctrl-names = "default";
 
 	/* Wi-Fi configuration */
@@ -178,7 +179,7 @@ uart2: &scb2 {
 		compatible = "infineon,airoc-wifi";
 
 		/* Wi-Fi control gpios */
-		wifi-reg-on-gpios	= <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-reg-on-gpios = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpio_prt4 1 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -203,7 +204,7 @@ uart2: &scb2 {
 		input-enable;
 	};
 
-	p2_4_sdio_cmd: p2_4_sdio_cmd  {
+	p2_4_sdio_cmd: p2_4_sdio_cmd {
 		pinmux = <DT_CAT1_PINMUX(2, 4, HSIOM_SEL_ACT_14)>;
 		drive-push-pull;
 		input-enable;
