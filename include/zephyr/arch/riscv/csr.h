@@ -254,6 +254,8 @@
 #define MIREG5   0x356
 #define MIREG6   0x357
 
+#ifndef _ASMLANGUAGE
+
 static inline unsigned long icsr_read(unsigned int index)
 {
 	csr_write(MISELECT, index);
@@ -281,6 +283,8 @@ static inline unsigned long icsr_read_clear(unsigned int index, unsigned long ma
 	icsr_write(index, val & ~mask);
 	return val;
 }
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
 
