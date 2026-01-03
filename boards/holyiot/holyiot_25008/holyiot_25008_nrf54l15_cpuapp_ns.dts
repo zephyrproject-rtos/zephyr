@@ -1,0 +1,66 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Clunky Machines
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "holyiot_25008_common.dtsi"
+
+/ {
+	model = "HOLYIOT 25008 Non-Secure";
+	compatible = "holyiot,holyiot_25008-nrf54l15-cpuapp";
+
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,uart-mcumgr = &uart20;
+		zephyr,bt-mon-uart = &uart20;
+		zephyr,bt-c2h-uart = &uart20;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram = &sram0_ns;
+		zephyr,entropy = &psa_rng;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
+	};
+};
+
+/ {
+	/*
+	 * Default SRAM planning when building for nRF54L15 with ARM TrustZone-M support
+	 * - Lowest 80 kB SRAM allocated to Secure image (sram0_s).
+	 * - Upper 80 kB SRAM allocated to Non-Secure image (sram0_ns).
+	 *
+	 * nRF54L15 has 256 kB of volatile memory (SRAM) but the last 96kB are reserved for
+	 * the FLPR MCU.
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+			reg = <0x20000000 DT_SIZE_K(80)>;
+		};
+
+		sram0_ns: image_ns@20014000 {
+			/* Non-Secure image memory */
+			reg = <0x20014000 DT_SIZE_K(80)>;
+		};
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54l15_ns_partition.dtsi>
