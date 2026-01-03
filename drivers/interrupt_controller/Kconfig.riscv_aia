@@ -19,3 +19,10 @@ config RISCV_APLIC_MSI
 	  RISC-V Advanced Platform-Level Interrupt Controller (APLIC) in MSI mode.
 	  Routes wire interrupts to IMSIC as Message-Signaled Interrupts.
 	  Automatically enabled when an APLIC-MSI node exists in devicetree.
+
+config RISCV_AIA
+	bool "RISC-V AIA unified coordinator"
+	default y
+	depends on RISCV_IMSIC || RISCV_APLIC_MSI
+	help
+	  Unified AIA coordinator providing common API for APLIC+IMSIC.
