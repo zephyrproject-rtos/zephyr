@@ -81,6 +81,11 @@ Apps with precise timing requirements (that are willing to do their
 own conversions to portable real time units) may access this with
 :c:func:`k_uptime_ticks`.
 
+:c:func:`k_uptime_delta` can be used to get the time elapsed between a reference
+and the current time. The referenced time will be updated to the current uptime,
+to easily calculate the next elapsed time.
+
+
 Timeouts
 ========
 
