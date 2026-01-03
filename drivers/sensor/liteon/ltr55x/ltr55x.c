@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT liteon_ltr329
-
 #include "ltr55x.h"
 
 #include <zephyr/logging/log.h>
@@ -13,8 +11,9 @@
 
 LOG_MODULE_REGISTER(LTR55X, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ltr55x_check_device_id(const struct i2c_dt_spec *bus)
+static int ltr55x_check_device_id(const struct ltr55x_config *cfg)
 {
+	const struct i2c_dt_spec *bus = &cfg->bus;
 	uint8_t id;
 	int rc;
 
@@ -23,8 +22,9 @@ static int ltr55x_check_device_id(const struct i2c_dt_spec *bus)
 		LOG_ERR("Failed to read PART_ID");
 		return rc;
 	}
-	if (id != LTR329_PART_ID_VALUE) {
-		LOG_ERR("PART_ID mismatch: expected 0x%02X, got 0x%02X", LTR329_PART_ID_VALUE, id);
+
+	if (id != cfg->part_id) {
+		LOG_ERR("PART_ID mismatch: expected 0x%02X, got 0x%02X", cfg->part_id, id);
 		return -ENODEV;
 	}
 
@@ -42,10 +42,55 @@ static int ltr55x_check_device_id(const struct i2c_dt_spec *bus)
 	return 0;
 }
 
-static int ltr55x_init_als_registers(const struct ltr55x_config *cfg)
+static int ltr55x_init_interrupt_registers(const struct device *dev)
 {
+	const struct ltr55x_config *cfg = dev->config;
 	const struct i2c_dt_spec *bus = &cfg->bus;
-	const uint8_t control_reg = LTR55X_REG_SET(ALS_CONTR, MODE, LTR553_ALS_CONTR_MODE_ACTIVE) |
+	struct ltr55x_data *data = dev->data;
+	uint8_t buf[6];
+	int rc;
+
+	sys_put_le16(data->ps_upper_threshold, &buf[0]);
+	sys_put_le16(data->ps_lower_threshold, &buf[2]);
+	sys_put_be16(data->ps_offset, &buf[4]);
+
+	rc = i2c_burst_write_dt(bus, LTR55X_PS_THRES_UP_0, buf, 6);
+	if (rc < 0) {
+		LOG_ERR("Failed to set PS threshold/offset: %d", rc);
+		return rc;
+	}
+
+	return 0;
+}
+
+static int ltr55x_init_ps_registers(const struct device *dev)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	const uint8_t ps_contr = LTR55X_REG_SET(PS_CONTR, MODE, LTR55X_PS_CONTR_MODE_ACTIVE) |
+				 LTR55X_REG_SET(PS_CONTR, SAT_IND, cfg->ps_saturation_indicator);
+	const uint8_t ps_led = LTR55X_REG_SET(PS_LED, PULSE_FREQ, cfg->ps_led_pulse_freq) |
+			       LTR55X_REG_SET(PS_LED, DUTY_CYCLE, cfg->ps_led_duty_cycle) |
+			       LTR55X_REG_SET(PS_LED, CURRENT, cfg->ps_led_current);
+	const uint8_t ps_n_pulses = LTR55X_REG_SET(PS_N_PULSES, COUNT, cfg->ps_n_pulses);
+	const uint8_t ps_meas_rate = LTR55X_REG_SET(PS_MEAS_RATE, RATE, cfg->ps_measurement_rate);
+	const uint8_t buf[] = {ps_contr, ps_led, ps_n_pulses, ps_meas_rate};
+	int rc;
+
+	rc = i2c_burst_write_dt(bus, LTR55X_PS_CONTR, buf, sizeof(buf));
+	if (rc < 0) {
+		LOG_ERR("Failed to set PS registers");
+		return rc;
+	}
+
+	return 0;
+}
+
+static int ltr55x_init_als_registers(const struct device *dev)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	const uint8_t control_reg = LTR55X_REG_SET(ALS_CONTR, MODE, LTR55X_ALS_CONTR_MODE_ACTIVE) |
 				    LTR55X_REG_SET(ALS_CONTR, GAIN, cfg->als_gain);
 	const uint8_t meas_reg = LTR55X_REG_SET(MEAS_RATE, REPEAT, cfg->als_measurement_rate) |
 				 LTR55X_REG_SET(MEAS_RATE, INT_TIME, cfg->als_integration_time);
@@ -97,13 +142,25 @@ static int ltr55x_init(const struct device *dev)
 	/* Wait for sensor startup */
 	k_sleep(K_MSEC(LTR55X_INIT_STARTUP_MS));
 
-	rc = ltr55x_check_device_id(&cfg->bus);
+	rc = ltr55x_check_device_id(cfg);
 	if (rc < 0) {
 		return rc;
 	}
 
+	if (cfg->part_id == LTR55X_PART_ID_VALUE) {
+		rc = ltr55x_init_interrupt_registers(dev);
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = ltr55x_init_ps_registers(dev);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
 	/* Init register to enable sensor to active mode */
-	rc = ltr55x_init_als_registers(cfg);
+	rc = ltr55x_init_als_registers(dev);
 	if (rc < 0) {
 		return rc;
 	}
@@ -111,8 +168,12 @@ static int ltr55x_init(const struct device *dev)
 	return 0;
 }
 
-static int ltr55x_check_data_ready(const struct i2c_dt_spec *bus)
+static int ltr55x_check_data_ready(const struct ltr55x_config *cfg, enum sensor_channel chan)
 {
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	const bool need_als = (chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_LIGHT);
+	const bool need_ps = (cfg->part_id == LTR55X_PART_ID_VALUE) &&
+			     ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_PROX));
 	uint8_t status;
 	int rc;
 
@@ -122,30 +183,60 @@ static int ltr55x_check_data_ready(const struct i2c_dt_spec *bus)
 		return rc;
 	}
 
-	if (!LTR55X_REG_GET(ALS_PS_STATUS, ALS_DATA_STATUS, status)) {
-		LOG_WRN("Data not ready");
+	if (need_als && !LTR55X_REG_GET(ALS_PS_STATUS, ALS_DATA_STATUS, status)) {
+		LOG_WRN("ALS data not ready");
+		return -EBUSY;
+	}
+
+	if (need_ps && !LTR55X_REG_GET(ALS_PS_STATUS, PS_DATA_STATUS, status)) {
+		LOG_WRN("PS data not ready");
 		return -EBUSY;
 	}
 
 	return 0;
 }
 
-static int ltr55x_read_als_data(const struct i2c_dt_spec *bus, struct ltr55x_data *data)
+static int ltr55x_read_data(const struct ltr55x_config *cfg, enum sensor_channel chan,
+			    struct ltr55x_data *data)
 {
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	const bool need_als = (chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_LIGHT);
+	const bool need_ps = (cfg->part_id == LTR55X_PART_ID_VALUE) &&
+			     ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_PROX));
+	const size_t read_als_ps = (LTR55X_PS_DATA1 + 1) - LTR55X_ALS_DATA_CH1_0;
+	const size_t read_als_only = (LTR55X_ALS_DATA_CH0_1 + 1) - LTR55X_ALS_DATA_CH1_0;
+	const size_t read_size =
+		(cfg->part_id == LTR55X_PART_ID_VALUE) ? read_als_ps : read_als_only;
 	uint8_t reg = LTR55X_ALS_DATA_CH1_0;
-	uint8_t buff[4];
+	uint8_t buff[read_als_ps];
 	int rc;
 
-	rc = i2c_write_read_dt(bus, &reg, sizeof(reg), buff, sizeof(buff));
+	rc = i2c_write_read_dt(bus, &reg, sizeof(reg), buff, read_size);
 	if (rc < 0) {
 		LOG_ERR("Failed to read ALS data registers");
 		return rc;
 	}
 
-	data->als_ch1 = sys_get_le16(buff);
-	data->als_ch0 = sys_get_le16(buff + 2);
+	if (need_als) {
+		data->als_ch1 = sys_get_le16(buff);
+		data->als_ch0 = sys_get_le16(buff + 2);
+	}
+
+	if (need_ps) {
+		data->ps_ch0 = sys_get_le16(buff + 5) & LTR55X_PS_DATA_MASK;
+	}
 
 	return 0;
+}
+
+static bool ltr55x_is_channel_supported(const struct ltr55x_config *cfg, enum sensor_channel chan)
+{
+	if (cfg->part_id == LTR55X_PART_ID_VALUE) {
+		return (chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_LIGHT) ||
+		       (chan == SENSOR_CHAN_PROX);
+	}
+
+	return (chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_LIGHT);
 }
 
 static int ltr55x_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -154,16 +245,16 @@ static int ltr55x_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct ltr55x_data *data = dev->data;
 	int rc;
 
-	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_LIGHT)) {
+	if (!ltr55x_is_channel_supported(cfg, chan)) {
 		return -ENOTSUP;
 	}
 
-	rc = ltr55x_check_data_ready(&cfg->bus);
+	rc = ltr55x_check_data_ready(cfg, chan);
 	if (rc < 0) {
 		return rc;
 	}
 
-	rc = ltr55x_read_als_data(&cfg->bus, data);
+	rc = ltr55x_read_data(cfg, chan, data);
 	if (rc < 0) {
 		return rc;
 	}
@@ -201,17 +292,12 @@ static int ltr55x_get_mapped_int_time(const uint8_t reg_val, uint8_t *const outp
 	return -EINVAL;
 }
 
-static int ltr55x_channel_get(const struct device *dev, enum sensor_channel chan,
-			      struct sensor_value *val)
+static int ltr55x_channel_light_get(const struct device *dev, struct sensor_value *val)
 {
-	const struct ltr55x_data *data = dev->data;
 	const struct ltr55x_config *cfg = dev->config;
+	struct ltr55x_data *data = dev->data;
 	uint8_t gain_value;
 	uint8_t integration_time_value;
-
-	if (chan != SENSOR_CHAN_LIGHT) {
-		return -ENOTSUP;
-	}
 
 	if (ltr55x_get_mapped_gain(cfg->als_gain, &gain_value) != 0) {
 		LOG_ERR("Invalid gain configuration");
@@ -257,6 +343,62 @@ static int ltr55x_channel_get(const struct device *dev, enum sensor_channel chan
 	return 0;
 }
 
+static int ltr55x_channel_proximity_get(const struct device *dev, struct sensor_value *val)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	struct ltr55x_data *data = dev->data;
+
+	if (cfg->part_id != LTR55X_PART_ID_VALUE) {
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("proximity: state=%d data: %d L-H: %d - %d", data->proximity_state, data->ps_ch0,
+		data->ps_lower_threshold, data->ps_upper_threshold);
+
+	if (data->proximity_state) {
+		if (data->ps_ch0 <= data->ps_lower_threshold) {
+			data->proximity_state = false;
+		}
+	} else {
+		if (data->ps_ch0 >= data->ps_upper_threshold) {
+			data->proximity_state = true;
+		}
+	}
+
+	val->val1 = data->proximity_state ? 1 : 0;
+	val->val2 = 0;
+
+	return 0;
+}
+
+static int ltr55x_channel_get(const struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	int ret = -ENOTSUP;
+
+	if (!ltr55x_is_channel_supported(cfg, chan)) {
+		return -ENOTSUP;
+	}
+
+	if (chan == SENSOR_CHAN_LIGHT || chan == SENSOR_CHAN_ALL) {
+		ret = ltr55x_channel_light_get(dev, val);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_PROX || chan == SENSOR_CHAN_ALL) {
+		ret = ltr55x_channel_proximity_get(dev, val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
 static DEVICE_API(sensor, ltr55x_driver_api) = {
 	.sample_fetch = ltr55x_sample_fetch,
 	.channel_get = ltr55x_channel_get,
@@ -272,16 +414,38 @@ static DEVICE_API(sensor, ltr55x_driver_api) = {
 	COND_CODE_1(DT_NODE_HAS_PROP(n, measurement_rate), (DT_PROP(n, measurement_rate)),         \
 		    (DT_ENUM_IDX_OR(n, als_measurement_rate, 3)))
 
-#define DEFINE_LTR55X(_num)                                                                        \
-	static struct ltr55x_data ltr55x_data_##_num;                                              \
-	static const struct ltr55x_config ltr55x_config_##_num = {                                 \
-		.bus = I2C_DT_SPEC_INST_GET(_num),                                                 \
-		.als_gain = LTR55X_ALS_GAIN_REG(_num),                                             \
-		.als_integration_time = LTR55X_ALS_INT_TIME_REG(_num),                             \
-		.als_measurement_rate = LTR55X_ALS_MEAS_RATE_REG(_num),                            \
+#define DEFINE_LTRXXX(node_id, partid)                                                             \
+	BUILD_ASSERT(DT_PROP_OR(node_id, ps_offset, 0) <= LTR55X_PS_DATA_MAX);                     \
+	BUILD_ASSERT(DT_PROP_OR(node_id, ps_upper_threshold, LTR55X_PS_DATA_MASK) <=               \
+		     LTR55X_PS_DATA_MASK);                                                         \
+	BUILD_ASSERT(DT_PROP_OR(node_id, ps_lower_threshold, 0) <= LTR55X_PS_DATA_MAX);            \
+	BUILD_ASSERT(DT_PROP_OR(node_id, ps_lower_threshold, 0) <=                                 \
+		     DT_PROP_OR(node_id, ps_upper_threshold, LTR55X_PS_DATA_MAX));                 \
+	static struct ltr55x_data ltr55x_data_##node_id = {                                        \
+		.ps_offset = DT_PROP_OR(node_id, ps_offset, 0),                                    \
+		.ps_upper_threshold = DT_PROP_OR(node_id, ps_upper_threshold, LTR55X_PS_DATA_MAX), \
+		.ps_lower_threshold = DT_PROP_OR(node_id, ps_lower_threshold, 0),                  \
 	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, ltr55x_init, NULL, &ltr55x_data_##_num,                 \
-				     &ltr55x_config_##_num, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &ltr55x_driver_api);
+	static const struct ltr55x_config ltr55x_config_##node_id = {                              \
+		.bus = I2C_DT_SPEC_GET(node_id),                                                   \
+		.part_id = partid,                                                                 \
+		.als_gain = LTR55X_ALS_GAIN_REG(node_id),                                          \
+		.als_integration_time = LTR55X_ALS_INT_TIME_REG(node_id),                          \
+		.als_measurement_rate = LTR55X_ALS_MEAS_RATE_REG(node_id),                         \
+		.ps_led_pulse_freq = DT_ENUM_IDX_OR(node_id, ps_led_pulse_frequency, 3),           \
+		.ps_led_duty_cycle = DT_ENUM_IDX_OR(node_id, ps_led_duty_cycle, 3),                \
+		.ps_led_current = DT_ENUM_IDX_OR(node_id, ps_led_current, 4),                      \
+		.ps_n_pulses = DT_PROP_OR(node_id, ps_n_pulses, 1),                                \
+		.ps_measurement_rate = UTIL_CAT(LTR55X_PS_MEASUREMENT_RATE_VALUE_,                 \
+						DT_PROP_OR(node_id, ps_measurement_rate, 100)),    \
+		.ps_saturation_indicator = DT_PROP_OR(node_id, ps_saturation_indicator, false),    \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_DEFINE(node_id, ltr55x_init, NULL, &ltr55x_data_##node_id,                \
+				&ltr55x_config_##node_id, POST_KERNEL,                             \
+				CONFIG_SENSOR_INIT_PRIORITY, &ltr55x_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_LTR55X)
+#define DEFINE_LTR329(node_id) DEFINE_LTRXXX(node_id, LTR329_PART_ID_VALUE)
+#define DEFINE_LTR55X(node_id) DEFINE_LTRXXX(node_id, LTR55X_PART_ID_VALUE)
+
+DT_FOREACH_STATUS_OKAY(liteon_ltr329, DEFINE_LTR329)
+DT_FOREACH_STATUS_OKAY(liteon_ltr553, DEFINE_LTR55X)
