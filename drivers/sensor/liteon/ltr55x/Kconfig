@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Konrad Sikora
 # SPDX-License-Identifier: Apache-2.0
 
-config LTR329
+config LTR55X
 	bool "LiteOn LTR-329 Ambient light sensor support"
 	default y
 	depends on DT_HAS_LITEON_LTR329_ENABLED
