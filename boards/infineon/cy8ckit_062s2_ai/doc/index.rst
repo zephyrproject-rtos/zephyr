@@ -36,7 +36,7 @@ The CY8CKIT-062S2-AI board supports multiple core configurations:
     * M4: 1536 KB flash (0x10080000-0x10200000), 892 KB SRAM (0x08021000-0x080FF000)
     * Shared: 4 KB SRAM (0x08020000-0x08021000) for inter-core communication
 
-  - See :zephyr:code-sample:`sysbuild.hello_world` for a dual-core example
+  - See :zephyr:code-sample:`sysbuild_hello_world` for a dual-core example
 
 Hardware
 ********
@@ -108,7 +108,7 @@ To build a dual-core application using Zephyr's sysbuild system:
 
    west build -b cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0 samples/sysbuild/hello_world --sysbuild
 
-See :zephyr:code-sample:`sysbuild.hello_world` for more details on dual-core operation.
+See :zephyr:code-sample:`sysbuild_hello_world` for more details on dual-core operation.
 
 Programming and Debugging
 *************************
