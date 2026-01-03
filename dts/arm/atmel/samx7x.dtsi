@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2026 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -205,11 +206,14 @@
 
 		usbhs: usbd@40038000 {
 			compatible = "atmel,sam-usbhs";
-			reg = <0x40038000 0x4000>;
+			reg = <0x40038000 0x4000>, <0xa0100000 0x50000>;
+			reg-names = "core", "fifo";
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
 			maximum-speed = "high-speed";
-			num-bidir-endpoints = <10>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <6>;
+			num-out-endpoints = <5>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 34>;
 			status = "disabled";
 		};
