@@ -1,0 +1,77 @@
+#
+# Copyright (c) 2025 Gabriele Zampieri <opensource@arsenaling.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Analog Devices MAX31335 I2C RTC ±2ppm Automotive Real-Time Clock with Integrated MEMS Resonator.
+
+  An example configuration node is:
+
+  &i2c1 {
+    max31331@68 {
+        compatible = "adi,max31331";
+        reg = <0x68>;
+        status = "okay";
+        int-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+        comp-ppb = <840>;
+        clko-frequency = <1024>;
+        enable-trickle-charger;
+        trickle-resistor-ohms = <3000>;
+        tc-diode = "standard+schottky";
+    };
+  };
+
+compatible: "adi,max31331"
+
+include: [rtc-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the MAX31331 nINTA output, interrupts are unused if none is provided.
+      Note: nINTB are also routed to nINTA.
+
+  comp-ppb:
+    type: int
+    default: 1
+    description: |
+      Compensation value in ppb. The RTC can compensate at 477 ppb steps. If the property value is
+      not a multiple of 477 the nearest integer is used.  Requires CONFIG_RTC_CALIBRATION.
+      See "Oscillator Circuit and Clock Accuracy" datasheet paragraph.
+
+  clko-frequency:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 64
+      - 1024
+      - 32000
+    description: |
+      Select the nINTB/CLKO output frequency in Hertz.
+
+  enable-trickle-charger:
+    type: boolean
+    description: |
+      Enable the trickle charger. trickle-resistor-ohms and tc-diode shall be specified.
+
+  trickle-resistor-ohms:
+    type: int
+    enum:
+      - 3000
+      - 6000
+      - 11000
+    description: |
+      Selected resistor for trickle charger. Should be specified togheter with tc-diode.
+
+  tc-diode:
+    type: string
+    enum:
+      - schottky
+      - standard+schottky
+    description: |
+      Select the diode configuration for the trickle charger. Should be specified togheter
+      with trickle-resistor-ohms.

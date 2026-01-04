@@ -121,6 +121,18 @@
 					status = "okay";
 				};
 			};
+
+			test_max31331: max31331@68 {
+				compatible = "adi,max31331";
+				reg = <0x68>;
+				status = "okay";
+				int-gpios = <&test_gpio 0 0>;
+				comp-ppb = <840>;
+				clko-frequency = <1024>;
+				enable-trickle-charger;
+				trickle-resistor-ohms = <3000>;
+				tc-diode = "standard+schottky";
+			};
 		};
 	};
 };
