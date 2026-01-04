@@ -52,6 +52,7 @@ class TwisterConfigParser:
         "type": {"type": "str", "default": "integration"},
         "extra_args": {"type": "list"},
         "extra_configs": {"type": "list"},
+        "conf_files": {"type": "list", "default": []},
         "extra_conf_files": {"type": "list", "default": []},
         "extra_overlay_confs": {"type": "list", "default": []},
         "extra_dtc_overlay_files": {"type": "list", "default": []},
@@ -204,16 +205,21 @@ class TwisterConfigParser:
             else:
                 d[k] = v
 
-        # Compile conf files in to a single list. The order to apply them is:
-        #  (1) CONF_FILEs extracted from common['extra_args']
-        #  (2) common['extra_conf_files']
-        #  (3) CONF_FILES extracted from scenarios[name]['extra_args']
-        #  (4) scenarios[name]['extra_conf_files']
+        # Compile extra conf files intended for EXTRA_CONF_FILE into a single list.
+        # The order to apply them is:
+        #  (1) common['extra_conf_files']
+        #  (2) scenarios[name]['extra_conf_files']
         d["extra_conf_files"] = \
-            extracted_common.get("CONF_FILE", []) + \
             self.common.get("extra_conf_files", []) + \
-            extracted_testsuite.get("CONF_FILE", []) + \
             self.scenarios[name].get("extra_conf_files", [])
+
+        # Compile conf files intended for CONF_FILE into a single list.
+        # The order to apply them is:
+        #  (1) CONF_FILEs extracted from common['extra_args']
+        #  (2) CONF_FILES extracted from scenarios[name]['extra_args']
+        d["conf_files"] = \
+            extracted_common.get("CONF_FILE", []) + \
+            extracted_testsuite.get("CONF_FILE", [])
 
         # Repeat the above for overlay confs and DTC overlay files
         d["extra_overlay_confs"] = \

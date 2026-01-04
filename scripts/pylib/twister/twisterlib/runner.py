@@ -1660,7 +1660,7 @@ class ProjectBuilder(FilterBuilder):
         sys.stdout.flush()
 
     @staticmethod
-    def cmake_assemble_args(extra_args, handler, extra_conf_files, extra_overlay_confs,
+    def cmake_assemble_args(extra_args, handler, conf_files, extra_conf_files, extra_overlay_confs,
                             extra_dtc_overlay_files, cmake_extra_args,
                             build_dir):
         # Retain quotes around config options
@@ -1672,8 +1672,11 @@ class ProjectBuilder(FilterBuilder):
         if handler.ready:
             args.extend(handler.args)
 
+        if conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(conf_files)}\"")
+
         if extra_conf_files:
-            args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+            args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
 
         if extra_dtc_overlay_files:
             args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
@@ -1720,6 +1723,7 @@ class ProjectBuilder(FilterBuilder):
         args = self.cmake_assemble_args(
             args,
             self.instance.handler,
+            self.testsuite.conf_files,
             self.testsuite.extra_conf_files,
             self.testsuite.extra_overlay_confs,
             self.testsuite.extra_dtc_overlay_files,
