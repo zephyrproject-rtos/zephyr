@@ -22,5 +22,6 @@ zephyr_library_sources_ifdef(CONFIG_MDIO_NXP_S32_NETC mdio_nxp_s32_netc.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_RENESAS_RA mdio_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_SENSRY_SY1XX mdio_sy1xx.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_ST_STM32_HAL mdio_stm32_hal.c)
+zephyr_library_sources_ifdef(CONFIG_MDIO_WCH mdio_wch.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_XILINX_AXI_ENET mdio_xilinx_axienet.c)
 # zephyr-keep-sorted-stop
