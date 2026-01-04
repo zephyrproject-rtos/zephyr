@@ -23,6 +23,15 @@ config DMA_INFINEON_CAT1_PDL
 	help
 	  This option enables the PDL-based DMA driver for Infineon CAT1 family.
 
+config DMA_INFINEON
+	bool "Infineon DMAC PDL-based driver"
+	default y
+	depends on DT_HAS_INFINEON_DMAC_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select USE_INFINEON_DMA
+	help
+	  This option enables the PDL-based DMAC driver for Infineon family.
+
 config INFINEON_DESCRIPTOR_POOL_SIZE
 	int
 	default 10
