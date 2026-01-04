@@ -1,0 +1,14 @@
+sample:
+  name: Sample for Nooploop TOFSense Time Of Flight sensor
+tests:
+  sample.sensor.tofsense:
+    depends_on:
+      - uart
+    tags:
+      - sensors
+    filter: dt_alias_exists("tof")
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "distance is .*"
