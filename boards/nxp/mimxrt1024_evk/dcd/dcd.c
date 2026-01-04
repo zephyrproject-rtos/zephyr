@@ -7,8 +7,8 @@
 
 #include "dcd.h"
 
-#if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
-#if defined(XIP_BOOT_HEADER_DCD_ENABLE) && (XIP_BOOT_HEADER_DCD_ENABLE == 1)
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR)
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_DEVICE_CONFIGURATION_DATA)
 __attribute__((section(".boot_hdr.dcd_data"), used))
 
 const uint8_t dcd_data[] = {
@@ -591,5 +591,5 @@ const uint8_t dcd_data[] = {
 
 #else
 const uint8_t dcd_data[] = {0x00};
-#endif /* XIP_BOOT_HEADER_DCD_ENABLE */
-#endif /* XIP_BOOT_HEADER_ENABLE */
+#endif /* defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_DEVICE_CONFIGURATION_DATA) */
+#endif /* defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR) */
