@@ -544,9 +544,13 @@ requests==2.32.5 \
     --hash=sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6 \
     --hash=sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf
     # via sphinx
-roman-numerals-py==3.1.0 ; python_full_version >= '3.11' \
-    --hash=sha256:9da2ad2fb670bcf24e81070ceb3be72f6c11c440d73bd579fbeca1e9f330954c \
-    --hash=sha256:be4bf804f083a4ce001b5eb7e3c0862479d10f94c936f6c4e5f250aa5ff5bd2d
+roman-numerals==4.0.0 ; python_full_version >= '3.11' \
+    --hash=sha256:231287018a8788bf8c0718482a08c15b90458523ea1d840a18a791a86d4583b3 \
+    --hash=sha256:4131feb23ba1a542494873e4cee7844ec8d226a750134efc65ceb20939ed33c9
+    # via roman-numerals-py
+roman-numerals-py==4.0.0 ; python_full_version >= '3.11' \
+    --hash=sha256:dfcecf6e0cddbf2ee1112e7e2ebf58ba771984f075cb57a30e1811cee4f06332 \
+    --hash=sha256:f7fa8dff5b7b7251d3a7586b97c57a0698e2e28898fa42c23bcc0cf51b02aee9
     # via sphinx
 ruamel-yaml==0.18.16 \
     --hash=sha256:048f26d64245bae57a4f9ef6feb5b552a386830ef7a826f235ffb804c59efbba \
@@ -642,6 +646,7 @@ sphinx==8.1.3 ; python_full_version < '3.11' \
     #   sphinx-tabs
     #   sphinx-togglebutton
     #   sphinxcontrib-jquery
+    #   sphinxcontrib-moderncmakedomain
     #   sphinxcontrib-programoutput
     #   sphinxcontrib-svg2pdfconverter
 sphinx==8.2.3 ; python_full_version >= '3.11' \
@@ -657,6 +662,7 @@ sphinx==8.2.3 ; python_full_version >= '3.11' \
     #   sphinx-tabs
     #   sphinx-togglebutton
     #   sphinxcontrib-jquery
+    #   sphinxcontrib-moderncmakedomain
     #   sphinxcontrib-programoutput
     #   sphinxcontrib-svg2pdfconverter
 sphinx-autobuild==2024.10.3 ; python_full_version < '3.11' \
@@ -715,6 +721,10 @@ sphinxcontrib-jsmath==1.0.1 \
     --hash=sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178 \
     --hash=sha256:a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8
     # via sphinx
+sphinxcontrib-moderncmakedomain==3.29.0 \
+    --hash=sha256:22385d9956e9565311eca41a09f26688312e4997a7366cb965fa610d1fd1436c \
+    --hash=sha256:3587def241ff2577d0bbef11810a082e9dec1b78a3d4b4a066240b5f3dc1b5b2
+    # via -r requirements.in
 sphinxcontrib-programoutput==0.18 \
     --hash=sha256:09e68b6411d937a80b6085f4fdeaa42e0dc5555480385938465f410589d2eed8 \
     --hash=sha256:8a651bc85de69a808a064ff0e48d06c12b9347da4fe5fdb1e94914b01e1b0c36
@@ -789,9 +799,9 @@ typing-extensions==4.15.0 ; python_full_version < '3.13' \
     #   exceptiongroup
     #   starlette
     #   uvicorn
-urllib3==2.6.1 \
-    --hash=sha256:5379eb6e1aba4088bae84f8242960017ec8d8e3decf30480b3a1abdaa9671a3f \
-    --hash=sha256:e67d06fe947c36a7ca39f4994b08d73922d40e6cca949907be05efa6fd75110b
+urllib3==2.6.2 \
+    --hash=sha256:016f9c98bb7e98085cb2b4b17b87d2c702975664e4f060c6532e64d1c1a5e797 \
+    --hash=sha256:ec21cddfe7724fc7cb4ba4bea7aa8e2ef36f607a4bab81aa6ce42a13dc3f03dd
     # via requests
 uvicorn==0.38.0 \
     --hash=sha256:48c0afd214ceb59340075b4a052ea1ee91c16fbc2a9b1469cca0e54566977b02 \
