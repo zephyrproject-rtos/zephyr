@@ -3,7 +3,7 @@
 /dts-v1/;
 
 #include <ti/mspm0/g/mspm0g3519.dtsi>
-#include <ti/mspm0/g/mspm0g1x0x_g3x0x-pinctrl.dtsi>
+#include <ti/mspm0/g/mspm0gx51x-pinctrl.dtsi>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
