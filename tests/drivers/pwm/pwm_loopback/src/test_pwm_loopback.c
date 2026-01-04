@@ -171,6 +171,10 @@ ZTEST_USER(pwm_loopback, test_capture_timeout)
 		err = pwm_capture_cycles(in.dev, in.pwm,
 					 PWM_CAPTURE_TYPE_PERIOD, &period,
 					 &pulse, K_MSEC(1000));
+		if (err == -ENOTSUP) {
+			TC_PRINT("capture type not supported\n");
+			ztest_test_skip();
+		}
 	}
 
 	zassert_equal(err, -EAGAIN, "pwm capture did not timeout (err %d)",
@@ -246,9 +250,14 @@ ZTEST(pwm_loopback, test_continuous_capture)
 					    PWM_CAPTURE_MODE_CONTINUOUS |
 					    PWM_CAPTURE_TYPE_PERIOD,
 					    continuous_capture_callback, &data);
-		zassert_equal(err, 0, "failed to configure pwm input (err %d)",
-			      err);
-		data.pulse_capture = false;
+		if (err == -ENOTSUP) {
+			TC_PRINT("capture type not supported\n");
+			ztest_test_skip();
+		} else {
+			zassert_equal(err, 0, "failed to configure pwm input (err %d)",
+					err);
+			data.pulse_capture = false;
+		}
 	}
 
 	err = pwm_enable_capture(in.dev, in.pwm);
@@ -308,9 +317,14 @@ ZTEST(pwm_loopback, test_capture_busy)
 		flags = PWM_CAPTURE_MODE_SINGLE | PWM_CAPTURE_TYPE_PERIOD;
 		err = pwm_configure_capture(in.dev, in.pwm, in.flags | flags,
 					    continuous_capture_callback, &data);
-		zassert_equal(err, 0, "failed to configure pwm input (err %d)",
-			      err);
-		data.pulse_capture = false;
+		if (err == -ENOTSUP) {
+			TC_PRINT("capture type not supported\n");
+			ztest_test_skip();
+		} else {
+			zassert_equal(err, 0, "failed to configure pwm input (err %d)",
+					err);
+			data.pulse_capture = false;
+		}
 	}
 
 	err = pwm_enable_capture(in.dev, in.pwm);
