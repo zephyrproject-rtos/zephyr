@@ -1,5 +1,4 @@
-# Copyright (c) 2022 Nordic Semiconductor ASA
-#
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_HOST_STACK
@@ -54,5 +53,6 @@ config USBH_MAX_UHC_MSG
 	  Maximum number of USB host controller events that can be queued.
 
 rsource "Kconfig.usbip"
+rsource "class/Kconfig"
 
 endif # USB_HOST_STACK
