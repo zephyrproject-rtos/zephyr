@@ -350,6 +350,8 @@ class Walker:
         for module in modules:
             module_name = module.get("name", None)
             module_security = module.get("security", None)
+            module_revision = module.get("revision", None)
+            module_remote = module.get("remote", None)
 
             if not module_name:
                 log.err("cannot find module name in meta file; bailing")
@@ -358,6 +360,10 @@ class Walker:
             module_ext_ref = []
             if module_security:
                 module_ext_ref = module_security.get("external-references")
+            else:
+                purl = self._build_purl(module_remote, module_revision)
+                if purl:
+                    module_ext_ref = [purl]
 
             # set up zephyr sources package
             cfgPackageModuleExtRef = PackageConfig()
@@ -366,6 +372,9 @@ class Walker:
 
             for ref in module_ext_ref:
                 cfgPackageModuleExtRef.externalReferences.append(ref)
+        
+            if module_revision:
+                cfgPackageModuleExtRef.version = module_revision
 
             pkgModule = Package(cfgPackageModuleExtRef, self.docModulesExtRefs)
             self.docModulesExtRefs.pkgs[pkgModule.cfg.spdxID] = pkgModule
