@@ -6,6 +6,16 @@ if SOC_SERIES_ESP32C6
 config NUM_IRQS
 	default 32
 
+config PMP_SLOTS
+	default 16
+
+# ESP32-C6 uses MMU to map flash to virtual addresses for code execution.
+# The PMP init code runs from IRAM while the main rom region is in flash.
+# Locked PMP entries would block IRAM execution before proper coverage is set.
+# Use unlocked entries with MPRV-based enforcement instead.
+config PMP_NO_LOCK_GLOBAL
+	default y
+
 config FLASH_SIZE
 	default $(dt_node_reg_size_int,/soc/flash-controller@60002000/flash@0,0)
 
