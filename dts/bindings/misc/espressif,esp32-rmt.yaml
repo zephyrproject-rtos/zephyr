@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Joel Guittet (joelguittet@gmail.com)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Espressif Remote Control Transceiver (RMT)
+
+    The RMT (Remote Control Transceiver) peripheral was designed to act as an infrared transceiver.
+    However, due to the flexibility of its data format, RMT can be extended to a versatile and
+    general-purpose transceiver, transmitting or receiving many other types of signals.
+
+    Here is an example ESP32 configuration with a RMT device:
+
+    rmt: rmt@3ff56000 {
+        compatible = "espressif,esp32-rmt";
+        reg = <0x3ff56000 0x1000>;
+        status = "okay";
+    };
+
+compatible: "espressif,esp32-rmt"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

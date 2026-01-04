@@ -1,0 +1,8 @@
+# Private config options for espressif_rmt sample
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Espressif RMT sample application"
+
+source "Kconfig.zephyr"

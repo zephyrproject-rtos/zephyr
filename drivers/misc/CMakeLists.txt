@@ -2,6 +2,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_DEVMUX devmux)
+add_subdirectory_ifdef(CONFIG_ESPRESSIF_RMT espressif_rmt)
 add_subdirectory_ifdef(CONFIG_ETHOS_U ethos_u)
 add_subdirectory_ifdef(CONFIG_FT800 ft8xx)
 add_subdirectory_ifdef(CONFIG_GROVE_LCD_RGB grove_lcd_rgb)

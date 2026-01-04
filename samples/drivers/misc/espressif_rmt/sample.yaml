@@ -1,0 +1,7 @@
+sample:
+  name: espressif_rmt
+tests:
+  sample.drivers.misc.espressif_rmt:
+    tags:
+      - drivers
+    filter: dt_compat_enabled("espressif,esp32-rmt")

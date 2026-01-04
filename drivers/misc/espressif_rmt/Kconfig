@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ESPRESSIF_RMT
+	bool "ESP32 RMT driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_RMT_ENABLED
+	select DMA if DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED && SOC_SERIES_ESP32S3
+	help
+	  Enables the ESP32 Remote Control Transceiver driver.
+
+if ESPRESSIF_RMT
+
+config ESPRESSIF_RMT_INIT_PRIORITY
+	int "ESP32 RMT driver init priority"
+	default 90
+	help
+	  ESP32 RMT driver initialization priority in POST_KERNEL.
+
+config ESPRESSIF_RMT_ISR_IRAM_SAFE
+	bool "RMT ISR IRAM-Safe"
+	default n
+	help
+	  Ensure the RMT interrupt is IRAM-Safe by allowing the interrupt handler to be
+	  executable when the cache is disabled (e.g. SPI Flash write).
+
+config ESPRESSIF_RMT_RECV_FUNC_IN_IRAM
+	bool "Place RMT receive function into IRAM"
+	default n
+	help
+	  Place RMT receive function into IRAM,
+	  so that the receive function can be IRAM-safe and able to be called when the flash cache is disabled.
+	  Enabling this option can improve driver performance as well.
+
+config ESPRESSIF_RMT_PM
+	bool "Support for power management"
+	default n
+	help
+	  If enabled, RMT driver is compiled with support for power management.
+
+module = ESPRESSIF_RMT
+module-str = espressif_rmt
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
