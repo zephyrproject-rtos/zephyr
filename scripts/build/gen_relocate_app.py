@@ -101,11 +101,11 @@ class OutputSection(NamedTuple):
 
 
 PRINT_TEMPLATE = """
-                KEEP(*{obj_file_name}({section_name}))
+                KEEP(*{obj_file_name}("{section_name}"))
 """
 
 PRINT_TEMPLATE_NOKEEP = """
-                *{obj_file_name}({section_name})
+                *{obj_file_name}("{section_name}")
 """
 
 SECTION_LOAD_MEMORY_SEQ = """
