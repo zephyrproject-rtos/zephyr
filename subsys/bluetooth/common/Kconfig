@@ -50,11 +50,17 @@ config BT_BUF_ACL_TX_COUNT
 
 config BT_BUF_ACL_RX_SIZE
 	int "Maximum supported ACL size for incoming data"
-	# For GOEP over RFCOMM, including,
+	# For GOEP over RFCOMM, the minimum MTU of GOEP is 264, including,
 	# 255 bytes - the minimum MTU of GOEP,
 	# 4 bytes - L2CAP Header,
 	# 5 bytes - 4 bytes for RFCOMM header with extended length, 1 byte for FCS.
-	default 264 if BT_CLASSIC && BT_GOEP
+	# For GOEP over L2CAP, the minimum MTU of GOEP is 265, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	# 6 bytes - Field length of L2CAP I-frame, including,
+	#   4 bytes - extended control field,
+	#   2 bytes - FCS field.
+	default 265 if BT_CLASSIC && BT_GOEP
 	default 200 if BT_CLASSIC
 	default 70 if BT_EATT
 	default 69 if BT_SMP
