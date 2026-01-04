@@ -48,4 +48,6 @@ extern void  *memchr(const void *s, int c, size_t n);
 }
 #endif
 
+#include <zephyr/posix/posix_string.h>
+
 #endif  /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRING_H_ */

@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 
+typedef long _CLOCK_T_;
 typedef int64_t _TIME_T_;
 typedef int32_t _SUSECONDS_T_;
 

@@ -24,12 +24,12 @@ LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdio.h>
 
-#include <zephyr/posix/sys/eventfd.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/poll.h>
+#include <arpa/inet.h>
+#include <poll.h>
+#include <sys/eventfd.h>
+#include <sys/socket.h>
 
 #include <zephyr/misc/lorem_ipsum.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>

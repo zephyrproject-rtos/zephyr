@@ -8,9 +8,10 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <string.h>
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
 #include "test_fs.h"
 
 #define FILL_SIZE 128
