@@ -257,7 +257,7 @@
 			size = <DT_SIZE_M(64)>; /* 64 Mbits */
 			jedec-id = [bf 26 43];
 			requires-ulbpr;
-			status = "okay";
+			status = "disabled";
 		};
 	};
 };
