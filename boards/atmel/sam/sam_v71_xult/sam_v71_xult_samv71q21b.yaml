@@ -25,6 +25,7 @@ supported:
   - sdhc
   - spi
   - usb_device
+  - usbd
   - watchdog
   - xpro_gpio
   - xpro_i2c
