@@ -13,35 +13,37 @@ zephyr_sources(
   thread_entry.c
   )
 
-if(CONFIG_ZVFS_OPEN_IGNORE_MIN)
-  set(final_fd_size ${CONFIG_ZVFS_OPEN_MAX})
-else()
-  # Import all custom ZVFS_OPEN_ size requirements
-  import_kconfig(CONFIG_ZVFS_OPEN_ADD_SIZE_ ${DOTCONFIG} add_size_keys)
-
-  # Calculate the sum of all "ADD_SIZE" requirements
-  set(add_size_sum 0)
-  foreach(add_size ${add_size_keys})
-    math(EXPR add_size_sum "${add_size_sum} + ${${add_size}}")
-  endforeach()
-
-  if(CONFIG_ZVFS_OPEN_MAX LESS "${add_size_sum}")
-    # Only warn if default value 0 has been modified
-    if(NOT CONFIG_ZVFS_OPEN_MAX EQUAL 0)
-      message(WARNING "
-        CONFIG_ZVFS_OPEN_MAX is less than requested minimum:
-          ${CONFIG_ZVFS_OPEN_MAX} < ${add_size_sum}
-        Setting the file descriptor size to ${add_size_sum}")
-    endif()
-
-    set(final_fd_size ${add_size_sum})
-  else()
-    # CONFIG_ZVFS_OPEN_MAX was greater than the sum of the requirements
+if(CONFIG_ZVFS)
+  if(CONFIG_ZVFS_OPEN_IGNORE_MIN)
     set(final_fd_size ${CONFIG_ZVFS_OPEN_MAX})
-  endif()
-endif()
+  else()
+    # Import all custom ZVFS_OPEN_ size requirements
+    import_kconfig(CONFIG_ZVFS_OPEN_ADD_SIZE_ ${DOTCONFIG} add_size_keys)
 
-zephyr_compile_definitions(ZVFS_OPEN_SIZE=${final_fd_size})
+    # Calculate the sum of all "ADD_SIZE" requirements
+    set(add_size_sum 0)
+    foreach(add_size ${add_size_keys})
+      math(EXPR add_size_sum "${add_size_sum} + ${${add_size}}")
+    endforeach()
+
+    if(CONFIG_ZVFS_OPEN_MAX LESS "${add_size_sum}")
+      # Only warn if default value 0 has been modified
+      if(NOT CONFIG_ZVFS_OPEN_MAX EQUAL 0)
+        message(WARNING "
+          CONFIG_ZVFS_OPEN_MAX is less than requested minimum:
+            ${CONFIG_ZVFS_OPEN_MAX} < ${add_size_sum}
+          Setting the file descriptor size to ${add_size_sum}")
+      endif()
+
+      set(final_fd_size ${add_size_sum})
+    else()
+      # CONFIG_ZVFS_OPEN_MAX was greater than the sum of the requirements
+      set(final_fd_size ${CONFIG_ZVFS_OPEN_MAX})
+    endif()
+  endif()
+
+  zephyr_compile_definitions(ZVFS_OPEN_SIZE=${final_fd_size})
+endif()
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
