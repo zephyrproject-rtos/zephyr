@@ -31,6 +31,12 @@ properties:
     description: |
       Number of configured IN endpoints including control endpoint.
 
+  gsnpsid:
+    type: int
+    description: |
+      Value of the GSNPSID register, used to identify the version of the core
+      and avoid mismatch by checking the register at runtime.
+
   ghwcfg1:
     type: int
     required: true
@@ -45,9 +51,34 @@ properties:
       Value of the GHWCFG2 register. It is used to determine available endpoint
       types during driver pre-initialization.
 
+  ghwcfg3:
+    type: int
+    description: |
+      Value of the GHWCFG3 register. It is used to determine available endpoint
+      types during driver pre-initialization.
+
   ghwcfg4:
     type: int
     required: true
     description: |
       Value of the GHWCFG4 register. It is used to determine available endpoint
       types during driver pre-initialization.
+
+  g-rx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Rx Data FIFO Depth. Must not exceed GRXFSIZ.RxFDep power-on value.
+
+  g-np-tx-fifo-size:
+    type: int
+    required: true
+    description: |
+      IN Endpoint 0 FIFO Depth. Must not exceed GNPTXFSIZ.NPTXFDep power-on value.
+
+  g-tx-fifo-size:
+    type: array
+    required: true
+    description: |
+      IN Endpoint Transmit fifo depths. Values must not exceed their respective
+      DIEPTXFn.INEPnTxFDep power-on values.
