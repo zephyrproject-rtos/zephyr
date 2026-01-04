@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	model = "NXP i.MX95 EVK board";
@@ -99,6 +100,12 @@
 	};
 };
 
+&lpi2c2 {
+	pinctrl-0 = <&lpi2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
@@ -149,3 +156,9 @@
 &edma2 {
 	status = "okay";
 };
+
+zephyr_dpu: &dpu {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+display_i2c: &lpi2c2 {};
