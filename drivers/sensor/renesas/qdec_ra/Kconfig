@@ -1,0 +1,14 @@
+# Renesas RA family Quadrature Decoder driver configuration options
+#
+# Copyright (c) 2025, Pivot International Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config QDEC_RENESAS_RA
+	bool "Renesas RA family QDEC driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_QDEC_ENABLED
+	select USE_RA_FSP_GPT
+	select PINCTRL
+	help
+	  Enable Renesas RA family Quadrature Decoder driver.
