@@ -25,3 +25,9 @@ properties:
     required: true
     description: |
       Size of DMA buffer in bytes
+
+  allow-disable-usb-on-unplug:
+    type: boolean
+    description: |
+      Some soc series allow USB function to be disabled temporarily on USB unplug. It can enable
+      back on USB re-plug.

@@ -69,6 +69,226 @@ LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #if !defined(SYS_USBPHY_HSUSBROLE_STD_USBD)
 #define SYS_USBPHY_HSUSBROLE_STD_USBD (0x0 << SYS_USBPHY_HSUSBROLE_Pos)
 #endif
+#elif defined(CONFIG_SOC_SERIES_M333X)
+#define CEPBUFSTART CEPBUFST
+#define EPBUFSTART  EPBUFST
+#endif
+
+/* Dummy USBD device definition
+ *
+ * This is used to pass compile for targets not supporting this device.
+ * Related code should be unreachable.
+ */
+#if defined(CONFIG_SOC_SERIES_M333X)
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nuvoton_numaker_usbd) == 0,
+	     "The SoC series should have no USBD");
+
+typedef struct {
+	uint32_t BUFSEG;
+	uint32_t MXPLD;
+	uint32_t CFG;
+	uint32_t CFGP;
+} USBD_EP_T;
+
+#define USBD_CFGP_SSTALL_Msk 0
+#define USBD_CFGP_CLRRDY_Msk 0
+#define USBD_CFG_DSQSYNC_Msk 0
+#define USBD_CFG_EPNUM_Pos   0
+#define USBD_CFG_EPNUM_Msk   0
+#define USBD_CFG_STATE_Msk   0
+#define USBD_MXPLD_MXPLD_Pos 0
+#define USBD_MXPLD_MXPLD_Msk 0
+
+#define USBD_CFG_CSTALL         0
+#define USBD_CFG_EPMODE_DISABLE 0
+#define USBD_CFG_EPMODE_IN      0
+#define USBD_CFG_EPMODE_OUT     0
+#define USBD_CFG_TYPE_ISO       0
+
+typedef struct {
+	uint32_t INTEN;
+	uint32_t INTSTS;
+	uint32_t FADDR;
+	uint32_t EPSTS;
+	uint32_t ATTR;
+	uint32_t VBUSDET;
+	uint32_t STBUFSEG;
+	uint32_t EPSTS0;
+	uint32_t EPSTS1;
+	uint32_t EPSTS2;
+	uint32_t EPSTS3;
+	uint32_t EPINTSTS;
+	uint32_t SE0;
+	USBD_EP_T EP[1];
+} USBD_T;
+
+#define USBD_INTSTS_SOFIF_Msk      0
+#define USBD_ATTR_BYTEM_Msk        0
+#define USBD_ATTR_DPPUEN_Msk       0
+#define USBD_ATTR_PHYEN_Msk        0
+#define USBD_ATTR_PWRDN_Msk        0
+#define USBD_ATTR_RWAKEUP_Msk      0
+#define USBD_ATTR_USBEN_Msk        0
+#define USBD_VBUSDET_VBUSDET_Msk   0
+#define USBD_STBUFSEG_STBUFSEG_Msk 0
+
+#define USBD_INT_BUS       0
+#define USBD_INT_FLDET     0
+#define USBD_INT_USB       0
+#define USBD_INT_WAKEUP    0
+#define USBD_INTSTS_BUS    0
+#define USBD_INTSTS_FLDET  0
+#define USBD_INTSTS_SETUP  0
+#define USBD_INTSTS_USB    0
+#define USBD_INTSTS_WAKEUP 0
+#define USBD_PHY_EN        0
+#define USBD_STATE_RESUME  0
+#define USBD_STATE_SUSPEND 0
+#define USBD_STATE_USBRST  0
+#define USBD_USB_EN        0
+#define USBD_DRVSE0        0
+
+#define EP0 0
+#define EP1 1
+
+#endif
+
+/* Dummy HSUSBD device definition
+ *
+ * This is used to pass compile for targets not supporting this device.
+ * Related code should be unreachable.
+ */
+#if defined(CONFIG_SOC_SERIES_M2L31X)
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nuvoton_numaker_hsusbd) == 0,
+	     "The SoC series should have no HSUSBD");
+
+typedef struct {
+	union {
+		uint32_t EPDAT;
+		uint8_t EPDAT_BYTE;
+	};
+	uint32_t EPINTSTS;
+	uint32_t EPINTEN;
+	uint32_t EPDATCNT;
+	uint32_t EPRSPCTL;
+	uint32_t EPMPS;
+	uint32_t EPTXCNT;
+	uint32_t EPCFG;
+	uint32_t EPBUFSTART;
+	uint32_t EPBUFEND;
+} HSUSBD_EP_T;
+
+#define HSUSBD_EPINTSTS_BUFEMPTYIF_Msk 0
+#define HSUSBD_EPINTSTS_BUFFULLIF_Msk  0
+#define HSUSBD_EPINTSTS_RXPKIF_Msk     0
+#define HSUSBD_EPINTEN_RXPKIEN_Msk     0
+#define HSUSBD_EPINTEN_TXPKIEN_Msk     0
+#define HSUSBD_EPDATCNT_DATCNT_Pos     0
+#define HSUSBD_EPDATCNT_DATCNT_Msk     0
+#define HSUSBD_EPRSPCTL_HALT_Msk       0
+#define HSUSBD_EPRSPCTL_MODE_Msk       0
+#define HSUSBD_EPRSPCTL_TOGGLE_Msk     0
+#define HSUSBD_EPCFG_EPDIR_Msk         0
+#define HSUSBD_EPCFG_EPEN_Msk          0
+#define HSUSBD_EPCFG_EPNUM_Pos         0
+#define HSUSBD_EPCFG_EPNUM_Msk         0
+
+typedef struct {
+	uint32_t GINTSTS;
+	uint32_t GINTEN;
+	uint32_t BUSINTSTS;
+	uint32_t BUSINTEN;
+	uint32_t OPER;
+	uint32_t FRAMECNT;
+	uint32_t FADDR;
+	uint32_t TEST;
+	union {
+		uint32_t CEPDAT;
+		uint8_t CEPDAT_BYTE;
+	};
+	uint32_t CEPCTL;
+	uint32_t CEPINTEN;
+	uint32_t CEPINTSTS;
+	uint32_t CEPTXCNT;
+	uint32_t CEPRXCNT;
+	uint32_t CEPDATCNT;
+	uint32_t SETUP1_0;
+	uint32_t SETUP3_2;
+	uint32_t SETUP5_4;
+	uint32_t SETUP7_6;
+	uint32_t CEPBUFSTART;
+	uint32_t CEPBUFEND;
+	uint32_t DMACTL;
+	uint32_t DMACNT;
+	HSUSBD_EP_T EP[1];
+	uint32_t DMAADDR;
+	uint32_t PHYCTL;
+} HSUSBD_T;
+
+#define HSUSBD_GINTEN_CEPIEN_Msk        0
+#define HSUSBD_GINTEN_EPAIEN_Pos        0
+#define HSUSBD_GINTEN_USBIEN_Msk        0
+#define HSUSBD_GINTSTS_EPAIF_Pos        0
+#define HSUSBD_BUSINTEN_RESUMEIEN_Msk   0
+#define HSUSBD_BUSINTEN_RSTIEN_Msk      0
+#define HSUSBD_BUSINTEN_SUSPENDIEN_Msk  0
+#define HSUSBD_BUSINTEN_VBUSDETIEN_Msk  0
+#define HSUSBD_BUSINTSTS_RESUMEIF_Msk   0
+#define HSUSBD_BUSINTSTS_RSTIF_Msk      0
+#define HSUSBD_BUSINTSTS_SOFIF_Msk      0
+#define HSUSBD_BUSINTSTS_SUSPENDIF_Msk  0
+#define HSUSBD_BUSINTSTS_VBUSDETIF_Msk  0
+#define HSUSBD_OPER_CURSPD_Msk          0
+#define HSUSBD_OPER_HISPDEN_Msk         0
+#define HSUSBD_OPER_RESUMEEN_Msk        0
+#define HSUSBD_CEPCTL_NAKCLR_Msk        0
+#define HSUSBD_CEPINTEN_ERRIEN_Msk      0
+#define HSUSBD_CEPINTEN_RXPKIEN_Msk     0
+#define HSUSBD_CEPINTEN_SETUPPKIEN_Msk  0
+#define HSUSBD_CEPINTEN_SETUPTKIEN_Msk  0
+#define HSUSBD_CEPINTEN_STALLIEN_Msk    0
+#define HSUSBD_CEPINTEN_STSDONEIEN_Msk  0
+#define HSUSBD_CEPINTEN_TXPKIEN_Msk     0
+#define HSUSBD_CEPINTSTS_BUFEMPTYIF_Msk 0
+#define HSUSBD_CEPINTSTS_BUFFULLIF_Msk  0
+#define HSUSBD_CEPINTSTS_RXPKIF_Msk     0
+#define HSUSBD_CEPINTSTS_SETUPPKIF_Msk  0
+#define HSUSBD_CEPINTSTS_SETUPTKIF_Msk  0
+#define HSUSBD_CEPINTSTS_STSDONEIF_Msk  0
+#define HSUSBD_CEPINTSTS_TXPKIF_Msk     0
+#define HSUSBD_CEPDATCNT_DATCNT_Pos     0
+#define HSUSBD_CEPDATCNT_DATCNT_Msk     0
+#define HSUSBD_PHYCTL_DPPUEN_Msk        0
+#define HSUSBD_PHYCTL_PHYCLKSTB_Msk     0
+#define HSUSBD_PHYCTL_PHYEN_Msk         0
+#define HSUSBD_PHYCTL_VBUSDET_Msk       0
+#define HSUSBD_PHYCTL_VBUSWKEN_Msk      0
+
+#define HSUSBD_CEPCTL_FLUSH          0
+#define HSUSBD_CEPCTL_NAKCLR         0
+#define HSUSBD_CEPCTL_STALL          0
+#define HSUSBD_CEPCTL_ZEROLEN        0
+#define HSUSBD_EP_CFG_DIR_IN         0
+#define HSUSBD_EP_CFG_DIR_OUT        0
+#define HSUSBD_EP_CFG_TYPE_BULK      0
+#define HSUSBD_EP_CFG_TYPE_INT       0
+#define HSUSBD_EP_CFG_TYPE_ISO       0
+#define HSUSBD_EP_CFG_VALID          0
+#define HSUSBD_EP_RSPCTL_FLUSH       0
+#define HSUSBD_EP_RSPCTL_HALT        0
+#define HSUSBD_EP_RSPCTL_MODE_AUTO   0
+#define HSUSBD_EP_RSPCTL_MODE_FLY    0
+#define HSUSBD_EP_RSPCTL_MODE_MANUAL 0
+#define HSUSBD_EP_RSPCTL_SHORTTXEN   0
+#define HSUSBD_EP_RSPCTL_TOGGLE      0
+#define HSUSBD_EP_RSPCTL_ZEROLEN     0
+
+#define CEP 0
+#define EPA 0
+#define EPB 0
+
 #endif
 
 enum numaker_usbd_msg_type {
@@ -158,6 +378,7 @@ struct udc_numaker_config {
 	const struct pinctrl_dev_config *pincfg;
 	uint32_t dmabuf_size;
 	bool disallow_iso_inout_same;
+	bool allow_disable_usb_on_unplug;
 	int speed_idx;
 	void (*make_thread)(const struct device *dev);
 	bool is_hsusbd;
@@ -489,6 +710,14 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 			      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSOTGPHYEN_Msk);
 		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
 		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#elif defined(CONFIG_SOC_SERIES_M333X)
+		/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
+		SYS->USBPHY = (SYS->USBPHY &
+			       ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
+			      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSUSBEN_Msk |
+			       SYS_USBPHY_SBO_Msk);
+		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
+		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
 #endif
 	} else {
 #if defined(CONFIG_SOC_SERIES_M46X)
@@ -502,6 +731,8 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_M55M1X)
 		SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
 			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_OTGPHYEN_Msk);
+#elif defined(CONFIG_SOC_SERIES_M333X)
+		CODE_UNREACHABLE;
 #endif
 	}
 
@@ -662,12 +893,16 @@ static void numaker_usbd_vbus_unplug_th(const struct device *dev)
 		HSUSBD_T *base = config->base;
 
 		/* Disable USB/PHY */
-		base->PHYCTL &= ~HSUSBD_PHYCTL_PHYEN_Msk;
+		if (config->allow_disable_usb_on_unplug) {
+			base->PHYCTL &= ~HSUSBD_PHYCTL_PHYEN_Msk;
+		}
 	} else {
 		USBD_T *base = config->base;
 
 		/* Disable USB */
-		base->ATTR &= ~USBD_USB_EN;
+		if (config->allow_disable_usb_on_unplug) {
+			base->ATTR &= ~USBD_USB_EN;
+		}
 	}
 
 	/* UDC stack would handle bottom-half processing */
@@ -917,12 +1152,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 	const struct udc_numaker_config *config = dev->config;
 	HSUSBD_T *base = config->base;
 	struct numaker_usbd_msg msg = {0};
-
-	/* Setup token */
-	if (cepintsts & HSUSBD_CEPINTSTS_SETUPTKIF_Msk) {
-		/* Flush CEP FIFO */
-		base->CEPCTL = HSUSBD_CEPCTL_FLUSH | HSUSBD_CEPCTL_NAKCLR_Msk;
-	}
 
 	/* Setup packet */
 	if (cepintsts & HSUSBD_CEPINTSTS_SETUPPKIF_Msk) {
@@ -2095,7 +2324,11 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 	/* Abort previous CTRL OUT/IN */
 	if (config->is_hsusbd) {
 		/* For HSUSBD, there is timing concern between FIFO flush and
-		 * immediately following data transaction. Do in ISR for in time.
+		 * immediately following Data OUT transaction. Even though FIFO flush
+		 * is done in Setup token ISR (HSUSBD_CEPINTSTS_SETUPTKIF_Msk),
+		 * it can still be not timely. For this, error recovery with FIFO
+		 * is not done in-place here and rely on USB reset handler to do it
+		 * as catch-all.
 		 */
 		numaker_usbd_ep_abort(ep_cur, true);
 		numaker_usbd_ep_abort(ep_cur + 1, true);
@@ -2116,7 +2349,7 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 
 	udc_ep_buf_set_setup(buf);
 	data_ptr = net_buf_tail(buf);
-	numaker_usbd_setup_copy_to_user(dev, data_ptr);
+	memcpy(data_ptr, msg->setup.packet, 8);
 	net_buf_add(buf, 8);
 
 	/* Update to next stage of CTRL transfer */
@@ -2145,6 +2378,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	uint8_t ep;
 	struct numaker_usbd_ep *ep_cur;
 	struct udc_ep_config *ep_cfg;
+	uint8_t ep_type;
 	struct net_buf *buf;
 	uint8_t *data_ptr;
 	uint32_t data_len;
@@ -2154,6 +2388,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 
 	ep = msg->out.ep;
 	ep_cfg = udc_get_ep_cfg(dev, ep);
+	ep_type = ep_cfg->attributes & USB_EP_TRANSFER_TYPE_MASK;
 
 	udc_ep_set_busy(ep_cfg, false);
 
@@ -2199,10 +2434,10 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 		goto next_xfer;
 	}
 
-	/* To submit the peeked buffer */
-	udc_buf_get(ep_cfg);
-
 	if (ep == USB_CONTROL_EP_OUT) {
+		/* To submit the peeked buffer */
+		udc_buf_get(ep_cfg);
+
 		if (udc_ctrl_stage_is_status_out(dev)) {
 			/* s-in-status finished */
 			err = udc_ctrl_submit_status(dev, buf);
@@ -2223,7 +2458,18 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 				return err;
 			}
 		}
-	} else {
+	} else if ((net_buf_tailroom(buf) == 0) || (data_len < ep_cfg->mps) ||
+		   (ep_type == USB_EP_TYPE_ISO)) {
+		/* Fix submit condition for non-control transfer
+		 *
+		 * Do submit when any of the following conditions is met:
+		 * 1. Transfer buffer (net_buf) is full
+		 * 2. Last packet size is less than mps
+		 * 3. Isochronous transfer
+		 */
+		/* To submit the peeked buffer */
+		udc_buf_get(ep_cfg);
+
 		err = udc_submit_ep_event(dev, buf, 0);
 		if (err < 0) {
 			LOG_ERR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
@@ -3101,7 +3347,7 @@ static const struct udc_api udc_numaker_api = {
 		.ep_cfg_out_size = ARRAY_SIZE(ep_cfg_out_##inst),                                  \
 		.ep_cfg_in_size = ARRAY_SIZE(ep_cfg_in_##inst),                                    \
 		.make_thread = udc_numaker_make_thread_##inst,                                     \
-		.base = (USBD_T *)DT_INST_REG_ADDR(inst),                                          \
+		.base = (void *)DT_INST_REG_ADDR(inst),                                            \
 		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
 		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
 		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
@@ -3113,6 +3359,8 @@ static const struct udc_api udc_numaker_api = {
 		.dmabuf_size = DT_INST_PROP(inst, dma_buffer_size),                                \
 		.disallow_iso_inout_same = DT_INST_PROP_OR(inst, disallow_iso_in_out_same_number,  \
 							   0),                                     \
+		.allow_disable_usb_on_unplug = DT_INST_PROP_OR(inst, allow_disable_usb_on_unplug,  \
+							       0),                                 \
 		.speed_idx = DT_ENUM_IDX_OR(DT_DRV_INST(inst), maximum_speed,                      \
 					    UDC_NUMAKER_SPEED_IDX_DEFAULT),                        \
 		.is_hsusbd = IS_ENABLED(UDC_NUMAKER_DEVICE_HSUSBD),                                \
