@@ -854,7 +854,7 @@ static int mcux_i3c_recover_bus(const struct device *dev)
  * @return Number of bytes read, or negative if error.
  */
 static int mcux_i3c_do_one_xfer_read(I3C_Type *base, struct mcux_i3c_data *data,
-				     uint8_t *buf, uint8_t buf_sz, bool ibi)
+				     uint8_t *buf, size_t buf_sz)
 {
 	int ret = 0;
 	int offset = 0;
@@ -866,7 +866,16 @@ static int mcux_i3c_do_one_xfer_read(I3C_Type *base, struct mcux_i3c_data *data,
 		 */
 		while (offset < buf_sz) {
 			if (mcux_i3c_fifo_rx_count_get(base) == 0) {
-				/* Enable Receive pending interrupt */
+				/* No more data - check if target marked message as complete */
+				if (mcux_i3c_status_is_set(base, I3C_MSTATUS_COMPLETE_MASK)) {
+					/* All data received, move on */
+					LOG_DBG("Target data complete, offset %d buf_sz %d", offset,
+						buf_sz);
+					ret = offset;
+					break;
+				}
+
+				/* More data to come, enable Receive pending interrupt */
 				base->MINTSET = I3C_MSTATUS_RXPEND_MASK;
 
 				/* Wait for data to arrive or an error */
@@ -881,28 +890,25 @@ static int mcux_i3c_do_one_xfer_read(I3C_Type *base, struct mcux_i3c_data *data,
 				buf[offset++] = (uint8_t)base->MRDATAB;
 			}
 		}
-		/*
-		 * If timed out, we abort the transaction.
-		 */
-		if ((mcux_i3c_has_error(data) & I3C_MERRWARN_TIMEOUT_MASK) || ret) {
-			ret = -ETIMEDOUT;
 
-			/* for ibi, ignore timeout err if any bytes were
-			 * read, since the code doesn't know how many
-			 * bytes will be sent by device.
-			 */
-			if (ibi && offset) {
-				ret = offset;
-			} else {
-				LOG_ERR("Timeout error");
-			}
+		/* Done reading all data */
+		if (ret > 0) {
 			break;
 		}
 
+		/*
+		 * If timed out, we abort the transaction.
+		 */
+		if ((mcux_i3c_has_error(data) & I3C_MERRWARN_TIMEOUT_MASK) || ret < 0) {
+			ret = -ETIMEDOUT;
+
+			LOG_ERR("Timeout error");
+			break;
+		}
 	}
 
 	/* If no errors, then return the number of bytes read */
-	if (ret > 0) {
+	if (ret >= 0) {
 		ret = offset;
 	}
 
@@ -1003,7 +1009,7 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 	}
 
 	if (is_read) {
-		ret = mcux_i3c_do_one_xfer_read(base, data, buf, buf_sz, false);
+		ret = mcux_i3c_do_one_xfer_read(base, data, buf, buf_sz);
 	} else {
 		ret = mcux_i3c_do_one_xfer_write(base, data, buf, buf_sz, no_ending);
 	}
@@ -1018,8 +1024,9 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		 * Wait for controller to say the operation is done.
 		 * Save time by not clearing the bit.
 		 */
-		ret = mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
-		if (ret != 0) {
+		int ret2 = mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
+
+		if (ret2 != 0) {
 			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
 				__func__, addr, buf_sz);
 			emit_stop = true;
@@ -1508,7 +1515,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			ret = mcux_i3c_do_one_xfer_read(base, data, &payload[0],
-							sizeof(payload), true);
+							sizeof(payload));
 			if (ret >= 0) {
 				payload_sz = (size_t)ret;
 			} else {
