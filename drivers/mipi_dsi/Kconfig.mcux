@@ -23,7 +23,7 @@ config MIPI_DSI_MCUX_2L_SMARTDMA
 	depends on DMA_MCUX_SMARTDMA
 	help
 	  Use SMARTDMA. This accelerator will automatically
-	  convert RGB565 input data to BGR565 (little endian to big endian),
+	  convert RGB565 input data to RGB565X (little endian to big endian),
 	  and write it to the MIPI DSI.
 
 config MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
