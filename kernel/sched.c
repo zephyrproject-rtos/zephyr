@@ -45,6 +45,9 @@ BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
 	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
 	     "threads.");
 
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
@@ -129,6 +132,9 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 		runq_remove(thread);
 	}
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 /* Called out of z_swap() when CONFIG_SMP.  The current thread can
  * never live in the run queue until we are inexorably on the context
@@ -173,6 +179,9 @@ static void update_metairq_preempt(struct k_thread *thread)
 #endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 }
 
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
@@ -268,6 +277,9 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	return thread;
 #endif /* CONFIG_SMP */
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 void move_current_to_end_of_prio_q(void)
 {
@@ -276,6 +288,9 @@ void move_current_to_end_of_prio_q(void)
 	update_cache(1);
 }
 
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
@@ -303,6 +318,9 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 	_current_cpu->swap_ok = preempt_ok;
 #endif /* CONFIG_SMP */
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 {
@@ -405,6 +423,9 @@ static ALWAYS_INLINE void z_metairq_preempted_clear(struct k_thread *thread)
  * (aborting _current will not return, obviously), which may be after
  * a context switch.
  */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 					bool terminate)
 {
@@ -459,6 +480,9 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 	 * re-take the lock!
 	 */
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 
 void z_impl_k_thread_suspend(k_tid_t thread)
@@ -541,6 +565,9 @@ static void unready_thread(struct k_thread *thread)
 }
 
 /* _sched_spinlock must be held */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
 	unready_thread(thread);
@@ -553,6 +580,9 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 		_priq_wait_add(&wait_q->waitq, thread);
 	}
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 {
@@ -674,6 +704,9 @@ void z_unpend_thread(struct k_thread *thread)
 /* Priority set utility that does no rescheduling, it just changes the
  * run queue state, returning true if a reschedule is needed later.
  */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 bool z_thread_prio_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
@@ -729,6 +762,9 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 
 	return need_sched;
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 static inline bool resched(uint32_t key)
 {
@@ -1268,6 +1304,9 @@ extern void thread_abort_hook(struct k_thread *thread);
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
  */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state)
 {
 	bool dummify = false;
@@ -1360,6 +1399,9 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		clear_halting(thread);
 	}
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 void z_thread_abort(struct k_thread *thread)
 {

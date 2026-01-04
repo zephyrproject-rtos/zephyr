@@ -149,7 +149,7 @@ const size_t _kernel_thread_info_offsets[] = {
 };
 
 extern const size_t __attribute__((alias("_kernel_thread_info_offsets")))
-		_kernel_openocd_offsets;
+		_kernel_openocd_offsets[ARRAY_SIZE(_kernel_thread_info_offsets)];
 
 __attribute__((used, section(".dbg_thread_info")))
 const size_t _kernel_thread_info_num_offsets = ARRAY_SIZE(_kernel_thread_info_offsets);
