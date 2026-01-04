@@ -13,4 +13,5 @@ supported:
   - adc
   - can
   - gpio
+  - flash
 vendor: nxp

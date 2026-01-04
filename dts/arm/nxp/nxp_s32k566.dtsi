@@ -742,6 +742,13 @@
 			number-of-mb = <96>;
 			number-of-mb-fd = <21>;
 			interrupt-names = "ored", "ored_0_96_mb";
+		};
+
+		xspi0: xspi@40ba4000 {
+			compatible = "nxp,s32-xspi";
+			reg = <0x40ba4000 0x8000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
