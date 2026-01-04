@@ -357,6 +357,8 @@ other-macro =/ %s"DT_COMPAT_HAS_OKAY_" dt-name
 ; property to a fixed-partitions node. See the flash map API docs
 ; for an example.
 other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL_" dt-name
+; Get the node label of the phandle
+other-macro =/ %s"DT_N_NODELABEL_" %s"DT_N" path-id "_IDX_" DIGIT "_C_TOKEN"
 
 ; --------------------------------------------------------------------
 ; alternate-id: another way to specify a node besides a path-id
