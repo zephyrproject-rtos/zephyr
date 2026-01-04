@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SF32LB58_DEVKIT_LCD
+	config BOARD
+		default "SF32LB58_DEVKIT_LCD"
+endif
