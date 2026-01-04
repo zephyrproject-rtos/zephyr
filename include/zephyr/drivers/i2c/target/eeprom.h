@@ -91,8 +91,12 @@ int eeprom_target_write_data(const struct device *dev, off_t offset,
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data size
  */
-__deprecated int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
-				       unsigned int length);
+static inline __deprecated int eeprom_target_program(const struct device *dev,
+						     const uint8_t *eeprom_data,
+						     unsigned int length)
+{
+	return eeprom_target_write_data(dev, 0, eeprom_data, length);
+}
 
 /**
  * @brief Read single byte of virtual EEPROM memory
@@ -104,8 +108,11 @@ __deprecated int eeprom_target_program(const struct device *dev, const uint8_t *
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data pointer or offset
  */
-int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
-		      unsigned int offset);
+static inline int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
+				     unsigned int offset)
+{
+	return eeprom_target_read_data(dev, offset, eeprom_data, 1);
+}
 
 /**
  * @brief Change the address of eeprom target at runtime
