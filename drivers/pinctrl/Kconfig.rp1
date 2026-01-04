@@ -1,0 +1,9 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_RP1
+	bool "Raspberry Pi RP1 pin controller driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_RP1_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for the Raspberry Pi RP1 peripheral.
