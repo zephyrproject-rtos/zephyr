@@ -1,0 +1,22 @@
+{
+  "channel_count": 2,
+  "resolution": 12,
+  "channels": {
+    "0": {
+      "mode": "single",
+      "verf_mv": 3300
+    },
+    "3": {
+      "mode": "single",
+      "verf_mv": 3300
+    },
+    "4": {
+      "mode": "single",
+      "verf_mv": 3300
+    },
+    "7": {
+      "mode": "single",
+      "verf_mv": 3300
+    }
+  }
+}
