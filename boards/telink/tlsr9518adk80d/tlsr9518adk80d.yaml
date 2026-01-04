@@ -3,8 +3,9 @@ name: Telink TLSR9518ADK80D
 type: mcu
 arch: riscv
 toolchain:
-  - cross-compile
   - zephyr
+  - andes
+  - cross-compile
 ram: 128
 flash: 1024
 supported:
