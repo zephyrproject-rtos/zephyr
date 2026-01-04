@@ -15,3 +15,9 @@ tests:
       - native_sim
     extra_configs:
       - CONFIG_EMUL=y
+  drivers.flash.stm32_fmc_mt29f4g08.build:
+    platform_allow:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_FLASH_EX_OP_ENABLED=y
+      - CONFIG_FLASH_MT29F4G08_ECC=y
