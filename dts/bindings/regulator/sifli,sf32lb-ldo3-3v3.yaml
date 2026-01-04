@@ -1,0 +1,8 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB LDO3 3V3 - 3.3V LDO3 for peripherals.
+
+compatible: "sifli,sf32lb-ldo3-3v3"
+
+include: sifli,sf32lb-ldo-common.yaml
