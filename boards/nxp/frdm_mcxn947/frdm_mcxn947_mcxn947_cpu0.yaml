@@ -36,6 +36,7 @@ supported:
   - sdhc
   - spi
   - usb_device
+  - usbd
   - video
   - watchdog
 vendor: nxp
