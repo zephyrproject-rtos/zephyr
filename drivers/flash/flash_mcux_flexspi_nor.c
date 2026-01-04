@@ -11,7 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 #include "jesd216.h"
 #include "memc_mcux_flexspi.h"
 

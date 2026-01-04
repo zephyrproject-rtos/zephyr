@@ -25,7 +25,7 @@ typedef enum mspi_timing_param mspi_timing_param;
 #endif
 
 #include <zephyr/drivers/flash.h>
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 LOG_MODULE_REGISTER(flash_mspi_atxp032, CONFIG_FLASH_LOG_LEVEL);
 
 #define NOR_WRITE_SIZE                      1
