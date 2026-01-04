@@ -58,16 +58,6 @@
 	};
 };
 
-&dmsc {
-	ti,host-id = <36>;
-	mboxes = <&secure_proxy_main 2>, <&secure_proxy_main 3>;
-};
-
-&secure_proxy_main {
-	interrupts = <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-	interrupt-parent = <&vim>;
-};
-
 &main_timer0 {
 	interrupts = <0 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
