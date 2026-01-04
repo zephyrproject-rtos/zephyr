@@ -397,9 +397,11 @@ static int iis3dwb_decoder_get_size_info(struct sensor_chan_spec chan_spec, size
 	}
 }
 
-static bool iis3dwb_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool iis3dwb_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					struct sensor_chan_spec chan_spec)
 {
 #ifdef CONFIG_IIS3DWB_STREAM
+	ARG_UNUSED(chan_spec);
 	const struct iis3dwb_decoder_header *header = (const struct iis3dwb_decoder_header *)buffer;
 
 	switch (trigger) {

@@ -201,8 +201,10 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 	return *fit - fit_0;
 }
 
-static bool bmp581_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool bmp581_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+				       struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 
 	if ((trigger == SENSOR_TRIG_DATA_READY &&
