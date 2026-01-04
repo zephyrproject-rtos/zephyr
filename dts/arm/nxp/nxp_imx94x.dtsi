@@ -592,6 +592,7 @@
 			reg = <0x428c0000 0x4000>;
 			interrupts = <146 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			run-mode = "free-run";
 			clocks = <&scmi_clk IMX943_CLK_GPT4>;
 		};
 

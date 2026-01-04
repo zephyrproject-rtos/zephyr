@@ -175,6 +175,7 @@
 			interrupts = <101 0>;
 			gptfreq = <DT_FREQ_M(25)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x68 24>;
+			run-mode = "free-run";
 		};
 
 		qtmr1: qtmr@401dc000 {

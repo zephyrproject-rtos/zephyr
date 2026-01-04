@@ -357,6 +357,7 @@
 		reg = <0x46c0000 0x4000>;
 		interrupts = <209 0>;
 		gptfreq = <DT_FREQ_M(240)>;
+		run-mode = "free-run";
 		clocks = <&ccm IMX_CCM_GPT1_CLK 0x41 0>;
 		status = "disabled";
 	};
@@ -367,6 +368,7 @@
 		interrupts = <210 0>;
 		gptfreq = <DT_FREQ_M(240)>;
 		clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
+		run-mode = "free-run";
 	};
 
 	acmp1: comparator@2dc0000 {

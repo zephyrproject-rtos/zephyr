@@ -108,6 +108,7 @@
 			interrupts = <120 0>;
 			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x41 0>;
+			run-mode = "free-run";
 		};
 
 		gpt3: gpt@400f4000 {
@@ -116,6 +117,7 @@
 			interrupts = <121 0>;
 			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x42 0>;
+			run-mode = "free-run";
 		};
 
 		gpt4: gpt@400f8000 {
@@ -124,6 +126,7 @@
 			interrupts = <122 0>;
 			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x43 0>;
+			run-mode = "free-run";
 		};
 
 		gpt5: gpt@400fc000 {
@@ -132,6 +135,7 @@
 			interrupts = <123 0>;
 			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x44 0>;
+			run-mode = "free-run";
 		};
 
 		gpt6: gpt@40100000 {
@@ -140,6 +144,7 @@
 			interrupts = <124 0>;
 			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
+			run-mode = "free-run";
 		};
 
 		qtmr1: qtmr@4015c000 {
