@@ -88,9 +88,9 @@
 			reg = <0x80000 0x60000>;
 		};
 
-		storage_partition: storage_partition@E0000 {
+		storage_partition: storage_partition@e0000 {
 			compatible = "soc-nv-flash";
-			reg = <0xE0000 DT_SIZE_K(64)>;
+			reg = <0xe0000 DT_SIZE_K(64)>;
 		};
 	};
 };
