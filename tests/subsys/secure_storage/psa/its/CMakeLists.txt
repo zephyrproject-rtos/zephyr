@@ -1,4 +1,15 @@
 cmake_minimum_required(VERSION 3.20.0)
+
+if((DEFINED SECURE_STORAGE_PSA_ITS_FLASH_ERASE_FIX) OR (BOARD MATCHES ".*/max32.*/ns"))
+  macro(app_set_runner_args)
+    board_runner_args(dfu-util "--dfuse-modifiers=force:mass-erase")
+    board_runner_args(pyocd "--erase")
+    board_runner_args(jlink "--erase")
+    board_runner_args(nrfjprog "--erase")
+    board_runner_args(openocd "--erase")
+  endmacro()
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(app)
 
