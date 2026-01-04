@@ -41,6 +41,11 @@ if(CONFIG_BT_HCI_HOST)
     ecc.c
     )
 
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_HCI_VS
+    hci_vs.c
+    )
+
   if(CONFIG_BT_CONN)
     zephyr_library_sources(
       conn.c
