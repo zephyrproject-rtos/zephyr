@@ -229,6 +229,13 @@ Counter
            resolution = <16>;
        };
 
+DMA
+===
+
+* Removed ``DMA_MCUX_EDMA_V5`` (:github:`100341`). This macro previously distinguished between
+  nxp,version(5) and nxp,version(4). It now supports unified maintenance for both versions.
+  Users can modify ``DMA_MCUX_EDMA_V5`` to ``DMA_MCUX_EDMA_V4``.
+
 Ethernet
 ========
 

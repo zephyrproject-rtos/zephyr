@@ -31,6 +31,12 @@ properties:
       DMAMUX. This value is used to validate the request source index provided in the
       DMA specifier.
 
+  has-dmamux:
+    type: boolean
+    description: |
+      Indicates whether the DMA controller has an integrated DMAMUX.
+      If present, the controller includes DMAMUX functionality.
+
   dmamux-reg-offset:
     type: int
     default: 0
