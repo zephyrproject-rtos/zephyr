@@ -277,13 +277,9 @@ config NRFX_SPI2
 	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52X
 	select NRFX_SPI
 
-DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
-
 config NRFX_SPIM
 	bool "SPIM driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
-
-DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
 
 config NRFX_SPIS
 	bool "SPIS driver"
