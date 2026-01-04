@@ -1180,6 +1180,7 @@ Display drivers:
     - jfischer-no
     - danieldegrasse
     - VynDragon
+    - KATE-WANG-NXP
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -2015,6 +2016,7 @@ Documentation Infrastructure:
   collaborators:
     - JarmouniA
     - VynDragon
+    - KATE-WANG-NXP
   files:
     - drivers/mipi_dbi/
     - include/zephyr/drivers/mipi_dbi.h
@@ -2027,6 +2029,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - JarmouniA
+    - KATE-WANG-NXP
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
