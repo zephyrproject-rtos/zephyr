@@ -196,10 +196,24 @@
 			status = "okay";
 		};
 
+		option_setting_dualsel: option-setting-dualsel@100a110 {
+			compatible = "zephyr,memory-region";
+			zephyr,memory-region = "OFS_DUALSEL_MEMORY";
+			reg = <0x0100a110 0x4>;
+			status = "okay";
+		};
+
 		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
 			compatible = "zephyr,memory-region";
 			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
 			reg = <0x0100a200 0x4>;
+			status = "okay";
+		};
+
+		option_setting_banksel_sec: option-setting-banksel-sec@100a210 {
+			compatible = "zephyr,memory-region";
+			zephyr,memory-region = "OFS_BANKSEL_SEC_MEMORY";
+			reg = <0x0100a210 0x4>;
 			status = "okay";
 		};
 
@@ -221,6 +235,13 @@
 			compatible = "zephyr,memory-region";
 			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
 			reg = <0x0100a280 0x4>;
+			status = "okay";
+		};
+
+		option_setting_banksel_sel: option-setting-banksel-sel@100a290 {
+			compatible = "zephyr,memory-region";
+			zephyr,memory-region = "OFS_BANKSEL_SEL_MEMORY";
+			reg = <0x0100a290 0x4>;
 			status = "okay";
 		};
 
