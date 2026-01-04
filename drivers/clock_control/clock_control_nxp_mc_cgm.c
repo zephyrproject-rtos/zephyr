@@ -380,6 +380,14 @@ static int mc_cgm_init(const struct device *dev)
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 #endif
 
+#if defined(CONFIG_CAN_MCUX_FLEXCAN)
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcan012PeClk, 1U);
+	CLOCK_AttachClk(kAIPS_PLAT_CLK_to_FLEXCAN012_PE);
+
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcan345PeClk, 1U);
+	CLOCK_AttachClk(kAIPS_PLAT_CLK_to_FLEXCAN345_PE);
+#endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClockUpdate();
 

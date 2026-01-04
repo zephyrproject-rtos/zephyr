@@ -70,24 +70,30 @@
 
 &flexcan_0 {
 	number-of-mb = <96>;
+	number-of-mb-fd = <21>;
 };
 
 &flexcan_1 {
 	number-of-mb = <64>;
+	number-of-mb-fd = <14>;
 };
 
 &flexcan_2 {
 	number-of-mb = <64>;
+	number-of-mb-fd = <14>;
 };
 
 &flexcan_3 {
 	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
 };
 
 &flexcan_4 {
 	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
 };
 
 &flexcan_5 {
 	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
 };
