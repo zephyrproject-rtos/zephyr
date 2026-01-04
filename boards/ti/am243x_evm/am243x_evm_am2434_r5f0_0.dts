@@ -6,7 +6,7 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <ti/am64x_r5.dtsi>
+#include <ti/am64x_r5f0_0.dtsi>
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
 
 / {
@@ -85,22 +85,16 @@
 &main_i2c0 {
 	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
 	pinctrl-names = "default";
-	status = "okay";
-	power-domains = <&i2c0_pd>;
 };
 
 &main_mcspi0 {
 	pinctrl-0 = <&spi0_clk &spi0_cs0 &spi0_d0 &spi0_d1>;
 	pinctrl-names = "default";
-	status = "okay";
-	power-domains = <&mcspi0_pd>;
 };
 
 &main_adc0 {
 	ti,vrefp = <1800>;
 	ti,fifo = <0>;
-	status = "okay";
-	power-domains = <&adc0_pd>;
 
 	channel@0 {
 		reg = <0>;

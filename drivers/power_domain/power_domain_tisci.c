@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(tisci_pd);
 
 #define DT_DRV_COMPAT ti_sci_pm_domain
 
-const struct device *dmsc = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(dmsc));
+static const struct device *dmsc = DEVICE_DT_GET(DT_NODELABEL(dmsc));
 
 struct power_domain {
 	uint32_t devid;
@@ -78,11 +78,6 @@ static int tisci_pd_init(const struct device *dev)
 {
 	int ret;
 
-	if (dmsc == NULL) {
-		LOG_ERR("DMSC device not found");
-		return -ENODEV;
-	}
-
 	ret = pm_device_driver_init(dev, tisci_pd_pm_action);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable runtime PM: %d", ret);
@@ -92,14 +87,21 @@ static int tisci_pd_init(const struct device *dev)
 	return 0;
 }
 
-#define TISCI_PD_DEVICE_DEFINE(inst)                                                               \
-	static struct power_domain power_domain_data_##inst = {                                    \
-		.devid = DT_INST_PROP(inst, tisci_device_id),                                      \
-		.mode = DT_INST_ENUM_IDX(inst, tisci_device_mode),                                 \
+#define TISCI_PD_DEVICE_DEFINE(node)                                                               \
+	static struct power_domain power_domain_data_##node = {                                    \
+		.devid = DT_PROP(node, tisci_device_id),                                           \
+		.mode = DT_ENUM_IDX(node, tisci_device_mode),                                      \
 	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(inst, tisci_pd_pm_action);                                        \
-	DEVICE_DT_INST_DEFINE(inst, tisci_pd_init, PM_DEVICE_DT_INST_GET(inst), NULL,              \
-			      &power_domain_data_##inst, PRE_KERNEL_1,                             \
-			      CONFIG_POWER_DOMAIN_TISCI_INIT_PRIORITY, NULL);
+	PM_DEVICE_DT_DEFINE(node, tisci_pd_pm_action);                                             \
+	DEVICE_DT_DEFINE(node, tisci_pd_init, PM_DEVICE_DT_GET(node), NULL,                        \
+			 &power_domain_data_##node, PRE_KERNEL_1,                                  \
+			 CONFIG_POWER_DOMAIN_TISCI_INIT_PRIORITY, NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(TISCI_PD_DEVICE_DEFINE);
+#define TISCI_PD_DEVICE_DEFINE_IF_OKAY(pd_node)                                                    \
+	COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(pd_node, DT_DRV_COMPAT, okay),                       \
+		    (TISCI_PD_DEVICE_DEFINE(pd_node)), ())
+
+#define DT_TISCI_CHECK_EACH_DEVICE_PD(node_id)                                                     \
+	TISCI_PD_DEVICE_DEFINE_IF_OKAY(DT_PHANDLE(node_id, power_domains))
+
+DT_FOREACH_STATUS_OKAY_NODE(DT_TISCI_CHECK_EACH_DEVICE_PD)
