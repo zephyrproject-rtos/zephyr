@@ -16,3 +16,4 @@
 #include <raspberrypi/rpi_pico/rp2350b.dtsi>
 #include <raspberrypi/rpi_pico/m33.dtsi>
 #include "pico_plus2.dtsi"
+#include "pico_plus2-led.dtsi"
