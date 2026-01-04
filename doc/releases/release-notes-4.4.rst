@@ -122,6 +122,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
+
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
