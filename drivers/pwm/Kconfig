@@ -42,6 +42,7 @@ config PWM_EVENT
 # zephyr-keep-sorted-start
 source "drivers/pwm/Kconfig.ambiq_timer"
 source "drivers/pwm/Kconfig.b91"
+source "drivers/pwm/Kconfig.bflb"
 source "drivers/pwm/Kconfig.cc13xx_cc26xx_timer"
 source "drivers/pwm/Kconfig.cc23x0_timer"
 source "drivers/pwm/Kconfig.ene"
