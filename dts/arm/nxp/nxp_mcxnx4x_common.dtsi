@@ -1222,6 +1222,15 @@
 		nxp,rx-dma-channel = <3>;
 		status = "disabled";
 	};
+
+	sema42: hwspinlock@b1000 {
+		compatible = "nxp,sema42";
+		reg = <0x0b1000 0x1000>;
+		clocks = <&syscon MCUX_SEMA42_CLK>;
+		#hwlock-cells = <1>;
+		num-locks = <16>;
+		status = "disabled";
+	};
 };
 
 &systick {
