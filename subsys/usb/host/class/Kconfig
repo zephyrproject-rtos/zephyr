@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+#
+# Copyright 2025 NXP
+# Copyright 2025 Linumiz GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.cdc_ecm"
+rsource "Kconfig.uvc"
+rsource "Kconfig.hub_host"
