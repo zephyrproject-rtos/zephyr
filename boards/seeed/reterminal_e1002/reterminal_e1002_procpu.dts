@@ -1,0 +1,191 @@
+/*
+ * Copyright (c) 2025 Benjamin Lemouzy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <espressif/partitions_0x0_amp_32M.dtsi>
+#include "reterminal_e1002-pinctrl.dtsi"
+
+/ {
+	model = "Seeed Studio reTerminal E1002 PROCPU";
+	compatible = "seeed,reterminal-e1002";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	aliases {
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		led0 = &green_led0;
+		pwm-led0 = &buzzer0;
+		rtc = &pfc8563_rtc;
+		sw0 = &refresh_key0;
+		sw1 = &left_key1;
+		sw2 = &right_key2;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		watchdog0 = &wdt0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		refresh_key0: button_0 {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Refresh";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		left_key1: button_1 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Left";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		right_key2: button_2 {
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Right";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led0: led_0 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			label = "Green";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		buzzer0: pwmled_0 {
+			pwms = <&ledc0 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
+			label = "Buzzer";
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(32)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	sht40_temp: sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+
+	pfc8563_rtc: pfc8563@51 {
+		status = "okay";
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&ledc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
