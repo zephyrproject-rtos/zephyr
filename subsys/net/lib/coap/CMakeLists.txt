@@ -11,6 +11,10 @@ zephyr_sources_ifdef(CONFIG_COAP_CLIENT
   coap_client.c
 )
 
+zephyr_sources_ifdef(CONFIG_COAP_CLIENT_TCP
+  coap_client_tcp.c
+)
+
 zephyr_sources_ifdef(CONFIG_COAP_SERVER
   coap_server.c
 )
