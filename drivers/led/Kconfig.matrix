@@ -1,0 +1,100 @@
+# Copyright (c) 2026 Hubert Miś
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LED_MATRIX
+	bool "LED Matrix driver"
+	default y
+	depends on DT_HAS_LED_MATRIX_ENABLED
+	help
+	  Enable LED Matrix driver.
+
+	  This driver is designed to control an LED matrix using two separate LED
+	  driver instances: one for the matrix columns and another for the matrix rows.
+
+	  The columns controller is responsible for managing the power sources
+	  or sinks for the LEDs, while the rows controller handles the complementary
+	  power control to complete the circuit.
+
+	  The current driver revision is limited to monochromatic LEDs.
+
+if LED_MATRIX
+
+config LED_MATRIX_ROWS
+	int "Number of rows in the LED Matrix"
+	default 8
+	help
+	  Define the maximal number of rows in the LED Matrix.
+	  This setting directly impacts the memory consumption of each driver instance.
+
+config LED_MATRIX_COLS
+	int "Number of columns in the LED Matrix"
+	default 8
+	help
+	  Define the maximal number of columns in the LED Matrix.
+	  This setting directly impacts the memory consumption of each driver instance.
+
+choice LED_MATRIX_REFRESH_METHOD
+	bool "Refresh method of the LED Matrix"
+	default LED_MATRIX_REFRESH_METHOD_THREAD
+	help
+	  The LED Matrix driver supports the following refresh methods:
+	  - thread: Uses a dedicated thread to refresh the LED Matrix.
+	  - ktimer: Uses timer interrupts to refresh the LED Matrix.
+	  - external: Uses an external event to trigger LED Matrix refresh.
+
+config LED_MATRIX_REFRESH_METHOD_THREAD
+	bool "Thread"
+	help
+	  Uses a dedicated thread to refresh the LED Matrix.
+	  This is the safest and most reliable method. It supports LED drivers using
+	  blocking calls (e.g. SPI or I2C based). However, it increases memory
+	  footprint and may introduce latency resulting in visible LED flicker.
+
+config LED_MATRIX_REFRESH_METHOD_KTIMER
+	bool "ktimer"
+	help
+	  Uses a ktimer to refresh the LED Matrix.
+	  This option is the least resource-intensive. It refreshes the LED matrix
+	  immediately, directly from the timer interrupt. Because of this, make sure
+	  that the LED drivers used by the matrix driver can be safely used from an
+	  interrupt context. Also, make sure that the functions to set LEDs (on/off,
+	  brightness) do not preempt each other.
+
+config LED_MATRIX_REFRESH_METHOD_EXTERNAL
+	bool "External"
+	help
+	  Uses an external event to trigger LED Matrix refresh.
+	  You have to call the refresh function periodically to refresh a matrix row.
+
+endchoice
+
+config LED_MATRIX_USE_LED_WRITE_CHANNELS
+	bool "Use led_write_channels API for columns driver"
+	help
+	  Enable the use of the led_write_channels() API for the columns driver.
+	  This approach is more efficient than falling back to a loop that calls
+	  led_set_brightness() for each column.
+
+if LED_MATRIX_REFRESH_METHOD_THREAD
+
+config LED_MATRIX_THREAD_STACK_SIZE
+	int "LED Matrix thread stack size"
+	default 1024
+	help
+	  Configure the stack size for the thread used by the LED Matrix driver.
+
+config LED_MATRIX_THREAD_PRIORITY
+	int "LED Matrix thread priority"
+	default 5
+	help
+	  Define the priority of the thread used by the LED Matrix driver.
+
+endif # LED_MATRIX_REFRESH_METHOD_THREAD
+
+config LED_MATRIX_INIT_PRIORITY
+	int "LED Matrix initialization priority"
+	default 90
+	help
+	  Set the initialization priority for the LED Matrix driver.
+
+endif # LED_MATRIX
