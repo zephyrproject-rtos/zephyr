@@ -149,7 +149,7 @@
 		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		gptfreq = <24000000>;
-		clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x6C 20>;
+		clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x6c 20>;
 		status = "disabled";
 	};
 
@@ -194,7 +194,7 @@
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
 		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
-		       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 		status = "disabled";
 	};
 
@@ -206,7 +206,7 @@
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
-		       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 		status = "disabled";
 	};
 

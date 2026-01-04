@@ -65,10 +65,7 @@
 			ranges = <0x0 0x50000000 0x10000000>,
 				 <0x10000000 0x10000000 0x10000000>;
 
-			/* Common nRF5340 Application MCU
-			 * peripheral description
-			 */
-			#include "nrf5340_cpuapp_peripherals.dtsi"
+#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
 
 		/* Additional Secure peripherals */
@@ -113,7 +110,7 @@
 
 	/* Default IPC description */
 	ipc {
-		#include "nrf5340_cpuapp_ipc.dtsi"
+#include "nrf5340_cpuapp_ipc.dtsi"
 	};
 };
 

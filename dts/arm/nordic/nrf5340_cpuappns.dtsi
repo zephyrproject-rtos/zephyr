@@ -47,10 +47,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 
-			/* Common nRF5340 Application MCU
-			 * peripheral description
-			 */
-			#include "nrf5340_cpuapp_peripherals.dtsi"
+#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
 
 		/*
@@ -69,7 +66,7 @@
 
 	/* Default IPC description */
 	ipc {
-		#include "nrf5340_cpuapp_ipc.dtsi"
+#include "nrf5340_cpuapp_ipc.dtsi"
 	};
 
 	psa_rng: psa-rng {

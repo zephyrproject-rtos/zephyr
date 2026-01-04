@@ -27,7 +27,7 @@
 
 	smartcharger0: smartcharger@b {
 		compatible = "sbs,sbs-charger";
-		reg = <0x0B>;
+		reg = <0x0b>;
 		status = "okay";
 	};
 };

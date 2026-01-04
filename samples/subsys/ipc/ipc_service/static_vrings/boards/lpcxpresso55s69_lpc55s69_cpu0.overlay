@@ -40,7 +40,7 @@
 		/* Attach MBOX driver to Mailbox Unit */
 		mbox: mailbox0@5008b000 {
 			compatible = "nxp,mbox-mailbox";
-			reg = <0x5008b000 0xEC>;
+			reg = <0x5008b000 0xec>;
 			interrupts = <31 0>;
 			rx-channels = <4>;
 			#mbox-cells = <1>;

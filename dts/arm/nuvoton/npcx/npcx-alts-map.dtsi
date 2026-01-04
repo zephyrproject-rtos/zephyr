@@ -282,141 +282,141 @@
 
 		/* SCFG DEVALT A */
 		alta_no_kso16_sl: alta0-inv {
-			alts = <&scfg 0x0A 0x0 1>;
+			alts = <&scfg 0x0a 0x0 1>;
 		};
 
 		alta_no_kso17_sl: alta1-inv {
-			alts = <&scfg 0x0A 0x1 1>;
+			alts = <&scfg 0x0a 0x1 1>;
 		};
 
 		alta_32k_out_sl: alta2 {
-			alts = <&scfg 0x0A 0x2 0>;
+			alts = <&scfg 0x0a 0x2 0>;
 		};
 
 		alta_no_vcc1_rst: alta4-inv {
-			alts = <&scfg 0x0A 0x4 1>;
+			alts = <&scfg 0x0a 0x4 1>;
 		};
 
 		alta_no_peci_en: alta6-inv {
-			alts = <&scfg 0x0A 0x6 1>;
+			alts = <&scfg 0x0a 0x6 1>;
 		};
 
 		/* SCFG DEVALT B */
 		altb_rxd_sl: altb0 {
-			alts = <&scfg 0x0B 0x0 0>;
+			alts = <&scfg 0x0b 0x0 0>;
 		};
 
 		altb_txd_sl: altb1 {
-			alts = <&scfg 0x0B 0x1 0>;
+			alts = <&scfg 0x0b 0x1 0>;
 		};
 
 		altb_rts_sl: altb2 {
-			alts = <&scfg 0x0B 0x2 0>;
+			alts = <&scfg 0x0b 0x2 0>;
 		};
 
 		altb_cts_sl: altb3 {
-			alts = <&scfg 0x0B 0x3 0>;
+			alts = <&scfg 0x0b 0x3 0>;
 		};
 
 		altb_ri_sl: altb4 {
-			alts = <&scfg 0x0B 0x4 0>;
+			alts = <&scfg 0x0b 0x4 0>;
 		};
 
 		altb_dtr_bout_sl: altb5 {
-			alts = <&scfg 0x0B 0x5 0>;
+			alts = <&scfg 0x0b 0x5 0>;
 		};
 
 		altb_dcd_sl: altb6 {
-			alts = <&scfg 0x0B 0x6 0>;
+			alts = <&scfg 0x0b 0x6 0>;
 		};
 
 		altb_dsr_sl: altb7 {
-			alts = <&scfg 0x0B 0x7 0>;
+			alts = <&scfg 0x0b 0x7 0>;
 		};
 
 		/* SCFG DEVALT C */
 		altc_shi_sl: altc1 {
-			alts = <&scfg 0x0C 0x1 0>;
+			alts = <&scfg 0x0c 0x1 0>;
 		};
 
 		altc_ps2_3_sl2: altc3 {
-			alts = <&scfg 0x0C 0x3 0>;
+			alts = <&scfg 0x0c 0x3 0>;
 		};
 
 		altc_ta1_sl2: altc4 {
-			alts = <&scfg 0x0C 0x4 0>;
+			alts = <&scfg 0x0c 0x4 0>;
 		};
 
 		altc_tb1_sl2: altc5 {
-			alts = <&scfg 0x0C 0x5 0>;
+			alts = <&scfg 0x0c 0x5 0>;
 		};
 
 		altc_ta2_sl2: altc6 {
-			alts = <&scfg 0x0C 0x6 0>;
+			alts = <&scfg 0x0c 0x6 0>;
 		};
 
 		altc_tb2_sl2: altc7 {
-			alts = <&scfg 0x0C 0x7 0>;
+			alts = <&scfg 0x0c 0x7 0>;
 		};
 
 		/* SCFG DEVALT D */
 		altd_psl_in1_ahi: altd0 {
-			alts = <&scfg 0x0D 0x0 0>;
+			alts = <&scfg 0x0d 0x0 0>;
 		};
 
 		altd_npsl_in1_sl: altd1-inv {
-			alts = <&scfg 0x0D 0x1 1>;
+			alts = <&scfg 0x0d 0x1 1>;
 		};
 
 		altd_psl_in2_ahi: altd2 {
-			alts = <&scfg 0x0D 0x2 0>;
+			alts = <&scfg 0x0d 0x2 0>;
 		};
 
 		altd_npsl_in2_sl: altd3-inv {
-			alts = <&scfg 0x0D 0x3 1>;
+			alts = <&scfg 0x0d 0x3 1>;
 		};
 
 		altd_psl_in3_ahi: altd4 {
-			alts = <&scfg 0x0D 0x4 0>;
+			alts = <&scfg 0x0d 0x4 0>;
 		};
 
 		altd_psl_in3_sl: altd5 {
-			alts = <&scfg 0x0D 0x5 0>;
+			alts = <&scfg 0x0d 0x5 0>;
 		};
 
 		altd_psl_in4_ahi: altd6 {
-			alts = <&scfg 0x0D 0x6 0>;
+			alts = <&scfg 0x0d 0x6 0>;
 		};
 
 		altd_psl_in4_sl: altd7 {
-			alts = <&scfg 0x0D 0x7 0>;
+			alts = <&scfg 0x0d 0x7 0>;
 		};
 
 		/* SCFG DEVALT E */
 
 		/* SCFG DEVALT F */
 		altf_adc5_sl: altf0 {
-			alts = <&scfg 0x0F 0x0 0>;
+			alts = <&scfg 0x0f 0x0 0>;
 		};
 
 		altf_adc6_sl: altf1 {
-			alts = <&scfg 0x0F 0x1 0>;
+			alts = <&scfg 0x0f 0x1 0>;
 		};
 
 		altf_adc7_sl: altf2 {
-			alts = <&scfg 0x0F 0x2 0>;
+			alts = <&scfg 0x0f 0x2 0>;
 		};
 
 		altf_adc8_sl: altf3 {
-			alts = <&scfg 0x0F 0x3 0>;
+			alts = <&scfg 0x0f 0x3 0>;
 		};
 
 		altf_adc9_sl: altf4 {
-			alts = <&scfg 0x0F 0x4 0>;
+			alts = <&scfg 0x0f 0x4 0>;
 		};
 
 		altf_shi_new: altf7 {
-			alts = <&scfg 0x0F 0x7 0>;
+			alts = <&scfg 0x0f 0x7 0>;
 		};
 	};
 };

@@ -71,7 +71,7 @@
 	/* SRAM */
 	sram0: memory@10010000 {
 		compatible = "mmio-sram";
-		reg = <0x10010000 0xB0000>;
+		reg = <0x10010000 0xb0000>;
 	};
 
 	xip0: memory@52000000 {
@@ -213,7 +213,7 @@
 
 		timer5: timer@400080a0 {
 			compatible = "ambiq,ctimer";
-			reg = <0x400080A0 0x20>;
+			reg = <0x400080a0 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
@@ -232,7 +232,7 @@
 
 		timer6: timer@400080c0 {
 			compatible = "ambiq,ctimer";
-			reg = <0x400080C0 0x20>;
+			reg = <0x400080c0 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
@@ -251,7 +251,7 @@
 
 		timer7: timer@400080e0 {
 			compatible = "ambiq,ctimer";
-			reg = <0x400080E0 0x20>;
+			reg = <0x400080e0 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
@@ -473,7 +473,7 @@
 
 		rtc0: rtc@40004240 {
 			compatible = "ambiq,rtc";
-			reg = <0x40004240 0xD0>;
+			reg = <0x40004240 0xd0>;
 			interrupts = <2 0>;
 			alarms-count = <1>;
 			status = "disabled";

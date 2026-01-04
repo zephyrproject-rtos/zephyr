@@ -102,8 +102,8 @@
 			interrupts = <7 0 0>;
 		};
 
-		/* Generated code for AFE devices */
-		#include "afe-mt8196.dts"
+/* Generated code for AFE devices */
+#include "afe-mt8196.dts"
 	}; /* soc */
 
 	chosen {};

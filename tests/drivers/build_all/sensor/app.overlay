@@ -50,7 +50,7 @@
 				zephyr,resolution = <12>;
 			};
 
-			#include "adc.dtsi"
+#include "adc.dtsi"
 		};
 
 		test_dac: dac@dac0dac0 {
@@ -67,7 +67,7 @@
 			#gpio-cells = <0x2>;
 			status = "okay";
 
-			#include "gpio.dtsi"
+#include "gpio.dtsi"
 		};
 
 		test_i2c: i2c@11112222 {
@@ -78,7 +78,7 @@
 			status = "okay";
 			clock-frequency = <100000>;
 
-			#include "i2c.dtsi"
+#include "i2c.dtsi"
 		};
 
 		test_pwm: pwm@12341234 {
@@ -87,7 +87,7 @@
 			#pwm-cells = <3>;
 			status = "okay";
 
-			#include "pwm.dtsi"
+#include "pwm.dtsi"
 		};
 
 		test_spi: spi@33334444 {
@@ -158,7 +158,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;	/* 0x3A */
-			#include "spi.dtsi"
+#include "spi.dtsi"
 		};
 
 		test_uart: uart@55556666 {
@@ -166,7 +166,7 @@
 			reg = <0x55556666 0x1000>;
 			status = "okay";
 
-			#include "uart.dtsi"
+#include "uart.dtsi"
 		};
 
 		test_w1: w1@66660000 {
@@ -176,7 +176,7 @@
 			#size-cells = <0>;
 			status = "okay";
 
-			#include "w1.dtsi"
+#include "w1.dtsi"
 		};
 
 		test_i3c: i3c@f0cacc1a {
@@ -186,7 +186,7 @@
 			reg = <0xf0cacc1a 0x1000>;
 			status = "okay";
 
-			#include "i3c.dtsi"
+#include "i3c.dtsi"
 		};
 	};
 };
