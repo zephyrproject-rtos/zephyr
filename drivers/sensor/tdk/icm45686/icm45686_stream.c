@@ -162,7 +162,7 @@ static void icm45686_complete_handler(struct rtio *ctx,
 				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths);
 		LOG_WRN("Flushing FIFO: %d", int_status);
 
-		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, FIFO_CONFIG2, &write_reg,
 							 1, NULL);
 		if (err < 0) {
 			LOG_ERR("Failed to acquire RTIO SQE");
@@ -203,7 +203,7 @@ static void icm45686_event_handler(const struct device *dev)
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 		(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
-		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_INT1_CONFIG0, &val, 1,
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, INT1_CONFIG0, &val, 1,
 							 NULL);
 		if (err < 0) {
 			LOG_ERR("Failed to prepare write to disable interrupts: %d", err);
@@ -238,7 +238,7 @@ static void icm45686_event_handler(const struct device *dev)
 	struct rtio_sqe *data_rd_sqe;
 
 	/** Directly read Status Register to determine what triggered the event */
-	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT,
+	err = icm45686_prep_reg_read_rtio_async(&data->bus, INT1_STATUS0 | REG_READ_BIT,
 						&data->stream.data.int_status, 1, &read_sqe);
 	if (err < 0) {
 		LOG_ERR("Failed to prepare Status-reg read: %d", err);
@@ -289,7 +289,7 @@ static void icm45686_event_handler(const struct device *dev)
 					 cfg->settings.fifo_watermark;
 
 		err = icm45686_prep_reg_read_rtio_async(
-			&data->bus, REG_FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
+			&data->bus, FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
 			buf->header.fifo_count * sizeof(struct icm45686_encoded_fifo_payload),
 			&data_rd_sqe);
 		if (err < 0) {
@@ -304,7 +304,7 @@ static void icm45686_event_handler(const struct device *dev)
 		buf->header.channels = 0x7F; /* Signal all channels are available */
 
 		err = icm45686_prep_reg_read_rtio_async(&data->bus,
-							REG_ACCEL_DATA_X1_UI | REG_READ_BIT,
+							ACCEL_DATA_X1_UI | REG_READ_BIT,
 							buf->payload.buf, sizeof(buf->payload.buf),
 							&data_rd_sqe);
 		if (err < 0) {
@@ -426,7 +426,7 @@ void icm45686_stream_submit(const struct device *dev,
 		data->stream.settings = stream.settings;
 
 		/* Disable all interrupts before re-configuring */
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable interrupts on INT1_CONFIG0: %d", err);
 			icm45686_stream_result(dev, err);
@@ -434,7 +434,7 @@ void icm45686_stream_submit(const struct device *dev,
 		}
 
 		/* Read flags to clear them */
-		err = icm45686_reg_read_rtio(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT, &val, 1);
+		err = icm45686_reg_read_rtio(&data->bus, INT1_STATUS0 | REG_READ_BIT, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to read INT1_STATUS0: %d", err);
 			icm45686_stream_result(dev, err);
@@ -445,7 +445,7 @@ void icm45686_stream_submit(const struct device *dev,
 		      REG_FIFO_CONFIG3_FIFO_ACCEL_EN(false) |
 		      REG_FIFO_CONFIG3_FIFO_GYRO_EN(false) |
 		      REG_FIFO_CONFIG3_FIFO_HIRES_EN(false);
-		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG3, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable all FIFO settings: %d", err);
 			icm45686_stream_result(dev, err);
@@ -455,7 +455,7 @@ void icm45686_stream_submit(const struct device *dev,
 		val = REG_INT1_CONFIG0_STATUS_EN_DRDY(data->stream.settings.enabled.drdy) |
 		      REG_INT1_CONFIG0_STATUS_EN_FIFO_THS(data->stream.settings.enabled.fifo_ths) |
 		      REG_INT1_CONFIG0_STATUS_EN_FIFO_FULL(data->stream.settings.enabled.fifo_full);
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT1_CONFIG0: %d", err);
 			icm45686_stream_result(dev, err);
@@ -464,7 +464,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 		val = REG_FIFO_CONFIG0_FIFO_MODE(REG_FIFO_CONFIG0_FIFO_MODE_BYPASS) |
 		      REG_FIFO_CONFIG0_FIFO_DEPTH(REG_FIFO_CONFIG0_FIFO_DEPTH_2K);
-		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable FIFO: %d", err);
 			icm45686_stream_result(dev, err);
@@ -486,14 +486,14 @@ void icm45686_stream_submit(const struct device *dev,
 
 			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG2, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG2, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to configure greater-than FIFO threshold: %d", err);
 				icm45686_stream_result(dev, err);
 				return;
 			}
 
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG1_0,
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG1_0,
 						      (uint8_t *)&fifo_ths, 2);
 			if (err) {
 				LOG_ERR("Failed to configure FIFO watermark: %d", err);
@@ -503,7 +503,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 			val = REG_FIFO_CONFIG0_FIFO_MODE(REG_FIFO_CONFIG0_FIFO_MODE_STREAM) |
 			      REG_FIFO_CONFIG0_FIFO_DEPTH(REG_FIFO_CONFIG0_FIFO_DEPTH_2K);
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG0, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to disable FIFO: %d", err);
 				icm45686_stream_result(dev, err);
@@ -514,7 +514,7 @@ void icm45686_stream_submit(const struct device *dev,
 			      REG_FIFO_CONFIG3_FIFO_ACCEL_EN(true) |
 			      REG_FIFO_CONFIG3_FIFO_GYRO_EN(true) |
 			      REG_FIFO_CONFIG3_FIFO_HIRES_EN(true);
-			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG3, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to enable FIFO: %d", err);
 				icm45686_stream_result(dev, err);
@@ -529,7 +529,8 @@ int icm45686_stream_init(const struct device *dev)
 {
 	const struct icm45686_config *cfg = dev->config;
 	struct icm45686_data *data = dev->data;
-	uint8_t val = 0;
+	inv_imu_int_state_t int_config;
+	inv_imu_int_pin_config_t int_pin_config;
 	int err;
 
 	/** Needed to get back the device handle from the callback context */
@@ -559,15 +560,22 @@ int icm45686_stream_init(const struct device *dev)
 			return -EIO;
 		}
 
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
+		err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+				GPIO_INT_EDGE_TO_ACTIVE);
+		if (err) {
+			LOG_ERR("Failed to configure interrupt");
+		}
+
+		err = inv_imu_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
 		if (err) {
 			LOG_ERR("Failed to disable all INTs");
 		}
 
-		val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
-		      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
+		int_pin_config.int_polarity = INTX_CONFIG2_INTX_POLARITY_HIGH;
+		int_pin_config.int_mode     = INTX_CONFIG2_INTX_MODE_PULSE;
+		int_pin_config.int_drive    = INTX_CONFIG2_INTX_DRIVE_OD;
+		err = inv_imu_set_pin_config_int(&data->driver, INV_IMU_INT1, &int_pin_config);
 
-		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG2, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT as push-pull: %d", err);
 		}
