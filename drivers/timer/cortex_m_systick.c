@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,12 @@
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
+#if defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM) || \
+defined(CONFIG_CORTEX_M_SYSTICK_STOP_IN_LPM)
+#define CORTEX_M_SYSTICK_STOPPED_OR_RESET_IN_LPM 1
+#else
+#define CORTEX_M_SYSTICK_STOPPED_OR_RESET_IN_LPM 0
+#endif
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 extern unsigned int z_clock_hw_cycles_per_sec;
@@ -100,7 +107,8 @@ static volatile uint32_t overflow_cyc;
  */
 static bool timeout_idle;
 
-#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM) && \
+	!defined(CONFIG_CORTEX_M_SYSTICK_STOP_IN_LPM)
 /* Cycle counter before entering the idle state. */
 static cycle_t cycle_pre_idle;
 #endif /* !CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
@@ -172,9 +180,9 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	uint32_t idle_timer_post, idle_timer_diff, idle_timer_top;
 	bool idle_timer_int_pending, idle_timer_wrap;
 
-	counter_get_value(idle_timer, &idle_timer_post);
 	idle_timer_int_pending = counter_get_pending_int(idle_timer) ? true : false;
 	idle_timer_top = counter_get_top_value(idle_timer);
+	counter_get_value(idle_timer, &idle_timer_post);
 
 	/**
 	 * Check for counter timer overflow
@@ -366,15 +374,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 */
 		z_cms_lptim_hook_on_lpm_entry(timeout_us);
 
-#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)
-		/* Store current value of SysTick counter to be able to
-		 * calculate a difference in measurements after exiting
-		 * the low-power state.
-		 */
-		cycle_pre_idle = cycle_count + elapsed();
-#else /* CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
+#if CORTEX_M_SYSTICK_STOPPED_OR_RESET_IN_LPM
 		/**
-		 * SysTick will be placed under reset once we enter
+		 * SysTick will be placed under reset or stopped once we enter
 		 * low-power mode. Turn it off right now then update
 		 * the cycle counter now, since we won't be able to
 		 * to it after waking up.
@@ -383,7 +385,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 		cycle_count += elapsed();
 		overflow_cyc = 0;
-#endif /* !CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
+#else
+		/* Store current value of SysTick counter to be able to
+		 * calculate a difference in measurements after exiting
+		 * the low-power state.
+		 */
+		cycle_pre_idle = cycle_count + elapsed();
+#endif
 		return;
 	}
 #endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
@@ -498,7 +506,10 @@ void sys_clock_idle_exit(void)
 		uint32_t dcycles, dticks;
 		uint64_t systick_us, idle_timer_us;
 
-#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)
+#if CORTEX_M_SYSTICK_STOPPED_OR_RESET_IN_LPM
+		/* SysTick was placed under reset so it didn't tick */
+		systick_diff = systick_us = 0;
+#else
 		/**
 		 * Get current value for SysTick and calculate how
 		 * much time has passed since last measurement.
@@ -506,11 +517,8 @@ void sys_clock_idle_exit(void)
 		systick_diff = cycle_count + elapsed() - cycle_pre_idle;
 		systick_us =
 			((uint64_t)systick_diff * USEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
-#else /* CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
-		/* SysTick was placed under reset so it didn't tick */
-		systick_diff = systick_us = 0;
-#endif /* !CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
 
+#endif
 		/**
 		 * Query platform-specific code for elapsed time according to LPTIM.
 		 */
@@ -548,7 +556,7 @@ void sys_clock_idle_exit(void)
 	}
 #endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 
-	if (last_load == TIMER_STOPPED || IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)) {
+	if (last_load == TIMER_STOPPED || CORTEX_M_SYSTICK_STOPPED_OR_RESET_IN_LPM) {
 		/* SysTick was stopped or placed under reset.
 		 * Restart the timer from scratch.
 		 */
@@ -571,6 +579,17 @@ void sys_clock_idle_exit(void)
 void sys_clock_disable(void)
 {
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+
+#if defined(CONFIG_CORTEX_M_SYSTICK_STOP_IN_LPM)
+	if (timeout_idle) {
+		/* Clear pending core exceptions that can cause immediate WFI return
+		 * The sys_clock_isr() also check for timeout_idle and just exit
+		 * without announcing ticks.
+		 */
+		SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+		(void)SCB->ICSR;
+	}
+#endif /* CONFIG_CORTEX_M_SYSTICK_STOP_IN_LPM */
 }
 
 static int sys_clock_driver_init(void)
