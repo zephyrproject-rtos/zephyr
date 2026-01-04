@@ -578,6 +578,28 @@ static int adxl345_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef ZTEST_UNITTEST
+struct sensor_driver_api *unit_test_get_device_api(void)
+{
+	adxl345_api_funcs.attr_set = adxl345_attr_set;
+	adxl345_api_funcs.sample_fetch = adxl345_sample_fetch;
+	adxl345_api_funcs.channel_get = adxl345_channel_get;
+#ifdef CONFIG_ADXL345_TRIGGER
+	adxl345_api_funcs.trigger_set = adxl345_trigger_set;
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	adxl345_api_funcs.submit = adxl345_submit;
+	adxl345_api_funcs.get_decoder = adxl345_get_decoder;
+#endif
+	return &adxl345_api_funcs;
+}
+
+int unit_test_invoke_adxl345_init(const struct device *dev)
+{
+	return adxl345_init(dev);
+}
+#endif
+
 #ifdef CONFIG_PM_DEVICE
 static int adxl345_pm_action(const struct device *dev,
 			     enum pm_device_action action)
