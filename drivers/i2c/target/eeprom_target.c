@@ -81,34 +81,6 @@ int eeprom_target_write_data(const struct device *dev, off_t offset,
 	return 0;
 }
 
-int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
-			 unsigned int length)
-{
-	struct i2c_eeprom_target_data *data = dev->data;
-
-	if (length > data->buffer_size) {
-		return -EINVAL;
-	}
-
-	memcpy(data->buffer, eeprom_data, length);
-
-	return 0;
-}
-
-int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
-		      unsigned int offset)
-{
-	struct i2c_eeprom_target_data *data = dev->data;
-
-	if (!data || offset >= data->buffer_size) {
-		return -EINVAL;
-	}
-
-	*eeprom_data = data->buffer[offset];
-
-	return 0;
-}
-
 #ifdef CONFIG_I2C_EEPROM_TARGET_RUNTIME_ADDR
 int eeprom_target_set_addr(const struct device *dev, uint8_t addr)
 {
