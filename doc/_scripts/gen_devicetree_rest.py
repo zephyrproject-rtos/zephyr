@@ -74,6 +74,10 @@ class VndLookup:
         }
         vnd2vendor.update(edtlib.load_vendor_prefixes_txt(vendor_prefixes))
 
+        # Remove a leading "The " so vendor names sort more naturally in lists.
+        _the = re.compile(r"^The\s+")
+        vnd2vendor.update((k, _the.sub("", v)) for k, v in vnd2vendor.items())
+
         logger.info('found %d vendor prefixes in %s', len(vnd2vendor) - 1,
                     vendor_prefixes)
         if logger.isEnabledFor(logging.DEBUG):
