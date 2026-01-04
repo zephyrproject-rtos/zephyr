@@ -12,8 +12,7 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/bos.h>
 #include <zephyr/usb/msos_desc.h>
-
-#include <cmsis_dap.h>
+#include <zephyr/dap/dap_link.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dap_sample, LOG_LEVEL_INF);
@@ -21,15 +20,22 @@ LOG_MODULE_REGISTER(dap_sample, LOG_LEVEL_INF);
 #include "webusb.h"
 #include "msosv2.h"
 
+DAP_LINK_CONTEXT_DEFINE(sample_dap_ctx, DEVICE_DT_GET_ONE(zephyr_swdp_gpio));
+
 int main(void)
 {
-	const struct device *const swd_dev = DEVICE_DT_GET_ONE(zephyr_swdp_gpio);
 	struct usbd_context *sample_usbd;
 	int ret;
 
-	ret = dap_setup(swd_dev);
+	ret = dap_link_init(&sample_dap_ctx);
 	if (ret) {
 		LOG_ERR("Failed to initialize DAP controller, %d", ret);
+		return ret;
+	}
+
+	ret = dap_link_backend_usb_init(&sample_dap_ctx);
+	if (ret) {
+		LOG_ERR("Failed to initialize DAP Link USB backend, %d", ret);
 		return ret;
 	}
 

@@ -18,6 +18,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/swdp.h>
+#include <zephyr/dap/dap_link.h>
 #include <stdint.h>
 
 #include <cmsis_dap.h>
@@ -26,26 +27,6 @@
 LOG_MODULE_REGISTER(dap, CONFIG_DAP_LOG_LEVEL);
 
 #define DAP_STATE_CONNECTED	0
-
-struct dap_context {
-	struct device *swdp_dev;
-	atomic_t state;
-	uint8_t debug_port;
-	uint8_t capabilities;
-	uint16_t pkt_size;
-	struct {
-		/* Idle cycles after transfer */
-		uint8_t idle_cycles;
-		/* Number of retries after WAIT response */
-		uint16_t retry_count;
-		/* Number of retries if read value does not match */
-		uint16_t match_retry;
-		/* Match Mask */
-		uint32_t match_mask;
-	} transfer;
-};
-
-static struct dap_context dap_ctx[1];
 
 #define CMSIS_DAP_PACKET_MIN_SIZE 64
 
@@ -69,7 +50,7 @@ BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_DEVICE_NAME) <=
 	     "DEVICE_NAME string is too long.");
 
 /* Get DAP Information */
-static uint16_t dap_info(struct dap_context *const ctx,
+static uint16_t dap_info(struct dap_link_context *const ctx,
 			 const uint8_t *const request,
 			 uint8_t *const response)
 {
@@ -165,7 +146,7 @@ static uint16_t dap_info(struct dap_context *const ctx,
 }
 
 /* Process Host Status command and prepare response */
-static uint16_t dap_host_status(struct dap_context *const ctx,
+static uint16_t dap_host_status(struct dap_link_context *const ctx,
 				const uint8_t *const request,
 				uint8_t *const response)
 {
@@ -190,11 +171,10 @@ static uint16_t dap_host_status(struct dap_context *const ctx,
 }
 
 /* Process Connect command and prepare response */
-static uint16_t dap_connect(struct dap_context *const ctx,
+static uint16_t dap_connect(struct dap_link_context *const ctx,
 			    const uint8_t *const request,
 			    uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	uint8_t port;
 
 	if (request[0] == DAP_PORT_AUTODETECT) {
@@ -214,7 +194,7 @@ static uint16_t dap_connect(struct dap_context *const ctx,
 			break;
 		}
 
-		api->swdp_port_on(ctx->swdp_dev);
+		(void)swdp_port_on(ctx->dev);
 		break;
 	case DAP_PORT_JTAG:
 		LOG_ERR("port unsupported");
@@ -231,17 +211,16 @@ static uint16_t dap_connect(struct dap_context *const ctx,
 }
 
 /* Process Disconnect command and prepare response */
-static uint16_t dap_disconnect(struct dap_context *const ctx,
+static uint16_t dap_disconnect(struct dap_link_context *const ctx,
 			       uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 
 	LOG_DBG("");
 
 	ctx->debug_port = DAP_PORT_DISABLED;
 
 	if (atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		api->swdp_port_off(ctx->swdp_dev);
+		(void)swdp_port_off(ctx->dev);
 	} else {
 		LOG_WRN("DAP device is not connected");
 	}
@@ -253,7 +232,7 @@ static uint16_t dap_disconnect(struct dap_context *const ctx,
 }
 
 /* Process Delay command and prepare response */
-static uint16_t dap_delay(struct dap_context *const ctx,
+static uint16_t dap_delay(struct dap_link_context *const ctx,
 			  const uint8_t *const request,
 			  uint8_t *const response)
 {
@@ -268,7 +247,7 @@ static uint16_t dap_delay(struct dap_context *const ctx,
 }
 
 /* Process Reset Target command and prepare response */
-static uint16_t dap_reset_target(struct dap_context *const ctx,
+static uint16_t dap_reset_target(struct dap_link_context *const ctx,
 				 uint8_t *const response)
 {
 	response[0] = DAP_OK;
@@ -279,11 +258,10 @@ static uint16_t dap_reset_target(struct dap_context *const ctx,
 }
 
 /* Process SWJ Pins command and prepare response */
-static uint16_t dap_swj_pins(struct dap_context *const ctx,
+static uint16_t dap_swj_pins(struct dap_link_context *const ctx,
 			     const uint8_t *const request,
 			     uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	uint8_t value = request[0];
 	uint8_t select = request[1];
 	uint32_t wait = sys_get_le32(&request[2]);
@@ -298,11 +276,11 @@ static uint16_t dap_swj_pins(struct dap_context *const ctx,
 
 	/* Skip if nothing selected. */
 	if (select) {
-		api->swdp_set_pins(ctx->swdp_dev, select, value);
+		(void)swdp_set_pins(ctx->dev, select, value);
 	}
 
 	do {
-		api->swdp_get_pins(ctx->swdp_dev, &state);
+		(void)swdp_get_pins(ctx->dev, &state);
 		LOG_INF("select 0x%02x, value 0x%02x, wait %u, state 0x%02x",
 			select, value, wait, state);
 		if ((value & select) == (state & select)) {
@@ -317,18 +295,17 @@ static uint16_t dap_swj_pins(struct dap_context *const ctx,
 }
 
 /* Process SWJ Clock command and prepare response */
-static uint16_t dap_swj_clock(struct dap_context *const ctx,
+static uint16_t dap_swj_clock(struct dap_link_context *const ctx,
 			      const uint8_t *const request,
 			      uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	uint32_t clk = sys_get_le32(&request[0]);
 
 	LOG_DBG("clock %d", clk);
 
 	if (atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
 		if (clk) {
-			api->swdp_set_clock(ctx->swdp_dev, clk);
+			(void)swdp_set_clock(ctx->dev, clk);
 			response[0] = DAP_OK;
 		} else {
 			response[0] = DAP_ERROR;
@@ -342,11 +319,10 @@ static uint16_t dap_swj_clock(struct dap_context *const ctx,
 }
 
 /* Process SWJ Sequence command and prepare response */
-static uint16_t dap_swj_sequence(struct dap_context *const ctx,
+static uint16_t dap_swj_sequence(struct dap_link_context *const ctx,
 				 const uint8_t *const request,
 				 uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	uint16_t count = request[0];
 
 	LOG_DBG("count %u", count);
@@ -361,18 +337,17 @@ static uint16_t dap_swj_sequence(struct dap_context *const ctx,
 		return 1U;
 	}
 
-	api->swdp_output_sequence(ctx->swdp_dev, count, &request[1]);
+	(void)swdp_output_sequence(ctx->dev, count, &request[1]);
 	response[0] = DAP_OK;
 
 	return 1U;
 }
 
 /* Process SWD Configure command and prepare response */
-static uint16_t dap_swdp_configure(struct dap_context *const ctx,
+static uint16_t dap_swdp_configure(struct dap_link_context *const ctx,
 				  const uint8_t *const request,
 				  uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	uint8_t turnaround = (request[0] & 0x03U) + 1U;
 	bool data_phase = (request[0] & 0x04U) ? true : false;
 
@@ -382,14 +357,14 @@ static uint16_t dap_swdp_configure(struct dap_context *const ctx,
 		return 1U;
 	}
 
-	api->swdp_configure(ctx->swdp_dev, turnaround, data_phase);
+	(void)swdp_configure(ctx->dev, turnaround, data_phase);
 	response[0] = DAP_OK;
 
 	return 1U;
 }
 
 /* Process Transfer Configure command and prepare response */
-static uint16_t dap_transfer_cfg(struct dap_context *const ctx,
+static uint16_t dap_transfer_cfg(struct dap_link_context *const ctx,
 				 const uint8_t *const request,
 				 uint8_t *const response)
 {
@@ -406,26 +381,25 @@ static uint16_t dap_transfer_cfg(struct dap_context *const ctx,
 	return 1U;
 }
 
-static inline uint8_t do_swdp_transfer(struct dap_context *const ctx,
+static inline uint8_t do_swdp_transfer(struct dap_link_context *const ctx,
 				      const uint8_t req_val,
 				      uint32_t *data)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	uint32_t retry = ctx->transfer.retry_count;
 	uint8_t rspns_val;
 
 	do {
-		api->swdp_transfer(ctx->swdp_dev,
-				   req_val,
-				   data,
-				   ctx->transfer.idle_cycles,
-				   &rspns_val);
+		(void)swdp_transfer(ctx->dev,
+				    req_val,
+				    data,
+				    ctx->transfer.idle_cycles,
+				    &rspns_val);
 	} while ((rspns_val == SWDP_ACK_WAIT) && retry--);
 
 	return rspns_val;
 }
 
-static uint8_t swdp_transfer_match(struct dap_context *const ctx,
+static uint8_t swdp_transfer_match(struct dap_link_context *const ctx,
 				  const uint8_t req_val,
 				  const uint32_t match_val)
 {
@@ -470,7 +444,7 @@ static uint8_t swdp_transfer_match(struct dap_context *const ctx,
  *                    one byte request (register)
  *                    four byte data (for write request only)
  */
-static uint16_t dap_swdp_transfer(struct dap_context *const ctx,
+static uint16_t dap_swdp_transfer(struct dap_link_context *const ctx,
 				 const uint8_t *const request,
 				 uint8_t *const response)
 {
@@ -612,7 +586,7 @@ end:
 }
 
 /* Delegate DAP Transfer command */
-static uint16_t dap_transfer(struct dap_context *const ctx,
+static uint16_t dap_transfer(struct dap_link_context *const ctx,
 			     const uint8_t *const request,
 			     uint8_t *const response)
 {
@@ -638,11 +612,10 @@ static uint16_t dap_transfer(struct dap_context *const ctx,
 	return retval;
 }
 
-static uint16_t dap_swdp_sequence(struct dap_context *const ctx,
+static uint16_t dap_swdp_sequence(struct dap_link_context *const ctx,
 				  const uint8_t *const request,
 				  uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	const uint8_t *request_data = request + 1;
 	uint8_t *response_data = response + 1;
 	uint8_t count = request[0];
@@ -673,10 +646,10 @@ static uint16_t dap_swdp_sequence(struct dap_context *const ctx,
 		request_data += 1;
 
 		if (input) {
-			api->swdp_input_sequence(ctx->swdp_dev, num_cycles, response_data);
+			(void)swdp_input_sequence(ctx->dev, num_cycles, response_data);
 			response_data += num_bytes;
 		} else {
-			api->swdp_output_sequence(ctx->swdp_dev, num_cycles, request_data);
+			(void)swdp_output_sequence(ctx->dev, num_cycles, request_data);
 			request_data += num_bytes;
 		}
 	}
@@ -692,7 +665,7 @@ static uint16_t dap_swdp_sequence(struct dap_context *const ctx,
  *                one byte block_request (register)
  *                data[transfer_count * sizeof(uint32_t)]
  */
-static uint16_t dap_swdp_transferblock(struct dap_context *const ctx,
+static uint16_t dap_swdp_transferblock(struct dap_link_context *const ctx,
 				      const uint8_t *const request,
 				      uint8_t *const response)
 {
@@ -772,7 +745,7 @@ end:
 }
 
 /* Delegate Transfer Block command */
-static uint16_t dap_transferblock(struct dap_context *const ctx,
+static uint16_t dap_transferblock(struct dap_link_context *const ctx,
 				  const uint8_t *const request,
 				  uint8_t *const response)
 {
@@ -805,24 +778,23 @@ static uint16_t dap_transferblock(struct dap_context *const ctx,
 }
 
 /* Process SWD Write ABORT command and prepare response */
-static uint16_t dap_swdp_writeabort(struct dap_context *const ctx,
+static uint16_t dap_swdp_writeabort(struct dap_link_context *const ctx,
 				   const uint8_t *const request,
 				   uint8_t *const response)
 {
-	const struct swdp_api *api = ctx->swdp_dev->api;
 	/* Load data (Ignore DAP index in request[0]) */
 	uint32_t data = sys_get_le32(&request[1]);
 
 	/* Write Abort register */
-	api->swdp_transfer(ctx->swdp_dev, DP_ABORT, &data,
-			  ctx->transfer.idle_cycles, NULL);
+	(void)swdp_transfer(ctx->dev, DP_ABORT, &data,
+			    ctx->transfer.idle_cycles, NULL);
 
 	response[0] = DAP_OK;
 	return 1U;
 }
 
 /* Delegate DAP Write ABORT command */
-static uint16_t dap_writeabort(struct dap_context *const ctx,
+static uint16_t dap_writeabort(struct dap_link_context *const ctx,
 			       const uint8_t *const request,
 			       uint8_t *const response)
 {
@@ -848,7 +820,7 @@ static uint16_t dap_writeabort(struct dap_context *const ctx,
 }
 
 /* Process DAP Vendor command request */
-static uint16_t dap_process_vendor_cmd(struct dap_context *const ctx,
+static uint16_t dap_process_vendor_cmd(struct dap_link_context *const ctx,
 				       const uint8_t *const request,
 				       uint8_t *const response)
 {
@@ -865,7 +837,7 @@ static uint16_t dap_process_vendor_cmd(struct dap_context *const ctx,
  *   All the subsequent command functions have the same parameter
  *   and return value structure.
  */
-static uint16_t dap_process_cmd(struct dap_context *const ctx,
+static uint16_t dap_process_cmd(struct dap_link_context *const ctx,
 				const uint8_t *request,
 				uint8_t *response)
 {
@@ -1011,8 +983,8 @@ static uint16_t dap_process_cmd(struct dap_context *const ctx,
  *   response: pointer to response data
  *   return:   number of bytes in response
  */
-uint32_t dap_execute_cmd(const uint8_t *request,
-			 uint8_t *response)
+uint32_t dap_link_execute_cmd(struct dap_link_context *const dap_link_ctx,
+			      const uint8_t *request, uint8_t *response)
 {
 	uint32_t retval;
 	uint16_t n;
@@ -1028,7 +1000,7 @@ uint32_t dap_execute_cmd(const uint8_t *request,
 		retval = sizeof(count) + 1U;
 		LOG_WRN("(untested) ID DAP EXECUTE_COMMANDS count %u", count);
 		while (count--) {
-			n = dap_process_cmd(&dap_ctx[0], request, response);
+			n = dap_process_cmd(dap_link_ctx, request, response);
 			retval += n;
 			request += n;
 			response += n;
@@ -1036,33 +1008,32 @@ uint32_t dap_execute_cmd(const uint8_t *request,
 		return retval;
 	}
 
-	return dap_process_cmd(&dap_ctx[0], request, response);
+	return dap_process_cmd(dap_link_ctx, request, response);
 }
 
-void dap_update_pkt_size(const uint16_t pkt_size)
+void dap_link_set_pkt_size(struct dap_link_context *const dap_link_ctx,
+			   const uint16_t pkt_size)
 {
-	dap_ctx[0].pkt_size = pkt_size;
-	LOG_INF("New packet size %u", dap_ctx[0].pkt_size);
+	dap_link_ctx->pkt_size = pkt_size;
+	LOG_INF("New packet size %u", dap_link_ctx->pkt_size);
 }
 
-int dap_setup(const struct device *const dev)
+int dap_link_init(struct dap_link_context *const dap_link_ctx)
 {
-	dap_ctx[0].swdp_dev = (void *)dev;
-
-	if (!device_is_ready(dap_ctx[0].swdp_dev)) {
-		LOG_ERR("SWD driver not ready");
+	if (!device_is_ready(dap_link_ctx->dev)) {
+		LOG_ERR("SWD driver %s not ready", dap_link_ctx->dev->name);
 		return -ENODEV;
 	}
 
 	/* Default settings */
-	dap_ctx[0].pkt_size = CMSIS_DAP_PACKET_MIN_SIZE;
-	dap_ctx[0].debug_port = 0U;
-	dap_ctx[0].transfer.idle_cycles = 0U;
-	dap_ctx[0].transfer.retry_count = 100U;
-	dap_ctx[0].transfer.match_retry = 0U;
-	dap_ctx[0].transfer.match_mask = 0U;
-	dap_ctx[0].capabilities = DAP_SUPPORTS_ATOMIC_COMMANDS |
-				  DAP_DP_SUPPORTS_SWD;
+	dap_link_ctx->pkt_size = CMSIS_DAP_PACKET_MIN_SIZE;
+	dap_link_ctx->debug_port = 0U;
+	dap_link_ctx->transfer.idle_cycles = 0U;
+	dap_link_ctx->transfer.retry_count = 100U;
+	dap_link_ctx->transfer.match_retry = 0U;
+	dap_link_ctx->transfer.match_mask = 0U;
+	dap_link_ctx->capabilities = DAP_SUPPORTS_ATOMIC_COMMANDS |
+				     DAP_DP_SUPPORTS_SWD;
 
 	return 0;
 }
