@@ -14,6 +14,19 @@
 include: "jedec,jesd216.yaml"
 
 properties:
+  erase-block-size:
+    type: int
+    default: 4096
+    description: |
+      Address alignment required by flash erase operations.
+      The default of 4096 is supported by the majority of vendors.
+
+  write-block-size:
+    type: int
+    default: 1
+    description: |
+      Address alignment required by flash write operations.
+
   requires-ulbpr:
     type: boolean
     description: |
