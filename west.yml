@@ -291,7 +291,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 5af8b179632c602b8a05c34c74a50dda3d546eaa
+      revision: pull/117/head
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -347,7 +347,7 @@ manifest:
       revision: 0f0c43748111c65800c6920f1c0690676423a351
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 9f09f0785f9fc716514d8956a2a446021697400c
+      revision: pull/94/head
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
