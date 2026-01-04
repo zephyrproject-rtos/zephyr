@@ -29,6 +29,12 @@
 		status = "okay";
 		reg = <0x10>;
 	};
+
+	ltr553: ltr553@23 {
+		compatible = "liteon,ltr553";
+		reg = <0x23>;
+		status = "okay";
+	};
 };
 
 &regulator {

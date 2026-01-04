@@ -1,0 +1,57 @@
+# Lite-On LTR-329/LTR-553 sensor driver configuration
+
+# Copyright (c) 2025 Konrad Sikora
+# SPDX-License-Identifier: Apache-2.0
+
+config LTR55X
+	bool "LiteOn LTR-329/LTR-553 ambient light/proximity sensor support"
+	default y
+	depends on DT_HAS_LITEON_LTR329_ENABLED || DT_HAS_LITEON_LTR553_ENABLED
+	select I2C
+	help
+	  Enable driver for Lite-On LTR-329 ambient light sensor and
+	  LTR-55X ambient light plus proximity sensor.
+
+if LTR55X
+
+choice
+	prompt "Trigger mode"
+	default LTR55X_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LTR55X_TRIGGER_NONE
+	bool "No trigger"
+
+config LTR55X_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LITEON_LTR553),int-gpios)
+	select LTR55X_TRIGGER
+
+config LTR55X_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LITEON_LTR553),int-gpios)
+	select LTR55X_TRIGGER
+
+endchoice
+
+config LTR55X_TRIGGER
+	bool
+
+config LTR55X_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LTR55X_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LTR55X_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LTR55X_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # LTR55X
