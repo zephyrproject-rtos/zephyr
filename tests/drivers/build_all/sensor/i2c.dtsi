@@ -1477,3 +1477,9 @@ test_i2c_as6221: as6221@c3 {
 	compatible = "ams,as6221";
 	reg = <0xc3>;
 };
+
+test_i2c_max30210: max30210@c4 {
+	compatible = "adi,max30210";
+	reg = <0xc4>;
+	interrupt-gpios = <&test_gpio 0 0>;
+};
