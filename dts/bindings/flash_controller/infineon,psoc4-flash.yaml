@@ -1,0 +1,5 @@
+description: Infineon PSOC4 flash controller
+
+compatible: "infineon,psoc4-flash"
+
+include: flash-controller.yaml

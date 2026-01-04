@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_INFINEON_PSOC4
+	bool "Infineon PSoC4 FLASH driver"
+	default y
+	depends on DT_HAS_INFINEON_PSOC4_FLASH_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select USE_INFINEON_FLASH
+	help
+	  Enable the Flash driver for Infineon PSoC4 family.
