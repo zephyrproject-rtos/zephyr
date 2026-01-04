@@ -39,4 +39,10 @@
 			bias-pull-down;
 		};
 	};
+
+	lxt32_default: lxt32_default {
+		group1 {
+			pinmux = <PA22_XTAL32K_XI>, <PA23_XTAL32K_XO>;
+		};
+	};
 };

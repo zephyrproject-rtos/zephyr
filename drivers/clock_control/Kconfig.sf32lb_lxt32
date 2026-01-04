@@ -1,0 +1,10 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SF32LB_LXT32
+	bool "SF32LB LXT32 clock driver"
+	default y
+	depends on CLOCK_CONTROL
+	depends on DT_HAS_SIFLI_SF32LB_LXT32_ENABLED
+	help
+	  Enable driver for the external 32.768 kHz crystal on SiFli SF32LB.
