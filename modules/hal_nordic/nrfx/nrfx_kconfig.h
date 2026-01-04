@@ -14,6 +14,168 @@
  * supported by nrfx (see the corresponding nrfx_config_*.h files).
  */
 
+#if defined(CONFIG_SOC_SERIES_NRF51X) && !defined(NRF51)
+#define NRF51
+#endif
+#if defined(CONFIG_SOC_NRF51822_QFAA) && !defined(NRF51422_XXAA)
+#define NRF51422_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF51822_QFAB) && !defined(NRF51422_XXAB)
+#define NRF51422_XXAB
+#endif
+#if defined(CONFIG_SOC_NRF51822_QFAC) && !defined(NRF51422_XXAC)
+#define NRF51422_XXAC
+#endif
+#if defined(CONFIG_SOC_NRF52805) && !defined(NRF52805_XXAA)
+#define NRF52805_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF52810) && !defined(NRF52810_XXAA)
+#define NRF52810_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF52811) && !defined(NRF52811_XXAA)
+#define NRF52811_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF52820) && !defined(NRF52820_XXAA)
+#define NRF52820_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF52832) && !defined(NRF52832_XXAA)
+#define NRF52832_XXAA
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF52833) && !defined(NRF52833_XXAA)
+#define NRF52833_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF52840) && !defined(NRF52840_XXAA)
+#define NRF52840_XXAA
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP) && !defined(NRF5340_XXAA_APPLICATION)
+#define NRF5340_XXAA_APPLICATION
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) && !defined(NRF5340_XXAA_NETWORK)
+#define NRF5340_XXAA_NETWORK
+#endif
+#if defined(CONFIG_SOC_NRF54H20_CPUAPP) && !defined(NRF54H20_XXAA)
+#define NRF54H20_XXAA
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF54H20_CPURAD) && !defined(NRF54H20_XXAA)
+#define NRF54H20_XXAA
+#define NRF_RADIOCORE
+#endif
+#if defined(CONFIG_SOC_NRF54H20_CPUPPR) && !defined(NRF54H20_XXAA)
+#define NRF54H20_XXAA
+#define NRF_PPR
+#endif
+#if defined(CONFIG_SOC_NRF54H20_CPUFLPR) && !defined(NRF54H20_XXAA)
+#define NRF54H20_XXAA
+#define NRF_FLPR
+#endif
+#if defined(CONFIG_SOC_NRF54L05) && !defined(NRF54L05_XXAA)
+#define NRF54L05_XXAA
+#define DEVELOP_IN_NRF54L15
+#endif
+#if defined(CONFIG_SOC_NRF54L05_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF54L05_CPUFLPR) && !defined(NRF_FLPR)
+#define NRF_FLPR
+#endif
+#if defined(CONFIG_SOC_NRF54L10) && !defined(NRF54L10_XXAA)
+#define NRF54L10_XXAA
+#define DEVELOP_IN_NRF54L15
+#endif
+#if defined(CONFIG_SOC_NRF54L10_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF54L10_CPUFLPR) && !defined(NRF_FLPR)
+#define NRF_FLPR
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54L15) && !defined(NRF54L15_XXAA)
+#define NRF54L15_XXAA
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54L15_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF54L15_CPUFLPR) && !defined(NRF_FLPR)
+#define NRF_FLPR
+#endif
+#if defined(CONFIG_SOC_NRF54LM20A_ENGA) && !defined(NRF54LM20A_ENGA_XXAA)
+#define NRF54LM20A_ENGA_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR) && !defined(NRF_FLPR)
+#define NRF_FLPR
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LM20A) && !defined(NRF54LM20A_ENGA_XXAA)
+#define NRF54LM20A_ENGA_XXAA
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LM20A_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF9120) && !defined(NRF9120_XXAA)
+#define NRF9120_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF9160) && !defined(NRF9160_XXAA)
+#define NRF9160_XXAA
+#endif
+#if defined(CONFIG_SOC_NRF9230_ENGB_CPUAPP) && !defined(NRF9230_ENGB_XXAA)
+#define NRF9230_ENGB_XXAA
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF9230_ENGB_CPURAD) && !defined(NRF9230_ENGB_XXAA)
+#define NRF9230_ENGB_XXAA
+#define NRF_RADIOCORE
+#endif
+#if defined(CONFIG_SOC_NRF9230_ENGB_CPUPPR) && !defined(NRF9230_ENGB_XXAA)
+#define NRF9230_ENGB_XXAA
+#define NRF_PPR
+#endif
+#if defined(CONFIG_NRF_APPROTECT_LOCK) && !defined(CONFIG_NRF_APPROTECT_LOCK)
+#define ENABLE_APPROTECT
+#endif
+#if defined(CONFIG_NRF_APPROTECT_USER_HANDLING) && !defined(CONFIG_NRF_APPROTECT_USER_HANDLING)
+#define ENABLE_APPROTECT_USER_HANDLING
+#define ENABLE_AUTHENTICATED_APPROTECT
+#endif
+#if defined(CONFIG_NRF_SECURE_APPROTECT_LOCK) && !defined(CONFIG_NRF_SECURE_APPROTECT_LOCK)
+#define ENABLE_SECURE_APPROTECT
+#define ENABLE_SECUREAPPROTECT
+#endif
+#if defined(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING) && \
+	!defined(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING)
+#define ENABLE_SECURE_APPROTECT_USER_HANDLING
+#define ENABLE_AUTHENTICATED_SECUREAPPROTECT
+#endif
+#if defined(CONFIG_NRF_TRACE_PORT) && !defined(CONFIG_NRF_TRACE_PORT)
+#define ENABLE_TRACE
+#endif
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && !defined(CONFIG_SOC_NRF5340_CPUAPP)
+#define NRF_SKIP_FICR_NS_COPY_TO_RAM
+#endif
+#if defined(CONFIG_SOC_SERIES_NRF91X) && !defined(CONFIG_SOC_SERIES_NRF91X)
+#define NRF_SKIP_FICR_NS_COPY_TO_RAM
+#endif
+#if defined(CONFIG_ARM_NONSECURE_FIRMWARE) && !defined(NRF_TRUSTZONE_NONSECURE)
+#define NRF_TRUSTZONE_NONSECURE
+#endif
+#if defined(CONFIG_LOG_BACKEND_SWO) && !defined(ENABLE_SWO)
+#define ENABLE_SWO
+#endif
+#if defined(CONFIG_NRF_SKIP_CLOCK_CONFIG) && !defined(NRF_SKIP_CLOCK_CONFIGURATION)
+#define NRF_SKIP_CLOCK_CONFIGURATION
+#endif
+#if defined(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF) && !defined(NRF_DISABLE_FICR_TRIMCNF)
+#define NRF_DISABLE_FICR_TRIMCNF
+#endif
+#if defined(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE) && \
+	!defined(NRF_SKIP_GLITCHDETECTOR_DISABLE)
+#define NRF_SKIP_GLITCHDETECTOR_DISABLE
+#endif
+#if !defined(zephyr_library_compile_definitions_ifndef) && !defined(NRF54L_CONFIGURATION_56_ENABLE)
+#define NRF54L_CONFIGURATION_56_ENABLE 0
+#endif
+
 #ifdef CONFIG_NRFX_ADC
 #define NRFX_ADC_ENABLED 1
 #endif
@@ -340,6 +502,7 @@
 #define NRF52_ERRATA_58_ENABLE_WORKAROUND 1
 #endif
 
+#if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX) && defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #define NRFX_SPIM_DT_HAS_RX_DELAY(node) DT_PROP(node, rx_delay_supported) +
 
 #ifndef NRFX_SPIM_EXTENDED_ENABLED
@@ -347,6 +510,7 @@
 #define NRFX_SPIM_EXTENDED_ENABLED 1
 #endif
 #endif
+#endif /* !defined(CONFIG_SOC_SERIES_BSIM_NRFXX) */
 
 #ifdef CONFIG_NRFX_SPIS
 #define NRFX_SPIS_ENABLED 1
@@ -462,6 +626,7 @@
 	CONFIG_NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
 #endif
 
+#if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX) && defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 /* If local or global DPPIC peripherals are used, provide the following macro
  * definitions required by the interconnect/ipct layer:
  * - NRFX_IPCTx_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
@@ -480,6 +645,8 @@
 		(NRFX_CONFIG_MASK_DT(node_id, owned_channels)), \
 		(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nordic_nrf_ipct_local), \
 			(BIT_MASK(DT_PROP(node_id, channels))), (0))))
+
+#endif /* !defined(CONFIG_SOC_SERIES_BSIM_NRFXX) */
 
 #if defined(NRF_APPLICATION)
 #define NRFX_CONFIG_IPCT_LOCAL_NODE DT_NODELABEL(cpuapp_ipct)
