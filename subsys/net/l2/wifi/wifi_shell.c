@@ -921,28 +921,23 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (iface_mode == WIFI_MODE_AP) {
-		if (params->channel == 0 && params->band == WIFI_FREQ_BAND_UNKNOWN) {
-			PR_ERROR("Band not provided when channel is 0\n");
-			return -EINVAL;
-		}
+	/* AP mode: channel 0 means ACS, band must be specified */
+	if (iface_mode == WIFI_MODE_AP && params->channel == 0 &&
+	    params->band == WIFI_FREQ_BAND_UNKNOWN) {
+		PR_ERROR("Band not provided when channel is 0 (ACS)\n");
+		return -EINVAL;
+	}
 
-		if (params->channel > 0 && params->channel <= 14 &&
-		    (params->band != WIFI_FREQ_BAND_2_4_GHZ &&
-		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
-			PR_ERROR("Band and channel mismatch\n");
-			return -EINVAL;
-		}
-
-		if (params->channel >= 36 &&
-		    (params->band != WIFI_FREQ_BAND_5_GHZ &&
-		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
-			PR_ERROR("Band and channel mismatch\n");
+	/* Validate band and channel combination when both are explicitly provided */
+	if (params->channel != WIFI_CHANNEL_ANY && params->channel != 0 &&
+	    params->band != WIFI_FREQ_BAND_UNKNOWN) {
+		if (!wifi_utils_validate_chan(params->band, params->channel)) {
+			PR_ERROR("Channel %d is not valid for %s band\n",
+				 params->channel, wifi_band_txt(params->band));
 			return -EINVAL;
 		}
 	}
-#endif
+
 	if (params->ignore_broadcast_ssid > 2) {
 		PR_ERROR("Invalid ignore_broadcast_ssid value\n");
 		return -EINVAL;
