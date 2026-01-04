@@ -828,12 +828,12 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | PBP    | Public Broadcast Source       | 1.0.0   | 3.5              | - Feature complete    |                                                  |
+   | PBP    | Public Broadcast Source       | 1.0.2   | 3.5              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Public Broadcast Sink         | 1.0.0   | 3.5              | - Feature complete    |                                                  |
+   |        | Public Broadcast Sink         | 1.0.2   | 3.5              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
