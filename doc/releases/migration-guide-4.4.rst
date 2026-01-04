@@ -99,6 +99,10 @@ Controller Area Network (CAN)
 Counter
 =======
 
+* Drivers that implement ``get_value_64`` API will now need to select
+  :kconfig:option:`CONFIG_COUNTER_64BITS_TICKS` to enable the API.
+  (:github:`94189`).
+
 * The NXP LPTMR driver (:dtcompatible:`nxp,lptmr`) has been updated to fix incorrect
   prescaler and glitch filter configuration:
 
