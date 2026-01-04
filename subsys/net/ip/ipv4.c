@@ -362,6 +362,16 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	if (net_ipv4_is_addr_mcast_raw(hdr->dst)) {
+		struct net_if *iface = net_pkt_iface(pkt);
+		struct net_if_mcast_addr *if_mcast_addr = net_if_ipv4_maddr_lookup(
+				(struct net_in_addr *)hdr->dst, &iface);
+		if (!net_if_ipv4_maddr_is_joined(if_mcast_addr)) {
+			NET_DBG("DROP: mcast not for me");
+			goto drop;
+		}
+	}
+
 	net_pkt_acknowledge_data(pkt, &ipv4_access);
 
 	if (opts_len) {
