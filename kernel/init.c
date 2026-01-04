@@ -554,10 +554,12 @@ FUNC_NORETURN void z_cstart(void)
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
+#if CONFIG_SOC_EARLY_INIT_HOOK
 	soc_early_init_hook();
-
+#endif
+#if CONFIG_BOARD_EARLY_INIT_HOOK
 	board_early_init_hook();
-
+#endif
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
 #if defined(CONFIG_SMP)

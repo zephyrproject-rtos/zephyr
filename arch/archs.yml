@@ -29,3 +29,6 @@ archs:
   - name: rx
     path: rx
     full_name: Renesas RX
+  - name: dspic
+    path: dspic
+    full_name: Microchip dsPIC

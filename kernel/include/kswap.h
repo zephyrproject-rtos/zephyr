@@ -206,7 +206,7 @@ static inline int z_swap_irqlock(unsigned int key)
 
 #ifdef CONFIG_SPIN_VALIDATE
 	/* Refer to comment in do_swap() above for details */
-# ifndef CONFIG_ARM64
+# if !defined(CONFIG_ARM64) && !defined(CONFIG_DSPIC)
 	__ASSERT(arch_irq_unlocked(key) ||
 		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
 		 "Context switching while holding lock!");

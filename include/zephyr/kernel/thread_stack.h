@@ -68,7 +68,11 @@ struct __packed z_thread_stack_element {
  */
 static inline char *z_stack_ptr_align(char *ptr)
 {
+#ifdef CONFIG_STACK_GROWS_UP
+	return (char *)ROUND_UP(ptr, ARCH_STACK_PTR_ALIGN);
+#else
 	return (char *)ROUND_DOWN(ptr, ARCH_STACK_PTR_ALIGN);
+#endif /* CONFIG_STACK_GROWS_UP */
 }
 #define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char *)(ptr)))
 
@@ -85,8 +89,15 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param ptr Initial aligned stack pointer value
  * @return Pointer to stack frame struct within the stack buffer
  */
-#define Z_STACK_PTR_TO_FRAME(type, ptr) \
-	(type *)((ptr) - sizeof(type))
+#ifdef CONFIG_STACK_GROWS_UP
+/**
+ * For architectures with upward growing stack, the frame pointer
+ * is same as that of the initial stack pointer itself.
+ */
+#define Z_STACK_PTR_TO_FRAME(type, ptr) (type *)((ptr))
+#else
+#define Z_STACK_PTR_TO_FRAME(type, ptr) (type *)((ptr) - sizeof(type))
+#endif /* CONFIG_STACK_GROWS_UP */
 
 #ifdef ARCH_KERNEL_STACK_RESERVED
 #define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)

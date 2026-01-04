@@ -2,6 +2,7 @@ tests:
   kernel.memory_protection.stack_random:
     arch_exclude:
       - posix
+      - dspic
     tags:
       - kernel
       - memory_protection

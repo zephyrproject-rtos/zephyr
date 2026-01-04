@@ -1,0 +1,15 @@
+identifier: dspic33a_curiosity/p33ak512mps512
+name: EV74H48A EVB DSPIC33AK512MPS512
+type: mcu
+arch: dspic
+toolchain:
+  - xcdsc
+ram: 64
+flash: 512
+supported:
+  - uart
+  - timer
+  - gpio
+testing:
+  default: true
+vendor: microchip

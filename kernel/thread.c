@@ -446,10 +446,17 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 
 #else /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
-	/* Initial stack pointer at the high end of the stack object, may
-	 * be reduced later in this function by TLS or random offset
+#ifdef CONFIG_STACK_GROWS_UP
+	/* Initial stack pointer at the low end of the stack object,
+	 * may be moved forward later in this function by TLS offset
+	 */
+	stack_ptr = (char *)stack;
+#else
+	/* Initial stack pointer at the high end of the stack object,
+	 * may be reduced later in this function by TLS or random offset
 	 */
 	stack_ptr = (char *)stack + stack_obj_size;
+#endif /* CONFIG_STACK_GROWS_UP */
 
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
@@ -502,7 +509,13 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		 stack_buf_size) / 100;
 #endif
 #endif /* CONFIG_THREAD_STACK_INFO */
+#ifdef CONFIG_STACK_GROWS_UP
+	/* for upward growing stack, increment the stack pointer to reserve space */
+	stack_ptr += delta;
+#else  /* CONFIG_STACK_GROWS_UP */
+	/* for downward growing stack, decreament the stack pointer to reserve space */
 	stack_ptr -= delta;
+#endif /* CONFIG_STACK_GROWS_UP */
 
 	return stack_ptr;
 }
@@ -935,7 +948,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
-#ifdef CONFIG_STACK_GROWS_UP
+#if defined(CONFIG_STACK_GROWS_UP) && !defined(CONFIG_DSPIC)
 #error "Unsupported configuration for stack analysis"
 #endif /* CONFIG_STACK_GROWS_UP */
 

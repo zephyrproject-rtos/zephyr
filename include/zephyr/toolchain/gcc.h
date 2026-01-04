@@ -592,14 +592,25 @@ do {                                                                    \
 		"\n\t.type\t" #name ",#object")
 
 #elif defined(CONFIG_RX)
-#define GEN_ABSOLUTE_SYM(name, value)                \
-	__asm__(".global\t" #name "\n\t.equ\t" #name \
-		",%c0"                               \
-		"\n\t.type\t" #name ",%%object" :  : "n"(value))
+#define GEN_ABSOLUTE_SYM(name, value)			\
+	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+		",%c0"				\
+		"\n\t.type\t" #name ",%%object" : : "n"(value))
 
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)        \
-	__asm__(".global\t" #name                    \
-		"\n\t.equ\t" #name "," #value        \
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)		\
+	__asm__(".global\t" #name					\
+		"\n\t.equ\t" #name "," #value		\
+		"\n\t.type\t" #name ",#object")
+
+#elif defined(CONFIG_DSPIC)
+#define GEN_ABSOLUTE_SYM(name, value)			\
+	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+		",%c0"				\
+		"\n\t.type\t" #name ",%%object" : : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)		\
+	__asm__(".global\t" #name					\
+		"\n\t.equ\t" #name "," #value		\
 		"\n\t.type\t" #name ",#object")
 
 #else
