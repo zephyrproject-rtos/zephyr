@@ -15,7 +15,7 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp/ns
     - nrf54lm20dk/nrf54lm20a/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
-
+    - sf32lb52_devkit_lcd/sf32lb525uc6
 tests:
   drivers.spi.spi_mode0:
     extra_configs:
@@ -74,6 +74,7 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE="8mhz.overlay"
     integration_platforms:
       - nrf52840dk/nrf52840
+      - sf32lb52_devkit_lcd/sf32lb525uc6
 
   drivers.spi.spi_fast:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
