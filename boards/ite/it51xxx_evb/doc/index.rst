@@ -1,4 +1,4 @@
-.. zephyr:board:: it515xx_evb
+.. zephyr:board:: it51xxx_evb
 
 Overview
 ********
@@ -6,9 +6,10 @@ Overview
 The IT51XXX is a 32-bit RISC-V microcontroller.
 And a highly integrated embedded controller with system functions.
 It is suitable for mobile system applications. The picture below is
-the IT51526 development board (also known as it515xx_evb) and its debug card.
+the IT51526 development board (also known as it51xxx_evb/it51526aw)
+and its debug card.
 
-.. figure:: it515xx_evb_and_debug_card.webp
+.. figure:: it51xxx_evb_and_debug_card.webp
      :align: center
      :alt: IT51526 EVB
 
@@ -52,22 +53,22 @@ Wiring
 =======
 #. Connect the Download Board to your host computer using the USB cable.
 
-#. Connect the it515xx_evb to the evolution motherboard.
+#. Connect the it51xxx_evb to the evolution motherboard.
 
 #. Connect the Download Board J5 to J38(GPC1 & GPC2) on the evolution motherboard.
 
 #. Connect the USB to UART wire to UART0 connector on the evolution motherboard.
 
-   .. image:: it515xx_evb_wiring.webp
+   .. image:: it51xxx_evb_wiring.webp
         :align: center
-        :alt: it515xx_evb wiring
+        :alt: it51xxx_evb wiring
 
    .. note:: Be careful during connection!
-    Use separate wires to connect I2C pins with pins on the it515xx_evb board.
+    Use separate wires to connect I2C pins with pins on the it51xxx_evb board.
     Wiring connection is described in the table below.
 
     +-------------+---------------+
-    |   J5        | it515xx_evb   |
+    |   J5        | it51xxx_evb   |
     |   Connector | J38 Connector |
     +=============+===============+
     |      2      |      C1       |
@@ -95,7 +96,7 @@ Building
    (see :`Zephyr Getting Started Guide`_):.
 
    .. zephyr-app-commands::
-      :board: it515xx_evb
+      :board: it51xxx_evb/it51526aw
       :zephyr-app: samples/hello_world
       :goals: build
 
@@ -108,12 +109,13 @@ Windows
 --------
 
 Use the winflash tool to program a zephyr application
-to the it515xx board flash.
+to the it51xxx/it51526aw board flash.
 
 #. Flashing steps as described in the link: `Flashing steps`_.
 
-#. Turn on the it515xx_evb board switch, you should see ``"Hello World! it515xx_evb"``
-   sent by the board. If you don't see this message, press the Reset button and the
+#. Turn on the it51xxx_evb/it51526aw board switch, you should see
+   ``"Hello World! it51xxx_evb/it51526aw"`` sent by the board.
+   If you don't see this message, press the Reset button and the
    message should appear.
 
 Ubuntu
@@ -138,20 +140,20 @@ Ubuntu
     https://www.ite.com.tw/upload/2024_01_23/6_20240123162336wu55j1Rjm4.bz2
 
 #. Split first and second terminal windows to view both of them.
-   You should see ``"Hello World! it515xx_evb"`` in the first terminal window.
+   You should see ``"Hello World! it51xxx_evb/it51526aw"`` in the first terminal window.
    If you don't see this message, press the Reset button and the message should appear.
 
 Debugging
 =========
 
-it515xx_evb board can be debugged by connecting USB to UART. We can write commands and
+it51xxx_evb board can be debugged by connecting USB to UART. We can write commands and
 read messages through minicom in the Ubuntu terminal.
 
 Troubleshooting
 ===============
 
 #. If the flash tool reports a failure, re-plug the 8390 Download board or
-   power cycle the it515xx_evb board and try again.
+   power cycle the it51xxx_evb board and try again.
 
 References
 ==========

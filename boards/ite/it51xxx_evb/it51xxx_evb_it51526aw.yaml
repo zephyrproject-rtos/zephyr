@@ -1,5 +1,5 @@
-identifier: it515xx_evb
-name: ITE IT51XXX EVB
+identifier: it51xxx_evb/it51526aw
+name: ITE-IT51XXX-EVB-IT51526AW
 type: mcu
 arch: riscv
 toolchain:
