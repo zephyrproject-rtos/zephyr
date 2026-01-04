@@ -35,10 +35,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 /* Configuration defines */
 
 #define VRING_COUNT		    2
+
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+#include <resource_table.h>
+#else
 #define VRING_RX_ADDRESS	(VDEV_START_ADDR + SHM_SIZE - VDEV_STATUS_SIZE)
 #define VRING_TX_ADDRESS	(VDEV_START_ADDR + SHM_SIZE)
 #define VRING_ALIGNMENT		4
 #define VRING_SIZE		    16
+#endif
 
 #define IPM_WORK_QUEUE_STACK_SIZE CONFIG_RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
 #define IPM_WORK_QUEUE_PRIORITY   K_HIGHEST_APPLICATION_THREAD_PRIO
@@ -62,6 +67,12 @@ static const struct device *const ipm_handle =
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
 static struct metal_io_region shm_io;
 
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+static struct fw_resource_table *rsc_table;
+static metal_phys_addr_t rsc_tab_physmap;
+static struct metal_io_region rsc_io;
+#endif
+
 static struct virtio_vring_info rvrings[2] = {
 	[0] = {
 		.info.align = VRING_ALIGNMENT,
@@ -76,7 +87,12 @@ static struct k_work ipm_work;
 
 static unsigned char ipc_virtio_get_status(struct virtio_device *vdev)
 {
-#if MASTER
+#if defined(CONFIG_RPMSG_SERVICE_LINUX)
+	struct fw_rsc_vdev *vdev_rsc = rsc_table_to_vdev(rsc_table);
+
+	RSC_TABLE_INVALIDATE(vdev_rsc, sizeof(struct fw_rsc_vdev));
+	return metal_io_read8(&rsc_io, metal_io_virt_to_offset(&rsc_io, &vdev_rsc->status));
+#elif MASTER
 	return VIRTIO_CONFIG_STATUS_DRIVER_OK;
 #else
 	return sys_read8(VDEV_STATUS_ADDR);
@@ -85,7 +101,14 @@ static unsigned char ipc_virtio_get_status(struct virtio_device *vdev)
 
 static void ipc_virtio_set_status(struct virtio_device *vdev, unsigned char status)
 {
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+	struct fw_rsc_vdev *vdev_rsc = rsc_table_to_vdev(rsc_table);
+
+	RSC_TABLE_INVALIDATE(vdev_rsc, sizeof(struct fw_rsc_vdev));
+	metal_io_write8(&rsc_io, metal_io_virt_to_offset(&rsc_io, &vdev_rsc->status), status);
+#else
 	sys_write8(status, VDEV_STATUS_ADDR);
+#endif
 }
 
 static uint32_t ipc_virtio_get_features(struct virtio_device *vdev)
@@ -113,6 +136,14 @@ static void ipc_virtio_notify(struct virtqueue *vq)
 #elif defined(CONFIG_IPM_STM32_HSEM)
 	/* No data transfer, only doorbell. */
 	status = ipm_send(ipm_handle, 0, 0, NULL, 0);
+#elif defined(CONFIG_RPMSG_SERVICE_LINUX)
+	struct virtio_vring_info *vring_info;
+	struct virtio_device *vdev;
+	unsigned int vq_id = vq->vq_queue_index;
+
+	vdev = vq->vq_dev;
+	vring_info = &vdev->vrings_info[vq_id];
+	status = ipm_send(ipm_handle, 0, vring_info->notifyid, &vring_info->notifyid, 4);
 #else
 	/* The IPM interface is unclear on whether or not ipm_send
 	 * can be called with NULL as data, thus, drivers might cause
@@ -142,7 +173,9 @@ const struct virtio_dispatch dispatch = {
 
 static void ipm_callback_process(struct k_work *work)
 {
-	virtqueue_notification(vqueue[VIRTQUEUE_ID]);
+	if (vqueue[VIRTQUEUE_ID]) {
+		virtqueue_notification(vqueue[VIRTQUEUE_ID]);
+	}
 }
 
 static void ipm_callback(const struct device *dev,
@@ -164,6 +197,10 @@ static void ipm_callback(const struct device *dev,
 int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 {
 	int32_t                  err;
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+	int rsc_size;
+	struct fw_rsc_vdev_vring *vring_rsc;
+#endif
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 
 	/* Start IPM workqueue */
@@ -185,6 +222,14 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	/* declare shared memory region */
 	metal_io_init(&shm_io, (void *)SHM_START_ADDR, shm_physmap, SHM_SIZE, -1, 0, NULL);
 	*io = &shm_io;
+
+	/* declare resource table region */
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+	rsc_table_get((void **)&rsc_table, &rsc_size);
+	rsc_tab_physmap = (uintptr_t)rsc_table;
+
+	metal_io_init(&rsc_io, rsc_table, &rsc_tab_physmap, rsc_size, -1, 0, NULL);
+#endif
 
 	/* IPM setup */
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
@@ -221,6 +266,35 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	}
 #endif
 
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+	vring_rsc = rsc_table_get_vring0(rsc_table);
+	vqueue[0] = virtqueue_allocate(vring_rsc->num);
+	if (!vqueue[0]) {
+		LOG_ERR("virtqueue_allocate failed to alloc vqueue[0]");
+		return -ENOMEM;
+	}
+
+	rvrings[0].io = &rsc_io;
+	rvrings[0].notifyid = vring_rsc->notifyid;
+	rvrings[0].info.vaddr = (void *)vring_rsc->da;
+	rvrings[0].info.num_descs = vring_rsc->num;
+	rvrings[0].info.align = vring_rsc->align;
+	rvrings[0].vq = vqueue[0];
+
+	vring_rsc = rsc_table_get_vring1(rsc_table);
+	vqueue[1] = virtqueue_allocate(vring_rsc->num);
+	if (!vqueue[1]) {
+		LOG_ERR("virtqueue_allocate failed to alloc vqueue[1]");
+		return -ENOMEM;
+	}
+
+	rvrings[1].io = &rsc_io;
+	rvrings[1].notifyid = vring_rsc->notifyid;
+	rvrings[1].info.vaddr = (void *)vring_rsc->da;
+	rvrings[1].info.num_descs = vring_rsc->num;
+	rvrings[1].info.align = vring_rsc->align;
+	rvrings[1].vq = vqueue[1];
+#else
 	/* Virtqueue setup */
 	vqueue[0] = virtqueue_allocate(VRING_SIZE);
 	if (!vqueue[0]) {
@@ -245,6 +319,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	rvrings[1].info.num_descs = VRING_SIZE;
 	rvrings[1].info.align = VRING_ALIGNMENT;
 	rvrings[1].vq = vqueue[1];
+#endif
 
 	vdev->role = RPMSG_ROLE;
 	vdev->vrings_num = VRING_COUNT;
