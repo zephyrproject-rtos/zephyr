@@ -7,7 +7,10 @@
 #ifndef ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 #define ZEPHYR_LIB_POSIX_POSIX_INTERNAL_H_
 
+#include "pthread_sched.h"
+
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <signal.h>
 
@@ -130,5 +133,54 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
 
 int posix_to_zephyr_priority(int priority, int policy);
 int zephyr_to_posix_priority(int priority, int *policy);
+
+static inline size_t __get_attr_stacksize(const struct posix_thread_attr *attr)
+{
+	return attr->stacksize + 1;
+}
+
+static inline bool __attr_is_runnable(const struct posix_thread_attr *attr)
+{
+	size_t stacksize;
+
+	if (attr == NULL || attr->stack == NULL) {
+		return false;
+	}
+
+	stacksize = __get_attr_stacksize(attr);
+	if (stacksize < PTHREAD_STACK_MIN) {
+		return false;
+	}
+
+	/* require a valid scheduler policy */
+	if (!valid_posix_policy(attr->schedpolicy)) {
+		return false;
+	}
+
+	return true;
+}
+
+static inline bool __attr_is_initialized(const struct posix_thread_attr *attr)
+{
+	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		return __attr_is_runnable(attr);
+	}
+
+	if (attr == NULL || !attr->initialized) {
+		return false;
+	}
+
+	return true;
+}
+
+static inline bool is_posix_policy_prio_valid(int priority, int policy)
+{
+	if (priority >= posix_sched_priority_min(policy) &&
+	    priority <= posix_sched_priority_max(policy)) {
+		return true;
+	}
+
+	return false;
+}
 
 #endif
