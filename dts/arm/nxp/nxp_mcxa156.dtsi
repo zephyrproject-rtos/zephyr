@@ -391,6 +391,8 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC1_CLK>;
+			dmas = <&edma0 0 51>;
+			dma-names = "fifoa";
 		};
 
 		lpadc1: lpadc@400b0000 {
@@ -407,6 +409,8 @@
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC2_CLK>;
+			dmas = <&edma0 1 52>;
+			dma-names = "fifoa";
 		};
 
 		lpcmp0: lpcmp@400b1000 {

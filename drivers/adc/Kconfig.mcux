@@ -121,6 +121,14 @@ config LPADC_CHANNEL_COUNT
 	  15 ADC channels. This value corresponds to how many of the CMD
 	  registers can be configured within the ADC.
 
+config ADC_MCUX_LPADC_DMA_DRIVEN
+	bool "Use DMA to transfer data"
+	select DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LPADC),dmas) && \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LPADC),dma-names)
+	help
+	  Use DMA in the LPADC driver to transfer data.
+
 endif # ADC_MCUX_LPADC
 
 if ADC_NXP_SAR_ADC
