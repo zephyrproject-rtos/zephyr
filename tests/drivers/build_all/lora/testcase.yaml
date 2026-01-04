@@ -1,7 +1,13 @@
+common:
+  tags:
+    - drivers
+    - lora
+
 tests:
   sample.driver.lora.rylr.send:
     extra_args: SHIELD=reyax_lora
     platform_allow: cy8ckit_062s4
+
   sample.driver.lora.build.uart:
     build_only: true
     extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"
@@ -11,6 +17,7 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
   sample.driver.lora.build.sx1262:
     build_only: true
     extra_args: DTC_OVERLAY_FILE="sx1262.overlay"
@@ -19,9 +26,28 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
   sample.driver.lora.build.sx1272:
     build_only: true
     extra_args: DTC_OVERLAY_FILE="sx1272.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  sample.driver.lora.build.lbm.sx126x:
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="lbm_sx126x.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  sample.driver.lora.build.lbm.sx127x:
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="lbm_sx127x.overlay"
     extra_configs:
       - CONFIG_SPI=y
     platform_allow:
