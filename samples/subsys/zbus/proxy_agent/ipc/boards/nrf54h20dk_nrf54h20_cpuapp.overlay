@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		zbus-proxy-ipc = <&ipc0>;
+	};
+
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
