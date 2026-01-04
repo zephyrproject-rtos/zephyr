@@ -172,14 +172,19 @@ static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
 	}
 }
 
-static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
-						uint16_t channel)
+static int ieee802154_cc13xx_cc26xx_do_set_channel(const struct device *dev,
+						uint16_t channel, bool force)
 {
 	int ret;
 	RF_CmdHandle cmd_handle;
 	RF_EventMask reason;
 	uint16_t freq, fract;
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+
+	/* Only stop radio operations and setup RX operations if really needed */
+	if (channel == drv_data->cmd_ieee_rx.channel && !force) {
+		return 0;
+	}
 
 	ret = ieee802154_cc13xx_cc26xx_channel_to_frequency(channel, &freq, &fract);
 	if (ret < 0) {
@@ -218,12 +223,19 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 		ret = -EIO;
 		goto out;
 	}
+	drv_data->rx_handle = cmd_handle;
 
 	ret = 0;
 
 out:
 	k_mutex_unlock(&drv_data->tx_mutex);
 	return ret;
+}
+
+static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
+						uint16_t channel)
+{
+	return ieee802154_cc13xx_cc26xx_do_set_channel(dev, channel, false);
 }
 
 /* TODO remove when rf driver bugfix is pulled in */
@@ -240,7 +252,7 @@ static int ieee802154_cc13xx_cc26xx_reset_channel(
 
 	LOG_DBG("re-setting channel to %u", channel);
 
-	return ieee802154_cc13xx_cc26xx_set_channel(dev, channel);
+	return ieee802154_cc13xx_cc26xx_do_set_channel(dev, channel, true);
 }
 
 static int
@@ -249,10 +261,14 @@ ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 				const struct ieee802154_filter *filter)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
+	RF_CmdHandle cmd_handle;
+	int ret = 0;
 
 	if (!set) {
 		return -ENOTSUP;
 	}
+
+	RF_cancelCmd(drv_data->rf_handle, drv_data->rx_handle, 0);
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
 		memcpy((uint8_t *)&drv_data->cmd_ieee_rx.localExtAddr,
@@ -263,10 +279,21 @@ ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
 		drv_data->cmd_ieee_rx.localPanID = filter->pan_id;
 	} else {
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	/* Run BG receive process with requested filter updated */
+	drv_data->cmd_ieee_rx.status = IDLE;
+	cmd_handle = RF_scheduleCmd(drv_data->rf_handle,
+		(RF_Op *)&drv_data->cmd_ieee_rx, RF_PriorityNormal,
+		cmd_ieee_rx_callback, RF_EventRxEntryDone);
+	if (cmd_handle < 0) {
+		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
+		return -EIO;
+	}
+	drv_data->rx_handle = cmd_handle;
+
+	return ret;
 }
 
 static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
