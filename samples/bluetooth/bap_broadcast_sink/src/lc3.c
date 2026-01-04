@@ -39,6 +39,7 @@
 #include "lc3.h"
 #include "stream_rx.h"
 #include "usb.h"
+#include "audio_codec.h"
 
 LOG_MODULE_REGISTER(lc3, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -177,6 +178,41 @@ static int get_lc3_chan_alloc_from_index(const struct stream_rx *stream, uint8_t
 #endif /* CONFIG_USE_USB_AUDIO_OUTPUT */
 }
 
+static int usb_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
+{
+	enum bt_audio_location chan_alloc;
+	int err;
+
+	err = get_lc3_chan_alloc_from_index(stream, chn, &chan_alloc);
+	if (err != 0) {
+		/* Not suitable for USB */
+		return err;
+	}
+	/* We only want to left or right from one stream to USB */
+	if ((chan_alloc == BT_AUDIO_LOCATION_FRONT_LEFT && stream != usb_left_stream) ||
+		(chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT && stream != usb_right_stream)) {
+		return -EIO;
+	}
+	/* TODO: Add support for properly support the presentation delay.
+	 * For now we just send audio to USB as soon as we get it
+	 */
+	err = usb_add_frame_to_usb(chan_alloc, lc3_rx_buf, sizeof(lc3_rx_buf), ts);
+	return err;
+}
+
+static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
+{
+	/* Codec output is mono: only the primary (channel 0) is forwarded.
+	 * Any additional channels are intentionally ignored.
+	 */
+	if (chn != 0) {
+		LOG_DBG("Ignoring non-primary channel %d for codec output", chn);
+	} else {
+		audio_codec_write_data((const uint8_t *)lc3_rx_buf, sizeof(lc3_rx_buf));
+	}
+	return 0;
+}
+
 static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 {
 	const struct stream_rx *stream = data->stream;
@@ -189,33 +225,11 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 		 */
 		if (decode_frame(data, frame_cnt + decoded_frames)) {
 			decoded_frames++;
-
+			if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+				codec_add_frame(stream, i, data->ts);
+			}
 			if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
-				enum bt_audio_location chan_alloc;
-				int err;
-
-				err = get_lc3_chan_alloc_from_index(stream, i, &chan_alloc);
-				if (err != 0) {
-					/* Not suitable for USB */
-					continue;
-				}
-
-				/* We only want to left or right from one stream to USB */
-				if ((chan_alloc == BT_AUDIO_LOCATION_FRONT_LEFT &&
-				     stream != usb_left_stream) ||
-				    (chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT &&
-				     stream != usb_right_stream)) {
-					continue;
-				}
-
-				/* TODO: Add support for properly support the presentation delay.
-				 * For now we just send audio to USB as soon as we get it
-				 */
-				err = usb_add_frame_to_usb(chan_alloc, lc3_rx_buf,
-							   sizeof(lc3_rx_buf), data->ts);
-				if (err == -EINVAL) {
-					continue;
-				}
+				usb_add_frame(stream, i, data->ts);
 			}
 		} else {
 			/* If decoding failed, we clear the data to USB as it would contain
@@ -224,11 +238,9 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 			if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 				usb_clear_frames_to_usb();
 			}
-
 			break;
 		}
 	}
-
 	return decoded_frames;
 }
 
@@ -280,8 +292,8 @@ static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 int lc3_enable(struct stream_rx *stream)
 {
 	const struct bt_audio_codec_cfg *codec_cfg = stream->stream.codec_cfg;
-	uint32_t lc3_frame_duration_us;
-	uint32_t lc3_freq_hz;
+	uint32_t lc3_frame_duration_us = 0U;
+	uint32_t lc3_freq_hz = 0U;
 	int ret;
 
 	if (codec_cfg->id != BT_HCI_CODING_FORMAT_LC3) {
@@ -298,15 +310,13 @@ int lc3_enable(struct stream_rx *stream)
 				lc3_freq_hz = (uint32_t)ret;
 			} else {
 				LOG_ERR("Unsupported frequency for LC3: %d", ret);
-				lc3_freq_hz = 0U;
+				return -EINVAL;
 			}
 		} else {
 			LOG_ERR("Invalid frequency: %d", ret);
-			lc3_freq_hz = 0U;
 		}
 	} else {
 		LOG_ERR("Could not get frequency: %d", ret);
-		lc3_freq_hz = 0U;
 	}
 
 	if (lc3_freq_hz == 0U) {
@@ -320,11 +330,9 @@ int lc3_enable(struct stream_rx *stream)
 			lc3_frame_duration_us = (uint32_t)ret;
 		} else {
 			LOG_ERR("Invalid frame duration: %d", ret);
-			lc3_frame_duration_us = 0U;
 		}
 	} else {
 		LOG_ERR("Could not get frame duration: %d", ret);
-		lc3_frame_duration_us = 0U;
 	}
 
 	if (lc3_frame_duration_us == 0U) {
@@ -397,6 +405,14 @@ int lc3_enable(struct stream_rx *stream)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+		const int err = audio_codec_cfg(lc3_freq_hz);
+
+		if ((err != 0) && (err != -EALREADY)) {
+			LOG_ERR("Failed to configure codec: %d", err);
+			return err;
+		}
+	}
 	return 0;
 }
 
