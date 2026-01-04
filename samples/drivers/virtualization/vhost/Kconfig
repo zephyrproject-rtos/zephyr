@@ -1,0 +1,100 @@
+# Copyright (c) 2025 Omori Fuma
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_LINE_NAME_0
+        string "Set name of line 0"
+
+config GPIO_LINE_NAME_1
+        string "Set name of line 1"
+
+config GPIO_LINE_NAME_2
+        string "Set name of line 2"
+
+config GPIO_LINE_NAME_3
+        string "Set name of line 3"
+
+config GPIO_LINE_NAME_4
+        string "Set name of line 4"
+
+config GPIO_LINE_NAME_5
+        string "Set name of line 5"
+
+config GPIO_LINE_NAME_6
+        string "Set name of line 6"
+
+config GPIO_LINE_NAME_7
+        string "Set name of line 7"
+
+config GPIO_LINE_NAME_8
+        string "Set name of line 8"
+
+config GPIO_LINE_NAME_9
+        string "Set name of line 9"
+
+config GPIO_LINE_NAME_10
+        string "Set name of line 10"
+
+config GPIO_LINE_NAME_11
+        string "Set name of line 11"
+
+config GPIO_LINE_NAME_12
+        string "Set name of line 12"
+
+config GPIO_LINE_NAME_13
+        string "Set name of line 13"
+
+config GPIO_LINE_NAME_14
+        string "Set name of line 14"
+
+config GPIO_LINE_NAME_15
+        string "Set name of line 15"
+
+config GPIO_LINE_NAME_16
+        string "Set name of line 16"
+
+config GPIO_LINE_NAME_17
+        string "Set name of line 17"
+
+config GPIO_LINE_NAME_18
+        string "Set name of line 18"
+
+config GPIO_LINE_NAME_19
+        string "Set name of line 19"
+
+config GPIO_LINE_NAME_20
+        string "Set name of line 20"
+
+config GPIO_LINE_NAME_21
+        string "Set name of line 21"
+
+config GPIO_LINE_NAME_22
+        string "Set name of line 22"
+
+config GPIO_LINE_NAME_23
+        string "Set name of line 23"
+
+config GPIO_LINE_NAME_24
+        string "Set name of line 24"
+
+config GPIO_LINE_NAME_25
+        string "Set name of line 25"
+
+config GPIO_LINE_NAME_26
+        string "Set name of line 26"
+
+config GPIO_LINE_NAME_27
+        string "Set name of line 27"
+
+config GPIO_LINE_NAME_28
+        string "Set name of line 28"
+
+config GPIO_LINE_NAME_29
+        string "Set name of line 29"
+
+config GPIO_LINE_NAME_30
+        string "Set name of line 30"
+
+config GPIO_LINE_NAME_31
+        string "Set name of line 31"
+
+source "Kconfig.zephyr"
