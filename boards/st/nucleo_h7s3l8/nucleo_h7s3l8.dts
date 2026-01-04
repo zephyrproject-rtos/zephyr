@@ -257,3 +257,10 @@
 		};
 	};
 };
+
+&iocell {
+	vddxspi2 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
