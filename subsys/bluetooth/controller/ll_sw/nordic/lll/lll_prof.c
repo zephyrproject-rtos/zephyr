@@ -85,10 +85,11 @@ static uint32_t timestamp_ticks_radio;
 static uint32_t timestamp_ticks_lll;
 static uint32_t timestamp_ticks_ull_high;
 static uint32_t timestamp_ticks_ull_low;
-static uint16_t  cputime_ticks_radio;
-static uint16_t  cputime_ticks_lll;
-static uint16_t  cputime_ticks_ull_high;
-static uint16_t  cputime_ticks_ull_low;
+static uint16_t cputime_ticks_radio;
+static uint16_t cputime_ticks_lll;
+static uint16_t cputime_ticks_ull_high;
+static uint16_t cputime_ticks_ull_low;
+static uint16_t cputime_ticks_overhead;
 
 void lll_prof_enter_radio(void)
 {
@@ -160,6 +161,13 @@ void lll_prof_exit_ull_low(void)
 uint16_t lll_prof_ull_low_get(void)
 {
 	return HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_low);
+}
+
+void lll_prof_overhead(uint16_t overhead_ticks)
+{
+	if (overhead_ticks > cputime_ticks_overhead) {
+		cputime_ticks_overhead = overhead_ticks;
+	}
 }
 
 void lll_prof_latency_capture(void)
@@ -343,6 +351,7 @@ static int send(struct node_rx_pdu *rx)
 	p->lll = cputime_lll;
 	p->ull_high = cputime_ull_high;
 	p->ull_low = cputime_ull_low;
+	p->overhead = HAL_TICKER_TICKS_TO_US(cputime_ticks_overhead);
 	p->radio_ticks = cputime_ticks_radio;
 	p->lll_ticks = cputime_ticks_lll;
 	p->ull_high_ticks = cputime_ticks_ull_high;

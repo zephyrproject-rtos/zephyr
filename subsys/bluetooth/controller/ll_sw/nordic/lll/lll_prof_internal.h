@@ -16,6 +16,7 @@ uint16_t lll_prof_ull_high_get(void);
 void lll_prof_enter_ull_low(void);
 void lll_prof_exit_ull_low(void);
 uint16_t lll_prof_ull_low_get(void);
+void lll_prof_overhead(uint16_t overhead_ticks);
 
 void lll_prof_latency_capture(void);
 uint16_t lll_prof_latency_get(void);
