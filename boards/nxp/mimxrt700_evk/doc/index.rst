@@ -252,7 +252,7 @@ directly, but some modifications are required (see
 for a list). The display sample can be built for this module like so:
 
 .. zephyr-app-commands::
-   :board: mimxrt700_evk
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0
    :shield: g1120b0mipi
    :zephyr-app: samples/drivers/display
    :goals: build
@@ -269,7 +269,7 @@ region must be used, which needs to connect JP45 1-2. The display sample can be 
 module like so:
 
 .. zephyr-app-commands::
-   :board: mimxrt700_evk
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0
    :shield: rk055hdmipi4ma0
    :zephyr-app: samples/drivers/display
    :goals: build
@@ -284,7 +284,7 @@ directly, but some modifications are required (see
 for a list). The display sample can be built for this module like so:
 
 .. zephyr-app-commands::
-   :board: mimxrt700_evk
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0
    :shield: zc143ac72mipi
    :zephyr-app: samples/drivers/display
    :goals: build
