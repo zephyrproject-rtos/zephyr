@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ * Copyright (c) 2025 STMicroelectronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Replace the quadspi by a "st,stm32-qspi-controller" compatible */
+/delete-node/ &quadspi;
+
+/ {
+	aliases {
+		flash0 = &mx25r6435;
+	};
+
+	soc {
+		quadspi: spi@a0001000 {
+			compatible = "st,stm32-qspi-controller";
+			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <71 0>;
+			clock-names = "qspix";
+			clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(8)>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			duplex = "MSPI_HALF_DUPLEX";
+			pinctrl-0 = <&quadspi_bk1_io0_pb1 &quadspi_bk1_io1_pb0
+				     &quadspi_bk1_io2_pa7 &quadspi_bk1_io3_pa6
+				     &quadspi_bk1_ncs_pb11 &quadspi_clk_pa3>;
+			pinctrl-names = "default";
+
+			dmas = <&dma2 7 3 STM32_DMA_PERIPH_RX>; /* channel 7 request 3 on DMA2 */
+			dma-names = "tx_rx";
+
+			status = "okay";
+
+			mx25r6435: qspi-nor-flash@0 {
+				compatible = "jedec,mspi-nor";
+				reg = <0>;
+
+				size = <DT_SIZE_M(64)>; /* 64 Mbits */
+				mspi-max-frequency = <8000000>;
+				mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+				mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+				mspi-hardware-ce-num = <0>;
+				read-command = <0xEB>;
+				write-command = <0x38>; /* PP_1_4_4 */
+				mspi-hardware-ce-num = <0>;
+				command-length = "INSTR_1_BYTE";
+				address-length = "ADDR_3_BYTE";
+				tx-dummy = <0>;
+				rx-dummy = <6>;
+				jedec-id = [c2 28 17];
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "nor";
+						reg = <0x00000000 DT_SIZE_M(4)>;
+					};
+				};
+			};
+		};
+	};
+};
