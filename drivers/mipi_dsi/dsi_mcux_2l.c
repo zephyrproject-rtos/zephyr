@@ -272,13 +272,13 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 		switch (data->src_bytes_per_pixel) {
 		case 2:
 			pixfmt = PIXEL_FORMAT_RGB_565;
-			dbi_config.mode |= MIPI_DBI_MODE_RGB565;
+			dbi_config.color_coding = MIPI_DBI_MODE_RGB565;
 			DSI_SetDbiPixelFormat(config->base, kDSI_DbiRGB565);
 			break;
 		case 3:
 			pixfmt = PIXEL_FORMAT_RGB_888;
 			/* If using the DBI, only RGB888 option 1 is supported. */
-			dbi_config.mode |= MIPI_DBI_MODE_RGB888_1;
+			dbi_config.color_coding = MIPI_DBI_MODE_RGB888_1;
 			DSI_SetDbiPixelFormat(config->base, kDSI_DbiRGB888);
 			break;
 		default:
