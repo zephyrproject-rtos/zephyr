@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026, Jonas Berg
+
+shield:
+  name: adafruit_max17048
+  full_name: Adafruit MAX17048 Fuel Gauge Shield
+  vendor: adafruit
+  supported_features:
+    - fuel-gauge
