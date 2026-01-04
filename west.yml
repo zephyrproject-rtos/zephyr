@@ -394,7 +394,7 @@ manifest:
       revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 9b07780aca6fb21f82a241ba386ad9b379809337
+      revision: pull/12/head
       path: modules/lib/zcbor
   # zephyr-keep-sorted-stop
 
