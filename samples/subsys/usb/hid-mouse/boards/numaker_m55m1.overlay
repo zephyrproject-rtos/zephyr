@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Nuvoton Technology Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Remove USBD */
+/delete-node/ &zephyr_udc0;
+
+/* Change to HSUSBD as default */
+zephyr_udc0: &hsusbd {
+	/* Needn't pinctrl for pins being dedicated */
+	status = "okay";
+};
+
+/* Enable HXT to clock HSUSB PHY */
+&scc {
+	hxt = "enable";
+};
+
+/* Copy from app.overlay */
+/ {
+	hid_dev_0: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		label = "HID0";
+		protocol-code = "none";
+		in-polling-period-us = <1000>;
+		in-report-size = <64>;
+	};
+};
