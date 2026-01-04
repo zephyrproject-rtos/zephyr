@@ -29,7 +29,7 @@ BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
            [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
-           [-n] [-o BUILD_OPT] [-f]
+           [--cmake-opt CMAKE_OPT] [-n] [-o BUILD_OPT] [-f]
            [--sysbuild | --no-sysbuild] [--domain DOMAIN]
            [--extra-conf FILE.conf]
            [--extra-dtc-overlay FILE.overlay]
@@ -119,6 +119,11 @@ class Build(Forceable):
         group = parser.add_argument_group('cmake and build tool')
         group.add_argument('-c', '--cmake', action='store_true',
                            help='force a cmake run')
+        group.add_argument('--cmake-opt', action='append',
+                           dest="cmake_opts", default=[],
+                           help='''same as '-- cmake_opt', but it prevents
+                           using '--' (e.g. for usage in alias commands);
+                           may be given multiple times.''')
         group.add_argument('--cmake-only', action='store_true',
                            help="just run cmake; don't build (implies -c)")
         group.add_argument('--domain', action='append',
@@ -262,7 +267,7 @@ class Build(Forceable):
             else:
                 self.die("test item path does not exist")
 
-        self._run_cmake(board, origin, self.args.cmake_opts)
+        self._run_cmake(board, origin)
         if args.cmake_only:
             return
 
@@ -293,7 +298,7 @@ class Build(Forceable):
 
     def _parse_remainder(self, remainder):
         self.args.source_dir = None
-        self.args.cmake_opts = None
+        self.args.cmake_opts = getattr(self.args, 'cmake_opts', [])
 
         try:
             # Only one source_dir is allowed, as the first positional arg
@@ -305,7 +310,7 @@ class Build(Forceable):
             if remainder[0] == _ARG_SEPARATOR:
                 remainder = remainder[1:]
             if remainder:
-                self.args.cmake_opts = remainder
+                self.args.cmake_opts.extend(remainder)
         except IndexError:
             pass
 
@@ -407,10 +412,7 @@ class Build(Forceable):
                         required_snippets.extend(arg_list)
                         continue
 
-                    if self.args.cmake_opts:
-                        self.args.cmake_opts.extend(args)
-                    else:
-                        self.args.cmake_opts = args
+                    self.args.cmake_opts.extend(args)
 
             self.args.sysbuild = sysbuild
 
@@ -431,10 +433,7 @@ class Build(Forceable):
             # Build the final argument list
             args_expanded = ["-D{}".format(a.replace('"', '')) for a in args]
 
-            if self.args.cmake_opts:
-                self.args.cmake_opts.extend(args_expanded)
-            else:
-                self.args.cmake_opts = args_expanded
+            self.args.cmake_opts.extend(args_expanded)
 
         return found_test_metadata
 
@@ -624,7 +623,7 @@ class Build(Forceable):
                 self.source_dir = self._find_source_dir()
                 self._sanity_check_source_dir()
 
-    def _run_cmake(self, board, origin, cmake_opts):
+    def _run_cmake(self, board, origin):
         if board is None and config_getboolean('board_warn', True):
             self.wrn('This looks like a fresh build and BOARD is unknown;',
                     "so it probably won't work. To fix, use",
