@@ -31,7 +31,6 @@ LOG_MODULE_REGISTER(spi_rts5912_spi, CONFIG_SPI_LOG_LEVEL);
 struct spi_rts5912_config {
 	volatile struct spi_reg *const spi_reg_base;
 	const struct pinctrl_dev_config *pcfg;
-	const uint32_t frequency;
 };
 
 struct spi_rts5912_data {
@@ -89,6 +88,11 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 		return -EINVAL;
 	}
 
+	if (spi_cfg->frequency <= RTS5912_SPI_FREQUENCY_BUS_MINIMUM) {
+		LOG_ERR("Can't support frequency %d", spi_cfg->frequency);
+		return -EINVAL;
+	}
+
 	ctx->config = spi_cfg;
 
 	spi->CTRL |= RTS5912_SPI_CTRL_RST_MASK;
@@ -99,11 +103,11 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 	spi->CMDN = RTS5912_SPI_ADDR_NUM; /* 7+1bit = 1Byte CMD */
 	spi->ADDR = 0x0;
 	spi->ADDRN = RTS5912_SPI_ADDR_NUM;
-	if ((spi_config->frequency < RTS5912_SPI_FREQUENCY_BUS_MAXIMUM) &&
-	    (spi_config->frequency > RTS5912_SPI_FREQUENCY_BUS_MINIMUM)) {
-		spi->CKDV = (RTS5912_PLL_DIV2_FREQUENCY / spi_config->frequency) - 1;
-	} else {
-		spi->CKDV = RTS5912_SPI_FREQUENCY_DEFAULT;
+	if ((spi_cfg->frequency < RTS5912_SPI_FREQUENCY_BUS_MAXIMUM) &&
+	    (spi_cfg->frequency > RTS5912_SPI_FREQUENCY_BUS_MINIMUM)) {
+		spi->CKDV = (RTS5912_PLL_DIV2_FREQUENCY / spi_cfg->frequency) - 1;
+	} else if (spi_cfg->frequency >= RTS5912_SPI_FREQUENCY_BUS_MAXIMUM) {
+		spi->CKDV = 0;
 	}
 	spi->CTRL |= RTS5912_SPI_CTRL_RST_MASK;
 
@@ -260,8 +264,6 @@ static DEVICE_API(spi, spi_rts5912_driver_api) = {
 	static const struct spi_rts5912_config spi_rts5912_cfg_##n = {                             \
 		.spi_reg_base = (volatile struct spi_reg *const)DT_INST_REG_ADDR(n),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.frequency =                                                                       \
-			DT_PROP_OR(n, clock_frequency, RTS5912_SPI_FREQUENCY_REGISTER_MAXIMUM),    \
 	};                                                                                         \
                                                                                                    \
 	static struct spi_rts5912_data spi_rts5912_data_##n = {                                    \
