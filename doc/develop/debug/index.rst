@@ -9,7 +9,7 @@ Application Debugging
 *********************
 
 This section is a quick hands-on reference to start debugging your
-application with QEMU. Most content in this section is already covered in
+application with QEMU. Most content in this section is already covered in both
 `QEMU`_ and `GNU_Debugger`_ reference manuals.
 
 .. _QEMU: https://wiki.qemu.org/Main_Page
