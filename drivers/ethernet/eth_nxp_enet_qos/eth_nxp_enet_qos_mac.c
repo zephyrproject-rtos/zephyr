@@ -220,7 +220,12 @@ skip:
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
 {
-	return ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE | ENET_MAC_PACKET_FILTER_PM_MASK;
+	return ETHERNET_LINK_100BASE |
+		ETHERNET_LINK_10BASE |
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		ETHERNET_PROMISC_MODE |
+#endif
+		ENET_MAC_PACKET_FILTER_PM_MASK;
 }
 
 static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
@@ -802,6 +807,15 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 			data->mac_addr.addr[2], data->mac_addr.addr[3],
 			data->mac_addr.addr[4], data->mac_addr.addr[5]);
 		return 0;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (cfg->promisc_mode) {
+			base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PR_MASK;
+		} else {
+			base->MAC_PACKET_FILTER &= ~ENET_MAC_PACKET_FILTER_PR_MASK;
+		}
+		return 0;
+#endif
 	default:
 		break;
 	}
