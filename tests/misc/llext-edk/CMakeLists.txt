@@ -2,11 +2,17 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+# verify information from dependencies is available to extensions
+add_library(dependency INTERFACE)
+target_compile_definitions(dependency INTERFACE GLOBAL_OPT="set")
+
 project(llext_edk_test LANGUAGES C)
 
 target_sources(app PRIVATE src/main.c src/foo.c)
 zephyr_include_directories(include)
 zephyr_include_directories(${ZEPHYR_BASE}/boards/native/common)
+target_link_libraries(app PUBLIC dependency)
 
 if(EXTENSION_DIR)
     target_include_directories(app PRIVATE ${EXTENSION_DIR})
