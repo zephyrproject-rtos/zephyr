@@ -601,6 +601,14 @@ if(CONFIG_INSTRUMENTATION)
   endif()
 endif()
 
+if(CONFIG_COMPILER_CODEGEN_VLIW_ENABLED)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,generate_vliw>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,generate_vliw>>)
+elseif(CONFIG_COMPILER_CODEGEN_VLIW_DISABLED)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_generate_vliw>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_generate_vliw>>)
+endif()
+
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 include(cmake/extra_flags.cmake)
