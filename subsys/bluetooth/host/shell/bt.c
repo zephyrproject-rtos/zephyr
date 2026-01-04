@@ -5176,11 +5176,14 @@ int ead_update_ad(void)
 	while (idx < bt_shell_ead_data_size && ad_structs_idx < BT_SHELL_EAD_MAX_AD) {
 		ad = &ad_structs[ad_structs_idx];
 
-		/* the data_len from bt_data struct doesn't include the size of the type */
-		ad->data_len = bt_shell_ead_data[idx] - 1;
-
-		if (ad->data_len < 0) {
-			/* if the len is less than 0 that mean there is not even a type field */
+		/* bt_shell_ead_data[idx] points to the start of an encrypted advertising
+		 * tuple, so bt_shell_ead_data[idx] is the length field, bt_shell_ead_data[idx + 1]
+		 * is the type field and bt_shell_ead_data[idx + 2] is the start of the value
+		 */
+		if (bt_shell_ead_data[idx] > 0) {
+			ad->data_len = bt_shell_ead_data[idx] - 1;
+		} else {
+			/* Zero length means the AD field does not even contain a type */
 			bt_shell_error("Failed to update AD due to malformed AD.");
 			return -ENOEXEC;
 		}
