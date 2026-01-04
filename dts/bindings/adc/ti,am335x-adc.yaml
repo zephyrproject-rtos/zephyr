@@ -6,7 +6,7 @@ description: TI AM335X ADC
 
 compatible: "ti,am335x-adc"
 
-include: [adc-controller.yaml]
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
   interrupts:
@@ -14,7 +14,6 @@ properties:
 
   ti,vrefp:
     type: int
-    required: true
     description: Reference Voltage (in mV)
 
   ti,fifo:
