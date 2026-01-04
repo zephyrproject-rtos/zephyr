@@ -60,22 +60,26 @@ Signing Tool
 As firmware binary signing is mandatory on Intel products from Skylake onwards,
 you will also need to set up the SOF rimage signing tool and key.
 
-.. code-block:: shell
+Clone the SOF repository and follow the instructions in the rimage :file:`README.md`
+to build the tool on your system.
 
-   cd zephyrproject
-   west config manifest.project-filter -- +sof
-   west update
-   cd modules/audio/sof/tools/rimage
-
-Follow the instructions in the rimage :file:`README.md` to build the tool on
-your system. You can either copy the executable to a directory in your PATH or
+You can either copy the executable to a directory in your PATH or
 use ``west config rimage.path /path/to/rimage-build/rimage``; see more details
 in the output of ``west sign -h``. Running directly from the build directory
 makes you less likely to use an obsolete rimage version by mistake.
 
-Platform-specific configuration files are located in the ``rimage/config/``
-subdirectory. For a different configuration directory you can use:
-``west config build.cmake-args -- -DRIMAGE_CONFIG_PATH=/path/to/my/rimage/config``.
+The west signing script will also need to know the path to the SOF directory.
+Depending on whether you need to use twister:
+
+* If you only need to build with ``west build``:
+
+  * Platform-specific configuration files are located in the ``rimage/config/``
+    subdirectory. For a different configuration directory you can use:
+    ``west config build.cmake-args -- -DRIMAGE_CONFIG_PATH=/path/to/my/rimage/config``.
+
+* If you also need to use twister to build and run on hardware:
+
+  * Environment variable ``SOF_SRC_DIR`` must be set to point to the SOF directory.
 
 
 Xtensa Toolchain (Optional)
