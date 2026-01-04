@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(rtc_sf32lb, CONFIG_RTC_LOG_LEVEL);
 #define SYS_CFG_RTC_TR offsetof(HPSYS_CFG_TypeDef, RTC_TR)
 #define SYS_CFG_RTC_DR offsetof(HPSYS_CFG_TypeDef, RTC_DR)
 
+#define RTC_SF32LB_RSF_TIMEOUT_US 3000U
+
 /*
  * The RTC clock, CLK_RTC, can be configured to use the LXT32 (32.768 kHz) or
  * LRC10 (9.8 kHz). The prescaler values need to be set such that the CLK1S
@@ -73,6 +75,7 @@ struct rtc_sf32lb_config {
 #endif
 };
 
+#ifdef CONFIG_RTC_ALARM
 static void rtc_irq_handler(const struct device *dev)
 {
 	const struct rtc_sf32lb_config *config = dev->config;
@@ -82,15 +85,14 @@ static void rtc_irq_handler(const struct device *dev)
 	if (isr & RTC_ISR_ALRMF) {
 		sys_clear_bit(config->base + RTC_ISR, RTC_ISR_ALRMF_Pos);
 
-#ifdef CONFIG_RTC_ALARM
-		atomic_set_bit(&data->is_pending, 0);
+		atomic_set_bit(data->is_pending, 0);
 
 		if (data->alarm_cb.cb) {
 			data->alarm_cb.cb(dev, 0, data->alarm_cb.user_data);
 		}
-#endif
 	}
 }
+#endif
 
 static inline int rtc_sf32lb_enter_init_mode(const struct device *dev)
 {
@@ -118,6 +120,8 @@ static inline void rtc_sf32lb_wait_for_sync(const struct device *dev)
 	const struct rtc_sf32lb_config *config = dev->config;
 
 	sys_clear_bit(config->base + RTC_ISR, RTC_ISR_RSF_Pos);
+
+	k_busy_wait(RTC_SF32LB_RSF_TIMEOUT_US);
 }
 
 static int rtc_sf32lb_set_time(const struct device *dev, const struct rtc_time *timeptr)
@@ -175,7 +179,17 @@ static int rtc_sf32lb_get_time(const struct device *dev, struct rtc_time *timept
 	reg = sys_read32(config->cfg + SYS_CFG_RTC_DR);
 
 	if (reg & RTC_DR_CB) { /* 20th century */
-		timeptr->tm_year = bcd2bin(FIELD_GET(RTC_DR_YT_Msk | RTC_DR_YU_Msk, reg));
+		uint8_t year = bcd2bin(FIELD_GET(RTC_DR_YT_Msk | RTC_DR_YU_Msk, reg));
+
+		if (year < 70) {
+			/* Year is 00-69, which should be 2000-2069. Clear CB bit */
+			sys_clear_bit(config->base + RTC_DATER, RTC_DR_CB_Pos);
+
+			timeptr->tm_year = year + 100;
+		} else {
+			/* Year is 70-99, which is 1970-1999. Keep CB bit set */
+			timeptr->tm_year = year;
+		}
 	} else {
 		timeptr->tm_year = bcd2bin(FIELD_GET(RTC_DR_YT_Msk | RTC_DR_YU_Msk, reg)) + 100;
 	}
@@ -319,7 +333,7 @@ static int rtc_sf32lb_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	return (int)atomic_test_and_clear_bit(&data->is_pending, 0);
+	return (int)atomic_test_and_clear_bit(data->is_pending, 0);
 }
 
 static int rtc_sf32lb_alarm_set_callback(const struct device *dev, uint16_t id,
@@ -378,7 +392,8 @@ static int rtc_sf32lb_init(const struct device *dev)
 }
 
 #define RTC_SF32LB_DEFINE(n)                                                                       \
-	static void rtc_sf32lb_irq_config_func_##n(void);                                          \
+	IF_ENABLED(CONFIG_RTC_ALARM, (                                                             \
+		static void rtc_sf32lb_irq_config_func_##n(void);))                                \
 	static const struct rtc_sf32lb_config rtc_sf32lb_config_##n = {                            \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.cfg = DT_REG_ADDR(DT_INST_PHANDLE(n, sifli_cfg)),                                 \
