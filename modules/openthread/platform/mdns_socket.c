@@ -294,10 +294,10 @@ static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *a
 {
 	uint16_t length = otMessageGetLength(message);
 	struct otbr_msg_ctx *req = NULL;
-	otIp4Address ot_ipv4_addr = {0};
 #if defined(CONFIG_NET_IPV4)
 	bool send_ipv4 = false;
 	struct net_sockaddr_in addr_v4 = {0};
+	otIp4Address ot_ipv4_addr = {0};
 #endif /* CONFIG_NET_IPV4*/
 	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
 					   .sin6_port = net_htons(aAddress->mPort),
@@ -341,10 +341,10 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 #if defined(CONFIG_NET_IPV4)
 	struct net_sockaddr_in addr_v4 = {0};
 	net_socklen_t optlen = sizeof(int);
+	int family;
 #endif /* CONFIG_NET_IPV4 */
 	net_socklen_t addrlen;
 	ssize_t len = 0;
-	int family;
 	struct otbr_msg_ctx *req = NULL;
 
 	VerifyOrExit(evt->event.revents & ZSOCK_POLLIN);

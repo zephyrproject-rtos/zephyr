@@ -28,9 +28,9 @@
 #include <zephyr/net/openthread.h>
 #include <zephyr/sys/util.h>
 
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 #include <openthread/nat64.h>
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 
 #include <inttypes.h>
 #include <stdarg.h>
@@ -62,10 +62,10 @@ K_MEM_SLAB_DEFINE_STATIC(border_router_messages_slab, sizeof(struct otbr_msg_ctx
 
 static const char *create_base_name(otInstance *ot_instance, char *base_name);
 static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool add);
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 static void openthread_border_router_start_nat64_service(void);
 static void openthread_border_router_stop_nat64_service(void);
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 
 #if defined(CONFIG_NET_IPV4)
 static void openthread_border_router_check_for_dhcpv4_addr(struct net_if *iface,
@@ -148,11 +148,9 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	otBorderRoutingDhcp6PdSetEnabled(instance, true);
 	otBackboneRouterSetEnabled(instance, true);
 	otSrpServerSetAutoEnableMode(instance, true);
-#if (defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) || \
-	defined(CONFIG_OPENTHREAD_NAT64_BORDER_ROUTING)) && \
-	defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 	openthread_border_router_set_nat64_translator_enabled(true);
-#endif
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 
 #if defined(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY)
 	otDnssdUpstreamQuerySetEnabled(instance, true);
@@ -195,9 +193,9 @@ static int openthread_stop_border_router_services(struct net_if *ot_iface,
 		infra_if_stop_icmp6_listener();
 		otBorderAgentSetEnabled(instance, false);
 		udp_plat_deinit();
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 		openthread_border_router_stop_nat64_service();
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 		openthread_border_router_add_or_rm_route_to_multicast_groups(false);
 
 	}
@@ -298,9 +296,9 @@ static void ail_ipv4_address_event_handler(struct net_mgmt_event_callback *cb, u
 	}
 
 	mdns_plat_monitor_interface(iface);
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 	openthread_border_router_start_nat64_service();
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -664,9 +662,7 @@ static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool ad
 }
 
 
-#if (defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) || \
-	defined(CONFIG_OPENTHREAD_NAT64_BORDER_ROUTING)) && \
-	defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 void openthread_border_router_set_nat64_translator_enabled(bool enable)
 {
 	otInstance *instance = openthread_get_default_instance();
@@ -676,7 +672,7 @@ void openthread_border_router_set_nat64_translator_enabled(bool enable)
 		otNat64SetEnabled(instance, enable);
 	}
 }
-#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+
 static void openthread_border_router_start_nat64_service(void)
 {
 	otInstance *instance = openthread_get_default_instance();
@@ -708,5 +704,4 @@ static void openthread_border_router_stop_nat64_service(void)
 	otNat64ClearIp4Cidr(instance);
 	openthread_border_router_set_nat64_translator_enabled(nat64_translator_enabled);
 }
-#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
-#endif
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR */
