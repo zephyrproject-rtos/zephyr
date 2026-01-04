@@ -10,6 +10,19 @@
  * Internal heap APIs
  */
 
+#ifdef CONFIG_SYS_HEAP_ASAN_POISONING
+#include <sanitizer/asan_interface.h>
+
+/* Define ASAN-specific attributes and macros */
+#define HEAP_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#define ASAN_POISON_HEAP_MEMORY(addr, size) ASAN_POISON_MEMORY_REGION(addr, size)
+#define ASAN_UNPOISON_HEAP_MEMORY(addr, size) ASAN_UNPOISON_MEMORY_REGION(addr, size)
+#else
+#define HEAP_NO_SANITIZE_ADDRESS
+#define ASAN_POISON_HEAP_MEMORY(addr, size)
+#define ASAN_UNPOISON_HEAP_MEMORY(addr, size)
+#endif
+
 /* These validation checks are non-trivially expensive, so enable
  * only when debugging the heap code.  They shouldn't be routine
  * assertions.
@@ -104,7 +117,7 @@ static inline chunk_unit_t *chunk_buf(struct z_heap *h)
 	return (chunk_unit_t *)h;
 }
 
-static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
+static inline chunkid_t HEAP_NO_SANITIZE_ADDRESS chunk_field(struct z_heap *h, chunkid_t c,
 				    enum chunk_fields f)
 {
 	chunk_unit_t *buf = chunk_buf(h);
@@ -117,7 +130,7 @@ static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
 	}
 }
 
-static inline void chunk_set(struct z_heap *h, chunkid_t c,
+static inline void HEAP_NO_SANITIZE_ADDRESS chunk_set(struct z_heap *h, chunkid_t c,
 			     enum chunk_fields f, chunkid_t val)
 {
 	CHECK(c <= h->end_chunk);
