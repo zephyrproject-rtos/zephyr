@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025 Paul Timke <ptimkec@live.com>
- *
+ * Copyright (c) 2025  Mohamed Haggouna <mohamed.haggouna@gmail.com>
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,8 +22,7 @@
  */
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #include <zephyr/drivers/sensor.h>
@@ -56,6 +56,26 @@ enum sensor_channel_paj7620 {
 	 */
 	SENSOR_CHAN_PAJ7620_GESTURES = SENSOR_CHAN_PRIV_START
 };
+
+#ifdef CONFIG_PAJ7620_POWER_MODES
+/**
+ * @brief Custom sensor attributes for PAJ7620
+ */
+enum sensor_attribute_paj7620 {
+	/* Sensor  power Modes
+	 *
+	 * PAJ7620_NORMAL_MODE
+	 * PAJ7620_NORMAL_MODE
+	 * See datasheet for more info on different modes.
+	 */
+	SENSOR_ATTR_POWER_MODE = SENSOR_ATTR_PRIV_START + 1,
+};
+enum paj7620_pm_mode {
+	/*PAJ7620 possible power modes*/
+	PAJ7620_NORMAL_MODE = 0,
+	PAJ7620_SLEEP_MODE
+};
+#endif
 
 #ifdef __cplusplus
 }
