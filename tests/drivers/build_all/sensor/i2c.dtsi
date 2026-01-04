@@ -1477,3 +1477,8 @@ test_i2c_as6221: as6221@c3 {
 	compatible = "ams,as6221";
 	reg = <0xc3>;
 };
+
+test_i2c_opt3004: opt3004@c4 {
+	compatible = "ti,opt3004";
+	reg = <0xc4>;
+};
