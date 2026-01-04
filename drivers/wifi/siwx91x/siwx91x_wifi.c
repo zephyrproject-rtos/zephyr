@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT silabs_siwx91x_wifi
 
 #include <zephyr/version.h>
+#include <zephyr/net/ethernet.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -25,6 +26,10 @@
 LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
+
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+static struct net_if_mcast_monitor mcast_monitor;
+#endif
 
 static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 {
@@ -303,6 +308,51 @@ unref:
 
 #endif
 
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+static void siwx91x_mcast_cb(struct net_if *iface, const struct net_addr *addr, bool is_joined)
+{
+	sl_wifi_multicast_filter_info_t filter_info = {};
+	struct net_eth_addr mac_addr;
+	sl_status_t status;
+
+	ARG_UNUSED(iface);
+
+	switch (addr->family) {
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	case AF_INET:
+		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
+		break;
+#endif
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	case AF_INET6:
+		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
+		break;
+#endif
+	default:
+		LOG_ERR("Invalid address family: %d", addr->family);
+		return;
+	}
+
+	if (is_joined) {
+		filter_info.command_type = SL_WIFI_MULTICAST_MAC_ADD_BIT;
+	} else {
+		filter_info.command_type = SL_WIFI_MULTICAST_MAC_CLEAR_BIT;
+	}
+
+	memcpy(filter_info.mac_address.octet, mac_addr.addr, sizeof(mac_addr.addr));
+
+	status = sl_wifi_configure_multicast_filter(&filter_info);
+	if (status != SL_STATUS_OK) {
+		LOG_ERR("Failed to %s multicast filter: 0x%x", is_joined ? "add" : "remove",
+			status);
+	} else {
+		LOG_DBG("Multicast filter %s for %02x:%02x:%02x:%02x:%02x:%02x",
+			is_joined ? "added" : "removed", mac_addr.addr[0], mac_addr.addr[1],
+			mac_addr.addr[2], mac_addr.addr[3], mac_addr.addr[4], mac_addr.addr[5]);
+	}
+}
+#endif
+
 static void siwx91x_ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *eth_ctx;
@@ -499,6 +549,10 @@ static void siwx91x_iface_init(struct net_if *iface)
 	}
 	siwx91x_sock_init(iface);
 	siwx91x_ethernet_init(iface);
+
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+	net_if_mcast_mon_register(&mcast_monitor, iface, siwx91x_mcast_cb);
+#endif
 
 	sidev->state = WIFI_STATE_INACTIVE;
 }
