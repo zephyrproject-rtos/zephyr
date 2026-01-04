@@ -20,6 +20,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <soc/gpio_reg.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_ledc_esp32, CONFIG_PWM_LOG_LEVEL);
@@ -362,6 +365,33 @@ sem_give:
 	return ret;
 }
 
+#ifdef CONFIG_SOC_SERIES_ESP32C3
+/* Workaround for ESP32-C3 LEDC Pin Muxing (Output Enable) */
+static void pwm_led_esp32_fix_output_enable(const struct pinctrl_dev_config *pincfg)
+{
+	const struct pinctrl_state *state;
+	int ret;
+
+	ret = pinctrl_lookup_state(pincfg, PINCTRL_STATE_DEFAULT, &state);
+	if (ret < 0) {
+		return;
+	}
+
+	for (uint8_t i = 0; i < state->pin_cnt; i++) {
+		uint32_t pin_curr = ESP32_PIN_NUM(state->pins[i].pinmux);
+		uint32_t sig_out = ESP32_PIN_SIGO(state->pins[i].pinmux);
+		uint32_t reg_addr = GPIO_FUNC0_OUT_SEL_CFG_REG + (pin_curr * 4);
+		uint32_t val = sig_out | BIT(9); /* Signal Index | Output Enable Select */
+
+		/* 1. Force GPIO Output Enable (Atomic Set) */
+		sys_write32(BIT(pin_curr), GPIO_ENABLE_W1TS_REG);
+
+		/* 2. Force Matrix Signal Connection + OE */
+		sys_write32(val, reg_addr);
+	}
+}
+#endif
+
 int pwm_led_esp32_init(const struct device *dev)
 {
 	const struct pwm_ledc_esp32_config *config = dev->config;
@@ -417,6 +447,11 @@ int pwm_led_esp32_init(const struct device *dev)
 		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
 		return ret;
 	}
+
+#ifdef CONFIG_SOC_SERIES_ESP32C3
+	/* Apply workaround for Output Enable on ESP32-C3 */
+	pwm_led_esp32_fix_output_enable(config->pincfg);
+#endif
 
 	return 0;
 }
