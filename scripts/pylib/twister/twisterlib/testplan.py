@@ -90,6 +90,8 @@ class TestConfiguration:
         "test-config-schema.yaml"
     )
 
+    tc_schema_validator = scl.make_yaml_validator(tc_schema_path)
+
     def __init__(self, config_file):
         self.test_config = None
         self.override_default_platforms = False
@@ -99,8 +101,7 @@ class TestConfiguration:
 
     def parse(self, config_file):
         if os.path.exists(config_file):
-            tc_schema = scl.yaml_load(self.tc_schema_path)
-            self.test_config = scl.yaml_load_verify(config_file, tc_schema)
+            self.test_config = scl.yaml_load_verify(config_file, self.tc_schema_validator)
         else:
             raise TwisterRuntimeError(f"File {config_file} not found.")
 
@@ -154,12 +155,15 @@ class TestPlan:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    suite_schema = scl.yaml_load(
-        os.path.join(ZEPHYR_BASE,
-                     "scripts", "schemas", "twister", "testsuite-schema.yaml"))
-    quarantine_schema = scl.yaml_load(
-        os.path.join(ZEPHYR_BASE,
-                     "scripts", "schemas", "twister", "quarantine-schema.yaml"))
+    suite_schema_path = os.path.join(
+        ZEPHYR_BASE, "scripts", "schemas", "twister", "testsuite-schema.yaml"
+    )
+    quarantine_schema_path = os.path.join(
+        ZEPHYR_BASE, "scripts", "schemas", "twister", "quarantine-schema.yaml"
+    )
+
+    suite_schema_validator = scl.make_yaml_validator(suite_schema_path)
+    quarantine_schema_validator = scl.make_yaml_validator(quarantine_schema_path)
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
@@ -242,7 +246,7 @@ class TestPlan:
             for quarantine_file in ql:
                 try:
                     # validate quarantine yaml file against the provided schema
-                    scl.yaml_load_verify(quarantine_file, self.quarantine_schema)
+                    scl.yaml_load_verify(quarantine_file, self.quarantine_schema_validator)
                 except scl.EmptyYamlFileException:
                     logger.debug(f'Quarantine file {quarantine_file} is empty')
             self.quarantine = Quarantine(ql)
@@ -574,7 +578,7 @@ class TestPlan:
                         break
 
                 try:
-                    parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
+                    parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema_validator)
                     parsed_data.load()
                     subcases = None
                     ztest_suite_names = None

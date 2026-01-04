@@ -65,12 +65,12 @@ def test_load_yaml_with_extra_args_and_retrieve_scenario_data(zephyr_base):
       filter: 'filter2'
     '''
 
-    loaded_schema = scl.yaml_load(
+    schema_validator = scl.make_yaml_validator(
         os.path.join(zephyr_base, 'scripts', 'schemas','twister', 'testsuite-schema.yaml')
     )
 
     with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
-        parser = TwisterConfigParser(filename, loaded_schema)
+        parser = TwisterConfigParser(filename, schema_validator)
         parser.load()
 
     scenario_data = parser.get_scenario('scenario1')
@@ -91,12 +91,12 @@ def test_default_values(zephyr_base):
         extra_args: ''
     '''
 
-    loaded_schema = scl.yaml_load(
+    schema_validator = scl.make_yaml_validator(
         os.path.join(zephyr_base, 'scripts', 'schemas', 'twister','testsuite-schema.yaml')
     )
 
     with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
-        parser = TwisterConfigParser(filename, loaded_schema)
+        parser = TwisterConfigParser(filename, schema_validator)
         parser.load()
 
     expected_scenario_data = { 'type': 'integration',
@@ -153,11 +153,11 @@ def test_default_values(zephyr_base):
 )
 
 def test_cast_value(zephyr_base, value, typestr, expected, expected_warning):
-    loaded_schema = scl.yaml_load(
+    schema_validator = scl.make_yaml_validator(
         os.path.join(zephyr_base, 'scripts', 'schemas', 'twister','testsuite-schema.yaml')
     )
 
-    parser = TwisterConfigParser("config.yaml", loaded_schema)
+    parser = TwisterConfigParser("config.yaml", schema_validator)
     with mock.patch('warnings.warn') as warn_mock:
         with pytest.raises(expected) if isinstance(expected, type) and issubclass(expected, Exception) else nullcontext():
             result = parser._cast_value(value, typestr)
@@ -174,12 +174,12 @@ def test_load_invalid_test_config_yaml(zephyr_base):
     gibberish data
     '''
 
-    loaded_schema = scl.yaml_load(
+    schema_validator = scl.make_yaml_validator(
         os.path.join(zephyr_base, 'scripts', 'schemas','twister', 'test-config-schema.yaml')
     )
 
     with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
-        parser = TwisterConfigParser(filename, loaded_schema)
+        parser = TwisterConfigParser(filename, schema_validator)
         with pytest.raises(Exception):
             parser.load()
 
@@ -193,12 +193,12 @@ def test_load_yaml_with_no_scenario_data(zephyr_base):
         extra_args: '--CONF_FILE=file2.conf --OVERLAY_CONFIG=config2.conf'
     '''
 
-    loaded_schema = scl.yaml_load(
+    schema_validator = scl.make_yaml_validator(
         os.path.join(zephyr_base, 'scripts', 'schemas','twister', 'testsuite-schema.yaml')
     )
 
     with mock.patch('builtins.open', mock.mock_open(read_data=yaml_data)):
-        parser = TwisterConfigParser(filename, loaded_schema)
+        parser = TwisterConfigParser(filename, schema_validator)
         parser.load()
 
     with pytest.raises(KeyError):

@@ -130,6 +130,7 @@ class DUT:
 
 class HardwareMap:
     schema_path = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "hwmap-schema.yaml")
+    hwm_schema_validator = scl.make_yaml_validator(schema_path)
 
     manufacturer = [
         'ARM',
@@ -268,8 +269,7 @@ class HardwareMap:
         self.duts.append(device)
 
     def load(self, map_file):
-        hwm_schema = scl.yaml_load(self.schema_path)
-        duts = scl.yaml_load_verify(map_file, hwm_schema)
+        duts = scl.yaml_load_verify(map_file, self.hwm_schema_validator)
         for dut in duts:
             pre_script = dut.get('pre_script')
             script_param = dut.get('script_param')

@@ -15,6 +15,7 @@ import scl
 from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser
 
+# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
@@ -31,8 +32,8 @@ def test_yamlload():
 def test_correct_schema(filename, schema, test_data):
     """ Test to validate the testsuite schema"""
     filename = test_data + filename
-    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
-    data = TwisterConfigParser(filename, schema)
+    schema_validator = scl.make_yaml_validator(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
+    data = TwisterConfigParser(filename, schema_validator)
     data.load()
     assert data
 
@@ -51,8 +52,8 @@ def test_incorrect_schema(filename, schema, test_data):
 def test_testsuite_config_files():
     """ Test to validate conf and overlay files are extracted properly """
     filename = Path(ZEPHYR_BASE) / "scripts/tests/twister/test_data/test_data_with_deprecation_warnings.yaml"
-    schema = scl.yaml_load(Path(ZEPHYR_BASE) / "scripts/schemas/twister/testsuite-schema.yaml")
-    data = TwisterConfigParser(filename, schema)
+    schema_validator = scl.make_yaml_validator(Path(ZEPHYR_BASE) / "scripts/schemas/twister/testsuite-schema.yaml")
+    data = TwisterConfigParser(filename, schema_validator)
     data.load()
 
     with mock.patch('warnings.warn') as warn_mock:

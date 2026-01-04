@@ -50,9 +50,8 @@ class Platform:
 
     Maps directly to BOARD when building"""
 
-    platform_schema = scl.yaml_load(
-        os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "platform-schema.yaml")
-    )
+    schema_path = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "platform-schema.yaml")
+    schema_validator = scl.make_yaml_validator(schema_path)
 
     def __init__(self):
         """Constructor.
@@ -215,7 +214,7 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
                 continue
             file = board_dir / "twister.yaml"
             if file.is_file():
-                data = scl.yaml_load_verify(file, Platform.platform_schema)
+                data = scl.yaml_load_verify(file, Platform.schema_validator)
             else:
                 data = None
             dir2data[board_dir] = data
@@ -287,7 +286,7 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
         target2aliases[target] = aliases
 
     for file in legacy_files:
-        data = scl.yaml_load_verify(file, Platform.platform_schema)
+        data = scl.yaml_load_verify(file, Platform.schema_validator)
         target = alias2target.get(data.get("identifier"))
         if target is None:
             continue
