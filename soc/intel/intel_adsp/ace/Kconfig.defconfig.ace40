@@ -35,4 +35,11 @@ config XTENSA_MMU_NUM_L2_TABLES
 config XTENSA_MMU_USE_DEFAULT_MAPPINGS
 	default n
 
+# xt-clang seems to generate some memory access patterns which
+# result in the simulator accessing incorrect memory or
+# messing with cached TLB entries when spinlock validation
+# is enabled. So disable this to avoid this issue.
+config SPIN_VALIDATE
+	default n if INTEL_ADSP_SIM
+
 endif
