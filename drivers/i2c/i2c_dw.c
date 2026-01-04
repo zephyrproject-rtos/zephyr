@@ -1232,6 +1232,16 @@ static int i2c_dw_initialize(const struct device *dev)
 	uint32_t scl_timeout = rom->scl_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
 #endif
 
+#if defined(CONFIG_CLOCK_CONTROL)
+	if (rom->clk_dev) {
+		ret = clock_control_on(rom->clk_dev, rom->clk_id);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable the clock");
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_RESET)
 	if (rom->reset.dev) {
 		ret = reset_line_toggle_dt(&rom->reset);
@@ -1357,6 +1367,20 @@ static int i2c_dw_initialize(const struct device *dev)
 #define RESET_DW_CONFIG(n)
 #endif
 
+#if defined(CONFIG_CLOCK_CONTROL)
+#define CLOCK_DW_DEFINE(n)                                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),                                            \
+	(static const clock_control_subsys_t i2c_dw_clk_id##n =                                 \
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid);))
+#define CLOCK_DW_CONFIG(n)                                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),     \
+			(.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                       \
+			 .clk_id = i2c_dw_clk_id##n,))
+#else
+#define CLOCK_DW_DEFINE(n)
+#define CLOCK_DW_CONFIG(n)
+#endif
+
 #define I2C_DW_INIT_PCIE0(n)
 #define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
 #define I2C_DW_INIT_PCIE(n)  _CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
@@ -1422,6 +1446,7 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_DEVICE_INIT_DW(n)                                                                      \
 	PINCTRL_DW_DEFINE(n);                                                                      \
 	I2C_PCIE_DEFINE(n);                                                                        \
+	CLOCK_DW_DEFINE(n);                                                                        \
 	static void i2c_config_##n(const struct device *port);                                     \
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
@@ -1430,7 +1455,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
-			I2C_CONFIG_DMA_INIT(n)};                                                   \
+			I2C_CONFIG_DMA_INIT(n) CLOCK_DW_CONFIG(n)};                                \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \
 				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
