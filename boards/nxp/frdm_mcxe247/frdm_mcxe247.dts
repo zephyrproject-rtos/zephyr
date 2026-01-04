@@ -160,6 +160,10 @@
 	clock-div = <1>;
 };
 
+&flexio0 {
+	status = "okay";
+};
+
 &soscdiv2_clk {
 	clock-div = <1>;
 };
