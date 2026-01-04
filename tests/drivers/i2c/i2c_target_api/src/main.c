@@ -273,11 +273,11 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	/* Program differentiable data into the two devices through a back door
 	 * that doesn't use I2C.
 	 */
-	ret = eeprom_target_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
+	ret = eeprom_target_write_data(eeprom_0, 0, eeprom_0_data, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to program EEPROM 0");
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
-		ret = eeprom_target_program(eeprom_1, eeprom_1_data,
-					   TEST_DATA_SIZE);
+		ret = eeprom_target_write_data(eeprom_1, 0, eeprom_1_data,
+					       TEST_DATA_SIZE);
 		zassert_equal(ret, 0, "Failed to program EEPROM 1");
 	}
 
