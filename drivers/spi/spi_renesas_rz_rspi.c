@@ -76,13 +76,7 @@ static void spi_rz_rspi_retransmit(const struct device *dev)
 	struct spi_rz_rspi_data *data = dev->data;
 	const struct spi_rz_rspi_config *config = dev->config;
 
-	if (data->ctx.rx_len == 0) {
-		data->data_len = data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
-		data->data_len = data->ctx.rx_len;
-	} else {
-		data->data_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
-	}
+	data->data_len = spi_context_max_continuous_chunk(&data->ctx);
 
 	if (data->ctx.tx_buf == NULL) { /* If there is only the rx buffer */
 		config->fsp_api->read(data->fsp_ctrl, data->ctx.rx_buf, data->data_len,
