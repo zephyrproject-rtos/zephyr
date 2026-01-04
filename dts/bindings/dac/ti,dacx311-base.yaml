@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Andreas Wolf <awolf002@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  power-down-mode:
+    type: string
+    default: "normal"
+    enum:
+      - "normal"
+      - "power-down-1k"
+      - "power-down-100k"
+      - "power-down-3-state"
+    description: |
+      Power-down mode select.
+      - Normal mode (reg: 0).
+      - 1 kOhm output impedance (reg: 1).
+      - 100 kOhm output impedance (reg: 2).
+      - Three-state output impedance (reg: 3).
+      The default corresponds to the reset value of the register field.
+
+io-channel-cells:
+  - output
