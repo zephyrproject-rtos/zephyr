@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <microchip/mec/mec5_mec1743qlj.dtsi>
-#include <microchip/mec5/mec1743qlj-a0-pinctrl.dtsi>
+#include <microchip/mec/mec5/mec174x-pinctrl.dtsi>
 
 / {
 	model = "Microchip MEC ASSY6941 MEC1743-QSZ evaluation board";
