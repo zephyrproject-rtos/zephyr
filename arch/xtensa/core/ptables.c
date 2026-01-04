@@ -326,6 +326,26 @@ static void init_page_table(uint32_t *ptable, size_t num_entries, uint32_t val)
 	}
 }
 
+static void calc_l2_page_tables_usage(void)
+{
+#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
+	uint32_t cur_l2_usage = 0;
+
+	/* Calculate how many L2 page tables are being used now. */
+	for (int idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
+		if (l2_page_tables_counter[idx] > 0) {
+			cur_l2_usage++;
+		}
+	}
+
+	/* Store the bigger number. */
+	l2_page_tables_max_usage = MAX(l2_page_tables_max_usage, cur_l2_usage);
+
+	LOG_DBG("L2 page table usage %u/%u/%u", cur_l2_usage, l2_page_tables_max_usage,
+		CONFIG_XTENSA_MMU_NUM_L2_TABLES);
+#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+}
+
 /**
  * @brief Find the L2 table counter array index from L2 table pointer.
  *
@@ -357,19 +377,7 @@ static inline uint32_t *alloc_l2_table(void)
 		}
 	}
 
-#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
-	uint32_t cur_l2_usage = 0;
-
-	/* Calculate how many L2 page tables are being used now. */
-	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
-		if (l2_page_tables_counter[idx] > 0) {
-			cur_l2_usage++;
-		}
-	}
-
-	/* Store the bigger number. */
-	l2_page_tables_max_usage = MAX(l2_page_tables_max_usage, cur_l2_usage);
-#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+	calc_l2_page_tables_usage();
 
 	k_spin_unlock(&xtensa_counter_lock, key);
 
@@ -398,6 +406,15 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 
 			__ASSERT(l2_table != NULL,
 				 "There is no l2 page table available to map 0x%08x\n", page);
+
+			if (l2_table == NULL) {
+				/* This function is called during boot. If this cannot
+				 * properly map all predefined memory regions, it is very
+				 * unlikely for anything to run correctly. So forcibly
+				 * halt the system in case assertion has been turned off.
+				 */
+				arch_system_halt(K_ERR_KERNEL_PANIC);
+			}
 
 			init_page_table(l2_table, L2_PAGE_TABLE_NUM_ENTRIES, PTE_L2_ILLEGAL);
 
@@ -716,6 +733,8 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 
 	K_SPINLOCK(&xtensa_counter_lock) {
 		l2_page_tables_counter_dec(l2_table);
+
+		calc_l2_page_tables_usage();
 	}
 
 end:
@@ -946,6 +965,9 @@ static inline uint32_t *alloc_l1_table(void)
 
 	/* Store the bigger number. */
 	l1_page_tables_max_usage = MAX(l1_page_tables_max_usage, cur_l1_usage);
+
+	LOG_DBG("L1 page table usage %u/%u/%u",	cur_l1_usage, l1_page_tables_max_usage,
+		CONFIG_XTENSA_MMU_NUM_L1_TABLES);
 #endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
 
 	return ret;
@@ -968,8 +990,14 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 	uint32_t *l2_table;
 
 	l2_table = alloc_l2_table();
+
+	/* Duplicating L2 tables is a must-have and must-success operation.
+	 * If we are running out of free L2 tables to be allocated, we cannot
+	 * continue.
+	 */
+	__ASSERT_NO_MSG(l2_table != NULL);
 	if (l2_table == NULL) {
-		return NULL;
+		arch_system_halt(K_ERR_KERNEL_PANIC);
 	}
 
 	switch (action) {
