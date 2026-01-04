@@ -70,7 +70,7 @@
 			compatible = "nxp,kinetis-ftfa";
 			reg = <0x40020000 0x14>;
 			interrupts = <5 0>;
-			status = "disabled";
+			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			fsec = <0xfe>;
