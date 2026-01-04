@@ -1,0 +1,15 @@
+sample:
+  description: This app provides an example of how to integrate OpenAMP
+    with Zephyr including a resource table and add a logging backend using rpmsg endpoint.
+  name: OpenAMP with resource table and rpmsg logging backend example integration
+tests:
+  sample.subsys.logging.rpmsg_backend:
+    build_only: true
+    platform_allow:
+      - imx8mp_evk/mimx8ml8/adsp
+    integration_platforms:
+      - imx8mp_evk/mimx8ml8/adsp
+    tags:
+      - ipm
+      - openamp
+      - logging
