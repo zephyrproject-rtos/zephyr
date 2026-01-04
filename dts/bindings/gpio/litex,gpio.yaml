@@ -11,10 +11,6 @@ compatible: "litex,gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-  port-is-output:
-    type: boolean
-    description: Indicates if the port is an output port
-
   reg:
     required: true
 
