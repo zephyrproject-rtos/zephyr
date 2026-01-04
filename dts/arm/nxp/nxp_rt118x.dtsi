@@ -76,9 +76,9 @@
 	 * or nxp_rt118x_cm7.dtsi. The base addresses on cm33 core differ
 	 * between non-secure (0x40000000) and secure modes (0x50000000).
 	 */
-	iomuxc: pinctrl@2A10000 {
+	iomuxc: pinctrl@2a10000 {
 		compatible = "nxp,imx-iomuxc";
-		reg = <0x2A10000 0x4000>;
+		reg = <0x2a10000 0x4000>;
 
 		pinctrl: pinctrl {
 			status = "okay";
@@ -86,9 +86,9 @@
 		};
 	};
 
-	iomuxc_aon: pinctrl@43C0000 {
+	iomuxc_aon: pinctrl@43c0000 {
 		compatible = "nxp,mcux-rt-pinctrl";
-		reg = <0x43C0000 0x4000>;
+		reg = <0x43c0000 0x4000>;
 		status = "okay";
 	};
 
@@ -168,9 +168,9 @@
 		status = "disabled";
 	};
 
-	lpuart6: serial@25A0000 {
+	lpuart6: serial@25a0000 {
 		compatible = "nxp,lpuart";
-		reg = <0x25A0000 0x4000>;
+		reg = <0x25a0000 0x4000>;
 		interrupts = <71 0>;
 		clocks = <&ccm IMX_CCM_LPUART0506_CLK 0x74 6>;
 		dmas = <&edma4 6 23>, <&edma4 7 24>;
@@ -188,9 +188,9 @@
 		status = "disabled";
 	};
 
-	lpuart8: serial@2DA0000 {
+	lpuart8: serial@2da0000 {
 		compatible = "nxp,lpuart";
-		reg = <0x2DA0000 0x4000>;
+		reg = <0x2da0000 0x4000>;
 		interrupts = <197 0>;
 		clocks = <&ccm IMX_CCM_LPUART0708_CLK 0x80 14>;
 		dmas = <&edma4 8 178>, <&edma4 9 179>;
@@ -198,9 +198,9 @@
 		status = "disabled";
 	};
 
-	lpuart9: serial@2D70000 {
+	lpuart9: serial@2d70000 {
 		compatible = "nxp,lpuart";
-		reg = <0x2D70000 0x4000>;
+		reg = <0x2d70000 0x4000>;
 		interrupts = <156 0>;
 		clocks = <&ccm IMX_CCM_LPUART0910_CLK 0x80 14>;
 		dmas = <&edma4 10 172>, <&edma4 11 173>;
@@ -208,9 +208,9 @@
 		status = "disabled";
 	};
 
-	lpuart10: serial@2D80000 {
+	lpuart10: serial@2d80000 {
 		compatible = "nxp,lpuart";
-		reg = <0x2D80000 0x4000>;
+		reg = <0x2d80000 0x4000>;
 		interrupts = <157 0>;
 		clocks = <&ccm IMX_CCM_LPUART0910_CLK 0x80 14>;
 		dmas = <&edma4 12 174>, <&edma4 13 175>;
@@ -218,9 +218,9 @@
 		status = "disabled";
 	};
 
-	lpuart11: serial@2D90000 {
+	lpuart11: serial@2d90000 {
 		compatible = "nxp,lpuart";
-		reg = <0x2D90000 0x4000>;
+		reg = <0x2d90000 0x4000>;
 		interrupts = <158 0>;
 		clocks = <&ccm IMX_CCM_LPUART1112_CLK 0x80 14>;
 		dmas = <&edma4 14 176>, <&edma4 15 177>;
@@ -1179,9 +1179,9 @@
 		#pwm-cells = <3>;
 	};
 
-	tpm3: pwm@24E0000 {
+	tpm3: pwm@24e0000 {
 		compatible = "nxp,kinetis-tpm";
-		reg = <0x24E0000 0x88>;
+		reg = <0x24e0000 0x88>;
 		interrupts = <75 0>;
 		clocks = <&ccm IMX_CCM_TPM3_CLK 0x3d 0>;
 		prescaler = <16>;
@@ -1189,9 +1189,9 @@
 		#pwm-cells = <3>;
 	};
 
-	tpm4: pwm@24F0000 {
+	tpm4: pwm@24f0000 {
 		compatible = "nxp,kinetis-tpm";
-		reg = <0x24F0000 0x88>;
+		reg = <0x24f0000 0x88>;
 		interrupts = <76 0>;
 		clocks = <&ccm IMX_CCM_TPM4_CLK 0x3e 0>;
 		prescaler = <16>;
@@ -1303,14 +1303,14 @@
 			     <139 0>, <140 0>, <141 0>, <142 0>,
 			     <143 0>, <127 0>;
 		channels-shared-irq-mask = <0x00000003 0x00000003
-					    0x0000000C 0x0000000C 0x00000030 0x00000030
-					    0x000000C0 0x000000C0 0x00000300 0x00000300
-					    0x00000C00 0x00000C00 0x00003000 0x00003000
-					    0x0000C000 0x0000C000 0x00030000 0x00030000
-					    0x000C0000 0x000C0000 0x00300000 0x00300000
-					    0x00C00000 0x00C00000 0x03000000 0x03000000
-					    0x0C000000 0x0C000000 0x30000000 0x30000000
-					    0xC0000000 0xC0000000>;
+					    0x0000000c 0x0000000c 0x00000030 0x00000030
+					    0x000000c0 0x000000c0 0x00000300 0x00000300
+					    0x00000c00 0x00000c00 0x00003000 0x00003000
+					    0x0000c000 0x0000c000 0x00030000 0x00030000
+					    0x000c0000 0x000c0000 0x00300000 0x00300000
+					    0x00c00000 0x00c00000 0x03000000 0x03000000
+					    0x0c000000 0x0c000000 0x30000000 0x30000000
+					    0xc0000000 0xc0000000>;
 		status = "disabled";
 	};
 
@@ -1337,7 +1337,7 @@
 
 	kpp: kpp@2a00000 {
 		compatible = "nxp,mcux-kpp";
-		reg = <0x2A00000 0x1000>;
+		reg = <0x2a00000 0x1000>;
 		interrupts = <211 0>;
 		#address-cells = <1>;
 		#size-cells = <0>;

@@ -210,9 +210,9 @@
 		prescale = <0>;
 	};
 
-	ctimer4: ctimer@2A000 {
+	ctimer4: ctimer@2a000 {
 		compatible = "nxp,lpc-ctimer";
-		reg = <0x2A000 0x1000>;
+		reg = <0x2a000 0x1000>;
 		interrupts = <37 0>;
 		status = "disabled";
 		clk-source = <3>;
