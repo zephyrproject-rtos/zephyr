@@ -12,5 +12,6 @@ toolchain:
 supported:
   - adc
   - can
+  - spi
   - gpio
 vendor: nxp
