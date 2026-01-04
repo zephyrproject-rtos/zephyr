@@ -1473,10 +1473,18 @@ def test_devicehandler_handle(
     openpty_mock = mock.Mock(return_value=('master', 'slave'))
     ttyname_mock = mock.Mock(side_effect=lambda x: x + ' name')
 
+    lp_mock = SimpleNamespace(
+        comports=mock.Mock(return_value=[
+            SimpleNamespace(name='dummy serial'),
+            SimpleNamespace(name='slave name'),
+        ])
+    )
+
     with mock.patch('builtins.open', mock.mock_open(read_data='')), \
          mock.patch('subprocess.Popen', side_effect=mock_popen), \
          mock.patch('threading.Event', mock.Mock()), \
          mock.patch('threading.Thread', side_effect=mock_thread), \
+         mock.patch('twisterlib.handlers.list_ports', lp_mock, create=True), \
          mock.patch('pty.openpty', openpty_mock), \
          mock.patch('os.ttyname', ttyname_mock):
         handler.handle(harness)
