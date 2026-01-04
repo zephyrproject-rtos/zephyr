@@ -696,6 +696,10 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		return diff;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_overhead(diff);
+	}
+
 	return 0U;
 }
 

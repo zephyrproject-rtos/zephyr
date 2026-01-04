@@ -8958,14 +8958,15 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
-		printk("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u) %u\n",
+		printk("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u)"
+		       " %u/%u\n",
 		       pdu_data->profile.lcur, pdu_data->profile.lmin, pdu_data->profile.lmax,
 		       pdu_data->profile.cur, pdu_data->profile.min, pdu_data->profile.max,
 		       pdu_data->profile.radio, pdu_data->profile.radio_ticks,
 		       pdu_data->profile.lll, pdu_data->profile.lll_ticks,
 		       pdu_data->profile.ull_high, pdu_data->profile.ull_high_ticks,
 		       pdu_data->profile.ull_low, pdu_data->profile.ull_low_ticks,
-		       EVENT_OVERHEAD_START_US);
+		       pdu_data->profile.overhead, EVENT_OVERHEAD_START_US);
 		return;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
