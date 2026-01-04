@@ -13,6 +13,7 @@ supported:
   - spi
   - can
   - watchdog
+  - tsc
 testing:
   ignore_tags:
     - net
