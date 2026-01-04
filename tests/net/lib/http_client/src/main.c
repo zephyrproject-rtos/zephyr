@@ -38,7 +38,7 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 {
 	static size_t offset;
 
-	if (status == HTTP_SERVER_DATA_ABORTED) {
+	if (status == HTTP_SERVER_DATA_ABORTED || status == HTTP_SERVER_DATA_COMPLETE) {
 		offset = 0;
 		return 0;
 	}

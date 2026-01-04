@@ -178,6 +178,8 @@ enum http_data_status {
 	HTTP_SERVER_DATA_MORE = 0,
 	/** Final data fragment in current transaction. */
 	HTTP_SERVER_DATA_FINAL = 1,
+	/** Response sent completely. */
+	HTTP_SERVER_DATA_COMPLETE = 2,
 };
 
 /** @brief Status of captured request headers */
