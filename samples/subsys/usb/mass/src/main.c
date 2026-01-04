@@ -22,6 +22,12 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #if CONFIG_FAT_FILESYSTEM_ELM
 #include <ff.h>
+#define FAT_VOLUME_LABEL_MAX_LEN	11 /* Max characters in a FAT volume label */
+#define FAT_MNT_POINT_MAX_LEN		11 /* Max characters in a FAT mount point */
+#define FAT_MNT_POINT_LEN			5
+#define FAT_SET_LABEL_CMD_MAX_CHARS		\
+	(FAT_VOLUME_LABEL_MAX_LEN + FAT_MNT_POINT_MAX_LEN + 1) /* +1 for ':' */
+
 #endif
 
 #if CONFIG_FILE_SYSTEM_LITTLEFS
@@ -142,6 +148,55 @@ static void setup_disk(void)
 	k_sleep(K_MSEC(50));
 
 	printk("Mount %s: %d\n", fs_mnt.mnt_point, rc);
+
+#if CONFIG_FAT_FILESYSTEM_ELM
+	/* Set volume label to replace "NO NAME" default */
+	char fatfs_setlabel_cmd[FAT_SET_LABEL_CMD_MAX_CHARS];
+	char fatfs_getlabel_result[FAT_VOLUME_LABEL_MAX_LEN];
+	char vol_id[FAT_MNT_POINT_LEN];
+	DWORD vsn;
+	const char *mnt = mp->mnt_point;
+	FRESULT res;
+
+	/* Extract volume ID by skipping leading '/' and trailing ':' */
+	if (mnt[0] == '/') {
+		mnt++;
+	}
+	size_t len = strlen(mnt);
+
+	if (len > 0 && mnt[len - 1] == ':') {
+		len--;
+	}
+	if (len >= sizeof(vol_id)) {
+		len = sizeof(vol_id) - 1;
+	}
+
+	strncpy(vol_id, mnt, len);
+	vol_id[len] = '\0';
+
+	/* Format: "MNT_POINT:LABEL" (e.g., "NAND:ZEPHYR_NAND") */
+	snprintf(fatfs_setlabel_cmd, sizeof(fatfs_setlabel_cmd), "%s:ZEPHYR_%s", vol_id, vol_id);
+	LOG_INF("Attempting to set volume label: %s (vol_id='%s')", fatfs_setlabel_cmd, vol_id);
+
+	res = f_setlabel(fatfs_setlabel_cmd);
+	if (res != FR_OK) {
+		LOG_WRN("Failed to set volume label: error %d", res);
+		goto label_done;
+	}
+
+	LOG_INF("Volume label successfully set to: %s", fatfs_setlabel_cmd);
+
+	res = f_getlabel(vol_id, fatfs_getlabel_result, &vsn);
+	if (res != FR_OK) {
+		LOG_WRN("Failed to get volume label: error %d", res);
+		goto label_done;
+	}
+
+	LOG_INF("Verified volume label: '%s' (VSN: 0x%08X)", fatfs_getlabel_result,
+		(unsigned int)vsn);
+
+label_done:
+#endif
 
 	rc = fs_statvfs(mp->mnt_point, &sbuf);
 	if (rc < 0) {
