@@ -22,6 +22,7 @@ common:
     - mimxrt1060_evk/mimxrt1062/qspi
     - samd21_xpro
     - same54_xpro
+    - sam_v71_xult/samv71q21b
 tests:
   sample.usbd.hid-keyboard: {}
   sample.usbd.hid-keyboard.out-report:
