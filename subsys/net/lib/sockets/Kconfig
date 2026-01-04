@@ -237,6 +237,17 @@ config ZVFS_OPEN_ADD_SIZE_TLS
 	default NET_SOCKETS_TLS_MAX_CONTEXTS if NET_SOCKETS_SOCKOPT_TLS
 	default 0
 
+config NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS
+	int "Maximum number of TLS/DTLS sessions"
+	default NET_SOCKETS_TLS_MAX_CONTEXTS
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable specifies the maximum number of TLS/DTLS sessions that
+	  can be established at the same time. Typically one session is needed
+	  for a TLS context. DTLS server sockets may use more sessions per socket
+	  to support communication with multiple clients at the same time.
+	  The value should not be lower than NET_SOCKETS_TLS_MAX_CONTEXTS.
+
 config NET_SOCKETS_TLS_MAX_CREDENTIALS
 	int "Maximum number of TLS/DTLS credentials per socket"
 	default 4
