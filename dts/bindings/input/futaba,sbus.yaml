@@ -52,6 +52,16 @@ compatible: "futaba,sbus"
 
 include: [base.yaml, uart-device.yaml]
 
+properties:
+  connection-code:
+    type: int
+    description: |
+      When the remote control is disconnected,
+      this event with a value of 0 will be sent;
+      when it is connected, this event with a value
+      of 1 will be sent. The event type is fixed
+      as INPUT_EV_KEY.
+
 child-binding:
   description: |
     SBUS Channel to input-event-code binding

@@ -25,15 +25,14 @@ struct sbus_input_channel {
 	uint32_t zephyr_code;
 };
 
-const struct uart_config uart_cfg_sbus = {
-	.baudrate = 100000,
-	.parity = UART_CFG_PARITY_EVEN,
-	.stop_bits = UART_CFG_STOP_BITS_2,
-	.data_bits = UART_CFG_DATA_BITS_8,
-	.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
-};
+const struct uart_config uart_cfg_sbus = {.baudrate = 100000,
+					  .parity = UART_CFG_PARITY_EVEN,
+					  .stop_bits = UART_CFG_STOP_BITS_2,
+					  .data_bits = UART_CFG_DATA_BITS_8,
+					  .flow_ctrl = UART_CFG_FLOW_CTRL_NONE};
 
 struct input_sbus_config {
+	uint32_t connection_code;
 	uint8_t num_channels;
 	const struct sbus_input_channel *channel_info;
 	const struct device *uart_dev;
@@ -60,6 +59,9 @@ struct input_sbus_config {
 #define REPORT_FILTER      CONFIG_INPUT_SBUS_REPORT_FILTER
 #define CHANNEL_VALUE_ZERO CONFIG_INPUT_SBUS_CHANNEL_VALUE_ZERO
 #define CHANNEL_VALUE_ONE  CONFIG_INPUT_SBUS_CHANNEL_VALUE_ONE
+
+#define SBUS_CONNECTION_KEY_VALUE    1
+#define SBUS_DISCONNECTION_KEY_VALUE 0
 
 struct input_sbus_data {
 	struct k_thread thread;
@@ -117,6 +119,7 @@ static void input_sbus_report(const struct device *dev, unsigned int sbus_channe
 static void input_sbus_input_report_thread(const struct device *dev, void *dummy2, void *dummy3)
 {
 	struct input_sbus_data *const data = dev->data;
+	const struct input_sbus_config *const cfg = dev->config;
 
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
@@ -128,6 +131,15 @@ static void input_sbus_input_report_thread(const struct device *dev, void *dummy
 	unsigned int key;
 	int ret;
 	bool connected_reported = false;
+
+	/* Before officially starting the report, let's first report a disconnection. */
+	if (cfg->connection_code != INPUT_KEY_RESERVED) {
+		input_report(dev, INPUT_EV_KEY, cfg->connection_code, SBUS_DISCONNECTION_KEY_VALUE,
+			     false, K_FOREVER);
+#ifdef CONFIG_INPUT_SBUS_SEND_SYNC
+		input_report(dev, 0, 0, 0, true, K_FOREVER);
+#endif
+	}
 
 	while (true) {
 		if (!data->in_sync) {
@@ -161,10 +173,24 @@ static void input_sbus_input_report_thread(const struct device *dev, void *dummy
 		if (connected_reported &&
 		    data->sbus_frame[SBUS_BYTE24_IDX] & SBUS_BYTE24_FRAME_LOST) {
 			LOG_DBG("SBUS controller connection lost");
+
+			/* Report disconnection */
+			if (cfg->connection_code != INPUT_KEY_RESERVED) {
+				input_report(dev, INPUT_EV_KEY, cfg->connection_code,
+					     SBUS_DISCONNECTION_KEY_VALUE, false, K_FOREVER);
+			}
+
 			connected_reported = false;
 		} else if (!connected_reported &&
 			   !(data->sbus_frame[SBUS_BYTE24_IDX] & SBUS_BYTE24_FRAME_LOST)) {
 			LOG_DBG("SBUS controller connected");
+
+			/* Report connection */
+			if (cfg->connection_code != INPUT_KEY_RESERVED) {
+				input_report(dev, INPUT_EV_KEY, cfg->connection_code,
+					     SBUS_CONNECTION_KEY_VALUE, false, K_FOREVER);
+			}
+
 			connected_reported = true;
 		}
 
@@ -259,8 +285,8 @@ static void sbus_uart_isr(const struct device *uart_dev, void *user_data)
 		}
 	}
 
-	if (data->in_sync && (k_uptime_get_32() - data->last_rx_time >
-	    SBUS_INTERFRAME_SPACING_MS)) {
+	if (data->in_sync &&
+	    (k_uptime_get_32() - data->last_rx_time > SBUS_INTERFRAME_SPACING_MS)) {
 		data->partial_sync = false;
 		data->in_sync = false;
 		data->xfer_bytes = 0;
@@ -356,13 +382,13 @@ static int input_sbus_init(const struct device *dev)
 #define INPUT_SBUS_INIT(n)                                                                         \
                                                                                                    \
 	static const struct sbus_input_channel input_##n[] = {                                     \
-		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)                           \
-	};                                                                                         \
+		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)};                         \
 	DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                              \
                                                                                                    \
 	static struct input_sbus_data sbus_data_##n;                                               \
                                                                                                    \
 	static const struct input_sbus_config sbus_cfg_##n = {                                     \
+		.connection_code = DT_INST_PROP_OR(n, connection_code, INPUT_KEY_RESERVED),        \
 		.channel_info = input_##n,                                                         \
 		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
 		.num_channels = ARRAY_SIZE(input_##n),                                             \
