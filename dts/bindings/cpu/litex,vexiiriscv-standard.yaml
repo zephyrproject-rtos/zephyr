@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: VexiiRiscv core with the standard configuration as used by LiteX
+
+compatible: "litex,vexiiriscv-standard"
+
+include: riscv,cpus.yaml
