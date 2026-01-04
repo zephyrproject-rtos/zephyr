@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/zperf.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -2063,6 +2065,292 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_jobs,
 	SHELL_CMD(start, NULL, "Start waiting jobs", cmd_jobs_start),
 );
 
+#ifdef CONFIG_NET_ZPERF_RAW_TX
+
+/**
+ * Parse MAC address string in format xx:xx:xx:xx:xx:xx
+ */
+static int parse_mac_addr(const char *mac_str, uint8_t *mac_out)
+{
+	int ret;
+
+	ret = sscanf(mac_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		     &mac_out[0], &mac_out[1], &mac_out[2],
+		     &mac_out[3], &mac_out[4], &mac_out[5]);
+
+	return (ret == 6) ? 0 : -EINVAL;
+}
+
+/**
+ * Parse hex string to byte array
+ * Returns number of bytes parsed, or negative error
+ */
+static int parse_hex_bytes(const char *hex_str, uint8_t *buf, size_t buf_size)
+{
+	size_t hex_len = strlen(hex_str);
+	size_t byte_len;
+	size_t i;
+
+	if ((hex_len % 2) != 0) {
+		return -EINVAL;
+	}
+
+	byte_len = hex_len / 2;
+	if (byte_len > buf_size) {
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < byte_len; i++) {
+		char hex_byte[3] = { hex_str[i * 2], hex_str[i * 2 + 1], '\0' };
+		char *endptr;
+		long val;
+
+		val = strtol(hex_byte, &endptr, 16);
+		if (*endptr != '\0' || val < 0 || val > 255) {
+			return -EINVAL;
+		}
+		buf[i] = (uint8_t)val;
+	}
+
+	return byte_len;
+}
+
+static void shell_raw_upload_print_stats(const struct shell *sh,
+					 struct zperf_results *results)
+{
+	uint64_t client_rate_in_kbps;
+
+	shell_fprintf(sh, SHELL_NORMAL, "-\nRaw TX upload completed!\n");
+
+	if (results->client_time_in_us != 0U) {
+		client_rate_in_kbps = (uint32_t)
+			(((uint64_t)results->nb_packets_sent *
+			  (uint64_t)results->packet_size * (uint64_t)8 *
+			  (uint64_t)USEC_PER_SEC) /
+			 (results->client_time_in_us * 1000U));
+	} else {
+		client_rate_in_kbps = 0U;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
+	print_number_64(sh, results->client_time_in_us, TIME_US, TIME_US_UNIT);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\n", results->nb_packets_sent);
+	shell_fprintf(sh, SHELL_NORMAL, "Num errors:\t\t%u\n", results->nb_packets_errors);
+	shell_fprintf(sh, SHELL_NORMAL, "Total bytes:\t\t");
+	print_number_64(sh, results->total_len, K, K_UNIT);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
+	print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+}
+
+static void raw_upload_cb(enum zperf_status status,
+			  struct zperf_results *result,
+			  void *user_data)
+{
+	const struct shell *sh = user_data;
+
+	switch (status) {
+	case ZPERF_SESSION_STARTED:
+		shell_fprintf(sh, SHELL_NORMAL, "Raw TX upload started\n");
+		break;
+
+	case ZPERF_SESSION_FINISHED:
+		shell_raw_upload_print_stats(sh, result);
+		break;
+
+	case ZPERF_SESSION_ERROR:
+		shell_fprintf(sh, SHELL_ERROR, "Raw TX upload failed\n");
+		break;
+
+	default:
+		break;
+	}
+}
+
+static int cmd_raw_upload(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct zperf_raw_upload_params param = { 0 };
+	struct zperf_results results = { 0 };
+	static uint8_t hdr_buf[CONFIG_NET_ZPERF_RAW_TX_MAX_HDR_SIZE];
+	bool async = false;
+	size_t opt_cnt = 0;
+	int start = 0;
+	int ret;
+
+	/* Parse options */
+	for (size_t i = 1; i < argc; ++i) {
+		if (*argv[i] != '-') {
+			break;
+		}
+
+		switch (argv[i][1]) {
+		case 'a':
+			async = true;
+			opt_cnt += 1;
+			break;
+
+		default:
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Unrecognized argument: %s\n", argv[i]);
+			return -ENOEXEC;
+		}
+	}
+
+	start += opt_cnt;
+	argc -= opt_cnt;
+
+	/* Required: <interface_index> <dst_mac> */
+	if (argc < 3) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Usage: zperf raw upload [-a] <if_index> <dst_mac> "
+			      "[<duration_sec>] [<packet_size>] [<rate_kbps>] [<ethertype>] "
+			      "[<header_hex>]\n");
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Example: zperf raw upload 1 ff:ff:ff:ff:ff:ff 5 256 1000 "
+			      "0x88b5 0102030405\n");
+		shell_fprintf(sh, SHELL_WARNING,
+			      "  <if_index>     Network interface index (use 'net iface' to list)\n"
+			      "  <dst_mac>      Destination MAC address (xx:xx:xx:xx:xx:xx)\n"
+			      "  <duration_sec> Test duration in seconds (default: 1)\n"
+			      "  <packet_size>  Packet size in bytes (default: 256)\n"
+			      "  <rate_kbps>    Target rate in Kbps (default: 10)\n"
+			      "  <ethertype>    EtherType in hex (default: 0x88b5)\n"
+			      "  <header_hex>   Custom header as hex bytes (optional)\n");
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Options:\n"
+			      "  -a  Asynchronous mode (shell will not block)\n");
+		return -ENOEXEC;
+	}
+
+	/* Parse interface index */
+	param.if_index = strtol(argv[start + 1], NULL, 10);
+	if (param.if_index <= 0) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid interface index: %s\n", argv[start + 1]);
+		return -EINVAL;
+	}
+
+	/* Parse destination MAC */
+	ret = parse_mac_addr(argv[start + 2], param.dst_mac);
+	if (ret < 0) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Invalid MAC address format. Use xx:xx:xx:xx:xx:xx\n");
+		return -EINVAL;
+	}
+
+	/* Optional: duration (default: 1 second) */
+	if (argc > 3) {
+		param.duration_ms = MSEC_PER_SEC * strtoul(argv[start + 3], NULL, 10);
+	} else {
+		param.duration_ms = MSEC_PER_SEC * DEF_DURATION_SECONDS;
+	}
+
+	/* Optional: packet size (default: 256) */
+	if (argc > 4) {
+		param.packet_size = parse_number(argv[start + 4], K, K_UNIT);
+	} else {
+		param.packet_size = DEF_PACKET_SIZE;
+	}
+
+	/* Optional: rate in kbps (default: 10) */
+	if (argc > 5) {
+		param.rate_kbps = (parse_number(argv[start + 5], K, K_UNIT) + 999) / 1000;
+	} else {
+		param.rate_kbps = DEF_RATE_KBPS;
+	}
+
+	/* Optional: ethertype (default: 0x88b5 - IEEE 802.1 Local Experimental) */
+	if (argc > 6) {
+		param.ethertype = strtoul(argv[start + 6], NULL, 0);
+	} else {
+		param.ethertype = 0x88b5;
+	}
+
+	/* Optional: custom header hex bytes */
+	if (argc > 7) {
+		ret = parse_hex_bytes(argv[start + 7], hdr_buf, sizeof(hdr_buf));
+		if (ret < 0) {
+			shell_fprintf(sh, SHELL_WARNING,
+				      "Invalid header hex string\n");
+			return -EINVAL;
+		}
+		param.hdr = hdr_buf;
+		param.hdr_len = ret;
+	} else {
+		param.hdr = NULL;
+		param.hdr_len = 0;
+	}
+
+	/* Print configuration */
+	shell_fprintf(sh, SHELL_NORMAL, "Raw TX configuration:\n");
+	shell_fprintf(sh, SHELL_NORMAL, "  Interface index: %d\n", param.if_index);
+	shell_fprintf(sh, SHELL_NORMAL, "  Dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		      param.dst_mac[0], param.dst_mac[1], param.dst_mac[2],
+		      param.dst_mac[3], param.dst_mac[4], param.dst_mac[5]);
+	shell_fprintf(sh, SHELL_NORMAL, "  Duration: ");
+	print_number_64(sh, (uint64_t)param.duration_ms * USEC_PER_MSEC, TIME_US, TIME_US_UNIT);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "  Packet size: %u bytes\n", param.packet_size);
+	shell_fprintf(sh, SHELL_NORMAL, "  Rate: ");
+	print_number(sh, param.rate_kbps, KBPS, KBPS_UNIT);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "  EtherType: 0x%04x\n", param.ethertype);
+	if (param.hdr_len > 0) {
+		shell_fprintf(sh, SHELL_NORMAL, "  Header length: %u bytes\n", param.hdr_len);
+	}
+
+	if (async) {
+		ret = zperf_raw_upload_async(&param, raw_upload_cb, (void *)sh);
+		if (ret < 0) {
+			shell_fprintf(sh, SHELL_ERROR,
+				      "Failed to start async raw TX upload (%d)\n", ret);
+			return ret;
+		}
+		shell_fprintf(sh, SHELL_NORMAL, "Async raw TX upload started\n");
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL, "Starting raw TX upload...\n");
+		ret = zperf_raw_upload(&param, &results);
+		if (ret < 0) {
+			shell_fprintf(sh, SHELL_ERROR, "Raw TX upload failed (%d)\n", ret);
+			return ret;
+		}
+		shell_raw_upload_print_stats(sh, &results);
+	}
+
+	return 0;
+}
+
+static int cmd_raw(const struct shell *sh, size_t argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_help(sh);
+	return -ENOEXEC;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_raw,
+	SHELL_CMD(upload, NULL,
+		  "[-a] <if_index> <dst_mac> [<duration_sec>] [<packet_size>] "
+		  "[<rate_kbps>] [<ethertype>] [<header_hex>]\n"
+		  "Send raw packets with custom header.\n"
+		  "<if_index>     Network interface index\n"
+		  "<dst_mac>      Destination MAC (xx:xx:xx:xx:xx:xx)\n"
+		  "<duration_sec> Duration in seconds (default: 1)\n"
+		  "<packet_size>  Packet size in bytes (default: 256)\n"
+		  "<rate_kbps>    Target rate in Kbps (default: 10)\n"
+		  "<ethertype>    EtherType in hex (default: 0x88b5)\n"
+		  "<header_hex>   Custom header as hex bytes\n"
+		  "Options:\n"
+		  "  -a: Asynchronous mode\n"
+		  "Example: raw upload 1 ff:ff:ff:ff:ff:ff 5 256 1000 0x88b5 0102030405\n",
+		  cmd_raw_upload),
+	SHELL_SUBCMD_SET_END
+);
+
+#endif /* CONFIG_NET_ZPERF_RAW_TX */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
 	SHELL_CMD(connectap, NULL,
 		  "Connect to AP",
@@ -2070,6 +2358,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
 	SHELL_CMD(jobs, &zperf_cmd_jobs,
 		  "Show currently active tests",
 		  cmd_jobs),
+#ifdef CONFIG_NET_ZPERF_RAW_TX
+	SHELL_CMD(raw, &zperf_cmd_raw,
+		  "Raw packet TX operations",
+		  cmd_raw),
+#endif /* CONFIG_NET_ZPERF_RAW_TX */
 	SHELL_CMD(setip, NULL,
 		  "Set IP address\n"
 		  "<my ip> <prefix len>\n"
