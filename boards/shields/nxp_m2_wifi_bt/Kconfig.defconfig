@@ -124,6 +124,9 @@ endif # WIFI_NM_HOSTAPD_AP
 
 endif # WIFI
 
+configdefault IMX_USDHC_DAT3_DETECT_RETRY
+	default 10
+
 endif # SHIELD_NXP_M2_2LL_WIFI_BT
 
 if (BT_NXP_IW416) || (BT_NXP_NW612) || (BT_NXP_IW610) || (NXP_IW416) || (NXP_IW61X) || (NXP_IW610)

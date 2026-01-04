@@ -27,8 +27,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 3 */
 	MPU_REGION_ENTRY("SRAM_0", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 
-	/* Region 4 - Ready only flash with unique device id */
-	MPU_REGION_ENTRY("ID", 0x08FFF800, REGION_FLASH_ATTR(REGION_2K)),
+	/* Region 4 - Ready only flash with unique device id, package code and VREF/TS calib*/
+	MPU_REGION_ENTRY("ID", 0x08FFF800, REGION_IO_ATTR(REGION_512B)),
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
 #define sram_eth_node DT_NODELABEL(sram2)

@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(shell_adsp_memory_window);
 
 BUILD_ASSERT(RX_WINDOW_SIZE < ADSP_DW_SLOT_SIZE);
 
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+static struct adsp_debug_slot_shell *dw_slot;
+#endif
+
 struct adsp_debug_slot_shell {
 	uint8_t rx_window[RX_WINDOW_SIZE];
 	uint8_t tx_window[ADSP_DW_SLOT_SIZE - RX_WINDOW_SIZE];
@@ -44,6 +48,15 @@ static int init(const struct shell_transport *transport,
 {
 	struct shell_adsp_memory_window *sh_adsp_mw =
 		(struct shell_adsp_memory_window *)transport->ctx;
+
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+	struct adsp_dw_desc slot_desc = { .type = ADSP_DW_SLOT_SHELL, };
+
+	dw_slot = (struct adsp_debug_slot_shell *)adsp_dw_request_slot(&slot_desc, NULL);
+	if (!dw_slot) {
+		return -ENOTSUP;
+	}
+#else
 	struct adsp_debug_slot_shell *dw_slot;
 
 	if (ADSP_DW->descs[ADSP_DW_SLOT_NUM_SHELL].type &&
@@ -55,10 +68,12 @@ static int init(const struct shell_transport *transport,
 
 	ADSP_DW->descs[ADSP_DW_SLOT_NUM_SHELL].type = ADSP_DW->descs[ADSP_DW_SLOT_NUM_SHELL].type;
 
+	dw_slot = (struct adsp_debug_slot_shell *)ADSP_DW->slots[ADSP_DW_SLOT_NUM_SHELL];
+#endif
+
 	sh_adsp_mw->shell_handler = evt_handler;
 	sh_adsp_mw->shell_context = context;
 
-	dw_slot = (struct adsp_debug_slot_shell *)ADSP_DW->slots[ADSP_DW_SLOT_NUM_SHELL];
 
 	sh_adsp_mw->ws_rx = sys_winstream_init(&dw_slot->rx_window[0], sizeof(dw_slot->rx_window));
 	sh_adsp_mw->ws_tx = sys_winstream_init(&dw_slot->tx_window[0], sizeof(dw_slot->tx_window));
@@ -79,6 +94,11 @@ static int uninit(const struct shell_transport *transport)
 		(struct shell_adsp_memory_window *)transport->ctx;
 
 	k_timer_stop(&sh_adsp_mw->timer);
+
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+	adsp_dw_release_slot(ADSP_DW_SLOT_SHELL);
+	dw_slot = NULL;
+#endif
 
 	return 0;
 }

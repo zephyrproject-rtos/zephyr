@@ -134,7 +134,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 						 .get_capabilities = netc_eth_get_capabilities,
 						 .get_phy = netc_eth_get_phy,
 						 .set_config = netc_eth_set_config,
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 						 .get_ptp_clock = netc_eth_get_ptp_clock,
 #endif
 						 .send = netc_eth_tx};
@@ -216,7 +216,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		IF_DISABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                       \
 			(.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                      \
 			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
-		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				                   \
+		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,                                          \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, ptp_clock)),))      \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \

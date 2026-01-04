@@ -218,7 +218,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	buf_size = MIN(fmt.pitch * fmt.height, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX);
+	buf_size = fmt.pitch * fmt.height;
 
 	shell_print(sh, "Preparing %u buffers of %u bytes each",
 		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, buf_size);

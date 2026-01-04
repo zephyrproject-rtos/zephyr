@@ -46,7 +46,7 @@
 
 #include "mcuboot_priv.h"
 
-LOG_MODULE_REGISTER(mcuboot_dfu, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(mcuboot_dfu, CONFIG_IMG_MANAGER_LOG_LEVEL);
 
 /*
  * Helpers for image headers and trailers, as defined by mcuboot.

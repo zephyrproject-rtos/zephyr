@@ -21,7 +21,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/irq.h>
 #include <string.h>
 
@@ -50,7 +49,6 @@
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"

@@ -6,6 +6,7 @@
 
 &i2c1 { /* SDA CN5.9=PB9, SCL CN5.10=PB8, ISW CN5.1=D8=PA9 */
 	status = "okay";
+
 	ds3231: ds3231@68 {
 		compatible = "maxim,ds3231";
 		reg = <0x68>;

@@ -74,6 +74,10 @@
 	status = "okay";
 };
 
+&mailbox {
+	status = "okay";
+};
+
 &uart5 {
 	pinctrl-0 = <&uart5_tx_pg9 &uart5_rx_pg10>;
 	pinctrl-names = "default";

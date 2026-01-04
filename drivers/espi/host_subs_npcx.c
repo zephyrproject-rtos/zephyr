@@ -293,6 +293,9 @@ static void host_kbc_obe_isr(const void *arg)
 
 	LOG_DBG("%s: kbc status 0x%02x", __func__, inst_kbc->HIKMST);
 
+	if (IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+		inst_kbc->HIIRQC &= ~(BIT(NPCX_HIIRQC_IRQ1B) | BIT(NPCX_HIIRQC_IRQ12B));
+	}
 	/*
 	 * Notify application that host already read out data. The application
 	 * might need to clear status register via espi_api_lpc_write_request()
@@ -323,9 +326,12 @@ static void host_kbc_init(void)
 	 * 2. Enable Output Buffer Full Mouse(OBFM) SIRQ 12.
 	 * 3. Enable Output Buffer Full Keyboard (OBFK) SIRQ 1.
 	 */
-	inst_kbc->HICTRL = BIT(NPCX_HICTRL_IBFCIE) | BIT(NPCX_HICTRL_OBFMIE)
-						| BIT(NPCX_HICTRL_OBFKIE);
-
+	if (IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+		inst_kbc->HICTRL = BIT(NPCX_HICTRL_IBFCIE);
+	} else {
+		inst_kbc->HICTRL =
+			BIT(NPCX_HICTRL_IBFCIE) | BIT(NPCX_HICTRL_OBFMIE) | BIT(NPCX_HICTRL_OBFKIE);
+	}
 	/* Configure SIRQ 1/12 type (level + high) */
 	inst_kbc->HIIRQC = 0x00;
 }
@@ -809,9 +815,11 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 		struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
 
 		/* Make sure kbc 8042 is on */
-		if (!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFKIE) ||
-			!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFMIE)) {
-			return -ENOTSUP;
+		if (!IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+			if (!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFKIE) ||
+			    !IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFMIE)) {
+				return -ENOTSUP;
+			}
 		}
 
 		switch (op) {
@@ -820,7 +828,16 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 			 * automatically cleared after host reads
 			 * the data
 			 */
-			*data = IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_OBF);
+			if (IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+				struct espi_reg *const inst_espi =
+					(struct espi_reg *)DT_REG_ADDR(DT_NODELABEL(espi0));
+
+				*data = (IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_OBF) ||
+					 IS_BIT_SET(inst_espi->STATUS_IMG,
+						    NPCX_STATUS_IMG_VWIRE_AVAIL));
+			} else {
+				*data = IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_OBF);
+			}
 			break;
 		case E8042_IBF_HAS_CHAR:
 			*data = IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_IBF);
@@ -892,9 +909,11 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 
 	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
 		/* Make sure kbc 8042 is on */
-		if (!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFKIE) ||
-			!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFMIE)) {
-			return -ENOTSUP;
+		if (!IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+			if (!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFKIE) ||
+			    !IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFMIE)) {
+				return -ENOTSUP;
+			}
 		}
 		if (data) {
 			LOG_DBG("op 0x%x data %x", op, *data);
@@ -910,6 +929,9 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			 * keyboard data register.
 			 */
 			inst_kbc->HICTRL |= BIT(NPCX_HICTRL_OBECIE);
+			if (IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+				inst_kbc->HIIRQC |= BIT(NPCX_HIIRQC_IRQ1B);
+			}
 			break;
 		case E8042_WRITE_MB_CHAR:
 			inst_kbc->HIMDO = *data & 0xff;
@@ -918,6 +940,9 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			 * mouse data register.
 			 */
 			inst_kbc->HICTRL |= BIT(NPCX_HICTRL_OBECIE);
+			if (IS_ENABLED(CONFIG_ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND)) {
+				inst_kbc->HIIRQC |= BIT(NPCX_HIIRQC_IRQ12B);
+			}
 			break;
 		case E8042_RESUME_IRQ:
 			/* Enable KBC IBF interrupt */

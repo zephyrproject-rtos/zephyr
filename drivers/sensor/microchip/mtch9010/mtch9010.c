@@ -48,6 +48,7 @@ static int mtch9010_device_reset(const struct device *dev);
 static int mtch9010_timeout_receive(const struct device *dev, char *buffer, uint8_t buffer_len,
 				    uint16_t milliseconds);
 static int mtch9010_lock_settings(const struct device *dev);
+static int mtch9010_update_heartbeat(const struct device *dev);
 
 /* Callbacks */
 static void mtch9010_heartbeat_callback(const struct device *dev, struct gpio_callback *cb,
@@ -313,7 +314,7 @@ static int mtch9010_init(const struct device *dev)
 	mtch9010_verify_uart(dev);
 
 	/* Configure heartbeat timing */
-	k_sem_init(&data->heartbeat_sem, 0, 1);
+	k_sem_init(&data->heartbeat_sem, 1, 1);
 
 	/* Configure device I/O, as needed */
 	mtch9010_configure_gpio(dev);
@@ -517,21 +518,24 @@ static int mtch9010_configure_int_gpio(const struct device *dev)
 	if (gpio_is_ready_dt(&config->heartbeat_gpio)) {
 		gpio_pin_configure_dt(&config->heartbeat_gpio, GPIO_INPUT);
 #ifdef CONFIG_MTCH9010_HEARTBEAT_MONITORING_ENABLE
-		gpio_init_callback(&data->heartbeat_cb, mtch9010_heartbeat_callback,
-				   BIT(config->heartbeat_gpio.pin));
-		rtn = gpio_add_callback_dt(&config->heartbeat_gpio, &data->heartbeat_cb);
-		if (rtn == 0) {
-			rtn = gpio_pin_interrupt_configure_dt(&config->heartbeat_gpio,
+		rtn = gpio_pin_interrupt_configure_dt(&config->heartbeat_gpio,
 							      GPIO_INT_EDGE_RISING);
-			if (rtn < 0) {
-				LOG_INST_ERR(config->log, "Unable to configure interrupt; code %d",
-					     rtn);
-			} else {
-				LOG_INST_DBG(config->log, "Configured Heartbeat Interrupt");
-			}
+		if (rtn < 0) {
+			LOG_INST_ERR(config->log, "Unable to configure interrupt; code %d",
+					rtn);
 		} else {
-			LOG_INST_ERR(config->log, "Unable to add callback; code %d", rtn);
+			LOG_INST_DBG(config->log, "Configured Heartbeat Interrupt");
+			gpio_init_callback(&data->heartbeat_cb, mtch9010_heartbeat_callback,
+				   BIT(config->heartbeat_gpio.pin));
+			rtn = gpio_add_callback_dt(&config->heartbeat_gpio, &data->heartbeat_cb);
+			if (rtn == 0) {
+				LOG_INST_DBG(config->log, "Added Heartbeat Callback");
+			} else {
+				LOG_INST_ERR(config->log, "Unable to add callback; code %d", rtn);
+			}
 		}
+
+
 #endif
 	} else {
 		LOG_INST_DBG(config->log, "Heartbeat line is not ready.");
@@ -669,6 +673,38 @@ static int mtch9010_lock_settings(const struct device *dev)
 	return 0;
 }
 
+static int mtch9010_update_heartbeat(const struct device *dev)
+{
+	struct mtch9010_data *data = dev->data;
+	const struct mtch9010_config *config = dev->config;
+	int64_t time_delta;
+
+#ifdef CONFIG_MTCH9010_HEARTBEAT_MONITORING_ENABLE
+	if (k_sem_take(&data->heartbeat_sem, K_MSEC(MTCH9010_UART_COMMAND_TIMEOUT_MS)) < 0) {
+		data->heartbeat_error_state = true;
+		LOG_INST_ERR(config->log, "Unable to acquire heartbeat semaphore");
+		return -EBUSY;
+	}
+
+	/* Compute the last access time */
+	time_delta = k_uptime_get() - data->last_heartbeat;
+
+	k_sem_give(&data->heartbeat_sem);
+
+	if (time_delta > MTCH9010_ERROR_PERIOD_MS) {
+		data->heartbeat_error_state = true;
+	} else {
+		data->heartbeat_error_state = false;
+	}
+
+	return 0;
+#else
+	LOG_INST_DBG(config->log, "Heartbeat monitoring not enabled");
+	data->heartbeat_error_state = false;
+	return -ENOTSUP;
+#endif
+}
+
 static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct mtch9010_config *config = dev->config;
@@ -763,30 +799,12 @@ static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel c
 			LOG_INST_ERR(config->log, "Unable to decode result for channel %u", chan);
 			return -EINVAL;
 		}
+
+		mtch9010_update_heartbeat(dev);
 	} break;
 	case SENSOR_CHAN_MTCH9010_HEARTBEAT_ERROR_STATE: {
 		/* Returns true if the heartbeat is an error state */
-#ifdef CONFIG_MTCH9010_HEARTBEAT_MONITORING_ENABLE
-		if (k_sem_take(&data->heartbeat_sem, K_MSEC(MTCH9010_UART_COMMAND_TIMEOUT_MS)) <
-		    0) {
-			return -EBUSY;
-		}
-
-		/* Compute the last access time */
-		int64_t time_delta = k_uptime_delta(&data->last_heartbeat);
-
-		k_sem_give(&data->heartbeat_sem);
-
-		if (time_delta < MTCH9010_ERROR_PERIOD_MS) {
-			data->heartbeat_error_state = true;
-		} else {
-			data->heartbeat_error_state = false;
-		}
-
-		return 0;
-#else
-		return -ENOTSUP;
-#endif
+		mtch9010_update_heartbeat(dev);
 	}
 	default: {
 		return -ENOTSUP;
@@ -878,10 +896,12 @@ static void mtch9010_heartbeat_callback(const struct device *dev, struct gpio_ca
 
 	struct mtch9010_data *data = CONTAINER_OF(cb, struct mtch9010_data, heartbeat_cb);
 
-	if (k_sem_take(&data->heartbeat_sem, K_NO_WAIT) == 0) {
-		data->last_heartbeat = k_uptime_get();
-		k_sem_give(&data->heartbeat_sem);
+	if (k_sem_take(&data->heartbeat_sem, K_NO_WAIT) < 0) {
+		return;
 	}
+
+	data->last_heartbeat = k_uptime_get();
+	k_sem_give(&data->heartbeat_sem);
 }
 
 /* Sensor APIs */

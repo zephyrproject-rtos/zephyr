@@ -741,6 +741,11 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 {
 	int ret;
 
+	client_id->hw_addr_type = msg->htype;
+	memcpy(client_id->hw_addr_buf, msg->chaddr, min(msg->hlen,
+			DHCPV4_HARDWARE_ADDRESS_MAX_SIZE));
+	client_id->hw_addr_len = msg->hlen;
+
 	client_id->len = sizeof(client_id->buf);
 
 	ret = dhcpv4_find_client_id_option(options, optlen, client_id->buf,

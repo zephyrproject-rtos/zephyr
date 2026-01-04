@@ -12,12 +12,6 @@
 #include <zephyr/drivers/uart.h>
 #include <ctype.h>
 
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
-
 LOG_MODULE_REGISTER(app);
 
 extern void foo(void);
@@ -255,7 +249,7 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
@@ -263,10 +257,12 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 #define CHAR_1 0x18
 #define CHAR_2 0x11
 
-static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len, void *user_data)
 {
 	static uint8_t tail;
 	bool escape = false;
+
+	ARG_UNUSED(user_data);
 
 	/* Check if escape criteria is met. */
 	if (tail == CHAR_1 && data[0] == CHAR_2) {

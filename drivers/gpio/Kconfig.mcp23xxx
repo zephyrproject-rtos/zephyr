@@ -26,7 +26,7 @@ if GPIO_MCP230XX
 
 config GPIO_MCP230XX_INIT_PRIORITY
 	int "MCP230XX GPIO expander init priority"
-	default 75
+	default I2C_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 

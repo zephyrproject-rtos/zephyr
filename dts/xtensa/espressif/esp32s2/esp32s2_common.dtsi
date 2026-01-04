@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;

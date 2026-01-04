@@ -392,8 +392,6 @@ device.
      - Video input device, typically a camera.
    * - zephyr,canbus
      - Sets the default CAN controller
-   * - zephyr,ccm
-     - Core-Coupled Memory node on some STM32 SoCs
    * - zephyr,code-partition
      - Flash partition that the Zephyr image's text section should be linked
        into
@@ -462,7 +460,10 @@ device.
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
    * - zephyr,touch
-     - touchscreen controller device node.
+     - Touchscreen controller device node. When LVGL is used, if
+       :kconfig:option:`CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH` is enabled, an LVGL
+       pointer input device is created using the touchscreen controller
+       as its input source.
    * - zephyr,videoenc
      - Video encoder device, typically an H264 or MJPEG video encoder.
    * - mcuboot,ram-load-dev

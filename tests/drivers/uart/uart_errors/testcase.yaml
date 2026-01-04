@@ -25,6 +25,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf5340dk/nrf5340/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - sam_e54_xpro
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_INTERRUPT_DRIVEN=n

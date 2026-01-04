@@ -35,7 +35,6 @@
 #ifdef CONFIG_ADC_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/toolchain.h>
 #include <stm32_ll_dma.h>
 #endif
 
@@ -54,7 +53,6 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <stm32_ll_system.h>
 #endif
 
 #include <zephyr/linker/linker-defs.h>
@@ -1700,6 +1698,13 @@ static int adc_stm32_init(const struct device *dev)
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
 
+	/* If several ADCs are used and share a common clock property (for example ADC1/2 prescaler
+	 * value on STM32U5), none of them should be enabled when the clock is set.
+	 * To that end, make sure to disable ADC at the end of the initialization, it will be
+	 * enabled later when necessary anyway.
+	 */
+	adc_stm32_disable(adc);
+
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -1828,8 +1833,11 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
 				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
-			.source_burst_length = 1,       /* SINGLE transfer */		\
-			.dest_burst_length = 1,         /* SINGLE transfer */		\
+			/* single transfers (burst length = data size) */		\
+			.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
+				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
+				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
 				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 			.dma_callback = dma_callback,					\

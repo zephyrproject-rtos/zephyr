@@ -86,7 +86,9 @@ if(NOT EXISTS "${APPLICATION_CONFIG_DIR}")
 endif()
 
 # Empty files to make kconfig.py happy.
-file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
+  file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
+endif()
 set(APPLICATION_SOURCE_DIR ${sysbuild_toplevel_SOURCE_DIR})
 set(AUTOCONF_H             ${CMAKE_CURRENT_BINARY_DIR}/autoconf.h)
 set(CONF_FILE              ${SB_CONF_FILE})

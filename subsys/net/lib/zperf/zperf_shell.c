@@ -230,7 +230,7 @@ static int zperf_bind_host(const struct shell *sh,
 			return ret;
 		}
 
-		memcpy(&param->addr, &addr, sizeof(struct sockaddr));
+		memcpy(&param->addr, &addr, sizeof(struct net_sockaddr));
 	}
 
 	return 0;

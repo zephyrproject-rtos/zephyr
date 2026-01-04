@@ -9,4 +9,12 @@ if SOC_SERIES_STM32F2X
 
 rsource "Kconfig.defconfig.stm32f2*"
 
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers9)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers10)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers11)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers12)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers14)
+
 endif # SOC_SERIES_STM32F2X

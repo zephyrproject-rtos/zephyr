@@ -26,6 +26,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -140,21 +141,32 @@ static int advertise(void)
 
 struct bt_cap_stream *stream_alloc(enum bt_audio_dir dir)
 {
-	if (dir == BT_AUDIO_DIR_SINK && peer.sink_stream.bap_stream.ep == NULL) {
-		return &peer.sink_stream;
+	struct bt_cap_stream *ret_stream;
+
+	if (dir == BT_AUDIO_DIR_SINK) {
+		ret_stream = NULL;
+		ARRAY_FOR_EACH_PTR(peer.sink_streams, stream) {
+			if (stream->bap_stream.ep == NULL) {
+				ret_stream = stream;
+			}
+		}
 	} else if (dir == BT_AUDIO_DIR_SOURCE && peer.source_stream.bap_stream.ep == NULL) {
-		return &peer.source_stream;
+		ret_stream = &peer.source_stream;
+	} else {
+		ret_stream = NULL;
 	}
 
-	return NULL;
+	return ret_stream;
 }
 
 void stream_released(const struct bt_cap_stream *cap_stream)
 {
 	if (cap_stream == &peer.source_stream) {
 		k_sem_give(&peer.source_stream_sem);
-	} else if (cap_stream == &peer.sink_stream) {
+	} else if (IS_ARRAY_ELEMENT(peer.sink_streams, cap_stream)) {
 		k_sem_give(&peer.sink_stream_sem);
+	} else {
+		__ASSERT(false, "Invalid stream: %p", cap_stream);
 	}
 }
 
@@ -201,11 +213,13 @@ static int reset_cap_acceptor(void)
 		}
 	}
 
-	if (peer.sink_stream.bap_stream.ep != NULL) {
-		err = k_sem_take(&peer.sink_stream_sem, SEM_TIMEOUT);
-		if (err != 0) {
-			LOG_ERR("Timeout on sink_stream_sem: %d", err);
-			return err;
+	ARRAY_FOR_EACH_PTR(peer.sink_streams, stream) {
+		if (stream->bap_stream.ep != NULL) {
+			err = k_sem_take(&peer.sink_stream_sem, SEM_TIMEOUT);
+			if (err != 0) {
+				LOG_ERR("Timeout on sink_stream_sem: %d", err);
+				return err;
+			}
 		}
 	}
 

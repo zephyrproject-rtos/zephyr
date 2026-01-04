@@ -35,6 +35,11 @@ if(CONFIG_BUILD_WITH_TFA)
     set(TFA_AARCH32_REGS "")
   endif()
 
+  # Set default TF-A build parameters that can be overridden by boards
+  if(NOT DEFINED TFA_EXTRA_ARGS)
+    set(TFA_EXTRA_ARGS "")
+  endif()
+
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND make -C ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
             DEBUG=${TFA_BUILD_DEBUG}
@@ -42,6 +47,7 @@ if(CONFIG_BUILD_WITH_TFA)
             BUILD_BASE=${TFA_BINARY_DIR} PLAT=${TFA_PLAT}
             BL33=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
             ${TFA_AARCH32_REGS}
+            ${TFA_EXTRA_ARGS}
             all fip
   )
 endif()

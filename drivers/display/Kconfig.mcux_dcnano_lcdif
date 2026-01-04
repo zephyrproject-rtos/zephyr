@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023,2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -33,29 +33,5 @@ config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE
 	  Maintain cache coherency for LCDIF framebuffer. This is generally
 	  required, unless an external framebuffer is utilized with custom
 	  caching settings, or caching is disabled.
-
-config MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
-	bool "Use external memory for framebuffer"
-	imply MEMC
-	help
-	  Use external memory for framebuffer. Configures the LCDIF to write
-	  framebuffer data to a memory mapped external device.
-
-	  Note that no specific linker section is used for this framebuffer, so
-	  if the application uses the external memory for other purposes, care
-	  should be taken to ensure that the memory allocated for the LCDIF
-	  does not overlap with other data. Each allocated LCDIF buffer will
-	  utilize (lcd_width * lcd_height * bytes_per_pixel) bytes of data,
-	  and buffers will be allocated contiguously.
-
-if MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
-
-config MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
-	hex "LCDIF framebuffer address"
-	help
-	  Address of memory mapped external framebuffer.
-	  Must be 128 byte aligned
-
-endif # MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
 
 endif # DISPLAY_MCUX_DCNANO_LCDIF

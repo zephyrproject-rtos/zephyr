@@ -327,7 +327,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 7>;
 			status = "disabled";
@@ -376,6 +376,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <35 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -386,6 +387,7 @@
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 5>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -396,6 +398,7 @@
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 5>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -413,6 +416,7 @@
 		lptim1: timers@40007c00 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
+			resets = <&rctl STM32_RESET(APB1L, 31)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
@@ -436,6 +440,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 
 			qdec {
@@ -542,6 +551,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -554,6 +568,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40013400 {
@@ -571,6 +590,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 
 			qdec {
@@ -761,8 +785,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1FFF75A8>;
-		ts-cal2-addr = <0x1FFF75CA>;
+		ts-cal1-addr = <0x1fff75a8>;
+		ts-cal2-addr = <0x1fff75ca>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -772,7 +796,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1FFF75AA>;
+		vrefint-cal-addr = <0x1fff75aa>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 18>;
 		status = "disabled";

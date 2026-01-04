@@ -60,42 +60,20 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 				break;
 			case 16:
 				value = sys_le16_to_cpu(sys_read16(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
+				sys_put_le16(value, &hex_data[data_offset]);
 				break;
 			case 32:
 				value = sys_le32_to_cpu(sys_read32(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 2] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 3] = (uint8_t)value;
+				sys_put_le32(value, &hex_data[data_offset]);
 				break;
 #ifdef CONFIG_64BIT
 			case 64:
 				value = sys_le64_to_cpu(sys_read64(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 2] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 3] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 4] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 5] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 6] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 7] = (uint8_t)value;
+				sys_put_le64(value, &hex_data[data_offset]);
 				break;
 #endif /* CONFIG_64BIT */
 			default:
-				shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+				shell_print(sh, "Incorrect data width");
 				return -EINVAL;
 			}
 		}
@@ -175,16 +153,18 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
 
-static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *user_data)
 {
 	bool escape = false;
 	static uint8_t tail;
 	uint8_t byte;
+
+	ARG_UNUSED(user_data);
 
 	for (size_t i = 0; i < len; i++) {
 		if (tail == CHAR_CAN && recv[i] == CHAR_DC1) {
@@ -283,13 +263,13 @@ static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 		break;
 #endif /* CONFIG_64BIT */
 	default:
-		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		shell_print(sh, "Incorrect data width");
 		err = -EINVAL;
 		break;
 	}
 
 	if (err == 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%llx\n", value);
+		shell_print(sh, "Read value 0x%llx", value);
 	}
 
 	return err;
@@ -315,7 +295,7 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 		break;
 #endif /* CONFIG_64BIT */
 	default:
-		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		shell_print(sh, "Incorrect data width");
 		err = -EINVAL;
 		break;
 	}
@@ -346,7 +326,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 		width = strtoul(argv[2], NULL, 10);
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Using data width %d\n", width);
+	shell_print(sh, "Using data width %d", width);
 
 	if (argc <= 3) {
 		return memory_read(sh, addr, width);
@@ -358,7 +338,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 
 	value = (uint64_t)strtoull(argv[3], NULL, 16);
 
-	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%llx\n", value);
+	shell_print(sh, "Writing value 0x%llx", value);
 
 	return memory_write(sh, addr, width, value);
 }

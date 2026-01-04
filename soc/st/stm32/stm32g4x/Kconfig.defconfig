@@ -7,6 +7,11 @@ if SOC_SERIES_STM32G4X
 
 rsource "Kconfig.defconfig.stm32g4*"
 
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers15)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers17)
+
 if PM
 config PM_DEVICE
 	default y

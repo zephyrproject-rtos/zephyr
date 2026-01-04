@@ -6,7 +6,7 @@
 menuconfig BT_CTLR_COEX_DRIVERS
 	bool "Bluetooth Co-existence Drivers"
 	default y
-	depends on HAS_BT_CTLR && DT_HAS_GPIO_RADIO_COEX_ENABLED
+	depends on HAS_BT_CTLR && DT_HAS_RADIO_GPIO_COEX_ENABLED
 
 if BT_CTLR_COEX_DRIVERS
 

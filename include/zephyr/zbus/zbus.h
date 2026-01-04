@@ -807,6 +807,20 @@ const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id);
 
 #endif
 
+#if defined(CONFIG_ZBUS_CHANNEL_NAME) || defined(__DOXYGEN__)
+
+/**
+ * @brief Retrieve a zbus channel from its name string
+ *
+ * @param name Name of the channel to retrieve.
+ *
+ * @retval NULL If channel with name @a name does not exist.
+ * @retval chan Channel pointer with name @a name otherwise.
+ */
+const struct zbus_channel *zbus_chan_from_name(const char *name);
+
+#endif
+
 /**
  * @brief Get the reference for a channel message directly.
  *

@@ -57,33 +57,26 @@ config MODEM_HL78XX_12_FW_R6
 
 endif # MODEM_HL78XX_12
 
-config MODEM_HL78XX_UART_BUFFER_SIZES
-	int "The UART receive and transmit buffer sizes in bytes."
-	default 512
-
-config MODEM_HL78XX_CHAT_BUFFER_SIZES
-	int "The size of the buffers used for the chat scripts in bytes."
-	default 512
-
-config MODEM_HL78XX_USER_PIPE_BUFFER_SIZES
-	int "The size of the buffers used for each user pipe in bytes."
-	default 512
-
-config MODEM_HL78XX_RECV_BUF_CNT
-	int "The number of allocated network buffers"
-	default 30
-
-config MODEM_HL78XX_RECV_BUF_SIZE
-	int "The size of the network buffers in bytes"
-	default 128
-
-config MODEM_HL78XX_RX_WORKQ_STACK_SIZE
-	int "Stack size for the Sierra Wireless HL78XX driver modem driver work queue"
-	default 2048
+config MODEM_HL78XX_AT_SHELL
+	bool "AT command shell"
 	help
-	  This stack is used by the work queue to pass off net_pkt data
-	  to the rest of the network stack, letting the rx thread continue
-	  processing data.
+	  Enable AT command shell for the modem.
+
+if MODEM_HL78XX_AT_SHELL
+
+config MODEM_AT_SHELL_RESPONSE_TIMEOUT_MS
+	int "Timeout waiting for response to AT command in milliseconds"
+	default 500
+
+config MODEM_AT_SHELL_COMMAND_MAX_SIZE
+	int "Maximum size of AT command"
+	default 32
+
+config MODEM_AT_SHELL_RESPONSE_MAX_SIZE
+	int "Maximum size of AT response"
+	default 64
+
+endif # MODEM_HL78XX_AT_SHELL
 
 choice MODEM_HL78XX_ADDRESS_FAMILY
 	prompt "IP Address family"
@@ -140,6 +133,7 @@ config MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
 	bool "WAIT FOR ROAMING"
 	help
 	  Keep the device in boot mode until have +CREG/+CEREG: 1(normal) or 5(roaming)
+
 endif # MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
 
 config MODEM_HL78XX_PERIODIC_SCRIPT_MS
@@ -299,6 +293,7 @@ menuconfig MODEM_HL78XX_CONFIGURE_BANDS
 
 if MODEM_HL78XX_CONFIGURE_BANDS
 if !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_1
 	bool "Band 1  (2000MHz)"
 	default y
@@ -377,13 +372,17 @@ config MODEM_HL78XX_BAND_20
 	default y
 	help
 	  Enable Band 20 (800MHz)
+
 endif # !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_23
 	bool "Band 23 (2000MHz)"
 	default y if MODEM_HL78XX_RAT_NBNTN
 	help
 	  Enable Band 23 (2000MHz)
+
 if !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_25
 	bool "Band 25 (1900MHz)"
 	help
@@ -449,7 +448,9 @@ config MODEM_HL78XX_BAND_107
 	bool "Band 107 (1800MHz)"
 	help
 	  Enable Band 107 (1800MHz)
+
 endif # !MODEM_HL78XX_RAT_NBNTN
+
 config MODEM_HL78XX_BAND_255
 	bool "Band 255 (1500MHz)"
 	default y if MODEM_HL78XX_RAT_NBNTN
@@ -466,6 +467,7 @@ endif # MODEM_HL78XX_CONFIGURE_BAND
 
 # NB-IoT NTN Position Configuration
 if MODEM_HL78XX_RAT_NBNTN
+
 menuconfig MODEM_HL78XX_NBNTN_POSITIONING
 	bool "NB-IoT NTN Position Configuration"
 	depends on !MODEM_HL78XX_AUTORAT
@@ -530,6 +532,7 @@ config NTN_DYNAMIC_POSREQ_UPDATE
 	help
 	  If enabled, the UE position must be updated after receiving unsolicited +KNTNEV:
 	  'POSREQ' indication, before any outgoing network operation in dynamic mode.
+
 endif # MODEM_HL78XX_NBNTN_POSITIONING
 endif # MODEM_HL78XX_RAT_NBNTN
 
@@ -719,6 +722,59 @@ config MODEM_MIN_ALLOWED_SIGNAL_STRENGTH
 	    default -140
 	    range - 140 0
 
+config MODEM_HL78XX_AIRVANTAGE
+	bool "AirVantage"
+	help
+	  Enable HL78xx modules connect to the AirVantage DM Server over OMA
+
+if MODEM_HL78XX_AIRVANTAGE
+
+choice MODEM_HL78XX_AIRVANTAGE_SESSION_INITIATION
+	prompt "AirVantage Initialization"
+	default MODEM_HL78XX_AIRVANTAGE_HOST_INITIATED
+	help
+	  Choose this setting to enable HL78xx modules to connect to the AirVantage DM Server.
+
+config MODEM_HL78XX_AIRVANTAGE_HOST_INITIATED
+	bool "Host Initiated"
+	help
+	  The host application is responsible for initiating the connection to the AirVantage server.
+
+config MODEM_HL78XX_AIRVANTAGE_MODULE_INITIATED
+	bool "Module Initiated"
+	help
+	  The HL78xx module is responsible for initiating the connection to the AirVantage server.
+
+endchoice
+
+menuconfig MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT
+	bool "User Agreement Activation"
+	help
+	  Activating User Agreements enables the host processor application to control the FOTA flow. For instance, the host
+	  processor application, busy fulfilling a service (e.g. car is operating, ongoing payment transaction), can decide to
+	  postpone firmware download or install operations, as accepting a firmware installation will lead the embedded
+	  module to reboot upon FOTA completion.
+
+if MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT
+
+config MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
+	bool "Connect to AirVantage"
+	help
+	  Module requests the user/application to connect to AirVantage
+
+config MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE
+	bool "Download Firmware"
+	help
+	  AirVantage requests the device to download a firmware package
+
+config MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE
+	bool "Install Firmware"
+	help
+	  AirVantage requests the device to install the downloaded firmware package
+
+endif # MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT
+endif # MODEM_HL78XX_AIRVANTAGE
+
 config MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
 	bool "Advanced socket configuration"
 	help
@@ -759,6 +815,14 @@ config MODEM_HL78XX_NUM_SOCKETS
 	help
 	  Maximum number of sockets that can be opened at the same time
 
+config MODEM_HL78XX_MAX_PDP_CONTEXTS
+	int "Maximum number of PDP contexts"
+	default 1
+	range 1 1 if !MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	range 1 2 if MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	help
+	  Maximum number of PDP contexts that can be defined at the same time
+
 config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	bool "TLS for sockets"
 	depends on NET_SOCKETS_SOCKOPT_TLS
@@ -766,38 +830,61 @@ config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	  This option enables TLS (Transport Layer Security) for sockets
 	  on the HL78xx modem.
 
-config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	bool "Verbose debug output in the HL78xx"
-	depends on MODEM_MODULES_LOG_LEVEL_DBG
-	help
-	  Enabling this setting will turn on VERY heavy debugging from the
-	  modem.  Do NOT leave on for production.
-	  This setting is depends on global log level debug.
+config MODEM_HL78XX_UART_BUFFER_SIZES
+	int "The UART receive and transmit buffer sizes in bytes."
+	default 512
 
-config MODEM_HL78XX_DEV_POWER_PULSE_DURATION
+config MODEM_HL78XX_CHAT_BUFFER_SIZES
+	int "The size of the buffers used for the chat scripts in bytes."
+	default 512
+
+config MODEM_HL78XX_USER_PIPE_BUFFER_SIZES
+	int "The size of the buffers used for each user pipe in bytes."
+	default 512
+
+config MODEM_HL78XX_RECV_BUF_CNT
+	int "The number of allocated network buffers"
+	default 30
+
+config MODEM_HL78XX_RECV_BUF_SIZE
+	int "The size of the network buffers in bytes"
+	default 128
+
+config MODEM_HL78XX_RX_WORKQ_STACK_SIZE
+	int "Stack size for the Sierra Wireless HL78XX driver modem driver work queue"
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS
 	int "Duration of the power-on pulse in milliseconds."
 	default 1500
 	help
 	  Trigger a power-on sequence by setting a power on GPIO pin high
 	  for a specific amount of time.
 
-config MODEM_HL78XX_DEV_RESET_PULSE_DURATION
+config MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS
 	int "Duration of the power-reset pulse in milliseconds."
 	default 100
 	help
 	  Trigger a power-reset sequence by setting a reset GPIO pin high
 	  for a specific amount of time.
 
-config MODEM_HL78XX_DEV_STARTUP_TIME
+config MODEM_HL78XX_DEV_STARTUP_TIME_MS
 	int "Wait before assuming the device is ready."
-	default 1000
+	default 120
 	help
-	  The expected time (in milliseconds) the modem needs to fully power on
-	  and become operational.
+	  The expected delay time (in milliseconds) the modem needs to fully power on
+	  and become operational.This delay before the driver opens the UART pipe
+	  and attaches the chat layer. The value must be long enough for the driver
+	  startup code to initialize, but short enough to ensure the pipe is ready
+	  before the modem sends its first URCs during boot.
 
-config MODEM_HL78XX_DEV_SHUTDOWN_TIME
+config MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS
 	int "Wait before assuming the device is completely off."
-	default 1000
+	default 120
 	help
 	  The amount of time (in milliseconds) the system should wait for the modem
 	  to fully shut down
@@ -816,6 +903,14 @@ config MODEM_HL78XX_OFFLOAD_INIT_PRIORITY
 	  Sierra Wireless HL78XX driver device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
 	  Make sure offload init priority higher than dev init priority
+
+config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	bool "Verbose debug output in the HL78xx"
+	depends on MODEM_MODULES_LOG_LEVEL_DBG
+	help
+	  Enabling this setting will turn on VERY heavy debugging from the
+	  modem.  Do NOT leave on for production.
+	  This setting is depends on global log level debug.
 
 rsource "hl78xx_evt_monitor/Kconfig.hl78xx_evt_monitor"
 

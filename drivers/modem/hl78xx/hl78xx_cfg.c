@@ -87,8 +87,8 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		cmd_set_rat = (const char *)SET_RAT_NBNTN_CMD_LEGACY;
 		*rat_request = HL78XX_RAT_NBNTN;
 	}
-#endif
-#endif
+#endif /* CONFIG_MODEM_HL78XX_12_FW_R6 */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 
 	if (cmd_set_rat == NULL || *rat_request == HL78XX_RAT_MODE_NONE) {
 		ret = -EINVAL;
@@ -104,7 +104,25 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 			*modem_require_restart = true;
 		}
 	}
-#endif
+#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
+	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
+	if (*rat_request == HL78XX_RAT_GSM) {
+		/* For GSM RAT, no band configuration is needed */
+		ret = hl78xx_run_lte_dis_gsm_en_reg_status_script(data);
+		if (ret < 0) {
+			goto error;
+		}
+	} else {
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+		/* For LTE RATs, enable LTE registration status and disable GSM */
+		ret = hl78xx_run_gsm_dis_lte_en_reg_status_script(data);
+		if (ret < 0) {
+			goto error;
+		}
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 error:
 	return ret;
@@ -121,12 +139,16 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
 		return -EINVAL;
 	}
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	if (rat_config_request == HL78XX_RAT_GSM) {
+		return 0;
+	}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
 	for (int rat = HL78XX_RAT_CAT_M1; rat <= HL78XX_RAT_NB1; rat++) {
 #else
 	int rat = rat_config_request;
-
-#endif
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 		ret = hl78xx_get_band_default_config_for_rat(rat, bnd_bitmap,
 							     ARRAY_SIZE(bnd_bitmap));
 		if (ret) {
@@ -192,6 +214,13 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 	if (ret < 0) {
 		goto error;
 	}
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+	ret = modem_dynamic_cmd_send(data, NULL, "AT+WDSS=2,1", strlen("AT+WDSS=2,1"),
+				     hl78xx_get_ok_match(), 1, false);
+	if (ret < 0) {
+		goto error;
+	}
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	data->status.apn.state = APN_STATE_CONFIGURED;
 	return 0;
 error:
@@ -199,7 +228,33 @@ error:
 	return ret;
 }
 
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+
+int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
+{
+	int ret = 0;
+	/* Activate the PDP context, Today only one pdp context is supported */
+	const char *cmd_activate_pdp = "AT+CGACT=1,1";
+	/* Check if the current RAT is GSM and if the PDP context is not already active */
+	if (data->status.registration.rat_mode == HL78XX_RAT_CAT_M1 ||
+	    data->status.registration.rat_mode == HL78XX_RAT_NB1 ||
+	    data->status.gprs[0].is_active) {
+		return 0;
+	}
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd_activate_pdp, strlen(cmd_activate_pdp),
+				     hl78xx_get_ok_match(), 1, false);
+	if (ret < 0) {
+		LOG_ERR("GSM PDP activation failed: %d", ret);
+		return ret;
+	}
+	return 0;
+}
+
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+
 #if defined(CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID) || defined(CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI)
+/* Find APN from profile string based on associated number prefix */
 int find_apn(const char *profile, const char *associated_number, char *apn_buff, uint8_t prefix_len)
 {
 	char buffer[512];
@@ -278,7 +333,7 @@ int modem_detect_apn(struct hl78xx_data *data, const char *associated_number)
 	}
 	return rc;
 }
-#endif
+#endif /* CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID || CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI */
 
 void set_band_bit(uint8_t *bitmap, uint16_t band_num)
 {

@@ -257,16 +257,6 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 //------------------------------------------------------------------------------
 
 /**
- * @brief When set to a non-zero value, this macro specifies that the
- *        @ref nrfx_error_codes and the @ref nrfx_err_t type itself are defined
- *        in a customized way and the default definitions from @c <nrfx_error.h>
- *        should not be used.
- */
-#define NRFX_CUSTOM_ERROR_CODES 0
-
-//------------------------------------------------------------------------------
-
-/**
  * @brief When set to a non-zero value, this macro specifies that inside HALs
  *        the event registers are read back after clearing, on devices that
  *        otherwise could defer the actual register modification.

@@ -8,7 +8,7 @@
 
 #include <nxp/nxp_mcxe31b.dtsi>
 #include "frdm_mcxe31b-pinctrl.dtsi"
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -32,6 +32,7 @@
 		zephyr,flash = &program_flash;
 		zephyr,flash-controller = &flash;
 		zephyr,console = &lpuart_5;
+		zephyr,edac = &erm0;
 		zephyr,shell-uart = &lpuart_5;
 	};
 
@@ -96,6 +97,22 @@
 
 &core0 {
 	clock-frequency = <DT_FREQ_M(160)>;
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel14 {
+	status = "okay";
+};
+
+&eim0_channel15 {
+	status = "okay";
 };
 
 &gpiob_h {
@@ -185,5 +202,9 @@
 };
 
 &swt_0 {
+	status = "okay";
+};
+
+&adc_0 {
 	status = "okay";
 };

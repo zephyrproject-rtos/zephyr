@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	aliases {
-		dma0 = &edma0;
-	};
-};
-
-&edma0 {
+tst_dma0: &edma0 {
 	status = "okay";
 };

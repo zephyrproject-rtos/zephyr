@@ -31,7 +31,9 @@ family:
     - name: mkv58f24
   - name: ke1xz
     socs:
+    - name: mke15z4
     - name: mke15z7
+    - name: mke16z4
     - name: mke17z7
     - name: mke17z9
   - name: k32lx

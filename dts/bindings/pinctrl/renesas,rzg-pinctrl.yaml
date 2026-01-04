@@ -31,7 +31,7 @@ description: |
       };
 
 
-compatible: renesas,rzg-pinctrl
+compatible: "renesas,rzg-pinctrl"
 
 include: base.yaml
 properties:

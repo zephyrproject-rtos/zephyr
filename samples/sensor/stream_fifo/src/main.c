@@ -12,7 +12,6 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/drivers/sensor.h>
 
 #define STREAMDEV_ALIAS(i) DT_ALIAS(_CONCAT(stream, i))
 #define STREAMDEV_DEVICE(i, _) \

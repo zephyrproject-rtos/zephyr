@@ -347,6 +347,21 @@ struct btp_gatt_cfg_notify_mult_cmd {
 	uint16_t cnt;
 	uint16_t attr_id[];
 } __packed;
+
+#define BTP_GATT_GET_HANDLE_FROM_UUID 0x22
+struct btp_gatt_get_handle_from_uuid_cmd {
+	uint8_t uuid_length;
+	uint8_t uuid[];
+} __packed;
+struct btp_gatt_get_handle_from_uuid_rp {
+	uint16_t handle;
+} __packed;
+
+#define BTP_GATT_REMOVE_HANDLE_FROM_DB 0x23
+struct btp_gatt_remove_handle_from_db_cmd {
+	uint16_t handle;
+} __packed;
+
 /* GATT events */
 #define BTP_GATT_EV_NOTIFICATION		0x80
 struct btp_gatt_notification_ev {

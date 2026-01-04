@@ -39,8 +39,8 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 	return -ENOENT;
 }
 
-int llext_get_section_header(struct llext_loader *ldr, struct llext *ext, const char *search_name,
-			     elf_shdr_t *shdr)
+int llext_get_section_header(const struct llext_loader *ldr, const struct llext *ext,
+			     const char *search_name, elf_shdr_t *shdr)
 {
 	int ret;
 

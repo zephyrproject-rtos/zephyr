@@ -1,11 +1,22 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
 # SPDX-License-Identifier: Apache-2.0
 
 config STEPPER_ADI_TMC51XX
-	bool "Activate trinamic tmc51xx stepper driver"
+	bool "Activate trinamic tmc51xx"
 	depends on DT_HAS_ADI_TMC51XX_ENABLED
 	select STEPPER_ADI_TMC_UART if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC51XX),uart)
 	select STEPPER_ADI_TMC_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC51XX),spi)
+	default y
+
+config STEPPER_ADI_TMC51XX_STEPPER
+	bool "Activate trinamic tmc51xx motion controller"
+	depends on DT_HAS_ADI_TMC51XX_STEPPER_ENABLED && STEPPER_ADI_TMC51XX
+	default y
+
+config STEPPER_ADI_TMC51XX_STEPPER_DRV
+	bool "Activate trinamic tmc51xx stepper driver"
+	depends on DT_HAS_ADI_TMC51XX_STEPPER_DRV_ENABLED && STEPPER_ADI_TMC51XX
 	default y
 
 if STEPPER_ADI_TMC51XX

@@ -32,7 +32,7 @@
 				   <&test_gpio 0 0>;
 
 			max3421e_spi: max3421e_spi@0 {
-				compatible = "maxim,max3421e_spi";
+				compatible = "maxim,max3421e-spi";
 				reg = <0>;
 				spi-max-frequency = <5000000>;
 				int-gpios = <&test_gpio 0 0>;

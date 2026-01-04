@@ -31,20 +31,24 @@ Important board features include:
 - User and Reset push-buttons
 - Fanout daughterboard
 - 1x FDCAN
-- Board connectors:
-   - Camera (8 bit)
-   - USB with Micro-AB
-   - Stereo headset jack including analog microphone input
-   - Audio jack for external speakers
-   - microSD |trade| card
-   - TAG-Connect 10-pin footprint
-   - Arm |reg| Cortex |reg| 10-pin 1.27mm-pitch debug connector over STDC14 footprint
-   - ARDUINO |reg| Uno V3 expansion connector
-   - STMod+ expansion connector
-   - Audio daughterboard expansion connector
-   - External I2C expansion connector
+- Board connectors
+
+  - Camera (8 bit)
+  - USB with Micro-AB
+  - Stereo headset jack including analog microphone input
+  - Audio jack for external speakers
+  - microSD |trade| card
+  - TAG-Connect 10-pin footprint
+  - Arm |reg| Cortex |reg| 10-pin 1.27mm-pitch debug connector over STDC14 footprint
+  - ARDUINO |reg| Uno V3 expansion connector
+  - STMod+ expansion connector
+  - Audio daughterboard expansion connector
+  - External I2C expansion connector
+
 - Flexible power-supply options:
-   - ST-LINK USB VBUS, USB OTG HS connector, or external sources
+
+  - ST-LINK USB VBUS, USB OTG HS connector, or external sources
+
 - On-board STLINK-V3E debugger/programmer with USB re-enumeration capability
 
 More information about the board can be found at the `STM32H7B3I-DK website`_.

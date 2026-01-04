@@ -10,6 +10,11 @@ if SOC_SERIES_STM32H7X
 
 rsource "Kconfig.defconfig.stm32h7*"
 
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers12)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers14)
+
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT

@@ -396,7 +396,7 @@ ssize_t llext_find_section(struct llext_loader *loader, const char *search_name)
  * @retval -ENOTSUP "peek" method not supported
  * @retval -ENOENT section not found
  */
-int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
+int llext_get_section_header(const struct llext_loader *loader, const struct llext *ext,
 			     const char *search_name, elf_shdr_t *shdr);
 
 /**

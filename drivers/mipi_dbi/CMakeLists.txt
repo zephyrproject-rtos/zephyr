@@ -15,6 +15,7 @@ if(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF)
 endif()
 
 # zephyr-keep-sorted-start
+zephyr_sources_ifdef(CONFIG_MIPI_DBI_BFLB mipi_dbi_bflb.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DBI_BITBANG mipi_dbi_bitbang.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF mipi_dbi_nxp_dcnano_lcdif.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF mipi_dbi_nxp_flexio_lcdif.c)

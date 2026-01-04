@@ -70,6 +70,10 @@
 	status = "okay";
 };
 
+&mailbox {
+	status = "okay";
+};
+
 &spi3 {
 	pinctrl-0 = <&spi3_nss_pb1 &spi3_sck_pb7
 		     &spi3_miso_pb10 &spi3_mosi_pb8>;

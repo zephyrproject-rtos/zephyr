@@ -58,7 +58,7 @@ static void isr_burst_handler(const void *message)
 	const struct msg_ping *msg = message;
 
 	for (int i = 0; i < CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE; ++i) {
-		int err = zbus_chan_pub(&chan_ping, &msg, K_NO_WAIT);
+		int err = zbus_chan_pub(&chan_ping, msg, K_NO_WAIT);
 
 		if (err) {
 			break;

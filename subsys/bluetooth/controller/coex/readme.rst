@@ -14,7 +14,7 @@ Similarly, as in the nordic implementation of the 1-wire interface, the coexiste
 .. code-block:: DTS
 
     coex_gpio: coex {
-        compatible = "gpio-radio-coex";
+        compatible = "radio-gpio-coex";
         grant-gpios = <&gpio0 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
         grant-delay-us = <150>;
     };

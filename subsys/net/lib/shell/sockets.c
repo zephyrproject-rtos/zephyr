@@ -69,7 +69,7 @@ int walk_sockets(struct k_obj_core *obj_core, void *user_data)
 	   thread_name, obj->reg->name,
 	   obj->socket_family == NET_AF_INET6 ? '6' :
 	   (obj->socket_family == NET_AF_INET ? '4' :
-	    (obj->socket_family == AF_NET_MGMT ? 'M' : ' ')),
+	    (obj->socket_family == NET_AF_NET_MGMT ? 'M' : ' ')),
 	   obj->socket_type == NET_SOCK_DGRAM ? 'D' :
 	   (obj->socket_type == NET_SOCK_STREAM ? 'S' :
 	    (obj->socket_type == NET_SOCK_RAW ? 'R' : ' ')),

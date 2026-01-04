@@ -163,16 +163,26 @@ static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
 	return MGMT_ERR_EOK;
 }
 
+static void smp_udp_ud_init(struct net_buf *nb, void *priv)
+{
+	struct net_sockaddr *ud = net_buf_user_data(nb);
+	const struct net_sockaddr *addr = priv;
+
+	if (addr) {
+		memcpy(ud, addr, sizeof(*addr));
+	}
+}
+
 static int create_socket(enum proto_type proto, int *sock)
 {
 	int tmp_sock;
 	int err;
 	struct net_sockaddr_storage addr_storage;
 	struct net_sockaddr *addr = (struct net_sockaddr *)&addr_storage;
-	socklen_t addr_len = 0;
+	net_socklen_t addr_len = 0;
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS)
-	int socket_role = TLS_DTLS_ROLE_SERVER;
+	int socket_role = ZSOCK_TLS_DTLS_ROLE_SERVER;
 #endif
 
 	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV4) &&
@@ -182,8 +192,8 @@ static int create_socket(enum proto_type proto, int *sock)
 		addr_len = sizeof(*addr4);
 		memset(addr4, 0, sizeof(*addr4));
 		addr4->sin_family = NET_AF_INET;
-		addr4->sin_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-		addr4->sin_addr.s_addr = htonl(INADDR_ANY);
+		addr4->sin_port = net_htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
+		addr4->sin_addr.s_addr = net_htonl(NET_INADDR_ANY);
 	} else if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV6) &&
 		   proto == PROTOCOL_IPV6) {
 		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)addr;
@@ -191,8 +201,8 @@ static int create_socket(enum proto_type proto, int *sock)
 		addr_len = sizeof(*addr6);
 		memset(addr6, 0, sizeof(*addr6));
 		addr6->sin6_family = NET_AF_INET6;
-		addr6->sin6_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-		addr6->sin6_addr = in6addr_any;
+		addr6->sin6_port = net_htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
+		addr6->sin6_addr = net_in6addr_any;
 	}
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS)
@@ -214,7 +224,7 @@ static int create_socket(enum proto_type proto, int *sock)
 		CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG,
 	};
 
-	err = zsock_setsockopt(tmp_sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_list,
+	err = zsock_setsockopt(tmp_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_list,
 			       sizeof(sec_tag_list));
 
 	if (err < 0) {
@@ -223,7 +233,7 @@ static int create_socket(enum proto_type proto, int *sock)
 	}
 
 	/* Set role to DTLS server */
-	err = zsock_setsockopt(tmp_sock, SOL_TLS, TLS_DTLS_ROLE, &socket_role,
+	err = zsock_setsockopt(tmp_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE, &socket_role,
 			       sizeof(socket_role));
 
 	if (err < 0) {
@@ -266,7 +276,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 
 	while (1) {
 		struct net_sockaddr addr;
-		socklen_t addr_len = sizeof(addr);
+		net_socklen_t addr_len = sizeof(addr);
 
 		int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
 					 CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, &addr, &addr_len);
@@ -438,6 +448,7 @@ static void smp_udp_start(void)
 	smp_udp_configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
 	smp_udp_configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
 	smp_udp_configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+	smp_udp_configs.ipv4.smp_transport.functions.ud_init = smp_udp_ud_init;
 
 	rc = smp_transport_init(&smp_udp_configs.ipv4.smp_transport);
 #ifdef CONFIG_SMP_CLIENT
@@ -460,6 +471,7 @@ static void smp_udp_start(void)
 	smp_udp_configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
 	smp_udp_configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
 	smp_udp_configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+	smp_udp_configs.ipv6.smp_transport.functions.ud_init = smp_udp_ud_init;
 
 	rc = smp_transport_init(&smp_udp_configs.ipv6.smp_transport);
 #ifdef CONFIG_SMP_CLIENT
@@ -482,5 +494,25 @@ static void smp_udp_start(void)
 	smp_udp_open();
 #endif
 }
+
+#ifdef CONFIG_SMP_CLIENT
+int smp_client_udp_set_host_addr(struct smp_client_object *obj, struct net_sockaddr *addr)
+{
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+	if (obj->smpt == smp_udp_configs.ipv4_transport.smpt && addr->sa_family == NET_AF_INET) {
+		smp_client_object_set_data(obj, addr);
+		return 0;
+	}
+#endif
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
+	if (obj->smpt == smp_udp_configs.ipv6_transport.smpt && addr->sa_family == NET_AF_INET6) {
+		smp_client_object_set_data(obj, addr);
+		return 0;
+	}
+#endif
+
+	return -EINVAL;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(smp_udp, smp_udp_start);

@@ -15,7 +15,6 @@
 LOG_MODULE_REGISTER(test);
 
 static const struct mqtt_sn_data client_id = MQTT_SN_DATA_STRING_LITERAL("zephyr");
-static const struct mqtt_sn_data client2_id = MQTT_SN_DATA_STRING_LITERAL("zephyr2");
 static const uint8_t gw_id = 12;
 static const struct mqtt_sn_data gw_addr = MQTT_SN_DATA_STRING_LITERAL("gw1");
 
@@ -176,6 +175,15 @@ static void setup(void *f)
 	k_sem_init(&mqtt_sn_tx_sem, 0, 1);
 	k_sem_init(&mqtt_sn_rx_sem, 0, 1);
 	k_sem_init(&mqtt_sn_cb_sem, 0, 1);
+
+	/* The MQTT-SN client uses timestamp 0 as a special value which
+	 * indicates, that no gwinfo or searchgw message needs to be sent.
+	 * This means that the code effectively ignores such incoming messages
+	 * during timestamp 0. Since this is both unrealistic and unproblematic
+	 * on a real device, we simply sleep here to workaround that without
+	 * complicating the MQTT-SN implementation.
+	 */
+	k_sleep(K_MSEC(1));
 }
 
 static void cleanup(void *f)
@@ -315,16 +323,15 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_gw)
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
 }
 
-/* Test send SEARCHGW and peer response */
-static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer)
+/* Test send SEARCHGW and expect GWINFO response from a gateway */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer_direct)
 {
 	int err;
-	static uint8_t gwinfo[3 + 3];
+	static uint8_t gwinfo[3];
 
-	gwinfo[0] = 3 + gw_addr.size;
+	gwinfo[0] = 3;
 	gwinfo[1] = 0x02;
 	gwinfo[2] = gw_id;
-	memcpy(&gwinfo[3], gw_addr.data, 3);
 
 	err = mqtt_sn_client_init(mqtt_client, &client_id, &transport, evt_cb, tx, sizeof(tx), rx,
 				  sizeof(rx));
@@ -346,32 +353,6 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer)
 	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
-}
-
-static ZTEST(mqtt_sn_client, test_mqtt_sn_respond_searchgw)
-{
-	int err;
-	static uint8_t searchgw[] = {3, 0x01, 1};
-
-	err = mqtt_sn_client_init(mqtt_client, &client_id, &transport, evt_cb, tx, sizeof(tx), rx,
-				  sizeof(rx));
-	zassert_equal(err, 0, "unexpected error %d", err);
-
-	err = mqtt_sn_add_gw(mqtt_client, gw_id, gw_addr);
-	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
-	zassert_equal(evt_cb_data.called, 0, "Unexpected event");
-
-	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
-	err = input(mqtt_client, searchgw, sizeof(searchgw), &client2_id);
-	zassert_equal(err, 0, "unexpected error %d", err);
-
-	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
-	zassert_equal(err, 0, "Timed out waiting for callback.");
-
-	zassert_equal(evt_cb_data.called, 1, "NO event");
-	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_SEARCHGW, "Wrong event");
-	assert_msg_send(1, 3 + gw_addr.size, NULL);
 }
 
 static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_no_will)

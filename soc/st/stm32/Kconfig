@@ -10,57 +10,28 @@ if SOC_FAMILY_STM32
 
 rsource "*/Kconfig"
 
-# STM32 wide symbols definitions
+# Kconfig options used to configure the family-wide code
+# found in `common/` are declared in `common/Kconfig`.
+# Some options are also shared by multiple series, but not
+# used by this family-wide common code; instead, they are
+# consumed by certain drivers, SoC-specific code or the
+# STM32Cube HAL module.
+#
+# (Please indicate as a comment where each option is consumed)
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CCM := zephyr,ccm
-
-config STM32_CCM
-	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))
-
+# This option is consumed by the HAL module
 config USE_STM32_ASSERT
 	depends on ASSERT
 	bool "STM32Cube HAL and LL drivers asserts"
 	help
 	  Enable asserts in STM32Cube HAL and LL drivers.
 
-config STM32_BACKUP_SRAM
-	bool "STM32 Backup SRAM"
-	default y
-	depends on DT_HAS_ST_STM32_BACKUP_SRAM_ENABLED
-	help
-	  Enable support for STM32 backup SRAM.
-
-config STM32_BACKUP_SRAM_INIT_PRIORITY
-	int "STM32 Backup SRAM init priority"
-	default APPLICATION_INIT_PRIORITY
-	depends on STM32_BACKUP_SRAM
-	help
-	  STM32 Backup SRAM device initialization priority.
-
-config STM32_ENABLE_DEBUG_SLEEP_STOP
-	bool "Allow debugger attach in stop/sleep Mode"
-	default y if DEBUG
-	help
-	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
-	  of power consumption. As a side-effects this prevents
-	  debuggers from attaching w/o resetting the target. This
-	  effectively destroys the use-case of `west attach`. Also
-	  SEGGER RTT and similar technologies need this.
-
-config SWJ_ANALOG_PRIORITY
-	int "SWJ DP port to analog routine initialization priority"
-	default 49
-	help
-	  Initialization priority of the routine within the PRE_KERNEL1 level.
-	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
-	  UART_INIT_PRIORITY.
-
 config HAS_STM32_FLASH_PREFETCH
 	bool
 	help
 	  Hidden symbol selected by SoCs which support flash prefetch.
 
+# This option is consumed by `soc.c` of applicable series
 config STM32_FLASH_PREFETCH
 	bool "Flash prefetch buffer"
 	default y
@@ -70,18 +41,7 @@ config STM32_FLASH_PREFETCH
 	  be enabled when flash is accessed through a cache memory. Flash
 	  prefetch also improves performances a bit.
 
-config STM32_WKUP_PINS
-	bool "STM32 PWR Wake-up Pins"
-	depends on DT_HAS_ST_STM32_PWR_ENABLED
-	help
-	  Enable support for STM32 PWR wake-up pins.
-
-config STM32_BACKUP_PROTECTION
-	bool "SoC has backup domain protection access"
-	help
-	  Enabled for SoCs for which access protection to backup domain
-	  resources needs to be explicitly handled.
-
+# This option is consumed by external flash drivers
 config STM32_APP_IN_EXT_FLASH
 	bool
 	help

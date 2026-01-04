@@ -31,6 +31,11 @@ extern "C" {
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup adc_interface_ext Device-specific ADC API extensions
+ *
+ * @{
+ * @}
  */
 
 /** @brief ADC channel gain factors. */
@@ -340,10 +345,7 @@ struct adc_dt_spec {
 	}
 
 #define ADC_CHANNEL_DT_NODE(ctlr, input) \
-	DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
-
-#define ADC_FOREACH_INPUT(node, input) \
-	IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), input), (node))
+	DT_CHILD_BY_UNIT_ADDR_INT(ctlr, input)
 
 #define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
 	IF_ENABLED(DT_NODE_EXISTS(node_id), \

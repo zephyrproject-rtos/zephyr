@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
-#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
@@ -82,7 +82,6 @@
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		/* intentionally empty because UICR is hardware fixed to Secure */
 #else
-
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
@@ -247,7 +246,7 @@
 				ieee802154-supported;
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
-				cs-supported;
+				ble-cs-supported;
 
 				ieee802154: ieee802154 {
 					compatible = "nordic,nrf-ieee802154";
@@ -673,7 +672,6 @@
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 			/* intentionally empty because WDT30 is hardware fixed to Secure */
 #else
-
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
@@ -694,7 +692,7 @@
 				gpio-controller;
 				reg = <0x10a000 0x300>;
 				#gpio-cells = <2>;
-				ngpios = <5>;
+				ngpios = <7>;
 				status = "disabled";
 				port = <0>;
 				gpiote-instance = <&gpiote30>;

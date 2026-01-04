@@ -12,7 +12,6 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
-#include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
@@ -163,6 +162,37 @@ ZTEST(util, test_COND_CODE_0) {
 
 	COND_CODE_0(2, (uint32_t x3 = 1;), (uint32_t y3 = 1;))
 	zassert_true((y3 == 1));
+}
+
+ZTEST(util, test_COND_CASE_1) {
+	/* Intentionally undefined symbols used to verify that only the selected
+	 * branch expands.
+	 */
+	int val;
+
+	#define CASE_TRUE 1
+	#define CASE_FALSE 0
+
+	val = COND_CASE_1(CASE_TRUE, (42),
+			  CASE_TRUE, (COND_CASE_1_SHOULD_NOT_REACH_SECOND_TRUE_CASE),
+			  (0));
+	zexpect_equal(val, 42);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_FIRST_CASE),
+			  CASE_TRUE, (7),
+			  (11));
+	zexpect_equal(val, 7);
+
+	val = COND_CASE_1(CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_SECOND_CASE),
+			  CASE_FALSE, (COND_CASE_1_SHOULD_NOT_USE_THIRD_CASE),
+			  (5));
+	zexpect_equal(val, 5);
+
+	val = COND_CASE_1((9));
+	zexpect_equal(val, 9);
+
+	#undef CASE_TRUE
+	#undef CASE_FALSE
 }
 
 #undef ZERO
@@ -1207,6 +1237,71 @@ ZTEST(util, test_bitmask_find_gap)
 	test_single_bitmask_find_gap(0x0, 1, 32, true, 0, __LINE__);
 	test_single_bitmask_find_gap(0x1F1F071F, 4, 32, true, 11, __LINE__);
 	test_single_bitmask_find_gap(0x0000000F, 2, 6, false, 4, __LINE__);
+}
+
+ZTEST(util, test_sys_gcd)
+{
+	/* Zero cases */
+	zassert_equal(sys_gcd(0, 0), 0, "should be 0");
+	zassert_equal(sys_gcd(0, INT_MAX), INT_MAX, "should be 0");
+	zassert_equal(sys_gcd(INT_MAX, 0), INT_MAX, "should be 0");
+
+	/* Normal cases */
+	zassert_equal(sys_gcd(12, 8), 4, "should be 4");
+
+	/* Negative number cases */
+	zassert_equal(sys_gcd(-12, 8), 4, "should be 4");
+	zassert_equal(sys_gcd(-12, -8), 4, "should be 4");
+
+	/* Prime numbers */
+	zassert_equal(sys_gcd(17, 13), 1, "should be 1");
+	zassert_equal(sys_gcd(25, 49), 1, "should be 1");
+
+	/* Boundary values */
+	zassert_equal(sys_gcd(INT_MAX, INT_MAX), INT_MAX, "should be INT_MAX");
+	zassert_equal(sys_gcd(INT_MIN, INT_MIN), (uint32_t)(-(int64_t)INT_MIN),
+		      "should be INT_MAX + 1");
+	zassert_equal(sys_gcd(INT_MIN, INT_MAX), 1, "should be 1");
+	zassert_equal(sys_gcd(UINT32_MAX, UINT32_MAX), UINT32_MAX, "should be UINT32_MAX");
+
+	/* Macro expansion */
+	int a = 12, b = 8;
+
+	zassert_equal(sys_gcd(a++, b++), 4, "should be 4");
+	zassert_equal(a, 13, "should be 13");
+	zassert_equal(b, 9, "should be 9");
+}
+
+ZTEST(util, test_sys_lcm)
+{
+	/* Zero cases - lcm with 0 should be 0 */
+	zassert_equal(sys_lcm(0, 0), 0, "should be 0");
+	zassert_equal(sys_lcm(0, INT_MAX), 0, "should be 0");
+
+	/* Normal cases */
+	zassert_equal(sys_lcm(12, 8), 24, "should be 24");
+	zassert_equal(sys_lcm(8, 12), 24, "should be 24");
+
+	/* Negative number cases - lcm should always be positive */
+	zassert_equal(sys_lcm(-12, 8), 24, "should be 24");
+
+	/* Prime numbers (gcd = 1, so lcm = a * b) */
+	zassert_equal(sys_lcm(17, 13), 221, "should be 221");
+
+	/* Boundary values */
+	zassert_equal(sys_lcm(INT_MAX, INT_MAX - 1), (uint64_t)INT_MAX * (INT_MAX - 1),
+		      "should be INT_MAX * (INT_MAX - 1)");
+	zassert_equal(sys_lcm(INT_MIN, INT_MIN), (uint64_t)INT_MAX + 1, "should be INT_MAX + 1");
+	zassert_equal(sys_lcm(INT_MIN, INT_MAX), (uint64_t)INT_MAX * (uint64_t)(-(int64_t)INT_MIN),
+		      "should be INT_MAX * (INT_MAX + 1)");
+	zassert_equal(sys_lcm(UINT32_MAX, UINT32_MAX), UINT32_MAX, "should be UINT32_MAX");
+
+	/* Macro expansion */
+	int a = 12, b = 8;
+
+	zassert_equal(sys_lcm(a++, b++), 24, "should be 4");
+	zassert_equal(a, 13, "should be 13");
+	zassert_equal(b, 9, "should be 9");
 }
 
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);

@@ -230,8 +230,8 @@ static int setup_iface(struct net_if *iface,
 {
 	struct virtual_interface_req_params params = { 0 };
 	struct net_if_addr *ifaddr;
-	struct in_addr addr4;
-	struct in6_addr addr6;
+	struct net_in_addr addr4;
+	struct net_in6_addr addr6;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
@@ -302,7 +302,7 @@ try_ipv4:
 		}
 
 		if (netmask) {
-			struct in_addr nm;
+			struct net_in_addr nm;
 
 			if (net_addr_pton(NET_AF_INET, netmask, &nm)) {
 				LOG_ERR("Invalid netmask: %s", netmask);

@@ -458,8 +458,7 @@ static int scan_update(void)
 			LOG_DBG("Could not stop scanner: %d", err);
 			break;
 		}
-		memset(&scan_state.used_scan_param, 0x0,
-		       sizeof(scan_state.used_scan_param));
+		memset(&scan_state.used_scan_param, 0x0, sizeof(scan_state.used_scan_param));
 		break;
 	case SCAN_ACTION_UPDATE:
 		err = cmd_le_set_scan_enable(BT_HCI_LE_SCAN_DISABLE,
@@ -538,8 +537,8 @@ int bt_le_scan_user_remove(enum bt_le_scan_user flag)
 	return scan_update();
 }
 
-static void check_pending_conn(const bt_addr_le_t *id_addr,
-			       const bt_addr_le_t *addr, uint8_t adv_props)
+static void check_pending_conn(const bt_addr_le_t *id_addr, const bt_addr_le_t *addr,
+			       uint8_t adv_props)
 {
 	struct bt_conn *conn;
 	int err;
@@ -557,8 +556,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr,
-				       BT_CONN_SCAN_BEFORE_INITIATING);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr, BT_CONN_SCAN_BEFORE_INITIATING);
 	if (!conn) {
 		return;
 	}
@@ -598,12 +596,10 @@ static uint8_t get_adv_props_legacy(uint8_t evt_type)
 {
 	switch (evt_type) {
 	case BT_GAP_ADV_TYPE_ADV_IND:
-		return BT_GAP_ADV_PROP_CONNECTABLE |
-		       BT_GAP_ADV_PROP_SCANNABLE;
+		return BT_GAP_ADV_PROP_CONNECTABLE | BT_GAP_ADV_PROP_SCANNABLE;
 
 	case BT_GAP_ADV_TYPE_ADV_DIRECT_IND:
-		return BT_GAP_ADV_PROP_CONNECTABLE |
-		       BT_GAP_ADV_PROP_DIRECTED;
+		return BT_GAP_ADV_PROP_CONNECTABLE | BT_GAP_ADV_PROP_DIRECTED;
 
 	case BT_GAP_ADV_TYPE_ADV_SCAN_IND:
 		return BT_GAP_ADV_PROP_SCANNABLE;
@@ -616,8 +612,7 @@ static uint8_t get_adv_props_legacy(uint8_t evt_type)
 	 * set connectable property bit.
 	 */
 	case BT_GAP_ADV_TYPE_SCAN_RSP:
-		return BT_GAP_ADV_PROP_SCAN_RESPONSE |
-		       BT_GAP_ADV_PROP_SCANNABLE;
+		return BT_GAP_ADV_PROP_SCAN_RESPONSE | BT_GAP_ADV_PROP_SCANNABLE;
 
 	default:
 		return 0;
@@ -631,7 +626,7 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	struct net_buf_simple_state state;
 	bt_addr_le_t id_addr;
 	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
-	bool conn_scan     = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
+	bool conn_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
 	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr), info->adv_type, len,
 		info->rssi);
@@ -647,8 +642,7 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	} else if (addr->type == BT_HCI_PEER_ADDR_ANONYMOUS) {
 		bt_addr_le_copy(&id_addr, BT_ADDR_LE_ANY);
 	} else {
-		bt_addr_le_copy(&id_addr,
-				bt_lookup_id_addr(BT_ID_DEFAULT, addr));
+		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, addr));
 	}
 
 	/* For connection-purpose scanning,
@@ -723,29 +717,23 @@ void bt_hci_le_scan_timeout(struct net_buf *buf)
 static uint8_t get_adv_type(uint8_t evt_type)
 {
 	switch (evt_type) {
-	case (BT_HCI_LE_ADV_EVT_TYPE_CONN |
-	      BT_HCI_LE_ADV_EVT_TYPE_SCAN |
+	case (BT_HCI_LE_ADV_EVT_TYPE_CONN | BT_HCI_LE_ADV_EVT_TYPE_SCAN |
 	      BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
 		return BT_GAP_ADV_TYPE_ADV_IND;
 
-	case (BT_HCI_LE_ADV_EVT_TYPE_CONN |
-	      BT_HCI_LE_ADV_EVT_TYPE_DIRECT |
+	case (BT_HCI_LE_ADV_EVT_TYPE_CONN | BT_HCI_LE_ADV_EVT_TYPE_DIRECT |
 	      BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
 		return BT_GAP_ADV_TYPE_ADV_DIRECT_IND;
 
-	case (BT_HCI_LE_ADV_EVT_TYPE_SCAN |
-	      BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
+	case (BT_HCI_LE_ADV_EVT_TYPE_SCAN | BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
 		return BT_GAP_ADV_TYPE_ADV_SCAN_IND;
 
 	case BT_HCI_LE_ADV_EVT_TYPE_LEGACY:
 		return BT_GAP_ADV_TYPE_ADV_NONCONN_IND;
 
-	case (BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP |
-	      BT_HCI_LE_ADV_EVT_TYPE_CONN |
-	      BT_HCI_LE_ADV_EVT_TYPE_SCAN |
-	      BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
-	case (BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP |
-	      BT_HCI_LE_ADV_EVT_TYPE_SCAN |
+	case (BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP | BT_HCI_LE_ADV_EVT_TYPE_CONN |
+	      BT_HCI_LE_ADV_EVT_TYPE_SCAN | BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
+	case (BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP | BT_HCI_LE_ADV_EVT_TYPE_SCAN |
 	      BT_HCI_LE_ADV_EVT_TYPE_LEGACY):
 		/* Scan response from connectable or non-connectable advertiser.
 		 */
@@ -813,7 +801,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
 	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
-	bool conn_scan     = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
+	bool conn_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
 	LOG_DBG("Adv number of reports %u", num_reports);
 
@@ -977,8 +965,7 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 	struct bt_le_per_adv_sync *per_adv_sync = NULL;
 
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
-		if (!atomic_test_bit(per_adv_sync_pool[i].flags,
-				     BT_PER_ADV_SYNC_CREATED)) {
+		if (!atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_CREATED)) {
 			per_adv_sync = &per_adv_sync_pool[i];
 			break;
 		}
@@ -992,8 +979,7 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CREATED);
 
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
-	net_buf_simple_init_with_data(&per_adv_sync->reassembly,
-				      per_adv_sync->reassembly_data,
+	net_buf_simple_init_with_data(&per_adv_sync->reassembly, per_adv_sync->reassembly_data,
 				      CONFIG_BT_PER_ADV_SYNC_BUF_SIZE);
 	net_buf_simple_reset(&per_adv_sync->reassembly);
 #endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
@@ -1004,8 +990,7 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
-		if (atomic_test_bit(per_adv_sync_pool[i].flags,
-				    BT_PER_ADV_SYNC_SYNCING)) {
+		if (atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_SYNCING)) {
 			return &per_adv_sync_pool[i];
 		}
 	}
@@ -1024,8 +1009,7 @@ struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		if (per_adv_sync_pool[i].handle == handle &&
-		    atomic_test_bit(per_adv_sync_pool[i].flags,
-				    BT_PER_ADV_SYNC_SYNCED)) {
+		    atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_SYNCED)) {
 			return &per_adv_sync_pool[i];
 		}
 	}
@@ -1051,7 +1035,7 @@ void bt_hci_le_per_adv_report_recv(struct bt_le_per_adv_sync *per_adv_sync,
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP) && (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0)
 static void bt_hci_le_per_adv_report_recv_failure(struct bt_le_per_adv_sync *per_adv_sync,
-				   const struct bt_le_per_adv_sync_recv_info *info)
+						  const struct bt_le_per_adv_sync_recv_info *info)
 {
 	struct bt_le_per_adv_sync_cb *listener;
 
@@ -1089,8 +1073,7 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 		return;
 	}
 
-	if (atomic_test_bit(per_adv_sync->flags,
-			    BT_PER_ADV_SYNC_RECV_DISABLED)) {
+	if (atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED)) {
 		LOG_ERR("Received PA adv report when receive disabled");
 		return;
 	}
@@ -1126,8 +1109,8 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 				 */
 				bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
 			} else {
-				net_buf_simple_add_mem(&per_adv_sync->reassembly,
-						       buf->data, evt->length);
+				net_buf_simple_add_mem(&per_adv_sync->reassembly, buf->data,
+						       evt->length);
 				bt_hci_le_per_adv_report_recv(per_adv_sync,
 							      &per_adv_sync->reassembly, &info);
 				net_buf_simple_reset(&per_adv_sync->reassembly);
@@ -1148,7 +1131,7 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 		} else {
 			__ASSERT(false, "Invalid data status 0x%02X", evt->data_status);
 		}
-#else /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+#else  /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
 		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
 			bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
 		} else {
@@ -1186,12 +1169,10 @@ static int per_adv_sync_terminate(uint16_t handle)
 
 	cp->handle = sys_cpu_to_le16(handle);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf,
-				    NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf, NULL);
 }
 
-static void per_adv_sync_terminated(struct bt_le_per_adv_sync *per_adv_sync,
-				    uint8_t reason)
+static void per_adv_sync_terminated(struct bt_le_per_adv_sync *per_adv_sync, uint8_t reason)
 {
 	/* Terminate the PA sync and notify app */
 	const struct bt_le_per_adv_sync_term_info term_info = {
@@ -1255,14 +1236,11 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	if (bt_addr_le_is_resolved(&evt->adv_addr)) {
 		bt_addr_le_copy_resolved(&id_addr, &evt->adv_addr);
 	} else {
-		bt_addr_le_copy(&id_addr,
-				bt_lookup_id_addr(BT_ID_DEFAULT,
-						  &evt->adv_addr));
+		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, &evt->adv_addr));
 	}
 
 	if (!pending_per_adv_sync ||
-	    (!atomic_test_bit(pending_per_adv_sync->flags,
-			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
+	    (!atomic_test_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
 	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &id_addr)))) {
 		LOG_ERR("Unexpected per adv sync established event");
@@ -1276,16 +1254,15 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 
 	if (unexpected_evt || evt->status != BT_HCI_ERR_SUCCESS) {
 		if (pending_per_adv_sync) {
-			const uint8_t reason = unexpected_evt ? BT_HCI_ERR_UNSPECIFIED
-							      : evt->status;
+			const uint8_t reason =
+				unexpected_evt ? BT_HCI_ERR_UNSPECIFIED : evt->status;
 
 			if (atomic_test_bit(pending_per_adv_sync->flags,
 					    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
 				/* Update the addr and sid for the callback
 				 * Already set if not using the sync list
 				 */
-				bt_addr_le_copy(&pending_per_adv_sync->addr,
-						&id_addr);
+				bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
 				pending_per_adv_sync->sid = evt->sid;
 			}
 
@@ -1300,22 +1277,19 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 
 	pending_per_adv_sync->handle = sys_le16_to_cpu(evt->handle);
 	pending_per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
-	pending_per_adv_sync->clock_accuracy =
-		sys_le16_to_cpu(evt->clock_accuracy);
+	pending_per_adv_sync->clock_accuracy = sys_le16_to_cpu(evt->clock_accuracy);
 	pending_per_adv_sync->phy = bt_get_phy(evt->phy);
 
 	memset(&sync_info, 0, sizeof(sync_info));
 	sync_info.interval = pending_per_adv_sync->interval;
 	sync_info.phy = pending_per_adv_sync->phy;
 
-	if (atomic_test_bit(pending_per_adv_sync->flags,
-			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
+	if (atomic_test_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
 		/* Now we know which address and SID we synchronized to. */
 		pending_per_adv_sync->sid = evt->sid;
 
 		if (bt_addr_le_is_resolved(&pending_per_adv_sync->addr)) {
-			bt_addr_le_copy_resolved(&pending_per_adv_sync->addr,
-						 &id_addr);
+			bt_addr_le_copy_resolved(&pending_per_adv_sync->addr, &id_addr);
 		} else {
 			bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
 		}
@@ -1336,8 +1310,7 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
 	sync_info.recv_enabled =
-		!atomic_test_bit(pending_per_adv_sync->flags,
-				 BT_PER_ADV_SYNC_RECV_DISABLED);
+		!atomic_test_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->synced) {
@@ -1466,8 +1439,7 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	struct bt_hci_evt_le_past_received_v2 *evt =
 		(struct bt_hci_evt_le_past_received_v2 *)buf->data;
 #else
-	struct bt_hci_evt_le_past_received *evt =
-		(struct bt_hci_evt_le_past_received *)buf->data;
+	struct bt_hci_evt_le_past_received *evt = (struct bt_hci_evt_le_past_received *)buf->data;
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
 
 	struct bt_le_per_adv_sync_synced_info sync_info;
@@ -1477,14 +1449,12 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 
 	if (evt->status) {
 		/* No sync created, don't notify app */
-		LOG_DBG("PAST receive failed with status 0x%02X %s",
-			evt->status, bt_hci_err_to_str(evt->status));
+		LOG_DBG("PAST receive failed with status 0x%02X %s", evt->status,
+			bt_hci_err_to_str(evt->status));
 		return;
 	}
 
-	sync_info.conn = bt_conn_lookup_handle(
-				sys_le16_to_cpu(evt->conn_handle),
-				BT_CONN_TYPE_LE);
+	sync_info.conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 
 	if (!sync_info.conn) {
 		LOG_ERR("Could not lookup connection handle from PAST");
@@ -1505,8 +1475,7 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	if (bt_addr_le_is_resolved(&evt->addr)) {
 		bt_addr_le_copy_resolved(&id_addr, &evt->addr);
 	} else {
-		bt_addr_le_copy(&id_addr,
-				bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));
+		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));
 	}
 
 	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
@@ -1542,10 +1511,10 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	}
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
-	sync_info.num_subevents =  per_adv_sync->num_subevents;
-	sync_info.subevent_interval =  per_adv_sync->subevent_interval;
-	sync_info.response_slot_delay =  per_adv_sync->response_slot_delay;
-	sync_info.response_slot_spacing =  per_adv_sync->response_slot_spacing;
+	sync_info.num_subevents = per_adv_sync->num_subevents;
+	sync_info.subevent_interval = per_adv_sync->subevent_interval;
+	sync_info.response_slot_delay = per_adv_sync->response_slot_delay;
+	sync_info.response_slot_spacing = per_adv_sync->response_slot_spacing;
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
@@ -1683,9 +1652,9 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 	uint8_t num_reports = net_buf_pull_u8(buf);
 	struct bt_hci_evt_le_advertising_info *evt;
 	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
-	bool conn_scan     = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
+	bool conn_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
-	LOG_DBG("Adv number of reports %u",  num_reports);
+	LOG_DBG("Adv number of reports %u", num_reports);
 
 	while (num_reports--) {
 		struct bt_le_scan_recv_info adv_info;
@@ -1734,8 +1703,7 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 {
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    param->type == BT_LE_SCAN_TYPE_ACTIVE &&
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) && param->type == BT_LE_SCAN_TYPE_ACTIVE &&
 	    param->timeout != 0) {
 		/* This is marked as not supported as a stopgap until the (scan,
 		 * adv, init) roles are reworked into proper state machines.
@@ -1752,15 +1720,12 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 		return false;
 	}
 
-	if (param->type != BT_LE_SCAN_TYPE_PASSIVE &&
-	    param->type != BT_LE_SCAN_TYPE_ACTIVE) {
+	if (param->type != BT_LE_SCAN_TYPE_PASSIVE && param->type != BT_LE_SCAN_TYPE_ACTIVE) {
 		return false;
 	}
 
-	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE |
-			       BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
-			       BT_LE_SCAN_OPT_CODED |
-			       BT_LE_SCAN_OPT_NO_1M)) {
+	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE | BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
+			       BT_LE_SCAN_OPT_CODED | BT_LE_SCAN_OPT_NO_1M)) {
 		return false;
 	}
 
@@ -1813,8 +1778,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	}
 
 	/* store the parameters that were used to start the scanner */
-	memcpy(&scan_state.explicit_scan_param, param,
-	       sizeof(scan_state.explicit_scan_param));
+	memcpy(&scan_state.explicit_scan_param, param, sizeof(scan_state.explicit_scan_param));
 
 	scan_dev_found_cb = cb;
 	err = bt_le_scan_user_add(BT_LE_SCAN_USER_EXPLICIT_SCAN);
@@ -1859,8 +1823,7 @@ void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 {
-	__ASSERT(IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync),
-		 "Invalid per_adv_sync pointer");
+	__ASSERT(IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync), "Invalid per_adv_sync pointer");
 
 	return (uint8_t)ARRAY_INDEX(per_adv_sync_pool, per_adv_sync);
 }
@@ -1889,14 +1852,12 @@ int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
 	return 0;
 }
 
-struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *adv_addr,
-							  uint8_t sid)
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *adv_addr, uint8_t sid)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		struct bt_le_per_adv_sync *sync = &per_adv_sync_pool[i];
 
-		if (!atomic_test_bit(per_adv_sync_pool[i].flags,
-				     BT_PER_ADV_SYNC_CREATED)) {
+		if (!atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_CREATED)) {
 			continue;
 		}
 
@@ -1924,11 +1885,15 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		return -EBUSY;
 	}
 
-	if (param->sid > BT_GAP_SID_MAX ||
-		   param->skip > BT_GAP_PER_ADV_MAX_SKIP ||
-		   param->timeout > BT_GAP_PER_ADV_MAX_TIMEOUT ||
-		   param->timeout < BT_GAP_PER_ADV_MIN_TIMEOUT) {
+	if (param->sid > BT_GAP_SID_MAX || param->skip > BT_GAP_PER_ADV_MAX_SKIP ||
+	    param->timeout > BT_GAP_PER_ADV_MAX_TIMEOUT ||
+	    param->timeout < BT_GAP_PER_ADV_MIN_TIMEOUT) {
 		return -EINVAL;
+	}
+
+	if ((param->options & BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE) != 0 &&
+	    BT_FEAT_LE_PER_ADV_ADI_SUPP(bt_dev.le.features) == 0) {
+		return -ENOTSUP;
 	}
 
 	per_adv_sync = per_adv_sync_new();
@@ -1946,8 +1911,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	(void)memset(cp, 0, sizeof(*cp));
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) {
-		atomic_set_bit(per_adv_sync->flags,
-			       BT_PER_ADV_SYNC_SYNCING_USE_LIST);
+		atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING_USE_LIST);
 
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	} else {
@@ -1960,18 +1924,14 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		cp->sid = param->sid;
 	}
 
-	if (param->options &
-	    BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED) {
-		cp->options |=
-			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED;
+	if (param->options & BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED) {
+		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED;
 
-		atomic_set_bit(per_adv_sync->flags,
-			       BT_PER_ADV_SYNC_RECV_DISABLED);
+		atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
 	}
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE) {
-		cp->options |=
-			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE;
+		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE;
 	}
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA) {
@@ -1979,13 +1939,11 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	}
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_1US) {
-		cp->cte_type |=
-			BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US;
+		cp->cte_type |= BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US;
 	}
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_2US) {
-		cp->cte_type |=
-			BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US;
+		cp->cte_type |= BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US;
 	}
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT) {
@@ -2027,8 +1985,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	return 0;
 }
 
-static int bt_le_per_adv_sync_create_cancel(
-	struct bt_le_per_adv_sync *per_adv_sync)
+static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	struct net_buf *buf;
 	int err;
@@ -2048,8 +2005,7 @@ static int bt_le_per_adv_sync_create_cancel(
 		return -ENOBUFS;
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, buf,
-				   NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, buf, NULL);
 	if (err) {
 		return err;
 	}
@@ -2086,8 +2042,7 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 		err = bt_le_per_adv_sync_terminate(per_adv_sync);
 
 		if (!err) {
-			per_adv_sync_terminated(per_adv_sync,
-						BT_HCI_ERR_LOCALHOST_TERM_CONN);
+			per_adv_sync_terminated(per_adv_sync, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 		}
 	} else if (get_pending_per_adv_sync() == per_adv_sync) {
 		err = bt_le_per_adv_sync_create_cancel(per_adv_sync);
@@ -2110,8 +2065,7 @@ int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
 	return 0;
 }
 
-static int bt_le_set_per_adv_recv_enable(
-	struct bt_le_per_adv_sync *per_adv_sync, bool enable)
+static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync, bool enable)
 {
 	struct bt_hci_cp_le_set_per_adv_recv_enable *cp;
 	struct bt_le_per_adv_sync_cb *listener;
@@ -2132,10 +2086,8 @@ static int bt_le_set_per_adv_recv_enable(
 		return -EINVAL;
 	}
 
-	if ((enable && !atomic_test_bit(per_adv_sync->flags,
-					BT_PER_ADV_SYNC_RECV_DISABLED)) ||
-	    (!enable && atomic_test_bit(per_adv_sync->flags,
-					BT_PER_ADV_SYNC_RECV_DISABLED))) {
+	if ((enable && !atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED)) ||
+	    (!enable && atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED))) {
 		return -EALREADY;
 	}
 
@@ -2150,18 +2102,16 @@ static int bt_le_set_per_adv_recv_enable(
 	cp->handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->enable = enable ? 1 : 0;
 
-	bt_hci_cmd_state_set_init(buf, &state, per_adv_sync->flags,
-				  BT_PER_ADV_SYNC_RECV_DISABLED, !enable);
+	bt_hci_cmd_state_set_init(buf, &state, per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED,
+				  !enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE,
-				   buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE, buf, NULL);
 
 	if (err) {
 		return err;
 	}
 
-	info.recv_enabled = !atomic_test_bit(per_adv_sync->flags,
-					     BT_PER_ADV_SYNC_RECV_DISABLED);
+	info.recv_enabled = !atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->state_changed) {
@@ -2184,12 +2134,10 @@ int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync)
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
-				const struct bt_conn *conn,
-				uint16_t service_data)
+				const struct bt_conn *conn, uint16_t service_data)
 {
 	struct bt_hci_cp_le_per_adv_sync_transfer *cp;
 	struct net_buf *buf;
-
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -2209,18 +2157,14 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->service_data = sys_cpu_to_le16(service_data);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf,
-				    NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf, NULL);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
-static bool valid_past_param(
-	const struct bt_le_per_adv_sync_transfer_param *param)
+static bool valid_past_param(const struct bt_le_per_adv_sync_transfer_param *param)
 {
-	if (param->skip > 0x01f3 ||
-	    param->timeout < 0x000A ||
-	    param->timeout > 0x4000) {
+	if (param->skip > 0x01f3 || param->timeout < 0x000A || param->timeout > 0x4000) {
 		return false;
 	}
 	if ((param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_REPORTING_INITIALLY_DISABLED) &&
@@ -2231,11 +2175,12 @@ static bool valid_past_param(
 	return true;
 }
 
-static int past_param_set(const struct bt_conn *conn, uint8_t mode,
-			  uint16_t skip, uint16_t timeout, uint8_t cte_type)
+static int past_param_set(const struct bt_conn *conn, uint8_t mode, uint16_t skip, uint16_t timeout,
+			  uint8_t cte_type)
 {
 	struct bt_hci_cp_le_past_param *cp;
 	struct net_buf *buf;
+	int err;
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -2250,15 +2195,16 @@ static int past_param_set(const struct bt_conn *conn, uint8_t mode,
 	cp->skip = sys_cpu_to_le16(skip);
 	cp->timeout = sys_cpu_to_le16(timeout);
 	cp->cte_type = cte_type;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, buf, NULL);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, buf, NULL);
+	return err;
 }
 
-static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
-				  uint8_t cte_type)
+static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout, uint8_t cte_type)
 {
 	struct bt_hci_cp_le_default_past_param *cp;
 	struct net_buf *buf;
+	int err;
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -2272,13 +2218,13 @@ static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
 	cp->skip = sys_cpu_to_le16(skip);
 	cp->timeout = sys_cpu_to_le16(timeout);
 	cp->cte_type = cte_type;
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, buf, NULL);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, buf, NULL);
+	return err;
 }
 
-int bt_le_per_adv_sync_transfer_subscribe(
-	const struct bt_conn *conn,
-	const struct bt_le_per_adv_sync_transfer_param *param)
+int bt_le_per_adv_sync_transfer_subscribe(const struct bt_conn *conn,
+					  const struct bt_le_per_adv_sync_transfer_param *param)
 {
 	uint8_t cte_type = 0;
 	uint8_t mode = BT_HCI_LE_PAST_MODE_SYNC;
@@ -2397,15 +2343,12 @@ int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
 	bt_addr_le_copy(&cp->addr, addr);
 	cp->sid = sid;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST, buf,
-				   NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST, buf, NULL);
 	if (err) {
 		LOG_ERR("Failed to add device to periodic advertiser list");
-
-		return err;
 	}
 
-	return 0;
+	return err;
 }
 
 int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid)
@@ -2427,8 +2370,7 @@ int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid)
 	bt_addr_le_copy(&cp->addr, addr);
 	cp->sid = sid;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST, buf,
-				   NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST, buf, NULL);
 	if (err) {
 		LOG_ERR("Failed to remove device from periodic advertiser list");
 		return err;
@@ -2463,13 +2405,13 @@ bool bt_le_explicit_scanner_running(void)
 bool bt_le_explicit_scanner_uses_same_params(const struct bt_conn_le_create_param *create_param)
 {
 	if (scan_state.explicit_scan_param.window != create_param->window ||
-	    scan_state.explicit_scan_param.interval != create_param->interval){
+	    scan_state.explicit_scan_param.interval != create_param->interval) {
 		return false;
 	}
 
 	if (scan_state.explicit_scan_param.options & BT_LE_SCAN_OPT_CODED) {
 		if (scan_state.explicit_scan_param.window_coded != create_param->window_coded ||
-		    scan_state.explicit_scan_param.interval_coded != create_param->interval_coded){
+		    scan_state.explicit_scan_param.interval_coded != create_param->interval_coded) {
 			return false;
 		}
 	}

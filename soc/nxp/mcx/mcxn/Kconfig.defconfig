@@ -37,4 +37,11 @@ config FLASH_FILL_BUFFER_SIZE
 config I2S_HAS_PLL_SETTING
 	default n
 
+if PM
+
+configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+	default y
+
+endif # PM
+
 endif # SOC_FAMILY_MCXN

@@ -359,7 +359,13 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 	 */
 	zassert_ok(pm_device_runtime_get(spec->bus));
 
-	/* since this is a test program, there shouldn't be much to interfere with measurement */
+	/*
+	 * since this is a test program, there shouldn't be much to interfere with measurement.
+	 * still let's wait for the console to complete printing so it does not complete and
+	 * suspend near the end of the spi transaction.
+	 */
+	k_msleep(10);
+
 	start_time = k_cycle_get_32();
 	spi_loopback_transceive(spec, &tx, &rx, 2);
 	end_time = k_cycle_get_32();

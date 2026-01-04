@@ -317,6 +317,7 @@ struct nvmem_cell {
  * @kconfig_dep{CONFIG_NVMEM}
  *
  * @retval -EINVAL Invalid offset or length arguments.
+ * @retval -ENODEV The controller device is not ready.
  * @retval -ENXIO  No runtime device API available.
  * @return the result of the underlying device API call.
  */
@@ -334,6 +335,7 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *data, off_t off, size_t
  *
  * @retval -EINVAL Invalid offset or length arguments.
  * @retval -EROFS  Writing to a read-only NVMEM Cell.
+ * @retval -ENODEV The controller device is not ready.
  * @retval -ENXIO  No runtime device API available.
  * @return the result of the underlying device API call.
  */

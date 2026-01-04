@@ -143,17 +143,19 @@ config SETTINGS_CUSTOM
 	help
 	  Use a custom settings storage back-end.
 
-config SETTINGS_TFM_ITS
-	bool "Internal Trusted Storage (ITS) settings backend"
-	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+config SETTINGS_TFM_PSA
+	bool "TF-M PSA"
+	depends on BUILD_WITH_TFM
 	select EXPERIMENTAL
 	help
-	  Enables Internal Trusted Storage (ITS) Settings backend. Intended for use with boards
+	  Enables PSA Settings backend. Intended for use with boards
 	  using TF-M which cannot make use of persistent storage otherwise.
-	  Note: This settings backend compacts settings data into as few ITS nodes as possible.
-	  On every save, the entire settings array is written to ITS.
+	  This backend uses the PSA ITS or PS service to store settings data.
+	  Note: This settings backend compacts settings data into as few secure storage nodes as possible.
+	  After each save, the entire settings array is written to the secure storage. To avoid excessive
+	  latency on saving, settings are saved after a delay using a kernel work item.
 	  Note: With this backend, all settings are kept in RAM at all times. The RAM consumption
-	  is controlled by the SETTINGS_TFM_ITS_NUM_ENTRIES Kconfig option.
+	  is controlled by the SETTINGS_TFM_PSA_NUM_ENTRIES Kconfig option.
 
 config SETTINGS_NONE
 	bool "NONE"
@@ -265,9 +267,29 @@ config SETTINGS_SHELL
 	  size of the shell thread may need to be increased to accommodate this
 	  feature.
 
-if SETTINGS_TFM_ITS
+if SETTINGS_TFM_PSA
 
-config SETTINGS_TFM_ITS_NUM_ENTRIES
+choice SETTINGS_TFM_PSA_BACKEND
+	prompt "TF-M PSA Settings backend"
+	default SETTINGS_TFM_PSA_BACKEND_ITS
+	help
+	  PSA storage option to be used by the PSA settings backend.
+
+config SETTINGS_TFM_PSA_BACKEND_PS
+	bool "PSA Protected Storage (PS)"
+	depends on TFM_PARTITION_PROTECTED_STORAGE
+	help
+	  Use PSA Protected Storage as settings storage backend.
+
+config SETTINGS_TFM_PSA_BACKEND_ITS
+	bool "PSA Internal Trusted Storage (ITS)"
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	help
+	  Use PSA Internal Trusted Storage as settings storage backend.
+
+endchoice # SETTINGS_TFM_PSA_BACKEND
+
+config SETTINGS_TFM_PSA_NUM_ENTRIES
 	int "Maximum number of settings entries"
 	default 10
 	help
@@ -275,18 +297,18 @@ config SETTINGS_TFM_ITS_NUM_ENTRIES
 	  Note: This value determines the size of a statically-allocated buffer which holds
 	  all the settings entries in RAM at all times.
 
-config SETTINGS_TFM_ITS_LAZY_PERSIST_DELAY_MS
+config SETTINGS_TFM_PSA_LAZY_PERSIST_DELAY_MS
 	int "Milliseconds delay before persisting settings"
 	default 500
 	help
-	  ITS may block for a long period of time when writing to flash, which may be
+	  PSA Secure Storage APIs may block for a long period of time when writing to flash, which may be
 	  unacceptable for time-sensitive events.
-	  Data is always persisted to ITS using k_work_delayable, instead of happening in
-	  the same context as settings_its_save. This option sets the delay with which the
-	  work item is scheduled. The delay is useful in cases where a PSA ITS write may
-	  block a time-sensitive event, Bluetooth pairing for example, which requires a
+	  Data is always persisted to the secure storage using k_work_delayable, instead of happening in
+	  the same context as settings_save. This option sets the delay with which the
+	  work item is scheduled. The delay is useful in cases where a write may
+	  block a time-sensitive event, for example Bluetooth pairing, which requires a
 	  sequence of settings writes.
 
-endif # SETTINGS_TFM_ITS
+endif # SETTINGS_TFM_PSA
 
 endif # SETTINGS

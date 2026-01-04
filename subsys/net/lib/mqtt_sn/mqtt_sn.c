@@ -596,32 +596,6 @@ static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 }
 
 /**
- * @brief Internal function to send a GWINFO message.
- *
- * @param client
- */
-static void mqtt_sn_do_gwinfo(struct mqtt_sn_client *client)
-{
-	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_GWINFO};
-	struct mqtt_sn_gateway *gw;
-	struct mqtt_sn_data addr;
-
-	gw = SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateway, gw, next);
-
-	if (gw == NULL || gw->addr_len == 0) {
-		LOG_WRN("No Gateway Address");
-		return;
-	}
-
-	response.params.gwinfo.gw_id = gw->gw_id;
-	addr.data = gw->addr;
-	addr.size = gw->addr_len;
-	response.params.gwinfo.gw_add = addr;
-
-	encode_and_send(client, &response, client->radius_gwinfo);
-}
-
-/**
  * @brief Internal function to send a PINGREQ message.
  *
  * @param client
@@ -1074,8 +1048,11 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 	}
 
 	if (client->ts_gwinfo != 0 && client->ts_gwinfo <= now) {
-		LOG_DBG("Sending GWINFO");
-		mqtt_sn_do_gwinfo(client);
+		/* The MQTT-SN specification doesn't properly specify the format
+		 * of the address in this message.
+		 * See https://github.com/zephyrproject-rtos/zephyr/pull/100874
+		 */
+		LOG_WRN("GwAddr is not specified properly. Ignoring SEARCHGW message");
 		client->ts_gwinfo = 0;
 	}
 
@@ -1559,8 +1536,12 @@ static void handle_gwinfo(struct mqtt_sn_client *client, struct mqtt_sn_param_gw
 
 	/* Extract GW info and store */
 	if (p->gw_add.size > 0) {
-		rx_addr.data = p->gw_add.data;
-		rx_addr.size = p->gw_add.size;
+		/* The MQTT-SN specification doesn't properly specify the format
+		 * of the address in this message.
+		 * See https://github.com/zephyrproject-rtos/zephyr/pull/100874
+		 */
+		LOG_WRN("GwAddr is not specified properly. Ignoring GWINFO message");
+		return;
 	} else {
 	}
 	gw = mqtt_sn_gw_create(p->gw_id, -1, rx_addr);

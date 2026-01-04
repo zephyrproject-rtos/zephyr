@@ -1866,6 +1866,10 @@ void bt_rfcomm_init(void)
 		.accept    = rfcomm_accept,
 		.sec_level = BT_SECURITY_L1,
 	};
+	__maybe_unused int err;
 
-	bt_l2cap_br_server_register(&server);
+	err = bt_l2cap_br_server_register(&server);
+	if (err != 0) {
+		LOG_ERR("Failed to register L2CAP server for RFCOMM (err %d)", err);
+	}
 }

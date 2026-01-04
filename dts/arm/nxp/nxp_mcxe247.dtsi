@@ -26,11 +26,38 @@
 	};
 };
 
+&eim0_channel0 {
+	start-address = <0x1ffe0000>;
+	size = <DT_SIZE_K(128)>;
+};
+
+&eim0_channel1 {
+	start-address = <0x20000000>;
+	size = <DT_SIZE_K(124)>;
+};
+
 &ftfc {
+	status = "okay";
+
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0 DT_SIZE_K(1536)>;
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <8>;
 	};
+};
+
+&flexcan0 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};
+
+&flexcan1 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};
+
+&flexcan2 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
 };

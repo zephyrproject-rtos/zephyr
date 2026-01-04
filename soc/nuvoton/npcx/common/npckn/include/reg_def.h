@@ -479,45 +479,45 @@ struct adc_reg {
 	(*(volatile uint16_t *)(base + NPCX_TEMP_THR_DCTL_OFFSET(ctrl)))
 
 /* ADC register fields */
-#define NPCX_ATCTL_SCLKDIV_FIELD              FIELD(0, 6)
-#define NPCX_ATCTL_DLY_FIELD                  FIELD(8, 3)
-#define NPCX_ASCADD_SADDR_FIELD               FIELD(0, 5)
-#define NPCX_ADCSTS_EOCEV                     0
-#define NPCX_ADCSTS_EOCCEV                    1
-#define NPCX_ADCSTS_TEOCEV                    4
-#define NPCX_ADCSTS_TEOCCEV                   5
-#define NPCX_ADCCNF_ADCEN                     0
-#define NPCX_ADCCNF_ADCMD_FIELD               FIELD(1, 2)
-#define NPCX_ADCCNF_ADCRPTC                   3
-#define NPCX_ADCCNF_START                     4
-#define NPCX_ADCCNF_ADCTTE                    5
-#define NPCX_ADCCNF_INTECEN                   6
-#define NPCX_ADCCNF_INTECCEN                  7
-#define NPCX_ADCCNF_INTETCEN                  8
-#define NPCX_ADCCNF_INTOVFEN                  9
-#define NPCX_ADCCNF_STOP                      11
-#define NPCX_CHNDAT_CHDAT_FIELD               FIELD(0, 10)
-#define NPCX_CHNDAT_NEW                       15
-#define NPCX_THRCTS_ADC_WKEN                  15
-#define NPCX_THRCTS_THR3_IEN                  10
-#define NPCX_THRCTS_THR2_IEN                  9
-#define NPCX_THRCTS_THR1_IEN                  8
-#define NPCX_THRCTS_ADC_EVENT                 7
-#define NPCX_THRCTS_THR3_STS                  2
-#define NPCX_THRCTS_THR2_STS                  1
-#define NPCX_THRCTS_THR1_STS                  0
-#define NPCX_THR_DCTL_THRD_EN                 15
-#define NPCX_THR_DCTL_THR_DVAL                FIELD(0, 10)
-#define NPCX_V2T_CTRL_TEMP_EN                 0
-#define NPCX_V2T_CTRL_OVT_EN                  1
-#define NPCX_V2T_CTRL_TINTC_EN                2
-#define NPCX_V2T_CTRL_TINTCC_EN               3
-#define NPCX_V2T_CTRL_TINTT_EN                4
-#define NPCX_V2T_CTRL_TINTO_EN                5
-#define NPCX_V2T_CTRL_OVT_MODE                6
-#define NPCX_V2T_TCHNDAT_DAT_FRACION       FIELD(0, 3)
-#define NPCX_V2T_TCHNDAT_DAT               FIELD(3, 8)
-#define NPCX_V2T_TCHNDAT_DAT_FULL          FIELD(0, 11) /* Data(8 bit) + Fraction (3 bit) */
+#define NPCX_ATCTL_SCLKDIV_FIELD     FIELD(0, 6)
+#define NPCX_ATCTL_DLY_FIELD         FIELD(8, 3)
+#define NPCX_ASCADD_SADDR_FIELD      FIELD(0, 5)
+#define NPCX_ADCSTS_EOCEV            0
+#define NPCX_ADCSTS_EOCCEV           1
+#define NPCX_ADCSTS_TEOCEV           4
+#define NPCX_ADCSTS_TEOCCEV          5
+#define NPCX_ADCCNF_ADCEN            0
+#define NPCX_ADCCNF_ADCMD_FIELD      FIELD(1, 2)
+#define NPCX_ADCCNF_ADCRPTC          3
+#define NPCX_ADCCNF_START            4
+#define NPCX_ADCCNF_ADCTTE           5
+#define NPCX_ADCCNF_INTECEN          6
+#define NPCX_ADCCNF_INTECCEN         7
+#define NPCX_ADCCNF_INTETCEN         8
+#define NPCX_ADCCNF_INTOVFEN         9
+#define NPCX_ADCCNF_STOP             11
+#define NPCX_CHNDAT_CHDAT_FIELD      FIELD(0, 10)
+#define NPCX_CHNDAT_NEW              15
+#define NPCX_THRCTS_ADC_WKEN         15
+#define NPCX_THRCTS_THR3_IEN         10
+#define NPCX_THRCTS_THR2_IEN         9
+#define NPCX_THRCTS_THR1_IEN         8
+#define NPCX_THRCTS_ADC_EVENT        7
+#define NPCX_THRCTS_THR3_STS         2
+#define NPCX_THRCTS_THR2_STS         1
+#define NPCX_THRCTS_THR1_STS         0
+#define NPCX_THR_DCTL_THRD_EN        15
+#define NPCX_THR_DCTL_THR_DVAL       FIELD(0, 10)
+#define NPCX_V2T_CTRL_TEMP_EN        0
+#define NPCX_V2T_CTRL_OVT_EN         1
+#define NPCX_V2T_CTRL_TINTC_EN       2
+#define NPCX_V2T_CTRL_TINTCC_EN      3
+#define NPCX_V2T_CTRL_TINTT_EN       4
+#define NPCX_V2T_CTRL_TINTO_EN       5
+#define NPCX_V2T_CTRL_OVT_MODE       6
+#define NPCX_V2T_TCHNDAT_DAT_FRACION FIELD(0, 3)
+#define NPCX_V2T_TCHNDAT_DAT         FIELD(3, 8)
+#define NPCX_V2T_TCHNDAT_DAT_FULL    FIELD(0, 11) /* Data(8 bit) + Fraction (3 bit) */
 
 /*
  * Timer Watchdog (TWD) device registers

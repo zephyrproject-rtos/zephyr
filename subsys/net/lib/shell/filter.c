@@ -87,7 +87,7 @@ static void rule_cb(struct npf_rule *rule, enum npf_rule_type type, void *user_d
 	for (int i = 0; i < rule->nb_tests; i++) {
 		/* Allocate room for storing two full IPv4/6 addresses */
 #define MAX_BUF_LEN ((IS_ENABLED(CONFIG_NET_IPV6) ?		\
-		      INET6_ADDRSTRLEN : INET_ADDRSTRLEN) * 2)
+		      NET_INET6_ADDRSTRLEN : NET_INET_ADDRSTRLEN) * 2)
 		char buf[MAX_BUF_LEN] = { 0 };
 		struct npf_test *test;
 		const char *str;

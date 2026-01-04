@@ -3,7 +3,7 @@
 
 description: Test PCIe bus controller
 
-compatible: vnd,pcie
+compatible: "vnd,pcie"
 
 include: base.yaml
 

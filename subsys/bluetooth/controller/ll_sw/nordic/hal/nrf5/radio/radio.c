@@ -12,6 +12,7 @@
 
 #include <nrf_sys_event.h>
 #include <nrfx_gpiote.h>
+#include <gpiote_nrfx.h>
 
 #include "util/mem.h"
 
@@ -67,8 +68,8 @@ BUILD_ASSERT(!HAL_RADIO_GPIO_LNA_OFFSET_MISSING,
 #endif	/* FEM_NODE */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-static const nrfx_gpiote_t gpiote_palna = NRFX_GPIOTE_INSTANCE(
-	NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP));
+static nrfx_gpiote_t * const gpiote_palna =
+	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE(FEM_NODE, HAL_RADIO_GPIO_PA_PROP));
 static uint8_t gpiote_ch_palna;
 
 BUILD_ASSERT(NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP) ==
@@ -78,8 +79,8 @@ BUILD_ASSERT(NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP) ==
 #endif
 
 #if defined(HAL_RADIO_FEM_IS_NRF21540)
-static const nrfx_gpiote_t gpiote_pdn = NRFX_GPIOTE_INSTANCE(
-	NRF_DT_GPIOTE_INST(FEM_NODE, pdn_gpios));
+static nrfx_gpiote_t * const gpiote_pdn =
+	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE(FEM_NODE, pdn_gpios));
 static uint8_t gpiote_ch_pdn;
 #endif
 
@@ -311,29 +312,14 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 void radio_tx_power_set(int8_t power)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	uint32_t value;
 
 	value = hal_radio_tx_power_value(power);
 	NRF_RADIO->TXPOWER = value;
 
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET)
-	uint32_t value;
-
-	/* NOTE: TXPOWER register only accepts upto 0dBm, hence use the HAL
-	 * floor value for the TXPOWER register. Permit +3dBm by using high
-	 * voltage being set for radio.
-	 */
-	value = hal_radio_tx_power_floor(power);
-	NRF_RADIO->TXPOWER = value;
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET)
 	hal_radio_tx_power_high_voltage_set(power);
-
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET  && !CONFIG_SOC_COMPATIBLE_NRF54LX */
-
-	/* NOTE: valid value range is passed by Kconfig define. */
-	NRF_RADIO->TXPOWER = (uint32_t)power;
-
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
 }
 
 void radio_tx_power_max_set(void)
@@ -346,32 +332,17 @@ void radio_tx_power_max_set(void)
 
 int8_t radio_tx_power_min_get(void)
 {
-	return (int8_t)hal_radio_tx_power_min_get();
+	return hal_radio_tx_power_min_get();
 }
 
 int8_t radio_tx_power_max_get(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET)
-	return RADIO_TXPOWER_TXPOWER_Pos3dBm;
-
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
-	return (int8_t)hal_radio_tx_power_max_get();
-
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
+	return hal_radio_tx_power_max_get();
 }
 
 int8_t radio_tx_power_floor(int8_t power)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET)
-	/* NOTE: TXPOWER register only accepts upto 0dBm, +3dBm permitted by
-	 * use of high voltage being set for radio when TXPOWER register is set.
-	 */
-	if (power >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
-	}
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
-
-	return (int8_t)hal_radio_tx_power_floor(power);
+	return hal_radio_tx_power_floor(power);
 }
 
 void radio_freq_chan_set(uint32_t chan)
@@ -1940,13 +1911,13 @@ uint32_t radio_tmr_sample_get(void)
 int radio_gpio_pa_lna_init(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-	if (nrfx_gpiote_channel_alloc(&gpiote_palna, &gpiote_ch_palna) != NRFX_SUCCESS) {
+	if (nrfx_gpiote_channel_alloc(gpiote_palna, &gpiote_ch_palna) != 0) {
 		return -ENOMEM;
 	}
 #endif
 
 #if defined(NRF_GPIO_PDN_PIN)
-	if (nrfx_gpiote_channel_alloc(&gpiote_pdn, &gpiote_ch_pdn) != NRFX_SUCCESS) {
+	if (nrfx_gpiote_channel_alloc(gpiote_pdn, &gpiote_ch_pdn) != 0) {
 		return -ENOMEM;
 	}
 #endif
@@ -1957,18 +1928,18 @@ int radio_gpio_pa_lna_init(void)
 void radio_gpio_pa_lna_deinit(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-	(void)nrfx_gpiote_channel_free(&gpiote_palna, gpiote_ch_palna);
+	(void)nrfx_gpiote_channel_free(gpiote_palna, gpiote_ch_palna);
 #endif
 
 #if defined(NRF_GPIO_PDN_PIN)
-	(void)nrfx_gpiote_channel_free(&gpiote_pdn, gpiote_ch_pdn);
+	(void)nrfx_gpiote_channel_free(gpiote_pdn, gpiote_ch_pdn);
 #endif
 }
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 void radio_gpio_pa_setup(void)
 {
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] =
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
 		(NRF_GPIO_PA_PSEL <<
@@ -1988,7 +1959,7 @@ void radio_gpio_pa_setup(void)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 void radio_gpio_lna_setup(void)
 {
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] =
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
 		(NRF_GPIO_LNA_PSEL <<
@@ -2008,7 +1979,7 @@ void radio_gpio_pdn_setup(void)
 {
 	/* Note: the pdn-gpios property is optional. */
 #if defined(NRF_GPIO_PDN)
-	gpiote_pdn.p_reg->CONFIG[gpiote_ch_pdn] =
+	gpiote_pdn->p_reg->CONFIG[gpiote_ch_pdn] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
 		(NRF_GPIO_PDN_PSEL <<
@@ -2062,12 +2033,12 @@ void radio_gpio_pa_lna_disable(void)
 					   BIT(HAL_DISABLE_PALNA_PPI) |
 					   BIT(HAL_ENABLE_FEM_PPI) |
 					   BIT(HAL_DISABLE_FEM_PPI));
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] = 0;
-	gpiote_pdn.p_reg->CONFIG[gpiote_ch_pdn] = 0;
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] = 0;
+	gpiote_pdn->p_reg->CONFIG[gpiote_ch_pdn] = 0;
 #else
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 					   BIT(HAL_DISABLE_PALNA_PPI));
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] = 0;
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] = 0;
 #endif
 }
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */

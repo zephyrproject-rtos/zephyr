@@ -138,12 +138,6 @@
 	pinctrl-names = "default";
 };
 
-/* Comparator configuration */
-&lpcmp0 {
-	pinctrl-0 = <&pinmux_lpcmp0>;
-	pinctrl-names = "default";
-};
-
 /* I2C configurations */
 &lpi2c1 {
 	status = "okay";

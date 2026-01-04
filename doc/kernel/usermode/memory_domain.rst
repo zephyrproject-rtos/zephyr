@@ -316,7 +316,7 @@ There are a few memory partitions which are pre-defined by the system:
    Required when using either the Minimal C library or the Newlib C Library.
    Required when :kconfig:option:`CONFIG_STACK_CANARIES` is enabled.
 
-Library-specific partitions are listed in ``include/app_memory/partitions.h``.
+Library-specific partitions are listed in :zephyr_file:`include/zephyr/app_memory/partitions.h`.
 For example, to use the MBEDTLS library from user mode, the
 ``k_mbedtls_partition`` must be added to the domain.
 
@@ -428,7 +428,7 @@ dependent.
 
 The complete list of available partition attributes for a specific architecture
 is found in the architecture-specific include file
-``include/zephyr/arch/<arch name>/arch.h``, (for example, ``include/zehpyr/arch/arm/arch.h``.)
+``include/zephyr/arch/<arch name>/arch.h``, (for example, :zephyr_file:`include/zephyr/arch/arm/arch.h`.)
 Some examples of partition attributes are:
 
 .. code-block:: c

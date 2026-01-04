@@ -240,6 +240,21 @@ int xen_domctl_assign_dt_device(int domid, char *dtdev_path)
 
 }
 
+int xen_domctl_deassign_dt_device(int domid, char *dtdev_path)
+{
+	xen_domctl_t domctl = {
+		.domain = domid,
+		.cmd = XEN_DOMCTL_deassign_device,
+		.u.assign_device.flags = 0,
+		.u.assign_device.dev = XEN_DOMCTL_DEV_DT,
+		.u.assign_device.u.dt.size = strlen(dtdev_path),
+	};
+
+	set_xen_guest_handle(domctl.u.assign_device.u.dt.path, dtdev_path);
+
+	return do_domctl(&domctl);
+}
+
 int xen_domctl_bind_pt_irq(int domid, uint32_t machine_irq, uint8_t irq_type,
 		uint8_t bus, uint8_t device, uint8_t intx, uint8_t isa_irq,
 		uint16_t spi)

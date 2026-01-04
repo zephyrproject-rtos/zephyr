@@ -34,4 +34,12 @@ config LORA_BASICS_MODEM_RSSI_REPORT_TYPE_SIGNAL
 
 endchoice
 
+config LORA_BASICS_MODEM_DEFERRED_INIT
+	bool "Defer radio initialization until first use"
+	help
+	  When enabled, radio hardware initialization (reset, interrupt
+	  configuration) is deferred until the first call to lora_config().
+	  This allows applications to perform setup before the radio is
+	  initialized. When disabled, the radio is fully initialized at boot.
+
 endif

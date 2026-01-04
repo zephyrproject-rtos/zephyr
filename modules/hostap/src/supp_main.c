@@ -43,7 +43,6 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
 #include "fst/fst.h"
-#include "includes.h"
 #include "wpa_cli_zephyr.h"
 #include "ctrl_iface_zephyr.h"
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP

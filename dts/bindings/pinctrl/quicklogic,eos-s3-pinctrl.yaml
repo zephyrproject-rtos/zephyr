@@ -10,7 +10,7 @@ description: |
 
   For example, setting pins 44 and 45 for use as UART would look like this:
 
-    #include <dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
+    #include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
 
     &pinctrl {
       uart0_rx_default: uart0_rx_default {

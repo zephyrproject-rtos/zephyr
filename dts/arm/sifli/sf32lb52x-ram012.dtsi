@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <mem.h>
 
 / {
@@ -13,7 +14,23 @@
 	soc {
 		ram012: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(512)>;
+			reg = <0x20000000 DT_SIZE_K(511)>;
+		};
+
+		sram0_shared: memory@2007fc00 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x2007fc00 DT_SIZE_K(1)>;
+			device_type = "memory";
+			zephyr,memory-region = "sram0_shared";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		};
+
+		sram1_shared: memory@20400000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20400000 DT_SIZE_K(64)>;
+			device_type = "memory";
+			zephyr,memory-region = "sram1_shared";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 	};
 };

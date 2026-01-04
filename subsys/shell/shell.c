@@ -987,6 +987,7 @@ static void state_collect(const struct shell *sh)
 
 	while (true) {
 		shell_bypass_cb_t bypass = sh->ctx->bypass;
+		void *bypass_user_data = sh->ctx->bypass_user_data;
 
 		if (bypass) {
 #if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
@@ -1006,7 +1007,7 @@ static void state_collect(const struct shell *sh)
 				 * to the bypass function.
 				 */
 				z_shell_unlock(sh);
-				bypass(sh, buf, count);
+				bypass(sh, buf, count, bypass_user_data);
 				/* After returning, we're back in the shell context — re-acquire
 				 * the shell mutex on the shell thread.
 				 */
@@ -1816,11 +1817,12 @@ int shell_mode_delete_set(const struct shell *sh, bool val)
 	return (int)z_flag_mode_delete_set(sh, val);
 }
 
-void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass, void *user_data)
 {
 	__ASSERT_NO_MSG(sh);
 
 	sh->ctx->bypass = bypass;
+	sh->ctx->bypass_user_data = user_data;
 
 	if (bypass == NULL) {
 		cmd_buffer_clear(sh);

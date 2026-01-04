@@ -410,7 +410,7 @@ static int frame_getconfig_msg(char *buf, int len, char *key, char *val,
 		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_key_val, "key",
 					  key, JSON_TOK_STRING),
 		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_key_val, "readonly",
-					  readonly, JSON_TOK_NUMBER),
+					  readonly, JSON_TOK_TRUE),
 		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_key_val, "value",
 					  value, JSON_TOK_STRING),
 	};

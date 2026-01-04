@@ -64,12 +64,30 @@ family:
           - name: efr32mg22c224f512gn32
           - name: efr32mg22e224f512im40
           - name: efr32mg22e224f512im32
+      - name: efr32bg24
+        socs:
+          - name: efr32bg24a010f1024im40
+          - name: efr32bg24a010f1024im48
+          - name: efr32bg24a020f1024im40
+          - name: efr32bg24a020f1024im48
+          - name: efr32bg24b110f1536im48
+          - name: efr32bg24b210f1024im48
+          - name: efr32bg24b220f1024im48
+          - name: efr32bg24l010f768im40
+          - name: efr32bg24l210f768im40
       - name: efr32mg24
         socs:
+          - name: efr32mg24b010f1024im48
+          - name: efr32mg24b010f1536im40
+          - name: efr32mg24b010f1536im48
+          - name: efr32mg24b020f1024im48
+          - name: efr32mg24b020f1536im40
+          - name: efr32mg24b020f1536im48
+          - name: efr32mg24b110f1536im48
+          - name: efr32mg24b120f1536im48
+          - name: efr32mg24b210f1536im48
           - name: efr32mg24b220f1536im48
           - name: efr32mg24b310f1536im48
-          - name: efr32mg24b210f1536im48
-          - name: efr32mg24b020f1536im40
       - name: bgm24
         socs:
           - name: bgm240pa22vna

@@ -31,4 +31,8 @@ config XTENSA_MMU_NUM_L2_TABLES
 	# Also need to have some room for future expansions or
 	# else we will be chasing changes all the time.
 	default 64
+
+config XTENSA_MMU_USE_DEFAULT_MAPPINGS
+	default n
+
 endif

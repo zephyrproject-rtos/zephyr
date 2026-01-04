@@ -35,6 +35,7 @@
 			reg = <0x41002000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>;
 			interrupts = <5 0>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -45,6 +46,7 @@
 			reg = <0x41003000 DT_SIZE_K(1)>;
 			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
 			interrupts = <6 0>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 

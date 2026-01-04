@@ -176,6 +176,16 @@ int xen_domctl_memory_mapping(int domid, uint64_t first_gfn, uint64_t first_mfn,
 int xen_domctl_assign_dt_device(int domid, char *dtdev_path);
 
 /**
+ * @brief Deassign a device from a guest domain.
+ *
+ * @param domid The ID of the domain from which the device should be deassigned.
+ * @param dtdev_path The path of the device tree device to be deassigned.
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+int xen_domctl_deassign_dt_device(int domid, char *dtdev_path);
+
+/**
  * @brief Binds a physical IRQ to a specified domain.
  *
  * Only supports SPI IRQs for now.

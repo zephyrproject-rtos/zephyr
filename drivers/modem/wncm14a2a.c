@@ -105,7 +105,7 @@ static struct k_work_q wncm14a2a_workq;
 
 struct wncm14a2a_socket {
 	struct net_context *context;
-	sa_family_t family;
+	net_sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
 	struct net_sockaddr src;
@@ -1430,7 +1430,7 @@ error:
 
 /*** OFFLOAD FUNCTIONS ***/
 
-static int offload_get(sa_family_t family,
+static int offload_get(net_sa_family_t family,
 		       enum net_sock_type type,
 		       enum net_ip_protocol ip_proto,
 		       struct net_context **context)
@@ -1465,7 +1465,7 @@ static int offload_get(sa_family_t family,
 
 static int offload_bind(struct net_context *context,
 			const struct net_sockaddr *addr,
-			socklen_t addrlen)
+			net_socklen_t addrlen)
 {
 	struct wncm14a2a_socket *sock = NULL;
 
@@ -1505,7 +1505,7 @@ static int offload_listen(struct net_context *context, int backlog)
 
 static int offload_connect(struct net_context *context,
 			   const struct net_sockaddr *addr,
-			   socklen_t addrlen,
+			   net_socklen_t addrlen,
 			   net_context_connect_cb_t cb,
 			   int32_t timeout,
 			   void *user_data)
@@ -1590,7 +1590,7 @@ static int offload_accept(struct net_context *context,
 
 static int offload_sendto(struct net_pkt *pkt,
 			  const struct net_sockaddr *dst_addr,
-			  socklen_t addrlen,
+			  net_socklen_t addrlen,
 			  net_context_send_cb_t cb,
 			  int32_t timeout,
 			  void *user_data)
@@ -1629,7 +1629,7 @@ static int offload_send(struct net_pkt *pkt,
 			void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
-	socklen_t addrlen;
+	net_socklen_t addrlen;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
 		addrlen = sizeof(struct net_sockaddr_in6);

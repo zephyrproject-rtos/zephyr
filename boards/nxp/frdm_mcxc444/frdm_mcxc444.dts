@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,10 @@
 	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
 };
 
+&cop {
+	status = "okay";
+};
+
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(48)>;
 };
@@ -190,4 +194,12 @@ i2c0: &i2c0 {
 zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
+};
+
+&dma {
+	status = "okay";
+};
+
+&dac {
+	status = "okay";
 };

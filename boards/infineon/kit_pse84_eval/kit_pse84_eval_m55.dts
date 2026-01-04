@@ -34,3 +34,7 @@
 		zephyr,shell-uart = &uart2;
 	};
 };
+
+&mcwdt1 {
+	status = "okay";
+};

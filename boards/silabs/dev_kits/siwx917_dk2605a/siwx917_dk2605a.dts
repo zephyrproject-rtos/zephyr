@@ -5,6 +5,7 @@
 
 /dts-v1/;
 #include <silabs/siwg917m111mgtba.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-siwx91x-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
@@ -31,6 +32,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -65,6 +67,10 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
 };
 
 &flash0 {
@@ -83,6 +89,10 @@
 			label = "storage";
 		};
 	};
+};
+
+&cpu0 {
+	clock-frequency = <180000000>;
 };
 
 &ulpuart {
@@ -139,6 +149,23 @@ zephyr_i2c: &ulpi2c {
 };
 
 &watchdog {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	silabs,adc-ref-voltage = <3300>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP28>;
+	};
+
 	status = "okay";
 };
 

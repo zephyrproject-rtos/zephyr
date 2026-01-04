@@ -167,7 +167,6 @@ struct ocpp_session {
 	uint8_t idcon;
 	int idtxn;
 	int resp_status;
-	int uid;
 	sys_snode_t node;
 	struct ocpp_info *ctx;
 };

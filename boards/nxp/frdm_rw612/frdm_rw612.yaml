@@ -33,4 +33,5 @@ supported:
   - dac
   - netif:eth
   - netif:openthread
+  - comparator
 vendor: nxp

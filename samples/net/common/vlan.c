@@ -10,7 +10,6 @@ LOG_MODULE_DECLARE(net_samples_common, LOG_LEVEL_DBG);
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/arpa/inet.h>
 #include <zephyr/net/ethernet.h>
 
 /* User data for the interface callback */
@@ -79,7 +78,7 @@ static int setup_iface(struct net_if *eth_iface,
 	addr_str = ++next;
 
 	do {
-		char my_addr[INET6_ADDRSTRLEN] = { 'N', 'o', ' ', 'I', 'P', '\0'};
+		char my_addr[NET_INET6_ADDRSTRLEN] = { 'N', 'o', ' ', 'I', 'P', '\0'};
 
 		next = net_ipaddr_parse_mask(addr_str, strlen(addr_str),
 					     paddr, &mask_len);
@@ -88,8 +87,8 @@ static int setup_iface(struct net_if *eth_iface,
 			return -EINVAL;
 		}
 
-		inet_ntop(paddr->sa_family, net_sin(paddr)->sin_addr.s4_addr,
-			  my_addr, sizeof(my_addr));
+		net_addr_ntop(paddr->sa_family, net_sin(paddr)->sin_addr.s4_addr,
+			      my_addr, sizeof(my_addr));
 
 		if (paddr->sa_family == NET_AF_INET) {
 			struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)paddr;
@@ -111,7 +110,7 @@ static int setup_iface(struct net_if *eth_iface,
 
 		} else if (paddr->sa_family == NET_AF_INET6) {
 			struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)paddr;
-			struct in6_addr netaddr6;
+			struct net_in6_addr netaddr6;
 
 			ifaddr = net_if_ipv6_addr_add(vlan_iface, &addr6->sin6_addr,
 						      NET_ADDR_MANUAL, 0);

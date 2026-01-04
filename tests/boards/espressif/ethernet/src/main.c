@@ -91,7 +91,7 @@ ZTEST(ethernet, test_icmp_check)
 {
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx ctx;
-	struct in_addr gw_addr_4;
+	struct net_in_addr gw_addr_4;
 	struct net_sockaddr_in dst4 = {0};
 	int ret;
 

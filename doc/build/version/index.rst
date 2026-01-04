@@ -72,7 +72,7 @@ Use in code
 ===========
 
 To use the version information in application code, the version file must be included, then the
-fields can be freely used. The include file name is :file:`app_version.h` (no path is needed), the
+fields can be freely used. The include file name is :file:`app_version.h` (use ``#include <zephyr/app_version.h>``), the
 following defines are available:
 
 +-----------------------------+-------------------+------------------------------------------------------+---------------------------+

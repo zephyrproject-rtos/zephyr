@@ -81,6 +81,7 @@ config DNS_RESOLVER_MAX_NAME_LEN
 	int "Max length of the resolved DNS name"
 	range 1 $(UINT8_MAX)
 	default 128 if DNS_SD
+	default 46 if NET_IPV6
 	default 20
 	help
 	  Max length of a buffer that is used to store information returned from

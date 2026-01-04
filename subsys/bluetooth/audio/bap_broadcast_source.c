@@ -477,6 +477,176 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 	(void)memset(source, 0, sizeof(*source));
 }
 
+static bool merge_bis_and_subgroup_data_cb(struct bt_data *data, void *user_data)
+{
+	struct bt_audio_codec_cfg *codec_cfg = user_data;
+	int err;
+
+	err = bt_audio_codec_cfg_set_val(codec_cfg, data->type, data->data, data->data_len);
+	if (err < 0) {
+		LOG_DBG("Failed to set type %u with len %u in codec_cfg: %d", data->type,
+			data->data_len, err);
+
+		return false;
+	}
+
+	return true;
+}
+
+static bool
+can_merge_codec_cfg_data(const struct bt_audio_codec_cfg *subgroup_codec_cfg,
+			 const struct bt_bap_broadcast_source_stream_param *stream_param)
+{
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	if (stream_param->data_len == 0) {
+		return true;
+	}
+
+	/* Fake merge subgroup codec configuration with the BIS configuration to check the merged
+	 * size.
+	 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it is
+	 * the value at level 3 that shall be used
+	 */
+	if (subgroup_codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		struct bt_audio_codec_cfg merged_codec_cfg;
+		int err;
+
+		(void)memcpy(merged_codec_cfg.data, subgroup_codec_cfg->data,
+			     subgroup_codec_cfg->data_len);
+		merged_codec_cfg.data_len = subgroup_codec_cfg->data_len;
+
+		err = bt_audio_data_parse(stream_param->data, stream_param->data_len,
+					  merge_bis_and_subgroup_data_cb, &merged_codec_cfg);
+		if (err != 0) {
+			LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d", err);
+
+			return false;
+		}
+	} else {
+		/* If it is not LC3, then we don't know how to merge the subgroup and BIS
+		 * codecs, so we just append them
+		 */
+		if (subgroup_codec_cfg->data_len + stream_param->data_len >
+		    sizeof(subgroup_codec_cfg->data)) {
+			LOG_DBG("Could not merge BIS and subgroup config (%u > %u)",
+				subgroup_codec_cfg->data_len + stream_param->data_len,
+				sizeof(subgroup_codec_cfg->data));
+
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+
+	return true;
+}
+
+static void update_codec_cfg_data(struct bt_audio_codec_cfg *codec_cfg,
+				  const struct bt_bap_broadcast_source_stream_param *stream_param)
+{
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	if (stream_param->data_len > 0) {
+		int err;
+
+		/* Merge subgroup codec configuration with the BIS configuration
+		 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it
+		 * is the value at level 3 that shall be used
+		 */
+		if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+			err = bt_audio_data_parse(stream_param->data, stream_param->data_len,
+						  merge_bis_and_subgroup_data_cb, codec_cfg);
+		} else {
+			/* If it is not LC3, then we don't know how to merge the subgroup and BIS
+			 * codecs, so we just append them
+			 */
+			if (codec_cfg->data_len + stream_param->data_len >
+			    sizeof(codec_cfg->data)) {
+				LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u "
+					"> %u)",
+					codec_cfg->data_len + stream_param->data_len,
+					sizeof(codec_cfg->data));
+
+				err = ENOMEM;
+			} else {
+				err = 0;
+				(void)memcpy(&codec_cfg->data[codec_cfg->data_len],
+					     stream_param->data, stream_param->data_len);
+				codec_cfg->data_len += stream_param->data_len;
+			}
+		}
+
+		__ASSERT(err == 0, "Failed codec merge not guarded by can_merge_codec_cfg_data");
+	}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+}
+
+static bool valid_broadcast_source_subgroup_param(
+	const struct bt_bap_broadcast_source_subgroup_param *subgroup_param,
+	const struct bt_bap_broadcast_source *source)
+{
+	CHECKIF(subgroup_param->params == NULL) {
+		LOG_DBG("subgroup_param->params is NULL");
+		return false;
+	}
+
+	CHECKIF(!IN_RANGE(subgroup_param->params_count, 1U,
+			  CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)) {
+		LOG_DBG("subgroup_param->count (%zu) is invalid", subgroup_param->params_count);
+		return false;
+	}
+
+	CHECKIF(!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
+		LOG_DBG("subgroup_param->codec_cfg  is invalid");
+		return false;
+	}
+
+	for (size_t i = 0U; i < subgroup_param->params_count; i++) {
+		const struct bt_bap_broadcast_source_stream_param *stream_param;
+
+		stream_param = &subgroup_param->params[i];
+
+		CHECKIF(stream_param->stream == NULL) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->stream is NULL", i);
+			return false;
+		}
+
+		CHECKIF(stream_param->stream->group != NULL &&
+			stream_param->stream->group != source) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->stream is already part of "
+				"group %p",
+				i, stream_param->stream->group);
+			return false;
+		}
+
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+		CHECKIF(stream_param->data == NULL && stream_param->data_len != 0) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->data is NULL with len %zu", i,
+				stream_param->data_len);
+			return false;
+		}
+
+		CHECKIF(stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->data_len too large: %zu > %d",
+				i, stream_param->data_len, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
+			return false;
+		}
+
+		CHECKIF(stream_param->data != NULL &&
+			subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+			!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->data not valid LTV", i);
+			return false;
+		}
+
+		if (!can_merge_codec_cfg_data(subgroup_param->codec_cfg, stream_param)) {
+			LOG_DBG("Cannot merge subgroup and BIS subgroup codec_cfg data");
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+
+	return true;
+}
+
 static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_param *param,
 					 const struct bt_bap_broadcast_source *source)
 {
@@ -529,68 +699,10 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 
 		subgroup_param = &param->params[i];
 
-		CHECKIF(subgroup_param->params == NULL) {
-			LOG_DBG("subgroup_params[%zu].params is NULL", i);
+		if (!valid_broadcast_source_subgroup_param(subgroup_param, source)) {
+			LOG_DBG("subgroup_params[%zu] is invalid", i);
 			return false;
 		}
-
-		CHECKIF(!IN_RANGE(subgroup_param->params_count, 1U,
-				  CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)) {
-			LOG_DBG("subgroup_params[%zu].count (%zu) is invalid", i,
-				subgroup_param->params_count);
-			return false;
-		}
-
-		CHECKIF(!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
-			LOG_DBG("subgroup_params[%zu].codec_cfg  is invalid", i);
-			return false;
-		}
-
-		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
-			const struct bt_bap_broadcast_source_stream_param *stream_param;
-
-			stream_param = &subgroup_param->params[j];
-
-			CHECKIF(stream_param->stream == NULL) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->stream is NULL",
-					i, j);
-				return false;
-			}
-
-			CHECKIF(stream_param->stream->group != NULL &&
-				stream_param->stream->group != source) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->stream is "
-					"already part of group %p",
-					i, j, stream_param->stream->group);
-				return false;
-			}
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-			CHECKIF(stream_param->data == NULL && stream_param->data_len != 0) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data is "
-					"NULL with len %zu",
-					i, j, stream_param->data_len);
-				return false;
-			}
-
-			CHECKIF(stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data_len too "
-					"large: %zu > %d",
-					i, j, stream_param->data_len,
-					CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
-				return false;
-			}
-
-			CHECKIF(stream_param->data != NULL &&
-				subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
-				!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data not valid "
-					"LTV",
-					i, j);
-				return false;
-			}
-		}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 	}
 
 	return true;
@@ -623,64 +735,6 @@ static enum bt_bap_ep_state broadcast_source_get_state(struct bt_bap_broadcast_s
 	}
 
 	return state;
-}
-
-static bool merge_bis_and_subgroup_data_cb(struct bt_data *data, void *user_data)
-{
-	struct bt_audio_codec_cfg *codec_cfg = user_data;
-	int err;
-
-	err = bt_audio_codec_cfg_set_val(codec_cfg, data->type, data->data, data->data_len);
-	if (err < 0) {
-		LOG_DBG("Failed to set type %u with len %u in codec_cfg: %d", data->type,
-			data->data_len, err);
-
-		return false;
-	}
-
-	return true;
-}
-
-static int update_codec_cfg_data(struct bt_audio_codec_cfg *codec_cfg,
-				 const struct bt_bap_broadcast_source_stream_param *stream_param)
-{
-	if (stream_param->data_len > 0) {
-		int err;
-
-		/* Merge subgroup codec configuration with the BIS configuration
-		 * As per the BAP spec, if a value exist at level 2 (subgroup) and 3 (BIS), then it
-		 * is the value at level 3 that shall be used
-		 */
-		if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
-			err = bt_audio_data_parse(stream_param->data, stream_param->data_len,
-						  merge_bis_and_subgroup_data_cb, codec_cfg);
-			if (err != 0) {
-				LOG_DBG("Could not merge BIS and subgroup config in codec_cfg: %d",
-					err);
-
-				return -EINVAL;
-			}
-		} else {
-			/* If it is not LC3, then we don't know how to merge the subgroup and BIS
-			 * codecs, so we just append them
-			 */
-			if (codec_cfg->data_len + stream_param->data_len >
-			    sizeof(codec_cfg->data)) {
-				LOG_DBG("Could not store BIS and subgroup config in codec_cfg (%u "
-					"> %u)",
-					codec_cfg->data_len + stream_param->data_len,
-					sizeof(codec_cfg->data));
-
-				return -ENOMEM;
-			}
-
-			memcpy(&codec_cfg->data[codec_cfg->data_len], stream_param->data,
-			       stream_param->data_len);
-			codec_cfg->data_len += stream_param->data_len;
-		}
-	}
-
-	return 0;
 }
 
 int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
@@ -759,24 +813,15 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 			stream = stream_param->stream;
 
 			if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
-				if (bis_count >= BROADCAST_STREAM_CNT) {
-					LOG_DBG("Stream count %d exceeded", bis_count);
-					return -ENOMEM;
-				}
-
 				codec_cfg = &source->codec_cfg[bis_count];
 				memcpy(codec_cfg, subgroup_param->codec_cfg,
 				       sizeof(struct bt_audio_codec_cfg));
 
-				err = update_codec_cfg_data(codec_cfg, stream_param);
-				if (err != 0) {
-					LOG_DBG("codec config update failed [%zu]: %d", i, err);
-					broadcast_source_cleanup(source);
-					return err;
-				}
-
-				bis_count++;
+				update_codec_cfg_data(codec_cfg, stream_param);
 			}
+
+			bis_count++;
+			__ASSERT_NO_MSG(bis_count <= BROADCAST_STREAM_CNT);
 
 			err = broadcast_source_setup_stream(index, stream, codec_cfg, qos, source);
 			if (err != 0) {
@@ -821,33 +866,14 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 	return 0;
 }
 
-int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
-				     struct bt_bap_broadcast_source_param *param)
+static bool valid_broadcast_source_reconfig_param(const struct bt_bap_broadcast_source_param *param,
+						  struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
-	enum bt_bap_ep_state broadcast_state;
-	struct bt_bap_qos_cfg *qos;
-	size_t subgroup_cnt;
-	uint8_t bis_count;
-
-	CHECKIF(source == NULL) {
-		LOG_DBG("source is NULL");
-		return -EINVAL;
-	}
-
-	if (!valid_broadcast_source_param(param, source)) {
-		LOG_DBG("Invalid parameters");
-		return -EINVAL;
-	}
-
-	broadcast_state = broadcast_source_get_state(source);
-	if (broadcast_source_get_state(source) != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
-		return -EBADMSG;
-	}
+	size_t subgroup_cnt = 0U;
+	size_t bis_count = 0U;
 
 	/* Verify that the parameter counts do not exceed existing number of subgroups and streams*/
-	subgroup_cnt = 0U;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param =
 			&param->params[subgroup_cnt];
@@ -878,7 +904,13 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 				LOG_DBG("Invalid param->params[%zu]->param[%zu].stream "
 					"not in subgroup",
 					subgroup_cnt, i);
-				return -EINVAL;
+				return false;
+			}
+
+			bis_count++;
+			if (bis_count > BROADCAST_STREAM_CNT) {
+				LOG_DBG("Stream count %d exceeded", bis_count);
+				return false;
 			}
 		}
 
@@ -886,7 +918,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			LOG_DBG("Invalid param->params[%zu]->params_count: %zu "
 				"(only %zu streams in subgroup)",
 				subgroup_cnt, subgroup_stream_param_cnt, subgroup_stream_cnt);
-			return -EINVAL;
+			return false;
 		}
 
 		subgroup_cnt++;
@@ -895,16 +927,99 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 	if (subgroup_cnt < param->params_count) {
 		LOG_DBG("Invalid param->params_count: %zu (only %zu subgroups in source)",
 			param->params_count, subgroup_cnt);
+		return false;
+	}
+
+	return true;
+}
+
+static void broadcast_source_reconfig_update_subgroup(
+	struct bt_bap_broadcast_source *source, struct bt_bap_broadcast_subgroup *subgroup,
+	const struct bt_bap_broadcast_source_subgroup_param *subgroup_param)
+{
+	struct bt_audio_codec_cfg *codec_cfg = subgroup_param->codec_cfg;
+	struct bt_bap_stream *stream;
+	uint8_t bis_count = 0U;
+
+	subgroup->codec_cfg = codec_cfg;
+
+	for (size_t j = 0U; j < subgroup_param->params_count; j++) {
+		const struct bt_bap_broadcast_source_stream_param *stream_param;
+		struct bt_audio_broadcast_stream_data *stream_data;
+		struct bt_bap_stream *subgroup_stream;
+		size_t stream_idx;
+
+		stream_param = &subgroup_param->params[j];
+		stream = stream_param->stream;
+		if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
+			codec_cfg = &source->codec_cfg[bis_count];
+			memcpy(codec_cfg, subgroup_param->codec_cfg,
+			       sizeof(struct bt_audio_codec_cfg));
+
+			update_codec_cfg_data(codec_cfg, stream_param);
+		}
+
+		bis_count++;
+		__ASSERT_NO_MSG(bis_count <= BROADCAST_STREAM_CNT);
+
+		stream_idx = 0U;
+		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, subgroup_stream, _node) {
+			if (subgroup_stream == stream) {
+				break;
+			}
+
+			stream_idx++;
+		}
+
+		/* Store the BIS specific codec configuration data in the broadcast source.
+		 * It is stored in the broadcast* source, instead of the stream object,
+		 * as this is only relevant for the broadcast source, and not used
+		 * for unicast or broadcast sink.
+		 */
+		stream_data = &source->stream_data[stream_idx];
+		(void)memcpy(stream_data->data, stream_param->data, stream_param->data_len);
+		stream_data->data_len = stream_param->data_len;
+	}
+
+	/* Apply the codec_cfg to all streams in the subgroup, and not just the ones in the
+	 * params
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+		bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
+	}
+}
+
+int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
+				     struct bt_bap_broadcast_source_param *param)
+{
+	struct bt_bap_broadcast_subgroup *subgroup;
+	enum bt_bap_ep_state broadcast_state;
+	struct bt_bap_qos_cfg *qos;
+
+	CHECKIF(source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (!valid_broadcast_source_param(param, source)) {
+		LOG_DBG("Invalid parameters");
+		return -EINVAL;
+	}
+
+	broadcast_state = broadcast_source_get_state(source);
+	if (broadcast_state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
+		return -EBADMSG;
+	}
+
+	if (!valid_broadcast_source_reconfig_param(param, source)) {
 		return -EINVAL;
 	}
 
 	qos = param->qos;
-	bis_count = 0U;
 	/* We update up to the first param->params_count subgroups */
 	for (size_t i = 0U; i < param->params_count; i++) {
 		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
-		struct bt_audio_codec_cfg *codec_cfg;
-		struct bt_bap_stream *stream;
 
 		if (i == 0) {
 			subgroup =
@@ -914,63 +1029,8 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		}
 
 		subgroup_param = &param->params[i];
-		codec_cfg = subgroup_param->codec_cfg;
-		subgroup->codec_cfg = codec_cfg;
 
-		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
-			const struct bt_bap_broadcast_source_stream_param *stream_param;
-			struct bt_audio_broadcast_stream_data *stream_data;
-			struct bt_bap_stream *subgroup_stream;
-			size_t stream_idx;
-
-			stream_param = &subgroup_param->params[j];
-			stream = stream_param->stream;
-			if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
-				int err;
-
-				if (bis_count >= BROADCAST_STREAM_CNT) {
-					LOG_DBG("Stream count %d exceeded", bis_count);
-					return -ENOMEM;
-				}
-
-				codec_cfg = &source->codec_cfg[bis_count];
-				memcpy(codec_cfg, subgroup_param->codec_cfg,
-				       sizeof(struct bt_audio_codec_cfg));
-
-				err = update_codec_cfg_data(codec_cfg, stream_param);
-				if (err != 0) {
-					LOG_DBG("codec config update failed [%zu]: %d", i, err);
-					return err;
-				}
-
-				bis_count++;
-			}
-
-			stream_idx = 0U;
-			SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, subgroup_stream, _node) {
-				if (subgroup_stream == stream) {
-					break;
-				}
-
-				stream_idx++;
-			}
-
-			/* Store the BIS specific codec configuration data in the broadcast source.
-			 * It is stored in the broadcast* source, instead of the stream object,
-			 * as this is only relevant for the broadcast source, and not used
-			 * for unicast or broadcast sink.
-			 */
-			stream_data = &source->stream_data[stream_idx];
-			(void)memcpy(stream_data->data, stream_param->data, stream_param->data_len);
-			stream_data->data_len = stream_param->data_len;
-		}
-
-		/* Apply the codec_cfg to all streams in the subgroup, and not just the ones in the
-		 * params
-		 */
-		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
-		}
+		broadcast_source_reconfig_update_subgroup(source, subgroup, subgroup_param);
 	}
 
 	/* Finally we apply the new qos and to all streams */
@@ -1017,7 +1077,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 	}
 
 	broadcast_state = broadcast_source_get_state(source);
-	if (broadcast_source_get_state(source) != BT_BAP_EP_STATE_STREAMING) {
+	if (broadcast_state != BT_BAP_EP_STATE_STREAMING) {
 		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
 
 		return -EBADMSG;

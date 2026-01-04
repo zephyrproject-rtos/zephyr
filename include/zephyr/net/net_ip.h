@@ -381,7 +381,7 @@ struct net_cmsghdr {
 #if defined(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
 #define UNIX_PATH_MAX 108
 #undef NET_SOCKADDR_MAX_SIZE
-/* Define NET_SOCKADDR_MAX_SIZE to be struct of sa_family_t + char[UNIX_PATH_MAX] */
+/* Define NET_SOCKADDR_MAX_SIZE to be struct of net_sa_family_t + char[UNIX_PATH_MAX] */
 #define NET_SOCKADDR_MAX_SIZE (UNIX_PATH_MAX+sizeof(net_sa_family_t))
 #if !defined(CONFIG_NET_SOCKETS_PACKET)
 #undef NET_SOCKADDR_PTR_MAX_SIZE

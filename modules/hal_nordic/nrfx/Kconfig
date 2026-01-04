@@ -55,93 +55,10 @@ config NRFX_COMP
 config NRFX_CRACEN
 	bool "CRACEN drivers"
 	depends on SOC_COMPATIBLE_NRF54LX
+	select NRFX_CRACEN_BSIM_SUPPORT if SOC_SERIES_BSIM_NRFXX
 
-config NRFX_DPPI
+config NRFX_CRACEN_BSIM_SUPPORT
 	bool
-
-config NRFX_DPPI0
-	bool "DPPI0 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic0)
-	select NRFX_DPPI
-
-config NRFX_DPPI00
-	bool "DPPI00 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic00)
-	select NRFX_DPPI
-
-config NRFX_DPPI10
-	bool "DPPI10 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic10)
-	select NRFX_DPPI
-
-config NRFX_DPPI20
-	bool "DPPI20 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic20)
-	select NRFX_DPPI
-
-config NRFX_DPPI30
-	bool "DPPI30 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic30)
-	select NRFX_DPPI
-
-config NRFX_DPPI020
-	bool "DPPI020 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic020)
-	select NRFX_DPPI
-
-config NRFX_DPPI120
-	bool "DPPI120 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic120)
-	select NRFX_DPPI
-
-config NRFX_DPPI130
-	bool "DPPI130 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic130)
-	select NRFX_DPPI
-
-config NRFX_DPPI131
-	bool "DPPI131 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic131)
-	select NRFX_DPPI
-
-config NRFX_DPPI132
-	bool "DPPI132 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic132)
-	select NRFX_DPPI
-
-config NRFX_DPPI133
-	bool "DPPI133 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic133)
-	select NRFX_DPPI
-
-config NRFX_DPPI134
-	bool "DPPI134 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic134)
-	select NRFX_DPPI
-
-config NRFX_DPPI135
-	bool "DPPI135 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic135)
-	select NRFX_DPPI
-
-config NRFX_DPPI136
-	bool "DPPI136 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic136)
-	select NRFX_DPPI
 
 config NRFX_EGU
 	bool
@@ -247,22 +164,19 @@ config NRFX_GPPI
 	   Enable the nrfx_gppi utilities providing unified API for creating PPI
 	   connections across SoC families.
 
+config NRFX_GPPI_V1
+	bool "GPPI layer legacy"
+	depends on NRFX_GPPI
+	default y if SOC_SERIES_NRF54HX
+	help
+	  When enabled then legacy version of Generic PPI layer is used.
+
 config NRFX_GRTC
 	bool "GRTC driver"
 	depends on $(dt_nodelabel_exists,grtc)
 
 config NRFX_I2S
-	bool
-
-config NRFX_I2S0
-	bool "I2S0 driver instance"
-	depends on $(dt_nodelabel_exists,i2s0)
-	select NRFX_I2S
-
-config NRFX_I2S20
-	bool "I2S20 driver instance"
-	depends on $(dt_nodelabel_exists,i2s20)
-	select NRFX_I2S
+	bool "I2S driver"
 
 config NRFX_IPC
 	bool "IPC driver"
@@ -279,31 +193,14 @@ config NRFX_MRAMC
 config NRFX_NFCT
 	bool "NFCT driver"
 	depends on $(dt_nodelabel_exists,nfct)
-	select NRFX_TIMER4 if SOC_SERIES_NRF52X
-	select NRFX_TIMER2 if SOC_SERIES_NRF53X
-	select NRFX_TIMER24 if SOC_SERIES_NRF54LX
+	select NRFX_TIMER
 
 config NRFX_NVMC
 	bool "NVMC driver"
 	depends on $(dt_nodelabel_exists,flash_controller)
 
 config NRFX_PDM
-	bool
-
-config NRFX_PDM0
-	bool "PDM0 driver instance"
-	depends on $(dt_nodelabel_exists,pdm0)
-	select NRFX_PDM
-
-config NRFX_PDM20
-	bool "PDM20 driver instance"
-	depends on $(dt_nodelabel_exists,pdm20)
-	select NRFX_PDM
-
-config NRFX_PDM21
-	bool "PDM21 driver instance"
-	depends on $(dt_nodelabel_exists,pdm21)
-	select NRFX_PDM
+	bool "PDM driver"
 
 config NRFX_POWER
 	bool "POWER driver"
@@ -312,157 +209,11 @@ config NRFX_POWER
 	# internally the USBREG driver.
 	select NRFX_USBREG if $(dt_nodelabel_exists,usbreg)
 
-config NRFX_PPI
-	bool "PPI allocator"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppi)
-
-config NRFX_PPIB
-	bool
-
-config NRFX_PPIB00
-	bool "PPIB00 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib00)
-	select NRFX_PPIB
-
-config NRFX_PPIB01
-	bool "PPIB01 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib01)
-	select NRFX_PPIB
-
-config NRFX_PPIB10
-	bool "PPIB10 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib10)
-	select NRFX_PPIB
-
-config NRFX_PPIB11
-	bool "PPIB11 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib11)
-	select NRFX_PPIB
-
-config NRFX_PPIB20
-	bool "PPIB20 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib20)
-	select NRFX_PPIB
-
-config NRFX_PPIB21
-	bool "PPIB21 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib21)
-	select NRFX_PPIB
-
-config NRFX_PPIB22
-	bool "PPIB22 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib22)
-	select NRFX_PPIB
-
-config NRFX_PPIB30
-	bool "PPIB30 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib30)
-	select NRFX_PPIB
-
 config NRFX_PWM
-	bool
-
-config NRFX_PWM0
-	bool "PWM0 driver instance"
-	depends on $(dt_nodelabel_exists,pwm0)
-	select NRFX_PWM
-
-config NRFX_PWM1
-	bool "PWM1 driver instance"
-	depends on $(dt_nodelabel_exists,pwm1)
-	select NRFX_PWM
-
-config NRFX_PWM2
-	bool "PWM2 driver instance"
-	depends on $(dt_nodelabel_exists,pwm2)
-	select NRFX_PWM
-
-config NRFX_PWM3
-	bool "PWM3 driver instance"
-	depends on $(dt_nodelabel_exists,pwm3)
-	select NRFX_PWM
-
-config NRFX_PWM20
-	bool "PWM20 driver instance"
-	depends on $(dt_nodelabel_exists,pwm20)
-	select NRFX_PWM
-
-config NRFX_PWM21
-	bool "PWM21 driver instance"
-	depends on $(dt_nodelabel_exists,pwm21)
-	select NRFX_PWM
-
-config NRFX_PWM22
-	bool "PWM22 driver instance"
-	depends on $(dt_nodelabel_exists,pwm22)
-	select NRFX_PWM
-
-config NRFX_PWM120
-	bool "PWM120 driver instance"
-	depends on $(dt_nodelabel_exists,pwm120)
-	select NRFX_PWM
-
-config NRFX_PWM130
-	bool "PWM130 driver instance"
-	depends on $(dt_nodelabel_exists,pwm130)
-	select NRFX_PWM
-
-config NRFX_PWM131
-	bool "PWM131 driver instance"
-	depends on $(dt_nodelabel_exists,pwm131)
-	select NRFX_PWM
-
-config NRFX_PWM132
-	bool "PWM132 driver instance"
-	depends on $(dt_nodelabel_exists,pwm132)
-	select NRFX_PWM
-
-config NRFX_PWM133
-	bool "PWM133 driver instance"
-	depends on $(dt_nodelabel_exists,pwm133)
-	select NRFX_PWM
+	bool "PWM driver"
 
 config NRFX_QDEC
-	bool
-
-config NRFX_QDEC0
-	bool "QDEC0 driver instance"
-	depends on $(dt_nodelabel_exists,qdec0)
-	select NRFX_QDEC
-
-config NRFX_QDEC1
-	bool "QDEC1 driver instance"
-	depends on $(dt_nodelabel_exists,qdec1)
-	select NRFX_QDEC
-
-config NRFX_QDEC20
-	bool "QDEC20 driver instance"
-	depends on $(dt_nodelabel_exists,qdec20)
-	select NRFX_QDEC
-
-config NRFX_QDEC21
-	bool "QDEC21 driver instance"
-	depends on $(dt_nodelabel_exists,qdec21)
-	select NRFX_QDEC
-
-config NRFX_QDEC130
-	bool "QDEC130 driver instance"
-	depends on $(dt_nodelabel_exists,qdec130)
-	select NRFX_QDEC
-
-config NRFX_QDEC131
-	bool "QDEC131 driver instance"
-	depends on $(dt_nodelabel_exists,qdec131)
-	select NRFX_QDEC
+	bool "QDEC driver"
 
 config NRFX_QSPI
 	bool "QSPI driver"
@@ -526,231 +277,17 @@ config NRFX_SPI2
 	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52X
 	select NRFX_SPI
 
+DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
+
 config NRFX_SPIM
-	bool
+	bool "SPIM driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
-config NRFX_SPIM0
-	bool "SPIM0 driver instance"
-	depends on $(dt_nodelabel_exists,spi0) && !SOC_SERIES_NRF51X
-	select NRFX_SPIM
-
-config NRFX_SPIM1
-	bool "SPIM1 driver instance"
-	depends on $(dt_nodelabel_exists,spi1) && !SOC_SERIES_NRF51X
-	select NRFX_SPIM
-
-config NRFX_SPIM2
-	bool "SPIM2 driver instance"
-	depends on $(dt_nodelabel_exists,spi2)
-	select NRFX_SPIM
-
-config NRFX_SPIM3
-	bool "SPIM3 driver instance"
-	depends on $(dt_nodelabel_exists,spi3)
-	select NRFX_SPIM
-
-config NRFX_SPIM4
-	bool "SPIM4 driver instance"
-	depends on $(dt_nodelabel_exists,spi4)
-	select NRFX_SPIM
-
-config NRFX_SPIM00
-	bool "SPIM00 driver instance"
-	depends on $(dt_nodelabel_exists,spi00)
-	select NRFX_SPIM
-
-config NRFX_SPIM01
-	bool "SPIM01 driver instance"
-	depends on $(dt_nodelabel_exists,spi01)
-	select NRFX_SPIM
-
-config NRFX_SPIM20
-	bool "SPIM20 driver instance"
-	depends on $(dt_nodelabel_exists,spi20)
-	select NRFX_SPIM
-
-config NRFX_SPIM21
-	bool "SPIM21 driver instance"
-	depends on $(dt_nodelabel_exists,spi21)
-	select NRFX_SPIM
-
-config NRFX_SPIM22
-	bool "SPIM22 driver instance"
-	depends on $(dt_nodelabel_exists,spi22)
-	select NRFX_SPIM
-
-config NRFX_SPIM23
-	bool "SPIM23 driver instance"
-	depends on $(dt_nodelabel_exists,spi23)
-	select NRFX_SPIM
-
-config NRFX_SPIM24
-	bool "SPIM24 driver instance"
-	depends on $(dt_nodelabel_exists,spi24)
-	select NRFX_SPIM
-
-config NRFX_SPIM30
-	bool "SPIM30 driver instance"
-	depends on $(dt_nodelabel_exists,spi30)
-	select NRFX_SPIM
-
-config NRFX_SPIM120
-	bool "SPIM120 driver instance"
-	depends on $(dt_nodelabel_exists,spi120)
-	select NRFX_SPIM
-
-config NRFX_SPIM121
-	bool "SPIM121 driver instance"
-	depends on $(dt_nodelabel_exists,spi121)
-	select NRFX_SPIM
-
-config NRFX_SPIM130
-	bool "SPIM130 driver instance"
-	depends on $(dt_nodelabel_exists,spi130)
-	select NRFX_SPIM
-
-config NRFX_SPIM131
-	bool "SPIM131 driver instance"
-	depends on $(dt_nodelabel_exists,spi131)
-	select NRFX_SPIM
-
-config NRFX_SPIM132
-	bool "SPIM132 driver instance"
-	depends on $(dt_nodelabel_exists,spi132)
-	select NRFX_SPIM
-
-config NRFX_SPIM133
-	bool "SPIM133 driver instance"
-	depends on $(dt_nodelabel_exists,spi133)
-	select NRFX_SPIM
-
-config NRFX_SPIM134
-	bool "SPIM134 driver instance"
-	depends on $(dt_nodelabel_exists,spi134)
-	select NRFX_SPIM
-
-config NRFX_SPIM135
-	bool "SPIM135 driver instance"
-	depends on $(dt_nodelabel_exists,spi135)
-	select NRFX_SPIM
-
-config NRFX_SPIM136
-	bool "SPIM136 driver instance"
-	depends on $(dt_nodelabel_exists,spi136)
-	select NRFX_SPIM
-
-config NRFX_SPIM137
-	bool "SPIM137 driver instance"
-	depends on $(dt_nodelabel_exists,spi137)
-	select NRFX_SPIM
+DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
 
 config NRFX_SPIS
-	bool
-
-config NRFX_SPIS0
-	bool "SPIS0 driver instance"
-	depends on $(dt_nodelabel_exists,spi0) && !SOC_SERIES_NRF51X
-	select NRFX_SPIS
-
-config NRFX_SPIS1
-	bool "SPIS1 driver instance"
-	depends on $(dt_nodelabel_exists,spi1)
-	select NRFX_SPIS
-
-config NRFX_SPIS2
-	bool "SPIS2 driver instance"
-	depends on $(dt_nodelabel_exists,spi2)
-	select NRFX_SPIS
-
-config NRFX_SPIS3
-	bool "SPIS3 driver instance"
-	depends on $(dt_nodelabel_exists,spi3)
-	select NRFX_SPIS
-
-config NRFX_SPIS00
-	bool "SPIS00 driver instance"
-	depends on $(dt_nodelabel_exists,spi00)
-	select NRFX_SPIS
-
-config NRFX_SPIS01
-	bool "SPIS01 driver instance"
-	depends on $(dt_nodelabel_exists,spi01)
-	select NRFX_SPIS
-
-config NRFX_SPIS20
-	bool "SPIS20 driver instance"
-	depends on $(dt_nodelabel_exists,spi20)
-	select NRFX_SPIS
-
-config NRFX_SPIS21
-	bool "SPIS21 driver instance"
-	depends on $(dt_nodelabel_exists,spi21)
-	select NRFX_SPIS
-
-config NRFX_SPIS22
-	bool "SPIS22 driver instance"
-	depends on $(dt_nodelabel_exists,spi22)
-	select NRFX_SPIS
-
-config NRFX_SPIS23
-	bool "SPIS23 driver instance"
-	depends on $(dt_nodelabel_exists,spi23)
-	select NRFX_SPIS
-
-config NRFX_SPIS24
-	bool "SPIS24 driver instance"
-	depends on $(dt_nodelabel_exists,spi24)
-	select NRFX_SPIS
-
-config NRFX_SPIS30
-	bool "SPIS30 driver instance"
-	depends on $(dt_nodelabel_exists,spi30)
-	select NRFX_SPIS
-
-config NRFX_SPIS120
-	bool "SPIS120 driver instance"
-	depends on $(dt_nodelabel_exists,spis120)
-	select NRFX_SPIS
-
-config NRFX_SPIS130
-	bool "SPIS130 driver instance"
-	depends on $(dt_nodelabel_exists,spi130)
-	select NRFX_SPIS
-
-config NRFX_SPIS131
-	bool "SPIS131 driver instance"
-	depends on $(dt_nodelabel_exists,spi131)
-	select NRFX_SPIS
-
-config NRFX_SPIS132
-	bool "SPIS132 driver instance"
-	depends on $(dt_nodelabel_exists,spi132)
-	select NRFX_SPIS
-
-config NRFX_SPIS133
-	bool "SPIS133 driver instance"
-	depends on $(dt_nodelabel_exists,spi133)
-	select NRFX_SPIS
-
-config NRFX_SPIS134
-	bool "SPIS134 driver instance"
-	depends on $(dt_nodelabel_exists,spi134)
-	select NRFX_SPIS
-
-config NRFX_SPIS135
-	bool "SPIS135 driver instance"
-	depends on $(dt_nodelabel_exists,spi135)
-	select NRFX_SPIS
-
-config NRFX_SPIS136
-	bool "SPIS136 driver instance"
-	depends on $(dt_nodelabel_exists,spi136)
-	select NRFX_SPIS
-
-config NRFX_SPIS137
-	bool "SPIS137 driver instance"
-	depends on $(dt_nodelabel_exists,spi137)
-	select NRFX_SPIS
+	bool "SPIS driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config NRFX_SYSTICK
 	bool "SYSTICK driver"
@@ -765,132 +302,7 @@ config NRFX_TEMP
 	depends on $(dt_nodelabel_exists,temp)
 
 config NRFX_TIMER
-	bool
-
-config NRFX_TIMER0
-	bool "TIMER0 driver instance"
-	depends on $(dt_nodelabel_exists,timer0)
-	select NRFX_TIMER
-
-config NRFX_TIMER1
-	bool "TIMER1 driver instance"
-	depends on $(dt_nodelabel_exists,timer1)
-	select NRFX_TIMER
-
-config NRFX_TIMER2
-	bool "TIMER2 driver instance"
-	depends on $(dt_nodelabel_exists,timer2)
-	select NRFX_TIMER
-
-config NRFX_TIMER3
-	bool "TIMER3 driver instance"
-	depends on $(dt_nodelabel_exists,timer3)
-	select NRFX_TIMER
-
-config NRFX_TIMER4
-	bool "TIMER4 driver instance"
-	depends on $(dt_nodelabel_exists,timer4)
-	select NRFX_TIMER
-
-config NRFX_TIMER00
-	bool "TIMER00 driver instance"
-	depends on $(dt_nodelabel_exists,timer00)
-	select NRFX_TIMER
-
-config NRFX_TIMER10
-	bool "TIMER10 driver instance"
-	depends on $(dt_nodelabel_exists,timer10)
-	select NRFX_TIMER
-
-config NRFX_TIMER20
-	bool "TIMER20 driver instance"
-	depends on $(dt_nodelabel_exists,timer20)
-	select NRFX_TIMER
-
-config NRFX_TIMER21
-	bool "TIMER21 driver instance"
-	depends on $(dt_nodelabel_exists,timer21)
-	select NRFX_TIMER
-
-config NRFX_TIMER22
-	bool "TIMER22 driver instance"
-	depends on $(dt_nodelabel_exists,timer22)
-	select NRFX_TIMER
-
-config NRFX_TIMER23
-	bool "TIMER23 driver instance"
-	depends on $(dt_nodelabel_exists,timer23)
-	select NRFX_TIMER
-
-config NRFX_TIMER24
-	bool "TIMER24 driver instance"
-	depends on $(dt_nodelabel_exists,timer24)
-	select NRFX_TIMER
-
-config NRFX_TIMER020
-	bool "TIMER020 driver instance"
-	depends on $(dt_nodelabel_exists,timer020)
-	select NRFX_TIMER
-
-config NRFX_TIMER021
-	bool "TIMER021 driver instance"
-	depends on $(dt_nodelabel_exists,timer021)
-	select NRFX_TIMER
-
-config NRFX_TIMER022
-	bool "TIMER022 driver instance"
-	depends on $(dt_nodelabel_exists,timer022)
-	select NRFX_TIMER
-
-config NRFX_TIMER120
-	bool "TIMER120 driver instance"
-	depends on $(dt_nodelabel_exists,timer120)
-	select NRFX_TIMER
-
-config NRFX_TIMER121
-	bool "TIMER121 driver instance"
-	depends on $(dt_nodelabel_exists,timer121)
-	select NRFX_TIMER
-
-config NRFX_TIMER130
-	bool "TIMER130 driver instance"
-	depends on $(dt_nodelabel_exists,timer130)
-	select NRFX_TIMER
-
-config NRFX_TIMER131
-	bool "TIMER131 driver instance"
-	depends on $(dt_nodelabel_exists,timer131)
-	select NRFX_TIMER
-
-config NRFX_TIMER132
-	bool "TIMER132 driver instance"
-	depends on $(dt_nodelabel_exists,timer132)
-	select NRFX_TIMER
-
-config NRFX_TIMER133
-	bool "TIMER133 driver instance"
-	depends on $(dt_nodelabel_exists,timer133)
-	select NRFX_TIMER
-
-config NRFX_TIMER134
-	bool "TIMER134 driver instance"
-	depends on $(dt_nodelabel_exists,timer134)
-	select NRFX_TIMER
-
-config NRFX_TIMER135
-	bool "TIMER135 driver instance"
-	depends on $(dt_nodelabel_exists,timer135)
-	select NRFX_TIMER
-
-config NRFX_TIMER136
-	bool "TIMER136 driver instance"
-	depends on $(dt_nodelabel_exists,timer136)
-	select NRFX_TIMER
-
-config NRFX_TIMER137
-	bool "TIMER137 driver instance"
-	depends on $(dt_nodelabel_exists,timer137)
-	select NRFX_TIMER
+	bool "TIMER driver"
 
 config NRFX_TWI
 	bool
@@ -906,195 +318,10 @@ config NRFX_TWI1
 	select NRFX_TWI
 
 config NRFX_TWIM
-	bool
-
-config NRFX_TWIM0
-	bool "TWIM0 driver instance"
-	depends on $(dt_nodelabel_exists,i2c0) && !SOC_SERIES_NRF51X
-	select NRFX_TWIM
-
-config NRFX_TWIM1
-	bool "TWIM1 driver instance"
-	depends on $(dt_nodelabel_exists,i2c1) && !SOC_SERIES_NRF51X
-	select NRFX_TWIM
-
-config NRFX_TWIM2
-	bool "TWIM2 driver instance"
-	depends on $(dt_nodelabel_exists,i2c2)
-	select NRFX_TWIM
-
-config NRFX_TWIM3
-	bool "TWIM3 driver instance"
-	depends on $(dt_nodelabel_exists,i2c3)
-	select NRFX_TWIM
-
-config NRFX_TWIM20
-	bool "TWIM20 driver instance"
-	depends on $(dt_nodelabel_exists,i2c20)
-	select NRFX_TWIM
-
-config NRFX_TWIM21
-	bool "TWIM21 driver instance"
-	depends on $(dt_nodelabel_exists,i2c21)
-	select NRFX_TWIM
-
-config NRFX_TWIM22
-	bool "TWIM22 driver instance"
-	depends on $(dt_nodelabel_exists,i2c22)
-	select NRFX_TWIM
-
-config NRFX_TWIM23
-	bool "TWIM23 driver instance"
-	depends on $(dt_nodelabel_exists,i2c23)
-	select NRFX_TWIM
-
-config NRFX_TWIM24
-	bool "TWIM24 driver instance"
-	depends on $(dt_nodelabel_exists,i2c24)
-	select NRFX_TWIM
-
-config NRFX_TWIM30
-	bool "TWIM30 driver instance"
-	depends on $(dt_nodelabel_exists,i2c30)
-	select NRFX_TWIM
-
-config NRFX_TWIM120
-	bool "TWIM120 driver instance"
-	depends on $(dt_nodelabel_exists,i2c120)
-	select NRFX_TWIM
-
-config NRFX_TWIM130
-	bool "TWIM130 driver instance"
-	depends on $(dt_nodelabel_exists,i2c130)
-	select NRFX_TWIM
-
-config NRFX_TWIM131
-	bool "TWIM131 driver instance"
-	depends on $(dt_nodelabel_exists,i2c131)
-	select NRFX_TWIM
-
-config NRFX_TWIM132
-	bool "TWIM132 driver instance"
-	depends on $(dt_nodelabel_exists,i2c132)
-	select NRFX_TWIM
-
-config NRFX_TWIM133
-	bool "TWIM133 driver instance"
-	depends on $(dt_nodelabel_exists,i2c133)
-	select NRFX_TWIM
-
-config NRFX_TWIM134
-	bool "TWIM134 driver instance"
-	depends on $(dt_nodelabel_exists,i2c134)
-	select NRFX_TWIM
-
-config NRFX_TWIM135
-	bool "TWIM135 driver instance"
-	depends on $(dt_nodelabel_exists,i2c135)
-	select NRFX_TWIM
-
-config NRFX_TWIM136
-	bool "TWIM136 driver instance"
-	depends on $(dt_nodelabel_exists,i2c136)
-	select NRFX_TWIM
-
-config NRFX_TWIM137
-	bool "TWIM137 driver instance"
-	depends on $(dt_nodelabel_exists,i2c137)
-	select NRFX_TWIM
+	bool "NRFX driver for TWIM peripheral"
 
 config NRFX_TWIS
-	bool
-
-config NRFX_TWIS0
-	bool "TWIS0 driver instance"
-	depends on $(dt_nodelabel_exists,i2c0) && !SOC_SERIES_NRF51X
-	select NRFX_TWIS
-
-config NRFX_TWIS1
-	bool "TWIS1 driver instance"
-	depends on $(dt_nodelabel_exists,i2c1) && !SOC_SERIES_NRF51X
-	select NRFX_TWIS
-
-config NRFX_TWIS2
-	bool "TWIS2 driver instance"
-	depends on $(dt_nodelabel_exists,i2c2)
-	select NRFX_TWIS
-
-config NRFX_TWIS3
-	bool "TWIS3 driver instance"
-	depends on $(dt_nodelabel_exists,i2c3)
-	select NRFX_TWIS
-
-config NRFX_TWIS20
-	bool "TWIS20 driver instance"
-	depends on $(dt_nodelabel_exists,i2c20)
-	select NRFX_TWIS
-
-config NRFX_TWIS21
-	bool "TWIS21 driver instance"
-	depends on $(dt_nodelabel_exists,i2c21)
-	select NRFX_TWIS
-
-config NRFX_TWIS22
-	bool "TWIS22 driver instance"
-	depends on $(dt_nodelabel_exists,i2c22)
-	select NRFX_TWIS
-
-config NRFX_TWIS23
-	bool "TWIS23 driver instance"
-	depends on $(dt_nodelabel_exists,i2c23)
-	select NRFX_TWIS
-
-config NRFX_TWIS24
-	bool "TWIS24 driver instance"
-	depends on $(dt_nodelabel_exists,i2c24)
-	select NRFX_TWIS
-
-config NRFX_TWIS30
-	bool "TWIS30 driver instance"
-	depends on $(dt_nodelabel_exists,i2c30)
-	select NRFX_TWIS
-
-config NRFX_TWIS130
-	bool "TWIS130 driver instance"
-	depends on $(dt_nodelabel_exists,i2c130)
-	select NRFX_TWIS
-
-config NRFX_TWIS131
-	bool "TWIS131 driver instance"
-	depends on $(dt_nodelabel_exists,i2c131)
-	select NRFX_TWIS
-
-config NRFX_TWIS132
-	bool "TWIS132 driver instance"
-	depends on $(dt_nodelabel_exists,i2c132)
-	select NRFX_TWIS
-
-config NRFX_TWIS133
-	bool "TWIS133 driver instance"
-	depends on $(dt_nodelabel_exists,i2c133)
-	select NRFX_TWIS
-
-config NRFX_TWIS134
-	bool "TWIS134 driver instance"
-	depends on $(dt_nodelabel_exists,i2c134)
-	select NRFX_TWIS
-
-config NRFX_TWIS135
-	bool "TWIS135 driver instance"
-	depends on $(dt_nodelabel_exists,i2c135)
-	select NRFX_TWIS
-
-config NRFX_TWIS136
-	bool "TWIS136 driver instance"
-	depends on $(dt_nodelabel_exists,i2c136)
-	select NRFX_TWIS
-
-config NRFX_TWIS137
-	bool "TWIS137 driver instance"
-	depends on $(dt_nodelabel_exists,i2c137)
-	select NRFX_TWIS
+	bool "NRFX driver for TWIS peripheral"
 
 config NRFX_UART
 	bool
@@ -1105,107 +332,7 @@ config NRFX_UART0
 	select NRFX_UART
 
 config NRFX_UARTE
-	bool
-
-config NRFX_UARTE0
-	bool "UARTE0 driver instance"
-	depends on $(dt_nodelabel_exists,uart0)
-	select NRFX_UARTE
-
-config NRFX_UARTE1
-	bool "UARTE1 driver instance"
-	depends on $(dt_nodelabel_exists,uart1)
-	select NRFX_UARTE
-
-config NRFX_UARTE2
-	bool "UARTE2 driver instance"
-	depends on $(dt_nodelabel_exists,uart2)
-	select NRFX_UARTE
-
-config NRFX_UARTE3
-	bool "UARTE3 driver instance"
-	depends on $(dt_nodelabel_exists,uart3)
-	select NRFX_UARTE
-
-config NRFX_UARTE00
-	bool "UARTE00 driver instance"
-	depends on $(dt_nodelabel_exists,uart00)
-	select NRFX_UARTE
-
-config NRFX_UARTE20
-	bool "UARTE20 driver instance"
-	depends on $(dt_nodelabel_exists,uart20)
-	select NRFX_UARTE
-
-config NRFX_UARTE21
-	bool "UARTE21 driver instance"
-	depends on $(dt_nodelabel_exists,uart21)
-	select NRFX_UARTE
-
-config NRFX_UARTE22
-	bool "UARTE22 driver instance"
-	depends on $(dt_nodelabel_exists,uart22)
-	select NRFX_UARTE
-
-config NRFX_UARTE23
-	bool "UARTE23 driver instance"
-	depends on $(dt_nodelabel_exists,uart23)
-	select NRFX_UARTE
-
-config NRFX_UARTE24
-	bool "UARTE24 driver instance"
-	depends on $(dt_nodelabel_exists,uart24)
-	select NRFX_UARTE
-
-config NRFX_UARTE30
-	bool "UARTE30 driver instance"
-	depends on $(dt_nodelabel_exists,uart30)
-	select NRFX_UARTE
-
-config NRFX_UARTE120
-	bool "UARTE120 driver instance"
-	depends on $(dt_nodelabel_exists,uart120)
-	select NRFX_UARTE
-
-config NRFX_UARTE130
-	bool "UARTE130 driver instance"
-	depends on $(dt_nodelabel_exists,uart130)
-	select NRFX_UARTE
-
-config NRFX_UARTE131
-	bool "UARTE131 driver instance"
-	depends on $(dt_nodelabel_exists,uart131)
-	select NRFX_UARTE
-
-config NRFX_UARTE132
-	bool "UARTE132 driver instance"
-	depends on $(dt_nodelabel_exists,uart132)
-	select NRFX_UARTE
-
-config NRFX_UARTE133
-	bool "UARTE133 driver instance"
-	depends on $(dt_nodelabel_exists,uart133)
-	select NRFX_UARTE
-
-config NRFX_UARTE134
-	bool "UARTE134 driver instance"
-	depends on $(dt_nodelabel_exists,uart134)
-	select NRFX_UARTE
-
-config NRFX_UARTE135
-	bool "UARTE135 driver instance"
-	depends on $(dt_nodelabel_exists,uart135)
-	select NRFX_UARTE
-
-config NRFX_UARTE136
-	bool "UARTE136 driver instance"
-	depends on $(dt_nodelabel_exists,uart136)
-	select NRFX_UARTE
-
-config NRFX_UARTE137
-	bool "UARTE137 driver instance"
-	depends on $(dt_nodelabel_exists,uart137)
-	select NRFX_UARTE
+	bool "UARTE driver"
 
 config NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG
 	bool "UARTE GPIO configuration support"
@@ -1233,51 +360,6 @@ config NRFX_USBREG
 
 config NRFX_WDT
 	bool
-
-config NRFX_WDT0
-	bool "WDT0 driver instance"
-	depends on $(dt_nodelabel_exists,wdt0)
-	select NRFX_WDT
-
-config NRFX_WDT1
-	bool "WDT1 driver instance"
-	depends on $(dt_nodelabel_exists,wdt1)
-	select NRFX_WDT
-
-config NRFX_WDT30
-	bool "WDT30 driver instance"
-	depends on $(dt_nodelabel_exists,wdt30)
-	select NRFX_WDT
-
-config NRFX_WDT31
-	bool "WDT31 driver instance"
-	depends on $(dt_nodelabel_exists,wdt31)
-	select NRFX_WDT
-
-config NRFX_WDT010
-	bool "WDT010 driver instance"
-	depends on $(dt_nodelabel_exists,wdt010)
-	select NRFX_WDT
-
-config NRFX_WDT011
-	bool "WDT011 driver instance"
-	depends on $(dt_nodelabel_exists,wdt011)
-	select NRFX_WDT
-
-config NRFX_WDT130
-	bool "WDT130 driver instance"
-	depends on $(dt_nodelabel_exists,wdt130)
-	select NRFX_WDT
-
-config NRFX_WDT131
-	bool "WDT131 driver instance"
-	depends on $(dt_nodelabel_exists,wdt131)
-	select NRFX_WDT
-
-config NRFX_WDT132
-	bool "WDT132 driver instance"
-	depends on $(dt_nodelabel_exists,wdt132)
-	select NRFX_WDT
 
 menu "Peripheral Resource Sharing module"
 

@@ -6,6 +6,7 @@
 
 &i2c0 { /* SDA 30, SCL 7 */
 	status = "okay";
+
 	ds3231: ds3231@68 {
 		compatible = "maxim,ds3231";
 		reg = <0x68>;

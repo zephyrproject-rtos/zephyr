@@ -9,6 +9,7 @@
 LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/net_stats.h>
+#include <zephyr/net/ethernet.h>
 
 #include "net_shell_private.h"
 
@@ -19,6 +20,12 @@ enum net_shell_stats_format {
 	NET_SHELL_STATS_FORMAT_KEY_VALUE,
 	NET_SHELL_STATS_FORMAT_HEX_BLOB,
 	NET_SHELL_STATS_FORMAT_BOTH
+};
+
+/** Shell stats options passed via user_data */
+struct net_shell_stats_options {
+	enum net_shell_stats_format format;
+	uint32_t type;  /* Bitmask of ethernet_stats_type */
 };
 
 #if defined(CONFIG_NET_STATISTICS)
@@ -55,74 +62,86 @@ static const char *priority2str(enum net_priority priority)
 static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 			    const struct shell *sh, struct net_shell_user_data *user_data)
 {
-	PR("Statistics for Ethernet interface %p [%d]\n", iface,
-	       net_if_get_by_iface(iface));
+	struct net_shell_stats_options *opts = NULL;
+	uint32_t type = ETHERNET_STATS_TYPE_ALL;
 
-	PR("Bytes received   : %llu\n", data->bytes.received);
-	PR("Bytes sent       : %llu\n", data->bytes.sent);
-	PR("Packets received : %u\n", data->pkts.rx);
-	PR("Packets sent     : %u\n", data->pkts.tx);
-	PR("Bcast received   : %u\n", data->broadcast.rx);
-	PR("Bcast sent       : %u\n", data->broadcast.tx);
-	PR("Mcast received   : %u\n", data->multicast.rx);
-	PR("Mcast sent       : %u\n", data->multicast.tx);
+	if (user_data != NULL && user_data->user_data != NULL) {
+		opts = (struct net_shell_stats_options *)user_data->user_data;
+		type = opts->type;
+	}
 
-	PR("Send errors      : %u\n", data->errors.tx);
-	PR("Receive errors   : %u\n", data->errors.rx);
-	PR("Collisions       : %u\n", data->collisions);
-	PR("Send Drops       : %u\n", data->tx_dropped);
-	PR("Send timeouts    : %u\n", data->tx_timeout_count);
-	PR("Send restarts    : %u\n", data->tx_restart_queue);
-	PR("Unknown protocol : %u\n", data->unknown_protocol);
+	/* Print common stats if requested */
+	if (type & ETHERNET_STATS_TYPE_COMMON) {
+		PR("Statistics for Ethernet interface %p [%d]\n", iface,
+		       net_if_get_by_iface(iface));
 
-	PR("Checksum offload : RX good %u errors %u\n",
-	   data->csum.rx_csum_offload_good,
-	   data->csum.rx_csum_offload_errors);
-	PR("Flow control     : RX xon %u xoff %u TX xon %u xoff %u\n",
-	   data->flow_control.rx_flow_control_xon,
-	   data->flow_control.rx_flow_control_xoff,
-	   data->flow_control.tx_flow_control_xon,
-	   data->flow_control.tx_flow_control_xoff);
-	PR("ECC errors       : uncorrected %u corrected %u\n",
-	   data->error_details.uncorr_ecc_errors,
-	   data->error_details.corr_ecc_errors);
-	PR("HW timestamp     : RX cleared %u TX timeout %u skipped %u\n",
-	   data->hw_timestamp.rx_hwtstamp_cleared,
-	   data->hw_timestamp.tx_hwtstamp_timeouts,
-	   data->hw_timestamp.tx_hwtstamp_skipped);
+		PR("Bytes received   : %llu\n", data->bytes.received);
+		PR("Bytes sent       : %llu\n", data->bytes.sent);
+		PR("Packets received : %u\n", data->pkts.rx);
+		PR("Packets sent     : %u\n", data->pkts.tx);
+		PR("Bcast received   : %u\n", data->broadcast.rx);
+		PR("Bcast sent       : %u\n", data->broadcast.tx);
+		PR("Mcast received   : %u\n", data->multicast.rx);
+		PR("Mcast sent       : %u\n", data->multicast.tx);
 
-	PR("RX errors : %5s %5s %5s %5s %5s %5s %5s %5s %5s %5s %5s\n",
-	   "Len", "Over", "CRC", "Frame", "NoBuf", "Miss", "Long", "Short",
-	   "Align", "DMA", "Alloc");
-	PR("            %5u %5u %5u %5u %5u %5u %5u %5u %5u %5u %5u\n",
-	   data->error_details.rx_length_errors,
-	   data->error_details.rx_over_errors,
-	   data->error_details.rx_crc_errors,
-	   data->error_details.rx_frame_errors,
-	   data->error_details.rx_no_buffer_count,
-	   data->error_details.rx_missed_errors,
-	   data->error_details.rx_long_length_errors,
-	   data->error_details.rx_short_length_errors,
-	   data->error_details.rx_align_errors,
-	   data->error_details.rx_dma_failed,
-	   data->error_details.rx_buf_alloc_failed);
-	PR("TX errors : %5s %8s %5s %10s %7s %5s\n",
-	   "Abort", "Carrier", "Fifo", "Heartbeat", "Window", "DMA");
-	PR("            %5u %8u %5u %10u %7u %5u\n",
-	   data->error_details.tx_aborted_errors,
-	   data->error_details.tx_carrier_errors,
-	   data->error_details.tx_fifo_errors,
-	   data->error_details.tx_heartbeat_errors,
-	   data->error_details.tx_window_errors,
-	   data->error_details.tx_dma_failed);
+		PR("Send errors      : %u\n", data->errors.tx);
+		PR("Receive errors   : %u\n", data->errors.rx);
+		PR("Collisions       : %u\n", data->collisions);
+		PR("Send Drops       : %u\n", data->tx_dropped);
+		PR("Send timeouts    : %u\n", data->tx_timeout_count);
+		PR("Send restarts    : %u\n", data->tx_restart_queue);
+		PR("Unknown protocol : %u\n", data->unknown_protocol);
+
+		PR("Checksum offload : RX good %u errors %u\n",
+		   data->csum.rx_csum_offload_good,
+		   data->csum.rx_csum_offload_errors);
+		PR("Flow control     : RX xon %u xoff %u TX xon %u xoff %u\n",
+		   data->flow_control.rx_flow_control_xon,
+		   data->flow_control.rx_flow_control_xoff,
+		   data->flow_control.tx_flow_control_xon,
+		   data->flow_control.tx_flow_control_xoff);
+		PR("ECC errors       : uncorrected %u corrected %u\n",
+		   data->error_details.uncorr_ecc_errors,
+		   data->error_details.corr_ecc_errors);
+		PR("HW timestamp     : RX cleared %u TX timeout %u skipped %u\n",
+		   data->hw_timestamp.rx_hwtstamp_cleared,
+		   data->hw_timestamp.tx_hwtstamp_timeouts,
+		   data->hw_timestamp.tx_hwtstamp_skipped);
+
+		PR("RX errors : %5s %5s %5s %5s %5s %5s %5s %5s %5s %5s %5s\n",
+		   "Len", "Over", "CRC", "Frame", "NoBuf", "Miss", "Long", "Short",
+		   "Align", "DMA", "Alloc");
+		PR("            %5u %5u %5u %5u %5u %5u %5u %5u %5u %5u %5u\n",
+		   data->error_details.rx_length_errors,
+		   data->error_details.rx_over_errors,
+		   data->error_details.rx_crc_errors,
+		   data->error_details.rx_frame_errors,
+		   data->error_details.rx_no_buffer_count,
+		   data->error_details.rx_missed_errors,
+		   data->error_details.rx_long_length_errors,
+		   data->error_details.rx_short_length_errors,
+		   data->error_details.rx_align_errors,
+		   data->error_details.rx_dma_failed,
+		   data->error_details.rx_buf_alloc_failed);
+		PR("TX errors : %5s %8s %5s %10s %7s %5s\n",
+		   "Abort", "Carrier", "Fifo", "Heartbeat", "Window", "DMA");
+		PR("            %5u %8u %5u %10u %7u %5u\n",
+		   data->error_details.tx_aborted_errors,
+		   data->error_details.tx_carrier_errors,
+		   data->error_details.tx_fifo_errors,
+		   data->error_details.tx_heartbeat_errors,
+		   data->error_details.tx_window_errors,
+		   data->error_details.tx_dma_failed);
+	}
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
-	if (data->vendor) {
-		size_t i = 0;
+	/* Print vendor stats if requested - format options only apply here */
+	if ((type & ETHERNET_STATS_TYPE_VENDOR) && data->vendor) {
 		enum net_shell_stats_format format = NET_SHELL_STATS_FORMAT_DEFAULT;
+		size_t i = 0;
 
-		if (user_data != NULL) {
-			format = *(enum net_shell_stats_format *)user_data->user_data;
+		if (opts != NULL) {
+			format = opts->format;
 		}
 
 		PR("Vendor specific statistics for Ethernet interface %p [%d]:\n",
@@ -619,13 +638,30 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		struct net_stats_eth eth_data;
-		int ret;
+		const struct ethernet_api *eth_api;
+		struct net_stats_eth *eth_data = NULL;
+		uint32_t type = ETHERNET_STATS_TYPE_ALL;
 
-		ret = net_mgmt(NET_REQUEST_STATS_GET_ETHERNET, iface,
-			       &eth_data, sizeof(eth_data));
-		if (!ret) {
-			print_eth_stats(iface, &eth_data, sh, data);
+		if (data != NULL && data->user_data != NULL) {
+			struct net_shell_stats_options *opts = data->user_data;
+
+			type = opts->type;
+		}
+
+		eth_api = net_if_get_device(iface)->api;
+		if (eth_api != NULL) {
+			/* Use get_stats_type if available for type filtering */
+			if (eth_api->get_stats_type != NULL) {
+				eth_data = eth_api->get_stats_type(
+					net_if_get_device(iface), type);
+			} else if (eth_api->get_stats != NULL) {
+				eth_data = eth_api->get_stats(
+					net_if_get_device(iface));
+			}
+		}
+
+		if (eth_data != NULL) {
+			print_eth_stats(iface, eth_data, sh, data);
 		}
 	}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
@@ -653,31 +689,45 @@ static void net_shell_print_statistics_all(struct net_shell_user_data *data)
 		net_if_foreach(net_shell_print_statistics, data);
 	}
 }
+
+static void parse_stats_options(size_t argc, char *argv[], int start_idx,
+				struct net_shell_stats_options *opts)
+{
+	opts->format = NET_SHELL_STATS_FORMAT_DEFAULT;
+	opts->type = ETHERNET_STATS_TYPE_ALL;
+
+	for (int i = start_idx; i < argc && argv[i] != NULL; i++) {
+		/* Format options */
+		if (strcmp(argv[i], "key-value") == 0) {
+			opts->format = NET_SHELL_STATS_FORMAT_KEY_VALUE;
+		} else if (strcmp(argv[i], "hex-blob") == 0) {
+			opts->format = NET_SHELL_STATS_FORMAT_HEX_BLOB;
+		} else if (strcmp(argv[i], "both") == 0) {
+			opts->format = NET_SHELL_STATS_FORMAT_BOTH;
+		/* Type filter options */
+		} else if (strcmp(argv[i], "common") == 0) {
+			opts->type = ETHERNET_STATS_TYPE_COMMON;
+		} else if (strcmp(argv[i], "vendor") == 0) {
+			opts->type = ETHERNET_STATS_TYPE_VENDOR;
+		} else if (strcmp(argv[i], "all") == 0) {
+			opts->type = ETHERNET_STATS_TYPE_ALL;
+		}
+	}
+}
 #endif /* CONFIG_NET_STATISTICS */
 
 int cmd_net_stats_all(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS)
 	struct net_shell_user_data user_data;
-#endif
-
-#if defined(CONFIG_NET_STATISTICS)
-	enum net_shell_stats_format format = NET_SHELL_STATS_FORMAT_DEFAULT;
+	struct net_shell_stats_options opts;
 
 	user_data.sh = sh;
 
-	/* Parse format argument if provided */
-	if (argc > 1) {
-		if (strcmp(argv[1], "key-value") == 0) {
-			format = NET_SHELL_STATS_FORMAT_KEY_VALUE;
-		} else if (strcmp(argv[1], "hex-blob") == 0) {
-			format = NET_SHELL_STATS_FORMAT_HEX_BLOB;
-		} else if (strcmp(argv[1], "both") == 0) {
-			format = NET_SHELL_STATS_FORMAT_BOTH;
-		}
-	}
+	/* Parse options starting from argv[1] */
+	parse_stats_options(argc, argv, 1, &opts);
 
-	user_data.user_data = &format;
+	user_data.user_data = &opts;
 
 	/* Print global network statistics */
 	net_shell_print_statistics_all(&user_data);
@@ -697,6 +747,7 @@ int cmd_net_stats_iface(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_STATISTICS)
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 	struct net_shell_user_data data;
+	struct net_shell_stats_options opts;
 	struct net_if *iface;
 	char *endptr;
 	int idx;
@@ -722,22 +773,12 @@ int cmd_net_stats_iface(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	enum net_shell_stats_format format = NET_SHELL_STATS_FORMAT_DEFAULT;
-
 	data.sh = sh;
 
-	/* Parse format argument if provided */
-	if (argc > 2) {
-		if (strcmp(argv[2], "key-value") == 0) {
-			format = NET_SHELL_STATS_FORMAT_KEY_VALUE;
-		} else if (strcmp(argv[2], "hex-blob") == 0) {
-			format = NET_SHELL_STATS_FORMAT_HEX_BLOB;
-		} else if (strcmp(argv[2], "both") == 0) {
-			format = NET_SHELL_STATS_FORMAT_BOTH;
-		}
-	}
+	/* Parse options starting from argv[2] */
+	parse_stats_options(argc, argv, 2, &opts);
 
-	data.user_data = &format;
+	data.user_data = &opts;
 
 	net_shell_print_statistics(iface, &data);
 #else
@@ -766,8 +807,8 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 	if (strcmp(argv[1], "reset") == 0) {
 		net_stats_reset(NULL);
 	} else {
-		/* Shift arguments for iface command */
-		cmd_net_stats_iface(sh, argc - 1, &argv[1]);
+		/* Pass arguments directly - cmd_net_stats_iface expects index in argv[1] */
+		cmd_net_stats_iface(sh, argc, argv);
 	}
 #else
 	ARG_UNUSED(argc);
@@ -789,19 +830,23 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_stats,
 	SHELL_CMD(all, NULL,
 		  "Show network statistics for all network interfaces.\n"
-		  "Usage: net stats all [key-value|hex-blob|both]",
+		  "Usage: net stats all [common|vendor|all] [key-value|hex-blob|both]",
 		  cmd_net_stats_all),
 	SHELL_CMD(iface, IFACE_DYN_CMD,
-		  "'net stats <index> [key-value|hex-blob|both]' shows network statistics for "
+		  "'net stats <index> [options]' shows network statistics for "
 		  "one specific network interface.\n"
-		  "Format options:\n"
-		  "  key-value: Show vendor stats as key-value pairs (default)\n"
-		  "  hex-blob:  Show vendor stats as hex blob for parsing\n"
-		  "  both:      Show both key-value and hex blob formats",
+		  "Type filter:\n"
+		  "  common: Only common stats (skips FW query)\n"
+		  "  vendor: Only vendor-specific stats\n"
+		  "  all:    All stats (default)\n"
+		  "Vendor stats format (only applies when vendor stats shown):\n"
+		  "  key-value: Key-value pairs (default)\n"
+		  "  hex-blob:  Hex blob for parsing\n"
+		  "  both:      Both formats",
 		  cmd_net_stats_iface),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_SUBCMD_ADD((net), stats, &net_cmd_stats,
 		 "Show network statistics.",
-		 cmd_net_stats, 1, 3);
+		 cmd_net_stats, 1, 4);

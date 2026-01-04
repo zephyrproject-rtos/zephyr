@@ -96,7 +96,7 @@ static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 	mpsc_pbuf_init(buffer, &mpsc_buf_cfg);
 
 #if CONFIG_SOC_SERIES_NRF52X
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 	DWT->CYCCNT = 0;
 #endif

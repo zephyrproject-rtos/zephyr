@@ -8,8 +8,8 @@
 #include <zephyr/logging/log.h>
 #include "feedback.h"
 
-#include <nrfx_dppi.h>
 #include <nrfx_gpiote.h>
+#include <gpiote_nrfx.h>
 #include <nrfx_timer.h>
 #include <hal/nrf_gpio.h>
 #include <helpers/nrfx_gppi.h>
@@ -60,11 +60,10 @@ static inline void feedback_target_init(void)
 #error "Unsupported target"
 #endif
 
-static const nrfx_gpiote_t gpiote =
-	NRFX_GPIOTE_INSTANCE(FEEDBACK_GPIOTE_INSTANCE_NUMBER);
+#define FEEDBACK_GPIOTE_NODE DT_NODELABEL(UTIL_CAT(gpiote, FEEDBACK_GPIOTE_INSTANCE_NUMBER))
 
-static const nrfx_timer_t feedback_timer_instance =
-	NRFX_TIMER_INSTANCE(FEEDBACK_TIMER_INSTANCE_NUMBER);
+static nrfx_timer_t feedback_timer_instance =
+	NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(FEEDBACK_TIMER_INSTANCE_NUMBER));
 
 /* See 5.12.4.2 Feedback in Universal Serial Bus Specification Revision 2.0 for
  * more information about the feedback. There is a direct implementation of the
@@ -118,11 +117,11 @@ static struct feedback_ctx {
 	};
 } fb_ctx;
 
-static nrfx_err_t feedback_edge_counter_setup(void)
+static int feedback_edge_counter_setup(void)
 {
-	nrfx_err_t err;
 	uint8_t feedback_gpiote_channel;
-	uint8_t feedback_gppi_channel;
+	nrfx_gppi_handle_t feedback_gppi_handle;
+	nrfx_gpiote_t *gpiote = &GPIOTE_NRFX_INST_BY_NODE(FEEDBACK_GPIOTE_NODE);
 	nrfx_gpiote_trigger_config_t trigger_config = {
 		.trigger = NRFX_GPIOTE_TRIGGER_TOGGLE,
 		.p_in_channel = &feedback_gpiote_channel,
@@ -132,14 +131,17 @@ static nrfx_err_t feedback_edge_counter_setup(void)
 		.p_pull_config = &pull,
 		.p_trigger_config = &trigger_config,
 	};
+	int err;
+	uint32_t eep = nrfx_gpiote_in_event_address_get(gpiote, FEEDBACK_PIN);
+	uint32_t tep = nrfx_timer_task_address_get(&feedback_timer_instance, NRF_TIMER_TASK_COUNT);
 
-	err = nrfx_gpiote_channel_alloc(&gpiote, &feedback_gpiote_channel);
-	if (err != NRFX_SUCCESS) {
+	err = nrfx_gpiote_channel_alloc(gpiote, &feedback_gpiote_channel);
+	if (err != 0) {
 		return err;
 	}
 
-	nrfx_gpiote_input_configure(&gpiote, FEEDBACK_PIN, &input_pin_config);
-	nrfx_gpiote_trigger_enable(&gpiote, FEEDBACK_PIN, false);
+	nrfx_gpiote_input_configure(gpiote, FEEDBACK_PIN, &input_pin_config);
+	nrfx_gpiote_trigger_enable(gpiote, FEEDBACK_PIN, false);
 
 	/* Configure TIMER in COUNTER mode */
 	const nrfx_timer_config_t cfg = {
@@ -151,30 +153,26 @@ static nrfx_err_t feedback_edge_counter_setup(void)
 	};
 
 	err = nrfx_timer_init(&feedback_timer_instance, &cfg, NULL);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("nrfx timer init error (sample clk feedback) - Return value: %d", err);
 		return err;
 	}
 
 	/* Subscribe TIMER COUNT task to GPIOTE IN event */
-	err = nrfx_gppi_channel_alloc(&feedback_gppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("gppi_channel_alloc failed with: %d\n", err);
+	err = nrfx_gppi_conn_alloc(eep, tep, &feedback_gppi_handle);
+	if (err < 0) {
+		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
 		return err;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(feedback_gppi_channel,
-		nrfx_gpiote_in_event_address_get(&gpiote, FEEDBACK_PIN),
-		nrfx_timer_task_address_get(&feedback_timer_instance, NRF_TIMER_TASK_COUNT));
+	nrfx_gppi_conn_enable(feedback_gppi_handle);
 
-	nrfx_gppi_channels_enable(BIT(feedback_gppi_channel));
-
-	return NRFX_SUCCESS;
+	return 0;
 }
 
-static nrfx_err_t feedback_relative_timer_setup(void)
+static int feedback_relative_timer_setup(void)
 {
-	nrfx_err_t err;
+	int err;
 	const nrfx_timer_config_t cfg = {
 		.frequency = NRFX_MHZ_TO_HZ(16UL),
 		.mode = NRF_TIMER_MODE_TIMER,
@@ -184,7 +182,7 @@ static nrfx_err_t feedback_relative_timer_setup(void)
 	};
 
 	err = nrfx_timer_init(&feedback_timer_instance, &cfg, NULL);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("nrfx timer init error (relative timer) - Return value: %d", err);
 	}
 
@@ -193,9 +191,13 @@ static nrfx_err_t feedback_relative_timer_setup(void)
 
 struct feedback_ctx *feedback_init(void)
 {
-	nrfx_err_t err;
-	uint8_t usbd_sof_gppi_channel;
-	uint8_t i2s_framestart_gppi_channel;
+	nrfx_gppi_handle_t usbd_sof_gppi_handle;
+	nrfx_gppi_handle_t i2s_framestart_gppi_handle;
+	int err;
+	uint32_t tsk1 = nrfx_timer_capture_task_address_get(&feedback_timer_instance,
+							    FEEDBACK_TIMER_USBD_SOF_CAPTURE);
+	uint32_t tsk2 = nrfx_timer_capture_task_address_get(&feedback_timer_instance,
+							    FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE);
 
 	feedback_target_init();
 
@@ -207,40 +209,31 @@ struct feedback_ctx *feedback_init(void)
 		err = feedback_relative_timer_setup();
 	}
 
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		return &fb_ctx;
 	}
 
 	/* Subscribe TIMER CAPTURE task to USBD SOF event */
-	err = nrfx_gppi_channel_alloc(&usbd_sof_gppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("gppi_channel_alloc failed with: %d\n", err);
+	err = nrfx_gppi_conn_alloc(USB_SOF_EVENT_ADDRESS, tsk1, &usbd_sof_gppi_handle);
+	if (err < 0) {
+		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
 		return &fb_ctx;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(usbd_sof_gppi_channel,
-		USB_SOF_EVENT_ADDRESS,
-		nrfx_timer_capture_task_address_get(&feedback_timer_instance,
-			FEEDBACK_TIMER_USBD_SOF_CAPTURE));
-	nrfx_gppi_fork_endpoint_setup(usbd_sof_gppi_channel,
-		nrfx_timer_task_address_get(&feedback_timer_instance,
-			NRF_TIMER_TASK_CLEAR));
+	nrfx_gppi_ep_attach(nrfx_timer_task_address_get(&feedback_timer_instance,
+							NRF_TIMER_TASK_CLEAR),
+			    usbd_sof_gppi_handle);
 
-	nrfx_gppi_channels_enable(BIT(usbd_sof_gppi_channel));
+	nrfx_gppi_conn_enable(usbd_sof_gppi_handle);
 
 	/* Subscribe TIMER CAPTURE task to I2S FRAMESTART event */
-	err = nrfx_gppi_channel_alloc(&i2s_framestart_gppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("gppi_channel_alloc failed with: %d\n", err);
+	err = nrfx_gppi_conn_alloc(I2S_FRAMESTART_EVENT_ADDRESS, tsk2, &i2s_framestart_gppi_handle);
+	if (err < 0) {
+		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
 		return &fb_ctx;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(i2s_framestart_gppi_channel,
-		I2S_FRAMESTART_EVENT_ADDRESS,
-		nrfx_timer_capture_task_address_get(&feedback_timer_instance,
-			FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE));
-
-	nrfx_gppi_channels_enable(BIT(i2s_framestart_gppi_channel));
+	nrfx_gppi_conn_enable(i2s_framestart_gppi_handle);
 
 	/* Enable feedback timer */
 	nrfx_timer_enable(&feedback_timer_instance);

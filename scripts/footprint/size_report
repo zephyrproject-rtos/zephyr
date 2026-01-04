@@ -866,56 +866,58 @@ def main():
     assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
     targets = args.target
 
-    elf = ELFFile(open(args.kernel, "rb"))
-    assert elf.has_dwarf_info(), "ELF file has no DWARF information"
+    with ELFFile(open(args.kernel, "rb")) as elf:
+        assert elf.has_dwarf_info(), "ELF file has no DWARF information"
 
-    set_global_machine_arch(elf.get_machine_arch())
-    addr_ranges = get_section_ranges(elf)
-    dwarfinfo = elf.get_dwarf_info()
+        set_global_machine_arch(elf.get_machine_arch())
+        addr_ranges = get_section_ranges(elf)
+        dwarfinfo = elf.get_dwarf_info()
 
-    symbols = get_symbols(elf, addr_ranges)
-    for sym in symbols['unassigned'].values():
-        for sym_entry in sym:
-            print(f"WARN: Symbol '{sym_entry['name']}' section '{sym_entry['section']}' "
-                    "is not in RAM or ROM.")
+        symbols = get_symbols(elf, addr_ranges)
+        for sym in symbols['unassigned'].values():
+            for sym_entry in sym:
+                print(f"WARN: Symbol '{sym_entry['name']}' section '{sym_entry['section']}' "
+                      "is not in RAM or ROM.")
 
-    for t in targets:
-        if args.json:
-            jsonout = args.json.replace('{target}', t)
-        else:
-            jsonout = os.path.join(args.output, f'{t}.json')
+        for t in targets:
+            if args.json:
+                jsonout = args.json.replace('{target}', t)
+            else:
+                jsonout = os.path.join(args.output, f'{t}.json')
 
-        symbol_dict = symbols[t]
-        symsize = addr_ranges[f'{t}_total_size']
-        ranges = addr_ranges[t]
+            symbol_dict = symbols[t]
+            symsize = addr_ranges[f'{t}_total_size']
+            ranges = addr_ranges[t]
 
-        if symbol_dict is not None:
-            processed = {"mapped_symbols": set(),
-                         "mapped_addr": set(),
-                         "unmapped_symbols": set(symbol_dict.keys())}
+            if symbol_dict is not None:
+                processed = {"mapped_symbols": set(),
+                             "mapped_addr": set(),
+                             "unmapped_symbols": set(symbol_dict.keys())}
 
-            do_simple_name_matching(dwarfinfo, symbol_dict, processed)
-            mark_address_aliases(symbol_dict, processed)
-            do_address_range_matching(dwarfinfo, symbol_dict, processed)
-            mark_address_aliases(symbol_dict, processed)
-            common_path_prefix = find_common_path_prefix(symbol_dict)
-            set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
+                do_simple_name_matching(dwarfinfo, symbol_dict, processed)
+                mark_address_aliases(symbol_dict, processed)
+                do_address_range_matching(dwarfinfo, symbol_dict, processed)
+                mark_address_aliases(symbol_dict, processed)
+                common_path_prefix = find_common_path_prefix(symbol_dict)
+                set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
 
-            if args.verbose:
-                for sym in processed['unmapped_symbols']:
-                    print("INFO: Unmapped symbol: {0}".format(sym))
+                if args.verbose:
+                    for sym in processed['unmapped_symbols']:
+                        print("INFO: Unmapped symbol: {0}".format(sym))
 
-            root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
-            if not args.quiet:
-                header = f"{t.upper()} Report" if len(targets) > 1 else None
-                print_any_tree(root, symsize, args.depth, header)
+                root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
+                if not args.quiet:
+                    header = f"{t.upper()} Report" if len(targets) > 1 else None
+                    print_any_tree(root, symsize, args.depth, header)
 
-            exporter = DictExporter(attriter=lambda attrs: [(k.lstrip('_'), v) for k, v in attrs])
-            data = dict()
-            data["symbols"] = exporter.export(root)
-            data["total_size"] = symsize
-            with open(jsonout, "w") as fp:
-                json.dump(data, fp, indent=4)
+                exporter = DictExporter(
+                    attriter=lambda attrs: [(k.lstrip('_'), v) for k, v in attrs]
+                )
+                data = dict()
+                data["symbols"] = exporter.export(root)
+                data["total_size"] = symsize
+                with open(jsonout, "w") as fp:
+                    json.dump(data, fp, indent=4)
 
 
 if __name__ == "__main__":

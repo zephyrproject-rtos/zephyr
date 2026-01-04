@@ -238,6 +238,7 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_SERVER_NAME_INDICATION if MBEDTLS_BUILTIN
 	select MBEDTLS_X509_CRL_PARSE_C
 	select MBEDTLS_SSL_PROTO_TLS1_2
+	select MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
 	select NOT_SECURE
 	select WIFI_CERTIFICATE_LIB
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
@@ -309,8 +310,8 @@ config EAP_ALL
 
 config EAP_TLSV1_3
 	bool "EAP TLSv1.3 support"
-	select MBEDTLS_TLS_VERSION_1_3
-	select MBEDTLS_TLS_SESSION_TICKETS
+	select MBEDTLS_SSL_PROTO_TLS1_3
+	select MBEDTLS_SSL_SESSION_TICKETS
 	select MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
 	select MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
 	select MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
@@ -479,6 +480,21 @@ config WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
 	  background scans on other channels (experimental).
 
 endif # WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
+config WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL
+	int "WPA supplicant cleanup interval (seconds)"
+	default 10
+	help
+	  WPA supplicant cleanup interval. Increase this interval to avoid constant wakeup
+	  and save power when device in low power mode.
+
+config WIFI_NM_HOSTAPD_CLEANUP_INTERVAL
+	int "Hostapd cleanup interval (seconds)"
+	default 10
+	depends on WIFI_NM_HOSTAPD_AP
+	help
+	  Hostapd cleanup interval. Increase this interval to avoid constant wakeup
+	  and save power when device in low power mode.
 
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
@@ -717,5 +733,14 @@ config WIFI_NM_HOSTAPD_REGULATORY_ENV
 	  This parameter is used to set the third octet of the country string.
 	  All supported environments of current region can be used with
 	  default value of 0x20 or 32.
+
+config WIFI_NM_WPA_SUPPLICANT_BTM_PRE_SCAN_CHECK
+	bool "Pre-scan check for BTM"
+	default y if !SOC_FAMILY_NORDIC_NRF
+	help
+	  This option is used to enable the pre-scan check for BTM.
+	  When no candidate is found, a new scan is performed.
+	  Disable this if the chip takes too long to perform a scan causing
+	  disassociations in WFA QT tests.
 
 endif # WIFI_NM_WPA_SUPPLICANT

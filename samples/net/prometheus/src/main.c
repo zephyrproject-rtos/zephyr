@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/kernel.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>

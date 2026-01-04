@@ -91,20 +91,20 @@ class SnippetsError(Exception):
     def __init__(self, msg):
         self.msg = msg
 
-class SnippetToCMakePrinter:
-    '''Helper class for printing a Snippets's semantics to a .cmake
+class SnippetToCMakeOutput:
+    '''Helper class for outputting a Snippets's semantics to a .cmake
     include file for use by snippets.cmake.'''
 
-    def __init__(self, snippets: Snippets, out_file):
+    def __init__(self, snippets: Snippets):
         self.snippets = snippets
-        self.out_file = out_file
         self.section = '#' * 79
 
-    def print_cmake(self):
-        '''Print to the output file provided to the constructor.'''
+    def output_cmake(self):
+        '''Output to the file provided to the constructor.'''
         # TODO: add source file info
         snippets = self.snippets
         snippet_names = sorted(snippets.keys())
+        output = ''
 
         if platform.system() == "Windows":
             # Change to linux-style paths for windows to avoid cmake escape character code issues
@@ -119,7 +119,7 @@ class SnippetToCMakePrinter:
         snippet_path_list = " ".join(
             sorted(f'"{path}"' for path in snippets.paths))
 
-        self.print('''\
+        output += '''\
 # WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!
 #
 # This file contains build system settings derived from your snippets.
@@ -127,9 +127,9 @@ class SnippetToCMakePrinter:
 # of Zephyr's snippets CMake module.
 #
 # See the Snippets guide in the Zephyr documentation for more information.
-''')
+'''
 
-        self.print(f'''\
+        output += f'''\
 {self.section}
 # Global information about all snippets.
 
@@ -141,44 +141,49 @@ set(SNIPPET_PATHS {snippet_path_list})
 
 # Create variable scope for snippets build variables
 zephyr_create_scope(snippets)
-''')
+'''
 
         for snippet_name in snippets.requested:
-            self.print_cmake_for(snippets[snippet_name])
-            self.print()
+            output += self.output_cmake_for(snippets[snippet_name])
 
-    def print_cmake_for(self, snippet: Snippet):
-        self.print(f'''\
+        return output
+
+    def output_cmake_for(self, snippet: Snippet):
+        output = f'''\
 {self.section}
 # Snippet '{snippet.name}'
 
-# Common variable appends.''')
-        self.print_appends(snippet.appends, 0)
+# Common variable appends.
+'''
+        output += self.output_appends(snippet.appends, 0)
         for board, appends in snippet.board2appends.items():
-            self.print_appends_for_board(board, appends)
+            output += self.output_appends_for_board(board, appends)
+        return output
 
-    def print_appends_for_board(self, board: str, appends: Appends):
+    def output_appends_for_board(self, board: str, appends: Appends):
+        output = ''
         if board.startswith('/'):
             board_re = board[1:-1]
-            self.print(f'''\
+            output += f'''\
 # Appends for board regular expression '{board_re}'
-if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")''')
+if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")
+'''
         else:
-            self.print(f'''\
+            output += f'''\
 # Appends for board '{board}'
-if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")''')
-        self.print_appends(appends, 1)
-        self.print('endif()')
+if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")
+'''
+        output += self.output_appends(appends, 1)
+        output += 'endif()\n'
+        return output
 
-    def print_appends(self, appends: Appends, indent: int):
+    def output_appends(self, appends: Appends, indent: int):
         space = '  ' * indent
+        output = ''
         for name, values in appends.items():
             for value in values:
-                self.print(f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)')
-
-    def print(self, *args, **kwargs):
-        kwargs['file'] = self.out_file
-        print(*args, **kwargs)
+                output += f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)\n'
+        return output
 
 # Name of the file containing the jsonschema schema for snippet.yml
 # files.
@@ -328,8 +333,16 @@ def write_cmake_out(snippets: Snippets, cmake_out: Path) -> None:
     detail and are not meant to be used outside of snippets.cmake.'''
     if not cmake_out.parent.exists():
         cmake_out.parent.mkdir()
+
+    snippet_data = SnippetToCMakeOutput(snippets).output_cmake()
+
+    if Path(cmake_out).is_file():
+        with open(cmake_out, encoding="utf-8") as fp:
+            if fp.read() == snippet_data:
+                return
+
     with open(cmake_out, 'w', encoding="utf-8") as f:
-        SnippetToCMakePrinter(snippets, f).print_cmake()
+        f.write(snippet_data)
 
 def main():
     args = parse_args()

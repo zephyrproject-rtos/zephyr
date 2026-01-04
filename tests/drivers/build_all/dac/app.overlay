@@ -331,7 +331,6 @@
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
-
 		};
 	};
 };

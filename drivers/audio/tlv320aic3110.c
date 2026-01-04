@@ -13,7 +13,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/audio/codec.h>
 #include <zephyr/drivers/clock_control.h>
 #include "tlv320aic3110.h"

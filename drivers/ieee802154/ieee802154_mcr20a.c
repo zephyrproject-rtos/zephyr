@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 #include <zephyr/random/random.h>
-#include <zephyr/debug/stack.h>
 
 #include <zephyr/drivers/gpio.h>
 

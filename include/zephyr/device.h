@@ -1246,10 +1246,10 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param level Init level
  */
 #define Z_DEVICE_CHECK_INIT_LEVEL(level)                                       \
-	COND_CODE_1(Z_INIT_PRE_KERNEL_1_##level, (),                           \
-	(COND_CODE_1(Z_INIT_PRE_KERNEL_2_##level, (),                          \
-	(COND_CODE_1(Z_INIT_POST_KERNEL_##level, (),                           \
-	(ZERO_OR_COMPILE_ERROR(0)))))))
+	COND_CASE_1(Z_INIT_PRE_KERNEL_1_##level, (),                           \
+		    Z_INIT_PRE_KERNEL_2_##level, (),                           \
+		    Z_INIT_POST_KERNEL_##level, (),                            \
+		    (ZERO_OR_COMPILE_ERROR(0)))
 
 /**
  * @brief Define the init entry for a device.

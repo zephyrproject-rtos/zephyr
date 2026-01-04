@@ -39,6 +39,7 @@
 	pinctrl-0 = <&spi0_default_alt>;
 	pinctrl-names = "default";
 	cs-gpios = <&ioport7 3 GPIO_ACTIVE_LOW>;
+
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;

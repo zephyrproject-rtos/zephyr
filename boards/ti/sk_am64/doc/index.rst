@@ -17,17 +17,20 @@ cluster and a single Cortex-M4 core in the MCU domain. Zephyr is ported to run o
 the M4F core and the following listed hardware specifications are used:
 
 - Low-power ARM Cortex-M4F
-   - 256KB of SRAM
+
+  - 256KB of SRAM
 
 - 2x ARM Dual-Core Cortex-R5F
-   - 64KB of SRAM each
+
+  - 64KB of SRAM each
 
 - Memory
-   - 2GB of DDR4
+
+  - 2GB of DDR4
 
 - Debug
 
-   - XDS110 based JTAG
+  - XDS110 based JTAG
 
 Supported Features
 ==================

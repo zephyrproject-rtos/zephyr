@@ -10,14 +10,8 @@ configdefault NET_L2_ETHERNET
 
 if DISPLAY || VIDEO
 # MEMC needs to be enabled in order to store
-# display frame buffer to external PSRAM
+# display frame buffer and video buffer pool to external PSRAM
 config MEMC
-	default y
-
-# Rely on Multi-Heap / Shared-Multi-Heap for PSRAM access
-config MULTI_HEAP
-	default y
-config SHARED_MULTI_HEAP
 	default y
 endif # DISPLAY || VIDEO
 
@@ -27,16 +21,30 @@ config INPUT
 
 config I2C_STM32_V2_TIMING
 	default y if INPUT
-
-# Let LTDC use memory allocated via SMH
-config STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
-	default y
 endif # DISPLAY
 
 if VIDEO
-# Let video framework use memory allocated via SMH
-config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
+# Place video buffer pool into the PSRAM
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION
 	default y
+
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+# Place VENC internal buffer into the PSRAM
+if VIDEO_STM32_VENC
+
+choice VIDEO_STM32_VENC_MEM_ALLOC
+	default VIDEO_STM32_VENC_HEAP_ALLOC
+endchoice
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+	default y
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+endif # VIDEO_STM32_VENC
 endif # VIDEO
 
 endif # BOARD_STM32N6570_DK

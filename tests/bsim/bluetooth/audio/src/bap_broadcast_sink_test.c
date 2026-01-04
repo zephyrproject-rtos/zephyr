@@ -11,7 +11,6 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
-#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>

@@ -1,0 +1,26 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+
+/ {
+	soc {
+		sram: sram@14000000 {
+			ranges = <0x4000000 0x14000000 0x20000000>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+		};
+
+		flexspi: spi@50020000 {
+			reg = <0x50020000 0x1000>, <0x90000000 DT_SIZE_M(8)>;
+		};
+	};
+};
+
+#include "nxp_mcxa5x_common.dtsi"

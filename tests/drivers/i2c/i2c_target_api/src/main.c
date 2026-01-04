@@ -135,42 +135,34 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 			    uint8_t addr_width, unsigned int offset)
 {
 	int ret, i;
-	uint8_t start_addr[2];
-	struct i2c_msg msg[2];
+	uint8_t buf[TEST_DATA_SIZE + 2];
+	uint8_t addr_size;
 
 	TC_PRINT("Testing program. Master: %s, address: 0x%x, off=%d\n",
 		i2c->name, addr, offset);
 
-	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
-		i2c_buffer[i] = i & 0xFF;
-	}
-
 	switch (addr_width) {
 	case 8:
-		start_addr[0] = (uint8_t) (offset & 0xFF);
+		buf[0] = (uint8_t) (offset & 0xFF);
+		addr_size = 1;
 	break;
 	case 16:
-		sys_put_be16((uint16_t)(offset & 0xFFFF), start_addr);
+		sys_put_be16((uint16_t)(offset & 0xFFFF), buf);
+		addr_size = 2;
 	break;
 	default:
 		return -EINVAL;
 	}
 
-	msg[0].buf = start_addr;
-	msg[0].len = (addr_width >> 3);
-	msg[0].flags = I2C_MSG_WRITE;
-	msg[1].buf = &i2c_buffer[0];
-	msg[1].len = TEST_DATA_SIZE;
-	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+	for (i = 0; i < TEST_DATA_SIZE - offset; ++i) {
+		buf[i + addr_size] = i & 0xFF;
+	}
 
-	ret = i2c_transfer(i2c, &msg[0], 2, addr);
+	ret = i2c_write(i2c, &buf[0], TEST_DATA_SIZE - offset + addr_size, addr);
 	zassert_equal(ret, 0, "Failed to write EEPROM");
 
-	(void)memset(i2c_buffer, 0xFF, TEST_DATA_SIZE);
-
 	/* Read back EEPROM from I2C Master requests, then compare */
-	ret = i2c_write_read(i2c, addr,
-			     start_addr, (addr_width >> 3), i2c_buffer, TEST_DATA_SIZE-offset);
+	ret = i2c_write_read(i2c, addr, buf, addr_size, i2c_buffer, TEST_DATA_SIZE - offset);
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {

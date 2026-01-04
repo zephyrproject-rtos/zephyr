@@ -9,6 +9,14 @@ if SOC_SERIES_STM32F4X
 
 rsource "Kconfig.defconfig.stm32f4*"
 
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers9)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers10)
+	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers11)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers12)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers14)
+
 # adjust the fallback because of the LSI oscaillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK

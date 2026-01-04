@@ -10,6 +10,8 @@
 
 &timers2 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -17,6 +19,8 @@
 
 &timers3 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -24,6 +28,8 @@
 
 &timers4 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -31,6 +37,8 @@
 
 &timers5 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -38,6 +46,8 @@
 
 &timers6 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -45,6 +55,8 @@
 
 &timers7 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -52,6 +64,8 @@
 
 &timers9 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -59,6 +73,8 @@
 
 &timers10 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -66,6 +82,8 @@
 
 &timers11 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -73,6 +91,8 @@
 
 &timers12 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -80,6 +100,8 @@
 
 &timers13 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -87,6 +109,8 @@
 
 &timers14 {
 	st,prescaler = <79>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};

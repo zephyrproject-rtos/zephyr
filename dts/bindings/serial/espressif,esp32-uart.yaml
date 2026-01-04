@@ -31,3 +31,19 @@ properties:
       Overrides hw-flow-control if both are set.
       Using this mode, the pin assigned to DTR
       is asserted during transmission.
+
+  uhci-slip-tx:
+    type: boolean
+    description: |
+      Enable SLIP encoding on TX when using UART with DMA (async API).
+      When enabled, the UHCI hardware automatically encodes transmitted data
+      using SLIP framing (0xC0 -> 0xDB 0xDC, 0xDB -> 0xDB 0xDD).
+      Disabled by default to prevent unintended data corruption.
+
+  uhci-slip-rx:
+    type: boolean
+    description: |
+      Enable SLIP decoding on RX when using UART with DMA (async API).
+      When enabled, the UHCI hardware automatically decodes received data
+      using SLIP framing (0xDB 0xDC -> 0xC0, 0xDB 0xDD -> 0xDB).
+      Disabled by default to prevent unintended data corruption.

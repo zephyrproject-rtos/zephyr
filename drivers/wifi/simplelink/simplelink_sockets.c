@@ -32,8 +32,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #define SD_TO_OBJ(sd) ((void *)(sd + 1))
 #define OBJ_TO_SD(obj) (((int)obj) - 1)
 
-static int simplelink_socket_accept(void *obj, struct net_sockaddr *addr,
-			     socklen_t *addrlen);
+static int simplelink_socket_accept(void *obj, struct net_sockaddr *addr, net_socklen_t *addrlen);
 
 /*
  * Convert SL error codes into BSD errno values
@@ -204,13 +203,13 @@ static int simplelink_socket_family_from_posix(int family, int *family_sl)
 static int simplelink_socket_type_from_posix(int type, int *type_sl)
 {
 	switch (type) {
-	case SOCK_STREAM:
+	case NET_SOCK_STREAM:
 		*type_sl = SL_SOCK_STREAM;
 		break;
-	case SOCK_DGRAM:
+	case NET_SOCK_DGRAM:
 		*type_sl = SL_SOCK_DGRAM;
 		break;
-	case SOCK_RAW:
+	case NET_SOCK_RAW:
 		*type_sl = SL_SOCK_RAW;
 		break;
 	default:
@@ -717,10 +716,10 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 	int sd = OBJ_TO_SD(obj);
 	int retval;
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == ZSOCK_SOL_TLS) {
 		/* Handle Zephyr's SOL_TLS secure socket options: */
 		switch (optname) {
-		case TLS_SEC_TAG_LIST:
+		case ZSOCK_TLS_SEC_TAG_LIST:
 			/* Bind credential filenames to this socket: */
 			retval = map_credentials(sd, optval, optlen);
 			if (retval != 0) {
@@ -728,12 +727,12 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 				goto exit;
 			}
 			break;
-		case TLS_HOSTNAME:
+		case ZSOCK_TLS_HOSTNAME:
 			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET,
 					       _SEC_DOMAIN_VERIF,
 					       (const char *)optval, optlen);
 			break;
-		case TLS_PEER_VERIFY:
+		case ZSOCK_TLS_PEER_VERIFY:
 			if (optval) {
 				/*
 				 * Not currently supported. Verification
@@ -756,8 +755,8 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 				goto exit;
 			}
 			break;
-		case TLS_CIPHERSUITE_LIST:
-		case TLS_DTLS_ROLE:
+		case ZSOCK_TLS_CIPHERSUITE_LIST:
+		case ZSOCK_TLS_DTLS_ROLE:
 			/* Not yet supported: */
 			retval = slcb_SetErrno(ENOTSUP);
 			goto exit;
@@ -770,7 +769,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 
 		/* Note: this logic should match SimpleLink SDK's socket.c: */
 		switch (optname) {
-		case TCP_NODELAY:
+		case ZSOCK_TCP_NODELAY:
 			if (optval) {
 				/* if user wishes to have TCP_NODELAY = FALSE,
 				 * we return EINVAL and fail in the cases below.
@@ -785,9 +784,9 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 			 * EINVAL in order to not break "off-the-shelf" BSD
 			 * code.
 			 */
-		case SO_BROADCAST:
-		case SO_REUSEADDR:
-		case SO_SNDBUF:
+		case ZSOCK_SO_BROADCAST:
+		case ZSOCK_SO_REUSEADDR:
+		case ZSOCK_SO_SNDBUF:
 			retval = slcb_SetErrno(EINVAL);
 			goto exit;
 		default:
@@ -811,12 +810,12 @@ static int simplelink_getsockopt(void *obj, int level, int optname,
 	int sd = OBJ_TO_SD(obj);
 	int retval;
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == ZSOCK_SOL_TLS) {
 		/* Handle Zephyr's SOL_TLS secure socket options: */
 		switch (optname) {
-		case TLS_SEC_TAG_LIST:
-		case TLS_CIPHERSUITE_LIST:
-		case TLS_CIPHERSUITE_USED:
+		case ZSOCK_TLS_SEC_TAG_LIST:
+		case ZSOCK_TLS_CIPHERSUITE_LIST:
+		case ZSOCK_TLS_CIPHERSUITE_USED:
 			/* Not yet supported: */
 			retval = slcb_SetErrno(ENOTSUP);
 			goto exit;
@@ -830,7 +829,7 @@ static int simplelink_getsockopt(void *obj, int level, int optname,
 		/* Note: this logic should match SimpleLink SDK's socket.c: */
 		switch (optname) {
 			/* TCP_NODELAY always set by the NWP, so return True */
-		case TCP_NODELAY:
+		case ZSOCK_TCP_NODELAY:
 			if (optval) {
 				(*(_u32 *)optval) = TRUE;
 				retval = 0;
@@ -841,9 +840,9 @@ static int simplelink_getsockopt(void *obj, int level, int optname,
 			 * errno to EINVAL in order to not break "off-the-shelf"
 			 * BSD code.
 			 */
-		case SO_BROADCAST:
-		case SO_REUSEADDR:
-		case SO_SNDBUF:
+		case ZSOCK_SO_BROADCAST:
+		case ZSOCK_SO_REUSEADDR:
+		case ZSOCK_SO_SNDBUF:
 			retval = slcb_SetErrno(EINVAL);
 			goto exit;
 		default:

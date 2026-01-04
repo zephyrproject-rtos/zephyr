@@ -150,6 +150,18 @@
 		    (default_value))
 
 /**
+ * @brief Convert a devicetree GPIO phandle+specifier to GPIOTE node.
+ */
+#define NRF_DT_GPIOTE_NODE_BY_IDX(node_id, prop, idx) \
+	DT_PHANDLE(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx), gpiote_instance)
+
+/**
+ * @brief Equivalent to NRF_DT_GPIOTE_NODE_BY_IDX(node_id, prop, 0)
+ */
+#define NRF_DT_GPIOTE_NODE(node_id, prop) \
+	NRF_DT_GPIOTE_NODE_BY_IDX(node_id, prop, 0)
+
+/**
  * @brief Convert a devicetree GPIO phandle+specifier to GPIOTE instance number.
  *
  * Some of nRF SoCs may have more instances of GPIOTE.
@@ -185,9 +197,7 @@
  *     NRF_DT_GPIOTE_INST_BY_IDX(DT_NODELABEL(foo), rx_gpios, 1) // = 20
  */
 #define NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, idx)			\
-	DT_PROP(DT_PHANDLE(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx),	\
-			   gpiote_instance),				\
-		instance)
+	DT_PROP(NRF_DT_GPIOTE_NODE_BY_IDX(node_id, prop, idx), instance)
 
 /**
  * @brief Equivalent to NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, 0)

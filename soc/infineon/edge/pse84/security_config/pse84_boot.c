@@ -65,7 +65,9 @@ void ifx_pse84_cm55_startup(void)
 	cy_ppc0_init();
 	cy_ppc1_init();
 
+#ifdef CONFIG_CORTEX_M_SYSTICK
 	sys_clock_disable();
+#endif
 
 	for (;;) {
 	}

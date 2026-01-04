@@ -5,48 +5,51 @@ if SOC_MIMX94398_M7_1
 
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
-config FLASH_SIZE
+configdefault FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
-config FLASH_BASE_ADDRESS
+configdefault FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-config MCUX_CORE_SUFFIX
+configdefault MCUX_CORE_SUFFIX
 	default "_cm7_core1" if SOC_MIMX94398_M7_1
 
-config NUM_IRQS
+configdefault NUM_IRQS
 	default 238
 
-config CORTEX_M_SYSTICK
+configdefault CORTEX_M_SYSTICK
 	default n if MCUX_GPT_TIMER
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default 32768 if MCUX_GPT_TIMER
 
-config ETH_NXP_IMX_MSGINTR
+configdefault ETH_NXP_IMX_MSGINTR
 	default 2
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default n
 
 if PM
 
-config IDLE_STACK_SIZE
+configdefault IDLE_STACK_SIZE
 	default 640
 
-config PM_S2RAM
+configdefault PM_S2RAM
 	default y
 
-config HAS_PM_S2RAM_CUSTOM_MARKING
+configdefault HAS_PM_S2RAM_CUSTOM_MARKING
 	default y
 
-config MCUX_GPT_TIMER
+configdefault MCUX_GPT_TIMER
 	default y
 
-config SYS_CLOCK_TICKS_PER_SEC
+configdefault SYS_CLOCK_TICKS_PER_SEC
 	default 1024
 
 endif
+
+configdefault DMA_TCD_QUEUE_SIZE
+	default 4
 
 endif # SOC_MIMX94398_M7_1

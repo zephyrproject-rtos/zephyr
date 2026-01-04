@@ -911,7 +911,7 @@ GDB Stub
 To enable GDB stub for remote debugging on a new architecture:
 
 #. Create a new ``gdbstub.h`` header file under appropriate architecture
-   include directory (``include/arch/<arch>/gdbstub.h``).
+   include directory (:file:`include/zephyr/arch/<arch>/gdbstub.h`).
 
    * Create a new struct ``struct gdb_ctx`` as the GDB context.
 

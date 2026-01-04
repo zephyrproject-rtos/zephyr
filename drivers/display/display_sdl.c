@@ -43,7 +43,6 @@ struct sdl_display_task {
 	};
 };
 
-
 struct sdl_display_config {
 	uint16_t height;
 	uint16_t width;
@@ -57,6 +56,7 @@ struct sdl_display_data {
 	void *texture;
 	void *read_texture;
 	void *background_texture;
+	void *round_disp_mask;
 	bool display_on;
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
@@ -83,20 +83,36 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 	struct sdl_display_data *disp_data = dev->data;
 
 	switch (task->op) {
-	case SDL_WRITE:
-		sdl_display_write_bottom(task->write.desc->height, task->write.desc->width,
-					 task->write.x, task->write.y, disp_data->renderer,
-					 disp_data->mutex, disp_data->texture,
-					 disp_data->background_texture, disp_data->buf,
-					 disp_data->display_on,
-					 task->write.desc->frame_incomplete,
-					 CONFIG_SDL_DISPLAY_COLOR_TINT);
+	case SDL_WRITE: {
+		struct sdl_display_write_params write_params = {
+			.height = task->write.desc->height,
+			.width = task->write.desc->width,
+			.x = task->write.x,
+			.y = task->write.y,
+			.renderer = disp_data->renderer,
+			.mutex = disp_data->mutex,
+			.texture = disp_data->texture,
+			.background_texture = disp_data->background_texture,
+			.buf = disp_data->buf,
+			.display_on = disp_data->display_on,
+			.frame_incomplete = task->write.desc->frame_incomplete,
+			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
+			.round_disp_mask = disp_data->round_disp_mask,
+		};
+		sdl_display_write_bottom(&write_params);
 		break;
-	case SDL_BLANKING_OFF:
-		sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
-						disp_data->background_texture,
-						CONFIG_SDL_DISPLAY_COLOR_TINT);
+	}
+	case SDL_BLANKING_OFF: {
+		struct sdl_display_blanking_off_params blanking_off_params = {
+			.renderer = disp_data->renderer,
+			.texture = disp_data->texture,
+			.background_texture = disp_data->background_texture,
+			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
+			.round_disp_mask = disp_data->round_disp_mask,
+		};
+		sdl_display_blanking_off_bottom(&blanking_off_params);
 		break;
+	}
 	case SDL_BLANKING_ON:
 		sdl_display_blanking_on_bottom(disp_data->renderer);
 		break;
@@ -119,13 +135,28 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
 	}
 
-	int rc = sdl_display_init_bottom(
-		config->height, config->width, sdl_display_zoom_pct, use_accelerator,
-		&disp_data->window, dev, config->title, &disp_data->renderer, &disp_data->mutex,
-		&disp_data->texture, &disp_data->read_texture, &disp_data->background_texture,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
-		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+	struct sdl_display_init_params init_params = {
+		.height = config->height,
+		.width = config->width,
+		.zoom_pct = sdl_display_zoom_pct,
+		.use_accelerator = use_accelerator,
+		.window = &disp_data->window,
+		.window_user_data = dev,
+		.title = config->title,
+		.renderer = &disp_data->renderer,
+		.mutex = &disp_data->mutex,
+		.texture = &disp_data->texture,
+		.read_texture = &disp_data->read_texture,
+		.background_texture = &disp_data->background_texture,
+		.transparency_grid_color1 = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
+		.transparency_grid_color2 = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
+		.transparency_grid_cell_size = CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE,
+		.round_disp_mask = COND_CODE_1(CONFIG_SDL_DISPLAY_ROUNDED_MASK,
+						(&disp_data->round_disp_mask), NULL),
+		.mask_color = CONFIG_SDL_DISPLAY_ROUNDED_MASK_COLOR,
+		};
+
+	int rc = sdl_display_init_bottom(&init_params);
 
 	k_sem_give(&disp_data->task_sem);
 
@@ -289,64 +320,31 @@ static void sdl_display_write_bgr565(uint8_t *disp_buf,
 	}
 }
 
-static void sdl_display_write_mono(uint8_t *disp_buf,
-		const struct display_buffer_descriptor *desc, const void *buf,
-		const bool one_is_black)
+static void sdl_display_write_mono(uint8_t *disp_buf, const struct display_buffer_descriptor *desc,
+				   const void *buf, const bool one_is_black)
 {
+	const uint32_t pixel_on = one_is_black ? 0U : 0x00FFFFFF;
 	uint32_t w_idx;
 	uint32_t h_idx;
-	uint32_t tile_idx;
-	uint32_t pixel;
+	bool pixel;
 	const uint8_t *byte_ptr;
-	uint32_t one_color;
-	uint8_t *disp_buf_start;
 
-	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U),
-			"Input buffer too small");
-	__ASSERT((desc->height % 8) == 0U,
-			"Input buffer height not aligned per 8 pixels");
+	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Input buffer too small");
 
-	if (one_is_black) {
-		one_color = 0U;
-	} else {
-		one_color = 0x00FFFFFF;
-	}
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			byte_ptr = buf;
 
-	if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
-		for (tile_idx = 0U; tile_idx < desc->height / 8U; ++tile_idx) {
-			for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-				byte_ptr =
-					(const uint8_t *)buf + ((tile_idx * desc->pitch) + w_idx);
-				disp_buf_start = disp_buf;
-				for (h_idx = 0U; h_idx < 8; ++h_idx) {
-					if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U) {
-						pixel = one_color;
-					} else {
-						pixel = ~one_color;
-					}
-					*((uint32_t *)disp_buf) = pixel | 0xFF000000;
-					disp_buf += (desc->width * 4U);
-				}
-				disp_buf = disp_buf_start;
-				disp_buf += 4;
+			if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
+				byte_ptr += ((h_idx / 8U) * DIV_ROUND_UP(desc->pitch, 1U)) + w_idx;
+				pixel = !!(*byte_ptr & mono_pixel_order(h_idx % 8U));
+			} else {
+				byte_ptr += (h_idx * DIV_ROUND_UP(desc->pitch, 8U)) + (w_idx / 8U);
+				pixel = !!(*byte_ptr & mono_pixel_order(w_idx % 8U));
 			}
-			disp_buf += 7 * (desc->width * 4U);
-		}
-	} else {
-		for (h_idx = 0; h_idx < desc->height; h_idx++) {
-			for (tile_idx = 0; tile_idx < desc->width / 8; tile_idx++) {
-				byte_ptr = (const uint8_t *)buf +
-					   ((h_idx * desc->width / 8) + tile_idx);
-				for (w_idx = 0; w_idx < 8; w_idx++) {
-					if ((*byte_ptr & mono_pixel_order(w_idx)) != 0U) {
-						pixel = one_color;
-					} else {
-						pixel = ~one_color;
-					}
-					*((uint32_t *)disp_buf + w_idx) = pixel | 0xFF000000;
-				}
-				disp_buf += 8 * sizeof(uint32_t);
-			}
+
+			*((uint32_t *)disp_buf) = (pixel ? pixel_on : ~pixel_on) | 0xFF000000;
+			disp_buf += 4;
 		}
 	}
 }
@@ -524,31 +522,33 @@ static void sdl_display_read_mono(const uint8_t *read_buf,
 				  const struct display_buffer_descriptor *desc, void *buf,
 				  const bool one_is_black)
 {
+	const uint32_t pixel_on = one_is_black ? 0xFF000000 : 0xFFFFFFFF;
 	uint32_t w_idx;
 	uint32_t h_idx;
-	uint32_t tile_idx;
-	uint8_t tile;
+	uint8_t bits;
 	const uint32_t *pix_ptr;
 	uint8_t *buf8;
 
 	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 8U), "Read buffer is too small");
-	__ASSERT((desc->height % 8U) == 0U, "Read buffer height not aligned per 8 pixels");
 
-	for (tile_idx = 0U; tile_idx < (desc->height / 8U); ++tile_idx) {
-		buf8 = (void *)(((uint8_t *)buf) + desc->pitch * tile_idx);
-
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
 		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
-			tile = 0;
+			pix_ptr = (const uint32_t *)read_buf + h_idx * desc->pitch + w_idx;
+			buf8 = buf;
 
-			for (h_idx = 0U; h_idx < 8; ++h_idx) {
-				pix_ptr = (const uint32_t *)read_buf +
-					  ((tile_idx * 8 + h_idx) * desc->pitch + w_idx);
-				if ((*pix_ptr)) {
-					tile |= mono_pixel_order(h_idx);
-				}
+			if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
+				buf8 += (h_idx / 8U) * DIV_ROUND_UP(desc->pitch, 1U) + (w_idx);
+				bits = mono_pixel_order(h_idx % 8U);
+			} else {
+				buf8 += (h_idx)*DIV_ROUND_UP(desc->pitch, 8U) + (w_idx / 8U);
+				bits = mono_pixel_order(w_idx % 8U);
 			}
-			*buf8 = one_is_black ? ~tile : tile;
-			buf8 += 1;
+
+			if (*pix_ptr == pixel_on) {
+				*buf8 |= bits;
+			} else {
+				*buf8 &= ~bits;
+			}
 		}
 	}
 }
@@ -611,9 +611,20 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 	memset(disp_data->read_buf, 0, desc->pitch * desc->height * 4);
 
-	err = sdl_display_read_bottom(desc->height, desc->width, x, y, disp_data->renderer,
-				      disp_data->read_buf, desc->pitch, disp_data->mutex,
-				      disp_data->texture, disp_data->read_texture);
+	struct sdl_display_read_params read_params = {
+		.height = desc->height,
+		.width = desc->width,
+		.x = x,
+		.y = y,
+		.renderer = disp_data->renderer,
+		.buf = disp_data->read_buf,
+		.pitch = desc->pitch,
+		.mutex = disp_data->mutex,
+		.texture = disp_data->texture,
+		.read_texture = disp_data->read_texture,
+	};
+
+	err = sdl_display_read_bottom(&read_params);
 
 	if (err) {
 		k_mutex_unlock(&disp_data->task_mutex);
@@ -779,9 +790,16 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 
 static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 {
-	sdl_display_cleanup_bottom(&disp_data->window, &disp_data->renderer, &disp_data->mutex,
-				   &disp_data->texture, &disp_data->read_texture,
-				   &disp_data->background_texture);
+	struct sdl_display_cleanup_params cleanup_params = {
+		.window = &disp_data->window,
+		.renderer = &disp_data->renderer,
+		.mutex = &disp_data->mutex,
+		.texture = &disp_data->texture,
+		.read_texture = &disp_data->read_texture,
+		.background_texture = &disp_data->background_texture,
+		.round_disp_mask = &disp_data->round_disp_mask,
+	};
+	sdl_display_cleanup_bottom(&cleanup_params);
 }
 
 static DEVICE_API(display, sdl_display_api) = {

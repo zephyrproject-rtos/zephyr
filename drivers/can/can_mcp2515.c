@@ -338,7 +338,7 @@ static int mcp2515_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_MCP2515_MAX_FILTERS;
 }
 
 static int mcp2515_set_timing(const struct device *dev, const struct can_timing *timing)
@@ -622,12 +622,13 @@ static int mcp2515_add_rx_filter(const struct device *dev, can_rx_callback_t rx_
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	/* find free filter */
-	while ((BIT(filter_id) & dev_data->filter_usage) && (filter_id < CONFIG_CAN_MAX_FILTER)) {
+	while ((BIT(filter_id) & dev_data->filter_usage) &&
+		(filter_id < CONFIG_CAN_MCP2515_MAX_FILTERS)) {
 		filter_id++;
 	}
 
 	/* setup filter */
-	if (filter_id < CONFIG_CAN_MAX_FILTER) {
+	if (filter_id < CONFIG_CAN_MCP2515_MAX_FILTERS) {
 		dev_data->filter_usage |= BIT(filter_id);
 
 		dev_data->filter[filter_id] = *filter;
@@ -647,7 +648,7 @@ static void mcp2515_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct mcp2515_data *dev_data = dev->data;
 
-	if (filter_id < 0 || filter_id >= CONFIG_CAN_MAX_FILTER) {
+	if (filter_id < 0 || filter_id >= CONFIG_CAN_MCP2515_MAX_FILTERS) {
 		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
@@ -681,7 +682,7 @@ static void mcp2515_rx_filter(const struct device *dev, struct can_frame *frame)
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	for (; filter_id < CONFIG_CAN_MAX_FILTER; filter_id++) {
+	for (; filter_id < CONFIG_CAN_MCP2515_MAX_FILTERS; filter_id++) {
 		if (!(BIT(filter_id) & dev_data->filter_usage)) {
 			continue; /* filter slot empty */
 		}

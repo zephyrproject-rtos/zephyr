@@ -202,6 +202,9 @@ static int start_read(const struct device *dev,
 	int error;
 	uint32_t tmp32;
 	ADC_Type *base = config->base;
+	size_t min_buffer_size = 0;
+
+	uint32_t channels_count = POPCOUNT(sequence->channels);
 
 	switch (sequence->resolution) {
 	case 8:
@@ -258,10 +261,25 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
+	min_buffer_size = channels_count * sizeof(uint16_t);
+
+	if (channels_count == 0) {
+		LOG_ERR("No channels selected");
+		return -EINVAL;
+	}
+
+	if (sequence->buffer_size < min_buffer_size) {
+		LOG_ERR("sequence buffer size too small %d < %d",
+			sequence->buffer_size, min_buffer_size);
+		return -EINVAL;
+	}
+
 	if (sequence->options) {
-		if (sequence->buffer_size <
-			2 * (sequence->options->extra_samplings + 1)) {
-			LOG_ERR("sequence buffer size too small < 2 * extra + 2");
+		min_buffer_size = channels_count * sizeof(uint16_t) *
+				  (sequence->options->extra_samplings + 1);
+		if (sequence->buffer_size < min_buffer_size) {
+			LOG_ERR("sequence buffer size too small for samplings: %d < %d",
+				sequence->buffer_size, min_buffer_size);
 			return -EINVAL;
 		}
 	}

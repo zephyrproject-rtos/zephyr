@@ -17,6 +17,9 @@ dut: &sercom1 {
 
 	pinctrl-0 = <&sercom1_uart_default>;
 	pinctrl-names = "default";
+
+	dmas = <&dmac 0x3 0x6>, <&dmac 0x4 0x7>;
+	dma-names = "rx", "tx";
 };
 
 dut_aux: &sercom5 {
@@ -30,6 +33,9 @@ dut_aux: &sercom5 {
 
 	pinctrl-0 = <&sercom5_uart_default>;
 	pinctrl-names = "default";
+
+	dmas = <&dmac 0x5 0xE>, <&dmac 0x6 0xF>;
+	dma-names = "rx", "tx";
 };
 
 &pinctrl {

@@ -541,7 +541,7 @@ New Boards
 
 * Ai-Thinker Co., Ltd.
 
-   * :zephyr:board:`ai_m62_12f` (``ai_m62_12f``)
+   * :zephyr:board:`ai_m62_12f_kit` (``ai_m62_12f_kit``)
    * :zephyr:board:`esp32_cam` (``esp32_cam``)
 
 * Ambiq Micro, Inc.

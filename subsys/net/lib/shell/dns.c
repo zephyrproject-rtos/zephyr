@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
+#define DNS_TIMEOUT CONFIG_NET_SOCKETS_DNS_TIMEOUT
+
 #if defined(CONFIG_DNS_RESOLVER)
 static void dns_result_cb(enum dns_resolve_status status,
 			  struct dns_addrinfo *info,
@@ -262,7 +264,6 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 {
 
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_QUERY_TIMEOUT (MSEC_PER_SEC * 2) /* ms */
 	struct dns_resolve_context *ctx;
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
 	char *host, *type = NULL;
@@ -311,7 +312,7 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	ret = dns_resolve_name(ctx, host, qtype, NULL, dns_result_cb,
-				(void *)sh, DNS_QUERY_TIMEOUT);
+				(void *)sh, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", host, ret);
 	} else {
@@ -403,7 +404,6 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_SERVICE_TIMEOUT (MSEC_PER_SEC * 4) /* ms */
 	struct dns_resolve_context *ctx;
 	char *cp;
 	char *service;
@@ -427,7 +427,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	ret = dns_resolve_service(ctx, service, &dns_id, dns_service_cb,
-				(void *)sh, DNS_SERVICE_TIMEOUT);
+				(void *)sh, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", service, ret);
 		return ret;
@@ -444,7 +444,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 			char in6[NET_INET6_ADDRSTRLEN];
 		} str;
 
-		ret = k_msgq_get(&dns_infoq, &info, K_MSEC(DNS_SERVICE_TIMEOUT));
+		ret = k_msgq_get(&dns_infoq, &info, K_MSEC(DNS_TIMEOUT));
 		if (ret < 0) {
 			/* just assume a timeout so no more data to process */
 			break;
@@ -476,7 +476,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 			ret = dns_resolve_name(ctx, query, qtype,
 					       &dns_id,
 					       dns_service_cb, (void *)sh,
-					       DNS_SERVICE_TIMEOUT);
+					       DNS_TIMEOUT);
 			if (ret < 0) {
 				return ret;
 			}
@@ -508,7 +508,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 						       &dns_id,
 						       dns_service_cb,
 						       (void *)sh,
-						       DNS_SERVICE_TIMEOUT);
+						       DNS_TIMEOUT);
 				if (ret < 0) {
 					return ret;
 				}

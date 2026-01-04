@@ -1027,6 +1027,93 @@ static inline size_t sys_count_bits(const void *value, size_t len)
 	return cnt;
 }
 
+/**
+ * @brief Returns the sign of a number.
+ *
+ * @param x The input value to determine the sign
+ *
+ * @retval 1 if x is positive
+ * @retval -1 if x is negative
+ * @retval 0 if x is zero
+ */
+#define SYS_SIGN(x) (((x) > 0) - ((x) < 0))
+
+/**
+ * @brief Compute the Greatest Common Divisor (GCD) of two integers
+ * using the Euclidean algorithm.
+ *
+ * @param a First integer
+ * @param b Second integer
+ *
+ * @return The greatest common divisor of a and b, always returns an unsigned value.
+ *         If one of the parameters is 0, returns the absolute value of the other parameter.
+ */
+#define sys_gcd(a, b) ((((__typeof__(a))-1) < 0) ? sys_gcd_s(a, b) : sys_gcd_u(a, b))
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+static ALWAYS_INLINE uint32_t sys_gcd_u(uint32_t a, uint32_t b)
+{
+	uint32_t c;
+
+	if (a == 0) {
+		return b;
+	}
+
+	if (b == 0) {
+		return a;
+	}
+
+	c = a % b;
+	while (c != 0) {
+		a = b;
+		b = c;
+		c = a % b;
+	}
+
+	return b;
+}
+
+static ALWAYS_INLINE uint32_t sys_gcd_s(int32_t a, int32_t b)
+{
+	return sys_gcd_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
+}
+/**
+ * @endcond
+ */
+
+/**
+ * @brief Compute the Least Common Multiple (LCM) of two integers.
+ *
+ * @param a First integer
+ * @param b Second integer
+ *
+ * @retval The least common multiple of a and b.
+ * @retval 0 if either input is 0.
+ */
+#define sys_lcm(a, b) ((((__typeof__(a))-1) < 0) ? sys_lcm_s(a, b) : sys_lcm_u(a, b))
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+static ALWAYS_INLINE uint64_t sys_lcm_u(uint32_t a, uint32_t b)
+{
+	if (a == 0 || b == 0) {
+		return 0;
+	}
+
+	return (uint64_t)(a / sys_gcd_u(a, b)) * (uint64_t)b;
+}
+
+static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
+{
+	return sys_lcm_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
+}
+/**
+ * @endcond
+ */
+
 #ifdef __cplusplus
 }
 #endif

@@ -25,6 +25,7 @@
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpurad_ram0;
 		zephyr,shell-uart = &uart135;
+		zephyr,uart-mcumgr = &uart135;
 		zephyr,ieee802154 = &cpurad_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
@@ -62,8 +63,6 @@
 
 &cpusec_cpurad_ipc {
 	mbox-names = "tx", "rx";
-	tx-region = <&cpurad_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpurad_ipc_shm>;
 };
 
 ipc0: &cpuapp_cpurad_ipc {
@@ -83,10 +82,6 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &cpurad_dma_region {
-	status = "okay";
-};
-
-&cpurad_rx_partitions {
 	status = "okay";
 };
 

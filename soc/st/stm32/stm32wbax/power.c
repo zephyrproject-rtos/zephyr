@@ -245,11 +245,8 @@ void stm32_power_init(void)
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
 #ifdef CONFIG_DEBUG
-	LL_DBGMCU_EnableDBGStandbyMode();
 	LL_DBGMCU_APB7_GRP1_FreezePeriph(LL_DBGMCU_APB7_GRP1_RTC_STOP);
 	LL_DBGMCU_APB7_GRP1_FreezePeriph(LL_DBGMCU_APB7_GRP1_LPTIM1_STOP);
-#else
-	LL_DBGMCU_DisableDBGStandbyMode();
 #endif
 
 	/* Enable SRAM full retention */

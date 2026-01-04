@@ -2406,7 +2406,7 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct net_sockaddr *addr,
 		 * even for non-blocking socket.
 		 */
 		ret = tls_mbedtls_handshake(
-			ctx, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
+			ctx, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
 		if (ret < 0) {
 			if ((ret == -EAGAIN) && !is_non_block) {
 				ret = -ETIMEDOUT;
@@ -2468,8 +2468,12 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	 * non-blocking socket.
 	 */
 	ret = tls_mbedtls_handshake(
-		child, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
+		child, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
 	if (ret < 0) {
+		if ((ret == -EAGAIN) && is_blocking(parent->sock, 0)) {
+			ret = -ETIMEDOUT;
+		}
+
 		goto error;
 	}
 

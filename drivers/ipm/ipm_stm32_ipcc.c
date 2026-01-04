@@ -88,7 +88,9 @@ LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 struct stm32_ipcc_mailbox_config {
 	void (*irq_config_func)(const struct device *dev);
 	IPCC_TypeDef *ipcc;
+#if DT_INST_NUM_CLOCKS(0) != 0
 	struct stm32_pclken pclken;
+#endif
 };
 
 struct stm32_ipcc_mbx_data {
@@ -241,9 +243,10 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 
 	struct stm32_ipcc_mbx_data *data = dev->data;
 	const struct stm32_ipcc_mailbox_config *cfg = dev->config;
-	const struct device *clk;
+	__maybe_unused const struct device *clk;
 	uint32_t i;
 
+#if DT_INST_NUM_CLOCKS(0) != 0
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (!device_is_ready(clk)) {
@@ -256,12 +259,17 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 			     (clock_control_subsys_t)&cfg->pclken) != 0) {
 		return -EIO;
 	}
+#endif
 
 	/* Disable RX and TX interrupts */
 	IPCC_DisableIT_TXF(cfg->ipcc);
 	IPCC_DisableIT_RXO(cfg->ipcc);
 
+#if defined(CONFIG_SOC_SERIES_STM32MP2X)
+	data->num_ch = LL_IPCC_GetChannelNumber(cfg->ipcc);
+#else
 	data->num_ch = LL_IPCC_GetChannelConfig(cfg->ipcc);
+#endif
 
 	for (i = 0; i < data->num_ch; i++) {
 		/* Clear RX status */
@@ -290,7 +298,9 @@ static void stm32_ipcc_mailbox_config_func(const struct device *dev);
 static const struct stm32_ipcc_mailbox_config stm32_ipcc_mailbox_0_config = {
 	.irq_config_func = stm32_ipcc_mailbox_config_func,
 	.ipcc = (IPCC_TypeDef *)DT_INST_REG_ADDR(0),
+#if DT_INST_NUM_CLOCKS(0) != 0
 	.pclken = STM32_DT_INST_CLOCK_INFO(0),
+#endif
 };
 
 DEVICE_DT_INST_DEFINE(0,

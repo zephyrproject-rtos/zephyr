@@ -15,7 +15,7 @@ if GPIO_CY8C95XX
 
 config GPIO_CY8C95XX_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default I2C_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 

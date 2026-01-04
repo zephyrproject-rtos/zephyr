@@ -56,5 +56,5 @@ zephyr_library_sources_ifdef(CONFIG_ST7789V display_st7789v.c)
 zephyr_library_sources_ifdef(CONFIG_ST7796S display_st7796s.c)
 zephyr_library_sources_ifdef(CONFIG_STM32_LTDC display_stm32_ltdc.c)
 zephyr_library_sources_ifdef(CONFIG_UC81XX uc81xx.c)
-zephyr_library_sources_ifdef(CONFIG_WAVESHARE_7INCH_DSI_LCD_C display_waveshare_dsi_lcd.c)
+zephyr_library_sources_ifdef(CONFIG_WAVESHARE_DSI2DPI display_waveshare_dsi2dpi.c)
 # zephyr-keep-sorted-stop

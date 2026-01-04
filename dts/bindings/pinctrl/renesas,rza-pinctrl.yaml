@@ -25,7 +25,7 @@ description: |
       };
 
 
-compatible: renesas,rza-pinctrl
+compatible: "renesas,rza-pinctrl"
 
 include: base.yaml
 properties:

@@ -9,8 +9,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
-#include <nrf_ironside/tdd.h>
-#include <uicr/uicr.h>
+#include <ironside/se/api.h>
+#include <ironside_zephyr/se/uicr_periphconf.h>
 
 #undef ETR_MODE_MODE_CIRCULARBUF
 
@@ -262,7 +262,7 @@ static int coresight_nrf_init(const struct device *dev)
 	return 0;
 }
 
-#define DEBUG_CORESIGHT_NRF_INIT_PRIORITY UTIL_INC(CONFIG_NRF_IRONSIDE_CALL_INIT_PRIORITY)
+#define DEBUG_CORESIGHT_NRF_INIT_PRIORITY UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY)
 
 #define CORESIGHT_NRF_INST(inst)                                                                   \
 	COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(inst, 0),                                      \

@@ -15,4 +15,5 @@ supported:
   - gpio
   - rtc
   - watchdog
+  - adc
 vendor: nxp

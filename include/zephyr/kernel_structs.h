@@ -161,8 +161,7 @@ struct _cpu {
 	struct _ready_q ready_q;
 #endif
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
 	/* Coop thread preempted by current metairq, or NULL */
 	struct k_thread *metairq_preempted;
 #endif

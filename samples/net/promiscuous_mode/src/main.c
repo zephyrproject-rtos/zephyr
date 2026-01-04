@@ -49,8 +49,8 @@ static int get_ports(struct net_pkt *pkt, uint16_t *src, uint16_t *dst)
 		return -EINVAL;
 	}
 
-	*src = ntohs(udp_hdr->src_port);
-	*dst = ntohs(udp_hdr->dst_port);
+	*src = net_ntohs(udp_hdr->src_port);
+	*dst = net_ntohs(udp_hdr->dst_port);
 
 	return 0;
 }
@@ -60,7 +60,7 @@ static void print_info(struct net_pkt *pkt)
 	char src_addr_buf[NET_IPV6_ADDR_LEN], *src_addr;
 	char dst_addr_buf[NET_IPV6_ADDR_LEN], *dst_addr;
 	uint16_t dst_port = 0U, src_port = 0U;
-	sa_family_t family = AF_UNSPEC;
+	net_sa_family_t family = NET_AF_UNSPEC;
 	void *dst, *src;
 	uint8_t next_hdr;
 	const char *proto;

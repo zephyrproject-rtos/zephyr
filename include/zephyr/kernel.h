@@ -532,6 +532,108 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  */
 __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 				       size_t *unused_ptr);
+
+/**
+ * @brief Set the unused stack threshold for a thread as a percentage
+ *
+ * This function sets the unused stack safety usage threshold for a thread as a
+ * percentage of the specified thread's total stack size. When performing a
+ * runtime stack safety usage check, if the thread's unused stack is detected
+ * to be below this threshold, then a runtime stack safety usage hook will be
+ * invoked. Setting this threshold to 0% disables the hook.
+ *
+ * @param thread Thread on which to set the threshold
+ * @param pct Percentage of total stack size to use as threshold
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p pct exceeds 99%
+ */
+__syscall int k_thread_runtime_stack_unused_threshold_pct_set(struct k_thread *thread,
+							      uint32_t pct);
+
+/**
+ * @brief Set the unused stack threshold for a thread as a number of bytes
+ *
+ * This function sets the unused stack safety usage threshold for a thread as a
+ * number of bytes. When performing a runtime stack safety usage check, if the
+ * thread's unused stack is detected to be below this threshold, then a runtime
+ * stack safety usage hook will be invoked. Setting this threshold to 0 bytes
+ * disables the hook.
+ *
+ * @param thread Thread on which to set the threshold
+ * @param threshold Number of bytes to use as threshold
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p threshold exceeds stack size
+ */
+__syscall int k_thread_runtime_stack_unused_threshold_set(struct k_thread *thread,
+							  size_t threshold);
+
+/**
+ * @brief Get the unused stack usage threshold (in bytes)
+ *
+ * This function retrieves the unused stack usage threshold for a thread as a
+ * number of bytes. A value of 0 bytes indicates thread does not have an
+ * unused stack usage threshold and that the runtime stack safety usage hook is
+ * disabled for this thread.
+ *
+ * @param thread Thread from which to retrieve the threshold
+ *
+ * @retval Unused stack threshold (in bytes)
+ */
+__syscall size_t k_thread_runtime_stack_unused_threshold_get(struct k_thread *thread);
+
+/**
+ * @brief Thread stack safety handler type
+ *
+ * This type defines the prototype for a custom thread stack safety handler.
+ * The handler is invoked when a thread's unused stack space is detected to
+ * have crossed below its configured threshold.
+ *
+ * @param thread Thread whose stack has crossed the safety threshold
+ * @param unused_space Amount of unused stack space remaining
+ * @param arg Pointer to user defined argument passed to the handler
+ */
+typedef void (*k_thread_stack_safety_handler_t)(const struct k_thread *thread,
+						size_t unused_space, void *arg);
+
+/**
+ * @brief Run the full stack safety check on a thread
+ *
+ * This function scans the specified thread's stack to determine how much of it
+ * remains unused. If the unused stack space is found to be less than the
+ * thread's configured threshold then the specified handler is executed.
+ *
+ * @param thread Thread whose stack to check
+ * @param unused_ptr Amount of unused stack space remaining
+ * @param handler Custom handler to invoke if threshold crossed
+ * @param arg Argument to pass to handler
+ *
+ * @return 0 on success, -ENOTSUP if forbidden by hardware policy
+ */
+int k_thread_runtime_stack_safety_full_check(const struct k_thread *thread,
+					     size_t *unused_ptr,
+					     k_thread_stack_safety_handler_t handler,
+					     void *arg);
+
+/**
+ * @brief Run the an abbreviated stack safety check on a thread
+ *
+ * This function scans the specified thread's stack for evidence that it has
+ * crossed its configured threshold of unused stack space. If this evidence is
+ * found, the specified handler is executed.
+ *
+ * @param thread Thread whose stack to check
+ * @param unused_ptr Amount of unused stack space remaining
+ * @param handler Custom handler to invoke if threshold crossed
+ * @param arg Argument to pass to handler
+ *
+ * @return 0 on success, -ENOTSUP if forbidden by hardware policy
+ */
+int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
+						  size_t *unused_ptr,
+						  k_thread_stack_safety_handler_t handler,
+						  void *arg);
 #endif
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
@@ -859,7 +961,7 @@ struct _static_thread_data {
 			       entry, p1, p2, p3,			\
 			       prio, options, delay)			\
 	struct k_thread _k_thread_obj_##name;				\
-	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
+	const STRUCT_SECTION_ITERABLE(_static_thread_data,		\
 				_k_thread_data_##name) =		\
 		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
 				     _k_thread_stack_##name, stack_size,\
@@ -4439,9 +4541,9 @@ struct z_work_canceller {
  * from both the caller thread and the work queue thread.
  *
  * @note If CONFIG_KERNEL_COHERENCE is enabled the object must be allocated in
- * coherent memory; see arch_mem_coherent().  The stack on these architectures
- * is generally not coherent.  be stack-allocated.  Violations are detected by
- * runtime assertion.
+ * coherent memory; see sys_cache_is_mem_coherent().  The stack on these
+ * architectures is generally not coherent.  be stack-allocated.  Violations are
+ * detected by runtime assertion.
  */
 struct k_work_sync {
 	union {

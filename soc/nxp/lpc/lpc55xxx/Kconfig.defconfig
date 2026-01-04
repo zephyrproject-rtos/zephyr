@@ -1,10 +1,11 @@
-# Copyright 2019,2024 NXP
+# Copyright 2019, 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_LPC55XXX
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
+	default 119 if SOC_LPC55S36
 	default 60
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -52,6 +53,21 @@ config CAN_MCUX_MCAN
 	depends on CAN
 
 endif # SOC_LPC55S16
+
+if SOC_LPC55S36
+
+# Enable cache management features
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+config ICACHE_LINE_SIZE
+	default 256
+
+endif # SOC_LPC55S36
 
 if SOC_LPC55S69_CPU0
 

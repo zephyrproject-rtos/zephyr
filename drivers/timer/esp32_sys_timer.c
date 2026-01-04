@@ -57,7 +57,7 @@ static uint64_t get_systimer_alarm(void)
 	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 }
 
-static void sys_timer_isr(void *arg)
+static void IRAM_ATTR sys_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
@@ -146,12 +146,12 @@ static int sys_clock_driver_init(void)
 {
 	int ret;
 
-	ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
+	ret = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
 		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)),
-		sys_timer_isr,
-		NULL,
-		NULL);
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)) |
+			ESP_INTR_FLAG_IRAM,
+		sys_timer_isr, NULL, NULL);
 
 	if (ret != 0) {
 		return ret;

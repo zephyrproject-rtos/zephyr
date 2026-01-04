@@ -20,19 +20,19 @@
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 extern unsigned int z_clock_hw_cycles_per_sec;
+/* CYC_PER_TICK must be inside of systick capacities (<1Ghz) */
 #define CYC_PER_TICK (z_clock_hw_cycles_per_sec/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #else
 #define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#if (COUNTER_MAX / CYC_PER_TICK) == 1
+#pragma message("tickless does nothing as CONFIG_SYS_CLOCK_TICKS_PER_SEC too low")
+#endif
 #endif
 
 /* add MAX_TICKS protection */
 #define _MAX_TICKS (int)((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_TICKS ((_MAX_TICKS > 0) ? _MAX_TICKS : 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
-
-#if (COUNTER_MAX / CYC_PER_TICK) == 1
-#pragma message("tickless does nothing as CONFIG_SYS_CLOCK_TICKS_PER_SEC too low")
-#endif
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -109,8 +109,24 @@ static cycle_t cycle_pre_idle;
 /* Idle timer value before entering the idle state. */
 static uint32_t idle_timer_pre_idle;
 
+/* How many ticks the system was expected to sleep when
+ * idle timer was configured. Used to determine if the
+ * counter overflowed or not.
+ */
+static uint32_t idle_timer_scheduled_sleep_ticks;
+
 /* Idle timer used for timer while entering the idle state */
 static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
+
+/* Stub callback to satisfy Counter API (cannot be NULL) */
+static void idle_timer_alarm_stub(const struct device *dev, uint8_t chan_id,
+				uint32_t ticks, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(user_data);
+}
 #endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 #endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 
@@ -123,7 +139,7 @@ static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m
 void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 {
 	struct counter_alarm_cfg cfg = {
-		.callback = NULL,
+		.callback = idle_timer_alarm_stub,
 		.ticks = counter_us_to_ticks(idle_timer, max_lpm_time_us),
 		.user_data = NULL,
 		.flags = 0,
@@ -144,6 +160,8 @@ void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * difference in measurements after exiting the idle state.
 	 */
 	counter_get_value(idle_timer, &idle_timer_pre_idle);
+
+	idle_timer_scheduled_sleep_ticks = cfg.ticks;
 }
 
 uint64_t z_cms_lptim_hook_on_lpm_exit(void)
@@ -151,18 +169,34 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	/**
 	 * Calculate how much time elapsed according to counter.
 	 */
-	uint32_t idle_timer_post, idle_timer_diff;
+	uint32_t idle_timer_post, idle_timer_diff, idle_timer_top;
+	bool idle_timer_int_pending, idle_timer_wrap;
 
 	counter_get_value(idle_timer, &idle_timer_post);
+	idle_timer_int_pending = counter_get_pending_int(idle_timer) ? true : false;
+	idle_timer_top = counter_get_top_value(idle_timer);
 
 	/**
 	 * Check for counter timer overflow
 	 * (TODO: this doesn't work for downcounting timers!)
 	 */
 	if (idle_timer_pre_idle > idle_timer_post) {
-		idle_timer_diff =
-			(counter_get_top_value(idle_timer) - idle_timer_pre_idle) +
-			idle_timer_post + 1;
+		/* Pre > Post: counter wrapped (overflow occurred) */
+		idle_timer_wrap = true;
+	} else if (idle_timer_pre_idle == idle_timer_post) {
+		/* Pre == Post: consider wrap only if interrupt is pending */
+		idle_timer_wrap = idle_timer_int_pending;
+	} else {
+		/* Pre < Post: normally no wrap; if interrupt pending and the
+		 * expected sleep spans the counter top, treat as wrap.
+		 */
+		idle_timer_wrap = idle_timer_int_pending &&
+			((uint64_t)idle_timer_pre_idle + idle_timer_scheduled_sleep_ticks
+				>= idle_timer_top);
+	}
+
+	if (idle_timer_wrap) {
+		idle_timer_diff = idle_timer_top - idle_timer_pre_idle + idle_timer_post + 1;
 	} else {
 		idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
 	}
@@ -522,7 +556,14 @@ void sys_clock_idle_exit(void)
 			last_load = CYC_PER_TICK;
 			SysTick->LOAD = last_load - 1;
 			SysTick->VAL = 0; /* resets timer to last_load */
-			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+			if (!IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)) {
+				SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+			} else {
+				NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+				SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
+						  SysTick_CTRL_TICKINT_Msk |
+						  SysTick_CTRL_CLKSOURCE_Msk);
+			}
 		}
 	}
 }

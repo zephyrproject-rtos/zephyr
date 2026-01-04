@@ -1089,6 +1089,172 @@ quit:
 	return ret;
 }
 
+static int dns_validate_record(struct dns_resolve_context *ctx, struct dns_msg_t *dns_msg,
+			       struct dns_addrinfo *info, enum dns_rr_type *answer_type,
+			       uint32_t *ttl)
+{
+	uint8_t *addr, *pos, *src;
+	int ret, address_size;
+
+	/* dname_ptr no longer seems to be used. So just passing 0. */
+	ret = dns_unpack_answer(dns_msg, 0, ttl, answer_type);
+	if (ret < 0) {
+		errno = -ret;
+		return DNS_EAI_SYSTEM;
+	}
+
+	switch (dns_msg->response_type) {
+	case DNS_RESPONSE_DATA: {
+		/* Synthesize a reply and place the returned info
+		 * in to the ai_canonname field. Use AF_LOCAL address
+		 * family as this is not a real address.
+		 */
+		struct net_buf *result;
+
+		address_size = MIN(dns_msg->response_length, DNS_MAX_NAME_SIZE);
+
+		/* Temporary buffer that is needed by dns_unpack_name()
+		 * to unpack the resolved name.
+		 */
+		result = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
+		if (result == NULL) {
+			NET_DBG("Cannot allocate buffer for DNS query result");
+			return DNS_EAI_MEMORY;
+		}
+
+		pos = dns_msg->msg + dns_msg->response_position;
+		ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, pos, result, NULL);
+		if (ret < 0) {
+			errno = -ret;
+			net_buf_unref(result);
+			return DNS_EAI_SYSTEM;
+		}
+
+		info->ai_family = NET_AF_LOCAL;
+		info->ai_addrlen = MIN(result->len, DNS_MAX_NAME_SIZE);
+		memcpy(info->ai_canonname, result->data, info->ai_addrlen);
+		info->ai_canonname[info->ai_addrlen] = '\0';
+
+		net_buf_unref(result);
+		break;
+	}
+	case DNS_RESPONSE_IP: {
+		if (*answer_type == DNS_RR_TYPE_A) {
+			address_size = DNS_IPV4_LEN;
+			addr = (uint8_t *)&net_sin(&info->ai_addr)->sin_addr;
+			info->ai_family = NET_AF_INET;
+			info->ai_addr.sa_family = NET_AF_INET;
+			info->ai_addrlen = sizeof(struct net_sockaddr_in);
+		} else if (*answer_type == DNS_RR_TYPE_AAAA) {
+/* We cannot resolve IPv6 address if IPv6 is
+ * disabled. The reason being that
+ * "struct net_sockaddr" does not have enough space
+ * for IPv6 address in that case.
+ */
+#if defined(CONFIG_NET_IPV6)
+			address_size = DNS_IPV6_LEN;
+			addr = (uint8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
+			info->ai_family = NET_AF_INET6;
+			info->ai_addr.sa_family = NET_AF_INET6;
+			info->ai_addrlen = sizeof(struct net_sockaddr_in6);
+#else
+			return DNS_EAI_FAMILY;
+#endif
+		} else {
+			return DNS_EAI_SYSTEM;
+		}
+
+		if (dns_msg->response_length < address_size) {
+			/* it seems this is a malformed message */
+			errno = EMSGSIZE;
+			return DNS_EAI_SYSTEM;
+		}
+
+		if ((dns_msg->response_position + address_size) > dns_msg->msg_size) {
+			/* Too short message */
+			errno = EMSGSIZE;
+			return DNS_EAI_SYSTEM;
+		}
+
+		src = dns_msg->msg + dns_msg->response_position;
+		memcpy(addr, src, address_size);
+
+		break;
+	}
+	case DNS_RESPONSE_TXT:
+		pos = dns_msg->msg + dns_msg->response_position;
+
+		info->ai_family = NET_AF_UNSPEC;
+		info->ai_extension = DNS_RESOLVE_TXT;
+		info->ai_txt.textlen = MIN(dns_msg->response_length, DNS_MAX_TEXT_SIZE);
+		memcpy(info->ai_txt.text, pos, info->ai_txt.textlen);
+		info->ai_txt.text[info->ai_txt.textlen] = '\0';
+		break;
+
+	case DNS_RESPONSE_SRV: {
+		int priority;
+		int weight;
+		int port;
+		struct net_buf *target;
+
+		address_size = MIN(dns_msg->response_length, 6 + DNS_MAX_NAME_SIZE);
+		if (address_size < 6) {
+			/* 3 tuples of be16 - priority, weight, port */
+			errno = EMSGSIZE;
+			return DNS_EAI_SYSTEM;
+		}
+
+		/* Temporary buffer that is needed by dns_unpack_name()
+		 * to unpack the target.
+		 */
+		target = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
+		if (target == NULL) {
+			NET_DBG("Cannot allocate buffer for DNS query target");
+			return DNS_EAI_MEMORY;
+		}
+
+		pos = dns_msg->msg + dns_msg->response_position;
+
+		priority = dns_unpack_srv_priority(pos);
+		weight = dns_unpack_srv_weight(pos);
+		port = dns_unpack_srv_port(pos);
+
+		ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, pos + 6, target, NULL);
+		if (ret < 0) {
+			errno = -ret;
+			net_buf_unref(target);
+			return DNS_EAI_SYSTEM;
+		}
+
+		info->ai_family = NET_AF_UNSPEC;
+		info->ai_extension = DNS_RESOLVE_SRV;
+		info->ai_srv.priority = priority;
+		info->ai_srv.weight = weight;
+		info->ai_srv.port = port;
+		info->ai_srv.targetlen = MIN(target->len, DNS_MAX_NAME_SIZE);
+		memcpy(info->ai_srv.target, target->data, info->ai_srv.targetlen);
+		info->ai_srv.target[info->ai_srv.targetlen] = '\0';
+
+		net_buf_unref(target);
+
+		break;
+	}
+	case DNS_RESPONSE_CNAME_NO_IP:
+		/* Instead of using the QNAME at DNS_QUERY_POS,
+		 * we will use this CNAME
+		 */
+		break;
+	default:
+		return DNS_EAI_FAIL;
+	}
+
+	/* Update the answer offset to point to the next RR (answer) */
+	dns_msg->answer_offset += dns_msg->response_position - dns_msg->answer_offset;
+	dns_msg->answer_offset += dns_msg->response_length;
+
+	return 0;
+}
+
 /* Unit test needs to be able to call this function */
 #if !defined(CONFIG_NET_TEST)
 static
@@ -1100,12 +1266,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		     struct net_buf *dns_cname,
 		     uint16_t *query_hash)
 {
-	struct dns_addrinfo info = { 0 };
 	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
-	uint8_t *src, *addr;
-	int address_size;
-	/* index that points to the current answer being analyzed */
-	int answer_ptr;
+	struct dns_addrinfo info = {0};
 	int items;
 	int server_idx;
 	int ret = 0;
@@ -1195,290 +1357,53 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 	 * are handled the same way.
 	 */
 
-	answer_ptr = DNS_QUERY_POS;
 	items = 0;
-	server_idx = 0;
 	enum dns_rr_type answer_type = DNS_RR_TYPE_INVALID;
 
-	while (server_idx < dns_header_ancount(dns_msg->msg)) {
-		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl,
-					&answer_type);
+	if (*query_idx < 0) {
+		ret = update_query_idx(ctx, dns_msg, dns_id, query_idx, query_hash);
 		if (ret < 0) {
 			errno = -ret;
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
-
-		switch (dns_msg->response_type) {
-		case DNS_RESPONSE_DATA:
-		case DNS_RESPONSE_IP:
-			if (*query_idx < 0) {
-				ret = update_query_idx(ctx, dns_msg, dns_id,
-							query_idx, query_hash);
-				if (ret < 0) {
-					errno = -ret;
-					ret = DNS_EAI_SYSTEM;
-					goto quit;
-				}
-			}
-
-			if (ctx->queries[*query_idx].query_type ==
-							DNS_QUERY_TYPE_A) {
-				if (answer_type != DNS_RR_TYPE_A) {
-					ret = DNS_EAI_ADDRFAMILY;
-					goto quit;
-				}
-
-rr_qtype_a:
-				address_size = DNS_IPV4_LEN;
-				addr = (uint8_t *)&net_sin(&info.ai_addr)->
-								sin_addr;
-				info.ai_family = NET_AF_INET;
-				info.ai_addr.sa_family = NET_AF_INET;
-				info.ai_addrlen = sizeof(struct net_sockaddr_in);
-
-			} else if (ctx->queries[*query_idx].query_type ==
-							DNS_QUERY_TYPE_AAAA) {
-				if (answer_type != DNS_RR_TYPE_AAAA) {
-					ret = DNS_EAI_ADDRFAMILY;
-					goto quit;
-				}
-
-rr_qtype_aaaa:
-				/* We cannot resolve IPv6 address if IPv6 is
-				 * disabled. The reason being that
-				 * "struct net_sockaddr" does not have enough space
-				 * for IPv6 address in that case.
-				 */
-#if defined(CONFIG_NET_IPV6)
-				address_size = DNS_IPV6_LEN;
-				addr = (uint8_t *)&net_sin6(&info.ai_addr)->
-								sin6_addr;
-				info.ai_family = NET_AF_INET6;
-				info.ai_addr.sa_family = NET_AF_INET6;
-				info.ai_addrlen = sizeof(struct net_sockaddr_in6);
-#else
-				ret = DNS_EAI_FAMILY;
-				goto quit;
-#endif
-			} else if (ctx->queries[*query_idx].query_type ==
-				   (enum dns_query_type)DNS_RR_TYPE_ANY) {
-				/* If we did ANY query, we need to check what
-				 * type of answer we got. Currently only A or AAAA
-				 * are supported.
-				 */
-				if (answer_type == DNS_RR_TYPE_A) {
-					goto rr_qtype_a;
-				} else if (answer_type == DNS_RR_TYPE_AAAA) {
-					goto rr_qtype_aaaa;
-				} else {
-					ret = DNS_EAI_ADDRFAMILY;
-					goto quit;
-				}
-
-			} else if (ctx->queries[*query_idx].query_type ==
-							DNS_QUERY_TYPE_PTR) {
-				/* Synthesize a reply and place the returned info
-				 * in to the ai_canonname field. Use AF_LOCAL address
-				 * family as this is not a real address.
-				 */
-				struct net_buf *result;
-				uint8_t *pos;
-
-				address_size = MIN(dns_msg->response_length,
-						   DNS_MAX_NAME_SIZE);
-
-				/* Temporary buffer that is needed by dns_unpack_name()
-				 * to unpack the resolved name.
-				 */
-				result = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
-				if (result == NULL) {
-					NET_DBG("Cannot allocate buffer for DNS query result");
-					ret = DNS_EAI_MEMORY;
-					goto quit;
-				}
-
-				pos = dns_msg->msg + dns_msg->response_position;
-				ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, pos,
-						      result, NULL);
-				if (ret < 0) {
-					errno = -ret;
-					ret = DNS_EAI_SYSTEM;
-					net_buf_unref(result);
-					goto quit;
-				}
-
-				info.ai_family = NET_AF_LOCAL;
-				info.ai_addrlen = MIN(result->len, DNS_MAX_NAME_SIZE);
-				memcpy(info.ai_canonname, result->data, info.ai_addrlen);
-				info.ai_canonname[info.ai_addrlen] = '\0';
-
-				net_buf_unref(result);
-
-			} else {
-				ret = DNS_EAI_FAMILY;
-				goto quit;
-			}
-
-			if (ctx->queries[*query_idx].query_type ==
-							DNS_QUERY_TYPE_A ||
-			    ctx->queries[*query_idx].query_type ==
-							DNS_QUERY_TYPE_AAAA) {
-				if (dns_msg->response_length < address_size) {
-					/* it seems this is a malformed message */
-					errno = EMSGSIZE;
-					ret = DNS_EAI_SYSTEM;
-					goto quit;
-				}
-
-				if ((dns_msg->response_position + address_size) >
-				    dns_msg->msg_size) {
-					/* Too short message */
-					errno = EMSGSIZE;
-					ret = DNS_EAI_SYSTEM;
-					goto quit;
-				}
-
-				src = dns_msg->msg + dns_msg->response_position;
-				memcpy(addr, src, address_size);
-			}
-
-			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
-					      &ctx->queries[*query_idx]);
-#ifdef CONFIG_DNS_RESOLVER_CACHE
-			dns_cache_add(&dns_cache,
-				ctx->queries[*query_idx].query, &info, ttl);
-#endif /* CONFIG_DNS_RESOLVER_CACHE */
-			items++;
-			break;
-
-		case DNS_RESPONSE_TXT: {
-			uint8_t *pos;
-
-			if (*query_idx < 0) {
-				ret = update_query_idx(ctx, dns_msg, dns_id,
-							query_idx, query_hash);
-				if (ret < 0) {
-					errno = -ret;
-					ret = DNS_EAI_SYSTEM;
-					goto quit;
-				}
-			}
-
-			pos = dns_msg->msg + dns_msg->response_position;
-
-			info.ai_family = NET_AF_UNSPEC;
-			info.ai_extension = DNS_RESOLVE_TXT;
-			info.ai_txt.textlen = MIN(dns_msg->response_length,
-						  DNS_MAX_TEXT_SIZE);
-			memcpy(info.ai_txt.text, pos, info.ai_txt.textlen);
-			info.ai_txt.text[info.ai_txt.textlen] = '\0';
-
-			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
-					      &ctx->queries[*query_idx]);
-			break;
-		}
-		case DNS_RESPONSE_SRV: {
-			int priority;
-			int weight;
-			int port;
-			struct net_buf *target;
-			uint8_t *pos;
-
-			if (*query_idx < 0) {
-				ret = update_query_idx(ctx, dns_msg, dns_id,
-							query_idx, query_hash);
-				if (ret < 0) {
-					errno = -ret;
-					ret = DNS_EAI_SYSTEM;
-					goto quit;
-				}
-			}
-
-			address_size = MIN(dns_msg->response_length,
-					   6 + DNS_MAX_NAME_SIZE);
-			if (address_size < 6) {
-				/* 3 tuples of be16 - priority, weight, port */
-				errno = EMSGSIZE;
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
-			}
-
-			/* Temporary buffer that is needed by dns_unpack_name()
-			 * to unpack the target.
-			 */
-			target = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
-			if (target == NULL) {
-				NET_DBG("Cannot allocate buffer for DNS query target");
-				ret = DNS_EAI_MEMORY;
-				goto quit;
-			}
-
-			pos = dns_msg->msg + dns_msg->response_position;
-
-			priority = dns_unpack_srv_priority(pos);
-			weight = dns_unpack_srv_weight(pos);
-			port = dns_unpack_srv_port(pos);
-
-			ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, pos + 6,
-					      target, NULL);
-			if (ret < 0) {
-				errno = -ret;
-				ret = DNS_EAI_SYSTEM;
-				net_buf_unref(target);
-				goto quit;
-			}
-
-			info.ai_family = NET_AF_UNSPEC;
-			info.ai_extension = DNS_RESOLVE_SRV;
-			info.ai_srv.priority = priority;
-			info.ai_srv.weight = weight;
-			info.ai_srv.port = port;
-			info.ai_srv.targetlen = MIN(target->len, DNS_MAX_NAME_SIZE);
-			memcpy(info.ai_srv.target, target->data, info.ai_srv.targetlen);
-			info.ai_srv.target[info.ai_srv.targetlen] = '\0';
-
-			net_buf_unref(target);
-
-			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
-					      &ctx->queries[*query_idx]);
-#ifdef CONFIG_DNS_RESOLVER_CACHE
-			dns_cache_add(&dns_cache,
-				ctx->queries[*query_idx].query, &info, ttl);
-#endif /* CONFIG_DNS_RESOLVER_CACHE */
-			items++;
-			break;
-		}
-		case DNS_RESPONSE_CNAME_NO_IP:
-			/* Instead of using the QNAME at DNS_QUERY_POS,
-			 * we will use this CNAME
-			 */
-			answer_ptr = dns_msg->response_position;
-			break;
-
-		default:
-			ret = DNS_EAI_FAIL;
-			goto quit;
-		}
-
-		/* Update the answer offset to point to the next RR (answer) */
-		dns_msg->answer_offset += dns_msg->response_position -
-							dns_msg->answer_offset;
-		dns_msg->answer_offset += dns_msg->response_length;
-
-		server_idx++;
 	}
 
-	if (*query_idx < 0) {
-		/* If the query_idx is still unknown, try to get it here
-		 * and hope it is found.
-		 */
-		ret = update_query_idx(ctx, dns_msg, dns_id,
-					query_idx, query_hash);
+	for (server_idx = 0; server_idx < dns_header_ancount(dns_msg->msg); server_idx++) {
+		ret = dns_validate_record(ctx, dns_msg, &info, &answer_type, &ttl);
 		if (ret < 0) {
-			errno = -ret;
-			ret = DNS_EAI_SYSTEM;
 			goto quit;
+		}
+
+		if (dns_msg->response_type == DNS_RESPONSE_IP) {
+			if ((ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_A &&
+			     answer_type != DNS_RR_TYPE_A) ||
+			    (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_AAAA &&
+			     answer_type != DNS_RR_TYPE_AAAA)) {
+				ret = DNS_EAI_ADDRFAMILY;
+				goto quit;
+			}
+		}
+
+		/* If we did ANY query, we need to check what
+		 * type of answer we got. Currently only A or AAAA
+		 * are supported.
+		 */
+		if (ctx->queries[*query_idx].query_type == (enum dns_query_type)DNS_RR_TYPE_ANY &&
+		    answer_type != DNS_RR_TYPE_AAAA && answer_type != DNS_RR_TYPE_A) {
+			ret = DNS_EAI_ADDRFAMILY;
+			goto quit;
+		}
+
+		invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
+
+		if (dns_msg->response_type == DNS_RESPONSE_IP ||
+		    dns_msg->response_type == DNS_RESPONSE_SRV) {
+#ifdef CONFIG_DNS_RESOLVER_CACHE
+			dns_cache_add(&dns_cache,
+				ctx->queries[*query_idx].query, &info, ttl);
+#endif /* CONFIG_DNS_RESOLVER_CACHE */
+			items++;
 		}
 	}
 
@@ -1507,6 +1432,22 @@ rr_qtype_aaaa:
 
 			ret = DNS_EAI_AGAIN;
 			goto quit;
+		}
+	}
+
+	/* Deal with Additional records. Only for DNS-SD right now. */
+	if (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_PTR) {
+		for (server_idx = 0; server_idx < dns_header_nscount(dns_msg->msg) +
+							  dns_header_arcount(dns_msg->msg);
+		     server_idx++) {
+			ret = dns_validate_record(ctx, dns_msg, &info, &answer_type, &ttl);
+			/* Ignore errors when parsing additional records */
+			if (ret < 0) {
+				NET_WARN("Failed to parse additional record");
+				continue;
+			}
+
+			invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
 		}
 	}
 
@@ -1555,10 +1496,18 @@ static int dns_read(struct dns_resolve_context *ctx,
 	}
 #endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
-	invoke_query_callback(ret, NULL, &ctx->queries[query_idx]);
+	/* Mark the query as success. Only used in case of DNS-SD query which need to wait for
+	 * multiple responses.
+	 */
+	ctx->queries[query_idx].cb_called = true;
 
-	/* Marks the end of the results */
-	release_query(&ctx->queries[query_idx]);
+	/* DNS service discovery can have multiple responses. */
+	if (ctx->queries[query_idx].query_type != DNS_QUERY_TYPE_PTR) {
+		invoke_query_callback(ret, NULL, &ctx->queries[query_idx]);
+
+		/* Marks the end of the results */
+		release_query(&ctx->queries[query_idx]);
+	}
 
 	return 0;
 
@@ -1709,7 +1658,11 @@ static int dns_write(struct dns_resolve_context *ctx,
 /* Must be invoked with context lock held */
 static void dns_resolve_cancel_slot(struct dns_resolve_context *ctx, int slot)
 {
-	invoke_query_callback(DNS_EAI_CANCELED, NULL, &ctx->queries[slot]);
+	if (ctx->queries[slot].cb_called) {
+		invoke_query_callback(DNS_EAI_ALLDONE, NULL, &ctx->queries[slot]);
+	} else {
+		invoke_query_callback(DNS_EAI_CANCELED, NULL, &ctx->queries[slot]);
+	}
 
 	release_query(&ctx->queries[slot]);
 }
@@ -2087,6 +2040,7 @@ try_resolve:
 	ctx->queries[i].user_data = user_data;
 	ctx->queries[i].ctx = ctx;
 	ctx->queries[i].query_hash = 0;
+	ctx->queries[i].cb_called = false;
 
 	k_work_init_delayable(&ctx->queries[i].timer, query_timeout);
 

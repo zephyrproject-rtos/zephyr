@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NXP_SYSCON_LPCAC
+	bool "NXP external cache driver for NXP syscon lpcac controller"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on HAS_MCUX_SYSCON_LPCAC
+	help
+	  This option enables the syscon lpcac driver for NXP SoCs.

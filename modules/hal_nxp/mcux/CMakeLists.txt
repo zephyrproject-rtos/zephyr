@@ -135,11 +135,6 @@ add_subdirectory_ifdef(CONFIG_IEEE802154_KW41Z
   ${CMAKE_CURRENT_BINARY_DIR}/middleware/wireless/framework
   )
 
-add_subdirectory_ifdef(CONFIG_WIFI_NXP
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/middleware/wifi_nxp
-  ${CMAKE_CURRENT_BINARY_DIR}/middleware/wifi_nxp
-  )
-
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/middleware
   ${CMAKE_CURRENT_BINARY_DIR}/middleware
   )

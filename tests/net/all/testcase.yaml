@@ -1,6 +1,5 @@
 common:
   # Only used for compile testing so it is enough to use one platform here.
-  platform_allow: qemu_x86
   build_only: true
   min_ram: 32
   tags:
@@ -8,23 +7,36 @@ common:
     - net-all
 tests:
   net.build:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_TC_THREAD_COOPERATIVE=y
   net.build.preempt:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
   net.build.no_compat_namespacing:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
       - CONFIG_POSIX_API=n
-      - CONFIG_SHELL_GETOPT=n
-      - CONFIG_NET_L2_WIFI_SHELL=n
   net.build.compat_namespacing:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=y
+  # Compile test CANBUS
+  net.build.no_compat_namespacing_canbus:
+    platform_allow: qemu_x86
+    tags: can
+    depends_on: can
+    extra_configs:
+      - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
+      - CONFIG_POSIX_API=n
+      - CONFIG_NET_CANBUS=y
+      - CONFIG_CAN=y
+      - CONFIG_NET_SOCKETS_CAN=y
+      - CONFIG_NET_L2_IEEE802154=n
   # Compile test OpenThread
   net.build.no_compat_namespacing_openthread:
-    build_only: true
     tags:
       - net
       - openthread
@@ -34,8 +46,6 @@ tests:
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
       - CONFIG_POSIX_API=n
-      - CONFIG_SHELL_GETOPT=n
-      - CONFIG_NET_L2_WIFI_SHELL=n
       - CONFIG_NET_L2_OPENTHREAD=y
       - CONFIG_CPP=y
       - CONFIG_NET_SLIP_TAP=n

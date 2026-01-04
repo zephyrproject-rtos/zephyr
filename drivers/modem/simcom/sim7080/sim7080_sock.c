@@ -31,7 +31,7 @@ MODEM_CMD_DEFINE(on_cmd_caopen)
 /*
  * Connects an modem socket. Protocol can either be TCP or UDP.
  */
-static int offload_connect(void *obj, const struct net_sockaddr *addr, socklen_t addrlen)
+static int offload_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	uint16_t dst_port = 0;
@@ -67,7 +67,7 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, socklen_t
 	}
 
 	/* Get protocol */
-	protocol = (sock->type == SOCK_STREAM) ? "TCP" : "UDP";
+	protocol = (sock->type == NET_SOCK_STREAM) ? "TCP" : "UDP";
 
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
@@ -304,7 +304,7 @@ MODEM_CMD_DEFINE(on_cmd_carecv)
  * Read data from a given socket.
  */
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
-				struct net_sockaddr *src_addr, socklen_t *addrlen)
+				struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char sendbuf[sizeof("AT+CARECV=##,####")];

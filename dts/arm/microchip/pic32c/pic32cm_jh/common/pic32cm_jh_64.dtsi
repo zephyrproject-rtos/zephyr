@@ -8,6 +8,32 @@
 
 #include <microchip/pic32c/pic32cm_jh/common/pic32cm_jh.dtsi>
 
+/ {
+	soc {
+		sercom4: sercom@42001400 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42001400 0x31>;
+			interrupts = <13 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom5: sercom@42001800 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42001800 0x31>;
+			interrupts = <14 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM5>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM5_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+	};
+};
+
 &pinctrl {
 	portb: gpio@41000080 {
 		compatible = "microchip,port-g1-gpio";

@@ -1,0 +1,24 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ai_m61_32s_kit
+name: Ai-Thinker M61-32S development board
+type: mcu
+arch: riscv
+ram: 480
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - spi
+  - flash
+vendor: bflb

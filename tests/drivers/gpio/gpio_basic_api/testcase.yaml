@@ -142,3 +142,10 @@ tests:
     extra_args: "DTC_OVERLAY_FILE=boards/frdm_rw612_hsgpio.overlay"
     harness_config:
       fixture: hsgpio_loopback
+  drivers.gpio.device_runtime_pm:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_ZTEST_NO_YIELD=n

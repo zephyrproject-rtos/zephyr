@@ -344,10 +344,11 @@ using :zephyr:code-sample:`blinky` sample:
    :goals: build
 
 The above command will:
- * Build a bootloader image (MCUboot)
- * Build a TF-M (secure) firmware image
- * Build Zephyr application as non-secure firmware image
- * Merge them as ``tfm_merged.hex`` which contain all images.
+
+* Build a bootloader image (MCUboot)
+* Build a TF-M (secure) firmware image
+* Build Zephyr application as non-secure firmware image
+* Merge them as ``tfm_merged.hex`` which contain all images.
 
 
 Note:

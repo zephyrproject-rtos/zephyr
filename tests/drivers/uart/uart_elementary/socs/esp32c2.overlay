@@ -11,6 +11,7 @@
 			input-enable;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART1_RX_GPIO2>,
 				 <UART1_CTS_GPIO3>;

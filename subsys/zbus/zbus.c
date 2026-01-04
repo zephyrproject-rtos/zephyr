@@ -156,6 +156,26 @@ const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
 
 #endif /* CONFIG_ZBUS_CHANNEL_ID */
 
+#if defined(CONFIG_ZBUS_CHANNEL_NAME)
+
+const struct zbus_channel *zbus_chan_from_name(const char *name)
+{
+	CHECKIF(name == NULL) {
+		return NULL;
+	}
+
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		if (strcmp(chan->name, name) == 0) {
+			/* Found matching channel */
+			return chan;
+		}
+	}
+	/* No matching channel exists */
+	return NULL;
+}
+
+#endif /* CONFIG_ZBUS_CHANNEL_NAME */
+
 static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 					const struct zbus_observer *obs, k_timepoint_t end_time,
 					struct net_buf *buf)

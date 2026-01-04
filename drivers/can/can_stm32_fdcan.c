@@ -361,8 +361,10 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 		break;
 	case CAN_MCAN_GFC:
 		/* Map fields to RXGFC including STM32 FDCAN LSS and LSE fields */
-		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
-			FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER);
+		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS,
+				   CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS);
+		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSE,
+				   CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);
 		bits |= val & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE |
 			CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE);
 		break;
@@ -499,8 +501,8 @@ static int can_stm32fd_init(const struct device *dev)
 		return ret;
 	}
 
-	rxgfc |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
-		 FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER);
+	rxgfc |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS) |
+		 FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);
 
 	ret = can_mcan_write_reg(dev, CAN_STM32FD_RXGFC, rxgfc);
 	if (ret != 0) {
@@ -594,8 +596,8 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 	PINCTRL_DT_INST_DEFINE(inst);						\
 	CAN_MCAN_CALLBACKS_DEFINE(can_stm32fd_cbs_##inst,			\
 				  CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst), \
-				  CONFIG_CAN_MAX_STD_ID_FILTER,			\
-				  CONFIG_CAN_MAX_EXT_ID_FILTER);		\
+				  CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS,	\
+				  CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);	\
 										\
 	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =		\
 					STM32_DT_INST_CLOCKS(inst);		\

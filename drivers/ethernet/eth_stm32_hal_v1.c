@@ -188,28 +188,12 @@ int eth_stm32_hal_init(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
-
-	if (!ETH_STM32_AUTO_NEGOTIATION_ENABLE) {
-		struct phy_link_state state;
-
-		phy_get_link_state(eth_stm32_phy_dev, &state);
-
-		heth->Init.DuplexMode = PHY_LINK_IS_FULL_DUPLEX(state.speed) ? ETH_MODE_FULLDUPLEX
-									     : ETH_MODE_HALFDUPLEX;
-		heth->Init.Speed =
-			PHY_LINK_IS_SPEED_100M(state.speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
-	}
+	HAL_StatusTypeDef hal_ret;
 
 	hal_ret = HAL_ETH_Init(heth);
-	if (hal_ret == HAL_TIMEOUT) {
-		/* HAL Init time out. This could be linked to */
-		/* a recoverable error. Log the issue and continue */
-		/* driver initialisation */
-		LOG_WRN("HAL_ETH_Init timed out (cable not connected?)");
-	} else if (hal_ret != HAL_OK) {
+	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
-		return -EINVAL;
+		return -EIO;
 	}
 
 	/* Initialize semaphores */

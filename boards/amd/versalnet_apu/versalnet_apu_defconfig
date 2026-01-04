@@ -1,6 +1,7 @@
 # The Zephyr build from this defconfig is expected to boot from
 # Xilinx Arm Trusted Firmware (ATF).
 # Boot Flow is: Boot PDI -> TF-A -> Zephyr
+CONFIG_BUILD_WITH_TFA=y
 
 CONFIG_ARM64_VA_BITS_40=y
 CONFIG_ARM64_PA_BITS_40=y
