@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_LEDS_GROUP_MULTICOLOR leds_group_multicolor.
 zephyr_library_sources_ifdef(CONFIG_LED_AXP192_AXP2101 led_axp192.c)
 zephyr_library_sources_ifdef(CONFIG_LED_DAC led_dac.c)
 zephyr_library_sources_ifdef(CONFIG_LED_GPIO led_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_LED_MATRIX led_matrix.c)
 zephyr_library_sources_ifdef(CONFIG_LED_NPM13XX led_npm13xx.c)
 zephyr_library_sources_ifdef(CONFIG_LED_PWM led_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_LED_SCT2024 sct2024.c)
