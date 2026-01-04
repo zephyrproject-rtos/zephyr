@@ -7,6 +7,9 @@ check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--build-id=none
 )
 
+# Used to retrieve individual flag
+set_property(TARGET linker PROPERTY gc_sections "${LINKERFLAGPREFIX},--gc-sections")
+
 check_set_linker_property(TARGET linker PROPERTY baremetal
                           -nostdlib
                           -static
@@ -39,6 +42,8 @@ if("${GNULD_VERSION_STRING}" VERSION_GREATER_EQUAL 2.37)
 else()
   set_property(TARGET linker PROPERTY no_position_independent)
 endif()
+
+set_property(TARGET linker PROPERTY no_gc_sections "${LINKERFLAGPREFIX},--no-gc-sections")
 
 set_property(TARGET linker PROPERTY partial_linking "-r")
 

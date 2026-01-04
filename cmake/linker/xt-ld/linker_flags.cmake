@@ -7,6 +7,9 @@ check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--build-id=none
 )
 
+# Used to retrieve individual flag
+set_property(TARGET linker PROPERTY gc_sections "${LINKERFLAGPREFIX},--gc-sections")
+
 if(NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
   set_property(TARGET linker PROPERTY cpp_base -lstdc++)
 endif()
@@ -25,6 +28,8 @@ check_set_linker_property(TARGET linker PROPERTY orphan_warning
 check_set_linker_property(TARGET linker PROPERTY orphan_error
                           ${LINKERFLAGPREFIX},--orphan-handling=error
 )
+
+set_property(TARGET linker PROPERTY no_gc_sections "${LINKERFLAGPREFIX},--no-gc-sections")
 
 set_property(TARGET linker PROPERTY partial_linking "-r")
 

@@ -5866,9 +5866,34 @@ function(add_llext_target target_name)
   set(llext_lib_target ${target_name}_llext_lib)
   if(CONFIG_LLEXT_TYPE_ELF_OBJECT)
 
-    # Create an object library to compile the source file
-    add_library(${llext_lib_target} EXCLUDE_FROM_ALL OBJECT ${source_files})
-    set(llext_lib_output $<TARGET_OBJECTS:${llext_lib_target}>)
+    get_property(TOPT GLOBAL PROPERTY TOPT)
+    get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+    set_ifndef(  TOPT "${COMPILER_TOPT}")
+    set_ifndef(  TOPT -Wl,-T)  # Use this if the compiler driver doesn't set a value
+
+    set(no_gc_sections_flag)
+    get_property(gc_sections_flag TARGET linker PROPERTY gc_sections)
+    if(gc_sections_flag)
+      get_property(no_gc_sections_flag TARGET linker PROPERTY no_gc_sections)
+    endif()
+
+    # Use executable target in the same way as LLEXT_TYPE_ELF_RELOCATABLE
+    # in order to run the object file through the linker to
+    # reorder sections.
+    add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
+    target_link_options(${llext_lib_target} PRIVATE
+      $<TARGET_PROPERTY:linker,partial_linking>)
+    set_target_properties(${llext_lib_target}
+      PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
+        SUFFIX ${CMAKE_C_OUTPUT_EXTENSION}
+    )
+    set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
+
+    target_link_options(${llext_lib_target} PRIVATE
+      ${TOPT} ${ZEPHYR_BASE}/subsys/llext/llext_reorder_sections.ld
+      ${no_gc_sections_flag} ${zephyr_filtered_flags} ${LLEXT_APPEND_FLAGS}
+    )
 
   elseif(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE)
 
@@ -5981,7 +6006,8 @@ function(add_llext_target target_name)
     set(gnu_strip_for_mwdt_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
-  # Remove sections that are unused by the llext loader
+  # Remove sections that are unused by the llext loader,
+  # reorder sections, and inject SLIDs
   add_custom_command(
     OUTPUT ${llext_pkg_output}
     COMMAND ${gnu_strip_for_mwdt_cmd}
