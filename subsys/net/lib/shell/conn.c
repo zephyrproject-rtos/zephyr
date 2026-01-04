@@ -190,7 +190,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			}
 
 			while (frag) {
-				PR("%p[%d/%d]", frag, frag->ref, frag->len);
+				PR("%p[%ld/%d]", frag, atomic_get(&frag->ref), frag->len);
 
 				frag = frag->frags;
 				if (frag) {

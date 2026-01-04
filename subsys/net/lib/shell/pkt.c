@@ -131,7 +131,7 @@ static void net_pkt_buffer_hexdump(const struct shell *sh,
 	struct net_buf *buf = pkt->buffer;
 	int i = 0;
 
-	if (!buf || buf->ref == 0) {
+	if (!buf || atomic_get(&buf->ref) == 0) {
 		return;
 	}
 
