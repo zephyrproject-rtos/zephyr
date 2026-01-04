@@ -203,6 +203,14 @@ zephyr_udc0: &usbfs {
 	status = "okay";
 };
 
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};
+
 &dac0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;

@@ -137,3 +137,11 @@ zephyr_udc0: &usbhs {
 &ctimer4 {
 	status = "okay";
 };
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};

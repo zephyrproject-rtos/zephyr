@@ -92,6 +92,14 @@
 	};
 };
 
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
