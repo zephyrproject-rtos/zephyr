@@ -55,7 +55,7 @@ extern "C" {
 #define PTHREAD_ONCE_INIT {0}
 
 /* The minimum allowable stack size */
-#define PTHREAD_STACK_MIN K_KERNEL_STACK_LEN(0)
+#define PTHREAD_STACK_MIN CONFIG_IDLE_STACK_SIZE
 
 /**
  * @brief Declare a condition variable as initialized
