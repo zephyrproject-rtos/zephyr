@@ -48,6 +48,7 @@ _names = [
     'nrfjprog',
     'nrfutil',
     'nsim',
+    'nxp_pemicro',
     'nxp_s32dbg',
     'openocd',
     'probe_rs',

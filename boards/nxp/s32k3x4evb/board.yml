@@ -1,0 +1,6 @@
+board:
+  name: s32k3x4evb
+  full_name: S32K3X4EVB
+  vendor: nxp
+  socs:
+    - name: s32k344
