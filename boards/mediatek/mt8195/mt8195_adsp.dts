@@ -95,7 +95,7 @@
 		};
 
 		/* Generated code for AFE devices */
-		#include "afe-mt8195.dts"
+		#include "afe-mt8195.dtsi"
 	}; /* soc */
 
 	chosen {};
