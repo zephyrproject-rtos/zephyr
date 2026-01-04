@@ -1,0 +1,7 @@
+identifier: nxp_virtual/mcxe317
+name: NXP Virtual (nxp_virtual/mcxe317)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: nxp

@@ -1,0 +1,18 @@
+identifier: nxp_virtual/mcxw236
+name: NXP Virtual (nxp_virtual/mcxw236)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - arduino_gpio
+  - uart
+  - counter
+  - flash
+  - i2c
+  - watchdog
+  - pwm
+  - spi
+  - dma
+vendor: nxp

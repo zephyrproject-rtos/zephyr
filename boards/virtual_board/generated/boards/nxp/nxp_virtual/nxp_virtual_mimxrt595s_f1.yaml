@@ -1,0 +1,7 @@
+identifier: nxp_virtual/mimxrt595s/f1
+name: NXP Virtual (nxp_virtual/mimxrt595s/f1)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+vendor: nxp

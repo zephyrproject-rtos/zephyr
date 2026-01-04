@@ -1,0 +1,7 @@
+identifier: nxp_virtual/mcxw235
+name: NXP Virtual (nxp_virtual/mcxw235)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: nxp

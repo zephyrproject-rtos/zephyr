@@ -1,0 +1,27 @@
+identifier: nxp_virtual/mimxrt1189/cm33
+name: NXP Virtual (nxp_virtual/mimxrt1189/cm33)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - can
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - mbox
+  - netif:eth
+  - pwm
+  - uart
+  - i3c
+  - dma
+  - spi
+  - watchdog
+  - usbd
+  - sdhc
+  - dac
+  - kpp
+  - i2s
+vendor: nxp

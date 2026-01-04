@@ -1,0 +1,26 @@
+identifier: nxp_virtual/mimxrt685s/cm33
+name: NXP Virtual (nxp_virtual/mimxrt685s/cm33)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - i2s
+  - i3c
+  - pwm
+  - sdhc
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
+vendor: nxp

@@ -1,0 +1,21 @@
+identifier: nxp_virtual/mcxw727c/cpu0
+name: NXP Virtual (nxp_virtual/mcxw727c/cpu0)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - can
+  - counter
+  - dma
+  - gpio
+  - flexio
+  - i2c
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - netif:openthread
+vendor: nxp

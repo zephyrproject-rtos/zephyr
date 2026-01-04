@@ -1,0 +1,13 @@
+identifier: nxp_virtual/mimx8mq6/m4
+name: NXP Virtual (nxp_virtual/mimx8mq6/m4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - can
+  - gpio
+  - i2c
+  - net
+  - uart
+vendor: nxp

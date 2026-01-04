@@ -1,0 +1,10 @@
+identifier: nxp_virtual/mcxn947/cpu1
+name: NXP Virtual (nxp_virtual/mcxn947/cpu1)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - dma
+  - gpio
+vendor: nxp

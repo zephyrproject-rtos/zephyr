@@ -1,0 +1,20 @@
+identifier: nxp_virtual/mimxrt1166/cm7
+name: NXP Virtual (nxp_virtual/mimxrt1166/cm7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - can
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+vendor: nxp

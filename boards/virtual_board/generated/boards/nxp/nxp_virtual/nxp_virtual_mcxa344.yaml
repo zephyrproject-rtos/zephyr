@@ -1,0 +1,13 @@
+identifier: nxp_virtual/mcxa344
+name: NXP Virtual (nxp_virtual/mcxa344)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - arduino_gpio
+  - counter
+  - flash
+  - gpio
+  - uart
+vendor: nxp

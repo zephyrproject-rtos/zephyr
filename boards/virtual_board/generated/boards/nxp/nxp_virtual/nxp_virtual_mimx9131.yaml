@@ -1,0 +1,11 @@
+identifier: nxp_virtual/mimx9131
+name: NXP Virtual (nxp_virtual/mimx9131)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - counter
+  - net
+  - uart
+vendor: nxp

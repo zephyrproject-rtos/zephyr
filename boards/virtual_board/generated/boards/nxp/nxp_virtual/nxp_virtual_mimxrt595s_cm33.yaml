@@ -1,0 +1,23 @@
+identifier: nxp_virtual/mimxrt595s/cm33
+name: NXP Virtual (nxp_virtual/mimxrt595s/cm33)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - counter
+  - dma
+  - dmic
+  - flash
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - sdhc
+  - spi
+  - usb_device
+  - watchdog
+vendor: nxp

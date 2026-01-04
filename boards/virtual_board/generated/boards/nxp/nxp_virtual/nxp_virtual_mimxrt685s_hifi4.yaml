@@ -1,0 +1,14 @@
+identifier: nxp_virtual/mimxrt685s/hifi4
+name: NXP Virtual (nxp_virtual/mimxrt685s/hifi4)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - dma
+  - gpio
+  - i2c
+  - i3c
+  - i2s
+  - spi
+vendor: nxp

@@ -1,0 +1,10 @@
+identifier: nxp_virtual/mimx8ml8/m7
+name: NXP Virtual (nxp_virtual/mimx8ml8/m7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - spi
+  - uart
+vendor: nxp

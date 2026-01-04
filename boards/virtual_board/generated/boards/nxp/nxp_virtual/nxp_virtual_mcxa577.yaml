@@ -1,0 +1,10 @@
+identifier: nxp_virtual/mcxa577
+name: NXP Virtual (nxp_virtual/mcxa577)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+vendor: nxp

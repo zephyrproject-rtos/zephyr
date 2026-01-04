@@ -1,0 +1,15 @@
+identifier: nxp_virtual/mimx9596/m7
+name: NXP Virtual (nxp_virtual/mimx9596/m7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - i2c
+  - pwm
+  - spi
+  - netif:eth
+  - counter
+  - dma
+vendor: nxp

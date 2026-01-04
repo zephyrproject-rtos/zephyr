@@ -1,0 +1,13 @@
+identifier: nxp_virtual/mimx8ml8/a53
+name: NXP Virtual (nxp_virtual/mimx8ml8/a53)
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+supported:
+  - can
+  - gpio
+  - i2c
+  - net
+  - uart
+vendor: nxp

@@ -1,0 +1,24 @@
+identifier: nxp_virtual/mcxw716c
+name: NXP Virtual (nxp_virtual/mcxw716c)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - can
+  - counter
+  - dma
+  - flash
+  - flexio
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - regulator
+  - spi
+  - uart
+  - watchdog
+  - netif:openthread
+  - rtc
+vendor: nxp

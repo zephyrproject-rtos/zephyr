@@ -1,0 +1,17 @@
+identifier: nxp_virtual/mcxc242
+name: NXP Virtual (nxp_virtual/mcxc242)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - usb_device
+  - usbd
+vendor: nxp

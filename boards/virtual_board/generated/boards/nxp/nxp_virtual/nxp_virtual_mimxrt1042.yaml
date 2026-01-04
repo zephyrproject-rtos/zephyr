@@ -1,0 +1,17 @@
+identifier: nxp_virtual/mimxrt1042
+name: NXP Virtual (nxp_virtual/mimxrt1042)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - arduino_gpio
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - rtc
+vendor: nxp

@@ -1,0 +1,28 @@
+identifier: nxp_virtual/rw610
+name: NXP Virtual (nxp_virtual/rw610)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - arduino_gpio
+  - gpio
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - dma
+  - spi
+  - i2c
+  - i2s
+  - entropy
+  - usb_device
+  - watchdog
+  - counter
+  - pwm
+  - hwinfo
+  - adc
+  - dac
+  - netif:eth
+  - netif:openthread
+  - comparator
+vendor: nxp

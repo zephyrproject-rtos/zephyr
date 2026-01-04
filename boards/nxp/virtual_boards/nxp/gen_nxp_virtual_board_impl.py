@@ -1,0 +1,973 @@
+#!/usr/bin/env python3
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+"""NXP virtual board generator (implementation).
+
+The entry point wrapper is:
+  boards/virtual_board/tools/gen_nxp_virtual_board.py
+
+Most vendor-agnostic helpers live in:
+  boards/virtual_board/tools/virtual_board_gen_common.py
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+# This module is normally imported via boards/virtual_board/tools/gen_nxp_virtual_board.py,
+# which sets up sys.path so this import resolves.
+import virtual_board_gen_common as common
+
+Target = common.Target
+
+
+def _default_zephyr_root() -> Path:
+    # This file lives at:
+    #   <ZEPHYR_BASE>/boards/nxp/virtual_boards/nxp/gen_nxp_virtual_board_impl.py
+    return Path(__file__).resolve().parents[4]
+
+
+def guess_arch(t: Target) -> str:
+    # DSP clusters
+    if t.cpucluster in {"adsp", "hifi4", "hifi1", "f1"}:
+        return "xtensa"
+
+    # A-class clusters
+    if t.cpucluster in {"a55", "a53", "a9", "a7"}:
+        return "arm64"
+
+    return "arm"
+
+
+def default_dtsi(t: Target) -> str:
+    # MCXC / MCXE / MCXA have per-soc dtsi
+    if t.soc.startswith("mcxc"):
+        return f"nxp/nxp_{t.soc}.dtsi"
+    if t.soc.startswith("mcxe"):
+        return f"nxp/nxp_{t.soc}.dtsi"
+    if t.soc.startswith("mcxa"):
+        return f"nxp/nxp_{t.soc}.dtsi"
+
+    # MCXN are family-based
+    if t.soc == "mcxn947":
+        return "nxp/nxp_mcxn94x.dtsi"
+    if t.soc == "mcxn547":
+        return "nxp/nxp_mcxn54x.dtsi"
+    if t.soc == "mcxn236":
+        return "nxp/nxp_mcxn23x.dtsi"
+
+    # RW
+    if t.soc in {"rw610", "rw612"}:
+        return "nxp/nxp_rw6xx.dtsi"
+
+    # i.MXRT is too varied; default is a fallback only
+    if t.soc.startswith("mimxrt"):
+        return "nxp/nxp_rt10xx.dtsi"
+
+    # i.MX is too varied; rely on overrides
+    return f"nxp/nxp_{t.soc}.dtsi"
+
+
+def soc_kconfig_symbol(t: Target) -> str:
+    # Many NXP SoCs encode cluster in symbol suffix.
+    socu = t.soc.upper()
+    if t.cpucluster:
+        return f"SOC_{socu}_{t.cpucluster.upper()}"
+    return f"SOC_{socu}"
+
+
+# Some NXP families require selecting a concrete part number to get the
+# correct HAL CPU_ macro definitions.
+_SOC_PART_NUMBER_BY_SOC: dict[str, str] = {
+    # MCXA
+    # (build-only: pick a representative part number per SoC)
+    "mcxa153": "SOC_PART_NUMBER_MCXA153VFM",
+    "mcxa156": "SOC_PART_NUMBER_MCXA156VPJ",
+    "mcxa266": "SOC_PART_NUMBER_MCXA266VLQ",
+    "mcxa344": "SOC_PART_NUMBER_MCXA344VFM",
+    "mcxa346": "SOC_PART_NUMBER_MCXA346VLQ",
+    "mcxa366": "SOC_PART_NUMBER_MCXA366VLQ",
+    "mcxa577": "SOC_PART_NUMBER_MCXA577VLQ",
+
+    # MCXC
+    "mcxc141": "SOC_PART_NUMBER_MCXC141VLH",
+    "mcxc142": "SOC_PART_NUMBER_MCXC142VFM",
+    "mcxc242": "SOC_PART_NUMBER_MCXC242VLH",
+    "mcxc444": "SOC_PART_NUMBER_MCXC444VLH",
+
+    # MCXN
+    "mcxn947": "SOC_PART_NUMBER_MCXN947VDF",
+    "mcxn547": "SOC_PART_NUMBER_MCXN547VDF",
+    "mcxn236": "SOC_PART_NUMBER_MCXN236VDF",
+
+    # RW
+    "rw610": "SOC_PART_NUMBER_RW610ETA2I",
+    "rw612": "SOC_PART_NUMBER_RW612ETA2I",
+
+    # i.MX RT
+    "mimxrt685s": "SOC_PART_NUMBER_MIMXRT685SFVKB",
+    "mimxrt595s": "SOC_PART_NUMBER_MIMXRT595SFFOC",
+    "mimxrt1189": "SOC_PART_NUMBER_MIMXRT1189CVM8C",
+    "mimxrt1176": "SOC_PART_NUMBER_MIMXRT1176DVMAA",
+    "mimxrt1166": "SOC_PART_NUMBER_MIMXRT1166DVM6A",
+    "mimxrt798s": "SOC_PART_NUMBER_MIMXRT798SGFOB",
+
+    # i.MX9 (i.MX93)
+    "mimx9352": "SOC_PART_NUMBER_MIMX9352DVVXM",
+}
+
+
+# RT595 (MIMXRT595S F1 / Xtensa) SoC needs board-level memory address/size
+# Kconfig symbols for its linker script.
+_RT595_F1_KCONFIG_DEFAULTS: list[tuple[str, str, str]] = [
+    ("RT595_ADSP_STACK_SIZE", 'hex "Boot time stack size"', "0x1000"),
+    ("RT595_ADSP_RESET_MEM_ADDR", "hex", "0x0"),
+    ("RT595_ADSP_RESET_MEM_SIZE", "hex", "0x400  # 1 KiB"),
+    ("RT595_ADSP_TEXT_MEM_ADDR", "hex", "0x400"),
+    ("RT595_ADSP_TEXT_MEM_SIZE", "hex", "0x3FC00  # 255 KiB"),
+    ("RT595_ADSP_DATA_MEM_ADDR", "hex", "0x840000"),
+    ("RT595_ADSP_DATA_MEM_SIZE", "hex", "0x40000  # 256 KiB"),
+]
+
+
+def board_target_kconfig_symbol(board_name: str, t: Target) -> str:
+    b = board_name.upper()
+    return f"BOARD_{b}_{t.soc.upper()}" + (f"_{t.cpucluster.upper()}" if t.cpucluster else "")
+
+
+def soc_part_number_kconfig_symbol(t: Target) -> str | None:
+    return _SOC_PART_NUMBER_BY_SOC.get(t.soc)
+
+
+def render_rt595_f1_kconfig_defaults() -> list[str]:
+    lines: list[str] = []
+    for sym, ktype, default in _RT595_F1_KCONFIG_DEFAULTS:
+        lines.append(f"config {sym}")
+        lines.append(f"\t{ktype}")
+        lines.append(f"\tdefault {default}")
+        lines.append("")
+    return lines
+
+
+def render_kconfig_board(board_name: str, targets: list[Target]) -> str:
+    # Modeled after boards/qemu/xtensa/Kconfig.qemu_xtensa: a single file with conditional selects.
+    b = board_name.upper()
+
+    lines: list[str] = []
+    lines.append("# Auto-generated by gen_nxp_virtual_board.py")
+    lines.append("# SPDX-License-Identifier: Apache-2.0")
+    lines.append("")
+    lines.append(f"config BOARD_{b}")
+    lines.append("\tbool")
+    lines.append("")
+
+    has_rt595_f1 = False
+
+    for t in targets:
+        target_sym = board_target_kconfig_symbol(board_name, t)
+
+        lines.append(f"select {soc_kconfig_symbol(t)} if {target_sym}")
+
+        part_sym = soc_part_number_kconfig_symbol(t)
+        if part_sym:
+            lines.append(f"select {part_sym} if {target_sym}")
+
+        if t.soc == "mimxrt595s" and t.cpucluster == "f1":
+            has_rt595_f1 = True
+
+    if has_rt595_f1:
+        lines.append(f"if BOARD_{b}_MIMXRT595S_F1")
+        lines.append("")
+        lines.extend(render_rt595_f1_kconfig_defaults())
+        lines.append("endif")
+        lines.append("")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_defconfig(t: Target) -> str:
+    lines: list[str] = []
+    lines.append("# Auto-generated by gen_nxp_virtual_board.py")
+    lines.append("# Build-only SoC coverage: keep requirements minimal")
+
+    # Keep runtime I/O optional for build-only.
+    lines.append("CONFIG_CONSOLE=n")
+    lines.append("CONFIG_UART_CONSOLE=n")
+    lines.append("CONFIG_SERIAL=n")
+    lines.append("CONFIG_PRINTK=y")
+
+    # MCXC SoCs include <fsl_port.h> from the MCUX SDK. Ensure the MCUX PORT driver
+    # component is pulled in by enabling Zephyr PINCTRL.
+    if t.soc.startswith("mcxc"):
+        lines.append("CONFIG_PINCTRL=y")
+        lines.append("CONFIG_PINCTRL_NXP_PORT=y")
+
+    # Some SoC families depend on the chosen timer to set SYS_CLOCK_HW_CYCLES_PER_SEC.
+    # In a virtual board without explicit timer enablement, this can end up unset.
+    # Force SysTick for *ARM Cortex-M* targets.
+    if t.soc.startswith("mcxn"):
+        lines.append("CONFIG_CORTEX_M_SYSTICK=y")
+
+    if t.soc.startswith("mimxrt") and (t.cpucluster not in {"hifi4", "hifi1", "f1"}):
+        # i.MX RT SoCs frequently use the NXP OS timer. Keep SysTick off by default.
+        lines.append("# CONFIG_CORTEX_M_SYSTICK is not set")
+
+    # i.MXRT6xx (RT685 CM33) SoC init requires these board-level Kconfig values.
+    if t.soc == "mimxrt685s" and t.cpucluster == "cm33":
+        lines.append("CONFIG_XTAL_SYS_CLK_HZ=24000000")
+        lines.append("CONFIG_SYSOSC_setTLING_US=260")
+
+    # RT595 F1 (Xtensa) needs ISR table generation and a smaller vector entry.
+    if t.soc == "mimxrt595s" and t.cpucluster == "f1":
+        lines.append("CONFIG_GEN_ISR_TABLES=y")
+        lines.append("CONFIG_GEN_IRQ_VECTOR_TABLE=n")
+        lines.append("CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY=y")
+        lines.append("CONFIG_NXP_IMXRT_BOOT_HEADER=n")
+
+    # i.MX93 A55 selects HAS_MCUX_CACHE unconditionally, but HAS_MCUX is only
+    # selected when CLOCK_CONTROL=y. Enable it to avoid Kconfig warnings aborting the build.
+    if t.soc == "mimx9352" and t.cpucluster == "a55":
+        lines.append("CONFIG_CLOCK_CONTROL=y")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_target_yaml(board_name: str, t: Target, arch: str, supported: list[str] | None = None) -> str:
+    # Keep identifier format and vendor field consistent with Zephyr expectations.
+    return common.render_target_yaml(
+        board_name=board_name,
+        t=t,
+        arch=arch,
+        vendor="nxp",
+        supported=supported,
+    )
+
+
+@dataclass(frozen=True)
+class PlatformInfo:
+    identifier: str
+    board_rel_dir: str  # relative to boards/nxp
+    yaml_path: Path
+    dts_path: Path | None
+    supported: list[str]
+    dtsi_include: str | None = None
+    socs: list[tuple[str, str | None]] | None = None
+
+
+def parse_board_platform_identifier(ident: str) -> tuple[str | None, str | None]:
+    # Common NXP identifiers are of form:
+    #   <board>/<soc>[/<cpucluster>[/...]]
+    # We only care about the SoC and the optional cpucluster here.
+    parts = [p for p in str(ident).split("/") if p]
+    if len(parts) < 2:
+        return None, None
+    soc = parts[1]
+    cpucluster = parts[2] if len(parts) >= 3 else None
+    return soc, cpucluster
+
+
+def guess_dtsi_include_from_board_dts(dts_path: Path) -> str | None:
+    # Heuristic: take the first include that looks like an NXP SoC DTSI.
+    inc_re = re.compile(r"^\s*#include\s+<([^>]+)>\s*$")
+    try:
+        for line in dts_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            m = inc_re.match(line)
+            if not m:
+                continue
+            inc = m.group(1).strip()
+            if inc.endswith(".dtsi") and (inc.startswith("nxp/") or "/nxp_" in inc):
+                return inc
+    except OSError:
+        return None
+    return None
+
+
+def collect_nxp_platform_db(zephyr_root: Path) -> dict[str, PlatformInfo]:
+    """Collect platform metadata from existing boards under boards/nxp/."""
+
+    db: dict[str, PlatformInfo] = {}
+    boards_root = zephyr_root / "boards" / "nxp"
+    if not boards_root.exists():
+        return db
+
+    for yml in sorted(boards_root.rglob("*.yaml"), key=str):
+        try:
+            data = common.load_yaml(yml)
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        ident = data.get("identifier")
+        if not ident:
+            continue
+
+        soc, cpucluster = parse_board_platform_identifier(str(ident))
+
+        supported = data.get("supported")
+        if not isinstance(supported, list):
+            supported_list: list[str] = []
+        else:
+            supported_list = [str(x) for x in supported]
+
+        dts_candidate = yml.with_suffix(".dts")
+        dts_path = dts_candidate if dts_candidate.exists() else None
+        dtsi_include: str | None = (
+            guess_dtsi_include_from_board_dts(dts_candidate) if dts_path else None
+        )
+
+        # boards/nxp/<board_rel_dir>/<file>
+        board_rel_dir = str(yml.parent.relative_to(boards_root))
+
+        # Try to infer the SoC(s) supported by this platform.
+        # 1) from the identifier itself (<board>/<soc>[/<cpucluster>])
+        # 2) otherwise from a sibling board.yml file.
+        socs: list[tuple[str, str | None]] = []
+        if soc:
+            socs.append((soc, cpucluster))
+        else:
+            byml = yml.parent / "board.yml"
+            if byml.exists():
+                try:
+                    by = common.load_yaml(byml)
+                except Exception:
+                    by = None
+                if isinstance(by, dict) and isinstance(by.get("board"), dict):
+                    for se in by["board"].get("socs", []) or []:
+                        if not isinstance(se, dict) or not se.get("name"):
+                            continue
+                        soc_name = str(se["name"])
+                        variants = se.get("variants")
+                        if isinstance(variants, list) and variants:
+                            for v in variants:
+                                if not isinstance(v, dict):
+                                    continue
+                                cc = v.get("cpucluster")
+                                socs.append((soc_name, str(cc) if cc else None))
+                        else:
+                            socs.append((soc_name, None))
+
+        info = PlatformInfo(
+            identifier=str(ident),
+            board_rel_dir=board_rel_dir,
+            yaml_path=yml,
+            dts_path=dts_path,
+            supported=supported_list,
+            dtsi_include=dtsi_include,
+            socs=socs,
+        )
+
+        db.setdefault(str(ident), info)
+
+    return db
+
+
+def platform_for_target(
+    platform_db: dict[str, PlatformInfo],
+    soc: str,
+    cpucluster: str | None,
+) -> PlatformInfo | None:
+    # Prefer an exact match for any known identifier with this soc/cpucluster.
+    # If multiple exist, choose the lexicographically smallest identifier for stability.
+    candidates: list[PlatformInfo] = []
+    for pi in platform_db.values():
+        if not pi.socs:
+            continue
+        if (soc, cpucluster) in pi.socs:
+            candidates.append(pi)
+    if not candidates:
+        return None
+    return sorted(candidates, key=lambda x: x.identifier)[0]
+
+
+def render_dts_from_master(
+    *,
+    t: Target,
+    master: PlatformInfo,
+    zephyr_root: Path,
+    dtsi_include: str,
+) -> str:
+    """Generate DTS based on a master platform DTS, with minimal rewriting."""
+
+    if not master.dts_path:
+        raise ValueError(f"Master platform has no DTS: {master.identifier}")
+
+    src = master.dts_path.read_text(encoding="utf-8", errors="ignore")
+
+    # NOTE: Keep quoted includes as-is.
+    # They are typically board-local files (e.g. "<board>-pinctrl.dtsi").
+    # We copy those files next to the generated DTS so the C preprocessor
+    # can resolve them via the "current directory" include semantics.
+    out = src
+
+    # Replace SoC DTSI include. Prefer replacing exactly the include we detected
+    # from the master platform DTS.
+    if master.dtsi_include:
+        out = out.replace(f"#include <{master.dtsi_include}>", f"#include <{dtsi_include}>")
+    else:
+        # fallback: replace first nxp/*.dtsi include
+        out = re.sub(
+            r'^\s*#include\s+<nxp/[^>]+\.dtsi>\s*$',
+            f"#include <{dtsi_include}>",
+            out,
+            count=1,
+            flags=re.MULTILINE,
+        )
+
+    out = common.patch_model_and_compatible(
+        out,
+        model=f"NXP Virtual Board ({t.qualifier})",
+        compat_soc=f"nxp,{t.soc}",
+    )
+
+    banner = (
+        "/* Auto-generated by gen_nxp_virtual_board.py */\n"
+        f"/* Master DTS template: boards/nxp/{master.board_rel_dir}/{master.dts_path.name} */\n"
+    )
+    return banner + out
+
+
+def copy_master_quoted_includes(*, master: PlatformInfo, board_out_dir: Path) -> None:
+    if not master.dts_path:
+        return
+    common.copy_quoted_includes_from_file(src_dts_path=master.dts_path, dst_dir=board_out_dir)
+
+
+def resolve_master_platform_identifier(
+    t: Target,
+    master_platforms: dict[str, Any],
+    overrides_master: dict[str, Any],
+) -> str | None:
+    # Per-target/per-soc override first
+    ov = overrides_master.get(t.qualifier) or overrides_master.get(t.soc)
+    if ov:
+        return str(ov)
+
+    if not t.series:
+        return None
+
+    entry = master_platforms.get(t.series)
+    if not entry:
+        return None
+
+    if isinstance(entry, str):
+        return entry
+    if isinstance(entry, dict):
+        # allow per-cpucluster selection, with optional "default"
+        if t.cpucluster and t.cpucluster in entry:
+            return str(entry[t.cpucluster])
+        if "default" in entry:
+            return str(entry["default"])
+    return None
+
+
+def render_dts_template_rt595_f1(t: Target) -> str:
+    # Based on boards/nxp/mimxrt595_evk/mimxrt595_evk_mimxrt595s_f1.dts
+    # Keep it minimal but valid for build-only.
+    lines: list[str] = []
+    lines.append("/* Auto-generated by gen_nxp_virtual_board.py (template: rt595_f1) */")
+    lines.append("/dts-v1/;")
+    lines.append("#include <mem.h>")
+    lines.append("#include <xtensa/xtensa.dtsi>")
+    lines.append("")
+    lines.append("/ {")
+    lines.append(f"\tmodel = \"NXP Virtual Board ({t.qualifier})\";")
+    lines.append("\tcompatible = \"nxp\";")
+    lines.append("")
+    lines.append("\tcpus {")
+    lines.append("\t\t#address-cells = <1>;")
+    lines.append("\t\t#size-cells = <0>;")
+    lines.append("\t\tcpu0: cpu@0 {")
+    lines.append("\t\t\tdevice_type = \"cpu\";")
+    lines.append("\t\t\tcompatible = \"cdns,tensilica-xtensa-lx6\";")
+    lines.append("\t\t\treg = <0>;")
+    lines.append("\t\t};")
+    lines.append("\t};")
+    lines.append("")
+    lines.append("\tsram0: memory@0 {")
+    lines.append("\t\t#address-cells = <1>;")
+    lines.append("\t\t#size-cells = <1>;")
+    lines.append("\t\tdevice_type = \"memory\";")
+    lines.append("\t\tcompatible = \"mmio-sram\";")
+    lines.append("\t\treg = <0x0 DT_SIZE_K(512)>;")
+    lines.append("")
+    lines.append("\t\tadsp_data: memory@840000 {")
+    lines.append("\t\t\treg = <0x840000 DT_SIZE_K(256)>;")
+    lines.append("\t\t};")
+    lines.append("\t};")
+    lines.append("")
+    lines.append("\tchosen {")
+    lines.append("\t\tzephyr,sram = &adsp_data;")
+    lines.append("\t};")
+    lines.append("};")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_dts_template_imx6sx_m4(t: Target) -> str:
+    """Minimal DTS template for i.MX6 SoloX M4 (mcimx6x/m4).
+
+    Reuses the SoC DTSI but provides the DT_FLASH_ADDR/DT_SRAM_ADDR defines
+    required by nxp_imx6sx_m4.dtsi.
+    """
+
+    lines: list[str] = []
+    lines.append("/* Auto-generated by gen_nxp_virtual_board.py (template: imx6sx_m4) */")
+    lines.append("/dts-v1/;")
+    lines.append("")
+    lines.append("#include <mem.h>")
+    lines.append("")
+    lines.append("/* Required by nxp_imx6sx_m4.dtsi */")
+    lines.append("#define DT_FLASH_SIZE\tDT_SIZE_K(512)")
+    lines.append("#define DT_FLASH_ADDR\t84000000")
+    lines.append("#define DT_SRAM_SIZE\tDT_SIZE_K(128)")
+    lines.append("#define DT_SRAM_ADDR\t84080000")
+    lines.append("")
+    lines.append("#include <nxp/nxp_imx6sx_m4.dtsi>")
+    lines.append("#include <nxp/nxp_imx/mimx6sx-pinctrl.dtsi>")
+    lines.append("")
+    lines.append("/ {")
+    lines.append(f"\tmodel = \"NXP Virtual Board ({t.qualifier})\";")
+    lines.append(f"\tcompatible = \"nxp,{t.soc}\";")
+    lines.append("\tchosen {")
+    lines.append("\t\tzephyr,flash = &flash;")
+    lines.append("\t\tzephyr,sram = &sram;")
+    lines.append("\t};")
+    lines.append("};")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_dts_template_imx7d_m4(t: Target) -> str:
+    """Minimal DTS template for i.MX7D M4 (mcimx7d/m4).
+
+    The SoC DTSI references a large set of pinmux node labels which are defined
+    in the NXP HAL pinctrl include; include it so dtc can resolve the labels.
+    """
+
+    lines: list[str] = []
+    lines.append("/* Auto-generated by gen_nxp_virtual_board.py (template: imx7d_m4) */")
+    lines.append("/dts-v1/;")
+    lines.append("")
+    lines.append("#include <nxp/nxp_imx7d_m4.dtsi>")
+    # Pinmux labels referenced by nxp_imx7d_m4.dtsi live in the NXP HAL DTS.
+    # (Zephyr's DTS include paths include modules/hal/nxp/dts by default.)
+    lines.append("#include <nxp/nxp_imx/mimx7d-pinctrl.dtsi>")
+    lines.append("")
+    lines.append("/ {")
+    lines.append(f"\tmodel = \"NXP Virtual Board ({t.qualifier})\";")
+    lines.append(f"\tcompatible = \"nxp,{t.soc}\";")
+    lines.append("")
+    lines.append("\tchosen {")
+    lines.append("\t\tzephyr,flash = &tcml_code;")
+    lines.append("\t\tzephyr,sram = &tcmu_sys;")
+    lines.append("\t};")
+    lines.append("};")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_dts(t: Target, dtsi_include: str, dts_labels: dict[str, str] | None = None) -> str:
+    # Support explicit templates for targets that don't have a usable SoC DTSI.
+    if dtsi_include.startswith("template:"):
+        templ = dtsi_include.split(":", 1)[1]
+        if templ == "rt595_f1":
+            return render_dts_template_rt595_f1(t)
+        if templ == "imx6sx_m4":
+            return render_dts_template_imx6sx_m4(t)
+        if templ == "imx7d_m4":
+            return render_dts_template_imx7d_m4(t)
+        raise ValueError(f"Unknown DTS template: {dtsi_include}")
+
+    compat = f"nxp,{t.soc}"
+
+    lines: list[str] = []
+    lines.append("/* Auto-generated by gen_nxp_virtual_board.py */")
+    lines.append("/dts-v1/;")
+    lines.append("")
+    lines.append(f"#include <{dtsi_include}>")
+
+    # Some SoCs have pinmux node labels provided by the NXP HAL DTS includes.
+    if t.soc == "mimx9352" and t.cpucluster in {"a55", "m33"}:
+        lines.append("#include <nxp/nxp_imx/mimx9352cvuxk-pinctrl.dtsi>")
+
+    # Some SoC bindings require board-level properties.
+    if t.soc.startswith("mcxc"):
+        lines.append("#include <zephyr/dt-bindings/clock/kinetis_sim.h>")
+
+    lines.append("")
+    lines.append("/ {")
+    lines.append(f"\tmodel = \"NXP Virtual Board ({t.qualifier})\";")
+    lines.append(f"\tcompatible = \"{compat}\";")
+
+    # Provide basic chosen nodes for some SoCs so the linker gets sane FLASH/RAM sizes.
+    if t.soc.startswith("mcxn"):
+        lines.append("")
+        lines.append("\tchosen {")
+        lines.append("\t\tzephyr,sram = &sram0;")
+        lines.append("\t\tzephyr,flash = &flash;")
+        lines.append("\t\tzephyr,flash-controller = &fmu;")
+        lines.append("\t};")
+
+    # i.MX93 A55 build-only needs a DDR region and a flash chosen node.
+    if t.soc == "mimx9352" and t.cpucluster == "a55":
+        lines.append("")
+        lines.append("\tflash0: flash@0 {")
+        lines.append("\t\tcompatible = \"soc-nv-flash\";")
+        lines.append("\t\treg = <0 DT_SIZE_M(8)>;")
+        lines.append("\t\terase-block-size = <4096>;")
+        lines.append("\t\twrite-block-size = <1>;")
+        lines.append("\t};")
+        lines.append("")
+        lines.append("\tdram: memory@d0000000 {")
+        lines.append("\t\tdevice_type = \"memory\";")
+        lines.append("\t\treg = <0xd0000000 DT_SIZE_M(16)>;")
+        lines.append("\t};")
+        lines.append("")
+        lines.append("\tchosen {")
+        lines.append("\t\tzephyr,flash = &flash0;")
+        lines.append("\t\tzephyr,sram = &dram;")
+        lines.append("\t};")
+
+    # RW6xx has external flash in real boards; provide a dummy flash region.
+    if t.soc in {"rw610", "rw612"}:
+        lines.append("")
+        lines.append("\tflash0: flash@0 {")
+        lines.append("\t\tcompatible = \"soc-nv-flash\";")
+        lines.append("\t\treg = <0 DT_SIZE_M(8)>;")
+        lines.append("\t\terase-block-size = <4096>;")
+        lines.append("\t\twrite-block-size = <1>;")
+        lines.append("\t};")
+        lines.append("")
+        lines.append("\tchosen {")
+        lines.append("\t\tzephyr,sram = &sram_data;")
+        lines.append("\t\tzephyr,flash = &flash0;")
+        lines.append("\t\tzephyr,flash-controller = &flexspi;")
+        lines.append("\t};")
+
+    # i.MX RT (ARM clusters) often need a board-provided flash node.
+    if t.soc.startswith("mimxrt") and (t.cpucluster not in {"hifi4", "hifi1", "f1"}):
+        lines.append("")
+        lines.append("\tflash0: flash@0 {")
+        lines.append("\t\tcompatible = \"soc-nv-flash\";")
+        lines.append("\t\treg = <0 DT_SIZE_M(8)>;")
+        lines.append("\t};")
+        lines.append("")
+        lines.append("\tchosen {")
+        lines.append("\t\tzephyr,sram = &sram0;")
+        lines.append("\t\tzephyr,flash = &flash0;")
+        lines.append("\t};")
+
+    lines.append("};")
+    lines.append("")
+
+    if t.soc.startswith("mcxc"):
+        labels = dts_labels or {}
+        sim_label = str(labels.get("sim", "sim"))
+        osc_label = str(labels.get("osc", "osc"))
+        cpu0_label = str(labels.get("cpu0", "cpu0"))
+
+        # Required DT properties for MCXC clock setup
+        lines.append(f"&{sim_label} {{")
+        lines.append("\tpllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;")
+        lines.append("\ter32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;")
+        lines.append("};")
+        lines.append("")
+
+        # Required by nxp,mcxc-osc binding
+        lines.append(f"&{osc_label} {{")
+        lines.append("\tclock-frequency = <32768>;\t/* conservative default */")
+        lines.append("\tmode = \"low-power\";")
+        lines.append("};")
+        lines.append("")
+
+        # MCXC SoC init reads cpu0 clock-frequency from DT
+        lines.append(f"&{cpu0_label} {{")
+        lines.append("\tclock-frequency = <48000000>;")
+        lines.append("};")
+        lines.append("")
+
+    # MCXN nx4x: SoC DTSI defines ENET without pinctrl (binding requires pinctrl-0).
+    # For build-only coverage, disable it.
+    if t.soc in {"mcxn947", "mcxn547"}:
+        lines.append("&enet { status = \"disabled\"; };")
+        lines.append("")
+
+    # Enable SysTick DT node where SoC DT disables it.
+    if t.soc.startswith("mcxn"):
+        lines.append("&os_timer { status = \"disabled\"; };")
+        lines.append("&systick { status = \"okay\"; };")
+        lines.append("")
+
+    if t.soc.startswith("mimxrt") and (t.cpucluster not in {"hifi4", "hifi1", "f1"}):
+        # Enable OS timer so CONFIG_MCUX_OS_TIMER can be selected.
+        lines.append("&os_timer { status = \"okay\"; };")
+        lines.append("")
+
+    # MCXN dual-core CPU selection: mimic real boards by deleting the other core
+    if t.cpucluster == "cpu0":
+        lines.append("/ { cpus { /delete-node/ cpu@1; }; };")
+    elif t.cpucluster == "cpu1":
+        lines.append("/ { cpus { /delete-node/ cpu@0; }; };")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def apply_filters(targets: list[Target], filters: dict[str, Any], family_name: str) -> list[Target]:
+    f = (filters or {}).get(family_name) or {}
+    prefixes = f.get("prefixes")
+
+    out = common.apply_prefix_filters(targets, prefixes)
+
+    # Optional filter knobs:
+    # - cpuclusters: keep only these cpuclusters
+    # - exclude_cpuclusters: drop these cpuclusters
+    cpuclusters = f.get("cpuclusters")
+    if isinstance(cpuclusters, list) and cpuclusters:
+        keep = {str(c) for c in cpuclusters}
+        out = [t for t in out if t.cpucluster in keep]
+
+    exclude_cpuclusters = f.get("exclude_cpuclusters")
+    if isinstance(exclude_cpuclusters, list) and exclude_cpuclusters:
+        drop = {str(c) for c in exclude_cpuclusters}
+        out = [t for t in out if t.cpucluster not in drop]
+
+    return out
+
+
+def apply_cpucluster_overrides(targets: list[Target], overrides: dict[str, Any]) -> list[Target]:
+    """Optionally restrict cpuclusters per-SoC.
+
+    Config format:
+      "overrides": {
+        "cpuclusters": {
+          "mcimx7d": ["m4"],
+          "mimx94398": ["a55", "m33"]
+        }
+      }
+
+    For SoCs listed in the mapping, only the listed cpuclusters are kept.
+    Non-listed SoCs are left unchanged.
+    """
+
+    m = (overrides or {}).get("cpuclusters") or {}
+    if not isinstance(m, dict) or not m:
+        return targets
+
+    allow: dict[str, set[str]] = {}
+    for soc, clusters in m.items():
+        if not isinstance(clusters, list):
+            continue
+        allow[str(soc)] = {str(c) for c in clusters}
+
+    if not allow:
+        return targets
+
+    out: list[Target] = []
+    for t in targets:
+        allowed = allow.get(t.soc)
+        if not allowed:
+            out.append(t)
+            continue
+        if t.cpucluster in allowed:
+            out.append(t)
+
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", "--configuration", dest="config", required=True, type=Path)
+    ap.add_argument("--zephyr-root", default=_default_zephyr_root(), type=Path)
+    args = ap.parse_args(argv)
+
+    zephyr_root: Path = args.zephyr_root.resolve()
+    cfg = common.load_json(args.config)
+
+    board_cfg = cfg["board"]
+    board_name = str(board_cfg["name"])
+    full_name = str(board_cfg.get("full_name", board_name))
+    vendor = str(board_cfg.get("vendor", "nxp"))
+
+    include_all_cpuclusters = bool(cfg.get("include_all_cpuclusters", True))
+    filters: dict[str, Any] = cfg.get("filters", {}) or {}
+
+    out_root = zephyr_root / cfg["output"]["root"]
+    board_out_dir = out_root / cfg["output"]["board_relpath"]
+
+    overrides_dtsi: dict[str, str] = (cfg.get("overrides", {}) or {}).get("dtsi", {}) or {}
+    overrides: dict[str, Any] = cfg.get("overrides", {}) or {}
+
+    # Default DT node labels used in the emitted board DTS.
+    dts_labels_default: dict[str, str] = cfg.get("dts_labels", {}) or {}
+    overrides_dts_labels: dict[str, Any] = (cfg.get("overrides", {}) or {}).get(
+        "dts_labels", {}
+    ) or {}
+
+    reuse_nxp_platforms = bool(cfg.get("reuse_nxp_platforms", True))
+    platform_db: dict[str, PlatformInfo] = (
+        collect_nxp_platform_db(zephyr_root) if reuse_nxp_platforms else {}
+    )
+
+    # SoC targets are sourced from Zephyr's soc.yml files.
+    family_soc_yml = {
+        "mcx": zephyr_root / "soc/nxp/mcx/soc.yml",
+        "rw": zephyr_root / "soc/nxp/rw/soc.yml",
+        "imxrt": zephyr_root / "soc/nxp/imxrt/soc.yml",
+        "imx": zephyr_root / "soc/nxp/imx/soc.yml",
+    }
+
+    cfg_soc_ymls = cfg.get("soc_ymls")
+    soc_ymls: list[Path]
+    if cfg_soc_ymls:
+        soc_ymls = [(zephyr_root / Path(str(p))).resolve() for p in (cfg_soc_ymls or [])]
+    else:
+        families: list[str] = list(cfg.get("families", []))
+        soc_ymls = []
+        for fam in families:
+            p = family_soc_yml.get(fam)
+            if not p or not p.exists():
+                raise SystemExit(f"Missing soc.yml for family '{fam}': {p}")
+            soc_ymls.append(p)
+
+    # Optional legacy behavior: discover additional cpuclusters from Kconfig.soc.
+    discover_cpuclusters_from_kconfig = bool(cfg.get("discover_cpuclusters_from_kconfig", False))
+    family_kconfig_roots = {
+        "mcx": zephyr_root / "soc/nxp/mcx",
+        "rw": zephyr_root / "soc/nxp/rw",
+        "imxrt": zephyr_root / "soc/nxp/imxrt",
+        "imx": zephyr_root / "soc/nxp/imx",
+    }
+
+    targets: list[Target] = []
+    for soc_yml in soc_ymls:
+        if not soc_yml.exists():
+            raise SystemExit(f"Missing soc.yml: {soc_yml}")
+
+        # filters keys are typically the family folder name (e.g. "mcx", "imxrt")
+        family_name = soc_yml.parent.name
+
+        fam_targets = common.extract_targets_from_soc_yml(
+            soc_yml, include_all_cpuclusters=include_all_cpuclusters
+        )
+        fam_targets = apply_filters(fam_targets, filters=filters, family_name=family_name)
+        targets.extend(fam_targets)
+
+    targets = apply_cpucluster_overrides(targets, overrides)
+
+    if discover_cpuclusters_from_kconfig and include_all_cpuclusters:
+        roots: list[Path] = []
+        for soc_yml in soc_ymls:
+            family_name = soc_yml.parent.name
+            root = family_kconfig_roots.get(family_name)
+            if root:
+                roots.append(root)
+
+        kconfig_symbols = common.collect_kconfig_soc_symbols(roots)
+        for soc in sorted({t.soc for t in targets}):
+            for c in sorted(common.extract_cpuclusters_from_kconfig_symbols(soc, kconfig_symbols)):
+                targets.append(Target(soc=soc, cpucluster=c))
+
+    # Final de-dupe
+    seen: set[str] = set()
+    dedup: list[Target] = []
+    for t in targets:
+        if t.qualifier in seen:
+            continue
+        seen.add(t.qualifier)
+        dedup.append(t)
+    targets = dedup
+
+    master_platforms: dict[str, Any] = cfg.get("master_platforms", {}) or {}
+    overrides_master_platform: dict[str, Any] = (cfg.get("overrides", {}) or {}).get(
+        "master_platform", {}
+    ) or {}
+
+    common.ensure_empty_dir(board_out_dir)
+
+    (board_out_dir / "board.yml").write_text(
+        common.render_board_yml(board_name, full_name, vendor, targets), encoding="utf-8"
+    )
+
+    # The file name *must* be Kconfig.<boardname>
+    (board_out_dir / f"Kconfig.{board_name}").write_text(
+        render_kconfig_board(board_name, targets), encoding="utf-8"
+    )
+
+    # Emit per-target artifacts
+    for t in targets:
+        suffix = f"{t.soc}" + (f"_{t.cpucluster}" if t.cpucluster else "")
+
+        # JSON override keys:
+        # - "soc" (e.g. "rw612")
+        # - "soc/cluster" (e.g. "mimx9352/a55")
+        platform_info = platform_for_target(platform_db, t.soc, t.cpucluster)
+
+        master_ident = resolve_master_platform_identifier(t, master_platforms, overrides_master_platform)
+        master_info = platform_db.get(master_ident) if master_ident else None
+
+        dtsi_include = (
+            overrides_dtsi.get(t.qualifier)
+            or overrides_dtsi.get(t.soc)
+            or (platform_info.dtsi_include if platform_info else None)
+            or (master_info.dtsi_include if master_info else None)
+            or default_dtsi(t)
+        )
+
+        dts_labels_override = (
+            overrides_dts_labels.get(t.qualifier) or overrides_dts_labels.get(t.soc) or {}
+        )
+        dts_labels: dict[str, str] = {
+            **{str(k): str(v) for k, v in dts_labels_default.items()},
+            **{str(k): str(v) for k, v in (dts_labels_override or {}).items()},
+        }
+
+        arch = guess_arch(t)
+
+        dts_text: str
+        if master_info and master_info.dts_path:
+            copy_master_quoted_includes(master=master_info, board_out_dir=board_out_dir)
+            try:
+                dts_text = render_dts_from_master(
+                    t=t,
+                    master=master_info,
+                    zephyr_root=zephyr_root,
+                    dtsi_include=dtsi_include,
+                )
+            except Exception:
+                # Robust fallback: keep generation working even if master DTS inlining fails.
+                dts_text = render_dts(t, dtsi_include=dtsi_include, dts_labels=dts_labels)
+        else:
+            dts_text = render_dts(t, dtsi_include=dtsi_include, dts_labels=dts_labels)
+
+        (board_out_dir / f"{board_name}_{suffix}.dts").write_text(dts_text, encoding="utf-8")
+        (board_out_dir / f"{board_name}_{suffix}_defconfig").write_text(
+            render_defconfig(t), encoding="utf-8"
+        )
+        (board_out_dir / f"{board_name}_{suffix}.yaml").write_text(
+            render_target_yaml(
+                board_name,
+                t,
+                arch=arch,
+                supported=(
+                    (platform_info.supported if platform_info and platform_info.supported else None)
+                    or (master_info.supported if master_info and master_info.supported else None)
+                ),
+            ),
+            encoding="utf-8",
+        )
+
+    print(f"Generated board '{board_name}' with {len(targets)} targets")
+    print(f"Output: {board_out_dir}")
+    print(f"BOARD_ROOT: {out_root}")
+    return 0
