@@ -30,8 +30,10 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 4 - Ready only flash with unique device id, package code and VREF/TS calib*/
 	MPU_REGION_ENTRY("ID", 0x08FFF800, REGION_IO_ATTR(REGION_512B)),
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
-#define sram_eth_node DT_NODELABEL(sram2)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac)) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(mac), memory_regions)
+#define sram_eth_node DT_PHANDLE(DT_NODELABEL(mac), memory_regions)
+
 #if DT_NODE_HAS_STATUS_OKAY(sram_eth_node)
 	/* Region 5 - Ethernet DMA buffer RAM */
 	MPU_REGION_ENTRY("SRAM_ETH_BUF", DT_REG_ADDR(sram_eth_node),
@@ -41,6 +43,12 @@ static const struct arm_mpu_region mpu_regions[] = {
 #endif
 #endif
 };
+
+#ifdef sram_eth_node
+	BUILD_ASSERT(!DT_SAME_NODE(sram_eth_node, DT_CHOSEN(zephyr_sram)),
+	     "Remove property memory-regions from 'mac' node "
+	     "to locate ethernet buffers in system RAM.");
+#endif
 
 const struct arm_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),

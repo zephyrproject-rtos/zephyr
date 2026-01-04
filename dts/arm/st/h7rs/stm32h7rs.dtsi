@@ -54,6 +54,7 @@
 		reg = <0x24000000 DT_SIZE_K(456)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM0";
+		#memory-region-cells = <0>;
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
@@ -61,6 +62,7 @@
 		reg = <0x30000000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM1";
+		#memory-region-cells = <0>;
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
@@ -69,6 +71,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30004000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM2";
+		#memory-region-cells = <0>;
 		/* Disable SRAM2 by default to avoid unintended access.
 		 * To enable it, explicitly define zephyr,memory-attr
 		 * to configure MPU attributes.
