@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CACHE
-	bool "External cache controller drivers"
-	default y if CACHE_MANAGEMENT
-	help
-	  Enable support for external cache controllers drivers
+		bool "External cache controller drivers"
+		default y if CACHE_MANAGEMENT || CACHE_INIT_ONLY
+		help
+		  Enable support for external cache controller drivers
 
 if CACHE
 
@@ -22,11 +22,17 @@ comment "Device Drivers"
 source "drivers/cache/Kconfig.andes"
 source "drivers/cache/Kconfig.aspeed"
 source "drivers/cache/Kconfig.bflb"
+source "drivers/cache/Kconfig.mcux"
 source "drivers/cache/Kconfig.nrf"
-source "drivers/cache/Kconfig.nxp_lmem_cache"
-source "drivers/cache/Kconfig.nxp_syscon_lpcac"
-source "drivers/cache/Kconfig.nxp_xcache"
 source "drivers/cache/Kconfig.stm32"
 # zephyr-keep-sorted-stop
 
 endif # CACHE
+
+# Init-only cache drivers without enabling generic cache management API
+config CACHE_INIT_ONLY
+		bool "Initialize SoC cache controller (no management API)"
+		help
+		  Enable init-only cache drivers without enabling the generic
+		  cache management API. This compiles drivers/cache to allow
+		  board/SoC specific cache initialization at boot.

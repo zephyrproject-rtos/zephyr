@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,6 +124,20 @@
 
 	flexspi2: spi@13c000 {
 		reg = <0x13c000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
+	};
+
+	cache64_ctrl0: cache@33000 {
+		compatible = "nxp,cache64";
+		reg = <0x33000 0x1000>;
+		enable-write-buffer;
+		status = "disabled";
+	};
+
+	cache64_ctrl1: cache@34000 {
+		compatible = "nxp,cache64";
+		reg = <0x34000 0x1000>;
+		enable-write-buffer;
+		status = "disabled";
 	};
 
 	clkctl0: clkctl@1000 {
