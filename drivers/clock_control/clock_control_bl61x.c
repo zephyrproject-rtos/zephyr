@@ -1045,6 +1045,8 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	regval |= (1 << 13);
 	/* enable DMA clock routing */
 	regval |= (1 << 12);
+	/* enable IR clock routing */
+	regval |= (1 << 22);
 	/* enable DBI clock routing */
 	regval |= (1 << 24);
 
