@@ -7,6 +7,7 @@ API Status and Guidelines
    :maxdepth: 1
 
    overview.rst
+   api_conventions.rst
    api_lifecycle.rst
    design_guidelines.rst
    terminology.rst
