@@ -22,7 +22,7 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 
-#include "apds9960.h"
+#include <zephyr/drivers/sensor/apds9960.h>
 
 LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -48,6 +48,124 @@ static void apds9960_gpio_callback(const struct device *dev,
 }
 #endif
 
+#if CONFIG_APDS9960_ENABLE_GESTURE
+static void apds9960_gesture_determine(struct apds9960_data *data,
+					uint8_t *gesture_fifo, int ir_difference)
+{
+	int tmp_up;
+	int tmp_left;
+	int net_up = 0;
+	int net_left = 0;
+
+	static bool up_trig;
+	static bool down_trig;
+	static bool left_trig;
+	static bool right_trig;
+
+	tmp_up = (int) gesture_fifo[0] - (int) gesture_fifo[1];
+	tmp_left = (int) gesture_fifo[2] - (int) gesture_fifo[3];
+
+	if (abs(tmp_up) > ir_difference && abs(tmp_up) > abs(tmp_left)) {
+		net_up = tmp_up;
+	}
+	if (abs(tmp_left) > ir_difference && abs(tmp_left) > abs(tmp_up)) {
+		net_left = tmp_left;
+	}
+
+	if (net_up > 0) {
+		if (down_trig) {
+			data->gesture = APDS9960_GESTURE_DOWN;
+			up_trig = false;
+			down_trig = false;
+			left_trig = false;
+			right_trig = false;
+		} else {
+			up_trig = true;
+		}
+	} else if (net_up < 0) {
+		if (up_trig) {
+			data->gesture = APDS9960_GESTURE_UP;
+			up_trig = false;
+			down_trig = false;
+			left_trig = false;
+			right_trig = false;
+		} else {
+			down_trig = true;
+		}
+	} else {
+		/* No movement in up down direction */
+	}
+	if (net_left > 0) {
+		if (right_trig) {
+			data->gesture = APDS9960_GESTURE_RIGHT;
+			up_trig = false;
+			down_trig = false;
+			left_trig = false;
+			right_trig = false;
+		} else {
+			left_trig = true;
+		}
+	} else if (net_left < 0) {
+		if (left_trig) {
+			data->gesture = APDS9960_GESTURE_LEFT;
+			up_trig = false;
+			down_trig = false;
+			left_trig = false;
+			right_trig = false;
+		} else {
+			right_trig = true;
+		}
+	} else {
+		/* No movement in left right direction*/
+	}
+	LOG_DBG("Net up: 0x%x, Net left: 0x%x", net_up, net_left);
+
+}
+static int apds9960_gesture_fetch(const struct device *dev)
+{
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
+
+	uint8_t gesture_fifo_cnt;
+	uint8_t gstatus;
+	uint8_t gesture_fifo[4];
+
+	data->gesture = APDS9960_GESTURE_NONE;
+
+	if (i2c_reg_read_byte_dt(&config->i2c,
+			APDS9960_GSTATUS_REG, &gstatus)) {
+		return -EIO;
+	}
+
+	while (gstatus & APDS9960_GSTATUS_GVALID) {
+		if (i2c_reg_read_byte_dt(&config->i2c,
+					APDS9960_GFLVL_REG, &gesture_fifo_cnt)) {
+			return -EIO;
+		}
+
+		for (int i = 0; i < gesture_fifo_cnt; ++i) {
+			/* Read up fifo and adjacent registers */
+			if (i2c_burst_read_dt(&config->i2c,
+					APDS9960_GFIFO_U_REG,
+					(uint8_t *) gesture_fifo,
+					4)) {
+				return -EIO;
+			}
+
+			apds9960_gesture_determine(data, gesture_fifo,
+				config->gesture_config.ir_difference);
+		}
+
+		if (i2c_reg_read_byte_dt(&config->i2c,
+				APDS9960_GSTATUS_REG, &gstatus)) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static int apds9960_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
@@ -62,6 +180,12 @@ static int apds9960_sample_fetch(const struct device *dev,
 		LOG_ERR("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
+
+#ifdef CONFIG_APDS9960_ENABLE_GESTURE
+	if (apds9960_gesture_fetch(dev)) {
+		return -EIO;
+	}
+#endif
 
 #ifndef CONFIG_APDS9960_TRIGGER
 #ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
@@ -90,16 +214,9 @@ static int apds9960_sample_fetch(const struct device *dev,
 	start_time = k_uptime_get();
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	while (!(tmp & APDS9960_STATUS_AINT)) {
-		k_sleep(K_MSEC(APDS9960_DEFAULT_WAIT_TIME));
-		if (i2c_reg_read_byte_dt(&config->i2c, APDS9960_STATUS_REG, &tmp)) {
-			return -EIO;
-		}
-		if ((k_uptime_get() - start_time) > APDS9960_MAX_WAIT_TIME) {
-			return -ETIMEDOUT;
-		}
-	}
 #else
 	while (!(tmp & APDS9960_STATUS_PINT)) {
+#endif
 		k_sleep(K_MSEC(APDS9960_DEFAULT_WAIT_TIME));
 		if (i2c_reg_read_byte_dt(&config->i2c, APDS9960_STATUS_REG, &tmp)) {
 			return -EIO;
@@ -108,7 +225,6 @@ static int apds9960_sample_fetch(const struct device *dev,
 			return -ETIMEDOUT;
 		}
 	}
-#endif
 #endif
 
 	LOG_DBG("status: 0x%x", tmp);
@@ -170,6 +286,12 @@ static int apds9960_channel_get(const struct device *dev,
 		break;
 	case SENSOR_CHAN_BLUE:
 		val->val1 = sys_le16_to_cpu(data->sample_crgb[3]);
+		val->val2 = 0;
+		break;
+#endif
+#ifdef CONFIG_APDS9960_ENABLE_GESTURE
+	case SENSOR_CHAN_APDS9960_GESTURE:
+		val->val1 = data->gesture;
 		val->val2 = 0;
 		break;
 #endif
@@ -304,6 +426,45 @@ static int apds9960_ambient_setup(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_APDS9960_ENABLE_GESTURE
+static int apds9960_gesture_setup(const struct device *dev)
+{
+	const struct apds9960_config *config = dev->config;
+
+	if (i2c_reg_write_byte_dt(&config->i2c,
+				APDS9960_GPENTH_REG, config->gesture_config.proximity)) {
+		LOG_ERR("Gesture proximity enter not set.");
+		return -EIO;
+	}
+	if (i2c_reg_write_byte_dt(&config->i2c,
+			       APDS9960_GEXTH_REG, config->gesture_config.proximity)) {
+		LOG_ERR("Gesture proximity exit not set.");
+		return -EIO;
+	}
+	if (i2c_reg_write_byte_dt(&config->i2c,
+			       APDS9960_GCONFIG1_REG, 0)) {
+		LOG_ERR("Gesture config 1 not set.");
+		return -EIO;
+	}
+	if (i2c_reg_write_byte_dt(&config->i2c,
+			       APDS9960_GCONFIG2_REG, APDS9960_GGAIN_4X)) {
+		LOG_ERR("Gesture config 2 not set.");
+		return -EIO;
+	}
+	if (i2c_reg_write_byte_dt(&config->i2c,
+			       APDS9960_GCONFIG4_REG, 0)) {
+		LOG_ERR("Gesture config 4 not set.");
+		return -EIO;
+	}
+	if (i2c_reg_update_byte_dt(&config->i2c, APDS9960_ENABLE_REG, APDS9960_ENABLE_GEN,
+				   APDS9960_ENABLE_GEN)) {
+		LOG_ERR("Gesture on bit not set.");
+		return -EIO;
+	}
+	return 0;
+}
+#endif
+
 static int apds9960_sensor_setup(const struct device *dev)
 {
 	const struct apds9960_config *config = dev->config;
@@ -381,6 +542,13 @@ static int apds9960_sensor_setup(const struct device *dev)
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	if (apds9960_ambient_setup(dev)) {
 		LOG_ERR("Failed to setup ambient light functionality");
+		return -EIO;
+	}
+#endif
+
+#ifdef CONFIG_APDS9960_ENABLE_GESTURE
+	if (apds9960_gesture_setup(dev)) {
+		LOG_ERR("Failed to setup gesture functionality");
 		return -EIO;
 	}
 #endif
@@ -520,57 +688,39 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 #endif
 };
 
-static const struct apds9960_config apds9960_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_APDS9960_FETCH_MODE_INTERRUPT
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif
-#if CONFIG_APDS9960_PGAIN_8X
-	.pgain = APDS9960_PGAIN_8X,
-#elif CONFIG_APDS9960_PGAIN_4X
-	.pgain = APDS9960_PGAIN_4X,
-#elif CONFIG_APDS9960_PGAIN_2X
-	.pgain = APDS9960_PGAIN_2X,
+#if CONFIG_APDS9960_FETCH_MODE_INTERRUPT
+#define APDS9960_CONFIG_INTERRUPT(inst) \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),
 #else
-	.pgain = APDS9960_PGAIN_1X,
+#define APDS9960_CONFIG_INTERRUPT(inst)
 #endif
-#if CONFIG_APDS9960_AGAIN_64X
-	.again = APDS9960_AGAIN_64X,
-#elif CONFIG_APDS9960_AGAIN_16X
-	.again = APDS9960_AGAIN_16X,
-#elif CONFIG_APDS9960_AGAIN_4X
-	.again = APDS9960_AGAIN_4X,
-#else
-	.again = APDS9960_AGAIN_1X,
-#endif
-#if CONFIG_APDS9960_PPULSE_LENGTH_32US
-	.ppcount = APDS9960_PPULSE_LENGTH_32US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#elif CONFIG_APDS9960_PPULSE_LENGTH_16US
-	.ppcount = APDS9960_PPULSE_LENGTH_16US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#elif CONFIG_APDS9960_PPULSE_LENGTH_8US
-	.ppcount = APDS9960_PPULSE_LENGTH_8US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#else
-	.ppcount = APDS9960_PPULSE_LENGTH_4US |
-		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
-#endif
-#if CONFIG_APDS9960_PLED_BOOST_300PCT
-	.pled_boost = APDS9960_PLED_BOOST_300,
-#elif CONFIG_APDS9960_PLED_BOOST_200PCT
-	.pled_boost = APDS9960_PLED_BOOST_200,
-#elif CONFIG_APDS9960_PLED_BOOST_150PCT
-	.pled_boost = APDS9960_PLED_BOOST_150,
-#else
-	.pled_boost = APDS9960_PLED_BOOST_100,
-#endif
-};
 
-static struct apds9960_data apds9960_data;
+#if CONFIG_APDS9960_ENABLE_GESTURE
+#define APDS9960_CONFIG_GESTURE(inst)                                                              \
+		.gesture_config = {                                                                \
+			.proximity = DT_INST_PROP(inst, proximity),                                \
+			.ir_difference = DT_INST_PROP(inst, ir_difference),                        \
+		},
+#else
+#define APDS9960_CONFIG_GESTURE(inst)
+#endif
 
-PM_DEVICE_DT_INST_DEFINE(0, apds9960_pm_action);
+#define APDS9960_INIT(i)                                                                           \
+	static struct apds9960_data apds9960_data_##i;                                             \
+	static const struct apds9960_config apds9960_config_##i = {                                \
+		.i2c = I2C_DT_SPEC_INST_GET(i),                                                    \
+		APDS9960_CONFIG_INTERRUPT(i)                                                       \
+		.pgain = DT_INST_PROP(i, pgain) << 1,                                              \
+		.again = DT_INST_PROP(i, again),                                                   \
+		.ppcount = DT_INST_PROP(i, ppulse_length) | (DT_INST_PROP(i, ppulse_count) - 1),   \
+		.pled_boost = DT_INST_PROP(i, pled_boost) << 4,                                    \
+		APDS9960_CONFIG_GESTURE(i)                                                         \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(i, apds9960_pm_action);                                           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(i, apds9960_init,                                             \
+		PM_DEVICE_DT_INST_GET(i), &apds9960_data_##i, &apds9960_config_##i,                \
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, apds9960_init,
-	      PM_DEVICE_DT_INST_GET(0), &apds9960_data, &apds9960_config,
-	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(APDS9960_INIT)
