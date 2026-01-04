@@ -415,3 +415,18 @@ SYS_INIT(board_config_pmic, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
  */
 SYS_INIT(init_psram_framebufs, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
+
+#ifdef CONFIG_VGLITE
+
+extern char __flexspi2_start[];
+extern char __flexspi2_end[];
+
+static int init_vg_psram(void)
+{
+	size_t region_size = (size_t)__flexspi2_end - (size_t)__flexspi2_start;
+	memset(__flexspi2_start, 0, region_size);
+	return 0;
+}
+
+SYS_INIT(init_vg_psram, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif
