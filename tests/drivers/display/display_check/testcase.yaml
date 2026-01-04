@@ -95,3 +95,4 @@ tests:
       - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu
       - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=zc143ac72mipi
+      - platform:imx93_evk/mimx9352/m33/ddr:SHIELD=nxp_mx8_dsi_oled1a
