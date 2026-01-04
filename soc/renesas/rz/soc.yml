@@ -4,6 +4,9 @@ family:
       - name: rza2m
         socs:
           - name: r7s921053vcbg
+      - name: rza3m
+        socs:
+          - name: r9a07g066m04gbg
       - name: rza3ul
         socs:
           - name: r9a07g063u02gbg
