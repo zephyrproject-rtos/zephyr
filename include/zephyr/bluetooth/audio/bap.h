@@ -883,6 +883,22 @@ struct bt_bap_ep_info {
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
 
 /**
+ * @brief Get the pointer to the ACL connection of an endpoint
+ *
+ * The caller gets a new reference to the connection object, if not NULL, which must be
+ * released with bt_conn_unref() once done using the object.
+ *
+ * @param ep The endpoint to get the ACL connection of
+ *
+ * @return The ACL connection pointer, or NULL if:
+ *         - @p ep is NULL
+ *         - @p ep is a broadcast endpoint
+ *         - @p ep is a Unicast Server endpoint not yet configured by a remote client
+ *         - @p ep is a Unicast Client endpoint not yet discovered on a remote server
+ */
+struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep);
+
+/**
  * @brief Basic Audio Profile stream structure.
  *
  * Streams represents a stream configuration of a Remote Endpoint and a Local Capability.
