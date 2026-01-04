@@ -422,6 +422,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x224dd930>;
 			ghwcfg4 = <0xd3f0a030>;
+			g-rx-fifo-size = <64>;
+			g-np-tx-fifo-size = <16>;
+			g-tx-fifo-size = <32 32 32 24>;
 		};
 
 		timer0: counter@6001f000 {
