@@ -1,0 +1,26 @@
+description: SCT2024 LED driver
+
+compatible: "sct,sct2024"
+
+include: ["spi-device.yaml", "led-controller.yaml"]
+
+properties:
+  la-gpios:
+    description:
+      GPIO specifier for the LA (Latch) pin.
+      The LA pin is used to apply previously transferred data to all LEDs simultaneously. The data
+      is latched onto the LEDs when the LA pin is low. The data from the shift register goes
+      through when the LA pin is high.
+    required: true
+    type: phandle-array
+  oe-gpios:
+    description:
+      GPIO specifier for the OE (Output Enable) pin.
+      The OE pin can be used to disable all LEDs connected to the device. When the OE pin is high,
+      all LEDs are disabled.
+    type: phandle-array
+
+child-binding:
+  properties:
+    index:
+      required: true
