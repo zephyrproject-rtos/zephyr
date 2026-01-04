@@ -1,0 +1,21 @@
+# Synaptics SR100 Watchdog
+
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_SYNA
+	bool "Synaptics Watchdog Timer (WDT) driver"
+	default y
+	depends on DT_HAS_SYNA_WATCHDOG_ENABLED
+	select RUNTIME_NMI
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable WDT driver for Synaptics MCU series.
+
+config WDT_SYNA_DEFAULT_TIMEOUT_MAX
+	int "Default timeout value of the WDT in ms"
+	depends on WDT_SYNA
+	default 1000
+	range 1 $(UINT32_MAX)
+	help
+	  Sets the initial timeout value for WDT in ms if enabled at boot.

@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synaptics AON Event GPIO driver
+
+compatible: "syna,aon-event-gpio"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: Event GPIO configuration
+
+  properties:
+    event:
+      type: int
+      required: true
+      description: |
+        Event identifier that will be assigned to the GPO. Note that the GPOs
+        have different supported events.
+
+    pulse-width:
+      type: int
+      required: true
+      description: |
+        Specifies the width of the pulse in units of 32kHz that is generated on
+        the GPO when an event occurs.
+
+        Valid range: 0 to 15.
+
+    polarity:
+      type: int
+      enum: [0, 1]
+      required: true
+      description: |
+        Specifies the GPO polarity (GPIO_ACTIVE_HIGH, GPIO_ACTIVE_LOW) at idle.
+        When an event occurs, a pulse is generated with the opposite polarity.
