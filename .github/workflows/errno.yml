@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: zephyr
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
+        uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
         with:
           app-path: zephyr
           toolchains: 'arm-zephyr-eabi'
