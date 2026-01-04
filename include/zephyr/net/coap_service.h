@@ -16,6 +16,9 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/tls_credentials.h>
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+#include <oscore.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +50,9 @@ struct coap_service_data {
 	int sock_fd;
 	struct coap_observer observers[CONFIG_COAP_SERVICE_OBSERVERS];
 	struct coap_pending pending[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+	struct context oscore_ctx;
+#endif
 };
 
 struct coap_service {
@@ -287,7 +293,7 @@ int coap_service_is_running(const struct coap_service *service);
  * @param params Pointer to transmission parameters structure or NULL to use default values.
  * @return 0 in case of success or negative in case of error.
  */
-int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
+int coap_service_send(const struct coap_service *service, struct coap_packet *cpkt,
 		      const struct net_sockaddr *addr, net_socklen_t addr_len,
 		      const struct coap_transmission_parameters *params);
 
@@ -303,7 +309,7 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
  * @param params Pointer to transmission parameters structure or NULL to use default values.
  * @return 0 in case of success or negative in case of error.
  */
-int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
+int coap_resource_send(const struct coap_resource *resource, struct coap_packet *cpkt,
 		       const struct net_sockaddr *addr, net_socklen_t addr_len,
 		       const struct coap_transmission_parameters *params);
 

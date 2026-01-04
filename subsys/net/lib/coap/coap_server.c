@@ -18,6 +18,9 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_service.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/zvfs/eventfd.h>
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+#include <oscore.h>
+#endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -153,12 +156,6 @@ static int coap_server_process(int sock_fd)
 		return -errno;
 	}
 
-	ret = coap_packet_parse(&request, buf, MIN(received, sizeof(buf)), options, opt_num);
-	if (ret < 0) {
-		LOG_ERR("Failed To parse coap message (%d)", ret);
-		return ret;
-	}
-
 	(void)k_mutex_lock(&lock, K_FOREVER);
 	/* Find the active service */
 	COAP_SERVICE_FOREACH(svc) {
@@ -169,6 +166,25 @@ static int coap_server_process(int sock_fd)
 	}
 	if (service == NULL) {
 		ret = -ENOENT;
+		goto unlock;
+	}
+
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+	/* First decrypt the raw packet (OSCORE -> CoAP), then parse it */
+	static uint8_t decrypted_coap[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t coap_len = sizeof(decrypted_coap);
+	ret = oscore2coap(buf, received, decrypted_coap, &coap_len, &(service->data->oscore_ctx));
+	if (ret != 0){
+		LOG_ERR("Failed to decrypt using OSCORE ret=%i", ret);
+		goto unlock;
+	}
+	ret = coap_packet_parse(&request, decrypted_coap, coap_len, options, opt_num);
+#else
+	/* The raw packet is already a CoAP packet */
+	ret = coap_packet_parse(&request, buf, MIN(received, sizeof(buf)), options, opt_num);
+#endif
+	if (ret < 0) {
+		LOG_ERR("Failed to parse coap message (%d)", ret);
 		goto unlock;
 	}
 
@@ -428,6 +444,33 @@ int coap_service_start(const struct coap_service *service)
 		goto end;
 	}
 
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+	struct oscore_init_params params = {
+		.master_secret = {.ptr = CONFIG_COAP_SERVER_OSCORE_MASTER_SECRET,
+				  .len = sizeof(CONFIG_COAP_SERVER_OSCORE_MASTER_SECRET) - 1},
+		.sender_id = {.ptr = CONFIG_COAP_SERVER_OSCORE_SENDER_ID,
+			      .len = sizeof(CONFIG_COAP_SERVER_OSCORE_SENDER_ID) - 1},
+		.recipient_id = {.ptr = CONFIG_COAP_SERVER_OSCORE_RECIPIENT_ID,
+			      .len = sizeof(CONFIG_COAP_SERVER_OSCORE_RECIPIENT_ID) - 1},
+		.id_context = {.ptr = NULL, .len = 0},
+		.master_salt = {.ptr = NULL, .len = 0},
+		.aead_alg = OSCORE_AES_CCM_16_64_128, /* only supported algo */
+		.hkdf = OSCORE_SHA_256, /* only supported algo */
+		.fresh_master_secret_salt = true /* FIXME */
+	};
+	/* Check for default master secret */
+	if (strcmp(params.master_secret.ptr, "0123456789012345") == 0){
+		LOG_WRN("Default OSCORE master secret in use. This is not secure!");
+	}
+
+	ret = oscore_context_init(&params, &(service->data->oscore_ctx));
+	if (ret != 0){
+		LOG_ERR("Failed to init oscore ctx %i", ret);
+		ret = -EINVAL;
+		goto end;
+	}
+#endif
+
 	/* set the default address (in6addr_any / NET_INADDR_ANY are all 0) */
 	addr_storage = (struct net_sockaddr_storage){0};
 	if (IS_ENABLED(CONFIG_NET_IPV6) && service->host != NULL &&
@@ -587,7 +630,7 @@ int coap_service_is_running(const struct coap_service *service)
 	return ret;
 }
 
-int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
+int coap_service_send(const struct coap_service *service, struct coap_packet *cpkt,
 		      const struct net_sockaddr *addr, net_socklen_t addr_len,
 		      const struct coap_transmission_parameters *params)
 {
@@ -642,7 +685,20 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 send:
 	(void)k_mutex_unlock(&lock);
 
+#if defined(CONFIG_COAP_SERVER_OSCORE)
+	/* Encrypt the CoAP packet before sending it */
+	uint8_t oscore_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t oscore_len = sizeof(oscore_buf);
+	ret = coap2oscore(cpkt->data, cpkt->offset, oscore_buf, &oscore_len, &(service->data->oscore_ctx));
+	if (ret != 0){
+		LOG_ERR("Failed to encrypt packet using OSCORE ret=%i", ret);
+		return ret;
+	}
+	ret = zsock_sendto(service->data->sock_fd, oscore_buf, oscore_len, 0, addr, addr_len);
+#else
+	/* Directly send the CoAP packet in plaintext */
 	ret = zsock_sendto(service->data->sock_fd, cpkt->data, cpkt->offset, 0, addr, addr_len);
+#endif
 	if (ret < 0) {
 		LOG_ERR("Failed to send CoAP message (%d)", ret);
 		return ret;
@@ -652,7 +708,7 @@ send:
 	return 0;
 }
 
-int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
+int coap_resource_send(const struct coap_resource *resource, struct coap_packet *cpkt,
 		       const struct net_sockaddr *addr, net_socklen_t addr_len,
 		       const struct coap_transmission_parameters *params)
 {
