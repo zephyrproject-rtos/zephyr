@@ -25,7 +25,11 @@
 /* Simultaneous 3 extended advertising sets with extended scanning on 1M and Coded PHY, scheduling
  * and receiving auxiliary PDUs.
  */
-#define EVENT_OVERHEAD_START_US       733 /* 24 RTC ticks */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define EVENT_OVERHEAD_START_US       367 /* 12 RTC ticks equivalent */
+#else
+#define EVENT_OVERHEAD_START_US       611 /* 20 RTC ticks */
+#endif
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
 /* Active connection in peripheral role with extended scanning on 1M only, scheduling and receiving
  * auxiliary PDUs.
