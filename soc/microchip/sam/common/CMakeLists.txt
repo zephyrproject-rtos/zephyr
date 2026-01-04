@@ -21,3 +21,7 @@ if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7)
   )
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_SAMA7D6 sama7d65.c)
 endif()
+
+if(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+  zephyr_sources(irq_aic.c)
+endif()
