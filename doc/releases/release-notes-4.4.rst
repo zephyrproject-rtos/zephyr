@@ -122,6 +122,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
+
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
