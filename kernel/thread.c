@@ -657,6 +657,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->no_wake_on_timeout = false;
 #endif /* CONFIG_EVENTS */
 #ifdef CONFIG_THREAD_MONITOR
+	/* Check if the thread is already in the list */
+	for (struct k_thread *t = _kernel.threads; t; t = t->next_thread) {
+		__ASSERT(t != new_thread, "thread already in list");
+	}
+
 	new_thread->entry.pEntry = entry;
 	new_thread->entry.parameter1 = p1;
 	new_thread->entry.parameter2 = p2;
