@@ -544,7 +544,7 @@ def load_firmware_ace(fw_file):
         log.info("Waiting for DSP subsystem power on")
         time.sleep(0.1)
 
-    if ace20 or ace30 or ace40:
+    if ace20 or ace30:
         log.info(f"Enabling offload for I2S link")
         # needed to allow DSP to access SSP DAI
         hda.HDAML_I2S_LCTL |= mask(OFLEN)

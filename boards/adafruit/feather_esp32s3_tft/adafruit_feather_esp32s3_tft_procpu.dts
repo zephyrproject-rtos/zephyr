@@ -58,7 +58,7 @@
 		};
 
 		led1: led_1 {
-			gpios = <&gpio1 45 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -69,7 +69,7 @@
 	neopixel_pwr: neopixel_pwr {
 		compatible = "power-domain-gpio";
 		#power-domain-cells = <0>;
-		enable-gpios = <&gpio1 34 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	/*
@@ -85,8 +85,8 @@
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&spi2>;
-		dc-gpios = <&gpio1 39 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio1 40 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
