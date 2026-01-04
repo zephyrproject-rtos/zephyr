@@ -18,8 +18,13 @@ LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT nxp_lpc_mcan
 
 /* Message RAM Base Address register */
-#define MCUX_MCAN_MRBA	 0x200
+#define MCUX_MCAN_MRBA    0x200
 #define MCUX_MCAN_MRBA_BA GENMASK(31, 16)
+
+/* External timestamp counter configuration register */
+#define MCUX_MCAN_ETSCC      0x400
+#define MCUX_MCAN_ETSCC_ETCP GENMASK(10, 0)
+#define MCUX_MCAN_ETSCC_ETCE BIT(31)
 
 struct mcux_mcan_config {
 	mm_reg_t base;
@@ -29,6 +34,10 @@ struct mcux_mcan_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 	const struct reset_dt_spec reset;
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	uint16_t timestamp_prescaler;
+	bool use_exteral_timestamp;
+#endif /* CONFIG_CAN_RX_TIMESTAMP */
 };
 
 static int mcux_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
@@ -130,6 +139,26 @@ static int mcux_mcan_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	if (mcux_config->use_exteral_timestamp) {
+		uint32_t reg;
+
+		/* Configure external timestamp counter prescaler and enable it */
+		reg = FIELD_PREP(MCUX_MCAN_ETSCC_ETCP, mcux_config->timestamp_prescaler - 1U) |
+			MCUX_MCAN_ETSCC_ETCE;
+		err = can_mcan_write_reg(dev, MCUX_MCAN_ETSCC, reg);
+		if (err != 0) {
+			return -EIO;
+		}
+
+		/* Use external timestamp counter */
+		err = can_mcan_write_reg(dev, CAN_MCAN_TSCC, FIELD_PREP(CAN_MCAN_TSCC_TSS, 2U));
+		if (err != 0) {
+			return -EIO;
+		}
+	}
+#endif /* CONFIG_CAN_RX_TIMESTAMP */
+
 	mcux_config->irq_config_func(dev);
 
 	return 0;
@@ -210,6 +239,9 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 		.irq_config_func = mcux_mcan_irq_config_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.reset = RESET_DT_SPEC_INST_GET(n),			\
+		COND_CODE_1(IS_ENABLED(CONFIG_CAN_RX_TIMESTAMP),        \
+		(.timestamp_prescaler = DT_INST_PROP(n, external_timestamp_counter_prescaler),  \
+		.use_exteral_timestamp = DT_INST_PROP(n, use_external_timestamp_counter),), ()) \
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\
