@@ -1,82 +1,65 @@
-type: seq
-sequence:
-  - type: map
-    required: false
-    mapping:
-      "available":
-        type: bool
-        required: false
-      "connected":
-        type: bool
-        required: true
-      "id":
-        type: str
-        required: true
-      "notes":
-        type: str
-        required: false
-      "platform":
-        type: any
-        required: true
-      "probe_id":
-        type: str
-        required: false
-      "product":
-        type: str
-        required: true
-      "runner":
-        type: str
-        required: true
-      "runner_params":
-        type: seq
-        required: false
-        sequence:
-          - type: str
-      "serial_pty":
-        type: str
-        required: false
-      "serial":
-        type: str
-        required: false
-      "baud":
-        type: int
-        required: false
-      "serial_baud":
-        type: int
-        required: false
-      "post_script":
-        type: str
-        required: false
-      "post_flash_script":
-        type: str
-        required: false
-      "pre_script":
-        type: str
-        required: false
-      "fixtures":
-        type: seq
-        required: false
-        sequence:
-          - type: str
-      "flash_timeout":
-        type: int
-        required: false
-      "flash_with_test":
-        type: bool
-        required: false
-      "flash_before":
-        type: bool
-        required: false
-      "script_param":
-        type: map
-        required: false
-        mapping:
-          "pre_script_timeout":
-            type: int
-            required: false
-          "post_script_timeout":
-            type: int
-            required: false
-          "post_flash_timeout":
-            type: int
-            required: false
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: array
+items:
+  type: object
+  properties:
+    available:
+      type: boolean
+    connected:
+      type: boolean
+    id:
+      type: string
+    notes:
+      type: string
+    platform: {}
+    probe_id:
+      type: string
+    product:
+      type: string
+    runner:
+      type: string
+    runner_params:
+      type: array
+      items:
+        type: string
+    serial_pty:
+      type: string
+    serial:
+      type: string
+    baud:
+      type: integer
+    serial_baud:
+      type: integer
+    post_script:
+      type: string
+    post_flash_script:
+      type: string
+    pre_script:
+      type: string
+    fixtures:
+      type: array
+      items:
+        type: string
+    flash_timeout:
+      type: integer
+    flash_with_test:
+      type: boolean
+    flash_before:
+      type: boolean
+    script_param:
+      type: object
+      properties:
+        pre_script_timeout:
+          type: integer
+        post_script_timeout:
+          type: integer
+        post_flash_timeout:
+          type: integer
+      additionalProperties: false
+  required:
+    - connected
+    - id
+    - platform
+    - product
+    - runner
+  additionalProperties: false
