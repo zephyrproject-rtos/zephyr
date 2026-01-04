@@ -12,7 +12,7 @@ Hardware
 - VideoCore VII GPU, supporting OpenGL ES 3.1, Vulkan 1.2
 - Dual 4Kp60 HDMI® display output with HDR support
 - 4Kp60 HEVC decoder
-- LPDDR4X-4267 SDRAM (4GB and 8GB SKUs available at launch)
+- LPDDR4X-4267 SDRAM (1GB, 2GB, 4GB, 8GB and 16GB SKUs available)
 - Dual-band 802.11ac Wi-Fi®
 - Bluetooth 5.0 / Bluetooth Low Energy (BLE)
 - microSD card slot, with support for high-speed SDR104 mode
