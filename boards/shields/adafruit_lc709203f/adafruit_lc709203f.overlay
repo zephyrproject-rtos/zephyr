@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		fuel-gauge0 = &adafruit_lc709203f;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_lc709203f: lc709203f@b {
+		status = "okay";
+		compatible = "onnn,lc709203f";
+		reg = <0x0b>;
+		apa = "500mAh"; /* Adjust to your cell size. See bindings file for legal values */
+		battery-profile = <0x01>;
+	};
+};

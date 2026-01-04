@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_LC709203F
+	def_bool $(shields_list_contains,adafruit_lc709203f)
