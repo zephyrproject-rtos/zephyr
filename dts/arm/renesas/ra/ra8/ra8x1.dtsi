@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -230,7 +231,8 @@
 		iic0: iic0@4025e000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;
-			reg = <0x4025E000 0x100>;
+			reg = <0x4025e000 0x100>;
+			clocks = <&pclkb MSTPB 9>;
 			status = "disabled";
 		};
 
@@ -239,7 +241,8 @@
 			channel = <1>;
 			interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x4025E100 0x100>;
+			reg = <0x4025e100 0x100>;
+			clocks = <&pclkb MSTPB 8>;
 			status = "disabled";
 		};
 
