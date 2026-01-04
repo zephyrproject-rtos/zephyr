@@ -272,6 +272,13 @@ config COAP_SERVER_SHELL
 	help
 	  Enable CoAP service shell commands.
 
+config COAP_SERVER_CLIENT_VERIFY
+	bool "Verify CoAP client when using DTLS"
+	depends on NET_SOCKETS_ENABLE_DTLS
+	help
+	  Enable mutual authentication by requiring that clients also
+	  authenticate themselves when using DTLS.
+
 endif
 
 module = COAP
