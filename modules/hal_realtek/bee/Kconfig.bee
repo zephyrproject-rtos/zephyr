@@ -1,0 +1,77 @@
+# Copyright(c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_REALTEK_BEE_MODULE
+	bool
+
+config HAL_REALTEK_BEE_ADC
+	bool
+
+config HAL_REALTEK_BEE_BT
+	bool
+
+config HAL_REALTEK_BEE_CAN
+	bool
+
+config HAL_REALTEK_BEE_CODEC
+	bool
+
+config HAL_REALTEK_BEE_DMA
+	bool
+
+config HAL_REALTEK_BEE_GPIO
+	bool
+
+config HAL_REALTEK_BEE_I2C
+	bool
+
+config HAL_REALTEK_BEE_I2S
+	bool
+
+config HAL_REALTEK_BEE_IR
+	bool
+
+config HAL_REALTEK_BEE_KEYSCAN
+	bool
+
+config HAL_REALTEK_BEE_NVIC
+	bool
+
+config HAL_REALTEK_BEE_PINMUX
+	bool
+
+config HAL_REALTEK_BEE_AON_QDEC
+	bool
+
+config HAL_REALTEK_BEE_QDEC
+	bool
+
+config HAL_REALTEK_BEE_RCC
+	bool
+
+config HAL_REALTEK_BEE_RTC
+	bool
+
+config HAL_REALTEK_BEE_SDHC
+	bool
+
+config HAL_REALTEK_BEE_SPI
+	bool
+
+config HAL_REALTEK_BEE_TIM
+	bool
+
+config HAL_REALTEK_BEE_ENHTIM
+	bool
+
+config HAL_REALTEK_BEE_UART
+	bool
+
+config HAL_REALTEK_BEE_USB
+	bool
+
+config HAL_REALTEK_BEE_AON_WDT
+	bool
+
+config HAL_REALTEK_BEE_CORE_WDT
+	bool
