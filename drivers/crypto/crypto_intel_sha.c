@@ -29,7 +29,7 @@ static int intel_sha_get_unused_session_idx(void)
 	return -1;
 }
 
-static int intel_sha_set_ctl_enable(struct sha_container *sha, int status)
+static void intel_sha_set_ctl_enable(struct sha_container *sha, int status)
 {
 	/* wait until not busy when turning off */
 	if (status == 0 && sha->dfsha->shactl.part.en == 1) {
@@ -38,7 +38,6 @@ static int intel_sha_set_ctl_enable(struct sha_container *sha, int status)
 	}
 
 	sha->dfsha->shactl.part.en = status;
-	return 0;
 }
 
 static int intel_sha_set_resume_length_dw0(struct sha_container *sha, uint32_t lower_length)
@@ -87,10 +86,7 @@ static int intel_sha_device_run(const struct device *dev, const void *buf_in, si
 	/* align to OWORD */
 	const size_t aligned_buff_size = ROUND_UP(buf_in_size, 0x10);
 
-	err = intel_sha_set_ctl_enable(self, 0);
-	if (err) {
-		return err;
-	}
+	intel_sha_set_ctl_enable(self, 0);
 
 	/* set processing element disable */
 	self->dfsha->pibcs.part.peen = 0;
@@ -142,14 +138,11 @@ static int intel_sha_device_run(const struct device *dev, const void *buf_in, si
 	/* increment pointer */
 	self->dfsha->pibfpi.full = buf_in_size;
 
-	err = intel_sha_set_ctl_enable(self, 1);
-	if (err) {
-		return err;
-	}
+	intel_sha_set_ctl_enable(self, 1);
 
-	err = intel_sha_set_ctl_enable(self, 0);
+	intel_sha_set_ctl_enable(self, 0);
 
-	return err;
+	return 0;
 }
 
 static int intel_sha_copy_hash(struct sha_container *const self, void *dst, size_t len)
