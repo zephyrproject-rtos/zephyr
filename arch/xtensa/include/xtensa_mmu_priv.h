@@ -486,6 +486,11 @@ void xtensa_mmu_set_paging(struct arch_mem_domain *domain);
 void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain);
 
 /**
+ * @brief Initialize page tables needed for boot.
+ */
+void xtensa_init_page_tables(void);
+
+/**
  * @}
  */
 
