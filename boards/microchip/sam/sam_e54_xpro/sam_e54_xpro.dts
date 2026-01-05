@@ -216,6 +216,20 @@
 	status = "okay";
 };
 
+&sercom6 {
+	compatible = "microchip,sercom-g1-spi";
+
+	dipo = <3>;
+	dopo = <0>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom6_spi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &sercom7 {
 	compatible = "microchip,sercom-g1-i2c";
 	#address-cells = <1>;
