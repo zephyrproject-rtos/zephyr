@@ -4168,6 +4168,22 @@ OSDP:
   tests:
     - sample.mgmt.osdp
 
+OTP:
+  status: odd fixes
+  collaborators:
+    - GseoC
+    - pdgendt
+  files:
+    - doc/hardware/peripherals/otp/
+    - drivers/otp/
+    - dts/bindings/otp/
+    - include/zephyr/drivers/otp.h
+    - tests/subsys/nvmem/api/otp.overlay
+  labels:
+    - "area: OTP"
+  tests:
+    - nvmem
+
 Octavo Systems Platforms:
   status: maintained
   maintainers:
