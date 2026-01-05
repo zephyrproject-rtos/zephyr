@@ -96,6 +96,13 @@ properties:
       By design, these macros also contains all register information (address,
       field offset and field mask) necessary to properly set the resolution.
 
+  st,adc-resolutions:
+    type: array
+    required: true
+    description: |
+      List of the resolutions supported by the ADC instance.
+      By convention, they should be listed in descending order (e.g. <12 10 8 6>).
+
   sampling-times:
     type: array
     required: true
