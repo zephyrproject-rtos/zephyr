@@ -193,6 +193,7 @@ endfunction()
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
 #                             [APP_TYPE <MAIN|BOOTLOADER>]
+#                             [BUILD_ONLY <bool>]
 #   )
 #
 # This function includes a Zephyr based build system into the multiimage
