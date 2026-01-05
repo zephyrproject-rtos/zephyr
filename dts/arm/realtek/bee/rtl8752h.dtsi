@@ -367,6 +367,17 @@
 			reg = <0x400c2400 0x68>;
 			status = "okay";
 		};
+
+		dma0: dma@400272c0 {
+			compatible = "realtek,bee-dma";
+			reg = <0x400272c0 0x4b0>;
+			interrupts = <20 0>, <21 0>, <22 0>;
+			dma-channels = <3>;
+			clocks = <&cctl APB_CLK(GDMA)>;
+			dma-port = <0>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	clocks {
