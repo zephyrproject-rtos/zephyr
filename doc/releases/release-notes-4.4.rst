@@ -123,6 +123,7 @@ New APIs and options
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
+    * :c:func:`bt_le_per_adv_sync_cb_unregister`
 
   * Mesh
 
