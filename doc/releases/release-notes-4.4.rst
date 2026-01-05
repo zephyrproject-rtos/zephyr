@@ -129,6 +129,10 @@ New APIs and options
     * :c:func:`bt_mesh_input_numeric` to provide provisioning numeric input OOB value.
     * :c:member:`output_numeric` callback in :c:struct:`bt_mesh_prov` structure to
       output numeric values during provisioning.
+    * :kconfig:option:`CONFIG_BT_MESH_CDB_KEY_SYNC` to enable key synchronization between
+      the Configuration Database (CDB) and the local Subnet and AppKey storages when keys are
+      added, deleted, or updated during key refresh procedure.
+      The option is enabled by default.
 
   * Services
 
