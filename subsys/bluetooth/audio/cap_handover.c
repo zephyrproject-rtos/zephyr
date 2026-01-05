@@ -296,6 +296,13 @@ void bt_cap_handover_unicast_to_broadcast_setup_broadcast(void)
 		return;
 	}
 
+	if (cap_cb->unicast_to_broadcast_created != NULL) {
+		/* Let application know the broadcast source was created so they can set up the
+		 * periodic advertising data with the BASE
+		 */
+		cap_cb->unicast_to_broadcast_created(*broadcast_source);
+	}
+
 	ext_adv = active_proc->proc_param.handover.unicast_to_broadcast.ext_adv;
 	err = bt_cap_initiator_broadcast_audio_start(*broadcast_source, ext_adv);
 	if (err != 0) {
