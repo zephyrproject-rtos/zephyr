@@ -163,6 +163,7 @@ New APIs and options
     * :c:func:`bt_bap_ep_get_conn`
     * :c:member:`bt_ccp_call_control_client_cb.user_data`
     * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
+    * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
 
   * Host
 
