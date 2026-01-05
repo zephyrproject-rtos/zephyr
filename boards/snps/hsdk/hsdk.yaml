@@ -9,6 +9,7 @@ toolchain:
 supported:
   - smp
 testing:
+  flash_before: true
   ignore_tags:
     - net
     - bluetooth

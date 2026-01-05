@@ -223,6 +223,11 @@ testing:
     power-efficient but slow CPU or simulation platform which can perform instruction accurate
     simulation but does it slowly.
 
+  flash_before: [True|False] (default False)
+    For pytest/shell harness hardware testing, flash the device before opening the serial port.
+    This prevents serial port disconnection issues during flashing on some boards (e.g., those
+    with USB CDC that reset during flash operations).
+
 env:
   A list of environment variables. Twister will check if all these environment variables are set,
   and otherwise skip this platform. This allows the user to define a platform which should be
