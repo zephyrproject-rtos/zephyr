@@ -12,6 +12,7 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - can
   - gpio
   - rtc
   - watchdog
