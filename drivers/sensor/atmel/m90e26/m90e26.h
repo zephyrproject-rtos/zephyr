@@ -102,6 +102,7 @@ struct m90e26_data {
   } power_factor_values;
 
   struct k_mutex bus_lock;
+  struct k_mutex config_lock;
 
 #if CONFIG_M90E26_BUS_UART
   struct k_mutex rx_lock;

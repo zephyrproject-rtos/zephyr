@@ -46,7 +46,7 @@ static inline int m90e26_read_register(const struct device *dev,
                                          m90e26_data_value_t *value)
 {
   const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
-  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  struct m90e26_data *data = (struct m90e26_data *)dev->data;
   int ret = 0;
 
   ret = k_mutex_lock(&data->bus_lock, K_FOREVER);
@@ -101,7 +101,7 @@ static inline int m90e26_write_register(const struct device *dev,
                                           const m90e26_data_value_t *value)
 {
   const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
-  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  struct m90e26_data *data = (struct m90e26_data *)dev->data;
   int ret = 0;
 
   if (addr == SysStatus || addr == LastData || addr >=APenergy)
@@ -199,7 +199,7 @@ static int m90e26_checksum1(const struct device *dev)
   lsb += (reg->MMode.uint16 & 0xFF) + (reg->MMode.uint16 >> 8);
   msb ^= (reg->MMode.uint16 & 0xFF) ^ (reg->MMode.uint16 >> 8);
 
-  m90e26_data_value_t checksum = {.uint16 = (msb << 8) | lsb};
+  m90e26_data_value_t checksum = {.uint16 = (uint16_t)((msb << 8) | lsb)};
   return m90e26_write_register(dev, CS1, &checksum);
 }
 
@@ -241,7 +241,7 @@ static int m90e26_checksum2(const struct device *dev)
   lsb += (reg->QoffsetN.uint16 & 0xFF) + (reg->QoffsetN.uint16 >> 8);
   msb ^= (reg->QoffsetN.uint16 & 0xFF) ^ (reg->QoffsetN.uint16 >> 8);
 
-  m90e26_data_value_t checksum = {.uint16 = (msb << 8) | lsb};
+  m90e26_data_value_t checksum = {.uint16 = (uint16_t)((msb << 8) | lsb)};
   return m90e26_write_register(dev, CS2, &checksum);
 }
 
@@ -293,15 +293,23 @@ static int m90e26_measurement_calibration_finish(const struct device *dev)
   return 0;
 }
 
-static void m90e26_reload_config(const struct device *dev)
+static int m90e26_reload_config(const struct device *dev)
 {
-  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  int ret = 0;
+  struct m90e26_data *data = (struct m90e26_data *)dev->data;
+
+  k_mutex_lock(&data->config_lock, K_FOREVER);
 
   m90e26_write_register(dev, FuncEn, &data->config_registers.FuncEn);
   m90e26_write_register(dev, SagTh, &data->config_registers.SagTh);
-  m90e26_write_register(dev, SmallPMod, &data->config_registers.SmallPMod);
+  //m90e26_write_register(dev, SmallPMod, &data->config_registers.SmallPMod);
 
-  m90e26_metering_calibration_start(dev);
+  ret = m90e26_metering_calibration_start(dev);
+  if (ret < 0)
+  {
+    goto end;
+  }
+
   m90e26_write_register(dev, PLconstH, &data->config_registers.PLconstH);
   m90e26_write_register(dev, PLconstL, &data->config_registers.PLconstL);
   m90e26_write_register(dev, Lgain, &data->config_registers.Lgain);
@@ -313,9 +321,19 @@ static void m90e26_reload_config(const struct device *dev)
   m90e26_write_register(dev, QStartTh, &data->config_registers.QStartTh);
   m90e26_write_register(dev, QNolTh, &data->config_registers.QNolTh);
   m90e26_write_register(dev, MMode, &data->config_registers.MMode);
-  m90e26_metering_calibration_finish(dev);
+  
+  ret = m90e26_metering_calibration_finish(dev);
+  if (ret < 0)
+  {
+    goto end;
+  }
 
-  m90e26_measurement_calibration_start(dev);
+  ret = m90e26_measurement_calibration_start(dev);
+  if (ret < 0)
+  {
+    goto end;
+  }
+
   m90e26_write_register(dev, Ugain, &data->config_registers.Ugain);
   m90e26_write_register(dev, IgainL, &data->config_registers.IgainL);
   m90e26_write_register(dev, IgainN, &data->config_registers.IgainN);
@@ -326,13 +344,24 @@ static void m90e26_reload_config(const struct device *dev)
   m90e26_write_register(dev, QoffsetL, &data->config_registers.QoffsetL);
   m90e26_write_register(dev, PoffsetN, &data->config_registers.PoffsetN);
   m90e26_write_register(dev, QoffsetN, &data->config_registers.QoffsetN);
-  m90e26_measurement_calibration_finish(dev);
+
+  ret = m90e26_measurement_calibration_finish(dev);
+  if (ret < 0)
+  {
+    goto end;
+  }
+
+  k_mutex_unlock(&data->config_lock);
+end:
+  return ret;
 }
 
 static int m90e26_reset(const struct device *dev)
 {
+  int ret = 0;
   const m90e26_data_value_t reset_value = {.uint16 = 0x789A};
-  int ret = m90e26_write_register(dev, SoftReset, &reset_value); // Reset Software
+
+  ret = m90e26_write_register(dev, SoftReset, &reset_value); // Reset Software
   if (ret < 0)
   {
     LOG_ERR("Could not write reset command to %s.", dev->name);
@@ -341,7 +370,12 @@ static int m90e26_reset(const struct device *dev)
 
   k_msleep(5); // Wait for reset to complete (T1)
 
-  m90e26_reload_config(dev);
+  ret = m90e26_reload_config(dev);
+  if (ret < 0)
+  {
+    LOG_ERR("Could not reload configuration for %s.", dev->name);
+    return ret;
+  }
 
   LOG_DBG("Reset done.");
 
@@ -373,7 +407,8 @@ static int m90e26_init(const struct device *dev)
 
 static int m90e26_sample_fetch(const struct device *dev, enum sensor_channel channel)
 {
-  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  int ret = 0;
+  struct m90e26_data *data = (struct m90e26_data *)dev->data;
 
   switch ((uint16_t)channel)
   {
@@ -436,16 +471,17 @@ static int m90e26_sample_fetch(const struct device *dev, enum sensor_channel cha
                          (m90e26_data_value_t*)&data->power_factor_values.PowerF2);
     break;
   default:
-    return -ENOTSUP;
+    ret = -ENOTSUP;
+    break;
   }
 
-  return 0;
+  return ret;
 }
 
 static int m90e26_channel_get(const struct device *dev, enum sensor_channel channel,
                                 struct sensor_value *value)
 {
-  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  struct m90e26_data *data = (struct m90e26_data *)dev->data;
   int ret = 0;
 
   switch ((uint16_t)channel)
@@ -455,32 +491,32 @@ static int m90e26_channel_get(const struct device *dev, enum sensor_channel chan
     break;
   case M90E26_SENSOR_CHANNEL_ENERGY:
     struct m90e26_energy_sensor_data *energy_value = (struct m90e26_energy_sensor_data *)value;
-    ret |= m90e26_convert_energy_reg((const m90e26_data_value_t *)&data->energy_values.APenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.APenergy, 
                                      &energy_value->APenergy);
-    ret |= m90e26_convert_energy_reg((const m90e26_data_value_t *)&data->energy_values.ANenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.ANenergy, 
                                      &energy_value->ANenergy);
-    ret |= m90e26_convert_energy_reg((const m90e26_data_value_t *)&data->energy_values.ATenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.ATenergy, 
                                      &energy_value->ATenergy);
-    ret |= m90e26_convert_energy_reg((const m90e26_data_value_t *)&data->energy_values.RPenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RPenergy, 
                                      &energy_value->RPenergy);
-    ret |= m90e26_convert_energy_reg((const m90e26_data_value_t *)&data->energy_values.RNenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RNenergy, 
                                      &energy_value->RNenergy);
-    ret |= m90e26_convert_energy_reg((const m90e26_data_value_t *)&data->energy_values.RTenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RTenergy, 
                                      &energy_value->RTenergy);
     break;
   case M90E26_SENSOR_CHANNEL_POWER:
     struct m90e26_power_sensor_data *power_value = (struct m90e26_power_sensor_data *)value;
-    ret |= m90e26_convert_power_reg((const m90e26_data_value_t *)&data->power_values.Pmean, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Pmean, 
                                      &power_value->Pmean);
-    ret |= m90e26_convert_power_reg((const m90e26_data_value_t *)&data->power_values.Pmean2, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Pmean2, 
                                      &power_value->Pmean2);
-    ret |= m90e26_convert_power_reg((const m90e26_data_value_t *)&data->power_values.Qmean, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Qmean, 
                                      &power_value->Qmean);
-    ret |= m90e26_convert_power_reg((const m90e26_data_value_t *)&data->power_values.Qmean2, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Qmean2, 
                                      &power_value->Qmean2);
-    ret |= m90e26_convert_power_reg((const m90e26_data_value_t *)&data->power_values.Smean, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Smean, 
                                      &power_value->Smean);
-    ret |= m90e26_convert_power_reg((const m90e26_data_value_t *)&data->power_values.Smean2, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Smean2, 
                                      &power_value->Smean2);
     break;
   case M90E26_SENSOR_CHANNEL_VOLTAGE:
@@ -488,9 +524,9 @@ static int m90e26_channel_get(const struct device *dev, enum sensor_channel chan
    break;
   case M90E26_SENSOR_CHANNEL_CURRENT:
     struct m90e26_current_sensor_data *current_value = (struct m90e26_current_sensor_data *)value;
-    ret |= m90e26_convert_current_reg((const m90e26_data_value_t *)&data->current_values.Irms, 
+    ret |= m90e26_convert_current_reg((m90e26_data_value_t *)&data->current_values.Irms, 
                                       &current_value->Irms);
-    ret |= m90e26_convert_current_reg((const m90e26_data_value_t *)&data->current_values.Irms2, 
+    ret |= m90e26_convert_current_reg((m90e26_data_value_t *)&data->current_values.Irms2, 
                                       &current_value->Irms2);
    break;
   case M90E26_SENSOR_CHANNEL_FREQUENCY:
@@ -498,21 +534,21 @@ static int m90e26_channel_get(const struct device *dev, enum sensor_channel chan
     break;
   case M90E26_SENSOR_CHANNEL_PHASE_ANGLE:
     struct m90e26_phase_angle_sensor_data *phase_angle_value = (struct m90e26_phase_angle_sensor_data *)value;
-    ret |= m90e26_convert_phase_angle_reg((const m90e26_data_value_t *)&data->phase_angle_values.Pangle, 
+    ret |= m90e26_convert_phase_angle_reg((m90e26_data_value_t *)&data->phase_angle_values.Pangle, 
                                           &phase_angle_value->Pangle);
-    ret |= m90e26_convert_phase_angle_reg((const m90e26_data_value_t *)&data->phase_angle_values.Pangle2, 
+    ret |= m90e26_convert_phase_angle_reg((m90e26_data_value_t *)&data->phase_angle_values.Pangle2, 
                                           &phase_angle_value->Pangle2);
     break;
   case M90E26_SENSOR_CHANNEL_POWER_FACTOR:
     struct m90e26_power_factor_sensor_data *power_factor_value = (struct m90e26_power_factor_sensor_data *)value;
-    ret |= m90e26_convert_power_factor_reg((const m90e26_data_value_t *)&data->power_factor_values.PowerF, 
+    ret |= m90e26_convert_power_factor_reg((m90e26_data_value_t *)&data->power_factor_values.PowerF, 
                                            &power_factor_value->PowerF);
-    ret |= m90e26_convert_power_factor_reg((const m90e26_data_value_t *)&data->power_factor_values.PowerF2, 
+    ret |= m90e26_convert_power_factor_reg((m90e26_data_value_t *)&data->power_factor_values.PowerF2, 
                                            &power_factor_value->PowerF2);
     break;
   default:
     LOG_ERR("Channel type not supported.");
-    return -EINVAL;
+    ret = -EINVAL;
     break;
   }
 
@@ -523,7 +559,8 @@ static void m90e26_gpio_callback_irq(const struct device *port,
                                         struct gpio_callback *cb, 
                                         uint32_t pins)
 {
-  struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, irq_ctx.gpio_cb);
+  ARG_UNUSED(pins);
+  const struct m90e26_data * data = CONTAINER_OF(cb, struct m90e26_data, irq_ctx.gpio_cb);
   if (data->irq_ctx.handler)
   {
     data->irq_ctx.handler(port, &data->irq_ctx.trigger);
@@ -534,7 +571,8 @@ static void m90e26_gpio_callback_wrn_out(const struct device *port,
                                            struct gpio_callback *cb, 
                                            uint32_t pins)
 {
-  struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, wrn_out_ctx.gpio_cb);
+  ARG_UNUSED(pins);
+  const struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, wrn_out_ctx.gpio_cb);
   if (data->wrn_out_ctx.handler)
   {
     data->wrn_out_ctx.handler(port, &data->wrn_out_ctx.trigger);
@@ -545,7 +583,8 @@ static void m90e26_gpio_callback_cf1(const struct device *port,
                                        struct gpio_callback *cb, 
                                        uint32_t pins)
 {
-  struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, cf1.gpio_cb);
+  ARG_UNUSED(pins);
+  const struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, cf1.gpio_cb);
   if (data->cf1.handler)
   {
     data->cf1.handler(port, &data->cf1.trigger);
@@ -556,7 +595,8 @@ static void m90e26_gpio_callback_cf2(const struct device *port,
                                        struct gpio_callback *cb, 
                                        uint32_t pins)
 {
-  struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, cf2.gpio_cb);
+  ARG_UNUSED(pins);
+  const struct m90e26_data *data = CONTAINER_OF(cb, struct m90e26_data, cf2.gpio_cb);
   if (data->cf2.handler)
   {
     data->cf2.handler(port, &data->cf2.trigger);
@@ -567,7 +607,7 @@ static int m90e26_trigger_set(const struct device *dev,
                                 const struct sensor_trigger *trig,
                                 sensor_trigger_handler_t handler)
 {
-  const struct m90e26_data *data = (const struct m90e26_data *)dev->data;
+  struct m90e26_data *data = (struct m90e26_data *)dev->data;
   const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
   int ret = -ENOTSUP;
 
@@ -707,6 +747,7 @@ static DEVICE_API(sensor, m90e26_api) = {
 #define M90E26_DEVICE(inst)                                                 \
   static struct m90e26_data m90e26_data_##inst = {                          \
     .bus_lock = Z_MUTEX_INITIALIZER(m90e26_data_##inst.bus_lock),           \
+    .config_lock = Z_MUTEX_INITIALIZER(m90e26_data_##inst.config_lock),     \
     .config_registers = M90E26_DEFAULT_CONFIG_REGISTER_VALUES,              \
   };                                                                        \
                                                                             \
