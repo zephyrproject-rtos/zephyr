@@ -33,6 +33,20 @@ DETAILS_IN_IMPORTANT_PROPS = {'compatible', 'label', 'reg', 'status', 'interrupt
 
 logger = logging.getLogger('gen_devicetree_rest')
 
+
+def format_value(value) -> str:
+    """
+    Format a property value, preserving hexadecimal notation for HexInt values.
+    For lists/arrays, formats each element individually and joins with ", ".
+    """
+    if isinstance(value, list):
+        return "[" + ", ".join(map(format_value, value)) + "]"
+    elif isinstance(value, edtlib.HexInt):
+        return hex(value)
+    else:
+        return str(value)
+
+
 class VndLookup:
     """
     A convenience class for looking up information based on a
@@ -754,13 +768,13 @@ def print_property_table(prop_specs, string_io, deprecated=False):
             details += '\n\nThis property is **required**.'
 
         if prop_spec.default:
-            details += f'\n\nDefault value: ``{prop_spec.default}``'
+            details += f'\n\nDefault value: ``{format_value(prop_spec.default)}``'
 
         if prop_spec.const:
-            details += f'\n\nConstant value: ``{prop_spec.const}``'
+            details += f'\n\nConstant value: ``{format_value(prop_spec.const)}``'
         elif prop_spec.enum:
             details += ('\n\nLegal values: ' +
-                        ', '.join(f'``{repr(val)}``' for val in
+                        ', '.join(f'``{format_value(val)}``' for val in
                                   prop_spec.enum))
 
         if prop_spec.name in DETAILS_IN_IMPORTANT_PROPS:
