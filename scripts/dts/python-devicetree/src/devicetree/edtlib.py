@@ -3559,6 +3559,48 @@ class _BindingLoader(Loader):
     pass
 
 
+class HexInt(int):
+    """
+    An integer subclass that indicates the value was expressed in hexadecimal
+    notation in the original YAML binding file.
+
+    This allows downstream tools (e.g., documentation generators) to preserve
+    the original representation when displaying default values.
+
+    Example usage:
+        if isinstance(prop_spec.default, HexInt):
+            # Format as hex: f"0x{prop_spec.default:x}"
+        else:
+            # Format as decimal: str(prop_spec.default)
+    """
+
+    def __new__(cls, value: int) -> "HexInt":
+        return super().__new__(cls, value)
+
+
+def _binding_int_constructor(
+    loader: _BindingLoader, node: yaml.ScalarNode
+) -> int:
+    """
+    Custom YAML constructor for integers that preserves hexadecimal notation.
+
+    Returns a HexInt instance if the original YAML value was in hex format,
+    otherwise returns a regular int.
+    """
+    # Get the original string representation from the YAML
+    value_str = node.value.lower()
+    # Use the standard YAML int parsing
+    value = loader.construct_yaml_int(node)
+
+    # Check if the original was hexadecimal (0x prefix, possibly with sign)
+    if value_str.lstrip("+-").startswith("0x"):
+        return HexInt(value)
+    return value
+
+
+# Override the default integer constructor to track hex notation
+_BindingLoader.add_constructor("tag:yaml.org,2002:int", _binding_int_constructor)
+
 # Add legacy '!include foo.yaml' handling
 _BindingLoader.add_constructor("!include", _binding_include)
 

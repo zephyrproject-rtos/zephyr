@@ -783,7 +783,9 @@ def test_prop_defaults():
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 
-    verify_props(edt.get_node("/defaults"),
+    node = edt.get_node("/defaults")
+
+    verify_props(node,
                  ['int',
                   'array', 'uint8-array',
                   'string', 'string-array',
@@ -796,6 +798,13 @@ def test_prop_defaults():
                   [1,2,3], b'\x89\xab\xcd',
                   'hello', ['hello','there'],
                   234])
+
+    # Verify HexInt preservation in PropertySpec.default (raw binding values)
+    # uint8-array default [0x89, 0xAB, 0xCD] should have HexInt elements
+    assert all(isinstance(v, edtlib.HexInt) for v in node.props["uint8-array"].spec.default)
+    # int/array defaults (decimal in binding) should NOT be HexInt
+    assert not isinstance(node.props["int"].spec.default, edtlib.HexInt)
+    assert not any(isinstance(v, edtlib.HexInt) for v in node.props["array"].spec.default)
 
 def test_prop_enums():
     '''test properties with enum: in the binding'''
