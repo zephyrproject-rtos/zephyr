@@ -799,7 +799,7 @@ __syscall int uart_tx_u16(const struct device *dev, const uint16_t *buf,
 /**
  * @brief Abort current TX transmission.
  *
- * #UART_TX_DONE event will be generated with amount of data sent.
+ * #UART_TX_ABORTED event will be generated with amount of data sent.
  *
  * @param dev UART device instance.
  *
