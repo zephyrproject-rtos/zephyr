@@ -46,17 +46,6 @@ struct app_key_val {
 	struct bt_mesh_key val[2];
 } __packed;
 
-/** Mesh Application Key. */
-struct app_key {
-	uint16_t net_idx;
-	uint16_t app_idx;
-	bool updated;
-	struct bt_mesh_app_cred {
-		uint8_t id;
-		struct bt_mesh_key val;
-	} keys[2];
-};
-
 static struct app_key_update app_key_updates[CONFIG_BT_MESH_APP_KEY_COUNT];
 
 static struct app_key apps[CONFIG_BT_MESH_APP_KEY_COUNT] = {
@@ -179,7 +168,7 @@ static void update_app_key_settings(uint16_t app_idx, bool store)
 static void app_key_evt(struct app_key *app, enum bt_mesh_key_evt evt)
 {
 	STRUCT_SECTION_FOREACH(bt_mesh_app_key_cb, cb) {
-		cb->evt_handler(app->app_idx, app->net_idx, evt);
+		cb->evt_handler(app, evt);
 	}
 }
 
