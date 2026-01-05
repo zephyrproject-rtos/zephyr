@@ -475,9 +475,9 @@ static void store_cdb_node(const struct bt_mesh_cdb_node *node)
 
 	err = settings_save_one(path, &val, sizeof(val));
 	if (err) {
-		LOG_ERR("Failed to store Node %s value", path);
+		LOG_ERR("Failed to store Node %s", path);
 	} else {
-		LOG_DBG("Stored Node %s value", path);
+		LOG_DBG("Stored Node %s", path);
 	}
 }
 
@@ -515,9 +515,9 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store Subnet value");
+		LOG_ERR("Failed to store Subnet %s", path);
 	} else {
-		LOG_DBG("Stored Subnet value");
+		LOG_DBG("Stored Subnet %s", path);
 	}
 }
 
@@ -552,9 +552,9 @@ static void store_cdb_app_key(const struct bt_mesh_cdb_app_key *app)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store AppKey %s value", path);
+		LOG_ERR("Failed to store AppKey %s", path);
 	} else {
-		LOG_DBG("Stored AppKey %s value", path);
+		LOG_DBG("Stored AppKey %s", path);
 	}
 }
 
