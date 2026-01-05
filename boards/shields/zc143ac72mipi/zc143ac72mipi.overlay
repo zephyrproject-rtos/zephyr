@@ -7,6 +7,7 @@
 / {
 	chosen {
 		zephyr,display = &co5300_zc143ac72mipi;
+		zephyr,touch = &tma525b_zc143ac72mipi;
 	};
 
 	en_mipi_display_zc143ac72mipi: enable-mipi-display {
@@ -14,6 +15,21 @@
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
+	};
+};
+
+&nxp_mipi_i2c {
+	status = "okay";
+
+	tma525b_zc143ac72mipi: tma525b@24 {
+		compatible = "parade,tma525b";
+		reg = <0x24>;
+		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
+		int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
+		inverted-y;
+		inverted-x;
+		screen-width = <466>;
+		screen-height = <466>;
 	};
 };
 
