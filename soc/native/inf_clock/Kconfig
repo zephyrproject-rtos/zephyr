@@ -48,4 +48,11 @@ config NATIVE_SIMULATOR_AUTOSTART_MCU
 	  If that MCU was, by HW design, going to start at HW boot anyhow, this option does nothing.
 	  This option is meant to facilitate development.
 
+config NATIVE_SIMULATOR_STATIC_LINKING
+	bool "Attempt to use static linking"
+	help
+	  Do not link the final native simulator runner with shared libraries.
+
+	  Static linking depends on all required libraries being available as static libraries.
+
 endif # SOC_POSIX
