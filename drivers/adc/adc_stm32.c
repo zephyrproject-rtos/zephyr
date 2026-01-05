@@ -240,7 +240,12 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 {
 	/* Allow ADC to create DMA request and set to one-shot mode as implemented in HAL drivers */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
+	/* Only modify CR2 register if DMA bit is not already set, otherwise
+	 * when ADON=1 a conversion is triggered
+	 */
+	if (LL_ADC_REG_GetDMATransfer(adc) != LL_ADC_REG_DMA_TRANSFER_UNLIMITED) {
+		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
 	defined(CONFIG_SOC_SERIES_STM32U3X) || \
