@@ -176,9 +176,9 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	uint32_t idle_timer_post, idle_timer_diff, idle_timer_top;
 	bool idle_timer_int_pending, idle_timer_wrap;
 
-	counter_get_value(idle_timer, &idle_timer_post);
 	idle_timer_int_pending = counter_get_pending_int(idle_timer) ? true : false;
 	idle_timer_top = counter_get_top_value(idle_timer);
+	counter_get_value(idle_timer, &idle_timer_post);
 
 	/**
 	 * Check for counter timer overflow
