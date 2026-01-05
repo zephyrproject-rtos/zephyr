@@ -410,6 +410,16 @@ config BT_MESH_CDB_APP_KEY_COUNT
 	  This option specifies how many application keys that can at most
 	  be saved in the configuration database.
 
+config BT_MESH_CDB_KEY_SYNC
+	bool "Keys synchronization support"
+	default y
+	help
+	  Enable this option to have support for synchronizing keys between
+	  mesh stack and cdb.
+	  When this option is enabled, key operations (add, remove, update)
+	  performed on the mesh stack through Configuration Server messages
+	  are automatically mirrored to the CDB.
+
 endif # BT_MESH_CDB
 
 endmenu # Provisioning
