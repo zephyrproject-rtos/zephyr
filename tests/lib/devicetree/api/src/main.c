@@ -662,7 +662,7 @@ ZTEST(devicetree_api, test_bus)
 #define DT_DRV_COMPAT vnd_vendor
 
 #define VND_VENDOR "A stand-in for a real vendor which can be used in examples and tests"
-#define ZEP_VENDOR "The Zephyr Project"
+#define ZEP_VENDOR "Zephyr Project"
 
 ZTEST(devicetree_api, test_vendor)
 {
