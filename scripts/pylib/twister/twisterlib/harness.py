@@ -399,6 +399,7 @@ class Pytest(Harness):
         pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
         pytest_args_yaml = config.get('pytest_args', []) if config else []
         pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
+        extra_test_args = config.get('extra_test_args', []) if config else []
         command = [
             'pytest',
             '--twister-harness',
@@ -439,8 +440,9 @@ class Pytest(Harness):
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
 
-        if handler.options.extra_test_args and handler.type_str == 'native':
-            command.append(f'--extra-test-args={shlex.join(handler.options.extra_test_args)}')
+        extra_test_args += handler.options.extra_test_args
+        if extra_test_args and handler.type_str == 'native':
+            command.append(f'--extra-test-args={shlex.join(extra_test_args)}')
 
         command.extend(pytest_args_yaml)
 

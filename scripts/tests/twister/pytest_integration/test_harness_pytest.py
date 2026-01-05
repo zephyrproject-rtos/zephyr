@@ -75,11 +75,17 @@ def test_pytest_command_extra_args(testinstance: TestInstance):
 
 def test_pytest_command_extra_test_args(testinstance: TestInstance):
     pytest_harness = Pytest()
+    extra_test_args_yaml = ['-no-color']
     extra_test_args = ['-stop_at=3', '-no-rt']
+    testinstance.testsuite.harness_config['extra_test_args'] = extra_test_args_yaml
     testinstance.handler.options.extra_test_args = extra_test_args
     pytest_harness.configure(testinstance)
     command = pytest_harness.generate_command()
-    assert f'--extra-test-args={extra_test_args[0]} {extra_test_args[1]}' in command
+    expected = (
+        f'--extra-test-args={extra_test_args_yaml[0]} '
+        f'{extra_test_args[0]} {extra_test_args[1]}'
+    )
+    assert expected in command
 
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
