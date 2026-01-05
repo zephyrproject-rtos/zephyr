@@ -26,6 +26,7 @@ supported:
   - reset
   - rtc
   - shell
+  - spi
   - uart
   - watchdog
 vendor: microchip
