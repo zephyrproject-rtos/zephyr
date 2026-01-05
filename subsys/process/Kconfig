@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config PROCESS
+	bool "Kernel process support"
+
+if PROCESS
+
+config PROCESS_POOL_SIZE
+	int "Kernel process pool size"
+	default 2
+
+config PROCESS_STACK_SIZE
+	int "Kernel process thread stack size"
+	default 4096
+
+config PROCESS_ARGV_BUF_SIZE
+	int "Kernel process argument buffer size in bytes"
+	default 256
+
+config PROCESS_ARGV_BUF_ALIGN
+	int "Kernel process argument buffer aligment in bytes"
+	default 32 if USERSPACE
+	default 4
+
+endif # PROCESS
