@@ -500,8 +500,11 @@ class Pytest(Harness):
         if hardware.post_script:
             command.append(f'--post-script={hardware.post_script}')
 
-        if hardware.flash_before:
-            command.append(f'--flash-before={hardware.flash_before}')
+        # Check flash_before from both hardware map and platform (board YAML)
+        # Platform flash_before is intended for boards with USB reset issues during flashing
+        flash_before = hardware.flash_before or self.instance.platform.flash_before
+        if flash_before:
+            command.append(f'--flash-before={flash_before}')
 
         for fixture in hardware.fixtures:
             command.append(f'--twister-fixture={fixture}')
