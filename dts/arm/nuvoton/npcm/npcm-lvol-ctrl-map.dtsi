@@ -9,155 +9,129 @@
 		compatible = "nuvoton,npcx-lvolctrl-conf";
 
 		/* Low-Voltage IO Control 0 */
-		lvol_iob5: lvol00 {
+		lvol_io61: lvol00 {
 			lvols = <&scfg 0 0>;
 		};
 
-		lvol_iob4: lvol01 {
+		lvol_ioa2: lvol01 {
 			lvols = <&scfg 0 1>;
 		};
 
-		lvol_iob3: lvol02 {
+		lvol_io37: lvol02 {
 			lvols = <&scfg 0 2>;
 		};
 
-		lvol_iob2: lvol03 {
+		lvol_io35: lvol03 {
 			lvols = <&scfg 0 3>;
 		};
 
-		lvol_io90: lvol04 {
+		lvol_io25: lvol04 {
 			lvols = <&scfg 0 4>;
 		};
 
-		lvol_io87: lvol05 {
-			lvols = <&scfg 0 5>;
-		};
-
-		lvol_io00: lvol06 {
-			lvols = <&scfg 0 6>;
-		};
-
-		lvol_io33: lvol07 {
+		lvol_io13: lvol07 {
 			lvols = <&scfg 0 7>;
 		};
 
 		/* Low-Voltage IO Control 1 */
-		lvol_io92: lvol10 {
+		lvol_io60: lvol10 {
 			lvols = <&scfg 1 0>;
 		};
 
-		lvol_io91: lvol11 {
+		lvol_ioa7: lvol11 {
 			lvols = <&scfg 1 1>;
 		};
 
-		lvol_iod1: lvol12 {
+		lvol_io36: lvol12 {
 			lvols = <&scfg 1 2>;
 		};
 
-		lvol_iod0: lvol13 {
+		lvol_io34: lvol13 {
 			lvols = <&scfg 1 3>;
 		};
 
-		lvol_io36: lvol14 {
+		lvol_io26: lvol14 {
 			lvols = <&scfg 1 4>;
 		};
 
-		lvol_io64: lvol15 {
+		lvol_slp_s3: lvol15 {
 			lvols = <&scfg 1 5>;
 		};
 
-		/* Low-Voltage IO Control 2 */
-		lvol_io74: lvol20 {
-			lvols = <&scfg 2 0>;
+		lvol_slp_s5: lvol16 {
+			lvols = <&scfg 1 6>;
 		};
 
-		lvol_io73: lvol23 {
-			lvols = <&scfg 2 3>;
-		};
-
-		lvol_ioc1: lvol24 {
-			lvols = <&scfg 2 4>;
-		};
-
-		lvol_ioc7: lvol25 {
-			lvols = <&scfg 2 5>;
-		};
-
-		lvol_io34: lvol27 {
-			lvols = <&scfg 2 7>;
+		lvol_io11: lvol17 {
+			lvols = <&scfg 1 7>;
 		};
 
 		/* Low-Voltage IO Control 3 */
-		lvol_ioc6: lvol30 {
+		lvol_ioc3: lvol30 {
 			lvols = <&scfg 3 0>;
 		};
 
-		lvol_io37: lvol31 {
+		lvol_ioc7: lvol31 {
 			lvols = <&scfg 3 1>;
 		};
 
-		lvol_io40: lvol32 {
+		lvol_io33: lvol32 {
 			lvols = <&scfg 3 2>;
 		};
 
-		lvol_io82: lvol34 {
+		lvol_iod3: lvol33 {
+			lvols = <&scfg 3 3>;
+		};
+
+		lvol_iod5: lvol34 {
 			lvols = <&scfg 3 4>;
 		};
 
-		lvol_io75: lvol35 {
+		lvol_iod7: lvol35 {
 			lvols = <&scfg 3 5>;
 		};
 
-		lvol_io80: lvol36 {
+		lvol_iof1: lvol36 {
 			lvols = <&scfg 3 6>;
 		};
 
-		lvol_ioc5: lvol37 {
+		lvol_io17: lvol37 {
 			lvols = <&scfg 3 7>;
 		};
 
 		/* Low-Voltage IO Control 4 */
-		lvol_ioc2: lvol41 {
+		lvol_ioc2: lvol40 {
+			lvols = <&scfg 4 0>;
+		};
+
+		lvol_ioc6: lvol41 {
 			lvols = <&scfg 4 1>;
 		};
 
-		lvol_iof3: lvol42 {
+		lvol_io32: lvol42 {
 			lvols = <&scfg 4 2>;
 		};
 
-		lvol_iof2: lvol43 {
+		lvol_iod2: lvol43 {
 			lvols = <&scfg 4 3>;
 		};
 
-		lvol_iof5: lvol44 {
+		lvol_iod4: lvol44 {
 			lvols = <&scfg 4 4>;
 		};
 
-		lvol_iof4: lvol45 {
+		lvol_iod6: lvol45 {
 			lvols = <&scfg 4 5>;
 		};
 
-		lvol_ioe4: lvol46 {
+		lvol_iof0: lvol46 {
 			lvols = <&scfg 4 6>;
 		};
 
-		lvol_ioe3: lvol47 {
+		lvol_io16: lvol47 {
 			lvols = <&scfg 4 7>;
 		};
 
-		/* Low-Voltage IO Control 5 */
-		lvol_io72: lvol50 {
-			lvols = <&scfg 5 0>;
-		};
-
-		lvol_io50: lvol53 {
-			lvols = <&scfg 5 3>;
-		};
-
-		/*
-		 * Pseudo Low-Voltage IO Control (i.e. IO pad doesn't support
-		 * low voltage detection.)
-		 */
 		lvol_none: lvol-pseudo {
 			lvols = <&scfg 31 0>;
 		};
