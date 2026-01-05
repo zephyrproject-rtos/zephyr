@@ -45,12 +45,12 @@
 
 		sercom6: sercom@43000800 {
 			compatible = "microchip,sercom-g1";
-			status = "disabled";
 			reg = <0x43000800 0x31>;
 			interrupts = <70 0>, <71 0>, <72 0>, <73 0>;
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_SERCOM6>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM6_CORE>;
 			clock-names = "mclk", "gclk";
+			status = "disabled";
 		};
 
 		sercom7: sercom@43000c00 {
