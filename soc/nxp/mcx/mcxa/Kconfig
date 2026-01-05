@@ -28,6 +28,7 @@ config SOC_MCXA346
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MCXA266
 	select CPU_CORTEX_M33
@@ -35,6 +36,7 @@ config SOC_MCXA266
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MCXA366
 	select CPU_CORTEX_M33
@@ -42,6 +44,7 @@ config SOC_MCXA366
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MCXA577
 	select CPU_CORTEX_M33
