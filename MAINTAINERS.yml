@@ -1451,6 +1451,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - nordic-krch
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/counter/
     - include/zephyr/drivers/counter.h
