@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config PROCESS
+	bool "Kernel process support"
+	depends on MULTITHREADING
+
+if PROCESS
+
+config PROCESS_POOL_SIZE
+	int "Kernel process pool size"
+	default 2
+
+config PROCESS_STACK_SIZE
+	int "Kernel process thread stack size"
+	default 2048
+
+config PROCESS_PARTITION_SIZE
+	int "Kernel process partition size in bytes"
+	default 256
+	range 32 1024
+
+config PROCESS_PARTITION_ALIGN
+	int "Kernel process partition aligment in bytes"
+	default 32 if USERSPACE
+	default 4
+
+endif # PROCESS
