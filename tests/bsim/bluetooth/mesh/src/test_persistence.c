@@ -440,7 +440,6 @@ static void provisioner_setup(void)
 		.node_added = prov_node_added,
 	};
 	uint8_t primary_netkey[16] = { 0xad, 0xde, 0xfa, 0x32 };
-	struct bt_mesh_cdb_subnet *subnet;
 	uint8_t status;
 	int err;
 
@@ -451,15 +450,6 @@ static void provisioner_setup(void)
 	ASSERT_OK(bt_mesh_cdb_create(primary_netkey));
 	ASSERT_OK(bt_mesh_provision(primary_netkey, 0, test_flags, test_ividx, TEST_PROV_ADDR,
 				    test_prov_devkey));
-
-	/* Adding a subnet for test_netkey as it is not primary. */
-	subnet = bt_mesh_cdb_subnet_alloc(test_netkey_idx);
-	ASSERT_TRUE(subnet != NULL);
-	err = bt_mesh_cdb_subnet_key_import(subnet, 0, test_netkey);
-	if (err) {
-		FAIL("Unable to import test_netkey (err: %d)", err);
-	}
-	bt_mesh_cdb_subnet_store(subnet);
 
 	err = bt_mesh_cfg_cli_net_key_add(0, TEST_PROV_ADDR, test_netkey_idx, test_netkey, &status);
 	if (err || status) {
