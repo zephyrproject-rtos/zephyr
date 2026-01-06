@@ -698,12 +698,14 @@ void log_output_msg_process(const struct log_output *output,
 	uint8_t domain_id = log_msg_get_domain(msg);
 	int16_t source_id = log_msg_get_source_id(msg);
 
+	const char *dname = IS_ENABLED(CONFIG_LOG_DOMAIN_NAME_PREFIX) ?
+		log_domain_name_get(domain_id) : NULL;
 	const char *sname = source_id >= 0 ? log_source_name_get(domain_id, source_id) : NULL;
 	size_t plen, dlen;
 	uint8_t *package = log_msg_get_package(msg, &plen);
 	uint8_t *data = log_msg_get_data(msg, &dlen);
 
-	log_output_process(output, timestamp, NULL, sname, (k_tid_t)log_msg_get_tid(msg), level,
+	log_output_process(output, timestamp, dname, sname, (k_tid_t)log_msg_get_tid(msg), level,
 			   plen > 0 ? package : NULL, data, dlen, flags);
 }
 
