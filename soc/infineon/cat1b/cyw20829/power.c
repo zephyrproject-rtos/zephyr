@@ -12,6 +12,7 @@
 
 #include <cyhal_syspm.h>
 #include <cyhal_lptimer.h>
+#include "smif_pm.h"
 
 LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
 
@@ -68,6 +69,8 @@ int ifx_pm_init(void)
 {
 	/* System Domain Idle Power Mode Configuration */
 	Cy_SysPm_SetDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
+
+	smif_pm_init();
 
 	return cyhal_syspm_init();
 }
