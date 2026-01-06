@@ -57,6 +57,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
         None,
         {
             'board': None,
+            'normalized_board': None,
             'west_topdir': str(west_topdir),
             'app': TEST_CWD.name,
             'source_dir': str(TEST_CWD),
@@ -69,6 +70,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
         west_topdir / 'my' / 'project',
         {
             'board': None,
+            'normalized_board': None,
             'west_topdir': str(west_topdir),
             'app': 'project',
             'source_dir': str(west_topdir / 'my' / 'project'),
@@ -81,6 +83,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
         ROOT / 'path' / 'to' / 'my-project',
         {
             'board': None,
+            'normalized_board': None,
             'west_topdir': str(west_topdir),
             'app': 'my-project',
             'source_dir': str(ROOT / 'path' / 'to' / 'my-project'),
@@ -93,6 +96,20 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
         None,
         {
             'board': 'native_sim',
+            'normalized_board': 'native_sim',
+            'west_topdir': str(west_topdir),
+            'app': TEST_CWD.name,
+            'source_dir': str(TEST_CWD),
+            'source_dir_workspace': str(TEST_CWD_RELATIVE_TO_ROOT),
+        },
+    ),
+    # check for correct board with extended name
+    (
+        Namespace(board='board/SoC/cluster'),
+        None,
+        {
+            'board': 'board/SoC/cluster',
+            'normalized_board': 'board_SoC_cluster',
             'west_topdir': str(west_topdir),
             'app': TEST_CWD.name,
             'source_dir': str(TEST_CWD),
