@@ -198,8 +198,8 @@
 			status = "disabled";
 		};
 
-		tcpwm0: tcpwm0@40200100 {
-			reg = <0x40200100 0x240>;
+		tcpwm0: tcpwm0@40200000 {
+			reg = <0x40200000 0x300>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
