@@ -27,6 +27,8 @@ Build System
   C standard version.  If your toolchain does not support this standard you will
   need to use one of the existing and now deprecated options:
   :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
+* The ``full_name`` property of ``board``/``boards`` entries corresponding to new boards in
+  board.yml files is now required.
 
 Kernel
 ******
