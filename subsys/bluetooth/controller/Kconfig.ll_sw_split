@@ -914,6 +914,14 @@ config BT_CTLR_ULL_LOW_PRIO
 	  The interrupt priority for Ticker's Job IRQ and Upper Link Layer
 	  lower priority functions.
 
+config BT_CTLR_LLL_PREPARE_AT_MARGIN
+	bool "LLL prepare at margin"
+	depends on !BT_CTLR_LOW_LAT
+	default y if SOC_COMPATIBLE_NRF54LX
+	help
+	  Execute LLL prepare callback at the prepare margin, even when no
+	  overlapping state/role currently active.
+
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
 	depends on BT_CTLR_LOW_LAT_ULL && BT_CTLR_LOW_LAT_ULL_DONE
