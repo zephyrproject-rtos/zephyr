@@ -943,7 +943,7 @@ The skeleton of the board YAML file for extending a board is:
 
    board:
      extend: <existing-board-name>
-      variants:
+     variants:
        - name: <new-variant>
          qualifier: <existing-qualifier>
 
