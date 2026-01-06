@@ -9,9 +9,16 @@
 #endif
 
 #include <zephyr/ztest.h>
-#include <zephyr/drivers/sensor_value.h>
 
 #include "../../../../../drivers/sensor/adi/adxl345/adxl345_convert.h"
+
+/* Define struct sensor_value here to avoid including include/zepyhr/drivers/sensor.h */
+struct sensor_value {
+	/** Integer part of the value. */
+	int32_t val1;
+	/** Fractional part of the value (in one-millionth parts). */
+	int32_t val2;
+};
 
 ZTEST(adxl345_accel_convert, test_convert_10bit_right_justified_2g_mode)
 {
