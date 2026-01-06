@@ -14,6 +14,7 @@ menuconfig MCUMGR_TRANSPORT_SHELL
 	depends on SHELL
 	depends on BASE64
 	depends on CRC
+	select MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE
 	help
 	  Enables handling of SMP commands received over shell. This allows the shell to be use
 	  for both MCUmgr commands and shell commands.
