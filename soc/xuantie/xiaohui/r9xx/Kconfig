@@ -1,0 +1,84 @@
+# riscv SOC family supporting the riscv privileged architecture spec
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+
+config CPU_XUANTIE_R908FDV
+	bool "xuantie CPU r908fdv (I,M,A,C,F,D,V)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_V
+
+config CPU_XUANTIE_R908FD
+	bool "xuantie CPU r908fd (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_R908
+	bool "xuantie CPU r908 (I,M,A,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_R908FDV_CP
+	bool "xuantie CPU r908fdv_cp (I,M,A,C,F,D,V)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+# 	select RISCV_ISA_EXT_V
+
+config CPU_XUANTIE_R908FD_CP
+	bool "xuantie CPU r908fd_cp (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_R908_CP
+	bool "xuantie CPU r908 (I,M,A,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_R910
+	bool "xuantie CPU r910 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_R920
+	bool "xuantie CPU r920 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D

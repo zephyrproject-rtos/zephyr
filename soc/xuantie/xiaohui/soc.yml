@@ -1,0 +1,6 @@
+family:
+  - name: xiaohui
+    series:
+      - name: c9xx
+        socs:
+          - name: c908
