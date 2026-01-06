@@ -30,6 +30,7 @@
 /* Group 2 */
 #define IT51XXX_IRQ_SMB_C      16
 #define IT51XXX_IRQ_WU24       17
+#define IT51XXX_IRQ_PS2_0      20
 #define IT51XXX_IRQ_WU22       21
 /* Group 3 */
 #define IT51XXX_IRQ_KBC_IBF    24
