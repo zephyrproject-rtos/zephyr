@@ -476,7 +476,7 @@ static int cmd_l2cap_register(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "L2CAP psm %u registered", l2cap_server.server.psm);
+	shell_print(sh, "L2CAP psm %04x registered", l2cap_server.server.psm);
 
 	return 0;
 }
@@ -573,7 +573,7 @@ static int cmd_l2cap_disconnect(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan.chan);
 	if (err) {
-		shell_error(sh, "Unable to disconnect: %u", -err);
+		shell_error(sh, "Unable to disconnect: %d", err);
 	}
 
 	return err;
@@ -618,7 +618,7 @@ static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
 		net_buf_add_mem(buf, buf_data, len);
 		err = bt_l2cap_chan_send(&l2cap_chan.chan.chan, buf);
 		if (err < 0) {
-			shell_error(sh, "Unable to send: %d", -err);
+			shell_error(sh, "Unable to send: %d", err);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
@@ -637,7 +637,7 @@ static int cmd_l2cap_credits(const struct shell *sh, size_t argc, char *argv[])
 	if (buf != NULL) {
 		err = bt_l2cap_chan_recv_complete(&l2cap_chan.chan.chan, buf);
 		if (err < 0) {
-			shell_error(sh, "Unable to set recv_complete: %d", -err);
+			shell_error(sh, "Unable to set recv_complete: %d", err);
 		}
 	} else {
 		shell_warn(sh, "No pending recv buffer");
@@ -676,7 +676,7 @@ static int cmd_l2cap_echo_reg(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_l2cap_br_echo_cb_register(&echo_cb);
 	if (err) {
-		shell_error(sh, "Failed to register echo callback: %d", -err);
+		shell_error(sh, "Failed to register echo callback: %d", err);
 		return err;
 	}
 
@@ -689,7 +689,7 @@ static int cmd_l2cap_echo_unreg(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_l2cap_br_echo_cb_unregister(&echo_cb);
 	if (err) {
-		shell_error(sh, "Failed to unregister echo callback: %d", -err);
+		shell_error(sh, "Failed to unregister echo callback: %d", err);
 		return err;
 	}
 
@@ -721,7 +721,7 @@ static int cmd_l2cap_echo_req(const struct shell *sh, size_t argc, char *argv[])
 	net_buf_add_mem(buf, buf_data, len);
 	err = bt_l2cap_br_echo_req(default_conn, buf);
 	if (err < 0) {
-		shell_error(sh, "Unable to send ECHO REQ: %d", -err);
+		shell_error(sh, "Unable to send ECHO REQ: %d", err);
 		net_buf_unref(buf);
 		return -ENOEXEC;
 	}
@@ -757,7 +757,7 @@ static int cmd_l2cap_echo_rsp(const struct shell *sh, size_t argc, char *argv[])
 	net_buf_add_mem(buf, buf_data, len);
 	err = bt_l2cap_br_echo_rsp(default_conn, identifier, buf);
 	if (err < 0) {
-		shell_error(sh, "Unable to send ECHO RSP: %d", -err);
+		shell_error(sh, "Unable to send ECHO RSP: %d", err);
 		net_buf_unref(buf);
 		return -ENOEXEC;
 	}
