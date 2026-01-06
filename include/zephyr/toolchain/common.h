@@ -76,7 +76,7 @@
 
   #if defined(CONFIG_X86) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || \
 	defined(CONFIG_RISCV) || defined(CONFIG_XTENSA) || defined(CONFIG_MIPS) || \
-	defined(CONFIG_ARCH_POSIX) || defined(CONFIG_RX)
+	defined(CONFIG_ARCH_POSIX) || defined(CONFIG_RX) || defined(CONFIG_DSPIC)
     #define   ALIGN(x)    .balign   x
   #elif defined(CONFIG_ARC)
     /* .align assembler directive is supported by all ARC toolchains and it is
@@ -127,13 +127,17 @@
 
     #define PERFOPT_ALIGN .align  4
 
+  #elif defined(CONFIG_DSPIC)
+
+    #define PERFOPT_ALIGN .align 4
+
   #else
 
     #error Architecture unsupported
 
-  #endif
+#endif
 
-  #define GC_SECTION(sym) SECTION .text.##sym, "ax"
+#define GC_SECTION(sym) SECTION.text.##sym, "ax"
 
 #endif /* _ASMLANGUAGE */
 

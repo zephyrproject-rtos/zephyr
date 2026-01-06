@@ -59,6 +59,9 @@
 	OUTPUT_FORMAT("elf32-sparc")
 #elif defined(CONFIG_RX)
 	OUTPUT_FORMAT("elf32-rx-le")
+#elif defined(CONFIG_DSPIC)
+	OUTPUT_FORMAT("elf32-pic30")
+	OUTPUT_ARCH("33AK128MC106")
 #else
 	#error Arch not supported.
 #endif
@@ -115,6 +118,8 @@
 #define GROUP_ROM_LINK_IN(vregion, lregion)
 #elif defined(K_MEM_IS_VM_KERNEL)
 #define GROUP_ROM_LINK_IN(vregion, lregion) > vregion AT > lregion
+#elif defined(__XC_DSC__) || defined(__XCDSC_LINKER_CMD__)
+#define GROUP_ROM_LINK_IN(vregion, lregion) > vregion
 #else
 #define GROUP_ROM_LINK_IN(vregion, lregion) > lregion
 #endif
@@ -135,6 +140,8 @@
 #define GROUP_DATA_LINK_IN(vregion, lregion)
 #elif defined(CONFIG_XIP) || defined(K_MEM_IS_VM_KERNEL)
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
+#elif defined(__XC_DSC__) || defined(__XCDSC_LINKER_CMD__)
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
 #else
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
 #endif
@@ -155,6 +162,8 @@
 #define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion AT > lregion
 #elif defined(CONFIG_XIP)
 #define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion AT > vregion
+#elif defined(__XC_DSC__) || defined(__XCDSC_LINKER_CMD__)
+#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion
 #else
 #define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion
 #endif

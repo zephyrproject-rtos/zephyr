@@ -32,6 +32,8 @@
 #include <zephyr/arch/sparc/arch_inlines.h>
 #elif defined(CONFIG_RX)
 #include <zephyr/arch/rx/arch_inlines.h>
+#elif defined(CONFIG_DSPIC)
+#include <zephyr/arch/dspic/arch_inlines.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */

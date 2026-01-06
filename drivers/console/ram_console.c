@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/printk-hooks.h>
@@ -23,7 +22,7 @@
 #error "Custom RAM console buffer exceeds the section size!"
 #endif
 
-#define RAM_CONSOLE_BUF_ATTR	\
+#define RAM_CONSOLE_BUF_ATTR                                                                       \
 	__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ram_console)))))
 #else
 #define RAM_CONSOLE_BUF_ATTR
@@ -58,8 +57,10 @@ static int ram_console_init(void)
 	ram_console = ram_console_buf;
 #endif
 	__printk_hook_install(ram_console_out);
-	__stdout_hook_install(ram_console_out);
 
+#ifndef CONFIG_DSPIC
+	__stdout_hook_install(ram_console_out);
+#endif
 	return 0;
 }
 
