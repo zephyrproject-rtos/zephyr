@@ -1,7 +1,11 @@
 /*
  * Copyright (c) 2023 Jamie McCrae
+ * Copyright (c) 2026 Hatus Vianna Wnderley
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Modifications:
+ *  - Added display backlight enable
  */
 
 #include <string.h>
@@ -21,6 +25,12 @@ int main(void)
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Auxdisplay device is not ready.");
 		return 0;
+	}
+
+	rc = auxdisplay_backlight_set(dev, 1);
+
+	if (rc != 0) {
+		LOG_ERR("Failed to turn backlight on: %d", rc);
 	}
 
 	rc = auxdisplay_cursor_set_enabled(dev, true);
