@@ -391,6 +391,8 @@ static int st7796s_init(const struct device *dev)
 		return ret;
 	}
 
+	data->orientation = DISPLAY_ORIENTATION_NORMAL;
+
 	/* Exit sleep */
 	st7796s_send_cmd(dev, ST7796S_CMD_SLPOUT, NULL, 0);
 	/* Delay 5ms after sleep out command, per datasheet */
@@ -444,9 +446,11 @@ static DEVICE_API(display, st7796s_api) = {
 		.te_delay = DT_INST_PROP(n, te_delay),                          \
 	};									\
 										\
+	static struct st7796s_data st7796s_data_##n;                            \
+										\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
 			NULL,							\
-			NULL,							\
+			&st7796s_data_##n,					\
 			&st7796s_config_##n,					\
 			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,		\
 			&st7796s_api);
