@@ -192,7 +192,7 @@ endfunction()
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
-#                             [APP_TYPE <MAIN|BOOTLOADER>]
+#                             [APP_TYPE <MAIN|BOOTLOADER|FIRMWARE_LOADER|VARIANT>]
 #   )
 #
 # This function includes a Zephyr based build system into the multiimage
@@ -204,19 +204,21 @@ endfunction()
 # BOARD <board>:             Use <board> for application build instead user defined BOARD.
 # BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
 #                            <board> is also supplied).
-# APP_TYPE <MAIN|BOOTLOADER>: Application type.
-#                             MAIN indicates this application is the main application
-#                             and where user defined settings should be passed on as-is
+# APP_TYPE <MAIN|BOOTLOADER|: Application type.
+#           FIRMWARE_LOADER|  MAIN indicates this application is the main application
+#           VARIANT>          and where user defined settings should be passed on as-is
 #                             except for multi image build flags.
 #                             For example, -DCONF_FILES=<files> will be passed on to the
 #                             MAIN_APP unmodified.
 #                             BOOTLOADER indicates this app is a bootloader
+#                             FIRMWARE_LOADER indicates this app is a firmware loader image for MCUboot
+#                             VARIANT indicates this app is a direct-xip slot 1 variant image for MCUboot
 # BUILD_ONLY <bool>:          Mark the application as build-only. If <bool> evaluates to
 #                             true, then this application will be excluded from flashing
 #                             and debugging.
 #
 function(ExternalZephyrProject_Add)
-  set(app_types MAIN BOOTLOADER FIRMWARE_LOADER)
+  set(app_types MAIN BOOTLOADER FIRMWARE_LOADER VARIANT)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
@@ -327,12 +329,17 @@ function(ExternalZephyrProject_Add)
   set(shared_cmake_vars_argument)
   foreach(shared_var ${shared_cmake_variables_list})
     if(DEFINED CACHE{${ZBUILD_APPLICATION}_${shared_var}})
-      get_property(var_type  CACHE ${ZBUILD_APPLICATION}_${shared_var} PROPERTY TYPE)
+      get_property(var_type CACHE ${ZBUILD_APPLICATION}_${shared_var} PROPERTY TYPE)
       list(APPEND shared_cmake_vars_argument
            "-D${shared_var}:${var_type}=$CACHE{${ZBUILD_APPLICATION}_${shared_var}}"
       )
+    elseif("${ZBUILD_APP_TYPE}" STREQUAL "VARIANT" AND DEFINED CACHE{${DEFAULT_IMAGE}_${shared_var}})
+      get_property(var_type CACHE ${DEFAULT_IMAGE}_${shared_var} PROPERTY TYPE)
+      list(APPEND shared_cmake_vars_argument
+           "-D${shared_var}:${var_type}=$CACHE{${DEFAULT_IMAGE}_${shared_var}}"
+      )
     elseif(DEFINED CACHE{${shared_var}})
-      get_property(var_type  CACHE ${shared_var} PROPERTY TYPE)
+      get_property(var_type CACHE ${shared_var} PROPERTY TYPE)
       list(APPEND shared_cmake_vars_argument
            "-D${shared_var}:${var_type}=$CACHE{${shared_var}}"
       )
@@ -391,7 +398,7 @@ function(ExternalZephyrProject_Add)
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES KCONFIG_BINARY_DIR
                         ${application_binary_dir}/Kconfig
   )
-  if("${ZBUILD_APP_TYPE}" STREQUAL "MAIN")
+  if("${ZBUILD_APP_TYPE}" STREQUAL "MAIN" OR "${ZBUILD_APP_TYPE}" STREQUAL "VARIANT")
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 

@@ -15,4 +15,12 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} ${image})
 
   set_config_string(${image} CONFIG_BOOT_SIGNATURE_KEY_FILE "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}")
+
+  if(SB_CONFIG_MCUBOOT_DIRECT_XIP_GENERATE_VARIANT)
+    ExternalZephyrProject_Add(
+      APPLICATION ${DEFAULT_IMAGE}_slot_1_variant
+      SOURCE_DIR ${APP_DIR}
+      APP_TYPE VARIANT
+    )
+  endif()
 endif()
