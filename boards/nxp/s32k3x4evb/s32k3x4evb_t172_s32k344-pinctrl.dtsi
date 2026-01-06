@@ -1,0 +1,100 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K344-172MQFP-pinctrl.h>
+
+&pinctrl {
+	eirq0_default: eirq0 {
+		group1 {
+			pinmux = <PTB26_EIRQ13>;
+			input-enable;
+		};
+	};
+
+	lpuart5_default: lpuart5_default {
+		group1 {
+			pinmux = <PTB27_LPUART5_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB28_LPUART5_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart6_default: lpuart6_default {
+		group1 {
+			pinmux = <PTA16_LPUART6_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA15_LPUART6_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart9_default: lpuart9_default {
+		group1 {
+			pinmux = <PTB10_LPUART9_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB9_LPUART9_RX>;
+			input-enable;
+		};
+	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+	};
+
+	adc1_default: adc1-default {
+		group1 {
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 11, 5, 0, 0)>;
+		};
+	};
+
+	emac0_default: emac0_default {
+		group1 {
+			pinmux = <PTC1_EMAC_MII_RMII_RXD0>,
+				 <PTC0_EMAC_MII_RMII_RXD1>,
+				 <PTC16_EMAC_MII_RMII_RX_ER>,
+				 <PTC17_EMAC_MII_RMII_RX_DV>,
+				 <PTD11_EMAC_MII_RMII_TX_CLK>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PTC2_EMAC_MII_RMII_TXD0>,
+				 <PTD7_EMAC_MII_RMII_TXD1>,
+				 <PTD12_EMAC_MII_RMII_TX_EN>;
+		};
+	};
+
+	mdio0_default: mdio0_default {
+		group1 {
+			pinmux = <(PTB4_EMAC_MII_RMII_MDIO_O | PTB4_EMAC_MII_RMII_MDIO_I)>;
+			input-enable;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB5_EMAC_MII_RMII_MDC>;
+			output-enable;
+		};
+	};
+};

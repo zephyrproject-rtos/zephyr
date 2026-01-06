@@ -1,39 +1,114 @@
-.. zephyr:board:: s32k3x4evb
+.. zephyr:board:: s32k3x4evb_t172
 
 Overview
 ********
 
-The NXP S32K3X4EVB board is based on the `NXP S32K3 Series`_ family of automotive microcontrollers (MCUs),
-which expands the S32K3 series to deliver higher performance, larger memory, and increased vehicle network
-communication capability, all with lower power consumption.
+The `NXP S32K3X4EVB-T172`_ is an evaluation and development board based on the
+`NXP S32K3 Series`_ microcontroller with Arm® Cortex-M7® core (Lock-Step). It
+is intended for general-purpose industrial and automotive applications and
+includes built-in safety and security features. The board uses an Arduino
+UNO-compatible pin layout, enabling easy expansion and rapid prototyping.
 
-The S32K3 MCU features:
-- Platform-focused Arm Cortex-M7 cores
+This development kit has the following Interfaces:
 
-Zephyr OS is ported to run on Cortex-M7 core.
+* :abbr:`ADC (Analog to Digital Converter)`
+* :abbr:`GPIO (General Purpose Input Output)`
+* :abbr:`QSPI (Quad Serial Peripheral Interface)`
+* :abbr:`SPI (Serial Peripheral Interface)`
+* :abbr:`LIN (Local Interconnect Network)`
+* :abbr:`ETH (Ethernet MII/RMII 100 Ethernet Phy)`
+* :abbr:`UART (Universal asynchronous receiver-transmitter)`
+* :abbr:`CAN (Controller Area Network)`
 
-- ``s32k3x4evb/s32k344``, for S32K344 Cortex-M7, code executed from code SRAM by default.
+Board Revisions
+----------------
+
+This Board have Revisions:
+``A``, ``B``, ``B1`` and ``B2`` (Rev B1 and B2 have same configuration)
+RevB have the possibility to change the S32K344 for the S32K358, so some
+features of the K358 was added both the footprint to populate a SD/MMC socket
+and the PGOOD connection between the FS26 and the K358.
+All ``TRACE`` signals are ``DISABLED`` as default configuration in ``S32K3X4EVB-T172 RevB``.
+In order to enable the TRACE interface, the MCU signals routed to the
+QSPIA(R451,R189,R447,R512) and Ethernet interface(R2274, R2283,R2284,R2285,R2286)
+must be disabled and isolated, but the TRACE resistors (R192,RR452,R190,R435,R511)
+must be populated.
+
+The following table summarizes the differences between the board revisions:
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|| Interface /   || Signal / || Rev A Config   || Rev B Config   || Rev B1 Config  || Description / Comment                      |
++================+===========+=================+=================+=================+=============================================+
+|| Ethernet      || Ethernet || MII Enabled    || RMII Enabled   || RMII Enabled   || TJA1103A Ethernet PHY, 100 Mbit/s          |
+||               || PHY      ||                ||                ||                ||                                            |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+| QSPI-A Memory  | U16       | Enabled         | Disabled        | Disabled        | QSPI-A interface disabled on Rev B/B1       |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|| TRACE         || J12      || Enabled        || Disabled       || Disabled       || TRACE disabled by default on 20-pin Cortex |
+||               ||          ||                ||                ||                || Debug ETM                                  |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|| CAN Interface || CAN0 RX  || TJA1153 / PTA6 || TJA1153 / PTA6 || TJA1443 / PTA6 || CAN0_RX routed to PTA26 (PHY varies by     |
+||               ||          ||                ||                ||                || revision)                                  |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|                | CAN0 TX   | TJA1153 / PTA7  | TJA1153 / PTA7  | TJA1443 / PTA7  | CAN0_TX routed to PTA27                     |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|                | CAN0 ERRN | TJA1153 / NC    | TJA1153 / NC    | TJA1443 / PTC23 | CAN error signal                            |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|                | CAN EN    | TJA1153 / PTC21 | TJA1153 / PTC21 | TJA1443 / PTC21 | Transceiver ENABLE                          |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+|                | CAN STB   | TJA1153 / PTC20 | TJA1153 / PTC20 | TJA1443 / PTC20 | Transceiver STANDBY                         |
++----------------+-----------+-----------------+-----------------+-----------------+---------------------------------------------+
+
 
 Hardware
 ********
 
+The S32K3X4EVB-T172 evaluation board has 16MHz external crystal oscillator
+for the main system clock. The board required
+
 - NXP S32K344
-    - Arm Cortex-M7 (2 cores with Lock-Step).
-    - 512 kB SRAM for Cortex-M7, with ECC
-    - 128 kB D flash with ECC
-    - Ethernet switch integrated, CAN FD/XL, QSPI
-    - 12-bit ADC, 16-bit eMIOS timer and more.
+
+  - Arm Cortex-M7 (Lock-Step), 160 MHz (Max.)
+  - 4 MB of program flash, with ECC
+  - 320 KB RAM, with ECC
+  - Ethernet 100 Mbps, CAN FD, FlexIO, QSPI
+  - 12-bit 1 Msps ADC, 16-bit eMIOS timer
+
+- Interfaces
+
+   - TJA1103: Automotive Ethernet Phy 100BASE-T1 MII/RMII mode, ASIL B
+   - TJA1153/TJA1443: CAN Transceiver Phy
+   - MX25L6433F: QSPI Flash (64M-bit)
+   - Arduino UNO R3 compatible headers
+   - User RGB LED
+   - User Buttons (2 Nos)
+   - JTAG/SWD Connector
+   - 20-Pin Cortex Debug + ETM Connector
+
+- `NXP FS26 Safety System Basis Chip`_
+
+More information about the hardware and design resources can be found at
+`NXP S32K3X4EVB-T172`_ website.
 
 Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
 
+See `NXP S32K3X4EVB-T172`_
+for a complete list of hardware features.
+
 Connections and IOs
 ===================
 
-The Port columns in the Reference Manual (RM) are organized into ports and pins to ensure consistency with
-the GPIO driver used in this Zephyr port.
+Each GPIO port is divided into two banks: low bank, from pin 0 to 15, and high
+bank, from pin 16 to 31. For example, ``PTA2`` is the pin 2 of ``gpioa_l`` (low
+bank), and ``PTA20`` is the pin 4 of ``gpioa_h`` (high bank).
+
+The GPIO controller provides the option to route external input pad interrupts
+to either the SIUL2 EIRQ or WKPU interrupt controllers, as supported by the SoC.
+By default, GPIO interrupts are routed to SIUL2 EIRQ interrupt controller,
+unless they are explicitly configured to be directed to the WKPU interrupt
+controller, as outlined in :zephyr_file:`dts/bindings/gpio/nxp,siul2-gpio.yaml`.
 
 The table below summarizes the mapping between the Port columns in the RM and Zephyr’s ports and pins.
 Please consider this mapping when using the GPIO driver or configuring pin multiplexing for device drivers.
@@ -56,174 +131,231 @@ Please consider this mapping when using the GPIO driver or configuring pin multi
 LEDs
 ----
 
-The board has three user RGB LEDs:
+The MR-CANHUBK3 board has one user RGB LED:
 
-=======================  =====  ===============
-Devicetree node          Color  Pin
-=======================  =====  ===============
-led0 / user_led_red      Red    PTA29 : GPIO 29
-led1 / user_led_green    Green  PTA30 : GPIO 30
-led2 / user_led_blue     Blue   PTA31 : GPIO 31
-=======================  =====  ===============
+=======================  =====  ===============    ================================================
+Devicetree node          Color  Pin                Pin Function
+=======================  =====  ===============    ================================================
+led0 / user_led_red      Red    PTA29              GPIO 29 / EMIOS_1 CH12 / EMIOS_2 CH12
+led1 / user_led_green    Green  PTA30              GPIO 30 / EMIOS_1 CH11 / EMIOS_2 CH11 / EIRQ6
+led2 / user_led_blue     Blue   PTA31              GPIO 31 / EMIOS_1 CH14 /
+=======================  =====  ===============    ================================================
 
 The user can control the LEDs in any way. An output of ``1`` illuminates the LED.
 
 Buttons
 -------
 
-The board has two user buttons:
+There are 2 push-buttons active high (pulled low), the push
+button switches connected to MCU ports. The switches are
+connected as follows:
 
-=======================  =======  ==============
-Devicetree node          Label    Pin
-=======================  =======  ==============
-sw0 / user_button_0      USERSW0  PTB26 : GPIO58
-sw1 / user_button_1      USERSW1  PTC18 : GPIO82
-sw1 / user_button_1      USERSW1  PTB19 : GPIO82
-=======================  =======  ==============
-
-UART Debug Interface OpenSDA
--------
-
-The board has UART channel for Debugging logs:
-
-=======================  ================ ==============
-Devicetree node          Label            Pin
-=======================  ================ ==============
-LPUART6_RX               DEBUG_UART0_RX   PTA15 : GPIO15
-LPUART6_TX               DEBUG_UART0_TX   PTA16 : GPIO16
-=======================  ===============  ==============
-
-Can Phy Interface
--------
-Can Connector is available as Jumper J32: Pin 1 CAN_H and Pin 2 CAN_L
-CAN2 is connected to the CAN transceiver on the on-board for loopback testing.
-=======================  =======    ==============
-Devicetree node          Label      Pin
-=======================  =======    ==============
-CAN0_TX                  CAN0_TX    PTA07 : GPIO7
-CAN0_RX                  CAN0_RX    PTA06 : GPIO6
-CAN0_EN                  CAN2_TX    PTC21 : GPIO85
-CAN0_STB                 CAN0_STB   PTC20 : GPIO84
-CAN0_ERRN                CAN0_ERRN  PTC23 : GPIO87
-CAN2_RX_PTC14            CAN2_RX    PTC14 : GPIO78
-CAN2_RX_PTC15            CAN2_TX    PTC15 : GPIO79
-=======================  =======    ==============
+=======================  =======  ==============   =========================
+Devicetree node          Label    Pin              Pin Function
+=======================  =======  ==============   =========================
+sw0 / user_button_0      USERSW0  PTB26            GPIO58 / EIRQ13 / WKPU41
+sw1 / user_button_1      USERSW1  PTB19            GPIO82 / WKPU38
+=======================  =======  ==============   =========================
 
 System Clock
 ============
 
-- The Arm Cortex-M7: 160 MHz.
+- The Arm Cortex-M7 (Lock-Step) are configured to run at 160 MHz.
 
-Set-up the Board
-================
 
-1) Connect the male micro usb to the board's usb connector connector (``J40``)
-and to the host computer via USB.
-2) Connect the 12V DC power supply to the board's power connector (``J14``)
-3) As board is using OpenSDA for programming and debugging, no additional
-hardware is required.
-4) Confirm SW1 Main switch is in the ON position (at 1st position).
-5) Make sure PEgdbserver driver are installed on the host computer.
+Serial Console
+==============
 
-Set-up Host pemicrogdbserver Driver
-===================================
+The EVB includes an on-board debugger that provides a serial console through ``lpuart6`` to the host via USB.
+jumper ``J44`` can be used to disconnect the LPUART6 from the OpenSDA debugger and connect it to an external
+device for serial communication.
 
-1) Make Sure OnBoard debugger is in OpenSDA mode and detected by the host computer COM Port as:
-   OpenSDA - CDC Serial Port (COMX)` or goto: https://www.pemicro.com/opensda/
-   for more details on how to set the board to OpenSDA mode.
-2) Make sure PEgdbserver driver are installed on the host computer, If not then GoTo:
-   https://www.pemicro.com/products/product_viewDetails.cfm?product_id=15320151&productTab=1000000
-   and download the from "PEmicro GDB Server for ARM devices - Eclipse Plugin" link
-3) Add the pemicro gdb server path to your environment variables as below:
-   (Unzip)DownloadedFolder-->plugins-->(unzip)com.pemicro.debug.gdbjtag.pne.expansion_xxxx-->Win32
-4) You can check the board connection using: "pegdbserver_console.exe -showhardware" to valid the connection
-   Output Snippet:
-   PS C:\Users\user_name>
-   P&E GDB Server for Arm(R) devices, Version 9.76.00.00
-   Copyright 2018, P&E Microcomputer Systems Inc, All rights reserved
-   Loading library C:\PEMicro\PEDrivers\com.pemicro.debug.gdbjtag\win32\gdi\unit_ngs_arm_internal.dll ... Done.
-   Command line arguments: -showhardware
-   -INTERFACE=USBMULTILINK   -PORT=PEMDFD7A8                ; USB1 : Embedded Multilink Rev A (PEMDFD7A8)[PortNum=21]
-   -INTERFACE=USBMULTILINK   -PORT=USB1                     ; USB1 : Embedded Multilink Rev A (PEMDFD7A8)[PortNum=21][DUPLICATE]
-5) Now you are ready to build and flash your application to the board.
+=========  =====  ============
+Connector  Pin    Pin Function
+=========  =====  ============
+J44.1      PTA15   LPUART6_TX
+J44.2      PTA16   LPUART6_RX
+=========  =====  ============
+
+
+CAN
+===
+
+CAN interface is available through ``J32`` interface Pin 1 CAN_H and Pin 2 CAN_L
+CAN2 is also connected to the CAN transceiver on the on-board.
+
+===============  =======  ===============  =============
+Devicetree node  Pin      Pin Function     Bus Connector
+===============  =======  ===============  =============
+flexcan0         PTA6     PTA6_CAN0_RX     J32.2 (CAN_L)
+                 PTA7     PTA7_CAN0_TX     J32.1 (CAN_H)
+
+.. note::
+    Revision A and B of the S32K3X4EVB-T172 is using TJA1153 CAN transceive while Revision B1 and B2 is using TJA1443 CAN transceiver. The only difference is ERROR pin in the TJA1443, which is NC In TJA1153.
+
+ADC
+===
+
+A ADC Rotary Potentiometer, which routes a voltage between 0v
+to VD_HV_A is connected to ADC Precise Input Chanel as follows:
+
+====================  ========  ==============  =============
+Devicetree node       Label     Pin             Pin Function
+====================  ========  ==============  =============
+adc0 / user_adc_0     ADC_POT0  PTA11 : GPIO11   ADC1_S10
+====================  ========  ==============  =============
+
+
+Lin Phy Interface
+======================
+The board includes two LIN interface connected to mcu using LIN transceiver
+TJA1021T/20/C, supporting both master and slave mode using jumper. The output from
+the LIN transceiver is connected to ``J23``.
+
+=========      =====  ============
+Connector      Pin    Pin Function
+=========      =====  ============
+J23.8 (LIN1)   PTB09   LPUART9_TX
+               PTB10   LPUART9_RX
+J43.7 (LIN2)   PTB28   LPUART5_RX
+               PTB27   LPUART5_TX
+=========      =====  ============
+
+Ethernet
+========
+
+This board has a single instance of Ethernet Media Access Controller (EMAC)
+interfacing with a `NXP TJA1103`_ 100Base-T1 Ethernet PHY. The output from
+the PHY is connected to ``J428.1`` as TX and ``J428.2`` as RX connpinector.
+
+================  =========    ================
+Devicetree node    Pin          Pin Function
+================  =========    ================
+emac0              PTB05       MII_RMII_MDC
+                   PTB04       MII_RMII_MDIO
+                   PTC02       MII_RMII_TXD0
+                   PTD07       MII_RMII_TXD1
+                   PTD06       MII_TXD2
+                   PTD05       MII_TXD3
+                   PTD12       MII_RMII_TX_EN
+                   PTD11       MII_RMII_TX_CLK
+                   PTD10       MII_RX_CLK
+                   PTC01       MII_RMII_RXD0
+                   PTC00       MII_RMII_RXD1
+                   PTD09       MII_RXD2
+                   PTD08       MII_RXD3
+                   PTC17       MII_RMII_RX_DV
+                   PTC16       MII_RMII_RX_ER
+================  =========    ================
+
+.. Note::
+   RevA use MII as default and the RevB is stablish to use RMII so the principal difference
+   is the pin strapping configuration for the Ethernet PHY and some pins of Rx
+   and Tx are connected to fast pins reach the maximum transmission speed.
+
+QSPI Interface
+===============
+The S32K3X4EVB-T172 incorporates a MX25L6433F is 64Mb bits Serial NOR Flash memory,
+which is connected to the QSPI-A Module of the S32K344 MCU.
+
+The QSPI Flash memory is connected as follows:
+================  ======      =================
+Devicetree node   Pin         Pin Function
+================  ======      =================
+qspi0             PTD11       QSPI_A_IO0_MCU
+                  PTD07       QSPI_A_IO1_MCU
+                  PTD12       QSPI_A_IO2_MCU
+                  PTC02       QSPI_A_IO3_MCU
+                  PTD10       QSPI_A_SCK_MCU
+                  PTC03       QSPI_A_CS_MCU
+================  ======      =================
+
+It is disabled by default to use the Ethernet RMII interface in all Rev B boards.
 
 Programming and Debugging
 *************************
+
 .. zephyr:board-supported-runners::
-   : nxp_pemicro
-Applications for the ``s32k3x4evb`` board can be built in the usual way as
+
+Applications for the ``s32k3x4evb-t172`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
-NOTE: Make sure virtual python environment is activated with west and zephyr installed.
+This board configuration supports `Lauterbach TRACE32`_, `SEGGER J-Link`_ and `pyOCD`_
+West runners for flashing and debugging. Follow the steps described in
+:ref:`lauterbach-trace32-debug-host-tools`, :ref:`jlink-debug-host-tools` and
+:ref:`pyocd-debug-host-tools`, to set up the required host tools.
+The default runner is J-Link.
 
-This board supports West runners "nxp_pemicro.py" for the following debug tools:
-SERIAL_MONITOR can be used to monitor serial outpur on same COM port as debug interface.
-Tested with Windows 11  and Vs code
-
-- :ref:`PEmicro OpenSDA https://www.pemicro.com/opensda/`
-
-You can build and debug the :zephyr:code-sample:`hello_world` sample for the board
-``s32k3x4evb/s32k344`` as follows:
-
-Building
-=========
-
-"west build -p always -b s32k3x4evb/s32k344 Samples/hello_world -- -DCMAKE_BUILD_TYPE=Debug"
-
-Output Snippet:
-"[1/174] Generating include/generated/zephyr/version.h
--- Zephyr version: 4.3.99 (C:/Users/user_name/zephyrproject/zephyr), build: v4.3.0-3078-g2df5c683f274
-[174/174] Linking C executable zephyr\zephyr.elf
-Memory region         Used Size  Region Size  %age Used
-           FLASH:          0 GB         0 GB
-             RAM:       72744 B       320 KB     22.20%
-            ITCM:          0 GB        64 KB      0.00%
-            DTCM:          0 GB       128 KB      0.00%
-        IDT_LIST:          0 GB        32 KB      0.00%
-Generating files from C:/Users/user_name/zephyrproject/zephyr/build/zephyr/zephyr.elf for board: s32k3x4evb"
+If using TRACE32, ensure you have version >= 2024.09 installed.
 
 Flashing
 ========
 
-Follow these steps if you just want to download the application to the board and run.
+Run the ``west flash`` command to flash the application using SEGGER J-Link.
+Alternatively, run ``west flash -r trace32`` to use Lauterbach TRACE32, or
+``west flash -r pyocd``` to use pyOCD.
 
-"west flash"
+The Lauterbach TRACE32 runner supports additional options that can be passed
+through command line:
 
-Output Snippet:
-"Loading section datas, size 0xf8 lma 0x20410020
-Loading section device_states, size 0x10 lma 0x20410118
-Loading section log_mpsc_pbuf_area, size 0x38 lma 0x20410128
-Loading section log_msg_ptr_area, size 0x4 lma 0x20410160
-Loading section k_sem_area, size 0x10 lma 0x20410164
-Loading section .last_section, size 0x4 lma 0x20410174
-Start address 0x20401fe0, load size 51888
-Transfer rate: 52 KB/sec, 836 bytes/write.
-No breakpoints currently set.
-[Inferior 1 (Remote target) detached]
-Disconnected from "127.0.0.1" via 127.0.0.1. Disconnection by port "56083" from 7224"
+.. code-block:: console
+
+   west flash -r trace32 --startup-args elfFile=<elf_path> loadTo=<flash/sram>
+      eraseFlash=<yes/no> verifyFlash=<yes/no>
+
+Where:
+
+- ``<elf_path>`` is the path to the Zephyr application ELF in the output
+  directory
+- ``loadTo=flash`` loads the application to the SoC internal program flash
+  (:kconfig:option:`CONFIG_XIP` must be set), and ``loadTo=sram`` load the
+  application to SRAM. Default is ``flash``.
+- ``eraseFlash=yes`` erases the whole content of SoC internal flash before the
+  application is downloaded to either Flash or SRAM. This routine takes time to
+  execute. Default is ``no``.
+- ``verifyFlash=yes`` verify the SoC internal flash content after programming
+  (use together with ``loadTo=flash``). Default is ``no``.
+
+For example, to erase and verify flash content:
+
+.. code-block:: console
+
+   west flash -r trace32 --startup-args elfFile=build/zephyr/zephyr.elf loadTo=flash eraseFlash=yes verifyFlash=yes
+
 
 Debugging
 =========
- Run the below Command and use gdb commands to debug the application.
+Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
+Alternatively, run ``west debug -r trace32`` or ``west debug -r pyocd``
+to launch the Lauterbach TRACE32 or pyOCD software debugging interface respectively.
 
-"west debug"
-
-Output Snippet:
-"Loading section log_mpsc_pbuf_area, size 0x38 lma 0x20410128
---Type <RET> for more, q to quit, c to continue without paging--
-Loading section log_msg_ptr_area, size 0x4 lma 0x20410160
-Loading section k_sem_area, size 0x10 lma 0x20410164
-Loading section .last_section, size 0x4 lma 0x20410174
-Start address 0x20401fe0, load size 51888
-Transfer rate: 4 KB/sec, 836 bytes/write.
-(gdb)"
-
+.. include:: ../../common/board-footer.rst.inc
 
 References
 **********
 
 .. target-notes::
-.. _NXP S32K344 172 Evaluation Board details:
+
+.. _NXP S32K3X4EVB-T172:
    https://www.nxp.com/design/design-center/development-boards-and-designs/S32K3X4EVB-T172
-.. _NXP S32K5 Series:
+
+.. _NXP S32K3 Series:
    https://www.nxp.com/products/S32K3
+
+.. _NXP FS26 Safety System Basis Chip:
+   https://www.nxp.com/products/power-management/pmics-and-sbcs/safety-sbcs/safety-system-basis-chip-with-low-power-fit-for-asil-d:FS26
+
+.. _NXP TJA1103:
+   https://www.nxp.com/products/interfaces/ethernet-/automotive-ethernet-phys/asil-b-compliant-100base-t1-ethernet-phy:TJA1103
+
+.. _RDDRONE-T1ADAPT:
+   https://www.nxp.com/products/interfaces/ethernet-/automotive-ethernet-phys/ethernet-media-converter-for-drones-rovers-mobile-robotics-and-automotive:RDDRONE-T1ADAPT
+
+.. _Lauterbach TRACE32:
+   https://www.lauterbach.com
+
+.. _SEGGER J-Link:
+   https://wiki.segger.com/NXP_S32K3xx
+
+.. _pyOCD:
+   https://pyocd.io/
