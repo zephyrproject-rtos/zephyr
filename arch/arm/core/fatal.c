@@ -147,6 +147,7 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 }
 
+#ifdef CONFIG_USERSPACE
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
 	uint32_t *ssf_contents = ssf_ptr;
@@ -158,3 +159,4 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 	z_arm_fatal_error(K_ERR_KERNEL_OOPS, &oops_esf);
 	CODE_UNREACHABLE;
 }
+#endif
