@@ -26,6 +26,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - sam_e54_xpro
+    extra_args: EXTRA_CONF_FILE="boards/sam_e54_xpro_async.conf"
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_INTERRUPT_DRIVEN=n
