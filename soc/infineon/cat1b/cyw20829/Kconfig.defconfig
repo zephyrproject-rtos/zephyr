@@ -29,6 +29,9 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 1024 if PM
 
+config PM
+	select FLASH
+
 # add additional die specific params
 
 endif # SOC_SERIES_CYW20829
