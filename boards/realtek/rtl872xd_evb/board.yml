@@ -1,5 +1,6 @@
 board:
   name: rtl872xd_evb
+  full_name: RTL872xD Evaluation Board
   vendor: realtek
   socs:
     - name: rtl872xd
