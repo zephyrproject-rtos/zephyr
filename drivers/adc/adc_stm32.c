@@ -159,11 +159,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define MAX_RANK	16
 #endif
 
-#define RANK(i, _)	_CONCAT_1(LL_ADC_REG_RANK_, UTIL_INC(i))
+#define RANK(i, _)	CONCAT(LL_ADC_REG_RANK_, UTIL_INC(i))
 static const uint32_t table_rank[] = {
 	LISTIFY(MAX_RANK, RANK, (,))};
 
-#define SEQ_LEN(i, _)	_CONCAT_2(LL_ADC_REG_SEQ_SCAN_ENABLE_, UTIL_INC(UTIL_INC(i)), RANKS)
+#define SEQ_LEN(i, _)	CONCAT(LL_ADC_REG_SEQ_SCAN_ENABLE_, UTIL_INC(UTIL_INC(i)), RANKS)
 /* Length of this array signifies the maximum sequence length */
 static const uint32_t table_seq_len[] = {
 	LL_ADC_REG_SEQ_SCAN_DISABLE,
@@ -692,7 +692,7 @@ static int adc_stm32_calibrate(const struct device *dev)
 #define MAX_OVS_SHIFT	8
 #endif
 
-#define OVS_SHIFT(i, _)	_CONCAT_1(LL_ADC_OVS_SHIFT_RIGHT_, UTIL_INC(i))
+#define OVS_SHIFT(i, _)	CONCAT(LL_ADC_OVS_SHIFT_RIGHT_, UTIL_INC(i))
 static const uint32_t table_oversampling_shift[] = {
 	LL_ADC_OVS_SHIFT_NONE,
 	LISTIFY(MAX_OVS_SHIFT, OVS_SHIFT, (,))
@@ -1754,7 +1754,7 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 
 /* Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler */
 #define ADC_STM32_DT_PRESC(x)	\
-	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
+	CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
 
 /* Macro to check if the ADC instance clock setup is correct */
 #define ADC_STM32_CHECK_DT_CLOCK(x)								\
