@@ -141,3 +141,9 @@
 &wdog4 {
 	status = "okay";
 };
+
+&lpi2c6 {
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
