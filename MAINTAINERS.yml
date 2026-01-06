@@ -5960,6 +5960,13 @@ West:
   labels:
     - "area: Xtensa"
 
+"West project: hal_xuantie":
+  status: unmaintained
+  files:
+    - modules/Kconfig.xuantie
+  labels:
+    - "platform: xuantie"
+
 "West project: hostap":
   status: maintained
   maintainers:
