@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+extern void z_arm_unwind_stack(const struct arch_esf *esf);
+
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void esf_dump(const struct arch_esf *esf)
 {
@@ -83,6 +85,10 @@ void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
 		EXCEPTION_DUMP("Unhandled IRQn: %d", irqn);
 	}
 #endif
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	z_arm_unwind_stack(esf);
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 	z_fatal_error(reason, esf);
 }
