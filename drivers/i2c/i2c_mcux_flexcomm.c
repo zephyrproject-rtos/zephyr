@@ -254,6 +254,7 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 	};
 	uint32_t bitrate_cfg;
 	int error = 0;
+	I2C_Type *base = config->base;
 
 	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
@@ -264,6 +265,13 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 		LOG_ERR("SDA GPIO device not ready");
 		return -EIO;
 	}
+
+	/* If a glitch on the bus looks like a start condition, the i2c block will be stuck
+	 * waiting forever for a stop. This resets the I2C block to clear this condition before
+	 * the bitbang recovery proceedure which should clear any other devices on the bus.
+	 */
+	I2C_MasterEnable(base, false);
+	I2C_MasterEnable(base, true);
 
 	k_sem_take(&data->lock, K_FOREVER);
 
