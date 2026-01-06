@@ -237,6 +237,14 @@ config RISCV_ISA_EXT_ZBC
 	  The Zbc instructions can be used for carry-less multiplication that
 	  is the multiplication in the polynomial ring over GF(2).
 
+config RISCV_ISA_EXT_ZBKB
+	bool
+	help
+	  (Zbkb) - Zbkb BitManip Extension (Bit-manipulation for Cryptography)
+
+	  The Zbkb instructions can be used for accelerating cryptography workloads
+	  and contain rotation, reversion, packing and some advanced bit-manipulation.
+
 config RISCV_ISA_EXT_ZBS
 	bool
 	help

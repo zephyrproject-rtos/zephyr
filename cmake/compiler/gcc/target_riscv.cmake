@@ -118,6 +118,10 @@ if(CONFIG_RISCV_ISA_EXT_ZBC)
   string(CONCAT riscv_march ${riscv_march} "_zbc")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_ZBKB)
+  string(CONCAT riscv_march ${riscv_march} "_zbkb")
+endif()
+
 if(CONFIG_RISCV_ISA_EXT_ZBS)
   string(CONCAT riscv_march ${riscv_march} "_zbs")
 endif()
