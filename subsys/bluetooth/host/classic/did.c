@@ -65,7 +65,21 @@ static struct bt_sdp_attribute did_attrs[] = {
 
 static struct bt_sdp_record did_rec = BT_SDP_RECORD(did_attrs);
 
-int bt_did_init(void)
+void bt_did_init(void)
 {
-	return bt_sdp_register_service(&did_rec);
+	__maybe_unused int err;
+
+	static bool initialized;
+
+	if (initialized) {
+		return;
+	}
+
+	err = bt_sdp_register_service(&did_rec);
+	if (err != 0) {
+		LOG_ERR("Failed to register DID SDP record (err %d)", err);
+		return;
+	}
+
+	initialized = true;
 }
