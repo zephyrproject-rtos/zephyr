@@ -1,4 +1,4 @@
-.. _phyboard_lyra_am62xx_a53:
+.. zephyr:board:: f_phyboard_lyra_am62xx_a53
 
 phyBOARD-Lyra AM62x A53 Core
 ############################
@@ -31,22 +31,7 @@ See the `PHYTEC AM62x Product Page`_ for details.
 Supported Features
 ==================
 
-The Zephyr phyboard_lyra/am6234/a53 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v3    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| Mailbox   | on-chip    | IPC Mailbox                         |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 ========
