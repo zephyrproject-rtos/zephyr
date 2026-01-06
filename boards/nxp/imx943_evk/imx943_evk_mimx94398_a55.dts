@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,4 +132,10 @@
 &switch_port3 {
 	zephyr,random-mac-address;
 	status = "disabled";
+};
+
+&lpi2c6 {
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
