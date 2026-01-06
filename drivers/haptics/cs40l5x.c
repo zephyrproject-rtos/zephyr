@@ -770,7 +770,7 @@ static void cs40l5x_error_callback(const struct device *const dev, const uint32_
 	struct cs40l5x_data *const data = dev->data;
 
 	if (data->error_callback != NULL) {
-		(void)data->error_callback(dev, error_bitmask);
+		(void)data->error_callback(dev, error_bitmask, data->user_data);
 	}
 }
 
@@ -854,7 +854,7 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 		case CS40L5X_MBOX_PERMANENT_SHORT_DETECTED:
 			__fallthrough;
 		case CS40L5X_MBOX_RUNTIME_SHORT_DETECTED:
-			(void)cs40l5x_error_callback(dev, CS40L5X_ERROR_AMPLIFIER_SHORT);
+			(void)cs40l5x_error_callback(dev, HAPTICS_ERROR_OVERCURRENT);
 
 			return 0;
 		default:
@@ -881,37 +881,37 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 	if (FIELD_GET(CS40L5X_MASK_IRQ1_AMP, irq_ints[CS40L5X_INT1]) != 0) {
 		LOG_INST_WRN(config->log, "amplifier short detected");
 
-		error_bitmask |= CS40L5X_ERROR_AMPLIFIER_SHORT;
+		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ8_TEMP, irq_ints[CS40L5X_INT8]) != 0) {
 		LOG_INST_WRN(config->log, "overtemperature detected");
 
-		error_bitmask |= CS40L5X_ERROR_OVERTEMPERATURE;
+		error_bitmask |= HAPTICS_ERROR_OVERTEMPERATURE;
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ9_UVP, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "undervoltage detected");
 
-		error_bitmask |= CS40L5X_ERROR_UNDERVOLTAGE;
+		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ9_IND_SHORT, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "inductor short detected");
 
-		error_bitmask |= CS40L5X_ERROR_INDUCTOR_SHORT;
+		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ9_CUR_LIMIT, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "overcurrent condition detected");
 
-		error_bitmask |= CS40L5X_ERROR_OVERCURRENT;
+		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ1_VDDB, irq_ints[CS40L5X_INT10]) != 0) {
 		LOG_INST_WRN(config->log, "battery undervoltage detected");
 
-		error_bitmask |= CS40L5X_ERROR_BATTERY_UNDERVOLTAGE;
+		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 	}
 
 	if (error_bitmask != 0) {
@@ -1870,13 +1870,15 @@ int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_sourc
 	return ret;
 }
 
-void cs40l5x_register_error_callback(const struct device *dev,
-				     void (*error_callback)(const struct device *const haptic_dev,
-							    const uint32_t errors))
+static int cs40l5x_register_error_callback(const struct device *dev, haptics_error_callback_t cb,
+					   void *const user_data)
 {
 	struct cs40l5x_data *const data = dev->data;
 
-	data->error_callback = error_callback;
+	data->error_callback = cb;
+	data->user_data = user_data;
+
+	return 0;
 }
 
 int cs40l5x_select_output(const struct device *const dev, const enum cs40l5x_bank bank,
@@ -2293,6 +2295,7 @@ error_pm:
 static DEVICE_API(haptics, cs40l5x_driver_api) = {
 	.start_output = &cs40l5x_start_output,
 	.stop_output = &cs40l5x_stop_output,
+	.register_error_callback = &cs40l5x_register_error_callback,
 };
 
 static int cs40l5x_pm_resume(const struct device *const dev)
