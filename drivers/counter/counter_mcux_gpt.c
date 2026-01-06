@@ -27,7 +27,6 @@ struct mcux_gpt_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	clock_name_t clock_source;
 	void (*irq_config_func)(void);
 };
 
