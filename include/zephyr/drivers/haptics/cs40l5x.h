@@ -78,20 +78,6 @@ enum cs40l5x_custom_index {
 };
 
 /**
- * @brief Types of fatal CS40L5x hardware errors
- *
- * @details Provided to application callback function. See @ref cs40l5x_register_error_callback().
- */
-enum cs40l5x_error_type {
-	CS40L5X_ERROR_AMPLIFIER_SHORT = BIT(0),      /**< Amplifier short detected */
-	CS40L5X_ERROR_OVERTEMPERATURE = BIT(1),      /**< Overtemperature detected */
-	CS40L5X_ERROR_UNDERVOLTAGE = BIT(2),         /**< Undervoltage detected */
-	CS40L5X_ERROR_INDUCTOR_SHORT = BIT(3),       /**< Inductor short detected */
-	CS40L5X_ERROR_OVERCURRENT = BIT(4),          /**< Overcurrent condition detected */
-	CS40L5X_ERROR_BATTERY_UNDERVOLTAGE = BIT(4), /**< Vdd_batt undervoltage detected */
-};
-
-/**
  * @brief Options for runtime haptics logging
  *
  * @details Provide to @ref cs40l5x_logger() to update runtime haptics logging.
@@ -318,7 +304,9 @@ struct cs40l5x_data {
 	/**< Callback handler for trigger logging */
 	struct gpio_callback trigger_callback;
 	/**< Application-provided callback to recover from fatal hardware errors */
-	void (*error_callback)(const struct device *const haptic_dev, const uint32_t errors);
+	haptics_error_callback_t error_callback;
+	/**< Application-provided user data for callback context */
+	void *user_data;
 	/**< Semaphore used to sequence the calibration routine */
 	struct k_sem calibration_semaphore;
 	/**< F0 and ReDC data derived from calibration */
@@ -417,17 +405,6 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
  */
 int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_source source,
 		       enum cs40l5x_logger_source_type type, uint32_t *const value);
-
-/**
- * @brief Register an application callback to handle fatal hardware errors
- *
- * @param dev Pointer to the device structure for haptic device instance
- * @param error_callback Application function that takes a pointer to the device structure for a
- * haptic device instance and a bitmask of @ref cs40l5x_error_type
- */
-void cs40l5x_register_error_callback(const struct device *dev,
-				     void (*error_callback)(const struct device *const haptic_dev,
-							    const uint32_t errors));
 
 /**
  * @brief Select haptic effect triggered via @ref haptics_start_output()
