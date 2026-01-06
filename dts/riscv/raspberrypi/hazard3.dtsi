@@ -35,11 +35,11 @@
 &cpu0 {
 	compatible = "riscv";
 	riscv,isa-base = "rv32i";
-	riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei", "zba", "zbs";
+	riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei", "zba", "zbb", "zbkb", "zbs";
 };
 
 &cpu1 {
 	compatible = "riscv";
 	riscv,isa-base = "rv32i";
-	riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei", "zba", "zbs";
+	riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei", "zba", "zbb", "zbkb", "zbs";
 };
