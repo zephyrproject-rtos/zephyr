@@ -51,6 +51,36 @@
 		};
 	};
 
+	pmod1_header: pmod-connector-1 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport1 3 0>,	/* IO1 */
+			   <1 0 &ioport1 1 0>,	/* IO2 */
+			   <2 0 &ioport1 0 0>,	/* IO3 */
+			   <3 0 &ioport1 2 0>,	/* IO4 */
+			   <4 0 &ioport4 2 0>,	/* IO5 */
+			   <5 0 &ioport2 8 0>,	/* IO6 */
+			   <6 0 &ioport1 5 0>,	/* IO7 */
+			   <7 0 &ioport1 6 0>;	/* IO8 */
+	};
+
+	pmod2_header: pmod-connector-2 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport2 5 0>,	/* IO1 */
+			   <1 0 &ioport2 3 0>,	/* IO2 */
+			   <2 0 &ioport2 2 0>,	/* IO3 */
+			   <3 0 &ioport2 4 0>,	/* IO4 */
+			   <4 0 &ioport4 9 0>,	/* IO5 */
+			   <5 0 &ioport3 3 0>,	/* IO6 */
+			   <6 0 &ioport2 6 0>,	/* IO7 */
+			   <7 0 &ioport3 4 0>;	/* IO8 */
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -84,6 +114,22 @@
 	status = "okay";
 };
 
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
 &sci0 {
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
@@ -93,6 +139,25 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &wdt {
@@ -143,3 +208,13 @@
 		};
 	};
 };
+
+pmod1_spi: &spi0 {};
+
+pmod2_serial: &uart9 {};
+
+pmod_spi: &pmod1_spi {};
+
+pmod_serial: &pmod2_serial {};
+
+pmod_header: &pmod1_header {};
