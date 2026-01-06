@@ -12,10 +12,14 @@ include: [clock-controller.yaml, base.yaml]
 properties:
   peri-group:
     type: uint8-array
+    default: [00, 00]
     description: |
       Peri instance and group of given peripheral divider:
       peri0_group1_... : peri-group = [00 01]
       peri1_group3_... : peri-group = [01 03]
+
+      For psoc4, peri-group is not used so default value is
+      taken for clock driver.
 
   div-type:
     type: int
