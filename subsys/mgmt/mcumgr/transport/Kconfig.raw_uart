@@ -1,0 +1,40 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2026. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to the raw UART transport of the MCUmgr subsystem and provides
+# Kconfig options to control aspects of the transport.
+#
+# Options defined in this file should be prefixed with:
+#  MCUMGR_TRANSPORT_RAW_UART_
+
+menuconfig MCUMGR_TRANSPORT_RAW_UART
+	bool "Raw UART (non-SMP over console) MCUmgr transport"
+	depends on CONSOLE
+	depends on UART_MCUMGR
+	depends on UART_MCUMGR_RAW_PROTOCOL
+	select MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
+	help
+	  Enables handling of MCUmgr commands received over UART, which are not encoded in the SMP
+	  over console format (without additional fields or base64 encoding). This is an even
+	  lighter-weight alternative to CONFIG_MCUMGR_TRANSPORT_UART. It allows MCUmgr commands
+	  to be received over a binary (non-textual) UART without requiring an additional thread.
+
+if MCUMGR_TRANSPORT_RAW_UART
+
+config MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT
+	bool "Input expiration"
+	help
+	  If enabled, will time out a partial or erroneous MCUmgr command received via the raw
+	  UART transport after a given time. This prevents the UART from becoming locked if it
+	  never receives the full packet that it was expecting to receive.
+
+config MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS
+	int "Input expiration timeout"
+	depends on MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT
+	default 3000
+	help
+	  Time (in msec) after first receiving data on the UART transport before considering it
+	  as timed out and clearing the receive buffer to await a new command.
+
+endif # MCUMGR_TRANSPORT_RAW_UART
