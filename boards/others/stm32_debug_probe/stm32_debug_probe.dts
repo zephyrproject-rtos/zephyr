@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/f1/stm32f103Xb.dtsi>
+#include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "STM32 Debug Probe";
+	compatible = "st,stm32f103rb", "stm32,debug_probe";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led: led {
+			gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+			label = "LED";
+		};
+	};
+
+	aliases {
+		led0 = &led;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	/* usbpre not set: USB clock = 72 / 1.5: 48MHz */
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
