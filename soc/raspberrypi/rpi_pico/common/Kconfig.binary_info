@@ -3,7 +3,6 @@
 
 config RPI_PICO_BINARY_INFO
 	bool "Generate Raspberry Pi Pico binary info"
-	default y
 	help
 	  Binary info is able to embed machine readable information with the binary in flash.
 	  It can be read with picotool (https://github.com/raspberrypi/picotool).
