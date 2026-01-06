@@ -20,7 +20,7 @@ config WUC_INIT_PRIORITY
 
 
 # zephyr-keep-sorted-start
-
+rsource "Kconfig.mcux_wuc"
 # zephyr-keep-sorted-stop
 
 endif # WAKEUP_CONTROL
