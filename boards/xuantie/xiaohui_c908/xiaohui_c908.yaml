@@ -1,0 +1,19 @@
+identifier: xiaohui_c908
+name: QEMU Emulation for RISC-V 64-bit SMP
+type: qemu
+simulation:
+  - name: custom # xuantie qemu
+    exec: qemu-system-riscv64
+arch: riscv  # arch: riscv64
+vendor: xuantie
+toolchain:
+  - zephyr
+supported:
+  - netif
+testing:
+  timeout_multiplier: 3
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+    - coredump # temp shield

@@ -1,0 +1,5 @@
+# Copyright (c) 2019 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAOHUI_C908
+	select SOC_SERIES_XIAOHUI_C9XX

@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <xuantie/xiaohui_c908.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+		zephyr,counter0 = &counter0;
+		zephyr,counter1 = &counter1;
+		zephyr,counter2 = &counter2;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&counter0 {
+	status = "okay";
+};
+
+&counter1 {
+	status = "okay";
+};
+
+&counter2 {
+	status = "okay";
+};

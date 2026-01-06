@@ -1,0 +1,7 @@
+board:
+  name: xiaohui_c908
+  vendor: xuantie
+  socs:
+  - name: c908
+    variants:
+    - name: smp
