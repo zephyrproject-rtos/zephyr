@@ -939,9 +939,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	    (event.curr.abort_cb != NULL) ||
 	    (ready_short != NULL) ||
 	    ((ready != NULL) && (is_resume != 0U)) ||
-	    (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) &&
-	     (prepare_param->defer == 0U) &&
-	     (event.curr.has_margin == 0U))) {
+	    (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) && (prepare_param->defer == 0U) &&
+	     (event.curr.has_margin == 0U) && (is_resume == 0U))) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -1292,15 +1291,16 @@ static void preempt(void *param)
 		 * event.curr.param is NULL. Let us setup the preempt timeout to
 		 * ensure the margin for certain.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) &&
-		    (event.curr.abort_cb == NULL)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
 			/* Previous event is done before the prepare margin for
 			 * the event ready in the pipeline when we are here now.
 			 */
 			event.curr.has_margin = 1U;
 
-			/* Execute the enqueued ready LLL prepare callbacks */
-			ull_prepare_dequeue(TICKER_USER_ID_LLL);
+			if (event.curr.abort_cb == NULL) {
+				/* Execute the enqueued ready LLL prepare callbacks */
+				ull_prepare_dequeue(TICKER_USER_ID_LLL);
+			}
 		}
 
 		return;
