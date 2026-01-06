@@ -376,7 +376,7 @@ static int co5300_reset(const struct device *dev)
 		}
 
 		k_sleep(K_MSEC(30));
-		gpio_pin_set_dt(&config->reset_gpios, 1);
+		ret = gpio_pin_set_dt(&config->reset_gpios, 1);
 		if (ret < 0) {
 			LOG_ERR("Could not pull reset high (%d)", ret);
 			return ret;
