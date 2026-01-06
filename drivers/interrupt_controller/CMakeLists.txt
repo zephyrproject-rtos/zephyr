@@ -69,4 +69,6 @@ zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ intc_vexriscv_litex.c)
 zephyr_library_sources_ifdef(CONFIG_WCH_EXTI intc_wch_exti.c)
 zephyr_library_sources_ifdef(CONFIG_WCH_PFIC intc_wch_pfic.c)
 zephyr_library_sources_ifdef(CONFIG_XMC4XXX_INTC intc_xmc4xxx.c)
+zephyr_library_sources_ifdef(CONFIG_XUANTIE_CLIC intc_xuantie_clic.S)
+zephyr_library_sources_ifdef(CONFIG_XUANTIE_CLIC intc_xuantie_clic.c)
 # zephyr-keep-sorted-stop
