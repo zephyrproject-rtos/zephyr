@@ -112,7 +112,6 @@ config DELAY_T0L
 
 endif
 
-
 config WS2812_STRIP_RPI_PICO_PIO
 	bool "WS2812 LED strip Raspberry Pi Pico PIO driver"
 	default y
@@ -121,3 +120,11 @@ config WS2812_STRIP_RPI_PICO_PIO
 	help
 	  Enable driver for WS2812 (and compatible) LED strips using
 	  the Raspberry Pi Pico's PIO.
+
+config WS2812_STRIP_ESPRESSIF_RMT
+	bool "WS2812 LED strip Espressif RMT driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_ESPRESSIF_RMT_ENABLED
+	help
+	  Enable driver for WS2812 (and compatible) LED strips using
+	  the Espressif RMT peripheral.
