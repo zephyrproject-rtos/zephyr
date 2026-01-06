@@ -44,6 +44,13 @@ LOG_MODULE_REGISTER(video_gc0308, CONFIG_VIDEO_LOG_LEVEL);
 #define GC0308_REG_WIN_HEIGHT_L 0x0a
 #define GC0308_REG_WIN_WIDTH_H  0x0b
 #define GC0308_REG_WIN_WIDTH_L  0x0c
+#define GC0308_REG_CROP_WIN_MODE    0x46
+#define GC0308_REG_CROP_WIN_Y1      0x47
+#define GC0308_REG_CROP_WIN_X1      0x48
+#define GC0308_REG_CROP_WIN_HEIGHT_H 0x49
+#define GC0308_REG_CROP_WIN_HEIGHT_L 0x4a
+#define GC0308_REG_CROP_WIN_WIDTH_H  0x4b
+#define GC0308_REG_CROP_WIN_WIDTH_L  0x4c
 
 #define GC0308_REG_SUBSAMPLE_EN   0x53
 #define GC0308_REG_SUBSAMPLE_MODE 0x54
@@ -197,6 +204,35 @@ static int gc0308_set_window(const struct device *dev, uint16_t width, uint16_t 
 		return ret;
 	}
 	ret = gc0308_write_reg(dev, GC0308_REG_WIN_WIDTH_L, (uint8_t)win_width);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_MODE, 0x80);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_Y1, 0x00);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_X1, 0x00);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_HEIGHT_H, (uint8_t)(height >> 8));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_HEIGHT_L, (uint8_t)height);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_WIDTH_H, (uint8_t)(width >> 8));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIN_WIDTH_L, (uint8_t)width);
 	if (ret < 0) {
 		return ret;
 	}
