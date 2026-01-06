@@ -395,16 +395,23 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		LOG_WRN("dest_buffer address is null.");
 	}
 
+	int source_index = find_lsb_set(config->source_data_size) - 1;
+	int dest_index = find_lsb_set(config->dest_data_size) - 1;
+
 	if (stream->direction == MEMORY_TO_PERIPHERAL) {
 		DMA_InitStruct.MemoryOrM2MDstAddress =
 					config->head_block->source_address;
 		DMA_InitStruct.PeriphOrM2MSrcAddress =
 					config->head_block->dest_address;
+		DMA_InitStruct.MemoryOrM2MDstDataSize = table_m_size[source_index];
+		DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[dest_index];
 	} else {
 		DMA_InitStruct.PeriphOrM2MSrcAddress =
 					config->head_block->source_address;
 		DMA_InitStruct.MemoryOrM2MDstAddress =
 					config->head_block->dest_address;
+		DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[source_index];
+		DMA_InitStruct.MemoryOrM2MDstDataSize = table_m_size[dest_index];
 	}
 
 	uint16_t memory_addr_adj = 0, periph_addr_adj = 0;
@@ -463,12 +470,6 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
-
-	/* set the data widths */
-	int index = find_lsb_set(config->source_data_size) - 1;
-	DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[index];
-	index = find_lsb_set(config->dest_data_size) - 1;
-	DMA_InitStruct.MemoryOrM2MDstDataSize = table_m_size[index];
 
 #if defined(CONFIG_DMA_STM32_V1)
 	DMA_InitStruct.MemBurst = stm32_dma_get_mburst(config,
