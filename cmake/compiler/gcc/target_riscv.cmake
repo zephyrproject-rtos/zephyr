@@ -52,6 +52,10 @@ if(CONFIG_RISCV_ISA_EXT_C)
   string(CONCAT riscv_march ${riscv_march} "c")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_V)
+  string(CONCAT riscv_march ${riscv_march} "v")
+endif()
+
 if(CONFIG_RISCV_ISA_EXT_ZICNTR)
   string(CONCAT riscv_march ${riscv_march} "_zicntr")
 endif()
@@ -134,6 +138,7 @@ list(APPEND RISCV_C_FLAGS
      -march=${riscv_march}
      -mcmodel=${riscv_mcmodel}
      )
+
 list(APPEND TOOLCHAIN_C_FLAGS ${RISCV_C_FLAGS})
 list(APPEND TOOLCHAIN_GROUPED_LD_FLAGS RISCV_C_FLAGS)
 
