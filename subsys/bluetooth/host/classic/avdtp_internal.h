@@ -2,7 +2,7 @@
  * avdtp_internal.h - avdtp handling
 
  * Copyright (c) 2015-2016 Intel Corporation
- * Copyright 2021,2024 NXP
+ * Copyright 2021,2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -279,7 +279,7 @@ struct bt_avdtp_event_cb {
 };
 
 /* Initialize AVDTP layer*/
-int bt_avdtp_init(void);
+void bt_avdtp_init(void);
 
 /* Application register with AVDTP layer */
 int bt_avdtp_register(struct bt_avdtp_event_cb *cb);

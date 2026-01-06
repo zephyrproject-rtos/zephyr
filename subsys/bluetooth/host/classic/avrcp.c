@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (C) 2024 Xiaomi Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2935,17 +2936,44 @@ static int avrcp_browsing_accept(struct bt_conn *conn, struct bt_avctp **session
 }
 #endif /* CONFIG_BT_AVRCP_BROWSING */
 
-int bt_avrcp_init(void)
+void bt_avrcp_init(void)
 {
-	int err;
+	__maybe_unused int err;
+
+	static bool initialized;
+
+	/* Init CT and TG connection pool*/
+	__ASSERT(ARRAY_SIZE(bt_avrcp_ct_pool) == ARRAY_SIZE(avrcp_connection), "CT size mismatch");
+	__ASSERT(ARRAY_SIZE(bt_avrcp_tg_pool) == ARRAY_SIZE(avrcp_connection), "TG size mismatch");
+
+	ARRAY_FOR_EACH(avrcp_connection, i) {
+		bt_avrcp_ct_pool[i].avrcp = &avrcp_connection[i];
+		bt_avrcp_tg_pool[i].avrcp = &avrcp_connection[i];
+
+		if (!initialized) {
+			/* Init delay work */
+			k_work_init_delayable(&bt_avrcp_tg_pool[i].vd_rsp_tx_work,
+					      bt_avrcp_tg_vendor_tx_work);
+			sys_slist_init(&bt_avrcp_tg_pool[i].vd_rsp_tx_pending);
+
+			k_sem_init(&bt_avrcp_tg_pool[i].lock, 1, 1);
+		}
+
+		memset(bt_avrcp_ct_pool[i].ct_notify, 0, sizeof(bt_avrcp_ct_pool[i].ct_notify));
+		memset(bt_avrcp_tg_pool[i].tg_notify, 0, sizeof(bt_avrcp_tg_pool[i].tg_notify));
+	}
+
+	if (initialized) {
+		return;
+	}
 
 	/* Register event handlers with AVCTP */
 	avctp_server.l2cap.psm = BT_L2CAP_PSM_AVRCP;
 	avctp_server.accept = avrcp_accept;
 	err = bt_avctp_server_register(&avctp_server);
 	if (err < 0) {
-		LOG_ERR("AVRCP registration failed");
-		return err;
+		LOG_ERR("AVRCP registration failed (err %d)", err);
+		return;
 	}
 
 #if defined(CONFIG_BT_AVRCP_BROWSING)
@@ -2953,16 +2981,16 @@ int bt_avrcp_init(void)
 	avctp_browsing_server.accept = avrcp_browsing_accept;
 	err = bt_avctp_server_register(&avctp_browsing_server);
 	if (err < 0) {
-		LOG_ERR("AVRCP browsing registration failed");
-		return err;
+		LOG_ERR("AVRCP browsing registration failed (err %d)", err);
+		return;
 	}
 #endif /* CONFIG_BT_AVRCP_BROWSING */
 
 #if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
 	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
 	if (err < 0) {
-		LOG_ERR("AVRCP Cover Art initialization failed");
-		return err;
+		LOG_ERR("AVRCP Cover Art initialization failed (err %d)", err);
+		return;
 	}
 #endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
 
@@ -2974,26 +3002,9 @@ int bt_avrcp_init(void)
 	bt_sdp_register_service(&avrcp_ct_rec);
 #endif /* CONFIG_BT_AVRCP_CONTROLLER */
 
-	/* Init CT and TG connection pool*/
-	__ASSERT(ARRAY_SIZE(bt_avrcp_ct_pool) == ARRAY_SIZE(avrcp_connection), "CT size mismatch");
-	__ASSERT(ARRAY_SIZE(bt_avrcp_tg_pool) == ARRAY_SIZE(avrcp_connection), "TG size mismatch");
-
-	ARRAY_FOR_EACH(avrcp_connection, i) {
-		bt_avrcp_ct_pool[i].avrcp = &avrcp_connection[i];
-		bt_avrcp_tg_pool[i].avrcp = &avrcp_connection[i];
-		/* Init delay work */
-		k_work_init_delayable(&bt_avrcp_tg_pool[i].vd_rsp_tx_work,
-				      bt_avrcp_tg_vendor_tx_work);
-		sys_slist_init(&bt_avrcp_tg_pool[i].vd_rsp_tx_pending);
-
-		k_sem_init(&bt_avrcp_tg_pool[i].lock, 1, 1);
-
-		memset(bt_avrcp_ct_pool[i].ct_notify, 0, sizeof(bt_avrcp_ct_pool[i].ct_notify));
-
-		memset(bt_avrcp_tg_pool[i].tg_notify, 0, sizeof(bt_avrcp_tg_pool[i].tg_notify));
-	}
 	LOG_DBG("AVRCP Initialized successfully.");
-	return 0;
+
+	initialized = true;
 }
 
 int bt_avrcp_connect(struct bt_conn *conn)
