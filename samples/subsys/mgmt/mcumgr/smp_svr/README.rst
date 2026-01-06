@@ -104,6 +104,11 @@ included. The ``smp_svr`` sample comes in different flavours.
          :gen-args: -DEXTRA_CONF_FILE="cdc.conf" -DEXTRA_DTC_OVERLAY_FILE="usb.overlay"
          :compact:
 
+      .. note::
+         If you are building the sample with the CDC overlay files
+         and plan to test it, make sure to connect to the USB port
+         on your board that is connected directly to the MCU.
+
    .. group-tab:: Shell
 
       To build the shell sample:
