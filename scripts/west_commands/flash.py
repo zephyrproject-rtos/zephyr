@@ -27,6 +27,6 @@ class Flash(WestCommand):
         return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        build_dir = get_build_dir(my_args)
+        build_dir = get_build_dir(self, my_args)
         domains_file = Path(build_dir) / 'domains.yaml'
         do_run_common(self, my_args, runner_args, domain_file=domains_file)

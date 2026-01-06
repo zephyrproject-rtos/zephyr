@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 from build_helpers import _resolve_build_dir
 
+from build import Build
+
 cwd = Path.cwd()
 root = Path(cwd.anchor)
 TEST_CWD = root / 'path' / 'to' / 'my' / 'current' / 'cwd'
@@ -33,8 +35,9 @@ TEST_CASES_RESOLVE_BUILD_DIR = [
 @pytest.mark.parametrize('test_case', TEST_CASES_RESOLVE_BUILD_DIR)
 def test_resolve_build_dir(test_case):
     fmt, kwargs, expected = test_case
+    b = Build()
 
     # test both guess=True and guess=False
     for guess in [True, False]:
-        actual = _resolve_build_dir(cwd=TEST_CWD, guess=guess, fmt=fmt, **kwargs)
+        actual = _resolve_build_dir(b, cwd=TEST_CWD, guess=guess, fmt=fmt, **kwargs)
         assert actual == expected

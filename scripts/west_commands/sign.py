@@ -167,10 +167,10 @@ schema (rimage "target") is not defined in board.cmake.''')
         self.args = args        # for check_force
 
         # Find the build directory and parse .config and DT.
-        build_dir = find_build_dir(args.build_dir)
+        build_dir = find_build_dir(self, args.build_dir)
         self.check_force(os.path.isdir(build_dir),
                          'no such build directory {}'.format(build_dir))
-        self.check_force(is_zephyr_build(build_dir),
+        self.check_force(is_zephyr_build(self, build_dir),
                          "build directory {} doesn't look like a Zephyr build "
                          'directory'.format(build_dir))
         build_conf = BuildConfiguration(build_dir)
