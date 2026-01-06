@@ -68,3 +68,6 @@ config NXP_RF_IMU
 endif # IEEE802154
 
 endif
+
+config WUC
+	default y if "$(dt_nodelabel_enabled,wuu)"
