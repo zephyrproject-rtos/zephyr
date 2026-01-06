@@ -1,0 +1,18 @@
+sample:
+  name: xuantie smp hello world
+
+common:
+  tags:
+    - xuantie
+    - smp
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World Sample End"
+
+tests:
+  sample.boards.xuantie.smp.hello_world:
+    tags:
+      - xuantie
+      - smp
