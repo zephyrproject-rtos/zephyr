@@ -24,6 +24,7 @@ struct mcux_lptmr_config {
 	lptmr_pin_select_t pin;
 	lptmr_pin_polarity_t polarity;
 	void (*irq_config_func)(const struct device *dev);
+	unsigned int irqn;
 };
 
 struct mcux_lptmr_data {
@@ -32,6 +33,7 @@ struct mcux_lptmr_data {
 	void *alarm_user_data;
 	bool alarm_active;
 	struct k_spinlock lock;
+	uint32_t guard_period;
 #else
 	counter_top_callback_t top_callback;
 	void *top_user_data;
@@ -69,18 +71,55 @@ static int mcux_lptmr_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static uint32_t mcux_lptmr_get_pending_int(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+	uint32_t mask = LPTMR_CSR_TCF_MASK | LPTMR_CSR_TIE_MASK;
+
+	return (uint32_t)!!((config->base->CSR & mask) == mask);
+}
+
+static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
+}
+
+static uint32_t mcux_lptmr_get_freq(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return config->info.freq;
+}
+
 #if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
 static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
-	ARG_UNUSED(chan_id);
-
 	const struct mcux_lptmr_config *config = dev->config;
 	struct mcux_lptmr_data *data = dev->data;
+	uint32_t current;
+	uint32_t max_rel_val;
+	bool irq_on_late = false;
+	uint32_t ticks;
+	bool absolute;
+	int err = 0;
+	uint32_t top = mcux_lptmr_get_top_value(dev);
 
 	/* Counter API: Alarm callback cannot be NULL. */
-	if ((alarm_cfg == NULL) || (alarm_cfg->callback == NULL) || (alarm_cfg->ticks == 0U) ||
-		(alarm_cfg->ticks > config->info.max_top_value)) {
+	if ((alarm_cfg == NULL) || (alarm_cfg->callback == NULL)) {
+		return -EINVAL;
+	}
+
+	/* Only channel 0 is supported */
+	if (chan_id != 0U) {
+		return -EINVAL;
+	}
+
+	/* Reject only absolute alarms that exceed current top */
+	absolute = (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0U;
+	if (absolute && (alarm_cfg->ticks > top)) {
 		return -EINVAL;
 	}
 
@@ -97,22 +136,42 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	k_spin_unlock(&data->lock, key);
 
-	if (config->base->CSR & LPTMR_CSR_TEN_MASK) {
-		/* Already enabled, first stop then set period (HW constraint). */
-		LPTMR_StopTimer(config->base);
-		LPTMR_SetTimerPeriod(config->base, alarm_cfg->ticks);
+	current = LPTMR_GetCurrentTimerCount(config->base);
+	max_rel_val = (current + data->guard_period) % config->info.max_top_value;
+	ticks = alarm_cfg->ticks;
+	/* 'absolute' already computed for validation above */
+
+	if (!absolute) {
+		/* Late detection heuristic for relative alarms. */
+		irq_on_late = ticks < (config->info.max_top_value / 2U);
+		ticks = (ticks + current) % config->info.max_top_value;
 	} else {
-		LPTMR_SetTimerPeriod(config->base, alarm_cfg->ticks);
-		/* RM recommendation: clear status flag after setting period
-		 * when timer is disabled.
-		 */
-		LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
+		irq_on_late = (alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) != 0U;
+		ticks = alarm_cfg->ticks % config->info.max_top_value;
 	}
 
+	/* HW constraint: stop before altering period (CMR) */
+	LPTMR_StopTimer(config->base);
+	LPTMR_SetTimerPeriod(config->base, ticks);
 	LPTMR_EnableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
 	LPTMR_StartTimer(config->base);
 
-	return 0;
+	if (ticks <= max_rel_val) {
+		err = -ETIME;
+		if (irq_on_late) {
+			NVIC_SetPendingIRQ(config->irqn);
+		} else {
+			/* Cancel alarm silently when late and no immediate expire requested */
+			k_spinlock_key_t key2 = k_spin_lock(&data->lock);
+
+			data->alarm_callback = NULL;
+			data->alarm_user_data = NULL;
+			data->alarm_active = false;
+			k_spin_unlock(&data->lock, key2);
+		}
+	}
+
+	return err;
 }
 
 static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
@@ -142,6 +201,27 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
+static int mcux_lptmr_set_guard_period(const struct device *dev, uint32_t guard, uint32_t flags)
+{
+	struct mcux_lptmr_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	__ASSERT_NO_MSG(guard < mcux_lptmr_get_top_value(dev));
+	data->guard_period = guard;
+
+	return 0;
+}
+
+static uint32_t mcux_lptmr_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	struct mcux_lptmr_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	return data->guard_period;
+}
+
 static int mcux_lptmr_set_top_value(const struct device *dev,
 				    const struct counter_top_cfg *cfg)
 {
@@ -167,6 +247,23 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	ARG_UNUSED(chan_id);
 
 	return -ENOTSUP;
+}
+
+static int mcux_lptmr_set_guard_period(const struct device *dev, uint32_t guard, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(guard);
+	ARG_UNUSED(flags);
+
+	return -ENOTSUP;
+}
+
+static uint32_t mcux_lptmr_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(flags);
+
+	return 0U;
 }
 
 static int mcux_lptmr_set_top_value(const struct device *dev,
@@ -197,28 +294,6 @@ static int mcux_lptmr_set_top_value(const struct device *dev,
 	return 0;
 }
 #endif /* CONFIG_COUNTER_MCUX_LPTMR_ALARM */
-
-static uint32_t mcux_lptmr_get_pending_int(const struct device *dev)
-{
-	const struct mcux_lptmr_config *config = dev->config;
-	uint32_t mask = LPTMR_CSR_TCF_MASK | LPTMR_CSR_TIE_MASK;
-
-	return (uint32_t)!!((config->base->CSR & mask) == mask);
-}
-
-static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
-{
-	const struct mcux_lptmr_config *config = dev->config;
-
-	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
-}
-
-static uint32_t mcux_lptmr_get_freq(const struct device *dev)
-{
-	const struct mcux_lptmr_config *config = dev->config;
-
-	return config->info.freq;
-}
 
 static void mcux_lptmr_isr(const struct device *dev)
 {
@@ -285,6 +360,12 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	struct mcux_lptmr_data *data = dev->data;
+
+	data->guard_period = 0U;
+#endif
+
 	return 0;
 }
 
@@ -298,6 +379,8 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
 	.get_freq = mcux_lptmr_get_freq,
+	.set_guard_period = mcux_lptmr_set_guard_period,
+	.get_guard_period = mcux_lptmr_get_guard_period,
 };
 
 /*
@@ -363,6 +446,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.polarity = DT_INST_PROP(n, active_low),			\
 		.prescaler_glitch = (lptmr_prescaler_glitch_value_t)		\
 			MCUX_LPTMR_PRESCALE_GLITCH_VAL(n),			\
+		.irqn = DT_INST_IRQN(n),							\
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
 	};									\
 										\
