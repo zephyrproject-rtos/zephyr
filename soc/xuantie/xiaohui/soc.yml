@@ -1,0 +1,26 @@
+family:
+  - name: xiaohui
+    series:
+      - name: c9xx
+        socs:
+          - name: c906
+          - name: c906fd
+          - name: c906fdv
+          - name: c907
+          - name: c907fd
+          - name: c907fdv
+          - name: c907fdvm
+          - name: c907-rv32
+          - name: c907fd-rv32
+          - name: c907fdv-rv32
+          - name: c907fdvm-rv32
+          - name: c908
+          - name: c908i
+          - name: c910
+          - name: c910v2
+          - name: c910v3
+          - name: c910v3_cp
+          - name: c910
+          - name: c910v2
+          - name: c910v3
+          - name: c910v3_cp

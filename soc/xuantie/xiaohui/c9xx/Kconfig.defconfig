@@ -1,0 +1,33 @@
+# riscv SOC family supporting the riscv privileged architecture spec
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_XIAOHUI_C9XX
+
+config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
+	default 1
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 52
+
+config NUM_IRQS
+	default 64
+
+config PMP_SLOTS
+	default 16
+
+endif # SOC_SERIES_XIAOHUI_C9XX
