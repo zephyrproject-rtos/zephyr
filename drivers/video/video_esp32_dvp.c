@@ -19,14 +19,16 @@
 #include <zephyr/kernel.h>
 #include <hal/cam_hal.h>
 #include <hal/cam_ll.h>
+#include <hal/dma_types.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/cache.h>
 
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
-#define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
+#define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 #define VIDEO_ESP32_VSYNC_MASK          0x04
 
 #ifdef CONFIG_POLL
@@ -123,6 +125,20 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		LOG_ERR("No video buffer available. Enque some buffers first.");
 		return;
 	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT)
+	{
+		void *buf = data->active_vbuf->buffer;
+
+#if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE)
+		if (!sys_cache_is_mem_coherent(buf)) {
+			sys_cache_data_invd_range(buf, data->active_vbuf->bytesused);
+		}
+#else
+		sys_cache_data_invd_range(buf, data->active_vbuf->bytesused);
+#endif
+	}
+#endif
 
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
 	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
@@ -426,6 +442,9 @@ int video_esp32_set_selection(const struct device *dev, struct video_selection *
 	int ret;
 
 	ret = video_set_selection(cfg->source_dev, sel);
+	if (ret == -ENOSYS || ret == -ENOTSUP) {
+		return ret;
+	}
 	if (ret < 0) {
 		LOG_ERR("Failed to set selection on source device");
 		return ret;

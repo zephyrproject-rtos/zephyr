@@ -45,21 +45,16 @@ LOG_MODULE_REGISTER(video_gc0308, CONFIG_VIDEO_LOG_LEVEL);
 #define GC0308_REG_WIN_WIDTH_H  0x0b
 #define GC0308_REG_WIN_WIDTH_L  0x0c
 
-#define GC0308_REG_SUBSAMPLE  0x54
-#define GC0308_REG_SUBMODE    0x55
-#define GC0308_REG_SUB_ROW_N1 0x56
-#define GC0308_REG_SUB_ROW_N2 0x57
-#define GC0308_REG_SUB_COL_N1 0x58
-#define GC0308_REG_SUB_COL_N2 0x59
+#define GC0308_REG_SUBSAMPLE_EN   0x53
+#define GC0308_REG_SUBSAMPLE_MODE 0x54
+#define GC0308_REG_SUBSAMPLE_EN2  0x55
+#define GC0308_REG_SUBSAMPLE_Y0   0x56
+#define GC0308_REG_SUBSAMPLE_Y1   0x57
+#define GC0308_REG_SUBSAMPLE_UV0  0x58
+#define GC0308_REG_SUBSAMPLE_UV1  0x59
 
-#define GC0308_REG_CROP_MODE     0x46
-#define GC0308_REG_CROP_Y0       0x47
-#define GC0308_REG_CROP_X0       0x48
-#define GC0308_REG_CROP_HEIGHT_H 0x49
-#define GC0308_REG_CROP_HEIGHT_L 0x4a
-#define GC0308_REG_CROP_WIDTH_H  0x4b
-#define GC0308_REG_CROP_WIDTH_L  0x4c
-#define GC0308_CROP_ENABLE       0x80
+#define GC0308_SUBSAMPLE_EN_MASK  0x80
+#define GC0308_SUBSAMPLE_EN2_MASK 0x01
 
 struct gc0308_data {
 	struct video_format fmt;
@@ -147,6 +142,7 @@ static int gc0308_write_reg(const struct device *dev, uint8_t reg, uint8_t value
 
 static int gc0308_set_window(const struct device *dev, uint16_t width, uint16_t height)
 {
+	const struct gc0308_config *cfg = dev->config;
 	uint8_t subsample;
 	const uint16_t win_height = GC0308_SENSOR_HEIGHT + 8;
 	const uint16_t win_width = GC0308_SENSOR_WIDTH + 8;
@@ -163,35 +159,6 @@ static int gc0308_set_window(const struct device *dev, uint16_t width, uint16_t 
 		subsample = 0x22;
 	} else {
 		return -ENOTSUP;
-	}
-
-	ret = gc0308_write_reg(dev, GC0308_REG_PAGE_SELECT, GC0308_PAGE_1);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = gc0308_write_reg(dev, GC0308_REG_SUBSAMPLE, subsample);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = gc0308_write_reg(dev, GC0308_REG_SUBMODE, 0x03);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = gc0308_write_reg(dev, GC0308_REG_SUB_ROW_N1, 0x00);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = gc0308_write_reg(dev, GC0308_REG_SUB_ROW_N2, 0x00);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = gc0308_write_reg(dev, GC0308_REG_SUB_COL_N1, 0x00);
-	if (ret < 0) {
-		return ret;
-	}
-	ret = gc0308_write_reg(dev, GC0308_REG_SUB_COL_N2, 0x00);
-	if (ret < 0) {
-		return ret;
 	}
 
 	ret = gc0308_write_reg(dev, GC0308_REG_PAGE_SELECT, GC0308_PAGE_0);
@@ -224,6 +191,7 @@ static int gc0308_set_window(const struct device *dev, uint16_t width, uint16_t 
 	if (ret < 0) {
 		return ret;
 	}
+
 	ret = gc0308_write_reg(dev, GC0308_REG_WIN_WIDTH_H, (uint8_t)(win_width >> 8));
 	if (ret < 0) {
 		return ret;
@@ -233,31 +201,43 @@ static int gc0308_set_window(const struct device *dev, uint16_t width, uint16_t 
 		return ret;
 	}
 
-	ret = gc0308_write_reg(dev, GC0308_REG_CROP_MODE, GC0308_CROP_ENABLE);
+	ret = gc0308_write_reg(dev, GC0308_REG_PAGE_SELECT, GC0308_PAGE_1);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = gc0308_write_reg(dev, GC0308_REG_CROP_Y0, 0x00);
+
+	ret = video_modify_cci_reg(&cfg->i2c, GC0308_REG8(GC0308_REG_SUBSAMPLE_EN),
+				    GC0308_SUBSAMPLE_EN_MASK, GC0308_SUBSAMPLE_EN_MASK);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = gc0308_write_reg(dev, GC0308_REG_CROP_X0, 0x00);
+	ret = video_modify_cci_reg(&cfg->i2c, GC0308_REG8(GC0308_REG_SUBSAMPLE_EN2),
+				    GC0308_SUBSAMPLE_EN2_MASK, GC0308_SUBSAMPLE_EN2_MASK);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = gc0308_write_reg(dev, GC0308_REG_CROP_HEIGHT_H, (uint8_t)((height >> 8) & 0x01));
+
+	ret = gc0308_write_reg(dev, GC0308_REG_SUBSAMPLE_MODE, subsample);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = gc0308_write_reg(dev, GC0308_REG_CROP_HEIGHT_L, (uint8_t)height);
+	ret = gc0308_write_reg(dev, GC0308_REG_SUBSAMPLE_Y0, 0x00);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = gc0308_write_reg(dev, GC0308_REG_CROP_WIDTH_H, (uint8_t)((width >> 8) & 0x03));
+	ret = gc0308_write_reg(dev, GC0308_REG_SUBSAMPLE_Y1, 0x00);
 	if (ret < 0) {
 		return ret;
 	}
-	return gc0308_write_reg(dev, GC0308_REG_CROP_WIDTH_L, (uint8_t)width);
+	ret = gc0308_write_reg(dev, GC0308_REG_SUBSAMPLE_UV0, 0x00);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = gc0308_write_reg(dev, GC0308_REG_SUBSAMPLE_UV1, 0x00);
+	if (ret < 0) {
+		return ret;
+	}
+	return gc0308_write_reg(dev, GC0308_REG_PAGE_SELECT, GC0308_PAGE_0);
 }
 
 static int gc0308_set_output_format(const struct device *dev, uint32_t pixelformat)
