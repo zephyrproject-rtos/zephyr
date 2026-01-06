@@ -46,6 +46,9 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_REG_IRQ1_STATUS        0x0000E004
 #define CS40L5X_REG_IRQ1_INT1          0x0000E010
 #define CS40L5X_REG_IRQ1_INT2          (CS40L5X_REG_IRQ1_INT1 + 0x4)
+#define CS40L5X_REG_IRQ1_INT8          (CS40L5X_REG_IRQ1_INT2 + 0x18)
+#define CS40L5X_REG_IRQ1_INT9          (CS40L5X_REG_IRQ1_INT8 + 0x4)
+#define CS40L5X_REG_IRQ1_INT10         (CS40L5X_REG_IRQ1_INT9 + 0x4)
 #define CS40L5X_REG_IRQ1_INT14         0x0000E044
 #define CS40L5X_REG_IRQ1_INT18         0x0000E054
 #define CS40L5X_REG_IRQ1_MASK1         0x0000E090
@@ -877,41 +880,72 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 {
 	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	uint32_t error_bitmask = 0;
+	int ret;
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ1_AMP, irq_ints[CS40L5X_INT1]) != 0) {
 		LOG_INST_WRN(config->log, "amplifier short detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
+
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT1, CS40L5X_MASK_IRQ1_AMP);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ8_TEMP, irq_ints[CS40L5X_INT8]) != 0) {
 		LOG_INST_WRN(config->log, "overtemperature detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERTEMPERATURE;
+
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT8, CS40L5X_MASK_IRQ8_TEMP);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ9_UVP, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "undervoltage detected");
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
+
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT9, CS40L5X_MASK_IRQ9_UVP);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ9_IND_SHORT, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "inductor short detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
+
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT9, CS40L5X_MASK_IRQ9_IND_SHORT);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ9_CUR_LIMIT, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "overcurrent condition detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
+
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT9, CS40L5X_MASK_IRQ9_CUR_LIMIT);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_IRQ1_VDDB, irq_ints[CS40L5X_INT10]) != 0) {
 		LOG_INST_WRN(config->log, "battery undervoltage detected");
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
+
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT10, CS40L5X_MASK_IRQ1_VDDB);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (error_bitmask != 0) {
