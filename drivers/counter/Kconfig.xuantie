@@ -1,0 +1,10 @@
+# XUANTIE xiaohui&smartl COUNTER configuration option
+
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_XUANTIE
+	bool "XuanTie Freedom counter driver"
+	default y
+	help
+	  This option enables the XuanTie xiaohui&smartl serial driver.

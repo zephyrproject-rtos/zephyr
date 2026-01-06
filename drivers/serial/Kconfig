@@ -245,6 +245,7 @@ rsource "Kconfig.xec"
 rsource "Kconfig.xen"
 rsource "Kconfig.xlnx"
 rsource "Kconfig.xmc4xxx"
+rsource "Kconfig.xuantie"
 # zephyr-keep-sorted-stop
 
 endif # SERIAL

@@ -29,6 +29,21 @@ config NRFX_CLIC
 	help
 	  Interrupt controller for Nordic VPR cores.
 
+config XUANTIE_CLIC
+	bool "XuanTie Core Local Interrupt Controller (CLIC)"
+	default y
+	depends on DT_HAS_XUANTIE_CLIC_ENABLED
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING if !RISCV_VECTORED_MODE
+	help
+	  Interrupt controller for XuanTie SoC core.
+
+config XUANTIE_CLIC_IRQ_NEST
+	bool "XuanTie CLIC Interrupt Nesting Support"
+	default n
+	depends on XUANTIE_CLIC
+	help
+	  XuanTie enable clic interrupt nesting.
+
 if CLIC
 
 config CLIC_SMCLICSHV_EXT

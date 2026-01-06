@@ -1,0 +1,19 @@
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  XuanTie System Timer
+
+  The XuanTie system timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "xuantie,systimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

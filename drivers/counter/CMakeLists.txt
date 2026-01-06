@@ -75,6 +75,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_TMR_ESP32 counter_esp32_tmr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_WUT_MAX32 counter_max32_wut.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XEC counter_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER counter_xlnx_axi_timer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_XUANTIE counter_xuantie.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB timer_dtmr_cmsdk_apb.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB timer_tmr_cmsdk_apb.c)
 # zephyr-keep-sorted-stop

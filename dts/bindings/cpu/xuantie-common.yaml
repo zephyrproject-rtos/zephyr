@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Xuantie Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Xuantie RISC-V CPUs
+
+include: riscv,cpus.yaml
