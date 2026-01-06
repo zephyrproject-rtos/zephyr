@@ -308,92 +308,132 @@ static int i2c_mcux_transfer_cb(const struct device *dev, struct i2c_msg *msgs, 
 #endif /* CONFIG_I2C_CALLBACK */
 
 #ifdef CONFIG_I2C_TARGET
+static int i2c_mcux_target_start_handler(struct i2c_mcux_data *data, i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	transfer->dataSize = 0;
+	data->target_first_rxtx = true;
+
+	if (data->target_receiving) {
+		/* In case of a repeated start after a kI2C_SlaveReceiveEvent,
+		 * the kI2C_SlaveCompletionEvent is not fired. We need to fetch the last
+		 * byte here.
+		 */
+		data->target_receiving = false;
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg, data->target_buffer);
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_mcux_target_receive_handler(struct i2c_mcux_data *data,
+					   i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	data->target_receiving = true;
+
+	transfer->data = &data->target_buffer;
+	transfer->dataSize = 1;
+
+	if (data->target_first_rxtx) {
+		data->target_first_rxtx = false;
+		if (target_cb->write_requested) {
+			ret = target_cb->write_requested(data->target_cfg);
+		}
+	} else {
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg, data->target_buffer);
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_mcux_target_transmit_handler(struct i2c_mcux_data *data,
+					    i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	transfer->data = &data->target_buffer;
+	transfer->dataSize = 1;
+
+	if (data->target_first_rxtx) {
+		data->target_first_rxtx = false;
+		if (target_cb->read_requested) {
+			ret = target_cb->read_requested(data->target_cfg, &data->target_buffer);
+		}
+	} else {
+		if (target_cb->read_processed) {
+			ret = target_cb->read_processed(data->target_cfg, &data->target_buffer);
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_mcux_target_completion_handler(struct i2c_mcux_data *data,
+					      i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	data->target_first_rxtx = false;
+
+	if (data->target_receiving) {
+		/* fetch last received byte */
+		data->target_receiving = false;
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg, data->target_buffer);
+		}
+	}
+
+	if (target_cb->stop) {
+		ret = target_cb->stop(data->target_cfg);
+	}
+
+	return ret;
+}
+
 static void i2c_mcux_target_transfer_cb(I2C_Type *base, i2c_slave_transfer_t *transfer,
 					void *userData)
 {
 	const struct device *dev = (const struct device *)userData;
 	struct i2c_mcux_data *data = dev->data;
-	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
-	int ret = 0;
+	int ret;
 
 	ARG_UNUSED(base);
 
 	switch (transfer->event) {
 	case kI2C_SlaveStartEvent:
 		/* start or repeated start of a transfer */
-		transfer->dataSize = 0;
-		data->target_first_rxtx = true;
-
-		if (data->target_receiving) {
-			/* In case of a repeated start after a kI2C_SlaveReceiveEvent,
-			 * the kI2C_SlaveCompletionEvent is not fired. We need to fetch the last
-			 * byte here.
-			 */
-			data->target_receiving = false;
-			if (target_cb->write_received) {
-				target_cb->write_received(data->target_cfg, data->target_buffer);
-			}
-		}
+		ret = i2c_mcux_target_start_handler(data, transfer);
 		break;
 
 	case kI2C_SlaveReceiveEvent:
 		/* request to provide a buffer in which to place received data */
-		data->target_receiving = true;
-
-		transfer->data = &data->target_buffer;
-		transfer->dataSize = 1;
-
-		if (data->target_first_rxtx) {
-			data->target_first_rxtx = false;
-			if (target_cb->write_requested) {
-				ret = target_cb->write_requested(data->target_cfg);
-			}
-		} else {
-			if (target_cb->write_received) {
-				ret = target_cb->write_received(data->target_cfg,
-								data->target_buffer);
-			}
-		}
+		ret = i2c_mcux_target_receive_handler(data, transfer);
 		break;
 
 	case kI2C_SlaveTransmitEvent:
 		/* request to provide data to transmit */
-		transfer->data = &data->target_buffer;
-		transfer->dataSize = 1;
-
-		if (data->target_first_rxtx) {
-			data->target_first_rxtx = false;
-			if (target_cb->read_requested) {
-				ret = target_cb->read_requested(data->target_cfg,
-								&data->target_buffer);
-			}
-		} else {
-			if (target_cb->read_processed) {
-				ret = target_cb->read_processed(data->target_cfg,
-								&data->target_buffer);
-			}
-		}
+		ret = i2c_mcux_target_transmit_handler(data, transfer);
 		break;
 
 	case kI2C_SlaveCompletionEvent:
 		/* transfer finished */
-		data->target_first_rxtx = false;
-
-		if (data->target_receiving) {
-			/* fetch last received byte */
-			data->target_receiving = false;
-			if (target_cb->write_received) {
-				target_cb->write_received(data->target_cfg, data->target_buffer);
-			}
-		}
-
-		if (target_cb->stop) {
-			target_cb->stop(data->target_cfg);
-		}
+		ret = i2c_mcux_target_completion_handler(data, transfer);
 		break;
 
 	default:
 		LOG_INF("Unhandled event: %d", transfer->event);
+		ret = -EINVAL;
 		break;
 	}
 
