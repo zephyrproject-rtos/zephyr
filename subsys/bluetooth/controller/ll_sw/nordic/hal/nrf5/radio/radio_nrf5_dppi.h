@@ -264,6 +264,13 @@ static inline void hal_trigger_aar_ppi_config(void)
 #define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_PHYEND
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
 
+/* Start SW-switch timer on event timer start.
+ */
+static inline void hal_sw_switch_timer_start_ppi_config(void)
+{
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
+}
+
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
  *
