@@ -93,6 +93,9 @@ enum fs_mgmt_err_code_t {
 
 	/** The operation cannot be performed because the file is empty with no contents. */
 	FS_MGMT_ERR_FILE_EMPTY,
+
+	/** Error occurred whilst attempting to close a file. */
+	FS_MGMT_ERR_FILE_CLOSE_FAILED,
 };
 
 #ifdef __cplusplus
