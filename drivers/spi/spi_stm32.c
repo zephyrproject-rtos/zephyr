@@ -196,26 +196,26 @@ static void dma_callback(const struct device *dma_dev, void *arg,
 	/* arg holds SPI DMA data
 	 * Passed in spi_stm32_dma_tx/rx_load()
 	 */
-	struct spi_stm32_data *spi_dma_data = arg;
+	struct spi_stm32_data *data = arg;
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
-		spi_dma_data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
 		/* identify the origin of this callback */
-		if (channel == spi_dma_data->dma_tx.channel) {
+		if (channel == data->dma_tx.channel) {
 			/* this part of the transfer ends */
-			spi_dma_data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
-		} else if (channel == spi_dma_data->dma_rx.channel) {
+			data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
+		} else if (channel == data->dma_rx.channel) {
 			/* this part of the transfer ends */
-			spi_dma_data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
+			data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
 		} else {
 			LOG_ERR("DMA callback channel %d is not valid.", channel);
-			spi_dma_data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+			data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 		}
 	}
 
-	k_sem_give(&spi_dma_data->status_sem);
+	k_sem_give(&data->status_sem);
 }
 
 static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
