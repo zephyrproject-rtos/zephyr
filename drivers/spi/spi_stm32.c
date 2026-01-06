@@ -863,26 +863,18 @@ static void spi_stm32_isr(const struct device *dev)
 
 	if (spi_stm32_transfer_ongoing(data)) {
 		err = spi_stm32_shift_frames(cfg, data);
-	}
-
-	if (err) {
-		spi_stm32_complete(dev, err);
+		if (err) {
+			spi_stm32_complete(dev, err);
+			return;
+		}
 	}
 
 	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 
-	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-		if (!spi_stm32_transfer_ongoing(data)) {
-			spi_stm32_complete(dev, err);
-		}
-	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-		if (!spi_context_tx_on(&data->ctx)) {
-			spi_stm32_complete(dev, err);
-		}
-	} else {
-		if (!spi_context_rx_on(&data->ctx)) {
-			spi_stm32_complete(dev, err);
-		}
+	if (((transfer_dir == LL_SPI_FULL_DUPLEX) && !spi_stm32_transfer_ongoing(data)) ||
+	    ((transfer_dir == LL_SPI_HALF_DUPLEX_TX) && !spi_context_tx_on(&data->ctx)) ||
+	    ((transfer_dir == LL_SPI_HALF_DUPLEX_RX) && !spi_context_rx_on(&data->ctx))) {
+		spi_stm32_complete(dev, err);
 	}
 }
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
