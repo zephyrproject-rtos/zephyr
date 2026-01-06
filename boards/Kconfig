@@ -18,6 +18,16 @@ config BOARD_REVISION
 	  "plank@foo", this option will be "foo". If building for "plank",
 	  this option will be the empty string.
 
+config BOARD_WITH_REVISION
+	string
+	default "$(BOARD)@$(BOARD_REVISION)" if "$(BOARD_REVISION)" != ""
+	default "$(BOARD)"
+	help
+	  Contains the name of the board, including any revision if present.
+	  For example, if building for "plank@foo/cpu0", this option
+	  will be "plank@foo". If building for "plank/cpu0", this
+	  option will be "plank".
+
 config BOARD_TARGET
 	string
 	default "$(BOARD)@$(BOARD_REVISION)$(BOARD_QUALIFIERS)" if "$(BOARD_REVISION)" != ""
