@@ -2,7 +2,7 @@ description: BCM2711 UART
 
 compatible: "brcm,bcm2711-aux-uart"
 
-include: [uart-controller.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
