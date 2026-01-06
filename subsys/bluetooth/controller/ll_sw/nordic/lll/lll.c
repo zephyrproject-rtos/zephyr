@@ -960,13 +960,15 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			return -EINPROGRESS;
 		}
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
+			if (event.curr.abort_cb != NULL) {
+				event.curr.has_margin = 0U;
+			}
+		}
+
 		/* Find any short prepare */
 		if (ready_short) {
 			ready = ready_short;
-
-		/* Next prepare needs margin */
-		} else if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
-			event.curr.has_margin = 0U;
 		}
 
 		/* Always start preempt timeout for first prepare in pipeline */
@@ -1301,6 +1303,7 @@ static void preempt(void *param)
 				/* Previous event is done before the prepare margin for
 				 * the event ready in the pipeline when we are here now.
 				 */
+				LL_ASSERT_DBG(event.curr.has_margin == 0U);
 				event.curr.has_margin = 1U;
 
 				/* Execute the enqueued ready LLL prepare callbacks */
