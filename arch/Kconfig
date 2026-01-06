@@ -200,6 +200,15 @@ config LITTLE_ENDIAN
 	depends on !BIG_ENDIAN
 	default y
 
+config 32BIT
+	bool
+	help
+	  This option tells the build system that the target system is
+	  using a 32-bit address space, meaning that pointer and long types
+	  are 32 bits wide. This option is selected by arch/$ARCH/Kconfig,
+	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
+	  avoid modifying it.
+
 config 64BIT
 	bool
 	help
