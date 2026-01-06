@@ -1163,6 +1163,31 @@ static int32_t spi_stm32_count_total_frames(const struct spi_config *config,
 
 	return MAX(rx_frames, tx_frames);
 }
+
+static int32_t spi_stm32_set_transfer_size(SPI_TypeDef *spi,
+					   const struct spi_config *config,
+					   const struct spi_buf_set *tx_bufs,
+					   const struct spi_buf_set *rx_bufs)
+{
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
+	int32_t frames;
+
+	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
+		frames = spi_stm32_count_total_frames(config, tx_bufs, rx_bufs);
+	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		frames = spi_stm32_count_bufset_frames(config, tx_bufs);
+	} else {
+		frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+	}
+
+	if (frames < 0) {
+		return frames;
+	}
+
+	LL_SPI_SetTransferSize(spi, (uint32_t)frames);
+
+	return 0;
+}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config *cfg,
@@ -1283,21 +1308,11 @@ static int transceive(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
-		int total_frames;
+		ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
 
-		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			total_frames = spi_stm32_count_total_frames(config, tx_bufs, rx_bufs);
-		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			total_frames = spi_stm32_count_bufset_frames(config, tx_bufs);
-		} else {
-			total_frames = spi_stm32_count_bufset_frames(config, rx_bufs);
-		}
-
-		if (total_frames < 0) {
-			ret = total_frames;
+		if (ret < 0) {
 			goto end;
 		}
-		LL_SPI_SetTransferSize(spi, (uint32_t)total_frames);
 	}
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
@@ -1443,14 +1458,11 @@ static int transceive_dma(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (transfer_dir == LL_SPI_HALF_DUPLEX_RX) {
-		int frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+		ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
 
-		if (frames < 0) {
-			ret = frames;
+		if (ret < 0) {
 			goto end;
 		}
-
-		LL_SPI_SetTransferSize(cfg->spi, frames);
 	}
 #endif /* st_stm32h7_spi */
 
@@ -1589,14 +1601,11 @@ static int transceive_dma(const struct device *dev,
 			transfer_dir = LL_SPI_HALF_DUPLEX_RX;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-			int frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+			ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
 
-			if (frames < 0) {
-				ret = frames;
+			if (ret < 0) {
 				break;
 			}
-
-			LL_SPI_SetTransferSize(cfg->spi, frames);
 
 			LL_SPI_EnableDMAReq_RX(spi);
 #endif /* st_stm32h7_spi */
