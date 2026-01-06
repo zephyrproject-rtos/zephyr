@@ -102,9 +102,9 @@
 				clocks = <&rcc CH32V00X_CLOCK_IOPA>;
 			};
 
-			gpiob: gpio@40010C00 {
+			gpiob: gpio@40010c00 {
 				compatible = "wch,gpio";
-				reg = <0x40010C00 0x20>;
+				reg = <0x40010c00 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <7>;

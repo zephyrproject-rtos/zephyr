@@ -10,7 +10,7 @@
 	dac-vref-source = "VIN2";
 	dac-value = <31>;
 	filter-count = <0x3>;
-	filter-period = <0xF>;
+	filter-period = <0xf>;
 	hysteresis-mode = "LEVEL2";
 	enable-high-speed-mode;
 	invert-output;

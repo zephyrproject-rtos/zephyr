@@ -26,12 +26,12 @@
 };
 
 &flashctrl {
-	flash0: flash@A0000000 {
+	flash0: flash@a0000000 {
 		/* in-chip xmc flash die on ALL variant, NC pins noneffective
 		 * in-module SOIC-8 gigadevice flash on non-ALL variant, NC pins effective
 		 */
 		compatible = "soc-nv-flash", "xmc,xm25qw64", "gd,gd25q64e";
-		reg = <0xA0000000 (0x800000 - 0x2000)>;
+		reg = <0xa0000000 (0x800000 - 0x2000)>;
 		write-block-size = <256>;
 		erase-block-size = <DT_SIZE_K(4)>;
 

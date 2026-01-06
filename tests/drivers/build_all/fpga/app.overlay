@@ -35,7 +35,7 @@
 			cs-gpios = <&test_gpio 0 0>,    /* 0x00 */
 				   <&test_gpio 0 0>;
 
-			#include "spi.dtsi"
+#include "spi.dtsi"
 		};
 	};
 

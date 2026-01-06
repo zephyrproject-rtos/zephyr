@@ -154,7 +154,7 @@
 
 		mailbox0: mailbox@4008b000 {
 			compatible = "nxp,lpc-mailbox";
-			reg = <0x4008b000 0xEC>;
+			reg = <0x4008b000 0xec>;
 			interrupts = <31 0>;
 			status = "disabled";
 		};

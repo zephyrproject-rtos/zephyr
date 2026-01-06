@@ -27,42 +27,42 @@
 
 		slot1_partition: partition@5f0000 {
 			label = "image-1";
-			reg = <0x5F0000 DT_SIZE_K(5952)>;
+			reg = <0x5f0000 DT_SIZE_K(5952)>;
 		};
 
 		slot0_appcpu_partition: partition@bc0000 {
 			label = "image-0-appcpu";
-			reg = <0xBC0000 DT_SIZE_K(1984)>;
+			reg = <0xbc0000 DT_SIZE_K(1984)>;
 		};
 
 		slot1_appcpu_partition: partition@db0000 {
 			label = "image-1-appcpu";
-			reg = <0xDB0000 DT_SIZE_K(1984)>;
+			reg = <0xdb0000 DT_SIZE_K(1984)>;
 		};
 
 		slot0_lpcore_partition: partition@fa0000 {
 			label = "image-0-lpcore";
-			reg = <0xFA0000 DT_SIZE_K(32)>;
+			reg = <0xfa0000 DT_SIZE_K(32)>;
 		};
 
 		slot1_lpcore_partition: partition@fa8000 {
 			label = "image-1-lpcore";
-			reg = <0xFA8000 DT_SIZE_K(32)>;
+			reg = <0xfa8000 DT_SIZE_K(32)>;
 		};
 
 		storage_partition: partition@fb0000 {
 			label = "storage";
-			reg = <0xFB0000 DT_SIZE_K(192)>;
+			reg = <0xfb0000 DT_SIZE_K(192)>;
 		};
 
 		scratch_partition: partition@fe0000 {
 			label = "image-scratch";
-			reg = <0xFE0000 DT_SIZE_K(124)>;
+			reg = <0xfe0000 DT_SIZE_K(124)>;
 		};
 
 		coredump_partition: partition@fff000 {
 			label = "coredump";
-			reg = <0xFFF000 DT_SIZE_K(4)>;
+			reg = <0xfff000 DT_SIZE_K(4)>;
 		};
 	};
 };

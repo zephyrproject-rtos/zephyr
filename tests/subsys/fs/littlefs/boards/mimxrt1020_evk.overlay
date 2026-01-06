@@ -18,9 +18,9 @@
 			reg = <0x00700000 DT_SIZE_K(960)>;
 		};
 
-		small_partition: partition@7F0000 {
+		small_partition: partition@7f0000 {
 			label = "small";
-			reg = <0x007F0000 DT_SIZE_K(64)>;
+			reg = <0x007f0000 DT_SIZE_K(64)>;
 		};
 	};
 };

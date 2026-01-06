@@ -27,7 +27,7 @@
 
 		slot1_partition: partition@b0000 {
 			label = "image-1";
-			reg = <0xB0000 DT_SIZE_K(576)>;
+			reg = <0xb0000 DT_SIZE_K(576)>;
 		};
 
 		slot0_appcpu_partition: partition@140000 {
@@ -42,27 +42,27 @@
 
 		slot0_lpcore_partition: partition@1a0000 {
 			label = "image-0-lpcore";
-			reg = <0x1A0000 DT_SIZE_K(32)>;
+			reg = <0x1a0000 DT_SIZE_K(32)>;
 		};
 
 		slot1_lpcore_partition: partition@1a8000 {
 			label = "image-1-lpcore";
-			reg = <0x1A8000 DT_SIZE_K(32)>;
+			reg = <0x1a8000 DT_SIZE_K(32)>;
 		};
 
 		storage_partition: partition@1b0000 {
 			label = "storage";
-			reg = <0x1B0000 DT_SIZE_K(192)>;
+			reg = <0x1b0000 DT_SIZE_K(192)>;
 		};
 
 		scratch_partition: partition@1e0000 {
 			label = "image-scratch";
-			reg = <0x1E0000 DT_SIZE_K(124)>;
+			reg = <0x1e0000 DT_SIZE_K(124)>;
 		};
 
 		coredump_partition: partition@1ff000 {
 			label = "coredump";
-			reg = <0x1FF000 DT_SIZE_K(4)>;
+			reg = <0x1ff000 DT_SIZE_K(4)>;
 		};
 	};
 };

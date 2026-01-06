@@ -57,10 +57,10 @@
 
 	id: device_id@80a00c {
 		compatible = "atmel,sam0-id";
-		reg = <0x0080A00C 0x4>,
-		      <0x0080A040 0x4>,
-		      <0x0080A044 0x4>,
-		      <0x0080A048 0x4>;
+		reg = <0x0080a00c 0x4>,
+		      <0x0080a040 0x4>,
+		      <0x0080a044 0x4>,
+		      <0x0080a048 0x4>;
 	};
 
 	soc {
@@ -146,7 +146,7 @@
 
 		sercom3: sercom@42000c00 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42000C00 0x40>;
+			reg = <0x42000c00 0x40>;
 			status = "disabled";
 		};
 

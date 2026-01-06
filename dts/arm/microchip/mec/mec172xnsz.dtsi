@@ -46,7 +46,7 @@
 	};
 
 	flash0: flash@c0000 {
-		reg = <0x000C0000 0x58000>;
+		reg = <0x000c0000 0x58000>;
 	};
 
 	sram0: memory@118000 {
@@ -55,7 +55,7 @@
 	};
 
 	soc {
-		#include "mec172x_common.dtsi"
+#include "mec172x_common.dtsi"
 
 		eeprom: eeprom@40002c00 {
 			compatible = "microchip,xec-eeprom";

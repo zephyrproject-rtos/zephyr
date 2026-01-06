@@ -55,10 +55,10 @@
 
 	id: device_id@80a00c {
 		compatible = "atmel,sam0-id";
-		reg = <0x0080A00C 0x4>,
-		      <0x0080A040 0x4>,
-		      <0x0080A044 0x4>,
-		      <0x0080A048 0x4>;
+		reg = <0x0080a00c 0x4>,
+		      <0x0080a040 0x4>,
+		      <0x0080a044 0x4>,
+		      <0x0080a048 0x4>;
 	};
 
 	soc {
@@ -97,7 +97,7 @@
 
 		eic: eic@40001800 {
 			compatible = "atmel,sam0-eic";
-			reg = <0x40001800 0x1C>;
+			reg = <0x40001800 0x1c>;
 			interrupts = <4 0>;
 		};
 
@@ -189,7 +189,7 @@
 
 		rtc: rtc@40001400 {
 			compatible = "atmel,sam0-rtc";
-			reg = <0x40001400 0x1C>;
+			reg = <0x40001400 0x1c>;
 			interrupts = <3 0>;
 			clocks = <&gclk 4 4>, <&pm 0x18 5>;
 			clock-names = "GCLK", "PM";
@@ -201,7 +201,7 @@
 
 		adc: adc@42004000 {
 			compatible = "atmel,sam0-adc";
-			reg = <0x42004000 0x2B>;
+			reg = <0x42004000 0x2b>;
 			status = "disabled";
 
 			#io-channel-cells = <1>;

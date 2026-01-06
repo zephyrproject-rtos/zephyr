@@ -159,7 +159,7 @@
 		ssdiv = "1.00";
 		so = <0x108>;
 		snum = <0x01>;
-		sdpa = <0x0B>;
+		sdpa = <0x0b>;
 		on-freq = <3>;
 		off-freq = <3>;
 		drift-freq = <255>;

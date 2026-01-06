@@ -8,9 +8,9 @@
 
 &w25q32jvwj0 {
 	partitions {
-		small_partition: partition@3F0000 {
+		small_partition: partition@3f0000 {
 			label = "small";
-			reg = <0x003F0000 DT_SIZE_K(64)>;
+			reg = <0x003f0000 DT_SIZE_K(64)>;
 		};
 	};
 };

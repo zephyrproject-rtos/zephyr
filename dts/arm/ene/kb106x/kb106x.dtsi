@@ -93,7 +93,7 @@
 
 			gpio6x7x: gpio@5000000c {
 				compatible = "ene,kb106x-gpio";
-				reg = <0x5000000C 0x04>, <0x5001000C 0x04>;
+				reg = <0x5000000c 0x04>, <0x5001000c 0x04>;
 				interrupts = <8 3>, <9 3>;
 				gpio-controller;
 				#gpio-cells = <2>;
