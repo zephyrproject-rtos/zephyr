@@ -158,6 +158,12 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* IPM
+
+  * IPM callbacks for the mailbox backend now correctly handle signal-only mailbox
+    mailbox usage. Applications should be prepared to receive a NULL payload pointer
+    in IPM callbacks when no data buffer is provided by the mailbox.
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
