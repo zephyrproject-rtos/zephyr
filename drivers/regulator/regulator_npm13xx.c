@@ -28,10 +28,18 @@ enum npm13xx_gpio_type {
 	NPM13XX_GPIO_TYPE_PWM
 };
 
-/* nPM13xx regulator base addresses */
-#define BUCK_BASE 0x04U
-#define LDSW_BASE 0x08U
-#define SHIP_BASE 0x0BU
+/* nPM13xx base addresses */
+#define MAIN_BASE       0x00U
+#define LDSW_EXTRA_BASE 0x02U
+#define BUCK_BASE       0x04U
+#define LDSW_BASE       0x08U
+#define SHIP_BASE       0x0BU
+
+/* nPM13xx main register offsets */
+#define MAIN_OFFSET_VERSION 0x26U
+
+/* nPM13xx ldsw extra register offsets */
+#define LDSW_OFFSET_LDO_SOFT 0x08U
 
 /* nPM13xx regulator register offsets */
 #define BUCK_OFFSET_EN_SET    0x00U
@@ -60,6 +68,9 @@ enum npm13xx_gpio_type {
 /* nPM13xx ship register offsets */
 #define SHIP_OFFSET_SHIP 0x02U
 
+/* relevant masks and shifts */
+#define MAIN_VERSION_MINOR_MASK 0x0FU
+
 #define BUCK1_ON_MASK          0x04U
 #define BUCK2_ON_MASK          0x40U
 #define BUCK1_EN_PULLDOWN_MASK BIT(2)
@@ -77,6 +88,15 @@ enum npm13xx_gpio_type {
 
 #define NPM13XX_GPIO_UNUSED UINT8_MAX
 
+#define NPM1304_REV_HAS_LDO_SOFTSTART(major, minor) ((major) > 1 || ((major == 1) && (minor >= 1)))
+#define DEVICE_HAS_LDO_SOFTSTART(device, major, minor)                                             \
+	((device) == NPM1304_DEVICE && NPM1304_REV_HAS_LDO_SOFTSTART(major, minor))
+
+enum npm13xx_device_variant {
+	NPM1300_DEVICE,
+	NPM1304_DEVICE,
+};
+
 struct npm13xx_gpio_info {
 	uint8_t pin;
 	bool invert;
@@ -90,6 +110,7 @@ struct regulator_npm13xx_pconfig {
 struct regulator_npm13xx_config {
 	struct regulator_common_config common;
 	const struct device *mfd;
+	enum npm13xx_device_variant device_variant;
 	uint8_t source;
 	int32_t retention_uv;
 	struct npm13xx_gpio_info enable_gpios;
@@ -333,14 +354,61 @@ static int set_buck_mode(const struct device *dev, uint8_t chan, regulator_mode_
 	return mfd_npm13xx_reg_write(config->mfd, BUCK_BASE, pwm_reg + (chan * 2U), 1U);
 }
 
+static int get_pmic_revision(const struct device *dev, uint8_t *major, uint8_t *minor)
+{
+	const struct regulator_npm13xx_config *config = dev->config;
+	static uint8_t version_regs[2];
+	int ret;
+
+	if (!(version_regs[0] || version_regs[1])) {
+		/* avoid re-reading the registers content */
+		ret = mfd_npm13xx_reg_read_burst(config->mfd, MAIN_BASE, MAIN_OFFSET_VERSION,
+						 version_regs, 2U);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	*major = version_regs[0];
+	*minor = version_regs[1] & MAIN_VERSION_MINOR_MASK;
+	return 0;
+}
+
 static int set_ldsw_mode(const struct device *dev, uint8_t chan, regulator_mode_t mode)
 {
 	const struct regulator_npm13xx_config *config = dev->config;
+	uint8_t major, minor;
+	int ret;
+
+	ret = get_pmic_revision(dev, &major, &minor);
+	if (ret < 0) {
+		return ret;
+	}
 
 	switch (mode) {
 	case NPM13XX_LDSW_MODE_LDO:
+		if (DEVICE_HAS_LDO_SOFTSTART(config->device_variant, major, minor)) {
+			ret = mfd_npm13xx_reg_update(config->mfd, LDSW_EXTRA_BASE,
+						     LDSW_OFFSET_LDO_SOFT, 1U << chan, 1U << chan);
+			if (ret < 0) {
+				return ret;
+			}
+
+			return mfd_npm13xx_reg_write(config->mfd, LDSW_BASE,
+						     LDSW_OFFSET_LDOSEL + chan, 0U);
+		}
+
 		return mfd_npm13xx_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_LDOSEL + chan, 1U);
 	case NPM13XX_LDSW_MODE_LDSW:
+		if (DEVICE_HAS_LDO_SOFTSTART(config->device_variant, major, minor)) {
+			/* clear the "LDO with soft start" bit, so that LS mode can take effect */
+			ret = mfd_npm13xx_reg_update(config->mfd, LDSW_EXTRA_BASE,
+						     LDSW_OFFSET_LDO_SOFT, 0U, 1U << chan);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
 		return mfd_npm13xx_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_LDOSEL + chan, 0U);
 	default:
 		return -ENOTSUP;
@@ -716,6 +784,7 @@ static DEVICE_API(regulator, api) = {
 	static const struct regulator_npm13xx_config regulator_##partno##_config_##id = {          \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
 		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
+		.device_variant = partno##_DEVICE,                                                 \
 		.source = _source,                                                                 \
 		.retention_uv = DT_PROP_OR(node_id, retention_microvolt, 0),                       \
 		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),             \
@@ -745,19 +814,18 @@ static DEVICE_API(regulator, api) = {
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, regulator_npm13xx_common_init, NULL, NULL,                        \
 			      &regulator_##partno##_config##n, POST_KERNEL,                        \
-			      CONFIG_REGULATOR_NPM13XX_COMMON_INIT_PRIORITY,                       \
-			      &parent_api);                                                        \
+			      CONFIG_REGULATOR_NPM13XX_COMMON_INIT_PRIORITY, &parent_api);         \
                                                                                                    \
 	REGULATOR_NPM13XX_DEFINE_COND(partno, n, buck1, NPM13XX_SOURCE_BUCK1)                      \
 	REGULATOR_NPM13XX_DEFINE_COND(partno, n, buck2, NPM13XX_SOURCE_BUCK2)                      \
 	REGULATOR_NPM13XX_DEFINE_COND(partno, n, ldo1, NPM13XX_SOURCE_LDO1)                        \
 	REGULATOR_NPM13XX_DEFINE_COND(partno, n, ldo2, NPM13XX_SOURCE_LDO2)
 
-#define DT_DRV_COMPAT nordic_npm1300_regulator
-#define REGULATOR_NPM1300_DEFINE_ALL(n) REGULATOR_NPM13XX_DEFINE_ALL(npm1300, n)
+#define DT_DRV_COMPAT                   nordic_npm1300_regulator
+#define REGULATOR_NPM1300_DEFINE_ALL(n) REGULATOR_NPM13XX_DEFINE_ALL(NPM1300, n)
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM1300_DEFINE_ALL)
 
 #undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT nordic_npm1304_regulator
-#define REGULATOR_NPM1304_DEFINE_ALL(n) REGULATOR_NPM13XX_DEFINE_ALL(npm1304, n)
+#define DT_DRV_COMPAT                   nordic_npm1304_regulator
+#define REGULATOR_NPM1304_DEFINE_ALL(n) REGULATOR_NPM13XX_DEFINE_ALL(NPM1304, n)
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM1304_DEFINE_ALL)
