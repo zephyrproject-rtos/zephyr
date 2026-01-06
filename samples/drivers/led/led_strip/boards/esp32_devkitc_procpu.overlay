@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 &pinctrl {
 	rmt_default: rmt_default {
 		group1 {
-			pinmux = <RMT_OUT3_GPIO48>;
+			pinmux = <RMT_OUT0_GPIO13>;
 		};
 	};
 };
@@ -26,8 +26,6 @@
 	status = "okay";
 	pinctrl-0 = <&rmt_default>;
 	pinctrl-names = "default";
-	dmas = <&dma 9>;
-	dma-names = "tx";
 
 	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-espressif-rmt";
@@ -38,8 +36,4 @@
 				 LED_COLOR_ID_BLUE>;
 		reset-delay = <500>;
 	};
-};
-
-&dma {
-	status = "okay";
 };

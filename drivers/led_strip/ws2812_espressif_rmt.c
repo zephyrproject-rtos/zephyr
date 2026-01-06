@@ -349,20 +349,18 @@ static DEVICE_API(led_strip, ws2812_espressif_rmt_api) = {
 #define WS2812_ESPRESSIF_RMT_DEVICE(idx)                                            \
 	static const uint8_t ws2812_espressif_rmt_##idx##_color_mapping[] =             \
 		DT_INST_PROP(idx, color_mapping);                                           \
-	static uint8_t                                                                  \
-		ws2812_espressif_rmt_##idx##_px_buf[WS2812_ESPRESSIF_RMT_BUFSZ(idx)];       \
-	static const struct ws2812_espressif_rmt_config                                 \
-		ws2812_espressif_rmt_##idx##_cfg = {                                        \
-			.dev = DEVICE_DT_GET(DT_INST_BUS(idx)),                                 \
-			.regs_count = DT_NUM_REGS(DT_DRV_INST(idx)),                            \
-			.regs = {                                                               \
-				DT_REG_ADDR_BY_IDX(DT_DRV_INST(idx), 0)                             \
-			},                                                                      \
-			.px_buf = ws2812_espressif_rmt_##idx##_px_buf,                          \
-			.num_colors = WS2812_NUM_COLORS(idx),                                   \
-			.length = DT_INST_PROP(idx, chain_length),                              \
-			.color_mapping = ws2812_espressif_rmt_##idx##_color_mapping,            \
-			.reset_delay = DT_INST_PROP(idx, reset_delay),                          \
+	static uint8_t ws2812_espressif_rmt_##idx##_px_buf[WS2812_ESPRESSIF_RMT_BUFSZ(idx)]; \
+	static const struct ws2812_espressif_rmt_config ws2812_espressif_rmt_##idx##_cfg = { \
+		.dev = DEVICE_DT_GET(DT_INST_BUS(idx)),                                     \
+		.regs_count = DT_NUM_REGS(DT_DRV_INST(idx)),                                \
+		.regs = {                                                                   \
+			DT_REG_ADDR_BY_IDX(DT_DRV_INST(idx), 0)                                 \
+		},                                                                          \
+		.px_buf = ws2812_espressif_rmt_##idx##_px_buf,                              \
+		.num_colors = WS2812_NUM_COLORS(idx),                                       \
+		.length = DT_INST_PROP(idx, chain_length),                                  \
+		.color_mapping = ws2812_espressif_rmt_##idx##_color_mapping,                \
+		.reset_delay = DT_INST_PROP(idx, reset_delay),                              \
 	};                                                                              \
 	static struct ws2812_espressif_rmt_data ws2812_espressif_rmt_##idx_data = {     \
 		.tx_chan_config.clk_src = RMT_CLK_SRC_DEFAULT,                              \
