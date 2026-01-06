@@ -31,6 +31,17 @@ config RISCV_ISA_EXT_M
 	  which is named "M" and contains instructions that multiply or divide
 	  values held in two integer registers.
 
+config RISCV_ISA_EXT_V
+	bool
+	help
+	  (V) - Standard Extension for Vector Operations
+
+	  The RISC-V Vector Extension (V) provides scalable SIMD (Single Instruction,
+	  Multiple Data) vector processing capabilities. It defines a set of vector
+	  registers and associated instructions to efficiently perform parallel data
+	  computations, making it suitable for high-performance workloads such as
+	  digital signal processing, machine learning, and scientific computing.
+
 config RISCV_ISA_EXT_A
 	bool
 	imply RISCV_ISA_EXT_ZAAMO

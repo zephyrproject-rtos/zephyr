@@ -11,6 +11,11 @@
 #include <stdio.h>
 #include <pmp.h>
 
+#if CONFIG_ARCH_RISCV_HAS_CUSTOM
+#include <csr_context.h>
+#include <riscv_custom.h>
+#endif /* CONFIG_ARCH_RISCV_HAS_CUSTOM */
+
 #ifdef CONFIG_USERSPACE
 /*
  * Per-thread (TLS) variable indicating whether execution is in user mode.
@@ -64,6 +69,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    thread stack.
 	 */
 	stack_init->mstatus = MSTATUS_DEF_RESTORE;
+
+	/* Some operations of soc extensions */
+#if CONFIG_ARCH_RISCV_HAS_CUSTOM
+	CUSTOM_INIT_THREAD_MSTATUS(stack_init)
+#endif
 
 #if defined(CONFIG_FPU_SHARING)
 	/* thread birth happens through the exception return path */

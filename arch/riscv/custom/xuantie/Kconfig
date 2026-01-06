@@ -1,0 +1,12 @@
+#
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ARCH_RISCV_HAS_CUSTOM
+	bool
+	default y if DT_HAS_XUANTIE_RISCV_ENABLED
+	help
+	  Automatically enabled when the devicetree contains a 'xuantie,riscv'
+	  compatible node. Used to conditionally compile Xuantie-specific code.
