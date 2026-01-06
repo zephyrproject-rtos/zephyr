@@ -498,52 +498,20 @@ static void spi_stm32_shift_m(const struct spi_stm32_config *cfg,
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	uint8_t frame_size = bits2bytes(data->ctx.config->operation);
-
 	if (ll_func_tx_is_not_full(spi) && spi_context_tx_on(&data->ctx)) {
-		uint32_t tx_frame;
-
-		if (frame_size == 1U) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData8(spi, tx_frame);
-		} else if (frame_size == 2U) {
-			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData16(spi, tx_frame);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		} else {
-			tx_frame = UNALIGNED_GET((uint32_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData32(spi, tx_frame);
-#endif
-		}
-		spi_context_update_tx(&data->ctx, frame_size, 1);
+		spi_stm32_send_next_frame(spi, data);
 	} else {
 		ll_func_disable_int_tx_empty(spi);
 	}
 
 	if (ll_func_rx_is_not_empty(spi) && spi_context_rx_buf_on(&data->ctx)) {
-		uint32_t rx_frame;
-
-		if (frame_size == 1U) {
-			rx_frame = LL_SPI_ReceiveData8(spi);
-			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
-		} else if (frame_size == 2U) {
-			rx_frame = LL_SPI_ReceiveData16(spi);
-			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		} else {
-			rx_frame = LL_SPI_ReceiveData32(spi);
-			UNALIGNED_PUT(rx_frame, (uint32_t *)data->ctx.rx_buf);
-#endif
-		}
-		spi_context_update_rx(&data->ctx, frame_size, 1);
+		spi_stm32_read_next_frame(spi, data);
 	}
 }
 
 /*
  * Without a FIFO, we can only shift out one frame's worth of SPI
  * data, and read the response back.
- *
- * TODO: support 16-bit data frames.
  */
 static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
 	struct spi_stm32_data *data)
