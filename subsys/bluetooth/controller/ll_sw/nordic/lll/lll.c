@@ -47,6 +47,7 @@ static struct {
 		void              *param;
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
+		uint8_t           has_margin:1;
 	} curr;
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -934,9 +935,13 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	}
 
 	/* Current event active or another prepare is ready in the pipeline */
-	if ((!is_dequeue && !is_done_sync()) ||
-	    event.curr.abort_cb || ready_short ||
-	    (ready && is_resume)) {
+	if (((is_dequeue == 0U) && (is_done_sync() == 0U)) ||
+	    (event.curr.abort_cb != NULL) ||
+	    (ready_short != NULL) ||
+	    ((ready != NULL) && (is_resume != 0U)) ||
+	    (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) &&
+	     (prepare_param->defer == 0U) &&
+	     (event.curr.has_margin == 0U))) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -1018,6 +1023,10 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	event.curr.param = prepare_param->param;
 	event.curr.is_abort_cb = is_abort_cb;
 	event.curr.abort_cb = abort_cb;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
+		event.curr.has_margin = 0U;
+	}
 
 	err = prepare_cb(prepare_param);
 
@@ -1277,6 +1286,23 @@ static void preempt(void *param)
 
 	/* No event to abort */
 	if (!event.curr.abort_cb || !event.curr.param) {
+		/* When a radio event is placed back in the prepare pipeline as
+		 * resume prepare and a done event is not to be generated; in
+		 * these cases, event.curr.abort_cb is not NULL, but
+		 * event.curr.param is NULL. Let us setup the preempt timeout to
+		 * ensure the margin for certain.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) &&
+		    (event.curr.abort_cb == NULL)) {
+			/* Previous event is done before the prepare margin for
+			 * the event ready in the pipeline when we are here now.
+			 */
+			event.curr.has_margin = 1U;
+
+			/* Execute the enqueued ready LLL prepare callbacks */
+			ull_prepare_dequeue(TICKER_USER_ID_LLL);
+		}
+
 		return;
 	}
 
@@ -1372,6 +1398,13 @@ preempt_find_preemptor:
 		}
 
 		LL_ASSERT_ERR(ready->prepare_param.param == param);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
+		/* Here prepare margin has expired while a previous event is
+		 * active, set the flag and proceed with abort.
+		 */
+		event.curr.has_margin = 1U;
 	}
 
 	/* Check if current event want to continue */
