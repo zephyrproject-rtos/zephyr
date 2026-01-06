@@ -171,7 +171,7 @@ SECTIONS
         __rodata_region_start = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-#if defined (CONFIG_CPP)
+#if defined (CONFIG_CPP) || defined(CONFIG_ARCH_STACKWALK)
     SECTION_PROLOGUE(.ARM.extab,,)
     {
         /*
