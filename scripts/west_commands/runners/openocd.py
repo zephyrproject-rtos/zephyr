@@ -247,6 +247,22 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         (major, minor, rev) = self.read_version()
         return (major, minor, rev) > (0, 11, 0)
 
+    def supports_new_port_syntax(self):
+        # New 'tcl port' syntax (space instead of underscore) introduced in 0.12.0
+        (major, minor, rev) = self.read_version()
+        return (major, minor, rev) >= (0, 12, 0)
+
+    def port_commands(self):
+        # Return port configuration commands using appropriate syntax for OpenOCD version
+        if self.supports_new_port_syntax():
+            return ['-c', f'tcl port {self.tcl_port}',
+                    '-c', f'telnet port {self.telnet_port}',
+                    '-c', f'gdb port {self.gdb_port}']
+        else:
+            return ['-c', f'tcl_port {self.tcl_port}',
+                    '-c', f'telnet_port {self.telnet_port}',
+                    '-c', f'gdb_port {self.gdb_port}']
+
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
         if globals().get('ELFFile') is None:
@@ -388,9 +404,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append(rtos_command)
 
         server_cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
-                      ['-c', f'tcl_port {self.tcl_port}',
-                       '-c', f'telnet_port {self.telnet_port}',
-                       '-c', f'gdb_port {self.gdb_port}'] +
+                      self.port_commands() +
                       pre_init_cmd + self.init_arg + self.targets_arg +
                       self.halt_arg)
 
@@ -486,9 +500,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append(rtos_command)
 
         cmd = (self.openocd_cmd + self.cfg_cmd +
-               ['-c', f'tcl_port {self.tcl_port}',
-                '-c', f'telnet_port {self.telnet_port}',
-                '-c', f'gdb_port {self.gdb_port}'] +
+               self.port_commands() +
                pre_init_cmd + self.init_arg + self.targets_arg +
                ['-c', self.reset_halt_cmd])
 
