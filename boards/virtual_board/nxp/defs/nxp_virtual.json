@@ -1,0 +1,174 @@
+{
+  "board": {
+    "name": "nxp_virtual",
+    "full_name": "NXP Virtual Board (SoC template)",
+    "vendor": "nxp"
+  },
+  "soc_ymls": [
+    "soc/nxp/mcx/soc.yml",
+    "soc/nxp/rw/soc.yml",
+    "soc/nxp/imxrt/soc.yml",
+    "soc/nxp/imx/soc.yml"
+  ],
+  "include_all_cpuclusters": true,
+  "include_part_number_variants": true,
+
+  "exclude_part_number_variants": {
+    "mimxrt1052": ["mimxrt1052cvl5a", "mimxrt1052dvl6a"],
+    "mimxrt1189": [
+      "mimxrt1187avm8b", "mimxrt1187cvm8b", "mimxrt1187xvm8b",
+      "mimxrt1182cvp2b", "mimxrt1182xvp2b", "mimxrt1181cvp2b", "mimxrt1181xvp2b",
+      "mimxrt1187avm8c", "mimxrt1187cvm8c", "mimxrt1187xvm8c",
+      "mimxrt1182cvp2c", "mimxrt1182xvp2c", "mimxrt1181cvp2c", "mimxrt1181xvp2c"
+    ],
+    "mimxrt798s": ["mimxrt735sgawbr", "mimxrt735sgfob", "mimxrt758sgawbr", "mimxrt758sgfob"],
+    "mimx9596": ["mimx9596avtxn"],
+    "mimx8qx6": ["mimx8qx6cvldz"],
+    "mimxrt595s/cm33": [
+      "mimxrt533sfawc", "mimxrt533sffoc",
+      "mimxrt555sfawc", "mimxrt555sffoc"
+    ]
+  },
+  "filters": {
+    "mcx": {
+      "prefixes": ["mcxa", "mcxc", "mcxe", "mcxn", "mcxw"],
+      "exclude_cpuclusters": ["a9", "a7"]
+    }
+  },
+
+  "output": {
+    "root": "boards/virtual_board/generated",
+    "board_relpath": "boards/nxp/nxp_virtual"
+  },
+
+  "dts_labels": {
+    "sim": "sim",
+    "osc": "osc",
+    "cpu0": "cpu0"
+  },
+
+  "master_platforms": {
+    "mcxa": "frdm_mcxa153",
+
+    "mcxc": {
+      "mcxc141": "frdm_mcxc242",
+      "mcxc142": "frdm_mcxc242",
+      "mcxc242": "frdm_mcxc242",
+      "mcxc444": "frdm_mcxc444",
+      "default": "frdm_mcxc242"
+    },
+
+    "mcxe24x": "frdm_mcxe247",
+    "mcxe31x": "frdm_mcxe31b",
+    "mcxn": "mcx_n9xx_evk/mcxn947/cpu0",
+    "mcxw": "frdm_mcxw23",
+    "rw61x": "frdm_rw612",
+
+    "imxrt10xx": "mimxrt1020_evk",
+    "imxrt11xx": {"cm7": "mimxrt1170_evk@A/mimxrt1176/cm7", "cm4": "mimxrt1170_evk@A/mimxrt1176/cm4"},
+    "imxrt118x": {"cm33": "mimxrt1180_evk/mimxrt1189/cm33", "cm7": "mimxrt1180_evk/mimxrt1189/cm7"},
+    "imxrt5xx": {"cm33": "mimxrt595_evk/mimxrt595s/cm33", "f1": "mimxrt595_evk/mimxrt595s/f1"},
+    "imxrt6xx": {"cm33": "mimxrt685_evk/mimxrt685s/cm33", "hifi4": "mimxrt685_evk/mimxrt685s/hifi4"},
+    "imxrt7xx": {"cm33_cpu0": "mimxrt700_evk/mimxrt798s/cm33_cpu0", "cm33_cpu1": "mimxrt700_evk/mimxrt798s/cm33_cpu1"},
+
+    "imx8": "imx8qm_mek/mimx8qm6/adsp",
+    "imx8x": "imx8qxp_mek/mimx8qx6/adsp",
+    "imx8ulp": "imx8ulp_evk/mimx8ud7/adsp",
+    "imx8m": {
+      "mimx8ml8": {"a53": "imx8mp_evk/mimx8ml8/a53", "a53/smp": "imx8mp_evk/mimx8ml8/a53/smp", "m7": "imx8mp_evk/mimx8ml8/m7"},
+      "mimx8mm6": {"a53": "imx8mm_evk/mimx8mm6/a53", "a53/smp": "imx8mm_evk/mimx8mm6/a53/smp", "m4": "imx8mm_evk/mimx8mm6/m4"},
+      "mimx8mn6": {"a53": "imx8mn_evk/mimx8mn6/a53", "a53/smp": "imx8mn_evk/mimx8mn6/a53/smp"},
+      "mimx8mq6": {"m4": "imx8mq_evk/mimx8mq6/m4"},
+      "default": {"a53": "imx8mp_evk/mimx8ml8/a53", "a53/smp": "imx8mp_evk/mimx8ml8/a53/smp", "m7": "imx8mp_evk/mimx8ml8/m7", "m4": "imx8mm_evk/mimx8mm6/m4"}
+    },
+    "imx9": {
+      "default": "imx95_evk/mimx9596/a55",
+      "mimx9596": {"a55": "imx95_evk/mimx9596/a55", "m7": "imx95_evk/mimx9596/m7"},
+      "mimx9111": "imx91_qsb/mimx9111",
+      "mimx9131": "imx91_evk/mimx9131",
+      "mimx9352": {"a55": "imx93_evk/mimx9352/a55", "m33": "imx93_evk/mimx9352/m33"},
+      "mimx94398": {"a55": "imx943_evk/mimx94398/a55", "m33": "imx943_evk/mimx94398/m33", "m7_0": "imx943_evk/mimx94398/m7_0", "m7_1": "imx943_evk/mimx94398/m7_1"}
+    }
+  },
+
+  "overrides": {
+    "master_platform": {
+      "rw610": "frdm_rw612",
+      "mcxw716c": "frdm_mcxw71",
+      "mcxa156": "frdm_mcxa156",
+      "mcxa344": "frdm_mcxa344",
+      "mcxa266": "frdm_mcxa266",
+      "mcxa346": "frdm_mcxa346",
+      "mcxa366": "frdm_mcxa366",
+      "mcxa577": "frdm_mcxa577",
+      "mcxe31b": "frdm_mcxe31b",
+      "mcxe247": "frdm_mcxe247",
+
+      "mimxrt1011": "mimxrt1010_evk",
+      "mimxrt1015": "mimxrt1015_evk",
+      "mimxrt1042": "mimxrt1040_evk",
+      "mimxrt1062": "mimxrt1062_fmurt6",
+      "mimxrt1064": "mimxrt1064_evk"
+    },
+    "cpuclusters": {
+      "mcimx6x": ["m4"],
+      "mcimx7d": ["m4"]
+    },
+    "dtsi": {
+      "mcimx6x/m4": "template:imx6sx_m4",
+      "mcimx7d/m4": "template:imx7d_m4",
+
+      "mcxn947": "nxp/nxp_mcxn94x.dtsi",
+      "mcxn547": "nxp/nxp_mcxn54x.dtsi",
+      "mcxn236": "nxp/nxp_mcxn23x.dtsi",
+
+      "rw610": "nxp/nxp_rw6xx.dtsi",
+      "rw612": "nxp/nxp_rw6xx.dtsi",
+
+      "mimx9352/a55": "nxp/nxp_mimx93_a55.dtsi",
+      "mimx9352/m33": "nxp/nxp_imx93_m33.dtsi",
+      "mimx94398/a55": "nxp/nxp_mimx943_a55.dtsi",
+      "mimx94398/m33": "nxp/nxp_imx943_m33.dtsi",
+      "mimx94398/m7_0": "nxp/nxp_imx943_m7_0.dtsi",
+      "mimx94398/m7_1": "nxp/nxp_imx943_m7_1.dtsi",
+      "mimx9596/a55": "nxp/nxp_mimx95_a55.dtsi",
+      "mimx9596/m7": "nxp/nxp_imx95_m7.dtsi",
+
+      "mimx8qm6/adsp": "nxp/nxp_imx8qm.dtsi",
+      "mimx8qx6/adsp": "nxp/nxp_imx8qxp.dtsi",
+      "mimx8ud7/adsp": "nxp/nxp_imx8ulp.dtsi",
+      "mimx8ml8/adsp": "nxp/nxp_imx8m.dtsi",
+
+      "mimxrt685s/cm33": "nxp/nxp_rt6xx.dtsi",
+      "mimxrt685s/hifi4": "nxp/nxp_rt685_hifi4.dtsi",
+
+      "mimxrt595s/cm33": "nxp/nxp_rt5xx.dtsi",
+      "mimxrt595s/f1": "template:rt595_f1",
+
+      "mimxrt798s/cm33_cpu0": "nxp/nxp_rt7xx_cm33_cpu0.dtsi",
+      "mimxrt798s/cm33_cpu1": "nxp/nxp_rt7xx_cm33_cpu1.dtsi",
+      "mimxrt798s/hifi4": "nxp/nxp_imxrt700_hifi4.dtsi",
+      "mimxrt798s/hifi1": "nxp/nxp_imxrt700_hifi1.dtsi",
+
+      "mimxrt1189/cm33": "nxp/nxp_rt118x_cm33.dtsi",
+      "mimxrt1189/cm7": "nxp/nxp_rt118x_cm7.dtsi",
+
+      "mimxrt1176/cm7": "nxp/nxp_rt1170_cm7.dtsi",
+      "mimxrt1176/cm4": "nxp/nxp_rt1170_cm4.dtsi",
+      "mimxrt1166/cm7": "nxp/nxp_rt1160_cm7.dtsi",
+      "mimxrt1166/cm4": "nxp/nxp_rt1160_cm4.dtsi"
+    },
+
+    "patch_generated_dts": {
+      "mcxc141": ["&usb", "usb_device", "usbd"],
+      "mcxc142": ["&usb", "usb_device", "usbd"],
+
+      "mcxe245": ["&lpi2c1"],
+      "mcxe246": ["&lpi2c1"],
+
+      "mcxe315": ["&lpuart_5", "&eim0", "&eim0_channel14", "&eim0_channel15", "&erm0"],
+      "mcxe316": ["&lpuart_5", "&eim0", "&eim0_channel14", "&eim0_channel15", "&erm0"],
+      "mcxe317": ["&lpuart_5", "&eim0", "&eim0_channel14", "&eim0_channel15", "&erm0"]
+    }
+  }
+}

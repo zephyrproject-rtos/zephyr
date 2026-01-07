@@ -40,5 +40,6 @@ Refer to the :ref:`shield_porting_guide` for more information on how to port a s
    :hidden:
 
    */index
+   virtual_board/README
 
 .. zephyr:board-catalog::
