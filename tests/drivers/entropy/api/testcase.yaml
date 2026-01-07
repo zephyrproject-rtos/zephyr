@@ -32,3 +32,9 @@ tests:
       - driver
       - entropy
       - virtio
+  drivers.entropy.stm32:
+    filter: CONFIG_ENTROPY_STM32_RNG
+    extra_args: "DTC_OVERLAY_FILE=./stm32_rng.overlay"
+    tags:
+      - driver
+      - entropy
