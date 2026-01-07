@@ -3,8 +3,14 @@
 
 if SOC_FAMILY_MCXN
 
-config CORTEX_M_SYSTICK
-	default n if MCUX_LPTMR_TIMER
+# Ensure SysTick is not enabled by default if another system timer is selected.
+configdefault CORTEX_M_SYSTICK
+	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
+
+# We override it here so CPU_FREQ controls whether OSTIMER is selected by default.
+configdefault MCUX_OS_TIMER
+	default y if CPU_FREQ
+	default n
 
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
