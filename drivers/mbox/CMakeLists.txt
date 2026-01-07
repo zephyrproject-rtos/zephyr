@@ -9,7 +9,6 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE mbox_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MBOX_ANDES_PLIC_SW mbox_andes_plic_sw.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_ESP32 mbox_esp32.c)
-zephyr_library_sources_ifdef(CONFIG_MBOX_GEN_SW   mbox_gen_sw_mbox.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_IVSHMEM mbox_ivshmem.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_MHUV3 mbox_mhuv3.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_NRFX_IPC mbox_nrfx_ipc.c)
