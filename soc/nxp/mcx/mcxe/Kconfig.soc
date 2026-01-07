@@ -3,8 +3,12 @@
 
 config SOC_FAMILY_MCXE
 	bool
+	select PINCTRL
 
 config SOC_FAMILY
 	default "mcxe" if SOC_FAMILY_MCXE
+
+config PINCTRL
+	bool
 
 rsource "*/Kconfig.soc"

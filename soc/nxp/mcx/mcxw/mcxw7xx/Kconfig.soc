@@ -12,18 +12,37 @@ config SOC_SERIES
 config SOC_MCXW716C
 	bool
 	select SOC_SERIES_MCXW7XX
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
+	select ARM_TRUSTZONE_M
 
 config SOC_MCXW727C
 	bool
 	select SOC_SERIES_MCXW7XX
+	select CPU_CORTEX_M33
 
 config SOC_MCXW727C_CPU0
 	bool
 	select SOC_MCXW727C
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
+	select ARM_TRUSTZONE_M
 
 config SOC_MCXW727C_CPU1
 	bool
 	select SOC_MCXW727C
+	select CPU_CORTEX_M33
+	# Secondary core does not have FPU/SAU/DSP extensions enabled.
+	# (MCUX CMSIS headers: __FPU_PRESENT=0, __DSP_PRESENT=0, __SAUREGION_PRESENT=0)
+	# However, the core still has an MPU (__MPU_PRESENT=1), so select it.
+	select CPU_HAS_ARM_MPU
 
 config SOC
 	default "mcxw716c" if SOC_MCXW716C
