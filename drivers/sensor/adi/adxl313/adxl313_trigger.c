@@ -53,6 +53,13 @@ static void adxl313_thread_cb(const struct device *dev)
 	status = data->reg_int_source;
 	k_mutex_unlock(&data->trigger_mutex);
 
+	if (FIELD_GET(ADXL313_INT_ACT, status)) {
+		if (data->act_handler) {
+			/* Optionally call external activity handler. */
+			data->act_handler(dev, data->act_trigger);
+		}
+	}
+
 	if (FIELD_GET(ADXL313_INT_DATA_RDY, status)) {
 		if (data->drdy_handler) {
 			/*
@@ -155,6 +162,7 @@ static void adxl313_work_cb(struct k_work *work)
  * This function allows the application to register interrupt service routines
  * (ISRs) for specific sensor events. Supported triggers include:
  *
+ * - SENSOR_TRIG_MOTION: Activity detection
  * - SENSOR_TRIG_FIFO_WATERMARK: FIFO watermark reached
  * - SENSOR_TRIG_DATA_READY: New FIFO data available
  * - SENSOR_TRIG_FIFO_FULL: FIFO overrun
@@ -194,6 +202,11 @@ int adxl313_trigger_set(const struct device *dev, const struct sensor_trigger *t
 	}
 
 	switch (trig->type) {
+	case SENSOR_TRIG_MOTION:
+		/* Register optional activity event handler. */
+		data->act_handler = handler;
+		data->act_trigger = trig;
+		break;
 	case SENSOR_TRIG_DATA_READY:
 		data->drdy_handler = handler;
 		data->drdy_trigger = trig;

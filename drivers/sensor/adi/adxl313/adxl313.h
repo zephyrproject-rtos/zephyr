@@ -83,6 +83,9 @@ enum adxl313_odr { /* Recommended ODR is betwen 12.5Hz and 400Hz */
 	ADXL313_ODR_3200HZ = ADXL313_DT_ODR_3200,
 };
 
+/* act/inact ctl */
+#define ADXL313_ACT_INACT_CTL_ACT_XYZ GENMASK(6, 4)
+
 /* power ctl */
 #define ADXL313_POWER_CTL_MEASURE     BIT(3)
 #define ADXL313_POWER_CTL_AUTO_SLEEP  BIT(4)

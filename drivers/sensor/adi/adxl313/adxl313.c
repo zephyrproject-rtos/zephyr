@@ -401,6 +401,79 @@ static int adxl313_attr_set_watermark(const struct device *dev, const struct sen
 	return adxl313_reg_write_mask(dev, ADXL313_REG_FIFO_CTL, ADXL313_FIFO_CTL_SAMPLES_MSK, wm);
 }
 
+static bool adxl313_act_en(const struct device *dev)
+{
+	uint8_t regval;
+
+	if (adxl313_reg_read_byte(dev, ADXL313_REG_THRESH_ACT, &regval)) {
+		return false;
+	}
+
+	if (!regval) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Set the activity detection threshold.
+ *
+ * The activity threshold is specified in raw LSB counts and written directly
+ * to an 8-bit register. No scaling is applied by this function; the effective
+ * scale factor is 15.625 mg/LSB.
+ *
+ * @param dev Pointer to the device structure.
+ * @param val Pointer to a sensor_value containing the activity threshold.
+ *            A value of 0 disables activity detection.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+static int adxl313_attr_set_act_threshold(const struct device *dev, const struct sensor_value *val)
+{
+	uint8_t thr = val->val1;
+	bool is_measuring = adxl313_is_measure_en(dev);
+	bool en;
+	int ret;
+
+	/*
+	 * It is recommended that the part be placed into standby mode and then
+	 * set back to measurement mode with a subsequent write.
+	 * ref: ADXL314 datasheet
+	 */
+	ret = adxl313_set_measure_en(dev, false);
+	if (ret) {
+		return ret;
+	}
+
+	/* Set activity THRESH. */
+	ret = adxl313_reg_write_byte(dev, ADXL313_REG_THRESH_ACT, thr);
+	if (ret) {
+		return ret;
+	}
+
+	/* Enable axis if THRESH is valid. */
+	en = adxl313_act_en(dev);
+
+	/* Set activity axis control. */
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_ACT_INACT_CTL, ADXL313_ACT_INACT_CTL_ACT_XYZ,
+				      en);
+	if (ret) {
+		return ret;
+	}
+
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_INT_ENABLE, ADXL313_INT_ACT, en);
+	if (ret) {
+		return ret;
+	}
+
+	if (is_measuring) { /* restore measuring if was enabled */
+		ret = adxl313_set_measure_en(dev, true);
+	}
+
+	return ret;
+}
+
 /**
  * adxl313_attr_set - Set sensor attributes from an application.
  *
@@ -410,6 +483,8 @@ static int adxl313_attr_set_watermark(const struct device *dev, const struct sen
  *
  * - SENSOR_ATTR_SAMPLING_FREQUENCY: Configures the output data rate (ODR) of
  *	the sensor.
+ * - SENSOR_ATTR_UPPER_THRESH: Sets the activity threshold, enabling activity
+ *	interrupts.
  * - SENSOR_ATTR_MAX: Sets the FIFO
  *	watermark level.
  *
@@ -427,6 +502,8 @@ static int adxl313_attr_set(const struct device *dev, enum sensor_channel chan,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY: /* ODR */
 		return adxl313_attr_set_odr(dev, val);
+	case SENSOR_ATTR_UPPER_THRESH: /* activity threshold */
+		return adxl313_attr_set_act_threshold(dev, val);
 	case SENSOR_ATTR_MAX: /* FIFO watermark */
 		return adxl313_attr_set_watermark(dev, val);
 	default:
@@ -682,6 +759,16 @@ static int adxl313_init(const struct device *dev)
 	}
 
 	rc = adxl313_reg_write_byte(dev, ADXL313_REG_FIFO_CTL, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl313_reg_write_byte(dev, ADXL313_REG_THRESH_ACT, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl313_reg_write_byte(dev, ADXL313_REG_ACT_INACT_CTL, 0x00);
 	if (rc) {
 		return rc;
 	}
