@@ -177,6 +177,7 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 		return -EOPNOTSUPP;
 	}
 
+	k_sem_take(&drv_data->lock, K_FOREVER);
 	tx_buf = (drv_data->pins_cfg.outputs_state & ~mask);
 	tx_buf |= (value & mask);
 	tx_buf ^= toggle;
@@ -186,9 +187,9 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 	rc = i2c_write_dt(&drv_cfg->i2c, tx_buf_p, drv_data->num_bytes);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to write output port: %d", dev->name, rc);
+		k_sem_give(&drv_data->lock);
 		return -EIO;
 	}
-	k_sem_take(&drv_data->lock, K_FOREVER);
 	drv_data->pins_cfg.outputs_state = tx_buf;
 	k_sem_give(&drv_data->lock);
 
