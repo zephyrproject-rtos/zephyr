@@ -1257,7 +1257,15 @@ static int uvc_compare_frmival_desc(const void *const a, const void *const b)
 	memcpy(&ia, a, sizeof(uint32_t));
 	memcpy(&ib, b, sizeof(uint32_t));
 
-	return ia - ib;
+	if (ia < ib) {
+		return -1;
+	}
+
+	if (ia > ib) {
+		return 1;
+	}
+
+	return 0;
 }
 
 static void uvc_set_vs_bitrate_range(struct uvc_frame_common_descriptor *const desc,
