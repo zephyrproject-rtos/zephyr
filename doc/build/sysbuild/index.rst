@@ -805,6 +805,22 @@ As a result, ``my_sample`` will be flashed after ``sample_a`` and ``sample_b``
    If ``my_sample`` had been created with ``BUILD_ONLY TRUE``, then the above
    call to ``sysbuild_add_dependencies()`` would have produced an error.
 
+.. _sysbuild_merged_hex_files:
+
+Merged hex files
+****************
+
+Sysbuild supports creating merged hex files, which will be created one per unique board target
+in a sysbuild project and can be enabled with :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES`.
+The output filename format will be :file:`merged_<NORMALIZED_BOARD_TARGET>.hex`. This is ideal
+for creating production images for deployment, it requires that all images output hex files.
+If a sysbuild project builds multiple images for the same board target but for **different**
+devices (e.g. 3 images for 3 different boards as part of a test), then this option should remain
+disabled. Hex files will be merged as per the flashing order they have been configured in, any
+overlapping data from previous addresses that conflicts with later merged hex files will be
+overwritten with the later hex file data - see :ref:`sysbuild_zephyr_application_dependencies`
+for how to configure the flashing order of sysbuild images.
+
 Adding non-Zephyr applications to sysbuild
 ******************************************
 
