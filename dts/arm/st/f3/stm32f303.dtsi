@@ -5,7 +5,6 @@
  */
 
 #include <st/f3/stm32f3.dtsi>
-#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
@@ -157,10 +156,6 @@
 			interrupts = <18 0>;
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(12, 0x00)
-				       STM32_ADC_RES(10, 0x01)
-				       STM32_ADC_RES(8, 0x02)
-				       STM32_ADC_RES(6, 0x03)>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
 			st,adc-sequencer = "programmable";
@@ -178,10 +173,6 @@
 			interrupts = <18 0>;
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(12, 0x00)
-				       STM32_ADC_RES(10, 0x01)
-				       STM32_ADC_RES(8, 0x02)
-				       STM32_ADC_RES(6, 0x03)>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
 			st,adc-sequencer = "programmable";

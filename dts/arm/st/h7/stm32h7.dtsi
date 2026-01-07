@@ -15,7 +15,6 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
-#include <zephyr/dt-bindings/adc/stm32h7_adc.h>
 #include <zephyr/dt-bindings/reset/stm32h7_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
@@ -941,13 +940,6 @@
 			status = "disabled";
 		};
 
-		/*
-		 * For devices STM32H742, H743, H750 & H753, revision Y only,
-		 * resolution 14 and 12 shall be replaced, respectively, by
-		 * STM32_ADC_RES(14, 0x01) and STM32_ADC_RES(12, 0x02)
-		 * for all ADCs
-		 * See RM0433 for more details
-		 */
 		adc1: adc@40022000 {
 			compatible = "st,stm32-adc";
 			reg = <0x40022000 0x400>;
@@ -955,11 +947,6 @@
 			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(16, 0x00)
-				       STM32_ADC_RES(14, 0x05)
-				       STM32_ADC_RES(12, 0x06)
-				       STM32_ADC_RES(10, 0x03)
-				       STM32_ADC_RES(8, 0x07)>;
 			st,adc-resolutions = <16 14 12 10 8>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "programmable";
@@ -978,11 +965,6 @@
 			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(16, 0x00)
-				       STM32_ADC_RES(14, 0x05)
-				       STM32_ADC_RES(12, 0x06)
-				       STM32_ADC_RES(10, 0x03)
-				       STM32_ADC_RES(8, 0x07)>;
 			st,adc-resolutions = <16 14 12 10 8>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "programmable";
@@ -1002,11 +984,6 @@
 			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(16, 0x00)
-				       STM32_ADC_RES(14, 0x05)
-				       STM32_ADC_RES(12, 0x06)
-				       STM32_ADC_RES(10, 0x03)
-				       STM32_ADC_RES(8, 0x07)>;
 			st,adc-resolutions = <16 14 12 10 8>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "programmable";
@@ -1025,11 +1002,6 @@
 			clock-names = "adcx";
 			interrupts = <127 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(16, 0x00)
-				       STM32_ADC_RES(14, 0x05)
-				       STM32_ADC_RES(12, 0x06)
-				       STM32_ADC_RES(10, 0x03)
-				       STM32_ADC_RES(8, 0x07)>;
 			st,adc-resolutions = <16 14 12 10 8>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "programmable";
