@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: MCUX Inter-Peripheral Crossbar Switch B (XBARB)
+
+compatible: "nxp,mcux-xbarb"
+
+include: nxp,mcux-xbar.yaml
+
+properties:
+  xbar-maps:
+    required: true

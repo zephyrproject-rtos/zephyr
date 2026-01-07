@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: MCUX Inter-Peripheral Crossbar Switch 1 (XBAR_1)
+
+compatible: "nxp,mcux-xbar-1"
+
+include: nxp,mcux-xbar.yaml
+
+properties:
+
+  xbar-instance:
+    type: int
+    description: |
+      XBAR instance number. The desired values can be
+      found by searching for 'xbar_instance_t' enum in
+      modules/hal/nxp/mcux/mcux-sdk/devices/<device>/<device>_COMMON.h.
+    required: true
+
+  xbar-maps:
+    required: true
