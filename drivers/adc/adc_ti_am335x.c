@@ -296,10 +296,12 @@ static int ti_adc_init(const struct device *dev)
 {
 	const struct ti_adc_cfg *cfg = DEV_CFG(dev);
 	struct ti_adc_data *data = DEV_DATA(dev);
-	struct ti_adc_regs *regs = DEV_REGS(dev);
+	struct ti_adc_regs *regs;
 	int ret;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	regs = DEV_REGS(dev);
 
 	ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
