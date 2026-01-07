@@ -344,7 +344,7 @@ static void mod_app_key_del(const struct bt_mesh_model *mod,
 	mod_unbind(mod, *app_idx, true);
 }
 
-static void app_key_evt(struct app_key *app, enum bt_mesh_key_evt evt)
+static void app_key_evt(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt)
 {
 	if (evt == BT_MESH_KEY_DELETED) {
 		bt_mesh_model_foreach(&mod_app_key_del, &app->app_idx);
