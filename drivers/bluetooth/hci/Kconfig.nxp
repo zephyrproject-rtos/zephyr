@@ -12,16 +12,6 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 	  Enabling this feature will allow to save power at the cost of some latency when sending a HCI
 	  message to the Controller as the Host will need to wake it up.
 
-config BT_NXP_CTRL_WAKE_ON_BT
-	bool "Config to enable/disable wake on BT/BLE for NXP controllers"
-	help
-	  Enable/Disable BT wakeup IO triggers for NXP BT IW416/NW612/IW610 SOC.
-
-config BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK
-	bool "Config LED0 to blink upon observing activity on BT wakeup IO"
-	help
-	  Enable/Disable LED0 blink for wakeup functionality test.
-
 config HCI_NXP_SET_CAL_DATA
 	bool "Bluetooth Controller calibration data"
 	help
