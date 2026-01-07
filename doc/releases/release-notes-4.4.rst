@@ -138,6 +138,13 @@ New APIs and options
 
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
 
+* Build system
+
+  * Sysbuild
+
+    * Added :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES` which allows generating
+      :ref:`merged hex files <sysbuild_merged_hex_files>`.
+
 * Ethernet
 
   * Driver MAC address configuration with support for NVMEM cell.
