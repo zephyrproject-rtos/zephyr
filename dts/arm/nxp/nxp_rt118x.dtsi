@@ -684,6 +684,25 @@
 		};
 	};
 
+	xbar1: xbar1@2750000 {
+		compatible = "nxp,mcux-xbar-1";
+		reg = <0x2750000 0x4000>;
+		interrupts = <144 0>, <145 0>;
+		status = "disabled";
+	};
+
+	xbar2: xbar2@2760000 {
+		compatible = "nxp,mcux-xbar-1";
+		reg = <0x2760000 0x4000>;
+		status = "disabled";
+	};
+
+	xbar3: xbar3@2770000 {
+		compatible = "nxp,mcux-xbar-1";
+		reg = <0x2770000 0x4000>;
+		status = "disabled";
+	};
+
 	netc: ethernet {
 		compatible = "nxp,imx-netc";
 		#address-cells = <1>;

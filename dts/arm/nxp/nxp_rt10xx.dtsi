@@ -1155,20 +1155,20 @@
 		};
 
 		xbar1: xbar1@403bc000 {
-			compatible = "nxp,mcux-xbar";
+			compatible = "nxp,mcux-xbara";
 			reg = <0x403bc000 0x4000>;
 			interrupts = <116 0>, <117 0>;
 			status = "disabled";
 		};
 
 		xbar2: xbar2@403c0000 {
-			compatible = "nxp,mcux-xbar";
+			compatible = "nxp,mcux-xbarb";
 			reg = <0x403c0000 0x4000>;
 			status = "disabled";
 		};
 
 		xbar3: xbar3@403c4000 {
-			compatible = "nxp,mcux-xbar";
+			compatible = "nxp,mcux-xbarb";
 			reg = <0x403c4000 0x4000>;
 			status = "disabled";
 		};
