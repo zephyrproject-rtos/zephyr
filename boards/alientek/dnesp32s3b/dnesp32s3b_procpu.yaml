@@ -5,8 +5,11 @@ arch: xtensa
 toolchain:
   - zephyr
 supported:
+  - audio
+  - eeprom
   - gpio
   - uart
   - i2c
+  - sdhc
   - watchdog
 vendor: alientek
