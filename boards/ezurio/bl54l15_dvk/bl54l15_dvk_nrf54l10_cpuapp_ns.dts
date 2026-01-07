@@ -35,4 +35,4 @@
 };
 
 /* Include default memory partition configuration file */
-#include <nordic/nrf54l10_ns_partition.dtsi>
+#include <vendor/nordic/nrf54l10_cpuapp_ns_partition.dtsi>
