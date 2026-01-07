@@ -1,0 +1,24 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Low-Leakage Wakeup Unit
+
+compatible: "nxp,llwu"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  '#wakeup-ctrl-cells':
+    type: int
+    const: 1
+    description: |
+      Number of cells in wakeup-ctrls property.
+
+wakeup-ctrl-cells:
+  - id
