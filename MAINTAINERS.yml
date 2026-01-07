@@ -6287,18 +6287,6 @@ West:
     - trusted-firmware-m
     - psa.secure_storage
 
-"West project: uoscore-uedhoc":
-  status: maintained
-  maintainers:
-    - rlubos
-    - StefanHri
-  files:
-    - modules/uoscore-uedhoc/
-    - tests/modules/uoscore/
-  labels:
-    - "area: Networking"
-    - "area: Crypto / RNG"
-
 "West project: zcbor":
   status: maintained
   maintainers:
