@@ -5267,7 +5267,7 @@ static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 /* A memory pool for vandor specific events for fatal error reporting purposes. */
 NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 0, NULL);
 
-/* The alias for convenience of Controller HCI implementation. Controller is build for
+/* The alias for convenience of Controller HCI implementation. Controller is built for
  * a particular architecture hence the alias will allow to avoid conditional compilation.
  * Host may be not aware of hardware architecture the Controller is working on, hence
  * all CPU data types for supported architectures should be available during build, hence
