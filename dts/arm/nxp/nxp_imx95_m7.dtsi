@@ -684,6 +684,7 @@
 			#address-cells = <1>;
 			nxp,irq-offset = <874>;
 			nxp,num-irqs = <512>;
+			status = "disabled";
 
 			disp_irqsteer_master0: interrupt-controller@0 {
 				compatible = "nxp,irqsteer-master";
@@ -691,6 +692,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 214 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master1: interrupt-controller@1 {
@@ -699,6 +701,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 215 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master2: interrupt-controller@2 {
@@ -707,6 +710,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 216 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master3: interrupt-controller@3 {
@@ -715,6 +719,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 217 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master4: interrupt-controller@4 {
@@ -723,6 +728,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 218 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master7: interrupt-controller@7 {
@@ -731,6 +737,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 219 0>;
+				status = "disabled";
 			};
 		};
 
