@@ -20,6 +20,55 @@
 		};
 	};
 
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <&iomuxc_gpio_b1_10_enet_ref_clk>;
+			bias-disable;
+			drive-strength = "r0-6";
+			slew-rate = "fast";
+			nxp,speed = "50-mhz";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_b1_04_enet_rx_data0>,
+				 <&iomuxc_gpio_b1_05_enet_rx_data1>,
+				 <&iomuxc_gpio_b1_06_enet_rx_en>,
+				 <&iomuxc_gpio_b1_07_enet_tx_data0>,
+				 <&iomuxc_gpio_b1_08_enet_tx_data1>,
+				 <&iomuxc_gpio_b1_09_enet_tx_en>,
+				 <&iomuxc_gpio_b1_11_enet_rx_er>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
+			nxp,speed = "200-mhz";
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_40_enet_mdc>,
+				 <&iomuxc_gpio_emc_41_enet_mdio>,
+				 <&iomuxc_gpio_sd_b1_04_gpio3_io04>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
+			nxp,speed = "200-mhz";
+		};
+	};
+
+	pinmux_ptp: pinmux_ptp {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_02_enet_1588_event2_out>,
+				 <&iomuxc_gpio_ad_b1_03_enet_1588_event2_in>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
 	/* Route PWM1 A3 to J16, pin 6 on arduino header */
 	pinmux_flexpwm1_pwm3: pinmux_flexpwm1_pwm3 {
 		group0 {
