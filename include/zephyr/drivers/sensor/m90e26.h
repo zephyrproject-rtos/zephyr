@@ -44,8 +44,7 @@ typedef uint8_t m90e26_register_t;
 /**
  * @brief Type definition for M90E26 register addresses.
  */
-typedef union m90e26_data_value
-{
+typedef union m90e26_data_value {
   int16_t int16;
   uint16_t uint16;
 } m90e26_data_value_t;
@@ -79,8 +78,7 @@ enum m90e26_sensor_trigger_type {
  * This structure holds all the measurement data read from the M90E26 energy metering IC
  * converted to sensor_value format.
  */
-struct m90e26_sensor_data
-{
+struct m90e26_sensor_data {
   struct m90e26_energy_sensor_data {
     struct sensor_value APenergy;
     struct sensor_value ANenergy;
@@ -91,31 +89,31 @@ struct m90e26_sensor_data
   } energy_sensor_values;
 
   struct m90e26_power_sensor_data {
-    struct sensor_value Pmean;        // [W]
-    struct sensor_value Qmean;        // [VAR]
-    struct sensor_value Smean;        // [VA]
-    struct sensor_value Pmean2;       // [W]
-    struct sensor_value Qmean2;       // [VAR]
-    struct sensor_value Smean2;       // [VA] 
+    struct sensor_value Pmean;        /* [W] */
+    struct sensor_value Qmean;        /* [VAR] */
+    struct sensor_value Smean;        /* [VA] */
+    struct sensor_value Pmean2;       /* [W] */
+    struct sensor_value Qmean2;       /* [VAR] */
+    struct sensor_value Smean2;       /* [VA] */
   } power_sensor_values;
 
-  struct sensor_value Urms;           // [V]
+  struct sensor_value Urms;           /* [V] */
 
   struct m90e26_current_sensor_data {
-    struct sensor_value Irms;         // [A]
-    struct sensor_value Irms2;        // [A]
+    struct sensor_value Irms;         /* [A] */
+    struct sensor_value Irms2;        /* [A] */
   } current_sensor_values;
 
-  struct sensor_value Freq;           // [Hz]
+  struct sensor_value Freq;           /* [Hz] */
 
   struct m90e26_phase_angle_sensor_data {
-    struct sensor_value Pangle;       // [degrees]
-    struct sensor_value Pangle2;      // [degrees]
+    struct sensor_value Pangle;       /* [degrees] */
+    struct sensor_value Pangle2;      /* [degrees] */
   } phase_angle_sensor_values;
 
   struct m90e26_power_factor_sensor_data {
-    struct sensor_value PowerF;       // [unitless]
-    struct sensor_value PowerF2;      // [unitless]
+    struct sensor_value PowerF;       /* [unitless] */
+    struct sensor_value PowerF2;      /* [unitless] */
   } power_factor_sensor_values;
 };
 
@@ -124,8 +122,7 @@ struct m90e26_sensor_data
  * 
  * This structure holds the configuration registers of the M90E26 device.
  */
-struct m90e26_config_registers
-{
+struct m90e26_config_registers {
   /* Special Registers */
 
   m90e26_data_value_t FuncEn;

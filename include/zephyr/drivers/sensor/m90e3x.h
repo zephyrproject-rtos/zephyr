@@ -33,8 +33,7 @@ typedef uint16_t m90e3x_register_t;
 /**
  * @brief Union for holding the data values read from the M90E3X registers.
  */
-typedef union m90e3x_data_value
-{
+typedef union m90e3x_data_value {
   int16_t int16;
   uint16_t uint16;
 } m90e3x_data_value_t;
@@ -80,14 +79,12 @@ enum m90e3x_power_mode {
   M90E3X_NORMAL = 3
 };
 
-struct m90e3x_sensor_data
-{
+struct m90e3x_sensor_data {
   /**
    * @brief Sensor values for Energy measurements. Contains data for all foward/reverse,
    * apparent/active/reactive energy values.
    */
-  struct m90e3x_energy_sensor_data
-  {
+  struct m90e3x_energy_sensor_data {
     struct sensor_value APenergyT;
     struct sensor_value APenergyA;
     struct sensor_value APenergyB;
@@ -115,8 +112,7 @@ struct m90e3x_sensor_data
    * @brief Sensor values for Fundamental Energy measurements. Contains data for all 
    * forward/reverse active fundamental energy values.
    */
-  struct m90e3x_fundamental_energy_sensor_data
-  {
+  struct m90e3x_fundamental_energy_sensor_data {
     struct sensor_value APenergyTF;
     struct sensor_value APenergyAF;
     struct sensor_value APenergyBF;
@@ -132,8 +128,7 @@ struct m90e3x_sensor_data
    * @brief Sensor values for Harmonic Energy measurements. Contains data for all 
    * forward/reverse active harmonic energy values.
    */
-  struct m90e3x_harmonic_energy_sensor_data
-  {
+  struct m90e3x_harmonic_energy_sensor_data {
     struct sensor_value APenergyTH;
     struct sensor_value APenergyAH;
     struct sensor_value APenergyBH;
@@ -148,67 +143,62 @@ struct m90e3x_sensor_data
    * @brief Sensor values for Power measurements. Contains data for total and per-phase
    * active, reactive and apparent power values.
    */
-  struct m90e3x_power_sensor_data
-  {
-    struct sensor_value PmeanT;         // [W]
-    struct sensor_value PmeanA;         // [W]
-    struct sensor_value PmeanB;         // [W]
-    struct sensor_value PmeanC;         // [W]
-    struct sensor_value QmeanT;         // [VAR]
-    struct sensor_value QmeanA;         // [VAR]
-    struct sensor_value QmeanB;         // [VAR]
-    struct sensor_value QmeanC;         // [VAR]
-    struct sensor_value SmeanT;         // [VA]
-    struct sensor_value SmeanA;         // [VA]
-    struct sensor_value SmeanB;         // [VA]
-    struct sensor_value SmeanC;         // [VA]
+  struct m90e3x_power_sensor_data {
+    struct sensor_value PmeanT;         /* [W] */
+    struct sensor_value PmeanA;         /* [W] */
+    struct sensor_value PmeanB;         /* [W] */
+    struct sensor_value PmeanC;         /* [W] */
+    struct sensor_value QmeanT;         /* [VAR] */
+    struct sensor_value QmeanA;         /* [VAR] */
+    struct sensor_value QmeanB;         /* [VAR] */
+    struct sensor_value QmeanC;         /* [VAR] */
+    struct sensor_value SmeanT;         /* [VA] */
+    struct sensor_value SmeanA;         /* [VA] */
+    struct sensor_value SmeanB;         /* [VA] */
+    struct sensor_value SmeanC;         /* [VA] */
   } power_sensor_values;
 
 /**
  * @brief Sensor values for Fundamental Power measurements. Contains data for total and 
  * per-phase active fundamental power values.
  */
-  struct m90e3x_fundamental_power_sensor_data
-  {
-    struct sensor_value PmeanTF;         // [W]
-    struct sensor_value PmeanAF;         // [W]
-    struct sensor_value PmeanBF;         // [W]
-    struct sensor_value PmeanCF;         // [W]
+  struct m90e3x_fundamental_power_sensor_data {
+    struct sensor_value PmeanTF;         /* [W] */
+    struct sensor_value PmeanAF;         /* [W] */
+    struct sensor_value PmeanBF;         /* [W] */
+    struct sensor_value PmeanCF;         /* [W] */
   } power_fundamental_sensor_values;
 
   /**
    * @brief Sensor values for Harmonic Power measurements. Contains data for total and 
    * per-phase for active harmonic power values.
    */
-  struct m90e3x_harmonic_power_sensor_data
-  {
-    struct sensor_value PmeanTH;         // [W]
-    struct sensor_value PmeanAH;         // [W]
-    struct sensor_value PmeanBH;         // [W]
-    struct sensor_value PmeanCH;         // [W]
+  struct m90e3x_harmonic_power_sensor_data {
+    struct sensor_value PmeanTH;         /* [W] */
+    struct sensor_value PmeanAH;         /* [W] */
+    struct sensor_value PmeanBH;         /* [W] */
+    struct sensor_value PmeanCH;         /* [W] */
   } harmonic_power_sensor_values;
 
   /**
    * @brief Sensor values for Voltage RMS measurements. Contains voltage data for all 
    * three phases.
    */
-  struct m90e3x_voltage_rms_sensor_data
-  {
-    struct sensor_value UrmsA;         // [V]
-    struct sensor_value UrmsB;         // [V]
-    struct sensor_value UrmsC;         // [V]
+  struct m90e3x_voltage_rms_sensor_data {
+    struct sensor_value UrmsA;         /* [V] */
+    struct sensor_value UrmsB;         /* [V] */
+    struct sensor_value UrmsC;         /* [V] */
   } voltage_rms_sensor_values;
 
   /**
    * @brief Sensor values for Current RMS measurements. Contains current data for all 
    * three phases and neutral line.
    */
-  struct m90e3x_current_rms_sensor_data
-  {
-    struct sensor_value IrmsN;         // [A]
-    struct sensor_value IrmsA;         // [A]
-    struct sensor_value IrmsB;         // [A]
-    struct sensor_value IrmsC;         // [A]
+  struct m90e3x_current_rms_sensor_data {
+    struct sensor_value IrmsN;         /* [A] */
+    struct sensor_value IrmsA;         /* [A] */
+    struct sensor_value IrmsB;         /* [A] */
+    struct sensor_value IrmsC;         /* [A] */
   } current_rms_sensor_values;
 
   /**
@@ -220,41 +210,36 @@ struct m90e3x_sensor_data
    * 
    * This union allows to use the same data structure for both ICs.
    */
-  union
-  {
-    struct m90e32as_peak_sensor_data
-    {
-      struct sensor_value UpkA;         // [V]
-      struct sensor_value UpkB;         // [V]
-      struct sensor_value UpkC;         // [V]
-      struct sensor_value IpkA;         // [A]
-      struct sensor_value IpkB;         // [A]
-      struct sensor_value IpkC;         // [A]
+  union {
+    struct m90e32as_peak_sensor_data {
+      struct sensor_value UpkA;         /* [V] */
+      struct sensor_value UpkB;         /* [V] */
+      struct sensor_value UpkC;         /* [V] */
+      struct sensor_value IpkA;         /* [A] */
+      struct sensor_value IpkB;         /* [A] */
+      struct sensor_value IpkC;         /* [A] */
     } peak_sensor_values;
-    struct m90e36a_thd_sensor_data
-    {
-      struct sensor_value THDNUA;         // [%]
-      struct sensor_value THDNUB;         // [%]
-      struct sensor_value THDNUC;         // [%]
-      struct sensor_value THDNIA;         // [%]
-      struct sensor_value THDNIB;         // [%]
-      struct sensor_value THDNIC;         // [%]
+    struct m90e36a_thd_sensor_data {
+      struct sensor_value THDNUA;         /* [%] */
+      struct sensor_value THDNUB;         /* [%] */
+      struct sensor_value THDNUC;         /* [%] */
+      struct sensor_value THDNIA;         /* [%] */
+      struct sensor_value THDNIB;         /* [%] */
+      struct sensor_value THDNIC;         /* [%] */
     } thd_sensor_values;
   };
 
-  struct m90e3x_phase_angle_sensor_data
-  {
-    struct sensor_value PAngleA;         // [degrees]
-    struct sensor_value PAngleB;         // [degrees]
-    struct sensor_value PAngleC;         // [degrees]
-    struct sensor_value UAngleA;         // [degrees]
-    struct sensor_value UAngleB;         // [degrees]
-    struct sensor_value UAngleC;         // [degrees]
+  struct m90e3x_phase_angle_sensor_data {
+    struct sensor_value PAngleA;         /* [degrees] */
+    struct sensor_value PAngleB;         /* [degrees] */
+    struct sensor_value PAngleC;         /* [degrees] */
+    struct sensor_value UAngleA;         /* [degrees] */
+    struct sensor_value UAngleB;         /* [degrees] */
+    struct sensor_value UAngleC;         /* [degrees] */
   } phase_angle_sensor_values;
 
-  struct sensor_value Frequency;         // [Hz]
-  struct sensor_value Temperature;       // [°C]
-
+  struct sensor_value Frequency;         /* [Hz] */
+  struct sensor_value Temperature;       /* [°C] */
   /**
    * @note Harmonic Fourier Analysis registers are not included in this data structure
    * due to their large size (32 orders for voltage and current per phase).
@@ -267,8 +252,7 @@ struct m90e3x_sensor_data
  * 
  * This structure holds the configuration registers of the M90E32AS device.
  */
-struct m90e32as_config_registers
-{
+struct m90e32as_config_registers {
   /* Status and Special Registers */
 
   m90e3x_data_value_t MeterEn;

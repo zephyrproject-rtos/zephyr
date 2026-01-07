@@ -5,7 +5,7 @@ properties:
   cf1-gpios:
     type: phandle-array
     description: "Active Energy Pulse Output"
-  
+
   cf2-gpios:
     type: phandle-array
     description: "Reactive/Apparent Energy Pulse Output"

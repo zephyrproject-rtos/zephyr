@@ -18,7 +18,7 @@ properties:
   cf4-gpios:
     type: phandle-array
     description: "Active Harmonic Energy Pulse Output"
-  
+
   irq1-gpios:
     type: phandle-array
     description: "Interrupt Output 1"
@@ -26,7 +26,7 @@ properties:
   pm0-gpios:
     type: phandle-array
     description: "Power Mode Configuration 0"
-  
+
   pm1-gpios:
     type: phandle-array
     description: "Power Mode Configuration 1"

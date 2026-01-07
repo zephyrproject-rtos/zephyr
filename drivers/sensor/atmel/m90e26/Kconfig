@@ -25,11 +25,11 @@ config M90E26_BUS_SPI
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_ATMEL_M90E26),spi)
 
 config M90E26_SPI_3WIRE
-  bool "Enable 3-wire SPI mode"
+  bool "3-wire SPI support for Atmel M90E26"
   default n
   depends on M90E26_BUS_SPI
   help
-    Enable support for 3-wire SPI mode. By default, 4-wire SPI mode is used.
+    This option enables 3-wire SPI communication support for Atmel M90E26 ICs.
   # TODO: Add dependency on SPI controller supporting 3-wire mode when available.
 
 menu "Status and Special Registers"

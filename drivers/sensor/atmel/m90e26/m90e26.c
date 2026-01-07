@@ -321,7 +321,7 @@ static int m90e26_reload_config(const struct device *dev)
   m90e26_write_register(dev, QStartTh, &data->config_registers.QStartTh);
   m90e26_write_register(dev, QNolTh, &data->config_registers.QNolTh);
   m90e26_write_register(dev, MMode, &data->config_registers.MMode);
-  
+
   ret = m90e26_metering_calibration_finish(dev);
   if (ret < 0)
   {
@@ -491,32 +491,32 @@ static int m90e26_channel_get(const struct device *dev, enum sensor_channel chan
     break;
   case M90E26_SENSOR_CHANNEL_ENERGY:
     struct m90e26_energy_sensor_data *energy_value = (struct m90e26_energy_sensor_data *)value;
-    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.APenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.APenergy,
                                      &energy_value->APenergy);
-    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.ANenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.ANenergy,
                                      &energy_value->ANenergy);
-    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.ATenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.ATenergy,
                                      &energy_value->ATenergy);
-    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RPenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RPenergy,
                                      &energy_value->RPenergy);
-    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RNenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RNenergy,
                                      &energy_value->RNenergy);
-    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RTenergy, 
+    ret |= m90e26_convert_energy_reg((m90e26_data_value_t *)&data->energy_values.RTenergy,
                                      &energy_value->RTenergy);
     break;
   case M90E26_SENSOR_CHANNEL_POWER:
     struct m90e26_power_sensor_data *power_value = (struct m90e26_power_sensor_data *)value;
-    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Pmean, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Pmean,
                                      &power_value->Pmean);
-    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Pmean2, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Pmean2,
                                      &power_value->Pmean2);
-    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Qmean, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Qmean,
                                      &power_value->Qmean);
-    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Qmean2, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Qmean2,
                                      &power_value->Qmean2);
-    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Smean, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Smean,
                                      &power_value->Smean);
-    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Smean2, 
+    ret |= m90e26_convert_power_reg((m90e26_data_value_t *)&data->power_values.Smean2,
                                      &power_value->Smean2);
     break;
   case M90E26_SENSOR_CHANNEL_VOLTAGE:
@@ -524,9 +524,9 @@ static int m90e26_channel_get(const struct device *dev, enum sensor_channel chan
    break;
   case M90E26_SENSOR_CHANNEL_CURRENT:
     struct m90e26_current_sensor_data *current_value = (struct m90e26_current_sensor_data *)value;
-    ret |= m90e26_convert_current_reg((m90e26_data_value_t *)&data->current_values.Irms, 
+    ret |= m90e26_convert_current_reg((m90e26_data_value_t *)&data->current_values.Irms,
                                       &current_value->Irms);
-    ret |= m90e26_convert_current_reg((m90e26_data_value_t *)&data->current_values.Irms2, 
+    ret |= m90e26_convert_current_reg((m90e26_data_value_t *)&data->current_values.Irms2,
                                       &current_value->Irms2);
    break;
   case M90E26_SENSOR_CHANNEL_FREQUENCY:
@@ -534,16 +534,16 @@ static int m90e26_channel_get(const struct device *dev, enum sensor_channel chan
     break;
   case M90E26_SENSOR_CHANNEL_PHASE_ANGLE:
     struct m90e26_phase_angle_sensor_data *phase_angle_value = (struct m90e26_phase_angle_sensor_data *)value;
-    ret |= m90e26_convert_phase_angle_reg((m90e26_data_value_t *)&data->phase_angle_values.Pangle, 
+    ret |= m90e26_convert_phase_angle_reg((m90e26_data_value_t *)&data->phase_angle_values.Pangle,
                                           &phase_angle_value->Pangle);
-    ret |= m90e26_convert_phase_angle_reg((m90e26_data_value_t *)&data->phase_angle_values.Pangle2, 
+    ret |= m90e26_convert_phase_angle_reg((m90e26_data_value_t *)&data->phase_angle_values.Pangle2,
                                           &phase_angle_value->Pangle2);
     break;
   case M90E26_SENSOR_CHANNEL_POWER_FACTOR:
     struct m90e26_power_factor_sensor_data *power_factor_value = (struct m90e26_power_factor_sensor_data *)value;
-    ret |= m90e26_convert_power_factor_reg((m90e26_data_value_t *)&data->power_factor_values.PowerF, 
+    ret |= m90e26_convert_power_factor_reg((m90e26_data_value_t *)&data->power_factor_values.PowerF,
                                            &power_factor_value->PowerF);
-    ret |= m90e26_convert_power_factor_reg((m90e26_data_value_t *)&data->power_factor_values.PowerF2, 
+    ret |= m90e26_convert_power_factor_reg((m90e26_data_value_t *)&data->power_factor_values.PowerF2,
                                            &power_factor_value->PowerF2);
     break;
   default:
@@ -627,7 +627,7 @@ static int m90e26_trigger_set(const struct device *dev,
       ret = gpio_add_callback(cfg->irq.port, &data->irq_ctx.gpio_cb);
       if (ret == 0)
       {
-        ret = gpio_pin_interrupt_configure_dt(&cfg->irq, 
+        ret = gpio_pin_interrupt_configure_dt(&cfg->irq,
                                               GPIO_INT_EDGE_TO_ACTIVE);
       }
     }
