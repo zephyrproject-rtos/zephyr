@@ -950,7 +950,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 #endif /* !CONFIG_CAN_FD_MODE */
 		.efc = 1U,
 	};
-	uint32_t put_idx = -1;
+	uint32_t put_idx = UINT32_MAX;
 	uint32_t reg;
 	int err;
 
@@ -1025,6 +1025,8 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		}
 	}
 
+	/* A free TX buffer should always be available since the data->tx_sem was acquired */
+	__ASSERT_NO_MSG(put_idx < cbs->num_tx);
 	tx_hdr.mm = put_idx;
 
 	if ((frame->flags & CAN_FRAME_IDE) != 0U) {
