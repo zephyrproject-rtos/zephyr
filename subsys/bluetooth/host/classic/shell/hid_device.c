@@ -282,9 +282,95 @@ static void hid_disconnected_cb(struct bt_hid_device *hid)
 	default_hid = NULL;
 }
 
+void hid_set_report_cb(struct bt_hid_device *hid, uint8_t type, struct net_buf *buf)
+{
+	bt_shell_print("hid:%p set report type:%d, len:%d", hid, type, buf->len);
+	bt_shell_hexdump(buf->data, buf->len);
+}
+
+void hid_get_report_cb(struct bt_hid_device *hid, uint8_t type, uint8_t report_id,
+		       uint16_t buffer_size)
+{
+	struct net_buf *buf;
+	int err;
+
+	bt_shell_print("hid:%p get report type:%d, id:%d, size:%d", hid, type, report_id,
+		       buffer_size);
+
+	buf = bt_hid_device_create_pdu(&pool);
+	if (!buf) {
+		bt_shell_error("hid:%p create pdu fail", hid);
+		return;
+	}
+
+	if (net_buf_tailroom(buf) < buffer_size) {
+		net_buf_unref(buf);
+		bt_shell_error("hid:%p buf tailroom %d < buffer_size %d", hid,
+			       net_buf_tailroom(buf), buffer_size);
+		return;
+	}
+
+	for (uint16_t i = 0; i < buffer_size; i++) {
+		net_buf_add_u8(buf, i);
+	}
+
+	err = bt_hid_device_send_ctrl_data(hid, BT_HID_REPORT_TYPE_INPUT, buf);
+	if (err != 0) {
+		net_buf_unref(buf);
+		bt_shell_error("hid:%p send ctrl data fail, err:%d", hid, err);
+		return;
+	}
+}
+
+void hid_set_protocol_cb(struct bt_hid_device *hid, uint8_t protocol)
+{
+	bt_shell_print("hid:%p set protocol:%d, ", hid, protocol);
+}
+
+void hid_get_protocol_cb(struct bt_hid_device *hid)
+{
+	uint8_t protocol = BT_HID_PROTOCOL_REPORT_MODE;
+	struct net_buf *buf;
+	int err;
+
+	bt_shell_print("hid:%p get protocol", hid);
+
+	buf = bt_hid_device_create_pdu(&pool);
+	if (!buf) {
+		bt_shell_error("hid:%p create pdu fail", hid);
+		return;
+	}
+
+	net_buf_add_u8(buf, protocol);
+
+	err = bt_hid_device_send_ctrl_data(hid, BT_HID_REPORT_TYPE_OTHER, buf);
+	if (err != 0) {
+		net_buf_unref(buf);
+		bt_shell_error("hid:%p send ctrl data fail, err:%d", hid, err);
+		return;
+	}
+}
+
+void hid_intr_data_cb(struct bt_hid_device *hid, int8_t type, struct net_buf *buf)
+{
+	bt_shell_print("hid:%p intr data type:%d len:%d", hid, type, buf->len);
+	bt_shell_hexdump(buf->data, buf->len);
+}
+
+void hid_vc_unplug_cb(struct bt_hid_device *hid)
+{
+	bt_shell_print("hid:%p unplug", hid);
+}
+
 static const struct bt_hid_device_cb hid_cb = {
 	.connected = hid_connect_cb,
 	.disconnected = hid_disconnected_cb,
+	.set_report = hid_set_report_cb,
+	.get_report = hid_get_report_cb,
+	.set_protocol = hid_set_protocol_cb,
+	.get_protocol = hid_get_protocol_cb,
+	.intr_data = hid_intr_data_cb,
+	.vc_unplug = hid_vc_unplug_cb,
 };
 
 static int cmd_hid_register(const struct shell *sh, int32_t argc, char *argv[])
@@ -308,8 +394,79 @@ static int cmd_hid_register(const struct shell *sh, int32_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_hid_send_report(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_buf *buf;
+	int err;
+
+	if (!hid_registered) {
+		bt_shell_error("hid connection callbacks not registered");
+		return -ENOEXEC;
+	}
+
+	if (!default_hid) {
+		bt_shell_error("hid device is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc < 4) {
+		bt_shell_error(
+			"invalid parameters: use 'mouse <X> <Y> [wheel]' or 'raw <b1> <b2> ...'");
+		return -ENOEXEC;
+	}
+
+	buf = bt_hid_device_create_pdu(&pool);
+	if (!buf) {
+		bt_shell_error("hid create pdu fail");
+		return -ENOEXEC;
+	}
+
+	if (net_buf_tailroom(buf) < 3) {
+		bt_shell_error("hid buf tailroom %d < report len %d", net_buf_tailroom(buf), 3);
+		net_buf_unref(buf);
+		return -ENOEXEC;
+	}
+
+	/* Mouse (descriptor identifier kept for compatibility) */
+	net_buf_add_u8(buf, 0x02);
+
+	/* Button byte (bit fields):
+	 *  bit0 = Button Left
+	 *  bit1 = Button Right
+	 *  bit2 = Button Middle
+	 *  bit3..bit7 = Button 4..8
+	 */
+	net_buf_add_u8(buf, atoi(argv[1])); /* Button: flags */
+	net_buf_add_u8(buf, atoi(argv[2])); /* X Displacement */
+	net_buf_add_u8(buf, atoi(argv[3])); /* Y Displacement */
+
+	if (argc >= 5) {
+		if (net_buf_tailroom(buf) < 1) {
+			net_buf_unref(buf);
+			bt_shell_error("hid buf tailroom %d < report len %d", net_buf_tailroom(buf),
+				       1);
+			return -ENOEXEC;
+		}
+
+		net_buf_add_u8(buf, atoi(argv[4])); /* Horizontal Scroll Wheel: optional */
+	}
+
+	err = bt_hid_device_send_intr_data(default_hid, BT_HID_REPORT_TYPE_INPUT, buf);
+	if (err != 0) {
+		net_buf_unref(buf);
+		bt_shell_error("hid send intr data fail, err:%d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(hid_device_cmds,
 	SHELL_CMD_ARG(register, NULL, "register hid mouse device", cmd_hid_register, 1, 0),
+	SHELL_CMD_ARG(send, NULL,
+			  "send mouse report: <(button bits: "
+			  "0=Left,1=Right,2=Middle,b3..7=4..8)> <X> <Y> [wheel]",
+			  cmd_hid_send_report, 4, 1),
 	SHELL_SUBCMD_SET_END
 );
 
