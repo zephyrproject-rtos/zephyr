@@ -1,0 +1,20 @@
+identifier: nxp_virtual/mcxc444
+name: NXP Virtual (nxp_virtual/mcxc444)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - uart
+  - pwm
+  - usb_device
+  - usbd
+  - watchdog
+  - dma
+  - dac
+vendor: nxp
