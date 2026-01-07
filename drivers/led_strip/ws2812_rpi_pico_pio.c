@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 TOKITA Hiroshi
+ * Copyright (c) 2025 The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,7 @@ LOG_MODULE_REGISTER(ws2812_rpi_pico_pio, CONFIG_LED_STRIP_LOG_LEVEL);
 
 struct ws2812_led_strip_data {
 	uint32_t sm;
+	struct k_timer reset_on_complete_timer;
 };
 
 struct ws2812_led_strip_config {
@@ -65,20 +67,17 @@ static int ws2812_led_strip_sm_init(const struct device *dev)
 	return sm;
 }
 
-/*
- * Latch current color values on strip and reset its state machines.
- */
-static inline void ws2812_led_strip_reset_delay(uint16_t delay)
-{
-	k_usleep(delay);
-}
-
 static int ws2812_led_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
 				       size_t num_pixels)
 {
 	const struct ws2812_led_strip_config *config = dev->config;
 	struct ws2812_led_strip_data *data = dev->data;
 	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+
+	/* Wait for the delay needed to latch current color values on
+	 * WS2812 and reset its state machine.
+	 */
+	k_timer_status_sync(&data->reset_on_complete_timer);
 
 	for (size_t i = 0; i < num_pixels; i++) {
 		uint32_t color = 0;
@@ -104,7 +103,8 @@ static int ws2812_led_strip_update_rgb(const struct device *dev, struct led_rgb 
 		pio_sm_put_blocking(pio, data->sm, color << (config->num_colors == 4 ? 0 : 8));
 	}
 
-	ws2812_led_strip_reset_delay(config->reset_delay);
+	k_timer_start(&data->reset_on_complete_timer, K_USEC(config->reset_delay),
+			K_NO_WAIT);
 
 	return 0;
 }
@@ -157,6 +157,8 @@ static int ws2812_led_strip_init(const struct device *dev)
 	}
 
 	data->sm = sm;
+
+	k_timer_init(&data->reset_on_complete_timer, NULL, NULL);
 
 	return 0;
 }
