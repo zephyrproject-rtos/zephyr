@@ -545,3 +545,7 @@ zephyr_h264enc: &venc {
 zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};
