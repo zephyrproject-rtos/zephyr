@@ -188,8 +188,7 @@ static uint8_t bits2bytes(spi_operation_t operation)
 static __aligned(32) uint32_t dummy_rx_tx_buffer __nocache;
 
 /* This function is executed in the interrupt context */
-static void dma_callback(const struct device *dma_dev, void *arg,
-			 uint32_t channel, int status)
+static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
 	ARG_UNUSED(dma_dev);
 
@@ -218,8 +217,7 @@ static void dma_callback(const struct device *dma_dev, void *arg,
 	k_sem_give(&data->status_sem);
 }
 
-static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
-				 size_t len)
+static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -269,8 +267,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	/* give the dma channel data as arg, as the callback comes from the dma */
 	stream->dma_cfg.user_data = data;
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
-	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel,
-			&stream->dma_cfg);
+	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel, &stream->dma_cfg);
 	/* the channel is the actual stream from 0 */
 	if (ret != 0) {
 		return ret;
@@ -280,8 +277,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
 }
 
-static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
-				 size_t len)
+static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -328,8 +324,7 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 
 
 	/* pass our client origin to the dma: data->dma_rx.channel */
-	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel,
-			&stream->dma_cfg);
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel, &stream->dma_cfg);
 	/* the channel is the actual stream from 0 */
 	if (ret != 0) {
 		return ret;
@@ -375,8 +370,7 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 /* Value to shift out when no application data needs transmitting. */
 #define SPI_STM32_TX_NOP 0x00
 
-static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
-		struct spi_stm32_data *data)
+static void spi_stm32_send_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	const uint8_t frame_size = bits2bytes(data->ctx.config->operation);
 	uint32_t tx_frame = SPI_STM32_TX_NOP;
@@ -402,8 +396,7 @@ static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
 	spi_context_update_tx(&data->ctx, frame_size, 1);
 }
 
-static void spi_stm32_read_next_frame(SPI_TypeDef *spi,
-		struct spi_stm32_data *data)
+static void spi_stm32_read_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	const uint8_t frame_size = bits2bytes(data->ctx.config->operation);
 	uint32_t rx_frame = 0;
@@ -439,8 +432,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	uint32_t sr = stm32_reg_read(&spi->SR);
 
 	if ((sr & SPI_STM32_ERR_MSK) != 0U) {
-		LOG_ERR("%s: err=%d", __func__,
-			sr & (uint32_t)SPI_STM32_ERR_MSK);
+		LOG_ERR("%s: err=%d", __func__, sr & (uint32_t)SPI_STM32_ERR_MSK);
 
 		/* OVR error must be explicitly cleared */
 		if (LL_SPI_IsActiveFlag_OVR(spi)) {
@@ -469,8 +461,7 @@ static void spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 }
 
 /* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(const struct spi_stm32_config *cfg,
-			      struct spi_stm32_data *data)
+static void spi_stm32_shift_m(const struct spi_stm32_config *cfg, struct spi_stm32_data *data)
 {
 	if (cfg->fifo_enabled) {
 		spi_stm32_shift_fifo(cfg->spi, data);
@@ -513,8 +504,7 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
  * Without a FIFO, we can only shift out one frame's worth of SPI
  * data, and read the response back.
  */
-static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
-	struct spi_stm32_data *data)
+static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg, struct spi_stm32_data *data)
 {
 	spi_operation_t operation = data->ctx.config->operation;
 
@@ -1062,8 +1052,7 @@ static int spi_stm32_configure(const struct device *dev,
 	return 0;
 }
 
-static int spi_stm32_release(const struct device *dev,
-			     const struct spi_config *config)
+static int spi_stm32_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *cfg = dev->config;
@@ -1364,8 +1353,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	for (size_t i = 0; i < bufs->count; i++) {
 		const struct spi_buf *buf = &bufs->buffers[i];
 
-		if (!is_dummy_buffer(buf) &&
-		    !stm32_buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+		if (!is_dummy_buffer(buf) && !stm32_buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
 			return false;
 		}
 	}
@@ -1445,8 +1433,7 @@ static int transceive_dma(const struct device *dev,
 	/* In half-duplex rx mode, start transfer after
 	 * setting DMA configurations
 	 */
-	if (transfer_dir != LL_SPI_HALF_DUPLEX_RX &&
-	    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+	if (transfer_dir != LL_SPI_HALF_DUPLEX_RX && LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 		LL_SPI_StartMasterTransfer(spi);
 	}
 #else
@@ -1471,7 +1458,6 @@ static int transceive_dma(const struct device *dev,
 
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
 			dma_len = spi_context_max_continuous_chunk(&data->ctx);
-
 			ret = spi_dma_move_buffers(dev, dma_len);
 		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
 			dma_len = data->ctx.tx_len;
@@ -1516,9 +1502,7 @@ static int transceive_dma(const struct device *dev,
 #endif /* SPI_SR_FTLVL */
 
 #ifdef CONFIG_SPI_STM32_ERRATA_BUSY
-		WAIT_FOR(!ll_func_spi_dma_busy(spi),
-			 CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT,
-			 k_yield());
+		WAIT_FOR(!ll_func_spi_dma_busy(spi), CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT, k_yield());
 #else
 		/* wait until spi is no more busy (spi TX fifo is really empty) */
 		while (ll_func_spi_dma_busy(spi) && LL_SPI_IsEnabled(spi)) {
@@ -1675,8 +1659,7 @@ static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 	return err;
 }
 
-static int spi_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
+static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	__maybe_unused struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *config = dev->config;
