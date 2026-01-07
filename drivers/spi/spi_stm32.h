@@ -80,6 +80,8 @@ struct spi_stm32_data {
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
+	bool tx_dma_done;
+	bool rx_dma_done;
 #endif /* CONFIG_SPI_STM32_DMA */
 	bool pm_policy_state_on;
 };
