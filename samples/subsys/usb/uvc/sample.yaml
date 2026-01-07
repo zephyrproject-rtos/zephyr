@@ -39,8 +39,6 @@ tests:
     filter: dt_chosen_enabled("zephyr,camera")
     integration_platforms:
       - stm32n6570_dk/stm32n657xx/sb
-    platform_exclude:
-      - frdm_imx93/mimx9352/a55
   sample.subsys.usb.uvc.encoder.jpeg:
     depends_on:
       - usbd
@@ -53,5 +51,3 @@ tests:
     filter: dt_chosen_enabled("zephyr,camera")
     integration_platforms:
       - stm32n6570_dk/stm32n657xx/sb
-    platform_exclude:
-      - frdm_imx93/mimx9352/a55
