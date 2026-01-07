@@ -13,7 +13,7 @@
 
 #include <LoRaMac.h>
 #include <Region.h>
-#include "nvm/lorawan_nvm.h"
+#include "../nvm/lorawan_nvm.h"
 
 #ifdef CONFIG_LORAMAC_REGION_AS923
 #define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_AS923

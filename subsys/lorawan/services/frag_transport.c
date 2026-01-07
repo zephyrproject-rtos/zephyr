@@ -12,7 +12,6 @@
 #include "frag_flash.h"
 #include "lorawan_services.h"
 
-#include <LoRaMac.h>
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 #include <FragDecoder.h>
 #elif defined(CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM)
