@@ -1485,6 +1485,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	uint16_t conn_handle;
 	/* Used only if CONFIG_ASSERT and CONFIG_BT_CONN_TX. */
 	__maybe_unused bool conn_tx_is_pending;
+	bool is_iso;
 
 	__ASSERT(conn, "Invalid connection reference");
 
@@ -1499,6 +1500,7 @@ void bt_conn_unref(struct bt_conn *conn)
 #if CONFIG_BT_CONN_TX && CONFIG_ASSERT
 	conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
 #endif
+	is_iso = bt_conn_is_iso(conn);
 	old = atomic_dec(&conn->ref);
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
@@ -1518,9 +1520,14 @@ void bt_conn_unref(struct bt_conn *conn)
 	/* Notify listeners that a slot has been freed and can be taken.
 	 * No guarantees are made on requests to claim connection object
 	 * as only the first claim will be served.
+	 *
+	 * Since ISO channels have their own disconnected callback and do not trigger the
+	 * conn_cb.disconnected callback, exclude them from the recycled callback as well.
 	 */
-	k_sem_give(&pending_recycled_events);
-	k_work_submit(&recycled_work);
+	if (!is_iso) {
+		k_sem_give(&pending_recycled_events);
+		k_work_submit(&recycled_work);
+	}
 }
 
 uint8_t bt_conn_index(const struct bt_conn *conn)
