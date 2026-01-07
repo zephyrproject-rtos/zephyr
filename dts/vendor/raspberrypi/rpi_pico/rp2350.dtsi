@@ -405,6 +405,13 @@
 			status = "disabled";
 		};
 
+		vreg: vreg@40100000 {
+			compatible = "raspberrypi,core-supply-regulator";
+			reg = <0x40100000 0x200>;
+			status = "okay";
+			raspberrypi,brown-out-detection;
+		};
+
 		dma: dma@50000000 {
 			compatible = "raspberrypi,pico-dma";
 			reg = <0x50000000 DT_SIZE_K(64)>;
