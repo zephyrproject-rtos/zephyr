@@ -51,8 +51,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, pre_init=None, reset_halt_cmd=DEFAULT_OPENOCD_RESET_HALT_CMD,
                  pre_load=None, erase_cmd=None, load_cmd=None, verify_cmd=None,
                  post_verify=None, do_verify=False, do_verify_only=False, do_erase=False,
-                 tui=None, config=None, serial=None, use_elf=None,
-                 no_halt=False, no_init=False, no_targets=False,
+                 tui=None, config=None, serial=None, image_type=None,
+                 flash_address=None, no_halt=False, no_init=False, no_targets=False,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT,
@@ -116,7 +116,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.init_arg = [] if no_init else ['-c init']
         self.targets_arg = [] if no_targets else ['-c targets']
         self.serial = ['-c set _ZEPHYR_BOARD_SERIAL ' + serial] if serial else []
-        self.use_elf = use_elf
+        self.image_type = image_type
+        self.flash_address = flash_address
         self.gdb_init = gdb_init
         self.load_arg = ['-ex', 'load'] if load else []
         self.target_handle = target_handle
@@ -140,8 +141,18 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--serial', default="",
                             help='''if given, selects FTDI instance by its serial number,
                             defaults to empty''')
-        parser.add_argument('--use-elf', default=False, action='store_true',
-                            help='if given, Elf file will be used for loading instead of HEX image')
+        # Multiple flags share the same dest; last one wins.
+        parser.add_argument('--use-hex', action='store_const',
+                            dest='image_type', const='hex',
+                            help='use HEX file for loading (default)')
+        parser.add_argument('--use-elf', action='store_const',
+                            dest='image_type', const='elf',
+                            help='use ELF file for loading instead of HEX')
+        parser.add_argument('--use-bin', action='store_const',
+                            dest='image_type', const='bin',
+                            help='use BIN file for loading instead of HEX')
+        parser.add_argument('--flash-address', default=None,
+                            help='flash address to use when flashing BIN file')
         # Options for flashing:
         parser.add_argument('--cmd-pre-init', action='append',
                             help='''Command to run before calling init;
@@ -209,7 +220,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
             tui=args.tui, config=args.config, serial=args.serial,
-            use_elf=args.use_elf, no_halt=args.no_halt, no_init=args.no_init,
+            image_type=args.image_type,
+            flash_address=args.flash_address, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
@@ -259,10 +271,13 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 self.cfg_cmd.append('-f')
                 self.cfg_cmd.append(i)
 
-        if command == 'flash' and self.use_elf:
-            self.do_flash_elf(**kwargs)
-        elif command == 'flash':
-            self.do_flash(**kwargs)
+        if command == 'flash':
+            if self.image_type == 'elf':
+                self.do_flash_elf(**kwargs)
+            elif self.image_type == 'bin':
+                self.do_flash_bin(**kwargs)
+            else:
+                self.do_flash(**kwargs)
         elif command in ('attach', 'debug', 'rtt'):
             self.do_attach_debug_rtt(command, **kwargs)
         elif command == 'load':
@@ -319,6 +334,56 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.do_verify or self.do_verify_only:
             verify_image = ['-c', self.reset_halt_cmd,
                             '-c', self.verify_cmd + ' ' + hex_name]
+
+        cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
+               pre_init_cmd + self.init_arg + self.targets_arg +
+               pre_load_cmd + load_image +
+               verify_image +
+               post_verify_cmd +
+               ['-c', 'reset run',
+                '-c', 'shutdown'])
+        self.check_call(cmd)
+
+    def do_flash_bin(self, **kwargs):
+        self.ensure_output('bin')
+        if self.load_cmd is None:
+            raise ValueError('Cannot flash; load command is missing')
+        if self.flash_address is None:
+            raise ValueError('Cannot flash BIN; flash address is missing (use --flash-address)')
+
+        bin_name = Path(self.cfg.bin_file).as_posix()
+
+        self.logger.info(f'Flashing file: {bin_name}')
+
+        pre_init_cmd = []
+        pre_load_cmd = []
+        post_verify_cmd = []
+        for i in self.pre_init:
+            pre_init_cmd.append("-c")
+            pre_init_cmd.append(i)
+
+        for i in self.pre_load:
+            pre_load_cmd.append("-c")
+            pre_load_cmd.append(i)
+
+        for i in self.post_verify:
+            post_verify_cmd.append("-c")
+            post_verify_cmd.append(i)
+
+        load_image = []
+        if not self.do_verify_only:
+            load_image = ['-c', self.reset_halt_cmd]
+            if self.do_erase and self.erase_cmd is None:
+                self.logger.error('--erase not supported for target without --cmd-erase')
+                return
+            if self.do_erase:
+                load_image += [x for cmd in self.erase_cmd for x in ("-c", cmd)]
+            load_image += ['-c', f'{self.load_cmd} {bin_name} {self.flash_address}']
+
+        verify_image = []
+        if (self.do_verify or self.do_verify_only) and self.verify_cmd:
+            verify_image = ['-c', self.reset_halt_cmd,
+                            '-c', f'{self.verify_cmd} {bin_name} {self.flash_address}']
 
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
