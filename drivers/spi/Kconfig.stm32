@@ -26,6 +26,8 @@ config SPI_STM32_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
+	  This can be used with the SPI_RTIO config to have SPI
+	  transactions using DMA + RTIO
 
 config SPI_STM32_USE_HW_SS
 	bool "STM32 Hardware Slave Select support"
