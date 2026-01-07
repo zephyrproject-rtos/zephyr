@@ -17,6 +17,16 @@ uart2: &scb2 {
 	pinctrl-names = "default";
 };
 
+spi1: &scb1 {
+	compatible = "infineon,spi";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri_clk_div2>;
+	pinctrl-0 = <&p2_0_scb1_spi_m_mosi &p2_1_scb1_spi_m_miso &p2_2_scb1_spi_m_clk>;
+	pinctrl-names = "default";
+};
+
 &peri_clk_div0 {
 	status = "okay";
 	resource-type = <IFX_RSC_SCB>;
@@ -61,6 +71,10 @@ uart2: &scb2 {
 &clk_pump {
 	status = "okay";
 	source-path = <IFX_PATH_PSOC4_PUMP_GND>;
+};
+
+&gpio_prt2 {
+	status = "okay";
 };
 
 &gpio_prt7 {
