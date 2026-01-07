@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_DEBUG_STACK_H_
 
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
 #include <stdbool.h>
 

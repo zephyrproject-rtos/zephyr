@@ -166,6 +166,7 @@ csq	Shenzen Chuangsiqi Technology Co.,Ltd.
 ct	CTHINGS.CO
 cubietech	Cubietech, Ltd.
 cypress	Cypress Semiconductor Corporation
+cytron	Cytron Technologies
 cznic	CZ.NIC, z.s.p.o.
 dallas	Maxim Integrated Products (formerly Dallas Semiconductor)
 dataimage	DataImage, Inc.
@@ -252,6 +253,7 @@ fintek	Feature Integration Technology Inc.
 firefly	Firefly
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
+framework	Framework Computer, Inc.
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd

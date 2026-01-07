@@ -294,7 +294,9 @@ class testValidator(unittest.TestCase):
 
         validator._ord2node = {1: mock.Mock(), 2: mock.Mock()}
         validator._ord2node[1]._binding = None
+        validator._ord2node[1].props = {}
         validator._ord2node[2]._binding = None
+        validator._ord2node[2].props = {}
 
         validator._obj.devices = {1: (10, "i1")}
         validator._check_dep(1, 2)
@@ -316,8 +318,10 @@ class testValidator(unittest.TestCase):
         validator._ord2node = {1: mock.Mock(), 2: mock.Mock()}
         validator._ord2node[1]._binding = None
         validator._ord2node[1].path = "/1"
+        validator._ord2node[1].props = {}
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
+        validator._ord2node[2].props = {}
 
         validator._obj.devices = {1: (10, "i1"), 2: (20, "i2")}
 
@@ -340,8 +344,10 @@ class testValidator(unittest.TestCase):
         validator._ord2node = {1: mock.Mock(), 2: mock.Mock()}
         validator._ord2node[1]._binding = None
         validator._ord2node[1].path = "/1"
+        validator._ord2node[1].props = {}
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
+        validator._ord2node[2].props = {}
 
         validator._obj.devices = {1: (10, "i1"), 2: (10, "i2")}
 
@@ -378,6 +384,34 @@ class testValidator(unittest.TestCase):
         self.assertEqual(validator.errors, 0)
 
         check_init_priorities._IGNORE_COMPATIBLES = save_ignore_compatibles
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_deferred(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator._obj = mock.Mock()
+        validator.errors = 0
+
+        validator._ord2node = {1: mock.Mock(), 2: mock.Mock()}
+        validator._ord2node[1]._binding = None
+        validator._ord2node[1].path = "/1"
+        validator._ord2node[1].props = {}
+        validator._ord2node[2]._binding = None
+        validator._ord2node[2].path = "/2"
+        validator._ord2node[2].props = {
+            check_init_priorities._DEFERRED_INIT_PROP_NAME: mock.Mock(val=True)
+        }
+
+        validator._obj.devices = {1: (10, "i1"), 2: (5, "i2")}
+
+        validator._check_dep(2, 1)
+        validator._check_dep(1, 2)
+
+        validator.log.info.assert_called_once_with("Ignoring deferred device /2")
+        validator.log.error.assert_has_calls(
+            [mock.call("Non-deferred device /1 depends on deferred device /2")]
+        )
+        self.assertEqual(validator.errors, 1)
 
     @mock.patch("check_init_priorities.Validator._check_dep")
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)

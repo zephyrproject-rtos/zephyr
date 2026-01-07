@@ -31,6 +31,10 @@
 	};
 };
 
+&mcwdt0 {
+	status = "okay";
+};
+
 /* For the dpll clocks declared below
  * The clock-frequency value is here for dts reference, but
  * it does not affect the frequency set by the clock_control

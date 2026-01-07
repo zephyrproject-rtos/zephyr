@@ -11,144 +11,245 @@
 
 #include <inttypes.h>
 
-extern char _cached_start[];
-extern char _cached_end[];
-extern char _imr_start[];
-extern char _imr_end[];
-extern char __common_rom_region_start[];
-extern char __common_rom_region_end[];
-extern char __common_ram_region_start[];
-extern char __common_ram_region_end[];
-extern char __cold_start[];
-extern char __cold_end[];
-extern char __imr_data_start[];
-extern char __imr_data_end[];
-extern char __coldrodata_start[];
 extern char _shared_heap_start[];
 extern char _shared_heap_end[];
 
+#define RPO_SET(addr, reg) (((uintptr_t)addr & 0x1fffffff) | (reg << 29))
+
+#define MEM_MAP_SYM_DECLARE(sym)                                                                   \
+	extern char sym##_c[];                                                                     \
+	extern char sym##_uc[];
+
+#define MEM_MAP_SYM_C(sym)  ((uint32_t)(uintptr_t)sym##_c)
+#define MEM_MAP_SYM_UC(sym) ((uint32_t)(uintptr_t)sym##_uc)
+
+#define MEM_MAP_CONST_C(val) ((uint32_t)RPO_SET((uintptr_t)(val), CONFIG_INTEL_ADSP_CACHED_REGION))
+
+#define MEM_MAP_CONST_UC(val) \
+	((uint32_t)RPO_SET((uintptr_t)(val), CONFIG_INTEL_ADSP_UNCACHED_REGION))
+
+#define MEM_MAP_SYM_REGION(sym_start, sym_end, region_attrs, region_name)                          \
+	{                                                                                          \
+		.start = MEM_MAP_SYM_UC(sym_start),                                                \
+		.end   = MEM_MAP_SYM_UC(sym_end),                                                  \
+		.attrs = region_attrs,                                                             \
+		.name = region_name,                                                               \
+	},                                                                                         \
+	{                                                                                          \
+		.start = MEM_MAP_SYM_C(sym_start),                                                 \
+		.end   = MEM_MAP_SYM_C(sym_end),                                                   \
+		.attrs = region_attrs | XTENSA_MMU_CACHED_WB,                                      \
+		.name = region_name,                                                               \
+	},
+
+#define MEM_MAP_CONST_REGION(const_start, const_end, region_attrs, region_name)                    \
+	{                                                                                          \
+		.start = MEM_MAP_CONST_UC(const_start),                                            \
+		.end   = MEM_MAP_CONST_UC(const_end),                                              \
+		.attrs = region_attrs,                                                             \
+		.name = region_name,                                                               \
+	},                                                                                         \
+	{                                                                                          \
+		.start = MEM_MAP_CONST_C(const_start),                                             \
+		.end   = MEM_MAP_CONST_C(const_end),                                               \
+		.attrs = region_attrs | XTENSA_MMU_CACHED_WB,                                      \
+		.name = region_name,                                                               \
+	},
+
+MEM_MAP_SYM_DECLARE(_cached_start);
+MEM_MAP_SYM_DECLARE(_cached_end);
+MEM_MAP_SYM_DECLARE(__cold_start);
+MEM_MAP_SYM_DECLARE(__cold_end);
+MEM_MAP_SYM_DECLARE(__coldrodata_start);
+MEM_MAP_SYM_DECLARE(_heap_start);
+MEM_MAP_SYM_DECLARE(_heap_end);
+MEM_MAP_SYM_DECLARE(_image_ram_start);
+MEM_MAP_SYM_DECLARE(_image_ram_end);
+MEM_MAP_SYM_DECLARE(__imr_data_start);
+MEM_MAP_SYM_DECLARE(__imr_data_end);
+MEM_MAP_SYM_DECLARE(_imr_end);
+MEM_MAP_SYM_DECLARE(__common_ram_region_start);
+MEM_MAP_SYM_DECLARE(__common_ram_region_end);
+MEM_MAP_SYM_DECLARE(__rodata_region_start);
+MEM_MAP_SYM_DECLARE(__rodata_region_end);
+MEM_MAP_SYM_DECLARE(__text_region_start);
+MEM_MAP_SYM_DECLARE(__text_region_end);
+
 
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
-	{
-		.start = (uint32_t)__common_ram_region_start,
-		.end   = (uint32_t)__common_ram_region_end,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "common-ram",
-	},
-	{
-		/* Workaround for D3 flows. L2 TLB wider than MMU TLB */
-		.start = (uint32_t)L2_SRAM_BASE,
-		.end   = (uint32_t)VECBASE_RESET_PADDR_SRAM,
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "workaround L2 TLB/MMU TLB",
-	},
-	{
-		.start = (uint32_t)VECBASE_RESET_PADDR_SRAM,
-		.end   = (uint32_t)VECBASE_RESET_PADDR_SRAM + VECTOR_TBL_SIZE,
-		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
-		.name = "exceptions",
-	},
-	{
-		.start = (uint32_t)_cached_start,
-		.end   = (uint32_t)_cached_end,
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "cached",
-	},
-	{
-		.start = (uint32_t)HP_SRAM_WIN0_BASE,
-		.end   = (uint32_t)HP_SRAM_WIN0_BASE + (uint32_t)HP_SRAM_WIN0_SIZE,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "win0",
-	},
-	{
-		.start = (uint32_t)HP_SRAM_WIN1_BASE,
-		.end   = (uint32_t)HP_SRAM_WIN1_BASE + (uint32_t)HP_SRAM_WIN1_SIZE,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "win2",
-	},
-	{
-		.start = (uint32_t)HP_SRAM_WIN2_BASE,
-		.end   = (uint32_t)HP_SRAM_WIN2_BASE + (uint32_t)HP_SRAM_WIN2_SIZE,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "win2",
-	},
-	{
-		.start = (uint32_t)HP_SRAM_WIN3_BASE,
-		.end   = (uint32_t)HP_SRAM_WIN3_BASE + (uint32_t)HP_SRAM_WIN3_SIZE,
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "win3",
-	},
+	MEM_MAP_SYM_REGION(
+		_image_ram_start,
+		_image_ram_end,
+		XTENSA_MMU_PERM_W,
+		"data"
+	)
+
+#if K_HEAP_MEM_POOL_SIZE > 0
+	MEM_MAP_SYM_REGION(
+		_heap_start,
+		_heap_end,
+		XTENSA_MMU_PERM_W,
+		"heap"
+	)
+#endif
+
+	MEM_MAP_SYM_REGION(
+		__text_region_start,
+		__text_region_end,
+		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
+		"text"
+	)
+
+	MEM_MAP_SYM_REGION(
+		__rodata_region_start,
+		__rodata_region_end,
+		XTENSA_MMU_MAP_SHARED,
+		"rodata"
+	)
+
+	MEM_MAP_SYM_REGION(
+		__common_ram_region_start,
+		__common_ram_region_end,
+		XTENSA_MMU_PERM_W,
+		"common-ram"
+	)
+
+	/* Workaround for D3 flows. L2 TLB wider than MMU TLB */
+	MEM_MAP_CONST_REGION(
+		L2_SRAM_BASE,
+		VECBASE_RESET_PADDR_SRAM,
+		XTENSA_MMU_PERM_W,
+		"workaround L2 TLB/MMU TLB"
+	)
+
+	MEM_MAP_CONST_REGION(
+		VECBASE_RESET_PADDR_SRAM,
+		VECBASE_RESET_PADDR_SRAM + VECTOR_TBL_SIZE,
+		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
+		"exceptions"
+	)
+
+	MEM_MAP_SYM_REGION(
+		_cached_start,
+		_cached_end,
+		XTENSA_MMU_PERM_W,
+		"cached"
+	)
+
+	MEM_MAP_CONST_REGION(
+		HP_SRAM_WIN0_BASE,
+		HP_SRAM_WIN0_BASE + HP_SRAM_WIN0_SIZE,
+		XTENSA_MMU_PERM_W,
+		"win0"
+	)
+
+	MEM_MAP_CONST_REGION(
+		HP_SRAM_WIN1_BASE,
+		HP_SRAM_WIN1_BASE + HP_SRAM_WIN1_SIZE,
+		XTENSA_MMU_PERM_W,
+		"win1"
+	)
+
+	MEM_MAP_CONST_REGION(
+		HP_SRAM_WIN2_BASE,
+		HP_SRAM_WIN2_BASE + HP_SRAM_WIN2_SIZE,
+		XTENSA_MMU_PERM_W,
+		"win2"
+	)
+
+	MEM_MAP_CONST_REGION(
+		HP_SRAM_WIN3_BASE,
+		HP_SRAM_WIN3_BASE + HP_SRAM_WIN3_SIZE,
+		XTENSA_MMU_PERM_W,
+		"win3"
+	)
+
 	/* Map IMR */
-	{
-		.start = (uint32_t)IMR_ROM_EXT_CODE_BASE,
-		.end   = (uint32_t)(IMR_ROM_EXT_CODE_BASE + IMR_ROM_EXT_CODE_SIZE),
-		.attrs = XTENSA_MMU_PERM_X,
-		.name = "IMR_rom_ext_code",
-	},
-	{
-		.start = (uint32_t)IMR_ROM_EXT_DATABSS_BASE,
-		.end   = (uint32_t)(IMR_ROM_EXT_DATABSS_BASE + IMR_ROM_EXT_DATABSS_SIZE),
-		.attrs = XTENSA_MMU_PERM_W,
-		.name = "IMR_rom_ext_data_bss",
-	},
-	{
-		.start = (uint32_t)(IMR_BOOT_LDR_MANIFEST_BASE - IMR_BOOT_LDR_MANIFEST_SIZE),
-		.end   = (uint32_t)IMR_BOOT_LDR_MANIFEST_BASE,
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "imr stack",
-	},
-	{
-		.start = (uint32_t)IMR_BOOT_LDR_MANIFEST_BASE,
-		.end   = (uint32_t)(IMR_BOOT_LDR_MANIFEST_BASE + IMR_BOOT_LDR_MANIFEST_SIZE),
-		.name = "imr text",
-	},
-	{
-		.start = (uint32_t)IMR_BOOT_LDR_BSS_BASE,
-		.end   = (uint32_t)(IMR_BOOT_LDR_BSS_BASE + IMR_BOOT_LDR_BSS_SIZE),
-		.name = "imr bss",
-	},
-	{
-		.start = (uint32_t)IMR_BOOT_LDR_TEXT_ENTRY_BASE,
-		.end   = (uint32_t)(IMR_BOOT_LDR_TEXT_ENTRY_BASE + IMR_BOOT_LDR_TEXT_ENTRY_SIZE),
-		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
-		.name = "imr text",
-	},
-	{
-		.start = (uint32_t)IMR_BOOT_LDR_STACK_BASE,
-		.end   = (uint32_t)(IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE),
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "imr stack",
-	},
-	{
-		.start = (uint32_t)IMR_LAYOUT_ADDRESS,
+	MEM_MAP_CONST_REGION(
+		IMR_ROM_EXT_CODE_BASE,
+		IMR_ROM_EXT_CODE_BASE + IMR_ROM_EXT_CODE_SIZE,
+		XTENSA_MMU_PERM_X,
+		"IMR_rom_ext_code"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_ROM_EXT_DATABSS_BASE,
+		IMR_ROM_EXT_DATABSS_BASE + IMR_ROM_EXT_DATABSS_SIZE,
+		XTENSA_MMU_PERM_W,
+		"IMR_rom_ext_data_bss"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_BOOT_LDR_MANIFEST_BASE - IMR_BOOT_LDR_MANIFEST_SIZE,
+		IMR_BOOT_LDR_MANIFEST_BASE,
+		XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
+		"imr stack"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_BOOT_LDR_MANIFEST_BASE,
+		IMR_BOOT_LDR_MANIFEST_BASE + IMR_BOOT_LDR_MANIFEST_SIZE,
+		0,
+		"imr text"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_BOOT_LDR_BSS_BASE,
+		IMR_BOOT_LDR_BSS_BASE + IMR_BOOT_LDR_BSS_SIZE,
+		0,
+		"imr bss"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_BOOT_LDR_TEXT_ENTRY_BASE,
+		IMR_BOOT_LDR_TEXT_ENTRY_BASE + IMR_BOOT_LDR_TEXT_ENTRY_SIZE,
+		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
+		"imr text"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_BOOT_LDR_STACK_BASE,
+		IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE,
+		XTENSA_MMU_PERM_W,
+		"imr stack"
+	)
+
+	MEM_MAP_CONST_REGION(
+		IMR_LAYOUT_ADDRESS,
 		/* sizeof(struct imr_layout) happens to be 0x1000 (4096) bytes. */
-		.end   = (uint32_t)(IMR_LAYOUT_ADDRESS + sizeof(struct imr_layout)),
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "imr layout",
-	},
-	{
-		.start = (uint32_t)__cold_start,
-		.end   = (uint32_t)__cold_end,
-		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
-		.name = "imr cold",
-	},
-	{
-		.start = (uint32_t)__coldrodata_start,
-		.end   = (uint32_t)_imr_end,
-		.name = "imr coldrodata",
-	},
-	{
-		.start = (uint32_t)__imr_data_start,
-		.end   = (uint32_t)__imr_data_end,
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "imr data",
-	},
-	{
-		.start = (uint32_t)LP_SRAM_BASE,
-		.end   = (uint32_t)(LP_SRAM_BASE + LP_SRAM_SIZE),
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "lpsram",
-	},
+		IMR_LAYOUT_ADDRESS + sizeof(struct imr_layout),
+		XTENSA_MMU_PERM_W,
+		"imr layout"
+	)
+
+	MEM_MAP_SYM_REGION(
+		__cold_start,
+		__cold_end,
+		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
+		"imr cold"
+	)
+
+	MEM_MAP_SYM_REGION(
+		__coldrodata_start,
+		_imr_end,
+		0,
+		"imr coldrodata"
+	)
+
+	MEM_MAP_SYM_REGION(
+		__imr_data_start,
+		__imr_data_end,
+		XTENSA_MMU_PERM_W,
+		"imr data"
+	)
+
+	MEM_MAP_CONST_REGION(
+		LP_SRAM_BASE,
+		LP_SRAM_BASE + LP_SRAM_SIZE,
+		XTENSA_MMU_PERM_W,
+		"lpsram"
+	)
+
 	{
 		.start = (uint32_t)_shared_heap_start,
 		.end   = (uint32_t)_shared_heap_end,

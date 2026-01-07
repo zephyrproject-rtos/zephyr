@@ -29,6 +29,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &st7789v;
 	};
 
 	leds {
@@ -65,6 +66,13 @@
 			label = "KEY2";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+	};
+
+	lcd_bl: LCD_BL {
+		compatible = "regulator-fixed";
+		regulator-name = "LCD_BL";
+		regulator-boot-on;
+		enable-gpios = <&io_expander 7 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -119,4 +127,43 @@
 
 &esp32_bt_hci {
 	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&lcd_cam {
+	status = "okay";
+	pinctrl-0 = <&lcd_cam_default>;
+	pinctrl-names = "default";
+};
+
+&lcd_cam_disp {
+	status = "okay";
+	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+
+	st7789v: st7789v@0 {
+		compatible = "sitronix,st7789v";
+		reg = <0>;
+		mipi-max-frequency = <DT_FREQ_M(10)>;
+		mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+		width = <320>;
+		height = <240>;
+		x-offset = <0>;
+		y-offset = <0>;
+		vcom = <0x20>;
+		gctrl = <0x35>;
+		mdac = <0x60>; /* RGB order, swap XY, mirror X */
+		lcm = <0x2c>;
+		colmod = <0x55>; /* RGB565 16bit */
+		gamma = <0x01>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+		nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+		ram-param = [00 F0];
+		rgb-param = [40 02 14];
+	};
 };

@@ -177,6 +177,7 @@ struct modem_cmux {
 
 	/* State */
 	enum modem_cmux_state state;
+	uint8_t retry_count;
 	bool flow_control_on : 1;
 	bool initiator : 1;
 

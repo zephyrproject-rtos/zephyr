@@ -12,12 +12,24 @@ description: |
   adxl345: adxl345@1d {
     ...
 
+    range = <ADXL345_DT_RANGE_8G>;
     odr = <ADXL345_DT_ODR_25>;
   };
 
 include: sensor-device.yaml
 
 properties:
+  range:
+    type: int
+    default: 2
+    description: |
+          Accelerometer range.
+    enum:
+      - 0 # ADXL345_DT_RANGE_2G
+      - 1 # ADXL345_DT_RANGE_4G
+      - 2 # ADXL345_DT_RANGE_8G
+      - 3 # ADXL345_DT_RANGE_16G
+
   odr:
     type: int
     default: 10

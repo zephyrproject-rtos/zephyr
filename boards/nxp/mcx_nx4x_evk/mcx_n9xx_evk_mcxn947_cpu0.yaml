@@ -25,6 +25,7 @@ supported:
   - i2s
   - i3c
   - nvs
+  - netif:eth
   - pwm
   - regulator
   - rtc

@@ -8,7 +8,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/printk.h>
 #ifdef CONFIG_DAC_REFERENCE_SOURCE

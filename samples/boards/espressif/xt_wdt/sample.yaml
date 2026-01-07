@@ -6,5 +6,5 @@ tests:
     platform_allow:
       - esp32c3_devkitm
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
     tags: esp32

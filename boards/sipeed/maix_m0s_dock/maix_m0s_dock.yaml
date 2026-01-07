@@ -1,0 +1,24 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: maix_m0s_dock
+name: Sipeed M0S Dock
+type: mcu
+arch: riscv
+ram: 480
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - spi
+  - flash
+vendor: sipeed

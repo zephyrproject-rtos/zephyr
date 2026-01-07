@@ -9,7 +9,6 @@
 #define MOCKS_CONN_H_
 #include <stdint.h>
 
-#include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>

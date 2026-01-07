@@ -1,3 +1,18 @@
+common:
+  platform_exclude:
+    - intel_adsp/cavs25
+    - intel_adsp/cavs25/tgph
+    - intel_adsp/ace15_mtpm
+    - intel_adsp/ace15_mtpm/sim
+    - intel_adsp/ace20_lnl
+    - intel_adsp/ace20_lnl/sim
+    - intel_adsp/ace30/ptl
+    - intel_adsp/ace30/ptl/sim
+    - intel_adsp/ace30/wcl
+    - intel_adsp/ace30/wcl/sim
+    - intel_adsp/ace40/nvl
+    - intel_adsp/ace40/nvl/sim
+    - intel_adsp/ace40/nvls
 tests:
   libraries.libc.newlib.heap_listener:
     tags:

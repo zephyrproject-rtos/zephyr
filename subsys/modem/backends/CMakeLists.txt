@@ -3,7 +3,10 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_TTY modem_backend_tty.c)
+if(CONFIG_MODEM_BACKEND_TTY)
+  zephyr_library_sources(modem_backend_tty.c)
+  target_sources(native_simulator INTERFACE modem_backend_tty_bottom.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_UART modem_backend_uart.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_BACKEND_UART_ISR modem_backend_uart_isr.c)
 if(CONFIG_MODEM_BACKEND_UART_ASYNC)

@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(bt_hfp_hf);
 
 #define MAX_IND_STR_LEN 17
 
+#define HFP_HF_INDICATOR_INVALID -1
+
 struct bt_hfp_hf_cb *bt_hf;
 
 NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
@@ -796,7 +798,7 @@ static int clcc_handle(struct at_client *hf_at)
 	uint32_t status;
 	uint32_t mode;
 	uint32_t mpty;
-	char *number = NULL;
+	const char *number;
 	uint32_t type = 0;
 	bool incoming = false;
 	bool new_call = false;
@@ -908,7 +910,7 @@ static int bvra_handle(struct at_client *hf_at)
 	size_t id_len;
 	uint32_t type;
 	uint32_t operation;
-	char *text;
+	const char *text;
 
 	err = at_get_number(hf_at, &activate);
 	if (err < 0) {
@@ -970,14 +972,13 @@ static int bvra_handle(struct at_client *hf_at)
 	}
 
 	text = at_get_string(hf_at);
-	if (!text) {
+	if (text == NULL) {
 		LOG_INF("Error getting text string");
 		return 0;
 	}
 
 	if (bt_hf->textual_representation) {
-		bt_hf->textual_representation(hf, text_id, (uint8_t)type,
-			(uint8_t)operation, text);
+		bt_hf->textual_representation(hf, text_id, (uint8_t)type, (uint8_t)operation, text);
 	}
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG_TEXT */
 	return 0;
@@ -1336,7 +1337,17 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 
 	LOG_DBG("Index :%u, Value :%u", index, value);
 
-	if (index >= ARRAY_SIZE(ag_ind)) {
+	if (index >= ARRAY_SIZE(hf->ind_table)) {
+		LOG_ERR("Invalid indicator index: %u", index);
+		return;
+	}
+
+	if (hf->ind_table[index] == HFP_HF_INDICATOR_INVALID) {
+		LOG_ERR("Indicator index %u not found", index);
+		return;
+	}
+
+	if (hf->ind_table[index] >= ARRAY_SIZE(ag_ind)) {
 		LOG_ERR("Max only %zu indicators are supported", ARRAY_SIZE(ag_ind));
 		return;
 	}
@@ -1471,7 +1482,7 @@ int ring_handle(struct at_client *hf_at)
 int clip_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *number;
+	const char *number;
 	uint32_t type;
 	int err;
 	struct bt_hfp_hf_call *call;
@@ -1657,7 +1668,7 @@ static int btrh_handle(struct at_client *hf_at)
 static int ccwa_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *number;
+	const char *number;
 	uint32_t type;
 	int err;
 	struct bt_hfp_hf_call *call;
@@ -1770,7 +1781,7 @@ static int cnum_handle(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
 	char *alpha;
-	char *number;
+	const char *number;
 	uint32_t type;
 	char *speed;
 	uint32_t service = 4;
@@ -1901,11 +1912,11 @@ static const struct unsolicited {
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
 {
-	int i;
+	ARRAY_FOR_EACH(handlers, i) {
+		size_t len = strlen(handlers[i].cmd);
 
-	for (i = 0; i < ARRAY_SIZE(handlers); i++) {
-		if (!strncmp(hf_at->buf, handlers[i].cmd,
-			     strlen(handlers[i].cmd))) {
+		if ((hf_at->rsp_buf.len >= len) &&
+		    (strncmp(hf_at->rsp_buf.data, handlers[i].cmd, len) == 0)) {
 			return &handlers[i];
 		}
 	}
@@ -2526,7 +2537,7 @@ static int cops_handle(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t mode;
 	uint32_t format;
-	char *operator;
+	const char *operator;
 	int err;
 
 	err = at_get_number(hf_at, &mode);
@@ -2602,7 +2613,7 @@ int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf)
 static int binp_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	char *number;
+	const char *number;
 
 	number = at_get_string(hf_at);
 
@@ -2790,7 +2801,8 @@ int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
 
 	bia_status = &buffer[0];
 	for (index = 0; index < ARRAY_SIZE(hf->ind_table); index++) {
-		if ((hf->ind_table[index] != -1) && (index < NUM_BITS(sizeof(status)))) {
+		if ((hf->ind_table[index] != HFP_HF_INDICATOR_INVALID) &&
+		    (index < NUM_BITS(sizeof(status)))) {
 			if (status & BIT(hf->ind_table[index])) {
 				*bia_status = '1';
 			} else {
@@ -3446,8 +3458,8 @@ static void hfp_hf_sco_connected(struct bt_sco_chan *chan)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(chan, struct bt_hfp_hf, chan);
 
-	if (hf->sco_conn == NULL) {
-		hf->sco_conn = bt_conn_ref(chan->sco);
+	if (atomic_ptr_cas(&hf->sco_conn, NULL, chan->sco)) {
+		bt_conn_ref(chan->sco);
 	}
 
 	if ((bt_hf != NULL) && (bt_hf->sco_connected != NULL)) {
@@ -3458,14 +3470,15 @@ static void hfp_hf_sco_connected(struct bt_sco_chan *chan)
 static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(chan, struct bt_hfp_hf, chan);
+	struct bt_conn *sco;
 
 	if ((bt_hf != NULL) && (bt_hf->sco_disconnected != NULL)) {
 		bt_hf->sco_disconnected(chan->sco, reason);
 	}
 
-	if (hf->sco_conn != NULL) {
-		bt_conn_unref(hf->sco_conn);
-		hf->sco_conn = NULL;
+	sco = atomic_ptr_set(&hf->sco_conn, NULL);
+	if (sco != NULL) {
+		bt_conn_unref(sco);
 	}
 }
 
@@ -3512,7 +3525,9 @@ static int hfp_hf_create_sco(struct bt_hfp_hf *hf)
 		.connected = hfp_hf_sco_connected,
 		.disconnected = hfp_hf_sco_disconnected,
 	};
+	struct bt_conn *sco;
 	int err;
+	bool updated;
 
 	LOG_DBG("Creating SCO connection");
 
@@ -3524,8 +3539,22 @@ static int hfp_hf_create_sco(struct bt_hfp_hf *hf)
 		return err;
 	}
 
-	hf->sco_conn = bt_conn_create_sco(&hf->acl->br.dst, &hf->chan);
-	if (hf->sco_conn == NULL) {
+	sco = bt_conn_create_sco(&hf->acl->br.dst, &hf->chan);
+	updated = atomic_ptr_cas(&hf->sco_conn, NULL, sco);
+	if (!updated) {
+		LOG_WRN("SCO is not NULL (%p), target (%p)", atomic_ptr_get(&hf->sco_conn), sco);
+		__ASSERT(atomic_ptr_get(&hf->sco_conn) == sco,
+				"Concurrent SCO connection creation detected");
+		/* The `hf->sco_conn` has been udpated in callback `hfp_hf_sco_connected()`.
+		 * The refernce count has been updated in callback `hfp_hf_sco_connected()`.
+		 * The refernce count should be unreferred in this case.
+		 */
+		if (sco != NULL) {
+			bt_conn_unref(sco);
+		}
+	}
+
+	if (sco == NULL) {
 		LOG_ERR("Failed to create SCO");
 		return -ENOMEM;
 	}
@@ -3544,7 +3573,7 @@ int bt_hfp_hf_audio_connect(struct bt_hfp_hf *hf)
 		return -ENOTCONN;
 	}
 
-	if (hf->sco_conn != NULL) {
+	if (atomic_ptr_get(&hf->sco_conn) != NULL) {
 		LOG_ERR("Audio conenction has been connected");
 		return -ECONNREFUSED;
 	}
@@ -4389,8 +4418,6 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	}
 
 	hf->acl = conn;
-	hf->at.buf = hf->hf_buffer;
-	hf->at.buf_max_len = HF_MAX_BUF_LEN;
 
 	hf->rfcomm_dlc.ops = &ops;
 	hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
@@ -4416,8 +4443,8 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 
 	k_work_init_delayable(&hf->deferred_work, bt_hf_deferred_work);
 
-	for (index = 0; index < ARRAY_SIZE(hf->ind_table); index++) {
-		hf->ind_table[index] = -1;
+	ARRAY_FOR_EACH(hf->ind_table, i) {
+		hf->ind_table[i] = HFP_HF_INDICATOR_INVALID;
 	}
 
 	return hf;
@@ -4487,9 +4514,8 @@ static void hf_sco_disconnected(struct bt_conn *conn, uint8_t reason)
 	__ASSERT(conn != NULL, "Invalid SCO conn");
 
 	ARRAY_FOR_EACH(bt_hfp_hf_pool, i) {
-		if (bt_hfp_hf_pool[i].sco_conn == conn) {
-			bt_conn_unref(bt_hfp_hf_pool[i].sco_conn);
-			bt_hfp_hf_pool[i].sco_conn = NULL;
+		if (atomic_ptr_cas(&bt_hfp_hf_pool[i].sco_conn, conn, NULL)) {
+			bt_conn_unref(conn);
 		}
 	}
 }

@@ -188,6 +188,7 @@ struct jesd216_bfp {
  *
  * JESD216C (20 DW)
  * * DW17-20 (quad/oct support) no API except jesd216_bfp_read_support().
+ *   DW19 also has jesd216_bfp_decode_dw19().
  */
 
 /* Extract the supported address bytes from BFP DW1. */
@@ -530,6 +531,32 @@ struct jesd216_bfp_dw16 {
 int jesd216_bfp_decode_dw16(const struct jesd216_param_header *php,
 			    const struct jesd216_bfp *bfp,
 			    struct jesd216_bfp_dw16 *res);
+
+/* Decoded data from JESD216 DW19 */
+struct jesd216_bfp_dw19 {
+	/* Bits specifying the status/control sequence required to enable
+	 * octal protocol operation.
+	 */
+	unsigned int octal_enable_req: 3;
+};
+
+/* Get data from BFP DW19.
+ *
+ * @param php pointer to the BFP header.
+ *
+ * @param bfp pointer to the BFP table.
+ *
+ * @param res pointer to where to store the decoded data.
+ *
+ * @retval -ENOTSUP if this information is not available from this BFP table.
+ * @retval 0 on successful storage into @c *res.
+ */
+int jesd216_bfp_decode_dw19(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw19 *res);
+
+#define JESD216_DW19_OER_VAL_NONE 0U
+#define JESD216_DW19_OER_VAL_S2B3 1U
 
 /* JESD216D-01 section 6.6: 4-Byte Address Instruction Parameter */
 #define JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_READ_13_SUP      BIT(0)

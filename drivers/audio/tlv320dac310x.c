@@ -13,7 +13,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/audio/codec.h>
 #include "tlv320dac310x.h"
 

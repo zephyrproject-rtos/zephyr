@@ -119,7 +119,7 @@ need one.
       .. code-block:: console
 
          sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
-             python-pip python-setuptools python-wheel tk xz file make
+             python-pip python-setuptools python-wheel tk xz file make which
 
 CMake
 =====

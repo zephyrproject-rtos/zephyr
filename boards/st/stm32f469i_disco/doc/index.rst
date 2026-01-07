@@ -12,9 +12,9 @@ some highlights of the STM32F469I-DISCO board:
 - On-board ST-LINK/V2-1 debugger/programmer, supporting USB reenumeration capability
 - Flexible board power supply:
 
-       - ST-LINK/V2-1 USB connector
-       - User USB FS connector
-       - VIN from Arduino* compatible connectors
+  - ST-LINK/V2-1 USB connector
+  - User USB FS connector
+  - VIN from Arduino* compatible connectors
 
 - Four user LEDs
 - Two push-buttons: USER and RESET
@@ -66,8 +66,9 @@ STM32F469I-DISCO Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F469NI can be found here:
-       - `STM32F469NI on www.st.com`_
-       - `STM32F469 reference manual`_
+
+- `STM32F469NI on www.st.com`_
+- `STM32F469 reference manual`_
 
 Supported Features
 ==================

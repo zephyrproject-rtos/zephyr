@@ -100,7 +100,7 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool
 		return ret;
 	}
 
-	if (fmt.size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+	if (fmt.size > (CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE / CONFIG_VIDEO_BUFFER_POOL_NUM_MAX)) {
 		LOG_WRN("Skipping format %ux%u", fmt.width, fmt.height);
 		return 0;
 	}

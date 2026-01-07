@@ -58,7 +58,7 @@ int smp_udp_close(void);
  * @return	0 on success
  * @return	-errno code on failure.
  */
-int smp_client_udp_set_host_addr(struct smp_client_object *obj, struct sockaddr *addr);
+int smp_client_udp_set_host_addr(struct smp_client_object *obj, struct net_sockaddr *addr);
 #endif
 
 #ifdef __cplusplus

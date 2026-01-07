@@ -26,7 +26,7 @@
     --navbar-scrollbar-active-color: #7929d2;
     --navbar-scrollbar-background: #131e2b;
 
-    --link-color: #237ab3;
+    --link-color: #2273a9;
     --link-color-hover: #3091d1;
     --link-color-active: #105078;
     --link-color-visited: #9b59b6;
@@ -37,7 +37,7 @@
     --table-row-odd-background-color: #f3f6f6;
     --code-background-color: #fff;
     --code-border-color: #e1e4e5;
-    --code-literal-color: #d04c60;
+    --code-literal-color: #c7254e;
     --input-background-color: #fcfcfc;
     --input-focus-border-color: #5f8cff;
 
@@ -65,19 +65,19 @@
 
     --admonition-note-background-color: #e7f2fa;
     --admonition-note-color: #404040;
-    --admonition-note-title-background-color: #6ab0de;
+    --admonition-note-title-background-color: #1a5c8a;
     --admonition-note-title-color: #fff;
     --admonition-attention-background-color: #ffedcc;
     --admonition-attention-color: #404040;
-    --admonition-attention-title-background-color: #f0b37e;
+    --admonition-attention-title-background-color: #b94a00;
     --admonition-attention-title-color: #fff;
     --admonition-danger-background-color: #fcf3f2;
     --admonition-danger-color: #404040;
-    --admonition-danger-title-background-color: #e9a499;
+    --admonition-danger-title-background-color: #a93226;
     --admonition-danger-title-color: #fff;
     --admonition-tip-background-color: #dbfaf4;
     --admonition-tip-color: #404040;
-    --admonition-tip-title-background-color: #1abc9c;
+    --admonition-tip-title-background-color: #00695c;
     --admonition-tip-title-color: #fff;
 
     --kbd-background-color: #fafbfc;
@@ -93,4 +93,6 @@
     --footer-color: #747474;
 
     --graphviz-filter: none;
+
+    --landing-card-background-color: var(--admonition-note-background-color);
 }

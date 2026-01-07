@@ -114,7 +114,7 @@ static inline int zperf_upload_fin(int sock,
 			continue;
 		} else {
 			/* Receive statistics */
-			ret = zsock_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeo,
+			ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &rcvtimeo,
 					       sizeof(rcvtimeo));
 			if (ret < 0) {
 				NET_ERR("setsockopt error (%d)", errno);
@@ -408,7 +408,7 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	int port = 0;
 	int sock;
 	int ret;
-	struct ifreq req;
+	struct net_ifreq req;
 
 	if (param == NULL || result == NULL) {
 		return -EINVAL;
@@ -438,7 +438,7 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 
 		if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET,
 				     ZSOCK_SO_BINDTODEVICE, &req,
-				     sizeof(struct ifreq)) != 0) {
+				     sizeof(struct net_ifreq)) != 0) {
 			NET_WARN("setsockopt SO_BINDTODEVICE error (%d)", -errno);
 		}
 	}

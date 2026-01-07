@@ -36,6 +36,7 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,edac = &erm0;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	leds {
@@ -216,12 +217,6 @@
 &lpadc0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
-	pinctrl-names = "default";
-};
-
-&lpcmp0 {
-	status = "okay";
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

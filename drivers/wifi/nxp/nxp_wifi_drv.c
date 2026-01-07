@@ -107,10 +107,11 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	static int auth_fail;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	wlan_uap_client_disassoc_t *disassoc_resp = data;
-	struct in_addr dhcps_addr4;
-	struct in_addr base_addr;
-	struct in_addr netmask_addr;
+	struct net_in_addr dhcps_addr4;
+	struct net_in_addr base_addr;
+	struct net_in_addr netmask_addr;
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
+	sta_node *con_sta_info;
 #endif
 
 	LOG_DBG("WLAN: received event %d", reason);
@@ -293,7 +294,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #endif
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
-		sta_node *con_sta_info = (sta_node *)data;
+		con_sta_info = (sta_node *)data;
 
 		if (con_sta_info->is_11n_enabled) {
 			ap_sta_info.link_mode = WIFI_4;

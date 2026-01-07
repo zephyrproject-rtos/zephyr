@@ -127,33 +127,53 @@ ZTEST(riscv_pmp_memattr_entries, test_dt_pmp_perm_conversion)
 
 ZTEST(riscv_pmp_memattr_entries, test_pmp_change_perm_invalid_permission)
 {
+	const struct mem_attr_region_t *region;
+	size_t num_regions = mem_attr_get_regions(&region);
+	size_t idx = num_regions - 1;
+
 	/* Invalid permission: 0x08 (bit 3) is outside of R|W|X (0x7) mask */
-	zassert_equal(z_riscv_pmp_change_permissions(0, 0x08), -EINVAL,
+	zassert_equal(z_riscv_pmp_change_permissions(idx, 0x08), -EINVAL,
 		      "Should return -EINVAL for invalid permission bits.");
 }
 
 ZTEST(riscv_pmp_memattr_entries, test_pmp_change_perm_invalid_region_index)
 {
-	/* region_idx = 2, which is out of bounds */
-	size_t idx = 2;
+	const struct mem_attr_region_t *region;
+	size_t num_regions = mem_attr_get_regions(&region);
+	size_t invalid_idx = num_regions;
 
-	zassert_equal(z_riscv_pmp_change_permissions(idx, PMP_R), -EINVAL,
+	zassert_equal(z_riscv_pmp_change_permissions(invalid_idx, PMP_R), -EINVAL,
 		      "Should return -EINVAL for region index out of bounds.");
 }
 
 ZTEST(riscv_pmp_memattr_entries, test_successful_permission_change)
 {
-	const uint8_t new_perm = 0x03; /* Read (0x1) | Write (0x2) */
-	const size_t idx = 0;
+	const struct mem_attr_region_t *region;
+	size_t num_regions = mem_attr_get_regions(&region);
+	size_t idx;
 
-	zassert_not_equal(new_perm, dt_regions[idx].perm,
-			  "Ensure new permission is different from existing permission");
+	/* Find the matching index of memory attribute region for dt_regions[0] */
+	for (idx = 0; idx < num_regions; ++idx) {
+		if ((region[idx].dt_addr == dt_regions[0].base) &&
+		    (region[idx].dt_size == dt_regions[0].size)) {
+			break;
+		}
+	}
 
+	zassert_not_equal(idx, num_regions,
+			  "No matching memory attribute region found for dt_regions[0].");
+
+	/* Store original permission to revert later if needed, and calculate new permission */
+	uint8_t original_perm = dt_regions[0].perm;
+	uint8_t new_perm = PMP_X ^ original_perm; /* Toggle X bit */
+
+	/* Update the expectations */
+	dt_regions[0].perm = new_perm;
+
+	/* Apply the permission change to the hardware */
 	int ret = z_riscv_pmp_change_permissions(idx, new_perm);
 
-	dt_regions[idx].perm = new_perm;
-
-	zassert_equal(ret, 0, "Function should return 0 on success.");
+	zassert_equal(ret, 0, "z_riscv_pmp_change_permissions should return 0 on success.");
 
 	const size_t num_pmpcfg_regs = CONFIG_PMP_SLOTS / sizeof(unsigned long);
 	const size_t num_pmpaddr_regs = CONFIG_PMP_SLOTS;
@@ -192,6 +212,10 @@ ZTEST(riscv_pmp_memattr_entries, test_successful_permission_change)
 			     "found.",
 			     i + 1, dt_regions[i].base, dt_regions[i].size, dt_regions[i].perm);
 	}
+
+	/* Restore original permissions to leave system in original state */
+	z_riscv_pmp_change_permissions(idx, original_perm);
+	dt_regions[0].perm = original_perm;
 }
 
 ZTEST_SUITE(riscv_pmp_memattr_entries, NULL, NULL, NULL, NULL, NULL);

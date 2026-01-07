@@ -4,6 +4,6 @@
 description: |
   Bindings for the ADI AD4195 Analog-to-Digital Converter.
 
-compatible: adi,ad4195-adc
+compatible: "adi,ad4195-adc"
 
 include: adi,ad4170-adc.yaml

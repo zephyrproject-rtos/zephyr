@@ -519,7 +519,7 @@ exit:
  */
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 			      int flags, const struct net_sockaddr *to,
-			      socklen_t tolen)
+			      net_socklen_t tolen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *) obj;
@@ -576,7 +576,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
  */
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 				int flags, struct net_sockaddr *from,
-				socklen_t *fromlen)
+				net_socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char   sendbuf[sizeof("AT+QIRD=##,####")] = {0};
@@ -685,7 +685,7 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
  * Desc: This function will connect with a provided TCP.
  */
 static int offload_connect(void *obj, const struct net_sockaddr *addr,
-						   socklen_t addrlen)
+						   net_socklen_t addrlen)
 {
 	struct modem_socket *sock     = (struct modem_socket *) obj;
 	uint16_t	    dst_port  = 0;

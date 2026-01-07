@@ -49,6 +49,11 @@ _IGNORE_COMPATIBLES = frozenset(
     ]
 )
 
+# Deferred initialization property name.
+# When present, the device is not initialized during boot.
+# (it is evaluated as if initializing "after everything else")
+_DEFERRED_INIT_PROP_NAME = "zephyr,deferred-init"
+
 # The offset of the init pointer in "struct device", in number of pointers.
 DEVICE_INIT_OFFSET = 5
 
@@ -262,6 +267,17 @@ class Validator:
 
         self.errors = 0
 
+    def _flag_error(self, msg):
+        """Remember that a validation error occurred and report to user"""
+        if not self.errors:
+            self.log.error(
+                "Device initialization priority validation failed, "
+                "the sequence of initialization calls does not match "
+                "the devicetree dependencies."
+            )
+        self.errors += 1
+        self.log.error(msg)
+
     def _check_dep(self, dev_ord, dep_ord):
         """Validate the priority between two devices."""
         if dev_ord == dep_ord:
@@ -276,6 +292,30 @@ class Validator:
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
 
+        def _deferred(node):
+            # Even though the property is boolean, it is sometimes present
+            # in node.props despite having value false: check for both
+            # presence *and* value.
+            if (p := node.props.get(_DEFERRED_INIT_PROP_NAME)) is None:
+                return False
+            assert isinstance(p.val, bool)
+            return p.val
+
+        dev_deferred = _deferred(dev_node)
+        dep_deferred = _deferred(dep_node)
+
+        # Deferred devices can depend on any device...
+        if dev_deferred:
+            self.log.info(f"Ignoring deferred device {dev_node.path}")
+            return
+
+        # ...but non-deferred devices cannot depend on them!
+        if dep_deferred:  # we already know dev_deferred==False
+            self._flag_error(
+                f"Non-deferred device {dev_node.path} depends on deferred device {dep_node.path}"
+            )
+            return
+
         dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
         dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
 
@@ -287,14 +327,7 @@ class Validator:
                 f"{dev_node.path} and {dep_node.path} have the same priority: {dev_prio}"
             )
         elif dev_prio < dep_prio:
-            if not self.errors:
-                self.log.error(
-                    "Device initialization priority validation failed, "
-                    "the sequence of initialization calls does not match "
-                    "the devicetree dependencies."
-                )
-            self.errors += 1
-            self.log.error(
+            self._flag_error(
                 f"{dev_node.path} <{dev_init}> is initialized before its dependency "
                 f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})"
             )

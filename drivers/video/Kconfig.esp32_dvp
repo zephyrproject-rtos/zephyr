@@ -4,7 +4,7 @@
 config VIDEO_ESP32
 	bool "Video interface driver"
 	select DMA
-	depends on DT_HAS_ESPRESSIF_ESP32_LCD_CAM_ENABLED
+	depends on DT_HAS_ESPRESSIF_ESP32_LCD_CAM_DVP_ENABLED
 	default y
 	help
 	  This option enables the video interface for the esp32s3.

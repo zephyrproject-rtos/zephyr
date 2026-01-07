@@ -1,0 +1,9 @@
+identifier: stm32h573i_dk/stm32h573xx/ns
+name: ST STM32H573I Discovery Kit non-secure
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+flash: 575 # size in kB of 1 app slot minus MCUboot header size (1KB)
+vendor: st

@@ -25,7 +25,8 @@ if ADC_SILABS_IADC
 
 config ADC_SILABS_IADC_DMA
 	bool "Silabs IADC async DMA support"
-	depends on DMA
+	select DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_IADC),dmas)
 	help
 	  Enable DMA support with the Silabs IADC driver.
 	  This allows ADC conversions to be performed (asynchronously or not)

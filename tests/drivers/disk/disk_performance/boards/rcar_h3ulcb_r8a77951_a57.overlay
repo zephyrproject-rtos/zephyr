@@ -4,5 +4,6 @@
 	disk {
 		status = "okay";
 	};
+
 	status = "okay";
 };

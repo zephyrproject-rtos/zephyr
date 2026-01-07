@@ -4,15 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MCUX_LPCMP
-	bool "NXP LPCMP driver"
-	default y
+	bool "NXP LPCMP driver [DEPRECATED]"
 	depends on DT_HAS_NXP_LPCMP_ENABLED
+	depends on !COMPARATOR_NXP_LPCMP
 	select PINCTRL
+	select DEPRECATED
 	help
 	  Enable the MCUX LPCMP driver.
 
 config MCUX_LPCMP_TRIGGER
-	bool "Trigger support"
+	bool "Trigger support [DEPRECATED]"
 	depends on MCUX_LPCMP
 	help
 	  Enable trigger support for the NXP LPCMP.

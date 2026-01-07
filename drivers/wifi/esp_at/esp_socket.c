@@ -180,7 +180,7 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 	pkt = esp_socket_prepare_pkt(sock, buf, offset, len);
 	if (!pkt) {
 		LOG_ERR("Failed to get net_pkt: len %zu", len);
-		if (esp_socket_type(sock) == SOCK_STREAM) {
+		if (esp_socket_type(sock) == NET_SOCK_STREAM) {
 			if (!esp_socket_flags_test_and_set(sock,
 						ESP_SOCK_CLOSE_PENDING)) {
 				esp_socket_work_submit(sock, &sock->close_work);

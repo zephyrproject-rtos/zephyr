@@ -8,9 +8,6 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: true
-
   fifo-disable:
     type: boolean
     description: Disable the UART FIFO

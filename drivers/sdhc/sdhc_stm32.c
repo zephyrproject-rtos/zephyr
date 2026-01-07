@@ -334,6 +334,12 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+		/* Only wait on semaphore if HAL function succeeded */
+		if (res != HAL_OK) {
+			k_free(dev_data->sdio_dma_buf);
+			return -EIO;
+		}
+
 		/* Wait for whole transfer to complete */
 		if (k_sem_take(&dev_data->device_sync_sem, K_MSEC(CONFIG_SD_CMD_TIMEOUT)) != 0) {
 			k_free(dev_data->sdio_dma_buf);

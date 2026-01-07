@@ -119,7 +119,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 						   0;
 
 	status = Argus_EvaluateData(data->platform.argus.handle, &edata->payload);
-	if (status != STATUS_OK || edata->payload.Status != STATUS_OK) {
+	if (status != STATUS_OK) {
 		LOG_ERR("Data not valid: %d, %d", status, edata->payload.Status);
 		handle_error_on_result(data, -EIO);
 	}

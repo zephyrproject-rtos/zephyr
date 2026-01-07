@@ -28,9 +28,6 @@
 #endif
 #include <fsl_gpio.h>
 #include <fsl_device_registers.h>
-#ifdef MCI_IO_MUX
-#include <zephyr/drivers/pinctrl.h>
-#endif
 
 /* Interrupt sources, matching int-source enum in DTS binding definition */
 #define INT_SOURCE_PINT 0

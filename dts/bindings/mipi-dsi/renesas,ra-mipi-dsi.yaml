@@ -23,7 +23,7 @@ properties:
     type: int
     enum: [1, 2, 3, 4]
     description:
-      PHY PLL divisor.
+      PHY PLL input frequency divisor.
 
   pll-mul-int:
     type: int
@@ -35,6 +35,12 @@ properties:
     enum: ["0.00", "0.33", "0.66", "0.50"]
     description:
       PHY PLL fractional multiplier.
+
+  pll-out-div:
+    type: int
+    enum: [1, 2, 4, 8]
+    description: |
+      PHY PLL output frequency divisor.
 
   lp-divisor:
     type: int

@@ -501,10 +501,6 @@ static void w5500_set_macaddr(const struct device *dev)
 {
 	struct w5500_runtime *ctx = dev->data;
 
-#if DT_INST_PROP(0, zephyr_random_mac_address)
-	gen_random_mac(ctx->mac_addr, WIZNET_OUI_B0, WIZNET_OUI_B1, WIZNET_OUI_B2);
-#endif
-
 	w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
 }
 
@@ -543,40 +539,56 @@ static int w5500_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT)) {
+	err = gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
+	if (err < 0) {
 		LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
-		return -EINVAL;
+		return err;
 	}
 
 	gpio_init_callback(&(ctx->gpio_cb), w5500_gpio_callback,
 			   BIT(config->interrupt.pin));
-
-	if (gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb))) {
-		return -EINVAL;
+	err = gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb));
+	if (err < 0) {
+		LOG_ERR("Unable to add GPIO callback %u", config->interrupt.pin);
+		return err;
 	}
 
-	gpio_pin_interrupt_configure_dt(&config->interrupt,
-					GPIO_INT_EDGE_FALLING);
+	err = gpio_pin_interrupt_configure_dt(&config->interrupt,
+					      GPIO_INT_EDGE_FALLING);
+	if (err < 0) {
+		LOG_ERR("Unable to enable GPIO INT %u", config->interrupt.pin);
+		return err;
+	}
 
-	if (config->reset.port) {
+	if (config->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset)) {
 			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
 			return -EINVAL;
 		}
-		if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT)) {
+
+		err = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+		if (err < 0) {
 			LOG_ERR("Unable to configure GPIO pin %u", config->reset.pin);
-			return -EINVAL;
+			return err;
 		}
-		gpio_pin_set_dt(&config->reset, 0);
+
+		/* See Section 5.5.1 of the W5500 datasheet
+		 * Trc = 500us
+		 * Tpl = 1ms
+		 */
+		gpio_pin_set_dt(&config->reset, 1);
 		k_usleep(500);
+		gpio_pin_set_dt(&config->reset, 0);
+		k_msleep(1);
 	}
 
 	err = w5500_soft_reset(dev);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Reset failed");
 		return err;
 	}
 
+	(void)net_eth_mac_load(&config->mac_cfg, ctx->mac_addr);
 	w5500_set_macaddr(dev);
 	w5500_memory_configure(dev);
 
@@ -601,9 +613,6 @@ static int w5500_init(const struct device *dev)
 }
 
 static struct w5500_runtime w5500_0_runtime = {
-#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-	.mac_addr = DT_INST_PROP(0, local_mac_address),
-#endif
 	.tx_sem = Z_SEM_INITIALIZER(w5500_0_runtime.tx_sem,
 					1,  UINT_MAX),
 	.int_sem  = Z_SEM_INITIALIZER(w5500_0_runtime.int_sem,
@@ -615,6 +624,7 @@ static const struct w5500_config w5500_0_config = {
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,
+	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,

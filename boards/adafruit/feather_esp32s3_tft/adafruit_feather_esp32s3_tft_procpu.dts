@@ -23,6 +23,11 @@
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
 		fuel-gauge0 = &max17048;
+		uart-0 = &uart0;
+		sw0 = &button0;
+		led0 = &led0;
+		led-strip = &led_strip;
+		backlight = &led1;
 	};
 
 	chosen {
@@ -33,15 +38,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &st7789v_tft;
-	};
-
-	/* These aliases are provided for compatibility with samples */
-	aliases {
-		uart-0 = &uart0;
-		sw0 = &button0;
-		led0 = &led0;
-		led-strip = &led_strip;
-		backlight = &led1;
 	};
 
 	buttons {

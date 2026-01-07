@@ -13,7 +13,6 @@
 
 #include <zephyr/drivers/timer/arm_arch_timer.h>
 #include <zephyr/types.h>
-#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {

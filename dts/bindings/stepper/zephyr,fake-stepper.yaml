@@ -1,10 +1,7 @@
-# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright (c) 2025 Jilay Sandeep Pandya
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    This binding provides a fake stepper controller for use as either a stub or a mock in
-    Zephyr testing.
+    A fake stepper controller for use as either a stub or a mock in testing.
 
 compatible: "zephyr,fake-stepper"
-
-include: stepper-controller.yaml

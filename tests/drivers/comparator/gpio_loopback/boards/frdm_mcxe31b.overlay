@@ -1,0 +1,30 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &lpcmp_1;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioa_l 1 GPIO_ACTIVE_HIGH>; /* FRDM-MCXE31B J9-5 */
+	};
+};
+
+&gpioa_l {
+	status = "okay";
+};
+
+&lpcmp_1 {
+	status = "okay";
+	positive-mux-input = "IN0"; /* FRDM-MCXE31B J9-3 */
+	negative-mux-input = "DAC";
+	dac-vref-source = "VREFH1";
+	dac-value = <127>;
+	dac-vref-source = "VREFH1";
+};

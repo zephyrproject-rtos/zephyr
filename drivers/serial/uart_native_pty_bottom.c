@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
-#include <poll.h>
 #include <nsi_tracing.h>
 
 #define ERROR nsi_print_error_and_exit

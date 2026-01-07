@@ -43,7 +43,8 @@ struct udc_skeleton_config {
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
-	void (*make_thread)(const struct device *dev);
+	k_thread_stack_t *thread_stk;
+	size_t thread_stk_sz;
 	int speed_idx;
 };
 
@@ -62,9 +63,12 @@ struct udc_skeleton_data {
  * enable Kconfig option UDC_WORKQUEUE and remove the handler below and
  * caller from the UDC_SKELETON_DEVICE_DEFINE macro.
  */
-static ALWAYS_INLINE void skeleton_thread_handler(void *const arg)
+static void skeleton_thread_handler(void *arg1, void *arg2, void *arg3)
 {
-	const struct device *dev = (const struct device *)arg;
+	const struct device *dev = (const struct device *)arg1;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	LOG_DBG("Driver %p thread started", dev);
 	while (true) {
@@ -283,6 +287,7 @@ static int udc_skeleton_shutdown(const struct device *dev)
 static int udc_skeleton_driver_preinit(const struct device *dev)
 {
 	const struct udc_skeleton_config *config = dev->config;
+	struct udc_skeleton_data *priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
 	uint16_t mps = 1023;
 	int err;
@@ -341,7 +346,16 @@ static int udc_skeleton_driver_preinit(const struct device *dev)
 		}
 	}
 
-	config->make_thread(dev);
+	k_thread_create(&priv->thread_data,
+			config->thread_stk,
+			config->thread_stk_sz,
+			skeleton_thread_handler,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_UDC_SKELETON_THREAD_PRIORITY),
+			K_ESSENTIAL,
+			K_NO_WAIT);
+	k_thread_name_set(&priv->thread_data, dev->name);
+
 	LOG_INF("Device %p (max. speed %d)", dev, config->speed_idx);
 
 	return 0;
@@ -390,26 +404,6 @@ static const struct udc_api udc_skeleton_api = {
 	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n,				\
 			      CONFIG_UDC_SKELETON_STACK_SIZE);			\
 										\
-	static void udc_skeleton_thread_##n(void *dev, void *arg1, void *arg2)	\
-	{									\
-		skeleton_thread_handler(dev);					\
-	}									\
-										\
-	static void udc_skeleton_make_thread_##n(const struct device *dev)	\
-	{									\
-		struct udc_skeleton_data *priv = udc_get_private(dev);		\
-										\
-		k_thread_create(&priv->thread_data,				\
-				udc_skeleton_stack_##n,				\
-				K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),	\
-				udc_skeleton_thread_##n,			\
-				(void *)dev, NULL, NULL,			\
-				K_PRIO_COOP(CONFIG_UDC_SKELETON_THREAD_PRIORITY),\
-				K_ESSENTIAL,					\
-				K_NO_WAIT);					\
-		k_thread_name_set(&priv->thread_data, dev->name);		\
-	}									\
-										\
 	static struct udc_ep_config						\
 		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
 	static struct udc_ep_config						\
@@ -419,7 +413,8 @@ static const struct udc_api udc_skeleton_api = {
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
 		.ep_cfg_in = ep_cfg_out,					\
 		.ep_cfg_out = ep_cfg_in,					\
-		.make_thread = udc_skeleton_make_thread_##n,			\
+		.thread_stk = udc_skeleton_stack_##n,				\
+		.thread_stk_sz = K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),	\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\
 	};									\
 										\

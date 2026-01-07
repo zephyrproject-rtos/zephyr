@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxa577
+  full_name: FRDM-MCXA577
+  vendor: nxp
+  socs:
+  - name: mcxa577

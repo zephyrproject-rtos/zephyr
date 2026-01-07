@@ -22,6 +22,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		rtc = &counter_rtc;
+		accel0 = &fxls8974;
 	};
 
 	chosen {
@@ -31,6 +32,7 @@
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -98,6 +100,20 @@
 	};
 };
 
+&adc0 {
+	status = "okay";
+	sample-time = <12>;
+	vref-mv = <3300>;
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+};
+
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_cmp0>;
+	pinctrl-names = "default";
+};
+
 &cpu0 {
 	clock-frequency = <80000000>;
 };
@@ -134,6 +150,10 @@
 
 &slow_clk {
 	clock-div = <4>;
+};
+
+&fircdiv1_clk {
+	clock-div = <1>;
 };
 
 &fircdiv2_clk {
@@ -202,6 +222,30 @@
 	status = "okay";
 };
 
+&lpi2c0 {
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
+	};
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
 &edma {
 	status = "okay";
 };
@@ -211,5 +255,9 @@
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

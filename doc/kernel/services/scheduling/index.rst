@@ -171,15 +171,21 @@ can be used to allow other threads of the same priority to execute.
 .. image:: timeslicing.svg
    :align: center
 
-The scheduler divides time into a series of **time slices**, where slices
-are measured in system clock ticks. The time slice size is configurable,
-but this size can be changed while the application is running.
+.. note::
+   For SMP, the behavior would be similar to the above UP image, except that
+   Thread 1 would not immediately follow Thread 4. Instead it would be
+   Thread 2, Thread 3, Thread 1, ....
+
+The scheduler divides time on each CPU into a series of **time slices**, where
+slices are measured in system clock ticks. The time slice size is configurable,
+but this size can be changed while the application is running. Scheduling a
+new thread causes the time slice timer to be reset.
 
 At the end of every time slice, the scheduler checks to see if the current
 thread is preemptible and, if so, implicitly invokes :c:func:`k_yield`
 on behalf of the thread. This gives other ready threads of the same priority
-the opportunity to execute before the current thread is scheduled again.
-If no threads of equal priority are ready, the current thread remains
+the opportunity to execute before the current thread is scheduled again. If no
+other threads of equal priority are ready, then the current thread remains
 the current thread.
 
 Threads with a priority higher than specified limit are exempt from preemptive

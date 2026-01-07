@@ -21,6 +21,11 @@
 	aliases {
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button0;
+		led0 = &led0;
+		led-strip = &led_strip;
+		fuel-gauge0 = &max17048;
 	};
 
 	chosen {
@@ -30,15 +35,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
-	};
-
-	/* These aliases are provided for compatibility with samples */
-	aliases {
-		uart-0 = &uart0;
-		sw0 = &button0;
-		led0 = &led0;
-		led-strip = &led_strip;
-		fuel-gauge0 = &max17048;
 	};
 
 	buttons {

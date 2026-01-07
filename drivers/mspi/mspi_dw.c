@@ -1105,9 +1105,9 @@ static int start_next_packet(const struct device *dev)
 	dev_data->dummy_bytes = 0;
 	dev_data->bytes_to_discard = 0;
 
-	dev_data->ctrlr0 &= ~(CTRLR0_TMOD_MASK)
-			  & ~(CTRLR0_DFS_MASK)
-			  & ~(CTRLR0_DFS32_MASK);
+	dev_data->ctrlr0 &= ~CTRLR0_TMOD_MASK
+			 &  ~CTRLR0_DFS_MASK
+			 &  ~CTRLR0_DFS32_MASK;
 
 	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_WAIT_CYCLES_MASK;
 

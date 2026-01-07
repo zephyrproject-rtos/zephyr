@@ -325,7 +325,7 @@ async def sdp_discover_with_range(hci_port, shell, address) -> None:
             hci_transport.sink,
         )
 
-        valid_attribute_ids = []
+        valid_attr_ids = []
 
         with open("bumble_hci_sdp_s_discover_with_range.log", "wb") as snoop_file:
             device.host.snooper = BtSnooper(snoop_file)
@@ -346,12 +346,15 @@ async def sdp_discover_with_range(hci_port, shell, address) -> None:
             sdp_client = SDP_Client(connection)
             await sdp_client.connect()
 
+            shell.exec_command("sdp_server register_sdp_all")
+            shell.exec_command("sdp_server register_sdp_large")
+            shell.exec_command("sdp_server register_sdp_large_valid")
+            shell.exec_command("sdp_server register_sdp_uuid128")
+
             logger.info("<<< 1 List all attributes and get all supported attribute ids")
             search_result = await sdp_client.search_attributes(
                 [BT_L2CAP_PROTOCOL_ID], [SDP_ALL_ATTRIBUTES_RANGE]
             )
-
-            max_attribute_id = 0
 
             assert len(search_result) != 0
             logger.info('SEARCH RESULTS:')
@@ -361,42 +364,73 @@ async def sdp_discover_with_range(hci_port, shell, address) -> None:
                     logger.info(
                         '  ' + '\n  '.join([attribute.to_string()])
                     )
-                    if attribute.id not in valid_attribute_ids:
-                        valid_attribute_ids.append(attribute.id)
-                        if max_attribute_id < attribute.id:
-                            max_attribute_id = attribute.id
+                    if attribute.id not in valid_attr_ids:
+                        valid_attr_ids.append(attribute.id)
 
-            logger.info(f"attribute id list {valid_attribute_ids}")
-            if (max_attribute_id + 10) <= 0xFFFF:
-                max_attribute_id += 10
+            logger.info(f"attribute id list {valid_attr_ids}")
 
-            for attribute_id_start in range(0, max_attribute_id):
-                for attribute_id_end in range(attribute_id_start, max_attribute_id):
-                    # List all services in the root browse group
-                    logger.info(f"<<< Service search discovery UUID {BT_L2CAP_PROTOCOL_ID} with "
-                                f"range ({attribute_id_start}, {attribute_id_end})")
-                    search_result = await sdp_client.search_attributes(
-                        [BT_L2CAP_PROTOCOL_ID], [(attribute_id_start, attribute_id_end)]
-                    )
-                    in_range = False
-                    for id in valid_attribute_ids:
-                        if attribute_id_start <= id <= attribute_id_end:
-                            logger.info(f"({attribute_id_start} {attribute_id_end}) in range")
-                            in_range = True
-                            break
+            valid_attr_ids.sort()
+            logger.info(f"Sorted attribute id list {valid_attr_ids}")
 
-                    logger.info('SEARCH RESULTS:')
-                    for attribute_list in search_result:
-                        logger.info('SERVICE:')
-                        logger.info(
-                            '  ' +
-                            '\n'.join([attribute.to_string() for attribute in attribute_list])
-                        )
+            range_list = []
 
-                    if in_range:
-                        assert len(search_result) != 0
-                    else:
-                        assert len(search_result) == 0
+            for _, attr_id_start in enumerate(valid_attr_ids):
+                for _, attr_id_end in enumerate(valid_attr_ids):
+                    if attr_id_start >= attr_id_end:
+                        continue
+
+                    discover_attr_ids = []
+
+                    if attr_id_start > 0:
+                        discover_attr_ids.append(attr_id_start - 1)
+                    discover_attr_ids.append(attr_id_start)
+                    discover_attr_ids.append(attr_id_start + 1)
+                    if attr_id_end > 0:
+                        discover_attr_ids.append(attr_id_end - 1)
+                    discover_attr_ids.append(attr_id_end)
+                    if attr_id_end < 0xFFFF:
+                        discover_attr_ids.append(attr_id_end + 1)
+
+                    discover_attr_ids = list(dict.fromkeys(discover_attr_ids))
+                    discover_attr_ids.sort()
+
+                    for _, discover_start in enumerate(discover_attr_ids):
+                        for _, discover_end in enumerate(discover_attr_ids):
+                            if discover_start > discover_end:
+                                continue
+
+                            if (discover_start, discover_end) in range_list:
+                                continue
+
+                            range_list.append((discover_start, discover_end))
+
+                            # List all services in the root browse group
+                            logger.info(f"<<< Service search discovery UUID {BT_L2CAP_PROTOCOL_ID} "
+                                        f"with range ({discover_start}, {discover_end})")
+
+                            search_result = await sdp_client.search_attributes(
+                                [BT_L2CAP_PROTOCOL_ID], [(discover_start, discover_end)]
+                            )
+
+                            in_range = False
+                            for id in valid_attr_ids:
+                                if discover_start <= id <= discover_end:
+                                    logger.info(f"({discover_start} {discover_end}) in range")
+                                    in_range = True
+                                    break
+
+                            logger.info('SEARCH RESULTS:')
+                            for attr_list in search_result:
+                                logger.info('SERVICE:')
+                                logger.info(
+                                    '  ' + '\n'.join([attr.to_string() for attr in attr_list])
+                                )
+
+                            if in_range:
+                                assert len(search_result) != 0
+                            else:
+                                assert len(search_result) == 0
+
 
 class TestSdpServer:
     def test_discovery_device(self, sdp_server_dut):

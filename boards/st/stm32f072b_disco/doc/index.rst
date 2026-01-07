@@ -54,8 +54,9 @@ STM32F072B-DISCO Discovery kit provides the following hardware components:
 - 24 capacitive sensing channels for touchkey, linear and rotary touch sensors
 
 More information about STM32F072RB can be found here:
-       - `STM32F072RB on www.st.com`_
-       - `STM32F072xB reference manual`_
+
+- `STM32F072RB on www.st.com`_
+- `STM32F072xB reference manual`_
 
 Supported Features
 ==================

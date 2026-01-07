@@ -92,3 +92,5 @@ elseif(CONFIG_SOC_ESP32C6_LPCORE)
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default.ld CACHE INTERNAL "")
 endif()
+
+zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)

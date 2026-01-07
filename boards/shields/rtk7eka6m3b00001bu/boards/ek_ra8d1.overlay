@@ -61,6 +61,7 @@
 	output-pin-hsync = "TCON_PIN_1";
 	output-pin-vsync = "TCON_PIN_0";
 	output-pin-de = "TCON_PIN_2";
+	ext-ram = <&sdram1>;
 };
 
 &iic1 {

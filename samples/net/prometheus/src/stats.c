@@ -8,7 +8,6 @@
 LOG_MODULE_DECLARE(main, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>

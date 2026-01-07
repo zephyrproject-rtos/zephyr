@@ -56,12 +56,9 @@ struct bmm350_bus_io {
 
 extern const struct bmm350_bus_io bmm350_bus_rtio;
 
-#include <zephyr/types.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>

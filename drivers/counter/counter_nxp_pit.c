@@ -300,7 +300,7 @@ static DEVICE_API(counter, nxp_pit_driver_api) = {
 
 #define NXP_PIT_SETUP_IRQ_ARRAY(n)								\
 	/* Create Array of IRQs -> 1 irq func per channel */					\
-	void (*nxp_pit_irq_config_array[DT_INST_FOREACH_CHILD_SEP_VARGS(n,			\
+	void (*nxp_pit_irq_config_array_##n[DT_INST_FOREACH_CHILD_SEP_VARGS(n,			\
 					DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)])		\
 				(const struct device *dev) = {					\
 					DT_INST_FOREACH_CHILD_STATUS_OKAY(n,			\
@@ -355,7 +355,7 @@ static DEVICE_API(counter, nxp_pit_driver_api) = {
 		.irq_config_func = COND_CODE_1(DT_NODE_HAS_PROP(				\
 					DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pit), interrupts),	\
 					(nxp_pit_irq_config_func_##n),				\
-					(&nxp_pit_irq_config_array[0])),			\
+					(&nxp_pit_irq_config_array_##n[0])),			\
 		.num_channels = DT_INST_FOREACH_CHILD_SEP_VARGS(				\
 			n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel),				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\

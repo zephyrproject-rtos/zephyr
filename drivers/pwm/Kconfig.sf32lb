@@ -8,3 +8,11 @@ config PWM_SF32LB_GPT
 	help
 	  Enable PWM driver for SF32LB series of MCUs. This driver uses
 	  the timer peripheral to implement PWM functionality.
+
+config PWM_SF32LB_ATIM
+	bool "ATIM based PWM driver for SF32LB family of MCUs"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_ATIM_PWM_ENABLED
+	help
+	  Enable PWM driver for SF32LB series of MCUs. This driver uses
+	  the advanced timer peripheral to implement PWM functionality.

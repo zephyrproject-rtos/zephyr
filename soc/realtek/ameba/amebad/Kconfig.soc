@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AMEBAD
+	bool
+	select SOC_FAMILY_REALTEK_AMEBA
+
+config SOC_SERIES
+	default "amebad" if SOC_SERIES_AMEBAD
+
+config SOC_RTL872XD
+	bool
+	select SOC_SERIES_AMEBAD
+
+config SOC
+	default "rtl872xd" if SOC_RTL872XD

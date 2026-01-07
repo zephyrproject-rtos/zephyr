@@ -37,7 +37,7 @@
 #endif
 
 #else
-#error "Unsupported configuraiton"
+#error "Unsupported configuration"
 #endif
 
 #define EXPECTED_SIZE 512

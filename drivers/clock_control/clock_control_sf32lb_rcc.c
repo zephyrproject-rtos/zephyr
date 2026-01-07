@@ -287,9 +287,11 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 	case SF32LB52X_CLOCK_GPADC:
 	case SF32LB52X_CLOCK_TSEN:
 	case SF32LB52X_CLOCK_GPTIM1:
-	case SF32LB52X_CLOCK_GPTIM2:
 	case SF32LB52X_CLOCK_ATIM1:
 		*rate = sf32lb_get_pclk1(config);
+		return 0;
+	case SF32LB52X_CLOCK_GPTIM2:
+		*rate = 24000000U;
 		return 0;
 	case SF32LB52X_CLOCK_BTIM1:
 	case SF32LB52X_CLOCK_BTIM2:

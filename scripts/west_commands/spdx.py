@@ -6,6 +6,7 @@ import os
 import uuid
 
 from west.commands import WestCommand
+
 from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery
 from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse
 

@@ -45,6 +45,8 @@ if(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
   zephyr_sources_ifdef(CONFIG_CPU_CORTEX_M55 mpu_regions.c)
 endif()
 
+zephyr_sources_ifdef(CONFIG_PM power.c)
+
 zephyr_include_directories(.)
 
 if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")

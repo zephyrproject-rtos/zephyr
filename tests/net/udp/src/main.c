@@ -48,7 +48,6 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define NET_LOG_ENABLED 1
 #endif
 #include "net_private.h"
-#include "ipv4.h"
 
 static bool test_failed;
 static bool fail = true;

@@ -14,8 +14,6 @@ config NATIVE_SIMULATOR_MCU_N
 	default 0
 	help
 	  Which native simulator microcontroller/CPU number is this image targeting.
-	  This option is only applicable for targets which use the
-	  native simulator as their runner.
 
 config NATIVE_SIMULATOR_NUMBER_MCUS
 	int "Total number of MCUs this target has"

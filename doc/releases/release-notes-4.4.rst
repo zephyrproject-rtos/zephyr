@@ -52,6 +52,17 @@ API Changes
 ..
   Only removed, deprecated and new APIs. Changes go in migration guide.
 
+* Architectures
+
+  * Xtensa
+
+    * Removed as these are architectural features:
+
+      * :kconfig:option:`CONFIG_XTENSA_MMU_DOUBLE_MAP`
+      * :kconfig:option:`CONFIG_XTENSA_RPO_CACHE`
+      * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
+      * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
+
 Removed APIs and options
 ========================
 
@@ -66,12 +77,20 @@ Deprecated APIs and options
       :c:func:`bt_mesh_input_numeric` instead.
     * The callback :c:member:`output_number` in :c:struct:`bt_mesh_prov` structure was deprecated.
       Applications should use :c:member:`output_numeric` callback instead.
+    * The :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` option has been deprecated.
 
   * Host
 
     * :c:member:`bt_conn_le_info.interval` has been deprecated. Use
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
+
+* Sensors
+
+  * NXP
+
+    * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
+      currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
 
 New APIs and options
 ====================
@@ -83,6 +102,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Architectures
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS`
+
 * Audio
 
   * :c:macro:`PDM_DT_IO_CFG_GET`
@@ -90,6 +115,10 @@ New APIs and options
   * :c:macro:`PDM_DT_HAS_RIGHT_CHANNEL`
 
 * Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_bap_ep_get_conn`
 
   * Host
 
@@ -112,6 +141,13 @@ New APIs and options
     * :c:func:`net_eth_mac_load`
     * :c:struct:`net_eth_mac_config`
     * :c:macro:`NET_ETH_MAC_DT_CONFIG_INIT` and :c:macro:`NET_ETH_MAC_DT_INST_CONFIG_INIT`
+
+  * Added :c:enum:`ethernet_stats_type` and optional ``get_stats_type`` callback in
+    :c:struct:`ethernet_api` to allow filtering of ethernet statistics by type
+    (common, vendor, or all). Drivers that support vendor-specific statistics can
+    implement ``get_stats_type`` to skip expensive FW queries when only common stats
+    are requested. The existing ``get_stats`` API remains unchanged for backward
+    compatibility.
 
 * Flash
 
@@ -156,6 +192,16 @@ New APIs and options
 
   * :c:macro:`COND_CASE_1`
 
+* Timeutil
+
+  * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
+
+* Video
+
+  * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
+  * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
+  * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
@@ -185,6 +231,10 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Comparator
+
+    * Added NXP low power comparator driver (:dtcompatible:`nxp,lpcmp`). (:github:`100998`)
+
 * Radio
 
   * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
@@ -207,6 +257,10 @@ DeviceTree
 
 Libraries / Subsystems
 **********************
+
+* LoRa/LoRaWAN
+
+   * :c:func:`lora_airtime`
 
 Other notable changes
 *********************

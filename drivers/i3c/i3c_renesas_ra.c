@@ -109,35 +109,6 @@ extern void i3c_tx_isr(void);
 extern void i3c_rcv_isr(void);
 extern void i3c_eei_isr(void);
 
-static enum i3c_bus_mode i3c_renesas_ra_get_bus_mode(const struct i3c_dev_list *dev_list)
-{
-	enum i3c_bus_mode mode = I3C_BUS_MODE_PURE;
-
-	for (int i = 0; i < dev_list->num_i2c; i++) {
-		switch (I3C_LVR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
-		case I3C_LVR_I2C_DEV_IDX_0:
-			if (mode < I3C_BUS_MODE_MIXED_FAST) {
-				mode = I3C_BUS_MODE_MIXED_FAST;
-			}
-			break;
-		case I3C_LVR_I2C_DEV_IDX_1:
-			if (mode < I3C_BUS_MODE_MIXED_LIMITED) {
-				mode = I3C_BUS_MODE_MIXED_LIMITED;
-			}
-			break;
-		case I3C_LVR_I2C_DEV_IDX_2:
-			if (mode < I3C_BUS_MODE_MIXED_SLOW) {
-				mode = I3C_BUS_MODE_MIXED_SLOW;
-			}
-			break;
-		default:
-			mode = I3C_BUS_MODE_INVALID;
-			break;
-		}
-	}
-	return mode;
-}
-
 static int i3c_renesas_ra_address_slots_init(const struct device *dev)
 {
 	const struct i3c_renesas_ra_config *config = dev->config;
@@ -1102,7 +1073,7 @@ static int i3c_renesas_ra_init(const struct device *dev)
 	config->bus_enable_irq();
 
 #ifdef CONFIG_I3C_CONTROLLER
-	data->mode = i3c_renesas_ra_get_bus_mode(&config->common.dev_list);
+	data->mode = i3c_bus_mode(&config->common.dev_list);
 
 	/* Clear bus internal device info */
 	memset(data->device_info, 0x00,

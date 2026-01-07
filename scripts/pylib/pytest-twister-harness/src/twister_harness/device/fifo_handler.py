@@ -44,13 +44,17 @@ class FifoHandler:
         thread when timeout will expire.
         """
         self._stop_waiting_for_opening.clear()
+        self._fifo_opened.clear()
         self._make_fifo_file(self._fifo_out_path)
         self._make_fifo_file(self._fifo_in_path)
-        if self._open_fifo_thread is None:
+        # Only create new threads if they don't exist or are not alive
+        if self._open_fifo_thread is None or not self._open_fifo_thread.is_alive():
             self._open_fifo_thread = threading.Thread(target=self._open_fifo, daemon=True)
             self._open_fifo_thread.start()
-        if self._opening_monitor_thread is None:
-            self._opening_monitor_thread = threading.Thread(target=self._opening_monitor, daemon=True)
+        if self._opening_monitor_thread is None or not self._opening_monitor_thread.is_alive():
+            self._opening_monitor_thread = threading.Thread(
+                target=self._opening_monitor, daemon=True
+            )
             self._opening_monitor_thread.start()
 
     @staticmethod
@@ -90,6 +94,7 @@ class FifoHandler:
 
     def disconnect(self) -> None:
         self._stop_waiting_for_opening.set()
+
         if self._open_fifo_thread and self._open_fifo_thread.is_alive():
             self._open_fifo_thread.join(timeout=1)
         self._open_fifo_thread = None
@@ -100,9 +105,13 @@ class FifoHandler:
 
         if self._fifo_out_file:
             self._fifo_out_file.close()
+            self._fifo_out_file = None
         if self._fifo_in_file:
             self._fifo_in_file.close()
+            self._fifo_in_file = None
 
+    def cleanup(self):
+        """Clean up FIFO files when object is destroyed"""
         if os.path.exists(self._fifo_out_path):
             os.unlink(self._fifo_out_path)
         if os.path.exists(self._fifo_in_path):
@@ -113,8 +122,10 @@ class FifoHandler:
         try:
             return bool(
                 self._fifo_opened.is_set()
-                and self._fifo_in_file is not None and self._fifo_out_file is not None
-                and self._fifo_in_file.fileno() and self._fifo_out_file.fileno()
+                and self._fifo_in_file is not None
+                and self._fifo_out_file is not None
+                and self._fifo_in_file.fileno()
+                and self._fifo_out_file.fileno()
             )
         except ValueError:
             return False

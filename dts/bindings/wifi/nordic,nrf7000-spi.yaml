@@ -3,7 +3,7 @@
 
 description: nRF7002 Wi-Fi chip with SPI interface.
 
-compatible: nordic,nrf7000-spi
+compatible: "nordic,nrf7000-spi"
 
 include:
   - "nordic,nrf70-spi.yaml"

@@ -29,60 +29,67 @@ only. Both support USB PD protocol and alternate mode functionality.
 Application firmware examples are provided to evaluate the USB-C technology
 through various use cases.
 
+- STM32G081RBT6 microcontroller with 128 Kbytes of Flash memory and
+  32 Kbytes of RAM in LQFP64 package
+- MCU voltage choice fixed 3.3 V or adjustable from 1.65 V to 3.6 V
+- I2C compatible serial interface
+- RTC with backup battery
+- 8-Gbyte or more SPI interface microSD card
+- Potentiometer
+- 4 color user LEDs and one LED as MCU low-power alarm
+- Reset, Tamper and User buttons
+- 4-direction control and selection joystick
+- Board connectors
 
+  - 5 V power jack
+  - RS-232 and RS485 communications
+  - Stereo audio jack including analog microphone input
+  - microSD card
+  - Extension I2C connector
+  - Motor-control connector
 
-- Mother board
-    - STM32G081RBT6 microcontroller with 128 Kbytes of Flash memory and
-      32 Kbytes of RAM in LQFP64 package
-    - MCU voltage choice fixed 3.3 V or adjustable from 1.65 V to 3.6 V
-    - I2C compatible serial interface
-    - RTC with backup battery
-    - 8-Gbyte or more SPI interface microSD card
-    - Potentiometer
-    - 4 color user LEDs and one LED as MCU low-power alarm
-    - Reset, Tamper and User buttons
-    - 4-direction control and selection joystick
-    - Board connectors:
-        - 5 V power jack
-        - RS-232 and RS485 communications
-        - Stereo audio jack including analog microphone input
-        - microSD card
-        - Extension I2C connector
-        - Motor-control connector
-    - Board extension connectors:
-        - Daughterboard connectors for legacy peripheral daughter board or
-          USB-C daughterboard
-        - Extension connectors for daughterboard or wire-wrap board
-    - Flexible power-supply options:
-        - 5 V power jack
-        - ST-LINK/V2-1 USB connector
-        - Daughterboard
-    - On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration
-      capability: mass storage, virtual COM port and debug port
-    - Legacy peripheral daughterboard
-        - IrDA transceiver
-        - IR LED and IR receiver
-        - Light dependent resistor (LDR)
-        - Temperature Sensor
-        - Board connectors:
-            - Two HDMI connectors with DDC and CEC
-            - Smart card slot
-    - USB-C and Power Delivery daughterboard
-        - Mux for USB3.1 Gen1 / DisplayPort input and Type-C port1 output
-        - Mux for Type-C port2 input and DisplayPort output / USB2.0
-        - VCONN on Type-C port1
-        - USB PD on Type-C port1
-        - Board connectors:
-            - Type-C port1 DRP (dual-role port)
-            - Type-C port2 Sink
-            - DisplayPort input
-            - DisplayPort output
-            - USB 3.1 Gen1 Type-B receptacle
-            - USB2.0 Type-A receptacle
-            - 19 V power jack for USB PD
+- Board extension connectors:
+
+  - Daughterboard connectors for legacy peripheral daughter board or
+    USB-C daughterboard
+  - Extension connectors for daughterboard or wire-wrap board
+
+- Flexible power-supply options:
+
+  - 5 V power jack
+  - ST-LINK/V2-1 USB connector
+  - Daughterboard
+
+- On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration
+  capability: mass storage, virtual COM port and debug port
+- Legacy peripheral daughterboard
+
+  - IrDA transceiver
+  - IR LED and IR receiver
+  - Light dependent resistor (LDR)
+  - Temperature Sensor
+  - Board connectors
+
+    - Two HDMI connectors with DDC and CEC
+    - Smart card slot
+
+- USB-C and Power Delivery daughterboard
+
+  - Mux for USB3.1 Gen1 / DisplayPort input and Type-C port1 output
+  - Mux for Type-C port2 input and DisplayPort output / USB2.0
+  - VCONN on Type-C port1
+  - USB PD on Type-C port1
+  - Board connectors
+
+    - Type-C port1 DRP (dual-role port)
+    - Type-C port2 Sink
+    - DisplayPort input
+    - DisplayPort output
+    - USB 3.1 Gen1 Type-B receptacle
+    - USB2.0 Type-A receptacle
+    - 19 V power jack for USB PD
 
 More information about the board can be found at the `STM32G081B-EVAL website`_.
-
 
 More information about STM32G081RB can be found here:
 

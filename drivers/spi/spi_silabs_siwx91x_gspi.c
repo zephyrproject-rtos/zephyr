@@ -24,8 +24,6 @@
 LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
-#define GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK   110000000
-#define GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE 40000000
 #define GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE 4096
 #define SPI_HIGH_BURST_FREQ_THRESHOLD_HZ      10000000
 
@@ -77,27 +75,17 @@ static bool spi_siwx91x_is_dma_enabled_instance(const struct device *dev)
 #endif
 }
 
-void gspi_siwx91x_pick_lower_freq(uint32_t clock_hz, uint32_t requested_hz, uint32_t *actual_hz_out,
-				  uint32_t *div_out)
+static uint32_t gspi_siwx91x_get_divider(uint32_t clock_hz, uint32_t requested_hz)
 {
-	/* Calculate divider that ensures freq <= requested */
 	uint32_t divider = DIV_ROUND_UP(clock_hz, 2 * requested_hz);
-	uint32_t actual_hz;
+	uint32_t actual_freq = clock_hz / (2U * divider);
 
-	if (divider == 0U) {
-		divider = 1U;
+	if (requested_hz != actual_freq) {
+		LOG_INF("Requested %u Hz, programmed %u Hz (divider=%u)",
+			requested_hz, actual_freq, divider);
 	}
 
-	/* Compute the actual achievable frequency */
-	actual_hz = clock_hz / (2U * divider);
-
-	if (actual_hz_out) {
-		*actual_hz_out = actual_hz;
-	}
-
-	if (div_out) {
-		*div_out = divider;
-	}
+	return divider;
 }
 
 static int gspi_siwx91x_config(const struct device *dev, const struct spi_config *spi_cfg,
@@ -105,9 +93,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 {
 	__maybe_unused struct gspi_siwx91x_data *data = dev->data;
 	const struct gspi_siwx91x_config *cfg = dev->config;
-	uint32_t bit_rate = spi_cfg->frequency;
-	uint32_t clk_div_factor;
-	uint32_t actual_freq;
 	uint32_t clock_rate;
 	int ret;
 	__maybe_unused int channel_filter;
@@ -137,34 +122,11 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	}
 
 	/* Configure clock divider based on the requested bit rate */
-	if (bit_rate > GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK) {
-		clk_div_factor = 1;
-	} else {
-		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_rate);
-		if (ret) {
-			return ret;
-		}
-
-		gspi_siwx91x_pick_lower_freq(clock_rate, spi_cfg->frequency, &actual_freq,
-					     &clk_div_factor);
-		if (spi_cfg->frequency != actual_freq) {
-			LOG_INF("Requested %u Hz, programmed %u Hz (divider=%u)",
-				spi_cfg->frequency, actual_freq, clk_div_factor);
-		}
+	ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_rate);
+	if (ret) {
+		return ret;
 	}
-
-	if (clk_div_factor < 1) {
-		cfg->reg->GSPI_CLK_CONFIG_b.GSPI_CLK_EN = 1;
-		cfg->reg->GSPI_CLK_CONFIG_b.GSPI_CLK_SYNC = 1;
-	}
-
-	/* Configure data sampling edge for high-speed transfers */
-	if (bit_rate > GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE) {
-		cfg->reg->GSPI_BUS_MODE_b.GSPI_DATA_SAMPLE_EDGE = 1;
-	}
-
-	/* Set the clock divider factor */
-	cfg->reg->GSPI_CLK_DIV = clk_div_factor;
+	cfg->reg->GSPI_CLK_DIV = gspi_siwx91x_get_divider(clock_rate, spi_cfg->frequency);
 
 	/* Configure SPI clock mode */
 	if ((spi_cfg->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) == 0) {
@@ -627,7 +589,7 @@ static int gspi_siwx91x_transceive(const struct device *dev, const struct spi_co
 				   spi_callback_t cb, void *userdata)
 {
 	struct gspi_siwx91x_data *data = dev->data;
-	int ret = 0;
+	int ret;
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
@@ -636,40 +598,38 @@ static int gspi_siwx91x_transceive(const struct device *dev, const struct spi_co
 
 	if (!spi_siwx91x_is_dma_enabled_instance(dev) && asynchronous) {
 		ret = -ENOTSUP;
-		pm_device_runtime_put(dev);
-		return ret;
+		goto pm;
 	}
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
-	/* Configure the device if it is not already configured */
 	if (!spi_context_configured(&data->ctx, config)) {
 		ret = gspi_siwx91x_config(dev, config, cb, userdata);
 		if (ret) {
-			spi_context_release(&data->ctx, ret);
-			pm_device_runtime_put(dev);
-			return ret;
+			goto context;
 		}
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs,
 				  SPI_WORD_SIZE_GET(config->operation) / 8);
 
-	/* Check if DMA is enabled */
 	if (spi_siwx91x_is_dma_enabled_instance(dev)) {
-		/* Perform DMA transceive */
 		ret = gspi_siwx91x_transceive_dma(dev, config);
-		if (ret < 0) {
-			pm_device_runtime_put(dev);
-		}
-		spi_context_release(&data->ctx, ret);
 	} else {
-		/* Perform synchronous polling transceive */
 		ret = gspi_siwx91x_transceive_polling_sync(dev, &data->ctx);
-		spi_context_unlock_unconditionally(&data->ctx);
-		pm_device_runtime_put(dev);
 	}
 
+	if (spi_siwx91x_is_dma_enabled_instance(dev) && !ret) {
+		/* pm_device_runtime_put(dev) is called from the dma callback */
+		spi_context_release(&data->ctx, ret);
+		return ret;
+	}
+
+context:
+	spi_context_release(&data->ctx, ret);
+pm:
+	pm_device_runtime_put(dev);
 	return ret;
+
 }
 
 static int gspi_siwx91x_transceive_sync(const struct device *dev, const struct spi_config *config,

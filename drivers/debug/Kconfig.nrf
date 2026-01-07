@@ -117,7 +117,7 @@ menuconfig DEBUG_CORESIGHT_NRF
 	default y
 	depends on DT_HAS_NORDIC_CORESIGHT_NRF_ENABLED
 	select PINCTRL
-	select NRF_IRONSIDE_TDD_SERVICE
+	select IRONSIDE_SE_CALL
 	help
 	  Support CoreSight peripherals in Test and Debug Domain for ARM
 	  CoreSight System Trace Macrocell (STM) trace support.

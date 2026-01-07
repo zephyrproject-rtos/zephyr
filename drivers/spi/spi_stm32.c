@@ -859,8 +859,6 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);
 #endif
-
-	spi_stm32_pm_policy_state_lock_put(dev);
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -1316,14 +1314,14 @@ static int transceive(const struct device *dev,
 		}
 	} while (ret == 0 && spi_stm32_transfer_ongoing(data));
 #else /* CONFIG_SPI_STM32_INTERRUPT */
-	do {
+	while (ret == 0 && spi_stm32_transfer_ongoing(data)) {
 		ret = spi_stm32_shift_frames(cfg, data);
 
 		if (ret == 0 && transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
 			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
 			transfer_dir = LL_SPI_GetTransferDirection(spi);
 		}
-	} while (ret == 0 && spi_stm32_transfer_ongoing(data));
+	}
 
 	spi_stm32_complete(dev, ret);
 
@@ -1337,6 +1335,7 @@ static int transceive(const struct device *dev,
 
 end:
 #endif /* CONFIG_SPI_RTIO */
+	spi_stm32_pm_policy_state_lock_put(dev);
 
 	spi_context_release(&data->ctx, ret);
 
@@ -1636,9 +1635,9 @@ static int transceive_dma(const struct device *dev,
 #endif /* CONFIG_SPI_SLAVE */
 
 end:
-	spi_context_release(&data->ctx, ret);
-
 	spi_stm32_pm_policy_state_lock_put(dev);
+
+	spi_context_release(&data->ctx, ret);
 
 	return ret;
 }
@@ -1716,7 +1715,7 @@ static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 static int spi_stm32_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
-	struct spi_stm32_data *data = dev->data;
+	__maybe_unused struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
@@ -1739,7 +1738,6 @@ static int spi_stm32_pm_action(const struct device *dev,
 		if (err < 0) {
 			return err;
 		}
-		spi_context_unlock_unconditionally(&data->ctx);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Stop device clock. */
@@ -1805,6 +1803,8 @@ static int spi_stm32_init(const struct device *dev)
 #ifdef CONFIG_SPI_RTIO
 	spi_rtio_init(data->rtio_ctx, dev);
 #endif /* CONFIG_SPI_RTIO */
+
+	spi_context_unlock_unconditionally(&data->ctx);
 
 	return pm_device_driver_init(dev, spi_stm32_pm_action);
 }

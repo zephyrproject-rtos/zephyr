@@ -273,10 +273,13 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	peer.sin6_port = net_htons(aMessageInfo->mPeerPort);
 	memcpy(&peer.sin6_addr, &aMessageInfo->mPeerAddr, sizeof(otIp6Address));
 
-	if (((aMessageInfo->mPeerAddr.mFields.m8[0] == 0xfe) &&
-	    ((aMessageInfo->mPeerAddr.mFields.m8[1] & 0xc0) == 0x80)) &&
-	    !aMessageInfo->mIsHostInterface) {
-		peer.sin6_scope_id = ail_iface_index;
+	if ((aMessageInfo->mPeerAddr.mFields.m8[0] == 0xfe) &&
+	    ((aMessageInfo->mPeerAddr.mFields.m8[1] & 0xc0) == 0x80)) {
+		if (aMessageInfo->mIsHostInterface) {
+			peer.sin6_scope_id = ail_iface_index;
+		} else {
+			peer.sin6_scope_id = ot_iface_index;
+		}
 	}
 
 	msg_hdr.msg_name = &peer;
@@ -305,7 +308,8 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 		cmsg_hdr->cmsg_type = ZSOCK_IPV6_PKTINFO;
 		cmsg_hdr->cmsg_len = NET_CMSG_LEN(sizeof(pktinfo));
 
-		pktinfo.ipi6_ifindex = aMessageInfo->mIsHostInterface ? 0 : ail_iface_index;
+		pktinfo.ipi6_ifindex = aMessageInfo->mIsHostInterface ?
+						ail_iface_index : ot_iface_index;
 
 		memcpy(&pktinfo.ipi6_addr, &aMessageInfo->mSockAddr, sizeof(otIp6Address));
 		memcpy(NET_CMSG_DATA(cmsg_hdr), &pktinfo, sizeof(pktinfo));

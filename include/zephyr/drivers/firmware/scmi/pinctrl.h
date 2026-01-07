@@ -6,13 +6,21 @@
 
 /**
  * @file
- * @brief SCMI pinctrl protocol helpers
+ * @ingroup scmi_pinctrl
+ * @brief Header file for the SCMI Pin Control Protocol.
  */
 
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_
 #define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
+
+/**
+ * @brief Pin configuration and control via SCMI
+ * @defgroup scmi_pinctrl Pin Control Protocol
+ * @ingroup scmi_protocols
+ * @{
+ */
 
 #define ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE (10 * 2)
 
@@ -28,6 +36,8 @@
 
 #define SCMI_PINCTRL_ATTRIBUTES_CONFIG_NUM(attributes)\
 	(((attributes) & GENMASK(9, 2)) >> 2)
+
+#define SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION	0x10000
 
 /**
  * @brief Pinctrl protocol command message IDs
@@ -99,5 +109,9 @@ struct scmi_pinctrl_settings {
  * @retval negative errno if failure
  */
 int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings);
+
+/**
+ * @}
+ */
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_ */

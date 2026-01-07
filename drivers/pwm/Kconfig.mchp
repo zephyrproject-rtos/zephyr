@@ -11,4 +11,11 @@ config PWM_MCHP_G1_TCC
 	help
 	  Enable the Microchip Pulse Width Modulation(PWM) driver.
 
+config PWM_MCHP_TC_G1
+	bool "Microchip TC G1 PWM driver"
+	default y
+	depends on  DT_HAS_MICROCHIP_TC_G1_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enable the Microchip Pulse Width Modulation(PWM) driver.
 endmenu

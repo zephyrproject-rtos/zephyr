@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -20,6 +21,37 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep &powerdown>;
+		};
+	};
+
+	power-states {
+		/*
+		 * Note:
+		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *  - 'min-residency-us' needs to be adjusted according to the actual project
+		 *    requirements. The values provided here are not applicable to all real
+		 *    projects.
+		 */
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <1>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <10>;
+		};
+
+		powerdown: powerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <80000>;
+			exit-latency-us = <20>;
 		};
 	};
 
@@ -257,6 +289,7 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 			clk-source = <0>;
+			number-of-mb = <32>;
 			status = "disabled";
 		};
 
@@ -447,7 +480,7 @@
 			reg = <0x400ab000 0x1000>;
 			interrupts = <55 0>;
 			clock-frequency = <16000>;
-			prescale-glitch-filter = <0>;
+			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";
@@ -457,6 +490,7 @@
 			compatible = "nxp,os-timer";
 			reg = <0x400ad000 0x1000>;
 			interrupts = <57 0>;
+			resets = <&reset NXP_SYSCON_RESET(1, 1)>;
 			status = "disabled";
 		};
 
@@ -471,6 +505,30 @@
 			interrupts = <60 0>;
 			status = "disabled";
 			clk-divider = <1>;
+		};
+
+		spc: system-modules@40090000 {
+			compatible = "nxp,spc";
+			reg = <0x40090000 0x1000>;
+			interrupts = <16 0>;
+			wakeup-delay = <780>;
+		};
+
+		wuu: system-modules@40092000 {
+			compatible = "nxp,wuu";
+			reg = <0x40092000 0x1000>;
+			interrupts = <18 0>;
+		};
+
+		cmc: system-modules@4008B000 {
+			compatible = "nxp,cmc";
+			reg = <0x4008B000 0x1000>;
+			interrupts = <1 0>;
+		};
+
+		vbat: system-modules@40093000 {
+			compatible = "nxp,vbat";
+			reg = <0x40093000 0x1000>;
 		};
 	};
 };

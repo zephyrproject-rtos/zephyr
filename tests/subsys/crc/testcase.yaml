@@ -1,7 +1,9 @@
 tests:
   subsys.crc:
-    depends_on: crc
     tags:
       - subsys
       - crc
     harness: ztest
+    integration_platforms:
+      - native_sim
+      - ek_ra8m1

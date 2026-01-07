@@ -2040,17 +2040,68 @@ This has been fixed in main for v4.3.0
 :cve:`2025-9557`
 ----------------
 
-Under embargo until 2025-11-24
+Bluetooth: Mesh: Out-of-Bound Write in gen_prov_cont
+
+An out-of-bound write can lead to an arbitrary code execution. Even on
+devices with some form of memory protection, this can still lead to a
+crash and a resultant denial of service.
+
+- `Zephyr project bug tracker GHSA-r3j3-c5v7-2ppf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r3j3-c5v7-2ppf>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 95061 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/95061>`_
+
+- `PR 97518 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97518>`_
+
+- `PR 97517 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97517>`_
 
 :cve:`2025-9558`
 ----------------
 
-Under embargo until 2025-11-24
+Bluetooth: Mesh: Out-of-Bound Write in gen_prov_start
+
+There is a potential OOB Write vulnerability in the gen_prov_start
+function in pb_adv.c. The full length of the received data is copied
+into the link.rx.buf receiver buffer without any validation on the
+data size.
+
+- `Zephyr project bug tracker GHSA-8wvr-688x-68vr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8wvr-688x-68vr>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 95064 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/95064>`_
+
+- `PR 97520 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97520>`_
+
+- `PR 97519 fix for 4.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97519>`_
+
 
 :cve:`2025-12035`
 -----------------
 
-Under embargo until 2025-12-13
+Bluetooth: Integer Overflow in Bluetooth Classic (BR/EDR) L2CAP
+
+An integer overflow condition exists in Bluetooth Host stack, within the bt_br_acl_recv routine a
+critical path for processing inbound BR/EDR L2CAP traffic.
+
+
+- `Zephyr project bug tracker GHSA-p793-3456-h7w3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p793-3456-h7w3>`_
+
+This has been fixed in main for v4.3.0
+
+- `PR 97370 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/97370>`_
+
 
 :cve:`2025-12890`
 -----------------

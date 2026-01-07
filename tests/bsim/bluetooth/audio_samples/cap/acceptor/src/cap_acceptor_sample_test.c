@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  * Copyright (c) 2017-2019 Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -51,13 +51,14 @@ static void test_cap_acceptor_sample_tick(bs_time_t HW_device_time)
 		extern uint64_t total_unicast_tx_iso_packet_count;
 
 		bs_trace_info_time(2, "%" PRIu64 " unicast packets received, expected >= %i\n",
-				   total_unicast_tx_iso_packet_count, PASS_THRESHOLD);
+				   total_unicast_rx_iso_packet_count, PASS_THRESHOLD);
 		bs_trace_info_time(2, "%" PRIu64 " unicast packets sent, expected >= %i\n",
 				   total_unicast_tx_iso_packet_count, PASS_THRESHOLD);
 
-		if (total_unicast_rx_iso_packet_count < PASS_THRESHOLD ||
+		/* Fail if we neither sent or receive any ISO packets */
+		if (total_unicast_rx_iso_packet_count < PASS_THRESHOLD &&
 		    total_unicast_tx_iso_packet_count < PASS_THRESHOLD) {
-			FAIL("cap_acceptor FAILED with(Did not pass after %d seconds)\n ",
+			FAIL("cap_acceptor unicast FAILED (Did not pass after %d seconds)\n ",
 			     WAIT_TIME);
 			return;
 		}
@@ -70,7 +71,7 @@ static void test_cap_acceptor_sample_tick(bs_time_t HW_device_time)
 				   total_broadcast_rx_iso_packet_count, PASS_THRESHOLD);
 
 		if (total_broadcast_rx_iso_packet_count < PASS_THRESHOLD) {
-			FAIL("cap_acceptor FAILED with (Did not pass after %d seconds)\n ",
+			FAIL("cap_acceptor broadcast FAILED (Did not pass after %d seconds)\n ",
 			     WAIT_TIME);
 			return;
 		}

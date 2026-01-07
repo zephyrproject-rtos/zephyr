@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -21,11 +22,38 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep &powerdown>;
 		};
 	};
 
-	cmc {
-		compatible = "nxp,cmc-reset-cause";
+	power-states {
+		/*
+		 * Note:
+		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *  - 'min-residency-us' needs to be adjusted according to the actual project
+		 *    requirements. The values provided here are not applicable to all real
+		 *    projects.
+		 */
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <1>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <10>;
+		};
+
+		powerdown: powerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <80000>;
+			exit-latency-us = <20>;
+		};
 	};
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
@@ -41,7 +69,7 @@
 			#clock-cells = <1>;
 
 			reset: reset {
-				compatible = "nxp,lpc-syscon-reset";
+				compatible = "nxp,mrcc-reset";
 				#reset-cells = <1>;
 			};
 		};
@@ -196,7 +224,7 @@
 			reg = <0x400ab000 0x1000>;
 			interrupts = <55 0>;
 			clock-frequency = <16000>;
-			prescale-glitch-filter = <0>;
+			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";
@@ -352,7 +380,7 @@
 			reg = <0x400b1000 0x1000>;
 			interrupts = <64 0>;
 			status = "disabled";
-			#io-channel-cells = <2>;
+			clocks = <&syscon MCUX_LPCMP0_CLK>;
 		};
 
 		lpcmp1: lpcmp@400b2000 {
@@ -360,7 +388,7 @@
 			reg = <0x400b2000 0x1000>;
 			interrupts = <65 0>;
 			status = "disabled";
-			#io-channel-cells = <2>;
+			clocks = <&syscon MCUX_LPCMP1_CLK>;
 		};
 
 		lpcmp2: lpcmp@400b3000 {
@@ -368,7 +396,7 @@
 			reg = <0x400b3000 0x1000>;
 			interrupts = <66 0>;
 			status = "disabled";
-			#io-channel-cells = <2>;
+			clocks = <&syscon MCUX_LPCMP2_CLK>;
 		};
 
 		opamp0: opamp@400b7000 {
@@ -475,6 +503,7 @@
 			compatible = "nxp,os-timer";
 			reg = <0x400ad000 0x1000>;
 			interrupts = <57 0>;
+			resets = <&reset NXP_SYSCON_RESET(1, 0)>;
 			status = "disabled";
 		};
 
@@ -500,6 +529,30 @@
 			status = "okay";
 			interrupts = <113 0>;
 			clocks = <&syscon MCUX_TRNG_CLK>;
+		};
+
+		spc: system-modules@40090000 {
+			compatible = "nxp,spc";
+			reg = <0x40090000 0x1000>;
+			interrupts = <16 0>;
+			wakeup-delay = <780>;
+		};
+
+		wuu: system-modules@40092000 {
+			compatible = "nxp,wuu";
+			reg = <0x40092000 0x1000>;
+			interrupts = <18 0>;
+		};
+
+		cmc: system-modules@4008B000 {
+			compatible = "nxp,cmc", "nxp,cmc-reset-cause";
+			reg = <0x4008B000 0x1000>;
+			interrupts = <1 0>;
+		};
+
+		vbat: system-modules@40093000 {
+			compatible = "nxp,vbat";
+			reg = <0x40093000 0x1000>;
 		};
 	};
 };

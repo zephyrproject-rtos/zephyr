@@ -198,6 +198,14 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v4.2.0-2105-g48f2ffda26de ***
    Hello World! frdm_mcxw23/mcxw236
 
+Power Management
+================
+
+When Power Management is enabled :kconfig:option:`CONFIG_PM`, OSTIMER is used as
+OS tick timer.
+
+Limitation: Wakeup pin can't be used as wakeup source in Standby mode.
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MCXW23 SoC Website:

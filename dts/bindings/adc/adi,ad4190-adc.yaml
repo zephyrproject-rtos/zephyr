@@ -4,6 +4,6 @@
 description: |
   Bindings for the ADI AD4190 Analog-to-Digital Converter.
 
-compatible: adi,ad4190-adc
+compatible: "adi,ad4190-adc"
 
 include: adi,ad4170-adc.yaml

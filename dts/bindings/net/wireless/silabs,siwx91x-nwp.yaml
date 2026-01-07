@@ -21,17 +21,6 @@ properties:
     description: Stack size for the NWP in bytes
     required: true
 
-  power-profile:
-    type: string
-    description: Power/performance profile
-    enum:
-      - high-performance
-      - associated-power-save
-      - associated-power-save-low-latency
-      - deep-sleep-without-ram-retention
-      - deep-sleep-with-ram-retention
-    required: true
-
   support-1p8v:
     type: boolean
     description: |

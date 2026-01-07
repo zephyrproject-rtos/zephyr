@@ -60,15 +60,12 @@ Building and running the application for nrf54h20dk/nrf54h20/cpuapp
 
 #. Trigger a reset:
 
-.. code-block:: console
+   .. code-block:: console
 
-   nrfutil device reset --reset-kind RESET_PIN --traits jlink
+      nrfutil device reset --reset-kind RESET_PIN --traits jlink
 
-#. Check that the new version is installed:
+#. Check the boot report to verify that the new versions have been installed:
 
    .. code-block:: console
 
-      # Read the version fields from the boot report
-      nrfutil x-read --direct --address 0x2f88fd04 --bytes 16 --traits jlink
-      # Read the update status in the boot report
-      nrfutil x-read --direct --address 0x2f88fd24 --bytes 4 --traits jlink
+      nrfutil device x-ironside-boot-report-read --traits jlink

@@ -407,12 +407,11 @@ static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 {
 	int ret;
 
-	if (!config->reset_gpio.port) {
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
 		return -ENODEV;
 	}
 
-	/* Start reset */
-	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
 	}
@@ -420,8 +419,7 @@ static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 	/* Wait for at least 500 us as specified by datasheet */
 	k_busy_wait(1000);
 
-	/* Reset over */
-	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 
 	/* After deasserting reset, must wait at least 100 us to use programming interface */
 	k_busy_wait(200);
@@ -653,21 +651,6 @@ done:
 #define ksz8081_init_int_gpios(dev) 0
 #endif
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-static int ksz8081_init_reset_gpios(const struct device *dev)
-{
-	const struct mc_ksz8081_config *config = dev->config;
-
-	if (config->reset_gpio.port == NULL) {
-		return 0;
-	}
-
-	return gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
-}
-#else
-#define ksz8081_init_reset_gpios(dev) 0
-#endif
-
 static int phy_mc_ksz8081_init(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
@@ -677,11 +660,6 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 	data->dev = dev;
 
 	ret = k_mutex_init(&data->mutex);
-	if (ret) {
-		return ret;
-	}
-
-	ret = ksz8081_init_reset_gpios(dev);
 	if (ret) {
 		return ret;
 	}

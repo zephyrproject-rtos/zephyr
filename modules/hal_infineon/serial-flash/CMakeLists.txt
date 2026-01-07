@@ -7,4 +7,4 @@ set(serial_flash_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/serial-flash)
 
 zephyr_include_directories(${serial_flash_dir})
 
-zephyr_library_sources(${serial_flash_dir}/cy_serial_flash_qspi.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${serial_flash_dir}/cy_serial_flash_qspi.c)

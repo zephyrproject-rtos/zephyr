@@ -202,12 +202,13 @@
 })
 
 #define csr_write(csr, val)					\
-({								\
-	unsigned long __wv = (unsigned long)(val);		\
-	__asm__ volatile ("csrw " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__wv)			\
-				: "memory");			\
-})
+	do {							\
+		unsigned long __wv = (unsigned long)(val);	\
+		__asm__ volatile ("csrw " STRINGIFY(csr) ", %0"	\
+				  :				\
+				  : "rK" (__wv)		\
+				  : "memory");		\
+	} while (0)
 
 
 #define csr_read_set(csr, val)					\
@@ -220,12 +221,13 @@
 })
 
 #define csr_set(csr, val)					\
-({								\
-	unsigned long __sv = (unsigned long)(val);		\
-	__asm__ volatile ("csrs " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__sv)			\
-				: "memory");			\
-})
+	do {							\
+		unsigned long __sv = (unsigned long)(val);	\
+		__asm__ volatile ("csrs " STRINGIFY(csr) ", %0"	\
+				  :				\
+				  : "rK" (__sv)		\
+				  : "memory");		\
+	} while (0)
 
 #define csr_read_clear(csr, val)				\
 ({								\
@@ -237,12 +239,13 @@
 })
 
 #define csr_clear(csr, val)					\
-({								\
-	unsigned long __cv = (unsigned long)(val);		\
-	__asm__ volatile ("csrc " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__cv)			\
-				: "memory");			\
-})
+	do {							\
+		unsigned long __cv = (unsigned long)(val);	\
+		__asm__ volatile ("csrc " STRINGIFY(csr) ", %0"	\
+				  :				\
+				  : "rK" (__cv)		\
+				  : "memory");		\
+	} while (0)
 
 #ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
 

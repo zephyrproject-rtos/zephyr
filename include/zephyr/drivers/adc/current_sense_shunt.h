@@ -4,13 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended ADC API of Current Sense Shunt
+ * @ingroup adc_current_sense_shunt_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_CURRENT_SENSE_SHUNT_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_CURRENT_SENSE_SHUNT_H_
 
 #include <zephyr/drivers/adc.h>
 
+/**
+ * @brief Current Sense Shunt
+ * @defgroup adc_current_sense_shunt_interface Current Sense Shunt
+ * @ingroup adc_interface_ext
+ * @{
+ */
+
+/**
+ * @brief Current sense shunt DT struct.
+ *
+ * This stores information about a current sense shunt obtained from Devicetree.
+ *
+ * @see CURRENT_SENSE_SHUNT_DT_SPEC_GET
+ */
 struct current_sense_shunt_dt_spec {
+	/** ADC channel info */
 	const struct adc_dt_spec port;
+	/** Shunt resistor value in micro-ohms */
 	uint32_t shunt_micro_ohms;
 };
 
@@ -31,7 +53,7 @@ struct current_sense_shunt_dt_spec {
 	}
 
 /**
- * @brief Calculates the actual amperage from the measured voltage
+ * @brief Calculates the actual amperage from a measured voltage
  *
  * @param[in] spec current sensor specification from Devicetree.
  * @param[in,out] v_to_i Pointer to the measured voltage in millivolts on input, and the
@@ -48,5 +70,7 @@ static inline void current_sense_shunt_scale_dt(const struct current_sense_shunt
 
 	*v_to_i = (int32_t)tmp;
 }
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_CURRENT_SENSE_SHUNT_H_ */

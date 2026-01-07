@@ -223,6 +223,7 @@
 		reg = <0x30004000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM2";
+		#memory-region-cells = <0>;
 	};
 
 	/* D3 domain, AHB SRAM  */

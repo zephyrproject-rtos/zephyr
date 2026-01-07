@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Advanced Micro Devices, Inc. (AMD)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ipi5 {
+	status = "okay";
+
+	rpu0_rpu0_mailbox: mailbox@eb380000 {
+		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+		status = "okay";
+		reg = <0xeb380000 0x20>, <0xeb3f0e00 0x1000>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <7>;
+		#mbox-cells = <1>;
+	};
+};
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&rpu0_rpu0_mailbox 0>, <&rpu0_rpu0_mailbox 1>;
+		mbox-names = "tx", "rx";
+	};
+};

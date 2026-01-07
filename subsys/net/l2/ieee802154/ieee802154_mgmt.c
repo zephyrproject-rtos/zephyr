@@ -574,7 +574,30 @@ static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 	 * TODO: The Association Response command shall be sent to the device
 	 *       requesting association using indirect transmission.
 	 */
-	k_sem_take(&ctx->scan_ctx_lock, K_USEC(ieee802154_get_response_wait_time_us(iface)));
+	ret = k_sem_take(&ctx->scan_ctx_lock, K_USEC(ieee802154_get_response_wait_time_us(iface)));
+
+	if (ret == -EAGAIN) {
+		/* Timeout, send DATA_REQUEST */
+		net_pkt_unref(pkt);
+		pkt = ieee802154_create_mac_cmd_frame(iface, IEEE802154_CFI_DATA_REQUEST, &params);
+		if (pkt == NULL) {
+			ret = -ENOBUFS;
+			k_sem_give(&ctx->scan_ctx_lock);
+			NET_ERR("Could not associate: cannot allocate DATA request frame");
+			goto out;
+		}
+		ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_DATA_REQUEST);
+
+		if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
+			ret = -EIO;
+			k_sem_give(&ctx->scan_ctx_lock);
+			NET_ERR("Could not associate: cannot send DATA request");
+			goto out;
+		}
+
+		k_sem_take(&ctx->scan_ctx_lock,
+			   K_USEC(ieee802154_get_response_wait_time_us(iface)));
+	}
 
 	/* Release the scan lock in case an association response was not received
 	 * within macResponseWaitTime and we got a timeout instead.
@@ -607,6 +630,7 @@ static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 		}
 
 		ctx->channel = req->channel;
+		ret = 0;
 	} else {
 		ret = -EACCES;
 	}

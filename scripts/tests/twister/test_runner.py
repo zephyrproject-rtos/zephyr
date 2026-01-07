@@ -1664,10 +1664,12 @@ def test_projectbuilder_determine_testcases(
 TESTDATA_8 = [
     (
         ['addition.al'],
+        ['keep.artifact'],
         'dummy',
-        ['addition.al', '.config', 'zephyr']
+        ['addition.al', 'keep.artifact', '.config', 'zephyr']
     ),
     (
+        [],
         [],
         'all',
         ['.config', 'zephyr', 'testsuite_extra.conf', 'twister']
@@ -1675,7 +1677,7 @@ TESTDATA_8 = [
 ]
 
 @pytest.mark.parametrize(
-    'additional_keep, runtime_artifact_cleanup, expected_files',
+    'additional_keep, keep_artifacts, runtime_artifact_cleanup, expected_files',
     TESTDATA_8,
     ids=['additional keep', 'all cleanup']
 )
@@ -1683,6 +1685,7 @@ def test_projectbuilder_cleanup_artifacts(
     tmpdir,
     mocked_jobserver,
     additional_keep,
+    keep_artifacts,
     runtime_artifact_cleanup,
     expected_files
 ):
@@ -1713,12 +1716,16 @@ def test_projectbuilder_cleanup_artifacts(
     addition_al = tmpdir.join('addition.al')
     addition_al.write_text('dummy', 'utf-8')
 
+    keep_art = tmpdir.join('keep.artifact')
+    keep_art.write_text('dummy', 'utf-8')
+
     instance_mock = mock.Mock()
     instance_mock.build_dir = tmpdir
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
-    pb.options = mock.Mock(runtime_artifact_cleanup=runtime_artifact_cleanup)
+    pb.options = mock.Mock(runtime_artifact_cleanup=runtime_artifact_cleanup,
+                           keep_artifacts=keep_artifacts)
 
     pb.cleanup_artifacts(additional_keep)
 

@@ -3047,9 +3047,17 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 	} else {
 		/* Non-connectable Non-Scannable */
 
-		/* FIXME: Calculate additional time reservations for chain PDUs,
-		 *        if any.
-		 */
+#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
+		const struct pdu_adv *pdu_chain;
+
+		/* Calculate additional time reservations for chain PDUs, if any. */
+		pdu_chain = lll_adv_pdu_linked_next_get(pdu);
+		while (pdu_chain != NULL) {
+			time_us += EVENT_B2B_MAFS_US;
+			time_us += PDU_AC_US(pdu_chain->len, lll->phy_s, lll->phy_flags);
+			pdu_chain = lll_adv_pdu_linked_next_get(pdu_chain);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 	}
 
 	return time_us;
@@ -3179,21 +3187,26 @@ void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
 }
 
 #else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+/* Maximum retries when ticks_current can change; for example, when 3 extended advertising sets
+ * configured, and 1 advertising set is calculating the aux_offset, at least 3 auxiliary advertising
+ * sets and 2 scanning instances can expire, changing the ticks_current value while we are querying
+ * for aux_offset value.
+ */
+#define MAX_RETRY_TICKS_CURRENT_CHANGE (CONFIG_BT_CTLR_ADV_AUX_SET + 2U)
+
 static void mfy_aux_offset_get(void *param)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
 	uint32_t ticks_to_expire;
-	uint32_t ticks_to_start;
 	uint8_t data_chan_count;
 	uint8_t *data_chan_map;
 	uint32_t ticks_current;
-	uint32_t ticks_elapsed;
 	struct ll_adv_set *adv;
 	uint16_t chan_counter;
 	struct pdu_adv *pdu;
-	uint32_t ticks_now;
 	uint32_t remainder = 0U;
 	uint32_t offset_us;
 	uint8_t ticker_id;
@@ -3209,7 +3222,7 @@ static void mfy_aux_offset_get(void *param)
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;
 	ticks_current = adv->ticks_at_expire;
-	retry = 1U; /* Assert on first ticks_current change */
+	retry = MAX_RETRY_TICKS_CURRENT_CHANGE;
 	do {
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
@@ -3323,11 +3336,17 @@ static void mfy_aux_offset_get(void *param)
 					   data_chan_map, data_chan_count);
 
 	/* Assertion check for delayed aux_offset calculations */
+	uint32_t ticks_to_start;
+	uint32_t ticks_elapsed;
+	uint32_t ticks_now;
+
 	ticks_now = ticker_ticks_now_get();
-	ticks_elapsed = ticker_ticks_diff_get(ticks_now, ticks_current);
-	ticks_to_start = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
-			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	LL_ASSERT_ERR(ticks_elapsed < ticks_to_start);
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now, adv->ticks_at_expire);
+	ticks_to_start = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	ticks_to_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	LL_ASSERT_MSG((ticks_elapsed <= ticks_to_start), "%s: elapsed = %u (%u) us.",
+		      __func__, HAL_TICKER_TICKS_TO_US(ticks_elapsed),
+		      HAL_TICKER_TICKS_TO_US(ticks_to_start));
 }
 
 static void ticker_op_cb(uint32_t status, void *param)

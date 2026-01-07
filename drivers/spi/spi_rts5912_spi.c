@@ -14,12 +14,16 @@
 #include <zephyr/pm/device.h>
 #include "reg/reg_spi.h"
 
-#define RTS5912_SPI_TIMEOUT_ROUND      100
-#define RTS5912_SPI_TX_FIFO_LIMIT      128
-#define RTS5912_SPI_ADDR_NUM           0x07
-#define RTS5912_SPI_FREQUENCY_SETTING  22 /* 3.84MHz */
-#define RTS5912_SPI_ADDR_ONLY_MODE     0
-#define RTS5912_SPI_ADDR_AND_DATA_MODE 2
+#define RTS5912_SPI_TIMEOUT_ROUND              100
+#define RTS5912_SPI_TX_FIFO_LIMIT              128
+#define RTS5912_SPI_ADDR_NUM                   0x07
+#define RTS5912_SPI_FREQUENCY_DEFAULT          22 /* 3.84MHz */
+#define RTS5912_SPI_FREQUENCY_REGISTER_MAXIMUM 0xFFFFFFFF
+#define RTS5912_SPI_FREQUENCY_BUS_MAXIMUM      (50000000ul)
+#define RTS5912_SPI_FREQUENCY_BUS_MINIMUM      (15000ul)
+#define RTS5912_PLL_DIV2_FREQUENCY             (50000000ul)
+#define RTS5912_SPI_ADDR_ONLY_MODE             0
+#define RTS5912_SPI_ADDR_AND_DATA_MODE         2
 
 LOG_MODULE_REGISTER(spi_rts5912_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
@@ -27,6 +31,7 @@ LOG_MODULE_REGISTER(spi_rts5912_spi, CONFIG_SPI_LOG_LEVEL);
 struct spi_rts5912_config {
 	volatile struct spi_reg *const spi_reg_base;
 	const struct pinctrl_dev_config *pcfg;
+	const uint32_t frequency;
 };
 
 struct spi_rts5912_data {
@@ -90,11 +95,16 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 	spi->CTRL &= ~RTS5912_SPI_CTRL_MODE_MASK;
 	spi->CTRL |= RTS5912_SPI_CTRL_TRANSEL_MASK;
 
-	spi->CMDL = 0x00;                  /* cmd mode setting */
+	spi->CMDL = 0x00;                 /* cmd mode setting */
 	spi->CMDN = RTS5912_SPI_ADDR_NUM; /* 7+1bit = 1Byte CMD */
 	spi->ADDR = 0x0;
 	spi->ADDRN = RTS5912_SPI_ADDR_NUM;
-	spi->CKDV = RTS5912_SPI_FREQUENCY_SETTING;
+	if ((spi_config->frequency < RTS5912_SPI_FREQUENCY_BUS_MAXIMUM) &&
+	    (spi_config->frequency > RTS5912_SPI_FREQUENCY_BUS_MINIMUM)) {
+		spi->CKDV = (RTS5912_PLL_DIV2_FREQUENCY / spi_config->frequency) - 1;
+	} else {
+		spi->CKDV = RTS5912_SPI_FREQUENCY_DEFAULT;
+	}
 	spi->CTRL |= RTS5912_SPI_CTRL_RST_MASK;
 
 	return 0;
@@ -127,10 +137,10 @@ static inline void rts5912_spi_tx(const struct device *dev)
 
 	if (ctx->tx_len == 1) {
 		spi->TRSF = ((spi->TRSF & ~RTS5912_SPI_TRSF_MODE_MASK) |
-			      (RTS5912_SPI_ADDR_ONLY_MODE & RTS5912_SPI_TRSF_MODE_MASK));
+			     (RTS5912_SPI_ADDR_ONLY_MODE & RTS5912_SPI_TRSF_MODE_MASK));
 	} else {
 		spi->TRSF = ((spi->TRSF & ~RTS5912_SPI_TRSF_MODE_MASK) |
-			      (RTS5912_SPI_ADDR_AND_DATA_MODE & RTS5912_SPI_TRSF_MODE_MASK));
+			     (RTS5912_SPI_ADDR_AND_DATA_MODE & RTS5912_SPI_TRSF_MODE_MASK));
 	}
 
 	spi->CTRL |= RTS5912_SPI_CTRL_RST_MASK;
@@ -174,8 +184,8 @@ static int rts5912_spi_xfer(const struct device *dev)
 }
 
 static int rts5912_spi_transceive(const struct device *dev, const struct spi_config *config,
-				   const struct spi_buf_set *tx_bufs,
-				   const struct spi_buf_set *rx_bufs)
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
 {
 	struct spi_rts5912_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
@@ -248,8 +258,10 @@ static DEVICE_API(spi, spi_rts5912_driver_api) = {
 #define SPI_rts5912_INIT(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static const struct spi_rts5912_config spi_rts5912_cfg_##n = {                             \
-		.spi_reg_base = (volatile struct spi_reg *const)DT_INST_REG_ADDR(n),             \
+		.spi_reg_base = (volatile struct spi_reg *const)DT_INST_REG_ADDR(n),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.frequency =                                                                       \
+			DT_PROP_OR(n, clock_frequency, RTS5912_SPI_FREQUENCY_REGISTER_MAXIMUM),    \
 	};                                                                                         \
                                                                                                    \
 	static struct spi_rts5912_data spi_rts5912_data_##n = {                                    \
@@ -257,7 +269,7 @@ static DEVICE_API(spi, spi_rts5912_driver_api) = {
 		SPI_CONTEXT_INIT_SYNC(spi_rts5912_data_##n, ctx),                                  \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &spi_rts5912_spi_init, NULL, &spi_rts5912_data_##n,              \
+	DEVICE_DT_INST_DEFINE(n, &spi_rts5912_spi_init, NULL, &spi_rts5912_data_##n,               \
 			      &spi_rts5912_cfg_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_rts5912_driver_api);
 

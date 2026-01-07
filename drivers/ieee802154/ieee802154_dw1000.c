@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 #include <zephyr/random/random.h>
-#include <zephyr/debug/stack.h>
 #include <math.h>
 
 #include <zephyr/drivers/gpio.h>

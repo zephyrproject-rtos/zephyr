@@ -1,0 +1,176 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config RPI_PICO_BINARY_INFO
+	bool "Generate Raspberry Pi Pico binary info"
+	help
+	  Binary info is able to embed machine readable information with the binary in flash.
+	  It can be read with picotool (https://github.com/raspberrypi/picotool).
+	  Binary info is generated automatically when this option is enabled,
+
+	  When this feature is enabled, pinctrl groups are restricted to consisting
+	  of pins with a single rpi_pico function.
+	  In other words, SPI's MISO and MOSI can be in the same group, but I2C's
+	  SDA cannot be included in this group. This is rarely an issue in normal use,
+	  and can be resolved by dividing them into separate groups.
+
+if RPI_PICO_BINARY_INFO
+
+config RPI_PICO_BINARY_INFO_PROGRAM_NAME
+	bool "Generate program_name in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_PROGRAM_NAME
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_NAME
+	string "Override program_name in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_NAME
+
+config RPI_PICO_BINARY_INFO_PROGRAM_NAME_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_NAME != ""
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_NAME
+
+endif
+
+config RPI_PICO_BINARY_INFO_PROGRAM_URL
+	bool "Generate program_url in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_PROGRAM_URL
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_URL
+	string "Override program_url in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_URL
+
+config RPI_PICO_BINARY_INFO_PROGRAM_URL_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_URL != ""
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_URL
+
+endif
+
+config RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION
+	bool "Generate program_description in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_DESCRIPTION
+	string "Override program_description in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION
+
+config RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_DESCRIPTION != ""
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION
+
+endif
+
+config RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE
+	bool "Generate program_build_date in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_BUILD_DATE
+	string "Override program_build_date in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE
+
+config RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_BUILD_DATE != ""
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE
+
+endif
+
+config RPI_PICO_BINARY_INFO_PROGRAM_VERSION_STRING
+	bool "Generate program_version_string in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_PROGRAM_VERSION_STRING
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_VERSION_STRING
+	string "Override program_version_string in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_VERSION_STRING
+
+config RPI_PICO_BINARY_INFO_PROGRAM_VERSION_STRING_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_VERSION_STRING != ""
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_VERSION_STRING
+
+endif
+
+config RPI_PICO_BINARY_INFO_SDK_VERSION_STRING
+	bool "Generate sdk_version_string in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_SDK_VERSION_STRING
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_SDK_VERSION_STRING
+	string "Override sdk_version_string in binary info"
+	depends on RPI_PICO_BINARY_INFO_SDK_VERSION_STRING
+
+config RPI_PICO_BINARY_INFO_SDK_VERSION_STRING_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_SDK_VERSION_STRING != ""
+	depends on RPI_PICO_BINARY_INFO_SDK_VERSION_STRING
+
+endif
+
+config RPI_PICO_BINARY_INFO_PICO_BOARD
+	bool "Generate pico_board in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_PICO_BOARD
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_PICO_BOARD
+	string "Override pico_board in binary info"
+	depends on RPI_PICO_BINARY_INFO_PICO_BOARD
+
+config RPI_PICO_BINARY_INFO_PICO_BOARD_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_PICO_BOARD != ""
+	depends on RPI_PICO_BINARY_INFO_PICO_BOARD
+
+endif
+
+config RPI_PICO_BINARY_INFO_ATTRIBUTE_BUILD_TYPE
+	bool "Generate attribute_build_type in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_ATTRIBUTE_BUILD_TYPE
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_ATTRIBUTE_BUILD_TYPE
+	string "Override attribute_build_type in binary info"
+	depends on RPI_PICO_BINARY_INFO_ATTRIBUTE_BUILD_TYPE
+
+config RPI_PICO_BINARY_INFO_ATTRIBUTE_BUILD_TYPE_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_ATTRIBUTE_BUILD_TYPE != ""
+	depends on RPI_PICO_BINARY_INFO_ATTRIBUTE_BUILD_TYPE
+
+endif
+
+config RPI_PICO_BINARY_INFO_BOOT_STAGE2_NAME
+	bool "Generate boot_stage2_name in binary info"
+	default y
+
+if RPI_PICO_BINARY_INFO_BOOT_STAGE2_NAME
+
+config RPI_PICO_BINARY_INFO_OVERRIDE_BOOT_STAGE2_NAME
+	string "Override boot_stage2_name in binary info"
+	depends on RPI_PICO_BINARY_INFO_BOOT_STAGE2_NAME
+
+config RPI_PICO_BINARY_INFO_BOOT_STAGE2_NAME_OVERRIDDEN
+	bool
+	default RPI_PICO_BINARY_INFO_OVERRIDE_BOOT_STAGE2_NAME != ""
+	depends on RPI_PICO_BINARY_INFO_BOOT_STAGE2_NAME
+
+endif
+
+config RPI_PICO_BINARY_INFO_PIN_CONFIGURATIONS
+	bool "Generate pin configuration info in binary info"
+	default y
+
+endif

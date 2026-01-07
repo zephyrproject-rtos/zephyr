@@ -555,7 +555,7 @@
 			reg = <0x40040000 0x1000>;
 			interrupts = <58 0>;
 			clock-frequency = <1000>;
-			prescale-glitch-filter = <0>;
+			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <16>;
 			status = "disabled";
@@ -690,6 +690,12 @@
 			clocks = <&lpo>;
 			clk-source = <1>;
 			clk-divider = <256>;
+			status = "disabled";
+		};
+
+		crc: crc@40032000 {
+			compatible = "nxp,crc";
+			reg = <0x40032000 0x1000>;
 			status = "disabled";
 		};
 	};

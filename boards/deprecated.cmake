@@ -79,3 +79,9 @@ set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp_DEPRECATED
 set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns_DEPRECATED
     fvp_base_revc_2xaem/v8a/smp/ns
 )
+set(esp32s3_devkitm/esp32s3/procpu_DEPRECATED
+    esp32s3_devkitc/esp32s3/procpu
+)
+set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
+    esp32s3_devkitc/esp32s3/appcpu
+)

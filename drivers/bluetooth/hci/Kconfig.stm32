@@ -12,4 +12,33 @@ config BT_STM32WBA_USE_TEMP_BASED_CALIB
 	select STM32_TEMP
 	help
 	  Allows the linklayer to calibrate itself on the current temperature read on the ADC4
+
+choice BT_STM32WBA_LIB_CONFIG
+	prompt "STM32WBA Bluetooth library configuration"
+	default BT_STM32WBA_FULL_LIB if \
+		BT_EXT_ADV || BT_PER_ADV || BT_PER_ADV_SYNC || BT_SCA_UPDATE || BT_DF_CTE_RX_AOA \
+		|| BT_CTLR_DF_ANT_SWITCH_RX || BT_CTLR_DF_ANT_SWITCH_TX || BT_DF_CTE_TX_AOD \
+		|| BT_PER_ADV_SYNC_TRANSFER_RECEIVER || BT_PER_ADV_SYNC_TRANSFER_SENDER \
+		|| BT_CTLR_SYNC_PERIODIC || BT_ISO_UNICAST || BT_ISO_BROADCASTER \
+		|| BT_ISO_SYNC_RECEIVER || BT_TRANSMIT_POWER_CONTROL || BT_SUBRATING \
+		|| BT_CTLR_ADV_PERIODIC_ADI_SUPPORT || BT_EXT_ADV_CODING_SELECTION
+	default BT_STM32WBA_BASIC_LIB
+	help
+	  Sets the library configuration according to the required Bluetooth features.
+
+config BT_STM32WBA_BASIC_LIB
+	bool "STM32WBA Bluetooth library basic configuration"
+	help
+	  Embed basic Bluetooth features support in STM32WBA:
+	  Advertising, Scanning, Connection Peripheral and Central, Privacy,
+	  Channel Selection Algorithm #2, Data Length Extension, LE Encryption,
+	  Legacy Pairing, LE secure connections, LE 2Mbit PHY, LE Coded PHY.
+
+config BT_STM32WBA_FULL_LIB
+	bool "STM32WBA Bluetooth library full configuration"
+	help
+	  Embed full Bluetooth features support in STM32WBA.
+
+endchoice
+
 endmenu

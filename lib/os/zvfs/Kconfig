@@ -50,6 +50,10 @@ config ZVFS_EVENTFD_MAX
 	help
 	  The maximum number of supported event file descriptors.
 
+config ZVFS_OPEN_ADD_SIZE_EVENTFD
+	int "Amount of file descriptors used by ZVFS eventfd"
+	default ZVFS_EVENTFD_MAX
+
 endif # ZVFS_EVENTFD
 
 config ZVFS_POLL

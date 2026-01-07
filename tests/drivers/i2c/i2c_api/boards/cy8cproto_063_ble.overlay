@@ -13,7 +13,7 @@
 };
 
 i2c1: &scb1 {
-	compatible = "infineon,cat1-i2c";
+	compatible = "infineon,i2c";
 
 	status = "okay";
 	pinctrl-0 = <&p10_0_scb1_i2c_scl &p10_1_scb1_i2c_sda>;

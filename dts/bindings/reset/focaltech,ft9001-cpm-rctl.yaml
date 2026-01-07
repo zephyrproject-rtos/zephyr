@@ -1,0 +1,18 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  FocalTech FT9001 Reset controller (CPM subnode).
+  Reset specifiers use the packed IDs defined in
+  include/zephyr/dt-bindings/reset/focaltech_ft9001_reset.h
+
+compatible: "focaltech,ft9001-cpm-rctl"
+
+include: [reset-controller.yaml]
+
+properties:
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id

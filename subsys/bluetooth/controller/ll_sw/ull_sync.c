@@ -65,7 +65,6 @@
 #include "ull_llcp.h"
 #include "ll.h"
 
-#include <soc.h>
 #include "hal/debug.h"
 
 /* Check that timeout_reload member is at safe offset when ll_sync_set is

@@ -42,6 +42,9 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <hal/uhci_ll.h>
+#include <hal/gdma_ll.h>
+#include <hal/gdma_hal.h>
+#include <hal/dma_types.h>
 #endif
 #include <soc/uart_struct.h>
 #include <hal/uart_ll.h>
@@ -78,6 +81,8 @@ struct uart_esp32_config {
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
 	uint8_t rx_dma_channel;
+	bool uhci_slip_tx;
+	bool uhci_slip_rx;
 #endif
 };
 
@@ -517,7 +522,7 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 }
 
-static void uart_esp32_isr(void *arg)
+static void IRAM_ATTR uart_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = dev->data;
@@ -552,13 +557,37 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	const struct device *uart_dev = user_data;
 	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
+	gdma_hal_context_t *dma_hal = dma_dev->data;
 	struct uart_event evt = {0};
+	dma_descriptor_t *desc;
+	size_t rx_bytes;
 	unsigned int key = irq_lock();
 
-	/* If the receive buffer is not complete we reload the DMA at current buffer position and
-	 * let the timeout callback handle the notifications
+	/*
+	 * Read actual transferred bytes from DMA descriptor.
+	 * Direct LL calls used because this ISR context requires IRAM-safe code.
+	 * Note: We SET rx_counter (not add) because the UART ISR also increments
+	 * rx_counter on RXFIFO_FULL interrupts, and the DMA descriptor contains
+	 * the authoritative byte count.
 	 */
-	if (data->async.rx_counter != data->async.rx_len) {
+	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
+									config->rx_dma_channel / 2);
+	if (desc) {
+		rx_bytes = desc->dw0.length;
+	} else {
+		/* Fallback to full buffer if descriptor unavailable */
+		rx_bytes = data->async.rx_len;
+	}
+
+	data->async.rx_counter = data->async.rx_offset + rx_bytes;
+
+	/*
+	 * If buffer is not full and no timeout is configured, reload DMA to
+	 * continue receiving into the same buffer. The timeout callback will
+	 * handle notifications for partial data.
+	 */
+	if (data->async.rx_counter < data->async.rx_len &&
+	    data->async.rx_timeout == SYS_FOREVER_US) {
 		dma_reload(config->dma_dev, config->rx_dma_channel, 0,
 			   (uint32_t)data->async.rx_buf + data->async.rx_counter,
 			   data->async.rx_len - data->async.rx_counter);
@@ -568,7 +597,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		return;
 	}
 
-	/*Notify RX_RDY*/
+	/* Notify RX_RDY */
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
 	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
@@ -581,14 +610,14 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	data->async.rx_offset = 0;
 	data->async.rx_counter = 0;
 
-	/*Release current buffer*/
+	/* Release current buffer */
 	evt.type = UART_RX_BUF_RELEASED;
 	evt.data.rx_buf.buf = data->async.rx_buf;
 	if (data->async.cb) {
 		data->async.cb(uart_dev, &evt, data->async.user_data);
 	}
 
-	/*Load next buffer and request another*/
+	/* Load next buffer and request another */
 	data->async.rx_buf = data->async.rx_next_buf;
 	data->async.rx_len = data->async.rx_next_len;
 	data->async.rx_next_buf = NULL;
@@ -598,14 +627,14 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		data->async.cb(uart_dev, &evt, data->async.user_data);
 	}
 
-	/*Notify RX_DISABLED when there is no buffer*/
+	/* Notify RX_DISABLED when there is no buffer */
 	if (!data->async.rx_buf) {
 		evt.type = UART_RX_DISABLED;
 		if (data->async.cb) {
 			data->async.cb(uart_dev, &evt, data->async.user_data);
 		}
 	} else {
-		/*Reload DMA with new buffer*/
+		/* Reload DMA with new buffer */
 		dma_reload(config->dma_dev, config->rx_dma_channel, 0, (uint32_t)data->async.rx_buf,
 			   data->async.rx_len);
 		dma_start(config->dma_dev, config->rx_dma_channel);
@@ -642,11 +671,23 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 {
 	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
+	struct dma_status dma_status = {0};
 	struct uart_event evt = {0};
+	size_t tx_sent;
 	int err = 0;
 	unsigned int key = irq_lock();
 
 	k_work_cancel_delayable(&data->async.tx_timeout_work);
+
+	/*
+	 * Get actual transferred bytes from DMA status before stopping.
+	 * This tells us how many bytes were actually sent before the abort.
+	 */
+	if (dma_get_status(config->dma_dev, config->tx_dma_channel, &dma_status) == 0) {
+		tx_sent = dma_status.total_copied;
+	} else {
+		tx_sent = data->async.tx_len;
+	}
 
 	err = dma_stop(config->dma_dev, config->tx_dma_channel);
 	if (err) {
@@ -656,7 +697,7 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 
 	evt.type = UART_TX_ABORTED;
 	evt.data.tx.buf = data->async.tx_buf;
-	evt.data.tx.len = data->async.tx_len;
+	evt.data.tx.len = tx_sent;
 
 	if (data->async.cb) {
 		data->async.cb(dev, &evt, data->async.user_data);
@@ -683,8 +724,29 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	struct uart_esp32_async_data *async =
 		CONTAINER_OF(dwork, struct uart_esp32_async_data, rx_timeout_work);
 	struct uart_esp32_data *data = CONTAINER_OF(async, struct uart_esp32_data, async);
+	const struct uart_esp32_config *config = data->uart_dev->config;
+	struct dma_status dma_status = {0};
 	struct uart_event evt = {0};
-	unsigned int key = irq_lock();
+	size_t rx_count;
+	unsigned int key;
+
+	/*
+	 * Get actual transferred bytes from DMA descriptor.
+	 * In DMA mode, data goes directly to memory via UHCI+GDMA, bypassing
+	 * the UART FIFO. So rx_counter (updated by FIFO Full ISR) is not reliable.
+	 * Instead, read total_copied from DMA status.
+	 */
+	if (dma_get_status(config->dma_dev, config->rx_dma_channel, &dma_status) == 0) {
+		rx_count = dma_status.total_copied;
+	} else {
+		/* Fallback to rx_counter if DMA status unavailable */
+		rx_count = data->async.rx_counter;
+	}
+
+	key = irq_lock();
+
+	/* Update rx_counter with actual DMA progress */
+	data->async.rx_counter = rx_count;
 
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
@@ -842,6 +904,20 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 
 	data->uhci_dev->pkt_thres.thrs = len;
 
+	/*
+	 * Configure UHCI EOF mode based on timeout setting.
+	 * For SYS_FOREVER_US, only use length-based EOF to avoid spurious
+	 * callbacks when UART goes idle before buffer is full.
+	 * For other timeouts, also enable idle-based EOF.
+	 */
+	if (timeout == SYS_FOREVER_US) {
+		data->uhci_dev->conf0.len_eof_en = 1;
+		data->uhci_dev->conf0.uart_idle_eof_en = 0;
+	} else {
+		data->uhci_dev->conf0.len_eof_en = 1;
+		data->uhci_dev->conf0.uart_idle_eof_en = 1;
+	}
+
 	/**
 	 * Request next buffer
 	 */
@@ -955,11 +1031,9 @@ static int uart_esp32_init(const struct device *dev)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(intr_handler_t)uart_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     (intr_handler_t)uart_esp32_isr, (void *)dev, NULL);
 	if (ret < 0) {
 		LOG_ERR("Error allocating UART interrupt (%d)", ret);
 		return ret;
@@ -975,6 +1049,11 @@ static int uart_esp32_init(const struct device *dev)
 		clock_control_on(config->clock_dev, (clock_control_subsys_t)ESP32_UHCI0_MODULE);
 		uhci_ll_init(data->uhci_dev);
 		uhci_ll_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
+
+		/* Configure SLIP encoding/decoding */
+		data->uhci_dev->escape_conf.tx_c0_esc_en = config->uhci_slip_tx ? 1 : 0;
+		data->uhci_dev->escape_conf.rx_c0_esc_en = config->uhci_slip_rx ? 1 : 0;
+
 		uhci_ll_attach_uart_port(data->uhci_dev, uart_hal_get_port_num(&data->hal));
 		data->uart_dev = dev;
 
@@ -1023,7 +1102,9 @@ static DEVICE_API(uart, uart_esp32_api) = {
 #define ESP_UART_DMA_INIT(n)                                                                       \
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(n, tx),                                                  \
 	.tx_dma_channel = ESP32_DT_INST_DMA_CELL(n, tx, channel),                                  \
-	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel)
+	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel),                                  \
+	.uhci_slip_tx = DT_INST_PROP_OR(n, uhci_slip_tx, false),                                   \
+	.uhci_slip_rx = DT_INST_PROP_OR(n, uhci_slip_rx, false)
 
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))

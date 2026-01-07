@@ -686,7 +686,7 @@ static void stm32wba_802154_iface_init(struct net_if *iface)
 		.stm32wba_802154_ral_cbk_tx_ack_started = stm32wba_802154_tx_ack_started,
 	};
 
-	link_layer_register_isr();
+	link_layer_register_isr(false);
 
 #if !defined(CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA)
 	ll_sys_thread_init();
@@ -995,7 +995,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 		if (LL_PWR_IsActiveFlag_SB() == 1U) {
 			/* Put the radio in active state */
 			LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
-			link_layer_register_isr();
+			link_layer_register_isr(true);
 		}
 		LINKLAYER_PLAT_NotifyWFIExit();
 		ll_sys_dp_slp_exit();

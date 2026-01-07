@@ -364,5 +364,6 @@ void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_
 
 int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt);
 int bt_ascs_unregister(void);
+struct bt_conn *bt_ascs_ep_get_conn(const struct bt_bap_ep *ep);
 
 #endif /* BT_ASCS_INTERNAL_H */

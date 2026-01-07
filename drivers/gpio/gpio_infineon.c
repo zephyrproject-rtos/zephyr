@@ -13,7 +13,7 @@
  *   is not supported in current version of GPIO CAT1 driver.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_gpio
+#define DT_DRV_COMPAT infineon_gpio
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -172,10 +172,7 @@ static void gpio_isr_handler(const struct device *dev)
 		Cy_GPIO_ClearInterrupt(base, i);
 	}
 
-	if (dev) {
-		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev,
-				    pins);
-	}
+	gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev, pins);
 }
 #endif
 

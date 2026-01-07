@@ -253,6 +253,23 @@ endchoice
 
 endif # LWM2M_RESOURCE_DATA_CACHE_SUPPORT
 
+config LWM2M_SEND_SCHEDULER
+	bool "LwM2M send scheduler helper objects (10523/10524)"
+	depends on LWM2M_VERSION_1_1
+	depends on LWM2M_RESOURCE_DATA_CACHE_SUPPORT
+	help
+	  Enable the optional send scheduler extension which exposes vendor
+	  objects to configure sampling rules, buffer limits, and SEND trigger
+	  policies on top of cached resources. Requires LwM2M 1.1 SEND support
+	  and resource data caching.
+
+if LWM2M_SEND_SCHEDULER
+module = LWM2M_SEND_SCHEDULER
+module-str = Log level for LwM2M send scheduler helper
+module-dep = LOG
+source "subsys/net/Kconfig.template.log_config.net"
+endif # LWM2M_SEND_SCHEDULER
+
 endmenu # "Engine features"
 
 menu "Memory and buffer size configuration"

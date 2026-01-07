@@ -79,7 +79,7 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 			.preamble_len_in_symb = lora_config->preamble_len,
 			.header_type = RAL_LORA_PKT_EXPLICIT,
 			.pld_len_in_bytes = UINT8_MAX,
-			.crc_is_on = true,
+			.crc_is_on = !lora_config->packet_crc_disable,
 			.invert_iq_is_on = lora_config->iq_inverted,
 		},
 		.rf_freq_in_hz = lora_config->frequency,
@@ -89,6 +89,15 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 	};
 	ral_status_t status;
 	int ret;
+
+	/* Perform deferred radio initialization on first config */
+	if (IS_ENABLED(CONFIG_LORA_BASICS_MODEM_DEFERRED_INIT) && !data->radio_initialized) {
+		ret = lbm_driver_radio_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+		data->radio_initialized = true;
+	}
 
 	/* Ensure available, decremented after configuration */
 	if (!modem_acquire(dev)) {
@@ -120,6 +129,20 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 release:
 	modem_release(dev);
 	return ret;
+}
+
+uint32_t lbm_lora_airtime(const struct device *dev, uint32_t data_len)
+{
+	const struct lbm_lora_config_common *config = dev->config;
+	struct lbm_lora_data_common *data = dev->data;
+
+	/* Updating the internal variable is fine since it is only used by ral_set_lora_pkt_params
+	 * in lbm_lora_send_async, and the value is set there immediately before use.
+	 */
+	data->pkt_params.pld_len_in_bytes = data_len;
+
+	return ral_get_lora_time_on_air_in_ms(&config->ralf.ral, &data->pkt_params,
+					      &data->mod_params);
 }
 
 int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len,
@@ -182,8 +205,6 @@ release:
 
 int lbm_lora_send(const struct device *dev, uint8_t *msg, uint32_t msg_len)
 {
-	const struct lbm_lora_config_common *config = dev->config;
-	struct lbm_lora_data_common *data = dev->data;
 	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
 	struct k_poll_event evt =
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
@@ -197,9 +218,8 @@ int lbm_lora_send(const struct device *dev, uint8_t *msg, uint32_t msg_len)
 	}
 
 	/* Calculate expected airtime of the packet */
-	air_time = ral_get_lora_time_on_air_in_ms(&config->ralf.ral, &data->pkt_params,
-						  &data->mod_params);
-	LOG_DBG("Expected airtime: %d ms", air_time);
+	air_time = lbm_lora_airtime(dev, msg_len);
+	LOG_DBG("Expected air time of %u bytes = %u ms", msg_len, air_time);
 
 	/* Wait for the packet to finish transmitting.
 	 * Setting up the transaction takes some minimal time, take it into
@@ -547,6 +567,7 @@ int lbm_lora_common_init(const struct device *dev)
 
 DEVICE_API(lora, lbm_lora_api) = {
 	.config = lbm_lora_config,
+	.airtime = lbm_lora_airtime,
 	.send = lbm_lora_send,
 	.send_async = lbm_lora_send_async,
 	.recv = lbm_lora_recv,

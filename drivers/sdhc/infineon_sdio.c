@@ -35,7 +35,7 @@
  *   > IO_RW_EXTENDED     (CMD53)
  */
 
-#define DT_DRV_COMPAT infineon_cat1_sdhc_sdio
+#define DT_DRV_COMPAT infineon_sdhc_sdio
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>

@@ -529,6 +529,16 @@ struct ethernet_config {
 
 /** @endcond */
 
+/** Ethernet statistics type (bitmap) */
+enum ethernet_stats_type {
+	/** Common statistics only (excludes vendor statistics) */
+	ETHERNET_STATS_TYPE_COMMON = BIT(0),
+	/** Vendor statistics only */
+	ETHERNET_STATS_TYPE_VENDOR = BIT(1),
+	/** All statistics */
+	ETHERNET_STATS_TYPE_ALL = 0xFFFFFFFFU,
+};
+
 /** Ethernet L2 API operations. */
 struct ethernet_api {
 	/**
@@ -543,6 +553,14 @@ struct ethernet_api {
 	 */
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth *(*get_stats)(const struct device *dev);
+
+	/** Optional function to collect ethernet specific statistics with
+	 * type filter. If NULL, get_stats() will be called instead, which
+	 * is equivalent to calling this with ETHERNET_STATS_TYPE_ALL.
+	 * @param type Bitmask of ethernet_stats_type values.
+	 */
+	struct net_stats_eth *(*get_stats_type)(const struct device *dev,
+						 uint32_t type);
 #endif
 
 	/** Start the device */

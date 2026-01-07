@@ -232,7 +232,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 	case MODEM_PPP_RECEIVE_STATE_HDR_23:
 		if (modem_ppp_is_byte_expected(byte, 0x23)) {
 			ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface,
-				CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE, AF_UNSPEC, 0, K_NO_WAIT);
+				CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE, NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 			if (ppp->rx_pkt == NULL) {
 				LOG_WRN("Dropped frame, no net_pkt available");

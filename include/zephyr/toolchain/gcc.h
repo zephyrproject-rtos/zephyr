@@ -349,7 +349,7 @@ do {                                                                    \
 #define __WARN1(s) _Pragma(#s)
 
 /* Generic message */
-#ifndef CONFIG_DEPRECATION_TEST
+#if !(defined(CONFIG_DEPRECATION_TEST) || !defined(CONFIG_WARN_DEPRECATED))
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 /* When adding this, remember to follow the instructions in
  * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated

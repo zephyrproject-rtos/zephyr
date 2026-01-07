@@ -17,7 +17,6 @@
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/lldp.h>
 #include <errno.h>

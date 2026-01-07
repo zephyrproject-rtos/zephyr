@@ -70,7 +70,7 @@
 	 * - 2mb for each of the cores(cm33_s, cm33 and cm55)
 	 */
 	flash_controller: flash_controller@40250000 {
-		compatible = "infineon,cat1-qspi-flash-mtb-hal";
+		compatible = "infineon,qspi-flash-mtb-hal";
 		reg = <0x40250000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;

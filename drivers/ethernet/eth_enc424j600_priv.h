@@ -277,7 +277,6 @@ struct enc424j600_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	uint8_t full_duplex;
-	int32_t timeout;
 };
 
 struct enc424j600_runtime {

@@ -20,6 +20,10 @@
 	aliases {
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button0;
+		sw1 = &button1;
+		rgb0 = &rgb_led;
 	};
 
 	chosen {
@@ -29,13 +33,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
-	};
-
-	aliases {
-		uart-0 = &uart0;
-		sw0 = &button0;
-		sw1 = &button1;
-		rgb0 = &rgb_led;
 	};
 
 	buttons {

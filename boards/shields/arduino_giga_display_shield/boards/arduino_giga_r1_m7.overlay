@@ -30,7 +30,7 @@
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	disp-on-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;

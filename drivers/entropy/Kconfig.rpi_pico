@@ -1,0 +1,14 @@
+# Raspberry Pi Pico entropy generator driver configuration
+
+# Copyright (c) 2024 Xudong Zheng
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_RPI_PICO_RNG
+	bool "Raspberry Pi Pico entropy number generator driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_RNG_ENABLED
+	depends on SOC_SERIES_RP2350
+	select ENTROPY_HAS_DRIVER
+	select PICOSDK_USE_CLAIM
+	select PICOSDK_USE_RAND
+	select PICOSDK_USE_TIMER

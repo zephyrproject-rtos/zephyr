@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(eth_adin2111, CONFIG_ETHERNET_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/ethernet.h>
-#include <zephyr/net/phy.h>
 #include <zephyr/drivers/ethernet/eth_adin2111.h>
 
 #include "phy/phy_adin2111_priv.h"

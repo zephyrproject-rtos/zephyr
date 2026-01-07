@@ -15,16 +15,6 @@ if DISPLAY
 # display frame buffer to external PSRAM
 config MEMC
 	default y
-
-# Rely on Multi-Heap / Shared-Multi-Heap for PSRAM access
-config MULTI_HEAP
-	default y
-config SHARED_MULTI_HEAP
-	default y
-
-# Let LTDC use memory allocated via SMH
-config STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
-	default y
 endif # DISPLAY
 
 if INPUT

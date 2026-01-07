@@ -34,6 +34,7 @@
 		zephyr,console = &lpuart_5;
 		zephyr,edac = &erm0;
 		zephyr,shell-uart = &lpuart_5;
+		zephyr,canbus = &flexcan_0;
 	};
 
 	leds {
@@ -128,6 +129,12 @@
 	dma-names = "tx", "rx";
 };
 
+&flexcan_0 {
+	pinctrl-0 = <&pinmux_flexcan_0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpioc_l {
 	status = "okay";
 };
@@ -202,5 +209,9 @@
 };
 
 &swt_0 {
+	status = "okay";
+};
+
+&adc_0 {
 	status = "okay";
 };

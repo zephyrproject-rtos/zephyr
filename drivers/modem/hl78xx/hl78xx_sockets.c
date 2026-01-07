@@ -60,11 +60,11 @@ RING_BUF_DECLARE(mdm_recv_pool, CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES);
 struct hl78xx_dns_info {
 #ifdef CONFIG_NET_IPV4
 	char v4_string[NET_IPV4_ADDR_LEN];
-	struct in_addr v4;
+	struct net_in_addr v4;
 #endif
 #ifdef CONFIG_NET_IPV6
 	char v6_string[NET_IPV6_ADDR_LEN];
-	struct in6_addr v6;
+	struct net_in6_addr v6;
 #endif
 	bool ready;
 };
@@ -72,19 +72,19 @@ struct hl78xx_dns_info {
 /* IPv4 information is optional and only present when IPv4 is enabled */
 #ifdef CONFIG_NET_IPV4
 struct hl78xx_ipv4_info {
-	struct in_addr addr;
-	struct in_addr subnet;
-	struct in_addr gateway;
-	struct in_addr new_addr;
+	struct net_in_addr addr;
+	struct net_in_addr subnet;
+	struct net_in_addr gateway;
+	struct net_in_addr new_addr;
 };
 #endif
 /* IPv6 information is optional and only present when IPv6 is enabled */
 #ifdef CONFIG_NET_IPV6
 struct hl78xx_ipv6_info {
-	struct in6_addr addr;
-	struct in6_addr subnet;
-	struct in6_addr gateway;
-	struct in6_addr new_addr;
+	struct net_in6_addr addr;
+	struct net_in6_addr subnet;
+	struct net_in6_addr gateway;
+	struct net_in6_addr new_addr;
 };
 #endif
 /* TLS information is optional and only present when TLS is enabled */
@@ -828,12 +828,12 @@ static int validate_socket(const struct modem_socket *sock, struct hl78xx_socket
 		return -1;
 	}
 
-	bool not_connected = (!sock->is_connected && sock->type != SOCK_DGRAM);
+	bool not_connected = (!sock->is_connected && sock->type != NET_SOCK_DGRAM);
 	bool tcp_disconnected =
-		(sock->type == SOCK_STREAM &&
+		(sock->type == NET_SOCK_STREAM &&
 		 !socket_data->tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_connected);
 	bool udp_not_created =
-		(sock->type == SOCK_DGRAM &&
+		(sock->type == NET_SOCK_DGRAM &&
 		 !socket_data->udp_conn_status[HL78XX_UDP_STATUS_ID(sock->id)].is_created);
 
 	if (not_connected || tcp_disconnected || udp_not_created) {
@@ -1776,7 +1776,7 @@ static void check_tcp_state_if_needed(struct hl78xx_socket_data *socket_data,
 {
 	const char *check_ktcp_stat = "AT+KTCPSTAT";
 	/* Only check for TCP sockets */
-	if (sock->type != SOCK_STREAM) {
+	if (sock->type != NET_SOCK_STREAM) {
 		return;
 	}
 	if (atomic_test_and_clear_bit(&socket_data->mdata_global->state_leftover,
@@ -1959,7 +1959,7 @@ static int validate_and_prepare(struct modem_socket *sock, const struct net_sock
 		errno = EINVAL;
 		return -1;
 	}
-	if (sock->type != SOCK_DGRAM && !sock->is_connected) {
+	if (sock->type != NET_SOCK_DGRAM && !sock->is_connected) {
 		errno = ENOTCONN;
 		return -1;
 	}
@@ -1967,7 +1967,7 @@ static int validate_and_prepare(struct modem_socket *sock, const struct net_sock
 		*dst_addr = &sock->dst;
 	}
 	if (*buf_len > MDM_MAX_DATA_LENGTH) {
-		if (sock->type == SOCK_DGRAM) {
+		if (sock->type == NET_SOCK_DGRAM) {
 			errno = EMSGSIZE;
 			return -1;
 		}
@@ -2137,7 +2137,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	 * destination address is provided or the socket has a stored dst. The
 	 * helper validate_and_prepare will supply sock->dst for UDP when needed.
 	 */
-	if (sock->type != SOCK_DGRAM && !sock->is_connected) {
+	if (sock->type != NET_SOCK_DGRAM && !sock->is_connected) {
 		errno = ENOTCONN;
 		return -1;
 	}
@@ -2229,7 +2229,7 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	ssize_t sent = 0;
-	struct iovec bkp_iovec = {0};
+	struct net_iovec bkp_iovec = {0};
 	struct net_msghdr crafted_msg = {
 		.msg_name = msg->msg_name,
 		.msg_namelen = msg->msg_namelen

@@ -71,6 +71,10 @@ built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
 
+The nRF52840 DK supports programming and debugging external boards with
+nRF51 Series or nRF52 Series System on Chip (SoC)s. For more information,
+see the documentation on `nRF52840 DK Debug output`_.
+
 Flashing
 ========
 
@@ -190,5 +194,6 @@ References
 .. _nRF52840 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK
 .. _nRF52840 Product Specification: https://docs.nordicsemi.com/bundle/ps_nrf52840/page/keyfeatures_html5.html
 .. _nRF52840 DK Hardware guide: https://docs.nordicsemi.com/bundle/ug_nrf52840_dk/page/UG/dk/intro.html
+.. _nRF52840 DK Debug output: https://docs.nordicsemi.com/bundle/ug_nrf52840_dk/page/UG/dk/hw_debug_out.html
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52811 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52811

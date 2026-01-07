@@ -650,7 +650,7 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 /**
  * @brief Identify the address family of received packets as per header type.
  */
-static sa_family_t eth_intel_igc_get_sa_family(uint8_t *rx_buf)
+static net_sa_family_t eth_intel_igc_get_sa_family(uint8_t *rx_buf)
 {
 	struct net_eth_hdr *eth_hdr = (struct net_eth_hdr *)rx_buf;
 

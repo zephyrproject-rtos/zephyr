@@ -2788,6 +2788,9 @@ struct bt_le_oob {
  *       - The local identity address conflicts with the local identity address used by other
  *         roles.
  *
+ * @note This function randomly generates cryptographic material used in the pairing process, and
+ *       should be called again for each new pairing process.
+ *
  * @param[in]  id  Local identity handle (typically @ref BT_ID_DEFAULT). Corresponds to the identity
  *                 address this function will be called for.
  * @param[out] oob LE OOB information
@@ -2814,6 +2817,9 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
  * @note If privacy is enabled the RPA cannot be refreshed in the following
  *       cases:
  *       - Creating a connection in progress, wait for the connected callback.
+ *
+ * @note This function randomly generates cryptographic material used in the pairing process, and
+ *       should be called again for each new pairing process.
  *
  * @param[in]  adv The advertising set object
  * @param[out] oob LE OOB information

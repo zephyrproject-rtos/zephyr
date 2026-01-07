@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>

@@ -195,3 +195,11 @@ zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
 };
+
+&dma {
+	status = "okay";
+};
+
+&dac {
+	status = "okay";
+};

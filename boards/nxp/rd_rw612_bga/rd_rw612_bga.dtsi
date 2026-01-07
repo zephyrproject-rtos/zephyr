@@ -257,6 +257,10 @@ zephyr_udc0: &usb_otg {
 	status = "okay";
 };
 
+zephyr_uhc0: &usbh {
+	status = "okay";
+};
+
 &dma0 {
 	status = "okay";
 };

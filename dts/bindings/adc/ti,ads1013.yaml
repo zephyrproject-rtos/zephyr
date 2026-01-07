@@ -1,4 +1,4 @@
-description: Texas Instrument ADS1013 I2C ADC
+description: Texas Instruments ADS1013 I2C ADC
 
 compatible: "ti,ads1013"
 

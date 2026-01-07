@@ -309,8 +309,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 
 	LOG_DBG("");
 
-	/* Buffer needs an additional byte for type */
-	if (buf->len >= SPI_MAX_MSG_LEN) {
+	if (buf->len > SPI_MAX_MSG_LEN) {
 		LOG_ERR("Message too long (%d)", buf->len);
 		return -EINVAL;
 	}

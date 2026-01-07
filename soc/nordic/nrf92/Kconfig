@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NRF92X
+	select HAS_IRONSIDE_SE
 	select HAS_NRFS
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS

@@ -8,4 +8,7 @@ if SOC_NRF9280_CPURAD
 config NUM_IRQS
 	default 471
 
+config NRF_PERIPHCONF_SECTION
+	default y
+
 endif # SOC_NRF9280_CPURAD

@@ -344,18 +344,25 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 			dev->name);
 		return -ENOTSUP;
 	}
-#endif /* CONFIG_DMA_STM32_V1 */
-
 	/* Support only the same data width for source and dest */
-	if ((config->dest_data_size != config->source_data_size)) {
+	if (config->dest_data_size != config->source_data_size) {
 		LOG_ERR("source and dest data size differ.");
 		return -EINVAL;
 	}
+#else /* CONFIG_DMA_STM32_V1 */
+	if (config->dest_data_size != 4U &&
+	    config->dest_data_size != 2U &&
+	    config->dest_data_size != 1U) {
+		LOG_ERR("invalid dest unit size: %d",
+			config->dest_data_size);
+		return -EINVAL;
+	}
+#endif /* CONFIG_DMA_STM32_V1 */
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
-		LOG_ERR("source and dest unit size error, %d",
+		LOG_ERR("invalid source unit size: %d",
 			config->source_data_size);
 		return -EINVAL;
 	}
@@ -457,7 +464,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
-	/* set the data width, when source_data_size equals dest_data_size */
+	/* set the data widths */
 	int index = find_lsb_set(config->source_data_size) - 1;
 	DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[index];
 	index = find_lsb_set(config->dest_data_size) - 1;

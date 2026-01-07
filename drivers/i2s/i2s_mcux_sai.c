@@ -26,7 +26,6 @@
 #endif
 
 #include <zephyr/sys/barrier.h>
-#include <zephyr/device.h>
 #include <soc.h>
 
 #include <fsl_sai.h>

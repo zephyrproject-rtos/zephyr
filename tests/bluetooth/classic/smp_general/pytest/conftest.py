@@ -1,11 +1,10 @@
 # Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
-import contextlib
 import logging
 import re
-import time
 
 import pytest
 from twister_harness import DeviceAdapter, Shell
@@ -33,7 +32,7 @@ def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
     assert hci is not None
 
     shell.exec_command("bt init")
-    dut.readlines_until("Settings Loaded")
+    dut.readlines_until(regex="Settings Loaded")
     regex = r'(?P<bd_addr>([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) *\((.*?)\))'
     bd_addr = None
     lines = shell.exec_command("bt id-show")
@@ -57,31 +56,3 @@ def smp_initiator_dut(initialize):
     logger.info('Start running testcase')
     yield initialize
     logger.info('Done')
-
-
-def app_handle_device_output(self) -> None:
-    """
-    This method is dedicated to run it in separate thread to read output
-    from device and put them into internal queue and save to log file.
-    """
-    with open(self.handler_log_path, 'a+') as log_file:
-        while self.is_device_running():
-            if self.is_device_connected():
-                output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
-                if output:
-                    self._device_read_queue.put(output)
-                    logger.debug(f'{output}\n')
-                    try:
-                        log_file.write(f'{output}\n')
-                    except Exception:
-                        contextlib.suppress(Exception)
-                    log_file.flush()
-            else:
-                # ignore output from device
-                self._flush_device_output()
-                time.sleep(0.1)
-
-
-# After reboot, there may be gbk character in the console, so replace _handle_device_output to
-# handle the exception.
-DeviceAdapter._handle_device_output = app_handle_device_output

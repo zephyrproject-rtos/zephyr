@@ -974,13 +974,14 @@ support files to make minor adjustments to a board configuration without
 duplicating all the files described in :ref:`create-your-board-directory` for
 each revision.
 
-To build for a particular revision, use ``<board>@<revision>`` instead of plain
-``<board>``. For example:
+To build for a particular revision, use ``<board>@<revision>`` or
+``<board>@<revision>/<qualifiers>`` instead of plain ``<board>`` or
+``<board>/<qualifiers>``. For example:
 
 .. zephyr-app-commands::
    :tool: all
    :cd-into:
-   :board: <board>@<revision>
+   :board: nrf9160dk@0.14.0/nrf9160/ns
    :goals: build
    :compact:
 

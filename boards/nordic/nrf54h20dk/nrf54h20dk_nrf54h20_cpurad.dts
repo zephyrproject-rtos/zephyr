@@ -135,3 +135,8 @@ zephyr_udc0: &usbhs {
 		};
 	};
 };
+
+/* For coex-grant GPIO */
+&gpiote130 {
+	owned-channels = <7>;
+};

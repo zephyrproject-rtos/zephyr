@@ -49,10 +49,6 @@
 #define _KINETIS_FLASH_CONFIG_SECTION_NAME  kinetis_flash_config
 #define _TI_CCFG_SECTION_NAME	        .ti_ccfg
 
-#define _CCM_DATA_SECTION_NAME		.ccm_data
-#define _CCM_BSS_SECTION_NAME		.ccm_bss
-#define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
-
 #define _ITCM_SECTION_NAME		.itcm
 
 #define _DTCM_DATA_SECTION_NAME	        .dtcm_data

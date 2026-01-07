@@ -85,7 +85,6 @@ osSemaphoreId forks[NUM_PHIL];
 #define PR_DEBUG(...)
 #endif
 
-#include "phil_obj_abstract.h"
 
 static void set_phil_state_pos(int id)
 {

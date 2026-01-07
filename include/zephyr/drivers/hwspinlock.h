@@ -266,7 +266,15 @@ static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ct
 	if (ret) {
 		return ret;
 	}
-	return api->trylock(dev, id);
+
+	ret = api->trylock(dev, id);
+	if (ret) {
+		/* HW trylock failed: release local lock before returning. */
+		k_spin_unlock(&ctx->lock, *key);
+		return ret;
+	}
+
+	return 0;
 }
 
 /**

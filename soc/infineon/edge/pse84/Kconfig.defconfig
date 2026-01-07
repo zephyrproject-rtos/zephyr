@@ -8,7 +8,7 @@
 if SOC_SERIES_PSE84
 
 config CORTEX_M_SYSTICK
-	default y
+	default n if INFINEON_LP_TIMER_PDL
 
 choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
@@ -19,8 +19,12 @@ config NUM_IRQS
 	default 174 if CPU_CORTEX_M55
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CPU_CORTEX_M33
-	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if CPU_CORTEX_M55
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CPU_CORTEX_M33 && CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if CPU_CORTEX_M55 && CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/clk_pilo,clock-frequency) if USE_INFINEON_LPTIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/clk_pilo,clock-frequency) if USE_INFINEON_LPTIMER
 
 config BUILD_OUTPUT_ADJUST_LMA
 	depends on XIP

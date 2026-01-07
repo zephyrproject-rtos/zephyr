@@ -8,12 +8,6 @@
 # multiple STM32 series.
 #
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CCM := zephyr,ccm
-
-config STM32_CCM
-	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))
-
 config STM32_BACKUP_SRAM
 	bool "STM32 Backup SRAM"
 	default y

@@ -95,6 +95,9 @@ void soc_early_init_hook(void)
 	/* Initializes the system */
 	ifx_cycfg_init();
 
+	/* Initialize SystemCoreClock variable. */
+	SystemCoreClockUpdate();
+
 	static cy_stc_ipc_pipe_ep_t systemIpcPipeEpArray[CY_IPC_MAX_ENDPOINTS];
 
 	Cy_IPC_Pipe_Config(systemIpcPipeEpArray);

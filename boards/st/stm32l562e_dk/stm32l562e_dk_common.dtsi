@@ -313,7 +313,7 @@ zephyr_udc0: &usb {
 		     &sdmmc1_cmd_pd2>;
 
 	pinctrl-names = "default";
-
+	idma;
 	cd-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
 };
 

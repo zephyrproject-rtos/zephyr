@@ -97,7 +97,7 @@
 			#size-cells = <1>;
 
 			pbridge2: pbridge2@0 {
-				ranges = <>;
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
@@ -334,9 +334,9 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2d000 0x10>;
 		interrupts = <34 0>;
-		clock-frequency = <DT_FREQ_K(32)>;
+		clock-frequency = <32768>;
 		clk-source = <2>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -345,9 +345,9 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2e000 0x10>;
 		interrupts = <35 0>;
-		clock-frequency = <DT_FREQ_K(32)>;
+		clock-frequency = <32768>;
 		clk-source = <2>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -377,6 +377,7 @@
 		interrupt-names = "common";
 		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
 		clk-source = <2>;
+		number-of-mb = <32>;
 		status = "disabled";
 	};
 

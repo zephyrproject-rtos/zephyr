@@ -7,6 +7,9 @@ if SOC_FAMILY_BFLB
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus,timebase-frequency)
 
+config MAIN_STACK_SIZE
+	default 4096
+
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_BFLB

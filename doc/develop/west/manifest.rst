@@ -1258,21 +1258,28 @@ The ``import`` key can be a boolean, path, mapping, or sequence. We'll describe
 these in order, using examples:
 
 - :ref:`Boolean <west-manifest-import-bool>`
-   - :ref:`west-manifest-ex1.1`
-   - :ref:`west-manifest-ex1.2`
-   - :ref:`west-manifest-ex1.3`
+
+  - :ref:`west-manifest-ex1.1`
+  - :ref:`west-manifest-ex1.2`
+  - :ref:`west-manifest-ex1.3`
+
 - :ref:`Relative path <west-manifest-import-path>`
-   - :ref:`west-manifest-ex2.1`
-   - :ref:`west-manifest-ex2.2`
-   - :ref:`west-manifest-ex2.3`
+
+  - :ref:`west-manifest-ex2.1`
+  - :ref:`west-manifest-ex2.2`
+  - :ref:`west-manifest-ex2.3`
+
 - :ref:`Mapping with additional configuration <west-manifest-import-map>`
-   - :ref:`west-manifest-ex3.1`
-   - :ref:`west-manifest-ex3.2`
-   - :ref:`west-manifest-ex3.3`
-   - :ref:`west-manifest-ex3.4`
+
+  - :ref:`west-manifest-ex3.1`
+  - :ref:`west-manifest-ex3.2`
+  - :ref:`west-manifest-ex3.3`
+  - :ref:`west-manifest-ex3.4`
+
 - :ref:`Sequence of paths and mappings <west-manifest-import-seq>`
-   - :ref:`west-manifest-ex4.1`
-   - :ref:`west-manifest-ex4.2`
+
+  - :ref:`west-manifest-ex4.1`
+  - :ref:`west-manifest-ex4.2`
 
 A more :ref:`formal description <west-manifest-formal>` of how this works is
 last, after the examples.

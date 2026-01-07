@@ -21,7 +21,6 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <stm32_cache.h>
 #include <zephyr/cache.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
@@ -270,12 +269,16 @@ static void i2c_stm32_slave_event(const struct device *dev)
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
 		uint8_t val = 0x00;
+		int ret = slave_cb->read_processed(slave_cfg, &val);
 
-		if (slave_cb->read_processed(slave_cfg, &val) < 0) {
+		/* We should transmit the data before logging because logging could
+		 * lead the i2c slave to stretch the clock if the data are not
+		 * transmitted fast enough.
+		 */
+		LL_I2C_TransmitData8(i2c, val);
+		if (ret < 0) {
 			LOG_ERR("Error continuing reading");
 		}
-
-		LL_I2C_TransmitData8(i2c, val);
 
 		return;
 	}

@@ -245,6 +245,15 @@ config SOC_IT8XXX2_ZEPHYR_IN_RAM
 	help
 	  Place zephyr handling code in ILM. This can significantly improve performance.
 
+config SOC_IT8XXX2_RAM_CODE_NOINLINE
+	bool "Force RAM code functions to be non-inlined"
+	depends on LTO
+	help
+	  When enabled, functions marked with __soc_ram_code will use the 'noinline'
+	  attribute to ensure they are not inlined by the compiler.
+	  This guarantees the function body stays in the RAM code section rather
+	  than being merged into callers.
+
 config SOC_IT8XXX2_SHA256_HW_ACCELERATE
 	bool "HW SHA256 calculation"
 	help

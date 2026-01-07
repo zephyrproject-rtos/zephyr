@@ -1814,6 +1814,12 @@ async def sm_init_035(hci_port, shell, dut, address, snoop_file) -> None:
         )
         lines = shell.exec_command(f"l2cap_br connect {format(l2cap_server_psm, 'x')} sec 3")
         found = check_shell_response(lines, f"Enter 16 digits wide PIN code for {bumble_address}")
+        if not found:
+            found, _ = await wait_for_shell_response(
+                dut,
+                [f"Enter 16 digits wide PIN code for {bumble_address}"],
+            )
+
         assert found is True
 
         await send_cmd_to_iut(shell, dut, f"br auth-pincode {pin_code}", None)

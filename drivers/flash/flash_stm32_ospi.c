@@ -25,8 +25,6 @@
 #include "spi_nor.h"
 #include "jesd216.h"
 
-#include "flash_stm32_ospi.h"
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
@@ -57,17 +55,10 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_FIFO_THRESHOLD         4
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-/* Valid range is [0, 255] */
-#define STM32_OSPI_CLOCK_PRESCALER_MIN  0U
-#define STM32_OSPI_CLOCK_PRESCALER_MAX  255U
-#define STM32_OSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
-#else
 /* Valid range is [1, 256] */
 #define STM32_OSPI_CLOCK_PRESCALER_MIN  1U
 #define STM32_OSPI_CLOCK_PRESCALER_MAX  256U
 #define STM32_OSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / (prescaler))
-#endif
 
 /* Max Time value during reset or erase operation */
 #define STM32_OSPI_RESET_MAX_TIME               100U
@@ -1293,24 +1284,23 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				    && ((bet == NULL)
 					|| (etp->exp > bet->exp))) {
 					bet = etp;
-					cmd_erase.Instruction = bet->cmd;
-				} else if (bet == NULL) {
-					/* Use the default sector erase cmd */
-					if (dev_cfg->data_mode == OSPI_OPI_MODE) {
-						cmd_erase.Instruction = SPI_NOR_OCMD_SE;
-					} else {
-						cmd_erase.Instruction =
-							(stm32_ospi_hal_address_size(dev) ==
-							HAL_OSPI_ADDRESS_32_BITS)
-							? SPI_NOR_CMD_SE_4B
-							: SPI_NOR_CMD_SE;
-					}
 				}
-				/* Avoid using wrong erase type,
-				 * if zero entries are found in erase_types
-				 */
-				bet = NULL;
 			}
+
+			if (bet != NULL) {
+				cmd_erase.Instruction = bet->cmd;
+			} else {
+				/* Use the default sector erase cmd */
+				if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+					cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+				} else {
+					cmd_erase.Instruction = (stm32_ospi_hal_address_size(dev) ==
+						HAL_OSPI_ADDRESS_32_BITS)
+						? SPI_NOR_CMD_SE_4B
+						: SPI_NOR_CMD_SE;
+				}
+			}
+
 			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
 				cmd_erase.Address, cmd_erase.AddressSize,
 				cmd_erase.AddressMode, cmd_erase.Instruction);
@@ -2242,7 +2232,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
-	struct dma_config dma_cfg = dev_data->dma.cfg;
+	struct dma_config *dma_cfg = &dev_data->dma.cfg;
 	static DMA_HandleTypeDef hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
@@ -2251,22 +2241,22 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	}
 
 	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg.user_data = &hdma;
+	dma_cfg->user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
+	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, dma_cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to configure DMA channel %d", dev_data->dma.channel);
 		return ret;
 	}
 
 	/* Proceed to the HAL DMA driver init */
-	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
 		LOG_ERR("Source and destination data sizes not aligned");
 		return -EINVAL;
 	}
 
-	int index = find_lsb_set(dma_cfg.source_data_size) - 1;
+	int index = find_lsb_set(dma_cfg->source_data_size) - 1;
 
 #if CONFIG_DMA_STM32U5
 	/* Fill the structure for dma init */
@@ -2286,14 +2276,14 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	hdma.Init.MemInc = DMA_MINC_ENABLE;
 #endif /* CONFIG_DMA_STM32U5 */
 	hdma.Init.Mode = DMA_NORMAL;
-	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
+	hdma.Init.Priority = table_priority[dma_cfg->channel_priority];
 	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
-	hdma.Init.Channel = dma_cfg.dma_slot;
+	hdma.Init.Channel = dma_cfg->dma_slot;
 #else
-	hdma.Init.Request = dma_cfg.dma_slot;
+	hdma.Init.Request = dma_cfg->dma_slot;
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
@@ -2355,13 +2345,8 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	/* Initialize OSPI HAL structure completely */
 	dev_data->hospi.Init.FifoThreshold = 4;
 	dev_data->hospi.Init.ClockPrescaler = prescaler;
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* The stm32h5xx_hal_xspi does not reduce DEVSIZE before writing the DCR1 */
-	dev_data->hospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size) - 2;
-#else
 	/* Give a bit position from 0 to 31 to the HAL init for the DCR1 reg */
 	dev_data->hospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size) - 1;
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
 	dev_data->hospi.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
 	dev_data->hospi.Init.ChipSelectHighTime = 2;
 	dev_data->hospi.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
@@ -2436,23 +2421,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #endif /* OCTOSPIM */
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* OCTOSPI1 delay block init Function */
-	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
-
-	(void)HAL_XSPI_DLYB_GetClockPeriod(&dev_data->hospi, &xspi_delay_block_cfg);
-	/*  with DTR, set the PhaseSel/4 (empiric value from stm32Cube) */
-	xspi_delay_block_cfg.PhaseSel /= 4;
-
-	if (HAL_XSPI_DLYB_SetConfig(&dev_data->hospi, &xspi_delay_block_cfg) != HAL_OK) {
-		LOG_ERR("XSPI DelayBlock failed");
-		return -EIO;
-	}
-
-	LOG_DBG("Delay Block Init");
-
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);

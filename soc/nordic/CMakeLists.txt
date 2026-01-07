@@ -50,4 +50,3 @@ if(CONFIG_SOC_NORDIC_BSP_NAME STREQUAL "stable")
 endif()
 
 add_subdirectory(common)
-add_subdirectory_ifdef(CONFIG_NRF_IRONSIDE ironside)

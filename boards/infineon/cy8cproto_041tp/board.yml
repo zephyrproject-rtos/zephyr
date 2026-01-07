@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: cy8cproto_041tp
+  full_name: CY8CPROTO-041TP
+  vendor: infineon
+  socs:
+  - name: cy8c4147azq_t495

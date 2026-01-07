@@ -377,7 +377,7 @@ ZTEST(modem_ppp, test_ppp_frame_send)
 	int ret;
 
 	/* Allocate net pkt */
-	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	zassert_true(pkt != NULL, "Failed to allocate network packet");
 
@@ -406,7 +406,7 @@ ZTEST(modem_ppp, test_ppp_frame_send_custom_accm1)
 	int ret;
 
 	/* Allocate net pkt */
-	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	zassert_true(pkt != NULL, "Failed to allocate network packet");
 
@@ -437,7 +437,7 @@ ZTEST(modem_ppp, test_ppp_frame_send_custom_accm2)
 	int ret;
 
 	/* Allocate net pkt */
-	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	zassert_true(pkt != NULL, "Failed to allocate network packet");
 
@@ -495,7 +495,7 @@ ZTEST(modem_ppp, test_ip_frame_send)
 	int ret;
 
 	/* Allocate net pkt */
-	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(&test_iface, 256, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_true(pkt != NULL, "Failed to allocate network packet");
 
 	/* Set network packet data */
@@ -524,7 +524,7 @@ ZTEST(modem_ppp, test_ip_frame_send_multiple)
 
 	/* Allocate net pkts */
 	for (uint8_t i = 0; i < TEST_MODEM_PPP_IP_FRAME_SEND_MULT_N; i++) {
-		pkts[i] = net_pkt_alloc_with_buffer(&test_iface, 256, AF_UNSPEC, 0, K_NO_WAIT);
+		pkts[i] = net_pkt_alloc_with_buffer(&test_iface, 256, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		zassert_true(pkts[i] != NULL, "Failed to allocate network packet");
 		net_pkt_cursor_init(pkts[i]);
 		ret = net_pkt_write(pkts[i], ip_frame_unwrapped, sizeof(ip_frame_unwrapped));
@@ -551,7 +551,7 @@ ZTEST(modem_ppp, test_ip_frame_send_large)
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(&test_iface, TEST_MODEM_PPP_IP_FRAME_SEND_LARGE_N,
-					AF_UNSPEC, 0, K_NO_WAIT);
+					NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_family(pkt, NET_AF_INET);

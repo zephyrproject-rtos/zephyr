@@ -134,6 +134,7 @@
 &eusart1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>, <&gpioc 4 GPIO_ACTIVE_LOW>;

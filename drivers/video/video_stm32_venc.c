@@ -16,7 +16,13 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_VIDEO_STM32_VENC_SMH_ALLOC)
 #include <zephyr/multi_heap/shared_multi_heap.h>
+
+#define EWL_HEAP_ALIGNED_ALLOC(size)\
+	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, ALIGNMENT_INCR, (size))
+#define EWL_HEAP_ALIGNED_FREE(block) shared_multi_heap_free(block)
+#endif
 
 #include <ewl.h>
 #include <h264encapi.h>
@@ -35,16 +41,33 @@ LOG_MODULE_REGISTER(stm32_venc, CONFIG_VIDEO_LOG_LEVEL);
 
 #define ALIGNMENT_INCR 8UL
 
-#define EWL_HEAP_ALIGNED_ALLOC(size)\
-	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, ALIGNMENT_INCR, (size))
-#define EWL_HEAP_ALIGNED_FREE(block) shared_multi_heap_free(block)
-
 #define EWL_TIMEOUT 100UL
 
 #define MEM_CHUNKS 32
 
 #define NUM_SLICES_READY_MASK GENMASK(23, 16)
 #define LOW_LATENCY_HW_ITF_EN 29
+
+#if defined(CONFIG_VIDEO_STM32_VENC_HEAP_ALLOC)
+#if !defined(CONFIG_VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION)
+#define VENC_HEAP_REGION_NAME __noinit_named(kheap_buf_venc_pool)
+#else
+#define VENC_HEAP_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME)
+#endif
+
+/*
+ * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
+ * since the section might not be yet accessible from the beginning, making it impossible
+ * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
+ */
+static char VENC_HEAP_REGION_NAME __aligned(8)
+	venc_pool_mem[MAX(CONFIG_VIDEO_STM32_VENC_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
+static struct k_heap venc_pool;
+
+#define EWL_HEAP_ALIGNED_ALLOC(size)	\
+	k_heap_aligned_alloc(&venc_pool, ALIGNMENT_INCR, size, K_NO_WAIT)
+#define EWL_HEAP_ALIGNED_FREE(block) k_heap_free(&venc_pool, block)
+#endif
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
@@ -841,30 +864,17 @@ static const struct stm32_venc_config stm32_venc_config_0 = {
 	.irq_config = stm32_venc_irq_config_func,
 };
 
-static void risaf_config(void)
-{
-	/* Define and initialize the master configuration structure */
-	RIMC_MasterConfig_t rimc_master = {0};
-
-	/* Enable the clock for the RIFSC (RIF Security Controller) */
-	__HAL_RCC_RIFSC_CLK_ENABLE();
-
-	rimc_master.MasterCID = RIF_CID_1;
-	rimc_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-
-	/* Configure the master attributes for the video encoder peripheral (VENC) */
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_VENC, &rimc_master);
-
-	/* Set the secure and privileged attributes for the VENC as a slave */
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_VENC,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-}
-
 static int stm32_venc_init(const struct device *dev)
 {
 	const struct stm32_venc_config *config = dev->config;
 	struct stm32_venc_data *data = dev->data;
 	int err;
+
+#if defined(CONFIG_VIDEO_STM32_VENC_HEAP_ALLOC)
+	/* Initialize the VENC internal buffers dedicated HEAP */
+	k_heap_init(&venc_pool, venc_pool_mem,
+		    MAX(CONFIG_VIDEO_STM32_VENC_HEAP_SIZE, Z_HEAP_MIN_SIZE));
+#endif
 
 	/* Enable VENC clock */
 	err = stm32_venc_enable_clock(dev);
@@ -889,8 +899,6 @@ static int stm32_venc_init(const struct device *dev)
 
 	/* Run IRQ init */
 	config->irq_config(dev);
-
-	risaf_config();
 
 	LOG_DBG("CPU frequency    : %d", HAL_RCC_GetCpuClockFreq() / 1000000);
 	LOG_DBG("sysclk frequency : %d", HAL_RCC_GetSysClockFreq() / 1000000);

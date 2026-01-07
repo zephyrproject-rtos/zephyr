@@ -12,7 +12,9 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - can
   - gpio
   - rtc
   - watchdog
+  - adc
 vendor: nxp

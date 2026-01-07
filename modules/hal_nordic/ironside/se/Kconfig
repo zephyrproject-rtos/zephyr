@@ -1,0 +1,66 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_IRONSIDE_SE
+	bool
+
+menu "IronSide SE"
+	depends on HAS_IRONSIDE_SE
+
+config IRONSIDE_SE_CALL
+	bool "IronSide calls"
+	default y
+	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
+	depends on MULTITHREADING
+	select EVENTS
+	select MBOX
+	help
+	  Support for IronSide call APIs.
+
+if IRONSIDE_SE_CALL
+
+config IRONSIDE_SE_CALL_INIT_PRIORITY
+	int "IronSide calls' driver initialization priority"
+	default 41
+	help
+	  Initialization priority of the IronSide call protocol driver.
+	  It must be below MBOX_INIT_PRIORITY, but higher than the priority of any feature
+	  that depends on IRONSIDE_SE_CALL.
+
+endif # IRONSIDE_SE_CALL
+
+config IRONSIDE_SE_DVFS
+	bool "DVFS support"
+	depends on SOC_NRF54H20_CPUAPP
+	depends on IRONSIDE_SE_CALL
+	help
+	  Support for changing the DVFS operating point.
+
+if IRONSIDE_SE_DVFS
+
+config IRONSIDE_SE_DVFS_ABB_STATUSANA_CHECK_MAX_ATTEMPTS
+	int "ABB analog status check maximum attempts"
+	range 0 255
+	default 50
+	help
+	  Maximum attempts with 10us intervals before busy status will be reported.
+
+endif # IRONSIDE_SE_DVFS
+
+menuconfig NRF_PERIPHCONF_SECTION
+	bool "Global peripheral initialization section"
+	depends on LINKER_DEVNULL_SUPPORT
+	imply LINKER_DEVNULL_MEMORY
+	help
+	  Include static global domain peripheral initialization values from the
+	  build in a dedicated section in the devnull region.
+
+config NRF_PERIPHCONF_GENERATE_ENTRIES
+	bool "Generate PERIPHCONF entries source file"
+	default y
+	depends on NRF_PERIPHCONF_SECTION
+	help
+	  Generate a C file containing PERIPHCONF entries based on the
+	  device configuration in the devicetree.
+
+endmenu # IronSide SE

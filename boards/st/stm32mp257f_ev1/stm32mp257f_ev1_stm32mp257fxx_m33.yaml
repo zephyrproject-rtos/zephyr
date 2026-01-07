@@ -10,6 +10,7 @@ supported:
   - gpio
   - shell
   - i2c
+  - i3c
   - spi
 testing:
   ignore_tags:

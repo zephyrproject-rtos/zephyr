@@ -177,6 +177,30 @@ void shared_multi_heap_free(void *block);
 int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_data);
 
 /**
+ * @brief Reallocate memory from the memory shared multi-heap pool
+ *
+ * Returns a pointer to a new memory region with the same contents,
+ * but a different allocated size. If the new allocation can be
+ * expanded in place, the pointer returned will be identical.
+ * Otherwise the data will be copied to a new block and the old one
+ * will be freed as per sys_heap_free(). If the specified size is
+ * smaller than the original, the block will be truncated in place and
+ * the remaining memory returned to the heap. If the allocation of a
+ * new block fails, then NULL will be returned and the old block will
+ * not be freed or modified. The opaque attribute parameter is used
+ * by the backend to select the correct heap to allocate memory from
+ * if needed.
+ *
+ * @param attr		capability / attribute requested for the memory block.
+ * @param ptr		pointer to the memory block to reallocate
+ * @param bytes		requested size of the allocation in bytes.
+ *
+ * @retval newptr	a valid pointer to a new heap memory block of size bytes.
+ * @retval err		NULL if no memory is available.
+ */
+void *shared_multi_heap_realloc(enum shared_multi_heap_attr attr, void *ptr, size_t bytes);
+
+/**
  * @}
  */
 

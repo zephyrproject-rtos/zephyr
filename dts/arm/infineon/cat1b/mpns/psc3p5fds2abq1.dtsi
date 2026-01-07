@@ -10,7 +10,7 @@
 
 / {
 	flash-controller@42150000 {
-		compatible = "infineon,cat1-flash-controller";
+		compatible = "infineon,flash-controller";
 		reg = <0x42150000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;

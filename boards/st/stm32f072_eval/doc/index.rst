@@ -62,8 +62,9 @@ STM32F072-EVAL Discovery kit provides the following hardware components:
 - Up to 87 fast I/Os: 68 I/Os with 5V tolerant capability and 19 with independent supply
 
 More information about STM32F072VB can be found here:
-       - `STM32F072VB on www.st.com`_
-       - `STM32F072 reference manual`_
+
+- `STM32F072VB on www.st.com`_
+- `STM32F072 reference manual`_
 
 Supported Features
 ==================

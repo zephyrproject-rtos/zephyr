@@ -9,7 +9,7 @@
  * @brief Counter driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_counter
+#define DT_DRV_COMPAT infineon_counter
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>

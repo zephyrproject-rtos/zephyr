@@ -81,6 +81,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30020000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM2";
+		#memory-region-cells = <0>;
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */

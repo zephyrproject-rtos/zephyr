@@ -16,13 +16,14 @@ Key Features
 - User, boot, and reset push-buttons
 - 32.768 kHz and 25MHz HSE crystal oscillators
 - External NOR Flash memories: 64-Mbit Quad-SPI and 64-Mbit SPI
-- Board connectors:
-   - Camera (8 bit) connector
-   - ST7735 TFT-LCD 160 x 80 pixels (RGB565 3-SPI)
-   - microSD |trade| card
-   - USB Type-C Connector
-   - SWD header for external debugger
-   - 2x 40-pin GPIO connector
+- Board connectors
+
+  - Camera (8 bit) connector
+  - ST7735 TFT-LCD 160 x 80 pixels (RGB565 3-SPI)
+  - microSD |trade| card
+  - USB Type-C Connector
+  - SWD header for external debugger
+  - 2x 40-pin GPIO connector
 
 More information about the board can be found on the `Mini_STM32H743 website`_.
 

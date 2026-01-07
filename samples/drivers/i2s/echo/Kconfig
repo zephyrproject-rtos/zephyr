@@ -1,10 +1,12 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2025 Croxel Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 source "Kconfig.zephyr"
 
 config I2C
-	default $(dt_compat_on_bus,$(DT_COMPAT_WOLFSON_WM8731),i2c)
+	default $(dt_compat_on_bus,$(DT_COMPAT_WOLFSON_WM8731),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_ADI_MAX9867),i2c)
 
 config TOGGLE_ECHO_EFFECT_SW0
 	bool "Toggle echo effect when pressing sw0"

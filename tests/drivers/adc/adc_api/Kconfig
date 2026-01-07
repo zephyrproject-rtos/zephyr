@@ -13,3 +13,7 @@ config ADC_API_SAMPLE_INTERVAL_US
 
 config ADC_32_BITS_DATA
 	bool "ADC data is 32-bits long"
+
+config TEST_ADC_CALIBRATE_REQUIRED
+	bool "Require calibrate field in ADC test"
+	default y if DT_HAS_RENESAS_RA_ADC16_ENABLED

@@ -31,6 +31,11 @@ extern "C" {
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup adc_interface_ext Device-specific ADC API extensions
+ *
+ * @{
+ * @}
  */
 
 /** @brief ADC channel gain factors. */

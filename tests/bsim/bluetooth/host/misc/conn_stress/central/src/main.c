@@ -27,7 +27,6 @@ LOG_MODULE_REGISTER(central, LOG_LEVEL_INF);
 #include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
-#include "bstests.h"
 #include "bs_pc_backchannel.h"
 
 #include "babblekit/testcase.h"

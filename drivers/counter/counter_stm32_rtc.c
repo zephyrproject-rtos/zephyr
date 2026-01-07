@@ -413,25 +413,29 @@ tick_t rtc_stm32_read(const struct device *dev)
 	uint32_t rtc_date, rtc_time;
 	tick_t ticks;
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-	uint32_t rtc_subseconds;
+	uint32_t rtc_subsecond;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	ARG_UNUSED(dev);
 
-	/* Read time and date registers. Make sure value of the previous register
-	 * hasn't been changed while reading the next one.
-	 */
 	do {
+		/* read date, time and subseconds and relaunch if a day increment occurred
+		 * while doing so as it will result in an erroneous result otherwise
+		 */
 		rtc_date = LL_RTC_DATE_Get(RTC);
-
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 		do {
+			/* read time and subseconds and relaunch if a second increment occurred
+			 * while doing so as it will result in an erroneous result otherwise
+			 */
 			rtc_time = LL_RTC_TIME_Get(RTC);
-			rtc_subseconds = LL_RTC_TIME_GetSubSecond(RTC);
+#if CONFIG_COUNTER_RTC_STM32_SUBSECONDS
+			do {
+				/* read subseconds and relaunch if a second increment occurred
+				 * while doing so as it will result in an erroneous result otherwise
+				 */
+				rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
+			} while (rtc_subsecond != LL_RTC_TIME_GetSubSecond(RTC));
+#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 		} while (rtc_time != LL_RTC_TIME_Get(RTC));
-#else /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-		rtc_time = LL_RTC_TIME_Get(RTC);
-#endif
-
 	} while (rtc_date != LL_RTC_DATE_Get(RTC));
 
 	/* Convert calendar datetime to UNIX timestamp */
@@ -460,7 +464,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 	 * down starting from the sync prescaler value. Add already counted
 	 * ticks.
 	 */
-	ticks += RTC_SYNCPRE - rtc_subseconds;
+	ticks += RTC_SYNCPRE - rtc_subsecond;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 	return ticks;

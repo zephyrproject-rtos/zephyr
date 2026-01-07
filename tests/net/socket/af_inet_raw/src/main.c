@@ -35,14 +35,14 @@
  *     - test_raw_v6_sock_send_proto_match
  *     - test_raw_v6_sock_send_proto_mismatch
  *
- *   * (NET_AF_INET/6, NET_SOCK_RAW, IPPROTO_RAW) - The IP header needs to be supplied by
+ *   * (NET_AF_INET/6, NET_SOCK_RAW, NET_IPPROTO_RAW) - The IP header needs to be supplied by
  *     the user in the data:
  *     - test_raw_v4_sock_send_proto_ipproto_raw
  *     - test_raw_v6_sock_send_proto_ipproto_raw
  *
  * Receiving data (RX)
  *
- *   *  (NET_AF_INET/6, NET_SOCK_RAW, 0) - 0 value is also `IPPROTO_IP` which is
+ *   *  (NET_AF_INET/6, NET_SOCK_RAW, 0) - 0 value is also `NET_IPPROTO_IP` which is
  *      "wildcard" value. The packet is received for any IP protocol. It works in
  *      similar way as in FreeBSD:
  *     - test_raw_v4_sock_recv_proto_wildcard
@@ -58,7 +58,7 @@
  *     - test_raw_v4_sock_recv_proto_match
  *     - test_raw_v6_sock_recv_proto_match
  *
- *   *  (NET_AF_INET/6, NET_SOCK_RAW, IPPROTO_RAW) - Receiving of all IP protocols via
+ *   *  (NET_AF_INET/6, NET_SOCK_RAW, NET_IPPROTO_RAW) - Receiving of all IP protocols via
  *      NET_IPPROTO_RAW is not
  *      possible using raw sockets. https://man7.org/linux/man-pages/man7/raw.7.html:
  *     - test_raw_v4_sock_recv_proto_ipproto_raw

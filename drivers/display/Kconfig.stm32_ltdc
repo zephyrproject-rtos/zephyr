@@ -8,7 +8,6 @@ menuconfig STM32_LTDC
 	default y
 	depends on DT_HAS_ST_STM32_LTDC_ENABLED
 	select USE_STM32_HAL_LTDC
-	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select PINCTRL
 	select RESET
@@ -20,7 +19,6 @@ if STM32_LTDC
 choice STM32_LTDC_PIXEL_FORMAT
 	prompt "Color pixel format"
 	default STM32_LTDC_RGB565
-	depends on STM32_LTDC
 	help
 	  Specify the color pixel format for the STM32 LCD-TFT display controller.
 

@@ -141,9 +141,7 @@
 
 # zephyr-keep-sorted-start strip(":) nofold
 ACPI:
-  status: maintained
-  maintainers:
-    - najumon1980
+  status: odd fixes
   files:
     - lib/acpi/
     - include/zephyr/acpi/
@@ -268,8 +266,6 @@ ARM64 arch:
   status: odd fixes
   collaborators:
     - npitre
-    - povergoing
-    - sgrrzhf
     - wearyzen
     - ithinuel
     - JiafeiPan
@@ -306,7 +302,7 @@ Aesc Platform:
   files-regex:
     - ^drivers/.*aesc(\.c)?$
   labels:
-    - "area: Aesc Silicon Platform"
+    - "platform: Aesc Silicon"
 
 Ambiq Platforms:
   status: maintained
@@ -509,7 +505,6 @@ Bluetooth Controller:
   collaborators:
     - carlescufi
     - thoh-ot
-    - ppryga
     - wopu-ot
     - erbr-ot
     - Tronil
@@ -658,7 +653,6 @@ Bluetooth Mesh:
     - jhedberg
     - LingaoM
     - alxelax
-    - Andrewpini
     - akredalen
     - HaavardRei
     - omkar3141
@@ -744,6 +738,7 @@ Bouffalolab Platforms:
     - josuah
   files:
     - boards/bflb/
+    - boards/sipeed/maix_m0s_dock/
     - drivers/*/*bflb*
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
@@ -1141,6 +1136,8 @@ Devicetree:
 
 Devicetree Bindings:
   status: odd fixes
+  collaborators:
+    - JarmouniA
   files-regex:
     - ^dts/bindings/.*zephyr.*
   files:
@@ -1148,7 +1145,7 @@ Devicetree Bindings:
     - include/zephyr/dt-bindings/
     - scripts/bindings_properties_allowlist.yaml
   labels:
-    - "area: Devicetree Bindings"
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
@@ -1223,6 +1220,7 @@ Documentation:
     - doc/substitutions.txt
     - doc/images/Zephyr-Kite-in-tree.png
     - doc/index-tex.rst
+    - doc/index.html
     - doc/index.rst
     - doc/kconfig.rst
     - doc/templates/sample.tmpl
@@ -1259,6 +1257,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - anangl
+    - ZhaoxiangJin
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
@@ -1452,6 +1451,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - nordic-krch
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/counter/
     - include/zephyr/drivers/counter.h
@@ -2165,7 +2166,6 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - gdengi
-    - nbalabak
   files:
     - drivers/pm_cpu_ops/
     - include/zephyr/drivers/pm_cpu_ops/
@@ -2193,8 +2193,6 @@ Documentation Infrastructure:
   maintainers:
     - manuargue
     - Dat-NguyenDuy
-  collaborators:
-    - congnguyenhuu
   files:
     - drivers/psi5/
     - include/zephyr/drivers/psi5/
@@ -2259,6 +2257,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - bjarki-andreasen
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/
@@ -2342,8 +2342,6 @@ Documentation Infrastructure:
   maintainers:
     - manuargue
     - Dat-NguyenDuy
-  collaborators:
-    - congnguyenhuu
   files:
     - drivers/sent/
     - include/zephyr/drivers/sent/
@@ -2457,7 +2455,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/stepper/
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
-    - doc/hardware/peripherals/stepper.rst
+    - doc/hardware/peripherals/stepper/
     - samples/drivers/stepper/
     - tests/drivers/build_all/stepper/
     - tests/drivers/stepper/
@@ -2562,8 +2560,6 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - str4t0m
-  collaborators:
-    - casparfriedrich
   files:
     - doc/hardware/peripherals/w1.rst
     - doc/hardware/peripherals/1-Wire_bus_topology.drawio.svg
@@ -2988,8 +2984,6 @@ Intel Platforms (Agilex):
   status: maintained
   maintainers:
     - gdengi
-  collaborators:
-    - nbalabak
   files:
     - boards/intel/socfpga/
     - soc/intel/intel_socfpga/
@@ -3020,7 +3014,6 @@ Intel Platforms (X86):
   maintainers:
     - edersondisouza
   collaborators:
-    - najumon1980
     - dcpleung
     - ceolin
   files:
@@ -3090,8 +3083,6 @@ JSON Web Token:
   status: maintained
   maintainers:
     - d3zd3z
-  collaborators:
-    - mrfuchs
   files:
     - subsys/jwt/
     - include/zephyr/data/json.h
@@ -3161,6 +3152,7 @@ Kernel:
   collaborators:
     - lyakh
     - pillo79
+    - laurenmurphyx64
   files:
     - cmake/llext-edk.cmake
     - samples/subsys/llext/
@@ -3399,6 +3391,7 @@ Microchip RISC-V Platforms:
   status: maintained
   maintainers:
     - fkokosinski
+  collaborators:
     - kgugala
     - tgorochowik
   files:
@@ -3503,6 +3496,7 @@ NXP Platform Drivers:
     - dbaluta
     - Holt-Sun
     - zejiang0jason
+    - butok
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -3724,7 +3718,6 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
-    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
@@ -4138,11 +4131,12 @@ Nuvoton Numicro Numaker Platforms:
     - cyliangtw
   collaborators:
     - ssekar15
+    - ccli8
   files:
     - soc/nuvoton/numaker/
     - soc/nuvoton/numicro/
     - boards/nuvoton/numaker*/
-    - dts/arm/nuvoton/
+    - dts/arm/nuvoton/m*
     - dts/bindings/*/*numicro*
     - dts/bindings/*/*numaker*
     - drivers/*/*_numicro*
@@ -4228,7 +4222,6 @@ PMCI:
     - teburd
   collaborators:
     - nashif
-    - inteljiangwe1
     - kehintel
   files:
     - subsys/pmci/
@@ -4419,6 +4412,20 @@ Raspberry Pi Pico Platforms:
   labels:
     - "platform: Raspberry Pi Pico"
 
+Realtek Ameba Platforms:
+  status: maintained
+  maintainers:
+    - zjian-zhang
+    - Derek-RTK
+  files:
+    - drivers/*/*ameba*
+    - boards/realtek/
+    - soc/realtek/ameba/
+    - dts/arm/realtek/ameba*/
+    - dts/bindings/*/*ameba*
+  labels:
+    - "platform: Ameba"
+
 Realtek EC Platforms:
   status: maintained
   maintainers:
@@ -4605,7 +4612,6 @@ SPDX Tooling:
     - kartben
   collaborators:
     - pdgendt
-    - swinslow
   files:
     - scripts/west_commands/spdx.py
     - scripts/west_commands/zspdx/
@@ -4729,8 +4735,6 @@ Sensor Subsystem:
   maintainers:
     - lixuzha
     - yperess
-  collaborators:
-    - qianruh
   files:
     - dts/bindings/sensor/zephyr,sensing.yaml
     - dts/bindings/sensor/zephyr,sensing*.yaml
@@ -4765,6 +4769,24 @@ Settings:
     - samples/subsys/settings/
     - doc/services/storage/settings/
     - tests/subsys/settings_commit_prio/
+  file-groups:
+    - name: TF-M PSA backend
+      collaborators:
+        - dsseng
+        - seankyer
+        - tomi-font
+      files:
+        - subsys/settings/src/settings_tfm_psa*
+        - tests/subsys/settings/functional/tfm_psa/
+        - tests/subsys/settings/tfm_psa/
+    - name: ZMS backend
+      collaborators:
+        - rghaddab
+      files:
+        - subsys/settings/src/settings_zms.c
+        - subsys/settings/include/settings/settings_zms.h
+        - tests/subsys/settings/zms/
+        - tests/subsys/settings/functional/zms/
   labels:
     - "area: Settings"
   tests:
@@ -5256,6 +5278,20 @@ USB-C:
   tests:
     - sample.usbc
 
+UUID:
+  status: maintained
+  maintainers:
+    - sorru94
+  files:
+    - lib/uuid/
+    - include/zephyr/sys/uuid.h
+    - tests/lib/uuid/
+    - samples/subsys/uuid/
+  labels:
+    - "area: UUID"
+  tests:
+    - libraries.uuid
+
 Userspace:
   status: maintained
   maintainers:
@@ -5358,7 +5394,6 @@ West:
   collaborators:
     - mbolivar
     - carlescufi
-    - swinslow
     - marc-hb
   files:
     - scripts/west-commands.yml
@@ -5369,9 +5404,7 @@ West:
     - "area: West"
 
 "West project: acpica":
-  status: maintained
-  maintainers:
-    - najumon1980
+  status: odd fixes
   files:
     - modules/acpica/
   labels:
@@ -5496,8 +5529,6 @@ West:
   status: maintained
   maintainers:
     - stephanosio
-  collaborators:
-    - povergoing
   files:
     - modules/cmsis/
   labels:
@@ -5577,7 +5608,6 @@ West:
     - bperseghetti
   collaborators:
     - PetervdPerk-NXP
-    - jgoppert
   files:
     - modules/hal_afbr/
   labels:
@@ -5649,6 +5679,7 @@ West:
   collaborators:
     - ithinuel
     - ccli8
+    - johan-alfven-arm
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
@@ -5777,6 +5808,15 @@ West:
   labels:
     - "platform: Quicklogic"
 
+"West project: hal_realtek":
+  status: maintained
+  maintainers:
+    - zjian-zhang
+    - Derek-RTK
+  files: []
+  labels:
+    - "platform: Ameba"
+
 "West project: hal_renesas":
   status: maintained
   maintainers:
@@ -5827,7 +5867,6 @@ West:
     - asmellby
   collaborators:
     - jerome-pouiller
-    - sateeshkotapati
     - yonsch
     - rettichschnidi
     - Martinhoff-maker
@@ -5940,7 +5979,6 @@ West:
 "West project: liblc3":
   status: maintained
   maintainers:
-    - Casper-Bonde-Bose
     - MariuszSkamra
   collaborators:
     - thalley
@@ -5956,8 +5994,8 @@ West:
     - teburd
   collaborators:
     - nashif
-    - inteljiangwe1
     - dkalowsk
+    - edersondisouza
   files: []
   labels:
     - "area: MCTP"
@@ -6407,7 +6445,7 @@ nRF IronSide SE Platforms:
     - karstenkoenig
     - SebastianBoe
   files:
-    - soc/nordic/ironside/
+    - modules/hal_nordic/ironside/
     - soc/nordic/common/uicr/
   labels:
     - "platform: nRF IronSide SE"
@@ -6471,7 +6509,6 @@ x86 arch:
     - dcpleung
     - ceolin
     - laurenmurphyx64
-    - najumon1980
     - nashif
   files:
     - arch/x86/

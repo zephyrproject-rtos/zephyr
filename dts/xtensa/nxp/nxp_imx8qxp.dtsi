@@ -10,6 +10,7 @@
 	irqsteer: interrupt-controller@51080000 {
 		compatible = "nxp,irqsteer-intc";
 		reg = <0x51080000 DT_SIZE_K(64)>;
+		nxp,num-irqs = <512>;
 		power-domains = <&irqstr_pd>;
 
 		#size-cells = <0>;
@@ -19,7 +20,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <0>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 19 0 0>;
 		};
 
@@ -27,7 +28,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <1>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 20 0 0>;
 		};
 
@@ -35,7 +36,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <2>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 21 0 0>;
 		};
 
@@ -43,7 +44,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <3>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 22 0 0>;
 		};
 
@@ -51,7 +52,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <4>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 23 0 0>;
 		};
 
@@ -59,7 +60,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <5>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 24 0 0>;
 		};
 
@@ -67,7 +68,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <6>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 25 0 0>;
 		};
 
@@ -75,7 +76,7 @@
 			compatible = "nxp,irqsteer-master";
 			reg = <7>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupts-extended = <&clic 26 0 0>;
 		};
 	};

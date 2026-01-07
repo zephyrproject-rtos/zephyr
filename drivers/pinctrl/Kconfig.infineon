@@ -7,6 +7,6 @@
 config PINCTRL_INFINEON_CAT1
 	bool "Pin controller driver for Infineon CAT1 MCUs"
 	default y
-	depends on DT_HAS_INFINEON_CAT1_PINCTRL_ENABLED
+	depends on DT_HAS_INFINEON_PINCTRL_ENABLED
 	help
 	  Enable Pin controller driver for Infineon CAT1 MCUs

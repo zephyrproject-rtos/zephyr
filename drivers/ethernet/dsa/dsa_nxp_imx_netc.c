@@ -142,7 +142,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	 * Trap gPTP frames to cpu port to perform gPTP protocol.
 	 */
 	netc_tb_ipf_config_t ipf_entry_cfg = {
-		.keye.etherType = htons(NET_ETH_PTYPE_PTP),
+		.keye.etherType = net_htons(NET_ETH_PTYPE_PTP),
 		.keye.etherTypeMask = 0xffff,
 		.keye.srcPort = 0,
 		.keye.srcPortMask = 0x0,
@@ -552,7 +552,7 @@ static struct dsa_api dsa_netc_api = {
 		.phy_mode = NETC_PHY_MODE(port),                                            \
 	};                                                                                  \
 	struct dsa_port_config dsa_##n##_##port##_config = {                                \
-		.use_random_mac_addr = DT_NODE_HAS_PROP(port, zephyr_random_mac_address),   \
+		.use_random_mac_addr = DT_PROP(port, zephyr_random_mac_address),            \
 		.mac_addr = DT_PROP_OR(port, local_mac_address, {0}),                       \
 		.port_idx = DT_REG_ADDR(port),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
@@ -583,6 +583,6 @@ static struct dsa_api dsa_netc_api = {
 			      POST_KERNEL,                                                  \
 			      CONFIG_ETH_INIT_PRIORITY,                                     \
 			      NULL);		                                            \
-	DSA_SWITCH_INST_INIT(n, &dsa_netc_api, &dsa_netc_data_##n, DSA_NETC_PORT_INST_INIT); \
+	DSA_SWITCH_INST_INIT(n, &dsa_netc_api, &dsa_netc_data_##n, DSA_NETC_PORT_INST_INIT);
 
 DT_INST_FOREACH_STATUS_OKAY(DSA_NETC_DEVICE);

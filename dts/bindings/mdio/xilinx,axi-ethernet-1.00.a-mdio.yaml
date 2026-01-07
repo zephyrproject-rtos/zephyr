@@ -5,7 +5,7 @@
 
 include: mdio-controller.yaml
 
-compatible: xlnx,axi-ethernet-1.00.a-mdio
+compatible: "xlnx,axi-ethernet-1.00.a-mdio"
 
 description: MDIO interface of Xilinx AXI 1G/2.5G Ethernet Subsystem.
 

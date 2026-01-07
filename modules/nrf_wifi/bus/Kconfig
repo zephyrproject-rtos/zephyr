@@ -53,4 +53,14 @@ config NRF70_LOG_VERBOSE
 	bool "Maintains the verbosity of information in logs"
 	default y
 
+config NRF70_SPI_PM_CLAIM_WHILE_ACTIVE
+	bool "Keep SPI bus in ACTIVE state while nRF70 is powered"
+	depends on PM_DEVICE_RUNTIME
+	depends on NRF70_ON_SPI
+	help
+	  Requesting and releasing the SPI bus on every bus transaction when PM
+	  device runtime is enabled has a negative impact on data throughput.
+	  Enabling this option keeps the bus in the active state while the interface
+	  is powered up.
+
 endif # NRF70_BUSLIB

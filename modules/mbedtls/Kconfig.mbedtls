@@ -149,6 +149,9 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 
 endif # MBEDTLS_SSL_PROTO_TLS1_3
 
+config MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+	bool "TLS keying material export support"
+
 config MBEDTLS_HKDF_C
 	bool "HMAC-based Extract-and-Expand Key Derivation Function"
 

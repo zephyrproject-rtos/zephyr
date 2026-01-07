@@ -129,7 +129,7 @@
 		#size-cells = <1>;
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		reg = <0x110000 0x1000>;
 
 		interrupts = <6 0 0>;
@@ -179,7 +179,7 @@
 		#size-cells = <1>;
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		reg = <0x112000 0x1000>;
 
 		interrupts = <7 0 0>;

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
  * Copyright 2024, 2025 NXP
+ * Copyright (c) 2025 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,8 @@ void *exp_user_data = (void *)199;
 
 struct counter_alarm_cfg cntr_alarm_cfg;
 struct counter_alarm_cfg cntr_alarm_cfg2;
+
+/* clang-format off */
 
 #define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 /* Generate a list of devices for all instances of the "compat" */
@@ -120,6 +123,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER_RPI_PICO
 	DEVS_FOR_DT_COMPAT(raspberrypi_pico_timer)
 #endif
+#ifdef CONFIG_COUNTER_RPI_PICO_PIT
+	DEVS_FOR_DT_COMPAT(raspberrypi_pico_pit_channel)
+#endif
 #ifdef CONFIG_COUNTER_RTC_MAX32
 	DEVS_FOR_DT_COMPAT(adi_max32_rtc_counter)
 #endif
@@ -153,11 +159,15 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RA_AGT
 	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
 #endif
+
 #ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
 #endif
 #ifdef CONFIG_COUNTER_INFINEON_TCPWM
 	DEVS_FOR_DT_COMPAT(infineon_tcpwm_counter)
+#endif
+#ifdef CONFIG_COUNTER_MCHP_G1_TCC
+	DEVS_FOR_DT_COMPAT(microchip_tcc_g1_counter)
 #endif
 };
 
@@ -179,6 +189,7 @@ static const struct device *const period_devs[] = {
 #endif
 };
 
+/* clang-format on */
 typedef void (*counter_test_func_t)(const struct device *dev);
 typedef bool (*counter_capability_func_t)(const struct device *dev);
 
@@ -432,6 +443,62 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 	k_sem_give(&alarm_cnt_sem);
 }
 
+static void alarm_capable_handler(const struct device *dev, uint8_t chan_id,
+				    uint32_t counter,
+				    void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(counter);
+	ARG_UNUSED(user_data);
+
+	/* Intentionally empty - capability probe only */
+}
+
+/* Any non-zero error (including -ENOTSUP) is treated as "not supported",
+ * and only returns true when there are no errors throughout the entire process.
+ */
+static bool alarm_capable(const struct device *dev)
+{
+	struct counter_alarm_cfg cfg = {
+		.flags = 0U,
+		.ticks = counter_us_to_ticks(dev, 1000U),
+		.callback = alarm_capable_handler,
+		.user_data = NULL,
+	};
+
+	/* Avoid zero-tick requests on very low-frequency counters */
+	if (cfg.ticks == 0U) {
+		cfg.ticks = 1U;
+	}
+
+	int err;
+
+	if (counter_get_num_of_channels(dev) < 1U) {
+		return false;
+	}
+
+	err = counter_start(dev);
+	if (err != 0) {
+		return false;
+	}
+
+	err = counter_set_channel_alarm(dev, 0, &cfg);
+	if (err != 0) {
+		goto out_stop;
+	}
+
+	err = counter_cancel_channel_alarm(dev, 0);
+	if (err != 0) {
+		goto out_stop;
+	}
+
+out_stop:
+	(void)counter_stop(dev);
+
+	return err == 0;
+}
+
 static void test_single_shot_alarm_instance(const struct device *dev, bool set_top)
 {
 	int err;
@@ -524,13 +591,12 @@ void test_single_shot_alarm_top_instance(const struct device *dev)
 
 static bool single_channel_alarm_capable(const struct device *dev)
 {
-	return (counter_get_num_of_channels(dev) > 0);
+	return alarm_capable(dev);
 }
 
 static bool single_channel_alarm_and_custom_top_capable(const struct device *dev)
 {
-	return single_channel_alarm_capable(dev) &&
-		set_top_value_capable(dev);
+	return alarm_capable(dev) && set_top_value_capable(dev);
 }
 
 ZTEST(counter_basic, test_single_shot_alarm_notop)
@@ -652,7 +718,7 @@ static void test_multiple_alarms_instance(const struct device *dev)
 
 static bool multiple_channel_alarm_capable(const struct device *dev)
 {
-	return (counter_get_num_of_channels(dev) > 1);
+	return alarm_capable(dev) && (counter_get_num_of_channels(dev) > 1);
 }
 
 ZTEST(counter_basic, test_multiple_alarms)

@@ -20,6 +20,11 @@
  * @version 0.8.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup display_interface_ext Device-specific Display API extensions
+ * @{
+ * @}
+ *
  */
 
 #include <zephyr/device.h>

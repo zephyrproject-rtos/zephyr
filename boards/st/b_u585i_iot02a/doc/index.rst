@@ -26,10 +26,11 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 - 2 push-buttons (user and reset)
 - 2 user LEDs
 
-- Flexible power supply options:
-    - ST-LINK/V3
-    - USB Vbus
-    - External sources
+- Flexible power supply options
+
+  - ST-LINK/V3
+  - USB Vbus
+  - External sources
 
 
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.

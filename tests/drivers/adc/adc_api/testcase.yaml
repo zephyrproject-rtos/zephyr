@@ -76,6 +76,17 @@ tests:
       - frdm_k82f
     integration_platforms:
       - frdm_k82f
+  drivers.adc.dma_nxp_lpadc:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-dma-nxp-lpadc.conf
+      - platform:frdm_mcxa156/mcxa156:DTC_OVERLAY_FILE="boards/frdm_mcxa156.overlay"
+    depends_on:
+      - dma
+      - adc
+    platform_allow:
+      - frdm_mcxa156
+    integration_platforms:
+      - frdm_mcxa156
   drivers.adc.dma_espressif:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-esp32.conf"

@@ -628,6 +628,11 @@ argument, as follows:
         bool
         default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_BAR))
 
+.. note::
+
+   A variable :samp:`DT_COMPAT_{VND_MY_DEVICE} := {vnd,my-device}`
+   is automatically created by Zephyr for every ``compatible`` found
+   in Devicetree bindings; there is no need to define such variables.
 
 Checking changes in menuconfig/guiconfig
 ****************************************

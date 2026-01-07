@@ -26,7 +26,7 @@
 };
 
 uart2: &scb2 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 	current-speed = <115200>;
 	hw-flow-control;
@@ -41,7 +41,7 @@ uart2: &scb2 {
 &dma0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,cat1-dma";
+	compatible = "infineon,dma";
 	status = "okay";
 };
 

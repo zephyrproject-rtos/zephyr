@@ -101,11 +101,11 @@ static void scb_restore(void)
 
 static int pm_suspend_to_ram(void)
 {
-	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
 
 	cpu_cfg.cpu_id = cpu_idx;
 	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_SUSPEND;
-	scmi_cpu_sleep_mode_set(&cpu_cfg);
+	scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
 	__DSB();
 	__WFI();
 
@@ -116,7 +116,7 @@ static int pm_suspend_to_ram(void)
 static int pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 {
 	int ret;
-	struct scmi_cpu_vector_config vector_cfg;
+	struct scmi_nxp_cpu_vector_config vector_cfg;
 
 	/*
 	 * Configure CPU reset vector for S2RAM resume flow.
@@ -132,11 +132,11 @@ static int pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	 * The RESUME flag indicates this vector configuration is for resume scenarios.
 	 */
 	vector_cfg.cpu_id = cpu_idx;
-	vector_cfg.flags = SCMI_CPU_VEC_FLAGS_RESUME;
+	vector_cfg.flags = SCMI_NXP_CPU_VEC_FLAGS_RESUME;
 	vector_cfg.vector_low = 0;
 	vector_cfg.vector_high = 0;
 
-	ret = scmi_cpu_reset_vector(&vector_cfg);
+	ret = scmi_nxp_cpu_reset_vector(&vector_cfg);
 	if (ret < 0) {
 		return ret;
 	}
@@ -160,7 +160,7 @@ void pm_s2ram_mark_set(void)
 bool pm_s2ram_mark_check_and_clear(void)
 {
 	int ret;
-	struct scmi_cpu_info cpu_info;
+	struct scmi_nxp_cpu_info cpu_info;
 
 	/*
 	 * Query CPU status from SCMI to determine boot reason.
@@ -168,7 +168,7 @@ bool pm_s2ram_mark_check_and_clear(void)
 	 * On resume from poweroff, this state persists until explicitly cleared,
 	 * allowing us to detect S2RAM resume vs normal boot.
 	 */
-	ret = scmi_cpu_info_get(cpu_idx, &cpu_info);
+	ret = scmi_nxp_cpu_info_get(cpu_idx, &cpu_info);
 	if (ret < 0) {
 		return false;
 	}
@@ -179,8 +179,8 @@ bool pm_s2ram_mark_check_and_clear(void)
 
 static void pm_state_before(enum pm_state state)
 {
-	struct scmi_cpu_pd_lpm_config cpu_pd_lpm_cfg;
-	struct scmi_cpu_irq_mask_config cpu_irq_mask_cfg;
+	struct scmi_nxp_cpu_pd_lpm_config cpu_pd_lpm_cfg;
+	struct scmi_nxp_cpu_irq_mask_config cpu_irq_mask_cfg;
 	uint32_t lpm_setting;
 
 	/*
@@ -205,7 +205,7 @@ static void pm_state_before(enum pm_state state)
 	cpu_pd_lpm_cfg.cfgs[1].lpm_setting = SCMI_CPU_LPM_SETTING_ON_ALWAYS;
 	cpu_pd_lpm_cfg.cfgs[1].ret_mask = 0;
 
-	scmi_cpu_pd_lpm_set(&cpu_pd_lpm_cfg);
+	scmi_nxp_cpu_pd_lpm_set(&cpu_pd_lpm_cfg);
 
 	/* Set wakeup mask */
 	uint32_t wake_mask[GPC_CPU_CTRL_CMC_IRQ_WAKEUP_MASK_COUNT] = {
@@ -226,12 +226,12 @@ static void pm_state_before(enum pm_state state)
 		cpu_irq_mask_cfg.mask[val] = wake_mask[val];
 	}
 
-	scmi_cpu_set_irq_mask(&cpu_irq_mask_cfg);
+	scmi_nxp_cpu_set_irq_mask(&cpu_irq_mask_cfg);
 }
 
 static void pm_state_resume(void)
 {
-	struct scmi_cpu_irq_mask_config cpu_irq_mask_cfg;
+	struct scmi_nxp_cpu_irq_mask_config cpu_irq_mask_cfg;
 
 	/* Restore scmi cpu wake mask */
 	uint32_t wake_mask[GPC_CPU_CTRL_CMC_IRQ_WAKEUP_MASK_COUNT] = {
@@ -246,12 +246,12 @@ static void pm_state_resume(void)
 		cpu_irq_mask_cfg.mask[val] = wake_mask[val];
 	}
 
-	scmi_cpu_set_irq_mask(&cpu_irq_mask_cfg);
+	scmi_nxp_cpu_set_irq_mask(&cpu_irq_mask_cfg);
 }
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
 
 	pm_state_before(state);
 
@@ -263,21 +263,21 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_RUNTIME_IDLE:
 		cpu_cfg.cpu_id = cpu_idx;
 		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_WAIT;
-		scmi_cpu_sleep_mode_set(&cpu_cfg);
+		scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
 		__DSB();
 		__WFI();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		cpu_cfg.cpu_id = cpu_idx;
 		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_STOP;
-		scmi_cpu_sleep_mode_set(&cpu_cfg);
+		scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
 		__DSB();
 		__WFI();
 		break;
 	case PM_STATE_STANDBY:
 		cpu_cfg.cpu_id = cpu_idx;
 		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_SUSPEND;
-		scmi_cpu_sleep_mode_set(&cpu_cfg);
+		scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
 		__DSB();
 		__WFI();
 		break;
@@ -294,14 +294,14 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 /* Handle SOC specific activity after Low Power Mode Exit */
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
 
 	pm_state_resume();
 
 	/* restore Mcore state into ACTIVE. */
 	cpu_cfg.cpu_id = cpu_idx;
 	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
-	scmi_cpu_sleep_mode_set(&cpu_cfg);
+	scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
 
 	/* Clear PRIMASK */
 	__enable_irq();

@@ -13,10 +13,12 @@ Key Features:
 - 1 user button and 1 reset button
 - 32.768 kHz crystal oscillator
 - Board connectors:
-   - USB Micro-AB
-   - SWD
-   - ST Zio connector (Arduino Uno R3 compatible)
-   - ST Morpho connector
+
+  - USB Micro-AB
+  - SWD
+  - ST Zio connector (Arduino Uno R3 compatible)
+  - ST Morpho connector
+
 - On-board ST-LINK debugger/programmer
 - Flexible power supply options, including ST-LINK VBUS and external sources.
 
@@ -60,48 +62,69 @@ Connections and IOs
 ===================
 
 - SDMMC1: Pins marked as "SDMMC" on the ST Zio connector.
-   - D0: PC8 (CN8 pin 2)
-   - D1: PC9 (CN8 pin 4)
-   - D2: PC10 (CN8 pin 6)
-   - D3: PC11 (CN8 pin 8)
-   - CK: PC12 (CN8 pin 10)
-   - CMD: PD2 (CN8 pin 12)
+
+  - D0: PC8 (CN8 pin 2)
+  - D1: PC9 (CN8 pin 4)
+  - D2: PC10 (CN8 pin 6)
+  - D3: PC11 (CN8 pin 8)
+  - CK: PC12 (CN8 pin 10)
+  - CMD: PD2 (CN8 pin 12)
+
 - ADC1:
-   - IN3: PA3 (CN9 pin 1, Arduino A0)
-   - IN10: PC0 (CN9 pin 3, Arduino A1)
+
+  - IN3: PA3 (CN9 pin 1, Arduino A0)
+  - IN10: PC0 (CN9 pin 3, Arduino A1)
+
 - DAC1:
-   - OUT1: PA4 (CN7 pin 17)
+
+  - OUT1: PA4 (CN7 pin 17)
+
 - I2C2: Pins marked as "I2C" on the ST Zio connector.
-   - SCL: PF1 (CN9 pin 19)
-   - SDA: PF0 (CN9 pin 21)
+
+  - SCL: PF1 (CN9 pin 19)
+  - SDA: PF0 (CN9 pin 21)
+
 - CAN1: Pins marked as "CAN" on the ST Zio connector.
-   - RX: PD0 (CN9 pin 25)
-   - TX: PD1 (CN9 pin 27)
+
+  - RX: PD0 (CN9 pin 25)
+  - TX: PD1 (CN9 pin 27)
+
 - USART2: Pins marked as "USART" on the ST Zio connector.
-   - RX: PD6 (CN9 pin 4)
-   - TX: PD5 (CN9 pin 6)
-   - RTS: PD4 (CN9 pin 8)
-   - CTS: PD3 (CN9 pin 10)
+
+  - RX: PD6 (CN9 pin 4)
+  - TX: PD5 (CN9 pin 6)
+  - RTS: PD4 (CN9 pin 8)
+  - CTS: PD3 (CN9 pin 10)
+
 - PWM1: Uses TIMER1.
-   - PE13 (CN10 pin 10, Arduino D3)
-   - PE11 (CN10 pin 6, Arduino D5)
+
+  - PE13 (CN10 pin 10, Arduino D3)
+  - PE11 (CN10 pin 6, Arduino D5)
+
 - USART3: Connected to ST-Link virtual COM port.
-   - TX: PD8
-   - RX: PD9
+
+  - TX: PD8
+  - RX: PD9
+
 - USART6: Arduino UART port.
-   - RX: PG9 (CN10 pin 16, Arduino D0)
-   - TX: PG14 (CN10 pin 14, Arduino D1)
+
+  - RX: PG9 (CN10 pin 16, Arduino D0)
+  - TX: PG14 (CN10 pin 14, Arduino D1)
+
 - USBOTG_FS: Connected to USB Micro-AB connector (CN13)
-   - DM: PA11
-   - DP: PA12
-   - ID: PA10
+
+  - DM: PA11
+  - DP: PA12
+  - ID: PA10
+
 - QUADSPI: Pins marked as "QSPI" on the ST Zio connector.
-   - CS: PB6 (CN10 pin 13)
-   - CLK: PB2 (CN10 pin 15)
-   - IO3: PD13 (CN10 pin 19)
-   - IO1: PD12 (CN10 pin 21)
-   - IO0: PD11 (CN10 pin 23)
-   - IO2: PE2 (CN10 pin 25)
+
+  - CS: PB6 (CN10 pin 13)
+  - CLK: PB2 (CN10 pin 15)
+  - IO3: PD13 (CN10 pin 19)
+  - IO1: PD12 (CN10 pin 21)
+  - IO0: PD11 (CN10 pin 23)
+  - IO2: PE2 (CN10 pin 25)
 
 System Clock
 ------------

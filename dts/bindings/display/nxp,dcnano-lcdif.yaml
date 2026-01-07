@@ -1,4 +1,4 @@
-# Copyright 2023,2024 NXP
+# Copyright 2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP DCNano LCDIF (LCD Interface) controller
@@ -40,3 +40,9 @@ properties:
     enum:
       - "DCnano"
       - "DC8000"
+
+  ext-ram:
+    type: phandle
+    description: |
+      Secondary RAM in which the controller's frame buffer(s) will
+      be stored. If not defined, the 'zephyr,ram' chosen memory will be used.

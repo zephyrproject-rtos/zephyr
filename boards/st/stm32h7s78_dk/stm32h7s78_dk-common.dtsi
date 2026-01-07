@@ -327,12 +327,13 @@ zephyr_udc0: &usb2 {};
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&psram>;
 
 	status = "okay";
 
 	width = <800>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";

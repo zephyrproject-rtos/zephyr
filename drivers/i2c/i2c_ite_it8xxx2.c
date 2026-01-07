@@ -144,20 +144,22 @@ static int i2c_parsing_return_value(const struct device *dev)
 		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
 			config->port, data->addr_16bit);
 	} else {
-		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:",
-			config->port, data->addr_16bit);
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
-			LOG_ERR("Time-out error: hardware time-out error.");
+			LOG_ERR("I2C ch%d Address:0x%X Time-out error: hardware time-out error.",
+				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_NACK) {
-			LOG_DBG("NACK error: device does not response ACK.");
+			LOG_DBG("I2C ch%d Address:0x%X NACK error: device does not response ACK.",
+				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_FAIL) {
-			LOG_ERR("Fail: a processing transmission is killed.");
+			LOG_ERR("I2C ch%d Address:0x%X Fail: a processing transmission is killed.",
+				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_BSER) {
-			LOG_ERR("BUS error: SMBus has lost arbitration.");
+			LOG_ERR("I2C ch%d Address:0x%X BUS error: SMBus has lost arbitration.",
+				config->port, data->addr_16bit);
 		}
 	}
 

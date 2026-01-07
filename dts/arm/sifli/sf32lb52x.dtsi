@@ -106,6 +106,20 @@
 			status = "disabled";
 		};
 
+		atim: timer@50004000 {
+			compatible = "sifli,sf32lb-atim";
+			reg = <0x50004000 0x1000>;
+			interrupts = <94 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_ATIM1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "sifli,sf32lb-atim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		trng: trng@5000f000 {
 			compatible = "sifli,sf32lb-trng";
 			reg = <0x5000f000 0x1000>;

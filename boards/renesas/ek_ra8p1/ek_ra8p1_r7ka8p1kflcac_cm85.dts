@@ -25,6 +25,19 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		mipi-dsi = &mipi_dsi;
+	};
+
+	renesas_mipi_connector: mipi-connector {
+		compatible = "renesas,ra-gpio-mipi-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <14 0 &ioport5 11 0>, /* IIC_SDA */
+			   <15 0 &ioport5 14 0>, /* DISP_BLEN */
+			   <16 0 &ioport5 12 0>, /* IIC_SCL */
+			   <17 0 &ioport1 11 0>, /* DISP_INT */
+			   <18 0 &ioport6 6 0>;  /* DISP_RST */
 	};
 };
 
@@ -171,7 +184,21 @@
 	};
 };
 
+&mipi_dsi {
+	interrupts = <24 12>, <25 12>, <26 12>, <27 12>, <28 12>, <29 12>;
+	interrupt-names = "sq0", "sq1", "vm", "rcv", "ferr", "ppi";
+};
+
+&lcdif {
+	interrupts = <30 1>;
+	interrupt-names = "line";
+};
+
 zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+renesas_mipi_i2c: &iic1 {};
 
 pmod_sd_shield: &sdhc0 {};
 

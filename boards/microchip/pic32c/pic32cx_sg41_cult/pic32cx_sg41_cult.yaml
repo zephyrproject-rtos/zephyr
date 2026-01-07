@@ -14,7 +14,10 @@ supported:
   - dma
   - flash
   - gpio
+  - i2c
   - pinctrl
   - pwm
+  - reset
+  - rtc
   - uart
 vendor: microchip

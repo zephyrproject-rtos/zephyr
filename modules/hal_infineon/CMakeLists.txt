@@ -5,7 +5,8 @@
 if(CONFIG_HAS_XMCLIB
   OR CONFIG_SOC_FAMILY_PSOC6_LEGACY
   OR CONFIG_SOC_FAMILY_INFINEON_CAT1
-  OR CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  OR CONFIG_SOC_FAMILY_INFINEON_EDGE
+  OR CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 
   zephyr_library_named(modules_hal_infineon)
   zephyr_library_compile_options($<TARGET_PROPERTY:compiler,warning_no_array_bounds>)
@@ -34,12 +35,14 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   add_subdirectory(mtb-template-cat1)
 endif()
 
+if(CONFIG_USE_INFINEON_LEGACY_HAL
+  AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY)
+  add_subdirectory(mtb-hal-cat1)
+endif()
+
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY
   AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE)
-
-  ## Add mtb-hal-cat1 sources for CAT1 devices
-  add_subdirectory(mtb-hal-cat1)
 
   ## Add catcm0p sleep images for CM0 Devices
   if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
@@ -50,7 +53,6 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   add_subdirectory(abstraction-rtos)
 
   add_subdirectory(serial-flash)
-
 endif()
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
@@ -97,4 +99,18 @@ endif()
 
 if(CONFIG_BT_PSOC6_BLESS)
   add_subdirectory(bless)
+endif()
+
+if(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+  ## Add core-lib sources for PSCO4 devices
+  add_subdirectory(core-lib)
+
+  ## Add mtb-pdl-cat2 sources for PSCO4 devices
+  add_subdirectory(mtb-pdl-cat2)
+
+  ## Add mtb-template-cat2 sources for PSCO4 devices
+  add_subdirectory(mtb-template-cat2)
+
+  ## Add abstraction-rtos sources
+  add_subdirectory(abstraction-rtos)
 endif()

@@ -733,6 +733,18 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_TIMER_STATUS_SYNC, (uint32_t)result)
 
+#define sys_port_trace_k_timer_expiry_enter(timer)                                                 \
+	SEGGER_SYSVIEW_RecordU32(TID_TIMER_EXPIRY, (uint32_t)(uintptr_t)timer)
+
+#define sys_port_trace_k_timer_expiry_exit(timer)                                                  \
+	SEGGER_SYSVIEW_RecordEndCall(TID_TIMER_EXPIRY)
+
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)                                         \
+	SEGGER_SYSVIEW_RecordU32(TID_TIMER_STOP_EXPIRY, (uint32_t)(uintptr_t)timer)
+
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)                                          \
+	SEGGER_SYSVIEW_RecordEndCall(TID_TIMER_STOP_EXPIRY)
+
 #define sys_port_trace_syscall_enter(id, name, ...)                                                \
 	SEGGER_SYSVIEW_RecordString(TID_SYSCALL, (const char *)#name)
 

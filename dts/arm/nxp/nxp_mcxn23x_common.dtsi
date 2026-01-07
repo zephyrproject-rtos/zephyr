@@ -288,7 +288,7 @@
 		interrupts = <35 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -326,7 +326,7 @@
 		interrupts = <36 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -370,7 +370,7 @@
 		interrupts = <37 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -414,7 +414,7 @@
 		interrupts = <38 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -452,7 +452,7 @@
 		interrupts = <39 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -496,7 +496,7 @@
 		interrupts = <40 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -534,7 +534,7 @@
 		interrupts = <41 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -572,7 +572,7 @@
 		interrupts = <42 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -661,6 +661,7 @@
 		compatible = "nxp,os-timer";
 		reg = <0x49000 0x1000>;
 		interrupts = <57 0>;
+		resets = <&reset NXP_SYSCON_RESET(1, 1)>;
 		status = "disabled";
 	};
 
@@ -907,7 +908,6 @@
 		reg = <0x51000 0x1000>;
 		interrupts = <109 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	lpcmp1: lpcmp@52000 {
@@ -915,26 +915,29 @@
 		reg = <0x52000 0x1000>;
 		interrupts = <110 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	flexcan0: can@d4000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xd4000 0x4000>;
 		interrupts = <62 0>;
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
+		number-of-mb-fd = <7>;
 		status = "disabled";
 	};
 
 	flexcan1: can@d8000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xd8000 0x4000>;
 		interrupts = <63 0>;
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
+		number-of-mb-fd = <7>;
 		status = "disabled";
 	};
 
@@ -982,7 +985,7 @@
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -992,7 +995,7 @@
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};

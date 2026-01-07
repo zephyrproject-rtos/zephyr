@@ -516,6 +516,9 @@ struct dns_resolve_context {
 		 * cannot be used to find correct pending query.
 		 */
 		uint16_t query_hash;
+
+		/** Flag to indicate that the callback has been called at least once. */
+		bool cb_called;
 	} queries[DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
@@ -768,9 +771,8 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
  * Note that this is an asynchronous call, the function will return immediately
  * and the system will call the callback after resolving has finished or a timeout
  * has occurred.
- * We might send the query to multiple servers (if there are more than one
- * server configured), but we only use the result of the first received
- * response.
+ * The callback is called for each response received. The query needs to be either cancelled
+ * manually, or by the timeout.
  *
  * @param ctx DNS context
  * @param query What the caller wants to resolve.

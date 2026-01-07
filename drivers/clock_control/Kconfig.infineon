@@ -35,13 +35,12 @@ config CLOCK_CONTROL_IFX_PERI_CLOCK
 
 
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
-
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	int "Infineon fixed factor clock driver init priority"
-	default 29
+	default 29 if !SOC_FAMILY_INFINEON_PSOC4
+	default 31 if SOC_FAMILY_INFINEON_PSOC4
 	help
 	  Infineon fixed factor clock control driver initialization priority.
 	  This should be lower than the priority of fixed factor clock driver
 	  to ensure the clock paths are initialized before.
-
 endif # CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK

@@ -4541,9 +4541,9 @@ struct z_work_canceller {
  * from both the caller thread and the work queue thread.
  *
  * @note If CONFIG_KERNEL_COHERENCE is enabled the object must be allocated in
- * coherent memory; see arch_mem_coherent().  The stack on these architectures
- * is generally not coherent.  be stack-allocated.  Violations are detected by
- * runtime assertion.
+ * coherent memory; see sys_cache_is_mem_coherent().  The stack on these
+ * architectures is generally not coherent.  be stack-allocated.  Violations are
+ * detected by runtime assertion.
  */
 struct k_work_sync {
 	union {

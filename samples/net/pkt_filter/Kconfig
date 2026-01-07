@@ -3,5 +3,13 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+mainmenu "Networking pkt_filter sample application"
+
+config NET_SAMPLE_USE_PACKET_PRIORITIES
+	bool "Use network packet priorities"
+	help
+	  Create multiple traffic class queues in order to test
+	  network packet priorities.
+
 source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

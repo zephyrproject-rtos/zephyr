@@ -179,6 +179,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+		printk("Sending PAST %p to %p\n", g_pa_sync, conn);
 		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
 						  BT_UUID_BASS_VAL);
 		if (err != 0) {
@@ -334,6 +335,29 @@ static void test_exchange_mtu(void)
 {
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 	printk("MTU exchanged\n");
+}
+
+static void update_conn_params(void)
+{
+	/* When we are the broadcast assistant we do not know the PA interval or ISO interval, so
+	 * set the connection parameters to something that is unlike to be a multiple of either to
+	 * avoid issues with e.g. PAST.
+	 * 45 fits nicely as it is not a multiple of neither BT_BAP_ADV_PARAM_BROADCAST_FAST or
+	 * BT_BAP_ADV_PARAM_BROADCAST_SLOW, nor 7.5 ms or 10 ms for ISO
+	 */
+	int err;
+
+	UNSET_FLAG(flag_conn_updated);
+	err = bt_conn_le_param_update(default_conn,
+				      BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(35),
+						       BT_GAP_MS_TO_CONN_INTERVAL(35), 0,
+						       BT_GAP_MS_TO_CONN_TIMEOUT(4000)));
+	if (err != 0) {
+		FAIL("Failed to update connection parameters %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_conn_updated);
 }
 
 static void test_bass_discover(void)
@@ -746,6 +770,8 @@ static int common_init(void)
 	printk("Scanning successfully started\n");
 
 	WAIT_FOR_FLAG(flag_connected);
+
+	update_conn_params();
 
 	test_exchange_mtu();
 	test_bass_discover();

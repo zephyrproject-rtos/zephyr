@@ -9,7 +9,7 @@
  * @brief Low Power timer driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_lp_timer
+#define DT_DRV_COMPAT infineon_lp_timer
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -59,10 +59,11 @@ static void lptimer_interrupt_handler(void *handler_arg, cyhal_lptimer_event_t e
 	uint32_t delta_ticks =
 		((uint64_t)(lptimer_value - last_lptimer_value) * CONFIG_SYS_CLOCK_TICKS_PER_SEC) /
 		LPTIMER_FREQ;
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : (delta_ticks > 0));
 	last_lptimer_value += (delta_ticks * LPTIMER_FREQ) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	k_spin_unlock(&lock, key);
+
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : (delta_ticks > 0));
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)

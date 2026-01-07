@@ -1,5 +1,5 @@
 /*
- * Copyright 2023,2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-
+#include <zephyr/linker/devicetree_regions.h>
 #include <fsl_lcdif.h>
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
@@ -20,6 +20,12 @@
 
 LOG_MODULE_REGISTER(display_mcux_dcnano_lcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+#define MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN (64)
+#else
+#define MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN (1)
+#endif
+
 struct mcux_dcnano_lcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
@@ -27,8 +33,6 @@ struct mcux_dcnano_lcdif_config {
 	lcdif_dpi_config_t dpi_config;
 	/* Pointer to start of first framebuffer */
 	uint8_t *fb_ptr;
-	/* Number of bytes used for each framebuffer */
-	uint32_t fb_bytes;
 };
 
 struct mcux_dcnano_lcdif_data {
@@ -37,7 +41,10 @@ struct mcux_dcnano_lcdif_data {
 	uint8_t *fb[CONFIG_MCUX_DCNANO_LCDIF_FB_NUM];
 	lcdif_fb_config_t fb_config;
 	uint8_t pixel_bytes;
+	uint16_t pitch_bytes;
 	struct k_sem sem;
+	/* Number of bytes used for each framebuffer, changed when pixel format is changed. */
+	uint32_t fb_bytes;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
 };
@@ -78,17 +85,17 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 			 */
 			src = data->active_fb;
 			dst = data->fb[data->next_idx];
-			memcpy(dst, src, config->fb_bytes);
+			memcpy(dst, src, data->fb_bytes);
 		}
 		/* Write the display update to the active framebuffer */
 		src = buf;
 		dst = data->fb[data->next_idx];
-		dst += data->pixel_bytes * (y * config->dpi_config.panelWidth + x);
+		dst += data->pixel_bytes * x + (y * data->pitch_bytes);
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, data->pixel_bytes * desc->width);
 			src += data->pixel_bytes * desc->pitch;
-			dst += data->pixel_bytes * config->dpi_config.panelWidth;
+			dst += data->pitch_bytes;
 		}
 		LOG_DBG("Setting FB from %p->%p", (void *) data->active_fb,
 			(void *) data->fb[data->next_idx]);
@@ -98,14 +105,13 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 
 #if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE)
 	CACHE64_CleanCacheByRange((uint32_t) data->active_fb,
-					config->fb_bytes);
+					data->fb_bytes);
 #endif
 
 	k_sem_reset(&data->sem);
 
 	/* Set new framebuffer */
-	LCDIF_SetFrameBufferStride(config->base, 0,
-		config->dpi_config.panelWidth * data->pixel_bytes);
+	LCDIF_SetFrameBufferStride(config->base, 0, data->pitch_bytes);
 	LCDIF_SetFrameBufferAddr(config->base, 0,
 		(uint32_t)data->active_fb);
 	LCDIF_SetFrameBufferConfig(config->base, 0, &data->fb_config);
@@ -130,6 +136,8 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 {
 	const struct mcux_dcnano_lcdif_config *config = dev->config;
 	struct mcux_dcnano_lcdif_data *data = dev->data;
+
+	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;
@@ -178,6 +186,7 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 					pixel_format)
 {
 	struct mcux_dcnano_lcdif_data *data = dev->data;
+	const struct mcux_dcnano_lcdif_config *config = dev->config;
 
 	switch (pixel_format) {
 	case PIXEL_FORMAT_RGB_565:
@@ -195,6 +204,15 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	}
+
+	/*
+	 * Update the pitch bytes and framebuffer size based on new pixel format,
+	 * they will be used in pixel write.
+	 */
+	data->pitch_bytes = ROUND_UP((config->dpi_config.panelWidth * data->pixel_bytes),
+						MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN);
+	data->fb_bytes = data->pitch_bytes * config->dpi_config.panelHeight;
+
 	return 0;
 }
 
@@ -244,16 +262,14 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 
 	for (int i = 0; i < CONFIG_MCUX_DCNANO_LCDIF_FB_NUM; i++) {
 		/* Record pointers to each driver framebuffer */
-		data->fb[i] = config->fb_ptr + (config->fb_bytes * i);
+		data->fb[i] = config->fb_ptr + (data->fb_bytes * i);
 	}
 	data->active_fb = config->fb_ptr;
 
 	k_sem_init(&data->sem, 1, 1);
 
-#ifdef CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
 	/* Clear external memory, as it is uninitialized */
-	memset(config->fb_ptr, 0, config->fb_bytes * CONFIG_MCUX_DCNANO_LCDIF_FB_NUM);
-#endif
+	memset(config->fb_ptr, 0, data->fb_bytes * CONFIG_MCUX_DCNANO_LCDIF_FB_NUM);
 
 	return 0;
 }
@@ -267,27 +283,32 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 	.get_framebuffer = mcux_dcnano_lcdif_get_framebuffer,
 };
 
+/*
+ * The initial bytes-per-pixel, pitch and frame buffer size. They can be changed
+ * if pixel format is changed at runtime.
+ */
 #define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)					\
 	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / BITS_PER_BYTE)
-#define MCUX_DCNANO_LCDIF_FB_SIZE(n) DT_INST_PROP(n, width) *			\
-	DT_INST_PROP(n, height) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)
+#define MCUX_DCNANO_LCDIF_PITCH_BYTES(n)					\
+	ROUND_UP((DT_INST_PROP(n, width) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)),	\
+	MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN)
+#define MCUX_DCNANO_LCDIF_FB_SIZE(n) MCUX_DCNANO_LCDIF_PITCH_BYTES(n) *		\
+	DT_INST_PROP(n, height)
 
-/* When using external framebuffer mem, we should not allocate framebuffers
- * in SRAM. Instead, we use external framebuffer address and size
- * from devicetree.
- */
-#ifdef CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_MEM
-#define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n)
-#define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n)					\
-	(uint8_t *)CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
-#else
-#define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n) uint8_t __aligned(LCDIF_FB_ALIGN)	\
-		mcux_dcnano_lcdif_frame_buffer_##n[DT_INST_PROP(n, width) *	\
-					 DT_INST_PROP(n, height) *		\
-					 MCUX_DCNANO_LCDIF_PIXEL_BYTES(n) *	\
-					 CONFIG_MCUX_DCNANO_LCDIF_FB_NUM]
+/* Place the frame buffer in secondary RAM if specified, otherwise use default RAM */
+#define MCUX_DCNANO_LCDIF_FB_PLACEMENT(n)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ext_ram),				\
+	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, ext_ram)))), \
+	())
+
+/* Use 4 Bpp to calculate the largest possible framebuffer size. */
+#define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n)					\
+	MCUX_DCNANO_LCDIF_FB_PLACEMENT(n) static uint8_t			\
+	__aligned(LCDIF_FB_ALIGN) mcux_dcnano_lcdif_frame_buffer_##n		\
+	[CONFIG_MCUX_DCNANO_LCDIF_FB_NUM * DT_INST_PROP(n, height) *		\
+	ROUND_UP((DT_INST_PROP(n, width) * 4U), MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN)]
+
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) mcux_dcnano_lcdif_frame_buffer_##n
-#endif
 
 #if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
 #define MCUX_DCNANO_LCDIF_FB_CONFIG(n)						\
@@ -327,6 +348,8 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 		MCUX_DCNANO_LCDIF_FB_CONFIG(n)					\
 		.next_idx = 0,							\
 		.pixel_bytes = MCUX_DCNANO_LCDIF_PIXEL_BYTES(n),		\
+		.pitch_bytes = MCUX_DCNANO_LCDIF_PITCH_BYTES(n),\
+		.fb_bytes = MCUX_DCNANO_LCDIF_FB_SIZE(n),			\
 	};									\
 	struct mcux_dcnano_lcdif_config mcux_dcnano_lcdif_config_##n = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),			\
@@ -366,7 +389,6 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 			.format = DT_INST_ENUM_IDX(n, data_bus_width),		\
 		},								\
 		.fb_ptr = MCUX_DCNANO_LCDIF_FRAMEBUFFER(n),			\
-		.fb_bytes = MCUX_DCNANO_LCDIF_FB_SIZE(n),			\
 	};									\
 	DEVICE_DT_INST_DEFINE(n,						\
 		&mcux_dcnano_lcdif_init,					\

@@ -151,7 +151,7 @@ static int gpio_aw9523b_port_read_write_toggle(const struct device *dev, gpio_po
 					       enum read_write_toggle_t mode)
 {
 	const struct gpio_aw9523b_config *const config = dev->config;
-	uint8_t buf[2];
+	uint8_t buf[3];
 	gpio_port_value_t old_value;
 	gpio_port_value_t new_value;
 	int err;
@@ -194,8 +194,10 @@ static int gpio_aw9523b_port_read_write_toggle(const struct device *dev, gpio_po
 		goto end;
 	}
 
-	*(uint16_t *)buf = sys_get_le16((uint8_t *)&new_value);
-	err = i2c_burst_write_dt(&config->i2c, AW9523B_REG_OUTPUT0, buf, sizeof(buf));
+	buf[0] = AW9523B_REG_OUTPUT0;
+
+	*(uint16_t *)(&buf[1]) = sys_get_le16((uint8_t *)&new_value);
+	err = i2c_write_dt(&config->i2c, buf, sizeof(buf));
 	if (err) {
 		LOG_ERR("%s: Failed to set port (%d)", dev->name, err);
 	}
@@ -374,7 +376,7 @@ static DEVICE_API(gpio, gpio_aw9523b_api) = {
 static int gpio_aw9523b_init(const struct device *dev)
 {
 	const struct gpio_aw9523b_config *const config = dev->config;
-	const uint8_t int_init_data[] = {0xFF, 0xFF};
+	const uint8_t int_init_data[] = {AW9523B_REG_INT0, 0xFF, 0xFF};
 	uint8_t buf[2];
 	int err;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
@@ -463,7 +465,7 @@ end_hw_reset:
 	}
 
 	/* Disabling all interrupts */
-	err = i2c_burst_write_dt(&config->i2c, AW9523B_REG_INT0, int_init_data, sizeof(buf));
+	err = i2c_write_dt(&config->i2c, int_init_data, sizeof(int_init_data));
 	if (err) {
 		LOG_ERR("%s: Failed to disable all interrupts (%d)", dev->name, err);
 		return err;

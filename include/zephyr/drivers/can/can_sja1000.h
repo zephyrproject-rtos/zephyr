@@ -163,8 +163,8 @@ struct can_sja1000_rx_filter {
  */
 struct can_sja1000_data {
 	struct can_driver_data common;
-	ATOMIC_DEFINE(rx_allocs, CONFIG_CAN_MAX_FILTER);
-	struct can_sja1000_rx_filter filters[CONFIG_CAN_MAX_FILTER];
+	ATOMIC_DEFINE(rx_allocs, CONFIG_CAN_SJA1000_MAX_FILTERS);
+	struct can_sja1000_rx_filter filters[CONFIG_CAN_SJA1000_MAX_FILTERS];
 	struct k_mutex mod_lock;
 	enum can_state state;
 	struct k_sem tx_idle;

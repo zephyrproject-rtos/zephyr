@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVE
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_server_bearer {
 	char provider_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
+	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t tbs_index;
 	bool registered;
 };
@@ -75,6 +76,7 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 	free_bearer->tbs_index = (uint8_t)ret;
 	(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
 			sizeof(free_bearer->provider_name));
+	(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
 	*bearer = free_bearer;
 
 	return 0;
@@ -172,6 +174,32 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 	}
 
 	*name = bearer->provider_name;
+
+	return 0;
+}
+
+int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
+					      const char **uci)
+{
+	CHECKIF(bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(uci == NULL) {
+		LOG_DBG("uci is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	*uci = bearer->uci;
 
 	return 0;
 }

@@ -899,6 +899,38 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 	return 0;
 }
 
+enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list)
+{
+	enum i3c_bus_mode mode = I3C_BUS_MODE_PURE;
+
+	__ASSERT_NO_MSG(dev_list != NULL);
+
+	for (int i = 0; i < dev_list->num_i2c; i++) {
+		switch (I3C_LVR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
+		case I3C_LVR_I2C_DEV_IDX_0:
+			if (mode < I3C_BUS_MODE_MIXED_FAST) {
+				mode = I3C_BUS_MODE_MIXED_FAST;
+			}
+			break;
+		case I3C_LVR_I2C_DEV_IDX_1:
+			if (mode < I3C_BUS_MODE_MIXED_LIMITED) {
+				mode = I3C_BUS_MODE_MIXED_LIMITED;
+			}
+			break;
+		case I3C_LVR_I2C_DEV_IDX_2:
+			if (mode < I3C_BUS_MODE_MIXED_SLOW) {
+				mode = I3C_BUS_MODE_MIXED_SLOW;
+			}
+			break;
+		default:
+			mode = I3C_BUS_MODE_INVALID;
+			break;
+		}
+	}
+
+	return mode;
+}
+
 bool i3c_bus_has_sec_controller(const struct device *dev)
 {
 	struct i3c_device_desc *i3c_desc;

@@ -361,15 +361,13 @@ img_mgmt_state_any_pending(void)
 int
 img_mgmt_slot_in_use(int slot)
 {
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
-	return 0;
-#else
 	int image = img_mgmt_slot_to_image(slot);
 	int active_slot = img_mgmt_active_slot(image);
 
 #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
 	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) && \
-	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 	enum img_mgmt_next_boot_type type = NEXT_BOOT_TYPE_NORMAL;
 	int nbs = img_mgmt_get_next_boot_slot(image, &type);
 
@@ -391,7 +389,6 @@ img_mgmt_slot_in_use(int slot)
 #endif
 
 	return (active_slot == slot);
-#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 }
 
 /**

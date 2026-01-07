@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
 static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_cap_unicast_group *unicast_group;
-uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
+uint64_t total_unicast_rx_iso_packet_count; /* This value is exposed to test code */
 uint64_t total_unicast_tx_iso_packet_count; /* This value is exposed to test code */
 
 /** Struct to contain information for a specific peer (CAP) device */
@@ -119,8 +119,6 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
 	LOG_INF("Started stream %p", stream);
-	total_rx_iso_packet_count = 0U;
-	total_unicast_tx_iso_packet_count = 0U;
 
 	if (is_tx_stream(stream)) {
 		struct bt_cap_stream *cap_stream =
@@ -179,11 +177,11 @@ static void unicast_stream_recv_cb(struct bt_bap_stream *stream,
 	 * (see the `info->flags` for which flags to check),
 	 */
 
-	if ((total_rx_iso_packet_count % 100U) == 0U) {
-		LOG_INF("Received %llu HCI ISO data packets", total_rx_iso_packet_count);
+	if ((total_unicast_rx_iso_packet_count % 100U) == 0U) {
+		LOG_INF("Received %llu HCI ISO data packets", total_unicast_rx_iso_packet_count);
 	}
 
-	total_rx_iso_packet_count++;
+	total_unicast_rx_iso_packet_count++;
 }
 
 static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
@@ -800,6 +798,9 @@ static int reset_cap_initiator(void)
 	k_sem_reset(&sem_proc);
 	k_sem_reset(&sem_state_change);
 	k_sem_reset(&sem_mtu_exchanged);
+
+	total_unicast_rx_iso_packet_count = 0U;
+	total_unicast_tx_iso_packet_count = 0U;
 
 	return 0;
 }

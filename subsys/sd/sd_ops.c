@@ -1,5 +1,5 @@
 /*
- * Copyright 2022,2024 NXP
+ * Copyright 2022, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -205,7 +205,7 @@ static inline void sdmmc_decode_cid(struct sd_cid *cid, uint32_t *raw_cid)
 static int sdmmc_spi_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t *cxd)
 {
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 	int ret, i;
 	/* Use internal card buffer for data transfer */
 	uint32_t *cxd_be = (uint32_t *)card->card_buffer;
@@ -492,7 +492,7 @@ static int card_read(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 {
 	int ret;
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 
 	/*
 	 * Note: The SD specification allows for CMD23 to be sent before a
@@ -613,7 +613,7 @@ static int card_query_written(struct sd_card *card, uint32_t *num_written)
 {
 	int ret;
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 	uint32_t *blocks = (uint32_t *)card->card_buffer;
 
 	ret = card_app_command(card, card->relative_addr);
@@ -656,7 +656,7 @@ static int card_write(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 	int ret;
 	uint32_t blocks;
 	struct sdhc_command cmd;
-	struct sdhc_data data;
+	struct sdhc_data data = {0};
 
 	/*
 	 * See the note in card_read() above. We will not issue CMD23
@@ -768,6 +768,85 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 	}
 	k_mutex_unlock(&card->lock);
 	return 0;
+}
+
+static int card_erase(struct sd_card *card, uint32_t start_block, uint32_t num_blocks)
+{
+	int ret;
+	struct sdhc_command cmd;
+
+	LOG_DBG("ERASE: Sector = %u, Count = %u", start_block, num_blocks);
+	cmd.retries = CONFIG_SD_DATA_RETRIES;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+
+	cmd.opcode = SD_ERASE_BLOCK_START;
+	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.arg = start_block;
+	if (!(card->flags & SD_HIGH_CAPACITY_FLAG)) {
+		/* Standard capacity cards use byte unit address */
+		cmd.arg *= card->block_size;
+	}
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("SD_ERASE_BLOCK_START failed (%d)", ret);
+		return ret;
+	}
+
+	cmd.opcode = SD_ERASE_BLOCK_END;
+	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.arg = start_block + num_blocks - 1;
+	if (!(card->flags & SD_HIGH_CAPACITY_FLAG)) {
+		/* Standard capacity cards use byte unit address */
+		cmd.arg *= card->block_size;
+	}
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("SD_ERASE_BLOCK_END failed (%d)", ret);
+		return ret;
+	}
+
+	cmd.opcode = SD_ERASE_BLOCK_OPERATION;
+	cmd.response_type = (SD_RSP_TYPE_R1b | SD_SPI_RSP_TYPE_R1b);
+	cmd.arg = 0x00000000;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("SD_ERASE_BLOCK_OPERATION failed (%d)", ret);
+		return ret;
+	}
+
+	/* Verify card is back in transfer state after erase */
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		LOG_ERR("Card did not return to ready state");
+		return -ETIMEDOUT;
+	}
+	return 0;
+}
+
+/* Erase blocks from SD card memory card */
+int card_erase_blocks(struct sd_card *card, uint32_t start_block, uint32_t num_blocks)
+{
+	int ret;
+
+	/* Overflow aware ((start_block + num_blocks) > card->block_count) */
+	if (num_blocks > card->block_count || (card->block_count - num_blocks) < start_block) {
+		return -EINVAL;
+	}
+	if (card->type == CARD_SDIO) {
+		LOG_WRN("SDIO does not support MMC commands");
+		return -ENOTSUP;
+	}
+	ret = k_mutex_lock(&card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	if (ret) {
+		LOG_WRN("Could not get SD card mutex");
+		return -EBUSY;
+	}
+	ret = card_erase(card, start_block, num_blocks);
+	k_mutex_unlock(&card->lock);
+	if (ret) {
+		LOG_ERR("Erase failed");
+	}
+	return ret;
 }
 
 /* IO Control handler for SD MMC */

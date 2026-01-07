@@ -198,6 +198,12 @@ extern "C" {
 	sys_trace_k_timer_status_sync_blocking(timer, timeout)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	sys_trace_k_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_expiry_enter(timer)	sys_trace_k_timer_expiry_enter(timer)
+#define sys_port_trace_k_timer_expiry_exit(timer)	sys_trace_k_timer_expiry_exit(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)                                         \
+	sys_trace_k_timer_stop_fn_expiry_enter(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)                                          \
+	sys_trace_k_timer_stop_fn_expiry_exit(timer)
 
 #define sys_port_trace_k_condvar_init(condvar, ret)    sys_trace_k_condvar_init(condvar, ret)
 #define sys_port_trace_k_condvar_signal_enter(condvar) sys_trace_k_condvar_signal_enter(condvar)
@@ -602,6 +608,10 @@ void sys_trace_k_timer_stop(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout);
 void sys_trace_k_timer_status_sync_enter(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
+void sys_trace_k_timer_expiry_enter(struct k_timer *timer);
+void sys_trace_k_timer_expiry_exit(struct k_timer *timer);
+void sys_trace_k_timer_stop_fn_expiry_enter(struct k_timer *timer);
+void sys_trace_k_timer_stop_fn_expiry_exit(struct k_timer *timer);
 
 /* Mailbox */
 void sys_trace_k_mbox_init(struct k_mbox *mbox);

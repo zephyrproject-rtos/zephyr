@@ -14,3 +14,7 @@
 		compatible = "st,stm32h7s3", "st,stm32h7rs", "simple-bus";
 	};
 };
+
+&mac {
+	memory-regions = <&sram1>;
+};

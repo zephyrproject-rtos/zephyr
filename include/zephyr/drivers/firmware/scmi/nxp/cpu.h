@@ -17,30 +17,32 @@
 #include <scmi_cpu_soc.h>
 #endif
 
-#define SCMI_CPU_SLEEP_FLAG_IRQ_MUX 0x1U
+#define SCMI_NXP_CPU_SLEEP_FLAG_IRQ_MUX 0x1U
 
-#define SCMI_PROTOCOL_CPU_DOMAIN 130
+#define SCMI_PROTOCOL_NXP_CPU_DOMAIN 130
 
-#define SCMI_CPU_MAX_PDCONFIGS_T 7U
+#define SCMI_NXP_CPU_MAX_PDCONFIGS_T 7U
 
-#define SCMI_CPU_IRQ_WAKE_NUM	22U
+#define SCMI_NXP_CPU_IRQ_WAKE_NUM	22U
 
 /** CPU vector flag: Boot address (cold boot/reset) */
-#define SCMI_CPU_VEC_FLAGS_BOOT    BIT(29)
+#define SCMI_NXP_CPU_VEC_FLAGS_BOOT    BIT(29)
 
 /** CPU vector flag: Start address (warm start) */
-#define SCMI_CPU_VEC_FLAGS_START   BIT(30)
+#define SCMI_NXP_CPU_VEC_FLAGS_START   BIT(30)
 
 /** CPU vector flag: Resume address (exit from suspend) */
-#define SCMI_CPU_VEC_FLAGS_RESUME  BIT(31)
+#define SCMI_NXP_CPU_VEC_FLAGS_RESUME  BIT(31)
+
+#define SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION	0x10000
 
 /**
- * @struct scmi_cpu_sleep_mode_config
+ * @struct scmi_nxp_cpu_sleep_mode_config
  *
  * @brief Describes the parameters for the CPU_STATE_SET
  * command
  */
-struct scmi_cpu_sleep_mode_config {
+struct scmi_nxp_cpu_sleep_mode_config {
 	uint32_t cpu_id;
 	uint32_t flags;
 	uint32_t sleep_mode;
@@ -53,34 +55,34 @@ struct scmi_pd_lpm_settings {
 };
 
 /**
- * @struct scmi_cpu_pd_lpm_config
+ * @struct scmi_nxp_cpu_pd_lpm_config
  *
  * @brief Describes cpu power domain low power mode setting
  */
-struct scmi_cpu_pd_lpm_config {
+struct scmi_nxp_cpu_pd_lpm_config {
 	uint32_t cpu_id;
 	uint32_t num_cfg;
-	struct scmi_pd_lpm_settings cfgs[SCMI_CPU_MAX_PDCONFIGS_T];
+	struct scmi_pd_lpm_settings cfgs[SCMI_NXP_CPU_MAX_PDCONFIGS_T];
 };
 
 /**
- * @struct scmi_cpu_irq_mask_config
+ * @struct scmi_nxp_cpu_irq_mask_config
  *
  * @brief Describes the parameters for the CPU_IRQ_WAKE_SET command
  */
-struct scmi_cpu_irq_mask_config {
+struct scmi_nxp_cpu_irq_mask_config {
 	uint32_t cpu_id;
 	uint32_t mask_idx;
 	uint32_t num_mask;
-	uint32_t mask[SCMI_CPU_IRQ_WAKE_NUM];
+	uint32_t mask[SCMI_NXP_CPU_IRQ_WAKE_NUM];
 };
 
 /**
- * @struct scmi_cpu_vector_config
+ * @struct scmi_nxp_cpu_vector_config
  *
  * @brief Describes the parameters for the CPU_RESET_VECTOR_SET command
  */
-struct scmi_cpu_vector_config {
+struct scmi_nxp_cpu_vector_config {
 	uint32_t cpu_id;
 	uint32_t flags;
 	uint32_t vector_low;
@@ -88,11 +90,11 @@ struct scmi_cpu_vector_config {
 };
 
 /**
- * @struct scmi_cpu_info
+ * @struct scmi_nxp_cpu_info
  *
  * @brief Describes the parameters for the CPU_INFO_GET command
  */
-struct scmi_cpu_info {
+struct scmi_nxp_cpu_info {
 	uint32_t run_mode;
 	uint32_t sleep_mode;
 	uint32_t vector_low;
@@ -102,21 +104,21 @@ struct scmi_cpu_info {
 /**
  * @brief CPU domain protocol command message IDs
  */
-enum scmi_cpu_domain_message {
-	SCMI_CPU_DOMAIN_MSG_PROTOCOL_VERSION = 0x0,
-	SCMI_CPU_DOMAIN_MSG_PROTOCOL_ATTRIBUTES = 0x1,
-	SCMI_CPU_DOMAIN_MSG_PROTOCOL_MESSAGE_ATTRIBUTES = 0x2,
-	SCMI_CPU_DOMAIN_MSG_CPU_DOMAIN_ATTRIBUTES = 0x3,
-	SCMI_CPU_DOMAIN_MSG_CPU_START = 0x4,
-	SCMI_CPU_DOMAIN_MSG_CPU_STOP = 0x5,
-	SCMI_CPU_DOMAIN_MSG_CPU_RESET_VECTOR_SET = 0x6,
-	SCMI_CPU_DOMAIN_MSG_CPU_SLEEP_MODE_SET = 0x7,
-	SCMI_CPU_DOMAIN_MSG_CPU_IRQ_WAKE_SET = 0x8,
-	SCMI_CPU_DOMAIN_MSG_CPU_NON_IRQ_WAKE_SET = 0x9,
-	SCMI_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET = 0xA,
-	SCMI_CPU_DOMAIN_MSG_CPU_PER_LPM_CONFIG_SET = 0xB,
-	SCMI_CPU_DOMAIN_MSG_CPU_INFO_GET = 0xC,
-	SCMI_CPU_DOMAIN_MSG_NEGOTIATE_PROTOCOL_VERSION = 0x10,
+enum scmi_nxp_cpu_domain_message {
+	SCMI_NXP_CPU_DOMAIN_MSG_PROTOCOL_VERSION = 0x0,
+	SCMI_NXP_CPU_DOMAIN_MSG_PROTOCOL_ATTRIBUTES = 0x1,
+	SCMI_NXP_CPU_DOMAIN_MSG_PROTOCOL_MESSAGE_ATTRIBUTES = 0x2,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_DOMAIN_ATTRIBUTES = 0x3,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_START = 0x4,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_STOP = 0x5,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_RESET_VECTOR_SET = 0x6,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_SLEEP_MODE_SET = 0x7,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_IRQ_WAKE_SET = 0x8,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_NON_IRQ_WAKE_SET = 0x9,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET = 0xA,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_PER_LPM_CONFIG_SET = 0xB,
+	SCMI_NXP_CPU_DOMAIN_MSG_CPU_INFO_GET = 0xC,
+	SCMI_NXP_CPU_DOMAIN_MSG_NEGOTIATE_PROTOCOL_VERSION = 0x10,
 };
 
 /**
@@ -128,10 +130,10 @@ enum scmi_cpu_domain_message {
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg);
+int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg);
 
 /**
- * @brief Send the SCMI_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET command and get its reply
+ * @brief Send the SCMI_NXP_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET command and get its reply
  *
  * @param cfg pointer to structure containing configuration
  * to be set
@@ -139,7 +141,7 @@ int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg);
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg);
+int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg);
 
 /**
  * @brief Send the CPU_IRQ_WAKE_SET command and get its reply
@@ -149,7 +151,7 @@ int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg);
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg);
+int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg);
 
 /**
  * @brief Send the CPU_RESET_VECTOR_SET command and get its reply
@@ -159,7 +161,7 @@ int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg);
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int scmi_cpu_reset_vector(struct scmi_cpu_vector_config *cfg);
+int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg);
 
 /**
  * @brief Send the CPU_INFO_GET command and get its reply
@@ -170,5 +172,5 @@ int scmi_cpu_reset_vector(struct scmi_cpu_vector_config *cfg);
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int scmi_cpu_info_get(uint32_t cpu_id, struct scmi_cpu_info *cfg);
+int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_ */

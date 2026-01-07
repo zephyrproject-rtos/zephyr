@@ -4,14 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended API of Voltage Divider
+ * @ingroup adc_voltage_divider_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_VOLTAGE_DIVIDER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_VOLTAGE_DIVIDER_H_
 
 #include <zephyr/drivers/adc.h>
 
+/**
+ * @brief Voltage Divider
+ * @defgroup adc_voltage_divider_interface Voltage Divider
+ * @ingroup adc_interface_ext
+ * @{
+ */
+
+/**
+ * @brief Voltage divider DT struct.
+ *
+ * This stores information about a voltage divider obtained from Devicetree.
+ *
+ * @see VOLTAGE_DIVIDER_DT_SPEC_GET
+ */
 struct voltage_divider_dt_spec {
+	/** ADC channel info */
 	const struct adc_dt_spec port;
+	/** Full resistance in ohms */
 	uint32_t full_ohms;
+	/** Output resistance in ohms */
 	uint32_t output_ohms;
 };
 
@@ -33,7 +56,7 @@ struct voltage_divider_dt_spec {
 	}
 
 /**
- * @brief Calculates the actual voltage from the measured voltage
+ * @brief Calculates the actual voltage from a measured voltage
  *
  * @param[in] spec voltage divider specification from Devicetree.
  * @param[in,out] v_to_v Pointer to the measured voltage on input, and the
@@ -55,5 +78,7 @@ static inline int voltage_divider_scale_dt(const struct voltage_divider_dt_spec 
 
 	return 0;
 }
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_VOLTAGE_DIVIDER_H_ */

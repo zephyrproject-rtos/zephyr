@@ -12,20 +12,22 @@ Hardware
 ********
 
 - NXP S32K344
-    - Arm Cortex-M7 (Lock-Step), 160 MHz (Max.)
-    - 4 MB of program flash, with ECC
-    - 320 KB RAM, with ECC
-    - Ethernet 100 Mbps, CAN FD, FlexIO, QSPI
-    - 12-bit 1 Msps ADC, 16-bit eMIOS timer
+
+  - Arm Cortex-M7 (Lock-Step), 160 MHz (Max.)
+  - 4 MB of program flash, with ECC
+  - 320 KB RAM, with ECC
+  - Ethernet 100 Mbps, CAN FD, FlexIO, QSPI
+  - 12-bit 1 Msps ADC, 16-bit eMIOS timer
 
 - `NXP FS26 Safety System Basis Chip`_
 
-- Interfaces:
-    - Console UART
-    - 6x CAN FD
-    - 100Base-T1 Ethernet
-    - JST-GH connectors and I/O headers for I2C, SPI, GPIO,
-      PWM, etc.
+- Interfaces
+
+  - Console UART
+  - 6x CAN FD
+  - 100Base-T1 Ethernet
+  - JST-GH connectors and I/O headers for I2C, SPI, GPIO,
+    PWM, etc.
 
 More information about the hardware and design resources can be found at
 `NXP MR-CANHUBK3`_ website.
@@ -143,11 +145,8 @@ flexcan5         | PTC11  | PTC11_CAN0_RX  P22/P23
    and support maximum 32 message buffers for concurrent active instances with 8 bytes
    payload. We need to pay attention to configuration options:
 
-   1. :kconfig:option:`CONFIG_CAN_MAX_MB` must be less or equal than the
+   1. :kconfig:option:`CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS` must be less than the
       maximum number of message buffers that is according to the table below.
-
-   2. :kconfig:option:`CONFIG_CAN_MAX_FILTER` must be less or equal than
-      :kconfig:option:`CONFIG_CAN_MAX_MB`.
 
 ===============  ==========  ================  ================
 Devicetree node  Payload     Hardware support  Software support

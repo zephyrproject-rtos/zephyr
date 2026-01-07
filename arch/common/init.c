@@ -55,11 +55,6 @@ void arch_bss_zero(void)
 	}
 
 	arch_early_memset(__bss_start, 0, __bss_end - __bss_start);
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
-	arch_early_memset(&__ccm_bss_start, 0,
-		       (uintptr_t) &__ccm_bss_end
-		       - (uintptr_t) &__ccm_bss_start);
-#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 	arch_early_memset(&__dtcm_bss_start, 0,
 		       (uintptr_t) &__dtcm_bss_end

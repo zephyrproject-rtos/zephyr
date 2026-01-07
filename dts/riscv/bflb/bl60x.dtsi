@@ -57,6 +57,10 @@
 		};
 	};
 
+	chosen {
+		zephyr,flash-controller = &flashctrl;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -188,6 +192,17 @@
 			status = "disabled";
 
 			interrupts = <48 0>;
+			interrupt-parent = <&clic>;
+		};
+
+		irx: irx@4000a600 {
+			compatible = "bflb,irx";
+			reg = <0x4000a600 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <36 0>;
 			interrupt-parent = <&clic>;
 		};
 

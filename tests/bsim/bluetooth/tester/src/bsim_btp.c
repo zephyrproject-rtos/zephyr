@@ -1103,6 +1103,8 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		return buf_simple->len == 0U;
 	case BTP_BAP_SEND_PAST:
 		return buf_simple->len == 0U;
+	case BTP_BAP_BROADCAST_SOURCE_SETUP_V2:
+		return buf_simple->len == sizeof(struct btp_bap_broadcast_source_setup_v2_rp);
 
 	/* events */
 	case BTP_BAP_EV_DISCOVERY_COMPLETED:
@@ -1131,6 +1133,8 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		} else {
 			return false;
 		}
+	case BTP_BAP_EV_BIS_SYNCED:
+		return buf_simple->len == sizeof(struct btp_bap_bis_synced_ev);
 	case BTP_BAP_EV_BIS_STREAM_RECEIVED:
 		if (hdr->len >= sizeof(struct btp_bap_stream_received_ev)) {
 			const struct btp_bap_bis_stream_received_ev *ev = net_buf_simple_pull_mem(
@@ -1156,7 +1160,7 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 				uint8_t metadata_len;
 				uint32_t bis_sync;
 
-				if (buf_simple->len <= (sizeof(bis_sync) + sizeof(metadata_len))) {
+				if (buf_simple->len < (sizeof(bis_sync) + sizeof(metadata_len))) {
 					return false;
 				}
 

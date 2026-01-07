@@ -12,12 +12,6 @@
 #include <zephyr/drivers/uart.h>
 #include <ctype.h>
 
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
-
 LOG_MODULE_REGISTER(app);
 
 extern void foo(void);

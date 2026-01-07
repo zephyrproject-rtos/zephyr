@@ -80,7 +80,7 @@ def run_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until(WELCOME_STRING)
+    output = dut.readlines_until(regex=WELCOME_STRING)
     upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
@@ -96,7 +96,7 @@ def run_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until(WELCOME_STRING)
+    output = dut.readlines_until(regex=WELCOME_STRING)
     match_no_lines(output, [
         upgrade_string_to_verify
     ])
@@ -141,7 +141,7 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until(WELCOME_STRING)
+    output = dut.readlines_until(regex=WELCOME_STRING)
     upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
@@ -156,7 +156,7 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until(WELCOME_STRING)
+    output = dut.readlines_until(regex=WELCOME_STRING)
     match_lines(output, [
         'Swap type: revert',
         upgrade_string_to_verify
@@ -216,7 +216,7 @@ def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until(WELCOME_STRING)
+    output = dut.readlines_until(regex=WELCOME_STRING)
     upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_no_lines(output, [upgrade_string_to_verify])
     match_lines(output, ['Image in the secondary slot is not valid'])

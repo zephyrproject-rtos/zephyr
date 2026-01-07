@@ -20,6 +20,7 @@ tests:
   drivers.comparator.gpio_loopback.mcux_acmp:
     platform_allow:
       - frdm_ke15z
+      - frdm_mcxe247
   drivers.comparator.gpio_loopback.nrf_comp:
     extra_args:
       - FILE_SUFFIX="nrf_comp"
@@ -44,3 +45,22 @@ tests:
     platform_allow:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_g474re/stm32g474xx
+  drivers.comparator.gpio_loopback.nxp_hscmp:
+    platform_allow:
+      - lpcxpresso55s36
+  drivers.comparator.gpio_loopback.nxp_acomp:
+    platform_allow:
+      - frdm_rw612
+  drivers.comparator.gpio_loopback.nxp_lpcmp:
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
+      - frdm_mcxe31b
+      - frdm_mcxn236
+      - frdm_mcxn947/mcxn947/cpu0/qspi
+      - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0/qspi
+      - mcx_n9xx_evk/mcxn947/cpu0

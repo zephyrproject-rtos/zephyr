@@ -7,11 +7,11 @@
 
 if SOC_SERIES_CYW20829
 
-config INFINEON_CAT1_LP_TIMER
+config INFINEON_LP_TIMER_HAL
 	bool
 
 config CORTEX_M_SYSTICK
-	default n if INFINEON_CAT1_LP_TIMER
+	default n if INFINEON_LP_TIMER_HAL
 
 config NUM_IRQS
 	default 70

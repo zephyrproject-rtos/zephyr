@@ -297,9 +297,9 @@ struct bt_avrcp_subunit_info_rsp {
 };
 
 #define BT_AVRCP_PASSTHROUGH_GET_STATE(payload)                                                    \
-	((bt_avrcp_opid_t)(FIELD_GET(BIT(7), ((payload)->opid_state))))
+	((bt_avrcp_button_state_t)(FIELD_GET(BIT(7), ((payload)->opid_state))))
 #define BT_AVRCP_PASSTHROUGH_GET_OPID(payload)                                                     \
-	((bt_avrcp_button_state_t)(FIELD_GET(GENMASK(6, 0), ((payload)->opid_state))))
+	((bt_avrcp_opid_t)(FIELD_GET(GENMASK(6, 0), ((payload)->opid_state))))
 #define BT_AVRCP_PASSTHROUGH_SET_STATE_OPID(payload, state, opid)                                  \
 	(payload)->opid_state = FIELD_PREP(BIT(7), state) | FIELD_PREP(GENMASK(6, 0), opid)
 

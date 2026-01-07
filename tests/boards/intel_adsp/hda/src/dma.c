@@ -60,10 +60,10 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 	}
 
 #if (IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-	zassert_true(arch_mem_coherent(dma_buf), "Buffer is unexpectedly incoherent!");
+	zassert_true(sys_cache_is_mem_coherent(dma_buf), "Buffer is unexpectedly incoherent!");
 #else
 	/* The buffer is in the cached address range and must be flushed */
-	zassert_false(arch_mem_coherent(dma_buf), "Buffer is unexpectedly coherent!");
+	zassert_false(sys_cache_is_mem_coherent(dma_buf), "Buffer is unexpectedly coherent!");
 	sys_cache_data_flush_range(dma_buf, DMA_BUF_SIZE);
 #endif
 
@@ -204,12 +204,13 @@ void test_hda_host_out_dma(void)
 		hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "dsp wait for full");
 
 #if (IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-	zassert_true(arch_mem_coherent(dma_buf), "Buffer is unexpectedly incoherent!");
+	zassert_true(sys_cache_is_mem_coherent(dma_buf), "Buffer is unexpectedly incoherent!");
 #else
 		/* The buffer is in the cached address range and must be invalidated
 		 * prior to reading.
 		 */
-		zassert_false(arch_mem_coherent(dma_buf), "Buffer is unexpectedly coherent!");
+		zassert_false(sys_cache_is_mem_coherent(dma_buf),
+			      "Buffer is unexpectedly coherent!");
 		sys_cache_data_invd_range(dma_buf, DMA_BUF_SIZE);
 #endif
 

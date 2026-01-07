@@ -4,10 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&code_mram_cm85 {
-	reg = <0x2000000 DT_SIZE_K(950)>;
+/delete-node/ &code_mram_cm85;
+/delete-node/ &code_mram_cm33;
+
+/ {
+	chosen {
+		/delete-property/ zephyr,code-partition;
+	};
 };
 
-&code_mram_cm33 {
-	reg = <0x20ed800 DT_SIZE_K(74)>;
+&mram_ctrl {
+	code_mram_cm85: mram@2000000 {
+		compatible = "renesas,ra-nv-mram";
+		reg = <0x2000000 DT_SIZE_M(1)>;
+		write-block-size = <1>;
+		erase-block-size = <32>;
+	};
 };

@@ -16,24 +16,24 @@
 /* Measurement based on drifting roles that can overlap leading to collision
  * resolutions that consume CPU time between radio events.
  * Value include max end, start and scheduling CPU usage times.
- * Measurements based on central_gatt_write and peripheral_gatt_write sample on
- * nRF52833 SoC.
+ * Measurements based on central_gatt_write, peripheral_gatt_write, observer and
+ * broadcaster_multiple samples on nRF52833 SoC.
  */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-/* Active connection in peripheral role with extended scanning on 1M and Coded
- * PHY, scheduling and receiving auxiliary PDUs.
+/* Simultaneous 3 extended advertising sets with extended scanning on 1M and Coded PHY, scheduling
+ * and receiving auxiliary PDUs.
  */
 #define EVENT_OVERHEAD_START_US       733 /* 24 RTC ticks */
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-/* Active connection in peripheral role with extended scanning on 1M only,
- * scheduling and receiving auxiliary PDUs.
+/* Active connection in peripheral role with extended scanning on 1M only, scheduling and receiving
+ * auxiliary PDUs.
  */
 #define EVENT_OVERHEAD_START_US       428 /* 14 RTC ticks */
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_OBSERVER */
-/* Active connection in peripheral role with legacy scanning on 1M.
+/* Simultaneous 3 extended advertising sets, calculating aux offsets.
  */
 #define EVENT_OVERHEAD_START_US       275 /* 9 RTC ticks */
 #endif /* !CONFIG_BT_OBSERVER */

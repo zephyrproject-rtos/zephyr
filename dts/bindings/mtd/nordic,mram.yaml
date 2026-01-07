@@ -3,7 +3,7 @@
 
 description: Nordic MRAM
 
-compatible: nordic,mram
+compatible: "nordic,mram"
 
 include: soc-nv-flash.yaml
 

@@ -8,7 +8,8 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 
-DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_power), NULL);
+DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_power), NULL,
+		SCMI_POWER_DOMAIN_PROTOCOL_SUPPORTED_VERSION);
 
 struct scmi_power_state_get_reply {
 	int32_t status;

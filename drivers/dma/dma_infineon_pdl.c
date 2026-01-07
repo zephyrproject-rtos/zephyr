@@ -9,7 +9,7 @@
  * @brief DMA driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_dma
+#define DT_DRV_COMPAT infineon_dma
 
 #include <infineon_kconfig.h>
 

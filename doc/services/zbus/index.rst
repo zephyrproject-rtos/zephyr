@@ -913,7 +913,7 @@ illustrates the runtime registration usage.
 
 .. warning::
 
-  The :c:struct:`zbus_observer_node` can only be re-used in :c:func:`zbus_chan_add_obs_with_node` after removing
+  The :c:struct:`zbus_observer_node` can only be reused in :c:func:`zbus_chan_add_obs_with_node` after removing
   the channel observer it was first associated with through :c:func:`zbus_chan_rm_obs`.
 
 
@@ -974,7 +974,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_ZBUS_OBSERVER_NAME` enables the name of observers to be available inside
   the channels metadata;
 * :kconfig:option:`CONFIG_ZBUS_PREFER_DYNAMIC_ALLOCATION` instructs zbus to
-  use dynamic allocation for its internals. That can be disabled by the user and tunned later;
+  use dynamic allocation for its internals. That can be disabled by the user and tuned later;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER` enables the message subscriber observer type;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` uses the heap to allocate message
   buffers;

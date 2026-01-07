@@ -291,8 +291,8 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
-	CLOCK_SetClkDiv(kCLOCK_DivFlexcan0Clk, 1U);
-	CLOCK_AttachClk(kFRO_HF_to_FLEXCAN0);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcan0Clk, 3U);
+	CLOCK_AttachClk(kPLL0_to_FLEXCAN0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0))

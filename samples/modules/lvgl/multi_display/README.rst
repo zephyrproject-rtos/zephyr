@@ -14,18 +14,18 @@ By default, it runs the Music demo on the first display, and the Widgets demo on
 Which demos are run can be changed by modifying the value of CONFIG_LV_Z_DEMO_FIRST_DISP## and
 CONFIG_LV_Z_DEMO_OTHER_DISPS## Kconfig symbols.
 
-* Music
-      The music player demo shows what kind of modern, smartphone-like user interfaces can be
-      created on LVGL.
-* Benchmark
-      The benchmark demo tests the performance in various cases. For example rectangle, border,
-      shadow, text, image blending, image transformation, blending modes, etc.
-* Stress
-      A stress test for LVGL. It contains a lot of object creation, deletion, animations, styles
-      usage, and so on. It can be used if there is any memory corruption during heavy usage or any
-      memory leaks.
-* Widgets
-      Shows how the widgets look like out of the box using the built-in material theme.
+Music
+    The music player demo shows what kind of modern, smartphone-like user interfaces can be
+    created on LVGL.
+Benchmark
+    The benchmark demo tests the performance in various cases. For example rectangle, border,
+    shadow, text, image blending, image transformation, blending modes, etc.
+Stress
+    A stress test for LVGL. It contains a lot of object creation, deletion, animations, styles
+    usage, and so on. It can be used if there is any memory corruption during heavy usage or any
+    memory leaks.
+Widgets
+    Shows how the widgets look like out of the box using the built-in material theme.
 
 More details on the demos can be found in `LVGL demos Readme`_.
 

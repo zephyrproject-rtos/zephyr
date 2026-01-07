@@ -296,6 +296,8 @@ float timeutil_sync_estimate_skew(const struct timeutil_sync_state *tsp);
  * produces an error.  If interpolation fails the referenced object is
  * not modified.
  *
+ * @note Clock skews are only applied with @kconfig{CONFIG_TIMEUTIL_APPLY_SKEW}
+ *
  * @retval 0 if interpolated using a skew of 1
  * @retval 1 if interpolated using a skew not equal to 1
  * @retval -EINVAL
@@ -320,6 +322,8 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
  * timescale should be stored.  An interpolated value before local
  * time 0 is provided without error.  If interpolation fails the
  * referenced object is not modified.
+ *
+ * @note Clock skews are only applied with @kconfig{CONFIG_TIMEUTIL_APPLY_SKEW}
  *
  * @retval 0 if successful with a skew of 1
  * @retval 1 if successful with a skew not equal to 1

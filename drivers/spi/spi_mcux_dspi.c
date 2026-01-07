@@ -687,13 +687,6 @@ static int transceive(const struct device *dev,
 	SPI_Type *base = config->base;
 #endif
 
-	if (rx_bufs == NULL) {
-		/* FIXME: for some reason this messes up the DMA configuration
-		 * probably because CITER is 0 and transfer is starting for some reason
-		 */
-		return -ENOTSUP;
-	}
-
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);

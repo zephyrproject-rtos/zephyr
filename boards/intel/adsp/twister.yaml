@@ -11,6 +11,7 @@ testing:
     - net
     - bluetooth
     - mcumgr
+    - newlib
 variants:
   intel_adsp/ace30/wcl:
     toolchain:

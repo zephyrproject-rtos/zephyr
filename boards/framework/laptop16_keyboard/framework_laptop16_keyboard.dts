@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2025 Framework Computer Inc
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "framework_laptop16_keyboard-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &caps_led;
+		pwm-led0 = &white_backlight_pwm;
+		rtc = &rtc;
+		watchdog0 = &wdt0;
+	};
+
+	zephyr,user {
+		io-channels = <&adc 2>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		caps_led: led {
+			gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+
+		white_backlight_pwm: pwm {
+			pwms = <&pwm 9 PWM_NSEC(1000) PWM_POLARITY_NORMAL>;
+			label = "Backlight";
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(1)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 1MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			reg = <0x100 (DT_SIZE_M(1) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+	/* GPIO25 is connected to channel 4B */
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&timer {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&clocks RPI_PICO_CLKID_CLK_RTC>;
+	status = "okay";
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};

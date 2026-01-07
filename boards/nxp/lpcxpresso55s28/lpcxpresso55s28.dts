@@ -33,6 +33,7 @@
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &iap;
+		zephyr,crc = &crc;
 	};
 
 	gpio_keys {
@@ -166,4 +167,8 @@ zephyr_uhc1: &usbhhs {
 		status = "okay";
 		disk-name = "SD";
 	};
+};
+
+&crc {
+	status = "okay";
 };

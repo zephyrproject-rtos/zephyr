@@ -10,11 +10,6 @@ compatible: "infineon,tcpwm-counter"
 include: [base.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
-  clock-frequency:
-    type: int
-    description: |
-      Frequency that the counter runs
-
   external-trigger-gpios:
     type: phandle-array
     description: |

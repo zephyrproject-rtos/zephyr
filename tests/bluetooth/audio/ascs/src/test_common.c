@@ -130,7 +130,8 @@ uint8_t test_ase_id_get(const struct bt_gatt_attr *ase)
 	ssize_t ret;
 
 	ret = ase->read(NULL, ase, &hdr, sizeof(hdr), 0);
-	zassert_false(ret < 0, "ase->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "ase->read returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	return hdr.ase_id;
 }
@@ -177,7 +178,8 @@ void test_ase_control_client_config_codec(struct bt_conn *conn, uint8_t ase_id,
 	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "cp_attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "cp_attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	stream_allocated = NULL;
 
@@ -204,7 +206,8 @@ void test_ase_control_client_config_qos(struct bt_conn *conn, uint8_t ase_id)
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }
@@ -221,7 +224,8 @@ void test_ase_control_client_enable(struct bt_conn *conn, uint8_t ase_id)
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }
@@ -237,7 +241,8 @@ void test_ase_control_client_disable(struct bt_conn *conn, uint8_t ase_id)
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }
@@ -253,7 +258,8 @@ void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id)
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }
@@ -271,7 +277,8 @@ void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_i
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }
@@ -287,7 +294,8 @@ void test_ase_control_client_receiver_start_ready(struct bt_conn *conn, uint8_t 
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }
@@ -303,7 +311,8 @@ void test_ase_control_client_receiver_stop_ready(struct bt_conn *conn, uint8_t a
 	ssize_t ret;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
-	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_false(ret < 0, "attr->write returned unexpected (err 0x%02x)",
+		      (uint8_t)BT_GATT_ERR(ret));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 }

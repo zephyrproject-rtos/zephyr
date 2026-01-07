@@ -322,6 +322,10 @@ __subsystem struct dai_driver_api {
 	const struct dai_properties *(*get_properties)(const struct device *dev,
 						       enum dai_dir dir,
 						       int stream_id);
+	int (*get_properties_copy)(const struct device *dev,
+				   enum dai_dir dir,
+				   int stream_id,
+				   struct dai_properties *dst);
 
 	int (*trigger)(const struct device *dev, enum dai_dir dir,
 		       enum dai_trigger_cmd cmd);
@@ -351,7 +355,9 @@ __subsystem struct dai_driver_api {
  *
  * @retval 0 If successful.
  */
-static inline int dai_probe(const struct device *dev)
+__syscall int dai_probe(const struct device *dev);
+
+static inline int z_impl_dai_probe(const struct device *dev)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -368,7 +374,9 @@ static inline int dai_probe(const struct device *dev)
  *
  * @retval 0 If successful.
  */
-static inline int dai_remove(const struct device *dev)
+__syscall int dai_remove(const struct device *dev);
+
+static inline int z_impl_dai_remove(const struct device *dev)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -396,10 +404,16 @@ static inline int dai_remove(const struct device *dev)
  * @retval -EINVAL Invalid argument.
  * @retval -ENOSYS DAI_DIR_BOTH value is not supported.
  */
-static inline int dai_config_set(const struct device *dev,
-				 const struct dai_config *cfg,
-				 const void *bespoke_cfg,
-				 size_t size)
+
+__syscall int dai_config_set(const struct device *dev,
+			     const struct dai_config *cfg,
+			     const void *bespoke_cfg,
+			     size_t size);
+
+static inline int z_impl_dai_config_set(const struct device *dev,
+					const struct dai_config *cfg,
+					const void *bespoke_cfg,
+					size_t size)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -414,9 +428,13 @@ static inline int dai_config_set(const struct device *dev,
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
  * @return 0 if success, negative if invalid parameters or DAI un-configured
  */
-static inline int dai_config_get(const struct device *dev,
-				 struct dai_config *cfg,
-				 enum dai_dir dir)
+__syscall int dai_config_get(const struct device *dev,
+			     struct dai_config *cfg,
+			     enum dai_dir dir);
+
+static inline int z_impl_dai_config_get(const struct device *dev,
+					struct dai_config *cfg,
+					enum dai_dir dir)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -443,6 +461,31 @@ static inline const struct dai_properties *dai_get_properties(const struct devic
 }
 
 /**
+ * @brief Fetch properties of a DAI driver
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
+ * @param stream_id Stream id: some drivers may have stream specific
+ *        properties, this id specifies the stream.
+ * @param dst address where to write properties to
+ * @retval Zero on success
+ */
+__syscall int dai_get_properties_copy(const struct device *dev,
+				      enum dai_dir dir,
+				      int stream_id,
+				      struct dai_properties *dst);
+
+static inline int z_impl_dai_get_properties_copy(const struct device *dev,
+						 enum dai_dir dir,
+						 int stream_id,
+						 struct dai_properties *dst)
+{
+	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+
+	return api->get_properties_copy(dev, dir, stream_id, dst);
+}
+
+/**
  * @brief Send a trigger command.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -459,9 +502,13 @@ static inline const struct dai_properties *dai_get_properties(const struct devic
  * @retval -ENOMEM RX/TX memory block not available.
  * @retval -ENOSYS DAI_DIR_BOTH value is not supported.
  */
-static inline int dai_trigger(const struct device *dev,
-			      enum dai_dir dir,
-			      enum dai_trigger_cmd cmd)
+__syscall int dai_trigger(const struct device *dev,
+			  enum dai_dir dir,
+			  enum dai_trigger_cmd cmd);
+
+static inline int z_impl_dai_trigger(const struct device *dev,
+				     enum dai_dir dir,
+				     enum dai_trigger_cmd cmd)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -477,7 +524,9 @@ static inline int dai_trigger(const struct device *dev,
  *
  * @retval 0 If successful.
  */
-static inline int dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg)
+__syscall int dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg);
+
+static inline int z_impl_dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -497,7 +546,9 @@ static inline int dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg
  *
  * @retval 0 If successful.
  */
-static inline int dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg)
+__syscall int dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg);
+
+static inline int z_impl_dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -517,7 +568,9 @@ static inline int dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg)
  *
  * @retval 0 If successful.
  */
-static inline int dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg)
+__syscall int dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg);
+
+static inline int z_impl_dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -538,8 +591,11 @@ static inline int dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg)
  *
  * @retval 0 If successful.
  */
-static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
-			     struct dai_ts_data *tsd)
+__syscall int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
+			 struct dai_ts_data *tsd);
+
+static inline int z_impl_dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
+				    struct dai_ts_data *tsd)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -569,9 +625,13 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
  * @retval -ENOSYS If the configuration update operation is not implemented.
  * @retval <0 Negative errno code if failure.
  */
-static inline int dai_config_update(const struct device *dev,
-									const void *bespoke_cfg,
-									size_t size)
+__syscall int dai_config_update(const struct device *dev,
+				const void *bespoke_cfg,
+				size_t size);
+
+static inline int z_impl_dai_config_update(const struct device *dev,
+					   const void *bespoke_cfg,
+					   size_t size)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
@@ -589,5 +649,7 @@ static inline int dai_config_update(const struct device *dev,
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/syscalls/dai.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DAI_H_ */

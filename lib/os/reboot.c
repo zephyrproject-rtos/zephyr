@@ -23,6 +23,10 @@ FUNC_NORETURN void sys_reboot(int type)
 
 	(void)irq_lock();
 
+#if defined(CONFIG_ZERO_LATENCY_IRQS)
+	(void)arch_zli_lock();
+#endif /* CONFIG_ZERO_LATENCY_IRQS */
+
 	/* Disable caches to ensure all data is flushed */
 #if defined(CONFIG_ARCH_CACHE)
 #if defined(CONFIG_DCACHE)

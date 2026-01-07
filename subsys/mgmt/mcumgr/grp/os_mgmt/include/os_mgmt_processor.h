@@ -184,6 +184,22 @@ extern "C" {
 #define PROCESSOR_NAME "sparc"
 #endif
 
+#if defined(CONFIG_ARCH_POSIX)
+#if defined(PROCESSOR_NAME)
+#error "Processor name already selected; compile-time check should be removed."
+#endif
+
+#if defined(__x86_64__)
+#define PROCESSOR_NAME "x86_64"
+#elif defined(__i386__)
+#define PROCESSOR_NAME "x86"
+#elif defined(__aarch64__)
+#define PROCESSOR_NAME "aarch64"
+#elif defined(__arm__)
+#define PROCESSOR_NAME "arm"
+#endif
+#endif
+
 #ifndef PROCESSOR_NAME
 #warning "Processor type could not be determined"
 #define PROCESSOR_NAME "unknown"

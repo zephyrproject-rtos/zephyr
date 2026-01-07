@@ -410,6 +410,15 @@ true.  A uniprocessor architecture built with :kconfig:option:`CONFIG_SMP` set t
 still decide to implement its context switching using
 :c:func:`arch_switch`.
 
+Thread Queue Ordering
+=====================
+
+When a thread is preempted by another thread of higher priority in an SMP
+system, it is moved to the back of the queue for its priority level. In
+contrast, on UP systems, a preempted thread does not move to the back of its
+priority queue; it simply waits to regain the CPU, preserving its original
+ordering relative to other threads of the same priority.
+
 API Reference
 **************
 

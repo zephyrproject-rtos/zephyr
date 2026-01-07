@@ -1653,8 +1653,14 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	sys_snode_t *node = NULL;
 
-	if (mgmt_event != NET_EVENT_IF_UP &&
-	    mgmt_event != NET_EVENT_IF_DOWN) {
+	switch (mgmt_event) {
+#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
+	case NET_EVENT_IF_UP:
+		break;
+#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
+	case NET_EVENT_IF_DOWN:
+		break;
+	default:
 		return;
 	}
 
@@ -1696,7 +1702,8 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 							  DNS_SOURCE_DHCPV4);
 			}
 		}
-	} else if (mgmt_event == NET_EVENT_IF_UP) {
+	} else if (IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) &&
+		   (mgmt_event == NET_EVENT_IF_UP)) {
 		NET_DBG("Interface %p coming up", iface);
 
 		/* We should not call dhcpv4_send_request() directly here as
@@ -2003,6 +2010,9 @@ void net_dhcpv4_restart(struct net_if *iface)
 
 int net_dhcpv4_init(void)
 {
+	uint64_t events =
+		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
+		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
 	struct net_sockaddr local_addr;
 	int ret;
 
@@ -2030,7 +2040,7 @@ int net_dhcpv4_init(void)
 	 * if interface is coming back up again.
 	 */
 	net_mgmt_init_event_callback(&mgmt4_if_cb, dhcpv4_iface_event_handler,
-				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
+				     events);
 #if defined(CONFIG_NET_IPV4_ACD)
 	net_mgmt_init_event_callback(&mgmt4_acd_cb, dhcpv4_acd_event_handler,
 				     NET_EVENT_IPV4_ACD_FAILED |

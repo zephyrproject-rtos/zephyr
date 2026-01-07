@@ -88,7 +88,7 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32c3_devkitm
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp8684_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
   sample.net.wifi.siwx91x_offloaded:

@@ -78,6 +78,27 @@ config MODEM_CMUX_MSC_FC_THRESHOLD
 	  This only works if the peer supports MSC messages.
 	  Disable flow control by setting this value to 0.
 
+config MODEM_CMUX_T1_TIMEOUT
+	int "CMUX T1 timeout in milliseconds"
+	range 10 2550
+	default 100
+	help
+	  Acknowledgment Timer (T1).
+	  Time in milliseconds to wait for an acknowledgment before retransmitting
+	  a frame.
+
+config MODEM_CMUX_T2_TIMEOUT
+	int "CMUX T2 timeout in milliseconds"
+	range 20 2550
+	default 300
+	help
+	  Response Timer for multiplexer control channel (T2).
+	  Time in milliseconds to wait for a response to a multiplexer control
+	  command before considering the link dead.
+	  NOTE: Zephyr's CMUX implementation deviates from the 3GPP TS 27.010
+	  specification by using T1 for all retry timers and T2 only for
+	  a total response timeout.
+
 config MODEM_CMUX_T3_TIMEOUT
 	int "CMUX T3 timeout in seconds"
 	range 1 255

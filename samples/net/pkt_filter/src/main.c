@@ -59,6 +59,62 @@ static NPF_RULE(arp_pkt_vlan2, NET_OK, match_iface_vlan2, match_arp_vlan);
 static NPF_PRIORITY(arp_priority_vlan1, NET_PRIORITY_BK, match_iface_vlan1, match_arp_vlan);
 static NPF_PRIORITY(arp_priority_vlan2, NET_PRIORITY_BK, match_iface_vlan2, match_arp_vlan);
 
+/* Block IPv4 or IPv6 packets from only these addresses */
+#define PEER1_IPV4_ADDR_INIT {{{ 192, 0, 2, 2 }}}
+#define PEER2_IPV4_ADDR_INIT {{{ 198, 51, 100, 2 }}}
+#define PEER1_IPV6_ADDR_INIT \
+	{{{ 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0x02 }}}
+#define PEER2_IPV6_ADDR_INIT \
+	{{{ 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,	0, 0, 0, 0, 0x1, 0, 0, 0x02 }}}
+
+static struct net_in_addr peer_ipv4_addr[] = {
+	[0] = PEER1_IPV4_ADDR_INIT,
+	[1] = PEER2_IPV4_ADDR_INIT,
+};
+
+static struct net_in6_addr peer_ipv6_addr[] = {
+	[0] = PEER1_IPV6_ADDR_INIT,
+	[1] = PEER2_IPV6_ADDR_INIT,
+};
+
+static NPF_IP_SRC_ADDR_BLOCKLIST(ipv4_src_block,
+				 peer_ipv4_addr, ARRAY_SIZE(peer_ipv4_addr),
+				 NET_AF_INET);
+static NPF_IP_SRC_ADDR_BLOCKLIST(ipv6_src_block,
+				 peer_ipv6_addr, ARRAY_SIZE(peer_ipv6_addr),
+				 NET_AF_INET6);
+static NPF_RULE(ipv4_addr_block, NET_OK, ipv4_src_block);
+static NPF_RULE(ipv6_addr_block, NET_OK, ipv6_src_block);
+
+/* Rules for other upper layer protocols like UDP or TCP */
+/* The pkt_counter is used to count matched packets in the handler. It is optional
+ * and it is up to the application how to use it.
+ */
+static int user_data_pkt_counter;
+
+static bool handler_local_in(struct net_pkt *pkt, void *user_data)
+{
+	int *pkt_counter = (int *)user_data;
+
+	if (pkt_counter != NULL) {
+		(*pkt_counter)++;
+
+		LOG_DBG("Local-in matched packets: %d", *pkt_counter);
+	} else {
+		LOG_DBG("Local-in matched packet");
+	}
+
+	/* We can evaluate the packet here and return true/false based on that.
+	 * For this sample, we just return true to match all the received packets.
+	 */
+
+	return true;
+}
+
+/* Note that the user_data argument is optional and can be NULL */
+static NPF_LOCAL_IN_MATCH(local_in_match, handler_local_in, &user_data_pkt_counter);
+static NPF_RULE(local_in_rule, NET_OK, local_in_match);
+
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 	int count = 0;
@@ -116,16 +172,22 @@ static void init_app(void)
 	/* The sample will setup the Ethernet interface and two VLAN
 	 * optional interfaces (if VLAN is enabled).
 	 * We allow all traffic to the Ethernet interface, but have
-	 * filters for the VLAN interfaces.
+	 * filters for the VLAN interfaces and check IPv4 and IPv6 source addresses.
 	 *
 	 * First append the priority rules, so that they get evaluated before
 	 * deciding on the final verdict for the packet.
 	 */
-	npf_append_recv_rule(&eth_priority_default);
-	npf_append_recv_rule(&eth_priority_ptp);
-	npf_append_recv_rule(&eth_priority_vlan);
-	npf_append_recv_rule(&arp_priority_vlan1);
-	npf_append_recv_rule(&arp_priority_vlan2);
+	if (IS_ENABLED(CONFIG_NET_SAMPLE_USE_PACKET_PRIORITIES)) {
+		LOG_INF("Using packet priorities");
+
+		npf_append_recv_rule(&eth_priority_default);
+		npf_append_recv_rule(&eth_priority_ptp);
+		npf_append_recv_rule(&eth_priority_vlan);
+		npf_append_recv_rule(&arp_priority_vlan1);
+		npf_append_recv_rule(&arp_priority_vlan2);
+	} else {
+		LOG_INF("Packet priorities are disabled");
+	}
 
 	/* We allow small IPv4 packets to the VLAN interface 1 */
 	npf_append_recv_rule(&small_ipv4_pkt);
@@ -142,6 +204,15 @@ static void init_app(void)
 
 	/* The remaining packets that do not match are dropped */
 	npf_append_recv_rule(&npf_default_drop);
+
+	/* We block packets from specific IPv4 addresses */
+	npf_append_ipv4_recv_rule(&ipv4_addr_block);
+
+	/* We block packets from specific IPv6 addresses */
+	npf_append_ipv6_recv_rule(&ipv6_addr_block);
+
+	/* Catch other upper layer protocols like UDP / TCP */
+	npf_append_local_in_recv_rule(&local_in_rule);
 }
 
 int main(void)

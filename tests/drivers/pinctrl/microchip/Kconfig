@@ -15,3 +15,7 @@ config PINCTRL_TEST_NON_STATIC
 config TEST_PINCTRL_MCHP_SAM
 	bool "Enable test for MCHP SAM drive strength"
 	default y if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+
+config TEST_PINCTRL_MCHP_MEC
+	bool "Enable test for MCHP MEC boards"
+	default y if SOC_FAMILY_MICROCHIP_MEC

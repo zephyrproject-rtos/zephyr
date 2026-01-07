@@ -26,7 +26,6 @@
 #include "rsi_power_save.h"
 #include "rsi_pll.h"
 #include "rsi_ulpss_clk.h"
-#include "clock_update.h"
 
 #define DMA_MAX_TRANSFER_COUNT 1024
 #define I2S_SIWX91X_UNSUPPORTED_OPTIONS                                                            \

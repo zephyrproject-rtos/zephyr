@@ -467,6 +467,15 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_AttachClk(kLPOSC_to_WWDT0);
+	/* ROM may change ITRC OUT3_SEL0 and OUT4_SEL0, which will select
+	 * WWDT0-2 as input for ITRC. When a WWDT timeout happened the
+	 * event will first assert and trigger a ITRC reset, This ITRC
+	 * reset is faster than WWDT reset and reset the system before
+	 * a WWDT reset. Change back the OUT3_SEL0 and OUT4_SEL0 to allow
+	 * RSTCTL capturing WWDT reset event.
+	 */
+	ITRC->OUT_SEL[3][0] = 0xAAAAAA0A;
+	ITRC->OUT_SEL[4][0] = 0xAAAAAA0A;
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0))

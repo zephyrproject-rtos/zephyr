@@ -23,6 +23,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			cpu-power-states = <&sleep &deepsleep &powerdown>;
+
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
@@ -35,8 +37,34 @@
 		};
 	};
 
-	cmc {
-		compatible = "nxp,cmc-reset-cause";
+	power-states {
+		/*
+		 * Note:
+		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *  - 'min-residency-us' needs to be adjusted according to the actual project
+		 *    requirements. The values provided here are not applicable to all real
+		 *    projects.
+		 */
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <1>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <10>;
+		};
+
+		powerdown: powerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <80000>;
+			exit-latency-us = <20>;
+		};
 	};
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
@@ -267,7 +295,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -305,7 +333,7 @@
 		interrupts = <36 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -349,7 +377,7 @@
 		interrupts = <37 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -393,7 +421,7 @@
 		interrupts = <38 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -431,7 +459,7 @@
 		interrupts = <39 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -475,7 +503,7 @@
 		interrupts = <40 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -513,7 +541,7 @@
 		interrupts = <41 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -551,7 +579,7 @@
 		interrupts = <42 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -589,7 +617,7 @@
 		interrupts = <43 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -627,7 +655,7 @@
 		interrupts = <44 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -726,6 +754,7 @@
 		compatible = "nxp,os-timer";
 		reg = <0x49000 0x1000>;
 		interrupts = <57 0>;
+		resets = <&reset NXP_SYSCON_RESET(1, 1)>;
 		status = "disabled";
 	};
 
@@ -1061,7 +1090,6 @@
 		reg = <0x51000 0x1000>;
 		interrupts = <109 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	lpcmp1: lpcmp@52000 {
@@ -1069,16 +1097,17 @@
 		reg = <0x52000 0x1000>;
 		interrupts = <110 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	flexcan0: can@d4000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xd4000 0x4000>;
 		interrupts = <62 0>;
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
+		number-of-mb-fd = <7>;
 		status = "disabled";
 	};
 
@@ -1087,7 +1116,7 @@
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -1097,7 +1126,7 @@
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -1220,6 +1249,31 @@
 		nxp,tx-dma-channel = <2>;
 		nxp,rx-dma-channel = <3>;
 		status = "disabled";
+	};
+
+	spc: system-modules@45000 {
+		compatible = "nxp,spc";
+		reg = <0x45000 0x1000>;
+		interrupts = <146 0>;
+		wakeup-delay = <780>;
+	};
+
+	wuu: system-modules@46000 {
+		compatible = "nxp,wuu";
+		reg = <0x46000 0x1000>;
+		interrupts = <147 0>;
+	};
+
+	cmc: system-modules@48000 {
+		compatible = "nxp,cmc";
+		reg = <0x48000 0x1000>;
+		interrupts = <154 0>;
+	};
+
+	vbat: system-modules@59000 {
+		compatible = "nxp,vbat";
+		reg = <0x59000 0x1000>;
+		interrupts = <99 0>;
 	};
 };
 

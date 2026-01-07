@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_REALTEK_AMEBA
+	select BUILD_OUTPUT_HEX
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_FAMILY_REALTEK_AMEBA
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_REALTEK_AMEBA

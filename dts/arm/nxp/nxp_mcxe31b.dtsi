@@ -67,3 +67,27 @@
 	start-address = <0x20010000>;
 	size = <DT_SIZE_K(32)>;
 };
+
+&flexcan_0 {
+	number-of-mb = <96>;
+};
+
+&flexcan_1 {
+	number-of-mb = <64>;
+};
+
+&flexcan_2 {
+	number-of-mb = <64>;
+};
+
+&flexcan_3 {
+	number-of-mb = <32>;
+};
+
+&flexcan_4 {
+	number-of-mb = <32>;
+};
+
+&flexcan_5 {
+	number-of-mb = <32>;
+};

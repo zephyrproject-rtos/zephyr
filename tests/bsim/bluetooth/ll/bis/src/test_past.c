@@ -10,18 +10,15 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <stddef.h>
 #include <errno.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/sys/byteorder.h>
 
 #include "subsys/bluetooth/host/hci_core.h"
 #include "subsys/bluetooth/controller/include/ll.h"

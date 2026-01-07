@@ -494,6 +494,7 @@
 		compatible = "nxp,os-timer";
 		reg = <0x113000 0x1000>;
 		interrupts = <41 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 27)>;
 		status = "disabled";
 	};
 

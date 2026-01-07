@@ -1,16 +1,25 @@
+common:
+  integration_platforms:
+    - max32657evkit/max32657/ns
+    - nrf5340dk/nrf5340/cpuapp/ns
+    - nrf54l15dk/nrf54l15/cpuapp/ns
+    - nrf54lm20dk/nrf54lm20a/cpuapp/ns
+    - mps2/an521/cpu0/ns
+  platform_exclude:
+    - lpcxpresso55s69/lpc55s69/cpu0/ns
+  tags:
+    - settings
+    - trusted-firmware-m
+  extra_args:
+    - CONFIG_SETTINGS_TFM_PSA=y
+
 tests:
+  settings.functional.tfm-ps:
+    filter: CONFIG_TFM_PARTITION_PROTECTED_STORAGE
+    extra_args:
+      - CONFIG_SETTINGS_TFM_PSA_BACKEND_PS=y
+
   settings.functional.tfm-its:
     filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
-    integration_platforms:
-      - max32657evkit/max32657/ns
-      - nrf5340dk/nrf5340/cpuapp/ns
-      - nrf54l15dk/nrf54l15/cpuapp/ns
-      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
-      - mps2/an521/cpu0/ns
-    platform_exclude:
-      - lpcxpresso55s69/lpc55s69/cpu0/ns
-    tags:
-      - settings
-      - trusted-firmware-m
     extra_args:
-      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_SETTINGS_TFM_PSA_BACKEND_ITS=y

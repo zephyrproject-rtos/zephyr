@@ -2038,7 +2038,7 @@ static const struct socket_dns_offload offload_dns_ops = {
 };
 #endif
 
-static int net_offload_dummy_get(sa_family_t family,
+static int net_offload_dummy_get(net_sa_family_t family,
 				 enum net_sock_type type,
 				 enum net_ip_protocol ip_proto,
 				 struct net_context **context)

@@ -18,6 +18,7 @@ supported:
   - comparator
   - adc
   - dac
+  - pwm
 testing:
   ignore_tags:
     - pm

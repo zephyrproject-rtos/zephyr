@@ -101,6 +101,16 @@ Supported Features
    Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
    already supported, which can also be re-used on this mimxrt1160_evk board:
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk055hdmipi4m`, :ref:`rk055hdmipi4ma0` and :ref:`g1120b0mipi` - support
+  the MIPI-DSI display interface.
+- :ref:`nxp_btb44_ov5640` - supports the MIPI-CSI video/camera interface.
+
 Connections and I/Os
 ====================
 

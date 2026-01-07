@@ -22,6 +22,8 @@ if(CONFIG_HAS_MCUX OR CONFIG_HAS_IMX_HAL OR CONFIG_HAS_NXP_S32_HAL)
 
   zephyr_compile_definitions_ifdef(CONFIG_ETH_NXP_IMX_NETC FSL_ETH_ENABLE_CACHE_CONTROL=1)
 
+  zephyr_compile_definitions_ifdef(CONFIG_SDHC_SCATTER_GATHER_TRANSFER FSL_USDHC_ENABLE_SCATTER_GATHER_TRANSFER=1)
+
   if(CONFIG_I2S_MCUX_SAI)
     zephyr_compile_definitions(MCUX_SDK_SAI_ALLOW_NULL_FIFO_WATERMARK=1)
   endif()
@@ -32,6 +34,10 @@ if(CONFIG_HAS_NXP_S32_HAL)
 else()
   add_subdirectory_ifdef(CONFIG_HAS_IMX_HAL imx)
   add_subdirectory_ifdef(CONFIG_HAS_MCUX mcux)
+endif()
+
+if(CONFIG_WIFI_NXP)
+  add_subdirectory(wifi)
 endif()
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/src hal_nxp)

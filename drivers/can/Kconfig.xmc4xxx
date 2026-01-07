@@ -35,9 +35,9 @@ config CAN_XMC4XXX_INTERNAL_BUS_MODE
 	  Connects all XMC4XXX CAN devices to an internal bus. Enables
 	  message exchange between MCU CAN devices without any external connectors.
 
-config CAN_MAX_FILTER
+config CAN_XMC4XXX_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
-	default 4
+	default 16
 	range 1 32
 	help
 	  Maximum number of filters supported by the can_add_rx_callback() API call.

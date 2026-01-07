@@ -1694,10 +1694,6 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 	int err;
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	RIMC_MasterConfig_t rimc = {0};
-#endif
-
 	dcmipp->enabled_pipe = 0;
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -1735,14 +1731,6 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 	/* Run IRQ init */
 	cfg->irq_config(dev);
-
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	rimc.MasterCID = RIF_CID_1;
-	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_DCMIPP, &rimc);
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_DCMIPP,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-#endif
 
 	/* Initialize DCMI peripheral */
 	err = HAL_DCMIPP_Init(&dcmipp->hdcmipp);

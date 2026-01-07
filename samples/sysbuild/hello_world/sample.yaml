@@ -7,6 +7,8 @@ sample:
 common:
   sysbuild: true
   harness: pytest
+  harness_config:
+    pytest_dut_scope: session
 
 tests:
   sample.sysbuild.hello_world.nrf5340dk_cpuapp_cpunet:

@@ -28,6 +28,8 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_INFINEON_TCPWM counter_infineon_tcpw
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT51XXX counter_ite_it51xxx.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT8XXX2 counter_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MAXIM_DS3231 maxim_ds3231.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_G1_TCC counter_mchp_tcc_g1.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_SAM_PIT64B counter_mchp_sam_pit64b.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_CTIMER counter_mcux_ctimer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_FTM counter_mcux_ftm.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_GPT counter_mcux_gpt.c)
@@ -55,6 +57,8 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_REALTEK_RTS5912 counter_realtek_rts5
 zephyr_library_sources_ifdef(CONFIG_COUNTER_REALTEK_RTS5912_SLWTMR counter_realtek_rts5912_slwtmr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RENESAS_RZ_CMTW counter_renesas_rz_cmtw.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RENESAS_RZ_GTM counter_renesas_rz_gtm.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_RPI_PICO_PIT counter_rpi_pico_pit.c
+                                                         counter_rpi_pico_pit_channel.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_ESP32 counter_esp32_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_MAX32 counter_max32_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_STM32 counter_stm32_rtc.c)

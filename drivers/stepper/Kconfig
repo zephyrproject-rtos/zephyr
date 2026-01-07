@@ -31,6 +31,7 @@ rsource "Kconfig.fake"
 rsource "adi_tmc/Kconfig"
 rsource "allegro/Kconfig"
 rsource "gpio_stepper/Kconfig"
+rsource "step_dir/Kconfig"
 rsource "ti/Kconfig"
 # zephyr-keep-sorted-stop
 

@@ -41,10 +41,6 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "net_stats.h"
 #include "pmtu.h"
 
-#if defined(CONFIG_NET_TCP)
-#include "tcp_internal.h"
-#endif
-
 #ifdef CONFIG_NET_INITIAL_MCAST_TTL
 #define INITIAL_MCAST_TTL CONFIG_NET_INITIAL_MCAST_TTL
 #else
@@ -943,6 +939,12 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 			ptr = (struct net_in6_addr *)net_ipv6_unspecified_address();
 		} else {
 			struct net_if_addr *ifaddr;
+
+			if (net_ipv6_is_ll_addr(&addr6->sin6_addr)) {
+				if (iface == NULL) {
+					iface = net_if_get_by_index(addr6->sin6_scope_id);
+				}
+			}
 
 			ifaddr = net_if_ipv6_addr_lookup(
 					&addr6->sin6_addr,
@@ -2470,6 +2472,17 @@ static int context_sendto(struct net_context *context,
 				IF_ENABLED(CONFIG_NET_IPV6,
 					   (iface = net_if_get_by_index(
 						   context->options.ipv6_mcast_ifindex)));
+			}
+
+			if (net_ipv6_is_ll_addr(&addr6->sin6_addr) &&
+			    !net_context_is_bound_to_iface(context) &&
+			    COND_CODE_1(CONFIG_NET_IPV6,
+					(addr6->sin6_scope_id > 0), (false))) {
+				IF_ENABLED(CONFIG_NET_IPV6, (
+					   iface = net_if_get_by_index(addr6->sin6_scope_id)));
+				if (iface != NULL) {
+					net_context_set_iface(context, iface);
+				}
 			}
 		}
 

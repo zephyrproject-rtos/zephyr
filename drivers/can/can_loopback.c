@@ -35,7 +35,7 @@ struct can_loopback_config {
 
 struct can_loopback_data {
 	struct can_driver_data common;
-	struct can_loopback_filter filters[CONFIG_CAN_MAX_FILTER];
+	struct can_loopback_filter filters[CONFIG_CAN_LOOPBACK_MAX_FILTERS];
 	struct k_mutex mtx;
 	struct k_msgq tx_msgq;
 	char msgq_buffer[CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE * sizeof(struct can_loopback_frame)];
@@ -90,7 +90,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 
 		k_mutex_lock(&data->mtx, K_FOREVER);
 
-		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
+		for (int i = 0; i < CONFIG_CAN_LOOPBACK_MAX_FILTERS; i++) {
 			filter = &data->filters[i];
 			if (filter->rx_cb != NULL &&
 			    can_frame_matches_filter(&frame.frame, &filter->filter)) {
@@ -163,7 +163,7 @@ static int can_loopback_send(const struct device *dev,
 
 static inline int get_free_filter(struct can_loopback_filter *filters)
 {
-	for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
+	for (int i = 0; i < CONFIG_CAN_LOOPBACK_MAX_FILTERS; i++) {
 		if (filters[i].rx_cb == NULL) {
 			return i;
 		}
@@ -362,7 +362,7 @@ static int can_loopback_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_LOOPBACK_MAX_FILTERS;
 }
 
 static DEVICE_API(can, can_loopback_driver_api) = {
@@ -420,7 +420,7 @@ static int can_loopback_init(const struct device *dev)
 
 	k_mutex_init(&data->mtx);
 
-	for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
+	for (int i = 0; i < CONFIG_CAN_LOOPBACK_MAX_FILTERS; i++) {
 		data->filters[i].rx_cb = NULL;
 	}
 

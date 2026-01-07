@@ -6,6 +6,7 @@ import argparse
 from argparse import Namespace
 
 import pytest
+
 from twister_cmd import Twister
 
 TEST_CASES = [

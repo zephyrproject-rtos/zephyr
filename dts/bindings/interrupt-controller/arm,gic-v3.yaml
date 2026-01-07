@@ -30,7 +30,7 @@ description: |
       status = "okay";
     };
 
-compatible: arm,gic-v3
+compatible: "arm,gic-v3"
 
 include: arm,gic.yaml
 

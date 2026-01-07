@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,32 @@
 #define REG_READ(r)     sys_read32((mem_addr_t)(DT_INST_REG_ADDR(0) + (r)))
 #define REG_WRITE(r, v) sys_write32((v), (mem_addr_t)(DT_INST_REG_ADDR(0) + (r)))
 
+static inline void mc_me_write_ctl_key(void)
+{
+	REG_WRITE(MC_ME_CTL_KEY, MC_ME_CTL_KEY_KEY(MC_ME_CTL_KEY_DIRECT_KEY));
+	REG_WRITE(MC_ME_CTL_KEY, MC_ME_CTL_KEY_KEY(MC_ME_CTL_KEY_INVERTED_KEY));
+}
+
+void mc_me_configure_cofb(uint8_t partition_idx, uint8_t cofb_idx, uint32_t value)
+{
+	REG_WRITE(MC_ME_PRTN_COFB_CLKEN(partition_idx, cofb_idx),
+		  REG_READ(MC_ME_PRTN_COFB_CLKEN(partition_idx, cofb_idx)) | value);
+
+	REG_WRITE(MC_ME_PRTN_PUPD(partition_idx),
+		  REG_READ(MC_ME_PRTN_PUPD(partition_idx)) | MC_ME_PRTN_PUPD_PCUD_MASK);
+
+	mc_me_write_ctl_key();
+
+	while ((REG_READ(MC_ME_PRTN_PUPD(partition_idx)) & MC_ME_PRTN_PUPD_PCUD_MASK)) {
+		;
+	}
+
+	while (!(REG_READ(MC_ME_PRTN_COFB_STAT(partition_idx, cofb_idx)) & value)) {
+		;
+	}
+}
+
+#if defined(CONFIG_REBOOT) && DT_INST_PROP(0, software_reset_supported)
 /** MC_ME power mode */
 enum mc_me_power_mode {
 	/** Destructive Reset Mode */
@@ -86,13 +112,6 @@ enum mc_me_power_mode {
 	/** Functional Reset Mode */
 	MC_ME_FUNC_RESET_MODE,
 };
-
-#if defined(CONFIG_REBOOT)
-static inline void mc_me_write_ctl_key(void)
-{
-	REG_WRITE(MC_ME_CTL_KEY, MC_ME_CTL_KEY_KEY(MC_ME_CTL_KEY_DIRECT_KEY));
-	REG_WRITE(MC_ME_CTL_KEY, MC_ME_CTL_KEY_KEY(MC_ME_CTL_KEY_INVERTED_KEY));
-}
 
 static inline void mc_me_trigger_mode_update(void)
 {
@@ -155,4 +174,4 @@ void sys_arch_reboot(int type)
 		break;
 	}
 }
-#endif /* CONFIG_REBOOT */
+#endif /* CONFIG_REBOOT && DT_INST_PROP(0, software_reset_supported) */

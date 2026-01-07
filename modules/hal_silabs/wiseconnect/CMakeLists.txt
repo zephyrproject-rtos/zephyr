@@ -5,6 +5,25 @@ set(SISDK_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk)
 set(WISECONNECT_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/wiseconnect)
 set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
 
+function(wiseconnect_get_ram_config node_var out_var)
+  # Get reg property from device tree node
+  dt_nodelabel(node_path NODELABEL "${node_var}")
+  dt_prop(reg_property PATH "${node_path}" PROPERTY "reg")
+  list(GET reg_property 1 size_bytes)
+  math(EXPR size_kb "${size_bytes} / 1024")
+
+  # Set output variable based on size
+  if(size_kb EQUAL 195)
+    set(${out_var} 1 PARENT_SCOPE)
+  elseif(size_kb EQUAL 255)
+    set(${out_var} 2 PARENT_SCOPE)
+  elseif(size_kb EQUAL 319)
+    set(${out_var} 3 PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR "Unsupported RAM size config: ${size_kb}KB")
+  endif()
+endfunction()
+
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
@@ -156,9 +175,10 @@ if(CONFIG_BT_SILABS_SIWX91X)
 endif() # CONFIG_BT_SILABS_SIWX91X
 
 if(CONFIG_SILABS_SIWX91X_NWP)
+  wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_OS
-    SL_SI91X_SI917_RAM_MEM_CONFIG=2
+    SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
     SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
   )
   zephyr_include_directories(
@@ -247,7 +267,6 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     SL_CODE_COMPONENT_POWER_MANAGER=power_manager
     SL_SI91X_TICKLESS_MODE
     SL_SLEEP_TIMER
-    SL_SI91X_SI917_RAM_MEM_CONFIG=2
     SL_CODE_COMPONENT_CORE=core
     SLI_WIRELESS_COMPONENT_PRESENT
   )

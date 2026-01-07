@@ -26,6 +26,22 @@ config HEAP_MEM_POOL_ADD_SIZE_NXP_WIFI
 config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 	default 50
 
+config NXP_MONOLITHIC_WIFI
+	bool "WiFi firmware monolithic build"
+	default y
+	depends on !NXP_WIFI_CUSTOM
+	help
+	   If enabled, the WiFi firmware used by the device will be linked with the
+	   application directly.
+
+config NXP_WIFI_CUSTOM_HOST
+	bool "Custom host platform for NXP Wi-Fi"
+	default y if BOARD_NATIVE_SIM
+	default y if !HAS_MCUX && !HAS_IMX_HAL && !HAS_NXP_S32_HAL
+	depends on !NXP_RW610
+	help
+	  Customize host platform eg. non NXP host platform for NXP Wi-Fi.
+
 config NXP_WIFI_CUSTOM
 	bool "Custom NXP Wi-Fi part"
 	help
@@ -830,8 +846,8 @@ config NXP_WIFI_CSI_AMI
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
-	imply NXP_WIFI_IND_DNLD if NXP_IW610
-	imply NXP_WIFI_IND_RESET if NXP_IW610
+	imply NXP_WIFI_IND_DNLD if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
+	imply NXP_WIFI_IND_RESET if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 

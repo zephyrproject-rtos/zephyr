@@ -174,7 +174,7 @@ int sock_obj_core_alloc_find(int sock, int new_sock, int type)
 		goto out;
 	}
 
-	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_DOMAIN, &family, &optlen);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_DOMAIN, &family, &optlen);
 	if (ret < 0) {
 		NET_ERR("Cannot get socket domain (%d)", -errno);
 		goto out;

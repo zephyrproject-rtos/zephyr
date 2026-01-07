@@ -25,6 +25,7 @@
 		lptim3: timers@40009000 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
+			resets = <&rctl STM32_RESET(APB1L, 26)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009000 0x400>;
@@ -59,6 +60,16 @@
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB1, 13)>,
 				 <&rcc STM32_SRC_CK48 NO_SEL>;
+			status = "disabled";
+		};
+
+		lpuart3: serial@40008c00 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
+			resets = <&rctl STM32_RESET(APB1L, 12)>;
+			interrupts = <30 0>;
+			interrupt-names = "combined";
 			status = "disabled";
 		};
 	};

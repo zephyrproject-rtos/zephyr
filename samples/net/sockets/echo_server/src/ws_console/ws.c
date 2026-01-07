@@ -54,7 +54,6 @@ struct http_resource_detail_static favicon_16x16_png_gz_resource_detail = {
 };
 
 #if defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE)
-#include <zephyr/net/tls_credentials.h>
 #include "../certificate.h"
 
 static const sec_tag_t sec_tag_list_verify_none[] = {

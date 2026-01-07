@@ -173,6 +173,44 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	}
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 
+#if defined(CONFIG_COMPARATOR_NXP_LPCMP)
+	switch ((uint32_t)sub_system) {
+	case MCUX_CMP0_CLK:
+		CLOCK_EnableClock(kCLOCK_Lpcmp0);
+		break;
+	case MCUX_CMP1_CLK:
+		CLOCK_EnableClock(kCLOCK_Lpcmp1);
+		break;
+	case MCUX_CMP2_CLK:
+		CLOCK_EnableClock(kCLOCK_Lpcmp2);
+		break;
+	default:
+		break;
+	}
+#endif /* CONFIG_COMPARATOR_NXP_HSCMP */
+
+#if defined(CONFIG_ADC_NXP_SAR_ADC)
+	switch ((uint32_t)sub_system) {
+	case MCUX_ADC0_CLK:
+		CLOCK_EnableClock(kCLOCK_Adc0);
+		break;
+	case MCUX_ADC1_CLK:
+		CLOCK_EnableClock(kCLOCK_Adc1);
+		break;
+	case MCUX_ADC2_CLK:
+		CLOCK_EnableClock(kCLOCK_Adc2);
+		break;
+	default:
+		break;
+	}
+#endif /* CONFIG_ADC_NXP_SAR_ADC */
+
+#if defined(CONFIG_NXP_TEMPSENSE)
+	if ((uint32_t)sub_system == MCUX_TEMPSENSE_CLK) {
+		CLOCK_EnableClock(kCLOCK_TempSensor);
+	}
+#endif /* CONFIG_NXP_TEMPSENSE */
+
 	return 0;
 }
 
@@ -262,7 +300,17 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		*rate = CLOCK_GetStmClkFreq(1);
 		break;
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
+
+#if defined(CONFIG_ADC_NXP_SAR_ADC)
+	case MCUX_ADC0_CLK:
+	case MCUX_ADC1_CLK:
+	case MCUX_ADC2_CLK:
+		*rate = CLOCK_GetCoreClkFreq();
+		break;
+
+#endif /* CONFIG_ADC_NXP_SAR_ADC */
 	}
+
 	return 0;
 }
 
@@ -331,6 +379,20 @@ static int mc_cgm_init(const struct device *dev)
 #endif /* FSL_FEATURE_SOC_STM_COUNT == 2U */
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 #endif
+#if defined(CONFIG_CAN_MCUX_FLEXCAN)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_2))
+		CLOCK_SetClkDiv(kCLOCK_DivFlexcan012PeClk, 1U);
+		CLOCK_AttachClk(kAIPS_PLAT_CLK_to_FLEXCAN012_PE);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_3)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_4)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_5))
+		CLOCK_SelectSafeClock(kFIRC_CLK_to_FLEXCAN345_PE);
+		CLOCK_SetClkDiv(kCLOCK_DivFlexcan345PeClk, 1U);
+#endif
+#endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClockUpdate();

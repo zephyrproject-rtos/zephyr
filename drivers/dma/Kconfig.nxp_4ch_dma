@@ -1,0 +1,7 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_NXP_4CH_DMA
+	bool "NXP 4 channel DMA driver"
+	default y
+	depends on DT_HAS_NXP_4CH_DMA_ENABLED
