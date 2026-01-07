@@ -12,7 +12,7 @@
 #include "subnet.h"
 
 /** Mesh Application Key. */
-struct app_key {
+struct bt_mesh_app_key {
 	/** NetKey Index the AppKey is bound to. */
 	uint16_t net_idx;
 	/** Application Key Index. */
@@ -29,7 +29,7 @@ struct app_key {
 
 /** Appkey callback. Instantiate with @ref BT_MESH_APP_KEY_CB_DEFINE */
 struct bt_mesh_app_key_cb {
-	void (*evt_handler)(struct app_key *app, enum bt_mesh_key_evt evt);
+	void (*evt_handler)(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt);
 };
 
 /**

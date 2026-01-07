@@ -1213,7 +1213,7 @@ int bt_mesh_cdb_app_key_export(const struct bt_mesh_cdb_app_key *key, int key_id
 }
 
 #if defined CONFIG_BT_MESH_CDB_KEY_SYNC
-static void app_key_evt(struct app_key *app, enum bt_mesh_key_evt evt)
+static void app_key_evt(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt)
 {
 	struct bt_mesh_cdb_app_key *app_cdb = NULL;
 	uint8_t tmp[16];
