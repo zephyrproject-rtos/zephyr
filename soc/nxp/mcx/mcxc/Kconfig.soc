@@ -3,6 +3,7 @@
 
 config SOC_FAMILY_MCXC
 	bool
+	select PINCTRL
 
 config SOC_FAMILY
 	default "mcxc" if SOC_FAMILY_MCXC
@@ -22,6 +23,9 @@ config SOC_MCXC242
 config SOC_MCXC444
 	bool
 	select SOC_FAMILY_MCXC
+
+config PINCTRL
+	bool
 
 config SOC
 	default "mcxc141" if SOC_MCXC141

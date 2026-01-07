@@ -6,6 +6,10 @@
 
 zephyr_sources(soc.c)
 
+# Only provide a SoC-specific mpu_config for CM7 builds (CM33 uses the generic
+# ARM MPU regions).
+zephyr_sources_ifdef(CONFIG_SOC_MIMXRT1189_CM7 mpu_regions.c)
+
 zephyr_include_directories(.)
 
 if(CONFIG_MEMC_MCUX_FLEXSPI)

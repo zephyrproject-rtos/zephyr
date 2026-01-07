@@ -4,6 +4,7 @@
 
 config SOC_SERIES_MCXW2XX
 	bool
+	select HAS_POWEROFF
 	select SOC_FAMILY_MCXW
 
 config SOC_SERIES
@@ -12,10 +13,20 @@ config SOC_SERIES
 config SOC_MCXW236
 	bool
 	select SOC_SERIES_MCXW2XX
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
 
 config SOC_MCXW235
 	bool
 	select SOC_SERIES_MCXW2XX
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
 
 config SOC
 	default "mcxw236" if SOC_MCXW236
@@ -24,5 +35,9 @@ config SOC
 config SOC_PART_NUMBER_MCXW236BIHNAR
 	bool
 
+config SOC_PART_NUMBER_MCXW235BIHNAR
+	bool
+
 config SOC_PART_NUMBER
 	default "MCXW236BIHNAR" if SOC_PART_NUMBER_MCXW236BIHNAR
+	default "MCXW235BIHNAR" if SOC_PART_NUMBER_MCXW235BIHNAR
