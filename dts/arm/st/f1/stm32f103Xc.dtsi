@@ -151,7 +151,6 @@
 			/* Shares vector with ADC1 */
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32F1_ADC_RES(12)>;
 			st,adc-resolutions = <12>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 			st,adc-sequencer = "programmable";
@@ -167,7 +166,6 @@
 			clock-names = "adcx";
 			interrupts = <47 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32F1_ADC_RES(12)>;
 			st,adc-resolutions = <12>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 			st,adc-sequencer = "programmable";

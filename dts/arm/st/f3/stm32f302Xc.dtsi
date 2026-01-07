@@ -5,7 +5,6 @@
  */
 
 #include <st/f3/stm32f302.dtsi>
-#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 
 / {
 	sram0: memory@20000000 {

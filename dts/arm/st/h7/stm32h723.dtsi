@@ -47,10 +47,6 @@
 		 * ADC, so we redefine the resolution for these devices.
 		 */
 		adc3: adc@58026000 {
-			resolutions = <STM32H72X_ADC3_RES(12, 0x00)
-				       STM32H72X_ADC3_RES(10, 0x01)
-				       STM32H72X_ADC3_RES(8, 0x02)
-				       STM32H72X_ADC3_RES(6, 0x03)>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-oversampler = "minimal";
