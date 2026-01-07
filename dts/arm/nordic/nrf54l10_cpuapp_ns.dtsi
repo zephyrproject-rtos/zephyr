@@ -4,5 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <vendor/nordic/nrf54l10_ns.dtsi>
+#include <vendor/nordic/nrf54l10_cpuapp_ns.dtsi>
 #include "nrf54l_05_10_15_cpuapp.dtsi"
