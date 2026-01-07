@@ -60,6 +60,13 @@ static void adxl313_thread_cb(const struct device *dev)
 		}
 	}
 
+	if (FIELD_GET(ADXL313_INT_INACT, status)) {
+		if (data->inact_handler) {
+			/* Optionally call external inactivity handler. */
+			data->inact_handler(dev, data->inact_trigger);
+		}
+	}
+
 	if (FIELD_GET(ADXL313_INT_DATA_RDY, status)) {
 		if (data->drdy_handler) {
 			/*
@@ -163,6 +170,7 @@ static void adxl313_work_cb(struct k_work *work)
  * (ISRs) for specific sensor events. Supported triggers include:
  *
  * - SENSOR_TRIG_MOTION: Activity detection
+ * - SENSOR_TRIG_STATIONARY: Inactivity detection
  * - SENSOR_TRIG_FIFO_WATERMARK: FIFO watermark reached
  * - SENSOR_TRIG_DATA_READY: New FIFO data available
  * - SENSOR_TRIG_FIFO_FULL: FIFO overrun
@@ -206,6 +214,11 @@ int adxl313_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		/* Register optional activity event handler. */
 		data->act_handler = handler;
 		data->act_trigger = trig;
+		break;
+	case SENSOR_TRIG_STATIONARY:
+		/* Register optional inactivity event handler */
+		data->inact_handler = handler;
+		data->inact_trigger = trig;
 		break;
 	case SENSOR_TRIG_DATA_READY:
 		data->drdy_handler = handler;

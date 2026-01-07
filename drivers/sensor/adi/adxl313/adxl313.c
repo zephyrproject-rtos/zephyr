@@ -416,12 +416,70 @@ static bool adxl313_act_en(const struct device *dev)
 	return true;
 }
 
+static bool adxl313_inact_en(const struct device *dev)
+{
+	uint8_t regval;
+
+	if (adxl313_reg_read_byte(dev, ADXL313_REG_THRESH_INACT, &regval)) {
+		return false;
+	}
+
+	if (!regval) {
+		return false;
+	}
+
+	if (adxl313_reg_read_byte(dev, ADXL313_REG_TIME_INACT, &regval)) {
+		return false;
+	}
+
+	if (!regval) {
+		return false;
+	}
+
+	return true;
+}
+
+static int adxl313_act_inact_linkbit(const struct device *dev)
+{
+	uint8_t regval;
+	bool en;
+	int ret;
+
+	/*
+	 * Check ACT_XYZ and INACT_XYZ. This implies that ACT_THRESHOLD,
+	 * INACT_THRESHOLD and INACT_TIME is not 0.
+	 */
+	ret = adxl313_reg_read_byte(dev, ADXL313_REG_ACT_INACT_CTL, &regval);
+	if (ret) {
+		return false;
+	}
+
+	en = FIELD_GET(ADXL313_ACT_INACT_CTL_ACT_XYZ, regval) &&
+	     FIELD_GET(ADXL313_ACT_INACT_CTL_INACT_XYZ, regval);
+
+	/*
+	 * Enable or disable auto-sleep and link-bit.
+	 * Note: This needs measurement turned off
+	 */
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_POWER_CTL, ADXL313_POWER_CTL_LINK, en);
+	if (ret) {
+		return ret;
+	}
+
+	return adxl313_reg_assign_bits(dev, ADXL313_REG_POWER_CTL, ADXL313_POWER_CTL_AUTO_SLEEP,
+				       en);
+}
+
 /**
  * Set the activity detection threshold.
  *
  * The activity threshold is specified in raw LSB counts and written directly
  * to an 8-bit register. No scaling is applied by this function; the effective
  * scale factor is 15.625 mg/LSB.
+ *
+ * When both valid Activity and Inactivity thresholds are configured, the two
+ * events are linked and automatic sleep mode (power save) is enabled. In this
+ * configuration, only state changes generate interrupts.
  *
  * @param dev Pointer to the device structure.
  * @param val Pointer to a sensor_value containing the activity threshold.
@@ -467,6 +525,147 @@ static int adxl313_attr_set_act_threshold(const struct device *dev, const struct
 		return ret;
 	}
 
+	/* Conditionally enable link-bit if ACT and INACT are set. */
+	ret = adxl313_act_inact_linkbit(dev);
+	if (ret) {
+		return ret;
+	}
+
+	if (is_measuring) { /* restore measuring if was enabled */
+		ret = adxl313_set_measure_en(dev, true);
+	}
+
+	return ret;
+}
+
+/**
+ * Set the inactivity detection threshold.
+ *
+ * The inactivity threshold is specified in raw LSB counts and written directly
+ * to an 8-bit register. No scaling is applied by this function; the effective
+ * scale factor is 15.625 mg/LSB.
+ *
+ * When both valid activity and inactivity thresholds are configured, the two
+ * events are linked and automatic sleep mode is enabled. In this configuration,
+ * only state changes generate interrupts.
+ *
+ * @param dev Pointer to the device structure.
+ * @param val Pointer to a sensor_value containing the inactivity threshold.
+ *            A value of 0 disables inactivity detection. Note that a valid
+ *            inactivity timeout must also be configured.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+static int adxl313_attr_set_inact_threshold(const struct device *dev,
+					    const struct sensor_value *val)
+{
+	uint8_t thr = val->val1;
+	bool is_measuring = adxl313_is_measure_en(dev);
+	bool en;
+	int ret;
+
+	/*
+	 * It is recommended that the part be placed into standby mode and then
+	 * set back to measurement mode with a subsequent write.
+	 * ref: ADXL314 datasheet
+	 */
+	ret = adxl313_set_measure_en(dev, false);
+	if (ret) {
+		return ret;
+	}
+
+	/* Set inactivity THRESH. */
+	ret = adxl313_reg_write_byte(dev, ADXL313_REG_THRESH_INACT, thr);
+	if (ret) {
+		return ret;
+	}
+
+	/* Enable axis if THRESH and TIME are valid. */
+	en = adxl313_inact_en(dev);
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_ACT_INACT_CTL,
+				      ADXL313_ACT_INACT_CTL_INACT_XYZ, en);
+	if (ret) {
+		return ret;
+	}
+
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_INT_ENABLE, ADXL313_INT_INACT, en);
+	if (ret) {
+		return ret;
+	}
+
+	/* Conditionally enable link-bit if ACT and INACT are set. */
+	ret = adxl313_act_inact_linkbit(dev);
+	if (ret) {
+		return ret;
+	}
+
+	if (is_measuring) { /* restore measuring if was enabled */
+		ret = adxl313_set_measure_en(dev, true);
+	}
+
+	return ret;
+}
+
+/**
+ * Set the inactivity detection timeout.
+ *
+ * The inactivity timeout is specified in raw LSB counts and written directly
+ * to the corresponding register. With a scale factor of 1 second per LSB, the
+ * timeout value is expressed in seconds.
+ *
+ * When both valid activity and inactivity parameters are configured, the two
+ * events are linked and automatic sleep mode is enabled. In this configuration,
+ * only state changes generate interrupts.
+ *
+ * @param dev Pointer to the device structure.
+ * @param val Pointer to a sensor_value containing the inactivity timeout.
+ *            A value of 0 disables inactivity detection. Note that a valid
+ *            inactivity threshold must also be configured.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+static int adxl313_attr_set_inact_timeout(const struct device *dev, const struct sensor_value *val)
+{
+	uint8_t tm = val->val1;
+	bool is_measuring = adxl313_is_measure_en(dev);
+	int ret;
+
+	/*
+	 * It is recommended that the part be placed into standby mode and then
+	 * set back to measurement mode with a subsequent write.
+	 * ref: ADXL314 datasheet
+	 */
+	ret = adxl313_set_measure_en(dev, false);
+	if (ret) {
+		return ret;
+	}
+
+	/* Set inact TIME. */
+	ret = adxl313_reg_write_byte(dev, ADXL313_REG_TIME_INACT, tm);
+	if (ret) {
+		return ret;
+	}
+
+	/* Enable axis if THRESH and TIME are valid. */
+	bool en = adxl313_inact_en(dev);
+
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_ACT_INACT_CTL,
+				      ADXL313_ACT_INACT_CTL_INACT_XYZ, en);
+	if (ret) {
+		return ret;
+	}
+
+	ret = adxl313_reg_assign_bits(dev, ADXL313_REG_INT_ENABLE, ADXL313_INT_INACT, en);
+	if (ret) {
+		return ret;
+	}
+
+	/* Conditionally enable link-bit if ACT and INACT are set. */
+	ret = adxl313_act_inact_linkbit(dev);
+	if (ret) {
+		return ret;
+	}
+
 	if (is_measuring) { /* restore measuring if was enabled */
 		ret = adxl313_set_measure_en(dev, true);
 	}
@@ -485,8 +684,16 @@ static int adxl313_attr_set_act_threshold(const struct device *dev, const struct
  *	the sensor.
  * - SENSOR_ATTR_UPPER_THRESH: Sets the activity threshold, enabling activity
  *	interrupts.
+ * - SENSOR_ATTR_LOWER_THRESH: Sets the inactivity threshold.
+ * - SENSOR_ATTR_HYSTERESIS: Sets the inactivity timeout. When both threshold
+ *	and timeout are configured, inactivity interrupts are enabled.
  * - SENSOR_ATTR_MAX: Sets the FIFO
  *	watermark level.
+ *
+ * When both activity and inactivity are enabled, the sensor links the two
+ * events and enables the internal power-save mini-state machine. If only one of
+ * them is enabled, interrupts will occur on each activity exceeding the
+ * threshold or on each inactivity timeout.
  *
  * @param dev Pointer to the device structure.
  * @param chan The sensor channel (currently unused, reserved for future expansion).
@@ -504,6 +711,10 @@ static int adxl313_attr_set(const struct device *dev, enum sensor_channel chan,
 		return adxl313_attr_set_odr(dev, val);
 	case SENSOR_ATTR_UPPER_THRESH: /* activity threshold */
 		return adxl313_attr_set_act_threshold(dev, val);
+	case SENSOR_ATTR_LOWER_THRESH: /* inactivity threshold */
+		return adxl313_attr_set_inact_threshold(dev, val);
+	case SENSOR_ATTR_HYSTERESIS: /* inactivity timeout */
+		return adxl313_attr_set_inact_timeout(dev, val);
 	case SENSOR_ATTR_MAX: /* FIFO watermark */
 		return adxl313_attr_set_watermark(dev, val);
 	default:
@@ -764,6 +975,16 @@ static int adxl313_init(const struct device *dev)
 	}
 
 	rc = adxl313_reg_write_byte(dev, ADXL313_REG_THRESH_ACT, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl313_reg_write_byte(dev, ADXL313_REG_THRESH_INACT, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl313_reg_write_byte(dev, ADXL313_REG_TIME_INACT, 0x00);
 	if (rc) {
 		return rc;
 	}
