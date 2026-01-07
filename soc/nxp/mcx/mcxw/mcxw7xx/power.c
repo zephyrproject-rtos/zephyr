@@ -8,22 +8,14 @@
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
 #include <fsl_vbat.h>
-#include <fsl_wuu.h>
 
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-#define WUU_WAKEUP_LPTMR_IDX 0
-#define MCXW7_WUU_ADDR (WUU_Type *)DT_REG_ADDR(DT_INST(0, nxp_wuu))
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 #define MCXW7_VBAT_ADDR (VBAT_Type *)DT_REG_ADDR(DT_INST(0, nxp_vbat))
 #define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
-
-void mcxw7xx_set_wakeup(int32_t sig)
-{
-	WUU_SetInternalWakeUpModulesConfig(MCXW7_WUU_ADDR, sig, kWUU_InternalModuleInterrupt);
-}
 
 /*
  * 1. Set power mode protection
@@ -200,6 +192,4 @@ __weak void set_spc_configuration(void)
 void nxp_mcxw7x_power_init(void)
 {
 	set_spc_configuration();
-	/* Enable LPTMR0 as wakeup source */
-	NXP_ENABLE_WAKEUP_SIGNAL(WUU_WAKEUP_LPTMR_IDX);
 }
