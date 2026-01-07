@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_VIRT_RISCV32_AIA
+	depends on SOC_FAMILY_QEMU_VIRT_RISCV
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_AIA
+	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_SMCSRIND
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select CPU_HAS_FPU
+	imply XIP

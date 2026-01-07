@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Synopsys, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/dts-v1/;
+
+#include <qemu/virt-riscv32.dtsi>
+
+/ {
+	model = "QEMU RISC-V virt (AIA SMP)";
+	compatible = "qemu,virt-riscv32-aia-smp";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+	};
+};
+
+&uart0 {
+	/* Wire UART to APLIC parent */
+	interrupt-parent = <&aplic>;
+	interrupts = <10 1 6>; /* source 10, priority 1, flags 6 (level high) */
+	status = "okay";
+};
+
+&{/soc} {
+	/* Define an explicit APLIC M-domain node at 0x0C000000 */
+	aplic: interrupt-controller@c000000 {
+		compatible = "riscv,aplic-msi";
+		reg = <0x0c000000 0x00008000>;
+		riscv,num-sources = <64>;
+		msi-parent = <&imsic0>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		status = "okay";
+	};
+
+	/* IMSIC for hart 0 */
+	imsic0: interrupt-controller@24000000 {
+		compatible = "riscv,imsic";
+		reg = <0x24000000 0x1000>;
+		riscv,num-ids = <256>;
+		riscv,hart-id = <0>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		status = "okay";
+	};
+
+	/* IMSIC for hart 1 */
+	imsic1: interrupt-controller@24001000 {
+		compatible = "riscv,imsic";
+		reg = <0x24001000 0x1000>;
+		riscv,num-ids = <256>;
+		riscv,hart-id = <1>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		status = "okay";
+	};
+};

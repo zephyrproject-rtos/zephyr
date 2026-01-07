@@ -6,7 +6,7 @@ common:
     - introduction
     - cpp
   integration_platforms:
-    - qemu_riscv32
+    - qemu_riscv32/qemu_virt_riscv32
   harness: console
   harness_config:
     type: one_line
