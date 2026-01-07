@@ -452,6 +452,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			/* Errata ES0418: For sampling time set to 1.5 or 3.5
 			 * cycles, the sampling in a single ADC conversion or in
 			 * the first conversion of a sequence takes one extra

@@ -380,6 +380,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 15 28 58 84 112 144 480>;
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "programmable";
@@ -399,6 +400,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 15 28 58 84 112 144 480>;
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "programmable";
@@ -418,6 +420,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 15 28 58 84 112 144 480>;
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "programmable";

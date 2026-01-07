@@ -331,6 +331,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <1>;
 			st,adc-sequencer = "fixed";

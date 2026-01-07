@@ -444,6 +444,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 3 7 12 14 47 247 1500>;
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "extended";
@@ -464,6 +465,7 @@
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 3 7 12 14 47 247 1500>;
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "extended";
