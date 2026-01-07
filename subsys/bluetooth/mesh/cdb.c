@@ -15,7 +15,6 @@
 #include "common/bt_str.h"
 
 #include "cdb.h"
-#include "mesh.h"
 #include "net.h"
 #include "app_keys.h"
 #include "rpl.h"
