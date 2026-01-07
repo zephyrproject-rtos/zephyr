@@ -22,4 +22,11 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+if PM
+
+configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+	default y
+
+endif # PM
+
 endif # SOC_FAMILY_MCXA

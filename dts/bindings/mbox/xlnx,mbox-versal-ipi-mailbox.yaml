@@ -1,0 +1,95 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AMD-Xilinx IPI (Inter Processor Interrupt) Mailbox Controller.
+
+  It manages messaging and interrupt handling between two IPI agents (processors).
+  Each IPI agent owns registers used for notification and may include buffers for message.
+
+  Example definition:
+
+    mailbox@ff300000 {
+      compatible = "xlnx,versal-ipi-mailbox";
+      interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>;
+      reg = <0x0 0xff300000 0x0 0x1000>,
+            <0x0 0xff990000 0x0 0x1ff>;
+      reg-names = "ctrl", "msg";
+      xlnx,ipi-id = <0>;
+      #address-cells = <2>;
+      #size-cells = <2>;
+
+      /* buffered IPI */
+      child_1: mailbox@ff340000 {
+        compatible = "xlnx,versal-ipi-dest-mailbox";
+        reg = <0x0 0xff340000 0x0 0x1000>,
+              <0x0 0xff990400 0x0 0x1ff>;
+        reg-names = "ctrl", "msg";
+        xlnx,ipi-id = <4>;
+        #mbox-cells = <1>;
+      };
+
+      /* bufferless IPI */
+      child_2: mailbox@ff370000 {
+        compatible = "xlnx,versal-ipi-dest-mailbox";
+        reg = <0x0 0xff370000 0x0 0x1000>;
+        reg-names = "ctrl";
+        xlnx,ipi-id = <7>;
+        #mbox-cells = <1>;
+      };
+    };
+
+  Example usage:
+    mbox-consumer {
+      compatible = "vnd,mbox-consumer";
+      mboxes = <&child_1 0>, <&child_1 1>;
+      mbox-names = "tx", "rx";
+    };
+
+compatible: "xlnx,mbox-versal-ipi-mailbox"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Host IPI agent control and message register space
+
+  reg-names:
+    required: true
+    description: Identifiers for register spaces with "ctrl" for control and "msg" for message
+
+  interrupts:
+    required: true
+
+  xlnx,ipi-id:
+    type: int
+    required: true
+    description: Host IPI Agent ID associated with the mailbox
+
+child-binding:
+  description: AMD-Xilinx IPI agent child node
+
+  compatible: "xlnx,mbox-versal-ipi-dest-mailbox"
+
+  include:
+    - name: base.yaml
+    - name: mailbox-controller.yaml
+
+  properties:
+    reg:
+      required: true
+      description: Remote IPI agent control and message register space
+
+    reg-names:
+      required: true
+      description: Identifiers for register spaces with "ctrl" for control and "msg" for message
+
+    xlnx,ipi-id:
+      required: true
+      type: int
+      description: Remote IPI Agent ID associated with the mailbox
+
+  mbox-cells:
+    - channel

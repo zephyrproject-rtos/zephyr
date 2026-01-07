@@ -152,11 +152,11 @@ static int pa_sync_past(struct bt_conn *conn,
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
 
+	printk("Subscribing to PAST from %p\n", conn);
 	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
 	if (err != 0) {
 		printk("Could not do PAST subscribe: %d\n", err);
 	} else {
-		printk("Syncing with PAST: %d\n", err);
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
 		(void)k_work_reschedule(&state->pa_timer,
@@ -237,14 +237,14 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 
 	state = sync_state_get_by_src_id(recv_state->src_id);
 	if (state == NULL) {
-		FAIL("Could not get state");
+		FAIL("Could not get state\n");
 		return;
 	}
 
 	if (state->recv_state != NULL) {
 		if (state->recv_state != recv_state) {
-			FAIL("Sync state receive state mismatch: %p - %p",
-			     state->recv_state, recv_state);
+			FAIL("Sync state receive state mismatch: %p - %p\n", state->recv_state,
+			     recv_state);
 			return;
 		}
 	} else {
@@ -269,12 +269,12 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	int err;
 
 	reset_cp_flags();
-	printk("PA Sync request: past_avail %u, pa_interval 0x%04x\n: %p",
-	       past_avail, pa_interval, recv_state);
+	printk("PA Sync request: past_avail %u, pa_interval 0x%04x: %p\n", past_avail, pa_interval,
+	       recv_state);
 
 	state = sync_state_get_or_new(recv_state);
 	if (state == NULL) {
-		FAIL("Could not get state");
+		FAIL("Could not get state\n");
 		return -1;
 	}
 
@@ -517,7 +517,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 
 	state = sync_state_get_or_new(NULL);
 	if (state == NULL) {
-		FAIL("Failed to get sync state");
+		FAIL("Failed to get sync state\n");
 		return true;
 	}
 
@@ -932,7 +932,7 @@ static void test_main_server_sync_server_rem(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
-		FAIL("Could not start scan (%d)", err);
+		FAIL("Could not start scan (%d)\n", err);
 		return;
 	}
 

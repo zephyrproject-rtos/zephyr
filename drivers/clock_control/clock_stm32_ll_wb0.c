@@ -263,6 +263,11 @@ static int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
 	sys_clear_bits(reg, STM32_DT_CLKSEL_MASK_GET(pclken->enr) << shift);
 	sys_set_bits(reg, STM32_DT_CLKSEL_VAL_GET(pclken->enr) << shift);
 

@@ -605,7 +605,7 @@ struct bmi08x_accel_frame {
 	union {
 		struct {
 			uint16_t payload[3];
-		} accel;
+		} __packed accel;
 		struct {
 			uint8_t skipped_frames;
 		} skip;

@@ -45,7 +45,6 @@
 #define ADXL345_RATE_REG                0x2c
 #define ADXL345_POWER_CTL_REG           0x2d
 #define ADXL345_DATA_FORMAT_REG         0x31
-#define ADXL345_DATA_FORMAT_FULL_RES    0x08
 #define ADXL345_X_AXIS_DATA_0_REG       0x32
 #define ADXL345_FIFO_CTL_REG            0x38
 #define ADXL345_FIFO_STATUS_REG         0x39
@@ -70,6 +69,8 @@
 #define ADXL345_INT_SOURCE 0x30u
 
 #define ADXL345_THRESH_ACT_REG 0x24
+#define ADXL345_THRESH_INACT_REG 0x25
+#define ADXL345_TIME_INACT_REG 0x26
 #define ADXL345_ACT_INACT_CTL_REG 0x27
 
 #define ADXL345_ACT_AC_DC         BIT(7)
@@ -120,6 +121,13 @@
 #define ADXL345_FIFO_CTL_TRIGGER_MODE(x) (((x) & 0x1) << 5)
 #define ADXL345_FIFO_CTL_SAMPLES_MSK     BIT(0)
 #define ADXL345_FIFO_CTL_SAMPLES_MODE(x) ((x) & 0x1F)
+
+/* ADXL345_DATA_FORMAT */
+#define ADXL345_DATA_FORMAT_RANGE_MSK GENMASK(1, 0)
+#define ADXL345_DATA_FORMAT_JUSTIFY   BIT(2)
+#define ADXL345_DATA_FORMAT_FULL_RES  BIT(3)
+#define ADXL345_DATA_FORMAT_SPI_3WIRE BIT(6)
+#define ADXL345_DATA_FORMAT_SELF_TEST BIT(7)
 
 #define ADXL345_ODR_MSK     GENMASK(3, 0)
 #define ADXL345_ODR_MODE(x) ((x) & 0xF)
@@ -243,6 +251,7 @@ struct adxl345_dev_config {
 	const union adxl345_bus bus;
 	adxl345_bus_is_ready_fn bus_is_ready;
 	adxl345_reg_access_fn reg_access;
+	uint8_t range;
 	enum adxl345_odr odr;
 	bool op_mode;
 	struct adxl345_fifo_config fifo_config;

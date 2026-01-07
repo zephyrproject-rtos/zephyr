@@ -157,6 +157,9 @@ config HAS_HW_NRF_RESET
 config HAS_HW_NRF_RNG
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_RNG))
 
+config HAS_HW_NRF_RRAMC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_RRAM_CONTROLLER))
+
 config HAS_HW_NRF_RTC0
 	def_bool $(dt_nodelabel_enabled_with_compat,rtc0,$(DT_COMPAT_NORDIC_NRF_RTC))
 

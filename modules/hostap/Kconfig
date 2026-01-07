@@ -481,6 +481,21 @@ config WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
 
 endif # WIFI_NM_WPA_SUPPLICANT_BGSCAN
 
+config WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL
+	int "WPA supplicant cleanup interval (seconds)"
+	default 10
+	help
+	  WPA supplicant cleanup interval. Increase this interval to avoid constant wakeup
+	  and save power when device in low power mode.
+
+config WIFI_NM_HOSTAPD_CLEANUP_INTERVAL
+	int "Hostapd cleanup interval (seconds)"
+	default 10
+	depends on WIFI_NM_HOSTAPD_AP
+	help
+	  Hostapd cleanup interval. Increase this interval to avoid constant wakeup
+	  and save power when device in low power mode.
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.

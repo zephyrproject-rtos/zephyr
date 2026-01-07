@@ -169,7 +169,7 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 		}
 
 #ifdef CONFIG_PM
-		rslt = Cy_SysPm_RegisterCallback(&_ifx_cat1_rtc_pm_cb)
+		rslt = Cy_SysPm_RegisterCallback(&_ifx_cat1_rtc_pm_cb);
 #endif /* CONFIG_PM */
 
 		if (rslt == CY_RSLT_SUCCESS) {

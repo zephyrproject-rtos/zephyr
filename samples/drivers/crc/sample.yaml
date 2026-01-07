@@ -6,8 +6,10 @@ tests:
     tags:
       - drivers
       - crc
+    integration_platforms:
+      - ek_ra8m1
     harness: console
     harness_config:
       type: one_line
       regex:
-        - "CRC verification succeeded"
+        - "verification succeeded"

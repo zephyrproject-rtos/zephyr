@@ -29,7 +29,7 @@ description: |
       };
 
 
-compatible: renesas,rzv-pinctrl
+compatible: "renesas,rzv-pinctrl"
 
 include: base.yaml
 properties:

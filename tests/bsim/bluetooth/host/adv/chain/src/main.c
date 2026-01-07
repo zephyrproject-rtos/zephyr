@@ -17,15 +17,22 @@
 #include "babblekit/testcase.h"
 
 #define NAME_LEN 30
-#define BT_AD_DATA_NAME_SIZE     (sizeof(CONFIG_BT_DEVICE_NAME) - 1U + 2U)
-#define BT_AD_DATA_MFG_DATA_SIZE (254U + 2U)
+#define AD_DATA_NAME_SIZE     (sizeof(CONFIG_BT_DEVICE_NAME) - 1U + 2U)
+#define AD_DATA_MFG_DATA_SIZE (254U + 2U)
 /*
  * for testing chaining the manufacturing data is duplicated, hence DATA_LEN needs to
  * add twice the size for this element
  */
-#define DATA_LEN                 MIN((BT_AD_DATA_NAME_SIZE + \
-				      BT_AD_DATA_MFG_DATA_SIZE + BT_AD_DATA_MFG_DATA_SIZE), \
+#define DATA_LEN                 MIN((AD_DATA_NAME_SIZE + \
+				      AD_DATA_MFG_DATA_SIZE + AD_DATA_MFG_DATA_SIZE), \
 				     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX)
+
+BUILD_ASSERT(CONFIG_BT_EXT_ADV_MAX_ADV_SET >= 2, "Need minimum 2 advertising sets.");
+
+/* One less extended advertising set as first one is legacy advertising in the broadcaster_multiple
+ * sample.
+ */
+#define MAX_EXT_ADV_SET (CONFIG_BT_EXT_ADV_MAX_ADV_SET - 1)
 
 static K_SEM_DEFINE(sem_recv, 0, 1);
 
@@ -76,7 +83,7 @@ static bool data_cb(struct bt_data *data, void *user_data)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	static uint8_t sid[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+	static uint8_t sid[MAX_EXT_ADV_SET];
 	static uint8_t sid_count;
 	char name[NAME_LEN];
 	uint8_t data_status;
@@ -84,12 +91,13 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info->adv_props);
 	if (data_status) {
+		printk("Received data status: %u\n", data_status);
 		return;
 	}
 
 	data_len = buf->len;
 	if (data_len != DATA_LEN) {
-		printk("Received datalength: %d\n", data_len);
+		printk("Received data length: %u\n", data_len);
 		return;
 	}
 
@@ -110,8 +118,9 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	sid[sid_count++] = info->sid;
 
-	if (sid_count < CONFIG_BT_EXT_ADV_MAX_ADV_SET) {
-		printk("Received advertising sets: %d\n", sid_count);
+	printk("Received advertising sets: %d\n", sid_count);
+
+	if (sid_count < MAX_EXT_ADV_SET) {
 		return;
 	}
 

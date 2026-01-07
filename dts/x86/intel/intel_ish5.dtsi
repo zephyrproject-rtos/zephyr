@@ -77,7 +77,6 @@
 	soc: soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		#interrupt-cells = <3>;
 		compatible = "simple-bus";
 		interrupt-parent = <&intc>;
 		interrupts = <6 IRQ_TYPE_FIXED_LEVEL_HIGH 1

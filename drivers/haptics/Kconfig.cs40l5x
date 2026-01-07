@@ -1,0 +1,87 @@
+# Copyright 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HAPTICS_CS40L5X
+	bool "CS40L5x Haptics Driver"
+	default y
+	depends on DT_HAS_CIRRUS_CS40L5X_ENABLED
+	help
+	  Enable CS40L5x haptics driver.
+
+if HAPTICS_CS40L5X
+
+config HAPTICS_CS40L5X_I2C
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L5X),i2c)
+	select I2C
+
+config HAPTICS_CS40L5X_SPI
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L5X),spi)
+	select SPI
+
+config HAPTICS_CS40L5X_CALIBRATION
+	bool "Calibration"
+	default y
+	help
+	  Allow the device to run its calibration routine and optionally
+	  write calibration data to flash memory if flash storage is provided.
+
+config HAPTICS_CS40L5X_CLICK_COMPENSATION
+	bool "Click Compensation"
+	default y
+	help
+	  Enable click compensation for haptic effects.
+
+config HAPTICS_CS40L5X_CUSTOM_EFFECTS
+	bool "Custom Haptics Sources (PCM/PWLE)"
+	default y
+	help
+	  Enable upload and playback of custom PCM and PWLE waveforms.
+
+config HAPTICS_CS40L5X_DYNAMIC_F0
+	bool "Dynamic F0"
+	default y
+	help
+	  Enable dynamic F0 compensation for haptic effects.
+
+config HAPTICS_CS40L5X_DSP_LOGGER
+	bool "DSP Logging"
+	default y
+	help
+	  Enable runtime configuration of the DSP logger, which can
+	  report back EMF, voltage, and voltage boost information.
+
+config HAPTICS_CS40L5X_METADATA_CACHE_LEN
+	int "Metadata Storage Length"
+	default 4
+	range 1 10
+	help
+	  Used to log details of GPIO- or mailbox-triggered haptics effects.
+	  If the number of active or queued effects exceeds the number
+	  provided by this option, then generic messages will be logged for
+	  playbacks. This option directly corresponds to the length of the
+	  ring buffer used to store metadata for haptics effects.
+
+config HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS
+	int "Active Timeout"
+	default 100
+	range 0 10000
+	help
+	  After the device has finished playing an effect, wait the
+	  specified amount of time (in ms) before entering the standby state.
+
+config HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS
+	int "Standby Timeout"
+	default 100
+	range 0 10000
+	help
+	  When the device enters the standby state with hibernation enabled,
+	  wait the specified amount of time (in ms) before entering hibernation.
+
+config HAPTICS_CS40L5X_TRIGGER_INTERRUPTS
+	bool "Trigger Interrupts"
+	default y
+	help
+	  Enable interrupt processing for edge-triggered events. Required
+	  for detailed logging of trigger events.
+
+endif #HAPTICS_CS40L5X

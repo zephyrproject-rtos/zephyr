@@ -142,7 +142,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	 * Trap gPTP frames to cpu port to perform gPTP protocol.
 	 */
 	netc_tb_ipf_config_t ipf_entry_cfg = {
-		.keye.etherType = htons(NET_ETH_PTYPE_PTP),
+		.keye.etherType = net_htons(NET_ETH_PTYPE_PTP),
 		.keye.etherTypeMask = 0xffff,
 		.keye.srcPort = 0,
 		.keye.srcPortMask = 0x0,

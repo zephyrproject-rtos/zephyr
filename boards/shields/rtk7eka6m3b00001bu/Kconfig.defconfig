@@ -36,4 +36,6 @@ endchoice
 
 endif # LVGL
 
+orsource "boards/*.defconfig"
+
 endif # SHIELD_RTK7EKA6M3B00001BU

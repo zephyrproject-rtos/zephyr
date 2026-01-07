@@ -94,7 +94,7 @@
 		#clock-cells = <1>;
 
 		reset: reset {
-			compatible = "nxp,lpc-syscon-reset";
+			compatible = "nxp,mrcc-reset";
 			#reset-cells = <1>;
 		};
 	};
@@ -488,6 +488,7 @@
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
 		status = "disabled";
 	};
 
@@ -498,6 +499,7 @@
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		clk-source = <0>;
+		number-of-mb = <32>;
 		status = "disabled";
 	};
 
@@ -506,7 +508,7 @@
 		reg = <0xab000 0x1000>;
 		interrupts = <55 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
 	};

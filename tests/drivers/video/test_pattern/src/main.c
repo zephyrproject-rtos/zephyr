@@ -206,7 +206,7 @@ static void *test_pattern_setup(void)
 	/* Alloc video buffers and enqueue for capture */
 	zassert(caps.min_vbuf_count <= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX,
 		"not enough buffers");
-	zassert(fmt.size <= CONFIG_VIDEO_BUFFER_POOL_SZ_MAX,
+	zassert(fmt.size <= (CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE / CONFIG_VIDEO_BUFFER_POOL_NUM_MAX),
 		"buffers too large");
 
 	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {

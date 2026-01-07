@@ -42,6 +42,7 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxc242
       - ucans32k1sic
+      - siwx917_rb4342a
       - slwrb4180a
       - xg27_rb4194a
       - xg29_rb4412a

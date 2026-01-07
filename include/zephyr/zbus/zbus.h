@@ -141,7 +141,7 @@ struct zbus_observer_data {
  * Every observer has an representation structure containing the relevant information.
  * An observer is a code portion interested in some channel. The observer can be notified
  * synchronously or asynchronously and it is called listener and subscriber respectively.
- * The observer can be enabled or disabled during runtime by change the enabled boolean
+ * The observer can be enabled or disabled during runtime by changing the enabled boolean
  * field of the structure. The listeners have a callback function that is executed by the
  * bus with the index of the changed channel as argument when the notification is sent.
  * The subscribers have a message queue where the bus enqueues the index of the changed
@@ -349,14 +349,14 @@ struct zbus_channel_observation {
 
 /**
  * @def ZBUS_OBS_DECLARE
- * This macro list the observers to be used in a file. Internally, it declares the observers with
+ * This macro lists the observers to be used in a file. Internally, it declares the observers with
  * the extern statement. Note it is only necessary when the observers are declared outside the file.
  */
 #define ZBUS_OBS_DECLARE(...) FOR_EACH_NONEMPTY_TERM(_ZBUS_OBS_EXTERN, (;), __VA_ARGS__)
 
 /**
  * @def ZBUS_CHAN_DECLARE
- * This macro list the channels to be used in a file. Internally, it declares the channels with the
+ * This macro lists the channels to be used in a file. Internally, it declares the channels with the
  * extern statement. Note it is only necessary when the channels are declared outside the file.
  */
 #define ZBUS_CHAN_DECLARE(...) FOR_EACH(_ZBUS_CHAN_EXTERN, (;), __VA_ARGS__)
@@ -389,11 +389,11 @@ struct zbus_channel_observation {
  * @param _type The Message type. It must be a struct or union.
  * @param _validator The validator function.
  * @param _user_data A pointer to the user data.
+ * @param _observers The observers list. The order defines observer priority, with the first
+ * observer having the highest priority.
+ * @param _init_val The message initialization.
  *
  * @see struct zbus_channel
- * @param _observers The observers list. The sequence indicates the priority of the observer. The
- * first the highest priority.
- * @param _init_val The message initialization.
  */
 #define ZBUS_CHAN_DEFINE(_name, _type, _validator, _user_data, _observers, _init_val)              \
 	static _type _ZBUS_MESSAGE_NAME(_name) = _init_val;                                        \
@@ -413,11 +413,11 @@ struct zbus_channel_observation {
  * @param _type The Message type. It must be a struct or union.
  * @param _validator The validator function.
  * @param _user_data A pointer to the user data.
+ * @param _observers The observers list. The order defines observer priority, with the first
+ * observer having the highest priority.
+ * @param _init_val The message initialization.
  *
  * @see struct zbus_channel
- * @param _observers The observers list. The sequence indicates the priority of the observer. The
- * first the highest priority.
- * @param _init_val The message initialization.
  */
 #define ZBUS_CHAN_DEFINE_WITH_ID(_name, _id, _type, _validator, _user_data, _observers, _init_val) \
 	static _type _ZBUS_MESSAGE_NAME(_name) = _init_val;                                        \
@@ -766,7 +766,7 @@ int zbus_chan_finish(const struct zbus_channel *chan);
  * @retval 0 Channel notified.
  * @retval -EBUSY The channel's semaphore returned without waiting.
  * @retval -EAGAIN Timeout to take the channel's semaphore.
- * @retval -ENOMEM There is not more buffer on the messgage buffers pool.
+ * @retval -ENOMEM There is not more buffer on the message buffers pool.
  * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
  * observer, or the function context is invalid (inside an ISR). The function only returns this
  * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.

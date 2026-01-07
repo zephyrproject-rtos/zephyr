@@ -57,6 +57,9 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	FOR_EACH_IDX(MMU_REGION_MCAN_DEFN, (), 0, 1, 2, 3, 4, 5)
 
+	MMU_REGION_FLAT_ENTRY("otpc", OTPC_BASE_ADDRESS, 0x1000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
 	MMU_REGION_FLAT_ENTRY("pioa", PIO_BASE_ADDRESS, 0x4000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 

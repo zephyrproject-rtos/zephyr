@@ -464,7 +464,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
 	int ret = BMP5_OK;
 
-	CHECKIF(iir == NULL || dev == NULL) {
+	CHECKIF(iir == NULL) {
 		return -EINVAL;
 	}
 

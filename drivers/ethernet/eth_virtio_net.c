@@ -188,10 +188,6 @@ static void virtnet_if_init(struct net_if *iface)
 	struct virtnet_data *data = dev->data;
 	const struct virtnet_config *config = dev->config;
 
-	if (dev == NULL) {
-		LOG_ERR("could not access device structure!");
-		return;
-	}
 	data->iface = iface;
 	net_if_set_link_addr(iface, data->mac, sizeof(data->virtio_devcfg->mac), NET_LINK_ETHERNET);
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));

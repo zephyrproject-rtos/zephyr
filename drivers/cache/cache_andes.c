@@ -85,7 +85,7 @@ static ALWAYS_INLINE int nds_cctl_range_operations(void *addr, size_t size, int 
 	align_addr = ROUND_DOWN(addr, line_size);
 
 	/*
-	 * In memory access privilige U mode, applications should use ucctl CSRs
+	 * In memory access privilege U mode, applications should use ucctl CSRs
 	 * for VA type commands.
 	 */
 	if ((status & MSTATUS_MPRV) && !(status & MSTATUS_MPP)) {
@@ -112,7 +112,7 @@ static ALWAYS_INLINE int nds_l1i_cache_all(int op)
 
 	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_VCCTL_2) {
 		/*
-		 * In memory access privilige U mode, applications can only use
+		 * In memory access privilege U mode, applications can only use
 		 * VA type commands for specific range.
 		 */
 		if ((status & MSTATUS_MPRV) && !(status & MSTATUS_MPP)) {
@@ -140,7 +140,7 @@ static ALWAYS_INLINE int nds_l1d_cache_all(int op)
 
 	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_VCCTL_2) {
 		/*
-		 * In memory access privilige U mode, applications can only use
+		 * In memory access privilege U mode, applications can only use
 		 * VA type commands for specific range.
 		 */
 		if ((status & MSTATUS_MPRV) && !(status & MSTATUS_MPP)) {

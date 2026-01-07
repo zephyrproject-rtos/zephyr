@@ -89,3 +89,11 @@
 &gpt_hw_timer1 {
 	status = "okay";
 };
+
+&edma2 {
+	status = "okay";
+};
+
+&edma4 {
+	status = "okay";
+};

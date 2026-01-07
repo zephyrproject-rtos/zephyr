@@ -27,11 +27,13 @@ LOG_MODULE_REGISTER(adc_sf32lb, CONFIG_ADC_LOG_LEVEL);
 
 #define SYS_CFG_ANAU_CR offsetof(HPSYS_CFG_TypeDef, ANAU_CR)
 
-#define ADC_MAX_CH (8U)
+#define ADC_MAX_CH       (8U)
 #define ADC_RDATAX(n)    (ADC_RDATA + (((n) >> 1) * 4U))
 #define ADC_SLOT_REGX(n) (ADC_SLOT_REG + (n) * 4U)
 
 #define ADC_SF32LB_DEFAULT_VREF_INTERNAL 3300
+
+#define SF32LB_ADC_WAIT_TIME_US 200
 
 struct adc_sf32lb_data {
 	struct adc_context ctx;
@@ -55,6 +57,7 @@ static void adc_sf32lb_isr(const struct device *dev)
 	struct adc_sf32lb_data *data = dev->data;
 	uint16_t channel;
 	uint32_t adc_data;
+	uint32_t channels;
 
 	if (!sys_test_bit(config->base + GPADC_IRQ, GPADC_GPADC_IRQ_GPADC_IRSR_Pos)) {
 		return;
@@ -62,8 +65,9 @@ static void adc_sf32lb_isr(const struct device *dev)
 
 	sys_set_bit(config->base + GPADC_IRQ, GPADC_GPADC_IRQ_GPADC_ICR_Pos);
 
-	while (data->channels) {
-		channel = find_lsb_set(data->channels) - 1;
+	channels = data->channels;
+	while (channels) {
+		channel = find_lsb_set(channels) - 1;
 		adc_data = sys_read32(config->base + ADC_RDATAX(channel));
 
 		if (channel & 1) {
@@ -72,7 +76,7 @@ static void adc_sf32lb_isr(const struct device *dev)
 			*data->buffer++ = FIELD_GET(GPADC_ADC_RDATA0_SLOT0_RDATA, adc_data);
 		}
 
-		data->channels &= ~BIT(channel);
+		channels &= ~BIT(channel);
 	}
 
 	adc_context_on_sampling_done(&data->ctx, dev);
@@ -107,6 +111,9 @@ static int adc_sf32lb_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	adc_slot &= ~(GPADC_ADC_SLOT0_REG_NCHNL_SEL | GPADC_ADC_SLOT0_REG_PCHNL_SEL |
+		      GPADC_ADC_SLOT0_REG_ACC_NUM | GPADC_ADC_SLOT0_REG_SLOT_EN);
+
 	if (channel_cfg->differential) {
 		adc_slot |= FIELD_PREP(GPADC_ADC_SLOT0_REG_PCHNL_SEL, channel_id);
 		adc_slot |= FIELD_PREP(GPADC_ADC_SLOT0_REG_NCHNL_SEL, channel_id);
@@ -122,16 +129,14 @@ static int adc_sf32lb_channel_setup(const struct device *dev,
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct adc_sf32lb_data *data =
-		CONTAINER_OF(ctx, struct adc_sf32lb_data, ctx);
+	struct adc_sf32lb_data *data = CONTAINER_OF(ctx, struct adc_sf32lb_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence,
-			     uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -141,8 +146,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 	return 0;
@@ -213,8 +218,8 @@ static int adc_sf32lb_read(const struct device *dev, const struct adc_sequence *
 	return error;
 }
 
-static int adc_sf32lb_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
+#ifdef CONFIG_ADC_ASYNC
+static int adc_sf32lb_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
 	struct adc_sf32lb_data *data = dev->data;
@@ -241,6 +246,7 @@ static int adc_sf32lb_read_async(const struct device *dev,
 
 	return error;
 }
+#endif /* CONFIG_ADC_ASYNC */
 
 static DEVICE_API(adc, adc_sf32lb_driver_api) = {
 	.channel_setup = adc_sf32lb_channel_setup,
@@ -256,6 +262,7 @@ static int adc_sf32lb_init(const struct device *dev)
 	const struct adc_sf32lb_config *config = dev->config;
 	struct adc_sf32lb_data *data = dev->data;
 	int ret;
+	uint32_t value;
 
 	if (!sf32lb_clock_is_ready_dt(&config->clock)) {
 		return -ENODEV;
@@ -270,17 +277,25 @@ static int adc_sf32lb_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	/* enable bandgap*/
+	/* enable bandgap */
 	sys_set_bit(config->cfg_base + SYS_CFG_ANAU_CR, HPSYS_CFG_ANAU_CR_EN_BG_Pos);
 
-	sys_clear_bits(config->base + ADC_CTRL_REG, GPADC_ADC_CTRL_REG_TIMER_TRIG_EN |
-		GPADC_ADC_CTRL_REG_DMA_EN);
-	sys_set_bits(config->base + ADC_CTRL_REG, GPADC_ADC_CTRL_REG_FRC_EN_ADC |
-		GPADC_ADC_CTRL_REG_CHNL_SEL_FRC_EN);
+	value = sys_read32(config->base + ADC_CTRL_REG);
+	/* Clear timer trigger and DMA enable bits */
+	value &= ~(GPADC_ADC_CTRL_REG_GPIO_TRIG_EN | GPADC_ADC_CTRL_REG_TIMER_TRIG_EN |
+		   GPADC_ADC_CTRL_REG_INIT_TIME | GPADC_ADC_CTRL_REG_DATA_SAMP_DLY |
+		   GPADC_ADC_CTRL_REG_FRC_EN_ADC);
+
+	value |= FIELD_PREP(GPADC_ADC_CTRL_REG_INIT_TIME_Msk, 8);
+	value |= FIELD_PREP(GPADC_ADC_CTRL_REG_DATA_SAMP_DLY_Msk, 2);
+
+	sys_write32(value, config->base + ADC_CTRL_REG);
+
 	/* enable ref ldo */
 	sys_set_bits(config->base + ADC_CFG_REG1, GPADC_ADC_CFG_REG1_ANAU_GPADC_SE |
-		GPADC_ADC_CFG_REG1_ANAU_GPADC_LDOREF_EN);
-
+							  GPADC_ADC_CFG_REG1_ANAU_GPADC_EN_V18 |
+							  GPADC_ADC_CFG_REG1_ANAU_GPADC_LDOREF_EN);
+	k_busy_wait(SF32LB_ADC_WAIT_TIME_US); /* wait for stable */
 	/* disable all slots */
 	for (uint8_t i = 0; i < 8U; i++) {
 		sys_clear_bit(config->base + ADC_SLOT_REGX(i), GPADC_ADC_SLOT0_REG_SLOT_EN_Pos);

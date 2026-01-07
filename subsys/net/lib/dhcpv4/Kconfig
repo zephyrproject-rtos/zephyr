@@ -121,6 +121,17 @@ config NET_DHCPV4_INIT_REBOOT
 	  been assigned an address before, it begins in INIT-REBOOT state and
 	  sends a DHCPREQUEST message.
 
+config NET_DHCPV4_RESTART_ON_IF_UP
+	bool
+	default n if WIFI_NM_WPA_SUPPLICANT
+	default y
+	help
+	  Disable when an external software module automatically calls
+	  `net_dhcpv4_restart` when the interface is in the correct state to start
+	  binding, instead of running it internally on `NET_EVENT_IF_UP`. This prevents
+	  the DHCP request from being sent before the interface is ready, for interfaces
+	  where `NET_EVENT_IF_UP` does not mean it is ready to send arbitrary packets.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER

@@ -163,14 +163,15 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)
-		ARRAY_FOR_EACH(v4_ctx, i) {
+		if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+			int index = net_if_get_by_iface(iface) - 1;
 			int ret = net_ipv4_igmp_join(iface,
-					&net_sin(&v4_ctx[i].dispatcher.local_addr)->sin_addr,
+				&net_sin(&v4_ctx[index].dispatcher.local_addr)->sin_addr,
 					NULL);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
 					net_sprint_ipv4_addr(&net_sin(
-						&v4_ctx[i].dispatcher.local_addr)->sin_addr),
+						&v4_ctx[index].dispatcher.local_addr)->sin_addr),
 					net_if_get_by_iface(iface), ret);
 			}
 		}
@@ -1130,6 +1131,10 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	struct net_in6_addr *addr = user_data;
 	int ret;
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		return;
+	}
+
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
@@ -1150,6 +1155,10 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 {
 	struct net_in_addr *addr = user_data;
 	int ret;
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		return;
+	}
 
 	if (!net_if_is_up(iface)) {
 		struct net_if_mcast_addr *maddr;
@@ -1259,7 +1268,7 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v6_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if (iface == NULL) {
+		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
 			continue;
 		}
 
@@ -1282,7 +1291,7 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v4_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if (iface == NULL) {
+		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
 			continue;
 		}
 
@@ -1353,7 +1362,7 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if (iface == NULL) {
+		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
 			zsock_close(v6);
 			continue;
 		}
@@ -1450,7 +1459,7 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if (iface == NULL) {
+		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
 			zsock_close(v4);
 			continue;
 		}

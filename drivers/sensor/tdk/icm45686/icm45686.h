@@ -49,12 +49,12 @@ struct icm45686_encoded_fifo_payload {
 				int16_t x;
 				int16_t y;
 				int16_t z;
-			} accel;
+			} __attribute__((__packed__)) accel;
 			struct {
 				int16_t x;
 				int16_t y;
 				int16_t z;
-			} gyro;
+			} __attribute__((__packed__)) gyro;
 			int16_t temp;
 			uint16_t timestamp;
 			struct {

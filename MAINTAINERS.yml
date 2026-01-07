@@ -302,7 +302,7 @@ Aesc Platform:
   files-regex:
     - ^drivers/.*aesc(\.c)?$
   labels:
-    - "area: Aesc Silicon Platform"
+    - "platform: Aesc Silicon"
 
 Ambiq Platforms:
   status: maintained
@@ -1136,6 +1136,8 @@ Devicetree:
 
 Devicetree Bindings:
   status: odd fixes
+  collaborators:
+    - JarmouniA
   files-regex:
     - ^dts/bindings/.*zephyr.*
   files:
@@ -1143,7 +1145,7 @@ Devicetree Bindings:
     - include/zephyr/dt-bindings/
     - scripts/bindings_properties_allowlist.yaml
   labels:
-    - "area: Devicetree Bindings"
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
@@ -1255,6 +1257,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - anangl
+    - ZhaoxiangJin
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
@@ -1448,6 +1451,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - nordic-krch
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/counter/
     - include/zephyr/drivers/counter.h
@@ -2188,8 +2193,6 @@ Documentation Infrastructure:
   maintainers:
     - manuargue
     - Dat-NguyenDuy
-  collaborators:
-    - congnguyenhuu
   files:
     - drivers/psi5/
     - include/zephyr/drivers/psi5/
@@ -2254,6 +2257,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - bjarki-andreasen
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/
@@ -2337,8 +2342,6 @@ Documentation Infrastructure:
   maintainers:
     - manuargue
     - Dat-NguyenDuy
-  collaborators:
-    - congnguyenhuu
   files:
     - drivers/sent/
     - include/zephyr/drivers/sent/
@@ -3715,7 +3718,6 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
-    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
@@ -4777,6 +4779,14 @@ Settings:
         - subsys/settings/src/settings_tfm_psa*
         - tests/subsys/settings/functional/tfm_psa/
         - tests/subsys/settings/tfm_psa/
+    - name: ZMS backend
+      collaborators:
+        - rghaddab
+      files:
+        - subsys/settings/src/settings_zms.c
+        - subsys/settings/include/settings/settings_zms.h
+        - tests/subsys/settings/zms/
+        - tests/subsys/settings/functional/zms/
   labels:
     - "area: Settings"
   tests:
@@ -5267,6 +5277,20 @@ USB-C:
     - "area: USB-C"
   tests:
     - sample.usbc
+
+UUID:
+  status: maintained
+  maintainers:
+    - sorru94
+  files:
+    - lib/uuid/
+    - include/zephyr/sys/uuid.h
+    - tests/lib/uuid/
+    - samples/subsys/uuid/
+  labels:
+    - "area: UUID"
+  tests:
+    - libraries.uuid
 
 Userspace:
   status: maintained

@@ -29,7 +29,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(CONFIG_EXTERNAL_MEM_CONFIG_DATA)
     # This external memory configuration data block may need modification
     # if another SDRAM chip is used on your custom board.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_XMCD_ENABLE=1)
+    zephyr_library_compile_definitions(XIP_BOOT_HEADER_XMCD_ENABLE=1)
     zephyr_library_sources(xmcd/xmcd.c)
   else()
     if(CONFIG_SRAM_BASE_ADDRESS EQUAL 0x80000000)

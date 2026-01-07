@@ -140,8 +140,18 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-/* PKA module isn't currently supported in Zephyr, but it could be used outside Zephyr */
-#if defined(PKA)
+/*
+ * The PKA IP is currently not supported by Zephyr but may be used by
+ * external code, such as wireless stack for example. Since the RNG
+ * clock must be enabled when PKA is used on certain series, check if
+ * the PKA is in use and keep RNG clock active if so.
+ *
+ * A notable exception is the STM32WB0 series where PKA can operate
+ * autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
+ * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
+ * ignore the check on this series.
+ */
+#if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
 	if (__HAL_RCC_PKA_IS_CLK_ENABLED() && LL_PKA_IsEnabled(PKA)) {
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
@@ -150,7 +160,7 @@ static int entropy_stm32_suspend(void)
 		/* PKA needs RNG clock, so exit here if in use */
 		return 0;
 	}
-#endif /* PKA */
+#endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;

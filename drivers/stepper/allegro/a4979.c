@@ -15,10 +15,7 @@ LOG_MODULE_REGISTER(a4979, CONFIG_STEPPER_LOG_LEVEL);
 
 struct a4979_config {
 	const struct step_dir_stepper_common_config common;
-	const struct gpio_dt_spec en_pin;
 	const struct gpio_dt_spec reset_pin;
-	const struct gpio_dt_spec m0_pin;
-	const struct gpio_dt_spec m1_pin;
 };
 
 struct a4979_data {
@@ -51,7 +48,7 @@ static int a4979_set_microstep_pin(const struct device *dev, const struct gpio_d
 static int a4979_enable(const struct device *dev)
 {
 	const struct a4979_config *config = dev->config;
-	bool has_enable_pin = config->en_pin.port != NULL;
+	bool has_enable_pin = config->common.en_pin.port != NULL;
 	int ret;
 
 	/* Check availability of enable pin, as it might be hardwired. */
@@ -60,7 +57,7 @@ static int a4979_enable(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	ret = gpio_pin_set_dt(&config->en_pin, 1);
+	ret = gpio_pin_set_dt(&config->common.en_pin, 1);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 		return ret;
@@ -72,7 +69,7 @@ static int a4979_enable(const struct device *dev)
 static int a4979_disable(const struct device *dev)
 {
 	const struct a4979_config *config = dev->config;
-	bool has_enable_pin = config->en_pin.port != NULL;
+	bool has_enable_pin = config->common.en_pin.port != NULL;
 	int ret;
 
 	/* Check availability of enable pin, as it might be hardwired. */
@@ -81,7 +78,7 @@ static int a4979_disable(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	ret = gpio_pin_set_dt(&config->en_pin, 0);
+	ret = gpio_pin_set_dt(&config->common.en_pin, 0);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 		return ret;
@@ -122,11 +119,11 @@ static int a4979_set_micro_step_res(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = a4979_set_microstep_pin(dev, &config->m0_pin, m0_value);
+	ret = a4979_set_microstep_pin(dev, &config->common.m0_pin, m0_value);
 	if (ret != 0) {
 		return ret;
 	}
-	ret = a4979_set_microstep_pin(dev, &config->m1_pin, m1_value);
+	ret = a4979_set_microstep_pin(dev, &config->common.m1_pin, m1_value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -150,7 +147,7 @@ static int a4979_init(const struct device *dev)
 	const struct a4979_data *data = dev->data;
 	int ret;
 
-	bool has_enable_pin = config->en_pin.port != NULL;
+	bool has_enable_pin = config->common.en_pin.port != NULL;
 	bool has_reset_pin = config->reset_pin.port != NULL;
 
 	LOG_DBG("Initializing %s gpios", dev->name);
@@ -171,12 +168,12 @@ static int a4979_init(const struct device *dev)
 
 	/* Configure enable pin if it is available */
 	if (has_enable_pin) {
-		if (!gpio_is_ready_dt(&config->en_pin)) {
+		if (!gpio_is_ready_dt(&config->common.en_pin)) {
 			LOG_ERR("Enable Pin is not ready");
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(&config->en_pin, GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&config->common.en_pin, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to configure en_pin (error: %d)", dev->name, ret);
 			return ret;
@@ -184,22 +181,22 @@ static int a4979_init(const struct device *dev)
 	}
 
 	/* Configure microstep pin 0 */
-	if (!gpio_is_ready_dt(&config->m0_pin)) {
+	if (!gpio_is_ready_dt(&config->common.m0_pin)) {
 		LOG_ERR("m0 Pin is not ready");
 		return -ENODEV;
 	}
-	ret = gpio_pin_configure_dt(&config->m0_pin, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&config->common.m0_pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
 	/* Configure microstep pin 1 */
-	if (!gpio_is_ready_dt(&config->m1_pin)) {
+	if (!gpio_is_ready_dt(&config->common.m1_pin)) {
 		LOG_ERR("m1 Pin is not ready");
 		return -ENODEV;
 	}
-	ret = gpio_pin_configure_dt(&config->m1_pin, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&config->common.m1_pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
 		return ret;
@@ -225,10 +222,7 @@ static DEVICE_API(stepper_drv, a4979_stepper_api) = {
                                                                                                    \
 	static const struct a4979_config a4979_config_##inst = {                                   \
 		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
-		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
 		.reset_pin = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                     \
-		.m0_pin = GPIO_DT_SPEC_INST_GET(inst, m0_gpios),                                   \
-		.m1_pin = GPIO_DT_SPEC_INST_GET(inst, m1_gpios),                                   \
 	};                                                                                         \
                                                                                                    \
 	static struct a4979_data a4979_data_##inst = {                                             \

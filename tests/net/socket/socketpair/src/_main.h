@@ -11,7 +11,6 @@
 #include <string.h>
 
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>

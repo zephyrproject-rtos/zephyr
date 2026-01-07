@@ -9,6 +9,8 @@
 #include "sam_e54_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
 
 / {
 	model = "SAM E54 Xplained Pro";
@@ -147,6 +149,14 @@
 			gclkgen-src = "fdpll0";
 			gclkgen-en = <1>;
 		};
+
+		gclkgen1 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN1>;
+			gclkgen-div-factor = <2>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -157,6 +167,18 @@
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
+		};
+
+		adc0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC0>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		adc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC1>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
 		};
 	};
 
@@ -172,21 +194,20 @@
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "microchip,sercom-g1-uart";
 	#address-cells = <1>;
 	#size-cells = <0>;
-
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
 	stop-bits = "1";
-
 	rxpo = <1>;
 	txpo = <0>;
-
 	pinctrl-0 = <&sercom2_uart_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 1 8>, <&dmac 2 9>;
+	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &sercom7 {
@@ -227,4 +248,18 @@
 
 &portc {
 	status = "okay";
+};
+
+&adc0 {
+	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
+	prescaler = <4>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
+	prescaler = <4>;
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
 };

@@ -200,6 +200,17 @@
 			interrupt-parent = <&clic>;
 		};
 
+		irx: irx@4000a600 {
+			compatible = "bflb,irx";
+			reg = <0x4000a600 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <36 0>;
+			interrupt-parent = <&clic>;
+		};
+
 		flashctrl: flash-controller@4000b000 {
 			compatible = "bflb,flash-controller";
 			reg = <0x4000b000 0x1000>;

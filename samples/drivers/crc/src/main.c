@@ -102,7 +102,6 @@ int main(void)
 
 	LOG_INF("%s result: 0x%08x", CRC_SAMPLE_NAME, (unsigned int)ctx.result);
 
-#if defined(CRC_SAMPLE_EXPECTED) && (CRC_SAMPLE_EXPECTED != 0)
 	ret = crc_verify(&ctx, CRC_SAMPLE_EXPECTED);
 	if (ret != 0) {
 		LOG_ERR("%s verification failed (expected 0x%08x): %d", CRC_SAMPLE_NAME,
@@ -111,7 +110,6 @@ int main(void)
 	}
 	LOG_INF("%s verification succeeded (expected 0x%08x)", CRC_SAMPLE_NAME,
 		CRC_SAMPLE_EXPECTED);
-#endif
 
 	return 0;
 }

@@ -1,6 +1,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
 import logging
 import os
@@ -78,4 +79,4 @@ def openssl_server(server_type, port):
 def test_app_vs_openssl(dut: DeviceAdapter, openssl_server):
     logger.info("Launch Zephyr application")
     dut.launch()
-    dut.readlines_until("Test PASSED", timeout=3.0)
+    dut.readlines_until(regex="Test PASSED", timeout=3.0)

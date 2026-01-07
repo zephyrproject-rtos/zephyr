@@ -1,7 +1,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 description: NXP PCAL9538 I2C GPIO expander node
-compatible: nxp,pcal9538
+compatible: "nxp,pcal9538"
 include: nxp,pca_series.yaml
 
 properties:

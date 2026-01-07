@@ -32,6 +32,18 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 
 	NET_DBG("Created socket %d", client->transport.tls.sock);
 
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER) && tls_config->set_native_tls) {
+		int tls_native = 1;
+
+		ret = zsock_setsockopt(client->transport.tls.sock, ZSOCK_SOL_TLS,
+				       ZSOCK_TLS_NATIVE, &tls_native,
+				       sizeof(tls_native));
+		if (ret < 0) {
+			NET_ERR("Failed to set native TLS (%d)", -errno);
+			goto error;
+		}
+	}
+
 	if (client->transport.if_name != NULL) {
 		struct net_ifreq ifname = { 0 };
 

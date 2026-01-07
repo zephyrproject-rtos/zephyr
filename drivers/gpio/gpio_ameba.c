@@ -265,8 +265,6 @@ static const struct gpio_driver_api gpio_ameba_driver_api = {
 #define GPIO_AMEBA_INIT(n)                                                                         \
 	static int gpio_ameba_port##n##_init(const struct device *dev)                             \
 	{                                                                                          \
-		const struct gpio_ameba_config *cfg = dev->config;                                 \
-                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_ameba_isr,             \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \

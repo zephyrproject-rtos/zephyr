@@ -1070,6 +1070,11 @@ void ethernet_init(struct net_if *iface)
 	dsa_eth_init(iface);
 #endif
 
+	if (IS_ENABLED(CONFIG_ETH_NET_IF_NO_AUTO_START)) {
+		/* Do not start Ethernet interface automatically */
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
+
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 	ctx->iface = iface;
 	k_work_init(&ctx->carrier_work, carrier_on_off);

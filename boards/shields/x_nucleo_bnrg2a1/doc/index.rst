@@ -57,7 +57,8 @@ X-NUCLEO-BNRG2A1 provides a BlueNRG-M2SP chip with the following key features:
  - BLE data packet length extension
 
 More information about X-NUCLEO-BNRG2A1 can be found here:
-       - `X-NUCLEO-BNRG2A1 databrief`_
+
+- `X-NUCLEO-BNRG2A1 databrief`_
 
 Programming
 ***********
