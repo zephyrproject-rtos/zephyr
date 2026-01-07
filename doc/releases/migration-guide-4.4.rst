@@ -68,6 +68,12 @@ ADC
   update also corrects this issue, so users also need to update the value of this property in the
   devicetree accordingly. (:github:`100978`)
 
+* :dtcompatible:`st,stm32-adc` no longer has the ``resolutions`` property. It is replaced by the
+  ``st,adc-resolutions`` property. For STM32H7 devices in revision Y, it is no longer needed to
+  replace the 14 and 12-bit resolution values. This change may have an impact on power consumption
+  if 14 or 12-bit resolutions are used. Previously, power-optimized values were used, now the
+  standard values (not power-optimized but better accuracy) are used. No impact on other series.
+
 Controller Area Network (CAN)
 =============================
 
