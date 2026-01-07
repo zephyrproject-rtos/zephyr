@@ -20,6 +20,10 @@
 #include <mem.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
