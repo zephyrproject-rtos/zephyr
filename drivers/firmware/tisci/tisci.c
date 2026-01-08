@@ -139,12 +139,26 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 		return -EINVAL;
 	}
 
+	if (config->is_secure) {
+		/* In secure mode, response includes 4-byte secure header */
+		xfer->rx_message.size += sizeof(struct tisci_secure_msg_hdr);
+	}
+
 	if (data->rx_message.size < xfer->rx_message.size) {
-		LOG_ERR("rx_message.size [ %d ] < xfer->rx_message.size\n", data->rx_message.size);
+		LOG_ERR("rx_message.size [ %zu ] < xfer->rx_message.size [ %zu ]\n",
+			data->rx_message.size, xfer->rx_message.size);
 		return -EINVAL;
 	}
 
-	memcpy(xfer->rx_message.buf, data->rx_message.buf, xfer->rx_message.size);
+	if (config->is_secure) {
+		xfer->rx_message.size -= sizeof(struct tisci_secure_msg_hdr);
+		/* Skip secure header and copy tisci_msg_hdr + payload */
+		memcpy(xfer->rx_message.buf,
+		       (uint8_t *)data->rx_message.buf + sizeof(struct tisci_secure_msg_hdr),
+		       xfer->rx_message.size);
+	} else {
+		memcpy(xfer->rx_message.buf, data->rx_message.buf, xfer->rx_message.size);
+	}
 	hdr = (struct tisci_msg_hdr *)xfer->rx_message.buf;
 
 	/* Sanity check for message response */
@@ -159,17 +173,48 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 
 static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 {
-	if (!dev) {
+	if (!dev || !xfer) {
 		return -EINVAL;
 	}
 
+	struct tisci_data *data = dev->data;
 	const struct tisci_config *config = dev->config;
 	struct mbox_msg *msg = &xfer->tx_message;
 	int ret;
 
+	/* Stack buffer for secure messaging (max 60 bytes total) */
+	uint8_t secure_buf[MAILBOX_MBOX_SIZE];
+	struct mbox_msg secure_msg;
+
+	if (config->is_secure) {
+		struct tisci_secure_msg_hdr secure_hdr;
+
+		/* Verify message fits with secure header (already checked in max_msg_size) */
+		if (msg->size + sizeof(struct tisci_secure_msg_hdr) > MAILBOX_MBOX_SIZE) {
+			LOG_ERR("Message too large for secure mailbox (%zu + %zu > %d)\n",
+				msg->size, sizeof(struct tisci_secure_msg_hdr), MAILBOX_MBOX_SIZE);
+			k_sem_give(&data->data_sem);
+			return -EMSGSIZE;
+		}
+
+		/* Prepare secure header */
+		secure_hdr.checksum = 0;
+		secure_hdr.reserved = 0;
+
+		/* Copy header and message into secure buffer */
+		memcpy(secure_buf, &secure_hdr, sizeof(struct tisci_secure_msg_hdr));
+		memcpy(secure_buf + sizeof(struct tisci_secure_msg_hdr), msg->data, msg->size);
+
+		/* Use temporary message structure to avoid modifying original */
+		secure_msg.data = secure_buf;
+		secure_msg.size = msg->size + sizeof(struct tisci_secure_msg_hdr);
+		msg = &secure_msg;
+	}
+
 	ret = mbox_send_dt(&config->mbox_tx, msg);
 	if (ret < 0) {
-		LOG_ERR("Could not send (%d)\n", ret);
+		LOG_ERR("Could not send on %s path\n",
+			config->is_secure ? "secure" : "non-secure");
 		return ret;
 	}
 
