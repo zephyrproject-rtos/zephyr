@@ -521,7 +521,7 @@ For example, to define a new non-cacheable memory region in devicetree:
         compatible = "zephyr,memory-region", "mmio-sram";
         reg = <0x20300000 0x100000>;
         zephyr,memory-region = "SRAM_NO_CACHE";
-        zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+        zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
    };
 
 This will automatically create a new MPU entry in with the correct name, base,
