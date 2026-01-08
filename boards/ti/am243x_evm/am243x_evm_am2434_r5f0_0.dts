@@ -6,7 +6,7 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <ti/am64x_r5.dtsi>
+#include <ti/am64x_r5f0_0.dtsi>
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
 
 / {
