@@ -1,0 +1,42 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WinChipHead CH9350L USB HID to UART control chip.
+  This supports State 0.
+
+
+  &uart0 {
+    status = "okay";
+
+      usb_kb {
+        compatible = "wch,ch9350l";
+        status = "okay";
+
+        kb-codemap = <
+          4 INPUT_KEY_Q
+          5 INPUT_KEY_B
+          6 INPUT_KEY_C
+        >;
+        mouse-codemap = <
+          1 INPUT_BTN_LEFT
+          2 INPUT_BTN_RIGHT
+          4 INPUT_BTN_MIDDLE
+        >;
+      };
+  };
+
+compatible: "wch,ch9350l"
+
+include: [base.yaml, uart-device.yaml]
+
+properties:
+  kb-codemap:
+    type: array
+    description: |
+      Maps a keyboard key code to a input code by pair of 2 when needed.
+
+  mouse-codemap:
+    type: array
+    description: |
+      Maps a mouse button code to a input code by pair of 2 when needed.
