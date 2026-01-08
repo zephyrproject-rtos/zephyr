@@ -187,6 +187,11 @@
 					zephyr,code = <INPUT_ABS_RX>;
 				};
 			};
+
+			usb_kb {
+				compatible = "wch,ch9350l";
+				status = "okay";
+			};
 		};
 
 		i2c@1 {
