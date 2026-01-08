@@ -612,6 +612,14 @@ Tracing
 
   With this change, existing CTF traces with 8-bit IDs won't be compatible.
 
+Serial
+========
+
+* pl011 UART driver: Remove Read Status Register (RSR) error handling
+  from :c:func:`pl011_poll_in`. RSR handling is already implemented in
+  :c:func:`pl011_err_check`, which is the appropriate place to detect,
+  and report receive error conditions. (:github:`101715`)
+
 Settings
 ========
 
