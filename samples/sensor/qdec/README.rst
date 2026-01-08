@@ -62,6 +62,8 @@ console
     Position = 30 degrees
     ...
 
+If the driver supports speed (RPM) and revolution count channels, these data
+will be displayed on the console.
 
 Of course the read value changes once the user manually rotates the mechanical
 encoder.
