@@ -70,3 +70,6 @@ set(ubx_evk_iris_w1_fidelex/rw612_DEPRECATED
 set(it51xxx_evb_DEPRECATED
     it515xx_evb/it51526aw
 )
+set(weact_stm32h5_core_DEPRECATED
+    weact_stm32h562_core
+)
