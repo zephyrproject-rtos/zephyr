@@ -14,9 +14,6 @@
  * - DFRobot DFR0063 16x2 LCD with I2C backpack (PCF8574-based)
  * - Connected to Teensy 4.1 via DFR0063 low voltage (3.3V) I2C interface
  *
- * Note: The read-write GPIO is omitted as the DFR0063 module has issues when
- * this pin is configured.
- *
  */
 
 #include <dt-bindings/input/input-event-codes.h>
@@ -61,8 +58,6 @@
 		boot-delay-ms = <0>;
 
 		register-select-gpios = <&aux_display_gpio 0 GPIO_ACTIVE_HIGH>;
-		// This pin should be ommited for the DFrobot DFR0063 16x2 LCD, otherwise it won't work.
-		// read-write-gpios = <&aux_display_gpio 1 GPIO_ACTIVE_HIGH>;
 		enable-gpios = <&aux_display_gpio 2 GPIO_ACTIVE_HIGH>;
 		backlight-gpios = <&aux_display_gpio 3 GPIO_ACTIVE_HIGH>;
 		data-bus-gpios = <0>, <0>, <0>, <0>,
