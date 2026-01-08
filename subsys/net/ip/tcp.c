@@ -4759,10 +4759,16 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 		return;
 	}
 
+	if (conn->state == TCP_CLOSED) {
+		return;
+	}
+
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
 	if (net_context_get_state(context) != NET_CONTEXT_LISTENING) {
 		net_tcp_put(context, true);
 	} else {
+		k_mutex_lock(&conn->lock, K_FOREVER);
+
 		if (context->conn_handler) {
 			net_conn_unregister(context->conn_handler);
 			context->conn_handler = NULL;
@@ -4770,7 +4776,10 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 
 		if (conn->accept_cb != NULL) {
 			conn->accept_cb(conn->context, NULL, 0, -ENETDOWN, context->user_data);
+			conn->accept_cb = NULL;
 		}
+
+		k_mutex_unlock(&conn->lock);
 	}
 }
 
