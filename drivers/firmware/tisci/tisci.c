@@ -75,6 +75,7 @@ static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_
 	if (rx_message_size > config->max_msg_size || tx_message_size > config->max_msg_size ||
 	    (rx_message_size > 0 && rx_message_size < sizeof(*hdr)) ||
 	    tx_message_size < sizeof(*hdr)) {
+		k_sem_give(&data->data_sem);
 		return NULL;
 	}
 
@@ -125,17 +126,20 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 
 	if (!xfer->rx_message.buf) {
 		LOG_ERR("No response buffer provided");
+		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
 
 	if (k_sem_take(data->rx_message.response_ready_sem, K_MSEC(config->max_rx_timeout_ms)) !=
 	    0) {
 		LOG_ERR("Timeout waiting for response");
+		k_sem_give(&data->data_sem);
 		return -ETIMEDOUT;
 	}
 
 	if (xfer->rx_message.size > config->max_msg_size) {
 		LOG_ERR("rx_message.size [ %d ] > max_msg_size\n", xfer->rx_message.size);
+		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
 
@@ -147,6 +151,7 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	if (data->rx_message.size < xfer->rx_message.size) {
 		LOG_ERR("rx_message.size [ %zu ] < xfer->rx_message.size [ %zu ]\n",
 			data->rx_message.size, xfer->rx_message.size);
+		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
 
@@ -164,6 +169,7 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	/* Sanity check for message response */
 	if (hdr->seq != data->seq) {
 		LOG_ERR("HDR seq != data seq [%d != %d]\n", hdr->seq, data->seq);
+		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
 
@@ -215,6 +221,7 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 	if (ret < 0) {
 		LOG_ERR("Could not send on %s path\n",
 			config->is_secure ? "secure" : "non-secure");
+		k_sem_give(&data->data_sem);
 		return ret;
 	}
 
@@ -226,8 +233,12 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 		}
 		if (!tisci_is_response_ack(xfer->rx_message.buf)) {
 			LOG_ERR("TISCI Response in NACK\n");
+			k_sem_give(&data->data_sem);
 			return -ENODEV;
 		}
+	} else {
+		/* No response requested, release semaphore */
+		k_sem_give(&data->data_sem);
 	}
 
 	return 0;
