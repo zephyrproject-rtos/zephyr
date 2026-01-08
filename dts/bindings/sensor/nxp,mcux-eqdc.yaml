@@ -1,0 +1,82 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX Enhanced Quadrature Decoder (EQDC)
+
+compatible: "nxp,mcux-eqdc"
+
+include: [sensor-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      Number of encoder counts per full revolution (360 degrees).
+      This is used to convert position to angle.
+
+  input-filter-count:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Input filter sample count
+      The Input Filter Sample Count represents the number of consecutive samples
+      that must agree, before the input filter accepts an input transition:
+      - A value of 0x0 represents 3 samples
+      - A value of 0x7 represents 10 samples
+      The value of the Input Filter Sample Count (FILT_CNT) affects the
+      input latency.
+
+  input-filter-period:
+    type: int
+    default: 0
+    description: |
+      The Input Filter Sample Period represents the sampling period
+      (in IPBus clock cycles) of the decoder input signals. Each input
+      is sampled multiple times at the rate specified by the Input Filter
+      Sample Period.
+      - If it is set to 0x00 (default), then the input filter is bypassed.
+      The value of the Input Filter Sample Period (FILT_PER) affects the
+      input latency.
+
+  prescaler:
+    type: int
+    default: 0
+    description: |
+      The Prescaler field is used to prescale the peripheral clock that
+      is used by the LASTEDGE and POSDPER counters as well as watchdog timer
+      and Input Filter.
+      The clock is prescaled by a value of 2^PRSC. For example:
+      prescaler = 0, divide by 1
+      prescaler = 1, divide by 2
+      ...
+      prescaler = 15, divide by 32768
+
+  reverse-direction:
+    type: boolean
+    description: |
+      Selects the direction of the count and position counter initial value.
+      false: Count normally and the position counter initialization uses
+      upper/lower initialization register UINIT/LINIT.
+      true: Count in the reverse direction and the position counter
+      initialization uses upper/lower modulus register UMOD/LMOD.
+
+  revolution-count-mode:
+    type: int
+    default: 0
+    description: |
+      false: Use INDEX pulse to increment/decrement revolution counter.
+      1: Use modulus counting roll-over or roll-under events instead of the INDEX pulse
+
+  xbar:
+    type: phandle
+    description: |
+      Reference to XBAR peripheral for signal routing.
+      Required if encoder signals need crossbar routing.
