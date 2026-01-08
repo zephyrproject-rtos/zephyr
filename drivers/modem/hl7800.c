@@ -3425,6 +3425,8 @@ static void iface_status_work_cb(struct k_work *work)
 	if ((iface_ctx.iface && !net_if_is_up(iface_ctx.iface)) ||
 	    (iface_ctx.low_power_mode == HL7800_LPM_PSM && state == HL7800_OUT_OF_COVERAGE)) {
 		hl7800_stop_rssi_work();
+		/* Avoid deadlock: closing sockets can re-enter hl7800. */
+		hl7800_unlock();
 		notify_all_tcp_sockets_closed();
 	} else if (iface_ctx.iface && net_if_is_up(iface_ctx.iface)) {
 		hl7800_start_rssi_work();
