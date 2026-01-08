@@ -58,6 +58,44 @@ struct tisci_data {
 };
 
 /* Core/Setup Functions */
+/**
+ * @brief Determine if a message type requires the secure path
+ * @param msg_type: TISCI message type
+ * @return true if secure path required, false for non-secure path
+ *
+ * Board configuration, security, and OTP messages must use the secure path.
+ */
+static bool tisci_msg_requires_secure_path(uint16_t msg_type)
+{
+	switch (msg_type) {
+	case TISCI_MSG_BOOT_NOTIFICATION:
+	case TISCI_MSG_SEC_HANDOVER:
+	case TISCI_MSG_BOARD_CONFIG:
+	case TISCI_MSG_BOARD_CONFIG_SECURITY:
+	case TISCI_MSG_SA2UL_SET_DKEK:
+	case TISCI_MSG_SA2UL_GET_DKEK:
+	case TISCI_MSG_SA2UL_RELEASE_DKEK:
+	case TISCI_MSG_SA2UL_SET_DSMEK:
+	case TISCI_MSG_SA2UL_GET_DSMEK:
+	case TISCI_MSG_SA2UL_RELEASE_DSMEK:
+	case TISCI_MSG_OPEN_DEBUG_FWLS:
+	case TISCI_MSG_WRITE_OTP_ROW:
+	case TISCI_MSG_READ_OTP_MMR:
+	case TISCI_MSG_LOCK_OTP_ROW:
+	case TISCI_MSG_GET_OTP_ROW_LOCK_STATUS:
+	case TISCI_MSG_SOFT_LOCK_OTP_WRITE_GLOBAL:
+	case TISCI_MSG_READ_SWREV:
+	case TISCI_MSG_WRITE_SWREV:
+	case TISCI_MSG_READ_KEYCNT_KEYREV:
+	case TISCI_MSG_KEY_WRITER:
+	case TISCI_MSG_WRITE_KEYREV:
+	case TISCI_MSG_ENTER_SLEEP:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_t msg_type,
 					       uint32_t msg_flags, void *req_buf,
 					       size_t tx_message_size, void *resp_buf,
