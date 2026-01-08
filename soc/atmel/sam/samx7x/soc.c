@@ -94,7 +94,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 */
 
 	/* Setting PLLA as MCK, first prescaler, then divider and source last */
-	soc_pmc_mck_set_prescaler(1);
+	soc_pmc_mck_set_prescaler(CONFIG_SOC_ATMEL_SAM_MCK_PRESCALLER);
 	soc_pmc_mck_set_divider(CONFIG_SOC_ATMEL_SAM_MDIV);
 	soc_pmc_mck_set_source(SOC_PMC_MCK_SRC_PLLA_CLK);
 
