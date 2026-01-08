@@ -15,3 +15,15 @@
 	interrupts = <0 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&dmsc {
+	ti,host-id = <36>;
+	mboxes = <&secure_proxy_main 2>, <&secure_proxy_main 3>;
+};
+
+&secure_proxy_main {
+	interrupt-names = "rx_0", "rx_2";
+	interrupts = <0 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+		     <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
