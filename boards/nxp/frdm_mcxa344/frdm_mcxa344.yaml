@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxa344
-name: NXP FRDM MCXA344
+name: NXP FRDM-MCXA344
 type: mcu
 arch: arm
 ram: 48

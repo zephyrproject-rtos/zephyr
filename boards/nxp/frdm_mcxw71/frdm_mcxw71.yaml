@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxw71
-name: NXP FRDM_MCXW71
+name: NXP FRDM-MCXW71
 type: mcu
 arch: arm
 ram: 64

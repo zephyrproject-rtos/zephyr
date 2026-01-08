@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxn947/mcxn947/cpu0/ns
-name: NXP FRDM MCXN947 (CPU0) (Non-Secure)
+name: NXP FRDM-MCXN947 (CPU0) (Non-Secure)
 type: mcu
 arch: arm
 ram: 128
