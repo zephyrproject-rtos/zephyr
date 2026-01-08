@@ -23,16 +23,27 @@ LOG_MODULE_REGISTER(udc_sam_udp, CONFIG_UDC_DRIVER_LOG_LEVEL);
 /*
  * USB Clock (UDPCK) Configuration
  *
- * The UDP peripheral requires a 48MHz clock derived from PLLB.
- * PLLB = 12MHz * 8 = 96MHz, USB = 96MHz / 2 = 48MHz
+ * The UDP peripheral requires a 48MHz clock derived from a PLL.
+ * - SAM4S: Uses PLLB (dedicated USB PLL)
+ *   PLLB = 12MHz * 8 = 96MHz, USB = 96MHz / 2 = 48MHz
+ * - SAM4E: Uses PLLA (shared with system clock, no PLLB available)
+ *   PLLA = 12MHz * 21 = 252MHz (before prescaler), USB = PLLA / 5 ≈ 48MHz
  *
- * CKGR_PLLBR: MULB = multiplier - 1, DIVB = divider
- * PMC_USB: USBDIV = divider - 1
+ * Detection: PMC_MCKR_CSS_PLLB_CLK is only defined on parts with PLLB.
+ * USB clock = PLL / (USBDIV + 1)
  */
-#define USB_PLLB_MUL		7	/* MULB: multiply by 8 */
-#define USB_PLLB_DIV		1	/* DIVB: divide by 1 */
-#define USB_PLLB_COUNT		0x3F	/* Lock counter */
-#define USB_CLK_DIV		1	/* USBDIV: divide by 2 */
+#if defined(PMC_MCKR_CSS_PLLB_CLK)
+/* SAM4S: Use dedicated PLLB for USB */
+#define USB_PLL_MUL		7	/* MULB: multiply by 8 */
+#define USB_PLL_DIV		1	/* DIVB: divide by 1 */
+#define USB_PLL_COUNT		0x3F	/* Lock counter */
+#define USB_CLK_DIV		1	/* USBDIV: divide by 2 (96/2 = 48MHz) */
+#define USB_CLK_USBS		PMC_USB_USBS	/* Select PLLB */
+#else
+/* SAM4E: Use PLLA (already configured for system clock) */
+#define USB_CLK_DIV		4	/* USBDIV: divide by 5 (~240/5 = 48MHz) */
+#define USB_CLK_USBS		0	/* Select PLLA */
+#endif
 
 /* Number of hardware endpoints */
 #define NUM_OF_HW_EPS		8
@@ -385,27 +396,34 @@ static uint16_t udc_sam_udp_read_fifo(Udp * const base, const uint8_t hw_ep,
  * USB Clock Configuration
  *
  * Per datasheet, the clock enable sequence is:
- * 1. Enable PLLB (if not already enabled)
- * 2. Configure PMC_USB to select PLLB and set divider
+ * 1. Enable PLL (PLLB on SAM4S, PLLA on SAM4E) if not already enabled
+ * 2. Configure PMC_USB to select PLL and set divider
  * 3. Enable UDP peripheral clock (MCK)
  * 4. Enable UDPCK (48MHz USB clock)
  *
  * Note: PMC_SCER requires write protection to be disabled.
- * PLLB registers do not require write protection per datasheet.
  */
 static int udc_sam_udp_enable_usb_clock(const struct device *dev)
 {
 	const struct udc_sam_udp_config *config = dev->config;
 	int ret;
 
-	/* Enable PLLB if not already locked */
+#if defined(PMC_MCKR_CSS_PLLB_CLK)
+	/* SAM4S: Enable PLLB if not already locked */
 	if (!soc_pmc_is_locked_pllbck()) {
-		soc_pmc_enable_pllbck(USB_PLLB_MUL, USB_PLLB_COUNT,
-				      USB_PLLB_DIV);
+		soc_pmc_enable_pllbck(USB_PLL_MUL, USB_PLL_COUNT,
+				      USB_PLL_DIV);
 	}
+#else
+	/* SAM4E: PLLA is already configured for system clock, just verify */
+	if (!soc_pmc_is_locked_pllack()) {
+		LOG_ERR("PLLA not locked - required for USB clock");
+		return -EIO;
+	}
+#endif
 
-	/* Configure USB clock: select PLLB, divide by 2 -> 48MHz */
-	PMC->PMC_USB = PMC_USB_USBS | PMC_USB_USBDIV(USB_CLK_DIV);
+	/* Configure USB clock: select PLL source and divider -> 48MHz */
+	PMC->PMC_USB = USB_CLK_USBS | PMC_USB_USBDIV(USB_CLK_DIV);
 
 	/* Enable UDP peripheral clock (MCK for UDP) */
 	ret = clock_control_on(config->clock_dev,
@@ -426,7 +444,7 @@ static int udc_sam_udp_enable_usb_clock(const struct device *dev)
 		return -EIO;
 	}
 
-	LOG_DBG("USB clock enabled: PLLB->96MHz, UDPCK->48MHz");
+	LOG_DBG("USB clock enabled: UDPCK->48MHz");
 
 	return 0;
 }
@@ -961,8 +979,11 @@ static int udc_sam_udp_shutdown(const struct device *dev)
 	/* Disable USB clocks (UDPCK and peripheral clock) */
 	udc_sam_udp_disable_usb_clock(dev);
 
-	/* Disable PLLB */
+#if defined(PMC_MCKR_CSS_PLLB_CLK)
+	/* SAM4S: Disable dedicated PLLB */
 	soc_pmc_disable_pllbck();
+#endif
+	/* SAM4E: Don't disable PLLA - it's used for system clock */
 
 	return 0;
 }
