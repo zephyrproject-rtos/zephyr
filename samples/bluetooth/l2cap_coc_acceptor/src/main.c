@@ -24,7 +24,7 @@ static struct bt_l2cap_chan_ops l2cap_ops = {
 };
 
 /* Fixed array of channel instances, one per possible connection */
-static struct bt_l2cap_chan fixed_chan[CONFIG_BT_MAX_CONN];
+static struct bt_l2cap_chan l2cap_chans[CONFIG_BT_MAX_CONN];
 
 static int accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
 		     struct bt_l2cap_chan **chan)
@@ -32,11 +32,11 @@ static int accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
 	uint8_t conn_index = bt_conn_index(conn);
 
 	/* initialize the chosen entry */
-	fixed_chan[conn_index] = (struct bt_l2cap_chan){
+	l2cap_chans[conn_index] = (struct bt_l2cap_chan){
 		.ops = &l2cap_ops,
 	};
 
-	*chan = &fixed_chan[conn_index];
+	*chan = &l2cap_chans[conn_index];
 
 	printk("L2CAP channel accepted, assigned chan[%d]\n", conn_index);
 
@@ -72,10 +72,6 @@ int main(void)
 	int err = bt_enable(NULL);
 
 	if (err) {
-
-
-
-
 		printk("Bluetooth init failed: %d\n", err);
 		return err;
 	}
