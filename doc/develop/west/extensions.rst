@@ -27,6 +27,48 @@ help for them shows up like this in ``west --help``:
      debugserver:          connect to board and launch a debug server
      attach:               interactively debug a board
 
+Zephyr SDK Extension (``west sdk``)
+**********************************
+
+The ``west sdk`` command is provided by a west extension and is used to list
+and install Zephyr SDK toolchains.
+
+Listing SDKs
+============
+
+To list installed Zephyr SDKs as well as available SDK releases and toolchains,
+run:
+
+.. code-block:: console
+
+   west sdk list
+
+This command displays:
+
+- Installed SDK versions
+- Available SDK releases
+- Toolchains included in each SDK
+
+Installing Toolchains
+=====================
+
+To install the Zephyr SDK, run:
+
+.. code-block:: console
+
+   west sdk install
+
+By default, this installs a minimal set of commonly used toolchains.
+
+To install specific toolchains, use the ``--toolchains`` option:
+
+.. code-block:: console
+
+   west sdk install --toolchains arm-zephyr-eabi riscv64-zephyr-elf
+
+If you are unsure which toolchains you need, run ``west sdk list`` first to
+see the available options.
+
 See :file:`zephyr/scripts/west-commands.yml` and the
 :file:`zephyr/scripts/west_commands` directory for the implementation details.
 
