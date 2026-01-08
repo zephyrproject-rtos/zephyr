@@ -84,7 +84,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 */
 
 	/* prescaler has to be set before PLL lock */
-	soc_pmc_mck_set_prescaler(1);
+	soc_pmc_mck_set_prescaler(CONFIG_SOC_ATMEL_SAM_MCK_PRESCALLER);
 
 	/* Select PLL as Master Clock source. */
 	soc_pmc_mck_set_source(SOC_PMC_MCK_SRC_PLLA_CLK);
