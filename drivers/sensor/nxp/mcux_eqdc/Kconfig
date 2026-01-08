@@ -1,0 +1,22 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# NXP enhanced Quadrature Decoder (eQDC) configuration options
+config MCUX_EQDC
+	bool "NXP eQDC driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EQDC_ENABLED
+	select MUX_CONTROL
+	select PINCTRL
+	help
+	  Enable the NXP eQDC driver.
+
+if MCUX_EQDC
+
+config MCUX_EQDC_TRIGGER
+	bool "EQDC trigger support"
+	help
+	  Enable trigger support for EQDC. This allows the driver to
+	  generate interrupts on events like position roll-over/under.
+
+endif # MCUX_EQDC

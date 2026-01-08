@@ -231,6 +231,8 @@ enum sensor_channel {
 
 	/** Raw quadrature decoder count, in counts */
 	SENSOR_CHAN_ENCODER_COUNT,
+	/** Number of revolutions for quadrature decoder */
+	SENSOR_CHAN_ENCODER_REVOLUTIONS,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
