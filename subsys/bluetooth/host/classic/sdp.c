@@ -3475,11 +3475,6 @@ static int sdp_attr_parse(struct net_buf_simple *buf,
 	int err;
 	uint8_t type;
 
-	if (nest_level == SDP_DATA_ELEM_NEST_LEVEL_MAX) {
-		LOG_WRN("Maximum nesting level (%u) exceeded", SDP_DATA_ELEM_NEST_LEVEL_MAX);
-		return 0;
-	}
-
 	if (buf->len < sizeof(uint8_t)) {
 		return 0;
 	}
@@ -3489,6 +3484,13 @@ static int sdp_attr_parse(struct net_buf_simple *buf,
 	err = sdp_attr_get_len(type, buf, &len);
 	if (err != 0) {
 		return err;
+	}
+
+	if (nest_level == SDP_DATA_ELEM_NEST_LEVEL_MAX) {
+		LOG_WRN("Exceed max nesting level (%u). Ignore ATTR data (len %u)",
+			SDP_DATA_ELEM_NEST_LEVEL_MAX, len);
+		net_buf_simple_pull_mem(buf, len);
+		return 0;
 	}
 
 	/* The following is a data ele sequence, so recursively parse */
