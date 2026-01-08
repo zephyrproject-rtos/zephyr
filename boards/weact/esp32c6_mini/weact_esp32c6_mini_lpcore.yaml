@@ -1,5 +1,5 @@
 identifier: weact_esp32c6_mini/esp32c6/lpcore
-name: ESP32-C6-Mini LP Core
+name: WeAct Studio ESP32-C6-Mini LP Core
 vendor: weact
 type: mcu
 arch: riscv
