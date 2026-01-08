@@ -101,4 +101,11 @@
 				 <PC8A_EBI_NWE>;
 		};
 	};
+
+	udp_default: udp_default {
+		group1 {
+			pinmux = <PB10S_UDP_DDM>,
+				 <PB11S_UDP_DDP>;
+		};
+	};
 };
