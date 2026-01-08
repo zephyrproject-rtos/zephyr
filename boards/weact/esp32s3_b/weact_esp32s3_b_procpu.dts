@@ -15,7 +15,7 @@
 
 / {
 	model = "WeAct Studio ESP32-S3-B PROCPU";
-	compatible = "espressif,esp32s3";
+	compatible = "weact,esp32s3-b";
 
 	aliases {
 		i2c-0 = &i2c0;
