@@ -15,4 +15,5 @@ supported:
   - retained_mem
   - netif:wifi
   - netif:eth
+  - rmt
 vendor: espressif
