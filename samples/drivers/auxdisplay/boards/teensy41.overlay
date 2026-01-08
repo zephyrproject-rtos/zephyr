@@ -19,7 +19,7 @@
  *
  */
 
- #include <dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/input/input-event-codes.h>
 
 /* Enable LPUART6 on Teensy 4.1 (Pins 0/1) */
 &lpuart6 {
@@ -29,9 +29,9 @@
 
 /* Enable LPI2C1 on Teensy 4.1 (Pins 18/19) */
 &lpi2c1 {
-    status = "okay";
-    pinctrl-0 = <&pinmux_lpi2c1>;
-    pinctrl-names = "default";
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 
 	aux_display_gpio: pcf8574@20 {
 		compatible = "nxp,pcf857x";
@@ -43,10 +43,10 @@
 };
 
 / {
-    chosen {
-        zephyr,console = &lpuart6;
-        zephyr,shell-uart = &lpuart6;
-    };
+	chosen {
+		zephyr,console = &lpuart6;
+		zephyr,shell-uart = &lpuart6;
+	};
 
 	auxdisplay_0: hd44780 {
 		compatible = "hit,hd44780";
