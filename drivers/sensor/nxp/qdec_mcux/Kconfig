@@ -1,11 +1,16 @@
 # Copyright (c) 2022, Prevas A/S
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config QDEC_MCUX
 	bool "NXP QDEC MCUX driver"
 	default y
 	depends on DT_HAS_NXP_MCUX_QDEC_ENABLED
-	select MCUX_XBARA
+	# Add if condition to indicate not all of the following are required
+	select MCUX_XBAR if DT_HAS_NXP_MCUX_XBAR_ENABLED
+	select MCUX_XBAR_1 if DT_HAS_NXP_MCUX_XBAR_1_ENABLED
+	select MCUX_XBARA if DT_HAS_NXP_MCUX_XBARA_ENABLED
+	select MCUX_XBARB if DT_HAS_NXP_MCUX_XBARB_ENABLED
 	select PINCTRL
 	help
 	  Enable support for NXP MCUX Quadrature Encoder driver.

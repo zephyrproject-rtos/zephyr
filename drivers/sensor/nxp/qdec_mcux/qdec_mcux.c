@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 #include <fsl_enc.h>
-#include <fsl_xbara.h>
+#include <zephyr/drivers/misc/nxp_xbar/nxp_xbar.h>
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
@@ -22,9 +22,12 @@ LOG_MODULE_REGISTER(qdec_mcux, CONFIG_SENSOR_LOG_LEVEL);
 struct qdec_mcux_config {
 	ENC_Type *base;
 	const struct pinctrl_dev_config *pincfg;
-	XBARA_Type *xbar;
+#if XBAR_AVAILABLE
+	const char *xbar_compat;
+	uintptr_t xbar_base;
 	size_t xbar_maps_len;
 	int xbar_maps[];
+#endif
 };
 
 struct qdec_mcux_data {
@@ -140,12 +143,35 @@ static void init_inputs(const struct device *dev)
 	assert(i == 0);
 
 	/* Quadrature Encoder inputs are only accessible via crossbar */
-	XBARA_Init(config->xbar);
-	for (i = 0; i < config->xbar_maps_len; i += 2) {
-		XBARA_SetSignalsConnection(config->xbar, config->xbar_maps[i],
-					   config->xbar_maps[i + 1]);
+#if XBAR_AVAILABLE
+	if (config->xbar_base != 0) {
+		/* Initialize XBAR using unified API */
+		XBAR_INIT(config->xbar_compat, config->xbar_base);
+
+		/* Connect signals in pairs: [input, output, input, output, ...] */
+		for (i = 0; i < config->xbar_maps_len; i += 2) {
+			XBAR_CONNECT(config->xbar_compat, config->xbar_base,
+				config->xbar_maps[i], config->xbar_maps[i + 1]);
+		}
 	}
+#endif
 }
+
+#if XBAR_AVAILABLE
+#define EQDC_XBAR_INIT(n) \
+	.xbar_compat = XBAR_COMPAT_STR(n, xbar), \
+	.xbar_base = XBAR_BASE(n, xbar), \
+	.xbar_maps = XBAR_MAPS(n, xbar), \
+	.xbar_maps_len = XBAR_MAPS_LEN(n, xbar),
+
+#define CHECK_XBAR_MAP_LENGTH(n)	\
+	BUILD_ASSERT((XBAR_MAPS_LEN(n, xbar) > 0) &&	\
+		((XBAR_MAPS_LEN(n, xbar) % 2) == 0),	\
+			"xbar_maps length must be an even number");
+#else
+#define EQDC_XBAR_INIT(n)
+#define CHECK_XBAR_MAP_LENGTH(n)
+#endif /* XBAR_AVAILABLE */
 
 #define XBAR_PHANDLE(n)	DT_INST_PHANDLE(n, xbar)
 
@@ -159,8 +185,7 @@ static void init_inputs(const struct device *dev)
 
 #define QDEC_MCUX_INIT(n)							\
 										\
-	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
-			"xbar_maps length must be an even number");		\
+	CHECK_XBAR_MAP_LENGTH(n)						\
 	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);		\
 	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);			\
 										\
@@ -172,10 +197,8 @@ static void init_inputs(const struct device *dev)
 										\
 	static const struct qdec_mcux_config qdec_mcux_##n##_config = {		\
 		.base = (ENC_Type *)DT_INST_REG_ADDR(n),			\
-		.xbar = (XBARA_Type *)DT_REG_ADDR(XBAR_PHANDLE(n)),		\
-		.xbar_maps_len = DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps),	\
-		.xbar_maps = DT_PROP(XBAR_PHANDLE(n), xbar_maps),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		EQDC_XBAR_INIT(n)	\
 	};									\
 										\
 	static int qdec_mcux_##n##_init(const struct device *dev)		\
