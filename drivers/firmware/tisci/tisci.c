@@ -256,7 +256,9 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 
 	ret = mbox_send_dt(&config->mbox_tx, msg);
 	if (ret < 0) {
-		LOG_ERR("Could not send (%d)\n", ret);
+		LOG_ERR("Could not send on %s path\n",
+			config->is_secure ? "secure" : "non-secure");
+		k_sem_give(&data->data_sem);
 		return ret;
 	}
 
@@ -268,8 +270,12 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 		}
 		if (!tisci_is_response_ack(xfer->rx_message.buf)) {
 			LOG_ERR("TISCI Response in NACK\n");
+			k_sem_give(&data->data_sem);
 			return -ENODEV;
 		}
+	} else {
+		/* No response requested, release semaphore */
+		k_sem_give(&data->data_sem);
 	}
 
 	return 0;
