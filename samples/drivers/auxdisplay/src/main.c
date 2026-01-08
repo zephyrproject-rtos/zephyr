@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2023 Jamie McCrae
- * Copyright (c) 2026 Hatus Vianna Wnderley
- *
+  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Modifications:
