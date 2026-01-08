@@ -1,10 +1,8 @@
 /*
  * Copyright (c) 2023 Jamie McCrae
-  *
+ *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Modifications:
- *  - Added display backlight enable
  */
 
 #include <string.h>
