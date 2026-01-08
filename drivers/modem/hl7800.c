@@ -3982,6 +3982,11 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		err = true;
 		sock->error = -ENOTCONN;
 		break;
+	case HL7800_TCP_CONN:
+		/* Connection failed/refused on this socket; do NOT drop network. */
+		err = true;
+		sock->error = -ECONNREFUSED;
+		break;
 	default:
 		iface_ctx.network_dropped = true;
 		err = true;
