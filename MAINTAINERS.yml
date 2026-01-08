@@ -1832,6 +1832,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - teburd
+  collaborators:
+    - maass-hamburg
   files:
     - drivers/i2c/
     - include/zephyr/drivers/i2c/
