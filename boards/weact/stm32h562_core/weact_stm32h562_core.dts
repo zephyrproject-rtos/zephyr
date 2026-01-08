@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio STM32H5 Core Board";
-	compatible = "weact,stm32h5-core";
+	model = "WeAct Studio STM32H562 Core Board";
+	compatible = "weact,stm32h562-core";
 
 	chosen {
 		zephyr,console = &usart1;
