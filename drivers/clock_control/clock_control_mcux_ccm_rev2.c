@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024-2025 NXP
+ * Copyright 2021,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +50,17 @@ static int mcux_ccm_on(const struct device *dev,
 		return 0;
 #endif
 #endif
+#ifdef CONFIG_MUX_NXP_XBAR
+	case IMX_CCM_XBAR1_CLK:
+		CLOCK_EnableClock(kCLOCK_Xbar1);
+		return 0;
+	case IMX_CCM_XBAR2_CLK:
+		CLOCK_EnableClock(kCLOCK_Xbar2);
+		return 0;
+	case IMX_CCM_XBAR3_CLK:
+		CLOCK_EnableClock(kCLOCK_Xbar3);
+		return 0;
+ #endif
 	default:
 		(void)instance;
 		return 0;
@@ -357,6 +368,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_INPUT_MCUX_KPP
 	case IMX_CCM_KPP_CLK:
 		clock_root = kCLOCK_CpuClk;
+		break;
+#endif
+
+#ifdef CONFIG_MCUX_EQDC
+	case IMX_CCM_EQDC_CLK:
+		clock_root = kCLOCK_Root_Bus_Wakeup;
 		break;
 #endif
 
