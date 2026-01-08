@@ -512,6 +512,14 @@ applications as sysbuild domains. Call this CMake function from your
 application's :file:`sysbuild.cmake` file, or any other CMake file you know will
 run as part sysbuild CMake invocation.
 
+A variant image can also added using the ``ExternalZephyrVariantProject_Add()`` function which
+will duplicate an existing image in the sysbuild project, and allows for slight differences in
+configuration. An example use case for this feature is to change the chosen flash node of an image
+but having the rest of the configuration identical to the base image. When this is used, neither
+sysbuild itself nor the image will have the extra Kconfig targets made for it such as menuconfig,
+guiconfig, hardenconfig or traceconfig, as the base image can be used for viewing/adjusting
+these instead.
+
 Targeting the same board
 ========================
 
