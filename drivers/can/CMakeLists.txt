@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE can_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CAN_ESP32_TWAI can_esp32_twai.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_FAKE can_fake.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_IFX_MCAN can_ifx.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_KVASER_PCI can_kvaser_pci.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_LOOPBACK can_loopback.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MAX32 can_max32.c)

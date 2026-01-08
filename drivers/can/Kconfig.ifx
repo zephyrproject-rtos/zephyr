@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_IFX_MCAN
+	bool "Infineon MCAN driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_CAN_ENABLED
+	depends on CLOCK_CONTROL
+	select CAN_MCAN
+	select PINCTRL
+	help
+	  Enable support for infineon cat1 family can driver.
