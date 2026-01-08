@@ -684,6 +684,38 @@
 		};
 	};
 
+	eqdc1: eqdc@2710000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2710000 0x4000>;
+		interrupts = <185 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
+	eqdc2: eqdc@2720000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2720000 0x4000>;
+		interrupts = <186 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
+	eqdc3: eqdc@2730000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2730000 0x4000>;
+		interrupts = <187 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
+	eqdc4: eqdc@2740000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2740000 0x4000>;
+		interrupts = <188 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
 	netc: ethernet {
 		compatible = "nxp,imx-netc";
 		#address-cells = <1>;
@@ -1217,6 +1249,33 @@
 		prescaler = <16>;
 		status = "disabled";
 		#pwm-cells = <3>;
+	};
+
+		xbar1: xbar1@42750000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x42750000 0x4000>;
+		clocks = <&ccm IMX_CCM_XBAR1_CLK 0x6f 0>;
+		#mux-control-cells = <2>;
+		#mux-state-cells = <3>;
+		status = "okay";
+	};
+
+	xbar2: xbar2@42760000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x42760000 0x4000>;
+		clocks = <&ccm IMX_CCM_XBAR2_CLK 0x70 0>;
+		#mux-control-cells = <2>;
+		#mux-state-cells = <3>;
+		status = "disabled";
+	};
+
+	xbar3: xbar3@42770000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x42770000 0x4000>;
+		clocks = <&ccm IMX_CCM_XBAR3_CLK 0x71 0>;
+		#mux-control-cells = <2>;
+		#mux-state-cells = <3>;
+		status = "disabled";
 	};
 
 	i3c1: i3c@4330000 {
