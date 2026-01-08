@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -3541,6 +3541,15 @@ static int sdp_attr_parse(struct net_buf_simple *buf,
 out:
 		if (!func(&value, user_data)) {
 			return -ECANCELED;
+		}
+
+		if ((vbuf.len > 0) && sdp_attr_is_seq(vbuf.data[0])) {
+			LOG_DBG("Recursively parse if the following data is a sequence");
+
+			err = sdp_attr_parse(&vbuf, func, user_data, nest_level + 1);
+			if (err != 0) {
+				return err;
+			}
 		}
 
 		if (vbuf.len < sizeof(uint8_t)) {
