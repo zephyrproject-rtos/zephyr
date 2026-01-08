@@ -106,6 +106,18 @@ int main(void)
 		}
 
 		printk("Position = %d degrees\n", val.val1);
+
+		/* Get speed(Optional)*/
+		rc = sensor_channel_get(dev, SENSOR_CHAN_RPM, &val);
+		if (rc == 0) {
+			printk("Speed = %d RPM\n", val.val1);
+		}
+
+		/* Get revolutions(Optional)*/
+		rc = sensor_channel_get(dev, SENSOR_CHAN_ENCODER_REVOLUTIONS, &val);
+		if (rc == 0) {
+			printk("Revolutions = %d\n", val.val1);
+		}
 	}
 	return 0;
 }
