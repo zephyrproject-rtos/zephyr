@@ -82,3 +82,10 @@ config CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
 	  used to initialize the SoC clocks.
 
 endif # CLOCK_CONTROL_NXP_S32
+
+config CLOCK_CONTROL_NXP_MCXW
+	bool "NXP MCXW clock control driver"
+	default y
+	depends on DT_HAS_NXP_MCXW_CLOCK_ENABLED
+	help
+	  Enable support for NXP MCXW clock control driver.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
-#include <zephyr/dt-bindings/clock/scg_k4.h>
+#include <zephyr/dt-bindings/clock/nxp_mcxw_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -147,37 +147,58 @@
 		interrupts = <22 0>;
 	};
 
-	scg: clock-controller@1e000 {
-		compatible = "nxp,scg-k4";
-		reg = <0x1e000 0x404>;
-		#clock-cells = <2>;
+	clk_ctrl: clock-controller {
+		compatible = "nxp,mcxw-clock";
+		osc32k-mode = <MCXW_CLK_OSC32K_ENABLE>;
+		osc32k-xtal-cap = <4>;
+		osc32k-extal-cap = <4>;
+		firc-mode = <MCXW_CLK_FIRC_ENABLE>;
+		firc-range = <MCXW_CLK_FIRC_RANGE_96MHZ>;
+		enable-sirc-in-lp-mode;
+		sys-clk-src = <MCXW_CLK_SYSTEM_CLK_SRC_FIRC>;
+		sys-clk-div-bus = <1>;
+		sys-clk-div-slow = <4>;
+		sys-clk-div-core = <1>;
+		enable-sosc;
+		sosc-freq = <DT_FREQ_M(32)>;
+		#clock-cells = <1>;
 	};
 
 	porta: pinctrl@42000 {
 		compatible = "nxp,port-pinmux";
-		clocks = <&scg SCG_K4_SLOW_CLK 0x108>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x108, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 	};
 
 	portb: pinctrl@43000 {
 		compatible = "nxp,port-pinmux";
-		clocks = <&scg SCG_K4_SLOW_CLK 0x10c>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x10c, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 	};
 
 	portc: pinctrl@44000 {
 		compatible = "nxp,port-pinmux";
-		clocks = <&scg SCG_K4_SLOW_CLK 0x110>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x110, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 	};
 
 	portd: pinctrl@45000 {
 		compatible = "nxp,port-pinmux";
-		clocks = <&scg SCG_K4_SLOW_CLK 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 	};
 
 	lpit0: timer@2f000 {
 		compatible = "nxp,lpit";
 		reg = <0x2f000 0x60>;
 		interrupts = <36 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xbc>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xbc, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 		max-load-value = <0xffffffff>;
 		#address-cells = <1>;
@@ -212,7 +233,9 @@
 		compatible = "nxp,lpuart";
 		reg = <0x38000 0x34>;
 		interrupts = <44 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		dmas = <&edma 0 32>, <&edma 1 31>;
 		dma-names = "tx", "rx";
 		status = "disabled";
@@ -222,7 +245,9 @@
 		compatible = "nxp,lpuart";
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		dmas = <&edma 2 34>, <&edma 3 33>;
 		dma-names = "tx", "rx";
 		status = "disabled";
@@ -235,7 +260,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		interrupts = <39 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_BY_16,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 	};
 
@@ -246,7 +273,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		interrupts = <40 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_BY_16,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 	};
 
@@ -254,7 +283,9 @@
 		compatible = "nxp,lpspi";
 		reg = <0x36000 0x800>;
 		interrupts = <42 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xd8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		tx-fifo-size = <8>;
 		rx-fifo-size = <8>;
 		#address-cells = <1>;
@@ -266,7 +297,9 @@
 		compatible = "nxp,lpspi";
 		reg = <0x37000 0x800>;
 		interrupts = <43 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xdc, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		tx-fifo-size = <8>;
 		rx-fifo-size = <8>;
 		#address-cells = <1>;
@@ -294,7 +327,9 @@
 		compatible = "nxp,kinetis-tpm";
 		reg = <0x31000 0x88>;
 		interrupts = <37 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xc4>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xc4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
 		status = "disabled";
 		#pwm-cells = <3>;
@@ -304,7 +339,9 @@
 		compatible = "nxp,kinetis-tpm";
 		reg = <0x32000 0x88>;
 		interrupts = <38 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0xc8>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xc8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
 		status = "disabled";
 		#pwm-cells = <3>;
@@ -314,8 +351,6 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1a000 10>;
 		interrupts = <23 0>;
-		clocks = <&scg SCG_K4_RTCOSC_CLK 0x68>;
-		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <1>;
 		status = "okay";
@@ -325,8 +360,6 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1b000 10>;
 		interrupts = <24 0>;
-		clocks = <&scg SCG_K4_RTCOSC_CLK 0x6c>;
-		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <1>;
 		status = "disabled";
@@ -377,7 +410,11 @@
 		reg = <0x3b000 0x3080>;
 		interrupts = <47 0>;
 		interrupt-names = "common";
-		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xec, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_BY_1,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
 		number-of-mb = <32>;
 		status = "disabled";
 	};
@@ -386,7 +423,9 @@
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x47000 0x584>;
 		interrupts = <71 0>;
-		clocks = <&scg SCG_K4_FIRC_CLK 0x11c>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x11c, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_BY_10,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		voltage-ref = <1>;
 		calibration-average = <128>;
 		/* pwrlvl 0 is slow speed low power, 1 is opposite */
@@ -402,6 +441,9 @@
 		compatible = "nxp,vref";
 		reg = <0x4a000 0x14>;
 		regulator-name = "mcxw71-vref";
+		clocks = <&clk_ctrl MCXW_CLOCK(0x128, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
@@ -435,7 +477,9 @@
 		dma-channels = <16>;
 		dma-requests = <64>;
 		reg = <0x2000 0x140>;
-		clocks = <&scg SCG_K4_EDMA_CLK 0x410>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x410, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
 			     <6 0>, <7 0>, <8 0>, <9 0>,
 			     <10 0>, <11 0>, <12 0>, <13 0>,
@@ -446,6 +490,9 @@
 	ewm0: ewm@13000 {
 		compatible = "nxp,ewm";
 		reg = <0x13000 0x6>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x4c, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 		interrupts = <18 0>;
 		clk-divider = <0x0>;
@@ -455,7 +502,9 @@
 		compatible = "nxp,flexio";
 		reg = <0x3a000 0x920>;
 		interrupts = <46 0>;
-		clocks = <&scg SCG_K4_FLEXIO_CLK 0xe8>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+								MCXW_CLK_DIV_BY_6,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 
 		flexio_pwm {
@@ -471,6 +520,9 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x404, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porta>;
 		reg = <0x10000 0x128>;
@@ -480,6 +532,9 @@
 	gpiob: gpio@20000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
+		clocks = <&clk_ctrl MCXW_CLOCK(0x408, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portb>;
@@ -490,6 +545,9 @@
 	gpioc: gpio@30000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
+		clocks = <&clk_ctrl MCXW_CLOCK(0x40C, MCXW_CLK_IP_MUX_NONE,
+								MCXW_CLK_DIV_NONE,
+								MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portc>;
