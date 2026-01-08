@@ -363,4 +363,23 @@ ZTEST(posix_signals, test_sigprocmask)
 	}
 }
 
+ZTEST(posix_signals, test_raise)
+{
+	int ret;
+
+	/* Test that raise() is callable for signals 
+	 * Skip this test when using PICOLIBC from toolchain, as picolibc's
+	 * raise() implementation may call stubbed kill()/pthread_kill() which hang.
+	 * Our COMMON_LIBC_RAISE implementation is only enabled for MINIMAL_LIBC.
+	 */
+	if (IS_ENABLED(CONFIG_PICOLIBC) && !IS_ENABLED(CONFIG_COMMON_LIBC_RAISE)) {
+		ztest_test_skip();
+		return;
+	}
+
+	ret = raise(SIGTERM);
+	zassert_equal(ret, -1, "raise() should return -1");
+	zassert_equal(errno, ENOSYS, "errno should be ENOSYS");
+}
+
 ZTEST_SUITE(posix_signals, NULL, NULL, NULL, NULL, NULL);
