@@ -4685,6 +4685,8 @@ Safety:
   maintainers:
     - tobiaskaestner
     - parphane
+  collaborators:
+    - jkey-eng
   files:
     - doc/safety/
   labels:
