@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxn236
-name: NXP FRDM MCXN236
+name: NXP FRDM-MCXN236
 type: mcu
 arch: arm
 ram: 256
