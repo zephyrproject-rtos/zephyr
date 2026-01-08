@@ -33,6 +33,12 @@
 #define NPCX_PWDWN_CTL7            7
 #define NPCX_PWDWN_CTL8            8
 #define NPCX_PWDWN_CTL9            9
+
+/* NPCM series has only 9 PWDWN_CTL registers (CTL0-CTL8) */
+#if defined(CONFIG_SOC_SERIES_NPCM4)
+#define NPCX_PWDWN_CTL_COUNT       9
+#else
 #define NPCX_PWDWN_CTL_COUNT       10
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NPCX_CLOCK_H_ */

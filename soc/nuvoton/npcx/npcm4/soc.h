@@ -24,7 +24,7 @@
 #define NPCX_WKINEN_OFFSET(n) (0x01f + (n * 2) + ((n < 5) ? 0 : 0x012))
 
 /* NPCM4 PMC multi-registers */
-#define NPCX_PWDWN_CTL_OFFSET(n) (((n - 1) < 6) ? (0x008 + (n - 1)) : (0x01e + (n - 1)))
+#define NPCX_PWDWN_CTL_OFFSET(n) ((n < 7) ? (0x007 + n) : (0x015 + (n - 7)))
 
 /* NPCM4 ADC multi-registers */
 #define NPCX_CHNDAT_OFFSET(n) (0x040 + n * 2)
