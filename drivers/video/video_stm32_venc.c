@@ -601,12 +601,15 @@ static int encoder_start(struct stm32_venc_data *data, struct video_buffer *outp
 
 static int encoder_end(struct stm32_venc_data *data)
 {
+	struct stm32_venc_ewl *inst = &ewl_instance;
 	H264EncIn enc_in = {0};
 	H264EncOut enc_out = {0};
 
 	if (data->encoder != NULL) {
 		H264EncStrmEnd(data->encoder, &enc_in, &enc_out);
+		H264EncRelease(data->encoder);
 		data->encoder = NULL;
+		inst->mem_cnt = 0;
 	}
 
 	return 0;
