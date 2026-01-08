@@ -3486,6 +3486,11 @@ static int sdp_attr_parse(struct net_buf_simple *buf,
 		return err;
 	}
 
+	if (len == 0) {
+		LOG_DBG("No valid data found");
+		return 0;
+	}
+
 	if (nest_level == SDP_DATA_ELEM_NEST_LEVEL_MAX) {
 		LOG_WRN("Exceed max nesting level (%u). Ignore ATTR data (len %u)",
 			SDP_DATA_ELEM_NEST_LEVEL_MAX, len);
