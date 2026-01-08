@@ -323,6 +323,14 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 };
 
+&hfxo {
+	status = "okay";
+};
+
+&lfxo {
+	status = "okay";
+};
+
 &pwm130 {
 	status = "okay";
 	pinctrl-0 = <&pwm130_default>;

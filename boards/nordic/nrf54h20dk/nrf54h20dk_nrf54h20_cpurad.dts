@@ -95,6 +95,14 @@ slot1_partition: &cpurad_slot1_partition {
 	status = "okay";
 };
 
+&hfxo {
+	status = "okay";
+};
+
+&lfxo {
+	status = "okay";
+};
+
 &uart135 {
 	status = "okay";
 	memory-regions = <&cpurad_dma_region>;
