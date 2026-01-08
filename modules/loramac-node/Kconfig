@@ -33,6 +33,7 @@ config HAS_SEMTECH_LORAMAC
 config HAS_SEMTECH_SOFT_SE
 	bool "Semtech Secure Element software implementation"
 	depends on HAS_SEMTECH_LORAMAC
+	depends on SYSTEM_WORKQUEUE_STACK_SIZE >= 2048
 	help
 	  This option enables the use of Semtech's Secure Element
 	  software implementation

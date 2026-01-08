@@ -1,0 +1,15 @@
+sample:
+  description: Test bridge functionality
+  name: bridge sample app
+common:
+  harness: net
+  tags:
+    - net
+tests:
+  sample.net.bridge:
+    build_only: true
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mimxrt1180_evk/mimxrt1189/cm33
+    depends_on: eth

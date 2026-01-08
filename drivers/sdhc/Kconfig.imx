@@ -7,6 +7,7 @@ config IMX_USDHC
 	depends on DT_HAS_NXP_IMX_USDHC_ENABLED
 	select SDHC_SUPPORTS_UHS
 	select SDHC_SUPPORTS_NATIVE_MODE
+	select SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER if IMX_USDHC_DMA_SUPPORT
 	select PINCTRL
 	help
 	  Enable the NXP IMX SD Host controller driver
@@ -18,6 +19,12 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 	default y
 	help
 	  Toggle power to SD card to clear DAT3 pull when pulling line low
+
+config IMX_USDHC_DAT3_DETECT_RETRY
+	int "Number of retries for DAT3-based card detection"
+	default 1
+	help
+	  Number of retries for DAT3 card detection to reduce false negatives
 
 config IMX_USDHC_DMA_SUPPORT
 	bool "DMA support for USDHC"
@@ -38,8 +45,13 @@ config IMX_USDHC_DMA_BUFFER_SIZE
 	help
 	  Size of USDHC ADMA descriptor buffer in bytes
 
+config IMX_USDHC_DMA_SCATTER_GATHER_BUF_COUNT
+	int "Scatter-Gather buffers count allocated"
+	default 36
+	depends on SDHC_SCATTER_GATHER_TRANSFER
+	help
+	  Count of USDHC Scatter-Gather buffers allocated.
+
 endif # IMX_USDHC_DMA_SUPPORT
-
-
 
 endif

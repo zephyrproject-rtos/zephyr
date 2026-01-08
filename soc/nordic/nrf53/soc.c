@@ -16,9 +16,9 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
-#include <nrf_erratas.h>
+#include <nrfx.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>
@@ -390,8 +390,8 @@ bool z_arm_on_enter_cpu_idle(void)
 /* RTC pretick - application core part. */
 static int rtc_pretick_cpuapp_init(void)
 {
-	uint8_t ch;
-	nrfx_err_t err;
+	nrfx_gppi_handle_t handle;
+	int err;
 	nrf_ipc_event_t ipc_event =
 		nrf_ipc_receive_event_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET);
 	nrf_ipc_task_t ipc_task =
@@ -399,19 +399,16 @@ static int rtc_pretick_cpuapp_init(void)
 	uint32_t task_ipc = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
 	uint32_t evt_ipc = nrf_ipc_event_address_get(NRF_IPC, ipc_event);
 
-	err = nrfx_gppi_channel_alloc(&ch);
-	if (err != NRFX_SUCCESS) {
-		return -ENOMEM;
-	}
-
 	nrf_ipc_receive_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET,
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
 	nrf_ipc_send_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET,
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET));
+	err = nrfx_gppi_conn_alloc(evt_ipc, task_ipc, &handle);
+	if (err < 0) {
+		return err;
+	}
 
-	nrfx_gppi_task_endpoint_setup(ch, task_ipc);
-	nrfx_gppi_event_endpoint_setup(ch, evt_ipc);
-	nrfx_gppi_channels_enable(BIT(ch));
+	nrfx_gppi_conn_enable(handle);
 
 	return 0;
 }
@@ -429,7 +426,7 @@ void rtc_pretick_rtc1_isr_hook(void)
 
 static int rtc_pretick_cpunet_init(void)
 {
-	uint8_t ppi_ch;
+	nrfx_gppi_handle_t ppi_handle;
 	nrf_ipc_task_t ipc_task =
 		nrf_ipc_send_task_get(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET);
 	nrf_ipc_event_t ipc_event =
@@ -439,6 +436,7 @@ static int rtc_pretick_cpunet_init(void)
 	uint32_t task_wdt = nrf_wdt_task_address_get(NRF_WDT, NRF_WDT_TASK_START);
 	uint32_t evt_cc = nrf_rtc_event_address_get(NRF_RTC1,
 				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
+	int err;
 
 	/* Configure Watchdog to allow stopping. */
 	nrf_wdt_behaviour_set(NRF_WDT, WDT_CONFIG_STOPEN_Msk | BIT(4));
@@ -451,17 +449,16 @@ static int rtc_pretick_cpunet_init(void)
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
 
 	/* Allocate PPI channel for RTC Compare event publishers that starts WDT. */
-	nrfx_err_t err = nrfx_gppi_channel_alloc(&ppi_ch);
-
-	if (err != NRFX_SUCCESS) {
-		return -ENOMEM;
+	err = nrfx_gppi_domain_conn_alloc(0, 0, &ppi_handle);
+	if (err < 0) {
+		return err;
 	}
 
-	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_cc);
-	nrfx_gppi_task_endpoint_setup(ppi_ch, task_ipc);
-	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_ipc);
-	nrfx_gppi_task_endpoint_setup(ppi_ch, task_wdt);
-	nrfx_gppi_channels_enable(BIT(ppi_ch));
+	nrfx_gppi_ep_attach(evt_cc, ppi_handle);
+	nrfx_gppi_ep_attach(task_ipc, ppi_handle);
+	nrfx_gppi_ep_attach(evt_ipc, ppi_handle);
+	nrfx_gppi_ep_attach(task_wdt, ppi_handle);
+	nrfx_gppi_conn_enable(ppi_handle);
 
 	nrf_rtc_event_enable(NRF_RTC1, NRF_RTC_CHANNEL_INT_MASK(RTC1_PRETICK_CC_CHAN));
 	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));

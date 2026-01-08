@@ -12,7 +12,7 @@ A kernel object can be one of three classes of data:
   set of subsystems
 
 The set of known kernel objects and driver subsystems is defined in
-include/kernel.h as :c:enum:`k_objects`.
+:zephyr_file:`include/zephyr/sys/kobject.h` as :c:enum:`k_objects`.
 
 Kernel objects are completely opaque to user threads. User threads work
 with addresses to kernel objects when making API calls, but may never

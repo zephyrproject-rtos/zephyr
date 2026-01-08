@@ -25,8 +25,7 @@ def front_matter(sys_nerr):
 
 
 def gen_strerror_table(input, output):
-    with open(input, 'r') as inf:
-
+    with open(input) as inf:
         highest_errno = 0
         symbols = []
         msgs = {}
@@ -49,19 +48,13 @@ def gen_strerror_table(input, output):
 
             highest_errno = max(int(errno), highest_errno)
 
-        try:
-            os.makedirs(os.path.dirname(output))
-        except BaseException:
-            # directory already present
-            pass
+        os.makedirs(os.path.dirname(output), exist_ok=True)
 
         with open(output, 'w') as outf:
-
             print(front_matter(highest_errno + 1), file=outf)
 
             # Generate string table
-            print(
-                f'static const char *const sys_errlist[sys_nerr] = {{', file=outf)
+            print('static const char *const sys_errlist[sys_nerr] = {', file=outf)
             print('[0] = "Success",', file=outf)
             for symbol in symbols:
                 print(f'[{symbol}] = "{msgs[symbol]}",', file=outf)
@@ -69,8 +62,7 @@ def gen_strerror_table(input, output):
             print('};', file=outf)
 
             # Generate string lengths (includes trailing '\0')
-            print(
-                f'static const uint8_t sys_errlen[sys_nerr] = {{', file=outf)
+            print('static const uint8_t sys_errlen[sys_nerr] = {', file=outf)
             print('[0] = 8,', file=outf)
             for symbol in symbols:
                 print(f'[{symbol}] = {len(msgs[symbol]) + 1},', file=outf)
@@ -85,13 +77,15 @@ def parse_args():
         '--input',
         dest='input',
         required=True,
-        help='input file (e.g. lib/libc/minimal/include/errno.h)')
+        help='input file (e.g. lib/libc/minimal/include/errno.h)',
+    )
     parser.add_argument(
         '-o',
         '--output',
         dest='output',
         required=True,
-        help='output file (e.g. build/zephyr/misc/generated/libc/minimal/strerror_table.h)')
+        help='output file (e.g. build/zephyr/misc/generated/libc/minimal/strerror_table.h)',
+    )
 
     args = parser.parse_args()
 

@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) 2020 Nordic Semiconductor
  * Copyright (c) 2020, Linaro Ltd.
+ * Copyright (c) 2025 The Zephyr Project Contributors
  *
  * Not a generated file. Feel free to modify.
  */
@@ -434,6 +435,41 @@
  * @return node identifier for the node with the name referred to by 'child'
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
+ * @brief Get a node identifier for a child node with a matching unit address
+ *
+ * @note Only works for children with unique integer unit addresses.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc-label: soc {
+ *                     serial1: serial@40001000 {
+ *                             status = "okay";
+ *                             current-speed = <115200>;
+ *                             ...
+ *                     };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage with DT_PROP() to get the status of the
+ * `serial@40001000` node:
+ *
+ * @code{.c}
+ *     #define SOC_NODE DT_NODELABEL(soc_label)
+ *     DT_PROP(DT_CHILD_BY_UNIT_ADDR_INT(SOC_NODE, 1073745920), status) // "okay"
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param addr Integer unit address for the child node.
+ *
+ * @return node identifier for the child node with the specified unit address
+ */
+#define DT_CHILD_BY_UNIT_ADDR_INT(node_id, addr) \
+	DT_CAT3(node_id, _CHILD_UNIT_ADDR_INT_, addr)
 
 /**
  * @brief Get a node identifier for a status `okay` node with a compatible
@@ -1321,6 +1357,18 @@
  */
 #define DT_STRING_TOKEN_BY_IDX(node_id, prop, idx) \
 	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_TOKEN)
+
+/**
+ * @brief Like DT_STRING_TOKEN_BY_IDX(), but with a fallback to @p default_value
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @param default_value a fallback value to expand to
+ * @return the element in @p prop at index @p idx as a token, or @p default_value
+ */
+#define DT_STRING_TOKEN_BY_IDX_OR(node_id, prop, idx, default_value) \
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, prop, idx), \
+		    (DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), (default_value))
 
 /**
  * @brief Like DT_STRING_TOKEN_BY_IDX(), but uppercased.
@@ -4067,6 +4115,21 @@
 	DT_CHILD(DT_DRV_INST(inst), child)
 
 /**
+ * @brief Get a node identifier for a child node with a matching unit address of DT_DRV_INST(inst)
+ *
+ * @note Only works for children with unique integer unit addresses.
+ *
+ * @param inst instance number
+ * @param addr Integer unit address for the child node.
+ *
+ * @return node identifier for the child node with the specified unit address
+ *
+ * @see DT_CHILD_BY_UNIT_ADDR_INT
+ */
+#define DT_INST_CHILD_BY_UNIT_ADDR_INT(inst, addr) \
+	DT_CHILD_BY_UNIT_ADDR_INT(DT_DRV_INST(inst), addr)
+
+/**
  * @brief Get the number of child nodes of a given node
  *
  * This is equivalent to @see
@@ -4417,6 +4480,17 @@
  */
 #define DT_INST_STRING_TOKEN_BY_IDX(inst, prop, idx) \
 	DT_STRING_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @param default_value a fallback value to expand to
+ * @return the element in @p prop at index @p idx as a token, or @p default_value
+ */
+#define DT_INST_STRING_TOKEN_BY_IDX_OR(inst, prop, idx, default_value) \
+	DT_STRING_TOKEN_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
 
 /**
  * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but uppercased.
@@ -5414,60 +5488,60 @@
 /** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has property @p prop.
+ * identified by index @p inst, if instance has property @p prop.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has boolean property
+ * identified by index @p inst, if instance has boolean property
  * @p prop with value 1.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance property value is 1,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
-	IF_ENABLED(DT_INST_PROP(idx, prop), (1,))
+#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
+	IF_ENABLED(DT_INST_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has no property @p prop.
+ * identified by index @p inst, if instance has no property @p prop.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
-	IF_DISABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
+	IF_DISABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has no boolean property
+ * identified by index @p inst, if instance has no boolean property
  * @p prop with value 1.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance property value is 0,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
-	IF_DISABLED(DT_INST_PROP(idx, prop), (1,))
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
+	IF_DISABLED(DT_INST_PROP(inst, prop), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))

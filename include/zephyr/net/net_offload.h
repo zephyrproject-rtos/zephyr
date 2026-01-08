@@ -53,7 +53,7 @@ struct net_offload {
 	/**
 	 * This function is called when the socket is to be opened.
 	 */
-	int (*get)(sa_family_t family,
+	int (*get)(net_sa_family_t family,
 		   enum net_sock_type type,
 		   enum net_ip_protocol ip_proto,
 		   struct net_context **context);
@@ -62,8 +62,8 @@ struct net_offload {
 	 * This function is called when user wants to bind to local IP address.
 	 */
 	int (*bind)(struct net_context *context,
-		    const struct sockaddr *addr,
-		    socklen_t addrlen);
+		    const struct net_sockaddr *addr,
+		    net_socklen_t addrlen);
 
 	/**
 	 * This function is called when user wants to mark the socket
@@ -76,8 +76,8 @@ struct net_offload {
 	 * to a peer host.
 	 */
 	int (*connect)(struct net_context *context,
-		       const struct sockaddr *addr,
-		       socklen_t addrlen,
+		       const struct net_sockaddr *addr,
+		       net_socklen_t addrlen,
 		       net_context_connect_cb_t cb,
 		       int32_t timeout,
 		       void *user_data);
@@ -103,8 +103,8 @@ struct net_offload {
 	 * This function is called when user wants to send data to peer host.
 	 */
 	int (*sendto)(struct net_pkt *pkt,
-		      const struct sockaddr *dst_addr,
-		      socklen_t addrlen,
+		      const struct net_sockaddr *dst_addr,
+		      net_socklen_t addrlen,
 		      net_context_send_cb_t cb,
 		      int32_t timeout,
 		      void *user_data);
@@ -134,15 +134,15 @@ struct net_offload {
  *
  * @param iface Network interface where the offloaded IP stack can be
  * reached.
- * @param family IP address family (AF_INET or AF_INET6)
- * @param type Type of the socket, SOCK_STREAM or SOCK_DGRAM
- * @param ip_proto IP protocol, IPPROTO_UDP or IPPROTO_TCP
+ * @param family IP address family (NET_AF_INET or NET_AF_INET6)
+ * @param type Type of the socket, NET_SOCK_STREAM or NET_SOCK_DGRAM
+ * @param ip_proto IP protocol, NET_IPPROTO_UDP or NET_IPPROTO_TCP
  * @param context The allocated context is returned to the caller.
  *
  * @return 0 if ok, < 0 if error
  */
 static inline int net_offload_get(struct net_if *iface,
-				  sa_family_t family,
+				  net_sa_family_t family,
 				  enum net_sock_type type,
 				  enum net_ip_protocol ip_proto,
 				  struct net_context **context)
@@ -169,8 +169,8 @@ static inline int net_offload_get(struct net_if *iface,
  */
 static inline int net_offload_bind(struct net_if *iface,
 				   struct net_context *context,
-				   const struct sockaddr *addr,
-				   socklen_t addrlen)
+				   const struct net_sockaddr *addr,
+				   net_socklen_t addrlen)
 {
 	NET_ASSERT(iface);
 	NET_ASSERT(net_if_offload(iface));
@@ -210,7 +210,7 @@ static inline int net_offload_listen(struct net_if *iface,
  *                   connection is established, the user-supplied callback (cb)
  *                   is executed. cb is called even if the timeout was set to
  *                   K_FOREVER. cb is not called if the timeout expires.
- *                   For datagram sockets (SOCK_DGRAM), this function only sets
+ *                   For datagram sockets (NET_SOCK_DGRAM), this function only sets
  *                   the peer address.
  *                   This function is similar to the BSD connect() function.
  *
@@ -233,8 +233,8 @@ static inline int net_offload_listen(struct net_if *iface,
  */
 static inline int net_offload_connect(struct net_if *iface,
 				      struct net_context *context,
-				      const struct sockaddr *addr,
-				      socklen_t addrlen,
+				      const struct net_sockaddr *addr,
+				      net_socklen_t addrlen,
 				      net_context_connect_cb_t cb,
 				      k_timeout_t timeout,
 				      void *user_data)
@@ -303,7 +303,7 @@ static inline int net_offload_accept(struct net_if *iface,
  * a caller-supplied callback is called. The callback is called even
  * if timeout was set to K_FOREVER, the callback is called
  * before this function will return in this case. The callback is not
- * called if the timeout expires. For context of type SOCK_DGRAM,
+ * called if the timeout expires. For context of type NET_SOCK_DGRAM,
  * the destination address must have been set by the call to
  * net_context_connect().
  * This is similar as BSD send() function.
@@ -339,7 +339,7 @@ static inline int net_offload_send(struct net_if *iface,
  *
  * @details This function can be used to send network data to a peer
  * specified by address. This variant can only be used for datagram
- * connections of type SOCK_DGRAM. This function will return immediately
+ * connections of type NET_SOCK_DGRAM. This function will return immediately
  * if the timeout is set to K_NO_WAIT. If the timeout is set to K_FOREVER,
  * the function will wait until the network packet is sent. Timeout
  * value > 0 will wait as many ms. After the network packet
@@ -364,8 +364,8 @@ static inline int net_offload_send(struct net_if *iface,
  */
 static inline int net_offload_sendto(struct net_if *iface,
 				     struct net_pkt *pkt,
-				     const struct sockaddr *dst_addr,
-				     socklen_t addrlen,
+				     const struct net_sockaddr *dst_addr,
+				     net_socklen_t addrlen,
 				     net_context_send_cb_t cb,
 				     k_timeout_t timeout,
 				     void *user_data)
@@ -457,7 +457,7 @@ static inline int net_offload_put(struct net_if *iface,
 /** @cond INTERNAL_HIDDEN */
 
 static inline int net_offload_get(struct net_if *iface,
-				  sa_family_t family,
+				  net_sa_family_t family,
 				  enum net_sock_type type,
 				  enum net_ip_protocol ip_proto,
 				  struct net_context **context)
@@ -467,8 +467,8 @@ static inline int net_offload_get(struct net_if *iface,
 
 static inline int net_offload_bind(struct net_if *iface,
 				   struct net_context *context,
-				   const struct sockaddr *addr,
-				   socklen_t addrlen)
+				   const struct net_sockaddr *addr,
+				   net_socklen_t addrlen)
 {
 	return 0;
 }
@@ -482,8 +482,8 @@ static inline int net_offload_listen(struct net_if *iface,
 
 static inline int net_offload_connect(struct net_if *iface,
 				      struct net_context *context,
-				      const struct sockaddr *addr,
-				      socklen_t addrlen,
+				      const struct net_sockaddr *addr,
+				      net_socklen_t addrlen,
 				      net_context_connect_cb_t cb,
 				      k_timeout_t timeout,
 				      void *user_data)
@@ -511,8 +511,8 @@ static inline int net_offload_send(struct net_if *iface,
 
 static inline int net_offload_sendto(struct net_if *iface,
 				     struct net_pkt *pkt,
-				     const struct sockaddr *dst_addr,
-				     socklen_t addrlen,
+				     const struct net_sockaddr *dst_addr,
+				     net_socklen_t addrlen,
 				     net_context_send_cb_t cb,
 				     k_timeout_t timeout,
 				     void *user_data)

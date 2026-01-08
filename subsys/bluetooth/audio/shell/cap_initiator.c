@@ -2,7 +2,7 @@
  * @file
  * @brief Shell APIs for Bluetooth CAP initiator
  *
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1281,6 +1281,8 @@ static int cmd_broadcast_stop(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	default_source.adv_sid = BT_GAP_SID_INVALID;
+
 	return 0;
 }
 
@@ -1321,6 +1323,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
+	struct bt_le_ext_adv_info adv_info;
 	uint32_t broadcast_id = 0U;
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -1333,6 +1336,12 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	adv = adv_sets[selected_adv];
 	if (adv == NULL) {
 		shell_error(sh, "Extended advertising set is NULL");
+		return -ENOEXEC;
+	}
+
+	err = bt_le_ext_adv_get_info(adv, &adv_info);
+	if (err != 0) {
+		shell_error(sh, "Failed to get adv info: %d\n", err);
 		return -ENOEXEC;
 	}
 
@@ -1387,6 +1396,8 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		    param->name);
 	default_source.is_cap = true;
 	default_source.broadcast_id = broadcast_id;
+	default_source.addr_type = adv_info.addr->type;
+	default_source.adv_sid = adv_info.sid;
 
 	return 0;
 }

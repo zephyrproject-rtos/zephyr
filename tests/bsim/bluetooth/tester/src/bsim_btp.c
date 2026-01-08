@@ -410,8 +410,6 @@ static bool is_valid_gatt_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		}
 	case BTP_GATT_WRITE_WITHOUT_RSP:
 		return buf_simple->len == 0U;
-	case BTP_GATT_SIGNED_WRITE_WITHOUT_RSP:
-		return buf_simple->len == 0U;
 	case BTP_GATT_WRITE:
 		return buf_simple->len == sizeof(struct btp_gatt_write_rp);
 	case BTP_GATT_WRITE_LONG:
@@ -873,6 +871,8 @@ static bool is_valid_vcs_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		return buf_simple->len == 0U;
 	case BTP_VCS_UNMUTE:
 		return buf_simple->len == 0U;
+	case BTP_VCS_REGISTER:
+		return buf_simple->len == 0U;
 
 	/* no events */
 	default:
@@ -1041,6 +1041,10 @@ static bool is_valid_ascs_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		return buf_simple->len == 0U;
 	case BTP_ASCS_EV_ASE_STATE_CHANGED:
 		return buf_simple->len == sizeof(struct btp_ascs_ase_state_changed_ev);
+	case BTP_ASCS_EV_CIS_CONNECTED:
+		return buf_simple->len == sizeof(struct btp_ascs_cis_connected_ev);
+	case BTP_ASCS_EV_CIS_DISCONNECTED:
+		return buf_simple->len == sizeof(struct btp_ascs_cis_disconnected_ev);
 	default:
 		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
@@ -1099,6 +1103,8 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		return buf_simple->len == 0U;
 	case BTP_BAP_SEND_PAST:
 		return buf_simple->len == 0U;
+	case BTP_BAP_BROADCAST_SOURCE_SETUP_V2:
+		return buf_simple->len == sizeof(struct btp_bap_broadcast_source_setup_v2_rp);
 
 	/* events */
 	case BTP_BAP_EV_DISCOVERY_COMPLETED:
@@ -1127,6 +1133,8 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		} else {
 			return false;
 		}
+	case BTP_BAP_EV_BIS_SYNCED:
+		return buf_simple->len == sizeof(struct btp_bap_bis_synced_ev);
 	case BTP_BAP_EV_BIS_STREAM_RECEIVED:
 		if (hdr->len >= sizeof(struct btp_bap_stream_received_ev)) {
 			const struct btp_bap_bis_stream_received_ev *ev = net_buf_simple_pull_mem(
@@ -1152,7 +1160,7 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 				uint8_t metadata_len;
 				uint32_t bis_sync;
 
-				if (buf_simple->len <= (sizeof(bis_sync) + sizeof(metadata_len))) {
+				if (buf_simple->len < (sizeof(bis_sync) + sizeof(metadata_len))) {
 					return false;
 				}
 
@@ -1236,7 +1244,7 @@ static bool is_valid_csis_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		return buf_simple->len == 0U;
 	case BTP_CSIS_GET_MEMBER_RSI:
 		return buf_simple->len == sizeof(struct btp_csis_get_member_rsi_rp);
-	case BTP_CSIS_ENC_SIRK_TYPE:
+	case BTP_CSIS_SET_SIRK_TYPE:
 		return buf_simple->len == 0U;
 
 	/* No events */
@@ -1928,7 +1936,7 @@ void bsim_btp_uart_init(void)
 {
 	TEST_ASSERT(device_is_ready(dev));
 
-	k_timer_start(&timer, K_MSEC(10), K_MSEC(10));
+	k_timer_start(&timer, K_USEC(100), K_USEC(100));
 }
 
 static void wait_for_response(const struct btp_hdr *cmd_hdr)

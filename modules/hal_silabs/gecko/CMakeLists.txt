@@ -108,6 +108,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_r
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_TIMER        ${EMLIB_DIR}/src/em_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFM32TG     ${DEVICE_DIR}/SiliconLabs/EFM32TG/Source/system_efm32tg.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFM32WG     ${DEVICE_DIR}/SiliconLabs/EFM32WG/Source/system_efm32wg.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFR32BG13P  ${DEVICE_DIR}/SiliconLabs/EFR32BG13P/Source/system_efr32bg13p.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFR32FG1P   ${DEVICE_DIR}/SiliconLabs/EFR32FG1P/Source/system_efr32fg1p.c)

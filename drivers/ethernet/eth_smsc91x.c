@@ -437,7 +437,7 @@ static void smsc_recv_pkt(struct eth_context *data)
 				rx_buffer[len - 1] = smsc_read_1(sc, DATA0);
 			}
 
-			pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0,
+			pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0,
 							   K_NO_WAIT);
 			if (!pkt) {
 				LOG_ERR("Failed to obtain RX buffer");

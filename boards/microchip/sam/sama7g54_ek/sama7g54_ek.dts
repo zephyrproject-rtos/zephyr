@@ -7,13 +7,13 @@
 
 /dts-v1/;
 #include <common/freq.h>
-#include <dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
+#include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/gpio/microchip-sam-gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/pwm/pwm.h>
-#include <microchip/sam/sama7g5.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-sam-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
 
 / {
 	model = "SAMA7G54-EK board";
@@ -29,6 +29,7 @@
 
 	chosen {
 		zephyr,sram = &ddram;
+		zephyr,canbus = &mcan0;
 		zephyr,console = &usart3;
 		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
@@ -91,6 +92,20 @@
 		pwm_led_blue: pwm_led_blue {
 			pwms = <&pwm 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&pioc 15 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <DT_FREQ_M(8)>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "can-transceiver-gpio";
+		standby-gpios = <&pioc 16 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <DT_FREQ_M(8)>;
+		#phy-cells = <0>;
 	};
 };
 
@@ -195,7 +210,37 @@
 	};
 };
 
+&mcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_can0_default>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+};
+
+&mcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_can1_default>;
+	pinctrl-names = "default";
+	phys = <&transceiver1>;
+};
+
 &pinctrl {
+	pinctrl_can0_default: can0_default {
+		group1 {
+			pinmux = <PIN_PD12__CANTX0>,
+				 <PIN_PD13__CANRX0>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_can1_default: can1_default {
+		group1 {
+			pinmux = <PIN_PD14__CANTX1>,
+				 <PIN_PD15__CANRX1>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_flx3_default: flx3_default {
 		group1 {
 			pinmux = <PIN_PD16__FLEXCOM3_IO0>,
@@ -322,6 +367,12 @@
 	clock-frequency = <DT_FREQ_M(10)>;
 };
 
+&pit64b1 {
+	top-alarm;
+	prescaler-period = <15>;
+	status = "okay";
+};
+
 &pwm {
 	pinctrl-0 = <&pinctrl_mikrobus_pwm_default>;
 	pinctrl-names = "default";
@@ -358,6 +409,10 @@
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&sha {
+	status = "okay";
 };
 
 &trng {

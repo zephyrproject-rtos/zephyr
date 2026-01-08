@@ -15,13 +15,8 @@
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <stm32_bitops.h>
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-#include <stm32h7rsxx_ll_bus.h>
-#include <stm32h7rsxx_ll_utils.h>
-#else
-#include <stm32h7xx_ll_bus.h>
-#include <stm32h7xx_ll_utils.h>
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+#include <stm32_ll_bus.h>
+#include <stm32_ll_utils.h>
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"
@@ -796,6 +791,9 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 		rc = rc2;
 	}
 
+#ifdef CONFIG_DCACHE
+	flash_stm32h7_flush_caches(dev, offset, len);
+#endif
 	flash_stm32_sem_give(dev);
 
 	return rc;
@@ -911,7 +909,7 @@ void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *)DT_INST_REG_ADDR(0),
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
-	.pclken = {.bus = DT_INST_CLOCKS_CELL(0, bus), .enr = DT_INST_CLOCKS_CELL(0, bits)},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 #endif
 };
 

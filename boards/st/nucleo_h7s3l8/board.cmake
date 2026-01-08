@@ -11,7 +11,10 @@ board_runner_args(pyocd "--target=stm32h7s3l8hx")
 board_runner_args(pyocd "--flash-opt=-O reset_type=hw")
 board_runner_args(pyocd "--flash-opt=-O connect_mode=under-reset")
 
+board_runner_args(jlink "--device=STM32H7S3L8" "--speed=4000")
+
 # keep first
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

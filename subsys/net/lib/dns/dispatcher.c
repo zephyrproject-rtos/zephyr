@@ -34,7 +34,7 @@ static struct socket_dispatch_table {
 } dispatch_table[ZVFS_OPEN_SIZE];
 
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
-			int sock, struct sockaddr *addr, size_t addrlen,
+			int sock, struct net_sockaddr *addr, size_t addrlen,
 			struct net_buf *dns_data, size_t buf_len)
 {
 	/* Helper struct to track the dns msg received from the server */
@@ -100,9 +100,9 @@ done:
 	if (IS_ENABLED(CONFIG_NET_STATISTICS_DNS)) {
 		struct net_if *iface = NULL;
 
-		if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 			iface = net_if_ipv6_select_src_iface(&net_sin6(addr)->sin6_addr);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 			iface = net_if_ipv4_select_src_iface(&net_sin(addr)->sin_addr);
 		}
 
@@ -122,10 +122,10 @@ static int recv_data(struct net_socket_service_event *pev)
 {
 	struct socket_dispatch_table *table = pev->user_data;
 	struct dns_socket_dispatcher *dispatcher;
-	socklen_t optlen = sizeof(int);
+	net_socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
-	struct sockaddr addr;
-	socklen_t addrlen;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
 
@@ -133,24 +133,24 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
 
-	(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-			       SO_DOMAIN, &family, &optlen);
+	(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
+			       ZSOCK_SO_DOMAIN, &family, &optlen);
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
+		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
+				       ZSOCK_SO_ERROR, &sock_error, &optlen);
 		if (sock_error > 0) {
 			NET_ERR("Receiver IPv%d socket error (%d)",
-				family == AF_INET ? 4 : 6, sock_error);
+				family == NET_AF_INET ? 4 : 6, sock_error);
 			ret = DNS_EAI_SYSTEM;
 		}
 
 		goto unlock;
 	}
 
-	addrlen = (family == AF_INET) ? sizeof(struct sockaddr_in) :
-		sizeof(struct sockaddr_in6);
+	addrlen = (family == NET_AF_INET) ? sizeof(struct net_sockaddr_in) :
+		sizeof(struct net_sockaddr_in6);
 
 	dns_data = net_buf_alloc(&dns_msg_pool, dispatcher->buf_timeout);
 	if (!dns_data) {
@@ -160,18 +160,18 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
 			     net_buf_max_len(dns_data), 0,
-			     (struct sockaddr *)&addr, &addrlen);
+			     (struct net_sockaddr *)&addr, &addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, -ret);
+			family == NET_AF_INET ? 4 : 6, -ret);
 		goto free_buf;
 	}
 
 	len = ret;
 
 	ret = dns_dispatch(dispatcher, pev->event.fd,
-			   (struct sockaddr *)&addr, addrlen,
+			   (struct net_sockaddr *)&addr, addrlen,
 			   dns_data, len);
 free_buf:
 	if (dns_data) {
@@ -281,10 +281,10 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	ctx->buf_timeout = DNS_BUF_TIMEOUT;
 
-	if (ctx->local_addr.sa_family == AF_INET) {
-		addrlen = sizeof(struct sockaddr_in);
+	if (ctx->local_addr.sa_family == NET_AF_INET) {
+		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
-		addrlen = sizeof(struct sockaddr_in6);
+		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
 	/* Bind and then register a socket service with this combo */

@@ -69,7 +69,7 @@ typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_s
  *
  * @param target The device Emulator instance
  *
- * @retval The address of the memory.
+ * @return The address of the memory.
  */
 typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
 #endif

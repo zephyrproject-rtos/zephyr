@@ -492,10 +492,12 @@ where:
 .. table::
     :align: center
 
-    +--------+--------------------------------------------------------------------------------+
-    | "name" | If provided, contains the settings subtree name to save, if not then will save |
-    |        | all settings.                                                                  |
-    +--------+--------------------------------------------------------------------------------+
+    +--------+---------------------------------------------------------------------------------------+
+    | "name" | If provided, contains the settings subtree name to save (can also be a single setting |
+    |        | name if :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION` is |
+    |        | enabled), if not then will save all settings.                                         |
+    +--------+---------------------------------------------------------------------------------------+
+
 
 Save settings response
 ======================

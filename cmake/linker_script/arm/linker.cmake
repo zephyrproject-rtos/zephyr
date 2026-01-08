@@ -54,7 +54,6 @@ endif()
 
 set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
 math(EXPR RAM_SIZE "(${CONFIG_SRAM_SIZE} + 0) * 1024" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR IDT_ADDR "${RAM_ADDR} + ${RAM_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
 
 # ToDo: decide on the optimal location for this.
 # linker/ld/target.cmake based on arch, or directly in arch and scatter_script.cmake can ignore
@@ -63,7 +62,7 @@ zephyr_linker(ENTRY ${CONFIG_KERNEL_ENTRY})
 
 zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
 zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
-zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
+zephyr_linker_memory(NAME IDT_LIST FLAGS wx START 0xFFFF8000    SIZE 2K)
 
 dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
@@ -152,7 +151,7 @@ if(CONFIG_USERSPACE)
   # handling in arch_data_copy, so put it in RAM_REGION rather than DATA_REGION
   zephyr_linker_group(NAME APP_SMEM_GROUP GROUP RAM_REGION SYMBOL SECTION)
   zephyr_linker_symbol(SYMBOL "_app_smem_size" EXPR "@__app_smem_group_size@")
-	zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
+  zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
 
 
   zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)

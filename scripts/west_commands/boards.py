@@ -10,6 +10,7 @@ import textwrap
 from pathlib import Path
 
 from west.commands import WestCommand
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
@@ -52,8 +53,6 @@ class Boards(WestCommand):
             - revision_default: board default revision
             - revisions: list of board revisions
             - qualifiers: board qualifiers (will be empty for legacy boards)
-            - arch: board architecture (deprecated)
-                    (arch is ambiguous for boards described in new hw model)
             - dir: directory that contains the board definition
             - vendor: board vendor
             '''))

@@ -35,6 +35,14 @@ config ARM_SCMI_POWER_DOMAIN_HELPERS
 	help
 	  Enable support for SCMI power domain protocol helper functions.
 
+config ARM_SCMI_REBOOT
+	bool "SCMI system reboot support"
+	depends on ARM_SCMI_SYSTEM && REBOOT
+	default y
+	help
+	  Enable system reboot functionality using SCMI system power protocol.
+	  This provides sys_arch_reboot() implementation for platforms with SCMI.
+
 config ARM_SCMI_SHMEM
 	bool "SCMI shared memory (SHMEM) driver"
 	default y
@@ -47,6 +55,13 @@ config ARM_SCMI_SHMEM_INIT_PRIORITY
 	default 15
 	help
 	  SCMI SHMEM driver device initialization priority.
+
+config ARM_SCMI_SYSTEM
+	bool "SCMI system power protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_SYSTEM_ENABLED
+	help
+	  Enable support for SCMI system protocol functions.
 
 config ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 	bool "Transport layer has static channels"

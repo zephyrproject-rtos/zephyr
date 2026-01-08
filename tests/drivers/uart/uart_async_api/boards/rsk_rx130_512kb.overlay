@@ -8,7 +8,7 @@
 	sci5_default: sci5_default {
 		group1 {
 			psels = <RX_PSEL(RX_PSEL_PAnPFS_TXD5, 10, 4)>,
-			<RX_PSEL(RX_PSEL_PAnPFS_RXD5, 10, 2)>;
+				<RX_PSEL(RX_PSEL_PAnPFS_RXD5, 10, 2)>;
 		};
 	};
 };
@@ -17,6 +17,7 @@
 	pinctrl-0 = <&sci5_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	dut: uart {
 		current-speed = <115200>;
 		status = "okay";

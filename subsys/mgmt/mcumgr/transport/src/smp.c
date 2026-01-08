@@ -54,6 +54,32 @@ void smp_packet_free(struct net_buf *nb)
 }
 
 /**
+ * @brief Allocates a request buffer.
+ *
+ * @param arg		The streamer providing the callback.
+ * @param priv		The streamer private data.
+ *
+ * @return	Newly-allocated buffer on success
+ *		NULL on failure.
+ */
+struct net_buf *smp_alloc_req(void *arg, void *priv)
+{
+	struct net_buf *req_nb;
+	struct smp_transport *smpt = arg;
+
+	req_nb = smp_packet_alloc();
+	if (req_nb == NULL) {
+		return NULL;
+	}
+
+	if (smpt->functions.ud_init) {
+		smpt->functions.ud_init(req_nb, priv);
+	}
+
+	return req_nb;
+}
+
+/**
  * @brief Allocates a response buffer.
  *
  * If a source buf is provided, its user data is copied into the new buffer.

@@ -32,12 +32,13 @@ def parse_args():
 
     argparser.add_argument("dbfile", help="Dictionary Logging Database file")
     argparser.add_argument("logfile", help="Log Data file")
-    argparser.add_argument("--hex", action="store_true",
-                           help="Log Data file is in hexadecimal strings")
-    argparser.add_argument("--rawhex", action="store_true",
-                           help="Log file only contains hexadecimal log data")
-    argparser.add_argument("--debug", action="store_true",
-                           help="Print extra debugging information")
+    argparser.add_argument(
+        "--hex", action="store_true", help="Log Data file is in hexadecimal strings"
+    )
+    argparser.add_argument(
+        "--rawhex", action="store_true", help="Log file only contains hexadecimal log data"
+    )
+    argparser.add_argument("--debug", action="store_true", help="Print extra debugging information")
 
     return argparser.parse_args()
 
@@ -134,6 +135,7 @@ def main():
             len(logdata) - parsed_data_offset,
         )
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

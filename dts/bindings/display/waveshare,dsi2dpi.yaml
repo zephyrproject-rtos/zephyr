@@ -1,0 +1,41 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Waveshare DSI-to-DPI display bridge
+
+description: |
+    Waveshare display shields consist of a DPI panel and a controller board.
+    The controller board consists of ICN6211 DSI-to-RGB bridge and an MCU, to
+    convert DSI to DPI and control the backlight.
+    This binding treats the controller board as a whole unit.
+
+compatible: "waveshare,dsi2dpi"
+
+include: base.yaml
+
+on-bus: i2c
+
+properties:
+  reg:
+    required: true
+
+  data-lanes:
+    type: array
+    required: true
+    description:
+      Number of data lanes.
+
+  pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in dt-bindings/mipi_dsi/mipi_dsi.h.
+
+  mipi-dsi:
+    type: phandle
+    required: true
+    description:
+      Instance of the MIPI DSI peripheral.

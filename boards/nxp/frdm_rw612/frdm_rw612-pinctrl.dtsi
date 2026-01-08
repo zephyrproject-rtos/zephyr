@@ -53,6 +53,7 @@
 			pinmux = <IO_MUX_FC1_SPI_SS0>;
 			slew-rate = "ultra";
 		};
+
 		group1 {
 			pinmux = <IO_MUX_FC1_SPI_SS1>;
 			slew-rate = "ultra";

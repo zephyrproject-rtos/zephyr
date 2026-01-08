@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2025 Antmicro
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,10 +57,6 @@
 #define ZVFS_POLLHUP  BIT(4)
 #define ZVFS_POLLNVAL BIT(5)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* FIXME: use k_off_t and k_ssize_t to avoid the POSIX->Zephyr->POSIX dependency cycle */
 #ifdef CONFIG_NEWLIB_LIBC
 #ifndef _OFF_T_DECLARED
@@ -70,6 +67,12 @@ typedef __off_t off_t;
 typedef _ssize_t ssize_t;
 #define _SSIZE_T_DECLARED
 #endif
+#endif
+
+#include <zephyr/fs/fs.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /**
@@ -236,6 +239,15 @@ static inline int zvfs_fdtable_call_ioctl(const struct fd_op_vtable *vtable, voi
 	return res;
 }
 
+/**
+ * Structure for result of the ZFD_IOCTL_STAT ioctl call.
+ * Contains fields for all currently supported details. Defined to avoid POSIX dependency.
+ */
+struct zvfs_stat {
+	off_t size;
+	uint32_t mode;
+};
+
 struct zvfs_pollfd {
 	int fd;
 	short events;
@@ -285,6 +297,88 @@ enum {
 	ZFD_IOCTL_FIONREAD = 0x541B,
 	ZFD_IOCTL_FIONBIO = 0x5421,
 };
+
+/**
+ * @brief Open a file with a given name.
+ *
+ * @param name Name of the file
+ * @param flags Access modes for @ref fs_open
+ * @param vtable Pointer to structure with appropriate i/o functions
+ *
+ * @return Index of newly created file descriptor on success, -1 on error with errno set.
+ */
+int zvfs_open(const char *name, int flags, struct fd_op_vtable *vtable);
+
+/**
+ * @brief Get information about file.
+ *
+ * @param fd File descriptor index
+ * @param buf Pointer to result structure
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+int zvfs_fstat(int fd, struct zvfs_stat *buf);
+
+/**
+ * @brief Close file.
+ *
+ * @param fd File descriptor index
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+int zvfs_close(int fd);
+
+/**
+ * @brief Read bytes from file.
+ *
+ * @param fd File descriptor index
+ * @param buf Destination buffer
+ * @param sz Number of bytes to read
+ * @param from_offset Pointer to variable specifying starting position;
+ * current offset will be used if NULL
+ *
+ * @return Number of bytes read successfully, or -1 with errno set on failure
+ */
+ssize_t zvfs_read(int fd, void *buf, size_t sz, const size_t *from_offset);
+
+/**
+ * @brief Write bytes to file.
+ *
+ * @param fd File descriptor index
+ * @param buf Source buffer
+ * @param sz Number of bytes to write
+ * @param from_offset Pointer to variable specifying starting position;
+ * current offset will be used if NULL
+ *
+ * @return Number of bytes written successfully, or -1 with errno set on failure
+ */
+ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
+
+#ifdef CONFIG_ZVFS_DEFAULT_FILE_VMETHODS
+int zvfs_ioctl_vmeth(void *obj, unsigned int request, va_list args);
+int zvfs_close_vmeth(void *obj);
+ssize_t zvfs_write_vmeth(void *obj, const void *buffer, size_t count);
+ssize_t zvfs_read_vmeth(void *obj, void *buffer, size_t count);
+#endif
+
+/**
+ * @brief Delete file or directory.
+ *
+ * @param path Path or name of file to be removed.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+int zvfs_unlink(const char *path);
+
+/**
+ * @brief Rename file or directory, moving it if necessary.
+ *
+ * @param old Current name
+ * @param newp Target name
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+int zvfs_rename(const char *old, const char *newp);
 
 #ifdef __cplusplus
 }

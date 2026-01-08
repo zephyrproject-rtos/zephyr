@@ -53,7 +53,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 		case kNETC_TagToHostRxTs:
 #ifdef CONFIG_NET_L2_PTP
 			tag_rx_ts = (netc_swt_tag_host_rx_ts_t *)tag_common;
-			ts = ntohll(tag_rx_ts->timestamp);
+			ts = net_ntohll(tag_rx_ts->timestamp);
 
 			/* Fill timestamp */
 			pkt->timestamp.nanosecond = ts % NSEC_PER_SEC;
@@ -65,7 +65,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 		case kNETC_TagToHostTxTs:
 #ifdef CONFIG_NET_L2_PTP
 			tag_tx_ts = (netc_swt_tag_host_tx_ts_t *)tag_common;
-			ts = ntohll(tag_tx_ts->timestamp);
+			ts = net_ntohll(tag_tx_ts->timestamp);
 
 			if (tagger_data->twostep_timestamp_handler != NULL) {
 				tagger_data->twostep_timestamp_handler(dsa_switch_ctx,
@@ -105,7 +105,7 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 	void *tag;
 
 	/* Tag is inserted after DMAC/SMAC fields. Decide header size per tag type. */
-	if (ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
 		header_len += sizeof(netc_swt_tag_port_two_step_ts_t);
 	} else {
 		header_len += sizeof(netc_swt_tag_port_no_ts_t);
@@ -127,7 +127,7 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_L2_PTP
 	/* Enable two-step timestamping for gPTP. */
-	if (ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
 
 		/* Utilize control block for timestamp request ID */
 		((netc_swt_tag_port_two_step_ts_t *)tag)->tsReqId = pkt->cb.cb[0] & 0xf;

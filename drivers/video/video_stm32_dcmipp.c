@@ -1694,10 +1694,6 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 	int err;
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	RIMC_MasterConfig_t rimc = {0};
-#endif
-
 	dcmipp->enabled_pipe = 0;
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -1735,14 +1731,6 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 	/* Run IRQ init */
 	cfg->irq_config(dev);
-
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	rimc.MasterCID = RIF_CID_1;
-	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_DCMIPP, &rimc);
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_DCMIPP,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-#endif
 
 	/* Initialize DCMI peripheral */
 	err = HAL_DCMIPP_Init(&dcmipp->hdcmipp);
@@ -1834,9 +1822,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 
 #if defined(STM32_DCMIPP_HAS_CSI)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)							\
-		.csi_pclken =									\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), csi, bus),		\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), csi, bits)},		\
+		.csi_pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, csi),			\
 		.reset_csi = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),				\
 		.csi.nb_lanes = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), data_lanes),	\
 		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),		\
@@ -1882,12 +1868,8 @@ static void stm32_dcmipp_isr(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);								\
 												\
 	static const struct stm32_dcmipp_config stm32_dcmipp_config_##inst = {			\
-		.dcmipp_pclken =								\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bus),		\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bits)},	\
-		.dcmipp_pclken_ker =								\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, bus),	\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, bits)},	\
+		.dcmipp_pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp),		\
+		.dcmipp_pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp_ker),	\
 		.irq_config = stm32_dcmipp_irq_config_##inst,					\
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 		.source_dev = SOURCE_DEV(inst),							\

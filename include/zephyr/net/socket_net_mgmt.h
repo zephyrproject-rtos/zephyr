@@ -56,26 +56,26 @@ extern "C" {
 /** @} */ /* for @name */
 
 /**
- * struct sockaddr_nm - The sockaddr structure for NET_MGMT sockets
+ * struct net_sockaddr_nm - The net_sockaddr structure for NET_MGMT sockets
  *
  * Similar concepts are used as in Linux AF_NETLINK. The NETLINK name is not
  * used in order to avoid confusion between Zephyr and Linux as the
  * implementations are different.
  *
  * The socket domain (address family) is AF_NET_MGMT, and the type of socket
- * is either SOCK_RAW or SOCK_DGRAM, because this is a datagram-oriented
+ * is either NET_SOCK_RAW or NET_SOCK_DGRAM, because this is a datagram-oriented
  * service.
  *
  * The protocol (protocol type) selects for which feature the socket is used.
  *
- * When used with bind(), the nm_pid field of the sockaddr_nm can be
+ * When used with bind(), the nm_pid field of the net_sockaddr_nm can be
  * filled with the calling thread' own id. The nm_pid serves here as the local
  * address of this net_mgmt socket. The application is responsible for picking
  * a unique integer value to fill in nm_pid.
  */
-struct sockaddr_nm {
+struct net_sockaddr_nm {
 	/** AF_NET_MGMT address family. */
-	sa_family_t nm_family;
+	net_sa_family_t nm_family;
 
 	/** Network interface related to this address */
 	int nm_ifindex;

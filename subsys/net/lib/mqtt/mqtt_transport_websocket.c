@@ -108,7 +108,7 @@ int mqtt_client_websocket_write(struct mqtt_client *client, const uint8_t *data,
 }
 
 int mqtt_client_websocket_write_msg(struct mqtt_client *client,
-				    const struct msghdr *message)
+				    const struct net_msghdr *message)
 {
 	enum websocket_opcode opcode = WEBSOCKET_OPCODE_DATA_BINARY;
 	bool final = false;

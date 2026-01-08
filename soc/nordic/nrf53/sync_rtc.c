@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <nrfx_dppi.h>
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
@@ -27,7 +26,7 @@ static int32_t nrf53_sync_offset = -EBUSY;
 union rtc_sync_channels {
 	uint32_t raw;
 	struct {
-		uint8_t ppi;
+		nrfx_gppi_handle_t ppi;
 		uint8_t rtc;
 		uint8_t ipc_out;
 		uint8_t ipc_in;
@@ -74,14 +73,15 @@ union rtc_sync_channels {
 static void ppi_ipc_to_rtc(union rtc_sync_channels channels, bool setup)
 {
 	nrf_ipc_event_t ipc_evt = nrf_ipc_receive_event_get(channels.ch.ipc_in);
-	uint32_t task_addr = z_nrf_rtc_timer_capture_task_address_get(channels.ch.rtc);
+	uint32_t eep = nrf_ipc_event_address_get(NRF_IPC, ipc_evt);
+	uint32_t tep = z_nrf_rtc_timer_capture_task_address_get(channels.ch.rtc);
 
 	if (setup) {
-		nrfx_gppi_task_endpoint_setup(channels.ch.ppi, task_addr);
-		nrf_ipc_publish_set(NRF_IPC, ipc_evt, channels.ch.ppi);
+		nrfx_gppi_ep_attach(eep, channels.ch.ppi);
+		nrfx_gppi_ep_attach(tep, channels.ch.ppi);
 	} else {
-		nrfx_gppi_task_endpoint_clear(channels.ch.ppi, task_addr);
-		nrf_ipc_publish_clear(NRF_IPC, ipc_evt);
+		nrfx_gppi_ep_clear(eep);
+		nrfx_gppi_ep_clear(tep);
 	}
 }
 
@@ -92,30 +92,25 @@ static void ppi_ipc_to_rtc(union rtc_sync_channels channels, bool setup)
  */
 static void ppi_rtc_to_ipc(union rtc_sync_channels channels, bool setup)
 {
-	uint32_t evt_addr = z_nrf_rtc_timer_compare_evt_address_get(channels.ch.rtc);
 	nrf_ipc_task_t ipc_task = nrf_ipc_send_task_get(channels.ch.ipc_out);
+	uint32_t eep = z_nrf_rtc_timer_compare_evt_address_get(channels.ch.rtc);
+	uint32_t tep = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
 
 	if (setup) {
-		nrf_ipc_subscribe_set(NRF_IPC, ipc_task, channels.ch.ppi);
-		nrfx_gppi_event_endpoint_setup(channels.ch.ppi, evt_addr);
+		nrfx_gppi_ep_attach(eep, channels.ch.ppi);
+		nrfx_gppi_ep_attach(tep, channels.ch.ppi);
 	} else {
-		nrfx_gppi_event_endpoint_clear(channels.ch.ppi, evt_addr);
-		nrf_ipc_subscribe_clear(NRF_IPC, ipc_task);
+		nrfx_gppi_ep_clear(eep);
+		nrfx_gppi_ep_clear(tep);
 	}
 }
 
 /* Free DPPI and RTC channels */
 static void free_resources(union rtc_sync_channels channels)
 {
-	nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
-	nrfx_err_t err;
-
-	nrfx_gppi_channels_disable(BIT(channels.ch.ppi));
-
+	nrfx_gppi_conn_disable(channels.ch.ppi);
+	nrfx_gppi_domain_conn_free(channels.ch.ppi);
 	z_nrf_rtc_timer_chan_free(channels.ch.rtc);
-
-	err = nrfx_dppi_channel_free(&dppi, channels.ch.ppi);
-	__ASSERT_NO_MSG(err == NRFX_SUCCESS);
 }
 
 int z_nrf_rtc_timer_nrf53net_offset_get(void)
@@ -225,21 +220,18 @@ static int mbox_rx_init(void *user_data)
 /* Setup RTC synchronization. */
 static int sync_rtc_setup(void)
 {
-	nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
-	nrfx_err_t err;
 	union rtc_sync_channels channels;
 	int32_t sync_rtc_ch;
 	int rv;
 
-	err = nrfx_dppi_channel_alloc(&dppi, &channels.ch.ppi);
-	if (err != NRFX_SUCCESS) {
-		rv = -ENODEV;
+	rv = nrfx_gppi_domain_conn_alloc(0, 0, &channels.ch.ppi);
+	if (rv < 0) {
 		goto bail;
 	}
 
 	sync_rtc_ch = z_nrf_rtc_timer_chan_alloc();
 	if (sync_rtc_ch < 0) {
-		nrfx_dppi_channel_free(&dppi, channels.ch.ppi);
+		nrfx_gppi_domain_conn_free(channels.ch.ppi);
 		rv = sync_rtc_ch;
 		goto bail;
 	}
@@ -253,7 +245,7 @@ static int sync_rtc_setup(void)
 		goto bail;
 	}
 
-	nrfx_gppi_channels_enable(BIT(channels.ch.ppi));
+	nrfx_gppi_conn_enable(channels.ch.ppi);
 
 	if (IS_ENABLED(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP)) {
 		ppi_ipc_to_rtc(channels, true);

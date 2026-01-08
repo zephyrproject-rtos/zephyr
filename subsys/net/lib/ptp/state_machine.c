@@ -125,6 +125,9 @@ enum ptp_port_state ptp_state_machine(enum ptp_port_state state,
 			new_state = IS_ENABLED(CONFIG_PTP_FAULTY_PRESENT) ?
 					PTP_PS_FAULTY : new_state;
 			break;
+		case PTP_EVT_RS_GRAND_MASTER:
+			new_state = PTP_PS_GRAND_MASTER;
+			break;
 		case PTP_EVT_RS_PASSIVE:
 			new_state = PTP_PS_PASSIVE;
 			break;

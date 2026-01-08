@@ -550,8 +550,6 @@ static int phy_mchp_ksz9131_init(const struct device *dev)
 	data->dev = dev;
 	data->cb = NULL;
 
-	mdio_bus_enable(cfg->mdio);
-
 	ret = phy_mchp_ksz9131_reset(dev);
 	if (ret < 0) {
 		return ret;

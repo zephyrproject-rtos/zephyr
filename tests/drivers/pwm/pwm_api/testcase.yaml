@@ -18,12 +18,16 @@ tests:
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_flexio_pwm.overlay"
       - platform:mimxrt1180_evk/mimxrt1189/cm33:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
       - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
+      - platform:frdm_mcxa366/mcxa366:DTC_OVERLAY_FILE="boards/frdm_mcxa366_flexio_pwm.overlay"
+      - platform:frdm_mcxa266/mcxa266:DTC_OVERLAY_FILE="boards/frdm_mcxa266_flexio_pwm.overlay"
     platform_allow:
       - frdm_ke17z
       - frdm_ke17z512
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - frdm_mcxa366/mcxa366
+      - frdm_mcxa266/mcxa266
     filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
@@ -63,27 +67,82 @@ tests:
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.mchp_tcc0:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc0.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc0.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc0.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc1:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc1.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc2:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc2.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg61_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc3:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc3.overlay"
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg61_cult
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tcc4:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc4.overlay"
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg61_cult
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc0:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
     platform_allow:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
-  drivers.pwm.mchp_tcc4:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+  drivers.pwm.mchp_tc1:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc1.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc2:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc2.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc3:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc3.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc4:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc4.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc5:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc6:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
+    platform_allow:
+      - sam_e54_xpro
+    filter: dt_alias_exists("pwm-test")
+  drivers.pwm.mchp_tc7:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc7.overlay"
     platform_allow:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")

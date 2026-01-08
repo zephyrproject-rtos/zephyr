@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/mcx/MCXE31BMPB-pinctrl.h>
 
 &pinctrl {
@@ -23,6 +22,18 @@
 		group2 {
 			pinmux = <PTE3_LPUART5_RX>;
 			input-enable;
+		};
+	};
+
+	pinmux_flexcan_0: pinmux_flexcan_0 {
+		group1 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
 		};
 	};
 };

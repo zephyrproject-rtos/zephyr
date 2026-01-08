@@ -483,7 +483,7 @@ complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in
 ## flash, debug, debugserver, attach
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o d -l build-dir -ra "(__zephyr_west_complete_directories)" -d "build directory to create or use"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o r -l runner -r -d "override default runner from build-dir"
-complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l skip-rebuild -d "do not refresh cmake dependencies first"
+complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l rebuild -l no-rebuild -d "manually specify to reinvoke cmake or not"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l domain -r -d "execute build tool (make or ninja) for a given domain"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -o H -l context -d "print runner-specific options"
 complete -c west -n "__zephyr_west_seen_subcommand_from flash debug debugserver attach" -l board-dir -ra "(__zephyr_west_complete_directories)" -d "board directory"

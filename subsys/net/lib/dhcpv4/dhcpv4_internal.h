@@ -102,7 +102,7 @@ struct dhcp_msg {
  * initial DISCOVER message. MAx value is defined with
  * CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX. Default max value
  * should be 10.
- * RFC2131 4.1.1
+ * RFC2131 4.4.1
  */
 #define DHCPV4_INITIAL_DELAY_MIN 1
 

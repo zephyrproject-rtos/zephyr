@@ -640,7 +640,7 @@ static inline int z_impl_tee_suppl_recv(const struct device *dev, uint32_t *func
  * @param param List of the params for send/receive
  *
  * @retval -ENOSYS If callback was not implemented
- * @retval         Return value for sent request
+ * @return         Return value for sent request
  *
  * @retval 0       On success, negative on error
  */

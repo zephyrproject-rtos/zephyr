@@ -160,7 +160,11 @@ int main(void)
 		return 0;
 	}
 
-	display_blanking_off(display_dev);
+	err = display_blanking_off(display_dev);
+	if (err < 0 && err != -ENOSYS) {
+		LOG_ERR("Failed to turn blanking off (error %d)", err);
+		return 0;
+	}
 
 	const lv_img_dsc_t video_img = {
 		.header.w = CONFIG_VIDEO_WIDTH,

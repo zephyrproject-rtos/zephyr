@@ -9,6 +9,7 @@
 	interrupts = <83 1>, <84 1>;
 	interrupt-names = "agti", "agtcmai";
 	renesas,prescaler = <4>;
+
 	counter0: counter {
 		status = "okay";
 	};

@@ -738,7 +738,6 @@ int bap_usb_init(void)
 		 */
 		err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
 
-		err -= NRFX_ERROR_BASE_NUM;
 		if (err != 0) {
 			LOG_WRN("Failed to set 128 MHz: %d", err);
 		}

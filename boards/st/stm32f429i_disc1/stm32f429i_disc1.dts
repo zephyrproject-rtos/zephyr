@@ -20,7 +20,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,ccm = &ccm0;
+		zephyr,dtcm = &ccm0;
 		zephyr,display = &ltdc;
 		zephyr,touch = &stmpe811;
 	};
@@ -59,11 +59,6 @@
 	aliases {
 		led0 = &green_led_3;
 		sw0 = &user_button;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&stmpe811>;
 	};
 
 	mipi_dbi {
@@ -253,7 +248,7 @@
 
 	width = <240>;
 	height = <320>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -269,9 +264,9 @@
 		vfront-porch = <4>;
 	};
 
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };
 
 zephyr_udc0: &usbotg_hs {

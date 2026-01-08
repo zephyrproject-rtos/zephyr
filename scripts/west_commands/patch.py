@@ -19,6 +19,7 @@ from west.commands import WestCommand
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import zephyr_module
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 try:
@@ -391,7 +392,9 @@ class Patch(WestCommand):
             self.dbg(f"patching {mod}... ", end="")
             apply_cmd += patch_path
             apply_cmd_list.extend([patch_path])
-            proc = subprocess.run(apply_cmd_list, cwd=mod_path)
+            proc = subprocess.run(
+                apply_cmd_list, capture_output=True, cwd=mod_path, encoding="utf-8"
+            )
             if proc.returncode:
                 self.dbg("FAIL")
                 self.err(proc.stderr)
@@ -430,7 +433,9 @@ class Patch(WestCommand):
             try:
                 if checkout_cmd:
                     self.dbg(f"Running '{checkout_cmd}' in {mod}.. ", end="")
-                    proc = subprocess.run(checkout_cmd_list, capture_output=True, cwd=mod_path)
+                    proc = subprocess.run(
+                        checkout_cmd_list, capture_output=True, cwd=mod_path, encoding="utf-8"
+                    )
                     if proc.returncode:
                         self.dbg("FAIL")
                         self.err(f"{checkout_cmd} failed for {mod}\n{proc.stderr}")
@@ -439,7 +444,9 @@ class Patch(WestCommand):
 
                 if clean_cmd:
                     self.dbg(f"Running '{clean_cmd}' in {mod}.. ", end="")
-                    proc = subprocess.run(clean_cmd_list, capture_output=True, cwd=mod_path)
+                    proc = subprocess.run(
+                        clean_cmd_list, capture_output=True, cwd=mod_path, encoding="utf-8"
+                    )
                     if proc.returncode:
                         self.dbg("FAIL")
                         self.err(f"{clean_cmd} failed for {mod}\n{proc.stderr}")

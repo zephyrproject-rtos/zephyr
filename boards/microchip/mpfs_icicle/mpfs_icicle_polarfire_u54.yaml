@@ -6,7 +6,14 @@ toolchain:
   - zephyr
 ram: 3840
 testing:
+  timeout_multiplier: 8
   ignore_tags:
     - net
     - bluetooth
+  renode:
+    uart: sysbus.mmuart1
+    resc: boards/microchip/mpfs_icicle/support/mpfs_icicle_polarfire_u54.resc
 vendor: microchip
+simulation:
+  - name: renode
+    exec: renode

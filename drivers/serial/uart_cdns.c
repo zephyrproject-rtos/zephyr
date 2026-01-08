@@ -80,12 +80,12 @@ static void uart_cdns_irq_handler(const struct device *dev)
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 	struct uart_cdns_data *data = dev->data;
 
+	/* clear events by reading the status */
+	(void)uart_regs->channel_intr_status;
+
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
-
-	/* clear events by reading the status */
-	(void)uart_regs->channel_intr_status;
 }
 
 static int uart_cdns_fill_fifo(const struct device *dev, const uint8_t *tx_data, int len)

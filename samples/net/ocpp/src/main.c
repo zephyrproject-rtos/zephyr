@@ -4,8 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strdup() */
 #include <stdio.h>
 #include <time.h>
+
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/netdb.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
@@ -18,10 +26,6 @@
 
 #include "net_sample_common.h"
 
-#if __POSIX_VISIBLE < 200809
-char    *strdup(const char *);
-#endif
-
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #define NO_OF_CONN 2
@@ -31,34 +35,68 @@ static struct k_thread tinfo[NO_OF_CONN];
 static k_tid_t tid[NO_OF_CONN];
 static char idtag[NO_OF_CONN][25];
 
+static int dns_query(const char *host, uint16_t port, int family, int socktype,
+			  struct sockaddr *addr, socklen_t *addrlen)
+{
+	struct addrinfo hints = {
+		.ai_family = family,
+		.ai_socktype = socktype,
+	};
+
+	struct addrinfo *res = NULL;
+	char addr_str[INET6_ADDRSTRLEN] = {0};
+	int ret;
+
+	/* Perform DNS query */
+	ret = getaddrinfo(host, NULL, &hints, &res);
+	if (ret < 0) {
+		LOG_ERR("getaddrinfo failed (%d, errno %d)", ret, errno);
+		return ret;
+	}
+
+	/* Store the first result */
+	*addr = *res->ai_addr;
+	*addrlen = res->ai_addrlen;
+	/* Free the allocated memory */
+	freeaddrinfo(res);
+	/* Store the port */
+	net_sin(addr)->sin_port = htons(port);
+	/* Print the found address */
+	inet_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str, sizeof(addr_str));
+	LOG_INF("%s -> %s", host, addr_str);
+
+	return 0;
+}
+
 static int ocpp_get_time_from_sntp(void)
 {
 	struct sntp_ctx ctx;
 	struct sntp_time stime;
-	struct sockaddr_in addr;
+	struct sockaddr addr;
+	socklen_t addrlen;
 	struct timespec tv;
 	int ret;
 
-	/* ipv4 */
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(123);
-	inet_pton(AF_INET, CONFIG_NET_SAMPLE_SNTP_SERVER, &addr.sin_addr);
+	ret = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT,
+				   AF_INET, SOCK_DGRAM, &addr, &addrlen);
+	if (ret != 0) {
+		LOG_ERR("Failed to lookup SNTP server (%d)", ret);
+		return ret;
+	}
 
-	ret = sntp_init(&ctx, (struct sockaddr *) &addr,
-			sizeof(struct sockaddr_in));
+	ret = sntp_init(&ctx, &addr, addrlen);
 	if (ret < 0) {
 		LOG_ERR("Failed to init SNTP IPv4 ctx: %d", ret);
 		return ret;
 	}
 
-	ret = sntp_query(&ctx, 60, &stime);
+	ret = sntp_query(&ctx, 4 * MSEC_PER_SEC, &stime);
 	if (ret < 0) {
 		LOG_ERR("SNTP IPv4 request failed: %d", ret);
 		return ret;
 	}
 
-	LOG_INF("sntp succ since Epoch: %llu\n", stime.seconds);
+	LOG_INF("SNTP success, epoch seconds: %llu\n", stime.seconds);
 	tv.tv_sec = stime.seconds;
 	clock_settime(CLOCK_REALTIME, &tv);
 	sntp_close(&ctx);
@@ -289,10 +327,10 @@ int main(void)
 	char *ip = NULL;
 
 	struct ocpp_cp_info cpi = { "basic", "zephyr", .num_of_con = NO_OF_CONN };
-	struct ocpp_cs_info csi = { NULL,
-				    "/steve/websocket/CentralSystemService/zephyr",
-				    CONFIG_NET_SAMPLE_OCPP_PORT,
-				    AF_INET };
+	struct ocpp_cs_info csi = {NULL,
+				   CONFIG_NET_SAMPLE_OCPP_WS_PATH,
+				   CONFIG_NET_SAMPLE_OCPP_PORT,
+				   AF_INET};
 
 	printk("OCPP sample %s\n", CONFIG_BOARD);
 

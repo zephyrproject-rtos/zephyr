@@ -23,3 +23,8 @@ properties:
       Milliseconds to wait for a complete pulse.
       Default is 1 s. This allows reading down to about 120 RPM (not 60
       because the measurement might start right after a pulse start).
+
+  pulses-per-round:
+    type: int
+    description: Number of pulses per round.
+    required: true

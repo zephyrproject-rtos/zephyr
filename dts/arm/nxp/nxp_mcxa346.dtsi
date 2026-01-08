@@ -7,3 +7,5 @@
 #include <nxp/nxp_mcxaxx6_common.dtsi>
 
 /delete-node/ &i3c0;
+/delete-node/ &flexio0;
+/delete-node/ &trng;

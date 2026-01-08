@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&axisram3 {
+	status = "okay";
+};
+
+&axisram4 {
+	status = "okay";
+};
+
+&axisram5 {
+	status = "okay";
+};
+
+&axisram6 {
+	status = "okay";
+};

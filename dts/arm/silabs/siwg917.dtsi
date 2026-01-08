@@ -64,7 +64,7 @@
 		 * Less memory is allocated to Zephyr, more memory is allocated
 		 * to NWP, better are the WiFi and BLE performances.
 		 */
-		reg = <0x00000400 DT_SIZE_K(255)>;
+		reg = <0x00000400 DT_SIZE_K(319)>;
 	};
 
 	sram_dma1: memory-dma@24061c00 {
@@ -76,11 +76,15 @@
 
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
-		power-profile = "deep-sleep-with-ram-retention";
 		stack-size = <10240>;
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
 		interrupt-names = "nwp_stack", "nwp_irq";
+		antenna-selection = "ext-gpios";
+		support-1p8v;
+		enable-xtal-correction;
+		qspi-80mhz-clk;
+		clock-frequency = <120000000>;
 		status = "okay";
 
 		bt_hci0: bt_hci {
@@ -134,6 +138,7 @@
 		siwx91x_soc_pd: siwx91x-soc-pd {
 			compatible = "silabs,siwx91x-power-domain";
 			#power-domain-cells = <0>;
+			zephyr,disabling-power-states = <&pstate_ps4_sleep>;
 			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
@@ -200,6 +205,7 @@
 				ngpios = <16>;
 				gpio-reserved-ranges = <0 6>;
 				silabs,pads = [ff ff ff ff ff ff 01 02 03 04 05 06 07 ff ff 08];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 
@@ -210,6 +216,7 @@
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				silabs,pads = [ff ff ff ff ff ff ff ff ff 00 00 00 00 00 00 09];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 
@@ -220,6 +227,7 @@
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				silabs,pads = [09 09 09 ff ff ff ff ff ff ff ff ff ff ff 0a 0b];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 
@@ -230,6 +238,7 @@
 				#gpio-cells = <2>;
 				ngpios = <10>;
 				silabs,pads = [0c 0d 0e 0f 10 11 12 13 14 15 ff ff ff ff ff ff];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 		};
@@ -254,6 +263,7 @@
 				ngpios = <12>;
 				gpio-reserved-ranges = <3 1>;
 				silabs,pads = [16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 ff ff ff ff];
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 			};
 		};

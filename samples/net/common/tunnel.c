@@ -55,7 +55,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 static int setup_iface(struct net_if *iface, const char *ipaddr)
 {
 	struct net_if_addr *ifaddr;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 
 	/* Before setting up tunnel, make sure it will be ignored by conn_mgr */
 	conn_mgr_ignore_iface(iface);
@@ -65,7 +65,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
 		ifaddr = net_if_ipv6_addr_add(iface,
 					      &net_sin6(&addr)->sin6_addr,
 					      NET_ADDR_MANUAL, 0);
@@ -76,7 +76,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
 		ifaddr = net_if_ipv4_addr_add(iface,
 					      &net_sin(&addr)->sin_addr,
 					      NET_ADDR_MANUAL, 0);
@@ -93,7 +93,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 int init_tunnel(void)
 {
 	struct virtual_interface_req_params params = { 0 };
-	struct sockaddr peer = { 0 };
+	struct net_sockaddr peer = { 0 };
 	struct ud ud;
 	int ret;
 	int mtu;
@@ -113,24 +113,24 @@ int init_tunnel(void)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && peer.sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && peer.sa_family == NET_AF_INET6) {
 		struct net_if *iface;
 
 		iface = net_if_ipv6_select_src_iface(
 					&net_sin6(&peer)->sin6_addr);
 		ud.peer = iface;
-		params.family = AF_INET6;
+		params.family = NET_AF_INET6;
 		net_ipaddr_copy(&params.peer6addr,
 				&net_sin6(&peer)->sin6_addr);
 		mtu = NET_ETH_MTU - sizeof(struct net_ipv6_hdr);
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && peer.sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && peer.sa_family == NET_AF_INET) {
 		struct net_if *iface;
 
 		iface = net_if_ipv4_select_src_iface(
 					&net_sin(&peer)->sin_addr);
 		ud.peer = iface;
-		params.family = AF_INET;
+		params.family = NET_AF_INET;
 		net_ipaddr_copy(&params.peer4addr,
 				&net_sin(&peer)->sin_addr);
 		mtu = NET_ETH_MTU - sizeof(struct net_ipv4_hdr);

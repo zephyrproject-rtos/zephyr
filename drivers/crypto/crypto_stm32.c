@@ -556,10 +556,7 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 
 static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	}
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, NULL,

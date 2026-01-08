@@ -1,7 +1,7 @@
 #
-#  Copyright (c) 2025 Netfeasa Ltd.
+# Copyright (c) 2025 Netfeasa Ltd.
 #
-#  SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 #
 zephyr_library()
 
@@ -11,6 +11,11 @@ zephyr_library_sources(
     hl78xx_cfg.c
     hl78xx_chat.c
     hl78xx_apis.c
+)
+
+zephyr_library_sources_ifdef(
+    CONFIG_MODEM_HL78XX_AT_SHELL
+    hl78xx_at_shell.c
 )
 
 add_subdirectory_ifdef(CONFIG_HL78XX_EVT_MONITOR hl78xx_evt_monitor)

@@ -19,6 +19,8 @@ supported:
   - i2s
   - netif:openthread
   - crypto
+  - retained_mem
+
 testing:
   ignore_tags:
     - bluetooth

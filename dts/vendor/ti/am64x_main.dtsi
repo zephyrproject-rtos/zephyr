@@ -197,17 +197,17 @@
 		status = "disabled";
 	};
 
-	main_gpio0: gpio@600000 {
+	main_gpio0: gpio@600010 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x600000 0x100>;
+		reg = <0x600010 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";
 	};
 
-	main_gpio1: gpio@601000 {
+	main_gpio1: gpio@601010 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x601000 0x100>;
+		reg = <0x601010 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		status = "disabled";

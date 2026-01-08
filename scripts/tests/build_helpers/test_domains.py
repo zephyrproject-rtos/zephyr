@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2023 Intel Corporation
+# Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -174,7 +175,7 @@ def test_get_domains(
     default_flash_order,
     expected_result,
 ):
-    doms = domains.Domains(
+    doms = domains.Domains.from_yaml(
         """
 domains:
 - name: dummy
@@ -225,7 +226,7 @@ def test_get_domain(
     expected_logs,
     expected_result,
 ):
-    doms = domains.Domains(
+    doms = domains.Domains.from_yaml(
         """
 domains:
 - name: dummy

@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -98,6 +98,12 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x3fc80000 DT_SIZE_K(384)>;
 			zephyr,memory-region = "SRAM1";
+		};
+
+		rtc_fast_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
 		};
 
 		intc: interrupt-controller@600c2000 {

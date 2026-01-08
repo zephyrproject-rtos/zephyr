@@ -1,0 +1,648 @@
+<style>
+  :root {
+    --shadow-color: rgb(from var(--body-color) r g b / calc(alpha * 0.2));
+    --shadow-style: 0 12px 6px -6px var(--shadow-color);
+  }
+
+  h1 {
+    display: none;
+  }
+
+  .admonition.welcome {
+      background: transparent;
+      border-left: 2px solid var(--navbar-scrollbar-active-color);
+      padding: 0 0 0 1rem;
+      overflow: visible;
+
+      .admonition-title {
+        color: var(--body-color);
+        background: transparent !important;
+        padding: 0;
+        margin: 0 0 0.25rem 0;
+        font-weight: 700;
+        font-size: 18px;
+        opacity: 1;
+
+        &::before {
+          display: none;
+        }
+      }
+
+      p {
+        color: var(--body-color);
+        font-size: 0.9rem;
+        line-height: 1.2em;
+      }
+  }
+
+  .landing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 0.5rem;
+  }
+  .landing-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    &.three-col {
+      @media (min-width: 1024px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  }
+
+  /* === SHARED CARD STYLES === */
+  .card-title {
+    font-size: 1.125rem;
+    font-weight: bold;
+    color: var(--body-color);
+    margin-bottom: 0.25rem !important;
+  }
+  .card-description {
+    color: var(--body-color);
+    font-weight: 300;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    opacity: 0.85;
+  }
+  .icon-wrapper i {
+    color: inherit;
+  }
+
+  /* === LANDING CARDS === */
+  .landing-card {
+    background-color: var(--landing-card-background-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.15s ease 0.15s ease;
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-style);
+      text-decoration: none;
+      .landing-watermark {
+        transform: translateY(-50%) rotate(-8deg) scale(1.1);
+        opacity: 0.25;
+      }
+    }
+    .card-content {
+      flex: 1;
+      position: relative;
+      z-index: 2;
+    }
+    .card-description {
+      padding-right: 5rem;
+    }
+  }
+  .landing-watermark {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: center center;
+    opacity: 0.12;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: var(--link-color);
+    i {
+      font-size: 5rem !important;
+      line-height: 1;
+    }
+  }
+
+  /* === PERSONA CARDS === */
+  .persona-card {
+    background-color: var(--landing-card-background-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.2s ease;
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-style);
+      border-color: rgba(255, 255, 255, 0.05);
+      .watermark {
+        transform: rotate(-10deg) scale(1.1);
+        opacity: 0.15;
+      }
+    }
+    .persona-link:hover {
+      font-weight: 500;
+    }
+    .card-content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+    }
+    @media (max-width: 768px) {
+      .watermark {
+        bottom:1rem;
+        right: 1rem;
+
+        i {
+          font-size: 7rem !important;
+        }
+      }
+    }
+  }
+  .persona-header {
+    margin-bottom: 1.5rem;
+    h3 {
+      min-height: 3rem;
+      font-size: 1.25rem;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+    @media (max-width: 768px) {
+      z-index: 10;
+    }
+  }
+
+  /* Watermark */
+  .watermark {
+    position: absolute;
+    bottom: -1rem;
+    right: -1.5rem;
+    z-index: 0;
+    opacity: 0.05;
+    transform: rotate(0deg);
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    i {
+      font-size: 9rem !important;
+      line-height: 1;
+    }
+    @media (max-width: 768px) {
+      bottom: -0.5rem;
+      right: -0.5rem;
+      opacity: 0.15;
+      i {
+        font-size: 6rem !important;
+      }
+    }
+  }
+
+  /* Persona Type Colors */
+  .type-app {
+    .watermark i {
+      color: #0ea5e9;
+    }
+    .persona-link {
+      i {
+        color: #0ea5e9;
+      }
+      &:hover {
+        color: #38bdf8 !important;
+      }
+    }
+  }
+  .type-hw {
+    .watermark i {
+      color: #8b5cf6;
+    }
+    .persona-link {
+      i {
+        color: #8b5cf6;
+      }
+      &:hover {
+        color: #a78bfa !important;
+      }
+    }
+  }
+  .type-maker {
+    .watermark i {
+      color: #10b981;
+    }
+    .persona-link {
+      i {
+        color: #10b981;
+      }
+      &:hover {
+        color: #34d399 !important;
+      }
+    }
+  }
+
+  /* Persona Links */
+  .persona-list {
+    margin: 0 !important;
+    list-style: none;
+    padding: 0;
+    position: relative;
+    z-index: 2;
+    li {
+      list-style: none !important;
+      margin-left: 0 !important;
+      * {
+        margin-bottom: 0.1rem !important;
+      }
+    }
+  }
+  .persona-link {
+    display: flex;
+    align-items: center;
+    color: var(--body-color) !important;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: color 0.2s;
+    i {
+      font-size: 0.75rem;
+      margin-right: 0.6rem;
+    }
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  /* === CONTRIBUTE CARD === */
+  .contribute-card {
+    background-color: var(--landing-card-background-color);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.1s ease;
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-style);
+      text-decoration: none;
+      .cta-text {
+        color: var(--body-color);
+      }
+    }
+    @media (max-width: 768px) {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+  }
+  .accent-contribute {
+    background-color: rgba(219, 39, 119, 0.15);
+    color: #f472b6;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cta-text {
+    color: var(--body-color);
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    padding-left: 1rem;
+    white-space: nowrap;
+    @media (max-width: 768px) {
+      margin-left: 0;
+      padding-left: 0;
+    }
+  }
+
+  /* === REFERENCE CARDS === */
+  .reference-card {
+    background-color: var(--landing-card-background-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    transition: transform 0.1s ease;
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-style);
+      text-decoration: none;
+      .reference-arrow {
+        opacity: 1;
+        transform: translateX(4px);
+      }
+    }
+    .icon-wrapper {
+      width: 2.5rem;
+      height: 2.5rem;
+      flex-shrink: 0;
+      border-radius: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-title {
+      font-size: 1rem;
+      margin: 0;
+    }
+    .card-description {
+      font-weight: 100;
+    }
+  }
+  .reference-content {
+    flex: 1;
+  }
+  .reference-arrow {
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+  }
+
+  /* === SECTION HEADERS === */
+  .section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .section-title {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem !important;
+  }
+  .section-subtitle {
+    opacity: 0.75;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  /* === COLOR ACCENTS === */
+  .ref-api {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+  }
+  .ref-kconfig {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+  .ref-dts {
+    background-color: rgba(168, 85, 247, 0.2);
+    color: #c084fc;
+  }
+  .ref-west {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+  .ref-glossary {
+    background-color: rgba(249, 115, 22, 0.2);
+    color: #fb923c;
+  }
+</style>
+
+<main class="landing-container">
+  <section>
+    <div class="landing-grid">
+      <a href="introduction/index.html" class="landing-card">
+        <div class="landing-watermark">
+          <i class="fa fa-info-circle" aria-hidden="true"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-title">What is Zephyr?</h3>
+          <p class="card-description">Discover the core concepts, features, and architecture.</p>
+        </div>
+      </a>
+
+      <a href="develop/getting_started/index.html" class="landing-card">
+        <div class="landing-watermark">
+          <i class="fa fa-lightbulb-o" aria-hidden="true" style="font-size: 5.5rem !important;"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-title">Getting Started</h3>
+          <p class="card-description">
+            A step-by-step guide to set up your environment & blink your first LED.
+          </p>
+        </div>
+      </a>
+
+      <a href="boards/index.html" class="landing-card">
+        <div class="landing-watermark">
+          <i class="fa fa-microchip" aria-hidden="true"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-title">Supported Boards</h3>
+          <p class="card-description">Browse 1,000+ supported boards and shields.</p>
+        </div>
+      </a>
+
+      <a href="samples/index.html" class="landing-card">
+        <div class="landing-watermark">
+          <i class="fa fa-cogs" aria-hidden="true"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-title">Code Samples</h3>
+          <p class="card-description">Explore hundreds of ready-to-run examples.</p>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section style="margin-top: 3rem">
+    <div class="section-header">
+      <h2 class="section-title">Choose Your Starting Point</h2>
+      <p class="section-subtitle">
+        Find documentation tailored to what you're trying to accomplish.
+      </p>
+    </div>
+
+    <div class="landing-grid three-col">
+      <div class="persona-card type-app">
+        <div class="watermark">
+          <i class="fa fa-laptop" aria-hidden="true"></i>
+        </div>
+        <div class="card-content">
+          <div class="persona-header">
+            <h3 class="card-title">Building an Application</h3>
+            <p class="card-description">Use Zephyr APIs and services in your firmware.</p>
+          </div>
+          <ul class="persona-list">
+            <li>
+              <a href="kernel/services/" class="persona-link"><i class="fa fa-chevron-right"
+                  aria-hidden="true"></i><span>RTOS Kernel</span></a>
+            </li>
+            <li>
+              <a href="services/" class="persona-link"><i class="fa fa-chevron-right"
+                  aria-hidden="true"></i><span>Services</span></a>
+            </li>
+            <li>
+              <a href="develop/application/" class="persona-link"><i class="fa fa-chevron-right"
+                  aria-hidden="true"></i><span>Application development</span></a>
+            </li>
+            <li>
+              <a href="samples/" class="persona-link"><i class="fa fa-chevron-right"
+                  aria-hidden="true"></i><span>Code samples</span></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="persona-card type-hw">
+        <div class="watermark">
+          <i class="fa fa-microchip" aria-hidden="true"></i>
+        </div>
+        <div class="card-content">
+          <div class="persona-header">
+            <h3 class="card-title">Bringing Up New Hardware</h3>
+            <p class="card-description">Port and run Zephyr on hardware.</p>
+          </div>
+          <ul class="persona-list">
+            <li>
+              <a href="kernel/drivers/index.html" class="persona-link"><i class="fa fa-chevron-right"
+                aria-hidden="true"></i><span>Device Driver Model</span></a>
+            </li>
+            <li>
+                <a href="build/dts/index.html" class="persona-link"><i class="fa fa-chevron-right"
+                  aria-hidden="true"></i><span>Devicetree</span></a>
+            </li>
+            <li>
+              <a href="hardware/porting/board_porting.html" class="persona-link"><i
+                 class="fa fa-chevron-right" aria-hidden="true"></i>
+                <span>Board Porting Guide</span>
+              </a>
+            </li>
+            <li>
+              <a href="hardware/porting/soc_porting.html" class="persona-link"><i class="fa fa-chevron-right"
+                 aria-hidden="true"></i>
+                <span>SoC Porting Guide</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="persona-card type-maker">
+        <div class="watermark">
+          <i class="fa fa-cube" aria-hidden="true"></i>
+        </div>
+        <div class="card-content">
+          <div class="persona-header">
+            <h3 class="card-title">Going to Production</h3>
+            <p class="card-description">Considerations for using Zephyr in your product.</p>
+          </div>
+          <ul class="persona-list">
+            <li>
+              <a href="security/" class="persona-link">
+                <i class="fa fa-chevron-right" aria-hidden="true"></i><span>Security</span></a>
+            </li>
+            <li>
+              <a href="safety/" class="persona-link">
+                <i class="fa fa-chevron-right" aria-hidden="true"></i><span>Safety</span></a>
+            </li>
+            <li>
+              <a href="project/release_process.html#long-term-support-lts" class="persona-link">
+                <i class="fa fa-chevron-right" aria-hidden="true"></i>
+                <span>Long-term Support</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://www.zephyrproject.org/products-running-zephyr/" class="persona-link"
+                 target="_blank">
+                <i class="fa fa-chevron-right" aria-hidden="true"></i>
+                <span>Product Showcase</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 1rem; margin-bottom: 3rem">
+    <a href="contribute/index.html" class="contribute-card">
+      <div class="accent-contribute">
+        <i class="fa fa-github" style="font-size: 3rem" aria-hidden="true"></i>
+      </div>
+      <div class="card-content">
+        <h2 class="card-title" style="font-size: 1.5rem; margin-bottom: 0.5rem">
+          Contribute to Zephyr
+        </h2>
+        <p class="card-description" style="font-size: 1rem; margin: 0">
+          The Zephyr Project is open source and community-driven.<br>
+          Learn how to report bugs, request new features, and submit pull requests.
+        </p>
+      </div>
+      <div class="cta-text">
+        <span>Read the Guidelines</span>
+        <i class="fa fa-arrow-right" aria-hidden="true"></i>
+      </div>
+    </a>
+  </section>
+
+  <section>
+    <div class="section-header">
+      <h2 class="section-title">Core References</h2>
+      <p class="section-subtitle">Essential resources for in-depth information</p>
+    </div>
+
+    <div class="landing-grid three-col">
+      <a href="doxygen/html/" class="reference-card">
+        <div class="icon-wrapper ref-api">
+          <i class="fa fa-book" aria-hidden="true" style="font-size: 1.25rem"></i>
+        </div>
+        <div class="reference-content">
+          <h3 class="card-title">API Reference</h3>
+          <p class="card-description">Complete C API docs</p>
+        </div>
+        <i class="fa fa-arrow-right reference-arrow" style="color: #60a5fa"></i>
+      </a>
+
+      <a href="kconfig.html" class="reference-card">
+        <div class="icon-wrapper ref-kconfig">
+          <i class="fa fa-sliders" aria-hidden="true" style="font-size: 1.25rem"></i>
+        </div>
+        <div class="reference-content">
+          <h3 class="card-title">Kconfig</h3>
+          <p class="card-description">Configuration system</p>
+        </div>
+        <i class="fa fa-arrow-right reference-arrow" style="color: #4ade80"></i>
+      </a>
+
+      <a href="build/dts/api/bindings.html" class="reference-card">
+        <div class="icon-wrapper ref-dts">
+          <i class="fa fa-sitemap" aria-hidden="true" style="font-size: 1.25rem"></i>
+        </div>
+        <div class="reference-content">
+          <h3 class="card-title">Devicetree</h3>
+          <p class="card-description">Hardware bindings</p>
+        </div>
+        <i class="fa fa-arrow-right reference-arrow" style="color: #c084fc"></i>
+      </a>
+
+      <a href="develop/manifest/" class="reference-card">
+        <div class="icon-wrapper ref-west">
+          <i class="fa fa-code-fork" aria-hidden="true" style="font-size: 1.25rem"></i>
+        </div>
+        <div class="reference-content">
+          <h3 class="card-title">West Projects</h3>
+          <p class="card-description">Available projects</p>
+        </div>
+        <i class="fa fa-arrow-right reference-arrow" style="color: #f87171"></i>
+      </a>
+
+      <a href="glossary.html" class="reference-card">
+        <div class="icon-wrapper ref-glossary">
+          <i class="fa fa-font" aria-hidden="true" style="font-size: 1.25rem"></i>
+        </div>
+        <div class="reference-content">
+          <h3 class="card-title">Glossary</h3>
+          <p class="card-description">Key term definitions</p>
+        </div>
+        <i class="fa fa-arrow-right reference-arrow" style="color: #fb923c"></i>
+      </a>
+    </div>
+  </section>
+</main>

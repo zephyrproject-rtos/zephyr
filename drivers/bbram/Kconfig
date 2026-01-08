@@ -30,20 +30,15 @@ config BBRAM_INIT_PRIORITY
 	help
 	  BBRAM driver initialization priority
 
-source "drivers/bbram/Kconfig.npcx"
-
-source "drivers/bbram/Kconfig.it8xxx2"
-
+# zephyr-keep-sorted-start
 source "drivers/bbram/Kconfig.bbram_emul"
-
-source "drivers/bbram/Kconfig.microchip"
-
-source "drivers/bbram/Kconfig.xec"
-
-source "drivers/bbram/Kconfig.stm32"
-
-source "drivers/bbram/Kconfig.rts5912"
-
+source "drivers/bbram/Kconfig.it8xxx2"
 source "drivers/bbram/Kconfig.mc146818"
+source "drivers/bbram/Kconfig.microchip"
+source "drivers/bbram/Kconfig.npcx"
+source "drivers/bbram/Kconfig.rts5912"
+source "drivers/bbram/Kconfig.stm32"
+source "drivers/bbram/Kconfig.xec"
+# zephyr-keep-sorted-stop
 
 endif # BBRAM

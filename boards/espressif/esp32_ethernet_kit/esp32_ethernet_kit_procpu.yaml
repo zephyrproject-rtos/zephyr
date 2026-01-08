@@ -12,4 +12,5 @@ supported:
   - pwm
   - i2s
   - crypto
+  - retained_mem
 vendor: espressif

@@ -173,10 +173,7 @@ SECTIONS
   dram_size_field = LOADADDR(.dram0.end) - LOADADDR(.dram0.data);
 
   #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-#endif
 
   /* --- START OF IRAM --- */
 

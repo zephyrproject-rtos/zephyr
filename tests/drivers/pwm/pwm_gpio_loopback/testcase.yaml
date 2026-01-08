@@ -14,12 +14,13 @@ tests:
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
 
   drivers.pwm.gpio_loopback.nrf:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
@@ -30,4 +31,37 @@ tests:
 
   drivers.pwm.gpio_loopback.ifx:
     platform_allow:
-      - cyw920829m2evk_02
+      - cyw920829m2evk_02/cyw20829b1340
+      - cyw920829m2evk_02/cyw20829b1010
+      - cyw920829m2evk_02/cyw20829b0lkml
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+  drivers.pwm.gpio_loopback_tc0.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc1.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc1.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc4.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc4.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc5.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc6.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
+    platform_allow:
+      - sam_e54_xpro
+
+  drivers.pwm.gpio_loopback_tc7.mchp:
+    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc7.overlay"
+    platform_allow:
+      - sam_e54_xpro

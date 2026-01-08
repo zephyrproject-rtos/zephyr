@@ -350,9 +350,14 @@ static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_pa
 	struct record *record = GET_CBOR_FD_REC(fd);
 
 	/* With the first ri the resource name (and ri name) are already in place*/
+	if (path->res_inst_id > 0) {
+		return put_begin_ri(out, path);
+	}
+
 	if (record == NULL || !record->record_t_present) {
 		return 0;
 	}
+
 	/* Name need to be add for each time serialized record */
 	if (path->level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
 		return put_begin_ri(out, path);

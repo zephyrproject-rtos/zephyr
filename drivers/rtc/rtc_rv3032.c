@@ -12,76 +12,10 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/mfd/rv3032.h>
 #include "rtc_utils.h"
 
 LOG_MODULE_REGISTER(rv3032, CONFIG_RTC_LOG_LEVEL);
-
-/* RV3032 RAM register addresses */
-#define RV3032_REG_100TH_SECONDS 0x00
-#define RV3032_REG_SECONDS       0x01
-#define RV3032_REG_MINUTES       0x02
-#define RV3032_REG_HOURS         0x03
-#define RV3032_REG_WEEKDAY       0x04
-#define RV3032_REG_DATE          0x05
-#define RV3032_REG_MONTH         0x06
-#define RV3032_REG_YEAR          0x07
-#define RV3032_REG_ALARM_MINUTES 0x08
-#define RV3032_REG_ALARM_HOURS   0x09
-#define RV3032_REG_ALARM_DATE    0x0A
-#define RV3032_REG_TIMER_VALUE_0 0x0B
-#define RV3032_REG_TIMER_VALUE_1 0x0C
-#define RV3032_REG_STATUS        0x0D
-#define RV3032_REG_TEMPERATURE   0x0E
-#define RV3032_REG_CONTROL1      0x10
-#define RV3032_REG_CONTROL2      0x11
-
-#define RV3032_REG_EEPROM_ADDRESS 0x3D
-#define RV3032_REG_EEPROM_DATA    0x3E
-#define RV3032_REG_EEPROM_COMMAND 0x3F
-#define RV3032_REG_EEPROM_PMU     0xC0
-
-#define RV3032_CONTROL1_TD   GENMASK(1, 0)
-#define RV3032_CONTROL1_EERD BIT(2)
-#define RV3032_CONTROL1_TE   BIT(3)
-#define RV3032_CONTROL1_USEL BIT(4)
-#define RV3032_CONTROL1_GP0  BIT(5)
-
-#define RV3032_CONTROL2_STOP  BIT(0)
-#define RV3032_CONTROL2_GP1   BIT(1)
-#define RV3032_CONTROL2_EIE   BIT(2)
-#define RV3032_CONTROL2_AIE   BIT(3)
-#define RV3032_CONTROL2_TIE   BIT(4)
-#define RV3032_CONTROL2_UIE   BIT(5)
-#define RV3032_CONTROL2_CLKIE BIT(6)
-
-#define RV3032_STATUS_VLF  BIT(0)
-#define RV3032_STATUS_PORF BIT(1)
-#define RV3032_STATUS_EVF  BIT(2)
-#define RV3032_STATUS_AF   BIT(3)
-#define RV3032_STATUS_TF   BIT(4)
-#define RV3032_STATUS_UF   BIT(5)
-#define RV3032_STATUS_TLF  BIT(6)
-#define RV3032_STATUS_THF  BIT(7)
-
-#define RV3032_TEMPERATURE_BSF      BIT(0)
-#define RV3032_TEMPERATURE_CLKF     BIT(1)
-#define RV3032_TEMPERATURE_EEBUSY   BIT(2)
-#define RV3032_TEMPERATURE_EEF      BIT(3)
-#define RV3032_TEMPERATURE_TEMP_LSB GENMASK(7, 4)
-
-#define RV3032_EEPROM_PMU_NCLKE BIT(6)
-#define RV3032_EEPROM_PMU_BSM   GENMASK(5, 4)
-#define RV3032_EEPROM_PMU_TCR   GENMASK(3, 2)
-#define RV3032_EEPROM_PMU_TCM   GENMASK(1, 0)
-
-#define RV3032_REG_EEPROM_CLKOUT1 0xC2
-#define RV3032_REG_EEPROM_CLKOUT2 0xC3
-
-#define RV3032_EEPROM_CLKOUT1_HFD_LOW GENMASK(7, 0)
-
-#define RV3032_EEPROM_CLKOUT2_OS       BIT(7)
-#define RV3032_EEPROM_CLKOUT2_FD       GENMASK(6, 5)
-#define RV3032_EEPROM_CLKOUT2_HFD_HIGH GENMASK(4, 0)
 
 #define RV3032_EEPROM_CLKOUT2_OS_XTAL 0x0
 #define RV3032_EEPROM_CLKOUT2_OS_HF   0x1
@@ -120,32 +54,6 @@ LOG_MODULE_REGISTER(rv3032, CONFIG_RTC_LOG_LEVEL);
 #define RV3032_EEPROM_CMD_WRITE   0x21
 #define RV3032_EEPROM_CMD_READ    0x22
 
-#define RV3032_100TH_SECONDS_MASK GENMASK(7, 0)
-#define RV3032_SECONDS_MASK       GENMASK(6, 0)
-#define RV3032_MINUTES_MASK       GENMASK(6, 0)
-#define RV3032_HOURS_AMPM         BIT(5)
-#define RV3032_HOURS_12H_MASK     GENMASK(4, 0)
-#define RV3032_HOURS_24H_MASK     GENMASK(5, 0)
-#define RV3032_DATE_MASK          GENMASK(5, 0)
-#define RV3032_WEEKDAY_MASK       GENMASK(2, 0)
-#define RV3032_MONTH_MASK         GENMASK(4, 0)
-#define RV3032_YEAR_MASK          GENMASK(7, 0)
-
-#define RV3032_ALARM_MINUTES_AE_M   BIT(7)
-#define RV3032_ALARM_MINUTES_MASK   GENMASK(6, 0)
-#define RV3032_ALARM_HOURS_AE_H     BIT(7)
-#define RV3032_ALARM_HOURS_AMPM     BIT(5)
-#define RV3032_ALARM_HOURS_12H_MASK GENMASK(4, 0)
-#define RV3032_ALARM_HOURS_24H_MASK GENMASK(5, 0)
-#define RV3032_ALARM_DATE_AE_D      BIT(7)
-#define RV3032_ALARM_DATE_MASK      GENMASK(5, 0)
-
-/* The RV3032 only supports two-digit years. Leap years are correctly handled from 2000 to 2099 */
-#define RV3032_YEAR_OFFSET (2000 - 1900)
-
-/* The RV3032 enumerates months 1 to 12 */
-#define RV3032_MONTH_OFFSET 1
-
 /* RV3032 EEPROM timing from datasheet */
 #define RV3032_EEBUSY_READ_POLL_MS  2   /* tREAD = ~1.1ms, poll every 2ms */
 #define RV3032_EEBUSY_WRITE_POLL_MS 5   /* tWRITE = ~4.8ms, poll every 5ms */
@@ -167,26 +75,15 @@ LOG_MODULE_REGISTER(rv3032, CONFIG_RTC_LOG_LEVEL);
 	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
-/* Helper macro to guard int-gpios related code */
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) &&                                                 \
-	(defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE))
-#define RV3032_INT_GPIOS_IN_USE 1
-#endif
-
 struct rv3032_config {
-	const struct i2c_dt_spec i2c;
-#ifdef RV3032_INT_GPIOS_IN_USE
-	struct gpio_dt_spec gpio_int;
-#endif /* RV3032_INT_GPIOS_IN_USE */
+	const struct device *mfd;
 	uint8_t backup;
 	uint32_t clkout_freq;
 };
 
 struct rv3032_data {
 	struct k_sem lock;
-#if RV3032_INT_GPIOS_IN_USE
 	const struct device *dev;
-	struct gpio_callback int_callback;
 	struct k_work work;
 #ifdef CONFIG_RTC_ALARM
 	rtc_alarm_callback alarm_callback;
@@ -196,7 +93,6 @@ struct rv3032_data {
 	rtc_update_callback update_callback;
 	void *update_user_data;
 #endif /* CONFIG_RTC_UPDATE */
-#endif /* RV3032_INT_GPIOS_IN_USE */
 };
 
 static void rv3032_lock_sem(const struct device *dev)
@@ -213,72 +109,17 @@ static void rv3032_unlock_sem(const struct device *dev)
 	k_sem_give(&data->lock);
 }
 
-static int rv3032_read_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
-{
-	const struct rv3032_config *config = dev->config;
-	int err;
-
-	err = i2c_write_read_dt(&config->i2c, &addr, sizeof(addr), buf, len);
-	if (err) {
-		LOG_ERR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int rv3032_read_reg8(const struct device *dev, uint8_t addr, uint8_t *val)
-{
-	return rv3032_read_regs(dev, addr, val, sizeof(*val));
-}
-
-static int rv3032_write_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
-{
-	const struct rv3032_config *config = dev->config;
-	uint8_t block[sizeof(addr) + len];
-	int err;
-
-	block[0] = addr;
-	memcpy(&block[1], buf, len);
-
-	err = i2c_write_dt(&config->i2c, block, sizeof(block));
-	if (err) {
-		LOG_ERR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int rv3032_write_reg8(const struct device *dev, uint8_t addr, uint8_t val)
-{
-	return rv3032_write_regs(dev, addr, &val, sizeof(val));
-}
-
-static int rv3032_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
-{
-	const struct rv3032_config *config = dev->config;
-	int err;
-
-	err = i2c_reg_update_byte_dt(&config->i2c, addr, mask, val);
-	if (err) {
-		LOG_ERR("failed to update reg addr 0x%02x, mask 0x%02x, val 0x%02x (err %d)", addr,
-			mask, val, err);
-		return err;
-	}
-
-	return 0;
-}
 
 static int rv3032_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t status = 0;
 	int err;
 	int64_t timeout_time = k_uptime_get() + RV3032_EEBUSY_TIMEOUT_MS;
 
 	/* Wait while the EEPROM is busy */
 	for (;;) {
-		err = rv3032_read_reg8(dev, RV3032_REG_TEMPERATURE, &status);
+		err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_TEMPERATURE_LSB, &status);
 		if (err) {
 			return err;
 		}
@@ -299,16 +140,19 @@ static int rv3032_eeprom_wait_busy(const struct device *dev, int poll_ms)
 
 static int rv3032_exit_eerd(const struct device *dev)
 {
-	return rv3032_update_reg8(dev, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD, 0);
+	const struct rv3032_config *config = dev->config;
+
+	return mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD, 0);
 }
 
 static int rv3032_enter_eerd(const struct device *dev)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t ctrl1;
 	bool eerd;
 	int ret;
 
-	ret = rv3032_read_reg8(dev, RV3032_REG_CONTROL1, &ctrl1);
+	ret = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_CONTROL1, &ctrl1);
 	if (ret) {
 		return ret;
 	}
@@ -318,7 +162,7 @@ static int rv3032_enter_eerd(const struct device *dev)
 		return 0;
 	}
 
-	ret = rv3032_update_reg8(dev, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD,
+	ret = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD,
 				 RV3032_CONTROL1_EERD);
 
 	if (ret) {
@@ -336,14 +180,15 @@ static int rv3032_enter_eerd(const struct device *dev)
 
 static int rv3032_eeprom_command(const struct device *dev, uint8_t command)
 {
+	const struct rv3032_config *config = dev->config;
 	int err;
 
-	err = rv3032_write_reg8(dev, RV3032_REG_EEPROM_COMMAND, RV3032_EEPROM_CMD_INIT);
+	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_COMMAND, RV3032_EEPROM_CMD_INIT);
 	if (err) {
 		return err;
 	}
 
-	return rv3032_write_reg8(dev, RV3032_REG_EEPROM_COMMAND, command);
+	return mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_COMMAND, command);
 }
 
 static int rv3032_update(const struct device *dev)
@@ -382,11 +227,12 @@ exit_eerd:
 
 static int rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t val_old;
 	uint8_t val_new;
 	int err;
 
-	err = rv3032_read_reg8(dev, addr, &val_old);
+	err = mfd_rv3032_read_reg8(config->mfd, addr, &val_old);
 	if (err) {
 		return err;
 	}
@@ -401,7 +247,7 @@ static int rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mas
 		return err;
 	}
 
-	err = rv3032_write_reg8(dev, addr, val_new);
+	err = mfd_rv3032_write_reg8(config->mfd, addr, val_new);
 	if (err) {
 		rv3032_exit_eerd(dev);
 		return err;
@@ -412,6 +258,7 @@ static int rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mas
 
 static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t clkout1_reg = 0;
 	uint8_t clkout2_reg = 0;
 	uint8_t pmu_reg = 0;
@@ -483,7 +330,7 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	}
 
 	/* Write EEPROM Clkout 1 (C2h) */
-	err = rv3032_write_reg8(dev, RV3032_REG_EEPROM_CLKOUT1, clkout1_reg);
+	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_CLKOUT1, clkout1_reg);
 	if (err) {
 		rv3032_exit_eerd(dev);
 		LOG_ERR("Failed to configure CLKOUT1 register: %d", err);
@@ -491,7 +338,7 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	}
 
 	/* Write EEPROM Clkout 2 (C3h) */
-	err = rv3032_write_reg8(dev, RV3032_REG_EEPROM_CLKOUT2, clkout2_reg);
+	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_CLKOUT2, clkout2_reg);
 	if (err) {
 		rv3032_exit_eerd(dev);
 		LOG_ERR("Failed to configure CLKOUT2 register: %d", err);
@@ -514,86 +361,9 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	return 0;
 }
 
-#if RV3032_INT_GPIOS_IN_USE
-
-static void rv3032_work_cb(struct k_work *work)
-{
-	struct rv3032_data *data = CONTAINER_OF(work, struct rv3032_data, work);
-	const struct device *dev = data->dev;
-	rtc_alarm_callback alarm_callback = NULL;
-	void *alarm_user_data = NULL;
-	rtc_update_callback update_callback = NULL;
-	void *update_user_data = NULL;
-	uint8_t status;
-	int err;
-
-	rv3032_lock_sem(dev);
-
-	err = rv3032_read_reg8(data->dev, RV3032_REG_STATUS, &status);
-	if (err) {
-		goto unlock;
-	}
-
-#ifdef CONFIG_RTC_ALARM
-	if ((status & RV3032_STATUS_AF) && data->alarm_callback) {
-		status &= ~(RV3032_STATUS_AF);
-		alarm_callback = data->alarm_callback;
-		alarm_user_data = data->alarm_user_data;
-	}
-#endif /* CONFIG_RTC_ALARM */
-
-#ifdef CONFIG_RTC_UPDATE
-	if ((status & RV3032_STATUS_UF) && data->update_callback) {
-		status &= ~(RV3032_STATUS_UF);
-		update_callback = data->update_callback;
-		update_user_data = data->update_user_data;
-	}
-#endif /* CONFIG_RTC_UPDATE */
-
-	err = rv3032_write_reg8(dev, RV3032_REG_STATUS, status);
-	if (err) {
-		goto unlock;
-	}
-
-	/* Check if interrupt occurred between STATUS read/write */
-	err = rv3032_read_reg8(dev, RV3032_REG_STATUS, &status);
-	if (err) {
-		goto unlock;
-	}
-
-	if (((status & RV3032_STATUS_AF) && alarm_callback) ||
-	    ((status & RV3032_STATUS_UF) && update_callback)) {
-		/* Another interrupt occurred while servicing this one */
-		k_work_submit(&data->work);
-	}
-
-unlock:
-	rv3032_unlock_sem(dev);
-
-	if (alarm_callback) {
-		alarm_callback(dev, 0U, alarm_user_data);
-	}
-
-	if (update_callback) {
-		update_callback(dev, update_user_data);
-	}
-}
-
-static void rv3032_int_handler(const struct device *port, struct gpio_callback *cb,
-			       gpio_port_pins_t pins)
-{
-	struct rv3032_data *data = CONTAINER_OF(cb, struct rv3032_data, int_callback);
-
-	ARG_UNUSED(port);
-	ARG_UNUSED(pins);
-
-	k_work_submit(&data->work);
-}
-
-#endif /* RV3032_INT_GPIOS_IN_USE */
-
 static int rv3032_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t date[7];
 	int err;
 
@@ -622,13 +392,13 @@ static int rv3032_set_time(const struct device *dev, const struct rtc_time *time
 	/* Write seconds through year registers. Note: Writing to seconds register automatically
 	 * clears the 100th seconds register to 00h per datasheet
 	 */
-	err = rv3032_write_regs(dev, RV3032_REG_SECONDS, &date, sizeof(date));
+	err = mfd_rv3032_write_regs(config->mfd, RV3032_REG_SECONDS, &date, sizeof(date));
 	if (err) {
 		goto unlock;
 	}
 
 	/* Clear Power On Reset Flag */
-	err = rv3032_update_reg8(dev, RV3032_REG_STATUS, RV3032_STATUS_PORF, 0);
+	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_STATUS, RV3032_STATUS_PORF, 0);
 
 unlock:
 	rv3032_unlock_sem(dev);
@@ -638,6 +408,7 @@ unlock:
 
 static int rv3032_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t status;
 	uint8_t date[8];
 	int err;
@@ -646,7 +417,7 @@ static int rv3032_get_time(const struct device *dev, struct rtc_time *timeptr)
 		return -EINVAL;
 	}
 
-	err = rv3032_read_reg8(dev, RV3032_REG_STATUS, &status);
+	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &status);
 	if (err) {
 		return err;
 	}
@@ -657,7 +428,7 @@ static int rv3032_get_time(const struct device *dev, struct rtc_time *timeptr)
 	}
 
 	/* Read 100th seconds through year registers */
-	err = rv3032_read_regs(dev, RV3032_REG_100TH_SECONDS, date, ARRAY_SIZE(date));
+	err = mfd_rv3032_read_regs(config->mfd, RV3032_REG_100TH_SECONDS, date, ARRAY_SIZE(date));
 	if (err) {
 		return err;
 	}
@@ -703,6 +474,7 @@ static int rv3032_alarm_get_supported_fields(const struct device *dev, uint16_t 
 static int rv3032_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 				 const struct rtc_time *timeptr)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t regs[3];
 
 	if (id != 0U) {
@@ -742,12 +514,14 @@ static int rv3032_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		timeptr->tm_hour, timeptr->tm_min, mask);
 
 	/* Write registers RV3032_REG_ALARM_MINUTES through RV3032_REG_ALARM_DATE */
-	return rv3032_write_regs(dev, RV3032_REG_ALARM_MINUTES, &regs, ARRAY_SIZE(regs));
+	return mfd_rv3032_write_regs(config->mfd, RV3032_REG_ALARM_MINUTES, &regs,
+				     ARRAY_SIZE(regs));
 }
 
 static int rv3032_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
 				 struct rtc_time *timeptr)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t regs[3];
 	int err;
 
@@ -757,7 +531,7 @@ static int rv3032_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	}
 
 	/* Read registers RV3032_REG_ALARM_MINUTES through RV3032_REG_ALARM_WEEKDAY */
-	err = rv3032_read_regs(dev, RV3032_REG_ALARM_MINUTES, &regs, ARRAY_SIZE(regs));
+	err = mfd_rv3032_read_regs(config->mfd, RV3032_REG_ALARM_MINUTES, &regs, ARRAY_SIZE(regs));
 	if (err) {
 		return err;
 	}
@@ -788,6 +562,7 @@ static int rv3032_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 
 static int rv3032_alarm_is_pending(const struct device *dev, uint16_t id)
 {
+	const struct rv3032_config *config = dev->config;
 	uint8_t status;
 	int err;
 
@@ -798,7 +573,7 @@ static int rv3032_alarm_is_pending(const struct device *dev, uint16_t id)
 
 	rv3032_lock_sem(dev);
 
-	err = rv3032_read_reg8(dev, RV3032_REG_STATUS, &status);
+	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &status);
 	if (err) {
 		goto unlock;
 	}
@@ -807,7 +582,7 @@ static int rv3032_alarm_is_pending(const struct device *dev, uint16_t id)
 		/* Clear alarm flag */
 		status &= ~(RV3032_STATUS_AF);
 
-		err = rv3032_write_reg8(dev, RV3032_REG_STATUS, status);
+		err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_STATUS, status);
 		if (err) {
 			goto unlock;
 		}
@@ -822,24 +597,34 @@ unlock:
 	return err;
 }
 
+#ifdef CONFIG_RTC_UPDATE
+static void rv3032_rtc_update_isr(const struct device *dev)
+{
+	struct rv3032_data *data = dev->data;
+	rtc_update_callback update_callback = data->update_callback;
+	void *update_user_data = data->update_user_data;
+
+	update_callback(dev, update_user_data);
+}
+#endif
+
+#ifdef CONFIG_RTC_ALARM
+static void rv3032_rtc_alarm_isr(const struct device *dev)
+{
+	struct rv3032_data *data = dev->data;
+	rtc_alarm_callback alarm_callback = data->alarm_callback;
+	void *alarm_user_data = data->alarm_user_data;
+
+	alarm_callback(dev, 0U, alarm_user_data);
+}
+#endif
+
 static int rv3032_alarm_set_callback(const struct device *dev, uint16_t id,
 				     rtc_alarm_callback callback, void *user_data)
 {
-#ifndef RV3032_INT_GPIOS_IN_USE
-	ARG_UNUSED(dev);
-	ARG_UNUSED(id);
-	ARG_UNUSED(callback);
-	ARG_UNUSED(user_data);
-
-	return -ENOTSUP;
-#else
 	const struct rv3032_config *config = dev->config;
 	struct rv3032_data *data = dev->data;
 	int err;
-
-	if (!config->gpio_int.port) {
-		return -ENOTSUP;
-	}
 
 	if (id != 0U) {
 		LOG_ERR("invalid alarm ID %d", id);
@@ -848,29 +633,22 @@ static int rv3032_alarm_set_callback(const struct device *dev, uint16_t id,
 
 	rv3032_lock_sem(dev);
 
+	mfd_rv3032_set_irq_handler(config->mfd, dev, RV3032_DEV_RTC_ALARM, rv3032_rtc_alarm_isr);
+
 	data->alarm_callback = callback;
 	data->alarm_user_data = user_data;
 
-	err = rv3032_update_reg8(dev, RV3032_REG_CONTROL2, RV3032_CONTROL2_AIE,
-				 callback ? RV3032_CONTROL2_AIE : 0);
-	if (err) {
-		goto unlock;
-	}
+	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_AIE,
+				     callback ? RV3032_CONTROL2_AIE : 0);
 
-unlock:
 	rv3032_unlock_sem(dev);
 
-	/* Alarm flag may already be set */
-	k_work_submit(&data->work);
-
 	return err;
-#endif /* RV3032_INT_GPIOS_IN_USE */
 }
 
 #endif /* CONFIG_RTC_ALARM */
 
-#if RV3032_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
-
+#ifdef CONFIG_RTC_UPDATE
 static int rv3032_update_set_callback(const struct device *dev, rtc_update_callback callback,
 				      void *user_data)
 {
@@ -878,17 +656,15 @@ static int rv3032_update_set_callback(const struct device *dev, rtc_update_callb
 	struct rv3032_data *data = dev->data;
 	int err;
 
-	if (!config->gpio_int.port) {
-		return -ENOTSUP;
-	}
-
 	rv3032_lock_sem(dev);
+
+	mfd_rv3032_set_irq_handler(config->mfd, dev, RV3032_DEV_RTC_UPDATE, rv3032_rtc_update_isr);
 
 	data->update_callback = callback;
 	data->update_user_data = user_data;
 
-	err = rv3032_update_reg8(dev, RV3032_REG_CONTROL2, RV3032_CONTROL2_UIE,
-				 callback ? RV3032_CONTROL2_UIE : 0);
+	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_UIE,
+				     callback ? RV3032_CONTROL2_UIE : 0);
 	if (err) {
 		goto unlock;
 	}
@@ -901,8 +677,7 @@ unlock:
 
 	return err;
 }
-
-#endif /* RV3032_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
+#endif /* CONFIG_RTC_UPDATE */
 
 static int rv3032_init(const struct device *dev)
 {
@@ -915,44 +690,6 @@ static int rv3032_init(const struct device *dev)
 
 	k_sem_init(&data->lock, 1, 1);
 
-	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
-		return -ENODEV;
-	}
-
-#if RV3032_INT_GPIOS_IN_USE
-	if (config->gpio_int.port) {
-		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("GPIO not ready");
-			return -ENODEV;
-		}
-
-		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
-		if (err) {
-			LOG_ERR("failed to configure GPIO (err %d)", err);
-			return -ENODEV;
-		}
-
-		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
-		if (err) {
-			LOG_ERR("failed to enable GPIO interrupt (err %d)", err);
-			return err;
-		}
-
-		gpio_init_callback(&data->int_callback, rv3032_int_handler,
-				   BIT(config->gpio_int.pin));
-
-		err = gpio_add_callback_dt(&config->gpio_int, &data->int_callback);
-		if (err) {
-			LOG_ERR("failed to add GPIO callback (err %d)", err);
-			return -ENODEV;
-		}
-
-		data->dev = dev;
-		data->work.handler = rv3032_work_cb;
-	}
-#endif /* RV3032_INT_GPIOS_IN_USE */
-
 	/* Wait for RV3032 EEPROM refresh to complete after cold boot */
 	/* According to datasheet: tPREFR = ~66ms for automatic EEPROM refresh at POR */
 	/* During this time, all I2C communication will fail, so we must wait */
@@ -963,7 +700,7 @@ static int rv3032_init(const struct device *dev)
 	}
 
 	/* Now read status register */
-	err = rv3032_read_reg8(dev, RV3032_REG_STATUS, &val);
+	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &val);
 	if (err) {
 		LOG_ERR("Status register read failed after EEPROM refresh: %d", err);
 		return err; /* Return actual I2C error code */
@@ -979,6 +716,7 @@ static int rv3032_init(const struct device *dev)
 		LOG_ERR("Failed to enter EERD mode: %d", err);
 		return err;
 	}
+
 	err = rv3032_refresh(dev);
 	if (err) {
 		LOG_ERR("Failed to refresh EEPROM settings: %d", err);
@@ -1002,24 +740,26 @@ static int rv3032_init(const struct device *dev)
 		return err;
 	}
 
-	err = rv3032_read_reg8(dev, RV3032_REG_STATUS, &status);
+	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &status);
 	if (err) {
 		return -ENODEV;
 	}
+
+	/*TODO: block is not needed - delete*/
 	if (status & RV3032_STATUS_PORF) {
 		/* Disable the alarms */
-		err = rv3032_update_reg8(dev, RV3032_REG_CONTROL2,
+		err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2,
 					 RV3032_CONTROL2_AIE | RV3032_CONTROL2_UIE, 0);
 		if (err) {
 			return -ENODEV;
 		}
-		err = rv3032_update_reg8(dev, RV3032_REG_STATUS, RV3032_STATUS_PORF, 0);
+		err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_STATUS, RV3032_STATUS_PORF, 0);
 		if (err) {
 			return -ENODEV;
 		}
 	}
 
-	err = rv3032_read_regs(dev, RV3032_REG_ALARM_MINUTES, regs, sizeof(regs));
+	err = mfd_rv3032_read_regs(config->mfd, RV3032_REG_ALARM_MINUTES, regs, sizeof(regs));
 	if (err) {
 		return -ENODEV;
 	}
@@ -1039,29 +779,29 @@ static DEVICE_API(rtc, rv3032_driver_api) = {
 	.alarm_is_pending = rv3032_alarm_is_pending,
 	.alarm_set_callback = rv3032_alarm_set_callback,
 #endif /* CONFIG_RTC_ALARM */
-#if RV3032_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE)
+#ifdef CONFIG_RTC_UPDATE
 	.update_set_callback = rv3032_update_set_callback,
-#endif /* RV3032_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
+#endif /* CONFIG_RTC_UPDATE */
 };
 
 #define RV3032_BSM_FROM_DT_INST(inst)                                                              \
-	UTIL_CAT(RV3032_BSM_, DT_INST_STRING_UPPER_TOKEN(inst, backup_switch_mode))
+	UTIL_CAT(RV3032_BSM_, DT_INST_STRING_UPPER_TOKEN(DT_PARENT(inst), backup_switch_mode))
 
 #define RV3032_TCM_FROM_DT_INST(inst)                                                              \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trickle_charger_mode),                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trickle_charger_mode),                             \
 		    (DT_INST_PROP(inst, trickle_charger_mode) == 1750 ?                            \
-		    RV3032_TCM_1750MV :                                                            \
+		     RV3032_TCM_1750MV :                                                           \
 		     DT_INST_PROP(inst, trickle_charger_mode) == 3000 ?                            \
 		     RV3032_TCM_3000MV :                                                           \
 		     DT_INST_PROP(inst, trickle_charger_mode) == 4500 ?                            \
-			 RV3032_TCM_4500MV :                                                       \
+		     RV3032_TCM_4500MV :                                                           \
 		     RV3032_TCM_DISABLED),                                                         \
 		    (RV3032_TCM_DISABLED))
 
 #define RV3032_TCR_FROM_DT_INST(inst)                                                              \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms),                        \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms),                            \
 		    (DT_INST_PROP(inst, trickle_resistor_ohms) == 600 ?                            \
-		    RV3032_TCR_600_OHM :                                                           \
+		     RV3032_TCR_600_OHM :                                                          \
 		     DT_INST_PROP(inst, trickle_resistor_ohms) == 2000 ?                           \
 		     RV3032_TCR_2000_OHM :                                                         \
 		     DT_INST_PROP(inst, trickle_resistor_ohms) == 7000 ?                           \
@@ -1070,7 +810,7 @@ static DEVICE_API(rtc, rv3032_driver_api) = {
 		    (RV3032_TCR_600_OHM))
 
 #define RV3032_BACKUP_FROM_DT_INST(inst)                                                           \
-	((FIELD_PREP(RV3032_EEPROM_PMU_BSM, RV3032_BSM_FROM_DT_INST(inst))) |                      \
+	((FIELD_PREP(RV3032_EEPROM_PMU_BSM, 0)) |                                                  \
 	 (FIELD_PREP(RV3032_EEPROM_PMU_TCR, RV3032_TCR_FROM_DT_INST(inst))) |                      \
 	 (FIELD_PREP(RV3032_EEPROM_PMU_TCM, RV3032_TCM_FROM_DT_INST(inst))))
 
@@ -1085,12 +825,9 @@ static DEVICE_API(rtc, rv3032_driver_api) = {
 		     "Invalid CLKOUT frequency for RV3032 instance " STRINGIFY(inst));             \
                                                                                                    \
 	static const struct rv3032_config rv3032_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.backup = RV3032_BACKUP_FROM_DT_INST(inst),                                        \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.clkout_freq = DT_INST_PROP_OR(inst, clkout_frequency, 0),                         \
-		IF_ENABLED(RV3032_INT_GPIOS_IN_USE, (.gpio_int =\
-				GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};             \
-                                                                                                   \
+	};                                                                                         \
 	static struct rv3032_data rv3032_data_##inst;                                              \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &rv3032_init, NULL, &rv3032_data_##inst,                       \

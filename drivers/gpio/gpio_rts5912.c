@@ -15,6 +15,9 @@
 #include "zephyr/drivers/gpio/gpio_utils.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 
 #include <reg/reg_gpio.h>
 
@@ -32,6 +35,22 @@ struct gpio_rts5912_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 };
+
+#if defined(CONFIG_PM)
+#define GPIO_EXPIRED_TIMEOUT_MS 1000
+static struct k_work_delayable gpio_wake_delay_work;
+static atomic_t gpio_wake_hold;			/* 0: no hold, 1: holding */
+static atomic_t gpio_wake_init_once;	/* 0: not inited, 1: inited */
+
+static void gpio_wake_delay_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (atomic_cas(&gpio_wake_hold, 1, 0)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* CONFIG_PM */
 
 static int pin_is_valid(const struct gpio_rts5912_config *config, gpio_pin_t pin)
 {
@@ -455,6 +474,19 @@ static void gpio_rts5912_isr(const void *arg)
 	if (gcr[pin] & GPIO_GCR_INTSTS_Msk) {
 		gcr[pin] |= GPIO_GCR_INTSTS_Msk;
 
+#if defined(CONFIG_PM)
+		/*
+		 * When EC wakes by GPIO, it may fall back to SUSPEND_TO_IDLE before
+		 * the host or peripherals have a chance to take further action.
+		 * Delay sleep for GPIO_EXPIRED_TIMEOUT_MS.
+		 */
+		if (atomic_cas(&gpio_wake_hold, 0, 1)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		}
+		k_work_reschedule(&gpio_wake_delay_work,
+				K_MSEC(GPIO_EXPIRED_TIMEOUT_MS));
+#endif
+
 		gpio_fire_callbacks(&data->callbacks, port, BIT(pin));
 	}
 	irq_unlock(key);
@@ -567,6 +599,14 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 	{                                                                                          \
 		if (!(DT_INST_IRQ_HAS_CELL(id, irq))) {                                            \
 			return 0;                                                                  \
+		}                                                                                  \
+		                                                                                   \
+		if (IS_ENABLED(CONFIG_PM)) {                                                       \
+			if (atomic_cas(&gpio_wake_init_once, 0, 1)) {                              \
+				k_work_init_delayable(&gpio_wake_delay_work,                       \
+					gpio_wake_delay_work_handler);                             \
+				atomic_clear(&gpio_wake_hold);                                     \
+			}                                                                          \
 		}                                                                                  \
                                                                                                    \
 		RTS5912_GPIO_DTNAMIC_IRQ(id)                                                       \

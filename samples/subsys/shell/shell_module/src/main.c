@@ -12,12 +12,6 @@
 #include <zephyr/drivers/uart.h>
 #include <ctype.h>
 
-#ifdef CONFIG_ARCH_POSIX
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
-
 LOG_MODULE_REGISTER(app);
 
 extern void foo(void);
@@ -109,14 +103,14 @@ static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
 static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	char *cvalue = NULL;
 	int aflag = 0;
 	int bflag = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "abhc:")) != -1) {
-		state = getopt_state_get();
+	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
+		state = sys_getopt_state_get();
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -166,7 +160,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 	int bflag = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -175,7 +169,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = optarg;
+			cvalue = sys_getopt_optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
@@ -185,17 +179,17 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		case '?':
-			if (optopt == 'c') {
+			if (sys_getopt_optopt == 'c') {
 				shell_print(sh,
 					"Option -%c requires an argument.",
-					optopt);
-			} else if (isprint(optopt) != 0) {
+					sys_getopt_optopt);
+			} else if (isprint(sys_getopt_optopt) != 0) {
 				shell_print(sh, "Unknown option `-%c'.",
-					optopt);
+					    sys_getopt_optopt);
 			} else {
 				shell_print(sh,
 					"Unknown option character `\\x%x'.",
-					optopt);
+					sys_getopt_optopt);
 			}
 			return 1;
 		default:
@@ -255,7 +249,7 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
@@ -263,10 +257,12 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 #define CHAR_1 0x18
 #define CHAR_2 0x11
 
-static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len, void *user_data)
 {
 	static uint8_t tail;
 	bool escape = false;
+
+	ARG_UNUSED(user_data);
 
 	/* Check if escape criteria is met. */
 	if (tail == CHAR_1 && data[0] == CHAR_2) {

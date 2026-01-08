@@ -1,5 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+/*
+ * Only define LLEXT sections if the subsystem is enabled.
+ * Check here to avoid duplication in every linker script.
+ */
+#ifdef CONFIG_LLEXT
 	/*
 	 * Save the current address to avoid changing it in this file.
 	 */
@@ -11,7 +16,7 @@
 	 * This section is used for mapping that symbol only and is not
 	 * to be included in the final binary.
 	 */
-	SECTION_PROLOGUE(llext_no_syscall_impl, 0 (COPY), )
+	SECTION_PROLOGUE(llext_no_syscall_impl, 0 (INFO), )
 	{
 	  *(llext_no_syscall_impl)
 	}
@@ -28,10 +33,11 @@
 	 * strictly equivalent to the offset inside the section.
 	 */
 #ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
-	SECTION_PROLOGUE(llext_exports_strtab, 0 (COPY), )
+	SECTION_PROLOGUE(llext_exports_strtab, 0 (INFO), )
 	{
 	  KEEP(*(llext_exports_strtab))
 	}
 #endif
 
 	. = __llext_current_addr;
+#endif /* CONFIG_LLEXT */

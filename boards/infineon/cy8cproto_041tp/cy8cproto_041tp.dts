@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/psoc4/mpns/cy8c4147azq_t495.dtsi>
+#include <arm/infineon/psoc4/psoc4100tp/system_clocks.dtsi>
+
+#include "cy8cproto_041tp_common.dtsi"
+
+/ {
+	model = "CY8CPROTO-041TP Development Board";
+	compatible = "infineon,cy8cproto-041tp", "infineon,psoc4100tp";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &led;
+		sw0 = &user_btn;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led: led {
+			label = "LED_0";
+			gpios = <&gpio_prt5 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_btn: button {
+			label = "SW_0";
+			gpios = <&gpio_prt5 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&clk_wco {
+	status = "okay";
+	clock-frequency = <32000>; /* 32 kHz */
+};

@@ -1,25 +1,19 @@
 # Copyright (c) 2019, Intel Corporation
+# Copyright (c) 2025, Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: Microchip CEC/MEC GPIO
 
 compatible: "microchip,xec-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: ["gpio-controller.yaml", "base.yaml", "microchip,dmec-ecia-girq.yaml"]
 
 properties:
   reg:
     required: true
 
-  port-id:
-    type: int
+  interrupts:
     required: true
-    description: Zero based GPIO port number
-
-  girq-id:
-    type: int
-    required: true
-    description: Aggregated GIRQ number for this bank of 32 GPIO pins.
 
   "#gpio-cells":
     const: 2

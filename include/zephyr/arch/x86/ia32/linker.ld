@@ -76,10 +76,7 @@ SECTIONS
 	{
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /DISCARD/ :
 	{

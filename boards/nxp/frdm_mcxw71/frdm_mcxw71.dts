@@ -189,7 +189,12 @@
 		};
 
 		storage_partition: partition@E4000 {
-			reg = <0xE4000 DT_SIZE_K(112)>;
+			reg = <0xE4000 DT_SIZE_K(104)>;
+		};
+
+		hw_params_partition: partition@FE000 {
+			label = "hw-parameters";
+			reg = <0xFE000 DT_SIZE_K(8)>;
 		};
 	};
 };

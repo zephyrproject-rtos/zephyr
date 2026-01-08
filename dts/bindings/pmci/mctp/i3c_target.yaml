@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A configuration for MCTP bindings to an I3C target.
+
+compatible: "zephyr,mctp-i3c-target"
+
+properties:
+  i3c:
+    type: phandle
+    description: |
+      I3C peripheral that is used as an MCTP bus with the target mode API.
+
+  endpoint-id:
+    type: int
+    description: |
+      MCTP endpoint id

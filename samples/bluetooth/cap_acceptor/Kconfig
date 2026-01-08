@@ -1,10 +1,10 @@
-# Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2022-2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 mainmenu "Bluetooth: Common Audio Profile Acceptor sample"
 
 config SAMPLE_UNICAST
-	bool "Whether or not to search for CAP acceptors for unicast audio"
+	bool "Whether or not advertise connectable support for unicast audio"
 	default y
 	select BT_BAP_UNICAST_SERVER
 	select BT_ISO_PERIPHERAL
@@ -19,7 +19,7 @@ config SAMPLE_UNICAST
 	  Broadcast Assistants.
 
 config SAMPLE_BROADCAST
-	bool "Whether or not to search for CAP acceptors for unicast audio"
+	bool "Whether or not advertise connectable support for broadcast audio"
 	default y if !SAMPLE_UNICAST
 	select BT_BAP_SCAN_DELEGATOR
 	select BT_OBSERVER

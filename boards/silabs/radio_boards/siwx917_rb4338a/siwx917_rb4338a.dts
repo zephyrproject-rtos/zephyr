@@ -6,10 +6,12 @@
 
 /dts-v1/;
 #include <silabs/siwg917m111mgtba.dtsi>
+#include <zephyr/dt-bindings/adc/silabs-siwx91x-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
 #include <freq.h>
+#include "siwx917_rb4338a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
@@ -30,6 +32,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -57,24 +60,14 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
 };
 
-&pinctrl0 {
-	ulpi2c_default: ulpi2c_default {
-		group {
-			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
-		};
-	};
-
-	ulpuart_default: ulpuart_default {
-		out {
-			pinmux = <ULPUART_TX_ULP11>;
-		};
-
-		in {
-			pinmux = <ULPUART_RX_ULP9>;
-		};
-	};
+&cpu0 {
+	clock-frequency = <180000000>;
 };
 
 &ulpuart {
@@ -122,5 +115,22 @@
 };
 
 &wifi0 {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	silabs,adc-ref-voltage = <3300>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <SIWX91X_ADC_INPUT_ULP1>;
+	};
+
 	status = "okay";
 };

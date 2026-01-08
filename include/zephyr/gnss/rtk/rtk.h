@@ -36,8 +36,17 @@ struct gnss_rtk_data_callback {
 		.dev = _dev,									   \
 		.callback = _callback,								   \
 	}
+
+#define GNSS_DT_RTK_DATA_CALLBACK_DEFINE(_node_id, _callback)                                      \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		gnss_rtk_data_callback,                                                            \
+		_CONCAT_4(_gnss_rtk_data_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {       \
+		.dev = DEVICE_DT_GET(_node_id),                                                    \
+		.callback = _callback,                                                             \
+	}
 #else
 #define GNSS_RTK_DATA_CALLBACK_DEFINE(_dev, _callback)
+#define GNSS_DT_RTK_DATA_CALLBACK_DEFINE(_node_id, _callback)
 #endif
 
 #ifdef __cplusplus

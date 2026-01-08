@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon low power timer
+
+compatible: "infineon,lp-timer"
+
+include: [base.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    default: 32768
+    description: |
+      Clock frequency (Hz) for tick increment operations

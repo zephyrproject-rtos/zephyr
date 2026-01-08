@@ -46,10 +46,14 @@ struct dsa_netc_data {
 	swt_config_t swt_config;
 	swt_handle_t swt_handle;
 	netc_cmd_bd_t *cmd_bd;
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	uint8_t cpu_port_idx;
 	struct k_fifo tx_ts_queue;
+#ifndef NETC_SWITCH_TAG_SUPPORT
+	struct k_sem tx_ts_sem;
 #endif
+#endif
+
 #ifdef CONFIG_NET_QBV
 	struct netc_qbv_config qbv_config[DSA_PORT_MAX_COUNT];
 #endif
@@ -58,7 +62,7 @@ struct dsa_netc_data {
 
 static int dsa_netc_port_init(const struct device *dev)
 {
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 #endif
@@ -88,7 +92,7 @@ static int dsa_netc_port_init(const struct device *dev)
 	swt_config->bridgeCfg.dVFCfg.portMembership |= (1 << cfg->port_idx);
 	swt_config->ports[cfg->port_idx].bridgeCfg.enMacStationMove = true;
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	/* Enable ingress port filter on user ports */
 	if (eth_ctx->dsa_port == DSA_CPU_PORT) {
 		prv->cpu_port_idx = cfg->port_idx;
@@ -118,7 +122,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 {
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 	swt_config_t *swt_config = &prv->swt_config;
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	uint32_t entry_id = 0;
 #endif
 	status_t result;
@@ -132,20 +136,22 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 		return -EIO;
 	}
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	/*
 	 * For gPTP, switch should work as time-aware bridge.
 	 * Trap gPTP frames to cpu port to perform gPTP protocol.
 	 */
 	netc_tb_ipf_config_t ipf_entry_cfg = {
-		.keye.etherType = htons(NET_ETH_PTYPE_PTP),
+		.keye.etherType = net_htons(NET_ETH_PTYPE_PTP),
 		.keye.etherTypeMask = 0xffff,
 		.keye.srcPort = 0,
 		.keye.srcPortMask = 0x0,
 		.cfge.fltfa = kNETC_IPFRedirectToMgmtPort,
 		.cfge.hr = kNETC_SoftwareDefHR0,
 		.cfge.timecape = 1,
+#ifdef NETC_SWITCH_TAG_SUPPORT
 		.cfge.rrt = 1,
+#endif
 	};
 
 	result = SWT_RxIPFAddTableEntry(&prv->swt_handle, &ipf_entry_cfg, &entry_id);
@@ -154,6 +160,9 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	}
 
 	k_fifo_init(&prv->tx_ts_queue);
+#ifndef NETC_SWITCH_TAG_SUPPORT
+	k_sem_init(&prv->tx_ts_sem, 1, 1);
+#endif
 #endif
 	return 0;
 }
@@ -183,7 +192,8 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 	}
 }
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef NETC_SWITCH_TAG_SUPPORT
 static int dsa_netc_port_txtstamp(const struct device *dev, struct net_pkt *pkt)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
@@ -228,12 +238,100 @@ static void dsa_netc_twostep_timestamp_handler(const struct dsa_switch_context *
 		pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
 	}
 }
-#endif
+#else /* NETC_SWITCH_TAG_SUPPORT */
+static int dsa_netc_port_txtstamp(const struct device *dev, struct net_pkt *pkt)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 
+	/* Enqueue will be completed until updating TX timestamp ID after TX */
+	k_sem_take(&prv->tx_ts_sem, K_FOREVER);
+
+	/* Utilize cb for TX timestamp ID. Initialize it with 0xff. */
+	pkt->cb.cb[0] = 0xff;
+
+	k_fifo_put(&prv->tx_ts_queue, pkt);
+	net_pkt_ref(pkt);
+
+	return 0;
+}
+
+void dsa_netc_port_txtsid(const struct device *dev, uint16_t id)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct net_pkt *pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+
+	while (pkt != NULL) {
+		/* Find the latest enqueue pkt */
+		if (pkt->iface == net_if_lookup_by_dev(dev) && pkt->cb.cb[0] == 0xff) {
+			/* Update id using lower 7-bits */
+			pkt->cb.cb[0] = (uint8_t)(id & 0x7f);
+
+			/* Enqueue back */
+			k_fifo_put(&prv->tx_ts_queue, pkt);
+
+			/* Release tx_ts_sem for next timestamped pkt */
+			k_sem_give(&prv->tx_ts_sem);
+			return;
+		}
+
+		/* Try next */
+		k_fifo_put(&prv->tx_ts_queue, pkt);
+		pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+	}
+}
+
+void dsa_netc_port_twostep_timestamp(struct dsa_switch_context *dsa_switch_ctx, uint16_t ts_req_id,
+				     uint32_t timestamp)
+{
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct net_ptp_time ptp_time = {0};
+	struct net_pkt *pkt;
+	uint64_t time_ns;
+	uint32_t time_h;
+	uint32_t time_l;
+
+	pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+	while (pkt != NULL) {
+		/* Find the matched lower 7-bits timestamp ID */
+		if (pkt->cb.cb[0] == (uint8_t)(ts_req_id & 0x7f)) {
+			/*
+			 * Packet timestamp is lower 32-bit ns value.
+			 * Need to reconstruct 64-bit ns value with ptp clock time.
+			 */
+			ptp_clock_get(net_eth_get_ptp_clock(net_pkt_iface(pkt)), &ptp_time);
+
+			time_ns = net_ptp_time_to_ns(&ptp_time);
+			time_h = time_ns >> 32;
+			time_l = time_ns & 0xffffffff;
+
+			/* Check if wrap happened. */
+			if (time_l <= timestamp) {
+				time_h--;
+			}
+
+			time_ns = (uint64_t)time_h << 32 | timestamp;
+
+			net_pkt_set_timestamp_ns(pkt, time_ns);
+			net_if_call_timestamp_cb(pkt);
+			net_pkt_unref(pkt);
+			return;
+		}
+
+		/* Try next */
+		k_fifo_put(&prv->tx_ts_queue, pkt);
+		pkt = k_fifo_get(&prv->tx_ts_queue, K_NO_WAIT);
+	}
+}
+#endif /* NETC_SWITCH_TAG_SUPPORT */
+#endif /* NETC_PTP_TIMESTAMPING_SUPPORT */
+
+#ifdef NETC_SWITCH_TAG_SUPPORT
 static struct dsa_tag_netc_data dsa_netc_tag_data = {
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	.twostep_timestamp_handler = dsa_netc_twostep_timestamp_handler,
-#endif
+#endif /* NETC_PTP_TIMESTAMPING_SUPPORT */
 };
 
 static int dsa_netc_connect_tag_protocol(struct dsa_switch_context *dsa_switch_ctx,
@@ -246,6 +344,7 @@ static int dsa_netc_connect_tag_protocol(struct dsa_switch_context *dsa_switch_c
 
 	return -EIO;
 }
+#endif /* NETC_SWITCH_TAG_SUPPORT */
 
 static int dsa_netc_switch_init(const struct device *dev)
 {
@@ -433,10 +532,12 @@ static struct dsa_api dsa_netc_api = {
 	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
 	.switch_setup = dsa_netc_switch_setup,
 	.port_phylink_change = dsa_netc_port_phylink_change,
-#ifdef CONFIG_NET_L2_PTP
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	.port_txtstamp = dsa_netc_port_txtstamp,
 #endif
+#ifdef NETC_SWITCH_TAG_SUPPORT
 	.connect_tag_protocol = dsa_netc_connect_tag_protocol,
+#endif
 	.get_capabilities = dsa_port_get_capabilities,
 	.set_config = dsa_netc_set_config,
 	.get_config = dsa_netc_get_config,
@@ -451,7 +552,7 @@ static struct dsa_api dsa_netc_api = {
 		.phy_mode = NETC_PHY_MODE(port),                                            \
 	};                                                                                  \
 	struct dsa_port_config dsa_##n##_##port##_config = {                                \
-		.use_random_mac_addr = DT_NODE_HAS_PROP(port, zephyr_random_mac_address),   \
+		.use_random_mac_addr = DT_PROP(port, zephyr_random_mac_address),            \
 		.mac_addr = DT_PROP_OR(port, local_mac_address, {0}),                       \
 		.port_idx = DT_REG_ADDR(port),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
@@ -482,6 +583,6 @@ static struct dsa_api dsa_netc_api = {
 			      POST_KERNEL,                                                  \
 			      CONFIG_ETH_INIT_PRIORITY,                                     \
 			      NULL);		                                            \
-	DSA_SWITCH_INST_INIT(n, &dsa_netc_api, &dsa_netc_data_##n, DSA_NETC_PORT_INST_INIT); \
+	DSA_SWITCH_INST_INIT(n, &dsa_netc_api, &dsa_netc_data_##n, DSA_NETC_PORT_INST_INIT);
 
 DT_INST_FOREACH_STATUS_OKAY(DSA_NETC_DEVICE);

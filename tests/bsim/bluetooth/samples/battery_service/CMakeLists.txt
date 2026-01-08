@@ -6,9 +6,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(battery_service_test)
 
 target_sources(app PRIVATE
-	src/main.c
-	src/central_test.c
-	src/peripheral_test.c
+  src/main.c
+  src/central_test.c
+  src/peripheral_test.c
 )
 
 # This contains a variety of helper functions that abstract away common tasks,

@@ -390,13 +390,13 @@ struct lcp_options {
 /** IPv4 control protocol options */
 struct ipcp_options {
 	/** IPv4 address */
-	struct in_addr address;
+	struct net_in_addr address;
 
 	/** Primary DNS server address */
-	struct in_addr dns1_address;
+	struct net_in_addr dns1_address;
 
 	/** Secondary DNS server address */
-	struct in_addr dns2_address;
+	struct net_in_addr dns2_address;
 };
 
 /** IPv6 control protocol options */

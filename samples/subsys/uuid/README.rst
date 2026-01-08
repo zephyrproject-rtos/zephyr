@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample app demonstrates the use of the :c:group:`uuid` utilities to generate and manipulate
-UUIDs accordingly to IETF RFC 9562.
+UUIDs accordingly to :rfc:`9562`.
 
 The following functionality is demonstrated:
 

@@ -3,6 +3,7 @@ common:
   ignore_faults: true
   ignore_qemu_crash: true
   tags: kernel
+  filter: CONFIG_ARCH_STACKWALK
 tests:
   arch.common.stack_unwind.riscv_fp:
     arch_allow: riscv

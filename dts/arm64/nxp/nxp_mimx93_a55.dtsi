@@ -420,6 +420,8 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
 		clk-source = <0>;
+		number-of-mb = <96>;
+		number-of-mb-fd = <21>;
 		status = "disabled";
 	};
 
@@ -432,6 +434,8 @@
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 14>;
 		clk-source = <0>;
+		number-of-mb = <96>;
+		number-of-mb-fd = <21>;
 		status = "disabled";
 	};
 
@@ -442,6 +446,22 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		#dma-cells = <2>;
+		status = "disabled";
+	};
+
+	edma4_2: edma@42000000 {
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
+		no-error-irq;
+		dma-requests = <159>;
+		reg = <0x42000000 0x400000>;
+		dma-channels = <4>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		#dma-cells = <2>;
 		status = "disabled";
 	};
@@ -457,6 +477,24 @@
 		dai-index = <3>;
 		dmas = <&edma4 0 60>, <&edma4 1 61>;
 		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	sai3_2: sai@42660000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x42660000 DT_SIZE_K(64)>;
+		clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>;
+		clock-names = "mclk1";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		dma-names = "tx", "rx";
+		dmas = <&edma4_2 2 60>, <&edma4_2 3 61>;
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		nxp,rx-sync-mode;
 		status = "disabled";
 	};
 
@@ -581,6 +619,32 @@
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_TPM6_CLK 0 0>;
 		prescaler = <1>;
+		status = "disabled";
+	};
+
+	usb1: usbd@4c100000 {
+		compatible = "nxp,ehci";
+		reg = <0x4c100000 DT_SIZE_K(4)>;
+		interrupts = <GIC_SPI 187 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "usb_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USB_CLK 2 3>,
+			 <&ccm IMX_CCM_USB_PHY_CLK 2 8>;
+		clock-rates = <134000000 50000000>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usb2: usbd@4c200000 {
+		compatible = "nxp,ehci";
+		reg = <0x4c200000 DT_SIZE_K(4)>;
+		interrupts = <GIC_SPI 188 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "usb_1";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USB_CLK 2 3>,
+			 <&ccm IMX_CCM_USB_PHY_CLK 2 8>;
+		clock-rates = <134000000 50000000>;
+		num-bidir-endpoints = <8>;
 		status = "disabled";
 	};
 };

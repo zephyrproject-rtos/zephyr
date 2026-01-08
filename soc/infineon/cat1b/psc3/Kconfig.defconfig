@@ -19,11 +19,18 @@
 
 if SOC_SERIES_PSC3
 
+config CORTEX_M_SYSTICK
+	default n if INFINEON_LP_TIMER_PDL
+
 config NUM_IRQS
 	default 140
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency) if USE_INFINEON_LPTIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency) if USE_INFINEON_LPTIMER
 
 # add additional die specific params
 

@@ -166,8 +166,8 @@ To use custom socket creation:
 
 The custom socket creation function receives:
 - ``svc``: Pointer to the service descriptor
-- ``af``: Address family (AF_INET or AF_INET6)
-- ``proto``: Protocol (IPPROTO_TCP or IPPROTO_TLS_1_2 for HTTPS)
+- ``af``: Address family (NET_AF_INET or NET_AF_INET6)
+- ``proto``: Protocol (NET_IPPROTO_TCP or NET_IPPROTO_TLS_1_2 for HTTPS)
 
 The function should return the socket file descriptor on success, or a negative error code on failure.
 

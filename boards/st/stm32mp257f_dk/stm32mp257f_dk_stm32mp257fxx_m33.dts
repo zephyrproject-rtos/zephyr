@@ -74,6 +74,10 @@
 	status = "okay";
 };
 
+&mailbox {
+	status = "okay";
+};
+
 &uart5 {
 	pinctrl-0 = <&uart5_tx_pg9 &uart5_rx_pg10>;
 	pinctrl-names = "default";
@@ -86,4 +90,18 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&i2c8 {
+	/* Pin conflict with i3c4. Enable only with i3c4 disabled */
+	pinctrl-0 = <&i2c8_scl_pz4 &i2c8_sda_pz3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c4 {
+	/* Pin conflict with i2c8. Enable only with i2c8 disabled */
+	pinctrl-0 = <&i3c4_scl_pz4 &i3c4_sda_pz3>;
+	pinctrl-names = "default";
+	status = "disabled";
 };

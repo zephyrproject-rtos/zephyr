@@ -27,6 +27,7 @@ Alternatively, it could be set by default in a project's CMakeLists.txt:
 
 	set(SHIELD x_nucleo_iks01a1)
 
+.. _shield-interfaces:
 
 Shield interfaces
 *****************

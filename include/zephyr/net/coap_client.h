@@ -164,8 +164,8 @@ struct coap_client_internal_request {
 
 struct coap_client {
 	int fd;
-	struct sockaddr address;
-	socklen_t socklen;
+	struct net_sockaddr address;
+	net_socklen_t socklen;
 	struct k_mutex lock;
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
@@ -206,7 +206,7 @@ int coap_client_init(struct coap_client *client, const char *info);
  * @return zero when operation started successfully or negative error code otherwise.
  */
 
-int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
+int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params);
 
 /**

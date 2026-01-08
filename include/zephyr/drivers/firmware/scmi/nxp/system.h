@@ -1,0 +1,39 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_NXP_SYSTEM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_NXP_SYSTEM_H_
+
+/**
+ * @file
+ * @brief NXP SCMI System Protocol Extensions
+ */
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @name NXP Vendor System Power States
+ * @{
+ */
+#define SCMI_NXP_SYSTEM_POWER_STATE_WAKE           0x80000000U
+#define SCMI_NXP_SYSTEM_POWER_STATE_FULL_SHUTDOWN  0x80000001U
+#define SCMI_NXP_SYSTEM_POWER_STATE_FULL_RESET     0x80000002U
+#define SCMI_NXP_SYSTEM_POWER_STATE_FULL_SUSPEND   0x80000003U
+#define SCMI_NXP_SYSTEM_POWER_STATE_FULL_WAKE      0x80000004U
+#define SCMI_NXP_SYSTEM_POWER_STATE_GRP_SHUTDOWN   0x80000005U
+#define SCMI_NXP_SYSTEM_POWER_STATE_GRP_RESET      0x80000006U
+#define SCMI_NXP_SYSTEM_POWER_STATE_SUBSYS_RESET   0x80000007U
+#define SCMI_NXP_SYSTEM_POWER_STATE_MODE           0xC0000000U
+/** @} */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_NXP_SYSTEM_H_ */

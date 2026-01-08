@@ -29,28 +29,34 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 # This is needed to load edt.pickle files.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..",
-                                "dts", "python-devicetree", "src"))
-from devicetree import edtlib  # pylint: disable=unused-import
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dts", "python-devicetree", "src"))
+from devicetree import edtlib  # noqa: F401
 
 # Prefix used for "struct device" reference initialized based on devicetree
 # entries with a known ordinal.
 _DEVICE_ORD_PREFIX = "__device_dts_ord_"
 
 # Defined init level in order of priority.
-_DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL",
-                      "APPLICATION", "SMP"]
+_DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL", "APPLICATION", "SMP"]
 
 # List of compatibles for nodes where we don't check the priority.
-_IGNORE_COMPATIBLES = frozenset([
+_IGNORE_COMPATIBLES = frozenset(
+    [
         # There is no direct dependency between the CDC ACM UART and the USB
         # device controller, the logical connection is established after USB
         # device support is enabled.
         "zephyr,cdc-acm-uart",
-        ])
+    ]
+)
+
+# Deferred initialization property name.
+# When present, the device is not initialized during boot.
+# (it is evaluated as if initializing "after everything else")
+_DEFERRED_INIT_PROP_NAME = "zephyr,deferred-init"
 
 # The offset of the init pointer in "struct device", in number of pointers.
 DEVICE_INIT_OFFSET = 5
+
 
 class Priority:
     """Parses and holds a device initialization priority.
@@ -60,7 +66,8 @@ class Priority:
     Attributes:
         name: the section name
     """
-    def __init__(self, level, priority):
+
+    def __init__(self, level: str, priority: int):
         for idx, level_name in enumerate(_DEVICE_INIT_LEVELS):
             if level_name == level:
                 self._level = idx
@@ -69,14 +76,15 @@ class Priority:
                 self._level_priority = (self._level, self._priority)
                 return
 
-        raise ValueError("Unknown level in %s" % level)
+        raise ValueError(f"Unknown level in {level}")
 
     def __repr__(self):
-        return "<%s %s %d>" % (self.__class__.__name__,
-                               _DEVICE_INIT_LEVELS[self._level], self._priority)
+        level = _DEVICE_INIT_LEVELS[self._level]
+        return f"<{self.__class__.__name__} {level} {self._priority}>"
 
     def __str__(self):
-        return "%s+%d" % (_DEVICE_INIT_LEVELS[self._level], self._priority)
+        level = _DEVICE_INIT_LEVELS[self._level]
+        return f"{level}+{self._priority}"
 
     def __lt__(self, other):
         return self._level_priority < other._level_priority
@@ -101,6 +109,7 @@ class ZephyrInitLevels:
     Attributes:
         file_path: path of the file to be loaded.
     """
+
     def __init__(self, file_path, elf_file):
         self.file_path = file_path
         self._elf = ELFFile(elf_file)
@@ -118,11 +127,16 @@ class ZephyrInitLevels:
                 continue
 
             for sym in section.iter_symbols():
-                if (sym.name and
-                    sym.entry.st_size > 0 and
-                    sym.entry.st_info.type in ["STT_OBJECT", "STT_FUNC"]):
+                if (
+                    sym.name
+                    and sym.entry.st_size > 0
+                    and sym.entry.st_info.type in ["STT_OBJECT", "STT_FUNC"]
+                ):
                     self._objects[sym.entry.st_value] = (
-                            sym.name, sym.entry.st_size, sym.entry.st_shndx)
+                        sym.name,
+                        sym.entry.st_size,
+                        sym.entry.st_shndx,
+                    )
                     self._object_addr[sym.name] = sym.entry.st_value
 
     def _load_level_addr(self):
@@ -145,7 +159,7 @@ class ZephyrInitLevels:
             raise ValueError(f"Missing init symbols, found: {self._init_level_addr}")
 
         if not self._init_level_end:
-            raise ValueError(f"Missing init section end symbol")
+            raise ValueError("Missing init section end symbol")
 
     def _device_ord_from_name(self, sym_name):
         """Find a device ordinal from a symbol name."""
@@ -214,8 +228,9 @@ class ZephyrInitLevels:
                 if ordinal:
                     dev_addr = self._object_addr[arg1_name]
                     _, _, shidx = self._objects[dev_addr]
-                    arg0_name = self._object_name(self._initlevel_pointer(
-                        dev_addr, DEVICE_INIT_OFFSET, shidx))
+                    arg0_name = self._object_name(
+                        self._initlevel_pointer(dev_addr, DEVICE_INIT_OFFSET, shidx)
+                    )
 
                     prio = Priority(level, priority)
                     self.devices[ordinal] = (prio, arg0_name)
@@ -225,7 +240,8 @@ class ZephyrInitLevels:
                 addr += size
                 priority += 1
 
-class Validator():
+
+class Validator:
     """Validates the initialization priorities.
 
     Scans through a build folder for object files and list all the device
@@ -237,12 +253,11 @@ class Validator():
         edt_pickle: name of the EDT pickle file
         log: a logging.Logger object
     """
+
     def __init__(self, elf_file_path, edt_pickle, log, elf_file):
         self.log = log
 
-        edt_pickle_path = pathlib.Path(
-                pathlib.Path(elf_file_path).parent,
-                edt_pickle)
+        edt_pickle_path = pathlib.Path(pathlib.Path(elf_file_path).parent, edt_pickle)
         with open(edt_pickle_path, "rb") as f:
             edt = pickle.load(f)
 
@@ -251,6 +266,17 @@ class Validator():
         self._obj = ZephyrInitLevels(elf_file_path, elf_file)
 
         self.errors = 0
+
+    def _flag_error(self, msg):
+        """Remember that a validation error occurred and report to user"""
+        if not self.errors:
+            self.log.error(
+                "Device initialization priority validation failed, "
+                "the sequence of initialization calls does not match "
+                "the devicetree dependencies."
+            )
+        self.errors += 1
+        self.log.error(msg)
 
     def _check_dep(self, dev_ord, dep_ord):
         """Validate the priority between two devices."""
@@ -266,6 +292,30 @@ class Validator():
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
 
+        def _deferred(node):
+            # Even though the property is boolean, it is sometimes present
+            # in node.props despite having value false: check for both
+            # presence *and* value.
+            if (p := node.props.get(_DEFERRED_INIT_PROP_NAME)) is None:
+                return False
+            assert isinstance(p.val, bool)
+            return p.val
+
+        dev_deferred = _deferred(dev_node)
+        dep_deferred = _deferred(dep_node)
+
+        # Deferred devices can depend on any device...
+        if dev_deferred:
+            self.log.info(f"Ignoring deferred device {dev_node.path}")
+            return
+
+        # ...but non-deferred devices cannot depend on them!
+        if dep_deferred:  # we already know dev_deferred==False
+            self._flag_error(
+                f"Non-deferred device {dev_node.path} depends on deferred device {dep_node.path}"
+            )
+            return
+
         dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
         dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
 
@@ -273,21 +323,18 @@ class Validator():
             return
 
         if dev_prio == dep_prio:
-            raise ValueError(f"{dev_node.path} and {dep_node.path} have the "
-                             f"same priority: {dev_prio}")
+            raise ValueError(
+                f"{dev_node.path} and {dep_node.path} have the same priority: {dev_prio}"
+            )
         elif dev_prio < dep_prio:
-            if not self.errors:
-                self.log.error("Device initialization priority validation failed, "
-                               "the sequence of initialization calls does not match "
-                               "the devicetree dependencies.")
-            self.errors += 1
-            self.log.error(
-                    f"{dev_node.path} <{dev_init}> is initialized before its dependency "
-                    f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})")
+            self._flag_error(
+                f"{dev_node.path} <{dev_init}> is initialized before its dependency "
+                f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})"
+            )
         else:
             self.log.info(
-                    f"{dev_node.path} <{dev_init}> {dev_prio} > "
-                    f"{dep_node.path} <{dep_init}> {dep_prio}")
+                f"{dev_node.path} <{dev_init}> {dev_prio} > {dep_node.path} <{dep_init}> {dep_prio}"
+            )
 
     def check_edt(self):
         """Scan through all known devices and validate the init priorities."""
@@ -302,29 +349,48 @@ class Validator():
             for call in calls:
                 print(f"  {call}")
 
+
 def _parse_args(argv):
     """Parse the command line arguments."""
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        allow_abbrev=False)
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-f", "--elf-file", default=pathlib.Path("build", "zephyr", "zephyr.elf"),
-                        help="ELF file to use")
-    parser.add_argument("-v", "--verbose", action="count",
-                        help=("enable verbose output, can be used multiple times "
-                              "to increase verbosity level"))
-    parser.add_argument("--always-succeed", action="store_true",
-                        help="always exit with a return code of 0, used for testing")
-    parser.add_argument("-o", "--output",
-                        help="write the output to a file in addition to stdout")
-    parser.add_argument("-i", "--initlevels", action="store_true",
-                        help="print the initlevel functions instead of checking the device dependencies")
-    parser.add_argument("--edt-pickle", default=pathlib.Path("edt.pickle"),
-                        help="name of the pickled edtlib.EDT file",
-                        type=pathlib.Path)
+    parser.add_argument(
+        "-f",
+        "--elf-file",
+        default=pathlib.Path("build", "zephyr", "zephyr.elf"),
+        help="ELF file to use",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        help=("enable verbose output, can be used multiple times to increase verbosity level"),
+    )
+    parser.add_argument(
+        "--always-succeed",
+        action="store_true",
+        help="always exit with a return code of 0, used for testing",
+    )
+    parser.add_argument("-o", "--output", help="write the output to a file in addition to stdout")
+    parser.add_argument(
+        "-i",
+        "--initlevels",
+        action="store_true",
+        help="print the initlevel functions instead of checking the device dependencies",
+    )
+    parser.add_argument(
+        "--edt-pickle",
+        default=pathlib.Path("edt.pickle"),
+        help="name of the pickled edtlib.EDT file",
+        type=pathlib.Path,
+    )
 
     return parser.parse_args(argv)
+
 
 def _init_log(verbose, output):
     """Initialize a logger object."""
@@ -348,6 +414,7 @@ def _init_log(verbose, output):
 
     return log
 
+
 def main(argv=None):
     args = _parse_args(argv)
 
@@ -369,6 +436,7 @@ def main(argv=None):
             return 1
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

@@ -154,7 +154,7 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 	const struct device *dev = p_context;
 	int status = 0;
 
-	if (i2c_nrfx_twi_get_evt_result(p_event) != NRFX_SUCCESS) {
+	if (i2c_nrfx_twi_get_evt_result(p_event) != 0) {
 		status = -EIO;
 	}
 

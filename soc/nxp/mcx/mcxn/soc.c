@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,9 @@
 
 void soc_reset_hook(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	SystemInit();
+#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 #endif
@@ -68,3 +70,8 @@ static int second_core_boot(void)
 
 SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
+
+void enable_ecc(uint32_t mask)
+{
+	SYSCON->ECC_ENABLE_CTRL = mask;
+}

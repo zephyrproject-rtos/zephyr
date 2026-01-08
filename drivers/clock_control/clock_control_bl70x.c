@@ -534,10 +534,14 @@ static void clock_control_bl70x_peripheral_clock_init(void)
 	regval |= (1 << 3);
 	/* enable UART0 clock routing */
 	regval |= (1 << 16);
+	/* enable SPI0 clock routing */
+	regval |= (1 << 18);
 	/* enable I2C0 clock routing */
 	regval |= (1 << 19);
 	/* enable DMA clock routing */
 	regval |= (1 << 12);
+	/* enable IR clock routing */
+	regval |= (1 << 22);
 
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG1_OFFSET);
 

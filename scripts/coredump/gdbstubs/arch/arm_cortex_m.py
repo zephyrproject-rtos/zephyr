@@ -9,13 +9,13 @@ import logging
 import struct
 
 from coredump_parser.elf_parser import ThreadInfoOffset
-from gdbstubs.gdbstub import GdbStub
 
+from gdbstubs.gdbstub import GdbStub
 
 logger = logging.getLogger("gdbstub")
 
 
-class RegNum():
+class RegNum:
     R0 = 0
     R1 = 1
     R2 = 2
@@ -36,7 +36,7 @@ class RegNum():
 
 
 class GdbStub_ARM_CortexM(GdbStub):
-    ARCH_DATA_BLK_STRUCT    = "<IIIIIIIII"
+    ARCH_DATA_BLK_STRUCT = "<IIIIIIIII"
     ARCH_DATA_BLK_STRUCT_V2 = "<IIIIIIIIIIIIIIIII"
 
     GDB_SIGNAL_DEFAULT = 7
@@ -72,12 +72,12 @@ class GdbStub_ARM_CortexM(GdbStub):
         self.registers[RegNum.SP] = tu[8]
 
         if arch_data_ver > 1:
-            self.registers[RegNum.R4]  = tu[9]
-            self.registers[RegNum.R5]  = tu[10]
-            self.registers[RegNum.R6]  = tu[11]
-            self.registers[RegNum.R7]  = tu[12]
-            self.registers[RegNum.R8]  = tu[13]
-            self.registers[RegNum.R9]  = tu[14]
+            self.registers[RegNum.R4] = tu[9]
+            self.registers[RegNum.R5] = tu[10]
+            self.registers[RegNum.R6] = tu[11]
+            self.registers[RegNum.R7] = tu[12]
+            self.registers[RegNum.R8] = tu[13]
+            self.registers[RegNum.R9] = tu[14]
             self.registers[RegNum.R10] = tu[15]
             self.registers[RegNum.R11] = tu[16]
 
@@ -121,7 +121,9 @@ class GdbStub_ARM_CortexM(GdbStub):
             raise ValueError(f"Malformed register write packet: {pkt_str}")
 
         reg = int(pkt_str[1:separator_index], 16)
-        self.registers[reg] = int.from_bytes(binascii.unhexlify(pkt[(separator_index + 1):]), byteorder = 'little')
+        self.registers[reg] = int.from_bytes(
+            binascii.unhexlify(pkt[(separator_index + 1) :]), byteorder='little'
+        )
         self.put_gdb_packet(b'+')
 
     def arch_supports_thread_operations(self):
@@ -135,7 +137,9 @@ class GdbStub_ARM_CortexM(GdbStub):
             thread_ptr = self.thread_ptrs[self.selected_thread]
 
             # Get stack pointer out of thread struct
-            t_stack_ptr_offset = self.elffile.get_kernel_thread_info_offset(ThreadInfoOffset.THREAD_INFO_OFFSET_T_STACK_PTR)
+            t_stack_ptr_offset = self.elffile.get_kernel_thread_info_offset(
+                ThreadInfoOffset.THREAD_INFO_OFFSET_T_STACK_PTR
+            )
             size_t_size = self.elffile.get_kernel_thread_info_size_t_size()
             stack_ptr_bytes = self.get_memory(thread_ptr + t_stack_ptr_offset, size_t_size)
 
@@ -161,15 +165,22 @@ class GdbStub_ARM_CortexM(GdbStub):
                     thread_registers[RegNum.SP] = stack_ptr + 32
 
                     # Read the exc_return value from the thread's arch struct
-                    t_arch_offset = self.elffile.get_kernel_thread_info_offset(ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARCH)
-                    t_exc_return_offset = self.elffile.get_kernel_thread_info_offset(ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARM_EXC_RETURN)
+                    t_arch_offset = self.elffile.get_kernel_thread_info_offset(
+                        ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARCH
+                    )
+                    t_exc_return_offset = self.elffile.get_kernel_thread_info_offset(
+                        ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARM_EXC_RETURN
+                    )
 
                     # Value of 0xffffffff indicates THREAD_INFO_UNIMPLEMENTED
-                    if t_exc_return_offset != 0xffffffff:
-                        exc_return_bytes = self.get_memory(thread_ptr + t_arch_offset + t_exc_return_offset, 1)
+                    if t_exc_return_offset != 0xFFFFFFFF:
+                        exc_return_bytes = self.get_memory(
+                            thread_ptr + t_arch_offset + t_exc_return_offset, 1
+                        )
                         exc_return = int.from_bytes(exc_return_bytes, "little")
 
-                        # If the bit 4 is not set, the stack frame is extended for floating point data, adjust the SP accordingly
+                        # If the bit 4 is not set, the stack frame is extended for floating point
+                        # data, adjust the SP accordingly
                         if (exc_return & (1 << 4)) == 0:
                             thread_registers[RegNum.SP] = thread_registers[RegNum.SP] + 72
 

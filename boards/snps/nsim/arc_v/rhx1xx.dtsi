@@ -44,7 +44,7 @@
 			reg-names = "mtime", "mtimecmp";
 		};
 
-		uart0: serial@10000000{
+		uart0: serial@10000000 {
 			compatible = "ns16550", "snps,dw-apb-uart";
 			reg = <0x10000000 0x400>;
 			reg-shift = <2>;

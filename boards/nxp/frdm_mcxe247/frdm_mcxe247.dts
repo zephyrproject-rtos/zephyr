@@ -21,6 +21,8 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		rtc = &counter_rtc;
+		accel0 = &fxls8974;
 	};
 
 	chosen {
@@ -29,18 +31,23 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
+		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
@@ -49,11 +56,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_2 {
 			label = "User SW2";
 			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_3 {
 			label = "User SW3";
 			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
@@ -91,8 +100,34 @@
 	};
 };
 
+&adc0 {
+	status = "okay";
+	sample-time = <12>;
+	vref-mv = <3300>;
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
+};
+
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_cmp0>;
+	pinctrl-names = "default";
+};
+
 &cpu0 {
 	clock-frequency = <80000000>;
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel1 {
+	status = "okay";
 };
 
 &sosc_clk {
@@ -117,11 +152,19 @@
 	clock-div = <4>;
 };
 
+&fircdiv1_clk {
+	clock-div = <1>;
+};
+
 &fircdiv2_clk {
 	clock-div = <1>;
 };
 
 &soscdiv2_clk {
+	clock-div = <1>;
+};
+
+&sircdiv2_clk {
 	clock-div = <1>;
 };
 
@@ -159,6 +202,62 @@
 	pinctrl-names = "default";
 };
 
+&lpit0 {
+	status = "okay";
+};
+
+&lpit0_channel0 {
+	status = "okay";
+};
+
+&lpit0_channel1 {
+	status = "okay";
+};
+
+&lpit0_channel2 {
+	status = "okay";
+};
+
+&lpit0_channel3 {
+	status = "okay";
+};
+
+&lpi2c0 {
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
+	};
+};
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
 &edma {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

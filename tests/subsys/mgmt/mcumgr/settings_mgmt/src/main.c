@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,8 +22,8 @@
 #include "settings.h"
 
 #define SMP_RESPONSE_WAIT_TIME 3
-#define ZCBOR_BUFFER_SIZE 64
-#define OUTPUT_BUFFER_SIZE 64
+#define ZCBOR_BUFFER_SIZE 128
+#define OUTPUT_BUFFER_SIZE 128
 #define ZCBOR_HISTORY_ARRAY_SIZE 4
 
 #define TEST_RESPONSE_OK_DATA_LENGTH sizeof(test_response_ok_data)
@@ -34,6 +34,19 @@
 #define TEST_RESPONSE_READ_DATA_LENGTH (sizeof(test_response_read_data_start) + \
 					sizeof(test_response_read_data_end))
 #define TEST_RESPONSE_READ_LENGTH (sizeof(struct smp_hdr) + TEST_RESPONSE_READ_DATA_LENGTH)
+
+#define DUMMY_VALUE_FIRST 0xf0
+#define DUMMY_VALUE_SECOND 0xf1
+#define DUMMY_VALUE_THIRD 0xf2
+#define DUMMY_VALUE_FORTH 0xf3
+
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION)
+struct group_error {
+	uint16_t group;
+	uint16_t rc;
+	bool found;
+};
+#endif
 
 static struct net_buf *nb;
 static bool access_read_got;
@@ -101,6 +114,35 @@ static void cleanup_test(void *p)
 
 	settings_state_reset();
 }
+
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION)
+static bool mcumgr_ret_decode(zcbor_state_t *state, struct group_error *result)
+{
+	bool ok;
+	size_t decoded;
+	uint32_t tmp_group;
+	uint32_t tmp_rc;
+
+	struct zcbor_map_decode_key_val output_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("group", zcbor_uint32_decode, &tmp_group),
+		ZCBOR_MAP_DECODE_KEY_DECODER("rc", zcbor_uint32_decode, &tmp_rc),
+	};
+
+	result->found = false;
+
+	ok = zcbor_map_decode_bulk(state, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+
+	if (ok &&
+	    zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode), "group") &&
+	    zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode), "rc")) {
+		result->group = (uint16_t)tmp_group;
+		result->rc = (uint16_t)tmp_rc;
+		result->found = true;
+	}
+
+	return ok;
+}
+#endif
 
 ZTEST(settings_mgmt, test_commit)
 {
@@ -1552,6 +1594,440 @@ ZTEST(settings_mgmt, test_delete)
 	zassert_false(commit_called, "Did not expect setting commit function to be called");
 }
 
+ZTEST(settings_mgmt, test_subtree_save)
+{
+	uint8_t buffer[ZCBOR_BUFFER_SIZE];
+	uint8_t buffer_out[OUTPUT_BUFFER_SIZE];
+	bool ok;
+	uint16_t buffer_size;
+	zcbor_state_t zse[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	zcbor_state_t zsd[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	bool received;
+	bool set_called;
+	bool get_called;
+	bool export_called;
+	bool commit_called;
+	struct smp_hdr *header;
+	uint8_t dummy_value;
+
+	/* Setup with dummy values in settings */
+	dummy_value = DUMMY_VALUE_FIRST;
+	settings_save_one("first/value1", &dummy_value, sizeof(dummy_value));
+	dummy_value = DUMMY_VALUE_SECOND;
+	settings_save_one("first/value2", &dummy_value, sizeof(dummy_value));
+	dummy_value = DUMMY_VALUE_THIRD;
+	settings_save_one("first/other/value3", &dummy_value, sizeof(dummy_value));
+	dummy_value = DUMMY_VALUE_FORTH;
+	settings_save_one("first/expected_fail/value4", &dummy_value, sizeof(dummy_value));
+	zassert_equal(single_data.first_val, 0x00, "Expected default first_val to be correct");
+	zassert_equal(single_data.second_val, 0x00, "Expected default second_val to be correct");
+	zassert_equal(single_data.third_val, 0x00, "Expected default third_val to be correct");
+	zassert_equal(single_data.forth_val, 0x00, "Expected default forth_val to be correct");
+	(void)settings_load();
+	zassert_equal(single_data.first_val, DUMMY_VALUE_FIRST,
+		      "Expected loaded first_val to be correct");
+	zassert_equal(single_data.second_val, DUMMY_VALUE_SECOND,
+		      "Expected loaded second_val to be correct");
+	zassert_equal(single_data.third_val, DUMMY_VALUE_THIRD,
+		      "Expected loaded third_val to be correct");
+	zassert_equal(single_data.forth_val, DUMMY_VALUE_FORTH,
+		      "Expected loaded forth_val to be correct");
+
+	memset(buffer, 0, sizeof(buffer));
+	memset(buffer_out, 0, sizeof(buffer_out));
+	buffer_size = 0;
+	memset(zse, 0, sizeof(zse));
+	memset(zsd, 0, sizeof(zsd));
+
+	zcbor_new_encode_state(zse, 2, buffer, ARRAY_SIZE(buffer), 0);
+	single_modification_reset();
+
+	/* Save "first" subtree (all values) */
+	ok = create_settings_mgmt_save_key_packet(zse, buffer, buffer_out, &buffer_size,
+						  "first");
+	zassert_true(ok, "Expected packet creation to be successful");
+
+	/* Enable dummy SMP backend and ready for usage */
+	smp_dummy_enable();
+	smp_dummy_clear_state();
+
+	/* Send query command to dummy SMP backend */
+	(void)smp_dummy_tx_pkt(buffer_out, buffer_size);
+	smp_dummy_add_data();
+
+	/* For a short duration to see if response has been received */
+	received = smp_dummy_wait_for_data(SMP_RESPONSE_WAIT_TIME);
+	zassert_true(received, "Expected to receive data but timed out");
+
+	/* Retrieve response buffer */
+	nb = smp_dummy_get_outgoing();
+	smp_dummy_disable();
+
+	/* Check response is as expected */
+	zassert_equal(nb->len, TEST_RESPONSE_OK_LENGTH, "SMP response mismatch");
+	header = (struct smp_hdr *)nb->data;
+	zassert_equal(header->nh_len, sys_cpu_to_be16(TEST_RESPONSE_OK_DATA_LENGTH),
+		      "SMP header length mismatch");
+	zassert_equal(header->nh_flags, 0, "SMP header flags mismatch");
+	zassert_equal(header->nh_op, MGMT_OP_WRITE_RSP, "SMP header operation mismatch");
+	zassert_equal(header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
+		      "SMP header group mismatch");
+	zassert_equal(header->nh_seq, 1, "SMP header sequence number mismatch");
+	zassert_equal(header->nh_id, SETTINGS_MGMT_ID_LOAD_SAVE,
+		      "SMP header command ID mismatch");
+	zassert_equal(header->nh_version, 1, "SMP header version mismatch");
+	zassert_mem_equal(&nb->data[(TEST_RESPONSE_OK_LENGTH - TEST_RESPONSE_OK_DATA_LENGTH)],
+			  test_response_ok_data, TEST_RESPONSE_OK_DATA_LENGTH,
+			  "SMP data mismatch");
+
+	/* Check events */
+	settings_state_get(&set_called, &get_called, &export_called, &commit_called);
+	zassert_false(access_read_got, "Did not expect read access notification");
+	zassert_false(access_write_got, "Did not expect write access notification");
+	zassert_false(access_delete_got, "Did not expect delete access notification");
+	zassert_false(access_load_got, "Did not expect load access notification");
+	zassert_true(access_save_got, "Expected save access notification");
+	zassert_false(access_commit_got, "Did not expect commit access notification");
+	zassert_false(access_invalid_got, "Did not expect an invalid access notification type");
+	zassert_false(event_invalid_got, "Did not expect an invalid event");
+	zassert_str_equal(access_name, "first", "Expected notification name to be correct");
+
+	zassert_equal(single_data.first_val, DUMMY_VALUE_FIRST,
+		      "Expected first_val value to be unchanged");
+	zassert_equal(single_data.second_val, DUMMY_VALUE_SECOND,
+		      "Expected second_val value to be unchanged");
+	zassert_equal(single_data.third_val, DUMMY_VALUE_THIRD,
+		      "Expected third_val value to be unchanged");
+	zassert_equal(single_data.forth_val, DUMMY_VALUE_FORTH,
+		      "Expected forth_val value to be unchanged");
+	zassert_true(single_data.first_second_export_called,
+		     "Expected first/second export to be called");
+	zassert_false(single_data.first_second_commit_called,
+		      "Did not expect first/second commit to be called");
+	zassert_false(single_data.first_get_called,
+		      "Did not expect first get to be called");
+	zassert_false(single_data.first_set_called,
+		      "Did not expect first set to be called");
+	zassert_false(single_data.second_get_called,
+		      "Did not expect second get to be called");
+	zassert_false(single_data.second_set_called,
+		      "Did not expect second set to be called");
+	zassert_true(single_data.third_export_called,
+		     "Expected third export to be called");
+	zassert_false(single_data.third_commit_called,
+		      "Did not expect third commit to be called");
+	zassert_false(single_data.third_get_called,
+		      "Did not expect third get to be called");
+	zassert_false(single_data.third_set_called,
+		      "Did not expect third set to be called");
+	zassert_true(single_data.forth_export_called,
+		     "Expected forth export to be called");
+	zassert_false(single_data.forth_commit_called,
+		      "Did not expect forth commit to be called");
+	zassert_false(single_data.forth_get_called,
+		      "Did not expect forth get to be called");
+	zassert_false(single_data.forth_set_called,
+		      "Did not expect forth set to be called");
+
+	/* Clean up test */
+	cleanup_test(NULL);
+	single_modification_reset();
+	zcbor_new_encode_state(zse, 2, buffer, ARRAY_SIZE(buffer), 0);
+
+	/* Save "first/other" subtree (1 value) */
+	ok = create_settings_mgmt_save_key_packet(zse, buffer, buffer_out, &buffer_size,
+						  "first/other");
+	zassert_true(ok, "Expected packet creation to be successful");
+
+	/* Enable dummy SMP backend and ready for usage */
+	smp_dummy_enable();
+	smp_dummy_clear_state();
+
+	/* Send query command to dummy SMP backend */
+	(void)smp_dummy_tx_pkt(buffer_out, buffer_size);
+	smp_dummy_add_data();
+
+	/* For a short duration to see if response has been received */
+	received = smp_dummy_wait_for_data(SMP_RESPONSE_WAIT_TIME);
+	zassert_true(received, "Expected to receive data but timed out");
+
+	/* Retrieve response buffer */
+	nb = smp_dummy_get_outgoing();
+	smp_dummy_disable();
+
+	/* Check response is as expected */
+	zassert_equal(nb->len, TEST_RESPONSE_OK_LENGTH, "SMP response mismatch");
+	header = (struct smp_hdr *)nb->data;
+	zassert_equal(header->nh_len, sys_cpu_to_be16(TEST_RESPONSE_OK_DATA_LENGTH),
+		      "SMP header length mismatch");
+	zassert_equal(header->nh_flags, 0, "SMP header flags mismatch");
+	zassert_equal(header->nh_op, MGMT_OP_WRITE_RSP, "SMP header operation mismatch");
+	zassert_equal(header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
+		      "SMP header group mismatch");
+	zassert_equal(header->nh_seq, 1, "SMP header sequence number mismatch");
+	zassert_equal(header->nh_id, SETTINGS_MGMT_ID_LOAD_SAVE,
+		      "SMP header command ID mismatch");
+	zassert_equal(header->nh_version, 1, "SMP header version mismatch");
+	zassert_mem_equal(&nb->data[(TEST_RESPONSE_OK_LENGTH - TEST_RESPONSE_OK_DATA_LENGTH)],
+			  test_response_ok_data, TEST_RESPONSE_OK_DATA_LENGTH,
+			  "SMP data mismatch");
+
+	/* Check events */
+	settings_state_get(&set_called, &get_called, &export_called, &commit_called);
+	zassert_false(access_read_got, "Did not expect read access notification");
+	zassert_false(access_write_got, "Did not expect write access notification");
+	zassert_false(access_delete_got, "Did not expect delete access notification");
+	zassert_false(access_load_got, "Did not expect load access notification");
+	zassert_true(access_save_got, "Expected save access notification");
+	zassert_false(access_commit_got, "Did not expect commit access notification");
+	zassert_false(access_invalid_got, "Did not expect an invalid access notification type");
+	zassert_false(event_invalid_got, "Did not expect an invalid event");
+	zassert_str_equal(access_name, "first/other", "Expected notification name to be correct");
+
+	zassert_equal(single_data.first_val, DUMMY_VALUE_FIRST,
+		      "Expected first_val value to be unchanged");
+	zassert_equal(single_data.second_val, DUMMY_VALUE_SECOND,
+		      "Expected second_val value to be unchanged");
+	zassert_equal(single_data.third_val, DUMMY_VALUE_THIRD,
+		      "Expected third_val value to be unchanged");
+	zassert_equal(single_data.forth_val, DUMMY_VALUE_FORTH,
+		      "Expected forth_val value to be unchanged");
+	zassert_false(single_data.first_second_export_called,
+		      "Did not expect first/second export to be called");
+	zassert_false(single_data.first_second_commit_called,
+		      "Did not expect first/second commit to be called");
+	zassert_false(single_data.first_get_called,
+		      "Did not expect first get to be called");
+	zassert_false(single_data.first_set_called,
+		      "Did not expect first set to be called");
+	zassert_false(single_data.second_get_called,
+		      "Did not expect second get to be called");
+	zassert_false(single_data.second_set_called,
+		      "Did not expect second set to be called");
+	zassert_true(single_data.third_export_called,
+		     "Expected third export to be called");
+	zassert_false(single_data.third_commit_called,
+		      "Did not expect third commit to be called");
+	zassert_false(single_data.third_get_called,
+		      "Did not expect third get to be called");
+	zassert_false(single_data.third_set_called,
+		      "Did not expect third set to be called");
+	zassert_false(single_data.forth_export_called,
+		      "Did not expect forth export to be called");
+	zassert_false(single_data.forth_commit_called,
+		      "Did not expect forth commit to be called");
+	zassert_false(single_data.forth_get_called,
+		      "Did not expect forth get to be called");
+	zassert_false(single_data.forth_set_called,
+		      "Did not expect forth set to be called");
+}
+
+ZTEST(settings_mgmt, test_single_save)
+{
+Z_TEST_SKIP_IFNDEF(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION);
+
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION)
+	uint8_t buffer[ZCBOR_BUFFER_SIZE];
+	uint8_t buffer_out[OUTPUT_BUFFER_SIZE];
+	bool ok;
+	uint16_t buffer_size;
+	zcbor_state_t zse[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	zcbor_state_t zsd[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	bool received;
+	bool set_called;
+	bool get_called;
+	bool export_called;
+	bool commit_called;
+	struct smp_hdr *header;
+
+	memset(buffer, 0, sizeof(buffer));
+	memset(buffer_out, 0, sizeof(buffer_out));
+	buffer_size = 0;
+	memset(zse, 0, sizeof(zse));
+	memset(zsd, 0, sizeof(zsd));
+
+	zcbor_new_encode_state(zse, 2, buffer, ARRAY_SIZE(buffer), 0);
+	single_modification_reset();
+
+	/* Save subtree which has 1 setting */
+	ok = create_settings_mgmt_save_key_packet(zse, buffer, buffer_out, &buffer_size,
+						  "first/other");
+	zassert_true(ok, "Expected packet creation to be successful");
+
+	/* Enable dummy SMP backend and ready for usage */
+	smp_dummy_enable();
+	smp_dummy_clear_state();
+
+	/* Send query command to dummy SMP backend */
+	(void)smp_dummy_tx_pkt(buffer_out, buffer_size);
+	smp_dummy_add_data();
+
+	/* For a short duration to see if response has been received */
+	received = smp_dummy_wait_for_data(SMP_RESPONSE_WAIT_TIME);
+	zassert_true(received, "Expected to receive data but timed out");
+
+	/* Retrieve response buffer */
+	nb = smp_dummy_get_outgoing();
+	smp_dummy_disable();
+
+	/* Check response is as expected */
+	zassert_equal(nb->len, TEST_RESPONSE_OK_LENGTH, "SMP response mismatch");
+	header = (struct smp_hdr *)nb->data;
+	zassert_equal(header->nh_len, sys_cpu_to_be16(TEST_RESPONSE_OK_DATA_LENGTH),
+		      "SMP header length mismatch");
+	zassert_equal(header->nh_flags, 0, "SMP header flags mismatch");
+	zassert_equal(header->nh_op, MGMT_OP_WRITE_RSP, "SMP header operation mismatch");
+	zassert_equal(header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
+		      "SMP header group mismatch");
+	zassert_equal(header->nh_seq, 1, "SMP header sequence number mismatch");
+	zassert_equal(header->nh_id, SETTINGS_MGMT_ID_LOAD_SAVE,
+		      "SMP header command ID mismatch");
+	zassert_equal(header->nh_version, 1, "SMP header version mismatch");
+	zassert_mem_equal(&nb->data[(TEST_RESPONSE_OK_LENGTH - TEST_RESPONSE_OK_DATA_LENGTH)],
+			  test_response_ok_data, TEST_RESPONSE_OK_DATA_LENGTH,
+			  "SMP data mismatch");
+
+	/* Check events */
+	settings_state_get(&set_called, &get_called, &export_called, &commit_called);
+	zassert_false(access_read_got, "Did not expect read access notification");
+	zassert_false(access_write_got, "Did not expect write access notification");
+	zassert_false(access_delete_got, "Did not expect delete access notification");
+	zassert_false(access_load_got, "Did not expect load access notification");
+	zassert_true(access_save_got, "Expected save access notification");
+	zassert_false(access_commit_got, "Did not expect commit access notification");
+	zassert_false(access_invalid_got, "Did not expect an invalid access notification type");
+	zassert_false(event_invalid_got, "Did not expect an invalid event");
+	zassert_str_equal(access_name, "first/other", "Expected notification name to be correct");
+
+	zassert_false(single_data.first_second_export_called,
+		      "Did not expect first/second export to be called");
+	zassert_false(single_data.first_second_commit_called,
+		      "Did not expect first/second commit to be called");
+	zassert_false(single_data.first_get_called,
+		      "Did not expect first get to be called");
+	zassert_false(single_data.first_set_called,
+		      "Did not expect first set to be called");
+	zassert_false(single_data.second_get_called,
+		      "Did not expect second get to be called");
+	zassert_false(single_data.second_set_called,
+		      "Did not expect second set to be called");
+	zassert_true(single_data.third_export_called,
+		     "Expected third export to be called");
+	zassert_false(single_data.third_commit_called,
+		      "Did not expect third commit to be called");
+	zassert_false(single_data.third_get_called,
+		      "Did not expect third get to be called");
+	zassert_false(single_data.third_set_called,
+		      "Did not expect third set to be called");
+	zassert_false(single_data.forth_export_called,
+		      "Did not expect forth export to be called");
+	zassert_false(single_data.forth_commit_called,
+		      "Did not expect forth commit to be called");
+	zassert_false(single_data.forth_get_called,
+		      "Did not expect forth get to be called");
+	zassert_false(single_data.forth_set_called,
+		      "Did not expect forth set to be called");
+#endif
+}
+
+ZTEST(settings_mgmt, test_single_save_without_get_function)
+{
+Z_TEST_SKIP_IFNDEF(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION);
+
+#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION)
+	uint8_t buffer[ZCBOR_BUFFER_SIZE];
+	uint8_t buffer_out[OUTPUT_BUFFER_SIZE];
+	bool ok;
+	uint16_t buffer_size;
+	zcbor_state_t zse[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	zcbor_state_t zsd[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	bool received;
+	bool set_called;
+	bool get_called;
+	bool export_called;
+	bool commit_called;
+	struct smp_hdr *header;
+	struct group_error group_error_data;
+	int32_t rc;
+	size_t decoded = 0;
+
+	struct zcbor_map_decode_key_val output_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("rc", zcbor_int32_decode, &rc),
+		ZCBOR_MAP_DECODE_KEY_DECODER("err", mcumgr_ret_decode, &group_error_data),
+	};
+
+	memset(buffer, 0, sizeof(buffer));
+	memset(buffer_out, 0, sizeof(buffer_out));
+	buffer_size = 0;
+	memset(zse, 0, sizeof(zse));
+	memset(zsd, 0, sizeof(zsd));
+
+	zcbor_new_encode_state(zse, 2, buffer, ARRAY_SIZE(buffer), 0);
+	single_modification_reset();
+
+	/* Save single value that does not have settings get function */
+	ok = create_settings_mgmt_save_key_packet(zse, buffer, buffer_out, &buffer_size,
+						  "first/expected_fail/value4");
+	zassert_true(ok, "Expected packet creation to be successful");
+
+	/* Enable dummy SMP backend and ready for usage */
+	smp_dummy_enable();
+	smp_dummy_clear_state();
+
+	/* Send query command to dummy SMP backend */
+	(void)smp_dummy_tx_pkt(buffer_out, buffer_size);
+	smp_dummy_add_data();
+
+	/* For a short duration to see if response has been received */
+	received = smp_dummy_wait_for_data(SMP_RESPONSE_WAIT_TIME);
+	zassert_true(received, "Expected to receive data but timed out");
+
+	/* Retrieve response buffer */
+	nb = smp_dummy_get_outgoing();
+	smp_dummy_disable();
+
+	/* Check response is as expected */
+	header = (struct smp_hdr *)nb->data;
+	zassert_equal(header->nh_flags, 0, "SMP header flags mismatch");
+	zassert_equal(header->nh_op, MGMT_OP_WRITE_RSP, "SMP header operation mismatch");
+	zassert_equal(header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
+		      "SMP header group mismatch");
+	zassert_equal(header->nh_seq, 1, "SMP header sequence number mismatch");
+	zassert_equal(header->nh_id, SETTINGS_MGMT_ID_LOAD_SAVE,
+		      "SMP header command ID mismatch");
+	zassert_equal(header->nh_version, 1, "SMP header version mismatch");
+
+	/* Check events */
+	settings_state_get(&set_called, &get_called, &export_called, &commit_called);
+	zassert_false(access_read_got, "Did not expect read access notification");
+	zassert_false(access_write_got, "Did not expect write access notification");
+	zassert_false(access_delete_got, "Did not expect delete access notification");
+	zassert_false(access_load_got, "Did not expect load access notification");
+	zassert_true(access_save_got, "Expected save access notification");
+	zassert_false(access_commit_got, "Did not expect commit access notification");
+	zassert_false(access_invalid_got, "Did not expect an invalid access notification type");
+	zassert_false(event_invalid_got, "Did not expect an invalid event");
+	zassert_str_equal(access_name, "first/expected_fail/value4",
+			  "Expected notification name to be correct");
+
+	/* Process received data by removing header */
+	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
+
+	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+	zassert_true(ok, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
+	zassert_false(zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode),
+		      "rc"), "Did not expect to receive rc element");
+	zassert_true(zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode),
+		     "err"), "Expected to receive err element");
+	zassert_equal(group_error_data.group, MGMT_GROUP_ID_SETTINGS,
+		      "Expected group to be settings");
+	zassert_equal(group_error_data.rc, SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED,
+		      "Expected rc to be save not supported");
+#endif
+}
+
 static enum mgmt_cb_return mgmt_event_cmd_callback(uint32_t event, enum mgmt_cb_return prev_status,
 						   int32_t *rc, uint16_t *group, bool *abort_more,
 						   void *data, size_t data_size)
@@ -1577,7 +2053,8 @@ static enum mgmt_cb_return mgmt_event_cmd_callback(uint32_t event, enum mgmt_cb_
 
 		if ((settings_data->access == SETTINGS_ACCESS_READ ||
 		     settings_data->access == SETTINGS_ACCESS_WRITE ||
-		     settings_data->access == SETTINGS_ACCESS_DELETE) &&
+		     settings_data->access == SETTINGS_ACCESS_DELETE ||
+		     settings_data->access == SETTINGS_ACCESS_SAVE) &&
 		    settings_data->name != NULL) {
 			strncpy(access_name, settings_data->name, (sizeof(access_name) - 1));
 		}

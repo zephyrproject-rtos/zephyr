@@ -235,12 +235,12 @@ zephyr_udc0: &usbotg_fs {
 
 		slot1_partition: partition@8c000 {
 			label = "image-1";
-			reg = <0x0008C000 DT_SIZE_K(432)>;
+			reg = <0x0008c000 DT_SIZE_K(432)>;
 		};
 
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 DT_SIZE_K(24)>;
+			reg = <0x000f8000 DT_SIZE_K(24)>;
 		};
 
 		storage_partition: partition@fc000 {

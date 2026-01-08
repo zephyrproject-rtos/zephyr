@@ -156,6 +156,12 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DTFM_SPM_LOG_LEVEL=${TFM_SPM_LOG_LEVEL})
   endif()
 
+  if(CONFIG_TFM_SECURE_UART)
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=1)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=0)
+  endif()
+
   # Enable TFM partitions as specified in Kconfig
   foreach(partition ${TFM_VALID_PARTITIONS})
     if(CONFIG_${partition})
@@ -246,12 +252,6 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 
   string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
-
-  if(CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS)
-    # Supply path to NXP HAL sources used for TF-M build
-    set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
-  endif()
 
   if(CONFIG_BOARD_MAX32657EVKIT_MAX32657_NS OR CONFIG_BOARD_MAX32658EVKIT_MAX32658_NS)
     # Supply path to hal_adi for TF-M build
@@ -422,6 +422,10 @@ if(CONFIG_BUILD_WITH_TFM)
   zephyr_library_link_libraries(
     ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
     )
+
+  # Ensure that the generated syscall include headers of Zephyr are available to TF-M
+  # because some platforms might use the same source files for both builds.
+  add_dependencies(tfm ${SYSCALL_LIST_H_TARGET})
 
   # To ensure that generated include files are created before they are used.
   add_dependencies(zephyr_interface tfm)
@@ -602,7 +606,7 @@ if(CONFIG_BUILD_WITH_TFM)
       HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
       INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_CONFIRMED_HEX_FILE})
     tfm_sign(sign_cmd_s_ns_hex SUFFIX "S_NS"
-      HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
+      HEADER MAX_SECTORS ${S_NS_MAX_SECTORS}
       INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_HEX_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands

@@ -44,8 +44,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x1FFFF7B8>;
-		ts-cal2-addr = <0x1FFFF7C2>;
+		ts-cal1-addr = <0x1ffff7b8>;
+		ts-cal2-addr = <0x1ffff7c2>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;

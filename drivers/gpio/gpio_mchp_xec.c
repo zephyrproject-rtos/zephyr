@@ -1,335 +1,513 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2025 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT microchip_xec_gpio
 
-#include <errno.h>
-#include <zephyr/device.h>
-#include <zephyr/irq.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/sys/sys_io.h>
 #include <soc.h>
-
+#include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+#include <zephyr/sys/slist.h>
 
-#define XEC_GPIO_EDGE_DLY_COUNT		4
+#define XEC_GPIO_EDGE_DLY_COUNT 8
 
-#define GPIO_IN_BASE(config) \
-	((__IO uint32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
-
-#define GPIO_OUT_BASE(config) \
-	((__IO uint32_t *)(GPIO_PAROUT_BASE + (config->port_num << 2)))
-
-static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
-	(MCHP_GPIO_PORT_A_BITMAP),
-	(MCHP_GPIO_PORT_B_BITMAP),
-	(MCHP_GPIO_PORT_C_BITMAP),
-	(MCHP_GPIO_PORT_D_BITMAP),
-	(MCHP_GPIO_PORT_E_BITMAP),
-	(MCHP_GPIO_PORT_F_BITMAP)
-};
+/* port_base is the base address of the array of 32 CR1 registers.
+ * pin in [0, 31] is the GPIO pin in this port.
+ */
+#define XEC_GPIO_CR1_ADDR(port_base, pin) ((uintptr_t)(port_base) + ((uint32_t)(pin) * 4u))
+#define XEC_GPIO_CR2_ADDR(port_base, pin) (XEC_GPIO_CR1_ADDR(port_base, pin) + MEC_GPIO_CR2_OFS)
 
 struct gpio_xec_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
+	/* bitmap of pins configured for level interrupt detection */
+	uint32_t level_intr_bm;
 };
 
-struct gpio_xec_config {
+/* port_base is the base address of an array of 32 32-bit control 1 registers
+ *   Control 2 32-bit register array starts offset +0x500
+ * parin_addr and parout_addr are the addresses of a single 32-bit register
+ * where each bit represents one of the 32 port pins.
+ */
+struct gpio_xec_devcfg {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	__IO uint32_t *pcr1_base;
-	uint8_t girq_id;
-	uint32_t port_num;
+	uintptr_t port_base;   /* base address of port (32 32-bit control registers) */
+	uintptr_t parin_addr;  /* address of one 32-bit register, 1 bit per GPIO */
+	uintptr_t parout_addr; /* address of one 32-bit register, 1 bit per GPIO */
 	uint32_t flags;
+	uint8_t girq;
 };
 
-/*
- * notes: The GPIO parallel output bits are read-only until the
- * Alternate-Output-Disable (AOD) bit is set in the pin's control
- * register. To preload a parallel output value to prevent certain
- * classes of glitching for output pins we must:
- * Set GPIO control AOD=1 with the pin direction set to input.
- * Program the new pin value in the respective GPIO parallel output
- * register.
- * Program other GPIO control bits except direction.
- * Last step set the GPIO control register direction bit to output.
+/* NOTE: gpio_flags_t b[0:15] are defined in the dt-binding gpio header.
+ * b[31:16] are defined in the driver gpio header.
  */
-static int gpio_xec_configure(const struct device *dev,
-			      gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_xec_validate_flags(gpio_flags_t flags)
 {
-	const struct gpio_xec_config *config = dev->config;
-	__IO uint32_t *current_pcr1;
-	uint32_t pcr1 = 0U;
-	uint32_t mask = 0U;
-
-	/* Validate pin number range in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
-		return -EINVAL;
-	}
-
-	/* Don't support "open source" mode */
-	if (((flags & GPIO_SINGLE_ENDED) != 0U) &&
-	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0U)) {
+	if (flags & GPIO_LINE_OPEN_SOURCE) {
 		return -ENOTSUP;
 	}
 
-	/* The flags contain options that require touching registers in the
-	 * PCRs for a given GPIO. There are no GPIO modules in Microchip SOCs!
-	 * Keep direction as input until last.
-	 * Clear input pad disable allowing input pad to operate.
-	 * Clear Power gate to allow pads to operate.
-	 */
-	mask |= MCHP_GPIO_CTRL_DIR_MASK;
-	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
-	mask |= MCHP_GPIO_CTRL_PWRG_MASK;
-	mask |= MCHP_GPIO_CTRL_AOD_MASK;
+	if ((flags & GPIO_OUTPUT_INIT_LOW) && (flags & GPIO_OUTPUT_INIT_HIGH)) {
+		return -EINVAL;
+	}
 
-	current_pcr1 = config->pcr1_base + pin;
+	return 0;
+}
+
+static const uint8_t port_girq_tbl[] = {
+	11u, /* port 0 GPIO 000 - 036 */
+	10u, /* port 1 GPIO 040 - 076 */
+	9u,  /* port 2 GPIO 0100 - 0136 */
+	8u,  /* port 3 GPIO 0140 - 0176 */
+	12u, /* port 4 GPIO 0200 - 0236 */
+	26u, /* port 5 GPIO 0240 - 0276 */
+};
+
+#define XEC_GPIO_PORT_FROM_CR1_ADDR(a) (((uint32_t)(a) & 0x3ffu) / 0x80u)
+
+#define XEC_GPIO_ENCODE(port_base, pos)                                                            \
+	((((uint32_t)(port_base) & 0x3ffu) / 0x80u) | ((uint32_t)(pos) & 0x1fu))
+
+#define XEC_GPIO_PIN_NUM_TO_PORT_BIT(gpin)                                                         \
+	((((uint32_t)(gpin) / 32u) << 8) | ((uint32_t)(gpin) % 32u))
+
+static const uint16_t vbat_pins[] = {
+	XEC_GPIO_PIN_NUM_TO_PORT_BIT(0),    XEC_GPIO_PIN_NUM_TO_PORT_BIT(0101),
+	XEC_GPIO_PIN_NUM_TO_PORT_BIT(0102), XEC_GPIO_PIN_NUM_TO_PORT_BIT(0161),
+	XEC_GPIO_PIN_NUM_TO_PORT_BIT(0162), XEC_GPIO_PIN_NUM_TO_PORT_BIT(0172),
+	XEC_GPIO_PIN_NUM_TO_PORT_BIT(0173), XEC_GPIO_PIN_NUM_TO_PORT_BIT(0174),
+	XEC_GPIO_PIN_NUM_TO_PORT_BIT(0234)};
+
+static bool is_vbat_pin(uint16_t enc_gpio)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(vbat_pins); i++) {
+		if (vbat_pins[i] == enc_gpio) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Each GPIO pin has two 32-bit control registers. Control 1 configures pin
+ * features except for drive strength and slew rate in Control 2.
+ * A pin's input and output state can be read/written from either the Control 1
+ * register or from corresponding bits in the GPIO parallel input/output registers.
+ * The parallel input and output registers group 32 pins into each register.
+ * The GPIO hardware restricts the pin output state to Control 1 or the parallel bit.
+ * The GPIO CR1 output state bit and corresponding parallel bit are mirrored.
+ * Writing the one that is writable is reflected in reading the other.
+ *
+ * NOTE 1: pins powered by VBAT cannot be completely disconnected. Only input pad can
+ *         be disabled. Power gating should remain in VTR mode.
+ */
+static uint32_t output_config(uint32_t cr1_new, uint32_t cr1_current, uint32_t flags)
+{
+	uint32_t cr1_out = cr1_new;
+	uint32_t pud = MEC_GPIO_CR1_PUD_GET(cr1_new);
+
+	cr1_out |= MEC_GPIO_CR1_DIR_SET(MEC_GPIO_CR1_DIR_OUT);
+
+	if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
+		cr1_out |= MEC_GPIO_CR1_OBUF_SET(MEC_GPIO_CR1_OBUF_OD);
+	} else {
+		cr1_out &= ~(MEC_GPIO_CR1_OBUF_SET(MEC_GPIO_CR1_OBUF_OD));
+	}
+
+	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+		cr1_out |= MEC_GPIO_CR1_ODAT_SET(MEC_GPIO_CR1_ODAT_HI);
+	} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+		cr1_out &= ~(MEC_GPIO_CR1_ODAT_SET(MEC_GPIO_CR1_ODAT_HI));
+	} else {
+		if (MEC_GPIO_CR1_PG_GET(cr1_current) == MEC_GPIO_CR1_PG_UNPWRD) {
+			if ((pud == MEC_GPIO_CR1_PUD_PU) || (pud == MEC_GPIO_CR1_PUD_RPT)) {
+				cr1_out |= BIT(MEC_GPIO_CR1_ODAT_POS);
+			}
+		} else {
+			if ((cr1_current & BIT(MEC_GPIO_CR1_ODAT_POS)) != 0) {
+				cr1_out |= MEC_GPIO_CR1_ODAT_SET(MEC_GPIO_CR1_ODAT_HI);
+			} else {
+				cr1_out &= ~(MEC_GPIO_CR1_ODAT_SET(MEC_GPIO_CR1_ODAT_HI));
+			}
+		}
+	}
+
+	return cr1_out;
+}
+
+static int gpio_xec_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
+{
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	uint32_t cr1_addr = 0u, cr1 = 0, cr1_new = 0, msk = 0, regval = 0;
+	int ret = 0;
+	uint16_t enc_gpio = 0;
+
+	ret = gpio_xec_validate_flags(flags);
+	if (ret != 0) {
+		return ret;
+	}
+
+	cr1_addr = XEC_GPIO_CR1_ADDR(devcfg->port_base, pin);
+	cr1 = sys_read32(cr1_addr);
 
 	if (flags == GPIO_DISCONNECTED) {
-		pcr1 |= MCHP_GPIO_CTRL_PWRG_OFF;
-		*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
+		enc_gpio = XEC_GPIO_ENCODE(devcfg->port_base, pin);
+		regval = cr1 & (uint32_t)~MEC_GPIO_CR1_PG_MSK;
+		regval |= MEC_GPIO_CR1_INPD_SET(MEC_GPIO_CR1_INPD_DIS);
+
+		if (is_vbat_pin(enc_gpio) == false) {
+			regval |= MEC_GPIO_CR1_PG_SET(MEC_GPIO_CR1_PG_UNPWRD);
+		} else {
+			regval |= MEC_GPIO_CR1_PG_SET(MEC_GPIO_CR1_PG_VTR);
+		}
+
+		sys_write32(regval, cr1_addr);
 		return 0;
 	}
 
-	pcr1 = MCHP_GPIO_CTRL_PWRG_VTR_IO;
+	/* build new CR1 register value */
+	msk = (MEC_GPIO_CR1_PUD_MSK | MEC_GPIO_CR1_PG_MSK | MEC_GPIO_CR1_OBUF_MSK |
+	       MEC_GPIO_CR1_DIR_MSK | MEC_GPIO_CR1_OCR_MSK | MEC_GPIO_CR1_FPOL_MSK |
+	       MEC_GPIO_CR1_MUX_MSK | MEC_GPIO_CR1_INPD_MSK | MEC_GPIO_CR1_ODAT_MSK);
 
-	/* Always enable input pad */
-	if (*current_pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS)) {
-		*current_pcr1 &= ~BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS);
+	cr1_new = (MEC_GPIO_CR1_PG_SET(MEC_GPIO_CR1_PG_VTR) |
+		   MEC_GPIO_CR1_OCR_SET(MEC_GPIO_CR1_OCR_PR) |
+		   MEC_GPIO_CR1_FPOL_SET(MEC_GPIO_CR1_FPOL_NORM) |
+		   MEC_GPIO_CR1_MUX_SET(MEC_GPIO_CR1_MUX_GPIO) |
+		   MEC_GPIO_CR1_INPD_SET(MEC_GPIO_CR1_INPD_EN));
+
+	/* internal pull up and pull down. If both are requested the result is repeater mode */
+	if ((flags & GPIO_PULL_UP) != 0) {
+		cr1_new |= MEC_GPIO_CR1_PUD_SET(MEC_GPIO_CR1_PUD_PU);
+		cr1_new |= MEC_GPIO_CR1_ODAT_SET(MEC_GPIO_CR1_ODAT_HI);
 	}
 
-	/* Figure out the pullup/pulldown configuration and keep it in the
-	 * pcr1 variable
-	 */
-	mask |= MCHP_GPIO_CTRL_PUD_MASK;
-
-	if ((flags & GPIO_PULL_UP) != 0U) {
-		/* Enable the pull and select the pullup resistor. */
-		pcr1 |= MCHP_GPIO_CTRL_PUD_PU;
-	} else if ((flags & GPIO_PULL_DOWN) != 0U) {
-		/* Enable the pull and select the pulldown resistor */
-		pcr1 |= MCHP_GPIO_CTRL_PUD_PD;
+	if ((flags & GPIO_PULL_DOWN) != 0) {
+		cr1_new |= MEC_GPIO_CR1_PUD_SET(MEC_GPIO_CR1_PUD_PD);
 	}
 
-	/* Push-pull or open drain */
-	mask |= MCHP_GPIO_CTRL_BUFT_MASK;
+	cr1_new |= BIT(MEC_GPIO_CR1_INPD_POS);           /* disable input pad */
+	cr1_new &= (uint32_t)~BIT(MEC_GPIO_CR1_DIR_POS); /* direction is input */
 
-	if ((flags & GPIO_OPEN_DRAIN) != 0U) {
-		/* Open drain */
-		pcr1 |= MCHP_GPIO_CTRL_BUFT_OPENDRAIN;
-	} else {
-		/* Push-pull */
-		pcr1 |= MCHP_GPIO_CTRL_BUFT_PUSHPULL;
+	if ((flags & GPIO_OUTPUT) != 0) { /* set direction to output */
+		cr1_new = output_config(cr1_new, cr1, flags);
 	}
 
-	if ((flags & GPIO_OUTPUT) != 0U) {
-		mask |= MCHP_GPIO_CTRL_OUTV_HI;
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-			pcr1 |= BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-			pcr1 &= ~BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
-		} else { /* Copy current input state to output state */
-			if ((*current_pcr1 & MCHP_GPIO_CTRL_PWRG_MASK) ==
-			     MCHP_GPIO_CTRL_PWRG_OFF) {
-				*current_pcr1 = (*current_pcr1 &
-						 ~MCHP_GPIO_CTRL_PWRG_MASK) |
-						 MCHP_GPIO_CTRL_PWRG_VTR_IO;
-			}
-			if (*current_pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_VAL_POS)) {
-				pcr1 |= BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
-			} else {
-				pcr1 &= ~BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
-			}
-		}
-
-		pcr1 |= MCHP_GPIO_CTRL_DIR_OUTPUT;
+	if ((flags & GPIO_INPUT) != 0) {                /* input direction also requested */
+		cr1_new &= ~BIT(MEC_GPIO_CR1_INPD_POS); /* enable input pad */
 	}
 
-	*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
-	/* Control output bit becomes ready only and parallel output r/w */
-	*current_pcr1 = *current_pcr1 | BIT(MCHP_GPIO_CTRL_AOD_POS);
+	cr1 = sys_read32(cr1_addr);
+	if ((cr1 & msk) != cr1_new) {
+		/* first write of CR1 use CR1 output control to write control and
+		 * output state in one register write. GPIO hardware will reflect
+		 * the output state from CR1 into corresponding parallel output bit.
+		 */
+		cr1_new |= cr1 & ~msk;
+		cr1_new &= (uint32_t)~(MEC_GPIO_CR1_OCR_MSK);
+		sys_write32(cr1_new, cr1_addr);
+
+		/* Enable parallel output bit for this pin. Parallel input is always enabled. */
+		sys_set_bit(cr1_addr, MEC_GPIO_CR1_OCR_POS);
+	}
 
 	return 0;
 }
 
-static int gpio_xec_pin_interrupt_configure(const struct device *dev,
-					    gpio_pin_t pin,
-					    enum gpio_int_mode mode,
-					    enum gpio_int_trig trig)
+static uint8_t gen_gpio_ctrl_icfg(enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-	const struct gpio_xec_config *config = dev->config;
-	__IO uint32_t *current_pcr1;
-	uint32_t pcr1 = 0U;
-	uint32_t mask = 0U;
-	uint32_t gpio_interrupt = 0U;
+	uint8_t idet;
 
-	/* Validate pin number range in terms of current port */
-	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0U) {
-		return -EINVAL;
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		idet = MEC_GPIO_CR1_IDET_DIS;
+	} else {
+		if (mode == GPIO_INT_MODE_LEVEL) {
+			if (trig == GPIO_INT_TRIG_HIGH) {
+				idet = MEC_GPIO_CR1_IDET_LH;
+			} else {
+				idet = MEC_GPIO_CR1_IDET_LL;
+			}
+		} else {
+			switch (trig) {
+			case GPIO_INT_TRIG_LOW:
+				idet = MEC_GPIO_CR1_IDET_FE;
+				break;
+			case GPIO_INT_TRIG_HIGH:
+				idet = MEC_GPIO_CR1_IDET_RE;
+				break;
+			case GPIO_INT_TRIG_BOTH:
+				idet = MEC_GPIO_CR1_IDET_BE;
+				break;
+			default:
+				idet = MEC_GPIO_CR1_IDET_DIS;
+				break;
+			}
+		}
 	}
 
+	return idet;
+}
+
+/* GPIO device is for each bank of 32 GPIO pins.
+ * 0 <= pin <= 31
+ */
+static int gpio_xec_pin_interrupt_config(const struct device *dev, gpio_pin_t pin,
+					 enum gpio_int_mode mode, enum gpio_int_trig trig)
+{
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	struct gpio_xec_data *data = dev->data;
+	uint32_t cr1 = 0, cr1_addr = 0, idet = 0, idet_curr = 0, port_num = 0;
+
 	/* Check if GPIO port supports interrupts */
-	if ((mode != GPIO_INT_MODE_DISABLED) &&
-	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
+	if ((mode != GPIO_INT_MODE_DISABLED) && !(devcfg->flags & GPIO_INT_ENABLE)) {
 		return -ENOTSUP;
 	}
 
-	/* Disable interrupt in the EC aggregator */
-	MCHP_GIRQ_ENCLR(config->girq_id) = BIT(pin);
+	port_num = XEC_GPIO_PORT_FROM_CR1_ADDR(devcfg->port_base);
 
-	/* Assemble mask for level/edge triggered interrupts */
-	mask |= MCHP_GPIO_CTRL_IDET_MASK;
+	cr1_addr = XEC_GPIO_CR1_ADDR(devcfg->port_base, pin);
+	cr1 = sys_read32(cr1_addr);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		/* Explicitly disable interrupts, otherwise the configuration
-		 * results in level triggered/low interrupts
-		 */
-		pcr1 |= MCHP_GPIO_CTRL_IDET_DISABLE;
+		cr1 &= (uint32_t)~(MEC_GPIO_CR1_IDET_MSK);
+		cr1 |= MEC_GPIO_CR1_IDET_SET(MEC_GPIO_CR1_IDET_DIS);
+		sys_write32(cr1, cr1_addr);
+		soc_ecia_girq_ctrl(devcfg->girq, pin, 0);
+		soc_ecia_girq_status_clear(devcfg->girq, pin);
+		data->level_intr_bm &= (uint32_t)~BIT(pin);
+		return 0;
+	}
+
+	idet_curr = MEC_GPIO_CR1_IDET_GET(cr1);
+	idet = gen_gpio_ctrl_icfg(mode, trig);
+
+	if (idet_curr == idet) {
+		return 0;
+	}
+
+	if ((idet == MEC_GPIO_CR1_IDET_LL) || (idet == MEC_GPIO_CR1_IDET_LH)) {
+		data->level_intr_bm |= BIT(pin);
 	} else {
-		if (mode == GPIO_INT_MODE_LEVEL) {
-			/* Enable level interrupts */
-			if (trig == GPIO_INT_TRIG_HIGH) {
-				gpio_interrupt = MCHP_GPIO_CTRL_IDET_LVL_HI;
-			} else {
-				gpio_interrupt = MCHP_GPIO_CTRL_IDET_LVL_LO;
-			}
-		} else {
-			/* Enable edge interrupts */
-			switch (trig) {
-			case GPIO_INT_TRIG_LOW:
-				gpio_interrupt = MCHP_GPIO_CTRL_IDET_FEDGE;
-				break;
-			case GPIO_INT_TRIG_HIGH:
-				gpio_interrupt = MCHP_GPIO_CTRL_IDET_REDGE;
-				break;
-			case GPIO_INT_TRIG_BOTH:
-				gpio_interrupt = MCHP_GPIO_CTRL_IDET_BEDGE;
-				break;
-			default:
-				return -EINVAL;
-			}
+		data->level_intr_bm &= (uint32_t)~BIT(pin);
+	}
+
+	cr1 &= (uint32_t)~(MEC_GPIO_CR1_IDET_MSK);
+	cr1 |= (uint32_t)MEC_GPIO_CR1_IDET_SET(idet);
+	sys_write32(cr1, cr1_addr);
+
+	/* MEC GPIO HW always signals interrupt if detection mode is changed from
+	 * disabled to enabled even if input is not in state to cause an interrupt!
+	 */
+	if (idet_curr == MEC_GPIO_CR1_IDET_DIS) {
+		for (int i = 0; i < XEC_GPIO_EDGE_DLY_COUNT; i++) {
+			sys_read32(cr1_addr); /* bus reads take >= 3 bus clocks (AHB) */
 		}
 
-		pcr1 |= gpio_interrupt;
+		soc_ecia_girq_status_clear(devcfg->girq, pin);
 	}
 
-	/* Now write contents of pcr1 variable to the PCR1 register that
-	 * corresponds to the GPIO being configured
-	 */
-	current_pcr1 = config->pcr1_base + pin;
-	*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
-	/* delay for HW to synchronize after it ungates its clock */
-	for (int i = 0; i < XEC_GPIO_EDGE_DLY_COUNT; i++) {
-		(void)*current_pcr1;
-	}
-
-	if (mode != GPIO_INT_MODE_DISABLED) {
-		/* We enable the interrupts in the EC aggregator so that the
-		 * result can be forwarded to the ARM NVIC
-		 */
-		MCHP_GIRQ_SRC_CLR(config->girq_id, pin);
-		MCHP_GIRQ_ENSET(config->girq_id) = BIT(pin);
-	}
+	soc_ecia_girq_ctrl(devcfg->girq, pin, 1u);
 
 	return 0;
 }
 
-static int gpio_xec_port_set_masked_raw(const struct device *dev,
-					uint32_t mask,
-					uint32_t value)
+static int gpio_xec_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
-	const struct gpio_xec_config *config = dev->config;
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	uint32_t parout_cr_addr = devcfg->parout_addr;
+	uint32_t regval = sys_read32(parout_cr_addr);
 
-	/* GPIO output registers are used for writing */
-	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
-
-	*gpio_base = (*gpio_base & ~mask) | (mask & value);
+	regval &= (uint32_t)~mask;
+	regval |= (value & mask);
+	sys_write32(regval, parout_cr_addr);
 
 	return 0;
 }
 
 static int gpio_xec_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
-	const struct gpio_xec_config *config = dev->config;
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	uint32_t parout_cr_addr = devcfg->parout_addr;
 
-	/* GPIO output registers are used for writing */
-	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
-
-	*gpio_base |= mask;
+	sys_set_bits(parout_cr_addr, mask);
 
 	return 0;
 }
 
-static int gpio_xec_port_clear_bits_raw(const struct device *dev,
-					uint32_t mask)
+static int gpio_xec_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
-	const struct gpio_xec_config *config = dev->config;
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	uint32_t parout_cr_addr = devcfg->parout_addr;
 
-	/* GPIO output registers are used for writing */
-	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
-
-	*gpio_base &= ~mask;
+	sys_clear_bits(parout_cr_addr, mask);
 
 	return 0;
 }
 
 static int gpio_xec_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	const struct gpio_xec_config *config = dev->config;
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	uint32_t parout_cr_addr = devcfg->parout_addr;
+	uint32_t regval = sys_read32(parout_cr_addr);
 
-	/* GPIO output registers are used for writing */
-	__IO uint32_t *gpio_base = GPIO_OUT_BASE(config);
-
-	*gpio_base ^= mask;
+	regval ^= mask;
+	sys_write32(regval, parout_cr_addr);
 
 	return 0;
 }
 
 static int gpio_xec_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	const struct gpio_xec_config *config = dev->config;
+	const struct gpio_xec_devcfg *devcfg = dev->config;
+	uint32_t parin_cr_addr = devcfg->parin_addr;
 
-	/* GPIO input registers are used for reading */
-	__IO uint32_t *gpio_base = GPIO_IN_BASE(config);
+	if (value == NULL) {
+		return -EINVAL;
+	}
 
-	*value = *gpio_base;
-
-	return 0;
-}
-
-static int gpio_xec_manage_callback(const struct device *dev,
-				    struct gpio_callback *callback, bool set)
-{
-	struct gpio_xec_data *data = dev->data;
-
-	gpio_manage_callback(&data->callbacks, callback, set);
+	*value = sys_read32(parin_cr_addr);
 
 	return 0;
 }
 
-static void gpio_gpio_xec_port_isr(const struct device *dev)
+static int gpio_xec_manage_callback(const struct device *dev, struct gpio_callback *cb, bool set)
 {
-	const struct gpio_xec_config *config = dev->config;
 	struct gpio_xec_data *data = dev->data;
-	uint32_t girq_result;
 
-	/* Figure out which interrupts have been triggered from the EC
-	 * aggregator result register
+	gpio_manage_callback(&data->callbacks, cb, set);
+
+	return 0;
+}
+
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_xec_get_direction(const struct device *port_dev, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_xec_devcfg *devcfg = port_dev->config;
+	uint32_t cr1 = 0u, cr1_addr = 0u, inp = 0u, outp = 0u;
+	uint8_t pwr_gate = 0u, dir = 0u, in_pad_dis = 0u;
+
+	for (uint8_t pin_pos = 0; pin_pos < 32; pin_pos++) {
+		if (map == 0) {
+			break;
+		}
+
+		if ((map & BIT(pin_pos)) != 0) {
+			cr1_addr = XEC_GPIO_CR1_ADDR(devcfg->port_base, pin_pos);
+			cr1 = sys_read32(cr1_addr);
+
+			pwr_gate = (uint8_t)MEC_GPIO_CR1_PG_GET(cr1);
+			dir = (uint8_t)MEC_GPIO_CR1_DIR_GET(cr1);
+			in_pad_dis = (uint8_t)MEC_GPIO_CR1_INPD_GET(cr1);
+
+			if (pwr_gate != MEC_GPIO_CR1_PG_UNPWRD) {
+				if (dir == MEC_GPIO_CR1_DIR_OUT) {
+					outp |= BIT(pin_pos);
+				}
+
+				if (in_pad_dis == MEC_GPIO_CR1_INPD_EN) {
+					inp |= BIT(pin_pos);
+				}
+			}
+
+			map &= ~BIT(pin_pos);
+		}
+	}
+
+	if (inputs != NULL) {
+		*inputs = inp;
+	}
+
+	if (outputs != NULL) {
+		*outputs = outp;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+int gpio_xec_get_config(const struct device *port_dev, gpio_pin_t pin, gpio_flags_t *flags)
+{
+	const struct gpio_xec_devcfg *devcfg = port_dev->config;
+	uint32_t cr1 = 0, cr1_addr = 0, pin_flags = 0;
+
+	if ((flags == NULL) || (pin >= MEC_GPIO_PINS_PER_PORT)) {
+		return -EINVAL;
+	}
+
+	cr1_addr = XEC_GPIO_CR1_ADDR(devcfg->port_base, pin);
+	cr1 = sys_read32(cr1_addr);
+
+	if (MEC_GPIO_CR1_DIR_GET(cr1) == MEC_GPIO_CR1_DIR_OUT) {
+		pin_flags |= GPIO_OUTPUT;
+
+		if (MEC_GPIO_CR1_ODAT_GET(cr1) == MEC_GPIO_CR1_ODAT_HI) {
+			pin_flags |= GPIO_OUTPUT_INIT_HIGH;
+		} else {
+			pin_flags |= GPIO_OUTPUT_INIT_LOW;
+		}
+
+		if (MEC_GPIO_CR1_OBUF_GET(cr1) == MEC_GPIO_CR1_OBUF_OD) {
+			pin_flags |= GPIO_OPEN_DRAIN;
+		}
+	} else {
+		if (MEC_GPIO_CR1_INPD_GET(cr1) == MEC_GPIO_CR1_INPD_EN) {
+			pin_flags |= GPIO_INPUT;
+		}
+	}
+
+	if (pin_flags != 0) {
+		*flags = pin_flags;
+	} else {
+		*flags = GPIO_DISCONNECTED;
+	}
+
+	return 0;
+}
+#endif
+
+static void gpio_xec_port_isr(const struct device *port_dev)
+{
+	const struct gpio_xec_devcfg *devcfg = port_dev->config;
+	struct gpio_xec_data *data = port_dev->data;
+	uint32_t girq_result = 0xffffffffu;
+	uint32_t lvl_bm = 0, port_num = 0u;
+	uint8_t girq = 0;
+
+	/* GIRQ result register indicates which GPIO pins on the port have detected
+	 * in interrupt event.
 	 */
-	girq_result = MCHP_GIRQ_RESULT(config->girq_id);
+	port_num = XEC_GPIO_PORT_FROM_CR1_ADDR(devcfg->port_base);
+	girq = port_girq_tbl[port_num];
 
-	/* Clear source register in aggregator before firing callbacks */
-	REG32(MCHP_GIRQ_SRC_ADDR(config->girq_id)) = girq_result;
+	soc_ecia_girq_result(girq, &girq_result);
+	/* if level detect and external signal is still asserting, this will
+	 * not be able to clear the interrupt status.
+	 */
+	soc_ecia_girq_status_clear_bm(girq, girq_result);
 
-	gpio_fire_callbacks(&data->callbacks, dev, girq_result);
+	gpio_fire_callbacks(&data->callbacks, port_dev, girq_result);
+
+	/* Clear a second time to handle level case */
+	lvl_bm = girq_result & data->level_intr_bm;
+	if (lvl_bm) {
+		soc_ecia_girq_status_clear_bm(girq, lvl_bm);
+	}
 }
 
+/* GPIO driver official API table */
 static DEVICE_API(gpio, gpio_xec_driver_api) = {
 	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,
@@ -337,282 +515,46 @@ static DEVICE_API(gpio, gpio_xec_driver_api) = {
 	.port_set_bits_raw = gpio_xec_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_xec_port_clear_bits_raw,
 	.port_toggle_bits = gpio_xec_port_toggle_bits,
-	.pin_interrupt_configure = gpio_xec_pin_interrupt_configure,
+	.pin_interrupt_configure = gpio_xec_pin_interrupt_config,
 	.manage_callback = gpio_xec_manage_callback,
-};
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_000_036))
-static int gpio_xec_port000_036_init(const struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port000_036_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_000_036)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_000_036)),
-	.port_num = MCHP_GPIO_000_036,
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
-	.girq_id = MCHP_GIRQ11_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_xec_get_direction,
+#endif
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_xec_get_config,
 #endif
 };
 
-static struct gpio_xec_data gpio_xec_port000_036_data;
+#define XEC_GPIO_PORT_FLAGS(inst) ((DT_INST_IRQ_HAS_CELL(inst, irq)) ? GPIO_INT_ENABLE : 0)
+#define XEC_GPIO_GIRQ(inst)       (MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0)))
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_000_036),
-		    gpio_xec_port000_036_init,
-		    NULL,
-		    &gpio_xec_port000_036_data, &gpio_xec_port000_036_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+#define XEC_GPIO_PORT(i)                                                                           \
+	static int gpio_xec_port_init##i(const struct device *dev)                                 \
+	{                                                                                          \
+		const struct gpio_xec_devcfg *devcfg = dev->config;                                \
+		if (!(DT_INST_IRQ_HAS_CELL(i, irq))) {                                             \
+			return 0;                                                                  \
+		}                                                                                  \
+		soc_ecia_girq_aggr_ctrl(devcfg->girq, 1u);                                         \
+		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), gpio_xec_port_isr,          \
+			    DEVICE_DT_INST_GET(i), 0u);                                            \
+		irq_enable(DT_INST_IRQN(i));                                                       \
+		return 0;                                                                          \
+	}                                                                                          \
+	static struct gpio_xec_data gpio_xec_port_data##i;                                         \
+	static const struct gpio_xec_devcfg gpio_xec_dcfg##i = {                                   \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(i),               \
+			},                                                                         \
+		.port_base = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(i, 0),                             \
+		.parin_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(i, 1),                            \
+		.parout_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(i, 2),                           \
+		.flags = XEC_GPIO_PORT_FLAGS(i),                                                   \
+		.girq = (uint8_t)XEC_GPIO_GIRQ(i),                                                 \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(i, gpio_xec_port_init##i, NULL, &gpio_xec_port_data##i,              \
+			      &gpio_xec_dcfg##i, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,          \
+			      &gpio_xec_driver_api);
 
-static int gpio_xec_port000_036_init(const struct device *dev)
-{
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
-	const struct gpio_xec_config *config = dev->config;
-
-	/* Turn on the block enable in the EC aggregator */
-	MCHP_GIRQ_BLK_SETEN(config->girq_id);
-
-	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_000_036), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_000_036), priority),
-		    gpio_gpio_xec_port_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(gpio_000_036)), 0U);
-
-	irq_enable(DT_IRQ(DT_NODELABEL(gpio_000_036), irq));
-#endif
-	return 0;
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_000_036)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_040_076))
-static int gpio_xec_port040_076_init(const struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port040_076_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_040_076)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_040_076)),
-	.port_num = MCHP_GPIO_040_076,
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
-	.girq_id = MCHP_GIRQ10_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port040_076_data;
-
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_040_076),
-		    gpio_xec_port040_076_init,
-		    NULL,
-		    &gpio_xec_port040_076_data, &gpio_xec_port040_076_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
-
-static int gpio_xec_port040_076_init(const struct device *dev)
-{
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
-	const struct gpio_xec_config *config = dev->config;
-
-	/* Turn on the block enable in the EC aggregator */
-	MCHP_GIRQ_BLK_SETEN(config->girq_id);
-
-	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_040_076), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_040_076), priority),
-		    gpio_gpio_xec_port_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(gpio_040_076)), 0U);
-
-	irq_enable(DT_IRQ(DT_NODELABEL(gpio_040_076), irq));
-#endif
-	return 0;
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_040_076)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_100_136))
-static int gpio_xec_port100_136_init(const struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port100_136_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_100_136)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_100_136)),
-	.port_num = MCHP_GPIO_100_136,
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
-	.girq_id = MCHP_GIRQ09_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port100_136_data;
-
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_100_136),
-		    gpio_xec_port100_136_init,
-		    NULL,
-		    &gpio_xec_port100_136_data, &gpio_xec_port100_136_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
-
-static int gpio_xec_port100_136_init(const struct device *dev)
-{
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
-	const struct gpio_xec_config *config = dev->config;
-
-	/* Turn on the block enable in the EC aggregator */
-	MCHP_GIRQ_BLK_SETEN(config->girq_id);
-
-	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_100_136), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_100_136), priority),
-		    gpio_gpio_xec_port_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(gpio_100_136)), 0U);
-
-	irq_enable(DT_IRQ(DT_NODELABEL(gpio_100_136), irq));
-#endif
-	return 0;
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_100_136)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_140_176))
-static int gpio_xec_port140_176_init(const struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port140_176_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_140_176)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_140_176)),
-	.port_num = MCHP_GPIO_140_176,
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
-	.girq_id = MCHP_GIRQ08_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port140_176_data;
-
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_140_176),
-		    gpio_xec_port140_176_init,
-		    NULL,
-		    &gpio_xec_port140_176_data, &gpio_xec_port140_176_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
-
-static int gpio_xec_port140_176_init(const struct device *dev)
-{
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
-	const struct gpio_xec_config *config = dev->config;
-
-	/* Turn on the block enable in the EC aggregator */
-	MCHP_GIRQ_BLK_SETEN(config->girq_id);
-
-	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_140_176), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_140_176), priority),
-		    gpio_gpio_xec_port_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(gpio_140_176)), 0U);
-
-	irq_enable(DT_IRQ(DT_NODELABEL(gpio_140_176), irq));
-#endif
-	return 0;
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_140_176)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_200_236))
-static int gpio_xec_port200_236_init(const struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port200_236_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_200_236)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_200_236)),
-	.port_num = MCHP_GPIO_200_236,
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
-	.girq_id = MCHP_GIRQ12_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port200_236_data;
-
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_200_236),
-		    gpio_xec_port200_236_init,
-		    NULL,
-		    &gpio_xec_port200_236_data, &gpio_xec_port200_236_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
-
-static int gpio_xec_port200_236_init(const struct device *dev)
-{
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
-	const struct gpio_xec_config *config = dev->config;
-
-	/* Turn on the block enable in the EC aggregator */
-	MCHP_GIRQ_BLK_SETEN(config->girq_id);
-
-	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_200_236), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_200_236), priority),
-		    gpio_gpio_xec_port_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(gpio_200_236)), 0U);
-
-	irq_enable(DT_IRQ(DT_NODELABEL(gpio_200_236), irq));
-#endif
-	return 0;
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_200_236)) */
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_240_276))
-static int gpio_xec_port240_276_init(const struct device *dev);
-
-static const struct gpio_xec_config gpio_xec_port240_276_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_240_276)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_240_276)),
-	.port_num = MCHP_GPIO_240_276,
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
-	.girq_id = MCHP_GIRQ26_ID,
-	.flags = GPIO_INT_ENABLE,
-#else
-	.flags = 0,
-#endif
-};
-
-static struct gpio_xec_data gpio_xec_port240_276_data;
-
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_240_276),
-		    gpio_xec_port240_276_init,
-		    NULL,
-		    &gpio_xec_port240_276_data, &gpio_xec_port240_276_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
-
-static int gpio_xec_port240_276_init(const struct device *dev)
-{
-#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
-	const struct gpio_xec_config *config = dev->config;
-
-	/* Turn on the block enable in the EC aggregator */
-	MCHP_GIRQ_BLK_SETEN(config->girq_id);
-
-	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_240_276), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_240_276), priority),
-		    gpio_gpio_xec_port_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(gpio_240_276)), 0U);
-
-	irq_enable(DT_IRQ(DT_NODELABEL(gpio_240_276), irq));
-#endif
-	return 0;
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio_240_276)) */
+DT_INST_FOREACH_STATUS_OKAY(XEC_GPIO_PORT)

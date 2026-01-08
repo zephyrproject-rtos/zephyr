@@ -166,7 +166,7 @@ if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
 endif()
 
-if(CONFIG_DEPRECATION_TEST)
+if(CONFIG_DEPRECATION_TEST OR NOT CONFIG_WARN_DEPRECATED)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_deprecation_warning>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_deprecation_warning>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,no_deprecation_warning>>)
@@ -311,8 +311,13 @@ compiler_simple_options(simple_options)
 toolchain_linker_add_compiler_options(${simple_options})
 
 if(CONFIG_LTO)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
-  add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
+  if(CONFIG_LTO_SINGLE_THREADED)
+    zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto_st>)
+    add_link_options($<TARGET_PROPERTY:linker,lto_arguments_st>)
+  else()
+    zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
+    add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
+  endif()
 endif()
 
 if(CONFIG_STD_C23)
@@ -468,8 +473,6 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-find_package(Deprecated COMPONENTS toolchain_ld_base)
-
 if(DEFINED TOOLCHAIN_LD_FLAGS)
   zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
 endif()
@@ -500,8 +503,6 @@ toolchain_ld_force_undefined_symbols(
 )
 
 if(NOT CONFIG_NATIVE_BUILD)
-  find_package(Deprecated COMPONENTS toolchain_ld_baremetal)
-
   zephyr_link_libraries(PROPERTY baremetal)
 
   # Note that some architectures will skip this flag if set to error, even
@@ -526,10 +527,6 @@ if(NOT CONFIG_NATIVE_BUILD)
 endif()
 
 if(CONFIG_CPP)
-  if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
-    find_package(Deprecated COMPONENTS toolchain_ld_cpp)
-  endif()
-
   zephyr_link_libraries(PROPERTY cpp_base)
 endif()
 

@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_TEMPSENSE
+	bool "NXP temperature sensor (TEMPSENSE)"
+	default y
+	depends on DT_HAS_NXP_TEMPSENSE_ENABLED
+	depends on ADC
+	help
+	  Enable driver for the NXP temperature sensor.

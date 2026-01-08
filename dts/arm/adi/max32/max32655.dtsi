@@ -164,5 +164,23 @@
 				status = "disabled";
 			};
 		};
+
+		i2s0: i2s0@40060000 {
+			compatible = "adi,max32-i2s";
+			reg = <0x40060000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			/*
+			 * DMA Configuration is provided as an example.
+			 * user is free to change dma channel index,
+			 * but tx and rx slot should be kept same as below
+			 *
+			 * ref to MAX32655 User Guide
+			 * Table 9-2: DMA Source and Destination by Peripheral
+			 */
+			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>, <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
 	};
 };

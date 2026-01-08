@@ -31,3 +31,10 @@ To build and flash the application:
 
 To run you can connect earphones to the lineout connect and hear the sound
 from DMIC or from memory buffer. Sample sine wave is included for reference.
+
+Notes on supported platforms
+****************************
+
+``rd_rw612_bga``:
+   - The audio output is routed to the line-level audio output jack (``J2``), as
+     this is the default configuration.

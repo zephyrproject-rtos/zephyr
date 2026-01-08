@@ -6,7 +6,7 @@ description: |
 
 include: soc-nv-flash.yaml
 
-compatible: st,stm32-nv-flash
+compatible: "st,stm32-nv-flash"
 
 properties:
   max-erase-time:

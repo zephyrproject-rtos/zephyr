@@ -41,6 +41,17 @@
  */
 #define MATRIX_COL(keymap_entry) (((keymap_entry) >> 16) & 0xff)
 
+/**
+ * @brief Extract the key code from a keymap entry.
+ *
+ * This macro extracts the key code from a 32-bit keymap entry. The key code
+ * s stored in bits 0-15 of the keymap entry.
+ *
+ * @param keymap_entry The 32-bit keymap entry value.
+ * @return The key code (0-0xffff) extracted from the keymap entry.
+ */
+#define MATRIX_CODE(keymap_entry) (keymap_entry & 0xffff)
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_INPUT_INPUT_KEYMAP_H_ */

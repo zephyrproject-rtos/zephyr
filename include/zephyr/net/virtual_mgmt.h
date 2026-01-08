@@ -40,10 +40,10 @@ extern "C" {
 	(NET_VIRTUAL_INTERFACE_BASE | NET_MGMT_EVENT_BIT)
 
 struct virtual_interface_req_params {
-	sa_family_t family;
+	net_sa_family_t family;
 	union {
-		struct in_addr peer4addr;
-		struct in6_addr peer6addr;
+		struct net_in_addr peer4addr;
+		struct net_in6_addr peer6addr;
 		int mtu;
 		struct virtual_interface_link_types link_types;
 		struct {

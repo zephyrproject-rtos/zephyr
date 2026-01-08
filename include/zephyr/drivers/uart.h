@@ -147,7 +147,7 @@ typedef void (*uart_irq_callback_user_data_t)(const struct device *dev,
  *
  * @defgroup uart_async Async UART API
  * @since 1.14
- * @version 0.8.0
+ * @version 1.0.0
  * @{
  */
 
@@ -799,7 +799,7 @@ __syscall int uart_tx_u16(const struct device *dev, const uint16_t *buf,
 /**
  * @brief Abort current TX transmission.
  *
- * #UART_TX_DONE event will be generated with amount of data sent.
+ * #UART_TX_ABORTED event will be generated with amount of data sent.
  *
  * @param dev UART device instance.
  *

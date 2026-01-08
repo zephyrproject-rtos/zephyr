@@ -12,7 +12,7 @@ ZTEST_USER_F(net_socketpair, test_expected_failures)
 
 	/* Use invalid values in fields starting from left to right */
 
-	res = zsock_socketpair(AF_INET, SOCK_STREAM, 0, fixture->sv);
+	res = zsock_socketpair(NET_AF_INET, NET_SOCK_STREAM, 0, fixture->sv);
 	if (res != -1) {
 		for (int i = 0; i < 2; ++i) {
 			zassert_ok(zsock_close(fixture->sv[i]));
@@ -23,7 +23,7 @@ ZTEST_USER_F(net_socketpair, test_expected_failures)
 	zassert_equal(errno, EAFNOSUPPORT,
 				  "errno should be EAFNOSUPPORT with bad address family");
 
-	res = zsock_socketpair(AF_UNIX, 42, 0, fixture->sv);
+	res = zsock_socketpair(NET_AF_UNIX, 42, 0, fixture->sv);
 	if (res != -1) {
 		for (int i = 0; i < 2; ++i) {
 			zassert_ok(zsock_close(fixture->sv[i]));
@@ -35,7 +35,7 @@ ZTEST_USER_F(net_socketpair, test_expected_failures)
 	zassert_equal(errno, EPROTOTYPE,
 				  "errno should be EPROTOTYPE with bad socket type");
 
-	res = zsock_socketpair(AF_UNIX, SOCK_STREAM, IPPROTO_TLS_1_0, fixture->sv);
+	res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_0, fixture->sv);
 	if (res != -1) {
 		for (int i = 0; i < 2; ++i) {
 			zassert_ok(zsock_close(fixture->sv[i]));
@@ -48,7 +48,7 @@ ZTEST_USER_F(net_socketpair, test_expected_failures)
 				  "errno should be EPROTONOSUPPORT with bad protocol");
 
 	/* This is not a POSIX requirement, but should be safe */
-	res = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, NULL);
+	res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, NULL);
 	if (res != -1) {
 		for (int i = 0; i < 2; ++i) {
 			zassert_ok(zsock_close(fixture->sv[i]));

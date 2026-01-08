@@ -39,6 +39,7 @@
 #include "ll_sw/pdu.h"
 
 #include "ll_sw/lll.h"
+#include "lll/lll_vendor.h"
 #include "lll/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
 #include "lll/lll_adv_pdu.h"
@@ -5266,7 +5267,7 @@ static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 /* A memory pool for vandor specific events for fatal error reporting purposes. */
 NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 0, NULL);
 
-/* The alias for convenience of Controller HCI implementation. Controller is build for
+/* The alias for convenience of Controller HCI implementation. Controller is built for
  * a particular architecture hence the alias will allow to avoid conditional compilation.
  * Host may be not aware of hardware architecture the Controller is working on, hence
  * all CPU data types for supported architectures should be available during build, hence
@@ -8957,13 +8958,14 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
-		LOG_INF("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u).",
-			pdu_data->profile.lcur, pdu_data->profile.lmin, pdu_data->profile.lmax,
-			pdu_data->profile.cur, pdu_data->profile.min, pdu_data->profile.max,
-			pdu_data->profile.radio, pdu_data->profile.radio_ticks,
-			pdu_data->profile.lll, pdu_data->profile.lll_ticks,
-			pdu_data->profile.ull_high, pdu_data->profile.ull_high_ticks,
-			pdu_data->profile.ull_low, pdu_data->profile.ull_low_ticks);
+		printk("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u) %u\n",
+		       pdu_data->profile.lcur, pdu_data->profile.lmin, pdu_data->profile.lmax,
+		       pdu_data->profile.cur, pdu_data->profile.min, pdu_data->profile.max,
+		       pdu_data->profile.radio, pdu_data->profile.radio_ticks,
+		       pdu_data->profile.lll, pdu_data->profile.lll_ticks,
+		       pdu_data->profile.ull_high, pdu_data->profile.ull_high_ticks,
+		       pdu_data->profile.ull_low, pdu_data->profile.ull_low_ticks,
+		       EVENT_OVERHEAD_START_US);
 		return;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 

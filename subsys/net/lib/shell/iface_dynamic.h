@@ -22,6 +22,7 @@ SHELL_DYNAMIC_CMD_CREATE(iface_index, iface_index_get);
 static char *set_iface_index_buffer(size_t idx)
 {
 	struct net_if *iface = net_if_get_by_index(idx);
+	size_t array_idx;
 
 	/* Network interfaces start at 1 */
 	if (idx == 0) {
@@ -32,14 +33,20 @@ static char *set_iface_index_buffer(size_t idx)
 		return NULL;
 	}
 
-	snprintk(iface_index_buffer[idx - 1], MAX_IFACE_STR_LEN, "%d", (uint8_t)idx);
+	array_idx = idx - 1;
+	if (array_idx >= ARRAY_SIZE(iface_index_buffer)) {
+		return NULL;
+	}
 
-	return iface_index_buffer[idx - 1];
+	snprintk(iface_index_buffer[array_idx], MAX_IFACE_STR_LEN, "%d", (uint8_t)idx);
+
+	return iface_index_buffer[array_idx];
 }
 
 static char *set_iface_index_help(size_t idx)
 {
 	struct net_if *iface = net_if_get_by_index(idx);
+	size_t array_idx;
 
 	/* Network interfaces start at 1 */
 	if (idx == 0) {
@@ -47,6 +54,11 @@ static char *set_iface_index_help(size_t idx)
 	}
 
 	if (!iface) {
+		return NULL;
+	}
+
+	array_idx = idx - 1;
+	if (array_idx >= ARRAY_SIZE(iface_help_buffer)) {
 		return NULL;
 	}
 
@@ -56,14 +68,14 @@ static char *set_iface_index_help(size_t idx)
 	net_if_get_name(iface, name, CONFIG_NET_INTERFACE_NAME_LEN);
 	name[CONFIG_NET_INTERFACE_NAME_LEN] = '\0';
 
-	snprintk(iface_help_buffer[idx - 1], MAX_IFACE_HELP_STR_LEN,
+	snprintk(iface_help_buffer[array_idx], MAX_IFACE_HELP_STR_LEN,
 		 "%s [%s] (%p)", name, iface2str(iface, NULL), iface);
 #else
-	snprintk(iface_help_buffer[idx - 1], MAX_IFACE_HELP_STR_LEN,
+	snprintk(iface_help_buffer[array_idx], MAX_IFACE_HELP_STR_LEN,
 		 "[%s] (%p)", iface2str(iface, NULL), iface);
 #endif
 
-	return iface_help_buffer[idx - 1];
+	return iface_help_buffer[array_idx];
 }
 
 static void iface_index_get(size_t idx, struct shell_static_entry *entry)

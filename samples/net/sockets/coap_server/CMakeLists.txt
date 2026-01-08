@@ -34,11 +34,11 @@ include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 foreach(inc_file
-	ca.der
-	server.der
-	server_privkey.der
-	coaps-server-cert.der
-	coaps-server-key.der
+  ca.der
+  server.der
+  server_privkey.der
+  coaps-server-cert.der
+  coaps-server-key.der
 )
   generate_inc_file_for_target(
     app

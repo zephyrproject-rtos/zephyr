@@ -250,7 +250,7 @@ struct net_pkt *ppp_my_options_add(struct ppp_fsm *fsm, size_t packet_len)
 	int err;
 
 	pkt = net_pkt_alloc_with_buffer(ppp_fsm_iface(fsm), packet_len,
-					AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
+					NET_AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}

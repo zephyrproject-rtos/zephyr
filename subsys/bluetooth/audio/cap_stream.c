@@ -38,7 +38,7 @@ static bool stream_is_central(struct bt_bap_stream *bap_stream)
 		}
 
 		err = bt_conn_get_info(bap_stream->conn, &info);
-		if (err == 0 && info.role == BT_HCI_ROLE_CENTRAL) {
+		if (err == 0 && info.role == BT_CONN_ROLE_CENTRAL) {
 			return true;
 		}
 	}

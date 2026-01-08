@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
+#include <zephyr/net/lwm2m_send_scheduler.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include "modules.h"
@@ -52,6 +53,10 @@ static int mem_free = 15;
 static int mem_total = 25;
 static double min_range = 0.0;
 static double max_range = 100;
+#if defined(CONFIG_LWM2M_IPSO_HUMIDITY_SENSOR)
+static double humidity_min_range = 0.0;
+static double humidity_max_range = 100.0;
+#endif
 
 static struct lwm2m_ctx client_ctx;
 
@@ -105,6 +110,7 @@ static int lwm2m_setup(void)
 		{&LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_UNITS_RID), TEMP_SENSOR_UNITS,
 		 sizeof(TEMP_SENSOR_UNITS)}
 	};
+	int err;
 
 	/* setup SECURITY object */
 
@@ -185,8 +191,31 @@ static int lwm2m_setup(void)
 	/* setup TEMP SENSOR object */
 	init_temp_sensor();
 
+#if defined(CONFIG_LWM2M_IPSO_HUMIDITY_SENSOR)
+	/* setup HUMIDITY SENSOR object */
+	init_humidity_sensor();
+
+	/* setup HUMIDITY SENSOR resources */
+	{
+		struct lwm2m_res_item humidity_items[] = {
+			{&LWM2M_OBJ(IPSO_OBJECT_HUMIDITY_SENSOR_ID, 0, MIN_RANGE_VALUE_RID),
+			 &humidity_min_range, sizeof(humidity_min_range)},
+			{&LWM2M_OBJ(IPSO_OBJECT_HUMIDITY_SENSOR_ID, 0, MAX_RANGE_VALUE_RID),
+			 &humidity_max_range, sizeof(humidity_max_range)},
+			{&LWM2M_OBJ(IPSO_OBJECT_HUMIDITY_SENSOR_ID, 0, SENSOR_UNITS_RID),
+			 "Percent", sizeof("Percent")}
+		};
+
+		err = lwm2m_set_bulk(humidity_items, ARRAY_SIZE(humidity_items));
+		if (err) {
+			LOG_ERR("Failed to set HUMIDITY SENSOR resources");
+			return err;
+		}
+	}
+#endif
+
 	/* Set multiple TEMP SENSOR resource values in one function call. */
-	int err = lwm2m_set_bulk(temp_sensor_items, ARRAY_SIZE(temp_sensor_items));
+	err = lwm2m_set_bulk(temp_sensor_items, ARRAY_SIZE(temp_sensor_items));
 
 	if (err) {
 		LOG_ERR("Failed to set TEMP SENSOR resources");
@@ -233,6 +262,9 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE:
 		LOG_DBG("Registration complete");
+#if defined(CONFIG_LWM2M_SEND_SCHEDULER)
+		lwm2m_send_sched_handle_registration_event();
+#endif
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT:
@@ -241,6 +273,9 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
 		LOG_DBG("Registration update complete");
+#if defined(CONFIG_LWM2M_SEND_SCHEDULER)
+		lwm2m_send_sched_handle_registration_event();
+#endif
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE:

@@ -33,17 +33,17 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 	NET_DBG("stratum:         %x", pkt->stratum);
 	NET_DBG("poll:            %x", pkt->poll);
 	NET_DBG("precision:       %x", pkt->precision);
-	NET_DBG("root_delay:      %x", ntohl(pkt->root_delay));
-	NET_DBG("root_dispersion: %x", ntohl(pkt->root_dispersion));
-	NET_DBG("ref_id:          %x", ntohl(pkt->ref_id));
-	NET_DBG("ref_tm_s:        %x", ntohl(pkt->ref_tm_s));
-	NET_DBG("ref_tm_f:        %x", ntohl(pkt->ref_tm_f));
-	NET_DBG("orig_tm_s:       %x", ntohl(pkt->orig_tm_s));
-	NET_DBG("orig_tm_f:       %x", ntohl(pkt->orig_tm_f));
-	NET_DBG("rx_tm_s:         %x", ntohl(pkt->rx_tm_s));
-	NET_DBG("rx_tm_f:         %x", ntohl(pkt->rx_tm_f));
-	NET_DBG("tx_tm_s:         %x", ntohl(pkt->tx_tm_s));
-	NET_DBG("tx_tm_f:         %x", ntohl(pkt->tx_tm_f));
+	NET_DBG("root_delay:      %x", net_ntohl(pkt->root_delay));
+	NET_DBG("root_dispersion: %x", net_ntohl(pkt->root_dispersion));
+	NET_DBG("ref_id:          %x", net_ntohl(pkt->ref_id));
+	NET_DBG("ref_tm_s:        %x", net_ntohl(pkt->ref_tm_s));
+	NET_DBG("ref_tm_f:        %x", net_ntohl(pkt->ref_tm_f));
+	NET_DBG("orig_tm_s:       %x", net_ntohl(pkt->orig_tm_s));
+	NET_DBG("orig_tm_f:       %x", net_ntohl(pkt->orig_tm_f));
+	NET_DBG("rx_tm_s:         %x", net_ntohl(pkt->rx_tm_s));
+	NET_DBG("rx_tm_f:         %x", net_ntohl(pkt->rx_tm_f));
+	NET_DBG("tx_tm_s:         %x", net_ntohl(pkt->tx_tm_s));
+	NET_DBG("tx_tm_f:         %x", net_ntohl(pkt->tx_tm_f));
 }
 
 #if defined(CONFIG_SNTP_UNCERTAINTY)
@@ -67,10 +67,11 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 
 	sntp_pkt_dump(pkt);
 
-	if (ntohl(pkt->orig_tm_s) != expected_orig_ts->seconds ||
-	    ntohl(pkt->orig_tm_f) != expected_orig_ts->fraction) {
+	if (net_ntohl(pkt->orig_tm_s) != expected_orig_ts->seconds ||
+	    net_ntohl(pkt->orig_tm_f) != expected_orig_ts->fraction) {
 		NET_DBG("Mismatch originate timestamp: %d.%09d, expect: %llu.%09u",
-			ntohl(pkt->orig_tm_s), ntohl(pkt->orig_tm_f), expected_orig_ts->seconds,
+			net_ntohl(pkt->orig_tm_s), net_ntohl(pkt->orig_tm_f),
+			expected_orig_ts->seconds,
 			expected_orig_ts->fraction);
 		return -ERANGE;
 	}
@@ -89,7 +90,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 		return -EBUSY;
 	}
 
-	if (ntohl(pkt->tx_tm_s) == 0 && ntohl(pkt->tx_tm_f) == 0) {
+	if (net_ntohl(pkt->tx_tm_s) == 0 && net_ntohl(pkt->tx_tm_f) == 0) {
 		NET_DBG("zero transmit timestamp");
 		return -EINVAL;
 	}
@@ -100,8 +101,8 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	int64_t orig_ts_us =
 		q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
 
-	int64_t rx_ts_us = q32_32_s_to_ll_us(ntohl(pkt->rx_tm_s), ntohl(pkt->rx_tm_f));
-	int64_t tx_ts_us = q32_32_s_to_ll_us(ntohl(pkt->tx_tm_s), ntohl(pkt->tx_tm_f));
+	int64_t rx_ts_us = q32_32_s_to_ll_us(net_ntohl(pkt->rx_tm_s), net_ntohl(pkt->rx_tm_f));
+	int64_t tx_ts_us = q32_32_s_to_ll_us(net_ntohl(pkt->tx_tm_s), net_ntohl(pkt->tx_tm_f));
 
 	if (rx_ts_us > tx_ts_us || orig_ts_us > dest_ts_us) {
 		NET_DBG("Invalid timestamps from SNTP server");
@@ -110,8 +111,8 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 
 	int64_t d_us = (dest_ts_us - orig_ts_us) - (tx_ts_us - rx_ts_us);
 	int64_t clk_offset_us = ((rx_ts_us - orig_ts_us) + (tx_ts_us - dest_ts_us)) / 2;
-	int64_t root_dispersion_us = q16_16_s_to_ll_us(ntohl(pkt->root_dispersion));
-	int64_t root_delay_us = q16_16_s_to_ll_us(ntohl(pkt->root_delay));
+	int64_t root_dispersion_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_dispersion));
+	int64_t root_delay_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_delay));
 	uint32_t precision_us;
 
 	if (pkt->precision <= 0) {
@@ -128,10 +129,10 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	res->fraction = (res->uptime_us + clk_offset_us) % USEC_PER_SEC;
 	res->uncertainty_us = (d_us + root_delay_us + precision_us) / 2 + root_dispersion_us;
 #else
-	res->fraction = ntohl(pkt->tx_tm_f);
-	res->seconds = ntohl(pkt->tx_tm_s);
+	res->fraction = net_ntohl(pkt->tx_tm_f);
+	res->seconds = net_ntohl(pkt->tx_tm_s);
 #endif
-	ts = ntohl(pkt->tx_tm_s);
+	ts = net_ntohl(pkt->tx_tm_s);
 
 	/* Check if most significant bit is set */
 	if (ts & 0x80000000) {
@@ -153,7 +154,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	return 0;
 }
 
-int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
+int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	int ret;
 
@@ -163,7 +164,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 
 	memset(ctx, 0, sizeof(struct sntp_ctx));
 
-	ctx->sock.fd = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	ctx->sock.fd = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (ctx->sock.fd < 0) {
 		NET_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
@@ -201,8 +202,8 @@ static int sntp_query_send(struct sntp_ctx *ctx)
 	ctx->expected_orig_ts.seconds = (uint32_t)(ts.tv_sec + OFFSET_1970_JAN_1);
 	ctx->expected_orig_ts.fraction =
 		(uint32_t)((uint64_t)ts.tv_nsec * UINT32_MAX / NSEC_PER_SEC);
-	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts.seconds);
-	tx_pkt.tx_tm_f = htonl(ctx->expected_orig_ts.fraction);
+	tx_pkt.tx_tm_s = net_htonl(ctx->expected_orig_ts.seconds);
+	tx_pkt.tx_tm_f = net_htonl(ctx->expected_orig_ts.fraction);
 
 	return zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
 }
@@ -265,7 +266,7 @@ void sntp_close(struct sntp_ctx *ctx)
 
 #ifdef CONFIG_NET_SOCKETS_SERVICE
 
-int sntp_init_async(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len,
+int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len,
 		    const struct net_socket_service_desc *service)
 {
 	int ret;

@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/dfu/flash_img.h>
 
@@ -13,6 +14,8 @@
 #define SLOT1_PARTITION		slot1_partition
 
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
+	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
+		FIXED_PARTITION_MTD(label)) &&                                                     \
 	(FIXED_PARTITION_OFFSET(label) <= CONFIG_FLASH_LOAD_OFFSET &&                              \
 	 FIXED_PARTITION_OFFSET(label) + FIXED_PARTITION_SIZE(label) > CONFIG_FLASH_LOAD_OFFSET)
 

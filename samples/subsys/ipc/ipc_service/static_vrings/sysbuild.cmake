@@ -3,17 +3,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if("${SB_CONFIG_NET_CORE_BOARD}" STREQUAL "")
-	message(
-	"Target ${BOARD} not supported for this sample. "
-	"There is no remote board selected in Kconfig.sysbuild")
+  message(
+    "Target ${BOARD} not supported for this sample. "
+    "There is no remote board selected in Kconfig.sysbuild"
+  )
 endif()
 
 set(REMOTE_APP remote)
 
 ExternalZephyrProject_Add(
-	APPLICATION ${REMOTE_APP}
-	SOURCE_DIR  ${APP_DIR}/${REMOTE_APP}
-	BOARD       ${SB_CONFIG_NET_CORE_BOARD}
+  APPLICATION ${REMOTE_APP}
+  SOURCE_DIR  ${APP_DIR}/${REMOTE_APP}
+  BOARD       ${SB_CONFIG_NET_CORE_BOARD}
 )
 
 # Add dependencies so that the remote sample will be built first

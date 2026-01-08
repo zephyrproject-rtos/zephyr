@@ -268,7 +268,7 @@ static inline void set_association(struct net_if *iface, struct ieee802154_conte
 		set_linkaddr_to_ext_addr(iface, ctx);
 	} else {
 		ctx->linkaddr.len = IEEE802154_SHORT_ADDR_LENGTH;
-		short_addr_be = htons(short_addr);
+		short_addr_be = net_htons(short_addr);
 		memcpy(ctx->linkaddr.addr, &short_addr_be, IEEE802154_SHORT_ADDR_LENGTH);
 		update_net_if_link_addr(iface, ctx);
 		ieee802154_radio_filter_short_addr(iface, ctx->short_addr);
@@ -574,7 +574,30 @@ static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 	 * TODO: The Association Response command shall be sent to the device
 	 *       requesting association using indirect transmission.
 	 */
-	k_sem_take(&ctx->scan_ctx_lock, K_USEC(ieee802154_get_response_wait_time_us(iface)));
+	ret = k_sem_take(&ctx->scan_ctx_lock, K_USEC(ieee802154_get_response_wait_time_us(iface)));
+
+	if (ret == -EAGAIN) {
+		/* Timeout, send DATA_REQUEST */
+		net_pkt_unref(pkt);
+		pkt = ieee802154_create_mac_cmd_frame(iface, IEEE802154_CFI_DATA_REQUEST, &params);
+		if (pkt == NULL) {
+			ret = -ENOBUFS;
+			k_sem_give(&ctx->scan_ctx_lock);
+			NET_ERR("Could not associate: cannot allocate DATA request frame");
+			goto out;
+		}
+		ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_DATA_REQUEST);
+
+		if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
+			ret = -EIO;
+			k_sem_give(&ctx->scan_ctx_lock);
+			NET_ERR("Could not associate: cannot send DATA request");
+			goto out;
+		}
+
+		k_sem_take(&ctx->scan_ctx_lock,
+			   K_USEC(ieee802154_get_response_wait_time_us(iface)));
+	}
 
 	/* Release the scan lock in case an association response was not received
 	 * within macResponseWaitTime and we got a timeout instead.
@@ -607,6 +630,7 @@ static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 		}
 
 		ctx->channel = req->channel;
+		ret = 0;
 	} else {
 		ret = -EACCES;
 	}
@@ -747,7 +771,8 @@ static int ieee802154_set_parameters(uint64_t mgmt_request,
 		return -EINVAL;
 	}
 
-	if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
+	if ((mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) ||
+	    (mgmt_request == NET_REQUEST_IEEE802154_SET_COORD_EXT_ADDR)) {
 		if (len != IEEE802154_EXT_ADDR_LENGTH) {
 			return -EINVAL;
 		}
@@ -791,6 +816,10 @@ static int ieee802154_set_parameters(uint64_t mgmt_request,
 			ctx->pan_id = value;
 			ieee802154_radio_filter_pan_id(iface, ctx->pan_id);
 		}
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_COORD_EXT_ADDR) {
+		sys_memcpy_swap(ctx->coord_ext_addr, data, IEEE802154_EXT_ADDR_LENGTH);
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_COORD_SHORT_ADDR) {
+		ctx->coord_short_addr = value;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
 		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
@@ -853,6 +882,12 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SHORT_ADDR,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_TX_POWER,
 				  ieee802154_set_parameters);
 
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_COORD_EXT_ADDR,
+				  ieee802154_set_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_COORD_SHORT_ADDR,
+				  ieee802154_set_parameters);
+
 static int ieee802154_get_parameters(uint64_t mgmt_request,
 				     struct net_if *iface,
 				     void *data, size_t len)
@@ -865,7 +900,8 @@ static int ieee802154_get_parameters(uint64_t mgmt_request,
 		return -EINVAL;
 	}
 
-	if (mgmt_request == NET_REQUEST_IEEE802154_GET_EXT_ADDR) {
+	if (mgmt_request == NET_REQUEST_IEEE802154_GET_EXT_ADDR ||
+	    mgmt_request == NET_REQUEST_IEEE802154_GET_COORD_EXT_ADDR) {
 		if (len != IEEE802154_EXT_ADDR_LENGTH) {
 			NET_ERR("Could not get parameter: invalid extended address length");
 			return -EINVAL;
@@ -889,6 +925,10 @@ static int ieee802154_get_parameters(uint64_t mgmt_request,
 		sys_memcpy_swap(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_SHORT_ADDR) {
 		*value = ctx->short_addr;
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_COORD_EXT_ADDR) {
+		sys_memcpy_swap(data, ctx->coord_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_COORD_SHORT_ADDR) {
+		*value = ctx->coord_short_addr;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_TX_POWER) {
 		int16_t *s_value = (int16_t *)data;
 
@@ -909,6 +949,12 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_EXT_ADDR,
 				  ieee802154_get_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SHORT_ADDR,
+				  ieee802154_get_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_COORD_EXT_ADDR,
+				  ieee802154_get_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_COORD_SHORT_ADDR,
 				  ieee802154_get_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_TX_POWER,

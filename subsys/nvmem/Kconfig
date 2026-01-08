@@ -11,6 +11,21 @@ config NVMEM_EEPROM
 	default y
 	depends on EEPROM
 
+config NVMEM_FLASH
+	bool "NVMEM (read) support for flash devices"
+	default y
+	depends on FLASH
+
+config NVMEM_FLASH_WRITE
+	bool "NVMEM write support for flash devices"
+	depends on NVMEM_FLASH
+	help
+	  Allow writing to NVMEM cells in flash devices.
+
+	  An explicit option is added for this as it's non-trivial
+	  to write to flash devices requiring out-of-bands erase or
+	  taking write-block sizes into account.
+
 module = NVMEM
 module-str = nvmem
 source "subsys/logging/Kconfig.template.log_config"

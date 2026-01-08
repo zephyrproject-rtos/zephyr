@@ -1106,13 +1106,13 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 	 */
 	if (ON_I3C_BUS(cfg)) {
 		/* Restore default configuration */
-		lsm6dsv16x_reset_set(ctx, LSM6DSV16X_RESTORE_CAL_PARAM);
+		lsm6dsv16x_reboot(ctx);
 
 		/* wait 150us as reported in AN5763 */
 		k_sleep(K_USEC(150));
 	} else {
 		/* reset device (sw_por) */
-		if (lsm6dsv16x_reset_set(ctx, LSM6DSV16X_GLOBAL_RST) < 0) {
+		if (lsm6dsv16x_sw_por(ctx) < 0) {
 			return -EIO;
 		}
 

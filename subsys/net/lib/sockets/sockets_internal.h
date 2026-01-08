@@ -53,7 +53,7 @@ static inline bool net_socket_is_tls(void *obj)
 #define sock_is_error(ctx) sock_get_flag(ctx, SOCK_ERROR)
 #define sock_set_error(ctx) sock_set_flag(ctx, SOCK_ERROR, SOCK_ERROR)
 
-size_t msghdr_non_empty_iov_count(const struct msghdr *msg);
+size_t msghdr_non_empty_iov_count(const struct net_msghdr *msg);
 
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
 int sock_obj_core_alloc(int sock, struct net_socket_register *reg,

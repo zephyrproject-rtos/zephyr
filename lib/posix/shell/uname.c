@@ -42,7 +42,7 @@ static void uname_print_usage(const struct shell *sh)
 
 static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 {
-	struct getopt_state *state = getopt_state_get();
+	struct sys_getopt_state *state = sys_getopt_state_get();
 	struct utsname info;
 	unsigned int set;
 	int option;
@@ -54,7 +54,7 @@ static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 	/* Get the uname options */
 
 	optind = 1;
-	while ((option = getopt(argc, argv, "asonrvmpi")) != -1) {
+	while ((option = sys_getopt(argc, argv, "asonrvmpi")) != -1) {
 		switch (option) {
 		case 'a':
 			set = UNAME_ALL;

@@ -31,7 +31,7 @@ static void before(void *arg)
 			fixture->sv[i] = -1;
 		}
 	}
-	zassert_ok(zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, fixture->sv));
+	zassert_ok(zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv));
 }
 
 static void after(void *arg)

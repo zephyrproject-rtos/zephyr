@@ -102,18 +102,18 @@ static struct offloaded_if_api api_funcs = {
 
 static bool offload_is_supported(int family, int type, int proto)
 {
-	if (family != AF_INET &&
-	    family != AF_INET6) {
+	if (family != NET_AF_INET &&
+	    family != NET_AF_INET6) {
 		return false;
 	}
 
-	if (type != SOCK_DGRAM &&
-	    type != SOCK_STREAM) {
+	if (type != NET_SOCK_DGRAM &&
+	    type != NET_SOCK_STREAM) {
 		return false;
 	}
 
-	if (proto != IPPROTO_TCP &&
-	    proto != IPPROTO_UDP) {
+	if (proto != NET_IPPROTO_TCP &&
+	    proto != NET_IPPROTO_UDP) {
 		return false;
 	}
 
@@ -881,4 +881,4 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  MDM_MAX_DATA_LENGTH);
 
 NET_SOCKET_OFFLOAD_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-			    AF_UNSPEC, offload_is_supported, sim7080_offload_socket);
+			    NET_AF_UNSPEC, offload_is_supported, sim7080_offload_socket);

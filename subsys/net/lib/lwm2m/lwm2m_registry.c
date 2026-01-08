@@ -1660,6 +1660,30 @@ int lwm2m_set_cache_filter(const struct lwm2m_obj_path *path,
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 }
 
+int lwm2m_cache_free_slots_get(const struct lwm2m_obj_path *path)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	struct lwm2m_time_series_resource *cache_entry;
+	uint32_t free_bytes;
+
+	if (path == NULL) {
+		return -EINVAL;
+	}
+
+	cache_entry = lwm2m_cache_entry_get_by_object(path);
+	if (cache_entry == NULL) {
+		return -ENOENT;
+	}
+
+	free_bytes = ring_buf_space_get(&cache_entry->rb);
+
+	return (int)(free_bytes / sizeof(struct lwm2m_time_series_elem));
+#else
+	ARG_UNUSED(path);
+	return -ENOTSUP;
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+}
+
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 static int lwm2m_engine_data_cache_init(void)
 {

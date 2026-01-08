@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fs_priv.h"
-
 #include <errno.h>
 #include <string.h>
 
@@ -17,7 +15,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
 	int rc;
 	struct fs_dirent de;
-	struct posix_fs_desc *const ptr = dirp;
+	struct fs_dir_t *const ptr = dirp;
 
 	if (result == NULL) {
 		return EINVAL;
@@ -33,7 +31,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 		return EBADF;
 	}
 
-	rc = fs_readdir(&ptr->dir, &de);
+	rc = fs_readdir(ptr, &de);
 	if (rc < 0) {
 		*result = NULL;
 		return -rc;

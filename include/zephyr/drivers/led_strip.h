@@ -22,6 +22,11 @@
  * @defgroup led_strip_interface LED Strip
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup led_strip_interface_ext Device-specific LED Strip API extensions
+ * @{
+ * @}
+ *
  */
 
 #include <errno.h>
@@ -159,7 +164,7 @@ static inline int led_strip_update_channels(const struct device *dev,
  *
  * @param dev	LED strip device.
  *
- * @retval	Length of LED strip device.
+ * @return	Length of LED strip device.
  */
 static inline size_t led_strip_length(const struct device *dev)
 {

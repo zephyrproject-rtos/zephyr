@@ -75,7 +75,7 @@ struct input_event {
  * @param timeout Timeout for reporting the event, ignored if
  *                @kconfig{CONFIG_INPUT_MODE_SYNCHRONOUS} is used.
  * @retval 0 if the message has been processed.
- * @retval negative if @kconfig{CONFIG_INPUT_MODE_THREAD} is enabled and the
+ * @retval <0 negative if @kconfig{CONFIG_INPUT_MODE_THREAD} is enabled and the
  *         message failed to be enqueued.
  */
 int input_report(const struct device *dev,

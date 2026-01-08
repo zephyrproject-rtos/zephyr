@@ -32,9 +32,17 @@ if(CONFIG_AFBR_LIB)
     set_target_properties(afbr_sdk_lib PROPERTIES IMPORTED_LOCATION
       ${HAL_AFBR_DIR}/zephyr/blobs/AFBR-S50/Lib/libafbrs50_m3.a
     )
+  elseif(CONFIG_CPU_CORTEX_M33 AND CONFIG_FPU)
+    set_target_properties(afbr_sdk_lib PROPERTIES IMPORTED_LOCATION
+      ${HAL_AFBR_DIR}/zephyr/blobs/AFBR-S50/Lib/libafbrs50_m33_fpu.a
+    )
   elseif(CONFIG_CPU_CORTEX_M33)
     set_target_properties(afbr_sdk_lib PROPERTIES IMPORTED_LOCATION
       ${HAL_AFBR_DIR}/zephyr/blobs/AFBR-S50/Lib/libafbrs50_m33.a
+    )
+  elseif(CONFIG_CPU_CORTEX_M4 AND CONFIG_FPU)
+    set_target_properties(afbr_sdk_lib PROPERTIES IMPORTED_LOCATION
+      ${HAL_AFBR_DIR}/zephyr/blobs/AFBR-S50/Lib/libafbrs50_m4_fpu.a
     )
   elseif(CONFIG_CPU_CORTEX_M4)
     set_target_properties(afbr_sdk_lib PROPERTIES IMPORTED_LOCATION

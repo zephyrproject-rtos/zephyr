@@ -17,9 +17,6 @@ CONFIG_ARM_MPU=y
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
 
-# Enable the internal SMPS regulator
-CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
-
 # Header offset since TF-M has no BL2 hence Zephyr is not signed
 CONFIG_ROM_START_OFFSET=0x400
 

@@ -7,13 +7,13 @@
 zephyr_library()
 zephyr_library_include_directories(.)
 zephyr_library_sources(
-	bmp581.c
-	bmp581_bus.c
+  bmp581.c
+  bmp581_bus.c
 )
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
-	bmp581_decoder.c
+  bmp581_decoder.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_BMP581_STREAM
-	bmp581_stream.c
+  bmp581_stream.c
 )

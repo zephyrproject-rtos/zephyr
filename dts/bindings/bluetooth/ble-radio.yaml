@@ -1,0 +1,42 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Base binding for Bluetooth LE radio hardware capabilities.
+
+  These properties describe hardware-supported Bluetooth features based on
+  the Bluetooth Core Specification. They are read-only and indicate what
+  the hardware is capable of, not what features are currently enabled.
+
+properties:
+  # Bluetooth 5.0
+  ble-2mbps-supported:
+    type: boolean
+    description: |
+      2 Mbps PHY support (Bluetooth 5.0 specification).
+
+  ble-coded-phy-supported:
+    type: boolean
+    description: |
+      Coded PHY support for Long Range (Bluetooth 5.0 specification).
+
+  # Bluetooth 5.1
+  ble-cte-tx-supported:
+    type: boolean
+    description: |
+      Constant Tone Extension transmission for Direction Finding in Angle
+      of Departure mode (Bluetooth 5.1 specification).
+
+  ble-cte-rx-supported:
+    type: boolean
+    description: |
+      Constant Tone Extension reception with IQ sampling for Direction Finding
+      in Angle of Arrival mode. Requires ble-cte-tx-supported capability
+      (Bluetooth 5.1 specification).
+
+  # Bluetooth 6.0
+  ble-cs-supported:
+    type: boolean
+    description: |
+      BLE Channel Sounding feature support (Bluetooth 6.0 specification).

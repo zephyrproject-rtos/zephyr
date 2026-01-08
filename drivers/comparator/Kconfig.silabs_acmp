@@ -4,6 +4,7 @@ config COMPARATOR_SILABS_ACMP
 	bool "Silabs ACMP comparator driver"
 	default y
 	depends on DT_HAS_SILABS_ACMP_ENABLED
+	depends on CLOCK_CONTROL
 	select PINCTRL
 	select SILABS_SISDK_ACMP
 	help

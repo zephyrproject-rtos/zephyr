@@ -21,17 +21,15 @@ include_guard(GLOBAL)
 
 include(kconfig)
 
-if(HWMv2)
-  set(SOC_NAME   ${CONFIG_SOC})
-  set(SOC_SERIES ${CONFIG_SOC_SERIES})
-  set(SOC_TOOLCHAIN_NAME ${CONFIG_SOC_TOOLCHAIN_NAME})
-  set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
-  set(SOC_V2_DIR ${SOC_${SOC_NAME}_DIR})
-  set(SOC_FULL_DIR ${SOC_V2_DIR} CACHE PATH "Path to the SoC directory." FORCE)
-  set(SOC_DIRECTORIES ${SOC_${SOC_NAME}_DIRECTORIES} CACHE INTERNAL
-      "List of SoC directories for SoC (${SOC_NAME})" FORCE
-  )
-  foreach(dir ${SOC_DIRECTORIES})
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${dir}/soc.yml)
-  endforeach()
-endif()
+set(SOC_NAME   ${CONFIG_SOC})
+set(SOC_SERIES ${CONFIG_SOC_SERIES})
+set(SOC_TOOLCHAIN_NAME ${CONFIG_SOC_TOOLCHAIN_NAME})
+set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
+set(SOC_V2_DIR ${SOC_${SOC_NAME}_DIR})
+set(SOC_FULL_DIR ${SOC_V2_DIR} CACHE PATH "Path to the SoC directory." FORCE)
+set(SOC_DIRECTORIES ${SOC_${SOC_NAME}_DIRECTORIES} CACHE INTERNAL
+    "List of SoC directories for SoC (${SOC_NAME})" FORCE
+)
+foreach(dir ${SOC_DIRECTORIES})
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${dir}/soc.yml)
+endforeach()

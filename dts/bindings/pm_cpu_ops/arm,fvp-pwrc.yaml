@@ -1,0 +1,42 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Arm Fixed Virtual Platform (FVP) Power Controller (PWRC)
+
+  The FVP PWRC provides CPU power management capabilities on Arm Fixed Virtual
+  Platform models. This hardware block is part of the Base_PowerController
+  component and controls CPU power states for bare-metal operation when PSCI
+  firmware is not available.
+
+  The PWRC registers include:
+  - PPOFFR (0x00): Power off processor request
+  - PPONR (0x04): Power on processor request
+  - PCOFFR (0x08): Power off cluster request
+  - PWKUPR (0x0c): Wakeup request control
+  - PSYSR (0x10): System power status register
+
+  For system reset operations, this controller requires access to the V2M
+  System Registers (vexpress-sysreg).
+
+  Reference:
+    - Fast Models FVP Reference Guide (Arm DUI 0966)
+    - Arn Trusted Firmware-A: drivers/arm/fvp/fvp_pwrc.c
+
+compatible: "arm,fvp-pwrc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the FVP Power Controller register block.
+      Typically 0x1c100000 with size 0x1000 on FVP Base RevC platforms.
+
+  arm,vexpress-sysreg:
+    type: phandle
+    description: |
+      Reference to the Arn Versatile Express System Registers (v2m_sysreg) node.
+      Required for system reset operations via the SYS_CFGCTRL register.
+      See ARM Motherboard Express µATX Technical Reference Manual (DUI 0447).

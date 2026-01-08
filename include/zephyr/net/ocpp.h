@@ -146,7 +146,7 @@ struct ocpp_cs_info {
 	char *cs_ip;	/**< Central system IP address */
 	char *ws_url;	/**< Websocket url exclude ipaddr & port */
 	int port;	/**< Central system port number */
-	sa_family_t sa_family; /**< IP protocol family type 4/6 */
+	net_sa_family_t sa_family; /**< IP protocol family type 4/6 */
 };
 
 /** @brief Parameters opaque session handle for ocpp_* API */

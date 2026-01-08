@@ -19,20 +19,18 @@
 
 include_guard(GLOBAL)
 
-if(NOT HWMv2)
-  return()
-endif()
-
 # Internal helper function for creation of Kconfig files.
 function(kconfig_gen bin_dir file dirs comment)
-  set(kconfig_header "# Load ${comment} descriptions.\n")
+  set(kconfig_output "# Load ${comment} descriptions.\n")
   set(kconfig_file ${KCONFIG_BINARY_DIR}/${bin_dir}/${file})
-  file(WRITE ${kconfig_file} "${kconfig_header}")
 
   foreach(dir ${dirs})
     cmake_path(CONVERT "${dir}" TO_CMAKE_PATH_LIST dir)
-    file(APPEND ${kconfig_file} "osource \"${dir}/${file}\"\n")
+    string(APPEND kconfig_output "osource \"${dir}/${file}\"\n")
   endforeach()
+
+  file(WRITE ${kconfig_file}.tmp "${kconfig_output}")
+  file(COPY_FILE ${kconfig_file}.tmp ${kconfig_file} ONLY_IF_DIFFERENT)
 endfunction()
 
 # 'SOC_ROOT' and 'ARCH_ROOT' are prioritized lists of directories where their
@@ -47,7 +45,7 @@ list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
                 --archs --socs
-                --cmakeformat={TYPE}\;{NAME}\;{DIR}\;{HWM}
+                --cmakeformat={TYPE}\;{NAME}\;{DIR}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val
@@ -58,11 +56,13 @@ endif()
 
 set(kconfig_soc_source_dir)
 
-while(TRUE)
-  string(FIND "${ret_hw}" "\n" idx REVERSE)
-  math(EXPR start "${idx} + 1")
-  string(SUBSTRING "${ret_hw}" ${start} -1 line)
-  string(SUBSTRING "${ret_hw}" 0 ${idx} ret_hw)
+# Convert to list format (protecting existing semicolons)
+string(REPLACE ";" "@@SEMICOLON@@" ret_hw_escaped "${ret_hw}")
+string(REPLACE "\n" ";" hw_lines "${ret_hw_escaped}")
+list(REVERSE hw_lines)
+
+foreach(line IN LISTS hw_lines)
+  string(REPLACE "@@SEMICOLON@@" ";" line "${line}")
 
   cmake_parse_arguments(HWM "" "TYPE" "" ${line})
   if(HWM_TYPE STREQUAL "arch")
@@ -73,7 +73,7 @@ while(TRUE)
     string(TOUPPER "${ARCH_V2_NAME}" ARCH_V2_NAME_UPPER)
     set(ARCH_V2_${ARCH_V2_NAME_UPPER}_DIR ${ARCH_V2_DIR})
   elseif(HWM_TYPE MATCHES "^soc|^series|^family")
-    cmake_parse_arguments(SOC_V2 "" "NAME;HWM" "DIR" ${line})
+    cmake_parse_arguments(SOC_V2 "" "NAME" "DIR" ${line})
 
     list(APPEND kconfig_soc_source_dir "${SOC_V2_DIR}")
     string(TOUPPER "${SOC_V2_NAME}" SOC_V2_NAME_UPPER)
@@ -91,11 +91,7 @@ while(TRUE)
       set(SOC_${HWM_TYPE_UPPER}_${SOC_V2_NAME_UPPER}_DIR ${SOC_V2_DIR})
     endif()
   endif()
-
-  if(idx EQUAL -1)
-    break()
-  endif()
-endwhile()
+endforeach()
 list(REMOVE_DUPLICATES kconfig_soc_source_dir)
 
 # Support multiple ARCH_ROOT, SOC_ROOT and BOARD_ROOT
@@ -112,6 +108,5 @@ kconfig_gen("boards" "Kconfig.sysbuild"  "${BOARD_DIRECTORIES}"       "Sysbuild 
 # Clear variables created by cmake_parse_arguments
 unset(SOC_V2_NAME)
 unset(SOC_V2_DIR)
-unset(SOC_V2_HWM)
 unset(ARCH_V2_NAME)
 unset(ARCH_V2_DIR)

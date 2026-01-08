@@ -19,12 +19,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Support: Microchip Phys:
  * lan8650/1 Rev.B0/B1 Internal PHYs
- * lan8670/1/2 Rev.C1/C2 PHYs
+ * lan8670/1/2 Rev.C1/C2/D0 PHYs
  */
 /* Both Rev.B0 and B1 clause 22 PHYID's are same due to B1 chip limitation */
 #define PHY_ID_LAN865X_REVB  0x0007C1B3
 #define PHY_ID_LAN867X_REVC1 0x0007C164
 #define PHY_ID_LAN867X_REVC2 0x0007C165
+#define PHY_ID_LAN867X_REVD0 0x0007C166
 
 /* Configuration param registers */
 #define LAN865X_REG_CFGPARAM_ADDR    0x00D8
@@ -38,6 +39,17 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LAN86XX_ENABLE_COL_DET    0x8000
 #define LAN86XX_COL_DET_MASK      0x8000
 #define LAN86XX_REG_COL_DET_CTRL0 0x0087
+
+/* LAN8670/1/2 Rev.D0 Link Status Selection Register */
+#define LAN867X_REG_LINK_STATUS_CTRL	0x0012
+#define LINK_STATUS_CONFIGURATION	GENMASK(12, 11)
+#define LINK_STATUS_SEMAPHORE		BIT(0)
+
+/* Link Status Configuration */
+#define LINK_STATUS_CONFIG_PLCA_STATUS	0x1
+#define LINK_STATUS_CONFIG_SEMAPHORE	0x2
+
+#define LINK_STATUS_SEMAPHORE_SET	0x1
 
 /* Structure holding configuration register address and value */
 typedef struct {
@@ -80,6 +92,22 @@ static lan865x_config lan865x_revb_config[] = {
 	{.address = 0x00BA, .value = 0x1C25}, {.address = 0x00BB, .value = 0x002B},
 };
 
+/* LAN867x Rev.D0 configuration parameters from AN1699
+ * As per the Configuration Application Note AN1699 published in the below link,
+ * https://www.microchip.com/en-us/application-notes/an1699
+ * Revision G (DS60001699G - October 2025)
+ */
+static const lan865x_config lan867x_revd0_config[] = {
+	{.address = 0x0037, .value = 0x0800},
+	{.address = 0x008A, .value = 0xBFC0},
+	{.address = 0x0118, .value = 0x029C},
+	{.address = 0x00D6, .value = 0x1001},
+	{.address = 0x0082, .value = 0x001C},
+	{.address = 0x00FD, .value = 0x0C0B},
+	{.address = 0x00FD, .value = 0x8C07},
+	{.address = 0x0091, .value = 0x9660},
+};
+
 struct mc_t1s_plca_config {
 	bool enable;
 	uint8_t node_id;
@@ -107,32 +135,18 @@ struct mc_t1s_data {
 static int phy_mc_t1s_read(const struct device *dev, uint16_t reg, uint32_t *data)
 {
 	const struct mc_t1s_config *cfg = dev->config;
-	int ret;
 
 	/* Make sure excessive bits 16-31 are reset */
 	*data = 0U;
 
-	mdio_bus_enable(cfg->mdio);
-
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, reg, (uint16_t *)data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return mdio_read(cfg->mdio, cfg->phy_addr, reg, (uint16_t *)data);
 }
 
 static int phy_mc_t1s_write(const struct device *dev, uint16_t reg, uint32_t data)
 {
 	const struct mc_t1s_config *cfg = dev->config;
-	int ret;
 
-	mdio_bus_enable(cfg->mdio);
-
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return mdio_write(cfg->mdio, cfg->phy_addr, reg, (uint16_t)data);
 }
 
 static int mdio_setup_c45_indirect_access(const struct device *dev, uint16_t devad, uint16_t reg)
@@ -141,7 +155,7 @@ static int mdio_setup_c45_indirect_access(const struct device *dev, uint16_t dev
 	int ret;
 
 	ret = mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_ACR, devad);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -164,20 +178,13 @@ static int phy_mc_t1s_c45_read(const struct device *dev, uint8_t devad, uint16_t
 		return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 	}
 
-	mdio_bus_enable(cfg->mdio);
-
 	/* Read C45 registers using C22 indirect access registers */
 	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
-	if (ret) {
-		mdio_bus_disable(cfg->mdio);
+	if (ret < 0) {
 		return ret;
 	}
 
-	ret = mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
 }
 
 static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_t reg, uint16_t val)
@@ -191,20 +198,13 @@ static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_
 		return mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 	}
 
-	mdio_bus_enable(cfg->mdio);
-
 	/* Write C45 registers using C22 indirect access registers */
 	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
-	if (ret) {
-		mdio_bus_disable(cfg->mdio);
+	if (ret < 0) {
 		return ret;
 	}
 
-	ret = mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, val);
 }
 
 static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *state)
@@ -216,7 +216,7 @@ static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *
 	int ret;
 
 	ret = phy_mc_t1s_read(dev, MII_BMSR, &value);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed MII_BMSR register read: %d\n", ret);
 		return ret;
 	}
@@ -279,13 +279,13 @@ static int lan865x_indirect_read(const struct device *dev, uint16_t addr, uint16
 	int ret;
 
 	ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN865X_REG_CFGPARAM_ADDR, addr);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
 	ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN865X_REG_CFGPARAM_CTRL,
 				   LAN865X_CFGPARAM_READ_ENABLE);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -299,7 +299,7 @@ static int lan865x_calculate_offset(const struct device *dev, uint16_t address, 
 	int ret;
 
 	ret = lan865x_indirect_read(dev, address, &value);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -332,13 +332,13 @@ static int lan865x_calculate_update_cfgparams(const struct device *dev)
 
 	/* Calculate offset1 */
 	ret = lan865x_calculate_offset(dev, 0x04, &offset1);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
 	/* Calculate offset2 */
 	ret = lan865x_calculate_offset(dev, 0x08, &offset2);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -371,7 +371,7 @@ static int phy_mc_lan865x_revb_config_init(const struct device *dev)
 	int ret;
 
 	ret = lan865x_calculate_update_cfgparams(dev);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -380,7 +380,7 @@ static int phy_mc_lan865x_revb_config_init(const struct device *dev)
 		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
 					   lan865x_revb_config[i].address,
 					   lan865x_revb_config[i].value);
-		if (ret) {
+		if (ret < 0) {
 			return ret;
 		}
 	}
@@ -402,7 +402,7 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 	int ret;
 
 	ret = lan865x_calculate_update_cfgparams(dev);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -410,7 +410,7 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
 					   lan865x_revb_config[i].address,
 					   lan865x_revb_config[i].value);
-		if (ret) {
+		if (ret < 0) {
 			return ret;
 		}
 
@@ -426,6 +426,48 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 	return 0;
 }
 
+static int phy_mc_lan867x_revd0_link_status_selection(const struct device *dev, bool plca_enabled)
+{
+	uint16_t value;
+
+	if (plca_enabled) {
+		/* 0x1 - When PLCA is enabled: link status reflects plca_status.
+		 */
+		value = FIELD_PREP(LINK_STATUS_CONFIGURATION, LINK_STATUS_CONFIG_PLCA_STATUS);
+	} else {
+		/* 0x2 - Link status is controlled by the value written into the
+		 * LINK_STATUS_SEMAPHORE bit written. Here the link semaphore
+		 * bit is written with 0x1 to set the link always active in
+		 * CSMA/CD mode as it doesn't support autoneg.
+		 */
+		value = FIELD_PREP(LINK_STATUS_CONFIGURATION, LINK_STATUS_CONFIG_SEMAPHORE) |
+			FIELD_PREP(LINK_STATUS_SEMAPHORE, LINK_STATUS_SEMAPHORE_SET);
+	}
+
+	return phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN867X_REG_LINK_STATUS_CTRL,
+				    value);
+}
+
+static int phy_mc_lan867x_revd0_config_init(const struct device *dev)
+{
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(lan867x_revd0_config); i++) {
+		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
+					   lan867x_revd0_config[i].address,
+					   lan867x_revd0_config[i].value);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Initially the PHY will be in CSMA/CD mode by default. So it is
+	 * required to set the link always active as it doesn't support
+	 * autoneg.
+	 */
+	return phy_mc_lan867x_revd0_link_status_selection(dev, false);
+}
+
 static int lan86xx_config_collision_detection(const struct device *dev, bool plca_enable)
 {
 	uint16_t val;
@@ -433,7 +475,7 @@ static int lan86xx_config_collision_detection(const struct device *dev, bool plc
 	int ret;
 
 	ret = phy_mc_t1s_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN86XX_REG_COL_DET_CTRL0, &val);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -456,7 +498,7 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 	int ret;
 
 	ret = phy_mc_t1s_read(dev, MII_PHYID1R, &value);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed MII_PHYID1R register read: %d\n", ret);
 		return ret;
 	}
@@ -464,7 +506,7 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 	*phy_id = value << 16;
 
 	ret = phy_mc_t1s_read(dev, MII_PHYID2R, &value);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed MII_PHYID2R register read: %d\n", ret);
 		return ret;
 	}
@@ -476,10 +518,19 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 
 static int phy_mc_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	struct mc_t1s_data *data = dev->data;
 	int ret;
 
+	/* Link status selection must be configured for LAN8670/1/2 Rev.D0 */
+	if (data->phy_id == PHY_ID_LAN867X_REVD0) {
+		ret = phy_mc_lan867x_revd0_link_status_selection(dev, plca_cfg->enable);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	ret = genphy_set_plca_cfg(dev, plca_cfg);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -513,7 +564,7 @@ static int phy_mc_t1s_init(const struct device *dev)
 	data->dev = dev;
 
 	ret = phy_mc_t1s_id(dev, &data->phy_id);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -521,25 +572,25 @@ static int phy_mc_t1s_init(const struct device *dev)
 	case PHY_ID_LAN867X_REVC1:
 	case PHY_ID_LAN867X_REVC2:
 		ret = phy_mc_lan867x_revc_config_init(dev);
-		if (ret) {
-			LOG_ERR("PHY initial configuration error: %d\n", ret);
-			return ret;
-		}
 		break;
 	case PHY_ID_LAN865X_REVB:
 		ret = phy_mc_lan865x_revb_config_init(dev);
-		if (ret) {
-			LOG_ERR("PHY initial configuration error: %d\n", ret);
-			return ret;
-		}
+		break;
+	case PHY_ID_LAN867X_REVD0:
+		ret = phy_mc_lan867x_revd0_config_init(dev);
 		break;
 	default:
 		LOG_ERR("Unsupported PHY ID: %x\n", data->phy_id);
 		return -ENODEV;
 	}
 
+	if (ret < 0) {
+		LOG_ERR("PHY initial configuration error: %d\n", ret);
+		return ret;
+	}
+
 	ret = phy_mc_t1s_set_dt_plca(dev);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 

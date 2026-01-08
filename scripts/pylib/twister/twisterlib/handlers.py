@@ -27,8 +27,10 @@ from pathlib import Path
 from queue import Empty, Queue
 
 import psutil
+from serial.tools import list_ports
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
+from twisterlib.hardwaremap import DUT
 from twisterlib.platform import Platform
 from twisterlib.statuses import TwisterStatus
 
@@ -105,6 +107,7 @@ class Handler:
 
         self.args = []
         self.terminated = False
+        self.duts: list[DUT] = []
 
     def get_test_timeout(self):
         return math.ceil(self.instance.testsuite.timeout *
@@ -507,10 +510,10 @@ class DeviceHandler(Handler):
             for d in duts:
                 d.lock.release()
 
-    def device_is_available(self, instance):
+    def device_is_available(self, instance) -> DUT | None:
         device = instance.platform.name
         fixture = instance.testsuite.harness_config.get("fixture")
-        duts_found = []
+        duts_found: list[DUT] = []
 
         for d in self.duts:
             if fixture and fixture not in map(lambda f: f.split(sep=':')[0], d.fixtures):
@@ -540,7 +543,7 @@ class DeviceHandler(Handler):
 
         return None
 
-    def make_dut_available(self, dut):
+    def make_dut_available(self, dut: DUT) -> None:
         if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
             dut.failures_increment()
         logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
@@ -586,7 +589,7 @@ class DeviceHandler(Handler):
         command = ["west"]
         if self.options.verbose > 2:
             command.append(f"-{'v' * (self.options.verbose - 2)}")
-        command += ["flash", "--skip-rebuild", "-d", self.build_dir]
+        command += ["flash", "--no-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
         # There are three ways this option is used.
@@ -635,7 +638,8 @@ class DeviceHandler(Handler):
                     # --probe=<serial number> select by probe serial number
                     command.append(f"--probe={board_id}")
                 elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
-                    command.append(f"--tool-opt=sn={board_id}")
+                    command.append('--dev-id')
+                    command.append(board_id)
 
                 # Receive parameters from runner_params field.
                 if hardware.runner_params:
@@ -688,8 +692,15 @@ class DeviceHandler(Handler):
 
         self.make_dut_available(dut)
 
+    def get_more_serials_from_device(self, hardware: DUT) -> list[str]:
+        serials = set()
+        dut_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
+        for d in dut_shared_hw:
+            if d.serial and d.serial != hardware.serial:
+                serials.add(d.serial)
+        return list(serials)
 
-    def get_hardware(self):
+    def get_hardware(self) -> DUT | None:
         hardware = None
         try:
             hardware = self.device_is_available(self.instance)
@@ -697,7 +708,7 @@ class DeviceHandler(Handler):
             while not hardware:
                 time.sleep(1)
                 in_waiting += 1
-                if in_waiting%60 == 0:
+                if in_waiting % 60 == 0:
                     logger.debug(f"Waiting for a DUT to run {self.instance.name}")
                 hardware = self.device_is_available(self.instance)
         except TwisterException as error:
@@ -709,11 +720,16 @@ class DeviceHandler(Handler):
     def _start_serial_pty(self, serial_pty, serial_pty_master):
         ser_pty_process = None
         try:
+            # Pass environment variables including platform name to serial PTY script
+            env = os.environ.copy()
+            if hasattr(self, 'instance') and hasattr(self.instance, 'platform'):
+                env['TWISTER_PLATFORM'] = self.instance.platform.name
             ser_pty_process = subprocess.Popen(
                 re.split('[, ]', serial_pty),
                 stdout=serial_pty_master,
                 stdin=serial_pty_master,
-                stderr=serial_pty_master
+                stderr=serial_pty_master,
+                env=env
             )
         except subprocess.CalledProcessError as error:
             logger.error(
@@ -730,6 +746,16 @@ class DeviceHandler(Handler):
         else:
             return
 
+        # Run pre-script BEFORE starting serial PTY to avoid conflicts
+        pre_script = hardware.pre_script
+        script_param = hardware.script_param
+
+        if pre_script:
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("pre_script_timeout", timeout)
+            self.run_custom_script(pre_script, timeout)
+
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
 
@@ -743,16 +769,8 @@ class DeviceHandler(Handler):
 
         command = self._create_command(runner, hardware)
 
-        pre_script = hardware.pre_script
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
-        script_param = hardware.script_param
-
-        if pre_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("pre_script_timeout", timeout)
-            self.run_custom_script(pre_script, timeout)
 
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
@@ -851,6 +869,16 @@ class DeviceHandler(Handler):
                     # Return to normal boot
                     ser.rts = False
                 else:
+                    # Wait for serial port to appear after flashing
+                    # To keep dependency between flash_timeout proposed 20% of this value
+                    # but not less than 10s. TO keep clarity of measurement,
+                    # declare new start time instead of using existing one start_time.
+                    serial_wait_timeout = max(10, int(flash_timeout * 0.2))
+                    flash_start_time = time.time()
+                    while ser.port not in (p.name for p in list_ports.comports()):
+                        time.sleep(0.1)
+                        if time.time() - flash_start_time > serial_wait_timeout:
+                            break
                     ser.open()
 
             except serial.SerialException as e:

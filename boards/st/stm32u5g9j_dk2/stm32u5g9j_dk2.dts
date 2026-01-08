@@ -248,7 +248,7 @@
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <1>;
+	st,adc-prescaler = <2>;
 	status = "okay";
 
 	#address-cells = <1>;

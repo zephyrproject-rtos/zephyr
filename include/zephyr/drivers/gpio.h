@@ -1892,7 +1892,7 @@ static inline int gpio_remove_callback_dt(const struct gpio_dt_spec *spec,
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval status != 0 if at least one gpio interrupt is pending.
+ * @return status != 0 if at least one gpio interrupt is pending.
  * @retval 0 if no gpio interrupt is pending.
  * @retval -ENOSYS If driver does not implement the operation
  */

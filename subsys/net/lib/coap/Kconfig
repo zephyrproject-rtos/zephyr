@@ -116,7 +116,7 @@ config COAP_CLIENT_THREAD_PRIORITY
 	  Priority of receive thread of the CoAP client.
 
 config COAP_CLIENT_BLOCK_SIZE
-	int "LWM2M CoAP block-wise transfer size"
+	int "CoAP block-wise transfer block size"
 	default 256
 	range 64 1024
 	help

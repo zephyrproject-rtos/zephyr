@@ -5,31 +5,32 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(kernel_common)
 
 if(CONFIG_PRINTK)
-target_sources(app PRIVATE
-	src/printk.c
+  target_sources(
+    app PRIVATE
+    src/printk.c
   )
 endif()
 target_sources(app PRIVATE
-	src/atomic.c
-	src/bitarray.c
-	src/byteorder.c
-	src/clock.c
-	src/main.c
-	src/timeout_order.c
-	src/multilib.c
-	src/errno.c
-	src/boot_delay.c
-	src/pow2.c
-  )
-
-target_sources_ifdef(
-	CONFIG_STATIC_INIT_GNU
-	app PRIVATE
-	src/constructor.c
+  src/atomic.c
+  src/bitarray.c
+  src/byteorder.c
+  src/clock.c
+  src/main.c
+  src/timeout_order.c
+  src/multilib.c
+  src/errno.c
+  src/boot_delay.c
+  src/pow2.c
 )
 
 target_sources_ifdef(
-	CONFIG_IRQ_OFFLOAD
-	app PRIVATE
-	src/irq_offload.c
+  CONFIG_STATIC_INIT_GNU
+  app PRIVATE
+  src/constructor.c
+)
+
+target_sources_ifdef(
+  CONFIG_IRQ_OFFLOAD
+  app PRIVATE
+  src/irq_offload.c
 )

@@ -7,6 +7,7 @@ import io
 from logging import WARNING
 import os
 from pathlib import Path
+import textwrap
 
 import pytest
 
@@ -568,10 +569,26 @@ def test_binding_top_key():
     title = binding.title
     description = binding.description
     compatible = binding.compatible
+    examples = binding.examples[0]
 
     assert title == "Test binding"
     assert description == "Property default value test"
     assert compatible == "defaults"
+    assert examples == textwrap.dedent("""\
+    / {
+        leds {
+            compatible = "gpio-leds";
+
+            uled: led {
+                gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+            };
+        };
+
+        aliases {
+            led0 = &uled;
+        };
+    };
+    """)
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''

@@ -359,6 +359,12 @@
 		reg = <0x38000 0x1000>;
 		status = "disabled";
 	};
+
+	crc: crc@95000 {
+		compatible = "nxp,lpc-crc";
+		reg = <0x95000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &nvic {

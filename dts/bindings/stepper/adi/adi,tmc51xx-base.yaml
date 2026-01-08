@@ -9,40 +9,12 @@ include:
     property-allowlist:
       - en-pwm-mode
       - test-mode
-  - name: stepper-controller.yaml
-  - name: adi,trinamic-ramp-generator.yaml
-    property-allowlist:
-      - vstart
-      - a1
-      - v1
-      - amax
-      - vmax
-      - dmax
-      - d1
-      - vstop
-      - tzerowait
-      - thigh
-      - tcoolthrs
-      - tpwmthrs
-      - tpowerdown
-      - ihold
-      - irun
-      - iholddelay
-  - name: adi,trinamic-stallguard.yaml
-    property-allowlist:
-      - activate-stallguard2
-      - stallguard2-threshold
-      - stallguard-threshold-velocity
-      - stallguard-velocity-check-interval-ms
 
 properties:
-  "#address-cells":
-    default: 1
-    const: 1
-
-  "#size-cells":
-    default: 0
-    const: 0
+  shaft:
+    type: boolean
+    description: |
+      Inverse motor direction
 
   clock-frequency:
     type: int

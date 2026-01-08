@@ -20,6 +20,7 @@ static const uint32_t us_per_min = USEC_PER_SEC * SEC_PER_MIN;
 struct tach_gpio_config {
 	struct gpio_dt_spec gpio;
 	k_timeout_t timeout;
+	uint16_t pulses_per_round;
 };
 
 struct tach_gpio_data {
@@ -48,9 +49,9 @@ static void tach_gpio_cb(const struct device *port, struct gpio_callback *cb, gp
 	gpio_pin_interrupt_configure(config->gpio.port, config->gpio.pin, GPIO_INT_DISABLE);
 
 	pulse_us = k_ticks_to_us_floor32(ticks - data->start_ticks);
-	data->rpm = pulse_us > 0 ? us_per_min / pulse_us : -ERANGE;
+	data->rpm = pulse_us > 0 ? (us_per_min / pulse_us) / config->pulses_per_round : -ERANGE;
 
-	LOG_DBG("rpm: %u, pulse: %d us", data->rpm, pulse_us);
+	LOG_DBG("rpm: %d, pulse: %d us", data->rpm, pulse_us);
 
 	k_sem_give(&data->data_ready);
 }
@@ -142,6 +143,10 @@ static int tach_gpio_init(const struct device *dev)
 }
 
 #define TACH_GPIO_INIT(n)                                                                          \
+	BUILD_ASSERT(DT_INST_PROP(n, pulses_per_round) > 0 &&                                      \
+			     DT_INST_PROP(n, pulses_per_round) <= UINT16_MAX,                      \
+		     "pulses-per-round cannot be 0 or above UINT16_MAX");                          \
+                                                                                                   \
 	static struct tach_gpio_data tach_gpio_data_##n = {                                        \
 		.rpm = -ENODATA,                                                                   \
 	};                                                                                         \
@@ -149,6 +154,7 @@ static int tach_gpio_init(const struct device *dev)
 	static const struct tach_gpio_config tach_gpio_config_##n = {                              \
 		.gpio = GPIO_DT_SPEC_INST_GET(n, gpios),                                           \
 		.timeout = K_MSEC(DT_INST_PROP(n, timeout_ms)),                                    \
+		.pulses_per_round = DT_INST_PROP(n, pulses_per_round),                             \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, &tach_gpio_init, NULL, &tach_gpio_data_##n,                \

@@ -12,10 +12,10 @@
 	enable-measure-output;
 	functional-mode = "non_inverting";
 	programmable-gain = "OPAMP_GAIN_1",
-			"OPAMP_GAIN_2",
-			"OPAMP_GAIN_4",
-			"OPAMP_GAIN_8",
-			"OPAMP_GAIN_16";
+			    "OPAMP_GAIN_2",
+			    "OPAMP_GAIN_4",
+			    "OPAMP_GAIN_8",
+			    "OPAMP_GAIN_16";
 };
 
 &dac0 {

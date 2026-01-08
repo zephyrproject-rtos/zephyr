@@ -265,6 +265,16 @@
 				status = "disabled";
 			};
 		};
+
+		lct0: lct@400dd000 {
+			compatible = "nuvoton,npck-lct";
+			reg = <0x400dd000 0x10>;
+			interrupts = <17 4>;
+			/* The maximum counter value is (16 weeks - 1 second) */
+			maximum-cnt-in-sec = <9676799>;
+			pwr-by-vsby;
+			status = "disabled";
+		};
 	};
 
 	soc-id {

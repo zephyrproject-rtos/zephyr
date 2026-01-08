@@ -16,6 +16,8 @@ const struct pstate *soc_pstates[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(performance_states), PSTATE_DT_GET, (,))
 };
 
+const size_t soc_pstates_count = ARRAY_SIZE(soc_pstates);
+
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1) && \
 	!defined(CONFIG_CPU_FREQ_PER_CPU_SCALING)
 
@@ -34,9 +36,11 @@ static unsigned int num_unprocessed_cpus;
 #endif /* CONFIG_SMP && (CONFIG_MP_MAX_NUM_CPUS > 1) && !CONFIG_CPU_FREQ_PER_CPU_SCALING */
 
 /*
- * On-demand policy scans the list of P-states from the devicetree and selects the
- * first P-state where the cpu_load is greater than or equal to the trigger threshold
- * of the P-state.
+ * On-demand policy scans the list of P-states from the devicetree and selects the first
+ * P-state where the cpu_load is greater than or equal to the trigger threshold of the
+ * P-state. If no P-state matches (i.e., the load is below all thresholds), the policy
+ * will select the last P-state in the array (the lowest performance state). This is
+ * intrinsic behavior: P-states must be defined in increasing threshold order.
  */
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
@@ -61,7 +65,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 
 	LOG_DBG("CPU%d Load: %d%%", cpu_id, cpu_load);
 
-	for (int i = 0; i < ARRAY_SIZE(soc_pstates); i++) {
+	for (int i = 0; i < soc_pstates_count; i++) {
 		const struct pstate *state = soc_pstates[i];
 
 		if (cpu_load >= state->load_threshold) {
@@ -73,10 +77,13 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 		}
 	}
 
+	/* No threshold matched: select the last P-state (lowest performance) */
+	*pstate_out = soc_pstates[soc_pstates_count - 1];
+	LOG_DBG("On-Demand Policy: No threshold matched for CPU load %d%%;"
+		"selecting last P-state (load_threshold=%d%%)",
+		cpu_load, soc_pstates[soc_pstates_count - 1]->load_threshold);
 
-	LOG_ERR("On-Demand Policy: No suitable P-state found for CPU load %d%%", cpu_load);
-
-	return -ENOTSUP;
+	return 0;
 }
 
 void cpu_freq_policy_reset(void)

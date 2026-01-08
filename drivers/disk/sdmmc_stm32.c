@@ -14,8 +14,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 
@@ -549,6 +551,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	int err;
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	/* Initialise the shared DMA channel for the current direction */
@@ -559,12 +562,31 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	}
 #endif
 
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
+	/* A flush is performed before the DMA operation, to prevent accidental data
+	 * loss when the buffer is not properly aligned to the cache-line (e.g:
+	 * 32-bytes for STM32H7).
+	 */
+	sys_cache_data_flush_and_invd_range((void *)data_buf, BLOCKSIZE * num_sector);
+#endif
+
 	err = stm32_sdmmc_read_blocks(&priv->hsd, data_buf, start_sector, num_sector);
 	if (err != 0) {
 		goto end;
 	}
 
 	k_sem_take(&priv->sync, K_FOREVER);
+
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
+	/* Invalidate again after the operation is complete, to protect against
+	 * speculative / spurious reads. Note that this is slightly unsafe when
+	 * `data_buf` is not aligned to the cache line, and shares the cache line
+	 * with other data... Hopefully the previous (otherwise unnecessary) flush &
+	 * invalidate reduces this risk enough.
+	 * This is a balance between forcing callers to have aligned buffers.
+	 */
+	sys_cache_data_invd_range((void *)data_buf, BLOCKSIZE * num_sector);
+#endif
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	if (HAL_DMA_DeInit(&priv->dma_txrx_handle) != HAL_OK) {
@@ -583,6 +605,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	}
 
 end:
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	k_sem_give(&priv->thread_lock);
 	return err;
 }
@@ -628,6 +651,7 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 	int err;
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	/* Initialise the shared DMA channel for the current direction */
@@ -636,6 +660,10 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 		err = -EIO;
 		goto end;
 	}
+#endif
+
+#if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
+	sys_cache_data_flush_range((void *)data_buf, BLOCKSIZE * num_sector);
 #endif
 
 	err = stm32_sdmmc_write_blocks(&priv->hsd, (uint8_t *)data_buf, start_sector, num_sector);
@@ -655,6 +683,30 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 
 	if (priv->status != DISK_STATUS_OK) {
 		LOG_ERR("sd write error %d", priv->status);
+		err = -EIO;
+		goto end;
+	}
+
+	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
+	}
+
+end:
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	k_sem_give(&priv->thread_lock);
+	return err;
+}
+
+static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uint32_t count)
+{
+	const struct device *dev = disk->dev;
+	struct stm32_sdmmc_priv *priv = dev->data;
+	int err;
+
+	k_sem_take(&priv->thread_lock, K_FOREVER);
+
+	err = HAL_SD_Erase(&priv->hsd, sector, sector + count);
+	if (err != HAL_OK) {
+		LOG_ERR("sd erase block failed %d", err);
 		err = -EIO;
 		goto end;
 	}
@@ -720,6 +772,7 @@ static const struct disk_operations stm32_sdmmc_ops = {
 	.status = stm32_sdmmc_access_status,
 	.read = stm32_sdmmc_access_read,
 	.write = stm32_sdmmc_access_write,
+	.erase = stm32_sdmmc_access_erase,
 	.ioctl = stm32_sdmmc_access_ioctl,
 };
 
@@ -935,19 +988,18 @@ void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
 				STM32_DMA_CHANNEL_CONFIG(0, dir)),	\
 		.dma_callback = stm32_sdmmc_dma_cb,			\
 		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
-	},								\
-
-
-#define SDMMC_DMA_CHANNEL(dir, DIR)					\
-.dma_##dir = {								\
-	COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),			\
-		 (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),			\
-		 (NULL))						\
 	},
 
-#else
+#define SDMMC_DMA_CHANNEL(dir, DIR)					\
+	.dma_##dir = {							\
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),		\
+			    (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),		\
+			    (NULL))					\
+	},
+
+#else /* STM32_SDMMC_USE_DMA */
 #define SDMMC_DMA_CHANNEL(dir, DIR)
-#endif
+#endif /* STM32_SDMMC_USE_DMA */
 
 PINCTRL_DT_INST_DEFINE(0);
 

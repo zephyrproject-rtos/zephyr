@@ -105,30 +105,15 @@ static const struct onoff_transitions shim_mgr_transitions = {
  *
  *   frequency = ((4 + (freq_fraction * 2^-16)) * 32000000) / 12
  *
- * Simplified linear approximation:
- *
- *   frequency = 10666666 + (((13333292 - 10666666) / 65535) * freq_fraction)
- *   frequency = 10666666 + ((2666626 / 65535) * freq_fraction)
- *   frequency = ((10666666 * 65535) + (2666626 * freq_fraction)) / 65535
- *   frequency = (699039956310 + (2666626 * freq_fraction)) / 65535
- *
  * Isolate freq_fraction:
  *
- *   frequency = (699039956310 + (2666626 * freq_fraction)) / 65535
- *   frequency * 65535 = 699039956310 + (2666626 * freq_fraction)
- *   (frequency * 65535) - 699039956310 = 2666626 * freq_fraction
- *   freq_fraction = ((frequency * 65535) - 699039956310) / 2666626
+ *   freq_fraction = (384 * frequency) / 15625 - 262144
  */
 static uint16_t shim_frequency_to_freq_fraction(uint32_t frequency)
 {
-	uint64_t freq_fraction;
+	int64_t freq_fraction = frequency;
 
-	freq_fraction = frequency;
-	freq_fraction *= 65535;
-	freq_fraction -= 699039956310;
-	freq_fraction = DIV_ROUND_CLOSEST(freq_fraction, 2666626);
-
-	return (uint16_t)freq_fraction;
+	return CLAMP(DIV_ROUND_CLOSEST(384 * freq_fraction, 15625) - 262144, 0, UINT16_MAX);
 }
 
 static int shim_nrfs_request_freq_sync(const struct device *dev, uint16_t freq_fraction)
@@ -145,6 +130,22 @@ static int shim_nrfs_request_freq_sync(const struct device *dev, uint16_t freq_f
 
 	k_sem_take(&dev_data->evt_sem, K_FOREVER);
 	return dev_data->evt == NRFS_AUDIOPLL_EVT_FREQ_CONFIRMED ? 0 : -EIO;
+}
+
+static int shim_nrfs_request_disable_sync(const struct device *dev)
+{
+	struct shim_data *dev_data = dev->data;
+	nrfs_err_t err;
+
+	LOG_DBG("send disable request");
+
+	err = nrfs_audiopll_disable_request(dev_data);
+	if (err != NRFS_SUCCESS) {
+		return -EIO;
+	}
+
+	k_sem_take(&dev_data->evt_sem, K_FOREVER);
+	return dev_data->evt == NRFS_AUDIOPLL_EVT_DISABLED ? 0 : -EIO;
 }
 
 static int shim_nrfs_request_prescaler_sync(const struct device *dev,
@@ -271,6 +272,13 @@ static int shim_init(const struct device *dev)
 	ret = shim_nrfs_request_freq_sync(dev, freq_fraction);
 	if (ret) {
 		LOG_ERR("failed to set freq_fraction");
+		return ret;
+	}
+
+	/* Requesting freq or prescaler automatically enables clock, disable it */
+	ret = shim_nrfs_request_disable_sync(dev);
+	if (ret) {
+		LOG_ERR("failed to disable clock");
 		return ret;
 	}
 

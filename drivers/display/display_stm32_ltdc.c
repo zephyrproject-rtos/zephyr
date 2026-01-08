@@ -181,6 +181,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	const uint8_t *src = buf;
 	uint16_t row;
 
+	/* Validate the given parameters */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
+
 	if ((x == 0) && (y == 0) &&
 	    (desc->width == config->width) &&
 	    (desc->height ==  config->height) &&
@@ -248,6 +254,12 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	uint8_t *dst = buf;
 	const uint8_t *src = data->front_buf;
 	uint16_t row;
+
+	/* Validate the given parameters */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
 
 	/* src = pointer to upper left pixel of the rectangle to be read from frame buffer */
 	src += (x * data->current_pixel_size);
@@ -345,9 +357,6 @@ static int stm32_ltdc_init(const struct device *dev)
 	int err;
 	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	RIMC_MasterConfig_t rimc = {0};
-#endif
 
 	/* Configure and set display on/off GPIO */
 	if (config->disp_on_gpio.port) {
@@ -446,15 +455,6 @@ static int stm32_ltdc_init(const struct device *dev)
 	if (err != HAL_OK) {
 		return err;
 	}
-
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Configure RIF for LTDC layer 1 */
-	rimc.MasterCID = RIF_CID_1;
-	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_LTDC1, &rimc);
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_LTDCL1,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-#endif
 
 	/* Disable layer 2, since it not used */
 	__HAL_LTDC_LAYER_DISABLE(&data->hltdc, LTDC_LAYER_2);
@@ -559,6 +559,11 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 	/* frame buffer aligned to cache line width for optimal cache flushing */                  \
 	FRAME_BUFFER_SECTION static uint8_t __aligned(32)                                          \
 		frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM * STM32_LTDC_FRAME_BUFFER_LEN(inst)];
+#endif
+
+/* LTDC supports RGB888 and RGB666 for output however only RGB_888 is supported for now */
+#if DT_INST_PROP(0, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888
+#error "Only RGB_888 is supported as a LTDC output (aka panel or mipi-dsi input format)"
 #endif
 
 #define STM32_LTDC_DEVICE(inst)									\

@@ -8,6 +8,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mchp_pic32cm_jh_clock.h>
 
 / {
 	cpus {
@@ -38,6 +39,58 @@
 			compatible = "mmio-sram";
 		};
 
+		clock: clock@40000800 {
+			compatible = "microchip,pic32cm-jh-clock";
+			reg = <0x40000800 0x24>, <0x40001000 0x58>,
+			      <0x40001400 0x20>, <0x40001c00 0x140>;
+			reg-names = "mclk", "oscctrl",
+				    "osc32kctrl", "gclk";
+
+			xosc: xosc {
+				compatible = "microchip,pic32cm-jh-xosc";
+			};
+
+			osc48m: osc48m {
+				compatible = "microchip,pic32cm-jh-osc48m";
+			};
+
+			fdpll: fdpll {
+				compatible = "microchip,pic32cm-jh-fdpll";
+			};
+
+			rtcclock: rtcclock {
+				compatible = "microchip,pic32cm-jh-rtc";
+				#clock-cells = <1>;
+			};
+
+			xosc32k: xosc32k {
+				compatible = "microchip,pic32cm-jh-xosc32k";
+			};
+
+			osc32k: osc32k {
+				compatible = "microchip,pic32cm-jh-osc32k";
+			};
+
+			gclkgen: gclkgen {
+				compatible = "microchip,pic32cm-jh-gclkgen";
+			};
+
+			gclkperiph: gclkperiph {
+				compatible = "microchip,pic32cm-jh-gclkperiph";
+				#clock-cells = <1>;
+			};
+
+			mclkcpu: mclkcpu {
+				compatible = "microchip,pic32cm-jh-mclkcpu";
+				mclk-cpu-div = <1>;
+			};
+
+			mclkperiph: mclkperiph {
+				compatible = "microchip,pic32cm-jh-mclkperiph";
+				#clock-cells = <1>;
+			};
+		};
+
 		pinctrl: pinctrl@41000000 {
 			compatible = "microchip,port-g1-pinctrl";
 			#address-cells = <1>;
@@ -51,6 +104,50 @@
 				#gpio-cells = <2>;
 				#microchip,pin-cells = <2>;
 			};
+		};
+
+		sercom0: sercom@42000400 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42000400 0x31>;
+			interrupts = <9 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM0_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom1: sercom@42000800 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42000800 0x31>;
+			interrupts = <10 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom2: sercom@42000c00 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42000c00 0x31>;
+			interrupts = <11 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom3: sercom@42001000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42001000 0x31>;
+			interrupts = <12 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
 		};
 	};
 };

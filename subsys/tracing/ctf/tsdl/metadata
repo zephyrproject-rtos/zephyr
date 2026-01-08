@@ -9,7 +9,7 @@ typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := 
 
 struct event_header {
 	uint32_t timestamp;
-	uint8_t id;
+	uint16_t id;
 };
 
 trace {
@@ -2195,5 +2195,37 @@ event {
 		uint32_t event_id;
 		uint32_t events;
 		int32_t ret;
+	};
+};
+
+event {
+	name = timer_expiry_enter;
+	id = 0x100;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_expiry_exit;
+	id = 0x101;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_stop_fn_expiry_enter;
+	id = 0x102;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_stop_fn_expiry_exit;
+	id = 0x103;
+	fields := struct {
+		uint32_t id;
 	};
 };

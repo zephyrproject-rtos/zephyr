@@ -3,5 +3,6 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/nuvoton/nuvoton_adc_cmp_npcx/Kconfig"
+source "drivers/sensor/nuvoton/nuvoton_adc_v2t_npcx/Kconfig"
 source "drivers/sensor/nuvoton/nuvoton_tach_npcx/Kconfig"
 # zephyr-keep-sorted-stop

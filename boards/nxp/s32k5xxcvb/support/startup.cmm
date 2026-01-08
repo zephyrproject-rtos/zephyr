@@ -1,0 +1,152 @@
+;*******************************************************************************
+;   Copyright 2025 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach Trace32 start-up script for s32k5xxcvb                          *
+;                                                                              *
+;   Parameters:                                                                *
+;   - command     operation to execute                                         *
+;                 valid values: flash, debug                                   *
+;                 default: debug                                               *
+;   - elfFile     filepath of ELF to load                                      *
+;   - coreType    type of the application core                                 *
+;                 valid values: m7, r52                                        *
+;   - core        core index                                                   *
+;                 valid values: 0 to 3                                         *
+;                 default: 0                                                   *
+;   - loadTo      if "mram", the application will be downloaded to SoC         *
+;                 MRAM by a flash programming routine; if "sram" it            *
+;                 will be downloaded to SoC SRAM.                              *
+;                 valid values: mram, sram                                     *
+;                                                                              *
+;*******************************************************************************
+
+ENTRY %LINE &args
+LOCAL &coreId &cpuName &sramInitTarget
+
+&command=STRing.SCANAndExtract("&args","command=","debug")
+&elfFile=STRing.SCANAndExtract("&args","elfFile=","")
+&coreType=STRing.SCANAndExtract("&args","coreType=","")
+&core=STRing.SCANAndExtract("&args","core=","0")
+&loadTo=STRing.SCANAndExtract("&args","loadTo=","")
+
+IF ("&elfFile"=="")
+(
+  PRINT %ERROR "Missing ELF file path"
+  PLIST
+  STOP
+  ENDDO
+)
+
+IF ("&coreType"!="m7"&&"&coreType"!="r52")
+(
+  PRINT %ERROR "Invalid core type: &coreType"
+  PLIST
+  STOP
+  ENDDO
+)
+
+IF ("&coreType"=="m7")
+(
+  IF (&core<0||&core>3)
+  (
+    PRINT %ERROR "Invalid core number: &core"
+  )
+
+  &cpuName="M7"
+  &sramInitTarget="CM7"
+)
+ELSE
+(
+  IF (&core<0||&core>1)
+  (
+    PRINT %ERROR "Invalid core number: &core"
+  )
+
+  &cpuName="R52-CPE"
+  &sramInitTarget="CPE"
+)
+
+; Trace32 indexes are offset by 1
+&coreId=&core+1
+
+RESet
+SYStem.CPU S32K566-&cpuName
+CORE.ASSIGN &coreId
+SYStem.CONFIG.DEBUGPORTTYPE SWD
+SYStem.MemAccess DAP
+SYStem.JtagClock 10MHz
+Trace.DISable
+SYStem.Mode.Prepare
+
+DO ~~/demo/arm/hardware/s32k5/misc/s32k5_init_sram.cmm &sramInitTarget
+
+IF ("&loadTo"=="mram")
+(
+  Data.LOAD.Elf &elfFile /NoCODE
+  &image_start = ADDRESS.OFFSET(__rom_region_start)
+  &image_end = ADDRESS.OFFSET(__rom_region_start)+ADDRESS.OFFSET(_flash_used)
+
+  ; Ensure 4-bit alignment at the end
+  &image_end=&image_end|0xF
+
+  ; Create image and add IVT header, if not part of the ELF file
+  Data.Set VM:0x08000000..0x080000FF %Long 0x0
+  Data.Set VM:0x08000000 %Long 0x710001D1  ; Magic number
+  Data.Set VM:0x08000004 %Long 0x031E0000  ; Boot configuration word (enable all M7 and R52)
+  IF ("&coreType"=="m7")
+  (
+    Data.Set VM:0x08000040+(&core*4) %Long ADDRESS.OFFSET(_vector_start)
+  )
+  ELSE
+  (
+    Data.Set VM:0x08000060+(&core*4) %Long ADDRESS.OFFSET(_vector_start)
+  )
+
+  Data.Set VM:&image_start..&image_end %Long 0x0
+
+  Data.LOAD.Elf &elfFile /VM /NosYmbol
+
+  ; Only declares flash, does not execute flash programming
+  DO ~~/demo/arm/flash/s32k5.cmm PREPAREONLY
+  FLASH.Program ALL
+
+  ; Create image and add IVT header
+  Data.COPY VM:0x08000000..0x080000FF EAXI:0x08000000 /Quad
+  Data.COPY VM:&image_start..&image_end EAXI:&image_start /Quad
+
+  FLASH.Program OFF
+
+  ; Reset the processor
+  SYStem.Up
+  IF ("&coreType"=="r52")
+  (
+    ; CPE.GPR Thumb bit is enabled after reset
+    R.S T 0
+  )
+)
+ELSE
+(
+  Data.LOAD.Elf &elfFile
+)
+
+IF ("&command"=="flash")
+(
+  ; Execute the application and quit
+  Go
+  QUIT
+)
+ELSE
+(
+  ; Setup minimal debug environment
+  WinCLEAR
+  SETUP.Var.%SpotLight
+  WinPOS 0. 0. 120. 30.
+  List.auto
+  WinPOS 125. 0. 80. 10.
+  Frame.view
+  WinPOS 125. 18.
+  Register.view /SpotLight
+)
+
+ENDDO

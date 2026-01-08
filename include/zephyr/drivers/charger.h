@@ -376,7 +376,7 @@ __subsystem struct charger_driver_api {
  * @param val Pointer to charger_propval union
  *
  * @retval 0 if successful
- * @retval < 0 if getting property failed
+ * @retval <0 if getting property failed
  */
 __syscall int charger_get_prop(const struct device *dev, const charger_prop_t prop,
 			       union charger_propval *val);
@@ -397,7 +397,7 @@ static inline int z_impl_charger_get_prop(const struct device *dev, const charge
  * @param val Pointer to charger_propval union
  *
  * @retval 0 if successful
- * @retval < 0 if setting property failed
+ * @retval <0 if setting property failed
  */
 __syscall int charger_set_prop(const struct device *dev, const charger_prop_t prop,
 			       const union charger_propval *val);

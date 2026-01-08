@@ -16,5 +16,7 @@ tests:
   sample.drivers.dac.shields:
     platform_allow:
       - adafruit_feather_rp2040/rp2040
+      - adafruit_feather_adalogger_rp2040/rp2040
     extra_args:
       - platform:adafruit_feather_rp2040/rp2040:SHIELD="adafruit_ad5693r"
+      - platform:adafruit_feather_adalogger_rp2040/rp2040:SHIELD="adafruit_mcp4728"

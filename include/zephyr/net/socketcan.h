@@ -31,16 +31,16 @@ extern "C" {
  */
 
 /** Protocols of the protocol family PF_CAN */
-#define CAN_RAW 1
+#define NET_CAN_RAW 1
 
 /** @cond INTERNAL_HIDDEN */
 
 /* SocketCAN options */
-#define SOL_CAN_BASE 100
-#define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+#define NET_SOL_CAN_BASE 100
+#define NET_SOL_CAN_RAW (NET_SOL_CAN_BASE + NET_CAN_RAW)
 
 enum {
-	CAN_RAW_FILTER = 1,
+	NET_CAN_RAW_FILTER = 1,
 };
 
 /** @endcond */
@@ -66,12 +66,12 @@ enum {
 #define CANFD_FDF 0x04 /**< Mark CAN FD for dual use of struct canfd_frame */
 
 /**
- * struct sockaddr_can - The sockaddr structure for CAN sockets
+ * struct net_sockaddr_can - The net_sockaddr structure for CAN sockets
  *
  */
-struct sockaddr_can {
-	sa_family_t can_family;   /**< Address family */
-	int         can_ifindex;  /**< SocketCAN network interface index */
+struct net_sockaddr_can {
+	net_sa_family_t can_family;   /**< Address family */
+	int             can_ifindex;  /**< SocketCAN network interface index */
 };
 
 /**

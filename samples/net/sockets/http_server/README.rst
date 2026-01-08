@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: sockets-http-server
    :name: HTTP Server
-   :relevant-api: http_service http_server tls_credentials
+   :relevant-api: http_service http_server tls_credentials json
 
    Implement an HTTP(s) Server demonstrating various resource types.
 

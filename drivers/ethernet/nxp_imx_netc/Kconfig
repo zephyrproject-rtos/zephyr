@@ -84,6 +84,7 @@ config ETH_NXP_IMX_RX_RING_NUM
 
 config ETH_NXP_IMX_RX_RING_LEN
 	int "RX ring length"
+	default 16 if NET_L2_PTP && PTP_CLOCK_NXP_NETC
 	default 8
 	range 8 256
 	help

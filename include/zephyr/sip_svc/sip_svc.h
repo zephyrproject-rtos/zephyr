@@ -127,7 +127,7 @@ int sip_svc_open(void *ctrl, uint32_t c_token, k_timeout_t k_timeout);
  * @param c_token Client's token
  * @param pre_close_req pre close request sent to lower layer on channel close.
  *
- * @retval 0 on success, negative errno on failure.
+ * @return 0 on success, negative errno on failure.
  * @retval -EINVAL invalid arguments.
  * @retval -ENOTSUP error on sending pre_close_request.
  * @retval -EPROTO client is not in OPEN state.
@@ -149,7 +149,7 @@ int sip_svc_close(void *ctrl, uint32_t c_token, struct sip_svc_request *pre_clos
  * @param cb Callback. SMC/SVC return value will be passed to client via
  *           context in struct sip_svc_response format in callback.
  *
- * @retval transaction id on success.
+ * @return transaction id on success.
  * @retval -EINVAL invalid arguments.
  * @retval -EOPNOTSUPP invalid command id or function id.
  * @retval -ESRCH invalid client state.
@@ -170,7 +170,7 @@ int sip_svc_send(void *ctrl, uint32_t c_token, struct sip_svc_request *req, sip_
  * @param ctrl Pointer to controller instance which provides ARM SiP service.
  * @param c_token Client's token
  *
- * @retval Address pointer to the client private data.
+ * @return Address pointer to the client private data.
  * @retval NULL invalid arguments and failure to get lock.
  */
 void *sip_svc_get_priv_data(void *ctrl, uint32_t c_token);
@@ -180,7 +180,7 @@ void *sip_svc_get_priv_data(void *ctrl, uint32_t c_token);
  *
  * @param method Pointer to controller instance which provides ARM SiP service.
  *
- * @retval Valid pointer.
+ * @return Valid pointer.
  * @retval NULL invalid arguments and on providing unsupported method name.
  */
 void *sip_svc_get_controller(char *method);

@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2025 CodeWrights GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32h573i_dk-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
+	compatible = "st,stm32h573i-dk";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+/* Last 64kB of SRAM1 are owned by TF-M */
+&sram1 {
+	reg = <0x20000000 DT_SIZE_K(256 - 64)>;
+};
+
+/* SRAM2 is owned by TF-M */
+&sram2 {
+	status = "disabled";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Keep in sync with partitions from flash_layout.h in TF-M
+		 * MCUboot (scratch area)                0000_0000 - 0000_C000 ( 48k)
+		 * MCUboot (anti-rollback counter)       0000_C000 - 0001_0000 ( 16k)
+		 * MCUboot (BL2)                         0001_0000 - 0002_8000 ( 96k)
+		 * MCUboot (OTP / non-volatile counters) 0002_8000 - 0002_C000 ( 16k)
+		 * MCUboot (non-volatile counters)       0002_C000 - 0003_0000 ( 16k)
+		 * Secure storage                        0003_0000 - 0003_4000 ( 16k)
+		 * Internal trusted storage              0003_4000 - 0003_8000 ( 16k)
+		 * Slot 0 Secure Partition               0003_8000 - 0008_8000 (320k)
+		 * Slot 0 Non-Secure Partition           0008_8000 - 0011_8000 (576k)
+		 * Slot 1 Secure Partition               0011_8000 - 0016_8000 (320k)
+		 * Slot 1 Non-Secure Partition           0016_8000 - 001F_8000 (576k)
+		 * Storage Partition                     001F_8000 - 0020_0000 ( 32k)
+		 */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(192)>;
+		};
+
+		slot0_partition: partition@38000 {
+			label = "image-0";
+			reg = <0x00038000 DT_SIZE_K(320)>;
+		};
+
+		slot0_ns_partition: partition@88000 {
+			label = "image-0-nonsecure";
+			reg = <0x00088000 DT_SIZE_K(576)>;
+		};
+
+		slot1_partition: partition@118000 {
+			label = "image-1";
+			reg = <0x00118000 DT_SIZE_K(320)>;
+		};
+
+		slot1_ns_partition: partition@168000 {
+			label = "image-1-nonsecure";
+			reg = <0x00168000 DT_SIZE_K(576)>;
+		};
+
+		storage_partition: partition@1f8000 {
+			label = "storage";
+			reg = <0x001f8000 DT_SIZE_K(32)>;
+		};
+	};
+};
+
+&ext_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "nor";
+			reg = <0x00000000 DT_SIZE_M(64)>;
+		};
+	};
+};

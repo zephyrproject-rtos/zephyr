@@ -141,7 +141,7 @@ static void help_item_print(const struct shell *sh, const char *item_name,
 	}
 
 	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) &&
-	    !IS_ENABLED(CONFIG_ARCH_POSIX)) {
+	    !IS_ENABLED(CONFIG_NATIVE_LIBC)) {
 		/* print option name */
 		z_shell_fprintf(sh, SHELL_NORMAL, "%s%-*s", tabulator,
 				item_name_width, item_name);

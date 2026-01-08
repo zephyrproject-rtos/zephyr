@@ -627,6 +627,7 @@ static int sx127x_lora_init(const struct device *dev)
 
 static DEVICE_API(lora, sx127x_lora_api) = {
 	.config = sx12xx_lora_config,
+	.airtime = sx12xx_airtime,
 	.send = sx12xx_lora_send,
 	.send_async = sx12xx_lora_send_async,
 	.recv = sx12xx_lora_recv,

@@ -289,6 +289,18 @@ config BT_HFP_AG_CODEC_NEG
 	help
 	  This option enables Codec Negotiation for HFP AG
 
+if BT_HFP_AG_CODEC_NEG
+config BT_HFP_AG_CODEC_MSBC
+	bool "Support Codec mSBC for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec mSBC for HFP AG
+
+config BT_HFP_AG_CODEC_LC3_SWB
+	bool "Support Codec LC3 SWB for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec LC3 SWB for HFP AG
+endif # BT_HFP_AG_CODEC_NEG
+
 config BT_HFP_AG_ECNR
 	bool "EC and/or NR function for HFP AG [EXPERIMENTAL]"
 	help
@@ -422,6 +434,12 @@ config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
 	help
 	  This option sets the timeout after the get ongoing calls callback notified
 
+config BT_HFP_AG_INBAND_RINGTONE
+	bool "In-band ring tone capability"
+	default y
+	help
+	  This option enables In-band ring tone capability
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
@@ -433,6 +451,7 @@ config BT_AVDTP
 config BT_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
 	select BT_AVDTP
+	imply LIBSBC
 	select EXPERIMENTAL
 	help
 	  This option enables the A2DP profile
@@ -494,6 +513,17 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_VD_RX_SIZE
+	int "AVRCP Vendor Dependent RX data buffer Size"
+	default 1024
+	range 512 $(INT16_MAX)
+	help
+	  Size of the AVRCP Vendor Dependent RX data buffer in bytes.
+	  This buffer is used for reassembling fragmented AVRCP Vendor Dependent
+	  commands and responses received from the CT device. If the remote CT
+	  sends large Vendor-specific PDUs or frequent fragmentation occurs,
+	  consider increasing this value to avoid incomplete message handling.
+
 config BT_AVRCP_BROWSING
 	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -501,6 +531,70 @@ config BT_AVRCP_BROWSING
 	help
 	  This option enables support for the AVRCP Browsing channel
 	  over Bluetooth BR/EDR.
+
+if BT_AVRCP_BROWSING
+
+config BT_AVRCP_BROWSING_L2CAP_MTU
+	int "L2CAP MTU for AVRCP Browsing Channel"
+	default 339
+	# For AVRCP Browsing Channel over L2CAP, including:
+	# 335 bytes - the minimum MTU for AVRCP Browsing Channel,
+	# 4 bytes - L2CAP Header,
+	range 339 4096
+	help
+	  Maximum size of L2CAP MTU for AVCTP Browsing Channel.
+	  RX MTU will be truncated to account for ACL data and type overhead, and
+	  the L2CAP PDUheader.
+
+endif # BT_AVRCP_BROWSING
+
+config BT_AVRCP_TG_COVER_ART
+	bool "Bluetooth AVRCP Target Cover Art support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	depends on BT_AVRCP_TARGET
+	help
+	  This option enables support for Cover Art in the AVRCP Target
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART
+	bool
+	select EXPERIMENTAL
+	select BT_BIP
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art in the AVRCP controller
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES
+	bool "Bluetooth AVRCP Controller Cover Art Get Image Properties support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	select BT_AVRCP_CT_COVER_ART
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art Get Image Properties in the AVRCP Controller
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART_GET_IMAGE
+	bool "Bluetooth AVRCP Controller Cover Art Get Image support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	select BT_AVRCP_CT_COVER_ART
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art Get Image in the AVRCP Controller
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL
+	bool "Bluetooth AVRCP Controller Cover Art Get Linked Thumbnail support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	select BT_AVRCP_CT_COVER_ART
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art Get Linked Thumbnail in the AVRCP Controller
+	  role over Bluetooth BR/EDR.
 
 endif # BT_AVRCP
 
@@ -605,6 +699,13 @@ config BT_OEBX_RSP_CODE_TO_STR
 	  See bt_obex_rsp_code_to_str() for more details.
 
 endif # BT_GOEP
+
+config BT_BIP
+	bool "Bluetooth BIP Profile [EXPERIMENTAL]"
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the BIP profile
 
 endif # BT_CLASSIC
 

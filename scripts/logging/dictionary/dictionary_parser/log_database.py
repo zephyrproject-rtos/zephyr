@@ -16,37 +16,37 @@ from .mipi_syst import gen_syst_xml_file
 from .utils import extract_one_string_in_section, find_string_in_mappings
 
 ARCHS = {
-    "arc" : {
+    "arc": {
         "kconfig": "CONFIG_ARC",
     },
-    "arm" : {
+    "arm": {
         "kconfig": "CONFIG_ARM",
     },
-    "arm64" : {
+    "arm64": {
         "kconfig": "CONFIG_ARM64",
     },
-    "mips" : {
+    "mips": {
         "kconfig": "CONFIG_MIPS",
     },
-    "sparc" : {
+    "sparc": {
         "kconfig": "CONFIG_SPARC",
     },
-    "x86" : {
+    "x86": {
         "kconfig": "CONFIG_X86",
     },
-    "posix" : {
+    "posix": {
         "kconfig": "CONFIG_ARCH_POSIX",
     },
-    "riscv32e" : {
+    "riscv32e": {
         "kconfig": "CONFIG_RISCV_ISA_RV32E",
     },
-    "riscv" : {
+    "riscv": {
         "kconfig": "CONFIG_RISCV",
     },
-    "rx" : {
+    "rx": {
         "kconfig": "CONFIG_RX",
     },
-    "xtensa" : {
+    "xtensa": {
         "kconfig": "CONFIG_XTENSA",
     },
 }
@@ -54,6 +54,7 @@ ARCHS = {
 
 class LogDatabase:
     """Class of log database"""
+
     # Update this if database format of dictionary based logging
     # has changed
     ZEPHYR_DICT_LOG_VER = 3
@@ -74,31 +75,25 @@ class LogDatabase:
 
         self.database = new_db
 
-
     def get_version(self):
         """Get Database Version"""
         return self.database['version']
-
 
     def get_build_id(self):
         """Get Build ID"""
         return self.database['build_id']
 
-
     def set_build_id(self, build_id):
         """Set Build ID in Database"""
         self.database['build_id'] = build_id
-
 
     def get_arch(self):
         """Get the Target Architecture"""
         return self.database['arch']
 
-
     def set_arch(self, arch):
         """Set the Target Architecture"""
         self.database['arch'] = arch
-
 
     def get_tgt_bits(self):
         """Get Target Bitness: 32 or 64"""
@@ -107,11 +102,9 @@ class LogDatabase:
 
         return None
 
-
     def set_tgt_bits(self, bits):
         """Set Target Bitness: 32 or 64"""
         self.database['target']['bits'] = bits
-
 
     def is_tgt_64bit(self):
         """Return True if target is 64-bit, False if 32-bit.
@@ -127,7 +120,6 @@ class LogDatabase:
 
         return None
 
-
     def get_tgt_endianness(self):
         """
         Get Target Endianness.
@@ -139,7 +131,6 @@ class LogDatabase:
 
         return None
 
-
     def set_tgt_endianness(self, endianness):
         """
         Set Target Endianness
@@ -148,7 +139,6 @@ class LogDatabase:
         """
         self.database['target']['little_endianness'] = endianness
 
-
     def is_tgt_little_endian(self):
         """Return True if target is little endian"""
         if 'little_endianness' not in self.database['target']:
@@ -156,21 +146,17 @@ class LogDatabase:
 
         return self.database['target']['little_endianness'] == self.LITTLE_ENDIAN
 
-
     def get_string_mappings(self):
         """Get string mappings to database"""
         return self.database['string_mappings']
-
 
     def set_string_mappings(self, database):
         """Add string mappings to database"""
         self.database['string_mappings'] = database
 
-
     def has_string_mappings(self):
         """Return True if there are string mappings in database"""
         return 'string_mappings' in self.database
-
 
     def has_string_sections(self):
         """Return True if there are any static string sections"""
@@ -179,14 +165,12 @@ class LogDatabase:
 
         return len(self.database['sections']) != 0
 
-
     def __find_string_in_mappings(self, string_ptr):
         """
         Find string pointed by string_ptr in the string mapping
         list. Return None if not found.
         """
         return find_string_in_mappings(self.database['string_mappings'], string_ptr)
-
 
     def __find_string_in_sections(self, string_ptr):
         """
@@ -201,7 +185,6 @@ class LogDatabase:
 
         return None
 
-
     def find_string(self, string_ptr):
         """Find string pointed by string_ptr in the database.
         Return None if not found."""
@@ -215,16 +198,14 @@ class LogDatabase:
 
         return one_str
 
-
     def add_log_instance(self, source_id, name, level, address):
         """Add one log instance into database"""
         self.database['log_subsys']['log_instances'][source_id] = {
-            'source_id' : source_id,
-            'name'      : name,
-            'level'     : level,
-            'addr'      : address,
+            'source_id': source_id,
+            'name': name,
+            'level': level,
+            'addr': address,
         }
-
 
     def get_log_source_string(self, domain_id, source_id):
         """Get the source string based on source ID"""
@@ -236,16 +217,13 @@ class LogDatabase:
 
         return f"unknown<{domain_id}:{source_id}>"
 
-
     def add_kconfig(self, name, val):
         """Add a kconfig name-value pair into database"""
         self.database['kconfigs'][name] = val
 
-
     def get_kconfigs(self):
         """Return kconfig name-value pairs"""
         return self.database['kconfigs']
-
 
     @staticmethod
     def read_json_database(db_file_name):
@@ -276,7 +254,6 @@ class LogDatabase:
             database.set_string_mappings(new_str_map)
 
         return database
-
 
     @staticmethod
     def write_json_database(db_file_name, database):

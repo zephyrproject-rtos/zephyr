@@ -118,29 +118,31 @@ config CAN_QEMU_IFACE_NAME
 	  the "-object can-host-socketcan" qemu command line option. The CAN interface must be
 	  configured before starting QEMU.
 
-source "drivers/can/Kconfig.sam"
-source "drivers/can/Kconfig.sam0"
-source "drivers/can/Kconfig.stm32"
-source "drivers/can/Kconfig.mcux"
-source "drivers/can/Kconfig.mcp2515"
-source "drivers/can/Kconfig.mcan"
-source "drivers/can/Kconfig.rcar"
-source "drivers/can/Kconfig.numaker"
-source "drivers/can/Kconfig.loopback"
-source "drivers/can/Kconfig.native_linux"
-source "drivers/can/Kconfig.sja1000"
+source "drivers/can/transceiver/Kconfig"
+
+# zephyr-keep-sorted-start
 source "drivers/can/Kconfig.esp32"
-source "drivers/can/Kconfig.kvaser"
 source "drivers/can/Kconfig.fake"
-source "drivers/can/Kconfig.nxp_s32"
-source "drivers/can/Kconfig.tcan4x5x"
+source "drivers/can/Kconfig.kvaser"
+source "drivers/can/Kconfig.loopback"
+source "drivers/can/Kconfig.max32"
+source "drivers/can/Kconfig.mcan"
+source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.mcp251xfd"
-source "drivers/can/Kconfig.xmc4xxx"
+source "drivers/can/Kconfig.mcux"
+source "drivers/can/Kconfig.native_linux"
 source "drivers/can/Kconfig.nrf"
+source "drivers/can/Kconfig.numaker"
+source "drivers/can/Kconfig.nxp_s32"
+source "drivers/can/Kconfig.rcar"
 source "drivers/can/Kconfig.renesas_ra"
 source "drivers/can/Kconfig.renesas_rz"
-source "drivers/can/Kconfig.max32"
-
-source "drivers/can/transceiver/Kconfig"
+source "drivers/can/Kconfig.sam"
+source "drivers/can/Kconfig.sam0"
+source "drivers/can/Kconfig.sja1000"
+source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.tcan4x5x"
+source "drivers/can/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
 endif # CAN

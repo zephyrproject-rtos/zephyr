@@ -7,9 +7,9 @@
 #
 
 if(CONFIG_BIG_ENDIAN)
-	set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-bigmips")
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-bigmips")
 else()
-	set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-littlemips")
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-littlemips")
 endif()
 
 add_subdirectory(core)

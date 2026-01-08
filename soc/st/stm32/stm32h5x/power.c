@@ -8,8 +8,8 @@
 #include <soc.h>
 #include <zephyr/init.h>
 
-#include <stm32h5xx_ll_cortex.h>
-#include <stm32h5xx_ll_pwr.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
 #include <clock_control/clock_stm32_ll_common.h>
 
 #include <zephyr/logging/log.h>

@@ -107,37 +107,39 @@ static int pcf8563_set_time(const struct device *dev, const struct rtc_time *tim
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;
-	uint8_t raw_time[7];
+	uint8_t raw_time[8];
 
 	if (!rtc_utils_validate_rtc_time(timeptr, PCF8563_RTC_TIME_MASK)) {
 		LOG_ERR("invalid time");
 		return -EINVAL;
 	}
 
+	/* I2C register address */
+	raw_time[0] = PCF8563_TIME_DATE_REGISTER;
+
 	/* Set seconds */
-	raw_time[0] = bin2bcd(timeptr->tm_sec);
+	raw_time[1] = bin2bcd(timeptr->tm_sec);
 
 	/* Set minutes */
-	raw_time[1] = bin2bcd(timeptr->tm_min);
+	raw_time[2] = bin2bcd(timeptr->tm_min);
 
 	/* Set hours */
-	raw_time[2] = bin2bcd(timeptr->tm_hour);
+	raw_time[3] = bin2bcd(timeptr->tm_hour);
 
 	/* Set days */
-	raw_time[3] = bin2bcd(timeptr->tm_mday);
+	raw_time[4] = bin2bcd(timeptr->tm_mday);
 
 	/* Set weekdays */
-	raw_time[4] = timeptr->tm_wday;
+	raw_time[5] = timeptr->tm_wday;
 
 	/*Set month */
-	raw_time[5] = bin2bcd(timeptr->tm_mon);
+	raw_time[6] = bin2bcd(timeptr->tm_mon);
 
 	/* Set year */
-	raw_time[6] = bin2bcd(timeptr->tm_year);
+	raw_time[7] = bin2bcd(timeptr->tm_year);
 
 	/* Write to device */
-	ret = i2c_burst_write_dt(&config->i2c, PCF8563_TIME_DATE_REGISTER,
-				 raw_time, sizeof(raw_time));
+	ret = i2c_write_dt(&config->i2c, raw_time, sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Error when setting time: %i", ret);
 		return ret;
@@ -249,7 +251,7 @@ static int pcf8563_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 				  const struct rtc_time *timeptr)
 {
 	const struct pcf8563_config *config = dev->config;
-	uint8_t regs[4];
+	uint8_t regs[5];
 	int ret;
 
 	if (id != 0) {
@@ -267,36 +269,37 @@ static int pcf8563_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 		return -EINVAL;
 	}
 
+	regs[0] = PCF8563_ALARM_REGISTER;
 	/*
 	 * The first bit is used as enabled/disabled flag.
 	 * The mask will clean it and also the unused bits
 	 */
 	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) != 0) {
-		regs[0] = bin2bcd(timeptr->tm_min) & PCF8563_MINUTES_MASK;
+		regs[1] = bin2bcd(timeptr->tm_min) & PCF8563_MINUTES_MASK;
 	} else {
 		/* First bit to 1 is alarm disabled */
-		regs[0] = BIT(7);
-	}
-
-	if ((mask & RTC_ALARM_TIME_MASK_HOUR) != 0) {
-		regs[1] = bin2bcd(timeptr->tm_hour) & PCF8563_HOURS_MASK;
-	} else {
 		regs[1] = BIT(7);
 	}
 
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) != 0) {
-		regs[2] = bin2bcd(timeptr->tm_mday) & PCF8563_DAYS_MASK;
+	if ((mask & RTC_ALARM_TIME_MASK_HOUR) != 0) {
+		regs[2] = bin2bcd(timeptr->tm_hour) & PCF8563_HOURS_MASK;
 	} else {
 		regs[2] = BIT(7);
 	}
 
-	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) != 0) {
-		regs[3] = bin2bcd(timeptr->tm_wday) & PCF8563_WEEKDAYS_MASK;
+	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) != 0) {
+		regs[3] = bin2bcd(timeptr->tm_mday) & PCF8563_DAYS_MASK;
 	} else {
 		regs[3] = BIT(7);
 	}
 
-	ret = i2c_burst_write_dt(&config->i2c, PCF8563_ALARM_REGISTER, regs, sizeof(regs));
+	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) != 0) {
+		regs[4] = bin2bcd(timeptr->tm_wday) & PCF8563_WEEKDAYS_MASK;
+	} else {
+		regs[4] = BIT(7);
+	}
+
+	ret = i2c_write_dt(&config->i2c, regs, sizeof(regs));
 	if (ret) {
 		LOG_ERR("Error when setting alarm: %i", ret);
 		return ret;

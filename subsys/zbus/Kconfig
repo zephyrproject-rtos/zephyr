@@ -30,8 +30,8 @@ config ZBUS_CHANNEL_PUBLISH_STATS
 	bool "Channel publishing statistics (Timestamp and count)"
 
 config ZBUS_MSG_SUBSCRIBER
-	select NET_BUF
 	bool "Message subscribers will receive all messages in sequence."
+	select NET_BUF
 
 if ZBUS_MSG_SUBSCRIBER
 
@@ -64,6 +64,21 @@ config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
 endif # ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 endif # ZBUS_MSG_SUBSCRIBER
+
+config ZBUS_ASYNC_LISTENER
+	bool "Async listeners"
+	select ZBUS_MSG_SUBSCRIBER
+	help
+	  Async listeners will execute the callback asynchronously through a work queue (the
+	  system's work queue by default).
+
+if ZBUS_ASYNC_LISTENER
+
+config ZBUS_ASYNC_LISTENER_EXEC_TIMEOUT
+	int "Timeout to get a message from the fifo"
+	default 200
+
+endif # ZBUS_ASYNC_LISTENER
 
 config ZBUS_RUNTIME_OBSERVERS
 	bool "Runtime observers support."

@@ -63,5 +63,4 @@
 				 <RZT_PINMUX(PORT_16, 3, 1)>; /* XSPI0_RSTO0 */
 		};
 	};
-
 };

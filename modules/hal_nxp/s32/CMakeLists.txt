@@ -1,15 +1,7 @@
 # Copyright 2022-2025 NXP
 
 # Set the SoC specific drivers and configuration to build
-if(HWMv2)
-  set(SOC_BASE ${CONFIG_SOC})
-else()
-  if(${CONFIG_SOC} STREQUAL "s32z27")
-    set(SOC_BASE "s32z270")
-  else()
-    set(SOC_BASE ${CONFIG_SOC})
-  endif()
-endif()
+set(SOC_BASE ${CONFIG_SOC})
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/drivers/${SOC_SERIES} hal_nxp/s32/drivers)
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/soc/${SOC_BASE} hal_nxp/s32/soc)

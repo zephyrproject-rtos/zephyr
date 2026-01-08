@@ -68,6 +68,16 @@ config THREAD_ANALYZER_RUN_UNLOCKED
 	  For the limitation of such configuration see the k_thread_foreach
 	  documentation.
 
+config THREAD_ANALYZER_STACK_SAFETY
+	bool "Thread analysis includes thread runtime stack safety check"
+	default n
+	select THREAD_RUNTIME_STACK_SAFETY
+	help
+	  If enabled, the stack usage analysis is enhanced by calling a customizable handler
+	  when the unused stack space of a thread falls below its configured threshold. This
+	  customized handler may take actions such as logging warnings, suspending or even
+	  aborting threads.
+
 config THREAD_ANALYZER_AUTO
 	bool "Run periodic thread analysis in a thread"
 	help

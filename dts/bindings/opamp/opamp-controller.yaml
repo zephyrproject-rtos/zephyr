@@ -7,6 +7,7 @@ include:
 
 properties:
   functional-mode:
+    required: true
     type: string
     enum:
       - "differential"
@@ -16,6 +17,93 @@ properties:
       - "standalone"
     description: |
       Selects opamp functional mode.
+
+      a) differential mode
+
+      - Signals applied to both inputs
+      - Amplifies the difference between two input signals
+      - Common-mode signals are rejected
+      - Used in instrumentation and noise rejection
+      - Vout = (Rf/Rin) * (Vin2 - Vin1), where Rf is the feedback resistor
+        and Rin is the input resistor, with gain (Rf/Rin)
+
+               Rin        Rf
+      Vin1 --/\/\/\--*--/\/\/\-----
+                     |            |
+                     |     |\     |
+                     ------|- \   |
+                           |   >--*-- Vout
+                     ------|+ /
+                     |     |/
+                     |
+      Vin2 --/\/\/\--*--/\/\/\-----
+               Rin        Rf      |
+                                 GND
+
+      b) inverting mode
+
+      - Input signal applied to inverting (-) terminal
+      - Non-inverting (+) terminal connected to ground
+      - Feedback resistor connects output to inverting input
+      - Output is 180° out of phase with input
+      - Vout = (-Rf/Rin) * Vin, where Rf is the feedback resistor
+        and Rin is the input resistor, s.t. gain is (-Rf/Rin)
+
+              Rin        Rf
+      Vin --/\/\/\--*--/\/\/\-----
+                    |            |
+                    |     |\     |
+                    ------|- \   |
+                          |   >--*-- Vout
+                    ------|+ /
+                    |     |/
+                  GND
+
+      c) non_inverting mode
+
+      - Input signal applied to non-inverting (+) terminal
+      - Inverting (-) terminal connected to feedback network
+      - Output is in phase with input
+      - Vout = (1 + (Rf/Rin)) * Vin, where Rf is the feedback resistor
+        and Rin is the input resistor, s.t. gain is (1 + (Rf/Rin))
+
+            Rin        Rf
+       |--/\/\/\--*--/\/\/\-----
+       |          |            |
+      GND         |     |\     |
+                  ------|- \   |
+                        |   >--*-- Vout
+              Vin ------|+ /
+                        |/
+
+      d) follower mode (voltage follower or buffer)
+
+      - Special case of non-inverting amplifier
+      - Vout = 1 * Vin, s.t. gain is 1
+      - Direct feedback from output to inverting input
+      - Very high input impedance, very low output impedance
+      - Used for impedance matching
+
+          --------------
+          |            |
+          |     |\     |
+          ------|- \   |
+                |   >--*-- Vout
+      Vin ------|+ /
+                |/
+
+      e) standalone mode
+
+      - The opamp mode is defined by external circuitry
+
+                |\
+      Vin- -----|- \
+                |   >---- Vout
+      Vin+ -----|+ /
+                |/
+
+      References:
+        - https://www.electronics-tutorials.ws/category/opamp
 
   programmable-gain:
     type: string-array

@@ -1558,7 +1558,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
-	struct dma_config dma_cfg = dev_data->dma.cfg;
+	struct dma_config *dma_cfg = &dev_data->dma.cfg;
 	static DMA_HandleTypeDef hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
@@ -1567,34 +1567,34 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 
 	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg.user_data = &hdma;
+	dma_cfg->user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
+	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, dma_cfg);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Proceed to the HAL DMA driver init */
-	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
 		LOG_ERR("Source and destination data sizes not aligned");
 		return -EINVAL;
 	}
 
-	int index = find_lsb_set(dma_cfg.source_data_size) - 1;
+	int index = find_lsb_set(dma_cfg->source_data_size) - 1;
 
 	hdma.Init.PeriphDataAlignment = table_p_size[index];
 	hdma.Init.MemDataAlignment = table_m_size[index];
 	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma.Init.MemInc = DMA_MINC_ENABLE;
 	hdma.Init.Mode = DMA_NORMAL;
-	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
+	hdma.Init.Priority = table_priority[dma_cfg->channel_priority];
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
-	hdma.Init.Channel = dma_cfg.dma_slot;
+	hdma.Init.Channel = dma_cfg->dma_slot;
 #else
-	hdma.Init.Request = dma_cfg.dma_slot;
+	hdma.Init.Request = dma_cfg->dma_slot;
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
@@ -1631,7 +1631,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
 	dev_data->hqspi.Init.ChipSelectHighTime = dev_cfg->cs_high_time - 1;
 #if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
@@ -1818,10 +1817,7 @@ PINCTRL_DT_DEFINE(STM32_QSPI_NODE);
 
 static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.regs = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),
-	.pclken = {
-		.enr = DT_CLOCKS_CELL(STM32_QSPI_NODE, bits),
-		.bus = DT_CLOCKS_CELL(STM32_QSPI_NODE, bus)
-	},
+	.pclken = STM32_CLOCK_INFO(0, STM32_QSPI_NODE),
 	.irq_config = flash_stm32_qspi_irq_config_func,
 	.flash_size = (DT_INST_PROP(0, size) / 8) << STM32_QSPI_DOUBLE_FLASH,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
@@ -1840,7 +1836,9 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
 		.Instance = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),
 		.Init = {
 			.FifoThreshold = STM32_QSPI_FIFO_THRESHOLD,
-			.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE,
+			.SampleShifting = DT_PROP(STM32_QSPI_NODE, ssht_enable)
+					? QSPI_SAMPLE_SHIFTING_HALFCYCLE
+					: QSPI_SAMPLE_SHIFTING_NONE,
 			.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE,
 			.ClockMode = QSPI_CLOCK_MODE_0,
 			},

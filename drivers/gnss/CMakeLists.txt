@@ -3,15 +3,18 @@
 
 zephyr_library()
 zephyr_library_sources(gnss_publish.c)
+
+# zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_GNSS_DUMP gnss_dump.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_EMUL gnss_emul.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_PARSE gnss_parse.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_LUATOS_AIR530Z gnss_luatos_air530z.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA0183 gnss_nmea0183.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA0183_MATCH gnss_nmea0183_match.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA_GENERIC gnss_nmea_generic.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_PARSE gnss_parse.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_QUECTEL_LCX6G gnss_quectel_lcx6g.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_U_BLOX_F9P gnss_u_blox_f9p.c
-						    gnss_ubx_common.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_U_BLOX_M8 gnss_u_blox_m8.c
-						   gnss_ubx_common.c)
-zephyr_library_sources_ifdef(CONFIG_GNSS_LUATOS_AIR530Z gnss_luatos_air530z.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_U_BLOX_F9P  gnss_ubx_common.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_U_BLOX_F9P gnss_u_blox_f9p.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_U_BLOX_M8 gnss_u_blox_m8.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_U_BLOX_M8 gnss_ubx_common.c)
+# zephyr-keep-sorted-stop

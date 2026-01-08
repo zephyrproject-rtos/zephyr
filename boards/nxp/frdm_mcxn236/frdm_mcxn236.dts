@@ -26,6 +26,8 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan1;
+		zephyr,edac = &erm0;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	aliases {
@@ -161,6 +163,30 @@
 	status = "okay";
 };
 
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
+};
+
 &flexcomm2 {
 	status = "okay";
 };
@@ -251,10 +277,6 @@ zephyr_udc0: &usb1 {
 	tx-d-cal = <4>;
 	tx-cal-45-dp-ohms = <7>;
 	tx-cal-45-dm-ohms = <7>;
-};
-
-&lpcmp0 {
-	status = "okay";
 };
 
 &i3c1 {
@@ -373,11 +395,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 &lpadc0 {
 	pinctrl-0 = <&pinmux_lpadc0>;
-	pinctrl-names = "default";
-};
-
-&lpcmp0 {
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

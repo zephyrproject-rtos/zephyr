@@ -55,10 +55,10 @@ struct net_conn {
 	sys_snode_t node;
 
 	/** Remote socket address */
-	struct sockaddr remote_addr;
+	struct net_sockaddr remote_addr;
 
 	/** Local socket address */
-	struct sockaddr local_addr;
+	struct net_sockaddr local_addr;
 
 	/** Callback to be called when matching net packet is received */
 	net_conn_cb_t cb;
@@ -92,8 +92,8 @@ struct net_conn {
  * is received corresponding to received packet.
  *
  * @param proto Protocol for the connection (depends on the protocol
- *              family, e.g. UDP/TCP in the case of AF_INET/AF_INET6)
- * @param type Connection type (SOCK_STREAM/DGRAM/RAW)
+ *              family, e.g. UDP/TCP in the case of NET_AF_INET/NET_AF_INET6)
+ * @param type Connection type (NET_SOCK_STREAM/DGRAM/RAW)
  * @param family Protocol family (AF_*)
  * @param remote_addr Remote address of the connection end point.
  * @param local_addr Local address of the connection end point.
@@ -108,8 +108,8 @@ struct net_conn {
  */
 #if defined(CONFIG_NET_NATIVE)
 int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
-		      const struct sockaddr *remote_addr,
-		      const struct sockaddr *local_addr,
+		      const struct net_sockaddr *remote_addr,
+		      const struct net_sockaddr *local_addr,
 		      uint16_t remote_port,
 		      uint16_t local_port,
 		      struct net_context *context,
@@ -119,8 +119,8 @@ int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 #else
 static inline int net_conn_register(uint16_t proto, enum net_sock_type type,
 				    uint8_t family,
-				    const struct sockaddr *remote_addr,
-				    const struct sockaddr *local_addr,
+				    const struct net_sockaddr *remote_addr,
+				    const struct net_sockaddr *local_addr,
 				    uint16_t remote_port,
 				    uint16_t local_port,
 				    struct net_context *context,
@@ -178,9 +178,9 @@ static inline int net_conn_unregister(struct net_conn_handle *handle)
 int net_conn_update(struct net_conn_handle *handle,
 		    net_conn_cb_t cb,
 		    void *user_data,
-		    const struct sockaddr *remote_addr,
+		    const struct net_sockaddr *remote_addr,
 		    uint16_t remote_port,
-		    const struct sockaddr *local_addr,
+		    const struct net_sockaddr *local_addr,
 		    uint16_t local_port);
 
 /**

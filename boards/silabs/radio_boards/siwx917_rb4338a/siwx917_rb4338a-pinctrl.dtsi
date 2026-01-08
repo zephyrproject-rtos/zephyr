@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+
+&pinctrl0 {
+	ulpi2c_default: ulpi2c_default {
+		group {
+			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
+		};
+	};
+
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group {
+			pinmux = <AGPIO_ULP1>;
+		};
+	};
+};

@@ -38,10 +38,6 @@ void arch_data_copy(void)
 		       (uintptr_t) &_nocache_load_ram_size);
 #endif /* CONFIG_NOCACHE_MEMORY */
 #endif /* CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT */
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
-	arch_early_memcpy(&__ccm_data_start, &__ccm_data_load_start,
-		       __ccm_data_end - __ccm_data_start);
-#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
 	arch_early_memcpy(&__itcm_start, &__itcm_load_start,
 		       (uintptr_t) &__itcm_size);

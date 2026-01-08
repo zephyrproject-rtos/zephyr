@@ -8,12 +8,6 @@
 #include <zephyr/dt-bindings/lvgl/lvgl.h>
 
 / {
-	pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&stmpe811>;
-		invert-y;
-	};
-
 	keypad {
 		compatible = "zephyr,lvgl-keypad-input";
 		input = <&buttons>;

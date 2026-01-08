@@ -13,6 +13,10 @@ tests:
     platform_exclude:
       - kit_xmc72_evk/xmc7200d_e272k8384/m7_0
       - kit_xmc72_evk/xmc7200d_e272k8384/m7_1
+      - kit_t2g_b_h_lite/cyt4bf8cds/m7_0
+      - kit_t2g_b_h_lite/cyt4bf8cds/m7_1
+      - kit_t2g_b_h_evk/cyt4bfbche/m7_0
+      - kit_t2g_b_h_evk/cyt4bfbche/m7_1
   arch.arm.irq_zero_latency_levels.secure_fw:
     filter: CONFIG_TRUSTED_EXECUTION_SECURE
     integration_platforms:

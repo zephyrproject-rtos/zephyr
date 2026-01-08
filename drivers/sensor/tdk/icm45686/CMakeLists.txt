@@ -5,15 +5,15 @@
 zephyr_library()
 zephyr_library_include_directories(.)
 zephyr_library_sources(
-	icm45686.c
-	icm45686_bus.c
+  icm45686.c
+  icm45686_bus.c
 )
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
-	icm45686_decoder.c
+  icm45686_decoder.c
 )
 zephyr_library_sources_ifdef(CONFIG_ICM45686_TRIGGER
-	icm45686_trigger.c
+  icm45686_trigger.c
 )
 zephyr_library_sources_ifdef(CONFIG_ICM45686_STREAM
-	icm45686_stream.c
+  icm45686_stream.c
 )

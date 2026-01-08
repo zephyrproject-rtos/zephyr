@@ -9,6 +9,7 @@ family:
     - name: mspm0g1505
     - name: mspm0g1506
     - name: mspm0g1507
+    - name: mspm0g1518
     - name: mspm0g1519
     - name: mspm0g3105
     - name: mspm0g3106
@@ -16,6 +17,7 @@ family:
     - name: mspm0g3505
     - name: mspm0g3506
     - name: mspm0g3507
+    - name: mspm0g3518
     - name: mspm0g3519
   - name: mspm0l
     socs:

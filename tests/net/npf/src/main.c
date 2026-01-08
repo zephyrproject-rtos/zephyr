@@ -56,12 +56,12 @@ static struct net_pkt *build_test_pkt(int type, int size, struct net_if *iface)
 	struct net_eth_hdr eth_hdr;
 	int ret;
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, size, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, size, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_not_null(pkt, "");
 
 	eth_hdr.src = ETH_SRC_ADDR;
 	eth_hdr.dst = ETH_DST_ADDR;
-	eth_hdr.type = htons(type);
+	eth_hdr.type = net_htons(type);
 
 	ret = net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr));
 	zassert_equal(ret, 0, "");
@@ -81,13 +81,13 @@ static struct net_pkt *build_vlan_test_pkt(int type, int size, struct net_if *if
 	struct net_eth_vlan_hdr eth_hdr;
 	int ret;
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, size, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, size, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_not_null(pkt, "");
 
 	eth_hdr.src = ETH_SRC_ADDR;
 	eth_hdr.dst = ETH_DST_ADDR;
-	eth_hdr.type = htons(type);
-	eth_hdr.vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
+	eth_hdr.type = net_htons(type);
+	eth_hdr.vlan.tpid = net_htons(NET_ETH_PTYPE_VLAN);
 
 	ret = net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr));
 	zassert_equal(ret, 0, "");
@@ -102,25 +102,25 @@ static struct net_pkt *build_vlan_test_pkt(int type, int size, struct net_if *if
 }
 
 static struct net_pkt *build_test_ip_pkt(void *src, void *dst,
-	   sa_family_t family, struct net_if *iface)
+					 net_sa_family_t family, struct net_if *iface)
 {
 	struct net_pkt *pkt;
 	int ret = -1;
 	int size;
 
-	size = (family == AF_INET) ? sizeof(struct net_ipv4_hdr) :
-		(family == AF_INET6) ? sizeof(struct net_ipv6_hdr) : 0U;
+	size = (family == NET_AF_INET) ? sizeof(struct net_ipv4_hdr) :
+		(family == NET_AF_INET6) ? sizeof(struct net_ipv6_hdr) : 0U;
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, size, family, 0, K_NO_WAIT);
 	zassert_not_null(pkt, "");
 
-	if (family == AF_INET) {
-		ret = net_ipv4_create(pkt, (struct in_addr *)src, (struct in_addr *)dst);
-	} else if (family == AF_INET6) {
-		ret = net_ipv6_create(pkt, (struct in6_addr *)src, (struct in6_addr *)dst);
+	if (family == NET_AF_INET) {
+		ret = net_ipv4_create(pkt, (struct net_in_addr *)src, (struct net_in_addr *)dst);
+	} else if (family == NET_AF_INET6) {
+		ret = net_ipv6_create(pkt, (struct net_in6_addr *)src, (struct net_in6_addr *)dst);
 	}
 	zassert_equal(ret, 0, "Cannot create %s packet (%d)",
-		(family == AF_INET) ? "IPv4" : "IPv6", ret);
+		(family == NET_AF_INET) ? "IPv4" : "IPv6", ret);
 
 	DBG("pkt %p: iface %p size %d sa_family %d\n", pkt, iface, size, family);
 	return pkt;
@@ -427,14 +427,14 @@ ZTEST(net_pkt_filter_test_suite, test_npf_address_mask)
  * IP address filtering
  */
 
-static struct in_addr ipv4_address_list[4] = {
+static struct net_in_addr ipv4_address_list[4] = {
 	{ { { 192, 168, 1, 1 } } },
 	{ { { 192, 0, 2, 1 } } },
 	{ { { 172, 16, 0, 1 } } },
 	{ { { 10, 49, 0, 252 } } }
 };
 
-static struct in6_addr ipv6_address_list[4] = {
+static struct net_in6_addr ipv6_address_list[4] = {
 	{ { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } },
 	{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } },
 	{ { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } },
@@ -442,21 +442,21 @@ static struct in6_addr ipv6_address_list[4] = {
 };
 
 static NPF_IP_SRC_ADDR_ALLOWLIST(allowlist_ipv4_src_addr, (void *)ipv4_address_list,
-					 ARRAY_SIZE(ipv4_address_list), AF_INET);
+					 ARRAY_SIZE(ipv4_address_list), NET_AF_INET);
 static NPF_IP_SRC_ADDR_BLOCKLIST(blocklist_ipv4_src_addr, (void *)ipv4_address_list,
-					 ARRAY_SIZE(ipv4_address_list), AF_INET);
+					 ARRAY_SIZE(ipv4_address_list), NET_AF_INET);
 
 static NPF_RULE(ipv4_allowlist, NET_OK, allowlist_ipv4_src_addr);
 static NPF_RULE(ipv4_blocklist, NET_OK, blocklist_ipv4_src_addr);
 
 ZTEST(net_pkt_filter_test_suite, test_npf_ipv4_address_filtering)
 {
-	struct in_addr dst = { { { 192, 168, 2, 1 } } };
-	struct in_addr bad_addr = { { { 192, 168, 2, 3 } } };
-	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[0], &dst, AF_INET,
+	struct net_in_addr dst = { { { 192, 168, 2, 1 } } };
+	struct net_in_addr bad_addr = { { { 192, 168, 2, 3 } } };
+	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[0], &dst, NET_AF_INET,
 						   &dummy_iface_a);
 	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[0], &ipv6_address_list[1],
-						   AF_INET6, &dummy_iface_a);
+						   NET_AF_INET6, &dummy_iface_a);
 
 	/* make sure pkt is initially accepted */
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");
@@ -466,14 +466,14 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv4_address_filtering)
 	npf_insert_ipv4_recv_rule(&ipv4_allowlist);
 
 	for (int it = 0; it < ARRAY_SIZE(ipv4_address_list); it++) {
-		memcpy((struct in_addr *)NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[it],
-		       sizeof(struct in_addr));
+		memcpy((struct net_in_addr *)NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[it],
+		       sizeof(struct net_in_addr));
 		zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");
 	}
 
 	/* And one not listed */
-	memcpy((struct in_addr *)NET_IPV4_HDR(pkt_v4)->src,
-				 &bad_addr, sizeof(struct in_addr));
+	memcpy((struct net_in_addr *)NET_IPV4_HDR(pkt_v4)->src,
+				 &bad_addr, sizeof(struct net_in_addr));
 	zassert_false(net_pkt_filter_ip_recv_ok(pkt_v4), "");
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v6), "");
 
@@ -488,14 +488,14 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv4_address_filtering)
 	npf_insert_ipv4_recv_rule(&ipv4_blocklist);
 
 	for (int it = 0; it < ARRAY_SIZE(ipv4_address_list); it++) {
-		memcpy((struct in_addr *)NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[it],
-		       sizeof(struct in_addr));
+		memcpy((struct net_in_addr *)NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[it],
+		       sizeof(struct net_in_addr));
 		zassert_false(net_pkt_filter_ip_recv_ok(pkt_v4), "");
 	}
 
 	/* And one not listed */
-	memcpy((struct in_addr *)NET_IPV4_HDR(pkt_v4)->src,
-				 &bad_addr, sizeof(struct in_addr));
+	memcpy((struct net_in_addr *)NET_IPV4_HDR(pkt_v4)->src,
+				 &bad_addr, sizeof(struct net_in_addr));
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");
 
 	zassert_true(npf_remove_all_ipv4_recv_rules(), "");
@@ -504,23 +504,23 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv4_address_filtering)
 }
 
 static NPF_IP_SRC_ADDR_ALLOWLIST(allowlist_ipv6_src_addr, (void *)ipv6_address_list,
-					 ARRAY_SIZE(ipv6_address_list), AF_INET6);
+					 ARRAY_SIZE(ipv6_address_list), NET_AF_INET6);
 static NPF_IP_SRC_ADDR_BLOCKLIST(blocklist_ipv6_src_addr, (void *)ipv6_address_list,
-					 ARRAY_SIZE(ipv6_address_list), AF_INET6);
+					 ARRAY_SIZE(ipv6_address_list), NET_AF_INET6);
 
 static NPF_RULE(ipv6_allowlist, NET_OK, allowlist_ipv6_src_addr);
 static NPF_RULE(ipv6_blocklist, NET_OK, blocklist_ipv6_src_addr);
 
 ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 {
-	struct in6_addr dst = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+	struct net_in6_addr dst = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0xf2, 0xaa, 0x29, 0x02, 0x04 } } };
-	struct in6_addr bad_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 8, 0, 0, 0,
+	struct net_in6_addr bad_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 8, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[0], &dst, AF_INET6,
+	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[0], &dst, NET_AF_INET6,
 						   &dummy_iface_a);
 	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[0], &ipv4_address_list[1],
-						   AF_INET, &dummy_iface_a);
+						   NET_AF_INET, &dummy_iface_a);
 
 	/* make sure pkt is initially accepted */
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");
@@ -530,14 +530,14 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 	npf_insert_ipv6_recv_rule(&ipv6_allowlist);
 
 	for (int it = 0; it < ARRAY_SIZE(ipv6_address_list); it++) {
-		memcpy((struct in6_addr *)NET_IPV6_HDR(pkt_v6)->src,
-				 &ipv6_address_list[it], sizeof(struct in6_addr));
+		memcpy((struct net_in6_addr *)NET_IPV6_HDR(pkt_v6)->src,
+				 &ipv6_address_list[it], sizeof(struct net_in6_addr));
 		zassert_true(net_pkt_filter_ip_recv_ok(pkt_v6), "");
 	}
 
 	/* And one not listed */
-	memcpy((struct in6_addr *)NET_IPV6_HDR(pkt_v6)->src,
-				 &bad_addr, sizeof(struct in6_addr));
+	memcpy((struct net_in6_addr *)NET_IPV6_HDR(pkt_v6)->src,
+				 &bad_addr, sizeof(struct net_in6_addr));
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");
 	zassert_false(net_pkt_filter_ip_recv_ok(pkt_v6), "");
 
@@ -552,14 +552,14 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 	npf_insert_ipv6_recv_rule(&ipv6_blocklist);
 
 	for (int it = 0; it < ARRAY_SIZE(ipv6_address_list); it++) {
-		memcpy((struct in6_addr *)NET_IPV6_HDR(pkt_v6)->src,
-				 &ipv6_address_list[it], sizeof(struct in6_addr));
+		memcpy((struct net_in6_addr *)NET_IPV6_HDR(pkt_v6)->src,
+				 &ipv6_address_list[it], sizeof(struct net_in6_addr));
 		zassert_false(net_pkt_filter_ip_recv_ok(pkt_v6), "");
 	}
 
 	/* And one not listed */
-	memcpy((struct in6_addr *)NET_IPV4_HDR(pkt_v6)->src,
-				 &bad_addr, sizeof(struct in6_addr));
+	memcpy((struct net_in6_addr *)NET_IPV4_HDR(pkt_v6)->src,
+				 &bad_addr, sizeof(struct net_in6_addr));
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v6), "");
 
 	zassert_true(npf_remove_all_ipv6_recv_rules(), "");

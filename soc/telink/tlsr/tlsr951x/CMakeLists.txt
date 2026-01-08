@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources(
-	start.S
-	soc_irq.S
-	soc.c
+  start.S
+  soc_irq.S
+  soc.c
 )
 
 zephyr_include_directories(.)

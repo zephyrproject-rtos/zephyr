@@ -32,10 +32,7 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 static inline void arch_switch(void *switch_to, void **switched_from)

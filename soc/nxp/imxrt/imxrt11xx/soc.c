@@ -780,12 +780,12 @@ __asm__ (
 
 void __used _soc_reset_hook(void)
 {
-	SystemInit();
-
 #if defined(FLEXRAM_RUNTIME_BANKS_USED)
 	/* Configure flexram if not running from RAM */
 	flexram_dt_partition();
 #endif
+
+	SystemInit();
 }
 #endif
 

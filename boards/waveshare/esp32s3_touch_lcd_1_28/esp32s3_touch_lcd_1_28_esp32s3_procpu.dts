@@ -46,12 +46,6 @@
 		};
 	};
 
-	/* Touch Controller */
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&cst816s>;
-	};
-
 	/* PWM */
 	pwmleds {
 		compatible = "pwm-leds";

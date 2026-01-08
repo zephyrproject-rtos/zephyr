@@ -20,6 +20,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(160)>;
 		};
 
 		cpu@1 {
@@ -62,16 +63,23 @@
 			reg = <0x20400000 DT_SIZE_K(320)>;
 		};
 
-		/*
-		 * Last 48Kb is reserved by Secure BAF, application core cannot access it.
-		 *
-		 * Do not assign the compatible for this now, when Flash API is implemented,
-		 * need to check if "soc-nv-flash" can be used or a new binding need to be
-		 * created, based on it.
-		 */
-		flash0: flash@400000 {
-			reg = <0x00400000 DT_SIZE_K(4048)>;
-			status = "disabled";
+		c40fc: flash-controller@40268000 {
+			compatible = "nxp,c40-flash-controller";
+			reg = <0x40268000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Map child address 0x0..size onto CPU 0x0040_0000.. */
+			/* Last 48Kb is reserved by Secure BAF, app core cannot access it.*/
+			ranges = <0x0 0x00400000 DT_SIZE_K(4048)>; /* 4048 KiB Flash window */
+
+			flash0: flash@0 {
+				compatible = "nxp,c40-flash";
+				reg = <0x0 DT_SIZE_K(4048)>;
+				erase-block-size = <DT_SIZE_K(8)>;  /* 8 KiB sectors */
+				write-block-size = <8>;             /* 8-byte min program unit */
+				status = "disabled";
+			};
 		};
 
 		clock: clock-controller@402c8000 {
@@ -471,6 +479,8 @@
 			interrupts = <109 0>, <110 0>, <111 0>, <112 0>;
 			interrupt-names = "ored", "ored_0_31_mb",
 					  "ored_32_63_mb", "ored_64_95_mb";
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
 			status = "disabled";
 		};
 
@@ -481,6 +491,8 @@
 			clk-source = <0>;
 			interrupts = <113 0>, <114 0>, <115 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -491,6 +503,8 @@
 			clk-source = <0>;
 			interrupts = <116 0>, <117 0>, <118 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
+			number-of-mb = <64>;
+			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -501,6 +515,8 @@
 			clk-source = <0>;
 			interrupts = <119 0>, <120 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
@@ -511,6 +527,8 @@
 			clk-source = <0>;
 			interrupts = <121 0>, <122 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
@@ -521,6 +539,8 @@
 			clk-source = <0>;
 			interrupts = <123 0>, <124 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
@@ -884,6 +904,7 @@
 		mc_me: mc_me@402dc000 {
 			compatible = "nxp,s32-mc-me";
 			reg = <0x402dc000 0x4000>;
+			software-reset-supported;
 		};
 
 		mc_rgm: mc_rgm@4028c000 {

@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
-#include <poll.h>
 #include <nsi_tracing.h>
 
 #define ERROR nsi_print_error_and_exit
@@ -107,7 +106,7 @@ int np_uart_slave_connected(int fd)
  * Attempt to connect a terminal emulator to the slave side of the pty
  * If -attach_uart_cmd=<cmd> is provided as a command line option, <cmd> will be
  * used. Otherwise, the default command,
- * CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD, will be used instead
+ * CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD, will be used instead
  */
 static void attach_to_pty(const char *slave_pty, const char *auto_attach_cmd)
 {

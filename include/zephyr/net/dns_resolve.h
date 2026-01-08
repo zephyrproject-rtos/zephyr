@@ -214,7 +214,7 @@ struct dns_socket_dispatcher;
  * @return 0 if ok, <0 if error
  */
 typedef int (*dns_socket_dispatcher_cb)(struct dns_socket_dispatcher *ctx, int sock,
-					struct sockaddr *addr, size_t addrlen,
+					struct net_sockaddr *addr, size_t addrlen,
 					struct net_buf *buf, size_t data_len);
 
 /** @brief DNS socket dispatcher context. */
@@ -235,7 +235,7 @@ struct dns_socket_dispatcher {
 	/** Type of the socket (resolver / responder) */
 	enum dns_socket_type type;
 	/** Local endpoint address (used when binding the socket) */
-	struct sockaddr local_addr;
+	struct net_sockaddr local_addr;
 	/** DNS socket dispatcher callback is called for incoming traffic */
 	dns_socket_dispatcher_cb cb;
 	/** Socket descriptors to poll */
@@ -312,10 +312,10 @@ struct dns_addrinfo {
 	union {
 		struct {
 			/** Length of the ai_addr field or ai_canonname */
-			socklen_t ai_addrlen;
+			net_socklen_t ai_addrlen;
 
-			/* AF_INET or AF_INET6 address info */
-			struct sockaddr ai_addr;
+			/* NET_AF_INET or NET_AF_INET6 address info */
+			struct net_sockaddr ai_addr;
 
 			/** AF_LOCAL Canonical name of the address */
 			char ai_canonname[DNS_MAX_NAME_SIZE + 1];
@@ -427,7 +427,7 @@ struct dns_resolve_context {
 	/** List of configured DNS servers */
 	struct dns_server {
 		/** DNS server information */
-		struct sockaddr dns_server;
+		struct net_sockaddr dns_server;
 
 		/** Connection to the DNS server */
 		int sock;
@@ -516,6 +516,9 @@ struct dns_resolve_context {
 		 * cannot be used to find correct pending query.
 		 */
 		uint16_t query_hash;
+
+		/** Flag to indicate that the callback has been called at least once. */
+		bool cb_called;
 	} queries[DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
@@ -536,7 +539,7 @@ struct mdns_probe_user_data {
 };
 
 struct mdns_responder_context {
-	struct sockaddr server_addr;
+	struct net_sockaddr server_addr;
 	struct dns_socket_dispatcher dispatcher;
 	struct zsock_pollfd fds[1];
 	int sock;
@@ -555,7 +558,7 @@ struct mdns_responder_context {
  *
  * @details This function sets the DNS server address and initializes the
  * DNS context that is used by the actual resolver. DNS server addresses
- * can be specified either in textual form, or as struct sockaddr (or both).
+ * can be specified either in textual form, or as struct net_sockaddr (or both).
  * Note that the recommended way to resolve DNS names is to use
  * the dns_get_addr_info() API. In that case user does not need to
  * call dns_resolve_init() as the DNS servers are already setup by the system.
@@ -571,15 +574,15 @@ struct mdns_responder_context {
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param dns_servers_sa DNS server addresses as struct sockaddr. The array
- * is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * @param dns_servers_sa DNS server addresses as struct net_sockaddr. The array
+ * is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  * default will be used if set to 0.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_init(struct dns_resolve_context *ctx,
 		     const char *dns_servers_str[],
-		     const struct sockaddr *dns_servers_sa[]);
+		     const struct net_sockaddr *dns_servers_sa[]);
 
 /**
  * @brief Init DNS resolving context with default Kconfig options.
@@ -615,8 +618,8 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param servers_sa DNS server addresses as struct sockaddr. The array
- * is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * @param servers_sa DNS server addresses as struct net_sockaddr. The array
+ * is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  * default will be used if set to 0.
  * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
  *
@@ -624,7 +627,7 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  */
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers_str[],
-			    const struct sockaddr *servers_sa[],
+			    const struct net_sockaddr *servers_sa[],
 			    enum dns_server_source source);
 
 /**
@@ -639,8 +642,8 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
  *           IPv4 + port : 10.0.9.1:5353
  *           IPv6        : 2001:db8::22:42
  *           IPv6 + port : [2001:db8::22:42]:5353
- * @param servers_sa DNS server addresses as struct sockaddr. The array
- *        is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * @param servers_sa DNS server addresses as struct net_sockaddr. The array
+ *        is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  *        default will be used if set to 0.
  * @param interfaces Network interfaces to which the DNS servers are bound.
  *        This is an array of network interface indices. The array must be
@@ -651,7 +654,7 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
  */
 int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 					    const char *servers_str[],
-					    const struct sockaddr *servers_sa[],
+					    const struct net_sockaddr *servers_sa[],
 					    int interfaces[],
 					    enum dns_server_source source);
 
@@ -682,8 +685,8 @@ int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
  * @brief Remove servers from the DNS resolving context that have a specific IP address.
  *
  * @param ctx DNS context
- * @param servers_sa DNS server addresses as struct sockaddr. The array
- *        is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * @param servers_sa DNS server addresses as struct net_sockaddr. The array
+ *        is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  *        default will be used if set to 0.
  * @param interfaces Network interfaces to which the DNS servers are bound.
  *        This is an array of network interface indices. The array must be
@@ -692,7 +695,7 @@ int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
-					const struct sockaddr *servers_sa[],
+					const struct net_sockaddr *servers_sa[],
 					int interfaces[]);
 
 /**
@@ -768,9 +771,8 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
  * Note that this is an asynchronous call, the function will return immediately
  * and the system will call the callback after resolving has finished or a timeout
  * has occurred.
- * We might send the query to multiple servers (if there are more than one
- * server configured), but we only use the result of the first received
- * response.
+ * The callback is called for each response received. The query needs to be either cancelled
+ * manually, or by the timeout.
  *
  * @param ctx DNS context
  * @param query What the caller wants to resolve.

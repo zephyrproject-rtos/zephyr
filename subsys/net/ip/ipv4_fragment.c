@@ -70,7 +70,7 @@ static struct net_ipv4_reassembly *reassembly_get(uint16_t id, const uint8_t *sr
 	return &reassembly[avail];
 }
 
-static bool reassembly_cancel(uint32_t id, struct in_addr *src, struct in_addr *dst)
+static bool reassembly_cancel(uint32_t id, struct net_in_addr *src, struct net_in_addr *dst)
 {
 	int i, j;
 
@@ -197,7 +197,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	}
 
 	/* Fix the total length, offset and checksum of the IPv4 packet */
-	ipv4_hdr->len = htons(net_pkt_get_len(pkt));
+	ipv4_hdr->len = net_htons(net_pkt_get_len(pkt));
 	ipv4_hdr->offset[0] = 0;
 	ipv4_hdr->offset[1] = 0;
 	ipv4_hdr->chksum = 0;
@@ -328,8 +328,8 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	int ret;
 	int i;
 
-	flag = ntohs(*((uint16_t *)&hdr->offset));
-	id = ntohs(*((uint16_t *)&hdr->id));
+	flag = net_ntohs(*((uint16_t *)&hdr->offset));
+	id = net_ntohs(*((uint16_t *)&hdr->id));
 
 	reass = reassembly_get(id, hdr->src, hdr->dst, hdr->proto);
 	if (!reass) {
@@ -431,7 +431,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 
 	frag_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), fit_len +
 					     net_pkt_ip_hdr_len(pkt),
-					     AF_INET, 0, NET_BUF_TIMEOUT);
+					     NET_AF_INET, 0, NET_BUF_TIMEOUT);
 	if (!frag_pkt) {
 		return -ENOMEM;
 	}
@@ -480,7 +480,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	}
 
 	sys_put_be16(offset_pkt, ipv4_hdr->offset);
-	ipv4_hdr->len = htons((fit_len + net_pkt_ip_hdr_len(pkt)));
+	ipv4_hdr->len = net_htons((fit_len + net_pkt_ip_hdr_len(pkt)));
 
 	ipv4_hdr->chksum = 0;
 	ipv4_hdr->chksum = net_calc_chksum_ipv4(frag_pkt);
@@ -532,7 +532,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	/* Check if the DF (Don't Fragment) flag is set, if so, we cannot fragment the packet */
-	flag = ntohs(*((uint16_t *)&frag_hdr->offset));
+	flag = net_ntohs(*((uint16_t *)&frag_hdr->offset));
 
 	if (flag & NET_IPV4_DO_NOT_FRAG_MASK) {
 		/* This packet cannot be fragmented */
@@ -569,13 +569,13 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		net_pkt_acknowledge_data(pkt, &frag_access);
 
 		switch (frag_hdr->proto) {
-		case IPPROTO_ICMP:
+		case NET_IPPROTO_ICMP:
 			ret = net_icmpv4_finalize(pkt, true);
 			break;
-		case IPPROTO_TCP:
+		case NET_IPPROTO_TCP:
 			ret = net_tcp_finalize(pkt, true);
 			break;
-		case IPPROTO_UDP:
+		case NET_IPPROTO_UDP:
 			ret = net_udp_finalize(pkt, true);
 			break;
 		default:
@@ -630,12 +630,12 @@ enum net_verdict net_ipv4_prepare_for_send_fragment(struct net_pkt *pkt)
 		uint16_t mtu;
 
 		if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
-			struct sockaddr_in dst = {
-				.sin_family = AF_INET,
-				.sin_addr = *((struct in_addr *)ip_hdr->dst),
+			struct net_sockaddr_in dst = {
+				.sin_family = NET_AF_INET,
+				.sin_addr = *((struct net_in_addr *)ip_hdr->dst),
 			};
 
-			ret = net_pmtu_get_mtu((struct sockaddr *)&dst);
+			ret = net_pmtu_get_mtu((struct net_sockaddr *)&dst);
 			if (ret <= 0) {
 				goto use_interface_mtu;
 			}

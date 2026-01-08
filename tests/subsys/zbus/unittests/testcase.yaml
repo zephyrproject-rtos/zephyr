@@ -1,6 +1,12 @@
+common:
+  platform_exclude:
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch32
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch64
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch64/smp
 tests:
   message_bus.zbus.general_unittests:
-    platform_exclude: fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
     tags: zbus
     integration_platforms:
       - native_sim
@@ -13,7 +19,6 @@ tests:
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y
   message_bus.zbus.general_unittests_without_priority_boost:
-    platform_exclude: fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
     tags: zbus
     integration_platforms:
       - native_sim

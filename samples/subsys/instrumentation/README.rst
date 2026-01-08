@@ -1,5 +1,6 @@
 .. zephyr:code-sample:: instrumentation
    :name: Instrumentation
+   :relevant-api: instrumentation_api
 
    Demonstrate the instrumentation subsystem tracing and profiling features.
 

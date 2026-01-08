@@ -1111,8 +1111,14 @@ ZTEST(smp, test_inc_concurrency)
 			"total count %d is wrong(M)", global_cnt);
 }
 
+/** Keep track of how many signals raised. */
+static unsigned int t_signal_raised;
+
+/** Keep track of how many signals received per thread. */
+static unsigned int t_signals_rcvd[MAX_NUM_THREADS];
+
 /**
- * @brief Torture test for context switching code
+ * @brief Stress test for context switching code
  *
  * @ingroup kernel_smp_tests
  *
@@ -1125,39 +1131,68 @@ static void process_events(void *arg0, void *arg1, void *arg2)
 	ARG_UNUSED(arg2);
 
 	uintptr_t id = (uintptr_t) arg0;
+	unsigned int signaled;
+	int result;
 
 	while (1) {
-		k_poll(&tevent[id], 1, K_FOREVER);
+		/* Retry if no event(s) are ready.
+		 * For example, -EINTR where polling is interrupted.
+		 */
+		if (k_poll(&tevent[id], 1, K_FOREVER) != 0) {
+			continue;
+		}
 
-		if (tevent[id].signal->result != 0x55) {
+		/* Grab the raised signal. */
+		k_poll_signal_check(tevent[id].signal, &signaled, &result);
+
+		/* Check correct result. */
+		if (result != 0x55) {
 			ztest_test_fail();
 		}
 
-		tevent[id].signal->signaled = 0;
-		tevent[id].state = K_POLL_STATE_NOT_READY;
+		t_signals_rcvd[id]++;
 
-		k_poll_signal_reset(&tsignal[id]);
+		/* Reset both event and signal. */
+		tevent[id].state = K_POLL_STATE_NOT_READY;
+		tevent[id].signal->result = 0;
+		k_poll_signal_reset(tevent[id].signal);
 	}
 }
 
 static void signal_raise(void *arg0, void *arg1, void *arg2)
 {
 	unsigned int num_threads = arch_num_cpus();
+	unsigned int signaled;
+	int result;
+
+	t_signal_raised = 0U;
 
 	while (1) {
 		for (uintptr_t i = 0; i < num_threads; i++) {
+			/* Only raise signal when it is okay to do so.
+			 * We don't want to raise a signal while the signal
+			 * and the associated event are still in the process
+			 * of being reset (see above).
+			 */
+			k_poll_signal_check(tevent[i].signal, &signaled, &result);
+
+			if (signaled != 0U) {
+				continue;
+			}
+
+			t_signal_raised++;
 			k_poll_signal_raise(&tsignal[i], 0x55);
 		}
 	}
 }
 
-ZTEST(smp, test_smp_switch_torture)
+ZTEST(smp_stress, test_smp_switch_stress)
 {
 	unsigned int num_threads = arch_num_cpus();
 
 	if (CONFIG_SMP_TEST_RUN_FACTOR == 0) {
 		/* If CONFIG_SMP_TEST_RUN_FACTOR is zero,
-		 * the switch torture test is effectively
+		 * the switch stress test is effectively
 		 * not doing anything as the k_sleep()
 		 * below is not going to sleep at all,
 		 * and all created threads are being
@@ -1169,6 +1204,8 @@ ZTEST(smp, test_smp_switch_torture)
 	}
 
 	for (uintptr_t i = 0; i < num_threads; i++) {
+		t_signals_rcvd[i] = 0;
+
 		k_poll_signal_init(&tsignal[i]);
 		k_poll_event_init(&tevent[i], K_POLL_TYPE_SIGNAL,
 				  K_POLL_MODE_NOTIFY_ONLY, &tsignal[i]);
@@ -1190,10 +1227,22 @@ ZTEST(smp, test_smp_switch_torture)
 		k_thread_abort(&tthread[i]);
 		k_thread_join(&tthread[i], K_FOREVER);
 	}
+
+	TC_PRINT("Total signals raised %u\n", t_signal_raised);
+
+	for (unsigned int i = 0; i < num_threads; i++) {
+		TC_PRINT("Thread #%d received %u signals\n", i, t_signals_rcvd[i]);
+	}
+
+	/* Check if we at least have done some switching. */
+	for (unsigned int i = 0; i < num_threads; i++) {
+		zassert_not_equal(0, t_signals_rcvd[i],
+				  "Thread #%d has not received any signals", i);
+	}
 }
 
 /**
- * @brief Torture test for cpu affinity code
+ * @brief Stress test for cpu affinity code
  *
  * @ingroup kernel_smp_tests
  *
@@ -1248,3 +1297,4 @@ static void *smp_tests_setup(void)
 }
 
 ZTEST_SUITE(smp, NULL, smp_tests_setup, NULL, NULL, NULL);
+ZTEST_SUITE(smp_stress, NULL, smp_tests_setup, NULL, NULL, NULL);

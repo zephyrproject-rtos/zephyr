@@ -1,24 +1,38 @@
-# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 temperature sensor
+description: |
+
+  ESP32 internal temperature sensor
+
+  This peripheral supports a number of measurement ranges with different
+  precisions, based on the temperature range expected for the device to operate:
+
+      Range (°C)      Error
+      50 to 125       < 3°C
+      20 to 100       < 2°C
+      -10 to 80       < 1°C
+      -30 to 50       < 2°C
+      -40 to 20       < 3°C
+
+  The range and corresponding expected precision are selected through the
+  user-defined `range-min` and `range-max` properties. The default values
+  represent a typical operating temperature range while selecting the best
+  precision.
 
 compatible: "espressif,esp32-temp"
 
 include: sensor-device.yaml
 
 properties:
-  range:
+  range-min:
     type: int
     description: |
-      The temperature sensor is available on the ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C6.
-      Note that it is unavailable on the ESP32 due to missing offset calibration.
-      Temperature range is defined by the temperature offset which is used during
-      calculation of the output temperature from the measured value.
-    default: 2
-    enum:
-    - 0    # measure range: 50°C ~ 125°C, error < 3°C
-    - 1    # measure range: 20°C ~ 100°C, error < 2°C
-    - 2    # measure range:-10°C ~  80°C, error < 1°C
-    - 3    # measure range:-30°C ~  50°C, error < 2°C
-    - 4    # measure range:-40°C ~  20°C, error < 3°C
+      Minimum temperature (°C) for the configured measuring range.
+    default: -10
+
+  range-max:
+    type: int
+    description: |
+      Maximum temperature (°C) for the configured measuring range.
+    default: 80

@@ -9,18 +9,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/classic/avrcp.h>
+
 #define AVCTP_VER_1_4 (0x0104u)
 #define AVRCP_VER_1_6 (0x0106u)
 
-#define AVRCP_CAT_1                       BIT(0) /* Player/Recorder */
-#define AVRCP_CAT_2                       BIT(1) /* Monitor/Amplifier */
-#define AVRCP_CAT_3                       BIT(2) /* Tuner */
-#define AVRCP_CAT_4                       BIT(3) /* Menu */
-#define AVRCP_PLAYER_APPLICATION_SETTINGS BIT(4) /* Bit 0 must also be set */
-#define AVRCP_GROUP_NAVIGATION            BIT(5) /* Bit 0 must also be set */
-#define AVRCP_BROWSING_SUPPORT            BIT(6)
-#define AVRCP_MULTIPLE_MEDIA_PLAYERS      BIT(7)
-#define AVRCP_COVER_ART_SUPPORT           BIT(8)
+#define AVRCP_TG_CAT_1                       BIT(0) /* Player/Recorder */
+#define AVRCP_TG_CAT_2                       BIT(1) /* Monitor/Amplifier */
+#define AVRCP_TG_CAT_3                       BIT(2) /* Tuner */
+#define AVRCP_TG_CAT_4                       BIT(3) /* Menu */
+#define AVRCP_TG_PLAYER_APPLICATION_SETTINGS BIT(4) /* Bit 0 must also be set */
+#define AVRCP_TG_GROUP_NAVIGATION            BIT(5) /* Bit 0 must also be set */
+#define AVRCP_TG_BROWSING_SUPPORT            BIT(6)
+#define AVRCP_TG_MULTIPLE_MEDIA_PLAYERS      BIT(7)
+#define AVRCP_TG_COVER_ART_SUPPORT           BIT(8)
+
+#define AVRCP_CT_CAT_1                          BIT(0) /* Player/Recorder */
+#define AVRCP_CT_CAT_2                          BIT(1) /* Monitor/Amplifier */
+#define AVRCP_CT_CAT_3                          BIT(2) /* Tuner */
+#define AVRCP_CT_CAT_4                          BIT(3) /* Menu */
+#define AVRCP_CT_BROWSING_SUPPORT               BIT(6)
+#define AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES BIT(7) /* Cover Art GetImageProperties */
+#define AVRCP_CT_COVER_ART_GET_IMAGE            BIT(8) /* Cover Art GetImage */
+#define AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL BIT(9) /* Cover Art GetLinkedThumbnail */
 
 #define AVRCP_SUBUNIT_PAGE              (0) /* Fixed value according to AVRCP */
 #define AVRCP_SUBUNIT_EXTENSION_CODE    (7) /* Fixed value according to TA Document 2001012 */
@@ -33,11 +44,47 @@
 #define BT_L2CAP_PSM_AVRCP 0x0017
 #define BT_L2CAP_PSM_AVRCP_BROWSING 0x001b
 
+#define BT_AVRCP_HEADROOM \
+	(sizeof(struct bt_l2cap_hdr) + \
+	 sizeof(struct bt_avctp_header_start) + \
+	 sizeof(struct bt_avrcp_header))
+
 #if defined(CONFIG_BT_AVRCP_BROWSING)
-#define AVRCP_BROWSING_ENABLE AVRCP_BROWSING_SUPPORT
+#define AVRCP_CT_BROWSING_ENABLE AVRCP_CT_BROWSING_SUPPORT
+#define AVRCP_TG_BROWSING_ENABLE AVRCP_TG_BROWSING_SUPPORT
 #else
-#define AVRCP_BROWSING_ENABLE 0
+#define AVRCP_CT_BROWSING_ENABLE 0
+#define AVRCP_TG_BROWSING_ENABLE 0
 #endif /* CONFIG_BT_AVRCP_BROWSING */
+
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+#define AVRCP_TG_COVER_ART_ENABLE AVRCP_TG_COVER_ART_SUPPORT
+#else
+#define AVRCP_TG_COVER_ART_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
+
+#if defined(CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES)
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_PROPERTIES_ENABLE AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES
+#else
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_PROPERTIES_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES */
+
+#if defined(CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE)
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_ENABLE AVRCP_CT_COVER_ART_GET_IMAGE
+#else
+#define AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_CT_COVER_ART_GET_IMAGE */
+
+#if defined(CONFIG_BT_AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL)
+#define AVRCP_CT_COVER_ART_FEAT_GET_LINKED_THUMBNAIL_ENABLE AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL
+#else
+#define AVRCP_CT_COVER_ART_FEAT_GET_LINKED_THUMBNAIL_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL */
+
+#define AVRCP_CT_COVER_ART_FEAT_ENABLE \
+	(AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_PROPERTIES_ENABLE | \
+	 AVRCP_CT_COVER_ART_FEAT_GET_IMAGE_ENABLE | \
+	 AVRCP_CT_COVER_ART_FEAT_GET_LINKED_THUMBNAIL_ENABLE)
 
 typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
@@ -52,10 +99,10 @@ typedef enum __packed {
 } bt_avrcp_opcode_t;
 
 typedef enum __packed {
-	BT_AVRVP_PKT_TYPE_SINGLE = 0b00,
-	BT_AVRVP_PKT_TYPE_START = 0b01,
-	BT_AVRVP_PKT_TYPE_CONTINUE = 0b10,
-	BT_AVRVP_PKT_TYPE_END = 0b11,
+	BT_AVRCP_PKT_TYPE_SINGLE = 0b00,
+	BT_AVRCP_PKT_TYPE_START = 0b01,
+	BT_AVRCP_PKT_TYPE_CONTINUE = 0b10,
+	BT_AVRCP_PKT_TYPE_END = 0b11,
 } bt_avrcp_pkt_type_t;
 
 typedef enum __packed {
@@ -119,6 +166,42 @@ typedef enum __packed {
 	BT_AVRCP_PDU_ID_GENERAL_REJECT = 0xa0,
 } bt_avrcp_pdu_id_t;
 
+/* bt_avrcp_tg flags: the flags defined */
+enum {
+	BT_AVRCP_TG_FLAG_TX_ONGOING,
+	BT_AVRCP_TG_FLAG_ABORT_CONTINUING,    /* AVRCP TG abort continuing is pending */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_AVRCP_TG_NUM_FLAGS,
+};
+
+struct bt_avrcp_ct_frag_reassembly_ctx {
+	uint8_t tid;
+	uint8_t rsp;
+	uint8_t pdu_id;
+};
+
+struct bt_avrcp_tg_vd_rsp_tx {
+	struct bt_avrcp_tg *tg;
+	uint16_t sent_len;
+	uint8_t tid;
+	uint8_t pdu_id;
+	uint8_t rsp;
+
+	ATOMIC_DEFINE(flags, BT_AVRCP_TG_NUM_FLAGS);
+};
+
+struct bt_avrcp_ct_notify_registration {
+	uint8_t tid;
+	bool interim_received;
+	bt_avrcp_notify_changed_cb_t cb;
+};
+
+struct bt_avrcp_tg_notify_state {
+	bool registered;   /* CT has an active registration for this event */
+	bool interim_sent; /* we have already sent INTERIM */
+};
+
 struct bt_avrcp_req {
 	uint8_t tid;
 	uint8_t subunit;
@@ -131,14 +214,15 @@ struct bt_avrcp_header {
 	uint8_t opcode; /**< Unit Info, Subunit Info, Vendor Dependent, or Pass Through */
 } __packed;
 
-struct bt_avrcp_avc_pdu {
+struct bt_avrcp_avc_vendor_pdu {
+	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
 	uint8_t pdu_id;
 	uint8_t pkt_type; /**< [7:2]: Reserved, [1:0]: Packet Type */
 	uint16_t param_len;
 	uint8_t param[];
 } __packed;
 
-struct bt_avrcp_avc_brow_pdu {
+struct bt_avrcp_brow_pdu {
 	uint8_t pdu_id;
 	uint16_t param_len;
 	uint8_t param[];
@@ -196,3 +280,11 @@ struct bt_avrcp_frame {
 } __packed;
 
 int bt_avrcp_init(void);
+
+int bt_avrcp_tg_cover_art_init(uint16_t *psm);
+
+struct bt_avrcp_tg *bt_avrcp_get_tg(struct bt_conn *conn, uint16_t psm);
+
+struct bt_avrcp_ct;
+
+struct bt_conn *bt_avrcp_ct_get_acl_conn(struct bt_avrcp_ct *ct);

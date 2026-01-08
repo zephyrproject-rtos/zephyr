@@ -315,7 +315,8 @@ _west_flash() {
   local -a opts=(
   '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
   '(-r --runner)'{-r,--runner}'[override default runner from build-dir]:runner:'
-  '--skip-rebuild[do not refresh cmake dependencies first]'
+  '--no-rebuild[manually specify to reinvoke cmake or not]'
+  '--rebuild[manually specify to reinvoke cmake or not]'
   '--domain[execute build tool (make or ninja) for a given domain]:domain:'
   )
 

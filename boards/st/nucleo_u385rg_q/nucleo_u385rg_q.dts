@@ -42,8 +42,19 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
+		status = "disabled";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led_2;
+		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -55,29 +66,24 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/*
-		 * The following partitioning is dedicated to the use of nucleo_u385rg_q
-		 * with TZEN=0 (i.e., without TF-M).
-		 * Place partitions within first 512 KiB to make use of the whole Bank1.
-		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(192)>;
+			reg = <0x0000c000 DT_SIZE_K(472)>;
 		};
 
-		slot1_partition: partition@40000 {
+		slot1_partition: partition@44000 {
 			label = "image-1";
-			reg = <0x00040000 DT_SIZE_K(192)>;
+			reg = <0x00044000 DT_SIZE_K(476)>;
 		};
 
-		storage_partition: partition@70000 {
+		storage_partition: partition@fd000 {
 			label = "storage";
-			reg = <0x00070000 DT_SIZE_K(64)>;
+			reg = <0x0007d000 DT_SIZE_K(12)>;
 		};
 	};
 };
@@ -206,4 +212,15 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
+		pinctrl-0 = <&tim2_ch1_pa5>;
+		pinctrl-names = "default";
+	};
 };

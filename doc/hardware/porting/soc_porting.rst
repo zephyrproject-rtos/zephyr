@@ -225,7 +225,7 @@ files for a SoC:
 
   This file selects the SoC family and series in the Kconfig tree and potential
   other SoC related Kconfig settings. In some cases a SOC_PART_NUMBER.
-  This file must not select anything outside the re-usable Kconfig SoC tree.
+  This file must not select anything outside the reusable Kconfig SoC tree.
 
   A :file:`Kconfig.soc` may look like this:
 

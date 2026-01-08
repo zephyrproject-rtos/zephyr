@@ -224,6 +224,12 @@
 			status = "disabled";
 		};
 
+		spi0_dma: spi0_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
 		spi0: spi0 {
 			compatible = "intel,penwell-spi";
 			vendor-id = <0x8086>;
@@ -237,7 +243,14 @@
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&spi0_dma 0>;
 			status = "okay";
+		};
+
+		spi1_dma: spi1_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
+			status = "disabled";
 		};
 
 		spi1: spi1 {
@@ -253,6 +266,13 @@
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&spi1_dma 0>;
+			status = "disabled";
+		};
+
+		spi2_dma: spi2_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -269,6 +289,7 @@
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&spi2_dma 0>;
 			status = "disabled";
 		};
 

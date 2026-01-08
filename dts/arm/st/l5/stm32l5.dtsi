@@ -14,7 +14,6 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
-#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
@@ -268,7 +267,7 @@
 
 		wwdg: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x40002C00 0x400>;
+			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 6>;
 			status = "disabled";
@@ -331,6 +330,7 @@
 		lptim1: timers@40007c00 {
 			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
+			resets = <&rctl STM32_RESET(APB1L, 31)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
@@ -404,6 +404,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <59 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -432,6 +433,7 @@
 			reg = <0x40003800 0x400>;
 			interrupts = <60 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -442,6 +444,7 @@
 			reg = <0x40003c00 0x400>;
 			interrupts = <99 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -494,6 +497,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 
 			qdec {
@@ -636,6 +644,11 @@
 				#pwm-cells = <3>;
 			};
 
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
 			qdec {
 				compatible = "st,stm32-qdec";
 				st,input-filter-level = <NO_FILTER>;
@@ -719,10 +732,7 @@
 			clock-names = "adcx";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(12, 0x00)
-				       STM32_ADC_RES(10, 0x01)
-				       STM32_ADC_RES(8, 0x02)
-				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "minimal";
@@ -739,10 +749,7 @@
 			clock-names = "adcx";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(12, 0x00)
-				       STM32_ADC_RES(10, 0x01)
-				       STM32_ADC_RES(8, 0x02)
-				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "minimal";
@@ -819,8 +826,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x0BFA05A8>;
-		ts-cal2-addr = <0x0BFA05CA>;
+		ts-cal1-addr = <0x0bfa05a8>;
+		ts-cal2-addr = <0x0bfa05ca>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -830,7 +837,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0BFA05AA>;
+		vrefint-cal-addr = <0x0bfa05aa>;
 		vrefint-cal-mv = <3000>;
 		io-channels = <&adc1 0>;
 		status = "disabled";

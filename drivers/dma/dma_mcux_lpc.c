@@ -23,10 +23,33 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #define DT_DRV_COMPAT nxp_lpc_dma
 
 LOG_MODULE_REGISTER(dma_mcux_lpc, CONFIG_DMA_LOG_LEVEL);
+
+#if CONFIG_PM_DEVICE
+/*
+ * Data structures to backup DMA registers when the
+ * register content lost in low power modes.
+ */
+struct dma_backup_reg {
+	/*
+	 * Backup the control registers.
+	 * Don't need to backup CTRL and SRAMBASE, they
+	 * are configured in function DMA_Init.
+	 */
+	uint32_t enableset;	/* Register ENABLESET */
+	uint32_t intenset;	/* Register INTENSET */
+};
+
+struct dma_ch_backup_reg {
+	/* Don't need to backup status register CTLSTAT. */
+	uint32_t cfg;		/* Register CFG */
+	uint32_t xfercfg;	/* Register XFERCFG */
+};
+#endif /* CONFIG_PM_DEVICE */
 
 struct dma_mcux_lpc_config {
 	DMA_Type *base;
@@ -53,6 +76,9 @@ struct channel_data {
 	uint8_t num_of_descriptors;
 	bool descriptors_queued;
 	bool busy;
+#if CONFIG_PM_DEVICE
+	struct dma_ch_backup_reg backup_reg;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 struct dma_otrig {
@@ -67,6 +93,9 @@ struct dma_mcux_lpc_dma_data {
 	struct dma_otrig *otrig_array;
 	int8_t *channel_index;
 	uint8_t num_channels_used;
+#if CONFIG_PM_DEVICE
+	struct dma_backup_reg backup_reg;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 struct k_spinlock configuring_otrigs;
@@ -106,6 +135,10 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 		 */
 		data->busy = false;
 		ret = DMA_STATUS_COMPLETE;
+	}
+
+	if (!data->busy) {
+		pm_policy_device_power_lock_put(data->dev);
 	}
 
 	if (data->dma_callback) {
@@ -563,6 +596,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	if (data->busy) {
 		DMA_AbortTransfer(p_handle);
+		pm_policy_device_power_lock_put(dev);
 	}
 
 	LOG_DBG("channel is %d", p_handle->channel);
@@ -815,6 +849,7 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);
 	data->busy = true;
+	pm_policy_device_power_lock_get(dev);
 	/* In case of a restart after a stop, reinstall the DMA callback
 	 * that was removed by the stop.
 	 */
@@ -836,7 +871,10 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 	DMA_AbortTransfer(p_handle);
 	DMA_DisableChannel(DEV_BASE(dev), p_handle->channel);
 
-	data->busy = false;
+	if (data->busy) {
+		data->busy = false;
+		pm_policy_device_power_lock_put(dev);
+	}
 
 	/* Handle race condition where if this is called from an ISR
 	 * and the DMA channel completion interrupt becomes pending
@@ -938,6 +976,69 @@ static int dma_mcux_lpc_get_attribute(const struct device *dev, uint32_t type, u
 	return 0;
 }
 
+#if CONFIG_PM_DEVICE
+static void dma_mcux_lpc_backup_reg(const struct device *dev)
+{
+	struct dma_mcux_lpc_dma_data *dma_data = dev->data;
+	const struct dma_mcux_lpc_config *config = dev->config;
+	struct channel_data *p_channel_data;
+	uint32_t virtual_channel;
+	DMA_Type *dma_base = DEV_BASE(dev);
+
+	dma_data->backup_reg.enableset = dma_base->COMMON[0].ENABLESET;
+	dma_data->backup_reg.intenset  = dma_base->COMMON[0].INTENSET;
+
+	/* Only backup the used channels */
+	virtual_channel = 0;
+	for (uint32_t channel = 0; channel < config->num_of_channels; channel++) {
+		if (dma_data->channel_index[channel] != -1) {
+			p_channel_data = &dma_data->channel_data[virtual_channel];
+
+			p_channel_data->backup_reg.xfercfg = dma_base->CHANNEL[channel].XFERCFG;
+			p_channel_data->backup_reg.cfg     = dma_base->CHANNEL[channel].CFG;
+			virtual_channel++;
+		}
+	}
+}
+
+static void dma_mcux_lpc_restore_reg(const struct device *dev)
+{
+	struct dma_mcux_lpc_dma_data *dma_data = dev->data;
+	const struct dma_mcux_lpc_config *config = dev->config;
+	struct channel_data *p_channel_data;
+	uint32_t virtual_channel;
+	DMA_Type *dma_base = DEV_BASE(dev);
+
+	dma_base->COMMON[0].ENABLESET = dma_data->backup_reg.enableset;
+	dma_base->COMMON[0].INTENSET  = dma_data->backup_reg.intenset;
+
+	/* Only backup the used channels */
+	virtual_channel = 0;
+	for (uint32_t channel = 0; channel < config->num_of_channels; channel++) {
+		if (dma_data->channel_index[channel] != -1) {
+			p_channel_data = &dma_data->channel_data[virtual_channel];
+
+			dma_base->CHANNEL[channel].XFERCFG = p_channel_data->backup_reg.xfercfg;
+			dma_base->CHANNEL[channel].CFG     = p_channel_data->backup_reg.cfg;
+			virtual_channel++;
+		}
+	}
+}
+
+#else /* !CONFIG_PM_DEVICE */
+
+static inline void dma_mcux_lpc_backup_reg(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void dma_mcux_lpc_restore_reg(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
 static int dma_mcux_lpc_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
@@ -946,9 +1047,11 @@ static int dma_mcux_lpc_pm_action(const struct device *dev, enum pm_device_actio
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
+		dma_mcux_lpc_backup_reg(dev);
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		DMA_Init(DEV_BASE(dev));
+		dma_mcux_lpc_restore_reg(dev);
 		break;
 	default:
 		return -ENOTSUP;

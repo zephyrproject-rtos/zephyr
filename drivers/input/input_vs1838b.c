@@ -315,6 +315,15 @@ static void vs1838b_input_callback(struct device const *dev, struct gpio_callbac
 		data->edges_ticks[data->edges_count++] = tick;
 	}
 
+	/* If the first 3 edges do not match a leading burst,
+	 * shift left the edges_ticks to get rid of leading noises.
+	 */
+	if ((data->edges_count == 3) && !detect_leading_burst(data->edges_ticks)) {
+		data->edges_ticks[0] = data->edges_ticks[1];
+		data->edges_ticks[1] = data->edges_ticks[2];
+		data->edges_count = 2;
+	}
+
 	if (data->edges_count == NEC_SINGLE_COMMAND_EDGES_COUNT) {
 		/* There's a candidate!
 		 * If nothing gets in during the grace period

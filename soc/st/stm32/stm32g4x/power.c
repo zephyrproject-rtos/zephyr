@@ -12,11 +12,11 @@
 #include <soc.h>
 
 #include <clock_control/clock_stm32_ll_common.h>
-#include <stm32g4xx_ll_bus.h>
-#include <stm32g4xx_ll_cortex.h>
-#include <stm32g4xx_ll_pwr.h>
-#include <stm32g4xx_ll_system.h>
-#include <stm32g4xx_ll_utils.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
+#include <stm32_ll_utils.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */

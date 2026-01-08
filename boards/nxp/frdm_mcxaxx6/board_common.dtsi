@@ -26,6 +26,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	leds {
@@ -135,12 +136,6 @@
 &lpadc1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc1>;
-	pinctrl-names = "default";
-};
-
-/* Comparator configuration */
-&lpcmp0 {
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

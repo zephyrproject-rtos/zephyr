@@ -10,6 +10,7 @@ Ethernet
 .. toctree::
    :maxdepth: 1
 
+   mac_config.rst
    vlan.rst
    lldp.rst
    8021Qav.rst
@@ -29,6 +30,7 @@ Zephyr supports following Ethernet features:
 * Promiscuous mode
 * TX and RX checksum offloading
 * MAC address filtering
+* :ref:`MAC address configuration <mac_address_config>`
 * :ref:`Virtual LANs <vlan_interface>`
 * :ref:`Priority queues <traffic-class-support>`
 * :ref:`IEEE 802.1AS (gPTP) <gptp_interface>`

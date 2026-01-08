@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 /* Memory pool management - unified pool-based API */
 #if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
 /* Use global system heap */
-extern struct sys_heap _system_heap;
+extern struct k_heap _system_heap;
 static struct k_heap * const wifi_ctrl_pool = &_system_heap;
 static struct k_heap * const wifi_data_pool = &_system_heap;
 #else
@@ -562,7 +562,7 @@ void *net_pkt_from_nbuf(void *iface, void *frm)
 
 	data = zep_shim_nbuf_data_get(nwb);
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 
 	if (!pkt) {
 		goto out;
@@ -607,7 +607,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, AF_PACKET, ETH_P_ALL, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, NET_AF_PACKET, ETH_P_ALL, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("%s: Unable to allocate net packet buffer", __func__);
 		goto out;

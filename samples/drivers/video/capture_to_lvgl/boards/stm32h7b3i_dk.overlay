@@ -8,7 +8,7 @@
 /delete-node/ &sram1;
 /delete-node/ &sram2;
 
-/* Increase the SRAM0 bank memory size to accommodate the VIDEO_BUFFER_POOL_SZ_MAX configuration. */
+/* Increase the SRAM0 bank memory size to accommodate the VIDEO_BUFFER_POOL_HEAP_SIZE */
 &sram0 {
 	reg = <0x24000000 DT_SIZE_K(1024)>;
 };

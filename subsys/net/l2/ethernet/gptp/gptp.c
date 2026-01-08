@@ -85,7 +85,7 @@ static void gptp_compute_clock_identity(int port)
 
 #define PRINT_INFO(msg, hdr, pkt)				\
 	NET_DBG("Received %s seq %d pkt %p", (const char *)msg,	\
-		ntohs(hdr->sequence_id), pkt)			\
+		net_ntohs(hdr->sequence_id), pkt)			\
 
 
 static bool gptp_handle_critical_msg(struct net_if *iface, struct net_pkt *pkt)
@@ -237,7 +237,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		/* Keep the pkt alive until info is extracted. */
 		sync_rcv_state->rcvd_follow_up_ptr = net_pkt_ref(pkt);
 		NET_DBG("Keeping %s seq %d pkt %p", "FOLLOWUP",
-			ntohs(hdr->sequence_id), pkt);
+			net_ntohs(hdr->sequence_id), pkt);
 		break;
 
 	case GPTP_PATH_DELAY_FOLLOWUP_MESSAGE:

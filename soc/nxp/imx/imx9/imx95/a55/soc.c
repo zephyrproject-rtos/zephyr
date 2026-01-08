@@ -16,10 +16,6 @@
 
 #define FREQ_24M_HZ 24000000 /* 24 MHz */
 
-/* SCMI power domain states */
-#define POWER_DOMAIN_STATE_ON  0x00000000
-#define POWER_DOMAIN_STATE_OFF 0x40000000
-
 static int lpuart_clk_init(void)
 {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) ||                                             \
@@ -70,20 +66,20 @@ static int netc_init(void)
 	struct scmi_protocol *proto = clk_dev->data;
 	struct scmi_clock_rate_config clk_cfg = {0};
 	struct scmi_power_state_config pwr_cfg = {0};
-	uint32_t power_state = POWER_DOMAIN_STATE_OFF;
+	uint32_t power_state = SCMI_POWER_STATE_GENERIC_OFF;
 	uint64_t enetref_clk = 250000000; /* 250 MHz*/
 	int ret;
 
 	/* Power up NETCMIX */
 	pwr_cfg.domain_id = IMX95_PD_NETC;
-	pwr_cfg.power_state = POWER_DOMAIN_STATE_ON;
+	pwr_cfg.power_state = SCMI_POWER_STATE_GENERIC_ON;
 
 	ret = scmi_power_state_set(&pwr_cfg);
 	if (ret) {
 		return ret;
 	}
 
-	while (power_state != POWER_DOMAIN_STATE_ON) {
+	while (power_state != SCMI_POWER_STATE_GENERIC_ON) {
 		ret = scmi_power_state_get(IMX95_PD_NETC, &power_state);
 		if (ret) {
 			return ret;

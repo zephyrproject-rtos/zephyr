@@ -26,11 +26,13 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	unit0@0 {
 		reg = <0>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		filter = <100>;
+
 		channelA@0 {
 			reg = <0>;
 			sig-pos-mode = <2>;

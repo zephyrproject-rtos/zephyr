@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 from conftest import RC_KERNEL_ELF
+
 from runners.nxp_s32dbg import NXPS32DebugProbeConfig, NXPS32DebugProbeRunner
 
 TEST_DEVICE = 's32dbg'

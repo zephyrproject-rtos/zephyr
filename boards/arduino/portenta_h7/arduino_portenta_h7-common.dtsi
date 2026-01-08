@@ -51,6 +51,11 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "smps-ldo";
+	smps-output-voltage = "1V8";
+};
+
 /* UART0 in datasheet */
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pi9>;
@@ -237,6 +242,7 @@ sdhc: &sdmmc1 {
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	sdhi-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+	power-delay-ms = <50>;
 	interrupts = <49 0>;
 	interrupt-names = "event";
 	min-bus-freq = <DT_FREQ_K(400)>;

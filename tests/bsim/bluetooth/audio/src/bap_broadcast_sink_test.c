@@ -11,7 +11,6 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
-#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -565,11 +564,13 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct bt_bap_ep_info info;
+	struct bt_conn *ep_conn;
 	int err;
 
 	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
 	test_stream->rx_cnt = 0U;
 	test_stream->valid_rx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {
@@ -599,6 +600,12 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	if (info.paired_ep != NULL) {
 		FAIL("Unexpected info.paired_ep: %p\n", info.paired_ep);
+		return;
+	}
+
+	ep_conn = bt_bap_ep_get_conn(stream->ep);
+	if (ep_conn != NULL) {
+		FAIL("Invalid conn from endpoint: %p", ep_conn);
 		return;
 	}
 
@@ -920,6 +927,17 @@ static void test_broadcast_delete_inval(void)
 	}
 }
 
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+	ARRAY_FOR_EACH_PTR(broadcast_sink_streams, test_stream) {
+		if (audio_test_stream_is_streaming(test_stream)) {
+			WAIT_FOR_FLAG(test_stream->flag_audio_received);
+		}
+	}
+	printk("Data received\n");
+}
+
 static void test_common(void)
 {
 	int err;
@@ -953,8 +971,7 @@ static void test_common(void)
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
+	wait_for_data();
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 }
 
@@ -1067,8 +1084,7 @@ static void test_sink_encrypted(void)
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
+	wait_for_data();
 
 	backchannel_sync_send_all(); /* let other devices know we have received data */
 
@@ -1122,9 +1138,7 @@ static void test_sink_encrypted_incorrect_code(void)
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
-	printk("Data received\n");
+	wait_for_data();
 
 	backchannel_sync_send_all(); /* let other devices know we have received data */
 	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
@@ -1171,8 +1185,7 @@ static void broadcast_sink_with_assistant(void)
 		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
 
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_audio_received);
+	wait_for_data();
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	printk("Waiting for BIG sync terminate request\n");

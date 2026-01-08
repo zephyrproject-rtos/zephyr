@@ -11,11 +11,6 @@
 		zephyr,display = &zephyr_lcdif;
 		zephyr,touch = &gt911_rk043fn66hs_ctg;
 	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&gt911_rk043fn66hs_ctg>;
-	};
 };
 
 &nxp_touch_i2c {
@@ -48,6 +43,7 @@
 		vsync-active = <0>;
 		clock-frequency = <9210240>;
 	};
+
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	data-bus-width = "16-bit";
 	backlight-gpios = <&nxp_parallel_lcd_connector 0 GPIO_ACTIVE_HIGH>;

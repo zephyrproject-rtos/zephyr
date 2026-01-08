@@ -430,7 +430,7 @@ static int esp_hosted_recv(struct net_if *iface, void *buf, size_t len)
 		return 0;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_MSEC(1000));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_MSEC(1000));
 	if (pkt == NULL) {
 		LOG_ERR("Failed to allocate net buffer");
 		return -ENOMEM;

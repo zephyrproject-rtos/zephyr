@@ -16,11 +16,11 @@
 	i2s0_default: i2s0_default {
 		group1 {
 			pinmux = <I2S0_O_WS_GPIO33>,
-				<I2S0_O_BCK_GPIO32>;
+				 <I2S0_O_BCK_GPIO32>;
 		};
 
 		group2 {
-			pinmux =  <I2S0_O_SD_GPIO25>;
+			pinmux = <I2S0_O_SD_GPIO25>;
 			input-enable;
 		};
 

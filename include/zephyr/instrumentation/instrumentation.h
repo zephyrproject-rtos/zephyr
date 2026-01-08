@@ -7,6 +7,12 @@
 #ifndef ZEPHYR_INCLUDE_INSTRUMENTATION_INSTRUMENTATION_H_
 #define ZEPHYR_INCLUDE_INSTRUMENTATION_INSTRUMENTATION_H_
 
+/**
+ * @defgroup instrumentation_api Instrumentation
+ * @ingroup os_services
+ * @{
+ */
+
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -211,5 +217,9 @@ void *instr_get_stop_func(void);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_INSTRUMENTATION_INSTRUMENTATION_H_ */

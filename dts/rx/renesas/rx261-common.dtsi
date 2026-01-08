@@ -455,6 +455,18 @@
 			};
 		};
 
+		i2c0: i2c@88300 {
+			compatible = "renesas,rx-i2c";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			reg = <0x88300 0x20>;
+			clocks = <&pclkb MSTPB 21>;
+			channel = <0>;
+			interrupts = <246 1>, <247 1>, <248 1>, <249 1>;
+			interrupt-names = "eei", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
 		cmt: timer@88000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
 			#address-cells = <1>;
@@ -509,6 +521,30 @@
 				interrupt-names = "cmi";
 				status = "disabled";
 			};
+
+			rspi0: spi@88380 {
+				compatible = "renesas,rx-rspi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x00088380 0x100>;
+				channel = <0>;
+				clocks = <&pclkb MSTPB 17>;
+				interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
+				interrupt-names = "spei", "spri", "spti", "spii";
+				status = "disabled";
+			};
+		};
+
+		adc: adc@89000 {
+			compatible = "renesas,rx-adc";
+			interrupts = <102 1>;
+			interrupt-names = "s12adi0";
+			reg = <0x00089000 0x100>;
+			#io-channel-cells = <1>;
+			channel-available-mask = <0xffff01ff>;
+			vref-mv = <3300>;
+			channel-count = <25>;
+			status = "disabled";
 		};
 
 		ofsm: ofsm@ffffff80 {

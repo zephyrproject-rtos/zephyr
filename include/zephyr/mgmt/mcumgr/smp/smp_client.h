@@ -32,6 +32,8 @@ struct smp_client_object {
 	struct smp_transport *smpt;
 	/** SMP SEQ */
 	uint8_t smp_seq;
+	/** SMP transport data. Allows multiple client_object for single smp_transport. */
+	void *priv;
 };
 
 #ifdef __cplusplus
@@ -48,6 +50,27 @@ extern "C" {
  * @return	mcumgr_err_t code on failure
  */
 int smp_client_object_init(struct smp_client_object *smp_client, int smp_type);
+
+/**
+ * @brief Set private data for SMP transport.
+ *
+ * @param smp_client	The Client to set private data for.
+ * @param data		SMP transport private data.
+ */
+static inline void smp_client_object_set_data(struct smp_client_object *smp_client, void *data)
+{
+	smp_client->priv = data;
+}
+
+/**
+ * @brief Get private data for SMP transport.
+ *
+ * @param smp_client	The Client to set private data for.
+ */
+static inline void *smp_client_object_get_data(struct smp_client_object *smp_client)
+{
+	return smp_client->priv;
+}
 
 /**
  * @brief Response callback for SMP send.

@@ -77,7 +77,7 @@ struct _thread_arch {
 	unsigned int u_mode_pmp_end_index;
 	unsigned int u_mode_pmp_update_nr;
 #endif
-#ifdef CONFIG_PMP_STACK_GUARD
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	unsigned int m_mode_pmp_end_index;
 	unsigned long m_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];
 	unsigned long m_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / (__riscv_xlen / 8)];

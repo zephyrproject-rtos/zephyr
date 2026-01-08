@@ -1,5 +1,6 @@
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 if BT_AIROC
@@ -136,6 +137,10 @@ endchoice
 
 if CYW20829
 
+# We can't have commas in macro arguments
+DT_COMPAT_INFINEON_CYW20829_B0 := infineon,cyw20829-b0
+DT_COMPAT_INFINEON_CYW20829_B1 := infineon,cyw20829-b1
+
 config CYW20829_BT_FW_TX10DBM_POWER
 	bool "CYW20829_BT_FW_TX10DBM_POWER"
 	default y
@@ -144,48 +149,80 @@ config CYW20829_BT_FW_TX10DBM_POWER
 
 choice CYW20829_BT_FW
 	prompt "Select variant of default CYW20829 BT FW"
-	default CYW20829_BT_FW_ISOC_TX10 if BT_ISO &&  CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_ISOC_TX0  if BT_ISO && !CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_PAWR_TX10 if (BT_PER_ADV_RSP || BT_PER_ADV_SYNC_RSP) &&  CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_PAWR_TX0  if (BT_PER_ADV_RSP || BT_PER_ADV_SYNC_RSP) && !CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_TX10      if CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_TX0
+	default CYW20829B0_BT_FW_ISOC_TX10 if BT_ISO && \
+					      CYW20829_BT_FW_TX10DBM_POWER && \
+					      $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
+	default CYW20829B0_BT_FW_ISOC_TX0 if BT_ISO && \
+					     !CYW20829_BT_FW_TX10DBM_POWER && \
+					     $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
+	default CYW20829B0_BT_FW_PAWR_TX10 if (BT_PER_ADV_RSP || BT_PER_ADV_SYNC_RSP) && \
+					      CYW20829_BT_FW_TX10DBM_POWER && \
+					      $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
+	default CYW20829B0_BT_FW_PAWR_TX0 if (BT_PER_ADV_RSP || BT_PER_ADV_SYNC_RSP) && \
+					     !CYW20829_BT_FW_TX10DBM_POWER && \
+					     $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
+	default CYW20829B0_BT_FW_TX10 if CYW20829_BT_FW_TX10DBM_POWER && \
+					 $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
+	default CYW20829B0_BT_FW_TX0 if $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
+	default CYW20829B1_BT_FW_TX10 if CYW20829_BT_FW_TX10DBM_POWER && \
+					 $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B1))
+	default CYW20829B1_BT_FW_TX0 if $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B1))
 
-config CYW20829_BT_FW_TX0
-	bool "CYW20829_BT_FW_TX0"
+config CYW20829B0_BT_FW_TX0
+	bool "CYW20829B0_BT_FW_TX0"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
 	help
-	  Enable CYW20829 FW patch for 0dBm TX Power.
+	  Enable CYW20829B0 FW patch for 0dBm TX Power.
 	  This configuration should be used with non-PAWR and non-ISOC applications.
 
-config CYW20829_BT_FW_TX10
-	bool "CYW20829_BT_FW_TX10"
+config CYW20829B0_BT_FW_TX10
+	bool "CYW20829B0_BT_FW_TX10"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
 	help
-	  Enable CYW20829 FW patch for 10dBm TX Power.
+	  Enable CYW20829B0 FW patch for 10dBm TX Power.
 	  This configuration should be used with non-PAwR and non-ISOC applications.
 
-config CYW20829_BT_FW_PAWR_TX0
-	bool "CYW20829_BT_FW_PAWR_TX0"
+config CYW20829B0_BT_FW_PAWR_TX0
+	bool "CYW20829B0_BT_FW_PAWR_TX0"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
 	help
-	  Enable CYW20829 FW patch with PAwR support for 0dBm TX Power.
+	  Enable CYW20829B0 FW patch with PAwR support for 0dBm TX Power.
 	  This configuration should be used with PAwR applications.
 
-config CYW20829_BT_FW_PAWR_TX10
-	bool "CYW20829_BT_FW_PAWR_TX10"
+config CYW20829B0_BT_FW_PAWR_TX10
+	bool "CYW20829B0_BT_FW_PAWR_TX10"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
 	help
-	  Enable CYW20829 FW patch for 10dBm TX Power.
+	  Enable CYW20829B0 FW patch for 10dBm TX Power.
 	  This configuration should be used with PAwR applications.
 
-config CYW20829_BT_FW_ISOC_TX0
-	bool "CYW20829_BT_FW_ISOC_TX0"
+config CYW20829B0_BT_FW_ISOC_TX0
+	bool "CYW20829B0_BT_FW_ISOC_TX0"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
 	help
-	  Enable CYW20829 FW patch for 0dBm TX Power.
+	  Enable CYW20829B0 FW patch for 0dBm TX Power.
 	  This configuration should be used with ISOC applications.
 
-config CYW20829_BT_FW_ISOC_TX10
-	bool "CYW20829_BT_FW_ISOC_TX10"
+config CYW20829B0_BT_FW_ISOC_TX10
+	bool "CYW20829B0_BT_FW_ISOC_TX10"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B0))
 	help
-	  Enable CYW20829 FW patch for 10dBm TX Power.
+	  Enable CYW20829B0 FW patch for 10dBm TX Power.
 	  This configuration should be used with ISOC applications.
+
+config CYW20829B1_BT_FW_TX0
+	bool "CYW20829B1_BT_FW_TX0"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B1))
+	help
+	  Enable CYW20829B1 FW patch for 0dBm TX Power.
+	  This configuration should be used with non-PAWR and non-ISOC applications.
+
+config CYW20829B1_BT_FW_TX10
+	bool "CYW20829B1_BT_FW_TX10"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_INFINEON_CYW20829_B1))
+	help
+	  Enable CYW20829B1 FW patch for 10dBm TX Power.
+	  This configuration should be used with non-PAwR and non-ISOC applications.
 
 endchoice
 endif # CYW20829

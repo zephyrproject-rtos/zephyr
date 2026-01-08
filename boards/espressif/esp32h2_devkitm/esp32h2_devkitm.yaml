@@ -19,3 +19,4 @@ supported:
   - i2s
   - netif:openthread
   - crypto
+  - retained_mem

@@ -18,4 +18,5 @@ supported:
   - counter
   - entropy
   - crypto
+  - retained_mem
 vendor: espressif

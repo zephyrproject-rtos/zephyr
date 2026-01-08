@@ -31,6 +31,7 @@ config SOC_MCXN547
 	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MCXN547_CPU1
 	select CPU_CORTEX_M33
@@ -43,6 +44,8 @@ config SOC_MCXN236
 	select ARMV8_M_DSP
 	select SOC_RESET_HOOK
 	select ARM_TRUSTZONE_M
+	select HAS_CPU_FREQ
+	select HAS_PM
 
 if SOC_FAMILY_MCXN
 

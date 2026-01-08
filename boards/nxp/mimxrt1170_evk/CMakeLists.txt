@@ -9,8 +9,8 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(NOT ((DEFINED CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7)
     OR (DEFINED CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM4)))
     message(WARNING "It appears you are using the board definition for "
-     "the MIMXRT1170-EVK, but targeting a custom board. You may need to "
-     "update your flash configuration or device configuration data blocks")
+      "the MIMXRT1170-EVK, but targeting a custom board. You may need to "
+      "update your flash configuration or device configuration data blocks")
   endif()
   if(${BOARD_REVISION} STREQUAL "A")
     set(RT1170_BOARD_NAME "evkmimxrt1170")
@@ -29,7 +29,7 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(CONFIG_EXTERNAL_MEM_CONFIG_DATA)
     # This external memory configuration data block may need modification
     # if another SDRAM chip is used on your custom board.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_XMCD_ENABLE=1)
+    zephyr_library_compile_definitions(XIP_BOOT_HEADER_XMCD_ENABLE=1)
     zephyr_library_sources(xmcd/xmcd.c)
   else()
     if(CONFIG_SRAM_BASE_ADDRESS EQUAL 0x80000000)

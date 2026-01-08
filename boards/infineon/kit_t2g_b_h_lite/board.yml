@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_t2g_b_h_lite
+  full_name: T2G Body High Lite Evaluation Kit
+  vendor: infineon
+  socs:
+  - name: cyt4bf8cds

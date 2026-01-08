@@ -51,10 +51,7 @@ if(CONFIG_USE_INFINEON_UART OR CONFIG_USE_INFINEON_I2C OR CONFIG_USE_INFINEON_SP
   zephyr_library_sources(${pdl_drv_dir}/source/cy_scb_common.c)
 endif()
 
-if(CONFIG_USE_INFINEON_DMA OR CONFIG_USE_INFINEON_SMIF)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_dma.c)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_dmac.c)
-endif()
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA ${pdl_drv_dir}/source/cy_dma.c)
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_v4.c)
 zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syspm_v4.c LOCATION RAM)

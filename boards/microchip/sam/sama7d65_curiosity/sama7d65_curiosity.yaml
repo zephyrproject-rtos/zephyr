@@ -9,6 +9,7 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - eeprom
   - i2c
   - pinctrl
   - shell

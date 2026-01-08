@@ -5,6 +5,12 @@
  */
 
 &lpcmp0 {
-	status = "okay";
+	/delete-property/ clocks;
+	#io-channel-cells = <2>;
 	function-clock = "CMP_CLOCK";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+	status = "okay";
+	positive-mux-input = "IN1";
+	negative-mux-input = "DAC";
 };

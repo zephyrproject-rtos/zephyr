@@ -23,6 +23,7 @@
  */
 &arduino_i2c {
 	status = "okay";
+
 	icm42670p: icm42670p@68 {
 		compatible = "invensense,icm42670p";
 		reg = <0x68>;

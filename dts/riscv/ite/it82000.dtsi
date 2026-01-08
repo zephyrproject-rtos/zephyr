@@ -41,7 +41,7 @@
 		pinctrlq: pinctrl@f016e0 {
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f016e0 8     /* GPCR */
-			       NO_FUNC    1>;
+			       NO_FUNC 1>;
 			func3-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 				     NO_FUNC NO_FUNC NO_FUNC>;
 			func3-en-mask = <0 0 0 0 0 0 0 0>;
@@ -70,7 +70,7 @@
 	func3-en-mask = <0 0 BIT(5) 0 0 BIT(5) 0 0>;
 	func3-ext = <NO_FUNC NO_FUNC 0xf03e16 NO_FUNC NO_FUNC 0xf03e16 NO_FUNC NO_FUNC>;
 	func3-ext-mask = <0 0 BIT(6) 0 0 BIT(6) 0 0>;
-	volt-sel =<NO_FUNC NO_FUNC 0xf01649 NO_FUNC NO_FUNC 0xf01649 0xf01649 NO_FUNC>;
+	volt-sel = <NO_FUNC NO_FUNC 0xf01649 NO_FUNC NO_FUNC 0xf01649 0xf01649 NO_FUNC>;
 	volt-sel-mask = <0 0 BIT(2) 0 0 BIT(5) BIT(6) 0>;
 };
 

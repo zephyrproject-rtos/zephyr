@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/gpio/adi-sdp-120.h>
+#include <zephyr/dt-bindings/gpio/adi-sdp-120.h>
 
 / {
 	sdp_k1_120_hdr: connector {

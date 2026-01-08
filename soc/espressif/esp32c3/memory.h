@@ -13,6 +13,9 @@
 #define SRAM1_SIZE         DT_REG_SIZE(DT_NODELABEL(sram1))
 /* ICache size is fixed to 16KB on ESP32-C3 */
 #define ICACHE_SIZE        SRAM0_SIZE
+/* RTC FAST RAM (8kB) */
+#define RCT_FAST_RAM_START DT_REG_ADDR(DT_NODELABEL(rtc_fast_ram))
+#define RCT_FAST_RAM_SIZE  DT_REG_SIZE(DT_NODELABEL(rtc_fast_ram))
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.

@@ -45,7 +45,6 @@ int start(void)
 
 	sub_stack = k_thread_stack_alloc(STACKSIZE, K_USER);
 	sub_thread = k_object_alloc(K_OBJ_THREAD);
-	printk("[ext3]%p - %p\n", sub_stack, sub_thread);
 	k_thread_create(sub_thread, sub_stack, STACKSIZE, tick_sub, NULL, NULL,
 			NULL, PRIORITY, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 

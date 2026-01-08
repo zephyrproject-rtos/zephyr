@@ -9,7 +9,7 @@
 
 #include <stddef.h>
 
-#include <compiler_abstraction.h>
+#include <nrfx.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <nrf_sys_event.h>

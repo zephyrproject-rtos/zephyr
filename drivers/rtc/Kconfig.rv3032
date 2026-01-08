@@ -5,6 +5,6 @@ config RTC_RV3032
 	bool "Micro Crystal RV3032 Real-Time Clock Module"
 	default y
 	depends on DT_HAS_MICROCRYSTAL_RV3032_ENABLED
-	select I2C
+	select MFD_RV3032
 	help
 	  Enable the Micro Crystal RV3032 I2C RTC driver.

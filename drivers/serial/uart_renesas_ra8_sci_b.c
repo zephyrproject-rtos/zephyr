@@ -963,6 +963,7 @@ static int uart_ra_sci_b_pm_action(const struct device *dev, enum pm_device_acti
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
+	{
 		/* Reinitialize the device */
 		int ret = uart_ra_sci_b_apply_config(&data->uart_config, &data->fsp_config,
 						     &data->fsp_config_extend,
@@ -974,6 +975,7 @@ static int uart_ra_sci_b_pm_action(const struct device *dev, enum pm_device_acti
 		fsp_err = R_SCI_B_UART_Open(&data->sci, &data->fsp_config);
 		__ASSERT(fsp_err == 0, "sci_uart: initialization: open failed");
 		break;
+	}
 
 	default:
 		return -ENOTSUP;

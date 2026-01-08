@@ -94,6 +94,25 @@ properties:
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
+  accel-lp-filter:
+    type: int
+    default: 0
+    description: |
+      Specify the amount of low pass filtering applied to the accelerometer values.
+      Default is power-up configuration.
+      This will enable the LPF2 lowpass filter via the lpf2_xl_en bit in the CTRL1_XL register.
+
+      - 0 # LSM6DSO_DT_LP_ODR_DIV_2
+      - 1 # LSM6DSO_DT_LP_ODR_DIV_10
+      - 2 # LSM6DSO_DT_LP_ODR_DIV_20
+      - 3 # LSM6DSO_DT_LP_ODR_DIV_45
+      - 4 # LSM6DSO_DT_LP_ODR_DIV_100
+      - 5 # LSM6DSO_DT_LP_ODR_DIV_200
+      - 6 # LSM6DSO_DT_LP_ODR_DIV_400
+      - 7 # LSM6DSO_DT_LP_ODR_DIV_800
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
   gyro-pm:
     type: int
     default: 0

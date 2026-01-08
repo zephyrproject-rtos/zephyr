@@ -7,6 +7,12 @@ rsource "andes/Kconfig"
 
 endif # DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED
 
+if DT_HAS_SPINALHDL_VEXRISCV_ENABLED
+
+rsource "vexriscv/Kconfig"
+
+endif # DT_HAS_SPINALHDL_VEXRISCV_ENABLED
+
 if DT_HAS_XUANTIE_E907_ENABLED
 
 rsource "thead/Kconfig"

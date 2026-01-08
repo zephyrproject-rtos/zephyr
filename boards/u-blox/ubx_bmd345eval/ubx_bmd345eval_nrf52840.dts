@@ -127,7 +127,7 @@
 	};
 
 	nrf_radio_fem: fem {
-		compatible = "generic-fem-two-ctrl-pins";
+		compatible = "radio-fem-two-ctrl-pins";
 		ctx-gpios = <&gpio1 5 0>;
 		ctx-settle-time-us = <1>;
 		crx-gpios = <&gpio1 6 0>;

@@ -8,10 +8,10 @@ config CAN_SJA1000
 	help
 	  This enables support for the shared NXP SJA1000 CAN driver.
 
-config CAN_MAX_FILTER
+config CAN_SJA1000_MAX_FILTERS
 	int "Maximum number of concurrent active RX filters"
 	depends on CAN_SJA1000
-	default 5
+	default 16
 	range 1 32
 	help
 	  As the NXP SJA1000 only supports one full-width RX filter, filtering of received CAN

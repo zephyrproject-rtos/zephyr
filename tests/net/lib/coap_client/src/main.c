@@ -65,7 +65,7 @@ static struct coap_client_request long_request = {
 	.len = sizeof(long_payload) - 1,
 	.user_data = &sem2,
 };
-static struct sockaddr dst_address;
+static struct net_sockaddr dst_address;
 
 
 
@@ -118,7 +118,8 @@ static void restore_token(uint8_t *buf)
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max_len, int flags,
-						 struct sockaddr *src_addr, socklen_t *addrlen)
+						 struct net_sockaddr *src_addr,
+						 net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -140,7 +141,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake(int sock, void *buf, size_t len, int flags,
-					       const struct sockaddr *dest_addr, socklen_t addrlen)
+					       const struct net_sockaddr *dest_addr,
+					       net_socklen_t addrlen)
 {
 	uint16_t last_message_id = 0;
 	uint8_t type;
@@ -161,8 +163,8 @@ static ssize_t z_impl_zsock_sendto_custom_fake(int sock, void *buf, size_t len, 
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake_no_reply(int sock, void *buf, size_t len, int flags,
-							const struct sockaddr *dest_addr,
-							socklen_t addrlen)
+							const struct net_sockaddr *dest_addr,
+							net_socklen_t addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -177,8 +179,8 @@ static ssize_t z_impl_zsock_sendto_custom_fake_no_reply(int sock, void *buf, siz
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake_echo(int sock, void *buf, size_t len, int flags,
-						    const struct sockaddr *dest_addr,
-						    socklen_t addrlen)
+						    const struct net_sockaddr *dest_addr,
+						    net_socklen_t addrlen)
 {
 	uint16_t last_message_id = 0;
 	struct coap_packet response = {0};
@@ -210,8 +212,8 @@ static ssize_t z_impl_zsock_sendto_custom_fake_echo(int sock, void *buf, size_t 
 
 static ssize_t z_impl_zsock_sendto_custom_fake_echo_next_req(int sock, void *buf, size_t len,
 							     int flags,
-							     const struct sockaddr *dest_addr,
-							     socklen_t addrlen)
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
 {
 	uint16_t last_message_id = 0;
 	struct coap_packet response = {0};
@@ -250,24 +252,24 @@ static ssize_t z_impl_zsock_sendto_custom_fake_echo_next_req(int sock, void *buf
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake_block(int sock, void *buf, size_t len, int flags,
-						     const struct sockaddr *dest_addr,
-						     socklen_t addrlen)
+						     const struct net_sockaddr *dest_addr,
+						     net_socklen_t addrlen)
 {
 	errno = EAGAIN;
 	return -1;
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake_err(int sock, void *buf, size_t len, int flags,
-						   const struct sockaddr *dest_addr,
-						   socklen_t addrlen)
+						   const struct net_sockaddr *dest_addr,
+						   net_socklen_t addrlen)
 {
 	errno = ENETDOWN;
 	return -1;
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_response(int sock, void *buf, size_t max_len,
-							  int flags, struct sockaddr *src_addr,
-							  socklen_t *addrlen)
+							  int flags, struct net_sockaddr *src_addr,
+							  net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -288,8 +290,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_response(int sock, void *buf, s
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, size_t max_len,
-							   int flags, struct sockaddr *src_addr,
-							   socklen_t *addrlen)
+							   int flags, struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -309,7 +311,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t max_len, int flags,
-						     struct sockaddr *src_addr, socklen_t *addrlen)
+						     struct net_sockaddr *src_addr,
+						     net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -328,8 +331,9 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_only_ack(int sock, void *buf, size_t max_len,
-							  int flags, struct sockaddr *src_addr,
-							  socklen_t *addrlen)
+							  int flags,
+							  struct net_sockaddr *src_addr,
+							  net_socklen_t *addrlen)
 {
 	int ret;
 
@@ -340,8 +344,9 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_only_ack(int sock, void *buf, s
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_unmatching(int sock, void *buf, size_t max_len,
-							    int flags, struct sockaddr *src_addr,
-							    socklen_t *addrlen)
+							    int flags,
+							    struct net_sockaddr *src_addr,
+							    net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -361,8 +366,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_unmatching(int sock, void *buf,
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_echo(int sock, void *buf, size_t max_len,
-						      int flags, struct sockaddr *src_addr,
-						      socklen_t *addrlen)
+						      int flags, struct net_sockaddr *src_addr,
+						      net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -388,8 +393,9 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo(int sock, void *buf, size_
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_echo_next_req(int sock, void *buf, size_t max_len,
-							       int flags, struct sockaddr *src_addr,
-							       socklen_t *addrlen)
+							       int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -416,8 +422,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo_next_req(int sock, void *b
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_duplicate_response(int sock, void *buf,
 								    size_t max_len, int flags,
-								    struct sockaddr *src_addr,
-								    socklen_t *addrlen)
+								    struct net_sockaddr *src_addr,
+								    net_socklen_t *addrlen)
 {
 	uint8_t token[TOKEN_OFFSET + COAP_TOKEN_MAX_LEN];
 
@@ -439,8 +445,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_duplicate_response(int sock, vo
 }
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, size_t max_len,
-							 int flags, struct sockaddr *src_addr,
-							 socklen_t *addrlen)
+							 int flags, struct net_sockaddr *src_addr,
+							 net_socklen_t *addrlen)
 {
 	int ret = z_impl_zsock_recvfrom_custom_fake_duplicate_response(sock, buf, max_len, flags,
 								       src_addr, addrlen);
@@ -531,7 +537,8 @@ ZTEST(coap_client, test_request_block)
 
 ZTEST(coap_client, test_resend_request)
 {
-	int (*sendto_fakes[])(int, void *, size_t, int, const struct sockaddr *, socklen_t) = {
+	int (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
+			      net_socklen_t) = {
 		z_impl_zsock_sendto_custom_fake_no_reply,
 		z_impl_zsock_sendto_custom_fake_block,
 		z_impl_zsock_sendto_custom_fake,
@@ -646,7 +653,8 @@ ZTEST(coap_client, test_separate_response_ack_fail)
 
 	req.user_data = &sem1;
 
-	int (*sendto_fakes[])(int, void *, size_t, int, const struct sockaddr *, socklen_t) = {
+	int (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
+			      net_socklen_t) = {
 		z_impl_zsock_sendto_custom_fake,
 		z_impl_zsock_sendto_custom_fake_err,
 	};

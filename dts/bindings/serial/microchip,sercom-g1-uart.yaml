@@ -7,7 +7,7 @@ description: |
   Microchip SERCOM UART driver.
 
   Group g1 SERCOM UART driver supports following hardware peripherals:
-    - module name="SERCOM" id="U2201" version="5.0.0"
+    - module name="SERCOM" id="U2201" version="3.1.1","5.0.0"
 
 compatible: "microchip,sercom-g1-uart"
 
@@ -93,3 +93,21 @@ properties:
          ONDEMAND bits are set in the clocking chain.
       1: Wake on Receive Complete interrupt. Generic clock is enabled in all sleep modes.
          Any interrupt can wake up the device.
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.
+
+      Each specifier will have a phandle reference to the dmac controller,
+      the channel number, and peripheral trigger source.
+
+      For example dmas for TX, RX on SERCOM3
+         dmas = <&dmac 0 0xb>, <&dmac 0 0xa>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";

@@ -9,3 +9,24 @@ config COUNTER_MCUX_LPTMR
 	depends on DT_HAS_NXP_LPTMR_ENABLED
 	help
 	  Enable support for the MCUX Low Power Timer (LPTMR).
+
+config COUNTER_MCUX_LPTMR_ALARM
+	bool "LPTMR alarm support"
+	depends on COUNTER_MCUX_LPTMR
+	help
+	  LPTMR is a commonly used wake-up source for many NXP MCUs and
+	  may be used as the companion low-power timer for the Cortex-M
+	  systick. Enabling single-shot alarm support requires reprogramming
+	  the hardware compare register (COMPARE/CMR), which is the same
+	  resource used for the periodic TOP callback. Because of this
+	  hardware limitation, this Kconfig option selects whether alarm
+	  support is enabled. When alarm support is enabled the driver will
+	  not allow set TOP operation at runtime (attempts to set TOP will
+	  return -ENOTSUP); When alarm support is disabled the driver will
+	  not allow set and cancel ALARM operation at runtime (attempts to
+	  set and cancel ALARM will return -ENOTSUP). Choose the configuration
+	  that matches your application's requirements.
+
+if COUNTER_MCUX_LPTMR_ALARM
+comment "NOTE: Enabling LPTMR ALARM disables set TOP operation and driver will return -ENOTSUP."
+endif

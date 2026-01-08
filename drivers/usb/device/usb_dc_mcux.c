@@ -9,7 +9,6 @@
 #include <string.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
-#include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>

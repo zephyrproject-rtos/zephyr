@@ -25,8 +25,7 @@ def parse_args():
     argparser.add_argument("dbfile", help="Dictionary Logging Database file")
     argparser.add_argument("serialPort", help="Port where the logs are generated")
     argparser.add_argument("baudrate", help="Serial Port baud rate")
-    argparser.add_argument("--debug", action="store_true",
-                           help="Print extra debugging information")
+    argparser.add_argument("--debug", action="store_true", help="Print extra debugging information")
 
     return argparser.parse_args()
 
@@ -34,8 +33,7 @@ def parse_args():
 def main():
     """function of serial parser"""
 
-    print("This script is deprecated. Use 'live_log_parser.py' instead.",
-          file=sys.stderr)
+    print("This script is deprecated. Use 'live_log_parser.py' instead.", file=sys.stderr)
 
     # Convert the arguments to the format expected by live_log_parser, and invoke it directly.
     args = parse_args()
@@ -47,11 +45,7 @@ def main():
     if args.debug:
         sys.argv.append('--debug')
 
-    sys.argv += [
-        'serial',
-        args.serialPort,
-        args.baudrate
-    ]
+    sys.argv += ['serial', args.serialPort, args.baudrate]
 
     live_log_parser.main()
 

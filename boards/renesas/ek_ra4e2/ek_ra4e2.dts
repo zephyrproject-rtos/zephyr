@@ -6,8 +6,8 @@
 /dts-v1/;
 
 #include <renesas/ra/ra4/r7fa4e2b93cfm.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra4e2-pinctrl.dtsi"
 

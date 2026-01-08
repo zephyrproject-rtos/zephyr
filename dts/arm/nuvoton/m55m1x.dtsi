@@ -475,6 +475,18 @@
 			disallow-iso-in-out-same-number;
 		};
 
+		hsusbd: hsusbd@40205000 {
+			compatible = "nuvoton,numaker-hsusbd";
+			reg = <0x40205000 0x1000>;
+			interrupts = <61 0>;
+			resets = <&rst NUMAKER_SYS_HSUSBD0RST>;
+			clocks = <&pcc NUMAKER_HSUSBD0_MODULE 0 0>;
+			dma-buffer-size = <8192>;
+			status = "disabled";
+			/* 2 more for Control OUT/IN */
+			num-bidir-endpoints = <20>;
+		};
+
 		wwdt: watchdog@40240000 {
 			compatible = "nuvoton,numaker-wwdt";
 			reg = <0x40240000 0x10>;

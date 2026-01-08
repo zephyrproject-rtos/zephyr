@@ -51,26 +51,26 @@ static const char *msg_type_str(struct ptp_msg *msg)
 
 static void msg_timestamp_post_recv(struct ptp_msg *msg, struct ptp_timestamp *ts)
 {
-	msg->timestamp.protocol._sec.high = ntohs(ts->seconds_high);
-	msg->timestamp.protocol._sec.low = ntohl(ts->seconds_low);
-	msg->timestamp.protocol.nanosecond = ntohl(ts->nanoseconds);
+	msg->timestamp.protocol._sec.high = net_ntohs(ts->seconds_high);
+	msg->timestamp.protocol._sec.low = net_ntohl(ts->seconds_low);
+	msg->timestamp.protocol.nanosecond = net_ntohl(ts->nanoseconds);
 }
 
 static void msg_timestamp_pre_send(struct ptp_timestamp *ts)
 {
-	ts->seconds_high = htons(ts->seconds_high);
-	ts->seconds_low = htonl(ts->seconds_low);
-	ts->nanoseconds = htonl(ts->nanoseconds);
+	ts->seconds_high = net_htons(ts->seconds_high);
+	ts->seconds_low = net_htonl(ts->seconds_low);
+	ts->nanoseconds = net_htonl(ts->nanoseconds);
 }
 
 static void msg_port_id_post_recv(struct ptp_port_id *port_id)
 {
-	port_id->port_number = ntohs(port_id->port_number);
+	port_id->port_number = net_ntohs(port_id->port_number);
 }
 
 static void msg_port_id_pre_send(struct ptp_port_id *port_id)
 {
-	port_id->port_number = htons(port_id->port_number);
+	port_id->port_number = net_htons(port_id->port_number);
 }
 
 static int msg_header_post_recv(struct ptp_header *header)
@@ -80,9 +80,9 @@ static int msg_header_post_recv(struct ptp_header *header)
 		return -1;
 	}
 
-	header->msg_length = ntohs(header->msg_length);
-	header->correction = ntohll(header->correction);
-	header->sequence_id = ntohs(header->sequence_id);
+	header->msg_length = net_ntohs(header->msg_length);
+	header->correction = net_ntohll(header->correction);
+	header->sequence_id = net_ntohs(header->sequence_id);
 
 	msg_port_id_post_recv(&header->src_port_id);
 
@@ -91,9 +91,9 @@ static int msg_header_post_recv(struct ptp_header *header)
 
 static void msg_header_pre_send(struct ptp_header *header)
 {
-	header->msg_length = htons(header->msg_length);
-	header->correction = htonll(header->correction);
-	header->sequence_id = htons(header->sequence_id);
+	header->msg_length = net_htons(header->msg_length);
+	header->correction = net_htonll(header->correction);
+	header->sequence_id = net_htons(header->sequence_id);
 
 	msg_port_id_pre_send(&header->src_port_id);
 }
@@ -156,8 +156,8 @@ static int msg_tlv_post_recv(struct ptp_msg *msg, int length)
 		}
 
 		tlv_container->tlv = (struct ptp_tlv *)suffix;
-		tlv_container->tlv->type = ntohs(tlv_container->tlv->type);
-		tlv_container->tlv->length = ntohs(tlv_container->tlv->length);
+		tlv_container->tlv->type = net_ntohs(tlv_container->tlv->type);
+		tlv_container->tlv->length = net_ntohs(tlv_container->tlv->length);
 
 		if (tlv_container->tlv->length % 2) {
 			/* IEEE 1588-2019 Section 5.3.8 - length is an even number */
@@ -290,8 +290,8 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 		return NULL;
 	}
 
-	payload = ntohs(hdr->len) - NET_UDPH_LEN;
-	port = ntohs(hdr->dst_port);
+	payload = net_ntohs(hdr->len) - NET_UDPH_LEN;
+	port = net_ntohs(hdr->dst_port);
 
 	if (port != PTP_SOCKET_PORT_EVENT && port != PTP_SOCKET_PORT_GENERAL) {
 		LOG_ERR("Couldn't retrieve PTP message from the net packet");
@@ -300,7 +300,7 @@ struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 
 	msg = (struct ptp_msg *)((uintptr_t)hdr + NET_UDPH_LEN);
 
-	if (payload == ntohs(msg->header.msg_length)) {
+	if (payload == net_ntohs(msg->header.msg_length)) {
 		return msg;
 	}
 
@@ -340,10 +340,10 @@ void ptp_msg_pre_send(struct ptp_msg *msg)
 		msg_port_id_pre_send(&msg->pdelay_resp_follow_up.req_port_id);
 		break;
 	case PTP_MSG_ANNOUNCE:
-		msg->announce.current_utc_offset = htons(msg->announce.current_utc_offset);
+		msg->announce.current_utc_offset = net_htons(msg->announce.current_utc_offset);
 		msg->announce.gm_clk_quality.offset_scaled_log_variance =
-			htons(msg->announce.gm_clk_quality.offset_scaled_log_variance);
-		msg->announce.steps_rm = htons(msg->announce.steps_rm);
+			net_htons(msg->announce.gm_clk_quality.offset_scaled_log_variance);
+		msg->announce.steps_rm = net_htons(msg->announce.steps_rm);
 		break;
 	case PTP_MSG_SIGNALING:
 		msg_port_id_pre_send(&msg->signaling.target_port_id);
@@ -415,10 +415,10 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 		msg->timestamp.host.second = (uint64_t)(current / MSEC_PER_SEC);
 		msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
 		msg_timestamp_post_recv(msg, &msg->announce.origin_timestamp);
-		msg->announce.current_utc_offset = ntohs(msg->announce.current_utc_offset);
+		msg->announce.current_utc_offset = net_ntohs(msg->announce.current_utc_offset);
 		msg->announce.gm_clk_quality.offset_scaled_log_variance =
-			ntohs(msg->announce.gm_clk_quality.offset_scaled_log_variance);
-		msg->announce.steps_rm = ntohs(msg->announce.steps_rm);
+			net_ntohs(msg->announce.gm_clk_quality.offset_scaled_log_variance);
+		msg->announce.steps_rm = net_ntohs(msg->announce.steps_rm);
 		break;
 	case PTP_MSG_SIGNALING:
 		msg_port_id_post_recv(&msg->signaling.target_port_id);

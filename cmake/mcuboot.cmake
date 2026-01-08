@@ -283,6 +283,9 @@ function(zephyr_mcuboot_tasks)
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
                    ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" ${output}.hex
                    ${output}.signed.encrypted.hex)
+      if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+        zephyr_runner_file(hex ${output}.signed.encrypted.hex)
+      endif()
     endif()
 
     if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD OR CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)

@@ -35,7 +35,7 @@ except ImportError:
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
-copyright = "2015-2025 Zephyr Project members and individual contributors"
+copyright = "2015-2026 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
@@ -209,8 +209,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.3.0", "/4.3.0/"),
         ("4.2.0", "/4.2.0/"),
-        ("4.1.0", "/4.1.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
     "display_gh_links": True,
@@ -219,6 +219,7 @@ html_context = {
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
+        "Glossary": f"{reference_prefix}/glossary.html",
     },
     # Set google_searchengine_id to your Search Engine ID to replace built-in search
     # engine with Google's Programmable Search Engine.

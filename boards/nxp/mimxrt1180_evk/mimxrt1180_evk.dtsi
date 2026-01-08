@@ -95,6 +95,10 @@
 	status = "okay";
 };
 
+&netc_ptp_clock0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 };
@@ -321,5 +325,4 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
 		clock-names = "mclk";
 	};
-
 };

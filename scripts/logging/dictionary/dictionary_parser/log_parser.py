@@ -20,8 +20,9 @@ LOG_LEVELS = [
     ('err', Fore.RED),
     ('wrn', Fore.YELLOW),
     ('inf', Fore.GREEN),
-    ('dbg', Fore.BLUE)
+    ('dbg', Fore.BLUE),
 ]
+
 
 def get_log_level_str_color(lvl):
     """Convert numeric log level to string"""
@@ -56,11 +57,11 @@ def formalize_fmt_string(fmt_str):
 
 class LogParser(abc.ABC):
     """Abstract class of log parser"""
+
     def __init__(self, database):
         self.database = database
 
         self.data_types = DataTypes(self.database)
-
 
     @abc.abstractmethod
     def parse_log_data(self, logdata, debug=False):

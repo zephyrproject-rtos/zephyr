@@ -62,6 +62,7 @@ MACOS_CLI_PATH = (
 TEST_CASES = (
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -89,6 +90,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -117,6 +119,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": "4000",
         "reset_mode": None,
         "download_address": None,
@@ -144,6 +147,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": "hw",
         "download_address": None,
@@ -171,6 +175,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": "sw",
         "download_address": None,
@@ -198,6 +203,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": "core",
         "download_address": None,
@@ -225,11 +231,12 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": "TEST",
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
         "start_address": None,
-        "conn_modifiers": "br=115200 sn=TEST",
+        "conn_modifiers": "br=115200",
         "start_modifiers": [],
         "download_modifiers": [],
         "cli": CLI_PATH,
@@ -252,6 +259,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -279,6 +287,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -307,6 +316,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -335,6 +345,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -362,6 +373,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -389,6 +401,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": None,
@@ -416,6 +429,7 @@ TEST_CASES = (
     },
     {
         "port": "swd",
+        "dev_id": None,
         "frequency": None,
         "reset_mode": None,
         "download_address": 0x80000000,
@@ -475,6 +489,7 @@ def test_stm32cubeprogrammer_init(
     runner = STM32CubeProgrammerBinaryRunner(
         cfg=runner_config,
         port=tc["port"],
+        dev_id=tc["dev_id"],
         frequency=tc["frequency"],
         reset_mode=tc["reset_mode"],
         download_address=tc["download_address"],
@@ -514,6 +529,8 @@ def test_stm32cubeprogrammer_create(
     system.return_value = tc["system"]
 
     args = ["--port", tc["port"]]
+    if tc["dev_id"]:
+        args.extend(["--dev-id", tc["dev_id"]])
     if tc["frequency"]:
         args.extend(["--frequency", tc["frequency"]])
     if tc["reset_mode"]:

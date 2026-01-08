@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Embeint Pty Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dmic_cfg0: dmic_cfg0 {
+		compatible = "zephyr,pdm-dmic";
+		clk-frequency-min = <1000000>;
+		clk-frequency-max = <2000000>;
+		clk-duty-cycle-min = <45>;
+		clk-duty-cycle-max = <55>;
+		channel-left;
+	};
+
+	dmic_cfg1: dmic_cfg1 {
+		compatible = "zephyr,pdm-dmic";
+		clk-frequency-min = <100000>;
+		clk-frequency-max = <400000>;
+		clk-duty-cycle-min = <40>;
+		clk-duty-cycle-max = <60>;
+		channel-right;
+	};
+
+	dmic_cfg2: dmic_cfg2 {
+		compatible = "zephyr,pdm-dmic";
+		clk-frequency-min = <150000>;
+		clk-frequency-max = <450000>;
+		clk-duty-cycle-min = <49>;
+		clk-duty-cycle-max = <51>;
+		channel-left;
+		channel-right;
+	};
+};

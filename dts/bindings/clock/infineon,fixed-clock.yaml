@@ -17,3 +17,36 @@ properties:
       The type of clock (refer to include/.../dt-bindings/clock/ifx_clock_source_common.h):
       clk_iho  : system-clock = <IFX_IHO>
       clk_pilo : system-clock = <IFX_PILO>
+
+  feedback-div:
+    type: int
+
+  reference-div:
+    type: int
+
+  output-div:
+    type: int
+
+  fraction-div:
+    type: int
+
+  dco-mode-enable:
+    type: boolean
+
+  div-p:
+    type: int
+
+  div-n:
+    type: int
+
+  div-k:
+    type: int
+
+  freq-mode-sel:
+    type: int
+
+  flock-enable-threshold:
+    type: int
+
+  lf-beta-value:
+    type: int

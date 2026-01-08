@@ -31,7 +31,8 @@ extern const uintptr_t _irq_vector_table[];
 
 #if defined(CONFIG_NRFX_CLIC)
 
-#if defined(CONFIG_SOC_SERIES_NRF54LX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#if (defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_NRF54H20_CPUFLPR)) && \
+	defined(CONFIG_RISCV_CORE_NORDIC_VPR)
 #define ISR1_OFFSET	16
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18

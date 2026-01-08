@@ -23,4 +23,12 @@
 		current-lsb-microamps = <1000>;
 		status = "okay";
 	};
+
+	ina232_default_test: ina232@42 {
+		compatible = "ti,ina232";
+		reg = <0x42>;
+		rshunt-micro-ohms = <2000>;
+		current-lsb-microamps = <1000>;
+		status = "okay";
+	};
 };

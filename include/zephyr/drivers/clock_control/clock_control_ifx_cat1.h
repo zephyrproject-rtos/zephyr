@@ -369,6 +369,15 @@ enum ifx_cat1_clock_block {
 	IFX_CAT1_CLOCK_BLOCK_BAK,  /*!< Backup Power Domain Clock */
 	IFX_CAT1_CLOCK_BLOCK_PERI, /*!< Peripheral Clock Group */
 
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	IFX_CAT1_CLOCK_BLOCK_PERIPHERAL_16BIT =
+		CY_SYSCLK_DIV_16_BIT, /* Equal to IFX_CAT1_CLOCK_BLOCK_PERIPHERAL0_16_BIT */
+
+	IFX_CAT1_CLOCK_BLOCK_PERIPHERAL_16_5BIT =
+		CY_SYSCLK_DIV_16_5_BIT, /* Equal to IFX_CAT1_CLOCK_BLOCK_PERIPHERAL0_16_5_BIT */
+
+	IFX_CAT1_CLOCK_BLOCK_PERIPHERAL_24_5BIT =
+		CY_SYSCLK_DIV_24_5_BIT, /* Equal to IFX_CAT1_CLOCK_BLOCK_PERIPHERAL0_24_5_BIT */
 #endif
 };
 
@@ -392,6 +401,21 @@ struct ifx_cat1_resource_inst {
 int ifx_cat1_clock_control_get_frequency(uint32_t dt_ord, uint32_t *frequency);
 
 en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num);
+en_clk_dst_t ifx_cat1_tcpwm_get_clock_index(uint32_t block_num, uint32_t channel);
+
+static inline uint32_t ifx_cat1_utils_peri_pclk_get_frequency(en_clk_dst_t clk_dest,
+							      const struct ifx_cat1_clock *_clock)
+{
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	return Cy_SysClk_PeriPclkGetFrequency(
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
+		_clock->channel);
+#else
+	CY_UNUSED_PARAMETER(clk_dest);
+	return Cy_SysClk_PeriphGetFrequency(
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block), _clock->channel);
+#endif
+}
 
 static inline cy_rslt_t ifx_cat1_utils_peri_pclk_enable_divider(en_clk_dst_t clk_dest,
 								const struct ifx_cat1_clock *_clock)

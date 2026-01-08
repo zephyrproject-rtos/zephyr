@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s3-xtensa-intmux.h>
-#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
 	aliases {
@@ -159,6 +159,18 @@
 				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
+		};
+
+		rtc_slow_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
+		rtc_fast_ram: memory@600fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x600fe000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
 		};
 
 		intc: interrupt-controller@600c2000 {
@@ -386,7 +398,20 @@
 			clocks = <&clock ESP32_LCD_CAM_MODULE>;
 			interrupts = <LCD_CAM_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
+			dmas = <&dma 6>, <&dma 7>;
+			dma-names = "rx", "tx";
+
+			lcd_cam_dvp: lcd_cam_dvp {
+				compatible = "espressif,esp32-lcd-cam-dvp";
+				status = "disabled";
+			};
+
+			lcd_cam_disp: lcd_cam_disp {
+				compatible = "espressif,esp32-lcd-cam-mipi-dbi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		usb_serial: uart@60038000 {

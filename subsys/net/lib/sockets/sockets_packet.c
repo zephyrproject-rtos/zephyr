@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -95,7 +94,7 @@ static int zpacket_socket(int family, int type, int proto)
 		 * we do not need to change the protocol field handling in
 		 * other part of the network stack.
 		 */
-		proto = ntohs(proto);
+		proto = net_ntohs(proto);
 	}
 
 	ret = net_context_get(family, type, proto, &ctx);
@@ -130,8 +129,8 @@ static int zpacket_socket(int family, int type, int proto)
 }
 
 static int zpacket_bind_ctx(struct net_context *ctx,
-			    const struct sockaddr *addr,
-			    socklen_t addrlen)
+			    const struct net_sockaddr *addr,
+			    net_socklen_t addrlen)
 {
 	int ret = 0;
 
@@ -155,7 +154,7 @@ static int zpacket_bind_ctx(struct net_context *ctx,
 }
 
 static void zpacket_set_eth_pkttype(struct net_if *iface,
-				    struct sockaddr_ll *addr,
+				    struct net_sockaddr_ll *addr,
 				    struct net_linkaddr *lladdr)
 {
 	if (lladdr == NULL || lladdr->len == 0) {
@@ -163,30 +162,30 @@ static void zpacket_set_eth_pkttype(struct net_if *iface,
 	}
 
 	if (net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
-		addr->sll_pkttype = PACKET_BROADCAST;
+		addr->sll_pkttype = NET_PACKET_BROADCAST;
 	} else if (net_eth_is_addr_multicast(
 			   (struct net_eth_addr *)lladdr->addr)) {
-		addr->sll_pkttype = PACKET_MULTICAST;
+		addr->sll_pkttype = NET_PACKET_MULTICAST;
 	} else if (!net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
-		addr->sll_pkttype = PACKET_HOST;
+		addr->sll_pkttype = NET_PACKET_HOST;
 	} else {
-		addr->sll_pkttype = PACKET_OTHERHOST;
+		addr->sll_pkttype = NET_PACKET_OTHERHOST;
 	}
 }
 
 static void zpacket_set_source_addr(struct net_context *ctx,
 				    struct net_pkt *pkt,
-				    struct sockaddr *src_addr,
-				    socklen_t *addrlen)
+				    struct net_sockaddr *src_addr,
+				    net_socklen_t *addrlen)
 {
-	struct sockaddr_ll addr = {0};
+	struct net_sockaddr_ll addr = {0};
 	struct net_if *iface = net_context_get_iface(ctx);
 
 	if (iface == NULL) {
 		return;
 	}
 
-	addr.sll_family = AF_PACKET;
+	addr.sll_family = NET_AF_PACKET;
 	addr.sll_ifindex = net_if_get_by_iface(iface);
 
 	if (net_pkt_is_l2_processed(pkt)) {
@@ -197,10 +196,10 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, pkt->lladdr_src.addr,
 		       MIN(sizeof(addr.sll_addr), pkt->lladdr_src.len));
 
-		addr.sll_protocol = htons(net_pkt_ll_proto_type(pkt));
+		addr.sll_protocol = net_htons(net_pkt_ll_proto_type(pkt));
 
 		if (net_if_get_link_addr(iface)->type == NET_LINK_ETHERNET) {
-			addr.sll_hatype = ARPHRD_ETHER;
+			addr.sll_hatype = NET_ARPHRD_ETHER;
 			zpacket_set_eth_pkttype(iface, &addr,
 						net_pkt_lladdr_dst(pkt));
 		}
@@ -227,7 +226,7 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		       sizeof(struct net_eth_addr));
 
 		addr.sll_protocol = hdr->type;
-		addr.sll_hatype = ARPHRD_ETHER;
+		addr.sll_hatype = NET_ARPHRD_ETHER;
 
 		(void)net_linkaddr_create(&dst_addr, hdr->dst.addr,
 					  sizeof(struct net_eth_addr),
@@ -237,16 +236,16 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		net_pkt_cursor_restore(pkt, &cur);
 	}
 
-	/* Copy the result sockaddr_ll structure into provided buffer. If the
+	/* Copy the result net_sockaddr_ll structure into provided buffer. If the
 	 * buffer is smaller than the structure size, it will be truncated.
 	 */
-	memcpy(src_addr, &addr, MIN(sizeof(struct sockaddr_ll), *addrlen));
-	*addrlen = sizeof(struct sockaddr_ll);
+	memcpy(src_addr, &addr, MIN(sizeof(struct net_sockaddr_ll), *addrlen));
+	*addrlen = sizeof(struct net_sockaddr_ll);
 }
 
 ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			   int flags, const struct sockaddr *dest_addr,
-			   socklen_t addrlen)
+			   int flags, const struct net_sockaddr *dest_addr,
+			   net_socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
 	int status;
@@ -272,7 +271,7 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	return status;
 }
 
-ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
+ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct net_msghdr *msg,
 			    int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
@@ -294,8 +293,8 @@ ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 }
 
 ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
-			     int flags, struct sockaddr *src_addr,
-			     socklen_t *addrlen)
+			     int flags, struct net_sockaddr *src_addr,
+			     net_socklen_t *addrlen)
 {
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
@@ -360,7 +359,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 }
 
 int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
-			   void *optval, socklen_t *optlen)
+			   void *optval, net_socklen_t *optlen)
 {
 	if (!optval || !optlen) {
 		errno = EINVAL;
@@ -372,7 +371,7 @@ int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 }
 
 int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
-			const void *optval, socklen_t optlen)
+			const void *optval, net_socklen_t optlen)
 {
 	return sock_fd_op_vtable.setsockopt(ctx, level, optname,
 					    optval, optlen);
@@ -398,15 +397,15 @@ static int packet_sock_ioctl_vmeth(void *obj, unsigned int request,
 /*
  * TODO: A packet socket can be bound to a network device using SO_BINDTODEVICE.
  */
-static int packet_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
-				  socklen_t addrlen)
+static int packet_sock_bind_vmeth(void *obj, const struct net_sockaddr *addr,
+				  net_socklen_t addrlen)
 {
 	return zpacket_bind_ctx(obj, addr, addrlen);
 }
 
 /* The connect() function is no longer necessary. */
-static int packet_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
-				     socklen_t addrlen)
+static int packet_sock_connect_vmeth(void *obj, const struct net_sockaddr *addr,
+				     net_socklen_t addrlen)
 {
 	return -EOPNOTSUPP;
 }
@@ -421,42 +420,42 @@ static int packet_sock_listen_vmeth(void *obj, int backlog)
 	return -EOPNOTSUPP;
 }
 
-static int packet_sock_accept_vmeth(void *obj, struct sockaddr *addr,
-				    socklen_t *addrlen)
+static int packet_sock_accept_vmeth(void *obj, struct net_sockaddr *addr,
+				    net_socklen_t *addrlen)
 {
 	return -EOPNOTSUPP;
 }
 
 static ssize_t packet_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 					int flags,
-					const struct sockaddr *dest_addr,
-					socklen_t addrlen)
+					const struct net_sockaddr *dest_addr,
+					net_socklen_t addrlen)
 {
 	return zpacket_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
-static ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+static ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct net_msghdr *msg,
 					 int flags)
 {
 	return zpacket_sendmsg_ctx(obj, msg, flags);
 }
 
 static ssize_t packet_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-					  int flags, struct sockaddr *src_addr,
-					  socklen_t *addrlen)
+					  int flags, struct net_sockaddr *src_addr,
+					  net_socklen_t *addrlen)
 {
 	return zpacket_recvfrom_ctx(obj, buf, max_len, flags,
 				    src_addr, addrlen);
 }
 
 static int packet_sock_getsockopt_vmeth(void *obj, int level, int optname,
-					void *optval, socklen_t *optlen)
+					void *optval, net_socklen_t *optlen)
 {
 	return zpacket_getsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
 static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
-					const void *optval, socklen_t optlen)
+					const void *optval, net_socklen_t optlen)
 {
 	return zpacket_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
@@ -487,14 +486,14 @@ static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 static bool packet_is_supported(int family, int type, int proto)
 {
 	switch (type) {
-	case SOCK_RAW:
-		proto = ntohs(proto);
+	case NET_SOCK_RAW:
+		proto = net_ntohs(proto);
 		return proto == 0
 		  || proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
 		  || proto == ETH_P_IEEE802154;
 
-	case SOCK_DGRAM:
+	case NET_SOCK_DGRAM:
 		return true;
 
 	default:
@@ -502,5 +501,5 @@ static bool packet_is_supported(int family, int type, int proto)
 	}
 }
 
-NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, AF_PACKET,
+NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, NET_AF_PACKET,
 		    packet_is_supported, zpacket_socket);

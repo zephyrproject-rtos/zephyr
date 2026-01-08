@@ -21,6 +21,10 @@
 		mcuboot-button0 = &user_button_2;
 	};
 
+	chosen {
+		zephyr,edac = &erm0;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -128,6 +132,38 @@
 		gpio-map = <DVP_20PIN_PEN 0 &gpio1 19 0>,
 			   <DVP_20PIN_PDN 0 &gpio1 18 0>;
 	};
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&eim0_channel5 {
+	status = "okay";
+};
+
+&eim0_channel6 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
 };
 
 &flexcomm1_lpspi1 {
@@ -345,11 +381,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pinmux_flexio_lcd>;
-	pinctrl-names = "default";
-};
-
-&lpcmp0 {
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

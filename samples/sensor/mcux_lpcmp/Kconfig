@@ -6,13 +6,25 @@
 
 config LPCMP_POSITIVE_PORT
 	int "The LPCMP positive input port"
-	default 0
+	default 0 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,IN0)
+	default 1 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,IN1)
+	default 2 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,IN2)
+	default 3 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,IN3)
+	default 4 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,IN4)
+	default 5 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,IN5)
+	default 7 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),positive-mux-input,DAC)
 	help
 	  Specifies positive input port.
 
 config LPCMP_NEGATIVE_PORT
 	int "The LPCMP negative input port"
-	default 7
+	default 0 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,IN0)
+	default 1 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,IN1)
+	default 2 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,IN2)
+	default 3 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,IN3)
+	default 4 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,IN4)
+	default 5 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,IN5)
+	default 7 if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lpcmp0),negative-mux-input,DAC)
 	help
 	  Specifies negative input port.
 
