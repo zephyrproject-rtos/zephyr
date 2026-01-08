@@ -491,6 +491,11 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 		return -1;
 	}
 
+	if (sock_is_error(parent)) {
+		errno = POINTER_TO_INT(parent->user_data);
+		return -1;
+	}
+
 	if (!sock_is_nonblock(parent)) {
 		k_timeout_t timeout = K_FOREVER;
 
