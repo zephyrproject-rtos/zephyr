@@ -9,6 +9,7 @@ Coding Style Guidelines
 
    naming.rst
    code.rst
+   doxygen.rst
    cmake.rst
    devicetree.rst
    kconfig.rst
