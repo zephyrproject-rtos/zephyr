@@ -1,9 +1,8 @@
 /*
  * Copyright (c) 2024 Kelly Helmut Lord
+ * Copyright (c) 2026 Basalte bv
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "zephyr/ztest_assert.h"
-#include <stdlib.h>
 #include <zephyr/ztest.h>
 #include <zephyr/data/cobs.h>
 
@@ -20,23 +19,21 @@ struct cobs_tests_fixture {
 
 static void *cobs_test_setup(void)
 {
-	struct cobs_tests_fixture *fixture = malloc(sizeof(struct cobs_tests_fixture));
+	static struct cobs_tests_fixture fixture;
 
-	zassume_not_null(fixture);
+	fixture.test_data = net_buf_alloc(&test_pool, K_NO_WAIT);
+	fixture.encoded = net_buf_alloc(&test_pool, K_NO_WAIT);
+	fixture.decoded = net_buf_alloc(&test_pool, K_NO_WAIT);
 
-	fixture->test_data = net_buf_alloc(&test_pool, K_NO_WAIT);
-	fixture->encoded = net_buf_alloc(&test_pool, K_NO_WAIT);
-	fixture->decoded = net_buf_alloc(&test_pool, K_NO_WAIT);
+	zassert_not_null(fixture.test_data, "Failed to allocate test_data buffer");
+	zassert_not_null(fixture.encoded, "Failed to allocate encoded buffer");
+	zassert_not_null(fixture.decoded, "Failed to allocate decoded buffer");
 
-	zassert_not_null(fixture->test_data, "Failed to allocate test_data buffer");
-	zassert_not_null(fixture->encoded, "Failed to allocate encoded buffer");
-	zassert_not_null(fixture->decoded, "Failed to allocate decoded buffer");
+	net_buf_reset(fixture.test_data);
+	net_buf_reset(fixture.encoded);
+	net_buf_reset(fixture.decoded);
 
-	net_buf_reset(fixture->test_data);
-	net_buf_reset(fixture->encoded);
-	net_buf_reset(fixture->decoded);
-
-	return fixture;
+	return &fixture;
 }
 
 static void cobs_test_before(void *f)
@@ -52,17 +49,9 @@ static void cobs_test_teardown(void *f)
 {
 	struct cobs_tests_fixture *fixture = (struct cobs_tests_fixture *)f;
 
-	if (fixture->test_data) {
-		net_buf_unref(fixture->test_data);
-	}
-	if (fixture->encoded) {
-		net_buf_unref(fixture->encoded);
-	}
-	if (fixture->decoded) {
-		net_buf_unref(fixture->decoded);
-	}
-
-	free(fixture);
+	net_buf_unref(fixture->test_data);
+	net_buf_unref(fixture->encoded);
+	net_buf_unref(fixture->decoded);
 }
 
 struct cobs_test_item {
