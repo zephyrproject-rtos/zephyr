@@ -408,70 +408,13 @@ static int sam_usbc_prep_in(const struct device *const dev,
 	return 0;
 }
 
-static int sam_usbc_ctrl_feed_dout(const struct device *const dev, const size_t length)
-{
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	udc_buf_put(ep_cfg, buf);
-
-	return sam_usbc_prep_out(dev, buf, ep_cfg);
-}
-
-static void drop_control_transfers(const struct device *const dev)
-{
-	struct net_buf *buf;
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-}
-
 static int sam_usbc_handle_evt_setup(const struct device *const dev)
 {
 	struct udc_sam_usbc_data *priv = udc_get_private(dev);
-	struct net_buf *buf;
-	int err;
 
-	drop_control_transfers(dev);
+	udc_setup_received(dev, priv->setup);
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, EP0_SETUP_SIZE);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	net_buf_add_mem(buf, priv->setup, EP0_SETUP_SIZE);
-	udc_ep_buf_set_setup(buf);
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		LOG_DBG("s:%p|feed for -out-", (void *)buf);
-		err = sam_usbc_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		LOG_DBG("s:%p|feed for -in-status", (void *)buf);
-		err = udc_ctrl_submit_s_in_status(dev);
-	} else {
-		LOG_DBG("s:%p|no data", (void *)buf);
-		err = udc_ctrl_submit_s_status(dev);
-	}
-
-	return err;
+	return 0;
 }
 
 static int sam_usbc_handle_evt_din(const struct device *const dev,
@@ -508,36 +451,12 @@ static int sam_usbc_handle_evt_din(const struct device *const dev,
 	udc_ep_set_busy(ep_cfg, false);
 
 	if (ep_cfg->addr == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) ||
-		    udc_ctrl_stage_is_no_data(dev)) {
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-
-			/*
-			 * CRITICAL: Restore EP0 OUT descriptor for next SETUP.
-			 * In single-bank mode, IN and OUT share the same
-			 * descriptor. sam_usbc_prep_in() set ep_pipe_addr to
-			 * the IN buffer. We must restore it to the setup
-			 * buffer before the next SETUP arrives.
-			 * EP0 always uses physical EP0.
-			 */
-			dt->ep_pipe_addr = priv->setup;
-			dt->sizes = 0;
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/*
-			 * IN transfer finished, need to receive OUT ZLP
-			 * for status stage
-			 */
-			net_buf_unref(buf);
-			return sam_usbc_ctrl_feed_dout(dev, 0);
-		}
-
-		return 0;
+		/*
+		 * Restore EP0 OUT descriptor for next SETUP.
+		 * Single-bank: IN and OUT share same descriptor.
+		 */
+		dt->ep_pipe_addr = priv->setup;
+		dt->sizes = 0;
 	}
 
 	return udc_submit_ep_event(dev, buf, 0);
@@ -554,7 +473,6 @@ static int sam_usbc_handle_evt_dout(const struct device *const dev,
 	struct net_buf *buf;
 	uint32_t size;
 	uint8_t bank = 0;
-	int err = 0;
 
 	/* EP0 control endpoint: single-bank, read from descriptor */
 	dt = sam_usbc_get_desc(dev, phys_ep, 0);
@@ -596,32 +514,12 @@ static int sam_usbc_handle_evt_dout(const struct device *const dev,
 	udc_ep_set_busy(ep_cfg, false);
 
 	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			LOG_DBG("dout:%p|status, feed >s", (void *)buf);
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-
-			/*
-			 * CRITICAL: Restore EP0 OUT descriptor for next SETUP.
-			 * After status OUT (ZLP from host), ensure descriptor
-			 * is ready for the next SETUP packet.
-			 * EP0 always uses physical EP0.
-			 */
-			dt->ep_pipe_addr = priv->setup;
-			dt->sizes = 0;
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_in(dev)) {
-			err = udc_ctrl_submit_s_out_status(dev, buf);
-		}
-	} else {
-		err = udc_submit_ep_event(dev, buf, 0);
+		/* Restore EP0 OUT descriptor for next SETUP */
+		dt->ep_pipe_addr = priv->setup;
+		dt->sizes = 0;
 	}
 
-	return err;
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static void sam_usbc_handle_xfer_next(const struct device *const dev,
@@ -633,6 +531,14 @@ static void sam_usbc_handle_xfer_next(const struct device *const dev,
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		return;
+	}
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			return;
+		}
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep_cfg->addr)) {

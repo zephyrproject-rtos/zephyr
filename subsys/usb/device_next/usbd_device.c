@@ -270,6 +270,7 @@ init_exit:
 
 int usbd_enable(struct usbd_context *const uds_ctx)
 {
+	bool ep0_empty;
 	int ret;
 
 	k_sched_lock();
@@ -287,13 +288,20 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 		goto enable_exit;
 	}
 
+	/* UDC drivers can keep enqueued control buffers across disable/enable
+	 * cycle. Enqueue SETUP buffer only if there are no queued buffers.
+	 * This check has to be done before udc_enable(), because only before
+	 * enable the driver won't complete any queued buffer.
+	 */
+	ep0_empty = udc_ep_queue_is_empty(uds_ctx->dev, USB_CONTROL_EP_OUT);
+
 	ret = udc_enable(uds_ctx->dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable controller");
 		goto enable_exit;
 	}
 
-	ret = usbd_init_control_pipe(uds_ctx);
+	ret = usbd_init_control_pipe(uds_ctx, ep0_empty);
 	if (ret != 0) {
 		udc_disable(uds_ctx->dev);
 		goto enable_exit;
@@ -342,10 +350,14 @@ int usbd_shutdown(struct usbd_context *const uds_ctx)
 
 	usbd_device_lock(uds_ctx);
 
-	/* TODO: control request dequeue ? */
 	ret = usbd_device_shutdown_core(uds_ctx);
 	if (ret) {
 		LOG_ERR("Failed to shutdown USB device");
+	}
+
+	ret = udc_purge_queues(uds_ctx->dev);
+	if (ret) {
+		LOG_ERR("Failed to purge endpoint queues");
 	}
 
 	uds_ctx->status.initialized = false;
