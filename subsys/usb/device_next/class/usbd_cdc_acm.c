@@ -486,19 +486,24 @@ static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
 
 static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
-			    struct net_buf *const buf)
+			    struct net_buf **const pbuf)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
+	struct net_buf *buf;
 	size_t min_len;
 
 	if (setup->bRequest == GET_LINE_CODING) {
+		min_len = MIN(sizeof(data->line_coding), setup->wLength);
+
+		buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), min_len);
 		if (buf == NULL) {
 			errno = -ENOMEM;
 			return 0;
 		}
 
-		min_len = MIN(sizeof(data->line_coding), setup->wLength);
+		*pbuf = buf;
+
 		net_buf_add_mem(buf, &data->line_coding, min_len);
 
 		return 0;
