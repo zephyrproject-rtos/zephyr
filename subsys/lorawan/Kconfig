@@ -19,6 +19,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 rsource "loramac-node/Kconfig"
 
+rsource "emul/Kconfig"
+
 rsource "nvm/Kconfig"
 
 rsource "services/Kconfig"

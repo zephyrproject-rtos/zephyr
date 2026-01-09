@@ -23,9 +23,8 @@ zephyr_compile_definitions_ifdef(CONFIG_LORAMAC_REGION_IN865 REGION_IN865)
 zephyr_compile_definitions_ifdef(CONFIG_LORAMAC_REGION_US915 REGION_US915)
 zephyr_compile_definitions_ifdef(CONFIG_LORAMAC_REGION_RU864 REGION_RU864)
 
-if(CONFIG_LORAWAN_EMUL)
-  zephyr_library_sources(lorawan_emul.c)
-else()
+# Don't build the real implementation when the emulator is used
+if(NOT CONFIG_LORAWAN_EMUL)
   zephyr_library_sources(lorawan.c)
 endif()
 
