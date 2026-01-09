@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@ extern void nxp_nbu_init(void);
 
 __weak void clock_init(void)
 {
+#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
 	/* Unlock Reference Clock Status Registers to allow writes */
 	CLOCK_UnlockFircControlStatusReg();
 	CLOCK_UnlockSircControlStatusReg();
@@ -115,6 +116,7 @@ __weak void clock_init(void)
 
 	/* Init SIRC */
 	(void)CLOCK_InitSirc(&sirc_config);
+#endif
 
 	/* Attach Clocks */
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0, kCLOCK_IpSrcFro192M);
@@ -133,20 +135,25 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Lpadc0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
+#ifndef CONFIG_SOC_MCXW70AC
 	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
+#endif
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortA);
+		CLOCK_EnableClock(kCLOCK_GpioA);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpiob), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortB);
+		CLOCK_EnableClock(kCLOCK_GpioB);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioc), nxp_kinetis_gpio, okay)) {
 		CLOCK_EnableClock(kCLOCK_PortC);
+		CLOCK_EnableClock(kCLOCK_GpioC);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpuart, okay)) {
@@ -189,9 +196,16 @@ __weak void clock_init(void)
 		CLOCK_EnableClock(kCLOCK_Can0);
 	}
 
+#ifndef CONFIG_SOC_MCXW70AC
+	/* MCX W70 does not support VREF and FLEXIO */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref), nxp_vref, okay)) {
 		CLOCK_EnableClock(kCLOCK_Vref0);
 	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
+		CLOCK_EnableClock(kCLOCK_Flexio0);
+	}
+#endif
 
 	if (DT_NODE_HAS_COMPAT_STATUS(adc0, nxp_lpadc, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpadc0);
@@ -204,12 +218,9 @@ __weak void clock_init(void)
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ewm0), nxp_ewm, okay)) {
 		CLOCK_EnableClock(kCLOCK_Ewm0);
 	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
-		CLOCK_EnableClock(kCLOCK_Flexio0);
-	}
 }
 
+#ifndef CONFIG_SOC_MCXW70AC
 static void vbat_init(void)
 {
 	VBAT_Type *base = (VBAT_Type *)DT_REG_ADDR(DT_NODELABEL(vbat));
@@ -224,6 +235,7 @@ static void vbat_init(void)
 	 */
 	base->STATUSA |= VBAT_STATUSA_POR_DET_MASK;
 };
+#endif
 
 void soc_early_init_hook(void)
 {
@@ -235,8 +247,10 @@ void soc_early_init_hook(void)
 	/* Initialize system clock to 96 MHz */
 	clock_init();
 
+#ifndef CONFIG_SOC_MCXW70AC
 	/* Smart power switch initialization */
 	vbat_init();
+#endif
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		nxp_mcxw7x_power_init();
