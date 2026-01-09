@@ -652,6 +652,22 @@ struct net_buf *udc_ctrl_alloc(const struct device *dev,
 	return udc_ep_buf_alloc(dev, ep, size);
 }
 
+struct net_buf *udc_ctrl_data_alloc(const struct device *dev,
+				    const uint8_t ep,
+				    const size_t size)
+{
+	struct udc_buf_info *bi;
+	struct net_buf *buf;
+
+	buf = udc_ctrl_alloc(dev, ep, size);
+	if (buf) {
+		bi = udc_get_buf_info(buf);
+		bi->data = true;
+	}
+
+	return buf;
+}
+
 static inline void udc_buf_destroy(struct net_buf *buf)
 {
 	/* Adjust level and use together with the log in udc_ep_buf_alloc() */
@@ -827,55 +843,15 @@ struct net_buf *udc_ctrl_alloc_stage(const struct device *dev,
 	return buf;
 }
 
-static struct net_buf *udc_ctrl_alloc_data(const struct device *dev,
-					   struct net_buf *const setup,
-					   const uint8_t ep)
-{
-	size_t size = udc_data_stage_length(setup);
-	struct udc_buf_info *bi;
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc_stage(dev, setup, ep, size);
-	if (buf) {
-		bi = udc_get_buf_info(buf);
-		bi->data = true;
-	}
-
-	return buf;
-}
-
-static struct net_buf *udc_ctrl_alloc_status(const struct device *dev,
-					     struct net_buf *const parent,
-					     const uint8_t ep)
-{
-	size_t size = (ep == USB_CONTROL_EP_OUT) ? 64 : 0;
-	struct udc_buf_info *bi;
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc_stage(dev, parent, ep, size);
-	if (buf) {
-		bi = udc_get_buf_info(buf);
-		bi->status = true;
-	}
-
-	return buf;
-}
-
 int udc_ctrl_submit_s_out_status(const struct device *dev,
 			      struct net_buf *const dout)
 {
 	struct udc_buf_info *bi = udc_get_buf_info(dout);
 	struct udc_data *data = dev->data;
-	struct net_buf *buf;
 	int ret = 0;
 
 	bi->data = true;
 	net_buf_frag_add(data->setup, dout);
-
-	buf = udc_ctrl_alloc_status(dev, dout, USB_CONTROL_EP_IN);
-	if (buf == NULL) {
-		ret = -ENOMEM;
-	}
 
 	return udc_submit_ep_event(dev, data->setup, ret);
 }
@@ -883,17 +859,10 @@ int udc_ctrl_submit_s_out_status(const struct device *dev,
 int udc_ctrl_submit_s_in_status(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
-	struct net_buf *buf;
 	int ret = 0;
 
 	if (!udc_ctrl_stage_is_data_in(dev)) {
 		return -ENOTSUP;
-	}
-
-	/* Allocate buffer for data stage IN */
-	buf = udc_ctrl_alloc_data(dev, data->setup, USB_CONTROL_EP_IN);
-	if (buf == NULL) {
-		ret = -ENOMEM;
 	}
 
 	return udc_submit_ep_event(dev, data->setup, ret);
@@ -902,14 +871,7 @@ int udc_ctrl_submit_s_in_status(const struct device *dev)
 int udc_ctrl_submit_s_status(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
-	struct net_buf *buf;
 	int ret = 0;
-
-	/* Allocate buffer for possible status IN */
-	buf = udc_ctrl_alloc_status(dev, data->setup, USB_CONTROL_EP_IN);
-	if (buf == NULL) {
-		ret = -ENOMEM;
-	}
 
 	return udc_submit_ep_event(dev, data->setup, ret);
 }

@@ -1030,6 +1030,19 @@ struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size);
 
 /**
+ * @brief Allocate buffer for USB control transfer data stage
+ *
+ * Allocate a new buffer from controller's driver buffer pool.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] size    Size of the request buffer
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *usbd_ep_ctrl_data_in_alloc(const struct usbd_context *const uds_ctx,
+					   const size_t size);
+
+/**
  * @brief Queue USB device control request
  *
  * Add control request to the queue.
