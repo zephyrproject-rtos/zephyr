@@ -257,6 +257,16 @@ controllers or channels, and properties related to them.
 
 .. doxygengroup:: devicetree-dmas
 
+.. _devicetree-display-api:
+
+Display
+=======
+
+These conveniences may be used for nodes which describe display
+controllers, and properties related to them.
+
+.. doxygengroup:: devicetree-display
+
 .. _devicetree-flash-api:
 
 Fixed flash partitions
