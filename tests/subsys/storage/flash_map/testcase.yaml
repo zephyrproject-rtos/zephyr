@@ -28,7 +28,7 @@ tests:
       - nrf52840dk/nrf52840
     tags: flash_map
   storage.flash_map_sha.psa:
-    extra_args: EXTRA_CONF_FILE=overlay-psa.conf
+    extra_args: EXTRA_CONF_FILE=overlay-integrity-check.conf
     platform_allow:
       - nrf51dk/nrf51822
       - native_sim
