@@ -197,8 +197,6 @@ static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys
 				  clock_control_subsys_rate_t rate)
 {
 	ARG_UNUSED(dev);
-	int div_numerator = FIELD_GET(0xFFFF0000, *(uint32_t *)rate);
-	int div_denominator =  FIELD_GET(0x0000FFFF, *(uint32_t *)rate);
 	uintptr_t clockid = (uintptr_t)sys;
 	ULP_I2S_CLK_SELECT_T ref_clk;
 	uint32_t freq;
@@ -216,9 +214,6 @@ static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys
 		if (ret) {
 			return -EIO;
 		}
-		return 0;
-	case SIWX91X_CLK_ADC:
-		RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, div_numerator, div_denominator);
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */

@@ -242,16 +242,9 @@ static int adc_siwx91x_init(const struct device *dev)
 	const struct adc_siwx91x_config *cfg = dev->config;
 	struct adc_siwx91x_data *data = dev->data;
 	float chip_volt;
-	float ref_voltage = cfg->ref_voltage / 1000.;
-	uint32_t total_duration = 4; /* Default clock division factor */
 	int ret;
 
 	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-	if (ret) {
-		return ret;
-	}
-
-	ret = clock_control_set_rate(cfg->clock_dev, cfg->clock_subsys, &total_duration);
 	if (ret) {
 		return ret;
 	}
@@ -260,6 +253,8 @@ static int adc_siwx91x_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, 0, 4);
 
 	/* Set default analog reference voltage to 2.8 V from 3.2 V chip voltage */
 	RSI_AUX_RefVoltageConfig(2.8, 3.2);
@@ -271,7 +266,7 @@ static int adc_siwx91x_init(const struct device *dev)
 		RSI_IPMU_HP_LDO_Enable();
 	}
 
-	ret = RSI_AUX_RefVoltageConfig(ref_voltage, chip_volt);
+	ret = RSI_AUX_RefVoltageConfig(cfg->ref_voltage / 1000., chip_volt);
 	if (ret) {
 		return -EIO;
 	}
