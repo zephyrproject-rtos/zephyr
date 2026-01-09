@@ -29,7 +29,11 @@
 #include <zephyr/kernel/mm.h>
 #include <zephyr/sys/barrier.h>
 
+#ifdef CONFIG_ARM_AARCH32_MMU_VMSA_V5
+#include <arm9/cp15.h>
+#else
 #include <cmsis_core.h>
+#endif
 
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
@@ -667,9 +671,34 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 
 	l2_page_table->entries[l2_index].l2_page_4k.id =
 		(ARM_MMU_PTE_ID_SMALL_PAGE & perms_attrs.id_mask);
+#if defined(CONFIG_ARM_AARCH32_MMU_VMSA_V5)
+	/*
+	 * XN (Execute Never) not supported by ARMv5.
+	 * When bit [1:0] = 0b11, it stands for a tiny page. The supported no implemented here.
+	 */
+#else
 	l2_page_table->entries[l2_index].l2_page_4k.id |= perms_attrs.exec_never; /* XN in [0] */
+#endif /* CONFIG_ARM_AARCH32_MMU_VMSA_V5 */
 	l2_page_table->entries[l2_index].l2_page_4k.bufferable = perms_attrs.bufferable;
 	l2_page_table->entries[l2_index].l2_page_4k.cacheable = perms_attrs.cacheable;
+#if defined(CONFIG_ARM_AARCH32_MMU_VMSA_V5)
+	if ((perms_attrs.acc_perms & ARM_MMU_PERMS_AP1_ENABLE_PL0) == 0) {
+		l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage0 = 1;
+	} else {
+		if ((perms_attrs.acc_perms & ARM_MMU_PERMS_AP2_DISABLE_WR) == 0) {
+			l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage0 = 2;
+		} else {
+			l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage0 = 3;
+		}
+	}
+	/* Use the same access permission for all the subpages */
+	l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage1 =
+		l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage0;
+	l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage2 =
+		l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage0;
+	l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage3 =
+		l2_page_table->entries[l2_index].l2_page_4k.acc_perms_subpage0;
+#else
 	l2_page_table->entries[l2_index].l2_page_4k.acc_perms10 =
 		((perms_attrs.acc_perms & 0x1) << 1) | 0x1;
 	l2_page_table->entries[l2_index].l2_page_4k.tex = perms_attrs.tex;
@@ -677,6 +706,7 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 		((perms_attrs.acc_perms >> 1) & 0x1);
 	l2_page_table->entries[l2_index].l2_page_4k.shared = perms_attrs.shared;
 	l2_page_table->entries[l2_index].l2_page_4k.not_global = perms_attrs.not_global;
+#endif /* CONFIG_ARM_AARCH32_MMU_VMSA_V5 */
 	l2_page_table->entries[l2_index].l2_page_4k.pa_base =
 		((pa >> ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_SHIFT) &
 		ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_MASK);
@@ -832,12 +862,19 @@ int z_arm_mmu_init(void)
 		}
 	}
 
+#if defined(CONFIG_ARM_AARCH32_MMU_VMSA_V5)
+	/*
+	 * ARMv5 support a single translation table base address register.
+	 * TTBR1 and TTBCR were introduced in ARMv6.
+	 */
+#else
 	/* Clear TTBR1 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
 
 	/* Write TTBCR: EAE, security not yet relevant, N[2:0] = 0 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 2"
 			     : : "r"(reg_val));
+#endif /* CONFIG_ARM_AARCH32_MMU_VMSA_V5 */
 
 	/* Write TTBR0 */
 	reg_val = ((uint32_t)&l1_page_table.entries[0] & ~0x3FFF);
@@ -870,7 +907,15 @@ int z_arm_mmu_init(void)
 		reg_val |= ARM_MMU_TTBR_IRGN1_BIT_MP_EXT_ONLY;
 	}
 
+#ifdef CONFIG_ARM_AARCH32_MMU_VMSA_V5
+	/*
+	 * ARMv5 support a single Translation Table Base Register, TTBR,
+	 * that is compatible with the ARMv7 TTBR0.
+	 */
+	__set_TTBR(reg_val);
+#else
 	__set_TTBR0(reg_val);
+#endif
 
 	/* Write DACR -> all domains to client = 01b. */
 	reg_val = ARM_MMU_DACR_ALL_DOMAINS_CLIENT;
