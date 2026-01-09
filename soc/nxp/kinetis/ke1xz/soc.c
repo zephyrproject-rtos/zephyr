@@ -14,6 +14,7 @@
 #include <zephyr/init.h>
 #include <fsl_clock.h>
 #include <cmsis_core.h>
+#include "fsl_smc.h"
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) BUILD_ASSERT(val >= min && val <= max, str)
 
@@ -186,6 +187,9 @@ void soc_early_init_hook(void)
 {
 	/* Initialize system clocks and PLL */
 	clk_init();
+#ifdef CONFIG_PM
+	SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
+#endif /* CONFIG_PM */
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
