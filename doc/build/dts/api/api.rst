@@ -288,6 +288,16 @@ and properties related to them.
 
 .. doxygengroup:: devicetree-gpio
 
+.. _devicetree-hwspinlock-api:
+
+HWSpinlock
+==========
+
+These conveniences may be used for nodes which describe hardware spinlock,
+and properties related to them.
+
+.. doxygengroup:: devicetree-hwspinlock
+
 IO channels
 ===========
 
