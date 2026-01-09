@@ -128,6 +128,102 @@ const registerOnScrollEvent = (function () {
   };
 })();
 
+/**
+ * Expand sidebar navigation by fetching child page navigation.
+ * Pages opt-in by adding: ".. meta:: :expand-sidebar: true" to their preamble.
+ */
+const expandSidebarNavigation = async () => {
+  const FETCH_CONCURRENCY = 10;
+
+  if (!document.querySelector('meta[name="expand-sidebar"][content="true"]')) return;
+  const navItem = document.querySelector(".wy-menu-vertical li.current.toctree-l1");
+  if (!navItem) return;
+
+  const rewriteNavLinks = (ul, pageHref) => {
+    const pageUrl = new URL(pageHref, location.href);
+    ul.querySelectorAll("a[href]").forEach((a) => {
+      try {
+        a.href = new URL(a.getAttribute("href"), pageUrl).href;
+      } catch { }
+    });
+  };
+
+  const fetchNavSubtree = async (href) => {
+    const url = new URL(href, location.href).href;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+      const ul = doc.querySelector(".wy-menu-vertical li.current.toctree-l2 > ul");
+      if (!(ul instanceof HTMLUListElement)) return null;
+      const clone = ul.cloneNode(true);
+      rewriteNavLinks(clone, href);
+      return clone;
+    } catch (e) {
+      console.debug("Could not fetch navigation for:", url, e);
+      return null;
+    }
+  };
+
+  const attachExpandControl = (link, li) => {
+    if (link.querySelector(".toctree-expand")) return;
+    const btn = Object.assign(document.createElement("button"), {
+      className: "toctree-expand",
+      title: "Open/close menu",
+    });
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const expanded = li.classList.toggle("current");
+      link.classList.toggle("current", expanded);
+      [li, link].forEach((el) => el.setAttribute("aria-expanded", String(expanded)));
+    });
+    link.prepend(btn);
+  };
+
+  const runPool = async (items, concurrency, fn) => {
+    const it = items[Symbol.iterator]();
+    const worker = async () => {
+      for (const x of it) await fn(x);
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  };
+
+  const targets = [
+    ...navItem.querySelectorAll(":scope > ul > li.toctree-l2 > a.reference.internal"),
+  ]
+    .map((link) => {
+      const li = link.parentElement;
+      const href = link.getAttribute("href");
+      if (!(li instanceof HTMLLIElement) || li.querySelector("ul") || !href || href.startsWith("#"))
+        return null;
+      try {
+        return { li, link, href, url: new URL(href, location.href).href };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  // Dedup by URL; targets sharing a URL share a single fetch promise.
+  const fetches = new Map();
+  for (const t of targets) {
+    if (!fetches.has(t.url)) fetches.set(t.url, { href: t.href, template: null });
+  }
+
+  await runPool([...fetches.values()], FETCH_CONCURRENCY, async (entry) => {
+    entry.template = await fetchNavSubtree(entry.href);
+  });
+
+  for (const { li, link, url } of targets) {
+    const tpl = fetches.get(url)?.template;
+    if (!tpl) continue;
+    attachExpandControl(link, li);
+    li.appendChild(tpl.cloneNode(true));
+    [li, link].forEach((el) => el.setAttribute("aria-expanded", "false"));
+  }
+};
+
 $(document).ready(() => {
   // Initialize handlers for page scrolling and our custom sidebar.
   const mediaQuery = window.matchMedia("only screen and (min-width: 769px)");
@@ -140,4 +236,6 @@ $(document).ready(() => {
   if (mode) {
     document.querySelector("dark-mode-toggle").setAttribute("mode", mode);
   }
+  // Expand sidebar navigation for index pages
+  expandSidebarNavigation();
 });
