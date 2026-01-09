@@ -315,83 +315,10 @@ static int rpi_pico_prep_tx(const struct device *dev,
 	return 0;
 }
 
-static int rpi_pico_ctrl_feed_dout(const struct device *dev, const size_t length)
-{
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	udc_buf_put(ep_cfg, buf);
-
-	return rpi_pico_prep_rx(dev, buf, ep_cfg);
-}
-
-static void drop_control_transfers(const struct device *dev)
-{
-	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
-	struct net_buf *buf;
-
-	buf = udc_buf_get_all(cfg_out);
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_buf_get_all(cfg_in);
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-}
-
-static int rpi_pico_handle_evt_setup(const struct device *dev)
-{
-	struct rpi_pico_data *priv = udc_get_private(dev);
-	struct net_buf *buf;
-	int err;
-
-	drop_control_transfers(dev);
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
-	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
-		return -ENOMEM;
-	}
-
-	net_buf_add_mem(buf, priv->setup, sizeof(priv->setup));
-	udc_ep_buf_set_setup(buf);
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "setup");
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		LOG_DBG("s:%p|feed for -out-", buf);
-
-		err = rpi_pico_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err != 0) {
-			err = udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		LOG_DBG("s:%p|feed for -in-status", buf);
-		err = udc_ctrl_submit_s_in_status(dev);
-	} else {
-		LOG_DBG("s:%p|no data", buf);
-		err = udc_ctrl_submit_s_status(dev);
-	}
-
-	return err;
-}
-
 static inline int rpi_pico_handle_evt_dout(const struct device *dev,
 					   struct udc_ep_config *const cfg)
 {
 	struct net_buf *buf;
-	int err = 0;
 
 	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
@@ -402,32 +329,13 @@ static inline int rpi_pico_handle_evt_dout(const struct device *dev,
 
 	udc_ep_set_busy(cfg, false);
 
-	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			LOG_DBG("dout:%p|status, feed >s", buf);
-
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_in(dev)) {
-			err = udc_ctrl_submit_s_out_status(dev, buf);
-		}
-	} else {
-		err = udc_submit_ep_event(dev, buf, 0);
-	}
-
-	return err;
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static int rpi_pico_handle_evt_din(const struct device *dev,
 				   struct udc_ep_config *const cfg)
 {
 	struct net_buf *buf;
-	int err;
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
@@ -438,29 +346,6 @@ static int rpi_pico_handle_evt_din(const struct device *dev,
 
 	buf = udc_buf_get(cfg);
 	udc_ep_set_busy(cfg, false);
-
-	if (cfg->addr == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) ||
-		    udc_ctrl_stage_is_no_data(dev)) {
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/* IN transfer finished, submit buffer for status stage */
-			net_buf_unref(buf);
-
-			err = rpi_pico_ctrl_feed_dout(dev, 0);
-			if (err == -ENOMEM) {
-				err = udc_submit_ep_event(dev, buf, err);
-			}
-		}
-
-		return 0;
-	}
 
 	return udc_submit_ep_event(dev, buf, 0);
 }
@@ -474,6 +359,15 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		return;
+	}
+
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			/* SETUP data will be received without any action */
+			return;
+		}
 	}
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
@@ -550,7 +444,7 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 	if (evt & BIT(RPI_PICO_EVT_SETUP)) {
 		k_event_clear(&priv->events, BIT(RPI_PICO_EVT_SETUP));
 		LOG_DBG("SETUP event");
-		rpi_pico_handle_evt_setup(dev);
+		udc_setup_received(dev, priv->setup);
 	}
 
 	udc_unlock_internal(dev);

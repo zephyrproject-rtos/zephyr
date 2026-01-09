@@ -541,6 +541,14 @@ static int udc_sam_udp_ep_enqueue(const struct device *dev,
 			}
 		}
 	} else {
+		if (cfg->addr == USB_CONTROL_EP_OUT) {
+			struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+			if (bi->setup) {
+				return 0;
+			}
+		}
+
 		/*
 		 * Buffer queued for OUT endpoint. If there's pending data
 		 * waiting (thread was NAKing due to no buffer), wake up the
@@ -1005,40 +1013,6 @@ static void udc_sam_udp_unlock(const struct device *dev)
 }
 
 /*
- * Control transfer handling
- */
-static void udc_sam_udp_drop_ctrl_transfers(const struct device *dev)
-{
-	struct net_buf *buf;
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-}
-
-static int udc_sam_udp_ctrl_feed_dout(const struct device *dev,
-				      const size_t length)
-{
-	struct udc_ep_config *const ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	udc_buf_put(ep_cfg, buf);
-
-	return 0;
-}
-
-/*
  * ISR handler for SETUP packets - called from ISR context.
  *
  * Per datasheet 40.6.2.1: RXSETUP cannot be cleared before the setup packet
@@ -1052,8 +1026,6 @@ static void udc_sam_udp_isr_handle_setup(const struct device *dev)
 {
 	Udp *base = udc_sam_udp_get_base(dev);
 	struct udc_sam_udp_data *priv = udc_get_private(dev);
-
-	udc_sam_udp_drop_ctrl_transfers(dev);
 
 	/* Read SETUP packet from FIFO - must be done before clearing RXSETUP */
 	for (int i = 0; i < 8; i++) {
@@ -1082,44 +1054,6 @@ static void udc_sam_udp_isr_handle_setup(const struct device *dev)
 }
 
 /*
- * Thread handler for SETUP packets - called from thread context.
- */
-static int udc_sam_udp_thread_handle_setup(const struct device *dev)
-{
-	struct udc_sam_udp_data *priv = udc_get_private(dev);
-	struct net_buf *buf;
-	int err;
-
-	udc_sam_udp_drop_ctrl_transfers(dev);
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	net_buf_add_mem(buf, priv->setup, 8);
-	udc_ep_buf_set_setup(buf);
-
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		LOG_DBG("s:%p|feed for -out-", (void *)buf);
-		err = udc_sam_udp_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		LOG_DBG("s:%p|feed for -in-status", (void *)buf);
-		err = udc_ctrl_submit_s_in_status(dev);
-	} else {
-		LOG_DBG("s:%p|no data", (void *)buf);
-		err = udc_ctrl_submit_s_status(dev);
-	}
-
-	return err;
-}
-
-/*
  * Handle IN (TX) endpoint completion.
  *
  * For dual-bank endpoints, we use ping-pong buffering to achieve back-to-back
@@ -1136,7 +1070,6 @@ static void udc_sam_udp_handle_in(const struct device *dev, const uint8_t ep)
 	uint8_t hw_ep = USB_EP_GET_IDX(ep);
 	struct net_buf *buf;
 	uint8_t max_banks = ep_has_dual_bank(hw_ep) ? 2 : 1;
-	int err;
 
 	if (SAM_UDP_LOG_LEVEL == LOG_LEVEL_DBG) {
 		/* Throughput measurement - only when debug logging enabled */
@@ -1195,29 +1128,7 @@ static void udc_sam_udp_handle_in(const struct device *dev, const uint8_t ep)
 	       priv->ep_data[hw_ep].tx_banks == 0) {
 		buf = udc_buf_get(cfg);
 
-		if (ep == USB_CONTROL_EP_IN) {
-			if (udc_ctrl_stage_is_status_in(dev) ||
-			    udc_ctrl_stage_is_no_data(dev)) {
-				LOG_DBG("IN: status stage complete");
-				udc_ctrl_submit_status(dev, buf);
-			}
-
-			udc_ctrl_update_stage(dev, buf);
-
-			if (udc_ctrl_stage_is_status_out(dev)) {
-				LOG_DBG("IN: feeding for status OUT");
-				net_buf_unref(buf);
-				err = udc_sam_udp_ctrl_feed_dout(dev, 0);
-				if (err != 0) {
-					LOG_ERR("Failed to feed ctrl dout: %d",
-						err);
-				}
-				buf = NULL;
-				break;
-			}
-		} else {
-			udc_submit_ep_event(dev, buf, 0);
-		}
+		udc_submit_ep_event(dev, buf, 0);
 
 		/* Check for next buffer and pre-fill if dual-bank */
 		buf = udc_buf_peek(cfg);
@@ -1362,7 +1273,6 @@ static int sam_udp_process_pending_out(const struct device *dev,
 	uint32_t csr;
 	uint32_t bank_flag;
 	uint16_t len;
-	int err;
 
 	csr = base->UDP_CSR[hw_ep];
 	bank_flag = sam_udp_get_out_bank(priv, hw_ep, csr);
@@ -1405,23 +1315,7 @@ static int sam_udp_process_pending_out(const struct device *dev,
 	if (len < priv->ep_data[hw_ep].mps || net_buf_tailroom(buf) == 0) {
 		buf = udc_buf_get(cfg);
 
-		if (ep == USB_CONTROL_EP_OUT) {
-			if (udc_ctrl_stage_is_status_out(dev)) {
-				LOG_DBG("OUT: status stage complete");
-				udc_ctrl_submit_status(dev, buf);
-			}
-
-			udc_ctrl_update_stage(dev, buf);
-
-			if (udc_ctrl_stage_is_status_in(dev)) {
-				err = udc_ctrl_submit_s_out_status(dev, buf);
-				if (err != 0) {
-					LOG_ERR("Failed s-out-status: %d", err);
-				}
-			}
-		} else {
-			udc_submit_ep_event(dev, buf, 0);
-		}
+		udc_submit_ep_event(dev, buf, 0);
 	}
 
 	return 0;
@@ -1482,14 +1376,9 @@ static ALWAYS_INLINE void sam_udp_thread_handler(const struct device *const dev)
 		}
 	}
 
-	/* Process SETUP after OUT to avoid dropping status stage */
 	if (evt & BIT(SAM_UDP_EVT_SETUP)) {
 		k_event_clear(&priv->events, BIT(SAM_UDP_EVT_SETUP));
-		err = udc_sam_udp_thread_handle_setup(dev);
-		if (err) {
-			LOG_ERR("SETUP handling failed: %d", err);
-			udc_submit_event(dev, UDC_EVT_ERROR, err);
-		}
+		udc_setup_received(dev, priv->setup);
 	}
 
 	udc_unlock_internal(dev);
