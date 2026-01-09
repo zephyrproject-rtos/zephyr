@@ -342,8 +342,11 @@ resource handler, which echoes received data back to the client:
 
         __ASSERT_NO_MSG(buffer != NULL);
 
-        if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
-            LOG_DBG("Transaction aborted after %zd bytes.", processed);
+        if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+            status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+            if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
+                LOG_DBG("Transaction aborted after %zd bytes.", processed);
+            }
             processed = 0;
             return 0;
         }
@@ -392,8 +395,11 @@ Once all request payload has been passed to the application, the server reports
 :c:enumerator:`HTTP_SERVER_REQUEST_DATA_FINAL` status. In case of communication
 errors during request processing (for example client closed the connection before
 complete payload has been received), the server reports
-:c:enumerator:`HTTP_SERVER_TRANSACTION_ABORTED`. Either of the two events indicate
-that the application shall reset any progress recorded for the resource, and await
+:c:enumerator:`HTTP_SERVER_TRANSACTION_ABORTED`.
+When the response has been sent completely to the client, the server reports
+:c:enumerator:`HTTP_SERVER_TRANSACTION_COMPLETE` status.
+Either of the two events indicate that the request processing is finished, and
+the application shall reset any progress recorded for the resource, and await
 a new request to come. The server guarantees that the resource can only be
 accessed by single client at a time.
 

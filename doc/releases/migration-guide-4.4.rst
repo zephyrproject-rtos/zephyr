@@ -519,6 +519,11 @@ Networking
   and its renamed values. Applications using dynamic HTTP resources must update their handler
   callbacks to use the new enum and handle the renamed values.
 
+* The HTTP server now reports for dynamic resources the ``HTTP_SERVER_TRANSACTION_COMPLETE``
+  status when the response has been sent completely to the client. Applications should now also
+  handle this status in the handler callback to properly reset resource state after successful
+  response transmission.
+
 Modem
 *****
 

@@ -81,8 +81,11 @@ static int echo_handler(struct http_client_ctx *client, enum http_transaction_st
 	enum http_method method = client->method;
 	static size_t processed;
 
-	if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
-		LOG_DBG("Transaction aborted after %zd bytes.", processed);
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
+			LOG_DBG("Transaction aborted after %zd bytes.", processed);
+		}
 		processed = 0;
 		return 0;
 	}
@@ -185,7 +188,8 @@ static int led_handler(struct http_client_ctx *client, enum http_transaction_sta
 
 	LOG_DBG("LED handler status %d, size %zu", status, request_ctx->data_len);
 
-	if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		cursor = 0;
 		return 0;
 	}
