@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	 * in effect while in m-mode. (it is done on every exception return
 	 * otherwise).
 	 */
-	lb t0, _thread_offset_to_user_options(a0)
+	lh t0, _thread_offset_to_user_options(a0)
 	andi t0, t0, K_USER
 	beqz t0, not_user_task
 	mv s0, a0
