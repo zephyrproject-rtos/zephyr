@@ -103,17 +103,26 @@ struct usbd_str_desc_data {
  * @code{.c}
  * static int foo_to_host_cb(const struct usbd_context *const ctx,
  *                           const struct usb_setup_packet *const setup,
- *                           struct net_buf *const buf)
+ *                           struct net_buf **const pbuf)
  * {
  *     if (setup->wIndex == WEBUSB_REQ_GET_URL) {
+ *         struct net_buf *buf;
+ *         uint16_t len;
  *         uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
  *
  *         if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
  *             return -ENOTSUP;
  *         }
  *
- *         net_buf_add_mem(buf, &webusb_origin_url,
- *                         MIN(net_buf_tailroom(buf), sizeof(webusb_origin_url)));
+ *         len = MIN(setup->wLength, sizeof(webusb_origin_url));
+ *         buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
+ *         if (buf == NULL) {
+ *             return -ENOMEM;
+ *         }
+ *
+ *         *pbuf = buf;
+ *
+ *         net_buf_add_mem(buf, &webusb_origin_url, len);
  *
  *         return 0;
  *     }
@@ -130,7 +139,7 @@ struct usbd_vreq_node {
 	/** Vendor request callback for device-to-host direction */
 	int (*to_host)(const struct usbd_context *const ctx,
 		       const struct usb_setup_packet *const setup,
-		       struct net_buf *const buf);
+		       struct net_buf **const pbuf);
 	/** Vendor request callback for host-to-device direction */
 	int (*to_dev)(const struct usbd_context *const ctx,
 		      const struct usb_setup_packet *const setup,
@@ -344,7 +353,7 @@ struct usbd_class_api {
 	/** USB control request handler to host */
 	int (*control_to_host)(struct usbd_class_data *const c_data,
 			       const struct usb_setup_packet *const setup,
-			       struct net_buf *const buf);
+			       struct net_buf **const pbuf);
 
 	/** Endpoint request completion event handler */
 	int (*request)(struct usbd_class_data *const c_data,

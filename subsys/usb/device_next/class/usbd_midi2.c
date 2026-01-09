@@ -289,11 +289,12 @@ static void usbd_midi_class_resumed(struct usbd_class_data *const class_data)
 
 static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
 			       const struct usb_setup_packet *const setup,
-			       struct net_buf *const buf)
+			       struct net_buf **const pbuf)
 {
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *config = dev->config;
 	struct usbd_midi_data *data = dev->data;
+	struct net_buf *buf;
 
 	size_t head_len = config->desc->grptrm_header.bLength;
 	size_t total_len = sys_le16_to_cpu(config->desc->grptrm_header.wTotalLength);
@@ -312,6 +313,15 @@ static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
 		errno = -ENOTSUP;
 		return 0;
 	}
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(class_data),
+					 MIN(total_len, setup->wLength));
+	if (buf == NULL) {
+		errno = -ENOMEM;
+		return 0;
+	}
+
+	*pbuf = buf;
 
 	/* Group terminal block header */
 	net_buf_add_mem(buf, (void *) &config->desc->grptrm_header,

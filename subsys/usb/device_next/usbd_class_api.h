@@ -55,18 +55,18 @@ static inline int usbd_class_request(struct usbd_class_data *const c_data,
  *
  * @param[in] c_data Pointer to USB device class data
  * @param[in] setup Pointer to USB Setup Packet
- * @param[in] buf Control Request Data buffer
+ * @param[in] pbuf Pointer to handler allocated Control Request Data buffer
  *
  * @return 0 on success, other values on fail.
  */
 static inline int usbd_class_control_to_host(struct usbd_class_data *const c_data,
 					     struct usb_setup_packet *const setup,
-					     struct net_buf *const buf)
+					     struct net_buf **const pbuf)
 {
 	const struct usbd_class_api *api = c_data->api;
 
 	if (api->control_to_host != NULL) {
-		return api->control_to_host(c_data, setup, buf);
+		return api->control_to_host(c_data, setup, pbuf);
 	}
 
 	errno = -ENOTSUP;

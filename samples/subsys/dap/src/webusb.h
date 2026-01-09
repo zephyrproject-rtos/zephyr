@@ -65,20 +65,29 @@ static const uint8_t webusb_origin_url[] = {
 
 static int webusb_to_host_cb(const struct usbd_context *const ctx,
 			     const struct usb_setup_packet *const setup,
-			     struct net_buf *const buf)
+			     struct net_buf **const pbuf)
 {
 	LOG_INF("Vendor callback to host");
 
 	if (setup->wIndex == WEBUSB_REQ_GET_URL) {
+		struct net_buf *buf;
+		uint16_t len;
 		uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
 
 		if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
 			return -ENOTSUP;
 		}
 
+		len = MIN(setup->wLength, sizeof(webusb_origin_url));
+		buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
+		if (buf == NULL) {
+			return -ENOMEM;
+		}
+
+		*pbuf = buf;
+
 		LOG_INF("Get URL request, index %u", index);
-		net_buf_add_mem(buf, &webusb_origin_url,
-				MIN(net_buf_tailroom(buf), sizeof(webusb_origin_url)));
+		net_buf_add_mem(buf, &webusb_origin_url, len);
 
 		return 0;
 	}
