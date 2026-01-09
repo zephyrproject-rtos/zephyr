@@ -279,11 +279,11 @@ class GdbStub(abc.ABC):
                     t_user_options_offset = self.elffile.get_kernel_thread_info_offset(
                         ThreadInfoOffset.THREAD_INFO_OFFSET_T_USER_OPTIONS
                     )
-                    thread_user_options_byte = self.get_memory(
-                        thread_ptr + t_user_options_offset, 1
+                    thread_user_options_halfword = self.get_memory(
+                        thread_ptr + t_user_options_offset, 2
                     )
-                    if thread_user_options_byte is not None:
-                        thread_user_options = int.from_bytes(thread_user_options_byte, "little")
+                    if thread_user_options_halfword is not None:
+                        thread_user_options = int.from_bytes(thread_user_options_halfword, "little")
                         thread_info_bytes += b', user_options: ' + bytes(
                             hex(thread_user_options), 'ascii'
                         )

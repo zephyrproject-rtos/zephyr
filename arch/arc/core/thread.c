@@ -318,7 +318,7 @@ void arc_dsp_disable(struct k_thread *thread, unsigned int options)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* Disable DSP or AGU capabilities for the thread */
-	thread->base.user_options &= ~(uint8_t)options;
+	thread->base.user_options &= ~(uint16_t)options;
 
 	k_spin_unlock(&lock, key);
 }
@@ -329,7 +329,7 @@ void arc_dsp_enable(struct k_thread *thread, unsigned int options)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* Enable dsp or agu capabilities for the thread */
-	thread->base.user_options |= (uint8_t)options;
+	thread->base.user_options |= (uint16_t)options;
 
 	k_spin_unlock(&lock, key);
 }
