@@ -15,3 +15,9 @@ shields:
     vendor: mikroe
     supported_features:
       - can
+
+  - name: mikroe_mcp251863_click
+    full_name: MikroElektronika MCP251863 Click shield
+    vendor: mikroe
+    supported_features:
+      - can
