@@ -17,4 +17,5 @@ supported:
   - gpio
   - clock_control
   - pin_ctrl
+  - i2c
 vendor: infineon
