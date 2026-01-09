@@ -22,7 +22,6 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
                  speed=None,
                  connect_under_reset=False,
                  verify=False,
-                 binary_format='elf',
                  tool_opt=None):
         super().__init__(cfg)
 
@@ -33,7 +32,6 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
         self.speed = speed
         self.connect_under_reset = connect_under_reset
         self.verify = verify
-        self.binary_format = binary_format
 
         self.args = ['--chip', chip]
 
@@ -55,6 +53,8 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
         self.file = cfg.file
         self.file_type = cfg.file_type
         self.elf_name = cfg.elf_file
+        self.hex_name = cfg.hex_file
+        self.bin_name = cfg.bin_file
 
         # GDB configuration (upstream compatible)
         self.gdb_cmd = cfg.gdb
@@ -104,22 +104,6 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
                   e.g. --chip-description-path=/path/to/chip.yml'''
 
     @classmethod
-    def _get_binary_format_from_args(cls, args):
-        '''Determine binary format from args.'''
-        if args.file_type:
-            # Map FileType to probe-rs format names
-            format_map = {
-                FileType.HEX: 'hex',
-                FileType.BIN: 'bin',
-                FileType.ELF: 'elf'
-            }
-            return format_map.get(args.file_type, 'elf')
-        elif args.file and args.file.endswith('.hex'):
-            return 'hex'
-        else:
-            return 'elf'
-
-    @classmethod
     def do_create(cls, cfg, args):
         return ProbeRsBinaryRunner(cfg, args.chip,
                                    probe_rs=args.probe_rs,
@@ -132,7 +116,6 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
                                    verify=args.verify,
                                    gdb_host=args.gdb_host,
                                    gdb_port=args.gdb_port,
-                                   binary_format=cls._get_binary_format_from_args(args),
                                    tool_opt=args.tool_opt)
 
     def do_run(self, command, **kwargs):
@@ -150,18 +133,30 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
             download_args += ['--chip-erase']
         if self.verify:
             download_args += ['--verify']
-        # Use provided file or default ELF file
-        flash_file = self.file if self.file else self.elf_name
-        # Determine format based on file_type or binary_format
-        if self.file_type:
-            format_map = {
-                FileType.HEX: 'hex',
-                FileType.BIN: 'bin',
-                FileType.ELF: 'elf'
-            }
-            flash_format = format_map.get(self.file_type, 'elf')
+
+        if self.file is not None:
+            flash_file = self.file
+            match self.file_type:
+                case FileType.HEX:
+                    flash_format = 'hex'
+                case FileType.BIN:
+                    flash_format = 'bin'
+                case _:
+                    flash_format = 'elf'
+        elif self.file_type == FileType.ELF:
+            if self.elf_name is None:
+                raise ValueError('Cannot flash; no .elf specified')
+            flash_file = self.elf_name
+            flash_format = 'elf'
+        elif self.file_type == FileType.BIN:
+            self.ensure_output('bin')
+            flash_file = self.bin_name
+            flash_format = 'bin'
         else:
-            flash_format = self.binary_format
+            self.ensure_output('hex')
+            flash_file = self.hex_name
+            flash_format = 'hex'
+
         download_args += ['--binary-format', flash_format, flash_file]
 
         self.check_call([self.probe_rs, 'download']
