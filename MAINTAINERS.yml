@@ -4463,6 +4463,9 @@ Release:
 Release Notes:
   status: maintained
   maintainers:
+    - MaureenHelm
+    - stephanosio
+  collaborators:
     - kartben
   files:
     - doc/releases/migration-guide-*
