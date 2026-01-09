@@ -244,6 +244,8 @@ static int adc_siwx91x_init(const struct device *dev)
 	float chip_volt;
 	int ret;
 
+	RSI_IPMU_PowerGateSet(AUXADC_PG_ENB);
+
 	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
 	if (ret) {
 		return ret;
