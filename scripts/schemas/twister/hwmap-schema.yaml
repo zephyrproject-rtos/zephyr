@@ -41,6 +41,9 @@ sequence:
       "baud":
         type: int
         required: false
+      "serial_baud":
+        type: int
+        required: false
       "post_script":
         type: str
         required: false
