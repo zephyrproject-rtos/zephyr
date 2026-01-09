@@ -1,5 +1,5 @@
 /*
- * Copyright 2017,2021,2023-2025 NXP
+ * Copyright 2017,2021,2023-2026 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -1160,9 +1160,14 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
-		return -EINVAL;
+	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (ret != 0) {
+		/* Check if error is due to lack of support */
+		if (ret != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", ret);
+			return ret;
+		}
 	}
 
 	LPUART_GetDefaultConfig(&uart_config);
@@ -1175,6 +1180,13 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
 		return ret;
+	}
+
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
+								&clock_freq);
+	if (ret) {
+		LOG_ERR("Failed to get clock rate: %d", ret);
+		return -EINVAL;
 	}
 
 	LPUART_Init(config->base, &uart_config, clock_freq);
