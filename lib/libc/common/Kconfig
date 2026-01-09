@@ -81,6 +81,14 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 	  16kB and all other systems will default to using all remaining
 	  ram for the malloc heap.
 
+config COMMON_LIBC_MALLINFO
+	bool "Common C library mallinfo implementation"
+	depends on COMMON_LIBC_MALLOC && SYS_HEAP_RUNTIME_STATS
+	default n if MINIMAL_LIBC
+	default y
+	help
+	  Common implementation of mallinfo using k_heap runtime stats.
+
 config COMMON_LIBC_CALLOC
 	bool "Common C library calloc"
 	depends on COMMON_LIBC_MALLOC
