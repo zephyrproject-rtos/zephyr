@@ -112,10 +112,75 @@ const registerOnScrollEvent = (function () {
   };
 })();
 
+/**
+ * Expand sidebar navigation by fetching child page navigation.
+ * Opt-in via: .. meta:: :expand-sidebar: true
+ */
+const expandSidebarNavigation = async () => {
+  const meta = document.querySelector('meta[name="expand-sidebar"][content="true"]');
+  if (!meta) return;
+
+  const navItem = document.querySelector(".wy-menu-vertical li.current.toctree-l1");
+  if (!navItem) return;
+
+  const links = navItem.querySelectorAll(":scope > ul > li.toctree-l2 > a.reference.internal");
+
+  for (const link of links) {
+    const li = link.parentElement;
+    const href = link.getAttribute("href");
+    if (li.querySelector("ul") || !href || href.startsWith("#")) continue;
+
+    try {
+      const response = await fetch(href);
+      if (!response.ok) continue;
+
+      const doc = new DOMParser().parseFromString(await response.text(), "text/html");
+      const nestedUl = doc.querySelector(".wy-menu-vertical li.current.toctree-l2 > ul");
+      if (!nestedUl) continue;
+
+      const clonedUl = nestedUl.cloneNode(true);
+      const basePath = href.substring(0, href.lastIndexOf("/") + 1);
+
+      // Fix relative URLs in cloned navigation
+      clonedUl.querySelectorAll("a").forEach((a) => {
+        const h = a.getAttribute("href");
+        if (!h) return;
+        if (h.startsWith("#")) a.href = href.split("#")[0] + h;
+        else if (!h.startsWith("http") && !h.startsWith("/")) a.href = basePath + h;
+      });
+
+      // Add expand button with toggle handler
+      if (!link.querySelector(".toctree-expand")) {
+        const btn = document.createElement("button");
+        btn.className = "toctree-expand";
+        btn.title = "Open/close menu";
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const expanded = li.classList.toggle("current");
+          link.classList.toggle("current", expanded);
+          li.setAttribute("aria-expanded", expanded);
+          link.setAttribute("aria-expanded", expanded);
+        };
+        link.prepend(btn);
+      }
+
+      li.appendChild(clonedUl);
+      li.setAttribute("aria-expanded", "false");
+      link.setAttribute("aria-expanded", "false");
+    } catch (e) {
+      console.debug("Could not fetch navigation for:", href, e);
+    }
+  }
+};
+
 $(document).ready(() => {
   // Initialize handlers for page scrolling and our custom sidebar.
   const mediaQuery = window.matchMedia("only screen and (min-width: 769px)");
 
   registerOnScrollEvent(mediaQuery);
   mediaQuery.addListener(registerOnScrollEvent);
+
+  // Expand sidebar navigation for index pages
+  expandSidebarNavigation();
 });
