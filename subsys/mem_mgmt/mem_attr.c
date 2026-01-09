@@ -7,6 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 
+#include <string.h>
+
 #define _BUILD_MEM_ATTR_REGION(node_id)					\
 	{								\
 		.dt_name = DT_NODE_FULL_NAME(node_id),			\
@@ -58,4 +60,21 @@ int mem_attr_check_buf(void *v_addr, size_t size, uint32_t attr)
 		}
 	}
 	return -ENOBUFS;
+}
+
+int mem_attr_get_region_index_by_name(const char *target_name)
+{
+	const struct mem_attr_region_t *regions;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&regions);
+
+	for (int i = 0; i < num_regions; ++i) {
+		if (regions[i].dt_name != NULL &&
+		    strcmp(regions[i].dt_name, target_name) == 0) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
 }
