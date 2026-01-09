@@ -3375,6 +3375,7 @@ Microchip MEC Platforms:
   status: maintained
   maintainers:
     - jvasanth1
+    - scottwcpg
   collaborators:
     - VenkatKotakonda
     - albertofloyd
