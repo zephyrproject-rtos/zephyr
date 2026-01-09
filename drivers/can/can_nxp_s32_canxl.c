@@ -712,8 +712,12 @@ static int can_nxp_s32_set_timing(const struct device *dev,
 
 	nxp_s32_zcan_timing_to_canxl_timing(timing, &can_time_segment);
 
+	Canexcel_Ip_EnterFreezeMode(config->instance);
+
 	/* Set timing for CAN instance*/
 	CanXL_SetBaudRate(config->base_sic, &can_time_segment);
+
+	Canexcel_Ip_ExitFreezeMode(config->instance);
 
 	return 0;
 }
@@ -732,11 +736,15 @@ static int can_nxp_s32_set_timing_data(const struct device *dev,
 
 	nxp_s32_zcan_timing_to_canxl_timing(timing_data, &can_fd_time_segment);
 
+	Canexcel_Ip_EnterFreezeMode(config->instance);
+
 	/* Set timing for CAN FD instance*/
 	CanXL_SetFDBaudRate(config->base_sic, &can_fd_time_segment);
 
 	Canexcel_Ip_SetTDCOffsetFD(config->instance, true, false,
 				CAN_CALC_TDCO((timing_data), 0U, CAN_NXP_S32_TDCO_MAX));
+
+	Canexcel_Ip_ExitFreezeMode(config->instance);
 
 	return 0;
 }
