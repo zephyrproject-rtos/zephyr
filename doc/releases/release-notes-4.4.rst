@@ -243,6 +243,19 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
 
+* Utilities
+
+  * :abbr:`COBS (Consistent Overhead Byte Stuffing)` streaming support
+
+    * :c:struct:`cobs_decoder`
+    * :c:func:`cobs_decoder_init`
+    * :c:func:`cobs_decoder_write`
+    * :c:func:`cobs_decoder_close`
+    * :c:struct:`cobs_encoder`
+    * :c:func:`cobs_encoder_init`
+    * :c:func:`cobs_encoder_write`
+    * :c:func:`cobs_encoder_close`
+
 * Video
 
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
