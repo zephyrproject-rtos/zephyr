@@ -14,7 +14,6 @@
 #include "rsi_rom_clks.h"
 #include "rsi_sysrtc.h"
 #include "rsi_pll.h"
-#include "rsi_adc.h"
 #include "clock_update.h"
 #include "sl_si91x_clock_manager.h"
 
@@ -106,7 +105,10 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_I2S_CLK, ENABLE_STATIC_CLK);
 		break;
 	case SIWX91X_CLK_ADC:
-		RSI_ADC_PowerControl(ADC_POWER_ON);
+		/* Warning, DAC also use these clocks */
+		RSI_IPMU_PowerGateSet(AUXADC_PG_ENB);
+		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_AUX);
+		RSI_ULPSS_AuxClkConfig(ULPCLK, ENABLE_STATIC_CLK, ULP_AUX_REF_CLK);
 		break;
 	case SIWX91X_CLK_GPDMA0:
 		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
@@ -147,7 +149,10 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_I2S_CLK);
 		break;
 	case SIWX91X_CLK_ADC:
-		RSI_ADC_PowerControl(ADC_POWER_OFF);
+		/* Warning, DAC also use these clocks */
+		RSI_PS_UlpssPeriPowerDown(ULPSS_PWRGATE_ULP_AUX);
+		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_AUX_CLK);
+		RSI_IPMU_PowerGateClr(AUXADC_PG_ENB);
 		break;
 	case SIWX91X_CLK_ULP_UART:
 	case SIWX91X_CLK_I2C0:
