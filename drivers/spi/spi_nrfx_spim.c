@@ -624,10 +624,18 @@ static int spi_nrfx_deinit(const struct device *dev)
 		.dev  = DEVICE_DT_GET(DT_DRV_INST(inst)),		       \
 		.busy = false,						       \
 	};								       \
+	NRF_DT_INST_IRQ_DIRECT_DEFINE(					       \
+		inst,							       \
+		nrfx_spim_irq_handler,					       \
+		&CONCAT(spi_, inst, _data.spim)				       \
+	)								       \
 	static void irq_connect##inst(void)				       \
 	{								       \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
-			nrfx_spim_irq_handler, &spi_##inst##_data.spim, 0);    \
+		NRF_DT_INST_IRQ_CONNECT(				       \
+			inst,						       \
+			nrfx_spim_irq_handler,				       \
+			&CONCAT(spi_, inst, _data.spim)			       \
+		);							       \
 	}								       \
 	PINCTRL_DT_INST_DEFINE(inst);					       \
 	static const struct spi_nrfx_config spi_##inst##z_config = {	       \
