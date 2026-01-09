@@ -13,7 +13,7 @@
 # try to group them together by the same stem after prefix.
 
 menuconfig MCUMGR_GRP_IMG
-	bool "Mcumgr handlers for image management"
+	bool "MCUmgr handlers for image management"
 	depends on FLASH
 	depends on IMG_MANAGER
 	depends on !MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
@@ -50,7 +50,8 @@ config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
 	help
 	  Sets how many application images are supported (pairs of secondary and primary slots).
 	  Setting this to 2 requires MCUMGR_TRANSPORT_NETBUF_SIZE to be at least 512b.
-	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
+
+	  Note: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
 	  needs to be set to the same value; this is due to the fact that the MCUmgr uses
 	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
 	  by that library.
@@ -59,50 +60,48 @@ config MCUMGR_GRP_IMG_VERBOSE_ERR
 	bool "Verbose error responses when uploading application image"
 	select MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	help
-	  Add additional "rsn" key to SMP responses, where provided, explaining
-	  non-0 "rc" codes.
+	  Add additional "rsn" key to SMP responses, where provided, explaining non-0 "rc" codes.
 
 config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
 	bool "Allow to confirm secondary slot of non-active image"
 	depends on !MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
 	default y
 	help
-	  Allows to confirm secondary (non-active) slot of non-active image.
-	  Normally it should not be allowed to confirm any slots of non-active
-	  image, via MCUmgr commands, to prevent confirming something that is
-	  broken and may not boot in other slot; instead application should
-	  have means to test and confirm the image.
+	  Allows to confirm secondary (non-active) slot of non-active image. Normally it should not
+	  be allowed to confirm any slots of non-active image, via MCUmgr commands, to prevent
+	  confirming something that is broken and may not boot in other slot; instead application
+	  should have a means to test and confirm the image.
 
 config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
 	bool "Allow to confirm slots of non-active image"
 	depends on !MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
 	select MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
 	help
-	  Allows to confirm any slot of non-active image.
-	  Normally it should not be allowed to confirm any slots of non-active
-	  image, via MCUmgr commands, to prevent confirming something that is
-	  broken and may not boot in other slot; instead application should
-	  have means to test and confirm the image.
+	  Allows to confirm any slot of non-active image. Normally it should not be allowed to
+	  confirm any slots of non-active image, via MCUmgr commands, to prevent confirming
+	  something that is broken and may not boot in other slot; instead application should have
+	  a means to test and confirm the image.
 
 config MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING
 	bool "Allow to erase pending slot"
 	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	default y
 	help
-	  Allows erasing secondary slot which is marked for test or confirmed; this allows
-	  erasing slots that have been set for next boot but the device has not
-	  reset yet, so has not yet been swapped.
+	  Allows erasing secondary slot which is marked for test or confirmed; this allows erasing
+	  slots that have been set for next boot but the device has not reset yet, so have not yet
+	  been swapped.
 
 config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
 	depends on !MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
 	help
-	  Enables directly uploading image to selected image partition.
-	  This changes how "image" is understood by MCUmgr: normally MCUmgr allows uploading to
-	  the first slot of the only image it knows, where image is understood as two slots
-	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
-	  target for upload, and more than two may be used (4 at this time).
-	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
+	  Enables directly uploading image to selected image partition. This changes how "image" is
+	  understood by MCUmgr: normally MCUmgr allows uploading to the first slot of the only
+	  image it knows, where image is understood as two slots (two DTS images for Zephyr); this
+	  allows to treat every DTS defined image as direct target for upload, and more than two
+	  may be used (4 at this time).
+
+	  Note: When direct upload is used the image numbers are shifted by + 1, and the default
 	  behaviour is, when image is not selected, to upload to image that represents secondary
 	  slot in normal operation.
 
@@ -110,12 +109,10 @@ config MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
 	depends on MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP || MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	help
-	  When enabled, the MCUmgr will compare base address of application,
-	  encoded into .bin file header with use of imgtool, on upload and will
-	  reject binaries that would not be able to start from available
-	  Direct-XIP address.
-	  The base address can be set, to an image binary header, with imgtool,
-	  using the --rom-fixed command line option.
+	  When enabled, the MCUmgr will compare base address of application, encoded into .bin
+	  file header with use of imgtool, on upload and will reject binaries that would not be
+	  able to start from available Direct-XIP address. The base address can be set, to an image
+	  binary header, with imgtool, using the --rom-fixed command line option.
 
 config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
 	bool "Allow to confirm non-active slots of any image" if !MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
@@ -127,28 +124,25 @@ config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
 		   MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
 	default y
 	help
-	  Allows to confirm non-active slot of any image.
-	  Normally it should not be allowed to confirm any slots via MCUmgr
-	  commands, to prevent confirming something that is broken and was not
-	  verified to boot correctly.
-	  Option always enabled in the overwrite mode, because the permanent
-	  update, that uses the confirm flag, is the intended way to provide
+	  Allows to confirm non-active slot of any image. Normally it should not be allowed to
+	  confirm any slots via MCUmgr commands, to prevent confirming something that is broken
+	  and was not verified to boot correctly. Option is always enabled when in overwrite only
+	  mode, because updates are permanent and using the confirm flag is the intended method for
 	  updates.
 
 config MCUMGR_GRP_IMG_FRUGAL_LIST
 	bool "Omit zero, empty or false values from status list"
 	help
 	  The status list send back from the device will only be filled with data that is non-zero,
-	  non-empty or true.  This option slightly reduces number of bytes transferred back from
+	  non-empty or true. This option slightly reduces number of bytes transferred back from
 	  a device but requires support in client software, which has to default omitted values.
 	  Works correctly with the go mcumgr-cli application.
 
 config MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER
 	bool "Use build number while comparing image version"
 	help
-	  By default, the image version comparison relies only on version major,
-	  minor and revision. Enable this option to take into account the build
-	  number as well.
+	  By default, the image version comparison relies only on version major, minor and
+	  revision. Enable this option to take into account the build number as well.
 
 config MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK
 	bool "Upload check hook"
@@ -219,9 +213,9 @@ config MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_STATES
 	prompt "Predicted maximum number of entries per group" if MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK
 	default 15
 	help
-	  This is used for defining CBOR map holding group data.
-	  The value does not affect memory allocation, it is used by zcbor
-	  to figure out how to encode map depending on its predicted size.
+	  This is used for defining CBOR map holding group data. The value does not affect memory
+	  allocation, it is used by zcbor to figure out how to encode map depending on its
+	  predicted size.
 
 config MCUMGR_GRP_IMG_SLOT_INFO
 	bool "Slot info"
