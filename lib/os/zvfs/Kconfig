@@ -1,5 +1,6 @@
 # Copyright (c) 2020 Tobias Svehagen
 # Copyright (c) 2023 Meta
+# Copyright (c) 2026 Antmicro
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -28,6 +29,40 @@ config ZVFS_DEFAULT_FILE_VMETHODS
 	help
 	  Provide typical file operations, which can be referenced in a struct fd_op_vtable
 	  and subsequently called by ZVFS functions.
+
+config ZVFS_STDIO_CONSOLE
+	bool "read() and write() to/from stdio use console subsystem"
+	default y
+	depends on CONSOLE_SUBSYS && UART_CONSOLE
+	depends on !(CONSOLE_GETCHAR || CONSOLE_GETLINE)
+	imply UART_INTERRUPT_DRIVEN
+	help
+	  Enable to use UART console whenever read() or write() is called
+	  on stdin, stdout or stderr.
+
+if ZVFS_STDIO_CONSOLE
+
+config ZVFS_STDIN_BUFSIZE
+	int "Buffer size for stdin" if UART_INTERRUPT_DRIVEN
+	default 16 if UART_INTERRUPT_DRIVEN
+	default 0
+	help
+	  Size of internal buffer for read()-ing, fread()-ing etc. from stdin.
+	  Setting both this and ZVFS_STDOUT_BUFSIZE to 0 will replace
+	  interrupt-driven operation with busy-polling and stop poll(), select()
+	  and others from working with stdio.
+
+config ZVFS_STDOUT_BUFSIZE
+	int "Buffer size for stdout" if UART_INTERRUPT_DRIVEN
+	default 16 if UART_INTERRUPT_DRIVEN
+	default 0
+	help
+	  Size of internal buffer for write()-ing, fwrite()-ing etc. to stdout.
+	  Setting both this and ZVFS_STDIN_BUFSIZE to 0 will replace
+	  interrupt-driven operation with busy-polling and stop poll(), select()
+	  and others from working with stdio.
+
+endif # ZVFS_STDIO_CONSOLE
 
 endif
 
