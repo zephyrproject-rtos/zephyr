@@ -529,6 +529,16 @@ Other subsystems
   * Use :kconfig:option:`CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS` instead of
     :kconfig:option:`CONFIG_CACHE_DOUBLEMAP` as the former is more descriptive of the feature.
 
+Flash
+=====
+
+* Previously deprecated ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS`` is now
+  removed.
+
+* Kconfig ``FLASH_AREA_CHECK_INTEGRITY_PSA`` is also removed since it's
+  now the default choice for the crypto library backend and there is no
+  alternative.
+
 JWT
 ===
 
