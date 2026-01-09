@@ -407,14 +407,14 @@ static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_deta
 {
 	int ret, len;
 	char *ptr;
-	enum http_data_status status;
+	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	/* Start of GET params */
 	ptr = &client->url_buffer[dynamic_detail->common.path_len];
 	len = strlen(ptr);
-	status = HTTP_SERVER_DATA_FINAL;
+	status = HTTP_SERVER_REQUEST_DATA_FINAL;
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
@@ -453,7 +453,7 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 {
 	int ret;
 	char *ptr = client->cursor;
-	enum http_data_status status;
+	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
@@ -462,9 +462,9 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 	}
 
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		status = HTTP_SERVER_DATA_FINAL;
+		status = HTTP_SERVER_REQUEST_DATA_FINAL;
 	} else {
-		status = HTTP_SERVER_DATA_MORE;
+		status = HTTP_SERVER_REQUEST_DATA_MORE;
 	}
 
 	memset(&response_ctx, 0, sizeof(response_ctx));
@@ -492,7 +492,8 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 	}
 
 	/* Once all data is transferred to application, repeat cb until response is complete */
-	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
+	while (!http_response_is_final(&response_ctx, status) &&
+	       status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 		populate_request_ctx(&request_ctx, ptr, 0, &client->header_capture_ctx);
 

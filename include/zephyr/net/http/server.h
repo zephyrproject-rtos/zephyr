@@ -171,13 +171,13 @@ struct http_content_type {
 struct http_client_ctx;
 
 /** Indicates the status of the currently processed piece of data.  */
-enum http_data_status {
+enum http_transaction_status {
 	/** Transaction aborted, data incomplete. */
-	HTTP_SERVER_DATA_ABORTED = -1,
+	HTTP_SERVER_TRANSACTION_ABORTED = -1,
 	/** Transaction incomplete, more data expected. */
-	HTTP_SERVER_DATA_MORE = 0,
+	HTTP_SERVER_REQUEST_DATA_MORE = 0,
 	/** Final data fragment in current transaction. */
-	HTTP_SERVER_DATA_FINAL = 1,
+	HTTP_SERVER_REQUEST_DATA_FINAL = 1,
 };
 
 /** @brief Status of captured request headers */
@@ -227,7 +227,7 @@ struct http_response_ctx {
  *         <0 error, close the connection.
  */
 typedef int (*http_resource_dynamic_cb_t)(struct http_client_ctx *client,
-					  enum http_data_status status,
+					  enum http_transaction_status status,
 					  const struct http_request_ctx *request_ctx,
 					  struct http_response_ctx *response_ctx,
 					  void *user_data);
