@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+shields:
+  - name: mikroe_mcp2518fd_click
+    full_name: MikroElektronika MCP2518FD Click shield
+    vendor: mikroe
+    supported_features:
+      - can
