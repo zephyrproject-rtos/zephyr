@@ -252,7 +252,7 @@ static void clkstarted_handle(const struct device *dev,
 			      enum clock_control_nrf_type type)
 {
 #if CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION
-	if (nrf54l_errata_30() && (type == CLOCK_CONTROL_NRF_TYPE_HFCLK)) {
+	if (NRF_ERRATA_DYNAMIC_CHECK(54L, 30) && (type == CLOCK_CONTROL_NRF_TYPE_HFCLK)) {
 		nrf54l_errata_30_workaround();
 	}
 #endif

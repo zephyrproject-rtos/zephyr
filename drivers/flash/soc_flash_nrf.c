@@ -555,7 +555,7 @@ static bool pofcon_enabled;
 
 static int suspend_pofwarn(void)
 {
-	if (!nrf52_errata_242()) {
+	if (!NRF_ERRATA_DYNAMIC_CHECK(52, 242)) {
 		return 0;
 	}
 
