@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,12 @@
 				power-state-name = "standby";
 				exit-latency-us = <11>;
 			};
+		};
+
+		sysclk: system-clock {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(96)>;
+			#clock-cells = <0>;
 		};
 	};
 
