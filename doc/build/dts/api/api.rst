@@ -296,6 +296,16 @@ and properties related to them.
 
 .. doxygengroup:: devicetree-mbox
 
+.. _devicetree-nvmem-api:
+
+NVMEM
+=====
+
+These conveniences may be used for nodes which describe Non-Volatile
+Memory, and properties related to them.
+
+.. doxygengroup:: devicetree-nvmem
+
 .. _devicetree-pinctrl-api:
 
 Pinctrl (pin control)
