@@ -6,7 +6,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+
+#include <zephyr/audio/audio_caps.h>
 #include <zephyr/drivers/i2s.h>
+
 #include "i2s_api_test.h"
 
 #define INVALID_TRIGGER_SETTING 7
@@ -153,4 +156,62 @@ ZTEST_USER(i2s_errors, test_i2s_improper_block_size_write)
 	zassert_not_equal(
 		err, 0,
 		"I2S attempting write with incorrect block size did not raise error, err=%d", err);
+}
+
+/**
+ * @brief Test the i2s_get_caps API function
+ *
+ * This test validates the I2S get_caps API functionality by testing both
+ * successful operation and error handling scenarios.
+ */
+ZTEST_USER(i2s_errors, test_i2s_get_caps)
+{
+	int ret;
+	struct audio_caps caps;
+
+	/**
+	 * Test Case 1: Normal operation - Valid parameters
+	 * Expected: Function should return 0 (success) or -ENOSYS (not implemented)
+	 */
+	ret = i2s_get_caps(dev_i2s, &caps);
+
+	/* Handle case where driver doesn't implement get_caps */
+	if (ret == -ENOSYS) {
+		TC_PRINT("I2S get_caps not implemented by driver\n");
+		ztest_test_skip();
+		return;
+	}
+
+	/* Verify successful execution */
+	zassert_equal(ret, 0, "i2s_get_caps should return 0, got %d", ret);
+
+	/**
+	 * Test Case 2: Capability value validation
+	 * Verify that returned capability values are within reasonable ranges
+	 */
+	zassert_true(caps.min_total_channels >= 1, "min_total_channels should be >= 1, got %u",
+		     caps.min_total_channels);
+
+	zassert_true(caps.max_total_channels >= caps.min_total_channels,
+		     "max_total_channels (%u) should be >= min_total_channels (%u)",
+		     caps.max_total_channels, caps.min_total_channels);
+
+	zassert_not_equal(caps.supported_sample_rates, 0, "supported_sample_rates should not be 0");
+
+	zassert_not_equal(caps.supported_bit_widths, 0, "supported_bit_widths should not be 0");
+
+	zassert_true(caps.min_num_buffers >= 1, "min_num_buffers should be >= 1, got %u",
+		     caps.min_num_buffers);
+
+	zassert_true(caps.max_frame_interval >= caps.min_frame_interval,
+		     "max_frame_interval (%u) should be >= min_frame_interval (%u)",
+		     caps.max_frame_interval, caps.min_frame_interval);
+
+	/**
+	 * Test Case 3: Error handling - NULL caps pointer
+	 * Expected: Function should return -EINVAL for invalid parameter
+	 */
+	ret = i2s_get_caps(dev_i2s, NULL);
+	zassert_equal(ret, -EINVAL,
+		      "i2s_get_caps should return -EINVAL for NULL caps pointer, got %d", ret);
 }
