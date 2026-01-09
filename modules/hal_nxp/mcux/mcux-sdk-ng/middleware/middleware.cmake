@@ -55,3 +55,5 @@ endif()
 add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/usb
   ${CMAKE_CURRENT_BINARY_DIR}/usb
 )
+
+include(${CMAKE_CURRENT_LIST_DIR}/connectivity_framework.cmake)
