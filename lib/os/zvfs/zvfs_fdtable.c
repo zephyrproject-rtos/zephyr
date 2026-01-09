@@ -25,6 +25,10 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/fs/fs.h>
+#include <zephyr/device.h>
+#include <zephyr/console/console.h>
+#include <zephyr/console/tty.h>
+#include <zephyr/drivers/uart.h>
 
 K_MEM_SLAB_DEFINE_TYPE(file_desc_slab, struct fs_file_t, ZVFS_OPEN_SIZE);
 
@@ -44,27 +48,40 @@ static const struct fd_op_vtable stdinout_fd_op_vtable;
 BUILD_ASSERT(ZVFS_OPEN_SIZE >= 3, "ZVFS_OPEN_SIZE >= 3 for CONFIG_POSIX_DEVICE_IO");
 #endif /* defined(CONFIG_POSIX_DEVICE_IO) */
 
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+static struct tty_serial tty;
+#endif
+
 static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 #if defined(CONFIG_POSIX_DEVICE_IO)
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
 	 */
 	{
-		/* STDIN */
+/* STDIN */
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+		.obj = &tty,
+#endif
 		.vtable = &stdinout_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[0].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[0].cond),
 	},
 	{
-		/* STDOUT */
+/* STDOUT */
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+		.obj = &tty,
+#endif
 		.vtable = &stdinout_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[1].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[1].cond),
 	},
 	{
-		/* STDERR */
+/* STDERR */
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+		.obj = &tty,
+#endif
 		.vtable = &stdinout_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[2].lock),
@@ -353,7 +370,7 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 		 * Seekable file types should support pread() / pwrite() and per-fd offset passing.
 		 * Otherwise, it's a bug.
 		 */
-		errno = ENOTSUP;
+		errno = ESPIPE;
 		res = -1;
 		goto unlock;
 	}
@@ -578,16 +595,64 @@ int zvfs_rename(const char *old, const char *newp)
  * fd operations for stdio/stdout/stderr
  */
 
+int z_impl_zephyr_read_stdin(char *buf, int nbytes);
 int z_impl_zephyr_write_stdout(const char *buf, int nbytes);
+
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+static int initialize_tty(struct tty_serial *obj)
+{
+	static bool initialized;
+	static int ret;
+
+	if (initialized) {
+		return ret;
+	}
+	ret = tty_init(obj, DEVICE_DT_GET(DT_CHOSEN(zephyr_console)));
+	initialized = true;
+	if (ret) {
+		errno = -ret;
+		ret = -1;
+		return ret;
+	}
+	return ret;
+}
+#endif
 
 static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 {
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+	int ret = initialize_tty(obj);
+
+	if (ret) {
+		return ret;
+	}
+	ret = tty_read(obj, buffer, count);
+	if (ret < -1) { /* return no less than -1 as per POSIX; errno is already set */
+		return -1;
+	}
+	return ret;
+#elif defined(CONFIG_NEWLIB_LIBC)
+	return z_impl_zephyr_read_stdin(buffer, count);
+#else
 	return 0;
+#endif
 }
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-#if defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_ZVFS_STDIO_CONSOLE)
+	int ret = initialize_tty(obj);
+
+	if (ret) {
+		return ret;
+	}
+	ret = tty_write(obj, buffer, count);
+	if (ret < -1) { /* return no less than -1 as per POSIX; errno is already set */
+		return -1;
+	}
+	return ret;
+#elif defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC) ||   \
+	defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
 	return 0;
