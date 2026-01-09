@@ -176,7 +176,7 @@ A simple Bluetooth beacon application is shown below. The application
 initializes the Bluetooth Subsystem and enables non-connectable
 advertising, effectively acting as a Bluetooth Low Energy broadcaster.
 
-.. literalinclude:: ../../../samples/bluetooth/beacon/src/main.c
+.. literalinclude:: ../../../../samples/bluetooth/beacon/src/main.c
    :language: c
    :lines: 19-
    :linenos:
