@@ -102,6 +102,28 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 #include <zephyr/syscalls/zephyr_fwrite_mrsh.c>
 #endif
 
+int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
+{
+	const char *buf = buffer;
+
+	for (int i = 0; i < nbytes; i++) {
+		if (*(buf + i) == '\n') {
+			_stdout_hook('\r');
+		}
+		_stdout_hook(*(buf + i));
+	}
+	return nbytes;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
+{
+	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
+	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
+}
+#include <zephyr/syscalls/zephyr_write_stdout_mrsh.c>
+#endif
+
 int puts(const char *s)
 {
 	if (fputs(s, stdout) == EOF) {
