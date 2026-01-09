@@ -340,7 +340,7 @@ resource handler, which echoes received data back to the client:
         enum http_method method = client->method;
         static size_t processed;
 
-        __ASSERT_NO_MSG(buffer != NULL);
+        __ASSERT_NO_MSG(request_ctx->data != NULL);
 
         if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
             status == HTTP_SERVER_TRANSACTION_COMPLETE) {

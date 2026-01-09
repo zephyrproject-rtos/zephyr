@@ -90,7 +90,7 @@ static int echo_handler(struct http_client_ctx *client, enum http_transaction_st
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(buffer != NULL);
+	__ASSERT_NO_MSG(request_ctx->data != NULL);
 
 	processed += request_ctx->data_len;
 
