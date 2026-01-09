@@ -38,6 +38,21 @@ config ARMV7_A
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
 
+config AARCH32_ARMV8_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+	help
+	  This option signifies the use of an ARMv8-A processor running in
+	  the AArch32 execution state.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/a-profile:
+	  The Armv8-A architecture targets the Applications profile and introduces
+	  a 64-bit execution state (AArch64) alongside the 32-bit AArch32 state.
+	  In AArch32 state, it provides a Virtual Memory System Architecture (VMSA)
+	  based on a Memory Management Unit (MMU) and supports the A32 and T32
+	  instruction sets.
+
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
 	default 256

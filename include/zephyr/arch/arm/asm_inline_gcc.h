@@ -57,7 +57,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	__set_BASEPRI_MAX(_EXC_IRQ_DEFAULT_PRIO);
 	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
 		"and %0, #" STRINGIFY(I_BIT) ";"
@@ -89,7 +89,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 	__set_BASEPRI(key);
 	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 	if (key != 0U) {
 		return;
 	}
