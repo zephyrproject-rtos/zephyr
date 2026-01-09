@@ -48,6 +48,7 @@ family:
     - name: mcxw235
   - name: mcxw7xx
     socs:
+    - name: mcxw70ac
     - name: mcxw716c
     - name: mcxw727c
       cpuclusters:

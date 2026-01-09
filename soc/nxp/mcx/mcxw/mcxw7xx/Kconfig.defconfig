@@ -1,11 +1,12 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXW7XX
 
 config NUM_IRQS
-	default 77 if SOC_MCXW727C
+	default 112 if SOC_MCXW70AC
+	default 77  if SOC_MCXW727C
 	default 75
 
 config MCUX_LPTMR_TIMER
