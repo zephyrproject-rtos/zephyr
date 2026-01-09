@@ -7,6 +7,7 @@ identifier: kit_pse84_ai/pse846gps2dbzc4a/m55
 name: PSOC Edge84 AI Kit (M55)
 type: mcu
 arch: arm
+ram: 5120
 sysbuild: true
 toolchain:
   - zephyr
