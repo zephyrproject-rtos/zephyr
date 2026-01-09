@@ -43,6 +43,7 @@ rsource "Kconfig.nxp_rstctl"
 rsource "Kconfig.rpi_pico"
 rsource "Kconfig.sf32lb"
 rsource "Kconfig.stm32"
+rsource "Kconfig.syna_sr100"
 # zephyr-keep-sorted-stop
 
 endif # RESET

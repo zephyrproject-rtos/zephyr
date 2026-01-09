@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Synaptics SR100 Reset Driver
+
+description: |
+  Synaptics SR100 Reset driver bindings.
+
+include: [base.yaml, reset-controller.yaml]
+
+compatible: "syna,sr100-reset"
+
+
+properties:
+  reg:
+    required: true
+
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+- id
