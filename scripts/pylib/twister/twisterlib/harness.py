@@ -463,7 +463,7 @@ class Pytest(Harness):
         else:
             command.extend([
                 f'--device-serial={hardware.serial}',
-                f'--device-serial-baud={hardware.baud}'
+                f'--device-serial-baud={hardware.serial_baud}'
             ])
             for extra_serial in handler.get_more_serials_from_device(hardware):
                 command.append(f'--device-serial={extra_serial}')
