@@ -1852,11 +1852,10 @@ Documentation Infrastructure:
     - drivers.i2c
 
 "Drivers: I2S":
-  status: maintained
-  maintainers:
-    - anangl
+  status: odd fixes
   collaborators:
     - TomasBarakNXP
+    - anangl
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
