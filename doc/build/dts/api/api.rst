@@ -316,6 +316,16 @@ Memory, and properties related to them.
 
 .. doxygengroup:: devicetree-nvmem
 
+.. _devicetree-ordinals-api:
+
+Ordinals
+========
+
+These conveniences may be used for nodes which describe Dependency
+tracking, and properties related to them.
+
+.. doxygengroup:: devicetree-dep-ord
+
 .. _devicetree-pinctrl-api:
 
 Pinctrl (pin control)
