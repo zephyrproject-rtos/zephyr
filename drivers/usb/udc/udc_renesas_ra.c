@@ -30,7 +30,7 @@ struct udc_renesas_ra_data {
 	struct k_thread thread_data;
 	struct st_usbd_instance_ctrl udc;
 	struct st_usbd_cfg udc_cfg;
-	atomic_t set_addr_req;
+	bool ignore_status_in;
 };
 
 enum udc_renesas_ra_event_type {
@@ -126,78 +126,46 @@ static void udc_event_xfer_next(const struct device *dev, const uint8_t ep)
 	}
 }
 
-static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
-{
-	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-	struct udc_renesas_ra_data *data = udc_get_private(dev);
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	k_fifo_put(&cfg->fifo, buf);
-
-	if (FSP_SUCCESS != R_USBD_XferStart(&data->udc, cfg->addr, buf->data, buf->size)) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int udc_event_xfer_setup(const struct device *dev, struct udc_renesas_ra_evt *evt)
 {
 	struct udc_renesas_ra_data *data = udc_get_private(dev);
-	struct net_buf *buf;
-	int err;
 
 	struct usb_setup_packet *setup_packet =
 		(struct usb_setup_packet *)&evt->hal_evt.setup_received;
 
 	if (setup_packet->bRequest == USB_SREQ_SET_ADDRESS) {
-		atomic_set(&data->set_addr_req, 1);
-	}
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return -ENOMEM;
-	}
-
-	udc_ep_buf_set_setup(buf);
-	net_buf_add_mem(buf, setup_packet, sizeof(struct usb_setup_packet));
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		LOG_DBG("s:%p|feed for -out-", buf);
-		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			err = udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		err = udc_ctrl_submit_s_in_status(dev);
+		data->ignore_status_in = true;
+	} else if (USB_REQTYPE_GET_DIR(setup_packet->bmRequestType) == USB_REQTYPE_DIR_TO_DEVICE &&
+		   setup_packet->wLength) {
+		/* Status IN after Data OUT is automatically handled.
+		 * This should not be the case because it does not allow USB
+		 * stack to stall Status stage in case the data is invalid
+		 * (determined by handler).
+		 */
+		data->ignore_status_in = true;
 	} else {
-		err = udc_ctrl_submit_s_status(dev);
+		data->ignore_status_in = false;
 	}
 
-	return err;
+	udc_setup_received(dev, setup_packet);
+
+	return 0;
 }
 
 static void udc_event_xfer_ctrl_in(const struct device *dev, struct net_buf *const buf)
 {
 	struct udc_renesas_ra_data *data = udc_get_private(dev);
-	atomic_val_t is_set_addr = atomic_clear(&data->set_addr_req);
+	struct udc_buf_info *bi = udc_get_buf_info(buf);
 	fsp_err_t err;
 
-	if (udc_ctrl_stage_is_no_data(dev)) {
-		if (is_set_addr == 0) {
-			/* Complete s-[status] stage for non-SET_ADDRESS requests */
+	if (bi->status) {
+		if (!data->ignore_status_in) {
+			/* Complete Status IN stage for control requests without
+			 * Data OUT stage other than SET_ADDRESS.
+			 */
 			err = R_USBD_XferStart(&data->udc, USB_CONTROL_EP_IN, NULL, 0);
 			if (err != FSP_SUCCESS) {
+				udc_submit_ep_event(dev, buf, -EIO);
 				return;
 			}
 		}
@@ -208,10 +176,7 @@ static void udc_event_xfer_ctrl_in(const struct device *dev, struct net_buf *con
 	 * Controller supports auto-status, so we cannot check for status completion after state
 	 * update
 	 */
-	net_buf_unref(buf);
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
+	udc_submit_ep_event(dev, buf, 0);
 }
 
 static void udc_event_status_in(const struct device *dev)
@@ -225,19 +190,6 @@ static void udc_event_status_in(const struct device *dev)
 	}
 
 	udc_event_xfer_ctrl_in(dev, buf);
-}
-
-static void udc_event_xfer_ctrl_out(const struct device *dev, struct net_buf *const buf,
-				    uint32_t len)
-{
-	net_buf_add(buf, len);
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_status_in(dev)) {
-		udc_ctrl_submit_s_out_status(dev, buf);
-	}
 }
 
 static void udc_event_xfer_complete(const struct device *dev, struct udc_renesas_ra_evt *evt)
@@ -276,8 +228,6 @@ static void udc_event_xfer_complete(const struct device *dev, struct udc_renesas
 
 	if (ep == USB_CONTROL_EP_IN) {
 		udc_event_xfer_ctrl_in(dev, buf);
-	} else if (ep == USB_CONTROL_EP_OUT) {
-		udc_event_xfer_ctrl_out(dev, buf, len);
 	} else {
 		if (USB_EP_DIR_IS_OUT(ep)) {
 			net_buf_add(buf, len);
@@ -337,14 +287,27 @@ static int udc_renesas_ra_ep_enqueue(const struct device *dev, struct udc_ep_con
 
 	LOG_DBG("%p enqueue %p", dev, buf);
 
-	udc_buf_put(cfg, buf);
-
 	evt.ep = cfg->addr;
-	if (cfg->addr == USB_CONTROL_EP_IN && buf->len == 0) {
-		evt.type = UDC_RENESAS_RA_EVT_STATUS;
-	} else {
-		evt.type = UDC_RENESAS_RA_EVT_XFER;
+	evt.type = UDC_RENESAS_RA_EVT_XFER;
+
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			udc_buf_put(cfg, buf);
+			return 0;
+		}
 	}
+
+	if (cfg->addr == USB_CONTROL_EP_IN) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->status) {
+			evt.type = UDC_RENESAS_RA_EVT_STATUS;
+		}
+	}
+
+	udc_buf_put(cfg, buf);
 
 	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 

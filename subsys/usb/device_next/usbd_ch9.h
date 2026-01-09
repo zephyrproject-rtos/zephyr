@@ -141,11 +141,12 @@ int usbd_handle_ctrl_xfer(struct usbd_context *uds_ctx,
 /**
  * @brief Initialize control pipe to default values
  *
- * @param[in] uds_ctx Pointer to a device context
+ * @param[in] uds_ctx       Pointer to a device context
+ * @param[in] enqueue_setup True to enqueue SETUP buffer
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_init_control_pipe(struct usbd_context *uds_ctx);
+int usbd_init_control_pipe(struct usbd_context *uds_ctx, bool enqueue_setup);
 
 
 #endif /* ZEPHYR_INCLUDE_USBD_CH9_H */

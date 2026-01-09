@@ -473,73 +473,14 @@ static int sam_usbhs_prep_in(const struct device *dev,
 	return 0;
 }
 
-static int sam_usbhs_ctrl_feed_dout(const struct device *dev,
-				    const size_t length)
-{
-	struct udc_ep_config *const ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	udc_buf_put(ep_cfg, buf);
-
-	return sam_usbhs_prep_out(dev, buf, ep_cfg);
-}
-
-static void drop_control_transfers(const struct device *dev)
-{
-	struct net_buf *buf;
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
-		net_buf_unref(buf);
-	}
-}
-
 static int sam_usbhs_handle_evt_setup(const struct device *dev)
 {
-	struct udc_sam_usbhs_data *const priv = udc_get_private(dev);
-	struct net_buf *buf;
-	int err;
+	struct udc_sam_usbhs_data *const priv =
+		udc_get_private(dev);
 
-	drop_control_transfers(dev);
+	udc_setup_received(dev, priv->setup);
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	net_buf_add_mem(buf, priv->setup, sizeof(priv->setup));
-	udc_ep_buf_set_setup(buf);
-
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		LOG_DBG("s:%p|feed for -out-", (void *)buf);
-
-		err = sam_usbhs_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		} else {
-			return err;
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		LOG_DBG("s:%p|feed for -in-status", (void *)buf);
-		err = udc_ctrl_submit_s_in_status(dev);
-	} else {
-		LOG_DBG("s:%p|no data", (void *)buf);
-		err = udc_ctrl_submit_s_status(dev);
-	}
-
-	return err;
+	return 0;
 }
 
 static int sam_usbhs_handle_evt_din(const struct device *dev,
@@ -555,30 +496,6 @@ static int sam_usbhs_handle_evt_din(const struct device *dev,
 
 	udc_ep_set_busy(ep_cfg, false);
 
-	if (ep_cfg->addr == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) ||
-		    udc_ctrl_stage_is_no_data(dev)) {
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			int err;
-
-			net_buf_unref(buf);
-
-			err = sam_usbhs_ctrl_feed_dout(dev, 0);
-			if (err == -ENOMEM) {
-				udc_submit_ep_event(dev, buf, err);
-			} else {
-				return err;
-			}
-		}
-
-		return 0;
-	}
-
 	return udc_submit_ep_event(dev, buf, 0);
 }
 
@@ -586,7 +503,6 @@ static int sam_usbhs_handle_evt_dout(const struct device *dev,
 				     struct udc_ep_config *const ep_cfg)
 {
 	struct net_buf *buf;
-	int err = 0;
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
@@ -596,22 +512,7 @@ static int sam_usbhs_handle_evt_dout(const struct device *dev,
 
 	udc_ep_set_busy(ep_cfg, false);
 
-	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			LOG_DBG("dout:%p|status, feed >s", (void *)buf);
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_in(dev)) {
-			err = udc_ctrl_submit_s_out_status(dev, buf);
-		}
-	} else {
-		err = udc_submit_ep_event(dev, buf, 0);
-	}
-
-	return err;
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static void sam_usbhs_handle_xfer_next(const struct device *dev,
@@ -623,6 +524,14 @@ static void sam_usbhs_handle_xfer_next(const struct device *dev,
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		return;
+	}
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			return;
+		}
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep_cfg->addr)) {
