@@ -168,6 +168,7 @@ typedef struct {
 #define HSUSBD_GINTEN_EPAIEN_Pos        0
 #define HSUSBD_GINTEN_USBIEN_Msk        0
 #define HSUSBD_GINTSTS_EPAIF_Pos        0
+#define HSUSBD_GINTSTS_CEPIF_Msk        0
 #define HSUSBD_BUSINTEN_RESUMEIEN_Msk   0
 #define HSUSBD_BUSINTEN_RSTIEN_Msk      0
 #define HSUSBD_BUSINTEN_SOFIEN_Msk      0

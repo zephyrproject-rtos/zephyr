@@ -64,28 +64,6 @@ struct udc_max32_data {
 	struct req_cb_data *req_cb_data;
 };
 
-static void udc_event_xfer_ctrl_status(const struct device *dev, struct net_buf *const buf)
-{
-	if (udc_ctrl_stage_is_status_in(dev) || udc_ctrl_stage_is_no_data(dev)) {
-		MXC_USB_Ackstat(0);
-
-		/* Status stage finished, notify upper layer */
-		udc_ctrl_submit_status(dev, buf);
-	}
-
-	if (udc_ctrl_stage_is_data_in(dev)) {
-		/*
-		 * s-in-[status] finished, release buffer.
-		 * Since the controller supports auto-status we cannot use
-		 * if (udc_ctrl_stage_is_status_out()) after state update.
-		 */
-		net_buf_unref(buf);
-	}
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-}
-
 /*
  * ISR-context callbacks: These are called from MXC_USB_EventHandler() in
  * interrupt context.
@@ -137,12 +115,6 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 		return;
 	}
 
-	if (buf->len == 0 && ep_cfg->addr == USB_CONTROL_EP_IN) {
-		buf = udc_buf_get(ep_cfg);
-		udc_event_xfer_ctrl_status(dev, buf);
-		return;
-	}
-
 	req_cb_data->dev = dev;
 	req_cb_data->ep = ep_cfg->addr;
 
@@ -184,6 +156,22 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 		return;
 	}
 
+	/*
+	 * Skip ReadEndpoint call for STATUS OUT xfers with no data.
+	 * These are auto-ACKED by hardware. If ReadEndpoint is called with a
+	 * zero-length buffer, the driver will treat it as a normal OUT transfer
+	 * and wait for data, which will never come, causing a timeout.
+	 *
+	 * For setup events, they are handled by a separate interrupt, SUDAV.
+	 */
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (!bi->data) {
+			return;
+		}
+	}
+
 	req_cb_data->dev = dev;
 	req_cb_data->ep = ep_cfg->addr;
 
@@ -194,7 +182,12 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 	ep_request->error_code = 0;
 	ep_request->callback = udc_event_xfer_out_callback;
 	ep_request->cbdata = req_cb_data;
-	ep_request->type = MAXUSB_TYPE_PKT;
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		ep_request->type = MAXUSB_TYPE_TRANS;
+	} else {
+		ep_request->type = MAXUSB_TYPE_PKT;
+	}
 
 	udc_ep_set_busy(ep_cfg, true);
 	ret = MXC_USB_ReadEndpoint(ep_request);
@@ -228,11 +221,7 @@ static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_confi
 		udc_ep_buf_clear_zlp(buf);
 	}
 
-	if (ep_cfg->addr == USB_CONTROL_EP_IN) {
-		udc_event_xfer_ctrl_status(dev, buf);
-	} else {
-		udc_submit_ep_event(dev, buf, 0);
-	}
+	udc_submit_ep_event(dev, buf, 0);
 
 	/* Start the next transfer if there is another waiting */
 	if (ep_cfg->addr != USB_CONTROL_EP_IN && udc_buf_peek(ep_cfg) != NULL) {
@@ -257,14 +246,7 @@ static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_conf
 		return;
 	}
 
-	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		udc_ctrl_submit_s_out_status(dev, buf);
-	} else {
-		udc_submit_ep_event(dev, buf, 0);
-	}
+	udc_submit_ep_event(dev, buf, 0);
 
 	/* Start the next transfer if there is another waiting */
 	if (ep_cfg->addr != USB_CONTROL_EP_OUT && udc_buf_peek(ep_cfg) != NULL) {
@@ -272,93 +254,33 @@ static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_conf
 	}
 }
 
-static int udc_ctrl_feed_dout(const struct device *dev, const size_t length)
-{
-	struct udc_max32_data *priv = udc_get_private(dev);
-	const struct udc_max32_config *config = dev->config;
-	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(USB_CONTROL_EP_OUT)];
-	struct req_cb_data *req_cb_data = &priv->req_cb_data[USB_EP_GET_IDX(USB_CONTROL_EP_OUT)];
-	struct net_buf *buf;
-	int ret;
-
-	/* Allocate buffer for data stage OUT */
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-	memset(buf->data, 0, length);
-	udc_buf_put(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT), buf);
-
-	req_cb_data->dev = dev;
-	req_cb_data->ep = USB_CONTROL_EP_OUT;
-
-	ep_request->ep = USB_EP_GET_IDX(USB_CONTROL_EP_OUT);
-	ep_request->data = buf->data;
-	ep_request->reqlen = length;
-	ep_request->actlen = 0;
-	ep_request->error_code = 0;
-	ep_request->callback = udc_event_xfer_out_callback;
-	ep_request->cbdata = req_cb_data;
-	ep_request->type = MAXUSB_TYPE_TRANS;
-
-	ret = MXC_USB_ReadEndpoint(ep_request);
-	if (ret != 0) {
-		LOG_ERR("ep 0x%02x error: %x", USB_CONTROL_EP_OUT, ret);
-		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
-	}
-
-	/*
-	 * Set the SERV_OUTPKTRDY bit to trigger the interrupt after creating a read request.
-	 * Otherwise program miss this interrupt because of race condition.
-	 */
-	config->base->csr0 |= MXC_F_USBHS_CSR0_SERV_OUTPKTRDY;
-
-	return ret;
-}
-
 static int udc_event_setup(const struct device *dev)
 {
-	const struct udc_max32_config *config = dev->config;
-	struct net_buf *buf;
-	int ret;
+	int ret = 0;
+	MXC_USB_SetupPkt setup_pkt;
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return -ENOMEM;
-	}
-
-	udc_ep_buf_set_setup(buf);
-	memset(buf->data, 0, sizeof(MXC_USB_SetupPkt));
-	if (MXC_USB_GetSetup((MXC_USB_SetupPkt *)buf->data) < 0) {
+	/* Get setup data from FIFO */
+	ret = MXC_USB_GetSetup(&setup_pkt);
+	if (ret != 0) {
 		LOG_ERR("Failed to get setup data");
-		return -1;
-	}
-	net_buf_add(buf, sizeof(MXC_USB_SetupPkt));
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		LOG_DBG("s:%p|feed for -out-", buf);
-		ret = udc_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (ret == -ENOMEM) {
-			ret = udc_submit_ep_event(dev, buf, ret);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		/*
-		 * Moved following line from MSDK driver to here because of the solution of
-		 * ctrl_data_out stage's problem.
-		 */
-		config->base->csr0 |= MXC_F_USBHS_CSR0_SERV_OUTPKTRDY;
-		LOG_INF("Setup: IN");
-		ret = udc_ctrl_submit_s_in_status(dev);
-	} else {
-		ret = udc_ctrl_submit_s_status(dev);
+		return ret;
 	}
 
-	return ret;
+	/* Hardware requires explicit ACK for SETUP if no follow-on data */
+	if (setup_pkt.wLength == 0) {
+		MXC_USB_Ackstat(0);
+	}
+
+	/* Clear EP0 previous requests */
+	ret = MXC_USB_ResetEp(0);
+	if (ret != 0) {
+		LOG_ERR("Failed to reset EP0");
+		return ret;
+	}
+
+	udc_setup_received(dev, &setup_pkt);
+
+	return 0;
 }
 
 static ALWAYS_INLINE void max32_thread_handler(void *const arg)
@@ -745,6 +667,7 @@ static int udc_max32_driver_preinit(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.can_detect_vbus = true;
 	data->caps.out_ack = true;
+	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 	if (config->speed_idx == 2) {
 		data->caps.hs = true;
