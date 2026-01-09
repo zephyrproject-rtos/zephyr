@@ -651,60 +651,64 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 	LOG_DBG("Opcode: %d", command.opcode);
 	command.use_param = false;
 
-	if (!BT_MCS_VALID_OP(command.opcode)) {
-		/* MCS does not specify what to return in case of an error - Only what to notify*/
-
-		const struct mpl_cmd_ntf cmd_ntf = {
-			.requested_opcode = command.opcode,
-			.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED,
-		};
-		int err;
-
-		LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
-
-		/* TODO: Offload to systemwq */
-		err = notify(conn, BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
-		if (err != 0) {
-			LOG_WRN("Couldn't notify CP: %d", err);
-		}
-
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-	}
-
 	if (conn != NULL) {
+		struct client_state *client;
 		struct mcs_flags *flags;
 		__maybe_unused int err;
 
 		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
 		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
-		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
+		client = &mcs_inst.clients[bt_conn_index(conn)];
+		flags = &client->flags;
 
-		if (flags->media_control_point_busy) {
-			const struct mpl_cmd_ntf cmd_ntf = {
-				.requested_opcode = command.opcode,
-				.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED,
-			};
+		/* If we are already handling a control point operation, we cannot handle it.
+		 * Similarly we do not send a notification, as we do not want to risk sending the
+		 * notification for this 2nd request before we've sent the notification for the 1st
+		 * request to avoid confusing the client. Unfortunately there is no flow control
+		 * defined for control point operations.
+		 */
+		if (flags->media_control_point_busy || flags->media_control_point_result) {
+			const bool media_control_point_busy = flags->media_control_point_busy;
+			const bool media_control_point_result = flags->media_control_point_result;
 
 			err = k_mutex_unlock(&mcs_inst.mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-			LOG_DBG("Busy with other operation");
-
-			err = notify(conn, BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf,
-				     sizeof(cmd_ntf));
-			if (err != 0) {
-				LOG_WRN("Couldn't notify CP: %d", err);
-				/* TODO: Ignore? Not much else we can do */
-			}
+			LOG_DBG("Rejecting CP write as one is already pending (%d %d)",
+				media_control_point_busy, media_control_point_result);
 
 			return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
+		}
+
+		if (!BT_MCS_VALID_OP(command.opcode)) {
+			/* MCS does not specify what to return in case of an error - Only what to
+			 * notify
+			 */
+
+			client->cmd_ntf.requested_opcode = command.opcode;
+			client->cmd_ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
+
+			flags->media_control_point_result = true;
+
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
+
+			err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+			__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
 		flags->media_control_point_busy = true;
 
 		err = k_mutex_unlock(&mcs_inst.mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	} else {
+		if (!BT_MCS_VALID_OP(command.opcode)) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (len == sizeof(command.opcode) + sizeof(command.param)) {
@@ -765,16 +769,21 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 
 		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
 
-		if (flags->search_control_point_busy) {
-			const uint8_t result_code = BT_MCS_SCP_NTF_FAILURE;
+		/* If we are already handling a search control point operation, we cannot handle it.
+		 * Similarly we do not send a notification, as we do not want to risk sending the
+		 * notification for this 2nd request before we've sent the notification for the 1st
+		 * request to avoid confusing the client. Unfortunately there is no flow control
+		 * defined for control point operations.
+		 */
+		if (flags->search_control_point_busy || flags->search_control_point_result) {
+			const bool search_control_point_busy = flags->search_control_point_busy;
+			const bool search_control_point_result = flags->search_control_point_result;
 
 			err = k_mutex_unlock(&mcs_inst.mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-			LOG_DBG("Busy with other operation");
-
-			err = notify(conn, BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code,
-				     sizeof(result_code));
+			LOG_DBG("Rejecting CP write as one is already pending (%d %d)",
+				search_control_point_busy, search_control_point_result);
 
 			return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
 		}
