@@ -1024,6 +1024,10 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
+		return -ENOTSUP;
+	}
+
 	if ((flags & GPIO_SINGLE_ENDED) &&
 		(cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) == 0U) {
 		return -ENOTSUP;
