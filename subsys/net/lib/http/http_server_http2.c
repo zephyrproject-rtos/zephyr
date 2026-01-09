@@ -661,7 +661,14 @@ static int dynamic_get_del_req_v2(struct http_resource_detail_dynamic *dynamic_d
 				      HTTP2_FLAG_END_STREAM);
 		if (ret < 0) {
 			LOG_DBG("Cannot send last frame (%d)", ret);
+			return ret;
 		}
+	}
+
+	ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+				 &response_ctx, dynamic_detail->user_data);
+	if (ret < 0) {
+		return ret;
 	}
 
 	dynamic_detail->holder = NULL;
@@ -759,10 +766,22 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 
 		if (ret < 0) {
 			LOG_DBG("Cannot send last frame (%d)", ret);
+			return ret;
 		}
 
 		client->current_stream->end_stream_sent = true;
-		dynamic_detail->holder = NULL;
+
+		if (http_response_is_final(&response_ctx, status) &&
+		    status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+			ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE,
+						 &request_ctx, &response_ctx,
+						 dynamic_detail->user_data);
+			if (ret < 0) {
+				return ret;
+			}
+
+			dynamic_detail->holder = NULL;
+		}
 	}
 
 	return ret;
@@ -1507,6 +1526,15 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 
 		ret = http2_dynamic_response(client, frame, &response_ctx,
 					     HTTP_SERVER_REQUEST_DATA_FINAL, dynamic_detail);
+
+		if (ret < 0) {
+			dynamic_detail->holder = NULL;
+			goto out;
+		}
+
+		ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
+
 		dynamic_detail->holder = NULL;
 
 		if (ret < 0) {

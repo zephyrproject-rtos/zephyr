@@ -252,6 +252,7 @@ HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/",
 static uint8_t dynamic_payload[32];
 static size_t dynamic_payload_len = sizeof(dynamic_payload);
 static bool dynamic_error;
+static bool dynamic_complete;
 
 static int dynamic_cb(struct http_client_ctx *client, enum http_transaction_status status,
 		      const struct http_request_ctx *request_ctx,
@@ -259,8 +260,14 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_transaction_stat
 {
 	static size_t offset;
 
-	if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		offset = 0;
+		if (status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+			zassert_false(dynamic_complete,
+				      "Transaction complete called multiple times");
+			dynamic_complete = true;
+		}
 		return 0;
 	}
 
@@ -336,6 +343,11 @@ static int dynamic_request_headers_cb(struct http_client_ctx *client,
 	struct http_header *hdrs_src;
 	struct http_header *hdrs_dst;
 	struct test_headers_clone *clone = (struct test_headers_clone *)user_data;
+
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		return 0;
+	}
 
 	if (request_ctx->header_count != 0) {
 		/* Copy the captured header info to static buffer for later assertions in testcase.
@@ -441,6 +453,12 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	static const struct http_header override_headers[] = {
 		{.name = "Content-Type", .value = "application/json"},
 	};
+
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		offset = 0;
+		return 0;
+	}
 
 	if (status != HTTP_SERVER_REQUEST_DATA_FINAL &&
 	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG) {
@@ -857,6 +875,7 @@ static void common_verify_http2_dynamic_post_request(const uint8_t *request,
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_post)
@@ -911,6 +930,7 @@ static void common_verify_http1_dynamic_upgrade_post(const uint8_t *method)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
@@ -953,6 +973,7 @@ static void common_verify_http1_dynamic_post(const uint8_t *method)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_post)
@@ -979,6 +1000,7 @@ static void common_verify_http2_dynamic_get_request(const uint8_t *request,
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_DYNAMIC_GET_PAYLOAD,
 				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get)
@@ -1026,6 +1048,7 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_get)
 	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_DYNAMIC_GET_PAYLOAD,
 				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get)
@@ -1057,6 +1080,7 @@ ZTEST(server_function_tests, test_http1_dynamic_get)
 	test_read_data(&offset, sizeof(expected_response) - 1);
 	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
 			  "Received data doesn't match expected response");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_put)
@@ -1369,6 +1393,7 @@ ZTEST(server_function_tests, test_http2_post_trailing_headers)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_get_headers_with_padding)
@@ -2799,6 +2824,7 @@ static void http_server_tests_before(void *fixture)
 	memset(&request_headers_clone2, 0, sizeof(request_headers_clone2));
 	dynamic_payload_len = 0;
 	dynamic_error = false;
+	dynamic_complete = false;
 
 	ret = http_server_start();
 	if (ret < 0) {

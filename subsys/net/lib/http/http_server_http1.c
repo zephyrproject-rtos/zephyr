@@ -435,8 +435,6 @@ static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_deta
 		len = 0;
 	} while (!http_response_is_final(&response_ctx, status));
 
-	dynamic_detail->holder = NULL;
-
 	/* Only send the 0\r\n\r\n if the client is NOT HTTP/1.0 */
 	if (!is_client_http10(client)) {
 		ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
@@ -444,6 +442,14 @@ static int dynamic_get_del_req(struct http_resource_detail_dynamic *dynamic_deta
 			return ret;
 		}
 	}
+
+	ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+				 &response_ctx, dynamic_detail->user_data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dynamic_detail->holder = NULL;
 
 	return 0;
 }
@@ -526,6 +532,12 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 			if (ret < 0) {
 				return ret;
 			}
+		}
+
+		ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
 		}
 
 		dynamic_detail->holder = NULL;

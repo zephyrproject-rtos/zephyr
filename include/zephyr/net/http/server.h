@@ -178,6 +178,8 @@ enum http_transaction_status {
 	HTTP_SERVER_REQUEST_DATA_MORE = 0,
 	/** Final data fragment in current transaction. */
 	HTTP_SERVER_REQUEST_DATA_FINAL = 1,
+	/** Transaction completed, response sent completely. */
+	HTTP_SERVER_TRANSACTION_COMPLETE = 2,
 };
 
 /** @brief Status of captured request headers */
@@ -218,7 +220,10 @@ struct http_response_ctx {
  *        can be specified.
  *
  * @param client HTTP context information for this client connection.
- * @param status HTTP data status, indicate whether more data is expected or not.
+ * @param status HTTP transaction status, HTTP_SERVER_REQUEST_DATA_MORE and
+ *               HTTP_SERVER_REQUEST_DATA_FINAL describe the request-body delivery progress.
+ *               HTTP_SERVER_TRANSACTION_ABORTED and HTTP_SERVER_TRANSACTION_COMPLETE are
+ *               terminal notifications.
  * @param request_ctx Request context structure containing HTTP request data that was received.
  * @param response_ctx Response context structure for application to populate with response data.
  * @param user_data User specified data.
