@@ -7,6 +7,26 @@ Zephyr supports a few different MikroElektronika Click shields carrying the
 Microchip `External CAN FD Controllers`_, either with or without integrated
 `CAN FD Transceiver`_.
 
+.. _mikroe_mcp2517fd_click_shield:
+
+MikroElektronika MCP2517FD Click shield
+***************************************
+
+Overview
+--------
+
+The MCP2517FD Click shield has a `MCP2517FD`_ CAN FD controller via a SPI
+interface and a high-speed `ATA6563`_ CAN transceiver.
+
+More information about the shield can be found at
+`Mikroe MCP2517FD click`_.
+
+.. figure:: mcp2517fd_click.webp
+   :align: center
+   :alt: MikroElektronika MCP2517FD Click
+
+   MikroElektronika MCP2517FD Click (Credit: MikroElektronika)
+
 .. _mikroe_mcp2518fd_click_shield:
 
 MikroElektronika MCP2518FD Click shield
@@ -38,8 +58,14 @@ interrupts and SPI clock frequency of up to 18 MHz.
 Programming
 ***********
 
-Set ``--shield mikroe_mcp2518fd_click`` when you invoke ``west build``,
-for example:
+Set ``--shield mikroe_mcp2517fd_click`` or ``--shield mikroe_mcp2518fd_click``
+when you invoke ``west build``, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/can/counter
+   :board: lpcxpresso55s28
+   :shield: mikroe_mcp2517fd_click
+   :goals: build flash
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
@@ -61,8 +87,14 @@ References
 .. _ATA6563:
    https://www.microchip.com/en-us/product/ATA6563
 
+.. _MCP2517FD:
+   https://www.microchip.com/en-us/product/MCP2517FD
+
 .. _MCP2518FD:
    https://www.microchip.com/en-us/product/MCP2518FD
+
+.. _Mikroe MCP2517FD click:
+   https://www.mikroe.com/mcp2517fd-click
 
 .. _Mikroe MCP2518FD click:
    https://www.mikroe.com/mcp2518fd-click
