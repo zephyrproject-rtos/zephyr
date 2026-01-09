@@ -58,6 +58,12 @@ struct intel_adsp_ipc_msg {
 	/** Extension specific to platform. */
 	uint32_t ext_data;
 
+	/** Pointer to message payload. */
+	uintptr_t payload;
+
+	/** Size of payload buffer in bytes. */
+	size_t payload_length;
+
 	/** Timeout for sending synchronuous message. */
 	k_timeout_t timeout;
 };
