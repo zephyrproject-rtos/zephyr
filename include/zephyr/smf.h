@@ -15,6 +15,14 @@
 
 #include <zephyr/sys/util.h>
 
+#define CHECK_SMF_PARENT(_parent)                                                                  \
+	({                                                                                         \
+		BUILD_ASSERT(                                                                      \
+			IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT) || (_parent == NULL),              \
+			"Parent state assigned, but CONFIG_SMF_ANCESTOR_SUPPORT is disabled!");    \
+		_parent;                                                                           \
+	})
+
 /**
  * @brief State Machine Framework API
  * @defgroup smf State Machine Framework API
@@ -33,13 +41,14 @@
  * @param _initial State initial transition object or NULL
  */
 /* clang-format off */
-#define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial)           \
-{                                                                          \
-	.entry   = _entry,                                                 \
-	.run     = _run,                                                   \
-	.exit    = _exit,                                                  \
-	IF_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = _parent,))      \
-	IF_ENABLED(CONFIG_SMF_INITIAL_TRANSITION, (.initial = _initial,))  \
+#define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial)            \
+{                                                                           \
+	.entry   = _entry,                                                      \
+	.run     = _run,                                                        \
+	.exit    = _exit,                                                       \
+	IF_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = _parent,))           \
+	IF_DISABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = CHECK_SMF_PARENT(_parent),)) \
+	IF_ENABLED(CONFIG_SMF_INITIAL_TRANSITION, (.initial = _initial,))       \
 }
 /* clang-format on */
 
