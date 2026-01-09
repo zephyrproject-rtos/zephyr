@@ -9,5 +9,8 @@ config UART_BEE
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL
+	select SERIAL_SUPPORT_ASYNC \
+		if DT_HAS_REALTEK_BEE_DMA_ENABLED
+	select DMA if UART_ASYNC_API
 	help
 	  This option enables the UART driver for Realtek Bee SoCs.
