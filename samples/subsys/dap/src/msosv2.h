@@ -115,16 +115,25 @@ struct bos_msosv2_descriptor bos_msosv2_desc = {
 
 static int msosv2_to_host_cb(const struct usbd_context *const ctx,
 			     const struct usb_setup_packet *const setup,
-			     struct net_buf *const buf)
+			     struct net_buf **const pbuf)
 {
 	LOG_INF("Vendor callback to host");
 
 	if (setup->bRequest == SAMPLE_MSOS2_VENDOR_CODE &&
 	    setup->wIndex == MS_OS_20_DESCRIPTOR_INDEX) {
+		struct net_buf *buf;
+		uint16_t len = MIN(setup->wLength, sizeof(msosv2_desc));
+
 		LOG_INF("Get MS OS 2.0 Descriptor Set");
 
-		net_buf_add_mem(buf, &msosv2_desc,
-				MIN(net_buf_tailroom(buf), sizeof(msosv2_desc)));
+		buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
+		if (buf == NULL) {
+			return -ENOMEM;
+		}
+
+		*pbuf = buf;
+
+		net_buf_add_mem(buf, &msosv2_desc, len);
 
 		return 0;
 	}
