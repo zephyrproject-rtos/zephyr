@@ -105,6 +105,16 @@ size_t mem_attr_get_regions(const struct mem_attr_region_t **region);
  */
 int mem_attr_check_buf(void *addr, size_t size, uint32_t attr);
 
+/**
+ * @brief Find the index of a memory region by its node name.
+ *
+ * @param target_name The memory node full name to search for.
+ *
+ * @return The index of the memory region in the regions array.
+ * @retval -ENOENT The region was not found.
+ */
+int mem_attr_get_region_index_by_name(const char *target_name);
+
 #ifdef __cplusplus
 }
 #endif
