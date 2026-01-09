@@ -203,23 +203,23 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 }
 
 static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys_t sys,
-				  clock_control_subsys_rate_t rate)
+				  clock_control_subsys_rate_t raw_rate)
 {
-	ARG_UNUSED(dev);
 	uintptr_t clockid = (uintptr_t)sys;
-	ULP_I2S_CLK_SELECT_T ref_clk;
-	uint32_t freq;
+	uint32_t rate = *(uint32_t *)raw_rate;
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	switch (clockid) {
 	case SIWX91X_CLK_I2S0:
-		RSI_CLK_SetI2sPllFreq(M4CLK, *((uint32_t *)rate), XTAL_FREQUENCY);
+		RSI_CLK_SetI2sPllFreq(M4CLK, rate, XTAL_FREQUENCY);
 		RSI_CLK_I2sClkConfig(M4CLK, I2S_PLLCLK, 0);
 		return 0;
 	case SIWX91X_CLK_ULP_I2S:
-		ref_clk = ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_CLK_SEL_b;
-		freq = RSI_CLK_GetBaseClock(ULPSS_I2S);
-		ret = RSI_ULPSS_UlpI2sClkConfig(ULPCLK, ref_clk, freq / (*((uint32_t *)rate) / 2));
+		ret = RSI_ULPSS_UlpI2sClkConfig(ULPCLK,
+						ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_CLK_SEL_b,
+						RSI_CLK_GetBaseClock(ULPSS_I2S) * 2 / rate);
 		if (ret) {
 			return -EIO;
 		}
