@@ -40,3 +40,6 @@ tests:
       - CONFIG_MP_MAX_NUM_CPUS=4
       - CONFIG_PLIC_IRQ_AFFINITY=y
       - CONFIG_PLIC_IRQ_AFFINITY_MASK=0xf
+  drivers.interrupt_controller.intc_plic.warm_boot.build:
+    extra_configs:
+      - CONFIG_PLIC_WARM_BOOT=y
