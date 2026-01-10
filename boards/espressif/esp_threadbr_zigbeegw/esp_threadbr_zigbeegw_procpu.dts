@@ -46,29 +46,29 @@
 		};
 	};
 
-	h2 {
-		compatible = "gpio-leds";
-		h2_reset: h2_reset {
-			gpios = <&gpio0 7 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
-			label = "H2 Reset";
-		};
-		h2_boot: h2_boot {
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
-			label = "H2 Boot";
-		};
-		h2_wl_active: h2_wl_active {
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
-			label = "H2 Boot";
-		};
-		h2_bt_active: h2_bt_active {
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
-			label = "H2 Boot";
-		};
-		h2_bt_priority: h2_wl_priority {
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
-			label = "H2 Boot";
-		};
-	};
+//	h2 {
+//		compatible = "gpio-leds";
+//		h2_reset: h2_reset {
+//			gpios = <&gpio0 7 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
+//			label = "H2 Reset";
+//		};
+//		h2_boot: h2_boot {
+//			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
+//			label = "H2 Boot";
+//		};
+//		h2_wl_active: h2_wl_active {
+//			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
+//			label = "H2 Boot";
+//		};
+//		h2_bt_active: h2_bt_active {
+//			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
+//			label = "H2 Boot";
+//		};
+//		h2_bt_priority: h2_wl_priority {
+//			gpios = <&gpio0 8 GPIO_ACTIVE_LOW | GPIO_PULL_UP>;
+//			label = "H2 Boot";
+//		};
+//	};
 };
 
 &usb_serial {

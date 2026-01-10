@@ -56,15 +56,15 @@
 		};
 	};
 
-	spim3_default: spim2_default {
+	spim3_default: spim3_default {
 		group1 {
-			pinmux = <SPIM2_MISO_GPIO38>,
-				 <SPIM2_SCLK_GPIO21>,
-				 <SPIM2_CSEL_GPIO41>;
+			pinmux = <SPIM3_MISO_GPIO38>,
+				 <SPIM3_SCLK_GPIO21>,
+				 <SPIM3_CSEL_GPIO41>;
 		};
 
 		group2 {
-			pinmux = <SPIM2_MOSI_GPIO45>;
+			pinmux = <SPIM3_MOSI_GPIO45>;
 			output-low;
 		};
 	};
