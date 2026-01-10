@@ -20,10 +20,10 @@
 LOG_MODULE_REGISTER(ADXL313, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint8_t adxl313_range_init[] = {
-	[ADXL313_RANGE_0_5G] = ADXL313_DATA_FORMAT_RANGE_0_5G,
-	[ADXL313_RANGE_1G] = ADXL313_DATA_FORMAT_RANGE_1G,
-	[ADXL313_RANGE_2G] = ADXL313_DATA_FORMAT_RANGE_2G,
-	[ADXL313_RANGE_4G] = ADXL313_DATA_FORMAT_RANGE_4G,
+	[ADXL313_RANGE_0_5G] = ADXL313_DT_RANGE_0_5G,
+	[ADXL313_RANGE_1G] = ADXL313_DT_RANGE_1G,
+	[ADXL313_RANGE_2G] = ADXL313_DT_RANGE_2G,
+	[ADXL313_RANGE_4G] = ADXL313_DT_RANGE_4G,
 };
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
@@ -464,6 +464,7 @@ static int adxl313_init(const struct device *dev)
 	}
 
 	/* initial setting */
+	data->selected_range = cfg->selected_range;
 	data->odr = cfg->odr;
 	data->is_full_res = true;
 
@@ -476,7 +477,7 @@ static int adxl313_init(const struct device *dev)
 	 * - turn off self test mode
 	 */
 	regval = (data->is_full_res ? ADXL313_DATA_FORMAT_FULL_RES : 0x00);
-	regval |= adxl313_range_init[cfg->selected_range];
+	regval |= adxl313_range_init[data->selected_range];
 	rc = adxl313_reg_write_byte(dev, ADXL313_REG_DATA_FORMAT, regval);
 	if (rc < 0) {
 		LOG_ERR("Data format set failed");
@@ -523,7 +524,7 @@ static int adxl313_init(const struct device *dev)
 	RTIO_DEFINE(adxl313_rtio_ctx_##inst, 4 * ADXL313_FIFO_MAX_SIZE, 4 * ADXL313_FIFO_MAX_SIZE);
 
 #define ADXL313_CONFIG(inst)                                                                       \
-	.odr = DT_INST_PROP(inst, odr), .selected_range = ADXL313_DATA_FORMAT_RANGE_4G,
+	.odr = DT_INST_PROP(inst, odr), .selected_range = DT_INST_PROP(inst, range),
 
 #define ADXL313_CONFIG_SPI(inst)                                                                   \
 	{.bus = {.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \

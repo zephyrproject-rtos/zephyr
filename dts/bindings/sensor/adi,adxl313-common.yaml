@@ -48,3 +48,21 @@ properties:
       - 7
       - 8
       - 9
+
+  range:
+    type: int
+    default: 3
+    description: |
+      Accelerometer g ranges. This is an optional setting, defaults to 4g.
+      - 0 # 0.5g
+      - 1 # 1g
+      - 2 # 2g
+      - 3 # 4g
+      Note, the device is always in full resolution mode, where the output
+      resolution increases with the g range set by the range bits to maintain
+      1024 LSB/g sensitivity.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3

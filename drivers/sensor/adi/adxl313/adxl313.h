@@ -104,11 +104,6 @@ enum adxl313_odr { /* Recommended ODR is betwen 12.5Hz and 400Hz */
 #define ADXL313_DATA_FORMAT_3WIRE_SPI  BIT(6) /* enable 3-wire SPI */
 #define ADXL313_DATA_FORMAT_SELF_TEST  BIT(7) /* enable self test */
 
-#define ADXL313_DATA_FORMAT_RANGE_0_5G 0x00
-#define ADXL313_DATA_FORMAT_RANGE_1G   0x01
-#define ADXL313_DATA_FORMAT_RANGE_2G   0x02
-#define ADXL313_DATA_FORMAT_RANGE_4G   0x03
-
 enum adxl313_range {
 	ADXL313_RANGE_0_5G = 0,
 	ADXL313_RANGE_1G,
@@ -160,6 +155,7 @@ struct adxl313_dev_data {
 	uint8_t sample_idx;  /* index counting up sample_number entries */
 	bool is_full_res;
 	enum adxl313_odr odr;
+	enum adxl313_range selected_range;
 };
 
 typedef bool (*adxl313_bus_is_ready_fn)(const union adxl313_bus *bus);

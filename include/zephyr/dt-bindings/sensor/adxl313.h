@@ -28,6 +28,16 @@
 #define ADXL313_DT_ODR_3200 15
 /** @} */
 
+/**
+ * @defgroup ADXL313_RANGE g range options
+ * @{
+ */
+#define ADXL313_DT_RANGE_0_5G 0x00
+#define ADXL313_DT_RANGE_1G   0x01
+#define ADXL313_DT_RANGE_2G   0x02
+#define ADXL313_DT_RANGE_4G   0x03
+/** @} */
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX313_H_ */
