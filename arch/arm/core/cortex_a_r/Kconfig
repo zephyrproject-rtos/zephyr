@@ -53,6 +53,28 @@ config AARCH32_ARMV8_A
 	  based on a Memory Management Unit (MMU) and supports the A32 and T32
 	  instruction sets.
 
+config AARCH32_ARMV8_A_MONITOR_INIT
+	bool "Perform Monitor mode initialization at reset"
+	depends on AARCH32_ARMV8_A
+	help
+	  Enable early Monitor mode (EL3 AArch32) initialization at reset,
+	  analogous to the EL3 initialization performed in the arm64 port
+	  (z_arm64_el3_init).
+
+	  On ARMv8-A AArch32 platforms booting bare-metal without Trusted
+	  Firmware-A, the core resets into Secure SVC mode. Certain system
+	  registers are only accessible from Monitor mode, such as ICC_MSRE
+	  (enables GICv3 CPU interface system register access). This option
+	  briefly switches to Monitor mode at reset to configure such
+	  registers before returning to SVC.
+
+	  Enable when booting bare-metal in AArch32 Secure state with EL3
+	  implemented in AArch32 (Monitor mode available).
+
+	  Leave disabled when EL3 is AArch64-only, when Trusted Firmware-A
+	  has already performed this initialization, or when booting in
+	  Non-Secure state.
+
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
 	default 256

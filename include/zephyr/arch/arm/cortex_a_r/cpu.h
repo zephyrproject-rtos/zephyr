@@ -21,6 +21,7 @@
 #define MODE_FIQ	0x11
 #define MODE_IRQ	0x12
 #define MODE_SVC	0x13
+#define MODE_MON	0x16 /**< Monitor mode */
 #define MODE_ABT	0x17
 #define MODE_HYP	0x1a
 #define MODE_UND	0x1b
@@ -90,6 +91,15 @@
 #define ICC_SRE_ELx_DFB_BIT	BIT(1)
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
 #define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
+
+/** @brief Monitor ICC System Register Enable Register (ICC_MSRE)
+ * initialisation value.
+ *
+ * AArch32 equivalent of ICC_SRE_EL3; shares the same bitfields. Enables the
+ * GICv3 system register interface and disables FIQ/IRQ bypass.
+ */
+#define ICC_MSRE_INIT		(ICC_SRE_ELx_SRE_BIT | ICC_SRE_ELx_DFB_BIT | \
+				 ICC_SRE_ELx_DIB_BIT | ICC_SRE_ELx_EN_BIT)
 
 /* MPIDR mask to extract Aff0, Aff1, and Aff2 */
 #define MPIDR_AFFLVL_MASK (0xffffff)
