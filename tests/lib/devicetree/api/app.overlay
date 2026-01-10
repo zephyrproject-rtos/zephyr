@@ -70,6 +70,7 @@
 			 */
 			ph = <&test_gpio_1>;
 			phs = <&test_i2c &test_spi>;
+			ph-conn = <&test_connector>;
 			phs-or = <&test_enum_default_0 &test_enum_default_1>;
 			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
 			pha-gpios = <&test_gpio_1 50 60>, <0>, <&test_gpio_3 70>,
@@ -232,7 +233,7 @@
 			status = "okay";
 		};
 
-		test_i2c: i2c@11112222 {
+		test_i2c: test_i2c1: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
@@ -327,7 +328,7 @@
 			status = "okay";
 		};
 
-		test_spi: spi@33334444 {
+		test_spi: test_spi1: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "vnd,spi";
@@ -964,3 +965,5 @@
 		label = "FOO";
 	};
 };
+
+test_connector: &test_i2c {};

@@ -197,6 +197,57 @@
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
 /**
+ * @brief Get the C symbolic name of a node identifier by index
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             foo = <&n2 &n3>;
+ *     };
+ *
+ *     n2: n2_1: node-2 { ... };
+ *     n3: &n2:  node-3 { ... };
+ * @endcode
+ *
+ * Above, `foo` has type phandles and has two elements:
+ *
+ * - index 0 has phandle `&n2`, which is `node-2`'s phandle
+ * - index 1 has phandle `&n3`, which is `node-3`'s phandle
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define N1 DT_NODELABEL(n1)
+ *
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 0), 0) // n2
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 0), 1) // n2_1
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 0) // n2
+ * 	   DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 1) // n2_1
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 2) // n3
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx index into @p node_id
+ * @return C symbolic name of the node for the given index
+ * @note The @p idx retrieves node labels in left-to-right order, as shown
+ *       in the example.
+ */
+#define DT_NODELABEL_C_TOKEN_BY_IDX(node_id, idx) \
+	DT_CAT5(DT_N_NODELABEL_, node_id, _IDX_, idx, _C_TOKEN)
+
+/**
+ * @brief Get the C symbolic name for a node identifier
+ *
+ * This is equivalent to DT_NODELABEL_C_TOKEN_BY_IDX(node_id, 0).
+ *
+ * @param node_id node identifier
+ * @return C symbolic name of the node
+ */
+#define DT_NODELABEL_C_TOKEN(node_id) \
+	DT_NODELABEL_C_TOKEN_BY_IDX(node_id, 0)
+
+/**
  * @brief Get a node identifier from /aliases
  *
  * This macro's argument is a property of the `/aliases` node. It

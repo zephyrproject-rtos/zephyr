@@ -429,6 +429,45 @@ ZTEST(devicetree_api, test_has_nodelabel)
 		      1, "");
 }
 
+ZTEST(devicetree_api, test_nodelabel_c_token)
+{
+#define TEST_PHS_IDX(i) DT_PHANDLE_BY_IDX(TEST_PH, phs, i)
+
+	/* DT_NODELABEL_C_TOKEN */
+	const char *test_nodelabel = STRINGIFY(
+		DT_NODELABEL_C_TOKEN(
+			DT_PHANDLE(TEST_PH, gpios)));
+	zassert_equal(test_nodelabel, "test_nodelabel");
+	const char *test_i2c = STRINGIFY(
+		DT_NODELABEL_C_TOKEN(TEST_PHS_IDX(0)));
+	zassert_equal(test_i2c, "test_i2c");
+	const char *test_spi = STRINGIFY(
+		DT_NODELABEL_C_TOKEN(TEST_PHS_IDX(1)));
+	zassert_equal(test_spi, "test_spi");
+	const char *test_phandles = STRINGIFY(
+		DT_NODELABEL_C_TOKEN(TEST_PH));
+	zassert_equal(test_phandles, "test_phandles");
+
+	/* DT_NODELABEL_C_TOKEN_BY_IDX */
+	const char *test_i2c0 = STRINGIFY(
+		DT_NODELABEL_C_TOKEN_BY_IDX(TEST_PHS_IDX(0), 0));
+	zassert_equal(test_i2c0, "test_i2c");
+	const char *test_spi0 = STRINGIFY(
+		DT_NODELABEL_C_TOKEN_BY_IDX(TEST_PHS_IDX(1), 0));
+	zassert_equal(test_spi0, "test_spi");
+	const char *test_i2c1 = STRINGIFY(
+		DT_NODELABEL_C_TOKEN_BY_IDX(TEST_PHS_IDX(0), 1));
+	zassert_equal(test_i2c1, "test_i2c1");
+	const char *test_spi1 = STRINGIFY(
+		DT_NODELABEL_C_TOKEN_BY_IDX(TEST_PHS_IDX(1), 1));
+	zassert_equal(test_spi1, "test_spi1");
+	const char *test_connector = STRINGIFY(
+		DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE(TEST_PH, ph_conn), 2));
+	zassert_equal(test_connector, "test_connector");
+
+#undef TEST_PHS_IDX
+}
+
 ZTEST(devicetree_api, test_has_compat)
 {
 	unsigned int compats;
