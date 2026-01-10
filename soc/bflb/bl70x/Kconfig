@@ -13,6 +13,7 @@ config SOC_SERIES_BL70X
 	select FPU
 	select GEN_IRQ_VECTOR_TABLE
 	select INCLUDE_RESET_VECTOR
+	select REGULATOR
 	select RISCV
 	select RISCV_HAS_CLIC
 	select RISCV_MACHINE_TIMER

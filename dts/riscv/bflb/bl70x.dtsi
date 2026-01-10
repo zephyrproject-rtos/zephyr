@@ -254,6 +254,24 @@
 			interrupt-names = "hbn0", "hbn1", "bor";
 		};
 
+		reg_soc: regulator-soc@4000f000 {
+			compatible = "bflb,soc-regulator";
+			reg = <0x4000f000 0x1000>;
+			status = "okay";
+		};
+
+		reg_rt: regulator-rt@4000f000 {
+			compatible = "bflb,rt-regulator";
+			reg = <0x4000f000 0x1000>;
+			status = "okay";
+		};
+
+		reg_aon: regulator-aon@4000f000 {
+			compatible = "bflb,aon-regulator";
+			reg = <0x4000f000 0x1000>;
+			status = "okay";
+		};
+
 		retram: memory@40010000 {
 			compatible = "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
