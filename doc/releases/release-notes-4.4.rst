@@ -290,6 +290,12 @@ New APIs and options
     * :c:func:`cobs_encoder_write`
     * :c:func:`cobs_encoder_close`
 
+  * Disjoint-set support
+    * :c:struct:`sys_set_node`
+    * :c:func:`sys_set_makeset`
+    * :c:func:`sys_set_find`
+    * :c:func:`sys_set_union`
+
 * Video
 
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
