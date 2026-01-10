@@ -10,13 +10,13 @@
 /* Checks if the Machine Privilege Register Virtualization (MPRV) bit in mstatus is 1 (enabled). */
 static bool riscv_mprv_is_enabled(void)
 {
-	return csr_read(mstatus) & MSTATUS_MPRV;
+	return csr_read(CSR_MSTATUS) & MSTATUS_MPRV;
 }
 
 /* Checks if the Machine Previous Privilege (MPP) field in mstatus is set to M-Mode (0b11). */
 static bool riscv_mpp_is_m_mode(void)
 {
-	return (csr_read(mstatus) & MSTATUS_MPP) == MSTATUS_MPP;
+	return (csr_read(CSR_MSTATUS) & MSTATUS_MPP) == MSTATUS_MPP;
 }
 
 /**
