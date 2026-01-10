@@ -1,5 +1,6 @@
 board:
   name: dummy
+  full_name: dummy
   vendor: others
   socs:
   - name: unit_testing
