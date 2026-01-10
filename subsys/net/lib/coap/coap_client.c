@@ -415,10 +415,15 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 {
 	int ret;
 	struct coap_client_internal_request *internal_req;
-	size_t pathlen = strnlen(req->path, MAX_PATH_SIZE);
+	size_t pathlen;
 
-	if (client == NULL || sock < 0 || req == NULL || pathlen == 0 ||
-	    pathlen == MAX_PATH_SIZE || req->num_options > MAX_EXTRA_OPTIONS) {
+	if (client == NULL || sock < 0 || req == NULL || req->num_options > MAX_EXTRA_OPTIONS) {
+		return -EINVAL;
+	}
+
+	pathlen = strnlen(req->path, MAX_PATH_SIZE);
+
+	if (pathlen == 0 || pathlen == MAX_PATH_SIZE) {
 		return -EINVAL;
 	}
 
