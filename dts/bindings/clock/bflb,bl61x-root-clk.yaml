@@ -6,6 +6,12 @@ description: |
   Represents both FCLK and HCLK, which should be kept the same.
   Source -> FCLK / divider -> HCLK / divider -> BCLK
 
+  'clocks' take the form of:
+  clocks = <&clk_wifipll BL61X_WIFIPLL_320MHz>;
+  Where the phandle is one of clk_wifipll, clk_aupll (Unsupported), clk_crystal, or clk_rc32m.
+  The second argument is from include/zephyr/dt-bindings/clock/bflb_bl61x_clock.h
+
+
 compatible: "bflb,bl61x-root-clk"
 
 include: [base.yaml, clock-controller.yaml]

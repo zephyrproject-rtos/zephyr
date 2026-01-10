@@ -149,13 +149,17 @@
 				 <&clk_wifipll BL61X_WIFIPLL_240MHz>,
 				 <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
 				 <&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OCMAX_640MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OCMAX_480MHz>,
 				 <&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
 				 <&clk_root>, <&clk_bclk>, <&clk_flash>;
 			clock-names = "rc32m", "crystal",
 				      "wifipll_320",
 				      "wifipll_240",
-				      "wifipll_480",
-				      "wifipll_360",
+				      "wifipll_oc_480",
+				      "wifipll_oc_360",
+				      "wifipll_ocmax_640",
+				      "wifipll_ocmax_480",
 				      "aupll_div1", "aupll_div2",
 				      "root", "bclk", "flash";
 		};
