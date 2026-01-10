@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_IMSIC
+	bool "RISC-V IMSIC (Incoming Message-Signaled Interrupt Controller)"
+	default y if DT_HAS_RISCV_IMSIC_ENABLED
+	depends on RISCV && RISCV_ISA_EXT_SMCSRIND
+	help
+	  RISC-V Incoming Message-Signaled Interrupt Controller (IMSIC).
+	  Provides per-hart interrupt files for MSI delivery in RISC-V AIA.
+	  Automatically enabled when an IMSIC node exists in devicetree.
