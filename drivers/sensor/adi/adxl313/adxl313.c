@@ -194,6 +194,80 @@ static inline bool adxl313_bus_is_ready(const struct device *dev)
 	return cfg->bus_is_ready(&cfg->bus);
 }
 
+static int adxl313_attr_set_odr(const struct device *dev, const struct sensor_value *val)
+{
+	enum adxl313_odr odr;
+	struct adxl313_dev_data *data = dev->data;
+
+	switch (val->val1) {
+	case 6:
+		odr = ADXL313_ODR_6_25HZ;
+		break;
+	case 12:
+		odr = ADXL313_ODR_12_5HZ;
+		break;
+	case 25:
+		odr = ADXL313_ODR_25HZ;
+		break;
+	case 50:
+		odr = ADXL313_ODR_50HZ;
+		break;
+	case 100:
+		odr = ADXL313_ODR_100HZ;
+		break;
+	case 200:
+		odr = ADXL313_ODR_200HZ;
+		break;
+	case 400:
+		odr = ADXL313_ODR_400HZ;
+		break;
+	case 800:
+		odr = ADXL313_ODR_800HZ;
+		break;
+	case 1600:
+		odr = ADXL313_ODR_1600HZ;
+		break;
+	case 3200:
+		odr = ADXL313_ODR_3200HZ;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	data->odr = odr;
+
+	return adxl313_reg_write_mask(dev, ADXL313_REG_RATE, ADXL313_RATE_ODR_MSK, odr);
+}
+
+/**
+ * adxl313_attr_set - Set sensor attributes from an application.
+ *
+ * This function allows the application to configure key features of the ADXL313
+ * sensor by setting the appropriate attributes. The available attributes and
+ * their effects are:
+ *
+ * - SENSOR_ATTR_SAMPLING_FREQUENCY: Configures the output data rate (ODR) of
+ *	the sensor.
+ *
+ * @param dev Pointer to the device structure.
+ * @param chan The sensor channel (currently unused, reserved for future expansion).
+ * @param attr The attribute to configure (one of the SENSOR_ATTR_* options above).
+ * @param val Pointer to a sensor_value containing the desired value for the attribute.
+ *
+ * @return 0 on success, or a negative error code if the attribute is unsupported
+ *         or the configuration fails.
+ */
+static int adxl313_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY: /* ODR */
+		return adxl313_attr_set_odr(dev, val);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data *sample)
 {
 	uint8_t axis_data[ADXL313_FIFO_SAMPLE_SIZE];
@@ -333,6 +407,7 @@ static int adxl313_channel_get(const struct device *dev, enum sensor_channel cha
 }
 
 static DEVICE_API(sensor, adxl313_api_funcs) = {
+	.attr_set = adxl313_attr_set,
 	.sample_fetch = adxl313_sample_fetch,
 	.channel_get = adxl313_channel_get,
 #ifdef CONFIG_SENSOR_ASYNC_API
