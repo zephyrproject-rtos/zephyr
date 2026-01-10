@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_E4
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_E4
