@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2019 Nordic Semiconductor ASA.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +25,15 @@ extern "C" {
 #endif
 
 #ifdef _ASMLANGUAGE
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#define arch_irq_enable                     z_soc_irq_enable
+#define arch_irq_disable                    z_soc_irq_disable
+#define arch_irq_is_enabled                 z_soc_irq_is_enabled
+#else
+#define arch_irq_enable                     arm_irq_enable
+#define arch_irq_disable                    arm_irq_disable
+#define arch_irq_is_enabled                 arm_irq_is_enabled
+#endif
 GTEXT(z_arm_int_exit);
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
