@@ -69,25 +69,25 @@ Related configuration options can be found under
 
 * :kconfig:option:`CONFIG_LORAWAN_SYSTEM_MAX_RX_ERROR`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_AS923`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_AS923`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_AU915`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_AU915`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_CN470`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_CN470`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_CN779`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_CN779`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_EU433`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_EU433`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_EU868`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_EU868`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_KR920`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_KR920`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_IN865`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_IN865`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_US915`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_US915`
 
-* :kconfig:option:`CONFIG_LORAMAC_REGION_RU864`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_RU864`
 
 API Reference
 *************
