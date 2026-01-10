@@ -217,7 +217,7 @@ uint8_t __soc_ram_code get_irq(void *arg)
 						find_msb_set(int_pending) - 1;
 				LOG_DBG("Pending interrupt found: %d",
 						intc_irq);
-				LOG_DBG("CPU mepc: 0x%lx", csr_read(mepc));
+				LOG_DBG("CPU mepc: 0x%lx", csr_read(CSR_MEPC));
 				break;
 			}
 		}

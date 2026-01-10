@@ -62,7 +62,7 @@ static inline void DBG(char *msg, struct k_thread *t) { }
 
 static void z_riscv_fpu_disable(void)
 {
-	unsigned long status = csr_read(mstatus);
+	unsigned long status = csr_read(CSR_MSTATUS);
 
 	__ASSERT((status & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
 
@@ -76,9 +76,8 @@ static void z_riscv_fpu_disable(void)
 
 static void z_riscv_fpu_load(void)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
-	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0,
+	__ASSERT((csr_read(CSR_MSTATUS) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
+	__ASSERT((csr_read(CSR_MSTATUS) & MSTATUS_FS) == 0,
 		 "must be called with FPU access disabled");
 
 	/* become new owner */
@@ -100,9 +99,8 @@ static void z_riscv_fpu_load(void)
  */
 void arch_flush_local_fpu(void)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
-	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0,
+	__ASSERT((csr_read(CSR_MSTATUS) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
+	__ASSERT((csr_read(CSR_MSTATUS) & MSTATUS_FS) == 0,
 		 "must be called with FPU access disabled");
 
 	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
@@ -132,8 +130,7 @@ void arch_flush_local_fpu(void)
 #ifdef CONFIG_SMP
 static void flush_owned_fpu(struct k_thread *thread)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
+	__ASSERT((csr_read(CSR_MSTATUS) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
 
 	int i;
 	atomic_ptr_val_t owner;
@@ -206,8 +203,7 @@ void z_riscv_fpu_enter_exc(void)
  */
 void z_riscv_fpu_trap(struct arch_esf *esf)
 {
-	__ASSERT((esf->mstatus & MSTATUS_FS) == 0 &&
-		 (csr_read(mstatus) & MSTATUS_FS) == 0,
+	__ASSERT((esf->mstatus & MSTATUS_FS) == 0 && (csr_read(CSR_MSTATUS) & MSTATUS_FS) == 0,
 		 "called despite FPU being accessible");
 
 	/* save current owner's content  if any */
@@ -253,8 +249,7 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
  */
 static bool fpu_access_allowed(unsigned int exc_update_level)
 {
-	__ASSERT((csr_read(mstatus) & MSTATUS_IEN) == 0,
-		 "must be called with IRQs disabled");
+	__ASSERT((csr_read(CSR_MSTATUS) & MSTATUS_IEN) == 0, "must be called with IRQs disabled");
 
 	if (_current->arch.exception_depth == exc_update_level) {
 		/* We're about to execute non-exception code */

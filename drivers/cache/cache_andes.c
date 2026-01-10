@@ -79,7 +79,7 @@ static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size) { return 0; }
 static ALWAYS_INLINE int nds_cctl_range_operations(void *addr, size_t size, int line_size, int cmd)
 {
 	unsigned long last_byte, align_addr;
-	unsigned long status = csr_read(mstatus);
+	unsigned long status = csr_read(CSR_MSTATUS);
 
 	last_byte = (unsigned long)addr + size - 1;
 	align_addr = ROUND_DOWN(addr, line_size);
@@ -108,7 +108,7 @@ static ALWAYS_INLINE int nds_cctl_range_operations(void *addr, size_t size, int 
 static ALWAYS_INLINE int nds_l1i_cache_all(int op)
 {
 	unsigned long sets, ways, end;
-	unsigned long status = csr_read(mstatus);
+	unsigned long status = csr_read(CSR_MSTATUS);
 
 	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_VCCTL_2) {
 		/*
@@ -136,7 +136,7 @@ static ALWAYS_INLINE int nds_l1i_cache_all(int op)
 
 static ALWAYS_INLINE int nds_l1d_cache_all(int op)
 {
-	unsigned long status = csr_read(mstatus);
+	unsigned long status = csr_read(CSR_MSTATUS);
 
 	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_VCCTL_2) {
 		/*
@@ -227,7 +227,7 @@ void cache_data_enable(void)
 
 void cache_data_disable(void)
 {
-	unsigned long status = csr_read(mstatus);
+	unsigned long status = csr_read(CSR_MSTATUS);
 
 	if (IS_ENABLED(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)) {
 		return;

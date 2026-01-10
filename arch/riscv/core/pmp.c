@@ -147,17 +147,17 @@ void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 
 #ifdef CONFIG_64BIT
 	/* RV64: pmpcfg0 holds entries 0-7; pmpcfg2 holds entries 8-15. */
-	pmp_cfg[0] = csr_read(pmpcfg0);
+	pmp_cfg[0] = csr_read(CSR_PMPCFG0);
 #if CONFIG_PMP_SLOTS > 8
-	pmp_cfg[1] = csr_read(pmpcfg2);
+	pmp_cfg[1] = csr_read(CSR_PMPCFG2);
 #endif
 #else
 	/* RV32: Each pmpcfg register holds 4 entries. */
-	pmp_cfg[0] = csr_read(pmpcfg0);
-	pmp_cfg[1] = csr_read(pmpcfg1);
+	pmp_cfg[0] = csr_read(CSR_PMPCFG0);
+	pmp_cfg[1] = csr_read(CSR_PMPCFG1);
 #if CONFIG_PMP_SLOTS > 8
-	pmp_cfg[2] = csr_read(pmpcfg2);
-	pmp_cfg[3] = csr_read(pmpcfg3);
+	pmp_cfg[2] = csr_read(CSR_PMPCFG2);
+	pmp_cfg[3] = csr_read(CSR_PMPCFG3);
 #endif
 #endif
 }
@@ -177,7 +177,7 @@ void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
 {
 	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
 
-#define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
+#define PMPADDR_READ(x) pmp_addr[x] = csr_read(CSR_PMPADDR##x)
 	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
 
 #if CONFIG_PMP_SLOTS > 8
