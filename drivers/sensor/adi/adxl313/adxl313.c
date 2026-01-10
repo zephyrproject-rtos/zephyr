@@ -290,20 +290,42 @@ int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data 
 /**
  * adxl313_accel_convert - Convert a raw acceleration sample to a sensor_value.
  *
- * @out: Converted value for output, containing the initialized fractional.
- * @sample: Input raw measurement.
- * When working without decoder, neither TRIGGER, nor STREAM is enabled,
- * this small converter is used. It assumes full scale resolution and 4g.
+ * This function provides a fallback conversion path for raw acceleration
+ * samples when no decoder is available, i.e. when neither TRIGGER nor STREAM
+ * modes are enabled.
+ *
+ * The conversion assumes the device is operating in full-resolution mode
+ * unless specified otherwise. The resulting acceleration value is written
+ * to the provided @ref sensor_value structure, including the fractional
+ * component.
+ *
+ * @param[out] out Pointer to the sensor_value structure to be populated.
+ * @param sample  Raw acceleration sample read from the sensor.
+ * @param range   Configured acceleration range of the device.
+ * @param is_full_res Indicates whether full-resolution mode is enabled.
  */
-void adxl313_accel_convert(struct sensor_value *out, int16_t sample)
+static void adxl313_accel_convert(struct sensor_value *out, int16_t sample,
+				  enum adxl313_range range, bool is_full_res)
 {
-	/* full resolution enabled w/ 4g */
-	if (sample & BIT(12)) {
-		sample |= ADXL313_COMPLEMENT_MASK(13);
+	q31_t tmp;
+	int64_t accel;
+	uint8_t shift;
+
+	adxl313_accel_convert_q31(&tmp, sample, range, is_full_res);
+
+	/* Resolve effective resolution shift */
+	if (is_full_res) {
+		shift = range_to_shift[range];
+	} else {
+		/* No full-res: always 10-bit, 256 LSB/g */
+		shift = range_to_shift[ADXL313_RANGE_0_5G];
 	}
 
-	out->val1 = (sample * INT32_C(SENSOR_G / 32)) / 1000000;
-	out->val2 = (sample * INT32_C(SENSOR_G / 32)) % 1000000;
+	accel = (int64_t)tmp * SENSOR_G / 10;
+	accel >>= (31 - shift);
+
+	out->val1 = accel / 1000000;
+	out->val2 = accel % 1000000;
 }
 
 /**
@@ -383,19 +405,24 @@ static int adxl313_channel_get(const struct device *dev, enum sensor_channel cha
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl313_accel_convert(val, data->sample[idx].x);
+		adxl313_accel_convert(val, data->sample[idx].x, data->selected_range,
+				      data->is_full_res);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl313_accel_convert(val, data->sample[idx].y);
+		adxl313_accel_convert(val, data->sample[idx].y, data->selected_range,
+				      data->is_full_res);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl313_accel_convert(val, data->sample[idx].z);
+		adxl313_accel_convert(val, data->sample[idx].z, data->selected_range,
+				      data->is_full_res);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl313_accel_convert(val++, data->sample[idx].x);
-		adxl313_accel_convert(val++, data->sample[idx].y);
-		adxl313_accel_convert(val, data->sample[idx].z);
-
+		adxl313_accel_convert(val++, data->sample[idx].x, data->selected_range,
+				      data->is_full_res);
+		adxl313_accel_convert(val++, data->sample[idx].y, data->selected_range,
+				      data->is_full_res);
+		adxl313_accel_convert(val, data->sample[idx].z, data->selected_range,
+				      data->is_full_res);
 		break;
 	default:
 		return -ENOTSUP;

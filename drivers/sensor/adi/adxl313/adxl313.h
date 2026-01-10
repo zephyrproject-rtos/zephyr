@@ -111,6 +111,13 @@ enum adxl313_range {
 	ADXL313_RANGE_4G,
 };
 
+static const uint32_t range_to_shift[] = {
+	[ADXL313_RANGE_0_5G] = 5,
+	[ADXL313_RANGE_1G] = 6,
+	[ADXL313_RANGE_2G] = 7,
+	[ADXL313_RANGE_4G] = 8,
+};
+
 /* fifo: ctl and status */
 #define ADXL313_FIFO_SAMPLE_SIZE 6
 
@@ -170,6 +177,9 @@ struct adxl313_dev_config {
 	enum adxl313_odr odr;
 	uint8_t bus_type;
 };
+
+void adxl313_accel_convert_q31(q31_t *out, int16_t sample, enum adxl313_range range,
+			       bool is_full_res);
 
 int adxl313_reg_write_mask(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t data);
 
