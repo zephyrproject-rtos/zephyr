@@ -28,6 +28,16 @@
 #define ADXL313_DT_ODR_3200 15 /**< ODR 3200Hz setting for ADXL313 */
 /** @} */
 
+/**
+ * @defgroup ADXL313_RANGE g range options
+ * @{
+ */
+#define ADXL313_DT_RANGE_0_5G 0x00 /**< Range ±0.5g setting for ADXL313 */
+#define ADXL313_DT_RANGE_1G   0x01 /**< Range ±1g setting for ADXL313 */
+#define ADXL313_DT_RANGE_2G   0x02 /**< Range ±2g setting for ADXL313 */
+#define ADXL313_DT_RANGE_4G   0x03 /**< Range ±4g setting for ADXL313 */
+/** @} */
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX313_H_ */

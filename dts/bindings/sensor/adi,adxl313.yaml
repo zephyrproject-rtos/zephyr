@@ -43,6 +43,29 @@ properties:
       - 8
       - 9
 
+  range:
+    type: int
+    default: 3
+    description: |
+      Accelerometer g ranges. This is an optional setting. Defaulting the sensor
+      to the highest g-rate, i.e. +/- 4g, is an adaptation to unknown reality.
+      In case of mechanical shock and/or fast motion, the risk of clipping the
+      signal is reduced in comparison to a loqer g-rate, where the sensor would
+      flatten. The resolution at +/-4g is still sufficient and the noise floor
+      dominates stil before quantization does.
+      - 0 # 0.5g
+      - 1 # 1g
+      - 2 # 2g
+      - 3 # 4g
+      Note, the device is always in full resolution mode, where the output
+      resolution increases with the g range set by the range bits to maintain
+      1024 LSB/g sensitivity.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
 examples:
   - |
     adxl313: adxl313@0 {
