@@ -276,6 +276,17 @@
 			interrupt-parent = <&clic>;
 		};
 
+		powerctrl: power-controller@2000f000 {
+			compatible = "bflb,power-controller";
+			reg = <0x2000f000 0x1000>, <0x2000f000 0x1000>;
+			reg-names = "hbn", "aon";
+			status = "okay";
+
+			interrupts = <67 1>, <68 1>, <69 1>;
+			interrupt-parent = <&clic>;
+			interrupt-names = "hbn0", "hbn1", "bor";
+		};
+
 		retram: memory@20010000 {
 			compatible = "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(4)>;

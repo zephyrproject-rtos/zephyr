@@ -85,29 +85,6 @@ void system_sysmap_init(void)
 	sys_write32(SYSMAP_ATTR_STRONG_ORDER, (sysmap_base + SYSMAP_FLAGS_OFFSET));
 }
 
-/* brown out detection */
-void system_BOD_init(void)
-{
-	uint32_t tmp;
-
-	/* disable BOD interrupt */
-	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
-	tmp &= ~HBN_IRQ_BOR_EN_MSK;
-	sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
-
-	tmp = sys_read32(HBN_BASE + HBN_BOR_CFG_OFFSET);
-	/* when brownout threshold, restart*/
-	tmp |= HBN_BOD_SEL_MSK;
-	/* set BOD threshold:
-	 * 0:2.05v,1:2.10v,2:2.15v....7:2.4v
-	 */
-	tmp &= ~HBN_BOD_VTH_MSK;
-	tmp |= (7 << HBN_BOD_VTH_POS);
-	/* enable BOD */
-	tmp |= HBN_PU_BOD_MSK;
-	sys_write32(tmp, HBN_BASE + HBN_BOR_CFG_OFFSET);
-}
-
 static void enable_branchpred(bool yes)
 {
 	uint32_t tmp;
@@ -215,8 +192,6 @@ void soc_early_init_hook(void)
 	sys_write32(tmp, HBN_BASE + HBN_PAD_CTRL_0_OFFSET);
 
 	/* TODO: 'em' config for ble goes here */
-
-	system_BOD_init();
 
 	irq_unlock(key);
 }
