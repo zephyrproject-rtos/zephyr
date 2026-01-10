@@ -95,10 +95,17 @@ int adxl313_raw_reg_read(const struct device *dev, uint8_t addr, uint8_t *data, 
 
 /* registers not to be cached */
 static uint8_t adxl313_cache_volatile[] = {
-	ADXL313_REG_SOFT_RESET,  ADXL313_REG_INT_SOURCE,  ADXL313_REG_DATA_X0_REG,
-	ADXL313_REG_DATA_X1_REG, ADXL313_REG_DATA_Y0_REG, ADXL313_REG_DATA_Y1_REG,
-	ADXL313_REG_DATA_Z0_REG, ADXL313_REG_DATA_Z1_REG, ADXL313_REG_FIFO_STATUS,
+	ADXL313_REG_SOFT_RESET,  /* 0x18 - keep ordered */
+	ADXL313_REG_INT_SOURCE,  /* 0x30 */
+	ADXL313_REG_DATA_X0_REG, /* 0x32 */
+	ADXL313_REG_DATA_X1_REG, /* 0x33 */
+	ADXL313_REG_DATA_Y0_REG, /* 0x34 */
+	ADXL313_REG_DATA_Y1_REG, /* 0x35 */
+	ADXL313_REG_DATA_Z0_REG, /* 0x36 */
+	ADXL313_REG_DATA_Z1_REG, /* 0x37 */
+	ADXL313_REG_FIFO_STATUS, /* 0x39 */
 };
+#define cache_idx(reg) ((reg) - ADXL313_CACHE_START)
 
 enum adxl313_cache_res {
 	ADXL313_CACHE_HIT = 0,
@@ -382,6 +389,7 @@ static int adxl313_init(const struct device *dev)
 	}
 
 	/* initial setting */
+	data->odr = cfg->odr;
 	data->is_full_res = true;
 
 	/*
@@ -400,7 +408,7 @@ static int adxl313_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = adxl313_reg_write_mask(dev, ADXL313_REG_RATE, ADXL313_RATE_ODR_MSK, cfg->odr);
+	rc = adxl313_reg_write_mask(dev, ADXL313_REG_RATE, ADXL313_RATE_ODR_MSK, data->odr);
 	if (rc) {
 		LOG_ERR("Rate setting failed");
 		return rc;
@@ -440,7 +448,7 @@ static int adxl313_init(const struct device *dev)
 	RTIO_DEFINE(adxl313_rtio_ctx_##inst, 4 * ADXL313_FIFO_MAX_SIZE, 4 * ADXL313_FIFO_MAX_SIZE);
 
 #define ADXL313_CONFIG(inst)                                                                       \
-	.odr = ADXL313_ODR_25HZ, .selected_range = ADXL313_DATA_FORMAT_RANGE_4G,
+	.odr = DT_INST_PROP(inst, odr), .selected_range = ADXL313_DATA_FORMAT_RANGE_4G,
 
 #define ADXL313_CONFIG_SPI(inst)                                                                   \
 	{.bus = {.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \

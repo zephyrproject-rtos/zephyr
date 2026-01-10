@@ -8,6 +8,7 @@ description: |
   use the macros defined there.
 
   Example:
+  #include <zephyr/dt-bindings/sensor/adxl313.h>
 
   adxl313: adxl313@0 {
     compatible = "adi,adxl313";
@@ -18,3 +19,32 @@ description: |
   };
 
 include: sensor-device.yaml
+
+properties:
+  odr:
+    type: int
+    default: 6
+    description: |
+      Accelerometer output data rate (ODR). The recommended range is between
+      12.5 Hz and 400 Hz. This is an optional setting, defaults to 400 Hz.
+      - 0 # 6_25Hz
+      - 1 # 12.5Hz
+      - 2 # 25Hz
+      - 3 # 50Hz
+      - 4 # 100Hz
+      - 5 # 200Hz
+      - 6 # 400Hz
+      - 7 # 800Hz
+      - 8 # 1600Hz
+      - 9 # 3200Hz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
