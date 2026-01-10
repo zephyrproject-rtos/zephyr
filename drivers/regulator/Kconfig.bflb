@@ -1,0 +1,21 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_BFLB
+	bool "Bouffalolab power regulation drivers"
+	default y
+	depends on DT_HAS_BFLB_AON_REGULATOR_ENABLED || DT_HAS_BFLB_RT_REGULATOR_ENABLED \
+		|| DT_HAS_BFLB_SOC_REGULATOR_ENABLED
+	help
+	  Enable support for Bouffalolab power regulation
+
+if REGULATOR_BFLB
+
+config REGULATOR_BFLB_INIT_PRIORITY
+	int "Bouffalolab power regulation drivers init priority"
+	default 25
+	help
+	  Init priority for Bouffalolab power regulation drivers.
+	  Must be earlier than clock_control.
+
+endif

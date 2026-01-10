@@ -9,6 +9,7 @@ config SOC_SERIES_BL61X
 	select FLOAT_HARD
 	select FPU
 	select ICACHE
+	select REGULATOR
 	select RISCV
 	select SOC_EARLY_INIT_HOOK
 	select SYSCON
