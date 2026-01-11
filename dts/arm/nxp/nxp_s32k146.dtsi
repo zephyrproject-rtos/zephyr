@@ -73,6 +73,8 @@
 	interrupts = <85 0>, <86 0>, <88 0>, <89 0>;
 	interrupt-names = "warning", "error", "mb-0-15", "mb-16-31";
 	clocks = <&clock NXP_S32_FLEXCAN1_CLK>;
+	clock-names = "clksrc1";
+	clk-source = <1>;
 	number-of-mb = <32>;
 	number-of-mb-fd = <7>;
 };
@@ -82,5 +84,7 @@
 	interrupts = <92 0>, <93 0>, <95 0>;
 	interrupt-names = "warning", "error", "mb-0-15";
 	clocks = <&clock NXP_S32_FLEXCAN2_CLK>;
+	clock-names = "clksrc1";
+	clk-source = <1>;
 	number-of-mb = <16>;
 };

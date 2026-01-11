@@ -197,6 +197,7 @@
 				     <GIC_SPI 143 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
+			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
 			number-of-mb-fd = <14>;
@@ -213,6 +214,7 @@
 				     <GIC_SPI 145 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 14>;
+			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
 			number-of-mb-fd = <14>;

@@ -916,6 +916,7 @@
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
+			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
 			number-of-mb-fd = <14>;
@@ -928,6 +929,7 @@
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
+			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
 			number-of-mb-fd = <14>;
@@ -940,6 +942,7 @@
 			interrupts = <48 0>, <49 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
+			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
 			number-of-mb-fd = <14>;

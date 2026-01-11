@@ -289,8 +289,9 @@
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>, <82 0>;
 			interrupt-names = "ored-warning-bus-off", "error", "wake-up",
 					  "mb-0-15", "mb-16-31";
-
-			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
+			clocks = <&scg KINETIS_SCG_SOSC_ASYNC_DIV2_CLK>,
+				 <&scg KINETIS_SCG_CORESYS_CLK>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			status = "disabled";
 		};
@@ -300,7 +301,9 @@
 			reg = <0x40025000 0x1000>;
 			interrupts = <85 0>, <86 0>, <88 0>, <89 0>;
 			interrupt-names = "ored-warning-bus-off", "error", "mb-0-15", "mb-16-31";
-			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
+			clocks = <&scg KINETIS_SCG_SOSC_ASYNC_DIV2_CLK>,
+				 <&scg KINETIS_SCG_CORESYS_CLK>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			status = "disabled";
 		};
@@ -310,7 +313,9 @@
 			reg = <0x4002b000 0x1000>;
 			interrupts = <92 0>, <93 0>, <95 0>, <96 0>;
 			interrupt-names = "ored-warning-bus-off", "error", "mb-0-15", "mb-16-31";
-			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
+			clocks = <&scg KINETIS_SCG_SOSC_ASYNC_DIV2_CLK>,
+				 <&scg KINETIS_SCG_CORESYS_CLK>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			status = "disabled";
 		};

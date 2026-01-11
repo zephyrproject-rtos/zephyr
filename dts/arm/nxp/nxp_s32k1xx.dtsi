@@ -53,6 +53,7 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40024000 0x1000>;
 			clocks = <&clock NXP_S32_FLEXCAN0_CLK>;
+			clock-names = "clksrc1";
 			clk-source = <1>;
 			status = "disabled";
 		};
@@ -60,14 +61,12 @@
 		flexcan1: can@40025000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40025000 0x1000>;
-			clk-source = <1>;
 			status = "disabled";
 		};
 
 		flexcan2: can@4002b000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x4002b000 0x1000>;
-			clk-source = <1>;
 			status = "disabled";
 		};
 
