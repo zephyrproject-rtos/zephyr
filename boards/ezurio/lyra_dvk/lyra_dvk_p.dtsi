@@ -1,0 +1,17 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
