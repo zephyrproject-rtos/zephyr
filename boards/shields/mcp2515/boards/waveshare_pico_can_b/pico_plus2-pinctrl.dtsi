@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Special re-routing for "Pico (W)" or "Pico 2(W)" compatible boards
+ * without I2C bus 1 support, e.g. the "Pimoroni Pico Plus 2(W)".
+ *
+ * Changes the pin assignments for the required Pico SPI bus on GP4, GP5,
+ * GP6 and GP7, which conflict with I2C buss 0 on two of the same pins.
+ * I2C bus 0 is then assigned to GP16 and GP17 (formerly SPI MISO and CSn).
+ */
+
+/delete-node/ &i2c0_default;	/* force error when not existent */
+/delete-node/ &spi0_default;	/* force error when not existent */
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P16>, <I2C0_SCL_P17>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_CSN_P5>, <SPI0_SCK_P6>, <SPI0_TX_P7>;
+		};
+
+		group2 {
+			pinmux = <SPI0_RX_P4>;
+			input-enable;
+		};
+	};
+};

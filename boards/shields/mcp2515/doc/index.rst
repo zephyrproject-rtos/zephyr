@@ -336,6 +336,134 @@ For more information about the Adafruit PiCowbell CAN Bus shield:
 - `MCP2515 Datasheet`_
 - `TJA1051 Datasheet`_
 
+Waveshare Pico-CAN-B Shield for Pico
+************************************
+
+Overview
+--------
+
+The Waveshare Pico-CAN-B Shield uses the Microchip MCP2515 controller with an
+SN65HVD230 transceiver. This shield is built for the Raspberry Pi Pico (W) or
+Pico 2(W) or compatible boards and uses the SPI interface, but not in the
+standardized pin assignment.
+
+.. figure:: waveshare_pico_can_b.jpg
+   :align: center
+   :alt: Waveshare Pico-CAN-B Shield
+
+   Waveshare Pico-CAN-B Shield
+
+Hardware
+--------
+
+The Waveshare Pico-CAN-B Shield requires the SPI bus on Raspberry Pi Pico
+header pins that are not standardized for Zephyr. They conflict with the
+standardized use of the two I2C buses on GPIO lines 4 to 7. The shield
+resolves this conflict by swapping the pins of SPI0 with I2C0, and I2C1.
+
+However, in a stacked configuration with multiple shields on a Raspberry Pi
+Pico or Pico 2 or compatible board, this means that the physical capabilities
+must be carefully checked.
+
+- MCP2515
+
+        - Stand-Alone CAN 2.0B Controller
+        - Up to 1Mb/s baud rate
+        - Standard and extended data and remote frames
+        - 3x Tx Buffers
+        - 2x Rx Buffers
+        - 6x 29-bit Filters
+        - 2x 29-bit Masks
+        - Interrupt output
+        - One shot mode
+        - High speed SPI interface (10 MHz)
+
+- SN65HVD230
+
+        - Fully compatible with the “ISO 11898” standard
+        - High speed (up to 1 Mbaud)
+
+- Connectivity
+
+        - Screw terminal block - 3-pin 3.5mm (CAN)
+        - Pin header - 3-pin 100mil (CAN)
+        - Pin header - 3-pin 100mil (CAN bus termination)
+        - Raspberry Pi Pico header (SPI)
+        - Raspberry Pi Pico conflicts with SPI, and both I2C
+
++-------+-----------------------+---------------------------+
+| Name  | Function (original)   | Usage                     |
++=======+=======================+===========================+
+| GP0   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP1   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP2   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP3   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP4   | SPI-MISO   (I2C0-SDA) | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP5   | SPI-CS     (I2C0-SCL) | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP6   | SPI-SCK    (I2C1-SDA) | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP7   | SPI-MOSI   (I2C1-SCL) | MCP2515                   |
++-------+-----------------------+---------------------------+
+| GP8   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP9   | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP10  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP11  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP12  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP13  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP14  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP15  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP16  | I2C0-SDA              | (re-routed)               |
++-------+-----------------------+---------------------------+
+| GP17  | I2C0-SCL              | (re-routed)               |
++-------+-----------------------+---------------------------+
+| GP18  | I2C1-SDA              | (re-routed)               |
++-------+-----------------------+---------------------------+
+| GP19  | I2C1-SCL              | (re-routed)               |
++-------+-----------------------+---------------------------+
+| GP20  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP21  | GPIO_ACTIVE_LOW       | MCP2515 - INT             |
++-------+-----------------------+---------------------------+
+| GP22  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP23  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP24  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP25  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP26  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP27  | None                  |                           |
++-------+-----------------------+---------------------------+
+| GP28  | None                  |                           |
++-------+-----------------------+---------------------------+
+
+
+- Power Supply
+
+        - 3.3V ~ 5V
+
+For more information about the Waveshare Pico-CAN-B shield:
+
+- `Waveshare Website`_
+- `MCP2515 Datasheet`_
+- `SN65HVD230 Datasheet`_
+
 Seeed Studio XIAO CAN Bus Shield
 ********************************
 
@@ -431,9 +559,9 @@ Programming
 ***********
 
 Set ``--shield dfrobot_can_bus_v2_0`` or ``--shield keyestudio_can_bus_ks0411``
-or ``--shield adafruit_can_picowbell`` or ``--shield seeed_xiao_can``
-when you invoke ``west build`` or ``cmake`` in your Zephyr application.
-For example:
+or ``--shield adafruit_can_picowbell`` or ``--shield waveshare_pico_can_b``
+or ``--shield seeed_xiao_can`` when you invoke ``west build`` or ``cmake``
+in your Zephyr application. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
@@ -454,6 +582,13 @@ For example:
    :tool: all
    :board: rpi_pico
    :shield: adafruit_can_picowbell
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/can/counter
+   :tool: all
+   :board: rpi_pico
+   :shield: waveshare_pico_can_b
    :goals: build
 
 .. zephyr-app-commands::
@@ -505,3 +640,6 @@ For example:
 
 .. _SN65HVD230 Datasheet:
    https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf
+
+.. _Waveshare Website:
+   https://www.waveshare.com/wiki/Pico-CAN-B

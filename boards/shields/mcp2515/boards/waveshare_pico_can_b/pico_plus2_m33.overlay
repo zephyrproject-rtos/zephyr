@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Support for "Pimoroni Pico Plus 2 (Cortex-M33)". */
+
+#include "pico_plus2-pinctrl.dtsi"

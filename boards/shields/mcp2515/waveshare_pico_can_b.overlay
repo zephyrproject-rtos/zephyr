@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2515_waveshare_pico_can_b;
+	};
+};
+
+&pico_spi {
+	status = "okay";
+	cs-gpios = <&pico_header 5 GPIO_ACTIVE_LOW>;
+
+	mcp2515_waveshare_pico_can_b: can@0 {
+		compatible = "microchip,mcp2515";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		osc-freq = <DT_FREQ_M(16)>;
+		int-gpios = <&pico_header 21 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};

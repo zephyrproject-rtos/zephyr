@@ -12,3 +12,6 @@ config SHIELD_ADAFRUIT_CAN_PICOWBELL
 
 config SHIELD_SEEED_XIAO_CAN
 	def_bool $(shields_list_contains,seeed_xiao_can)
+
+config SHIELD_WAVESHARE_PICO_CAN_B
+	def_bool $(shields_list_contains,waveshare_pico_can_b)
