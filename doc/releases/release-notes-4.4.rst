@@ -138,6 +138,11 @@ New APIs and options
 
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
 
+* Devicetree
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 * Ethernet
 
   * Driver MAC address configuration with support for NVMEM cell.
