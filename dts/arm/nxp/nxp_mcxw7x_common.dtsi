@@ -376,7 +376,6 @@
 		interrupts = <47 0>;
 		interrupt-names = "common";
 		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
-		clk-source = <2>;
 		number-of-mb = <32>;
 		status = "disabled";
 	};

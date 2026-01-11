@@ -923,7 +923,6 @@
 		interrupts = <62 0>;
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
-		clk-source = <0>;
 		number-of-mb = <32>;
 		number-of-mb-fd = <7>;
 		status = "disabled";
@@ -935,7 +934,6 @@
 		interrupts = <63 0>;
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
-		clk-source = <0>;
 		number-of-mb = <32>;
 		number-of-mb-fd = <7>;
 		status = "disabled";

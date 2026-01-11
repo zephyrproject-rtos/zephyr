@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2019-2026 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -38,7 +38,9 @@ properties:
 
   clk-source:
     type: int
-    required: true
+    enum:
+      - 0
+      - 1
     description: CAN engine clock source
 
   number-of-mb:

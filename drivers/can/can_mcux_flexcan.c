@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2019-2026 Vestas Wind Systems A/S
  * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -64,7 +64,7 @@ struct mcux_flexcan_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	int clk_source;
+	uint32_t clk_source;
 	uint32_t number_of_mb;
 	uint32_t rx_mb;
 	uint32_t tx_mb;
@@ -1521,7 +1521,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(id, name),			\
-		.clk_source = DT_INST_PROP(id, clk_source),		\
+		.clk_source = DT_INST_PROP_OR(id, clk_source, 0U),	\
 		.number_of_mb = FLEXCAN_INST_NUMBER_OF_MB(id),		\
 		.rx_mb = FLEXCAN_INST_RX_MB(id),			\
 		.tx_mb = FLEXCAN_INST_TX_MB(id),			\
