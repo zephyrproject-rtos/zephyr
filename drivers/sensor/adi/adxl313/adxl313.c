@@ -910,6 +910,7 @@ static DEVICE_API(sensor, adxl313_api_funcs) = {
 	.trigger_set = adxl313_trigger_set,
 #endif
 #ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = adxl313_submit,
 	.get_decoder = adxl313_get_decoder,
 #endif
 };
@@ -1024,7 +1025,7 @@ static int adxl313_init(const struct device *dev)
 	fifo_mode = ADXL313_FIFO_BYPASSED;
 	fifo_samples = 0;
 	int_en = 0x00;
-#if defined(CONFIG_ADXL313_TRIGGER)
+#if defined(CONFIG_ADXL313_TRIGGER) || defined(CONFIG_ADXL313_STREAM)
 	if (adxl313_init_interrupt(dev)) {
 		LOG_DBG("No IRQ lines specified, fallback to FIFO BYPASSED");
 		fifo_mode = ADXL313_FIFO_BYPASSED;
@@ -1143,7 +1144,12 @@ static int adxl313_init(const struct device *dev)
 		 "Invalid fifo-watermark setting, consult dts/bindings "                           \
 		 "for valid ranges.");                                                             \
                                                                                                    \
-	static struct adxl313_dev_data adxl313_data_##inst = {};                                   \
+	IF_ENABLED(CONFIG_ADXL313_STREAM, (ADXL313_RTIO_DEFINE(inst)));                            \
+                                                                                                   \
+	static struct adxl313_dev_data adxl313_data_##inst = {                                     \
+		IF_ENABLED(CONFIG_ADXL313_STREAM, (                                \
+			.rtio_ctx = &adxl313_rtio_ctx_##inst,                       \
+			.iodev = &adxl313_iodev_##inst,)) };               \
                                                                                                    \
 	static const struct adxl313_dev_config adxl313_config_##inst =                             \
 			    COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                 \

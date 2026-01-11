@@ -15,6 +15,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/sensor/adxl313.h>
 
+#ifdef CONFIG_ADXL313_STREAM
+#include <zephyr/rtio/rtio.h>
+#endif /* CONFIG_ADXL313_STREAM */
+
 #define DT_DRV_COMPAT adi_adxl313
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
@@ -216,6 +220,13 @@ struct adxl313_dev_data {
 	struct k_work work;
 #endif
 #endif /* CONFIG_ADXL313_TRIGGER */
+#ifdef CONFIG_ADXL313_STREAM
+	struct rtio_iodev_sqe *iodev_sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint8_t reg_fifo_status;
+	struct rtio *r_cb;
+#endif /* CONFIG_ADXL313_STREAM */
 };
 
 typedef bool (*adxl313_bus_is_ready_fn)(const union adxl313_bus *bus);
@@ -244,6 +255,12 @@ int adxl313_set_gpios_en(const struct device *dev, bool enable);
 bool adxl313_is_measure_en(const struct device *dev);
 int adxl313_set_measure_en(const struct device *dev, bool en);
 int adxl313_flush_fifo(const struct device *dev);
+
+#ifdef CONFIG_ADXL313_STREAM
+int adxl313_flush_fifo_async(const struct device *dev);
+void adxl313_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void adxl313_stream_fifo_irq_handler(const struct device *dev);
+#endif
 
 #ifdef CONFIG_ADXL313_TRIGGER
 int adxl313_get_fifo_entries(const struct device *dev);
@@ -275,7 +292,14 @@ int adxl313_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data *sample);
 
 #ifdef CONFIG_SENSOR_ASYNC_API
+void adxl313_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl313_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 #endif /* CONFIG_SENSOR_ASYNC_API */
+
+#ifdef CONFIG_ADXL313_STREAM
+int adxl313_configure_fifo(const struct device *dev, enum adxl313_fifo_mode mode,
+			   uint8_t fifo_samples);
+size_t adxl313_get_packet_size(const struct adxl313_dev_config *cfg);
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL313_ADXL313_H_ */

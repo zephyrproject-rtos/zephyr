@@ -10,6 +10,7 @@ config ADXL313
 	depends on DT_HAS_ADI_ADXL313_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL313),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL313),spi)
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for adxl313 Three-Axis Digital Accelerometer.
 
@@ -35,6 +36,14 @@ config ADXL313_TRIGGER_OWN_THREAD
 	select ADXL313_TRIGGER
 
 endchoice
+
+config ADXL313_STREAM
+	bool "Use FIFO to stream data"
+	select ADXL313_TRIGGER
+	depends on (SPI_RTIO || I2C_RTIO)
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
 
 config ADXL313_TRIGGER
 	bool

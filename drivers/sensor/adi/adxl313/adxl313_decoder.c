@@ -72,6 +72,88 @@ void adxl313_accel_convert_q31(q31_t *out, int16_t sample, enum adxl313_range ra
 	}
 }
 
+#ifdef CONFIG_ADXL313_STREAM
+static const uint32_t accel_period_ns[] = {
+	[ADXL313_ODR_6_25HZ] = UINT32_C(1000000000) / 6,
+	[ADXL313_ODR_12_5HZ] = UINT32_C(1000000000) / 12,
+	[ADXL313_ODR_25HZ] = UINT32_C(1000000000) / 25,
+	[ADXL313_ODR_50HZ] = UINT32_C(1000000000) / 50,
+	[ADXL313_ODR_100HZ] = UINT32_C(1000000000) / 100,
+	[ADXL313_ODR_200HZ] = UINT32_C(1000000000) / 200,
+	[ADXL313_ODR_400HZ] = UINT32_C(1000000000) / 400,
+	[ADXL313_ODR_800HZ] = UINT32_C(1000000000) / 800,
+	[ADXL313_ODR_1600HZ] = UINT32_C(1000000000) / 1600,
+	[ADXL313_ODR_3200HZ] = UINT32_C(1000000000) / 3200,
+};
+
+static int adxl313_decode_stream(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				 uint32_t *fit, uint16_t max_count, void *data_out)
+{
+	const struct adxl313_fifo_data *enc_data = (const struct adxl313_fifo_data *)buffer;
+	const uint8_t *buffer_end =
+		buffer + sizeof(struct adxl313_fifo_data) + enc_data->fifo_byte_count;
+	int count = 0;
+	uint8_t sample_num = 0;
+
+	if ((uintptr_t)buffer_end <= *fit || chan_spec.chan_idx != 0) {
+		return 0;
+	}
+
+	struct sensor_three_axis_data *out = (struct sensor_three_axis_data *)data_out;
+	enum adxl313_range selected_range = enc_data->selected_range;
+
+	memset(out, 0, sizeof(*out));
+	out->header.base_timestamp_ns = enc_data->timestamp;
+	out->header.reading_count = 1;
+	out->shift = range_to_shift[selected_range];
+
+	buffer += sizeof(struct adxl313_fifo_data);
+
+	uint8_t sample_set_size = enc_data->sample_set_size;
+	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	bool is_full_res = enc_data->is_full_res;
+
+	/* Calculate which sample is decoded. */
+	if ((uint8_t *)*fit >= buffer) {
+		sample_num = ((uint8_t *)*fit - buffer) / sample_set_size;
+	}
+
+	while (count < max_count && buffer < buffer_end) {
+		const uint8_t *sample_end = buffer;
+
+		sample_end += sample_set_size;
+
+		if ((uintptr_t)buffer < *fit) {
+			/* This frame was already decoded, move on to the next frame */
+			buffer = sample_end;
+			continue;
+		}
+
+		switch (chan_spec.chan_type) {
+		case SENSOR_CHAN_ACCEL_XYZ:
+			out->readings[count].timestamp_delta = sample_num * period_ns;
+
+			adxl313_accel_convert_q31(&out->readings[count].x, *(int16_t *)buffer,
+						  selected_range, is_full_res);
+
+			adxl313_accel_convert_q31(&out->readings[count].y, *(int16_t *)(buffer + 2),
+						  selected_range, is_full_res);
+
+			adxl313_accel_convert_q31(&out->readings[count].z, *(int16_t *)(buffer + 4),
+						  selected_range, is_full_res);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+		buffer = sample_end;
+		*fit = (uintptr_t)sample_end;
+		count++;
+	}
+	return count;
+}
+
+#endif /* CONFIG_ADXL313_STREAM */
+
 static int adxl313_decoder_get_frame_count(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 					   uint16_t *frame_count)
 {
@@ -81,18 +163,41 @@ static int adxl313_decoder_get_frame_count(const uint8_t *buffer, struct sensor_
 		return ret;
 	}
 
-	switch (chan_spec.chan_type) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_XYZ:
-		*frame_count = 1;
-		ret = 0;
-		break;
+#ifdef CONFIG_ADXL313_STREAM
+	const struct adxl313_fifo_data *data = (const struct adxl313_fifo_data *)buffer;
 
-	default:
-		break;
+	if (!data->is_fifo) {
+#endif /* CONFIG_ADXL313_STREAM */
+		switch (chan_spec.chan_type) {
+		case SENSOR_CHAN_ACCEL_X:
+		case SENSOR_CHAN_ACCEL_Y:
+		case SENSOR_CHAN_ACCEL_Z:
+		case SENSOR_CHAN_ACCEL_XYZ:
+			*frame_count = 1;
+			ret = 0;
+			break;
+
+		default:
+			break;
+		}
+#ifdef CONFIG_ADXL313_STREAM
+	} else {
+		if (data->fifo_byte_count == 0) {
+			*frame_count = 0;
+			ret = 0;
+		} else {
+			switch (chan_spec.chan_type) {
+			case SENSOR_CHAN_ACCEL_XYZ:
+				*frame_count = data->fifo_byte_count / data->sample_set_size;
+				ret = 0;
+				break;
+
+			default:
+				break;
+			}
+		}
 	}
+#endif /* CONFIG_ADXL313_STREAM */
 
 	return ret;
 }
@@ -134,6 +239,10 @@ static int adxl313_decode_sample(const struct adxl313_xyz_accel_data *data,
 static int adxl313_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				  uint32_t *fit, uint16_t max_count, void *data_out)
 {
+#ifdef CONFIG_ADXL313_STREAM
+	return adxl313_decode_stream(buffer, chan_spec, fit, max_count, data_out);
+#endif /* CONFIG_ADXL313_STREAM */
+
 	const struct adxl313_xyz_accel_data *data = (const struct adxl313_xyz_accel_data *)buffer;
 
 	return adxl313_decode_sample(data, chan_spec, fit, max_count, data_out);
