@@ -324,7 +324,6 @@
 		interrupts = <109 0>, <110 0>, <111 0>, <112 0>;
 		interrupt-names = "flexcan0-0", "flexcan0-1", "flexcan0-2", "flexcan0-3";
 		clocks = <&mc_cgm MCUX_FLEXCAN0_CLK>;
-		clk-source = <0>;
 		status = "disabled";
 	};
 
@@ -334,7 +333,6 @@
 		interrupts = <113 0>, <114 0>, <115 0>;
 		interrupt-names = "flexcan1-0", "flexcan1-1", "flexcan1-2";
 		clocks = <&mc_cgm MCUX_FLEXCAN1_CLK>;
-		clk-source = <0>;
 		status = "disabled";
 	};
 
@@ -344,7 +342,6 @@
 		interrupts = <116 0>, <117 0>, <118 0>;
 		interrupt-names = "flexcan2-0", "flexcan2-1", "flexcan2-2";
 		clocks = <&mc_cgm MCUX_FLEXCAN2_CLK>;
-		clk-source = <0>;
 		status = "disabled";
 	};
 
@@ -354,7 +351,6 @@
 		interrupts = <119 0>, <120 0>;
 		interrupt-names = "flexcan3-0", "flexcan3-1";
 		clocks = <&mc_cgm MCUX_FLEXCAN3_CLK>;
-		clk-source = <0>;
 		status = "disabled";
 	};
 
@@ -364,7 +360,6 @@
 		interrupts = <121 0>, <122 0>;
 		interrupt-names = "flexcan4-0", "flexcan4-1";
 		clocks = <&mc_cgm MCUX_FLEXCAN4_CLK>;
-		clk-source = <0>;
 		status = "disabled";
 	};
 
@@ -374,7 +369,6 @@
 		interrupts = <123 0>, <124 0>;
 		interrupt-names = "flexcan5-0", "flexcan5-1";
 		clocks = <&mc_cgm MCUX_FLEXCAN5_CLK>;
-		clk-source = <0>;
 		status = "disabled";
 	};
 
