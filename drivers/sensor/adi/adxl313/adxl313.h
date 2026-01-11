@@ -129,8 +129,31 @@ static const uint32_t range_to_shift[] = {
 #define ADXL313_FIFO_STATUS_ENTRIES_MSK GENMASK(5, 0)
 #define ADXL313_FIFO_MAX_SIZE           32
 
+enum adxl313_fifo_mode {
+	ADXL313_FIFO_BYPASSED,
+	ADXL313_FIFO_OLD_SAVED,
+	ADXL313_FIFO_STREAMED,
+	ADXL313_FIFO_TRIGGERED
+};
+
 #define ADXL313_BUS_I2C 0
 #define ADXL313_BUS_SPI 1
+
+struct adxl313_fifo_config {
+	enum adxl313_fifo_mode fifo_mode;
+	uint8_t fifo_samples; /* number of entries to read for STREAM */
+};
+
+struct adxl313_fifo_data {
+	uint8_t is_fifo: 1;
+	uint8_t is_full_res: 1;
+	enum adxl313_range selected_range: 2;
+	uint8_t sample_set_size: 4;
+	uint8_t int_status;
+	uint16_t accel_odr: 4;
+	uint16_t fifo_byte_count: 12;
+	uint64_t timestamp;
+} __attribute__((__packed__));
 
 struct adxl313_xyz_accel_data {
 	enum adxl313_range selected_range;
@@ -160,9 +183,35 @@ struct adxl313_dev_data {
 	struct adxl313_xyz_accel_data sample[ADXL313_FIFO_MAX_SIZE];
 	int8_t fifo_entries; /* the actual read FIFO entries */
 	uint8_t sample_idx;  /* index counting up sample_number entries */
+	struct adxl313_fifo_config fifo_config;
 	bool is_full_res;
 	enum adxl313_odr odr;
 	enum adxl313_range selected_range;
+#ifdef CONFIG_ADXL313_TRIGGER
+	struct k_mutex trigger_mutex;
+	struct gpio_callback int1_cb;
+	struct gpio_callback int2_cb;
+	sensor_trigger_handler_t act_handler;
+	const struct sensor_trigger *act_trigger;
+	sensor_trigger_handler_t inact_handler;
+	const struct sensor_trigger *inact_trigger;
+	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t wm_handler;
+	const struct sensor_trigger *wm_trigger;
+	sensor_trigger_handler_t overrun_handler;
+	const struct sensor_trigger *overrun_trigger;
+	const struct device *dev;
+	uint64_t timestamp;
+	uint8_t reg_int_source;
+#if defined(CONFIG_ADXL313_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL313_THREAD_STACK_SIZE);
+	struct k_sem gpio_sem;
+	struct k_thread thread;
+#elif defined(CONFIG_ADXL313_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+#endif /* CONFIG_ADXL313_TRIGGER */
 };
 
 typedef bool (*adxl313_bus_is_ready_fn)(const union adxl313_bus *bus);
@@ -176,12 +225,35 @@ struct adxl313_dev_config {
 	enum adxl313_range selected_range;
 	enum adxl313_odr odr;
 	uint8_t bus_type;
+#ifdef CONFIG_ADXL313_TRIGGER
+	struct gpio_dt_spec gpio_int1;
+	struct gpio_dt_spec gpio_int2;
+	int8_t drdy_pad;
+	uint8_t fifo_samples;
+#endif
 };
 
 void adxl313_accel_convert_q31(q31_t *out, int16_t sample, enum adxl313_range range,
 			       bool is_full_res);
 
+int adxl313_set_gpios_en(const struct device *dev, bool enable);
+bool adxl313_is_measure_en(const struct device *dev);
+int adxl313_set_measure_en(const struct device *dev, bool en);
+int adxl313_flush_fifo(const struct device *dev);
+
+#ifdef CONFIG_ADXL313_TRIGGER
+int adxl313_get_fifo_entries(const struct device *dev);
+int adxl313_get_status(const struct device *dev, uint8_t *status);
+
+int adxl313_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+
+int adxl313_init_interrupt(const struct device *dev);
+#endif
+
 int adxl313_reg_write_mask(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t data);
+
+int adxl313_reg_assign_bits(const struct device *dev, uint8_t reg, uint8_t mask, bool en);
 
 int adxl313_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr, uint8_t *data,
 		       size_t len);
@@ -197,5 +269,9 @@ int adxl313_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 int adxl313_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
 
 int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data *sample);
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+int adxl313_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+#endif /* CONFIG_SENSOR_ASYNC_API */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL313_ADXL313_H_ */

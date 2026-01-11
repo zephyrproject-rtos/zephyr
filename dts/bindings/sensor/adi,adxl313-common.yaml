@@ -16,11 +16,53 @@ description: |
     spi-cpha;
     spi-cpol;
     spi-max-frequency = <5000000>;
+    int1-gpios =  <&gpio0 4 GPIO_ACTIVE_HIGH>;
+    drdy-pin = <1>;
+    fifo-watermark = <30>;
   };
 
 include: sensor-device.yaml
 
 properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      Specify if this gpio line is connected and available. None, only one or
+      both interrupt lines can be connected. The pin defaults to active high
+      when produced by the sensor. The property specifies the INT_1 line of
+      the sensor.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      Specify if this gpio line is connected and available. None, only one or
+      both interrupt lines can be connected. The pin defaults to active high
+      when produced by the sensor. The property specifies the INT_2 line of
+      the sensor.
+
+  drdy-pin:
+    type: int
+    enum: [1, 2]
+    description: |
+      Specify which of the two interrupt lines (INT_1 or INT_2), if any,
+      actively delivers the data signal.
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 2.
+      - 1 # INT1
+      - 2 # INT2
+
+  fifo-watermark:
+    default: 0
+    type: int
+    description: |
+      Acceleration samples can be read either directly from the sensor or via
+      the internal FIFO buffer. When FIFO buffering is enabled, an interrupt
+      line must be configured to signal FIFO watermark events. Other events,
+      such as Activity or Inactivity, do not rely on FIFO configuration.
+      Valid range: from 1 to 31. A value of 0 disables FIFO buffering and is the
+      default. The setting thus is optional.
+
   odr:
     type: int
     default: 6

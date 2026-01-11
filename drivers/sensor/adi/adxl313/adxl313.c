@@ -26,6 +26,13 @@ static const uint8_t adxl313_range_init[] = {
 	[ADXL313_RANGE_4G] = ADXL313_DT_RANGE_4G,
 };
 
+static const uint8_t adxl313_fifo_ctl_mode_init[] = {
+	[ADXL313_FIFO_BYPASSED] = ADXL313_FIFO_CTL_MODE_BYPASSED,
+	[ADXL313_FIFO_OLD_SAVED] = ADXL313_FIFO_CTL_MODE_OLD_SAVED,
+	[ADXL313_FIFO_STREAMED] = ADXL313_FIFO_CTL_MODE_STREAMED,
+	[ADXL313_FIFO_TRIGGERED] = ADXL313_FIFO_CTL_MODE_TRIGGERED,
+};
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 static bool adxl313_bus_is_ready_i2c(const union adxl313_bus *bus)
 {
@@ -187,11 +194,136 @@ int adxl313_reg_write_mask(const struct device *dev, uint8_t reg, uint8_t mask, 
 	return adxl313_reg_write_byte(dev, reg, tmp);
 }
 
+int adxl313_reg_assign_bits(const struct device *dev, uint8_t reg, uint8_t mask, bool en)
+{
+	return adxl313_reg_write_mask(dev, reg, mask, en ? mask : 0x00);
+}
+
 static inline bool adxl313_bus_is_ready(const struct device *dev)
 {
 	const struct adxl313_dev_config *cfg = dev->config;
 
 	return cfg->bus_is_ready(&cfg->bus);
+}
+
+bool adxl313_is_measure_en(const struct device *dev)
+{
+	uint8_t regval;
+	int ret;
+
+	ret = adxl313_reg_read_byte(dev, ADXL313_REG_POWER_CTL, &regval);
+	if (ret) {
+		return false;
+	}
+
+	return !!(FIELD_GET(ADXL313_POWER_CTL_MEASURE, regval));
+}
+
+int adxl313_set_measure_en(const struct device *dev, bool en)
+{
+	return adxl313_reg_assign_bits(dev, ADXL313_REG_POWER_CTL, ADXL313_POWER_CTL_MEASURE, en);
+}
+
+int adxl313_get_fifo_entries(const struct device *dev)
+{
+	uint8_t regval;
+	int ret;
+
+	ret = adxl313_reg_read_byte(dev, ADXL313_REG_FIFO_STATUS, &regval);
+	if (ret) {
+		return ret;
+	}
+
+	return FIELD_GET(ADXL313_FIFO_STATUS_ENTRIES_MSK, regval);
+}
+
+int adxl313_get_status(const struct device *dev, uint8_t *status)
+{
+	return adxl313_reg_read_byte(dev, ADXL313_REG_INT_SOURCE, status);
+}
+
+int adxl313_flush_fifo(const struct device *dev)
+{
+#if defined(CONFIG_ADXL313_TRIGGER)
+	/*
+	 * Simply turning off (BYPASSED) and then back on (e.g., set to STREAM)
+	 * the FIFO does not fully reset its status and control registers, as
+	 * mentioned in the datasheet. This behavior can be observed by enabling
+	 * CONFIG_ADXL313_TRIGGER and creating an application that registers a
+	 * handler for watermark or overrun events. Simply toggling the FIFO
+	 * state will never trigger these events. Therefore, it is necessary to
+	 * ensure that the FIFO is read completely empty.
+	 */
+	uint8_t sample_line[ADXL313_FIFO_SAMPLE_SIZE];
+	int rc;
+
+	rc = adxl313_set_measure_en(dev, false);
+	if (rc) {
+		return rc;
+	}
+
+	while (true) {
+		int8_t fifo_entries = adxl313_get_fifo_entries(dev);
+
+		if (fifo_entries < 0) {
+			return fifo_entries;
+		}
+
+		if (fifo_entries == 0) {
+			break;
+		}
+
+		fifo_entries += 1;
+		while (fifo_entries > 0) { /* Read FIFO entries + 1 sample lines */
+			rc = adxl313_raw_reg_read(dev, ADXL313_REG_DATA_XYZ_REGS, sample_line,
+						  ADXL313_FIFO_SAMPLE_SIZE);
+			if (rc) {
+				return rc;
+			}
+
+			fifo_entries--;
+		}
+	}
+#endif /* CONFIG_ADXL313_TRIGGER */
+
+	return adxl313_set_measure_en(dev, true);
+}
+
+/**
+ * adxl313_configure_fifo - Configure the FIFO operating parameters.
+ *
+ * This function sets the FIFO mode and watermark level used to control FIFO
+ * behavior. Depending on the selected mode, the FIFO may be bypassed or operated
+ * in a streamed configuration. When the FIFO is bypassed, the watermark level
+ * is reset accordingly.
+ *
+ * @param dev Pointer to the device structure.
+ * @param mode FIFO operating mode. Typically either
+ *             ADXL313_FIFO_BYPASSED or ADXL313_FIFO_STREAMED.
+ * @param fifo_samples FIFO watermark level, expressed as the number of samples
+ *                     required to trigger a FIFO_FULL condition. Valid values
+ *                     range from 0 to 32; selecting ADXL313_FIFO_BYPASSED
+ *                     implicitly resets this value to 0.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int adxl313_configure_fifo(const struct device *dev, enum adxl313_fifo_mode mode,
+			   uint8_t fifo_samples)
+{
+	struct adxl313_dev_data *data = dev->data;
+	uint8_t fifo_config = adxl313_fifo_ctl_mode_init[mode];
+
+	data->fifo_config.fifo_mode = mode;
+
+	/* Although rather cosmetic, clear config in case of BYPASSED. */
+	if (mode == ADXL313_FIFO_BYPASSED) {
+		fifo_samples = 0;
+	}
+
+	data->fifo_config.fifo_samples = MIN(fifo_samples, ADXL313_FIFO_MAX_SIZE);
+	fifo_config |= data->fifo_config.fifo_samples;
+
+	return adxl313_reg_write_byte(dev, ADXL313_REG_FIFO_CTL, fifo_config);
 }
 
 static int adxl313_attr_set_odr(const struct device *dev, const struct sensor_value *val)
@@ -284,6 +416,13 @@ int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data 
 	sample->y = axis_data[2] | axis_data[3] << 8;
 	sample->z = axis_data[4] | axis_data[5] << 8;
 
+#ifdef CONFIG_ADXL313_TRIGGER
+	struct adxl313_dev_data *data = dev->data;
+
+	sample->is_full_res = data->is_full_res; /* needed for decoder */
+	sample->selected_range = data->selected_range;
+#endif
+
 	return rc;
 }
 
@@ -348,6 +487,14 @@ static int adxl313_sample_fetch(const struct device *dev, enum sensor_channel ch
 	int rc;
 
 	count = 1;
+
+	/* FIFO BYPASSED is the only mode not using a FIFO buffer */
+	if (data->fifo_config.fifo_mode != ADXL313_FIFO_BYPASSED) {
+		count = adxl313_get_fifo_entries(dev);
+		if (count < 0) {
+			return -EIO;
+		}
+	}
 
 	__ASSERT_NO_MSG(count <= ARRAY_SIZE(data->sample));
 
@@ -437,8 +584,10 @@ static DEVICE_API(sensor, adxl313_api_funcs) = {
 	.attr_set = adxl313_attr_set,
 	.sample_fetch = adxl313_sample_fetch,
 	.channel_get = adxl313_channel_get,
+#ifdef CONFIG_ADXL313_TRIGGER
+	.trigger_set = adxl313_trigger_set,
+#endif
 #ifdef CONFIG_SENSOR_ASYNC_API
-	.submit = adxl313_submit,
 	.get_decoder = adxl313_get_decoder,
 #endif
 };
@@ -447,7 +596,10 @@ static int adxl313_init(const struct device *dev)
 {
 	struct adxl313_dev_data *data = dev->data;
 	const struct adxl313_dev_config *cfg = dev->config;
+	enum adxl313_fifo_mode fifo_mode;
 	uint8_t dev_id;
+	uint8_t int_en;
+	uint8_t fifo_samples;
 	uint8_t power_ctl;
 	uint8_t regval;
 	int rc;
@@ -476,6 +628,16 @@ static int adxl313_init(const struct device *dev)
 	power_ctl |= ADXL313_POWER_CTL_I2C_DISABLE;
 #endif
 	rc = adxl313_reg_write_byte(dev, ADXL313_REG_POWER_CTL, power_ctl);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl313_reg_write_byte(dev, ADXL313_REG_INT_ENABLE, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl313_reg_write_byte(dev, ADXL313_REG_INT_MAP, 0x00);
 	if (rc) {
 		return rc;
 	}
@@ -517,11 +679,69 @@ static int adxl313_init(const struct device *dev)
 		return rc;
 	}
 
+	fifo_mode = ADXL313_FIFO_BYPASSED;
+	fifo_samples = 0;
+	int_en = 0x00;
+#if defined(CONFIG_ADXL313_TRIGGER)
+	if (adxl313_init_interrupt(dev)) {
+		LOG_DBG("No IRQ lines specified, fallback to FIFO BYPASSED");
+		fifo_mode = ADXL313_FIFO_BYPASSED;
+	} else {
+		/*
+		 * Note, zephyr STREAMING or TRIGGER enabled, at least one
+		 * configured interrupt line is required for all sensor events.
+		 * FIFO buffering is optional (wm == 0), other events do not
+		 * depend on FIFO buffering. In such case FIFO is running on
+		 * FIFO_BYPASSED.
+		 */
+		fifo_samples = cfg->fifo_samples;
+		if (fifo_samples) {
+			fifo_mode = ADXL313_FIFO_STREAMED;
+
+			/*
+			 * Currently, map all interrupts to the (same) gpio line
+			 * configured in the device tree. This is usually sufficient,
+			 * also since not every hardware will have both gpio lines
+			 * soldered. Anyway, for individual interrupt mapping, set up
+			 * DTB bindings.
+			 */
+			rc = adxl313_reg_assign_bits(dev, ADXL313_REG_INT_MAP, UCHAR_MAX,
+						     (cfg->drdy_pad == 2));
+			if (rc) {
+				return rc;
+			}
+		}
+	}
+#endif
+	rc = adxl313_configure_fifo(dev, fifo_mode, fifo_samples);
+	if (rc) {
+		return rc;
+	}
+
+	if (fifo_mode == ADXL313_FIFO_BYPASSED) {
+		return adxl313_set_measure_en(dev, true);
+	}
+
 	return 0;
 }
 
+#ifdef CONFIG_ADXL313_TRIGGER
+#define ADXL313_CFG_IRQ(inst)                                                                      \
+	.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),                              \
+	.gpio_int2 = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                              \
+	.drdy_pad = DT_INST_PROP_OR(inst, drdy_pin, -1),                                           \
+	.fifo_samples = DT_INST_PROP_OR(inst, fifo_watermark, 0),
+#else
+#define ADXL313_CFG_IRQ(inst)
+#endif /* CONFIG_ADXL313_TRIGGER */
+
+#define ADXL313_CONFIG_COMMON(inst)                                                                \
+	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),     \
+			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),    \
+			   (ADXL313_CFG_IRQ(inst)))
+
 #define ADXL313_RTIO_SPI_DEFINE(inst)                                                              \
-	COND_CODE_1(CONFIG_SPI_RTIO,                                                               \
+	COND_CODE_1(CONFIG_SPI_RTIO,                                                  \
 			(SPI_DT_IODEV_DEFINE(adxl313_iodev_##inst, DT_DRV_INST(inst), \
 			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \
 			SPI_MODE_CPOL | SPI_MODE_CPHA);),               \
@@ -590,6 +810,11 @@ static int adxl313_init(const struct device *dev)
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl313_init, NULL, &adxl313_data_##inst,               \
 				     &adxl313_config_##inst, POST_KERNEL,                          \
-				     CONFIG_SENSOR_INIT_PRIORITY, &adxl313_api_funcs);
+				     CONFIG_SENSOR_INIT_PRIORITY, &adxl313_api_funcs);             \
+                                                                                                   \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_pin),                 \
+		(BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst,                 \
+			CONCAT(int, DT_INST_PROP(inst, drdy_pin), _gpios)),                        \
+			"No GPIO pin defined for ADXL313 DRDY interrupt");))
 
 DT_INST_FOREACH_STATUS_OKAY(ADXL313_DEFINE)
