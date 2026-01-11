@@ -372,6 +372,36 @@ static int adxl313_attr_set_odr(const struct device *dev, const struct sensor_va
 }
 
 /**
+ * Set the FIFO watermark level via sensor attributes.
+ *
+ * In RTIO mode, the FIFO watermark (i.e. the number of FIFO entries) is used to
+ * size the memory pool that holds FIFO elements. For this reason, the watermark
+ * must be defined in the devicetree. Note, attempting to configure a watermark
+ * value greater than the statically reserved memory capacity via attributes may
+ * lead to a system crash.
+ *
+ * @param dev Pointer to the device structure.
+ * @param val Pointer to a sensor_value containing the desired watermark level
+ *            in val1.
+ *
+ * @return 0 on success, or a negative error code if the value is out of range or
+ *         the register update fails.
+ */
+static int adxl313_attr_set_watermark(const struct device *dev, const struct sensor_value *val)
+{
+	struct adxl313_dev_data *data = dev->data;
+	uint8_t wm = val->val1;
+
+	if (wm < 1 || wm > ADXL313_FIFO_MAX_SIZE) {
+		return -EINVAL;
+	}
+
+	data->fifo_config.fifo_samples = wm;
+
+	return adxl313_reg_write_mask(dev, ADXL313_REG_FIFO_CTL, ADXL313_FIFO_CTL_SAMPLES_MSK, wm);
+}
+
+/**
  * adxl313_attr_set - Set sensor attributes from an application.
  *
  * This function allows the application to configure key features of the ADXL313
@@ -380,6 +410,8 @@ static int adxl313_attr_set_odr(const struct device *dev, const struct sensor_va
  *
  * - SENSOR_ATTR_SAMPLING_FREQUENCY: Configures the output data rate (ODR) of
  *	the sensor.
+ * - SENSOR_ATTR_MAX: Sets the FIFO
+ *	watermark level.
  *
  * @param dev Pointer to the device structure.
  * @param chan The sensor channel (currently unused, reserved for future expansion).
@@ -395,6 +427,8 @@ static int adxl313_attr_set(const struct device *dev, enum sensor_channel chan,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY: /* ODR */
 		return adxl313_attr_set_odr(dev, val);
+	case SENSOR_ATTR_MAX: /* FIFO watermark */
+		return adxl313_attr_set_watermark(dev, val);
 	default:
 		return -ENOTSUP;
 	}
