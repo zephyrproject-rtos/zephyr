@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# LoRa drivers depend on the include directories exposed by the lora_basics_modem
+# LoRa drivers depend on the include directories exposed by the lora-basics-modem
 # library. Hence, if it exists then the source files are added to that otherwise
 # a library with same name is created.
-if(TARGET lora_basics_modem)
-  set(ZEPHYR_CURRENT_LIBRARY lora_basics_modem)
+if(TARGET lora-basics-modem)
+  set(ZEPHYR_CURRENT_LIBRARY lora-basics-modem)
 else()
-  zephyr_library_named(lora_basics_modem)
+  zephyr_library_named(lora-basics-modem)
 endif()
 
 zephyr_library_sources(lbm_common.c)
