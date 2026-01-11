@@ -895,6 +895,10 @@ static DEVICE_API(sensor, adxl313_api_funcs) = {
 #ifdef CONFIG_ADXL313_TRIGGER
 	.trigger_set = adxl313_trigger_set,
 #endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = adxl313_submit,
+	.get_decoder = adxl313_get_decoder,
+#endif
 };
 
 /**
@@ -1032,7 +1036,7 @@ static int adxl313_init(const struct device *dev)
 	fifo_mode = ADXL313_FIFO_BYPASSED;
 	fifo_samples = 0;
 	int_en = 0x00;
-#if defined(CONFIG_ADXL313_TRIGGER)
+#if defined(CONFIG_ADXL313_TRIGGER) || defined(CONFIG_ADXL313_STREAM)
 	if (adxl313_init_interrupt(dev)) {
 		LOG_DBG("No IRQ lines specified, fallback to FIFO BYPASSED");
 		fifo_mode = ADXL313_FIFO_BYPASSED;
@@ -1090,6 +1094,36 @@ static int adxl313_init(const struct device *dev)
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),    \
 			   (ADXL313_CFG_IRQ(inst)))
 
+#define ADXL313_RTIO_SPI_DEFINE(inst)                                                              \
+	COND_CODE_1(CONFIG_SPI_RTIO,                                                  \
+			(SPI_DT_IODEV_DEFINE(adxl313_iodev_##inst, DT_DRV_INST(inst), \
+			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \
+			SPI_MODE_CPOL | SPI_MODE_CPHA);),               \
+			())
+
+#define ADXL313_RTIO_I2C_DEFINE(inst)                                                              \
+	COND_CODE_1(CONFIG_I2C_RTIO,                                                               \
+			(I2C_DT_IODEV_DEFINE(adxl313_iodev_##inst, DT_DRV_INST(inst));), \
+			())
+
+/*
+ * RTIO SQE/CQE pool size depends on the fifo-watermark because we
+ * can't just burst-read all the fifo data at once. Datasheet specifies
+ * we need to get one frame at a time (through the Data registers),
+ * therefore, we set all the sequence at once to properly pull each
+ * frame, and then end up calling the completion event so the
+ * application receives it).
+ */
+#define ADXL313_RTIO_DEFINE(inst)                                                                  \
+	/* Conditionally include SPI and/or I2C parts based on their presence */                   \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),                          \
+				(ADXL313_RTIO_SPI_DEFINE(inst)),        \
+				())                          \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),                          \
+				(ADXL313_RTIO_I2C_DEFINE(inst)),        \
+				())                          \
+	RTIO_DEFINE(adxl313_rtio_ctx_##inst, 4 * ADXL313_FIFO_MAX_SIZE, 4 * ADXL313_FIFO_MAX_SIZE);
+
 #define ADXL313_CONFIG(inst)                                                                       \
 	.odr = DT_INST_PROP(inst, odr), .selected_range = DT_INST_PROP(inst, range),
 
@@ -1121,7 +1155,12 @@ static int adxl313_init(const struct device *dev)
 		 "Invalid fifo-watermark setting, consult dts/bindings "                           \
 		 "for valid ranges.");                                                             \
                                                                                                    \
-	static struct adxl313_dev_data adxl313_data_##inst;                                        \
+	IF_ENABLED(CONFIG_ADXL313_STREAM, (ADXL313_RTIO_DEFINE(inst)));                            \
+                                                                                                   \
+	static struct adxl313_dev_data adxl313_data_##inst = {                                     \
+		IF_ENABLED(CONFIG_ADXL313_STREAM, (                                \
+			.rtio_ctx = &adxl313_rtio_ctx_##inst,                       \
+			.iodev = &adxl313_iodev_##inst,)) };               \
                                                                                                    \
 	static const struct adxl313_dev_config adxl313_config_##inst =                             \
 			    COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                 \

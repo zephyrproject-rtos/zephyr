@@ -82,6 +82,19 @@ static void adxl313_thread_cb(const struct device *dev)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_ADXL313_STREAM)) {
+		/*
+		 * FIFO and STREAM is enabled: Reading the (bulky) FIFO is done
+		 * asynchronously by the streaming implementation. Skip the
+		 * rest, here.
+		 */
+		if (data->wm_handler || data->overrun_handler) {
+			LOG_WRN("wm_handler / overrun_handler dropped! "
+				"FIFO is processed asynchronously in streaming!");
+		}
+		return;
+	}
+
 	if (FIELD_GET(ADXL313_INT_WATERMARK, status)) {
 		if (data->wm_handler) {
 			/*
@@ -119,6 +132,12 @@ static void adxl313_int1_gpio_callback(const struct device *dev, struct gpio_cal
 
 	ARG_UNUSED(pins);
 
+#if defined(CONFIG_ADXL313_STREAM)
+	if (data->fifo_config.fifo_mode != ADXL313_FIFO_BYPASSED) {
+		adxl313_stream_fifo_irq_handler(data->dev);
+	}
+#endif
+
 #if defined(CONFIG_ADXL313_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->gpio_sem);
 #elif defined(CONFIG_ADXL313_TRIGGER_GLOBAL_THREAD)
@@ -132,6 +151,12 @@ static void adxl313_int2_gpio_callback(const struct device *dev, struct gpio_cal
 	struct adxl313_dev_data *data = CONTAINER_OF(cb, struct adxl313_dev_data, int2_cb);
 
 	ARG_UNUSED(pins);
+
+#if defined(CONFIG_ADXL313_STREAM)
+	if (data->fifo_config.fifo_mode != ADXL313_FIFO_BYPASSED) {
+		adxl313_stream_fifo_irq_handler(data->dev);
+	}
+#endif
 
 #if defined(CONFIG_ADXL313_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->gpio_sem);
