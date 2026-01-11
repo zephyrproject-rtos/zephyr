@@ -104,6 +104,10 @@ Controller Area Network (CAN)
   :dtcompatible:`nxp,flexcan-fd` with per-instance ``number-of-mb`` and
   ``number-of-mb-fd`` devicetree properties (:github:`99483`).
 
+* The :dtcompatible:`nxp,flexcan` ``clk-source`` devicetree property, if present, now automatically
+  selects between the named input clocks ``clksrc0`` and ``clksrc1`` for use as the CAN protocol
+  engine clock.
+
 Counter
 =======
 
