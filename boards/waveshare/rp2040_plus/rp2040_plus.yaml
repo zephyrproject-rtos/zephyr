@@ -8,6 +8,10 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - pico_gpio
+  - pico_i2c
+  - pico_spi
+  - pico_serial
   - uart
   - gpio
   - adc
