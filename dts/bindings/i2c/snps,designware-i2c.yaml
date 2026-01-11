@@ -11,6 +11,20 @@ properties:
   interrupts:
     required: true
 
+  sda-hold-tx:
+    description: |
+      This property specifies the amount of time that the SDA line is held
+      after a transmit operation. The value is in units of I2C clock cycles.
+      Valid range is 0 to 0xffff.
+    type: int
+
+  sda-hold-rx:
+    description: |
+      This property specifies the amount of time that the SDA line is held
+      after a receive operation. The value is in units of I2C clock cycles.
+      Valid range is 0 to 0xff.
+    type: int
+
   lcnt-offset:
     type: int
     description: |
