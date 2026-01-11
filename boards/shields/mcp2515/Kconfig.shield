@@ -9,3 +9,6 @@ config SHIELD_KEYESTUDIO_CAN_BUS_KS0411
 
 config SHIELD_ADAFRUIT_CAN_PICOWBELL
 	def_bool $(shields_list_contains,adafruit_can_picowbell)
+
+config SHIELD_WAVESHARE_PICO_CAN_B
+	def_bool $(shields_list_contains,waveshare_pico_can_b)
