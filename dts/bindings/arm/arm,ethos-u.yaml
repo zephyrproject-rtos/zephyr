@@ -1,5 +1,5 @@
-# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
-#
+# SPDX-FileCopyrightText: <text>Copyright 2022, 2025 Arm Limited and/or
+# its affiliates <open-source-office@arm.com></text>
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -30,3 +30,13 @@ properties:
   privilege-enable:
     type: boolean
     description: Configure Ethos-U NPU to operate in privileged- or non-privileged mode
+
+  fast-memory-region:
+    type: phandle
+    description: |
+      Phandle to a node compatible with "zephyr,memory-region" that represents
+      a dedicated fast SRAM region used by the Ethos-U driver as scratch
+      memory (spill cache). This is used by Ethos-U65/Ethos-U85 when the model has
+      been compiled in Dedicated SRAM mode with Vela.
+      If omitted, the driver passes NULL/0 to ethosu_init() and no fast
+      scratch area is used.

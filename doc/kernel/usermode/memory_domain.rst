@@ -113,12 +113,6 @@ noted for users who do not want heap allocations within their application:
    initialized at boot with :c:macro:`K_STACK_DEFINE()`, or to initialize the
    k_stack in supervisor mode with :c:func:`k_stack_init`.
 
- - :c:func:`k_pipe_alloc_init` sets up a k_pipe object with its
-   storage buffer allocated out of a resource pool instead of a buffer provided
-   by the user. An alternative is to declare k_pipes that are automatically
-   initialized at boot with :c:macro:`K_PIPE_DEFINE()`, or to initialize the
-   k_pipe in supervisor mode with :c:func:`k_pipe_init`.
-
  - :c:func:`k_msgq_alloc_init` sets up a k_msgq object with its
    storage buffer allocated out of a resource pool instead of a buffer provided
    by the user. An alternative is to declare a k_msgq that is automatically
@@ -322,7 +316,7 @@ There are a few memory partitions which are pre-defined by the system:
    Required when using either the Minimal C library or the Newlib C Library.
    Required when :kconfig:option:`CONFIG_STACK_CANARIES` is enabled.
 
-Library-specific partitions are listed in ``include/app_memory/partitions.h``.
+Library-specific partitions are listed in :zephyr_file:`include/zephyr/app_memory/partitions.h`.
 For example, to use the MBEDTLS library from user mode, the
 ``k_mbedtls_partition`` must be added to the domain.
 
@@ -434,7 +428,7 @@ dependent.
 
 The complete list of available partition attributes for a specific architecture
 is found in the architecture-specific include file
-``include/zephyr/arch/<arch name>/arch.h``, (for example, ``include/zehpyr/arch/arm/arch.h``.)
+``include/zephyr/arch/<arch name>/arch.h``, (for example, :zephyr_file:`include/zephyr/arch/arm/arch.h`.)
 Some examples of partition attributes are:
 
 .. code-block:: c

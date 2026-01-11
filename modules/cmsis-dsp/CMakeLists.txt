@@ -19,6 +19,9 @@ if(CONFIG_CMSIS_DSP)
     ${cmsis_glue_path}/CMSIS/Core/Include
   )
 
+  # Define ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_ to avoid using Zephyr's stdint.h
+  zephyr_library_compile_definitions(ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_)
+
   # Global Feature Definitions
   zephyr_library_compile_definitions_ifdef(CONFIG_CMSIS_DSP_NEON                  ARM_MATH_NEON)
   zephyr_library_compile_definitions_ifdef(CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL     ARM_MATH_NEON_EXPERIMENTAL)
@@ -33,12 +36,12 @@ if(CONFIG_CMSIS_DSP)
 
   zephyr_compile_definitions_ifndef(CONFIG_ARM __GNUC_PYTHON__)
 
-  if (CONFIG_CMSIS_DSP_NEON OR CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL)
+  if(CONFIG_CMSIS_DSP_NEON OR CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL)
     zephyr_library_include_directories("${CMSIS_DSP_DIR}/ComputeLibrary/Include")
   endif()
 
-  if (CONFIG_ARMV8_1_M_MVEI OR CONFIG_ARMV8_1_M_MVEF)
-    if (CONFIG_CMSIS_DSP_LAX_VECTOR_CONVERSIONS)
+  if(CONFIG_ARMV8_1_M_MVEI OR CONFIG_ARMV8_1_M_MVEF)
+    if(CONFIG_CMSIS_DSP_LAX_VECTOR_CONVERSIONS)
       zephyr_library_compile_options($<$<STREQUAL:${CMAKE_C_COMPILER_ID},GNU>:-flax-vector-conversions>)
       zephyr_library_compile_options($<$<STREQUAL:${CMAKE_C_COMPILER_ID},ARMClang>:-flax-vector-conversions=integer>)
     else()
@@ -139,7 +142,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${SRCF64})
     zephyr_library_sources(${SRCF32})
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${SRCF16})
     endif()
 
@@ -153,10 +156,10 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # BayesFunctions
-  if (CONFIG_CMSIS_DSP_BAYES)
+  if(CONFIG_CMSIS_DSP_BAYES)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/BayesFunctions/arm_gaussian_naive_bayes_predict_f32.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/BayesFunctions/arm_gaussian_naive_bayes_predict_f16.c)
     endif()
   endif()
@@ -170,22 +173,22 @@ if(CONFIG_CMSIS_DSP)
   zephyr_library_sources(${CMSIS_DSP_DIR}/Source/CommonTables/arm_const_structs_f16.c)
 
 
-  if (CONFIG_CMSIS_DSP_NEON OR CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL)
+  if(CONFIG_CMSIS_DSP_NEON OR CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL)
     zephyr_library_sources("${CMSIS_DSP_DIR}/ComputeLibrary/Source/arm_cl_tables.c")
   endif()
 
-  if (CONFIG_ARMV8_1_M_MVEI OR CONFIG_ARMV8_1_M_MVEF)
+  if(CONFIG_ARMV8_1_M_MVEI OR CONFIG_ARMV8_1_M_MVEF)
     zephyr_library_sources("${CMSIS_DSP_DIR}/Source/CommonTables/arm_mve_tables.c")
     zephyr_library_sources("${CMSIS_DSP_DIR}/Source/CommonTables/arm_mve_tables_f16.c")
   endif()
 
 
-  if (WRAPPER)
+  if(WRAPPER)
     target_compile_definitions(CMSISDSP PUBLIC ARM_TABLE_BITREV_1024)
     target_compile_definitions(CMSISDSP PUBLIC ARM_TABLE_TWIDDLECOEF_F32_4096)
     target_compile_definitions(CMSISDSP PUBLIC ARM_TABLE_TWIDDLECOEF_Q31_4096)
     target_compile_definitions(CMSISDSP PUBLIC ARM_TABLE_TWIDDLECOEF_Q15_4096)
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       target_compile_definitions(CMSISDSP PUBLIC ARM_TABLE_TWIDDLECOEF_F16_4096)
     endif()
   endif()
@@ -194,7 +197,7 @@ if(CONFIG_CMSIS_DSP)
   # MVE code is using a table for computing the fast sqrt arm_cmplx_mag_q31
   # There is the possibility of not compiling this function and not including
   # the table.
-  if (CONFIG_CMSIS_DSP_COMPLEXMATH)
+  if(CONFIG_CMSIS_DSP_COMPLEXMATH)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_mag_q31.c)
 
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_mag_q15.c)
@@ -221,7 +224,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_mult_real_q15.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_mult_real_q31.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_conj_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_dot_prod_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ComplexMathFunctions/arm_cmplx_mag_f16.c)
@@ -232,7 +235,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Controller Functions
-  if (CONFIG_CMSIS_DSP_CONTROLLER)
+  if(CONFIG_CMSIS_DSP_CONTROLLER)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ControllerFunctions/arm_pid_init_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ControllerFunctions/arm_pid_init_q15.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/ControllerFunctions/arm_pid_init_q31.c)
@@ -246,7 +249,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Distance Functions
-  if (CONFIG_CMSIS_DSP_DISTANCE)
+  if(CONFIG_CMSIS_DSP_DISTANCE)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/DistanceFunctions/arm_boolean_distance.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/DistanceFunctions/arm_braycurtis_distance_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/DistanceFunctions/arm_canberra_distance_f32.c)
@@ -277,7 +280,7 @@ if(CONFIG_CMSIS_DSP)
 
     zephyr_library_include_directories("${CMSIS_DSP_DIR}/Source/DistanceFunctions")
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/DistanceFunctions/arm_braycurtis_distance_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/DistanceFunctions/arm_canberra_distance_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/DistanceFunctions/arm_chebyshev_distance_f16.c)
@@ -291,7 +294,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Fast Math Functions
-  if (CONFIG_CMSIS_DSP_FASTMATH)
+  if(CONFIG_CMSIS_DSP_FASTMATH)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FastMathFunctions/arm_cos_f32.c)
 
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FastMathFunctions/arm_cos_q15.c)
@@ -317,7 +320,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FastMathFunctions/arm_vlog_q15.c)
 
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FastMathFunctions/arm_vlog_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FastMathFunctions/arm_vexp_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FastMathFunctions/arm_vinverse_f16.c)
@@ -333,7 +336,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Filtering Functions
-  if (CONFIG_CMSIS_DSP_FILTERING)
+  if(CONFIG_CMSIS_DSP_FILTERING)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_lms_norm_init_q31.c)
 
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_lms_norm_init_q15.c)
@@ -441,7 +444,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_levinson_durbin_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_levinson_durbin_q31.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_fir_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_fir_init_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_biquad_cascade_df1_f16.c)
@@ -456,7 +459,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Interpolation Functions
-  if (CONFIG_CMSIS_DSP_INTERPOLATION)
+  if(CONFIG_CMSIS_DSP_INTERPOLATION)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/InterpolationFunctions/arm_bilinear_interp_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/InterpolationFunctions/arm_bilinear_interp_q15.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/InterpolationFunctions/arm_bilinear_interp_q31.c)
@@ -469,14 +472,14 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/InterpolationFunctions/arm_spline_interp_init_f32.c)
 
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/InterpolationFunctions/arm_bilinear_interp_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/InterpolationFunctions/arm_linear_interp_f16.c)
     endif()
   endif()
 
   # Matrix Functions
-  if (CONFIG_CMSIS_DSP_MATRIX)
+  if(CONFIG_CMSIS_DSP_MATRIX)
     set(SRCF64 ${CMSIS_DSP_DIR}/Source/MatrixFunctions/arm_mat_cholesky_f64.c
       ${CMSIS_DSP_DIR}/Source/MatrixFunctions/arm_mat_inverse_f64.c
       ${CMSIS_DSP_DIR}/Source/MatrixFunctions/arm_mat_ldlt_f64.c
@@ -545,7 +548,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${SRCQ7})
 
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/MatrixFunctions/arm_mat_add_f16.c
       ${CMSIS_DSP_DIR}/Source/MatrixFunctions/arm_mat_cholesky_f16.c
       ${CMSIS_DSP_DIR}/Source/MatrixFunctions/arm_mat_cmplx_mult_f16.c
@@ -566,7 +569,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Quaternion Math Functions
-  if (CONFIG_CMSIS_DSP_QUATERNIONMATH)
+  if(CONFIG_CMSIS_DSP_QUATERNIONMATH)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/QuaternionMathFunctions/arm_quaternion_norm_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/QuaternionMathFunctions/arm_quaternion_inverse_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/QuaternionMathFunctions/arm_quaternion_conjugate_f32.c)
@@ -578,7 +581,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Statistics Functions
-  if (CONFIG_CMSIS_DSP_STATISTICS)
+  if(CONFIG_CMSIS_DSP_STATISTICS)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_entropy_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_entropy_f64.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_kullback_leibler_f32.c)
@@ -660,7 +663,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_accumulate_f32.c)
 
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_max_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_min_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/StatisticsFunctions/arm_mean_f16.c)
@@ -684,7 +687,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Support Functions
-  if (CONFIG_CMSIS_DSP_SUPPORT)
+  if(CONFIG_CMSIS_DSP_SUPPORT)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_barycenter_f32.c
       ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_bitonic_sort_f32.c
       ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_bubble_sort_f32.c
@@ -731,7 +734,7 @@ if(CONFIG_CMSIS_DSP)
       ${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_weighted_average_f32.c
     )
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_copy_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_fill_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SupportFunctions/arm_f16_to_q15.c)
@@ -746,7 +749,7 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # SVM Functions
-  if (CONFIG_CMSIS_DSP_SVM)
+  if(CONFIG_CMSIS_DSP_SVM)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_linear_init_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_rbf_init_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_linear_predict_f32.c)
@@ -756,7 +759,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_polynomial_predict_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_sigmoid_predict_f32.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_linear_init_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_rbf_init_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/SVMFunctions/arm_svm_linear_predict_f16.c)
@@ -769,11 +772,11 @@ if(CONFIG_CMSIS_DSP)
   endif()
 
   # Transform Functions
-  if (CONFIG_CMSIS_DSP_TRANSFORM)
+  if(CONFIG_CMSIS_DSP_TRANSFORM)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_bitreversal.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_bitreversal2.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_bitreversal_f16.c)
     endif()
 
@@ -783,14 +786,14 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_f32.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_init_f32.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix2_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix4_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_init_f16.c)
     endif()
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix4_init_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix4_f16.c)
     endif()
@@ -846,7 +849,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_rfft_fast_f64.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_rfft_fast_init_f64.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_rfft_fast_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_rfft_fast_init_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_f16.c)
@@ -871,7 +874,7 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_init_q31.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix4_q31.c)
 
-    if (WRAPPER)
+    if(WRAPPER)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix2_init_q15.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix2_init_q31.c)
     endif()
@@ -881,9 +884,9 @@ if(CONFIG_CMSIS_DSP)
 
 
     # For scipy or wrappers or benchmarks
-    if (WRAPPER)
+    if(WRAPPER)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix2_init_f32.c)
-      if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+      if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
         zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_cfft_radix2_init_f16.c)
       endif()
     endif()
@@ -897,14 +900,14 @@ if(CONFIG_CMSIS_DSP)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_mfcc_init_q15.c)
     zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_mfcc_q15.c)
 
-    if ((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
+    if((NOT ARMAC5) AND (NOT DISABLEFLOAT16))
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_mfcc_init_f16.c)
       zephyr_library_sources(${CMSIS_DSP_DIR}/Source/TransformFunctions/arm_mfcc_f16.c)
     endif()
   endif()
 
   # Window Functions
-  if (CONFIG_CMSIS_DSP_WINDOW)
+  if(CONFIG_CMSIS_DSP_WINDOW)
     set(SRCF64 ${CMSIS_DSP_DIR}/Source/WindowFunctions/arm_welch_f64.c
       ${CMSIS_DSP_DIR}/Source/WindowFunctions/arm_bartlett_f64.c
       ${CMSIS_DSP_DIR}/Source/WindowFunctions/arm_hamming_f64.c

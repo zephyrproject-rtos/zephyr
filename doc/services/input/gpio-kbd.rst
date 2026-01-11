@@ -231,6 +231,8 @@ output:
       };
   };
 
+.. doxygengroup:: input_keymap
+
 Keyboard matrix shell commands
 ******************************
 

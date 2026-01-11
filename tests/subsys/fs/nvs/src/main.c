@@ -96,7 +96,14 @@ ZTEST_SUITE(nvs, NULL, setup, before, after, NULL);
 ZTEST_F(nvs, test_nvs_mount)
 {
 	int err;
+	size_t orig_sector_size = fixture->fs.sector_size;
 
+	fixture->fs.sector_size = KB(128);
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == -EINVAL,
+		     "nvs_mount did not return expected err for invalid sector_size");
+
+	fixture->fs.sector_size = orig_sector_size;
 	err = nvs_mount(&fixture->fs);
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
@@ -307,7 +314,7 @@ static void write_content(uint16_t max_id, uint16_t begin, uint16_t end,
 
 	for (uint16_t i = begin; i < end; i++) {
 		uint8_t id = (i % max_id);
-		uint8_t id_data = id + max_id * (i / max_id);
+		uint8_t id_data = id + max_id * ((i % 256) / max_id);
 
 		memset(buf, id_data, sizeof(buf));
 
@@ -346,13 +353,25 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 
 	const uint16_t max_id = 10;
 	/* 50th write will trigger 1st GC. */
-	const uint16_t max_writes = 51;
+	uint16_t max_writes = 51;
 	/* 75th write will trigger 2st GC. */
-	const uint16_t max_writes_2 = 51 + 25;
+	uint16_t max_writes_2 = 51 + 25;
 	/* 100th write will trigger 3st GC. */
-	const uint16_t max_writes_3 = 51 + 25 + 25;
+	uint16_t max_writes_3 = 51 + 25 + 25;
 	/* 125th write will trigger 4st GC. */
-	const uint16_t max_writes_4 = 51 + 25 + 25 + 25;
+	uint16_t max_writes_4 = 51 + 25 + 25 + 25;
+
+	if (fixture->fs.sector_size == KB(64)) {
+		/* write 1637 will trigger 1st GC. */
+		/* write 3274 will trigger 2nd GC. */
+		max_writes = 3275;
+		/* write 4911 will trigger 3rd GC. */
+		max_writes_2 = 3275 + 1637;
+		/* write 6548 will trigger 4th GC. */
+		max_writes_3 = 3275 + 1637 + 1637;
+		/* write 8185 will trigger 5th GC. */
+		max_writes_4 = 3275 + 1637 + 1637 + 1637;
+	}
 
 	fixture->fs.sector_count = 3;
 
@@ -361,7 +380,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
 
-	/* Trigger 1st GC */
+	/* Trigger 1st and 2nd GC */
 	write_content(max_id, 0, max_writes, &fixture->fs);
 
 	/* sector sequence: empty,closed, write */
@@ -376,7 +395,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 		     "unexpected write sector");
 	check_content(max_id, &fixture->fs);
 
-	/* Trigger 2nd GC */
+	/* Trigger 3rd GC */
 	write_content(max_id, max_writes, max_writes_2, &fixture->fs);
 
 	/* sector sequence: write, empty, closed */
@@ -391,7 +410,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 		     "unexpected write sector");
 	check_content(max_id, &fixture->fs);
 
-	/* Trigger 3rd GC */
+	/* Trigger 4th GC */
 	write_content(max_id, max_writes_2, max_writes_3, &fixture->fs);
 
 	/* sector sequence: closed, write, empty */
@@ -406,7 +425,7 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 		     "unexpected write sector");
 	check_content(max_id, &fixture->fs);
 
-	/* Trigger 4th GC */
+	/* Trigger 5th GC */
 	write_content(max_id, max_writes_3, max_writes_4, &fixture->fs);
 
 	/* sector sequence: empty,closed, write */

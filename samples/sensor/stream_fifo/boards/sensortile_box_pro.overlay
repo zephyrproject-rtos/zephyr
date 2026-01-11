@@ -5,7 +5,6 @@
  */
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 
-
 /*
  * This devicetree overlay file will be automatically picked by the Zephyr
  * build system when building the sample for the sensortile_box_pro board.

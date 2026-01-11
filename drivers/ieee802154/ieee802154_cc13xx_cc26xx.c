@@ -424,7 +424,7 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 				len, seq, rssi, lqi);
 
 			pkt = net_pkt_rx_alloc_with_buffer(
-				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+				drv_data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 			if (!pkt) {
 				LOG_WRN("Cannot allocate packet");
 				continue;

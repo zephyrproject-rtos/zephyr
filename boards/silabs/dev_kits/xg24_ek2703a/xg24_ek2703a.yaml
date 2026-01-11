@@ -8,6 +8,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - bluetooth
   - counter
   - gpio
@@ -15,6 +16,8 @@ supported:
   - watchdog
   - clock_control
   - comparator
+  - dac
+  - pwm
 testing:
   ignore_tags:
     - pm

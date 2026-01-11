@@ -9,6 +9,7 @@ menuconfig CRYPTO_STM32
 	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED
 	select USE_STM32_HAL_CRYP
 	select USE_STM32_HAL_CRYP_EX
+	select RESET
 	help
 	  Enable STM32 HAL-based Cryptographic Accelerator driver.
 
@@ -16,6 +17,24 @@ config CRYPTO_STM32_MAX_SESSION
 	int "Maximum of sessions STM32 crypto driver can handle"
 	default 2
 	depends on CRYPTO_STM32
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.
+
+config CRYPTO_STM32_HASH
+	bool "STM32 Hash Accelerator driver"
+	default y
+	depends on DT_HAS_ST_STM32_HASH_ENABLED
+	select USE_STM32_HAL_HASH
+	select USE_STM32_HAL_HASH_EX
+	help
+	  Enable support for the STM32 HASH hardware accelerator (SHA224/SHA256),
+	  using the STM32 HAL HASH driver.
+
+config CRYPTO_STM32_HASH_MAX_SESSIONS
+	int "Maximum of sessions STM32 hash driver can handle"
+	default 2
+	depends on CRYPTO_STM32_HASH
 	help
 	  This can be used to tweak the amount of sessions the driver
 	  can handle in parallel.

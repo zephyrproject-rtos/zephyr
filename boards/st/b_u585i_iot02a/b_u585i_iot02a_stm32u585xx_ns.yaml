@@ -5,6 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-ram: 786
-flash: 512
+ram: 512
+flash: 1024
 vendor: st

@@ -4,7 +4,7 @@
 config FAKE_ENTROPY_NATIVE_SIM
 	bool "Native simulator entropy driver"
 	default y
-	depends on DT_HAS_ZEPHYR_NATIVE_POSIX_RNG_ENABLED || DT_HAS_ZEPHYR_NATIVE_SIM_RNG_ENABLED
+	depends on DT_HAS_ZEPHYR_NATIVE_SIM_RNG_ENABLED
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the test random number generator for the
@@ -22,17 +22,3 @@ config FAKE_ENTROPY_NATIVE_SIM_SEED_BY_DEFAULT
 	  Apply a seed by default, even if the user does not request it through the command line.
 	  Disabling this feature allows some other component to seed the host standard library random
 	  generator without this component's default initialization interfering.
-
-config FAKE_ENTROPY_NATIVE_POSIX
-	bool "Native posix entropy driver (deprecated)"
-	select FAKE_ENTROPY_NATIVE_SIM
-	select DEPRECATED
-	help
-	  Deprecated option in favour of FAKE_ENTROPY_NATIVE_SIM
-
-config FAKE_ENTROPY_NATIVE_POSIX_SEED_BY_DEFAULT
-	bool "Seed the generator by default (deprecated)"
-	depends on FAKE_ENTROPY_NATIVE_POSIX
-	select DEPRECATED
-	help
-	  Deprecated option. Replaced by FAKE_ENTROPY_NATIVE_SIM_SEED_BY_DEFAULT

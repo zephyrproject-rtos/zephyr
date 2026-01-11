@@ -48,7 +48,7 @@
 		input-enable;
 	};
 
-	p2_4_sdio_cmd: p2_4_sdio_cmd  {
+	p2_4_sdio_cmd: p2_4_sdio_cmd {
 		pinmux = <DT_CAT1_PINMUX(2, 4, HSIOM_SEL_ACT_14)>;
 		drive-push-pull;
 		input-enable;

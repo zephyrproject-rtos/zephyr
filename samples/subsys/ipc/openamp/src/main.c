@@ -217,7 +217,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* Since we are using name service, we need to wait for a response
-	 * from NS setup and than we need to process it
+	 * from NS setup and then we need to process it
 	 */
 	k_sem_take(&data_sem, K_FOREVER);
 	virtqueue_notification(vqueue[0]);

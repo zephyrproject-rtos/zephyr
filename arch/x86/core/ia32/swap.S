@@ -16,12 +16,21 @@
 #include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <offsets_short.h>
+#include <cet_asm.inc>
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+#include <soc_cet.h>
+#endif
 
 	/* exports (internal APIs) */
 
 	GTEXT(arch_swap)
 	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	GTEXT(arch_shadow_stack_reset)
+#endif
 
 	/* externs */
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_X86_USERSPACE)
@@ -291,9 +300,9 @@ restoreContext_NoFloatSwap:
 	 * or XMM register.
 	 */
 
-	movl %cr0, %edx
-	orl $0x8, %edx
-	movl %edx, %cr0
+	movl %cr0, %ebx
+	orl $0x8, %ebx
+	movl %ebx, %cr0
 
 CROHandlingDone:
 
@@ -304,6 +313,7 @@ CROHandlingDone:
 	movl    %eax, _kernel_offset_to_current(%edi)
 
 #if defined(CONFIG_X86_USE_THREAD_LOCAL_STORAGE)
+	pushl   %edx
 	pushl	%eax
 
 	call	z_x86_tls_update_gdt
@@ -313,6 +323,43 @@ CROHandlingDone:
 	movw	%ax, %gs
 
 	popl	%eax
+	popl	%edx
+#endif
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	cmpl $0, _thread_offset_to_shstk_addr(%edx)
+	jz __sh_stk_verify
+
+	/* Create a ssp token "by hand", as next thread may not have shadow
+	 * stack enabled to use rstorssp/saveprevssp pair. Note that the token
+	 * has 64 bits and needs to be aligned to 8 bytes.
+	 */
+	save_ssp_restore_token %ecx, %ebx
+
+	/* Finally, save SSP on thread struct */
+	movl %ecx, _thread_offset_to_shstk_addr(%edx)
+
+	jmp __sh_stk_out
+
+__sh_stk_verify:
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	/* Outgoing thread doesn't have a SSP, so shadow stack is disabled for
+	 * it. Let's just check if shadow stack is enabled now, which would
+	 * imply something is tampering with the pointer. */
+	pushl %eax
+	pushl %edx
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz __sh_stk_verify_out
+	/* Stack already has k_thread* */
+	call z_x86_cet_shadow_stack_panic
+
+__sh_stk_verify_out:
+	popl %edx
+	popl %eax
+#endif /* CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK */
+__sh_stk_out:
 #endif
 
 	/* recover thread stack pointer from k_thread */
@@ -339,16 +386,53 @@ CROHandlingDone:
 	 * - -EINVAL
 	 */
 
-	/* Utilize the 'eflags' parameter to arch_swap() */
+#ifdef CONFIG_HW_SHADOW_STACK
+	pushl %eax
+	pushl %ebx
+	pushl %edi
 
-	pushl	4(%esp)
-	popfl
+	movl $_kernel, %eax
+	movl _kernel_offset_to_current(%eax), %edi
+	movl _thread_offset_to_shstk_addr(%edi), %ebx
+	testl %ebx, %ebx
+	jz __sh_stk_disable
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	orl $X86_S_CET_MSR_SHSTK_EN, %eax
+	wrmsr
 
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %edi
+	soc_prepare_shadow_stack_switch
+	popl %edi
+#endif
+
+	rstorssp (%ebx)
+	discard_previous_ssp_token %ebx
+	jmp __sh_stk_done
+
+__sh_stk_disable:
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	andl $~X86_S_CET_MSR_SHSTK_EN, %eax
+	wrmsr
+
+__sh_stk_done:
+	popl %edi
+	popl %ebx
+	popl %eax
+#endif
 #if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
 	call	z_thread_mark_switched_in
 	popl	%eax
 #endif
+
+	/* Utilize the 'eflags' parameter to arch_swap() */
+
+	pushl	4(%esp)
+	popfl
+
 	ret
 
 #ifdef _THREAD_WRAPPER_REQUIRED
@@ -404,3 +488,59 @@ SECTION_FUNC(PINNED_TEXT, z_x86_thread_entry_wrapper)
 	movl	$0, (%esp)
 	jmp	*%edi
 #endif /* _THREAD_WRAPPER_REQUIRED */
+
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
+	/*
+	 * C function prototype:
+	 *
+	 * void arch_shadow_stack_reset(k_thread *thread);
+	 */
+SECTION_FUNC(PINNED_TEXT, arch_shadow_stack_reset)
+	movl 0x4(%esp), %eax /* *thread on EAX */
+	pushl %ebx
+
+	/* As we are touching other thread shadow stack memory, SoC may
+	 * need to do some house keeping.
+	 */
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	pushl %eax
+	soc_prepare_shadow_stack_switch
+	popl %eax
+#endif
+
+	movl _thread_offset_to_shstk_base(%eax), %ecx
+	movl _thread_offset_to_shstk_size(%eax), %edx
+
+	/* Set "shstk[-2]", z_thread_entry/z_x86_thread_entry_wrapper */
+	subl $8, %edx
+	addl %edx, %ecx
+	movl %ecx, %edx /* Save "&stsk[-2]" */
+#ifdef CONFIG_X86_DEBUG_INFO
+	movl $z_x86_thread_entry_wrapper, %ebx
+#else
+	movl $z_thread_entry, %ebx
+#endif
+	wrssd %ebx, (%ecx)
+
+	/* Set "shstk[-3]", token high bits, 0 */
+	xorl %ebx, %ebx
+	wrssd %ebx, -4(%ecx)
+
+	/* Set "shstk[-4]", token low bits */
+	wrssd %edx, -8(%ecx)
+
+	/* Set thread->shstk_addr to point to the token on the stack */
+	subl $8, %ecx
+	movl %ecx, _thread_offset_to_shstk_addr(%eax)
+
+#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	movl	$_kernel, %eax
+	movl _kernel_offset_to_current(%eax), %ecx
+	pushl %ecx
+	soc_prepare_shadow_stack_switch
+	popl %ecx
+#endif
+
+	popl %ebx
+	ret
+#endif

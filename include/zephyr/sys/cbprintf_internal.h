@@ -86,7 +86,7 @@ extern "C" {
  * opaque struct pointers. Alternative is to add + 0 but that requires suppressing
  * compiler warning about pointer arithmetic and does not cover opaque structs.
  */
-#define Z_ARGIFY(arg) ((0) ? (arg) : (arg))
+#define Z_ARGIFY(arg) ((0) ? 0 : (arg))
 
 /** @brief Return 1 if argument is a pointer to char or wchar_t
  *

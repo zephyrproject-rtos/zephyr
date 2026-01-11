@@ -63,13 +63,10 @@ means Pin number 0 on PORT2, as used in the board's datasheets and manuals.
 Programming and Debugging
 *************************
 
-The XIAO nRF54L15 contains an SAMD11 with CMSIS-DAP, allowing flashing, debugging, logging, etc. over
-the USB port. Doing so requires a version of OpenOCD that includes support for the flash on the nRF54L15
-MCU. Until those changes are included in stock OpenOCD, the version bundled with Arduino can be
-used, or can be installed from the `OpenOCD Arduino`_.
+.. zephyr:board-supported-runners::
 
-When flashing, debugging, etc. you may need to include ``--openocd=/usr/local/bin/openocd
---openocd-search=/usr/local/share/openocd/scripts/`` options to the command.
+The XIAO nRF54L15 contains a SAMD11 with CMSIS-DAP, allowing flashing, debugging, logging, etc. over
+the USB port.
 
 Flashing
 ========
@@ -81,7 +78,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: xiao_nrf54l15
+   :board: xiao_nrf54l15/nrf54l15/cpuapp
    :goals: flash
 
 Open a serial terminal (minicom, putty, etc.) connecting to the UCB CDC ACM serial port.
@@ -90,14 +87,14 @@ Reset the board and you should see the following message in the terminal:
 
 .. code-block:: console
 
-   Hello World! xiao_nrf54l15
+   Hello World! xiao_nrf54l15/nrf54l15/cpuapp
 
 
 .. _Seeed Studio XIAO nRF54L15:
    https://www.seeedstudio.com/XIAO-nRF54L15-Sense-p-6494
 
 .. _XIAO nRF54L15 Wiki:
-   https://wiki.seeedstudio.com/getting_started_with_xiao_nrf54l15/
+   https://wiki.seeedstudio.com/xiao_nrf54l15_sense_getting_started
 
 .. _nRF54L15 Website:
    https://www.nordicsemi.com/Products/nRF54L15

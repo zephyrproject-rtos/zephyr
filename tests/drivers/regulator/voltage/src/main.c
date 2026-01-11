@@ -58,7 +58,7 @@ ZTEST(regulator_voltage, test_output_voltage)
 		zassert_equal(ret, 0);
 
 		for (unsigned int j = 0U; j < volt_cnt; j++) {
-			int32_t val_mv = 0;
+			int32_t val_uv = 0;
 
 			(void)regulator_list_voltage(regs[i], j, &volt_uv);
 			/* Check if voltage is outside user constraints */
@@ -83,18 +83,17 @@ ZTEST(regulator_voltage, test_output_voltage)
 				ret = adc_read_dt(&adc_chs[i], &sequence);
 				zassert_equal(ret, 0);
 
-				val_mv += buf;
+				val_uv += buf;
 			}
 
-			val_mv /= (int32_t)adc_avg_count;
+			val_uv /= (int32_t)adc_avg_count;
 
-			ret = adc_raw_to_millivolts_dt(&adc_chs[i], &val_mv);
+			ret = adc_raw_to_microvolts_dt(&adc_chs[i], &val_uv);
 			zassert_equal(ret, 0);
 
-			TC_PRINT("Set: %d, read: %d uV\n", volt_uv,
-				 val_mv * 1000);
+			TC_PRINT("Set: %d, read: %d uV\n", volt_uv, val_uv);
 
-			zassert_between_inclusive(val_mv * 1000,
+			zassert_between_inclusive(val_uv,
 						  volt_uv - tols[i],
 						  volt_uv + tols[i]);
 		}

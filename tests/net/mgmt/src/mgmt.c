@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #define TEST_MGMT_EVENT			0x97AB1234
 #define TEST_MGMT_EVENT_UNHANDLED	0x97AB4321
 #define TEST_MGMT_EVENT_INFO_SIZE	\
-	MAX(sizeof(TEST_INFO_STRING), sizeof(struct in6_addr))
+	MAX(sizeof(TEST_INFO_STRING), sizeof(struct net_in6_addr))
 
 /* Notifier infra */
 static uint64_t event2throw;
@@ -44,7 +44,7 @@ static size_t info_length_in_test;
 static struct net_mgmt_event_callback rx_cb;
 static char *info_string = TEST_INFO_STRING;
 
-static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+static struct net_in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
@@ -107,9 +107,12 @@ int fake_dev_init(const struct device *dev)
 
 static void fake_iface_init(struct net_if *iface)
 {
-	static uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
+	static uint8_t mac[6] = { 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
+	int ret;
 
-	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
+	ret = net_if_set_link_addr(iface, mac, 6, NET_LINK_DUMMY);
+
+	zassert_equal(ret, 0, "Setting link address failed (%d)", ret);
 }
 
 static int fake_iface_send(const struct device *dev, struct net_pkt *pkt)
@@ -326,7 +329,7 @@ static int test_core_event(uint64_t event, bool (*func)(void))
 {
 	TC_PRINT("- Triggering core event: 0x%" PRIx64 "\n", event);
 
-	info_length_in_test = sizeof(struct in6_addr);
+	info_length_in_test = sizeof(struct net_in6_addr);
 	memcpy(info_data, &addr6, sizeof(addr6));
 
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb, event);

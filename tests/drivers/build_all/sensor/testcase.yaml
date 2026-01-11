@@ -18,6 +18,8 @@ tests:
     extra_args: EXTRA_CONF_FILE=sensors_trigger_none.conf;sensors_die_temp.conf
   drivers.sensor.no_default.build:
     extra_args: EXTRA_CONF_FILE=sensors_no_default.conf
+  drivers.sensor.async_api:
+    extra_args: EXTRA_CONF_FILE=sensors_async_api.conf
   drivers.sensor.build:
     tags: sensors
     extra_args: EXTRA_CONF_FILE=sensors_die_temp.conf

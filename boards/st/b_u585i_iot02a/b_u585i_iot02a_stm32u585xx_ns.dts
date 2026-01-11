@@ -11,10 +11,26 @@
 	model = "STMicroelectronics B-U585I-IOT02A discovery kit";
 	compatible = "st,b-u585i-iot02a";
 
+	/* Node label sram0 covers SRAM1 + SRAM2 + SRAM3.
+	 * Among these TF-M owns the last 64kB of SRAM1 and the full SRAM2.
+	 * Therefore shorten RAM referred by label sram0 to SRAM1 minus the
+	 * last 64kB, declare it as a zephyr-memory-region and add a node
+	 * for the whole SRAM3 region used as Zephyr main RAM.
+	 */
+	memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(192 - 64)>;
+		zephyr,memory-region = "SRAM0";
+	};
+
+	sram3: memory@20040000 {
+		reg = <0x20040000 DT_SIZE_K(512)>;
+	};
+
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram3;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
@@ -34,44 +50,59 @@
 
 		/*
 		 * Following flash partition is compatible with requirements
-		 * given in TFM configuration given for current board.
-		 * It might require adjustment depending on evolutions on TFM.
+		 * given in TF-M configuration given for current board.
+		 *
+		 * It might require adjustment depending on evolutions on TF-M.
 		 */
-
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(224)>;
+			reg = <0x00000000 DT_SIZE_K(384)>;
 			read-only;
 		};
 
 		/* Secure image primary slot */
-		slot0_partition: partition@38000 {
+		slot0_partition: partition@60000 {
 			label = "image-0";
-			reg = <0x00038000 DT_SIZE_K(384)>;
+			reg = <0x00060000 DT_SIZE_K(512)>;
 		};
 
 		/* Non-secure image primary slot */
-		slot0_ns_partition: partition@98000 {
+		slot0_ns_partition: partition@e0000 {
 			label = "image-0-nonsecure";
-			reg = <0x00098000 DT_SIZE_K(512)>;
+			reg = <0x000e0000 DT_SIZE_K(1024)>;
 		};
 
-		/* Secure image secondary slot */
-		slot1_partition: partition@118000 {
-			label = "image-1";
-			reg = <0x00118000 DT_SIZE_K(384)>;
-		};
-
-		/* Non-secure image secondary slot */
-		slot1_ns_partition: partition@178000 {
-			label = "image-1-nonsecure";
-			reg = <0x00178000 DT_SIZE_K(512)>;
-		};
-
-		/* Applicative Non Volatile Storage */
-		storage_partition: partition@1f8000 {
+		/* Internal Non Volatile Storage */
+		storage_partition: partition@1e0000 {
 			label = "storage";
-			reg = <0x001f8000 DT_SIZE_K(16)>;
+			reg = <0x001e0000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&mx25lm51245 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The flash partition (0 and 1) are aligned
+		 * with the TF-M flash layout expectation.
+		 */
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+
+		slot1_ns_partition: partition@80000 {
+			label = "image-1-nonsecure";
+			reg = <0x00080000 DT_SIZE_K(1024)>;
+		};
+
+		external_partition: partition@180000 {
+			label = "external";
+			reg = <0x00180000 (DT_SIZE_M(64) - DT_SIZE_K(1024) - DT_SIZE_K(512))>;
 		};
 	};
 };

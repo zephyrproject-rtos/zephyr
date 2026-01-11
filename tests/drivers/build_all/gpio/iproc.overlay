@@ -13,7 +13,7 @@
 			#size-cells = <1>;
 			interrupt-parent = <&test_nvic>;
 
-			test_nvic: interrupt-controller@bbbbcccc  {
+			test_nvic: interrupt-controller@bbbbcccc {
 				compatible = "arm,v6m-nvic";
 				reg = <0xbbbbcccc 0xc00>;
 				interrupt-controller;

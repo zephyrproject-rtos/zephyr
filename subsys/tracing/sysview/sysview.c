@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
 #include <zephyr/debug/cpu_load.h>
-#include <ksched.h>
 
 #include <SEGGER_SYSVIEW.h>
 
@@ -32,6 +32,10 @@ uint32_t sysview_get_interrupt(void)
 void sys_trace_k_thread_switched_in(void)
 {
 	struct k_thread *thread;
+
+	if (k_is_pre_kernel()) {
+		return;
+	}
 
 	thread = k_current_get();
 

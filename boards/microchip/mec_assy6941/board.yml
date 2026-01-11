@@ -3,6 +3,7 @@ board:
   full_name: MEC17xxEVB ASSY6941
   vendor: microchip
   socs:
+  - name: mec1653b_nsz
   - name: mec1743_qlj
   - name: mec1743_qsz
   - name: mec1753_qlj

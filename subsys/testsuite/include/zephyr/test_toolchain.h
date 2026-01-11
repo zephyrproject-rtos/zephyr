@@ -13,6 +13,8 @@
 #include <zephyr/test_toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/test_toolchain/gcc.h>
+#elif defined(__IAR_SYSTEMS_ICC__)
+#include <zephyr/test_toolchain/iar.h>
 #endif
 
 /**

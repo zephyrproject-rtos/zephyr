@@ -14,9 +14,7 @@
 #include <esp_cpu.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/entropy.h>
-#if defined(SOC_RNG_CLOCK_IS_INDEPENDENT)
 #include <zephyr/drivers/clock_control.h>
-#endif
 
 LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 
@@ -36,6 +34,9 @@ LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
  * plus additional overhead for the calculation, making it slower.
  */
 #define APB_CYCLE_WAIT_NUM (160 * 16)
+#elif defined CONFIG_SOC_SERIES_ESP32H2
+/* Same reasoning as for ESP32C6, but the CPU frequency on ESP32H2 is 96MHz instead of 160 MHz */
+#define APB_CYCLE_WAIT_NUM (96 * 16)
 #else
 #define APB_CYCLE_WAIT_NUM (16)
 #endif
@@ -95,11 +96,7 @@ static int entropy_esp32_get_entropy(const struct device *dev, uint8_t *buf,
 
 static int entropy_esp32_init(const struct device *dev)
 {
-	int ret = 0;
-
-#if defined(SOC_RNG_CLOCK_IS_INDEPENDENT)
-	const struct device *clock_dev =
-		DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(trng0)));
+	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(trng0)));
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(trng0), offset);
 
@@ -107,16 +104,9 @@ static int entropy_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clock_dev, clock_subsys);
+	clock_control_on(clock_dev, clock_subsys);
 
-	if (ret != 0) {
-		LOG_ERR("Error enabling TRNG clock");
-	}
-#else
-	/* clock initialization handled by clock manager */
-#endif
-
-	return ret;
+	return 0;
 }
 
 static DEVICE_API(entropy, entropy_esp32_api_funcs) = {

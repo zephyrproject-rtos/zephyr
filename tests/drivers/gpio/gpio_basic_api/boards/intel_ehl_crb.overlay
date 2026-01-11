@@ -21,6 +21,6 @@
 		compatible = "test-gpio-basic-api";
 
 		out-gpios = <&gpio_0_b 4 0>;
-		in-gpios  = <&gpio_0_b 23 0>;
+		in-gpios = <&gpio_0_b 23 0>;
 	};
 };

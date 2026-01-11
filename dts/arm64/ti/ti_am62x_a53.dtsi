@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ti/k3-am62-main.dtsi>
 
 / {
 	#address-cells = <1>;
@@ -26,6 +27,13 @@
 		};
 	};
 
+	firmware {
+		psci: psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
+	};
+
 	oc_sram: memory@70000000 {
 		reg = <0x70000000 DT_SIZE_K(64)>;
 	};
@@ -33,20 +41,20 @@
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 14 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 11 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 10 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
 
 	gic: interrupt-controller@1800000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x01800000 0x10000>, /* GICD */
-			  <0x01880000 0xc0000>; /* GICR */
+		      <0x01880000 0xc0000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";
@@ -58,83 +66,6 @@
 		status = "okay";
 	};
 
-	uart0: serial@2800000 {
-		compatible = "ns16550";
-		reg = <0x02800000 0x100>;
-		interrupts = <GIC_SPI 178 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart1: serial@2810000 {
-		compatible = "ns16550";
-		reg = <0x02810000 0x100>;
-		interrupts = <GIC_SPI 179 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart2: serial@2820000 {
-		compatible = "ns16550";
-		reg = <0x02820000 0x100>;
-		interrupts = <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart3: serial@2830000 {
-		compatible = "ns16550";
-		reg = <0x02830000 0x100>;
-		interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart4: serial@2840000 {
-		compatible = "ns16550";
-		reg = <0x02840000 0x100>;
-		interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart5: serial@2850000 {
-		compatible = "ns16550";
-		reg = <0x02850000 0x100>;
-		interrupts = <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart6: serial@2860000 {
-		compatible = "ns16550";
-		reg = <0x02860000 0x100>;
-		interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <48000000>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
 	mbox0: mailbox0@29000000 {
 		compatible = "ti,omap-mailbox";
 		reg = <0x29000000 0x200>;
@@ -143,68 +74,59 @@
 		usr-id = <0>;
 		#mbox-cells = <1>;
 	};
+};
 
-	main_i2c0: i2c@20000000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20000000 0x100>;
-		interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
+&main_uart0 {
+	interrupts = <GIC_SPI 178 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
 
-	main_i2c1: i2c@20010000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20010000 0x100>;
-		interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
+&main_uart1 {
+	interrupts = <GIC_SPI 179 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
 
-	main_i2c2: i2c@20020000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20020000 0x100>;
-		interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
+&main_uart2 {
+	interrupts = <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
 
-	main_i2c3: i2c@20030000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20030000 0x100>;
-		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
+&main_uart3 {
+	interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
 
-	main_gpio0: gpio@600000 {
-		compatible = "ti,davinci-gpio";
-		reg = <0x00600000 0x100>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		/* FIXME: Enable all 92 GPIOs */
-		ngpios = <32>;
-		status = "disabled";
-	};
+&main_uart4 {
+	interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
 
-	main_gpio1: gpio@601000 {
-		compatible = "ti,davinci-gpio";
-		reg = <0x00601000 0x100>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		/* FIXME: Enable all 52 GPIOs */
-		ngpios = <32>;
-		status = "disabled";
-	};
+&main_uart5 {
+	interrupts = <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_uart6 {
+	interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c0 {
+	interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c1 {
+	interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c2 {
+	interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c3 {
+	interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
 };

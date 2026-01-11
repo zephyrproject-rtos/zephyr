@@ -300,7 +300,7 @@ ZTEST(test_log_core_additional, test_log_early_logging)
 		}
 
 		zassert_equal(backend1_cb.total_logs, backend1_cb.counter,
-			      "Unexpected amount of messages received. %d",
+			      "Unexpected amount of messages received. %zu",
 			      backend1_cb.counter);
 	}
 }

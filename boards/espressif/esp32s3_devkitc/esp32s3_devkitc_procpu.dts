@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 	aliases {
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button0;
 	};
 
 	chosen {
@@ -29,13 +31,9 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
-	aliases {
-		uart-0 = &uart0;
-		sw0 = &button0;
-	};
-
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";
@@ -90,13 +88,11 @@
 &i2s0 {
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
-	status = "disabled";
 };
 
 &i2s1 {
 	pinctrl-0 = <&i2s1_default>;
 	pinctrl-names = "default";
-	status = "disabled";
 };
 
 &spi2 {
@@ -149,5 +145,9 @@
 };
 
 &wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
 	status = "okay";
 };

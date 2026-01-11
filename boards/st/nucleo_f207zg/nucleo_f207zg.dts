@@ -17,8 +17,10 @@
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
+		zephyr,canbus = &can1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -153,12 +155,24 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -234,12 +248,17 @@ zephyr_udc0: &usbotg_fs {
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x20000 DT_SIZE_K(448)>;
+			reg = <0x20000 DT_SIZE_K(384)>;
 		};
 
-		slot1_partition: partition@90000 {
+		slot1_partition: partition@60000 {
 			label = "image-1";
-			reg = <0x90000 DT_SIZE_K(448)>;
+			reg = <0x60000 DT_SIZE_K(384)>;
+		};
+
+		scratch_partition: partiimagtion@c0000 {
+			label = "image-scratch";
+			reg = <0xc0000 DT_SIZE_K(128)>;
 		};
 	};
 };

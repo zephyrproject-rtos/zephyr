@@ -6,17 +6,17 @@
 
 /**
  * @file
- * @brief Public LoRa driver APIs
+ * @ingroup lora_interface
+ * @brief Main header file for LoRa driver API.
  */
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 
 /**
- * @file
- * @brief Public LoRa APIs
- * @defgroup lora_api LoRa APIs
+ * @brief Interfaces for LoRa transceivers.
+ * @defgroup lora_interface LoRa
  * @since 2.2
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -31,34 +31,50 @@ extern "C" {
 
 /**
  * @brief LoRa signal bandwidth
+ *
+ * This enumeration defines the bandwidth of a LoRa signal.
+ *
+ * The bandwidth determines how much spectrum is used to transmit data. Wider bandwidths enable
+ * higher data rates but typically reduce sensitivity and range.
  */
 enum lora_signal_bandwidth {
-	BW_125_KHZ = 0,
-	BW_250_KHZ,
-	BW_500_KHZ,
+	BW_125_KHZ = 0,	/**< 125 kHz */
+	BW_250_KHZ,	/**< 250 kHz */
+	BW_500_KHZ,	/**< 500 kHz */
 };
 
 /**
  * @brief LoRa data-rate
+ *
+ * This enumeration represents the data rate of a LoRa signal, expressed as a Spreading Factor (SF).
+ *
+ * The Spreading Factor determines how many chirps are used to encode each symbol (2^SF chips per
+ * symbol). Higher values result in lower data rates but increased range and robustness.
  */
 enum lora_datarate {
-	SF_6 = 6,
-	SF_7,
-	SF_8,
-	SF_9,
-	SF_10,
-	SF_11,
-	SF_12,
+	SF_6 = 6, /**< Spreading factor 6 (fastest, shortest range) */
+	SF_7,     /**< Spreading factor 7 */
+	SF_8,     /**< Spreading factor 8 */
+	SF_9,     /**< Spreading factor 9 */
+	SF_10,    /**< Spreading factor 10 */
+	SF_11,    /**< Spreading factor 11 */
+	SF_12,    /**< Spreading factor 12 (slowest, longest range) */
 };
 
 /**
  * @brief LoRa coding rate
+ *
+ * This enumeration defines the LoRa coding rate, used for forward error correction (FEC).
+ *
+ * The coding rate is expressed as 4/x, where a lower denominator (e.g., 4/5) means less redundancy,
+ * resulting in a higher data rate but reduced robustness. Higher redundancy (e.g., 4/8) improves
+ * error tolerance at the cost of data rate.
  */
 enum lora_coding_rate {
-	CR_4_5 = 1,
-	CR_4_6 = 2,
-	CR_4_7 = 3,
-	CR_4_8 = 4,
+	CR_4_5 = 1,  /**< Coding rate 4/5 (4 information bits, 1 error correction bit) */
+	CR_4_6 = 2,  /**< Coding rate 4/6 (4 information bits, 2 error correction bits) */
+	CR_4_7 = 3,  /**< Coding rate 4/7 (4 information bits, 3 error correction bits) */
+	CR_4_8 = 4,  /**< Coding rate 4/8 (4 information bits, 4 error correction bits) */
 };
 
 /**
@@ -106,6 +122,9 @@ struct lora_modem_config {
 	 * interacting with a public network.
 	 */
 	bool public_network;
+
+	/** Set to true to disable the 16-bit payload CRC */
+	bool packet_crc_disable;
 };
 
 /**
@@ -131,6 +150,14 @@ typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t s
  */
 typedef int (*lora_api_config)(const struct device *dev,
 			       struct lora_modem_config *config);
+
+/**
+ * @typedef lora_api_airtime()
+ * @brief Callback API for querying packet airtime
+ *
+ * @see lora_airtime() for argument descriptions.
+ */
+typedef uint32_t (*lora_api_airtime)(const struct device *dev, uint32_t data_len);
 
 /**
  * @typedef lora_api_send()
@@ -182,6 +209,7 @@ typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 
 __subsystem struct lora_driver_api {
 	lora_api_config config;
+	lora_api_airtime airtime;
 	lora_api_send send;
 	lora_api_send_async send_async;
 	lora_api_recv recv;
@@ -206,6 +234,23 @@ static inline int lora_config(const struct device *dev,
 		(const struct lora_driver_api *)dev->api;
 
 	return api->config(dev, config);
+}
+
+/**
+ * @brief Query the airtime of a packet with a given length
+ *
+ * @note Uses the current radio configuration from @ref lora_config
+ *
+ * @param dev       LoRa device
+ * @param data_len  Length of the data
+ * @return Airtime of packet in milliseconds
+ */
+static inline uint32_t lora_airtime(const struct device *dev, uint32_t data_len)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	return api->airtime(dev, data_len);
 }
 
 /**

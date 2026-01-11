@@ -6,7 +6,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 #if !defined(CONFIG_XIP)
 extern char _rom_attr[];

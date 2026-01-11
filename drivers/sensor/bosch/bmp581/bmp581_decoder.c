@@ -49,6 +49,7 @@ int bmp581_encode(const struct device *dev,
 
 	if (trigger_status) {
 		edata->header.channels |= bmp581_encode_channel(SENSOR_CHAN_ALL);
+		edata->header.fifo_count = data->stream.fifo_thres;
 	} else {
 		const struct sensor_chan_spec *const channels = read_config->channels;
 		size_t num_channels = read_config->count;
@@ -63,7 +64,7 @@ int bmp581_encode(const struct device *dev,
 		return err;
 	}
 
-	edata->header.events = trigger_status ? BIT(0) : 0;
+	edata->header.events = trigger_status;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
@@ -86,7 +87,11 @@ static int bmp581_decoder_get_frame_count(const uint8_t *buffer,
 		return -ENODATA;
 	}
 
-	*frame_count = 1;
+	if (edata->header.events & BMP581_EVENT_FIFO_WM) {
+		*frame_count = edata->header.fifo_count;
+	} else {
+		*frame_count = 1;
+	}
 	return 0;
 }
 
@@ -105,6 +110,59 @@ static int bmp581_decoder_get_size_info(struct sensor_chan_spec chan_spec,
 	}
 }
 
+static int bmp581_convert_raw_to_q31_value(const struct bmp581_encoded_header *header,
+					   struct sensor_chan_spec *chan_spec,
+					   const struct bmp581_frame *frame,
+					   uint32_t *fit,
+					   struct sensor_q31_data *out)
+{
+	if (((header->events & BMP581_EVENT_FIFO_WM) != 0 && *fit >= header->fifo_count) ||
+	     ((header->events & BMP581_EVENT_FIFO_WM) == 0 && *fit != 0)) {
+		return -ENODATA;
+	}
+
+	switch (chan_spec->chan_type) {
+	case SENSOR_CHAN_AMBIENT_TEMP: {
+		/* Temperature is in data[2:0], data[2] is integer part */
+		uint32_t raw_temp = ((uint32_t)frame[*fit].payload[2] << 16) |
+				    ((uint16_t)frame[*fit].payload[1] << 8) |
+				    frame[*fit].payload[0];
+		int32_t raw_temp_signed = sign_extend(raw_temp, 23);
+
+		out->shift = (31 - 16); /* 16 left shifts gives us the value in celsius */
+		out->readings[*fit].value = raw_temp_signed;
+		break;
+	}
+	case SENSOR_CHAN_PRESS: {
+		if (!header->press_en) {
+			return -ENODATA;
+		}
+		/* Shift by 10 bits because we'll divide by 1000 to make it kPa */
+		uint64_t raw_press = (((uint32_t)frame[*fit].payload[5] << 16) |
+				       ((uint16_t)frame[*fit].payload[4] << 8) |
+				       frame[*fit].payload[3]);
+
+		int64_t raw_press_signed = sign_extend_64(raw_press, 23);
+
+		raw_press_signed *= 1024;
+		raw_press_signed /= 1000;
+
+		/* Original value was in Pa by left-shifting 6 spaces, but
+		 * we've multiplied by 2^10 to not lose precision when
+		 * converting to kPa. Hence, left-shift 16 spaces.
+		 */
+		out->shift = (31 - 6 - 10);
+		out->readings[*fit].value = (int32_t)raw_press_signed;
+		break;
+	}
+	default:
+		return -EINVAL;
+	}
+
+	*fit = (*fit) + 1;
+	return 0;
+}
+
 static int bmp581_decoder_decode(const uint8_t *buffer,
 				struct sensor_chan_spec chan_spec,
 				uint32_t *fit,
@@ -113,10 +171,6 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 {
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 	uint8_t channel_request;
-
-	if (*fit != 0) {
-		return 0;
-	}
 
 	if (max_count == 0 || chan_spec.chan_idx != 0) {
 		return -EINVAL;
@@ -130,54 +184,31 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 	struct sensor_q31_data *out = data_out;
 
 	out->header.base_timestamp_ns = edata->header.timestamp;
-	out->header.reading_count = 1;
 
-	switch (chan_spec.chan_type) {
-	case SENSOR_CHAN_AMBIENT_TEMP: {
-		/* Temperature is in data[2:0], data[2] is integer part */
-		uint32_t raw_temp = ((uint32_t)edata->payload[2] << 16) |
-				    ((uint16_t)edata->payload[1] << 8) |
-				    edata->payload[0];
-		int32_t raw_temp_signed = sign_extend(raw_temp, 23);
+	int err;
+	uint32_t fit_0 = *fit;
 
-		out->shift = (31 - 16); /* 16 left shifts gives us the value in celsius */
-		out->readings[0].value = raw_temp_signed;
-		break;
-	}
-	case SENSOR_CHAN_PRESS:
-		if (!edata->header.press_en) {
-			return -ENODATA;
-		}
-		/* Shift by 10 bits because we'll divide by 1000 to make it kPa */
-		uint64_t raw_press = (((uint32_t)edata->payload[5] << 16) |
-				       ((uint16_t)edata->payload[4] << 8) |
-				       edata->payload[3]);
+	do {
+		err = bmp581_convert_raw_to_q31_value(&edata->header, &chan_spec,
+						      edata->frame, fit, out);
+	} while (err == 0 && *fit < max_count);
 
-		int64_t raw_press_signed = sign_extend_64(raw_press, 23);
-
-		raw_press_signed *= 1024;
-		raw_press_signed /= 1000;
-
-		/* Original value was in Pa by left-shifting 6 spaces, but
-		 * we've multiplied by 2^10 to not lose precision when
-		 * converting to kPa. Hence, left-shift 16 spaces.
-		 */
-		out->shift = (31 - 6 - 10);
-		out->readings[0].value = (int32_t)raw_press_signed;
-		break;
-	default:
-		return -EINVAL;
+	if (*fit == fit_0 || err != 0) {
+		return err;
 	}
 
-	*fit = 1;
-	return 1;
+	out->header.reading_count = *fit;
+	return *fit - fit_0;
 }
 
 static bool bmp581_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 
-	if ((trigger == SENSOR_TRIG_DATA_READY) && (edata->header.events != 0)) {
+	if ((trigger == SENSOR_TRIG_DATA_READY &&
+	     edata->header.events & BMP581_EVENT_DRDY) ||
+	    (trigger == SENSOR_TRIG_FIFO_WATERMARK &&
+	     edata->header.events & BMP581_EVENT_FIFO_WM)) {
 		return true;
 	}
 

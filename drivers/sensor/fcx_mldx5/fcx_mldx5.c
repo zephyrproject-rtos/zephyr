@@ -235,8 +235,14 @@ static void fcx_mldx5_uart_send(const struct device *dev, enum fcx_mldx5_cmd cmd
 
 	buf[FCX_MLDX5_STX_INDEX] = FCX_MLDX5_STX;
 	memcpy(&buf[FCX_MLDX5_CMD_INDEX], fcx_mldx5_cmds[cmd], FCX_MLDX5_CMD_LEN);
-	if (cmd_data_len != 0 && cmd_data_len == fcx_mldx5_cmds_data_len[cmd]) {
-		memcpy(&buf[FCX_MLDX5_DATA_INDEX], cmd_data, strlen(cmd_data));
+
+	if (cmd_data_len != 0) {
+		if ((FCX_MLDX5_DATA_INDEX + cmd_data_len) <= FCX_MLDX5_MAX_FRAME_LEN) {
+			memcpy(&buf[FCX_MLDX5_DATA_INDEX], cmd_data, cmd_data_len);
+		} else {
+			LOG_ERR("%s: cmd_data too large for buffer", __func__);
+			return;
+		}
 	}
 
 	checksum = fcx_mldx5_calculate_checksum(&buf[FCX_MLDX5_CMD_INDEX],

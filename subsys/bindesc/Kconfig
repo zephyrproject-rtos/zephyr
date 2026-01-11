@@ -27,7 +27,7 @@ config BINDESC_DEFINE_MAX_DATA_SIZE
 	help
 	  Determines the maximum size of a binary descriptor's data. The theoretical
 	  limit to this value is the maximum value of a uint16_t (65535), in practice
-	  it's recommened to keep this value much smaller for easier handling of the data.
+	  it's recommended to keep this value much smaller for easier handling of the data.
 
 endif # BINDESC_DEFINE
 

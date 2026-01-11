@@ -54,6 +54,9 @@ extern "C" {
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
 
+/** Value that represents an unset presentation delay value */
+#define BT_BAP_PD_UNSET 0xFFFFFFFFU
+
 /**
  * @brief Recommended connectable advertising parameters
  *
@@ -880,6 +883,22 @@ struct bt_bap_ep_info {
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
 
 /**
+ * @brief Get the pointer to the ACL connection of an endpoint
+ *
+ * The caller gets a new reference to the connection object, if not NULL, which must be
+ * released with bt_conn_unref() once done using the object.
+ *
+ * @param ep The endpoint to get the ACL connection of
+ *
+ * @return The ACL connection pointer, or NULL if:
+ *         - @p ep is NULL
+ *         - @p ep is a broadcast endpoint
+ *         - @p ep is a Unicast Server endpoint not yet configured by a remote client
+ *         - @p ep is a Unicast Client endpoint not yet discovered on a remote server
+ */
+struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep);
+
+/**
  * @brief Basic Audio Profile stream structure.
  *
  * Streams represents a stream configuration of a Remote Endpoint and a Local Capability.
@@ -906,14 +925,12 @@ struct bt_bap_stream {
 	/** Stream user data */
 	void *user_data;
 
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
-	/**
-	 * @brief Audio ISO reference
+	/** ISO channel reference
 	 *
-	 * This is only used for Unicast Client streams, and is handled internally.
+	 * This will become valid once the stream is added to a group (bt_bap_unicast_group,
+	 * bt_bap_broadcast_source or bt_bap_broadcast_sink).
 	 */
-	struct bt_bap_iso *bap_iso;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+	struct bt_iso_chan *iso;
 
 	/** Unicast or Broadcast group - Used internally */
 	void *group;
@@ -1204,7 +1221,7 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream);
  * @retval 0 in case of success
  * @retval -EINVAL if the stream, endpoint, ISO channel or connection is NULL
  * @retval -EBADMSG if the stream or ISO channel is in an invalid state for connection
- * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_HCI_ROLE_CENTRAL
+ * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_CONN_ROLE_CENTRAL
  * @retval -EALREADY if the ISO channel is already connecting or connected
  * @retval -EBUSY if another ISO channel is connecting
  * @retval -ENOEXEC if otherwise rejected by the ISO layer
@@ -1248,7 +1265,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream);
  *
  * @retval 0 Success
  * @retval -EINVAL The @p stream does not have an endpoint or a connection, of the stream's
- *                 connection's role is not @p BT_HCI_ROLE_CENTRAL
+ *                 connection's role is not @p BT_CONN_ROLE_CENTRAL
  * @retval -EBADMSG The state of the @p stream endpoint is not @ref BT_BAP_EP_STATE_DISABLING
  * @retval -EALREADY The CIS state of the @p is not in a connected state, and thus is already
  *                   stopping
@@ -1746,6 +1763,33 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 					bt_bap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
 
+/** Structure holding information of audio stream endpoint */
+struct bt_bap_unicast_group_info {
+	/** Presentation delay for sink ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no sink ASEs have been QoS configured
+	 */
+	uint32_t sink_pd;
+
+	/** Presentation delay for source ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no source ASEs have been QoS configured
+	 */
+	uint32_t source_pd;
+};
+
+/**
+ * @brief Return structure holding information of unicast group
+ *
+ * @param unicast_group The unicast group object.
+ * @param info          The structure object to be filled with the info.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL  @p unicast_group or @p info are NULL
+ */
+int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_group,
+				  struct bt_bap_unicast_group_info *info);
+
 /** Unicast Client callback structure */
 struct bt_bap_unicast_client_cb {
 	/**
@@ -1939,16 +1983,23 @@ struct bt_bap_unicast_client_cb {
 /**
  * @brief Register unicast client callbacks.
  *
- * Only one callback structure can be registered, and attempting to
- * registering more than one will result in an error.
- *
- * @param cb  Unicast client callback structure.
+ * @param cb  Unicast client callback structure to register.
  *
  * @retval 0 Success
  * @retval -EINVAL @p cb is NULL.
  * @retval -EEXIST @p cb is already registered.
  */
 int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb);
+
+/**
+ * @brief Unregister unicast client callbacks.
+ *
+ * @param cb  Unicast client callback structure to unregister.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
 
 /**
  * @brief Discover remote capabilities and endpoints
@@ -2428,6 +2479,32 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
 int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 				     struct net_buf_simple *base_buf);
 
+/**
+ * @brief Callback function for bt_bap_broadcast_source_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true  Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_bap_broadcast_source_foreach_stream_func_t)(struct bt_bap_stream *stream,
+							      void *user_data);
+
+/**
+ * @brief Iterate through all streams in a broadcast source
+ *
+ * @param source         The broadcast source
+ * @param func           The callback function
+ * @param user_data      User specified data that is sent to the callback function
+ *
+ * @retval 0          Success (even if no streams exists in the broadcast source).
+ * @retval -ECANCELED The @p func returned true.
+ * @retval -EINVAL    @p source or @p func were NULL.
+ */
+int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
+					   bt_bap_broadcast_source_foreach_stream_func_t func,
+					   void *user_data);
 /** @} */ /* End of bt_bap_broadcast_source */
 
 /**
@@ -2607,8 +2684,6 @@ int bt_bap_scan_delegator_unregister(void);
  *
  * @param src_id    The source id used to identify the receive state.
  * @param pa_state  The Periodic Advertising sync state to set.
- *                  BT_BAP_PA_STATE_NOT_SYNCED and BT_BAP_PA_STATE_SYNCED is
- *                  not necessary to provide, as they are handled internally.
  *
  * @return int    Error value. 0 on success, errno on fail.
  */
@@ -2633,6 +2708,14 @@ struct bt_bap_scan_delegator_add_src_param {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/**
+	 * @brief Periodic Advertising sync state
+	 *
+	 * This will typically be either @ref BT_BAP_PA_STATE_NOT_SYNCED or
+	 * @ref BT_BAP_PA_STATE_SYNCED.
+	 */
+	enum bt_bap_pa_state pa_state;
 
 	/** The broadcast isochronous group encryption state */
 	enum bt_bap_big_enc_state encrypt_state;

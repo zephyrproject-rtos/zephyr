@@ -12,3 +12,11 @@
 	model = "M5Stack CoreS3 SE PROCPU";
 	compatible = "m5stack,cores3-se";
 };
+
+&mipi_dbi {
+	/* Disabled by default since CoreS3 SE shares the LCD_DC pin with
+	 * SPI_MISO. To use the display, remove SPIM2_MISO_GPIO35 from the
+	 * pinctrl configuration in m5stack_cores3-pinctrl.dtsi.
+	 */
+	status = "disabled";
+};

@@ -28,20 +28,18 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@2 {
 		compatible = "microchip,ksz8081";
 		reg = <2>;
 		status = "okay";
-		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_LOW>;
 		int-gpios = <&hsgpio0 21 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
 	};
 };
 
 /* XTAL is disconnected */
-/* TODO: this should be uncommented once it is added */
-/*
- * &rtc {
- *	status = "disabled";
- * };
- */
+&xtal32 {
+	status = "disabled";
+};

@@ -16,6 +16,6 @@
 &spi1 {
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
-			<&rcc STM32_SRC_HSI16 SPI1_SEL(2)>;
+		 <&rcc STM32_SRC_HSI16 SPI1_SEL(2)>;
 	status = "okay";
 };

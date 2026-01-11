@@ -30,14 +30,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
 			label = "User LED Red";
 		};
+
 		yellow_led: led_1 {
 			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
 			label = "User LED Yellow";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioh 2 GPIO_ACTIVE_LOW>;
 			label = "User LED Green";
@@ -46,11 +49,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		sw2: button_0 {
 			gpios = <&gpiog 15 GPIO_ACTIVE_LOW>;
 			label = "User SW2";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		sw3: button_1 {
 			gpios = <&gpiof 11 GPIO_ACTIVE_LOW>;
 			label = "User SW3";

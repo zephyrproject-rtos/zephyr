@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "dt_xt_zb1.dtsi"
+#include "dt_xt_zb1_devkit-pinctrl.dtsi"
+
+/ {
+	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module Development Kit";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};

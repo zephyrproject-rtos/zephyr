@@ -5,6 +5,10 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(ostimer0));
+#endif
+
 #define OSTIMER64_BASE DT_REG_ADDR(DT_NODELABEL(ostimer64))
 #define OSTIMER_BASE DT_REG_ADDR(DT_NODELABEL(ostimer0))
 
@@ -51,18 +55,20 @@ struct mtk_ostimer64 {
 
 #define OSTIMER_CON_ENABLE BIT(0)
 #define OSTIMER_CON_CLKSRC_MASK 0x30
+
+#if defined(CONFIG_SOC_SERIES_MT818X)
+#define OSTIMER_CON_CLKSRC_26M  0x00 /*  26 MHz */
+#define OSTIMER_CON_CLKSRC_BCLK 0x10
+#define OSTIMER_CON_CLKSRC_PCLK 0x20
+#else
 #define OSTIMER_CON_CLKSRC_32K  0x00 /*  32768 Hz */
 #define OSTIMER_CON_CLKSRC_26M  0x10 /*  26 MHz */
 #define OSTIMER_CON_CLKSRC_BCLK 0x20 /*  CPU speed, 720 MHz */
 #define OSTIMER_CON_CLKSRC_PCLK 0x30 /*  ~312 MHz experimentally */
+#endif
 
-#ifndef CONFIG_SOC_MT8196
-#define OSTIMER_IRQ_ACK_ENABLE BIT(4) /*  read = status, write = enable */
-#define OSTIMER_IRQ_ACK_CLEAR  BIT(5)
-#else
 #define OSTIMER_IRQ_ACK_ENABLE BIT(0)
 #define OSTIMER_IRQ_ACK_CLEAR  BIT(5)
-#endif
 
 #define OST64_HZ 13000000U
 #define OST_HZ 26000000U

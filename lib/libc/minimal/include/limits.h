@@ -80,7 +80,15 @@ extern "C" {
 #error "unexpected __SIZEOF_LONG_LONG__ value"
 #endif
 
+#if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
+
+#include <zephyr/posix/posix_limits.h>
+
+#else
+
 #define PATH_MAX    256
+
+#endif
 
 #ifdef __cplusplus
 }

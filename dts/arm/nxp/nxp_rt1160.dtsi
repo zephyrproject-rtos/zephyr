@@ -11,3 +11,16 @@
 	clock-mult = <100>;
 	clock-div = <4>;
 };
+
+/* Set OCRAM regions/sizes for RT1160. Combines OCRAM1/OCRAM2/OCRAM M7 (FlexRAM ECC).
+ * ECC must be left disabled for this configuration
+ */
+/ {
+	soc {
+		ocram_combined: ocram@20340000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "OCRAMCOMBINED";
+			reg = <0x20340000 DT_SIZE_K(256)>;
+		};
+	};
+};

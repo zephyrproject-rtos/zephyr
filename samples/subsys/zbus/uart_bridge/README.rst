@@ -69,7 +69,7 @@ The :file:`decoder.py` script can be executed using the following command:
 
 
 Note the run command above prints the value of pts port because it is running in
-:ref:`native_sim <native_sim>`.
+:zephyr:board:`native_sim <native_sim>`.
 Look at the line indicating ``uart_1 connected to pseudotty: /dev/pts/2``.
 It can be different in your case. If you are using a board, read the documentation to get the
 correct port destination (in Linux is something like ``/dev/tty...`` or in Windows ``COM...``).

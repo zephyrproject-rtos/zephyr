@@ -103,13 +103,13 @@
 			reg = <0x40028000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>,
-						 <72 0>, <73 0>, <74 0>, <75 0>;
+				     <72 0>, <73 0>, <74 0>, <75 0>;
 			dma-channels = <12>;
 			status = "disabled";
 			#dma-cells = <2>;
 		};
 
-		wdt1: watchdog@40003400  {
+		wdt1: watchdog@40003400 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003400 0x400>;
 			interrupts = <57 0>;
@@ -156,6 +156,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
@@ -170,6 +171,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";

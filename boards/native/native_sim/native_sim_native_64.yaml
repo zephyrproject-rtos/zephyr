@@ -20,4 +20,5 @@ supported:
   - adc
   - gpio
   - rtc
+  - hwinfo
 vendor: zephyr

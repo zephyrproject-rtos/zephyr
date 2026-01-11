@@ -550,7 +550,6 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 
 static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 {
-	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
 	struct net_buf *pkt_buf;
 	struct net_pkt *pkt;
@@ -558,8 +557,8 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 	uint8_t dummy[4];
 
 	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len,
-					   AF_UNSPEC, 0, K_MSEC(config->timeout));
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len, NET_AF_UNSPEC, 0,
+					   K_MSEC(CONFIG_ETH_ENC28J60_TIMEOUT));
 	if (!pkt) {
 		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
 		eth_stats_update_errors_rx(get_iface(context));
@@ -914,10 +913,9 @@ static int eth_enc28j60_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static const struct eth_enc28j60_config eth_enc28j60_config_##inst = {                     \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
-		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \
 		.hw_rx_filter = DT_INST_PROP_OR(inst, hw_rx_filter, ENC28J60_RECEIVE_FILTERS),     \
 		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                    \
 	};                                                                                         \

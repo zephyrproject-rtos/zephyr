@@ -45,6 +45,9 @@ BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
 	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
 	     "threads.");
 
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
@@ -77,6 +80,7 @@ static ALWAYS_INLINE void *curr_cpu_runq(void)
 static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+	__ASSERT_NO_MSG(!is_thread_dummy(thread));
 
 	_priq_run_add(thread_runq(thread), thread);
 }
@@ -84,6 +88,7 @@ static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+	__ASSERT_NO_MSG(!is_thread_dummy(thread));
 
 	_priq_run_remove(thread_runq(thread), thread);
 }
@@ -127,6 +132,9 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 		runq_remove(thread);
 	}
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 /* Called out of z_swap() when CONFIG_SMP.  The current thread can
  * never live in the run queue until we are inexorably on the context
@@ -142,19 +150,6 @@ void z_requeue_current(struct k_thread *thread)
 	signal_pending_ipi();
 }
 
-/* Return true if the thread is aborting, else false */
-static inline bool is_aborting(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
-}
-
-/* Return true if the thread is aborting or suspending, else false */
-static inline bool is_halting(struct k_thread *thread)
-{
-	return (thread->base.thread_state &
-		(_THREAD_ABORTING | _THREAD_SUSPENDING)) != 0U;
-}
-
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
 {
@@ -164,19 +159,41 @@ static inline void clear_halting(struct k_thread *thread)
 	}
 }
 
+/* Track cooperative threads preempted by metairqs so we can return to
+ * them specifically.  Called at the moment a new thread has been
+ * selected to run.
+ */
+static void update_metairq_preempt(struct k_thread *thread)
+{
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
+	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
+	    !thread_is_preemptible(_current)) {
+		/* Record new preemption */
+		_current_cpu->metairq_preempted = _current;
+	} else if (!thread_is_metairq(thread)) {
+		/* Returning from existing preemption */
+		_current_cpu->metairq_preempted = NULL;
+	}
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
+}
+
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
-	if (is_halting(_current)) {
-		halt_thread(_current, is_aborting(_current) ?
+	if (z_is_thread_halting(_current)) {
+		halt_thread(_current, z_is_thread_aborting(_current) ?
 				      _THREAD_DEAD : _THREAD_SUSPENDED);
 	}
 #endif /* CONFIG_SMP */
 
 	struct k_thread *thread = runq_best();
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
 	/* MetaIRQs must always attempt to return back to a
 	 * cooperative thread they preempted and not whatever happens
 	 * to be highest priority now. The cooperative thread was
@@ -185,16 +202,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	struct k_thread *mirqp = _current_cpu->metairq_preempted;
 
 	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
-		if (!z_is_thread_prevented_from_running(mirqp)) {
+		if (z_is_thread_ready(mirqp)) {
 			thread = mirqp;
 		} else {
 			_current_cpu->metairq_preempted = NULL;
 		}
 	}
-#endif
-/* CONFIG_NUM_METAIRQ_PRIORITIES > 0 &&
- * CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES
- */
+#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
@@ -211,13 +225,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * thread selected above represents "the best thread that is
 	 * not current".
 	 *
-	 * Subtle note on "queued": in SMP mode, _current does not
-	 * live in the queue, so this isn't exactly the same thing as
-	 * "ready", it means "is _current already added back to the
-	 * queue such that we don't want to re-add it".
+	 * Subtle note on "queued": in SMP mode, neither _current nor
+	 * metairq_premepted live in the queue, so this isn't exactly the
+	 * same thing as "ready", it means "the thread already been
+	 * added back to the queue such that we don't want to re-add it".
 	 */
 	bool queued = z_is_thread_queued(_current);
-	bool active = !z_is_thread_prevented_from_running(_current);
+	bool active = z_is_thread_ready(_current);
 
 	if (thread == NULL) {
 		thread = _current_cpu->idle_thread;
@@ -236,10 +250,22 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		}
 	}
 
-	/* Put _current back into the queue */
-	if ((thread != _current) && active &&
-		!z_is_idle_thread_object(_current) && !queued) {
-		queue_thread(_current);
+	if (thread != _current) {
+		update_metairq_preempt(thread);
+		/*
+		 * Put _current back into the queue unless it is ..
+		 * 1. not active (i.e., blocked, suspended, dead), or
+		 * 2. already queued, or
+		 * 3. the idle thread, or
+		 * 4. preempted by a MetaIRQ thread
+		 */
+		if (active && !queued && !z_is_idle_thread_object(_current)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
+		    && (_current != _current_cpu->metairq_preempted)
+#endif
+		   ) {
+			queue_thread(_current);
+		}
 	}
 
 	/* Take the new _current out of the queue */
@@ -251,40 +277,20 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	return thread;
 #endif /* CONFIG_SMP */
 }
-
-void move_thread_to_end_of_prio_q(struct k_thread *thread)
-{
-	if (z_is_thread_queued(thread)) {
-		dequeue_thread(thread);
-	}
-	queue_thread(thread);
-	update_cache(thread == _current);
-}
-
-/* Track cooperative threads preempted by metairqs so we can return to
- * them specifically.  Called at the moment a new thread has been
- * selected to run.
- */
-static void update_metairq_preempt(struct k_thread *thread)
-{
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
-	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
-	    !thread_is_preemptible(_current)) {
-		/* Record new preemption */
-		_current_cpu->metairq_preempted = _current;
-	} else if (!thread_is_metairq(thread)) {
-		/* Returning from existing preemption */
-		_current_cpu->metairq_preempted = NULL;
-	}
-#else
-	ARG_UNUSED(thread);
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 #endif
-/* CONFIG_NUM_METAIRQ_PRIORITIES > 0 &&
- * CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES
- */
+
+void move_current_to_end_of_prio_q(void)
+{
+	runq_yield();
+
+	update_cache(1);
 }
 
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
@@ -312,24 +318,28 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 	_current_cpu->swap_ok = preempt_ok;
 #endif /* CONFIG_SMP */
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
+/**
+ * Returns pointer to _cpu if the thread is currently running on
+ * another CPU.
+ */
 static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 {
-	/* Returns pointer to _cpu if the thread is currently running on
-	 * another CPU. There are more scalable designs to answer this
-	 * question in constant time, but this is fine for now.
-	 */
 #ifdef CONFIG_SMP
-	int currcpu = _current_cpu->id;
+	int thread_cpu_id = thread->base.cpu;
+	struct _cpu *thread_cpu;
 
-	unsigned int num_cpus = arch_num_cpus();
+	__ASSERT_NO_MSG((thread_cpu_id >= 0) &&
+			(thread_cpu_id < arch_num_cpus()));
 
-	for (int i = 0; i < num_cpus; i++) {
-		if ((i != currcpu) &&
-		    (_kernel.cpus[i].current == thread)) {
-			return &_kernel.cpus[i];
-		}
+	thread_cpu = &_kernel.cpus[thread_cpu_id];
+	if ((thread_cpu->current == thread) && (thread_cpu != _current_cpu)) {
+		return thread_cpu;
 	}
+
 #endif /* CONFIG_SMP */
 	ARG_UNUSED(thread);
 	return NULL;
@@ -338,7 +348,7 @@ static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 static void ready_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(thread));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	/* If thread is queued already, do not try and added it to the
@@ -363,10 +373,11 @@ void z_ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
+/* This routine only used for testing purposes */
+void z_yield_testing_only(void)
 {
 	K_SPINLOCK(&_sched_spinlock) {
-		move_thread_to_end_of_prio_q(thread);
+		move_current_to_end_of_prio_q();
 	}
 }
 
@@ -378,17 +389,35 @@ void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
  */
 static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 {
-	if (is_halting(_current)) {
+	if (z_is_thread_halting(_current)) {
 		halt_thread(_current,
-			    is_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED);
+			    z_is_thread_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
-	while (is_halting(thread)) {
+	while (z_is_thread_halting(thread)) {
 		unsigned int k = arch_irq_lock();
 
 		arch_spin_relax(); /* Requires interrupts be masked */
 		arch_irq_unlock(k);
 	}
+}
+
+/**
+ * If the specified thread is recorded as being preempted by a meta IRQ thread,
+ * clear that record.
+ */
+static ALWAYS_INLINE void z_metairq_preempted_clear(struct k_thread *thread)
+{
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
+	unsigned int cpu_id = 0;
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	cpu_id = thread->base.cpu;
+#endif
+	if (_kernel.cpus[cpu_id].metairq_preempted == thread) {
+		_kernel.cpus[cpu_id].metairq_preempted = NULL;
+	}
+#endif
 }
 
 /* Shared handler for k_thread_{suspend,abort}().  Called with the
@@ -397,6 +426,9 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
  * (aborting _current will not return, obviously), which may be after
  * a context switch.
  */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 					bool terminate)
 {
@@ -404,6 +436,8 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 #ifdef CONFIG_SMP
 	wq = terminate ? wq : &thread->halt_queue;
 #endif
+
+	z_metairq_preempted_clear(thread);
 
 	/* If the target is a thread running on another CPU, flag and
 	 * poke (note that we might spin to wait, so a true
@@ -422,8 +456,8 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 		arch_sched_directed_ipi(IPI_CPU_MASK(cpu->id));
 #else
 		arch_sched_broadcast_ipi();
-#endif
-#endif
+#endif /* CONFIG_ARCH_HAS_DIRECTED_IPIS */
+#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
 		if (arch_is_in_isr()) {
 			thread_halt_spin(thread, key);
 		} else  {
@@ -449,6 +483,9 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 	 * re-take the lock!
 	 */
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 
 void z_impl_k_thread_suspend(k_tid_t thread)
@@ -462,6 +499,7 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 		k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 		z_mark_thread_as_suspended(thread);
+		z_metairq_preempted_clear(thread);
 		dequeue_thread(thread);
 		update_cache(1);
 		z_swap(&_sched_spinlock, key);
@@ -530,6 +568,9 @@ static void unready_thread(struct k_thread *thread)
 }
 
 /* _sched_spinlock must be held */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
 	unready_thread(thread);
@@ -542,6 +583,9 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 		_priq_wait_add(&wait_q->waitq, thread);
 	}
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 {
@@ -554,7 +598,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 			k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
+	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
 	add_thread_timeout(thread, timeout);
@@ -663,6 +707,9 @@ void z_unpend_thread(struct k_thread *thread)
 /* Priority set utility that does no rescheduling, it just changes the
  * run queue state, returning true if a reschedule is needed later.
  */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 bool z_thread_prio_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
@@ -718,6 +765,9 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 
 	return need_sched;
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 static inline bool resched(uint32_t key)
 {
@@ -768,6 +818,9 @@ void z_reschedule_irqlock(uint32_t key)
 
 void k_sched_lock(void)
 {
+	LOG_DBG("scheduler locked (%p:%d)",
+		_current, _current->base.sched_locked);
+
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
@@ -870,9 +923,9 @@ void *z_get_next_switch_handle(void *interrupted)
 	K_SPINLOCK(&_sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		if (IS_ENABLED(CONFIG_SMP)) {
-			old_thread->switch_handle = NULL;
-		}
+		__ASSERT(old_thread->switch_handle == NULL || is_thread_dummy(old_thread),
+			"old thread handle should be null.");
+
 		new_thread = next_up();
 
 		z_sched_usage_switch(new_thread);
@@ -880,7 +933,6 @@ void *z_get_next_switch_handle(void *interrupted)
 		if (old_thread != new_thread) {
 			uint8_t  cpu_id;
 
-			update_metairq_preempt(new_thread);
 			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
@@ -920,10 +972,8 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
-		if (IS_ENABLED(CONFIG_SMP)) {
-			/* Active threads MUST have a null here */
-			new_thread->switch_handle = NULL;
-		}
+		/* Active threads MUST have a null here */
+		new_thread->switch_handle = NULL;
 	}
 	signal_pending_ipi();
 	return ret;
@@ -999,13 +1049,9 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_SCHED_DEADLINE
-void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
 {
-
-	deadline = CLAMP(deadline, 0, INT_MAX);
-
 	struct k_thread *thread = tid;
-	int32_t newdl = k_cycle_get_32() + deadline;
 
 	/* The prio_deadline field changes the sorting order, so can't
 	 * change it while the thread is in the run queue (dlists
@@ -1016,15 +1062,35 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 	K_SPINLOCK(&_sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
-			thread->base.prio_deadline = newdl;
+			thread->base.prio_deadline = deadline;
 			queue_thread(thread);
 		} else {
-			thread->base.prio_deadline = newdl;
+			thread->base.prio_deadline = deadline;
 		}
 	}
 }
 
+void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+{
+
+	deadline = clamp(deadline, 0, INT_MAX);
+
+	int32_t newdl = k_cycle_get_32() + deadline;
+
+	z_impl_k_thread_absolute_deadline_set(tid, newdl);
+}
+
 #ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
+{
+	struct k_thread *thread = tid;
+
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	z_impl_k_thread_absolute_deadline_set((k_tid_t)thread, deadline);
+}
+#include <zephyr/syscalls/k_thread_absolute_deadline_set_mrsh.c>
+
 static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
@@ -1141,7 +1207,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	/* k_sleep() still returns 32 bit milliseconds for compatibility */
 	int64_t ms = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
-		CLAMP(k_ticks_to_ms_ceil64(ticks), 0, INT_MAX);
+		clamp(k_ticks_to_ms_ceil64(ticks), 0, INT_MAX);
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ms);
 	return (int32_t) ms;
@@ -1241,6 +1307,9 @@ extern void thread_abort_hook(struct k_thread *thread);
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
  */
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state)
 {
 	bool dummify = false;
@@ -1316,10 +1385,11 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		 * handle for any threads spinning in join() (this can
 		 * never be used, as our thread is flagged dead, but
 		 * it must not be NULL otherwise join can deadlock).
+		 * Use 1 as a clearly invalid but non-NULL value.
 		 */
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 #ifdef CONFIG_USE_SWITCH
-			_current->switch_handle = _current;
+			_current->switch_handle = (void *)1;
 #endif
 			z_dummy_thread_init(&_thread_dummy);
 
@@ -1332,13 +1402,16 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		clear_halting(thread);
 	}
 }
+#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
+#endif
 
 void z_thread_abort(struct k_thread *thread)
 {
 	bool essential = z_is_thread_essential(thread);
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
-	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+	if (z_is_thread_dead(thread)) {
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
@@ -1358,7 +1431,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	z_thread_abort(thread);
 
-	__ASSERT_NO_MSG((thread->base.thread_state & _THREAD_DEAD) != 0);
+	__ASSERT_NO_MSG(z_is_thread_dead(thread));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
 }
@@ -1371,7 +1444,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
-	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+	if (z_is_thread_dead(thread)) {
 		z_sched_switch_spin(thread);
 		ret = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {

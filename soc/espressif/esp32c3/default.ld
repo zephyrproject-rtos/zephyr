@@ -28,6 +28,10 @@ user_idram_size = (user_dram_end - user_dram_seg_org);
 user_iram_seg_len = user_idram_size;
 user_dram_seg_len = user_idram_size;
 
+/* RTC RAM memory segment */
+rtc_iram_org = RCT_FAST_RAM_START;
+rtc_iram_len = RCT_FAST_RAM_SIZE;
+
 /* Aliases */
 #define FLASH_CODE_REGION  irom0_0_seg
 #define RODATA_REGION      drom0_0_seg
@@ -73,7 +77,7 @@ MEMORY
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg (R): org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
-  rtc_iram_seg(RWX): org = 0x50000000, len = 0x2000 - CONFIG_RESERVE_RTC_MEM
+  rtc_iram_seg(RWX): org = rtc_iram_org, len = rtc_iram_len - CONFIG_RESERVE_RTC_MEM
 
   /* We reduced the size of rtc_iram_seg by CONFIG_RESERVE_RTC_MEM value.
      It reserves the amount of RTC fast memory that we use for this memory segment.
@@ -82,7 +86,7 @@ MEMORY
      The aim of this is to keep data that will not be moved around and have a fixed address.
   */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
-  rtc_reserved_seg(RW): org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM,
+  rtc_reserved_seg(RW): org = rtc_iram_org + rtc_iram_len - CONFIG_RESERVE_RTC_MEM,
                         len = CONFIG_RESERVE_RTC_MEM
 #endif
 
@@ -178,10 +182,7 @@ SECTIONS
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-#endif
 
   /* --- START OF RTC --- */
 
@@ -308,6 +309,7 @@ SECTIONS
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
 
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
+    *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
@@ -364,6 +366,8 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_mmap.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_flash_api.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -588,6 +592,8 @@ SECTIONS
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.* .srodata .srodata.*)
@@ -638,13 +644,11 @@ SECTIONS
     *libzephyr.a:cpu_region_protect.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:clk.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_clk.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
 
     *libzephyr.a:esp_gpio_reserve.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal_common.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(16);

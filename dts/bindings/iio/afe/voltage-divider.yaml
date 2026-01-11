@@ -1,6 +1,8 @@
 # Copyright (c) 2019, Peter Bigot Consulting, LLC
 # SPDX-License-Identifier: Apache-2.0
 
+title: Voltage Divider
+
 description: |
     Description for a voltage divider, with optional ability to measure
     resistance of the upper leg.
@@ -45,3 +47,8 @@ properties:
       `power-gpios`. In most cases the switched voltage rail will
       require some non-zero time to settle to its final value. The
       default value of 100us should be sufficient in most situations.
+
+  skip-calibration:
+    type: boolean
+    description: |
+      Skip ADC calibration before taking a measurement.

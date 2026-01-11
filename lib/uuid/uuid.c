@@ -15,7 +15,7 @@
 #endif
 
 #if defined(CONFIG_UUID_V5)
-#include <mbedtls/md.h>
+#include <psa/crypto.h>
 #endif
 
 #if defined(CONFIG_UUID_BASE64)
@@ -82,54 +82,32 @@ int uuid_generate_v4(struct uuid *out)
 int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 		     struct uuid *out)
 {
+	uint8_t sha_result[PSA_HASH_LENGTH(PSA_ALG_SHA_1)];
+	psa_hash_operation_t hash_operation = PSA_HASH_OPERATION_INIT;
+	size_t sha_len;
+	psa_status_t status;
+
 	if (out == NULL) {
 		return -EINVAL;
 	}
-	int ret = 0;
-	int mbedtls_err = 0;
-	mbedtls_md_context_t ctx = {0};
-	const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
-	const size_t sha_1_bytes = 20;
-	uint8_t sha_result[sha_1_bytes];
 
-	mbedtls_md_init(&ctx);
-	mbedtls_err = mbedtls_md_setup(&ctx, md_info, 0);
-	/* Might return: MBEDTLS_ERR_MD_BAD_INPUT_DATA or MBEDTLS_ERR_MD_ALLOC_FAILED */
-	switch (mbedtls_err) {
-	case 0:
-		break;
-	case MBEDTLS_ERR_MD_BAD_INPUT_DATA:
-		ret = -EINVAL;
-		goto exit;
-	case MBEDTLS_ERR_MD_ALLOC_FAILED:
-		ret = -ENOMEM;
-		goto exit;
-	default:
-		ret = -ENOTSUP;
+	status = psa_hash_setup(&hash_operation, PSA_ALG_SHA_1);
+	if (status != PSA_SUCCESS) {
 		goto exit;
 	}
-	mbedtls_err = mbedtls_md_starts(&ctx);
-	if (mbedtls_err != 0) {
-		/* Might return MBEDTLS_ERR_MD_BAD_INPUT_DATA */
-		ret = -EINVAL;
+
+	status = psa_hash_update(&hash_operation, ns->val, UUID_SIZE);
+	if (status != PSA_SUCCESS) {
 		goto exit;
 	}
-	mbedtls_err = mbedtls_md_update(&ctx, ns->val, UUID_SIZE);
-	if (mbedtls_err != 0) {
-		/* Might return MBEDTLS_ERR_MD_BAD_INPUT_DATA */
-		ret = -EINVAL;
+
+	status = psa_hash_update(&hash_operation, data, data_size);
+	if (status != PSA_SUCCESS) {
 		goto exit;
 	}
-	mbedtls_err = mbedtls_md_update(&ctx, data, data_size);
-	if (mbedtls_err != 0) {
-		/* Might return MBEDTLS_ERR_MD_BAD_INPUT_DATA */
-		ret = -EINVAL;
-		goto exit;
-	}
-	mbedtls_err = mbedtls_md_finish(&ctx, sha_result);
-	if (mbedtls_err != 0) {
-		/* Might return MBEDTLS_ERR_MD_BAD_INPUT_DATA */
-		ret = -EINVAL;
+
+	status = psa_hash_finish(&hash_operation, sha_result, sizeof(sha_result), &sha_len);
+	if (status != PSA_SUCCESS) {
 		goto exit;
 	}
 
@@ -141,8 +119,18 @@ int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 	overwrite_uuid_version_and_variant(UUID_V5_VERSION, UUID_V5_VARIANT, out);
 
 exit:
-	mbedtls_md_free(&ctx);
-	return ret;
+	psa_hash_abort(&hash_operation);
+
+	switch (status) {
+	case PSA_SUCCESS:
+		return 0;
+	case PSA_ERROR_INSUFFICIENT_MEMORY:
+		return -ENOMEM;
+	case PSA_ERROR_NOT_SUPPORTED:
+		return -ENOTSUP;
+	default:
+		return -EIO;
+	}
 }
 #endif
 

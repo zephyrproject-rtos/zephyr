@@ -1,5 +1,5 @@
 # Sensor clock configuration options
-# Copyright(c) 2024 Cienet
+# Copyright (c) 2024 Cienet
 # SPDX-License-Identifier: Apache-2.0
 
 config SENSOR_CLOCK

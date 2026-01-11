@@ -35,14 +35,20 @@ used instead.
 
 .. code-block:: console
 
-                  name                       |   current   |  recommended   ||    check result
-   ================================================================================================
-   CONFIG_BOOT_BANNER                        |      y      |       n        ||       FAIL
-   CONFIG_BUILD_OUTPUT_STRIPPED              |      n      |       y        ||       FAIL
-   CONFIG_FAULT_DUMP                         |      2      |       0        ||       FAIL
-   CONFIG_HW_STACK_PROTECTION                |      n      |       y        ||       FAIL
-   CONFIG_MPU_STACK_GUARD                    |      n      |       y        ||       FAIL
-   CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT     |      n      |       y        ||       FAIL
-   CONFIG_STACK_SENTINEL                     |      n      |       y        ||       FAIL
-   CONFIG_EARLY_CONSOLE                      |      y      |       n        ||       FAIL
-   CONFIG_PRINTK                             |      y      |       n        ||       FAIL
+   +---------------------------------------+-----------+---------------+----------------+
+   | Name                                  | Current   | Recommended   | Check result   |
+   +=======================================+===========+===============+================+
+   | CONFIG_BUILD_OUTPUT_STRIPPED          | n         | y             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+
+   | CONFIG_FAULT_DUMP                     | 2         | 0             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+
+   | CONFIG_MPU_STACK_GUARD                | n         | y             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+
+   | CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT | n         | y             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+
+   | CONFIG_STACK_SENTINEL                 | n         | y             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+
+   | CONFIG_EXCEPTION_DEBUG                | y         | n             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+
+   | CONFIG_PRINTK                         | y         | n             | FAIL           |
+   +---------------------------------------+-----------+---------------+----------------+

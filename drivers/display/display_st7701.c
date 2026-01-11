@@ -10,6 +10,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
@@ -357,6 +358,26 @@ static void st7701_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int st7701_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = st7701_dcs_write(dev, MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = st7701_dcs_write(dev, MIPI_DCS_ENTER_SLEEP_MODE, NULL, 0);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(display, st7701_api) = {
 	.blanking_on = st7701_blanking_on,
 	.blanking_off = st7701_blanking_off,
@@ -487,7 +508,8 @@ static int st7701_init(const struct device *dev)
 	static struct st7701_data st7701_data_##inst = {                                           \
 		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),                              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &st7701_init, NULL, &st7701_data_##inst,                       \
+	PM_DEVICE_DT_INST_DEFINE(inst, st7701_pm_action);                                          \
+	DEVICE_DT_INST_DEFINE(inst, &st7701_init, PM_DEVICE_DT_INST_GET(inst), &st7701_data_##inst,\
 			      &st7701_config_##inst, POST_KERNEL,                                  \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &st7701_api);
 

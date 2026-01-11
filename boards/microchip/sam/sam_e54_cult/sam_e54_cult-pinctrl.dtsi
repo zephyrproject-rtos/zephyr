@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/sam/sam_d5x_e5x/atsame54/atsame54p20a-pinctrl.h>
+
+&pinctrl {
+	sercom1_uart_default: sercom1_uart_default {
+		group1 {
+			pinmux = <PC27C_SERCOM1_PAD0>,
+				 <PC28C_SERCOM1_PAD1>;
+		};
+	};
+};

@@ -106,7 +106,7 @@ Golden Reference Design
 =======================
 
 The Golden System Reference Design (GSRD) provides a set of essential hardware
-and software system componets that can be used as a starting point for various
+and software system components that can be used as a starting point for various
 custom user designs.
 
 The Zephyr support for Cyclone® V SoC Development Kit is based on GSRD hardware.
@@ -123,7 +123,7 @@ a Intel® Quartus® project:
 * soc_system.qsf : Quartus® Prime Settings File
 * soc_system.qsys : Platform Designer file (contains the SoC system)
 * soc_system.sopcinfo : SOPC Information file contains details about modules instantiated in the project, parameter names and values.
-* soc_system_timing.sdc : Synopsys Desing Constraint FILE.
+* soc_system_timing.sdc : Synopsys Design Constraint FILE.
 * output_files/soc_system.sof : FPGA configuration file.
 
 
@@ -183,7 +183,7 @@ This provisions the Zephyr kernel and the CPU configuration onto the board,
 using the customized OpenOCD runner script :zephyr_file:`scripts/west_commands/runners/intel_cyclonev.py`
 After it completes the kernel will immediately boot using the GSRD preloader.
 Notice that there a lot of helper files to ``flash`` the application with
-OpenOCD and GDB Debbuger (Zephyr SDK must be installed in your machine).
+OpenOCD and GDB Debugger (Zephyr SDK must be installed in your machine).
 This files should be located in :zephyr_file:`boards/intel/socfpga_std/cyclonev_socdk/support/` including:
 
 * blaster_6810.hex : USB-BlasterII firmware
@@ -326,7 +326,7 @@ You will see output similar to the following:
 
 Try other examples
 ==================
-There are varios examples that can be downloaded to the Cyclone® V SoC FPGA
+There are various examples that can be downloaded to the Cyclone® V SoC FPGA
 Development Kit Board. Try to ``blink`` an LED from the HPS side of the chip:
 
 .. zephyr-app-commands::

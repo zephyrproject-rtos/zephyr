@@ -63,7 +63,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &sim {

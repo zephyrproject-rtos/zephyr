@@ -20,7 +20,6 @@
 #include <kernel_internal.h>
 #include <mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
-#include <mmu.h>
 #include <zephyr/arch/x86/memmap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);

@@ -111,7 +111,7 @@ a Windows host, this can be done with the following commands:
          netsh interface ipv6 add route ::/0 "Ethernet" ::
 
 .. note::
-   The above commands must be run as priviledged user.
+   The above commands must be run as privileged user.
 
 If everything is configured correctly, you will be able to successfully execute
 the following commands from the Zephyr shell:

@@ -7,6 +7,12 @@
 Overview
 ********
 
+.. warning::
+
+   The DS3231 driver demonstrated in this sample predates the introduction of
+   the RTC subsystem and is deprecated. RTC functionality for the DS3231 should
+   now be enabled by means of the :dtcompatible:`maxim,ds3231-rtc` compatible.
+
 The `DS3231`_ temperature-compensated real-time clock is a
 high-precision (2 ppm) battery backed clock that maintains civil time
 and supports alarms.  The `Chronodot`_ breakout board can be used to

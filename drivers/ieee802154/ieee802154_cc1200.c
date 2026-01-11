@@ -471,7 +471,7 @@ static void cc1200_rx(void *p1, void *p2, void *p3)
 		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(cc1200->iface, pkt_len,
-						   AF_UNSPEC, 0, K_NO_WAIT);
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No free pkt available");
 			goto flush;
@@ -805,7 +805,7 @@ static void cc1200_iface_init(struct net_if *iface)
 }
 
 static const struct cc1200_config cc1200_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios)
 };
 

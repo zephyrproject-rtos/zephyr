@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pmod_sd_default: pmod_sd_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 13, 2)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 13, 1)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 1, 11)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+};
+
+&pmod_sd_shield {
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <84 12>, <85 12>, <86 12>;
+	pinctrl-0 = <&pmod_sd_default>;
+};

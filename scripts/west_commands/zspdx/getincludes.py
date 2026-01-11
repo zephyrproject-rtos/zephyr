@@ -45,7 +45,7 @@ def extractIncludes(resp):
 
     # lines we want will start with one or more periods, followed by
     # a space and then the include file path, e.g.:
-    # .... /home/steve/programming/zephyr/zephyrproject/zephyr/include/kernel.h
+    # .... /home/steve/programming/zephyr/zephyrproject/zephyr/include/zephyr/kernel.h
     # the number of periods indicates the depth of nesting (for transitively-
     # included files), but here we aren't going to care about that. We'll
     # treat everything as tied to the corresponding source file.

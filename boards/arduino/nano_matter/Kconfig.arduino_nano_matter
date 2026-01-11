@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ARDUINO_NANO_MATTER
-	select SOC_PART_NUMBER_MGM240SD22VNA
+	select SOC_MGM240SD22VNA

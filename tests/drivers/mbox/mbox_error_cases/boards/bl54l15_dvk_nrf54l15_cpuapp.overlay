@@ -8,9 +8,9 @@
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
 		mboxes = <&cpuapp_vevif_tx 21>, <&cpuapp_vevif_tx 32>,
-				 <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_rx 32>;
+			 <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_rx 32>;
 		mbox-names = "remote_valid", "remote_incorrect",
-					 "local_valid", "local_incorrect";
+			     "local_valid", "local_incorrect";
 	};
 };
 

@@ -141,10 +141,9 @@ Configuring a Debug Probe
 =========================
 
 For the RT1010, J61/J62 are the SWD isolation jumpers, J22 is the DFU
-mode jumper, and J16 is the 10 pin JTAG/SWD header.
+mode jumper, and J55 is the 10 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -181,8 +180,7 @@ see the following message in the terminal:
 
     Hello World! mimxrt1010_evk
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1010-EVK Website:
    https://www.nxp.com/MIMXRT1010-EVK

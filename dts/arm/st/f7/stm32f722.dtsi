@@ -35,20 +35,20 @@
 		sdmmc2: sdmmc@40011c00 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40011c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 7U)>,
-				<&rcc STM32_SRC_PLL_Q SDMMC2_SEL(0)>;
-			resets = <&rctl STM32_RESET(APB2, 7U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 7)>,
+				 <&rcc STM32_SRC_PLL_Q SDMMC2_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <103 0>;
 			status = "disabled";
 		};
 	};
 
 	die_temp: dietemp {
-		ts-cal1-addr = <0x1FF07A2C>;
-		ts-cal2-addr = <0x1FF07A2E>;
+		ts-cal1-addr = <0x1ff07a2c>;
+		ts-cal2-addr = <0x1ff07a2e>;
 	};
 
 	vref: vref {
-		vrefint-cal-addr = <0x1FF07A2A>;
+		vrefint-cal-addr = <0x1ff07a2a>;
 	};
 };

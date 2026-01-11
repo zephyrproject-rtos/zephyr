@@ -40,6 +40,8 @@
 #define PLL2_ID		2
 #define PLL3_ID		3
 
+#define PLL_FRACN_DIVISOR 8192
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -87,13 +89,17 @@ static uint32_t get_startup_frequency(void)
 
 __unused
 static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
-					    int pllm_div,
-					    int plln_mul,
-					    int pllout_div)
+					    unsigned int pllm_div,
+					    unsigned int plln_mul,
+					    unsigned int plln_frac,
+					    unsigned int pllout_div)
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
-	return (pllsrc_freq / pllm_div) * plln_mul / pllout_div;
+	uint32_t f_vco = (pllsrc_freq / pllm_div) *
+			 ((uint64_t)plln_mul * PLL_FRACN_DIVISOR + plln_frac) / PLL_FRACN_DIVISOR;
+
+	return f_vco / pllout_div;
 }
 
 static uint32_t get_sysclk_frequency(void)
@@ -102,6 +108,7 @@ static uint32_t get_sysclk_frequency(void)
 	return get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
 					STM32_PLL_M_DIVISOR,
 					STM32_PLL_N_MULTIPLIER,
+					STM32_PLL_FRACN_VALUE,
 					STM32_PLL_R_DIVISOR);
 #elif defined(STM32_SYSCLK_SRC_CSI)
 	return STM32_CSI_FREQ;
@@ -124,6 +131,8 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PCLK1) ||
 	    (src_clk == STM32_SRC_PCLK2) ||
 	    (src_clk == STM32_SRC_PCLK3) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
@@ -197,6 +206,11 @@ static int stm32_clock_control_configure(const struct device *dev,
 	if (err < 0) {
 		/* Attempt to configure a src clock not available or not valid */
 		return err;
+	}
+
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
 	}
 
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
@@ -283,18 +297,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL1_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL1_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #endif /* STM32_PLL_ENABLED */
@@ -303,18 +320,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL2_ID),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL2_ID),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL2_ID),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_R_DIVISOR);
 		break;
 #endif /* STM32_PLL2_ENABLED */
@@ -323,21 +343,38 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL3_ID),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL3_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL3_ID),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL3_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL3_ID),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_R_DIVISOR);
 		break;
 #endif /* STM32_PLL3_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_APB1_PRESCALER <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+		break;
+	case STM32_SRC_TIMPCLK2:
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_APB2_PRESCALER <= 4 ? ahb_clock : apb2_clock * 4;
+		} else {
+			*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+		}
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -591,6 +628,10 @@ setup_pll2:
 	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
 
 	LL_RCC_PLL2FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL2_FRACN_ENABLED)) {
+		LL_RCC_PLL2_SetFRACN(STM32_PLL2_FRACN_VALUE);
+		LL_RCC_PLL2FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
 		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
@@ -650,6 +691,10 @@ setup_pll3:
 	LL_RCC_PLL3_SetN(STM32_PLL3_N_MULTIPLIER);
 
 	LL_RCC_PLL3FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL3_FRACN_ENABLED)) {
+		LL_RCC_PLL3_SetFRACN(STM32_PLL3_FRACN_VALUE);
+		LL_RCC_PLL3FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL3_P_ENABLED)) {
 		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
@@ -826,6 +871,12 @@ int stm32_clock_control_init(const struct device *dev)
 	/* If freq not increased, set flash latency after all clock setting */
 	if (old_hclk_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
+
+	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+	} else {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
 	}
 
 	/* Update CMSIS variable */

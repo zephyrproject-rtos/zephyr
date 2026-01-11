@@ -37,14 +37,17 @@
 			   <23 0 &gpio0 0 0>,	/* IIS MK */
 			   /* 24 HPWR */
 			   <25 0 &gpio1 3 0>;	/* IIS IN */
-			   /* 26 HPWR */
-			   /* 27 5V */
-			   /* 28 HPWR */
-			   /* 29 BAT */
+		/* 26 HPWR */
+		/* 27 5V */
+		/* 28 HPWR */
+		/* 29 BAT */
 	};
 };
 
 m5stack_mbus_i2c0: &i2c0 {};
+
 m5stack_mbus_uart0: &uart1 {};
+
 m5stack_mbus_uart1: &uart2 {};
+
 m5stack_mbus_spi: &spi3 {};

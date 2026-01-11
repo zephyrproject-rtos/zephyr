@@ -10,9 +10,6 @@ Overview
 Application demonstrating the BAP Unicast Server functionality.
 Starts advertising and awaits connection from a BAP Unicast Client.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/bap_unicast_server` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

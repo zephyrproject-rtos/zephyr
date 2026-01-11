@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 
 #include "wsen_tids_2521020222501.h"
+#include <zephyr/drivers/sensor/wsen_tids_2521020222501.h>
 
 LOG_MODULE_DECLARE(WSEN_TIDS_2521020222501, CONFIG_SENSOR_LOG_LEVEL);
 

@@ -69,5 +69,5 @@ Sample Output
    <when sensor is pressed>
    [00:00:09.819,061] <inf> PRESS_INT_SAMPLE: PRESSURE CHANGE INTERRUPT
 
-   <when the sensor pressure crosses defined threhold>
+   <when the sensor pressure crosses defined threshold>
    [00:00:09.859,039] <inf> PRESS_INT_SAMPLE: PRESSURE THRESHOLD INTERRUPT

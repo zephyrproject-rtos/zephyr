@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		/*
+		 * m33s(NETCMIX) as master(host), m70(M7MIX0) as remote
+		 */
+		mboxes = <&mu_m33s_m70_for_m70 0>, <&mu_m33s_m70_for_m70 1>;
+		mbox-names = "tx", "rx";
+	};
+};

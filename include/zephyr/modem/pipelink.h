@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief Modem pipelink
  * @defgroup modem_pipelink Modem pipelink
+ * @since 3.7
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
@@ -81,7 +83,7 @@ bool modem_pipelink_is_connected(struct modem_pipelink *link);
 /**
  * @brief Get pipe from pipelink
  * @param link Pipelink instance
- * @retval Pointer to pipe if pipelink has been initialized
+ * @return Pointer to pipe if pipelink has been initialized
  * @retval NULL if pipelink has not been initialized
  */
 struct modem_pipe *modem_pipelink_get_pipe(struct modem_pipelink *link);

@@ -14,7 +14,7 @@ config UART_RTS5912
 
 config UART_RTS5912_INIT_PRIORITY
 	int "RTS5912 UART wrapper init priority"
-	default 49
+	default 51
 	depends on UART_RTS5912
 	help
 	  Initialization priority for Realtek RTS5912 UART wrapper driver.

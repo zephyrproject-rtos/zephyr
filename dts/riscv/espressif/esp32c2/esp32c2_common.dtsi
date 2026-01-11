@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c2-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c2_clock.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -23,6 +23,7 @@
 	chosen {
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	cpus {
@@ -47,6 +48,11 @@
 
 	wifi: wifi {
 		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
 		status = "disabled";
 	};
 
@@ -95,7 +101,7 @@
 
 		rtc_timer: rtc_timer@60008004 {
 			reg = <0x60008004 0xC>;
-			compatible = "espressif,esp32-rtc_timer";
+			compatible = "espressif,esp32-rtc-timer";
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -190,6 +196,7 @@
 		trng0: trng@3ff700b0 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3FF700B0 0x4>;
+			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 
@@ -199,12 +206,11 @@
 			interrupts = <SPI2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_SPI2_MODULE>;
-			dma-clk = <ESP32_GDMA_MODULE>;
 			dma-host = <0>;
 			status = "disabled";
 		};
 
-		wdt0: watchdog@6001f048  {
+		wdt0: watchdog@6001f048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;

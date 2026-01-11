@@ -77,16 +77,32 @@ endchoice # RNG_GENERATOR_CHOICE
 
 
 DT_CHOSEN_Z_ENTROPY := zephyr,entropy
-config CSPRNG_AVAILABLE
+config ENTROPY_NODE_ENABLED
 	bool
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_ENTROPY))
 	help
-	  Helper that can be used to check if the platform is capable of generating
-	  CS random values. For this to be enabled, there must be the "zephyr,entropy"
-	  chosen property defined in the devicetree. This means that there is an
-	  HW entropy generator that can be used for this purpose.
-	  Once CONFIG_CSPRNG_AVAILABLE is set, then CONFIG_ENTROPY_GENERATOR can
-	  be enabled to enable the platform specific entropy driver.
+	  Helper to state that in the DT the "zephyr,entropy" property points to
+	  the node of an entropy generator unit.
+	  Warning #1: unfortunately having this property set does not guarantee in
+	  all cases that enabling CONFIG_ENTROPY_GENERATOR will make the corresponding
+	  driver available. This because that driver might be gated by other
+	  Kconfig that are not enabled in the build.
+	  Warning #2: even in case blindly enabling CONFIG_ENTROPY_GENERATOR whenever
+	  CONFIG_ENTROPY_NODE_ENABLED is set works fine, it might not be the desired
+	  effect for all the scenarios because then the driver will effectively be
+	  enabled even if there is no usage of it.
+	  The only workaround for these problems to tentatively enable
+	  CONFIG_CSPRNG_NEEDED and check the "return value" on CONFIG_CSPRNG_ENABLED.
+
+config CSPRNG_NEEDED
+	bool "Use CSPRNG if possible on the current platform"
+	select ENTROPY_GENERATOR if ENTROPY_NODE_ENABLED
+	help
+	  If a DT node exists for an entropy generator (i.e. CONFIG_ENTROPY_NODE_ENABLED
+	  is set) then enable this symbol and check the "result" in CONFIG_CSPRNG_ENABLED
+	  to see if the corresponding driver was really enabled in the build.
+	  This will ensure that (a) there really is a entropy driver for this platform and
+	  (b) it will only get enabled when there is someone needing it.
 
 #
 # Implied dependency on a cryptographically secure entropy source when
@@ -97,6 +113,10 @@ config CSPRNG_ENABLED
 	bool
 	default y
 	depends on ENTROPY_HAS_DRIVER
+	help
+	  Helper to confirm that there is an hardware entropy unit enabled in the build
+	  that can be used to provide CS random values.
+
 
 choice CSPRNG_GENERATOR_CHOICE
 	prompt "Cryptographically secure random generator"

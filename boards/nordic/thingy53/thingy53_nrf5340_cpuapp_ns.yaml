@@ -12,7 +12,7 @@ supported:
   - i2c
   - pwm
   - watchdog
-  - usb_device
+  - usbd
   - netif:openthread
 vendor: nordic
 sysbuild: true

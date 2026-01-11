@@ -20,7 +20,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,ccm = &ccm0;
+		zephyr,dtcm = &ccm0;
 		zephyr,display = &ltdc;
 		zephyr,touch = &stmpe811;
 	};
@@ -59,11 +59,6 @@
 	aliases {
 		led0 = &green_led_3;
 		sw0 = &user_button;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&stmpe811>;
 	};
 
 	mipi_dbi {
@@ -122,6 +117,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <4>;
+	div-divr = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(168)>;
@@ -138,7 +142,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -244,7 +248,7 @@
 
 	width = <240>;
 	height = <320>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -254,15 +258,15 @@
 		vsync-active = <0>;
 		hsync-len = <10>;
 		vsync-len = <2>;
-		hback-porch= <20>;
+		hback-porch = <20>;
 		vback-porch = <2>;
 		hfront-porch = <10>;
 		vfront-porch = <4>;
 	};
 
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };
 
 zephyr_udc0: &usbotg_hs {

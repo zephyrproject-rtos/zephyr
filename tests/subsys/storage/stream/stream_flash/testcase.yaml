@@ -22,7 +22,6 @@ tests:
     # common platforms could bring them here too so filter these out.
     filter: not dt_compat_enabled("zephyr,sim-flash")
     platform_allow:
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     extra_configs:

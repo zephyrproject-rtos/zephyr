@@ -273,11 +273,23 @@ def ast_expr(ast, env, edt):
         if node and node.status == "okay":
             return True
         return False
-    elif ast[0] == "dt_node_prop_enabled":
+    elif ast[0] == "dt_nodelabel_prop_enabled":
         label = ast[1][0]
         node = edt.label2node.get(label)
         prop = ast[1][1]
         if node and prop in node.props and node.props[prop].val:
+            return True
+        return False
+    elif ast[0] == "dt_node_has_prop":
+        # 1st arg 'node_id' must be a valid node alias (defined in aliases node)
+        # or a node path
+        node_id = ast[1][0]
+        try:
+            node = edt.get_node(node_id)
+        except Exception:
+            return False
+        prop = ast[1][1]
+        if prop in node.props:
             return True
         return False
 

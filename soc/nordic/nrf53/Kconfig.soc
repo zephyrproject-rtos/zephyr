@@ -1,4 +1,4 @@
-# Nordic Semiconductor nRF52 MCU line, Zephyr hw model v2 compliant
+# Nordic Semiconductor nRF53 MCU line, Zephyr hw model v2 compliant
 
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0

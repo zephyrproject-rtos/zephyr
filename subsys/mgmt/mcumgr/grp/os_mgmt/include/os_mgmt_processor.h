@@ -37,6 +37,16 @@ extern "C" {
 #else
 #define PROCESSOR_NAME "cortex-m33+nodsp"
 #endif
+#elif defined(CONFIG_CPU_CORTEX_M52)
+#if defined(CONFIG_ARMV8_1_M_MVEF)
+#define PROCESSOR_NAME "cortex-m52"
+#elif defined(CONFIG_ARMV8_1_M_MVEI)
+#define PROCESSOR_NAME "cortex-m52+nomve.fp"
+#elif defined(CONFIG_ARMV8_M_DSP)
+#define PROCESSOR_NAME "cortex-m52+nomve"
+#else
+#define PROCESSOR_NAME "cortex-m52+nodsp"
+#endif
 #elif defined(CONFIG_CPU_CORTEX_M55)
 #if defined(CONFIG_ARMV8_1_M_MVEF)
 #define PROCESSOR_NAME "cortex-m55"
@@ -121,6 +131,12 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a76"
 #elif defined(CONFIG_CPU_CORTEX_A76)
 #define PROCESSOR_NAME "cortex-a76"
+#elif defined(CONFIG_CPU_CORTEX_A78)
+#define PROCESSOR_NAME "cortex-a78"
+#elif defined(CONFIG_CPU_CORTEX_A510)
+#define PROCESSOR_NAME "cortex-a510"
+#elif defined(CONFIG_CPU_CORTEX_A320)
+#define PROCESSOR_NAME "cortex-a320"
 #elif defined(CONFIG_CPU_CORTEX_R82)
 #define PROCESSOR_NAME "armv8.4-a+nolse"
 #endif
@@ -166,6 +182,22 @@ extern "C" {
 #define PROCESSOR_NAME "xtensa"
 #elif defined(CONFIG_SPARC)
 #define PROCESSOR_NAME "sparc"
+#endif
+
+#if defined(CONFIG_ARCH_POSIX)
+#if defined(PROCESSOR_NAME)
+#error "Processor name already selected; compile-time check should be removed."
+#endif
+
+#if defined(__x86_64__)
+#define PROCESSOR_NAME "x86_64"
+#elif defined(__i386__)
+#define PROCESSOR_NAME "x86"
+#elif defined(__aarch64__)
+#define PROCESSOR_NAME "aarch64"
+#elif defined(__arm__)
+#define PROCESSOR_NAME "arm"
+#endif
 #endif
 
 #ifndef PROCESSOR_NAME

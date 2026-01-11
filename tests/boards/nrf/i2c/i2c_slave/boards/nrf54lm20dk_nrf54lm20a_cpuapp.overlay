@@ -33,9 +33,9 @@
 
 	i2c22_default_alt: i2c22_default_alt {
 		group1 {
-/* Temporary workaround as it is currently not possible
- * to configure pins for TWIS with pinctrl.
- */
+			/* Temporary workaround as it is currently not possible
+			 * to configure pins for TWIS with pinctrl.
+			 */
 			psels = <NRF_PSEL(TWIM_SDA, 1, 14)>,
 				<NRF_PSEL(TWIM_SCL, 1, 24)>;
 			bias-pull-up;

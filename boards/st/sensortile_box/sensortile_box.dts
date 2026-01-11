@@ -141,7 +141,7 @@
 	status = "okay";
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>,
-		<&gpioe 10 GPIO_ACTIVE_LOW>;
+		   <&gpioe 10 GPIO_ACTIVE_LOW>;
 
 	lis2dw12: lis2dw12@0 {
 		compatible = "st,lis2dw12";
@@ -206,7 +206,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -235,12 +235,12 @@ zephyr_udc0: &usbotg_fs {
 
 		slot1_partition: partition@8c000 {
 			label = "image-1";
-			reg = <0x0008C000 DT_SIZE_K(432)>;
+			reg = <0x0008c000 DT_SIZE_K(432)>;
 		};
 
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 DT_SIZE_K(24)>;
+			reg = <0x000f8000 DT_SIZE_K(24)>;
 		};
 
 		storage_partition: partition@fc000 {
@@ -252,7 +252,7 @@ zephyr_udc0: &usbotg_fs {
 
 &rng {
 	/* Change clock source to avoid using MSI */
-	clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
 	status = "okay";
 };

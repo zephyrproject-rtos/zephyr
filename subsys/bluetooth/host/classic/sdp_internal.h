@@ -37,8 +37,6 @@
 #define BT_SDP_INVALID_PDU_SIZE      0x0004
 #define BT_SDP_INVALID_CSTATE        0x0005
 
-#define BT_SDP_MAX_SERVICES   10
-
 struct bt_sdp_data_elem_seq {
 	uint8_t  type; /* Type: Will be data element sequence */
 	uint16_t size; /* We only support 2 byte sizes for now */

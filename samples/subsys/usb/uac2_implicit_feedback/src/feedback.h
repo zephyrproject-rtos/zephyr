@@ -9,15 +9,14 @@
 
 #include <stdint.h>
 
-/* Nominal number of samples received on each SOF. This sample is currently
- * supporting only 48 kHz sample rate.
- */
-#define SAMPLES_PER_SOF     48
+/* This sample is currently supporting only 48 kHz sample rate. */
+#define SAMPLE_RATE         48000
 
 struct feedback_ctx *feedback_init(void);
 void feedback_reset_ctx(struct feedback_ctx *ctx);
 void feedback_process(struct feedback_ctx *ctx);
-void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued);
+void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued,
+		    bool microframes);
 
 /* Return offset between I2S block start and USB SOF in samples.
  *

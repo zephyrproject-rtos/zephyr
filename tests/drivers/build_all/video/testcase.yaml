@@ -34,5 +34,22 @@ tests:
   drivers.video.stm32_dcmipp.build:
     platform_allow:
       - stm32n6570_dk/stm32n657xx/sb
+      - stm32mp135f_dk/stm32mp135fxx
     extra_args:
       - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
+      - platform:stm32mp135f_dk/stm32mp135fxx:SHIELD=st_mb1897_cam
+  drivers.video.renesas_ra_ceu.build:
+    platform_allow:
+      - ek_ra8d1/r7fa8d1bhecbd
+    extra_args:
+      - platform:ek_ra81/r7fa8d1bhecbd:SHIELD="dvp_20pin_ov7670"
+  drivers.video.stm32_venc.build:
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    extra_configs:
+      - CONFIG_VIDEO_ENCODER_H264=y
+  drivers.video.stm32_jpeg.build:
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    extra_configs:
+      - CONFIG_VIDEO_ENCODER_JPEG=y

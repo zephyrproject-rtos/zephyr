@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2022, Whisper.ai
+# Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -25,9 +26,11 @@ supported:
   - dma
   - gpio
   - i2c
+  - i2s
   - netif:eth
   - sdhc
   - spi
   - usbd
   - watchdog
+  - rtc
 vendor: nxp

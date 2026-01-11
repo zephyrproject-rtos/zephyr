@@ -29,6 +29,15 @@ Supported Features
 
    Power modes 1, 2 and 3 are supported when using System Power Management.
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
+  SPI interface of the shield, connected to the LCDIC on-chip peripheral.
+
 Programming and Debugging
 *************************
 
@@ -151,8 +160,7 @@ following modifications to the board hardware:
 
 After this change, the ENET will stop functioning on the board.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 Resources
 *********

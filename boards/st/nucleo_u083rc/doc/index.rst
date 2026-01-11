@@ -184,6 +184,15 @@ Programming and Debugging
 Nucleo U083RC board includes an ST-LINK/V3 embedded debug tool interface.
 This probe allows to flash the board using various tools.
 
+.. warning::
+   The onboard ST-LINK/V3 debug probe cannot be `converted into a JLink probe`_;
+   as such, usage of the JLink runner requires an external JLink debug probe.
+
+.. warning::
+   There are known issues about the usage of the pyOCD runner with this board.
+   If issues are encountered (e.g., debugging does not work), use the
+   :ref:`ST-Link GDB Server <runner_stlink_gdbserver>` runner instead.
+
 Flashing
 ========
 
@@ -236,17 +245,12 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default flasher for this board is openocd. It could be used in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: nucleo_u083rc
    :goals: debug
-
-Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
-(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-(which is used for initialization) is available in the PATH.
 
 .. _NUCLEO_U083RC website:
    https://www.st.com/en/evaluation-tools/nucleo-u083rc.html
@@ -262,3 +266,6 @@ Note: Check the ``build/tfm`` directory to ensure that the commands required by 
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _converted into a JLink probe:
+   https://www.segger.com/products/debug-probes/j-link/models/other-j-links/st-link-on-board/

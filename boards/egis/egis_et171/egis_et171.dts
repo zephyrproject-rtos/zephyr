@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2025 Egis Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <egis/egis_et171.dtsi>
+
+/ {
+	model = "Egis ET171C";
+	compatible = "egis,egis_et171";
+
+	aliases {
+		watchdog0 = &wdt;
+		led0 = &gpio_led0;
+		led1 = &gpio_led1;
+		gpio-0 = &gpio0;
+		counter-0 = &pit0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		gpio_led0: led0 {
+			label = "LED0";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_led1: led1 {
+			label = "LED1";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_K(1024)>;
+	};
+
+	clocks {
+		clk_mtimer: clk_mtimer {
+			compatible = "fixed-clock";
+			clock-frequency = <18037518>;
+			status = "disabled";
+		};
+	};
+};
+
+&plic0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	clock-frequency = <18037518>;
+	current-speed = <38400>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};

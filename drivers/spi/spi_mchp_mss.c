@@ -192,40 +192,33 @@ static inline void mss_spi_readwr_fifo(const struct device *dev)
 	struct mss_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	struct mss_spi_transfer *xfer = &data->xfer;
-	uint32_t rx_raw = 0, rd_byte_size, tr_len;
+	uint32_t rx_raw = 0;
 	uint32_t data8, transfer_idx = 0;
 	int count;
 
-	tr_len = spi_context_longest_current_buf(ctx);
 	count = spi_context_total_tx_len(ctx);
-	if (ctx->rx_buf) {
-		rd_byte_size = count - tr_len;
-	} else {
-		rd_byte_size = 0;
-	}
 	mss_spi_hw_tfsz_set(cfg, count);
 
 	mss_spi_enable_ints(cfg);
-	spi_context_update_rx(ctx, 1, xfer->rx_len);
 	while (transfer_idx < count) {
 		if (!(mss_spi_read(cfg, MSS_SPI_REG_STATUS) & MSS_SPI_STATUS_RXFIFO_EMPTY)) {
 			rx_raw = mss_spi_read(cfg, MSS_SPI_REG_RX_DATA);
-			if (transfer_idx >= tr_len) {
-				if (spi_context_rx_buf_on(ctx)) {
-					UNALIGNED_PUT(rx_raw, (uint8_t *)ctx->rx_buf);
-					spi_context_update_rx(ctx, 1, 1);
-				}
+			if (spi_context_rx_buf_on(ctx)) {
+				UNALIGNED_PUT(rx_raw, (uint8_t *)ctx->rx_buf);
 			}
+			spi_context_update_rx(ctx, 1, 1);
 			++transfer_idx;
 		}
 
 		if (!(mss_spi_read(cfg, MSS_SPI_REG_STATUS) & MSS_SPI_STATUS_TXFIFO_FULL)) {
-			if (spi_context_tx_buf_on(ctx)) {
-				data8 = ctx->tx_buf[0];
-				mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, data8);
+			if (spi_context_tx_on(ctx)) {
+				if (spi_context_tx_buf_on(ctx)) {
+					data8 = ctx->tx_buf[0];
+					mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, data8);
+				} else {
+					mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, 0x0);
+				}
 				spi_context_update_tx(ctx, 1, 1);
-			} else {
-				mss_spi_write(cfg, MSS_SPI_REG_TX_DATA, 0x0);
 			}
 		}
 	}

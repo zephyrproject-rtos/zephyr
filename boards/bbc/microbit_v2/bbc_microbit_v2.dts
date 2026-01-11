@@ -35,6 +35,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		buttonA: button_0 {
 			label = "BTN_A";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
@@ -66,7 +67,7 @@
 		col-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>,
 			    <&gpio0 11 GPIO_ACTIVE_LOW>,
 			    <&gpio0 31 GPIO_ACTIVE_LOW>,
-			    <&gpio1  5 GPIO_ACTIVE_LOW>,
+			    <&gpio1 5 GPIO_ACTIVE_LOW>,
 			    <&gpio0 30 GPIO_ACTIVE_LOW>;
 		refresh-frequency = <50>;
 		timer = <&timer4>;
@@ -140,6 +141,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "okay";
@@ -156,7 +158,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -166,18 +167,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xA000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007A000 0x00006000>;

@@ -1,0 +1,69 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: PSOC Edge AutAnalog SAR ADC
+
+description: |
+  Infineon PSOC Edge 84 AutAnalog SAR ADC
+
+  The AutAnalog (Autonomous Analog) SAR ADC provides high resolution 12-bit analog-to-digital
+  conversion capabilities for the PSOC Edge family of microcontrollers.
+
+  The ADC provides 12-bit resolution with a sampling rate of up to 5Msps when configured in
+  high performance mode.  The inputs can be configured to sample directly from analog inputs or
+  through an internal mux to select from signals from other AutAnalog peripherals.
+
+  The AutAnalog SAR ADC is part of the AutAnalog subsystem, which must be set up before initializing
+  the ADC.  Additionally, the AutAnalog subsystem uses a shared interrupt which handles events from
+  all AutAnalog peripherals.
+
+compatible: "infineon,autanalog-sar-adc"
+
+include: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the AutAnalog SAR ADC Registers
+
+  "#io-channel-cells":
+    const: 1
+    description: Number of cells in an io-channel specifier
+
+  vref-mv:
+    type: int
+    default: 1800
+    description: |
+      Internal reference voltage in millivolts.
+
+  offset-cal:
+    type: boolean
+    description: |
+      Enables Self-Calibration for offset correction within the ADC.  If left disabled,
+      the factory calibration for offset correction will be used.
+
+  linear-cal:
+    type: boolean
+    description: |
+      Enables Self-Calibration for linearity correction within the ADC. If left disabled,
+      the factory calibration for linearity will be used.
+
+  vref-source:
+    type: string
+    default: "vdda"
+    enum:
+      - "vdda"
+      - "external"
+      - "vbgr"
+      - "vdda_by_2"
+      - "prb_out1"
+      - "prb_out2"
+    description: |
+      Selects which voltage reference to use for the ADC.
+      The default value of vdda matches the hardware default value and provides ADC
+      functionality without requiring additional hardware.
+
+io-channel-cells:
+  - input

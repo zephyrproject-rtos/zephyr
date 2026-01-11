@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <time.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -182,7 +183,7 @@ static void *test_mutex_timedlock_fn(void *arg)
 	struct timespec time_point;
 	pthread_mutex_t *mtx = (pthread_mutex_t *)arg;
 
-	zassume_ok(clock_gettime(CLOCK_MONOTONIC, &time_point));
+	zassume_ok(clock_gettime(CLOCK_REALTIME, &time_point));
 	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
 
 	return INT_TO_POINTER(pthread_mutex_timedlock(mtx, &time_point));

@@ -379,7 +379,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 	struct node_tx *tx;
 	struct pdu_data *pdu;
 
-	LL_ASSERT(ctx->node_ref.tx);
+	LL_ASSERT_DBG(ctx->node_ref.tx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	if (!((ctx->tx_opcode == PDU_DATA_LLCTRL_TYPE_PHY_REQ) &&
@@ -390,7 +390,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 			return;
 		}
 		ctx->data.pu.ntf_dle_node = llcp_ntf_alloc();
-		LL_ASSERT(ctx->data.pu.ntf_dle_node);
+		LL_ASSERT_DBG(ctx->data.pu.ntf_dle_node);
 	}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -417,7 +417,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	/* Enqueue LL Control PDU towards LLL */
@@ -435,10 +435,10 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Piggy-back on stored RX node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	if (ctx->data.pu.ntf_pu) {
-		LL_ASSERT(ntf->hdr.type == NODE_RX_TYPE_RETAIN);
+		LL_ASSERT_DBG(ntf->hdr.type == NODE_RX_TYPE_RETAIN);
 		ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 		ntf->hdr.handle = conn->lll.handle;
 		pdu = (struct node_rx_pu *)ntf->pdu;
@@ -476,7 +476,7 @@ static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		/* Signal to release pre-allocated node in case there is no DLE ntf */
 		ntf->hdr.type = NODE_RX_TYPE_RELEASE;
 	} else {
-		LL_ASSERT(ntf);
+		LL_ASSERT_DBG(ntf);
 
 		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 		ntf->hdr.handle = conn->lll.handle;
@@ -542,12 +542,11 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
-
-		/* Allocate TX node */
 		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		lp_pu_tx(conn, ctx, evt, param);
 	}
@@ -647,7 +646,7 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 #endif /* CONFIG_BT_PERIPHERAL */
 		default:
 			/* Unknown role */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 		}
 
 		break;
@@ -676,7 +675,7 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 {
 	switch (evt) {
 	case LP_PU_EVT_ACK:
-		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_CENTRAL);
+		LL_ASSERT_DBG(conn->lll.role == BT_HCI_ROLE_CENTRAL);
 		if (ctx->data.pu.p_to_c_phy || ctx->data.pu.c_to_p_phy) {
 			/* Either phys should change */
 			if (ctx->data.pu.c_to_p_phy) {
@@ -712,7 +711,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
-		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
+		LL_ASSERT_DBG(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
@@ -868,7 +867,7 @@ static void lp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -931,7 +930,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 	struct node_tx *tx;
 	struct pdu_data *pdu;
 
-	LL_ASSERT(ctx->node_ref.tx);
+	LL_ASSERT_DBG(ctx->node_ref.tx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	if (!llcp_ntf_alloc_is_available()) {
@@ -941,7 +940,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 	}
 
 	ctx->data.pu.ntf_dle_node = llcp_ntf_alloc();
-	LL_ASSERT(ctx->data.pu.ntf_dle_node);
+	LL_ASSERT_DBG(ctx->data.pu.ntf_dle_node);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	tx = ctx->node_ref.tx;
@@ -968,7 +967,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, vo
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	/* Enqueue LL Control PDU towards LLL */
@@ -1011,14 +1010,13 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
 	    (llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE) ||
-	    !ull_is_lll_tx_queue_empty(conn)) {
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		rp_pu_tx(conn, ctx, evt, param);
-
 	}
 }
 #endif /* CONFIG_BT_CENTRAL */
@@ -1075,7 +1073,7 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 #endif /* CONFIG_BT_PERIPHERAL */
 		default:
 			/* Unknown role */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 		}
 		break;
 	default:
@@ -1107,7 +1105,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_RSP) {
-			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
+			LL_ASSERT_DBG(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 			/* When we act as peripheral apply timing restriction */
 			pu_set_timing_restrict(
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
@@ -1116,7 +1114,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND) {
-			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_CENTRAL);
+			LL_ASSERT_DBG(conn->lll.role == BT_HCI_ROLE_CENTRAL);
 			if (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy) {
 				/* UPDATE_IND acked, so lets await instant */
 				if (ctx->data.pu.c_to_p_phy) {
@@ -1291,7 +1289,7 @@ static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 

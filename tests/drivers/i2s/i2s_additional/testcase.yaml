@@ -26,6 +26,17 @@ tests:
   drivers.i2s.additional.gpio_loopback.54h:
     harness_config:
       fixture: i2s_loopback
+    extra_configs:
+      - CONFIG_I2S_TEST_EIGHT_CHANNELS_32B_48K_UNSUPPORTED=y
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  drivers.i2s.additional.gpio_loopback.54h.aclk:
+    harness_config:
+      fixture: i2s_loopback
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_aclk.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:

@@ -21,8 +21,10 @@ LOG_MODULE_REGISTER(mctp_i2c_gpio_controller, CONFIG_MCTP_LOG_LEVEL);
 static void mctp_start_rx(struct mctp_binding_i2c_gpio_controller *b,
 			  bool chained_rx);
 
-static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	struct mctp_binding_i2c_gpio_controller *b = arg0;
 	struct rtio_cqe *cqe;
 
@@ -41,15 +43,17 @@ static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, void *arg0
 	struct mctp_i2c_gpio_controller_cb *cb = b->inflight_rx;
 
 	/* Re-enable the GPIO interrupt */
-	gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[cb->index], GPIO_INT_ENABLE);
+	gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[cb->index], GPIO_INT_LEVEL_ACTIVE);
 
 	/* Try and start the next transfer if one is pending */
 	mctp_start_rx(b, true);
 }
 
 
-static void rx_len_completion(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+static void rx_len_completion(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	const uint8_t mctp_tx_msg_addr = MCTP_I2C_GPIO_TX_MSG_ADDR;
 
 	struct mctp_binding_i2c_gpio_controller *b = arg0;
@@ -228,7 +232,7 @@ int mctp_i2c_gpio_controller_start(struct mctp_binding *binding)
 	mctp_binding_set_tx_enabled(binding, true);
 
 	for (int i = 0; i < b->num_endpoints; i++) {
-		gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[i], GPIO_INT_LEVEL_HIGH);
+		gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[i], GPIO_INT_LEVEL_ACTIVE);
 	}
 
 	LOG_DBG("started");

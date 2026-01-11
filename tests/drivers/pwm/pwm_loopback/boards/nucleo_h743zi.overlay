@@ -11,13 +11,14 @@
 		compatible = "test-pwm-loopback";
 		/* first index must be a 32-Bit timer */
 		pwms = <&pwm2 4 0 PWM_POLARITY_NORMAL>,
-			<&pwm5 1 0 PWM_POLARITY_NORMAL>;
+		       <&pwm5 1 0 PWM_POLARITY_NORMAL>;
 	};
 };
 
 /* 32-Bit timers */
 &timers2 {
 	status = "okay";
+
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>; /* CN9 PIN1 A0 */
@@ -27,6 +28,7 @@
 
 &timers5 {
 	status = "okay";
+
 	pwm5: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim5_ch1_pa0>; /* CN11 PIN28 */
@@ -35,6 +37,6 @@
 		/* At least one of the test devices need to verify
 		 * the four-channel-capture-support in this test.
 		 */
-		 four-channel-capture-support;
+		four-channel-capture-support;
 	};
 };

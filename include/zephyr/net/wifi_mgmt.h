@@ -109,6 +109,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	/** Configure AP parameter */
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
+	/** Configure STA parameter */
+	NET_REQUEST_WIFI_CMD_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
 	/** BSS transition management query */
@@ -133,6 +135,10 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_CANDIDATE_SCAN,
 	/** AP WPS config */
 	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
+	/** Configure BSS maximum idle period */
+	NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD,
+	/** Configure background scanning */
+	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -267,6 +273,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 
+/** Request a Wi-Fi STA parameters configuration */
+#define NET_REQUEST_WIFI_CONFIG_PARAM         \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONFIG_PARAM)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** Request a Wi-Fi DPP operation */
 #define NET_REQUEST_WIFI_DPP			\
@@ -316,6 +328,16 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
+
+#define NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD				\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD);
+
+#define NET_REQUEST_WIFI_BGSCAN					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BGSCAN)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -701,6 +723,16 @@ struct wifi_connect_req_params {
 	uint8_t ignore_broadcast_ssid;
 	/** Parameter used for frequency band */
 	enum wifi_frequency_bandwidths bandwidth;
+
+	/** Full domain name to verify in the server certificate */
+	const uint8_t *server_cert_domain_exact;
+	/** Length of the server_cert_domain_exact string, maximum 128 bytes */
+	uint8_t server_cert_domain_exact_len;
+
+	/** Domain name suffix to verify in the server certificate */
+	const uint8_t *server_cert_domain_suffix;
+	/** Length of the server_cert_domain_suffix string, maximum 64 bytes */
+	uint8_t server_cert_domain_suffix_len;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -788,7 +820,7 @@ struct wifi_iface_status {
 	/** is TWT capable? */
 	bool twt_capable;
 	/** The current 802.11 PHY TX data rate (in Mbps) */
-	int current_phy_tx_rate;
+	float current_phy_tx_rate;
 };
 
 /** @brief Wi-Fi power save parameters */
@@ -1141,6 +1173,14 @@ struct wifi_ap_config_params {
 #endif
 };
 
+/** @brief Wi-Fi STA configuration parameter */
+struct wifi_config_params {
+	/** Parameter used to identify the different STA parameters */
+	enum wifi_config_param type;
+	/** Parameter used for opportunistic key caching */
+	int okc;
+};
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** @brief Wi-Fi DPP configuration parameter */
 /** Wi-Fi DPP QR-CODE in string max len for SHA512 */
@@ -1370,6 +1410,32 @@ enum wifi_sap_iface_state {
 	WIFI_SAP_IFACE_ENABLED
 };
 
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
+/** @brief Wi-Fi background scan implementation */
+enum wifi_bgscan_type {
+	/** None, background scan is disabled */
+	WIFI_BGSCAN_NONE = 0,
+	/** Simple, periodic scan based on signal strength */
+	WIFI_BGSCAN_SIMPLE,
+	/** Learn channels used by the network (experimental) */
+	WIFI_BGSCAN_LEARN,
+};
+
+/** @brief Wi-Fi background scan parameters */
+struct wifi_bgscan_params {
+	/** The type of background scanning */
+	enum wifi_bgscan_type type;
+	/** Short scan interval in seconds */
+	uint16_t short_interval;
+	/** Long scan interval in seconds */
+	uint16_t long_interval;
+	/** Signal strength threshold in dBm */
+	int8_t rssi_threshold;
+	/** Number of BSS Transition Management (BTM) queries */
+	uint16_t btm_queries;
+};
+#endif
+
 /* Extended Capabilities */
 enum wifi_ext_capab {
 	WIFI_EXT_CAPAB_20_40_COEX = 0,
@@ -1571,6 +1637,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*btm_query)(const struct device *dev, uint8_t reason);
+
+	/** Check if ap support Neighbor Report or not.
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return true if support, false if not support
+	 */
+	bool (*bss_support_neighbor_rep)(const struct device *dev);
+
 	/** Judge ap whether support the capability
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1625,7 +1699,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
-
+	/** Configure STA parameter
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params STA mode parameter configuration parameter info
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*config_params)(const struct device *dev, struct wifi_config_params *params);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	/** Dispatch DPP operations by action enum, with or without arguments in string format
 	 *
@@ -1685,6 +1766,25 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*start_11r_roaming)(const struct device *dev);
+	/** Set BSS max idle period
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param BSS max idle period value
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*set_bss_max_idle_period)(const struct device *dev,
+			unsigned short bss_max_idle_period);
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
+	/** Configure background scanning
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params Background scanning configuration parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*set_bgscan)(const struct device *dev, struct wifi_bgscan_params *params);
+#endif
 };
 
 /** Wi-Fi management offload API */

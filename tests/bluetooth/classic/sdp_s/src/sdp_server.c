@@ -296,9 +296,6 @@ static int cmd_register_sdp_large_valid(const struct shell *sh, size_t argc, cha
 	return 0;
 }
 
-uint8_t serial_port_svclass_uuid128[16] = {0x00, 0x00, 0x11, 0x01, 0x00, 0x00, 0x10, 0x00,
-					   0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
-
 static struct bt_sdp_attribute spp_attrs_uuid128[] = {
 	BT_SDP_NEW_SERVICE,
 	BT_SDP_LIST(
@@ -307,7 +304,7 @@ static struct bt_sdp_attribute spp_attrs_uuid128[] = {
 		BT_SDP_DATA_ELEM_LIST(
 		{
 			BT_SDP_TYPE_SIZE(BT_SDP_UUID128),
-			serial_port_svclass_uuid128
+			BT_SDP_ARRAY_UUID_128(0x00001101, 0x0000, 0x1000, 0x8000, 0x00805F9B34FB),
 		},
 		)
 	),
@@ -348,7 +345,8 @@ static struct bt_sdp_attribute spp_attrs_uuid128[] = {
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID128),
-				serial_port_svclass_uuid128
+				BT_SDP_ARRAY_UUID_128(0x00001101, 0x0000, 0x1000, 0x8000,
+						      0x00805F9B34FB),
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),

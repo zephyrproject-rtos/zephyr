@@ -22,7 +22,7 @@ description: |
       */
 
     /* include pre-defined combinations for the SoC variant used by the board */
-    #include <dt-bindings/pinctrl/renesas/rx-pinctrl.h>
+    #include <zephyr/dt-bindings/pinctrl/renesas/rx-pinctrl.h>
 
     &pinctrl {
       sci1_default: sci1_default {

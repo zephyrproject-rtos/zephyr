@@ -33,6 +33,10 @@ config SOC_MAX32657
 	bool
 	select SOC_FAMILY_MAX32_M33
 
+config SOC_MAX32658
+	bool
+	select SOC_MAX32657
+
 config SOC_MAX32660
 	bool
 	select SOC_FAMILY_MAX32_M4
@@ -97,6 +101,7 @@ config SOC
 	default "max32650" if SOC_MAX32650
 	default "max32655" if SOC_MAX32655
 	default "max32657" if SOC_MAX32657
+	default "max32658" if SOC_MAX32658
 	default "max32660" if SOC_MAX32660
 	default "max32662" if SOC_MAX32662
 	default "max32666" if SOC_MAX32666

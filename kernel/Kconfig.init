@@ -6,13 +6,40 @@
 
 menu "SoC and Board Hooks"
 
-config SOC_RESET_HOOK
-	bool "Run early SoC reset hook"
+config SOC_EARLY_RESET_HOOK
+	bool "Run SoC-specific early reset hook"
 	help
-	  Run an early SoC reset hook.
+	  Run a SoC-specific hook early in the reset/startup code (__start).
+	  A custom hook soc_early_reset_hook() will be executed at the beginning
+	  of the architecture-specific startup code, after hardware has been
+	  configured (as required by CONFIG_INIT_ARCH_HW_AT_BOOT) but before
+	  architecture's own resume logic.
 
-	  A custom hook soc_reset_hook() is executed at the beginning of the
-	  startup code (__start). soc_reset_hook() must be implemented by the SoC.
+	  Returning from this hook is not mandatory: it can be used to implement
+	  special logic to resume execution in some scenarios (for example, when
+	  a bootloader is used).
+
+	  The stack pointer register should be considered as not initialized upon
+	  call to this hook. In particular, this means that the hook is NOT allowed
+	  to "push" any data using this stack pointer value. However, the hook may
+	  use an implementation-specific area as stack if desired; in such case,
+	  the original value of the stack pointer needs not to be "restored" before
+	  returning control to the hook's caller.
+
+	  Additional constraints may be imposed on the hook by the architecture.
+
+config SOC_RESET_HOOK
+	bool "Run SoC-specific reset hook"
+	help
+	  Run a SoC-specific hook in the reset/startup code (__start).
+
+	  A custom hook soc_reset_hook() will be executed near the beginning
+	  of the architecture-specific startup code, after hardware has been
+	  configured (as required by CONFIG_INIT_ARCH_HW_AT_BOOT), a stack
+	  pointer has been loaded and the architecture's own resume logic
+	  has executed (if CONFIG_PM_S2RAM is enabled). Because this hook
+	  runs after the resume logic, it is not called when the system
+	  resumes from a suspend-to-RAM power state.
 
 config SOC_PREP_HOOK
 	bool "Run early SoC preparation hook"

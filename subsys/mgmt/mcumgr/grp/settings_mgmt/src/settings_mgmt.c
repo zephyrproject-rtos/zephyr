@@ -433,15 +433,66 @@ end:
  */
 static int settings_mgmt_save(struct smp_streamer *ctxt)
 {
+	int rc;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok = true;
+	size_t decoded;
+	struct zcbor_string key = {0};
+	bool name_found = false;
+	bool save_subtree = false;
+
+#ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+	char *key_name = NULL;
+#else
+	char key_name[CONFIG_MCUMGR_GRP_SETTINGS_NAME_LEN];
+#endif
+
+	struct zcbor_map_decode_key_val settings_save_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &key),
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, settings_save_decode, ARRAY_SIZE(settings_save_decode),
+				   &decoded) == 0;
+
+	if (!ok) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	name_found = zcbor_map_decode_bulk_key_found(settings_save_decode,
+						     ARRAY_SIZE(settings_save_decode), "name");
+
+	if (name_found && key.len == 0) {
+		return MGMT_ERR_EINVAL;
+	} else if (name_found) {
+		save_subtree = true;
+	}
+
+	if (save_subtree) {
+		if (key.len >= CONFIG_MCUMGR_GRP_SETTINGS_NAME_LEN) {
+			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SETTINGS,
+					     SETTINGS_MGMT_ERR_KEY_TOO_LONG);
+			goto end;
+		}
+
+#ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+		key_name = (char *)malloc(key.len + 1);
+
+		if (key_name == NULL) {
+			return MGMT_ERR_ENOMEM;
+		}
+#endif
+		memcpy(key_name, key.value, key.len);
+		key_name[key.len] = 0;
+	}
 
 	if (IS_ENABLED(CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK)) {
 		/* Send request to application to check if access should be allowed or not */
 		struct settings_mgmt_access settings_access_data = {
 			.access = SETTINGS_ACCESS_SAVE,
+			.name = name_found ? key_name : NULL,
 		};
 
-		zcbor_state_t *zse = ctxt->writer->zs;
 		enum mgmt_cb_return status;
 		int32_t ret_rc;
 		uint16_t ret_group;
@@ -452,6 +503,9 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
+#ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+				free(key_name);
+#endif
 				return ret_rc;
 			}
 
@@ -460,9 +514,46 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 		}
 	}
 
-	settings_save();
+	if (save_subtree) {
+#ifdef CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+		/*
+		 * This allows saving either a subtree or single setting, if a full setting name
+		 * is provided then the single setting will be saved, otherwise it will save the
+		 * subtree (assuming it is a valid setting subtree).
+		 */
+		rc = settings_save_subtree_or_single_without_modification(key_name, true, true);
+#else
+		rc = settings_save_subtree(key_name);
+#endif
+	} else {
+		rc = settings_save();
+	}
+
+	if (rc != 0) {
+		switch (rc) {
+#ifdef CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION
+		case -EDOM:
+			rc = SETTINGS_MGMT_ERR_SAVE_FAILED_VALUE_TOO_LONG_TO_READ;
+			break;
+		case -ENOSYS:
+#endif
+		case -ENOENT:
+		case -ENOTSUP:
+			rc = SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED;
+			break;
+		default:
+			rc = SETTINGS_MGMT_ERR_UNKNOWN;
+			break;
+		}
+
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SETTINGS, (uint16_t)rc);
+	}
 
 end:
+#ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+	free(key_name);
+#endif
+
 	return MGMT_RETURN_CHECK(ok);
 }
 

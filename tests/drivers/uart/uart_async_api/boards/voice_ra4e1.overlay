@@ -8,7 +8,7 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 1, 1)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 1, 0)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 1, 0)>;
 		};
 	};
 };
@@ -17,6 +17,7 @@
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	dut: uart {
 		current-speed = <115200>;
 		status = "okay";

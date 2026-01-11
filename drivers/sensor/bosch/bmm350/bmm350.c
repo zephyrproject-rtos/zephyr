@@ -728,8 +728,11 @@ static int bmm350_attr_get(const struct device *dev, enum sensor_channel chan,
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 
-static void bmm350_one_shot_complete(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg0)
+static void bmm350_one_shot_complete(struct rtio *ctx, const struct rtio_sqe *sqe,
+				     int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
 	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
 	const struct device *dev = (const struct device *)sqe->userdata;

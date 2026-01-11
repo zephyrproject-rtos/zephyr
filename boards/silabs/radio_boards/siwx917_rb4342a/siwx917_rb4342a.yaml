@@ -20,6 +20,7 @@ supported:
   - pwm
   - uart
   - watchdog
+  - rtc
   - counter
   - wifi
 vendor: silabs

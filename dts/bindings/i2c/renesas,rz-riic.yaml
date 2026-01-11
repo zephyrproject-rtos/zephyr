@@ -1,7 +1,7 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RZ/G3S I2C controller
+description: Renesas RZ I2C controller
 
 compatible: "renesas,rz-riic"
 

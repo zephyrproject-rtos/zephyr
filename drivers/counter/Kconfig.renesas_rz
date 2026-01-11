@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_RENESAS_RZ_GTM
@@ -8,3 +8,11 @@ config COUNTER_RENESAS_RZ_GTM
 	select USE_RZ_FSP_GTM
 	help
 	  Enable the counter driver for the Renesas RZ General Timer (GTM).
+
+config COUNTER_RENESAS_RZ_CMTW
+	bool "Renesas RZ Compare Match Timer W (CMTW) Counter driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_CMTW_COUNTER_ENABLED
+	select USE_RZ_FSP_CMTW
+	help
+	  Enable the counter driver for the Renesas RZ Compare Match Timer W (CMTW).

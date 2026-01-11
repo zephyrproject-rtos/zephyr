@@ -27,19 +27,30 @@ description: |
 
   Specifying a gated clock:
 
-  To specify a gated clock, a peripheral should define a "clocks" property encoded
-  in the following way:
+  To specify a gated clock, a peripheral should define a "clocks" property such as:
   ... {
            ...
-           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+           clocks = <&rcc STM32_CLOCK(APB2, 5)>;
            ...
   }
-  After the phandle referring to rcc node, the first index specifies the registers of
-  the bus controlling the peripheral and the second index specifies the bit used to
-  control the peripheral clock in that bus register.
+
+  After the phandle referring to rcc node, use the STM32_CLOCK() macro which accepts
+  two parameters: the first specifies the bus on which the peripheral is attached, and
+  the second indicates the bit number controlling the peripheral clock gate in that
+  bus's control register in RCC. As an example, the snippet above indicates that the
+  peripheral gate is controlled by bit 5 in RCC_APB2ENR (USART6EN on STM32F401).
   The gated clock is required when accessing to the peripheral controller is needed
   (generally for configuring the device). If dual clock domain is not used, it is
   also used for peripheral operation.
+
+  Note: in situations where more than one bit is required, use the explicit form:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 ((1 << 14) | (1 << 7))>;
+           ...
+  }
+  where 14 and 7 are the bits that control the peripheral clock gate.
+  (You can have more than two bits, and they do not have to be contiguous).
 
   Specifying a domain clock source:
 
@@ -47,7 +58,7 @@ description: |
   clock property:
   ... {
            ...
-           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>,
+           clocks = <&rcc STM32_CLOCK(APB2, 5)>,
                         <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
            ...
   }

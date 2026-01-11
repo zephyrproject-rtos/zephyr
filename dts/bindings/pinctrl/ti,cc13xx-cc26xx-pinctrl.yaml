@@ -34,7 +34,7 @@ description: |
     An example for CC13XX family, include the chip level pinctrl
     DTSI file in the board level DTS:
 
-      #include <dt-bindings/pinctrl/cc13xx_cc26xx-pinctrl.h>
+      #include <zephyr/dt-bindings/pinctrl/cc13xx_cc26xx-pinctrl.h>
 
     We want to configure the I2C pins to open drain, with pullup enabled
     and input enabled.

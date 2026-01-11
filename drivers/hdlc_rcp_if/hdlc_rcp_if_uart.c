@@ -151,7 +151,7 @@ static void hdlc_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 	ctx->ot_context = net_if_l2_data(iface);
 
-	otPlatRadioGetIeeeEui64(ctx->ot_context->instance, eui64.m8);
+	otPlatRadioGetIeeeEui64(openthread_get_default_instance(), eui64.m8);
 	net_if_set_link_addr(iface, eui64.m8, OT_EXT_ADDRESS_SIZE,
 			     NET_LINK_IEEE802154);
 }

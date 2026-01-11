@@ -16,8 +16,8 @@
 	compatible = "microchip,mec5-qspi";
 	clock-frequency = <12000000>;
 
-	pinctrl-0 = < &qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
-		      &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224 >;
+	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
+		     &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224>;
 	pinctrl-names = "default";
 
 	slow@0 {

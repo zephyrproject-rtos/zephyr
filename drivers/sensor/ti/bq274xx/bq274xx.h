@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2020 Linumiz
+ * Copyright (c) 2020 Linumiz
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -42,7 +42,7 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
-#if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_SRAM_SW_ISR_TABLE)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{
 		/*
@@ -99,5 +99,14 @@
 #include <zephyr/linker/device-deps.ld>
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_DEVICE_DEPS_DYNAMIC */
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	ITERABLE_SECTION_ROM(_stack_to_hw_shadow_stack, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(_stack_to_hw_shadow_stack_arr, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_TIMER_OBSERVER)
+	ITERABLE_SECTION_ROM(k_timer_observer, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_TIMER_OBSERVER */
 
 #include <device-api-sections.ld>

@@ -88,11 +88,7 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 		}
 		break;
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-#ifdef CONFIG_PIPES
-		if (event->pipe->bytes_used != 0) {
-#else
 		if (!ring_buf_is_empty(&event->pipe->buf)) {
-#endif
 			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
 			return true;
 		}
@@ -380,11 +376,11 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		goto out;
 	}
 
-	key = k_spin_lock(&lock);
 	if (K_SYSCALL_MEMORY_WRITE(events, bounds)) {
-		k_spin_unlock(&lock, key);
 		goto oops_free;
 	}
+
+	key = k_spin_lock(&lock);
 	(void)memcpy(events_copy, events, bounds);
 	k_spin_unlock(&lock, key);
 

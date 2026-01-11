@@ -58,6 +58,11 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define DIRECT_XIP_BOOT_FOREVER		3
 #endif
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) && \
+	CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
+#warning "MCUmgr img mgmt only supports 1 image"
+#endif
+
 /**
  * Collects information about the specified image slot.
  */
@@ -122,21 +127,30 @@ img_mgmt_state_flags(int query_slot)
 	int image = query_slot / 2;	/* We support max 2 images for now */
 	int active_slot = img_mgmt_active_slot(image);
 
-	/* In case when MCUboot is configured for DirectXIP slot may only be
-	 * active or pending. Slot is marked pending only when version in that slot
-	 * is higher than version of active slot.
+	/* In case when MCUboot is configured for FW loader/updater mode, slots
+	 * can be either active or non-active. There is no concept of pending
+	 * or confirmed slots.
+	 *
+	 * In case when MCUboot is configured for DirectXIP slot may only be
+	 * active or pending.
+	 * Slot is marked as pending when:
+	 * - version in that slot is higher than version of active slot.
+	 * - versions are equal but slot number is lower than the active slot.
 	 */
 	if (image == img_mgmt_active_image() && query_slot == active_slot) {
 		flags = IMG_MGMT_STATE_F_ACTIVE;
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	} else {
 		struct image_version sver;
 		struct image_version aver;
 		int rcs = img_mgmt_read_info(query_slot, &sver, NULL, NULL);
 		int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
-		if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &sver) < 0) {
+		if (rcs == 0 && rca == 0 && ((img_mgmt_vercmp(&aver, &sver) < 0) ||
+		    ((img_mgmt_vercmp(&aver, &sver) == 0) && (active_slot > query_slot)))) {
 			flags = IMG_MGMT_STATE_F_PENDING | IMG_MGMT_STATE_F_PERMANENT;
 		}
+#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP */
 	}
 
 	return flags;
@@ -196,7 +210,6 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 #else
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-
 static int read_directxip_state(int slot)
 {
 	struct boot_swap_state bss;
@@ -229,6 +242,8 @@ static int read_directxip_state(int slot)
 }
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
 	struct image_version aver;
@@ -279,18 +294,37 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		if (active_slot_state == DIRECT_XIP_BOOT_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 		}
-	} else if (img_mgmt_vercmp(&aver, &over) < 0) {
+	} else if ((img_mgmt_vercmp(&aver, &over) < 0) ||
+		   ((img_mgmt_vercmp(&aver, &over) == 0) && (active_slot > other_slot))) {
+		/* Check if MCUboot will select the non-active slot during the next boot.
+		 * The logic is as follows:
+		 * - If both slots are valid, a slot with higher version is preferred.
+		 * - If both slots are valid and the versions are equal, a slot with lower number
+		 *   is preferred.
+		 */
 		if (other_slot_state == DIRECT_XIP_BOOT_FOREVER) {
 			return_slot = other_slot;
 		} else if (other_slot_state == DIRECT_XIP_BOOT_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 			return_slot = other_slot;
 		}
+	} else {
+		/* There is neither a preference nor a necessity to boot the other slot.
+		 * The active slot will be used again.
+		 */
 	}
 
 out:
 #else
-	if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &over) < 0) {
+	if (rcs == 0 && rca == 0 &&
+	    ((img_mgmt_vercmp(&aver, &over) < 0) ||
+	     ((img_mgmt_vercmp(&aver, &over) == 0) && (active_slot > other_slot)))) {
+		/* Check if MCUboot will select the non-active slot during the next boot.
+		 * The logic is as follows:
+		 * - If both slots are valid, a slot with higher version is preferred.
+		 * - If both slots are valid and the versions are equal, a slot with lower number
+		 *   is preferred.
+		 */
 		return_slot = other_slot;
 	}
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
@@ -301,11 +335,13 @@ out:
 
 	return return_slot;
 }
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+	* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	*/
 #endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
 	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) && \
 	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 	*/
-
 
 /**
  * Indicates whether any image slot is pending (i.e., whether a test swap will
@@ -325,14 +361,13 @@ img_mgmt_state_any_pending(void)
 int
 img_mgmt_slot_in_use(int slot)
 {
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
-	return 0;
-#else
 	int image = img_mgmt_slot_to_image(slot);
 	int active_slot = img_mgmt_active_slot(image);
 
 #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
-	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 	enum img_mgmt_next_boot_type type = NEXT_BOOT_TYPE_NORMAL;
 	int nbs = img_mgmt_get_next_boot_slot(image, &type);
 
@@ -354,7 +389,6 @@ img_mgmt_slot_in_use(int slot)
 #endif
 
 	return (active_slot == slot);
-#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 }
 
 /**
@@ -426,8 +460,11 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot,
 	zcbor_state_t *zse = ctxt->writer->zs;
 	uint32_t flags;
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
-	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
-	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
+	uint8_t hash[IMAGE_SHA_LEN];
+	struct zcbor_string zhash = {
+		.value = hash,
+		.len = IMAGE_SHA_LEN,
+	};
 	struct image_version ver;
 	bool ok;
 	int rc = img_mgmt_read_info(slot, &ver, hash, &flags);
@@ -494,6 +531,7 @@ failed:
 /**
  * Command handler: image state read
  */
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 int
 img_mgmt_state_read(struct smp_streamer *ctxt)
 {
@@ -551,6 +589,43 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
+#else
+int
+img_mgmt_state_read(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	uint32_t i;
+	bool ok;
+
+	ok = zcbor_tstr_put_lit(zse, "images") &&
+	     zcbor_list_start_encode(zse, 2);
+
+	img_mgmt_take_lock();
+
+	for (i = 0; ok && i < CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
+		/* _a is active slot, _o is opposite slot */
+		int slot_a = img_mgmt_active_slot(i);
+		int slot_o = img_mgmt_get_opposite_slot(slot_a);
+		int flags_a = REPORT_SLOT_ACTIVE;
+		int flags_o = REPORT_SLOT_CONFIRMED;
+
+		ok = img_mgmt_state_encode_slot(ctxt, slot_o, flags_o) &&
+		     img_mgmt_state_encode_slot(ctxt, slot_a, flags_a);
+	}
+
+	/* Ending list encoding for two slots per image */
+	ok = ok && zcbor_list_end_encode(zse, 2);
+	/* splitStatus is always 0 so in frugal list it is not present at all */
+	if (!IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_FRUGAL_LIST) && ok) {
+		ok = zcbor_tstr_put_lit(zse, "splitStatus") &&
+		     zcbor_int32_put(zse, 0);
+	}
+
+	img_mgmt_release_lock();
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 
 static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool confirm)
 {
@@ -630,6 +705,17 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	}
 #endif
 
+	/* The rules above apply only to the inactive image.
+	 * To effectively prevent confirming something that might not have been
+	 * verified to actually be bootable, a new policy was introduced,
+	 * that applies to both active and inactive images.
+	 */
+#ifndef CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	if (confirm && slot != active_slot) {
+		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
+	}
+#endif
+
 	/* Setting test to active slot is not allowed. */
 	if (!confirm && slot == active_slot) {
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
@@ -678,8 +764,9 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 #else
 int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 {
+	int image = img_mgmt_slot_to_image(slot);
+	int active_slot = img_mgmt_active_slot(image);
 	int active_image = img_mgmt_active_image();
-	int active_slot = img_mgmt_active_slot(active_image);
 
 	LOG_DBG("(%d, %s)", slot, confirm ? "confirm" : "test");
 	LOG_DBG("aimg = %d, aslot = %d, slot = %d",
@@ -688,6 +775,12 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	if (slot == active_slot && !confirm) {
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
 	}
+
+#ifndef CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	if (slot != active_slot && confirm) {
+		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
+	}
+#endif
 
 	return img_mgmt_set_next_boot_slot_common(slot, active_slot, confirm);
 }
@@ -733,14 +826,14 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 					     IMG_MGMT_ERR_INVALID_HASH);
 			goto end;
 		}
-	} else if (zhash.len != IMAGE_HASH_LEN) {
+	} else if (zhash.len != IMAGE_SHA_LEN) {
 		/* The img_mgmt_find_by_hash does exact length compare
 		 * so just fail here.
 		 */
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ERR_INVALID_HASH);
 		goto end;
 	} else {
-		uint8_t hash[IMAGE_HASH_LEN];
+		uint8_t hash[IMAGE_SHA_LEN];
 
 		memcpy(hash, zhash.value, zhash.len);
 

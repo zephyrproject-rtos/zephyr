@@ -155,17 +155,23 @@ static bool copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 	return true;
 }
 
+/* Compile-time computed shell log output flags */
+#define SHELL_LOG_BASE_FLAGS                                                                       \
+	((IS_ENABLED(CONFIG_SHELL_LOG_OUTPUT_TIMESTAMP) ? LOG_OUTPUT_FLAG_TIMESTAMP : 0) |         \
+	 (IS_ENABLED(CONFIG_SHELL_LOG_FORMAT_TIMESTAMP) ? LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP : 0) |  \
+	 (IS_ENABLED(CONFIG_SHELL_LOG_OUTPUT_LEVEL) ? LOG_OUTPUT_FLAG_LEVEL : 0) |                 \
+	 (IS_ENABLED(CONFIG_SHELL_LOG_OUTPUT_CRLF_NONE) ? LOG_OUTPUT_FLAG_CRLF_NONE : 0) |         \
+	 (IS_ENABLED(CONFIG_SHELL_LOG_OUTPUT_CRLF_LFONLY) ? LOG_OUTPUT_FLAG_CRLF_LFONLY : 0) |     \
+	 (IS_ENABLED(CONFIG_SHELL_LOG_OUTPUT_THREAD) ? LOG_OUTPUT_FLAG_THREAD : 0) |               \
+	 (IS_ENABLED(CONFIG_SHELL_LOG_OUTPUT_SKIP_SOURCE) ? LOG_OUTPUT_FLAG_SKIP_SOURCE : 0))
+
 static void process_log_msg(const struct shell *sh,
 			     const struct log_output *log_output,
 			     union log_msg_generic *msg,
 			     bool locked, bool colors)
 {
 	unsigned int key = 0;
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_THREAD;
-
-	if (IS_ENABLED(CONFIG_SHELL_LOG_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
+	uint32_t flags = SHELL_LOG_BASE_FLAGS;
 
 	if (colors) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
@@ -181,7 +187,7 @@ static void process_log_msg(const struct shell *sh,
 		if (k_is_in_isr()) {
 			key = irq_lock();
 		} else {
-			k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+			z_shell_lock(sh);
 		}
 		if (!z_flag_cmd_ctx_get(sh)) {
 			z_shell_cmd_line_erase(sh);
@@ -197,7 +203,7 @@ static void process_log_msg(const struct shell *sh,
 		if (k_is_in_isr()) {
 			irq_unlock(key);
 		} else {
-			k_mutex_unlock(&sh->ctx->wr_mtx);
+			z_shell_unlock(sh);
 		}
 	}
 }

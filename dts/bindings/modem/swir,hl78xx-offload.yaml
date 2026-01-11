@@ -1,0 +1,32 @@
+description: |
+  Binding for a modem child node that indicates the modem supports
+  socket offloading. This node is intended to be a child of a modem
+  device node (for example, `modem: hl_modem { ... };`).
+
+  The binding is intentionally small and extensible; it documents a
+  presence node (compatible = "net,offload-modem-sockets") and a couple
+  of optional integer properties that the driver may consume.
+
+compatible: "swir,hl78xx-offload"
+
+properties:
+  max-data-length:
+    type: int
+    description: |
+      "Maximum length of a single data payload (bytes) that
+      the modem can send/receive in one offload operation."
+    enum:
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+
+  offload-priority:
+    type: int
+    description: |
+      "Priority of this offload modem compared to other offload
+      modems in the system. Lower values indicate higher priority.
+      The system will prefer to use the offload modem with the
+      highest priority (lowest value) when multiple offload modems
+      are available."

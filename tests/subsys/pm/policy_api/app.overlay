@@ -37,6 +37,10 @@
 			substate-id = <100>;
 		};
 	};
+
+	zephyr,user {
+		test-states = <&state0 &state2>;
+	};
 };
 
 &cpu0 {

@@ -76,16 +76,30 @@
   </div>
 
   <div class="form-group" style="flex-basis: 100%">
-    <label for="tag-input">Supported Hardware Capabilities</label>
-    <div class="tag-container" id="tag-container">
-      <input list="tag-list" class="tag-input" id="tag-input"
+    <label for="hwcaps-input">Supported Hardware Capabilities</label>
+    <div class="tag-container" id="hwcaps-tags">
+      <input list="tag-list" class="tag-input" id="hwcaps-input"
              placeholder="{% if hw_features_present -%}
-               Type a tag...
+               Type a hardware capability, e.g. &quot;display&quot;, &quot;sensor&quot;, &hellip;
              {%- else -%}
                List of supported hardware capabilities is not available
              {%- endif %}"
              {% if not hw_features_present %}disabled{% endif %}>
       <datalist id="tag-list"></datalist>
+    </div>
+  </div>
+
+  <div class="form-group" style="flex-basis: 100%">
+    <label for="compatibles-input">Supported devices (compatible strings, supports wildcards)</label>
+    <div class="tag-container" id="compatibles-tags">
+      <input list="compatibles-list" class="tag-input" id="compatibles-input"
+        placeholder="{% if hw_features_present -%}
+          Type a compatible, e.g. &quot;ti,hdc2080&quot; or wildcard like &quot;bosch,bmp*&quot;
+        {%- else -%}
+          List of supported devices is not available
+        {%- endif %}"
+        {% if not hw_features_present %}disabled{% endif %}>
+      <datalist id="compatibles-list"></datalist>
     </div>
   </div>
 

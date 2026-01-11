@@ -1,0 +1,61 @@
+# Deprecated Mbed TLS symbols. They are kept for backward compatibility until
+# the deprecation period expires.
+#
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config MBEDTLS_MD
+	bool "Generic message digest layer [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_MD_C
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_MD_C instead.
+
+config MBEDTLS_LMS
+	bool "Support LMS signature schemes [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_LMS_C
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_LMS_C instead.
+
+config MBEDTLS_TLS_VERSION_1_2
+	bool "Support for TLS 1.2 (DTLS 1.2) [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_SSL_PROTO_TLS1_2
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_SSL_PROTO_TLS1_2 instead.
+
+config MBEDTLS_DTLS
+	bool "Support for DTLS [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_SSL_PROTO_DTLS
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_SSL_PROTO_DTLS instead.
+
+config MBEDTLS_TLS_VERSION_1_3
+	bool "Support for TLS 1.3 [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_SSL_PROTO_TLS1_3
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_SSL_PROTO_TLS1_3 instead.
+
+config MBEDTLS_TLS_SESSION_TICKETS
+	bool "Support for RFC 5077 session tickets in TLS 1.3 [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_SSL_SESSION_TICKETS
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_SSL_SESSION_TICKETS instead.
+
+config MBEDTLS_CTR_DRBG_ENABLED
+	bool "CTR_DRBG AES-256-based random generator [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_CTR_DRBG_C
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_CTR_DRBG_C instead.
+
+config MBEDTLS_HMAC_DRBG_ENABLED
+	bool "HMAC_DRBG random generator [DEPRECATED]"
+	select DEPRECATED
+	select MBEDTLS_HMAC_DRBG_C
+	help
+	  This Kconfig is deprecated. Use MBEDTLS_HMAC_DRBG_C instead.

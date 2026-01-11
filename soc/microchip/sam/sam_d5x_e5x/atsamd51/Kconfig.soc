@@ -1,0 +1,58 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ATSAMD51
+	bool
+	select SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Enable support for Microchip SAMD51 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "atsamd51" if SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51G18A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51G19A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51J18A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51J19A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51J20A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51N19A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51N20A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51P19A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC_ATSAMD51P20A
+	bool
+	select SOC_SERIES_ATSAMD51
+
+config SOC
+	default "atsamd51g18a" if SOC_ATSAMD51G18A
+	default "atsamd51g19a" if SOC_ATSAMD51G19A
+	default "atsamd51j18a" if SOC_ATSAMD51J18A
+	default "atsamd51j19a" if SOC_ATSAMD51J19A
+	default "atsamd51j20a" if SOC_ATSAMD51J20A
+	default "atsamd51n19a" if SOC_ATSAMD51N19A
+	default "atsamd51n20a" if SOC_ATSAMD51N20A
+	default "atsamd51p19a" if SOC_ATSAMD51P19A
+	default "atsamd51p20a" if SOC_ATSAMD51P20A

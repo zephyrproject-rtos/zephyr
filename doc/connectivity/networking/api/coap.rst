@@ -14,7 +14,7 @@ The Constrained Application Protocol (CoAP) is a specialized web transfer
 protocol for use with constrained nodes and constrained (e.g., low-power,
 lossy) networks. It provides a convenient API for RESTful Web services
 that support CoAP's features. For more information about the protocol
-itself, see `IETF RFC7252 The Constrained Application Protocol <https://tools.ietf.org/html/rfc7252>`_.
+itself, see :rfc:`7252`.
 
 Zephyr provides a CoAP library which supports client and server roles.
 The library can be enabled with :kconfig:option:`CONFIG_COAP` Kconfig option and
@@ -29,10 +29,10 @@ See :ref:`lwm2m_interface` for more information.
 
 Supported RFCs:
 
-- `RFC7252: The Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7252>`_
-- `RFC6690: Constrained RESTful Environments (CoRE) Link Format <https://tools.ietf.org/html/rfc6690>`_
-- `RFC7959: Block-Wise Transfers in the Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7959>`_
-- `RFC7641: Observing Resources in the Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7641>`_
+- :rfc:`7252` - The Constrained Application Protocol (CoAP)
+- :rfc:`6690` - Constrained RESTful Environments (CoRE) Link Format
+- :rfc:`7959` - Block-Wise Transfers in the Constrained Application Protocol (CoAP)
+- :rfc:`7641` - Observing Resources in the Constrained Application Protocol (CoAP)
 
 .. note:: Not all parts of these RFCs are supported. Features are supported based on Zephyr requirements.
 

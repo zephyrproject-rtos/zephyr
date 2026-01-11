@@ -26,20 +26,56 @@ extern "C" {
 			      (bitrate == I2C_BITRATE_FAST_PLUS ? NRF_TWIM_FREQ_1000K :))          \
 			   I2C_NRFX_TWIM_INVALID_FREQUENCY)
 
-#define I2C(idx)                DT_NODELABEL(i2c##idx)
-#define I2C_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(I2C(idx), prop)
-#define I2C_FREQUENCY(idx)      I2C_NRFX_TWIM_FREQUENCY(DT_PROP_OR(I2C(idx), clock_frequency,      \
-								   I2C_BITRATE_STANDARD))
+#define I2C_FREQUENCY(inst) \
+	I2C_NRFX_TWIM_FREQUENCY(DT_INST_PROP_OR(inst, clock_frequency, I2C_BITRATE_STANDARD))
+
+/* Macro determines PM actions interrupt safety level.
+ *
+ * Requesting/releasing TWIM device may be ISR safe, but it cannot be reliably known whether
+ * managing its power domain is. It is then assumed that if power domains are used, device is
+ * no longer ISR safe. This macro let's us check if we will be requesting/releasing
+ * power domains and determines PM device ISR safety value.
+ */
+#define I2C_PM_ISR_SAFE(inst)								      \
+	COND_CODE_1(									      \
+		UTIL_AND(								      \
+			IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),			      \
+			UTIL_AND(							      \
+				DT_NODE_INST_HAS_PROP(inst, power_domains),		      \
+				DT_NODE_HAS_STATUS_OKAY(DT_INST_PHANDLE(inst, power_domains)) \
+			)								      \
+		),									      \
+		(0),									      \
+		(PM_DEVICE_ISR_SAFE)							      \
+	)
+
+#define CONCAT_BUF_SIZE(inst)						 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_concat_buf_size), \
+		    (DT_INST_PROP(inst, zephyr_concat_buf_size)), (0))
+
+#define FLASH_BUF_MAX_SIZE(inst)					    \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_flash_buf_max_size), \
+		    (DT_INST_PROP(inst, zephyr_flash_buf_max_size)), (0))
+
+#define USES_MSG_BUF(inst)					   \
+	COND_CODE_0(CONCAT_BUF_SIZE(inst),			   \
+		(COND_CODE_0(FLASH_BUF_MAX_SIZE(inst), (0), (1))), \
+		(1))
+
+#define MSG_BUF_SIZE(inst) MAX(CONCAT_BUF_SIZE(inst), FLASH_BUF_MAX_SIZE(inst))
+
+#define MAX_TRANSFER_SIZE(inst) BIT_MASK(DT_INST_PROP(inst, easydma_maxcnt_bits))
 
 struct i2c_nrfx_twim_common_config {
-	nrfx_twim_t twim;
 	nrfx_twim_config_t twim_config;
-	nrfx_twim_evt_handler_t event_handler;
+	nrfx_twim_event_handler_t event_handler;
 	uint16_t msg_buf_size;
-	void (*irq_connect)(void);
+	void (*pre_init)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t *msg_buf;
 	uint16_t max_transfer_size;
+	nrfx_twim_t *twim;
+	void *mem_reg;
 };
 
 int i2c_nrfx_twim_common_init(const struct device *dev);

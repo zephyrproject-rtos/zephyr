@@ -27,8 +27,13 @@
 
 #ifdef CONFIG_TEMP_NRF5
 static const struct device *temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);
+#define TEMP_SENSOR_CHAN SENSOR_CHAN_DIE_TEMP
+#elif DT_HAS_ALIAS(dht0)
+static const struct device *temp_dev = DEVICE_DT_GET(DT_ALIAS(dht0));
+#define TEMP_SENSOR_CHAN SENSOR_CHAN_AMBIENT_TEMP
 #else
 static const struct device *temp_dev;
+#define TEMP_SENSOR_CHAN SENSOR_CHAN_AMBIENT_TEMP
 #endif
 
 static uint8_t simulate_htm;
@@ -104,8 +109,7 @@ void hts_indicate(void)
 			printk("sensor_sample_fetch failed return: %d\n", r);
 		}
 
-		r = sensor_channel_get(temp_dev, SENSOR_CHAN_DIE_TEMP,
-				       &temp_value);
+		r = sensor_channel_get(temp_dev, TEMP_SENSOR_CHAN, &temp_value);
 		if (r) {
 			printk("sensor_channel_get failed return: %d\n", r);
 		}

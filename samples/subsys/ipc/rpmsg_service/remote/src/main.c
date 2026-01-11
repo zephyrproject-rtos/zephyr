@@ -17,8 +17,7 @@
 
 #include <zephyr/ipc/rpmsg_service.h>
 
-#define APP_TASK_STACK_SIZE (1024)
-K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
+K_THREAD_STACK_DEFINE(thread_stack, CONFIG_APP_REMOTE_TASK_STACK_SIZE);
 static struct k_thread thread_data;
 
 static volatile unsigned int received_data;
@@ -26,10 +25,9 @@ static volatile unsigned int received_data;
 static K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_rx_sem, 0, 1);
 
-int endpoint_cb(struct rpmsg_endpoint *ept, void *data,
-		size_t len, uint32_t src, void *priv)
+int endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src, void *priv)
 {
-	received_data = *((unsigned int *) data);
+	received_data = *((unsigned int *)data);
 
 	k_sem_give(&data_rx_sem);
 
@@ -60,15 +58,14 @@ void app_task(void *arg1, void *arg2, void *arg3)
 
 	printk("\r\nRPMsg Service [remote] demo started\r\n");
 
-	while (message < 99) {
+	while (message < (CONFIG_RPMSG_SERVICE_DEMO_CYCLES - 1)) {
 		message = receive_message();
 		printk("Remote core received a message: %d\n", message);
 
 		message++;
 		status = send_message(message);
 		if (status < 0) {
-			printk("send_message(%d) failed with status %d\n",
-			       message, status);
+			printk("send_message(%d) failed with status %d\n", message, status);
 			break;
 		}
 	}
@@ -79,8 +76,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 int main(void)
 {
 	printk("Starting application thread!\n");
-	k_thread_create(&thread_data, thread_stack, APP_TASK_STACK_SIZE,
-			app_task,
+	k_thread_create(&thread_data, thread_stack, CONFIG_APP_REMOTE_TASK_STACK_SIZE, app_task,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	return 0;
 }

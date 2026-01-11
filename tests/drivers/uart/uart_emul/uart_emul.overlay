@@ -2,7 +2,7 @@
  * Copyright (c) 2023 Fabian Blatz
  *
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 
 / {
 	euart0: uart-emul {

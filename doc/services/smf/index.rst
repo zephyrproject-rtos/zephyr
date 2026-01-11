@@ -130,6 +130,33 @@ should be called. It can be called from the entry, run, or exit actions. The
 function takes a non-zero user defined value that will be returned by the
 :c:func:`smf_run_state` function.
 
+Retrieving the Current State
+====================================
+
+**Leaf State**: In the context of a hierarchical state machine, a *leaf state*
+is a state that does not contain any child states. It represents the most granular
+level of state in the hierarchy, where no further decomposition is possible.
+
+**Executing State**: The *executing state* refers to the state whose entry,
+run, or exit action is currently being executed by the state machine. This
+may be a parent or leaf state, depending on the current operation.
+
+To retrieve the current leaf state, the :c:func:`smf_get_current_leaf_state`
+function should be called.
+For example::
+
+   const struct smf_state *leaf_state = smf_get_current_leaf_state(SMF_CTX(&s_obj));
+
+.. note:: If :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION` is not enabled, or
+	if the initial state of a parent state is not defined, always set the state
+	to a leaf state. Otherwise, the state machine may enter a parent state directly,
+	and :c:func:`smf_get_current_leaf_state` may return a parent state instead of
+	a leaf state. Ensure initial transitions are properly configured for all parent
+	states to avoid malformed hierarchical state machines.
+
+To retrieve the state whose entry, run, or exit action is currently being executed,
+use the :c:func:`smf_get_current_executing_state` function.
+
 UML State Machines
 ==================
 
@@ -369,17 +396,21 @@ Code::
 	}
 
 When designing hierarchical state machines, the following should be considered:
- - Ancestor entry actions are executed before the sibling entry actions. For
-   example, the parent_entry function is called before the s0_entry function.
- - Transitioning from one sibling to another with a shared ancestry does not
-   re-execute the ancestor\'s entry action or execute the exit action.
-   For example, the parent_entry function is not called when transitioning
-   from S0 to S1, nor is the parent_exit function called.
- - Ancestor exit actions are executed after the exit action of the current
-   state. For example, the s1_exit function is called before the parent_exit
-   function is called.
- - The parent_run function only executes if the child_run function does not
-   call either :c:func:`smf_set_state` or return :c:enum:`SMF_EVENT_HANDLED`.
+
+- Ancestor entry actions are executed before the sibling entry actions. For
+  example, the parent_entry function is called before the s0_entry function.
+- Transitioning from one sibling to another with a shared ancestry does not
+  re-execute the ancestor\'s entry action or execute the exit action.
+  For example, the parent_entry function is not called when transitioning
+  from S0 to S1, nor is the parent_exit function called.
+- Ancestor exit actions are executed after the exit action of the current
+  state. For example, the s1_exit function is called before the parent_exit
+  function is called.
+- The parent_run function only executes if the child_run function does not
+  call either :c:func:`smf_set_state` or return :c:enum:`SMF_EVENT_HANDLED`.
+- Avoid malformed hierarchical state machines by ensuring the state always
+  transitions to a leaf state when :kconfig:option:`CONFIG_SMF_INITIAL_TRANSITION`
+  is not enabled, or when a parent state's initial state is undefined.
 
 Event Driven State Machine Example
 **********************************
@@ -441,7 +472,7 @@ Code::
 		printk("STATE0\n");
 	}
 
-	static void s0_run(void *o)
+	static enum smf_state_result s0_run(void *o)
 	{
 		struct s_object *s = (struct s_object *)o;
 
@@ -458,7 +489,7 @@ Code::
 		printk("STATE1\n");
 	}
 
-	static void s1_run(void *o)
+	static enum smf_state_result s1_run(void *o)
 	{
 		struct s_object *s = (struct s_object *)o;
 
@@ -551,7 +582,7 @@ state. The statechart for this test is below.
       STATE_B [shape = box];
       STATE_C [shape = box];
       STATE_D [shape = box];
-      DC[shape=point height=0 width=0 label=<>]
+      DC[shape=point height=0 width=0 label="" style="invis"]
 
       subgraph cluster_root {
          label = "ROOT";

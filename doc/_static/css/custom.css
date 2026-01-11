@@ -121,94 +121,6 @@ hr,
     border-color: var(--hr-color);
 }
 
-/* JavaScript documentation directives */
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list) > dt {
-    background-color: var(--admonition-note-background-color);
-    border-color: var(--admonition-note-title-background-color);
-    color: var(--admonition-note-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl dt {
-    background-color: transparent;
-    border-color: transparent;
-    color: var(--footer-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute dt {
-    font-weight: 600;
-    padding: 0 8px;
-    margin-bottom: 1px;
-    width: 100%;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class > dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function > dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method > dt,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute > dt {
-    font-family: var(--monospace-font-family);
-    font-variant-ligatures: none;
-    font-size: 90%;
-    font-weight: normal;
-    margin-bottom: 16px;
-    padding: 6px 8px;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-prename.descclassname {
-    color: var(--highlight-type2-color);
-    font-weight: normal;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-name.descname {
-    color: var(--highlight-function-color);
-    font-weight: 700;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-paren,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
-    color: var(--highlight-operator-color) !important;
-    font-weight: normal;
-    padding: 0 2px;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
-    font-style: italic;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > em {
-    color: var(--code-literal-color);
-    font-style: normal;
-    padding: 0 4px;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .k {
-    font-style: normal;
-}
-html.writer-html5 .rst-content dl:not(.docutils) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
-    border-top-color: var(--highlight-background-emph-color);
-    background: var(--highlight-background-color);
-}
-html.writer-html5 .rst-content dl:not(.docutils) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
-    border-left-color: var(--highlight-background-emph-color);
-    background: var(--highlight-background-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > .optional ~ em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > .optional ~ em,
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > .optional ~ em {
-    color: var(--highlight-number-color);
-    font-style: italic;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em.property {
-    color: var(--highlight-keyword-color);
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink {
-    color: var(--link-color) !important;
-}
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink:visited {
-    color: var(--link-color-visited);
-}
-html.writer-html5 .rst-content dl.field-list > dd strong {
-    font-family: var(--monospace-font-family);
-    font-variant-ligatures: none;
-}
 
 footer,
 #search-results .context {
@@ -607,6 +519,31 @@ kbd, .kbd,
     font-weight: 100;
 }
 
+/* Definition lists */
+.rst-content dl {
+    border-left: 4px solid var(--admonition-note-background-color);
+}
+
+.rst-content dl:not(.field-list) > dt {
+    position: relative;
+    padding-left: 1rem;
+    line-height: 1.8rem;
+    background: var(--highlight-background-color);
+    border-radius: 0 16px 16px 0;
+}
+
+.rst-content dl:not(.field-list) > dt::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+    background: var(--admonition-note-title-background-color);
+    border-radius: 50%;
+    border: 4px solid var(--content-background-color);
+}
+
 /* Buttons */
 
 .btn-neutral {
@@ -927,6 +864,70 @@ div.graphviz > object {
     filter: var(--graphviz-filter);
 }
 
+/* Sidebar */
+.rst-content .sidebar {
+    border-radius: 12px;
+    padding: 0px;
+    background: var(--admonition-note-background-color);
+    color: var(--admonition-note-title-color);
+    border-color: var(--admonition-note-title-background-color);
+}
+
+@media screen and (max-width: 480px) {
+    .rst-content .sidebar {
+        float: none;
+        margin-left: 0;
+    }
+}
+
+.rst-content .sidebar {
+    color: var(--admonition-note-color);
+}
+
+.rst-content .sidebar .sidebar-title {
+    font-family: var(--header-font-family);
+    background: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+    border-radius: 12px 12px 0px 0px;
+    margin: 0px;
+    text-align: center;
+}
+
+.rst-content .sidebar figure {
+    padding: 1rem;
+    margin-bottom: -1rem;
+}
+
+.rst-content .sidebar figure img {
+    height: auto !important;
+}
+
+.rst-content .sidebar figure figcaption p {
+    margin-bottom: 0px;
+}
+
+.rst-content .sidebar dl.field-list {
+    align-items: center;
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+    grid-template-columns: auto 1fr !important;
+    padding-right: 1em;
+}
+
+.rst-content .sidebar dl.field-list>dt {
+    background: transparent !important;
+}
+
+.rst-content .sidebar dl.field-list>dd {
+    margin-left: 1em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.rst-content .sidebar dl.field-list>dd code {
+    font-size: 0.9em;
+}
+
 /* Home page grid display */
 .grid {
     list-style-type: none !important;
@@ -1036,6 +1037,7 @@ div.graphviz > object {
     transform: translateY(-50%);
     cursor: pointer;
     opacity: 0.8;
+    padding: 10px;
 }
 
 #search-se-menu {

@@ -7,24 +7,23 @@
 
 / {
 	zephyr,user {
-		io-channels =
-			<&adc1 0>, /* I1 */
-			<&adc3 0>, /* I2 */
-			<&adc1 6>, /* I3 */
-			<&adc2 9>, /* I4 */
-			<&adc3 6>, /* I5 */
-			<&adc3 7>, /* I6 */
-			<&adc3 8>, /* I7 */
-			<&adc3 9>; /* I8 */
+		io-channels = <&adc1 0>, /* I1 */
+			      <&adc3 0>, /* I2 */
+			      <&adc1 6>, /* I3 */
+			      <&adc2 9>, /* I4 */
+			      <&adc3 6>, /* I5 */
+			      <&adc3 7>, /* I6 */
+			      <&adc3 8>, /* I7 */
+			      <&adc3 9>; /* I8 */
 	};
 };
 
 &adc1 {
-	status ="okay";
+	status = "okay";
 };
 
 &adc2 {
-	status ="okay";
+	status = "okay";
 };
 
 &adc3 {

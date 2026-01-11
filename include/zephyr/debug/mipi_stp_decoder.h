@@ -110,7 +110,7 @@ struct mipi_stp_decoder_config {
  * @param config	Configuration.
  *
  * @retval 0		On successful initialization.
- * @retval negative	On failure.
+ * @retval <0	On failure.
  */
 int mipi_stp_decoder_init(const struct mipi_stp_decoder_config *config);
 
@@ -122,7 +122,7 @@ int mipi_stp_decoder_init(const struct mipi_stp_decoder_config *config);
  * @param len		Data length.
  *
  * @retval 0		On successful decoding.
- * @retval negative	On failure.
+ * @retval <0	On failure.
  */
 int mipi_stp_decoder_decode(const uint8_t *data, size_t len);
 

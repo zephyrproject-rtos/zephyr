@@ -45,7 +45,6 @@
 			read-only;
 		};
 
-
 		/*
 		 * Usable flash. Starts at 0x100, after the bootloader. The partition
 		 * size is 16MB minus the 0x100 bytes taken by the bootloader.

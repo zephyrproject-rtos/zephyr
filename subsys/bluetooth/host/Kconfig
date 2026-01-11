@@ -42,7 +42,6 @@ config BT_HCI_HOST
 	depends on !BT_HCI_RAW
 	select POLL
 
-
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
@@ -112,6 +111,7 @@ config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	default 768 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
+	default 2800 if BT_MESH_PB_GATT
 	default 2600 if BT_MESH
 	default 2048 if BT_AUDIO
 	default 1200
@@ -132,6 +132,26 @@ config BT_DRIVER_RX_HIGH_PRIO
 	# Hidden option for Co-Operative HCI driver RX thread priority
 	int
 	default 6
+
+config BT_TX_PROCESSOR_THREAD
+	# This thread is used to send pending HCI Commands, ACL and ISO data to
+	# Controller.
+	bool
+	# This option is automatically selected for all platforms except nRF51
+	# due to limited RAM on nRF51 devices.
+	default y if !SOC_SERIES_NRF51X
+
+if BT_TX_PROCESSOR_THREAD
+
+config BT_TX_PROCESSOR_THREAD_PRIO
+	int
+	default SYSTEM_WORKQUEUE_PRIORITY
+
+config BT_TX_PROCESSOR_STACK_SIZE
+	int
+	default 1024
+
+endif
 
 config BT_CONN_TX_NOTIFY_WQ
 	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
@@ -169,11 +189,39 @@ if BT_HCI_HOST
 rsource "../mesh/Kconfig"
 rsource "../audio/Kconfig"
 
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	int "Maximum supported discardable HCI Event buffer length"
+	range 43 $(UINT8_MAX) if !BT_EXT_ADV
+	range 58 $(UINT8_MAX) if BT_EXT_ADV
+	# LE Extended Advertising Report event
+	default $(UINT8_MAX) if BT_CLASSIC
+	# Le Advertising Report event
+	default 43 if !BT_EXT_ADV
+	default 58 if BT_EXT_ADV
+	help
+	  Maximum support discardable HCI event size of buffers in the separate
+	  discardable event buffer pool. This value does not include the
+	  HCI Event header.
+	  The minimum size is set based on the Advertising Report. Setting
+	  the buffer size different than BT_BUF_EVT_RX_SIZE can save memory.
+
+config BT_BUF_EVT_DISCARDABLE_COUNT
+	int "Number of discardable HCI Event buffers"
+	range 1 $(UINT8_MAX)
+	default 20 if BT_MESH
+	default 3
+	help
+	  Number of buffers in a separate buffer pool for events which
+	  the HCI driver considers discardable. Examples of such events
+	  could be e.g. Advertising Reports. The benefit of having such
+	  a pool is that the if there is a heavy inflow of such events
+	  it will not cause the allocation for other critical events to
+	  block and may even eliminate deadlocks in some cases.
+
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_ECB_NO_PADDING
 	help
@@ -356,9 +404,10 @@ config BT_CONN_CHECK_NULL_BEFORE_CREATE
 	  dereferencing, the connection object stays alive which can lead to an
 	  unpredictable behavior.
 
+if BT_PHY_UPDATE
+
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
-	depends on BT_PHY_UPDATE
 	help
 	  Enable application access to initiate the PHY Update Procedure.
 	  The application can also register a callback to be notified about PHY
@@ -366,15 +415,57 @@ config BT_USER_PHY_UPDATE
 	  connection info.
 
 config BT_AUTO_PHY_UPDATE
-	bool "Auto-initiate PHY Update Procedure"
-	depends on BT_PHY_UPDATE
-	default y if !BT_USER_PHY_UPDATE
+	bool "Auto-initiate PHY Update Procedure [DEPRECATED]"
+	select DEPRECATED
 	help
-	  Initiate PHY Update Procedure on connection establishment.
+	  Initiate PHY Update Procedure on connection establishment. This will attempt
+	  to update the connection to use 2M PHY, however it doesn't actually guarantee
+	  that this is what will be used in the end.
 
-	  Disable this if you want the PHY Update Procedure feature supported
-	  but want to rely on the remote device to initiate the procedure at its
-	  discretion or want to initiate manually.
+	  This option has been deprecated in favor of role specific options. The equivalent
+	  behavior can be accomplished by enabling BT_AUTO_PHY_PERIPHERAL_2M and
+	  BT_AUTO_PHY_CENTRAL_2M.
+
+choice BT_AUTO_PHY_PERIPHERAL
+	prompt "Auto PHY update for peripheral role"
+	depends on BT_PERIPHERAL
+	default BT_AUTO_PHY_PERIPHERAL_2M if BT_AUTO_PHY_UPDATE
+	default BT_AUTO_PHY_PERIPHERAL_NONE
+
+config BT_AUTO_PHY_PERIPHERAL_NONE
+	bool "No PHY preference"
+
+config BT_AUTO_PHY_PERIPHERAL_1M
+	bool "1M PHY"
+
+config BT_AUTO_PHY_PERIPHERAL_2M
+	bool "2M PHY"
+
+config BT_AUTO_PHY_PERIPHERAL_CODED
+	bool "Coded PHY"
+
+endchoice # BT_AUTO_PHY_PERIPHERAL
+
+choice BT_AUTO_PHY_CENTRAL
+	prompt "Auto PHY update for central role"
+	depends on BT_CENTRAL
+	default BT_AUTO_PHY_CENTRAL_2M
+
+config BT_AUTO_PHY_CENTRAL_NONE
+	bool "No PHY preference"
+
+config BT_AUTO_PHY_CENTRAL_1M
+	bool "1M PHY"
+
+config BT_AUTO_PHY_CENTRAL_2M
+	bool "2M PHY"
+
+config BT_AUTO_PHY_CENTRAL_CODED
+	bool "Coded PHY"
+
+endchoice # BT_AUTO_PHY_CENTRAL
+
+endif # BT_PHY_UPDATE
 
 config BT_USER_DATA_LEN_UPDATE
 	bool "User control of Data Length Update Procedure"
@@ -534,6 +625,7 @@ config BT_RPA_SHARING
 
 config BT_SIGNING
 	bool "Data signing support"
+	select DEPRECATED
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
@@ -655,11 +747,23 @@ config BT_SMP_USB_HCI_CTLR_WORKAROUND
 	  if the keys are distributed over an encrypted link.
 
 config BT_FIXED_PASSKEY
-	bool "Use a fixed passkey for pairing"
+	bool "Use a fixed passkey for pairing [DEPRECATED]"
+	select DEPRECATED
 	help
+	  This option is deprecated, use BT_APP_PASSKEY instead.
 	  With this option enabled, the application will be able to call the
 	  bt_passkey_set() API to set a fixed passkey. If set, the
 	  pairing_confirm() callback will be called for all incoming pairings.
+
+config BT_APP_PASSKEY
+	bool "Allow the application to provide passkeys for pairing"
+	depends on !BT_FIXED_PASSKEY
+	help
+	  With this option enabled, the application will be able to provide passkeys for pairing
+	  using the app_passkey() callback.  If the application does not provide a passkey, a
+	  random passkey will be generated by the Host.
+
+	  WARNING: It is the responsibility of the application to use random and unique keys.
 
 config BT_USE_DEBUG_KEYS
 	bool "Security Manager Debug Mode"
@@ -760,7 +864,7 @@ config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 0 if !BT_SMP
 	default 1
-	range 0 128
+	range 0 250
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
@@ -995,8 +1099,7 @@ endif # BT_DF
 
 config BT_ECC
 	bool
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
@@ -1079,6 +1182,15 @@ config BT_CONN_DISABLE_SECURITY
 
 	  WARNING: This option enables anyone to snoop on-air traffic.
 	  Use of this feature in production is strongly discouraged.
+
+config BT_SMP_LEGACY_PAIR_ONLY
+	bool "Force legacy pairing"
+	depends on BT_TESTING
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY)
+	help
+	  This option enforces legacy pairing. This is required for testing
+	  legacy pairing between two Zephyr Bluetooth devices, as without this
+	  option the devices will default to using Secure Connections pairing.
 
 rsource "./classic/Kconfig"
 

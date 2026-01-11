@@ -74,7 +74,8 @@ IRQ and reset pins are also necessary in addition to SPI pins.
 +----------------+-----------------------+
 
 More information about X-NUCLEO-WB05KN1 can be found here:
-       - `X-NUCLEO-WB05KN1 datasheet`_
+
+- `X-NUCLEO-WB05KN1 datasheet`_
 
 Programming
 ***********

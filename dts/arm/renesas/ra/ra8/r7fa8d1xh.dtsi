@@ -10,12 +10,16 @@
 
 / {
 	soc {
-		sdram: sdram-controller@40002000 {
-			compatible = "renesas,ra-sdram";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40002000 0xFFF>;
-			status = "disabled";
+		itcm: memory@0 {
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x0 DT_SIZE_K(64)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "zephyr,memory-region", "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM";
 		};
 
 		lcdif: display-controller@40342000 {
@@ -35,6 +39,29 @@
 			interrupts = <72 12>, <73 12>, <74 12>, <75 12>, <76 12>, <77 12>;
 			interrupt-names = "sq0", "sq1", "vm", "rcv", "ferr", "ppi";
 			clocks = <&lcdclk MSTPC 10>;
+			status = "disabled";
+		};
+
+		usbhs: usbhs@40351000 {
+			compatible = "renesas,ra-usbhs";
+			reg = <0x40351000 0x2000>;
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&u60clk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
+		ceu: ceu@40348000 {
+			compatible = "renesas,ra-ceu";
+			reg = <0x40348000 0x8000>;
+			clocks = <&pclka MSTPC 16>;
 			status = "disabled";
 		};
 	};
@@ -77,6 +104,7 @@
 
 		pll: pll {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL */
@@ -107,11 +135,11 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pll2: pll2 {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL2 */
@@ -141,14 +169,13 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pclkblock: pclkblock@40203000 {
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40203000 4>, <0x40203004 4>, <0x40203008 4>,
 			      <0x4020300c 4>, <0x40203010 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
 			clocks = <&pllp>;
@@ -207,14 +234,15 @@
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
 				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
 					clk-out-div = <2>;
 					sdclk = <1>;
 					#clock-cells = <0>;
 				};
-				#clock-cells = <2>;
-				status = "okay";
 			};
 
 			fclk: fclk {
@@ -280,23 +308,6 @@
 		};
 	};
 
-	soc {
-		usbhs: usbhs@40351000 {
-			compatible = "renesas,ra-usbhs";
-			reg = <0x40351000 0x2000>;
-			interrupts = <54 12>;
-			interrupt-names = "usbhs-ir";
-			num-bidir-endpoints = <10>;
-			phys = <&usbhs_phy>;
-			phys-clock = <&uclk>, <&u60clk>;
-			status = "disabled";
-			udc {
-				compatible = "renesas,ra-udc";
-				status = "disabled";
-			};
-		};
-	};
-
 	usbhs_phy: usbhs-phy {
 		compatible = "renesas,ra-usbphyc";
 		#phy-cells = <0>;
@@ -305,8 +316,8 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11
-	&port_irq12 &port_irq13 &port_irq14>;
+		     &port_irq9 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13 &port_irq14>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -339,7 +350,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -352,7 +363,7 @@
 
 &ioport3 {
 	port-irqs = <&port_irq4 &port_irq5 &port_irq6
-	&port_irq8 &port_irq9>;
+		     &port_irq8 &port_irq9>;
 	port-irq-names = "port-irq4",
 			 "port-irq5",
 			 "port-irq6",
@@ -367,8 +378,8 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq14 &port_irq15>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9 &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -391,7 +402,7 @@
 
 &ioport5 {
 	port-irqs = <&port_irq1 &port_irq2 &port_irq3
-	&port_irq14 &port_irq15>;
+		     &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq1",
 			 "port-irq2",
 			 "port-irq3",
@@ -412,7 +423,7 @@
 
 &ioport7 {
 	port-irqs = <&port_irq7 &port_irq8 &port_irq10
-	&port_irq11>;
+		     &port_irq11>;
 	port-irq-names = "port-irq7",
 			 "port-irq8",
 			 "port-irq10",
@@ -425,7 +436,7 @@
 
 &ioport8 {
 	port-irqs = <&port_irq0 &port_irq11 &port_irq12
-	&port_irq14 &port_irq15>;
+		     &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq0",
 			 "port-irq11",
 			 "port-irq12",
@@ -440,7 +451,7 @@
 
 &ioport9 {
 	port-irqs = <&port_irq8 &port_irq9 &port_irq10
-	&port_irq11>;
+		     &port_irq11>;
 	port-irq-names = "port-irq8",
 			 "port-irq9",
 			 "port-irq10",

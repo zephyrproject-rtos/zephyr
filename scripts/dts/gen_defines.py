@@ -484,6 +484,19 @@ def write_children(node: edtlib.Node) -> None:
 
     out_dt_define(f"{node.z_path_id}_CHILD_NUM_STATUS_OKAY", ok_nodes_num)
 
+    child_unit_addrs = {}
+    for child in node.children.values():
+        # Provide a way to query child nodes
+        if (addr := child.unit_addr) is not None:
+            child_unit_addrs.setdefault(addr, []).append(child)
+
+    for addr, children in child_unit_addrs.items():
+        if len(children) != 1:
+            # Duplicate unit addresses for different children, skip
+            continue
+
+        out_dt_define(f"{node.z_path_id}_CHILD_UNIT_ADDR_INT_{addr}", f"DT_{children[0].z_path_id}")
+
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
@@ -569,7 +582,7 @@ def write_gpio_hogs(node: edtlib.Node) -> None:
     macro = f"{node.z_path_id}_GPIO_HOGS"
     macro2val = {}
     for i, entry in enumerate(node.gpio_hogs):
-        macro2val.update(controller_and_data_macros(entry, i, macro))
+        macro2val.update(controller_and_data_macros(entry, i, macro, ""))
 
     if macro2val:
         out_comment("GPIO hog properties:")
@@ -835,12 +848,12 @@ def phandle_macros(prop: edtlib.Property, macro: str) -> dict:
                 ret[f"{macro}_IDX_{i}_EXISTS"] = 0
                 continue
 
-            ret.update(controller_and_data_macros(entry, i, macro))
+            ret.update(controller_and_data_macros(entry, i, macro, prop.name))
 
     return ret
 
 
-def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: str):
+def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: str, pname: str):
     # Helper procedure used by phandle_macros().
     #
     # Its purpose is to write the "controller" (i.e. label property of
@@ -849,6 +862,8 @@ def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: s
 
     ret = {}
     data = entry.data
+    node = entry.node
+    pname = edtlib.str_as_token(str2ident(pname))
 
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
     ret[f"{macro}_IDX_{i}_EXISTS"] = 1
@@ -858,13 +873,40 @@ def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: s
     for cell, val in data.items():
         ret[f"{macro}_IDX_{i}_VAL_{str2ident(cell)}"] = val
         ret[f"{macro}_IDX_{i}_VAL_{str2ident(cell)}_EXISTS"] = 1
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_FOREACH_CELL
+    ret[f"{macro}_IDX_{i}_FOREACH_CELL(fn)"] = (
+            ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {pname}, {i}, {cell})'
+                           for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_FOREACH_CELL_SEP
+    ret[f"{macro}_IDX_{i}_FOREACH_CELL_SEP(fn, sep)"] = (
+        ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
+            f'fn(DT_{node.z_path_id}, {pname}, {i}, {cell})'
+               for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NUM_CELLS
+    ret[f"{macro}_IDX_{i}_NUM_CELLS"] = len(data)
 
     if not entry.name:
         return ret
 
     name = str2ident(entry.name)
-    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
+
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NAME
+    ret[f"{macro}_IDX_{i}_NAME"] = edtlib.str_as_token(name)
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_IDX
+    ret[f"{macro}_NAME_{name}_IDX"] = i
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_FOREACH_CELL
+    ret[f"{macro}_NAME_{name}_FOREACH_CELL(fn)"] = (
+            ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {pname}, {name}, {cell})'
+                           for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_FOREACH_CELL_SEP
+    ret[f"{macro}_NAME_{name}_FOREACH_CELL_SEP(fn, sep)"] = (
+        ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
+            f'fn(DT_{node.z_path_id}, {pname}, {name}, {cell})'
+               for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_NUM_CELLS
+    ret[f"{macro}_NAME_{name}_NUM_CELLS"] = len(data)
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NAME
     ret[f"{macro}_IDX_{i}_NAME"] = quote_str(entry.name)
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_PH

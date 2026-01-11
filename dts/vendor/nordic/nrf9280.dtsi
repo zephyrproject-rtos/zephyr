@@ -6,11 +6,12 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
-#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf9230-engb.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf9230.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf9230.h>
 #include <zephyr/dt-bindings/reserved-memory/nordic-owned-memory.h>
+#include <zephyr/dt-bindings/clock/nrf-auxpll.h>
 
 /delete-node/ &sw_pwm;
 
@@ -116,16 +117,17 @@
 			write-block-size = <16>;
 		};
 
-		cpuapp_uicr: uicr@fff8000 {
-			compatible = "nordic,nrf-uicr-v2";
-			reg = <0xfff8000 DT_SIZE_K(2)>;
-			domain = <2>;
-		};
+		uicr: uicr@fff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xfff8000 DT_SIZE_K(3)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xfff8000 DT_SIZE_K(3)>;
 
-		cpurad_uicr: uicr@fffa000 {
-			compatible = "nordic,nrf-uicr-v2";
-			reg = <0xfffa000 DT_SIZE_K(2)>;
-			domain = <3>;
+			bicr: bicr@800 {
+				compatible = "nordic,nrf-bicr";
+				reg = <0x800 204>;
+			};
 		};
 
 		ficr: ficr@fffe000 {
@@ -169,10 +171,12 @@
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(320)>;
-				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
+				nordic,ficrs = <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
+					       <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
+					       <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -221,10 +225,9 @@
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(256)>;
-				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
+				nordic,ficrs = <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -358,6 +361,28 @@
 			};
 		};
 
+		tdd_peripherals: peripheral@bf000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0xbf000000 0x1000000>;
+			ranges = <0x0 0xbf000000 0x1000000>;
+
+			tbm: tbm@3000 {
+				compatible = "nordic,nrf-tbm";
+				reg = <0x3000 0x408>;
+				status = "disabled";
+				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			hsfll200: clock@4000 {
+				compatible = "fixed-clock";
+				reg = <0x4000 0x1000>;
+				#clock-cells = <0>;
+				status = "disabled";
+				clock-frequency = <DT_FREQ_M(320)>;
+			};
+		};
+
 		global_peripherals: peripheral@5f000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -384,6 +409,7 @@
 				reg-names = "wrapper", "core";
 				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
 				clock-frequency = <DT_FREQ_M(400)>;
+				packet-data-limit = <65536>;
 				fifo-depth = <32>;
 				status = "disabled";
 			};
@@ -412,15 +438,15 @@
 				#mbox-cells = <1>;
 			};
 
-			canpll: clock-controller@8c2000{
+			canpll: clock-controller@8c2000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x8c2000 0x1000>;
 				interrupts = <194 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&hfxo>;
 				#clock-cells = <0>;
 				nordic,ficrs = <&ficr NRF_FICR_TRIM_GLOBAL_CANPLL_TRIM_CTUNE>;
-				nordic,frequency = <0>;
-				nordic,out-div = <2>;
+				nordic,frequency = <NRF_AUXPLL_FREQ_DIV_MIN>;
+				nordic,out-div = <NRF_AUXPLL_OUT_DIV_2>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <6>;
 				nordic,sdm-disable;

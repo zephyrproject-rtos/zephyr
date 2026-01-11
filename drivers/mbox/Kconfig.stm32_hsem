@@ -3,6 +3,7 @@
 
 config MBOX_STM32_HSEM
 	bool "MBOX STM32 HSEM driver"
+	default y
 	depends on DT_HAS_ST_MBOX_STM32_HSEM_ENABLED
 	help
 	  MBOX Driver for STM32 hardware semaphore

@@ -236,7 +236,7 @@ void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 {
 	bool has_volatiles = false;
 
-	__ASSERT(!sz && !ctrls, "The 1st control, i.e. the primary control, must not be NULL");
+	__ASSERT(sz && ctrls, "The 1st control, i.e. the primary control, must not be NULL");
 
 	for (uint8_t i = 0; i < sz; i++) {
 		ctrls[i].cluster_sz = sz;

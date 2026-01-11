@@ -13,7 +13,7 @@
 /* MICP commands */
 #define BTP_MICP_READ_SUPPORTED_COMMANDS	0x01
 struct btp_micp_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MICP_CTLR_DISCOVER			0x02

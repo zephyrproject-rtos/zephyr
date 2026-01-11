@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup fpga_interface
+ * @brief Main header file for FPGA driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FPGA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_FPGA_H_
 
@@ -16,6 +22,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Interfaces for Field-Programmable Gate Arrays (FPGA).
+ * @defgroup fpga_interface FPGA
+ * @since 2.7
+ * @version 0.8.0
+ * @ingroup io_interfaces
+ * @{
+ */
 
 enum FPGA_status {
 	/* Inactive is when the FPGA cannot accept the bitstream
@@ -74,7 +89,7 @@ static inline enum FPGA_status fpga_get_status(const struct device *dev)
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval Failed Otherwise.
+ * @return Failed Otherwise.
  */
 static inline int fpga_reset(const struct device *dev)
 {
@@ -96,7 +111,7 @@ static inline int fpga_reset(const struct device *dev)
  * @param img_size Bitstream size in bytes.
  *
  * @retval 0 if successful.
- * @retval Failed Otherwise.
+ * @return Failed Otherwise.
  */
 static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
 			    uint32_t img_size)
@@ -117,7 +132,7 @@ static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval negative errno code on failure.
+ * @retval <0 negative errno code on failure.
  */
 static inline int fpga_on(const struct device *dev)
 {
@@ -158,7 +173,7 @@ static inline const char *fpga_get_info(const struct device *dev)
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval negative errno code on failure.
+ * @retval <0 negative errno code on failure.
  */
 static inline int fpga_off(const struct device *dev)
 {
@@ -171,6 +186,8 @@ static inline int fpga_off(const struct device *dev)
 
 	return api->off(dev);
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

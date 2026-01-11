@@ -50,12 +50,12 @@
 /* IP addresses -- Two of each are needed because address sharing will cause address removal to
  * fail silently (Address is only removed from one iface).
  */
-static struct in_addr test_ipv4_a = { { { 10, 0, 0, 1 } } };
-static struct in_addr test_ipv4_b = { { { 10, 0, 0, 2 } } };
-static struct in6_addr test_ipv6_a = { { {
+static struct net_in_addr test_ipv4_a = { { { 10, 0, 0, 1 } } };
+static struct net_in_addr test_ipv4_b = { { { 10, 0, 0, 2 } } };
+static struct net_in6_addr test_ipv6_a = { { {
 	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1
 } } };
-static struct in6_addr test_ipv6_b = { { {
+static struct net_in6_addr test_ipv6_b = { { {
 	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2
 } } };
 
@@ -63,7 +63,7 @@ static struct in6_addr test_ipv6_b = { { {
 /* Helpers */
 static void reset_test_iface(struct net_if *iface)
 {
-	struct in6_addr *ll_ipv6;
+	struct net_in6_addr *ll_ipv6;
 
 	if (net_if_is_admin_up(iface)) {
 		(void)net_if_down(iface);

@@ -59,6 +59,17 @@
 	};
 };
 
+/* Add the STM32C031Cx package-specific wake-up pins */
+&pwr {
+	wkup-pin@2 {
+		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+	};
+
+	wkup-pin@6 {
+		wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+	};
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -89,7 +100,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
@@ -117,10 +128,13 @@
 };
 
 &adc1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
+		 <&rcc STM32_SRC_SYSCLK ADC_SEL(0)>;
+	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in4_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <32>;
 	status = "okay";
 };
 

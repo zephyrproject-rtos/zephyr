@@ -12,9 +12,6 @@ A simple application to demonstrate the :ref:`LoRaWAN subsystem <lorawan_api>` o
 Building and Running
 ********************
 
-This sample can be found under
-:zephyr_file:`samples/subsys/lorawan/class_a` in the Zephyr tree.
-
 Before building the sample, make sure to select the correct region in the
 ``prj.conf`` file.
 

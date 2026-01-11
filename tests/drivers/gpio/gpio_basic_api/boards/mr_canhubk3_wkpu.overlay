@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/gpio/nxp-s32-gpio.h>
+#include <zephyr/dt-bindings/gpio/nxp-siul2-gpio.h>
 
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
 		/* Use LPSPI1 MISO/MOSI pins which are also used for spi_loopback test */
 		out-gpios = <&gpioa_h 13 0>;
-		in-gpios = <&gpioa_h 14 NXP_S32_GPIO_INT_WKPU>;
+		in-gpios = <&gpioa_h 14 NXP_SIUL2_GPIO_INT_WKPU>;
 	};
 };
 

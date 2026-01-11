@@ -12,9 +12,6 @@ Starts by scanning for PBP Public Broadcast Sources and then synchronizes to
 the first found source which defines a Public Broadcast Announcement including
 a High Quality Public Broadcast Audio Stream configuration.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/pbp_public_broadcast_sink` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

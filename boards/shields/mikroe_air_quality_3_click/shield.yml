@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_air_quality_3_click
+  full_name: Air Quality 3 Click
+  vendor: mikroe
+  supported_features:
+    - sensor

@@ -3,6 +3,10 @@ sample:
   name: HT16K33 sample
 tests:
   sample.drivers.ht16k33:
-    platform_allow: nrf52840dk/nrf52840
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - adafruit_qt_py_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_ht16k33"
     harness: TBD
     tags: LED

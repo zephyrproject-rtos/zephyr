@@ -14,9 +14,10 @@ menuconfig IWDG_STM32
 	help
 	  Enable IWDG driver for STM32 line of MCUs
 
+if IWDG_STM32
+
 config IWDG_STM32_INITIAL_TIMEOUT
 	int "Value for IWDG timeout in ms"
-	depends on IWDG_STM32
 	default 100
 	range 1 26214
 	help
@@ -29,6 +30,25 @@ config IWDG_STM32_INITIAL_TIMEOUT
 
 	  Limiting maximum timeout to a safe value of 26214 ms here, which was
 	  calculated for highest LSI frequency among STM32 MCUs of 40 kHz.
+
+config IWDG_STM32_EARLY_WAKEUP
+	bool "Early Wakeup Interrupt support for STM32 IWDG"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_WATCHDOG),interrupts)
+	help
+	  Enable support for Early Wakeup Interrupt.
+
+config IWDG_STM32_EWI_TIME
+	int "Value for IWDG early wake-up in ticks"
+	depends on IWDG_STM32_EARLY_WAKEUP
+	default 100
+	range 2 4095
+	help
+	  Set the early wake-up interrupt value for IWDG in ticks.
+	  It represents the time before reset when the early wake-up occurs.
+	  This value is ignored if the reload value provided at runtime
+	  is smaller. In such cases, the interrupt triggers one tick after
+	  the watchdog is reloaded.
+endif
 
 config WWDG_STM32
 	bool "System Window Watchdog (WWDG) Driver for STM32 family of MCUs"

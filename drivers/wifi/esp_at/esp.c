@@ -416,7 +416,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 }
 
 /* +CWJAP:(ssid,bssid,channel,rssi) */
-MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap)
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap_status)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
@@ -483,13 +483,41 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap)
 	return str - cwjap_buf;
 }
 
+/* +CWJAP:(error) */
+MODEM_CMD_DEFINE(on_cmd_cwjap_connect)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	long errcode = strtol(argv[0], NULL, 10);
+
+	switch (errcode) {
+	case 1:
+		dev->conn_status = WIFI_STATUS_CONN_TIMEOUT;
+		break;
+	case 2:
+		dev->conn_status = WIFI_STATUS_CONN_WRONG_PASSWORD;
+		break;
+	case 3:
+		dev->conn_status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+		break;
+	case 4:
+		dev->conn_status = WIFI_STATUS_CONN_FAIL;
+		break;
+	default:
+		LOG_WRN("Unknown CWJAP error code: %ld", errcode);
+		break;
+	}
+
+	return 0;
+}
+
 static void esp_dns_work(struct k_work *work)
 {
 #if defined(ESP_MAX_DNS)
 	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
 	struct dns_resolve_context *dnsctx;
-	struct sockaddr_in *addrs = data->dns_addresses;
-	const struct sockaddr *dns_servers[ESP_MAX_DNS + 1] = {};
+	struct net_sockaddr_in *addrs = data->dns_addresses;
+	const struct net_sockaddr *dns_servers[ESP_MAX_DNS + 1] = {};
 	int interfaces[ESP_MAX_DNS];
 	size_t i;
 	int err, ifindex;
@@ -500,7 +528,7 @@ static void esp_dns_work(struct k_work *work)
 		if (!addrs[i].sin_addr.s_addr) {
 			break;
 		}
-		dns_servers[i] = (struct sockaddr *) &addrs[i];
+		dns_servers[i] = (struct net_sockaddr *) &addrs[i];
 		interfaces[i] = ifindex;
 	}
 
@@ -522,7 +550,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 #if defined(ESP_MAX_DNS)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
-	struct sockaddr_in *addrs = dev->dns_addresses;
+	struct net_sockaddr_in *addrs = dev->dns_addresses;
 	char **servers = (char **)argv + 1;
 	size_t num_servers = argc - 1;
 	size_t valid_servers = 0;
@@ -538,7 +566,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 		servers[i] = str_unquote(servers[i]);
 		LOG_DBG("DNS[%zu]: %s", i, servers[i]);
 
-		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
+		err = net_addr_pton(NET_AF_INET, servers[i], &addrs[i].sin_addr);
 		if (err) {
 			LOG_ERR("Invalid DNS address: %s",
 				servers[i]);
@@ -546,8 +574,8 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 			break;
 		}
 
-		addrs[i].sin_family = AF_INET;
-		addrs[i].sin_port = htons(53);
+		addrs[i].sin_family = NET_AF_INET;
+		addrs[i].sin_port = net_htons(53);
 
 		valid_servers++;
 	}
@@ -635,11 +663,11 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 	ip = str_unquote(argv[1]);
 
 	if (!strcmp(argv[0], "ip")) {
-		net_addr_pton(AF_INET, ip, &dev->ip);
+		net_addr_pton(NET_AF_INET, ip, &dev->ip);
 	} else if (!strcmp(argv[0], "gateway")) {
-		net_addr_pton(AF_INET, ip, &dev->gw);
+		net_addr_pton(NET_AF_INET, ip, &dev->gw);
 	} else if (!strcmp(argv[0], "netmask")) {
-		net_addr_pton(AF_INET, ip, &dev->nm);
+		net_addr_pton(NET_AF_INET, ip, &dev->nm);
 	} else {
 		LOG_WRN("Unknown IP type %s", argv[0]);
 	}
@@ -826,8 +854,8 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 
 	if (!ESP_PROTO_PASSIVE(esp_socket_ip_proto(*sock)) &&
 	    IS_ENABLED(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)) {
-		struct sockaddr_in *recv_addr =
-			(struct sockaddr_in *) &(*sock)->context->remote;
+		struct net_sockaddr_in *recv_addr =
+			(struct net_sockaddr_in *) &(*sock)->context->remote;
 		char *remote_ip;
 		long port;
 
@@ -855,15 +883,15 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 			goto socket_unref;
 		}
 
-		err = net_addr_pton(AF_INET, remote_ip, &recv_addr->sin_addr);
+		err = net_addr_pton(NET_AF_INET, remote_ip, &recv_addr->sin_addr);
 		if (err) {
 			LOG_ERR("Invalid IP address");
 			err = -EBADMSG;
 			goto socket_unref;
 		}
 
-		recv_addr->sin_family = AF_INET;
-		recv_addr->sin_port = htons(port);
+		recv_addr->sin_family = NET_AF_INET;
+		recv_addr->sin_port = net_htons(port);
 	}
 
 	*data_offset = (str - ipd_buf);
@@ -1032,7 +1060,7 @@ static void esp_mgmt_iface_status_work(struct k_work *work)
 	struct wifi_iface_status *status = data->wifi_status;
 	int ret;
 	static const struct modem_cmd cmds[] = {
-		MODEM_CMD_DIRECT("+CWJAP:", on_cmd_cwjap),
+		MODEM_CMD_DIRECT("+CWJAP:", on_cmd_cwjap_status),
 	};
 
 	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), "AT+CWJAP?",
@@ -1144,6 +1172,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	int ret;
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("FAIL", on_cmd_fail, 0U, ""),
+		MODEM_CMD("+CWJAP:", on_cmd_cwjap_connect, 1U, ""),
 	};
 
 	dev = CONTAINER_OF(work, struct esp_data, connect_work);
@@ -1152,6 +1181,8 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	if (ret < 0) {
 		goto out;
 	}
+
+	dev->conn_status = WIFI_STATUS_CONN_FAIL;
 
 	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
 			   ESP_CONNECT_TIMEOUT);
@@ -1166,11 +1197,12 @@ static void esp_mgmt_connect_work(struct k_work *work)
 								0);
 		} else {
 			wifi_mgmt_raise_connect_result_event(dev->net_iface,
-							     ret);
+							     dev->conn_status);
 		}
 	} else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		esp_flags_set(dev, EDF_STA_CONNECTED);
-		wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
+		wifi_mgmt_raise_connect_result_event(dev->net_iface,
+						     WIFI_STATUS_CONN_SUCCESS);
 		net_if_dormant_off(dev->net_iface);
 	}
 

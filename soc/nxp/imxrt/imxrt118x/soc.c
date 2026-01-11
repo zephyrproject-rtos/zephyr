@@ -26,7 +26,52 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M33)
+#include <fsl_flexspi_nor_boot.h>
+
+extern char __start[];
+extern char _flash_used[];
+extern char __rom_region_start[];
+const __imx_boot_container_section container boot_header = {
+	.hdr = {
+		CNT_VERSION,
+		CNT_SIZE,
+		CNT_TAG_HEADER,
+		CNT_FLAGS,
+		CNT_SW_VER,
+		CNT_FUSE_VER,
+		CNT_NUM_IMG,
+		sizeof(cnt_hdr) + CNT_NUM_IMG * sizeof(image_entry),
+		0
+	},
+	.array = {
+		{
+			(uint32_t)(-1 * CONFIG_IMAGE_CONTAINER_OFFSET),
+			(uint32_t)_flash_used,
+			(uint32_t)__rom_region_start,
+			0x00000000,
+			(uint32_t)__start,
+			0x00000000,
+			IMG_FLAGS,
+			0x0,
+			{0},
+			{0}
+		},
+	},
+	.sign_block = {
+		SGNBK_VERSION,
+		SGNBK_SIZE,
+		SGNBK_TAG,
+		0x0,
+		0x0,
+		0x0,
+		0x0
+	},
+};
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
 #include <zephyr_image_info.h>
 /* Memcpy macro to copy segments from secondary core image stored in flash
  * to RAM section that secondary core boots from.
@@ -36,6 +81,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA) + 0x303C0000),	\
 		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),			\
 		(SEGMENT_SIZE_ ## n))
+#endif /* !defined(CONFIG_CM7_BOOT_FROM_FLASH) */
 #endif
 
 /*
@@ -69,6 +115,18 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define CM33_SET_TRDC 1U
 #endif
 
+#if (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33))
+/* Handle CM7 core initialization based on execution mode */
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
+#define CM7_BOOT_ADDRESS (0)
+#else
+/* Get CM7 partition address from device tree */
+#define CM7_PARTITION_NODE DT_CHOSEN(zephyr_code_m7_partition)
+#define CM7_FLASH_ADDR     DT_REG_ADDR(CM7_PARTITION_NODE)
+#define CM7_BOOT_ADDRESS   (CM7_FLASH_ADDR + CONFIG_CM7_FLEXSPI_OFFSET)
+#endif /* defined(CONFIG_CM7_BOOT_FROM_FLASH) */
+#endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
+
 #ifdef CONFIG_INIT_ARM_PLL
 static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
 #if defined(CONFIG_SOC_MIMXRT1189_CM33) || defined(CONFIG_SOC_MIMXRT1189_CM7)
@@ -77,7 +135,7 @@ static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
 	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
 	.loopDivider = 132,
 #else
-	#error "Unknown SOC, no pll configuration defined"
+#error "Unknown SOC, no pll configuration defined"
 #endif
 };
 #endif
@@ -131,7 +189,6 @@ __weak void clock_init(void)
 
 	/* Init OSC RC 400M */
 	CLOCK_OSC_EnableOscRc400M();
-	CLOCK_OSC_GateOscRc400M(false);
 
 #if CONFIG_CPU_CORTEX_M7
 	/* Switch both core to OscRC400M first */
@@ -481,6 +538,24 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_CAN_MCUX_FLEXCAN */
 
+#ifdef CONFIG_MCUX_FLEXIO
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio1), okay)
+	/* Configure FLEXIO1 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_FLEXIO1_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio2), okay)
+	/* Configure FLEXIO2 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_FLEXIO2_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio2, &rootCfg);
+#endif
+
+#endif /* CONFIG_MCUX_FLEXIO */
+
 #if defined(CONFIG_MCUX_LPTMR_TIMER) || defined(CONFIG_COUNTER_MCUX_LPTMR)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr1), okay)
@@ -514,8 +589,6 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
-#ifdef CONFIG_HAS_MCUX_TPM
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	/* Configure TPM2 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_TPM2_ClockRoot_MuxSysPll3Div2;
@@ -543,8 +616,6 @@ __weak void clock_init(void)
 	rootCfg.div = 3;
 	CLOCK_SetRootClock(kCLOCK_Root_Tpm6, &rootCfg);
 #endif
-
-#endif /* CONFIG_HAS_MCUX_TPM */
 
 #ifdef CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED
 
@@ -596,12 +667,25 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_IMX_USDHC */
 
+#ifdef CONFIG_COUNTER_MCUX_LPIT
+	/* LPIT1 use BUS_AON, LPIT2 use BUS_WAKEUP, which have been configured */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpit3), okay)
+	/* Configure LPIT3 using SysPll3Div2 */
+	rootCfg.mux = kCLOCK_LPIT3_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpit3, &rootCfg);
+#endif
+#endif /* CONFIG_COUNTER_MCUX_LPIT */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
 
 	/* Let the core clock still running in WAIT mode */
 	BLK_CTRL_S_AONMIX->M7_CFG |= BLK_CTRL_S_AONMIX_M7_CFG_CORECLK_FORCE_ON_MASK;
+
+	/* Make AHB clock run (enabled) when CM7 is sleeping and TCM is accessible */
+	BLK_CTRL_S_AONMIX->M7_CFG |= BLK_CTRL_S_AONMIX_M7_CFG_HCLK_FORCE_ON_MASK;
 
 	/* Keep the system clock running so SYSTICK can wake up
 	 * the system from wfi.
@@ -611,6 +695,36 @@ __weak void clock_init(void)
 	GPC_CM_EnableCpuSleepHold(0, false);
 	GPC_CM_EnableCpuSleepHold(1, false);
 }
+
+#ifdef CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src, uint32_t clk_pre_div,
+				uint32_t clk_src_div)
+{
+	ARG_UNUSED(clk_pre_div);
+
+	switch (clock_name) {
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai1, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai1, clk_src_div);
+		break;
+	case IMX_CCM_SAI2_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai2, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai2, clk_src_div);
+		break;
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai3, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai3, clk_src_div);
+		break;
+	case IMX_CCM_SAI4_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai4, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, clk_src_div);
+		break;
+	default:
+		return;
+	}
+}
+#endif /* CONFIG_I2S_MCUX_SAI */
+
 
 /**
  * @brief Initialize the system clock
@@ -763,6 +877,7 @@ void soc_early_init_hook(void)
 #endif /* defined(CONFIG_WDT_MCUX_RTWDOG) */
 
 #if (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33))
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
 	/**
 	 * Copy CM7 core from flash to memory. Note that depending on where the
 	 * user decided to store CM7 code, this is likely going to read from the
@@ -774,6 +889,7 @@ void soc_early_init_hook(void)
 	 */
 	LISTIFY(SEGMENT_NUM, MEMCPY_SEGMENT, (;));
 #endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
+#endif /* !defined(CONFIG_CM7_BOOT_FROM_FLASH) */
 
 	/* Enable data cache */
 	sys_cache_data_enable();
@@ -788,7 +904,7 @@ void soc_reset_hook(void)
 	SystemInit();
 
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
-	Prepare_CM7(0);
+	Prepare_CM7(CM7_BOOT_ADDRESS);
 #endif
 }
 #endif

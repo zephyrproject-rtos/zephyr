@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,10 +46,10 @@
 #define _thread_offset_to_priv_stack_start \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #define _thread_offset_to_priv_stack_end \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_end_OFFSET)
 
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #define _thread_offset_to_sp_usr \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_sp_usr_OFFSET)
 #endif
@@ -59,6 +60,10 @@
 	(___thread_stack_info_t_start_OFFSET + ___thread_t_stack_info_OFFSET)
 #endif
 
+#if defined(CONFIG_ARM_PAC_PER_THREAD)
+#define _thread_offset_to_pac_keys \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_pac_keys_OFFSET)
+#endif
 
 /* end - threads */
 

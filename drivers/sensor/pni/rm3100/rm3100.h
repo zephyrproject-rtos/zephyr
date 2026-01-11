@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/rtio/regmap.h>
 #include "rm3100_reg.h"
 
 /* RM3100 produces 3 bytes (24-bit) of data per axis */
@@ -60,6 +61,7 @@ struct rm3100_data {
 	struct {
 		struct rtio_iodev *iodev;
 		struct rtio *ctx;
+		rtio_bus_type type;
 	} rtio;
 	struct {
 		uint8_t odr;

@@ -8,7 +8,25 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+		};
+	};
+
+	sci2_default: sci2_default {
+		group1 {
+			/* sda scl */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 1, 12)>,
+				<RA_PSEL(RA_PSEL_SCI_2, 1, 13)>;
+			drive-strength = "medium";
+			drive-open-drain;
+		};
+	};
+
+	sci7_default: sci7_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 6, 13)>,
+				<RA_PSEL(RA_PSEL_SCI_7, 6, 14)>;
 		};
 	};
 
@@ -16,7 +34,7 @@
 		group1 {
 			/* SCL1 SDA1 */
 			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
-			<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
 			drive-strength = "medium";
 		};
 	};
@@ -25,9 +43,9 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 2, 2)>,
-			<RA_PSEL(RA_PSEL_SPI, 2, 3)>,
-			<RA_PSEL(RA_PSEL_SPI, 2, 4)>,
-			<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
+				<RA_PSEL(RA_PSEL_SPI, 2, 3)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 4)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
 		};
 	};
 
@@ -54,11 +72,11 @@
 		};
 	};
 
-	pwm1_default: pwm1_default {
+	pwm0_default: pwm0_default {
 		group1 {
-			/* GTIOC1A GTIOC1B */
-			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 5)>,
-				<RA_PSEL(RA_PSEL_GPT1, 4, 6)>;
+			/* GTIOC0A GTIOC0B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 15)>,
+				<RA_PSEL(RA_PSEL_GPT1, 4, 14)>;
 		};
 	};
 
@@ -67,6 +85,34 @@
 			/* USB_VBUS */
 			psels = <RA_PSEL(RA_PSEL_USBFS, 11, 1)>;
 			drive-strength = "high";
+		};
+	};
+
+	ether_default: ether_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_RMII, 4, 1)>, /* ET0_MDC */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 4, 2)>, /* ET0_MDIO */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 4, 5)>, /* RMII0_TXD_EN_B */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 4, 6)>, /* RMII0_TXD1_BR */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 0)>, /* RMII0_TXD0_B */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 1)>, /* REF50CK0_B */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 2)>, /* RMII0_RXD0_B */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 3)>, /* RMII0_RXD1_B */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 4)>, /* RMII0_RX_ER_B */
+				<RA_PSEL(RA_PSEL_ETH_RMII, 7, 5)>; /* RMII0_CRS_DV_B */
+			drive-strength = "high";
+		};
+	};
+
+	qspi_default: qspi_default {
+		group1 {
+			/* QSPICLK QSSL QIO0 QIO1 QIO2 QIO3 */
+			psels = <RA_PSEL(RA_PSEL_QSPI, 3, 5)>,
+				<RA_PSEL(RA_PSEL_QSPI, 3, 6)>,
+				<RA_PSEL(RA_PSEL_QSPI, 3, 7)>,
+				<RA_PSEL(RA_PSEL_QSPI, 3, 8)>,
+				<RA_PSEL(RA_PSEL_QSPI, 3, 9)>,
+				<RA_PSEL(RA_PSEL_QSPI, 3, 10)>;
 		};
 	};
 };

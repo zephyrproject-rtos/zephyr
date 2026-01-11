@@ -169,7 +169,6 @@
 				#pwm-cells = <3>;
 			};
 		};
-
 	};
 
 	pinctrl: pin-controller {

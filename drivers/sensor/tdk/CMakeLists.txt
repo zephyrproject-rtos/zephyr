@@ -4,7 +4,7 @@
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_ICM40627 icm40627)
 add_subdirectory_ifdef(CONFIG_ICM42605 icm42605)
-add_subdirectory_ifdef(CONFIG_ICM42688 icm42688)
+add_subdirectory_ifdef(CONFIG_ICM4268X icm4268x)
 add_subdirectory_ifdef(CONFIG_ICM42X70 icm42x70)
 add_subdirectory_ifdef(CONFIG_ICM45686 icm45686)
 add_subdirectory_ifdef(CONFIG_ICP101XX icp101xx)

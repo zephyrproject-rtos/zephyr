@@ -32,6 +32,9 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define IT8XXX2_PORT_80_IRQ  DT_INST_IRQ_BY_IDX(0, 5, irq)
 #define IT8XXX2_PMC2_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 6, irq)
 #define IT8XXX2_TRANS_IRQ    DT_INST_IRQ_BY_IDX(0, 7, irq)
+#define IT8XXX2_PMC3_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 8, irq)
+#define IT8XXX2_PMC4_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 9, irq)
+#define IT8XXX2_PMC5_IBF_IRQ DT_INST_IRQ_BY_IDX(0, 10, irq)
 
 /* General Capabilities and Configuration 1 */
 #define IT8XXX2_ESPI_MAX_FREQ_MASK GENMASK(2, 0)
@@ -306,8 +309,48 @@ struct pmc_regs {
 	volatile uint8_t MBXCTRL;
 	/* 0x1a-0x1f: Reserved2 */
 	volatile uint8_t reserved2[6];
-	/* 0x20-0xff: Reserved3 */
-	volatile uint8_t reserved3[0xe0];
+	/* 0x20: Host Interface PM Channel 3 Status */
+	volatile uint8_t PM3STS;
+	/* 0x21: Host Interface PM Channel 3 Data Out Port */
+	volatile uint8_t PM3DO;
+	/* 0x22: Host Interface PM Channel 3 Data In Port */
+	volatile uint8_t PM3DI;
+	/* 0x23: Host Interface PM Channel 3 Control */
+	volatile uint8_t PM3CTL;
+	/* 0x24: Host Interface PM Channel 3 Interrupt Control */
+	volatile uint8_t PM3IC;
+	/* 0x25: Host Interface PM Channel 3 Interrupt Enable */
+	volatile uint8_t PM3IE;
+	/* 0x26-0x2f: reserved_26_2f */
+	volatile uint8_t reserved_26_2f[10];
+	/* 0x30: PMC4 Status Register */
+	volatile uint8_t PM4STS;
+	/* 0x31: PMC4 Data Out Port */
+	volatile uint8_t PM4DO;
+	/* 0x32: PMC4 Data In Port */
+	volatile uint8_t PM4DI;
+	/* 0x33: PMC4 Control */
+	volatile uint8_t PM4CTL;
+	/* 0x34: PMC4 Interrupt Control */
+	volatile uint8_t PM4IC;
+	/* 0x35: PMC4 Interrupt Enable*/
+	volatile uint8_t PM4IE;
+	/* 0x36-0x3f: reserved_36_3f */
+	volatile uint8_t reserved_36_3f[10];
+	/* 0x40: PMC5 Status Register */
+	volatile uint8_t PM5STS;
+	/* 0x41: PMC5 Data Out Port */
+	volatile uint8_t PM5DO;
+	/* 0x42: PMC5 Data In Port */
+	volatile uint8_t PM5DI;
+	/* 0x43: PMC5 Control */
+	volatile uint8_t PM5CTL;
+	/* 0x44: PMC5 Interrupt Control */
+	volatile uint8_t PM5IC;
+	/* 0x45: PMC5 Interrupt Enable*/
+	volatile uint8_t PM5IE;
+	/* 0x46-0xff: reserved_46_ff */
+	volatile uint8_t reserved_46_ff[0xba];
 };
 
 /* Input Buffer Full Interrupt Enable */
@@ -325,6 +368,19 @@ struct pmc_regs {
 #define PMC_PM2CTL_IBFIE BIT(0)
 /* General Purpose Flag */
 #define PMC_PM2STS_GPF   BIT(2)
+
+/* PMC3 Input Buffer Full Interrupt Enable */
+#define PMC_PM3CTL_IBFIE   BIT(0)
+/* A2 Address (A2) */
+#define PMC_PM3STS_A2_ADDR BIT(3)
+/* Input Buffer Full Interrupt Enable */
+#define PMC_PM4CTL_IBFIE   BIT(0)
+/* A2 Address (A2) */
+#define PMC_PM4STS_A2_ADDR BIT(3)
+/* Input Buffer Full Interrupt Enable */
+#define PMC_PM5CTL_IBFIE   BIT(0)
+/* A2 Address (A2) */
+#define PMC_PM5STS_A2_ADDR BIT(3)
 
 /*
  * Dedicated Interrupt
@@ -614,6 +670,12 @@ IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM2DO, 0x11);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM2DI, 0x14);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM2CTL, 0x16);
 IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, MBXCTRL, 0x19);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3STS, 0x20);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3DO, 0x21);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3DI, 0x22);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3CTL, 0x23);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3IC, 0x24);
+IT8XXX2_ESPI_REG_OFFSET_CHECK(pmc_regs, PM3IE, 0x25);
 
 /* eSPI slave register structure check */
 IT8XXX2_ESPI_REG_SIZE_CHECK(espi_slave_regs, 0xd8);
@@ -753,6 +815,77 @@ static const struct ec2i_t pmc1_settings[] = {
 	{HOST_INDEX_LDA, 0x01},
 };
 
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+#define IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_MSB                                                     \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_LSB (CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_MSB                                                      \
+	(((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM + 4) >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_LSB                                                      \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM + 4) & 0xff)
+static const struct ec2i_t pmc3_settings[] = {
+	/* Select logical device 17h(PMC3) */
+	{HOST_INDEX_LDN, LDN_PMC3},
+	/* I/O Port Base Address (data/command ports) */
+	{HOST_INDEX_IOBAD0_MSB, IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_MSB},
+	{HOST_INDEX_IOBAD0_LSB, IT8XXX2_ESPI_HOST_IO_PVT_DATA_PORT_LSB},
+	{HOST_INDEX_IOBAD1_MSB, IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_MSB},
+	{HOST_INDEX_IOBAD1_LSB, IT8XXX2_ESPI_HOST_IO_PVT_CMD_PORT_LSB},
+	/* Set IRQ=00h for logical device */
+	{HOST_INDEX_IRQNUMX, 0x00},
+	/* Enable logical device */
+	{HOST_INDEX_LDA, 0x01},
+};
+#endif
+
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2
+#define IT8XXX2_ESPI_HOST_IO_PVT2_DATA_PORT_MSB                                                    \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2_PORT_NUM >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT2_DATA_PORT_LSB                                                    \
+	(CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2_PORT_NUM & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT2_CMD_PORT_MSB                                                     \
+	(((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2_PORT_NUM + 4) >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT2_CMD_PORT_LSB                                                     \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2_PORT_NUM + 4) & 0xff)
+static const struct ec2i_t pmc4_settings[] = {
+	/* Select logical device 18h(PMC4) */
+	{HOST_INDEX_LDN, LDN_PMC4},
+	/* I/O Port Base Address (data/command ports) */
+	{HOST_INDEX_IOBAD0_MSB, IT8XXX2_ESPI_HOST_IO_PVT2_DATA_PORT_MSB},
+	{HOST_INDEX_IOBAD0_LSB, IT8XXX2_ESPI_HOST_IO_PVT2_DATA_PORT_LSB},
+	{HOST_INDEX_IOBAD1_MSB, IT8XXX2_ESPI_HOST_IO_PVT2_CMD_PORT_MSB},
+	{HOST_INDEX_IOBAD1_LSB, IT8XXX2_ESPI_HOST_IO_PVT2_CMD_PORT_LSB},
+	/* Set IRQ=00h for logical device */
+	{HOST_INDEX_IRQNUMX, 0x00},
+	/* Enable logical device */
+	{HOST_INDEX_LDA, 0x01},
+};
+#endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2 */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3
+#define IT8XXX2_ESPI_HOST_IO_PVT3_DATA_PORT_MSB                                                    \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3_PORT_NUM >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT3_DATA_PORT_LSB                                                    \
+	(CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3_PORT_NUM & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT3_CMD_PORT_MSB                                                     \
+	(((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3_PORT_NUM + 4) >> 8) & 0xff)
+#define IT8XXX2_ESPI_HOST_IO_PVT3_CMD_PORT_LSB                                                     \
+	((CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3_PORT_NUM + 4) & 0xff)
+static const struct ec2i_t pmc5_settings[] = {
+	/* Select logical device 19h(PMC5) */
+	{HOST_INDEX_LDN, LDN_PMC5},
+	/* I/O Port Base Address (data/command ports) */
+	{HOST_INDEX_IOBAD0_MSB, IT8XXX2_ESPI_HOST_IO_PVT3_DATA_PORT_MSB},
+	{HOST_INDEX_IOBAD0_LSB, IT8XXX2_ESPI_HOST_IO_PVT3_DATA_PORT_LSB},
+	{HOST_INDEX_IOBAD1_MSB, IT8XXX2_ESPI_HOST_IO_PVT3_CMD_PORT_MSB},
+	{HOST_INDEX_IOBAD1_LSB, IT8XXX2_ESPI_HOST_IO_PVT3_CMD_PORT_LSB},
+	/* Set IRQ=00h for logical device */
+	{HOST_INDEX_IRQNUMX, 0x00},
+	/* Enable logical device */
+	{HOST_INDEX_LDA, 0x01},
+};
+#endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3 */
+
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 #define IT8XXX2_ESPI_HC_DATA_PORT_MSB \
 	((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM >> 8) & 0xff)
@@ -815,8 +948,14 @@ static const struct ec2i_t pmc2_settings[] = {
 #endif
 #endif
 
-static uint8_t h2ram_pool[MAX(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX)]
-					__attribute__((section(".h2ram_pool")));
+#ifdef CONFIG_ESPI_IT8XXX2_H2RAM_SHARED
+#define H2RAM_STORAGE
+#else
+#define H2RAM_STORAGE static
+#endif
+
+H2RAM_STORAGE uint8_t h2ram_pool[MAX(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX)]
+	__attribute__((section(".h2ram_pool")));
 
 #define H2RAM_WINDOW_SIZE(ram_size) ((find_msb_set((ram_size) / 16) - 1) & 0x7)
 
@@ -959,6 +1098,15 @@ static void pnpcfg_it8xxx2_init(const struct device *dev)
 	}
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	PNPCFG(pmc2);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	PNPCFG(pmc3);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2
+	PNPCFG(pmc4);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3
+	PNPCFG(pmc5);
 #endif
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
 	defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
@@ -1177,6 +1325,111 @@ static void pmc2_it8xxx2_init(const struct device *dev)
 	}
 }
 #endif
+
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+/* PMC3 (Host private port) */
+static void pmc3_it8xxx2_ibf_isr(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT,
+				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
+
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM3STS & PMC_PM3STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM3DI;
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
+static void pmc3_it8xxx2_init(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+
+	/* Enable pmc3 input buffer full interrupt */
+	pmc_reg->PM3CTL |= PMC_PM3CTL_IBFIE;
+	IRQ_CONNECT(IT8XXX2_PMC3_IBF_IRQ, 0, pmc3_it8xxx2_ibf_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(IT8XXX2_PMC3_IBF_IRQ);
+}
+#endif
+
+/* PMC4 (Host private port 2) */
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2
+static void pmc4_it8xxx2_ibf_isr(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT2,
+				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
+
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM4STS & PMC_PM4STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM4DI;
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
+static void pmc4_it8xxx2_init(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+
+	/* Enable pmc4 input buffer full interrupt */
+	pmc_reg->PM4CTL |= PMC_PM4CTL_IBFIE;
+	IRQ_CONNECT(IT8XXX2_PMC4_IBF_IRQ, 0, pmc4_it8xxx2_ibf_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(IT8XXX2_PMC4_IBF_IRQ);
+}
+#endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2 */
+
+/* PMC5 (Host private port 3) */
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3
+static void pmc5_it8xxx2_ibf_isr(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 .evt_details = ESPI_PERIPHERAL_HOST_IO_PVT3,
+				 .evt_data = ESPI_PERIPHERAL_NODATA};
+	struct espi_evt_data_pvt *pvt_evt = (struct espi_evt_data_pvt *)&evt.evt_data;
+
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	pvt_evt->type = !!(pmc_reg->PM5STS & PMC_PM5STS_A2_ADDR);
+	pvt_evt->data = pmc_reg->PM5DI;
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+
+static void pmc5_it8xxx2_init(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
+
+	/* Enable pmc5 input buffer full interrupt */
+	pmc_reg->PM5CTL |= PMC_PM5CTL_IBFIE;
+	IRQ_CONNECT(IT8XXX2_PMC5_IBF_IRQ, 0, pmc5_it8xxx2_ibf_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(IT8XXX2_PMC5_IBF_IRQ);
+}
+#endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3 */
 
 #define IT8XXX2_ESPI_VW_SEND_TIMEOUT_US (USEC_PER_MSEC * 10)
 
@@ -2538,6 +2791,18 @@ static int espi_it8xxx2_init(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	/* enable pmc2 for host command port */
 	pmc2_it8xxx2_init(dev);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+	/* enable pmc3 for host private port */
+	pmc3_it8xxx2_init(dev);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT2
+	/* enable pmc4 for host private port */
+	pmc4_it8xxx2_init(dev);
+#endif
+#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT3
+	/* enable pmc5 for host private port */
+	pmc5_it8xxx2_init(dev);
 #endif
 
 	/* Reset vwidx_cached_flag[] at initialization */

@@ -29,10 +29,10 @@
 #define BMP5_SET_HIGH_BYTE 0xFF00u
 
 /* BIT SLICE GET AND SET FUNCTIONS */
-#define BMP5_GET_BITSLICE(regvar, bitname) ((regvar & bitname##_MSK) >> bitname##_POS)
+#define BMP5_GET_BITSLICE(regvar, bitname) (((regvar) & (bitname##_MSK)) >> (bitname##_POS))
 
 #define BMP5_SET_BITSLICE(regvar, bitname, val)                                                    \
-	((regvar & ~bitname##_MSK) | ((val << bitname##_POS) & bitname##_MSK))
+	(((regvar) & ~(bitname##_MSK)) | (((val) << (bitname##_POS)) & (bitname##_MSK)))
 
 #define BMP5_GET_LSB(var) (uint8_t)(var & BMP5_SET_LOW_BYTE)
 #define BMP5_GET_MSB(var) (uint8_t)((var & BMP5_SET_HIGH_BYTE) >> 8)
@@ -119,6 +119,11 @@
 #define BMP5_FIFO_EMPTY                  0X7F
 #define BMP5_FIFO_MAX_THRESHOLD_P_T_MODE 0x0F
 #define BMP5_FIFO_MAX_THRESHOLD_P_MODE   0x1F
+
+#define BMP5_FIFO_FRAME_SEL_OFF 0
+#define BMP5_FIFO_FRAME_SEL_TEMP 1
+#define BMP5_FIFO_FRAME_SEL_PRESS 2
+#define BMP5_FIFO_FRAME_SEL_ALL 3
 
 /* Macro is used to bypass both iir_t and iir_p together */
 #define BMP5_IIR_BYPASS 0xC0
@@ -239,9 +244,12 @@
 #define BMP5_FIFO_DEC_SEL_MSK 0x1C
 #define BMP5_FIFO_DEC_SEL_POS 2
 
-#define BMP5_FIFO_COUNT_MSK 0x3F
+/* This driver only supports both Pressure and Temperature FIFO mode. */
+#define BMP5_FIFO_COUNT_MSK BMP5_FIFO_MAX_THRESHOLD_P_T_MODE
+#define BMP5_FIFO_COUNT_POS 0
 
 #define BMP5_FIFO_FRAME_SEL_MSK 0x03
+#define BMP5_FIFO_FRAME_SEL_POS 0
 
 /* Out-of-range configuration */
 #define BMP5_OOR_THR_P_LSB_MSK 0x0000FF
@@ -316,10 +324,18 @@ struct bmp581_sample {
 	struct sensor_value temperature;
 };
 
+/** Aligned with register bitmask to easily match on data-readout */
+enum bmp581_event {
+	BMP581_EVENT_DRDY = BIT(0),
+	BMP581_EVENT_FIFO_WM = BIT(2),
+};
+
 struct bmp581_stream {
 	const struct device *dev;
 	struct gpio_callback cb;
 	struct rtio_iodev_sqe *iodev_sqe;
+	enum bmp581_event enabled_mask;
+	uint8_t fifo_thres;
 	atomic_t state;
 };
 

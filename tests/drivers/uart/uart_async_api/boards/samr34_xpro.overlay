@@ -21,6 +21,7 @@
 		};
 	};
 };
+
 dut: &sercom2 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";

@@ -297,8 +297,7 @@ If the west flash or debug commands fail, and the command hangs while executing
 runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the FMURT6 properly.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1062-FMURT6 Website:
    https://www.nxp.com/part/RDDRONE-FMURT6#

@@ -32,7 +32,7 @@ static void heap_print_info(struct z_heap *h, bool dump_chunks)
 
 			do {
 				count++;
-				largest = MAX(largest, chunk_size(h, curr));
+				largest = max(largest, chunk_size(h, curr));
 				curr = next_free_chunk(h, curr);
 			} while (curr != first);
 		}

@@ -6,6 +6,7 @@ config MIPI_DSI_STM32
 	default y
 	depends on DT_HAS_ST_STM32_MIPI_DSI_ENABLED
 	depends on DT_HAS_ST_STM32_LTDC_ENABLED
+	select RESET
 	select USE_STM32_HAL_DSI
 	help
 	  STM32 MIPI DSI controller driver

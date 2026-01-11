@@ -24,11 +24,13 @@ static const struct adc_channel_cfg valid_channel_cfg = {
 	#endif
 };
 
+#define VALID_RESOLUTION CONFIG_TEST_ADC_ERROR_CASES_RESOLUTION
+
 static const struct adc_sequence valid_seq = {
 	.buffer = m_sample_buffer,
 	.buffer_size = BUFFER_LEN * sizeof(m_sample_buffer),
 	.options = NULL,
-	.resolution = 10,
+	.resolution = VALID_RESOLUTION,
 	.oversampling = 0,
 	.channels = 1,
 };

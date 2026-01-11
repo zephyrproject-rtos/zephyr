@@ -23,6 +23,7 @@
 		wui_smb0: wui0-4-3 {
 			miwus = <&miwu0 3 3>; /* SMB0 */
 		};
+
 		wui_smb1: wui0-4-4 {
 			miwus = <&miwu0 3 4>; /* SMB1 */
 		};
@@ -43,12 +44,15 @@
 		wui_slp_msc: wui2-5-0 {
 			miwus = <&miwu2 4 0>; /* SLP_MSC */
 		};
+
 		wui_z8: wui2-5-1 {
 			miwus = <&miwu2 4 1>; /* Z8 */
 		};
+
 		wui_z9: wui2-5-2 {
 			miwus = <&miwu2 4 2>; /* Z9 */
 		};
+
 		wui_z10: wui2-5-3 {
 			miwus = <&miwu2 4 3>; /* Z10 */
 		};
@@ -57,18 +61,23 @@
 		wui_io12: wui2-6-0 {
 			miwus = <&miwu2 5 0>; /* GPIO12 */
 		};
+
 		wui_smb2: wui2-6-3 {
 			miwus = <&miwu2 5 3>; /* SMB2 */
 		};
+
 		wui_smb3: wui2-6-4 {
 			miwus = <&miwu2 5 4>; /* SMB3 */
 		};
+
 		wui_iod6: wui2-6-5 {
 			miwus = <&miwu2 5 5>; /* GPIOD6 */
 		};
+
 		wui_iob6: wui2-6-6 {
 			miwus = <&miwu2 5 6>; /* GPIOB6 */
 		};
+
 		wui_lct: wui2-6-7 {
 			miwus = <&miwu2 5 7>; /* LCT Event */
 		};
@@ -77,15 +86,19 @@
 		wui_cr_sin2: wui2-7-3 {
 			miwus = <&miwu2 6 3>; /* CR_SIN2 */
 		};
+
 		wui_cr_sin3: wui2-7-4 {
 			miwus = <&miwu2 6 4>; /* CR_SIN3 */
 		};
+
 		wui_cr_sin4: wui2-7-5 {
 			miwus = <&miwu2 6 5>; /* CR_SIN4 */
 		};
+
 		wui_i3c1_addrw: wui2-7-6 {
 			miwus = <&miwu2 6 6>; /* I3C1_ADDRW */
 		};
+
 		wui_i3c1_rstw: wui2-7-7 {
 			miwus = <&miwu2 6 7>; /* I3C1_RSTW */
 		};
@@ -94,12 +107,15 @@
 		wui_i3c2_addrw: wui2-8-0 {
 			miwus = <&miwu2 7 0>; /* I3C2_ADDRW */
 		};
+
 		wui_i3c2_rstw: wui2-8-1 {
 			miwus = <&miwu2 7 1>; /* I3C2_RSTW */
 		};
+
 		wui_i3c3_addrw: wui2-8-2 {
 			miwus = <&miwu2 7 2>; /* I3C3_ADDRW */
 		};
+
 		wui_i3c3_rstw: wui2-8-3 {
 			miwus = <&miwu2 7 3>; /* I3C3_RSTW */
 		};

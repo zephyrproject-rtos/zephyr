@@ -32,6 +32,6 @@ config FIRMWARE_LOADER_IMAGE_NAME
 
 config FIRMWARE_LOADER_IMAGE_PATH
 	string
-	default "${ZEPHYR_BASE}/samples/subsys/mgmt/mcumgr/smp_svr" if FIRMWARE_LOADER_IMAGE_SMP_SVR
+	default "$(ZEPHYR_BASE)/samples/subsys/mgmt/mcumgr/smp_svr" if FIRMWARE_LOADER_IMAGE_SMP_SVR
 	help
 	  Source directory of firmware loader image.

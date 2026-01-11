@@ -348,8 +348,6 @@ ZTEST(tx_q, test_ctrl_and_data_5)
 
 	/* Dequeue ctrl and data nodes */
 	for (int i = 0U; i < SIZE; i++) {
-		struct node_tx *node;
-
 		node = ull_tx_q_dequeue(&tx_q);
 		zassert_equal_ptr(node, &ctrl_nodes1[i], NULL);
 
@@ -359,14 +357,14 @@ ZTEST(tx_q, test_ctrl_and_data_5)
 
 	/* Dequeue ctrl nodes */
 	for (int i = 0U; i < SIZE; i++) {
-		struct node_tx *node = ull_tx_q_dequeue(&tx_q);
+		node = ull_tx_q_dequeue(&tx_q);
 
 		zassert_equal_ptr(node, &ctrl_nodes2[i], NULL);
 	}
 
 	/* Dequeue data nodes */
 	for (int i = 0U; i < SIZE; i++) {
-		struct node_tx *node = ull_tx_q_dequeue(&tx_q);
+		node = ull_tx_q_dequeue(&tx_q);
 
 		zassert_equal_ptr(node, &data_nodes2[i], NULL);
 	}

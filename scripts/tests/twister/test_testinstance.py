@@ -7,23 +7,18 @@
 Tests for testinstance class
 """
 
-from contextlib import nullcontext
 import os
-import sys
-import pytest
+from contextlib import nullcontext
 from unittest import mock
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-from pylib.twister.twisterlib.platform import Simulator
+import pytest
+from expr_parser import reserved
+from twisterlib.error import BuildError
+from twisterlib.handlers import QEMUHandler
+from twisterlib.platform import Simulator
+from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-from twisterlib.error import BuildError
-from twisterlib.runner import TwisterRunner
-from twisterlib.handlers import QEMUHandler
-from expr_parser import reserved
-
 
 TESTDATA_PART_1 = [
     (False, False, "console", None, "qemu", False, [], (False, True)),
@@ -96,13 +91,13 @@ def test_check_build_or_run(
 
 TESTDATA_PART_2 = [
     (True, True, True, ["demo_board_2/unit_testing"], "native",
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
+     None, '\nCONFIG_COVERAGE=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
     (True, False, True, ["demo_board_2/unit_testing"], "native",
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
+     None, '\nCONFIG_COVERAGE=y\nCONFIG_ASAN=y'),
     (False, False, True, ["demo_board_2/unit_testing"], 'native',
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+     None, '\nCONFIG_COVERAGE=y'),
     (True, False, True, ["demo_board_2/unit_testing"], 'mcu',
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+     None, '\nCONFIG_COVERAGE=y'),
     (False, False, False, ["demo_board_2/unit_testing"], 'native', None, ''),
     (False, False, True, ['demo_board_1'], 'native', None, ''),
     (True, False, False, ["demo_board_2"], 'native', None, '\nCONFIG_ASAN=y'),

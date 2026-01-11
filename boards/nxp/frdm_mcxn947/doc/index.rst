@@ -39,6 +39,16 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
+  MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
+- :ref:`dvp_20pin_ov7670` - supports the SmartDMA video interface.
+
 Dual Core samples
 *****************
 
@@ -351,11 +361,9 @@ will print:
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCX-N947 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X

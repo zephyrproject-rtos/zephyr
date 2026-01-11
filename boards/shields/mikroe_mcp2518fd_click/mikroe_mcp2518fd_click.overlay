@@ -9,7 +9,6 @@
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
 		reg = <0x0>;
 		osc-freq = <40000000>;
-
 	};
 };
 

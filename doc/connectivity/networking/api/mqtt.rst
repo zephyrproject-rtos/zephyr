@@ -13,7 +13,7 @@ Overview
 MQTT (Message Queuing Telemetry Transport) is an application layer protocol
 which works on top of the TCP/IP stack. It is a lightweight
 publish/subscribe messaging transport for machine-to-machine communication.
-For more information about the protocol itself, see http://mqtt.org/.
+For more information about the protocol itself, see https://mqtt.org/.
 
 Zephyr provides an MQTT client library built on top of BSD sockets API. The
 library can be enabled with :kconfig:option:`CONFIG_MQTT_LIB` Kconfig option and
@@ -51,7 +51,7 @@ of the MQTT client and can be shared among MQTT clients:
 .. code-block:: c
 
    /* MQTT Broker address information. */
-   static struct sockaddr_storage broker;
+   static struct net_sockaddr_storage broker;
 
 An MQTT client library will notify MQTT events to the application through a
 callback function created to handle respective events:
@@ -150,6 +150,7 @@ additional configuration information:
    tls_config->sec_tag_list = m_sec_tags;
    tls_config->sec_tag_count = ARRAY_SIZE(m_sec_tags);
    tls_config->hostname = MQTT_BROKER_HOSTNAME;
+   tls_config->set_native_tls = true;
 
 In this sample code, the ``m_sec_tags`` array holds a list of tags, referencing TLS
 credentials that the MQTT library should use for authentication. We do not specify
@@ -161,6 +162,9 @@ the ``peer_verify`` field.
 Note, that TLS credentials referenced by the ``m_sec_tags`` array must be
 registered in the system first. For more information on how to do that, refer
 to :ref:`secure sockets documentation <secure_sockets_interface>`.
+
+Finally, ``set_native_tls`` can be optionally set to enable native TLS support
+instead of offloading TLS operations to an offloaded socket.
 
 An example of how to use TLS with MQTT is also present in
 :zephyr:code-sample:`mqtt-publisher` sample application.

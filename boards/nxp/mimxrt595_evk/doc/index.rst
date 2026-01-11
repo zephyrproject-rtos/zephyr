@@ -60,6 +60,15 @@ already supported, which can also be re-used on this mimxrt595_evk board.
 
 .. zephyr:board-supported-hw::
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk055hdmipi4m`, :ref:`rk055hdmipi4ma0` and :ref:`g1120b0mipi` - support
+  the MIPI-DSI display interface.
+
 Connections and IOs
 ===================
 
@@ -249,8 +258,7 @@ steps:
 
 #. Reset by pressing SW3
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT595-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt595-evaluation-kit:MIMXRT595-EVK

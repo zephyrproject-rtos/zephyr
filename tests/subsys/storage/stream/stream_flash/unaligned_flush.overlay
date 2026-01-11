@@ -5,5 +5,5 @@
  */
 
 &flash0 {
-	write-block-size = < 0x8 >;
+	write-block-size = <0x8>;
 };

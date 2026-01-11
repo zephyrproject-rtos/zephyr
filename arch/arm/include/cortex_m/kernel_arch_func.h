@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,9 +57,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	z_arm_configure_static_mpu_regions();
 #endif /* CONFIG_ARM_MPU */
 
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
@@ -75,7 +74,8 @@ extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_
 #endif /* !CONFIG_MULTITHREADING */
 
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry, void *p1, void *p2,
-						void *p3, uint32_t stack_end, uint32_t stack_start);
+						void *p3, uint32_t stack_end, uint32_t stack_start,
+						uint32_t sp_is_priv);
 
 extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 

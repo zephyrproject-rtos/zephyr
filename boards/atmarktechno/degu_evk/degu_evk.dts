@@ -22,18 +22,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			label = "LED1";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			label = "LED2";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			label = "LED3";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 			label = "LED4";
@@ -42,16 +46,19 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio1 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW4";
@@ -91,7 +98,7 @@
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &uicr {
@@ -99,15 +106,15 @@
 };
 
 &gpiote {
-	status ="okay";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="okay";
+	status = "okay";
 };
 
 &gpio1 {
-	status ="okay";
+	status = "okay";
 };
 
 &uart0 {
@@ -149,18 +156,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00014000>;
 		};
+
 		slot0_partition: partition@14000 {
 			label = "image-0";
 			reg = <0x00014000 0x0006e000>;
 		};
+
 		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 0x0006e000>;
 		};
+
 		scratch_partition: partition@f0000 {
 			label = "image-scratch";
 			reg = <0x000f0000 0x00008000>;
 		};
+
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

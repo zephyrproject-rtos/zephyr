@@ -115,6 +115,7 @@
 	pmic_main: npm1300@6b {
 		compatible = "nordic,npm1300";
 		reg = <0x6b>;
+
 		pmic_charger: charger {
 			compatible = "nordic,npm1300-charger";
 			term-microvolt = <4150000>;
@@ -169,12 +170,10 @@
 		has-dpd;
 		t-enter-dpd = <3000>;
 		t-exit-dpd = <40000>;
-		sfdp-bfp = [
-			e5 20 f3 ff  ff ff ff 0f  44 eb 08 6b  08 3b 42 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  44 7a c9 fe  83 67 26 62  ec 82 18 44
-			7a 75 7a 75  04 c4 d5 5c  00 06 74 00  08 50 00 01
-			];
+		sfdp-bfp = [e5 20 f3 ff ff ff ff 0f 44 eb 08 6b 08 3b 42 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 44 7a c9 fe 83 67 26 62 ec 82 18 44
+			    7a 75 7a 75 04 c4 d5 5c 00 06 74 00 08 50 00 01];
 		jedec-id = [c8 65 19];
 	};
 };

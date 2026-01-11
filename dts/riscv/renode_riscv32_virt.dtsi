@@ -13,12 +13,14 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "renode,virt", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32imac_zicsr_zifencei";
+
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -80,24 +82,24 @@
 		};
 
 		uart0: uart@10000000 {
-			interrupts = < 0x0a 1 >;
-			interrupt-parent = < &plic0 >;
+			interrupts = <0x0a 1>;
+			interrupt-parent = <&plic0>;
 			clock-frequency = <150000000>;
 			current-speed = <115200>;
-			reg = < 0x10000000 0x100 >;
+			reg = <0x10000000 0x100>;
 			compatible = "ns16550";
-			reg-shift = < 0 >;
+			reg-shift = <0>;
 			status = "disabled";
 		};
 
 		uart1: uart@10000100 {
-			interrupts = < 0x0a 1 >;
-			interrupt-parent = < &plic1 >;
+			interrupts = <0x0a 1>;
+			interrupt-parent = <&plic1>;
 			clock-frequency = <150000000>;
 			current-speed = <115200>;
-			reg = < 0x10000100 0x100 >;
+			reg = <0x10000100 0x100>;
 			compatible = "ns16550";
-			reg-shift = < 0 >;
+			reg-shift = <0>;
 			status = "disabled";
 		};
 	};

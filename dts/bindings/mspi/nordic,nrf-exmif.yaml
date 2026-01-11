@@ -6,3 +6,7 @@ description: Nordic External Memory Interface (EXMIF)
 compatible: "nordic,nrf-exmif"
 
 include: snps,designware-ssi.yaml
+
+properties:
+  op-mode:
+    default: "MSPI_OP_MODE_CONTROLLER"

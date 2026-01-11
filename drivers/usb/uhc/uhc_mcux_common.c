@@ -11,7 +11,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/init.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/uhc.h>
 
 #include "uhc_common.h"
@@ -243,10 +242,9 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 		}
 	}
 
-	/* TODO: need to check endpoint type too */
-	if (mcux_ep != NULL &&
+	if (mcux_ep != NULL && mcux_ep->pipeType == xfer->type &&
 	    (mcux_ep->maxPacketSize != xfer->mps ||
-	     mcux_ep->interval != xfer->interval)) {
+	    priv->mcux_eps_interval[i] != xfer->interval)) {
 		/* re-initialize the ep */
 		status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
 							    mcux_ep);
@@ -256,6 +254,7 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 
 		uhc_mcux_lock(dev);
 		priv->mcux_eps[i] = NULL;
+		priv->mcux_eps_interval[i] = 0;
 		uhc_mcux_unlock(dev);
 		mcux_ep = NULL;
 	}
@@ -280,21 +279,16 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	/* USB_HostHelperGetPeripheralInformation uses this value as first parameter */
 	pipe_init.devInstance = xfer->udev;
 	pipe_init.nakCount = USB_HOST_CONFIG_MAX_NAK;
-	pipe_init.maxPacketSize = xfer->mps;
+	pipe_init.maxPacketSize = USB_MPS_EP_SIZE(xfer->mps);
 	pipe_init.endpointAddress = USB_EP_GET_IDX(xfer->ep);
 	pipe_init.direction = USB_EP_GET_IDX(xfer->ep) == 0 ? USB_OUT :
 			      USB_EP_GET_DIR(xfer->ep) ? USB_IN : USB_OUT;
 	/* Current Zephyr Host stack is experimental, the endpoint's interval,
 	 * 'number per uframe' and the endpoint type cannot be got yet.
 	 */
-	pipe_init.numberPerUframe = 0; /* TODO: need right way to implement it. */
+	pipe_init.numberPerUframe = USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps);
 	pipe_init.interval = xfer->interval;
-	/* TODO: need right way to implement it. */
-	if (pipe_init.endpointAddress == 0) {
-		pipe_init.pipeType = USB_ENDPOINT_CONTROL;
-	} else {
-		pipe_init.pipeType = USB_ENDPOINT_BULK;
-	}
+	pipe_init.pipeType = xfer->type;
 
 	status = priv->mcux_if->controllerOpenPipe(priv->mcux_host.controllerHandle,
 						   (usb_host_pipe_handle *)&mcux_ep, &pipe_init);
@@ -314,6 +308,7 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
 		if (priv->mcux_eps[i] == NULL) {
 			priv->mcux_eps[i] = mcux_ep;
+			priv->mcux_eps_interval[i] = xfer->interval;
 			break;
 		}
 	}
@@ -341,8 +336,13 @@ int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfe
 	mcux_xfer->callbackParam = (void *)dev;
 	mcux_xfer->setupPacket = (usb_setup_struct_t *)&xfer->setup_pkt[0];
 	if (xfer->buf != NULL) {
-		mcux_xfer->transferLength = xfer->buf->size;
-		mcux_xfer->transferBuffer = xfer->buf->__buf;
+		if (USB_EP_DIR_IS_OUT(xfer->ep)) {
+			mcux_xfer->transferLength = xfer->buf->len;
+			mcux_xfer->transferBuffer = xfer->buf->data;
+		} else {
+			mcux_xfer->transferLength = net_buf_tailroom(xfer->buf);
+			mcux_xfer->transferBuffer = net_buf_tail(xfer->buf);
+		}
 	} else {
 		mcux_xfer->transferBuffer = NULL;
 		mcux_xfer->transferLength = 0;
@@ -352,6 +352,8 @@ int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfe
 		mcux_xfer->direction = USB_REQTYPE_GET_DIR(mcux_xfer->setupPacket->bmRequestType)
 					       ? USB_IN
 					       : USB_OUT;
+	} else {
+		mcux_xfer->direction = USB_EP_DIR_IS_IN(xfer->ep) ? USB_IN : USB_OUT;
 	}
 
 	return 0;

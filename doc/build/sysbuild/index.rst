@@ -140,8 +140,8 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
       To use sysbuild directly with CMake, you must specify the sysbuild
       project as the source folder, and give ``-DAPP_DIR=<path-to-sample>`` as
-      an extra CMake argument. ``APP_DIR`` is the path to the main Zephyr
-      application managed by sysbuild.
+      an extra CMake argument or set APP_DIR as environment variable.
+      ``APP_DIR`` is the path to the main Zephyr application managed by sysbuild.
 
       .. tip::
 
@@ -880,3 +880,57 @@ can be added.
     :maxdepth: 1
 
     images.rst
+
+Sysbuild and CMake presets
+**************************
+
+`CMake presets <https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html>`_ can be used with
+Sysbuild but not all preset macros will work as expected.
+
+.. note::
+
+   Using CMake presets with sysbuild requires CMake version 3.27 or higher.
+
+As described in :ref:`sysbuild` then sysbuild is a higher-level build system which means that when
+CMake presets are used together with sysbuild, then the preset is consumed and processed by sysbuild
+itself and result is passed to the application.
+
+Running sysbuild with preset.
+
+.. tabs::
+
+   .. group-tab:: ``west build``
+
+      Here is an example where preset ``release`` should be used.
+      For details, see :ref:`west-multi-domain-builds` in the ``west build documentation``.
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/hello_world
+         :board: reel_board
+         :goals: build
+         :west-args: --sysbuild -- --preset=release
+         :compact:
+
+   .. group-tab:: ``cmake``
+
+      Here is an example using CMake and Ninja.
+
+      .. code-block:: shell
+
+         APP_DIR=samples/hello_world cmake -Bbuild -GNinja -DBOARD=reel_board share/sysbuild
+         ninja -Cbuild
+
+      When using CMake presets with sysbuild then ``APP_DIR`` must be set in environment in order
+      for Sysbuild CMake to be able to include the ``CMakePresets.json`` from the main Zephyr
+      application's source directory.
+
+.. note::
+
+   As sysbuild changes the top-level cmake project to its own directory, the cmake presets are
+   parsed from there, the application's presets are included from this file verbatim.
+   Therefore relative paths, and macros resolving relative to the source directory will not work as
+   expected, but as relative to share/sysbuild, for example ``${sourceDir}``.
+
+   The ``${fileDir}`` macro can be used to create portable paths relative to the application's
+   directory.

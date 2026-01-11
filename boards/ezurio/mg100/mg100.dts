@@ -27,14 +27,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
@@ -43,6 +46,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button1: button_1 {
 			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch";
@@ -110,6 +114,7 @@
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	hl7800: hl7800 {
 		compatible = "swir,hl7800";
 		status = "okay";
@@ -131,6 +136,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh@19 {
 		compatible = "st,lis3dh", "st,lis2dh";
 		status = "okay";
@@ -147,11 +153,13 @@
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
@@ -165,13 +173,14 @@
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		jedec-id = [ c2 28 17  ];
+		jedec-id = [c2 28 17];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
@@ -194,6 +203,7 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00018000>;
 		};
+
 		/* 896K */
 		slot0_partition: partition@18000 {
 			label = "image-0";
@@ -227,11 +237,13 @@
 			label = "image-1";
 			reg = <0x00000000 0x000E0000>;
 		};
+
 		/* 128K */
 		scratch_partition: partition@E0000 {
 			label = "image-scratch";
 			reg = <0x000E0000 0x00020000>;
 		};
+
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";

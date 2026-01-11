@@ -47,6 +47,7 @@ struct ssd1327_config {
 	uint8_t function_selection_b;
 	uint8_t precharge_voltage;
 	uint8_t vcomh_voltage;
+	const uint8_t *grayscale_table;
 	bool color_inversion;
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
@@ -85,16 +86,17 @@ static inline int ssd1327_write_bus_cmd_i2c(const struct device *dev, const uint
 					    const uint8_t *data, size_t len)
 {
 	const struct ssd1327_config *config = dev->config;
-	uint8_t buf[SSD1327_MAXIMUM_CMD_LENGTH];
+	uint8_t buf[SSD1327_MAXIMUM_CMD_LENGTH + 1];
 
 	if (len > SSD1327_MAXIMUM_CMD_LENGTH - 1) {
 		return -EINVAL;
 	}
 
-	buf[0] = cmd;
-	memcpy(&(buf[1]), data, len);
+	buf[0] = SSD1327_CONTROL_ALL_BYTES_CMD;
+	buf[1] = cmd;
+	memcpy(&(buf[2]), data, len);
 
-	return i2c_burst_write_dt(&config->i2c, SSD1327_CONTROL_ALL_BYTES_CMD, buf, len + 1);
+	return i2c_write_dt(&config->i2c, buf, len + 2);
 }
 
 static inline int ssd1327_set_timing_setting(const struct device *dev)
@@ -118,6 +120,13 @@ static inline int ssd1327_set_timing_setting(const struct device *dev)
 	err = config->write_cmd(dev, SSD1327_LINEAR_LUT, NULL, 0);
 	if (err < 0) {
 		return err;
+	}
+	if (config->grayscale_table != NULL) {
+		err = config->write_cmd(dev, SSD1327_SET_LUT, config->grayscale_table,
+					SSD1327_SET_LUT_COUNT);
+		if (err < 0) {
+			return err;
+		}
 	}
 	err = config->write_cmd(dev, SSD1327_SET_PRECHARGE_VOLTAGE, &config->precharge_voltage, 1);
 	if (err < 0) {
@@ -452,9 +461,16 @@ static DEVICE_API(display, ssd1327_driver_api) = {
 #define SSD1327_CONV_BUFFER_SIZE(node_id)                                                          \
 	DIV_ROUND_UP(DT_PROP(node_id, width) * CONFIG_SSD1327_CONV_BUFFER_LINES, 2)
 
+#define SSD1327_GRAYSCALE_TABLE(node_id)                                                           \
+	.grayscale_table = COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table),                 \
+	(ssd1327_grayscale_table_##node_id), (NULL))
+
 #define SSD1327_DEFINE_I2C(node_id)                                                                \
 	static uint8_t conversion_buf##node_id[SSD1327_CONV_BUFFER_SIZE(node_id)];                 \
 	static struct ssd1327_data data##node_id;                                                  \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
+	static const uint8_t ssd1327_grayscale_table_##node_id[SSD1327_SET_LUT_COUNT] =            \
+	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1327_config config##node_id = {                                     \
 		.i2c = I2C_DT_SPEC_GET(node_id),                                                   \
 		.height = DT_PROP(node_id, height),                                                \
@@ -470,6 +486,7 @@ static DEVICE_API(display, ssd1327_driver_api) = {
 		.function_selection_b = DT_PROP(node_id, function_selection_b),                    \
 		.precharge_voltage = DT_PROP(node_id, precharge_voltage),                          \
 		.vcomh_voltage = DT_PROP(node_id, vcomh_voltage),                                  \
+		SSD1327_GRAYSCALE_TABLE(node_id),                                                  \
 		.write_cmd = ssd1327_write_bus_cmd_i2c,                                            \
 		.write_pixels = ssd1327_write_pixels_i2c,                                          \
 		.conversion_buf = conversion_buf##node_id,                                         \
@@ -482,6 +499,9 @@ static DEVICE_API(display, ssd1327_driver_api) = {
 #define SSD1327_DEFINE_MIPI(node_id)                                                               \
 	static uint8_t conversion_buf##node_id[SSD1327_CONV_BUFFER_SIZE(node_id)];                 \
 	static struct ssd1327_data data##node_id;                                                  \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
+	static const uint8_t ssd1327_grayscale_table_##node_id[SSD1327_SET_LUT_COUNT] =            \
+	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1327_config config##node_id = {                                     \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
@@ -499,6 +519,7 @@ static DEVICE_API(display, ssd1327_driver_api) = {
 		.function_selection_b = DT_PROP(node_id, function_selection_b),                    \
 		.precharge_voltage = DT_PROP(node_id, precharge_voltage),                          \
 		.vcomh_voltage = DT_PROP(node_id, vcomh_voltage),                                  \
+		SSD1327_GRAYSCALE_TABLE(node_id),                                                  \
 		.write_cmd = ssd1327_write_bus_cmd_mipi,                                           \
 		.write_pixels = ssd1327_write_pixels_mipi,                                         \
 		.conversion_buf = conversion_buf##node_id,                                         \

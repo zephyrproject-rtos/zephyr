@@ -18,16 +18,15 @@ from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Dict, Iterable, List, Set
+from jsonschema.exceptions import best_match
 import argparse
 import logging
 import os
-import pykwalify.core
-import pykwalify.errors
 import re
 import sys
-import textwrap
 import yaml
 import platform
+import jsonschema
 
 # Marker type for an 'append:' configuration. Maps variables
 # to the list of values to append to them.
@@ -50,7 +49,7 @@ class Snippet:
 
     def process_data(self, pathobj: Path, snippet_data: dict, sysbuild: bool):
         '''Process the data in a snippet.yml file, after it is loaded into a
-        python object and validated by pykwalify.'''
+        python object and validated by jsonschema.'''
         def append_value(variable, value):
             if variable in ('SB_EXTRA_CONF_FILE', 'EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
                 path = pathobj.parent / value
@@ -92,20 +91,20 @@ class SnippetsError(Exception):
     def __init__(self, msg):
         self.msg = msg
 
-class SnippetToCMakePrinter:
-    '''Helper class for printing a Snippets's semantics to a .cmake
+class SnippetToCMakeOutput:
+    '''Helper class for outputting a Snippets's semantics to a .cmake
     include file for use by snippets.cmake.'''
 
-    def __init__(self, snippets: Snippets, out_file):
+    def __init__(self, snippets: Snippets):
         self.snippets = snippets
-        self.out_file = out_file
         self.section = '#' * 79
 
-    def print_cmake(self):
-        '''Print to the output file provided to the constructor.'''
+    def output_cmake(self):
+        '''Output to the file provided to the constructor.'''
         # TODO: add source file info
         snippets = self.snippets
         snippet_names = sorted(snippets.keys())
+        output = ''
 
         if platform.system() == "Windows":
             # Change to linux-style paths for windows to avoid cmake escape character code issues
@@ -120,7 +119,7 @@ class SnippetToCMakePrinter:
         snippet_path_list = " ".join(
             sorted(f'"{path}"' for path in snippets.paths))
 
-        self.print('''\
+        output += '''\
 # WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!
 #
 # This file contains build system settings derived from your snippets.
@@ -128,9 +127,9 @@ class SnippetToCMakePrinter:
 # of Zephyr's snippets CMake module.
 #
 # See the Snippets guide in the Zephyr documentation for more information.
-''')
+'''
 
-        self.print(f'''\
+        output += f'''\
 {self.section}
 # Global information about all snippets.
 
@@ -142,48 +141,53 @@ set(SNIPPET_PATHS {snippet_path_list})
 
 # Create variable scope for snippets build variables
 zephyr_create_scope(snippets)
-''')
+'''
 
         for snippet_name in snippets.requested:
-            self.print_cmake_for(snippets[snippet_name])
-            self.print()
+            output += self.output_cmake_for(snippets[snippet_name])
 
-    def print_cmake_for(self, snippet: Snippet):
-        self.print(f'''\
+        return output
+
+    def output_cmake_for(self, snippet: Snippet):
+        output = f'''\
 {self.section}
 # Snippet '{snippet.name}'
 
-# Common variable appends.''')
-        self.print_appends(snippet.appends, 0)
+# Common variable appends.
+'''
+        output += self.output_appends(snippet.appends, 0)
         for board, appends in snippet.board2appends.items():
-            self.print_appends_for_board(board, appends)
+            output += self.output_appends_for_board(board, appends)
+        return output
 
-    def print_appends_for_board(self, board: str, appends: Appends):
+    def output_appends_for_board(self, board: str, appends: Appends):
+        output = ''
         if board.startswith('/'):
             board_re = board[1:-1]
-            self.print(f'''\
+            output += f'''\
 # Appends for board regular expression '{board_re}'
-if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")''')
+if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")
+'''
         else:
-            self.print(f'''\
+            output += f'''\
 # Appends for board '{board}'
-if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")''')
-        self.print_appends(appends, 1)
-        self.print('endif()')
+if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")
+'''
+        output += self.output_appends(appends, 1)
+        output += 'endif()\n'
+        return output
 
-    def print_appends(self, appends: Appends, indent: int):
+    def output_appends(self, appends: Appends, indent: int):
         space = '  ' * indent
+        output = ''
         for name, values in appends.items():
             for value in values:
-                self.print(f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)')
+                output += f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)\n'
+        return output
 
-    def print(self, *args, **kwargs):
-        kwargs['file'] = self.out_file
-        print(*args, **kwargs)
-
-# Name of the file containing the pykwalify schema for snippet.yml
+# Name of the file containing the jsonschema schema for snippet.yml
 # files.
-SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'snippet-schema.yml')
+SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'snippet-schema.yaml')
 with open(SCHEMA_PATH, 'r') as f:
     SNIPPET_SCHEMA = yaml.safe_load(f.read())
 
@@ -221,10 +225,6 @@ def parse_args():
     return parser.parse_args()
 
 def setup_logging():
-    # Silence validation errors from pykwalify, which are logged at
-    # logging.ERROR level. We want to handle those ourselves as
-    # needed.
-    logging.getLogger('pykwalify').setLevel(logging.CRITICAL)
     logging.basicConfig(level=logging.INFO,
                         format='  %(name)s: %(message)s')
 
@@ -296,17 +296,15 @@ def load_snippet_yml(snippet_yml: Path) -> dict:
         except yaml.scanner.ScannerError:
             _err(f'snippets file {snippet_yml} is invalid YAML')
 
-    def pykwalify_err(e):
-        return f'''\
-invalid {SNIPPET_YML} file: {snippet_yml}
-{textwrap.indent(e.msg, '  ')}
-'''
+    validator_class = jsonschema.validators.validator_for(SNIPPET_SCHEMA)
+    validator_class.check_schema(SNIPPET_SCHEMA)
+    snippet_validator = validator_class(SNIPPET_SCHEMA)
+    errors = list(snippet_validator.iter_errors(snippet_data))
 
-    try:
-        pykwalify.core.Core(source_data=snippet_data,
-                            schema_data=SNIPPET_SCHEMA).validate()
-    except pykwalify.errors.PyKwalifyException as e:
-        _err(pykwalify_err(e))
+    if errors:
+        sys.exit('ERROR: Malformed snippet YAML file: '
+                 f'{snippet_yml.as_posix()}\n'
+                 f'{best_match(errors).message} in {best_match(errors).json_path}')
 
     name = snippet_data['name']
     if not SNIPPET_NAME_RE.fullmatch(name):
@@ -335,8 +333,16 @@ def write_cmake_out(snippets: Snippets, cmake_out: Path) -> None:
     detail and are not meant to be used outside of snippets.cmake.'''
     if not cmake_out.parent.exists():
         cmake_out.parent.mkdir()
+
+    snippet_data = SnippetToCMakeOutput(snippets).output_cmake()
+
+    if Path(cmake_out).is_file():
+        with open(cmake_out, encoding="utf-8") as fp:
+            if fp.read() == snippet_data:
+                return
+
     with open(cmake_out, 'w', encoding="utf-8") as f:
-        SnippetToCMakePrinter(snippets, f).print_cmake()
+        f.write(snippet_data)
 
 def main():
     args = parse_args()

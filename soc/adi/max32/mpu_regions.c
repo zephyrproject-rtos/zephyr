@@ -6,7 +6,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 /*
  * Define noncacheable flash region attributes using noncacheable SRAM memory

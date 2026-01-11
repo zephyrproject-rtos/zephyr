@@ -12,6 +12,7 @@
 			pinmux = <PB10_LIN_0_TX>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <PB11_LIN_0_RX>;
 			input-enable;
@@ -23,6 +24,7 @@
 			pinmux = <PM6_LIN_9_TX>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <PM7_LIN_9_RX>;
 			input-enable;
@@ -35,6 +37,7 @@
 			input-enable;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <(PE11_ETH_MDIO_I | PE11_ETH_MDIO_O)>;
 			input-enable;
@@ -46,20 +49,21 @@
 	eth0_default: eth0_default {
 		group1 {
 			pinmux = <PF2_ETH_0_RX_CLK>,
-				<PF3_ETH_0_RGMII_RXCTL>,
-				<PF4_ETH_0_RGMII_RXD_0>,
-				<PF5_ETH_0_RGMII_RXD_1>,
-				<PF6_ETH_0_RGMII_RXD_2>,
-				<PF7_ETH_0_RGMII_RXD_3>;
+				 <PF3_ETH_0_RGMII_RXCTL>,
+				 <PF4_ETH_0_RGMII_RXD_0>,
+				 <PF5_ETH_0_RGMII_RXD_1>,
+				 <PF6_ETH_0_RGMII_RXD_2>,
+				 <PF7_ETH_0_RGMII_RXD_3>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <PE12_ETH_0_RGMII_TXC>,
-				<PE13_ETH_0_RGMII_TXCTL>,
-				<PE14_ETH_0_RGMII_TXD_0>,
-				<PE15_ETH_0_RGMII_TXD_1>,
-				<PF0_ETH_0_RGMII_TXD_2>,
-				<PF1_ETH_0_RGMII_TXD_3>;
+				 <PE13_ETH_0_RGMII_TXCTL>,
+				 <PE14_ETH_0_RGMII_TXD_0>,
+				 <PE15_ETH_0_RGMII_TXD_1>,
+				 <PF0_ETH_0_RGMII_TXD_2>,
+				 <PF1_ETH_0_RGMII_TXD_3>;
 			output-enable;
 		};
 	};
@@ -69,6 +73,7 @@
 			pinmux = <PN2_CANXL_0_RX>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <PN1_CANXL_0_TX>;
 			output-enable;
@@ -80,6 +85,7 @@
 			pinmux = <PM11_CANXL_1_RX>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <PM10_CANXL_1_TX>;
 			output-enable;
@@ -91,6 +97,7 @@
 			pinmux = <PA5_CAN_0_RX>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <PA4_CAN_0_TX>;
 			output-enable;
@@ -102,6 +109,7 @@
 			pinmux = <PB7_CAN_1_RX>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <PB6_CAN_1_TX>;
 			output-enable;
@@ -111,7 +119,7 @@
 	i2c1_default: i2c1_default {
 		group1 {
 			pinmux = <(PC15_I2C_1_SDA_I | PC15_I2C_1_SDA_O)>,
-				<(PD0_I2C_1_SCL_I | PD0_I2C_1_SCL_O)>;
+				 <(PD0_I2C_1_SCL_I | PD0_I2C_1_SCL_O)>;
 			input-enable;
 			output-enable;
 			drive-open-drain;
@@ -121,7 +129,7 @@
 	i2c2_default: i2c2_default {
 		group1 {
 			pinmux = <(PJ11_I2C_2_SDA_I | PJ11_I2C_2_SDA_O)>,
-				<(PJ10_I2C_2_SCL_I | PJ10_I2C_2_SCL_O)>;
+				 <(PJ10_I2C_2_SCL_I | PJ10_I2C_2_SCL_O)>;
 			input-enable;
 			output-enable;
 			drive-open-drain;
@@ -138,11 +146,13 @@
 			output-enable;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <PH13_QSPI_0_CS_A0>, <PI9_QSPI_0_CS_A1>,
 				 <PI2_QSPI_0_CK_A_B>, <PI3_QSPI_0_CK_A>;
 			output-enable;
 		};
+
 		group3 {
 			pinmux = <PH12_QSPI_0_INTA_B>;
 			input-enable;

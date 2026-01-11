@@ -24,6 +24,7 @@ endif()
 
 # ECLAIR Settings
 set(ECLAIR_PROJECT_NAME "Zephyr-${BOARD}${BOARD_QUALIFIERS}")
+set(ECLAIR_PROJECT_ROOT "${ZEPHYR_BASE}")
 set(ECLAIR_OUTPUT_DIR "${CMAKE_BINARY_DIR}/sca/eclair")
 set(ECLAIR_ECL_DIR "${ZEPHYR_BASE}/cmake/sca/eclair/ECL")
 set(ECLAIR_ANALYSIS_ECL_DIR "${ZEPHYR_BASE}/cmake/sca/eclair/ECL")
@@ -66,58 +67,61 @@ elseif(ECLAIR_RULESET_ZEPHYR_GUIDELINES)
 endif()
 
 # ECLAIR report
-if (ECLAIR_METRICS_TAB)
+if(ECLAIR_METRICS_TAB)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-metrics_tab=${ECLAIR_OUTPUT_DIR}/metrics")
 endif()
-if (ECLAIR_REPORTS_TAB)
+if(ECLAIR_REPORTS_TAB)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-reports_tab=${ECLAIR_OUTPUT_DIR}/reports")
 endif()
-if (ECLAIR_REPORTS_SARIF)
+if(ECLAIR_REPORTS_SARIF)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-reports_sarif=${ECLAIR_OUTPUT_DIR}/reports.sarif")
 endif()
-if (ECLAIR_SUMMARY_TXT)
+if(ECLAIR_SUMMARY_TXT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-summary_txt=${ECLAIR_OUTPUT_DIR}/summary_txt")
 endif()
-if (ECLAIR_SUMMARY_DOC)
+if(ECLAIR_SUMMARY_DOC)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-summary_doc=${ECLAIR_OUTPUT_DIR}/summary_doc")
 endif()
-if (ECLAIR_SUMMARY_ODT)
+if(ECLAIR_SUMMARY_ODT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-summary_odt=${ECLAIR_OUTPUT_DIR}/summary_odt")
 endif()
-if (ECLAIR_SUMMARY_HTML)
+if(ECLAIR_SUMMARY_HTML)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-summary_html=${ECLAIR_OUTPUT_DIR}/summary_html")
 endif()
-if (ECLAIR_FULL_TXT_ALL_AREAS)
+if(ECLAIR_FULL_TXT_ALL_AREAS)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-setq=report_areas,areas")
 endif()
-if (ECLAIR_FULL_TXT_FIRST_AREA)
+if(ECLAIR_FULL_TXT_FIRST_AREA)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-setq=report_areas,first_area")
 endif()
-if (ECLAIR_FULL_TXT)
+if(ECLAIR_FULL_TXT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_txt=${ECLAIR_OUTPUT_DIR}/report_full_txt")
 endif()
-if (ECLAIR_FULL_DOC_ALL_AREAS)
+if(ECLAIR_FULL_DOC_ALL_AREAS)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-setq=report_areas,areas")
 endif()
-if (ECLAIR_FULL_DOC_FIRST_AREA)
+if(ECLAIR_FULL_DOC_FIRST_AREA)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-setq=report_areas,first_area")
 endif()
-if (ECLAIR_FULL_DOC)
+if(ECLAIR_FULL_DOC)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_doc=${ECLAIR_OUTPUT_DIR}/report_full_doc")
 endif()
-if (ECLAIR_FULL_ODT)
+if(ECLAIR_FULL_ODT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_odt=${ECLAIR_OUTPUT_DIR}/report_full_odt")
 endif()
-if (ECLAIR_FULL_HTL)
+if(ECLAIR_FULL_HTL)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_html=${ECLAIR_OUTPUT_DIR}/report_full_html")
 endif()
 
-message(STATUS "ECLAIR outputs have been written to: ${ECLAIR_OUTPUT_DIR}")
-message(STATUS "ECLAIR ECB files have been written to: ${ECLAIR_ANALYSIS_DATA_DIR}")
+message(STATUS "ECLAIR project name: ${ECLAIR_PROJECT_NAME}")
+message(STATUS "ECLAIR project root is: ${ECLAIR_PROJECT_ROOT}")
+message(STATUS "ECLAIR outputs will be written to: ${ECLAIR_OUTPUT_DIR}")
+message(STATUS "ECLAIR ECB files will be written to: ${ECLAIR_ANALYSIS_DATA_DIR}")
 
 list(APPEND ECLAIR_CLEAN_ARGS
                         +clean
-                        -project_name=${ECLAIR_PROJECT_NAME} -project_root=${ZEPHYR_BASE}
+                        -project_name=${ECLAIR_PROJECT_NAME}
+                        -project_root=${ECLAIR_PROJECT_ROOT}
                         -eval_file=${ECLAIR_ECL_DIR}/analysis.ecl
                         -eval_file=${ECLAIR_ANALYSIS_ECL_DIR}/analysis_${ECLAIR_RULESET}.ecl
                         ${ECLAIR_ENV_ADDITIONAL_OPTIONS})
@@ -142,7 +146,8 @@ set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment} CACHE INTERNAL "")
 
 list(APPEND ECLAIR_PROJECT_ARGS
                         +project
-                        -project_name=${ECLAIR_PROJECT_NAME} -project_root=${ZEPHYR_BASE}
+                        -project_name=${ECLAIR_PROJECT_NAME}
+                        -project_root=${ECLAIR_PROJECT_ROOT}
                         -eval_file=${ECLAIR_ECL_DIR}/analysis.ecl
                         -eval_file=${ECLAIR_ANALYSIS_ECL_DIR}/analysis_${ECLAIR_RULESET}.ecl
                         ${ECLAIR_ENV_ADDITIONAL_OPTIONS})

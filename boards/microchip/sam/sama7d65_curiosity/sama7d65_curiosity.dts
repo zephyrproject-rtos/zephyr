@@ -1,0 +1,93 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <common/freq.h>
+#include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
+#include <dt-bindings/sam/sama7d6/sama7d65/sama7d65-pinctrl.h>
+#include <microchip/sam/sama7/sama7d6/sama7d65.dtsi>
+
+/ {
+	model = "SAMA7D65-Curiosity board";
+	compatible = "microchip,sama7d65curiosity", "microchip,sama7d6", "microchip,sama7";
+
+	chosen {
+		zephyr,sram = &ddram;
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+	};
+
+	clocks {
+		main_xtal {
+			clock-frequency = <DT_FREQ_M(24)>;
+		};
+
+		slow_xtal {
+			clock-frequency = <32768>;
+		};
+	};
+
+	ddram: ddram@60000000 {
+		compatible = "ddram";
+		reg = <0x60000000 DT_SIZE_M(1024)>;
+	};
+};
+
+&flx6 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_USART>;
+	status = "okay";
+
+	uart6: serial@200 {
+		current-speed = <115200>;
+		pinctrl-0 = <&pinctrl_uart6_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&flx10 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_TWI>;
+	status = "okay";
+
+	i2c10: i2c10@600 {
+		pinctrl-0 = <&pinctrl_i2c10_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		eeprom0: eeprom0@51 {
+			compatible = "atmel,24mac02e4", "atmel,at24";
+			reg = <0x51>;
+			address-width = <8>;
+			pagesize = <16>;
+			size = <256>;
+			timeout = <5>;
+			status = "okay";
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl_i2c10_default: i2c10-default {
+		group1 {
+			pinmux = <PIN_PB19__FLEXCOM10_IO1>,
+				 <PIN_PB20__FLEXCOM10_IO0>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_uart6_default: uart6-default {
+		group1 {
+			pinmux = <PIN_PD18__FLEXCOM6_IO0>,
+				 <PIN_PD19__FLEXCOM6_IO1>;
+			bias-disable;
+		};
+	};
+};
+
+&pit64b0 {
+	clock-frequency = <DT_FREQ_M(10)>;
+};

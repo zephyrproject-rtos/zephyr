@@ -11,7 +11,6 @@ config SOC_MIMX8UD7_ADSP
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select CPU_HAS_DCACHE
 	select HAS_MCUX
-	select HAS_MCUX_IOMUXC
 
 # note: the NXP HAL refers to the HIFI4 DSP as
 # `dsp1` and the Fusion DSP as `dsp0`, thus the

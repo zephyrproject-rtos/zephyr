@@ -12,6 +12,7 @@ multiple scopes, including:
 * Code (C/C++)
 * Kconfig
 * CMake
+* Shell
 
 which makes it a very versatile system for lifecycle management of applications. In addition, it
 can be used when building applications which target supported bootloaders (e.g. MCUboot) allowing
@@ -39,19 +40,19 @@ field to a single byte (note that there may be further restrictions depending up
 is used for, e.g. bootloaders might only support some of these fields or might place limits on the
 maximum values of fields):
 
-+---------------+-------------------------------------------------------+
-| Field         | Data type                                             |
-+---------------+-------------------------------------------------------+
-| VERSION_MAJOR | Numerical (0-255)                                     |
-+---------------+-------------------------------------------------------+
-| VERSION_MINOR | Numerical (0-255)                                     |
-+---------------+-------------------------------------------------------+
-| PATCHLEVEL    | Numerical (0-255)                                     |
-+---------------+-------------------------------------------------------+
-| VERSION_TWEAK | Numerical (0-255)                                     |
-+---------------+-------------------------------------------------------+
-| EXTRAVERSION  | Alphanumerical (Lowercase a-z and 0-9) and "." or "-" |
-+---------------+-------------------------------------------------------+
++---------------+-------------------------------------------------------+---------------+
+| Field         | Data type                                             |   Required    |
++---------------+-------------------------------------------------------+---------------+
+| VERSION_MAJOR | Numerical (0-255)                                     |       X       |
++---------------+-------------------------------------------------------+---------------+
+| VERSION_MINOR | Numerical (0-255)                                     |       X       |
++---------------+-------------------------------------------------------+---------------+
+| PATCHLEVEL    | Numerical (0-255)                                     |       X       |
++---------------+-------------------------------------------------------+---------------+
+| VERSION_TWEAK | Numerical (0-255)                                     |       X       |
++---------------+-------------------------------------------------------+---------------+
+| EXTRAVERSION  | Alphanumerical (Lowercase a-z and 0-9) and "." or "-" |               |
++---------------+-------------------------------------------------------+---------------+
 
 When an application is configured using CMake, the version file will be automatically processed,
 and will be checked automatically each time the version is changed, so CMake does not need to be
@@ -71,7 +72,7 @@ Use in code
 ===========
 
 To use the version information in application code, the version file must be included, then the
-fields can be freely used. The include file name is :file:`app_version.h` (no path is needed), the
+fields can be freely used. The include file name is :file:`app_version.h` (use ``#include <zephyr/app_version.h>``), the
 following defines are available:
 
 +-----------------------------+-------------------+------------------------------------------------------+---------------------------+
@@ -195,3 +196,18 @@ Use in MCUboot-supported applications
 No additional configuration needs to be done to the target application so long as it is configured
 to support MCUboot and a signed image is generated, the version information will be automatically
 included in the image data.
+
+Use in Shell
+============
+
+When a shell interface is configured, the following commands are available to retrieve application version information:
+
++----------------------+-----------------------------+-------------------------+
+| Command              | Variable                    | Example                 |
++----------------------+-----------------------------+-------------------------+
+| app version          | APP_VERSION_STRING          | 1.2.3-unstable.5        |
++----------------------+-----------------------------+-------------------------+
+| app version-extended | APP_VERSION_EXTENDED_STRING | 1.2.3-unstable.5+4      |
++----------------------+-----------------------------+-------------------------+
+| app build-version    | APP_BUILD_VERSION           | v3.3.0-18-g2c85d9224fca |
++----------------------+-----------------------------+-------------------------+

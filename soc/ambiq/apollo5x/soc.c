@@ -48,15 +48,19 @@ void soc_early_init_hook(void)
 	/*
 	 * Set default temperature for spotmgr to room temperature
 	 */
-	am_hal_pwrctrl_temp_thresh_t dummy[32];
+	am_hal_pwrctrl_temp_thresh_t dummy;
 
-	am_hal_pwrctrl_temp_update(25.0f, dummy);
+	am_hal_pwrctrl_temp_update(25.0f, &dummy);
 
 	/* Enable Icache*/
 	sys_cache_instr_enable();
 
 	/* Enable Dcache */
 	sys_cache_data_enable();
+
+#ifdef CONFIG_CORTEX_M_DWT
+	am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DEBUG);
+#endif
 }
 
 #if CONFIG_CACHE_MANAGEMENT

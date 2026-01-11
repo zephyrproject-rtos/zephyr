@@ -41,7 +41,8 @@ config I2C_STM32_COMBINED_INTERRUPT
 	depends on I2C_STM32_INTERRUPT
 	default y if SOC_SERIES_STM32C0X || SOC_SERIES_STM32F0X || \
 		     SOC_SERIES_STM32G0X || SOC_SERIES_STM32L0X || \
-		     SOC_SERIES_STM32U0X || SOC_SERIES_STM32WB0X
+		     SOC_SERIES_STM32U0X || SOC_SERIES_STM32WB0X || \
+		     SOC_SERIES_STM32MP2X
 
 config I2C_STM32_BUS_RECOVERY
 	bool "Bus recovery support"
@@ -63,5 +64,13 @@ config I2C_STM32_V2_DMA
 	select EXPERIMENTAL
 	help
 	  Enable DMA support for the STM32 I2C driver.
+
+config I2C_STM32_TRANSFER_TIMEOUT_MSEC
+	int "STM32 I2C transfer timeout (ms)"
+	range 1 $(UINT32_MAX)
+	default 500
+	help
+	  Time in milliseconds to wait for an I2C transfer to complete before
+	  considering it timed out.
 
 endif # I2C_STM32

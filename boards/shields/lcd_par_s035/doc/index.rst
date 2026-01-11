@@ -30,8 +30,8 @@ invoke ``west build``. For example:
    :shield: lcd_par_s035_8080
    :goals: build
 
-.. include:: ../../../nxp/common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

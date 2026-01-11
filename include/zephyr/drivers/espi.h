@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for eSPI driver
+ * @ingroup espi_interface
+ * @brief Main header file for eSPI (Enhanced Serial Peripheral Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_ESPI_H_
@@ -24,8 +25,9 @@ extern "C" {
 #endif
 
 /**
- * @brief eSPI Driver APIs
- * @defgroup espi_interface ESPI Driver APIs
+ * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
+ *        controllers.
+ * @defgroup espi_interface ESPI
  * @ingroup io_interfaces
  * @{
  */
@@ -34,8 +36,11 @@ extern "C" {
  * @brief eSPI I/O mode capabilities
  */
 enum espi_io_mode {
+	/** Single data line mode (traditional SPI) */
 	ESPI_IO_MODE_SINGLE_LINE = BIT(0),
+	/** Dual data line mode */
 	ESPI_IO_MODE_DUAL_LINES = BIT(1),
+	/** Quad data line mode */
 	ESPI_IO_MODE_QUAD_LINES = BIT(2),
 };
 
@@ -100,10 +105,10 @@ enum espi_io_mode {
  * over eSPI can occur if all channels are disabled or not ready
  */
 enum espi_channel {
-	ESPI_CHANNEL_PERIPHERAL = BIT(0),
-	ESPI_CHANNEL_VWIRE      = BIT(1),
-	ESPI_CHANNEL_OOB        = BIT(2),
-	ESPI_CHANNEL_FLASH      = BIT(3),
+	ESPI_CHANNEL_PERIPHERAL = BIT(0), /**< Peripheral channel (channel 0) */
+	ESPI_CHANNEL_VWIRE      = BIT(1), /**< Virtual Wire channel (channel 1) */
+	ESPI_CHANNEL_OOB        = BIT(2), /**< Out-of-Band channel (channel 2) */
+	ESPI_CHANNEL_FLASH      = BIT(3), /**< Flash Access channel (channel 3) */
 };
 
 /**
@@ -122,7 +127,7 @@ enum espi_bus_event {
 	ESPI_BUS_RESET                      = BIT(0),
 
 	/** Indicates the eSPI HW has received channel enable notification from eSPI host,
-	 * once the eSPI channel is signal as ready to the eSPI host,
+	 * once the eSPI channel is signaled as ready to the eSPI host,
 	 * eSPI drivers should convey the eSPI channel ready to eSPI driver client via this event.
 	 */
 	ESPI_BUS_EVENT_CHANNEL_READY        = BIT(1),
@@ -132,7 +137,7 @@ enum espi_bus_event {
 	 */
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
 
-	/** Indicates the eSPI HW has received a Out-of-band package from eSPI host.
+	/** Indicates the eSPI HW has received a Out-of-band packet from eSPI host.
 	 */
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
 
@@ -140,17 +145,19 @@ enum espi_bus_event {
 	 * eSPI drivers should convey the peripheral type.
 	 */
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
+	/** Indicates the eSPI HW has received a Target Attached Flash (TAF) notification event */
 	ESPI_BUS_TAF_NOTIFICATION           = BIT(5),
 };
-
 
 /**
  * @brief eSPI peripheral channel events.
  *
- * eSPI peripheral channel event types to indicate users.
+ * eSPI peripheral channel event types to signal users.
  */
 enum espi_pc_event {
+	/** Bus channel ready event */
 	ESPI_PC_EVT_BUS_CHANNEL_READY = BIT(0),
+	/** Bus master enable event */
 	ESPI_PC_EVT_BUS_MASTER_ENABLE = BIT(1),
 };
 
@@ -191,12 +198,25 @@ enum espi_pc_event {
  * trigger the eSPI callback
  */
 enum espi_virtual_peripheral {
+	/** UART peripheral */
 	ESPI_PERIPHERAL_UART,
+	/** 8042 Keyboard Controller peripheral */
 	ESPI_PERIPHERAL_8042_KBC,
+	/** Host I/O peripheral */
 	ESPI_PERIPHERAL_HOST_IO,
+	/** Debug Port 80 peripheral */
 	ESPI_PERIPHERAL_DEBUG_PORT80,
+	/** Private Host I/O peripheral */
 	ESPI_PERIPHERAL_HOST_IO_PVT,
-#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
+	/** Private Host I/O peripheral 2 */
+	ESPI_PERIPHERAL_HOST_IO_PVT2,
+	/** Private Host I/O peripheral 3 */
+	ESPI_PERIPHERAL_HOST_IO_PVT3,
+#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || defined(__DOXYGEN__)
+	/**
+	 * Embedded Controller Host Command peripheral
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD}
+	 */
 	ESPI_PERIPHERAL_EC_HOST_CMD,
 #endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 };
@@ -205,151 +225,234 @@ enum espi_virtual_peripheral {
  * @brief eSPI cycle types supported over eSPI peripheral channel
  */
 enum espi_cycle_type {
+	/** 32-bit memory read cycle */
 	ESPI_CYCLE_MEMORY_READ32,
+	/** 64-bit memory read cycle */
 	ESPI_CYCLE_MEMORY_READ64,
+	/** 32-bit memory write cycle */
 	ESPI_CYCLE_MEMORY_WRITE32,
+	/** 64-bit memory write cycle */
 	ESPI_CYCLE_MEMORY_WRITE64,
+	/** Message cycle with no data */
 	ESPI_CYCLE_MESSAGE_NODATA,
+	/** Message cycle with data */
 	ESPI_CYCLE_MESSAGE_DATA,
+	/** Successful completion with no data */
 	ESPI_CYCLE_OK_COMPLETION_NODATA,
+	/** Successful completion with data */
 	ESPI_CYCLE_OKCOMPLETION_DATA,
+	/** Unsuccessful completion with no data */
 	ESPI_CYCLE_NOK_COMPLETION_NODATA,
 };
 
 /**
- * @brief eSPI system platform signals that can be send or receive through
+ * @brief eSPI system platform signals that can be sent or received through
  * virtual wire channel
  */
 enum espi_vwire_signal {
 	/* Virtual wires that can only be send from controller to target */
-	ESPI_VWIRE_SIGNAL_SLP_S3,
-	ESPI_VWIRE_SIGNAL_SLP_S4,
-	ESPI_VWIRE_SIGNAL_SLP_S5,
-	ESPI_VWIRE_SIGNAL_OOB_RST_WARN,
-	ESPI_VWIRE_SIGNAL_PLTRST,
-	ESPI_VWIRE_SIGNAL_SUS_STAT,
-	ESPI_VWIRE_SIGNAL_NMIOUT,
-	ESPI_VWIRE_SIGNAL_SMIOUT,
-	ESPI_VWIRE_SIGNAL_HOST_RST_WARN,
-	ESPI_VWIRE_SIGNAL_SLP_A,
-	ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK,
-	ESPI_VWIRE_SIGNAL_SUS_WARN,
-	ESPI_VWIRE_SIGNAL_SLP_WLAN,
-	ESPI_VWIRE_SIGNAL_SLP_LAN,
-	ESPI_VWIRE_SIGNAL_HOST_C10,
-	ESPI_VWIRE_SIGNAL_DNX_WARN,
+	ESPI_VWIRE_SIGNAL_SLP_S3,        /**< Sleep S3 state signal */
+	ESPI_VWIRE_SIGNAL_SLP_S4,        /**< Sleep S4 state signal */
+	ESPI_VWIRE_SIGNAL_SLP_S5,        /**< Sleep S5 state signal */
+	ESPI_VWIRE_SIGNAL_OOB_RST_WARN,  /**< Out-of-band reset warning signal */
+	ESPI_VWIRE_SIGNAL_PLTRST,        /**< Platform reset signal */
+	ESPI_VWIRE_SIGNAL_SUS_STAT,      /**< Suspend status signal */
+	ESPI_VWIRE_SIGNAL_NMIOUT,        /**< NMI output signal */
+	ESPI_VWIRE_SIGNAL_SMIOUT,        /**< SMI output signal */
+	ESPI_VWIRE_SIGNAL_HOST_RST_WARN, /**< Host reset warning signal */
+	ESPI_VWIRE_SIGNAL_SLP_A,         /**< Sleep A state signal */
+	ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, /**< Suspend power down acknowledge signal */
+	ESPI_VWIRE_SIGNAL_SUS_WARN,      /**< Suspend warning signal */
+	ESPI_VWIRE_SIGNAL_SLP_WLAN,      /**< Sleep WLAN signal */
+	ESPI_VWIRE_SIGNAL_SLP_LAN,       /**< Sleep LAN signal */
+	ESPI_VWIRE_SIGNAL_HOST_C10,      /**< Host C10 state signal */
+	ESPI_VWIRE_SIGNAL_DNX_WARN,      /**< DNX (Debug and eXception) warning signal */
+
 	/* Virtual wires that can only be sent from target to controller */
-	ESPI_VWIRE_SIGNAL_PME,
-	ESPI_VWIRE_SIGNAL_WAKE,
-	ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
-	ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,
-	ESPI_VWIRE_SIGNAL_ERR_NON_FATAL,
-	ESPI_VWIRE_SIGNAL_ERR_FATAL,
-	ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE,
-	ESPI_VWIRE_SIGNAL_HOST_RST_ACK,
-	ESPI_VWIRE_SIGNAL_RST_CPU_INIT,
-	/* System management interrupt */
-	ESPI_VWIRE_SIGNAL_SMI,
-	/* System control interrupt */
-	ESPI_VWIRE_SIGNAL_SCI,
-	ESPI_VWIRE_SIGNAL_DNX_ACK,
-	ESPI_VWIRE_SIGNAL_SUS_ACK,
+	ESPI_VWIRE_SIGNAL_PME,              /**< Power Management Event signal */
+	ESPI_VWIRE_SIGNAL_WAKE,             /**< Wake signal */
+	ESPI_VWIRE_SIGNAL_OOB_RST_ACK,      /**< Out-of-band reset acknowledge signal */
+	ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS,  /**< Target boot status signal */
+	ESPI_VWIRE_SIGNAL_ERR_NON_FATAL,    /**< Non-fatal error signal */
+	ESPI_VWIRE_SIGNAL_ERR_FATAL,        /**< Fatal error signal */
+	ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, /**< Target boot done signal */
+	ESPI_VWIRE_SIGNAL_HOST_RST_ACK,     /**< Host reset acknowledge signal */
+	ESPI_VWIRE_SIGNAL_RST_CPU_INIT,     /**< Reset CPU initialization signal */
+	ESPI_VWIRE_SIGNAL_SMI,              /**< System Management Interrupt signal */
+	ESPI_VWIRE_SIGNAL_SCI,              /**< System Control Interrupt signal */
+	ESPI_VWIRE_SIGNAL_DNX_ACK,          /**< DNX acknowledge signal */
+	ESPI_VWIRE_SIGNAL_SUS_ACK,          /**< Suspend acknowledge signal */
+
 	/*
 	 * Virtual wire GPIOs that can be sent from target to controller for
 	 * platform specific usage.
 	 */
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_0,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_1,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_2,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_3,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_4,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_5,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_6,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_7,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_8,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_9,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_10,
-	ESPI_VWIRE_SIGNAL_TARGET_GPIO_11,
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_0,  /**< Target GPIO 0 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_1,  /**< Target GPIO 1 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_2,  /**< Target GPIO 2 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_3,  /**< Target GPIO 3 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_4,  /**< Target GPIO 4 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_5,  /**< Target GPIO 5 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_6,  /**< Target GPIO 6 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_7,  /**< Target GPIO 7 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_8,  /**< Target GPIO 8 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_9,  /**< Target GPIO 9 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_10, /**< Target GPIO 10 signal */
+	ESPI_VWIRE_SIGNAL_TARGET_GPIO_11, /**< Target GPIO 11 signal */
 
-	/* Number of Virtual Wires */
+	/** Number of Virtual Wire signals */
 	ESPI_VWIRE_SIGNAL_COUNT
 };
 
-/* USB-C port over current */
+/**
+ * @name USB-C port over current signal aliases
+ * @{
+ */
+/** USB-C port 0 over current signal */
 #define ESPI_VWIRE_SIGNAL_OCB_0 ESPI_VWIRE_SIGNAL_TARGET_GPIO_0
+/** USB-C port 1 over current signal */
 #define ESPI_VWIRE_SIGNAL_OCB_1 ESPI_VWIRE_SIGNAL_TARGET_GPIO_1
+/** USB-C port 2 over current signal */
 #define ESPI_VWIRE_SIGNAL_OCB_2 ESPI_VWIRE_SIGNAL_TARGET_GPIO_2
+/** USB-C port 3 over current signal */
 #define ESPI_VWIRE_SIGNAL_OCB_3 ESPI_VWIRE_SIGNAL_TARGET_GPIO_3
+/** @} */
 
-/* eSPI LPC peripherals. */
+/**
+ * @brief eSPI LPC peripheral opcodes
+ *
+ * Opcodes for LPC peripheral operations that are tunneled through eSPI.
+ * These opcodes are used to interact with legacy LPC devices.
+ */
 enum lpc_peripheral_opcode {
 	/* Read transactions */
-	E8042_OBF_HAS_CHAR = 0x50,
-	E8042_IBF_HAS_CHAR,
+	E8042_OBF_HAS_CHAR = 0x50, /**< Check if 8042 output buffer has character */
+	E8042_IBF_HAS_CHAR,        /**< Check if 8042 input buffer has character */
 	/* Write transactions */
-	E8042_WRITE_KB_CHAR,
-	E8042_WRITE_MB_CHAR,
+	E8042_WRITE_KB_CHAR, /**< Write character to 8042 keyboard buffer */
+	E8042_WRITE_MB_CHAR, /**< Write character to 8042 mouse buffer */
 	/* Write transactions without input parameters */
-	E8042_RESUME_IRQ,
-	E8042_PAUSE_IRQ,
-	E8042_CLEAR_OBF,
+	E8042_RESUME_IRQ, /**< Resume 8042 interrupt processing */
+	E8042_PAUSE_IRQ,  /**< Pause 8042 interrupt processing */
+	E8042_CLEAR_OBF,  /**< Clear 8042 output buffer */
 	/* Status transactions */
-	E8042_READ_KB_STS,
-	E8042_SET_FLAG,
-	E8042_CLEAR_FLAG,
+	E8042_READ_KB_STS, /**< Read 8042 keyboard status */
+	E8042_SET_FLAG,    /**< Set 8042 flag */
+	E8042_CLEAR_FLAG,  /**< Clear 8042 flag */
 	/* ACPI read transactions */
-	EACPI_OBF_HAS_CHAR = EACPI_START_OPCODE,
-	EACPI_IBF_HAS_CHAR,
+	EACPI_OBF_HAS_CHAR = EACPI_START_OPCODE, /**< Check if ACPI output buffer has character */
+	EACPI_IBF_HAS_CHAR,                      /**< Check if ACPI input buffer has character */
 	/* ACPI write transactions */
-	EACPI_WRITE_CHAR,
+	EACPI_WRITE_CHAR, /**< Write character to ACPI output buffer */
 	/* ACPI status transactions */
-	EACPI_READ_STS,
-	EACPI_WRITE_STS,
-#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
-	/* Shared memory region support to return the ACPI response data */
+	EACPI_READ_STS,  /**< Read ACPI status */
+	EACPI_WRITE_STS, /**< Write ACPI status */
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION) || defined(__DOXYGEN__)
+	/**
+	 * Shared memory region support to return the ACPI response data
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION}
+	 */
 	EACPI_GET_SHARED_MEMORY,
 #endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
-#if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
+#if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE) || defined(__DOXYGEN__)
 	/* Other customized transactions */
+	/**
+	 * Enable host subsystem interrupt (custom)
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 */
 	ECUSTOM_HOST_SUBS_INTERRUPT_EN = ECUSTOM_START_OPCODE,
+	/**
+	 * Get host command parameter memory (custom)
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 */
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY,
+	/**
+	 * Get host command parameter memory size (custom)
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 */
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE,
+	/**
+	 * Send host command result (custom)
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 */
 	ECUSTOM_HOST_CMD_SEND_RESULT,
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 };
 
-/* KBC 8042 event: Input Buffer Full */
+/** KBC 8042 event: Input Buffer Full */
 #define HOST_KBC_EVT_IBF BIT(0)
-/* KBC 8042 event: Output Buffer Empty */
+/** KBC 8042 event: Output Buffer Empty */
 #define HOST_KBC_EVT_OBE BIT(1)
+
 /**
- * @brief Bit field definition of evt_data in struct espi_event for KBC.
+ * @brief Event data format for KBC events.
+ *
+ * Event data (@ref espi_event.evt_data) for Keyboard Controller (8042)
+ * events, allowing to manipulate the raw event data as a bit field.
  */
 struct espi_evt_data_kbc {
-	uint32_t type:8;
-	uint32_t data:8;
-	uint32_t evt:8;
-	uint32_t reserved:8;
+	/** Event type identifier */
+	uint32_t type: 8;
+	/** Event data payload */
+	uint32_t data: 8;
+	/** Event flags */
+	uint32_t evt: 8;
+	/** Reserved field for future use */
+	uint32_t reserved: 8;
 };
 
 /**
- * @brief Bit field definition of evt_data in struct espi_event for ACPI.
+ * @brief Event data format for ACPI events.
+ *
+ * Event data (@ref espi_event.evt_data) for ACPI events, allowing to manipulate the raw event
+ * data as a bit field.
  */
 struct espi_evt_data_acpi {
-	uint32_t type:8;
-	uint32_t data:8;
-	uint32_t reserved:16;
+	/** Event type identifier */
+	uint32_t type: 8;
+	/** Event data payload */
+	uint32_t data: 8;
+	/** Reserved field for future use */
+	uint32_t reserved: 16;
+};
+
+/**
+ * @brief Event data format for Private Channel (PVT) events.
+ *
+ * Event data (@ref espi_event.evt_data) for Private Channel (PVT) events, allowing to manipulate
+ * the raw event data as a bit field.
+ */
+struct espi_evt_data_pvt {
+	/** Event type identifier */
+	uint32_t type: 8;
+	/** Event data payload */
+	uint32_t data: 8;
+	/** Reserved field for future use */
+	uint32_t reserved: 16;
 };
 
 /**
  * @brief eSPI event
+ *
+ * Represents an eSPI bus event that is passed to application callbacks,
+ * providing details about what occurred.
  */
 struct espi_event {
-	/** Event type */
+	/** The type of event that occurred. */
 	enum espi_bus_event evt_type;
-	/** Additional details for bus event type */
+	/**
+	 * Additional details for the event.
+	 *
+	 * The meaning depends on @ref evt_type.
+	 */
 	uint32_t evt_details;
-	/** Data associated to the event */
+	/**
+	 * Data associated with the event.
+	 *
+	 * The meaning depends on @ref evt_type.
+	 * @c espi_evt_data_* structures can be used to manipulate the raw event data as a bit
+	 * field.
+	 */
 	uint32_t evt_data;
 };
 
@@ -366,27 +469,40 @@ struct espi_cfg {
 };
 
 /**
- * @brief eSPI peripheral request packet format
+ * @brief eSPI peripheral request packet.
+ *
+ * Defines the format for peripheral channel (CH0) transactions, which are used
+ * for memory, I/O, and message cycles.
  */
 struct espi_request_packet {
+	/** Type of eSPI cycle being performed. */
 	enum espi_cycle_type cycle_type;
+	/** Transaction tag for tracking. */
 	uint8_t tag;
+	/** Length of the data payload in bytes. */
 	uint16_t len;
+	/** Target address for the transaction. */
 	uint32_t address;
+	/** Pointer to the data buffer for read or write operations. */
 	uint8_t *data;
 };
 
 /**
  * @brief eSPI out-of-band transaction packet format
  *
- * For Tx packet, eSPI driver client shall specify the OOB payload data and its length in bytes.
- * For Rx packet, eSPI driver client shall indicate the maximum number of bytes that can receive,
- * while the eSPI driver should update the length field with the actual data received/available.
+ * - For Tx packet, eSPI driver client shall specify the OOB payload data and its length in bytes.
+ * - For Rx packet, eSPI driver client shall indicate the maximum number of bytes that can receive,
+ *   while the eSPI driver should update the length field with the actual data received/available.
  *
- * In all cases, the length does not include OOB header size 3 bytes.
+ * @note In all cases, the @ref len does not include OOB header size 3 bytes.
  */
 struct espi_oob_packet {
+	/** Pointer to the data buffer. */
 	uint8_t *buf;
+	/**
+	 * Length of the data in bytes (excluding the 3-byte OOB header).
+	 * On reception, this is updated by the driver to the actual size.
+	 */
 	uint16_t len;
 };
 
@@ -394,11 +510,27 @@ struct espi_oob_packet {
  * @brief eSPI flash transactions packet format
  */
 struct espi_flash_packet {
+	/** Pointer to the data buffer. */
 	uint8_t *buf;
+	/** Flash address to access. */
 	uint32_t flash_addr;
+	/**
+	 * Length of the data in bytes for read/write, or the size of the
+	 * sector/block for an erase operation.
+	 */
 	uint16_t len;
 };
 
+/**
+ * @brief Opaque type representing an eSPI callback.
+ *
+ * Used to register a callback in the driver instance callback list.
+ * As many callbacks as needed can be added as long as each of them
+ * are unique pointers of struct espi_callback.
+ * Beware such structure should not be allocated on stack.
+ *
+ * @note To help setting a callback, see @ref espi_init_callback() helper.
+ */
 struct espi_callback;
 
 /**
@@ -416,13 +548,6 @@ typedef void (*espi_callback_handler_t) (const struct device *dev,
 
 /**
  * @cond INTERNAL_HIDDEN
- *
- * Used to register a callback in the driver instance callback list.
- * As many callbacks as needed can be added as long as each of them
- * are unique pointers of struct espi_callback.
- * Beware such structure should not be allocated on stack.
- *
- * Note: To help setting it, see espi_init_callback() below
  */
 struct espi_callback {
 	/** This is meant to be used in the driver only */
@@ -566,7 +691,7 @@ static inline int z_impl_espi_config(const struct device *dev,
 }
 
 /**
- * @brief Query to see if it a channel is ready.
+ * @brief Query whether a logical channel is ready.
  *
  * This routine allows to check if logical channel is ready before use.
  * Note that queries for channels not supported will always return false.
@@ -592,7 +717,7 @@ static inline bool z_impl_espi_get_channel_status(const struct device *dev,
 /**
  * @brief Sends memory, I/O or message read request over eSPI.
  *
- * This routines provides a generic interface to send a read request packet.
+ * This routine provides a generic interface to send a read request packet.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param req Address of structure representing a memory,
@@ -622,7 +747,7 @@ static inline int z_impl_espi_read_request(const struct device *dev,
 /**
  * @brief Sends memory, I/O or message write request over eSPI.
  *
- * This routines provides a generic interface to send a write request packet.
+ * This routine provides a generic interface to send a write request packet.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param req Address of structure representing a memory, I/O or
@@ -631,7 +756,7 @@ static inline int z_impl_espi_read_request(const struct device *dev,
  * @retval 0 If successful.
  * @retval -ENOTSUP if eSPI controller doesn't support raw packets and instead
  *         low memory transactions are handled by controller hardware directly.
- * @retval -EINVAL General input / output error, failed to send over the bus.
+ * @retval -EIO General input / output error, failed to send over the bus.
  */
 __syscall int espi_write_request(const struct device *dev,
 				 struct espi_request_packet *req);
@@ -719,12 +844,12 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
 /**
  * @brief Sends system/platform signal as a virtual wire packet.
  *
- * This routines provides a generic interface to send a virtual wire packet
+ * This routine provides a generic interface to send a virtual wire packet
  * from target to controller.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param signal The signal to be send to eSPI controller.
- * @param level The level of signal requested LOW or HIGH.
+ * @param signal The signal to be sent to eSPI controller.
+ * @param level The level of signal requested. LOW (0) or HIGH (1).
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to send over the bus.
@@ -748,12 +873,12 @@ static inline int z_impl_espi_send_vwire(const struct device *dev,
 /**
  * @brief Retrieves level status for a signal encapsulated in a virtual wire.
  *
- * This routines provides a generic interface to request a virtual wire packet
+ * This routine provides a generic interface to request a virtual wire packet
  * from eSPI controller and retrieve the signal level.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param signal the signal to be requested from eSPI controller.
- * @param level the level of signal requested 0b LOW, 1b HIGH.
+ * @param[out] level the level of signal requested 0b LOW, 1b HIGH.
  *
  * @retval -EIO General input / output error, failed request to controller.
  */
@@ -774,7 +899,7 @@ static inline int z_impl_espi_receive_vwire(const struct device *dev,
 /**
  * @brief Sends SMBus transaction (out-of-band) packet over eSPI bus.
  *
- * This routines provides an interface to encapsulate a SMBus transaction
+ * This routine provides an interface to encapsulate a SMBus transaction
  * and send into packet over eSPI bus
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -801,7 +926,7 @@ static inline int z_impl_espi_send_oob(const struct device *dev,
 /**
  * @brief Receives SMBus transaction (out-of-band) packet from eSPI bus.
  *
- * This routines provides an interface to receive and decoded a SMBus
+ * This routine provides an interface to receive and decode an SMBus
  * transaction from eSPI bus
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -828,7 +953,7 @@ static inline int z_impl_espi_receive_oob(const struct device *dev,
 /**
  * @brief Sends a read request packet for shared flash.
  *
- * This routines provides an interface to send a request to read the flash
+ * This routine provides an interface to send a request to read the flash
  * component shared between the eSPI controller and eSPI targets.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -857,7 +982,7 @@ static inline int z_impl_espi_read_flash(const struct device *dev,
 /**
  * @brief Sends a write request packet for shared flash.
  *
- * This routines provides an interface to send a request to write to the flash
+ * This routine provides an interface to send a request to write to the flash
  * components shared between the eSPI controller and eSPI targets.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -886,11 +1011,11 @@ static inline int z_impl_espi_write_flash(const struct device *dev,
 /**
  * @brief Sends a write request packet for shared flash.
  *
- * This routines provides an interface to send a request to write to the flash
+ * This routine provides an interface to send a request to erase the flash
  * components shared between the eSPI controller and eSPI targets.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param pckt Address of the representation of write flash transaction.
+ * @param pckt Address of the representation of erase flash transaction.
  *
  * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
  * @retval -EBUSY eSPI flash channel is not ready or disabled by controller.
@@ -974,7 +1099,7 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  */
 
 /**
- * @brief Helper to initialize a struct espi_callback properly.
+ * @brief Helper to initialize an espi_callback structure properly.
  *
  * @param callback A valid Application's callback structure pointer.
  * @param handler A valid handler function pointer.

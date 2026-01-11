@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
+
 / {
 	aliases {
 		test-comp = &comp;
@@ -30,9 +32,9 @@
 
 &comp {
 	status = "okay";
-	psel = "AIN4";
+	psel = <NRF_COMP_AIN4>;
 	refsel = "AREF";
-	extrefsel= "AIN3";
+	extrefsel = <NRF_COMP_AIN3>;
 	sp-mode = "NORMAL";
 	th-up = <36>;
 	th-down = <30>;

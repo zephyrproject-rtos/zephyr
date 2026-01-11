@@ -188,7 +188,7 @@ endforeach()
 # The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
 # string that tells what nic model Qemu should use.
 if(CONFIG_QEMU_TARGET)
-  if ((CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER) AND NOT CONFIG_ETH_NIC_MODEL)
+  if((CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER) AND NOT CONFIG_ETH_NIC_MODEL)
     message(FATAL_ERROR "
       No Qemu ethernet driver configured!
       Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"

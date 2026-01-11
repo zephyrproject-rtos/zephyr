@@ -23,4 +23,9 @@ config LPCOMP_WAKEUP_ENABLE
 	help
 	  Enable system off wakeup from analog comparator.
 
+config SYS_CLOCK_DISABLE
+	bool "Power down system clock before system off"
+	help
+	  System clock and GRTC will be switched off during system off.
+
 source "Kconfig.zephyr"

@@ -463,7 +463,7 @@ bool k_work_flush(struct k_work *work,
 	__ASSERT_NO_MSG(!k_is_in_isr());
 	__ASSERT_NO_MSG(sync != NULL);
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(sync));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, flush, work);
@@ -575,7 +575,7 @@ bool k_work_cancel_sync(struct k_work *work,
 	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
 	__ASSERT_NO_MSG(!k_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(sync));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_sync, work, sync);
@@ -606,8 +606,8 @@ bool k_work_cancel_sync(struct k_work *work,
 static void work_timeout_handler(struct _timeout *record)
 {
 	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
-	struct k_work *work;
-	k_work_handler_t handler;
+	struct k_work *work = NULL;
+	k_work_handler_t handler = NULL;
 	const char *name;
 	const char *space = " ";
 
@@ -920,6 +920,11 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 	__ASSERT_NO_MSG(queue);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, stop, queue, timeout);
+
+	if (z_is_thread_essential(&queue->thread)) {
+		return -ENOTSUP;
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	if (!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT)) {
@@ -987,12 +992,8 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(handler != NULL);
 
-	*dwork = (struct k_work_delayable){
-		.work = {
-			.handler = handler,
-			.flags = K_WORK_DELAYABLE,
-		},
-	};
+	*dwork = (struct k_work_delayable)Z_WORK_DELAYABLE_INITIALIZER(handler);
+
 	z_init_timeout(&dwork->timeout);
 
 	SYS_PORT_TRACING_OBJ_INIT(k_work_delayable, dwork);
@@ -1197,7 +1198,7 @@ bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 	__ASSERT_NO_MSG(sync != NULL);
 	__ASSERT_NO_MSG(!k_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(sync));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_delayable_sync, dwork, sync);
@@ -1229,7 +1230,7 @@ bool k_work_flush_delayable(struct k_work_delayable *dwork,
 	__ASSERT_NO_MSG(sync != NULL);
 	__ASSERT_NO_MSG(!k_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(sync));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, flush_delayable, dwork, sync);

@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <mem.h>
 
+#include "mps3_common_ns.dtsi"
+
 / {
 	compatible = "arm,mps3-fvp";
 	#address-cells = <1>;
@@ -19,8 +21,9 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &ram;
-		zephyr,flash = &code;
+		zephyr,sram = &isram_ns;
+		zephyr,flash = &reserved_memory;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 
 	cpus {
@@ -62,30 +65,19 @@
 		zephyr,memory-region = "DTCM";
 	};
 
-	isram: sram@21000000 {
+	/* The ISRAM blocks are used for both S and NS data. The S reserves 128k
+	 * bytes and the remaining can be used by the NS firmware.
+	 */
+	isram_s: secure_data@21000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x21000000 DT_SIZE_M(2)>;
-		zephyr,memory-region = "ISRAM";
+		reg = <0x21000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "ISRAM-Secure";
 	};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		/* The memory regions defined below must match what the TF-M
-		 * project has defined for that board - a single image boot is
-		 * assumed. Please see the memory layout in:
-		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps3/corstone300/common/partition/flash_layout.h
-		 */
-
-		code: memory@28080000 {
-			reg = <0x28080000 DT_SIZE_K(512)>;
-		};
-
-		ram: memory@21020000 {
-			reg = <0x21020000 DT_SIZE_M(1)>;
-		};
+	isram_ns: non_secure_data@21020000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x21020000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+		zephyr,memory-region = "ISRAM-Non-Secure";
 	};
 
 	soc {

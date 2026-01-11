@@ -45,12 +45,13 @@
 
 	ddr1: memory@9cc01000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x9cc01000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
+		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
 	};
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		heartbeat_led: led_0 {
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Heartbeat LED";
@@ -62,9 +63,11 @@
 	mcu_uart0_rx_default: mcu_uart0_rx_default {
 		pinmux = <K3_PINMUX(0x0014, PIN_INPUT, MUX_MODE_0)>;
 	};
+
 	mcu_uart0_tx_default: mcu_uart0_tx_default {
 		pinmux = <K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
 	mcu_gpio0_led_default: mcu_gpio0_led_default {
 		pinmux = <K3_PINMUX(0x0000, PIN_OUTPUT, MUX_MODE_7)>;
 	};

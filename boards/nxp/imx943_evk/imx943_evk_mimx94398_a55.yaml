@@ -11,8 +11,10 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
-ram: 1024
+ram: 10240
 supported:
+  - counter
   - gpio
+  - net
   - uart
 vendor: nxp

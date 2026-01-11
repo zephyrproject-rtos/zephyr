@@ -62,10 +62,6 @@ static int rtc_numaker_set_time(const struct device *dev, const struct rtc_time 
 	struct rtc_numaker_time curr_time;
 	struct rtc_numaker_data *data = dev->data;
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
-#ifdef CONFIG_RTC_ALARM
-	const struct rtc_numaker_config *config = dev->config;
-	RTC_T *rtc_base = config->rtc_base;
-#endif
 
 	if (real_year < NVT_RTC_YEAR_MIN || real_year > NVT_RTC_YEAR_MAX) {
 		/* RTC can't support years out of 2000 ~ 2099 */
@@ -88,12 +84,6 @@ static int rtc_numaker_set_time(const struct device *dev, const struct rtc_time 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	RTC_SetDateAndTime((S_RTC_TIME_DATA_T *)&curr_time);
-
-#ifdef CONFIG_RTC_ALARM
-	/* Restore RTC alarm mask */
-	rtc_base->CAMSK = rtc_base->SPR[1];
-	rtc_base->TAMSK = rtc_base->SPR[2];
-#endif
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -149,8 +139,6 @@ static void rtc_numaker_isr(const struct device *dev)
 
 		/* Clear RTC Alarm interrupt flag */
 		rtc_base->INTSTS = RTC_INTSTS_ALMIF_Msk;
-		rtc_base->CAMSK = 0x00;
-		rtc_base->TAMSK = 0x00;
 		callback = data->alarm_callback;
 		user_data = data->alarm_user_data;
 		data->alarm_pending = callback ? false : true;
@@ -211,13 +199,10 @@ static int rtc_numaker_alarm_set_time(const struct device *dev, uint16_t id, uin
 	irq_disable(DT_INST_IRQN(0));
 	if ((mask == 0) || (timeptr == NULL)) {
 		/* Disable the alarm */
-		rtc_base->SPR[0] = mask;
-		rtc_base->SPR[1] = 0x00;
-		rtc_base->SPR[2] = 0x00;
 		irq_enable(DT_INST_IRQN(0));
 		k_spin_unlock(&data->lock, key);
-		rtc_base->CAMSK = rtc_base->SPR[1];
-		rtc_base->TAMSK = rtc_base->SPR[2];
+		rtc_base->CAMSK = 0x00;
+		rtc_base->TAMSK = 0x00;
 		/* Disable RTC Alarm Interrupt */
 		RTC_DisableInt(RTC_INTEN_ALMIEN_Msk);
 		return 0;
@@ -265,12 +250,8 @@ static int rtc_numaker_alarm_set_time(const struct device *dev, uint16_t id, uin
 	/* Clear RTC alarm interrupt flag */
 	RTC_CLEAR_ALARM_INT_FLAG();
 
-	rtc_base->SPR[0] = mask;
-	rtc_base->SPR[1] = camsk;
-	rtc_base->SPR[2] = tamsk;
-
-	rtc_base->CAMSK = rtc_base->SPR[1];
-	rtc_base->TAMSK = rtc_base->SPR[2];
+	rtc_base->CAMSK = camsk;
+	rtc_base->TAMSK = tamsk;
 
 	k_spin_unlock(&data->lock, key);
 	irq_enable(DT_INST_IRQN(0));
@@ -279,6 +260,33 @@ static int rtc_numaker_alarm_set_time(const struct device *dev, uint16_t id, uin
 	RTC_EnableInt(RTC_INTEN_ALMIEN_Msk);
 
 	return 0;
+}
+
+static uint16_t rtc_numaker_get_mask(uint32_t camsk, uint32_t tamsk)
+{
+	uint16_t mask = 0x00;
+
+	/* Set H/W care to match bits */
+	if (!((camsk >> RTC_CAMSK_MYEAR_Pos) & NVT_ALARM_UNIT_MSK)) {
+		mask |= RTC_ALARM_TIME_MASK_YEAR;
+	}
+	if (!((camsk >> RTC_CAMSK_MMON_Pos) & NVT_ALARM_UNIT_MSK)) {
+		mask |= RTC_ALARM_TIME_MASK_MONTH;
+	}
+	if (!((camsk >> RTC_CAMSK_MDAY_Pos) & NVT_ALARM_UNIT_MSK)) {
+		mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
+	}
+	if (!((tamsk >> RTC_TAMSK_MHR_Pos) & NVT_ALARM_UNIT_MSK)) {
+		mask |= RTC_ALARM_TIME_MASK_HOUR;
+	}
+	if (!((tamsk >> RTC_TAMSK_MMIN_Pos) & NVT_ALARM_UNIT_MSK)) {
+		mask |= RTC_ALARM_TIME_MASK_MINUTE;
+	}
+	if (!((tamsk >> RTC_TAMSK_MSEC_Pos) & NVT_ALARM_UNIT_MSK)) {
+		mask |= RTC_ALARM_TIME_MASK_SECOND;
+	}
+
+	return mask;
 }
 
 static int rtc_numaker_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
@@ -299,7 +307,7 @@ static int rtc_numaker_alarm_get_time(const struct device *dev, uint16_t id, uin
 		RTC_GetAlarmDateAndTime((S_RTC_TIME_DATA_T *)&alarm_time);
 	}
 
-	*mask = rtc_base->SPR[0];
+	*mask = rtc_numaker_get_mask(rtc_base->CAMSK, rtc_base->TAMSK);
 	if (*mask & RTC_ALARM_TIME_MASK_YEAR) {
 		timeptr->tm_year = alarm_time.year - TM_YEAR_REF;
 	}
@@ -379,7 +387,6 @@ static int rtc_numaker_init(const struct device *dev)
 {
 	const struct rtc_numaker_config *cfg = dev->config;
 	struct numaker_scc_subsys scc_subsys;
-	RTC_T *rtc_base = cfg->rtc_base;
 	int err;
 
 	/* CLK controller */
@@ -396,8 +403,6 @@ static int rtc_numaker_init(const struct device *dev)
 	}
 
 	RTC_SetClockSource(cfg->oscillator);
-	/* Enable spare registers */
-	rtc_base->SPRCTL = RTC_SPRCTL_SPRRWEN_Msk;
 
 	irq_disable(DT_INST_IRQN(0));
 

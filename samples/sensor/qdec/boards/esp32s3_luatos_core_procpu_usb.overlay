@@ -14,7 +14,7 @@
 	pcnt_default: pcnt_default {
 		group1 {
 			pinmux = <PCNT0_CH0SIG_GPIO35>,
-				<PCNT0_CH0CTRL_GPIO36>;
+				 <PCNT0_CH0CTRL_GPIO36>;
 			bias-pull-up;
 		};
 	};
@@ -26,11 +26,13 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	unit0@0 {
 		reg = <0>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		filter = <100>;
+
 		channelA@0 {
 			reg = <0>;
 			sig-pos-mode = <2>;

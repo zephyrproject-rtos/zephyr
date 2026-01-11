@@ -134,12 +134,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
+	ARG_UNUSED(thread);
 	/* xtensa always has FPU enabled so cannot be disabled */
 	return -ENOTSUP;
 }
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	/* xtensa always has FPU enabled so nothing to do here */
 	return 0;
 }
@@ -237,6 +240,15 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
 				     size_t *unused_ptr)
 {
+	if (!IS_ENABLED(CONFIG_INIT_STACKS) || !IS_ENABLED(CONFIG_THREAD_STACK_INFO)) {
+		/*
+		 * This is needed to ensure that the call to z_stack_space_get() below is properly
+		 * dead-stripped when linking using LLVM / lld. For more info, please see issue
+		 * #98491.
+		 */
+		return -EINVAL;
+	}
+
 	struct xtensa_thread_stack_header *hdr_stack_obj;
 
 	if ((thread->base.user_options & K_USER) != K_USER) {

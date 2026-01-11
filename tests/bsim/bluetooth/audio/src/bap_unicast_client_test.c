@@ -69,11 +69,20 @@ CREATE_FLAG(flag_operation_success);
 
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
+	struct bt_conn *ep_conn;
+
 	printk("Configured stream %p\n", stream);
 
 	/* TODO: The preference should be used/taken into account when
 	 * setting the QoS
 	 */
+
+	ep_conn = bt_bap_ep_get_conn(stream->ep);
+	if (ep_conn == NULL || stream->conn != ep_conn) {
+		FAIL("Invalid conn from endpoint: %p", ep_conn);
+		return;
+	}
+	bt_conn_unref(ep_conn);
 
 	SET_FLAG(flag_stream_codec_configured);
 }
@@ -492,6 +501,25 @@ static void init(void)
 	}
 }
 
+static void deinit(void)
+{
+	int err;
+
+	err = bt_bap_unicast_client_unregister_cb(&unicast_client_cbs);
+	if (err != 0) {
+		FAIL("Failed to unregister client callbacks: %d", err);
+		return;
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		FAIL("Failed to unregister GATT callbacks: %d", err);
+		return;
+	}
+
+	bt_le_scan_cb_unregister(&bap_scan_cb);
+}
+
 static void scan_and_connect(void)
 {
 	int err;
@@ -623,6 +651,7 @@ static void codec_configure_streams(size_t stream_cnt)
 static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 				  size_t stream_cnt)
 {
+	struct bt_bap_unicast_group_info info;
 	int err;
 
 	UNSET_FLAG(flag_stream_qos_configured);
@@ -639,6 +668,23 @@ static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 
 	while (atomic_get(&flag_stream_qos_configured) != stream_cnt) {
 		(void)k_sleep(K_MSEC(1));
+	}
+
+	err = bt_bap_unicast_group_get_info(unicast_group, &info);
+	if (err != 0) {
+		FAIL("Unable to QoS configure streams: %d\n", err);
+		return;
+	}
+
+	if (info.sink_pd != preset_16_2_1.qos.pd) {
+		FAIL("Unexpected sink PD %u (expected %u)\n", info.sink_pd, preset_16_2_1.qos.pd);
+		return;
+	}
+
+	if (info.source_pd != preset_16_2_1.qos.pd) {
+		FAIL("Unexpected source PD %u (expected %u)\n", info.source_pd,
+		     preset_16_2_1.qos.pd);
+		return;
 	}
 }
 
@@ -832,8 +878,11 @@ static void transceive_streams(void)
 	}
 
 	if (source_stream != NULL) {
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_bap_stream(source_stream);
+
 		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		WAIT_FOR_FLAG(test_stream->flag_audio_received);
 	}
 }
 
@@ -1070,6 +1119,8 @@ static void test_main(void)
 
 	disconnect_acl();
 
+	deinit();
+
 	PASS("Unicast client passed\n");
 }
 
@@ -1122,6 +1173,8 @@ static void test_main_acl_disconnect(void)
 
 	disconnect_acl();
 
+	deinit();
+
 	PASS("Unicast client ACL disconnect passed\n");
 }
 
@@ -1159,6 +1212,8 @@ static void test_main_async_group(void)
 
 		return;
 	}
+
+	deinit();
 
 	PASS("Unicast client async group parameters passed\n");
 }
@@ -1206,6 +1261,8 @@ static void test_main_reconf_group(void)
 
 		return;
 	}
+
+	deinit();
 
 	PASS("Unicast client async group parameters passed\n");
 }

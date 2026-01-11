@@ -209,6 +209,8 @@ struct lwm2m_time_series_resource {
 	sys_snode_t node;
 	/* Resource Path url */
 	struct lwm2m_obj_path path;
+	/* Optional filter for cached samples */
+	lwm2m_cache_filter_cb_t filter_cb;
 	/* Ring buffer */
 	struct ring_buf rb;
 };

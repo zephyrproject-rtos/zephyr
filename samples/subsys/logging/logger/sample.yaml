@@ -65,3 +65,18 @@ tests:
     harness: keyboard
     extra_configs:
       - CONFIG_USERSPACE=y
+
+  sample.logger.swo:
+    arch_allow: arm
+    platform_allow:
+      - apollo3_evb
+      - apollo3p_evb
+    integration_platforms:
+      - apollo3_evb
+      - apollo3p_evb
+    tags:
+      - logging
+    filter: CONFIG_HAS_SWO
+    extra_args:
+      - EXTRA_CONF_FILE="arm_itm_swo.conf"
+      - DTC_OVERLAY_FILE="arm_itm_swo.overlay"

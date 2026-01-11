@@ -11,6 +11,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/llext/symbol.h>
 
 static uint64_t curr_tick;
 
@@ -21,9 +22,6 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
  * shall it call any other subsystem while holding this lock.
  */
 static struct k_spinlock timeout_lock;
-
-#define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-		  ? K_TICKS_FOREVER : INT_MAX)
 
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
@@ -91,9 +89,9 @@ static int32_t next_timeout(int32_t ticks_elapsed)
 
 	if ((to == NULL) ||
 	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
-		ret = MAX_WAIT;
+		ret = SYS_CLOCK_MAX_WAIT;
 	} else {
-		ret = MAX(0, to->dticks - ticks_elapsed);
+		ret = max(0, to->dticks - ticks_elapsed);
 	}
 
 	return ret;
@@ -108,7 +106,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	}
 
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(to));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(to));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
@@ -127,7 +125,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		} else {
 			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
-			to->dticks = MAX(1, dticks);
+			to->dticks = max(1, dticks);
 			ticks = timeout.ticks;
 		}
 
@@ -205,6 +203,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 
 	return ticks;
 }
+EXPORT_SYMBOL(z_timeout_remaining);
 
 k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
@@ -219,6 +218,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 
 	return ticks;
 }
+EXPORT_SYMBOL(z_timeout_expires);
 
 int32_t z_get_next_timeout_expiry(void)
 {
@@ -325,7 +325,7 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
 		k_ticks_t dt = timeout.ticks;
 
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
-			timepoint.tick = sys_clock_tick_get() + MAX(1, dt);
+			timepoint.tick = sys_clock_tick_get() + max(1, dt);
 		} else {
 			timepoint.tick = Z_TICK_ABS(dt);
 		}

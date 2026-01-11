@@ -43,3 +43,10 @@ config MIPI_DSI_MCUX_2L_SWAP16
 
 
 endif # MIPI_DSI_MCUX_2L
+
+config MIPI_DSI_NXP_DWC
+	bool "NXP DWC MIPI-DSI Host Controller"
+	default y
+	depends on DT_HAS_NXP_MIPI_DSI_DWC_ENABLED
+	help
+	  NXP MIPI DSI DWC controller driver

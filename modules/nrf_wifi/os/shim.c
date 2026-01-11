@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 /* Memory pool management - unified pool-based API */
 #if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
 /* Use global system heap */
-extern struct sys_heap _system_heap;
+extern struct k_heap _system_heap;
 static struct k_heap * const wifi_ctrl_pool = &_system_heap;
 static struct k_heap * const wifi_data_pool = &_system_heap;
 #else
@@ -195,23 +195,18 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 }
 #endif /* !CONFIG_NRF71_ON_IPC */
 
-struct zep_shim_spinlock {
-	struct k_spinlock lock;
-	k_spinlock_key_t key;
-};
-
 static void *zep_shim_spinlock_alloc(void)
 {
-	struct zep_shim_spinlock *slock = NULL;
+	struct k_mutex *lock = NULL;
 
-	slock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*slock), K_FOREVER);
-	if (!slock) {
+	lock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*lock), K_FOREVER);
+	if (!lock) {
 		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
 	} else {
-		memset(slock, 0, sizeof(*slock));
+		memset(lock, 0, sizeof(*lock));
 	}
 
-	return slock;
+	return lock;
 }
 
 static void zep_shim_spinlock_free(void *lock)
@@ -223,38 +218,29 @@ static void zep_shim_spinlock_free(void *lock)
 
 static void zep_shim_spinlock_init(void *lock)
 {
-	/* No explicit initialization needed for k_spinlock_t */
-	ARG_UNUSED(lock);
+	k_mutex_init(lock);
 }
 
 static void zep_shim_spinlock_take(void *lock)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
-	slock->key = k_spin_lock(&slock->lock);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_rel(void *lock)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
-	k_spin_unlock(&slock->lock, slock->key);
+	k_mutex_unlock(lock);
 }
 
 static void zep_shim_spinlock_irq_take(void *lock, unsigned long *flags)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
 	ARG_UNUSED(flags);
-	slock->key = k_spin_lock(&slock->lock);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_irq_rel(void *lock, unsigned long *flags)
 {
-	struct zep_shim_spinlock *slock = (struct zep_shim_spinlock *)lock;
-
 	ARG_UNUSED(flags);
-	k_spin_unlock(&slock->lock, slock->key);
+	k_mutex_unlock(lock);
 }
 
 static int zep_shim_pr_dbg(const char *fmt, va_list args)
@@ -576,7 +562,7 @@ void *net_pkt_from_nbuf(void *iface, void *frm)
 
 	data = zep_shim_nbuf_data_get(nwb);
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 
 	if (!pkt) {
 		goto out;
@@ -621,7 +607,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, AF_PACKET, ETH_P_ALL, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, NET_AF_PACKET, ETH_P_ALL, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("%s: Unable to allocate net packet buffer", __func__);
 		goto out;

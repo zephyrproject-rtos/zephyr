@@ -19,6 +19,7 @@ config MEMC_INIT_PRIORITY
 	  Memory controllers initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/memc/Kconfig.bflb"
 source "drivers/memc/Kconfig.max32_hpb"
 source "drivers/memc/Kconfig.mcux"
 source "drivers/memc/Kconfig.mspi"

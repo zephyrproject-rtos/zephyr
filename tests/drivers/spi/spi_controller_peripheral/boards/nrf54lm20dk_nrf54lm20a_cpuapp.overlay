@@ -49,7 +49,6 @@
 	};
 };
 
-
 &gpio1 {
 	status = "okay";
 };
@@ -77,6 +76,6 @@ dut_spis: &spi21 {
 	pinctrl-0 = <&spi21_default_alt>;
 	pinctrl-1 = <&spi21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };

@@ -114,6 +114,7 @@ static int disk_mmc_init(const struct device *dev)
 
 	data->status = SD_UNINIT;
 	data->card.bus_width = config->bus_width;
+	data->card.type = CARD_MMC;
 
 	return disk_access_register(data->disk_info);
 }

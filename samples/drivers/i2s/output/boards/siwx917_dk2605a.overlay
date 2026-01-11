@@ -16,6 +16,7 @@
 			/* Breakout PAD 3 - Breakout PAD 9 - Breakout PAD 5 */
 			pinmux = <I2S0_CLK_HP25>, <I2S0_DOUT0_HP28>, <I2S0_WS_HP26>;
 		};
+
 		in {
 			/* Breakout PAD 7 */
 			pinmux = <I2S0_DIN0_HP27>;
@@ -28,7 +29,7 @@
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
 
-	dmas =  <&dma0 15>, <&dma0 14>;
+	dmas = <&dma0 15>, <&dma0 14>;
 	dma-names = "tx", "rx";
 };
 

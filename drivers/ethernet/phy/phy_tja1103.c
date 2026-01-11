@@ -112,30 +112,12 @@ static inline int phy_tja1103_c45_read(const struct device *dev, uint16_t devad,
 
 static int phy_tja1103_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
-	const struct phy_tja1103_config *cfg = dev->config;
-	int ret;
-
-	mdio_bus_enable(cfg->mdio);
-
-	ret = phy_tja1103_c22_read(dev, reg_addr, (uint16_t *)data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return phy_tja1103_c22_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int phy_tja1103_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
-	const struct phy_tja1103_config *cfg = dev->config;
-	int ret;
-
-	mdio_bus_enable(cfg->mdio);
-
-	ret = phy_tja1103_c22_write(dev, reg_addr, (uint16_t)data);
-
-	mdio_bus_disable(cfg->mdio);
-
-	return ret;
+	return phy_tja1103_c22_write(dev, reg_addr, (uint16_t)data);
 }
 
 static int phy_tja1103_id(const struct device *dev, uint32_t *phy_id)
@@ -375,7 +357,7 @@ static int phy_tja1103_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Check always accesible register for handling NMIs */
+	/* Check always accessible register for handling NMIs */
 	ret = phy_tja1103_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_ALWAYS_ACCESSIBLE, &val);
 	if (ret < 0) {
 		return ret;

@@ -15,8 +15,8 @@
 	compatible = "nxp,mcimx7d_m4";
 
 	aliases {
-		led0   = &green_led;
-		sw0    = &user_switch_1;
+		led0 = &green_led;
+		sw0 = &user_switch_1;
 	};
 
 	chosen {
@@ -28,6 +28,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_0 {
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 			label = "User LED1";
@@ -36,6 +37,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_switch_1: user_sw_1 {
 			gpios = <&gpio2 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			label = "User SW1";

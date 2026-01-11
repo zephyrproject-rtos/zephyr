@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup input_analog_axis
+ * @brief Main header file for interacting with analog axis input devices.
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_ANALOG_AXIS_H_
 #define ZEPHYR_INCLUDE_INPUT_ANALOG_AXIS_H_
 
@@ -11,9 +17,8 @@
 #include <zephyr/device.h>
 
 /**
- * @brief Analog axis API
- * @defgroup input_analog_axis Analog axis API
- * @ingroup io_interfaces
+ * @defgroup input_analog_axis Analog axis
+ * @ingroup input_interface
  * @{
  */
 
@@ -21,7 +26,7 @@
  * @brief Analog axis calibration data structure.
  *
  * Holds the calibration data for a single analog axis. Initial values are set
- * from the devicetree and can be changed by the applicatoin in runtime using
+ * from the devicetree and can be changed by the application in runtime using
  * @ref analog_axis_calibration_set and @ref analog_axis_calibration_get.
  */
 struct analog_axis_calibration {
@@ -51,13 +56,14 @@ typedef void (*analog_axis_raw_data_t)(const struct device *dev,
  * calibration. Set cb to NULL to disable the callback.
  *
  * @param dev Analog axis device.
- * @param cb An analog_axis_raw_data_t callback to use, NULL disable.
+ * @param cb An analog_axis_raw_data_t callback to use, NULL to disable.
  */
 void analog_axis_set_raw_data_cb(const struct device *dev, analog_axis_raw_data_t cb);
 
 /**
  * @brief Get the number of defined axes.
  *
+ * @param dev Analog axis device.
  * @retval n The number of defined axes for dev.
  */
 int analog_axis_num_axes(const struct device *dev);

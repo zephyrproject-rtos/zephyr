@@ -104,7 +104,7 @@ NET_DEVICE_INIT(fake_dev, "fake_dev",
 void *test_setup(void)
 {
 	struct net_if *iface;
-	struct in_addr in4addr_my = { { { 192, 168, 0, 2 } } };
+	struct net_in_addr in4addr_my = { { { 192, 168, 0, 2 } } };
 	struct net_if_addr *ifaddr;
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
@@ -122,22 +122,22 @@ ZTEST(test_net_pm_test_suite, test_pm)
 		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	const struct device *dev = net_if_get_device(iface);
 	char data[] = "some data";
-	struct sockaddr_in addr4;
+	struct net_sockaddr_in addr4;
 	int sock;
 	int ret;
 
-	addr4.sin_family = AF_INET;
-	addr4.sin_port = htons(12345);
-	zsock_inet_pton(AF_INET, "192.168.0.1", &addr4.sin_addr);
+	addr4.sin_family = NET_AF_INET;
+	addr4.sin_port = net_htons(12345);
+	zsock_inet_pton(NET_AF_INET, "192.168.0.1", &addr4.sin_addr);
 
-	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	zassert_true(sock >= 0, "Could not open socket");
 
 	zassert_false(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's send some data, it should go through */
 	ret = zsock_sendto(sock, data, ARRAY_SIZE(data), 0,
-			   (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
+			   (struct net_sockaddr *)&addr4, sizeof(struct net_sockaddr_in));
 	zassert_true(ret > 0, "Could not send data");
 
 	/* Let's make sure net stack's thread gets ran, or setting PM state
@@ -158,7 +158,7 @@ ZTEST(test_net_pm_test_suite, test_pm)
 
 	/* Let's send some data, it should fail relevantly */
 	ret = zsock_sendto(sock, data, ARRAY_SIZE(data), 0,
-			   (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
+			   (struct net_sockaddr *)&addr4, sizeof(struct net_sockaddr_in));
 	zassert_true(ret < 0, "Could send data");
 
 	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
@@ -171,7 +171,7 @@ ZTEST(test_net_pm_test_suite, test_pm)
 
 	/* Let's send some data, it should go through */
 	ret = zsock_sendto(sock, data, ARRAY_SIZE(data), 0,
-			   (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
+			   (struct net_sockaddr *)&addr4, sizeof(struct net_sockaddr_in));
 	zassert_true(ret > 0, "Could not send data");
 
 	zsock_close(sock);

@@ -25,6 +25,13 @@ LOG_MODULE_REGISTER(MAX17048);
 #warning "MAX17048 driver enabled without any devices"
 #endif
 
+#define RESET_COMMAND   0x5400
+#define QUICKSTART_MODE 0x4000
+
+struct max17048_config {
+	struct i2c_dt_spec i2c;
+};
+
 /**
  * Storage for the fuel gauge basic information
  */
@@ -52,7 +59,7 @@ int max17048_read_register(const struct device *dev, uint8_t registerId, uint16_
 	const struct max17048_config *cfg = dev->config;
 	int rc = i2c_write_read_dt(&cfg->i2c, &registerId, sizeof(registerId), max17048_buffer,
 				   sizeof(max17048_buffer));
-	if (rc != 0) {
+	if (rc) {
 		LOG_ERR("Unable to read register, error %d", rc);
 		return rc;
 	}
@@ -77,7 +84,7 @@ int max17048_voltage(const struct device *i2c_dev, uint32_t *response)
 	uint16_t raw_voltage;
 	int rc = max17048_adc(i2c_dev, &raw_voltage);
 
-	if (rc < 0) {
+	if (rc) {
 		return rc;
 	}
 	/**
@@ -89,7 +96,7 @@ int max17048_voltage(const struct device *i2c_dev, uint32_t *response)
 	 * obtain µV
 	 */
 
-	*response = (uint32_t)raw_voltage * 78.125;
+	*response = ((uint32_t)raw_voltage * 78125) / 1000;
 	return 0;
 }
 
@@ -101,7 +108,7 @@ int max17048_percent(const struct device *i2c_dev, uint8_t *response)
 	uint16_t data;
 	int rc = max17048_read_register(i2c_dev, REGISTER_SOC, &data);
 
-	if (rc < 0) {
+	if (rc) {
 		return rc;
 	}
 	/**
@@ -109,7 +116,7 @@ int max17048_percent(const struct device *i2c_dev, uint8_t *response)
 	 * https://www.analog.com/media/en/technical-documentation/data-she4ets/
 	 * MAX17048-MAX17049.pdf
 	 * Page 10, Table 2. Register Summary: 1%/256
-	 * So to obtain the total percentaje we just divide the read value by 256
+	 * So to obtain the total percentage we just divide the read value by 256
 	 */
 	*response = data / 256;
 	return 0;
@@ -123,7 +130,7 @@ int max17048_crate(const struct device *i2c_dev, int16_t *response)
 {
 	int rc = max17048_read_register(i2c_dev, REGISTER_CRATE, response);
 
-	if (rc < 0) {
+	if (rc) {
 		return rc;
 	}
 
@@ -135,7 +142,7 @@ int max17048_crate(const struct device *i2c_dev, int16_t *response)
 	 * To avoid floats, the value will be multiplied by 208 instead of 0.208, taking into
 	 * account that the value will be 1000 times higher
 	 */
-	*response = *response * 208;
+	*response *= 208;
 	return 0;
 }
 
@@ -147,14 +154,15 @@ static int max17048_init(const struct device *dev)
 {
 	const struct max17048_config *cfg = dev->config;
 	uint16_t version;
-	int rc = max17048_read_register(dev, REGISTER_VERSION, &version);
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 
-	if (rc < 0) {
+	int rc = max17048_read_register(dev, REGISTER_VERSION, &version);
+
+	if (rc) {
 		LOG_ERR("Cannot read from I2C");
 		return rc;
 	}
@@ -211,13 +219,13 @@ static int max17048_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	int16_t crate;
 	int ret;
 
-	if (rc < 0) {
+	if (rc) {
 		LOG_ERR("Error while reading battery percentage");
 		return rc;
 	}
 
 	rc = max17048_voltage(dev, &data->voltage);
-	if (rc < 0) {
+	if (rc) {
 		LOG_ERR("Error while reading battery voltage");
 		return rc;
 	}
@@ -227,7 +235,7 @@ static int max17048_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	 * per hour
 	 */
 	rc = max17048_crate(dev, &crate);
-	if (rc < 0) {
+	if (rc) {
 		LOG_ERR("Error while reading battery current rate");
 		return rc;
 	}
@@ -290,7 +298,7 @@ static DEVICE_API(fuel_gauge, max17048_driver_api) = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                                \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &max17048_init, NULL, &max17048_data_##inst,                   \
-			&max17048_config_##inst, POST_KERNEL,                                \
-			CONFIG_FUEL_GAUGE_INIT_PRIORITY, &max17048_driver_api);
+			      &max17048_config_##inst, POST_KERNEL,                                \
+			      CONFIG_FUEL_GAUGE_INIT_PRIORITY, &max17048_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17048_DEFINE)

@@ -5,29 +5,95 @@ if SOC_MIMX94398_M33
 
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
-config FLASH_SIZE
+configdefault FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
-config FLASH_BASE_ADDRESS
+configdefault FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-config MCUX_CORE_SUFFIX
+configdefault MCUX_CORE_SUFFIX
 	default "_cm33_core1" if SOC_MIMX94398_M33
 
-config NUM_IRQS
-	default 405
+# Multi-level interrupts
+# Some interrupts(e.g. dma interrupts) depend on irqsteer.
+# So enable Multi-level interrupts
+config MULTI_LEVEL_INTERRUPTS
+	default y
+	depends on GEN_ISR_TABLES
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+configdefault 1ST_LEVEL_INTERRUPT_BITS
+	default 9
+
+configdefault MAX_IRQ_PER_AGGREGATOR
+	default 64
+
+configdefault 2ND_LEVEL_INTERRUPTS
+	default y
+
+configdefault 2ND_LVL_ISR_TBL_OFFSET
+	default 407
+
+configdefault NUM_2ND_LEVEL_AGGREGATORS
+	default 6
+
+configdefault 2ND_LEVEL_INTERRUPT_BITS
+	default 9
+
+configdefault 2ND_LVL_INTR_00_OFFSET
+	default 224
+
+configdefault 2ND_LVL_INTR_01_OFFSET
+	default 225
+
+configdefault 2ND_LVL_INTR_02_OFFSET
+	default 226
+
+configdefault 2ND_LVL_INTR_03_OFFSET
+	default 227
+
+configdefault 2ND_LVL_INTR_04_OFFSET
+	default 228
+
+configdefault 2ND_LVL_INTR_05_OFFSET
+	default 229
+
+configdefault 3RD_LEVEL_INTERRUPTS
+	default n
+
+configdefault NUM_IRQS
+	default 791
+
+configdefault CORTEX_M_SYSTICK
+	default n if MCUX_GPT_TIMER
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default 32768 if MCUX_GPT_TIMER
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
-config ETH_NXP_IMX_MSGINTR
+configdefault ETH_NXP_IMX_MSGINTR
 	default 2
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
+
+if PM
+
+configdefault IDLE_STACK_SIZE
+	default 640
+
+configdefault MCUX_GPT_TIMER
+	default y
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 1024
+
+endif
+
+configdefault DMA_TCD_QUEUE_SIZE
+	default 4
 
 endif # SOC_MIMX94398_M33

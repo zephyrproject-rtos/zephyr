@@ -13,7 +13,7 @@ Overview
 Lightweight Machine to Machine (LwM2M) is an application layer protocol
 designed with device management, data reporting and device actuation in mind.
 Based on CoAP/UDP, `LwM2M`_ is a
-`standard <http://openmobilealliance.org/release/LightweightM2M/>`_ defined by
+`standard <https://openmobilealliance.org/release/LightweightM2M/>`_ defined by
 the Open Mobile Alliance and suitable for constrained devices by its use of
 CoAP packet-size optimization and a simple, stateless flow that supports a
 REST API.
@@ -225,12 +225,12 @@ instance 0 (the default and only instance) by sending a ``READ 3/0/0``
 operation to the client.
 
 The full list of registered objects and resource IDs can be found in the
-`LwM2M registry`_.
+`OMA LwM2M registries`_.
 
 Zephyr's LwM2M library lives in the :zephyr_file:`subsys/net/lib/lwm2m`, with a
 client sample in :zephyr_file:`samples/net/lwm2m_client`.  For more information
 about the provided sample see: :zephyr:code-sample:`lwm2m-client`. The sample can be
-configured to use normal unsecure network sockets or sockets secured via DTLS.
+configured to use normal insecure network sockets or sockets secured via DTLS.
 
 The Zephyr LwM2M library implements the following items:
 
@@ -244,7 +244,8 @@ The Zephyr LwM2M library implements the following items:
 By default, the library implements `LwM2M specification 1.0.2`_ and can be set to
 `LwM2M specification 1.1.1`_ with a Kconfig option.
 
-For more information about LwM2M visit `OMA Specworks LwM2M`_.
+For more information about LwM2M specification releases visit the
+`OMA LwM2M releases`_ page.
 
 Sample usage
 ************
@@ -515,6 +516,10 @@ must be enabled separately and each resource needs their own storage.
   lwm2m_enable_cache(LWM2M_OBJ(IPSO_OBJECT_TEMP_SENSOR_ID, 0, SENSOR_VALUE_RID),
           temperature_cache, ARRAY_SIZE(temperature_cache));
 
+Applications can inspect the available space in a cached resource with
+:c:func:`lwm2m_cache_free_slots_get`, which returns the number of samples that
+can still be stored or a negative errno value if the query fails.
+
 LwM2M engine have room for four resources that have cache enabled. Limit can be increased by
 changing :kconfig:option:`CONFIG_LWM2M_MAX_CACHED_RESOURCES`. This affects a static memory usage of
 engine.
@@ -531,15 +536,68 @@ Read and Write operations
 Full content of data cache is written into a payload when any READ, SEND or NOTIFY operation
 internally reads the content of a given resource. This has a side effect that any read callbacks
 registered for a that resource are ignored when cache is enabled.
-Data is written into a cache when any of the ``lwm2m_set_*`` functions are called. To filter
-the data entering the cache, application may register a validation callback using
-:c:func:`lwm2m_register_validate_callback`.
+Data is written into a cache when any of the ``lwm2m_set_*`` functions are called. Applications can
+register a cache filter callback with :c:func:`lwm2m_set_cache_filter` to drop otherwise valid samples
+based on application-specific rules.
 
 Limitations
 ===========
 
 Cache size should be manually set so small that the content can fit normal packets sizes.
 When cache is full, new values are dropped.
+
+Send scheduler helper objects
+*****************************
+
+The optional SEND scheduler extension exposes two objects (Send scheduler Control ``10523`` and
+Sampling Rules ``10524``) that sit on top of cached resources to decide when samples should be kept
+and when the client should trigger a LWM2M SEND.
+
+Enabling and wiring
+===================
+
+* Select :kconfig:option:`CONFIG_LWM2M_SEND_SCHEDULER` (requires LwM2M 1.1 SEND support and
+  :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`).
+* Send-scheduler objects register automatically; ensure caches are configured before starting the
+  RD client.
+* Attach :c:func:`lwm2m_send_sched_cache_filter` to every cached resource that should be governed by
+  the scheduler using :c:func:`lwm2m_set_cache_filter`.
+* Call :c:func:`lwm2m_send_sched_handle_registration_event` from the RD client callback when
+  registration or registration-update completes (on
+  ``LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE`` and ``LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE``)
+  so cached samples are sent right after the registration exchange.
+
+Scheduler Control object (10523)
+================================
+
+The single-instance control object configures global behaviour:
+
+* ``0: paused`` – stop accepting samples in cache.
+* ``1: max-samples`` – upper limit for cached samples across all resources; a SEND is forced when
+  the limit is reached (``0`` disables).
+* ``2: max-age`` – maximum age in seconds of the oldest cached sample before a SEND is triggered
+  (``0`` disables).
+* ``3: flush`` – Execute resource that immediately triggers a SEND for all configured rule paths.
+* ``4: flush-on-update`` – when enabled (default), a successful registration or registration-update
+  event triggers a SEND of cached resources.
+
+Sampling Rules object (10524)
+=============================
+
+Each instance describes one cached resource to watch. ``/10524/X/0`` holds the resource path
+and ``/10524/X/1`` contains up to four rule strings. Supported attributes:
+
+* ``gt=<float>`` – trigger when the sample crosses above the threshold.
+* ``lt=<float>`` – trigger when the sample crosses below the threshold.
+* ``st=<float>`` – trigger when the absolute delta from the last reported value is greater than or
+  equal to the threshold.
+* ``pmin=<int>`` – minimum seconds between accepted samples.
+* ``pmax=<int>`` – force a cached sample to be kept at least every ``pmax`` seconds, even without
+  changes.
+
+When no rules are configured for an instance, every incoming sample is cached. The scheduler also
+forces a SEND when a cache for a controlled resource runs out of space or when the global
+``max-samples``/``max-age`` limits are reached.
 
 LwM2M engine and application events
 ***********************************
@@ -804,16 +862,16 @@ API Reference
 .. doxygengroup:: lwm2m_api
 
 .. _LwM2M:
-   https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/
+   https://www.openmobilealliance.org/specifications/lwm2m
 
-.. _LwM2M registry:
-   http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
+.. _OMA LwM2M registries:
+   https://www.openmobilealliance.org/specifications/registries
 
-.. _OMA Specworks LwM2M:
-   https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/
+.. _OMA LwM2M releases:
+   https://www.openmobilealliance.org/specifications/lwm2m/releases
 
 .. _LwM2M specification 1.0.2:
-   http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
 
 .. _LwM2M specification 1.1.1:
-   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/

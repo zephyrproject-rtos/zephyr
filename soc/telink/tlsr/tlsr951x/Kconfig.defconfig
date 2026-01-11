@@ -30,4 +30,8 @@ config 2ND_LVL_INTR_00_OFFSET
 config HAS_FLASH_LOAD_OFFSET
 	default y if BOOTLOADER_MCUBOOT
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 endif # SOC_SERIES_TLSR951X

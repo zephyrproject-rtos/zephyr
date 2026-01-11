@@ -86,7 +86,7 @@ properties:
     type: int
     default: 0
     description: |
-      Defines the time between the activation of the DE signal and the beginning of the start bit.
+      Defines the time between the end of the stop bit and the deactivation of the DE signal.
       It is expressed in 16th of a bit time.
       Valid range: 0 - 31
 

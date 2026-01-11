@@ -1,0 +1,13 @@
+# STM32WB0x radio timer configuration options
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32WB0_RADIO_TIMER
+	bool "STM32 Radio Timer for WB0x"
+	default y if PM || BT
+	depends on SOC_SERIES_STM32WB0X
+	select USE_STM32_HAL_RADIO_TIMER
+	select HAS_STM32LIB
+	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT

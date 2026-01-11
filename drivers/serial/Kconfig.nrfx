@@ -25,15 +25,6 @@ config UART_NRFX_UART
 config UART_NRFX_UARTE
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
-	imply NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
-	imply NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
-
-config UART_NRFX_UARTE_USE_CLOCK_CONTROL
-	def_bool y
-	depends on UART_NRFX_UARTE
-	depends on $(dt_nodelabel_enabled,uart120)
-	depends on !SOC_NRF54H20_CPUFLPR && !SOC_NRF54H20_CPUPPR
-	select CLOCK_CONTROL
 
 config UART_NRFX_UARTE_NO_IRQ
 	bool "Polling without interrupt"
@@ -43,23 +34,9 @@ config UART_NRFX_UARTE_NO_IRQ
 	  When enabled, then interrupt handler is not used at all and it is possible
 	  to get to the lowest power state after uart_poll_out if receiver is not used.
 
-config UART_NRFX_UARTE_LEGACY_SHIM
-	bool "Legacy UARTE shim"
-	depends on UART_NRFX_UARTE
-	default y
-	help
-	  Disabling this option is deprecated.
-
-config DEPRECATED_UART_NRFX_UARTE_LEGACY_SHIM
-	bool
-	default y if !UART_NRFX_UARTE_LEGACY_SHIM
-	depends on UART_NRFX_UARTE
-	select DEPRECATED
-
 config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
 	depends on UART_ASYNC_API
-	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	depends on !(UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC)
 	default y
 	help
@@ -72,15 +49,40 @@ config UART_NRFX_UARTE_ENHANCED_RX
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on UART_ASYNC_API
-	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	default 8
 	help
 	  For UARTE, TX cache buffer is used when provided TX buffer is not located
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
+config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	bool "Use TIMER to count RX bytes"
+	depends on UART_ASYNC_API
+	depends on !ARCH_POSIX # Mode not supported on BSIM target
+	select NRFX_GPPI
+
+config UART_NRFX_UARTE_BOUNCE_BUF_LEN
+	int "RX bounce buffer size"
+	depends on UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	default 256
+	range 64 1024
+	help
+	  Buffer is used when workaround with bounce buffers is applied
+
+config UART_NRFX_UARTE_BOUNCE_BUF_SWAP_LATENCY
+	int "RX bounce buffer swap latency (in microseconds)"
+	depends on UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	default 300
+	help
+	  Option decides how long before current bounce buffer is filled driver
+	  attempts to swap the buffer. It must be long enough to ensure that
+	  space following the buffer is not overwritten. Too high value results
+	  in more frequent buffer swaps so it impacts performance. Setting should
+	  take into account potential interrupt handling latency.
+
 config UART_NRFX_UARTE_DIRECT_ISR
 	bool "Use direct ISR"
+	default y if !MULTITHREADING
 
 config UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND
 	bool
@@ -187,37 +189,25 @@ nrfx_uart_num = 137
 rsource "Kconfig.nrfx_uart_instance"
 endif
 
-config NRFX_TIMER0
+config NRFX_TIMER
 	default y
 	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 0 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 0 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 0
-
-config NRFX_TIMER1
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 1 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 1 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 1 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 1
-
-config NRFX_TIMER2
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 2 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 2 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 2 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 2
-
-config NRFX_TIMER3
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 3 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 3 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 3 \
-		|| UART_3_NRF_HW_ASYNC_TIMER = 3
-
-config NRFX_TIMER4
-	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_0_NRF_HW_ASYNC_TIMER = 4 \
 		|| UART_1_NRF_HW_ASYNC_TIMER = 4 \
 		|| UART_2_NRF_HW_ASYNC_TIMER = 4 \
 		|| UART_3_NRF_HW_ASYNC_TIMER = 4

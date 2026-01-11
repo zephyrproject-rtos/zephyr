@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio_prt15 2 0>;
+		in-gpios = <&gpio_prt15 3 0>;
+	};
+};
+
+&gpio_prt15 {
+	status = "okay";
+};

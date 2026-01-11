@@ -9,7 +9,6 @@
 / {
 	soc {
 		pinctrl: pin-controller@40008000 {
-
 			/omit-if-no-ref/ uart0a_rx_p0_0: uart0a_rx_p0_0 {
 				pinmux = <MAX32_PINMUX(0, 0, AF1)>;
 			};
@@ -401,7 +400,6 @@
 			/omit-if-no-ref/ wakeup_p3_1: wakeup_p3_1 {
 				pinmux = <MAX32_PINMUX(3, 1, AF2)>;
 			};
-
 		};
 	};
 };

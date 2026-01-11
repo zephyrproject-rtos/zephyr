@@ -10,6 +10,6 @@
 	resources {
 		compatible = "test-gpio-basic-api";
 		out-gpios = <&arduino_header 0 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
-		in-gpios  = <&arduino_header 1 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+		in-gpios = <&arduino_header 1 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
 	};
 };

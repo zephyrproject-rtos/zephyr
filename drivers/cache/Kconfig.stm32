@@ -4,6 +4,7 @@
 menuconfig CACHE_STM32
 	bool "STM32 cache driver"
 	select CACHE_HAS_DRIVER
+	depends on SOC_FAMILY_STM32
 	depends on CACHE_MANAGEMENT
 	help
 	  Enable support for the STM32 ICACHE / DCACHE peripheral present in some STM32 chips.

@@ -67,7 +67,7 @@ Run ish_fw.bin on ADL RVP board for Chrome
    $ /usr/share/vboot/bin/make_dev_ssd.sh --remove_rootfs_verification --partitions
    $ reboot
 
-- Go to the ISH firmware direcoty:
+- Go to the ISH firmware directory:
 
 .. code-block:: console
 

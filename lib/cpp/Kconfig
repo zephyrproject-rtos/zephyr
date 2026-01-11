@@ -18,7 +18,8 @@ config STD_CPP_VERSION
 	default 201103 if STD_CPP11
 	default 201402 if STD_CPP14
 	default 201703 if STD_CPP17
-	default 202002 if STD_CPP20 || STD_CPP2A || STD_CPP2B
+	default 202002 if STD_CPP20 || STD_CPP2A
+	default 202302 if STD_CPP23 || STD_CPP2B
 	help
 	  The version number of C++ standard being used (NOTE: this uses the
 	  full year and month, and is the same as the __cplusplus macro defined
@@ -74,6 +75,11 @@ config STD_CPP2B
 	bool "C++ 2b"
 	help
 	  Next revision of the C++ standard, which is expected to be published in 2023.
+
+config STD_CPP23
+	bool "C++ 23"
+	help
+	  2023 C++ standard, previously known as C++2B.
 
 endchoice
 

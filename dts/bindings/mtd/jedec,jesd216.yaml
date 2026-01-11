@@ -35,6 +35,18 @@ properties:
       information in cases were runtime retrieval of SFDP data
       is not desired.
 
+  sfdp-ff05:
+    type: uint8-array
+    description: |
+      Contains the 32-bit words in little-endian byte order from the JESD216
+      SFDP xSPI Profile 1.0 table.
+
+  sfdp-ff84:
+    type: uint8-array
+    description: |
+      Contains the 32-bit words in little-endian byte order from the JESD216
+      SFDP 4-byte Address Instruction Parameter table.
+
   quad-enable-requirements:
     type: string
     enum:

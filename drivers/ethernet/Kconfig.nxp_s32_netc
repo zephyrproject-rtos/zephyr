@@ -7,7 +7,6 @@ menuconfig ETH_NXP_S32_NETC
 	depends on (DT_HAS_NXP_S32_NETC_PSI_ENABLED || DT_HAS_NXP_S32_NETC_VSI_ENABLED)
 	select MBOX
 	select PINCTRL
-	select MDIO if DT_HAS_NXP_S32_NETC_PSI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable Ethernet Switch and Controller (NETC) driver for NXP S32 SoCs.

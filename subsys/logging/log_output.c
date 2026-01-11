@@ -310,11 +310,18 @@ static int ids_print(const struct log_output *output,
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) && thread_on) {
-		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-			total += print_formatted(output, "[%s] ",
-				tid == NULL ? "irq" : k_thread_name_get(tid));
+		if (tid == NULL) {
+			total += print_formatted(output, "[irq] ");
+		} else if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			total += print_formatted(output,
+					"[%3d %s] ",
+					k_thread_priority_get(tid),
+					k_thread_name_get(tid));
 		} else {
-			total += print_formatted(output, "[%p] ", tid);
+			total += print_formatted(output,
+					"[%3d %p] ",
+					k_thread_priority_get(tid),
+					tid);
 		}
 	}
 

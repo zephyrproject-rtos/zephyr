@@ -22,6 +22,12 @@ properties:
       Data/command gpio pin. Required when using 4 wire SPI mode (Mode C1).
       Set to low when sending a command, or high when sending data.
 
+  te-gpios:
+    type: phandle-array
+    description: |
+      Tearing Effect GPIO pin. Set to high when the display is blanking
+      (i.e., not actively reading pixels from its RAM).
+
   reset-gpios:
     type: phandle-array
     description: |

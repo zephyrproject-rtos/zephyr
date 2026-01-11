@@ -16,6 +16,7 @@
 
 enum ina23x_ids {
 	INA230,
+	INA232,
 	INA236
 };
 
@@ -33,7 +34,7 @@ struct ina230_fixture {
  */
 ZTEST(ina230_0, test_default_config)
 {
-	const struct ina230_config *config;
+	const struct ina2xx_config *config;
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ina230_default_test));
 
 	zassert_not_null(dev);
@@ -153,7 +154,8 @@ static void test_bus_voltage(struct ina230_fixture *fixture)
 		0,
 	};
 
-	double bitres = fixture->dev_type == INA236 ? 1.6e-3 : 1.25e-3;
+	double bitres =
+		(fixture->dev_type == INA232 || fixture->dev_type == INA236) ? 1.6e-3 : 1.25e-3;
 
 	for (int idx = 0; idx < ARRAY_SIZE(voltage_reg_vectors); idx++) {
 		struct sensor_value sensor_val;
@@ -186,7 +188,7 @@ static void test_power(struct ina230_fixture *fixture)
 		0,
 	};
 
-	int scale = fixture->dev_type == INA236 ? 32 : 25;
+	int scale = (fixture->dev_type == INA232 || fixture->dev_type == INA236) ? 32 : 25;
 
 	for (int idx = 0; idx < ARRAY_SIZE(power_reg_vectors); idx++) {
 		struct sensor_value sensor_val;
@@ -216,7 +218,6 @@ static void test_power(struct ina230_fixture *fixture)
 		.mock = EMUL_DT_GET(DT_DRV_INST(inst)),                                            \
 		.current_lsb_uA = DT_INST_PROP(inst, current_lsb_microamps),                       \
 		.rshunt_uOhms = DT_INST_PROP(inst, rshunt_micro_ohms),                             \
-		.config = DT_INST_PROP(inst, config),                                              \
 		.dev_type = INA23##v,                                                              \
 	}
 
@@ -248,6 +249,10 @@ static void test_power(struct ina230_fixture *fixture)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ina230
 DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_TESTS, 0)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ina232
+DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_TESTS, 2)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ina236

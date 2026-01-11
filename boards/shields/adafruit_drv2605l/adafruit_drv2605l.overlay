@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_drv2605: drv2605@5a {
+		compatible = "ti,drv2605";
+		reg = <0x5a>;
+		status = "okay";
+		actuator-mode = "ERM";
+	};
+};
+
+/* Alternate node label for samples/drivers/haptics/drv2605 */
+haptic: &adafruit_drv2605 {};

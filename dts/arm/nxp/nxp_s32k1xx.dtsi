@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -329,7 +330,7 @@
 			reg = <0x4003d000 0x1000>;
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "alarm", "seconds";
-			clock-frequency = <32000>;
+			clock-frequency = <DT_FREQ_K(32)>;
 			prescaler = <32000>;
 		};
 

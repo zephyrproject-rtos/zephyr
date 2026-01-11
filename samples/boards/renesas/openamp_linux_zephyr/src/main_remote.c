@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <zephyr/drivers/mbox.h>
 
@@ -122,7 +121,6 @@ static void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t
 int mailbox_notify(void *priv, uint32_t id)
 {
 	ARG_UNUSED(priv);
-
 	mbox_send_dt(&tx_channel, NULL);
 	return 0;
 }
@@ -209,7 +207,6 @@ static void platform_deinit(void)
 static void cleanup_system(void)
 {
 	struct fw_resource_table *rsc_tbl = (struct fw_resource_table *)RSC_TABLE_ADDR;
-
 	rpmsg_deinit_vdev(&rvdev);
 	rproc_virtio_remove_vdev(rvdev.vdev);
 	/*
@@ -236,13 +233,6 @@ struct rpmsg_device *platform_create_rpmsg_vdev(unsigned int vdev_index, unsigne
 		return NULL;
 	}
 
-	/* Set gfeatures because they should be equal to dfeatures
-	 * when create_ept is called. As rproc_virtio_create_vdev
-	 * doesn't set them because its VIRTIO_DEVICE not DRIVER.
-	 * Assume the virtio driver support all remote features.
-	 */
-	virtio_set_features(vdev, 0x1);
-
 	/* wait master rpmsg init completion */
 	rproc_virtio_wait_remote_ready(vdev);
 
@@ -263,6 +253,13 @@ struct rpmsg_device *platform_create_rpmsg_vdev(unsigned int vdev_index, unsigne
 		LOG_ERR("failed to init vring 1");
 		goto failed;
 	}
+
+	/* Set gfeatures because they should be equal to dfeatures
+	 * when create_ept is called. As rproc_virtio_create_vdev
+	 * doesn't set them because its VIRTIO_DEVICE not DRIVER.
+	 * Assume the virtio driver support all remote features.
+	 */
+	virtio_set_features(vdev, 0x1);
 
 	rpmsg_virtio_init_shm_pool(&shpool, NULL, SHM_SIZE);
 	ret = rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, &shpool);

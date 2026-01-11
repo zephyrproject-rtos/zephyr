@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) 2020 Nordic Semiconductor
  * Copyright (c) 2020, Linaro Ltd.
+ * Copyright (c) 2025 The Zephyr Project Contributors
  *
  * Not a generated file. Feel free to modify.
  */
@@ -434,6 +435,41 @@
  * @return node identifier for the node with the name referred to by 'child'
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
+ * @brief Get a node identifier for a child node with a matching unit address
+ *
+ * @note Only works for children with unique integer unit addresses.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc-label: soc {
+ *                     serial1: serial@40001000 {
+ *                             status = "okay";
+ *                             current-speed = <115200>;
+ *                             ...
+ *                     };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage with DT_PROP() to get the status of the
+ * `serial@40001000` node:
+ *
+ * @code{.c}
+ *     #define SOC_NODE DT_NODELABEL(soc_label)
+ *     DT_PROP(DT_CHILD_BY_UNIT_ADDR_INT(SOC_NODE, 1073745920), status) // "okay"
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param addr Integer unit address for the child node.
+ *
+ * @return node identifier for the child node with the specified unit address
+ */
+#define DT_CHILD_BY_UNIT_ADDR_INT(node_id, addr) \
+	DT_CAT3(node_id, _CHILD_UNIT_ADDR_INT_, addr)
 
 /**
  * @brief Get a node identifier for a status `okay` node with a compatible
@@ -1321,6 +1357,18 @@
  */
 #define DT_STRING_TOKEN_BY_IDX(node_id, prop, idx) \
 	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_TOKEN)
+
+/**
+ * @brief Like DT_STRING_TOKEN_BY_IDX(), but with a fallback to @p default_value
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @param default_value a fallback value to expand to
+ * @return the element in @p prop at index @p idx as a token, or @p default_value
+ */
+#define DT_STRING_TOKEN_BY_IDX_OR(node_id, prop, idx, default_value) \
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, prop, idx), \
+		    (DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), (default_value))
 
 /**
  * @brief Like DT_STRING_TOKEN_BY_IDX(), but uppercased.
@@ -3818,6 +3866,134 @@
 	DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
 
 /**
+ * @brief Iterate over all cells in a phandle array element by index
+ *
+ * This macro calls @p fn(cell_value) for each cell value in the
+ * phandle array element at index @p idx.
+ *
+ * In general, this macro expands to:
+ *
+ *     fn(node_id, pha, idx, cell[0]) fn(node_id, pha, idx, cell[1]) [...]
+ *     fn(node_id, pha, idx, cell[n-1])
+ *
+ * where `n` is the number of cells in @p pha, as it would be
+ * returned by `DT_PHA_NUM_CELLS_BY_IDX(node_id, pha, idx)`, and cell[x] is the NAME of the cell
+ * in the specifier.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @param fn macro to call for each cell value
+ */
+#define DT_FOREACH_PHA_CELL_BY_IDX(node_id, pha, idx, fn)	\
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _FOREACH_CELL)(fn)
+
+/**
+ * @brief Iterate over all cells in a phandle array element by index with separator
+ *
+ * This is like DT_FOREACH_PHA_CELL_BY_IDX(), but @p sep is placed between
+ * each invocation of @p fn.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @param fn macro to call for each cell value
+ * @param sep separator (e.g. comma or semicolon)
+ */
+#define DT_FOREACH_PHA_CELL_BY_IDX_SEP(node_id, pha, idx, fn, sep)	\
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _FOREACH_CELL_SEP)(fn, sep)
+
+/**
+ * @brief Get the number of cells in a phandle array element by index
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @return number of cells in the element at index @p idx
+ */
+#define DT_PHA_NUM_CELLS_BY_IDX(node_id, pha, idx) \
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _NUM_CELLS)
+
+/**
+ * @brief Get the name of a phandle array element by index
+ *
+ * This returns the name in the *-names property of the node
+ * corresponding to the index @p idx of @p pha
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @return name of the element at index @p idx
+ */
+#define DT_PHA_ELEM_NAME_BY_IDX(node_id, pha, idx) \
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _NAME)
+
+/**
+ * @brief Iterate over all cells in a phandle array element by name
+ *
+ * This macro calls @p fn(cell_value) for each cell value in the
+ * phandle array @p pha element with the given @p name in the *-names property.
+ *
+ * In general, this macro expands to:
+ *
+ *     fn(node_id, pha, name, cell[0]) fn(node_id, pha, idx, cell[1]) [...]
+ *     fn(node_id, pha, idx, cell[n-1])
+ *
+ * where `n` is the number of cells in @p pha, as it would be
+ * returned by `DT_PHA_NUM_CELLS_BY_NAME(node_id, pha, name)`, and cell[x] is the NAME of the cell
+ * in the specifier.
+ *
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @param fn macro to call for each cell value
+ */
+#define DT_FOREACH_PHA_CELL_BY_NAME(node_id, pha, name, fn)	\
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _FOREACH_CELL)(fn)
+
+/**
+ * @brief Iterate over all cells in a phandle array element by name with separator
+ *
+ * This is like DT_FOREACH_PHA_CELL_BY_NAME(), but @p sep is placed between
+ * each invocation of @p fn.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @param fn macro to call for each cell value
+ * @param sep separator (e.g. comma or semicolon)
+ */
+#define DT_FOREACH_PHA_CELL_BY_NAME_SEP(node_id, pha, name, fn, sep)	\
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _FOREACH_CELL_SEP)(fn, sep)
+
+/**
+ * @brief Get the number of cells in a phandle array element by name
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @return number of cells in the element with the given @p name
+ */
+#define DT_PHA_NUM_CELLS_BY_NAME(node_id, pha, name) \
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _NUM_CELLS)
+
+/**
+ * @brief Get the index of a phandle array element by name
+ *
+ * This returns the index of the @p pha which has the name @p name in the corresponding
+ * *-names property.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @return index of the element with the given @p name
+ */
+#define DT_PHA_ELEM_IDX_BY_NAME(node_id, pha, name) \
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _IDX)
+
+
+/**
  * @}
  */
 
@@ -3937,6 +4113,21 @@
  */
 #define DT_INST_CHILD(inst, child) \
 	DT_CHILD(DT_DRV_INST(inst), child)
+
+/**
+ * @brief Get a node identifier for a child node with a matching unit address of DT_DRV_INST(inst)
+ *
+ * @note Only works for children with unique integer unit addresses.
+ *
+ * @param inst instance number
+ * @param addr Integer unit address for the child node.
+ *
+ * @return node identifier for the child node with the specified unit address
+ *
+ * @see DT_CHILD_BY_UNIT_ADDR_INT
+ */
+#define DT_INST_CHILD_BY_UNIT_ADDR_INT(inst, addr) \
+	DT_CHILD_BY_UNIT_ADDR_INT(DT_DRV_INST(inst), addr)
 
 /**
  * @brief Get the number of child nodes of a given node
@@ -4289,6 +4480,17 @@
  */
 #define DT_INST_STRING_TOKEN_BY_IDX(inst, prop, idx) \
 	DT_STRING_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @param default_value a fallback value to expand to
+ * @return the element in @p prop at index @p idx as a token, or @p default_value
+ */
+#define DT_INST_STRING_TOKEN_BY_IDX_OR(inst, prop, idx, default_value) \
+	DT_STRING_TOKEN_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
 
 /**
  * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but uppercased.
@@ -5286,60 +5488,60 @@
 /** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has property @p prop.
+ * identified by index @p inst, if instance has property @p prop.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has boolean property
+ * identified by index @p inst, if instance has boolean property
  * @p prop with value 1.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance property value is 1,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
-	IF_ENABLED(DT_INST_PROP(idx, prop), (1,))
+#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
+	IF_ENABLED(DT_INST_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has no property @p prop.
+ * identified by index @p inst, if instance has no property @p prop.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
-	IF_DISABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
+	IF_DISABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
 
 /** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
- * identified by index @p idx, if instance has no boolean property
+ * identified by index @p inst, if instance has no boolean property
  * @p prop with value 1.
  *
- * @param idx instance number
+ * @param inst instance number
  * @param prop property to check for
  *
  * @return Macro evaluates to `1,` if instance property value is 0,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
-	IF_DISABLED(DT_INST_PROP(idx, prop), (1,))
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
+	IF_DISABLED(DT_INST_PROP(inst, prop), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
@@ -5442,5 +5644,6 @@
 #include <zephyr/devicetree/mbox.h>
 #include <zephyr/devicetree/port-endpoint.h>
 #include <zephyr/devicetree/display.h>
+#include <zephyr/devicetree/hwspinlock.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */

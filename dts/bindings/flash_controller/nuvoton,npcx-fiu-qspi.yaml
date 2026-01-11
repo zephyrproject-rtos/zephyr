@@ -42,3 +42,19 @@ properties:
     type: boolean
     description: |
       Inverse the device connected to the base address.
+  dmas:
+    description: |
+      Optional DMA channel specifier. If DMA should be used, specifier should
+      hold a phandle reference to the dma controller and its channel.
+  support-npcxn-v1:
+    type: boolean
+    description: |
+      This option enables the FIU support for NPCXn V1.
+  support-npcxn-v2:
+    type: boolean
+    description: |
+      This option enables the FIU support for NPCXn V2.
+  support-npckn-v1:
+    type: boolean
+    description: |
+      This option enables the FIU support for NPCKn V1.

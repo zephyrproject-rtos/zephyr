@@ -96,7 +96,7 @@
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &gpiote {
@@ -141,11 +141,12 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
-			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			    <&gpio0 29 GPIO_ACTIVE_HIGH>;
 	};
 };
 

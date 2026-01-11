@@ -15,6 +15,9 @@
 #include "zephyr/drivers/gpio/gpio_utils.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 
 #include <reg/reg_gpio.h>
 
@@ -32,6 +35,22 @@ struct gpio_rts5912_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 };
+
+#if defined(CONFIG_PM)
+#define GPIO_EXPIRED_TIMEOUT_MS 1000
+static struct k_work_delayable gpio_wake_delay_work;
+static atomic_t gpio_wake_hold;			/* 0: no hold, 1: holding */
+static atomic_t gpio_wake_init_once;	/* 0: not inited, 1: inited */
+
+static void gpio_wake_delay_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (atomic_cas(&gpio_wake_hold, 1, 0)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* CONFIG_PM */
 
 static int pin_is_valid(const struct gpio_rts5912_config *config, gpio_pin_t pin)
 {
@@ -412,7 +431,25 @@ static int gpio_rts5912_port_toggle_bits(const struct device *port, gpio_port_pi
 	return 0;
 }
 
-static gpio_pin_t gpio_rts5912_get_intr_pin(volatile uint32_t *reg_base)
+int gpio_rts5912_get_pin_num(const struct gpio_dt_spec *gpio)
+{
+	const struct device *dev = gpio->port;
+	const struct gpio_rts5912_config *config = dev->config;
+	uint32_t gcr = (uint32_t)config->reg_base;
+
+	return (gcr - (uint32_t)(RTS5912_GPIOA_REG_BASE)) / 4 + gpio->pin;
+}
+
+volatile uint32_t *gpio_rts5912_get_port_address(const struct gpio_dt_spec *gpio)
+{
+	const struct device *dev = gpio->port;
+	const struct gpio_rts5912_config *config = dev->config;
+	volatile uint32_t *gcr = config->reg_base;
+
+	return gcr;
+}
+
+gpio_pin_t gpio_rts5912_get_intr_pin(volatile uint32_t *reg_base)
 {
 	gpio_pin_t pin = 0U;
 
@@ -436,6 +473,19 @@ static void gpio_rts5912_isr(const void *arg)
 
 	if (gcr[pin] & GPIO_GCR_INTSTS_Msk) {
 		gcr[pin] |= GPIO_GCR_INTSTS_Msk;
+
+#if defined(CONFIG_PM)
+		/*
+		 * When EC wakes by GPIO, it may fall back to SUSPEND_TO_IDLE before
+		 * the host or peripherals have a chance to take further action.
+		 * Delay sleep for GPIO_EXPIRED_TIMEOUT_MS.
+		 */
+		if (atomic_cas(&gpio_wake_hold, 0, 1)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		}
+		k_work_reschedule(&gpio_wake_delay_work,
+				K_MSEC(GPIO_EXPIRED_TIMEOUT_MS));
+#endif
 
 		gpio_fire_callbacks(&data->callbacks, port, BIT(pin));
 	}
@@ -550,6 +600,14 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 		if (!(DT_INST_IRQ_HAS_CELL(id, irq))) {                                            \
 			return 0;                                                                  \
 		}                                                                                  \
+		                                                                                   \
+		if (IS_ENABLED(CONFIG_PM)) {                                                       \
+			if (atomic_cas(&gpio_wake_init_once, 0, 1)) {                              \
+				k_work_init_delayable(&gpio_wake_delay_work,                       \
+					gpio_wake_delay_work_handler);                             \
+				atomic_clear(&gpio_wake_hold);                                     \
+			}                                                                          \
+		}                                                                                  \
                                                                                                    \
 		RTS5912_GPIO_DTNAMIC_IRQ(id)                                                       \
                                                                                                    \
@@ -564,7 +622,7 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 		.num_pins = DT_INST_PROP(id, ngpios),                                              \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, gpio_rts5912_init_##id, NULL, &gpio_rts5912_data_##id,           \
-			      &gpio_rts5912_config_##id, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,   \
+			      &gpio_rts5912_config_##id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
 			      &gpio_rts5912_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RTS5912_INIT)

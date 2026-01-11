@@ -9,5 +9,36 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
+if LVGL
 
+# Double frame buffer maintained by lvgl.
+config STM32_LTDC_FB_NUM
+	default 0
+
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_VDB_ZEPHYR_REGION
+	default y
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "SDRAM1"
+
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 32
+
+config LV_DPI_DEF
+	default 128
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_32
+endchoice
+
+endif #LVGL
 endif # BOARD_STM32F469I_DISCO

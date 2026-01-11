@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,11 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
+#if defined(CONFIG_GIC)
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#endif /* CONFIG_GIC */
 #include <fsl_lptmr.h>
+#include <zephyr/spinlock.h>
 
 struct mcux_lptmr_config {
 	struct counter_config_info info;
@@ -18,15 +23,42 @@ struct mcux_lptmr_config {
 	lptmr_prescaler_clock_select_t clk_source;
 	lptmr_prescaler_glitch_value_t prescaler_glitch;
 	bool bypass_prescaler_glitch;
+	bool free_running;
 	lptmr_timer_mode_t mode;
 	lptmr_pin_select_t pin;
 	lptmr_pin_polarity_t polarity;
+	unsigned int irqn;
 	void (*irq_config_func)(const struct device *dev);
 };
 
+static ALWAYS_INLINE void irq_set_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	arm_gic_irq_set_pending(irq);
+#else
+	NVIC_SetPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
+static ALWAYS_INLINE bool irq_is_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	return arm_gic_irq_is_pending(irq);
+#else
+	return NVIC_GetPendingIRQ((IRQn_Type)irq) != 0U;
+#endif /* CONFIG_GIC */
+}
+
 struct mcux_lptmr_data {
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	counter_alarm_callback_t alarm_callback;
+	void *alarm_user_data;
+	bool alarm_active;
+	struct k_spinlock lock;
+#else
 	counter_top_callback_t top_callback;
 	void *top_user_data;
+#endif
 };
 
 static int mcux_lptmr_start(const struct device *dev)
@@ -60,6 +92,117 @@ static int mcux_lptmr_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	ARG_UNUSED(chan_id);
+
+	const struct mcux_lptmr_config *config = dev->config;
+	struct mcux_lptmr_data *data = dev->data;
+
+	/* Counter API: Alarm callback cannot be NULL. */
+	if ((alarm_cfg == NULL) || (alarm_cfg->callback == NULL) ||
+		(alarm_cfg->ticks > config->info.max_top_value)) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (data->alarm_active) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
+	data->alarm_callback = alarm_cfg->callback;
+	data->alarm_user_data = alarm_cfg->user_data;
+	data->alarm_active = true;
+
+	k_spin_unlock(&data->lock, key);
+
+	/* Handle timer state: stop if running, clear flags if stopped */
+	if (config->base->CSR & LPTMR_CSR_TEN_MASK) {
+		/* Already enabled, first stop then set period (HW constraint). */
+		LPTMR_StopTimer(config->base);
+	}
+
+	if (alarm_cfg->ticks == 0U) {
+		/*
+		 * Trigger the alarm callback immediately by setting the IRQ pending.
+		 * The ISR checks alarm_active/callback and does not require HW flags.
+		 */
+		LPTMR_EnableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+		LPTMR_StartTimer(config->base);
+		irq_set_pending(config->irqn);
+		return 0;
+	}
+
+	/* Normal case: set period and start timer */
+	LPTMR_SetTimerPeriod(config->base, alarm_cfg->ticks);
+	/* RM recommendation: clear status flag after setting period
+	 * when timer is disabled.
+	 */
+	LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
+	LPTMR_EnableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+	LPTMR_StartTimer(config->base);
+
+	return 0;
+}
+
+static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(chan_id);
+
+	const struct mcux_lptmr_config *config = dev->config;
+	struct mcux_lptmr_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+	if (!data->alarm_active) {
+		k_spin_unlock(&data->lock, key);
+		return 0;
+	}
+
+	LPTMR_DisableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+
+	data->alarm_callback = NULL;
+	data->alarm_user_data = NULL;
+	data->alarm_active = false;
+
+	k_spin_unlock(&data->lock, key);
+
+	LPTMR_StopTimer(config->base);
+
+	return 0;
+}
+
+static int mcux_lptmr_set_top_value(const struct device *dev,
+				    const struct counter_top_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+
+	return -ENOTSUP;
+}
+#else
+static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(alarm_cfg);
+
+	return -ENOTSUP;
+}
+
+static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+
+	return -ENOTSUP;
+}
+
 static int mcux_lptmr_set_top_value(const struct device *dev,
 				    const struct counter_top_cfg *cfg)
 {
@@ -87,16 +230,26 @@ static int mcux_lptmr_set_top_value(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_COUNTER_MCUX_LPTMR_ALARM */
 
 static uint32_t mcux_lptmr_get_pending_int(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
 	uint32_t mask = LPTMR_CSR_TCF_MASK | LPTMR_CSR_TIE_MASK;
-	uint32_t flags;
 
-	flags = LPTMR_GetStatusFlags(config->base);
+	/* "Pending" if the peripheral has a real compare pending (TCF+TIE). */
+	if ((config->base->CSR & mask) == mask) {
+		return 1U;
+	}
 
-	return ((flags & mask) == mask);
+	/* Also report pending if the IRQ is pending in the interrupt controller.
+	 * This covers the ticks==0 path where we set NVIC pending without TCF.
+	 */
+	if ((config->base->CSR & LPTMR_CSR_TIE_MASK) && irq_is_pending(config->irqn)) {
+		return 1U;
+	}
+
+	return 0U;
 }
 
 static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
@@ -104,6 +257,13 @@ static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
 	const struct mcux_lptmr_config *config = dev->config;
 
 	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
+}
+
+static uint32_t mcux_lptmr_get_freq(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return config->info.freq;
 }
 
 static void mcux_lptmr_isr(const struct device *dev)
@@ -115,9 +275,37 @@ static void mcux_lptmr_isr(const struct device *dev)
 	flags = LPTMR_GetStatusFlags(config->base);
 	LPTMR_ClearStatusFlags(config->base, flags);
 
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	counter_alarm_callback_t callback = data->alarm_callback;
+
+	if ((callback != NULL) && (data->alarm_active)) {
+		void *user_data = data->alarm_user_data;
+
+		LPTMR_DisableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+
+		data->alarm_callback = NULL;
+		data->alarm_user_data = NULL;
+		data->alarm_active = false;
+
+		k_spin_unlock(&data->lock, key);
+
+		uint32_t current_count = LPTMR_GetCurrentTimerCount(config->base);
+
+		LPTMR_StopTimer(config->base);
+		LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
+
+		callback(dev, 0, current_count, user_data);
+
+		return;
+	}
+
+	k_spin_unlock(&data->lock, key);
+#else
 	if (data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
 	}
+#endif
 }
 
 static int mcux_lptmr_init(const struct device *dev)
@@ -127,7 +315,7 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	LPTMR_GetDefaultConfig(&lptmr_config);
 	lptmr_config.timerMode = config->mode;
-	lptmr_config.enableFreeRunning = false;
+	lptmr_config.enableFreeRunning = config->free_running;
 	lptmr_config.prescalerClockSource = config->clk_source;
 	lptmr_config.bypassPrescaler = config->bypass_prescaler_glitch;
 	lptmr_config.value = config->prescaler_glitch;
@@ -149,11 +337,40 @@ static int mcux_lptmr_init(const struct device *dev)
 static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.start = mcux_lptmr_start,
 	.stop = mcux_lptmr_stop,
+	.set_alarm = mcux_lptmr_set_alarm,
+	.cancel_alarm = mcux_lptmr_cancel_alarm,
 	.get_value = mcux_lptmr_get_value,
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
+	.get_freq = mcux_lptmr_get_freq,
 };
+
+/*
+ * Devicetree mapping notes
+ * - In time counter mode, prescaler divides by 2^(value + 1)
+ * - In pulse counter mode, glitch filter recognizes a change after 2^value edges
+ * - prescale-glitch-filter-bypass bypasses prescaler/glitch filter entirely
+ */
+#define MCUX_LPTMR_PRESCALE_GLITCH_VAL(n) DT_INST_PROP(n, prescale_glitch_filter)
+#define MCUX_LPTMR_MODE(n) DT_INST_PROP(n, timer_mode_sel)
+/*
+ * Default must be false so prescale-glitch-filter can be used without requiring
+ * an explicit bypass property.
+ */
+#define MCUX_LPTMR_BYPASS(n) DT_INST_PROP_OR(n, prescale_glitch_filter_bypass, false)
+
+#define MCUX_LPTMR_TIME_DIV(n) BIT(MCUX_LPTMR_PRESCALE_GLITCH_VAL(n) + 1)
+#define MCUX_LPTMR_PULSE_DIV(n) BIT(MCUX_LPTMR_PRESCALE_GLITCH_VAL(n))
+
+#define MCUX_LPTMR_EFFECTIVE_FREQ(n) \
+	(MCUX_LPTMR_BYPASS(n) ? DT_INST_PROP(n, clock_frequency) : \
+		((MCUX_LPTMR_MODE(n) == kLPTMR_TimerModeTimeCounter) ? \
+			(DT_INST_PROP(n, clock_frequency) / MCUX_LPTMR_TIME_DIV(n)) : \
+			(DT_INST_PROP(n, clock_frequency) / MCUX_LPTMR_PULSE_DIV(n))))
+
+/* DT run-mode enum order: restart(0), free-run(1). Default: restart(0). */
+#define MCUX_LPTMR_IS_FREE_RUN(n) (DT_INST_ENUM_IDX_OR(n, run_mode, 0) == 1)
 
 #define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
 	static void mcux_lptmr_irq_config_##n(const struct device *dev)		\
@@ -167,8 +384,13 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	static void mcux_lptmr_irq_config_##n(const struct device *dev);	\
 										\
 	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&			\
-		DT_INST_PROP(n, prescale_glitch_filter) == 16),			\
-		"Pulse mode cannot have a glitch value of 16");			\
+		DT_INST_PROP(n, prescale_glitch_filter) > 15),			\
+		"prescale-glitch-filter must be in range 0..15");			\
+								\
+	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&			\
+		!MCUX_LPTMR_BYPASS(n) &&				\
+		DT_INST_PROP(n, prescale_glitch_filter) == 0),			\
+		"Pulse mode: prescale-glitch-filter=0 is invalid unless bypass is enabled");\
 										\
 	BUILD_ASSERT(DT_INST_PROP(n, resolution) <= 32 &&			\
 		DT_INST_PROP(n, resolution) > 0,				\
@@ -178,20 +400,20 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.info = {							\
 			.max_top_value =					\
 				GENMASK(DT_INST_PROP(n, resolution) - 1, 0),	\
-			.freq = DT_INST_PROP(n, clock_frequency) /		\
-				DT_INST_PROP(n, prescaler),			\
+			.freq = MCUX_LPTMR_EFFECTIVE_FREQ(n),			\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-			.channels = 0,						\
+			.channels = 1,						\
 		},								\
 		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
 		.clk_source = DT_INST_PROP(n, clk_source),			\
-		.bypass_prescaler_glitch =					\
-			1 - DT_INST_PROP(n, timer_mode_sel),			\
+		.bypass_prescaler_glitch = MCUX_LPTMR_BYPASS(n),	\
+		.free_running = MCUX_LPTMR_IS_FREE_RUN(n),			\
 		.mode = DT_INST_PROP(n, timer_mode_sel),			\
 		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
 		.polarity = DT_INST_PROP(n, active_low),			\
-		.prescaler_glitch = DT_INST_PROP(n, prescale_glitch_filter) +	\
-			DT_INST_PROP(n, timer_mode_sel) - 1,			\
+		.prescaler_glitch = (lptmr_prescaler_glitch_value_t)		\
+			MCUX_LPTMR_PRESCALE_GLITCH_VAL(n),			\
+		.irqn = DT_INST_IRQN(n),					\
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
 	};									\
 										\
@@ -200,6 +422,5 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		&mcux_lptmr_config_##n,						\
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
 		&mcux_lptmr_driver_api);
-
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)

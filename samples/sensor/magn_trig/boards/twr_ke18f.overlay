@@ -4,7 +4,6 @@
  * Copyright 2025 NXP
  */
 
-
 &fxos8700 {
 	status = "okay";
 	int1-gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;

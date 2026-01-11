@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro Limited.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +28,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <zephyr/arch/arm/misc.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +52,7 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret), "=r"(r1), "=r"(r2), "=r"(r3)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
@@ -72,6 +75,7 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret), "=r"(r1), "=r"(r2), "=r"(r3)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
@@ -92,6 +96,7 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret), "=r"(r1), "=r"(r2), "=r"(r3)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
@@ -111,6 +116,7 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret), "=r"(r1), "=r"(r2)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
@@ -127,6 +133,7 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret), "=r"(r1)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r6)
@@ -142,6 +149,7 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
@@ -155,6 +163,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
+			 IF_ENABLED(CONFIG_ARM_BTI, ("bti\n"))
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)

@@ -57,7 +57,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
-                 gdb_init=None, no_load=False,
+                 gdb_init=None, load=True,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE,
                  rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False):
         super().__init__(cfg)
@@ -65,8 +65,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if not path.exists(cfg.board_dir):
             # try to find the board support in-tree
             cfg_board_path = path.normpath(cfg.board_dir)
-            _temp_path = cfg_board_path.split("boards/")[1]
-            support = path.join(ZEPHYR_BASE, "boards", _temp_path, 'support')
+            boards_parent = cfg_board_path.split('boards')[0]
+            boards_and_below = path.relpath(cfg_board_path, boards_parent)
+            support = path.join(ZEPHYR_BASE, boards_and_below, 'support')
         else:
             support = path.join(cfg.board_dir, 'support')
 
@@ -117,7 +118,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.serial = ['-c set _ZEPHYR_BOARD_SERIAL ' + serial] if serial else []
         self.use_elf = use_elf
         self.gdb_init = gdb_init
-        self.load_arg = [] if no_load else ['-ex', 'load']
+        self.load_arg = ['-ex', 'load'] if load else []
         self.target_handle = target_handle
         self.rtt_port = rtt_port
         self.rtt_server = rtt_server
@@ -129,7 +130,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          rtt=True, erase=True)
+                          rtt=True, erase=True, skip_load=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -187,8 +188,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='if given, no init issued in gdb server cmd')
         parser.add_argument('--no-targets', action='store_true',
                             help='if given, no target issued in gdb server cmd')
-        parser.add_argument('--no-load', action='store_true',
-                            help='if given, no load issued in gdb server cmd')
         parser.add_argument('--target-handle', default=DEFAULT_OPENOCD_TARGET_HANDLE,
                             help=f'''Internal handle used in openocd targets cfg
                             files, defaults to "{DEFAULT_OPENOCD_TARGET_HANDLE}".
@@ -214,7 +213,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
-            no_load=args.no_load, target_handle=args.target_handle,
+            load=args.load, target_handle=args.target_handle,
             rtt_port=args.rtt_port, rtt_server=args.rtt_server)
 
     def print_gdbserver_message(self):
@@ -407,7 +406,12 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 + ['-c', f'rtt server start {self.rtt_port} 0']
             )
 
-        gdb_cmd = (self.gdb_cmd + self.tui_arg +
+        if command == 'rtt':
+            # Run GDB in batch mode. This will disable pagination automatically
+            gdb_args = ['--batch']
+        else:
+            gdb_args = []
+        gdb_cmd = (self.gdb_cmd + gdb_args + self.tui_arg +
                    ['-ex', f'target extended-remote :{self.gdb_client_port}',
                     self.elf_name])
         if command == 'debug':
@@ -421,8 +425,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             if rtt_address is None:
                 raise ValueError("RTT Control block not found")
 
-            # cannot prompt the user to press return for automation purposes
-            gdb_cmd.extend(['-ex', 'set pagination off'])
             # start the internal openocd rtt service via gdb monitor commands
             gdb_cmd.extend(
                 ['-ex', f'monitor rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"'])

@@ -546,7 +546,7 @@ static inline enum ieee802154_addressing_mode get_dst_addr_mode(struct net_linka
 	}
 
 	if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
-		uint16_t short_addr = ntohs(*(uint16_t *)(dst->addr));
+		uint16_t short_addr = net_ntohs(*(uint16_t *)(dst->addr));
 		*broadcast = (short_addr == IEEE802154_BROADCAST_ADDRESS);
 		return IEEE802154_ADDR_MODE_SHORT;
 	} else {
@@ -574,7 +574,7 @@ static inline bool data_addr_to_fs_settings(struct net_linkaddr *dst, struct iee
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 			fs->fc.ar = 0U;
 		} else if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
-			params->dst.short_addr = ntohs(*(uint16_t *)(dst->addr));
+			params->dst.short_addr = net_ntohs(*(uint16_t *)(dst->addr));
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
 			__ASSERT_NO_MSG(dst->len == IEEE802154_EXT_ADDR_LENGTH);
@@ -689,7 +689,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
 	if (src->len == IEEE802154_SHORT_ADDR_LENGTH) {
-		params.short_addr = ntohs(*(uint16_t *)(src->addr));
+		params.short_addr = net_ntohs(*(uint16_t *)(src->addr));
 		if (ctx->short_addr != params.short_addr) {
 			goto out;
 		}
@@ -792,8 +792,37 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi, struct ieee802154
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
+		if (params->dst.len == 0) {
+			/* If the Destination Addressing Mode subfield is set to zero (i.e.,
+			 * destination addressing information not present), the PAN ID
+			 * Compression subfield of the Frame Control field shall be set to zero
+			 * and the source PAN identifier shall contain the value of macPANId.
+			 *
+			 * This is the case only if the data request command is being
+			 * sent in response to the receipt of a beacon frame indicating that
+			 * data are pending for that device.
+			 */
+			fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_NONE;
+		} else {
+			/* Both short and extended dest addresses are supported.
+			 * It's up to the caller to configure it correctly.
+			 */
+			if (params->dst.len == IEEE802154_SHORT_ADDR_LENGTH) {
+				fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_SHORT;
+			} else {
+				fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+			}
+			fs->fc.pan_id_comp = 1U;
+		}
+
+		if (params->short_addr == IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
+			fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
+		} else {
+			fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_SHORT;
+		}
+
+		/* the Acknowledgment Request subfield is always set */
 		fs->fc.ar = 1U;
-		/* TODO: src/dst addr mode: see section 7.5.5 */
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
@@ -861,7 +890,7 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 	 * bigger than IEEE802154_MTU bytes less the FCS size, so let's allocate that
 	 * size as buffer.
 	 */
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, AF_UNSPEC, 0, BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, NET_AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		goto out;
 	}

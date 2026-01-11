@@ -12,7 +12,7 @@ config NUM_IRQS
 	default 220
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 5000000
+	default $(dt_nodelabel_int_prop,ttc0,clock-frequency)
 
 endif # SOC_XILINX_ZYNQMP_RPU
 

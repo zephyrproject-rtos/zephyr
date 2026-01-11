@@ -78,6 +78,10 @@ properties:
     type: boolean
     description: |
       Output AMCLK on the MCLK pin only effective when use-internal-clock is set
+  spi-cs-setup-delay-ns:
+    default: 1000
+  spi-cs-hold-delay-ns:
+    default: 1000
 
 io-channel-cells:
   - input

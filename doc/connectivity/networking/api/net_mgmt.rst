@@ -88,7 +88,7 @@ An example follows.
 
 	/*
 	 * Set of events to handle.
-	 * See e.g. include/net/net_event.h for some NET_EVENT_xxx values.
+	 * See e.g. include/zephyr/net/net_event.h for some NET_EVENT_xxx values.
 	 */
 	#define EVENT_IFACE_SET (NET_EVENT_IF_xxx | NET_EVENT_IF_yyy)
 	#define EVENT_IPV4_SET (NET_EVENT_IPV4_xxx | NET_EVENT_IPV4_yyy)

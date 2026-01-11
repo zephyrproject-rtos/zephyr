@@ -6,11 +6,10 @@
 
 import logging
 import struct
+from enum import IntEnum
 
 import elftools
 from elftools.elf.elffile import ELFFile
-from enum import IntEnum
-
 
 # ELF section flags
 SHF_WRITE = 0x1
@@ -18,6 +17,7 @@ SHF_ALLOC = 0x2
 SHF_EXEC = 0x4
 SHF_WRITE_ALLOC = SHF_WRITE | SHF_ALLOC
 SHF_ALLOC_EXEC = SHF_ALLOC | SHF_EXEC
+
 
 # Must match enum in thread_info.c
 class ThreadInfoOffset(IntEnum):
@@ -44,7 +44,7 @@ class ThreadInfoOffset(IntEnum):
 logger = logging.getLogger("parser")
 
 
-class CoredumpElfFile():
+class CoredumpElfFile:
     """
     Class to parse ELF file for memory content in various sections.
     There are read-only sections (e.g. text and rodata) where
@@ -78,7 +78,11 @@ class CoredumpElfFile():
         return self.kernel_thread_info_offsets is not None
 
     def get_kernel_thread_info_offset(self, thread_info_offset_index):
-        if self.has_kernel_thread_info() and thread_info_offset_index <= ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE:
+        if (
+            self.has_kernel_thread_info()
+            and thread_info_offset_index
+            <= ThreadInfoOffset.THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE
+        ):
             return self.kernel_thread_info_offsets[thread_info_offset_index]
         else:
             return None
@@ -96,14 +100,20 @@ class CoredumpElfFile():
         for section in self.elf.iter_sections():
             # Find symbols for _kernel_thread_info data
             if isinstance(section, elftools.elf.sections.SymbolTableSection):
-                _kernel_thread_info_offsets = section.get_symbol_by_name("_kernel_thread_info_offsets")
-                _kernel_thread_info_num_offsets = section.get_symbol_by_name("_kernel_thread_info_num_offsets")
-                _kernel_thread_info_size_t_size = section.get_symbol_by_name("_kernel_thread_info_size_t_size")
+                _kernel_thread_info_offsets = section.get_symbol_by_name(
+                    "_kernel_thread_info_offsets"
+                )
+                _kernel_thread_info_num_offsets = section.get_symbol_by_name(
+                    "_kernel_thread_info_num_offsets"
+                )
+                _kernel_thread_info_size_t_size = section.get_symbol_by_name(
+                    "_kernel_thread_info_size_t_size"
+                )
 
             # REALLY NEED to match exact type as all other sections
             # (debug, text, etc.) are descendants where
             # isinstance() would match.
-            if type(section) is not elftools.elf.sections.Section: # pylint: disable=unidiomatic-typecheck
+            if type(section) is not elftools.elf.sections.Section:  # pylint: disable=unidiomatic-typecheck
                 continue
 
             size = section['sh_size']
@@ -132,37 +142,49 @@ class CoredumpElfFile():
 
             if store:
                 mem_region = {"start": sec_start, "end": sec_end, "data": section.data()}
-                logger.info("ELF Section: 0x%x to 0x%x of size %d (%s)" %
-                            (mem_region["start"],
-                             mem_region["end"],
-                             len(mem_region["data"]),
-                             sect_desc))
+                logger.info(
+                    f'ELF Section: 0x{mem_region["start"]:x} to 0x{mem_region["end"]:x} '
+                    f'of size {mem_region["data"]:d} ({sect_desc:s})'
+                )
 
                 self.memory_regions.append(mem_region)
 
-        if _kernel_thread_info_size_t_size is not None and \
-           _kernel_thread_info_num_offsets is not None and \
-           _kernel_thread_info_offsets is not None:
+        if (
+            _kernel_thread_info_size_t_size is not None
+            and _kernel_thread_info_num_offsets is not None
+            and _kernel_thread_info_offsets is not None
+        ):
             for seg in self.elf.iter_segments():
                 if seg.header['p_type'] != 'PT_LOAD':
                     continue
 
                 # Store segment of kernel_thread_info_offsets
                 info_offsets_symbol = _kernel_thread_info_offsets[0]
-                if info_offsets_symbol['st_value'] >= seg['p_vaddr'] and info_offsets_symbol['st_value'] < seg['p_vaddr'] + seg['p_filesz']:
+                if (
+                    info_offsets_symbol['st_value'] >= seg['p_vaddr']
+                    and info_offsets_symbol['st_value'] < seg['p_vaddr'] + seg['p_filesz']
+                ):
                     kernel_thread_info_offsets_segment = seg
 
                 # Store segment of kernel_thread_info_num_offsets
                 num_offsets_symbol = _kernel_thread_info_num_offsets[0]
-                if num_offsets_symbol['st_value'] >= seg['p_vaddr'] and num_offsets_symbol['st_value'] < seg['p_vaddr'] + seg['p_filesz']:
+                if (
+                    num_offsets_symbol['st_value'] >= seg['p_vaddr']
+                    and num_offsets_symbol['st_value'] < seg['p_vaddr'] + seg['p_filesz']
+                ):
                     kernel_thread_info_num_offsets_segment = seg
 
                 # Read and store size_t size
                 size_t_size_symbol = _kernel_thread_info_size_t_size[0]
-                if size_t_size_symbol['st_value'] >= seg['p_vaddr'] and size_t_size_symbol['st_value'] < seg['p_vaddr'] + seg['p_filesz']:
+                if (
+                    size_t_size_symbol['st_value'] >= seg['p_vaddr']
+                    and size_t_size_symbol['st_value'] < seg['p_vaddr'] + seg['p_filesz']
+                ):
                     offset = size_t_size_symbol['st_value'] - seg['p_vaddr'] + seg['p_offset']
                     self.elf.stream.seek(offset)
-                    self.kernel_thread_info_size_t_size = struct.unpack('B', self.elf.stream.read(size_t_size_symbol['st_size']))[0]
+                    self.kernel_thread_info_size_t_size = struct.unpack(
+                        'B', self.elf.stream.read(size_t_size_symbol['st_size'])
+                    )[0]
 
             struct_format = "I"
             if self.kernel_thread_info_size_t_size == 8:
@@ -170,9 +192,15 @@ class CoredumpElfFile():
 
             # Read and store count of offset values
             num_offsets_symbol = _kernel_thread_info_num_offsets[0]
-            offset = num_offsets_symbol['st_value'] - kernel_thread_info_num_offsets_segment['p_vaddr'] + kernel_thread_info_num_offsets_segment['p_offset']
+            offset = (
+                num_offsets_symbol['st_value']
+                - kernel_thread_info_num_offsets_segment['p_vaddr']
+                + kernel_thread_info_num_offsets_segment['p_offset']
+            )
             self.elf.stream.seek(offset)
-            self.kernel_thread_info_num_offsets = struct.unpack(struct_format, self.elf.stream.read(num_offsets_symbol['st_size']))[0]
+            self.kernel_thread_info_num_offsets = struct.unpack(
+                struct_format, self.elf.stream.read(num_offsets_symbol['st_size'])
+            )[0]
 
             array_format = ""
             for _ in range(self.kernel_thread_info_num_offsets):
@@ -180,8 +208,14 @@ class CoredumpElfFile():
 
             # Read and store array of offset values
             info_offsets_symbol = _kernel_thread_info_offsets[0]
-            offset = info_offsets_symbol['st_value'] - kernel_thread_info_offsets_segment['p_vaddr'] + kernel_thread_info_offsets_segment['p_offset']
+            offset = (
+                info_offsets_symbol['st_value']
+                - kernel_thread_info_offsets_segment['p_vaddr']
+                + kernel_thread_info_offsets_segment['p_offset']
+            )
             self.elf.stream.seek(offset)
-            self.kernel_thread_info_offsets = struct.unpack(array_format, self.elf.stream.read(info_offsets_symbol['st_size']))
+            self.kernel_thread_info_offsets = struct.unpack(
+                array_format, self.elf.stream.read(info_offsets_symbol['st_size'])
+            )
 
         return True

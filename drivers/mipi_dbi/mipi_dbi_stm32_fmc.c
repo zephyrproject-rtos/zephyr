@@ -93,9 +93,11 @@ int mipi_dbi_stm32_fmc_command_write(const struct device *dev,
 
 	for (i = 0U; i < len; i++) {
 		sys_write16((uint16_t)data_buf[i], config->data_addr);
-		if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
-			barrier_dsync_fence_full();
-		}
+	}
+
+	if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER) && (len != 0U)) {
+		/* barrier is only needed if the loop wrote data */
+		barrier_dsync_fence_full();
 	}
 
 	return 0;
@@ -118,9 +120,10 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 
 	for (i = 0U; i < desc->buf_size; i += 2) {
 		sys_write16(sys_get_le16(&framebuf[i]), config->data_addr);
-		if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
-			barrier_dsync_fence_full();
-		}
+	}
+
+	if (IS_ENABLED(CONFIG_MIPI_DBI_STM32_FMC_MEM_BARRIER)) {
+		barrier_dsync_fence_full();
 	}
 
 	return 0;
@@ -182,8 +185,9 @@ static DEVICE_API(mipi_dbi, mipi_dbi_stm32_fmc_driver_api) = {
 	.write_display = mipi_dbi_stm32_fmc_write_display,
 };
 
-#define MIPI_DBI_FMC_GET_ADDRESS(n) _CONCAT(FMC_BANK1_,                                            \
-					UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n))))
+#define MIPI_DBI_FMC_GET_ADDRESS(n)                                                                \
+	DT_INST_PROP_OR(n, bank_address,                                                           \
+			_CONCAT(FMC_BANK1_, UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n)))))
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
 	MIPI_DBI_FMC_GET_ADDRESS(n) + (1 << (DT_INST_PROP(n, register_select_pin) + 1))

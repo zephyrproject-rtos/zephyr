@@ -16,7 +16,7 @@
 
 	chosen {
 		zephyr,sram = &cpu0_atcm;
-		zephyr,flash = &xspi0_cs0;
+		zephyr,flash = &mx25u51245g;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &sw1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -86,6 +87,12 @@
 	status = "okay";
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpio10 {
 	irqs = <5 2>;
 	status = "okay";
@@ -105,4 +112,36 @@
 
 &gpio23 {
 	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&xspi0 {
+	pinctrl-0 = <&xspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25u51245g: qspi-nor-flash@60000000 {
+		compatible = "renesas,rz-qspi-xspi";
+		reg = <0x60000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		write-block-size = <1>;
+		erase-block-size = <4096>;
+		status = "okay";
+	};
 };

@@ -201,7 +201,7 @@ static int uart_emul_config_get(const struct device *dev, struct uart_config *cf
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_emul_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
-	int ret;
+	int ret = 0;
 	struct uart_emul_data *data = dev->data;
 	const struct uart_emul_config *config = dev->config;
 	uint32_t put_size = MIN(config->latch_buffer_size, size);
@@ -223,7 +223,7 @@ static int uart_emul_fifo_read(const struct device *dev, uint8_t *rx_data, int s
 {
 	struct uart_emul_data *data = dev->data;
 	const struct uart_emul_config *config = dev->config;
-	uint32_t bytes_to_read;
+	uint32_t bytes_to_read = 0;
 
 	K_SPINLOCK(&data->rx_lock) {
 		bytes_to_read = MIN(config->latch_buffer_size, ring_buf_size_get(data->rx_rb));
@@ -312,7 +312,7 @@ static int uart_emul_irq_is_pending(const struct device *dev)
 
 static void uart_emul_irq_tx_enable(const struct device *dev)
 {
-	bool submit_irq_work;
+	bool submit_irq_work = false;
 	struct uart_emul_data *const data = dev->data;
 
 	K_SPINLOCK(&data->tx_lock) {
@@ -327,7 +327,7 @@ static void uart_emul_irq_tx_enable(const struct device *dev)
 
 static void uart_emul_irq_rx_enable(const struct device *dev)
 {
-	bool submit_irq_work;
+	bool submit_irq_work = false;
 	struct uart_emul_data *const data = dev->data;
 
 	K_SPINLOCK(&data->rx_lock) {
@@ -919,10 +919,10 @@ void uart_emul_callback_tx_data_ready_set(const struct device *dev,
 uint32_t uart_emul_put_rx_data(const struct device *dev, const uint8_t *data, size_t size)
 {
 	struct uart_emul_data *drv_data = dev->data;
-	uint32_t count;
-	__unused bool empty;
-	__unused bool irq_en;
-	__unused bool rx_en;
+	uint32_t count = 0;
+	__unused bool empty = false;
+	__unused bool irq_en = false;
+	__unused bool rx_en = false;
 
 	K_SPINLOCK(&drv_data->rx_lock) {
 		count = ring_buf_put(drv_data->rx_rb, data, size);

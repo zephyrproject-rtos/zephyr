@@ -141,14 +141,11 @@ typedef enum _wm8904_fs_ratio {
 /*! @brief Sample rate. */
 typedef enum _wm8904_sample_rate {
 	kWM8904_SampleRate8kHz    = 0x0, /*!< 8 kHz */
-	kWM8904_SampleRate12kHz   = 0x1, /*!< 12kHz */
+	kWM8904_SampleRate12kHz   = 0x1, /*!< 11.025kHz, 12kHz */
 	kWM8904_SampleRate16kHz   = 0x2, /*!< 16kHz */
-	kWM8904_SampleRate24kHz   = 0x3, /*!< 24kHz */
+	kWM8904_SampleRate24kHz   = 0x3, /*!< 22.05kHz, 24kHz */
 	kWM8904_SampleRate32kHz   = 0x4, /*!< 32kHz */
-	kWM8904_SampleRate48kHz   = 0x5, /*!< 48kHz */
-	kWM8904_SampleRate11025Hz = 0x6, /*!< 11.025kHz */
-	kWM8904_SampleRate22050Hz = 0x7, /*!< 22.05kHz */
-	kWM8904_SampleRate44100Hz = 0x8  /*!< 44.1kHz */
+	kWM8904_SampleRate48kHz   = 0x5, /*!< 44.1kHz, 48kHz */
 } wm8904_sample_rate_t;
 
 #endif /* ZEPHYR_INCLUDE_CODEC_WM8904_H_ */

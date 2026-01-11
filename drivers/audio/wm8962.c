@@ -506,7 +506,7 @@ static int wm8962_configure(const struct device *dev, struct audio_codec_cfg *cf
 	wm8962_write_reg(dev, WM8962_REG_POWER1, 0x1FE);
 	wm8962_write_reg(dev, WM8962_REG_POWER2, 0x1E0);
 
-	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_SLAVE) == I2S_OPT_FRAME_CLK_SLAVE) {
+	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_SLAVE) == 0) {
 		wm8962_set_master_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
 		wm8962_update_reg(dev, WM8962_REG_IFACE0, 1U << 6U, 1U << 6U);
 	}
@@ -718,7 +718,7 @@ static const struct audio_codec_api wm8962_driver_api = {.configure = wm8962_con
 #define wm8962_INIT(n)                                                                             \
 	static const struct wm8962_driver_config wm8962_device_config_##n = {                      \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.clock_source = DT_INST_PROP_OR(n, clk_source, 0),                                 \
+		.clock_source = DT_INST_ENUM_IDX(n, clock_source),                                 \
 		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
 		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)};  \
                                                                                                    \

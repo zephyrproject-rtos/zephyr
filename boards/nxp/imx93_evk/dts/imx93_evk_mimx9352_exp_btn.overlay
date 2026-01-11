@@ -20,13 +20,13 @@
 	keys {
 		compatible = "gpio-keys";
 
-		btn_1: btn_1{
+		btn_1: btn_1 {
 			label = "BTN1";
 			gpios = <&gpio_exp1 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
-		btn_2: btn_2{
+		btn_2: btn_2 {
 			label = "BTN2";
 			gpios = <&gpio_exp1 6 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;

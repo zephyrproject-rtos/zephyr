@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +58,15 @@ struct _preempt_float {
 	float  s29;
 	float  s30;
 	float  s31;
+};
+#endif
+
+#if defined(CONFIG_ARM_PAC_PER_THREAD)
+struct pac_keys {
+	uint32_t key_0;
+	uint32_t key_1;
+	uint32_t key_2;
+	uint32_t key_3;
 };
 #endif
 
@@ -128,11 +138,15 @@ struct _thread_arch {
 
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	uint32_t priv_stack_end;
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	uint32_t sp_usr;
 #endif
 #endif
+#endif
+
+#if defined(CONFIG_ARM_PAC_PER_THREAD)
+	struct pac_keys pac_keys;
 #endif
 };
 

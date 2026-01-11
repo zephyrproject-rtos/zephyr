@@ -8,11 +8,11 @@
 #include <zephyr/drivers/firmware/scmi/transport.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
+#include "mailbox.h"
 
 LOG_MODULE_REGISTER(scmi_core);
 
 #define SCMI_CHAN_LOCK_TIMEOUT_USEC 500
-#define SCMI_CHAN_SEM_TIMEOUT_USEC 500
 
 int scmi_status_to_errno(int scmi_status)
 {
@@ -87,21 +87,54 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
-static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
+static int scmi_interrupt_enable(struct scmi_channel *chan, bool enable)
+{
+	struct scmi_mbox_channel *mbox_chan;
+	struct mbox_dt_spec *tx_reply;
+	bool comp_int;
+
+	mbox_chan = chan->data;
+	comp_int = enable ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
+
+	if (mbox_chan->tx_reply.dev) {
+		tx_reply = &mbox_chan->tx_reply;
+	} else {
+		tx_reply = &mbox_chan->tx;
+	}
+
+	/* re-set completion interrupt */
+	scmi_shmem_update_flags(mbox_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT, comp_int);
+
+	return mbox_set_enabled_dt(tx_reply, enable);
+}
+
+static int scmi_send_message_polling(struct scmi_protocol *proto,
 					struct scmi_message *msg,
 					struct scmi_message *reply)
 {
 	int ret;
+	int status;
+
+	/*
+	 * SCMI communication interrupt is enabled by default during setup_chan
+	 * to support interrupt-driven communication. When using polling mode
+	 * it must be disabled to avoid unnecessary interrupts and
+	 * ensure proper polling behavior.
+	 */
+	status = scmi_interrupt_enable(proto->tx, false);
 
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {
-		return ret;
+		goto cleanup;
 	}
 
 	/* no kernel primitives, we're forced to poll here.
 	 *
 	 * Cortex-M quirk: no interrupts at this point => no timer =>
 	 * no timeout mechanism => this can block the whole system.
+	 *
+	 * Polling mode repeatedly checks the chan_status field in share memory
+	 * to detect whether the remote side have completed message processing
 	 *
 	 * TODO: is there a better way to handle this?
 	 */
@@ -113,10 +146,16 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 		return ret;
 	}
 
+cleanup:
+	/* restore scmi interrupt enable status when disable it pass */
+	if (status >= 0) {
+		scmi_interrupt_enable(proto->tx, true);
+	}
+
 	return ret;
 }
 
-static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
+static int scmi_send_message_interrupt(struct scmi_protocol *proto,
 					 struct scmi_message *msg,
 					 struct scmi_message *reply)
 {
@@ -140,7 +179,7 @@ static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
 	}
 
 	/* only one protocol instance can wait for a message reply at a time */
-	ret = k_sem_take(&proto->tx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
+	ret = k_sem_take(&proto->tx->sem, K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
 	if (ret < 0) {
 		LOG_ERR("failed to wait for msg reply");
 		goto out_release_mutex;
@@ -159,7 +198,7 @@ out_release_mutex:
 }
 
 int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
-		      struct scmi_message *reply)
+		      struct scmi_message *reply, bool use_polling)
 {
 	if (!proto->tx) {
 		return -ENODEV;
@@ -169,11 +208,50 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		return -EINVAL;
 	}
 
-	if (k_is_pre_kernel()) {
-		return scmi_send_message_pre_kernel(proto, msg, reply);
+	if (use_polling) {
+		return scmi_send_message_polling(proto, msg, reply);
 	} else {
-		return scmi_send_message_post_kernel(proto, msg, reply);
+		return scmi_send_message_interrupt(proto, msg, reply);
 	}
+}
+
+static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
+
+{
+	uint32_t agent_version, platform_version;
+	int ret;
+
+	if (!proto) {
+		return -EINVAL;
+	}
+
+	agent_version = proto->version;
+
+	if (!agent_version) {
+		LOG_ERR("Protocol 0x%X: Agent version not specified", proto->id);
+		return -EINVAL;
+	}
+
+	ret = scmi_protocol_get_version(proto, &platform_version);
+	if (ret < 0) {
+		LOG_ERR("Protocol 0x%X: Failed to get platform version: %d",
+			proto->id, ret);
+		return ret;
+	}
+
+	if (platform_version > agent_version) {
+		ret = scmi_protocol_version_negotiate(proto, agent_version);
+		if (ret < 0) {
+			LOG_WRN("Protocol 0x%X: Negotiation failed (%d). "
+				"Platform v0x%08x does not support downgrade to agent v0x%08x",
+				proto->id, ret, platform_version, agent_version);
+		}
+	}
+
+	LOG_INF("Using protocol 0x%X: agent version 0x%08x, platform version 0x%08x",
+			proto->id, agent_version, platform_version);
+
+	return 0;
 }
 
 static int scmi_core_protocol_setup(const struct device *transport)
@@ -196,6 +274,12 @@ static int scmi_core_protocol_setup(const struct device *transport)
 		if (ret < 0) {
 			return ret;
 		}
+
+		ret = scmi_core_protocol_negotiate(it);
+		if (ret < 0) {
+			return ret;
+		}
+
 	}
 
 	return 0;

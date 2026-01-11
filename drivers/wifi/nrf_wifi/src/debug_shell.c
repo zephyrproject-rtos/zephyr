@@ -9,7 +9,11 @@
  */
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
+#ifdef NRF71_ON_IPC
+#include <nrf71_wifi_ctrl.h>
+#else
 #include "host_rpu_umac_if.h"
+#endif
 #include "fmac_main.h"
 
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;

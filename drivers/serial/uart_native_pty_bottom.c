@@ -19,9 +19,8 @@
 #include <string.h>
 #include <pty.h>
 #include <fcntl.h>
-#include <sys/select.h>
-#include <unistd.h>
 #include <poll.h>
+#include <unistd.h>
 #include <nsi_tracing.h>
 
 #define ERROR nsi_print_error_and_exit
@@ -38,39 +37,35 @@
  * @retval -1 If no character was available to read
  * @retval -2 if the stdin is disconnected
  */
-int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char, int len)
+int np_uart_stdin_read_bottom(int in_f, unsigned char *p_char, int len)
 {
-	if (feof(stdin)) {
-		/*
-		 * The stdinput is fed from a file which finished or the user
-		 * pressed Ctrl+D
-		 */
-		return -2;
-	}
-
 	int n = -1;
-
 	int ready;
-	fd_set readfds;
-	static struct timeval timeout; /* just zero */
 
-	FD_ZERO(&readfds);
-	FD_SET(in_f, &readfds);
+	struct pollfd fds = {.fd = in_f, .events = POLLIN};
 
-	ready = select(in_f+1, &readfds, NULL, NULL, &timeout);
+	ready = poll(&fds, 1, 0);
 
 	if (ready == 0) {
 		return -1;
 	} else if (ready == -1) {
-		ERROR("%s: Error on select ()\n", __func__);
+		ERROR("%s: Error on poll ()\n", __func__);
+	}
+
+	if (len == 0) {
+		return 0;
 	}
 
 	n = read(in_f, p_char, len);
-	if ((n == -1) || (n == 0)) {
-		return -1;
-	}
 
-	return n;
+	if (n == 0) {
+		/* Attempting to read > 0 but getting 0 characters back
+		 * indicates we reached EOF
+		 */
+		return -2;
+	} else {
+		return n;
+	}
 }
 
 /**
@@ -111,7 +106,7 @@ int np_uart_slave_connected(int fd)
  * Attempt to connect a terminal emulator to the slave side of the pty
  * If -attach_uart_cmd=<cmd> is provided as a command line option, <cmd> will be
  * used. Otherwise, the default command,
- * CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD, will be used instead
+ * CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD, will be used instead
  */
 static void attach_to_pty(const char *slave_pty, const char *auto_attach_cmd)
 {
@@ -143,7 +138,7 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 	int ret;
 	int flags;
 
-	master_pty = posix_openpt(O_RDWR | O_NOCTTY);
+	master_pty = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
 	if (master_pty == -1) {
 		ERROR("Could not open a new PTY for the UART\n");
 	}
@@ -218,7 +213,7 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 		 * The connection of the client would cause the HUP flag to be
 		 * cleared, and in turn set again at disconnect.
 		 */
-		ret = open(slave_pty_name, O_RDWR | O_NOCTTY);
+		ret = open(slave_pty_name, O_RDWR | O_NOCTTY | O_CLOEXEC);
 		if (ret == -1) {
 			err_nbr = errno;
 			ERROR("%s: Could not open terminal from the slave side (%i,%s)\n",

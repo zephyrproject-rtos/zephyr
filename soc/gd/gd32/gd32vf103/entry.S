@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nuclei_csr.h"
+#include <nuclei_csr.h>
 
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/csr.h>

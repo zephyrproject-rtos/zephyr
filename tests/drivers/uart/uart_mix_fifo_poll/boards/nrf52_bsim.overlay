@@ -2,7 +2,6 @@
 
 #include "nrf52840dk_nrf52840.overlay"
 
-
 dut: &uart0 {
 	current-speed = <1000000>;
 };

@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/xg24/bgm24.dtsi>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+
+/ {
+	soc {
+		compatible = "silabs,bgm240pa32vna", "silabs,bgm24", "silabs,xg24", "silabs,efr32",
+			     "simple-bus";
+	};
+};
+
+&dcdc {
+	silabs,pfmx-peak-current-milliamp = <50>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1536)>;
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfrco {
+	precision-mode;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+};

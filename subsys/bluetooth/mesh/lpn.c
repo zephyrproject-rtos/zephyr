@@ -13,7 +13,6 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "crypto.h"
-#include "mesh.h"
 #include "net.h"
 #include "transport.h"
 #include "heartbeat.h"

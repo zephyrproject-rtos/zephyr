@@ -7,6 +7,7 @@ tests:
       - dma
     platform_allow:
       - frdm_k64f
+      - frdm_mcxe247
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1010_evk
       - mimxrt1050_evk/mimxrt1052/hyperflash

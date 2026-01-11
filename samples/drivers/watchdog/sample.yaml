@@ -22,16 +22,17 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
-      - panb511evb/nrf54l15/cpuflpr
-      - panb511evb/nrf54l15/cpuflpr/xip
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuflpr
+      - panb611evb/nrf54l15/cpuflpr/xip
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
@@ -73,7 +74,7 @@ tests:
       - nucleo_h755zi_q/stm32h755xx/m4
       - stm32h747i_disco/stm32h747xx/m4
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h753zi
   sample.drivers.watchdog.stm32_iwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
     filter: dt_compat_enabled("st,stm32-watchdog")
@@ -88,6 +89,7 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_u385rg_q
@@ -99,6 +101,21 @@ tests:
       - stm32h573i_dk
     integration_platforms:
       - nucleo_f103rb
+  sample.drivers.watchdog.stm32_iwdg_ewi:
+    extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
+    filter: dt_compat_enabled("st,stm32-watchdog")
+    extra_configs:
+      - CONFIG_IWDG_STM32_EARLY_WAKEUP=y
+    platform_allow:
+      - nucleo_h563zi
+      - nucleo_h7s3l8
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_u575zi_q
+      - b_u585i_iot02a
+      - nucleo_wba55cg
+    integration_platforms:
+      - nucleo_wba55cg
   sample.drivers.watchdog.gd32_fwdgt:
     filter: dt_compat_enabled("gd,gd32-fwdgt")
     extra_args: DTC_OVERLAY_FILE=boards/gd32_fwdgt.overlay

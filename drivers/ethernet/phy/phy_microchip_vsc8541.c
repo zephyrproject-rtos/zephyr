@@ -64,6 +64,7 @@ struct mc_vsc8541_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum vsc8541_interface microchip_interface_type;
+	enum phy_link_speed default_speeds;
 	uint8_t rgmii_rx_clk_delay;
 	uint8_t rgmii_tx_clk_delay;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -295,6 +296,7 @@ static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed
 static int phy_mc_vsc8541_init(const struct device *dev)
 {
 	struct mc_vsc8541_data *data = dev->data;
+	const struct mc_vsc8541_config *cfg = dev->config;
 	int ret;
 
 	data->active_page = -1;
@@ -315,6 +317,8 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 			K_NO_WAIT);
 
 	k_thread_name_set(&data->link_monitor_thread, "phy-link-mon");
+
+	phy_mc_vsc8541_cfg_link(dev, cfg->default_speeds, 0);
 
 	return 0;
 }
@@ -438,7 +442,6 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	reg_addr &= 0x00ff;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
-	mdio_bus_enable(cfg->mdio_dev);
 
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
@@ -453,7 +456,6 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	ret = mdio_read(cfg->mdio_dev, cfg->addr, reg_addr, data);
 
 read_end:
-	mdio_bus_disable(cfg->mdio_dev);
 	k_mutex_unlock(&dev_data->mutex);
 
 	return ret;
@@ -489,7 +491,6 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 	reg_addr &= 0x00ff;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
-	mdio_bus_enable(cfg->mdio_dev);
 
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
@@ -504,7 +505,6 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 	ret = mdio_write(cfg->mdio_dev, cfg->addr, reg_addr, data);
 
 write_end:
-	mdio_bus_disable(cfg->mdio_dev);
 	k_mutex_unlock(&dev_data->mutex);
 
 	return ret;
@@ -546,6 +546,7 @@ static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),         \
 		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),               \
 		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),               \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct mc_vsc8541_data mc_vsc8541_##n##_data;                                       \

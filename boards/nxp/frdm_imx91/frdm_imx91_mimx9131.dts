@@ -1,0 +1,116 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx9131.dtsi>
+#include "frdm_imx91-pinctrl.dtsi"
+
+/ {
+	model = "NXP FRDM-IMX91 A55";
+	compatible = "fsl,mimx91";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,sram = &dram;
+	};
+
+	dram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(1)>;
+	};
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&edma4_2 {
+	status = "disabled";
+};
+
+&sai3_2 {
+	status = "disabled";
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};
+
+&tpm2 {
+	status = "okay";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc1_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "disabled";
+	};
+};
+
+&usdhc2 {
+	pinctrl-0 = <&pinmux_usdhc2>;
+	pinctrl-1 = <&pinmux_usdhc2_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc2_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	pwr-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+	power-delay-ms = <20>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "disabled";
+	};
+};
+
+&enet {
+	status = "okay";
+};
+
+&enet_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: phy@2 {
+		compatible = "motorcomm,yt8521";
+		reg = <2>;
+		status = "okay";
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
+	};
+};

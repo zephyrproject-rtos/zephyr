@@ -28,7 +28,17 @@ extern "C" {
 
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	return arch_curr_cpu()->nested != 0U;
+	uint32_t nested;
+#ifdef CONFIG_SMP
+	unsigned int key;
+
+	key = arch_irq_lock();
+#endif
+	nested = arch_curr_cpu()->nested;
+#ifdef CONFIG_SMP
+	arch_irq_unlock(key);
+#endif
+	return nested != 0U;
 }
 
 #ifdef __cplusplus

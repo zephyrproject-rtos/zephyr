@@ -53,6 +53,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		heartbeat_led: led_0 {
 			gpios = <&mcu_gpio0 6 GPIO_ACTIVE_HIGH>;
 			label = "Heartbeat LED";
@@ -66,9 +67,11 @@
 	mcu_uart0_rx_default: mcu_uart0_rx_default {
 		pinmux = <K3_PINMUX(0x028, PIN_INPUT, MUX_MODE_0)>;
 	};
+
 	mcu_uart0_tx_default: mcu_uart0_tx_default {
 		pinmux = <K3_PINMUX(0x002C, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
 	mcu_gpio0_led_default: mcu_gpio0_led_default {
 		pinmux = <K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_7)>;
 	};

@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RENESAS_RZ
+	bool "Watchdog Driver for Renesas RZ"
+	default y
+	depends on DT_HAS_RENESAS_RZ_WDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select USE_RZ_FSP_WDT
+	help
+	  Enable watchdog driver for Renesas RZ
+
+if WDT_RENESAS_RZ
+
+config WDT_RENESAS_RZ_USE_ICU
+	bool "Watchdog generates interrupt requests signal"
+	default y
+	depends on SOC_SERIES_RZT2M || SOC_SERIES_RZN2L
+	help
+	  Watchdog generates interrupt requests signal
+
+endif # WDT_RENESAS_RZ

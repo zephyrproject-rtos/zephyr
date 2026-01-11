@@ -1,6 +1,6 @@
 # BH1790 BH1790 Optical Sensor for Heart Rate Monitor IC sensor configuration options
 
-# Copyright(c) 2025 Magpie Embedded
+# Copyright (c) 2025 Magpie Embedded
 # SPDX-License-Identifier: Apache-2.0
 
 config BH1790

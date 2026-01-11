@@ -1,0 +1,92 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MCXW2XX
+
+# MCXW23 uses SYSTICK timer as the kernel timer by default.
+# In case we need to switch to OS timer, then
+# define CONFIG_MCUX_OS_TIMER=y
+configdefault MCUX_OS_TIMER
+	default y if PM
+	default n if !PM
+
+config CORTEX_M_SYSTICK
+	default n if MCUX_OS_TIMER
+
+config NUM_IRQS
+	default 63
+
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768   if MCUX_OS_TIMER && PM
+	default 1000000 if MCUX_OS_TIMER && !PM
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 1024 if MCUX_OS_TIMER && PM
+	default 1000 if MCUX_OS_TIMER && !PM
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
+
+if BT
+
+config FPU
+	default y
+
+config BT_BUF_ACL_TX_COUNT
+	default 8
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2048
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # BT
+
+if PM
+
+# Enable PM_DEVICE for Suspend mode and Standby mode,
+# because some devices can't work in these modes.
+configdefault PM_DEVICE
+	default y if "$(dt_nodelabel_enabled,standby)" || "$(dt_nodelabel_enabled,suspend)"
+
+configdefault PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE
+
+configdefault IDLE_STACK_SIZE
+	default 640
+
+configdefault TICKLESS_KERNEL
+	default y
+
+choice PM_PREWAKEUP_CONV_MODE
+	default PM_PREWAKEUP_CONV_MODE_CEIL
+endchoice # PM_PREWAKEUP_CONV_MODE
+
+configdefault MCUX_OS_TIMER_MIN_DELAY
+	default 100
+
+if BT
+choice PM_POLICY
+	default PM_POLICY_CUSTOM
+endchoice
+endif # BT
+
+endif # PM
+
+if PM_DEVICE
+
+configdefault POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
+endif # SOC_SERIES_MCXW2XX

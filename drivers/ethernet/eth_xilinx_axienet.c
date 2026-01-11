@@ -1,7 +1,7 @@
 /*
  * Xilinx AXI 1G / 2.5G Ethernet Subsystem
  *
- * Copyright(c) 2024, CISPA Helmholtz Center for Information Security
+ * Copyright (c) 2024, CISPA Helmholtz Center for Information Security
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -150,7 +150,8 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 	data->rx_completed_buffer_index = next_descriptor;
 
 	packet_size = dma_xilinx_axi_dma_last_received_frame_length(dma);
-	pkt = net_pkt_rx_alloc_with_buffer(data->interface, packet_size, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(data->interface, packet_size,
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	if (!pkt) {
 		LOG_ERR("Could not allocate a packet!");
@@ -388,7 +389,6 @@ static int xilinx_axienet_get_config(const struct device *dev, enum ethernet_con
 				     struct ethernet_config *config)
 {
 	const struct xilinx_axienet_config *dev_config = dev->config;
-	const struct xilinx_axienet_data *data = dev->data;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
@@ -533,13 +533,6 @@ static int xilinx_axienet_probe(const struct device *dev)
 	xilinx_axienet_write_register(config,
 				      XILINX_AXIENET_RECEIVER_CONFIGURATION_FLOW_CONTROL_OFFSET,
 				      XILINX_AXIENET_RECEIVER_CONFIGURATION_FLOW_CONTROL_EN_MASK);
-
-	/* at time of writing, hardware does not support half duplex */
-	err = phy_configure_link(config->phy,
-				 LINK_FULL_10BASE | LINK_FULL_100BASE | LINK_FULL_1000BASE, 0);
-	if (err) {
-		LOG_WRN("Could not configure PHY: %d", -err);
-	}
 
 	LOG_INF("RX Checksum offloading %s",
 		config->have_rx_csum_offload ? "requested" : "disabled");

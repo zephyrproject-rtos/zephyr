@@ -127,7 +127,7 @@ Testing
 *******
 
 The stack has been informally tested using the
-`Linux ptp4l <http://linuxptp.sourceforge.net/>`_ daemons.
+`Linux ptp4l <https://linuxptp.sourceforge.net/>`_ daemons.
 The :zephyr:code-sample:`PTP sample application <ptp>` from the Zephyr
 source distribution can be used for testing.
 

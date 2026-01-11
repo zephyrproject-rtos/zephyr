@@ -170,21 +170,21 @@ static struct ll_conn conn;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 #if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
-bool ull_handle_cpr_anchor_point_move(struct ll_conn *conn, uint16_t *offsets, uint8_t *status)
+bool ull_handle_cpr_anchor_point_move(struct ll_conn *llconn, uint16_t *offsets, uint8_t *status)
 {
 	ztest_copy_return_data(status, 1);
 	return ztest_get_return_value();
 }
 #endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 
-static void test_unmask_feature_conn_param_req(struct ll_conn *conn)
+static void test_unmask_feature_conn_param_req(struct ll_conn *llconn)
 {
-	conn->llcp.fex.features_used &= ~BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
+	llconn->llcp.fex.features_used &= ~BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 }
 
-static bool test_get_feature_conn_param_req(struct ll_conn *conn)
+static bool test_get_feature_conn_param_req(struct ll_conn *llconn)
 {
-	return (conn->llcp.fex.features_used & BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ));
+	return (llconn->llcp.fex.features_used & BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ));
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
@@ -206,9 +206,9 @@ static void conn_update_setup(void *data)
 	lll->event_counter = 0;
 }
 
-static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
+static bool is_instant_reached(struct ll_conn *llconn, uint16_t instant)
 {
-	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
+	return ((event_counter(llconn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)

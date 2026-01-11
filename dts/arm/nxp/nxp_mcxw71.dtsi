@@ -6,6 +6,20 @@
 
 #include "nxp_mcxw7x_common.dtsi"
 
+&fast_peripheral1 {
+	smu2: smu2@1c0000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		rpmsgmem: memory@8800 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x8800 DT_SIZE_K(6)>;
+			zephyr,memory-region = "rpmsg_sh_mem";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		};
+	};
+};
+
 &fmu {
 	ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
 };
@@ -24,17 +38,10 @@
 
 &stcm {
 	ranges = <0x0 0x30000000 DT_SIZE_K(112)>;
-
-	stcm1: system_memory@1a000 {
-		compatible = "zephyr,memory-region","mmio-sram";
-		reg = <0x1a000 DT_SIZE_K(8)>;
-		zephyr,memory-region = "RetainedMem";
-	};
 };
 
 &stcm0 {
-	/* With only the first 64KB having ECC */
-	reg = <0x0 DT_SIZE_K(104)>;
+	reg = <0x0 DT_SIZE_K(112)>;
 };
 
 &pbridge2 {

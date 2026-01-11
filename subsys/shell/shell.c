@@ -158,15 +158,6 @@ static void tab_item_print(const struct shell *sh, const char *option,
 	z_shell_op_cursor_horiz_move(sh, diff);
 }
 
-static void history_init(const struct shell *sh)
-{
-	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-		return;
-	}
-
-	z_shell_history_init(sh->history);
-}
-
 static void history_purge(const struct shell *sh)
 {
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
@@ -346,7 +337,7 @@ static void find_completion_candidates(const struct shell *sh,
 		is_candidate = is_completion_candidate(candidate->syntax,
 						incompl_cmd, incompl_cmd_len);
 		if (is_candidate) {
-			*longest = Z_MAX(strlen(candidate->syntax), *longest);
+			*longest = max(strlen(candidate->syntax), *longest);
 			if (*cnt == 0) {
 				*first_idx = idx;
 			}
@@ -555,18 +546,18 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 
 	if (!ret_val) {
 #if CONFIG_SHELL_GETOPT
-		getopt_init();
+		sys_getopt_init();
 #endif
 
 		z_flag_cmd_ctx_set(sh, true);
 		/* Unlock thread mutex in case command would like to borrow
 		 * shell context to other thread to avoid mutex deadlock.
 		 */
-		k_mutex_unlock(&sh->ctx->wr_mtx);
+		z_shell_unlock(sh);
 		ret_val = sh->ctx->active_cmd.handler(sh, argc,
 							 (char **)argv);
 		/* Bring back mutex to shell thread. */
-		k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+		z_shell_lock(sh);
 		z_flag_cmd_ctx_set(sh, false);
 	}
 
@@ -812,6 +803,21 @@ static int execute(const struct shell *sh)
 			&argv[cmd_with_handler_lvl], &help_entry);
 }
 
+static void toggle_logs_output(const struct shell *sh)
+{
+	const struct shell_log_backend *backend = sh->log_backend;
+
+	if (!IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+		return;
+	}
+
+	if (backend->control_block->state == SHELL_LOG_BACKEND_ENABLED) {
+		z_shell_log_backend_disable(backend);
+	} else if (backend->control_block->state == SHELL_LOG_BACKEND_DISABLED) {
+		z_shell_log_backend_enable(backend, (void *)sh, sh->ctx->log_level);
+	}
+}
+
 static void tab_handle(const struct shell *sh)
 {
 	const char *__argv[CONFIG_SHELL_ARGC_MAX + 1];
@@ -926,6 +932,10 @@ static void ctrl_metakeys_handle(const struct shell *sh, char data)
 		history_handle(sh, true);
 		break;
 
+	case SHELL_VT100_ASCII_CTRL_T: /* CTRL + T */
+		toggle_logs_output(sh);
+		break;
+
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
 		z_shell_op_cursor_home_move(sh);
 		cmd_buffer_clear(sh);
@@ -977,6 +987,7 @@ static void state_collect(const struct shell *sh)
 
 	while (true) {
 		shell_bypass_cb_t bypass = sh->ctx->bypass;
+		void *bypass_user_data = sh->ctx->bypass_user_data;
 
 		if (bypass) {
 #if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
@@ -989,7 +1000,18 @@ static void state_collect(const struct shell *sh)
 							sizeof(buf), &count);
 			if (count) {
 				z_flag_cmd_ctx_set(sh, true);
-				bypass(sh, buf, count);
+				/** Unlock the shell mutex before calling the bypass function,
+				 * allowing shell APIs (e.g. shell_print()) to be used inside it.
+				 * Since these APIs require the mutex to be unlocked,
+				 * we temporarily leave the shell context and transfer control
+				 * to the bypass function.
+				 */
+				z_shell_unlock(sh);
+				bypass(sh, buf, count, bypass_user_data);
+				/* After returning, we're back in the shell context — re-acquire
+				 * the shell mutex on the shell thread.
+				 */
+				z_shell_lock(sh);
 				z_flag_cmd_ctx_set(sh, false);
 				/* Check if bypass mode ended. */
 				if (!(volatile shell_bypass_cb_t *)sh->ctx->bypass) {
@@ -1214,10 +1236,8 @@ static int instance_init(const struct shell *sh,
 		sh->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
 	}
 
-	history_init(sh);
-
 	k_event_init(&sh->ctx->signal_event);
-	k_mutex_init(&sh->ctx->wr_mtx);
+	k_sem_init(&sh->ctx->lock_sem, 1, 1);
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		sh->stats->log_lost_cnt = 0;
@@ -1342,7 +1362,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			     false,
 			     K_FOREVER);
 
-		k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+		z_shell_lock(sh);
 
 		shell_signal_handle(sh, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(sh, SHELL_SIGNAL_RXRDY, shell_process);
@@ -1355,7 +1375,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			sh->iface->api->update(sh->iface);
 		}
 
-		k_mutex_unlock(&sh->ctx->wr_mtx);
+		z_shell_unlock(sh);
 	}
 }
 
@@ -1393,6 +1413,7 @@ void shell_uninit(const struct shell *sh, shell_uninit_cb_t cb)
 	__ASSERT_NO_MSG(sh);
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		sh->ctx->uninit_cb = cb;
 		k_event_post(&sh->ctx->signal_event, SHELL_SIGNAL_KILL);
 		return;
 	}
@@ -1420,7 +1441,7 @@ int shell_start(const struct shell *sh)
 		z_shell_log_backend_enable(sh->log_backend, (void *)sh, sh->ctx->log_level);
 	}
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return -EBUSY;
 	}
 
@@ -1442,7 +1463,7 @@ int shell_start(const struct shell *sh)
 	 */
 	z_shell_backend_rx_buffer_flush(sh);
 
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 
 	return 0;
 }
@@ -1524,7 +1545,7 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 		return;
 	}
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return;
 	}
 
@@ -1537,7 +1558,7 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	}
 	z_transport_buffer_flush(sh);
 
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 }
 
 /* These functions mustn't be used from shell context to avoid deadlock:
@@ -1664,12 +1685,12 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 
 	size_t prompt_length = z_shell_strlen(prompt);
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return -EBUSY;
 	}
 
 	if ((prompt_length + 1 > CONFIG_SHELL_PROMPT_BUFF_SIZE) || (prompt_length == 0)) {
-		k_mutex_unlock(&sh->ctx->wr_mtx);
+		z_shell_unlock(sh);
 		return -EINVAL;
 	}
 
@@ -1677,7 +1698,7 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 
 	sh->ctx->vt100_ctx.cons.name_len = prompt_length;
 
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 
 	return 0;
 #else
@@ -1687,11 +1708,11 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 
 void shell_help(const struct shell *sh)
 {
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return;
 	}
 	shell_internal_help_print(sh);
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 }
 
 int shell_execute_cmd(const struct shell *sh, const char *cmd)
@@ -1722,11 +1743,11 @@ int shell_execute_cmd(const struct shell *sh, const char *cmd)
 	sh->ctx->cmd_buff_len = cmd_len;
 	sh->ctx->cmd_buff_pos = cmd_len;
 
-	if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
 		return -ENOEXEC;
 	}
 	ret_val = execute(sh);
-	k_mutex_unlock(&sh->ctx->wr_mtx);
+	z_shell_unlock(sh);
 
 	cmd_buffer_clear(sh);
 
@@ -1796,11 +1817,12 @@ int shell_mode_delete_set(const struct shell *sh, bool val)
 	return (int)z_flag_mode_delete_set(sh, val);
 }
 
-void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass, void *user_data)
 {
 	__ASSERT_NO_MSG(sh);
 
 	sh->ctx->bypass = bypass;
+	sh->ctx->bypass_user_data = user_data;
 
 	if (bypass == NULL) {
 		cmd_buffer_clear(sh);
@@ -1839,7 +1861,7 @@ static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 #if defined(CONFIG_SHELL_METAKEYS)
 	shell_print(sh,
 		"\nShell supports following meta-keys:\n"
-		"  Ctrl + (a key from: abcdefklnpuw)\n"
+		"  Ctrl + (a key from: abcdefklnptuw)\n"
 		"  Alt  + (a key from: bf)\n"
 		"Please refer to shell documentation for more details.");
 #endif

@@ -24,12 +24,16 @@ Hardware
 ********
 
 - Main Compute Subsystem:
-   - Arm Cortex-M33 up to 325 MHz
-   - HiFi 4 DSP up to 325 MHz
-   - eIQ Neutron NPU up to 325 MHz
-- Sense Compute Subsystem:
-   - Arm Cortex-M33 up to 250 MHz
-   - HiFi 1 DSP up to 250 MHz
+
+  - Arm Cortex-M33 up to 325 MHz
+  - HiFi 4 DSP up to 325 MHz
+  - eIQ Neutron NPU up to 325 MHz
+
+- Sense Compute Subsystem
+
+  - Arm Cortex-M33 up to 250 MHz
+  - HiFi 1 DSP up to 250 MHz
+
 - 7.5 MB on-chip SRAM
 - Three xSPI interfaces for off-chip memory expansion, supporting up to 16b wide external memories up to 250 MHz DDR
 - eUSB support with integrated PHY
@@ -128,6 +132,18 @@ To build the hello_world sample for the i.MX RT700 HiFi 4 DSP core:
    :board: mimxrt700_evk/mimxrt798s/hifi4
    :goals: build
 
+Multicore Core Operation
+************************
+
+The MIMXRT700-EVK supports multicore core operation with all cores, the Cortex-M33 CPU0, Cortex-M33 CPU1,
+HiFi1 DSP and HiFi4 DSP.
+By default, the CM33 CPU0 core is the boot core and is responsible for initializing the system and
+starting the CM33 CPU1 core and/or HiFi4 DSP.
+The CM33 CPU1 is responsible to boot the HiFi1 DSP.
+
+Usually boot process is that core responsible for booting the secondary core(s) will copy its firmware/image
+to the designated memory location and then release the secondary core from reset.
+
 Programming and Debugging
 *************************
 
@@ -213,8 +229,7 @@ should see the following message in the terminal:
    *** Booting Zephyr OS v3.7.0 ***
    Hello World! mimxrt700_evk/mimxrt798s/cm33_cpu0
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _i.MX RT700 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt700-crossover-mcu-with-arm-cortex-m33-npu-dsp-and-gpu-cores:i.MX-RT700
@@ -239,6 +254,38 @@ for a list). The display sample can be built for this module like so:
 .. zephyr-app-commands::
    :board: mimxrt700_evk
    :shield: g1120b0mipi
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
+NXP RK055HDMIPI4MA0 720p MIPI Display
+=====================================
+
+The :ref:`rk055hdmipi4ma0` connects to the board's MIPI connector J52
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/rk055hdmipi4ma0/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). This panel has a 720p resolution which needs large frame buffer(s) so PSRAM memory
+region must be used, which needs to connect JP45 1-2. The display sample can be built for this
+module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: rk055hdmipi4ma0
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
+NXP ZC143AC72MIPI MIPI Display
+==============================
+
+The :ref:`zc143ac72mipi` connects to the board's MIPI connector J26
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/zc143ac72mipi/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk
+   :shield: zc143ac72mipi
    :zephyr-app: samples/drivers/display
    :goals: build
    :compact:

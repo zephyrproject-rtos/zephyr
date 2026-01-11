@@ -7,11 +7,11 @@
 /dts-v1/;
 
 #include <renesas/rx-qemu.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Renesas QEMU";
-	compatible = "qemu,rx","renesas,rxv1";
+	compatible = "qemu,rx";
 
 	chosen {
 		zephyr,sram = &sram0;

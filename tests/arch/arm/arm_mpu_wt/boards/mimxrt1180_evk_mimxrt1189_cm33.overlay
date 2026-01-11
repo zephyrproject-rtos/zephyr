@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		test-dma = &edma3;
+		test-memory = &ocram2;
+	};
+};
+
+&ocram2 {
+	zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_WT>;
+};

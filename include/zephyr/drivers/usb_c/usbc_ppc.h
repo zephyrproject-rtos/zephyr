@@ -12,6 +12,13 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_
 
+/**
+ * @brief USB Type-C Power Path Controller
+ * @defgroup usb_type_c_power_path_controller USB Type-C Power Path Controller
+ * @ingroup usb_type_c
+ * @{
+ */
+
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <errno.h>
@@ -273,5 +280,9 @@ static inline int ppc_dump_regs(const struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_ */

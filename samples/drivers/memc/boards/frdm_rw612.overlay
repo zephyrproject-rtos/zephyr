@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,11 +26,11 @@
 	pinmux_flexspi_safe: pinmux-flexspi-safe {
 		group0 {
 			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO35
-				IO_MUX_QUAD_SPI_PSRAM_IO36
-				IO_MUX_QUAD_SPI_PSRAM_IO38
-				IO_MUX_QUAD_SPI_PSRAM_IO39
-				IO_MUX_QUAD_SPI_PSRAM_IO40
-				IO_MUX_QUAD_SPI_PSRAM_IO41>;
+				  IO_MUX_QUAD_SPI_PSRAM_IO36
+				  IO_MUX_QUAD_SPI_PSRAM_IO38
+				  IO_MUX_QUAD_SPI_PSRAM_IO39
+				  IO_MUX_QUAD_SPI_PSRAM_IO40
+				  IO_MUX_QUAD_SPI_PSRAM_IO41>;
 			slew-rate = "normal";
 		};
 
@@ -48,4 +48,6 @@
 &flexspi {
 	pinctrl-0 = <&pinmux_flexspi_safe>;
 	pinctrl-names = "default";
+	rx-buffer-config = <1 0 10 512>, <0 0 0 0>, <0 0 0 0>, <0 0 0 0>,
+			   <0 0 0 0>, <0 0 0 0>, <0 0 0 0>, <1 0 0 512>;
 };

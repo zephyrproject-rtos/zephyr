@@ -8,4 +8,4 @@
  * mimxrt685_evk/mimxrt685s/cm33 Short J27-1 to J27-2
  */
 
-dut: &flexcomm4 { };
+dut: &flexcomm4 {};

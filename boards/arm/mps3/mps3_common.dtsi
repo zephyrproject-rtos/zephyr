@@ -22,42 +22,52 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&gpio_led0 0>;
 			label = "USERLED0";
 		};
+
 		led_1: led_1 {
 			gpios = <&gpio_led0 1>;
 			label = "USERLED1";
 		};
+
 		led_2: led_2 {
 			gpios = <&gpio_led0 2>;
 			label = "USERLED2";
 		};
+
 		led_3: led_3 {
 			gpios = <&gpio_led0 3>;
 			label = "USERLED3";
 		};
+
 		led_4: led_4 {
 			gpios = <&gpio_led0 4>;
 			label = "USERLED4";
 		};
+
 		led_5: led_5 {
 			gpios = <&gpio_led0 5>;
 			label = "USERLED5";
 		};
+
 		led_6: led_6 {
 			gpios = <&gpio_led0 6>;
 			label = "USERLED6";
 		};
+
 		led_7: led_7 {
 			gpios = <&gpio_led0 7>;
 			label = "USERLED7";
 		};
+
 		led_8: led_8 {
 			gpios = <&gpio_led0 8>;
 			label = "PB1LED";
 		};
+
 		led_9: led_9 {
 			gpios = <&gpio_led0 9>;
 			label = "PB2LED";
@@ -66,11 +76,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "USERPB0";
 			gpios = <&gpio_button 0>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "USERPB1";
 			gpios = <&gpio_button 1>;
@@ -83,8 +95,9 @@
 		/* 0 - CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE> */
 		reg = <0x0 0x400>;
 		zephyr,memory-region = "NULL_PTR_DETECT";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_FLASH) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
+
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
 	ddr4: memory@60000000 {
 		device_type = "memory";

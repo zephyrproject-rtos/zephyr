@@ -142,8 +142,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-xxx-gxxxxxxxxxxxx *****
    Hello World! twr_kv58f220m
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _TWR-KV58F220M Website:
    https://www.nxp.com/TWR-KV58F220M

@@ -1,0 +1,41 @@
+# Renesas RX Watchdog configuration
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RENESAS_RX_IWDT
+	bool "Renesas RX Series Independent Watchdog Driver"
+	default y
+	depends on DT_HAS_RENESAS_RX_IWDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT if WDT_RENESAS_RX_IWDT_REGISTER_START_MODE
+	select USE_RX_RDP_IWDT
+	help
+	  Enable Renesas RX series watchdog driver.
+
+if WDT_RENESAS_RX_IWDT
+
+config WDT_RENESAS_RX_IWDT_USE_NMI
+	bool "Non-maskable interrupt for IWDT"
+	default y
+	help
+	  Enable NMI for IWDT.
+
+choice
+	prompt "IWDT Start Mode"
+	default WDT_RENESAS_RX_IWDT_REGISTER_START_MODE
+	help
+	  Select the IWDT start mode.
+	  - WDT_RENESAS_RX_IWDT_AUTO_START_MODE: Counting automatically starts after a reset
+	  (auto-start mode), controlled by option function select register 0 (OFS0).
+	  - WDT_RENESAS_RX_IWDT_REGISTER_START_MODE: Counting is started by refreshing the counter.
+	  (controlled by the IWDT registers)
+
+config WDT_RENESAS_RX_IWDT_AUTO_START_MODE
+	bool "Start IWDT automatically on reset"
+
+config WDT_RENESAS_RX_IWDT_REGISTER_START_MODE
+	bool "IWDT Start Mode Select"
+
+endchoice
+
+endif # WDT_RENESAS_RX_IWDT

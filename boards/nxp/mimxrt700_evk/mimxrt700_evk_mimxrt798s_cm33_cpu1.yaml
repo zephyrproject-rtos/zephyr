@@ -19,4 +19,6 @@ supported:
   - uart
   - adc
   - i3c
+  - flash
+  - memc
 vendor: nxp

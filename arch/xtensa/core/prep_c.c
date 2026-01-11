@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
-#include <kernel_internal.h>
+#include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/platform/hooks.h>
-#include <zephyr/arch/cache.h>
+#include <zephyr/cache.h>
+#include <zephyr/arch/common/init.h>
 
 extern FUNC_NORETURN void z_cstart(void);
 
@@ -27,11 +29,10 @@ BUILD_ASSERT(CONFIG_DCACHE_LINE_SIZE == XCHAL_DCACHE_LINESIZE);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
+
 #if CONFIG_SOC_HAS_RUNTIME_NUM_CPUS
 	soc_num_cpus_init();
 #endif
@@ -83,6 +84,9 @@ void z_prep_c(void)
 #endif
 #if CONFIG_ARCH_CACHE
 	arch_cache_init();
+#endif
+#if CONFIG_SOC_CACHE
+	soc_cache_init();
 #endif
 
 #ifdef CONFIG_XTENSA_MMU

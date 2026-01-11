@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-mbox Devicetree MBOX API
  * @ingroup devicetree
+ * @ingroup mbox_interface
  * @{
  */
 

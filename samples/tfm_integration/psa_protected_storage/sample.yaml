@@ -11,6 +11,7 @@ common:
     - bl5340_dvk/nrf5340/cpuapp/ns
     - lpcxpresso55s69/lpc55s69/cpu0/ns
     - max32657evkit/max32657/ns
+    - stm32h573i_dk/stm32h573xx/ns
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console

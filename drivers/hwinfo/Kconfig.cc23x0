@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_CC23X0
+	bool "TI CC23X0 hwinfo"
+	default y
+	depends on SOC_FAMILY_TI_SIMPLELINK && SOC_SERIES_CC23X0
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable CC23X0 hwinfo driver.

@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library_sources_ifdef(CONFIG_RISCV_CUSTOM_CSR_THEAD_CMO cache_xtheadcmo.c)
+zephyr_library_sources_ifdef(CONFIG_RISCV_CUSTOM_CSR_THEAD_CMO_E907 cache_xtheadcmo_e907.c)

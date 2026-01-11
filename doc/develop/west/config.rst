@@ -227,6 +227,9 @@ commands are documented in the pages for those commands.
            +foo,,-bar
            +foo,-bar
 
+   * - ``update.auto-cache``
+     - String. If non-empty, ``west update`` will use its value as the
+       ``--auto-cache`` option's value if not given on the command line.
    * - ``update.fetch``
      - String, one of ``"smart"`` (the default behavior starting in v0.6.1) or
        ``"always"`` (the previous behavior). If set to ``"smart"``, the

@@ -1,0 +1,26 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxe247
+name: NXP FRDM-MCXE247
+type: mcu
+arch: arm
+ram: 128
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - uart
+  - i2c
+  - spi
+  - gpio
+  - adc
+  - arduino_gpio
+  - comparator
+  - dma
+vendor: nxp

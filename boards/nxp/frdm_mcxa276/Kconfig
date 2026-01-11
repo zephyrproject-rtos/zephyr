@@ -1,5 +1,0 @@
-# Copyright 2025 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_FRDM_MCXA276
-	select BOARD_EARLY_INIT_HOOK

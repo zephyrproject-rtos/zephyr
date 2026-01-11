@@ -45,8 +45,7 @@ Time scale instants can be represented in multiple ways including:
 
 * Seconds since an epoch. POSIX representations of time in this form include
   ``time_t`` and ``struct timespec``, which are generally interpreted as a
-  representation of `"UNIX Time"
-  <https://tools.ietf.org/html/rfc8536#section-2>`__.
+  representation of "UNIX Time" (see :rfc:`8536#section-2`).
 
 * Calendar time as a year, month, day, hour, minutes, and seconds relative to
   an epoch. POSIX representations of time in this form include ``struct tm``.
@@ -250,17 +249,15 @@ influenced by longitude, but the offset may be adjusted ("daylight
 saving time") to align standard time to the local solar time. In a sense
 local time is "more discontinuous" than UT.
 
-`POSIX Time <https://tools.ietf.org/html/rfc8536#section-2>`__ is a time scale
-that counts seconds since the "POSIX epoch" at 1970-01-01T00:00:00Z (i.e. the
-start of 1970 UTC). `UNIX Time
-<https://tools.ietf.org/html/rfc8536#section-2>`__ is an extension of POSIX
+POSIX Time (see :rfc:`8536#section-2`) is a time scale
+that counts seconds since the "POSIX epoch" at 1970-01-01T00:00:00Z (i.e. the
+start of 1970 UTC). UNIX Time is an extension of POSIX
 time using negative values to represent times before the POSIX epoch. Both of
 these scales assume that every day has exactly 86400 seconds. In normal use
 instants in these scales correspond to times in the UTC scale, so they inherit
 the discontinuity.
 
-The continuous analogue is `UNIX Leap Time
-<https://tools.ietf.org/html/rfc8536#section-2>`__ which is UNIX time plus all
+The continuous analogue is UNIX Leap Time which is UNIX time plus all
 leap-second corrections added after the POSIX epoch (when TAI-UTC was 8 s).
 
 Example of Time Scale Differences
@@ -348,15 +345,6 @@ since C11. The definition of ``struct timespec`` is as shown below.
        time_t tv_sec;  /* seconds */
        long   tv_nsec; /* nanoseconds */
    };
-
-.. _note:
-
-    The C standard does not define the size of ``time_t``. However, Zephyr
-    uses 64-bits for ``time_t``. The ``long`` type is required to be at least
-    32-bits, but usually matches the word size of the architecture. Both
-    elements of ``struct timespec`` are signed integers. ``time_t`` is defined
-    to be 64-bits both for historical reasons and to be robust enough to
-    represent times in the future.
 
 The ``tv_nsec`` field is only valid with values in the range ``[0, 999999999]``. The
 ``tv_sec`` field is the number of seconds since the epoch. If ``struct timespec`` is

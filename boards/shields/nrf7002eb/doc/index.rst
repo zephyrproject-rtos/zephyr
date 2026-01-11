@@ -51,6 +51,7 @@ edge-connector on some boards, like earlier revisions of the Thingy53 than v1.0.
 
 - ``nrf7002eb``: The default variant.
 - ``nrf7002eb_coex``: Variant which includes the COEX pins.
+- ``nrf7002eb_coex_sa``: Variant which includes the COEX pins and is standalone.
 
 SR Co-existence
 ***************

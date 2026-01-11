@@ -39,8 +39,8 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 	return -ENOENT;
 }
 
-int llext_get_section_header(struct llext_loader *ldr, struct llext *ext, const char *search_name,
-			     elf_shdr_t *shdr)
+int llext_get_section_header(const struct llext_loader *ldr, const struct llext *ext,
+			     const char *search_name, elf_shdr_t *shdr)
 {
 	int ret;
 
@@ -179,7 +179,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	*ext = llext_alloc(sizeof(struct llext));
+	*ext = llext_alloc_data(sizeof(struct llext));
 	if (*ext == NULL) {
 		LOG_ERR("Not enough memory for extension metadata");
 		ret = -ENOMEM;

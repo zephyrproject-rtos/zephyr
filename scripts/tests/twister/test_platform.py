@@ -6,19 +6,12 @@
 '''
 This test file contains tests for platform.py module of twister
 '''
-import sys
-import os
-from unittest import mock
-import pytest
-
 from contextlib import nullcontext
+from unittest import mock
+
+import pytest
 from pykwalify.errors import SchemaError
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
 from twisterlib.platform import Platform, Simulator, generate_platforms
-
 
 TESTDATA_1 = [
     (

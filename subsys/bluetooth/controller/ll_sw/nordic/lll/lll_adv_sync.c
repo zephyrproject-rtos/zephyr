@@ -86,11 +86,11 @@ void lll_adv_sync_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static int init_reset(void)
@@ -176,7 +176,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	upd = 0U;
 	pdu = lll_adv_sync_data_latest_get(lll, NULL, &upd);
-	LL_ASSERT(pdu);
+	LL_ASSERT_DBG(pdu);
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	lll_df_cte_tx_enable(lll, pdu, &cte_len_us);
@@ -278,7 +278,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_A(1);
 
@@ -305,7 +305,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
@@ -336,7 +336,7 @@ static void isr_done(void *param)
 		 * the thread context.
 		 */
 		rx = ull_pdu_rx_alloc();
-		LL_ASSERT(rx);
+		LL_ASSERT_ERR(rx);
 
 		rx->hdr.type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
 		rx->rx_ftr.param = lll;
@@ -370,14 +370,14 @@ static void isr_tx(void *param)
 
 	/* Get reference to aux pointer structure */
 	err = aux_ptr_get(lll_sync->last_pdu, &aux_ptr);
-	LL_ASSERT(!err && aux_ptr);
+	LL_ASSERT_ERR(!err && aux_ptr);
 
 	/* Use channel idx that was in aux_ptr */
 	lll_chan_set(aux_ptr->chan_idx);
 
 	/* Get reference to the auxiliary chain PDU */
 	pdu = lll_adv_pdu_linked_next_get(lll_sync->last_pdu);
-	LL_ASSERT(pdu);
+	LL_ASSERT_DBG(pdu);
 
 	/* Set the last used auxiliary PDU for transmission */
 	lll_sync->last_pdu = pdu;
@@ -401,7 +401,12 @@ static void isr_tx(void *param)
 	radio_pkt_tx_set(pdu);
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT_ERR(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -509,7 +514,7 @@ static void aux_ptr_chan_idx_set(struct lll_adv_sync *lll, struct pdu_adv *pdu)
 
 	/* Get reference to aux pointer structure */
 	err = aux_ptr_get(pdu, &aux_ptr);
-	LL_ASSERT(!err && aux_ptr);
+	LL_ASSERT_ERR(!err && aux_ptr);
 
 	/* Calculate a new channel index */
 	chan_idx = lll_chan_sel_2(lll->data_chan_counter, lll->data_chan_id,

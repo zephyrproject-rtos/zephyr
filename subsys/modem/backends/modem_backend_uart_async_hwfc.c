@@ -5,11 +5,14 @@
  */
 
 #include "modem_backend_uart_async.h"
+#include "../modem_workqueue.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_backend_uart_async_hwfc, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 struct rx_buf_t {
@@ -136,7 +139,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 	case UART_TX_DONE:
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
-		k_work_submit(&backend->transmit_idle_work);
+		modem_work_submit(&backend->transmit_idle_work);
 		break;
 
 	case UART_TX_ABORTED:
@@ -145,7 +148,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 		}
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
-		k_work_submit(&backend->transmit_idle_work);
+		modem_work_submit(&backend->transmit_idle_work);
 
 		break;
 
@@ -182,7 +185,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 				rx_buf_unref(&backend->async, evt->data.rx.buf);
 				break;
 			}
-			k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+			modem_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 		}
 		break;
 
@@ -191,7 +194,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 				    MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT)) {
 			if (!atomic_test_and_set_bit(&backend->async.common.state,
 						     MODEM_BACKEND_UART_ASYNC_STATE_RECOVERY_BIT)) {
-				k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+				modem_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 				LOG_DBG("RX recovery started");
 			}
 		}
@@ -206,7 +209,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 	}
 
 	if (modem_backend_uart_async_hwfc_is_uart_stopped(backend)) {
-		k_work_submit(&backend->async.common.rx_disabled_work);
+		modem_work_submit(&backend->async.common.rx_disabled_work);
 	}
 }
 
@@ -218,6 +221,15 @@ static int modem_backend_uart_async_hwfc_open(void *data)
 
 	if (!buf) {
 		return -ENOMEM;
+	}
+
+	ret = pm_device_runtime_get(backend->uart);
+	if (ret < 0) {
+		LOG_ERR("Failed to power on UART: %d", ret);
+		return ret;
+	}
+	if (backend->dtr_gpio) {
+		gpio_pin_set_dt(backend->dtr_gpio, 1);
 	}
 
 	atomic_clear(&backend->async.common.state);
@@ -335,7 +347,7 @@ static int modem_backend_uart_async_hwfc_receive(void *data, uint8_t *buf, size_
 
 	if (backend->async.rx_event.len != 0 ||
 	    k_msgq_num_used_get(&backend->async.rx_queue) != 0) {
-		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+		modem_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 
 	modem_backend_uart_async_hwfc_rx_recovery(backend);
@@ -346,6 +358,7 @@ static int modem_backend_uart_async_hwfc_receive(void *data, uint8_t *buf, size_
 static int modem_backend_uart_async_hwfc_close(void *data)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
+	int ret;
 
 	atomic_clear_bit(&backend->async.common.state, MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
 	uart_tx_abort(backend->uart);
@@ -355,6 +368,16 @@ static int modem_backend_uart_async_hwfc_close(void *data)
 		/* Disable the RX, if recovery is not ongoing. */
 		uart_rx_disable(backend->uart);
 	}
+
+	if (backend->dtr_gpio) {
+		gpio_pin_set_dt(backend->dtr_gpio, 0);
+	}
+	ret = pm_device_runtime_put_async(backend->uart, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to power off UART: %d", ret);
+		return ret;
+	}
+	modem_pipe_notify_closed(&backend->pipe);
 
 	return 0;
 }

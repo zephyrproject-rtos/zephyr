@@ -1,0 +1,8 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI PSRAM Controller
+
+compatible: "nxp,xspi-psram"
+
+include: ["nxp,xspi-device.yaml"]

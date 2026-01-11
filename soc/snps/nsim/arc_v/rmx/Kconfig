@@ -3,7 +3,6 @@
 
 config SOC_SERIES_RMX
 	bool
-
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_ISA_RV32I

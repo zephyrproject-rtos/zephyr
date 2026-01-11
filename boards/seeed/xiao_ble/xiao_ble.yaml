@@ -16,7 +16,7 @@ supported:
   - i2s
   - pwm
   - spi
-  - usb_device
+  - usbd
   - watchdog
   - netif:openthread
   - xiao_adc

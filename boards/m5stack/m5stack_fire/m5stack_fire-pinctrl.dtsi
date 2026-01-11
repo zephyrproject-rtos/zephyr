@@ -7,11 +7,10 @@
  */
 
 #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
 
 &pinctrl {
-
 	uart0_tx_gpio1: uart0_tx_gpio1 {
 		pinmux = <UART0_TX_GPIO1>;
 	};
@@ -21,20 +20,12 @@
 		bias-pull-up;
 	};
 
-	uart1_rx_gpio33: uart1_rx_gpio33 {
-		pinmux = <UART1_RX_GPIO33>;
+	uart1_tx_gpio16: uart1_tx_gpio16 {
+		pinmux = <UART1_TX_GPIO16>;
 	};
 
-	uart2_rx_gpio13: uart2_rx_gpio13 {
-		pinmux = <UART2_RX_GPIO13>;
-	};
-
-	uart2_tx_gpio14: uart2_rx_gpio14 {
-		pinmux = <UART2_TX_GPIO14>;
-	};
-
-	uart1_tx_gpio32: uart1_tx_gpio32 {
-		pinmux = <UART1_TX_GPIO32>;
+	uart1_rx_gpio17: uart1_rx_gpio17 {
+		pinmux = <UART1_RX_GPIO17>;
 	};
 
 	spim3_default: spim3_default {

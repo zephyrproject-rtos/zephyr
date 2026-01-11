@@ -21,6 +21,7 @@
 				 <SMARTBOND_PINMUX(ADC, 1, 19)>;
 		};
 	};
+
 	sdadc_default: sdadc_default {
 		group_1 {
 			pinmux = <SMARTBOND_PINMUX(ADC, 1, 14)>,
@@ -44,6 +45,7 @@
 		zephyr,oversampling = <7>;
 		zephyr,input-positive = <SMARTBOND_GPADC_P1_09>;
 	};
+
 	channel@1 {
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_1_3";
@@ -53,6 +55,7 @@
 		zephyr,oversampling = <0>;
 		zephyr,input-positive = <SMARTBOND_GPADC_V30>;
 	};
+
 	channel@2 {
 		reg = <2>;
 		zephyr,gain = "ADC_GAIN_1_3";
@@ -62,6 +65,7 @@
 		zephyr,oversampling = <0>;
 		zephyr,input-positive = <SMARTBOND_GPADC_P0_25>;
 	};
+
 	channel@3 {
 		reg = <3>;
 		zephyr,gain = "ADC_GAIN_1_3";
@@ -71,6 +75,7 @@
 		zephyr,oversampling = <0>;
 		zephyr,input-positive = <SMARTBOND_GPADC_P1_19>;
 	};
+
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 };
@@ -89,6 +94,7 @@
 		zephyr,oversampling = <7>;
 		zephyr,input-positive = <SMARTBOND_SDADC_P1_14>;
 	};
+
 	channel@1 {
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_1";
@@ -99,6 +105,7 @@
 		zephyr,input-positive = <SMARTBOND_SDADC_P1_20>;
 		zephyr,input-negative = <SMARTBOND_SDADC_P1_21>;
 	};
+
 	channel@2 {
 		reg = <2>;
 		zephyr,gain = "ADC_GAIN_1_4";
@@ -108,6 +115,7 @@
 		zephyr,oversampling = <7>;
 		zephyr,input-positive = <SMARTBOND_SDADC_VBAT>;
 	};
+
 	pinctrl-0 = <&sdadc_default>;
 	pinctrl-names = "default";
 };

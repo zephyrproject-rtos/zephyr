@@ -15,16 +15,14 @@
 #include <zephyr/input/input.h>
 #include <zephyr/sys/util.h>
 
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/usbd.h>
-#include <zephyr/usb/class/usb_hid.h>
+#include <zephyr/usb/class/usbd_hid.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
-static enum usb_dc_status_code usb_status;
 
 #define MOUSE_BTN_LEFT		0
 #define MOUSE_BTN_RIGHT		1
@@ -38,22 +36,7 @@ enum mouse_report_idx {
 };
 
 K_MSGQ_DEFINE(mouse_msgq, MOUSE_REPORT_COUNT, 2, 1);
-static K_SEM_DEFINE(ep_write_sem, 0, 1);
-
-static inline void status_cb(enum usb_dc_status_code status, const uint8_t *param)
-{
-	usb_status = status;
-}
-
-static ALWAYS_INLINE void rwup_if_suspended(void)
-{
-	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-		if (usb_status == USB_DC_SUSPEND) {
-			usb_wakeup_request();
-			return;
-		}
-	}
-}
+static bool mouse_ready;
 
 static void input_cb(struct input_event *evt, void *user_data)
 {
@@ -63,11 +46,9 @@ static void input_cb(struct input_event *evt, void *user_data)
 
 	switch (evt->code) {
 	case INPUT_KEY_0:
-		rwup_if_suspended();
 		WRITE_BIT(tmp[MOUSE_BTN_REPORT_IDX], MOUSE_BTN_LEFT, evt->value);
 		break;
 	case INPUT_KEY_1:
-		rwup_if_suspended();
 		WRITE_BIT(tmp[MOUSE_BTN_REPORT_IDX], MOUSE_BTN_RIGHT, evt->value);
 		break;
 	case INPUT_KEY_2:
@@ -99,42 +80,30 @@ static void input_cb(struct input_event *evt, void *user_data)
 
 INPUT_CALLBACK_DEFINE(NULL, input_cb, NULL);
 
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-static int enable_usb_device_next(void)
+static void mouse_iface_ready(const struct device *dev, const bool ready)
 {
-	struct usbd_context *sample_usbd;
-	int err;
+	LOG_INF("HID device %s interface is %s",
+		dev->name, ready ? "ready" : "not ready");
+	mouse_ready = ready;
+}
 
-	sample_usbd = sample_usbd_init_device(NULL);
-	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
-		return -ENODEV;
-	}
-
-	err = usbd_enable(sample_usbd);
-	if (err) {
-		LOG_ERR("Failed to enable device support");
-		return err;
-	}
-
-	LOG_DBG("USB device support enabled");
+static int mouse_get_report(const struct device *dev,
+			 const uint8_t type, const uint8_t id, const uint16_t len,
+			 uint8_t *const buf)
+{
+	LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
 
 	return 0;
 }
-#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
-static void int_in_ready_cb(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	k_sem_give(&ep_write_sem);
-}
-
-static const struct hid_ops ops = {
-	.int_in_ready = int_in_ready_cb,
+struct hid_device_ops mouse_ops = {
+	.iface_ready = mouse_iface_ready,
+	.get_report = mouse_get_report,
 };
 
 int main(void)
 {
+	struct usbd_context *sample_usbd;
 	const struct device *hid_dev;
 	int ret;
 
@@ -143,51 +112,58 @@ int main(void)
 		return 0;
 	}
 
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
-#else
-	hid_dev = device_get_binding("HID_0");
-#endif
-	if (hid_dev == NULL) {
-		LOG_ERR("Cannot get USB HID Device");
-		return 0;
-	}
-
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT);
-	if (ret < 0) {
+	if (ret != 0) {
 		LOG_ERR("Failed to configure the LED pin, error: %d", ret);
 		return 0;
 	}
 
-	usb_hid_register_device(hid_dev,
-				hid_report_desc, sizeof(hid_report_desc),
-				&ops);
-
-	usb_hid_init(hid_dev);
-
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-	ret = enable_usb_device_next();
-#else
-	ret = usb_enable(status_cb);
-#endif
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return 0;
+	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+	if (!device_is_ready(hid_dev)) {
+		LOG_ERR("HID Device is not ready");
+		return -EIO;
 	}
+
+	ret = hid_device_register(hid_dev,
+				  hid_report_desc, sizeof(hid_report_desc),
+				  &mouse_ops);
+	if (ret != 0) {
+		LOG_ERR("Failed to register HID Device, %d", ret);
+		return ret;
+	}
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		LOG_ERR("Failed to initialize USB device");
+		return -ENODEV;
+	}
+
+	ret = usbd_enable(sample_usbd);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable device support");
+		return ret;
+	}
+
+	LOG_DBG("USB device support enabled");
 
 	while (true) {
 		UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_COUNT);
 
 		k_msgq_get(&mouse_msgq, &report, K_FOREVER);
 
-		ret = hid_int_ep_write(hid_dev, report, MOUSE_REPORT_COUNT, NULL);
+		if (!mouse_ready) {
+			LOG_INF("USB HID device is not ready");
+			continue;
+		}
+
+		ret = hid_device_submit_report(hid_dev, MOUSE_REPORT_COUNT, report);
 		if (ret) {
-			LOG_ERR("HID write error, %d", ret);
+			LOG_ERR("HID submit report error, %d", ret);
 		} else {
-			k_sem_take(&ep_write_sem, K_FOREVER);
 			/* Toggle LED on sent report */
 			(void)gpio_pin_toggle(led0.port, led0.pin);
 		}
 	}
+
 	return 0;
 }

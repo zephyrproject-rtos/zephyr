@@ -9,7 +9,7 @@
 #define float_multiplier(type) ((INT64_C(1) << (8 * sizeof(type) - 1)) - 1)
 
 #define assert_strings(expected, actual)                                                           \
-	zexpect_equal(strlen(expected), strlen(actual), "Expected %d(%s), got %d(%s)",             \
+	zexpect_equal(strlen(expected), strlen(actual), "Expected %zu(%s), got %zu(%s)",           \
 		      strlen(expected), expected, strlen(actual), actual);                         \
 	zexpect_mem_equal(expected, actual, MIN(strlen(expected), strlen(actual)),                 \
 			  "Expected '%s', got '%s'", expected, actual)

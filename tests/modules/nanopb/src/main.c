@@ -41,6 +41,8 @@ ZTEST(nanopb_tests, test_nanopb_simple)
 	for (size_t i = 0; i < sizeof(msg.buffer); ++i) {
 		zassert_equal(msg.buffer[i], i);
 	}
+
+	pb_release(SimpleMessage_fields, &msg);
 }
 
 ZTEST(nanopb_tests, test_nanopb_nested)
@@ -68,6 +70,8 @@ ZTEST(nanopb_tests, test_nanopb_nested)
 	zassert_equal(42, msg.nested.id);
 	zassert_true(msg.has_nested);
 	zassert_str_equal(msg.nested.name, "Test name");
+
+	pb_release(ComplexMessage_fields, &msg);
 }
 
 ZTEST(nanopb_tests, test_nanopb_lib)

@@ -32,6 +32,7 @@ comparator	Comparator
 coredump	Core dump
 counter	Counter
 cpu	CPU (Central Processing Unit)
+crc	CRC (Cyclic Redundancy Check)
 crypto	Cryptographic accelerator
 dac	DAC (Digital to Analog Converter)
 dai	DAI (Digital Audio Interface)

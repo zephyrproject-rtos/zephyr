@@ -1,5 +1,6 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
+# Copyright 2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Tip: You can view just the documentation with 'pydoc3 devicetree.edtlib'
@@ -136,6 +137,17 @@ class Binding:
       This may be None. For example, it's None when the Binding is inferred
       from node properties. It can also be None for Binding objects created
       using 'child-binding:' with no compatible.
+
+    examples:
+      Provides a minimal example node illustrating the binding (optional).
+      Like this:
+
+      examples:
+        - |
+          / {
+              model = "This is a sample node";
+              ...
+          };
 
     prop2specs:
       A dict mapping property names to PropertySpec objects
@@ -291,6 +303,11 @@ class Binding:
         return self.raw.get('bus')
 
     @property
+    def examples(self) -> Optional[list[str]]:
+        "See the class docstring"
+        return self.raw.get('examples')
+
+    @property
     def buses(self) -> list[str]:
         "See the class docstring"
         if self.raw.get('bus') is not None:
@@ -420,7 +437,7 @@ class Binding:
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
         ok_top = {"title", "description", "compatible", "bus",
-                  "on-bus", "properties", "child-binding"}
+                  "on-bus", "properties", "child-binding", "examples"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -438,7 +455,7 @@ class Binding:
 
             if key not in ok_top and not key.endswith("-cells"):
                 _err(f"unknown key '{key}' in {self.path}, "
-                     "expected one of {', '.join(ok_top)}, or *-cells")
+                     f"expected one of {', '.join(ok_top)}, or *-cells")
 
         if "bus" in raw:
             bus = raw["bus"]
@@ -855,7 +872,7 @@ class ControllerAndData:
       *-names property
 
     basename:
-      Basename for the controller when supporting named cells
+      Basename for the controller when supporting named cells. AKA, the specifier space.
     """
     node: 'Node'
     controller: 'Node'
@@ -972,8 +989,7 @@ class Node:
 
     status:
       The node's status property value, as a string, or "okay" if the node
-      has no status property set. If the node's status property is "ok",
-      it is converted to "okay" for consistency.
+      has no status property set.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -1199,9 +1215,6 @@ class Node:
         else:
             as_string = status.to_string()
 
-        if as_string == "ok":
-            as_string = "okay"
-
         return as_string
 
     @property
@@ -1365,6 +1378,14 @@ class Node:
                 # works the same way in Zephyr as it does elsewhere.
                 binding = None
 
+                # Collect all available bindings for this compatible for warning purposes
+                available_bindings = [
+                    (binding_bus, candidate_binding.path)
+                    for (binding_compat, binding_bus), candidate_binding
+                    in self.edt._compat2binding.items()
+                    if binding_compat == compat
+                ]
+
                 for bus in on_buses:
                     if (compat, bus) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, bus]
@@ -1374,6 +1395,27 @@ class Node:
                     if (compat, None) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, None]
                     else:
+                        # No matching binding found - warn if bindings exist for other buses
+                        if (available_bindings and
+                            self.edt._warn_bus_mismatch):
+                            current_bus = on_buses[0] if on_buses else "none"
+
+                            # Format available bus information for the warning
+                            available_bus_info = []
+                            for bus, binding_path in available_bindings:  # type: ignore
+                                bus_name = bus if bus is not None else "any"
+                                # Get relative path for cleaner output
+                                rel_path = (os.path.relpath(binding_path)
+                                            if binding_path is not None else "unknown")
+                                bus_info = f"'{bus_name}' (from {rel_path})"
+                                available_bus_info.append(bus_info)
+
+                            _LOG.warning(
+                                f"Node '{self.path}' with compatible '{compat}' "
+                                f"is on bus '{current_bus}', but available bindings "
+                                f"expect: {', '.join(available_bus_info)}. "
+                                f"No binding will be applied to this node."
+                            )
                         continue
 
                 self._binding = binding
@@ -1999,7 +2041,8 @@ class EDT:
                  support_fixed_partitions_on_any_bus: bool = True,
                  infer_binding_for_paths: Optional[Iterable[str]] = None,
                  vendor_prefixes: Optional[dict[str, str]] = None,
-                 werror: bool = False):
+                 werror: bool = False,
+                 warn_bus_mismatch: bool = False):
         """EDT constructor.
 
         dts:
@@ -2043,6 +2086,10 @@ class EDT:
           If True, some edtlib specific warnings become errors. This currently
           errors out if 'dts' has any deprecated properties set, or an unknown
           vendor prefix is used.
+
+        warn_bus_mismatch (default: False):
+          If True, a warning is logged if a node's actual bus does not match
+            the bus specified in its binding.
         """
         # All instance attributes should be initialized here.
         # This makes it easy to keep track of them, which makes
@@ -2069,6 +2116,7 @@ class EDT:
         self._infer_binding_for_paths: set[str] = set(infer_binding_for_paths or [])
         self._vendor_prefixes: dict[str, str] = vendor_prefixes or {}
         self._werror: bool = bool(werror)
+        self._warn_bus_mismatch: bool = warn_bus_mismatch
 
         # Other internal state
         self._compat2binding: dict[tuple[str, Optional[str]], Binding] = {}
@@ -3312,8 +3360,7 @@ def _check_dt(dt: DT) -> None:
 
     # Check that 'status' has one of the values given in the devicetree spec.
 
-    # Accept "ok" for backwards compatibility
-    ok_status = {"ok", "okay", "disabled", "reserved", "fail", "fail-sss"}
+    ok_status = {"okay", "disabled", "reserved", "fail", "fail-sss"}
 
     for node in dt.node_iter():
         if "status" in node.props:

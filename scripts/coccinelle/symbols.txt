@@ -49,6 +49,7 @@ fileno5
 floor
 fmod
 fopen
+fork
 fprintf
 fputc1
 fputs1

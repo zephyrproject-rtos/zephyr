@@ -3,6 +3,7 @@ common:
   tags:
     - drivers
     - flash
+  timeout: 240
 tests:
   boards.nrf.xip:
     platform_allow:

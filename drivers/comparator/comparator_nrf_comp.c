@@ -9,7 +9,6 @@
 #include <zephyr/drivers/comparator/nrf_comp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
-#include "comparator_nrf_common.h"
 
 #define DT_DRV_COMPAT nordic_nrf_comp
 
@@ -19,8 +18,7 @@
 #define SHIM_NRF_COMP_DT_INST_REFSEL_IS_AREF(inst) \
 	DT_INST_ENUM_HAS_VALUE(inst, refsel, aref)
 
-#define SHIM_NRF_COMP_DT_INST_EXTREFSEL(inst) \
-	_CONCAT(COMP_NRF_COMP_EXTREFSEL_, DT_INST_STRING_TOKEN(inst, extrefsel))
+#define SHIM_NRF_COMP_DT_INST_EXTREFSEL(inst) DT_INST_PROP(inst, extrefsel)
 
 #define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(inst) \
 	DT_INST_ENUM_HAS_VALUE(inst, main_mode, se)
@@ -43,22 +41,7 @@
 #define SHIM_NRF_COMP_DT_INST_ISOURCE(inst) \
 	_CONCAT(COMP_NRF_COMP_ISOURCE_, DT_INST_STRING_TOKEN(inst, isource))
 
-#define SHIM_NRF_COMP_DT_INST_PSEL(inst) \
-	_CONCAT(COMP_NRF_COMP_PSEL_, DT_INST_STRING_TOKEN(inst, psel))
-
-#if defined(COMP_HYST_HYST_Hyst40mV)
-#define NRF_COMP_HYST_ENABLED NRF_COMP_HYST_40MV
-#elif defined(COMP_HYST_HYST_Hyst50mV)
-#define NRF_COMP_HYST_ENABLED NRF_COMP_HYST_50MV
-#endif
-
-#define NRF_COMP_HYST_DISABLED NRF_COMP_HYST_NO_HYST
-
-#if defined(NRF_COMP_HYST_ENABLED)
-#define NRF_COMP_HAS_HYST 1
-#else
-#define NRF_COMP_HAS_HYST 0
-#endif
+#define SHIM_NRF_COMP_DT_INST_PSEL(inst) DT_INST_PROP(inst, psel)
 
 struct shim_nrf_comp_data {
 	uint32_t event_mask;
@@ -73,87 +56,41 @@ BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_TH_DOWN(0) < 64);
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_TH_UP(0) < 64);
 #endif
 
-#if NRF_COMP_HAS_AIN_AS_PIN
-BUILD_ASSERT((COMP_NRF_COMP_PSEL_AIN0 == 0));
-BUILD_ASSERT((COMP_NRF_COMP_PSEL_AIN7 == 7));
-BUILD_ASSERT((COMP_NRF_COMP_EXTREFSEL_AIN0 == 0));
-BUILD_ASSERT((COMP_NRF_COMP_EXTREFSEL_AIN7 == 7));
-#else
-#ifndef COMP_PSEL_PSEL_AnalogInput4
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_PSEL(0) != COMP_NRF_COMP_PSEL_AIN4);
+BUILD_ASSERT((NRF_COMP_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
+	     (NRF_COMP_AIN1 == NRFX_ANALOG_EXTERNAL_AIN1) &&
+	     (NRF_COMP_AIN2 == NRFX_ANALOG_EXTERNAL_AIN2) &&
+	     (NRF_COMP_AIN3 == NRFX_ANALOG_EXTERNAL_AIN3) &&
+	     (NRF_COMP_AIN4 == NRFX_ANALOG_EXTERNAL_AIN4) &&
+	     (NRF_COMP_AIN5 == NRFX_ANALOG_EXTERNAL_AIN5) &&
+	     (NRF_COMP_AIN6 == NRFX_ANALOG_EXTERNAL_AIN6) &&
+	     (NRF_COMP_AIN7 == NRFX_ANALOG_EXTERNAL_AIN7) &&
+#if NRF_COMP_HAS_VDDH_DIV5
+	     (NRF_COMP_AIN_VDDH_DIV5 == NRFX_ANALOG_INTERNAL_VDDHDIV5) &&
 #endif
+#if NRF_COMP_HAS_VDD_DIV2
+	     (NRF_COMP_AIN_VDD_DIV2 == NRFX_ANALOG_INTERNAL_VDDDIV2) &&
+#endif
+	     1,
+	     "Definitions from nrf-comp.h do not match those from nrfx_analog_common.h");
 
-#ifndef COMP_PSEL_PSEL_AnalogInput5
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_PSEL(0) != COMP_NRF_COMP_PSEL_AIN5);
-#endif
-
-#ifndef COMP_PSEL_PSEL_AnalogInput6
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_PSEL(0) != COMP_NRF_COMP_PSEL_AIN6);
-#endif
-
-#ifndef COMP_PSEL_PSEL_AnalogInput7
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_PSEL(0) != COMP_NRF_COMP_PSEL_AIN7);
-#endif
-#endif
-
-#ifndef COMP_PSEL_PSEL_VddDiv2
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_PSEL(0) != COMP_NRF_COMP_PSEL_VDD_DIV2);
-#endif
-
-#ifndef COMP_PSEL_PSEL_VddhDiv5
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_PSEL(0) != COMP_NRF_COMP_PSEL_VDDH_DIV5);
-#endif
-
-#ifndef COMP_MODE_SP_Normal
+#if !NRF_COMP_HAS_SP_MODE_NORMAL
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_SP_MODE(0) != COMP_NRF_COMP_SP_MODE_NORMAL);
 #endif
 
-#if NRF_COMP_HAS_ISOURCE
-#ifndef COMP_ISOURCE_ISOURCE_Ien2uA5
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_ISOURCE(0) != COMP_NRF_COMP_ISOURCE_2UA5);
-#endif
-
-#ifndef COMP_ISOURCE_ISOURCE_Ien5uA
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_ISOURCE(0) != COMP_NRF_COMP_ISOURCE_5UA);
-#endif
-
-#ifndef COMP_ISOURCE_ISOURCE_Ien10uA
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_ISOURCE(0) != COMP_NRF_COMP_ISOURCE_10UA);
-#endif
-#endif
-
-#if SHIM_NRF_COMP_DT_INST_REFSEL_IS_AREF(0)
-#ifndef COMP_EXTREFSEL_EXTREFSEL_AnalogReference4
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_EXTREFSEL(0) != COMP_NRF_COMP_EXTREFSEL_AIN4);
-#endif
-
-#ifndef COMP_EXTREFSEL_EXTREFSEL_AnalogReference5
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_EXTREFSEL(0) != COMP_NRF_COMP_EXTREFSEL_AIN5);
-#endif
-
-#ifndef COMP_EXTREFSEL_EXTREFSEL_AnalogReference6
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_EXTREFSEL(0) != COMP_NRF_COMP_EXTREFSEL_AIN6);
-#endif
-
-#ifndef COMP_EXTREFSEL_EXTREFSEL_AnalogReference7
-BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_EXTREFSEL(0) != COMP_NRF_COMP_EXTREFSEL_AIN7);
-#endif
-#endif
-
 #if SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(0)
-#ifndef COMP_REFSEL_REFSEL_Int1V8
+#if !NRF_COMP_HAS_REF_INT_1V8
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_REFSEL(0) != COMP_NRF_COMP_REFSEL_INT_1V8);
 #endif
 
-#ifndef COMP_REFSEL_REFSEL_Int2V4
+#if !NRF_COMP_HAS_REF_INT_2V4
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_REFSEL(0) != COMP_NRF_COMP_REFSEL_INT_2V4);
 #endif
 
-#ifndef COMP_REFSEL_REFSEL_AVDDAO1V8
+#if !NRF_COMP_HAS_REF_AVDDAO1V8
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_REFSEL(0) != COMP_NRF_COMP_REFSEL_AVDDAO1V8);
 #endif
 
-#ifndef COMP_REFSEL_REFSEL_VDD
+#if !NRF_COMP_HAS_REF_VDD
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_REFSEL(0) != COMP_NRF_COMP_REFSEL_VDD);
 #endif
 #endif
@@ -245,82 +182,6 @@ static int shim_nrf_comp_pm_callback(const struct device *dev, enum pm_device_ac
 	return 0;
 }
 
-#if (NRF_COMP_HAS_AIN_AS_PIN)
-static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
-				     nrf_comp_input_t *nrf)
-{
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
-		return -EINVAL;
-	}
-
-	*nrf = shim_nrf_comp_ain_map[(uint32_t)shim];
-	return 0;
-}
-#else
-static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
-				     nrf_comp_input_t *nrf)
-{
-	switch (shim) {
-	case COMP_NRF_COMP_PSEL_AIN0:
-		*nrf = NRF_COMP_INPUT_0;
-		break;
-
-	case COMP_NRF_COMP_PSEL_AIN1:
-		*nrf = NRF_COMP_INPUT_1;
-		break;
-
-	case COMP_NRF_COMP_PSEL_AIN2:
-		*nrf = NRF_COMP_INPUT_2;
-		break;
-
-	case COMP_NRF_COMP_PSEL_AIN3:
-		*nrf = NRF_COMP_INPUT_3;
-		break;
-
-#if defined(COMP_PSEL_PSEL_AnalogInput4)
-	case COMP_NRF_COMP_PSEL_AIN4:
-		*nrf = NRF_COMP_INPUT_4;
-		break;
-#endif
-
-#if defined(COMP_PSEL_PSEL_AnalogInput5)
-	case COMP_NRF_COMP_PSEL_AIN5:
-		*nrf = NRF_COMP_INPUT_5;
-		break;
-#endif
-
-#if defined(COMP_PSEL_PSEL_AnalogInput6)
-	case COMP_NRF_COMP_PSEL_AIN6:
-		*nrf = NRF_COMP_INPUT_6;
-		break;
-#endif
-
-#if defined(COMP_PSEL_PSEL_AnalogInput7)
-	case COMP_NRF_COMP_PSEL_AIN7:
-		*nrf = NRF_COMP_INPUT_7;
-		break;
-#endif
-
-#if defined(COMP_PSEL_PSEL_VddDiv2)
-	case COMP_NRF_COMP_PSEL_VDD_DIV2:
-		*nrf = NRF_COMP_VDD_DIV2;
-		break;
-#endif
-
-#if defined(COMP_PSEL_PSEL_VddhDiv5)
-	case COMP_NRF_COMP_PSEL_VDDH_DIV5:
-		*nrf = NRF_COMP_VDDH_DIV5;
-		break;
-#endif
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
-
 static int shim_nrf_comp_sp_mode_to_nrf(enum comp_nrf_comp_sp_mode shim,
 					nrf_comp_sp_mode_t *nrf)
 {
@@ -329,7 +190,7 @@ static int shim_nrf_comp_sp_mode_to_nrf(enum comp_nrf_comp_sp_mode shim,
 		*nrf = NRF_COMP_SP_MODE_LOW;
 		break;
 
-#if defined(COMP_MODE_SP_Normal)
+#if NRF_COMP_HAS_SP_MODE_NORMAL
 	case COMP_NRF_COMP_SP_MODE_NORMAL:
 		*nrf = NRF_COMP_SP_MODE_NORMAL;
 		break;
@@ -348,95 +209,21 @@ static int shim_nrf_comp_sp_mode_to_nrf(enum comp_nrf_comp_sp_mode shim,
 
 #if NRF_COMP_HAS_ISOURCE
 static int shim_nrf_comp_isource_to_nrf(enum comp_nrf_comp_isource shim,
-					nrf_isource_t *nrf)
+					nrf_comp_isource_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_COMP_ISOURCE_DISABLED:
 		*nrf = NRF_COMP_ISOURCE_OFF;
 		break;
-
-#if defined(COMP_ISOURCE_ISOURCE_Ien2uA5)
 	case COMP_NRF_COMP_ISOURCE_2UA5:
 		*nrf = NRF_COMP_ISOURCE_IEN_2UA5;
 		break;
-#endif
-
-#if defined(COMP_ISOURCE_ISOURCE_Ien5uA)
 	case COMP_NRF_COMP_ISOURCE_5UA:
 		*nrf = NRF_COMP_ISOURCE_IEN_5UA;
 		break;
-#endif
-
-#if defined(COMP_ISOURCE_ISOURCE_Ien10uA)
 	case COMP_NRF_COMP_ISOURCE_10UA:
 		*nrf = NRF_COMP_ISOURCE_IEN_10UA;
 		break;
-#endif
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
-
-#if (NRF_COMP_HAS_AIN_AS_PIN)
-static int shim_nrf_comp_extrefsel_to_nrf(enum comp_nrf_comp_extrefsel shim,
-					  nrf_comp_ext_ref_t *nrf)
-{
-	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
-		return -EINVAL;
-	}
-
-	*nrf = shim_nrf_comp_ain_map[(uint32_t)shim];
-	return 0;
-}
-#else
-static int shim_nrf_comp_extrefsel_to_nrf(enum comp_nrf_comp_extrefsel shim,
-					  nrf_comp_ext_ref_t *nrf)
-{
-	switch (shim) {
-	case COMP_NRF_COMP_EXTREFSEL_AIN0:
-		*nrf = NRF_COMP_EXT_REF_0;
-		break;
-
-	case COMP_NRF_COMP_EXTREFSEL_AIN1:
-		*nrf = NRF_COMP_EXT_REF_1;
-		break;
-
-	case COMP_NRF_COMP_EXTREFSEL_AIN2:
-		*nrf = NRF_COMP_EXT_REF_2;
-		break;
-
-	case COMP_NRF_COMP_EXTREFSEL_AIN3:
-		*nrf = NRF_COMP_EXT_REF_3;
-		break;
-
-#if defined(COMP_EXTREFSEL_EXTREFSEL_AnalogReference4)
-	case COMP_NRF_COMP_EXTREFSEL_AIN4:
-		*nrf = NRF_COMP_EXT_REF_4;
-		break;
-#endif
-
-#if defined(COMP_EXTREFSEL_EXTREFSEL_AnalogReference5)
-	case COMP_NRF_COMP_EXTREFSEL_AIN5:
-		*nrf = NRF_COMP_EXT_REF_5;
-		break;
-#endif
-
-#if defined(COMP_EXTREFSEL_EXTREFSEL_AnalogReference6)
-	case COMP_NRF_COMP_EXTREFSEL_AIN6:
-		*nrf = NRF_COMP_EXT_REF_6;
-		break;
-#endif
-
-#if defined(COMP_EXTREFSEL_EXTREFSEL_AnalogReference7)
-	case COMP_NRF_COMP_EXTREFSEL_AIN7:
-		*nrf = NRF_COMP_EXT_REF_7;
-		break;
-#endif
-
 	default:
 		return -EINVAL;
 	}
@@ -453,25 +240,25 @@ static int shim_nrf_comp_refsel_to_nrf(enum comp_nrf_comp_refsel shim,
 		*nrf = NRF_COMP_REF_INT_1V2;
 		break;
 
-#if defined(COMP_REFSEL_REFSEL_Int1V8)
+#if NRF_COMP_HAS_REF_INT_1V8
 	case COMP_NRF_COMP_REFSEL_INT_1V8:
 		*nrf = NRF_COMP_REF_INT_1V8;
 		break;
 #endif
 
-#if defined(COMP_REFSEL_REFSEL_Int2V4)
+#if NRF_COMP_HAS_REF_INT_2V4
 	case COMP_NRF_COMP_REFSEL_INT_2V4:
 		*nrf = NRF_COMP_REF_INT_2V4;
 		break;
 #endif
 
-#if defined(COMP_REFSEL_REFSEL_AVDDAO1V8)
+#if NRF_COMP_HAS_REF_AVDDAO1V8
 	case COMP_NRF_COMP_REFSEL_AVDDAO1V8:
 		*nrf = NRF_COMP_REF_AVDDAO1V8;
 		break;
 #endif
 
-#if defined(COMP_REFSEL_REFSEL_VDD)
+#if NRF_COMP_HAS_REF_VDD
 	case COMP_NRF_COMP_REFSEL_VDD:
 		*nrf = NRF_COMP_REF_VDD;
 		break;
@@ -495,9 +282,8 @@ static int shim_nrf_comp_se_config_to_nrf(const struct comp_nrf_comp_se_config *
 		return -EINVAL;
 	}
 
-	if (shim_nrf_comp_extrefsel_to_nrf(shim->extrefsel, &nrf->ext_ref)) {
-		return -EINVAL;
-	}
+	nrf->ext_ref = (nrfx_analog_input_t)shim->extrefsel;
+	nrf->input = (nrfx_analog_input_t)shim->psel;
 
 	nrf->main_mode = NRF_COMP_MAIN_MODE_SE;
 
@@ -524,10 +310,6 @@ static int shim_nrf_comp_se_config_to_nrf(const struct comp_nrf_comp_se_config *
 	}
 #endif
 
-	if (shim_nrf_comp_psel_to_nrf(shim->psel, &nrf->input)) {
-		return -EINVAL;
-	}
-
 	nrf->interrupt_priority = 0;
 	return 0;
 }
@@ -537,9 +319,8 @@ static int shim_nrf_comp_diff_config_to_nrf(const struct comp_nrf_comp_diff_conf
 {
 	nrf->reference = NRF_COMP_REF_AREF;
 
-	if (shim_nrf_comp_extrefsel_to_nrf(shim->extrefsel, &nrf->ext_ref)) {
-		return -EINVAL;
-	}
+	nrf->ext_ref = (nrfx_analog_input_t)shim->extrefsel;
+	nrf->input = (nrfx_analog_input_t)shim->psel;
 
 	nrf->main_mode = NRF_COMP_MAIN_MODE_DIFF;
 	nrf->threshold.th_down = 0;
@@ -570,10 +351,6 @@ static int shim_nrf_comp_diff_config_to_nrf(const struct comp_nrf_comp_diff_conf
 		return -EINVAL;
 	}
 #endif
-
-	if (shim_nrf_comp_psel_to_nrf(shim->psel, &nrf->input)) {
-		return -EINVAL;
-	}
 
 	nrf->interrupt_priority = 0;
 	return 0;
@@ -722,7 +499,7 @@ static int shim_nrf_comp_init(const struct device *dev)
 	(void)shim_nrf_comp_diff_config_to_nrf(&shim_nrf_comp_config0, &nrf);
 #endif
 
-	if (nrfx_comp_init(&nrf, shim_nrf_comp_event_handler) != NRFX_SUCCESS) {
+	if (nrfx_comp_init(&nrf, shim_nrf_comp_event_handler) != 0) {
 		return -ENODEV;
 	}
 

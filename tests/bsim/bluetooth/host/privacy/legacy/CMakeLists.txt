@@ -13,9 +13,9 @@ target_link_libraries(app PRIVATE
 )
 
 target_sources(app PRIVATE
-	src/tester.c
-	src/main.c
-	src/dut.c
+  src/tester.c
+  src/main.c
+  src/dut.c
 )
 
 zephyr_include_directories(

@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 
-#include <zephyr/arch/riscv/reg.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -16,13 +15,22 @@
 
 #define ROGUE_USER_STACK_SZ 2048
 
+#define riscv_reg_read(reg)                                                                        \
+	({                                                                                         \
+		register unsigned long __rv;                                                       \
+		__asm__ volatile("mv %0, " STRINGIFY(reg) : "=r"(__rv));                           \
+		__rv;                                                                              \
+	})
+
+#define riscv_reg_write(reg, val) ({ __asm__("mv " STRINGIFY(reg) ", %0" : : "r"(val)); })
+
 static struct k_thread rogue_user_thread;
 static K_THREAD_STACK_DEFINE(rogue_user_stack, ROGUE_USER_STACK_SZ);
 
 static void rogue_user_fn(void *p1, void *p2, void *p3)
 {
 	zassert_true(k_is_user_context());
-	uintptr_t gp_val = reg_read(gp);
+	uintptr_t gp_val = riscv_reg_read(gp);
 	uintptr_t gp_test_val;
 
 	/* Make sure that `gp` is as expected */
@@ -33,11 +41,11 @@ static void rogue_user_fn(void *p1, void *p2, void *p3)
 	}
 
 	/* Corrupt `gp` reg */
-	reg_write(gp, 0xbad);
+	riscv_reg_write(gp, 0xbad);
 
 	/* Make sure that `gp` is corrupted */
 	if (IS_ENABLED(CONFIG_RISCV_GP)) {
-		zassert_equal(reg_read(gp), 0xbad);
+		zassert_equal(riscv_reg_read(gp), 0xbad);
 	} else { /* CONFIG_RISCV_CURRENT_VIA_GP */
 		zassert_equal((uintptr_t)_current, 0xbad);
 	}
@@ -57,7 +65,7 @@ static void rogue_user_fn(void *p1, void *p2, void *p3)
 
 ZTEST_USER(riscv_gp, test_gp_value)
 {
-	uintptr_t gp_val = reg_read(gp);
+	uintptr_t gp_val = riscv_reg_read(gp);
 	uintptr_t gp_test_val;
 	k_tid_t th;
 
@@ -74,7 +82,7 @@ ZTEST_USER(riscv_gp, test_gp_value)
 	zassert_ok(k_thread_join(th, K_FOREVER));
 
 	/* Make sure that `gp` is the same as before a rogue thread was executed */
-	zassert_equal(reg_read(gp), gp_val, "`gp` corrupted by user thread");
+	zassert_equal(riscv_reg_read(gp), gp_val, "`gp` corrupted by user thread");
 }
 
 static void *userspace_setup(void)

@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA QSPI
+
+compatible: "renesas,ra-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

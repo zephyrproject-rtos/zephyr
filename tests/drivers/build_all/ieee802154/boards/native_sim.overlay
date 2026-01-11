@@ -37,7 +37,7 @@
 				reg = <0x0>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
-				status= "okay";
+				status = "okay";
 			};
 
 			test_spi_cc2520: cc2520@1 {
@@ -50,11 +50,11 @@
 				cca-gpios = <&test_gpio 0 0>;
 				sfd-gpios = <&test_gpio 0 0>;
 				fifop-gpios = <&test_gpio 0 0>;
-				status= "okay";
+				status = "okay";
 
 				crypto {
 					compatible = "ti,cc2520-crypto";
-					status= "okay";
+					status = "okay";
 				};
 			};
 
@@ -63,8 +63,8 @@
 				reg = <0x2>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
-				reset-gpios =<&test_gpio 0 0>;
-				status= "okay";
+				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
 			};
 
 			test_spi_rf2xx: rf2xx@3 {

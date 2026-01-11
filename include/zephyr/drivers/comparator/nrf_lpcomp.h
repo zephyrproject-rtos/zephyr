@@ -7,39 +7,12 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_COMP_NRF_LPCOMP_H_
 #define ZEPHYR_INCLUDE_DRIVERS_COMP_NRF_LPCOMP_H_
 
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
 #include <zephyr/drivers/comparator.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** Positive input selection */
-enum comp_nrf_lpcomp_psel {
-	/** AIN0 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN0,
-	/** AIN1 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN1,
-	/** AIN2 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN2,
-	/** AIN3 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN3,
-	/** AIN4 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN4,
-	/** AIN5 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN5,
-	/** AIN6 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN6,
-	/** AIN7 external input */
-	COMP_NRF_LPCOMP_PSEL_AIN7,
-};
-
-/** External reference selection */
-enum comp_nrf_lpcomp_extrefsel {
-	/** AIN0 external input */
-	COMP_NRF_LPCOMP_EXTREFSEL_AIN0,
-	/** AIN1 external input */
-	COMP_NRF_LPCOMP_EXTREFSEL_AIN1,
-};
 
 /** Reference selection */
 enum comp_nrf_lpcomp_refsel {
@@ -83,10 +56,10 @@ enum comp_nrf_lpcomp_refsel {
  * @note extrefsel is only used if refsel == COMP_NRF_LPCOMP_REFSEL_AREF
  */
 struct comp_nrf_lpcomp_config {
-	/** Positive input selection */
-	enum comp_nrf_lpcomp_psel psel;
-	/** External reference selection */
-	enum comp_nrf_lpcomp_extrefsel extrefsel;
+	/** Positive input selection defined by the NRF_COMP_AIN defines */
+	uint8_t psel;
+	/** External reference input selection defined by the NRF_COMP_AIN defines */
+	uint8_t extrefsel;
 	/** Reference selection */
 	enum comp_nrf_lpcomp_refsel refsel;
 	/** Hysteresis configuration */

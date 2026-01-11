@@ -20,7 +20,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(DT_CLOCK_SRC_PATH),clock-frequency) if SMARTBOND_TIMER
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default $(dt_node_int_prop_int,$(DT_CLOCK_SRC_PATH),clock-frequency) if SMARTBOND_TIMER
+	default 5000 if SMARTBOND_TIMER && SYS_CLOCK_HW_CYCLES_PER_SEC <= 20000
 
 config USE_DT_CODE_PARTITION
 	default y if MCUBOOT

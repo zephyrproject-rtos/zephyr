@@ -20,8 +20,8 @@
 
 /**
  * @brief USB host controller (UHC) driver API
- * @defgroup uhc_api USB host controller driver API
- * @ingroup io_interfaces
+ * @defgroup uhc_api USB Host Controller
+ * @ingroup usb_interfaces
  * @since 3.3
  * @version 0.1.1
  * @{
@@ -120,6 +120,8 @@ struct uhc_transfer {
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
+	/** Endpoint type */
+	uint8_t type;
 	/** Maximum packet size */
 	uint16_t mps;
 	/** Interval, used for periodic transfers only */

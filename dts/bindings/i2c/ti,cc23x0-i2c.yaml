@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Baylibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC23x0 I2C node
+
+compatible: "ti,cc23x0-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

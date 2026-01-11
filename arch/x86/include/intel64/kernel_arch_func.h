@@ -29,9 +29,7 @@ extern void z_x86_ipi_setup(void);
 
 static inline void arch_kernel_init(void)
 {
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot);

@@ -15,9 +15,6 @@
 	compatible = "arduino,nicla-vision";
 
 	chosen {
-		zephyr,console = &lpuart1;
-		zephyr,shell-uart = &lpuart1;
-		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -165,30 +162,16 @@ zephyr_i2c: &i2c1 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@0 {
+	qspi_flash: n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB) */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		status = "okay";
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			slot1_partition: partition@0 {
-				label = "image-1";
-				reg = <0x00000000 DT_SIZE_M(1)>;
-			};
-
-			storage_partition: partition@100000 {
-				label = "storage";
-				reg = <0x00100000 DT_SIZE_M(15)>;
-			};
-		};
 	};
 };
+#include <arduino/partitions_qspi_h7.dtsi>
 
 &rng {
 	status = "okay";
@@ -196,22 +179,24 @@ zephyr_i2c: &i2c1 {
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
-			&usb_otg_hs_ulpi_d0_pa3
-			&usb_otg_hs_ulpi_d1_pb0
-			&usb_otg_hs_ulpi_d2_pb1
-			&usb_otg_hs_ulpi_d3_pb10
-			&usb_otg_hs_ulpi_d4_pb11
-			&usb_otg_hs_ulpi_d5_pb12
-			&usb_otg_hs_ulpi_d6_pb13
-			&usb_otg_hs_ulpi_d7_pb5
-			&usb_otg_hs_ulpi_stp_pc0
-			&usb_otg_hs_ulpi_dir_pc2_c
-			&usb_otg_hs_ulpi_nxt_pc3_c>;
+		     &usb_otg_hs_ulpi_d0_pa3
+		     &usb_otg_hs_ulpi_d1_pb0
+		     &usb_otg_hs_ulpi_d2_pb1
+		     &usb_otg_hs_ulpi_d3_pb10
+		     &usb_otg_hs_ulpi_d4_pb11
+		     &usb_otg_hs_ulpi_d5_pb12
+		     &usb_otg_hs_ulpi_d6_pb13
+		     &usb_otg_hs_ulpi_d7_pb5
+		     &usb_otg_hs_ulpi_stp_pc0
+		     &usb_otg_hs_ulpi_dir_pc2_c
+		     &usb_otg_hs_ulpi_nxt_pc3_c>;
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	phys = <&otghs_ulpi_phy>;
 	status = "okay";
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &i2c3 {
 	status = "okay";
@@ -229,7 +214,6 @@ zephyr_udc0: &usbotg_hs {
 				remote-endpoint-label = "dcmi_ep_in";
 			};
 		};
-
 	};
 };
 

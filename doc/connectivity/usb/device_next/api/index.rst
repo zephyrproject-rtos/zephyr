@@ -1,7 +1,7 @@
 .. _usb_device_next_api:
 
-New USB device support APIs
-###########################
+USB device support APIs
+#######################
 
 .. toctree::
    :maxdepth: 1

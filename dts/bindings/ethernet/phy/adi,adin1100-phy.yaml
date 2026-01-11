@@ -7,3 +7,8 @@ description: ADIN1100 PHY
 compatible: "adi,adin1100-phy"
 
 include: adi,adin2111-phy.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to PHY reset signal pin. Reset is active low.

@@ -17,6 +17,8 @@ supported:
   - clock_control
   - comparator
   - adc
+  - dac
+  - pwm
 testing:
   ignore_tags:
     - pm

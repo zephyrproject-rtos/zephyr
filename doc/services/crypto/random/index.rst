@@ -14,9 +14,8 @@ FIPS 140-2 [NIST02]_ recommended algorithms. Hardware based random-number
 generators (RNG) can be used on platforms with appropriate hardware support.
 Platforms without hardware RNG support shall use the `CTR-DRBG algorithm
 <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf>`_.
-The algorithm can be provided by `TinyCrypt <https://01.org/tinycrypt>`_
-or `mbedTLS <https://tls.mbed.org/ctr-drbg-source-code>`_ depending on
-your application performance and resource requirements.
+
+The algorithm can be provided by  `mbedTLS <https://tls.mbed.org/ctr-drbg-source-code>`_.
 
   .. note::
 

@@ -6,7 +6,6 @@ menuconfig ETH_LAN865X
 	default y
 	depends on DT_HAS_MICROCHIP_LAN865X_ENABLED
 	select SPI
-	select MDIO
 	select NET_L2_ETHERNET_MGMT
 	help
 	  The LAN865X is a low power, 10BASE-T1S transceiver compliant with

@@ -159,11 +159,24 @@ static void rram_write(off_t addr, const void *data, size_t len)
 	nrf_rramc_config_set(NRF_RRAMC, &config);
 #endif
 
-	if (data) {
-		memcpy((void *)addr, data, len);
-	} else {
-		memset((void *)addr, ERASE_VALUE, len);
+	size_t chunk_len = len;
+
+#ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
+	while (len > 0) {
+		chunk_len = MIN(len, CONFIG_NRF_RRAM_THROTTLING_DATA_BLOCK * WRITE_LINE_SIZE);
+#endif /* CONFIG_SOC_FLASH_NRF_THROTTLING */
+		if (data) {
+			memcpy((void *)addr, data, chunk_len);
+		} else {
+			memset((void *)addr, ERASE_VALUE, chunk_len);
+		}
+#ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
+		addr += chunk_len;
+		data = (const uint8_t *)data + chunk_len;
+		len -= chunk_len;
+		k_usleep(CONFIG_NRF_RRAM_THROTTLING_DELAY);
 	}
+#endif /* CONFIG_SOC_FLASH_NRF_THROTTLING */
 
 	barrier_dmem_fence_full(); /* Barrier following our last write. */
 

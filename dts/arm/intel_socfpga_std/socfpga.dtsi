@@ -21,8 +21,8 @@
 	};
 
 	cpus {
-	#address-cells = <1>;
-	#size-cells = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a9";
@@ -30,6 +30,7 @@
 			reg = <0>;
 			/* next-level-cache = <&L2>; */ /*cache driver not available yet */
 		};
+
 		cpu1: cpu@1 {
 			compatible = "arm,cortex-a9";
 			device_type = "cpu";
@@ -43,7 +44,7 @@
 		#interrupt-cells = <4>;
 		interrupt-controller;
 		reg = <0xfffed000 0x1000>,
-			  <0xfffec100 0x100>;
+		      <0xfffec100 0x100>;
 	};
 
 	soc {
@@ -58,27 +59,31 @@
 			compatible = "arm,pl330-cache";
 			reg = <0xfffef000 0x1000>;
 			interrupts = <0 38 0x04 IRQ_DEFAULT_PRIORITY>;
-			status= "okay";
+			status = "okay";
 		};
 
 		clkmgr@ffd04000 {
 			compatible = "altr,clk-mgr";
 			reg = <0xffd04000 0x1000>;
+
 			clocks {
 				osc1: osc1 {
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
 				};
+
 				osc2: osc2 {
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
 					clock-frequency = <25000000>;
 				};
+
 				f2s_periph_ref_clk: f2s_periph_ref_clk {
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
 					clock-frequency = <50000000>;
 				};
+
 				f2s_sdram_ref_clk: f2s_sdram_ref_clk {
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
@@ -92,8 +97,9 @@
 			reg = <0xffd08000 0x4000>;
 			status = "okay";
 		};
+
 		ocram: sram@ffff0000 {
-			compatible = "zephyr,memory-region" , "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0xffff0000 0x10000>;
 			zephyr,memory-region = "OCRAM";
 		};
@@ -103,19 +109,19 @@
 			status = "okay";
 			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
 			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
-				IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 14 IRQ_TYPE_EDGE
-				IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 11 IRQ_TYPE_EDGE
-				IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 10 IRQ_TYPE_EDGE
-				IRQ_DEFAULT_PRIORITY>;
-			 reg = <0xfffec200 0x1C>;
-			 clocks = <&osc1>;
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>;
+			reg = <0xfffec200 0x1C>;
+			clocks = <&osc1>;
 		};
 
 		uart0: serial0@ffc02000 {
-			compatible = "ns16550","snps,dw-apb-uart";
+			compatible = "ns16550", "snps,dw-apb-uart";
 			reg = <0xffc02000 0x1000>;
 			interrupts = <0 162 4 IRQ_DEFAULT_PRIORITY>;
 			reg-shift = <2>;
@@ -124,7 +130,7 @@
 		};
 
 		uart1: serial1@ffc03000 {
-			compatible = "ns16550","snps,dw-apb-uart";
+			compatible = "ns16550", "snps,dw-apb-uart";
 			reg = <0xffc03000 0x1000>;
 			interrupts = <0 163 4 IRQ_DEFAULT_PRIORITY>;
 			reg-shift = <2>;
@@ -233,7 +239,7 @@
 			ghwcfg2 = <0x208ffc90>;
 			ghwcfg4 = <0xfe0f0020>;
 			status = "disabled";
-			};
+		};
 
 		usb1: usb@ffb40000 {
 			compatible = "snps,dwc2";
@@ -246,7 +252,7 @@
 			ghwcfg2 = <0x208ffc90>;
 			ghwcfg4 = <0xfe0f0020>;
 			status = "okay";
-			};
+		};
 
 		spi0: spi@fff00000 {
 			compatible = "snps,designware-spi";

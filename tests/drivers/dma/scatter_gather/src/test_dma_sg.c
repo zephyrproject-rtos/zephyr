@@ -22,16 +22,17 @@
 #include <zephyr/ztest.h>
 
 #define XFERS 4
+#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
 
 #if CONFIG_NOCACHE_MEMORY
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE] __used
 	__attribute__((__section__(".nocache")));
-static __aligned(32) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] __used
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
 /* this src memory shall be in RAM to support using as a DMA source pointer.*/
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE];
-static __aligned(32) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] = { { 0 } };
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE];
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] = { { 0 } };
 #endif
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
@@ -66,7 +67,7 @@ static int test_sg(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
+	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;

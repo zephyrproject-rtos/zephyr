@@ -115,6 +115,7 @@ EXC_FUNC_CODE(IV_GENERAL_PROTECTION, 0);
 EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR, 0);
 EXC_FUNC_CODE(IV_ALIGNMENT_CHECK, 0);
 EXC_FUNC_NOCODE(IV_MACHINE_CHECK, 0);
+EXC_FUNC_CODE(IV_CTRL_PROTECTION_EXCEPTION, 0);
 #endif
 
 _EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT, 0);
@@ -219,7 +220,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
 	 * and run df_handler_bottom
 	 */
-	__asm__ volatile ("iret");
+	__asm__ volatile ("iret" ::: "memory");
 	CODE_UNREACHABLE;
 }
 

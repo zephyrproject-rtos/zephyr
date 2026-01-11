@@ -1,0 +1,20 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_BFLB
+	bool "Bouffalolab flash driver"
+	default y
+	depends on DT_HAS_BFLB_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select CODE_DATA_RELOCATION
+	help
+	  Enables Bouffalolab flash driver for the flash controller
+
+config SOC_FLASH_BFLB_DIRECT_ACCESS
+	bool "Bouffalolab flash driver read mode"
+	default n
+	depends on SOC_FLASH_BFLB
+	help
+	  Enables direct access to flash via controller instead of via cache and XIP

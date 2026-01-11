@@ -319,7 +319,7 @@ static bool is_eapol(struct net_pkt *pkt)
 	uint16_t ethertype;
 
 	hdr = NET_ETH_HDR(pkt);
-	ethertype = ntohs(hdr->type);
+	ethertype = net_ntohs(hdr->type);
 
 	return ethertype == NET_ETH_PTYPE_EAPOL;
 }
@@ -515,10 +515,10 @@ static void ip_maddr_event_handler(struct net_if *iface,
 	}
 
 	switch (addr->family) {
-	case AF_INET:
+	case NET_AF_INET:
 		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
 		break;
-	case AF_INET6:
+	case NET_AF_INET6:
 		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
 		break;
 	default:
@@ -780,6 +780,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (!rpu_ctx_zep) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL",
 			__func__);
+		ret = -EIO;
 		goto out;
 	}
 
@@ -795,6 +796,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: nrf_wifi_fmac_dev_add_zep failed",
 				__func__);
+			ret = -EIO;
 			goto out;
 		}
 		fmac_dev_added = true;
@@ -820,12 +822,12 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (vif_ctx_zep->vif_idx >= MAX_NUM_VIFS) {
 		LOG_ERR("%s: FMAC returned invalid interface index",
 			__func__);
+		ret = -EIO;
 		goto dev_rem;
 	}
 
 	k_mutex_init(&vif_ctx_zep->vif_lock);
-	rpu_ctx_zep->vif_ctx_zep[vif_ctx_zep->vif_idx].if_type =
-		add_vif_info.iftype;
+	vif_ctx_zep->if_type = add_vif_info.iftype;
 
 	/* Check if user has provided a valid MAC address, if not
 	 * fetch it from OTP.
@@ -838,6 +840,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: Failed to get MAC address",
 				__func__);
+			ret = -EIO;
 			goto del_vif;
 		}
 		net_if_set_link_addr(vif_ctx_zep->zep_net_if_ctx,
@@ -855,6 +858,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: MAC address change failed",
 			__func__);
+		ret = -EIO;
 		goto del_vif;
 	}
 
@@ -876,6 +880,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_vif_state failed",
 			__func__);
+		ret = -EIO;
 		goto del_vif;
 	}
 
@@ -890,6 +895,7 @@ int nrf_wifi_if_start_zep(const struct device *dev)
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_sys_fmac_set_power_save failed",
 			__func__);
+		ret = -EIO;
 		goto dev_rem;
 	}
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
@@ -1211,23 +1217,92 @@ out:
 }
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
-struct net_stats_eth *nrf_wifi_eth_stats_get(const struct device *dev)
+struct net_stats_eth *nrf_wifi_eth_stats_get_type(const struct device *dev,
+						   uint32_t type)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct rpu_sys_op_stats stats;
+	enum nrf_wifi_status status;
+	size_t fw_stats_size;
+	size_t num_uint32;
+	const uint8_t *fw_stats_bytes;
+	size_t i;
+	int vendor_idx = 0;
+	const char **key_ptr;
+	uint32_t *val_ptr;
+	uint32_t val;
+#endif
 
 	if (!dev) {
 		LOG_ERR("%s Device not found", __func__);
-		goto out;
+		goto err;
 	}
 
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
-		goto out;
+		goto err;
 	}
 
+	if (!(type & ETHERNET_STATS_TYPE_VENDOR)) {
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+		vif_ctx_zep->eth_stats.vendor = NULL;
+#endif
+		goto done;
+	}
+
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
+		LOG_ERR("%s: rpu_ctx_zep or rpu_ctx is NULL", __func__);
+		goto err;
+	}
+
+	memset(&stats, 0, sizeof(stats));
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx,
+					     RPU_STATS_TYPE_ALL,
+					     &stats);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: Failed to get RPU stats", __func__);
+		goto done;
+	}
+
+	/* Treat stats.fw as a blob and divide into uint32_t chunks */
+	fw_stats_size = sizeof(stats.fw);
+	num_uint32 = fw_stats_size / sizeof(uint32_t);
+	fw_stats_bytes = (const uint8_t *)&stats.fw;
+
+	vendor_idx = 0;
+	for (i = 0; i < num_uint32 && vendor_idx < MAX_VENDOR_STATS - 1; i++) {
+		memcpy(&val, fw_stats_bytes + i * sizeof(uint32_t),
+		       sizeof(uint32_t));
+
+		snprintk(vif_ctx_zep->vendor_key_strings[vendor_idx], 16,
+			 "fw_%zu", i);
+
+		key_ptr = (const char **) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].key;
+		*key_ptr = vif_ctx_zep->vendor_key_strings[vendor_idx];
+
+		val_ptr = (uint32_t *) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].value;
+		*val_ptr = val;
+
+		vendor_idx++;
+	}
+
+	key_ptr = (const char **) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].key;
+	val_ptr = (uint32_t *) &vif_ctx_zep->eth_stats_vendor_data[vendor_idx].value;
+	*key_ptr = NULL;
+	*val_ptr = 0;
+
+	vif_ctx_zep->eth_stats.vendor = vif_ctx_zep->eth_stats_vendor_data;
+#endif
+
+done:
 	return &vif_ctx_zep->eth_stats;
-out:
+
+err:
 	return NULL;
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
@@ -1291,7 +1366,9 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 
 	/* FMAC statistics */
-	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx,
+					     RPU_STATS_TYPE_ALL,
+					     &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_WRN("%s: nrf_wifi_fmac_stats_get failed", __func__);
 		/* Special value to indicate that

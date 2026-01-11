@@ -34,7 +34,6 @@ int main(void)
 	struct video_selection sel = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
-	size_t bsize;
 	int i = 0;
 	int err;
 
@@ -131,17 +130,10 @@ int main(void)
 		(char)(fmt.pixelformat >> 16), (char)(fmt.pixelformat >> 24), fmt.width, fmt.height,
 		fmt.pitch);
 
-	if (caps.min_line_count != LINE_COUNT_HEIGHT) {
-		LOG_ERR("Partial framebuffers not supported by this sample");
-		return 0;
-	}
-	/* Size to allocate for each buffer */
-	bsize = fmt.pitch * fmt.height;
-
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
+		buffers[i] = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+							K_NO_WAIT);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
@@ -168,7 +160,11 @@ int main(void)
 		return 0;
 	}
 
-	display_blanking_off(display_dev);
+	err = display_blanking_off(display_dev);
+	if (err < 0 && err != -ENOSYS) {
+		LOG_ERR("Failed to turn blanking off (error %d)", err);
+		return 0;
+	}
 
 	const lv_img_dsc_t video_img = {
 		.header.w = CONFIG_VIDEO_WIDTH,

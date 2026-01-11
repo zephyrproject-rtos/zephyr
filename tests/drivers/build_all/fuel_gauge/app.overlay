@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	test {
@@ -56,7 +56,7 @@
 		test_fuel_gauge: fuel_gauge {
 			compatible = "zephyr,fuel-gauge-composite";
 			status = "okay";
-			battery-voltage = <&test_vbatt>;
+			source-primary = <&test_vbatt>;
 			device-chemistry = "lithium-ion-polymer";
 			ocv-capacity-table-0 = <0>;
 			charge-full-design-microamp-hours = <1350000>;

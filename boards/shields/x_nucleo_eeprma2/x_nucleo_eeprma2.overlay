@@ -6,6 +6,7 @@
 
 #include <freq.h>
 #include <mem.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	aliases {
@@ -28,7 +29,7 @@
 		timeout = <5>;
 
 		/* if solder-bridge closed: arduino A1 pin on CN8 can wp */
-		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
+		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A1 GPIO_ACTIVE_LOW>; */
 	};
 
 	eeprom1_x_nucleo_eeprma2: eeprom@55 {
@@ -41,7 +42,7 @@
 		timeout = <5>;
 
 		/* if solder-bridge closed: arduino A1 pin on CN8 can wp */
-		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
+		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A1 GPIO_ACTIVE_LOW>; */
 	};
 
 	eeprom2_x_nucleo_eeprma2: eeprom@56 {
@@ -54,7 +55,7 @@
 		timeout = <5>;
 
 		/* if solder-bridge closed: arduino A1 pin on CN8 can wp */
-		/* wp-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; */
+		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A1 GPIO_ACTIVE_LOW>; */
 	};
 
 	/* U4: unpopulated SO8N footprint for any I2C M24 EEPROM */
@@ -62,9 +63,9 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header  8 GPIO_ACTIVE_LOW>, /* U5: eeprom4 */
-		   <&arduino_header 15 GPIO_ACTIVE_LOW>, /* U6: eeprom5 */
-		   <&arduino_header 16 GPIO_ACTIVE_LOW>; /* U7: eeprom6 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_LOW>, /* U5: eeprom4 */
+		   <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>, /* U6: eeprom5 */
+		   <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>; /* U7: eeprom6 */
 
 	/*
 	 * All chip select pins have an on board 10k pull-up resistor to VCC,
@@ -91,7 +92,7 @@
 		timeout = <5>;
 
 		/* if solder-bridge closed: arduino A0 pin on CN8 can wp */
-		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
+		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A0 GPIO_ACTIVE_LOW>; */
 	};
 
 	eeprom5_x_nucleo_eeprma2: eeprom_m95256@1 {
@@ -105,7 +106,7 @@
 		timeout = <5>;
 
 		/* if solder-bridge closed: arduino A0 pin on CN8 can wp */
-		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
+		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A0 GPIO_ACTIVE_LOW>; */
 	};
 
 	eeprom6_x_nucleo_eeprma2: eeprom_m95m04@2 {
@@ -120,7 +121,7 @@
 		timeout = <5>;
 
 		/* if solder-bridge closed: arduino A0 pin on CN8 can wp */
-		/* wp-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; */
+		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A0 GPIO_ACTIVE_LOW>; */
 	};
 
 	/* U8: unpopulated SO8N footprint for any M95 SPI EEPROM */

@@ -392,13 +392,13 @@ device.
      - Video input device, typically a camera.
    * - zephyr,canbus
      - Sets the default CAN controller
-   * - zephyr,ccm
-     - Core-Coupled Memory node on some STM32 SoCs
    * - zephyr,code-partition
      - Flash partition that the Zephyr image's text section should be linked
        into
    * - zephyr,console
      - Sets UART device used by console driver
+   * - zephyr,crc
+     - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
    * - zephyr,keyboard-scan
@@ -456,14 +456,16 @@ device.
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
      - Sets UART device used by serial pipe driver
-   * - zephyr,usb-device
-     - USB device node. If defined and has a ``vbus-gpios`` property, these
-       will be used by the USB subsystem to enable/disable VBUS
    * - zephyr,led-strip
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
    * - zephyr,touch
-     - touchscreen controller device node.
+     - Touchscreen controller device node. When LVGL is used, if
+       :kconfig:option:`CONFIG_LV_Z_POINTER_FROM_CHOSEN_TOUCH` is enabled, an LVGL
+       pointer input device is created using the touchscreen controller
+       as its input source.
+   * - zephyr,videoenc
+     - Video encoder device, typically an H264 or MJPEG video encoder.
    * - mcuboot,ram-load-dev
      - When a Zephyr application is built to be loaded to RAM by MCUboot, with
        :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,

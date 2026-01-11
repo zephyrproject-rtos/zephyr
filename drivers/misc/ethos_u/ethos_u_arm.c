@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024 Arm Limited and/or its
+ * SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024-2025 Arm Limited and/or its
  * affiliates <open-source-office@arm.com></text>
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,17 @@
 #define DT_DRV_COMPAT arm_ethos_u
 LOG_MODULE_REGISTER(arm_ethos_u, CONFIG_ETHOS_U_LOG_LEVEL);
 
+/* DT helpers: use fast-memory-region if present; else NULL/0. */
+#define ETHOSU_FAST_BASE(n)                                                                        \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, fast_memory_region), \
+		((void *)DT_REG_ADDR(DT_INST_PHANDLE(n, fast_memory_region))), \
+		(NULL))
+
+#define ETHOSU_FAST_SIZE(n)                                                                        \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, fast_memory_region), \
+		((size_t)DT_REG_SIZE(DT_INST_PHANDLE(n, fast_memory_region))), \
+		(0u))
+
 void ethosu_zephyr_irq_handler(const struct device *dev)
 {
 	struct ethosu_data *data = dev->data;
@@ -31,16 +42,18 @@ static int ethosu_zephyr_init(const struct device *dev)
 	struct ethosu_driver *drv = &data->drv;
 	struct ethosu_driver_version version;
 
-	LOG_DBG("Ethos-U DTS info. base_address=0x%p, secure_enable=%u, privilege_enable=%u",
-		config->base_addr, config->secure_enable, config->privilege_enable);
+	LOG_DBG("Ethos-U DTS info. base_address=%p, fast_mem=%p, fast_size=%zu, secure_enable=%u, "
+		"privilege_enable=%u",
+		config->base_addr, config->fast_mem_base, config->fast_mem_size,
+		config->secure_enable, config->privilege_enable);
 
 	ethosu_get_driver_version(&version);
 
 	LOG_DBG("Version. major=%u, minor=%u, patch=%u", version.major, version.minor,
 		version.patch);
 
-	if (ethosu_init(drv, config->base_addr, NULL, 0, config->secure_enable,
-			config->privilege_enable)) {
+	if (ethosu_init(drv, config->base_addr, config->fast_mem_base, config->fast_mem_size,
+			config->secure_enable, config->privilege_enable)) {
 		LOG_ERR("Failed to initialize NPU with ethosu_init().");
 		return -EINVAL;
 	}
@@ -65,6 +78,8 @@ static int ethosu_zephyr_init(const struct device *dev)
 		.secure_enable = DT_INST_PROP(n, secure_enable),                                   \
 		.privilege_enable = DT_INST_PROP(n, privilege_enable),                             \
 		.irq_config = &ethosu_zephyr_irq_config_##n,                                       \
+		.fast_mem_base = ETHOSU_FAST_BASE(n),                                              \
+		.fast_mem_size = ETHOSU_FAST_SIZE(n),                                              \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ethosu_zephyr_init, NULL, &ethosu_data_##n, &ethosu_dts_info_##n, \

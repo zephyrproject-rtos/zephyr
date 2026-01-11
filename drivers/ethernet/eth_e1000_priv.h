@@ -18,9 +18,13 @@ extern "C" {
 
 #define ICR_TXDW	     (1) /* Transmit Descriptor Written Back */
 #define ICR_TXQE	(1 << 1) /* Transmit Queue Empty */
+#define ICR_RXDMT0	(1 << 4) /* Receive Descriptor Minimum Threshold */
 #define ICR_RXO		(1 << 6) /* Receiver Overrun */
+#define ICR_RXT0	(1 << 7) /* Receiver Timer */
 
+#define IMS_RXDMT0	(1 << 4) /* Receive Descriptor Minimum Threshold */
 #define IMS_RXO		(1 << 6) /* Receiver FIFO Overrun */
+#define IMS_RXT0	(1 << 7) /* Receiver Timer */
 
 #define RCTL_MPE	(1 << 4) /* Multicast Promiscuous Enabled */
 
@@ -32,9 +36,12 @@ extern "C" {
 
 #define ETH_ALEN 6	/* TODO: Add a global reusable definition in OS */
 
+#define RDMTS_OFFSET 8
+
 enum e1000_reg_t {
 	CTRL	= 0x0000,	/* Device Control */
 	ICR	= 0x00C0,	/* Interrupt Cause Read */
+	ITR	= 0x00C4,	/* Interrupt Throttling Rate */
 	ICS	= 0x00C8,	/* Interrupt Cause Set */
 	IMS	= 0x00D0,	/* Interrupt Mask Set */
 	RCTL	= 0x0100,	/* Receive Control */
@@ -75,9 +82,12 @@ struct e1000_rx {
 };
 
 struct e1000_dev {
-	volatile struct e1000_tx tx __aligned(16);
-	volatile struct e1000_rx rx __aligned(16);
+	volatile struct e1000_tx tx[CONFIG_ETH_E1000_TX_QUEUE_SIZE] __aligned(16);
+	volatile struct e1000_rx rx[CONFIG_ETH_E1000_RX_QUEUE_SIZE] __aligned(16);
 	mm_reg_t address;
+
+	uint32_t next_rx_desc;
+	uint32_t next_tx_desc;
 
 	/* BDF & DID/VID */
 	struct pcie_dev *pcie;
@@ -88,11 +98,10 @@ struct e1000_dev {
 	 */
 	struct net_if *iface;
 	uint8_t mac[ETH_ALEN];
-	uint8_t txb[NET_ETH_MTU];
-	uint8_t rxb[NET_ETH_MTU];
+	uint8_t txb[CONFIG_ETH_E1000_TX_QUEUE_SIZE][NET_ETH_MTU];
+	uint8_t rxb[CONFIG_ETH_E1000_RX_QUEUE_SIZE][NET_ETH_MTU];
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	const struct device *ptp_clock;
-	double clk_ratio;
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;

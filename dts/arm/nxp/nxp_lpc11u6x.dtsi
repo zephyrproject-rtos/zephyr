@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/clock/lpc11u6x_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -19,24 +20,24 @@
 		};
 	};
 
-	sram0:memory@10000000 {
+	sram0: memory@10000000 {
 		compatible = "mmio-sram";
 	};
 
-	sram1:memory@20000000 {
+	sram1: memory@20000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20000000 0x800>;
 		zephyr,memory-region = "SRAM1";
 	};
 
-	sram2:memory@20004000 {
+	sram2: memory@20004000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20004000 0x800>;
 		zephyr,memory-region = "SRAM2";
 	};
 
 	soc {
-		flash0:flash@0 {
+		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 		};
 
@@ -57,19 +58,23 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40044000 0x150>;
+
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc11u6x-pinctrl";
 			};
+
 			/* PIO0_0 to PIO0_23 */
 			pio0: pio0@0 {
 				compatible = "nxp,lpc-iocon-pio";
 				reg = <0x0 0x60>;
 			};
+
 			/* PIO1_0 to PIO1_31. */
 			pio1: pio1@60 {
 				compatible = "nxp,lpc-iocon-pio";
 				reg = <0x60 0x7C>;
 			};
+
 			/* PIO2_0 to PIO2_23. */
 			pio2: pio2@f0 {
 				compatible = "nxp,lpc-iocon-pio";
@@ -81,7 +86,7 @@
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
-			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
 			gpio-controller;
@@ -98,7 +103,7 @@
 		gpio1: gpio@1 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
-			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
 			gpio-controller;
@@ -114,7 +119,7 @@
 		gpio2: gpio@2 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
-			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
 			gpio-controller;

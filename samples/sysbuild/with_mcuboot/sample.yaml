@@ -11,18 +11,40 @@ tests:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+      - nucleo_c071rb
+      - nucleo_f091rc
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h753zi
       - nucleo_h7s3l8
+      - nucleo_l152re
       - nucleo_u385rg_q
-      - stm32h7s78_dk
+      - nucleo_wb55rg
+      - nucleo_wb09ke
+      - nucleo_wba65ri
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f3_disco
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
       - stm32h573i_dk
+      - stm32h573i_dk/stm32h573xx/ext_flash_app
+      - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - stm32l562e_dk
+      - stm32u083c_dk
+      - stm32wba65i_dk1
+      - sam_e54_xpro
+      - pic32cx_sg41_cult
     integration_platforms:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
     tags: mcuboot

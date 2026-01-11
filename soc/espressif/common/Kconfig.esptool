@@ -6,7 +6,6 @@ if SOC_FAMILY_ESPRESSIF_ESP32
 config ESPTOOLPY_OCT_FLASH
 	bool "Use Octal Flash"
 	depends on SOC_SERIES_ESP32S3
-	default n
 
 config ESPTOOLPY_FLASH_MODE_AUTO_DETECT
 	depends on SOC_SERIES_ESP32S3
@@ -38,15 +37,19 @@ choice ESPTOOLPY_FLASHMODE
 config ESPTOOLPY_FLASHMODE_QIO
 	bool "QIO"
 	depends on !ESPTOOLPY_OCT_FLASH
+
 config ESPTOOLPY_FLASHMODE_QOUT
 	bool "QOUT"
 	depends on !ESPTOOLPY_OCT_FLASH
+
 config ESPTOOLPY_FLASHMODE_DIO
 	bool "DIO"
 	depends on !ESPTOOLPY_OCT_FLASH
+
 config ESPTOOLPY_FLASHMODE_DOUT
 	bool "DOUT"
 	depends on !ESPTOOLPY_OCT_FLASH
+
 config ESPTOOLPY_FLASHMODE_OPI
 	bool "OPI"
 	depends on ESPTOOLPY_OCT_FLASH
@@ -60,6 +63,7 @@ choice ESPTOOLPY_FLASH_SAMPLE_MODE
 
 config ESPTOOLPY_FLASH_SAMPLE_MODE_STR
 	bool "STR Mode"
+
 config ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
 	bool "DTR Mode"
 	depends on ESPTOOLPY_OCT_FLASH
@@ -81,6 +85,7 @@ config ESPTOOLPY_FLASHMODE
 choice ESPTOOLPY_FLASHFREQ
 	prompt "Flash SPI speed"
 	default ESPTOOLPY_FLASHFREQ_40M if SOC_SERIES_ESP32
+	default ESPTOOLPY_FLASHFREQ_48M if SOC_SERIES_ESP32H2
 	default ESPTOOLPY_FLASHFREQ_60M if SOC_SERIES_ESP32C2
 	default ESPTOOLPY_FLASHFREQ_80M if ESPTOOLPY_FLASHFREQ_80M_DEFAULT
 
@@ -89,24 +94,29 @@ config ESPTOOLPY_FLASHFREQ_120M
 	select SPI_FLASH_HPM_ENABLE
 	depends on SOC_SERIES_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
 	help
-		- Flash 120 MHz SDR mode is stable.
-		- Flash 120 MHz DDR mode is an experimental feature, it works when
-		the temperature is stable.
+	  - Flash 120 MHz SDR mode is stable.
+	  - Flash 120 MHz DDR mode is an experimental feature, it works when
+	  the temperature is stable.
 
-		Risks:
-		If your chip powers on at a certain temperature, then after the temperature
-		increases or decreases by approximately 20 Celsius degrees (depending on the
-		chip), the program will crash randomly.
+	  Risks:
+	  If your chip powers on at a certain temperature, then after the temperature
+	  increases or decreases by approximately 20 Celsius degrees (depending on the
+	  chip), the program will crash randomly.
 
 config ESPTOOLPY_FLASHFREQ_80M
 	bool "80 MHz"
+
 config ESPTOOLPY_FLASHFREQ_60M
 	bool "60 MHz"
+config ESPTOOLPY_FLASHFREQ_48M
+	bool "48 MHz"
 config ESPTOOLPY_FLASHFREQ_40M
 	bool "40 MHz"
+
 config ESPTOOLPY_FLASHFREQ_26M
 	bool "26 MHz"
 	depends on !SOC_SERIES_ESP32S3
+
 config ESPTOOLPY_FLASHFREQ_20M
 	bool "20 MHz"
 
@@ -125,6 +135,7 @@ config ESPTOOLPY_FLASHFREQ
 	default '80m' if ESPTOOLPY_FLASHFREQ_120M
 	default '80m' if ESPTOOLPY_FLASHFREQ_80M
 	default '60m' if ESPTOOLPY_FLASHFREQ_60M
+	default '48m' if ESPTOOLPY_FLASHFREQ_48M
 	default '40m' if ESPTOOLPY_FLASHFREQ_40M
 	default '26m' if ESPTOOLPY_FLASHFREQ_26M
 	default '20m' if ESPTOOLPY_FLASHFREQ_20M
@@ -136,22 +147,30 @@ choice ESPTOOLPY_FLASHSIZE
 	help
 	  SPI flash size, in megabytes
 
-	config ESPTOOLPY_FLASHSIZE_1MB
-		bool "1 MB"
-	config ESPTOOLPY_FLASHSIZE_2MB
-		bool "2 MB"
-	config ESPTOOLPY_FLASHSIZE_4MB
-		bool "4 MB"
-	config ESPTOOLPY_FLASHSIZE_8MB
-		bool "8 MB"
-	config ESPTOOLPY_FLASHSIZE_16MB
-		bool "16 MB"
-	config ESPTOOLPY_FLASHSIZE_32MB
-		bool "32 MB"
-	config ESPTOOLPY_FLASHSIZE_64MB
-		bool "64 MB"
-	config ESPTOOLPY_FLASHSIZE_128MB
-		bool "128 MB"
+config ESPTOOLPY_FLASHSIZE_1MB
+	bool "1 MB"
+
+config ESPTOOLPY_FLASHSIZE_2MB
+	bool "2 MB"
+
+config ESPTOOLPY_FLASHSIZE_4MB
+	bool "4 MB"
+
+config ESPTOOLPY_FLASHSIZE_8MB
+	bool "8 MB"
+
+config ESPTOOLPY_FLASHSIZE_16MB
+	bool "16 MB"
+
+config ESPTOOLPY_FLASHSIZE_32MB
+	bool "32 MB"
+
+config ESPTOOLPY_FLASHSIZE_64MB
+	bool "64 MB"
+
+config ESPTOOLPY_FLASHSIZE_128MB
+	bool "128 MB"
+
 endchoice
 
 config ESPTOOLPY_FLASHSIZE
@@ -167,7 +186,6 @@ config ESPTOOLPY_FLASHSIZE
 
 config ESPTOOLPY_HEADER_FLASHSIZE_UPDATE
 	bool "Detect flash size when flashing bootloader"
-	default n
 	help
 	  If this option is set, flashing the project will automatically detect
 	  the flash size of the target chip and update the bootloader image
@@ -187,10 +205,12 @@ choice ESPTOOLPY_BEFORE
 	  wired from the serial port to the ESP32. Most USB development
 	  boards do this internally.
 
-	config ESPTOOLPY_BEFORE_RESET
-	  bool "Reset to bootloader"
-	config ESPTOOLPY_BEFORE_NORESET
-	  bool "No reset"
+config ESPTOOLPY_BEFORE_RESET
+	bool "Reset to bootloader"
+
+config ESPTOOLPY_BEFORE_NORESET
+	bool "No reset"
+
 endchoice # ESPTOOLPY_BEFORE
 
 config ESPTOOLPY_BEFORE
@@ -203,15 +223,16 @@ choice ESPTOOLPY_AFTER
 	default ESPTOOLPY_AFTER_RESET
 	help
 	  Configure whether esptool.py should reset the ESP32 after flashing.
-
 	  Automatic resetting depends on the RTS & DTR signals being
 	  wired from the serial port to the ESP32. Most USB development
 	  boards do this internally.
 
-	config ESPTOOLPY_AFTER_RESET
-	  bool "Reset after flashing"
-	config ESPTOOLPY_AFTER_NORESET
-	  bool "Stay in bootloader"
+config ESPTOOLPY_AFTER_RESET
+	bool "Reset after flashing"
+
+config ESPTOOLPY_AFTER_NORESET
+	bool "Stay in bootloader"
+
 endchoice
 
 config ESPTOOLPY_AFTER

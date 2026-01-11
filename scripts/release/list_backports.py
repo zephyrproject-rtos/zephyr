@@ -68,7 +68,7 @@ def parse_args():
     parser.add_argument('-e', '--end', dest='end', help='end date (YYYY-mm-dd)',
                         metavar='END_DATE', type=valid_date_type)
     parser.add_argument("-o", "--org", default="zephyrproject-rtos",
-                        help="Github organisation")
+                        help="Github organization")
     parser.add_argument('-p', '--include-pull', dest='includes',
                         help='include pull request (can be specified multiple times)',
                         metavar='PR', type=int, action='append', default=[])

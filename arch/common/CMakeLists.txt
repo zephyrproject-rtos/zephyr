@@ -17,6 +17,9 @@ if(CONFIG_GEN_ISR_TABLES)
   )
 endif()
 
+zephyr_library_sources(init.c)
+zephyr_library_sources_ifdef(CONFIG_XIP xip.c)
+
 zephyr_library_sources_ifdef(
   CONFIG_ISR_TABLE_SHELL
   isr_tables_shell.c
@@ -83,7 +86,7 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   nocache.ld
 )
 
-if (DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
+if(DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   # Exclamation mark is printable character with lowest number in ASCII table.
   # We are sure that this file will be included as a first.
   zephyr_linker_sources(ROM_START SORT_KEY ! rom_start_address.ld)
@@ -98,7 +101,7 @@ endif()
 
 # isr_tables is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
-if (CONFIG_GEN_ISR_TABLES)
+if(CONFIG_GEN_ISR_TABLES)
   add_library(isr_tables
     isr_tables.c
   )
@@ -106,6 +109,9 @@ if (CONFIG_GEN_ISR_TABLES)
   add_dependencies(isr_tables zephyr_generated_headers)
   target_link_libraries(isr_tables zephyr_interface)
   zephyr_library_link_libraries(isr_tables)
+
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_sw_isr_table)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_irq_vector_table)
 endif()
 
 if(CONFIG_COVERAGE)

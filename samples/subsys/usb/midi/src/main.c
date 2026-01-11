@@ -14,10 +14,14 @@
 #include <zephyr/input/input.h>
 #include <zephyr/usb/class/usbd_midi2.h>
 
+#include <ump_stream_responder.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sample_usb_midi, LOG_LEVEL_INF);
 
-static const struct device *const midi = DEVICE_DT_GET(DT_NODELABEL(usb_midi));
+#define USB_MIDI_DT_NODE DT_NODELABEL(usb_midi)
+
+static const struct device *const midi = DEVICE_DT_GET(USB_MIDI_DT_NODE);
 
 static struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
@@ -38,15 +42,26 @@ static void key_press(struct input_event *evt, void *user_data)
 }
 INPUT_CALLBACK_DEFINE(NULL, key_press, NULL);
 
+static const struct ump_endpoint_dt_spec ump_ep_dt =
+	UMP_ENDPOINT_DT_SPEC_GET(USB_MIDI_DT_NODE);
+
+const struct ump_stream_responder_cfg responder_cfg =
+	UMP_STREAM_RESPONDER(midi, usbd_midi_send, &ump_ep_dt);
+
 static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 {
 	LOG_INF("Received MIDI packet (MT=%X)", UMP_MT(ump));
 
-	/* Only send MIDI1 channel voice messages back to the host */
-	if (UMP_MT(ump) == UMP_MT_MIDI1_CHANNEL_VOICE) {
-		LOG_INF("Send back MIDI1 message %02X %02X %02X", UMP_MIDI_STATUS(ump),
-			UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
+	switch (UMP_MT(ump)) {
+	case UMP_MT_MIDI1_CHANNEL_VOICE:
+		/* Only send MIDI1 channel voice messages back to the host */
+		LOG_INF("Send back MIDI1 message %02X %02X %02X",
+			UMP_MIDI_STATUS(ump), UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
 		usbd_midi_send(dev, ump);
+		break;
+	case UMP_MT_UMP_STREAM:
+		ump_stream_respond(&responder_cfg, ump);
+		break;
 	}
 }
 

@@ -46,6 +46,7 @@
 #include <zephyr/sys/math_extras.h>
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_adc.h>
 #include <stm32_ll_utils.h>
 
@@ -98,7 +99,7 @@ LOG_MODULE_REGISTER(adc_stm32wb0, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CHANNEL_TYPE_INVALID	(0xFFU)	/* Invalid */
 
 /** See RM0505 §6.2.1 "System clock details" */
-BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (8 * 1000 * 1000),
+BUILD_ASSERT(STM32_HCLK_FREQUENCY >= (8 * 1000 * 1000),
 	"STM32WB0: system clock frequency must be at least 8MHz to use ADC");
 
 /**
@@ -304,7 +305,7 @@ static inline void ll_adc_set_conversion_channel(ADC_TypeDef *ADCx,
 	const uint32_t reg = (Conversion & 8) ? 1 : 0;
 	const uint32_t shift = 4 * (Conversion & 7);
 
-	MODIFY_REG((&ADCx->SEQ_1)[reg], ADC_SEQ_1_SEQ0 << shift, Channel << shift);
+	stm32_reg_modify_bits((&ADCx->SEQ_1) + reg, ADC_SEQ_1_SEQ0 << shift, Channel << shift);
 }
 
 /**
@@ -379,7 +380,7 @@ static inline void ll_adc_set_calib_point_for_any(ADC_TypeDef *ADCx, uint32_t Ty
 
 	const uint32_t shift = (group_shift + type_shift);
 
-	MODIFY_REG(ADCx->COMP_SEL, (ADC_COMP_SEL_OFFSET_GAIN0 << shift), (Point << shift));
+	stm32_reg_modify_bits(&ADCx->COMP_SEL, ADC_COMP_SEL_OFFSET_GAIN0 << shift, Point << shift);
 }
 
 static void adc_acquire_pm_locks(void)
@@ -1229,8 +1230,11 @@ static struct adc_stm32wb0_data adc_data = {
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
 		.dest_data_size = STM32_DMA_CONFIG_MEMORY_DATA_SIZE(
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
-		.source_burst_length = 1,	/* SINGLE transfer */
-		.dest_burst_length = 1,		/* SINGLE transfer */
+		/* single transfers (burst length = data size) */
+		.source_burst_length = STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
+		.dest_burst_length = STM32_DMA_CONFIG_MEMORY_DATA_SIZE(
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(ADC_INSTANCE, 0)),
 		.block_count = 1,
 		.dma_callback = adc_stm32wb0_dma_callback,
 		/* head_block and user_data are initialized at runtime */
@@ -1246,6 +1250,6 @@ static struct adc_stm32wb0_data adc_data = {
 
 PM_DEVICE_DT_DEFINE(ADC_NODE, adc_stm32wb0_pm_action);
 
-DEVICE_DT_DEFINE(ADC_NODE, &adc_stm32wb0_init, PM_DEVICE_DT_GET(ADC_NODE),
+DEVICE_DT_DEFINE(ADC_NODE, adc_stm32wb0_init, PM_DEVICE_DT_GET(ADC_NODE),
 	&adc_data, &adc_config, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,
 	&api_stm32wb0_driver_api);

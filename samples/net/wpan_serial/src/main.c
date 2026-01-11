@@ -13,11 +13,10 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(wpan_serial, LOG_LEVEL_DBG);
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/random/random.h>
 
 #include <zephyr/net_buf.h>
@@ -113,7 +112,7 @@ static int slip_process_byte(unsigned char c)
 
 	if (!pkt_curr) {
 		pkt_curr = net_pkt_rx_alloc_with_buffer(NULL, 256,
-							AF_UNSPEC, 0,
+							NET_AF_UNSPEC, 0,
 							K_NO_WAIT);
 		if (!pkt_curr) {
 			LOG_ERR("No more buffers");
@@ -174,7 +173,7 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_alloc_with_buffer(NULL, len + 5,
-					AF_UNSPEC, 0, K_NO_WAIT);
+					NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_DBG("No pkt available");
 		return;
@@ -541,12 +540,6 @@ int main(void)
 
 	if (!device_is_ready(uart_dev)) {
 		LOG_ERR("CDC ACM device not ready");
-		return 0;
-	}
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
 		return 0;
 	}
 

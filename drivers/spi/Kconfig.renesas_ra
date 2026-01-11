@@ -1,6 +1,6 @@
 # Renesas RA Family
 
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_RENESAS_RA
@@ -33,3 +33,31 @@ config SPI_USE_HW_SS
 	  Use Hardware Peripheral Select instead of Software Peripheral Select.
 
 endif # SPI_RENESAS_RA
+
+config SPI_RENESAS_RA_SCI_B
+	bool "Renesas RA SCI B SPI"
+	default y
+	depends on DT_HAS_RENESAS_RA_SPI_SCI_B_ENABLED
+	select USE_RA_FSP_SCI_B_SPI
+	select PINCTRL
+	help
+	  Enable Renesas RA SCI B SPI Driver.
+
+if SPI_RENESAS_RA_SCI_B
+
+config SPI_RENESAS_RA_SCI_B_INTERRUPT
+	bool
+	depends on SPI_ASYNC
+	default y
+	help
+	  Enable Interrupt support for the SCI B SPI Driver of RA family.
+
+config SPI_RENESAS_RA_SCI_B_DTC
+	bool
+	default y
+	depends on SPI_RENESAS_RA_SCI_B_INTERRUPT
+	select USE_RA_FSP_DTC
+	help
+	  Enable DTC (Data Transfer Control) support for the SCI B SPI Driver of RA family.
+
+endif # SPI_RENESAS_RA_SCI_B

@@ -145,60 +145,34 @@ static int bridged_subnets_get(const struct bt_mesh_model *model, struct bt_mesh
 	net_buf_simple_add_le16(&msg, net_idx_filter);
 	net_buf_simple_add_u8(&msg, start_id);
 
-	uint8_t cnt = 0;
-	uint16_t net_idx1, net_idx2;
-
 	for (int i = 0; i < rows; i++) {
-		net_idx1 = brg_tbl[i].net_idx1;
-		net_idx2 = brg_tbl[i].net_idx2;
+		uint16_t net_idx1 = brg_tbl[i].net_idx1;
+		uint16_t net_idx2 = brg_tbl[i].net_idx2;
+		bool is_first_instance;
 
 		if (net_buf_simple_tailroom(&msg) < 3 + BT_MESH_MIC_SHORT) {
 			break;
 		}
 
-		switch (filter_net_idx.filter) {
-		/* Report pair of NetKeys from the table, starting from start_id. */
-		case 0:
-			if (i >= start_id) {
+		is_first_instance = true;
+		for (int j = 0; j < i; j++) {
+			if (net_idx1 == brg_tbl[j].net_idx1 && net_idx2 == brg_tbl[j].net_idx2) {
+				is_first_instance = false;
+				break;
+			}
+		}
+
+		if (is_first_instance &&
+		    (filter_net_idx.filter == 0 ||
+		     (filter_net_idx.filter == 1 && net_idx1 == filter_net_idx.net_idx) ||
+		     (filter_net_idx.filter == 2 && net_idx2 == filter_net_idx.net_idx) ||
+		     (filter_net_idx.filter == 3 && (net_idx1 == filter_net_idx.net_idx ||
+						     net_idx2 == filter_net_idx.net_idx)))) {
+			if (start_id > 0) {
+				start_id--;
+			} else {
 				key_idx_pack_pair(&msg, net_idx1, net_idx2);
 			}
-			break;
-
-		/* Report pair of NetKeys in which (NetKeyIndex1) matches the net_idx */
-		case 1:
-			if (net_idx1 == filter_net_idx.net_idx) {
-				if (cnt >= start_id) {
-					key_idx_pack_pair(&msg, net_idx1, net_idx2);
-				}
-				cnt++;
-			}
-			break;
-
-		/* Report pair of NetKeys in which (NetKeyIndex2) matches the net_idx */
-		case 2:
-			if (net_idx2 == filter_net_idx.net_idx) {
-				if (cnt >= start_id) {
-					key_idx_pack_pair(&msg, net_idx1, net_idx2);
-				}
-				cnt++;
-			}
-			break;
-
-		/* Report pair of NetKeys in which (NetKeyIndex1 or NetKeyIndex2) matches the
-		 * net_idx
-		 */
-		case 3:
-			if (net_idx1 == filter_net_idx.net_idx ||
-			    net_idx2 == filter_net_idx.net_idx) {
-				if (cnt >= start_id) {
-					key_idx_pack_pair(&msg, net_idx1, net_idx2);
-				}
-				cnt++;
-			}
-			break;
-
-		default:
-			CODE_UNREACHABLE;
 		}
 	}
 

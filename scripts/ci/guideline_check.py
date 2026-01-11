@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2021 Intel Corporation
 
-import os
-import sh
 import argparse
+import os
 import re
+
+import sh
 from unidiff import PatchSet
 
 if "ZEPHYR_BASE" not in os.environ:
@@ -13,16 +14,18 @@ if "ZEPHYR_BASE" not in os.environ:
 
 RESERVED_NAMES_SCRIPT = "/scripts/coccinelle/reserved_names.cocci"
 
-coccinelle_scripts = [RESERVED_NAMES_SCRIPT,
-                      "/scripts/coccinelle/same_identifier.cocci",
-                      #"/scripts/coccinelle/identifier_length.cocci",
-                      ]
+coccinelle_scripts = [
+    RESERVED_NAMES_SCRIPT,
+    "/scripts/coccinelle/same_identifier.cocci",
+    # "/scripts/coccinelle/identifier_length.cocci",
+]
 
 coccinelle_reserved_names_exclude_regex = [
     r"lib/libc/.*",
     r"lib/posix/.*",
     r"include/zephyr/posix/.*",
 ]
+
 
 def parse_coccinelle(contents: str, violations: dict):
     reg = re.compile("([a-zA-Z0-9_/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
@@ -38,13 +41,11 @@ def parse_coccinelle(contents: str, violations: dict):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Check commits against Cocccinelle rules", allow_abbrev=False)
-    parser.add_argument('-r', "--repository", required=False,
-                        help="Path to repository")
-    parser.add_argument('-c', '--commits', default=None,
-                        help="Commit range in the form: a..b")
-    parser.add_argument("-o", "--output", required=False,
-                        help="Print violation into a file")
+        description="Check commits against Cocccinelle rules", allow_abbrev=False
+    )
+    parser.add_argument('-r', "--repository", required=False, help="Path to repository")
+    parser.add_argument('-c', '--commits', default=None, help="Commit range in the form: a..b")
+    parser.add_argument("-o", "--output", required=False, help="Print violation into a file")
     return parser.parse_args()
 
 
@@ -58,10 +59,7 @@ def main():
     else:
         repository_path = args.repository
 
-    sh_special_args = {
-        '_tty_out': False,
-        '_cwd': repository_path
-    }
+    sh_special_args = {'_tty_out': False, '_cwd': repository_path}
 
     # pylint does not like the 'sh' library
     # pylint: disable=too-many-function-args,unexpected-keyword-arg
@@ -72,11 +70,13 @@ def main():
     numViolations = 0
 
     for f in patch_set:
-        if not f.path.endswith(".c") and not f.path.endswith(".h") or not os.path.exists(zephyr_base + "/" + f.path):
+        c_file = f.path.endswith(".c")
+        h_file = f.path.endswith(".h")
+        exists = os.path.exists(zephyr_base + "/" + f.path)
+        if not c_file and not h_file or not exists:
             continue
 
         for script in coccinelle_scripts:
-
             skip_reserved_names = False
             if script == RESERVED_NAMES_SCRIPT:
                 for path in coccinelle_reserved_names_exclude_regex:
@@ -87,16 +87,16 @@ def main():
             if skip_reserved_names:
                 continue
 
-            script_path =zephyr_base + "/" + script
+            script_path = zephyr_base + "/" + script
             print(f"Running {script} on {f.path}")
             try:
                 cocci = sh.coccicheck(
                     "--mode=report",
-                    "--cocci=" +
-                    script_path,
+                    "--cocci=" + script_path,
                     f.path,
                     _timeout=10,
-                    **sh_special_args)
+                    **sh_special_args,
+                )
                 parse_coccinelle(cocci, violations)
             except sh.TimeoutException:
                 print("we timed out waiting, skipping...")
@@ -104,19 +104,16 @@ def main():
         for hunk in f:
             for line in hunk:
                 if line.is_added:
-                    violation = "{}:{}".format(f.path, line.target_line_no)
+                    violation = f"{f.path}:{line.target_line_no}"
                     if violation in violations:
+                        v_str = "\t\n".join(violations[violation])
+                        out_str = f"{violation}:{v_str}"
                         numViolations += 1
                         if args.output:
                             with open(args.output, "a+") as fp:
-                                fp.write("{}:{}\n".format(
-                                    violation, "\t\n".join(
-                                        violations[violation])))
+                                fp.write(f"{out_str}\n")
                         else:
-                            print(
-                                "{}:{}".format(
-                                    violation, "\t\n".join(
-                                        violations[violation])))
+                            print(out_str)
 
     return numViolations
 

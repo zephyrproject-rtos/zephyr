@@ -29,22 +29,7 @@
 	(DT_ENUM_IDX(DT_NODELABEL(lfxo), timeout) << _LFXO_CFG_TIMEOUT_SHIFT)
 
 /* HFRCODPLL */
-#define SL_CLOCK_MANAGER_HFRCO_BAND                                                                \
-	(DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 1500000    ? 1000000U                 \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 3000000  ? 2000000U                 \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 5500000  ? 4000000U                 \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 10000000 ? 7000000U                 \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 14500000 ? 13000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 17500000 ? 16000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 23000000 ? 19000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 29000000 ? 26000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 35000000 ? 32000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 44000000 ? 38000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 52000000 ? 48000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 60000000 ? 56000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 72000000 ? 64000000U                \
-	 : DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency) < 90000000 ? 80000000U                \
-									: 100000000U)
+#define SL_CLOCK_MANAGER_HFRCO_BAND    DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency)
 #define SL_CLOCK_MANAGER_HFRCO_DPLL_EN DT_NUM_CLOCKS(DT_NODELABEL(hfrcodpll))
 #define SL_CLOCK_MANAGER_DPLL_FREQ     DT_PROP(DT_NODELABEL(hfrcodpll), clock_frequency)
 #define SL_CLOCK_MANAGER_DPLL_N        DT_PROP(DT_NODELABEL(hfrcodpll), dpll_n)

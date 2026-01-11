@@ -7,6 +7,7 @@
 &i2c1 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+
 	ms5837@76 {
 		compatible = "meas,ms5837-30ba";
 		reg = <0x76>;

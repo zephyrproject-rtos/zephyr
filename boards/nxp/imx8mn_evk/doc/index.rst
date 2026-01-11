@@ -166,8 +166,7 @@ display the following ram console output:
     thread_b: Hello World from cpu 0 on mimx8mn_evk!
     thread_a: Hello World from cpu 0 on mimx8mn_evk!
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-nano-applications-processor:8MNANOD4-EVK

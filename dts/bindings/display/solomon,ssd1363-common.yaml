@@ -90,11 +90,11 @@ properties:
     type: boolean
     description: Turn on display color inverting
 
-  greyscale-enhancement:
+  grayscale-enhancement:
     type: boolean
-    description: Enable greyscale enhancement, undocumented.
+    description: Enable grayscale enhancement, undocumented.
 
-  greyscale-table:
+  grayscale-table:
     type: uint8-array
     description: 15 elements array defines gamma settings for each brightness levels.
       It seems last element must always be 60/0x3C.

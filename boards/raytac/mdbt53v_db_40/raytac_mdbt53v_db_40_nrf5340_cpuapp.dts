@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
-#include "raytac_mdbt53v_db_40_nrf5340_cpuapp_common.dts"
+#include "raytac_mdbt53v_db_40_nrf5340_cpuapp_common.dtsi"
 
 / {
 	model = "Raytac MDBT53V-DB-40 NRF5340 Application";
@@ -20,3 +20,6 @@
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_partition.dtsi>

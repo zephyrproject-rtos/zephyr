@@ -649,14 +649,23 @@ static int pin_get_config(void)
 
 	flags_set = GPIO_OUTPUT_HIGH;
 	rc = gpio_pin_configure(dev_out, PIN_OUT, flags_set);
-	zassert_equal(rc, 0, "pin configure failed");
+	zassert_equal(rc, 0, "pin configure output failed");
 
 	rc = gpio_pin_get_config(dev_out, PIN_OUT, &flags_get);
 	if (rc == -ENOSYS) {
 		return TC_PASS;
 	}
 
-	zassert_equal(rc, 0, "pin get config failed");
+	zassert_equal(rc, 0, "pin get config output failed");
+	zassert_equal(flags_get, flags_set, "flags are different");
+
+	flags_set = GPIO_INPUT;
+	rc = gpio_pin_configure(dev_out, PIN_OUT, flags_set);
+	zassert_equal(rc, 0, "pin configure input failed");
+
+	flags_get = 0;
+	rc = gpio_pin_get_config(dev_out, PIN_OUT, &flags_get);
+	zassert_equal(rc, 0, "pin get config input failed");
 	zassert_equal(flags_get, flags_set, "flags are different");
 
 	return TC_PASS;

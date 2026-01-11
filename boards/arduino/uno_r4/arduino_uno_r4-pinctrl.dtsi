@@ -11,6 +11,7 @@
 			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 2)>;
 			drive-strength = "medium";
 		};
+
 		group2 {
 			/* rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 1)>;
@@ -29,10 +30,10 @@
 	adc0_default: adc0_default {
 		group1 {
 			/* input */
-			psels = <RA_PSEL(RA_PSEL_ADC, 0,  9)>,
-				<RA_PSEL(RA_PSEL_ADC, 0,  0)>,
-				<RA_PSEL(RA_PSEL_ADC, 0,  1)>,
-				<RA_PSEL(RA_PSEL_ADC, 0,  2)>;
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 9)>,
+				<RA_PSEL(RA_PSEL_ADC, 0, 0)>,
+				<RA_PSEL(RA_PSEL_ADC, 0, 1)>,
+				<RA_PSEL(RA_PSEL_ADC, 0, 2)>;
 			renesas,analog-enable;
 		};
 	};

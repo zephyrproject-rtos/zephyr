@@ -12,7 +12,8 @@
 /**
  * @brief Sensor emulator backend API
  * @defgroup sensor_emulator_backend Sensor emulator backend API
- * @ingroup io_interfaces
+ * @ingroup io_emulators
+ * @ingroup sensor_interface
  * @{
  */
 

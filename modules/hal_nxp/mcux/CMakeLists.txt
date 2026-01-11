@@ -31,6 +31,7 @@ if(CONFIG_SOC_LPC11U66
     OR CONFIG_SOC_MKW40Z4
     OR CONFIG_SOC_MKW41Z4
     OR CONFIG_SOC_MIMX9131
+    OR CONFIG_SOC_MIMX9111
     )
 
     set (CONFIG_SOC_SDKNG_UNSUPPORTED ON)
@@ -47,18 +48,13 @@ endif()
 # MCU_DEVICE_PATH: SOC name without core suffix. Must match the name of the
 #              folder in MCUX HAL. IE MIMXRT595S, or LPC55S36
 
-if(NOT HWMv2)
-  # Include HWMv1 logic for MCUX variables
-  include(${CMAKE_CURRENT_LIST_DIR}/hwmv1.cmake)
-else()
-  string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE_PATH)
-  string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE)
-  set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
+string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE_PATH)
+string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE)
+set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
 
-  if(DEFINED CONFIG_MCUX_CORE_SUFFIX)
-    string(APPEND MCUX_DEVICE ${CONFIG_MCUX_CORE_SUFFIX})
-    string(APPEND MCUX_CPU ${CONFIG_MCUX_CORE_SUFFIX})
-  endif()
+if(DEFINED CONFIG_MCUX_CORE_SUFFIX)
+  string(APPEND MCUX_DEVICE ${CONFIG_MCUX_CORE_SUFFIX})
+  string(APPEND MCUX_CPU ${CONFIG_MCUX_CORE_SUFFIX})
 endif()
 
 if(DEFINED CONFIG_SOC_SDKNG_UNSUPPORTED)
@@ -73,14 +69,18 @@ endif() # CONFIG_SOC_SDKNG_UNSUPPORTED
 
 enable_language(C ASM)
 
-zephyr_linker_sources(RWDATA
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
-  )
+if(CONFIG_CPU_CORTEX_A)
+  zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
+else()
+  zephyr_linker_sources(RWDATA
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+    )
 
-zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-  RAMFUNC_SECTION
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
-  )
+  zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+    RAMFUNC_SECTION
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+    )
+endif()
 
 zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   NOCACHE_SECTION
@@ -133,11 +133,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_HAS_MCUX_CACHE
 add_subdirectory_ifdef(CONFIG_IEEE802154_KW41Z
   ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/middleware/wireless/framework_5.3.3
   ${CMAKE_CURRENT_BINARY_DIR}/middleware/wireless/framework
-  )
-
-add_subdirectory_ifdef(CONFIG_WIFI_NXP
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/middleware/wifi_nxp
-  ${CMAKE_CURRENT_BINARY_DIR}/middleware/wifi_nxp
   )
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/middleware

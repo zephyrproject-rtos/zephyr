@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(BQ27Z746);
 #define BQ27Z746_MAC_OVERHEAD_LEN 4 /* 2 cmd bytes, 1 length byte, 1 checksum byte */
 #define BQ27Z746_MAC_COMPLETE_LEN (BQ27Z746_MAC_DATA_LEN + BQ27Z746_MAC_OVERHEAD_LEN)
 
+struct bq27z746_config {
+	struct i2c_dt_spec i2c;
+};
+
 static int bq27z746_read16(const struct device *dev, uint8_t reg, uint16_t *value)
 {
 	uint8_t i2c_data[2];
@@ -196,9 +200,8 @@ static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return rc;
 }
 
-static int bq27z746_get_buffer_prop(const struct device *dev,
-				    fuel_gauge_prop_t property_type, void *dst,
-				    size_t dst_len)
+static int bq27z746_get_buffer_prop(const struct device *dev, fuel_gauge_prop_t property_type,
+				    void *dst, size_t dst_len)
 {
 	int rc = 0;
 
@@ -238,16 +241,13 @@ static int bq27z746_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			     union fuel_gauge_prop_val val)
 {
 	int rc = 0;
-	uint16_t tmp_val = 0;
 
 	switch (prop) {
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = bq27z746_write16(dev, BQ27Z746_MANUFACTURERACCESS, val.sbs_mfr_access_word);
-		val.sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
 		rc = bq27z746_write16(dev, BQ27Z746_ATRATE, val.sbs_at_rate);
-		val.sbs_at_rate = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;

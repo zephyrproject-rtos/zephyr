@@ -34,7 +34,7 @@
 };
 
 uart5: &scb5 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 	current-speed = <115200>;
 
@@ -43,7 +43,7 @@ uart5: &scb5 {
 };
 
 uart2: &scb2 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 
 	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
@@ -64,7 +64,7 @@ uart2: &scb2 {
 		murata-1dx {
 			status = "okay";
 			compatible = "infineon,cyw43xxx-bt-hci";
-			bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 
 			/* Configuration UART speeds for firmware download (fw-download-speed)
 			 * and HCI operation (hci-operation-speed).
@@ -91,7 +91,7 @@ uart2: &scb2 {
 		compatible = "infineon,airoc-wifi";
 
 		/* Wi-Fi control gpios */
-		wifi-reg-on-gpios    = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-reg-on-gpios = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -129,7 +129,7 @@ uart2: &scb2 {
 };
 
 i2c3: &scb3 {
-	compatible = "infineon,cat1-i2c";
+	compatible = "infineon,i2c";
 
 	/* I2C pins */
 	pinctrl-0 = <&p6_0_scb3_i2c_scl &p6_1_scb3_i2c_sda>;

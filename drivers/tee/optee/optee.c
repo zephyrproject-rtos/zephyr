@@ -1093,8 +1093,12 @@ static int optee_suppl_send(const struct device *dev, unsigned int ret, unsigned
 		req = supp->current;
 		supp->current = NULL;
 	} else {
-		LOG_ERR("Invalid number of parameters, expected %lu got %u", req->num_params,
-			num_params);
+		if (supp->current) {
+			LOG_ERR("Invalid number of parameters, expected %lu or more, got %u",
+				supp->current->num_params, num_params);
+		} else {
+			LOG_ERR("No current request, but called with num_params=%u", num_params);
+		}
 	}
 	k_mutex_unlock(&supp->mutex);
 

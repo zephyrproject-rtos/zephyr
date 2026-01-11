@@ -131,7 +131,7 @@ static void touch_anon_pages(bool zig, bool zag)
 		size_t i = zig ? (arena_size - 1 - j) : j;
 
 		zassert_equal(arena[i], '\x00',
-			      "page not zeroed got 0x%hhx at index %d",
+			      "page not zeroed got 0x%hhx at index %zu",
 			      arena[i], i);
 	}
 
@@ -149,7 +149,7 @@ static void touch_anon_pages(bool zig, bool zag)
 		size_t i = zig ? (arena_ptr_size - 1 - j) : j;
 
 		zassert_equal(arena_ptr[i], &arena_ptr[i],
-			      "arena corrupted at index %d: got %p expected %p",
+			      "arena corrupted at index %zu: got %p expected %p",
 			      i, arena_ptr[i], &arena_ptr[i]);
 	}
 
@@ -176,7 +176,7 @@ static void touch_anon_pages(bool zig, bool zag)
 		size_t i = zag ? (arena_ptr_size - 1 - j) : j;
 
 		zassert_equal(arena_ptr[i], &arena_ptr[i],
-			      "arena corrupted at index %d: got %p expected %p",
+			      "arena corrupted at index %zu: got %p expected %p",
 			      i, arena_ptr[i], &arena_ptr[i]);
 	}
 
@@ -253,7 +253,7 @@ static void test_k_mem_page_out(void)
 	irq_unlock(key);
 
 	zassert_equal(faults, HALF_PAGES,
-		      "unexpected num pagefaults expected %lu got %d",
+		      "unexpected num pagefaults expected %d got %lu",
 		      HALF_PAGES, faults);
 
 	ret = k_mem_page_out(arena, arena_size);
@@ -284,7 +284,7 @@ ZTEST(demand_paging_api, test_k_mem_page_in)
 	faults = k_mem_num_pagefaults_get() - faults;
 	irq_unlock(key);
 
-	zassert_equal(faults, 0, "%d page faults when 0 expected",
+	zassert_equal(faults, 0, "%lu page faults when 0 expected",
 		      faults);
 }
 
@@ -309,7 +309,7 @@ ZTEST(demand_paging_api, test_k_mem_pin)
 	faults = k_mem_num_pagefaults_get() - faults;
 	irq_unlock(key);
 
-	zassert_equal(faults, 0, "%d page faults when 0 expected",
+	zassert_equal(faults, 0, "%lu page faults when 0 expected",
 		      faults);
 
 	/* Clean up */

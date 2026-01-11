@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(flash_mcux);
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfl))
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfc))
+#define DT_DRV_COMPAT nxp_kinetis_ftfc
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc55))
 #define DT_DRV_COMPAT nxp_iap_fmc55
 #define SOC_HAS_IAP 1
@@ -119,6 +121,12 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 #define SOC_FLASH_NEED_CLEAR_CACHES 1
 #ifdef CONFIG_SOC_FAMILY_MCXW
+#ifdef CONFIG_SOC_SERIES_MCXW2XX
+static void clear_flash_caches(void)
+{
+	FLASH_CacheClear();
+}
+#else
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
@@ -128,6 +136,7 @@ static void clear_flash_caches(void)
 	/* this bit clears the code cache */
 	*mcm_cpcr2 |= BIT(0);
 }
+#endif
 #elif CONFIG_SOC_FAMILY_MCXN
 static void clear_flash_caches(void)
 {

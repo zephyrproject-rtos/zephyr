@@ -15,8 +15,4 @@
  */
 #include <raspberrypi/rpi_pico/rp2350b.dtsi>
 #include <raspberrypi/rpi_pico/m33.dtsi>
-
-/* there's nothing specific to the Cortex-M33 cores vs the (not yet
- * implemented) Hazard3 cores.
- */
 #include "pico_plus2.dtsi"

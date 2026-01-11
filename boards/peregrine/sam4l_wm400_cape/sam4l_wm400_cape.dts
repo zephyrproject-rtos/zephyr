@@ -23,9 +23,11 @@
 	};
 
 	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition= &code_partition;
+		zephyr,code-partition = &code_partition;
 	};
 
 	leds {
@@ -56,7 +58,7 @@
 		compatible = "gpio-keys";
 
 		sw0_dfu: button_1 {
-			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW)>;
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 			label = "SW0_DFU";
 			zephyr,code = <INPUT_KEY_0>;
 		};
@@ -185,5 +187,3 @@ zephyr_udc0: &usbc {
 	pinctrl-0 = <&usbc_default>;
 	pinctrl-names = "default";
 };
-
-#include <../boards/common/usb/cdc_acm_serial.dtsi>

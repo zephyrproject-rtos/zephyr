@@ -8,6 +8,6 @@
 	status = "disabled";
 };
 
-&cpusec_bellboard{
+&cpusec_bellboard {
 	status = "disabled";
 };

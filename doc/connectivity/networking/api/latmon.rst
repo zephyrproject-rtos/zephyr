@@ -44,7 +44,7 @@ Socket Creation
 ===============
 
 The :c:func:`net_latmon_get_socket()` function is called to create and configure a TCP socket to
-communicate with the Latmus service. A connection address can be specified as a paramenter to
+communicate with the Latmus service. A connection address can be specified as a parameter to
 bind the socket to a specific interface and port.
 
 Connection Handling

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/sys_io.h>
 #include <dsp/cache.h>
+#include <soc_common.h>
 
 #ifndef __INC_IMXRT_SOC_H
 #define __INC_IMXRT_SOC_H

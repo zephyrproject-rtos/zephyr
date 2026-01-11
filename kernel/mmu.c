@@ -19,6 +19,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -273,8 +274,8 @@ static void virt_region_free(void *vaddr, size_t size)
 	     (vaddr_u8 < Z_VIRT_REGION_END_ADDR)) ||
 	    (((vaddr_u8 + size - 1) >= Z_VIRT_REGION_START_ADDR) &&
 	     ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR))) {
-		uint8_t *adjusted_start = MAX(vaddr_u8, Z_VIRT_REGION_START_ADDR);
-		uint8_t *adjusted_end = MIN(vaddr_u8 + size,
+		uint8_t *adjusted_start = max(vaddr_u8, Z_VIRT_REGION_START_ADDR);
+		uint8_t *adjusted_end = min(vaddr_u8 + size,
 					    Z_VIRT_REGION_END_ADDR);
 		size_t adjusted_sz = adjusted_end - adjusted_start;
 
@@ -929,8 +930,8 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 		    IN_RANGE(aligned_phys + aligned_size - 1,
 			      (uintptr_t)K_MEM_VIRT_RAM_START,
 			      (uintptr_t)(K_MEM_VIRT_RAM_END - 1))) {
-			uint8_t *adjusted_start = MAX(dest_addr, K_MEM_VIRT_RAM_START);
-			uint8_t *adjusted_end = MIN(dest_addr + aligned_size,
+			uint8_t *adjusted_start = max(dest_addr, K_MEM_VIRT_RAM_START);
+			uint8_t *adjusted_end = min(dest_addr + aligned_size,
 						    K_MEM_VIRT_RAM_END);
 			size_t adjusted_sz = adjusted_end - adjusted_start;
 
@@ -1176,7 +1177,7 @@ void z_mem_manage_init(void)
 	 * and the BSS pages can be brought into physical
 	 * memory to be cleared.
 	 */
-	z_bss_zero();
+	arch_bss_zero();
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 
@@ -1502,7 +1503,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	k_spin_unlock(&z_mm_lock, key);
+	key = k_spin_lock(&z_mm_lock);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:

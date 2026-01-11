@@ -63,8 +63,8 @@ int arch_pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
  * Function is called when system state is stored to RAM, just before going to system
  * off.
  *
- * Default implementation is setting a magic word in RAM. CONFIG_PM_S2RAM_CUSTOM_MARKING
- * allows custom implementation.
+ * Default implementation is setting a magic word in RAM used if
+ * CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING is not set.
  */
 void pm_s2ram_mark_set(void);
 
@@ -74,8 +74,8 @@ void pm_s2ram_mark_set(void);
  * Function is used to determine if resuming after suspend-to-RAM shall be performed
  * or standard boot code shall be executed.
  *
- * Default implementation is checking a magic word in RAM. CONFIG_PM_S2RAM_CUSTOM_MARKING
- * allows custom implementation.
+ * Default implementation is checking a magic word in RAM used if
+ * CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING is not set.
  *
  * @retval true if marking is found which indicates resuming after suspend-to-RAM.
  * @retval false if marking is not found which indicates standard boot.

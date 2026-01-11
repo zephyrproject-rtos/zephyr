@@ -53,7 +53,7 @@ Available Emulators
   * Emulate an EEPROM on RAM
   * Main Kconfig option: :kconfig:option:`CONFIG_EEPROM_SIMULATOR`
   * DT binding: :dtcompatible:`zephyr,sim-eeprom`
-  * Note: For :ref:`native targets <native_sim>` it is also possible to keep the content
+  * Note: For :zephyr:board:`native targets <native_sim>` it is also possible to keep the content
     as a file on the host filesystem.
 
 **External bus and bus connected peripheral emulators**

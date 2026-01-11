@@ -99,7 +99,7 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), /* 09 */
-				BT_SDP_ARRAY_16(0x0100U) /* AVDTP version: 01 00 */
+				BT_SDP_ARRAY_16(AVDTP_VERSION) /* AVDTP version: 01 03 */
 			},
 			)
 		},
@@ -168,7 +168,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0100U)
+				BT_SDP_ARRAY_16(AVDTP_VERSION)
 			},
 			)
 		},
@@ -193,7 +193,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 		},
 		)
 	),
-	BT_SDP_SERVICE_NAME("A2DPSink"),
+	BT_SDP_SERVICE_NAME("A2DPSource"),
 	BT_SDP_SUPPORTED_FEATURES(0x0001U),
 };
 
@@ -240,7 +240,7 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_DUAL)) {
 			bt_shell_print("	Dual ");
 		}
-		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_STREO)) {
+		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_STEREO)) {
 			bt_shell_print("	Stereo ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_JOINT)) {
@@ -287,7 +287,7 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 	}
 }
 
-void app_connected(struct bt_a2dp *a2dp, int err)
+static void app_connected(struct bt_a2dp *a2dp, int err)
 {
 	if (!err) {
 		default_a2dp = a2dp;
@@ -297,13 +297,13 @@ void app_connected(struct bt_a2dp *a2dp, int err)
 	}
 }
 
-void app_disconnected(struct bt_a2dp *a2dp)
+static void app_disconnected(struct bt_a2dp *a2dp)
 {
 	found_peer_sbc_endpoint = NULL;
 	bt_shell_print("a2dp disconnected");
 }
 
-int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
+static int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 		struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
 		uint8_t *rsp_err_code)
 {
@@ -321,8 +321,8 @@ int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 	return 0;
 }
 
-int app_reconfig_req(struct bt_a2dp_stream *stream,
-	struct bt_a2dp_codec_cfg *codec_cfg, uint8_t *rsp_err_code)
+static int app_reconfig_req(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+			    uint8_t *rsp_err_code)
 {
 	uint32_t sample_rate;
 
@@ -335,7 +335,7 @@ int app_reconfig_req(struct bt_a2dp_stream *stream,
 	return 0;
 }
 
-void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to configure");
@@ -344,14 +344,14 @@ void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_establish_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_establish_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting establishment and accept");
 	return 0;
 }
 
-void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to establish");
@@ -360,14 +360,14 @@ void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_release_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_release_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting release and accept");
 	return 0;
 }
 
-void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to release");
@@ -376,14 +376,14 @@ void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_start_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_start_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting start and accept");
 	return 0;
 }
 
-void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to start");
@@ -392,14 +392,14 @@ void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_suspend_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_suspend_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting suspend and accept");
 	return 0;
 }
 
-void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to suspend");
@@ -408,38 +408,34 @@ void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-void stream_configured(struct bt_a2dp_stream *stream)
+static void stream_configured(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream configured");
 }
 
-void stream_established(struct bt_a2dp_stream *stream)
+static void stream_established(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream established");
 }
 
-void stream_released(struct bt_a2dp_stream *stream)
+static void stream_released(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream released");
 }
 
-void stream_started(struct bt_a2dp_stream *stream)
+static void stream_started(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream started");
 }
 
-void stream_suspended(struct bt_a2dp_stream *stream)
+static void stream_suspended(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream suspended");
 }
 
-void stream_aborted(struct bt_a2dp_stream *stream)
-{
-	bt_shell_print("stream aborted");
-}
-
-void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
-			uint16_t seq_num, uint32_t ts)
+#if defined(CONFIG_BT_A2DP_SINK)
+static void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
+				   uint16_t seq_num, uint32_t ts)
 {
 	uint8_t sbc_hdr;
 
@@ -453,13 +449,57 @@ void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
 		buf->data[1], buf->data[2], buf->data[3], buf->data[4], buf->data[5]);
 }
 
-void stream_recv(struct bt_a2dp_stream *stream,
-		struct net_buf *buf, uint16_t seq_num, uint32_t ts)
+static void stream_recv(struct bt_a2dp_stream *stream,
+			struct net_buf *buf, uint16_t seq_num, uint32_t ts)
 {
 	sink_sbc_streamer_data(stream, buf, seq_num, ts);
 }
 
-struct bt_a2dp_cb a2dp_cb = {
+static void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+{
+	if (rsp_err_code == 0) {
+		bt_shell_print("success to send report delay");
+	} else {
+		bt_shell_print("fail to send report delay");
+	}
+}
+#endif
+
+#if defined(CONFIG_BT_A2DP_SOURCE)
+static int app_delay_report_req(struct bt_a2dp_stream *stream, uint16_t value,
+				uint8_t *rsp_err_code)
+{
+	*rsp_err_code = 0;
+	bt_shell_print("receive delay report and accept");
+	return 0;
+}
+
+static void delay_report(struct bt_a2dp_stream *stream, uint16_t value)
+{
+	bt_shell_print("received delay report: %d 1/10ms", value);
+}
+#endif
+
+static int app_get_config_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+{
+	*rsp_err_code = 0;
+	bt_shell_print("receive get config request and accept");
+	return 0;
+}
+
+static void app_get_config_rsp(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+			       uint8_t rsp_err_code)
+{
+	bt_shell_print("get config result: %d", rsp_err_code);
+
+	if (rsp_err_code == 0) {
+		uint32_t sample_rate = bt_a2dp_sbc_get_sampling_frequency(
+			(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
+		bt_shell_print("sample rate %dHz", sample_rate);
+	}
+}
+
+static struct bt_a2dp_cb a2dp_cb = {
 	.connected = app_connected,
 	.disconnected = app_disconnected,
 	.config_req = app_config_req,
@@ -473,6 +513,14 @@ struct bt_a2dp_cb a2dp_cb = {
 	.suspend_req = app_suspend_req,
 	.suspend_rsp = app_suspend_rsp,
 	.reconfig_req = app_reconfig_req,
+	.get_config_req = app_get_config_req,
+	.get_config_rsp = app_get_config_rsp,
+#if defined(CONFIG_BT_A2DP_SOURCE)
+	.delay_report_req = app_delay_report_req,
+#endif
+#if defined(CONFIG_BT_A2DP_SINK)
+	.delay_report_rsp = app_delay_report_rsp,
+#endif
 };
 
 static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
@@ -582,25 +630,18 @@ static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
-void app_configured(int err)
-{
-	if (err) {
-		bt_shell_print("configure fail");
-	}
-}
-
 static struct bt_a2dp_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.established = stream_established,
 	.released = stream_released,
 	.started = stream_started,
 	.suspended = stream_suspended,
-	.aborted = stream_aborted,
 #if defined(CONFIG_BT_A2DP_SINK)
 	.recv = stream_recv,
 #endif
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	.sent = NULL,
+	.delay_report = delay_report,
 #endif
 };
 
@@ -669,7 +710,7 @@ static uint8_t bt_a2dp_discover_peer_endpoint_cb(struct bt_a2dp *a2dp,
 
 static struct bt_avdtp_sep_info found_seps[5];
 
-struct bt_a2dp_discover_param discover_param = {
+static struct bt_a2dp_discover_param discover_param = {
 	.cb = bt_a2dp_discover_peer_endpoint_cb,
 	.seps_info = &found_seps[0],
 	.sep_count = 5,
@@ -677,13 +718,22 @@ struct bt_a2dp_discover_param discover_param = {
 
 static int cmd_get_peer_eps(const struct shell *sh, int32_t argc, char *argv[])
 {
+	int err = 0;
+
 	if (a2dp_initied == 0) {
 		shell_print(sh, "need to register a2dp connection callbacks");
 		return -ENOEXEC;
 	}
 
 	if (default_a2dp != NULL) {
-		int err = bt_a2dp_discover(default_a2dp, &discover_param);
+		discover_param.avdtp_version = (uint16_t)shell_strtoul(argv[1], 0, &err);
+		if (err != 0) {
+			shell_error(sh, "failed to parse avdtp version: %d", err);
+
+			return -ENOEXEC;
+		}
+
+		err = bt_a2dp_discover(default_a2dp, &discover_param);
 
 		if (err) {
 			shell_error(sh, "discover fail");
@@ -770,8 +820,11 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	buf = net_buf_alloc(&a2dp_tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_A2DP_STREAM_BUF_RESERVE);
+	buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
+	if (buf == NULL) {
+		shell_error(sh, "fail to allocate buffer");
+		return -ENOEXEC;
+	}
 
 	/* num of frames is 1 */
 	net_buf_add_u8(buf, (uint8_t)BT_A2DP_SBC_MEDIA_HDR_ENCODE(1, 0, 0, 0));
@@ -789,6 +842,38 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_A2DP_SINK)
+static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *argv[])
+{
+	int err;
+
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	err = bt_a2dp_stream_delay_report(&sbc_stream, 1);
+	if (err < 0) {
+		shell_print(sh, "fail to send delay report (%d)\n", err);
+	}
+
+	return 0;
+}
+#endif
+
+static int cmd_get_config(const struct shell *sh, int32_t argc, char *argv[])
+{
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	if (bt_a2dp_stream_get_config(&sbc_stream) != 0) {
+		shell_error(sh, "fail");
+	}
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
@@ -798,7 +883,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 			cmd_register_ep, 3, 0),
 	SHELL_CMD_ARG(connect, NULL, HELP_NONE, cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
-	SHELL_CMD_ARG(discover_peer_eps, NULL, HELP_NONE, cmd_get_peer_eps, 1, 0),
+	SHELL_CMD_ARG(discover_peer_eps, NULL, "<avdtp version value>", cmd_get_peer_eps, 2, 0),
 	SHELL_CMD_ARG(configure, NULL, "\"configure/enable the stream\"", cmd_configure, 1, 0),
 	SHELL_CMD_ARG(establish, NULL, "\"establish the stream\"", cmd_establish, 1, 0),
 	SHELL_CMD_ARG(reconfigure, NULL, "\"reconfigure the stream\"", cmd_reconfigure, 1, 0),
@@ -807,6 +892,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(suspend, NULL, "\"suspend the stream\"", cmd_suspend, 1, 0),
 	SHELL_CMD_ARG(abort, NULL, "\"abort the stream\"", cmd_abort, 1, 0),
 	SHELL_CMD_ARG(send_media, NULL, HELP_NONE, cmd_send_media, 1, 0),
+#if defined(CONFIG_BT_A2DP_SINK)
+	SHELL_CMD_ARG(send_delay_report, NULL, HELP_NONE, cmd_send_delay_report, 1, 0),
+#endif
+	SHELL_CMD_ARG(get_config, NULL, HELP_NONE, cmd_get_config, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

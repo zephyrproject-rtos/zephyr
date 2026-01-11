@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_BIT_WIDTH
+	int "Sample bit width"
+	default 32 if DT_HAS_NXP_MICFIL_ENABLED
+	default 16
+	help
+	  PCM sample bit width.

@@ -1,0 +1,139 @@
+/*
+ * Copyright (c) 2025 Core Devices LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <sifli/sf32lb52x.dtsi>
+#include <sifli/sf32lb52x-ram012.dtsi>
+#include <zephyr/dt-bindings/dma/sf32lb52x-dma.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "pt2-pinctrl.dtsi"
+
+/ {
+	model = "Core Devices Pebble Time 2";
+	compatible = "coredevices,pt2";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,flash = &gd25q256e;
+		zephyr,flash-controller = &mpi2;
+		zephyr,code-partition = &code;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		btn_back: button-back {
+			label = "BACK";
+			gpios = <&gpioa_32_44 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_BACK>;
+		};
+
+		btn_up: button-up {
+			label = "UP";
+			gpios = <&gpioa_32_44 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		btn_center: button-center {
+			label = "CENTER";
+			gpios = <&gpioa_32_44 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		btn_down: button-down {
+			label = "DOWN";
+			gpios = <&gpioa_32_44 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+	};
+
+	aliases {
+		sw0 = &btn_back;
+		sw1 = &btn_up;
+		watchdog0 = &wdt;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
+
+&dmac {
+	status = "okay";
+};
+
+&gpioa_32_44 {
+	status = "okay";
+};
+
+&hxt48 {
+	status = "okay";
+};
+
+&mpi2 {
+	compatible = "sifli,sf32lb-mpi-qspi-nor";
+	dmas = <&dmac 0 SF32LB52X_DMA_REQ_MPI2 SF32LB_DMA_PL_MEDIUM>;
+	sifli,lines = <4>;
+	sifli,psclr = <0>;
+	status = "okay";
+
+	gd25q256e: flash@0 {
+		compatible = "gd,gd25q256e", "jedec,qspi-nor";
+		reg = <0x0>;
+		size = <DT_SIZE_M(256)>;
+		quad-enable-requirements = "S2B1v6";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ptable: partition@0 {
+				label = "ptable";
+				reg = <0x0 DT_SIZE_K(64)>;
+			};
+
+			code: partition@10000 {
+				label = "code";
+				reg = <0x10000 DT_SIZE_K(32704)>;
+			};
+		};
+	};
+};
+
+&pinctrl {
+	status = "okay";
+};
+
+&rcc_clk {
+	status = "okay";
+
+	sifli,hdiv = <1>;
+	sifli,pdiv1 = <1>;
+	sifli,pdiv2 = <6>;
+
+	dll1 {
+		status = "okay";
+		clock-frequency = <DT_FREQ_M(240)>;
+	};
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <1000000>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&wdt {
+	status = "okay";
+};

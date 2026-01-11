@@ -11,13 +11,13 @@
  */
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel_structs.h>
-#include <ksched.h>
 #include <ipi.h>
 #include <zephyr/init.h>
-#include <zephyr/irq.h>
 #include <zephyr/platform/hooks.h>
 #include <arc_irq_offload.h>
+#include <kernel_arch_func.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -117,9 +117,7 @@ void arch_secondary_cpu_init(int cpu_num)
 	irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 #endif
 
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 
 	/* call the function set by arch_cpu_start */
 	fn = arc_cpu_init[cpu_num].fn;

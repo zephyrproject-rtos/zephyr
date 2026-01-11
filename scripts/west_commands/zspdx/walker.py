@@ -4,6 +4,7 @@
 
 import os
 import re
+from dataclasses import dataclass
 
 import yaml
 from west import log
@@ -26,21 +27,19 @@ from zspdx.getincludes import getCIncludes
 
 
 # WalkerConfig contains configuration data for the Walker.
+@dataclass(eq=True)
 class WalkerConfig:
-    def __init__(self):
-        super().__init__()
-
-        # prefix for Document namespaces; should not end with "/"
-        self.namespacePrefix = ""
+    # prefix for Document namespaces; should not end with "/"
+    namespacePrefix: str = ""
 
         # location of build directory
-        self.buildDir = ""
+    buildDir: str = ""
 
-        # should also analyze for included header files?
-        self.analyzeIncludes = False
+    # should also analyze for included header files?
+    analyzeIncludes: bool = False
 
-        # should also add an SPDX document for the SDK?
-        self.includeSDK = False
+    # should also add an SPDX document for the SDK?
+    includeSDK: bool = False
 
 # Walker is the main analysis class: it walks through the CMake codemodel,
 # build files, and corresponding source and SDK files, and gathers the
@@ -386,7 +385,7 @@ class Walker:
                 if not self.setupZephyrDocument(content["zephyr"], content["modules"]):
                     return False
         except (FileNotFoundError, yaml.YAMLError):
-            log.err("cannot find a valid zephyr_meta.yml required for SPDX generation; bailing")
+            log.err("cannot find a valid zephyr.meta required for SPDX generation; bailing")
             return False
 
         self.setupAppDocument()

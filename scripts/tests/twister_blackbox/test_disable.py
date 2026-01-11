@@ -6,7 +6,6 @@
 Blackbox tests for twister's command line functions related to disable features.
 """
 
-import importlib
 import pytest
 from unittest import mock
 import os
@@ -14,11 +13,12 @@ import sys
 import re
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from conftest import TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
+from twisterlib.twister_main import main as twister_main
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestDisable:
     TESTDATA_1 = [
         (
@@ -41,28 +41,15 @@ class TestDisable:
             os.path.join(TEST_DATA, 'tests', 'always_warning'),
             ['qemu_x86'],
             '--disable-warnings-as-errors',
-            '0'
+            0
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'always_warning'),
             ['qemu_x86'],
             '-v',
-            '1'
+            1
         ),
     ]
-
-
-    @classmethod
-    def setup_class(cls):
-        apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
-        cls.loader = importlib.machinery.SourceFileLoader('__main__', apath)
-        cls.spec = importlib.util.spec_from_loader(cls.loader.name, cls.loader)
-        cls.twister_module = importlib.util.module_from_spec(cls.spec)
-
-
-    @classmethod
-    def teardown_class(cls):
-        pass
 
 
     @pytest.mark.parametrize(
@@ -82,15 +69,14 @@ class TestDisable:
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+
+        return_value = twister_main(args)
 
         out, err = capfd.readouterr()
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        assert str(sys_exit.value) == '0'
+        assert return_value == 0
         if expected_none:
             assert re.search(expected[0], err) is None, f"Not expected string in log: {expected[0]}"
             assert re.search(expected[1], err) is None, f"Not expected: {expected[1]}"
@@ -117,13 +103,12 @@ class TestDisable:
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+
+        return_value = twister_main(args)
 
         out, err = capfd.readouterr()
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        assert str(sys_exit.value) == expected_exit_code, \
-            f"Twister return not expected ({expected_exit_code}) exit code: ({sys_exit.value})"
+        assert return_value == expected_exit_code, \
+            f"Twister return not expected ({expected_exit_code}) exit code: ({return_value})"

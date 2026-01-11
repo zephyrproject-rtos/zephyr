@@ -64,16 +64,16 @@ void validate_bitarray_define(sys_bitarray_t *ba, size_t num_bits)
 		      / sizeof(uint32_t);
 
 	zassert_equal(ba->num_bits, num_bits,
-		      "SYS_BITARRAY_DEFINE num_bits expected %u, got %u",
+		      "SYS_BITARRAY_DEFINE num_bits expected %zu, got %u",
 		      num_bits, ba->num_bits);
 
 	zassert_equal(ba->num_bundles, num_bundles,
-		      "SYS_BITARRAY_DEFINE num_bundles expected %u, got %u",
+		      "SYS_BITARRAY_DEFINE num_bundles expected %zu, got %u",
 		      num_bundles, ba->num_bundles);
 
 	for (i = 0; i < num_bundles; i++) {
 		zassert_equal(ba->bundles[i], FREE,
-			      "SYS_BITARRAY_DEFINE bundles[%u] not free for num_bits %u",
+			      "SYS_BITARRAY_DEFINE bundles[%u] not free for num_bits %zu",
 			      i, num_bits);
 	}
 }
@@ -149,78 +149,78 @@ ZTEST(bitarray, test_bitarray_set_clear)
 
 		ret = sys_bitarray_set_bit(&ba, bit);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_set_bit failed on bit %d", bit);
+			      "sys_bitarray_set_bit failed on bit %zu", bit);
 		zassert_equal(ba.bundles[bundle_idx], BIT(bit_idx_in_bundle),
-			      "sys_bitarray_set_bit did not set bit %d\n", bit);
+			      "sys_bitarray_set_bit did not set bit %zu\n", bit);
 		zassert_not_equal(sys_bitfield_test_bit((mem_addr_t)ba.bundles, bit),
-				  0, "sys_bitarray_set_bit did not set bit %d\n", bit);
+				  0, "sys_bitarray_set_bit did not set bit %zu\n", bit);
 
 		ret = sys_bitarray_test_bit(&ba, bit, &bit_val);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_test_bit failed at bit %d", bit);
+			      "sys_bitarray_test_bit failed at bit %zu", bit);
 		zassert_equal(bit_val, 1,
-			      "sys_bitarray_test_bit did not detect bit %d\n", bit);
+			      "sys_bitarray_test_bit did not detect bit %zu\n", bit);
 
 		ret = sys_bitarray_clear_bit(&ba, bit);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_clear_bit failed at bit %d", bit);
+			      "sys_bitarray_clear_bit failed at bit %zu", bit);
 		zassert_equal(ba.bundles[bundle_idx], 0,
-			      "sys_bitarray_clear_bit did not clear bit %d\n", bit);
+			      "sys_bitarray_clear_bit did not clear bit %zu\n", bit);
 		zassert_equal(sys_bitfield_test_bit((mem_addr_t)ba.bundles, bit),
-			      0, "sys_bitarray_set_bit did not set bit %d\n", bit);
+			      0, "sys_bitarray_set_bit did not set bit %zu\n", bit);
 
 		ret = sys_bitarray_test_bit(&ba, bit, &bit_val);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_test_bit failed at bit %d", bit);
+			      "sys_bitarray_test_bit failed at bit %zu", bit);
 		zassert_equal(bit_val, 0,
-			      "sys_bitarray_test_bit erroneously detected bit %d\n",
+			      "sys_bitarray_test_bit erroneously detected bit %zu\n",
 			      bit);
 
 		ret = sys_bitarray_test_and_set_bit(&ba, bit, &bit_val);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_test_and_set_bit failed at bit %d", bit);
+			      "sys_bitarray_test_and_set_bit failed at bit %zu", bit);
 		zassert_equal(bit_val, 0,
-			      "sys_bitarray_test_and_set_bit erroneously detected bit %d\n",
+			      "sys_bitarray_test_and_set_bit erroneously detected bit %zu\n",
 			      bit);
 		zassert_equal(ba.bundles[bundle_idx], BIT(bit_idx_in_bundle),
-			      "sys_bitarray_test_and_set_bit did not set bit %d\n", bit);
+			      "sys_bitarray_test_and_set_bit did not set bit %zu\n", bit);
 		zassert_not_equal(sys_bitfield_test_bit((mem_addr_t)ba.bundles, bit),
-				  0, "sys_bitarray_set_bit did not set bit %d\n", bit);
+				  0, "sys_bitarray_set_bit did not set bit %zu\n", bit);
 
 		ret = sys_bitarray_test_and_set_bit(&ba, bit, &bit_val);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_test_and_set_bit failed at bit %d", bit);
+			      "sys_bitarray_test_and_set_bit failed at bit %zu", bit);
 		zassert_equal(bit_val, 1,
-			      "sys_bitarray_test_and_set_bit did not detect bit %d\n",
+			      "sys_bitarray_test_and_set_bit did not detect bit %zu\n",
 			      bit);
 		zassert_equal(ba.bundles[bundle_idx], BIT(bit_idx_in_bundle),
-			      "sys_bitarray_test_and_set_bit cleared bit %d\n", bit);
+			      "sys_bitarray_test_and_set_bit cleared bit %zu\n", bit);
 		zassert_not_equal(sys_bitfield_test_bit((mem_addr_t)ba.bundles, bit),
-				  0, "sys_bitarray_set_bit did not set bit %d\n", bit);
+				  0, "sys_bitarray_set_bit did not set bit %zu\n", bit);
 
 		ret = sys_bitarray_test_and_clear_bit(&ba, bit, &bit_val);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_test_and_clear_bit failed at bit %d", bit);
+			      "sys_bitarray_test_and_clear_bit failed at bit %zu", bit);
 		zassert_equal(bit_val, 1,
-			      "sys_bitarray_test_and_clear_bit did not detect bit %d\n",
+			      "sys_bitarray_test_and_clear_bit did not detect bit %zu\n",
 			      bit);
 		zassert_equal(ba.bundles[bundle_idx], 0,
-			      "sys_bitarray_test_and_clear_bit did not clear bit %d\n",
+			      "sys_bitarray_test_and_clear_bit did not clear bit %zu\n",
 			      bit);
 		zassert_equal(sys_bitfield_test_bit((mem_addr_t)ba.bundles, bit),
-			      0, "sys_bitarray_set_bit did not set bit %d\n", bit);
+			      0, "sys_bitarray_set_bit did not set bit %zu\n", bit);
 
 		ret = sys_bitarray_test_and_clear_bit(&ba, bit, &bit_val);
 		zassert_equal(ret, 0,
-			      "sys_bitarray_test_and_clear_bit failed at bit %d", bit);
+			      "sys_bitarray_test_and_clear_bit failed at bit %zu", bit);
 		zassert_equal(bit_val, 0,
-			      "sys_bitarray_test_and_clear_bit erroneously detected bit %d\n",
+			      "sys_bitarray_test_and_clear_bit erroneously detected bit %zu\n",
 			      bit);
 		zassert_equal(ba.bundles[bundle_idx], 0,
-			      "sys_bitarray_test_and_clear_bit set bit %d\n",
+			      "sys_bitarray_test_and_clear_bit set bit %zu\n",
 			      bit);
 		zassert_equal(sys_bitfield_test_bit((mem_addr_t)ba.bundles, bit),
-			      0, "sys_bitarray_set_bit did not set bit %d\n", bit);
+			      0, "sys_bitarray_set_bit did not set bit %zu\n", bit);
 	}
 
 	/* All this should fail because we go outside of
@@ -282,6 +282,39 @@ ZTEST(bitarray, test_bitarray_set_clear)
 		     "sys_bitarray_test_and_clear_bit() erroneously changed bitarray");
 }
 
+static void test_alloc_free_32(uint32_t mask, uint32_t mask_after, size_t num_bits,
+			       size_t exp_offset, int exp_ret)
+{
+	int ret;
+	size_t offset;
+
+	SYS_BITARRAY_DEFINE(ba_32, 32);
+
+	ba_32.bundles[0] = mask;
+
+	ret = sys_bitarray_alloc(&ba_32, num_bits, &offset);
+	zassert_equal(ret, exp_ret, "sys_bitarray_alloc() failed: %d", ret);
+	if (exp_ret < 0) {
+		return;
+	}
+	zassert_equal(offset, exp_offset,
+		      "sys_bitarray_alloc() offset expected %zu, got %zu", exp_offset, offset);
+	zassert_equal(ba_32.bundles[0], mask_after, "sys_bitarray_alloc() failed bits comparison");
+
+	ret = sys_bitarray_free(&ba_32, num_bits, offset);
+	zassert_equal(ret, 0, "sys_bitarray_free() failed: %d", ret);
+	zassert_equal(ba_32.bundles[0], mask, "sys_bitarray_alloc() failed bits comparison");
+}
+
+static void alloc_and_free_32_predefined(void)
+{
+	printk("Testing bit array alloc and free with predefined patterns using 32 bit array\n");
+
+	test_alloc_free_32(0x0F0F070F, 0x0F0FFF0F, 5, 11, 0);
+	test_alloc_free_32(0x33333333, 0xF3333333, 3, 0, -ENOSPC);
+	test_alloc_free_32(0x33333333, 0xF3333333, 2, 30, 0);
+}
+
 void alloc_and_free_predefined(void)
 {
 	int ret;
@@ -291,7 +324,7 @@ void alloc_and_free_predefined(void)
 
 	SYS_BITARRAY_DEFINE(ba_128, 128);
 
-	printk("Testing bit array alloc and free with predefined patterns\n");
+	printk("Testing bit array alloc and free with predefined patterns using 128 bit array\n");
 
 	/* Pre-populate the bits */
 	ba_128.bundles[0] = 0x0F0F070F;
@@ -307,7 +340,7 @@ void alloc_and_free_predefined(void)
 
 	ret = sys_bitarray_alloc(&ba_128, 5, &offset);
 	zassert_equal(ret, 0, "sys_bitarray_alloc() failed: %d", ret);
-	zassert_equal(offset, 11, "sys_bitarray_alloc() offset expected %d, got %d", 11, offset);
+	zassert_equal(offset, 11, "sys_bitarray_alloc() offset expected %d, got %zu", 11, offset);
 	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
 		     "sys_bitarray_alloc() failed bits comparison");
 
@@ -315,7 +348,7 @@ void alloc_and_free_predefined(void)
 	ba_128_expected[2] = 0xFF0F0F0F;
 	ba_128_expected[3] = 0x0F0F0FFF;
 	zassert_equal(ret, 0, "sys_bitarray_alloc() failed: %d", ret);
-	zassert_equal(offset, 92, "sys_bitarray_alloc() offset expected %d, got %d", 92, offset);
+	zassert_equal(offset, 92, "sys_bitarray_alloc() offset expected %d, got %zu", 92, offset);
 	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
 		     "sys_bitarray_alloc() failed bits comparison");
 
@@ -355,25 +388,9 @@ void alloc_and_free_predefined(void)
 
 	ret = sys_bitarray_alloc(&ba_128, 34, &offset);
 	zassert_equal(ret, 0, "sys_bitarray_alloc() failed: %d", ret);
-	zassert_equal(offset, 64, "sys_bitarray_alloc() offset expected %d, got %d", 64, offset);
+	zassert_equal(offset, 64, "sys_bitarray_alloc() offset expected %d, got %zu", 64, offset);
 	zassert_true(cmp_u32_arrays(ba_128.bundles, ba_128_expected, ba_128.num_bundles),
 		     "sys_bitarray_alloc() failed bits comparison");
-}
-
-static inline size_t count_bits(uint32_t val)
-{
-	/* Implements Brian Kernighan’s Algorithm
-	 * to count bits.
-	 */
-
-	size_t cnt = 0;
-
-	while (val != 0) {
-		val = val & (val - 1);
-		cnt++;
-	}
-
-	return cnt;
 }
 
 size_t get_bitarray_popcnt(sys_bitarray_t *ba)
@@ -382,7 +399,7 @@ size_t get_bitarray_popcnt(sys_bitarray_t *ba)
 	unsigned int idx;
 
 	for (idx = 0; idx < ba->num_bundles; idx++) {
-		popcnt += count_bits(ba->bundles[idx]);
+		popcnt += sys_count_bits(&ba->bundles[idx], sizeof(uint32_t));
 	}
 
 	return popcnt;
@@ -404,7 +421,7 @@ void alloc_and_free_loop(int divisor)
 	for (bit = 0U; bit < ba.num_bits; ++bit) {
 		cur_popcnt = get_bitarray_popcnt(&ba);
 		zassert_equal(cur_popcnt, expected_popcnt,
-			      "bit count expected %u, got %u (at bit %u)",
+			      "bit count expected %zu, got %zu (at bit %zu)",
 			      expected_popcnt, cur_popcnt, bit);
 
 		/* Allocate half of remaining bits */
@@ -413,14 +430,14 @@ void alloc_and_free_loop(int divisor)
 		ret = sys_bitarray_alloc(&ba, num_bits, &offset);
 		if (num_bits == 0) {
 			zassert_not_equal(ret, 0,
-					  "sys_bitarray_free() should fail but not (bit %u)",
+					  "sys_bitarray_free() should fail but not (bit %zu)",
 					  bit);
 		} else {
 			zassert_equal(ret, 0,
-				      "sys_bitarray_alloc() failed (%d) at bit %u",
+				      "sys_bitarray_alloc() failed (%d) at bit %zu",
 				      ret, bit);
 			zassert_equal(offset, bit,
-				      "sys_bitarray_alloc() offset expected %d, got %d",
+				      "sys_bitarray_alloc() offset expected %zu, got %zu",
 				      bit, offset);
 
 			expected_popcnt += num_bits;
@@ -428,18 +445,18 @@ void alloc_and_free_loop(int divisor)
 
 		cur_popcnt = get_bitarray_popcnt(&ba);
 		zassert_equal(cur_popcnt, expected_popcnt,
-			      "bit count expected %u, got %u (at bit %u)",
+			      "bit count expected %zu, got %zu (at bit %zu)",
 			      expected_popcnt, cur_popcnt, bit);
 
 		/* Free all but the first bit of allocated region */
 		ret = sys_bitarray_free(&ba, (num_bits - 1), (bit + 1));
 		if ((num_bits == 0) || ((num_bits - 1) == 0)) {
 			zassert_not_equal(ret, 0,
-					  "sys_bitarray_free() should fail but not (bit %u)",
+					  "sys_bitarray_free() should fail but not (bit %zu)",
 					  bit);
 		} else {
 			zassert_equal(ret, 0,
-				      "sys_bitarray_free() failed (%d) at bit %u",
+				      "sys_bitarray_free() failed (%d) at bit %zu",
 				      ret, (bit + 1));
 
 			expected_popcnt -= num_bits - 1;
@@ -474,22 +491,22 @@ void alloc_and_free_interval(void)
 		ret = sys_bitarray_alloc(&ba, 4, &offset);
 		if (cnt == (ba.num_bits / 8)) {
 			zassert_not_equal(ret, 0,
-					  "sys_bitarray_free() should fail but not (cnt %u)",
+					  "sys_bitarray_free() should fail but not (cnt %zu)",
 					  cnt);
 		} else {
 			zassert_equal(ret, 0,
-				      "sys_bitarray_alloc() failed (%d) (cnt %u)",
+				      "sys_bitarray_alloc() failed (%d) (cnt %zu)",
 				      ret, cnt);
 
 			zassert_equal(offset, expected_offset,
-				      "offset expected %u, got %u (cnt %u)",
+				      "offset expected %zu, got %zu (cnt %zu)",
 				      expected_offset, offset, cnt);
 
 			expected_popcnt += 4;
 
 			cur_popcnt = get_bitarray_popcnt(&ba);
 			zassert_equal(cur_popcnt, expected_popcnt,
-				      "bit count expected %u, got %u (cnt %u)",
+				      "bit count expected %zu, got %zu (cnt %zu)",
 				      expected_popcnt, cur_popcnt, cnt);
 
 
@@ -514,6 +531,7 @@ ZTEST(bitarray, test_bitarray_alloc_free)
 	}
 
 	alloc_and_free_predefined();
+	alloc_and_free_32_predefined();
 
 	i = 1;
 	while (i < 65) {
@@ -547,27 +565,27 @@ ZTEST(bitarray, test_bitarray_popcount_region)
 
 	ret = sys_bitarray_popcount_region(&ba, 1, 0, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 1, 1, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 2, 0, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 3, 0, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 3, 1, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	printk("Testing bit array region popcount spanning multiple bundles\n");
@@ -582,26 +600,26 @@ ZTEST(bitarray, test_bitarray_popcount_region)
 
 	ret = sys_bitarray_popcount_region(&ba, 126, 1, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 0, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 126, 0, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 127, 1, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 	ret = sys_bitarray_popcount_region(&ba, 1, 127, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 1, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	ret = sys_bitarray_popcount_region(&ba, 128, 0, &count);
 	zassert_equal(ret, 0, "sys_bitarray_popcount_region() returned unexpected value: %d", ret);
-	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %d",
+	zassert_equal(count, 2, "sys_bitarray_popcount_region() returned unexpected count: %zu",
 		      count);
 
 	printk("Testing edge/error cases\n");
@@ -787,22 +805,22 @@ ZTEST(bitarray, test_bitarray_find_nth_set)
 
 	ret = sys_bitarray_find_nth_set(&ba, 1, 1, 0, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 1, 32, 0, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 2, 32, 0, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 1, 31, 1, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 31, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 2, 31, 1, &found_at);
@@ -812,13 +830,13 @@ ZTEST(bitarray, test_bitarray_find_nth_set)
 
 	ret = sys_bitarray_find_nth_set(&ba, 1, 128, 0, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 0, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 8, 128, 0, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 127, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
-		      found_at);
+	zassert_equal(found_at, 127,
+		      "sys_bitarray_find_nth_set() returned unexpected found_at: %zu", found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 8, 128, 1, &found_at);
 	zassert_equal(ret, -EINVAL, "sys_bitarray_find_nth_set() returned unexpected value: %d",
@@ -826,32 +844,32 @@ ZTEST(bitarray, test_bitarray_find_nth_set)
 
 	ret = sys_bitarray_find_nth_set(&ba, 7, 127, 1, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 127, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
-		      found_at);
+	zassert_equal(found_at, 127,
+		      "sys_bitarray_find_nth_set() returned unexpected found_at: %zu", found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 7, 127, 0, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 6, 127, 1, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 6, 127, 1, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 96, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 1, 32, 48, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 63, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 63, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	ret = sys_bitarray_find_nth_set(&ba, 2, 32, 48, &found_at);
 	zassert_equal(ret, 0, "sys_bitarray_find_nth_set() returned unexpected value: %d", ret);
-	zassert_equal(found_at, 64, "sys_bitarray_find_nth_set() returned unexpected found_at: %d",
+	zassert_equal(found_at, 64, "sys_bitarray_find_nth_set() returned unexpected found_at: %zu",
 		      found_at);
 
 	printk("Testing error cases\n");

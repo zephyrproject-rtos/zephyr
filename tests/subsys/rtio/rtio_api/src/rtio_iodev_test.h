@@ -28,6 +28,9 @@ struct rtio_iodev_test_data {
 
 	/* Lock around kicking off next timer */
 	struct k_spinlock lock;
+
+	/* Mocked result to receive by the IODEV */
+	int result;
 };
 
 static void rtio_iodev_test_next(struct rtio_iodev_test_data *data, bool completion)
@@ -64,6 +67,7 @@ static void rtio_iodev_test_complete(struct rtio_iodev_test_data *data, int stat
 	if (status < 0) {
 		rtio_iodev_sqe_err(data->txn_head, status);
 		rtio_iodev_test_next(data, true);
+		return;
 	}
 
 	data->txn_curr = rtio_txn_next(data->txn_curr);
@@ -80,7 +84,7 @@ static void rtio_iodev_await_signaled(struct rtio_iodev_sqe *iodev_sqe, void *us
 {
 	struct rtio_iodev_test_data *data = userdata;
 
-	rtio_iodev_test_complete(data, 0);
+	rtio_iodev_test_complete(data, data->result);
 }
 
 static void rtio_iodev_timer_fn(struct k_timer *tm)
@@ -93,7 +97,7 @@ static void rtio_iodev_timer_fn(struct k_timer *tm)
 
 	switch (iodev_sqe->sqe.op) {
 	case RTIO_OP_NOP:
-		rtio_iodev_test_complete(data, 0);
+		rtio_iodev_test_complete(data, data->result);
 		break;
 	case RTIO_OP_RX:
 		rc = rtio_sqe_rx_buf(iodev_sqe, 16, 16, &buf, &buf_len);
@@ -103,7 +107,7 @@ static void rtio_iodev_timer_fn(struct k_timer *tm)
 		}
 		/* For reads the test device copies from the given userdata */
 		memcpy(buf, ((uint8_t *)iodev_sqe->sqe.userdata), 16);
-		rtio_iodev_test_complete(data, 0);
+		rtio_iodev_test_complete(data, data->result);
 		break;
 	case RTIO_OP_AWAIT:
 		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_iodev_await_signaled, data);
@@ -138,6 +142,14 @@ void rtio_iodev_test_init(struct rtio_iodev *test)
 	data->txn_head = NULL;
 	data->txn_curr = NULL;
 	k_timer_init(&data->timer, rtio_iodev_timer_fn, NULL);
+	data->result = 0;
+}
+
+void rtio_iodev_test_set_result(struct rtio_iodev *test, int result)
+{
+	struct rtio_iodev_test_data *data = test->data;
+
+	data->result = result;
 }
 
 #define RTIO_IODEV_TEST_DEFINE(name)                                                               \

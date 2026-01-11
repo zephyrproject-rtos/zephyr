@@ -4,13 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/h7rs/stm32h7rs.dtsi>
 
 / {
 	soc {
-
 		compatible = "st,stm32h7r3", "st,stm32h7rs", "simple-bus";
-
 	};
 };

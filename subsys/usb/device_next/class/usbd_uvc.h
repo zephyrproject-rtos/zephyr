@@ -375,6 +375,22 @@ struct uvc_format_mjpeg_descriptor {
 	uint8_t bCopyProtect;
 } __packed;
 
+struct uvc_format_frame_based_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFormatIndex;
+	uint8_t bNumFrameDescriptors;
+	uint8_t guidFormat[16];
+	uint8_t bBitsPerPixel;
+	uint8_t bDefaultFrameIndex;
+	uint8_t bAspectRatioX;
+	uint8_t bAspectRatioY;
+	uint8_t bmInterlaceFlags;
+	uint8_t bCopyProtect;
+	uint8_t bVariableSize;
+} __packed;
+
 struct uvc_frame_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -385,10 +401,7 @@ struct uvc_frame_descriptor {
 	uint16_t wHeight;
 	uint32_t dwMinBitRate;
 	uint32_t dwMaxBitRate;
-	uint32_t dwMaxVideoFrameBufferSize;
-	uint32_t dwDefaultFrameInterval;
-	uint8_t bFrameIntervalType;
-	/* Other fields depending on bFrameIntervalType value */
+	/* Other fields depending on bDescriptorSubtype value */
 } __packed;
 
 struct uvc_frame_continuous_descriptor {
@@ -420,6 +433,38 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMinBitRate;
 	uint32_t dwMaxBitRate;
 	uint32_t dwMaxVideoFrameBufferSize;
+	uint32_t dwDefaultFrameInterval;
+	uint8_t bFrameIntervalType;
+	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+} __packed;
+
+struct uvc_frame_based_continuous_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFrameIndex;
+	uint8_t bmCapabilities;
+	uint16_t wWidth;
+	uint16_t wHeight;
+	uint32_t dwMinBitRate;
+	uint32_t dwMaxBitRate;
+	uint32_t dwDefaultFrameInterval;
+	uint8_t bFrameIntervalType;
+	uint32_t dwMinFrameInterval;
+	uint32_t dwMaxFrameInterval;
+	uint32_t dwFrameIntervalStep;
+} __packed;
+
+struct uvc_frame_based_discrete_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bFrameIndex;
+	uint8_t bmCapabilities;
+	uint16_t wWidth;
+	uint16_t wHeight;
+	uint32_t dwMinBitRate;
+	uint32_t dwMaxBitRate;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
 	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];

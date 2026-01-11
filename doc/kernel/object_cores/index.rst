@@ -22,18 +22,19 @@ linked together via a singly linked list. Together, this can allow debugging
 tools to traverse all the objects in the system.
 
 Object cores have been integrated into following kernel objects:
- * :ref:`Condition Variables <condvar>`
- * :ref:`Events <events>`
- * :ref:`FIFOs <fifos_v2>` and :ref:`LIFOs <lifos_v2>`
- * :ref:`Mailboxes <mailboxes_v2>`
- * :ref:`Memory Slabs <memory_slabs_v2>`
- * :ref:`Message Queues <message_queues_v2>`
- * :ref:`Mutexes <mutexes_v2>`
- * :ref:`Pipes <pipes_v2>`
- * :ref:`Semaphores <semaphores_v2>`
- * :ref:`Threads <threads_v2>`
- * :ref:`Timers <timers_v2>`
- * :ref:`System Memory Blocks <sys_mem_blocks>`
+
+* :ref:`Condition Variables <condvar>`
+* :ref:`Events <events>`
+* :ref:`FIFOs <fifos_v2>` and :ref:`LIFOs <lifos_v2>`
+* :ref:`Mailboxes <mailboxes_v2>`
+* :ref:`Memory Slabs <memory_slabs_v2>`
+* :ref:`Message Queues <message_queues_v2>`
+* :ref:`Mutexes <mutexes_v2>`
+* :ref:`Pipes <pipes_v2>`
+* :ref:`Semaphores <semaphores_v2>`
+* :ref:`Threads <threads_v2>`
+* :ref:`Timers <timers_v2>`
+* :ref:`System Memory Blocks <sys_mem_blocks>`
 
 Developers are free to integrate them if desired into other objects within
 their projects.

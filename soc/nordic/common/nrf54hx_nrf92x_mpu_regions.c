@@ -5,7 +5,8 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
+#include <ironside/se/memory_map.h>
 
 #define USBHS_BASE	DT_REG_ADDR_BY_NAME(DT_NODELABEL(usbhs), core)
 #define USBHS_SIZE	DT_REG_SIZE_BY_NAME(DT_NODELABEL(usbhs), core)
@@ -22,10 +23,12 @@
 #define SOFTPERIPH_SIZE	DT_REG_SIZE(DT_NODELABEL(softperiph_ram))
 
 static struct arm_mpu_region mpu_regions[] = {
+#ifdef CONFIG_XIP
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
 			 REGION_FLASH_ATTR(CONFIG_FLASH_BASE_ADDRESS,
 				CONFIG_FLASH_SIZE * 1024)),
+#endif
 	MPU_REGION_ENTRY("SRAM_0",
 			 CONFIG_SRAM_BASE_ADDRESS,
 			 REGION_RAM_ATTR(CONFIG_SRAM_BASE_ADDRESS,
@@ -47,6 +50,9 @@ static struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("SOFTPERIPH_RAM", SOFTPERIPH_BASE,
 			 REGION_RAM_NOCACHE_ATTR(SOFTPERIPH_BASE, SOFTPERIPH_SIZE)),
 #endif
+	MPU_REGION_ENTRY("EVENT_REPORT", IRONSIDE_SE_EVENT_REPORT_ADDRESS,
+			 REGION_RAM_NOCACHE_ATTR(IRONSIDE_SE_EVENT_REPORT_ADDRESS,
+						 IRONSIDE_SE_EVENT_REPORT_SIZE)),
 };
 
 const struct arm_mpu_config mpu_config = {

@@ -7,14 +7,15 @@
 /**
  * @file
  * @brief Public APIs for the Renesas ELC driver
+ * @ingroup renesas_elc_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_ELC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_ELC_H_
 
 /**
- * @brief Renesas ELC driver public APIs
- * @defgroup renesas_elc_interface Renesas ELC driver APIs
+ * @brief Interfaces for Renesas Event Link Controller (ELC).
+ * @defgroup renesas_elc_interface Renesas ELC
  * @ingroup misc_interfaces
  * @{
  */

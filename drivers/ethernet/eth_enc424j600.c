@@ -347,7 +347,6 @@ static int enc424j600_tx(const struct device *dev, struct net_pkt *pkt)
 static int enc424j600_rx(const struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->data;
-	const struct enc424j600_config *config = dev->config;
 	uint8_t info[ENC424J600_RSV_SIZE + ENC424J600_PTR_NXP_PKT_SIZE];
 	struct net_buf *pkt_buf = NULL;
 	struct net_pkt *pkt;
@@ -386,9 +385,8 @@ static int enc424j600_rx(const struct device *dev)
 	}
 
 	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
-					   AF_UNSPEC, 0,
-					   K_MSEC(config->timeout));
+	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len, NET_AF_UNSPEC, 0,
+					   K_MSEC(CONFIG_ETH_ENC424J600_TIMEOUT));
 	if (!pkt) {
 		LOG_ERR("Could not allocate rx buffer");
 		eth_stats_update_errors_rx(context->iface);
@@ -778,9 +776,8 @@ static struct enc424j600_runtime enc424j600_0_runtime = {
 };
 
 static const struct enc424j600_config enc424j600_0_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-	.timeout = CONFIG_ETH_ENC424J600_TIMEOUT,
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,

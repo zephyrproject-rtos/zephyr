@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon TCPWM Timer
+
+compatible: "infineon,tcpwm"
+
+include: base.yaml
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: Register base address and size information
+
+  interrupts:
+    type: array
+    description: Interrupt mapping for TCPWM instance
+
+  resolution:
+    type: int
+    required: true
+    description: Counter/timer resolution (16 or 32 bits)
+    enum:
+      - 16
+      - 32

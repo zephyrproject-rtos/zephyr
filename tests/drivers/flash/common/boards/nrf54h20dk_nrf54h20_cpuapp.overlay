@@ -4,6 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	zephyr,user {
+		test-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
+};
+
+&exmif {
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
+};
+
 &mx25uw63 {
 	status = "okay";
+	supply-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 };

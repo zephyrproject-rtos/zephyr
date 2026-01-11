@@ -25,23 +25,27 @@ struct bt_esp32_data {
 	bt_hci_recv_t recv;
 };
 
-static K_SEM_DEFINE(hci_send_sem, 1, 1);
+/* VHCI notifies when exactly one more HCI packet can be sent */
+static K_SEM_DEFINE(hci_send_sem, 0, 1);
 
-static bool is_hci_event_discardable(const uint8_t *evt_data)
+static bool is_hci_event_discardable(uint8_t evt_code, const uint8_t *payload, size_t plen)
 {
-	uint8_t evt_type = evt_data[0];
-
-	switch (evt_type) {
+	switch (evt_code) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
 #endif
 	case BT_HCI_EVT_LE_META_EVENT: {
-		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+		/* Need at least 1 byte to read LE subevent safely */
+		if (plen < 1U) {
+			return false;
+		}
+		uint8_t subevt_type = payload[0];
 
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
 			return true;
 		default:
 			return false;
@@ -64,8 +68,6 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	discardable = is_hci_event_discardable(data);
-
 	memcpy((void *)&hdr, data, sizeof(hdr));
 	data += sizeof(hdr);
 	remaining -= sizeof(hdr);
@@ -75,6 +77,8 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
+
+	discardable = is_hci_event_discardable(hdr.evt, data, remaining);
 
 	buf = bt_buf_get_evt(hdr.evt, discardable, K_NO_WAIT);
 	if (!buf) {
@@ -242,19 +246,21 @@ static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
-	if (!esp_vhci_host_check_send_available()) {
-		LOG_WRN("Controller not ready to receive packets");
-	}
-
-	if (k_sem_take(&hci_send_sem, HCI_BT_ESP32_TIMEOUT) == 0) {
-		esp_vhci_host_send_packet(buf->data, buf->len);
-	} else {
+	/* Wait for controller credit (callback gives the semaphore) */
+	if (k_sem_take(&hci_send_sem, HCI_BT_ESP32_TIMEOUT) != 0) {
 		LOG_ERR("Send packet timeout error");
 		err = -ETIMEDOUT;
+	} else {
+		if (!esp_vhci_host_check_send_available()) {
+			LOG_WRN("VHCI not available, sending anyway");
+		}
+		esp_vhci_host_send_packet(buf->data, buf->len);
 	}
 
-	net_buf_unref(buf);
-	k_sem_give(&hci_send_sem);
+	if (!err) {
+		net_buf_unref(buf);
+	}
+
 
 	return err;
 }
@@ -288,6 +294,10 @@ static int bt_esp32_ble_init(void)
 
 	esp_vhci_host_register_callback(&vhci_host_cb);
 
+	if (esp_vhci_host_check_send_available()) {
+		k_sem_give(&hci_send_sem);
+	}
+
 	return 0;
 }
 
@@ -314,6 +324,8 @@ static int bt_esp32_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct bt_esp32_data *hci = dev->data;
 	int err;
+
+	k_sem_reset(&hci_send_sem);
 
 	err = bt_esp32_ble_init();
 	if (err) {

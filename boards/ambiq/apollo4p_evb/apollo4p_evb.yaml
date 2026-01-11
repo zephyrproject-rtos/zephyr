@@ -18,6 +18,7 @@ supported:
   - adc
   - hwinfo
   - usbd
+  - sdhc
 testing:
   ignore_tags:
     - net

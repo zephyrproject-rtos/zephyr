@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
 
 &pinctrl {
 	eusart0_default: eusart0_default {
@@ -33,6 +33,28 @@
 			pins = <EUSART1_RX_PA8>;
 			input-enable;
 			silabs,input-filter;
+		};
+	};
+
+	iadc0_default: iadc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_AEVEN0_IADC0>;
+		};
+
+		group1 {
+			silabs,analog-bus = <ABUS_AODD0_IADC0>;
+		};
+
+		group2 {
+			silabs,analog-bus = <ABUS_BEVEN0_IADC0>;
+		};
+
+		group3 {
+			silabs,analog-bus = <ABUS_BODD0_IADC0>;
+		};
+
+		group4 {
+			silabs,analog-bus = <ABUS_CDEVEN0_IADC0>;
 		};
 	};
 

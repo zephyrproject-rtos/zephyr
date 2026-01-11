@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	adc4052_eval_ad4052_ardz: adc4052@0 {
+		sampling-period = <20000>; /*uS*/
+	};
+};

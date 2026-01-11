@@ -8,16 +8,17 @@
  */
 
 #include <stdint.h>
+#include <zephyr/sys/util.h>
 
 /* Core Service */
 #define BTP_CORE_READ_SUPPORTED_COMMANDS	0x01
 struct btp_core_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_CORE_READ_SUPPORTED_SERVICES	0x02
 struct btp_core_read_supported_services_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_CORE_REGISTER_SERVICE		0x03

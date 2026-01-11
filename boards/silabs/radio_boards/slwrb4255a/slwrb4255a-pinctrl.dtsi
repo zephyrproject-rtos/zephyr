@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
 
 &pinctrl {
 	/* configuration for uart0 device, default state */
@@ -14,6 +14,7 @@
 			psels = <GECKO_PSEL(UART_RX, A, 1)>,
 				<GECKO_LOC(UART_RX, 0)>;
 		};
+
 		group2 {
 			/* configure PA.0 as UART_TX */
 			psels = <GECKO_PSEL(UART_TX, A, 0)>,

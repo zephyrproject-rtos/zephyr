@@ -13,7 +13,7 @@
 	compatible = "seeed,xiao-esp32s3";
 
 	chosen {
-		zephyr,camera = &lcd_cam;
+		zephyr,camera = &lcd_cam_dvp;
 	};
 };
 
@@ -28,6 +28,7 @@
 		reg = <0x30>;
 		status = "okay";
 		clock-rate-control = <0x80>;
+
 		port {
 			ov2640_ep_out: endpoint {
 				remote-endpoint-label = "dvp_ep_in";
@@ -42,12 +43,15 @@
 
 &lcd_cam {
 	status = "okay";
-	cam-clk = <10000000>;
 	pinctrl-0 = <&lcd_cam_default>;
 	pinctrl-names = "default";
+};
+
+&lcd_cam_dvp {
+	status = "okay";
+	cam-clk = <10000000>;
 	source = <&ov2640>;
-	dmas = <&dma 2>;
-	dma-names = "rx";
+
 	port {
 		dvp_ep_in: endpoint {
 			remote-endpoint-label = "ov2640_ep_out";
@@ -63,11 +67,13 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 			status = "okay";
 		};
+
 		spi-max-frequency = <20000000>;
 	};
 };

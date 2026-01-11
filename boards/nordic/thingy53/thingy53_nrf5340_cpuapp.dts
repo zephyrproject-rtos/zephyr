@@ -42,3 +42,6 @@
 	load-capacitors = "internal";
 	load-capacitance-picofarad = <7>;
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_partition.dtsi>

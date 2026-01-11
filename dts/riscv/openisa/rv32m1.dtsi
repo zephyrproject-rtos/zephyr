@@ -20,6 +20,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "openisa,ri5cy", "riscv";
@@ -488,7 +489,7 @@
 			#pwm-cells = <3>;
 		};
 
-		trng: random@41029000{
+		trng: random@41029000 {
 			compatible = "openisa,rv32m1-trng";
 			reg = <0x41029000 0x1000>;
 			status = "okay";

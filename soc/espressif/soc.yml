@@ -28,3 +28,6 @@ family:
       cpuclusters:
       - name: hpcore
       - name: lpcore
+  - name: esp32h2
+    socs:
+    - name: esp32h2

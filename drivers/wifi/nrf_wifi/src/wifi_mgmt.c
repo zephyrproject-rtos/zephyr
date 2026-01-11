@@ -564,7 +564,9 @@ int nrf_wifi_set_twt(const struct device *dev,
 
 		twt_info.dialog_token = twt_params->dialog_token;
 		twt_info.twt_wake_ahead_duration = twt_params->setup.twt_wake_ahead_duration;
-
+#ifndef CONFIG_NRF71_ON_IPC
+		twt_info.twt_req_timeout = CONFIG_NRF_WIFI_TWT_SETUP_TIMEOUT_MS;
+#endif /* CONFIG_NRF71_ON_IPC */
 		status = nrf_wifi_sys_fmac_twt_setup(rpu_ctx_zep->rpu_ctx,
 					   vif_ctx_zep->vif_idx,
 					   &twt_info);
@@ -1074,6 +1076,59 @@ int nrf_wifi_get_rts_threshold(const struct device *dev,
 
 	*rts_threshold = vif_ctx_zep->rts_threshold_value;
 	ret = 0;
+
+	return ret;
+}
+
+int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
+				     unsigned short bss_max_idle_period)
+{
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	int ret = -1;
+
+	if (!dev) {
+		LOG_ERR("%s: dev is NULL", __func__);
+		return ret;
+	}
+
+	vif_ctx_zep = dev->data;
+
+	if (!vif_ctx_zep) {
+		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		return ret;
+	}
+
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return ret;
+	}
+
+
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_ERR("%s: RPU context not initialized", __func__);
+		return ret;
+	}
+
+	if (((int)bss_max_idle_period < 0) ||
+	    (bss_max_idle_period > 64000)) {
+		/* 0 or value less than 64000 is passed to f/w.
+		 * All other values considered as invalid.
+		 */
+		LOG_ERR("%s: Invalid max_idle_period value : %d",
+			__func__, (int)bss_max_idle_period);
+		return ret;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+
+	vif_ctx_zep->bss_max_idle_period = bss_max_idle_period;
+
+	ret = 0;
+
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 
 	return ret;
 }

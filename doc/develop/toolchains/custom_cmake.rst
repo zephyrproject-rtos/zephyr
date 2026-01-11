@@ -43,7 +43,7 @@ your :makevar:`ZEPHYR_TOOLCHAIN_VARIANT`, :makevar:`TOOLCHAIN_ROOT`, and other
 settings in a file named :file:`my-toolchain.cmake`, you can then invoke cmake
 as ``cmake -C my-toolchain.cmake ...`` to save typing.
 
-Zephyr includes :file:`include/toolchain.h` which again includes a toolchain
+Zephyr includes :file:`include/zephyr/toolchain.h` which again includes a toolchain
 specific header based on the compiler identifier, such as ``__llvm__`` or
 ``__GNUC__``.
 Some custom compilers identify themselves as the compiler on which they are
@@ -59,7 +59,7 @@ available out-of-tree and it must include the correct header for the custom
 toolchain.
 A good location for the :file:`other.h` header file, would be a
 directory under the directory specified in ``TOOLCHAIN_ROOT`` as
-:file:`include/toolchain`.
+:file:`include/zephyr/toolchain`.
 To get the toolchain header included in zephyr's build, the
 :makevar:`USERINCLUDE` can be set to point to the include directory, as shown
 here:

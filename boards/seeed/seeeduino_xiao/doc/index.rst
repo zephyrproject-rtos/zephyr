@@ -127,11 +127,6 @@ References
 
 .. target-notes::
 
-.. _Seeeduino XIAO wiki:
-    https://wiki.seeedstudio.com/Seeeduino-XIAO/
-
-.. _pinouts:
-    https://wiki.seeedstudio.com/Seeeduino-XIAO/#hardware-overview
-
-.. _schematic:
-    https://wiki.seeedstudio.com/Seeeduino-XIAO/#resourses
+.. _`Seeeduino XIAO wiki`: https://wiki.seeedstudio.com/Seeeduino-XIAO/
+.. _`pinouts`: https://wiki.seeedstudio.com/Seeeduino-XIAO/#hardware-overview
+.. _`schematic`: https://wiki.seeedstudio.com/Seeeduino-XIAO/#resources

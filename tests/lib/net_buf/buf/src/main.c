@@ -146,14 +146,20 @@ ZTEST(net_buf_tests, test_net_buf_1)
 	int i;
 
 	for (i = 0; i < bufs_pool.buf_count; i++) {
+		zassert_equal(bufs_pool.buf_count - i, net_buf_get_available(&bufs_pool));
+		/* Assertion requires that this test runs first */
+		zassert_equal(i, net_buf_get_max_used(&bufs_pool));
 		buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
 		zassert_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bufs); i++) {
+		zassert_equal(i, net_buf_get_available(&bufs_pool));
+		zassert_equal(ARRAY_SIZE(bufs), net_buf_get_max_used(&bufs_pool));
 		net_buf_unref(bufs[i]);
 	}
+	zassert_equal(bufs_pool.buf_count, net_buf_get_available(&bufs_pool));
 
 	zassert_equal(destroy_called, ARRAY_SIZE(bufs),
 		      "Incorrect destroy callback count");
@@ -206,7 +212,7 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(sema);
 }
 
-static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024);
+static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 ZTEST(net_buf_tests, test_net_buf_3)
 {
@@ -288,7 +294,6 @@ ZTEST(net_buf_tests, test_net_buf_4)
 
 		if ((i % 2) && next) {
 			net_buf_frag_del(frag, next);
-			net_buf_unref(next);
 			removed++;
 		} else {
 			frag = next;
@@ -312,7 +317,6 @@ ZTEST(net_buf_tests, test_net_buf_4)
 		struct net_buf *frag2 = buf->frags;
 
 		net_buf_frag_del(buf, frag2);
-		net_buf_unref(frag2);
 		removed++;
 	}
 

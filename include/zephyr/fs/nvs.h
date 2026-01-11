@@ -48,7 +48,7 @@ struct nvs_fs {
 	/** Data write address */
 	uint32_t data_wra;
 	/** File system is split into sectors, each sector must be multiple of erase-block-size */
-	uint16_t sector_size;
+	uint32_t sector_size;
 	/** Number of sectors in the file system */
 	uint16_t sector_count;
 	/** Flag indicating if the file system is initialized */

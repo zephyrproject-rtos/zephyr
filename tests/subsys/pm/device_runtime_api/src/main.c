@@ -42,6 +42,8 @@ void test_api_setup(void *data)
 	int ret;
 	enum pm_device_state state;
 
+	test_driver_pm_retval(test_dev, 0);
+
 	/* check API always returns 0 when runtime PM is disabled */
 	ret = pm_device_runtime_get(test_dev);
 	zassert_equal(ret, 0);
@@ -107,6 +109,12 @@ ZTEST(device_runtime_api, test_api)
 
 	/*** get + put ***/
 
+	/* usage: 0, 0, resume: no */
+	test_driver_pm_retval(test_dev, -EIO);
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, -EIO);
+	test_driver_pm_retval(test_dev, 0);
+
 	/* usage: 0, +1, resume: yes */
 	ret = pm_device_runtime_get(test_dev);
 	zassert_equal(ret, 0);
@@ -125,6 +133,12 @@ ZTEST(device_runtime_api, test_api)
 
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+
+	/* usage: 1, 0, suspend: no */
+	test_driver_pm_retval(test_dev, -EIO);
+	ret = pm_device_runtime_put(test_dev);
+	zassert_equal(ret, -EIO);
+	test_driver_pm_retval(test_dev, 0);
 
 	/* usage: 1, -1, suspend: yes */
 	ret = pm_device_runtime_put(test_dev);

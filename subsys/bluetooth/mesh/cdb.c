@@ -15,8 +15,8 @@
 #include "common/bt_str.h"
 
 #include "cdb.h"
-#include "mesh.h"
 #include "net.h"
+#include "app_keys.h"
 #include "rpl.h"
 #include "settings.h"
 #include "keys.h"
@@ -180,6 +180,10 @@ static int cdb_net_set(const char *name, size_t len_rd,
 	struct net_val net;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 		return 0;
@@ -218,6 +222,10 @@ static int cdb_node_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp;
 	uint16_t addr;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -280,6 +288,10 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp[2];
 	uint16_t net_idx;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -346,6 +358,10 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp[2];
 	uint16_t app_idx;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -458,9 +474,9 @@ static void store_cdb_node(const struct bt_mesh_cdb_node *node)
 
 	err = settings_save_one(path, &val, sizeof(val));
 	if (err) {
-		LOG_ERR("Failed to store Node %s value", path);
+		LOG_ERR("Failed to store Node %s", path);
 	} else {
-		LOG_DBG("Stored Node %s value", path);
+		LOG_DBG("Stored Node %s", path);
 	}
 }
 
@@ -498,9 +514,9 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store Subnet value");
+		LOG_ERR("Failed to store Subnet %s", path);
 	} else {
-		LOG_DBG("Stored Subnet value");
+		LOG_DBG("Stored Subnet %s", path);
 	}
 }
 
@@ -535,9 +551,9 @@ static void store_cdb_app_key(const struct bt_mesh_cdb_app_key *app)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store AppKey %s value", path);
+		LOG_ERR("Failed to store AppKey %s", path);
 	} else {
-		LOG_DBG("Stored AppKey %s value", path);
+		LOG_DBG("Stored AppKey %s", path);
 	}
 }
 
@@ -900,6 +916,95 @@ int bt_mesh_cdb_subnet_key_export(const struct bt_mesh_cdb_subnet *sub, int key_
 	return bt_mesh_key_export(out, &sub->keys[key_idx].net_key);
 }
 
+#if defined CONFIG_BT_MESH_CDB_KEY_SYNC
+static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
+{
+	struct bt_mesh_cdb_subnet *sub_cdb = NULL;
+	uint8_t tmp[16];
+	int err;
+
+	LOG_DBG("Subnet %#x evt %d", sub->net_idx, evt);
+
+	for (int i = 0; i < ARRAY_SIZE(bt_mesh_cdb.subnets); ++i) {
+		if (bt_mesh_cdb.subnets[i].net_idx == sub->net_idx) {
+			sub_cdb = &bt_mesh_cdb.subnets[i];
+			break;
+		}
+	}
+
+	if (sub_cdb == NULL && evt != BT_MESH_KEY_ADDED) {
+		LOG_WRN("Subnet %#x not found in CDB", sub->net_idx);
+		return;
+	} else if (sub_cdb != NULL && evt == BT_MESH_KEY_ADDED) {
+		LOG_WRN("Subnet %#x already exists in CDB. Skipping adding", sub->net_idx);
+		return;
+	}
+
+	switch (evt) {
+	case BT_MESH_KEY_ADDED:
+		sub_cdb = bt_mesh_cdb_subnet_alloc(sub->net_idx);
+		if (sub_cdb == NULL) {
+			LOG_WRN("No space to allocate new subnet in CDB");
+			return;
+		}
+
+		sub_cdb->kr_phase = sub->kr_phase;
+		err = bt_mesh_key_export(tmp, &sub->keys[0].net);
+		if (err) {
+			LOG_ERR("Failed to export NetKey from stack for subnet: %#x, err: %d",
+				sub->net_idx, err);
+			return;
+		}
+
+		err = bt_mesh_cdb_subnet_key_import(sub_cdb, 0, tmp);
+		if (err) {
+			LOG_ERR("Failed to import NetKey in CDB for subnet: %#x, err: %d",
+				sub->net_idx, err);
+			return;
+		}
+		break;
+	case BT_MESH_KEY_DELETED:
+		bt_mesh_cdb_subnet_del(sub_cdb, true);
+		break;
+	case BT_MESH_KEY_UPDATED:
+		sub_cdb->kr_phase = sub->kr_phase;
+		err = bt_mesh_key_export(tmp, &sub->keys[1].net);
+		if (err) {
+			LOG_ERR("Failed to export NetKey from stack for subnet: %#x, err: %d",
+				sub->net_idx, err);
+			return;
+		}
+
+		err = bt_mesh_cdb_subnet_key_import(sub_cdb, 1, tmp);
+		if (err) {
+			LOG_ERR("Failed to import NetKey in CDB for subnet: %#x, err: %d",
+				sub->net_idx, err);
+			return;
+		}
+		break;
+	case BT_MESH_KEY_SWAPPED:
+		sub_cdb->kr_phase = sub->kr_phase;
+		break;
+	case BT_MESH_KEY_REVOKED:
+		sub_cdb->kr_phase = sub->kr_phase;
+		bt_mesh_key_destroy(&sub_cdb->keys[0].net_key);
+		memcpy(&sub_cdb->keys[0], &sub_cdb->keys[1], sizeof(sub_cdb->keys[0]));
+		memset(&sub_cdb->keys[1], 0, sizeof(sub_cdb->keys[1]));
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
+	if (evt != BT_MESH_KEY_DELETED) {
+		bt_mesh_cdb_subnet_store(sub_cdb);
+	}
+}
+
+BT_MESH_SUBNET_CB_DEFINE(cdb) = {
+	.evt_handler = subnet_evt,
+};
+#endif /* CONFIG_BT_MESH_CDB_KEY_SYNC */
+
 struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t addr,
 						uint8_t num_elem, uint16_t net_idx)
 {
@@ -1106,6 +1211,89 @@ int bt_mesh_cdb_app_key_export(const struct bt_mesh_cdb_app_key *key, int key_id
 {
 	return bt_mesh_key_export(out, &key->keys[key_idx].app_key);
 }
+
+#if defined CONFIG_BT_MESH_CDB_KEY_SYNC
+static void app_key_evt(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt)
+{
+	struct bt_mesh_cdb_app_key *app_cdb = NULL;
+	uint8_t tmp[16];
+	int err;
+
+	LOG_DBG("AppKey %#x NetIdx %#x evt %d", app->app_idx, app->net_idx, evt);
+
+	for (int i = 0; i < ARRAY_SIZE(bt_mesh_cdb.app_keys); ++i) {
+		if (bt_mesh_cdb.app_keys[i].net_idx == app->net_idx &&
+		    bt_mesh_cdb.app_keys[i].app_idx == app->app_idx) {
+			app_cdb = &bt_mesh_cdb.app_keys[i];
+			break;
+		}
+	}
+
+	if (app_cdb == NULL && evt != BT_MESH_KEY_ADDED) {
+		LOG_WRN("AppKey %#x not found in CDB", app->app_idx);
+		return;
+	} else if (app_cdb != NULL && evt == BT_MESH_KEY_ADDED) {
+		LOG_WRN("AppKey %#x already exists in CDB. Skipping adding", app->app_idx);
+		return;
+	}
+
+	switch (evt) {
+	case BT_MESH_KEY_ADDED:
+		app_cdb = bt_mesh_cdb_app_key_alloc(app->net_idx, app->app_idx);
+		if (app_cdb == NULL) {
+			LOG_WRN("No space to allocate new app key in CDB");
+			return;
+		}
+
+		err = bt_mesh_key_export(tmp, &app->keys[0].val);
+		if (err) {
+			LOG_ERR("Failed to export AppKey: %#x, err: %d", app->app_idx, err);
+			return;
+		}
+
+		app_cdb->net_idx = app->net_idx;
+		app_cdb->app_idx = app->app_idx;
+		err = bt_mesh_cdb_app_key_import(app_cdb, 0, tmp);
+		if (err) {
+			LOG_ERR("Failed to import AppKey: %#x, err: %d", app->app_idx,
+				err);
+			return;
+		}
+		break;
+	case BT_MESH_KEY_DELETED:
+		bt_mesh_cdb_app_key_del(app_cdb, true);
+		break;
+	case BT_MESH_KEY_UPDATED:
+		err = bt_mesh_key_export(tmp, &app->keys[1].val);
+		if (err) {
+			LOG_ERR("Failed to export AppKey: %#x, err: %d", app->app_idx, err);
+			return;
+		}
+
+		err = bt_mesh_cdb_app_key_import(app_cdb, 1, tmp);
+		if (err) {
+			LOG_ERR("Failed to import AppKey: %#x, err: %d", app->app_idx, err);
+			return;
+		}
+		break;
+	case BT_MESH_KEY_SWAPPED:
+		break;
+	case BT_MESH_KEY_REVOKED:
+		bt_mesh_key_destroy(&app_cdb->keys[0].app_key);
+		memcpy(&app_cdb->keys[0], &app_cdb->keys[1], sizeof(app_cdb->keys[0]));
+		memset(&app_cdb->keys[1], 0, sizeof(app_cdb->keys[1]));
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
+	if (evt != BT_MESH_KEY_DELETED && evt != BT_MESH_KEY_SWAPPED) {
+		bt_mesh_cdb_app_key_store(app_cdb);
+	}
+}
+
+BT_MESH_APP_KEY_CB_DEFINE(app_key_evt);
+#endif /* CONFIG_BT_MESH_CDB_KEY_SYNC */
 
 static void clear_cdb_net(void)
 {

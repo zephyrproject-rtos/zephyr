@@ -1,15 +1,7 @@
 # Copyright 2022-2025 NXP
 
 # Set the SoC specific drivers and configuration to build
-if(HWMv2)
-  set(SOC_BASE ${CONFIG_SOC})
-else()
-  if(${CONFIG_SOC} STREQUAL "s32z27")
-    set(SOC_BASE "s32z270")
-  else()
-    set(SOC_BASE ${CONFIG_SOC})
-  endif()
-endif()
+set(SOC_BASE ${CONFIG_SOC})
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/drivers/${SOC_SERIES} hal_nxp/s32/drivers)
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/soc/${SOC_BASE} hal_nxp/s32/soc)
@@ -80,11 +72,9 @@ if(CONFIG_HAS_MCUX)
   # Load MCUX SDK NG code.
   include(../mcux/mcux-sdk-ng/basic.cmake)
 
-  if(${MCUX_DEVICE} MATCHES "S32K1")
-    set_variable_ifdef(CONFIG_PINCTRL CONFIG_MCUX_COMPONENT_driver.port)
-
+  if(CONFIG_SOC_SERIES_S32K1)
+    set(CONFIG_MCUX_COMPONENT_driver.port ON)
     set_variable_ifdef(CONFIG_CPU_HAS_NXP_SYSMPU CONFIG_MCUX_COMPONENT_driver.sysmpu)
-
     set_variable_ifdef(CONFIG_HAS_MCUX_CACHE CONFIG_MCUX_COMPONENT_driver.cache_lmem)
   endif()
 

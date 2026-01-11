@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <string.h>
+#include <string.h>
 
- #include <zephyr/drivers/flash.h>
- #include <zephyr/logging/log.h>
- #include <nrfx_mramc.h>
- #if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
- #include <hal/nrf_cache.h>
- #endif
+#include <zephyr/drivers/flash.h>
+#include <zephyr/logging/log.h>
+#include <nrfx_mramc.h>
+#if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
+#include <zephyr/cache.h>
+#endif
 
 LOG_MODULE_REGISTER(flash_nrf_mramc, CONFIG_FLASH_LOG_LEVEL);
 
@@ -112,13 +112,7 @@ static int nrf_mramc_write(const struct device *dev, off_t offset,
 	 * and not number of bytes
 	 */
 	nrfx_mramc_words_write(addr, data, len / WRITE_BLOCK_SIZE);
-#if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
-	if (nrf_cache_enable_check(NRF_ICACHE)) {
-		while (nrf_cache_busy_check(NRF_ICACHE)) {
-		}
-		nrf_cache_invalidate(NRF_ICACHE);
-	}
-#endif
+
 	return 0;
 }
 
@@ -144,11 +138,7 @@ static int nrf_mramc_erase(const struct device *dev, off_t offset, size_t size)
 	 */
 	nrfx_mramc_area_erase(addr, size / WRITE_BLOCK_SIZE);
 #if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
-	if (nrf_cache_enable_check(NRF_ICACHE)) {
-		while (nrf_cache_busy_check(NRF_ICACHE)) {
-		}
-		nrf_cache_invalidate(NRF_ICACHE);
-	}
+	sys_cache_instr_invd_all();
 #endif
 	return 0;
 }
@@ -196,11 +186,11 @@ static int mramc_sys_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	nrfx_mramc_config_t config = NRFX_MRAMC_DEFAULT_CONFIG();
-	nrfx_err_t err = nrfx_mramc_init(&config, NULL);
+	int ret = nrfx_mramc_init(&config, NULL);
 
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize MRAMC: %d", err);
-		return -EIO;
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize MRAMC: %d", ret);
+		return ret;
 	}
 	LOG_DBG("MRAMC initialized successfully");
 	return 0;

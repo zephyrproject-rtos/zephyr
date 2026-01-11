@@ -22,8 +22,8 @@ properties:
   op-mode:
     type: string
     enum:
-      - "MSPI_CONTROLLER"
-      - "MSPI_PERIPHERAL"
+      - "MSPI_OP_MODE_CONTROLLER"
+      - "MSPI_OP_MODE_PERIPHERAL"
     description: |
       Indicate MSPI controller or peripheral mode of the controller.
       The controller driver may use this during initialization.
@@ -92,3 +92,11 @@ properties:
       Regardless of whether the CE pin may need software control or MSPI
       controller has dedicated CE pin, this field should be defined to
       help manage multiple devices on the same MSPI controller.
+
+  packet-data-limit:
+    type: int
+    description: |
+      Specifies the maximum length of data that the controller can transfer
+      in a single packet. Transceive requests made to the controller must be
+      split into multiple packets if a single one would exceed this value.
+      If not specified, no limit is imposed.

@@ -28,8 +28,6 @@ A LoRaWAN Application Server implementing the relevant services is required for 
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/subsys/lorawan/fuota` in the Zephyr tree.
-
 Before building the sample, make sure to select the correct region in the ``prj.conf`` file.
 
 The following commands build and flash the sample.

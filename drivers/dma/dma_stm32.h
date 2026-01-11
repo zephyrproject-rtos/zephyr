@@ -95,11 +95,6 @@ void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id);
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id);
 
-#if !defined(CONFIG_DMAMUX_STM32)
-void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id,
-						uint32_t slot);
-#endif
-
 #ifdef CONFIG_DMA_STM32_V1
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx);

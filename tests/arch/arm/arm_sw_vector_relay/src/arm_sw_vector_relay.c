@@ -69,6 +69,6 @@ ZTEST(arm_sw_vector_relay, test_arm_sw_vector_relay)
 	 */
 	zassert_true(_vector_table_pointer == (uint32_t)_vector_start,
 		     "vector table pointer not pointing to vector start, 0x%x, 0x%x\n",
-		     _vector_table_pointer, _vector_start);
+		     _vector_table_pointer, (uint32_t)_vector_start);
 #endif
 }

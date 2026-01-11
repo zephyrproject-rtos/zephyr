@@ -1,0 +1,27 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &flexcomm1;
+	};
+};
+
+&flexcomm1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	compatible = "nxp,lpc-i2s";
+
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+dmic_dev: &dmic0 {
+	status = "okay";
+};

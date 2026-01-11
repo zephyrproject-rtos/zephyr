@@ -15,18 +15,23 @@
 		wuc_wu20: wu20 {
 			wucs = <&wuc2 BIT(0)>; /* GPD0 */
 		};
+
 		wuc_wu21: wu21 {
 			wucs = <&wuc2 BIT(1)>; /* GPD1 */
 		};
+
 		wuc_wu22: wu22 {
 			wucs = <&wuc2 BIT(2)>; /* GPC4 */
 		};
+
 		wuc_wu23: wu23 {
 			wucs = <&wuc2 BIT(3)>; /* GPC6 */
 		};
-		wuc_wu24: wu24{
+
+		wuc_wu24: wu24 {
 			wucs = <&wuc2 BIT(4)>; /* GPD2 */
 		};
+
 		wuc_wu25: wu25 {
 			wucs = <&wuc2 BIT(5)>; /* GPE4 */
 		};
@@ -35,24 +40,31 @@
 		wuc_wu30: wu30 {
 			wucs = <&wuc3 BIT(0)>; /* KSI[0] */
 		};
+
 		wuc_wu31: wu31 {
 			wucs = <&wuc3 BIT(1)>; /* KSI[1] */
 		};
+
 		wuc_wu32: wu32 {
 			wucs = <&wuc3 BIT(2)>; /* KSI[2] */
 		};
+
 		wuc_wu33: wu33 {
 			wucs = <&wuc3 BIT(3)>; /* KSI[3] */
 		};
-		wuc_wu34: wu34{
+
+		wuc_wu34: wu34 {
 			wucs = <&wuc3 BIT(4)>; /* KSI[4] */
 		};
+
 		wuc_wu35: wu35 {
 			wucs = <&wuc3 BIT(5)>; /* KSI[5] */
 		};
+
 		wuc_wu36: wu36 {
 			wucs = <&wuc3 BIT(6)>; /* KSI[6] */
 		};
+
 		wuc_wu37: wu37 {
 			wucs = <&wuc3 BIT(7)>; /* KSI[7] */
 		};
@@ -61,12 +73,15 @@
 		wuc_wu40: wu40 {
 			wucs = <&wuc4 BIT(0)>; /* GPE5 */
 		};
+
 		wuc_wu42: wu42 {
 			wucs = <&wuc4 BIT(2)>; /* eSPI transaction */
 		};
+
 		wuc_wu45: wu45 {
 			wucs = <&wuc4 BIT(5)>; /* GPE6 */
 		};
+
 		wuc_wu46: wu46 {
 			wucs = <&wuc4 BIT(6)>; /* GPE7 */
 		};
@@ -75,24 +90,31 @@
 		wuc_wu50: wu50 {
 			wucs = <&wuc5 BIT(0)>; /* GPK0 */
 		};
+
 		wuc_wu51: wu51 {
 			wucs = <&wuc5 BIT(1)>; /* GPK1 */
 		};
+
 		wuc_wu52: wu52 {
 			wucs = <&wuc5 BIT(2)>; /* GPK2 */
 		};
+
 		wuc_wu53: wu53 {
 			wucs = <&wuc5 BIT(3)>; /* GPK3 */
 		};
+
 		wuc_wu54: wu54 {
 			wucs = <&wuc5 BIT(4)>; /* GPK4 */
 		};
+
 		wuc_wu55: wu55 {
 			wucs = <&wuc5 BIT(5)>; /* GPK5 */
 		};
+
 		wuc_wu56: wu56 {
 			wucs = <&wuc5 BIT(6)>; /* GPK6 */
 		};
+
 		wuc_wu57: wu57 {
 			wucs = <&wuc5 BIT(7)>; /* GPK7 */
 		};
@@ -101,24 +123,31 @@
 		wuc_wu60: wu60 {
 			wucs = <&wuc6 BIT(0)>; /* GPH0 */
 		};
+
 		wuc_wu61: wu61 {
 			wucs = <&wuc6 BIT(1)>; /* GPH1 */
 		};
+
 		wuc_wu62: wu62 {
 			wucs = <&wuc6 BIT(2)>; /* GPH2 */
 		};
+
 		wuc_wu63: wu63 {
 			wucs = <&wuc6 BIT(3)>; /* GPH3 */
 		};
+
 		wuc_wu64: wu64 {
 			wucs = <&wuc6 BIT(4)>; /* GPF4 */
 		};
+
 		wuc_wu65: wu65 {
 			wucs = <&wuc6 BIT(5)>; /* GPF5 */
 		};
+
 		wuc_wu66: wu66 {
 			wucs = <&wuc6 BIT(6)>; /* GPF6 */
 		};
+
 		wuc_wu67: wu67 {
 			wucs = <&wuc6 BIT(7)>; /* GPF7 */
 		};
@@ -127,24 +156,31 @@
 		wuc_wu70: wu70 {
 			wucs = <&wuc7 BIT(0)>; /* GPE0 */
 		};
+
 		wuc_wu71: wu71 {
 			wucs = <&wuc7 BIT(1)>; /* GPE1 */
 		};
+
 		wuc_wu72: wu72 {
 			wucs = <&wuc7 BIT(2)>; /* GPE2 */
 		};
+
 		wuc_wu73: wu73 {
 			wucs = <&wuc7 BIT(3)>; /* GPE3 */
 		};
+
 		wuc_wu74: wu74 {
 			wucs = <&wuc7 BIT(4)>; /* GPI4 */
 		};
+
 		wuc_wu75: wu75 {
 			wucs = <&wuc7 BIT(5)>; /* GPI5 */
 		};
+
 		wuc_wu76: wu76 {
 			wucs = <&wuc7 BIT(6)>; /* GPI6 */
 		};
+
 		wuc_wu77: wu77 {
 			wucs = <&wuc7 BIT(7)>; /* GPI7 */
 		};
@@ -153,24 +189,31 @@
 		wuc_wu80: wu80 {
 			wucs = <&wuc8 BIT(0)>; /* GPA3 */
 		};
+
 		wuc_wu81: wu81 {
 			wucs = <&wuc8 BIT(1)>; /* GPA4 */
 		};
+
 		wuc_wu82: wu82 {
 			wucs = <&wuc8 BIT(2)>; /* GPA5 */
 		};
+
 		wuc_wu83: wu83 {
 			wucs = <&wuc8 BIT(3)>; /* GPA6 */
 		};
+
 		wuc_wu84: wu84 {
 			wucs = <&wuc8 BIT(4)>; /* GPB2 */
 		};
+
 		wuc_wu85: wu85 {
 			wucs = <&wuc8 BIT(5)>; /* GPC0 */
 		};
+
 		wuc_wu86: wu86 {
 			wucs = <&wuc8 BIT(6)>; /* GPC7 */
 		};
+
 		wuc_wu87: wu87 {
 			wucs = <&wuc8 BIT(7)>; /* GPD7 */
 		};
@@ -179,24 +222,31 @@
 		wuc_wu88: wu88 {
 			wucs = <&wuc9 BIT(0)>; /* GPH4 */
 		};
+
 		wuc_wu89: wu89 {
 			wucs = <&wuc9 BIT(1)>; /* GPH5 */
 		};
+
 		wuc_wu90: wu90 {
 			wucs = <&wuc9 BIT(2)>; /* GPH6 */
 		};
+
 		wuc_wu91: wu91 {
 			wucs = <&wuc9 BIT(3)>; /* GPA0 */
 		};
+
 		wuc_wu92: wu92 {
 			wucs = <&wuc9 BIT(4)>; /* GPA1 */
 		};
+
 		wuc_wu93: wu93 {
 			wucs = <&wuc9 BIT(5)>; /* GPA2 */
 		};
+
 		wuc_wu94: wu94 {
 			wucs = <&wuc9 BIT(6)>; /* GPB4 */
 		};
+
 		wuc_wu95: wu95 {
 			wucs = <&wuc9 BIT(7)>; /* GPC2 */
 		};
@@ -205,24 +255,31 @@
 		wuc_wu96: wu96 {
 			wucs = <&wuc10 BIT(0)>; /* GPF0 */
 		};
+
 		wuc_wu97: wu97 {
 			wucs = <&wuc10 BIT(1)>; /* GPF1 */
 		};
+
 		wuc_wu98: wu98 {
 			wucs = <&wuc10 BIT(2)>; /* GPF2 */
 		};
+
 		wuc_wu99: wu99 {
 			wucs = <&wuc10 BIT(3)>; /* GPF3 */
 		};
+
 		wuc_wu100: wu100 {
 			wucs = <&wuc10 BIT(4)>; /* GPA7 */
 		};
+
 		wuc_wu101: wu101 {
 			wucs = <&wuc10 BIT(5)>; /* GPB0 */
 		};
+
 		wuc_wu102: wu102 {
 			wucs = <&wuc10 BIT(6)>; /* GPB1 */
 		};
+
 		wuc_wu103: wu103 {
 			wucs = <&wuc10 BIT(7)>; /* GPB3 */
 		};
@@ -231,24 +288,31 @@
 		wuc_wu104: wu104 {
 			wucs = <&wuc11 BIT(0)>; /* GPB5 */
 		};
+
 		wuc_wu105: wu105 {
 			wucs = <&wuc11 BIT(1)>; /* GPB6 */
 		};
+
 		wuc_wu106: wu106 {
 			wucs = <&wuc11 BIT(2)>; /* GPB7 */
 		};
+
 		wuc_wu107: wu107 {
 			wucs = <&wuc11 BIT(3)>; /* GPC1 */
 		};
+
 		wuc_wu108: wu108 {
 			wucs = <&wuc11 BIT(4)>; /* GPC3 */
 		};
+
 		wuc_wu109: wu109 {
 			wucs = <&wuc11 BIT(5)>; /* GPC5 */
 		};
+
 		wuc_wu110: wu110 {
 			wucs = <&wuc11 BIT(6)>; /* GPD3 */
 		};
+
 		wuc_wu111: wu111 {
 			wucs = <&wuc11 BIT(7)>; /* GPD4 */
 		};
@@ -257,24 +321,31 @@
 		wuc_wu112: wu112 {
 			wucs = <&wuc12 BIT(0)>; /* GPD5 */
 		};
+
 		wuc_wu113: wu113 {
 			wucs = <&wuc12 BIT(1)>; /* GPD6 */
 		};
+
 		wuc_wu114: wu114 {
 			wucs = <&wuc12 BIT(2)>; /* GPE4 */
 		};
+
 		wuc_wu115: wu115 {
 			wucs = <&wuc12 BIT(3)>; /* GPG0 */
 		};
+
 		wuc_wu116: wu116 {
 			wucs = <&wuc12 BIT(4)>; /* GPG1 */
 		};
+
 		wuc_wu117: wu117 {
 			wucs = <&wuc12 BIT(5)>; /* GPG2 */
 		};
+
 		wuc_wu118: wu118 {
 			wucs = <&wuc12 BIT(6)>; /* GPG6 */
 		};
+
 		wuc_wu119: wu119 {
 			wucs = <&wuc12 BIT(7)>; /* GPI0 */
 		};
@@ -283,21 +354,27 @@
 		wuc_wu120: wu120 {
 			wucs = <&wuc13 BIT(0)>; /* GPI1 */
 		};
+
 		wuc_wu121: wu121 {
 			wucs = <&wuc13 BIT(1)>; /* GPI2 */
 		};
+
 		wuc_wu122: wu122 {
 			wucs = <&wuc13 BIT(2)>; /* GPI3 */
 		};
+
 		wuc_wu123: wu123 {
 			wucs = <&wuc13 BIT(3)>; /* GPG3 */
 		};
+
 		wuc_wu124: wu124 {
 			wucs = <&wuc13 BIT(4)>; /* GPG4 */
 		};
+
 		wuc_wu125: wu125 {
 			wucs = <&wuc13 BIT(5)>; /* GPG5 */
 		};
+
 		wuc_wu126: wu126 {
 			wucs = <&wuc13 BIT(6)>; /* GPG7 */
 		};
@@ -306,24 +383,31 @@
 		wuc_wu128: wu128 {
 			wucs = <&wuc14 BIT(0)>; /* GPJ0 */
 		};
+
 		wuc_wu129: wu129 {
 			wucs = <&wuc14 BIT(1)>; /* GPJ1 */
 		};
+
 		wuc_wu130: wu130 {
 			wucs = <&wuc14 BIT(2)>; /* GPJ2 */
 		};
+
 		wuc_wu131: wu131 {
 			wucs = <&wuc14 BIT(3)>; /* GPJ3 */
 		};
+
 		wuc_wu132: wu132 {
 			wucs = <&wuc14 BIT(4)>; /* GPJ4 */
 		};
+
 		wuc_wu133: wu133 {
 			wucs = <&wuc14 BIT(5)>; /* GPJ5 */
 		};
+
 		wuc_wu134: wu134 {
 			wucs = <&wuc14 BIT(6)>; /* GPJ6 */
 		};
+
 		wuc_wu135: wu135 {
 			wucs = <&wuc14 BIT(7)>; /* GPJ7 */
 		};
@@ -332,24 +416,31 @@
 		wuc_wu136: wu136 {
 			wucs = <&wuc15 BIT(0)>; /* GPIO L0 */
 		};
+
 		wuc_wu137: wu137 {
 			wucs = <&wuc15 BIT(1)>; /* GPIO L1 */
 		};
+
 		wuc_wu138: wu138 {
 			wucs = <&wuc15 BIT(2)>; /* GPIO L2 */
 		};
+
 		wuc_wu139: wu139 {
 			wucs = <&wuc15 BIT(3)>; /* GPIO L3 */
 		};
+
 		wuc_wu140: wu140 {
 			wucs = <&wuc15 BIT(4)>; /* GPIO L4 */
 		};
+
 		wuc_wu141: wu141 {
 			wucs = <&wuc15 BIT(5)>; /* GPIO L5 */
 		};
+
 		wuc_wu142: wu142 {
 			wucs = <&wuc15 BIT(6)>; /* GPIO L6 */
 		};
+
 		wuc_wu143: wu143 {
 			wucs = <&wuc15 BIT(7)>; /* GPIO L7 */
 		};
@@ -358,21 +449,27 @@
 		wuc_wu144: wu144 {
 			wucs = <&wuc16 BIT(0)>; /* GPM0 */
 		};
+
 		wuc_wu145: wu145 {
 			wucs = <&wuc16 BIT(1)>; /* GPM1 */
 		};
+
 		wuc_wu146: wu146 {
 			wucs = <&wuc16 BIT(2)>; /* GPM2 */
 		};
+
 		wuc_wu147: wu147 {
 			wucs = <&wuc16 BIT(3)>; /* GPM3 */
 		};
+
 		wuc_wu148: wu148 {
 			wucs = <&wuc16 BIT(4)>; /* GPM4 */
 		};
+
 		wuc_wu149: wu149 {
 			wucs = <&wuc16 BIT(5)>; /* GPM5 */
 		};
+
 		wuc_wu150: wu150 {
 			wucs = <&wuc16 BIT(6)>; /* GPM6 */
 		};

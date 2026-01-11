@@ -21,6 +21,7 @@
 &pll1 {
 	/delete-property/ div-m;
 	/delete-property/ mul-n;
+	/delete-property/ div-p;
 	/delete-property/ div-q;
 	/delete-property/ div-r;
 	/delete-property/ clocks;

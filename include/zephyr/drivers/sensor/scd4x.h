@@ -4,35 +4,68 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended sensor API of SCD4X sensor
+ * @ingroup scd4x_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_SCD4X_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_SCD4X_H_
 
+/**
+ * @brief Sensirion SCD4X CO<sub>2</sub> sensor
+ * @defgroup scd4x_interface SCD4X
+ * @ingroup sensor_interface_ext
+ * @{
+ */
+
 #include <zephyr/drivers/sensor.h>
 
+/**
+ * @brief Custom sensor attributes for SCD4X
+ */
 enum sensor_attribute_scd4x {
-	/* Offset temperature: Toffset_actual = Tscd4x – Treference + Toffset_previous
+	/**
+	 * Temperature offset
+	 *
+	 * @f[
+	 * T_{offset\_actual} = T_{scd4x} - T_{reference} + T_{offset\_previous}
+	 * @f]
+	 *
 	 * 0 - 20°C
 	 */
 	SENSOR_ATTR_SCD4X_TEMPERATURE_OFFSET = SENSOR_ATTR_PRIV_START,
-	/* Altidude of the sensor;
+	/**
+	 * Altitude of the sensor
+	 *
 	 * 0 - 3000m
 	 */
 	SENSOR_ATTR_SCD4X_SENSOR_ALTITUDE,
-	/* Ambient pressure in hPa
+	/**
+	 * Ambient pressure in hPa
+	 *
 	 * 700 - 1200hPa
 	 */
 	SENSOR_ATTR_SCD4X_AMBIENT_PRESSURE,
-	/* Set the current state (enabled: 1 / disabled: 0).
+	/**
+	 * Automatic calibration enable (enabled: 1 / disabled: 0).
+	 *
 	 * Default: enabled.
 	 */
 	SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_ENABLE,
-	/* Set the initial period for automatic self calibration correction in hours. Allowed values
-	 * are integer multiples of 4 hours.
+	/**
+	 * Initial period for automatic self calibration correction (in hours).
+	 *
+	 * Allowed values are integer multiples of 4 hours.
 	 * Default: 44
 	 */
 	SENSOR_ATTR_SCD4X_SELF_CALIB_INITIAL_PERIOD,
-	/* Set the standard period for automatic self calibration correction in hours. Allowed
-	 * values are integer multiples of 4 hours. Default: 156
+	/**
+	 * Standard period for automatic self calibration correction (in hours).
+	 *
+	 * Allowed values are integer multiples of 4 hours.
+	 * Default: 156
 	 */
 	SENSOR_ATTR_SCD4X_SELF_CALIB_STANDARD_PERIOD,
 };
@@ -88,5 +121,9 @@ int scd4x_persist_settings(const struct device *dev);
  * @return 0 if successful, negative errno code if failure.
  */
 int scd4x_factory_reset(const struct device *dev);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_SCD4X_H_ */

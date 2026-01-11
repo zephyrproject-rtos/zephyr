@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <atmel/samc2x.dtsi>
+#include <atmel/samc2x.dtsi>
 
 / {
 	aliases {
@@ -82,6 +82,19 @@
 
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 			divider = <1>;
+		};
+
+		dac: dac@42005400 {
+			compatible = "atmel,sam0-dac";
+			reg = <0x42005400 0x10>;
+			interrupts = <28 0>;
+			status = "disabled";
+
+			#io-channel-cells = <0>;
+			clocks = <&gclk 36>, <&mclk 0x1c 21>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 		};
 	};
 };

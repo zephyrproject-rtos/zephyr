@@ -28,10 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		evb_led1: evb_led_1 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "LED1 on EVB";
 		};
+
 		evb_led2: evb_led_2 {
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "LED2 on EVB";
@@ -40,6 +42,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_evb_led1: pwm_evb_led_1 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -47,11 +50,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		evb_sw1: evb_sw1 {
 			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW1 on EVB";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		evb_sw2: evb_sw2 {
 			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2 on EVB";
@@ -188,18 +193,22 @@ arduino_spi: &spi3 {
 			label = "mcuboot";
 			reg = <0x000000000 0xC000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xA000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007A000 0x00006000>;

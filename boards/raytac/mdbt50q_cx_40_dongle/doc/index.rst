@@ -14,7 +14,7 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 - Supports BT5 Long Range Feature
 - Deployed Raytac MDBT50Q-P1M Module
 - Certifications: FCC, IC, CE, UKCA, Telec (MIC), KC, SRRC, NCC, RCM, WPC
-- 32-bit ARM® Cortex™ M4F CPU
+- 32-bit ARM® Cortex |reg| M4F CPU
 - 1MB Flash Memory / 256kB RAM
 - RoHS & Reach Compliant.
 - Dimension：26.2 x 15.1 x 6.8 mm (excluding Type C USB Connector)

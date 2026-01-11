@@ -8,6 +8,8 @@ compatible: "motorola,mc146818"
 
 include: [rtc-device.yaml, acpi.yaml]
 
+on-bus: mc146818-mfd
+
 properties:
   clock-frequency:
     type: int

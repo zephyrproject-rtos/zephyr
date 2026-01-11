@@ -11,7 +11,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/zbus/dyn_channel
+   :zephyr-app: samples/subsys/zbus/benchmark
    :host-os: unix
    :board: qemu_cortex_m3
    :gen-args: -DCONFIG_BM_MESSAGE_SIZE=512 -DCONFIG_BM_ONE_TO=1 -DCONFIG_BM_LISTENERS=y

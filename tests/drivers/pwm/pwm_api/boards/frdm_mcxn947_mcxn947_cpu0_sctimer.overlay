@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		pwm-test = &sc_timer;
+	};
+};
+
 /* Disable flexpwm node as it is mapped to pwm-0 alias which is picked up first by the test.
  * PWM signal is visible on J9-16.
  */

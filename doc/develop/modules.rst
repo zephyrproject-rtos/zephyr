@@ -424,9 +424,11 @@ this variable is defined unless you are adding a new module. The build system
 knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
 modules to this list by setting the :makevar:`EXTRA_ZEPHYR_MODULES` CMake
 variable or by adding a :makevar:`EXTRA_ZEPHYR_MODULES` line to ``.zephyrrc``
-(See the section on :ref:`env_vars` for more details). This can be
-useful if you want to keep the list of modules found with west and also add
-your own.
+(See the section on :ref:`env_vars` for more details). This can be useful if you
+want to keep the list of modules found with west and also add your own. If
+:makevar:`EXTRA_ZEPHYR_MODULES` is set in multiple places, for example both as
+an environment variable and as a CMake variable, the final list of additional
+modules will be the merged result of all sources.
 
 .. note::
    If the module ``FOO`` is provided by :ref:`west <west>` but also given with

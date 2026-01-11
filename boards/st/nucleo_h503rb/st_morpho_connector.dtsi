@@ -3,68 +3,67 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/dt-bindings/gpio/gpio.h>
- #include <zephyr/dt-bindings/gpio/st-morpho-header.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/st-morpho-header.h>
 
 / {
-	 st_morpho_header: st-morpho-header {
-		 compatible = "st-morpho-header";
-		 #gpio-cells = <2>;
-		 gpio-map-mask = <ST_MORPHO_PIN_MASK 0x0>;
-		 gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
-		 gpio-map = <ST_MORPHO_L_1 0 &gpioc 10 0>,
-				<ST_MORPHO_L_2 0 &gpioc 11 0>,
-				<ST_MORPHO_L_3 0 &gpioc 12 0>,
-				<ST_MORPHO_L_4 0 &gpiod 2 0>,
-				/* By default, PA13 and PA14 are used as SWD signals
-				 * (SB40=ON, SB41=ON)
-				 */
-				<ST_MORPHO_L_13 0 &gpioa 13 0>,
-				<ST_MORPHO_L_15 0 &gpioa 14 0>,
-				<ST_MORPHO_L_17 0 &gpioa 15 0>,
-				<ST_MORPHO_L_23 0 &gpioc 13 0>,
-				<ST_MORPHO_L_25 0 &gpioc 14 0>,
-				<ST_MORPHO_L_27 0 &gpioc 15 0>,
-				<ST_MORPHO_L_28 0 &gpioa 0 0>,
-				/* STM32H503xx has no pin PF0 as described in manual (UM3121) */
-				<ST_MORPHO_L_30 0 &gpioa 1 0>,
-				/* STM32H503xx has no pin PF1 as described in manual (UM3121) */
-				<ST_MORPHO_L_32 0 &gpioa 2 0>,
-				<ST_MORPHO_L_34 0 &gpiob 0 0>,
-				<ST_MORPHO_L_35 0 &gpioc 2 0>,
-				<ST_MORPHO_L_36 0 &gpioc 1 0>,
-				<ST_MORPHO_L_37 0 &gpioc 3 0>,
-				<ST_MORPHO_L_38 0 &gpioc 0 0>,
-
-				<ST_MORPHO_R_2 0 &gpioc 8 0>,
-				<ST_MORPHO_R_3 0 &gpiob 6 0>,
-				<ST_MORPHO_R_5 0 &gpiob 7 0>,
-				<ST_MORPHO_R_6 0 &gpioc 5 0>,
-				<ST_MORPHO_R_11 0 &gpioa 5 0>,
-				/* By default, connected to USB connector (SB13=ON, SB17=ON) */
-				<ST_MORPHO_R_12 0 &gpioa 12 0>,
-				<ST_MORPHO_R_13 0 &gpioa 6 0>,
-				/* By default, connected to USB connector (SB13=ON, SB17=ON) */
-				<ST_MORPHO_R_14 0 &gpioa 11 0>,
-				<ST_MORPHO_R_15 0 &gpioa 7 0>,
-				<ST_MORPHO_R_16 0 &gpiob 12 0>,
-				<ST_MORPHO_R_17 0 &gpioc 9 0>,
-				<ST_MORPHO_R_19 0 &gpioc 6 0>,
-				<ST_MORPHO_R_21 0 &gpioc 7 0>,
-				<ST_MORPHO_R_22 0 &gpiob 2 0>,
-				<ST_MORPHO_R_23 0 &gpioa 8 0>,
-				<ST_MORPHO_R_24 0 &gpiob 1 0>,
-				<ST_MORPHO_R_25 0 &gpiob 10 0>,
-				<ST_MORPHO_R_26 0 &gpiob 15 0>,
-				<ST_MORPHO_R_27 0 &gpiob 4 0>,
-				<ST_MORPHO_R_28 0 &gpiob 14 0>,
-				<ST_MORPHO_R_29 0 &gpiob 5 0>,
-				<ST_MORPHO_R_30 0 &gpiob 13 0>,
-				<ST_MORPHO_R_31 0 &gpiob 3 0>,
-				<ST_MORPHO_R_33 0 &gpioa 10 0>,
-				<ST_MORPHO_R_34 0 &gpioc 4 0>,
-				<ST_MORPHO_R_35 0 &gpiob 14 0>,
-				<ST_MORPHO_R_36 0 &gpiob 8 0>,
-				<ST_MORPHO_R_37 0 &gpiob 15 0>;
-	 };
+	st_morpho_header: st-morpho-header {
+		compatible = "st-morpho-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <ST_MORPHO_PIN_MASK 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <ST_MORPHO_L_1 0 &gpioc 10 0>,
+			   <ST_MORPHO_L_2 0 &gpioc 11 0>,
+			   <ST_MORPHO_L_3 0 &gpioc 12 0>,
+			   <ST_MORPHO_L_4 0 &gpiod 2 0>,
+			   /* By default, PA13 and PA14 are used as SWD signals
+			    * (SB40=ON, SB41=ON)
+			    */
+			   <ST_MORPHO_L_13 0 &gpioa 13 0>,
+			   <ST_MORPHO_L_15 0 &gpioa 14 0>,
+			   <ST_MORPHO_L_17 0 &gpioa 15 0>,
+			   <ST_MORPHO_L_23 0 &gpioc 13 0>,
+			   <ST_MORPHO_L_25 0 &gpioc 14 0>,
+			   <ST_MORPHO_L_27 0 &gpioc 15 0>,
+			   <ST_MORPHO_L_28 0 &gpioa 0 0>,
+			   /* STM32H503xx has no pin PF0 as described in manual (UM3121) */
+			   <ST_MORPHO_L_30 0 &gpioa 1 0>,
+			   /* STM32H503xx has no pin PF1 as described in manual (UM3121) */
+			   <ST_MORPHO_L_32 0 &gpioa 2 0>,
+			   <ST_MORPHO_L_34 0 &gpiob 0 0>,
+			   <ST_MORPHO_L_35 0 &gpioc 2 0>,
+			   <ST_MORPHO_L_36 0 &gpioc 1 0>,
+			   <ST_MORPHO_L_37 0 &gpioc 3 0>,
+			   <ST_MORPHO_L_38 0 &gpioc 0 0>,
+			   <ST_MORPHO_R_2 0 &gpioc 8 0>,
+			   <ST_MORPHO_R_3 0 &gpiob 6 0>,
+			   <ST_MORPHO_R_5 0 &gpiob 7 0>,
+			   <ST_MORPHO_R_6 0 &gpioc 5 0>,
+			   <ST_MORPHO_R_11 0 &gpioa 5 0>,
+			   /* By default, connected to USB connector (SB13=ON, SB17=ON) */
+			   <ST_MORPHO_R_12 0 &gpioa 12 0>,
+			   <ST_MORPHO_R_13 0 &gpioa 6 0>,
+			   /* By default, connected to USB connector (SB13=ON, SB17=ON) */
+			   <ST_MORPHO_R_14 0 &gpioa 11 0>,
+			   <ST_MORPHO_R_15 0 &gpioa 7 0>,
+			   <ST_MORPHO_R_16 0 &gpiob 12 0>,
+			   <ST_MORPHO_R_17 0 &gpioc 9 0>,
+			   <ST_MORPHO_R_19 0 &gpioc 6 0>,
+			   <ST_MORPHO_R_21 0 &gpioc 7 0>,
+			   <ST_MORPHO_R_22 0 &gpiob 2 0>,
+			   <ST_MORPHO_R_23 0 &gpioa 8 0>,
+			   <ST_MORPHO_R_24 0 &gpiob 1 0>,
+			   <ST_MORPHO_R_25 0 &gpiob 10 0>,
+			   <ST_MORPHO_R_26 0 &gpiob 15 0>,
+			   <ST_MORPHO_R_27 0 &gpiob 4 0>,
+			   <ST_MORPHO_R_28 0 &gpiob 14 0>,
+			   <ST_MORPHO_R_29 0 &gpiob 5 0>,
+			   <ST_MORPHO_R_30 0 &gpiob 13 0>,
+			   <ST_MORPHO_R_31 0 &gpiob 3 0>,
+			   <ST_MORPHO_R_33 0 &gpioa 10 0>,
+			   <ST_MORPHO_R_34 0 &gpioc 4 0>,
+			   <ST_MORPHO_R_35 0 &gpiob 14 0>,
+			   <ST_MORPHO_R_36 0 &gpiob 8 0>,
+			   <ST_MORPHO_R_37 0 &gpiob 15 0>;
+	};
 };

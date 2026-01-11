@@ -24,10 +24,6 @@ from bumble.device import (
     with_connection_from_address,
 )
 from bumble.hci import (
-    HCI_DISPLAY_ONLY_IO_CAPABILITY,
-    HCI_DISPLAY_YES_NO_IO_CAPABILITY,
-    HCI_KEYBOARD_ONLY_IO_CAPABILITY,
-    HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY,
     HCI_REMOTE_USER_TERMINATED_CONNECTION_ERROR,
     Address,
     HCI_User_Confirmation_Request_Negative_Reply_Command,
@@ -267,29 +263,29 @@ class SmpDevice(Device):
 
         # See Bluetooth spec @ Vol 3, Part C 5.2.2.6
         methods = {
-            HCI_DISPLAY_ONLY_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_DISPLAY_ONLY_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
-            HCI_DISPLAY_YES_NO_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_DISPLAY_YES_NO_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
-            HCI_KEYBOARD_ONLY_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: na,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: auto_confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_KEYBOARD_ONLY_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: na,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: auto_confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
-            HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: confirm,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: auto_confirm,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: confirm,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: auto_confirm,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
         }
 
@@ -1818,6 +1814,12 @@ async def sm_init_035(hci_port, shell, dut, address, snoop_file) -> None:
         )
         lines = shell.exec_command(f"l2cap_br connect {format(l2cap_server_psm, 'x')} sec 3")
         found = check_shell_response(lines, f"Enter 16 digits wide PIN code for {bumble_address}")
+        if not found:
+            found, _ = await wait_for_shell_response(
+                dut,
+                [f"Enter 16 digits wide PIN code for {bumble_address}"],
+            )
+
         assert found is True
 
         await send_cmd_to_iut(shell, dut, f"br auth-pincode {pin_code}", None)

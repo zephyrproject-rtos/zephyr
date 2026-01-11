@@ -9,6 +9,8 @@ common:
     - nrf9160dk/nrf9160/ns
     - nrf9161dk/nrf9161/ns
     - v2m_musca_s1/musca_s1/ns
+    - stm32h573i_dk/stm32h573xx/ns
+    - frdm_mcxn947/mcxn947/cpu0/ns
   integration_platforms:
     - nrf5340dk/nrf5340/cpuapp/ns
   harness: console
@@ -33,6 +35,8 @@ tests:
     timeout: 200
 
   sample.tfm.regression_sfn:
+    platform_allow:
+      - max32657evkit/max32657/ns
     extra_args:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1

@@ -4,6 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- &flashcontroller0 {
+&flashcontroller0 {
 	reg = <0x00000001 4194304>;
 };

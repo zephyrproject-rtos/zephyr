@@ -14,7 +14,7 @@ import sys
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -49,7 +49,7 @@ class TestShuffle:
              'first third, 321', 'middle third, 321', 'last third, 321'
 ]
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_shuffle_tests(self, out_path, seed, ratio, expected_order):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')

@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
-#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -80,6 +80,7 @@
 		#clock-cells = <1>;
 		status = "okay";
 	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -115,6 +116,18 @@
 			};
 		};
 
+		rtc_fast_ram: memory@3ff9e000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ff9e000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
+		rtc_slow_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
 		icache0: icache0@40080000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x40080000 DT_SIZE_K(7680)>;
@@ -141,11 +154,11 @@
 
 		rtc_timer: rtc_timer@3f408004 {
 			reg = <0x3f408004 0xC>;
-			compatible = "espressif,esp32-rtc_timer";
+			compatible = "espressif,esp32-rtc-timer";
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3f402000 {
@@ -335,6 +348,7 @@
 		trng0: trng@3f435110 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3f435110 0x4>;
+			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 
@@ -398,6 +412,7 @@
 			compatible = "espressif,esp32-adc";
 			reg = <0x3f440018 100>;
 			clocks = <&clock ESP32_PERIPH_SARADC_MODULE>;
+			interrupt-parent = <&intc>;
 			unit = <1>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;
@@ -422,6 +437,19 @@
 			clocks = <&clock ESP32_TWAI_MODULE>;
 			status = "disabled";
 		};
-	};
 
+		sha: sha@6003b000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x6003b000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@6003a000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x6003a000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
+		};
+	};
 };

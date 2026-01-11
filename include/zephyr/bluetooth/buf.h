@@ -144,26 +144,19 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
 #define BT_BUF_ACL_RX_COUNT_MAX 65535
 
 #if defined(CONFIG_BT_CONN) && defined(CONFIG_BT_HCI_HOST)
- /* The host needs more ACL buffers than maximum ACL links. This is because of
-  * the way we re-assemble ACL packets into L2CAP PDUs.
-  *
-  * We keep around the first buffer (that comes from the driver) to do
-  * re-assembly into, and if all links are re-assembling, there will be no buffer
-  * available for the HCI driver to allocate from.
-  *
-  * TODO: When CONFIG_BT_BUF_ACL_RX_COUNT is removed,
-  *       remove the MAX and only keep the 1.
-  */
+/* The host needs more ACL buffers than maximum ACL links. This is because of
+ * the way we re-assemble ACL packets into L2CAP PDUs.
+ *
+ * We keep around the first buffer (that comes from the driver) to do
+ * re-assembly into, and if all links are re-assembling, there will be no buffer
+ * available for the HCI driver to allocate from.
+ */
 #define BT_BUF_ACL_RX_COUNT_EXTRA CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA
-#define BT_BUF_ACL_RX_COUNT       (MAX(CONFIG_BT_BUF_ACL_RX_COUNT, 1) + BT_BUF_ACL_RX_COUNT_EXTRA)
+#define BT_BUF_ACL_RX_COUNT       (1 + BT_BUF_ACL_RX_COUNT_EXTRA)
 #else
 #define BT_BUF_ACL_RX_COUNT_EXTRA 0
 #define BT_BUF_ACL_RX_COUNT       0
 #endif /* CONFIG_BT_CONN && CONFIG_BT_HCI_HOST */
-
-#if defined(CONFIG_BT_BUF_ACL_RX_COUNT) && CONFIG_BT_BUF_ACL_RX_COUNT > 0
-#warning "CONFIG_BT_BUF_ACL_RX_COUNT is deprecated, see Zephyr 4.1 migration guide"
-#endif /* CONFIG_BT_BUF_ACL_RX_COUNT && CONFIG_BT_BUF_ACL_RX_COUNT > 0 */
 
 BUILD_ASSERT(BT_BUF_ACL_RX_COUNT <= BT_BUF_ACL_RX_COUNT_MAX,
 	     "Maximum number of ACL RX buffer is 65535, reduce CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA");
@@ -203,15 +196,22 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout);
  * @ref bt_buf_get_rx function. However, this callback is called from the context of the buffer
  * freeing operation and must not attempt to allocate a new buffer from the same pool.
  *
- * @warning When this callback is called, the scheduler is locked and the callee must not perform
- * any action that makes the current thread unready. This callback must only be used for very
- * short non-blocking operation (e.g. submitting a work item).
+ * This callback must only be used for very short non-blocking operations (e.g. submitting a work
+ * item). When called from thread context, the scheduler is locked during execution and the
+ * callee must not perform any action that makes the current thread unready. When called from ISR
+ * context, the callback runs without scheduler lock.
+ *
+ * @funcprops \isr_ok
  *
  * @param type_mask A bit mask of buffer types that have been freed.
  */
 typedef void (*bt_buf_rx_freed_cb_t)(enum bt_buf_type type_mask);
 
 /** Set the callback to notify about freed buffer in the incoming data pool.
+ *
+ * It's safe to call this inside the callback itself.
+ *
+ * @funcprops \isr_ok
  *
  * @param cb Callback to notify about freed buffer in the incoming data pool. If NULL, the callback
  *           is disabled.

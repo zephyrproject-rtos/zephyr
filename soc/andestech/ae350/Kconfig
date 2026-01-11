@@ -11,11 +11,16 @@ config SOC_SERIES_ANDES_AE350
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
-	select ATOMIC_OPERATIONS_BUILTIN
-	select INCLUDE_RESET_VECTOR
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
-	select CACHE_MANAGEMENT if DCACHE
+	select CPU_HAS_ANDES_EXECIT
+	select CPU_HAS_ANDES_HWDSP
+	select CPU_HAS_ANDES_PFT
+	select CPU_HAS_ANDES_PMA
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_CUSTOM_CSR_ANDES_HWDSP
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_CUSTOM_CSR_ANDES_PFT
+	select SOC_EARLY_INIT_HOOK if RISCV_CUSTOM_CSR_ANDES_PMA
+	select SOC_PER_CORE_INIT_HOOK if RISCV_CUSTOM_CSR_ANDES_PMA
 	imply XIP
 
 config SOC_ANDES_AE350
@@ -44,7 +49,6 @@ config RV32E_CPU
 config RV64I_CPU
 	bool "RISCV64 CPU ISA"
 	select RISCV_ISA_RV64I
-	select 64BIT
 
 endchoice
 
@@ -57,58 +61,34 @@ config NO_FPU
 
 config SINGLE_PRECISION_FPU
 	bool "Single precision FPU"
-	select CPU_HAS_FPU
+	select RISCV_ISA_EXT_F
 
 config DOUBLE_PRECISION_FPU
 	bool "Double precision FPU"
-	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
 
 endchoice
 
 config SOC_ANDES_V5_HWDSP
-	bool "AndeStar V5 DSP ISA"
-	select RISCV_SOC_CONTEXT_SAVE
-	depends on !RISCV_GENERIC_TOOLCHAIN
-	help
-		This option enables the AndeStar v5 hardware DSP, in order to
-		support using the DSP instructions.
+	bool
+	select DEPRECATED
 
 config SOC_ANDES_V5_PFT
-	bool "Andes V5 PowerBrake extension"
-	default y
-	select RISCV_SOC_CONTEXT_SAVE
-	help
-		The PowerBrake extension throttles performance by reducing instruction
-		executing rate.
+	bool
+	select DEPRECATED
 
 config SOC_ANDES_V5_EXECIT
-	bool "Andes V5 EXEC.IT extension"
-	depends on RISCV_ISA_EXT_C
-	depends on !RISCV_GENERIC_TOOLCHAIN
-	depends on !LINKER_USE_NO_RELAX
-	help
-		The EXEC.IT extension (Execution on Instruction Table) generate
-		a look-up table and replaces suitable 32-bit instructions with
-		the 16-bit "exec.it <INDEX>".
+	bool
+	select DEPRECATED
 
 config SOC_ANDES_V5_PMA
-	bool "Andes V5 Physical Memory Attribute (PMA)"
-	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
-	select SOC_EARLY_INIT_HOOK
-	select SOC_PER_CORE_INIT_HOOK
-	help
-		This option enables the Andes V5 PMA, in order to support SW to
-		configure physical memory attribute by PMA CSRs. The address
-		matching of Andes V5 PMA is like RISC-V PMP NAPOT mode
-		(power-of-two alignment).
+	bool
+	select DEPRECATED
 
 config SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE
-	int
-	depends on SOC_ANDES_V5_PMA
-	default 4096
-	help
-		Minimum size (and alignment) of an PMA region. Use this symbol
-		to guarantee minimum size and alignment of PMA regions.
+	bool
+	select DEPRECATED
 
 config SOC_ANDES_V5_L2C
 	bool

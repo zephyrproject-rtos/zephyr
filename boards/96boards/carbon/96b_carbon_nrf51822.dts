@@ -55,6 +55,7 @@
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi-slave";
 		reg = <0>;

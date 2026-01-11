@@ -33,6 +33,12 @@ struct net_if;
 
 #define DHCPV4_CLIENT_ID_MAX_SIZE 20
 
+/**
+ * Max DHCP hardware address size is defined in RFC2131
+ * https://www.rfc-editor.org/rfc/rfc2131
+ */
+#define DHCPV4_HARDWARE_ADDRESS_MAX_SIZE 16
+
 enum dhcpv4_server_addr_state {
 	DHCPV4_SERVER_ADDR_FREE,
 	DHCPV4_SERVER_ADDR_RESERVED,
@@ -41,6 +47,10 @@ enum dhcpv4_server_addr_state {
 };
 
 struct dhcpv4_client_id {
+	uint8_t hw_addr_type;
+	uint8_t hw_addr_buf[DHCPV4_HARDWARE_ADDRESS_MAX_SIZE];
+	uint8_t hw_addr_len;
+
 	uint8_t buf[DHCPV4_CLIENT_ID_MAX_SIZE];
 	uint8_t len;
 };
@@ -48,7 +58,7 @@ struct dhcpv4_client_id {
 struct dhcpv4_addr_slot {
 	enum dhcpv4_server_addr_state state;
 	struct dhcpv4_client_id client_id;
-	struct in_addr addr;
+	struct net_in_addr addr;
 	uint32_t lease_time;
 	k_timepoint_t expiry;
 };
@@ -69,7 +79,7 @@ struct dhcpv4_addr_slot {
  *
  *  @return 0 on success, a negative error code otherwise.
  */
-int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr);
+int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr);
 
 /**
  *  @brief Stop DHCPv4 server instance on an iface
@@ -126,7 +136,7 @@ int net_dhcpv4_server_foreach_lease(struct net_if *iface,
  */
 typedef int (*net_dhcpv4_server_provider_cb_t)(struct net_if *iface,
 					       const struct dhcpv4_client_id *client_id,
-					       struct in_addr *addr,
+					       struct net_in_addr *addr,
 					       void *user_data);
 /**
  * @brief Set the callback used to provide addresses to the DHCP server.

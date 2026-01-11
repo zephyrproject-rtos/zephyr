@@ -81,10 +81,7 @@ SECTIONS
 {
 
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /*
      * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
@@ -131,6 +128,8 @@ SECTIONS
         *(".text.*")
         *(.gnu.linkonce.t.*)
 
+#include <snippets-text-sections.ld>
+
 #include <zephyr/linker/kobject-text.ld>
 
         MMU_ALIGN;
@@ -138,6 +137,9 @@ SECTIONS
 
     __text_region_end = .;
     __text_region_size = __text_region_end - __text_region_start;
+
+    MMU_ALIGN;
+    __rodata_region_start = .;
 
 #if defined (CONFIG_CPP)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -163,9 +165,6 @@ SECTIONS
 #endif
         __exidx_end = .;
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-    MMU_ALIGN;
-    __rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
 #include <snippets-rom-sections.ld>

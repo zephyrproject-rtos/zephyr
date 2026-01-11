@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the websocket log backend API
+ * @ingroup log_backend_ws
+ */
+
 #ifndef ZEPHYR_LOG_BACKEND_WS_H_
 #define ZEPHYR_LOG_BACKEND_WS_H_
+
+/**
+ * @brief Websocket log backend API
+ * @defgroup log_backend_ws Websocket log backend API
+ * @ingroup log_backend
+ * @{
+ */
 
 #include <stdbool.h>
 
@@ -52,5 +65,7 @@ void log_backend_ws_start(void);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_LOG_BACKEND_WS_H_ */

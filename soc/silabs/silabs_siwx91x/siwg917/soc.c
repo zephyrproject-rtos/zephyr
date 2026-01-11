@@ -12,6 +12,7 @@
 #include "em_device.h"
 #include "sli_siwx917_soc.h"
 #include "sl_si91x_power_manager.h"
+#include "sl_si91x_hal_soc_soft_reset.h"
 
 void soc_early_init_hook(void)
 {
@@ -31,6 +32,13 @@ void soc_early_init_hook(void)
 		sl_si91x_power_manager_add_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 		sl_si91x_power_manager_set_clock_scaling(SL_SI91X_POWER_MANAGER_PERFORMANCE);
 	}
+}
+
+void sys_arch_reboot(int type)
+{
+	ARG_UNUSED(type);
+
+	sl_si91x_soc_nvic_reset();
 }
 
 /* SiWx917's bootloader requires IRQn 32 to hold payload's entry point address. */

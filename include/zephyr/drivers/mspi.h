@@ -6,9 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for MSPI driver
- * @since 3.7
- * @version 0.1.0
+ * @ingroup mspi_interface
+ * @brief Main header file for MSPI (Multi-Master Serial Peripheral Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_MSPI_H_
@@ -27,8 +26,11 @@ extern "C" {
 #endif
 
 /**
- * @brief MSPI Driver APIs
- * @defgroup mspi_interface MSPI Driver APIs
+ * @brief Interfaces for Multi-bit Serial Peripheral Interface (MSPI)
+ *        controllers.
+ * @defgroup mspi_interface MSPI
+ * @since 3.7
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -124,6 +126,8 @@ enum mspi_bus_event {
 	MSPI_BUS_RESET              = 0,
 	MSPI_BUS_ERROR              = 1,
 	MSPI_BUS_XFER_COMPLETE      = 2,
+	/** @brief When a request or xfer has timed out */
+	MSPI_BUS_TIMEOUT            = 3,
 	MSPI_BUS_EVENT_MAX,
 };
 
@@ -137,6 +141,7 @@ enum mspi_bus_event_cb_mask {
 	MSPI_BUS_RESET_CB           = BIT(0),
 	MSPI_BUS_ERROR_CB           = BIT(1),
 	MSPI_BUS_XFER_COMPLETE_CB   = BIT(2),
+	MSPI_BUS_TIMEOUT_CB         = BIT(3),
 };
 
 /**

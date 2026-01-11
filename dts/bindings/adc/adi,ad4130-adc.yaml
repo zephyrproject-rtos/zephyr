@@ -48,7 +48,7 @@ description: |
   For input constants such as `AD4130_ADC_AIN8`, refer to the binding header:
   `include/zephyr/dt-bindings/adc/ad4130-adc.h`
 
-compatible: adi,ad4130-adc
+compatible: "adi,ad4130-adc"
 
 include: [adc-controller.yaml, spi-device.yaml]
 
@@ -95,6 +95,10 @@ properties:
       enabling the clock output.
   "#io-channel-cells":
     const: 1
+  spi-cs-setup-delay-ns:
+    default: 1000
+  spi-cs-hold-delay-ns:
+    default: 1000
 
 io-channel-cells:
   - input

@@ -420,8 +420,8 @@ static void dwxgmac_set_mac_addr_by_idx(const struct device *dev, uint8_t *addr,
 		/**
 		 * 'sa' bit specifies if This MAC address[47:0] is used to compare with the source
 		 * address fields of the received packet. MAC Address with index 0 is always enabled
-		 * for recive packet MAC address filtering. And 'sa' bit of MAC address with index 0
-		 * is reserved hence this step is excluded for index 0.
+		 * for receive packet MAC address filtering. And 'sa' bit of MAC address with index
+		 * 0 is reserved hence this step is excluded for index 0.
 		 */
 		reg_val |= CORE_MAC_ADDRESSx_HIGH_SA_SET(sa);
 	}
@@ -488,7 +488,7 @@ static void dwxgmac_mac_init(const struct device *dev,
 
 	sys_write32(reg_val, ioaddr + CORE_MAC_PACKET_FILTER_OFST);
 
-	/* Enable Recive queues for Data Center Bridging/ Generic */
+	/* Enable Receive queues for Data Center Bridging/ Generic */
 	reg_val = 0;
 	for (uint32_t q = 0; q < config->num_rx_Qs; q++) {
 		reg_val |= (XGMAC_RXQxEN_DCB << (q * XGMAC_RXQxEN_SIZE_BITS));
@@ -500,7 +500,7 @@ static void dwxgmac_mac_init(const struct device *dev,
 	sys_write32(reg_val, ioaddr + CORE_MAC_TX_CONFIGURATION_OFST);
 
 	/**
-	 * Enable Giant Packet Size Limit Control, disable eatchdog timer on reciver and
+	 * Enable Giant Packet Size Limit Control, disable eatchdog timer on receiver and
 	 * Configure RX checksum offload, jumbo packet enable, ARP offload, gaint packet size limit
 	 * in MAC RX configuration register.
 	 */
@@ -1060,7 +1060,7 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 	 * Every RX descriptor in the descriptor ring, needs to be prefilled with 2 RX
 	 * buffer addresses and put it to DMA ownership by setting the OWN bit. When new
 	 * data is received the DMA will check the OWN bit and moves the data to
-	 * corresponding recive buffers and puts the RX descriptor to application ownership
+	 * corresponding receive buffers and puts the RX descriptor to application ownership
 	 * by clearing the OWN bit. If received data size is more than total of 2 buffer
 	 * sizes  then DMA will use next descriptor in the ring.
 	 */

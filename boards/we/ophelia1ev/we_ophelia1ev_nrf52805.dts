@@ -26,10 +26,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
@@ -38,6 +40,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			label = "Example button";
 			gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -111,18 +114,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0xd000>;
 		};
+
 		slot1_partition: partition@19000 {
 			label = "image-1";
 			reg = <0x00019000 0xd000>;
 		};
+
 		scratch_partition: partition@26000 {
 			label = "image-scratch";
 			reg = <0x00026000 0x3000>;
 		};
+
 		storage_partition: partition@29000 {
 			label = "storage";
 			reg = <0x00029000 0x00007000>;

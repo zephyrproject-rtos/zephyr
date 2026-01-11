@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-c2h-uart = &usart1;
 		zephyr,display = &st7789v;
 	};
@@ -49,9 +50,36 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* 2KB at the end of 512KB flash is set for storage */
-		storage_partition: partition@7f800 {
-			reg = <0x0007f800 DT_SIZE_K(2)>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(228)>;
+		};
+
+		slot1_partition: partition@45000 {
+			label = "image-1";
+			reg = <0x00045000 DT_SIZE_K(230)>;
+		};
+
+		storage_partition: partition@7e800 {
+			label = "storage";
+			reg = <0x0007e800 DT_SIZE_K(6)>;
+		};
+	};
+};
+
+&mx25lm51245 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00000000 DT_SIZE_M(64)>;
 		};
 	};
 };

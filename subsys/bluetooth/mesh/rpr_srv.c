@@ -18,7 +18,6 @@
 #include "crypto.h"
 #include "rpr.h"
 #include "net.h"
-#include "mesh.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>

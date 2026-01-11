@@ -33,8 +33,42 @@ properties:
     description: |
       Set number of sample to averaging in one readout.
       Default is power-up configuration (8 samples).
-
       - 0    # TMP11X_DT_OVERSAMPLING_1
       - 0x20 # TMP11X_DT_OVERSAMPLING_8
       - 0x40 # TMP11X_DT_OVERSAMPLING_32
       - 0x60 # TMP11X_DT_OVERSAMPLING_64
+  alert-polarity:
+    type: boolean
+    description: |
+      Set alert polarity to active high (true) or active low (false).
+      Default is power-up configuration (active low).
+  alert-mode:
+    type: boolean
+    description: |
+      Set alert mode to one of the following:
+      - 0: Alert mode (default)
+      - 1: Therm mode
+  alert-dr-sel:
+    type: boolean
+    description: |
+      Set alert pin mode to one of the following:
+      - 0: ALERT pin reflects the status of the alert flags
+      - 1: ALERT pin reflects the status of the data ready flag
+  alert-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used for alert/interrupt functionality.
+      Supported on TMP116, TMP117, and TMP119 devices.
+      Alert pin functionality depends on Therm/alert modus.
+  store-attr-values:
+    type: boolean
+    description: |
+      Enable storage of sensor attribute values in EEPROM. On reset, the device
+      goes through a POR sequence that loads the values programmed in the
+      EEPROM into the respective register map locations.
+
+      The following values are supported by the sensor:
+      High limit register, low limit register, conversion cycle time, averaging
+      mode, conversion mode (continuous or shutdown mode), alert function mode
+      (alert or therm mode), alert polarity, and temperature offset (not
+      specified in datasheet).

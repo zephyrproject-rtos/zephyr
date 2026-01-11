@@ -1,7 +1,7 @@
 /** @file
  *  @brief Bluetooth Call Control Profile (CCP) Server role.
  *
- *  Copyright 2023 NXP
+ *  Copyright 2023,2025 NXP
  *  Copyright (c) 2024 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
@@ -48,9 +48,24 @@ int ccp_call_control_server_init(void)
 {
 	int err;
 
-	bt_tbs_register_cb(&tbs_cbs);
+	const struct bt_tbs_register_param gtbs_param = {
+		.provider_name = "Generic TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel",
+		.gtbs = true,
+		.authorization_required = false,
+		.technology = BT_TBS_TECHNOLOGY_3G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
 
-	err = bt_tbs_set_uri_scheme_list(0, (const char **)&uri_list, URI_LIST_LEN);
+	err = bt_tbs_register_bearer(&gtbs_param);
+	if (err < 0) {
+		printk("Failed to register GTBS: %d\n", err);
+		return -ENOEXEC;
+	}
+
+	bt_tbs_register_cb(&tbs_cbs);
+	err = bt_tbs_set_uri_scheme_list(BT_TBS_GTBS_INDEX, (const char **)&uri_list, URI_LIST_LEN);
 
 	return err;
 }

@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Christoph Jans
+# Copyright (c) 2025 Shontal Biton
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SILABS_XG28
+	bool
+	select SOC_FAMILY_SILABS_S2
+	help
+	  Silicon Labs XG28 Series SoC and modules
+
+config SOC_SERIES_EFM32PG28
+	bool
+	select SOC_SILABS_XG28
+	help
+	  Silicon Labs EFM32PG28 Series MCU
+
+config SOC_SERIES_EFR32ZG28
+	bool
+	select SOC_SILABS_XG28
+	help
+	  Silicon Labs EFR32ZG28 Series MCU
+
+config SOC_EFM32PG28B310F1024IM68
+	bool
+	select SOC_SERIES_EFM32PG28
+
+config SOC_EFR32ZG28B322F1024IM68
+	bool
+	select SOC_SERIES_EFR32ZG28
+
+config SOC_SERIES
+	default "efm32pg28" if SOC_SERIES_EFM32PG28
+	default "efr32zg28" if SOC_SERIES_EFR32ZG28
+
+config SOC
+	default "efm32pg28b310f1024im68" if SOC_EFM32PG28B310F1024IM68
+	default "efr32zg28b322f1024im68" if SOC_EFR32ZG28B322F1024IM68

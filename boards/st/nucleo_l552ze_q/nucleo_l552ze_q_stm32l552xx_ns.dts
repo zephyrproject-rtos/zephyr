@@ -28,6 +28,11 @@
 	};
 };
 
+/* Last 64kB of SRAM1 (node label sram0) are owned by TF-M */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192 - 64)>;
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

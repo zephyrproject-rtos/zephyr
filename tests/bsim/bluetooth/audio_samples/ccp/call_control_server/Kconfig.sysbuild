@@ -1,7 +1,7 @@
 # Copyright (c) 2023-2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-source "${ZEPHYR_BASE}/samples/bluetooth/ccp_call_control_server/Kconfig.sysbuild"
+source "$(ZEPHYR_BASE)/samples/bluetooth/ccp_call_control_server/Kconfig.sysbuild"
 
 config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	int

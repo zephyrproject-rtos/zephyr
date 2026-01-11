@@ -12,8 +12,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr enum_mgmt callback API
- * @defgroup mcumgr_callback_api_enum_mgmt MCUmgr enum_mgmt callback API
+ * @brief MCUmgr Enumeration Management Callbacks API
+ * @defgroup mcumgr_callback_api_enum_mgmt Enumeration Management Callbacks
+ * @ingroup mcumgr_enum_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */

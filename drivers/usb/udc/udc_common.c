@@ -65,7 +65,7 @@ void udc_set_suspended(const struct device *dev, const bool value)
 	struct udc_data *data = dev->data;
 
 	if (value == udc_is_suspended(dev)) {
-		LOG_WRN("Spurious suspend/resume event");
+		LOG_WRN("Spurious %s event", value ? "suspend" : "resume");
 	}
 
 	atomic_set_bit_to(&data->status, UDC_STATUS_SUSPENDED, value);
@@ -355,7 +355,6 @@ int udc_ep_enable_internal(const struct device *dev,
 	cfg->mps = mps;
 	cfg->interval = interval;
 
-	cfg->stat.odd = 0;
 	cfg->stat.halted = 0;
 	cfg->stat.data1 = false;
 	ret = api->ep_enable(dev, cfg);
@@ -631,13 +630,13 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 
 	buf = net_buf_alloc_len(&udc_ep_pool, size, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("Failed to allocate net_buf %zd", size);
+		LOG_ERR("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
 		goto ep_alloc_error;
 	}
 
 	bi = udc_get_buf_info(buf);
 	bi->ep = ep;
-	LOG_DBG("Allocate net_buf, ep 0x%02x, size %zd", ep, size);
+	LOG_DBG("Allocate net_buf %p, ep 0x%02x, size %zd", buf, ep, size);
 
 ep_alloc_error:
 	api->unlock(dev);

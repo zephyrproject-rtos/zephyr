@@ -92,6 +92,25 @@ Supported Features
    Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
    already supported, which can also be re-used on this mimxrt1040_evk board.
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk043fn02h_ct` and :ref:`rk043fn66hs_ctg` - support the Display interface.
+- :ref:`nxp_m2_wifi_bt` - Rev C version is tested with this shield to attach any M.2 module
+  with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+  HCI driver or SDIO driver to perform firmware-load and other setup configurations
+  for NXP SoC IW416/IW612/IW610.
+
+For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
+
+- Solder 0 ohm resistors for R96, and R93.
+- Remove resistors from R497, R498, R456 and R457.
+
+And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
+
 Connections and IOs
 ===================
 
@@ -192,8 +211,7 @@ Configuring a Debug Probe
 For the RT1040, J9/J10 are the SWD isolation jumpers, J12 is the DFU
 mode jumper, and J2 is the 20 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -293,12 +311,6 @@ steps:
 Bluetooth Module
 ----------------
 
-For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
-Solder 0 ohm resistors for R96, and R93.
-Remove resistors from R497, R498, R456 and R457.
-
-And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
-
 For the debugger fails to connect with the following error, please refer to the next section.
 
 WiFi Module
@@ -320,8 +332,7 @@ the M.2 WiFi module is interfering with the debug signals
 To resolve this, you may remove the M.2 WiFi module from the board when
 flashing or debugging it, or remove jumper J80.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1040-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1040-evaluation-kit:MIMXRT1040-EVK

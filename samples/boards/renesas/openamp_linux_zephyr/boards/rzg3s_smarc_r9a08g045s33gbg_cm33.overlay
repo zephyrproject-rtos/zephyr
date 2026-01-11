@@ -18,7 +18,7 @@
 			compatible = "zephyr,memory-region";
 			reg = <0x62F00000 0x600000>;
 			zephyr,memory-region = "openamp_memory";
-			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 		};
 	};
 
@@ -72,7 +72,6 @@
 		mboxes = <&mbox1 1>, <&mbox1 0>;
 		mbox-names = "tx", "rx";
 	};
-
 };
 
 &mbox1 {

@@ -10,7 +10,6 @@
 
 / {
 	soc {
-
 		mdc: mdc@4000c000 {
 			compatible = "syscon";
 			reg = <0x4000c000 0xa>;
@@ -35,6 +34,5 @@
 		};
 	};
 
-	soc-if {
-	};
+	soc-if {};
 };

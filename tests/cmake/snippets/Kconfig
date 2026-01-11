@@ -47,9 +47,9 @@ config TEST_FOO_VAL
 	  overlay.
 
 config TEST_BAR_VAL
-	int "Test value set by the 'foo' snippet config overlay"
+	int "Test value set by the 'bar' snippet config overlay"
 	help
-	  This option's value should be overridden by the 'foo' snippet config
+	  This option's value should be overridden by the 'bar' snippet config
 	  overlay.
 
 config TEST_COMMON_VAL

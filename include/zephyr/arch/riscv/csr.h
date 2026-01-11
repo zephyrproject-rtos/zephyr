@@ -156,6 +156,17 @@
 #define IRQ_COP		12
 #define IRQ_HOST	13
 
+/* SMRNMI CSR addresses */
+#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+#define CSR_MNSCRATCH 0x740
+#define CSR_MNEPC     0x741
+#define CSR_MNCAUSE   0x742
+#define CSR_MNSTATUS  0x744
+
+/* MNSTATUS bit fields */
+#define MNSTATUS_NMIE 0x00000008 /* NMI Enable (bit 3) */
+#endif                           /* CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY */
+
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000
 #define CLINT_SIZE	0x000c0000
@@ -182,6 +193,20 @@
 	((val) & ~(which)) | ((fieldval) * ((which) & ~((which)-1)))	\
 )									\
 
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+
+#define MISELECT 0x350
+#define MIREG    0x351
+#define MIREG2   0x352
+#define MIREG3   0x353
+#define MIREG4   0x355
+#define MIREG5   0x356
+#define MIREG6   0x357
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
+
+#ifndef _ASMLANGUAGE
+
 #define csr_read(csr)						\
 ({								\
 	register unsigned long __rv;				\
@@ -191,12 +216,13 @@
 })
 
 #define csr_write(csr, val)					\
-({								\
-	unsigned long __wv = (unsigned long)(val);		\
-	__asm__ volatile ("csrw " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__wv)			\
-				: "memory");			\
-})
+	do {							\
+		unsigned long __wv = (unsigned long)(val);	\
+		__asm__ volatile ("csrw " STRINGIFY(csr) ", %0"	\
+				  :				\
+				  : "rK" (__wv)		\
+				  : "memory");		\
+	} while (0)
 
 
 #define csr_read_set(csr, val)					\
@@ -209,12 +235,13 @@
 })
 
 #define csr_set(csr, val)					\
-({								\
-	unsigned long __sv = (unsigned long)(val);		\
-	__asm__ volatile ("csrs " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__sv)			\
-				: "memory");			\
-})
+	do {							\
+		unsigned long __sv = (unsigned long)(val);	\
+		__asm__ volatile ("csrs " STRINGIFY(csr) ", %0"	\
+				  :				\
+				  : "rK" (__sv)		\
+				  : "memory");		\
+	} while (0)
 
 #define csr_read_clear(csr, val)				\
 ({								\
@@ -226,11 +253,46 @@
 })
 
 #define csr_clear(csr, val)					\
-({								\
-	unsigned long __cv = (unsigned long)(val);		\
-	__asm__ volatile ("csrc " STRINGIFY(csr) ", %0"		\
-				: : "rK" (__cv)			\
-				: "memory");			\
-})
+	do {							\
+		unsigned long __cv = (unsigned long)(val);	\
+		__asm__ volatile ("csrc " STRINGIFY(csr) ", %0"	\
+				  :				\
+				  : "rK" (__cv)		\
+				  : "memory");		\
+	} while (0)
+
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+
+static inline unsigned long icsr_read(unsigned int index)
+{
+	csr_write(MISELECT, index);
+	return csr_read(MIREG);
+}
+
+static inline void icsr_write(unsigned int index, unsigned long value)
+{
+	csr_write(MISELECT, index);
+	csr_write(MIREG, value);
+}
+
+static inline unsigned long icsr_read_set(unsigned int index, unsigned long mask)
+{
+	unsigned long val = icsr_read(index);
+
+	icsr_write(index, val | mask);
+	return val;
+}
+
+static inline unsigned long icsr_read_clear(unsigned int index, unsigned long mask)
+{
+	unsigned long val = icsr_read(index);
+
+	icsr_write(index, val & ~mask);
+	return val;
+}
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* CSR_H_ */

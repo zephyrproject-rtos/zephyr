@@ -28,12 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 			label = "BUILTIN LED";
 		};
 	};
-
 };
 
 &usb_serial {

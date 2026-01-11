@@ -27,7 +27,7 @@
 		zephyr,memory-region = "SRAMU";
 	};
 
-	soc{
+	soc {
 		/* Remove ftfe, it doesn't exist on KE17Z */
 		/delete-node/ ftfe;
 
@@ -45,6 +45,14 @@
 				erase-block-size = <DT_SIZE_K(2)>;
 				write-block-size = <8>;
 			};
+		};
+
+		tsi1: tsi@40047000 {
+			compatible = "nxp,tsi";
+			reg = <0x40047000 0x1000>;
+			status = "okay";
+			interrupts = <25 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 		};
 
 		/* Remove rtc, it doesn't exist on KE17Z */

@@ -1,0 +1,25 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The BL61x Root Clock
+  Represents both FCLK and HCLK, which should be kept the same.
+  Source -> FCLK / divider -> HCLK / divider -> BCLK
+
+compatible: "bflb,bl61x-root-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: source
+
+  divider:
+    type: int
+    required: true
+    description: Divide source clock by this 8-bits value (FCLK divider). Typically 1.
+
+  "#clock-cells":
+    const: 0

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /*
-  * Connect EXP4 (PC0) and EXP6 (PC1) of the Expansion Pin header
-  */
+/*
+ * Connect EXP4 (PC0) and EXP6 (PC1) of the Expansion Pin header
+ */
 / {
 	chosen {
 		zephyr,console = &usart0;
@@ -16,13 +16,14 @@
 	};
 };
 
-&pinctrl{
+&pinctrl {
 	eusart1_default: eusart1_default {
 		group0 {
 			pins = <EUSART1_TX_PC1>; /* WPK EXP4 (PC1) */
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <EUSART1_RX_PC2>; /* WPK EXP6 (PC2) */
 			input-enable;
@@ -36,6 +37,7 @@
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <USART0_RX_PA9>;
 			input-enable;
@@ -47,7 +49,7 @@
 dut: &eusart1 {
 	compatible = "silabs,eusart-uart";
 	dmas = <&dma0 DMA_REQSEL_EUSART1TXFL>,
-		<&dma0 DMA_REQSEL_EUSART1RXFL>;
+	       <&dma0 DMA_REQSEL_EUSART1RXFL>;
 	dma-names = "tx", "rx";
 	current-speed = <115200>;
 	pinctrl-0 = <&eusart1_default>;

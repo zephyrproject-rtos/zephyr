@@ -6,10 +6,11 @@ clang-format>=15.0.0
 elasticsearch<9
 exceptiongroup>=1.0.0rc8
 gcovr==6.0
-gitlint>=0.19.1
+gitlint-core>=0.19.1
 gitpython>=3.1.41
 ijson
 intelhex
+jsonschema
 junit2html
 junitparser>=4.0.1
 mypy
@@ -17,16 +18,17 @@ natsort
 ply>=3.10
 psutil>=5.6.6
 pyelftools>=0.29
-pygithub
+pygithub>=2.7.0
 pykwalify
 pylint>=3
 pyserial
 pytest
+python-dotenv
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
-pyyaml
+pyyaml>=5.4
 reuse
-ruff==0.11.11
+ruff==0.14.2
 setuptools>=70.2.0
 spdx-tools
 sphinx-lint

@@ -8,18 +8,12 @@ mainmenu "MQTT-SN sample application"
 config NET_SAMPLE_MQTT_SN_STATIC_GATEWAY
 	bool "Whether to statically define the Gateway. Will use Search procedure if False."
 
-config NET_SAMPLE_MQTT_SN_GATEWAY_IP
-	string "IP of the MQTT-SN gateway. Only used if NET_SAMPLE_MQTT_SN_STATIC_GATEWAY=n."
+config NET_SAMPLE_MQTT_SN_GATEWAY_ADDRESS
+	string "IP and port of the MQTT-SN gateway"
 	depends on NET_SAMPLE_MQTT_SN_STATIC_GATEWAY
 
-config NET_SAMPLE_MQTT_SN_GATEWAY_PORT
-	int "Port of the MQTT-SN gateway"
-
-config NET_SAMPLE_MQTT_SN_BROADCAST_IP
-	string "IP of the Broadcast address"
-
-config NET_SAMPLE_MQTT_SN_BROADCAST_PORT
-	int "Port of the MQTT-SN broadcast"
+config NET_SAMPLE_MQTT_SN_BROADCAST_ADDRESS
+	string "IP and port of the Broadcast address"
 
 config NET_SAMPLE_MQTT_SN_BUFFER_SIZE
 	int "Size of the TX and RX buffers"

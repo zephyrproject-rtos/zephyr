@@ -192,7 +192,7 @@ static int tsl2591_set_threshold(const struct device *dev, enum sensor_attribute
 	int ret;
 
 	/* Convert from relative strength of visible light to raw value */
-	cpl = data->atime * data->again;
+	cpl = (uint32_t)data->atime * data->again;
 	raw = ((val->val1 * cpl) / TSL2591_LUX_DF) +
 	      ((val->val2 * cpl) / (1000000U * TSL2591_LUX_DF));
 

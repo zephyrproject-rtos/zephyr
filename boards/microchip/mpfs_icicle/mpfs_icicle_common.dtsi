@@ -12,6 +12,7 @@
 / {
 	model = "microchip,mpfs-icicle-kit";
 	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+
 	aliases {
 		led0 = &led0;
 		sw0 = &sw0;
@@ -30,6 +31,7 @@
 
 	keys {
 		compatible = "gpio-keys";
+
 		sw0: sw0 {
 			gpios = <&gpio2 30 GPIO_ACTIVE_LOW>;
 			label = "SW_0";
@@ -46,6 +48,7 @@
 
 &qspi0 {
 	status = "okay";
+
 	qspi_flash: spi-nor-flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -61,6 +64,7 @@
 
 &syscontroller_qspi {
 	status = "okay";
+
 	sys_ctrl_flash: spi-nor-flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

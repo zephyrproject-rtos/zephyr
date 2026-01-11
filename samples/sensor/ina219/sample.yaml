@@ -10,5 +10,9 @@ sample:
 tests:
   sample.drivers.ina219:
     build_only: true
-    platform_allow: blackpill_f411ce
+    platform_allow:
+      - blackpill_f411ce
+      - adafruit_qt_py_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_ina219"
     tags: sensors

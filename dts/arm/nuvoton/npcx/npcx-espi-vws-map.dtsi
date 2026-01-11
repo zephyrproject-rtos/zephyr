@@ -39,10 +39,12 @@
 			vw-reg = <NPCX_VWEVMS0 0x01>;
 			vw-wui = <&wui_vw_slp_s3>;
 		};
+
 		vw-slp-s4 {
 			vw-reg = <NPCX_VWEVMS0 0x02>;
 			vw-wui = <&wui_vw_slp_s4>;
 		};
+
 		vw-slp-s5 {
 			vw-reg = <NPCX_VWEVMS0 0x04>;
 			vw-wui = <&wui_vw_slp_s5>;
@@ -53,10 +55,12 @@
 			vw-reg = <NPCX_VWEVMS1 0x01>;
 			vw-wui = <&wui_vw_sus_stat>;
 		};
+
 		vw-plt-rst {
 			vw-reg = <NPCX_VWEVMS1 0x02>;
 			vw-wui = <&wui_vw_plt_rst>;
 		};
+
 		vw-oob-rst-warn {
 			vw-reg = <NPCX_VWEVMS1 0x04>;
 			vw-wui = <&wui_vw_oob_rst_warn>;
@@ -73,10 +77,12 @@
 			vw-reg = <NPCX_VWEVMS3 0x01>;
 			vw-wui = <&wui_vw_sus_warn>;
 		};
+
 		vw-sus-pwrdn-ack {
 			vw-reg = <NPCX_VWEVMS3 0x02>;
 			vw-wui = <&wui_vw_sus_pwrdn_ack>;
 		};
+
 		vw-slp-a {
 			vw-reg = <NPCX_VWEVMS3 0x08>;
 			vw-wui = <&wui_vw_slp_a>;
@@ -87,6 +93,7 @@
 			vw-reg = <NPCX_VWEVMS4 0x01>;
 			vw-wui = <&wui_vw_slp_lan>;
 		};
+
 		vw-slp-wlan {
 			vw-reg = <NPCX_VWEVMS4 0x02>;
 			vw-wui = <&wui_vw_slp_wlan>;
@@ -97,9 +104,11 @@
 		vw-oob-rst-ack {
 			vw-reg = <NPCX_VWEVSM0 0x01>;
 		};
+
 		vw-wake {
 			vw-reg = <NPCX_VWEVSM0 0x04>;
 		};
+
 		vw-pme {
 			vw-reg = <NPCX_VWEVSM0 0x08>;
 		};
@@ -108,12 +117,15 @@
 		vw-slv-boot-done {
 			vw-reg = <NPCX_VWEVSM1 0x01>;
 		};
+
 		vw-err-fatal {
 			vw-reg = <NPCX_VWEVSM1 0x02>;
 		};
+
 		vw-err-non-fatal {
 			vw-reg = <NPCX_VWEVSM1 0x04>;
 		};
+
 		vw-slv-boot-sts-with-done {
 			/*
 			 * SLAVE_BOOT_DONE & SLAVE_LOAD_STS bits (bit 0 & bit 3)
@@ -126,9 +138,11 @@
 		vw-sci {
 			vw-reg = <NPCX_VWEVSM2 0x01>;
 		};
+
 		vw-smi {
 			vw-reg = <NPCX_VWEVSM2 0x02>;
 		};
+
 		vw-host-rst-ack {
 			vw-reg = <NPCX_VWEVSM2 0x08>;
 		};

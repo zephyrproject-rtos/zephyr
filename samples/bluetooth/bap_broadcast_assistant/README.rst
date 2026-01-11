@@ -18,9 +18,6 @@ Practical use of this sample requires a sink (e.g. the BAP Broadcast Audio Sink 
 a set of BAP Broadcast capable earbuds) and a source (e.g. the BAP Broadcast Audio
 Source sample).
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/bap_broadcast_assistant` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

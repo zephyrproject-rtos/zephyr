@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "mesh.h"
+#include "keys.h"
 #include "net.h"
 #include "settings.h"
 #include "brg_cfg.h"
@@ -51,6 +51,10 @@ static void brg_tbl_compact(int j)
 static int brg_en_set(const char *name, size_t len_rd, settings_read_cb read_cb, void *cb_arg)
 {
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (len_rd == 0) {
 		brg_enabled = 0;

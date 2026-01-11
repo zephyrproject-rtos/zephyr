@@ -1,0 +1,26 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OPAMP
+	bool "Operational Amplifier (opamp) drivers"
+	help
+	  Enable opamp driver configuration.
+
+if OPAMP
+
+module = OPAMP
+module-str = opamp
+source "subsys/logging/Kconfig.template.log_config"
+
+config OPAMP_INIT_PRIORITY
+	int "OPAMP init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Opamp device driver initialization priority.
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.mcux_opamp"
+rsource "Kconfig.mcux_opamp_fast"
+# zephyr-keep-sorted-stop
+
+endif # OPAMP

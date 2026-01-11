@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led2: led2 {
 			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 		};
@@ -29,6 +30,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_key: user_key {
 			label = "USER_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;

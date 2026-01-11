@@ -21,8 +21,8 @@
  * must eventually pull in full definitions for all of them (the actual macro
  * defines and inline function bodies)
  *
- * include/kernel.h and other public headers depend on definitions in this
- * header.
+ * include/zephyr/kernel.h and other public headers depend on definitions in
+ * this header.
  */
 #ifndef ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
 #define ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
@@ -279,6 +279,28 @@ static inline void arch_irq_unlock(unsigned int key);
  * call that produced the key argument.
  */
 static inline bool arch_irq_unlocked(unsigned int key);
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+
+/**
+ * @brief Lock all interrupts including zero latency interrupts on the current CPU.
+ *
+ * @details Intended to be used when breaking the promise of zero latency interrupts is
+ * unavoidable and necessary, like accessing shared core peripherals or powering down the
+ * SoC.
+ *
+ * @warning This lock breaks the promise of zero latency interrupts.
+ */
+static inline unsigned int arch_zli_lock(void);
+
+/**
+ * @brief Unlock all interrupts including zero latency interrupts on the current CPU
+ *
+ * @see arch_zli_lock()
+ */
+static inline void arch_zli_unlock(unsigned int key);
+
+#endif
 
 /**
  * Disable the specified interrupt line
@@ -871,31 +893,9 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @brief Detect memory coherence type
- *
- * Required when ARCH_HAS_COHERENCE is true.  This function returns
- * true if the byte pointed to lies within an architecture-defined
- * "coherence region" (typically implemented with uncached memory) and
- * can safely be used in multiprocessor code without explicit flush or
- * invalidate operations.
- *
- * @note The result is for only the single byte at the specified
- * address, this API is not required to check region boundaries or to
- * expect aligned pointers.  The expectation is that the code above
- * will have queried the appropriate address(es).
- */
-#ifndef CONFIG_ARCH_HAS_COHERENCE
-static inline bool arch_mem_coherent(void *ptr)
-{
-	ARG_UNUSED(ptr);
-	return true;
-}
-#endif
-
-/**
  * @brief Ensure cache coherence prior to context switch
  *
- * Required when ARCH_HAS_COHERENCE is true.  On cache-incoherent
+ * Required when CONFIG_KERNEL_COHERENCE is true.  On cache-incoherent
  * multiprocessor architectures, thread stacks are cached by default
  * for performance reasons.  They must therefore be flushed
  * appropriately on context switch.  The rules are:

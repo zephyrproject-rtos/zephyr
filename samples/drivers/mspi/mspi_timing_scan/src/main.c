@@ -48,13 +48,13 @@ int main(void)
 	struct mspi_ambiq_timing_scan scan;
 
 	if (!device_is_ready(tar_dev)) {
-		printk("%s: device not ready.\n", tar_dev->name);
+		printf("%s: device not ready.\n", tar_dev->name);
 		return 1;
 	}
 
 #if CONFIG_MEMC_MSPI
 	if (!tar_xip_cfg.enable) {
-		printk("Need to enable XIP for timing scan.\n");
+		printf("Need to enable XIP for timing scan.\n");
 		return 1;
 	}
 #endif
@@ -73,13 +73,13 @@ int main(void)
 				tar_xip_cfg.size / 2;
 #endif
 	scan.min_window       = 6;
-
+	printf("Starting MSPI Timing Scan.\n");
 	if (mspi_ambiq_timing_scan(tar_dev, tar_bus, &dev_id, timing_cfg_mask,
 				   (void *)&tar_timing_cfg, &scan)) {
-		printk("Failed to timing scan\n");
+		printf("Failed to timing scan\n");
 		return 1;
 	}
-
+	printf("MSPI Timing Scan is successful.\n");
 	printf("==========================\n");
 	return 0;
 }

@@ -17,6 +17,6 @@
 &rtc {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
-			<&rcc STM32_SRC_LSI RTC_SEL(2)>;
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	prescaler = <32768>;
 };

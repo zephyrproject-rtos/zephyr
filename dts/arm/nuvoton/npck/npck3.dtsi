@@ -251,8 +251,12 @@
 		espi0: espi@4000a000 {
 			rx-plsize = <64>;
 			tx-plsize = <64>;
+
+			rst-gpios = <&gpio1 0 0>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			espi_taf: espitaf@4000a000 {
 				compatible = "nuvoton,npcx-espi-taf";
 				reg = <0x4000a000 0x2000>,
@@ -260,6 +264,16 @@
 				reg-names = "saf", "fiu1";
 				status = "disabled";
 			};
+		};
+
+		lct0: lct@400dd000 {
+			compatible = "nuvoton,npck-lct";
+			reg = <0x400dd000 0x10>;
+			interrupts = <17 4>;
+			/* The maximum counter value is (16 weeks - 1 second) */
+			maximum-cnt-in-sec = <9676799>;
+			pwr-by-vsby;
+			status = "disabled";
 		};
 	};
 

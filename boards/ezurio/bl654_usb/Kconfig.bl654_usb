@@ -1,6 +1,7 @@
 # BL654 USB adapter board configuration
 
-# Copyright (c) 2021 Laird Connectivity
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# Copyright (c) 2021-2025 Ezurio LLC
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_BL654_USB

@@ -10,19 +10,11 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdlib.h>
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
+#include <zephyr/sys/sys_getopt.h>
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-
-#ifndef CONFIG_NATIVE_LIBC
-extern void getopt_init(void);
-#endif
 
 static inline bool is_ascii(uint8_t data)
 {
@@ -42,7 +34,7 @@ static bool littleendian;
 
 static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size, uint8_t width)
 {
-	uint32_t value;
+	uint64_t value;
 	size_t data_offset;
 	mm_reg_t addr;
 	const size_t vsize = width / BITS_PER_BYTE;
@@ -68,22 +60,20 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 				break;
 			case 16:
 				value = sys_le16_to_cpu(sys_read16(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
+				sys_put_le16(value, &hex_data[data_offset]);
 				break;
 			case 32:
 				value = sys_le32_to_cpu(sys_read32(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 2] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 3] = (uint8_t)value;
+				sys_put_le32(value, &hex_data[data_offset]);
 				break;
+#ifdef CONFIG_64BIT
+			case 64:
+				value = sys_le64_to_cpu(sys_read64(addr + data_offset));
+				sys_put_le64(value, &hex_data[data_offset]);
+				break;
+#endif /* CONFIG_64BIT */
 			default:
-				shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+				shell_print(sh, "Incorrect data width");
 				return -EINVAL;
 			}
 		}
@@ -102,30 +92,29 @@ static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 	size_t width = 32;
 	mem_addr_t addr = -1;
 
-	optind = 1;
-#ifndef CONFIG_NATIVE_LIBC
-	getopt_init();
-#endif
-	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
+	sys_getopt_optind = 1;
+	sys_getopt_init();
+
+	while ((rv = sys_getopt(argc, argv, "a:s:w:")) != -1) {
 		switch (rv) {
 		case 'a':
-			addr = (mem_addr_t)shell_strtoul(optarg, 16, &err);
+			addr = (mem_addr_t)shell_strtoul(sys_getopt_optarg, 16, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid addr '%s'", optarg);
+				shell_error(sh, "invalid addr '%s'", sys_getopt_optarg);
 				return -EINVAL;
 			}
 			break;
 		case 's':
-			size = (size_t)shell_strtoul(optarg, 0, &err);
+			size = (size_t)shell_strtoul(sys_getopt_optarg, 0, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid size '%s'", optarg);
+				shell_error(sh, "invalid size '%s'", sys_getopt_optarg);
 				return -EINVAL;
 			}
 			break;
 		case 'w':
-			width = (size_t)shell_strtoul(optarg, 0, &err);
+			width = (size_t)shell_strtoul(sys_getopt_optarg, 0, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid width '%s'", optarg);
+				shell_error(sh, "invalid width '%s'", sys_getopt_optarg);
 				return -EINVAL;
 			}
 			break;
@@ -164,25 +153,38 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
 
-static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *user_data)
 {
 	bool escape = false;
 	static uint8_t tail;
 	uint8_t byte;
 
-	if (tail == CHAR_CAN && recv[0] == CHAR_DC1) {
-		escape = true;
-	} else {
-		for (int i = 0; i < (len - 1); i++) {
-			if (recv[i] == CHAR_CAN && recv[i + 1] == CHAR_DC1) {
-				escape = true;
-				break;
-			}
+	ARG_UNUSED(user_data);
+
+	for (size_t i = 0; i < len; i++) {
+		if (tail == CHAR_CAN && recv[i] == CHAR_DC1) {
+			escape = true;
+			tail = 0;
+			break;
+		}
+		tail = recv[i];
+
+		if (is_ascii(recv[i])) {
+			chunk[chunk_element] = recv[i];
+			chunk_element++;
+		}
+
+		if (chunk_element == 2) {
+			byte = (uint8_t)strtoul(chunk, NULL, 16);
+			*bytes = byte;
+			bytes++;
+			sum++;
+			chunk_element = 0;
 		}
 	}
 
@@ -205,21 +207,6 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 			}
 		}
 		return;
-	}
-
-	tail = recv[len - 1];
-
-	if (is_ascii(*recv)) {
-		chunk[chunk_element] = *recv;
-		chunk_element++;
-	}
-
-	if (chunk_element == 2) {
-		byte = (uint8_t)strtoul(chunk, NULL, 16);
-		*bytes = byte;
-		bytes++;
-		sum++;
-		chunk_element = 0;
 	}
 }
 
@@ -257,7 +244,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char **argv)
 
 static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 {
-	uint32_t value;
+	uint64_t value;
 	int err = 0;
 
 	switch (width) {
@@ -270,14 +257,19 @@ static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 	case 32:
 		value = sys_read32(addr);
 		break;
+#ifdef CONFIG_64BIT
+	case 64:
+		value = sys_read64(addr);
+		break;
+#endif /* CONFIG_64BIT */
 	default:
-		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		shell_print(sh, "Incorrect data width");
 		err = -EINVAL;
 		break;
 	}
 
 	if (err == 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%x\n", value);
+		shell_print(sh, "Read value 0x%llx", value);
 	}
 
 	return err;
@@ -297,8 +289,13 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 	case 32:
 		sys_write32(value, addr);
 		break;
+#ifdef CONFIG_64BIT
+	case 64:
+		sys_write64(value, addr);
+		break;
+#endif /* CONFIG_64BIT */
 	default:
-		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		shell_print(sh, "Incorrect data width");
 		err = -EINVAL;
 		break;
 	}
@@ -310,7 +307,7 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 {
 	mem_addr_t phys_addr, addr;
-	uint32_t value = 0;
+	uint64_t value = 0;
 	uint8_t width;
 
 	phys_addr = strtoul(argv[1], NULL, 16);
@@ -329,7 +326,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 		width = strtoul(argv[2], NULL, 10);
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Using data width %d\n", width);
+	shell_print(sh, "Using data width %d", width);
 
 	if (argc <= 3) {
 		return memory_read(sh, addr, width);
@@ -339,9 +336,9 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 	 * this value at the address provided
 	 */
 
-	value = strtoul(argv[3], NULL, 16);
+	value = (uint64_t)strtoull(argv[3], NULL, 16);
 
-	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%x\n", value);
+	shell_print(sh, "Writing value 0x%llx", value);
 
 	return memory_write(sh, addr, width, value);
 }

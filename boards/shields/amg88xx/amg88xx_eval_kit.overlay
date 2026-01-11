@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_i2c {
 	status = "okay";
 
 	amg88xx_amg88xx_eval_kit: amg88xx@68 {
 		compatible = "panasonic,amg88xx";
 		reg = <0x68>;
-		/* Pin D6 from Arduino Connector */
-		int-gpios = <&arduino_header 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

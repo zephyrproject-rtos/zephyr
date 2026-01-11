@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2023 Legrand North America, LLC.
+ * Copyright (c) 2023 Legrand North America, LLC.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

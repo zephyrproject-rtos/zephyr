@@ -4,7 +4,7 @@
 config COMPILER_RT_SUPPORTED
 	bool
 	default y
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	help
 	  Selected when the compiler supports compiler-rt runtime library.
 

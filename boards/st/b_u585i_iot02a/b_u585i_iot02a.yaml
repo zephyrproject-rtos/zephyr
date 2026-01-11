@@ -5,7 +5,7 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-ram: 786
+ram: 768
 flash: 2048
 supported:
   - arduino_i2c
@@ -24,4 +24,5 @@ supported:
   - i2c
   - rtc
   - usbd
+  - memc
 vendor: st

@@ -6,15 +6,16 @@
 
 /**
  * @file
- * @brief Public Reset Controller driver APIs
+ * @ingroup reset_controller_interface
+ * @brief Main header file for reset controller driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RESET_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RESET_H_
 
 /**
- * @brief Reset Controller Interface
- * @defgroup reset_controller_interface Reset Controller Interface
+ * @brief Interfaces for reset controllers.
+ * @defgroup reset_controller_interface Reset Controller
  * @since 3.1
  * @version 0.2.0
  * @ingroup io_interfaces

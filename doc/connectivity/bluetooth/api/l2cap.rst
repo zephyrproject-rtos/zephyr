@@ -3,10 +3,44 @@
 Logical Link Control and Adaptation Protocol (L2CAP)
 ####################################################
 
-L2CAP layer enables connection-oriented channels which can be enable with the
-configuration option: :kconfig:option:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`. This channels
+L2CAP layer enables connection-oriented channels which can be enabled with the
+configuration option: :kconfig:option:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`. These channels
 support segmentation and reassembly transparently, they also support credit
 based flow control making it suitable for data streams.
+
+The user can also define fixed channels using the :c:macro:`BT_L2CAP_FIXED_CHANNEL_DEFINE`
+macro. Fixed channels are initialized upon connection, and do not support segmentation. An example
+of how to define a fixed channel is shown below.
+
+.. code-block:: c
+
+   static struct bt_l2cap_chan fixed_chan[CONFIG_BT_MAX_CONN];
+
+   /* Callbacks are assumed to be defined prior. */
+   static struct bt_l2cap_chan_ops ops = {
+       .recv = recv_cb,
+       .sent = sent_cb,
+       .connected = connected_cb,
+       .disconnected = disconnected_cb,
+   };
+
+   static int l2cap_fixed_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+   {
+       uint8_t conn_index = bt_conn_index(conn);
+
+       *chan = &fixed_chan[conn_index];
+
+       **chan = (struct bt_l2cap_chan){
+           .ops = &ops,
+       };
+
+       return 0;
+   }
+
+   BT_L2CAP_FIXED_CHANNEL_DEFINE(fixed_channel) = {
+       .cid = 0x0010,
+       .accept = l2cap_fixed_accept,
+   };
 
 Channels instances are represented by the :c:struct:`bt_l2cap_chan` struct which
 contains the callbacks in the :c:struct:`bt_l2cap_chan_ops` struct to inform

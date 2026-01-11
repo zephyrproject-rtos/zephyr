@@ -661,6 +661,26 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	return rc;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GC)
+
+int fs_gc(struct fs_mount_t *mp)
+{
+	int rc;
+
+	CHECKIF(mp->fs->gc == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->gc(mp);
+	if (rc < 0) {
+		LOG_ERR("failed to run garbage collection (%d)", rc);
+	}
+
+	return rc;
+}
+
+#endif /* CONFIG_FILE_SYSTEM_GC */
+
 int fs_mount(struct fs_mount_t *mp)
 {
 	struct fs_mount_t *itr;

@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2015 Intel Corporation
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,11 @@
 #define RAM_CONSOLE_BUF_ATTR
 #endif
 
+/* workaround the fact that device_map() is not defined for SoCs with no MMU */
+#ifndef DEVICE_MMIO_IS_IN_RAM
+#define device_map(virt, phys, size, flags) *(virt) = (phys)
+#endif /* DEVICE_MMIO_IS_IN_RAM */
+
 char ram_console_buf[CONFIG_RAM_CONSOLE_BUFFER_SIZE] RAM_CONSOLE_BUF_ATTR;
 char *ram_console;
 static int pos;
@@ -48,9 +53,9 @@ static int ram_console_init(void)
 
 	device_map((mm_reg_t *)&ram_console_va, DT_REG_ADDR(DT_CHOSEN(zephyr_ram_console)),
 		   CONFIG_RAM_CONSOLE_BUFFER_SIZE, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
-	ram_console = (char *)ram_console_va,
+	ram_console = (char *)ram_console_va;
 #else
-	ram_console = ram_console_buf,
+	ram_console = ram_console_buf;
 #endif
 	__printk_hook_install(ram_console_out);
 	__stdout_hook_install(ram_console_out);

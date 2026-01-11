@@ -21,9 +21,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/st_ble_sensor` in the
-Zephyr tree.
-
 Open ST Bluetooth LE Sensor app and click on "CONNECT TO A DEVICE" button to scan Bluetooth LE devices.
 To connect click on the device shown in the Device List.
 After connected, tap LED image on Android to test LED service.

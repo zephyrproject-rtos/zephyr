@@ -20,8 +20,6 @@
 #include "grant_table.h"
 #include "memory.h"
 
-#define XEN_DOMCTL_INTERFACE_VERSION 0x00000015
-
 /*
  * NB. xen_domctl.domain is an IN/OUT parameter for this operation.
  * If it is specified as an invalid value (0 or >= DOMID_FIRST_RESERVED),
@@ -193,6 +191,18 @@ struct xen_domctl_vcpucontext {
 	uint32_t vcpu; /* IN */
 
 	XEN_GUEST_HANDLE_64(vcpu_guest_context_t) ctxt; /* IN/OUT */
+};
+
+/* XEN_DOMCTL_getvcpuinfo */
+struct xen_domctl_getvcpuinfo {
+	/* IN variables. */
+	uint32_t vcpu;
+	/* OUT variables. */
+	uint8_t  online;                  /* currently online (not hotplugged)? */
+	uint8_t  blocked;                 /* blocked waiting for an event? */
+	uint8_t  running;                 /* currently scheduled on its CPU? */
+	uint64_aligned_t cpu_time;        /* total cpu time consumed (ns) */
+	uint32_t cpu;                     /* current mapping   */
 };
 
 /*
@@ -399,6 +409,7 @@ struct xen_domctl_cacheflush {
 	xen_pfn_t start_pfn, nr_pfns;
 };
 
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000016
 /*
  * XEN_DOMCTL_get_paging_mempool_size / XEN_DOMCTL_set_paging_mempool_size.
  *
@@ -414,6 +425,7 @@ struct xen_domctl_cacheflush {
 struct xen_domctl_paging_mempool {
 	uint64_aligned_t size; /* Size in bytes. */
 };
+#endif
 
 struct xen_domctl {
 	uint32_t cmd;
@@ -485,8 +497,10 @@ struct xen_domctl {
 #define XEN_DOMCTL_get_cpu_policy		82
 #define XEN_DOMCTL_set_cpu_policy		83
 #define XEN_DOMCTL_vmtrace_op			84
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000016
 #define XEN_DOMCTL_get_paging_mempool_size	85
 #define XEN_DOMCTL_set_paging_mempool_size	86
+#endif
 #define XEN_DOMCTL_gdbsx_guestmemio		1000
 #define XEN_DOMCTL_gdbsx_pausevcpu		1001
 #define XEN_DOMCTL_gdbsx_unpausevcpu		1002
@@ -499,6 +513,7 @@ struct xen_domctl {
 		struct xen_domctl_getdomaininfo getdomaininfo;
 		struct xen_domctl_max_mem max_mem;
 		struct xen_domctl_vcpucontext vcpucontext;
+		struct xen_domctl_getvcpuinfo getvcpuinfo;
 		struct xen_domctl_max_vcpus max_vcpus;
 		struct xen_domctl_scheduler_op scheduler_op;
 		struct xen_domctl_iomem_permission iomem_permission;
@@ -507,7 +522,9 @@ struct xen_domctl {
 		struct xen_domctl_bind_pt_irq bind_pt_irq;
 		struct xen_domctl_memory_mapping memory_mapping;
 		struct xen_domctl_cacheflush cacheflush;
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000016
 		struct xen_domctl_paging_mempool paging_mempool;
+#endif
 		uint8_t pad[128];
 	} u;
 };

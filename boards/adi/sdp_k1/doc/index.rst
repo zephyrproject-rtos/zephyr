@@ -12,10 +12,11 @@ ADI components.
 - USB debug interface supporting CMSIS-DAP through a NXP Freescale
   microcontroller
 - Flexible board power supply
-    - USB VBUS 5 V max. 500 mA
-    - 5.5mm DC power jack 7 - 12 V min. 300 mA
-    - VIN from Arduino* compatible connectors
-    - VIN from 120-pin connector 5 V min. 300 mA
+
+  - USB VBUS 5 V max. 500 mA
+  - 5.5mm DC power jack 7 - 12 V min. 300 mA
+  - VIN from Arduino* compatible connectors
+  - VIN from 120-pin connector 5 V min. 300 mA
 - 3 color LEDs (green, orange, red) and 1 status LED
 - One push-buttons: RESET
 - 16MB SDRAM
@@ -59,8 +60,9 @@ ADI SDP-K1 provides the following hardware components:
 - DMA Controller
 
 More information about STM32F469NI can be found here:
-       - `STM32F469NI product page`_
-       - `STM32F469 reference manual`_
+
+- `STM32F469NI product page`_
+- `STM32F469 reference manual`_
 
 Supported Features
 ==================

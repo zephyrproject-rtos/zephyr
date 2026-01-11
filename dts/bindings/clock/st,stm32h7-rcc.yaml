@@ -122,6 +122,20 @@ properties:
       - 8
       - 16
 
+  timpre:
+    type: boolean
+    description: |
+        Timers clocks prescalers selection
+        Used to control the clock frequency of all the timers connected to APB1 and APB2 domain.
+        - When absent: If the APB prescaler (D2PPRE1, D2PPRE2 in the RCC_D2CFGR register) is
+          configured to a division factor of 1, TIMxCLK = HCKL. Otherwise, the timer clock
+          frequencies are set to twice to the frequency of the APB domain to which the timers are
+          connected: TIMxCLK = 2xPCLKx.
+        - When present: If the APB prescaler (D2PPRE1, D2PPRE2 in the RCC_D2CFGR register) is
+          configured to a division factor of 1 or 2, TIMxCLK = HCKL. Otherwise, the timer clock
+          frequencies are set to four times to the frequency of the APB domain to which the timers
+          are connected: TIMxCLK = 4xPCLKx.
+
 clock-cells:
   - bus
   - bits

@@ -277,6 +277,14 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason);
  */
 int supplicant_legacy_roam(const struct device *dev);
 
+/** Check if ap supports Neighbor report or not.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return true if support, false if not support
+ */
+bool supplicant_bss_support_neighbor_rep(const struct device *dev);
+
 /** Judge ap whether support the capability
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -304,6 +312,25 @@ int supplicant_get_wifi_conn_params(const struct device *dev,
  * @return 0 if ok, < 0 if error
  */
 int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
+
+/** @ Set Wi-Fi max idle period
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param bss_max_idle_period Maximum idle period to set
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_set_bss_max_idle_period(const struct device *dev,
+				       unsigned short bss_max_idle_period);
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
+/** @ Set Wi-Fi background scanning parameters
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param params bgscan parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_set_bgscan(const struct device *dev, struct wifi_bgscan_params *params);
+#endif
 
 #ifdef CONFIG_AP
 int set_ap_bandwidth(const struct device *dev, enum wifi_frequency_bandwidths bandwidth);
@@ -350,4 +377,13 @@ int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
  */
 int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+/**
+ * @brief Wi-Fi STA configuration parameter.
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param params STA parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_config_params(const struct device *dev, struct wifi_config_params *params);
 #endif /* ZEPHYR_SUPP_MGMT_H */

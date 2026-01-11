@@ -46,8 +46,7 @@ LOG_MODULE_REGISTER(usb, CONFIG_LOG_DEFAULT_LEVEL);
 #define USB_MONO_FRAME_SIZE      (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
 #define USB_CHANNELS             2U
 #define USB_STEREO_FRAME_SIZE    (USB_MONO_FRAME_SIZE * USB_CHANNELS)
-#define USB_OUT_RING_BUF_SIZE    (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
-#define USB_IN_RING_BUF_SIZE     (USB_MONO_FRAME_SIZE * USB_ENQUEUE_COUNT)
+#define USB_IN_RING_BUF_SIZE     (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
 
 #define IN_TERMINAL_ID UAC2_ENTITY_ID(DT_NODELABEL(in_terminal))
 
@@ -60,8 +59,8 @@ struct decoded_sdu {
 	uint32_t ts;
 } decoded_sdu;
 
-RING_BUF_DECLARE(usb_out_ring_buf, USB_OUT_RING_BUF_SIZE);
-K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
+RING_BUF_DECLARE(usb_in_ring_buf, USB_IN_RING_BUF_SIZE);
+K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
 			 USB_ENQUEUE_COUNT, UDC_BUF_ALIGN);
 static volatile bool terminal_enabled;
 
@@ -74,17 +73,17 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 
 	if (!terminal_enabled) {
 		/* Simply discard the data then */
-		(void)ring_buf_get(&usb_out_ring_buf, NULL, USB_STEREO_FRAME_SIZE);
+		(void)ring_buf_get(&usb_in_ring_buf, NULL, USB_STEREO_FRAME_SIZE);
 		return;
 	}
 
-	err = k_mem_slab_alloc(&usb_out_buf_pool, &pcm_buf, K_NO_WAIT);
+	err = k_mem_slab_alloc(&usb_in_buf_pool, &pcm_buf, K_NO_WAIT);
 	if (err != 0) {
 		LOG_WRN("Could not allocate pcm_buf");
 		return;
 	}
 
-	size = ring_buf_get(&usb_out_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
+	size = ring_buf_get(&usb_in_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
 	if (size != USB_STEREO_FRAME_SIZE) {
 		/* If we could not fill the buffer, zero-fill the rest (possibly all) */
 		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
@@ -116,14 +115,14 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 			}
 		}
 
-		k_mem_slab_free(&usb_out_buf_pool, pcm_buf);
+		k_mem_slab_free(&usb_in_buf_pool, pcm_buf);
 	} /* USB owns the buffer which will be released in uac2_buf_release_cb */
 }
 
 static void uac2_buf_release_cb(const struct device *dev, uint8_t terminal, void *buf,
 				void *user_data)
 {
-	k_mem_slab_free(&usb_out_buf_pool, buf);
+	k_mem_slab_free(&usb_in_buf_pool, buf);
 }
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
@@ -156,7 +155,7 @@ static void usb_send_frames_to_usb(void)
 		uint32_t rb_size;
 
 		/* Not enough space to store data */
-		if (ring_buf_space_get(&usb_out_ring_buf) < sizeof(stereo_frame)) {
+		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
 			if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
 			    (fail_cnt % CONFIG_INFO_REPORTING_INTERVAL) == 0U) {
 				LOG_WRN("[%zu] Could not send more than %zu frames to USB",
@@ -195,7 +194,7 @@ static void usb_send_frames_to_usb(void)
 			}
 		}
 
-		rb_size = ring_buf_put(&usb_out_ring_buf, (uint8_t *)stereo_frame,
+		rb_size = ring_buf_put(&usb_in_ring_buf, (uint8_t *)stereo_frame,
 				       sizeof(stereo_frame));
 		if (rb_size != sizeof(stereo_frame)) {
 			LOG_WRN("Failed to put frame on USB ring buf");

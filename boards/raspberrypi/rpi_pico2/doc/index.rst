@@ -3,12 +3,13 @@
 Overview
 ********
 
-The Raspberry Pi Pico 2 is the second-generation product in the Raspberry Pi
+The Raspberry Pi Pico 2 and Pico 2W are second-generation products in the Raspberry Pi
 Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html>`_ is referred to as Pico 2.
 
-There are many limitations of the board currently. Including but not limited to:
-- The Zephyr build only supports configuring the RP2350A with the Cortex-M33 cores.
-- As with the Pico 1, there's no support for running any code on the second core.
+The Pico 2 supports running code on either a single Cortex-M33 or a Hazard3
+(RISC-V) core.
+
+As with the Pico 1, there's no support for running any code on the second core.
 
 Hardware
 ********
@@ -23,6 +24,7 @@ Hardware
 - 2 Timer with 4 alarms, 1 AON Timer
 - Temperature sensor
 - 3 Programmable IO (PIO) blocks, 12 state machines total for custom peripheral support
+- Infineon CYW43439 2.4 GHz Wi-Fi chip (Pico 2W only)
 
   - Flexible, user-programmable high-speed IO
   - Can emulate interfaces such as SD Card and VGA
@@ -48,10 +50,43 @@ See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` docume
 Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: rpi_pico2/rp2350a/m33
-   :goals: build flash
-   :flash-args: --openocd /usr/local/bin/openocd
+    :zephyr-app: samples/basic/blinky
+    :board: rpi_pico2/rp2350a/m33
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
+
+The blinky sample is not yet supported on Pico 2W, so try the :zephyr:code-sample:`wifi-shell` application to connect to the network.
+
+Wi-Fi Firmware Setup
+=====================
+
+Before building applications for the Pico 2W variant, you must fetch the required Wi-Fi firmware blobs.
+The Infineon CYW43439 chip requires proprietary firmware and CLM (Country Localization Module) files.
+
+Run the following command to download these blobs:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
+
+This command downloads the necessary firmware files from Infineon's repositories, including:
+
+- ``43439A0.bin`` - Wi-Fi firmware for CYW43439
+- ``43439A0.clm_blob`` - Country localization data
+
+You only need to run this command once per workspace. Without these blobs, the build will fail with
+CMake errors about missing firmware files.
+
+Building Wi-Fi Applications
+============================
+
+After fetching the blobs, you can build Wi-Fi applications:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/net/wifi/shell
+    :board: rpi_pico2/rp2350a/m33/w
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
 
 References
 **********

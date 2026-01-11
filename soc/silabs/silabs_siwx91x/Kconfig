@@ -15,17 +15,23 @@ if SOC_FAMILY_SILABS_SIWX91X
 
 rsource "*/Kconfig"
 
-config SOC_SILABS_SLEEPTIMER
-	bool
+config SILABS_SIWX91X_NWP
+	bool "Silabs Network Coprocessor"
+	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select CMSIS_RTOS_V2
+	select POLL
+	select DYNAMIC_THREAD
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
 	help
-	  The Sleeptimer HAL module is used for SIWX91X.
+	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
 
 config SOC_SIWX91X_PM_BACKEND_PMGR
 	bool
-	select WISECONNECT_NETWORK_STACK
+	select SILABS_SIWX91X_NWP
 	select SILABS_SLEEPTIMER_TIMER
-	select SRAM_VECTOR_TABLE
-	select CODE_DATA_RELOCATION_SRAM
 	default y if PM
 	help
 	  Implement PM using sl_power_manager service from Gecko SDK
@@ -61,5 +67,23 @@ config SIWX91X_ENCRYPT
 	  Encrypt the application image using AES ECB encryption.
 	  The key used is the value of CONFIG_SIWX91X_MIC_KEY. This value is
 	  passed as-is to the command "commander rps convert".
+
+config SIWX91X_FIRMWARE_UPGRADE
+	bool "Support for firmware upgrade"
+	select SILABS_SIWX91X_NWP
+	help
+	  The firmware upgrade process for SiWx91x devices involves coordinated
+	  communication with both the Network Co-Processor (NCP) and the ROM
+	  bootloader. The NCP is responsible for writing the firmware image to
+	  flash memory, while the ROM bootloader handles the A/B upgrade logic
+	  to ensure reliable firmware switching.
+	  This option provides the necessary APIs to perform these upgrade tasks
+	  and is agnostic to the underlying transport protocol. It does not handle
+	  firmware retrieval directly; instead, the application layer is responsible
+	  for acquiring the firmware image (e.g., via an HTTP client or other means)
+	  and invoking the appropriate APIs to initiate and complete the upgrade
+	  process.
+	  For more information, visit:
+	  https://docs.silabs.com/wiseconnect/latest/wiseconnect-api-reference-guide-si91x-driver/si91-x-firmware-update-from-host-functions#sl-si91x-fwup-load
 
 endif # SOC_FAMILY_SILABS_SIWX91X

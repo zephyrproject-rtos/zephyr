@@ -7,9 +7,14 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
-#include "nxp_imx_netc.h"
+#include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include "fsl_netc_endpoint.h"
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+#include "fsl_netc_switch.h"
+#endif
+#ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #include "fsl_msgintr.h"
+#endif
 
 /* Buffer and descriptor alignment */
 #define NETC_BUFF_ALIGN 64
@@ -33,6 +38,7 @@
 #define NETC_MSGINTR_IRQ DT_IRQN_BY_IDX(DT_NODELABEL(netc), 0)
 #endif
 
+#ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #if (CONFIG_ETH_NXP_IMX_MSGINTR == 1)
 #define NETC_MSGINTR MSGINTR1
 #ifndef NETC_MSGINTR_IRQ
@@ -46,6 +52,7 @@
 #else
 #error "Current CONFIG_ETH_NXP_IMX_MSGINTR not support"
 #endif
+#endif /* CONFIG_ETH_NXP_IMX_NETC_MSI_GIC */
 
 /* Timeout for various operations */
 #define NETC_TIMEOUT K_MSEC(20)
@@ -62,10 +69,10 @@
 	do {                                                                                       \
 		uint32_t id = 0x001100;                                                            \
                                                                                                    \
-		mac_addr[0] = FREESCALE_OUI_B0;                                                    \
-		mac_addr[1] = FREESCALE_OUI_B1;                                                    \
 		/* Set MAC address locally administered bit (LAA) */                               \
-		mac_addr[2] = FREESCALE_OUI_B2 | 0x02;                                             \
+		mac_addr[0] = FREESCALE_OUI_B0 | 0x02;                                             \
+		mac_addr[1] = FREESCALE_OUI_B1;                                                    \
+		mac_addr[2] = FREESCALE_OUI_B2;                                                    \
 		mac_addr[3] = (id >> 16) & 0xff;                                                   \
 		mac_addr[4] = (id >> 8) & 0xff;                                                    \
 		mac_addr[5] = (id + n) & 0xff;                                                     \
@@ -82,6 +89,8 @@
 	}
 
 struct netc_eth_config {
+	DEVICE_MMIO_NAMED_ROM(port);
+	DEVICE_MMIO_NAMED_ROM(pfconfig);
 	uint16_t si_idx;
 	const struct device *phy_dev;
 	netc_hw_mii_mode_t phy_mode;
@@ -90,9 +99,14 @@ struct netc_eth_config {
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);
 	const struct pinctrl_dev_config *pincfg;
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
+	const struct device *msi_dev;
+	uint8_t msi_device_id; /* MSI device ID */
+#else
 	uint8_t tx_intr_msg_data;
 	uint8_t rx_intr_msg_data;
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#endif
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	const struct device *ptp_clock;
 #endif
 };
@@ -100,6 +114,8 @@ struct netc_eth_config {
 typedef uint8_t rx_buffer_t[NETC_RX_RING_BUF_SIZE_ALIGN];
 
 struct netc_eth_data {
+	DEVICE_MMIO_NAMED_RAM(port);
+	DEVICE_MMIO_NAMED_RAM(pfconfig);
 	ep_handle_t handle;
 	struct net_if *iface;
 	uint8_t mac_addr[6];
@@ -113,6 +129,10 @@ struct netc_eth_data {
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_NXP_IMX_RX_THREAD_STACK_SIZE);
 	uint8_t *rx_frame;
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
+	unsigned int tx_intid;
+	unsigned int rx_intid;
+#endif
 };
 
 int netc_eth_init_common(const struct device *dev);
@@ -120,7 +140,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt);
 enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev);
 int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type,
 			const struct ethernet_config *config);
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 const struct device *netc_eth_get_ptp_clock(const struct device *dev);
 #endif
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_ */

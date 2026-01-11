@@ -33,5 +33,4 @@
 			low-power-enable;
 		};
 	};
-
 };

@@ -31,22 +31,27 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0_31 10 GPIO_ACTIVE_LOW>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0_31 15 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0_31 14 GPIO_ACTIVE_LOW>;
 			label = "LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
 			label = "LED 4";
@@ -55,16 +60,19 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
 			label = "BTN0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
 			label = "BTN1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
 			label = "BTN2";
@@ -75,6 +83,7 @@
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";

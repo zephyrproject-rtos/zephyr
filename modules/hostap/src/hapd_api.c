@@ -38,7 +38,7 @@ static struct wifi_enterprise_creds_params hapd_enterprise_creds;
 #define hostapd_cli_cmd_v(cmd, ...) ({					\
 	bool status;							\
 									\
-	if (zephyr_hostapd_cli_cmd_v(cmd, ##__VA_ARGS__) < 0) {		\
+	if (zephyr_hostapd_cli_cmd_v(iface->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {		\
 		wpa_printf(MSG_ERROR,					\
 			   "Failed to execute wpa_cli command: %s",	\
 			   cmd);					\
@@ -365,12 +365,32 @@ out:
 }
 #endif
 
-bool hostapd_ap_reg_domain(struct wifi_reg_domain *reg_domain)
+int hostapd_ap_reg_domain(const struct device *dev,
+	struct wifi_reg_domain *reg_domain)
 {
-	return hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code);
+	struct hostapd_iface *iface;
+	int ret = 0;
+
+	iface = get_hostapd_handle(dev);
+	if (iface == NULL) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		ret = -ENODEV;
+	}
+
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		ret = -EACCES;
+	}
+
+	if (!hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code)) {
+		ret = -ENOTSUP;
+	}
+
+	return ret;
 }
 
-static int hapd_config_chan_center_seg0(struct wifi_connect_req_params *params)
+static int hapd_config_chan_center_seg0(struct hostapd_iface *iface,
+	struct wifi_connect_req_params *params)
 {
 	int ret = 0;
 	uint8_t center_freq_seg0_idx = 0;
@@ -472,7 +492,7 @@ int hapd_config_network(struct hostapd_iface *iface,
 		goto out;
 	}
 
-	ret = hapd_config_chan_center_seg0(params);
+	ret = hapd_config_chan_center_seg0(iface, params);
 	if (ret) {
 		goto out;
 	}
@@ -820,7 +840,7 @@ static int hapd_ap_wps_pin(const struct device *dev, struct wifi_wps_config_para
 	}
 
 	if (params->oper == WIFI_WPS_PIN_GET) {
-		if (zephyr_hostapd_cli_cmd_resp(get_pin_cmd, params->pin)) {
+		if (zephyr_hostapd_cli_cmd_resp(iface->ctrl_conn, get_pin_cmd, params->pin)) {
 			goto out;
 		}
 	} else if (params->oper == WIFI_WPS_PIN_SET) {
@@ -1003,9 +1023,16 @@ int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *param
 {
 	int ret;
 	char *cmd = NULL;
+	struct hostapd_iface *iface;
 
 	if (params == NULL) {
 		return -EINVAL;
+	}
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return -ENOENT;
 	}
 
 	cmd = os_zalloc(SUPPLICANT_DPP_CMD_BUF_SIZE);
@@ -1021,7 +1048,7 @@ int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *param
 	}
 
 	wpa_printf(MSG_DEBUG, "hostapd_cli %s", cmd);
-	if (zephyr_hostapd_cli_cmd_resp(cmd, params->resp)) {
+	if (zephyr_hostapd_cli_cmd_resp(iface->ctrl_conn, cmd, params->resp)) {
 		os_free(cmd);
 		return -ENOEXEC;
 	}

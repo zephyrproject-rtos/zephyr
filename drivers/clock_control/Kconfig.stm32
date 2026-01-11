@@ -22,23 +22,30 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 
 if CLOCK_CONTROL_STM32_CUBE
 
-DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
-DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
-
 config CLOCK_STM32_HSE_CLOCK
-	int "HSE clock value"
-	default "$(DT_STM32_HSE_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,clk_hse)"
-	default 8000000
+	int
+	default $(dt_nodelabel_int_prop,clk_hse,clock-frequency)
+	depends on $(dt_nodelabel_enabled,clk_hse)
 	help
-	  Value of external high-speed clock (HSE). This symbol could be optionally
-	  configured using device tree by setting "clock-frequency" value of clk_hse
-	  node. For instance:
-	  &clk_hse{
-	  status = "okay";
-	  clock-frequency = <DT_FREQ_M(25)>;
-	  };
-	  Note: Device tree configuration is overridden when current symbol is set:
-	  CONFIG_CLOCK_STM32_HSE_CLOCK=32000000
+	  Frequency of external high-speed clock (HSE).
+
+	  The value of this symbol is used to set the preprocessor
+	  definition "HSE_VALUE" notably consumed by the HAL.
+
+	  This symbol cannot be set externally: its value is directly
+	  taken from the "clock-frequency" property of the "clk_hse"
+	  Device Tree node when it is enabled.
+
+	  This node would usually looks similar to:
+
+	    &clk_hse {
+	      clock-frequency = <DT_FREQ_M(25)>;
+	      status = "okay";
+	    };
+
+	  If the "clk_hse" node does not exist or is not enabled
+	  (status != "okay"), this symbol is not defined and the
+	  HSE_VALUE preprocessor definition does not exist.
 
 config CLOCK_STM32_MUX
 	bool "STM32 clock mux driver"
@@ -99,6 +106,7 @@ endmenu # DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
 config CLOCK_STM32_MCO
 	bool
 	default y
+	select PINCTRL
 	depends on DT_HAS_ST_STM32_CLOCK_MCO_ENABLED || DT_HAS_ST_STM32F1_CLOCK_MCO_ENABLED
 	help
 	  Allows to output various different clock sources onto the MCO pin

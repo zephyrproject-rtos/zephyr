@@ -9,7 +9,9 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
+#include <zephyr/sys/timeutil.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -57,8 +59,8 @@ static void semaphore_test(sem_t *sem)
 
 	zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0, "clock_gettime failed");
 
-	abstime.tv_sec += WAIT_TIME_MS / MSEC_PER_SEC;
-	abstime.tv_nsec += (WAIT_TIME_MS % MSEC_PER_SEC) * NSEC_PER_MSEC;
+	timespec_add(&abstime, &(struct timespec){.tv_sec = WAIT_TIME_MS / MSEC_PER_SEC,
+						  (WAIT_TIME_MS % MSEC_PER_SEC) * NSEC_PER_MSEC});
 
 	/* TESPOINT: Wait to acquire sem given by thread1 */
 	zassert_equal(sem_timedwait(sem, &abstime), 0);
