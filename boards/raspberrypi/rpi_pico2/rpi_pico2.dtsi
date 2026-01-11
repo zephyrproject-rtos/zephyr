@@ -121,4 +121,16 @@ zephyr_udc0: &usbd {
 	status = "okay";
 };
 
+pico_spi: &spi0 {};
+
+pico_spi0: &spi0 {};
+
+pico_i2c: &i2c0 {};
+
+pico_i2c0: &i2c0 {};
+
+pico_i2c1: &i2c1 {};
+
 pico_serial: &uart0 {};
+
+pico_serial0: &uart0 {};
