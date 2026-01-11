@@ -1230,6 +1230,8 @@ static int i2c_dw_initialize(const struct device *dev)
 {
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
+	union ic_sdahold_register sda_hold;
+	uint32_t reg_base = get_regs(dev);
 	union ic_con_register ic_con;
 	int ret = 0;
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
@@ -1294,9 +1296,20 @@ static int i2c_dw_initialize(const struct device *dev)
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
 
-	uint32_t reg_base = get_regs(dev);
-
 	clear_bit_enable_en(reg_base);
+
+	/* Set up SDAHOLD timing register */
+	sda_hold.raw = read_sdahold(reg_base);
+	if (rom->sda_hold_tx != SDA_HOLD_INVALID) {
+		sda_hold.bits.sdahold_tx = rom->sda_hold_tx;
+	}
+	if (rom->sda_hold_rx != SDA_HOLD_INVALID) {
+		sda_hold.bits.sdahold_rx = rom->sda_hold_rx;
+	}
+	if (rom->sda_hold_rx != SDA_HOLD_INVALID || rom->sda_hold_tx != SDA_HOLD_INVALID) {
+		write_sdahold(sda_hold.raw, reg_base);
+	}
+
 	/*
 	 * depending on the IP configuration, we may have to disable block mode in
 	 * controller mode
@@ -1431,11 +1444,15 @@ static int i2c_dw_initialize(const struct device *dev)
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.sda_hold_tx = DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID),                  \
+		.sda_hold_rx = DT_INST_PROP_OR(n, scl_hold_rx, SDA_HOLD_INVALID),                  \
 		.irqnumber = DT_INST_IRQN(n),                                                      \
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
 			I2C_CONFIG_DMA_INIT(n)};                                                   \
+	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \
+	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_rx, 0) <= 0xff, "Invalid SDA_HOLD_RX value");     \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \
 				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
