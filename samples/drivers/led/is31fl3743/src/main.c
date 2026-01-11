@@ -18,7 +18,7 @@
 
 static uint8_t led_state[HW_COL_COUNT * HW_ROW_COUNT];
 
-static int led_channel_write(const struct device *led)
+static int led_channel_write(const struct device *leds[], uint8_t led_count)
 {
 	int ret;
 	uint32_t led_idx;
@@ -33,10 +33,12 @@ static int led_channel_write(const struct device *led)
 		}
 	}
 
-	ret = led_write_channels(led, 0, sizeof(led_state), led_state);
-	if (ret) {
-		printk("Error: could not write LED channels (%d)\n", ret);
-		return ret;
+	for (uint8_t i = 0; i < led_count; i++) {
+		ret = led_write_channels(leds[i], 0, sizeof(led_state), led_state);
+		if (ret) {
+			printk("Error: could not write LED channels (%d)\n", ret);
+			return ret;
+		}
 	}
 
 #if CONFIG_LED_RGB
@@ -51,10 +53,12 @@ static int led_channel_write(const struct device *led)
 			}
 		}
 	}
-	ret = led_write_channels(led, 0, sizeof(led_state), led_state);
-	if (ret) {
-		printk("Error: could not write LED channels (%d)\n", ret);
-		return ret;
+	for (uint8_t i = 0; i < led_count; i++) {
+		ret = led_write_channels(leds[i], 0, sizeof(led_state), led_state);
+		if (ret) {
+			printk("Error: could not write LED channels (%d)\n", ret);
+			return ret;
+		}
 	}
 
 	/* Turn all Green LEDs on */
@@ -68,10 +72,12 @@ static int led_channel_write(const struct device *led)
 			}
 		}
 	}
-	ret = led_write_channels(led, 0, sizeof(led_state), led_state);
-	if (ret) {
-		printk("Error: could not write LED channels (%d)\n", ret);
-		return ret;
+	for (uint8_t i = 0; i < led_count; i++) {
+		ret = led_write_channels(leds[i], 0, sizeof(led_state), led_state);
+		if (ret) {
+			printk("Error: could not write LED channels (%d)\n", ret);
+			return ret;
+		}
 	}
 
 	/* Turn all RED LEDs on */
@@ -85,20 +91,24 @@ static int led_channel_write(const struct device *led)
 			}
 		}
 	}
-	ret = led_write_channels(led, 0, sizeof(led_state), led_state);
-	if (ret) {
-		printk("Error: could not write LED channels (%d)\n", ret);
-		return ret;
+	for (uint8_t i = 0; i < led_count; i++) {
+		ret = led_write_channels(leds[i], 0, sizeof(led_state), led_state);
+		if (ret) {
+			printk("Error: could not write LED channels (%d)\n", ret);
+			return ret;
+		}
 	}
 #endif
 
 	/* Turn all LEDs off */
 	k_msleep(500);
 	memset(led_state, 0, sizeof(led_state));
-	ret = led_write_channels(led, 0, sizeof(led_state), led_state);
-	if (ret) {
-		printk("Error: could not write LED channels (%d)\n", ret);
-		return ret;
+	for (uint8_t i = 0; i < led_count; i++) {
+		ret = led_write_channels(leds[i], 0, sizeof(led_state), led_state);
+		if (ret) {
+			printk("Error: could not write LED channels (%d)\n", ret);
+			return ret;
+		}
 	}
 
 	return 0;
@@ -157,45 +167,50 @@ static int led_on_off(const struct device *led)
 	return 0;
 }
 
-const struct device *led_dev = DEVICE_DT_GET_ONE(issi_is31fl3743);
+#define DEVICE_DT_GET_COMMA(node_id) DEVICE_DT_GET(node_id),
+
+const struct device *led_devs[] = {
+	DT_FOREACH_STATUS_OKAY(issi_is31fl3743, DEVICE_DT_GET_COMMA)
+};
 
 int main(void)
 {
 	int ret;
 	int current_limit = 0xFF;
+	int led_count = 0;
 
-	if (!device_is_ready(led_dev)) {
-		printk("Error- LED device is not ready\n");
-		return 0;
+	for (uint8_t i = 0; i < ARRAY_SIZE(led_devs); i++) {
+		if (!device_is_ready(led_devs[i])) {
+			printk("Error- LED device is not ready\n");
+			break;
+		}
+		led_count++;
 	}
 
 	while (1) {
-		ret = led_channel_write(led_dev);
+		ret = led_channel_write(led_devs, led_count);
 		if (ret < 0) {
 			return 0;
 		}
-		ret = led_brightness(led_dev);
-		if (ret < 0) {
-			return 0;
-		}
-		ret = led_on_off(led_dev);
-		if (ret < 0) {
-			return 0;
-		}
-		if (current_limit == 0xFF) {
-			/* Select lower current limit */
-			printk("Restarting sample with lower current limit\n");
-			current_limit = 0x3F;
-			ret = is31fl3743_current_limit(led_dev, current_limit);
-			if (ret) {
-				printk("Could not set LED current limit (%d)\n", ret);
+		for (uint8_t i = 0; i < led_count; i++) {
+			ret = led_brightness(led_devs[i]);
+			if (ret < 0) {
 				return 0;
 			}
-		} else {
-			/* Select higher current limit */
-			printk("Restarting sample with higher current limit\n");
-			current_limit = 0xFF;
-			ret = is31fl3743_current_limit(led_dev, current_limit);
+			ret = led_on_off(led_devs[i]);
+			if (ret < 0) {
+				return 0;
+			}
+			if (current_limit == 0xFF) {
+				/* Select lower current limit */
+				printk("Restarting sample with lower current limit\n");
+				current_limit = 0x3F;
+			} else {
+				/* Select higher current limit */
+				printk("Restarting sample with higher current limit\n");
+				current_limit = 0xFF;
+			}
+			ret = is31fl3743_current_limit(led_devs[i], current_limit);
 			if (ret) {
 				printk("Could not set LED current limit (%d)\n", ret);
 				return 0;
