@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Vestas Wind Systems A/S
+ * Copyright (c) 2019-2026 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -407,9 +407,9 @@
 			compatible = "nxp,flexcan";
 			reg = <0x40024000 0x1000>;
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
-			interrupt-names = "warning", "error", "wake-up",
-					  "mb-0-15";
-			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			interrupt-names = "warning", "error", "wake-up", "mb-0-15";
+			clocks = <&scg KINETIS_SCG_SOSC_ASYNC_DIV2_CLK>, <&scg KINETIS_SCG_BUS_CLK>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
 			status = "disabled";
@@ -419,9 +419,9 @@
 			compatible = "nxp,flexcan";
 			reg = <0x40025000 0x1000>;
 			interrupts = <85 0>, <86 0>, <87 0>, <88 0>;
-			interrupt-names = "warning", "error", "wake-up",
-					  "mb-0-15";
-			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			interrupt-names = "warning", "error", "wake-up", "mb-0-15";
+			clocks = <&scg KINETIS_SCG_SOSC_ASYNC_DIV2_CLK>, <&scg KINETIS_SCG_BUS_CLK>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
 			status = "disabled";

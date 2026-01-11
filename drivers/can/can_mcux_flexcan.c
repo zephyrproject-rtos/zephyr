@@ -1488,6 +1488,30 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 #define FLEXCAN_INST_RX_MB(id) (CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS + RX_START_IDX)
 #define FLEXCAN_INST_TX_MB(id) (FLEXCAN_INST_NUMBER_OF_MB(id) - FLEXCAN_INST_RX_MB(id))
 
+#define FLEXCAN_CLK_SOURCE(id) DT_INST_PROP(id, clk_source)
+#define FLEXCAN_CLK_SOURCE_NAME(id) CONCAT(clksrc, FLEXCAN_CLK_SOURCE(id))
+
+#define FLEXCAN_INST_CLOCKS_FROM_CLK_SOURCE(id)							  \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, FLEXCAN_CLK_SOURCE_NAME(id))), \
+	.clock_subsys = (clock_control_subsys_t)						  \
+		DT_INST_CLOCKS_CELL_BY_NAME(id, FLEXCAN_CLK_SOURCE_NAME(id), name),		  \
+	.clk_source = FLEXCAN_CLK_SOURCE(id)
+
+#define FLEXCAN_INST_CLOCKS_NO_CLK_SOURCE(id)					\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),			\
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
+	.clk_source = 0U
+
+#define FLEXCAN_INST_CLOCKS(id)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, clk_source),			\
+		(FLEXCAN_INST_CLOCKS_FROM_CLK_SOURCE(id)),			\
+		(FLEXCAN_INST_CLOCKS_NO_CLK_SOURCE(id)))
+
+#define FLEXCAN_CHECK_CLK_SOURCE(id)								\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(id, clk_source),					\
+		(BUILD_ASSERT(DT_INST_CLOCKS_HAS_NAME(id, FLEXCAN_CLK_SOURCE_NAME(id)),		\
+			"FlexCAN instance " STRINGIFY(id) " clk-source without named clock")))
+
 #define FLEXCAN_CHECK_MAX_FILTER(id)						\
 	BUILD_ASSERT(CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS > 0,			\
 		"Maximum number of RX filters should greater than 0");		\
@@ -1499,6 +1523,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 
 #define FLEXCAN_DEVICE_INIT_MCUX(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
+	FLEXCAN_CHECK_CLK_SOURCE(id);					\
 	FLEXCAN_CHECK_MAX_FILTER(id);					\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev); \
@@ -1518,10 +1543,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(flexcan_mmio, DT_DRV_INST(id)),	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-			DT_INST_CLOCKS_CELL(id, name),			\
-		.clk_source = DT_INST_PROP_OR(id, clk_source, 0U),	\
+		FLEXCAN_INST_CLOCKS(id),				\
 		.number_of_mb = FLEXCAN_INST_NUMBER_OF_MB(id),		\
 		.rx_mb = FLEXCAN_INST_RX_MB(id),			\
 		.tx_mb = FLEXCAN_INST_TX_MB(id),			\

@@ -36,12 +36,25 @@ properties:
   clocks:
     required: true
 
+  clock-names:
+    description: |
+      Required if the "clk-source" property is present.
+
   clk-source:
     type: int
     enum:
       - 0
       - 1
-    description: CAN engine clock source
+    description: |
+      CAN engine clock source. The value of this property, if present, selects the corresponding
+      named clock from the "clocks" property. A value of "0" selects "clksrc0" whereas a value of
+      "1" selects "clksrc1".
+
+      The value of this property is written to the CLKSRC bit of the FlexCAN CTRL1 register for
+      controlling the 1-bit, internal clock multiplexer.
+
+      Omit this property for FlexCAN instances that do not have a 1-bit, internal multiplexer
+      (FlexCAN CTRL1 register bit 13 is marked as "reserved").
 
   number-of-mb:
     type: int
