@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
+zephyr_sources_ifdef(CONFIG_GD32_BACKUP_PROTECTION gd32_backup_domain.c)
