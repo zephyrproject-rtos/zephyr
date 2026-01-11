@@ -16,3 +16,9 @@ shields:
     vendor: others
     supported_features:
       - can
+
+  - name: waveshare_pico_can_b
+    full_name: Waveshare Pico-CAN-B Shield
+    vendor: waveshare
+    supported_features:
+      - can
