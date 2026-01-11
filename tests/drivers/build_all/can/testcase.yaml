@@ -13,6 +13,26 @@ tests:
   drivers.can.build_all.mcp2515.mikrobus:
     extra_args: SHIELD=mikroe_mcp25625_click
     platform_allow: lpcxpresso55s28
+  drivers.can.build_all.mcp2515.pico:
+    depends_on:
+      - pico_spi
+      - pico_gpio
+    extra_args: SHIELD=waveshare_pico_can_b
+    platform_allow:
+      - pico_plus2/rp2350b/hazard3
+      - pico_plus2/rp2350b/m33
+      - rp2040_plus
+      - rpi_pico
+      - rpi_pico/rp2040/w
+      - rpi_pico/rp2040/w/mcuboot
+      - rpi_pico/rp2040/mcuboot
+      - rpi_pico2/rp2350a/hazard3
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/m33/w
+      - rpi_pico2/rp2350a/m33/w/mcuboot
+      - rpi_pico2/rp2350a/m33/mcuboot
+      - w5500_evb_pico
+      - w5500_evb_pico2/rp2350a/m33
   drivers.can.build_all.mcp2515.xiao:
     depends_on:
       - xiao_spi
