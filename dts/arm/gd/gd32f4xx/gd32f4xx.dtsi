@@ -43,6 +43,13 @@
 			status = "disabled";
 		};
 
+		backup_sram: sram@40024000 {
+			compatible = "gd,gd32-backup-sram";
+			reg = <0x40024000 0x1000>;
+			clocks = <&cctl GD32_CLOCK_BKPSRAM>;
+			status = "disabled";
+		};
+
 		rcu: reset-clock-controller@40023800 {
 			compatible = "gd,gd32-rcu";
 			reg = <0x40023800 0x400>;
