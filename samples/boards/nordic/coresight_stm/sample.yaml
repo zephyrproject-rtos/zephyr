@@ -46,7 +46,6 @@ tests:
       - nordic-log-stm
     extra_configs:
       - CONFIG_DEBUG_NRF_ETR_BACKEND_RTT=y
-      - CONFIG_DEBUG_NRF_ETR_BACKEND_UART=n
       - CONFIG_SEGGER_RTT_BUFFER_SIZE_UP=8192
     extra_args:
       - SB_CONFIG_APP_CPUPPR_RUN=y
