@@ -13,6 +13,11 @@ properties:
   reg:
     required: true
 
+  unit:
+    type: int
+    required: true
+    description: XSPI unit number
+
   pinctrl-0:
     required: true
 
