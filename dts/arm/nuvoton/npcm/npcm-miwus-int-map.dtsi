@@ -31,6 +31,7 @@
 				irq-prio   = <2>;
 				group-mask = <0x08>;
 			};
+			/* group D0 (INT43) is not routed on npcm4 */
 			group_e0: group-e0-map {
 				irq        = <44>;
 				irq-prio   = <2>;
@@ -76,11 +77,6 @@
 				irq        = <51>;
 				irq-prio   = <2>;
 				group-mask = <0x08>;
-			};
-			group_e1b: group-e1b-map {
-				irq        = <12>;
-				irq-prio   = <2>;
-				group-mask = <0x10>;
 			};
 			group_f1: group-f1-map {
 				irq        = <53>;

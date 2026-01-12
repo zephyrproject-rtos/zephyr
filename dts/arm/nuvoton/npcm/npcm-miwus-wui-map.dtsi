@@ -307,8 +307,8 @@
 		wui_host_acc: wui1-4-6 {
 			miwus = <&miwu1 3 6>; /* HOST_ACC */
 		};
-		wui_espi_rst: wui1-4-7 {
-			miwus = <&miwu1 3 7>; /* PLT_RST/ESPI_RST */
+		wui_pltrst: wui1-4-7 {
+			miwus = <&miwu1 3 7>; /* PLTRST/ESPI_RST */
 		};
 
 		/* MIWU group E */
@@ -320,6 +320,12 @@
 		};
 		wui_t0out: wui1-5-3 {
 			miwus = <&miwu1 4 3>; /* T0OUT */
+		};
+		wui_siox1: wui1-5-4 {
+			miwus = <&miwu1 4 4>; /* SIOX1 Wake-up */
+		};
+		wui_siox2: wui1-5-5 {
+			miwus = <&miwu1 4 5>; /* SIOX2 Wake-up */
 		};
 
 		/* MIWU group F */
@@ -349,13 +355,34 @@
 		};
 
 		/* MIWU group G */
+		wui_smb7: wui1-7-1 {
+			miwus = <&miwu1 6 1>; /* SMB7 */
+		};
+		wui_smb8: wui1-7-2 {
+			miwus = <&miwu1 6 2>; /* SMB8 */
+		};
+		wui_smb9: wui1-7-3 {
+			miwus = <&miwu1 6 3>; /* SMB9 */
+		};
+		wui_smb10: wui1-7-4 {
+			miwus = <&miwu1 6 4>; /* SMB10 */
+		};
+		wui_smb11: wui1-7-5 {
+			miwus = <&miwu1 6 5>; /* SMB11 */
+		};
+		wui_smb12: wui1-7-6 {
+			miwus = <&miwu1 6 6>; /* SMB12 */
+		};
 		wui_i3c: wui1-7-7 {
-			miwus = <&miwu1 6 7>; /* I3C1/2 */
+			miwus = <&miwu1 6 7>; /* I3C1/6 */
 		};
 
 		/* MIWU group H */
 		wui_smb1: wui1-8-1 {
 			miwus = <&miwu1 7 1>; /* SMB1 */
+		};
+		wui_smb2: wui1-8-2 {
+			miwus = <&miwu1 7 2>; /* SMB2 */
 		};
 		wui_smb3: wui1-8-3 {
 			miwus = <&miwu1 7 3>; /* SMB3 */
@@ -376,75 +403,107 @@
 		/* MIWU table 2 */
 		/* MIWU group A */
 		/* eSPI VW Events */
-		wui_vw_slp_s3: wui2-1-0 {
-			miwus = <&miwu2 0 0>; /* VW020 SLP_S3_L */
+		wui_vw_20: wui2-1-0 {
+			miwus = <&miwu2 0 0>; /* VW020 */
 		};
-		wui_vw_slp_s4: wui2-1-1 {
-			miwus = <&miwu2 0 1>; /* VW021 SLP_S4_L */
+		wui_vw_21: wui2-1-1 {
+			miwus = <&miwu2 0 1>; /* VW021 */
 		};
-		wui_vw_slp_s5: wui2-1-2 {
-			miwus = <&miwu2 0 2>; /* VW022 SLP_S5_L */
+		wui_vw_22: wui2-1-2 {
+			miwus = <&miwu2 0 2>; /* VW022 */
+		};
+		wui_vw_23_reserved: wui2-1-3 {
+			miwus = <&miwu2 0 3>; /* VW023 (Reserved) */
 		};
 		wui_vw_sus_stat: wui2-1-4 {
-			miwus = <&miwu2 0 4>; /* SUS_STAT_L */
+			miwus = <&miwu2 0 4>; /* VW030 (SUS_STAT) */
 		};
 		wui_vw_plt_rst: wui2-1-5 {
-			miwus = <&miwu2 0 5>; /* PLTRST_L */
+			miwus = <&miwu2 0 5>; /* VW031 (PLTRST) */
 		};
 		wui_vw_oob_rst_warn: wui2-1-6 {
-			miwus = <&miwu2 0 6>; /* OOB_RST_WARN */
+			miwus = <&miwu2 0 6>; /* VW032 (OOB_RST_WARN) */
+		};
+		wui_vw_33_reserved: wui2-1-7 {
+			miwus = <&miwu2 0 7>; /* VW033 (Reserved) */
 		};
 
 		/* MIWU group B */
 		wui_vw_host_rst_warn: wui2-2-0 {
-			miwus = <&miwu2 1 0>; /* HOST_RST_WARN */
+			miwus = <&miwu2 1 0>; /* VW070 (HOST_RST_WARN) */
+		};
+		wui_vw_71_reserved: wui2-2-1 {
+			miwus = <&miwu2 1 1>; /* VW071 (Reserved) */
+		};
+		wui_vw_72_reserved: wui2-2-2 {
+			miwus = <&miwu2 1 2>; /* VW072 (Reserved) */
+		};
+		wui_vw_73_reserved: wui2-2-3 {
+			miwus = <&miwu2 1 3>; /* VW073 (Reserved) */
 		};
 		wui_vw_sus_warn: wui2-2-4 {
-			miwus = <&miwu2 1 4>; /* SUS_WARN_L */
+			miwus = <&miwu2 1 4>; /* VW410 (SUS_WARN) */
 		};
 		wui_vw_sus_pwrdn_ack: wui2-2-5 {
-			miwus = <&miwu2 1 5>; /* SUS_PWRDN_ACK */
+			miwus = <&miwu2 1 5>; /* VW411 (SUS_PWRDN_ACK) */
+		};
+		wui_vw_412_reserved: wui2-2-6 {
+			miwus = <&miwu2 1 6>; /* VW412 (Reserved) */
 		};
 		wui_vw_slp_a: wui2-2-7 {
-			miwus = <&miwu2 1 7>; /* SLP_A_L */
+			miwus = <&miwu2 1 7>; /* VW413 (SLP_A) */
 		};
 
 		/* MIWU group C */
-		/* eSPI VW Events */
 		wui_vw_slp_lan: wui2-3-0 {
-			miwus = <&miwu2 2 0>; /* SLP_LAN_L */
+			miwus = <&miwu2 2 0>; /* VW420 (SLP_LAN) */
 		};
 		wui_vw_slp_wlan: wui2-3-1 {
-			miwus = <&miwu2 2 1>; /* SLP_WLAN_L) */
+			miwus = <&miwu2 2 1>; /* VW421 (SLP_WLAN) */
+		};
+		wui_vw_422_reserved: wui2-3-2 {
+			miwus = <&miwu2 2 2>; /* VW422 (Reserved) */
+		};
+		wui_vw_423_reserved: wui2-3-3 {
+			miwus = <&miwu2 2 3>; /* VW423 (Reserved) */
 		};
 		wui_vw_pch_to_ec_gen_0: wui2-3-4 {
-			miwus = <&miwu2 2 4>; /* PCH_TO_EC_GENERIC_0 */
+			miwus = <&miwu2 2 4>; /* VW430 (PCH_TO_EC_GENERIC_0) */
 		};
 		wui_vw_pch_to_ec_gen_1: wui2-3-5 {
-			miwus = <&miwu2 2 5>; /* PCH_TO_EC_GENERIC_1 */
+			miwus = <&miwu2 2 5>; /* VW431 (PCH_TO_EC_GENERIC_1) */
 		};
 		wui_vw_pch_to_ec_gen_2: wui2-3-6 {
-			miwus = <&miwu2 2 6>; /* PCH_TO_EC_GENERIC_2 */
+			miwus = <&miwu2 2 6>; /* VW432 (PCH_TO_EC_GENERIC_2) */
 		};
 		wui_vw_pch_to_ec_gen_3: wui2-3-7 {
-			miwus = <&miwu2 2 7>; /* PCH_TO_EC_GENERIC_3 */
+			miwus = <&miwu2 2 7>; /* VW433 (PCH_TO_EC_GENERIC_3) */
 		};
 
 		/* MIWU group D */
 		wui_vw_pch_to_ec_gen_4: wui2-4-0 {
-			miwus = <&miwu2 3 0>; /* PCH_TO_EC_GENERIC_4 */
+			miwus = <&miwu2 3 0>; /* VW440 (PCH_TO_EC_GENERIC_4) */
 		};
 		wui_vw_pch_to_ec_gen_5: wui2-4-1 {
-			miwus = <&miwu2 3 1>; /* PCH_TO_EC_GENERIC_5 */
+			miwus = <&miwu2 3 1>; /* VW441 (PCH_TO_EC_GENERIC_5) */
 		};
 		wui_vw_pch_to_ec_gen_6: wui2-4-2 {
-			miwus = <&miwu2 3 2>; /* PCH_TO_EC_GENERIC_6 */
+			miwus = <&miwu2 3 2>; /* VW442 (PCH_TO_EC_GENERIC_6) */
 		};
 		wui_vw_pch_to_ec_gen_7: wui2-4-3 {
-			miwus = <&miwu2 3 3>; /* PCH_TO_EC_GENERIC_7 */
+			miwus = <&miwu2 3 3>; /* VW443 (PCH_TO_EC_GENERIC_7) */
 		};
 		wui_vw_host_c10: wui2-4-4 {
-			miwus = <&miwu2 3 4>; /* HOST_C10 */
+			miwus = <&miwu2 3 4>; /* VW470 (HOST_C10) */
+		};
+		wui_vw_471_reserved: wui2-4-5 {
+			miwus = <&miwu2 3 5>; /* VW471 (Reserved) */
+		};
+		wui_vw_472_reserved: wui2-4-6 {
+			miwus = <&miwu2 3 6>; /* VW472 (Reserved) */
+		};
+		wui_rsmrst_sys: wui2-4-7 {
+			miwus = <&miwu2 3 7>; /* RSMRST_SYS / VW473 (Reserved) */
 		};
 
 		/* MIWU group E */
@@ -500,26 +559,26 @@
 		};
 
 		/* MIWU group G */
-		wui_ioe0: wui2-7-0 {
-			miwus = <&miwu2 6 0>; /* GPIOE0 */
+		wui_deep_s5: wui2-7-0 {
+			miwus = <&miwu2 6 0>; /* DEEP_S5 / GPIOE0 */
 		};
-		wui_ioe1: wui2-7-1 {
-			miwus = <&miwu2 6 1>; /* GPIOE1 */
+		wui_dpwrok: wui2-7-1 {
+			miwus = <&miwu2 6 1>; /* DPWROK / GPIOE1 */
 		};
-		wui_ioe2: wui2-7-2 {
-			miwus = <&miwu2 6 2>; /* GPIOE2 */
+		wui_pwrokd: wui2-7-2 {
+			miwus = <&miwu2 6 2>; /* PWROKD / GPIOE2 */
 		};
 		wui_ioe3: wui2-7-3 {
 			miwus = <&miwu2 6 3>; /* GPIOE3 */
 		};
-		wui_ioe4: wui2-7-4 {
-			miwus = <&miwu2 6 4>; /* GPIOE4 */
+		wui_caseopen: wui2-7-4 {
+			miwus = <&miwu2 6 4>; /* CASEOPEN / GPIOE4 */
 		};
-		wui_ioe5: wui2-7-5 {
-			miwus = <&miwu2 6 5>; /* GPIOE5 */
+		wui_rsmrst: wui2-7-5 {
+			miwus = <&miwu2 6 5>; /* RSMRST / GPIOE5 */
 		};
-		wui_ioe6: wui2-7-6 {
-			miwus = <&miwu2 6 6>; /* GPIOE6 */
+		wui_sktocc: wui2-7-6 {
+			miwus = <&miwu2 6 6>; /* SKTOCC / GPIOE6 */
 		};
 
 		/* MIWU group H */
@@ -536,7 +595,7 @@
 			miwus = <&miwu2 7 3>; /* GPIOF3 */
 		};
 		wui_vcc: wui2-8-7 {
-			miwus = <&miwu2 7 7>; /* VCC */
+			miwus = <&miwu2 7 7>; /* Vcc */
 		};
 
 		/* Pseudo wui item means no mapping between source and wui */

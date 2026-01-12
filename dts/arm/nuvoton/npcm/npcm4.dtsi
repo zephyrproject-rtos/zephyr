@@ -149,8 +149,8 @@
 		};
 
 		gpioe: gpio@4009d000 {
-			wui-maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
-				    &wui_ioe4 &wui_ioe5 &wui_ioe6 &wui_none>;
+			wui-maps = <&wui_deep_s5 &wui_dpwrok &wui_pwrokd &wui_ioe3
+				    &wui_caseopen &wui_rsmrst &wui_sktocc &wui_none>;
 			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
 				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
