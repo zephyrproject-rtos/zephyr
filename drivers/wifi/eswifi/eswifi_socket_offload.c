@@ -288,6 +288,23 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", len);
 	offset = strlen(eswifi->buf);
 
+	/* Check for overflow */
+	if (offset + len > sizeof(eswifi->buf)) {
+		if (socket->type == ESWIFI_TRANSPORT_TCP ||
+		    socket->type == ESWIFI_TRANSPORT_TCP_SSL) {
+			/* Stream socket, just send as much as possible. */
+			len = sizeof(eswifi->buf) - offset;
+			/* Recalculate the header. */
+			snprintk(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", len);
+			offset = strlen(eswifi->buf);
+		} else {
+			/* Datagram socket, report an error. */
+			errno = EMSGSIZE;
+			ret = -1;
+			goto out;
+		}
+	}
+
 	/* copy payload */
 	memcpy(&eswifi->buf[offset], buf, len);
 	offset += len;
@@ -301,6 +318,7 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 		ret = len;
 	}
 
+out:
 	eswifi_unlock(eswifi);
 	return ret;
 }
