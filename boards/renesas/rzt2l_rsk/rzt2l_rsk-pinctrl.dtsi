@@ -34,4 +34,15 @@
 				 <RZT_PINMUX(PORT_09, 2, 5)>; /* GTIOCB */
 		};
 	};
+
+	/omit-if-no-ref/ xspi1_default: xspi1_default {
+		xspi1-pinmux {
+			pinmux = <RZT_PINMUX(PORT_17, 7, 7)>, /* XSPI0_CKP */
+				 <RZT_PINMUX(PORT_18, 2, 5)>, /* XSPI0_CS0 */
+				 <RZT_PINMUX(PORT_18, 0, 8)>, /* XSPI0_IO0 */
+				 <RZT_PINMUX(PORT_17, 0, 2)>, /* XSPI0_IO1 */
+				 <RZT_PINMUX(PORT_17, 3, 7)>, /* XSPI0_IO2 */
+				 <RZT_PINMUX(PORT_17, 4, 7)>; /* XSPI0_IO3 */
+		};
+	};
 };
