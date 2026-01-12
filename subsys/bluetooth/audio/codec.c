@@ -1047,7 +1047,9 @@ static int codec_meta_set_assisted_listening_stream(uint8_t meta[], size_t meta_
 static int codec_meta_get_broadcast_name(const uint8_t meta[], size_t meta_len,
 					 const uint8_t **broadcast_name)
 {
+	char broadcast_name_str[BT_AUDIO_BROADCAST_NAME_LEN_MAX + sizeof('\0')];
 	const uint8_t *data;
+	int char_cnt;
 	int ret;
 
 	CHECKIF(meta == NULL) {
@@ -1061,9 +1063,25 @@ static int codec_meta_get_broadcast_name(const uint8_t meta[], size_t meta_len,
 	}
 
 	ret = codec_meta_get_val(meta, meta_len, BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, &data);
-	if (data == NULL ||
-	    !IN_RANGE(ret, BT_AUDIO_BROADCAST_NAME_LEN_MIN, BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+	if (data == NULL) {
 		return -ENODATA;
+	}
+
+	if (!IN_RANGE(ret, BT_AUDIO_BROADCAST_NAME_LEN_MIN, BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+		LOG_DBG("Invalid broadcast name len %d", ret);
+		return -EBADMSG;
+	}
+
+	/* Since the input is not a NULL-terminated string, we need to copy it to add a NULL
+	 * terminator before we can use utf8_count_chars to verify the number of characters
+	 */
+	(void)memcpy(broadcast_name_str, data, ret);
+	broadcast_name_str[ret] = '\0';
+	char_cnt = utf8_count_chars(broadcast_name_str);
+	if (!IN_RANGE(char_cnt, BT_AUDIO_BROADCAST_NAME_CHAR_MIN,
+		      BT_AUDIO_BROADCAST_NAME_CHAR_MAX)) {
+		LOG_DBG("Invalid broadcast name %s", broadcast_name_str);
+		return -EBADMSG;
 	}
 
 	*broadcast_name = data;
