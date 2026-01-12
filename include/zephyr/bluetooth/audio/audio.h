@@ -919,6 +919,7 @@ int bt_audio_codec_cfg_meta_set_assisted_listening_stream(
  * @retval length The length of the @p broadcast_name (may be 0)
  * @retval -EINVAL Arguments are invalid
  * @retval -ENODATA Data not found
+ * @retval -EBADMSG Data found, but Invalid broadcast name
  */
 int bt_audio_codec_cfg_meta_get_broadcast_name(const struct bt_audio_codec_cfg *codec_cfg,
 					       const uint8_t **broadcast_name);
