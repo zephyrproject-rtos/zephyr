@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The PWM peripherals on CC23X0 devices by default
+ * run with a prescaling of 0, so the maximum period
+ * by default is around 1.3ms.
+ *
+ * Since the example only accepts a minimum period of
+ * around 28ms, we need to prescale the LGPT clock by
+ * at least 22.
+ */
+
+&lgpt1 {
+	clk-prescale = <32>;
+};
+
+&lgpt2 {
+	clk-prescale = <32>;
+};
