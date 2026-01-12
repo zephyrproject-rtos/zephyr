@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_REGULATOR_SHELL regulator_shell.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_ADP5360 regulator_adp5360.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_AXP192_AXP2101 regulator_axp192.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_BFLB regulator_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_CP9314 regulator_cp9314.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_DA1469X regulator_da1469x.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_FAKE regulator_fake.c)
