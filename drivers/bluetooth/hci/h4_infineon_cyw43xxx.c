@@ -53,6 +53,7 @@ extern const uint8_t brcm_patchram_buf[];
 extern const int brcm_patch_ram_length;
 
 enum {
+	BT_HCI_VND_OP_SET_MAC                   = 0xFC01,
 	BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER       = 0xFC2E,
 	BT_HCI_VND_OP_WRITE_RAM                 = 0xFC4C,
 	BT_HCI_VND_OP_LAUNCH_RAM                = 0xFC4E,
@@ -147,6 +148,22 @@ static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint3
 	return 0;
 }
 
+static int bt_set_mac_address(const bt_addr_t *addr)
+{
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	net_buf_add_mem(buf, addr->val, 6);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_SET_MAC, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
 static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 {
 	uint8_t *data = (uint8_t *)firmware_image;
@@ -209,11 +226,10 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int err;
+	const bt_addr_t *public_addr;
 	uint32_t default_uart_speed = DT_PROP(DT_INST_BUS(0), current_speed);
 	uint32_t hci_operation_speed = DT_INST_PROP_OR(0, hci_operation_speed, default_uart_speed);
 	uint32_t fw_download_speed = DT_INST_PROP_OR(0, fw_download_speed, default_uart_speed);
-
-	ARG_UNUSED(params);
 
 	/* Check BT Uart instance */
 	if (!device_is_ready(dev)) {
@@ -305,6 +321,15 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	 */
 	if (hci_operation_speed != default_uart_speed) {
 		err = bt_update_controller_baudrate(dev, hci_operation_speed);
+		if (err) {
+			return err;
+		}
+	}
+
+	/* Set public address if present */
+	public_addr = &params->public_addr;
+	if (!bt_addr_eq(public_addr, BT_ADDR_ANY) && !bt_addr_eq(public_addr, BT_ADDR_NONE)) {
+		err = bt_set_mac_address(public_addr);
 		if (err) {
 			return err;
 		}
