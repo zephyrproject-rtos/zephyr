@@ -843,6 +843,13 @@ config NXP_WIFI_CSI_AMI
 	help
 	  This option enable/disable channel state information to calculate ambient motion index feature.
 
+config NXP_WIFI_WLS
+	bool "Wireless Location Service"
+	select FPU
+	depends on NXP_WIFI_CSI
+	help
+	  Enable/Disable Wireless Location Service(WLS) feature.
+
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
