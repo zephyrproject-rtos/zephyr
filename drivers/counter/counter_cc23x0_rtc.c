@@ -42,6 +42,7 @@ static int counter_cc23x0_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 static int counter_cc23x0_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	const struct counter_cc23x0_config *config = dev->config;
@@ -61,6 +62,7 @@ static int counter_cc23x0_get_value_64(const struct device *dev, uint64_t *ticks
 
 	return 0;
 }
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 static void counter_cc23x0_isr(const struct device *dev)
 {
@@ -230,7 +232,9 @@ static DEVICE_API(counter, rtc_cc23x0_api) = {
 	.start = counter_cc23x0_start,
 	.stop = counter_cc23x0_stop,
 	.get_value = counter_cc23x0_get_value,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 	.get_value_64 = counter_cc23x0_get_value_64,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 	.set_alarm = counter_cc23x0_set_alarm,
 	.cancel_alarm = counter_cc23x0_cancel_alarm,
 	.get_top_value = counter_cc23x0_get_top_value,

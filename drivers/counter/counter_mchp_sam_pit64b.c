@@ -134,6 +134,7 @@ static int sam_pit_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 static int sam_pit_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	const struct sam_pit_config *config = dev->config;
@@ -148,6 +149,7 @@ static int sam_pit_get_value_64(const struct device *dev, uint64_t *ticks)
 
 	return 0;
 }
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 static int sam_pit_set_alarm(const struct device *dev, uint8_t chan_id,
 			     const struct counter_alarm_cfg *alarm_cfg)
@@ -389,7 +391,9 @@ static DEVICE_API(counter, sam_pit_driver_api) = {
 	.start = sam_pit_start,
 	.stop = sam_pit_stop,
 	.get_value = sam_pit_get_value,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 	.get_value_64 = sam_pit_get_value_64,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 	.set_alarm = sam_pit_set_alarm,
 	.cancel_alarm = sam_pit_cancel_alarm,
 	.set_top_value = sam_pit_set_top_value,

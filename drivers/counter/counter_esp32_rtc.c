@@ -279,7 +279,9 @@ static DEVICE_API(counter, rtc_timer_esp32_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 	.get_value_64 = counter_esp32_get_value_64,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 	.set_alarm = counter_esp32_set_alarm,
 	.cancel_alarm = counter_esp32_cancel_alarm,
 	.set_top_value = counter_esp32_set_top_value,

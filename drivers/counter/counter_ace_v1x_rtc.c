@@ -11,6 +11,16 @@
 #include <soc.h>
 #include <counter/counter_ace_v1x_rtc_regs.h>
 
+static int counter_ace_v1x_rtc_get_value_32(const struct device *dev,
+		uint32_t *value)
+{
+	ARG_UNUSED(dev);
+
+	*value = sys_read32(ACE_RTCWC_LO);
+
+	return 0;
+}
+
 static int counter_ace_v1x_rtc_get_value(const struct device *dev,
 		uint64_t *value)
 {
@@ -36,7 +46,10 @@ int counter_ace_v1x_rtc_init(const struct device *dev)
 }
 
 static DEVICE_API(counter, ace_v1x_rtc_counter_apis) = {
-	.get_value_64 = counter_ace_v1x_rtc_get_value
+	.get_value = counter_ace_v1x_rtc_get_value_32,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	.get_value_64 = counter_ace_v1x_rtc_get_value,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ace_rtc_counter), counter_ace_v1x_rtc_init, NULL, NULL, NULL,

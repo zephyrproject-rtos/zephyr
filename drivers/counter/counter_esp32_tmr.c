@@ -228,9 +228,15 @@ static int counter_esp32_set_top_value_64(const struct device *dev,
 		return -EBUSY;
 	}
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 	if (cfg->ticks > config->counter_info.max_top_value_64) {
 		return -ENOTSUP;
 	}
+#else
+	if (cfg->ticks > config->counter_info.max_top_value) {
+		return -ENOTSUP;
+	}
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 	counter_esp32_get_value_64(dev, &now);
 
@@ -269,12 +275,14 @@ static uint32_t counter_esp32_get_pending_int(const struct device *dev)
 	return timer_ll_get_intr_status(data->hal_ctx.dev);
 }
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 static uint64_t counter_esp32_get_top_value_64(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
 
 	return data->top_data.ticks;
 }
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 uint32_t counter_esp32_get_freq(const struct device *dev)
 {
@@ -293,6 +301,7 @@ static int counter_esp32_reset(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 static uint64_t counter_esp32_get_guard_period_64(const struct device *dev, uint32_t flags)
 {
 	struct counter_esp32_data *data = dev->data;
@@ -316,6 +325,7 @@ static int counter_esp32_set_guard_period_64(const struct device *dev, uint64_t 
 	data->top_data.guard_period = ticks;
 	return 0;
 }
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 static int counter_esp32_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
@@ -392,20 +402,22 @@ static DEVICE_API(counter, counter_api) = {
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,
 	.reset = counter_esp32_reset,
-	.get_value_64 = counter_esp32_get_value_64,
 	.set_alarm = counter_esp32_set_alarm,
-	.set_alarm_64 = counter_esp32_set_alarm_64,
 	.cancel_alarm = counter_esp32_cancel_alarm,
 	.set_top_value = counter_esp32_set_top_value,
-	.set_top_value_64 = counter_esp32_set_top_value_64,
 	.get_pending_int = counter_esp32_get_pending_int,
 	.get_top_value = counter_esp32_get_top_value,
-	.get_top_value_64 = counter_esp32_get_top_value_64,
 	.get_freq = counter_esp32_get_freq,
 	.get_guard_period = counter_esp32_get_guard_period,
-	.get_guard_period_64 = counter_esp32_get_guard_period_64,
 	.set_guard_period = counter_esp32_set_guard_period,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	.get_value_64 = counter_esp32_get_value_64,
+	.set_alarm_64 = counter_esp32_set_alarm_64,
+	.set_top_value_64 = counter_esp32_set_top_value_64,
+	.get_top_value_64 = counter_esp32_get_top_value_64,
+	.get_guard_period_64 = counter_esp32_get_guard_period_64,
 	.set_guard_period_64 = counter_esp32_set_guard_period_64,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 };
 
 static void IRAM_ATTR counter_esp32_isr(void *arg)
@@ -452,7 +464,9 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	static struct counter_esp32_data counter_data_##idx;                                       \
                                                                                                    \
 	static const struct counter_esp32_config counter_config_##idx = {                          \
-		.counter_info = {.max_top_value_64 = UINT64_MAX,                                   \
+		.counter_info = {COND_CODE_1(CONFIG_COUNTER_64BITS_TICKS,                          \
+					(.max_top_value_64 = UINT64_MAX,),                         \
+					(.max_top_value = UINT32_MAX,))                            \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
 		.config =                                                                          \
