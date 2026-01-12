@@ -64,6 +64,14 @@ zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZ
 zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
 zephyr_linker_memory(NAME IDT_LIST FLAGS wx START 0xFFFF8000    SIZE 2K)
 
+# If ROMSTART relocation is enabled, create a *separate* load/exec memory region
+# for the vector table. This must be separate for armlink,
+# otherwise moving .rom_start changes the LR base and drags .text with it.
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  math(EXPR _romstart_size_bytes "${CONFIG_ROMSTART_REGION_SIZE} * 1024" OUTPUT_FORMAT HEXADECIMAL)
+  zephyr_linker_memory(NAME ROMSTART FLAGS rx START ${CONFIG_ROMSTART_REGION_ADDRESS} SIZE ${_romstart_size_bytes})
+endif()
+
 dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
   zephyr_linker_dts_memory(PATH ${path})
@@ -78,7 +86,15 @@ else()
   set(rom_start ${RAM_ADDR})
 endif()
 
+set(ROMSTART_ADDRESS ${rom_start})
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  set(ROMSTART_ADDRESS ${CONFIG_ROMSTART_REGION_ADDRESS})
+endif()
+
 zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  zephyr_linker_group(NAME ROMSTART_REGION VMA ROMSTART LMA ROMSTART)
+endif()
 zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION SYMBOL SECTION)
 zephyr_linker_group(NAME RODATA_REGION GROUP ROM_REGION)
 zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION SYMBOL SECTION)
@@ -99,8 +115,13 @@ zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".igot.plt")
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".got")
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".igot")
 
-zephyr_linker_section(NAME .rom_start ADDRESS ${rom_start} GROUP ROM_REGION NOINPUT)
-
+if(CONFIG_ROMSTART_RELOCATION_ROM)
+  # Put vectors into their own LR/ER rooted at ROMSTART.
+  # Do NOT place this in ROM_REGION, or armlink will move the whole LR base.
+  zephyr_linker_section(NAME .rom_start GROUP ROMSTART_REGION NOINPUT)
+else()
+  zephyr_linker_section(NAME .rom_start ADDRESS ${rom_start} GROUP ROM_REGION NOINPUT)
+endif()
 zephyr_linker_section(NAME .text         GROUP TEXT_REGION)
 
 zephyr_linker_section_configure(SECTION .rel.plt  INPUT ".rel.iplt")
