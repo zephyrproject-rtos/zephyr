@@ -831,6 +831,25 @@ config BT_PBAP_PSE_REPOSITORY_FAVORITES
 
 endif # BT_PBAP_PSE
 
+config BT_MAP
+	bool
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the MAP profile
+
+config BT_MAP_MCE
+	bool "Bluetooth MAP Profile Messaging Client Equipment Function"
+	select BT_MAP
+	help
+	  This option enables the MAP profile messaging client equipment function
+
+config BT_MAP_MSE
+	bool "Bluetooth MAP Profile Messaging Server Equipment Function"
+	select BT_MAP
+	help
+	  This option enables the MAP profile messaging server equipment function
+
 endif # BT_CLASSIC
 
 endmenu
