@@ -707,6 +707,27 @@ config BT_BIP
 	help
 	  This option enables the BIP profile
 
+config BT_MAP
+	bool "Bluetooth MAP Profile [EXPERIMENTAL]"
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the MAP profile
+
+if BT_MAP
+
+config BT_MAP_MCE
+	bool "Bluetooth MAP Profile Messaging Client Equipment Function"
+	help
+	  This option enables the MAP profile messaging client equipment function
+
+config BT_MAP_MSE
+	bool "Bluetooth MAP Profile Messaging Server Equipment Function"
+	help
+	  This option enables the AVRCP profile messaging server equipment function
+
+endif # BT_MAP
+
 endif # BT_CLASSIC
 
 endmenu
