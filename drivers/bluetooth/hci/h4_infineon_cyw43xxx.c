@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 
@@ -64,7 +65,7 @@ enum {
  * bt_h4_vnd_setup function must be implemented in vendor-specific HCI
  * extansion module if CONFIG_BT_HCI_SETUP is enabled.
  */
-int bt_h4_vnd_setup(const struct device *dev);
+int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params);
 
 static int bt_hci_uart_set_baudrate(const struct device *bt_uart_dev, uint32_t baudrate)
 {
@@ -205,12 +206,14 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 	return 0;
 }
 
-int bt_h4_vnd_setup(const struct device *dev)
+int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int err;
 	uint32_t default_uart_speed = DT_PROP(DT_INST_BUS(0), current_speed);
 	uint32_t hci_operation_speed = DT_INST_PROP_OR(0, hci_operation_speed, default_uart_speed);
 	uint32_t fw_download_speed = DT_INST_PROP_OR(0, fw_download_speed, default_uart_speed);
+
+	ARG_UNUSED(params);
 
 	/* Check BT Uart instance */
 	if (!device_is_ready(dev)) {
