@@ -9,8 +9,8 @@
 #include "rsi_rom_rng.h"
 #include "rsi_rom_clks.h"
 
-static int siwx91x_get_entropy_isr(const struct device *dev, uint8_t *buffer,
-				   uint16_t length, uint32_t flags)
+static int rng_siwx91x_get_entropy_isr(const struct device *dev, uint8_t *buffer,
+				       uint16_t length, uint32_t flags)
 {
 	uint32_t u32_count = length / sizeof(uint32_t);
 	uint32_t u8_count = u32_count * sizeof(uint32_t);
@@ -29,12 +29,12 @@ static int siwx91x_get_entropy_isr(const struct device *dev, uint8_t *buffer,
 	return 0;
 }
 
-static int siwx91x_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
+static int rng_siwx91x_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
-	return siwx91x_get_entropy_isr(dev, buffer, length, ENTROPY_BUSYWAIT);
+	return rng_siwx91x_get_entropy_isr(dev, buffer, length, ENTROPY_BUSYWAIT);
 }
 
-static int siwx91x_init(const struct device *dev)
+static int rng_siwx91x_init(const struct device *dev)
 {
 	int ret;
 
@@ -49,13 +49,13 @@ static int siwx91x_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(entropy, siwx91x_api) = {
-	.get_entropy = siwx91x_get_entropy,
-	.get_entropy_isr = siwx91x_get_entropy_isr,
+static DEVICE_API(entropy, rng_siwx91x_api) = {
+	.get_entropy = rng_siwx91x_get_entropy,
+	.get_entropy_isr = rng_siwx91x_get_entropy_isr,
 };
 
-#define SIWX91X_RNG_INIT(idx)                                                               \
-	DEVICE_DT_INST_DEFINE(idx, siwx91x_init, NULL, NULL, (void *)DT_INST_REG_ADDR(idx), \
-			      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY, &siwx91x_api);
+#define SIWX91X_RNG_INIT(n)                                                                     \
+	DEVICE_DT_INST_DEFINE(n, rng_siwx91x_init, NULL, NULL, (void *)DT_INST_REG_ADDR(n),     \
+			      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY, &rng_siwx91x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_RNG_INIT)
