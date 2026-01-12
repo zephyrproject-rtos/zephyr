@@ -52,7 +52,7 @@ static int cmd_net_arp(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 
 #if defined(CONFIG_NET_ARP)
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		/* ARP cache content */
 		int count = 0;
 

@@ -555,7 +555,7 @@ static int cmd_net_gptp_port(const struct shell *sh, size_t argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_GPTP)
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("Port number must be given.\n");
 		return -ENOEXEC;
 	}

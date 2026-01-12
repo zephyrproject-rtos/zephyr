@@ -64,7 +64,7 @@ static int cmd_net_pmtu(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 
 #if defined(CONFIG_NET_PMTU)
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		/* PMTU destination cache content */
 		int count = 0;
 
