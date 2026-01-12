@@ -40,10 +40,10 @@ config USE_RA_FSP_DTC
 	help
 	  Enable RA FSP DTC driver
 
-config USE_RA_FSP_I2C_IIC
+config USE_RA_FSP_I2C_IIC_CONTROLLER
 	bool
 	help
-	  Enable Renesas RA I2C IIC Master driver
+	  Enable Renesas RA I2C IIC Controller driver
 
 config USE_RA_FSP_SCI_I2C
 	bool

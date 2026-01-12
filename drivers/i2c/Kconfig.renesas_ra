@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config I2C_RENESAS_RA_IIC
-	bool "Renesas RA I2C IIC Master"
+	bool "Renesas RA I2C IIC Controller"
 	default y
 	depends on DT_HAS_RENESAS_RA_IIC_ENABLED
-	select USE_RA_FSP_I2C_IIC
+	select USE_RA_FSP_I2C_IIC_CONTROLLER
 	select PINCTRL
 	help
-	  Enable Renesas RA I2C IIC Driver.
+	  Enable Renesas RA I2C IIC Controller Driver.
 
 config I2C_RENESAS_RA_SCI
 	bool "Renesas RA SCI I2C"
