@@ -538,7 +538,7 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
  * @param config Pointer to MSPI configuration
  * @return 0 on success, negative errno on failure
  */
-static int mspi_stm32_qspi_conf_validate(const struct mspi_cfg *config)
+static int mspi_stm32_qspi_conf_validate(const struct mspi_cfg *config, uint32_t max_frequency)
 {
 	/* Only Controller mode is supported */
 	if (config->op_mode != MSPI_OP_MODE_CONTROLLER) {
@@ -547,7 +547,7 @@ static int mspi_stm32_qspi_conf_validate(const struct mspi_cfg *config)
 	}
 
 	/* Check the max possible freq. */
-	if (config->max_freq > MSPI_MAX_FREQ) {
+	if (config->max_freq > max_frequency) {
 		LOG_ERR("Max_freq %d too large.", config->max_freq);
 		return -ENOTSUP;
 	}
@@ -657,7 +657,7 @@ static int mspi_stm32_qspi_config(const struct mspi_dt_spec *spec)
 
 	LOG_DBG("Configuring QSPI controller");
 
-	ret = mspi_stm32_qspi_conf_validate(config);
+	ret = mspi_stm32_qspi_conf_validate(config, cfg->mspicfg.max_freq);
 	if (ret != 0) {
 		return ret;
 	}
@@ -722,9 +722,10 @@ end:
 /**
  * Validate and set frequency configuration.
  */
-static int mspi_stm32_qspi_validate_and_set_freq(struct mspi_stm32_data *data, uint32_t freq)
+static int mspi_stm32_qspi_validate_and_set_freq(struct mspi_stm32_data *data, uint32_t freq,
+						 uint32_t max_frequency)
 {
-	if (freq > MSPI_MAX_FREQ) {
+	if (freq > max_frequency) {
 		LOG_ERR("%u, freq is too large", __LINE__);
 		return -ENOTSUP;
 	}
@@ -886,7 +887,8 @@ static int mspi_stm32_qspi_dev_cfg_save(const struct device *controller,
 	}
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) != 0) {
-		ret = mspi_stm32_qspi_validate_and_set_freq(data, dev_cfg->freq);
+		ret = mspi_stm32_qspi_validate_and_set_freq(data, dev_cfg->freq,
+							    cfg->mspicfg.max_freq);
 		if (ret != 0) {
 			return ret;
 		}
@@ -1306,7 +1308,7 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 		.channel_num = 0,                                                              \
 		.op_mode = DT_INST_ENUM_IDX_OR(index, op_mode, MSPI_OP_MODE_CONTROLLER),       \
 		.duplex = DT_INST_ENUM_IDX_OR(index, duplex, MSPI_HALF_DUPLEX),                \
-		.max_freq = DT_INST_PROP_OR(index, clock_frequency, MSPI_MAX_FREQ),            \
+		.max_freq = DT_INST_PROP(index, clock_frequency),                              \
 		.dqs_support = false, /* QSPI typically doesn't support DQS */                 \
 		.num_periph = DT_INST_CHILD_NUM(index),                                        \
 		.sw_multi_periph = DT_INST_PROP(index, software_multiperipheral),              \
