@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/delete-node/ &octospi1;
+
+/ {
+	aliases {
+		flash0 = &mx25lm51245;
+	};
+
+	soc {
+		octospi1: spi@44021000 {
+			compatible = "st,stm32-ospi-controller";
+			reg = <0x44021000 0x400>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <76 0>;
+			clock-names = "ospix", "ospi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB3, 8)>,
+				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			pinctrl-0 = <&octospi1_clk_pa3 &octospi1_ncs_pa2
+				     &octospi1_io0_pb1 &octospi1_io1_pb0
+				     &octospi1_io2_pa7 &octospi1_io3_pa6
+				     &octospi1_io4_pc1 &octospi1_io5_pc2
+				     &octospi1_io6_pc3 &octospi1_io7_pc0
+				     &octospi1_dqs_pb2>;
+			pinctrl-names = "default";
+
+			dmas = <&dma1 1 41 0x480>; /* request 41 for OCTOSPI1 */
+			dma-names = "tx_rx";
+			status = "okay";
+
+			mx25lm51245: ospi-nor-flash@0 {
+				compatible = "jedec,mspi-nor";
+				reg = <0>;
+				size = <DT_SIZE_M(512)>; /* 512 Megabits */
+				mspi-max-frequency = <DT_FREQ_M(50)>;
+				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+				mspi-data-rate = "MSPI_DATA_RATE_DUAL"; /* as first step */
+				mspi-hardware-ce-num = <0>;
+				read-command = <0xEE11>;                /* ReaD 4Bytes */
+				command-length = "INSTR_2_BYTE";
+				write-command = <0x12ED>; /* WRite 4Bytes */
+				rx-dummy = <20>;
+				jedec-id = [c2 85 3a];
+				status = "okay";
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "nor";
+						reg = <0x00000000 DT_SIZE_M(4)>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
