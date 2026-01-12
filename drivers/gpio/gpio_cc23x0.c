@@ -58,8 +58,9 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 		config |= IOC_IOC0_PULLCTL_PULL_DIS;
 	}
 
+	/* Allow interrupts to trigger in shutdown */
 	if (flags & GPIO_INT_WAKEUP) {
-		config |= IOC_IOC0_WUENSB;
+		config |= IOC_IOC0_WUCFGSD_WAKE_LOW;
 	}
 
 	/* In single-ended mode a GPIO is either open drain or open source */
@@ -228,6 +229,9 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 		default:
 			return -ENOTSUP;
 		}
+
+		/* Allow interrupts to trigger in standby */
+		config |= IOC_IOC0_WUENSB;
 
 		GPIOSetConfigDio(IOC_ADDR(pin), config);
 
