@@ -285,6 +285,11 @@ Display
 * For ILI9341 controller, display mirroring configuration has been updated to conform with
   the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
 
+* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include ``SSD1325`` as well.
+
+* ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
 DMA
 ===
 
