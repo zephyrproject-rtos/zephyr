@@ -19,6 +19,11 @@
 #include "wpa_supp_if.h"
 #include <system/fmac_peer.h>
 
+#ifdef CONFIG_NRF71_ON_IPC
+#include <psa/crypto.h>
+#include "wifi_keys.h"
+#endif
+
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 K_SEM_DEFINE(wait_for_event_sem, 0, 1);
@@ -974,6 +979,113 @@ out:
 	return ret;
 }
 
+#ifdef CONFIG_NRF71_ON_IPC
+static bool is_mic_cipher_suite(unsigned int suite)
+{
+	return (suite == RSN_CIPHER_SUITE_AES_128_CMAC ||
+		suite == RSN_CIPHER_SUITE_BIP_GMAC_128 ||
+		suite == RSN_CIPHER_SUITE_BIP_GMAC_256 ||
+		suite == RSN_CIPHER_SUITE_BIP_CMAC_256);
+}
+
+/* Maximum number of keys we can track (unicast + group keys) */
+#define WIFI_CRYPTO_MAX_KEYS 8
+
+/* Track installed keys: key_idx -> key_type mapping */
+static struct {
+	bool valid;
+	wifi_keys_key_type_t type;
+	uint32_t db_id;
+} installed_keys[WIFI_CRYPTO_MAX_KEYS];
+
+static int wifi_import_key_to_crypto(unsigned int suite, const unsigned char *key, size_t key_len,
+				     const unsigned char *addr, int key_idx, uint32_t db_id)
+{
+	wifi_keys_key_type_t type;
+	psa_key_attributes_t attr;
+	psa_key_id_t key_id;
+	psa_status_t status;
+	uint32_t key_index;
+	bool is_broadcast = false;
+
+	/* Determine if this is a broadcast/group key or unicast/pairwise key */
+	if (addr && is_broadcast_ether_addr(addr)) {
+		is_broadcast = true;
+	}
+
+	/* Determine key type based on cipher suite and address */
+	if (is_mic_cipher_suite(suite)) {
+		type = is_broadcast ? PEER_BCST_MIC : PEER_UCST_MIC;
+	} else {
+		type = is_broadcast ? PEER_BCST_ENC : PEER_UCST_ENC;
+	}
+
+	/* Convert key_idx to uint32_t, ensure it's within valid range */
+	key_index = (key_idx < 0) ? 0 : (uint32_t)key_idx;
+
+	/* Initialize PSA key attributes */
+	attr = wifi_keys_key_attributes_init(type, db_id, key_index);
+
+	LOG_DBG("%s: Importing key to PSA (suite: 0x%08x, type: %d, idx: %u, len: %zu)",
+		__func__, suite, type, key_index, key_len);
+
+	/* Import key to PSA */
+	status = psa_import_key(&attr, key, key_len, &key_id);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("%s: Failed to import key to PSA: %d", __func__, status);
+		return -EIO;
+	}
+
+	/* Track installed key for later destruction */
+	if (key_index < WIFI_CRYPTO_MAX_KEYS) {
+		installed_keys[key_index].valid = true;
+		installed_keys[key_index].type = type;
+		installed_keys[key_index].db_id = db_id;
+	}
+
+	LOG_DBG("%s: Key imported successfully (type: %d, idx: %u)", __func__, type, key_index);
+
+	return 0;
+}
+
+static int wifi_destroy_key_from_crypto(int key_idx, uint32_t db_id)
+{
+	psa_key_attributes_t attr;
+	psa_key_id_t key_id;
+	psa_status_t status;
+	uint32_t key_index;
+
+	/* Convert key_idx to uint32_t */
+	key_index = (key_idx < 0) ? 0 : (uint32_t)key_idx;
+
+	if (key_index >= WIFI_CRYPTO_MAX_KEYS || !installed_keys[key_index].valid) {
+		LOG_WRN("%s: No tracked key at index %u", __func__, key_index);
+		/* During init supplicant deletes all keys, so, suppress error */
+		return 0;
+	}
+
+	/* Get the key type that was used during import */
+	attr = wifi_keys_key_attributes_init(installed_keys[key_index].type,
+					       installed_keys[key_index].db_id, key_index);
+	key_id = psa_get_key_id(&attr);
+
+	LOG_DBG("%s: Destroying key (type: %d, idx: %u, key_id: 0x%08x)",
+		__func__, installed_keys[key_index].type, key_index, key_id);
+
+	status = psa_destroy_key(key_id);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("%s: Failed to destroy key: %d", __func__, status);
+		return -EIO;
+	}
+
+	/* Clear tracking entry */
+	installed_keys[key_index].valid = false;
+
+	LOG_DBG("%s: Key destroyed successfully", __func__);
+	return 0;
+}
+#endif
+
 int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum wpa_alg alg,
 			      const unsigned char *addr, int key_idx, int set_tx,
 			      const unsigned char *seq, size_t seq_len, const unsigned char *key,
@@ -982,7 +1094,7 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_umac_key_info key_info;
+	struct nrf_wifi_umac_key_info key_info = {0};
 	const unsigned char *mac_addr = NULL;
 	unsigned int suite;
 	int ret = -1;
@@ -1022,7 +1134,15 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 			goto out;
 		}
 
+#ifdef CONFIG_NRF71_ON_IPC
+		ret = wifi_import_key_to_crypto(suite, key, key_len, addr, key_idx, 0);
+		if (ret) {
+			LOG_ERR("%s: Failed to import key to crypto: %d", __func__, ret);
+			goto out;
+		}
+#else
 		memcpy(key_info.key.nrf_wifi_key, key, key_len);
+#endif
 
 		key_info.key.nrf_wifi_key_len = key_len;
 		key_info.cipher_suite = suite;
@@ -1060,7 +1180,16 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: nrf_wifi_sys_fmac_del_key failed", __func__);
 		} else {
+#ifdef CONFIG_NRF71_ON_IPC
+			/* Destroy PSA key after successful del_key */
+			ret = wifi_destroy_key_from_crypto(key_idx, 0);
+			if (ret) {
+				LOG_ERR("%s: Failed to destroy key from crypto: %d",
+					__func__, ret);
+			}
+#else
 			ret = 0;
+#endif
 		}
 	} else {
 		status = nrf_wifi_sys_fmac_add_key(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
