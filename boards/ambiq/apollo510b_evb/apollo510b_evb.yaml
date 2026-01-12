@@ -16,16 +16,22 @@ supported:
   - gpio
   - spi
   - i2c
+  - i2c_target
   - rtc
   - hwinfo
   - clock_control
+  - usbd
+  - dmic
   - audadc
+  - i2s
   - mspi
   - sdhc
   - mipi_dsi
   - flash
   - nvs
   - zms
+  - pm
+  - pwm
   - bluetooth
 testing:
   ignore_tags:
