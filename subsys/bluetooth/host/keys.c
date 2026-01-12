@@ -43,6 +43,18 @@ static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 
 #define BT_KEYS_STORAGE_LEN_COMPAT (BT_KEYS_STORAGE_LEN - sizeof(uint32_t))
 
+/* Configuration version used to detect if the device has configuration flags present in the stored
+ * keys. Shall be higher than the maximum value of the `enc_size` field (16).
+ */
+#define STORAGE_CFG_VERSION 17U
+BUILD_ASSERT(STORAGE_CFG_VERSION <= UINT8_MAX, "STORAGE_CFG_VERSION is too large");
+/* Configuration flags for storage. Based on the bt_keys_cfg_flags enum. */
+#define STORAGE_CFG_FLAGS                                                                          \
+	((IS_ENABLED(CONFIG_BT_SIGNING) ? BT_KEYS_CFG_SIGNING : 0) |                               \
+	 (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) ? BT_KEYS_CFG_SC_PAIR_ONLY : 0) |                 \
+	 (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) ? BT_KEYS_CFG_OVERWRITE_OLDEST : 0))
+BUILD_ASSERT(STORAGE_CFG_FLAGS < BIT(24), "STORAGE_CFG_FLAGS is too large");
+
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
 static struct bt_keys *last_keys_updated;
@@ -148,6 +160,8 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		keys = &key_pool[first_free_slot];
 		keys->id = id;
 		bt_addr_le_copy(&keys->addr, addr);
+		keys->cfg_version = STORAGE_CFG_VERSION;
+		sys_put_le24(STORAGE_CFG_FLAGS, keys->cfg_flags);
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 		keys->aging_counter = ++aging_counter_val;
 		last_keys_updated = keys;
@@ -410,8 +424,19 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
-		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
+		if ((uint8_t)val[0] != (uint8_t)STORAGE_CFG_VERSION &&
 		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
+			/* This check migrates keys without configuration flags to the new format
+			 * granted only the configuration version and flags are missing. Older keys
+			 * are recognized by the first octet being the enc_size field.
+			 */
+			LOG_DBG("Keys for %s do not have configuration flags, adding automatically",
+				bt_addr_le_str(&addr));
+			keys->cfg_version = STORAGE_CFG_VERSION;
+			sys_put_le24(STORAGE_CFG_FLAGS, keys->cfg_flags);
+			memcpy((char *)keys + offsetof(struct bt_keys, enc_size), val, len);
+		} else if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
+			   len == BT_KEYS_STORAGE_LEN_COMPAT) {
 			/* Load shorter structure for compatibility with old
 			 * records format with no counter.
 			 */
@@ -425,6 +450,17 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		}
 	} else {
 		memcpy(keys->storage_start, val, len);
+	}
+
+	/* Some Kconfig options can change the size of the keys structure. This check will clear
+	 * the stored keys if the config flags are not matching between firmware updates.
+	 */
+	if ((keys->cfg_version != STORAGE_CFG_VERSION) ||
+	    (sys_get_le24(keys->cfg_flags) != STORAGE_CFG_FLAGS)) {
+		LOG_ERR("Stored keys for %s do not match current config flags or version",
+			bt_addr_le_str(&addr));
+		bt_keys_clear(keys);
+		return -EINVAL;
 	}
 
 	/* As of Core v6.2, authenticated keys are only valid for OOB or LE SC pairing
