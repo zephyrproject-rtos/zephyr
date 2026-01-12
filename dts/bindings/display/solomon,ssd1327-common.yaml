@@ -1,0 +1,16 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include: "solomon,ssd1327_5-common.yaml"
+
+properties:
+  prechargep:
+    type: int
+    required: true
+    description: Pre-charge period ranging from 0 to 15 DCLK's.
+
+  function-selection-b:
+    type: int
+    default: 0x62
+    description: Enables second precharge (A[1]), and external Voltage Segment Level (A[0])
+      The value can either be 0x61, 0x62, or 0x63. Most displays use 0x62.
