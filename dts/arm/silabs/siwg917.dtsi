@@ -182,6 +182,7 @@
 		rng0: rng@45090000 {
 			compatible = "silabs,siwx91x-rng";
 			reg = <0x45090000 0x8>;
+			clocks = <&clock0 SIWX91X_CLK_RNG>;
 		};
 
 		egpio0: egpio@46130000 {
