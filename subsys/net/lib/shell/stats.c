@@ -799,7 +799,7 @@ int cmd_net_stats_iface(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS)
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		cmd_net_stats_all(sh, argc, argv);
 		return 0;
 	}

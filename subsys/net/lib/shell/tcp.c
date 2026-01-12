@@ -269,14 +269,14 @@ static int cmd_net_tcp_connect(const struct shell *sh, size_t argc, char *argv[]
 		return -ENOEXEC;
 	}
 
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("Peer IP address missing.\n");
 		return -ENOEXEC;
 	}
 
 	ip = argv[1];
 
-	if (!argv[2]) {
+	if (argv[2] == NULL) {
 		PR_WARNING("Peer port missing.\n");
 		return -ENOEXEC;
 	}
@@ -308,7 +308,7 @@ static int cmd_net_tcp_send(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("No data to send.\n");
 		return -ENOEXEC;
 	}

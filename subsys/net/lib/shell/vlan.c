@@ -102,7 +102,7 @@ static int cmd_net_vlan_add(const struct shell *sh, size_t argc, char *argv[])
 	uint32_t iface_idx;
 
 	/* vlan add <tag> <interface index> */
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("VLAN tag missing.\n");
 		goto usage;
 	}
@@ -113,7 +113,7 @@ static int cmd_net_vlan_add(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!argv[2]) {
+	if (argv[2] == NULL) {
 		PR_WARNING("Network interface index missing.\n");
 		goto usage;
 	}
@@ -173,7 +173,7 @@ static int cmd_net_vlan_del(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t tag;
 
 	/* vlan del <tag> */
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("VLAN tag missing.\n");
 		goto usage;
 	}
