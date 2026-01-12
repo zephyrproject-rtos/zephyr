@@ -1,7 +1,7 @@
 # Bluetooth Audio - Call control configuration options
 #
 # Copyright (c) 2020 Bose Corporation
-# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2024-2026 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,7 +14,6 @@ config BT_TBS
 	bool "Telephone Bearer Service Support"
 	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_SMP
-	depends on UTF8
 	help
 	  This option enables support for Telephone Bearer Service. By default this only
 	  initializes the GTBS service. If specific TBS services are wanted, they need to be
@@ -70,7 +69,6 @@ config BT_TBS_CLIENT_GTBS
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
 	depends on BT_SMP
-	depends on UTF8
 	help
 	  This option enables support for the GTBS-oriented Call Control client.
 
@@ -79,7 +77,6 @@ config BT_TBS_CLIENT_TBS
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
 	depends on BT_SMP
-	depends on UTF8
 	help
 	  This option enables support for the TBS-oriented Call Control client.
 
