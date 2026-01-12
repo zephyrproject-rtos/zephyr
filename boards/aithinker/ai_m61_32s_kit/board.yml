@@ -2,5 +2,15 @@ board:
   name: ai_m61_32s_kit
   full_name: Ai-Thinker M61-32S development board
   vendor: aithinker
+  revision:
+    format: custom
+    default: "DEFAULT"
+    exact: true
+    revisions:
+      - name: "ALL"
+      - name: "DEFAULT"
   socs:
-    - name: bl618m65q2i
+    - name: bl618m05q2i # ALL revision is bl618m65q2i, Kconfig repairs this 'error'
+      variants:
+        - name: "safe_overclock"
+        - name: "unsafe_overclock"

@@ -29,6 +29,15 @@ System Clock
 The M61 (BL618) Development Board is configured to run at maximum speed (320MHz)
 and can be overclocked to 480 MHz.
 
+This board provides demonstration configurations for the overclocking of the BL618 SoC clocks:
+
+- ``ai_m61_32s_kit/bl618m05q2i/safe_overclock`` demonstrates 120MHz BCLK and 480MHz core clock on both variants. This nets a Coremark score up to 1600.
+- ``ai_m61_32s_kit/bl618m05q2i/unsafe_overclock`` demonstrates 120MHz or 106MHz BCLK and 640MHz core clock with higher core voltages. This nets a Coremark score up to 2100.
+
+If you are using the ALL variant, please use :``ai_m61_32s_kit@ALL``.
+
+When overclocking, DMA and DMA-using drivers will not work properly.
+
 Serial Port
 ===========
 
@@ -69,7 +78,7 @@ Samples
    .. code-block:: console
 
       *** Booting Zephyr OS build v4.3.0 ***
-      Hello World! ai_m61_32s_kit/bl618m65q2i
+      Hello World! ai_m61_32s_kit/bl618m05q2i
 
 Congratulations, you have ``ai_m61_32s_kit`` configured and running Zephyr.
 
