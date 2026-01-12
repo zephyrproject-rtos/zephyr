@@ -85,8 +85,9 @@ bma4xx_get_read_config_trigger(const struct sensor_read_config *cfg, enum sensor
 	return NULL;
 }
 
-static void bma4xx_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void bma4xx_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
+	ARG_UNUSED(result);
 	const struct device *dev = arg;
 	struct bma4xx_data *drv_data = dev->data;
 	const struct bma4xx_config *drv_cfg = dev->config;
@@ -97,8 +98,9 @@ static void bma4xx_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, void 
 	gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void bma4xx_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void bma4xx_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
+	ARG_UNUSED(result);
 	const struct device *dev = arg;
 	struct bma4xx_data *drv_data = dev->data;
 	const struct bma4xx_config *drv_cfg = dev->config;
@@ -192,8 +194,9 @@ static void bma4xx_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, voi
 	rtio_submit(r, 0);
 }
 
-static void bma4xx_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void bma4xx_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, int result, void *arg)
 {
+	ARG_UNUSED(result);
 	const struct device *dev = arg;
 	struct bma4xx_data *drv_data = dev->data;
 	const struct bma4xx_config *drv_cfg = dev->config;
