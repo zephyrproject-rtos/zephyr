@@ -11,6 +11,7 @@
 		#gpio-cells = <2>;
 		gpio-map = <3 0 &gpio0 22 0>,
 			   <4 0 &gpio0 20 0>,
+			   <5 0 &gpio0 4 0>,
 			   <7 0 &gpio0 18 0>,
 			   <8 0 &gpio0 3 0>,
 			   <9 0 &gpio0 24 0>,
