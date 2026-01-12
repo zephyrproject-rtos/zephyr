@@ -2315,7 +2315,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
 
-		if (tcp_backlog_is_full(conn_old)) {
+		if (conn_old == NULL || tcp_backlog_is_full(conn_old)) {
 			/* If the connection backlog is full, ignore the SYN
 			 * packet (same behavior as on Linux). Retransmitted SYN
 			 * attempts may be successful later.
