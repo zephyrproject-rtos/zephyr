@@ -5,9 +5,7 @@
  */
 
 #include <stdio.h>
-
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/poll.h>
+#include <errno.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/tls_credentials.h>
@@ -66,7 +64,7 @@ static struct data {
 	int sock;
 	uint32_t counter;
 	uint32_t bytes_received;
-	struct pollfd fds[1];
+	struct zsock_pollfd fds[1];
 	char recv_buffer[RECV_BUFFER_SIZE];
 } config[CONFIG_NET_SAMPLE_NUM_WEBSOCKET_HANDLERS] = {
 	[0 ... (CONFIG_NET_SAMPLE_NUM_WEBSOCKET_HANDLERS - 1)] = {
@@ -100,7 +98,7 @@ static int get_free_netstats_slot(void)
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
 	while (len) {
-		ssize_t out_len = send(sock, buf, len, 0);
+		ssize_t out_len = zsock_send(sock, buf, len, 0);
 
 		if (out_len < 0) {
 			return out_len;
@@ -125,7 +123,7 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 	client = cfg->sock;
 
 	cfg->fds[0].fd = client;
-	cfg->fds[0].events = POLLIN;
+	cfg->fds[0].events = ZSOCK_POLLIN;
 
 	/* In this example, we start to receive data from the websocket
 	 * and send it back to the client. Note that we could either use
@@ -134,7 +132,7 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 	 * function to send websocket specific data.
 	 */
 	while (true) {
-		if (poll(cfg->fds, 1, -1) < 0) {
+		if (zsock_poll(cfg->fds, 1, -1) < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			continue;
 		}
@@ -143,15 +141,15 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 			continue;
 		}
 
-		if (cfg->fds[0].revents & POLLHUP) {
+		if (cfg->fds[0].revents & ZSOCK_POLLHUP) {
 			LOG_DBG("Client #%d has disconnected", client);
 			break;
 		}
 
-		received = recv(client,
-				cfg->recv_buffer + offset,
-				sizeof(cfg->recv_buffer) - offset,
-				0);
+		received = zsock_recv(client,
+				      cfg->recv_buffer + offset,
+				      sizeof(cfg->recv_buffer) - offset,
+				      0);
 
 		if (received == 0) {
 			/* Connection closed */
@@ -171,9 +169,9 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 		 * buffer is full or there is no more data to read
 		 */
 		if (offset == sizeof(cfg->recv_buffer) ||
-		    (recv(client, cfg->recv_buffer + offset,
-			  sizeof(cfg->recv_buffer) - offset,
-			  MSG_PEEK | MSG_DONTWAIT) < 0 &&
+		    (zsock_recv(client, cfg->recv_buffer + offset,
+				sizeof(cfg->recv_buffer) - offset,
+				MSG_PEEK | MSG_DONTWAIT) < 0 &&
 		     (errno == EAGAIN || errno == EWOULDBLOCK))) {
 #endif
 			ret = sendall(client, cfg->recv_buffer, offset);

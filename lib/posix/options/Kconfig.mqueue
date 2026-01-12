@@ -4,6 +4,7 @@
 
 menuconfig POSIX_MESSAGE_PASSING
 	bool "POSIX message queue support"
+	depends on POSIX_THREADS
 	help
 	  This enabled POSIX message queue related APIs.
 

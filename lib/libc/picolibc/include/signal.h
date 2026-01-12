@@ -7,18 +7,13 @@
 #ifndef ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_SIGNAL_H_
 #define ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_SIGNAL_H_
 
+#include <zephyr/posix/posix_features.h>
+
 #include_next <signal.h>
 
 #include <zephyr/toolchain.h>
 
 #if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
-
-#define SIGRTMIN 32
-#if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
-#define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
-#else
-#define SIGRTMAX SIGRTMIN
-#endif
 
 #ifndef _PID_T_DECLARED
 typedef __pid_t pid_t;
@@ -46,11 +41,10 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 #undef sigaddset
 #undef sigdelset
 #undef sigismember
+#undef sigemptyset
+#undef sigfillset
 
-#if defined(_POSIX_REALTIME_SIGNALS)
-#define _SIGEVENT_DECLARED
-#define _SIGVAL_DECLARED
-#endif
+#include <zephyr/posix/posix_signal.h>
 
 #endif /* defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__) */
 
