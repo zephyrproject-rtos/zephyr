@@ -21,7 +21,8 @@
 #define RING_SIZE 512
 #if CONFIG_SOC_INTEL_CAVS_V25
 #define SOF_GDB_WINDOW_OFFSET 1024
-#elif CONFIG_SOC_INTEL_ACE15_MTPM || CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30
+#elif CONFIG_SOC_INTEL_ACE15_MTPM || CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30 ||       \
+	CONFIG_SOC_INTEL_ACE40
 /*
  * MTL has 2 usable slots in debug window, which is more than 1 slot on TGL, but
  * still slot 0 is always used for logging, slot 1 is assigned to shell
