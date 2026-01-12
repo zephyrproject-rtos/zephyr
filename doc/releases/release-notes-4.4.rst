@@ -169,6 +169,11 @@ New APIs and options
       generating slot 1 images automatically in sysbuild projects when using MCUboot in
       direct-xip mode.
 
+* Display
+
+  * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
+  * :kconfig:option:`SSD1325_CONV_BUFFER_LINES`
+
 * Ethernet
 
   * Driver MAC address configuration with support for NVMEM cell.
@@ -286,6 +291,10 @@ New Drivers
 
   * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
   * :dtcompatible:`radio-gpio-coex` (renamed from ``gpio-radio-coex``)
+
+* Display
+
+  * :dtcompatible:`solomon,ssd1325`
 
 New Samples
 ***********
