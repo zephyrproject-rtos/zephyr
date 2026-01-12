@@ -105,3 +105,16 @@ tests:
     extra_configs:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow: nrf7002dk/nrf5340/cpuapp
+  sample.net.zperf.raw_tx:
+    harness: net
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_NET_SOCKETS_PACKET=y
+      - CONFIG_NET_ZPERF_RAW_TX=y
+  sample.net.zperf.raw_tx.nrf7002dk:
+    extra_args: SNIPPET=wifi-ipv4
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_NET_SOCKETS_PACKET=y
+      - CONFIG_NET_ZPERF_RAW_TX=y
+    platform_allow: nrf7002dk/nrf5340/cpuapp
