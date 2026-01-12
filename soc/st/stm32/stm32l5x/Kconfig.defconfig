@@ -10,6 +10,9 @@ rsource "Kconfig.defconfig.stm32l5*"
 config ICACHE
 	default y
 
+config ICACHE_LINE_SIZE
+	default 16
+
 config CACHE_MANAGEMENT
 	default y
 
