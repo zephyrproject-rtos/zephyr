@@ -1,0 +1,49 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		led-strip = &ws2812;
+	};
+};
+
+&pio0 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+
+		pinctrl-0 = <&ws2812_pio0_default>;
+		pinctrl-names = "default";
+
+		/* HI: 0x3F0: 1111110000: 0.750 us high and 0.500 us low */
+		/* LO: 0x380: 1110000000: 0.375 us high and 0.875 us low */
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+
+			/* PIO0:OUT @ GP8 and Tbit = 1.25 us / 10 */
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			frequency = <DT_FREQ_K(800)>;
+			reset-delay = <280>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
