@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ai_m61_32s.dtsi"
+#include "ai_m61_32s_kit_common.dtsi"
+
+&clk_root {
+	/* Increased PLL speed used as FCLK */
+	clocks = <&clk_wifipll BL61X_WIFIPLL_OCMAX_640MHz>;
+};
+
+&reg_soc {
+	/* SoC LDO at 1.25v to handle 640MHz FCLK*/
+	regulator-init-microvolt = <1250000>;
+};
+
+/* With the settings used for their flash (Dual Out mode), the ALL and non-ALL revisions
+ * need different flash clock settings to work properly at 640MHz FCLK.
+ */
+&clk_bclk {
+	/* 120MHz BCLK */
+	divider = <5>;
+};
+
+&clk_flash {
+	/* 0 Units of delay for GD Flash but inverted RX */
+	read-delay = <0>;
+	rx-clock-invert;
+	divider = <1>;
+};

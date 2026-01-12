@@ -1,6 +1,34 @@
-# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
 #
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_AI_M61_32S_KIT
-	select SOC_BL618M65Q2I
+	select SOC_BL618M05Q2I if BOARD_REVISION_DEFAULT
+	select SOC_BL618M65Q2I if BOARD_REVISION_ALL
+
+if BOARD_AI_M61_32S_KIT
+
+config BOARD_REVISION_DEFAULT
+	bool
+
+config BOARD_REVISION_ALL
+	bool
+
+# Avoid adding 8 identical files
+config CONSOLE
+	bool
+	default y
+
+config SERIAL
+	bool
+	default y
+
+config UART_CONSOLE
+	bool
+	default y
+
+config MEMC
+	bool
+	default y
+
+endif

@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	/* ALL revision is BL618M65, which has an internal XMC Flash die
+	 * instead of an external SOIC Flash.
+	 */
+	compatible = "soc-nv-flash", "xmc,xm25qw64";
+};
+
+/* With the settings used for their flash (Dual Out mode), the ALL and non-ALL revisions
+ * need different flash clock settings to work properly at 640MHz FCLK.
+ */
+
+&clk_bclk {
+	/* 100 + 20/3 (106.66...) MHz BCLK */
+	divider = <6>;
+};
+
+&clk_flash {
+	/* 1 Unit of delay (4 Cycles) for XMC Flash at 100 + 20/3 (106.66...) MHz Flash clock */
+	read-delay = <1>;
+	/delete-property/ rx-clock-invert;
+};
