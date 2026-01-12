@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SPARKFUN_RP2040_MIKROBUS
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 125
+
+endif # I2C_DW
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_SPARKFUN_RP2040_MIKROBUS
