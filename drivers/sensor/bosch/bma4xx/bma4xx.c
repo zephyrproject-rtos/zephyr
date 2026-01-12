@@ -275,6 +275,17 @@ static int bma4xx_chip_init(const struct device *dev)
 	}
 	LOG_DBG("chip_id is 0x%02x", bma4xx->chip_id);
 
+	switch (bma4xx->chip_id) {
+	case BMA4XX_CHIP_ID_BMA423:
+		LOG_WRN("Driver tested for BMA422/BMA400. Check for unintended operation.");
+	case BMA4XX_CHIP_ID_BMA400:
+	case BMA4XX_CHIP_ID_BMA422:
+		break;
+	default:
+		LOG_ERR("Chip id (0x%02X) not supported", bma4xx->chip_id);
+		return -ENODEV;
+	}
+
 	if (bma4xx->chip_id != BMA4XX_CHIP_ID_BMA422) {
 		LOG_WRN("Driver tested for BMA422. Check for unintended operation.");
 	}
@@ -308,11 +319,27 @@ static int bma4xx_chip_init(const struct device *dev)
 	return 0;
 }
 
+static int bma4xx_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	struct bma4xx_data *bma4xx = dev->data;
+
+	switch (attr) {
+	case SENSOR_ATTR_CHIP_ID:
+		val->val1 = bma4xx->chip_id;
+		return 0;
+	default:
+		LOG_ERR("Attribute not supported");
+		return -EINVAL;
+	}
+}
+
 /*
  * Sensor driver API
  */
 
 static DEVICE_API(sensor, bma4xx_driver_api) = {
+	.attr_get = bma4xx_attr_get,
 	.attr_set = bma4xx_attr_set,
 	.get_decoder = bma4xx_get_decoder,
 	.submit = bma4xx_submit,

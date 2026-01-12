@@ -374,6 +374,8 @@ enum sensor_attribute {
 	SENSOR_ATTR_GAIN,
 	/* Configure the resolution of a sensor. */
 	SENSOR_ATTR_RESOLUTION,
+	/* Chip ID of the sensor*/
+	SENSOR_ATTR_CHIP_ID,
 	/**
 	 * Number of all common sensor attributes.
 	 */

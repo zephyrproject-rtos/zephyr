@@ -173,6 +173,7 @@
 /* BMA4xx chip id */
 #define BMA4XX_CHIP_ID_BMA422 (0x12)
 #define BMA4XX_CHIP_ID_BMA423 (0x13)
+#define BMA4XX_CHIP_ID_BMA400 (0x90)
 
 #define BMA4XX_REG_I2C_READ_BIT BIT(7)
 
