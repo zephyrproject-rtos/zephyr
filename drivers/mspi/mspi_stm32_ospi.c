@@ -995,44 +995,6 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 }
 
 /**
- * Verify if the device with dev_id is on this MSPI bus.
- *
- * @param controller Pointer to the device structure for the driver instance.
- * @param dev_id Pointer to the device ID structure from a device.
- * @return 0 The device is on this MSPI bus.
- * @return -ENODEV The device is not on this MSPI bus.
- */
-static int mspi_stm32_ospi_verify_device(const struct device *controller,
-						const struct mspi_dev_id *dev_id)
-{
-	const struct mspi_stm32_conf *cfg = controller->config;
-	int device_index = cfg->mspicfg.num_periph;
-
-	if (cfg->mspicfg.num_ce_gpios != 0) {
-		for (int i = 0; i < cfg->mspicfg.num_periph; i++) {
-			if (dev_id->ce.port == cfg->mspicfg.ce_group[i].port &&
-			    dev_id->ce.pin == cfg->mspicfg.ce_group[i].pin &&
-			    dev_id->ce.dt_flags == cfg->mspicfg.ce_group[i].dt_flags) {
-				device_index = i;
-				break;
-			}
-		}
-
-		if (device_index >= cfg->mspicfg.num_periph || device_index != dev_id->dev_idx) {
-			LOG_ERR("%u, invalid device ID.", __LINE__);
-			return -ENODEV;
-		}
-	} else {
-		if (dev_id->dev_idx >= cfg->mspicfg.num_periph) {
-			LOG_ERR("%u, invalid device ID.", __LINE__);
-			return -ENODEV;
-		}
-	}
-
-	return 0;
-}
-
-/**
  * API implementation of mspi_dev_config : controller device specific configuration
  *
  * @param controller Pointer to the device structure for the driver instance.
