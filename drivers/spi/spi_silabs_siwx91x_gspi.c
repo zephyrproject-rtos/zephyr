@@ -444,6 +444,7 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 	const struct device *dma_dev = data->dma_rx.dma_dev;
 	struct spi_context *ctx = &data->ctx;
 	size_t padded_transaction_size = gspi_siwx91x_longest_transfer_size(ctx);
+	uint8_t rx_null_buf = 0;
 	uint8_t burst_size = 1;
 	int ret = 0;
 
@@ -473,9 +474,15 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 		burst_size = gspi_siwx91x_burst_size(ctx);
 	}
 
-	cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
-	cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
-	cfg->reg->GSPI_FIFO_THRLD = 0;
+	/* Detect transfers where RX data is either not requested or shorter than
+	 * the transmitted data. In such cases, the RX buffer is treated as NULL
+	 * since incoming data will not be fully consumed by the SPI context.
+	 */
+	if (data->ctx.rx_buf == NULL ||
+	    spi_context_total_rx_len(ctx) < spi_context_total_tx_len(ctx)) {
+		rx_null_buf = 1;
+	}
+
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AEMPTY_THRLD = burst_size - 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AFULL_THRLD = burst_size - 1;
 
@@ -500,6 +507,19 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 	ret = spi_context_wait_for_completion(&data->ctx);
 	if (ret < 0) {
 		goto force_transaction_close;
+	}
+
+	if (rx_null_buf) {
+		/* When a NULL RX buffer is used, RX data is not consumed by software
+		 * and may remain in the GSPI RX FIFO. Explicitly reset both RX and TX
+		 * FIFOs to flush any residual data, ensuring subsequent transfers
+		 * start with a clean FIFO state.
+		 */
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 0;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 0;
+		rx_null_buf = 0;
 	}
 
 	/* Successful transaction. DMA transfer done interrupt ended the transaction. */
