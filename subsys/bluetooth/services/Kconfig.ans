@@ -6,7 +6,6 @@
 
 menuconfig BT_ANS
 	bool "GATT Alert Notification Service [EXPERIMENTAL]"
-	depends on UTF8
 	select EXPERIMENTAL
 
 if BT_ANS

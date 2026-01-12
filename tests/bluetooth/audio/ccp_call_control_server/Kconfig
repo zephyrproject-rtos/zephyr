@@ -1,6 +1,10 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config UTF8
+	bool
+	default y
+
 config BT_AUDIO
 	bool
 	default y
