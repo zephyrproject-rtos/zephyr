@@ -1,0 +1,12 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Solomon SSD1325 display controller on MIPI_DBI or SPI bus
+
+description: |
+    The Solomon SSD1325 is a 4-bit greyscale OLED controller
+    with a maximum 128x80 resolution.
+
+include: ["solomon,ssd1327_5-common.yaml", "mipi-dbi-spi-device.yaml"]
+
+compatible: "solomon,ssd1325"
