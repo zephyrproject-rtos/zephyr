@@ -631,6 +631,10 @@ modules you can execute the following command:
 
 This feature is activated by :kconfig:option:`CONFIG_SHELL_WILDCARD` set to ``y``.
 
+.. note::
+	When the wildcard feature is enabled, the characters ``*`` and ``?``
+	cannot be used as normal characters in commands or arguments.
+
 Meta Keys Feature
 *****************
 
