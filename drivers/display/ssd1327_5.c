@@ -89,7 +89,7 @@ typedef int (*ssd1327_5_write_pixels_fn)(const struct device *dev, const uint8_t
 	{ t[0] & 0x7, (t[1] & 0x7) | ((t[2] & 0x7) << 4), (t[3] & 0x7) | ((t[4] & 0x7) << 4), \
 	  (t[5] & 0x7) | ((t[6] & 0x7) << 4), (t[7] & 0x7) | ((t[8] & 0x7) << 4), \
 	  (t[9] & 0x7) | ((t[10] & 0x7) << 4), (t[11] & 0x7) | ((t[12] & 0x7) << 4), \
-	  (t[13] & 0x7) | ((t[14] & 0x7) << 4) };
+	  (t[13] & 0x7) | ((t[14] & 0x7) << 4) }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1327)
 #define SSD1327_5_MAXIMUM_CMD_LENGTH SSD1327_MAXIMUM_CMD_LENGTH
