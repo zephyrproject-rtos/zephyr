@@ -355,6 +355,11 @@ Display
   :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
   respectively. (:github:`99276`)
 
+* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include ``SSD1325`` as well.
+
+* ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
 DMA
 ===
 
