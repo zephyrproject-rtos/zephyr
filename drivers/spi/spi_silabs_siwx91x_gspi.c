@@ -148,8 +148,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	cfg->reg->GSPI_CONFIG1_b.GSPI_MANUAL_RD = 1;
 	cfg->reg->GSPI_WRITE_DATA2_b.USE_PREV_LENGTH = 1;
 
-	/* Configure FIFO thresholds */
-	cfg->reg->GSPI_FIFO_THRLD = 0;
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 	if (spi_siwx91x_is_dma_enabled_instance(dev)) {
 		if (!device_is_ready(data->dma_tx.dma_dev)) {
@@ -192,6 +190,7 @@ static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 				      int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
+	__maybe_unused const struct gspi_siwx91x_config *cfg = spi_dev->config;
 	struct gspi_siwx91x_data *data = spi_dev->data;
 	struct spi_context *instance_ctx = &data->ctx;
 
@@ -209,6 +208,15 @@ static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 	spi_context_cs_control(instance_ctx, false);
 	spi_context_complete(instance_ctx, spi_dev, status);
 	pm_device_runtime_put_async(spi_dev, K_NO_WAIT);
+
+#ifdef CONFIG_SPI_ASYNC
+	if (instance_ctx->asynchronous && channel == data->dma_tx.chan_nb) {
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 0;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 0;
+	}
+#endif
 }
 
 static int gspi_siwx91x_dma_config(const struct device *dev,
@@ -456,12 +464,18 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 	const struct device *dma_dev = data->dma_rx.dma_dev;
 	struct spi_context *ctx = &data->ctx;
 	size_t padded_transaction_size = gspi_siwx91x_longest_transfer_size(ctx);
+	bool asynchronous = false;
+	bool null_rx_present = false;
 	uint8_t burst_size = 1;
 	int ret = 0;
 
 	if (padded_transaction_size == 0) {
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_SPI_ASYNC
+	asynchronous = ctx->asynchronous;
+#endif
 
 	if (config->frequency >= SPI_HIGH_BURST_FREQ_THRESHOLD_HZ &&
 	    data->dma_rx.dma_slot != 0xFF && data->dma_tx.dma_slot != 0xFF) {
@@ -485,9 +499,16 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 		burst_size = gspi_siwx91x_burst_size(ctx);
 	}
 
-	cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
-	cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
-	cfg->reg->GSPI_FIFO_THRLD = 0;
+	/* Detect transfers where RX data is either not requested or shorter than
+	 * the transmitted data. In such cases, the RX buffer/one of the rx buffer
+	 * in descriptors is NULL since incoming data will not be fully consumed by
+	 * the SPI context.
+	 */
+	if (data->ctx.rx_buf == NULL ||
+	    spi_context_total_rx_len(ctx) < spi_context_total_tx_len(ctx)) {
+		null_rx_present = true;
+	}
+
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AEMPTY_THRLD = burst_size - 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AFULL_THRLD = burst_size - 1;
 
@@ -512,6 +533,19 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 	ret = spi_context_wait_for_completion(&data->ctx);
 	if (ret < 0) {
 		goto force_transaction_close;
+	}
+
+	if (null_rx_present && !asynchronous) {
+		/* When a NULL RX buffer is used (either for the entire transfer or for
+		 * any descriptor within the transfer), RX data is not consumed by software
+		 * and may remain in the GSPI RX FIFO. Explicitly reset both RX and TX
+		 * FIFOs to flush any residual data, ensuring subsequent transfers
+		 * start with a clean FIFO state.
+		 */
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 0;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 0;
 	}
 
 	/* Successful transaction. DMA transfer done interrupt ended the transaction. */
