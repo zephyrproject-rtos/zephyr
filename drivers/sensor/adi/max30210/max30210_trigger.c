@@ -140,7 +140,7 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 	}
 
 	switch ((int)trig->type) {
-	case SENSOR_TRIG_THRESHOLD:
+	case SENSOR_TRIG_THRESHOLD: {
 		uint8_t temp_hi_setup[2];
 
 		max30210_reg_read(dev, TEMP_ALARM_HIGH_MSB, temp_hi_setup, 2);
@@ -170,8 +170,9 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 			int_mask |= TEMP_LO_MASK;
 		}
 		break;
+	}
 
-	case SENSOR_TRIG_TEMP_INC_FAST:
+	case SENSOR_TRIG_TEMP_INC_FAST: {
 		uint8_t temp_inc_fast_thresh;
 
 		ret = max30210_reg_read(dev, TEMP_INC_FAST_THRESH, &temp_inc_fast_thresh, 1);
@@ -191,8 +192,9 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 			int_mask |= TEMP_INC_FAST_MASK;
 		}
 		break;
+	}
 
-	case SENSOR_TRIG_TEMP_DEC_FAST:
+	case SENSOR_TRIG_TEMP_DEC_FAST: {
 		uint8_t temp_dec_fast_thresh;
 
 		ret = max30210_reg_read(dev, TEMP_DEC_FAST_THRESH, &temp_dec_fast_thresh, 1);
@@ -212,6 +214,7 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 			int_mask |= TEMP_DEC_FAST_MASK;
 		}
 		break;
+	}
 
 	case SENSOR_TRIG_DATA_READY:
 		data->temp_rdy_handler = handler;
