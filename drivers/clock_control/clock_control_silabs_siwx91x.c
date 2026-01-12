@@ -113,6 +113,9 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 	case SIWX91X_CLK_GPDMA0:
 		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
 		break;
+	case SIWX91X_CLK_RNG:
+		RSI_CLK_PeripheralClkEnable1(M4CLK, HWRNG_PCLK_ENABLE);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -154,6 +157,7 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_AUX_CLK);
 		RSI_IPMU_PowerGateClr(AUXADC_PG_ENB);
 		break;
+	case SIWX91X_CLK_RNG:
 	case SIWX91X_CLK_ULP_UART:
 	case SIWX91X_CLK_I2C0:
 	case SIWX91X_CLK_I2C1:
