@@ -3289,7 +3289,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			}
 		}
 #endif
-		NET_ASSERT((conn->send_data_total == 0) ||
+		NET_ASSERT((conn->send_data_total == 0) || (conn->send_win == 0) ||
 			   k_work_delayable_is_pending(&conn->send_data_timer),
 			   "conn: %p, Missing a subscription "
 				"of the send_data queue timer", conn);
