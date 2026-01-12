@@ -16,7 +16,7 @@
 
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <22 DIO22_UART0_RXD>;
-		bias-disable;
+		bias-pull-up;
 		input-enable;
 	};
 
