@@ -190,8 +190,8 @@ static void hwtimer_tick_timer_reached(void)
 
 		us_time_to_str(es, expected_rt - boot_time);
 		us_time_to_str(rs, real_time - boot_time);
-		printf("tick @%5llims: diff = expected_rt - real_time = "
-			"%5lli = %s - %s\n",
+		printf("tick @%5lims: diff = expected_rt - real_time = "
+			"%5li = %s - %s\n",
 			hw_timer_tick_timer/1000U, diff, es, rs);
 #endif
 
@@ -325,7 +325,7 @@ void hwtimer_adjust_rt_ratio(double ratio_correction)
 	last_drift_offset += r_drift;
 	us_time_to_str(ct, current_stime);
 
-	printf("%s(): @%s, s_diff= %llius after last adjust\n"
+	printf("%s(): @%s, s_diff= %lius after last adjust\n"
 		" during which we drifted %.3fms\n"
 		" total acc drift (last_drift_offset) = %.3fms\n"
 		" last_radj_rtime = %.3fms (+%.3fms )\n"
