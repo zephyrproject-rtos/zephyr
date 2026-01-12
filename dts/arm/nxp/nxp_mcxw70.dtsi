@@ -55,6 +55,13 @@
 				exit-latency-us = <11>;
 			};
 		};
+
+		sysclk: system-clock {
+			compatible = "fixed-clock";
+			/* On FPGA, fixed at 32MHz */
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+		};
 	};
 
 	soc {
