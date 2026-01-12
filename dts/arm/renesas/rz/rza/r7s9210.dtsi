@@ -625,5 +625,14 @@
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA4, RZA2M_CLK_P1C)>;
 			status = "disabled";
 		};
+
+		spibsc: spibsc@1f800000 {
+			compatible = "renesas,rz-spibsc";
+			reg = <0x1f800000 0x78>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SPIBSC, RZA2M_CLK_P1)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
