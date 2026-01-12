@@ -18,6 +18,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
@@ -1412,12 +1413,14 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 	return 0;
 }
 
-int bt_h4_vnd_setup(const struct device *dev)
+int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int err;
 	uint32_t default_speed;
 	uint32_t operation_speed;
 	bool flowcontrol_of_hci;
+
+	ARG_UNUSED(params);
 
 	if (dev != uart_dev) {
 		return -EINVAL;
