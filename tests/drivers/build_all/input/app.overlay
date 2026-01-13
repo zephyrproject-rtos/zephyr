@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/keymap.h>
 
 / {
 	test {
@@ -88,9 +89,10 @@
 
 			keymap {
 				compatible = "input-keymap";
-				keymap = <0 1 2>;
 				row-size = <2>;
 				col-size = <2>;
+				keymap = <MATRIX_KEY(0, 0, 0) MATRIX_KEY(0, 1, 1)
+					  MATRIX_KEY(1, 0, 2)>;
 			};
 		};
 
