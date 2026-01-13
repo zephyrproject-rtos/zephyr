@@ -2805,6 +2805,100 @@ ZTEST(server_function_tests, test_http1_static_fs_compression)
 	zassert_mem_equal(buf, expected_response, expected_response_size,
 			  "Received data doesn't match expected response");
 }
+
+#define TEST_DIR_OVERLAP	LFS_MNTP "/testfs"
+#define TEST_FILE_OVERLAP	"test_file"
+
+static struct http_resource_detail_static_fs static_file_resource_detail_dir = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+			.content_type = "text/html",
+		},
+	.fs_path = LFS_MNTP,
+};
+
+HTTP_RESOURCE_DEFINE(static_fs_resource_dir, test_http_service, "/testfs",
+		     &static_file_resource_detail_dir);
+
+static const char static_overlap_resource_payload[] = TEST_STATIC_PAYLOAD;
+struct http_resource_detail_static static_overlap_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		},
+	.static_data = static_overlap_resource_payload,
+	.static_data_len = sizeof(static_overlap_resource_payload) - 1,
+};
+
+HTTP_RESOURCE_DEFINE(static_overlap_resource, test_http_service, "/testfs/static",
+		     &static_overlap_resource_detail);
+
+static void setup_fs_with_subdir(void)
+{
+	test_clear_flash();
+
+	zassert_equal(test_unmount(), TC_PASS, "Failed to unmount fs");
+	zassert_equal(test_mount(), TC_PASS, "Failed to mount fs");
+
+	zassert_equal(test_mkdir(TEST_DIR_OVERLAP, TEST_FILE_OVERLAP), TC_PASS,
+		      "Failed to create dir");
+}
+
+/* Verify that if the filesystem resource overlaps with a statically defined one,
+ * the latter takes preference.
+ */
+ZTEST(server_function_tests, test_http1_static_fs_overlap)
+{
+	static const char http1_request_file[] =
+		"GET /testfs/test_file HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response_file[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 30\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		TEST_STATIC_FS_PAYLOAD;
+	static const char http1_request_static[] =
+		"GET /testfs/static HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response_static[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n"
+		"\r\n"
+		TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	setup_fs_with_subdir();
+
+	ret = zsock_send(client_fd, http1_request_static, strlen(http1_request_static), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response_static) - 1);
+	zassert_mem_equal(buf, expected_response_static, sizeof(expected_response_static) - 1,
+			  "Received data doesn't match expected response");
+
+	ret = zsock_send(client_fd, http1_request_file, strlen(http1_request_file), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+	offset = 0;
+
+	test_read_data(&offset, sizeof(expected_response_file) - 1);
+	zassert_mem_equal(buf, expected_response_file, sizeof(expected_response_file) - 1,
+			  "Received data doesn't match expected response");
+}
+
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_ram_disk) */
 
 static void http_server_tests_before(void *fixture)
