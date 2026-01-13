@@ -3604,6 +3604,7 @@ NXP Platforms (MCU):
     - mmahadevan108
   collaborators:
     - butok
+    - DerekSnell
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
