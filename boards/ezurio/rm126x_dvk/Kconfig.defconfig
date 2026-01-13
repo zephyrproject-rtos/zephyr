@@ -1,0 +1,14 @@
+# Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RM126X_DVK_RM1261 || BOARD_RM126X_DVK_RM1262
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+config FPU
+	default y
+
+endif
