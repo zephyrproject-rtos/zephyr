@@ -652,7 +652,7 @@ static bool is_tbs_uri_unique(const char *uri_list, const char *uri_to_search)
 		is_matched = true;
 	}
 
-	return is_matched;
+	return !is_matched;
 }
 
 static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_buf_simple *buf)
@@ -2978,9 +2978,10 @@ static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *f
 
 int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint8_t uri_count)
 {
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	size_t len = 0;
+	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH]; /* includes NULL term */
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
+	size_t uri_scheme_list_len = 0U;
+	const char terminator = '\0';
 	int err;
 
 	if (inst == NULL) {
@@ -2988,34 +2989,61 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EINVAL;
 	}
 
-	(void)memset(uri_scheme_list, 0, sizeof(uri_scheme_list));
+	if (uri_list == NULL) {
+		LOG_DBG("uri_list is NULL");
+		return -EINVAL;
+	}
+
+	if (uri_count == 0U) {
+		LOG_DBG("uri_count is 0U");
+		return -EINVAL;
+	}
 
 	for (int i = 0; i < uri_count; i++) {
-		if (strlen(uri_scheme_list) > 0) {
-			if ((len + 1) > sizeof(uri_scheme_list) - 1) {
+		size_t uri_len;
+
+		if (uri_list[i] == NULL) {
+			LOG_DBG("[%d]: NULL URI", i);
+			return -EINVAL;
+		}
+
+		if (i > 0) {
+			const char sep = ',';
+
+			if (sizeof(sep) + uri_scheme_list_len > sizeof(uri_scheme_list)) {
 				return -ENOMEM;
 			}
 
-			strcat(uri_scheme_list, ",");
+			uri_scheme_list[uri_scheme_list_len] = sep;
+			uri_scheme_list_len += sizeof(sep);
 		}
 
-		len += strlen(uri_list[i]);
+		uri_len = strlen(uri_list[i]);
+		if (uri_len == 0U) {
+			LOG_DBG("[%d]: Cannot add empty URI", i);
+			return -EINVAL;
+		}
 
-		if (len > sizeof(uri_scheme_list) - 1) {
+		if (uri_len + uri_scheme_list_len + sizeof(terminator) > sizeof(uri_scheme_list)) {
+			LOG_DBG("[%d]: Cannot fit URI in buffer", i);
 			return -ENOMEM;
-		} else {
-			if (is_tbs_uri_unique(inst->uri_scheme_list, uri_list[i])) {
-				len -= strlen(uri_list[i]);
-			}
-
-			/* Store list in temp list */
-			strcat(uri_scheme_list, uri_list[i]);
 		}
+
+		if (uri_scheme_list_len > 0U && !is_tbs_uri_unique(uri_scheme_list, uri_list[i])) {
+			LOG_DBG("[%d]: URI \"%s\" is a duplicate in the list", i, uri_list[i]);
+			return -EINVAL;
+		}
+
+		/* Store list in temp list */
+		memcpy(&uri_scheme_list[uri_scheme_list_len], uri_list[i], uri_len);
+		uri_scheme_list_len += uri_len;
+		uri_scheme_list[uri_scheme_list_len] = terminator;
 	}
 
-	if ((len == 0) && (strlen(inst->uri_scheme_list) == strlen(uri_scheme_list))) {
-		/* no new uri-scheme added; don't update or notify */
-		LOG_DBG("All requested uri prefix are already in TBS uri-scheme list");
+	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
+		/* No URI scheme changes */
+		LOG_DBG("URI scheme \"%s\" was identical to existing for %p", uri_scheme_list,
+			inst);
 		return 0;
 	}
 

@@ -463,7 +463,17 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags);
  * @param uri_list      List of URI prefixes (e.g. {"skype", "tel"}).
  * @param uri_count     Number of URI prefixies in @p uri_list.
  *
- * @return BT_TBS_RESULT_CODE_* if positive or 0, errno value if negative.
+ * @retval 0 Success. If the URI scheme list is equal to the existing one for the bearer,
+ *           then no notifications to connected clients are sent.
+ * @retval -ENOMEM @kconfig{CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH} not large enough for provided
+ *                 arguments.
+ * @retval -EBUSY Could not access the current bearer.
+ * @retval -EINVAL
+ *         - @p bearer_index does not identify a registered bearer.
+ *         - @p uri_list is NULL.
+ *         - @p uri_count is 0.
+ *         - @p uri_list contain duplicate values.
+ *         - @p uri_list contain empty values.
  */
 int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 			       uint8_t uri_count);
