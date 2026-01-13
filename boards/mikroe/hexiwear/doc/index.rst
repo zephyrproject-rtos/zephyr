@@ -94,7 +94,7 @@ The hexiwear/mk64f12 board variant supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/nxp/hexiwear/hexiwear_mk64f12_defconfig`
+	:zephyr_file:`boards/mikroe/hexiwear/hexiwear_mk64f12_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -381,7 +381,7 @@ The hexiwear/mkw40z4 board variant supports the following hardware features:
 
 The default configuration can be found in the defconfig file:
 
-	:zephyr_file:`boards/nxp/hexiwear/hexiwear_mkw40z4_defconfig`
+	:zephyr_file:`boards/mikroe/hexiwear/hexiwear_mkw40z4_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -500,8 +500,6 @@ you should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! hexiwear
-
-.. include:: ../../common/board-footer.rst.inc
 
 .. _KW40Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/kinetis-kw40z-2.4-ghz-dual-mode-ble-and-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m0-plus-core:KW40Z
