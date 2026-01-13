@@ -104,7 +104,6 @@ static uint32_t get_pll_source(void)
 /**
  * @brief get the pll source frequency
  */
-__unused
 uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
@@ -120,7 +119,6 @@ uint32_t get_pllsrc_frequency(void)
 /**
  * @brief Set up pll configuration
  */
-__unused
 void config_pll_sysclock(void)
 {
 #if STM32_PLL_P_ENABLED
@@ -218,7 +216,6 @@ static uint32_t get_plli2s_source(void)
 /**
  * @brief Get the PLLI2S source frequency
  */
-__unused
 uint32_t get_plli2ssrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLLI2S_SRC_HSI)) {
@@ -234,7 +231,6 @@ uint32_t get_plli2ssrc_frequency(void)
 /**
  * @brief Set up PLL I2S configuration
  */
-__unused
 void config_plli2s(void)
 {
 #if STM32_PLLI2S_P_ENABLED
@@ -312,7 +308,6 @@ static uint32_t get_pllsai_source(void)
 /**
  * @brief Get the PLLSAI source frequency
  */
-__unused
 uint32_t get_pllsaisrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLLSAI_SRC_HSI)) {
@@ -328,7 +323,6 @@ uint32_t get_pllsaisrc_frequency(void)
 /**
  * @brief Set up PLLSAI configuration
  */
-__unused
 void config_pllsai(void)
 {
 #if STM32_PLLSAI_P_ENABLED
@@ -373,7 +367,6 @@ void config_pllsai(void)
 /**
  * @brief calculate the CK48 frequency depending on its clock source
  */
-__unused
 uint32_t get_ck48_frequency(void)
 {
 	uint32_t source = LL_RCC_GetCK48MClockSource(LL_RCC_CK48M_CLKSOURCE);
