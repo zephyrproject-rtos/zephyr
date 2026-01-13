@@ -1,0 +1,14 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,video-codec = &jpegdec;
+		/* Display cannot support the codec output format, disable. */
+		/delete-property/ zephyr,display;
+	};
+};
