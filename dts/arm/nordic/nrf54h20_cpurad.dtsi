@@ -131,3 +131,7 @@ wdt011: &cpurad_wdt011 {};
 &gdpwr_slow_main {
 	status = "okay";
 };
+
+&lfclk {
+	status = "okay";
+};
