@@ -57,3 +57,4 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/usb
 )
 
 include(${CMAKE_CURRENT_LIST_DIR}/connectivity_framework.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/multicore.cmake)
