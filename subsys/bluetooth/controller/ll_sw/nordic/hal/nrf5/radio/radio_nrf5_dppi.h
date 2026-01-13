@@ -7,6 +7,8 @@
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 #define NRF_DPPIC NRF_DPPIC10
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#define NRF_DPPIC NRF_DPPIC020
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
@@ -106,6 +108,7 @@ static inline void hal_event_timer_start_ppi_config(void)
 	nrf_grtc_publish_set(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO,
 			     HAL_EVENT_TIMER_START_PPI);
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	/* Setup PPIB receive publish */
 	nrf_ppib_publish_set(NRF_PPIB11, HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI,
 			     HAL_EVENT_TIMER_START_PPI);
@@ -115,8 +118,26 @@ static inline void hal_event_timer_start_ppi_config(void)
 			       HAL_EVENT_TIMER_START_PPI);
 
 	/* Enable same DPPI in Peripheral domain */
-	nrf_dppi_channels_enable(NRF_DPPIC20,
-				 BIT(HAL_EVENT_TIMER_START_PPI));
+	nrf_dppi_channels_enable(NRF_DPPIC20, BIT(HAL_EVENT_TIMER_START_PPI));
+
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+	/* Setup IPCT receive publish in radio domain */
+	nrf_ipct_publish_set(NRF_IPCT, HAL_IPCT_RECEIVE_EVENT_TIMER_START_PPI,
+			     HAL_EVENT_TIMER_START_PPI);
+
+	/* Setup IPCT send subscribe in main domain */
+	nrf_ipct_subscribe_set(NRF_IPCT130, HAL_IPCT_SEND_EVENT_TIMER_START_PPI,
+			       HAL_EVENT_TIMER_START_PPI);
+
+	nrf_ipct_shorts_enable(NRF_IPCT, IPCT_SHORTS_RECEIVE0_FLUSH0_Msk);
+
+	/* Enable same DPPI in main domain */
+	nrf_dppi_channels_enable(NRF_DPPIC130, BIT(HAL_EVENT_TIMER_START_PPI));
+
+	/* Enable same DPPI in global domain */
+	nrf_dppi_channels_enable(NRF_DPPIC132, BIT(HAL_EVENT_TIMER_START_PPI));
+#else
+#endif
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
@@ -263,6 +284,13 @@ static inline void hal_trigger_aar_ppi_config(void)
 #define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_PHYEND
 #define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_PHYEND
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
+
+/* Start SW-switch timer on event timer start.
+ */
+static inline void hal_sw_switch_timer_start_ppi_config(void)
+{
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
+}
 
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.

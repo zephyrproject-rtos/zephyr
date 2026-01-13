@@ -1134,10 +1134,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 	}
 
+	force = 0U;
+	force_lll = 0U;
 	elapsed_event = lll->lazy_prepare + 1U;
 
 	/* Reset supervision countdown */
-	if (done->extra.crc_valid && !done->extra.is_aborted) {
+	if ((done->extra.crc_valid != 0U) && (done->extra.is_aborted == 0U)) {
 		conn->supervision_expire = 0U;
 	}
 
@@ -1145,6 +1147,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 	else if (conn->connect_expire) {
 		if (conn->connect_expire > elapsed_event) {
 			conn->connect_expire -= elapsed_event;
+
+			force = 1U;
+			force_lll = 1U;
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
 
@@ -1175,8 +1180,6 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* check supervision timeout */
-	force = 0U;
-	force_lll = 0U;
 	if (conn->supervision_expire) {
 		if (conn->supervision_expire > elapsed_event) {
 			conn->supervision_expire -= elapsed_event;
@@ -1188,10 +1191,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 			 * supervision timeout.
 			 */
 			if (conn->supervision_expire <= 6U) {
-				force_lll = 1U;
-
 				force = 1U;
+				force_lll = 1U;
 			}
+
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
@@ -1199,6 +1202,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			else if (lll->role) {
 				if (latency_event) {
 					force = 1U;
+					force_lll = 1U;
 				} else {
 					force = conn->periph.force & 0x01;
 
@@ -1206,10 +1210,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 					conn->periph.force >>= 1U;
 					if (force) {
 						conn->periph.force |= BIT(31);
+
+						force_lll = 1U;
 					}
 				}
 			}
 #endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
+
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
@@ -1370,9 +1377,16 @@ void ull_conn_done(struct node_rx_event_done *done)
 		slot_us = tx_time + rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			slot_us += lll->periph.window_widening_periodic_us << 1U;
+			slot_us += EVENT_JITTER_US << 1U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+		slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
-		    !conn->lll.role) {
+		    (lll->role == BT_HCI_ROLE_CENTRAL)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		}
 
@@ -2403,6 +2417,13 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		slot_us = max_tx_time + max_rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay_us;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			slot_us += lll->periph.window_widening_periodic_us << 1U;
+			slot_us += EVENT_JITTER_US << 1U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+		slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
 		    (lll->role == BT_HCI_ROLE_CENTRAL)) {
@@ -2849,7 +2870,7 @@ static void ticker_get_offset_op_cb(uint32_t status, void *param)
 	*((uint32_t volatile *)param) = status;
 }
 
-static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
+static uint32_t get_ticker_offset(struct ll_conn *conn, uint8_t ticker_id, uint16_t *lazy)
 {
 	uint32_t volatile ret_cb;
 	uint32_t ticks_to_expire;
@@ -2888,6 +2909,7 @@ static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
 	/* Add a tick for negative remainder and return positive remainder
 	 * value.
 	 */
+	remainder = conn->llcp.prep.remainder;
 	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
 	start_us = remainder;
 
@@ -2921,7 +2943,8 @@ static void mfy_past_sender_offset_get(void *param)
 
 		LL_ASSERT_DBG(adv_sync);
 
-		ticker_offset_us = get_ticker_offset(TICKER_ID_ADV_SYNC_BASE + adv_sync_handle,
+		ticker_offset_us = get_ticker_offset(conn,
+						     (TICKER_ID_ADV_SYNC_BASE + adv_sync_handle),
 						     &lazy);
 
 		pa_event_counter = adv_sync->lll.event_counter;
@@ -2933,7 +2956,8 @@ static void mfy_past_sender_offset_get(void *param)
 
 		LL_ASSERT_DBG(sync);
 
-		ticker_offset_us = get_ticker_offset(TICKER_ID_SCAN_SYNC_BASE + sync_handle,
+		ticker_offset_us = get_ticker_offset(conn,
+						     (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
 						     &lazy);
 
 		if (lazy && ticker_offset_us > interval_us) {

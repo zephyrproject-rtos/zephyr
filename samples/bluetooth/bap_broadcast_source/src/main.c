@@ -63,12 +63,22 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2
 
 #define BROADCAST_SAMPLE_RATE 24000
 
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#define BROADCAST_SAMPLE_RATE 48000
+
 #endif
 
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 #define MAX_SAMPLE_RATE 16000
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 #define MAX_SAMPLE_RATE 24000
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
+#define MAX_SAMPLE_RATE 48000
 #endif
 #define MAX_FRAME_DURATION_US 10000
 #define MAX_NUM_SAMPLES       ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
@@ -139,6 +149,8 @@ static struct broadcast_source_stream {
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 	lc3_encoder_mem_16k_t lc3_encoder_mem;
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
+	lc3_encoder_mem_48k_t lc3_encoder_mem;
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
 #endif
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
@@ -310,7 +322,8 @@ K_THREAD_DEFINE(encoder, LC3_ENCODER_STACK_SIZE, init_lc3_thread, NULL, NULL, NU
 /* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
-K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_MAX_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, ROUND_UP(USB_MAX_STEREO_FRAME_SIZE, UDC_BUF_ALIGN), 3,
+			 UDC_BUF_ALIGN);
 static bool terminal_enabled;
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,

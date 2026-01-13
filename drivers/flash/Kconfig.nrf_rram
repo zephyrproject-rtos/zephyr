@@ -47,7 +47,7 @@ choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
 
 config SOC_FLASH_NRF_RADIO_SYNC_TICKER
 	bool "Nordic nRFx flash driver synchronized with radio"
-	depends on BT_LL_SW_SPLIT
+	depends on BT_LL_SW_SPLIT && !SOC_SERIES_NRF54HX
 	help
 	  Enable synchronization between flash memory driver and radio using
 	  Bluetooth LE LL controller ticker API.

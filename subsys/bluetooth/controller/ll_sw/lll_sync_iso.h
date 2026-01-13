@@ -84,6 +84,19 @@ struct lll_sync_iso {
 	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t chm_chan_count:6;
 
+	/* Flag to stop events in LLL pipeline */
+	uint8_t is_lll_stop:1;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t is_lll_resume:1;
+	uint32_t ready_us;
+	uint32_t aa_us;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+	/* Last scheduled subevent and its access address sync */
+	uint32_t aa_se;
+	uint8_t se;
+
 	uint8_t term_reason;
 
 	uint16_t ctrl_instant;
@@ -111,5 +124,6 @@ void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
+extern uint32_t ull_sync_iso_lll_ticks_slot_get(struct lll_sync_iso *lll);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);
 extern void ll_rx_sched(void);
