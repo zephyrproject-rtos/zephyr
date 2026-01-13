@@ -46,7 +46,11 @@ config FPU
 	default y
 
 config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 2048
+	default 2048 if !BT_TX_PROCESSOR_THREAD
+	default 1024
+
+config BT_TX_PROCESSOR_STACK_SIZE
+	default 2048 if BT_TX_PROCESSOR_THREAD
 
 endif
 
