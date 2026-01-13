@@ -83,6 +83,8 @@ Boards
     ``hal_nxp/rt11xx/fsl_flexspi_nor_boot.h``, they were added to the corresponding SoC-layer CMakeLists.txt files
     using ``zephyr_library_compile_definitions()`` to limit their scope.
 
+* Renesas ``ek_ra8t2/r7ka8t2lfecac/cm85`` is renamed to ``ek_ra8t2/r7ka8t2lflcac/cm85``.
+
 Device Drivers and Devicetree
 *****************************
 
