@@ -88,7 +88,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application on CM85
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mck_ra8t2/r7ka8t2lfecac/cm85
+   :board: mck_ra8t2/r7ka8t2lflcac/cm85
    :goals: flash
 
 Open a serial terminal, reset the board (push the reset switch S1), and you should
@@ -97,7 +97,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v4.2.0-xxx-xxxxxxxxxxxxx *****
-   Hello World! mck_ra8t2/r7ka8t2lfecac/cm85
+   Hello World! mck_ra8t2/r7ka8t2lflcac/cm85
 
 Flashing
 ========
@@ -128,7 +128,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: mck_ra8t2/r7ka8t2lfecac/cm85
+   :board: mck_ra8t2/r7ka8t2lflcac/cm85
    :goals: build flash
    :west-args: --sysbuild
    :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
@@ -188,7 +188,7 @@ You should see the following message in the terminal:
    I: Image version: v0.0.0
    I: Jumping to the first image slot
    *** Booting Zephyr OS build v4.2.0-6156-ged85ac9ffda9 ***
-   Hello World! mck_ra8t2/r7ka8t2lfecac/cm85
+   Hello World! mck_ra8t2/r7ka8t2lflcac/cm85
 
 References
 **********
