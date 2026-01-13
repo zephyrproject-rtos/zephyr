@@ -66,6 +66,7 @@ struct ifx_cat1_spi_config {
 	const struct pinctrl_dev_config *pcfg;
 	cy_stc_scb_spi_config_t scb_spi_config;
 	cy_cb_scb_spi_handle_events_t spi_handle_events_func;
+	en_clk_dst_t clk_dst;
 
 	uint32_t irq_num;
 	void (*irq_config_func)(const struct device *dev);
@@ -469,10 +470,17 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	struct ifx_cat1_spi_data *const data = dev->data;
 	const struct ifx_cat1_spi_config *const config = dev->config;
 	int ret;
+	cy_rslt_t result;
 
 	/* Dedicate SCB HW resource */
 	data->resource.type = IFX_RSC_SCB;
 	data->resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
+
+	/* Connect this SCB to the peripheral clock */
+	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+	if (result != CY_RSLT_SUCCESS) {
+		return -EIO;
+	}
 
 #ifdef CONFIG_IFX_CAT1_SPI_DMA
 	/* spi_rx_trigger is initialized to PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0,
@@ -636,6 +644,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			 .masterSlaveIntEnableMask =                                               \
 				 DT_INST_PROP_OR(n, master_slave_int_enable_mask, 0)},             \
                                                                                                    \
+		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		.irq_num = DT_INST_IRQN(n),                                                        \
 		.irq_config_func = ifx_cat1_spi_irq_config_func_##n,                               \
                                                                                                    \
@@ -844,6 +853,7 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 {
 
 	struct ifx_cat1_spi_data *const data = dev->data;
+	const struct ifx_cat1_spi_config *const config = dev->config;
 
 	cy_rslt_t result = CY_RSLT_SUCCESS;
 	uint8_t oversample_value;
@@ -910,13 +920,11 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		CY_UNUSED_PARAMETER(last_ovrsmpl_val);
 	}
 
-	en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->resource.block_num);
-
 	if ((data->clock.block & 0x02) == 0) {
-		result = ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &(data->clock),
+		result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
 							      last_dvdr_val - 1);
 	} else {
-		result = ifx_cat1_utils_peri_pclk_set_frac_divider(clk_idx, &(data->clock),
+		result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   last_dvdr_val - 1, 0);
 	}
 

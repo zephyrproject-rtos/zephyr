@@ -131,6 +131,7 @@ struct ifx_cat1_uart_config {
 	struct uart_config dt_cfg;
 	uint16_t irq_num;
 	uint8_t irq_priority;
+	en_clk_dst_t clk_dst;
 };
 
 typedef void (*ifx_cat1_uart_event_callback_t)(void *callback_arg);
@@ -313,13 +314,12 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 
 	divider = ifx_uart_divider(peri_frequency, baudrate, best_oversample);
 
-	en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->hw_resource.block_num);
-
 	/* Set baud rate */
 	if ((data->clock.block & 0x02) == 0) {
-		status = ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &(data->clock), divider - 1);
+		status = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
+							      divider - 1);
 	} else {
-		status = ifx_cat1_utils_peri_pclk_set_frac_divider(clk_idx, &(data->clock),
+		status = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   divider - 1, 0);
 	}
 
@@ -1321,6 +1321,12 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	data->scb_config.txFifoTriggerLevel = 1;
 #endif
 
+	/* Connect this SCB to the peripheral clock */
+	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+	if (result != CY_RSLT_SUCCESS) {
+		return -EIO;
+	}
+
 	result = (cy_rslt_t)Cy_SCB_UART_Init(config->reg_addr, &(data->scb_config),
 					     &(data->context));
 
@@ -1537,6 +1543,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.dt_cfg.flow_ctrl = DT_INST_PROP(n, hw_flow_control),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
+		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		IRQ_INFO(n)};                                                                      \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init##n, NULL, &ifx_cat1_uart##n##_data,           \
