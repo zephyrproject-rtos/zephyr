@@ -2786,6 +2786,10 @@ Espressif Platforms:
     - samples/boards/espressif/
     - tests/boards/espressif/
     - drivers/*/*esp32*/
+  file-groups:
+    - name: Espressif hosted Wi-Fi driver
+      files:
+        - drivers/wifi/esp_hosted
   labels:
     - "platform: ESP32"
 
