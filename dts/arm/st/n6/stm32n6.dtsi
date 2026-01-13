@@ -1362,12 +1362,17 @@
 		npu: npu@580e0000 {
 			compatible = "st,stm32-npu";
 			reg = <0x580e0000 DT_SIZE_K(128)>;
-			clocks = <&rcc STM32_CLOCK(AHB5, 31)>,
-				 <&rcc STM32_CLOCK(AHB5, 30)>;
-			clock-names = "npu", "cacheaxi";
-			resets = <&rctl STM32_RESET(AHB5, 31)>,
-				 <&rctl STM32_RESET(AHB5, 30)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
+			resets = <&rctl STM32_RESET(AHB5, 31)>;
 			status = "disabled";
+		};
+
+		npu_cache: cache-controller@580dfc00 {
+			compatible = "st,stm32-npu-cache";
+			reg = <0x580dfc00 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 30)>;
+			resets = <&rctl STM32_RESET(AHB5, 30)>;
+			status = "okay";
 		};
 
 		venc: venc@58005000 {
