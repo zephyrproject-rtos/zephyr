@@ -506,7 +506,7 @@ static void numaker_usbd_setup_fifo_copy_to_user(const struct device *dev, uint8
  *
  * size_p holds size to copy/copied on input/output
  */
-static int numaker_usbd_ep_fifo_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_t *usrbuf,
+static void numaker_usbd_ep_fifo_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_t *usrbuf,
 					     uint32_t *size_p)
 {
 	const struct device *dev = ep_cur->dev;
@@ -528,8 +528,6 @@ static int numaker_usbd_ep_fifo_copy_to_user(struct numaker_usbd_ep *ep_cur, uin
 	if (ep_cur->read_fifo_used == 0) {
 		ep_cur->read_fifo_pos = ep_cur->dmabuf_base;
 	}
-
-	return 0;
 }
 
 /* Copy data from user buffer to EP FIFO
@@ -1807,12 +1805,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data_buf, uint32_t max_data_len, ui
 	 */
 	if (data_buf) {
 		data_len_act = max_data_len;
-		rc = numaker_usbd_ep_fifo_copy_to_user(ep_cur, data_buf, &data_len_act);
-		if (rc < 0) {
-			LOG_ERR("Copy from FIFO to user buffer");
-			goto cleanup;
-		}
-
+		numaker_usbd_ep_fifo_copy_to_user(ep_cur, data_buf, &data_len_act);
 		if (read_bytes) {
 			*read_bytes = data_len_act;
 		}
