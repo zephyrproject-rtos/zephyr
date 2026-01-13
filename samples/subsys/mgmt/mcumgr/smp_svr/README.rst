@@ -145,6 +145,17 @@ included. The ``smp_svr`` sample comes in different flavours.
          :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf;802154-subg.conf"
          :compact:
 
+      To build the UDP with DTLS sample:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: bl5340_dvk/nrf5340/cpuapp
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="udp-dtls.conf"
+         :compact:
+
 Flashing the sample image
 *************************
 
