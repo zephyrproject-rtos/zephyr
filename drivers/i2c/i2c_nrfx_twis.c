@@ -307,7 +307,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 #endif
 
 #define SHIM_NRF_TWIS_NAME(id, name) \
-	_CONCAT_4(shim_nrf_twis_, name, _, id)
+	CONCAT(shim_nrf_twis_, name, _, id)
 
 #define SHIM_NRF_TWIS_DEVICE_DEFINE(id)                                                            \
 	static struct shim_nrf_twis_data SHIM_NRF_TWIS_NAME(id, data);                             \

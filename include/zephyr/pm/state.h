@@ -385,7 +385,7 @@ struct pm_state_constraints {
 	PM_STATE_CONSTRAINT_INIT(DT_PHANDLE_BY_IDX(node_id, phandle, idx))
 
 #define Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, phandles)                   \
-	_CONCAT_4(node_id, _, phandles, _constraints)
+	CONCAT(node_id, _, phandles, _constraints)
 
 /**
  * @brief Define a list of power state constraints from devicetree.
