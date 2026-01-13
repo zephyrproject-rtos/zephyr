@@ -780,21 +780,27 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 			continue;
 		}
 
-		if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+		if (compare_strings(path, resource->resource) == 0) {
+			NET_DBG("Got match for %s", resource->resource);
+
+			*path_len = strlen(resource->resource);
+			return resource->detail;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
+		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
 			int ret;
+
+			if (skip_this(resource, is_websocket)) {
+				continue;
+			}
 
 			ret = fnmatch(resource->resource, path, (FNM_PATHNAME | FNM_LEADING_DIR));
 			if (ret == 0) {
 				*path_len = path_len_without_query(path);
 				return resource->detail;
 			}
-		}
-
-		if (compare_strings(path, resource->resource) == 0) {
-			NET_DBG("Got match for %s", resource->resource);
-
-			*path_len = strlen(resource->resource);
-			return resource->detail;
 		}
 	}
 
