@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
- * Copyright 2025 NXP
+ * Copyright 2025,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,10 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if !DT_HAS_CHOSEN(zephyr_camera)
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
+#endif
+
+#if defined(CONFIG_VIDEO_USE_CODEC) && !DT_HAS_CHOSEN(zephyr_video_codec)
+#error CONFIG_VIDEO_USE_CODEC is enabled but no video codec chosen in devicetree.
 #endif
 
 static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
@@ -107,8 +111,8 @@ static int app_setup_video_selection(const struct device *const video_dev,
 			return ret;
 		}
 
-		LOG_INF("Crop window set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+		LOG_INF("Crop window set to (%u,%u)/%ux%u", sel.rect.left, sel.rect.top,
+			sel.rect.width, sel.rect.height);
 	}
 
 	/*
@@ -135,15 +139,14 @@ static int app_setup_video_selection(const struct device *const video_dev,
 			return ret;
 		}
 
-		LOG_INF("Compose window set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+		LOG_INF("Compose window set to (%u,%u)/%ux%u", sel.rect.left, sel.rect.top,
+			sel.rect.width, sel.rect.height);
 	}
 
 	return 0;
 }
 
-static int app_query_video_info(const struct device *const video_dev,
-				struct video_caps *const caps,
+static int app_query_video_info(const struct device *const video_dev, struct video_caps *const caps,
 				struct video_format *const fmt)
 {
 	int ret;
@@ -167,9 +170,8 @@ static int app_query_video_info(const struct device *const video_dev,
 		const struct video_format_cap *fcap = &caps->format_caps[i];
 
 		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
-			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
-			fcap->width_min, fcap->width_max, fcap->width_step,
-			fcap->height_min, fcap->height_max, fcap->height_step);
+			VIDEO_FOURCC_TO_STR(fcap->pixelformat), fcap->width_min, fcap->width_max,
+			fcap->width_step, fcap->height_min, fcap->height_max, fcap->height_step);
 	}
 
 	/* Get default/native format */
@@ -197,8 +199,8 @@ static int app_setup_video_format(const struct device *const video_dev,
 {
 	int ret;
 
-	LOG_INF("- Video format: %s %ux%u",
-		VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
+	LOG_INF("- Video format: %s %ux%u", VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width,
+		fmt->height);
 
 	ret = video_set_compose_format(video_dev, fmt);
 	if (ret < 0) {
@@ -296,18 +298,25 @@ static int app_setup_video_controls(const struct device *const video_dev)
 }
 
 static int app_setup_video_buffers(const struct device *const video_dev,
-				   struct video_caps *const caps,
-				   struct video_format *const fmt)
+				   struct video_caps *const caps, struct video_format *const fmt)
 {
 	int ret;
 
 	/* Alloc video buffers and enqueue for capture */
+#if defined(CONFIG_VIDEO_USE_CODEC)
+	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX / 2U) {
+#else
 	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+#endif
 		LOG_ERR("Not enough buffers to start streaming");
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_VIDEO_USE_CODEC)
+	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX / 2U; i++) {
+#else
 	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+#endif
 		struct video_buffer *vbuf;
 
 		/*
@@ -333,6 +342,100 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 	return 0;
 }
 
+#if defined(CONFIG_VIDEO_USE_CODEC)
+static int app_query_codec_info(const struct device *const codec_dev,
+				struct video_caps *const codec_in_caps,
+				struct video_caps *const codec_out_caps,
+				struct video_format *const codec_out_fmt)
+{
+	int ret = 0;
+
+	LOG_INF("Video codec device: %s", codec_dev->name);
+
+	if (!device_is_ready(codec_dev)) {
+		LOG_ERR("%s: video codec device is not ready", codec_dev->name);
+		return -ENOSYS;
+	}
+
+	/* Get input capabilities */
+	codec_in_caps->type = VIDEO_BUF_TYPE_INPUT;
+	ret = video_get_caps(codec_dev, codec_in_caps);
+	if (ret < 0) {
+		LOG_ERR("Unable to retrieve codec input capabilities");
+		return ret;
+	}
+
+	/* Get output capabilities */
+	codec_out_caps->type = VIDEO_BUF_TYPE_OUTPUT;
+	ret = video_get_caps(codec_dev, codec_out_caps);
+	if (ret < 0) {
+		LOG_ERR("Unable to retrieve codec output capabilities");
+		return ret;
+	}
+
+	/* Set output format. */
+	codec_out_fmt->type = VIDEO_BUF_TYPE_OUTPUT;
+
+	/* Adjust codec format according to the configuration */
+	if (CONFIG_VIDEO_CODEC_FRAME_HEIGHT > 0) {
+		codec_out_fmt->height = CONFIG_VIDEO_CODEC_FRAME_HEIGHT;
+	}
+	if (CONFIG_VIDEO_CODEC_FRAME_WIDTH > 0) {
+		codec_out_fmt->width = CONFIG_VIDEO_CODEC_FRAME_WIDTH;
+	}
+	if (strcmp(CONFIG_VIDEO_CODEC_PIXEL_FORMAT, "") != 0) {
+		codec_out_fmt->pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_CODEC_PIXEL_FORMAT);
+	}
+
+	ret = video_set_format(codec_dev, codec_out_fmt);
+	if (ret < 0) {
+		LOG_ERR("Unable to set codec output format");
+		return ret;
+	}
+
+	return ret;
+}
+
+static int app_setup_codec_buffers(const struct device *const codec_dev,
+				   struct video_caps *const codec_out_caps,
+				   struct video_format *const codec_out_fmt)
+{
+	int ret;
+	/* Use 4Bps for largest possible format (ARGB32) */
+	uint32_t buf_size = codec_out_fmt->height * codec_out_fmt->width * 4U;
+
+	/*
+	 * Allocate and enqueue output buffers for codec, the input buffers are provided by the
+	 * capture device
+	 */
+	if (codec_out_caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX / 2) {
+		LOG_ERR("Not enough buffers for codec output");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX / 2; i++) {
+		struct video_buffer *vbuf;
+
+		vbuf = video_buffer_aligned_alloc(buf_size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+						  K_NO_WAIT);
+		if (vbuf == NULL) {
+			LOG_ERR("Unable to alloc codec output buffer");
+			return -ENOMEM;
+		}
+
+		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+
+		ret = video_enqueue(codec_dev, vbuf);
+		if (ret < 0) {
+			LOG_ERR("Failed to enqueue codec output buffer");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_VIDEO_USE_CODEC */
+
 int main(void)
 {
 	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
@@ -344,6 +447,20 @@ int main(void)
 	struct video_caps caps = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
+#if defined(CONFIG_VIDEO_USE_CODEC)
+	const struct device *const codec_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_video_codec));
+	struct video_buffer *codec_in_vbuf = &(struct video_buffer){};
+	struct video_buffer *codec_out_vbuf = &(struct video_buffer){};
+	struct video_format codec_out_fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	struct video_caps codec_in_caps = {
+		.type = VIDEO_BUF_TYPE_INPUT,
+	};
+	struct video_caps codec_out_caps = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+#endif /* CONFIG_VIDEO_USE_CODEC */
 	unsigned int frame = 0;
 	int ret;
 
@@ -378,8 +495,21 @@ int main(void)
 		goto err;
 	}
 
+#if defined(CONFIG_VIDEO_USE_CODEC)
+	ret = app_query_codec_info(codec_dev, &codec_in_caps, &codec_out_caps, &codec_out_fmt);
+
+	if (ret < 0) {
+		goto err;
+	}
+#endif /* CONFIG_VIDEO_USE_CODEC */
+
 	if (DT_HAS_CHOSEN(zephyr_display)) {
+#if defined(CONFIG_VIDEO_USE_CODEC)
+		/* Setup display with codec output format */
+		ret = app_setup_display(display_dev, codec_out_fmt.pixelformat);
+#else
 		ret = app_setup_display(display_dev, fmt.pixelformat);
+#endif /* CONFIG_VIDEO_USE_CODEC */
 		if (ret < 0) {
 			goto err;
 		}
@@ -396,11 +526,31 @@ int main(void)
 		goto err;
 	}
 
+#if defined(CONFIG_VIDEO_USE_CODEC)
+	ret = app_setup_codec_buffers(codec_dev, &codec_out_caps, &codec_out_fmt);
+	if (ret < 0) {
+		goto err;
+	}
+
+	ret = video_stream_start(codec_dev, VIDEO_BUF_TYPE_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Unable to start codec stream");
+		goto err;
+	}
+
+	LOG_INF("Codec streaming started");
+#endif /* CONFIG_VIDEO_USE_CODEC */
+
 	LOG_INF("Capture started");
 
 	uint32_t last_ts = 0;
 
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+#if defined(CONFIG_VIDEO_USE_CODEC)
+	codec_in_vbuf->type = VIDEO_BUF_TYPE_INPUT;
+	codec_out_vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+#endif /* CONFIG_VIDEO_USE_CODEC */
+
 	while (1) {
 		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (ret < 0) {
@@ -412,6 +562,47 @@ int main(void)
 			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp-last_ts);
 		last_ts = vbuf->timestamp;
 
+#if defined(CONFIG_VIDEO_USE_CODEC)
+		/* Enqueue codec input buffer for processing */
+		vbuf->type = VIDEO_BUF_TYPE_INPUT;
+		ret = video_enqueue(codec_dev, vbuf);
+		if (ret < 0) {
+			LOG_ERR("Unable to enqueue codec input buf");
+			goto err;
+		}
+
+		/* Dequeue codec output buffer */
+		ret = video_dequeue(codec_dev, &codec_out_vbuf, K_FOREVER);
+		if (ret < 0) {
+			LOG_ERR("Unable to dequeue codec output buf");
+			goto err;
+		}
+
+		LOG_INF("Codec output frame size: %u", codec_out_vbuf->bytesused);
+
+		if (DT_HAS_CHOSEN(zephyr_display)) {
+			ret = app_display_frame(display_dev, codec_out_vbuf, &codec_out_fmt);
+			if (ret != 0) {
+				LOG_WRN("Failed to display this frame");
+			}
+		}
+
+		/* Re-enqueue codec output buffer */
+		ret = video_enqueue(codec_dev, codec_out_vbuf);
+		if (ret < 0) {
+			LOG_ERR("Unable to requeue codec output buf");
+			goto err;
+		}
+
+		/* Dequeue codec input buffer */
+		ret = video_dequeue(codec_dev, &vbuf, K_FOREVER);
+		if (ret < 0) {
+			LOG_ERR("Unable to dequeue codec input buf");
+			goto err;
+		}
+
+		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+#else
 		if (DT_HAS_CHOSEN(zephyr_display)) {
 			ret = app_display_frame(display_dev, vbuf, &fmt);
 			if (ret != 0) {
@@ -419,6 +610,9 @@ int main(void)
 			}
 		}
 
+#endif /* CONFIG_VIDEO_USE_CODEC */
+
+		/* Re-enqueue camera buffer */
 		ret = video_enqueue(video_dev, vbuf);
 		if (ret < 0) {
 			LOG_ERR("Unable to requeue video buf");
