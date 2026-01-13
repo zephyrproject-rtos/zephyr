@@ -1,0 +1,28 @@
+# Copyright Laird Connectivity 2021. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2022-2026. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to Dummy transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_RAW_DUMMY_
+
+menuconfig MCUMGR_TRANSPORT_RAW_DUMMY
+	bool "Dummy raw UART MCUmgr (non-SMP over console) backend"
+	help
+	  Enables the dummy MCUmgr UART backend which does not use SMP over console and does not
+	  have base64 encoding over the data, which can be used for unit testing SMP
+	  functionality without needing a real interface or driver.
+
+if MCUMGR_TRANSPORT_RAW_DUMMY
+
+config MCUMGR_TRANSPORT_RAW_DUMMY_RX_BUF_SIZE
+	int "Size of receive buffer for dummy interface MCUmgr fragments"
+	default 128
+	help
+	  Specifies the size of the raw MCUmgr dummy backend receive buffer, in bytes. This value
+	  must be large enough to accommodate any line sent by an MCUmgr client.
+
+endif # MCUMGR_TRANSPORT_RAW_DUMMY
