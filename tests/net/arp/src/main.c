@@ -52,9 +52,7 @@ struct net_arp_context {
 
 int net_arp_dev_init(const struct device *dev)
 {
-	struct net_arp_context *net_arp_context = dev->data;
-
-	net_arp_context = net_arp_context;
+	ARG_UNUSED(dev);
 
 	return 0;
 }
