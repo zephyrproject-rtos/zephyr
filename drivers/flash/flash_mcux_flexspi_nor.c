@@ -861,6 +861,9 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 	if (en4b & BIT(6)) {
 		/* Flash is always in 4 byte mode. We just need to configure LUT */
 		return 0;
+	} else if (en4b & BIT(5)) {
+		/* Dedicated vendor instruction set, which we don't support. Exit here */
+		return -ENOTSUP;
 	} else if (en4b & BIT(0)) {
 		/* Issue instruction 0xB7 */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
