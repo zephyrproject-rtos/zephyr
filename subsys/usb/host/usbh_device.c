@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023,2025 Nordic Semiconductor ASA
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -303,6 +302,11 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 				}
 
 				udev->ifaces[tmp_nif].dhp = dhp;
+				if (iad != NULL &&
+				    iad->bFirstInterface == if_desc->bInterfaceNumber) {
+					udev->ifaces[tmp_nif].iad = iad;
+				}
+
 				tmp_nif++;
 			}
 		}
