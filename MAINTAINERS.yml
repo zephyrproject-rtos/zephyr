@@ -486,7 +486,8 @@ Bluetooth Classic:
     - makeshi
     - chengkai15
   files:
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
+    - doc/connectivity/bluetooth/api/classic/
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -589,9 +590,10 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/autopts/
     - doc/connectivity/bluetooth/img/ctlr*
     - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/api/classic/
     - doc/connectivity/bluetooth/api/mesh/
     - doc/connectivity/bluetooth/api/controller.rst
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
