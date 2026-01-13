@@ -81,6 +81,7 @@ struct ifx_cat1_i2c_config {
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t irq_priority;
 	uint32_t irq_num;
+	en_clk_dst_t clk_dst;
 	void (*irq_config_func)(const struct device *dev);
 	cy_cb_scb_i2c_handle_events_t i2c_handle_events_func;
 };
@@ -102,7 +103,6 @@ static cy_stc_scb_i2c_config_t _i2c_default_config = {
 
 typedef void (*ifx_cat1_i2c_event_callback_t)(void *callback_arg, uint32_t event);
 
-en_clk_dst_t _ifx_cat1_scb_get_clock_index(uint32_t block_num);
 int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr);
 
 cy_rslt_t _i2c_abort_async(const struct device *dev)
@@ -290,7 +290,7 @@ uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_
 		return 0;
 	}
 
-	if (_ifx_cat1_utils_peri_pclk_assign_divider(_ifx_cat1_scb_get_clock_index(block_num),
+	if (_ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst,
 						     &data->clock) == CY_SYSCLK_SUCCESS) {
 		status = ifx_cat1_clock_set_enabled(&data->clock, false, false);
 		if (status == CY_RSLT_SUCCESS) {
@@ -565,6 +565,7 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *config = dev->config;
 	int ret;
+	cy_rslt_t result;
 
 	/* Configure semaphores */
 	ret = k_sem_init(&data->transfer_sem, 0, 1);
@@ -583,13 +584,11 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 		return ret;
 	}
 
-	/* TODO: Assigns a programmable divider to a selected IP block */
-	/* en_clk_dst_t clk_idx = _ifx_cat1_scb_get_clock_index(_get_hw_block_num(config->base));
-	 * cy_rslt_t result = _ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
-	 * if (result != CY_RSLT_SUCCESS) {
-	 *	return -ENOTSUP;
-	 * }
-	 */
+	/* Connect this SCB to the peripheral clock */
+	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+	if (result != CY_RSLT_SUCCESS) {
+		return -EIO;
+	}
 
 	/* Initial value for async operations */
 	data->pending = CAT1_I2C_PENDING_NONE;
@@ -752,6 +751,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                         \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 		.irq_num = DT_INST_IRQN(n),                                                        \
+		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		.irq_config_func = ifx_cat1_i2c_irq_config_func_##n,                               \
 		.i2c_handle_events_func = i2c_handle_events_func_##n,                              \
 	};                                                                                         \
