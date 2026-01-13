@@ -167,6 +167,7 @@
 			compatible = "infineon,scb";
 			reg = <0x40240000 0xfd0>;
 			interrupts = <7 3>;
+			clk-dst = <0x0>;
 			status = "disabled";
 		};
 
@@ -174,6 +175,7 @@
 			compatible = "infineon,scb";
 			reg = <0x40250000 0xfd0>;
 			interrupts = <8 3>;
+			clk-dst = <0x1>;
 			status = "disabled";
 		};
 
@@ -181,6 +183,7 @@
 			compatible = "infineon,scb";
 			reg = <0x40260000 0xfd0>;
 			interrupts = <9 3>;
+			clk-dst = <0x2>;
 			status = "disabled";
 		};
 
@@ -188,6 +191,7 @@
 			compatible = "infineon,scb";
 			reg = <0x40270000 0xfd0>;
 			interrupts = <10 3>;
+			clk-dst = <0x3>;
 			status = "disabled";
 		};
 
@@ -195,6 +199,7 @@
 			compatible = "infineon,scb";
 			reg = <0x40280000 0xfd0>;
 			interrupts = <11 3>;
+			clk-dst = <0x4>;
 			status = "disabled";
 		};
 
@@ -207,6 +212,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x40200100 0x40>;
 				resolution = <16>;
+				clk-dst = <0x6>;
 				status = "disabled";
 
 				pwm0_0: pwm0_0 {
@@ -225,6 +231,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x40200140 0x40>;
 				resolution = <16>;
+				clk-dst = <0x7>;
 				status = "disabled";
 
 				pwm0_1: pwm0_1 {
@@ -243,6 +250,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x40200180 0x40>;
 				resolution = <16>;
+				clk-dst = <0x8>;
 				status = "disabled";
 
 				pwm0_2: pwm0_2 {
@@ -261,6 +269,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x402001c0 0x40>;
 				resolution = <16>;
+				clk-dst = <0x9>;
 				status = "disabled";
 
 				pwm0_3: pwm0_3 {
@@ -279,6 +288,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x40200200 0x40>;
 				resolution = <16>;
+				clk-dst = <0xa>;
 				status = "disabled";
 
 				pwm0_4: pwm0_4 {
@@ -297,6 +307,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x40200240 0x40>;
 				resolution = <16>;
+				clk-dst = <0xb>;
 				status = "disabled";
 
 				pwm0_5: pwm0_5 {
@@ -315,6 +326,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x40200280 0x40>;
 				resolution = <16>;
+				clk-dst = <0xc>;
 				status = "disabled";
 
 				pwm0_6: pwm0_6 {
@@ -333,6 +345,7 @@
 				compatible = "infineon,tcpwm";
 				reg = <0x402002c0 0x40>;
 				resolution = <16>;
+				clk-dst = <0xd>;
 				status = "disabled";
 
 				pwm0_7: pwm0_7 {

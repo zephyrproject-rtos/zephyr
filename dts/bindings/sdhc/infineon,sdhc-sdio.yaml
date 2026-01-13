@@ -45,3 +45,7 @@ properties:
   cd-gpios:
     type: phandle-array
     description: Card Detect pin
+
+  clk-dst:
+    type: int
+    description: Peripheral clock destination ID for this TCPWM instance
