@@ -14,7 +14,7 @@ menuconfig MCUMGR_TRANSPORT_UART
 	depends on CONSOLE
 	depends on BASE64
 	depends on CRC
-	select UART_MCUMGR
+	depends on UART_MCUMGR
 	help
 	  Enables handling of SMP commands received over UART. This is a lightweight alternative
 	  to MCUMGR_TRANSPORT_SHELL. It allows MCUmgr commands to be received over UART without
