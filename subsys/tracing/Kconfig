@@ -63,6 +63,15 @@ config TRACING_USER
 	help
 	  Use user-defined functions for tracing task switching and irqs
 
+config TRACING_CUSTOM
+	bool "Include custom tracing header [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  When enabled, a custom application provided header, named
+	  "zephyr_custom_tracing.h", is included at the end of tracing.h. This enables
+	  extension of the sys_port_trace* APIs at the macro level. Please use cautiously!
+	  The internal TRACE APIs may change in future releases.
+
 endchoice
 
 
