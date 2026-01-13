@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <renesas/ra/ra8/r7ka8t2lfecac_cm85.dtsi>
+#include <renesas/ra/ra8/r7ka8t2lflcac_cm85.dtsi>
 #include "mck_ra8t2.dtsi"
 
 / {

@@ -11,8 +11,8 @@ DT_CPUCLK1_PATH := $(dt_nodelabel_path,cpuclk1)
 DT_LOCO_PATH := $(dt_nodelabel_path,loco)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,$(DT_CPUCLK0_PATH),clock-frequency) if SOC_R7KA8T2LFECAC_CM85 && CORTEX_M_SYSTICK
-	default $(dt_node_int_prop_int,$(DT_CPUCLK1_PATH),clock-frequency) if SOC_R7KA8T2LFECAC_CM33 && CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_CPUCLK0_PATH),clock-frequency) if SOC_R7KA8T2LFLCAC_CM85 && CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_CPUCLK1_PATH),clock-frequency) if SOC_R7KA8T2LFLCAC_CM33 && CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,$(DT_LOCO_PATH),clock-frequency) if RENESAS_RA_ULPT_TIMER
 
 config CORTEX_M_SYSTICK
