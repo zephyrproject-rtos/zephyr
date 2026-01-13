@@ -365,6 +365,19 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 	return spi_dma_move_tx_buffers(dev, len);
 }
 
+static void spi_dma_enable_requests(SPI_TypeDef *spi)
+{
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
+
+	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
+		LL_SPI_EnableDMAReq_RX(spi);
+		LL_SPI_EnableDMAReq_TX(spi);
+	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		LL_SPI_EnableDMAReq_TX(spi);
+	} else {
+		LL_SPI_EnableDMAReq_RX(spi);
+	}
+}
 #endif /* CONFIG_SPI_STM32_DMA */
 
 /* Value to shift out when no application data needs transmitting. */
@@ -1419,14 +1432,7 @@ static int transceive_dma(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
-	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-		LL_SPI_EnableDMAReq_RX(spi);
-		LL_SPI_EnableDMAReq_TX(spi);
-	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-		LL_SPI_EnableDMAReq_TX(spi);
-	} else {
-		LL_SPI_EnableDMAReq_RX(spi);
-	}
+	spi_dma_enable_requests(spi);
 
 	LL_SPI_Enable(spi);
 
@@ -1479,16 +1485,8 @@ static int transceive_dma(const struct device *dev,
 		}
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-
 		/* toggle the DMA request to restart the transfer */
-		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			LL_SPI_EnableDMAReq_RX(spi);
-			LL_SPI_EnableDMAReq_TX(spi);
-		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			LL_SPI_EnableDMAReq_TX(spi);
-		} else {
-			LL_SPI_EnableDMAReq_RX(spi);
-		}
+		spi_dma_enable_requests(spi);
 #endif /* ! st_stm32h7_spi */
 
 		ret = wait_dma_rx_tx_done(dev);
@@ -1551,7 +1549,7 @@ static int transceive_dma(const struct device *dev,
 				break;
 			}
 
-			LL_SPI_EnableDMAReq_RX(spi);
+			spi_dma_enable_requests(spi);
 #endif /* st_stm32h7_spi */
 
 			LL_SPI_Enable(spi);
