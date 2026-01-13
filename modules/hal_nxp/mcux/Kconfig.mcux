@@ -93,6 +93,11 @@ config NXP_IEEE802154_MAC
 	   If enabled, the NBU firmware used by the device will be use the 802.15.4
 	   MAC interface.
 
+config NXP_MULTICORE
+	bool "NXP Multicore Manager support"
+	help
+	  Includes NXP Multicore Manager support.
+
 endif # HAS_MCUX
 
 config BT_NXP_PCM_PINS_DIR_REVERSE
