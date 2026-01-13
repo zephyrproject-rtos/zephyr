@@ -13,7 +13,7 @@
 
 / {
 	model = "Hexiwear K64 board";
-	compatible = "nxp,hexiwear", "nxp,k64f", "nxp,k6x";
+	compatible = "mikroe,hexiwear", "nxp,k64f", "nxp,k6x";
 
 	aliases {
 		led0 = &green_led;

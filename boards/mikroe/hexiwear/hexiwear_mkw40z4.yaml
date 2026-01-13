@@ -10,4 +10,4 @@ toolchain:
 testing:
   ignore_tags:
     - net
-vendor: nxp
+vendor: mikroe
