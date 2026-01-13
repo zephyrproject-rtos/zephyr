@@ -93,7 +93,7 @@ family:
               - name: cm33
       - name: ra8t2
         socs:
-          - name: r7ka8t2lfecac
+          - name: r7ka8t2lflcac
             cpuclusters:
               - name: cm85
               - name: cm33

@@ -16,11 +16,11 @@ config SOC_SERIES_RA8T2
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
 
-config SOC_R7KA8T2LFECAC_CM85
+config SOC_R7KA8T2LFLCAC_CM85
 	select CPU_CORTEX_M85
 	select GPIO_RA_HAS_VBTICTLR
 
-config SOC_R7KA8T2LFECAC_CM33
+config SOC_R7KA8T2LFLCAC_CM33
 	select CPU_CORTEX_M33
 	select SOC_RA_SECOND_CORE_BUILD
 
@@ -28,14 +28,14 @@ if SOC_SERIES_RA8T2
 
 config RENESAS_PN_ROM_SIZE
 	hex
-	default 0x100000 if SOC_R7KA8T2LFECAC
+	default 0x100000 if SOC_R7KA8T2LFLCAC
 	help
 	  Code MRAM and Flash size
 
 config RENESAS_PN_PACKAGE_TYPE
 	int
 	range 1 4
-	default 2 if SOC_R7KA8T2LFECAC
+	default 2 if SOC_R7KA8T2LFLCAC
 	help
 	  Package type:
 	  1 -> AB: LFBGA 224 pins
@@ -45,7 +45,7 @@ config RENESAS_PN_PACKAGE_TYPE
 
 config RENESAS_PN_FEATURE_SET
 	hex
-	default 0x4c if SOC_R7KA8T2LFECAC
+	default 0x4c if SOC_R7KA8T2LFLCAC
 	help
 	  Feature set (Convert the feature set character into its ASCII hex value):
 	  - A (0x41): Single Core (CM85 only), EtherCAT slave controller is not available
@@ -55,7 +55,7 @@ config RENESAS_PN_FEATURE_SET
 config RENESAS_PN_NUMBER_OF_CORES
 	int
 	range 1 2
-	default 2 if SOC_R7KA8T2LFECAC
+	default 2 if SOC_R7KA8T2LFLCAC
 	help
 	  Number of SoC cores
 

@@ -5,6 +5,6 @@
  */
 
 #include <arm/armv8.1-m.dtsi>
-#include <arm/renesas/ra/ra8/r7ka8t2lfecac.dtsi>
+#include <arm/renesas/ra/ra8/r7ka8t2lflcac.dtsi>
 
 /delete-node/ &cpu1;
