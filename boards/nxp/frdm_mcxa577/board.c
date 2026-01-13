@@ -9,18 +9,57 @@
 #include <fsl_spc.h>
 #include <soc.h>
 
-/* Core clock frequency: 12MHz in FPGA */
-#define CLOCK_INIT_CORE_CLOCK 12000000U
+/* Core clock frequency: 200MHz from PLL */
+#define CLOCK_INIT_CORE_CLOCK 200000000U
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
 void board_early_init_hook(void)
 {
+	spc_active_mode_core_ldo_option_t ldoOption;
+	spc_sram_voltage_config_t sramOption;
+
 	/* Get the CPU Core frequency */
 	CLOCK_SetupFRO12MClocking();
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 	CLOCK_SetClockDiv(kCLOCK_DivFRO_HF, 1);
 	CLOCK_SetClockDiv(kCLOCK_DivFRO_LF, 1);
+
+	/* Set the LDO_CORE VDD regulator level */
+	ldoOption.CoreLDOVoltage = kSPC_CoreLDO_OverDriveVoltage;
+	ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+	(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
+	/* Configure Flash to support different voltage level and frequency */
+	CLOCK_SetFLASHAccessCyclesForFreq(CLOCK_INIT_CORE_CLOCK, kOD_Mode);
+	/* Specifies the operating voltage for the SRAM's read/write timing margin */
+	sramOption.operateVoltage = kSPC_sramOperateAt1P2V;
+	sramOption.requestVoltageUpdate = true;
+	(void)SPC_SetSRAMOperateVoltage(SPC0, &sramOption);
+
+	/*!< Set up system dividers */
+	CLOCK_SetClockDiv(kCLOCK_DivFRO_HF, 4U); /* !< Set SYSCON.FROHFDIV divider to value 4 */
+	CLOCK_SetupFROHFClocking(192000000U);    /*!< Enable FRO HF(192MHz) output */
+	CLOCK_SetupFRO12MClocking();             /*!< Setup FRO12M clock */
+	CLOCK_SetupExtClocking(24000000U);       /*!< Enable OSC with 24000000 HZ */
+	CLOCK_SetSysOscMonitorMode(
+		kSCG_SysOscMonitorDisable); /* System OSC Clock Monitor is disabled */
+
+	/*!< Set up PLL1 */
+	const pll_setup_t pll1Setup = {.pllctrl = SCG_SPLLCTRL_SOURCE(0U) | SCG_SPLLCTRL_SELI(53U) |
+						  SCG_SPLLCTRL_SELP(26U) |
+						  SCG_SPLLCTRL_BYPASSPOSTDIV2_MASK,
+				       .pllndiv = SCG_SPLLNDIV_NDIV(6U),
+				       .pllpdiv = SCG_SPLLPDIV_PDIV(2U),
+				       .pllmdiv = SCG_SPLLMDIV_MDIV(100U),
+				       .pllRate = 200000000U};
+	CLOCK_SetPLL1Freq(&pll1Setup); /*!< Configure PLL1 to the desired values */
+	CLOCK_SetPll1MonitorMode(kSCG_Pll1MonitorDisable); /* Pll1 Monitor is disabled */
+
+	CLOCK_AttachClk(kPll1Clk_to_MAIN_CLK); /* !< Switch MAIN_CLK to kPll1Clk */
+
+	/*!< Set up dividers */
+	CLOCK_SetClockDiv(kCLOCK_DivFRO_LF, 1U);  /* !< Set SYSCON.FROLFDIV divider to value 1 */
+	CLOCK_SetClockDiv(kCLOCK_DivPLL1CLK, 4U); /* !< Set SYSCON.PLL1CLKDIV divider to value 4 */
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))
 	RESET_ReleasePeripheralReset(kPORT0_RST_SHIFT_RSTn);
@@ -77,7 +116,6 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
-	RESET_ReleasePeripheralReset(kGPIO5_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO5);
 #endif
 
@@ -89,7 +127,7 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
 	CLOCK_SetClockDiv(kCLOCK_DivLPUART1, 1u);
-	CLOCK_AttachClk(kFRO_LF_DIV_to_LPUART1);
+	CLOCK_AttachClk(kPll1ClkDiv_to_LPUART1);
 	RESET_ReleasePeripheralReset(kLPUART1_RST_SHIFT_RSTn);
 #endif
 
