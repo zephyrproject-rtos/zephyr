@@ -13,8 +13,8 @@ if(NOT("${SB_CONFIG_NET_CORE_BOARD}" STREQUAL ""))
     BOARD       ${SB_CONFIG_NET_CORE_BOARD}
   )
 
-  set(${NET_APP}_CONF_FILE
-   ${NET_APP_SRC_DIR}/nrf5340_cpunet_iso-bt_ll_sw_split.conf
+  set(${NET_APP}_EXTRA_CONF_FILE
+   ${NET_APP_SRC_DIR}/extra-iso-bt_ll_sw_split.conf
    CACHE INTERNAL ""
   )
 
