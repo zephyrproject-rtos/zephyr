@@ -382,10 +382,12 @@ enum ifx_cat1_clock_block {
 };
 
 struct ifx_cat1_clock {
-	enum ifx_cat1_clock_block block;
-	uint8_t channel;
-	bool reserved;
-	const void *funcs;
+	enum ifx_cat1_clock_block block; /*!< Clock block type */
+	uint8_t channel;                 /*!< Clock channel number */
+	uint8_t instance;                /*!< Peripheral clock instance number */
+	uint8_t group;                   /*!< Peripheral clock group number */
+	bool reserved;                   /*!< Reserved for future use */
+	const void *funcs;               /*!< Clock-specific functions */
 };
 
 struct ifx_cat1_resource_inst {
@@ -399,9 +401,6 @@ struct ifx_cat1_resource_inst {
 };
 
 int ifx_cat1_clock_control_get_frequency(uint32_t dt_ord, uint32_t *frequency);
-
-en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num);
-en_clk_dst_t ifx_cat1_tcpwm_get_clock_index(uint32_t block_num, uint32_t channel);
 
 static inline uint32_t ifx_cat1_utils_peri_pclk_get_frequency(en_clk_dst_t clk_dest,
 							      const struct ifx_cat1_clock *_clock)
