@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
+ * Copyright (c) 2026 Infineon Technologies AG,
  * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -32,6 +32,7 @@ struct ifx_tcpwm_pwm_config {
 	bool resolution_32_bits;
 	uint32_t tcpwm_index;
 	uint32_t index;
+	uint32_t clk_dst;
 };
 
 struct ifx_tcpwm_pwm_data {
@@ -41,6 +42,8 @@ struct ifx_tcpwm_pwm_data {
 static int ifx_tcpwm_pwm_init(const struct device *dev)
 {
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
+	struct ifx_tcpwm_pwm_data *const data = dev->data;
+
 	cy_en_tcpwm_status_t status;
 	int ret;
 
@@ -53,11 +56,18 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 		.countInput = CY_TCPWM_INPUT_1,
 		.enableCompareSwap = true,
 		.enablePeriodSwap = true,
-	};
+		.line_out_sel = CY_TCPWM_OUTPUT_PWM_SIGNAL,
+		.linecompl_out_sel = CY_TCPWM_OUTPUT_INVERTED_PWM_SIGNAL};
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
+	}
+
+	/* Connect this TCPWM to the peripheral clock */
+	status = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+	if (status != CY_RSLT_SUCCESS) {
+		return -EIO;
 	}
 
 	/* Configure the TCPWM to be a PWM */
@@ -149,16 +159,8 @@ static int ifx_tcpwm_pwm_get_cycles_per_sec(const struct device *dev, uint32_t c
 
 	struct ifx_tcpwm_pwm_data *const data = dev->data;
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
-	en_clk_dst_t clk_connection;
 
-	/* Determine tcpwm block number based on its resolution */
-	uint32_t tcpwm_block = config->resolution_32_bits ? 0 : 1;
-
-	/* Calculate clock connection based on TCPWM index */
-	clk_connection = ifx_cat1_tcpwm_get_clock_index(tcpwm_block, config->index);
-
-	*cycles = ifx_cat1_utils_peri_pclk_get_frequency(clk_connection,
-							 &data->clock);
+	*cycles = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
 
 	return 0;
 }
@@ -192,8 +194,7 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 #define INFINEON_TCPWM_PWM_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static struct ifx_tcpwm_pwm_data ifx_tcpwm_pwm##n##_data =                                 \
-		{PWM_PERI_CLOCK_INIT(n)};                                                          \
+	static struct ifx_tcpwm_pwm_data ifx_tcpwm_pwm##n##_data = {PWM_PERI_CLOCK_INIT(n)};       \
                                                                                                    \
 	static const struct ifx_tcpwm_pwm_config pwm_tcpwm_config_##n = {                          \
 		.reg_base = (TCPWM_GRP_CNT_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                  \
@@ -206,6 +207,7 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 		.index = (DT_REG_ADDR(DT_INST_PARENT(n)) -                                         \
 			  DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /                             \
 			 DT_REG_SIZE(DT_INST_PARENT(n)),                                           \
+		.clk_dst = DT_PROP(DT_INST_PARENT(n), clk_dst),                                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_pwm_init, NULL, &ifx_tcpwm_pwm##n##_data,               \
