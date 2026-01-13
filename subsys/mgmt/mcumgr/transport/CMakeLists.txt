@@ -34,6 +34,9 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_LORAWAN
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_DUMMY
   src/smp_dummy.c
 )
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY
+  src/smp_raw_dummy.c
+)
 
 if(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE OR
   CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
