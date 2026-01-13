@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
+ * Copyright (c) 2026 Infineon Technologies AG,
  * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -300,6 +300,7 @@
 			compatible = "infineon,scb";
 			reg = <0x42990000 0xfd0>;
 			interrupts = <43 4>;
+			clk-dst = <0x100>;
 			status = "disabled";
 		};
 
@@ -307,6 +308,7 @@
 			compatible = "infineon,scb";
 			reg = <0x429a0000 0xfd0>;
 			interrupts = <143 4>;
+			clk-dst = <0x101>;
 			status = "disabled";
 		};
 
@@ -314,6 +316,7 @@
 			compatible = "infineon,scb";
 			reg = <0x429b0000 0xfd0>;
 			interrupts = <144 4>;
+			clk-dst = <0x102>;
 			status = "disabled";
 		};
 
@@ -321,6 +324,7 @@
 			compatible = "infineon,scb";
 			reg = <0x429c0000 0xfd0>;
 			interrupts = <145 4>;
+			clk-dst = <0x103>;
 			status = "disabled";
 		};
 
@@ -328,6 +332,7 @@
 			compatible = "infineon,scb";
 			reg = <0x429d0000 0xfd0>;
 			interrupts = <146 4>;
+			clk-dst = <0x104>;
 			status = "disabled";
 		};
 
@@ -335,6 +340,7 @@
 			compatible = "infineon,scb";
 			reg = <0x429e0000 0xfd0>;
 			interrupts = <147 4>;
+			clk-dst = <0x105>;
 			status = "disabled";
 		};
 
@@ -342,6 +348,7 @@
 			compatible = "infineon,scb";
 			reg = <0x429f0000 0xfd0>;
 			interrupts = <148 4>;
+			clk-dst = <0x106>;
 			status = "disabled";
 		};
 
@@ -349,6 +356,7 @@
 			compatible = "infineon,scb";
 			reg = <0x42a00000 0xfd0>;
 			interrupts = <149 4>;
+			clk-dst = <0x107>;
 			status = "disabled";
 		};
 
@@ -356,6 +364,7 @@
 			compatible = "infineon,scb";
 			reg = <0x42a10000 0xfd0>;
 			interrupts = <150 4>;
+			clk-dst = <0x108>;
 			status = "disabled";
 		};
 
@@ -363,6 +372,7 @@
 			compatible = "infineon,scb";
 			reg = <0x42a20000 0xfd0>;
 			interrupts = <151 4>;
+			clk-dst = <0x109>;
 			status = "disabled";
 		};
 
@@ -370,6 +380,7 @@
 			compatible = "infineon,scb";
 			reg = <0x42a30000 0xfd0>;
 			interrupts = <152 4>;
+			clk-dst = <0x10a>;
 			status = "disabled";
 		};
 
@@ -377,6 +388,7 @@
 			compatible = "infineon,scb";
 			reg = <0x42d00000 0xfd0>;
 			interrupts = <142 4>;
+			clk-dst = <0x800>;
 			status = "disabled";
 		};
 
@@ -418,6 +430,7 @@
 				reg = <0x42860000 0x80>;
 				interrupts = <110 4>;
 				resolution = <32>;
+				clk-dst = <0x10d>;
 				status = "disabled";
 
 				pwm0_0: pwm0_0 {
@@ -437,6 +450,7 @@
 				reg = <0x42860080 0x80>;
 				interrupts = <111 4>;
 				resolution = <32>;
+				clk-dst = <0x10e>;
 				status = "disabled";
 
 				pwm0_1: pwm0_1 {
@@ -456,6 +470,7 @@
 				reg = <0x42860100 0x80>;
 				interrupts = <112 4>;
 				resolution = <32>;
+				clk-dst = <0x10f>;
 				status = "disabled";
 
 				pwm0_2: pwm0_2 {
@@ -475,6 +490,7 @@
 				reg = <0x42860180 0x80>;
 				interrupts = <113 4>;
 				resolution = <32>;
+				clk-dst = <0x110>;
 				status = "disabled";
 
 				pwm0_3: pwm0_3 {
@@ -494,6 +510,7 @@
 				reg = <0x42860200 0x80>;
 				interrupts = <114 4>;
 				resolution = <32>;
+				clk-dst = <0x111>;
 				status = "disabled";
 
 				pwm0_4: pwm0_4 {
@@ -513,6 +530,7 @@
 				reg = <0x42860280 0x80>;
 				interrupts = <115 4>;
 				resolution = <32>;
+				clk-dst = <0x112>;
 				status = "disabled";
 
 				pwm0_5: pwm0_5 {
@@ -532,6 +550,7 @@
 				reg = <0x42860300 0x80>;
 				interrupts = <116 4>;
 				resolution = <32>;
+				clk-dst = <0x113>;
 				status = "disabled";
 
 				pwm0_6: pwm0_6 {
@@ -551,6 +570,7 @@
 				reg = <0x42860380 0x80>;
 				interrupts = <117 4>;
 				resolution = <32>;
+				clk-dst = <0x114>;
 				status = "disabled";
 
 				pwm0_7: pwm0_7 {
@@ -576,6 +596,7 @@
 				reg = <0x42868000 0x80>;
 				interrupts = <118 4>;
 				resolution = <16>;
+				clk-dst = <0x115>;
 				status = "disabled";
 
 				pwm1_0: pwm1_0 {
@@ -595,6 +616,7 @@
 				reg = <0x42868080 0x80>;
 				interrupts = <119 4>;
 				resolution = <16>;
+				clk-dst = <0x116>;
 				status = "disabled";
 
 				pwm1_1: pwm1_1 {
@@ -614,6 +636,7 @@
 				reg = <0x42868100 0x80>;
 				interrupts = <120 4>;
 				resolution = <16>;
+				clk-dst = <0x117>;
 				status = "disabled";
 
 				pwm1_2: pwm1_2 {
@@ -633,6 +656,7 @@
 				reg = <0x42868180 0x80>;
 				interrupts = <121 4>;
 				resolution = <16>;
+				clk-dst = <0x118>;
 				status = "disabled";
 
 				pwm1_3: pwm1_3 {
@@ -652,6 +676,7 @@
 				reg = <0x42868200 0x80>;
 				interrupts = <122 4>;
 				resolution = <16>;
+				clk-dst = <0x119>;
 				status = "disabled";
 
 				pwm1_4: pwm1_4 {
@@ -671,6 +696,7 @@
 				reg = <0x42868280 0x80>;
 				interrupts = <123 4>;
 				resolution = <16>;
+				clk-dst = <0x11a>;
 				status = "disabled";
 
 				pwm1_5: pwm1_5 {
@@ -690,6 +716,7 @@
 				reg = <0x42868300 0x80>;
 				interrupts = <124 4>;
 				resolution = <16>;
+				clk-dst = <0x11b>;
 				status = "disabled";
 
 				pwm1_6: pwm1_6 {
@@ -709,6 +736,7 @@
 				reg = <0x42868380 0x80>;
 				interrupts = <125 4>;
 				resolution = <16>;
+				clk-dst = <0x11c>;
 				status = "disabled";
 
 				pwm1_7: pwm1_7 {
@@ -728,6 +756,7 @@
 				reg = <0x42868400 0x80>;
 				interrupts = <126 4>;
 				resolution = <16>;
+				clk-dst = <0x11d>;
 				status = "disabled";
 
 				pwm1_8: pwm1_8 {
@@ -747,6 +776,7 @@
 				reg = <0x42868480 0x80>;
 				interrupts = <127 4>;
 				resolution = <16>;
+				clk-dst = <0x11e>;
 				status = "disabled";
 
 				pwm1_9: pwm1_9 {
@@ -766,6 +796,7 @@
 				reg = <0x42868500 0x80>;
 				interrupts = <128 4>;
 				resolution = <16>;
+				clk-dst = <0x11f>;
 				status = "disabled";
 
 				pwm1_10: pwm1_10 {
@@ -785,6 +816,7 @@
 				reg = <0x42868580 0x80>;
 				interrupts = <129 4>;
 				resolution = <16>;
+				clk-dst = <0x120>;
 				status = "disabled";
 
 				pwm1_11: pwm1_11 {
@@ -804,6 +836,7 @@
 				reg = <0x42868600 0x80>;
 				interrupts = <130 4>;
 				resolution = <16>;
+				clk-dst = <0x121>;
 				status = "disabled";
 
 				pwm1_12: pwm1_12 {
@@ -823,6 +856,7 @@
 				reg = <0x42868680 0x80>;
 				interrupts = <131 4>;
 				resolution = <16>;
+				clk-dst = <0x122>;
 				status = "disabled";
 
 				pwm1_13: pwm1_13 {
@@ -842,6 +876,7 @@
 				reg = <0x42868700 0x80>;
 				interrupts = <132 4>;
 				resolution = <16>;
+				clk-dst = <0x123>;
 				status = "disabled";
 
 				pwm1_14: pwm1_14 {
@@ -861,6 +896,7 @@
 				reg = <0x42868780 0x80>;
 				interrupts = <133 4>;
 				resolution = <16>;
+				clk-dst = <0x124>;
 				status = "disabled";
 
 				pwm1_15: pwm1_15 {
@@ -880,6 +916,7 @@
 				reg = <0x42868800 0x80>;
 				interrupts = <134 4>;
 				resolution = <16>;
+				clk-dst = <0x125>;
 				status = "disabled";
 
 				pwm1_16: pwm1_16 {
@@ -899,6 +936,7 @@
 				reg = <0x42868880 0x80>;
 				interrupts = <135 4>;
 				resolution = <16>;
+				clk-dst = <0x126>;
 				status = "disabled";
 
 				pwm1_17: pwm1_17 {
@@ -918,6 +956,7 @@
 				reg = <0x42868900 0x80>;
 				interrupts = <136 4>;
 				resolution = <16>;
+				clk-dst = <0x127>;
 				status = "disabled";
 
 				pwm1_18: pwm1_18 {
@@ -937,6 +976,7 @@
 				reg = <0x42868980 0x80>;
 				interrupts = <137 4>;
 				resolution = <16>;
+				clk-dst = <0x128>;
 				status = "disabled";
 
 				pwm1_19: pwm1_19 {
@@ -956,6 +996,7 @@
 				reg = <0x42868a00 0x80>;
 				interrupts = <138 4>;
 				resolution = <16>;
+				clk-dst = <0x129>;
 				status = "disabled";
 
 				pwm1_20: pwm1_20 {
@@ -975,6 +1016,7 @@
 				reg = <0x42868a80 0x80>;
 				interrupts = <139 4>;
 				resolution = <16>;
+				clk-dst = <0x12a>;
 				status = "disabled";
 
 				pwm1_21: pwm1_21 {
@@ -994,6 +1036,7 @@
 				reg = <0x42868b00 0x80>;
 				interrupts = <140 4>;
 				resolution = <16>;
+				clk-dst = <0x12b>;
 				status = "disabled";
 
 				pwm1_22: pwm1_22 {
@@ -1013,6 +1056,7 @@
 				reg = <0x42868b80 0x80>;
 				interrupts = <141 4>;
 				resolution = <16>;
+				clk-dst = <0x12c>;
 				status = "disabled";
 
 				pwm1_23: pwm1_23 {
@@ -1081,6 +1125,7 @@
 			reg = <0x44810000 0x2000>;
 			interrupts = <155 4>, /* SDIO wakeup interrupt for mxsdhc */
 				     <154 6>; /* Consolidated interrupt for mxsdhc */
+			clk-dst = <0x10200>;
 			status = "disabled";
 		};
 
@@ -1089,6 +1134,7 @@
 			reg = <0x44820000 0x2000>;
 			interrupts = <157 4>, /* SDIO wakeup interrupt for mxsdhc */
 				     <156 6>; /* Consolidated interrupt for mxsdhc */
+			clk-dst = <0x10300>;
 			status = "disabled";
 		};
 	};
