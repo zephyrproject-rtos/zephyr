@@ -11,7 +11,8 @@ tests:
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
-       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
+       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103) and
+       dt_nodelabel_enabled("watchdog0")
     platform_exclude:
       - mec15xxevb_assy6853
       - s32z2xxdc2/s32z270/rtu0
