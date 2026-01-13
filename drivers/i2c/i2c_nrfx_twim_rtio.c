@@ -237,7 +237,7 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 	)
 
 #define MSG_BUF_SYM(inst) \
-	_CONCAT_3(twim_, inst, _msg_buf)
+	CONCAT(twim_, inst, _msg_buf)
 
 #define MSG_BUF_DEFINE(inst) \
 	static uint8_t MSG_BUF_SYM(inst)[MSG_BUF_SIZE(inst)] MSG_BUF_ATTR(inst)
