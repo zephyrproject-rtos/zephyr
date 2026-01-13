@@ -73,7 +73,7 @@ struct net_nbr *net_nbr_get(struct net_nbr_table *table)
 		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (!nbr->ref) {
-			nbr->data = nbr->__nbr;
+			nbr->data = (uint8_t *)nbr + sizeof(struct net_nbr);
 
 			return net_nbr_ref(nbr);
 		}
