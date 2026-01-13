@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(nsos_sockets);
 
 #include "nsi_host_trampolines.h"
 
-BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE > 0);
+BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE > 0);
 
 #define NSOS_IRQ_FLAGS		(0)
 #define NSOS_IRQ_PRIORITY	(2)
