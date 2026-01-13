@@ -14,6 +14,8 @@
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif CONFIG_CRYPTO_ESP32_AES
 #define CRYPTO_DEV_COMPAT espressif_esp32_aes
+#elif CONFIG_CRYPTO_STM32
+#define CRYPTO_DEV_COMPAT st_stm32_cryp
 #else
 #error "You need to enable one crypto device"
 #endif
