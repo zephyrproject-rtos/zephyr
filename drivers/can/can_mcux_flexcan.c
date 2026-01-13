@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019-2026 Vestas Wind Systems A/S
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1175,6 +1175,24 @@ static int mcux_flexcan_init(const struct device *dev)
 		LOG_ERR("clock device not ready");
 		return -ENODEV;
 	}
+
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (err) {
+		/* Check if error is due to lack of support */
+		if (err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
+	}
+
+#if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		LOG_ERR("Failed to enable clock: %d", err);
+		return err;
+	}
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 	DEVICE_MMIO_NAMED_MAP(dev, flexcan_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
