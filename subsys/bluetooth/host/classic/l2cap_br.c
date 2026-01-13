@@ -4126,8 +4126,18 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 		uint16_t mps = CONFIG_BT_L2CAP_MPS;
 
 		if (sys_le16_to_cpu(opt_ret_fc->mps) > br_chan->tx.mtu) {
+			/*
+			 * There is an issue that the mps is bigger than tx mtu sent from the peer
+			 * device. The L2CAP configuration request from the peer device contains
+			 * a mps value that is bigger its tx mtu (sent in the same
+			 * L2CAP_CONFIGURATION_REQ packet or omitted). The issue can occur when
+			 * connecting to an iphone with the enhanced retransmission mode if the
+			 * test profile is MAP or PBAP.
+			 *
+			 * Just adjust it to the tx mtu, and give the suggested value in the
+			 * L2CAP_CONFIGURATION_RSP packet.
+			 */
 			opt_ret_fc->mps = sys_cpu_to_le16(br_chan->tx.mtu);
-			accept = false;
 		}
 
 		if (sys_le16_to_cpu(opt_ret_fc->mps) > mps) {
