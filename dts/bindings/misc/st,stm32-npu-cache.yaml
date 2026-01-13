@@ -1,0 +1,19 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32N6 NPU cache (aka CACHEAXI) block
+
+compatible: "st,stm32-npu-cache"
+
+include: base.yaml
+
+properties:
+  npu:
+    type: phandle
+    required: true
+
+  reg:
+    required: true
+
+  clocks:
+    required: true
