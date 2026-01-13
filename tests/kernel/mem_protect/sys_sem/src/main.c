@@ -328,6 +328,42 @@ ZTEST(sys_sem_1cpu, test_sem_take_timeout_isr)
 	k_thread_join(&sem_tid, K_FOREVER);
 }
 
+static void sem_take_kernel_user(void *p1, void *p2, void *p3)
+{
+	int ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
+
+	zassert_ok(ret_value, "sys_sem_take failed: %d", ret_value);
+
+	sys_sem_give(&mid_prio_sem);
+}
+
+/**
+ * @brief Test sys_sem_take() between kernel and userspace
+ */
+ZTEST(sys_sem_1cpu, test_sem_take_kernel_user)
+{
+#ifdef CONFIG_USERSPACE
+	int thread_flags = K_USER;
+#else
+	int thread_flags = 0;
+#endif
+
+	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
+	sys_sem_init(&mid_prio_sem, SEM_INIT_VAL, SEM_MAX_VAL);
+
+	k_thread_create(&sem_tid, stack_1, STACK_SIZE,
+			sem_take_kernel_user, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(0), thread_flags, K_NO_WAIT);
+
+	sys_sem_give(&simple_sem);
+
+	int ret_value = sys_sem_take(&mid_prio_sem, SEM_TIMEOUT);
+
+	zassert_ok(ret_value, "sys_sem_take kernel failed: %d", ret_value);
+
+	k_thread_join(&sem_tid, K_FOREVER);
+}
+
 /**
  * @brief Test multiple semaphore take
  */
