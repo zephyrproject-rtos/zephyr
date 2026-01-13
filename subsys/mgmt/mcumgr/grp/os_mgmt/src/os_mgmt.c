@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
@@ -112,8 +113,6 @@ struct datetime_parser {
 #define RTC_DATETIME_MINUTE_MAX 59
 #define RTC_DATETIME_SECOND_MIN 0
 #define RTC_DATETIME_SECOND_MAX 59
-#define RTC_DATETIME_MILLISECOND_MIN 0
-#define RTC_DATETIME_MILLISECOND_MAX 999
 
 /* Size used for datetime creation buffer */
 #ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
@@ -124,7 +123,7 @@ struct datetime_parser {
 
 /* Minimum/maximum size of a datetime string that a client can provide */
 #define RTC_DATETIME_MIN_STRING_SIZE 19
-#define RTC_DATETIME_MAX_STRING_SIZE 26
+#define RTC_DATETIME_MAX_STRING_SIZE 31
 #endif
 
 /* Specifies what the "all" ('a') of info parameter shows */
@@ -868,7 +867,7 @@ static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
 	bool ok = true;
 	char *pos;
 	char *new_pos;
-	char date_string[RTC_DATETIME_MAX_STRING_SIZE];
+	char date_string[RTC_DATETIME_MAX_STRING_SIZE + 1];
 	struct rtc_time new_time = {
 		.tm_wday = -1,
 		.tm_yday = -1,
@@ -923,7 +922,7 @@ static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
 	if (zcbor_map_decode_bulk(zsd, datetime_decode, ARRAY_SIZE(datetime_decode), &decoded)) {
 		return MGMT_ERR_EINVAL;
 	} else if (datetime.len < RTC_DATETIME_MIN_STRING_SIZE ||
-		   datetime.len >= RTC_DATETIME_MAX_STRING_SIZE) {
+		   datetime.len > RTC_DATETIME_MAX_STRING_SIZE) {
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -959,16 +958,20 @@ static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
 	}
 
 #ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
-	if (*(pos - 1) == '.' && *pos != '\0') {
-		/* Provided value has a ms value, extract it */
-		new_time.tm_nsec = strtol(pos, &new_pos, RTC_DATETIME_NUMERIC_BASE);
+	if (*(pos - 1) == '.') {
+		uint32_t msec = 0;
+		uint32_t mul = 100; /* first digit: 10^-1 second = 100 ms */
 
-		if (new_time.tm_nsec < RTC_DATETIME_MILLISECOND_MIN ||
-		    new_time.tm_nsec > RTC_DATETIME_MILLISECOND_MAX) {
-			return MGMT_ERR_EINVAL;
+		/* Parse up to 3 fractional digits */
+		while (isdigit((unsigned char)*pos) && mul >= 1) {
+			msec += (uint32_t)(*pos - '0') * mul;
+			mul /= 10;
+			pos++;
 		}
 
-		new_time.tm_nsec *= RTC_DATETIME_MS_TO_NS;
+		/* "." without digits yields 0 µs */
+
+		new_time.tm_nsec = msec * RTC_DATETIME_MS_TO_NS;
 	}
 #endif
 
