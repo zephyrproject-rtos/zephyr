@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54lm20b_cpuflpr.dtsi>
+#include "nrf54lm20_a_b_cpuflpr_common.dtsi"
+
+/ {
+	model = "Nordic nRF54LM20 DK nRF54LM20B FLPR MCU";
+	compatible = "nordic,nrf54lm20dk_nrf54lm20b-cpuflpr";
+
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_rram;
+		zephyr,sram = &cpuflpr_sram;
+	};
+};
