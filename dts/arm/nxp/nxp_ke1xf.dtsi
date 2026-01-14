@@ -299,6 +299,7 @@
 			reg = <0x40052000 0x1000>;
 			interrupts = <22 0>;
 			clocks = <&lpo>;
+			clock-names = "clksrc1";
 			clk-source = <1>;
 			clk-divider = <256>;
 		};
