@@ -18,4 +18,5 @@ tests:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
       - sama7g54_ek
+      - nucleo_h753zi
     tags: crypto
