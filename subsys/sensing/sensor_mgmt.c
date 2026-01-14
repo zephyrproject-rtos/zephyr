@@ -252,13 +252,11 @@ static void save_config_and_notify(struct sensing_sensor *sensor)
 	k_sem_give(&ctx->event_sem);
 }
 
-static int set_sensor_state(struct sensing_sensor *sensor, enum sensing_sensor_state state)
+static void set_sensor_state(struct sensing_sensor *sensor, enum sensing_sensor_state state)
 {
 	__ASSERT(sensor, "set sensor state, sensing_sensor is NULL");
 
 	sensor->state = state;
-
-	return 0;
 }
 
 static void init_connection(struct sensing_connection *conn,
@@ -318,16 +316,12 @@ static void init_sensor(struct sensing_sensor *sensor)
 static int sensing_init(const struct device *dev)
 {
 	struct sensing_context *ctx = dev->data;
-	int ret = 0;
 
 	LOG_INF("sensing init begin...");
 
 	for_each_sensor(sensor) {
 		init_sensor(sensor);
-		ret = set_sensor_state(sensor, SENSING_SENSOR_STATE_READY);
-		if (ret) {
-			LOG_ERR("set sensor:%s error", sensor->dev->name);
-		}
+		set_sensor_state(sensor, SENSING_SENSOR_STATE_READY);
 		LOG_INF("sensing init, sensor:%s, state:%d", sensor->dev->name, sensor->state);
 	}
 
@@ -336,7 +330,7 @@ static int sensing_init(const struct device *dev)
 	LOG_INF("create sensing runtime thread ok");
 	ctx->sensing_initialized = true;
 
-	return ret;
+	return 0;
 }
 
 int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn)
