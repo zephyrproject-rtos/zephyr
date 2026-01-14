@@ -239,6 +239,16 @@ static void start_bonding(void)
 	printk("done.\n");
 }
 
+static void unregister_cb(void)
+{
+	int err;
+
+	err = bt_le_per_adv_sync_cb_unregister(&sync_callbacks);
+	if (err != 0) {
+		TEST_FAIL("Failed to unregister callbacks: %d", err);
+	}
+}
+
 static void main_per_adv_sync(void)
 {
 	struct bt_le_per_adv_sync *sync = NULL;
@@ -364,6 +374,42 @@ static void main_per_adv_long_data_sync(void)
 	TEST_PASS("Periodic advertising long data sync passed");
 }
 
+static void main_per_adv_unregister_sync_cb(void)
+{
+	struct bt_le_per_adv_sync *sync = NULL;
+
+	common_init();
+	start_scan();
+
+	printk("Waiting for periodic advertising...\n");
+	WAIT_FOR_FLAG(flag_per_adv);
+	printk("Found periodic advertising.\n");
+
+	create_pa_sync(&sync);
+
+	printk("Waiting to receive periodic advertisement...\n");
+	WAIT_FOR_FLAG(flag_per_adv_recv);
+
+	unregister_cb();
+	UNSET_FLAG(flag_per_adv_recv);
+	k_sleep(K_SECONDS(2));
+
+	if (IS_FLAG_SET(flag_per_adv_recv)) {
+		/* Rarely the testcase might fail here due to a race condition as brought up in:
+		 * https://github.com/zephyrproject-rtos/zephyr/pull/98458#issuecomment-3474097193
+		 */
+		TEST_FAIL("Received a callback after bt_le_per_adv_sync_cb_unregister");
+		return;
+	}
+
+	bt_le_per_adv_sync_cb_register(&sync_callbacks);
+	WAIT_FOR_FLAG(flag_per_adv_recv);
+
+	printk("Waiting for periodic sync lost...\n");
+	WAIT_FOR_FLAG(flag_per_adv_sync_lost);
+	TEST_PASS("Periodic advertising sync callback unregister passed");
+}
+
 static const struct bst_test_instance per_adv_sync[] = {
 	{
 		.test_id = "per_adv_sync",
@@ -398,6 +444,13 @@ static const struct bst_test_instance per_adv_sync[] = {
 			      "data length. Test is used to verify that "
 			      "reassembly of long data is handeled correctly.",
 		.test_main_f = main_per_adv_long_data_sync
+	},
+	{
+		.test_id = "per_adv_unregister_sync_cb",
+		.test_descr = "Periodic advertising sync test, but sync callbacks "
+			      "get unregistered. Test is used to verify that "
+			      "the sync callbacks can be properly unregistered.",
+		.test_main_f = main_per_adv_unregister_sync_cb
 	},
 	BSTEST_END_MARKER
 };
