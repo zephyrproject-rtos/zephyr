@@ -1,7 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,19 +27,19 @@
 #include "codec.h"
 
 static struct bt_conn *default_conn;
-struct bt_hfp_ag *hfp_ag;
+static struct bt_hfp_ag *hfp_ag;
 static struct bt_conn *active_sco_conn;
-struct bt_hfp_ag_call *hfp_ag_call;
+static struct bt_hfp_ag_call *hfp_ag_call;
 
 static struct bt_br_discovery_param br_discover;
 static struct bt_br_discovery_result scan_result[CONFIG_BT_HFP_AG_DISCOVER_RESULT_COUNT];
 
-struct k_work discover_work;
-struct k_work_delayable call_connect_work;
-struct k_work_delayable call_disconnect_work;
+static struct k_work discover_work;
+static struct k_work_delayable call_connect_work;
+static struct k_work_delayable call_disconnect_work;
 
-struct k_work_delayable call_remote_ringing_work;
-struct k_work_delayable call_remote_accept_work;
+static struct k_work_delayable call_remote_ringing_work;
+static struct k_work_delayable call_remote_accept_work;
 
 NET_BUF_POOL_DEFINE(sdp_discover_pool, 10, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
