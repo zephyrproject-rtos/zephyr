@@ -264,6 +264,14 @@ void mctp_uart_start_rx(struct mctp_binding_uart *uart)
 	__ASSERT_NO_MSG(res == 0);
 }
 
+void mctp_uart_stop_rx(struct mctp_binding_uart *uart)
+{
+	int res = uart_rx_disable(uart->dev);
+
+	(void)res;
+	__ASSERT_NO_MSG(res == 0);
+}
+
 int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 {
 	struct mctp_binding_uart *uart = binding_to_uart(b);
