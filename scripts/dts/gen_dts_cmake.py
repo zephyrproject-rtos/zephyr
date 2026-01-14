@@ -122,9 +122,7 @@ def main():
             if "phandle" not in node.props[item].type:
                 if "array" in node.props[item].type:
                     # Convert array to CMake list
-                    cmake_value = ''
-                    for val in node.props[item].val:
-                        cmake_value = f'{cmake_value}{val};'
+                    cmake_value = ';'.join(str(val) for val in node.props[item].val)
                 else:
                     cmake_value = node.props[item].val
 
@@ -138,30 +136,19 @@ def main():
 
         if node.regs is not None:
             cmake_props.append(f'"DT_REG|{node.path}|NUM" "{len(node.regs)}"')
-            cmake_addr = ''
-            cmake_size = ''
 
-            for reg in node.regs:
-                if reg.addr is None:
-                    cmake_addr = f'{cmake_addr}NONE;'
-                else:
-                    cmake_addr = f'{cmake_addr}{hex(reg.addr)};'
-
-                if reg.size is None:
-                    cmake_size = f'{cmake_size}NONE;'
-                else:
-                    cmake_size = f'{cmake_size}{hex(reg.size)};'
+            cmake_addr = ';'.join(
+                'NONE' if reg.addr is None else hex(reg.addr) for reg in node.regs
+            )
+            cmake_size = ';'.join(
+                'NONE' if reg.size is None else hex(reg.size) for reg in node.regs
+            )
 
             cmake_props.append(f'"DT_REG|{node.path}|ADDR" "{cmake_addr}"')
             cmake_props.append(f'"DT_REG|{node.path}|SIZE" "{cmake_size}"')
 
     for comp in compatible2paths.keys():
-        cmake_path = ''
-        for path in compatible2paths[comp]:
-            cmake_path = f'{cmake_path}{path};'
-
-        # Remove the last ';'
-        cmake_path = cmake_path[:-1]
+        cmake_path = ';'.join(compatible2paths[comp])
 
         cmake_comp = f'DT_COMP|{comp}'
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
