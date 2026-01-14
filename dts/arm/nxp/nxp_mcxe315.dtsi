@@ -41,14 +41,17 @@
 
 &flexcan_0 {
 	number-of-mb = <64>;
+	number-of-mb-fd = <14>;
 };
 
 &flexcan_1 {
 	number-of-mb = <64>;
+	number-of-mb-fd = <14>;
 };
 
 &flexcan_2 {
 	number-of-mb = <64>;
+	number-of-mb-fd = <14>;
 };
 
 &peripheral {
