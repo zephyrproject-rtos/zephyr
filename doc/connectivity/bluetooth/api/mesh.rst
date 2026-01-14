@@ -25,3 +25,4 @@ Read more about Bluetooth Mesh on the
    mesh/statistic.rst
    mesh/shell.rst
    mesh/brg_cfg.rst
+   mesh/cdb_usage.rst
