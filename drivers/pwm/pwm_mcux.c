@@ -84,7 +84,7 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 				      &data->channel[channel], 1U,
 				      config->mode, 1U, clock_freq);
 		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm");
+			LOG_ERR("Could not set up pwm (%d)", status);
 			return -ENOTSUP;
 		}
 
