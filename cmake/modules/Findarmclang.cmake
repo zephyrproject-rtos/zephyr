@@ -2,15 +2,27 @@
 #
 # Copyright (c) 2023 Intel Corporation
 #
-# Findarmclang module for locating arm clang compiler.
-#
-# The module defines the following variables:
-#
-# 'armclang_FOUND', 'ARMCLANG_FOUND'
-# True if the arm clang toolchain/compiler was found.
-#
-# 'ARMCLANG_VERSION'
-# The version of the arm clang toolchain.
+#[=======================================================================[.rst:
+Findarmclang
+************
+
+Find the Arm Compiler (armclang).
+
+This module locates the Arm Compiler (armclang) and verifies its version.
+
+Variables
+=========
+
+.. cmake:variable:: armclang_FOUND
+.. cmake:variable:: ARMCLANG_FOUND
+
+   Set to True if the Arm Compiler was found.
+
+.. cmake:variable:: ARMCLANG_VERSION
+
+   The version of the installed Arm Compiler.
+
+#]=======================================================================]
 
 include(FindPackageHandleStandardArgs)
 

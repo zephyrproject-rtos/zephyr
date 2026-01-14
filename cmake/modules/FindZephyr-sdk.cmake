@@ -2,41 +2,92 @@
 #
 # Copyright (c) 2022-2023, Nordic Semiconductor ASA
 
-# FindZephyr-sdk module for supporting module search mode of Zephyr SDK.
-#
-# It is possible to control the behavior of the Zephyr-SDK package using
-# COMPONENTS.
-# The Zephyr-SDK package supports the components:
-# - LOAD: Load a Zephyr-SDK. This is the default behavior if no COMPONENTS is specified.
-#         Its purpose is to allow the find_package basic signature mode to lookup Zephyr
-#         SDK and based on user / environment settings of selected toolchain decide if
-#         the Zephyr SDK CMake package should be loaded.
-#
-#         It extends the Zephyr-sdk CMake package by providing more flexibility in when
-#         the Zephyr SDK is loaded and loads additional host tools from the Zephyr SDK.
-#
-#         The module defines the following variables when used in normal search and load mode:
-#         'ZEPHYR_SDK_INSTALL_DIR'
-#         Install location of the Zephyr SDK
-#
-#         'ZEPHYR_TOOLCHAIN_VARIANT'
-#         Zephyr toolchain variant to use if not defined already.
-#
-#         'Zephyr-sdk_FOUND'
-#         True if the Zephyr SDK was found.
+#[=======================================================================[.rst:
+FindZephyr-sdk
+**************
 
-# - LIST: Will list all available Zephyr SDKs found in the system but not load
-#         any Sdk. This can be used to fetch available Zephyr-SDKs before doing
-#         an actual load.
-#         LIST component will define the following lists:
-#         - Zephyr-sdk      : Version of a Zephyr-SDK
-#         - Zephyr-sdk_DIRS : Install dir of the Zephyr-SDK
-#         Each entry in Zephyr-SDK has a corresponding entry in Zephyr-SDK_DIRS.
-#         For example:
-#         index:  Zephyr-sdk:    Zephyr-sdk_DIRS:
-#         0       0.15.0         /opt/zephyr-sdk-0.15.0
-#         1       0.16.0         /home/<user>/zephyr-sdk-0.16.0
-#
+This module locates the Zephyr SDK and supports multiple components to control
+the behavior.
+
+Components
+==========
+
+The Zephyr-SDK package supports the following components:
+
+``LOAD``
+  Load a Zephyr-SDK. This is the default behavior if no ``COMPONENTS`` is specified.
+  Its purpose is to allow the ``find_package`` basic signature mode to lookup Zephyr
+  SDK and based on user / environment settings of selected toolchain decide if
+  the Zephyr SDK CMake package should be loaded.
+
+  It extends the Zephyr-sdk CMake package by providing more flexibility in when
+  the Zephyr SDK is loaded and loads additional host tools from the Zephyr SDK.
+
+  The module defines the following variables when used in normal search and load mode:
+
+  .. cmake:variable:: ZEPHYR_SDK_INSTALL_DIR
+
+     Install location of the Zephyr SDK.
+
+
+  .. TODO FIXME
+  .. cmake:variable:: ZEPHYR_TOOLCHAIN_VARIANT_XXX
+
+     Zephyr toolchain variant to use if not defined already.
+
+  .. cmake:variable:: Zephyr-sdk_FOUND
+
+     True if the Zephyr SDK was found.
+
+``LIST``
+  Will list all available Zephyr SDKs found in the system but not load
+  any SDK. This can be used to fetch available Zephyr-SDKs before doing
+  an actual load.
+
+  LIST component will define the following lists:
+
+  .. cmake:variable:: Zephyr-sdk
+
+     Version of a Zephyr-SDK.
+
+  .. cmake:variable:: Zephyr-sdk_DIRS
+
+     Install dir of the Zephyr-SDK.
+
+  Each entry in :cmake:variable:`Zephyr-sdk` has a corresponding entry in
+  :cmake:variable:`Zephyr-sdk_DIRS`.
+
+  For example:
+
+  =====  ==========  ==============================
+  Index  Zephyr-sdk  Zephyr-sdk_DIRS
+  =====  ==========  ==============================
+  0      0.15.0      /opt/zephyr-sdk-0.15.0
+  1      0.16.0      /home/<user>/zephyr-sdk-0.16.0
+  =====  ==========  ==============================
+
+Example usage
+=============
+
+.. code-block:: cmake
+   :caption: Find Zephyr SDK
+
+   find_package(Zephyr-sdk 0.16)
+
+   if(Zephyr-sdk_FOUND)
+     message(STATUS "Zephyr SDK ${Zephyr-sdk_VERSION} found at ${Zephyr-sdk_DIR}")
+   endif()
+
+.. code-block:: cmake
+   :caption: List available Zephyr SDKs
+
+   find_package(Zephyr-sdk COMPONENTS LIST)
+
+   foreach(version dir IN ZIP_LISTS Zephyr-sdk Zephyr-sdk_DIRS)
+     message(STATUS "Zephyr SDK ${version} found at ${dir}")
+   endforeach()
+
+#]=======================================================================]
 
 include(extensions)
 

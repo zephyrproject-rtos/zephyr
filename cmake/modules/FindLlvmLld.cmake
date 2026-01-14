@@ -3,19 +3,41 @@
 # Copyright (c) 2022, Nordic Semiconductor ASA
 # Copyright (c) 2023, Intel Corporation
 
-# FindGnuLd module for locating LLVM lld linker.
-#
-# The module defines the following variables:
-#
-# 'LLVMLLD_LINKER'
-# Path to LLVM lld linker
-# Set to 'LLVMLLD_LINKER-NOTFOUND' if ld was not found.
-#
-# 'LlvmLld_FOUND', 'LLVMLLD_FOUND'
-# True if LLVM lld was found.
-#
-# 'LLVMLLD_VERSION_STRING'
-# The version of LLVM lld.
+#[=======================================================================[.rst:
+FindLlvmLld
+***********
+
+Find the LLVM lld linker.
+
+This module locates the LLVM lld linker and verifies its version.
+
+Variables
+=========
+
+.. cmake:variable:: LLVMLLD_LINKER
+
+   Path to the LLVM lld linker executable. Set to :cmake:variable:`LLVMLLD_LINKER-NOTFOUND` if ld.lld was not found.
+
+.. cmake:variable:: LlvmLld_FOUND
+.. cmake:variable:: LLVMLLD_FOUND
+
+   Set to True if the LLVM lld linker was found.
+
+.. cmake:variable:: LLVMLLD_VERSION_STRING
+
+   The version of the installed LLVM lld linker.
+
+Usage
+=====
+
+.. code-block:: cmake
+
+   find_package(LlvmLld)
+   if(LlvmLld_FOUND)
+     message("Found LLVM lld version ${LLVMLLD_VERSION_STRING} at ${LLVMLLD_LINKER}")
+   endif()
+
+#]=======================================================================]
 
 include(FindPackageHandleStandardArgs)
 

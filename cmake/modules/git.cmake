@@ -1,5 +1,54 @@
 # SPDX-License-Identifier: Apache-2.0
 
+#[=======================================================================[.rst:
+Git
+***
+
+Provides Git-related functionality for the Zephyr build system.
+
+This module provides functions for interacting with Git repositories
+within the Zephyr build system.
+
+Commands
+========
+
+.. cmake:command:: git_describe
+
+   Get a short Git description associated with a directory.
+
+   .. code-block:: cmake
+
+     git_describe(DIR OUTPUT)
+
+   This function runs ``git describe --abbrev=12 --always`` in the specified
+   directory and stores the result in the provided output variable.
+
+   ``DIR``
+     The directory to run the git command in.
+
+   ``OUTPUT``
+     The variable name where the git description will be stored.
+     If the git command fails, this variable will not be set.
+
+   The function will output status messages if:
+
+   * The :command:`git` command fails (error message)
+   * The :command:`git` command produces warnings (warning message)
+
+Example Usage
+-------------
+
+.. code-block:: cmake
+
+   include(git)
+
+   git_describe(${CMAKE_CURRENT_SOURCE_DIR} GIT_DESCRIPTION)
+   if(DEFINED GIT_DESCRIPTION)
+     message(STATUS "Git description: ${GIT_DESCRIPTION}")
+   endif()
+
+#]=======================================================================]
+
 include_guard(GLOBAL)
 
 find_package(Git QUIET)

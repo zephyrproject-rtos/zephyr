@@ -3,25 +3,48 @@
 # Copyright (c) 2022, Nordic Semiconductor ASA
 # Copyright (c) 2023, Intel Corporation
 
-# FindGnuLd module for locating GNU ld (linker from binutils).
-#
-# The module defines the following variables:
-#
-# 'GNULD_LINKER'
-# Path to GNU ld linker
-# Set to 'GNULD_LINKER-NOTFOUND' if ld was not found.
-#
-# 'GnuLd_FOUND', 'GNULD_FOUND'
-# True if GNU ld was found.
-#
-# 'GNULD_VERSION_STRING'
-# The version of GNU ld.
-#
-# 'GNULD_LINKER_IS_BFD'
-# True if linker is ld.bfd (or compatible)
-#
-# Note that this will use CROSS_COMPILE, if defined,
-# as a prefix to the linker executable.
+#[=======================================================================[.rst:
+FindGnuLd
+*********
+
+Find the GNU ld linker.
+
+This module locates the GNU ld linker and verifies its version.
+
+Note that this will use ``CROSS_COMPILE``, if defined, as a prefix to the linker executable.
+
+Variables
+=========
+
+.. cmake:variable:: GNULD_LINKER
+
+   Path to the GNU ld linker executable. Set to :cmake:variable:`GNULD_LINKER-NOTFOUND` if ld was
+   not found.
+
+.. cmake:variable:: GnuLd_FOUND
+.. cmake:variable:: GNULD_FOUND
+
+   Set to True if the GNU ld linker was found.
+
+.. cmake:variable:: GNULD_VERSION_STRING
+
+   The version of the installed GNU ld linker.
+
+.. cmake:variable:: GNULD_LINKER_IS_BFD
+
+   Set to True if the found linker is ld.bfd (or compatible).
+
+Usage
+=====
+
+.. code-block:: cmake
+
+   find_package(GnuLd)
+   if(GnuLd_FOUND)
+     message("Found GNU ld version ${GNULD_VERSION_STRING} at ${GNULD_LINKER}")
+   endif()
+
+#]=======================================================================]
 
 include(FindPackageHandleStandardArgs)
 

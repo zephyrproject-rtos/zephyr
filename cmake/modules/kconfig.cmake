@@ -2,6 +2,62 @@
 
 include_guard(GLOBAL)
 
+#[=======================================================================[.rst:
+kconfig
+*******
+
+This module contains the Kconfig configuration logic.
+
+It provides the following targets:
+
+* ``menuconfig``: Run the Kconfig menuconfig tool.
+* ``guiconfig``: Run the Kconfig guiconfig tool.
+* ``hardenconfig``: Run the Kconfig hardenconfig tool.
+* ``traceconfig``: Run the Kconfig traceconfig tool.
+
+Variables
+=========
+
+After loading this module, the following global variables are defined:
+
+.. cmake:variable:: KCONFIG_ROOT
+
+   Path to the Kconfig root file.
+   Default: ``${ZEPHYR_BASE}/Kconfig``.
+
+.. XXX FIXME: the below intentionally introduces typos as moderncmakedomain generates warnings
+   for CMake objects being described more than once
+
+.. cmake:variable:: CONF_FILE_XXX
+
+   Path to the configuration file(s).
+   Can be a single file or a list of files.
+
+.. cmake:variable:: EXTRA_CONF_FILE_XXX
+
+   Path to extra configuration file(s).
+   Can be a single file or a list of files.
+
+.. cmake:variable:: AUTOCONF_H
+
+   Path to the generated autoconf header file.
+   Default: ``${PROJECT_BINARY_DIR}/include/generated/zephyr/autoconf.h``.
+
+.. cmake:variable:: DOTCONFIG
+
+   Path to the generated .config file.
+   Default: ``${PROJECT_BINARY_DIR}/.config``.
+
+.. cmake:variable:: EXTRA_KCONFIG_TARGETS
+
+   List of extra Kconfig targets to add.
+
+.. cmake:variable:: EXTRA_KCONFIG_TARGET_COMMAND_FOR_<target>
+
+   Command to run for the extra Kconfig target.
+
+#]=======================================================================]
+
 include(extensions)
 include(python)
 

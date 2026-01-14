@@ -1,25 +1,38 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# FindTargetTools module for locating a set of tools to use on the host but
-# targeting a remote target for Zephyr development.
-#
-# This module will lookup following target tools for Zephyr development:
-# +---------------------------------------------------------------+
-# | Tool               | Required |  Notes:                       |
-# +---------------------------------------------------------------+
-# | Target C-compiler  | Yes      |                               |
-# | Target Assembler   | Yes      |                               |
-# | Target linker      | Yes      |                               |
-# +---------------------------------------------------------------+
-#
-# The module defines the following variables:
-#
-# 'CMAKE_C_COMPILER'
-# Path to target C compiler.
-# Set to 'CMAKE_C_COMPILER-NOTFOUND' if no C compiler was found.
-#
-# 'TargetTools_FOUND', 'TARGETTOOLS_FOUND'
-# True if all required host tools were found.
+#[=======================================================================[.rst:
+FindTargetTools
+***************
+
+Find the target tools for Zephyr development.
+
+This module locates a set of tools to use on the host, but targeting a remote target for Zephyr
+development.
+
+The module looks up the following target tools:
+
+===================== =========== =========================
+Tool                  Required    Notes
+===================== =========== =========================
+Target C-compiler     Yes
+Target Assembler      Yes
+Target linker         Yes
+===================== =========== =========================
+
+Variables
+=========
+
+.. cmake:variable:: CMAKE_C_COMPILER
+
+   Path to the target C compiler. Set to :cmake:variable:`CMAKE_C_COMPILER-NOTFOUND` if no C
+   compiler was found.
+
+.. cmake:variable:: TargetTools_FOUND
+.. cmake:variable:: TARGETTOOLS_FOUND
+
+   Set to True if all required target tools were found.
+
+#]=======================================================================]
 
 find_package(HostTools)
 

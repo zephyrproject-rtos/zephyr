@@ -2,19 +2,41 @@
 #
 # Copyright (c) 2022, Nordic Semiconductor ASA
 
-# FindDTC module for locating devicetree compiler, DTC.
-#
-# The module defines the following variables:
-#
-# 'DTC'
-# Path to devicetree compiler, dtc.
-# Set to 'DTC-NOTFOUND' if dtc was not found.
-#
-# 'Dtc_FOUND', 'DTC_FOUND'
-# True if the devicetree compiler, dtc, was found.
-#
-# 'DTC_VERSION_STRING'
-# The version of devicetree compiler, dtc.
+#[=======================================================================[.rst:
+FindDtc
+*******
+
+Find the devicetree compiler (DTC).
+
+This module locates the devicetree compiler (dtc) and verifies its version.
+
+Variables
+=========
+
+.. cmake:variable:: DTC
+
+   Path to the devicetree compiler executable. Set to :cmake:variable:`DTC-NOTFOUND` if dtc was not found.
+
+.. cmake:variable:: Dtc_FOUND
+.. cmake:variable:: DTC_FOUND
+
+   Set to True if the devicetree compiler was found.
+
+.. cmake:variable:: DTC_VERSION_STRING
+
+   The version of the installed devicetree compiler.
+
+Usage
+=====
+
+.. code-block:: cmake
+
+   find_package(Dtc)
+   if(Dtc_FOUND)
+     message("Found DTC version ${DTC_VERSION_STRING} at ${DTC}")
+   endif()
+
+#]=======================================================================]
 
 find_program(
   DTC
