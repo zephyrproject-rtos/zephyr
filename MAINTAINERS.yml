@@ -4447,6 +4447,7 @@ Raspberry Pi Pico Platforms:
     - boards/pimoroni/pico_plus2/
     - boards/seeed/xiao_rp2040/
     - boards/sparkfun/pro_micro_rp2040/
+    - boards/sparkfun/rp2040_mikrobus/
     - boards/waveshare/rp2040_zero/
     - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
