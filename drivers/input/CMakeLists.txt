@@ -41,6 +41,7 @@ zephyr_library_sources_ifdef(CONFIG_INPUT_RENESAS_RX_CTSU input_renesas_rx_ctsu.
 zephyr_library_sources_ifdef(CONFIG_INPUT_SBUS input_sbus.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_STM32_TSC_KEYS input_tsc_keys.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_STMPE811 input_stmpe811.c)
+zephyr_library_sources_ifdef(CONFIG_INPUT_TMA525B input_tma525b.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_TOUCH input_touch.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_VS1838B input_vs1838b.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_XEC_KBD input_xec_kbd.c)
