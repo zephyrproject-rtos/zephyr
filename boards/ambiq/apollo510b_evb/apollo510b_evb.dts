@@ -30,7 +30,8 @@
 		ambiq,xo32k = &xo32k_xtal;
 		ambiq,extrefclk = &extrefclk;
 		zephyr,bt-hci = &bt_hci;
-		/* zephyr,bt-hci = &bt_hci_apollo; */
+		ambiq,psram = &aps51216ba;
+		ambiq,external-ram-region = &xip0;
 	};
 
 	aliases {
@@ -207,7 +208,7 @@
 	pinctrl-1 = <&mspi0_sleep>;
 	pinctrl-2 = <&mspi0_psram>;
 	pinctrl-names = "default", "sleep", "psram";
-	status = "disabled";
+	status = "okay";
 	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio192_223 7 GPIO_ACTIVE_LOW>;
@@ -223,7 +224,7 @@
 		compatible = "ambiq,mspi-device", "mspi-aps-z8";
 		size = <DT_SIZE_M(512)>;
 		reg = <0>;
-		status = "disabled";
+		status = "okay";
 		mspi-max-frequency = <125000000>;
 		mspi-io-mode = "MSPI_IO_MODE_HEX_8_8_16";
 		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
