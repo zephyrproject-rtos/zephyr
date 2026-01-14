@@ -396,6 +396,11 @@
 			status = "okay";
 			interrupts = <23 0>;
 		};
+
+		smc: smc@4007e000 {
+			compatible = "nxp,smc";
+			reg = <0x4007e000 0x1000>;
+		};
 	};
 };
 
