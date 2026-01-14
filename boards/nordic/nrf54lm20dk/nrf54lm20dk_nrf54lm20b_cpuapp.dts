@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nordic/nrf54lm20a_cpuapp.dtsi>
+#include <nordic/nrf54lm20b_cpuapp.dtsi>
 #include "nrf54lm20_a_b_cpuapp_common.dtsi"
-#include <nordic/nrf54lm20a_partition.dtsi>
+#include <nordic/nrf54lm20b_partition.dtsi>
 
 / {
-	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp";
-	model = "Nordic nRF54LM20 DK nRF54LM20A Application MCU";
+	compatible = "nordic,nrf54lm20dk_nrf54lm20b-cpuapp";
+	model = "Nordic nRF54LM20 DK nRF54LM20B Application MCU";
 
 	chosen {
 		zephyr,code-partition = &slot0_partition;
