@@ -1,0 +1,12 @@
+sample:
+  name: MAX3010x Sensor Sample
+tests:
+  sample.sensor.max3010x:
+    build_only: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags:
+      - sensors
+      - heart rate
+    depends_on:
+      - i2c

@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText Copyright (c) 2026 Ashirwad Paswan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&i2c22 {
+	status = "okay";
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	mysensor: mysensor@57 {
+		compatible = "maxim,max30101";
+		status = "okay";
+		irq-gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		reg = <0x57>;
+		smp-ave = <1>;          /* Samples to average (1, 2, 4, 8, 16, 32) */
+		fifo-rollover-en;       /* Enable FIFO rollover */
+		fifo-watermark = <15>;  /* Interrupt after 15 samples in FIFO */
+		acq-mode = "spo2";      /* "heart_rate", "spo2", or "multi_led" */
+		adc-rge = <16384>;      /* ADC Range in nA */
+		smp-sr = <100>;         /* Sample rate in Hz */
+		led-pw = <411>;         /* LED Pulse width in us */
+		led-pa = [24 24 24];    /* Current(mA)=RegisterValue×0.2 */
+		led-slot = <1 2 0 0>;   /* Slot1: Red,Slot2: IR,Slot3: Green,Slot4: Multi_Led*/
+	};
+};
+
+&pinctrl {
+	/omit-if-no-ref/ i2c22_default: i2c22_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SCL, 1, 11)>,
+				<NRF_PSEL(TWIM_SDA, 1, 12)>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c22_sleep: i2c22_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SCL, 1, 11)>,
+				<NRF_PSEL(TWIM_SDA, 1, 12)>;
+			low-power-enable;
+		};
+	};
+};
