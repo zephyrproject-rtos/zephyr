@@ -2586,6 +2586,7 @@ Documentation Infrastructure:
   collaborators:
     - katsuster
     - martinjaeger
+    - yvesll
   files:
     - doc/hardware/peripherals/watchdog.rst
     - drivers/watchdog/
