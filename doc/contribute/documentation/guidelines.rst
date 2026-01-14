@@ -699,6 +699,32 @@ Cross-referencing C documentation
 
    You may provide a custom link text, similar to the built-in :rst:role:`ref` role.
 
+Cross-referencing CMake documentation
+=====================================
+
+You may use the following roles to cross-reference the documentation of Zephyr's CMake modules and
+variables.
+
+.. rst:role:: cmake:module
+
+   This role is used to reference a CMake module. For example::
+
+      See :cmake:module:`FindHostTools` for more information.
+
+   Will render as:
+
+      See :cmake:module:`FindHostTools` for more information.
+
+.. rst:role:: cmake:variable
+
+   This role is used to reference a CMake variable. For example::
+
+      See :cmake:variable:`CMAKE_C_COMPILER` for more information.
+
+   Will render as:
+
+      See :cmake:variable:`CMAKE_C_COMPILER` for more information.
+
 Visual Elements
 ***************
 
