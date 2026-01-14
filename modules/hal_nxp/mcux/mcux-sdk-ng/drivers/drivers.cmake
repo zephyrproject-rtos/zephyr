@@ -70,6 +70,8 @@ set_variable_ifdef(CONFIG_ENTROPY_MCUX_TRNG     CONFIG_MCUX_COMPONENT_driver.trn
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_CAAM     CONFIG_MCUX_COMPONENT_driver.caam)
 set_variable_ifdef(CONFIG_ETH_NXP_ENET          CONFIG_MCUX_COMPONENT_driver.enet)
 set_variable_ifdef(CONFIG_SOC_SERIES_KINETIS_K2X          CONFIG_MCUX_COMPONENT_driver.smc)
+set_variable_ifdef(CONFIG_SOC_FAMILY_MCXC       CONFIG_MCUX_COMPONENT_driver.smc)
+set_variable_ifdef(CONFIG_SOC_FAMILY_MCXC       CONFIG_MCUX_COMPONENT_driver.llwu)
 set_variable_ifdef(CONFIG_I2C_MCUX              CONFIG_MCUX_COMPONENT_driver.i2c)
 set_variable_ifdef(CONFIG_I2C_NXP_II2C          CONFIG_MCUX_COMPONENT_driver.ii2c)
 set_variable_ifdef(CONFIG_I3C_MCUX              CONFIG_MCUX_COMPONENT_driver.i3c)
