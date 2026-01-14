@@ -44,14 +44,13 @@ import pickle
 import sys
 from collections import defaultdict
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
-                                'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree', 'src'))
 
 ESCAPE_TABLE = str.maketrans(
     {
         "\n": "\\n",
         "\r": "\\r",
-        '\"': '\\"',
+        '"': '\\"',
         "\\": "\\\\",
     }
 )
@@ -68,10 +67,10 @@ def parse_args():
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--cmake-out", required=True,
-                        help="path to write the CMake property file")
-    parser.add_argument("--edt-pickle", required=True,
-                        help="path to read the pickled edtlib.EDT object from")
+    parser.add_argument("--cmake-out", required=True, help="path to write the CMake property file")
+    parser.add_argument(
+        "--edt-pickle", required=True, help="path to read the pickled edtlib.EDT object from"
+    )
 
     return parser.parse_args()
 
@@ -180,8 +179,7 @@ def main():
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
 
     cmake_props = map(
-        'set_target_properties(${{DEVICETREE_TARGET}} PROPERTIES {})'.format,
-        cmake_props
+        'set_target_properties(${{DEVICETREE_TARGET}} PROPERTIES {})'.format, cmake_props
     )
     with open(args.cmake_out, "w", encoding="utf-8") as cmake_file:
         print("\n".join(cmake_props), file=cmake_file)
