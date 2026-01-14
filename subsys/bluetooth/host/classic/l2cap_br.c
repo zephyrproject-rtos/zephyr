@@ -1100,7 +1100,7 @@ static int bt_l2cap_br_pack_s_frame_header(struct bt_l2cap_br_chan *br_chan, str
 }
 
 static void bt_l2cap_br_pack_i_frame_header(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf,
-					    uint8_t pdu_len, uint8_t sar, uint8_t tx_seq)
+					    uint16_t pdu_len, uint8_t sar, uint8_t tx_seq)
 {
 	struct bt_l2cap_hdr *hdr;
 	uint16_t std_control;
