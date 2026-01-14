@@ -1155,21 +1155,36 @@
 		};
 
 		xbar1: xbar1@403bc000 {
-			compatible = "nxp,mcux-xbar";
+			compatible = "nxp,xbar";
 			reg = <0x403bc000 0x4000>;
 			interrupts = <116 0>, <117 0>;
+			clocks = <&ccm IMX_CCM_XBAR1_CLK 0 0>;
+			num-outputs = <132>;
+			num-inputs = <88>;
+			num-ctrl-regs = <2>;
+			#xbar-cells = <2>;
 			status = "disabled";
 		};
 
 		xbar2: xbar2@403c0000 {
-			compatible = "nxp,mcux-xbar";
+			compatible = "nxp,xbar";
 			reg = <0x403c0000 0x4000>;
+			clocks = <&ccm IMX_CCM_XBAR2_CLK 0 0>;
+			num-outputs = <16>;
+			num-inputs = <58>;
+			num-ctrl-regs = <0>;
+			#xbar-cells = <2>;
 			status = "disabled";
 		};
 
 		xbar3: xbar3@403c4000 {
-			compatible = "nxp,mcux-xbar";
+			compatible = "nxp,xbar";
 			reg = <0x403c4000 0x4000>;
+			clocks = <&ccm IMX_CCM_XBAR2_CLK 0 0>;
+			num-outputs = <16>;
+			num-inputs = <58>;
+			num-ctrl-regs = <0>;
+			#xbar-cells = <2>;
 			status = "disabled";
 		};
 
