@@ -111,8 +111,8 @@ static void mipi_dbi_sf32lb_recv_single_data(const struct device *dev, uint8_t *
 	sys_put_le32(data, buf);
 }
 
-static void mipi_dbi_sf32lb_read_bytes(const struct device *dev, uint32_t addr, uint32_t addr_len,
-				       uint8_t *buf, uint16_t len)
+static void mipi_dbi_sf32lb_type_c_read_bytes(const struct device *dev, uint32_t addr,
+					   uint32_t addr_len, uint8_t *buf, uint16_t len)
 {
 	wait_busy(dev);
 	mipi_dbi_sf32lb_spi_sequence(dev, false);
@@ -386,6 +386,57 @@ static int mipi_dbi_command_write_sf32lb(const struct device *dev,
 	return 0;
 }
 
+static int mipi_dbi_sf32lb_8080_cmd_read_bytes(const struct device *dev, uint8_t *cmd,
+					       size_t num_cmds, uint8_t *data, size_t data_len)
+{
+	const struct dbi_sf32lb_config *config = dev->config;
+
+	while (num_cmds > 0) {
+		wait_busy(dev);
+		sys_write32(*cmd, config->base + LCD_WR);
+		sys_write32(LCD_IF_LCD_SINGLE_WR_TRIG, config->base + LCD_SINGLE);
+
+		num_cmds--;
+		cmd++;
+	}
+
+	while (data_len > 0) {
+		wait_busy(dev);
+		sys_write32(LCD_IF_LCD_SINGLE_RD_TRIG, config->base + LCD_SINGLE);
+
+		wait_busy(dev);
+		*data = sys_read8(config->base + LCD_RD);
+
+		data_len--;
+		data++;
+	}
+
+	return 0;
+}
+
+static int mipi_dbi_command_read_sf32lb(const struct device *dev,
+					const struct mipi_dbi_config *dbi_config, uint8_t *cmds,
+					size_t num_cmds, uint8_t *response, size_t len)
+{
+	ARG_UNUSED(num_cmds);
+	uint32_t addr;
+	uint8_t bus_type = dbi_config->mode & 0xFU;
+
+	switch (bus_type) {
+	case MIPI_DBI_MODE_8080_BUS_8_BIT:
+		mipi_dbi_sf32lb_8080_cmd_read_bytes(dev, cmds, num_cmds, response, len);
+	case MIPI_DBI_MODE_SPI_3WIRE:
+	case MIPI_DBI_MODE_SPI_4WIRE:
+		mipi_dbi_sf32lb_configure(dev, dbi_config);
+		mipi_dbi_sf32lb_type_c_read_bytes(dev, addr, sizeof(addr), response, len);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int mipi_dbi_write_display_sf32lb(const struct device *dev,
 					 const struct mipi_dbi_config *dbi_config,
 					 const uint8_t *framebuf,
@@ -490,6 +541,7 @@ static int mipi_dbi_configure_te_sf32lb(const struct device *dev, uint8_t edge, 
 static DEVICE_API(mipi_dbi, dbi_sf32lb_api) = {
 	.reset = mipi_dbi_reset_sf32lb,
 	.command_write = mipi_dbi_command_write_sf32lb,
+	.command_read = mipi_dbi_command_read_sf32lb,
 	.write_display = mipi_dbi_write_display_sf32lb,
 	.configure_te = mipi_dbi_configure_te_sf32lb,
 };
