@@ -1665,6 +1665,22 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 #define K_FOREVER Z_FOREVER
 
+/**
+ * @brief Add two k_timeout_t values together
+ *
+ * This macro adds two k_timeout_t values together. If only one value is an
+ * absolute timeout, the result will be an absolute timeout. If both are
+ * relative timeouts, the result will be a relative timeout. If the calculation
+ * overflows, underflows or if both values are absolute timeouts, K_FOREVER
+ * is returned.
+ *
+ * @param timeout1 First k_timeout_t value
+ * @param timeout2 Second k_timeout_t value
+ *
+ * @return Sum of the two timeout values, or K_FOREVER if incalculable
+ */
+#define K_TIMEOUT_SUM(timeout1, timeout2)  K_TICKS(z_timeout_sum(timeout1, timeout2))
+
 #ifdef CONFIG_TIMEOUT_64BIT
 
 /**
@@ -1748,7 +1764,6 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * @return Timeout delay value
  */
 #define K_TIMEOUT_ABS_CYC(t) K_TIMEOUT_ABS_TICKS(k_cyc_to_ticks_ceil64(t))
-
 #endif
 
 /**
