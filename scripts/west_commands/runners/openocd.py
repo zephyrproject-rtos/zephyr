@@ -272,12 +272,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 self.cfg_cmd.append(i)
 
         if command == 'flash':
-            if self.image_type == 'elf':
-                self.do_flash_elf(**kwargs)
-            elif self.image_type == 'bin':
-                self.do_flash_bin(**kwargs)
-            else:
-                self.do_flash(**kwargs)
+            self.do_flash(**kwargs)
         elif command in ('attach', 'debug', 'rtt'):
             self.do_attach_debug_rtt(command, **kwargs)
         elif command == 'load':
@@ -285,155 +280,92 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         else:
             self.do_debugserver(**kwargs)
 
+    def _openocd_cmd(self, cmd_list):
+        """Convert a list of commands to openocd -c arguments."""
+        return [x for cmd in cmd_list for x in ("-c", cmd)]
+
     def do_flash(self, **kwargs):
-        self.ensure_output('hex')
-        if self.load_cmd is None:
-            raise ValueError('Cannot flash; load command is missing')
-        if self.verify_cmd is None:
-            raise ValueError('Cannot flash; verify command is missing')
+        match self.image_type:
+            case 'elf':
+                if self.elf_name is None:
+                    raise ValueError('Cannot flash; no .elf specified')
+                image_file = self.elf_name
+                with open(image_file, 'rb') as f:
+                    ep_addr = f"0x{ELFFile(f).header['e_entry']:016x}"
 
-        # openocd doesn't cope with Windows path names, so convert
-        # them to POSIX style just to be sure.
-        hex_name = Path(self.cfg.hex_file).as_posix()
+            case 'bin':
+                self.ensure_output('bin')
+                if self.load_cmd is None:
+                    raise ValueError('Cannot flash; load command is missing')
+                if self.flash_address is None:
+                    raise ValueError('Cannot flash; flash address is missing')
+                image_file = Path(self.cfg.bin_file).as_posix()
 
-        self.logger.info(f'Flashing file: {hex_name}')
+            case _:  # 'hex' or None (default)
+                self.ensure_output('hex')
+                if self.load_cmd is None:
+                    raise ValueError('Cannot flash; load command is missing')
+                if self.verify_cmd is None:
+                    raise ValueError('Cannot flash; verify command is missing')
+                image_file = Path(self.cfg.hex_file).as_posix()
 
-        pre_init_cmd = []
-        pre_load_cmd = []
-        post_verify_cmd = []
-        for i in self.pre_init:
-            pre_init_cmd.append("-c")
-            pre_init_cmd.append(i)
+        self.logger.info(f'Flashing file: {image_file}')
 
-        for i in self.pre_load:
-            pre_load_cmd.append("-c")
-            pre_load_cmd.append(i)
+        pre_init_cmd = self._openocd_cmd(self.pre_init)
 
-        for i in self.post_verify:
-            post_verify_cmd.append("-c")
-            post_verify_cmd.append(i)
+        if self.image_type == 'elf':
+            pre_load_cmd = []
+            load_image = []
+            if not self.do_verify_only:
+                pre_load_cmd = self._openocd_cmd(self.pre_load)
+                load_image = ['-c', self.reset_halt_cmd,
+                              '-c', 'load_image ' + image_file]
 
-        load_image = []
-        if not self.do_verify_only:
-            # Halt target
-            load_image = ['-c', self.reset_halt_cmd]
-            # Perform any erase operations
-            if self.do_erase:
-                if self.erase_cmd is None:
-                    self.logger.error('--erase not supported for target without --cmd-erase')
-                    return
-                for erase_cmd in self.erase_cmd:
-                    load_image += ["-c", erase_cmd]
-                # Trim the "erase" from "flash write_image erase" since a mass erase is already done
-                if self.load_cmd.endswith(' erase'):
-                    self.load_cmd = self.load_cmd[:-6]
-            # Load image
-            load_image +=['-c', self.load_cmd + ' ' + hex_name]
+            verify_image = []
+            post_verify_cmd = []
+            if self.do_verify or self.do_verify_only:
+                verify_image = ['-c', 'verify_image ' + image_file]
+                post_verify_cmd = self._openocd_cmd(self.post_verify)
 
-        verify_image = []
-        if self.do_verify or self.do_verify_only:
-            verify_image = ['-c', self.reset_halt_cmd,
-                            '-c', self.verify_cmd + ' ' + hex_name]
+            epilogue = ['-c', 'resume ' + ep_addr, '-c', 'shutdown']
 
-        cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
-               pre_init_cmd + self.init_arg + self.targets_arg +
-               pre_load_cmd + load_image +
-               verify_image +
-               post_verify_cmd +
-               ['-c', 'reset run',
-                '-c', 'shutdown'])
-        self.check_call(cmd)
+        else:
+            pre_load_cmd = self._openocd_cmd(self.pre_load)
+            post_verify_cmd = self._openocd_cmd(self.post_verify)
 
-    def do_flash_bin(self, **kwargs):
-        self.ensure_output('bin')
-        if self.load_cmd is None:
-            raise ValueError('Cannot flash; load command is missing')
-        if self.flash_address is None:
-            raise ValueError('Cannot flash BIN; flash address is missing (use --flash-address)')
+            load_image = []
+            if not self.do_verify_only:
+                load_image = ['-c', self.reset_halt_cmd]
+                if self.do_erase:
+                    if self.erase_cmd is None:
+                        self.logger.error('--erase not supported for target without --cmd-erase')
+                        return
+                    load_image += self._openocd_cmd(self.erase_cmd)
+                    if self.image_type != 'bin' and self.load_cmd.endswith(' erase'):
+                        self.load_cmd = self.load_cmd[:-6]
 
-        bin_name = Path(self.cfg.bin_file).as_posix()
+                if self.image_type == 'bin':
+                    load_image += ['-c', f'{self.load_cmd} {image_file} {self.flash_address}']
+                else:
+                    load_image += ['-c', f'{self.load_cmd} {image_file}']
 
-        self.logger.info(f'Flashing file: {bin_name}')
+            verify_image = []
+            if self.do_verify or self.do_verify_only:
+                if self.image_type == 'bin':
+                    if self.verify_cmd:
+                        verify_cmd = f'{self.verify_cmd} {image_file} {self.flash_address}'
+                        verify_image = ['-c', self.reset_halt_cmd, '-c', verify_cmd]
+                else:
+                    verify_image = ['-c', self.reset_halt_cmd,
+                                    '-c', f'{self.verify_cmd} {image_file}']
 
-        pre_init_cmd = []
-        pre_load_cmd = []
-        post_verify_cmd = []
-        for i in self.pre_init:
-            pre_init_cmd.append("-c")
-            pre_init_cmd.append(i)
-
-        for i in self.pre_load:
-            pre_load_cmd.append("-c")
-            pre_load_cmd.append(i)
-
-        for i in self.post_verify:
-            post_verify_cmd.append("-c")
-            post_verify_cmd.append(i)
-
-        load_image = []
-        if not self.do_verify_only:
-            load_image = ['-c', self.reset_halt_cmd]
-            if self.do_erase and self.erase_cmd is None:
-                self.logger.error('--erase not supported for target without --cmd-erase')
-                return
-            if self.do_erase:
-                load_image += [x for cmd in self.erase_cmd for x in ("-c", cmd)]
-            load_image += ['-c', f'{self.load_cmd} {bin_name} {self.flash_address}']
-
-        verify_image = []
-        if (self.do_verify or self.do_verify_only) and self.verify_cmd:
-            verify_image = ['-c', self.reset_halt_cmd,
-                            '-c', f'{self.verify_cmd} {bin_name} {self.flash_address}']
+            epilogue = ['-c', 'reset run', '-c', 'shutdown']
 
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
                pre_load_cmd + load_image +
-               verify_image +
-               post_verify_cmd +
-               ['-c', 'reset run',
-                '-c', 'shutdown'])
-        self.check_call(cmd)
-
-    def do_flash_elf(self, **kwargs):
-        if self.elf_name is None:
-            raise ValueError('Cannot debug; no .elf specified')
-
-        # Extract entry point address from Elf to use it later with
-        # "resume" command of OpenOCD.
-        with open(self.elf_name, 'rb') as f:
-            ep_addr = f"0x{ELFFile(f).header['e_entry']:016x}"
-
-        pre_init_cmd = []
-        for i in self.pre_init:
-            pre_init_cmd.append("-c")
-            pre_init_cmd.append(i)
-
-        pre_load_cmd = []
-        load_image = []
-        if not self.do_verify_only:
-            for i in self.pre_load:
-                pre_load_cmd.append("-c")
-                pre_load_cmd.append(i)
-            load_image = ['-c', 'load_image ' + self.elf_name]
-
-        verify_image = []
-        post_verify_cmd = []
-        if self.do_verify or self.do_verify_only:
-            verify_image = ['-c', 'verify_image ' + self.elf_name]
-            for i in self.post_verify:
-                post_verify_cmd.append("-c")
-                post_verify_cmd.append(i)
-
-        prologue = ['-c', 'resume ' + ep_addr,
-                    '-c', 'shutdown']
-
-        cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
-               pre_init_cmd + self.init_arg + self.targets_arg +
-               pre_load_cmd + ['-c', self.reset_halt_cmd] +
-               load_image +
                verify_image + post_verify_cmd +
-               prologue)
-
+               epilogue)
         self.check_call(cmd)
 
     def do_attach_debug_rtt(self, command, **kwargs):
