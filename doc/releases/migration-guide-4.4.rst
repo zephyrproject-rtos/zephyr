@@ -755,6 +755,15 @@ Libsbc
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
 
+Management
+==========
+
+* MCUmgr
+
+  * If using :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` then
+    :kconfig:option:`CONFIG_UART_MCUMGR` must now also be selected, this has changed to be
+    ``depends on`` rather than ``select``.
+
 Tracing
 ========
 
