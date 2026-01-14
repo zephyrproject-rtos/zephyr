@@ -12,6 +12,10 @@ tests:
     min_flash: 34
     filter: dt_compat_enabled("test-gpio-basic-api") and not dt_compat_enabled("arduino-header-r3")
 
+  drivers.gpio.s32k3x4evb_t172:
+    platform_allow: s32k3x4evb_t172
+    extra_args: "DTC_OVERLAY_FILE=boards/s32k3x4evb_t172.overlay"
+    
   drivers.gpio.nrf_sense_edge:
     platform_allow:
       - nrf52840dk/nrf52840

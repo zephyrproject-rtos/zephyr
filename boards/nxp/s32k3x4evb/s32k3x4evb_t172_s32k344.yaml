@@ -12,11 +12,6 @@ toolchain:
   - zephyr
 supported:
   - adc
-  - can
   - dma
-  - flash
   - gpio
-  - i2c
-  - netif:eth
-  - spi
   - uart
