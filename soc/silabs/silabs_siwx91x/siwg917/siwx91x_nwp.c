@@ -55,15 +55,15 @@ typedef struct {
 	const char *const *codes;
 	size_t num_codes;
 	sl_wifi_region_code_t region_code;
-	const sli_si91x_set_region_ap_request_t *sdk_reg;
+	const sli_wifi_set_region_ap_request_t *sdk_reg;
 } region_map_t;
 
-extern const sli_si91x_set_region_ap_request_t default_US_region_2_4GHZ_configurations;
-extern const sli_si91x_set_region_ap_request_t default_EU_region_2_4GHZ_configurations;
-extern const sli_si91x_set_region_ap_request_t default_JP_region_2_4GHZ_configurations;
-extern const sli_si91x_set_region_ap_request_t default_KR_region_2_4GHZ_configurations;
-extern const sli_si91x_set_region_ap_request_t default_SG_region_2_4GHZ_configurations;
-extern const sli_si91x_set_region_ap_request_t default_CN_region_2_4GHZ_configurations;
+extern const sli_wifi_set_region_ap_request_t default_US_region_2_4GHZ_configurations;
+extern const sli_wifi_set_region_ap_request_t default_EU_region_2_4GHZ_configurations;
+extern const sli_wifi_set_region_ap_request_t default_JP_region_2_4GHZ_configurations;
+extern const sli_wifi_set_region_ap_request_t default_KR_region_2_4GHZ_configurations;
+extern const sli_wifi_set_region_ap_request_t default_SG_region_2_4GHZ_configurations;
+extern const sli_wifi_set_region_ap_request_t default_CN_region_2_4GHZ_configurations;
 
 static const char *const us_codes[] = {
 	"AE", "AR", "AS", "BB", "BM", "BR", "BS", "CA", "CO", "CR", "CU", "CX", "DM", "DO",
@@ -127,7 +127,7 @@ sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_cod
 	return SL_WIFI_DEFAULT_REGION;
 }
 
-const sli_si91x_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t region_code)
+const sli_wifi_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t region_code)
 {
 	ARRAY_FOR_EACH(region_maps, i) {
 		if (region_maps[i].region_code == region_code) {
