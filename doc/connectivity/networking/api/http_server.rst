@@ -495,7 +495,8 @@ from within the dynamic resource callback:
     HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_user_agent, "User-Agent");
 
     static int dyn_handler(struct http_client_ctx *client, enum http_transaction_status status,
-                           uint8_t *buffer, size_t len, void *user_data)
+                           const struct http_request_ctx *request_ctx,
+                           struct http_response_ctx *response_ctx, void *user_data)
     {
         size_t header_count = client->header_capture_ctx.count;
         const struct http_header *headers = client->header_capture_ctx.headers;
