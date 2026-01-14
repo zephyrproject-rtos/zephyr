@@ -118,6 +118,7 @@ extensions = [
     "zephyr.domain",
     "zephyr.api_overview",
     "zephyr.partial_build",
+    "moderncmakedomain",
 ]
 
 # Only use image conversion when it is really needed, e.g. LaTeX build.
