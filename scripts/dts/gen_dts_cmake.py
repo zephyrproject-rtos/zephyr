@@ -147,7 +147,7 @@ def main():
             cmake_props.append(f'"DT_REG|{node.path}|ADDR" "{cmake_addr}"')
             cmake_props.append(f'"DT_REG|{node.path}|SIZE" "{cmake_size}"')
 
-    for comp in compatible2paths.keys():
+    for comp in compatible2paths:
         cmake_path = ';'.join(compatible2paths[comp])
 
         cmake_comp = f'DT_COMP|{comp}'

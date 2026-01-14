@@ -150,9 +150,6 @@
 "./scripts/dts/gen_driver_kconfig_dts.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./scripts/dts/gen_dts_cmake.py" = [
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
-]
 "./scripts/dts/python-devicetree/src/devicetree/_private.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
