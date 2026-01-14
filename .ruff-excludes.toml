@@ -14,6 +14,21 @@
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
+"./doc/_extensions/moderncmakedomain/cmake.py" = [
+    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
+    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
+    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
+    "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
+    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
+    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
+    "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
+    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
+]
+"./doc/_extensions/moderncmakedomain/colors.py" = [
+    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+    "UP009",    # https://docs.astral.sh/ruff/rules/utf8-encoding-declaration
+]
 "./doc/_scripts/redirects.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
@@ -875,6 +890,8 @@
 exclude = [
     "./arch/x86/zefi/zefi.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
+    "./doc/_extensions/moderncmakedomain/cmake.py",
+    "./doc/_extensions/moderncmakedomain/colors.py",
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",
     "./doc/conf.py",
