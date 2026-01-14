@@ -5,9 +5,6 @@
 
 if BOARD_STM32F429I_DISC1
 
-config INPUT
-	default y if DISPLAY
-
 config MEMC
 	default y if DISPLAY
 
