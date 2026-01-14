@@ -328,7 +328,8 @@ static int uart_cmsdk_apb_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
 
-	return !(dev_cfg->uart->state & UART_TX_BF);
+	return !(dev_cfg->uart->state & UART_TX_BF) &&
+	       (dev_cfg->uart->ctrl & UART_TX_IN_EN);
 }
 
 /**
@@ -380,7 +381,8 @@ static int uart_cmsdk_apb_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
 
-	return (dev_cfg->uart->state & UART_RX_BF) == UART_RX_BF;
+	return (dev_cfg->uart->state & UART_RX_BF) &&
+	       (dev_cfg->uart->ctrl & UART_RX_IN_EN);
 }
 
 /**
