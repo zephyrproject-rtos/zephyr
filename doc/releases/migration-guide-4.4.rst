@@ -563,6 +563,15 @@ STM32
   The previous ``swap using move`` mode can still be selected in sysbuild by enabling
   :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
 
+* For STM32F2x/F4x/F7x, the different PLL bindings (:dtcompatible:`st,stm32f2-pll-clock`,
+  :dtcompatible:`st,stm32f4-pll-clock`, :dtcompatible:`st,stm32f4-plli2s-clock`,
+  :dtcompatible:`st,stm32f411-plli2s-clock`, :dtcompatible:`st,stm32f7-pll-clock` and
+  :dtcompatible:`st,stm32fx-pllsai-clock` ) has been merged into a single one
+  :dtcompatible:`st,stm32fx-pll-clock`. This merge brings some changes, notably ``div-divq`` and
+  ``div-divr`` properties have been renamed respectively to ``post-div-q`` and ``post-div-r``.
+  Besides, when applicable to the SoC, these properties need to be defined if the corresponding
+  ``div-q`` or ``div-r`` properties are used.
+
 USB
 ===
 
