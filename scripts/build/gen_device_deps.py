@@ -160,7 +160,6 @@ def main():
                 f.write(dot.source)
         except ImportError:
             pass
-
     with open(args.output_source, "w") as fp:
         fp.write('#include <zephyr/device.h>\n')
         fp.write('#include <zephyr/toolchain.h>\n')
