@@ -108,7 +108,7 @@ jobs:
         cache-dependency-path: doc/requirements.txt
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
+      uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'
@@ -226,7 +226,7 @@ jobs:
         echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
+      uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'
