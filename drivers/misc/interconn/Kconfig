@@ -1,10 +1,13 @@
 # Interconn drivers not exposing Zephyr Device Driver API
 
 # Copyright (c) 2025 Renesas Electronics Corporation
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Interconn Drivers"
 
 source "drivers/misc/interconn/renesas_elc/Kconfig"
+
+source "drivers/misc/interconn/nxp_xbar/Kconfig"
 
 endmenu
