@@ -4,3 +4,16 @@
 
 config BOARD_APOLLO510B_EVB
 	select BOARD_EARLY_INIT_HOOK
+
+if BOARD_APOLLO510B_EVB
+config BOARD_ENABLE_GPU_ASSET_RELOCATION
+	bool "Relocate GPU asset from MRAM to PSRAM or SSRAM"
+	default y if LVGL
+	select BOARD_LATE_INIT_HOOK
+	help
+	  The Apollo510B GPU has limited access to MRAM. If this option is
+	  enabled, large constant assets (like LVGL fonts and images) will
+	  be loaded into MRAM but copied to external XIP RAM at BOARD_LATE_INIT_HOOK
+	  for direct access by the GPU. This is essential for any LVGL
+	  application with large assets on this board.
+endif

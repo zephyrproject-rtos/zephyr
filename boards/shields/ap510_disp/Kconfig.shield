@@ -6,3 +6,6 @@ config SHIELD_AP510_DISP
 
 config SHIELD_AP510_DISP_SPI
 	def_bool $(shields_list_contains,ap510_disp_spi)
+
+config SHIELD_AP510B_DISP
+	def_bool $(shields_list_contains,ap510b_disp)

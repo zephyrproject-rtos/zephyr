@@ -6,6 +6,8 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
+#include <zephyr/pm/device_runtime.h>
 #include <am_mcu_apollo.h>
 
 #if DT_HAS_CHOSEN(ambiq_xo32m)
@@ -55,3 +57,23 @@ void board_early_init_hook(void)
 				   AM_HAL_CLKMGR_HFRC2_FREQ_FREE_RUN_APPROX_250MHZ, NULL);
 
 }
+
+#if defined(CONFIG_BOARD_ENABLE_GPU_ASSET_RELOCATION)
+
+/* Symbols defined in the board-level linker.ld */
+extern char __gfx_assets_start[];
+extern char __gfx_assets_load_start[];
+extern char __gfx_assets_size[];
+
+void board_late_init_hook(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(ambiq_psram)) &&                                             \
+	DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(ambiq_external_ram_region))
+	pm_device_runtime_get(DEVICE_DT_GET(DT_CHOSEN(ambiq_psram)));
+#endif
+
+	memcpy(__gfx_assets_start, __gfx_assets_load_start, (size_t)&__gfx_assets_size);
+
+	sys_cache_data_flush_range(__gfx_assets_start, (size_t)&__gfx_assets_size);
+}
+#endif /* CONFIG_BOARD_ENABLE_GPU_ASSET_RELOCATION */

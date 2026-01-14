@@ -96,6 +96,12 @@
 		};
 	};
 
+	i2c2_sleep: i2c2_sleep {
+		group1 {
+			pinmux = <GPIO_P25>, <GPIO_P26>;
+		};
+	};
+
 	i2c3_default: i2c3_default {
 		group1 {
 			pinmux = <M3SCL_P31>, <M3SDAWIR3_P32>;
@@ -298,14 +304,18 @@
 				 <MSPI0_15_P42>,  /* D13 */
 				 <MSPI0_16_P43>,  /* D14 */
 				 <MSPI0_17_P44>,  /* D15 */
-				 <MSPI0_18_P45>,  /* DQS1 */
-				 <MNCE0_0_P199>;  /* CE0 */
+				 <MSPI0_18_P45>;  /* DQS1 */
 			drive-strength = "0.5";
 		};
 
 		group1 {
 			pinmux = <MSPI0_8_P72>;   /* SCK */
 			drive-strength = "0.75";
+		};
+
+		group2 {
+			pinmux = <MNCE0_0_P199>;   /* CE */
+			drive-strength = "1.0";
 		};
 	};
 

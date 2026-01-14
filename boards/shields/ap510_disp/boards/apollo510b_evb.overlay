@@ -60,12 +60,12 @@
 	pinctrl-0 = <&dc_te_default>;
 	pinctrl-names = "default";
 	/*apollo510_evb designed with a loadswitch to control power Vdd18.*/
-	vdd18-gpios = <&gpio32_63 26 GPIO_PULL_DOWN>;
+	vdd18-gpios = <&gpio32_63 17 GPIO_PULL_DOWN>;
 
 	co5300: co5300@0 {
 		status = "okay";
 		compatible = "chipone,co5300";
-		reset-gpios = <&gpio32_63 31 GPIO_PULL_UP>;
+		reset-gpios = <&gpio32_63 3 GPIO_PULL_UP>;
 		reg = <0x0>;
 		data-lanes = <1>;
 		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;

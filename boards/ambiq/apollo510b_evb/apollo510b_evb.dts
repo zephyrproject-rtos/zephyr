@@ -47,12 +47,12 @@
 
 	sram0: memory@SSRAM_BASE_NAME {
 		compatible = "mmio-sram";
-		reg = <SSRAM_BASE_ADDR 0x200000>;
+		reg = <SSRAM_BASE_ADDR 0x180000>;
 	};
 
-	sram_no_cache: memory@20280000 {
+	sram_no_cache: memory@20200000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20280000 0x100000>;
+		reg = <0x20200000 0x180000>;
 		zephyr,memory-region = "SRAM_NO_CACHE";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
