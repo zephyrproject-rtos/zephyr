@@ -32,9 +32,9 @@ Building the extension
 ----------------------
 
 An extension can be defined in the app's ``CMakeLists.txt`` by invoking the
-``add_llext_target`` function, providing the target name, the output and the
-source files. Usage is similar to the standard ``add_custom_target`` CMake
-function:
+:cmake:command:`add_llext_target` function, providing the target name, the output and the
+source files. Usage is similar to the standard :cmake:command:`add_custom_target
+<command:add_custom_target>` CMake function:
 
 .. code-block:: cmake
 
@@ -83,11 +83,11 @@ during the extension build process to a fine degree. Each of the below
 functions takes the LLEXT target name as its first argument; it is otherwise
 functionally equivalent to the common Zephyr ``target_*`` version.
 
-* ``llext_compile_definitions``
-* ``llext_compile_features``
-* ``llext_compile_options``
-* ``llext_include_directories``
-* ``llext_link_options``
+* :cmake:command:`llext_compile_definitions`
+* :cmake:command:`llext_compile_features`
+* :cmake:command:`llext_compile_options`
+* :cmake:command:`llext_include_directories`
+* :cmake:command:`llext_link_options`
 
 Custom build steps
 ------------------

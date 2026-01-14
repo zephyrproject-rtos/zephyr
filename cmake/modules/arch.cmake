@@ -2,26 +2,27 @@
 #
 # Copyright (c) 2023, Nordic Semiconductor ASA
 
-#
-# Configure ARCH settings based on KConfig settings and arch root.
-#
-# This CMake module will set the following variables in the build system based
-# on board directory and arch root.
-#
-# If no implementation is available for the current arch an error will be raised.
-#
-# Outcome:
-# The following variables will be defined when this CMake module completes:
-#
-# - ARCH:      Name of the arch in use.
-# - ARCH_DIR:  Directory containing the arch implementation.
-# - ARCH_ROOT: ARCH_ROOT with ZEPHYR_BASE appended
-#
-# Variable dependencies:
-# - ARCH_ROOT: CMake list of arch roots containing arch implementations
-#
-# Variables set by this module and not mentioned above are considered internal
-# use only and may be removed, renamed, or re-purposed without prior notice.
+#[=======================================================================[.rst:
+arch
+****
+
+Configure arch settings based on Kconfig settings and arch root.
+
+This CMake module will set the following variables in the build system based on board directory and
+arch root.
+
+If no implementation is available for the current arch, an error will be raised.
+
+Variables
+=========
+
+The following variables will be defined when this CMake module completes:
+
+* :cmake:variable:`ARCH`
+* :cmake:variable:`ARCH_DIR`
+* :cmake:variable:`ARCH_ROOT`
+
+#]=======================================================================]
 
 include_guard(GLOBAL)
 
