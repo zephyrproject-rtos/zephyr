@@ -34,12 +34,6 @@ config LV_Z_VDB_ZEPHYR_REGION
 config LV_Z_VDB_ZEPHYR_REGION_NAME
 	default "SDRAM2"
 
-config LV_Z_FLUSH_THREAD
-	default y
-
-config LV_Z_BITS_PER_PIXEL
-	default 16 if STM32_LTDC_RGB565
-
 endif # LVGL
 
 endif # BOARD_STM32H7B3I_DK
