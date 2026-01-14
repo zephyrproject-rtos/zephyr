@@ -30,9 +30,6 @@ endchoice
 
 endif # DISPLAY
 
-config INPUT
-	default y if LVGL
-
 if INPUT
 
 config INPUT_FT5336_INTERRUPT
