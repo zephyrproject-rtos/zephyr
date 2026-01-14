@@ -290,7 +290,7 @@ static void sensing_sensor_polling_timer(struct k_timer *timer_id)
 	sensor_read_async_mempool(sensor->iodev, &sensing_rtio_ctx, sensor);
 }
 
-static int init_sensor(struct sensing_sensor *sensor)
+static void init_sensor(struct sensing_sensor *sensor)
 {
 	struct sensing_submit_config *config;
 	struct sensing_connection *conn;
@@ -313,27 +313,20 @@ static int init_sensor(struct sensing_sensor *sensor)
 
 	config = sensor->iodev->data;
 	config->chan = sensing_sensor_type_to_chan(sensor->info->type);
-
-	return 0;
 }
 
 static int sensing_init(const struct device *dev)
 {
 	struct sensing_context *ctx = dev->data;
-	enum sensing_sensor_state state;
 	int ret = 0;
 
 	LOG_INF("sensing init begin...");
 
 	for_each_sensor(sensor) {
-		ret = init_sensor(sensor);
+		init_sensor(sensor);
+		ret = set_sensor_state(sensor, SENSING_SENSOR_STATE_READY);
 		if (ret) {
-			LOG_ERR("sensor:%s initial error", sensor->dev->name);
-		}
-		state = (ret ? SENSING_SENSOR_STATE_OFFLINE : SENSING_SENSOR_STATE_READY);
-		ret = set_sensor_state(sensor, state);
-		if (ret) {
-			LOG_ERR("set sensor:%s state:%d error", sensor->dev->name, state);
+			LOG_ERR("set sensor:%s error", sensor->dev->name);
 		}
 		LOG_INF("sensing init, sensor:%s, state:%d", sensor->dev->name, sensor->state);
 	}
