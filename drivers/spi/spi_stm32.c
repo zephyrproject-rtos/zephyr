@@ -1434,7 +1434,10 @@ static int transceive_dma(const struct device *dev,
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
 	spi_dma_enable_requests(spi);
 
-	LL_SPI_Enable(spi);
+	if (!cfg->fifo_enabled || transfer_dir != LL_SPI_FULL_DUPLEX ||
+	    SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
+		LL_SPI_Enable(spi);
+	}
 
 	/* In half-duplex rx mode, start transfer after
 	 * setting DMA configurations
@@ -1474,6 +1477,13 @@ static int transceive_dma(const struct device *dev,
 		}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		if (cfg->fifo_enabled && transfer_dir == LL_SPI_FULL_DUPLEX &&
+		    SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+			LL_SPI_SetTransferSize(spi, dma_len);
+			LL_SPI_Enable(spi);
+			LL_SPI_StartMasterTransfer(spi);
+		}
+
 		if (transfer_dir == LL_SPI_HALF_DUPLEX_RX &&
 		    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 			LL_SPI_StartMasterTransfer(spi);
@@ -1509,7 +1519,8 @@ static int transceive_dma(const struct device *dev,
 			/* The TXC flag is not raised at the end of 9, 17 or 25
 			 * bit transfer, so disable the SPI in these cases to avoid being stuck.
 			 */
-			if ((width == 9U) || (width == 17U) || (width == 25U)) {
+			if (!cfg->fifo_enabled &&
+			    ((width == 9U) || (width == 17U) || (width == 25U))) {
 				k_usleep(1000);
 				ll_func_disable_spi(spi);
 			}
@@ -1531,6 +1542,14 @@ static int transceive_dma(const struct device *dev,
 		} else {
 			spi_context_update_rx(&data->ctx, dfs, dma_len);
 		}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		if (cfg->fifo_enabled && transfer_dir == LL_SPI_FULL_DUPLEX &&
+		    SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+			LL_SPI_ClearFlag_TXTF(spi);
+			LL_SPI_Disable(spi);
+		}
+#endif /* st_stm32h7_spi */
 
 		if (transfer_dir == LL_SPI_HALF_DUPLEX_TX &&
 		    !spi_context_tx_on(&data->ctx) &&
