@@ -299,7 +299,9 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 	 * that will trigger a TX interrupt.
 	 */
 	key = irq_lock();
-	uart_cmsdk_apb_isr(dev);
+	if (!(dev_cfg->uart->state & UART_TX_BF)) {
+		uart_cmsdk_apb_isr(dev);
+	}
 	irq_unlock(key);
 }
 
@@ -340,8 +342,15 @@ static int uart_cmsdk_apb_irq_tx_ready(const struct device *dev)
 static void uart_cmsdk_apb_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
+	unsigned int key;
 
 	dev_cfg->uart->ctrl |= UART_RX_IN_EN;
+	/* "Prime" the interrupt as described above */
+	key = irq_lock();
+	if (dev_cfg->uart->state & UART_RX_BF) {
+		uart_cmsdk_apb_isr(dev);
+	}
+	irq_unlock(key);
 }
 
 /**
