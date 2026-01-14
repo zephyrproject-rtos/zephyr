@@ -423,7 +423,7 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 	return 0;
 }
 
-static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_request_t *sdk_reg,
+static int map_sdk_region_to_zephyr_channel_info(const sli_wifi_set_region_ap_request_t *sdk_reg,
 						 struct wifi_reg_chan_info *z_chan_info,
 						 size_t *num_channels)
 {
@@ -457,7 +457,7 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_r
 static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
 {
 	const struct siwx91x_config *siwx91x_cfg = dev->config;
-	const sli_si91x_set_region_ap_request_t *sdk_reg = NULL;
+	const sli_wifi_set_region_ap_request_t *sdk_reg = NULL;
 	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
 	sl_wifi_region_code_t region_code;
 	const char *country_code;
