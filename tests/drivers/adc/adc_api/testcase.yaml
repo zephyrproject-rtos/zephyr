@@ -121,3 +121,4 @@ tests:
       - EXTRA_CONF_FILE="overlay-dma-ambiq.conf"
     platform_allow:
       - apollo510_evb
+      - apollo510b_evb
