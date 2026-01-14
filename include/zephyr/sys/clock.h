@@ -172,6 +172,49 @@ typedef struct {
 /* The maximum duration in ticks strictly and semantically "less than" K_FOREVER */
 #define K_TICK_MAX ((k_ticks_t)(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX : UINT32_MAX - 1))
 
+/**
+ * @brief Sum the ticks from two timeout values
+ *
+ * This routine determines the resulting tick value when adding two k_timeout_t
+ * values together. If only one k_timeout_t value is an absolute timeout, the
+ * result will be an absolute timeout. If both are relative timeouts, the
+ * result will be a relative timeout. If the calculated tick value overflows,
+ * underflows or if both values are absolute timeouts, it returns K_TICKS_FOREVER.
+ *
+ * @param t1 First k_timeout_t value
+ * @param t2 Second k_timeout_t value
+ *
+ * @return Sum of the two timeout values in ticks, or val K_TICKS_FOREVER if incalculable
+ */
+static inline k_ticks_t z_timeout_sum(k_timeout_t t1, k_timeout_t t2)
+{
+	k_ticks_t ticks1 = t1.ticks;
+	k_ticks_t ticks2 = t2.ticks;
+
+#ifdef CONFIG_TIMEOUT_64BIT
+	if ((ticks1 == K_TICKS_FOREVER) || (ticks2 == K_TICKS_FOREVER)) {
+		return K_TICKS_FOREVER;
+	}
+
+	if (ticks1 < 0) {
+		if (ticks2 < 0) {
+			return K_TICKS_FOREVER;  /* Both absolute timeouts */
+		}
+
+		return ((ticks1 - INT64_MIN) < ticks2) ?
+			K_TICKS_FOREVER : (ticks1 - ticks2);
+	} else if (ticks2 < 0) {
+		return ((ticks2 - INT64_MIN) < ticks1) ?
+			K_TICKS_FOREVER : (ticks2 - ticks1);
+	} else {
+		return ((INT64_MAX - ticks1) < ticks2) ?
+			K_TICKS_FOREVER : ticks1 + ticks2;
+	}
+#else
+	return ((UINT32_MAX - ticks1) < ticks2) ? K_TICKS_FOREVER : ticks1 + ticks2;
+#endif
+}
+
 /** @endcond */
 
 #ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
