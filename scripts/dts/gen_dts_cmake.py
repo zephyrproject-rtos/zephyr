@@ -158,7 +158,7 @@ def main():
 
             cmake_props.append(f'"DT_UNIT_ADDR|{node.path}" "{cmake_unit_addr_int}"')
 
-    for comp in compatible2paths.keys():
+    for comp in compatible2paths:
         cmake_path = ';'.join(compatible2paths[comp])
 
         cmake_comp = f'DT_COMP|{comp}'
