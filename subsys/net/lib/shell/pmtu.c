@@ -59,13 +59,12 @@ static int cmd_net_pmtu(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_PMTU)
 	struct net_shell_user_data user_data;
-	int arg = 1;
 #endif
 
 	ARG_UNUSED(argc);
 
 #if defined(CONFIG_NET_PMTU)
-	if (!argv[arg]) {
+	if (argv[1] == NULL) {
 		/* PMTU destination cache content */
 		int count = 0;
 

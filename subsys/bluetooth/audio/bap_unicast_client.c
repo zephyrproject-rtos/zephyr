@@ -460,6 +460,39 @@ bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 	return false;
 }
 
+struct bt_conn *bt_bap_unicast_client_ep_get_conn(const struct bt_bap_ep *ep)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts); i++) {
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+		if (PART_OF_ARRAY(uni_cli_insts[i].snks, ep)) {
+			struct bt_bap_unicast_client_ep *client_ep =
+				CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
+
+			if (client_ep->handle == BAP_HANDLE_UNUSED) {
+				return NULL;
+			}
+
+			return bt_conn_lookup_index((uint8_t)i);
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+		if (PART_OF_ARRAY(uni_cli_insts[i].srcs, ep)) {
+			struct bt_bap_unicast_client_ep *client_ep =
+				CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
+
+			if (client_ep->handle == BAP_HANDLE_UNUSED) {
+				return NULL;
+			}
+
+			return bt_conn_lookup_index((uint8_t)i);
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+	}
+
+	return NULL;
+}
+
 static void unicast_client_ep_init(struct bt_bap_ep *ep, uint16_t handle, uint8_t dir)
 {
 	struct bt_bap_unicast_client_ep *client_ep;
@@ -4634,7 +4667,7 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	}
 
 	role = conn->role;
-	if (role != BT_HCI_ROLE_CENTRAL) {
+	if (role != BT_CONN_ROLE_CENTRAL) {
 		LOG_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}

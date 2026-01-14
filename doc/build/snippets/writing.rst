@@ -245,3 +245,27 @@ The above example uses devicetree overlay :file:`my_vendor.overlay` when
 building for either board ``my_vendor_board1`` or ``my_vendor_board2``. It
 would not use the overlay when building for either ``another_vendor_board`` or
 ``x_my_vendor_board``.
+
+Board revisions
+===============
+
+Specific configuration for revisions of boards is also supported which will be applied after the
+common files:
+
+.. code-block:: yaml
+
+   name: foo
+   boards:
+     bar:
+       append:
+         # Base file will be applied first
+         EXTRA_DTC_OVERLAY_FILE: first.overlay
+       revisions:
+         "0.7.0":
+           append:
+             # Will be applied on top of common board file
+             EXTRA_DTC_OVERLAY_FILE: extra_0_7_0.overlay
+
+The above example will use :file:`first.overlay` for all revisions of the ``bar`` board, and will
+also include :file:`extra_0_7_0.overlay` when building for revision ``0.7.0`` of the ``bar``
+board (``bar@0.7.0``).

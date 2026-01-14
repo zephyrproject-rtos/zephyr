@@ -261,7 +261,7 @@ static inline void qspi_clock_div_change(const struct device *dev)
 #if NRF53_ERRATA_159_ENABLE_WORKAROUND
 	struct qspi_nor_data *dev_data = dev->data;
 
-	if (nrf53_errata_159()) {
+	if (NRF_ERRATA_DYNAMIC_CHECK(53, 159)) {
 		/* Save current hfclk configuration */
 		dev_data->prev_hclk_div = nrf_clock_hfclk_div_get(NRF_CLOCK);
 		nrf_clock_hfclk_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_2);
@@ -285,7 +285,7 @@ static inline void qspi_clock_div_restore(const struct device *dev)
 #if NRF53_ERRATA_159_ENABLE_WORKAROUND
 	struct qspi_nor_data *dev_data = dev->data;
 
-	if (nrf53_errata_159()) {
+	if (NRF_ERRATA_DYNAMIC_CHECK(53, 159)) {
 		/* Restore previous hfclk configuration */
 		nrf_clock_hfclk_div_set(NRF_CLOCK, dev_data->prev_hclk_div);
 	}
@@ -1054,7 +1054,7 @@ static int qspi_init(const struct device *dev)
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, rx_delay)
-	if (!nrf53_errata_121()) {
+	if (!NRF_ERRATA_DYNAMIC_CHECK(53, 121)) {
 		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
 	}
 #endif

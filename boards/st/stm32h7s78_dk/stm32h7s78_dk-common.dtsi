@@ -11,6 +11,11 @@
 #include "zephyr/dt-bindings/display/panel.h"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
+/*
+ * WARNING:
+ * JP6 must be in PC1 position when using Ethernet.
+ */
+
 / {
 	chosen {
 		zephyr,console = &uart4;
@@ -226,6 +231,31 @@
 	 * reference: DS14359 Rev 4 page 134
 	 */
 	status = "disabled";
+};
+
+&mac {
+	pinctrl-0 = <&eth_rmii_ref_clk_pd7
+		     &eth_rmii_crs_dv_pa7
+		     &eth_rmii_rxd0_pc4
+		     &eth_rmii_rxd1_pc5
+		     &eth_rmii_tx_en_pg11
+		     &eth_rmii_txd0_pb0
+		     &eth_rmii_txd1_pb1>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
 };
 
 &xspi1 {

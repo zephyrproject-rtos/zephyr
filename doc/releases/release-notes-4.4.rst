@@ -77,6 +77,7 @@ Deprecated APIs and options
       :c:func:`bt_mesh_input_numeric` instead.
     * The callback :c:member:`output_number` in :c:struct:`bt_mesh_prov` structure was deprecated.
       Applications should use :c:member:`output_numeric` callback instead.
+    * The :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` option has been deprecated.
 
   * Host
 
@@ -89,14 +90,7 @@ Deprecated APIs and options
   * NXP
 
     * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
-      currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample.
-    * The new ``comparator_nxp_lpcmp`` driver (:zephyr_file:`drivers/comparator/comparator_nxp_lpcmp.c`) has
-      been introduced to support NXP LPCMP peripheral. SoCs and boards that previously supported the ``mcux_lpcmp``
-      driver and its associated sample have now migrated to use the ``comparator_nxp_lpcmp`` driver along with the
-      ``gpio_loopback`` test case (:zephyr_file:`tests/drivers/comparator/gpio_loopback/src/test.c`).
-    * The original :dtcompatible:`nxp,lpcmp` has been renamed to :dtcompatible:`nxp,sensor-lpcmp`, applications
-      using the old compatible must update their devicetree nodes to use the ``mcux_lpcmp`` driver. The
-      :dtcompatible:`nxp,lpcmp` now is used for the ``comparator_nxp_lpcmp`` driver. (:github:`100998`).
+      currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
 
 New APIs and options
 ====================
@@ -122,6 +116,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:func:`bt_bap_ep_get_conn`
+
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
@@ -131,10 +129,21 @@ New APIs and options
     * :c:func:`bt_mesh_input_numeric` to provide provisioning numeric input OOB value.
     * :c:member:`output_numeric` callback in :c:struct:`bt_mesh_prov` structure to
       output numeric values during provisioning.
+    * :kconfig:option:`CONFIG_BT_MESH_CDB_KEY_SYNC` to enable key synchronization between
+      the Configuration Database (CDB) and the local Subnet and AppKey storages when keys are
+      added, deleted, or updated during key refresh procedure.
+      The option is enabled by default.
 
   * Services
 
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
+
+* Build system
+
+  * Sysbuild
+
+    * Added :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES` which allows generating
+      :ref:`merged hex files <sysbuild_merged_hex_files>`.
 
 * Ethernet
 
@@ -156,6 +165,12 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* IPM
+
+  * IPM callbacks for the mailbox backend now correctly handle signal-only mailbox
+    mailbox usage. Applications should be prepared to receive a NULL payload pointer
+    in IPM callbacks when no data buffer is provided by the mailbox.
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
@@ -167,6 +182,12 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
+
+* Networking
+
+  * Wi-Fi
+
+    * Add support for Wi-Fi Direct (P2P) mode.
 
 * PWM
 
@@ -233,6 +254,10 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Comparator
+
+    * Added NXP low power comparator driver (:dtcompatible:`nxp,lpcmp`). (:github:`100998`)
+
 * Radio
 
   * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
@@ -259,6 +284,12 @@ Libraries / Subsystems
 * LoRa/LoRaWAN
 
    * :c:func:`lora_airtime`
+
+* Mbed TLS
+
+  * Added :kconfig:option:`CONFIG_MBEDTLS_VERSION_C` to simplify the
+    export of version information from Mbed TLS. If enabled, the
+    :c:func:`mbedtls_version_get_number()` function will be available.
 
 Other notable changes
 *********************

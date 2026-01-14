@@ -256,7 +256,7 @@ static const struct video_reg8 ov767x_init_regtbl[] = {
 	{OV767X_COM13, 0x80}, /* Common Control 13 */
 	{OV767X_MANU, 0x11},  /* Manual U Value */
 	{OV767X_MANV, 0xFF},  /* Manual V Value */
-	/* config the output window data, this can be configed later */
+	/* config the output window data, this can be configured later */
 	{OV767X_HSTART, 0x15}, /*  HSTART */
 	{OV767X_HSTOP, 0x03},  /*  HSTOP */
 	{OV767X_VSTRT, 0x02},  /*  VSTRT */

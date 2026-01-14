@@ -26,6 +26,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	leds {

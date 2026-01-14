@@ -13,12 +13,12 @@ properties:
 
   max-current-ua:
     type: int
-    description: Maxmimum supported current in microamps.
+    description: Maximum supported current in microamps.
     required: true
 
   current-limit-ua:
     type: int
-    description: Maxmimum allowed current in microamps.
+    description: Maximum allowed current in microamps.
     required: true
 
   power-down-clamp:

@@ -44,6 +44,7 @@
 		watchdog0 = &wdt010;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
+		rtt-custom-section = &cpuapp_tcm_region;
 	};
 
 	buttons {
@@ -320,6 +321,14 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 	pinctrl-0 = <&can120_default>;
 	pinctrl-names = "default";
+};
+
+&hfxo {
+	status = "okay";
+};
+
+&lfxo {
+	status = "okay";
 };
 
 &pwm130 {

@@ -25,6 +25,7 @@ from twisterlib.harness import Pytest
 from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner
 from twisterlib.statuses import TwisterStatus
 
+# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
@@ -103,6 +104,7 @@ def test_projectbuilder_cmake_assemble_args_single(m):
         ["basearg1", "CONFIG_t=\"test\"", "SNIPPET_t=\"test\""],
         handler,
         ["a.conf;b.conf", "c.conf"],
+        ["d.conf;e.conf", "f.conf"],
         ["extra_overlay.conf"],
         ["x.overlay;y.overlay", "z.overlay"],
         ["cmake1=foo", "cmake2=bar"],
@@ -113,6 +115,7 @@ def test_projectbuilder_cmake_assemble_args_single(m):
         "-Dbasearg1", "-DSNIPPET_t=test",
         "-Dhandler_arg1", "-Dhandler_arg2",
         "-DCONF_FILE=a.conf;b.conf;c.conf",
+        "-DEXTRA_CONF_FILE=d.conf;e.conf;f.conf",
         "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",
         "-DOVERLAY_CONFIG=extra_overlay.conf "
         "/builddir/twister/testsuite_extra.conf",
@@ -1664,10 +1667,12 @@ def test_projectbuilder_determine_testcases(
 TESTDATA_8 = [
     (
         ['addition.al'],
+        ['keep.artifact'],
         'dummy',
-        ['addition.al', '.config', 'zephyr']
+        ['addition.al', 'keep.artifact', '.config', 'zephyr']
     ),
     (
+        [],
         [],
         'all',
         ['.config', 'zephyr', 'testsuite_extra.conf', 'twister']
@@ -1675,7 +1680,7 @@ TESTDATA_8 = [
 ]
 
 @pytest.mark.parametrize(
-    'additional_keep, runtime_artifact_cleanup, expected_files',
+    'additional_keep, keep_artifacts, runtime_artifact_cleanup, expected_files',
     TESTDATA_8,
     ids=['additional keep', 'all cleanup']
 )
@@ -1683,6 +1688,7 @@ def test_projectbuilder_cleanup_artifacts(
     tmpdir,
     mocked_jobserver,
     additional_keep,
+    keep_artifacts,
     runtime_artifact_cleanup,
     expected_files
 ):
@@ -1713,12 +1719,16 @@ def test_projectbuilder_cleanup_artifacts(
     addition_al = tmpdir.join('addition.al')
     addition_al.write_text('dummy', 'utf-8')
 
+    keep_art = tmpdir.join('keep.artifact')
+    keep_art.write_text('dummy', 'utf-8')
+
     instance_mock = mock.Mock()
     instance_mock.build_dir = tmpdir
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
-    pb.options = mock.Mock(runtime_artifact_cleanup=runtime_artifact_cleanup)
+    pb.options = mock.Mock(runtime_artifact_cleanup=runtime_artifact_cleanup,
+                           keep_artifacts=keep_artifacts)
 
     pb.cleanup_artifacts(additional_keep)
 
@@ -2151,6 +2161,7 @@ def test_projectbuilder_report_out(
 def test_projectbuilder_cmake_assemble_args():
     extra_args = ['CONFIG_FOO=y', 'DUMMY_EXTRA="yes"']
     handler = mock.Mock(ready=True, args=['dummy_handler'])
+    conf_files = ['file1.conf', 'file2.conf']
     extra_conf_files = ['extrafile1.conf', 'extrafile2.conf']
     extra_overlay_confs = ['extra_overlay_conf']
     extra_dtc_overlay_files = ['overlay1.dtc', 'overlay2.dtc']
@@ -2159,6 +2170,7 @@ def test_projectbuilder_cmake_assemble_args():
 
     with mock.patch('os.path.exists', return_value=True):
         results = ProjectBuilder.cmake_assemble_args(extra_args, handler,
+                                                     conf_files,
                                                      extra_conf_files,
                                                      extra_overlay_confs,
                                                      extra_dtc_overlay_files,
@@ -2171,7 +2183,8 @@ def test_projectbuilder_cmake_assemble_args():
         '-DCMAKE2=n',
         '-DDUMMY_EXTRA=yes',
         '-Ddummy_handler',
-        '-DCONF_FILE=extrafile1.conf;extrafile2.conf',
+        '-DCONF_FILE=file1.conf;file2.conf',
+        '-DEXTRA_CONF_FILE=extrafile1.conf;extrafile2.conf',
         '-DDTC_OVERLAY_FILE=overlay1.dtc;overlay2.dtc',
         f'-DOVERLAY_CONFIG=extra_overlay_conf ' \
         f'{os.path.join("build", "dir", "twister", "testsuite_extra.conf")}'
@@ -2189,9 +2202,10 @@ def test_projectbuilder_cmake():
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb.build_dir = 'build_dir'
     pb.testsuite.extra_args = ['some', 'args']
-    pb.testsuite.extra_conf_files = ['some', 'files1']
-    pb.testsuite.extra_overlay_confs = ['some', 'files2']
-    pb.testsuite.extra_dtc_overlay_files = ['some', 'files3']
+    pb.testsuite.conf_files = ['some', 'files1']
+    pb.testsuite.extra_conf_files = ['some', 'files2']
+    pb.testsuite.extra_overlay_confs = ['some', 'files3']
+    pb.testsuite.extra_dtc_overlay_files = ['some', 'files4']
     pb.options.extra_args = ['other', 'args']
     pb.cmake_assemble_args = mock.Mock(return_value=['dummy'])
     cmake_res_mock = mock.Mock()
@@ -2203,6 +2217,7 @@ def test_projectbuilder_cmake():
     pb.cmake_assemble_args.assert_called_once_with(
         pb.testsuite.extra_args,
         pb.instance.handler,
+        pb.testsuite.conf_files,
         pb.testsuite.extra_conf_files,
         pb.testsuite.extra_overlay_confs,
         pb.testsuite.extra_dtc_overlay_files,

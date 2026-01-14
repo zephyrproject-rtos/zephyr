@@ -28,20 +28,27 @@ variants:
     testing:
       timeout_multiplier: 8
   intel_adsp/ace30/ptl:
+    ram: 4092
     toolchain:
       - xt-clang
       - zephyr
   intel_adsp/ace30:
     twister: false
+  intel_adsp/ace20_lnl:
+    ram: 2048
   intel_adsp/ace20_lnl/sim:
     type: sim
+    ram: 2048
     simulation:
       - name: custom
         exec: acesim
     testing:
       timeout_multiplier: 4
+  intel_adsp/ace15_mtpm:
+    ram: 2048
   intel_adsp/ace15_mtpm/sim:
     type: sim
+    ram: 2048
     simulation:
       - name: custom
         exec: acesim
@@ -49,6 +56,7 @@ variants:
       timeout_multiplier: 4
   intel_adsp/ace30/ptl/sim:
     type: sim
+    ram: 4096
     simulation:
       - name: custom
         exec: acesim
@@ -61,10 +69,12 @@ variants:
     toolchain:
       - xt-clang
   intel_adsp/ace40/nvl:
+    ram: 4096
     toolchain:
       - xt-clang
   intel_adsp/ace40/nvl/sim:
     type: sim
+    ram: 4096
     toolchain:
       - xt-clang
     simulation:

@@ -340,8 +340,8 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
-/* Configure sequence resolution, buffer, oversampling. Then submit to context. */
-static int nxp_sar_adc_read(const struct device *dev, const struct adc_sequence *sequence)
+static int nxp_sar_adc_read_async(const struct device *dev, const struct adc_sequence *sequence,
+				  struct k_poll_signal *async)
 {
 	struct nxp_sar_adc_data *data = dev->data;
 
@@ -397,7 +397,7 @@ static int nxp_sar_adc_read(const struct device *dev, const struct adc_sequence 
 	}
 #endif
 
-	adc_context_lock(&data->ctx, false, NULL);
+	adc_context_lock(&data->ctx, async ? true : false, async);
 	data->buffer = sequence->buffer;
 	adc_context_start_read(&data->ctx, sequence);
 	int err = adc_context_wait_for_completion(&data->ctx);
@@ -405,6 +405,11 @@ static int nxp_sar_adc_read(const struct device *dev, const struct adc_sequence 
 	adc_context_release(&data->ctx, err);
 
 	return err;
+}
+
+static int nxp_sar_adc_read(const struct device *dev, const struct adc_sequence *sequence)
+{
+	return nxp_sar_adc_read_async(dev, sequence, NULL);
 }
 
 /* Configure an ADC channel from a struct 'adc_dt_spec'. Mapping from logical
@@ -518,6 +523,9 @@ static int nxp_sar_adc_init(const struct device *dev)
 static const struct adc_driver_api nxp_sar_adc_api = {
 	.channel_setup = nxp_sar_adc_channel_setup,
 	.read = nxp_sar_adc_read,
+#ifdef CONFIG_ADC_ASYNC
+	.read_async = nxp_sar_adc_read_async,
+#endif
 };
 
 #if IS_ENABLED(CONFIG_ADC_NXP_SAR_ADC_INTERRUPT)

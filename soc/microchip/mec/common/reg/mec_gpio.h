@@ -122,8 +122,10 @@
 #define MEC_GPIO_CR2_DSTR_SET(ds) FIELD_PREP(MEC_GPIO_CR2_DSTR_MSK, (ds))
 #define MEC_GPIO_CR2_DSTR_GET(r)  FIELD_GET(MEC_GPIO_CR2_DSTR_MSK, (r))
 
-#define MEC_GPIO_CR1_OFS 0
-#define MEC_GPIO_CR2_OFS 0x500u
+#define MEC_GPIO_CR1_OFS    0
+#define MEC_GPIO_PP_IN_OFS  0x300u
+#define MEC_GPIO_PP_OUT_OFS 0x380u
+#define MEC_GPIO_CR2_OFS    0x500u
 
 /* gpio_base is the base address of the GPIO peripheral block */
 #define MEC_GPIO_CR1_ADDR(gpio_base, pin)                                                          \
@@ -133,6 +135,12 @@
 	(((uint32_t)(gpio_base) + MEC_GPIO_CR2_OFS) + ((uint32_t)(pin) * 4u))
 
 #define MCHP_XEC_PINCTRL_REG_IDX(pin) ((pin >> 5) * 32 + (pin & 0x1f))
+
+#define MEC_GPIO_PP_IN_ADDR(gpio_base, pin) \
+	((uint32_t)(gpio_base) + MEC_GPIO_PP_IN_OFS + ((((uint32_t)(pin) >> 5) & 0xFU) * 4U))
+
+#define MEC_GPIO_PP_OUT_ADDR(gpio_base, pin) \
+	((uint32_t)(gpio_base) + MEC_GPIO_PP_OUT_OFS + ((((uint32_t)(pin) >> 5) & 0xFU) * 4U))
 
 /** @brief All GPIO register as arrays of registers */
 struct gpio_regs {

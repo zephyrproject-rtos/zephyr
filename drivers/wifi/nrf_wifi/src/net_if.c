@@ -25,13 +25,11 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 #include "util.h"
 #include "common/fmac_util.h"
+#include "system/fmac_peer.h"
 #include "shim.h"
 #include "fmac_main.h"
 #include "wpa_supp_if.h"
 #include "net_if.h"
-
-extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
-				    char *buf, int buflen);
 
 #ifdef CONFIG_NRF70_STA_MODE
 static struct net_if_mcast_monitor mcast_monitor;
@@ -388,6 +386,9 @@ int nrf_wifi_if_send(const struct device *dev,
 	struct rpu_host_stats *host_stats = NULL;
 	void *nbuf = NULL;
 	bool locked = false;
+	unsigned char *ra = NULL;
+	int peer_id = -1;
+	bool authorized;
 
 	if (!dev || !pkt) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -436,12 +437,40 @@ int nrf_wifi_if_send(const struct device *dev,
 						      nbuf);
 	} else {
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
-		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
-		    (!vif_ctx_zep->authorized && !is_eapol(pkt))) {
-			ret = -EPERM;
+
+		ra = nrf_wifi_util_get_ra(sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx], nbuf);
+		peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, ra);
+		if (peer_id == -1) {
+			/* TODO: Make this an error once we fix ping_work sending packets despite
+			 * the interface being dormant
+			 */
+#if CONFIG_WIFI_NRF70_LOG_LEVEL >= LOG_LEVEL_DBG
+			char ra_buf[18] = {0};
+
+			LOG_DBG("%s: Got packet for unknown PEER: %s", __func__,
+				nrf_wifi_sprint_ll_addr_buf(ra, 6, ra_buf,
+							    sizeof(ra_buf)));
+#endif
 			goto drop;
 		}
 
+		/* Use authorized from vif_ctx_zep for STA mode, or per-peer for AP/GO */
+		if (vif_ctx_zep->if_type == NRF_WIFI_IFTYPE_STATION) {
+			authorized = vif_ctx_zep->authorized;
+		} else if (peer_id != MAX_PEERS) {
+			authorized = sys_dev_ctx->tx_config.peers[peer_id].authorized;
+		} else {
+			/* non-STA modes always allow group frames */
+			authorized = true;
+		}
+
+		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
+		    (!authorized && !is_eapol(pkt))) {
+			LOG_DBG("%s: carrier state: %d, authorized: %d, is_eapol: %d",
+				__func__, vif_ctx_zep->if_carr_state, authorized, is_eapol(pkt));
+			ret = -EPERM;
+			goto drop;
+		}
 		ret = nrf_wifi_fmac_start_xmit(rpu_ctx_zep->rpu_ctx,
 					       vif_ctx_zep->vif_idx,
 					       nbuf);
@@ -484,7 +513,6 @@ static void ip_maddr_event_handler(struct net_if *iface,
 	struct net_eth_addr mac_addr;
 	struct nrf_wifi_umac_mcast_cfg *mcast_info = NULL;
 	enum nrf_wifi_status status;
-	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	int ret;
 
@@ -540,12 +568,15 @@ static void ip_maddr_event_handler(struct net_if *iface,
 					      vif_ctx_zep->vif_idx,
 					      mcast_info);
 	if (status == NRF_WIFI_STATUS_FAIL) {
+		char mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
 		LOG_ERR("%s: nrf_wifi_fmac_set_multicast failed	for"
 			" mac addr=%s",
 			__func__,
-			net_sprint_ll_addr_buf(mac_addr.addr,
-					       WIFI_MAC_ADDR_LEN, mac_string_buf,
-					       sizeof(mac_string_buf)));
+			nrf_wifi_sprint_ll_addr_buf(mac_addr.addr,
+						   WIFI_MAC_ADDR_LEN,
+						   mac_string_buf,
+						   sizeof(mac_string_buf)));
 	}
 unlock:
 	nrf_wifi_osal_mem_free(mcast_info);

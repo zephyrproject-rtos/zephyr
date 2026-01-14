@@ -13,4 +13,6 @@ supported:
   - adc
   - can
   - gpio
+  - counter
+  - i2c
 vendor: nxp

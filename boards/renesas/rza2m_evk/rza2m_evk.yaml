@@ -6,6 +6,8 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - uart
   - gpio
+  - pwm
 vendor: renesas

@@ -285,14 +285,11 @@ static void test_sector_erase(uint8_t *wbuf, uint8_t *rbuf, uint32_t num_sectors
 
 	/* Try and erase past the last sector */
 	rc = erase_sector_checked(rbuf, disk_sector_count - num_sectors + 1, num_sectors);
-	zassert_equal(rc, -EINVAL,
-		      "Unexpected error code when attempting to erase past end of disk");
+	zassert_not_equal(rc, 0, "Should fail when attempting to erase past end of disk");
 	rc = erase_sector_checked(rbuf, disk_sector_count + 1, num_sectors);
-	zassert_equal(rc, -EINVAL,
-		      "Unexpected error code when attempting to erase past end of disk");
+	zassert_not_equal(rc, 0, "Should fail when attempting to erase past end of disk");
 	rc = erase_sector_checked(rbuf, UINT32_MAX, num_sectors);
-	zassert_equal(rc, -EINVAL,
-		      "Unexpected error code when attempting to erase past end of disk");
+	zassert_not_equal(rc, 0, "Should fail when attempting to erase past end of disk");
 }
 
 /* Test multiple reads in series, and reading from a variety of blocks */

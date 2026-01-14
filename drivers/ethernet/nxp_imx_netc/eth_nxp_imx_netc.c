@@ -575,7 +575,7 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 	uint32_t caps;
 
 	caps = (ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE |
-		ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_FILTERING
+		ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif

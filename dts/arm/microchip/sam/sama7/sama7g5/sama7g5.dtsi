@@ -762,6 +762,21 @@
 			};
 		};
 
+		otpc: efuse@e8c00000 {
+			compatible = "microchip,sama7g5-otpc";
+			reg = <0xe8c00000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		hwinfo: device_id@e8c00060 {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0xe8c00060 0x4>,
+			      <0xe8c00064 0x4>,
+			      <0xe8c00068 0x4>,
+			      <0xe8c0006c 0x4>;
+		};
+
 		gic: interrupt-controller@e8c11000 {
 			compatible = "arm,gic-v2", "arm,gic";
 			reg = <0xe8c11000 0x1000>, <0xe8c12000 0x100>;

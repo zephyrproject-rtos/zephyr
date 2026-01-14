@@ -575,7 +575,8 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct lan9250_runtime *context = p1;
+	const struct device *dev = p1;
+	struct lan9250_runtime *context = dev->data;
 	uint32_t int_sts;
 	uint16_t tmp;
 	uint32_t ier;
@@ -584,18 +585,18 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&context->int_sem, K_FOREVER);
 
 		/* Save interrupt enable register value */
-		lan9250_read_sys_reg(context->dev, LAN9250_INT_EN, &ier);
+		lan9250_read_sys_reg(dev, LAN9250_INT_EN, &ier);
 
 		/* Disable interrupts to release the interrupt line */
-		lan9250_write_sys_reg(context->dev, LAN9250_INT_EN, 0);
+		lan9250_write_sys_reg(dev, LAN9250_INT_EN, 0);
 
 		/* Read interrupt status register */
-		lan9250_read_sys_reg(context->dev, LAN9250_INT_STS, &int_sts);
+		lan9250_read_sys_reg(dev, LAN9250_INT_STS, &int_sts);
 
 		if ((int_sts & LAN9250_INT_STS_PHY_INT) != 0) {
 
 			/* Read PHY interrupt source register */
-			lan9250_read_phy_reg(context->dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
+			lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
 			if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP) {
 				LOG_DBG("LINK UP");
 				net_eth_carrier_on(context->iface);
@@ -606,12 +607,12 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 		}
 
 		if ((int_sts & LAN9250_INT_STS_RSFL) != 0) {
-			lan9250_write_sys_reg(context->dev, LAN9250_INT_STS, LAN9250_INT_STS_RSFL);
-			lan9250_rx(context->dev);
+			lan9250_write_sys_reg(dev, LAN9250_INT_STS, LAN9250_INT_STS_RSFL);
+			lan9250_rx(dev);
 		}
 
 		/* Re-enable interrupts */
-		lan9250_write_sys_reg(context->dev, LAN9250_INT_EN, ier);
+		lan9250_write_sys_reg(dev, LAN9250_INT_EN, ier);
 	}
 }
 
@@ -662,8 +663,6 @@ static int lan9250_init(const struct device *dev)
 	int ret;
 	const struct lan9250_config *config = dev->config;
 	struct lan9250_runtime *context = dev->data;
-
-	context->dev = dev;
 
 	/* SPI config */
 	if (!spi_is_ready_dt(&config->spi)) {
@@ -733,8 +732,9 @@ static int lan9250_init(const struct device *dev)
 	lan9250_set_macaddr(dev);
 
 	k_thread_create(&context->thread, context->thread_stack,
-			CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE, lan9250_thread, context, NULL,
-			NULL, K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
+			CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE,
+			lan9250_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 
 	LOG_INF("LAN9250 Initialized");
 

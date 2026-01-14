@@ -1,6 +1,7 @@
 common:
   tags:
     - trusted-firmware-m
+    - mcuboot
   platform_allow:
     - mps2/an521/cpu0/ns
     - v2m_musca_s1/musca_s1/ns
@@ -25,7 +26,9 @@ sample:
   name: "TFM Secure Partition Sample"
 
 tests:
-  sample.tfm.secure_partition:
-    tags:
-      - trusted-firmware-m
-      - mcuboot
+  sample.tfm.secure_partition.ipc:
+    extra_configs:
+      - CONFIG_TFM_IPC=y
+  sample.tfm.secure_partition.sfn:
+    extra_configs:
+      - CONFIG_TFM_SFN=y

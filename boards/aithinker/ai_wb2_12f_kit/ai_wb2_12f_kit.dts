@@ -14,6 +14,7 @@
 
 	aliases {
 		led0 = &blue_led;
+		pwm-led0 = &blue_pwm_led;
 		sw0 = &button_0;
 	};
 
@@ -33,6 +34,26 @@
 		red_led: led_2 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED2";
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		blue_pwm_led: led_pwm_0 {
+			pwms = <&pwm0 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Blue - LED0 PWM";
+		};
+
+		green_pwm_led: led_pwm_1 {
+			pwms = <&pwm0 2 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Green - LED1 PWM";
+		};
+
+		red_pwm_led: led_pwm_2 {
+			pwms = <&pwm0 4 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "Red - LED2 PWM";
 		};
 	};
 

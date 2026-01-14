@@ -537,8 +537,8 @@ ZTEST(coap_client, test_request_block)
 
 ZTEST(coap_client, test_resend_request)
 {
-	int (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
-			      net_socklen_t) = {
+	ssize_t (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
+				  net_socklen_t) = {
 		z_impl_zsock_sendto_custom_fake_no_reply,
 		z_impl_zsock_sendto_custom_fake_block,
 		z_impl_zsock_sendto_custom_fake,
@@ -653,8 +653,8 @@ ZTEST(coap_client, test_separate_response_ack_fail)
 
 	req.user_data = &sem1;
 
-	int (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
-			      net_socklen_t) = {
+	ssize_t (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
+				  net_socklen_t) = {
 		z_impl_zsock_sendto_custom_fake,
 		z_impl_zsock_sendto_custom_fake_err,
 	};

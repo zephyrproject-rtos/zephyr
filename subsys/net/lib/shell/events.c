@@ -663,7 +663,7 @@ static int cmd_net_events(const struct shell *sh, size_t argc, char *argv[])
 	PR("Network event monitoring is %s.\n",
 	   net_event_monitoring ? "enabled" : "disabled");
 
-	if (!argv[1]) {
+	if (argv[1] == NULL) {
 		PR_INFO("Give 'on' to enable event monitoring and "
 			"'off' to disable it.\n");
 	}

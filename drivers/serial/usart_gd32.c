@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, ATL Electronics
+ * Copyright (c) 2025 Aleksandr Senin <al@meshium.net>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -38,6 +39,13 @@ struct gd32_usart_data {
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	enum uart_config_parity parity;
+	enum uart_config_stop_bits stop_bits;
+	enum uart_config_data_bits data_bits;
+	enum uart_config_flow_control flow_ctrl;
+	bool initialized;
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -102,7 +110,14 @@ static int usart_gd32_init(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	cfg->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	/* Initialize runtime configuration from Devicetree defaults */
+	data->parity = cfg->parity;
+	data->data_bits = UART_CFG_DATA_BITS_8;
+	data->stop_bits = UART_CFG_STOP_BITS_1;
+	data->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	data->initialized = true;
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 	return 0;
 }
 
@@ -161,6 +176,126 @@ static int usart_gd32_err_check(const struct device *dev)
 
 	return errors;
 }
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int usart_gd32_configure(const struct device *dev, const struct uart_config *cfg_new)
+{
+	const struct gd32_usart_config *const cfg = dev->config;
+	struct gd32_usart_data *const data = dev->data;
+	uint32_t parity_bits;
+	uint32_t word_length;
+	uint32_t stop_bits_hw;
+
+	if (cfg_new == NULL) {
+		return -EINVAL;
+	}
+
+	if (cfg_new->baudrate == 0U) {
+		return -EINVAL;
+	}
+
+	if (cfg_new->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		return -ENOTSUP;
+	}
+
+	switch (cfg_new->parity) {
+	case UART_CFG_PARITY_NONE:
+		parity_bits = USART_PM_NONE;
+		break;
+	case UART_CFG_PARITY_ODD:
+		parity_bits = USART_PM_ODD;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		parity_bits = USART_PM_EVEN;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	switch (cfg_new->data_bits) {
+	case UART_CFG_DATA_BITS_8:
+	case UART_CFG_DATA_BITS_7:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (cfg_new->data_bits == UART_CFG_DATA_BITS_7 && cfg_new->parity == UART_CFG_PARITY_NONE) {
+		return -EINVAL;
+	}
+
+	/* Map word length depending on requested data bits and parity */
+	if (cfg_new->parity == UART_CFG_PARITY_NONE) {
+		/* 8N* uses 8-bit word length */
+		word_length = USART_WL_8BIT;
+	} else {
+		/* With parity: 8 data bits -> 9-bit word length, 7 data bits -> 8-bit */
+		word_length = (cfg_new->data_bits == UART_CFG_DATA_BITS_8) ? USART_WL_9BIT
+									   : USART_WL_8BIT;
+	}
+
+	switch (cfg_new->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		stop_bits_hw = USART_STB_1BIT;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		stop_bits_hw = USART_STB_2BIT;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (data->baud_rate == cfg_new->baudrate && data->parity == cfg_new->parity &&
+	    data->data_bits == cfg_new->data_bits && data->stop_bits == cfg_new->stop_bits &&
+	    data->flow_ctrl == cfg_new->flow_ctrl) {
+		return 0;
+	}
+
+	unsigned int key = irq_lock();
+
+	usart_disable(cfg->reg);
+
+	usart_parity_config(cfg->reg, parity_bits);
+	usart_word_length_set(cfg->reg, word_length);
+	usart_stop_bit_set(cfg->reg, stop_bits_hw);
+	usart_baudrate_set(cfg->reg, cfg_new->baudrate);
+
+	usart_receive_config(cfg->reg, USART_RECEIVE_ENABLE);
+	usart_transmit_config(cfg->reg, USART_TRANSMIT_ENABLE);
+	usart_enable(cfg->reg);
+
+	irq_unlock(key);
+
+	data->baud_rate = cfg_new->baudrate;
+	data->parity = cfg_new->parity;
+	data->data_bits = cfg_new->data_bits;
+	data->stop_bits = cfg_new->stop_bits;
+	data->flow_ctrl = cfg_new->flow_ctrl;
+
+	return 0;
+}
+
+static int usart_gd32_config_get(const struct device *dev, struct uart_config *cfg_out)
+{
+	struct gd32_usart_data *const data = dev->data;
+
+	if (cfg_out == NULL) {
+		return -EINVAL;
+	}
+
+	if (!data->initialized) {
+		return -ENODEV;
+	}
+
+	cfg_out->baudrate = data->baud_rate;
+	cfg_out->parity = data->parity;
+	cfg_out->stop_bits = data->stop_bits;
+	cfg_out->data_bits = data->data_bits;
+	cfg_out->flow_ctrl = data->flow_ctrl;
+
+	return 0;
+}
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 int usart_gd32_fifo_fill(const struct device *dev, const uint8_t *tx_data,
@@ -288,6 +423,10 @@ static DEVICE_API(uart, usart_gd32_driver_api) = {
 	.poll_in = usart_gd32_poll_in,
 	.poll_out = usart_gd32_poll_out,
 	.err_check = usart_gd32_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = usart_gd32_configure,
+	.config_get = usart_gd32_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = usart_gd32_fifo_fill,
 	.fifo_read = usart_gd32_fifo_read,

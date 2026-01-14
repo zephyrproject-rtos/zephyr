@@ -26,6 +26,7 @@ tests:
       - nucleo_l152re
       - nucleo_u385rg_q
       - nucleo_wb55rg
+      - nucleo_wb09ke
       - nucleo_wba65ri
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -34,6 +35,7 @@ tests:
       - stm32h573i_dk
       - stm32h573i_dk/stm32h573xx/ext_flash_app
       - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - stm32l562e_dk
       - stm32u083c_dk
       - stm32wba65i_dk1
       - sam_e54_xpro

@@ -1532,45 +1532,6 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
-/**
- * Determine I3C bus mode from the i2c devices on the bus
- *
- * Reads the LVR of all I2C devices and returns the I3C bus
- * Mode
- *
- * @param dev_list Pointer to device list
- *
- * @return @see enum i3c_bus_mode.
- */
-static enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list)
-{
-	enum i3c_bus_mode mode = I3C_BUS_MODE_PURE;
-
-	for (int i = 0; i < dev_list->num_i2c; i++) {
-		switch (I3C_LVR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
-		case I3C_LVR_I2C_DEV_IDX_0:
-			if (mode < I3C_BUS_MODE_MIXED_FAST) {
-				mode = I3C_BUS_MODE_MIXED_FAST;
-			}
-			break;
-		case I3C_LVR_I2C_DEV_IDX_1:
-			if (mode < I3C_BUS_MODE_MIXED_LIMITED) {
-				mode = I3C_BUS_MODE_MIXED_LIMITED;
-			}
-			break;
-		case I3C_LVR_I2C_DEV_IDX_2:
-			if (mode < I3C_BUS_MODE_MIXED_SLOW) {
-				mode = I3C_BUS_MODE_MIXED_SLOW;
-			}
-			break;
-		default:
-			mode = I3C_BUS_MODE_INVALID;
-			break;
-		}
-	}
-	return mode;
-}
-
 static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc)
 {
 	const struct dw_i3c_config *config = dev->config;

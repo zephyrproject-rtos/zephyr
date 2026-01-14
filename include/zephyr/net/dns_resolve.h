@@ -284,21 +284,30 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
  * Enumerate the extensions that are available in the address info
  */
 enum dns_resolve_extension {
-	DNS_RESOLVE_NONE = 0,
-	DNS_RESOLVE_TXT,
-	DNS_RESOLVE_SRV,
+	DNS_RESOLVE_NONE = 0, /*<< No extension in use   */
+	DNS_RESOLVE_TXT,      /*<< TXT field is returned */
+	DNS_RESOLVE_SRV,      /*<< SRV field is returned */
 };
 
+/** TXT record information */
 struct dns_resolve_txt {
+	/** Length of the text field */
 	size_t textlen;
+	/** Text field (NULL terminated)*/
 	char   text[DNS_MAX_TEXT_SIZE + 1];
 };
 
+/** SRV record information */
 struct dns_resolve_srv {
+	/** Priority of the server order, lower value means higher priority */
 	uint16_t priority;
+	/** Weight of the server for load balancing */
 	uint16_t weight;
+	/** Port number of the service */
 	uint16_t port;
+	/** Length of the target field */
 	size_t   targetlen;
+	/** Target field (NULL terminated) */
 	char     target[DNS_MAX_NAME_SIZE + 1];
 };
 
@@ -310,23 +319,27 @@ struct dns_addrinfo {
 	uint8_t ai_family;
 
 	union {
+		/** A or AAAA records */
 		struct {
 			/** Length of the ai_addr field or ai_canonname */
 			net_socklen_t ai_addrlen;
 
-			/* NET_AF_INET or NET_AF_INET6 address info */
+			/** NET_AF_INET or NET_AF_INET6 address info */
 			struct net_sockaddr ai_addr;
 
-			/** AF_LOCAL Canonical name of the address */
+			/** NET_AF_LOCAL Canonical name of the address */
 			char ai_canonname[DNS_MAX_NAME_SIZE + 1];
 		};
 
-		/* AF_UNSPEC extensions */
+		/** SRV or TXT records (NET_AF_UNSPEC extension) */
 		struct {
+			/** What kind of extension is returned */
 			enum dns_resolve_extension ai_extension;
 
 			union {
+				/** TXT record info */
 				struct dns_resolve_txt ai_txt;
+				/** SRV record info */
 				struct dns_resolve_srv ai_srv;
 			};
 		};

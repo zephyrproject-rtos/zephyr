@@ -197,10 +197,8 @@ static enum coap_block_size coap_client_default_block_size(void)
 	return COAP_BLOCK_256;
 }
 
-static int coap_client_init_request(struct coap_client *client,
-				    struct coap_client_request *req,
-				    struct coap_client_internal_request *internal_req,
-				    bool reconstruct)
+static int coap_client_init_request(struct coap_client *client, struct coap_client_request *req,
+				    struct coap_client_internal_request *internal_req)
 {
 	int ret = 0;
 	int i;
@@ -208,13 +206,11 @@ static int coap_client_init_request(struct coap_client *client,
 
 	memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
-	if (!reconstruct) {
-		uint8_t *token = coap_next_token();
+	uint8_t *token = coap_next_token();
 
-		internal_req->last_id = coap_next_id();
-		internal_req->request_tkl = COAP_TOKEN_MAX_LEN & 0xf;
-		memcpy(internal_req->request_token, token, internal_req->request_tkl);
-	}
+	internal_req->last_id = coap_next_id();
+	internal_req->request_tkl = COAP_TOKEN_MAX_LEN & 0xf;
+	memcpy(internal_req->request_token, token, internal_req->request_tkl);
 
 	ret = coap_packet_init(&internal_req->request, internal_req->send_buf, MAX_COAP_MSG_LEN,
 			       1, req->confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
@@ -469,7 +465,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 
 	reset_internal_request(internal_req);
 
-	ret = coap_client_init_request(client, req, internal_req, false);
+	ret = coap_client_init_request(client, req, internal_req);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize coap request");
 		goto release;
@@ -897,7 +893,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		 /* Resend request with echo option */
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
 			ret = coap_client_init_request(client, &internal_req->coap_request,
-						       internal_req, false);
+						       internal_req);
 
 			if (ret < 0) {
 				LOG_ERR("Error creating a CoAP request");
@@ -1052,8 +1048,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* If this wasn't last block, send the next request */
 	if (blockwise_transfer && !last_block) {
-		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req,
-					       false);
+		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req);
 
 		if (ret < 0) {
 			LOG_ERR("Error creating a CoAP request");

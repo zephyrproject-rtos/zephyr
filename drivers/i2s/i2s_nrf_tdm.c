@@ -27,17 +27,15 @@ LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);
  */
 #define NRFX_TDM_STATUS_NEXT_BUFFERS_NEEDED BIT(0)
 
-/* The TDM peripheral has been stopped and all buffers that were passed
- * to the driver have been released.
+/* The TDM peripheral has been stopped (or aborted) and all buffers that
+ * were passed to the driver have been released.
  */
 #define NRFX_TDM_STATUS_TRANSFER_STOPPED BIT(1)
 
-#if NRF_ERRATA_STATIC_CHECK(54H, 39)
 /* Due to hardware limitations, the TDM peripheral requires the rx/tx size
  * to be greater than 8 bytes.
  */
 #define NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED 8
-#endif
 
 /* Maximum clock divider value. Corresponds to CKDIV2. */
 #define NRFX_TDM_MAX_SCK_DIV_VALUE TDM_CONFIG_SCK_DIV_SCKDIV_Max
@@ -180,14 +178,12 @@ static void tdm_irq_handler(const struct device *dev)
 	const struct tdm_drv_cfg *drv_cfg = dev->config;
 	NRF_TDM_Type *p_reg = drv_cfg->p_reg;
 	tdm_ctrl_t *ctrl_data = drv_cfg->control_data;
-	uint32_t event_mask = 0;
 
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_MAXCNT)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_MAXCNT);
 	}
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_TXPTRUPD)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_TXPTRUPD);
-		event_mask |= NRFY_EVENT_TO_INT_BITMASK(NRF_TDM_EVENT_TXPTRUPD);
 		ctrl_data->tx_ready = true;
 		if (ctrl_data->use_tx && ctrl_data->buffers_needed) {
 			ctrl_data->buffers_reused = true;
@@ -195,16 +191,17 @@ static void tdm_irq_handler(const struct device *dev)
 	}
 	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_RXPTRUPD)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_RXPTRUPD);
-		event_mask |= NRFY_EVENT_TO_INT_BITMASK(NRF_TDM_EVENT_RXPTRUPD);
 		ctrl_data->rx_ready = true;
 		if (ctrl_data->use_rx && ctrl_data->buffers_needed) {
 			ctrl_data->buffers_reused = true;
 		}
 	}
-	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_STOPPED)) {
+	if (nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_STOPPED) ||
+	    nrf_tdm_event_check(p_reg, NRF_TDM_EVENT_ABORTED)) {
 		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_STOPPED);
-		event_mask |= NRFY_EVENT_TO_INT_BITMASK(NRF_TDM_EVENT_STOPPED);
-		nrf_tdm_int_disable(p_reg, NRF_TDM_INT_STOPPED_MASK_MASK);
+		nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_ABORTED);
+		nrf_tdm_int_disable(p_reg,
+				    NRF_TDM_INT_STOPPED_MASK_MASK | NRF_TDM_INT_ABORTED_MASK);
 		nrf_tdm_disable(p_reg);
 		/* When stopped, release all buffers, including these scheduled for
 		 * the next part of the transfer, and signal that the transfer has
@@ -363,7 +360,8 @@ static void tdm_start(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_init
 		rxtx_mask = NRF_TDM_INT_TXPTRUPD_MASK_MASK;
 	}
 
-	nrf_tdm_int_enable(p_reg, rxtx_mask | NRF_TDM_INT_STOPPED_MASK_MASK);
+	nrf_tdm_int_enable(p_reg,
+			   rxtx_mask | NRF_TDM_INT_STOPPED_MASK_MASK | NRF_TDM_INT_ABORTED_MASK);
 	nrf_tdm_tx_count_set(p_reg, p_initial_buffers->buffer_size);
 	nrf_tdm_tx_buffer_set(p_reg, p_initial_buffers->p_tx_buffer);
 	nrf_tdm_rx_count_set(p_reg, p_initial_buffers->buffer_size);
@@ -372,11 +370,11 @@ static void tdm_start(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_init
 	nrf_tdm_task_trigger(p_reg, NRF_TDM_TASK_START);
 }
 
-static void tdm_stop(NRF_TDM_Type *p_reg)
+static void tdm_stop(NRF_TDM_Type *p_reg, bool graceful)
 {
 	nrf_tdm_int_disable(p_reg, NRF_TDM_INT_RXPTRUPD_MASK_MASK | NRF_TDM_INT_TXPTRUPD_MASK_MASK);
 
-	nrf_tdm_task_trigger(p_reg, NRF_TDM_TASK_STOP);
+	nrf_tdm_task_trigger(p_reg, graceful ? NRF_TDM_TASK_STOP : NRF_TDM_TASK_ABORT);
 }
 
 static bool next_buffers_set(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_buffers)
@@ -408,7 +406,7 @@ static bool supply_next_buffers(struct tdm_drv_data *drv_data, tdm_buffers_t *ne
 	if (drv_data->active_dir != I2S_DIR_TX) { /* -> RX active */
 		if (!get_next_rx_buffer(drv_data, next)) {
 			drv_data->state = I2S_STATE_ERROR;
-			tdm_stop(drv_cfg->p_reg);
+			tdm_stop(drv_cfg->p_reg, true);
 			return false;
 		}
 		/* Set buffer size if there is no TX buffer (which effectively
@@ -448,7 +446,7 @@ static void tdm_uninit(struct tdm_drv_data *drv_data)
 {
 	NRF_TDM_Type *p_reg = drv_data->drv_cfg->p_reg;
 
-	tdm_stop(p_reg);
+	tdm_stop(p_reg, true);
 	NRFX_IRQ_DISABLE(nrfx_get_irq_number(p_reg));
 }
 
@@ -482,14 +480,12 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 
 	__ASSERT_NO_MSG(tdm_cfg->mem_slab != NULL && tdm_cfg->block_size != 0);
 
-#if NRF_ERRATA_STATIC_CHECK(54H, 39)
-	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 39) || (tdm_cfg->block_size % sizeof(uint32_t)) != 0 ||
+	if ((tdm_cfg->block_size % sizeof(uint32_t)) != 0 ||
 		tdm_cfg->block_size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
 		LOG_ERR("This device can only transmit full 32-bit words greater than %u bytes.",
 			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
 		return -EINVAL;
 	}
-#endif
 
 	switch (tdm_cfg->word_size) {
 	case 8:
@@ -690,14 +686,11 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-#if NRF_ERRATA_STATIC_CHECK(54H, 39)
-	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 39) || (size % sizeof(uint32_t)) != 0 ||
-		size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
+	if ((size % sizeof(uint32_t)) != 0 || size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
 		LOG_ERR("This device can only write full 32-bit words greater than %u bytes.",
 			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
 		return -EIO;
 	}
-#endif
 
 	ret = dmm_buffer_out_prepare(drv_cfg->mem_reg, buf.mem_block, buf.size,
 				     (void **)&buf.dmm_buf);
@@ -979,7 +972,7 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	case I2S_TRIGGER_DROP:
 		if (drv_data->state != I2S_STATE_READY) {
 			drv_data->discard_rx = true;
-			tdm_stop(drv_cfg->p_reg);
+			tdm_stop(drv_cfg->p_reg, false);
 		}
 		purge_queue(dev, dir);
 		drv_data->state = I2S_STATE_READY;
@@ -1048,7 +1041,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 		if (drv_data->state != I2S_STATE_STOPPING) {
 			drv_data->state = I2S_STATE_ERROR;
 		}
-		tdm_stop(drv_cfg->p_reg);
+		tdm_stop(drv_cfg->p_reg, true);
 		return;
 	}
 	if (released->p_rx_buffer) {
@@ -1094,7 +1087,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 	}
 
 	if (stop_transfer) {
-		tdm_stop(drv_cfg->p_reg);
+		tdm_stop(drv_cfg->p_reg, true);
 	} else if (status & NRFX_TDM_STATUS_NEXT_BUFFERS_NEEDED) {
 		tdm_buffers_t next = {0};
 

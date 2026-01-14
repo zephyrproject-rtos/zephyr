@@ -2338,6 +2338,18 @@ static inline int i3c_device_info_get(struct i3c_device_desc *target)
 }
 
 /**
+ * @brief Determine I3C bus mode from the I2C devices on the bus.
+ *
+ * Reads the LVR of all I2C devices and returns the I3C bus
+ * mode.
+ *
+ * @param dev_list Pointer to the device list struct.
+ *
+ * @return @see enum i3c_bus_mode
+ */
+enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list);
+
+/**
  * @brief Check if the bus has a secondary controller.
  *
  * This reads the BCR from the device descriptor struct of all targets

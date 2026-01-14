@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include "ek_ra6m4-pinctrl.dtsi"
 
@@ -43,6 +44,14 @@
 		led3: led3 {
 			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -146,6 +155,7 @@
 
 	aliases {
 		led0 = &led1;
+		pwm-led0 = &pwm_led1;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;

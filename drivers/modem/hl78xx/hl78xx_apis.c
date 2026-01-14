@@ -28,7 +28,7 @@ static int hl78xx_send_cmd(struct hl78xx_data *data, const char *cmd,
 		return -EINVAL;
 	}
 	return modem_dynamic_cmd_send(data, chat_cb, cmd, (uint16_t)strlen(cmd), matches,
-				      match_count, true);
+				      match_count, MDM_CMD_TIMEOUT, true);
 }
 
 int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_signal_type type,
@@ -179,6 +179,9 @@ int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
 		safe_strncpy(info, (const char *)data->identity.serial_number,
 			     MIN(size, sizeof(data->identity.serial_number)));
 		break;
+	case HL78XX_MODEM_INFO_CURRENT_BAUD_RATE:
+		*(uint32_t *)info = data->status.uart.current_baudrate;
+		break;
 	default:
 		break;
 	}
@@ -266,7 +269,8 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 	/* configure modem functionality with/without restart  */
 	snprintf(cmd_string, sizeof(cmd_string), "AT+CFUN=%d,%d", functionality, reset);
-	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(), 1);
+	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
+			       hl78xx_get_ok_match_size());
 }
 
 int hl78xx_api_func_get_phone_functionality(const struct device *dev,
@@ -275,7 +279,8 @@ int hl78xx_api_func_get_phone_functionality(const struct device *dev,
 	const char *cmd_string = GET_FULLFUNCTIONAL_MODE_CMD;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 	/* get modem phone functionality */
-	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(), 1);
+	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
+			       hl78xx_get_ok_match_size());
 }
 
 int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char *cmd,
@@ -290,7 +295,7 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 	}
 	/* respect provided matches_size and serialize modem access */
 	return modem_dynamic_cmd_send(data, NULL, cmd, cmd_size, response_matches, matches_size,
-				      true);
+				      MDM_CMD_TIMEOUT, true);
 }
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 int hl78xx_start_airvantage_dm_session(const struct device *dev)
@@ -300,7 +305,8 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev)
 
 	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_START_CMD,
 				     strlen(WDSI_USER_INITIATED_CONNECTION_START_CMD),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("Start DM session error %d", ret);
 		return ret;
@@ -315,7 +321,8 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 
 	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_STOP_CMD,
 				     strlen(WDSI_USER_INITIATED_CONNECTION_STOP_CMD),
-				     hl78xx_get_ok_match(), 1, false);
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		LOG_ERR("Stop DM session error %d", ret);
 		return ret;

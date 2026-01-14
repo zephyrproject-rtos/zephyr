@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Benjamin Klaric <benjamin.klaric01@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram2 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	status = "okay";
+};
+
+&mac {
+	/*
+	 * mac is disabled for this test since the ethernet driver that gets
+	 * enabled by this node consumes the sram1 node thus failing this test
+	 */
+	status = "disabled";
+};

@@ -735,7 +735,7 @@ void at_register(struct at_client *at, at_resp_cb_t resp, at_finish_cb_t finish)
 	at->state = AT_STATE_START;
 }
 
-char *at_get_string(struct at_client *at)
+const char *at_get_string(struct at_client *at)
 {
 	struct get_string_data data;
 
@@ -755,7 +755,7 @@ char *at_get_string(struct at_client *at)
 	skip_space(at);
 	next_list(at);
 
-	return (char *)data.start;
+	return (const char *)data.start;
 }
 
 struct get_raw_string_data {
@@ -778,7 +778,7 @@ static bool at_get_raw_string_cb(uint8_t *c, void *data)
 	return true;
 }
 
-char *at_get_raw_string(struct at_client *at, size_t *string_len)
+const char *at_get_raw_string(struct at_client *at, size_t *string_len)
 {
 	struct get_raw_string_data data;
 
@@ -800,5 +800,5 @@ char *at_get_raw_string(struct at_client *at, size_t *string_len)
 	skip_space(at);
 	next_list(at);
 
-	return (char *)data.start;
+	return (const char *)data.start;
 }

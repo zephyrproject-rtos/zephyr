@@ -1,5 +1,6 @@
 board:
   name: unit_testing
+  full_name: Unit Testing Board
   vendor: zephyr
   socs:
   - name: unit_testing

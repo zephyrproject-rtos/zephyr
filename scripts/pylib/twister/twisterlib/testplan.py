@@ -589,6 +589,11 @@ class TestPlan:
                             detailed_test_id=self.options.detailed_test_id
                         )
 
+                        if not self._is_testsuite_selected(suite, testsuite_filter,
+                                                       testsuite_patterns_r):
+                            # skip testsuite if they were not selected directly by the user
+                            continue
+
                         # convert to fully qualified names
                         suite.integration_platforms = self.verify_platforms_existence(
                                 suite.integration_platforms,
@@ -608,10 +613,6 @@ class TestPlan:
                         else:
                             suite.add_subcases(suite_dict)
 
-                        if not self._is_testsuite_selected(suite, testsuite_filter,
-                                                       testsuite_patterns_r):
-                            # skip testsuite if they were not selected directly by the user
-                            continue
                         if suite.name in self.testsuites:
                             msg = (
                                 f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"

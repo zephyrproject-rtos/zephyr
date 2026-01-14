@@ -29,6 +29,16 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data);
 
 int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t size);
 
+int hl78xx_get_uart_config(struct hl78xx_data *data);
+
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+/* Baud rate detection and switching */
+int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate);
+int hl78xx_try_baudrate(struct hl78xx_data *data, uint32_t baudrate);
+int hl78xx_detect_current_baudrate(struct hl78xx_data *data);
+int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate);
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+
 /**
  * @brief Convert a binary bitmap to a trimmed hexadecimal string.
  *

@@ -13,6 +13,7 @@ supported:
   - counter
   - crypto
   - dma
+  - entropy
   - gpio
   - hwinfo
   - i2c

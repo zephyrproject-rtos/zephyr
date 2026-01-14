@@ -47,6 +47,7 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 extern const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops;
+extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len, char *buf, int buflen);
 
 /* 3 bytes for addreess, 3 bytes for length */
 #define MAX_PKT_RAM_TX_ALIGN_OVERHEAD 6
@@ -100,6 +101,22 @@ static const unsigned int rx3_buf_sz = CONFIG_NRF70_RX_MAX_DATA_SIZE;
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 static K_MUTEX_DEFINE(reg_lock);
+
+/**
+ * @brief Format a link layer address to a string buffer.
+ *
+ * @param ll Pointer to the link layer address bytes.
+ * @param ll_len Length of the link layer address (typically 6 for MAC).
+ * @param buf Buffer to store the formatted string.
+ * @param buflen Size of the buffer.
+ *
+ * @return Pointer to the buffer on success, NULL on failure.
+ */
+char *nrf_wifi_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+				   char *buf, int buflen)
+{
+	return net_sprint_ll_addr_buf(ll, NET_ETH_ADDR_LEN, buf, buflen);
+}
 
 const char *nrf_wifi_get_drv_version(void)
 {
@@ -439,6 +456,11 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 	/* TODO: When supp_callbk_fns.mgmt_tx_status is implemented, add logic
 	 * here to use the cookie and host_cookie to map requests to responses.
 	 */
+	if (vif_ctx_zep->supp_drv_if_ctx &&
+		vif_ctx_zep->supp_callbk_fns.cookie_event) {
+		vif_ctx_zep->supp_callbk_fns.cookie_event(vif_ctx_zep->supp_drv_if_ctx,
+			cookie_rsp_event->host_cookie, cookie_rsp_event->cookie);
+		}
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
@@ -830,6 +852,8 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.event_get_wiphy = nrf_wifi_wpa_supp_event_get_wiphy;
 	callbk_fns.mgmt_rx_callbk_fn = nrf_wifi_wpa_supp_event_mgmt_rx_callbk_fn;
 	callbk_fns.get_conn_info_callbk_fn = nrf_wifi_supp_event_proc_get_conn_info;
+	callbk_fns.roc_callbk_fn = nrf_wifi_supp_event_remain_on_channel;
+	callbk_fns.roc_cancel_callbk_fn = nrf_wifi_supp_event_roc_cancel_complete;
 #endif /* CONFIG_NRF70_STA_MODE */
 
 	/* The OSAL layer needs to be initialized before any other initialization
@@ -950,6 +974,9 @@ static const struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 	.get_conn_info = nrf_wifi_supp_get_conn_info,
 	.set_country = nrf_wifi_supp_set_country,
 	.get_country = nrf_wifi_supp_get_country,
+	.remain_on_channel = nrf_wifi_supp_remain_on_channel,
+	.cancel_remain_on_channel = nrf_wifi_supp_cancel_remain_on_channel,
+	.set_p2p_powersave = nrf_wifi_supp_set_p2p_powersave,
 #ifdef CONFIG_NRF70_AP_MODE
 	.init_ap = nrf_wifi_wpa_supp_init_ap,
 	.start_ap = nrf_wifi_wpa_supp_start_ap,

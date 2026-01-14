@@ -17,6 +17,10 @@ config I3C_STM32
 
 if I3C_STM32
 
+config I3C_STM32_COMBINED_INTERRUPT
+	bool
+	default y if SOC_SERIES_STM32MP2X
+
 config I3C_STM32_DMA
 	bool "STM32 I3C DMA driver support"
 	select DMA

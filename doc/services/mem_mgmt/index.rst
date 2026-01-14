@@ -19,7 +19,7 @@ out-of-order:
    mem: memory@10000000 {
        compatible = "mmio-sram";
        reg = <0x10000000 0x1000>;
-       zephyr,memory-attr = <( DT_MEM_NON_VOLATILE | DT_MEM_CACHEABLE | DT_MEM_OOO )>;
+       zephyr,memory-attr = <(DT_MEM_NON_VOLATILE | DT_MEM_CACHEABLE | DT_MEM_OOO)>;
    };
 
 .. note::
@@ -41,7 +41,7 @@ regions out of devicetree defined memory regions, for example:
        compatible = "mmio-sram";
        reg = <0x10000000 0x1000>;
        zephyr,memory-region = "NOCACHE_REGION";
-       zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+       zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
    };
 
 See :zephyr_file:`include/zephyr/dt-bindings/memory-attr/memory-attr-arm.h` and
@@ -82,12 +82,12 @@ one by renaming the property and changing its value according to the following l
 
 .. code-block:: none
 
-   "RAM"         -> <( DT_ARM_MPU(ATTR_MPU_RAM) )>
-   "RAM_NOCACHE" -> <( DT_ARM_MPU(ATTR_MPU_RAM_NOCACHE) )>
-   "FLASH"       -> <( DT_ARM_MPU(ATTR_MPU_FLASH) )>
-   "PPB"         -> <( DT_ARM_MPU(ATTR_MPU_PPB) )>
-   "IO"          -> <( DT_ARM_MPU(ATTR_MPU_IO) )>
-   "EXTMEM"      -> <( DT_ARM_MPU(ATTR_MPU_EXTMEM) )>
+   "RAM"         -> <DT_MEM_ARM_MPU_RAM>
+   "RAM_NOCACHE" -> <DT_MEM_ARM_MPU_RAM_NOCACHE>
+   "FLASH"       -> <DT_MEM_ARM_MPU_FLASH>
+   "PPB"         -> <DT_MEM_ARM_MPU_PPB>
+   "IO"          -> <DT_MEM_ARM_MPU_IO>
+   "EXTMEM"      -> <DT_MEM_ARM_MPU_EXTMEM>
 
 Memory Attributes Heap Allocator
 ********************************
@@ -119,26 +119,26 @@ allocate memory from those regions:
    mem_cacheable: memory@10000000 {
        compatible = "mmio-sram";
        reg = <0x10000000 0x1000>;
-       zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE )>;
+       zephyr,memory-attr = <(DT_MEM_CACHEABLE | DT_MEM_SW_ALLOC_CACHE)>;
    };
 
    mem_non_cacheable: memory@20000000 {
        compatible = "mmio-sram";
        reg = <0x20000000 0x1000>;
-       zephyr,memory-attr = <( DT_MEM_NON_CACHEABLE | ATTR_SW_ALLOC_NON_CACHE )>;
+       zephyr,memory-attr = <(DT_MEM_NON_CACHEABLE | ATTR_SW_ALLOC_NON_CACHE)>;
    };
 
    mem_cacheable_big: memory@30000000 {
        compatible = "mmio-sram";
        reg = <0x30000000 0x10000>;
-       zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_OOO | DT_MEM_SW_ALLOC_CACHE )>;
+       zephyr,memory-attr = <(DT_MEM_CACHEABLE | DT_MEM_OOO | DT_MEM_SW_ALLOC_CACHE)>;
    };
 
    mem_cacheable_dma: memory@40000000 {
        compatible = "mmio-sram";
        reg = <0x40000000 0x10000>;
-       zephyr,memory-attr = <( DT_MEM_CACHEABLE      | DT_MEM_DMA |
-                               DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA )>;
+       zephyr,memory-attr = <(DT_MEM_CACHEABLE      | DT_MEM_DMA |
+                              DT_MEM_SW_ALLOC_CACHE | DT_MEM_SW_ALLOC_DMA)>;
    };
 
 The user can then dynamically carve memory out of those regions using the

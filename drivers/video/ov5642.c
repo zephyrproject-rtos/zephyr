@@ -606,7 +606,7 @@ static int ov5642_set_ctrl_hue(const struct device *dev, int value)
 {
 	const struct ov5642_config *cfg = dev->config;
 	int cos_coef, sin_coef, sign = 0;
-	double rad_val = value;
+	double rad_val = value * PI / 180.0;
 	int ret;
 
 	ret = video_modify_cci_reg(&cfg->i2c, SDE_CTRL0_CCI, BIT(0), BIT(0));
@@ -614,7 +614,6 @@ static int ov5642_set_ctrl_hue(const struct device *dev, int value)
 		return ret;
 	}
 
-	rad_val = value * PI / 180.0;
 	cos_coef = round(cos(rad_val) * 128);
 	sin_coef = round(sin(rad_val) * 128);
 

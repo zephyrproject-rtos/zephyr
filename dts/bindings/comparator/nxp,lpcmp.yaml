@@ -120,3 +120,56 @@ properties:
       Negative input selection. "DAC" routes the internal DAC output.
       NOTE: For MCXN/A devices, IN6 and IN7 are not available, only
       IN0-IN5 and DAC.
+
+  enable-output-pin:
+    type: boolean
+    description: |
+      Enable the comparator in selected pin.
+
+  enable-output-invert:
+    type: boolean
+    description: |
+      Invert the comparator output.
+
+  hysteresis-level:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    default: 0
+    description: |
+      LPCMP hysteresis mode.
+      The default corresponds to the reset value of the register field.
+
+  power-level:
+    type: string
+    enum:
+      - "low"
+      - "high"
+      - "nano"
+    default: "low"
+    description: |
+      LPCMP power mode.
+      The default corresponds to the reset value of the register field.
+
+  function-clock:
+    type: string
+    enum:
+      - "Reserved"
+      - "FRO_16K"
+      - "XTAL32K"
+      - "CMP_CLOCK"
+    default: "Reserved"
+    description: |
+      LPCMP function clock.
+      The default corresponds to the reset value of the register field.
+
+  "#io-channel-cells":
+    type: int
+    const: 2
+
+io-channel-cells:
+  - positive
+  - negative

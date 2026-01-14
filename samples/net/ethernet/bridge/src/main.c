@@ -36,6 +36,7 @@ static void bridge_add_iface_cb(struct net_if *iface, void *user_data)
 #endif
 	struct ud *u = user_data;
 	int i;
+	int ret;
 
 	for (i = 0; i < CONFIG_NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT; i++) {
 		if (u->iface[i] == NULL) {
@@ -60,8 +61,12 @@ static void bridge_add_iface_cb(struct net_if *iface, void *user_data)
 #else
 	u->iface[i] = iface;
 #endif
-	eth_bridge_iface_add(u->bridge, iface);
 	LOG_INF("Find iface %d. Add into bridge.", net_if_get_by_iface(iface));
+
+	ret = eth_bridge_iface_add(u->bridge, iface);
+	if (ret < 0) {
+		LOG_ERR("eth_bridge_iface_add failed: %d", ret);
+	}
 }
 
 #if defined(CONFIG_NET_MGMT_EVENT) && defined(CONFIG_NET_DHCPV4)

@@ -160,3 +160,10 @@ endforeach()
 foreach(F ${IAR_ASM_FLAGS})
   list(APPEND TOOLCHAIN_C_FLAGS $<$<COMPILE_LANGUAGE:ASM>:${F}>)
 endforeach()
+
+# --------------------------------------------------------------------
+# Disable GCC-specific runtime library detection for IAR
+# --------------------------------------------------------------------
+function(compiler_set_linker_properties)
+  message(STATUS "Skipping GCC-specific runtime lib detection for IAR toolchain")
+endfunction()

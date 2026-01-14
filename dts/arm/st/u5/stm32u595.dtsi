@@ -79,10 +79,7 @@
 			clock-names = "adcx", "adc_ker";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(14, 0x00)
-				       STM32_ADC_RES(12, 0x01)
-				       STM32_ADC_RES(10, 0x02)
-				       STM32_ADC_RES(8, 0x03)>;
+			st,adc-resolutions = <14 12 10 8>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "programmable";
@@ -106,10 +103,7 @@
 			clock-names = "adcx", "adc_ker";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(14, 0x00)
-				       STM32_ADC_RES(12, 0x01)
-				       STM32_ADC_RES(10, 0x02)
-				       STM32_ADC_RES(8, 0x03)>;
+			st,adc-resolutions = <14 12 10 8>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "programmable";

@@ -19,6 +19,14 @@ config LITEX_CSR_DATA_WIDTH
 	int "Select Control/Status register width"
 	default 32
 
+config LITEX_CSR_DATA_WIDTH_DEPRECATED
+	def_bool y
+	depends on LITEX_CSR_DATA_WIDTH != 32
+	select DEPRECATED
+	help
+	  This option is there to select DEPRECATED, when LITEX_CSR_DATA_WIDTH is
+	  set to a value other than 32. It will be removed in future releases.
+
 choice LITEX_CSR_ORDERING
 	prompt "Select Control/Status register ordering"
 	default LITEX_CSR_ORDERING_BIG

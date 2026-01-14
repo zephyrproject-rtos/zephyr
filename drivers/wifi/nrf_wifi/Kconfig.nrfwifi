@@ -119,6 +119,7 @@ config NRF70_ENABLE_DUAL_VIF
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
+	default y if WIFI_NM_WPA_SUPPLICANT_P2P
 
 config NRF70_SYSTEM_WITH_RAW_MODES
 	bool "nRF70 system mode with raw modes"
@@ -807,6 +808,32 @@ config NRF_WIFI_FEAT_WMM
 	default y
 	help
 	  This option controls disable/enable of the WMM (Wireless Multi-Media) feature.
+
+config NRF_WIFI_QOS_NOACK_POLICY
+	bool "QoS No-ACK policy for Tx packets"
+	help
+	  Enable this option to set No-ACK policy for Tx packets with a specific TID.
+	  When enabled, all Tx frames for the configured TID will be marked with
+	  the No-ACK policy flag, indicating that the receiver should not send
+	  ACK frames for these packets.
+	  Use with caution:
+	  Enabling No-ACK for BE (Best Effort) or BK (Background) can cause link
+	  issues (ARP/IP failures due to no retries).
+
+	  Recommended usage:
+	  Ideally for VI (Video) or VO (Voice) access category.
+	  The application must correctly encode TID via TOS to activate this feature.
+
+if NRF_WIFI_QOS_NOACK_POLICY
+config NRF_WIFI_QOS_NOACK_POLICY_TID
+	int "TID (Traffic Identifier) for No-ACK policy"
+	range 0 7
+	default 0
+	help
+	  Specify the TID (Traffic Identifier) for which No-ACK policy should be applied.
+	  TID values range from 0 to 7, corresponding to different QoS priority levels.
+	  All Tx frames with this TID will be marked with the No-ACK policy flag.
+endif # NRF_WIFI_QOS_NOACK_POLICY
 
 choice NRF_WIFI_PS_DATA_RETRIEVAL_MECHANISM
 	prompt "Power save data retrieval mechanism"

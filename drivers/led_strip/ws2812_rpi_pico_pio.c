@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 TOKITA Hiroshi
+ * Copyright (c) 2025 The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +15,41 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ws2812_rpi_pico_pio, CONFIG_LED_STRIP_LOG_LEVEL);
 
+#if defined(CONFIG_DMA)
+
+#include <zephyr/drivers/dma.h>
+#if defined(CONFIG_SOC_SERIES_RP2040)
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
+#elif defined(CONFIG_SOC_SERIES_RP2350)
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2350.h>
+#endif
+
+#include "hardware/dma.h"
+
+#endif
+
 #define DT_DRV_COMPAT worldsemi_ws2812_rpi_pico_pio
+
+#if defined(CONFIG_DMA)
+struct ws2812_led_strip_dma_data {
+	struct dma_config dma_config;
+	struct dma_block_config dma_block;
+	struct k_sem complete_sem;
+	uint32_t *pixel_buf;
+};
+
+struct ws2812_led_strip_dma_config {
+	const struct device *dev;
+	uint32_t tx_channel;
+};
+#endif
 
 struct ws2812_led_strip_data {
 	uint32_t sm;
+	struct k_timer reset_on_complete_timer;
+#if defined(CONFIG_DMA)
+	struct ws2812_led_strip_dma_data *dma_data;
+#endif
 };
 
 struct ws2812_led_strip_config {
@@ -29,6 +61,9 @@ struct ws2812_led_strip_config {
 	const uint8_t *const color_mapping;
 	uint16_t reset_delay;
 	uint32_t cycles_per_bit;
+#if defined(CONFIG_DMA)
+	const struct ws2812_led_strip_dma_config dma_config;
+#endif
 };
 
 struct ws2812_rpi_pico_pio_config {
@@ -65,13 +100,147 @@ static int ws2812_led_strip_sm_init(const struct device *dev)
 	return sm;
 }
 
-/*
- * Latch current color values on strip and reset its state machines.
- */
-static inline void ws2812_led_strip_reset_delay(uint16_t delay)
+static inline uint32_t ws2812_led_strip_map_color(const struct device *dev, struct led_rgb *pixel)
 {
-	k_usleep(delay);
+	const struct ws2812_led_strip_config *config = dev->config;
+	uint32_t color = 0;
+
+	for (size_t j = 0; j < config->num_colors; j++) {
+		switch (config->color_mapping[j]) {
+		case LED_COLOR_ID_RED:
+			color |= pixel->r << (8 * (2 - j));
+			break;
+		case LED_COLOR_ID_GREEN:
+			color |= pixel->g << (8 * (2 - j));
+			break;
+		case LED_COLOR_ID_BLUE:
+			color |= pixel->b << (8 * (2 - j));
+			break;
+		/* White channel is not supported by LED strip API. */
+		case LED_COLOR_ID_WHITE:
+		default:
+			color |= 0;
+			break;
+		}
+	}
+	return color << (config->num_colors == 4 ? 0 : 8);
 }
+
+#if defined(CONFIG_DMA)
+
+static int ws2812_led_strip_dma_setup(const struct device *dev);
+
+static int ws2812_led_strip_start_dma_put(const struct device *dev, struct led_rgb *pixels,
+					  size_t num_pixels)
+{
+	const struct ws2812_led_strip_config *dev_cfg = dev->config;
+	struct ws2812_led_strip_data *data = dev->data;
+	int err;
+
+	for (size_t i = 0; i < num_pixels; i++) {
+		data->dma_data->pixel_buf[i] = ws2812_led_strip_map_color(dev, &pixels[i]);
+	}
+
+	err = ws2812_led_strip_dma_setup(dev);
+
+	if (err < 0) {
+		dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.tx_channel);
+
+		return err;
+	}
+
+	k_sem_take(&data->dma_data->complete_sem, K_FOREVER);
+
+	k_timer_start(&data->reset_on_complete_timer, K_USEC(dev_cfg->reset_delay), K_NO_WAIT);
+
+	return 0;
+}
+
+static void ws2812_led_strip_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+					  int status)
+{
+	const struct device *dev = (const struct device *)arg;
+	struct ws2812_led_strip_data *data = dev->data;
+	const struct ws2812_led_strip_config *dev_cfg = dev->config;
+
+	if (dma_dev != dev_cfg->dma_config.dev) {
+		/* rpi pico has only one dma controller so far
+		 * so this branch will never run in theory.
+		 */
+		return;
+	}
+
+	if (status < 0) {
+		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
+
+		return;
+	}
+
+	if (channel == dev_cfg->dma_config.tx_channel) {
+		k_timer_start(&data->reset_on_complete_timer, K_USEC(dev_cfg->reset_delay),
+			      K_NO_WAIT);
+
+		dma_stop(dev_cfg->dma_config.dev, dev_cfg->dma_config.tx_channel);
+		k_sem_give(&data->dma_data->complete_sem);
+	}
+}
+
+static int ws2812_led_strip_dma_setup(const struct device *dev)
+{
+	struct ws2812_led_strip_data *data = dev->data;
+	const struct ws2812_led_strip_config *dev_cfg = dev->config;
+	struct dma_config *dma_cfg = &data->dma_data->dma_config;
+	struct dma_block_config *block_cfg = &data->dma_data->dma_block;
+	uint32_t dma_channel = dev_cfg->dma_config.tx_channel;
+	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+	int ret;
+
+	memset(dma_cfg, 0, sizeof(struct dma_config));
+	memset(block_cfg, 0, sizeof(struct dma_block_config));
+
+	dma_cfg->source_burst_length = 1;
+	dma_cfg->dest_burst_length = 1;
+	dma_cfg->user_data = (void *)dev;
+	dma_cfg->block_count = 1U;
+	dma_cfg->head_block = block_cfg;
+	dma_cfg->channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg->source_data_size = 4;
+	dma_cfg->dest_data_size = 4;
+
+	/* in pio_get_dreq, true => tx */
+	dma_cfg->dma_slot = RPI_PICO_DMA_DREQ_TO_SLOT(pio_get_dreq(pio, data->sm, true));
+
+	block_cfg->block_size = dev_cfg->length;
+	dma_cfg->dma_callback = ws2812_led_strip_dma_callback;
+
+	block_cfg->dest_address = (uint32_t)&pio->txf[data->sm];
+	block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	block_cfg->source_address = (uint32_t)data->dma_data->pixel_buf;
+	block_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+
+	ret = dma_config(dev_cfg->dma_config.dev, dma_channel, dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("dma ctrl %p: dma_config failed with %d", dev_cfg->dma_config.dev, ret);
+		return ret;
+	}
+
+	ret = dma_start(dev_cfg->dma_config.dev, dma_channel);
+	if (ret < 0) {
+		LOG_ERR("dma ctrl %p: dma_start failed with %d", dev_cfg->dma_config.dev, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static inline bool ws2812_led_strip_use_dma(const struct device *dev)
+{
+	const struct ws2812_led_strip_config *config = dev->config;
+
+	return config->dma_config.dev;
+}
+
+#endif /* defined(CONFIG_DMA) */
 
 static int ws2812_led_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
 				       size_t num_pixels)
@@ -80,31 +249,22 @@ static int ws2812_led_strip_update_rgb(const struct device *dev, struct led_rgb 
 	struct ws2812_led_strip_data *data = dev->data;
 	PIO pio = pio_rpi_pico_get_pio(config->piodev);
 
+	/* Wait for the delay needed to latch current color values on
+	 * WS2812 and reset its state machine.
+	 */
+	k_timer_status_sync(&data->reset_on_complete_timer);
+
+#if defined(CONFIG_DMA)
+	if (ws2812_led_strip_use_dma(dev)) {
+		return ws2812_led_strip_start_dma_put(dev, pixels, num_pixels);
+	}
+#endif
+
 	for (size_t i = 0; i < num_pixels; i++) {
-		uint32_t color = 0;
-
-		for (size_t j = 0; j < config->num_colors; j++) {
-			switch (config->color_mapping[j]) {
-			/* White channel is not supported by LED strip API. */
-			case LED_COLOR_ID_WHITE:
-				color |= 0;
-				break;
-			case LED_COLOR_ID_RED:
-				color |= pixels[i].r << (8 * (2 - j));
-				break;
-			case LED_COLOR_ID_GREEN:
-				color |= pixels[i].g << (8 * (2 - j));
-				break;
-			case LED_COLOR_ID_BLUE:
-				color |= pixels[i].b << (8 * (2 - j));
-				break;
-			}
-		}
-
-		pio_sm_put_blocking(pio, data->sm, color << (config->num_colors == 4 ? 0 : 8));
+		pio_sm_put_blocking(pio, data->sm, ws2812_led_strip_map_color(dev, &pixels[i]));
 	}
 
-	ws2812_led_strip_reset_delay(config->reset_delay);
+	k_timer_start(&data->reset_on_complete_timer, K_USEC(config->reset_delay), K_NO_WAIT);
 
 	return 0;
 }
@@ -158,6 +318,14 @@ static int ws2812_led_strip_init(const struct device *dev)
 
 	data->sm = sm;
 
+	k_timer_init(&data->reset_on_complete_timer, NULL, NULL);
+
+#if defined(CONFIG_DMA)
+	if (ws2812_led_strip_use_dma(dev)) {
+		k_sem_init(&data->dma_data->complete_sem, 0, 1);
+	}
+#endif
+
 	return 0;
 }
 
@@ -178,6 +346,24 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 
+#define DMA_ENABLED(node) COND_CODE_1(CONFIG_DMA, (DT_DMAS_HAS_NAME(node, tx)), (false))
+
+#define DMA_DATA_NAME(node) ws2812_led_strip_##node##_dma_data
+
+#define DMA_DATA_DECL(node)                                                                        \
+	uint32_t ws2812_led_strip_##node##_pixel_buf[DT_PROP(node, chain_length)];                 \
+	static struct ws2812_led_strip_dma_data DMA_DATA_NAME(node) = {                            \
+		.pixel_buf = ws2812_led_strip_##node##_pixel_buf,                                  \
+	};
+
+#define DMA_CFG_INITIALIZER(node)                                                                  \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(node, tx)),                              \
+		.tx_channel = DT_DMAS_CELL_BY_NAME(node, tx, channel),                             \
+	}
+
+#define DMA_CFG_DECL(node) COND_CODE_1(DMA_ENABLED(node), (DMA_CFG_INITIALIZER(node)), ({0}))
+
 #define CYCLES_PER_BIT(node)                                                                       \
 	(DT_PROP_BY_IDX(node, bit_waveform, 0) + DT_PROP_BY_IDX(node, bit_waveform, 1) +           \
 	 DT_PROP_BY_IDX(node, bit_waveform, 2))
@@ -185,7 +371,12 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 #define WS2812_CHILD_INIT(node)                                                                    \
 	static const uint8_t ws2812_led_strip_##node##_color_mapping[] =                           \
 		DT_PROP(node, color_mapping);                                                      \
-	struct ws2812_led_strip_data ws2812_led_strip_##node##_data;                               \
+                                                                                                   \
+	IF_ENABLED(DMA_ENABLED(node), (DMA_DATA_DECL(node)));                                      \
+                                                                                                   \
+	static struct ws2812_led_strip_data ws2812_led_strip_##node##_data = {                     \
+		IF_ENABLED(DMA_ENABLED(node), (.dma_data = &DMA_DATA_NAME(node),))                 \
+	};                                                                                         \
                                                                                                    \
 	static const struct ws2812_led_strip_config ws2812_led_strip_##node##_config = {           \
 		.piodev = DEVICE_DT_GET(DT_PARENT(DT_PARENT(node))),                               \
@@ -196,6 +387,7 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 		.reset_delay = DT_PROP(node, reset_delay),                                         \
 		.frequency = DT_PROP(node, frequency),                                             \
 		.cycles_per_bit = CYCLES_PER_BIT(DT_PARENT(node)),                                 \
+		IF_ENABLED(CONFIG_DMA, (.dma_config = DMA_CFG_DECL(node),))                        \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_DEFINE(node, &ws2812_led_strip_init, NULL, &ws2812_led_strip_##node##_data,      \

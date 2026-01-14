@@ -85,7 +85,7 @@ need one.
 
       .. code-block:: console
 
-         sudo dnf group install "Development Tools" "C Development Tools and Libraries"
+         sudo dnf group install development-tools c-development
          sudo dnf install cmake ninja-build gperf dfu-util dtc wget which \
            python3-pip python3-tkinter xz file python3-devel SDL2-devel
 
@@ -119,7 +119,7 @@ need one.
       .. code-block:: console
 
          sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
-             python-pip python-setuptools python-wheel tk xz file make
+             python-pip python-setuptools python-wheel tk xz file make which
 
 CMake
 =====

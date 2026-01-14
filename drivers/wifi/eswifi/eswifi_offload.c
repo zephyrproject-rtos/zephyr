@@ -538,7 +538,7 @@ static int eswifi_off_enable_dhcp(struct eswifi_dev *eswifi)
 
 	eswifi_unlock(eswifi);
 
-	return 0;
+	return err;
 }
 
 static int eswifi_off_disable_bypass(struct eswifi_dev *eswifi)

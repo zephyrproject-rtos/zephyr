@@ -362,7 +362,7 @@ called directly.
 
 To setup unit tests you have to add a CMakeLists.txt, a testcases.yml and a
 prj.conf to the directory containing the unit test source files. The resulting
-binary from this directory is build with the -DBOARD=unit_testing. When twister
+binary from this directory is built using -DBOARD=unit_testing. When twister
 is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
 filters out all testcases.yml in which type: unit is not set. Only unit tests
 are executed with a firmware build with BOARD=unit_testing.

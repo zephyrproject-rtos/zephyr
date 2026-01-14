@@ -1,5 +1,6 @@
 boards:
   - name: intel_wcl_crb
+    full_name: Wildcat Lake CRB
     vendor: intel
     socs:
       - name: wildcat_lake

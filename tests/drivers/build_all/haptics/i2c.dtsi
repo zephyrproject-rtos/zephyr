@@ -15,3 +15,11 @@ drv2605@0 {
 
 	actuator-mode = "LRA";
 };
+
+cs40l5x@1 {
+	compatible = "cirrus,cs40l5x";
+	reg = <0x1>;
+	status = "okay";
+
+	reset-gpios = <&test_gpio 0 0>;
+};

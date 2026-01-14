@@ -8,12 +8,14 @@ common:
     - nucleo_g474re
     - nucleo_h753zi
     - nucleo_u385rg_q
+    - nucleo_wb09ke
     - nucleo_wb55rg
     - nucleo_wba55cg
     - nucleo_wba65ri
     - nucleo_wl55jc
     - stm32f3_disco
     - stm32h573i_dk
+    - stm32l562e_dk
     - stm32u083c_dk
     - stm32wba65i_dk1
   timeout: 600
@@ -42,11 +44,13 @@ tests:
       - nucleo_g474re
       - nucleo_h753zi
       - nucleo_u385rg_q
+      - nucleo_wb09ke
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wba65ri
       - nucleo_wl55jc
       - stm32f3_disco
+      - stm32l562e_dk
       - stm32u083c_dk
       - stm32wba65i_dk1
     integration_platforms:

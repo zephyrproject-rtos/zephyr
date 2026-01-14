@@ -72,6 +72,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${common_dir}/boot_picobin_headers/include
     ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/pico_base_headers/include
+    ${common_dir}/pico_binary_info/include
     ${rp2_common_dir}/boot_bootrom_headers/include
     ${rp2_common_dir}/hardware_base/include
     ${rp2_common_dir}/hardware_boot_lock/include
@@ -95,6 +96,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2xxx_dir}/hardware_regs/include
     ${rp2xxx_dir}/hardware_structs/include
     ${rp2xxx_dir}/pico_platform/include
+    ${boot_stage_dir}/include
   )
 
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_GPIO
@@ -162,6 +164,18 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_SHA256
           ${rp2_common_dir}/hardware_sha256/include
           ${rp2_common_dir}/pico_sha256/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_RAND
+          ${rp2_common_dir}/pico_rand/rand.c
+  )
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_RAND
+          ${common_dir}/pico_sync/include
+          ${common_dir}/pico_time/include
+          ${rp2_common_dir}/pico_rand/include
+          ${rp2_common_dir}/pico_time_adapter/include
+          ${rp2_common_dir}/pico_unique_id/include
+  )
+  zephyr_linker_sources_ifdef(CONFIG_PICOSDK_USE_RAND DATA_SECTIONS uninit_data.ld)
 
   zephyr_include_directories_ifdef(CONFIG_RISCV
           ${common_dir}/pico_sync/include

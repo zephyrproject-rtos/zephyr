@@ -376,11 +376,11 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		goto out;
 	}
 
-	key = k_spin_lock(&lock);
 	if (K_SYSCALL_MEMORY_WRITE(events, bounds)) {
-		k_spin_unlock(&lock, key);
 		goto oops_free;
 	}
+
+	key = k_spin_lock(&lock);
 	(void)memcpy(events_copy, events, bounds);
 	k_spin_unlock(&lock, key);
 

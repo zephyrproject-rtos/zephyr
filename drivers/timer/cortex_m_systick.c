@@ -11,12 +11,16 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/devicetree.h>
 
 #include "cortex_m_systick.h"
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
+#define SYSTICK_CTRL_CLKSOURCE_MSK_GET()					\
+	COND_CODE_1(DT_PROP(DT_NODELABEL(systick), external_clock_source),	\
+		    (0), (SysTick_CTRL_CLKSOURCE_Msk))
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 extern unsigned int z_clock_hw_cycles_per_sec;
@@ -562,7 +566,7 @@ void sys_clock_idle_exit(void)
 				NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 				SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
 						  SysTick_CTRL_TICKINT_Msk |
-						  SysTick_CTRL_CLKSOURCE_Msk);
+						  SYSTICK_CTRL_CLKSOURCE_MSK_GET());
 			}
 		}
 	}
@@ -581,9 +585,13 @@ static int sys_clock_driver_init(void)
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
-	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
+
+	uint32_t ctrl_flags = SysTick_CTRL_ENABLE_Msk |
+			      SysTick_CTRL_TICKINT_Msk |
+			      SYSTICK_CTRL_CLKSOURCE_MSK_GET();
+
+	SysTick->CTRL = ctrl_flags;
+
 	return 0;
 }
 

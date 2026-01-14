@@ -21,4 +21,6 @@ supported:
   - i2c
   - spi
   - flash
+  - input
+  - pwm
 vendor: bflb

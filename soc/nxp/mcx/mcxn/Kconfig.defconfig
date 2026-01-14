@@ -3,8 +3,14 @@
 
 if SOC_FAMILY_MCXN
 
-config CORTEX_M_SYSTICK
-	default n if MCUX_LPTMR_TIMER
+# Ensure SysTick is not enabled by default if another system timer is selected.
+configdefault CORTEX_M_SYSTICK
+	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
+
+# We override it here so CPU_FREQ controls whether OSTIMER is selected by default.
+configdefault MCUX_OS_TIMER
+	default y if CPU_FREQ
+	default n
 
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
@@ -15,9 +21,6 @@ config NUM_IRQS
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x1000 if !BOOTLOADER_MCUBOOT && FLASH_MCUX_FLEXSPI_XIP
-
-config MCUX_LPTMR_TIMER
-	default n if (DT_HAS_NXP_OS_TIMER_ENABLED || DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if MCUX_OS_TIMER

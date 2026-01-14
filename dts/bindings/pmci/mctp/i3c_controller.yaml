@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A configuration for MCTP bindings to an I3C controller.
+
+compatible: "zephyr,mctp-i3c-controller"
+
+properties:
+  endpoints:
+    type: phandles
+    description: |
+      I3C devices to use as endpoints
+
+  endpoint-ids:
+    type: array
+    description: |
+      Endpoint IDs to assign to each I3C device endpoint

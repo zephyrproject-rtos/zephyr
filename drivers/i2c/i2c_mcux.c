@@ -46,6 +46,14 @@ struct i2c_mcux_data {
 	i2c_callback_t cb;
 	void *userdata;
 #endif /* CONFIG_I2C_CALLBACK */
+#ifdef CONFIG_I2C_TARGET
+	i2c_slave_handle_t target_handle;
+	struct i2c_target_config *target_cfg;
+	uint8_t target_buffer;
+	bool target_attached;
+	bool target_receiving;
+	bool target_first_rxtx;
+#endif
 };
 
 static int i2c_mcux_configure(const struct device *dev,
@@ -299,12 +307,216 @@ static int i2c_mcux_transfer_cb(const struct device *dev, struct i2c_msg *msgs, 
 
 #endif /* CONFIG_I2C_CALLBACK */
 
+#ifdef CONFIG_I2C_TARGET
+static int i2c_mcux_target_start_handler(struct i2c_mcux_data *data, i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	transfer->dataSize = 0;
+	data->target_first_rxtx = true;
+
+	if (data->target_receiving) {
+		/* In case of a repeated start after a kI2C_SlaveReceiveEvent,
+		 * the kI2C_SlaveCompletionEvent is not fired. We need to fetch the last
+		 * byte here.
+		 */
+		data->target_receiving = false;
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg, data->target_buffer);
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_mcux_target_receive_handler(struct i2c_mcux_data *data,
+					   i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	data->target_receiving = true;
+
+	transfer->data = &data->target_buffer;
+	transfer->dataSize = 1;
+
+	if (data->target_first_rxtx) {
+		data->target_first_rxtx = false;
+		if (target_cb->write_requested) {
+			ret = target_cb->write_requested(data->target_cfg);
+		}
+	} else {
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg, data->target_buffer);
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_mcux_target_transmit_handler(struct i2c_mcux_data *data,
+					    i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	transfer->data = &data->target_buffer;
+	transfer->dataSize = 1;
+
+	if (data->target_first_rxtx) {
+		data->target_first_rxtx = false;
+		if (target_cb->read_requested) {
+			ret = target_cb->read_requested(data->target_cfg, &data->target_buffer);
+		}
+	} else {
+		if (target_cb->read_processed) {
+			ret = target_cb->read_processed(data->target_cfg, &data->target_buffer);
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_mcux_target_completion_handler(struct i2c_mcux_data *data,
+					      i2c_slave_transfer_t *transfer)
+{
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret = 0;
+
+	data->target_first_rxtx = false;
+
+	if (data->target_receiving) {
+		/* fetch last received byte */
+		data->target_receiving = false;
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg, data->target_buffer);
+		}
+	}
+
+	if (target_cb->stop) {
+		ret = target_cb->stop(data->target_cfg);
+	}
+
+	return ret;
+}
+
+static void i2c_mcux_target_transfer_cb(I2C_Type *base, i2c_slave_transfer_t *transfer,
+					void *userData)
+{
+	const struct device *dev = (const struct device *)userData;
+	struct i2c_mcux_data *data = dev->data;
+	int ret;
+
+	ARG_UNUSED(base);
+
+	switch (transfer->event) {
+	case kI2C_SlaveStartEvent:
+		/* start or repeated start of a transfer */
+		ret = i2c_mcux_target_start_handler(data, transfer);
+		break;
+
+	case kI2C_SlaveReceiveEvent:
+		/* request to provide a buffer in which to place received data */
+		ret = i2c_mcux_target_receive_handler(data, transfer);
+		break;
+
+	case kI2C_SlaveTransmitEvent:
+		/* request to provide data to transmit */
+		ret = i2c_mcux_target_transmit_handler(data, transfer);
+		break;
+
+	case kI2C_SlaveCompletionEvent:
+		/* transfer finished */
+		ret = i2c_mcux_target_completion_handler(data, transfer);
+		break;
+
+	default:
+		LOG_INF("Unhandled event: %d", transfer->event);
+		ret = -EINVAL;
+		break;
+	}
+
+	if (ret < 0) {
+		/* abort communication by not providing a buffer in case of an error */
+		transfer->dataSize = 0;
+	}
+}
+
+static int i2c_mcux_target_register(const struct device *dev,
+				    struct i2c_target_config *target_config)
+{
+	I2C_Type *base = DEV_BASE(dev);
+	const struct i2c_mcux_config *config = dev->config;
+	struct i2c_mcux_data *data = dev->data;
+	i2c_slave_config_t slave_config;
+	uint32_t clock_freq;
+
+	if (!target_config || !target_config->callbacks) {
+		return -EINVAL;
+	}
+
+	if (data->target_attached) {
+		return -EBUSY;
+	}
+
+	I2C_MasterDeinit(base);
+
+	data->target_attached = true;
+	data->target_cfg = target_config;
+	data->target_first_rxtx = true;
+	data->target_receiving = false;
+
+	I2C_SlaveGetDefaultConfig(&slave_config);
+	slave_config.slaveAddress = target_config->address;
+
+	clock_freq = CLOCK_GetFreq(config->clock_source);
+
+	I2C_SlaveInit(base, &slave_config, clock_freq);
+	I2C_SlaveClearStatusFlags(base, kClearFlags);
+	I2C_SlaveTransferCreateHandle(base, &data->target_handle, i2c_mcux_target_transfer_cb,
+				      (void *)dev);
+	I2C_SlaveTransferNonBlocking(base, &data->target_handle,
+				     kI2C_SlaveStartEvent | kI2C_SlaveCompletionEvent);
+
+	return 0;
+}
+
+static int i2c_mcux_target_unregister(const struct device *dev,
+				      struct i2c_target_config *target_config)
+{
+	I2C_Type *base = DEV_BASE(dev);
+	struct i2c_mcux_data *data = dev->data;
+
+	ARG_UNUSED(target_config);
+
+	if (!data->target_attached) {
+		return -EINVAL;
+	}
+
+	I2C_SlaveDeinit(base);
+
+	data->target_cfg = NULL;
+	data->target_attached = false;
+
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET */
+
 static void i2c_mcux_isr(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = dev->data;
 
+#ifdef CONFIG_I2C_TARGET
+	if (data->target_attached) {
+		I2C_SlaveTransferHandleIRQ(base, &data->target_handle);
+	} else {
+		I2C_MasterTransferHandleIRQ(base, &data->handle);
+	}
+#else
 	I2C_MasterTransferHandleIRQ(base, &data->handle);
+#endif /* CONFIG_I2C_TARGET */
 }
 
 static int i2c_mcux_init(const struct device *dev)
@@ -350,6 +562,10 @@ static DEVICE_API(i2c, i2c_mcux_driver_api) = {
 #endif
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_mcux_target_register,
+	.target_unregister = i2c_mcux_target_unregister,
 #endif
 };
 
