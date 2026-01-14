@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: AD Semiconductor TSM12 12-channel capacitive touch sensor
+
+description: |
+  Also covers the register- and pin-compatible Si12T from Nanjing Zhongke
+  Microelectronics.
+
+  Each channel with an entry in input-codes reports an INPUT_EV_KEY event,
+  pressed as soon as the sensor detects a touch of any strength.
+
+compatible: "adsemi,tsm12"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt line (open drain, active low), asserted when a channel
+      detects a touch. The sensor is polled when this property is absent.
+
+  input-codes:
+    type: array
+    required: true
+    min-len: 1
+    max-len: 12
+    description: |
+      Input event key codes (INPUT_KEY_* or INPUT_BTN_*), one per channel
+      starting from channel 1. Channels without an entry are disabled.
+
+  threshold-midpoints:
+    type: array
+    min-len: 1
+    max-len: 12
+    max: 7
+    default: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+    description: |
+      Middle touch threshold of each channel (ChxM[2:0]), one entry per
+      channel starting from channel 1; entries beyond input-codes are
+      ignored. Higher values raise the threshold and make the channel less
+      sensitive. The default corresponds to the reset value of the register
+      field.
+
+  threshold-windows:
+    type: string-array
+    min-len: 1
+    max-len: 12
+    enum:
+      - "narrow"
+      - "wide"
+    default: ["wide", "wide", "wide", "wide", "wide", "wide",
+              "wide", "wide", "wide", "wide", "wide", "wide"]
+    description: |
+      Spacing of the light and hard touch thresholds around the middle
+      threshold (ChxHL), one entry per channel starting from channel 1;
+      entries beyond input-codes are ignored. A touch is reported from the
+      light touch threshold on. The default corresponds to the reset value
+      of the register field.
+
+      - "narrow": 20% below and above the middle threshold.
+      - "wide": 30% below and above the middle threshold, which reports
+        lighter touches.
+
+      Example thresholds (capacitance change) with "narrow":
+
+        Midpoint | Light touch | Middle | Hard touch
+        ---------|-------------|--------|-----------
+            0    |    0.40%    | 0.50%  |   0.60%
+            3    |    0.95%    | 1.20%  |   1.45%
+            7    |    2.85%    | 3.55%  |   4.30%
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    &i2c0 {
+      touch@68 {
+        compatible = "adsemi,tsm12";
+        reg = <0x68>;
+        int-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        input-codes = <INPUT_BTN_LEFT INPUT_BTN_MIDDLE INPUT_BTN_RIGHT>;
+        threshold-windows = "narrow", "narrow", "narrow";
+      };
+    };
