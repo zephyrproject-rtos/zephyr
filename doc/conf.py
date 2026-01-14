@@ -186,7 +186,7 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
     "prev_next_buttons_location": None,
-    "navigation_depth": 5,
+    "navigation_depth": 6,
 }
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
