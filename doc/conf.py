@@ -224,6 +224,7 @@ html_context = {
         "API": f"{reference_prefix}/doxygen/html/index.html",
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
+        "CMake modules": f"{reference_prefix}/build/cmake-ref/index.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
         "Glossary": f"{reference_prefix}/glossary.html",
     },
@@ -335,6 +336,7 @@ external_content_contents = [
     (ZEPHYR_BASE, "snippets/**/*.rst"),
     (ZEPHYR_BASE, "snippets/**/doc"),
     (ZEPHYR_BASE, "tests/**/*.pts"),
+    (ZEPHYR_BASE, "cmake/modules"),
 ]
 external_content_keep = [
     "reference/kconfig/*",
