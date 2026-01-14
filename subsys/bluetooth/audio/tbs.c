@@ -1529,19 +1529,19 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 	uint8_t call_state;
 
 	if ((inst->optional_opcodes & BT_TBS_FEATURE_JOIN) == 0) {
-		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
+		return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 	}
 
 	/* Check length */
 	if (call_index_cnt < 2 || call_index_cnt > CONFIG_BT_TBS_MAX_CALLS) {
-		return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
 	/* Check for duplicates */
 	for (int i = 0; i < call_index_cnt; i++) {
 		for (int j = 0; j < i; j++) {
 			if (ccp->call_indexes[i] == ccp->call_indexes[j]) {
-				return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+				return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 			}
 		}
 	}
@@ -1562,7 +1562,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 		if (call_state != BT_TBS_CALL_STATE_LOCALLY_HELD &&
 		    call_state != BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD &&
 		    call_state != BT_TBS_CALL_STATE_ACTIVE) {
-			return BT_TBS_RESULT_CODE_STATE_MISMATCH;
+			return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 		}
 	}
 
@@ -1749,7 +1749,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 		if (is_gtbs) {
 			tbs = lookup_inst_by_call_index(call_index);
 			if (tbs == NULL) {
-				status = BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+				status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 				break;
 			}
 		} else {
@@ -1764,7 +1764,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 		if (is_gtbs) {
 			tbs = lookup_inst_by_call_index(call_index);
 			if (tbs == NULL) {
-				status = BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+				status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 				break;
 			}
 		} else {
@@ -1779,7 +1779,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 		if (is_gtbs) {
 			tbs = lookup_inst_by_call_index(call_index);
 			if (tbs == NULL) {
-				status = BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+				status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 				break;
 			}
 		} else {
@@ -1806,20 +1806,43 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	}
 	case BT_TBS_CALL_OPCODE_JOIN: {
 		const uint16_t call_index_cnt = len - sizeof(ccp->join);
-		call_index = ccp->join.call_indexes[0];
+		struct tbs_inst *owner;
 
-		if (is_gtbs) {
-			tbs = lookup_inst_by_call_index(call_index);
-			if (tbs == NULL) {
-				status = BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
-				break;
-			}
-		} else {
-			tbs = inst;
+		if (call_index_cnt == 0) {
+			status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
+			call_index = 0;
+			break;
 		}
 
-		status = join_calls(tbs, &ccp->join, call_index_cnt);
-		break;
+		call_index = ccp->join.call_indexes[0];
+		owner = lookup_inst_by_call_index(call_index);
+
+		if (owner == NULL) {
+			status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
+			call_index = 0;
+			break;
+		}
+
+		if ((owner->optional_opcodes & BT_TBS_FEATURE_JOIN) == 0) {
+			status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
+			call_index = 0;
+			break;
+		}
+
+		for (uint16_t i = 1; i < call_index_cnt; i++) {
+			struct tbs_inst *tmp;
+
+			tmp = lookup_inst_by_call_index(ccp->join.call_indexes[i]);
+			if (tmp != owner) {
+				status = BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
+				call_index = 0;
+				break;
+			}
+		}
+		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+			status = join_calls(owner, &ccp->join, call_index_cnt);
+		}
+	break;
 	}
 	default:
 		status = BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;

@@ -80,3 +80,20 @@ struct btp_tbs_set_signal_strength_cmd {
 struct btp_tbs_terminate_call_cmd {
 	uint8_t index;
 } __packed;
+
+#define BTP_TBS_SET_SUPPORTED_FEATURES        0x0c
+struct btp_tbs_set_supported_features_cmd {
+	uint32_t supported_features;
+} __packed;
+
+#define BTP_TBS_REGISTER_BEARER        0x0d
+struct btp_tbs_register_bearer_cmd {
+    uint8_t gtbs;
+    uint8_t authorization_required;
+    uint8_t technology;
+    uint32_t supported_features;
+    uint8_t provider_name_len;
+    uint8_t uci_len;
+    uint8_t uri_schemes_len;
+    uint8_t data[0];
+} __packed;

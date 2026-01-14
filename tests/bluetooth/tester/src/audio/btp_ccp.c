@@ -10,6 +10,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -31,6 +34,20 @@ struct bt_tbs_instance *tbs_inst;
 static uint8_t call_index;
 static uint8_t inst_ccid;
 static bool send_ev;
+static uint32_t tbs_supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES;
+static uint8_t tester_tbs_set_supported_features(const void *cmd,
+							uint16_t cmd_len,
+							void *rsp,
+							uint16_t *rsp_len);
+static uint8_t tester_tbs_register_bearer(const void *cmd,
+                                          uint16_t cmd_len,
+                                          void *rsp,
+                                          uint16_t *rsp_len);
+static void tester_connected(struct bt_conn *conn, uint8_t err);
+static struct bt_conn_cb tester_conn_cb = {
+    .connected = tester_connected,
+};
+
 
 static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
@@ -133,22 +150,6 @@ static void tbs_client_current_calls_ev(struct bt_conn *conn, uint8_t status)
 	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CURRENT_CALLS, &ev, sizeof(ev));
 }
 
-static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count,
-				   bool gtbs_found)
-{
-	if (err) {
-		LOG_DBG("Discovery Failed (%d)", err);
-		return;
-	}
-
-	LOG_DBG("Discovered TBS - err (%u) GTBS (%u)", err, gtbs_found);
-
-	bt_tbs_client_read_ccid(conn, 0xFF);
-
-	tbs_client_discovered_ev(err, tbs_count, gtbs_found);
-
-	send_ev = true;
-}
 
 typedef struct bt_tbs_client_call_state bt_tbs_client_call_state_t;
 
@@ -177,14 +178,36 @@ static void tbs_client_call_states_ev(int err,
 }
 
 static void tbs_client_call_states_cb(struct bt_conn *conn,
-				      int err,
-				      uint8_t inst_index,
-				      uint8_t call_count,
-				      const bt_tbs_client_call_state_t *call_states)
+                                      int err,
+                                      uint8_t inst_index,
+                                      uint8_t call_count,
+                                      const bt_tbs_client_call_state_t *call_states)
 {
-	LOG_DBG("Call states - err (%u) Call Count (%u)", err, call_count);
+    LOG_INF("Call state cb: err=%d inst=%u calls=%u",
+            err, inst_index, call_count);
 
-	tbs_client_call_states_ev(err, inst_index, call_count, call_states);
+    /* Forward event to AutoPTS */
+    tbs_client_call_states_ev(err, inst_index, call_count, call_states);
+
+}
+
+static void tbs_client_discover_cb(struct bt_conn *conn,
+                                   int err,
+                                   uint8_t tbs_count,
+                                   bool gtbs_found)
+{
+    if (err) {
+        LOG_ERR("Discovery Failed (%d)", err);
+        return;
+    }
+
+    LOG_INF("TBS discovered (GTBS=%d, count=%d)", gtbs_found, tbs_count);
+
+    bt_tbs_client_read_ccid(conn, 0xFF);
+
+    tbs_client_discovered_ev(err, tbs_count, gtbs_found);
+
+    send_ev = true;
 }
 
 static void tbs_client_termination_reason_cb(struct bt_conn *conn,
@@ -841,23 +864,60 @@ static const struct btp_handler ccp_handlers[] = {
 
 uint8_t tester_init_ccp(void)
 {
-	int err;
+    int err;
 
-	tester_register_command_handlers(BTP_SERVICE_ID_CCP, ccp_handlers,
-					 ARRAY_SIZE(ccp_handlers));
+    tester_register_command_handlers(BTP_SERVICE_ID_CCP, ccp_handlers,
+                                     ARRAY_SIZE(ccp_handlers));
 
-	err = bt_tbs_client_register_cb(&tbs_client_callbacks);
-	if (err != 0) {
-		return BTP_STATUS_FAILED;
-	}
+    err = bt_tbs_client_register_cb(&tbs_client_callbacks);
+    if (err != 0) {
+        return BTP_STATUS_FAILED;
+    }
 
-	return BTP_STATUS_SUCCESS;
+    bt_conn_cb_register(&tester_conn_cb);
+
+    return BTP_STATUS_SUCCESS;
 }
 
 uint8_t tester_unregister_ccp(void)
 {
 	return BTP_STATUS_SUCCESS;
 }
+
+static void tester_connected(struct bt_conn *conn, uint8_t err)
+{
+    if (err) {
+        LOG_ERR("Connection failed (%u)", err);
+        return;
+    }
+
+    LOG_INF("Connected, requesting security");
+
+    int sec_err = bt_conn_set_security(conn, BT_SECURITY_L2);
+    if (sec_err) {
+        LOG_ERR("Failed to set security (%d)", sec_err);
+    }
+}
+
+static void auto_create_dummy_call(void)
+{
+    int err;
+
+    err = bt_tbs_remote_incoming(
+        0,                  /* GTBS index */
+        "tel:123",          /* Target URI */
+        "tel:456",          /* Caller URI */
+        "PTS Dummy Call"    /* Friendly name */
+    );
+
+    if (err < 0) {
+        LOG_ERR("Failed to create dummy call (%d)", err);
+        return;
+    }
+
+    LOG_INF("Dummy incoming call created (call id = %d)", err);
+}
+
 
 /* Telephone Bearer Service */
 static uint8_t tbs_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
@@ -1148,54 +1208,96 @@ static const struct btp_handler tbs_handlers[] = {
 		.expect_len = sizeof(struct btp_tbs_terminate_call_cmd),
 		.func = tbs_terminate_call
 	},
+	{
+		.opcode = BTP_TBS_SET_SUPPORTED_FEATURES,
+		.index  = BTP_INDEX_NONE,
+		.func   = tester_tbs_set_supported_features,
+	},
+	{
+    .opcode = BTP_TBS_REGISTER_BEARER,
+    .index  = BTP_INDEX_NONE,
+    .func   = tester_tbs_register_bearer,
+	},
 };
 
 uint8_t tester_init_tbs(void)
 {
-	const struct bt_tbs_register_param gtbs_param = {
-		.provider_name = "Generic TBS",
-		.uci = "un000",
-		.uri_schemes_supported = "tel,skype",
-		.gtbs = true,
-		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
-	};
-	const struct bt_tbs_register_param tbs_param = {
-		.provider_name = "TBS",
-		.uci = "un000",
-		.uri_schemes_supported = "tel,skype",
-		.gtbs = false,
-		.authorization_required = false,
-		/* Set different technologies per bearer */
-		.technology = BT_TBS_TECHNOLOGY_4G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
-	};
-	int err;
+    bt_tbs_register_cb(&tbs_cbs);
 
-	bt_tbs_register_cb(&tbs_cbs);
+    tester_register_command_handlers(
+        BTP_SERVICE_ID_TBS,
+        tbs_handlers,
+        ARRAY_SIZE(tbs_handlers)
+    );
 
-	tester_register_command_handlers(BTP_SERVICE_ID_TBS, tbs_handlers,
-					 ARRAY_SIZE(tbs_handlers));
+    return BTP_STATUS_SUCCESS;
+}
 
-	err = bt_tbs_register_bearer(&gtbs_param);
-	if (err < 0) {
-		LOG_DBG("Failed to register GTBS: %d", err);
+static uint8_t tester_tbs_register_bearer(const void *cmd,
+                                          uint16_t cmd_len,
+                                          void *rsp,
+                                          uint16_t *rsp_len)
+{
+    const struct btp_tbs_register_bearer_cmd *cp = cmd;
 
-		return BTP_STATUS_FAILED;
-	}
+    static char name_buf[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
+    static char uci_buf[CONFIG_BT_TBS_MAX_URI_LENGTH];
+    static char uri_buf[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
 
-	err = bt_tbs_register_bearer(&tbs_param);
-	if (err < 0) {
-		LOG_DBG("Failed to register TBS: %d", err);
+    struct bt_tbs_register_param params;
+    const uint8_t *p = cp->data;
+    int err;
 
-		return BTP_STATUS_FAILED;
-	}
+    if (cp->provider_name_len >= sizeof(name_buf))
+        return BTP_STATUS_FAILED;
 
-	return BTP_STATUS_SUCCESS;
+    memcpy(name_buf, p, cp->provider_name_len);
+    name_buf[cp->provider_name_len] = '\0';
+    p += cp->provider_name_len;
+
+    if (cp->uci_len >= sizeof(uci_buf))
+        return BTP_STATUS_FAILED;
+
+    memcpy(uci_buf, p, cp->uci_len);
+    uci_buf[cp->uci_len] = '\0';
+    p += cp->uci_len;
+
+    if (cp->uri_schemes_len >= sizeof(uri_buf))
+        return BTP_STATUS_FAILED;
+
+    memcpy(uri_buf, p, cp->uri_schemes_len);
+    uri_buf[cp->uri_schemes_len] = '\0';
+
+    params.provider_name = name_buf;
+    params.uci = uci_buf;
+    params.uri_schemes_supported = uri_buf;
+    params.gtbs = cp->gtbs;
+    params.authorization_required = cp->authorization_required;
+    params.technology = cp->technology;
+    params.supported_features = tbs_supported_features;
+
+    err = bt_tbs_register_bearer(&params);
+
+    return err == 0 ? BTP_STATUS_SUCCESS : BTP_STATUS_FAILED;
 }
 
 uint8_t tester_unregister_tbs(void)
 {
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tester_tbs_set_supported_features(const void *cmd,
+						 uint16_t cmd_len,
+						 void *rsp,
+						 uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_supported_features_cmd *cp = cmd;
+
+	if (cmd_len != sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	tbs_supported_features = sys_le32_to_cpu(cp->supported_features);
+
 	return BTP_STATUS_SUCCESS;
 }
