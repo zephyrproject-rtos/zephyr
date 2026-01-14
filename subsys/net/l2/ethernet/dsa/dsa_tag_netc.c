@@ -10,6 +10,8 @@ LOG_MODULE_REGISTER(net_dsa_tag_netc, CONFIG_NET_DSA_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
 #include <zephyr/net/dsa_tag_netc.h>
+
+#include "soc.h"
 #include "fsl_netc_tag.h"
 
 struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
