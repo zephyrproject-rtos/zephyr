@@ -56,7 +56,19 @@ FILE *fdopen(int fd, const char *mode)
 
 int fileno(FILE *file)
 {
-	return zvfs_fileno(file);
+	int fd = -1;
+
+	if (file == stdin) {
+		fd = 0;
+	} else if (file == stdout) {
+		fd = 1;
+	} else if (file == stderr) {
+		fd = 2;
+	} else {
+		fd = zvfs_fileno(file);
+	}
+
+	return fd;
 }
 
 static int posix_mode_to_zephyr(int mf)
