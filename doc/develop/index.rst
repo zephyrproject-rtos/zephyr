@@ -5,7 +5,7 @@ Developing with Zephyr
 
 .. toctree::
    :maxdepth: 1
-
+   :caption: Developer Guides
    getting_started/index.rst
    beyond-GSG.rst
    env_vars.rst
