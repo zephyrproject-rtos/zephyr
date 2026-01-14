@@ -1,0 +1,45 @@
+# Copyright (c) 2023, Prevas A/S
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Crossbar Switch (XBAR/XBARA/XBARB)
+
+compatible: "nxp,xbar"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  num-outputs:
+    type: int
+    required: true
+    description: Number of XBAR output signals
+
+  num-inputs:
+    type: int
+    required: true
+    description: Number of XBAR input signals
+
+  num-ctrl-regs:
+    type: int
+    required: true
+    description: Number of XBAR Control Registers
+
+  has-write-protect:
+    type: boolean
+    description: |
+      Indicates whether this XBAR instance supports write protection
+      for SEL and CTRL registers.
+
+  "#xbar-cells":
+    type: int
+    const: 2
+
+xbar-cells:
+  - output
+  - input
