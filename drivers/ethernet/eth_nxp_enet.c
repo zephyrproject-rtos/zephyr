@@ -106,7 +106,6 @@ struct nxp_enet_mac_data {
 	struct k_work rx_work;
 	const struct device *dev;
 	struct k_sem rx_thread_sem;
-	struct k_mutex tx_frame_buf_mutex;
 	struct k_mutex rx_frame_buf_mutex;
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	struct nxp_enet_ptp_data ptp;
@@ -219,13 +218,10 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Wait for a TX buffer descriptor to be available */
 	k_sem_take(&data->tx_buf_sem, K_FOREVER);
 
-	/* Enter critical section for TX frame buffer access */
-	k_mutex_lock(&data->tx_frame_buf_mutex, K_FOREVER);
-
 	ret = net_pkt_read(pkt, data->tx_frame_buf, total_len);
 	if (ret) {
 		k_sem_give(&data->tx_buf_sem);
-		goto exit;
+		return ret;
 	}
 
 	frame_is_timestamped =
@@ -237,19 +233,14 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	if (ret != kStatus_Success) {
 		LOG_ERR("ENET_SendFrame error: %d", ret);
 		ENET_ReclaimTxDescriptor(data->base, &data->enet_handle, RING_ID);
-		ret = -EIO;
-		goto exit;
+		return -EIO;
 	}
 
 	if (frame_is_timestamped) {
 		eth_wait_for_ptp_ts(dev, pkt);
 	}
 
-exit:
-	/* Leave critical section for TX frame buffer access */
-	k_mutex_unlock(&data->tx_frame_buf_mutex);
-
-	return ret;
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev)
@@ -695,7 +686,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 	}
 
 	k_mutex_init(&data->rx_frame_buf_mutex);
-	k_mutex_init(&data->tx_frame_buf_mutex);
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
