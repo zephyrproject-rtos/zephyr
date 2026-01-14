@@ -97,6 +97,7 @@ extensions = [
     "zephyr.domain",
     "zephyr.api_overview",
     "moderncmakedomain",
+    "sphinx.ext.intersphinx",
 ]
 
 # Only use image conversion when it is really needed, e.g. LaTeX build.
@@ -139,6 +140,10 @@ pygments_style = "sphinx"
 highlight_language = "none"
 
 todo_include_todos = False
+
+intersphinx_mapping = {
+    "cmake": ("https://cmake.org/cmake/help/latest", None),
+}
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
