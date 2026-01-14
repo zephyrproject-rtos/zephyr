@@ -123,6 +123,7 @@
 		interrupt-parent = <&gic>;
 		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
 		clocks = <&lpo_clk>;
+		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <256>;
 		status = "disabled";
@@ -135,6 +136,7 @@
 		interrupt-parent = <&gic>;
 		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
 		clocks = <&lpo_clk>;
+		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <256>;
 		status = "disabled";
