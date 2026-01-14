@@ -525,8 +525,7 @@ static int handle_get_status(struct usbd_class_data *const c_data,
 	const size_t getstatus_len = 6;
 
 	if (len != getstatus_len) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/*
@@ -551,8 +550,7 @@ static int handle_get_state(struct usbd_class_data *const c_data,
 	const size_t getstate_len = 1;
 
 	if (len != getstate_len) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	net_buf_add_u8(buf, data->state);
@@ -655,8 +653,8 @@ static int handle_upload(struct usbd_class_data *const c_data,
 			data->state = DFU_IDLE;
 		}
 	} else {
-		errno = -ENOTSUP;
 		dfu_error(c_data, DFU_ERROR, ERR_UNKNOWN);
+		return -ENOTSUP;
 	}
 
 	return 0;
