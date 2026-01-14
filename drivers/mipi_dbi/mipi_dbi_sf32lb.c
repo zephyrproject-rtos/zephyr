@@ -157,7 +157,7 @@ static void mipi_dbi_sf32lb_write_bytes(const struct device *dev, uint32_t addr,
 		uint32_t v, l;
 
 		/* Convert 0xAA,0xBB,0xCC ->  0x00AABBCC */
-		for (v = 0, l = 0; l < 4; l++) {
+		for (v = 0, l = 0; (l < 4) && (data_len > 0); l++) {
 			v = (v << 8) | (*buf);
 			data_len--;
 			buf++;
@@ -483,7 +483,7 @@ static int mipi_dbi_write_display_sf32lb(const struct device *dev,
 			uint32_t v, l;
 
 			/* Convert 0xAA,0xBB,0xCC ->  0x00AABBCC */
-			for (v = 0, l = 0; l < 4; l++) {
+			for (v = 0, l = 0; (l < 4) && (data_len > 0); l++) {
 				v = (v << 8) | (*buf);
 				data_len--;
 				buf++;
