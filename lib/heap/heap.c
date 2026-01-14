@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,16 @@
 #include "heap.h"
 #ifdef CONFIG_MSAN
 #include <sanitizer/msan_interface.h>
+#endif
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+#include "heap_custom_header.h"
+#endif
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+static atomic_t z_heap_stats_buffer_index = ATOMIC_INIT(0);
+static struct z_heap_stats z_heap_stats_buffer
+	[CONFIG_SYS_HEAP_STATS_MAX_HEAPS]
+	[CONFIG_SYS_HEAP_STATS_MAX_THREADS] = { 0 };
 #endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -24,7 +35,17 @@ static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
 	chunk_unit_t *buf = chunk_buf(h);
-	uint8_t *ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
+	uint8_t *ret = NULL;
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (c != 0 && c != h->end_chunk) {
+		ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
+	} else {
+		ret = ((uint8_t *)&buf[c]) + zephyr_base_header_bytes(h);
+	}
+#else
+	ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
+#endif
 
 	CHECK(!(((uintptr_t)ret) & (big_heap(h) ? 7 : 3)));
 
@@ -146,6 +167,14 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 	}
 
 	free_list_add(h, c);
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	struct z_heap_custom_header custom_header = { 0 };
+
+	custom_header.global_tid = UINT32_MAX;
+	custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+	z_heap_set_custom_header(h, c, &custom_header);
+#endif
 }
 
 /*
@@ -156,8 +185,65 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
  */
 static chunkid_t mem_to_chunkid(struct z_heap *h, void *p)
 {
-	uint8_t *mem = p, *base = (uint8_t *)chunk_buf(h);
-	return (mem - chunk_header_bytes(h) - base) / CHUNK_UNIT;
+	uint8_t *mem_ptr = (uint8_t *)p;
+	uint8_t *base = (uint8_t *)chunk_buf(h);
+	const size_t heap_bytes = (size_t)h->end_chunk * CHUNK_UNIT;
+	const uint8_t *heap_end = base + heap_bytes;
+
+#if defined(CONFIG_SYS_HEAP_PER_THREAD_STATS)
+	chunkid_t id;
+
+	/* Not on a chunk boundary: the chunk id is stored immediately before mem_ptr */
+	if (((uintptr_t)mem_ptr % CHUNK_UNIT) != 0U) {
+
+		/* Compute offset once, and validate the memcpy source range explicitly */
+		size_t offset = (size_t)(mem_ptr - base);
+
+		if (offset < sizeof(id)) {
+			__ASSERT(0, "underflow - invalid pointer");
+		}
+		if (mem_ptr > heap_end) {
+			__ASSERT(0, "pointer beyond heap bounds");
+		}
+		/* At this point, source start = base + (offset - sizeof(id)) >= base
+		 * and source end = base + offset <= heap_end
+		 */
+
+		memcpy(&id, base + (offset - sizeof(id)), sizeof(id));
+
+		if (id > h->end_chunk) {
+			__ASSERT(0, "corrupted chunk id");
+		}
+		return id;
+	}
+
+	/* On a chunk boundary: derive id from position after fixed header bytes */
+	{
+		size_t offset = (size_t)(mem_ptr - base);
+
+		if (offset < (size_t)chunk_header_bytes(h) || mem_ptr > heap_end) {
+			__ASSERT(0, "pointer beyond heap bounds");
+		}
+
+		id = (chunkid_t)((offset - (size_t)chunk_header_bytes(h)) / CHUNK_UNIT);
+
+		if (id > h->end_chunk) {
+			__ASSERT(0, "corrupted chunk id");
+		}
+		return id;
+	}
+#else
+	/* No per-thread stats: compute id directly from aligned position */
+	{
+		size_t offset = (size_t)(mem_ptr - base);
+
+		if (offset < (size_t)chunk_header_bytes(h) || mem_ptr > (base + heap_bytes)) {
+			__ASSERT(0, "pointer beyond heap bounds");
+		}
+
+		return (chunkid_t)((offset - (size_t)chunk_header_bytes(h)) / CHUNK_UNIT);
+	}
+#endif
 }
 
 void sys_heap_free(struct sys_heap *heap, void *mem)
@@ -185,6 +271,10 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		 mem);
 
 	set_chunk_used(h, c, false);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	z_heap_update_stats_sub(heap, c);
+#endif
+
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes -= chunksz_to_bytes(h, chunk_size(h, c));
 #endif
@@ -264,27 +354,76 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 	void *mem;
+	chunksz_t actual_allocated_chunk_sz;
 
 	if (bytes == 0U) {
 		return NULL;
 	}
 
-	chunksz_t chunk_sz = bytes_to_chunksz(h, bytes, 0);
-	chunkid_t c = alloc_chunk(h, chunk_sz);
+	chunksz_t chunk_sz_orig = bytes_to_chunksz(h, bytes, 0);
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (!big_heap(h)) {
+		chunksz_t min_needed_sz = chunksz
+			(Z_HEAP_CUSTOM_HEADER_BYTES +
+			zephyr_base_header_bytes(h) +
+			zephyr_free_list_pointers_bytes(h));
+		if (chunk_sz_orig < min_needed_sz) {
+			chunk_sz_orig = min_needed_sz;
+		}
+	}
+#endif
+
+	chunkid_t c = alloc_chunk(h, chunk_sz_orig);
 
 	if (c == 0U) {
 		return NULL;
 	}
 
-	/* Split off remainder if any */
-	if (chunk_size(h, c) > chunk_sz) {
-		split_chunks(h, c, c + chunk_sz);
-		free_list_add(h, c + chunk_sz);
+	chunksz_t allocated_chunk_sz = chunk_size(h, c);
+	chunksz_t remainder_sz = allocated_chunk_sz - chunk_sz_orig;
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (remainder_sz > 0 && remainder_sz >= min_chunk_size(h)) {
+		chunkid_t new_free_chunk = c + chunk_sz_orig;
+
+		split_chunks(h, c, new_free_chunk);
+
+		struct z_heap_custom_header custom_header = { 0 };
+
+		custom_header.global_tid = UINT32_MAX;
+		custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+		z_heap_set_custom_header(h, new_free_chunk, &custom_header);
+		free_list_add(h, new_free_chunk);
+
+		actual_allocated_chunk_sz = chunk_sz_orig;
+	} else {
+		actual_allocated_chunk_sz = allocated_chunk_sz;
 	}
+#else
+	if (allocated_chunk_sz > chunk_sz_orig) {
+		split_chunks(h, c, c + chunk_sz_orig);
+		free_list_add(h, c + chunk_sz_orig);
+		actual_allocated_chunk_sz = chunk_sz_orig;
+	} else {
+		actual_allocated_chunk_sz = allocated_chunk_sz;
+	}
+#endif
 
 	set_chunk_used(h, c, true);
 
 	mem = chunk_mem(h, c);
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	struct z_heap_custom_header custom_header = { 0 };
+
+	custom_header.global_tid = z_heap_get_tid_and_update_stats_add
+		(heap, actual_allocated_chunk_sz);
+	custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+	z_heap_set_custom_header(h, c, &custom_header);
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunksz_to_bytes(h, chunk_size(h, c)));
@@ -310,6 +449,9 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 	size_t gap, rew;
+	#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	uint8_t *mem2 = NULL;
+	#endif
 
 	/*
 	 * Split align and rewind values (if any).
@@ -340,7 +482,16 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	size_t total_needed = bytes + align - gap + chunk_header_bytes(h);
+	chunksz_t padded_sz = bytes_to_chunksz(h, total_needed, 0);
+
+	if ((total_needed % CHUNK_UNIT) == 0U) {
+		padded_sz += 1U;
+	}
+#else
 	chunksz_t padded_sz = bytes_to_chunksz(h, bytes, align - gap);
+#endif
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
@@ -350,6 +501,18 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	/* Align allocated memory */
 	mem = (uint8_t *) ROUND_UP(mem + rew, align) - rew;
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	mem2 = mem;
+
+	if (((uintptr_t)mem2 % CHUNK_UNIT) != 0) {
+		size_t base_off = (size_t)(mem2 - (uint8_t *)chunk_buf(h));
+
+		__ASSERT(base_off >= sizeof(chunkid_t), "corrupted memory pointer");
+		*((chunkid_t *)(mem2 - sizeof(chunkid_t))) = c0;
+	}
+#endif
+
 	chunk_unit_t *end = (chunk_unit_t *) ROUND_UP(mem + bytes, CHUNK_UNIT);
 
 	/* Get corresponding chunks */
@@ -359,17 +522,75 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	/* Split and free unused prefix */
 	if (c > c0) {
-		split_chunks(h, c0, c);
-		free_list_add(h, c0);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+		chunksz_t prefix_sz = c - c0;
+
+		if (prefix_sz >= min_chunk_size(h)) {
+#endif
+			split_chunks(h, c0, c);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+			struct z_heap_custom_header custom_header = { 0 };
+
+			custom_header.global_tid = UINT32_MAX;
+			custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+			z_heap_set_custom_header(h, c0, &custom_header);
+#endif
+			free_list_add(h, c0);
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+			if (((uintptr_t)mem2 % CHUNK_UNIT) != 0) {
+				size_t base_off = (size_t)(mem2 - (uint8_t *)chunk_buf(h));
+
+				__ASSERT(base_off >= sizeof(chunkid_t), "corrupted memory pointer");
+				*(chunkid_t *)(mem2 - sizeof(chunkid_t)) = c;
+			}
+		} else {
+			c = c0;
+		}
+#endif
 	}
 
 	/* Split and free unused suffix */
 	if (right_chunk(h, c) > c_end) {
-		split_chunks(h, c, c_end);
-		free_list_add(h, c_end);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+		chunksz_t suffix_sz = right_chunk(h, c) - c_end;
+
+		if (suffix_sz >= min_chunk_size(h)) {
+#endif
+			split_chunks(h, c, c_end);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+			struct z_heap_custom_header custom_header = { 0 };
+
+			custom_header.global_tid = UINT32_MAX;
+			custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+			z_heap_set_custom_header(h, c_end, &custom_header);
+#endif
+			free_list_add(h, c_end);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+		}
+#endif
 	}
 
 	set_chunk_used(h, c, true);
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	size_t actual_allocated_chunk_sz = chunk_size(h, c);
+
+	struct z_heap_custom_header custom_header = { 0 };
+
+	custom_header.global_tid = z_heap_get_tid_and_update_stats_add
+		(heap, actual_allocated_chunk_sz);
+	custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+	z_heap_set_custom_header(h, c, &custom_header);
+
+	if (left_chunk(h, right_chunk(h, c)) != c ||
+	((uintptr_t)(mem + rew) & (align - 1)) != 0) {
+		__ASSERT(0, "corrupted mem pointer");
+	}
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunksz_to_bytes(h, chunk_size(h, c)));
@@ -397,8 +618,11 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		/* We're good already */
 		return true;
 	}
-
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (chunk_size(h, c) >= (chunks_need + min_chunk_size(h))) {
+#else
 	if (chunk_size(h, c) > chunks_need) {
+#endif
 		/* Shrink in place, split off and free unused suffix */
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
@@ -409,8 +633,21 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 			(chunk_size(h, c) - chunks_need) * CHUNK_UNIT;
 #endif
 
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+		z_heap_update_stats_sub(heap, c);
+#endif
 		split_chunks(h, c, c + chunks_need);
 		set_chunk_used(h, c, true);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	struct z_heap_custom_header custom_header = { 0 };
+
+	custom_header.global_tid = z_heap_get_tid_and_update_stats_add
+		(heap, (chunk_size(h, c)));
+	custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+	z_heap_set_custom_header(h, c, &custom_header);
+#endif
+
 		free_chunk(h, c + chunks_need);
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -429,6 +666,12 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	    (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
 		/* Expand: split the right chunk and append */
 		chunksz_t split_size = chunks_need - chunk_size(h, c);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	z_heap_update_stats_sub(heap, c);
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+		h->allocated_bytes -= chunk_size(h, c) * CHUNK_UNIT;
+#endif
+#else
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
@@ -438,19 +681,53 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		increase_allocated_bytes(h, split_size * CHUNK_UNIT);
 #endif
 
+#endif
 		free_list_remove(h, rc);
 
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+		merge_chunks(h, c, rc);
+
+		if (chunk_size(h, c) >= chunks_need + min_chunk_size(h)) {
+			split_chunks(h, c, c + chunks_need);
+
+			struct z_heap_custom_header *new_free_hdr_ptr =
+			(struct z_heap_custom_header *)chunk_buf(h)[c + chunks_need].bytes;
+
+			new_free_hdr_ptr->global_tid = UINT16_MAX;
+			new_free_hdr_ptr->caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+			free_list_add(h, c + chunks_need);
+		}
+#else
 		if (split_size < chunk_size(h, rc)) {
 			split_chunks(h, rc, rc + split_size);
 			free_list_add(h, rc + split_size);
 		}
 
 		merge_chunks(h, c, rc);
+#endif
 		set_chunk_used(h, c, true);
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+		h->allocated_bytes += chunk_size(h, c) * CHUNK_UNIT;
+#endif
+
+#endif
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	struct z_heap_custom_header custom_header2 = { 0 };
+
+	custom_header2.global_tid = z_heap_get_tid_and_update_stats_add
+		(heap, (chunk_size(h, c)));
+	custom_header2.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+	z_heap_set_custom_header(h, c, &custom_header2);
+#endif
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), ptr,
-					   chunksz_to_bytes(h, chunk_size(h, c)));
+					  chunksz_to_bytes(h, chunk_size(h, c)));
 		heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), ptr,
 					  bytes_freed);
 #endif
@@ -586,4 +863,32 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	set_chunk_used(h, heap_sz, true);
 
 	free_list_add(h, chunk0_size);
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	int index;
+	bool assigned = false;
+
+	struct z_heap_custom_header custom_header = { 0 };
+
+	custom_header.global_tid = UINT32_MAX;
+	custom_header.caller_address = Z_HEAP_GET_CALLER_ADDRESS(0);
+
+	z_heap_set_custom_header(h, chunk0_size, &custom_header);
+
+	do {
+		index = atomic_get(&z_heap_stats_buffer_index);
+		if (index >= CONFIG_SYS_HEAP_STATS_MAX_HEAPS) {
+			break;
+		}
+		assigned = atomic_cas(&z_heap_stats_buffer_index, index, index + 1);
+	} while (!assigned);
+
+	if (assigned) {
+		h->heap_stats_buffer_ptr = (void *)&z_heap_stats_buffer[index][0];
+		h->heap_stats_index = index;
+	} else {
+		h->heap_stats_buffer_ptr = NULL;
+		h->heap_stats_index = UINT16_MAX;
+	}
+#endif
 }

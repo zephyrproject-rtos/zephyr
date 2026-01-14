@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Intel Corporation
+# Copyright (c) 2026 Qualcomm Technologies, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -144,5 +145,64 @@ config SHARED_MULTI_HEAP
 	  multi-heap allocator to manage a set of reserved memory regions with
 	  different capabilities / attributes (cacheable, non-cacheable,
 	  etc...) defined in the DT.
+
+config SYS_HEAP_PER_THREAD_STATS
+	bool "Per-thread sys_heap statistics"
+	depends on THREAD_LOCAL_STORAGE
+	help
+	  Enable per-thread heap usage statistics for sys_heap. When enabled,
+	  a small custom header is stored before each allocated block to track
+	  allocation information per thread. The header records:
+
+	  - A global per-thread index used to account allocation sizes
+	  - Caller address for debugging purposes
+
+	  This enables analysis of heap allocation patterns per thread without
+	  changing public APIs. Note that this feature adds a small overhead to
+	  each allocation (typically 8-16 bytes per block depending on platform).
+
+config SYS_HEAP_THREAD_NAME_LEN
+	int "Maximum thread name length for heap statistics"
+	depends on SYS_HEAP_PER_THREAD_STATS
+	default 32
+	range 8 128
+	help
+	  Maximum length of thread name stored in heap statistics, including
+	  the terminating NULL byte. This is used to store thread names in the
+	  per-thread heap statistics buffer.
+
+	  Reduce this value to conserve memory in the heap statistics structures.
+
+config SYS_HEAP_STATS_MAX_THREADS
+	int "Maximum number of threads tracked for heap statistics"
+	depends on SYS_HEAP_PER_THREAD_STATS
+	default 32
+	range 1 1024
+	help
+	  Maximum number of threads that can be tracked for per-thread heap
+	  statistics. Each thread that allocates memory from a heap with
+	  per-thread statistics enabled will be assigned a unique index up to
+	  this limit.
+
+	  Once the limit is reached, additional threads will not have their
+	  allocations tracked. Increase this value if you have many threads
+	  allocating from heaps, or decrease it to save memory.
+
+config SYS_HEAP_STATS_MAX_HEAPS
+	int "Maximum number of heaps tracked for statistics"
+	depends on SYS_HEAP_PER_THREAD_STATS
+	default 4
+	range 1 256
+	help
+	  Maximum number of heaps that can have per-thread statistics enabled
+	  simultaneously. Each heap initialized with sys_heap_init() that has
+	  per-thread statistics enabled will consume one slot in the global
+	  statistics buffer array.
+
+	  Increase this value if you have many heaps with statistics enabled,
+	  or decrease it to save memory. The total memory used for heap
+	  statistics is approximately:
+	  SYS_HEAP_STATS_MAX_HEAPS * SYS_HEAP_STATS_MAX_THREADS *
+	  sizeof(struct z_heap_stats) bytes.
 
 endmenu
