@@ -48,6 +48,11 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_GECKO_RTCC)
 #define TIMER DT_NODELABEL(rtcc0)
+#elif defined(CONFIG_COUNTER_SILABS_BURTC)
+#ifdef TIMER
+#undef TIMER
+#endif
+#define TIMER DT_NODELABEL(burtc0)
 #elif defined(CONFIG_COUNTER_GECKO_STIMER)
 #ifdef TIMER
 #undef TIMER
