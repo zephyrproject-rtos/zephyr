@@ -408,7 +408,7 @@ static inline bool i2c_bflb_errored(const struct device *dev)
 	return (tmp & I2C_ARB_INT) != 0 || (tmp & I2C_FER_INT) != 0;
 }
 
-static inline int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
+__no_optimization static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
@@ -445,7 +445,7 @@ static inline int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t
 	return 0;
 }
 
-static inline int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
+__no_optimization static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
@@ -480,7 +480,7 @@ static inline int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t 
 	return 0;
 }
 
-static inline int i2c_bflb_prepare_transfer(const struct device *dev,
+__no_optimization static int i2c_bflb_prepare_transfer(const struct device *dev,
 				     struct i2c_msg *msgs, uint8_t num_msgs)
 {
 	struct i2c_bflb_data *data = dev->data;
@@ -526,7 +526,6 @@ static inline int i2c_bflb_prepare_transfer(const struct device *dev,
 	return i;
 }
 
-/* GCC somehow keeps mangling that function into nonfunctionality. Nuke optimization. */
 __no_optimization static int i2c_bflb_transfer(const struct device *dev,
 			     struct i2c_msg *msgs,
 			     uint8_t num_msgs,

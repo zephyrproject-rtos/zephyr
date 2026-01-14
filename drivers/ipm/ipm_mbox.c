@@ -25,13 +25,44 @@ struct ipm_mbox_config {
 	struct mbox_dt_spec mbox_rx;
 };
 
-static void ipm_mbox_callback(const struct device *mboxdev, mbox_channel_id_t channel_id,
-			      void *user_data, struct mbox_msg *data)
+/**
+ * @brief Mailbox callback wrapper for IPM
+ *
+ * Mailbox notifications may be delivered without a data payload when
+ * used in signal-only mode. In this case, the IPM callback is invoked
+ * with a NULL payload pointer.
+ *
+ * For signal-only notifications, the mailbox channel identifier
+ * represents the signal value. Users can distinguish multiple signals
+ * by using separate mailbox channels.
+ *
+ * @param mboxdev    Mailbox device instance
+ * @param channel_id Mailbox channel identifier (used as signal for signal-only)
+ * @param user_data  Pointer to the IPM device
+ * @param data       Mailbox message, may be NULL for signal-only notifications
+ */
+static void ipm_mbox_callback(const struct device *mboxdev,
+			      mbox_channel_id_t channel_id,
+			      void *user_data,
+			      struct mbox_msg *data)
 {
 	const struct device *ipmdev = user_data;
 	struct ipm_mbox_data *ipm_mbox_data = ipmdev->data;
+	void *payload = NULL;
 
-	ipm_mbox_data->callback(ipmdev, ipm_mbox_data->user_data, channel_id, (void *)data->data);
+	if (!ipm_mbox_data || !ipm_mbox_data->callback) {
+		return;
+	}
+
+	/* Only use the payload if the mailbox provides a non-empty buffer */
+	if (data && data->data && data->size > 0) {
+		payload = data->data;
+	}
+
+	ipm_mbox_data->callback(ipmdev,
+				ipm_mbox_data->user_data,
+				channel_id,
+				payload);
 }
 
 static int ipm_mbox_send(const struct device *ipmdev, int wait, uint32_t id,

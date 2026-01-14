@@ -193,6 +193,20 @@
 	((val) & ~(which)) | ((fieldval) * ((which) & ~((which)-1)))	\
 )									\
 
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+
+#define MISELECT 0x350
+#define MIREG    0x351
+#define MIREG2   0x352
+#define MIREG3   0x353
+#define MIREG4   0x355
+#define MIREG5   0x356
+#define MIREG6   0x357
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
+
+#ifndef _ASMLANGUAGE
+
 #define csr_read(csr)						\
 ({								\
 	register unsigned long __rv;				\
@@ -249,14 +263,6 @@
 
 #ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
 
-#define MISELECT 0x350
-#define MIREG    0x351
-#define MIREG2   0x352
-#define MIREG3   0x353
-#define MIREG4   0x355
-#define MIREG5   0x356
-#define MIREG6   0x357
-
 static inline unsigned long icsr_read(unsigned int index)
 {
 	csr_write(MISELECT, index);
@@ -286,5 +292,7 @@ static inline unsigned long icsr_read_clear(unsigned int index, unsigned long ma
 }
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* CSR_H_ */

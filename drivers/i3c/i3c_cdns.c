@@ -466,7 +466,7 @@
 #define I3C_MAX_IDLE_CANCEL_WAIT_RETRIES 50
 #define I3C_PRESCL_REG_SCALE             (4)
 #define I2C_PRESCL_REG_SCALE             (5)
-#define I3C_WAIT_FOR_IDLE_STATE_US       100
+#define I3C_WAIT_FOR_IDLE_STATE_US       CONFIG_I3C_CADENCE_IDLE_TIMEOUT_US
 #define I3C_IDLE_TIMEOUT_CYC                                                                       \
 	(I3C_WAIT_FOR_IDLE_STATE_US * (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC))
 
@@ -935,6 +935,7 @@ static inline int cdns_i3c_wait_for_idle(const struct device *dev)
 	 */
 	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE)) {
 		if (k_cycle_get_32() - start_time > I3C_IDLE_TIMEOUT_CYC) {
+			LOG_ERR("%s: Timeout waiting for idle", dev->name);
 			return -EAGAIN;
 		}
 	}

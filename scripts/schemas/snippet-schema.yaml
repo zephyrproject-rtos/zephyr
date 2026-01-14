@@ -17,6 +17,19 @@
 #     append:
 #       EXTRA_DTC_OVERLAY_FILE: m3.overlay
 
+# 'revisions' can also be used to include additional file(s) specific to a board revision:
+# name: foo
+# boards:
+#   nrf9160dk/nrf9160:
+#     append:
+#       # Base file will be applied first
+#       EXTRA_DTC_OVERLAY_FILE: first.overlay
+#     revisions:
+#       "0.7.0":
+#         append:
+#           # Will be applied on top of common board file
+#           EXTRA_DTC_OVERLAY_FILE: extra_0_7_0.overlay
+
 $schema: "https://json-schema.org/draft/2020-12/schema"
 $id: "https://zephyrproject.org/schemas/zephyr/snippet"
 title: Zephyr snippet Schema
@@ -51,6 +64,16 @@ properties:
         properties:
           append:
             $ref: "#/$defs/append-schema"
+          revisions:
+            type: object
+            patternProperties:
+              "(.*)":
+                type: object
+                properties:
+                  append:
+                    include: append-schema
+                additionalProperties: false
+          additionalProperties: false
         additionalProperties: false
 required:
   - name

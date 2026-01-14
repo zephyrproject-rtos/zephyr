@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1565,11 +1566,12 @@ done:
 
 	struct net_buf *buf;
 
-	buf = br_chan->_pdu_buf;
+	buf = net_buf_ref(br_chan->_pdu_buf);
 
 	if (br_chan->_pdu_remaining > amount) {
 		br_chan->_pdu_remaining -= amount;
 	} else {
+		net_buf_unref(br_chan->_pdu_buf);
 		br_chan->_pdu_buf = NULL;
 		br_chan->_pdu_remaining = 0;
 		if (pdu && !pdu->len) {

@@ -207,7 +207,7 @@ static int pl011_poll_in(const struct device *dev, unsigned char *c)
 	/* got a character */
 	*c = (unsigned char)uart->dr;
 
-	return uart->rsr & PL011_RSR_ERROR_MASK;
+	return 0;
 }
 
 static void pl011_poll_out(const struct device *dev,

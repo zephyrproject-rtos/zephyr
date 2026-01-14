@@ -1,5 +1,6 @@
 boards:
   - name: mt8186
+    full_name: MT8186 ADSP
     vendor: mediatek
     socs:
       - name: mt8186

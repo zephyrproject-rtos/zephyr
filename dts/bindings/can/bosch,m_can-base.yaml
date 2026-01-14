@@ -24,3 +24,28 @@ properties:
       Rx Buffers	    0-64 elements / 0-1152 words
       Tx Event FIFO	  0-32 elements / 0-64 words
       Tx Buffers	    0-32 elements / 0-576 words
+
+  bosch,timestamp-counter-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+    default: 1
+    description: |
+      Configures the internal timestamp counter time unit in multiples of CAN bit times. Valid range
+      is 1 to 16. The default value is a prescaler of 1, such that the time unit equals one CAN bit
+      time.

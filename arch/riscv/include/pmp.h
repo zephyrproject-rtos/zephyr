@@ -7,6 +7,7 @@
 #ifndef PMP_H_
 #define PMP_H_
 
+#include <zephyr/arch/riscv/pmp.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
 
 #define PMPCFG_STRIDE (__riscv_xlen / 8)

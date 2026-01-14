@@ -43,3 +43,15 @@ properties:
       Note that the divisor is common to all 'st,stm32-fdcan' instances.
       Divide by 1 is the peripherals reset value and remains set unless
       this property is configured.
+
+  external-timestamp-counter:
+    type: phandle
+    description: |
+      Phandle to the counter device to be used as the external RX timestamp source.
+
+      When this property is defined, the driver configures the FDCAN Timestamp
+      Counter Configuration (TSCC) to use the External Timestamp (TSS=0x2).
+
+      Hardware Constraint: The selected timer must be physically routed to the
+      fdcan_ts input in the SoC interconnect. (e.g. TIM3 on STM32G4). The exact timer
+      connected to the fdcan_ts input can be found in the reference manual of the specific SoC.

@@ -105,4 +105,8 @@
 	ITERABLE_SECTION_ROM(_stack_to_hw_shadow_stack_arr, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_TIMER_OBSERVER)
+	ITERABLE_SECTION_ROM(k_timer_observer, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_TIMER_OBSERVER */
+
 #include <device-api-sections.ld>

@@ -1,0 +1,9 @@
+name: ver_check
+boards:
+  nrf9160dk/nrf9160:
+    revisions:
+      "0.7.0":
+        append:
+          EXTRA_CONF_FILE: ver_check_0_7_0.conf
+    append:
+      EXTRA_CONF_FILE: ver_check.conf

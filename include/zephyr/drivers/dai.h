@@ -463,12 +463,17 @@ static inline const struct dai_properties *dai_get_properties(const struct devic
 /**
  * @brief Fetch properties of a DAI driver
  *
+ * Optional method.
+ *
  * @param dev Pointer to the device structure for the driver instance
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
  * @param stream_id Stream id: some drivers may have stream specific
  *        properties, this id specifies the stream.
  * @param dst address where to write properties to
- * @retval Zero on success
+ * @retval 0 if success
+ * @retval -EINVAL if arguments are incorrect
+ * @retval -ENOENT if there are no properties for the device
+ * @retval -ENOSYS if method not implemented by the driver
  */
 __syscall int dai_get_properties_copy(const struct device *dev,
 				      enum dai_dir dir,
@@ -481,6 +486,10 @@ static inline int z_impl_dai_get_properties_copy(const struct device *dev,
 						 struct dai_properties *dst)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+
+	if (!api->get_properties_copy) {
+		return -ENOSYS;
+	}
 
 	return api->get_properties_copy(dev, dir, stream_id, dst);
 }

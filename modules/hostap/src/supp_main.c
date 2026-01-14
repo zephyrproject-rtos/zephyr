@@ -100,6 +100,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
 	.config_params = supplicant_config_params,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	.p2p_oper = supplicant_p2p_oper,
+#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
@@ -244,6 +247,12 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 						NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
 						(void *)txt, len);
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	} else if (strncmp(txt, "P2P-", 4) == 0) {
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_SUPPLICANT,
+						(void *)txt, len);
+#endif
 	}
 }
 

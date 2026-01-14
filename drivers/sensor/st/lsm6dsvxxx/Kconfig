@@ -1,0 +1,48 @@
+# ST Microelectronics LSM6DSVXXX accelerometer sensor
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LSM6DSVXXX
+	bool "LSM6DSVXXX IMU sensor"
+	default y
+	depends on DT_HAS_ST_LSM6DSV320X_ENABLED || DT_HAS_ST_LSM6DSV80X_ENABLED ||\
+		   DT_HAS_ST_ISM6HG256X_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV320X),i2c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV80X),i2c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ISM6HG256X),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV320X),i3c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV80X),i3c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ISM6HG256X),i3c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV320X),spi) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV80X),spi) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ISM6HG256X),spi)
+	select HAS_STMEMSC
+	select USE_STDC_LSM6DSV320X if DT_HAS_ST_LSM6DSV320X_ENABLED
+	select USE_STDC_LSM6DSV80X if DT_HAS_ST_LSM6DSV80X_ENABLED
+	select USE_STDC_ISM6HG256X if DT_HAS_ST_ISM6HG256X_ENABLED
+	help
+	  Enable driver for LSM6DSVXXX family IMU sensors.
+
+if LSM6DSVXXX
+
+config LSM6DSVXXX_STREAM
+	bool "LSM6DSVXXX data streaming"
+	select LSM6DSVXXX_TRIGGER
+	default y
+	depends on SPI_RTIO || I2C_RTIO || I3C_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this config option to enable streaming sensor data via RTIO subsystem.
+
+config LSM6DSVXXX_TRIGGER
+	bool
+
+config LSM6DSVXXX_ENABLE_TEMP
+	bool "Temperature"
+	help
+	  Enable/disable temperature sensor
+
+
+endif # LSM6DSVXXX

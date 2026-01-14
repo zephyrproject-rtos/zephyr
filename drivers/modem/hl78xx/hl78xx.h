@@ -25,8 +25,8 @@
 #include "../modem_context.h"
 #include "../modem_socket.h"
 #include <stdint.h>
-
-#define MDM_CMD_TIMEOUT                      (10)  /*K_SECONDS*/
+/* clang-format off */
+#define MDM_CMD_TIMEOUT                      (40)  /*K_SECONDS*/
 #define MDM_DNS_TIMEOUT                      (70)  /*K_SECONDS*/
 #define MDM_CELL_BAND_SEARCH_TIMEOUT         (60)  /*K_SECONDS*/
 #define MDM_CMD_CONN_TIMEOUT                 (120) /*K_SECONDS*/
@@ -73,6 +73,7 @@
 #define TERMINATION_PATTERN "+++"
 #define CONNECT_STRING      "CONNECT"
 #define CME_ERROR_STRING    "+CME ERROR: "
+#define ERROR_STRING        "ERROR"
 #define OK_STRING           "OK"
 
 /* RAT (Radio Access Technology) commands */
@@ -112,6 +113,9 @@
  */
 #define WDSI_USER_INITIATED_CONNECTION_START_CMD "AT+WDSS=1,1"
 #define WDSI_USER_INITIATED_CONNECTION_STOP_CMD  "AT+WDSS=1,0"
+/* Baud rate commands */
+#define GET_BAUDRATE_CMD                         "AT+IPR?"
+#define SET_BAUDRATE_CMD_FMT                     "AT+IPR=%d"
 
 /* Helper macros */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
@@ -121,6 +125,8 @@
 	COND_CODE_1(CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG, \
 		    (LOG_DBG(str, ##__VA_ARGS__)), \
 		    ((void)0))
+
+/* clang-format on */
 
 /* HL78XX States */
 enum hl78xx_state {
@@ -181,6 +187,7 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED,
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED,
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+	MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT,
 	MODEM_HL78XX_EVENT_COUNT
 };
 
@@ -322,6 +329,13 @@ struct hl78xx_wdsi_status {
 
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
+struct hl78xx_modem_uart_status {
+	uint32_t current_baudrate;
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	uint32_t target_baudrate;
+	uint8_t baudrate_detection_retry;
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+};
 struct modem_status {
 	struct registration_status registration;
 	int16_t rssi;
@@ -340,6 +354,7 @@ struct modem_status {
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+	struct hl78xx_modem_uart_status uart;
 };
 
 struct modem_gpio_callbacks {
@@ -472,13 +487,14 @@ void iface_status_work_cb(struct hl78xx_data *data,
  * @param cmd_len Length of the command in bytes.
  * @param response_matches Array of expected response match patterns.
  * @param matches_size Number of elements in the response_matches array.
+ * @param response_timeout Response timeout in seconds.
  *
  * @return 0 on success, negative errno code on failure.
  */
 int modem_dynamic_cmd_send(struct hl78xx_data *data,
 			   modem_chat_script_callback script_user_callback, const uint8_t *cmd,
 			   uint16_t cmd_len, const struct modem_chat_match *response_matches,
-			   uint16_t matches_size, bool user_cmd);
+			   uint16_t matches_size, uint16_t response_timeout, bool user_cmd);
 
 #define HASH_MULTIPLIER 37
 /**

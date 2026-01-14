@@ -386,4 +386,16 @@ int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *pa
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_config_params(const struct device *dev, struct wifi_config_params *params);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+/**
+ * @brief P2P operation
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param params P2P parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 #endif /* ZEPHYR_SUPP_MGMT_H */

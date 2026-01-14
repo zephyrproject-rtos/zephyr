@@ -72,6 +72,15 @@ config WIFI_SHELL_MAX_AP_STA
 	  This option defines the maximum number of APs and STAs that can be managed
 	  in Wi-Fi shell.
 
+config WIFI_P2P_MAX_PEERS
+	int "Maximum number of P2P peers that can be returned in a single query"
+	depends on WIFI_NM_WPA_SUPPLICANT_P2P
+	default 32
+	range 1 256
+	help
+	  This option defines the maximum number of P2P peers that can be returned
+	  in a single query operation.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help

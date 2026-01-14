@@ -604,6 +604,12 @@ config MBEDTLS_LMS_C
 	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
+config MBEDTLS_VERSION_C
+	bool "Support version information"
+	help
+	  Enable the mbedtls_version_get_number() function to get version
+	  information from Mbed TLS.
+
 if MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_PSA_P256M_DRIVER_ENABLED

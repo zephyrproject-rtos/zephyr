@@ -188,14 +188,6 @@ static void tester_setup(void)
 			FAIL("NetKey add failed (status %u)", status);
 			return;
 		}
-
-		struct bt_mesh_cdb_subnet *subnet = bt_mesh_cdb_subnet_alloc(i + 1);
-
-		ASSERT_TRUE(subnet != NULL);
-
-		ASSERT_OK(bt_mesh_cdb_subnet_key_import(subnet, 0, subnet_keys[i]));
-
-		bt_mesh_cdb_subnet_store(subnet);
 	}
 
 	uint8_t transmit;

@@ -76,6 +76,14 @@ config GDBSTUB_BUF_SZ
 
 endif
 
+# No need to use the reset vector and crt1 from the arch layer
+# as ACE has its own entry point: rom_entry().
+config XTENSA_USE_CORE_CRT1
+	default n
+
+config XTENSA_RESET_VECTOR
+	default n
+
 rsource "Kconfig.defconfig.ace*"
 
 endif # SOC_SERIES_INTEL_ADSP_ACE

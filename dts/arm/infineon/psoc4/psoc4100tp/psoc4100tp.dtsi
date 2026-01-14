@@ -8,7 +8,6 @@
 #include <mem.h>
 #include "psoc4100tp.cm0p.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 
 / {
 	flash0: flash@0 {
@@ -27,14 +26,8 @@
 			reg = <0x40020000 0x24000>;
 		};
 
-		hsiom: hsiom@40020000 {
-			compatible = "infineon,cat1-hsiom";
-			reg = <0x40020000 0x4000>;
-			status = "disabled";
-		};
-
 		gpio_prt0: gpio@40040000 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040000 0x100>;
 			interrupts = <0 4>;
 			gpio-controller;
@@ -44,7 +37,7 @@
 		};
 
 		gpio_prt1: gpio@40040100 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040100 0x100>;
 			interrupts = <1 4>;
 			gpio-controller;
@@ -54,7 +47,7 @@
 		};
 
 		gpio_prt2: gpio@40040200 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040200 0x100>;
 			interrupts = <2 4>;
 			gpio-controller;
@@ -64,7 +57,7 @@
 		};
 
 		gpio_prt3: gpio@40040300 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040300 0x100>;
 			interrupts = <3 4>;
 			gpio-controller;
@@ -74,7 +67,7 @@
 		};
 
 		gpio_prt4: gpio@40040400 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040400 0x100>;
 			gpio-controller;
 			ngpios = <8>;
@@ -83,7 +76,7 @@
 		};
 
 		gpio_prt5: gpio@40040500 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040500 0x100>;
 			gpio-controller;
 			ngpios = <8>;
@@ -92,7 +85,7 @@
 		};
 
 		gpio_prt6: gpio@40040600 {
-			compatible = "infineon,cat1-gpio";
+			compatible = "infineon,gpio";
 			reg = <0x40040600 0x100>;
 			gpio-controller;
 			ngpios = <8>;
@@ -101,35 +94,35 @@
 		};
 
 		scb0: scb@40240000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x40240000 0xfcc>;
 			interrupts = <6 3>;
 			status = "disabled";
 		};
 
 		scb1: scb@40250000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x40250000 0xfcc>;
 			interrupts = <7 3>;
 			status = "disabled";
 		};
 
 		scb2: scb@40260000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x40260000 0xfcc>;
 			interrupts = <8 3>;
 			status = "disabled";
 		};
 
 		scb3: scb@40270000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x40270000 0xfcc>;
 			interrupts = <9 3>;
 			status = "disabled";
 		};
 
 		scb4: scb@40280000 {
-			compatible = "infineon,cat1-scb";
+			compatible = "infineon,scb";
 			reg = <0x40280000 0xfcc>;
 			interrupts = <10 3>;
 			status = "disabled";

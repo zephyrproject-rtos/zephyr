@@ -13,6 +13,10 @@ if(SYSROOT_DIR)
   target_link_options(native_simulator INTERFACE "--sysroot=${SYSROOT_DIR}")
 endif()
 
+if(CONFIG_NATIVE_SIMULATOR_STATIC_LINKING)
+  target_link_options(native_simulator INTERFACE "-static")
+endif()
+
 if("${LINKER}" STREQUAL "lld")
   target_link_options(native_simulator INTERFACE "-fuse-ld=lld")
 endif()

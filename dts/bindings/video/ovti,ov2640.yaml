@@ -12,6 +12,12 @@ properties:
       The RESETn pin is asserted to disable the sensor causing a hard
       reset.  The sensor receives this as an active-low signal.
 
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to disable the sensor. The sensor
+      receives this as an active-high signal.
+
   clock-rate-control:
     type: int
     default: 0x87

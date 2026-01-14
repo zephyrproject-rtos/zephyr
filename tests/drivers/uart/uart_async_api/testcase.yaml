@@ -168,5 +168,3 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     platform_allow:
       - sam_e54_xpro
-    extra_configs:
-      - CONFIG_UART_ASYNC_API=y

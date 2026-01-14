@@ -95,6 +95,14 @@ slot1_partition: &cpurad_slot1_partition {
 	status = "okay";
 };
 
+&hfxo {
+	status = "okay";
+};
+
+&lfxo {
+	status = "okay";
+};
+
 &uart135 {
 	status = "okay";
 	memory-regions = <&cpurad_dma_region>;
@@ -139,4 +147,8 @@ zephyr_udc0: &usbhs {
 /* For coex-grant GPIO */
 &gpiote130 {
 	owned-channels = <7>;
+};
+
+&lfclk {
+	status = "okay";
 };

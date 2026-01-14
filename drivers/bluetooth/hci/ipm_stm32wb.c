@@ -84,12 +84,80 @@ static struct k_thread ipm_rx_thread_data;
 
 static bool c2_started_flag;
 
+static void stm32wb_set_stack_options(SHCI_C2_Ble_Init_Cmd_Packet_t *ble_init_cmd_packet)
+{
+	ble_init_cmd_packet->Param.Options =
+		SHCI_C2_BLE_INIT_OPTIONS_LL_HOST |
+		SHCI_C2_BLE_INIT_OPTIONS_WITH_SVC_CHANGE_DESC |
+		SHCI_C2_BLE_INIT_OPTIONS_FULL_GATTDB_NVM |
+		SHCI_C2_BLE_INIT_OPTIONS_POWER_CLASS_2_3;
+	ble_init_cmd_packet->Param.Options_extension = 0;
+
+#if !defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
+	ble_init_cmd_packet->Param.Options |=
+		SHCI_C2_BLE_INIT_OPTIONS_DEVICE_NAME_RO;
+#endif
+
+#if defined(CONFIG_BT_EXT_ADV)
+	ble_init_cmd_packet->Param.Options |=
+		SHCI_C2_BLE_INIT_OPTIONS_EXT_ADV |
+		SHCI_C2_BLE_INIT_OPTIONS_CS_ALGO2;
+#endif
+
+#if defined(CONFIG_BT_GATT_CACHING)
+	ble_init_cmd_packet->Param.Options |=
+		SHCI_C2_BLE_INIT_OPTIONS_GATT_CACHING_USED;
+#endif
+
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
+	ble_init_cmd_packet->Param.Options_extension |=
+		SHCI_C2_BLE_INIT_OPTIONS_APPEARANCE_WRITABLE;
+#endif
+
+#if defined(CONFIG_BT_EATT)
+	ble_init_cmd_packet->Param.Options_extension |=
+		SHCI_C2_BLE_INIT_OPTIONS_ENHANCED_ATT_SUPPORTED;
+#endif
+
+#if defined(CONFIG_BT_EXT_ADV_MAX_ADV_SET)
+#if (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 8)
+	ble_init_cmd_packet->Param.max_adv_set_nbr = 1;
+#else
+	ble_init_cmd_packet->Param.max_adv_set_nbr = CONFIG_BT_EXT_ADV_MAX_ADV_SET;
+#endif
+#else
+	ble_init_cmd_packet->Param.max_adv_set_nbr = 1;
+#endif
+
+	if (ble_init_cmd_packet->Param.max_adv_set_nbr < 4) {
+		ble_init_cmd_packet->Param.max_adv_data_len = 1650;
+	} else if (ble_init_cmd_packet->Param.max_adv_set_nbr == 4) {
+		ble_init_cmd_packet->Param.max_adv_data_len = 1035;
+	} else if (ble_init_cmd_packet->Param.max_adv_set_nbr == 5) {
+		ble_init_cmd_packet->Param.max_adv_data_len = 621;
+	} else if (ble_init_cmd_packet->Param.max_adv_set_nbr == 6) {
+		ble_init_cmd_packet->Param.max_adv_data_len = 414;
+	} else {
+		ble_init_cmd_packet->Param.max_adv_data_len = 207;
+	}
+
+#if defined(CONFIG_BT_EATT_MAX)
+#if (CONFIG_BT_EATT_MAX > 4)
+	ble_init_cmd_packet->Param.MaxAddEattBearers = 4;
+#else
+	ble_init_cmd_packet->Param.MaxAddEattBearers = CONFIG_BT_EATT_MAX;
+#endif
+#else
+	ble_init_cmd_packet->Param.MaxAddEattBearers = 4;
+#endif
+}
+
 static void stm32wb_start_ble(uint32_t rf_clock)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
-	  { { 0, 0, 0 } },                     /**< Header unused */
-	  { 0,                                 /** pBleBufferAddress not used */
-	    0,                                 /** BleBufferSize not used */
+	  { { 0, 0, 0 } },                 /**< Header unused */
+	  { 0,                             /** pBleBufferAddress not used */
+	    0,                             /** BleBufferSize not used */
 	    CFG_BLE_NUM_GATT_ATTRIBUTES,
 	    CFG_BLE_NUM_GATT_SERVICES,
 	    CFG_BLE_ATT_VALUE_ARRAY_SIZE,
@@ -105,8 +173,25 @@ static void stm32wb_start_ble(uint32_t rf_clock)
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
 	    CFG_BLE_OPTIONS,
-	    0 }
+	    0,
+	    CFG_BLE_MAX_COC_INITIATOR_NBR,
+	    CFG_BLE_MIN_TX_POWER,
+	    CFG_BLE_MAX_TX_POWER,
+	    CFG_BLE_RX_MODEL_CONFIG,
+	    CFG_BLE_MAX_ADV_SET_NBR,
+	    CFG_BLE_MAX_ADV_DATA_LEN,
+	    CFG_BLE_TX_PATH_COMPENS,
+	    CFG_BLE_RX_PATH_COMPENS,
+	    CFG_BLE_CORE_VERSION,
+	    CFG_BLE_OPTIONS_EXT,
+	    CFG_BLE_MAX_ADD_EATT_BEARERS }
 	};
+
+	/**
+	 * Set BLE Options, Options_extension, max_adv_set_nbr,
+	 * max_adv_data_len and MaxAddEattBearers according zephyr KConfig
+	 */
+	stm32wb_set_stack_options(&ble_init_cmd_packet);
 
 	/**
 	 * Starts the BLE Stack on CPU2
@@ -473,7 +558,7 @@ static int bt_ipm_ble_init(void)
 	}
 	param = net_buf_add(buf, sizeof(*param));
 	param->cmd = 0x0F;
-	param->value[0] = 0x18;
+	param->value[0] = CFG_TX_POWER; /* app_conf.h define: 0x18 => -0.15dBm */
 	param->value[1] = 0x01;
 
 	err = bt_hci_cmd_send_sync(ACI_WRITE_SET_TX_POWER_LEVEL, buf, NULL);

@@ -13,3 +13,18 @@ config I3C_CADENCE
 	default y
 	help
 	  Enable Cadence I3C driver.
+
+if I3C_CADENCE
+
+config I3C_CADENCE_IDLE_TIMEOUT_US
+	int "I3C Idle Timeout (us)"
+	default 250
+	help
+	  The timeout value waiting for to entry I3C idle state.
+	  This is due to the odd state machine of the I3C peripheral,
+	  where it can be not in an idle state for a while after a transfer
+	  is complete, and it does another transfer before it goes to idle.
+	  It needs to wait for it to be back in the idle state before it can
+	  start another transfer.
+
+endif # I3C_CADENCE

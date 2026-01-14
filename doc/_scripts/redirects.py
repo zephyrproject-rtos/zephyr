@@ -33,6 +33,7 @@ REDIRECTS = (
     ('boards/x86/intel_rpl/doc/index', 'boards/intel/rpl/doc/index'),
     ('boards/x86/rpl_crb/doc/index', 'boards/x86/intel_rpl/doc/index'),
 
+    ('connectivity/bluetooth/api/a2dp', 'connectivity/bluetooth/api/classic/a2dp'),
     ('connectivity/bluetooth/api/audio/shell/bap', 'connectivity/bluetooth/shell/audio/bap'),
     ('connectivity/bluetooth/api/audio/shell/bap_broadcast_assistant', 'connectivity/bluetooth/shell/audio/bap_broadcast_assistant'),
     ('connectivity/bluetooth/api/audio/shell/bap_scan_delegator', 'connectivity/bluetooth/shell/audio/bap_scan_delegator'),
@@ -43,6 +44,9 @@ REDIRECTS = (
     ('connectivity/bluetooth/api/audio/shell/mcp', 'connectivity/bluetooth/shell/audio/mcp'),
     ('connectivity/bluetooth/api/audio/shell/pbp', 'connectivity/bluetooth/shell/audio/pbp'),
     ('connectivity/bluetooth/api/audio/shell/tmap', 'connectivity/bluetooth/shell/audio/tmap'),
+    ('connectivity/bluetooth/api/hfp', 'connectivity/bluetooth/api/classic/hfp'),
+    ('connectivity/bluetooth/api/rfcomm', 'connectivity/bluetooth/api/classic/rfcomm'),
+    ('connectivity/bluetooth/api/sdp', 'connectivity/bluetooth/api/classic/sdp'),
     ('connectivity/bluetooth/api/shell/iso', 'connectivity/bluetooth/shell/host/iso'),
     ('connectivity/bluetooth/audio', 'connectivity/bluetooth/api/audio/audio'),
     ('connectivity/bluetooth/bap', 'connectivity/bluetooth/api/audio/bap'),

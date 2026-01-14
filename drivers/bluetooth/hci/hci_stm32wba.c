@@ -16,9 +16,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
-#ifdef CONFIG_PM_DEVICE
 #include "linklayer_plat.h"
-#endif /* CONFIG_PM_DEVICE */
 #include <linklayer_plat_local.h>
 
 #include <zephyr/sys/byteorder.h>
@@ -95,6 +93,21 @@ struct bt_hci_end_radio_activity_evt {
 	uint8_t next_state_slot;
 } __packed;
 #endif /* CONFIG_PM_DEVICE */
+
+/* ACI Reset command */
+#define ACI_RESET                             0xFF00
+
+struct aci_reset {
+	uint8_t mode;
+	uint32_t options;
+} __packed;
+
+/* Bluetooth driver state */
+#define BT_HCI_STATE_DEINIT                   0
+#define BT_HCI_STATE_OPENED                   1
+#define BT_HCI_STATE_CLOSED                   2
+
+static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
 
 static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
 static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
@@ -452,6 +465,12 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 	struct hci_data *data = dev->data;
 	int ret = 0;
 
+	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
+#if !defined(CONFIG_IEEE802154_STM32WBA)
+		LINKLAYER_PLAT_ClockInit();
+#endif
+	}
+
 	link_layer_register_isr(false);
 
 	ret = bt_ble_ctlr_init();
@@ -464,7 +483,52 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
 	}
 
+	if (ret == 0) {
+		bt_hci_state = BT_HCI_STATE_OPENED;
+	}
+
 	return ret;
+}
+
+static int bt_hci_stm32wba_close(const struct device *dev)
+{
+	struct aci_reset *param;
+	struct net_buf *buf;
+	int err;
+
+	ARG_UNUSED(dev);
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->mode = 0;
+	param->options = CFG_BLE_OPTIONS;
+
+	err = bt_hci_cmd_send_sync(ACI_RESET, buf, NULL);
+	if (err) {
+		return err;
+	}
+	bt_hci_state = BT_HCI_STATE_CLOSED;
+
+#if !defined(CONFIG_IEEE802154_STM32WBA)
+
+	/* No radio event scheduled : inform LL to enter in deep sleep */
+	(void)ll_sys_dp_slp_enter(LL_DP_SLP_NO_WAKEUP);
+
+	link_layer_disable_isr();
+
+	/* Disable the clock sources used for the radio */
+	LINKLAYER_PLAT_AclkCtrl(0);
+
+	__HAL_RCC_RADIO_CLK_DISABLE();
+
+	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
+#endif
+
+	return err;
 }
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -609,6 +673,7 @@ static DEVICE_API(bt_hci, drv) = {
 #endif /* CONFIG_BT_HCI_SETUP */
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
+	.close          = bt_hci_stm32wba_close,
 };
 
 #define HCI_DEVICE_INIT(inst) \

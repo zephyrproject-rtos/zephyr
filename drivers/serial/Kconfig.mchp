@@ -18,6 +18,6 @@ config UART_MCHP_ASYNC
 	bool
 	default y
 	depends on UART_ASYNC_API
-	select DMA
+	depends on DMA
 
 endif # UART_MCHP_SERCOM_G1

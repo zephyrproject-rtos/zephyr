@@ -242,6 +242,7 @@ sdhc: &sdmmc1 {
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	sdhi-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+	power-delay-ms = <50>;
 	interrupts = <49 0>;
 	interrupt-names = "event";
 	min-bus-freq = <DT_FREQ_K(400)>;

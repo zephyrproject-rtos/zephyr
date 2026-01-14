@@ -39,6 +39,16 @@
 			gpios = <&ioport5 3 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
+		led2: led2 {
+			gpios = <&ioport5 4 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport5 5 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
 	};
 
 	buttons {
@@ -59,6 +69,7 @@
 
 	aliases {
 		led0 = &led1;
+		led1 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;

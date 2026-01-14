@@ -316,10 +316,9 @@ struct lan9250_config {
 
 struct lan9250_runtime {
 	struct net_if *iface;
-	const struct device *dev;
 
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE);
-	k_tid_t tid_int;
+	K_KERNEL_STACK_MEMBER(thread_stack,
+			      CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 
 	uint8_t mac_address[6];
@@ -327,7 +326,6 @@ struct lan9250_runtime {
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
-	struct k_mutex lock;
 };
 
 #endif /*_LAN9250_*/

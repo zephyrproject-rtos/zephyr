@@ -239,6 +239,18 @@ below).
    uart:~$ can filter remove can@0 0
    removing filter with ID 0
 
+Another option is to use the ``can dump`` subcommand, which adds standard (11-bit) and extended
+(29-bit) CAN filters matching any RX frame, starts the CAN controller, and prints all received CAN
+frames to the shell:
+
+.. code-block:: console
+
+   uart:~$ can dump can@0
+   dumping CAN RX frames on device can@0, press Ctrl+C to exit
+
+After exiting the ``can dump`` subcommand by pressing Ctrl+C, the added filters are automatically
+removed and the CAN controller stopped again.
+
 Sending
 *******
 

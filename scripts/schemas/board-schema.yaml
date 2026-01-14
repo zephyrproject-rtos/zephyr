@@ -165,10 +165,10 @@ $defs:
         $ref: "#/$defs/extendVariantSchema"
     # Conditional logic for requirements
     allOf:
-      # 'name' and 'extend' are mutually exclusive: we're either defining a new board or extending
-      # an existing one.
+      # 'name'/'full_name' and 'extend' are mutually exclusive: we're either defining a new board or
+      # extending an existing one.
       - oneOf:
-          - required: [name]
+          - required: [name, full_name]
           - required: [extend]
       # A base board (identified by 'name') must define its hardware via the 'socs' property.
       - if:

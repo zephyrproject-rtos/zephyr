@@ -1,12 +1,5 @@
 common:
   tags: snippets
-  platform_allow:
-  - native_sim
-  - qemu_x86
-  - qemu_x86_64
-  - qemu_cortex_m3
-  integration_platforms:
-  - native_sim
   sysbuild: false
 
 tests:
@@ -14,23 +7,77 @@ tests:
   buildsystem.snippets.none:
     extra_configs:
     - CONFIG_TEST_TYPE_NONE=y
+    platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_m3
+    integration_platforms:
+    - native_sim
   # Test the `foo` snippet from the default application snippet root
   buildsystem.snippets.foo:
     extra_args: SNIPPET="foo"
     extra_configs:
     - CONFIG_TEST_TYPE_FOO=y
+    platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_m3
+    integration_platforms:
+    - native_sim
   # Test the `bar` snippet from an extra snippet root
   buildsystem.snippets.bar:
     extra_args: SNIPPET="bar"
     extra_configs:
     - CONFIG_TEST_TYPE_BAR=y
+    platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_m3
+    integration_platforms:
+    - native_sim
   # Test the snippet processing order (1. foo, 2. bar)
   buildsystem.snippets.foo_bar:
     extra_args: SNIPPET="foo;bar"
     extra_configs:
     - CONFIG_TEST_TYPE_FOO_BAR=y
+    platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_m3
+    integration_platforms:
+    - native_sim
   # Test the snippet processing order (1. bar, 2. foo)
   buildsystem.snippets.bar_foo:
     extra_args: SNIPPET="bar;foo"
     extra_configs:
     - CONFIG_TEST_TYPE_BAR_FOO=y
+    platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_m3
+    integration_platforms:
+    - native_sim
+  # Test the snippet board version processing
+  buildsystem.snippets.version_exclude:
+    extra_args: SNIPPET="ver_check"
+    extra_configs:
+    - CONFIG_TEST_TYPE_VER_CHECK=y
+    platform_allow:
+    - nrf9160dk@0.14.0/nrf9160
+    integration_platforms:
+    - nrf9160dk@0.14.0/nrf9160
+    build_only: true
+  buildsystem.snippets.version_include:
+    extra_args: SNIPPET="ver_check"
+    extra_configs:
+    - CONFIG_TEST_TYPE_VER_CHECK_SPECIFIC=y
+    platform_allow:
+    - nrf9160dk@0.7.0/nrf9160
+    integration_platforms:
+    - nrf9160dk@0.7.0/nrf9160
+    build_only: true

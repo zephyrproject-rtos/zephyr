@@ -25,37 +25,37 @@
 /* Errata: ISO double buffering not functional. **/
 static inline bool nrf_usbd_common_errata_166(void)
 {
-	return NRF_USBD_COMMON_ERRATA_ENABLE && nrf52_errata_166();
+	return NRF_USBD_COMMON_ERRATA_ENABLE && NRF_ERRATA_DYNAMIC_CHECK(52, 166);
 }
 
 /* Errata: USBD might not reach its active state. **/
 static inline bool nrf_usbd_common_errata_171(void)
 {
-	return NRF_USBD_COMMON_ERRATA_ENABLE && nrf52_errata_171();
+	return NRF_USBD_COMMON_ERRATA_ENABLE && NRF_ERRATA_DYNAMIC_CHECK(52, 171);
 }
 
 /* Errata: USB cannot be enabled. **/
 static inline bool nrf_usbd_common_errata_187(void)
 {
-	return NRF_USBD_COMMON_ERRATA_ENABLE && nrf52_errata_187();
+	return NRF_USBD_COMMON_ERRATA_ENABLE && NRF_ERRATA_DYNAMIC_CHECK(52, 187);
 }
 
 /* Errata: USBD cannot receive tasks during DMA. **/
 static inline bool nrf_usbd_common_errata_199(void)
 {
-	return NRF_USBD_COMMON_ERRATA_ENABLE && nrf52_errata_199();
+	return NRF_USBD_COMMON_ERRATA_ENABLE && NRF_ERRATA_DYNAMIC_CHECK(52, 199);
 }
 
 /* Errata: Device remains in SUSPEND too long. */
 static inline bool nrf_usbd_common_errata_211(void)
 {
-	return NRF_USBD_COMMON_ERRATA_ENABLE && nrf52_errata_211();
+	return NRF_USBD_COMMON_ERRATA_ENABLE && NRF_ERRATA_DYNAMIC_CHECK(52, 211);
 }
 
 /* Errata: Unexpected behavior after reset. **/
 static inline bool nrf_usbd_common_errata_223(void)
 {
-	return NRF_USBD_COMMON_ERRATA_ENABLE && nrf52_errata_223();
+	return NRF_USBD_COMMON_ERRATA_ENABLE && NRF_ERRATA_DYNAMIC_CHECK(52, 223);
 }
 
 #endif /* NRF_USBD_COMMON_ERRATA_H__ */

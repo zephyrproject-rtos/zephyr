@@ -45,6 +45,10 @@
 #define MBEDTLS_LMS_C
 #endif
 
+#if defined(CONFIG_MBEDTLS_VERSION_C)
+#define MBEDTLS_VERSION_C
+#endif
+
 #if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
 #define MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME_DATE

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Intel Corporation.
+
+mainmenu "LLEXT tests"
+
+source "Kconfig.zephyr"
+
+config LLEXT_INC_IN_TEXT
+	bool "Put extension .inc array in .text instead of .data"
+	help
+	  Put the llext extension .inc arrays from the LLEXT subsys tests
+	  in .text instead of .data by default. This is useful for when the
+	  memory region the linker places .data in by default is not suitable
+	  for execution.

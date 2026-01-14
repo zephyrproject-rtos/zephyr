@@ -16,6 +16,9 @@ tests:
       - arduino_gpio
     extra_args: SHIELD=tcan4550evm
     platform_allow: frdm_k64f
+  drivers.can.build_all.tcan4x5x.mikrobus:
+    extra_args: SHIELD=mikroe_can_fd_6_click
+    platform_allow: mikroe_stm32_m4_clicker
   drivers.can.build_all.mcp251xfd:
     extra_args: SHIELD=mikroe_mcp2518fd_click
     platform_allow: lpcxpresso55s28

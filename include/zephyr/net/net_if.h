@@ -1348,7 +1348,6 @@ extern struct net_if_addr *net_if_addr_ref(struct net_if *iface,
  *
  * @param iface Pointer to a network interface structure
  * @param addr A pointer to a uint8_t buffer representing the address.
- *             The buffer must remain valid throughout interface lifetime.
  * @param len length of the address buffer
  * @param type network bearer type of this link address
  *

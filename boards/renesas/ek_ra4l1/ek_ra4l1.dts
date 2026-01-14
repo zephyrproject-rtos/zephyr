@@ -9,6 +9,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 #include "ek_ra4l1-pinctrl.dtsi"
 
 / {
@@ -65,6 +67,35 @@
 			   <11 0 &ioport4 1 0>;	/* SDA  */
 		/* +5V */
 		/* GND */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &ioport5 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &ioport5 11 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &ioport5 12 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &ioport5 13 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &ioport0 3 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &ioport0 4 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &ioport6 8 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &ioport1 15 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &ioport4 15 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &ioport4 14 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &ioport4 4 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &ioport4 5 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &ioport4 6 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &ioport1 7 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &ioport6 2 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &ioport6 0 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &ioport2 4 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &ioport2 11 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &ioport2 10 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &ioport2 9 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &ioport4 1 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &ioport4 0 0>;
 	};
 
 	buttons {
@@ -272,3 +303,5 @@
 };
 
 mikrobus_serial: &uart1 {};
+
+arduino_serial: &uart1 {};

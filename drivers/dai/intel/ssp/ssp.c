@@ -2549,12 +2549,17 @@ static const struct dai_properties *dai_ssp_get_properties(const struct device *
 }
 
 static int dai_ssp_get_properties_copy(const struct device *dev,
-				enum dai_dir dir, int stream_id, struct dai_properties *prop)
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
 {
 	const struct dai_properties *kernel_prop = dai_ssp_get_properties(dev, dir, stream_id);
 
 	if (!prop) {
 		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
 	}
 
 	memcpy(prop, kernel_prop, sizeof(*kernel_prop));

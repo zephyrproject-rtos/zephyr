@@ -30,9 +30,9 @@
 		irq-gpios = <&nxp_lcd_pmod_connector 12 GPIO_ACTIVE_HIGH>;
 		zephyr,deferred-init;
 		swapped-x-y;
-		inverted-y;
-		screen-width = <480>;
-		screen-height = <320>;
+		inverted-x;
+		screen-width = <320>;
+		screen-height = <480>;
 	};
 };
 

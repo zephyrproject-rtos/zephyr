@@ -148,6 +148,7 @@ class HardwareMap:
         'Nuvoton',
         'Espressif',
         'SecuringHardware.com',
+        'Cypress Semiconductor'
     ]
 
     runner_mapping = {
@@ -160,7 +161,7 @@ class HardwareMap:
             'J-Link OB'
         ],
         'openocd': [
-            'STM32 STLink', '^XDS110.*', 'STLINK-V3', '^Tigard.*'
+            'STM32 STLink', '^XDS110.*', 'STLINK-V3', '^Tigard.*', 'KitProg3'
         ],
         'dediprog': [
             'TTL232R-3V3',

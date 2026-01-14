@@ -1,0 +1,193 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices EVAL_ADIN2111D1Z";
+	compatible = "adi,eval-adin2111d1z";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	bypass_relay: bypass_relay_uc {
+		compatible = "regulator-fixed";
+		regulator-name = "bypass_relay";
+		enable-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		orange_led: led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio2 22 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		red_led: led_2 {
+			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		pb0: pb0 {
+			gpios = <&gpio4 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		bypassuc = &bypass_relay;
+		led0 = &orange_led;
+		led1 = &green_led;
+		led2 = &red_led;
+		sw0 = &pb0;
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0a_sda_p2_7 &i2c0a_scl_p2_8>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart0 { /*USB-C P4*/
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart0a_tx_p2_12 &uart0a_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&spi0b_miso_p2_27 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_mosi_p2_28 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_sck_p2_29 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_ss1_p2_26 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0b_miso_p2_27 &spi0b_mosi_p2_28 &spi0b_sck_p2_29>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio2 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+
+	adin2111: adin2111@0 {
+		compatible = "adi,adin2111";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		int-gpios = <&gpio2 25 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+		spi-oa;
+		spi-oa-protection;
+
+		port1 {
+			local-mac-address = [00 aa 22 fe da c8];
+			status = "okay";
+		};
+
+		port2 {
+			local-mac-address = [00 aa 22 fe da c8];
+			status = "okay";
+		};
+
+		mdio {
+			compatible = "adi,adin2111-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "adi,adin2111-phy";
+				status = "okay";
+			};
+
+			ethernet-phy@2 {
+				reg = <0x2>;
+				compatible = "adi,adin2111-phy";
+				status = "okay";
+			};
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "image";
+			reg = <0x0 DT_SIZE_M(1)>;
+		};
+
+		storage_partition: partition@100000 {
+			label = "storage_partition";
+			reg = <0x100000 DT_SIZE_K(256)>;
+		};
+	};
+};

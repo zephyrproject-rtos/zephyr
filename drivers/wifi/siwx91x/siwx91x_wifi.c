@@ -301,6 +301,56 @@ unref:
 	return SL_STATUS_FAIL;
 }
 
+static enum ethernet_hw_caps siwx91x_get_capabilities(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETHERNET_HW_FILTERING;
+}
+
+static int siwx91x_set_config(const struct device *dev,
+			      enum ethernet_config_type type,
+			      const struct ethernet_config *config)
+{
+	sl_wifi_multicast_filter_info_t filter_info = {};
+	sl_status_t status;
+
+	ARG_UNUSED(dev);
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		memcpy(filter_info.mac_address.octet, config->filter.mac_address.addr,
+		       sizeof(config->filter.mac_address.addr));
+
+		if (config->filter.set) {
+			filter_info.command_type = SL_WIFI_MULTICAST_MAC_ADD_BIT;
+		} else {
+			filter_info.command_type = SL_WIFI_MULTICAST_MAC_CLEAR_BIT;
+		}
+
+		status = sl_wifi_configure_multicast_filter(&filter_info);
+		if (status != SL_STATUS_OK) {
+			LOG_ERR("Failed to %s multicast filter: 0x%x",
+				config->filter.set ? "add" : "remove", status);
+			return -EIO;
+		}
+
+		LOG_DBG("Multicast filter %s for %02x:%02x:%02x:%02x:%02x:%02x",
+			config->filter.set ? "added" : "removed",
+			config->filter.mac_address.addr[0],
+			config->filter.mac_address.addr[1],
+			config->filter.mac_address.addr[2],
+			config->filter.mac_address.addr[3],
+			config->filter.mac_address.addr[4],
+			config->filter.mac_address.addr[5]);
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 #endif
 
 static void siwx91x_ethernet_init(struct net_if *iface)
@@ -592,6 +642,8 @@ static const struct net_wifi_mgmt_offload siwx91x_api = {
 	.wifi_iface.iface_api.init = siwx91x_iface_init,
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
 	.wifi_iface.send = siwx91x_send,
+	.wifi_iface.get_capabilities = siwx91x_get_capabilities,
+	.wifi_iface.set_config = siwx91x_set_config,
 #else
 	.wifi_iface.get_type = siwx91x_get_type,
 #endif

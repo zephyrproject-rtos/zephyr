@@ -66,7 +66,7 @@ struct esp32_wifi_status {
 };
 
 struct esp32_wifi_runtime {
-	uint8_t mac_addr[6];
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	struct net_stats_wifi stats;
@@ -376,7 +376,7 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	for (int i = 0; i < sta_list.num; i++) {
 		wifi_sta_info_t *sta = &sta_list.sta[i];
 
-		if (memcmp(event->mac, sta->mac, 6) == 0) {
+		if (memcmp(event->mac, sta->mac, WIFI_MAC_ADDR_LEN) == 0) {
 			if (sta->phy_11n) {
 				sta_info.link_mode = WIFI_4;
 			} else if (sta->phy_11g) {
@@ -885,7 +885,7 @@ static void esp32_wifi_init(struct net_if *iface)
 #endif
 
 	/* Assign link local address. */
-	net_if_set_link_addr(iface, dev_data->mac_addr, 6, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev_data->mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
@@ -909,7 +909,7 @@ static void esp32_wifi_init_ap(struct net_if *iface)
 	wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_SAP, esp32_wifi_iface_ap);
 
 	/* Assign link local address. */
-	net_if_set_link_addr(iface, dev_data->mac_addr, 6, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev_data->mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);

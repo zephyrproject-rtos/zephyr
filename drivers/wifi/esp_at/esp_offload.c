@@ -154,10 +154,8 @@ static int esp_bind(struct net_context *context, const struct net_sockaddr *addr
 		    net_socklen_t addrlen)
 {
 	struct esp_socket *sock;
-	struct esp_data *dev;
 
 	sock = (struct esp_socket *)context->offload_context;
-	dev = esp_socket_to_dev(sock);
 
 	if (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) {
 		return 0;

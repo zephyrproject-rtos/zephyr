@@ -19,9 +19,13 @@ struct entropy_virtio_config {
 	const struct device *vdev;
 };
 
+#define ENTROPY_BUFFER_MAX_LEN 256
+
 struct entropy_virtio_data {
 	struct k_sem sem;
 	uint32_t received_len;
+	struct k_mutex buf_mutex;
+	uint8_t buf[ENTROPY_BUFFER_MAX_LEN];
 };
 
 static void entropy_virtio_virtq_recv_cb(void *priv, uint32_t len)
@@ -43,7 +47,6 @@ static uint16_t entropy_virtio_enum_queues_cb(uint16_t q_index, uint16_t q_size_
 
 static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
-	struct virtq_buf buf[] = {{.addr = buffer, .len = length}};
 	const struct entropy_virtio_config *cfg = dev->config;
 	struct entropy_virtio_data *data = dev->data;
 	struct virtq *vq = virtio_get_virtqueue(cfg->vdev, VIRTIO_ENTROPY_QUEUE_IDX);
@@ -54,20 +57,35 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 		return -ENODEV;
 	}
 
-	data->received_len = 0;
-	ret = virtq_add_buffer_chain(vq, buf, 1, 0, entropy_virtio_virtq_recv_cb, data, K_FOREVER);
-	if (ret) {
-		LOG_ERR("virtq_add_buffer_chain failed: %d", ret);
-		return -EIO;
-	}
+	while (length > 0) {
+		struct virtq_buf buf[] = {
+			{.addr = data->buf, .len = MIN(length, ENTROPY_BUFFER_MAX_LEN)}};
 
-	virtio_notify_virtqueue(cfg->vdev, VIRTIO_ENTROPY_QUEUE_IDX);
+		k_mutex_lock(&data->buf_mutex, K_FOREVER);
+		data->received_len = 0;
+		ret = virtq_add_buffer_chain(vq, buf, 1, 0, entropy_virtio_virtq_recv_cb, data,
+					     K_FOREVER);
+		if (ret) {
+			LOG_ERR("virtq_add_buffer_chain failed: %d", ret);
+			k_mutex_unlock(&data->buf_mutex);
+			return -EIO;
+		}
 
-	k_sem_take(&data->sem, K_FOREVER);
+		virtio_notify_virtqueue(cfg->vdev, VIRTIO_ENTROPY_QUEUE_IDX);
 
-	if (data->received_len != length) {
-		LOG_ERR("insufficient number of values: %d/%d", data->received_len, length);
-		return -EIO;
+		k_sem_take(&data->sem, K_FOREVER);
+
+		if (data->received_len != buf[0].len) {
+			LOG_ERR("insufficient number of values: %d/%d", data->received_len,
+				buf[0].len);
+			k_mutex_unlock(&data->buf_mutex);
+			return -EIO;
+		}
+
+		memcpy(buffer, data->buf, data->received_len);
+		buffer += data->received_len;
+		length -= data->received_len;
+		k_mutex_unlock(&data->buf_mutex);
 	}
 
 	return 0;
@@ -97,6 +115,7 @@ static int entropy_virtio_init(const struct device *dev)
 	virtio_finalize_init(cfg->vdev);
 
 	k_sem_init(&data->sem, 0, 1);
+	k_mutex_init(&data->buf_mutex);
 
 	LOG_DBG("virtio entropy driver initialized");
 	return 0;

@@ -129,10 +129,21 @@ New APIs and options
     * :c:func:`bt_mesh_input_numeric` to provide provisioning numeric input OOB value.
     * :c:member:`output_numeric` callback in :c:struct:`bt_mesh_prov` structure to
       output numeric values during provisioning.
+    * :kconfig:option:`CONFIG_BT_MESH_CDB_KEY_SYNC` to enable key synchronization between
+      the Configuration Database (CDB) and the local Subnet and AppKey storages when keys are
+      added, deleted, or updated during key refresh procedure.
+      The option is enabled by default.
 
   * Services
 
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
+
+* Build system
+
+  * Sysbuild
+
+    * Added :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES` which allows generating
+      :ref:`merged hex files <sysbuild_merged_hex_files>`.
 
 * Ethernet
 
@@ -154,6 +165,12 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* IPM
+
+  * IPM callbacks for the mailbox backend now correctly handle signal-only mailbox
+    mailbox usage. Applications should be prepared to receive a NULL payload pointer
+    in IPM callbacks when no data buffer is provided by the mailbox.
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
@@ -165,6 +182,12 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
+
+* Networking
+
+  * Wi-Fi
+
+    * Add support for Wi-Fi Direct (P2P) mode.
 
 * PWM
 
@@ -261,6 +284,12 @@ Libraries / Subsystems
 * LoRa/LoRaWAN
 
    * :c:func:`lora_airtime`
+
+* Mbed TLS
+
+  * Added :kconfig:option:`CONFIG_MBEDTLS_VERSION_C` to simplify the
+    export of version information from Mbed TLS. If enabled, the
+    :c:func:`mbedtls_version_get_number()` function will be available.
 
 Other notable changes
 *********************

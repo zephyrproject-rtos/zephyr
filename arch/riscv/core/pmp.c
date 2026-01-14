@@ -617,6 +617,19 @@ void z_riscv_pmp_init(void)
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
+	/* SoC-specific PMP regions defined via iterable sections */
+	STRUCT_SECTION_FOREACH(pmp_soc_region, region) {
+		uintptr_t start = (uintptr_t)region->start;
+		size_t size = (uintptr_t)region->end - start;
+
+		if (size > 0) {
+			set_pmp_entry(&index, region->perm | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL,
+								 (0x0), (PMP_L)), start,
+									  size, pmp_addr, pmp_cfg,
+									  ARRAY_SIZE(pmp_addr));
+		}
+	}
+
 #ifdef CONFIG_PMP_STACK_GUARD
 #ifdef CONFIG_MULTITHREADING
 	/*

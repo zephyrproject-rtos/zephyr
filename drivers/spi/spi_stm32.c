@@ -1498,13 +1498,7 @@ static int transceive_dma(const struct device *dev,
 		data->status_flags = 0;
 
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			if (data->ctx.rx_len == 0) {
-				dma_len = data->ctx.tx_len;
-			} else if (data->ctx.tx_len == 0) {
-				dma_len = data->ctx.rx_len;
-			} else {
-				dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
-			}
+			dma_len = spi_context_max_continuous_chunk(&data->ctx);
 
 			ret = spi_dma_move_buffers(dev, dma_len);
 		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {

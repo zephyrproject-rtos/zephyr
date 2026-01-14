@@ -189,13 +189,13 @@ customised 404 response.
 
 .. code-block:: c
 
-    static int default_handler(struct http_client_ctx *client, enum http_data_status status,
+    static int default_handler(struct http_client_ctx *client, enum http_transaction_status status,
 		       const struct http_request_ctx *request_ctx,
 		       struct http_response_ctx *response_ctx, void *user_data)
     {
         static const char response_404[] = "Oops, page not found!";
 
-        if (status == HTTP_SERVER_DATA_FINAL) {
+        if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
             response_ctx->status = 404;
             response_ctx->body = response_404;
             response_ctx->body_len = sizeof(response_404) - 1;
@@ -331,7 +331,7 @@ resource handler, which echoes received data back to the client:
 
 .. code-block:: c
 
-    static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
+    static int dyn_handler(struct http_client_ctx *client, enum http_transaction_status status,
                            const struct http_request_ctx *request_ctx,
                            struct http_response_ctx *response_ctx, void *user_data)
     {
@@ -340,10 +340,13 @@ resource handler, which echoes received data back to the client:
         enum http_method method = client->method;
         static size_t processed;
 
-        __ASSERT_NO_MSG(buffer != NULL);
+        __ASSERT_NO_MSG(request_ctx->data != NULL);
 
-        if (status == HTTP_SERVER_DATA_ABORTED) {
-            LOG_DBG("Transaction aborted after %zd bytes.", processed);
+        if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+            status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+            if (status == HTTP_SERVER_TRANSACTION_ABORTED) {
+                LOG_DBG("Transaction aborted after %zd bytes.", processed);
+            }
             processed = 0;
             return 0;
         }
@@ -354,7 +357,7 @@ resource handler, which echoes received data back to the client:
                  http_method_str(method), request_ctx->data_len);
         LOG_HEXDUMP_DBG(request_ctx->data, request_ctx->data_len, print_str);
 
-        if (status == HTTP_SERVER_DATA_FINAL) {
+        if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
             LOG_DBG("All data received (%zd bytes).", processed);
             processed = 0;
         }
@@ -362,7 +365,7 @@ resource handler, which echoes received data back to the client:
         /* Echo data back to client */
         response_ctx->body = request_ctx->data;
         response_ctx->body_len = request_ctx->data_len;
-        response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
+        response_ctx->final_chunk = (status == HTTP_SERVER_REQUEST_DATA_FINAL);
 
         return 0;
     }
@@ -386,13 +389,16 @@ the application should be able to keep track of the received data progress.
 
 The ``status`` field informs the application about the progress in passing
 request payload from the server to the application. As long as the status
-reports :c:enumerator:`HTTP_SERVER_DATA_MORE`, the application should expect
+reports :c:enumerator:`HTTP_SERVER_REQUEST_DATA_MORE`, the application should expect
 more data to be provided in a consecutive callback calls.
 Once all request payload has been passed to the application, the server reports
-:c:enumerator:`HTTP_SERVER_DATA_FINAL` status. In case of communication errors
-during request processing (for example client closed the connection before
+:c:enumerator:`HTTP_SERVER_REQUEST_DATA_FINAL` status. In case of communication
+errors during request processing (for example client closed the connection before
 complete payload has been received), the server reports
-:c:enumerator:`HTTP_SERVER_DATA_ABORTED`. Either of the two events indicate that
+:c:enumerator:`HTTP_SERVER_TRANSACTION_ABORTED`.
+When the response has been sent completely to the client, the server reports
+:c:enumerator:`HTTP_SERVER_TRANSACTION_COMPLETE` status.
+Either of the two events indicate that the request processing is finished, and
 the application shall reset any progress recorded for the resource, and await
 a new request to come. The server guarantees that the resource can only be
 accessed by single client at a time.
@@ -488,7 +494,7 @@ from within the dynamic resource callback:
 
     HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_user_agent, "User-Agent");
 
-    static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
+    static int dyn_handler(struct http_client_ctx *client, enum http_transaction_status status,
                            uint8_t *buffer, size_t len, void *user_data)
     {
         size_t header_count = client->header_capture_ctx.count;

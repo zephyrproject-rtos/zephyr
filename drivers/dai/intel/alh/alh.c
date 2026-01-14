@@ -158,6 +158,25 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 	return prop;
 }
 
+static int dai_alh_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_alh_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static int dai_alh_probe(const struct device *dev)
 {
 	k_spinlock_key_t key;
@@ -201,6 +220,7 @@ static DEVICE_API(dai, dai_intel_alh_api_funcs) = {
 	.config_get		= dai_alh_config_get,
 	.trigger		= dai_alh_trigger,
 	.get_properties		= dai_alh_get_properties,
+	.get_properties_copy	= dai_alh_get_properties_copy,
 };
 
 #define DAI_INTEL_ALH_DEVICE_INIT(n)						\

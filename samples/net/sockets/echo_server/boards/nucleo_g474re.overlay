@@ -1,0 +1,47 @@
+/*
+ * Copyright 2025 Łukasz Majewski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+
+	spe: lan865x@0 {
+		compatible = "microchip,lan865x";
+		reg = <0>;
+
+		/* pa9 -> D8 label on nucleo */
+		rst-gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+		/* pa8 -> D7 label on nucleo */
+		int-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+
+		local-mac-address = [00 19 05 00 00 01];
+
+		spi-max-frequency = <25000000>;
+
+		lan865x_mdio: lan865x_mdio {
+			compatible = "microchip,lan865x-mdio";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-phy@0 {
+				compatible = "microchip,t1s-phy";
+				reg = <0x0>;
+				plca-enable;
+				plca-node-id = <1>;
+				plca-node-count = <8>;
+				plca-burst-count = <0>;
+				plca-burst-timer = <0x80>;
+				plca-to-timer = <0x20>;
+				status = "okay";
+			};
+		};
+
+		status = "okay";
+	};
+};

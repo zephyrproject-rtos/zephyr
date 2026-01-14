@@ -179,7 +179,7 @@ Compile Zephyr application.
    :goals: build
    :compact:
 
-When the Zephyr image is build, you can start it like this:
+When the Zephyr image is built, you can start it like this:
 
 .. code-block:: console
 

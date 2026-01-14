@@ -7,6 +7,7 @@
 #include <arm/armv7-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/renesas_rza2m_clock.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r7s9210";
@@ -316,6 +317,242 @@
 					#gpio-cells = <2>;
 					ngpios = <2>;
 				};
+			};
+		};
+
+		adc: adc@e8005800 {
+			compatible = "renesas,rza2m-adc";
+			reg = <0xe8005800 0xe8>;
+			interrupts = <GIC_SPI 247 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channel-available-mask = <0xFF>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_ADC, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		gpt32e0: gpt32e@e8043000 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <0>;
+			reg = <0xe8043000 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 139 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 140 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 141 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 142 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 146 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 147 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 148 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 149 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 150 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 151 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e1: gpt32e@e8043100 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <1>;
+			reg = <0xe8043100 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 152 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 153 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 154 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 155 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 159 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 160 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 161 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 162 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 163 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 164 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e2: gpt32e@e8043200 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <2>;
+			reg = <0xe8043200 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 165 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 166 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 167 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 168 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 172 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 173 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 174 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 175 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 176 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 177 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e3: gpt32e@e8043300 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <3>;
+			reg = <0xe8043300 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 178 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 179 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 180 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 181 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 185 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 186 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 187 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 188 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 189 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 190 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e4: gpt32e@e8043400 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <4>;
+			reg = <0xe8043400 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 191 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 192 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 193 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 194 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 198 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 199 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 200 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 201 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 202 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 203 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e5: gpt32e@e8043500 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <5>;
+			reg = <0xe8043500 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 204 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 205 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 206 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 207 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 211 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 212 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 213 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 214 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 215 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 216 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e6: gpt32e@e8043600 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <6>;
+			reg = <0xe8043600 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 217 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 218 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 219 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 220 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 224 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 225 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 226 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 227 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 228 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 229 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e7: gpt32e@e8043700 {
+			compatible = "renesas,rza2m-gpt";
+			channel = <7>;
+			reg = <0xe8043700 0xa4>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 230 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 231 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 232 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 233 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 237 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 238 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 239 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 240 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 241 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 242 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_GPT, RZA2M_CLK_P1C)>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rza2m-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 

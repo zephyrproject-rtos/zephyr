@@ -71,6 +71,29 @@ struct ipc_service_backend {
 	int (*send)(const struct device *instance, void *token,
 		    const void *data, size_t len);
 
+	/** @brief Pointer to the function that sends critical messages bypassing flow control.
+	 *
+	 *  This function sends high-priority messages directly, bypassing busy checks
+	 *  and normal queuing mechanisms. It should be used only for critical system
+	 *  notifications like crash reports or fatal errors.
+	 *
+	 *  @param[in] instance Instance pointer.
+	 *  @param[in] token Backend-specific token.
+	 *  @param[in] data Pointer to the buffer to send.
+	 *  @param[in] len Number of bytes to send.
+	 *
+	 *  @retval -EINVAL when instance is invalid.
+	 *  @retval -ENOENT when the endpoint is not registered with the instance.
+	 *  @retval -EBADMSG when the message is invalid.
+	 *  @retval -ENOTSUP when critical send is not supported.
+	 *  @retval -ENOMEM when even critical buffers are unavailable.
+	 *
+	 *  @retval bytes number of bytes sent.
+	 *  @retval other errno codes depending on the implementation of the backend.
+	 */
+	int (*send_critical)(const struct device *instance, void *token,
+			     const void *data, size_t len);
+
 	/** @brief Pointer to the function that will be used to register endpoints.
 	 *
 	 *  @param[in] instance Instance to register the endpoint onto.

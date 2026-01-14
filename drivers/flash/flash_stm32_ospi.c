@@ -1288,7 +1288,12 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			}
 
 			if (bet != NULL) {
-				cmd_erase.Instruction = bet->cmd;
+				/* In OPI mode, do not use the SFDP SPI opcode (bet->cmd). */
+				if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+					cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+				} else {
+					cmd_erase.Instruction = bet->cmd;
+				}
 			} else {
 				/* Use the default sector erase cmd */
 				if (dev_cfg->data_mode == OSPI_OPI_MODE) {

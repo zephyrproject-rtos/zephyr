@@ -160,6 +160,12 @@
 	clock-div = <1>;
 };
 
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &soscdiv2_clk {
 	clock-div = <1>;
 };

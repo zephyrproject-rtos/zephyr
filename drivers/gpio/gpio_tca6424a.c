@@ -318,7 +318,6 @@ static int tca6424a_pin_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 
 static int tca6424a_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
-	struct tca6424a_drv_data *const drv_data = dev->data;
 	uint32_t buf;
 	int ret;
 
@@ -327,14 +326,11 @@ static int tca6424a_port_get_raw(const struct device *dev, gpio_port_value_t *va
 		return -EWOULDBLOCK;
 	}
 
-	k_sem_take(&drv_data->lock, K_FOREVER);
-
-	ret = update_input_regs(dev, &buf);
+	ret = read_port_regs(dev, TCA6424A_REG_INPUT, &buf);
 	if (ret == 0) {
 		*value = buf;
 	}
 
-	k_sem_give(&drv_data->lock);
 	return ret;
 }
 

@@ -28,8 +28,16 @@ edge-triggered effects.
    :goals: build
    :compact:
 
-For flashing the application, refer to the Flashing section of the :zephyr:board:`nucleo_f401re` board
-documentation.
+Alternatively, build the application for the :zephyr:board:`crd40l50` demonstration board.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/haptics/cs40l5x
+   :board: crd40l50
+   :goals: build
+   :compact:
+
+For flashing the application, refer to the Flashing sections of the :zephyr:board:`nucleo_f401re` or
+:zephyr:board:`crd40l50` board documentation.
 
 .. code-block:: none
 

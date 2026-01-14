@@ -8,7 +8,8 @@
 /dts-v1/;
 #include <arm/infineon/psoc4/mpns/cy8c4147azq_t495.dtsi>
 #include <arm/infineon/psoc4/psoc4100tp/system_clocks.dtsi>
-#include "cy8cproto_041tp-pinctrl.dtsi"
+
+#include "cy8cproto_041tp_common.dtsi"
 
 / {
 	model = "CY8CPROTO-041TP Development Board";
@@ -20,28 +21,34 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	aliases {
+		led0 = &led;
+		sw0 = &user_btn;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led: led {
+			label = "LED_0";
+			gpios = <&gpio_prt5 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_btn: button {
+			label = "SW_0";
+			gpios = <&gpio_prt5 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
 };
 
-uart0: &scb0 {
-	compatible = "infineon,uart";
+&clk_wco {
 	status = "okay";
-	current-speed = <115200>;
-	clocks = <&peri0_group0_16bit_0>;
-	pinctrl-0 = <&p5_2_scb0_uart_tx &p5_1_scb0_uart_rx>;
-	pinctrl-names = "default";
-};
-
-&peri0_group0_16bit_0 {
-	status = "okay";
-	resource-type = <IFX_RSC_SCB>;
-	resource-instance = <0>;
-	clock-div = <26>;
-};
-
-&hf_clk_sel {
-	status = "okay";
-};
-
-&clk_hf0 {
-	status = "okay";
+	clock-frequency = <32000>; /* 32 kHz */
 };

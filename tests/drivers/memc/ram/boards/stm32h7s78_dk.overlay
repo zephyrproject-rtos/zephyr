@@ -8,3 +8,11 @@
 	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	status = "okay";
 };
+
+&mac {
+	/*
+	 * mac is disabled for this test since the ethernet driver that gets
+	 * enabled by this node consumes the sram1 node thus failing this test
+	 */
+	status = "disabled";
+};

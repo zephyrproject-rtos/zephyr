@@ -101,7 +101,7 @@ struct _thread_base {
 	/* True for the per-CPU idle threads */
 	uint8_t is_idle;
 
-	/* CPU index on which thread was last run */
+	/* Identify CPU on which thread is (or was last) executing */
 	uint8_t cpu;
 
 	/* Recursive count of irq_lock() calls */

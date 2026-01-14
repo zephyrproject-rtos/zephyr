@@ -742,6 +742,50 @@
 			number-of-mb = <96>;
 			number-of-mb-fd = <21>;
 			interrupt-names = "ored", "ored_0_96_mb";
+		};
+
+		lpe_lpi2c: i2c@42178000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x42178000 0x4000>;
+			clocks = <&clock NXP_S32_LPE_LPI2C_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c0: i2c@400d4000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x400d4000 0x4000>;
+			clocks = <&clock NXP_S32_LPI2C0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@406bc000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x406bc000 0x4000>;
+			clocks = <&clock NXP_S32_LPI2C1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@406c0000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x406c0000 0x4000>;
+			clocks = <&clock NXP_S32_LPI2C2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c3: i2c@408b4000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x408b4000 0x4000>;
+			clocks = <&clock NXP_S32_LPI2C3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 

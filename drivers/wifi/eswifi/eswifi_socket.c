@@ -273,7 +273,7 @@ int __eswifi_listen(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to start set listen backlog");
-		err = -EIO;
+		return -EIO;
 	}
 
 	socket->is_server = true;

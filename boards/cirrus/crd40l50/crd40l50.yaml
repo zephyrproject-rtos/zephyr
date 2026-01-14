@@ -1,0 +1,14 @@
+identifier: crd40l50
+name: CRD40L50-POC-Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - rtc
+ram: 96
+flash: 384
+vendor: cirrus

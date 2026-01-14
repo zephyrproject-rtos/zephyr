@@ -111,6 +111,7 @@ manufacturer.
 	| 0x0001             | Intel Corporation                    |
 	| 0x0002             | Nordic Semiconductor                 |
 	| 0x0003             | NXP Semiconductors                   |
+	| 0x0004             | Espressif Systems                    |
 	| All other values   | Reserved for future use              |
 	+--------------------+--------------------------------------+
 

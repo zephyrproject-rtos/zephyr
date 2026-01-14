@@ -1610,6 +1610,8 @@ flagged.
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
         "TEST1",
+        "TFM_SPM_BACKEND_IPC",  # Used in TFM sample dummy partition - belongs to TFM
+        "TFM_SPM_BACKEND_SFN",  # Used in TFM sample dummy partition - belongs to TFM
         # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
         # It is used by MCUX SDK cmake functions to add content
         # based on current toolchain.

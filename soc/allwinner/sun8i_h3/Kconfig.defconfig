@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SUN8I_H3
+
+config NUM_IRQS
+	default 156
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+if SERIAL
+
+config UART_NS16550
+	default y
+
+config UART_NS16550_DW8250_DW_APB
+	default y
+
+config UART_NS16550_ACCESS_WORD_ONLY
+	default y
+
+endif # SERIAL
+
+endif

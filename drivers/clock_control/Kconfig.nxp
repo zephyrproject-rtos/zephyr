@@ -1,0 +1,84 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCUX_CCM
+	bool "MCUX CCM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_ENABLED
+	help
+	  Enable support for mcux ccm driver.
+
+config CLOCK_CONTROL_MCUX_CCM_REV2
+	bool "MCUX CCM Rev 2 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_REV2_ENABLED
+	help
+	  Enable support for mcux ccm rev 2 driver.
+
+config CLOCK_CONTROL_MCUX_MCG
+	bool "MCUX MCG driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_MCG_ENABLED
+	help
+	  Enable support for mcux mcg driver.
+
+config CLOCK_CONTROL_MCUX_PCC
+	bool "MCUX PCC driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_PCC_ENABLED
+	help
+	  Enable support for MCUX PCC driver.
+
+config CLOCK_CONTROL_MCUX_SCG
+	bool "MCUX SCG driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_SCG_ENABLED
+	help
+	  Enable support for mcux scg driver.
+
+config CLOCK_CONTROL_MCUX_SCG_K4
+	bool "MCUX driver for K4 Generation SCG"
+	default y
+	depends on DT_HAS_NXP_SCG_K4_ENABLED
+	help
+	  Enable support for SCG K4 driver
+
+config CLOCK_CONTROL_MCUX_SIM
+	bool "MCUX SIM driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_SIM_ENABLED
+	help
+	  Enable support for mcux sim driver.
+
+config CLOCK_CONTROL_MCUX_SYSCON
+	bool "MCUX LPC clock driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SYSCON_ENABLED
+	select PINCTRL
+	help
+	  Enable support for mcux clock driver.
+
+config CLOCK_CONTROL_NXP_MC_CGM
+	bool "NXP MC_CGM clock driver"
+	default y
+	depends on DT_HAS_NXP_MC_CGM_ENABLED
+	help
+	  Enable support for NXP MC_CGM clock driver.
+
+config CLOCK_CONTROL_NXP_S32
+	bool "NXP S32 clock control driver"
+	default y
+	depends on DT_HAS_NXP_S32_CLOCK_ENABLED
+	help
+	  Enable support for NXP S32 clock control driver.
+
+if CLOCK_CONTROL_NXP_S32
+
+config CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
+	int
+	default 0
+	help
+	  This option specifies the zero-based index of the clock configuration
+	  used to initialize the SoC clocks.
+
+endif # CLOCK_CONTROL_NXP_S32

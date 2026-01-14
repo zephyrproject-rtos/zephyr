@@ -435,6 +435,27 @@
 			misc-prop = <1234>;
 		};
 
+		test_reg_0: reg-holder-0@9999baaa {
+			compatible = "vnd,reg-holder-2";
+			reg = <0x9999baaa 0x1000 0xbbbbcccc 0x3f>;
+			status = "okay";
+			reg-names = "foo", "bar";
+		};
+
+		test_reg_1: reg-holder-1@9999caaa {
+			compatible = "vnd,reg-holder-2";
+			reg = <0x9999caaa 0x1000>;
+			status = "okay";
+			reg-names = "foo";
+		};
+
+		test_reg_2: reg-holder-2@9999daaa {
+			compatible = "vnd,reg-holder-2";
+			reg = <0x9999daaa 0x1000>;
+			status = "disabled";
+			reg-names = "baz";
+		};
+
 		test_vendor: vendor {
 			compatible = "vnd,model1", "gpio", "zephyr,model2";
 			status = "okay";

@@ -1,5 +1,6 @@
 board:
   name: rtl872xda_evb
+  full_name: RTL8721Dx Evaluation Board
   vendor: realtek
   socs:
     - name: rtl8721dx

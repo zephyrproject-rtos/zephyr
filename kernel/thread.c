@@ -890,6 +890,12 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 #ifdef CONFIG_SMP
 	thread_base->is_idle = 0;
+
+	/*
+	 * Pretend that the thread was last executing on CPU0 to prevent
+	 * out-of-bounds memory accesses to the _kernel.cpus[] array.
+	 */
+	thread_base->cpu = 0;
 #endif /* CONFIG_SMP */
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD

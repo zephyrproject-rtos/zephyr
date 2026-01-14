@@ -14,3 +14,7 @@ tests:
   drivers.display.build.bflb_dbi:
     platform_allow:
       - ai_m62_12f_kit
+
+  drivers.display.build.sf32lb_dbi:
+    platform_allow:
+      - sf32lb52_devkit_lcd

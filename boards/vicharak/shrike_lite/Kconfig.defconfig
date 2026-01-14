@@ -1,0 +1,19 @@
+# Shrike Lite board configuration
+#
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SHRIKE_LITE
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 125
+
+endif # I2C_DW
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_SHRIKE_LITE

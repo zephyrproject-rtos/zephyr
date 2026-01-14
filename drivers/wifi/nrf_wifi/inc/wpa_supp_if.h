@@ -123,8 +123,18 @@ int nrf_wifi_supp_get_conn_info(void *if_priv, struct wpa_conn_info *info);
 void nrf_wifi_supp_event_proc_get_conn_info(void *os_vif_ctx,
 					    struct nrf_wifi_umac_event_conn_info *info,
 					    unsigned int event_len);
+void nrf_wifi_supp_event_remain_on_channel(void *os_vif_ctx,
+					    struct nrf_wifi_event_remain_on_channel *info,
+					    unsigned int event_len);
+void nrf_wifi_supp_event_roc_cancel_complete(void *os_vif_ctx,
+					    struct nrf_wifi_event_remain_on_channel *info,
+					    unsigned int event_len);
 int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2);
 int nrf_wifi_supp_get_country(void *if_priv, char *alpha2);
+int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
+				     unsigned int duration, u64 host_cookie);
+int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv, u64 rpu_cookie);
+int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, int ctwindow);
 
 #endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_AP_MODE

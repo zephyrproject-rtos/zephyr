@@ -2,34 +2,50 @@
 
 .. espressif-openocd-debugging
 
-OpenOCD
-=======
+OpenOCD Debugging
+=================
 
-As with much custom hardware, the ESP32 modules require patches to
-OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD for ESP32`_.
+Espressif chips require a custom OpenOCD build with ESP32-specific patches.
+Download the latest release from `OpenOCD for ESP32`_.
 
-The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
-``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
-parameter when building.
+For detailed JTAG setup instructions, see `JTAG debugging for ESP32`_.
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32`_.
+Zephyr Thread Awareness
+-----------------------
 
-Here is an example for building the :zephyr:code-sample:`hello_world` application.
+OpenOCD supports Zephyr RTOS thread awareness, allowing GDB to:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: <board>
-   :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
+- List all threads with ``info threads``
+- Display thread names, priorities, and states
+- Switch between thread contexts
+- Show backtraces for any thread
 
-You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
+**Requirements:**
+
+- `OpenOCD ESP32 v0.12.0-esp32-20251215`_ or later
+- Build with ``CONFIG_DEBUG_THREAD_INFO=y``
+
+**Example:**
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: <board>
    :goals: debug
+   :gen-args: -DCONFIG_DEBUG_THREAD_INFO=y -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
+
+Using a Custom OpenOCD
+----------------------
+
+The Zephyr SDK includes a bundled OpenOCD, but it may not have ESP32 support.
+To use the Espressif OpenOCD, specify the path when building:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: <board>
+   :goals: debug
+   :gen-args: -DOPENOCD=/path/to/openocd -DOPENOCD_DEFAULT_PATH=/path/to/openocd/scripts
 
 
 .. _`OpenOCD for ESP32`: https://github.com/espressif/openocd-esp32/releases
+.. _`OpenOCD ESP32 v0.12.0-esp32-20251215`: https://github.com/espressif/openocd-esp32/releases/tag/v0.12.0-esp32-20251215
 .. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html

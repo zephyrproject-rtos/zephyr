@@ -156,13 +156,7 @@ static void spi_renesas_ra_sci_b_retransmit(struct spi_renesas_ra_sci_b_data *da
 {
 	fsp_err_t fsp_err;
 
-	if (data->ctx.rx_len == 0) {
-		data->data_len = data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
-		data->data_len = data->ctx.rx_len;
-	} else {
-		data->data_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
-	}
+	data->data_len = spi_context_max_continuous_chunk(&data->ctx);
 
 	if (data->ctx.rx_buf == NULL) {
 		fsp_err = R_SCI_B_SPI_Write(&data->fsp_ctrl, data->ctx.tx_buf, data->data_len,

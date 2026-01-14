@@ -344,7 +344,7 @@ static void client_release_resources(struct http_client_ctx *client)
 
 			populate_request_ctx(&request_ctx, NULL, 0, NULL);
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, &request_ctx,
+			dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_ABORTED, &request_ctx,
 					   &response_ctx, dynamic_detail->user_data);
 		}
 	}
@@ -909,9 +909,9 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	return 0;
 }
 
-bool http_response_is_final(struct http_response_ctx *rsp, enum http_data_status status)
+bool http_response_is_final(struct http_response_ctx *rsp, enum http_transaction_status status)
 {
-	if (status != HTTP_SERVER_DATA_FINAL) {
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
 		return false;
 	}
 

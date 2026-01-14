@@ -686,6 +686,25 @@ const struct dai_properties *dai_dmic_get_properties(const struct device *dev,
 	return prop;
 }
 
+static int dai_dmic_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_dmic_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 			    enum dai_trigger_cmd cmd)
 {
@@ -857,6 +876,7 @@ DEVICE_API(dai, dai_dmic_ops) = {
 	.config_set		= dai_dmic_set_config,
 	.config_get		= dai_dmic_get_config,
 	.get_properties		= dai_dmic_get_properties,
+	.get_properties_copy	= dai_dmic_get_properties_copy,
 	.trigger		= dai_dmic_trigger,
 	.ts_config		= dai_dmic_timestamp_config,
 	.ts_start		= dai_timestamp_dmic_start,

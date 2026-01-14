@@ -27,6 +27,8 @@ Build System
   C standard version.  If your toolchain does not support this standard you will
   need to use one of the existing and now deprecated options:
   :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
+* The ``full_name`` property of ``board``/``boards`` entries corresponding to new boards in
+  board.yml files is now required.
 
 Kernel
 ******
@@ -67,6 +69,12 @@ ADC
   the reference voltage should use ``ADC_REF_VDD_1`` instead of ``ADC_REF_INTERNAL``. This driver
   update also corrects this issue, so users also need to update the value of this property in the
   devicetree accordingly. (:github:`100978`)
+
+* :dtcompatible:`st,stm32-adc` no longer has the ``resolutions`` property. It is replaced by the
+  ``st,adc-resolutions`` property. For STM32H7 devices in revision Y, it is no longer needed to
+  replace the 14 and 12-bit resolution values. This change may have an impact on power consumption
+  if 14 or 12-bit resolutions are used. Previously, power-optimized values were used, now the
+  standard values (not power-optimized but better accuracy) are used. No impact on other series.
 
 Controller Area Network (CAN)
 =============================
@@ -229,6 +237,44 @@ Counter
            resolution = <16>;
        };
 
+* The NXP i.MX GPT counter driver (:dtcompatible:`nxp,imx-gpt`) now
+  defaults to ``run-mode = "restart"`` instead of the previous hardcoded free-run behavior.
+
+  * **Previous behavior** (Zephyr ≤ 4.3): GPT counter always ran in free-run mode
+    (``enableFreeRun = true``). The counter continued counting without reset on compare events.
+
+  * **New behavior** (Zephyr ≥ 4.4): GPT counter defaults to restart mode unless explicitly
+    configured. A new ``run-mode`` devicetree property controls the behavior:
+
+    * ``"restart"`` (default): Counter resets to 0 when reaching Compare Channel 1 value
+    * ``"free-run"``: Counter continues counting without reset (previous behavior)
+
+  **Migration Required**: Out-of-tree boards and applications using GPT counters must add
+  ``run-mode = "free-run";`` to their devicetree nodes to preserve the previous behavior.
+
+  .. code-block:: devicetree
+
+     /* Out-of-tree boards: add this to preserve previous behavior */
+     gpt2: gpt@400f0000 {
+         compatible = "nxp,imx-gpt";
+         /* Explicitly restore Zephyr ≤4.3 behavior */
+         run-mode = "free-run";
+         /* ... other properties ... */
+     };
+
+  .. warning::
+
+     The driver uses Compare Channel 1 for Zephyr counter alarm functionality. When using
+     ``run-mode = "restart"``, setting alarms will cause the counter to reset at the alarm
+     compare point. If your application relies on alarms and continuous counting, you must
+     use ``run-mode = "free-run"``.
+
+  .. note::
+
+     This change standardizes NXP counter driver run mode configuration.
+     GPT now uses explicit devicetree properties rather than hardcoded values, allowing
+     per-instance customization.
+
 EEPROM
 ======
 
@@ -261,15 +307,20 @@ Ethernet
 * Driver MAC address configuration support using :c:struct:`net_eth_mac_config` has been introduced
   for the following drivers:
 
-  * :zephyr_file:`drivers/ethernet/eth_test.c` (:github:`96598`)
-
-  * :zephyr_file:`drivers/ethernet/eth_sam_gmac.c` (:github:`96598`)
+  * :dtcompatible:`atmel,sam-gmac` and :dtcompatible:`atmel,sam0-gmac` (:github:`96598`)
 
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM``
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS``
     * Removed ``CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE``
-    * Removed ``mac-eeprom`` property from :dtcompatible:`atmel,sam-gmac` and
-      :dtcompatible:`atmel,sam0-gmac`
+    * Removed ``mac-eeprom`` property
+
+  * :dtcompatible:`litex,liteeth` (:github:`100620`)
+  * :dtcompatible:`microchip,lan865x` (:github:`100318`)
+  * :dtcompatible:`microchip,lan9250` (:github:`99127`)
+  * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
+  * :dtcompatible:`virtio,net` (:github:`100106`)
+  * :dtcompatible:`vnd,ethernet` (:github:`96598`)
+  * :dtcompatible:`wiznet,w5500` (:github:`100919`)
 
 * The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
   the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
@@ -279,6 +330,14 @@ Ethernet
 * The ``reset-gpios`` property of :dtcompatible:`microchip,ksz8081` has been
   reworked to be used as active low, you may have to set the pin as
   ``GPIO_ACTIVE_LOW`` in devicetree (:github:`100751`).
+
+GPIO
+====
+
+* The LiteX GPIO driver :dtcompatible:`litex,gpio` has been reworked to support changing direction.
+  The driver now uses the reg-names property to detect supported modes of the GPIO controller.
+  The Devicetree property ``port-is-output`` has been removed.
+  The reg-names are now taken directly from LiteX. (:github:`99329`)
 
 Infineon
 ========
@@ -445,6 +504,9 @@ Video
   :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE` which represent the
   size in byte allocated for the whole video buffer pool.
 
+* The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
+  active level compared to before, to match the active level expected by the sensor.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
@@ -496,6 +558,23 @@ Networking
   code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
   code calling a network API.
 
+* The enum for HTTP server transaction status has been renamed from ``http_data_status``
+  to ``http_transaction_status`` to better reflect its purpose. The enum values have also been
+  renamed as follows:
+
+  - ``HTTP_SERVER_DATA_ABORTED`` → ``HTTP_SERVER_TRANSACTION_ABORTED``
+  - ``HTTP_SERVER_DATA_MORE`` → ``HTTP_SERVER_REQUEST_DATA_MORE``
+  - ``HTTP_SERVER_DATA_FINAL`` → ``HTTP_SERVER_REQUEST_DATA_FINAL``
+
+  The handler callback type for dynamic resources has been updated accordingly to use the new enum
+  and its renamed values. Applications using dynamic HTTP resources must update their handler
+  callbacks to use the new enum and handle the renamed values.
+
+* The HTTP server now reports for dynamic resources the ``HTTP_SERVER_TRANSACTION_COMPLETE``
+  status when the response has been sent completely to the client. Applications should now also
+  handle this status in the handler callback to properly reset resource state after successful
+  response transmission.
+
 Modem
 *****
 
@@ -517,6 +596,8 @@ Modem HL78XX
 
 Other subsystems
 ****************
+* The DAP subsystem initialization and configuration has changed. Please take a look at
+  :zephyr:code-sample:`cmsis-dap` sample on how to initialize Zephyr DAP Link with USB backend.
 
 * Cache
 
@@ -543,6 +624,14 @@ Tracing
   doubles the space used for event IDs but allows 65,535 events instead of 255.
 
   With this change, existing CTF traces with 8-bit IDs won't be compatible.
+
+Serial
+========
+
+* pl011 UART driver: Remove Read Status Register (RSR) error handling
+  from :c:func:`pl011_poll_in`. RSR handling is already implemented in
+  :c:func:`pl011_err_check`, which is the appropriate place to detect,
+  and report receive error conditions. (:github:`101715`)
 
 Settings
 ========

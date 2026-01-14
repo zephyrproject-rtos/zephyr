@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SUN8I_H3
+	bool
+
+config SOC
+	default "sun8i_h3" if SOC_SUN8I_H3

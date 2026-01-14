@@ -86,12 +86,16 @@ const size_t _kernel_thread_info_offsets[] = {
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.thread_status),
 #elif defined(CONFIG_XTENSA)
-	/* Xtensa does not store stack pointers inside thread objects.
-	 * The registers are saved in thread stack where there is
-	 * no fixed location for this to work. So mark this as
-	 * unimplemented to avoid the #warning below.
-	 */
+/* Xtensa does not store stack pointers inside thread objects.
+ * The registers are saved in thread stack where there is
+ * no fixed location for this to work. It needs arch_switch in
+ * order to work on Xtensa.
+ */
+#ifdef CONFIG_USE_SWITCH
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread, switch_handle),
+#else
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
+#endif
 #elif defined(CONFIG_RX)
 	/* RX doesn't store *anything* inside thread objects yet */
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
@@ -149,7 +153,7 @@ const size_t _kernel_thread_info_offsets[] = {
 };
 
 extern const size_t __attribute__((alias("_kernel_thread_info_offsets")))
-		_kernel_openocd_offsets;
+		_kernel_openocd_offsets[ARRAY_SIZE(_kernel_thread_info_offsets)];
 
 __attribute__((used, section(".dbg_thread_info")))
 const size_t _kernel_thread_info_num_offsets = ARRAY_SIZE(_kernel_thread_info_offsets);

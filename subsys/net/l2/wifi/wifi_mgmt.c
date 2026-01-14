@@ -1474,6 +1474,35 @@ static int wifi_set_bgscan(uint64_t mgmt_request, struct net_if *iface, void *da
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN, wifi_set_bgscan);
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static int wifi_p2p_oper(uint64_t mgmt_request, struct net_if *iface,
+		    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_p2p_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->p2p_oper == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (data == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->p2p_oper(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER, wifi_p2p_oper);
+
+void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
+					     struct wifi_p2p_device_info *peer_info)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_P2P_DEVICE_FOUND,
+					iface, peer_info,
+					sizeof(*peer_info));
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,

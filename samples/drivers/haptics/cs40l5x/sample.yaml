@@ -6,3 +6,4 @@ tests:
     tags: haptics
     platform_allow:
       - nucleo_f401re
+      - crd40l50

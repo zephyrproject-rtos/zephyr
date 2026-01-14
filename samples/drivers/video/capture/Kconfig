@@ -58,6 +58,13 @@ config VIDEO_CTRL_VFLIP
 	help
 	  If set, mirror the video frame vertically
 
+config VIDEO_SHELL_AND_CAPTURE
+	bool "Capture video even if the video shell is enabled"
+	depends on VIDEO_SHELL
+	default n
+	help
+	  If set, the video capture is enabled even if the video shell is also enabled.
+
 endmenu
 
 source "Kconfig.zephyr"

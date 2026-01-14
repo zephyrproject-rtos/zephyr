@@ -74,7 +74,8 @@ void hl78xx_on_wdsi(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH("OK", "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL));
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
 /* clang-format off */
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
 			  MODEM_CHAT_MATCH("+KSUP: ", "", hl78xx_on_ksup),
@@ -185,7 +186,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 );
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_post_restart_chat_script, hl78xx_post_restart_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 1000);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 12);
 
 /* init_fail_script moved from hl78xx.c */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(init_fail_script_cmds,
@@ -250,17 +251,16 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_
  * definitions.
  */
 MODEM_CHAT_MATCHES_DEFINE(connect_matches, MODEM_CHAT_MATCH(CONNECT_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL));
-MODEM_CHAT_MATCH_DEFINE(kudpind_match, "+KUDP_IND: ", ",", hl78xx_on_kudpsocket_create);
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(kudpind_allow_match,
+			  MODEM_CHAT_MATCH("+KUDP_IND: ", ",", hl78xx_on_kudpsocket_create),
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCH_DEFINE(ktcpind_match, "+KTCP_IND: ", ",", hl78xx_on_ktcpind);
 MODEM_CHAT_MATCH_DEFINE(ktcpcfg_match, "+KTCPCFG: ", "", hl78xx_on_ktcpsocket_create);
 MODEM_CHAT_MATCH_DEFINE(cgdcontrdp_match, "+CGCONTRDP: ", ",", hl78xx_on_cgdcontrdp);
 MODEM_CHAT_MATCH_DEFINE(ktcp_state_match, "+KTCPSTAT: ", ",", NULL);
-
-const struct modem_chat_match *hl78xx_get_sockets_ok_match(void)
-{
-	return &hl78xx_ok_match;
-}
 
 const struct modem_chat_match *hl78xx_get_connect_matches(void)
 {
@@ -284,7 +284,12 @@ size_t hl78xx_get_sockets_allow_matches_size(void)
 
 const struct modem_chat_match *hl78xx_get_kudpind_match(void)
 {
-	return &kudpind_match;
+	return kudpind_allow_match;
+}
+
+size_t hl78xx_get_kudpind_allow_matches_size(void)
+{
+	return (size_t)ARRAY_SIZE(kudpind_allow_match);
 }
 
 const struct modem_chat_match *hl78xx_get_ktcpind_match(void)
@@ -320,6 +325,8 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
+	} else if (result == MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) {
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
 	} else {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 	}
@@ -329,6 +336,11 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 const struct modem_chat_match *hl78xx_get_ok_match(void)
 {
 	return &hl78xx_ok_match;
+}
+
+size_t hl78xx_get_ok_match_size(void)
+{
+	return 1;
 }
 
 const struct modem_chat_match *hl78xx_get_abort_matches(void)

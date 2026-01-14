@@ -17,4 +17,11 @@ config WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP
 
 endif # WIFI_AIROC
 
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 150
+
+endif # I2C_DW
+
 endif # BOARD_RPI_PICO2

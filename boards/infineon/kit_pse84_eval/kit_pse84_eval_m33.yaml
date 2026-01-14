@@ -8,6 +8,7 @@ name: PSOC Edge84 Evaluation Kit (M33_S)
 type: mcu
 arch: arm
 sysbuild: true
+ram: 5120
 toolchain:
   - zephyr
 supported:

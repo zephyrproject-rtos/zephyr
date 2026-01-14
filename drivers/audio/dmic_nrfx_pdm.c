@@ -340,16 +340,14 @@ static int start_transfer(struct dmic_nrfx_pdm_drv_data *drv_data)
 	}
 
 	LOG_ERR("Failed to start PDM: %d", err);
-	ret =  -EIO;
 
 	ret = release_clock(drv_data);
 	if (ret < 0) {
 		LOG_ERR("Failed to release clock: %d", ret);
-		return ret;
 	}
 
 	drv_data->active = false;
-	return ret;
+	return -EIO;
 }
 
 static void clock_started_callback(struct onoff_manager *mgr,

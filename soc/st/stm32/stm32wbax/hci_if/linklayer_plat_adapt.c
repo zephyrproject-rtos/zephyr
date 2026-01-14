@@ -125,6 +125,15 @@ void link_layer_register_isr(bool force)
 	irq_enable(RADIO_SW_LOW_INTR_NUM);
 }
 
+void link_layer_disable_isr(void)
+{
+	irq_disable(RADIO_INTR_NUM);
+
+	irq_disable(RADIO_SW_LOW_INTR_NUM);
+
+	local_basepri_value = __get_BASEPRI();
+	__set_BASEPRI_MAX(RADIO_INTR_PRIO_LOW_Z << 4);
+}
 
 void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
 {

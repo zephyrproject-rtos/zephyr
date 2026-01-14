@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_NXP_MCUX_I3C := nxp,mcux-i3c
-
 module = I3C_MCUX
 module-str = i3c-mcux
 source "subsys/logging/Kconfig.template.log_config"

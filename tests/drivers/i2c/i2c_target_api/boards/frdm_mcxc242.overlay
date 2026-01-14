@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Maximilian Werner <maximilian.werner96@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXC242VLH-pinctrl.h>
+
+&pinctrl {
+	pinmux_i2c0: pinmux_i2c0 {
+		group0 {
+			pinmux = <I2C0_SCL_PTB0>,
+				 <I2C0_SDA_PTB1>;
+			drive-strength = "low";
+			drive-open-drain;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_i2c1: pinmux_i2c1 {
+		group0 {
+			pinmux = <I2C1_SCL_PTD7>,
+				 <I2C1_SDA_PTD6>;
+			drive-strength = "low";
+			drive-open-drain;
+			slew-rate = "fast";
+		};
+	};
+};
+
+/* To test this sample, connect
+ * I2C0 SCL(J4-12, PTB0) --> I2C1 SCL(J2-20, PTD7)
+ * I2C0 SDA(J4-10, PTB1) --> I2C1 SDA(J2-18, PTD6)
+ */
+&i2c0 {
+	pinctrl-0 = <&pinmux_i2c0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&pinmux_i2c1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

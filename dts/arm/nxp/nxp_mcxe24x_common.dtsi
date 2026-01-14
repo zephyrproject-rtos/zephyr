@@ -291,7 +291,7 @@
 					  "mb-0-15", "mb-16-31";
 
 			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
-			clk-source = <0>;
+			clk-source = <1>;
 			status = "disabled";
 		};
 
@@ -301,7 +301,7 @@
 			interrupts = <85 0>, <86 0>, <88 0>, <89 0>;
 			interrupt-names = "ored-warning-bus-off", "error", "mb-0-15", "mb-16-31";
 			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
-			clk-source = <0>;
+			clk-source = <1>;
 			status = "disabled";
 		};
 
@@ -311,7 +311,7 @@
 			interrupts = <92 0>, <93 0>, <95 0>, <96 0>;
 			interrupt-names = "ored-warning-bus-off", "error", "mb-0-15", "mb-16-31";
 			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
-			clk-source = <0>;
+			clk-source = <1>;
 			status = "disabled";
 		};
 

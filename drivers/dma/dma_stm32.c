@@ -91,6 +91,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 	uint32_t callback_arg;
+	int status;
 
 	__ASSERT_NO_MSG(id < config->max_streams);
 
@@ -117,10 +118,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_ht(dma, id);
 		}
-		if (stream->dma_callback != NULL) {
-			stream->dma_callback(dev, stream->user_data, callback_arg,
-					     DMA_STATUS_BLOCK);
-		}
+		status = DMA_STATUS_BLOCK;
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
 		/* Circular buffer never stops receiving as long as peripheral is enabled */
 		if (!stream->cyclic) {
@@ -130,10 +128,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
 		}
-		if (stream->dma_callback != NULL) {
-			stream->dma_callback(dev, stream->user_data, callback_arg,
-					     DMA_STATUS_COMPLETE);
-		}
+		status = DMA_STATUS_COMPLETE;
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
@@ -141,9 +136,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			stm32_dma_dump_stream_irq(dma, id);
 			stm32_dma_clear_stream_irq(dma, id);
 		}
-		if (stream->dma_callback != NULL) {
-			stream->dma_callback(dev, stream->user_data, callback_arg, -EIO);
-		}
+		status = -EIO;
 	} else {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
@@ -152,9 +145,11 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			dma_stm32_dump_stream_irq(dev, id);
 			dma_stm32_clear_stream_irq(dev, id);
 		}
-		if (stream->dma_callback != NULL) {
-			stream->dma_callback(dev, stream->user_data, callback_arg, -EIO);
-		}
+		status = -EIO;
+	}
+
+	if (stream->dma_callback != NULL) {
+		stream->dma_callback(dev, stream->user_data, callback_arg, status);
 	}
 }
 
@@ -395,16 +390,23 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		LOG_WRN("dest_buffer address is null.");
 	}
 
+	int source_index = find_lsb_set(config->source_data_size) - 1;
+	int dest_index = find_lsb_set(config->dest_data_size) - 1;
+
 	if (stream->direction == MEMORY_TO_PERIPHERAL) {
 		DMA_InitStruct.MemoryOrM2MDstAddress =
 					config->head_block->source_address;
 		DMA_InitStruct.PeriphOrM2MSrcAddress =
 					config->head_block->dest_address;
+		DMA_InitStruct.MemoryOrM2MDstDataSize = table_m_size[source_index];
+		DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[dest_index];
 	} else {
 		DMA_InitStruct.PeriphOrM2MSrcAddress =
 					config->head_block->source_address;
 		DMA_InitStruct.MemoryOrM2MDstAddress =
 					config->head_block->dest_address;
+		DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[source_index];
+		DMA_InitStruct.MemoryOrM2MDstDataSize = table_m_size[dest_index];
 	}
 
 	uint16_t memory_addr_adj = 0, periph_addr_adj = 0;
@@ -463,12 +465,6 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
-
-	/* set the data widths */
-	int index = find_lsb_set(config->source_data_size) - 1;
-	DMA_InitStruct.PeriphOrM2MSrcDataSize = table_p_size[index];
-	index = find_lsb_set(config->dest_data_size) - 1;
-	DMA_InitStruct.MemoryOrM2MDstDataSize = table_m_size[index];
 
 #if defined(CONFIG_DMA_STM32_V1)
 	DMA_InitStruct.MemBurst = stm32_dma_get_mburst(config,

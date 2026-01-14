@@ -19,7 +19,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		slot0_partition: parition@10000 {
+		slot0_partition: partition@10000 {
 			reg = <0x00010000 DT_SIZE_K(300)>;
 		};
 

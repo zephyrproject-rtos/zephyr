@@ -608,7 +608,7 @@ static int rtc_ds3231_get_alarm_states(const struct device *dev, bool *states)
 static int rtc_ds3231_alarm_set_callback(const struct device *dev, uint16_t id,
 					 rtc_alarm_callback cb, void *user_data)
 {
-	if (id < 0 || id >= ALARM_COUNT) {
+	if (id >= ALARM_COUNT) {
 		return -EINVAL;
 	}
 

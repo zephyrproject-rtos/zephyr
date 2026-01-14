@@ -55,6 +55,7 @@
 	};
 
 	aliases {
+		codec0 = &audcodec;
 		led0 = &led0;
 		sw0 = &key1;
 		sw1 = &key2;
@@ -141,6 +142,14 @@
 	current-speed = <1000000>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+};
+
+&audcodec {
+	dmas = <&dmac 1 SF32LB52X_DMA_REQ_AUDAC_CH0 SF32LB_DMA_PL_HIGH>,
+	       <&dmac 4 SF32LB52X_DMA_REQ_AUDADC_CH0 SF32LB_DMA_PL_HIGH>;
+	dma-names = "tx", "rx";
+	pa-power-gpios = <&gpioa_00_31 10 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };
 
 &wdt {

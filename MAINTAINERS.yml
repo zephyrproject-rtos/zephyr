@@ -486,7 +486,8 @@ Bluetooth Classic:
     - makeshi
     - chengkai15
   files:
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
+    - doc/connectivity/bluetooth/api/classic/
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -584,13 +585,15 @@ Bluetooth Host:
     - include/zephyr/bluetooth/iso.h
     - include/zephyr/bluetooth/controller.h
     - include/zephyr/bluetooth/mesh.h
+    - include/zephyr/bluetooth/sbc.h
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/autopts/
     - doc/connectivity/bluetooth/img/ctlr*
     - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/api/classic/
     - doc/connectivity/bluetooth/api/mesh/
     - doc/connectivity/bluetooth/api/controller.rst
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
@@ -606,6 +609,7 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
+    - subsys/bluetooth/lib/sbc.c
     - tests/bluetooth/audio/
     - tests/bluetooth/classic/
     - tests/bluetooth/controller/
@@ -1320,6 +1324,7 @@ Documentation Infrastructure:
   files:
     - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
+    - boards/shields/mikroe_can_fd_6_click/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
     - doc/hardware/peripherals/can/
@@ -1832,6 +1837,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - teburd
+  collaborators:
+    - maass-hamburg
   files:
     - drivers/i2c/
     - include/zephyr/drivers/i2c/
@@ -1849,11 +1856,10 @@ Documentation Infrastructure:
     - drivers.i2c
 
 "Drivers: I2S":
-  status: maintained
-  maintainers:
-    - anangl
+  status: odd fixes
   collaborators:
     - TomasBarakNXP
+    - anangl
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -3371,6 +3377,7 @@ Microchip MEC Platforms:
   status: maintained
   maintainers:
     - jvasanth1
+    - scottwcpg
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -4463,6 +4470,9 @@ Release:
 Release Notes:
   status: maintained
   maintainers:
+    - MaureenHelm
+    - stephanosio
+  collaborators:
     - kartben
   files:
     - doc/releases/migration-guide-*
@@ -4679,6 +4689,8 @@ Safety:
   maintainers:
     - tobiaskaestner
     - parphane
+  collaborators:
+    - jkey-eng
   files:
     - doc/safety/
   labels:
@@ -4833,6 +4845,7 @@ SiFli SF32LB Platforms:
   collaborators:
     - cameled
     - ck-telecom
+    - HalfSweet
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
@@ -6016,6 +6029,8 @@ West:
     - MarkWangChinese
   files:
     - modules/libsbc/
+    - include/zephyr/bluetooth/sbc.h
+    - subsys/bluetooth/lib/sbc.c
   labels:
     - "area: Audio"
 
@@ -6355,6 +6370,7 @@ Xilinx Platforms:
     - henrikbrixandersen
     - ibirnbaum
     - kedareswararao
+    - neeliajay
   files:
     - boards/amd/
     - drivers/*/*xilinx*

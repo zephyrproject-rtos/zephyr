@@ -347,8 +347,8 @@ int main(void)
 	unsigned int frame = 0;
 	int ret;
 
-	/* When the video shell is enabled, do not run the capture loop */
-	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
+	/* When the video shell is enabled, do not run the capture loop unless requested */
+	if (IS_ENABLED(CONFIG_VIDEO_SHELL) && !IS_ENABLED(CONFIG_VIDEO_SHELL_AND_CAPTURE)) {
 		LOG_INF("Letting the user control the device with the video shell");
 		return 0;
 	}
@@ -398,6 +398,8 @@ int main(void)
 
 	LOG_INF("Capture started");
 
+	uint32_t last_ts = 0;
+
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
 		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
@@ -406,8 +408,9 @@ int main(void)
 			goto err;
 		}
 
-		LOG_INF("Got frame %u! size: %u; timestamp %u ms",
-			frame++, vbuf->bytesused, vbuf->timestamp);
+		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)",
+			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp-last_ts);
+		last_ts = vbuf->timestamp;
 
 		if (DT_HAS_CHOSEN(zephyr_display)) {
 			ret = app_display_frame(display_dev, vbuf, &fmt);

@@ -1098,7 +1098,7 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 	static canfd_afl_entry_t canfd_afl##index[DT_INST_PROP(index, rx_max_filters)];            \
 	struct can_renesas_ra_filter                                                               \
 		can_renesas_ra_rx_filter##index[DT_INST_PROP(index, rx_max_filters)];              \
-	static void can_renesas_ra_irq_configure##inst(void)                                       \
+	static void can_renesas_ra_irq_configure##index(void)                                      \
 	{                                                                                          \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, rx, irq)].IELS =                         \
 			EVENT_CAN_COMFRX(DT_INST_PROP(index, channel));                            \
@@ -1135,7 +1135,7 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 				.stop_bit = DT_INST_CLOCKS_CELL_BY_NAME(index, dllclk, stop_bit),  \
 			},                                                                         \
 		.rx_filter_num = DT_INST_PROP(index, rx_max_filters),                              \
-		.irq_configure = can_renesas_ra_irq_configure##inst,                               \
+		.irq_configure = can_renesas_ra_irq_configure##index,                              \
 	};                                                                                         \
 	static struct can_renesas_ra_data can_renesas_ra_data##index = {                           \
 		.fsp_can =                                                                         \

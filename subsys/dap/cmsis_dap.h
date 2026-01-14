@@ -19,7 +19,8 @@
 #ifndef ZEPHYR_INCLUDE_CMSIS_DAP_H_
 #define ZEPHYR_INCLUDE_CMSIS_DAP_H_
 
-#include <zephyr/kernel.h>
+#include <stdint.h>
+#include <zephyr/dap/dap_link.h>
 
 /* Firmware Version */
 #define DAP_FW_VER				"2.1.0"
@@ -129,9 +130,7 @@
 #define DAP_MBMSG_FROM_IFACE			0x1U
 #define DAP_MBMSG_FROM_CONTROLLER		0x2U
 
-/* Keep it internal until an other interface has been implemented. */
-int dap_setup(const struct device *const dev);
-uint32_t dap_execute_cmd(const uint8_t *request, uint8_t *response);
-void dap_update_pkt_size(const uint16_t pkt_size);
+uint32_t dap_link_execute_cmd(struct dap_link_context *const dap_link_ctx,
+			      const uint8_t *request, uint8_t *response);
 
 #endif	/* ZEPHYR_INCLUDE_CMSIS_DAP_H_ */

@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "mesh.h"
+#include "keys.h"
 #include "net.h"
 #include "settings.h"
 #include "brg_cfg.h"

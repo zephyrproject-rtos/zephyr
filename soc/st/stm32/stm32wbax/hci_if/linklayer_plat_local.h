@@ -14,4 +14,9 @@
  */
 void link_layer_register_isr(bool force);
 
+/*
+ * @brief  Link Layer related ISR disable
+ */
+void link_layer_disable_isr(void);
+
 #endif /* _STM32WBA_LINK_LAYER_PLAT_LOCAL_H_ */

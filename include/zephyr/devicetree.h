@@ -5217,6 +5217,25 @@
 	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_BOOL_STATUS_OKAY_, prop))
 
 /**
+ * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
+ *        register name.
+ *
+ * @param name lowercase-and-underscores register name
+ */
+#define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(name)						\
+	UTIL_NOT(IS_EMPTY(									\
+		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY_, name)))
+
+/**
+ * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
+ *        register name. If all nodes are disabled, this will return 1.
+ *
+ * @param name lowercase-and-underscores register name
+ */
+#define DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(name) \
+	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY_, name))
+
+/**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
  *        and status `okay`
  *
@@ -5514,6 +5533,21 @@
 #define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
 	IF_ENABLED(DT_INST_PROP(inst, prop), (1,))
 
+/** @brief Helper for DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p inst, if instance has named register
+ * @p name.
+ *
+ * @param inst instance number
+ * @param name register name to check for
+ *
+ * @return Macro evaluates to `1,` if instance register name exists,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY_(inst, name)	\
+	IF_ENABLED(DT_INST_REG_HAS_NAME(inst, name), (1,))
+
 /** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
@@ -5542,6 +5576,21 @@
  */
 #define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
 	IF_DISABLED(DT_INST_PROP(inst, prop), (1,))
+
+/** @brief Helper for DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p inst, if instance has no named register
+ * @p name.
+ *
+ * @param inst instance number
+ * @param name register name to check for
+ *
+ * @return Macro evaluates to `1,` if instance register name exists,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY_(inst, name)	\
+	IF_DISABLED(DT_INST_REG_HAS_NAME(inst, name), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
