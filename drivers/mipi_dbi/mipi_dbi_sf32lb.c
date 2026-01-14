@@ -228,12 +228,11 @@ static int mipi_dbi_sf32lb_spi_config(const struct device *dev,
 	const struct dbi_sf32lb_config *config = dev->config;
 	const struct spi_config *spi_config = &dbi_config->config;
 	uint8_t bus_type = dbi_config->mode & 0xFU;
-	uint8_t color_format = dbi_config->mode & 0xF0U;
 	uint32_t spi_if_conf = 0;
 	uint32_t clk_div;
 	uint32_t lcdc_clk;
 	uint32_t freq = dbi_config->config.frequency;
-	uint32_t lcd_conf = sys_read32(config->base + LCD_CONF);
+	int ret;
 
 	sys_clear_bits(config->base + LCD_SPI_IF_CONF, LCD_IF_SPI_IF_CONF_CLK_DIV);
 
@@ -285,6 +284,7 @@ static int mipi_dbi_sf32lb_configure(const struct device *dev,
 	uint8_t bus_type = dbi_config->mode & 0xFU;
 	uint32_t lcd_conf;
 	uint32_t lcd_if_conf;
+	int ret;
 
 	if (dbi_config == data->active_config) {
 		return 0;
@@ -310,7 +310,6 @@ static int mipi_dbi_sf32lb_configure(const struct device *dev,
 	case MIPI_DBI_MODE_SPI_3WIRE:
 	case MIPI_DBI_MODE_SPI_4WIRE:
 		lcd_conf |= FIELD_PREP(LCD_IF_LCD_CONF_LCD_INTF_SEL_Msk, LCD_INTF_SEL_SPI);
-		lcd_conf |= FIELD_PREP(LCD_IF_LCD_CONF_TARGET_LCD_Msk, 1U);
 		ret = mipi_dbi_sf32lb_spi_config(dev, dbi_config);
 		if (ret < 0) {
 			return ret;
