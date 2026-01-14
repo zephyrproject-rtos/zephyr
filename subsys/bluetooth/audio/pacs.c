@@ -18,6 +18,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
@@ -885,24 +886,32 @@ int bt_pacs_register(const struct bt_pacs_register_param *param)
 	__ASSERT_NO_MSG(pacs.supported_ctx_attr != NULL);
 #endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 #if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
-	pacs.snk_pac_attr =
-		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SNK);
-	__ASSERT_NO_MSG(pacs.snk_pac_attr != NULL);
+	if (param->snk_pac) {
+		pacs.snk_pac_attr =
+			bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SNK);
+		__ASSERT_NO_MSG(pacs.snk_pac_attr != NULL);
+	}
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 #if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
-	pacs.snk_pac_loc_attr =
-		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SNK_LOC);
-	__ASSERT_NO_MSG(pacs.snk_pac_loc_attr != NULL);
+	if (param->snk_loc) {
+		pacs.snk_pac_loc_attr = bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count,
+							     BT_UUID_PACS_SNK_LOC);
+		__ASSERT_NO_MSG(pacs.snk_pac_loc_attr != NULL);
+	}
 #endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
 #if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
-	pacs.src_pac_attr =
-		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SRC);
-	__ASSERT_NO_MSG(pacs.src_pac_attr != NULL);
+	if (param->src_pac) {
+		pacs.src_pac_attr =
+			bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SRC);
+		__ASSERT_NO_MSG(pacs.src_pac_attr != NULL);
+	}
 #endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 #if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
-	pacs.src_pac_loc_attr =
-		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SRC_LOC);
-	__ASSERT_NO_MSG(pacs.src_pac_loc_attr != NULL);
+	if (param->src_loc) {
+		pacs.src_pac_loc_attr = bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count,
+							     BT_UUID_PACS_SRC_LOC);
+		__ASSERT_NO_MSG(pacs.src_pac_loc_attr != NULL);
+	}
 #endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
 	return 0;
@@ -940,6 +949,23 @@ int bt_pacs_unregister(void)
 	/* Restore to original definition */
 	memcpy(pacs_svc.attrs, &_pacs_attrs, sizeof(_pacs_attrs));
 	pacs_svc.attr_count = ARRAY_SIZE(pacs_attrs);
+
+	pacs.available_ctx_attr = NULL;
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
+	pacs.supported_ctx_attr = NULL;
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+	pacs.snk_pac_attr = NULL;
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+	pacs.snk_pac_loc_attr = NULL;
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+	pacs.src_pac_attr = NULL;
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+	pacs.src_pac_loc_attr = NULL;
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
 	atomic_clear_bit(pacs.flags, PACS_FLAG_REGISTERED);
 	atomic_clear_bit(pacs.flags, PACS_FLAG_SVC_CHANGING);
