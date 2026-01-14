@@ -28,6 +28,18 @@ static int test_file_open(void)
 	return TC_PASS;
 }
 
+static int test_file_fdopen(void)
+{
+	FILE *fp = fdopen(file, "r+");
+
+	if (fp == NULL) {
+		TC_ERROR("Failed associating file descriptor %d with file, errno=%d\n", file,
+			 errno);
+		__ASSERT_NO_MSG(fp != NULL);
+	}
+	return TC_PASS;
+}
+
 int test_file_write(void)
 {
 	ssize_t brw;
@@ -195,6 +207,17 @@ ZTEST(posix_fs_file_test, test_fs_open)
 {
 	/* FIXME: restructure tests as per #46897 */
 	zassert_true(test_file_open() == TC_PASS);
+}
+
+/**
+ * @brief Test for POSIX fdopen API
+ *
+ * @details Test converts POSIX file descriptor to C FILE pointer.
+ */
+ZTEST(posix_fs_file_test, test_fs_fdopen)
+{
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_fdopen() == TC_PASS);
 }
 
 /**
