@@ -116,8 +116,7 @@ static int scmi_send_message_polling(struct scmi_protocol *proto,
 	int status;
 
 	/* wait for channel to be free */
-	ret = k_mutex_lock(&proto->tx->lock, K_NO_WAIT);
-	if (ret < 0) {
+	if (!k_is_pre_kernel() && k_mutex_lock(&proto->tx->lock, K_NO_WAIT)) {
 		LOG_ERR("failed to acquire chan lock");
 		return -EBUSY;
 	}
@@ -159,7 +158,9 @@ cleanup:
 		scmi_interrupt_enable(proto->tx, true);
 	}
 
-	k_mutex_unlock(&proto->tx->lock);
+	if (!k_is_pre_kernel()) {
+		k_mutex_unlock(&proto->tx->lock);
+	}
 
 	return ret;
 }
