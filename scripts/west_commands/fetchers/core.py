@@ -21,5 +21,5 @@ class ZephyrBlobFetcher(ABC):
         '''Return this fetcher's schemes.'''
 
     @abstractmethod
-    def fetch(self, west_command: WestCommand, url: str, path: Path):
+    def fetch(self, west_command: WestCommand, blob: dict, path: Path):
         ''' Fetch a blob and store it '''
