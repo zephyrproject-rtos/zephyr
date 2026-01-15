@@ -17,8 +17,8 @@ static uint8_t buf[512];
 int main(void)
 {
 	int ret;
-	uint32_t flash_size, target_id;
-	uint32_t addr, len;
+	uint32_t flash_size, chip_id;
+	uint32_t offset;
 
 	ret = device_is_ready(esp);
 	if (ret == 0) {
@@ -34,39 +34,48 @@ int main(void)
 	}
 	printk("ESP device connected\n");
 
-	ret = esp_tool_get_target(esp, &target_id);
+	ret = esp_tool_get_target(esp, &chip_id);
 	if (ret) {
 		printk("Target detection failed!\n");
 		return -1;
 	}
-	printk("Target id %x\n", target_id);
+	printk("Target chip id is %x\n", chip_id);
 
 	ret = esp_tool_flash_detect_size(esp, &flash_size);
 	if (ret) {
 		printk("Could not detected flash size");
 		return -1;
 	}
-	printk("Detected flash size %d\n", flash_size);
+	printk("Detected flash size is %d MB (%d Bytes)\n", flash_size/1024/1024, flash_size);
 
-//	while (1) {
-//		esp_tool_flash_write(esp_dev, tmp, 0x1000);
-//	}
-//	esp_tool_flash_finish(esp_dev, 0);
+	if (esp_tool_get_boot_offset(esp, chip_id, &offset)) {
+		printk("boot offset failed\n");
+		return -1;
+	}
+	printk("Target chip boot offset is 0x%x\n", offset);
 
-	ret = esp_tool_flash_read(esp, 0x0, buf, sizeof(buf));
+	ret = esp_tool_flash_read(esp, offset, buf, sizeof(buf));
 	if (ret) {
 		printk("flash read ret=%d\n", ret);
+		return -1;
 	}
 
 	hexdump("0x0", buf, sizeof(buf));
 
-//	esp_tool_flash_erase(esp_dev);
+	if (buf[0] == 0xe9) {
+		printk("Boot vector installed");
+	} else {
+		printk("Target chip not bootable!");
+	}
 
-//	esp_tool_flash_erase_region(esp_dev, offset, size);
+	printk("Resetting target...");
 
-//	esp_tool_tr_rate(esp_dev, old, new);
-//	esp_tool_tr_rate_stub(esp_dev, old, new);
-//	esp_tool_get_security_info(esp_dev, old, new);
+	ret = esp_tool_reset_target(esp);
+	if (ret) {
+		printk("Target reset failed\n");
+		return -1;
+	}
+	printk("OK\n\n");
 
 	return 0;
 }
