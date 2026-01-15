@@ -321,6 +321,8 @@ int esp_tool_get_security_info(const struct device *dev);
  */
 int esp_tool_connect_secure_download_mode(const struct device *dev);
 
+int esp_tool_get_boot_offset(const struct device *dev, int chip, uint32_t *off);
+
 /** @} */
 
 #ifdef __cplusplus
