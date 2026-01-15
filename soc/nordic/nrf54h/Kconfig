@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF54HX
+config SOC_SERIES_NRF54H
 	select HAS_IRONSIDE_SE
 	select HAS_NRFS
 	select HAS_NRFX

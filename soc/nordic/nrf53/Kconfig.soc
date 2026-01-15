@@ -18,11 +18,11 @@ config SOC_SERIES
 
 config SOC_NRF5340_CPUAPP
 	bool
-	select SOC_SERIES_NRF53X
+	select SOC_SERIES_NRF53
 
 config SOC_NRF5340_CPUNET
 	bool
-	select SOC_SERIES_NRF53X
+	select SOC_SERIES_NRF53
 
 config SOC_NRF5340_CPUAPP_QKAA
 	bool

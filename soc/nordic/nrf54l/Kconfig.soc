@@ -18,7 +18,7 @@ config SOC_SERIES
 
 config SOC_NRF54L05
 	bool
-	select SOC_SERIES_NRF54LX
+	select SOC_SERIES_NRF54L
 	help
 	  NRF54L05
 
@@ -36,7 +36,7 @@ config SOC_NRF54L05_CPUFLPR
 
 config SOC_NRF54L10
 	bool
-	select SOC_SERIES_NRF54LX
+	select SOC_SERIES_NRF54L
 	help
 	  NRF54L10
 
@@ -54,7 +54,7 @@ config SOC_NRF54L10_CPUFLPR
 
 config SOC_NRF54L15
 	bool
-	select SOC_SERIES_NRF54LX
+	select SOC_SERIES_NRF54L
 	help
 	  NRF54L15
 
@@ -72,7 +72,7 @@ config SOC_NRF54L15_CPUFLPR
 
 config SOC_NRF54LM20A
 	bool
-	select SOC_SERIES_NRF54LX
+	select SOC_SERIES_NRF54L
 	help
 	  NRF54LM20A
 

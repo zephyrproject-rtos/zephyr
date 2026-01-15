@@ -18,31 +18,31 @@ config SOC_SERIES
 
 config SOC_NRF52805
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52810
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52811
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52820
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52832
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52833
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52840
 	bool
-	select SOC_SERIES_NRF52X
+	select SOC_SERIES_NRF52
 
 config SOC_NRF52805_CAAA
 	bool
