@@ -61,7 +61,7 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	17
 #define ISR5_OFFSET	18
 #define TRIG_CHECK_SIZE	19
-#elif defined(CONFIG_SOC_ANDES_AE350_CLIC)
+#elif defined(CONFIG_SOC_AE350_INTERRUPT_TYPE_CLIC)
 #define ISR1_OFFSET	19
 #define ISR3_OFFSET	20
 #define ISR5_OFFSET	21
