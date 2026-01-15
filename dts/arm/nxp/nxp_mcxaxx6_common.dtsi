@@ -554,6 +554,28 @@
 			compatible = "nxp,vbat";
 			reg = <0x40093000 0x1000>;
 		};
+
+		flexcan0: can@400cc000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x400cc000 0x1000>;
+			interrupts = <19 0>;
+			interrupt-names = "common";
+			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
+			status = "disabled";
+		};
+
+		flexcan1: can@400d0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x400d0000 0x1000>;
+			interrupts = <20 0>;
+			interrupt-names = "common";
+			clocks = <&syscon MCUX_FLEXCAN1_CLK>;
+			number-of-mb = <32>;
+			number-of-mb-fd = <7>;
+			status = "disabled";
+		};
 	};
 };
 
