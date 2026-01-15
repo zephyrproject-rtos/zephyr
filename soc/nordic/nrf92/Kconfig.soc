@@ -33,7 +33,7 @@ config SOC_SERIES
 
 config SOC_NRF9230_ENGB
 	bool
-	select SOC_SERIES_NRF92X
+	select SOC_SERIES_NRF92
 
 config SOC_NRF9230_ENGB_CPUAPP
 	bool

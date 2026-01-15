@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF53X
+config SOC_SERIES_NRF53
 	bool
 	select ARM
 	select SOC_COMPATIBLE_NRF53X
@@ -38,7 +38,7 @@ config SOC_NRF5340_CPUNET
 	imply SOC_NRF53_RTC_PRETICK if !WDT_NRFX
 	imply SOC_NRF53_ANOMALY_168_WORKAROUND
 
-if SOC_SERIES_NRF53X
+if SOC_SERIES_NRF53
 
 VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
 VREGRADIO_PATH := $(dt_nodelabel_path,vregradio)
@@ -292,4 +292,4 @@ config BUILD_WITH_TFM
 
 rsource "Kconfig.sync_rtc"
 
-endif # SOC_SERIES_NRF53X
+endif # SOC_SERIES_NRF53

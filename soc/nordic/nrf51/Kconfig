@@ -4,7 +4,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF51X
+config SOC_SERIES_NRF51
 	select ARM
 	select CPU_CORTEX_M0
 	imply XIP

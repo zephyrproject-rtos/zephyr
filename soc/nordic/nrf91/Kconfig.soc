@@ -18,7 +18,7 @@ config SOC_SERIES
 
 config SOC_NRF9120
 	bool
-	select SOC_SERIES_NRF91X
+	select SOC_SERIES_NRF91
 
 config SOC_NRF9131_LACA
 	bool
@@ -30,7 +30,7 @@ config SOC_NRF9151_LACA
 
 config SOC_NRF9160
 	bool
-	select SOC_SERIES_NRF91X
+	select SOC_SERIES_NRF91
 
 config SOC_NRF9160_SICA
 	bool

@@ -18,7 +18,7 @@ config SOC_SERIES
 
 config SOC_NRF54H20
 	bool
-	select SOC_SERIES_NRF54HX
+	select SOC_SERIES_NRF54H
 	help
 	  nRF54H20
 
