@@ -82,7 +82,7 @@ class Sdk(WestCommand):
                 Run 'west sdk install' to install Zephyr SDK.
 
                 Set --version option to install a specific version of the SDK.
-                If not specified, the install version is detected from "${ZEPHYR_BASE}/SDK_VERSION file.
+                If not specified, the install version is detected from ${ZEPHYR_BASE}/SDK_VERSION file.
                 SDKs older than 0.14.1 are not supported.
 
                 You can specify the installation directory with --install-dir or --install-base.
@@ -128,7 +128,7 @@ class Sdk(WestCommand):
             metavar="BASE",
             help="Base directory to SDK install. "
             "The subdirectory created by extracting the archive in <BASE> will be the SDK installation directory. "
-            "For example, -b /foo/bar will install the SDK in `/foo/bar/zephyr-sdk-<version>'."
+            "For example, -b /foo/bar will install the SDK in '/foo/bar/zephyr-sdk-<version>'."
         )
         install_args_parser.add_argument(
             "-d",
@@ -156,7 +156,7 @@ class Sdk(WestCommand):
             help="toolchain(s) to install (e.g. 'arm-zephyr-eabi'). "
             "If this option is not given, toolchains for all architectures will be installed. "
             "If you are unsure which one to install, install all toolchains. "
-            "This requires downloading several gigabytes and the corresponding disk space."
+            "This requires downloading several gigabytes and occupies significant disk space. "
             "Each Zephyr SDK release may include different toolchains; "
             "see the release notes at https://github.com/zephyrproject-rtos/sdk-ng/releases.",
         )
