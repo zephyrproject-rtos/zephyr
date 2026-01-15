@@ -48,7 +48,7 @@
 	pinctrl-names = "default";
 
 	eastrising_72x40: ssd1306@3c {
-		compatible = "solomon,ssd1306fb";
+		compatible = "solomon,ssd1306";
 		reg = <0x3c>;
 
 		width = <72>;

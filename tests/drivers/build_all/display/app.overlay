@@ -643,7 +643,7 @@
 			};
 
 			test_ssd1306: ssd1306@1 {
-				compatible = "solomon,ssd1306fb";
+				compatible = "solomon,ssd1306";
 				reg = <0x1>;
 				width = <128>;
 				height = <64>;
