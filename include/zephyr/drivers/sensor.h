@@ -59,6 +59,12 @@ struct sensor_value {
 	int32_t val2;
 };
 
+enum sensor_stuff_with_incomplete_doc {
+	SENSOR_STUFF_WITH_INCOMPLETE_DOC,
+	SENSOR_STUFF_WITH_INCOMPLETE_DOC_TOO,
+	SENSOR_STUFF_THAT_IS_OK, /**< this one is ok! */
+};
+
 /**
  * @brief Sensor channels.
  */
