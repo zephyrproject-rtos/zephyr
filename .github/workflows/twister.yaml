@@ -68,7 +68,7 @@ jobs:
         uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
         with:
           app-path: zephyr
-          toolchains: all
+          toolchains: 'arm-zephyr-eabi'
 
       - name: Environment Setup
         working-directory: zephyr
