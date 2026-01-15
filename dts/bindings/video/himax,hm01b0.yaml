@@ -33,6 +33,16 @@ properties:
       Camera output data width. 1/4/8 bits.
       The default output data width value is 1, pixel value is serialised.
     enum: [1, 4, 8]
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset. The sensor receives this as an active-low signal.
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to power down the sensor. The sensor
+      receives this as an active high signal
 
 include: i2c-device.yaml
 
