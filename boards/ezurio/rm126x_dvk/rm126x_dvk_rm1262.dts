@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/efr32bg22c224f512im40.dtsi>
+#include "rm126x_dvk.dtsi"
+#include "rm126x_dvk_rm1262.dtsi"
+
+/ {
+	model = "Ezurio RM1262 DVK";
+	compatible = "ezurio,rm126x_dvk_rm1262", "silabs,efr32bg22";
+};
