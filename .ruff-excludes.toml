@@ -147,9 +147,6 @@
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
     "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
-"./scripts/dts/gen_driver_kconfig_dts.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/dts/gen_dts_cmake.py" = [
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
 ]
@@ -905,7 +902,6 @@ exclude = [
     "./scripts/check_maintainers.py",
     "./scripts/ci/upload_test_results_es.py",
     "./scripts/dts/gen_defines.py",
-    "./scripts/dts/gen_driver_kconfig_dts.py",
     "./scripts/dts/gen_dts_cmake.py",
     "./scripts/dts/gen_edt.py",
     "./scripts/dts/python-devicetree/src/devicetree/_private.py",
