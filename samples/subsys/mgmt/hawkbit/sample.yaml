@@ -32,9 +32,8 @@ tests:
       - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
       - CONFIG_HAWKBIT_DDI_NO_SECURITY=y
   sample.net.hawkbit.tls:
-    extra_configs:
-      - CONFIG_HAWKBIT_USE_TLS=y
-      - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-tls.conf"
   sample.net.hawkbit.set_settings_runtime:
     extra_configs:
       - CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME=y
