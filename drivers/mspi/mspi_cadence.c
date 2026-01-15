@@ -283,6 +283,13 @@ static int mspi_cadence_init(const struct device *dev)
 	/* Disable loop-back via DQS */
 	MSPI_CADENCE_REG_WRITE(1, RD_DATA_CAPTURE, BYPASS, base_addr);
 
+	/* Data outputs from flash memory are sampled on falling edge of the reference clock */
+	MSPI_CADENCE_REG_WRITE(0, RD_DATA_CAPTURE, SAMPLE_EDGE_SEL, base_addr);
+
+	/* Configure read delay */
+	MSPI_CADENCE_REG_WRITE(0, RD_DATA_CAPTURE, DELAY, base_addr);
+
+
 	/* Disable auto polling for write completion */
 	MSPI_CADENCE_REG_WRITE(1, WRITE_COMPLETION_CTRL, DISABLE_POLLING, base_addr);
 
@@ -907,6 +914,20 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 	.register_callback = NULL,
 	.transceive = mspi_cadence_transceive,
 };
+
+int mspi_cadence_configure_read_delay(const struct device *controller, uint8_t read_delay)
+{
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+
+	if (read_delay >= (1 << CADENCE_MSPI_RD_DATA_CAPTURE_DELAY_FLD_SIZE)) {
+		LOG_ERR("read delay is too big");
+		return -EINVAL;
+	}
+
+	MSPI_CADENCE_REG_WRITE(read_delay, RD_DATA_CAPTURE, DELAY, base_addr);
+
+	return 0;
+}
 
 #define CADENCE_CHECK_MULTIPERIPHERAL(n)                                                           \
 	BUILD_ASSERT(DT_PROP_OR(DT_DRV_INST(n), software_multiperipheral, 0) == 0,                 \
