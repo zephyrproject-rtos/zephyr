@@ -10,7 +10,7 @@ menuconfig WIFI_NRF70
 	select NET_L2_WIFI_MGMT if NETWORKING
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select WIFI_USE_NATIVE_NETWORKING if NETWORKING
-	select EXPERIMENTAL if !SOC_SERIES_NRF53X && !SOC_SERIES_NRF91X
+	select EXPERIMENTAL if !SOC_SERIES_NRF53 && !SOC_SERIES_NRF91
 	select NRF70_BUSLIB
 	default y
 	depends on \
@@ -933,7 +933,7 @@ config NRF_WIFI_ZERO_COPY_TX
 	select NET_L2_ETHERNET_RESERVE_HEADER
 	select EXPERIMENTAL
 	# 54L has lower RAM
-	default y if SOC_SERIES_NRF54LX
+	default y if SOC_SERIES_NRF54L
 	help
 	  Enable this configuration to use zero copy Transmit path.
 	  The driver will use the network buffer directly for transmission

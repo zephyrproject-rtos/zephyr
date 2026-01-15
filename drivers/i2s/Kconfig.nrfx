@@ -22,7 +22,7 @@ config I2S_NRFX_TX_BLOCK_COUNT
 
 config I2S_NRFX_ALLOW_MCK_BYPASS
 	bool "Allow MCK bypass if a ratio exists"
-	depends on SOC_SERIES_NRF53X
+	depends on SOC_SERIES_NRF53
 	help
 	  Search for a supported ratio directly from MCK and LRCK
 	  and enable bypass if a ratio exists. If not, fallback to

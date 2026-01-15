@@ -80,7 +80,7 @@ endif # MODEM_HL78XX_AT_SHELL
 
 menuconfig MODEM_HL78XX_AUTO_BAUDRATE
 	bool "Auto Baud Rate Detection and Switching"
-	select UART_USE_RUNTIME_CONFIGURE if SOC_SERIES_NRF52X
+	select UART_USE_RUNTIME_CONFIGURE if SOC_SERIES_NRF52
 	help
 	  Enable automatic baud rate detection and switching for the HL78xx modem.
 	  The driver will attempt to detect the modem's current baud rate and
