@@ -580,6 +580,10 @@ _handle_tlb_miss_dblexc:
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
 
+	/* Restore EXCCAUSE and a0 values */
+	rsr a0, ZSR_EXCCAUSE_SAVE
+	wsr.exccause a0
+
 	rsr a0, ZSR_DBLEXC
 	rfde
 #endif
