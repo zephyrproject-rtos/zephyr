@@ -317,6 +317,9 @@ static int mspi_cadence_init(const struct device *dev)
 	/* Re-enable MSPI controller */
 	MSPI_CADENCE_REG_WRITE(1, CONFIG, ENABLE_SPI, base_addr);
 
+	/* Reset the STIG register for first time use */
+	sys_write32(0, base_addr + CADENCE_MSPI_FLASH_CMD_CTRL_REG);
+
 	return 0;
 }
 
