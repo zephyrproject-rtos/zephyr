@@ -27,14 +27,6 @@ struct flash_mspi_nor_quirks {
 	int (*post_switch_mode)(const struct device *dev);
 };
 
-/* Extend this macro when adding new flash chip with quirks */
-#define FLASH_MSPI_QUIRKS_GET(node)						\
-	COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25r, okay),		\
-		    (&flash_quirks_mxicy_mx25r),				\
-	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25u, okay),	\
-		    (&flash_quirks_mxicy_mx25u),				\
-		    (NULL))))
-
 #if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25r)
 
 #define MXICY_MX25R_LH_MASK BIT(1)
@@ -217,5 +209,19 @@ struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
 };
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u) */
+
+#ifdef CONFIG_FLASH_MSPI_INFINEON_S28HX512T
+#include "flash_mspi_nor_quirks_infineon_s28hx512t.h"
+#endif /* CONFIG_FLASH_MSPI_INFINEON_S28HX512T */
+
+/* Extend this macro when adding new flash chip with quirks */
+#define FLASH_MSPI_QUIRKS_GET(node)						\
+	COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25r, okay),		\
+		    (&flash_quirks_mxicy_mx25r),				\
+	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25u, okay),	\
+		    (&flash_quirks_mxicy_mx25u),				\
+	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, infineon_s28hx512t, okay), \
+		    (FLASH_QUIRKS_INFINEON_S28HX512T(node)),                    \
+		    (NULL))))))
 
 #endif /*__FLASH_MSPI_NOR_QUIRKS_H__*/
