@@ -315,10 +315,14 @@ static int mspi_cadence_init(const struct device *dev)
 	sys_write32(indirect_trigger_addr_range,
 		    base_addr + CADENCE_MSPI_INDIRECT_TRIGGER_ADDR_RANGE_OFFSET);
 
-	/* Disable loop-back via DQS */
 	uint32_t rd_data_capture = sys_read32(base_addr + CADENCE_MSPI_RD_DATA_CAPTURE_OFFSET);
 
+	/* Disable loop-back via DQS */
 	rd_data_capture |= CADENCE_MSPI_RD_DATA_CAPTURE_REG_BYPASS_BIT;
+	/* Set initial read delay to 0 */
+	rd_data_capture &= ~CADENCE_MSPI_RD_DATA_CAPTURE_REG_DELAY_MASK;
+	/* Data outputs from flash memory are sampled on falling edge of the reference clock */
+	rd_data_capture &= ~CADENCE_MSPI_RD_DATA_CAPTURE_REG_SAMPLE_EDGE_SEL_BIT;
 
 	sys_write32(rd_data_capture, base_addr + CADENCE_MSPI_RD_DATA_CAPTURE_OFFSET);
 
@@ -1130,12 +1134,58 @@ static int mspi_cadence_get_channel_status(const struct device *controller, uint
 	return 0;
 }
 
+#ifdef CONFIG_MSPI_TIMING
+static int mspi_cadence_timing_config(const struct device *controller,
+				      const struct mspi_dev_id *dev_id, const uint32_t param_mask,
+				      void *timing_cfg)
+{
+	ARG_UNUSED(dev_id);
+
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+	struct mspi_cadence_data *data = controller->data;
+	struct mspi_cadence_timing_cfg *timing = timing_cfg;
+	int ret = 0;
+
+	/* Ensure no transfers in the meantime */
+	ret = k_sem_take(&data->transfer_lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE));
+	if (ret < 0) {
+		LOG_ERR("Error waiting for MSPI controller lock for changing timing");
+		return ret;
+	}
+
+	if (dev_id != data->current_peripheral) {
+		LOG_ERR("Tried chaning timing for another peripheral than the one the access lock "
+			"is held for");
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	if (param_mask & MSPI_CADENCE_TIMING_PARAM_RD_DELAY) {
+		uint32_t rd_data_capture =
+			sys_read32(base_addr + CADENCE_MSPI_RD_DATA_CAPTURE_OFFSET);
+		rd_data_capture &= ~CADENCE_MSPI_RD_DATA_CAPTURE_REG_DELAY_MASK;
+		rd_data_capture |=
+			FIELD_PREP(CADENCE_MSPI_RD_DATA_CAPTURE_REG_DELAY_MASK, timing->rd_delay);
+		sys_write32(rd_data_capture, base_addr + CADENCE_MSPI_RD_DATA_CAPTURE_OFFSET);
+	}
+
+exit:
+	k_sem_give(&data->transfer_lock);
+
+	return ret;
+}
+#endif /* CONFIG_MSPI_TIMING */
+
 static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 	.config = NULL,
 	.dev_config = mspi_cadence_dev_config,
 	.xip_config = NULL,
 	.scramble_config = NULL,
+#ifdef CONFIG_MSPI_TIMING
+	.timing_config = mspi_cadence_timing_config,
+#else
 	.timing_config = NULL,
+#endif
 	.get_channel_status = mspi_cadence_get_channel_status,
 	.register_callback = NULL,
 	.transceive = mspi_cadence_transceive,
