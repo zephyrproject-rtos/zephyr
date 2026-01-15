@@ -14,7 +14,8 @@ class HTTPFetcher(ZephyrBlobFetcher):
     def schemes(cls):
         return ['http', 'https']
 
-    def fetch(self, west_command, url, path):
+    def fetch(self, west_command, blob, path):
+        url = blob['url']
         west_command.dbg(f'HTTPFetcher fetching {url} to {path}')
         try:
             resp = requests.get(url)
