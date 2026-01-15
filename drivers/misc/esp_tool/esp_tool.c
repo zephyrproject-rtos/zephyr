@@ -70,6 +70,27 @@ struct esp_tool_data {
 	uint32_t current_baudrate;
 };
 
+/* Only boot addresses vary by chip
+ * DO NOT specify array size - let compiler determine it from initializers
+ */
+static const uint32_t boot_offset[] = {
+    [ESP8266_CHIP] = 0x0,
+    [ESP32_CHIP]   = 0x1000,
+    [ESP32S2_CHIP] = 0x1000,
+    [ESP32C3_CHIP] = 0x0,
+    [ESP32S3_CHIP] = 0x0,
+    [ESP32C2_CHIP] = 0x0,
+    [ESP32C5_CHIP] = 0x2000,
+    [ESP32H2_CHIP] = 0x0,
+    [ESP32C6_CHIP] = 0x0,
+    [ESP32P4_CHIP] = 0x2000
+};
+
+/* If someone adds a new chip but forgets to update the array, compilation FAILS */
+_Static_assert(sizeof(boot_offset) / sizeof(boot_offset[0]) == ESP_MAX_CHIP,
+               "boot_offset array size mismatch! "
+               "If you added a new chip to target_chip_t, you MUST add its address to bootloader_addresses[]");
+
 #if 0
 static int esp_tool_tx(const struct device *dev,
                       const void *buf, size_t len)
@@ -378,12 +399,21 @@ int esp_tool_connect_with_stub(const struct device *dev)
 	return err;
 }
 
+int esp_tool_get_boot_offset(const struct device *dev, int chip, uint32_t *offset)
+{
+	if (offset == NULL || chip > ESP_MAX_CHIP) {
+		return -EINVAL;
+	}
+
+	*offset = boot_offset[chip];
+
+	return 0;
+}
+
 static int esp_tool_init(const struct device *dev)
 {
 	const struct esp_tool_config *cfg = dev->config;
 	struct esp_tool_data *data = dev->data;
-
-//	ets_printf("### %s ===\n", __func__);
 
 	if (!device_is_ready(cfg->uart)) {
 		return -ENODEV;

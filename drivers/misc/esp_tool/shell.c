@@ -18,7 +18,11 @@
 #include <zephyr/posix/unistd.h>
 #endif
 
-LOG_MODULE_REGISTER(app);
+LOG_MODULE_REGISTER(esp_shell);
+
+
+static const struct device *esp = DEVICE_DT_GET(DT_INST(0, espressif_esp_tool));
+
 #if 0
 extern void foo(void);
 
@@ -104,12 +108,81 @@ static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_esp_tool_connect(const struct shell *sh, size_t argc, char **argv)
+static int cmd_esp_connect(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "ESP connect...");
+	if (esp_tool_connect(esp)) {
+
+		shell_print(sh, "Connection failed");
+		return -1;
+	}
+	shell_print(sh, "ESP connected");
+
+	return 0;
+}
+
+static int cmd_esp_reset(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (esp_tool_reset_target(esp)) {
+
+		shell_print(sh, "Connection failed");
+		return -1;
+	}
+	shell_print(sh, "ESP connected");
+
+	return 0;
+}
+
+
+static int cmd_esp_target(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	int id;
+
+	if (esp_tool_get_target(esp, &id)) {
+
+		shell_print(sh, "Failed");
+		return -1;
+	}
+	shell_print(sh, "%x", id);
+
+	return 0;
+}
+
+//static int cmd_esp_boot_offset(const struct shell *sh, size_t argc, char **argv)
+//{
+//	ARG_UNUSED(argc);
+//	ARG_UNUSED(argv);
+//	int id;
+//
+//	if (esp_tool_get_boot_offset(esp, &id)) {
+//
+//		shell_print(sh, "Failed");
+//		return -1;
+//	}
+//	shell_print(sh, "%x", id);
+//
+//	return 0;
+//}
+
+static int cmd_esp_flash_size(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	uint32_t size;
+
+	if (esp_tool_flash_detect_size(esp, &size)) {
+
+		shell_print(sh, "Failed");
+		return -1;
+	}
+	shell_print(sh, "%d", size/1024/1024);
 
 	return 0;
 }
@@ -331,17 +404,30 @@ static int cmd_dict(const struct shell *sh, size_t argc, char **argv,
 }
 
 SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, cmd_dict,
-	(value_0, 0, "value 0"), (value_1, 1, "value 1"),
-	(value_2, 2, "value 2"), (value_3, 3, "value 3")
+	(value_0, 0, "value 0"),
+	(value_1, 1, "value 1"),
+	(value_2, 2, "value 2"),
+	(value_3, 3, "value 3")
 );
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_esp_tool,
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_esp,
 	SHELL_CMD(dictionary, &sub_dict_cmds, "Dictionary commands", NULL),
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
 	SHELL_CMD(board, NULL, "Show board name command.", cmd_demo_board),
-	SHELL_CMD(connect, NULL, "Connect to ESP target.", cmd_esp_tool_connect),
+	SHELL_CMD(connect, NULL, "Connect ESP target.", cmd_esp_connect),
+	SHELL_CMD(reset, NULL, "Reset ESP target.", cmd_esp_reset),
+	SHELL_CMD(target, NULL, "Reset ESP target.", cmd_esp_target),
+	SHELL_CMD(flash_size, NULL, "ESP flash size.", cmd_esp_flash_size),
+//	SHELL_CMD(boot_offset, NULL, "ESP flash size.", cmd_esp_boot_offset),
+//	SHELL_CMD(flash_read, NULL, "ESP flash size.", cmd_esp_flash_read),
+//	SHELL_CMD(flash_erase, NULL, "ESP flash size.", cmd_esp_flash_erase),
+//	SHELL_CMD(tr_rate, NULL, "ESP flash size.", cmd_esp_tr_rate),
+//	SHELL_CMD(mac_read, NULL, "ESP flash size.", cmd_esp_mac_read),
+//	SHELL_CMD(reg_read, NULL, "ESP flash size.", cmd_esp_reg_read),
+//	SHELL_CMD(mem_read, NULL, "ESP flash size.", cmd_esp_mem_read),
+
 #if defined CONFIG_SHELL_GETOPT
 	SHELL_CMD(getopt_thread_safe, NULL,
 		  "Cammand using getopt in thread safe way"
@@ -352,54 +438,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_esp_tool,
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
-SHELL_CMD_REGISTER(esp_tool, &sub_esp_tool, "ESP-tool commands", NULL);
+
+SHELL_CMD_REGISTER(esp, &sub_esp, "ESP(tool) commands", NULL);
 
 SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 SHELL_CMD_ARG_REGISTER(bypass, NULL, "Bypass shell", cmd_bypass, 1, 0);
-
-#if 0
-/* Create a set of commands. Commands to this set are added using @ref SHELL_SUBCMD_ADD
- * and @ref SHELL_SUBCMD_COND_ADD.
- */
-SHELL_SUBCMD_SET_CREATE(sub_section_cmd, (section_cmd));
-
-static int cmd1_handler(const struct shell *sh, size_t argc, char **argv)
-{
-	ARG_UNUSED(sh);
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	shell_print(sh, "cmd1 executed");
-
-	return 0;
-}
-
-/* Create a set of subcommands for "section_cmd cm1". */
-SHELL_SUBCMD_SET_CREATE(sub_section_cmd1, (section_cmd, cmd1));
-
-/* Add command to the set. Subcommand set is identify by parent shell command. */
-SHELL_SUBCMD_ADD((section_cmd), cmd1, &sub_section_cmd1, "help for cmd1", cmd1_handler, 1, 0);
-
-SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
-		   "Demo command using section for subcommand registration", NULL);
-
-int main(void)
-{
-#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
-	const struct device *dev;
-	uint32_t dtr = 0;
-
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
-	if (!device_is_ready(dev)) {
-		return 0;
-	}
-
-	while (!dtr) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-		k_sleep(K_MSEC(100));
-	}
-#endif
-	return 0;
-}
-#endif
