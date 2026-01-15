@@ -48,7 +48,7 @@ jobs:
       uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
       with:
         app-path: zephyr
-        toolchains: all
+        toolchains: 'arm-zephyr-eabi:riscv64-zephyr-elf:x86_64-zephyr-elf'
         enable-ccache: false
         west-group-filter: -tools,-bootloader,-babblesim,-hal
         west-project-filter: -nrf_hw_models,+cmsis,+hal_xtensa,+cmsis_6
