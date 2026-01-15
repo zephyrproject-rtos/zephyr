@@ -390,14 +390,17 @@ static int lan9250_configure(const struct device *dev)
 	/* Configure HMAC control:
 	 *
 	 *   - Automatically strip the pad field on incoming packets
+	 *   - Full duplex
 	 *   - TX enable
 	 *   - RX enable
-	 *   - Full duplex
+	 *   - Pass all multicast frames
+	 *   - Hash filtering disabled
 	 *   - Promiscuous disabled
 	 */
 	lan9250_write_mac_reg(dev, LAN9250_HMAC_CR,
-			      LAN9250_HMAC_CR_PADSTR | LAN9250_HMAC_CR_TXEN | LAN9250_HMAC_CR_RXEN |
-			      LAN9250_HMAC_CR_FDPX);
+			      LAN9250_HMAC_CR_PADSTR | LAN9250_HMAC_CR_FDPX |
+			      LAN9250_HMAC_CR_TXEN | LAN9250_HMAC_CR_RXEN |
+			      LAN9250_HMAC_CR_MCPAS);
 
 	/* Configure TX:
 	 *
@@ -620,7 +623,11 @@ static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		| ETHERNET_PROMISC_MODE
+#endif
+	;
 }
 
 static void lan9250_iface_init(struct net_if *iface)
@@ -641,11 +648,53 @@ static int lan9250_set_config(const struct device *dev, enum ethernet_config_typ
 {
 	struct lan9250_runtime *ctx = dev->data;
 
-	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		memcpy(ctx->mac_address, config->mac_address.addr, sizeof(ctx->mac_address));
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(ctx->mac_address, config->mac_address.addr,
+		       sizeof(ctx->mac_address));
 		lan9250_set_macaddr(dev);
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
+
+		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+			dev->name,
+			ctx->mac_address[0], ctx->mac_address[1],
+			ctx->mac_address[2], ctx->mac_address[3],
+			ctx->mac_address[4], ctx->mac_address[5]);
+
+		/* register the new mac address with the upper layer */
+		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
+					    sizeof(ctx->mac_address),
 					    NET_LINK_ETHERNET);
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
+			uint32_t reg;
+
+			lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &reg);
+
+			/* See Table 11-1 from the LAN9250 data sheet */
+			if (config->promisc_mode) {
+				if ((reg & LAN9250_HMAC_CR_PRMS) != 0) {
+					return -EALREADY;
+				}
+
+				reg &= ~LAN9250_HMAC_CR_MCPAS;
+				reg |= LAN9250_HMAC_CR_PRMS;
+				reg &= ~LAN9250_HMAC_CR_HO;
+			} else {
+				if ((reg & LAN9250_HMAC_CR_PRMS) == 0) {
+					return -EALREADY;
+				}
+
+				reg |= LAN9250_HMAC_CR_MCPAS;
+				reg &= ~LAN9250_HMAC_CR_PRMS;
+				reg &= ~LAN9250_HMAC_CR_HO;
+			}
+
+			return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, reg);
+		}
+
+		break;
+	default:
+		break;
 	}
 
 	return -ENOTSUP;
