@@ -726,13 +726,10 @@ _not_triple_fault:
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 
-	/* Save registers needed for handling the exception as
-	 * these registers can be overwritten during nested
+	/* Save register needed for handling the exception as
+	 * this register can be overwritten during nested
 	 * exceptions.
 	 */
-	rsr.exccause a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
-
 	rsr.excvaddr a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_excvaddr_OFFSET
 
