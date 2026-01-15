@@ -8,9 +8,9 @@
 
 &flash {
 	partitions {
-		small_partition: partition@E0000 {
+		small_partition: partition@e0000 {
 			label = "small";
-			reg = <0x000E0000 DT_SIZE_K(128)>;
+			reg = <0x000e0000 DT_SIZE_K(128)>;
 		};
 	};
 };

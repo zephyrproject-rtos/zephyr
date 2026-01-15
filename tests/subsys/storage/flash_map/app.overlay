@@ -33,7 +33,7 @@
 
 				disabled_a_b: partition@100 {
 					label = "disabled_a_b";
-					reg = <0x00000100 0xF00>;
+					reg = <0x00000100 0xf00>;
 				};
 			};
 
@@ -52,7 +52,7 @@
 
 				disabled_b_b: partition@100 {
 					label = "disabled_b_b";
-					reg = <0x00000100 0xF00>;
+					reg = <0x00000100 0xf00>;
 				};
 			};
 		};
