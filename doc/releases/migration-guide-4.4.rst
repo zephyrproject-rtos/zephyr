@@ -360,6 +360,10 @@ Display
 * ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
   to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
 
+* ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles has been renamed
+  :dtcompatible:`solomon,ssd1306` and :dtcompatible:`solomon,ssd1309` respectively,
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
 DMA
 ===
 
