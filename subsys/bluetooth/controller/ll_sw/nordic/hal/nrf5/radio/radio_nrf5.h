@@ -20,7 +20,7 @@
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
 /* SoC specific defines */
-#if defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52805)
 #include "radio_nrf52805.h"
@@ -39,7 +39,7 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
-#elif defined(CONFIG_SOC_SERIES_NRF54LX)
+#elif defined(CONFIG_SOC_SERIES_NRF54L)
 #include <hal/nrf_ppib.h>
 #include "radio_nrf54lx.h"
 #elif defined(CONFIG_BOARD_NRF52_BSIM)
@@ -81,7 +81,7 @@
 /* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
 #include "hal/cntr.h"
 
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include <hal/nrf_ppi.h>
 #include "radio_nrf5_ppi_resources.h"
 #include "radio_nrf5_ppi.h"
@@ -102,7 +102,7 @@
 #define HAL_RADIO_RESET_VALUE_PCNF1 0x00000000UL
 
 /* SoC specific Radio PDU length field maximum value */
-#if defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NRF51)
 #define HAL_RADIO_PDU_LEN_MAX (BIT(5) - 1)
 #else
 #define HAL_RADIO_PDU_LEN_MAX (BIT(8) - 1)
