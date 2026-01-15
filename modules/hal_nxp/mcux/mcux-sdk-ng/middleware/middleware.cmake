@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -57,4 +57,5 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/usb
 )
 
 include(${CMAKE_CURRENT_LIST_DIR}/connectivity_framework.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/bluetooth_controller.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/multicore.cmake)
