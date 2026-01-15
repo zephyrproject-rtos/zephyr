@@ -44,7 +44,7 @@
 #define DEFAULT_WINDOW_MIN (0U)
 
 /* Align tests to the specific target: */
-#if defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_SERIES_NRF54LX) || \
+#if defined(CONFIG_SOC_SERIES_NRF53) || defined(CONFIG_SOC_SERIES_NRF54L) || \
 	defined(CONFIG_SOC_SERIES_NRF71) || defined(CONFIG_SOC_NRF54H20) || \
 	defined(CONFIG_SOC_NRF9280)
 #define WDT_TEST_FLAGS                                                                             \

@@ -95,7 +95,7 @@ static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 	mpsc_buf_cfg.size = wlen;
 	mpsc_pbuf_init(buffer, &mpsc_buf_cfg);
 
-#if CONFIG_SOC_SERIES_NRF52X
+#if CONFIG_SOC_SERIES_NRF52
 	DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 	DWT->CYCCNT = 0;
@@ -104,7 +104,7 @@ static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 
 static inline uint32_t get_cyc(void)
 {
-#if CONFIG_SOC_SERIES_NRF52X
+#if CONFIG_SOC_SERIES_NRF52
 	return DWT->CYCCNT;
 #else
 	return k_cycle_get_32();

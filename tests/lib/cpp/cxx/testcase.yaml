@@ -44,7 +44,7 @@ tests:
             not CONFIG_HAS_SILABS_WISECONNECT and
             not CONFIG_SOC_FAMILY_AMBIQ and
             not (CONFIG_CPU_CORTEX_M and (CONFIG_NRF_PLATFORM_HALTIUM or
-            CONFIG_SOC_SERIES_NRF54LX or CONFIG_SOC_SERIES_NRF71))
+            CONFIG_SOC_SERIES_NRF54L or CONFIG_SOC_SERIES_NRF71))
     build_only: true
     extra_configs:
       - CONFIG_STD_CPP98=y
