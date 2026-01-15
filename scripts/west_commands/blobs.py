@@ -202,7 +202,7 @@ class Blobs(WestCommand):
         self.dbg(f'Found fetcher: {fetcher}')
         inst = fetcher()
         self.ensure_folder(path)
-        inst.fetch(url, path)
+        inst.fetch(self, url, path)
 
     def fetch_blob(self, args, blob):
         """
