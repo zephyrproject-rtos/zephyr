@@ -15,7 +15,7 @@ DOXYGEN_FORCE_SINGLE_THREAD ?= 0
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen doxygen-coverage
+.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen doxygen-coverage doxygen-coverage-json
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
@@ -23,7 +23,7 @@ html-fast:
 html-live-fast:
 	${MAKE} html-live DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
 
-doxygen-coverage:
+doxygen-coverage doxygen-coverage-json:
 	${MAKE} configure DOXYGEN_FORCE_SINGLE_THREAD=1
 	cmake --build ${BUILDDIR} --target $@
 
