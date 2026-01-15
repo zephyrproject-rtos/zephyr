@@ -3,11 +3,20 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_SERIES_NRF71
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Nordic Semiconductor nRF71 series MCU
+
 config SOC_NRF7120
 	bool
 	select SOC_SERIES_NRF71
 	help
 	  NRF7120
+
+config SOC_SERIES
+	default "nrf71" if SOC_SERIES_NRF71
 
 config SOC_NRF7120_ENGA
 	bool

@@ -18,6 +18,19 @@
 # as build target, and so that its definition can also be re-used
 # for other SiPs.
 
+config SOC_SERIES_NRF92
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Enable support for NRF92 MCU series
+
+config SOC_SERIES_NRF92X
+	bool
+	select SOC_SERIES_NRF92
+
+config SOC_SERIES
+	default "nrf92" if SOC_SERIES_NRF92
+
 config SOC_NRF9230_ENGB
 	bool
 	select SOC_SERIES_NRF92X
