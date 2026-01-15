@@ -1346,8 +1346,8 @@ static DEVICE_API(flash, drv_api) = {
 	.freq = FLASH_MSPI_MAX_FREQ(inst),				\
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
+	.cmd_length = 1,                                                \
 	.cpp = MSPI_CPP_MODE_0,						\
-	.endian = MSPI_XFER_BIG_ENDIAN,					\
 	.ce_polarity = MSPI_CE_ACTIVE_LOW,				\
 	.dqs_enable = false,						\
 }
