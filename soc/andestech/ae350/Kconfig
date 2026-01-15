@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Andes Technology Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_ANDES_AE350
+config SOC_SERIES_AE350
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_PMP
@@ -23,11 +23,11 @@ config SOC_SERIES_ANDES_AE350
 	select SOC_PER_CORE_INIT_HOOK if RISCV_CUSTOM_CSR_ANDES_PMA
 	imply XIP
 
-if SOC_SERIES_ANDES_AE350
+if SOC_SERIES_AE350
 
 choice SOC_AE350_INTERRUPT_TYPE
 	prompt "Base interrupt type"
-	depends on SOC_ANDES_AE350
+	depends on SOC_AE350
 	default SOC_AE350_INTERRUPT_TYPE_PLIC
 
 config SOC_AE350_INTERRUPT_TYPE_PLIC
@@ -110,4 +110,4 @@ config SOC_ANDES_V5_IOCP
 	  Support Andes V5 I/O Coherence Port to handle cache coherency between cache and external
 	  non-caching master, such as DMA controller.
 
-endif # SOC_SERIES_ANDES_AE350
+endif # SOC_SERIES_AE350
