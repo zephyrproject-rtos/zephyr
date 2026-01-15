@@ -20,6 +20,8 @@
 #define ADC_ACQ_TIME_DEFAULT       0
 #define ADC_ACQ_TIME_MAX           BIT_MASK(14)
 
+#define BLA
+
 #define ADC_ACQ_TIME_UNIT(time)    (((time) >> 14) & BIT_MASK(2))
 #define ADC_ACQ_TIME_VALUE(time)   ((time) & BIT_MASK(14))
 
