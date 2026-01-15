@@ -12,12 +12,12 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/drivers/mfd/sc18is606.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_sc18is606_gpio, CONFIG_GPIO_LOG_LEVEL);
 
-#include "spi/spi_sc18is606.h"
 
 #define SC18IS606_GPIO_MAX_PINS 3
 

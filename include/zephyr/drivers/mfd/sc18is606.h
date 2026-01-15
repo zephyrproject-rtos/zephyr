@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_I2C_SPI_SC18IS606_H_
-#define ZEPHYR_DRIVERS_I2C_SPI_SC18IS606_H_
+#ifndef ZEPHYR_DRIVERS_SC18IS606_H_
+#define ZEPHYR_DRIVERS_SC18IS606_H_
 
 #include <stdint.h>
 

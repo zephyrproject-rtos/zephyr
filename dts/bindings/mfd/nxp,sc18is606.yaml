@@ -25,7 +25,7 @@ description: |
         #size-cells = <0>;
       };
 
-      gpio_ext: sc18is606_gpio {
+      gpio_ext: gpio {
         compatible = "nxp,sc18is606-gpio";
         status = "okay";
         gpio-controller;

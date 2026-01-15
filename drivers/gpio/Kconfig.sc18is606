@@ -4,14 +4,14 @@
 config GPIO_SC18IS606
 	bool "NXP SC18IS606 GPIO Controller driver"
 	default y
-	depends on SPI_SC18IS606
 	depends on DT_HAS_NXP_SC18IS606_GPIO_ENABLED
+	select MFD
 	help
 	   Enables NXP SC18IS606 gpio controller driver
 
 config GPIO_SC18IS606_INIT_PRIORITY
 	int "SC18IS606 GPIO Init Priority"
-	default 66
+	default 99
 	depends on GPIO_SC18IS606
 	help
 	   SC18IS606 GPIO Controller Init priority
