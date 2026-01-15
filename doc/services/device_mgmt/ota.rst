@@ -88,6 +88,16 @@ updates with automatic rollback on failure.
 
 See :ref:`external_module_mender_mcu` for integration details and examples.
 
+Memfault and nRF Cloud powered by Memfault
+==========================================
+
+`Memfault`_ is a IoT observability platform that includes OTA management. Devices check-in with
+Memfault's service periodically for an OTA update, and when an update is available, download and
+install the binary.
+
+See :ref:`external_module_memfault_firmware_sdk` for overall integration details and
+examples.
+
 .. _MCUboot bootloader: https://mcuboot.com/
 .. _Golioth: https://golioth.io/
 .. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
@@ -95,3 +105,4 @@ See :ref:`external_module_mender_mcu` for integration details and examples.
 .. _Eclipse hawkBit: https://www.eclipse.org/hawkbit/
 .. _UpdateHub: https://updatehub.io/
 .. _mender-mcu: https://github.com/mendersoftware/mender-mcu
+.. _Memfault: https://memfault.com/
