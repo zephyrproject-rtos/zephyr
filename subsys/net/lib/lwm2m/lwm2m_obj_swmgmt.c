@@ -565,7 +565,7 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 			    uint16_t data_len, bool last_block,
 			    size_t total_size, size_t offset)
 {
-	int ret = -EINVAL;
+	int ret;
 	struct lwm2m_swmgmt_data *instance = NULL;
 
 	instance = find_index(obj_inst_id);
