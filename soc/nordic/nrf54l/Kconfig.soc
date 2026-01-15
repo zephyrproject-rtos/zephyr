@@ -3,6 +3,19 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_SERIES_NRF54L
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	  Nordic Semiconductor nRF54L series MCU
+
+config SOC_SERIES_NRF54LX
+	bool
+	select SOC_SERIES_NRF54L
+
+config SOC_SERIES
+	default "nrf54l" if SOC_SERIES_NRF54L
+
 config SOC_NRF54L05
 	bool
 	select SOC_SERIES_NRF54LX
