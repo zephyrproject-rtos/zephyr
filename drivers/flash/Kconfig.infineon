@@ -69,3 +69,15 @@ config FLASH_INFINEON_SMIF_HW_INIT
 	  RRAM and the ROM extended boot has not configured SMIF.
 	  When disabled, the driver assumes SMIF is already initialized
 	  (e.g., by the ROM when booting from external flash).
+
+if FLASH_MSPI_NOR
+
+config FLASH_MSPI_INFINEON_S28HX512T
+	bool "MSPI Infineon S28HX512T driver"
+	default y
+	depends on DT_HAS_INFINEON_S28HX512T_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+
+endif # FLASH_MSPI_NOR
