@@ -5,4 +5,4 @@ description: SH1106 128x64 dot-matrix display controller on I2C bus
 
 compatible: "sinowealth,sh1106"
 
-include: ["solomon,ssd1306fb-common.yaml", "i2c-device.yaml"]
+include: ["solomon,ssd1306-common.yaml", "i2c-device.yaml"]
