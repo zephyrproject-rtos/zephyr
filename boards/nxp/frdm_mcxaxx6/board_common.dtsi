@@ -27,6 +27,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,cortex-m-idle-timer = &lptmr0;
+		zephyr,canbus = &flexcan0;
 	};
 
 	leds {
@@ -201,4 +202,10 @@
 
 &lptmr0 {
 	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
 };
