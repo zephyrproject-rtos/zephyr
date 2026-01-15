@@ -366,6 +366,9 @@ static int mspi_cadence_init(const struct device *dev)
 	config_reg |= CADENCE_MSPI_CONFIG_REG_ENABLE_SPI_BIT;
 	sys_write32(config_reg, base_addr + CADENCE_MSPI_CONFIG_OFFSET);
 
+	/* Reset the STIG register for first time use */
+	sys_write32(0, base_addr + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET);
+
 	return 0;
 }
 
