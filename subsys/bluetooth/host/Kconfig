@@ -148,8 +148,12 @@ config BT_TX_PROCESSOR_THREAD_PRIO
 	default SYSTEM_WORKQUEUE_PRIORITY
 
 config BT_TX_PROCESSOR_STACK_SIZE
-	int
+	int "TX processor thread stack size"
 	default 1024
+	help
+	  Size of the TX processor thread stack. How much stack is needed depends on which
+	  and how many host features are enabled. One might try to decrease it to save RAM,
+	  or increase it if there are stack overflows.
 
 endif
 
