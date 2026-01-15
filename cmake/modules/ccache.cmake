@@ -1,7 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Use ccache if it is installed, unless the user explicitly disables
-# it by setting USE_CCACHE=0.
+#[=======================================================================[.rst:
+ccache
+######
+
+Use ccache if it is installed.
+
+Behavior
+********
+
+This module will check if ``ccache`` is installed. If installed, it will configure the build system
+to use it for compilation and linking.
+
+Variables
+*********
+
+* :cmake:variable:`USE_CCACHE`
+
+#]=======================================================================]
 
 include_guard(GLOBAL)
 

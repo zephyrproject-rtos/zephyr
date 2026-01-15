@@ -2,45 +2,119 @@
 #
 # Copyright (c) 2022, Nordic Semiconductor ASA
 
-# FindHostTools module for locating a set of tools to use on the host for
-# Zephyr development.
-#
-# This module will lookup the following tools for Zephyr development:
-# +---------------------------------------------------------------+
-# | Tool               | Required |  Notes:                       |
-# +---------------------------------------------------------------+
-# | Generic C-compiler | Yes      |  Pre-processing of devicetree |
-# | Zephyr-sdk         |          |                               |
-# | gperf              |          |                               |
-# | openocd            |          |                               |
-# | bossac             |          |                               |
-# | imgtool            |          |                               |
-# +---------------------------------------------------------------+
-#
-# The module defines the following variables:
-#
-# 'CMAKE_C_COMPILER'
-# Path to C compiler.
-# Set to 'CMAKE_C_COMPILER-NOTFOUND' if no C compiler was found.
-#
-# 'GPERF'
-# Path to gperf.
-# Set to 'GPERF-NOTFOUND' if gperf was not found.
-#
-# 'OPENOCD'
-# Path to openocd.
-# Set to 'OPENOCD-NOTFOUND' if openocd was not found.
-#
-# 'BOSSAC'
-# Path to bossac.
-# Set to 'BOSSAC-NOTFOUND' if bossac was not found.
-#
-# 'IMGTOOL'
-# Path to imgtool.
-# Set to 'IMGTOOL-NOTFOUND' if imgtool was not found.
-#
-# 'HostTools_FOUND', 'HOSTTOOLS_FOUND'
-# True if all required host tools were found.
+#[=======================================================================[.rst:
+FindHostTools
+*************
+
+Find and configure host tools required for Zephyr development.
+
+This module locates and configures a set of tools needed for Zephyr development on the host system.
+It sets up the toolchain and finds various utilities used during the build process.
+
+The module searches for the following tools:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 40
+
+   * - Tool
+     - Required
+     - Notes
+   * - Generic C-compiler
+     - Yes
+     - Used for devicetree preprocessing
+   * - Zephyr-sdk
+     - No
+     - Zephyr SDK toolchain
+   * - gperf
+     - No
+     - Perfect hash function generator
+   * - openocd
+     - No
+     - Open On-Chip Debugger
+   * - bossac
+     - No
+     - Atmel SAM bootloader
+   * - imgtool
+     - No
+     - MCUboot image signing tool
+   * - winpty
+     - No
+     - Windows PTY interface
+
+Variables
+=========
+
+.. XXX FIXME: the below intentionally introduces a typo as moderncmakedomain generates warnings
+   for CMake objects being described more than once (it's also defined in FindTargetTools.cmake)
+
+.. cmake:variable:: CMAKE_C_COMPILERXXX
+
+   Path to C compiler on the host.
+   Set to :cmake:variable:`CMAKE_C_COMPILER-NOTFOUND` if no C compiler was found.
+
+.. cmake:variable:: GPERF
+
+   Path to gperf on the host.
+   Set to :cmake:variable:`GPERF-NOTFOUND` if gperf was not found.
+
+.. cmake:variable:: OPENOCD
+
+   Path to openocd on the host.
+   Set to :cmake:variable:`OPENOCD-NOTFOUND` if openocd was not found.
+
+.. cmake:variable:: BOSSAC
+
+   Path to bossac on the host.
+   Set to :cmake:variable:`BOSSAC-NOTFOUND` if bossac was not found.
+
+.. cmake:variable:: IMGTOOL
+
+   Path to imgtool on the host.
+   Set to :cmake:variable:`IMGTOOL-NOTFOUND` if imgtool was not found.
+
+.. cmake:variable:: PTY_INTERFACE
+
+   Path to winpty on Windows systems.
+   Set to empty string if winpty was not found.
+
+.. cmake:variable:: TOOLCHAIN_ROOT
+
+   Path to the toolchain root directory.
+
+.. cmake:variable:: ZEPHYR_TOOLCHAIN_VARIANT
+
+   The toolchain variant being used (e.g., "zephyr", "gnuarmemb", "host").
+
+.. cmake:variable:: HostTools_FOUND
+
+   TRUE if all required host tools were found.
+
+.. cmake:variable:: HOSTTOOLS_FOUND
+
+   Same as :cmake:variable:`HostTools_FOUND`.
+
+Toolchain Configuration
+=======================
+
+The module automatically configures the toolchain based on the selected
+:cmake:variable:`ZEPHYR_TOOLCHAIN_VARIANT``. For host-based targets (native, posix, or unit
+testing), it defaults to the host toolchain unless LLVM is explicitly selected.
+
+Example Usage
+=============
+
+.. code-block:: cmake
+
+   find_package(HostTools REQUIRED)
+
+   if(HostTools_FOUND)
+     # Use the located tools
+     message(STATUS "Using toolchain: ${ZEPHYR_TOOLCHAIN_VARIANT}")
+     message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
+   endif()
+
+#]=======================================================================]
 
 include(extensions)
 

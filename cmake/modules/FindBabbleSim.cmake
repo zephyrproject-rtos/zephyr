@@ -1,22 +1,52 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# FindBabbleSim module for locating BabbleSim
-#
-# The module defines the following variables:
-#
-# 'BSIM_COMPONENTS_PATH'
-# Path to the BabbleSim components source folder
-#
-# 'BSIM_OUT_PATH'
-# Path to the BabbleSim build output root path (under which libraries and binaries) are kept
-#
-# We first try to find it via the environment variables BSIM_OUT_PATH and BSIM_COMPONENTS_PATH.
-# If these are not set, as a fallback we attempt to find it through west, in case the user
-# fetched babblesim using the manifest.
-# Note that what we find through the environment variables is meant to have precedence.
-#
-# If BabbleSim cannot be found we error right away with a message trying to guide users
+#[=======================================================================[.rst:
+FindBabbleSim
+*************
+
+Find the :ref:`BabbleSim <bsim>` simulator and verify its version.
+
+This module locates the BabbleSim simulator components and output paths, and verifies
+that the installed version meets the minimum requirements.
+
+Variables
+=========
+
+When the module is found, the following variables are set:
+
+* :cmake:variable:`BSIM_COMPONENTS_PATH`
+* :cmake:variable:`BSIM_OUT_PATH`
+
+Search Process
+==============
+
+The module searches for BabbleSim in the following order:
+
+1. Using the environment variables :envvar:`BSIM_COMPONENTS_PATH` and :envvar:`BSIM_OUT_PATH`
+2. Using west to locate BabbleSim if it was fetched using the manifest
+
+If BabbleSim cannot be found, the module will error with instructions on how to install it.
+
+Version Checking
+================
+
+The module checks that the installed BabbleSim components meet the minimum version requirements.
+Currently, it verifies that ``bs_2G4_phy_v1`` is at least version 2.4.
+
+Example Usage
+=============
+
+.. code-block:: cmake
+
+   find_package(BabbleSim)
+
+   if(BabbleSim_FOUND)
+     message(STATUS "BabbleSim found at ${BSIM_COMPONENTS_PATH}")
+     message(STATUS "BabbleSim out path at ${BSIM_OUT_PATH}")
+   endif()
+
+#]=======================================================================]
 
 zephyr_get(BSIM_COMPONENTS_PATH)
 zephyr_get(BSIM_OUT_PATH)

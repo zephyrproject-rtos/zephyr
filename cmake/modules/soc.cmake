@@ -2,20 +2,44 @@
 #
 # Copyright (c) 2021, Nordic Semiconductor ASA
 
-# Configure SoC settings based on Kconfig settings.
-#
-# This CMake module will set the following variables in the build system based
-# on Kconfig settings for the selected SoC.
-#
-# Outcome:
-# The following variables will be defined when this CMake module completes:
-#
-# - SOC_NAME:   Name of the SoC in use, identical to CONFIG_SOC
-# - SOC_SERIES: Name of the SoC series in use, identical to CONFIG_SOC_SERIES
-# - SOC_FAMILY: Name of the SoC family, identical to CONFIG_SOC_FAMILY
-#
-# Variables set by this module and not mentioned above are considered internal
-# use only and may be removed, renamed, or re-purposed without prior notice.
+#[=======================================================================[.rst:
+soc
+***
+
+Configure SoC settings based on Kconfig settings.
+
+This module sets up SoC-specific variables in the build system based on Kconfig
+settings for the selected SoC. It handles both legacy and HWMv2 SoC configurations.
+
+Variables
+=========
+
+The following variables will be defined when this CMake module completes:
+
+* :cmake:variable:`SOC_NAME`
+* :cmake:variable:`SOC_SERIES`
+* :cmake:variable:`SOC_FAMILY`
+
+Variables set by this module and not mentioned above are considered internal use only and may be
+removed, renamed, or re-purposed without prior notice.
+
+Usage
+=====
+
+This module is typically loaded automatically by the Zephyr build system based on the selected SoC.
+It sets up the necessary variables for SoC-specific configuration and build settings.
+
+Example
+-------
+
+.. code-block:: cmake
+
+   # The module is loaded automatically when building for a specific SoC
+   # The following variables will be available:
+   message(STATUS "Building for SoC: ${SOC_NAME}")
+   message(STATUS "SoC series: ${SOC_SERIES}")
+   message(STATUS "SoC family: ${SOC_FAMILY}")
+#]=======================================================================]
 
 include_guard(GLOBAL)
 

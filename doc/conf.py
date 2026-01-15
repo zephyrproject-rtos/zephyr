@@ -95,6 +95,8 @@ extensions = [
     "zephyr.external_content",
     "zephyr.domain",
     "zephyr.api_overview",
+    "moderncmakedomain",
+    "sphinx.ext.intersphinx",
 ]
 
 # Only use image conversion when it is really needed, e.g. LaTeX build.
@@ -127,6 +129,10 @@ pygments_style = "sphinx"
 highlight_language = "none"
 
 todo_include_todos = False
+
+intersphinx_mapping = {
+    "cmake": ("https://cmake.org/cmake/help/latest", None),
+}
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
@@ -180,7 +186,7 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
     "prev_next_buttons_location": None,
-    "navigation_depth": 5,
+    "navigation_depth": 6,
 }
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
@@ -218,6 +224,7 @@ html_context = {
         "API": f"{reference_prefix}/doxygen/html/index.html",
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
+        "CMake modules": f"{reference_prefix}/build/cmake-ref/index.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
         "Glossary": f"{reference_prefix}/glossary.html",
     },
@@ -329,6 +336,7 @@ external_content_contents = [
     (ZEPHYR_BASE, "snippets/**/*.rst"),
     (ZEPHYR_BASE, "snippets/**/doc"),
     (ZEPHYR_BASE, "tests/**/*.pts"),
+    (ZEPHYR_BASE, "cmake/modules"),
 ]
 external_content_keep = [
     "reference/kconfig/*",

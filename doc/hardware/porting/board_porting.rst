@@ -894,8 +894,8 @@ The :makevar:`BOARD_REVISION` variable holds the revision value specified by the
 user.
 
 To signal to the build system that it should use a different revision than the
-one specified by the user, :file:`revision.cmake` can set the variable
-``ACTIVE_BOARD_REVISION`` to the revision to use instead. The corresponding
+one specified by the user, :file:`revision.cmake` can set the CMake variable
+:cmake:variable:`ACTIVE_BOARD_REVISION` to the revision to use instead. The corresponding
 Kconfig files and devicetree overlays must be named
 :file:`<board>_<ACTIVE_BOARD_REVISION>_defconfig` and
 :file:`<board>_<ACTIVE_BOARD_REVISION>.overlay`.

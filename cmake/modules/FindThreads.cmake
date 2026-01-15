@@ -2,35 +2,54 @@
 #
 # Copyright (c) 2024 Google LLC.
 
-# FindThreads module for locating threads implementation.
-#
-# The module defines the following variables:
-#
-# 'Threads_FOUND'
-# Indicates if threads are supported.
-#
-# 'CMAKE_THREAD_LIBS_INIT'
-# The threads library to use. Zephyr provides threads implementation and no
-# special flags are needed, so this will be empty.
-#
-# 'CMAKE_USE_PTHREADS_INIT'
-# Indicates if threads are pthread compatible.
-#
-# This module is compatible with FindThreads module from CMake.
-# The original implementation tries to find threads library using various
-# methods (e.g. checking if pthread library is present or compiling example
-# program to check if the implementation is provided by libc), but it's not
-# able to detect pthread implementation provided by Zephyr.
+#[=======================================================================[.rst:
+FindThreads
+***********
 
-include(FindPackageHandleStandardArgs)
+Find the native threading library.
 
-set(Threads_FOUND FALSE)
+This module provides a unified interface for finding and linking against the native threading
+library on the target platform.
 
-if(DEFINED CONFIG_POSIX_THREADS)
-  set(Threads_FOUND TRUE)
-  set(CMAKE_THREAD_LIBS_INIT )
-  set(CMAKE_USE_PTHREADS_INIT 1)
-endif()
+Variables
+=========
+
+The following variables will be defined when this module completes:
+
+.. cmake:variable:: Threads_FOUND
+
+   Set to True if the threading library was found.
+
+.. cmake:variable:: CMAKE_THREAD_LIBS_INIT
+
+   The threading library to link against.
+
+.. cmake:variable:: CMAKE_USE_WIN32_THREADS_INIT
+
+   Set to True if using Windows threads.
+
+.. cmake:variable:: CMAKE_USE_PTHREADS_INIT
+
+   Set to True if using POSIX threads.
+
+Usage
+=====
+
+This module is compatible with :cmake:module:`FindThreads <module:FindThreads>` module from CMake.
+The original implementation tries to find threads library using various methods (e.g. checking if
+pthread library is present or compiling example program to check if the implementation is provided
+by libc), but it's not able to detect pthread implementation provided by Zephyr.
+
+Example
+-------
+
+.. code-block:: cmake
+
+   find_package(Threads REQUIRED)
+   if(Threads_FOUND)
+      target_link_libraries(my_target PRIVATE Threads::Threads)
+   endif()
+#]=======================================================================]
 
 find_package_handle_standard_args(Threads
   DEFAULT_MSG

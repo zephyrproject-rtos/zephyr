@@ -2,22 +2,29 @@
 #
 # Copyright (c) 2022, Nordic Semiconductor ASA
 
-# Setup basic settings for a Zephyr project.
-#
-# Basic settings are:
-# - sysbuild defined configuration settings
-#
-# Details for sysbuild settings:
-#
-# Sysbuild is a higher level build system used by Zephyr.
-# Sysbuild allows users to build multiple samples for a given system.
-#
-# For this to work, sysbuild manages other Zephyr CMake build systems by setting
-# dedicated build variables.
-# This CMake modules loads the sysbuild cache variables as target properties on
-# a sysbuild_cache target.
-#
-# This ensures that qoutes and lists are correctly preserved.
+#[=======================================================================[.rst:
+basic_settings
+**************
+
+Setup basic settings for a Zephyr project.
+
+Basic settings are:
+
+* Sysbuild defined configuration settings
+
+Details for sysbuild settings:
+
+Sysbuild is a higher level build system used by Zephyr.
+Sysbuild allows users to build multiple samples for a given system.
+
+For this to work, sysbuild manages other Zephyr CMake build systems by setting
+dedicated build variables.
+This CMake module loads the sysbuild cache variables as target properties on
+a ``sysbuild_cache`` target.
+
+This ensures that quotes and lists are correctly preserved.
+
+#]=======================================================================]
 
 include_guard(GLOBAL)
 
