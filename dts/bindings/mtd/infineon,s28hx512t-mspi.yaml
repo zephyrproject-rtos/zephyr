@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon S28HX512T Flash
+
+compatible: "infineon,s28hx512t"
+
+on-bus: mspi
+
+include: ["jedec,mspi-nor.yaml"]

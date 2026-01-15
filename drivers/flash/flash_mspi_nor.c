@@ -27,12 +27,20 @@ LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 static void set_up_xfer(const struct device *dev, enum mspi_xfer_direction dir,
 			enum mspi_xfer_mode xfer_mode);
+static void set_up_xfer_with_addr(const struct device *dev,
+					enum mspi_xfer_direction dir,
+					uint32_t addr,
+					enum mspi_xfer_mode xfer_mode);
 static int perform_xfer(const struct device *dev, uint8_t cmd);
 static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr);
 static int wait_until_ready(const struct device *dev, k_timeout_t poll_period);
 static int cmd_wren(const struct device *dev);
 static int cmd_wrsr(const struct device *dev, uint8_t op_code,
 		    uint8_t sr_cnt, uint8_t *sr);
+static int read_jedec_id(const struct device *dev, uint8_t *id);
+#if defined(WITH_SOFT_RESET)
+static int soft_reset_66_99(const struct device *dev);
+#endif /* WITH_SOFT_RESET */
 
 #include "flash_mspi_nor_quirks.h"
 
