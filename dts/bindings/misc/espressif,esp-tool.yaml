@@ -48,6 +48,14 @@ properties:
     type: int
     required: false
 
+  num-trials:
+    type: int
+    required: true
+
+  sync-timeout-ms:
+    type: int
+    required: true
+
 # additionalProperties: false
 #
 #oneOf:
