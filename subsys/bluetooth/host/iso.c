@@ -477,8 +477,12 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		net_buf_unref(buf);
 	}
 
+	conn_type = chan->iso->iso.info.type;
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
 	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && conn_type == BT_ISO_CHAN_TYPE_BROADCASTER) {
+		bt_conn_tx_notify(chan->iso, true);
+	}
 
 	/* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
 	 * the callback and to be more similar to the ACL disconnected callback. This also means
@@ -529,7 +533,14 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		 * complete in the same way as ACL and CIS do. Call bt_conn_tx_notify directly here
 		 * to flush the chan->iso->tx_complete for each disconnected BIS
 		 */
-		bt_conn_tx_notify(chan->iso, true);
+		// bt_conn_tx_notify(chan->iso, true);
+
+		/* TODO: This might need to be done before the `disconnected` callback.
+		 * Consider calling
+		 * bt_conn_set_state(chan->iso, BT_CONN_DISCONNECTED); to fake a disconnected event
+		 * BT_CONN_DISCONNECTED does more than we need to do though, and we only really need
+		 * the call to bt_conn_tx_notify
+		 */
 	} else {
 		/* No special handling for BT_ISO_CHAN_TYPE_SYNC_RECEIVER */
 	}

@@ -255,7 +255,7 @@ static void decrement_enqueued(struct bt_iso_chan *iso_chan)
 	ARRAY_FOR_EACH_PTR(tx_streams, tx_stream) {
 		int mutex_err;
 
-		mutex_err = k_mutex_lock(&tx_stream->mutex, K_FOREVER);
+		mutex_err = k_mutex_lock(&tx_stream->mutex, TX_MUTEX_TIMEOUT);
 		TEST_ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
 
 		if (tx_stream->iso_chan == iso_chan) {
@@ -299,7 +299,7 @@ size_t iso_tx_get_sent_cnt(const struct bt_iso_chan *iso_chan)
 	ARRAY_FOR_EACH_PTR(tx_streams, tx_stream) {
 		int mutex_err;
 
-		mutex_err = k_mutex_lock(&tx_stream->mutex, K_FOREVER);
+		mutex_err = k_mutex_lock(&tx_stream->mutex, TX_MUTEX_TIMEOUT);
 		TEST_ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
 
 		if (tx_stream->iso_chan == iso_chan) {
