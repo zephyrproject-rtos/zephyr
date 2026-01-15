@@ -115,34 +115,6 @@ static int app_setup_video_selection(const struct device *const video_dev,
 			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
 	}
 
-	/*
-	 * Check (if possible) if targeted size is same as crop
-	 * and if compose is necessary
-	 */
-	sel.target = VIDEO_SEL_TGT_CROP;
-	ret = video_get_selection(video_dev, &sel);
-	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Unable to get selection crop");
-		return ret;
-	}
-
-	if (ret == 0 && (sel.rect.width != fmt->width || sel.rect.height != fmt->height)) {
-		sel.target = VIDEO_SEL_TGT_COMPOSE;
-		sel.rect.left = 0;
-		sel.rect.top = 0;
-		sel.rect.width = fmt->width;
-		sel.rect.height = fmt->height;
-
-		ret = video_set_selection(video_dev, &sel);
-		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Unable to set selection compose");
-			return ret;
-		}
-
-		LOG_INF("Compose window set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
-	}
-
 	return 0;
 }
 
