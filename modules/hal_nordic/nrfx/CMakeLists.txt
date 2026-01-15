@@ -36,7 +36,7 @@ zephyr_include_directories(.)
 include(${BSP_DIR}/zephyr/nrfx.cmake OPTIONAL)
 
 # Define MDK defines globally
-zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51X       NRF51)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51       NRF51)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAA       NRF51422_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAB       NRF51422_XXAB)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAC       NRF51422_XXAC)
@@ -104,14 +104,14 @@ zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
 
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP
                                  NRF_SKIP_FICR_NS_COPY_TO_RAM)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF91X
+zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF91
                                  NRF_SKIP_FICR_NS_COPY_TO_RAM)
 
 # Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
 zephyr_compile_definitions_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE NRF_TRUSTZONE_NONSECURE)
 zephyr_compile_definitions_ifdef(CONFIG_LOG_BACKEND_SWO ENABLE_SWO)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF51X  ${MDK_DIR}/system_nrf51.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF51  ${MDK_DIR}/system_nrf51.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52805       ${MDK_DIR}/system_nrf52805.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52810       ${MDK_DIR}/system_nrf52810.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52811       ${MDK_DIR}/system_nrf52811.c)
@@ -121,13 +121,13 @@ zephyr_library_sources_ifdef(CONFIG_SOC_NRF52833       ${MDK_DIR}/system_nrf5283
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52840       ${MDK_DIR}/system_nrf52840.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP ${MDK_DIR}/system_nrf5340_application.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUNET ${MDK_DIR}/system_nrf5340_network.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF54HX ${MDK_DIR}/system_nrf54h.c)
-if(CONFIG_SOC_SERIES_NRF54LX OR CONFIG_SOC_SERIES_BSIM_NRF54LX)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF54H ${MDK_DIR}/system_nrf54h.c)
+if(CONFIG_SOC_SERIES_NRF54L OR CONFIG_SOC_SERIES_BSIM_NRF54LX)
   zephyr_library_sources(${MDK_DIR}/system_nrf54l.c)
 endif()
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF71 ${MDK_DIR}/system_nrf7120_enga.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91X ${MDK_DIR}/system_nrf91.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF92X ${MDK_DIR}/system_nrf92.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91 ${MDK_DIR}/system_nrf91.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF92 ${MDK_DIR}/system_nrf92.c)
 
 zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
@@ -135,7 +135,7 @@ zephyr_library_sources_ifdef(CONFIG_HAS_NORDIC_RAM_CTRL       ${HELPERS_DIR}/nrf
 
 if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources_ifdef(CONFIG_HAS_HW_NRF_PPI ${HELPERS_DIR}/nrfx_gppi_ppi.c)
-  if(CONFIG_SOC_SERIES_NRF54LX OR CONFIG_SOC_SERIES_NRF71 OR CONFIG_HAS_HW_NRF_DPPIC)
+  if(CONFIG_SOC_SERIES_NRF54L OR CONFIG_SOC_SERIES_NRF71 OR CONFIG_HAS_HW_NRF_DPPIC)
     zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi.c)
   endif()
   if(CONFIG_SOC_COMPATIBLE_NRF54LX OR CONFIG_SOC_SERIES_NRF71)
@@ -244,7 +244,7 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DIS
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
 zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L_CONFIGURATION_56_ENABLE=0)
 
-if(CONFIG_SOC_SERIES_NRF54HX AND CONFIG_NRFX_GPPI_V1)
+if(CONFIG_SOC_SERIES_NRF54H AND CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources(${HELPERS_DIR}/internal/nrfx_gppiv1_ipct.c)
   zephyr_library_sources(${HELPERS_DIR}/internal/nrfx_gppiv1_shim.c)
 endif()
@@ -256,7 +256,7 @@ macro(mdk_svd_ifdef feature_toggle filename)
   endif()
 endmacro()
 
-mdk_svd_ifdef(CONFIG_SOC_SERIES_NRF51X        nrf51.svd)
+mdk_svd_ifdef(CONFIG_SOC_SERIES_NRF51        nrf51.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF52805             nrf52805.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF52810             nrf52810.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF52811             nrf52811.svd)
