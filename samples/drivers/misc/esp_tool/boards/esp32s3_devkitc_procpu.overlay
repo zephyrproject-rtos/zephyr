@@ -7,6 +7,8 @@
 		higher-baudrate = <230400>;
 		reset-gpios = <&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		boot-gpios = <&gpio0 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		sync-timeout-ms = <100>;
+		num-trials = <10>;
 	};
 };
 
