@@ -498,6 +498,8 @@ struct bt_l2cap_br_window {
 	uint8_t sar;
 	/** srej flag */
 	bool srej;
+	/** retransmit flag */
+	bool retransmit;
 	/* Save PDU state */
 	struct net_buf_simple_state sdu_state;
 	/** @internal Holds the sending buffer. */
