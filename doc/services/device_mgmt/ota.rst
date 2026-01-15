@@ -88,6 +88,26 @@ updates with automatic rollback on failure.
 
 See :ref:`external_module_mender_mcu` for integration details and examples.
 
+Memfault and nRF Cloud powered by Memfault
+==========================================
+
+`Memfault`_ is a IoT observability platform that includes OTA management. Devices check-in with
+Memfault's service periodically for an OTA update, and when an update is available, download and
+install the binary.
+
+Zephyr projects that use MCUboot and have a direct internet connection can leverage the
+`Memfault Firmware SDK`_'s OTA client to download a payload from Memfault's OTA service, load it
+into the secondary partition, and then reboot into the new image. The
+`Memfault OTA for Zephyr documentation`_ has more detail on this support for Zephyr projects.
+
+Zephyr projects with a BLE connection can leverage the `Memfault Diagnostic Service`_ (MDS) with the
+`Memfault iOS SDK`_ and `Memfault Android SDK`_ to deliver the update payload to the device. For
+Nordic Semi BLE chip users, see the `Memfault Quickstart for nRF52/nRF53/nRF54`_ for testing an OTA
+via `nRF Cloud powered by Memfault`_.
+
+See :ref:`external_module_memfault_firmware_sdk` for overall integration details and
+examples.
+
 .. _MCUboot bootloader: https://mcuboot.com/
 .. _Golioth: https://golioth.io/
 .. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
@@ -95,3 +115,11 @@ See :ref:`external_module_mender_mcu` for integration details and examples.
 .. _Eclipse hawkBit: https://www.eclipse.org/hawkbit/
 .. _UpdateHub: https://updatehub.io/
 .. _mender-mcu: https://github.com/mendersoftware/mender-mcu
+.. _Memfault: https://memfault.com/
+.. _Memfault Firmware SDK: https://github.com/memfault/memfault-firmware-sdk
+.. _Memfault OTA for Zephyr documentation: https://docs.memfault.com/docs/mcu/zephyr-guide#ota
+.. _Memfault Diagnostic Service: https://docs.memfault.com/docs/mcu/mds
+.. _Memfault iOS SDK: https://github.com/memfault/memfault-cloud-ios
+.. _Memfault Android SDK: https://github.com/memfault/memfault-cloud-android
+.. _Memfault Quickstart for nRF52/nRF53/nRF54: https://docs.memfault.com/docs/mcu/quickstart-nrf5x-ncs
+.. _nRF Cloud powered by Memfault: https://nrfcloud.com/#/
