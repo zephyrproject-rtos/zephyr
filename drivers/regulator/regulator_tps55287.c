@@ -42,7 +42,7 @@ struct regulator_tps55287_config {
 	struct regulator_common_config common;
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_gpio;
-	int16_t r_is;
+	uint16_t r_is;
 	uint8_t cdc;
 };
 
@@ -150,7 +150,7 @@ static int regulator_tps55287_get_current_limit(const struct device *dev, int32_
 	uint8_t val;
 	int ret;
 
-	if (config->r_is < 0) {
+	if (config->r_is == 0U) {
 		return -ENOENT;
 	}
 
@@ -172,7 +172,7 @@ static int regulator_tps55287_set_current_limit(const struct device *dev,
 	uint16_t idx;
 	int ret;
 
-	if (config->r_is < 0) {
+	if (config->r_is == 0U) {
 		return -ENOENT;
 	}
 
@@ -291,7 +291,7 @@ static DEVICE_API(regulator, api) = {
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
-		.r_is = DT_INST_PROP_OR(inst, r_is_milliohm, -1),                                  \
+		.r_is = DT_INST_PROP_OR(inst, r_is_milliohm, 0U),                                  \
 		.cdc = DT_INST_PROP(inst, cdc),                                                    \
 	};                                                                                         \
                                                                                                    \
