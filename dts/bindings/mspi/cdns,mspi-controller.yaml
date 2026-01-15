@@ -20,6 +20,11 @@ properties:
     description: |
       Offset to the FIFO for indirect access relative to flash's base address.
 
+  baud-rate-div:
+    type: int
+    description: |
+      Baud rate divisor value that divides the MSPI master reference clock.
+
   sram-allocated-for-read:
     required: true
     type: int

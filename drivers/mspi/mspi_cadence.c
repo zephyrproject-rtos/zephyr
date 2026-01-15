@@ -31,6 +31,7 @@ struct mspi_cadence_config {
 	const struct pinctrl_dev_config *pinctrl;
 	const uint32_t data_reg;
 	const uint32_t ahb_offset;
+	const uint8_t baud_rate_div;
 	const uint32_t sram_allocated_for_read;
 
 	const struct mspi_cadence_timing_cfg initial_timing_cfg;
@@ -246,7 +247,7 @@ static int mspi_cadence_init(const struct device *dev)
 	MSPI_CADENCE_REG_WRITE(1, CONFIG, RESET_CFG, base_addr);
 
 	/* Set baud rate division to 32; formula: (n + 1) * 2 */
-	MSPI_CADENCE_REG_WRITE(15, CONFIG, MSTR_BAUD_DIV, base_addr);
+	MSPI_CADENCE_REG_WRITE((config->baud_rate_div / 2) - 1, CONFIG, MSTR_BAUD_DIV, base_addr);
 
 	/* Disable dual byte opcodes */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, DUAL_BYTE_OPCODE_EN, base_addr);
@@ -909,7 +910,9 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 
 #define CADENCE_CHECK_MULTIPERIPHERAL(n)                                                           \
 	BUILD_ASSERT(DT_PROP_OR(DT_DRV_INST(n), software_multiperipheral, 0) == 0,                 \
-		     "Multiperipherals arent's supported by the driver as of now")
+		     "Multiperipherals arent's supported by the driver as of now");                \
+	BUILD_ASSERT(DT_INST_PROP_OR(n, baud_rate_div, 32) % 2 == 0,                               \
+		     "Baud rate divisor must be an even number between 2 and 32 inclusive.");
 
 #define MSPI_CONFIG(n)                                                                             \
 	{.op_mode = DT_INST_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),                      \
@@ -924,6 +927,7 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 		.mspi_config = MSPI_CONFIG(n),                                                     \
 		.data_reg = DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                                 \
 		.ahb_offset = DT_INST_PROP_OR(n, indirect_trigger_offset, 0),                      \
+		.baud_rate_div = DT_INST_PROP_OR(n, baud_rate_div, 32),                            \
 		.sram_allocated_for_read = DT_PROP(DT_DRV_INST(n), sram_allocated_for_read),       \
 		.initial_timing_cfg = {                                                            \
 			.nss = DT_PROP_OR(DT_DRV_INST(n), init_nss_delay,                          \
