@@ -187,11 +187,10 @@ static void smp_notify_finished(struct bt_conn *conn, void *user_data)
 /* Sets connection parameters for a given conn. */
 static void conn_param_set(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	int ret = 0;
 	struct conn_param_data *cpd = conn_param_data_get(conn);
 
 	if (cpd != NULL) {
-		ret = bt_conn_le_param_update(conn, param);
+		int ret = bt_conn_le_param_update(conn, param);
 		if (ret && (ret != -EALREADY)) {
 			/* Try again to avoid being stuck with incorrect connection parameters. */
 			(void)k_work_reschedule(&cpd->ework, K_MSEC(RETRY_TIME));
