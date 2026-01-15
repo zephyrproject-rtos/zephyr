@@ -121,6 +121,10 @@ properties:
           type: string
         doc-url:
           type: string
+        fetcher:
+          type: string
+        size:
+          type: integer
       required:
         - path
         - sha256
