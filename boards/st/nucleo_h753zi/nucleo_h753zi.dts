@@ -279,3 +279,7 @@ zephyr_udc0: &usbotg_fs {
 &cryp {
 	status = "okay";
 };
+
+&hash {
+	status = "okay";
+};
