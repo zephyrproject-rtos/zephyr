@@ -1,13 +1,4 @@
-.. _sparkfun_thing_plus_nrf9160:
-
-nRF9160 Thing Plus
-##################
-
-.. figure:: img/sparkfun_thing_plus_nrf9160.jpg
-     :align: center
-     :alt: Sparkfun nRF9160 Thing Plus
-
-     nRF9160 Thing Plus (Credit: Sparkfun)
+.. zephyr:board:: sparkfun_thing_plus
 
 Overview
 ********
@@ -38,6 +29,11 @@ More information about the board can be found at the
 
 Hardware
 ********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -77,6 +73,8 @@ on the bottom side.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 sparkfun_thing_plus_nrf9160 can be used with most programmers like:
 
