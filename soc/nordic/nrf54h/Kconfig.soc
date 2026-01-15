@@ -12,6 +12,8 @@ config SOC_SERIES_NRF54H
 config SOC_SERIES_NRF54HX
 	bool
 	select SOC_SERIES_NRF54H
+	help
+	  Deprecated Kconfig, use SOC_SERIES_NRF54H instead
 
 config SOC_SERIES
 	default "nrf54h" if SOC_SERIES_NRF54H

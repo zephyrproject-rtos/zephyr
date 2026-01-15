@@ -16,6 +16,9 @@ config SOC_SERIES_NRF52
 	select HAS_SWO
 	select HAS_POWEROFF
 
+config SOC_SERIES_NRF52X
+	select DEPRECATED
+
 config SOC_NRF52832
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU

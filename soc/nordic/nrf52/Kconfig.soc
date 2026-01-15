@@ -12,6 +12,8 @@ config SOC_SERIES_NRF52
 config SOC_SERIES_NRF52X
 	bool
 	select SOC_SERIES_NRF52
+	help
+	  Deprecated Kconfig, use SOC_SERIES_NRF52 instead
 
 config SOC_SERIES
 	default "nrf52" if SOC_SERIES_NRF52
