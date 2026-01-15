@@ -1,0 +1,4 @@
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/observer
+   :board: lyra_dvk_p
+   :goals: build

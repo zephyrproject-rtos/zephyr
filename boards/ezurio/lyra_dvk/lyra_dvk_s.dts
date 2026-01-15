@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/bgm220sc22hna.dtsi>
+#include "lyra_dvk.dtsi"
+#include "lyra_dvk_s.dtsi"
+
+/ {
+	model = "Ezurio Lyra S DVK";
+	compatible = "ezurio,lyra_dvk_s", "silabs,efr32bg22";
+};

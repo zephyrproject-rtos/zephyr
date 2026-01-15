@@ -1,0 +1,10 @@
+.. |Lyra variant| replace:: P
+.. |Datasheet Ref| replace:: `Lyra P datasheet`_
+.. |SoC| replace:: BGM220PC22HNA
+.. |SoC short| replace:: BGM220P
+.. |SoC Datasheet Ref| replace:: `BGM220PC22HNA datasheet`_
+.. |Number of IO| replace:: 24
+.. |BLE TX Power| replace:: 8dBm
+.. |Board Quoted| replace:: ``lyra_dvk_p``
+.. |User Guide Ref| replace:: `Lyra P DVK user guide`_
+.. |Schematics Ref| replace:: `Lyra P DVK schematics`_
