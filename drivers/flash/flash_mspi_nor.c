@@ -44,6 +44,15 @@ static bool in_octal_io(const struct device *dev)
 		dev_data->last_applied_cfg->io_mode == MSPI_IO_MODE_OCTAL;
 }
 
+
+static bool in_ddr(const struct device *dev)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
+	return dev_data->last_applied_cfg &&
+	       dev_data->last_applied_cfg->data_rate == MSPI_DATA_RATE_DUAL;
+}
+
 static bool is_quad_enable_needed(const struct mspi_dev_cfg *cfg)
 {
 	return cfg && (cfg->io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
@@ -156,6 +165,7 @@ static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	static uint8_t sr_even[2] = {0};
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
@@ -163,14 +173,23 @@ static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr)
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdsr_dummy;
 		dev_data->xfer.addr_length = dev_data->cmd_info.rdsr_addr_4
 					   ? 4 : 0;
+		dev_data->packet.address = 0;
 	}
-	dev_data->packet.num_bytes = sizeof(uint8_t);
-	dev_data->packet.data_buf  = sr;
+
+	if (in_ddr(dev)) {
+		dev_data->packet.num_bytes = sizeof(uint8_t) * 2;
+	} else {
+		dev_data->packet.num_bytes = sizeof(uint8_t);
+	}
+
+	dev_data->packet.data_buf = sr_even;
 	rc = perform_xfer(dev, op_code);
 	if (rc < 0) {
 		LOG_ERR("%s 0x%02x failed: %d", __func__, op_code, rc);
 		return rc;
 	}
+
+	*sr = sr_even[0];
 
 	return 0;
 }
@@ -592,6 +611,7 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	static uint8_t id_even[JESD216_READ_ID_LEN + 1] = {0};
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
@@ -599,13 +619,22 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdid_dummy;
 		dev_data->xfer.addr_length = dev_data->cmd_info.rdid_addr_4
 					   ? 4 : 0;
+		dev_data->packet.address = 0;
 	}
-	dev_data->packet.data_buf  = id;
-	dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
+
+	if (in_ddr(dev)) {
+		dev_data->packet.num_bytes = JESD216_READ_ID_LEN + 1;
+	} else {
+		dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
+	}
+
+	dev_data->packet.data_buf = id_even;
 	rc = perform_xfer(dev, SPI_NOR_CMD_RDID);
 	if (rc < 0) {
 		LOG_ERR("Read JEDEC ID failed: %d", rc);
 	}
+
+	memcpy(id, id_even, JESD216_READ_ID_LEN);
 
 	return rc;
 }
