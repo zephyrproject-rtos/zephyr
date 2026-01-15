@@ -1252,6 +1252,19 @@
 			status = "disabled";
 		};
 
+		xspi3: spi@5802d000 {
+			compatible = "st,stm32-xspi";
+			reg = <0x5802d000 0x1000>, <0x80000000 DT_SIZE_M(256)>;
+			interrupts = <172 0>;
+			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB5, 17)>,
+				 <&rcc STM32_SRC_HCLK5 XSPI3_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB5, 13)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		usbotg_hs1: otghs@58040000 {
 			compatible = "st,stm32n6-otghs", "st,stm32-otghs";
 			reg = <0x58040000 0x2000>;
