@@ -644,7 +644,8 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan, u
 		}
 	}
 
-	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R) &&
+	    !atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		if (bt_l2cap_br_get_outstanding_count(br_chan)) {
 			/*
 			 * If unacknowledged I-frames have been sent but the retransmission
