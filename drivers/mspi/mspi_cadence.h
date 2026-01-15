@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/drivers/mspi/mspi_cadence.h>
 
 /*
  * Implemented dev_cfg_bits. Implemented means that the value is at least
