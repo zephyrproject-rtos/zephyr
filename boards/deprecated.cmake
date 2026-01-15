@@ -64,3 +64,6 @@ set(esp32s3_devkitm/esp32s3/procpu_DEPRECATED
 set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
     esp32s3_devkitc/esp32s3/appcpu
 )
+set(weact_stm32h5_core_DEPRECATED
+    weact_stm32h562_core
+)
