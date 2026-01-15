@@ -1043,7 +1043,10 @@ static int flash_chip_init(const struct device *dev)
 	memcpy(&mspi_nor_init_cfg, &dev_config->mspi_control_cfg, sizeof(mspi_nor_init_cfg));
 	mspi_nor_init_cfg.freq = MIN(dev_config->mspi_control_cfg.freq, MHZ(50));
 	rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
-			     MSPI_DEVICE_CONFIG_ALL,
+			     MSPI_DEVICE_CONFIG_CE_NUM | MSPI_DEVICE_CONFIG_FREQUENCY |
+				     MSPI_DEVICE_CONFIG_IO_MODE | MSPI_DEVICE_CONFIG_DATA_RATE |
+				     MSPI_DEVICE_CONFIG_CPP | MSPI_DEVICE_CONFIG_CE_POL |
+				     MSPI_DEVICE_CONFIG_DQS,
 			     &mspi_nor_init_cfg);
 	if (rc < 0) {
 		LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
@@ -1333,7 +1336,6 @@ static DEVICE_API(flash, drv_api) = {
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
 	.cpp = MSPI_CPP_MODE_0,						\
-	.endian = MSPI_XFER_BIG_ENDIAN,					\
 	.ce_polarity = MSPI_CE_ACTIVE_LOW,				\
 	.dqs_enable = false,						\
 }
