@@ -613,6 +613,9 @@ Bluetooth Audio
   receive states at the end of the procedure. Users will have to manually call
   :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
   prior to performing any operations. (:github:`91587`)
+* :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
+  Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
+  :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
 
 Bluetooth Mesh
 ==============
