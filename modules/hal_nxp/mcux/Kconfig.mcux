@@ -1,7 +1,7 @@
 # MCUXpresso SDK
 
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_MCUX
@@ -85,6 +85,12 @@ config NXP_MULTICORE
 	bool "NXP Multicore Manager support"
 	help
 	  Includes NXP Multicore Manager support.
+
+config NXP_SNPS_BLE_CTRL
+	bool "Include NXP SNPS BLE Controller"
+	depends on BT
+	help
+	  If enabled, the NXP SNPS BLE Controller will be included.
 
 endif # HAS_MCUX
 
