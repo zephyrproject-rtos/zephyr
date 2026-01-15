@@ -10,6 +10,7 @@
 
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -94,14 +95,26 @@ static bool z_sig_is_valid(int signo)
 	return (signo >= 0) && (signo <= K_SIG_RTMIN + K_SIG_NUM_RT);
 }
 
+static bool z_sig_is_reserved(int signo)
+{
+#ifdef CONFIG_THREAD_CANCEL
+	/* cancellation is requested with k_thread_cancel() and controlled through the mask */
+	return signo == K_SIG_CANCEL;
+#else
+	ARG_UNUSED(signo);
+	return false;
+#endif /* CONFIG_THREAD_CANCEL */
+}
+
 static bool z_sig_may_be_caught(int signo)
 {
-	return !((signo == K_SIG_KILL) || (signo == K_SIG_STOP));
+	return !((signo == K_SIG_KILL) || (signo == K_SIG_STOP) || z_sig_is_reserved(signo));
 }
 
 static bool z_sig_may_be_ignored(int signo)
 {
-	return !((signo == K_SIG_KILL) || (signo == K_SIG_STOP) || (signo == K_SIG_CONT));
+	return !((signo == K_SIG_KILL) || (signo == K_SIG_STOP) || (signo == K_SIG_CONT) ||
+		 z_sig_is_reserved(signo));
 }
 
 static void z_sig_pending_unlocked(struct k_sig_set *set, struct k_thread *tid)
@@ -668,8 +681,14 @@ static int z_sig_set_min(const struct k_sig_set *set, bool rt)
 	ARRAY_FOR_EACH(set->sig, i) {
 		word = set->sig[i];
 
-		if (rt && (i == 0)) {
-			word &= ~BIT_MASK(K_SIG_RTMIN - 1);
+		if (rt) {
+			const int word_base = i * BITS_PER_LONG;
+			const int rtmin_bit = K_SIG_RTMIN - 1 - word_base;
+			if (rtmin_bit >= BITS_PER_LONG) {
+				word = 0;
+			} else if (rtmin_bit > 0) {
+				word &= ~BIT_MASK(rtmin_bit);
+			}
 		}
 
 		if (word == 0) {
@@ -876,6 +895,107 @@ static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext)
 	k_thread_abort(k_current_get());
 }
 
+#ifdef CONFIG_THREAD_CANCEL
+FUNC_NORETURN void z_thread_cancel_actuate(void)
+{
+#ifdef CONFIG_THREAD_CLEANUP
+	/* call clean-up routines */
+	for (bool more = true; more;) {
+		more = k_thread_cleanup_pop(true);
+	}
+#endif
+
+	k_thread_abort(k_current_get());
+	CODE_UNREACHABLE;
+}
+
+/*
+ * Not a system call, and defined here rather than in thread.c because this file is compiled
+ * without __ZEPHYR_SUPERVISOR__: it runs in the exiting thread's own mode, so the cleanup
+ * handlers and destructors of a user thread execute in user mode. Disabling cancellation
+ * first makes the result final: no cancellation point below can actuate a pending request.
+ */
+FUNC_NORETURN void k_thread_exit(void *result)
+{
+	k_thread_cancel_setstate(false);
+	k_thread_result_set(result);
+	z_thread_cancel_actuate();
+	CODE_UNREACHABLE;
+}
+
+bool z_thread_cancel_try_actuate(void)
+{
+	k_tid_t const tid = _current;
+
+	if (k_sig_ismember(&tid->base.sig.mask, K_SIG_CANCEL) != 0) {
+		return false;
+	}
+
+#ifdef CONFIG_USERSPACE
+	if (k_is_in_user_syscall()) {
+		/*
+		 * Cleanup handlers and destructors of a user thread run in user mode: hand the
+		 * request to the signal path, which delivers K_SIG_CANCEL through the trampoline
+		 * on return from this system call. The request stays pending until then, so a
+		 * full queue simply retries at the next cancellation point.
+		 */
+		if (atomic_get(&tid->base.cancel_pending) == 0) {
+			return false;
+		}
+		(void)k_sig_queue(tid, K_SIG_CANCEL, (union k_sig_val){0});
+		return true;
+	}
+#endif /* CONFIG_USERSPACE */
+
+	if (!atomic_cas(&tid->base.cancel_pending, 1, 0)) {
+		return false;
+	}
+	atomic_dec(&z_sig_work_pending);
+	atomic_set(&tid->base.result, (atomic_val_t)K_THREAD_CANCELLED);
+
+	z_thread_cancel_actuate();
+	CODE_UNREACHABLE;
+}
+
+/**
+ * @brief The cancellation signal handler
+ *
+ * In contrast to aborting a thread, cancelling a thread is a cooperative process. It
+ * permits the thread to
+ *
+ * 1. perform any thread-level clean-up routines
+ * 2. destructors for thread-specific storage are called
+ * 3. finally, the thread is terminated
+ *
+ * @param sig signal number
+ * @param info signal information
+ * @param ucontext signal user context
+ */
+static void z_sig_handler_cancel(int sig, struct k_sig_info *info, void *ucontext)
+{
+	ARG_UNUSED(sig);
+	ARG_UNUSED(info);
+	ARG_UNUSED(ucontext);
+
+	/*
+	 * Runs in the cancelled thread's own mode (user mode for a user thread, through the
+	 * trampoline) and touches nothing but system calls: the request was claimed and the
+	 * result set kernel-side at delivery.
+	 */
+	z_thread_cancel_actuate();
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_THREAD_CANCEL */
+
+/**
+ * @brief The coredump signal handler
+ *
+ * The coredump signal handler first triggers a coredump, and then terminates the calling thread.
+ *
+ * @param sig signal number
+ * @param info signal information
+ * @param ucontext signal user context
+ */
 static void z_sig_handler_core(int sig, struct k_sig_info *info, void *ucontext)
 {
 	/* trigger a coredump (not yet implemented) */
@@ -1014,6 +1134,11 @@ static k_sig_handler_t z_sig_resolve(int sig)
 	case K_SIG_SYS:
 		return z_sig_handler_core;
 
+#ifdef CONFIG_THREAD_CANCEL
+	case K_SIG_CANCEL:
+		return z_sig_handler_cancel;
+#endif
+
 	/* all signals that have default 'Ign' behaviour */
 	case K_SIG_CHLD:
 	case K_SIG_URG:
@@ -1034,6 +1159,23 @@ static k_sig_handler_t z_sig_resolve(int sig)
 
 	CODE_UNREACHABLE;
 }
+
+#if defined(CONFIG_THREAD_CANCEL)
+void z_syscall_cancel_check_slow(void)
+{
+	k_tid_t const tid = _current;
+
+	if (k_is_pre_kernel() || k_is_in_isr()) {
+		return;
+	}
+
+	if (z_thread_cancel_is_async(tid)) {
+		return;
+	}
+
+	(void)z_thread_cancel_try_actuate();
+}
+#endif /* CONFIG_THREAD_CANCEL */
 
 void z_syscall_sig_check_slow(void)
 {

@@ -870,6 +870,12 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		}
 
 		if (new_state == _THREAD_DEAD) {
+#ifdef CONFIG_THREAD_CANCEL
+			/* a cancellation request that never actuated is retired with the thread */
+			if (atomic_cas(&thread->base.cancel_pending, 1, 0)) {
+				atomic_dec(&z_sig_work_pending);
+			}
+#endif /* CONFIG_THREAD_CANCEL */
 			if (thread->base.pended_on != NULL) {
 				unpend_thread_no_timeout(thread);
 			}

@@ -62,7 +62,12 @@ extern "C" {
  * @note K_SIG_RTMAX is intentionally not defined since it would inevitably lead to off-by-one
  * errors.
  */
-#define K_SIG_RTMIN 32
+#define K_SIG_CANCEL CONFIG_THREAD_CANCEL_SIGNAL_NUMBER
+
+/** Reserved (Linux NPTL slot 33); not delivered to applications. */
+#define K_SIG_RESERVED (CONFIG_THREAD_CANCEL_SIGNAL_NUMBER + 1)
+
+#define K_SIG_RTMIN (CONFIG_THREAD_CANCEL_SIGNAL_NUMBER + 2)
 
 /** @brief Number of supported realtime signals */
 #define K_SIG_NUM_RT MAX(SIGNAL_SET_SIZE - K_SIG_RTMIN, 0)

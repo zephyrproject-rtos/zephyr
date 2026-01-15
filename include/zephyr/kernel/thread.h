@@ -144,6 +144,11 @@ struct _thread_base {
        /** Thread result or return value */
        atomic_t result;
 #endif
+
+#ifdef CONFIG_THREAD_CANCEL
+       /** Sticky cancellation request pending actuation */
+       atomic_t cancel_pending;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;

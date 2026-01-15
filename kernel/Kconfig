@@ -203,6 +203,57 @@ config THREAD_RESULT
 	help
 	  Say 'Y' here to support a thread result or "return value".
 
+config THREAD_CANCEL_SIGNAL_NUMBER
+	int "Thread cancellation signal number"
+	def_int 32
+	help
+	  k_thread_cancel() is implemented via a signal. This option configures the signal
+	  number, delivered via k_sig_queue(), that is used when k_thread_cancel() is called.
+
+	  This signal number is intentionally chosen to be compabile with Linux' usage of
+	  K_SIG_RTMIN for cancellation.
+
+	  The signal number may be defined regardless of whether CONFIG_THREAD_CANCEL is
+	  enabled.
+
+config THREAD_CANCEL
+	bool "Thread cancellation"
+	depends on SIGNAL
+	select THREAD_RESULT
+	default y
+	help
+	  Say 'Y' here to support thread cancellation. Thread cancellation differs from
+	  thread abort in that it allows the target thread to perform cleanup operations,
+	  possibly set a return value, and terminate at a cancellation point.
+
+if THREAD_CANCEL
+
+config THREAD_CANCEL_TLS
+	bool "Mirror the pending-cancellation flag in thread-local storage"
+	default y
+	depends on THREAD_LOCAL_STORAGE
+	help
+	  Keep a copy of each thread's pending-cancellation flag in its thread-local
+	  storage, where the thread can read it without a system call. Cancellation
+	  points test the copy first and only enter the kernel when it is set, so a
+	  wait that is not being cancelled costs no extra system call. The kernel's
+	  own flag stays authoritative: a thread that overwrites its copy only delays
+	  its own cancellation until its next system call.
+
+config SIGNAL_SET_SIZE_MIN_THREAD_CANCEL
+	int
+	default 34
+	help
+	  This option represents the number of signals required for thread cancellation. While
+	  thread cancellation itself only requires one specific signal number, it is a fixed
+	  value, so there may be more signals in the set aside from just the bare minmimum
+	  required by ISO C.
+
+	  When enabled, this option ensures the value of SIGNAL_SET_SIZE is at least
+	  CONFIG_THREAD_CANCEL_SIGNAL_NUMBER + 2 (Linux NPTL: reserve 32 cancel, 33 reserved).
+
+endif # THREAD_CANCEL
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help

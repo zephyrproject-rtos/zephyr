@@ -418,6 +418,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  */
 #define K_SSE_REGS (BIT(15))
 
+/**
+ * @brief Asynchronous cancellation for thread
+ *
+ * This option indicates that the thread may be cancelled asynchronously.
+ *
+ * @note Asynchronous cancellation is not yet implemented. All thread cancellation is deferred.
+ */
+#define K_CANCEL_ASYNC (BIT(9))
+
 /* end - thread options */
 
 #if !defined(_ASMLANGUAGE)
@@ -7600,6 +7609,168 @@ __syscall void k_sig_current(struct k_sig_info *info, struct k_sig_action *actio
 __syscall void k_sig_return(void);
 /** @endcond */
 #endif
+#if defined(CONFIG_THREAD_CANCEL) || defined(__DOXYGEN__)
+/**
+ * @addtogroup k_thread_cancel_apis
+ * @{
+ */
+
+/** The result of a cancelled thread */
+#define K_THREAD_CANCELLED INT_TO_POINTER(-1)
+
+/**
+ * @brief Request cancellation of a thread.
+ *
+ * Request that target thread @p tid is cancelled. This function records a sticky
+ * cancellation request and is not itself a cancellation point. If the target thread has
+ * cancellation enabled, it is terminated at the next cancellation point (deferred
+ * cancellation) or via the cancellation signal (asynchronous cancellation). If thread
+ * cancellation is disabled for @p tid, then the cancellation request remains pending until
+ * thread cancellation is re-enabled.
+ *
+ * Cancelling a thread is different than aborting a thread (@ref k_thread_abort). A cancelled
+ * thread is a cooperative mechanism that allows a thread to be cancelled at a specific point in
+ * its execution. A cancelled thread is expected to run any internal cleanup handlers, whereas
+ * an aborted thread is terminated immediately without any cleanup.
+ *
+ * If @kconfig{CONFIG_THREAD_RESULT} is enabled, the result of a cancelled thread will be set to
+ * @ref K_THREAD_CANCELLED.
+ *
+ * @param tid Thread ID of the thread to cancel.
+ *
+ * @retval 0 on success.
+ * @retval -EPERM if the calling thread does not have permission to cancel @p tid.
+ * @retval -ESRCH if @p tid does not represent a valid thread.
+ */
+__syscall int k_thread_cancel(k_tid_t tid);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+/** @brief underlying system call for @ref k_thread_cancel_getstate and @ref
+ * k_thread_cancel_setstate */
+__syscall void k_thread_cancel_qstate(bool *new_state, bool *old_state);
+
+/** @brief underlying system call for @ref k_thread_cancel_gettype and @ref
+ * k_thread_cancel_settype */
+__syscall void k_thread_cancel_qtype(bool *new_type, bool *old_type);
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Get the cancellation state of the current thread.
+ *
+ * @retval true if the thread has cancellation enabled.
+ * @retval false if the thread has cancellation disabled.
+ */
+static inline bool k_thread_cancel_getstate(void)
+{
+	bool enabled = true;
+
+	k_thread_cancel_qstate(NULL, &enabled);
+
+	return enabled;
+}
+
+/**
+ * @brief Set the cancellation state of the current thread.
+ *
+ * @param enabled true to enable cancellation, false to disable cancellation.
+ *
+ * @note If the current thread has a pending cancellation request and this call re-enables
+ * cancellation, the thread does not return from this call.
+ */
+static inline void k_thread_cancel_setstate(bool enabled)
+{
+	k_thread_cancel_qstate(&enabled, NULL);
+}
+
+/**
+ * @brief Get the cancellation type of the current thread.
+ *
+ * @retval true if the thread has asynchronous cancellation enabled.
+ * @retval false if the thread has deferred cancellation enabled.
+ *
+ * @note Asynchronous cancellation is not yet implemented. All thread cancellation is deferred.
+ */
+static inline bool k_thread_cancel_gettype(void)
+{
+	bool async = true;
+
+	k_thread_cancel_qtype(NULL, &async);
+
+	return async;
+}
+
+/**
+ * @brief Set the cancellation type of the current thread.
+ *
+ * @param async true to enable asynchronous cancellation, false to enable deferred cancellation.
+ *
+ * @note Asynchronous cancellation is not yet implemented. All thread cancellation is deferred.
+ */
+static inline void k_thread_cancel_settype(bool async)
+{
+	k_thread_cancel_qtype(&async, NULL);
+}
+
+/**
+ * @brief Test for a pending cancellation request and act on it.
+ *
+ * This function is a cancellation point. It does not queue a cancellation request. If a
+ * cancellation request is pending and cancellation is enabled for the current thread, then
+ * this call does not return.
+ */
+__syscall void k_thread_testcancel(void);
+
+#ifdef CONFIG_THREAD_CANCEL_TLS
+extern Z_THREAD_LOCAL atomic_t z_tls_cancel_pending;
+#endif
+
+/**
+ * @brief Test whether a cancellation request may be pending for the current thread.
+ *
+ * A cheap, possibly conservative test: when it returns false no cancellation request is
+ * pending, so a cancellation point may skip @ref k_thread_testcancel. When it returns true a
+ * request may be pending and the caller should invoke @ref k_thread_testcancel to act on it.
+ * Without @kconfig{CONFIG_THREAD_CANCEL_TLS} it always returns true.
+ *
+ * @return false if no cancellation request is pending, true otherwise.
+ */
+static inline bool k_thread_cancel_may_be_pending(void)
+{
+#ifdef CONFIG_THREAD_CANCEL_TLS
+	return *(volatile atomic_t *)&z_tls_cancel_pending != 0;
+#else
+	return true;
+#endif
+}
+
+#if defined(CONFIG_THREAD_RESULT) || defined(__DOXYGEN__)
+/**
+ * @brief Terminate the current thread gracefully and set its result.
+ *
+ * Executing this function terminates the current thread gracefully, in the same way that a
+ * cancelled thread is terminated: cancellation is disabled, the result is recorded, and the
+ * thread's cleanup handlers and thread-specific storage destructors run in the calling
+ * thread's own context and privilege level before it is aborted.
+ *
+ * This function does not return.
+ *
+ * @param result The result to set for the current thread.
+ *
+ * @note @kconfig{CONFIG_THREAD_CANCEL} and @kconfig{CONFIG_THREAD_RESULT} must
+ * be set for this function to be available.
+ */
+FUNC_NORETURN void k_thread_exit(void *result);
+#endif
+
+/**
+ * @}
+ */
+
+#endif /* CONFIG_THREAD_CANCEL */
 
 /**
  * @}

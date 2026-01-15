@@ -1172,6 +1172,10 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 #endif
 
 	z_init_thread_timeout(thread_base);
+
+#ifdef CONFIG_THREAD_CANCEL
+	atomic_set(&thread_base->cancel_pending, 0);
+#endif
 }
 
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
@@ -2010,3 +2014,179 @@ void *z_vrfy_k_thread_result_get(void)
 }
 #include <zephyr/syscalls/k_thread_result_get_mrsh.c>
 #endif
+
+#ifdef CONFIG_THREAD_CANCEL
+static void z_thread_cancel_deliver_pending(k_tid_t tid)
+{
+	if (atomic_get(&tid->base.cancel_pending) == 0) {
+		return;
+	}
+
+	if (!z_thread_cancel_is_enabled(tid)) {
+		return;
+	}
+
+	if (z_thread_cancel_is_async(tid)) {
+		(void)k_sig_queue(tid, K_SIG_CANCEL, (union k_sig_val){0});
+	} else if (tid == _current) {
+		(void)z_thread_cancel_try_actuate();
+	}
+}
+
+#ifdef CONFIG_THREAD_CANCEL_TLS
+Z_THREAD_LOCAL atomic_t z_tls_cancel_pending;
+
+/*
+ * Static TLS places a variable at the same offset from the thread pointer in every
+ * thread, and thread->tls is that thread's thread pointer value.
+ */
+static void thread_cancel_tls_set(k_tid_t tid)
+{
+	static ptrdiff_t offset;
+	static bool offset_valid;
+
+	if (!offset_valid) {
+		offset = (intptr_t)&z_tls_cancel_pending - (intptr_t)_current->tls;
+		offset_valid = true;
+	}
+
+	if (tid->tls != 0) {
+		*(volatile atomic_t *)((intptr_t)tid->tls + offset) = 1;
+	}
+}
+#else
+#define thread_cancel_tls_set(tid) do { } while (false)
+#endif /* CONFIG_THREAD_CANCEL_TLS */
+
+int z_impl_k_thread_cancel(k_tid_t tid)
+{
+	if (tid == NULL) {
+		return -ESRCH;
+	}
+
+	const uint32_t invalid_states = _THREAD_DUMMY | _THREAD_DEAD | _THREAD_ABORTING;
+
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if ((tid->base.thread_state & invalid_states) != 0) {
+		k_spin_unlock(&_sched_spinlock, key);
+		return -ESRCH;
+	}
+
+	/* the result becomes K_THREAD_CANCELLED when the request actuates, not when it is made */
+	const bool first = atomic_cas(&tid->base.cancel_pending, 0, 1);
+
+	if (first) {
+		atomic_inc(&z_sig_work_pending);
+		thread_cancel_tls_set(tid);
+	}
+
+	const bool deliver_async = first && z_thread_cancel_is_async(tid) &&
+				   z_thread_cancel_is_enabled(tid);
+
+	k_spin_unlock(&_sched_spinlock, key);
+
+	if (deliver_async) {
+		return k_sig_queue(tid, K_SIG_CANCEL, (union k_sig_val){0});
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_thread_cancel(k_tid_t tid)
+{
+	struct k_object *const ko = k_object_find(tid);
+	const int oret = k_object_validate(ko, K_OBJ_THREAD, _OBJ_INIT_TRUE);
+
+	if (oret == -EINVAL) {
+		return -ESRCH;
+	}
+
+	K_OOPS(K_SYSCALL_VERIFY_MSG(oret == 0, "access denied"));
+
+	return z_impl_k_thread_cancel(tid);
+}
+#include <zephyr/syscalls/k_thread_cancel_mrsh.c>
+#endif
+
+void z_impl_k_thread_cancel_qstate(bool *new_state, bool *old_state)
+{
+	bool enabled = k_sig_ismember(&_current->base.sig.mask, K_SIG_CANCEL) == 0;
+
+	if (new_state != NULL) {
+		if (*new_state) {
+			(void)k_sig_delset(&_current->base.sig.mask, K_SIG_CANCEL);
+			z_thread_cancel_deliver_pending(_current);
+		} else {
+			(void)k_sig_addset(&_current->base.sig.mask, K_SIG_CANCEL);
+		}
+	}
+
+	if (old_state != NULL) {
+		*old_state = enabled;
+	}
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_thread_cancel_qstate(bool *new_state, bool *old_state)
+{
+	if (new_state != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(new_state, sizeof(*new_state)));
+	}
+	if (old_state != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(old_state, sizeof(*old_state)));
+	}
+
+	z_impl_k_thread_cancel_qstate(new_state, old_state);
+}
+#include <zephyr/syscalls/k_thread_cancel_qstate_mrsh.c>
+#endif
+
+void z_impl_k_thread_cancel_qtype(bool *new_type, bool *old_type)
+{
+	const bool async = (_current->base.user_options & K_CANCEL_ASYNC) != 0;
+
+	if (new_type != NULL) {
+		if (*new_type) {
+			_current->base.user_options |= K_CANCEL_ASYNC;
+			z_thread_cancel_deliver_pending(_current);
+		} else {
+			_current->base.user_options &= ~K_CANCEL_ASYNC;
+		}
+	}
+
+	if (old_type != NULL) {
+		*old_type = async;
+	}
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_thread_cancel_qtype(bool *new_type, bool *old_type)
+{
+	if (new_type != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(new_type, sizeof(*new_type)));
+	}
+	if (old_type != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(old_type, sizeof(*old_type)));
+	}
+
+	z_impl_k_thread_cancel_qtype(new_type, old_type);
+}
+#include <zephyr/syscalls/k_thread_cancel_qtype_mrsh.c>
+#endif
+
+void z_impl_k_thread_testcancel(void)
+{
+	z_syscall_cancel_check();
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_thread_testcancel(void)
+{
+	z_impl_k_thread_testcancel();
+}
+#include <zephyr/syscalls/k_thread_testcancel_mrsh.c>
+#endif
+
+#endif /* CONFIG_THREAD_CANCEL */

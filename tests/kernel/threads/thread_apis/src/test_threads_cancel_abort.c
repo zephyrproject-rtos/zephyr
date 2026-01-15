@@ -11,6 +11,7 @@
 static ZTEST_BMEM int execute_flag;
 
 K_SEM_DEFINE(sync_sema, 0, 1);
+K_SEM_DEFINE(cancel_ready, 0, 1);
 #define BLOCK_SIZE 64
 
 static void thread_entry_result(void *p1, void *p2, void *p3)
@@ -146,6 +147,271 @@ ZTEST_USER(threads_lifecycle, test_thread_abort_others)
 	k_msleep(1000);
 	zassert_true(execute_flag == 1);
 }
+
+#ifdef CONFIG_THREAD_CANCEL
+static void thread_entry_cancel(void *p1, void *p2, void *p3)
+{
+	bool cancel_self = (bool)POINTER_TO_INT(p1);
+	bool cancel_enable = (bool)POINTER_TO_INT(p2);
+
+	execute_flag = BIT(0);
+
+	if (cancel_enable) {
+		if (!k_is_user_context()) {
+			/* kernel threads must explicitly opt-in to cancellation */
+			k_thread_cancel_setstate(true);
+		}
+		/* cancellation is enabled by default for user threads */
+		execute_flag |= BIT(1);
+	} else {
+		execute_flag |= BIT(2);
+		/* disable cancellation */
+		k_thread_cancel_setstate(false);
+	}
+
+	zexpect_equal(k_thread_cancel_getstate(), cancel_enable);
+
+	while (!cancel_self) {
+		/* this thread will be cancelled by the main thread */
+		execute_flag |= BIT(3);
+		k_msleep(100); /* sleep is mostly used here as a cancellation point */
+
+		if (!cancel_enable && ((execute_flag & BIT(6)) != 0)) {
+			/*
+			 * We should only get here after the main thread has requested this thread
+			 * to be cancelled and used BIT(6) to signal to this thread that we should
+			 * re-enable cancellation.
+			 */
+			execute_flag |= BIT(7);
+			k_thread_cancel_setstate(true);
+
+			/* code will be unreachable beyond this point */
+
+			execute_flag = 0xffffffff;
+			CODE_UNREACHABLE;
+			zassert_true(false);
+		}
+	}
+
+	/* this thread cancels itself */
+	execute_flag |= BIT(4);
+	zexpect_ok(k_thread_cancel(k_current_get()));
+
+	if (cancel_enable) {
+		k_thread_testcancel();
+	} else {
+		execute_flag |= BIT(5);
+		k_thread_cancel_setstate(true);
+	}
+
+	/* code will be unreachable beyond this point */
+
+	execute_flag = 0xffffffff;
+	CODE_UNREACHABLE;
+	zassert_true(false);
+}
+
+static void thread_entry_cancel_before_sleep(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	execute_flag = BIT(0);
+
+	if (!k_is_user_context()) {
+		k_thread_cancel_setstate(true);
+	}
+
+	execute_flag |= BIT(1);
+	k_sem_give(&sync_sema);
+
+	/* Wait until main has queued cancellation, then enter sleep. */
+	k_sem_take(&cancel_ready, K_FOREVER);
+
+	/* Deferred cancel must act at this cancellation point before blocking. */
+	k_sleep(K_FOREVER);
+
+	execute_flag = 0xffffffff;
+	CODE_UNREACHABLE;
+	zassert_true(false);
+}
+#endif
+
+ZTEST_USER(threads_lifecycle, test_k_thread_cancel)
+{
+#ifndef CONFIG_THREAD_CANCEL
+	ztest_test_skip();
+#else
+	void *result = NULL;
+	struct k_sig_action act = {.handler = K_SIG_IGN};
+
+	/* the cancellation signal is reserved: requested with k_thread_cancel(), never caught */
+	zassert_equal(k_sig_action(K_SIG_CANCEL, &act, NULL), -EINVAL);
+	act.handler = K_SIG_DFL;
+	zassert_equal(k_sig_action(K_SIG_CANCEL, &act, NULL), -EINVAL);
+	bool cancel_self;
+	bool cancel_enable;
+	int expect_flag;
+
+	/* Spawn a self-cancelling thread */
+	{
+		execute_flag = 0;
+		cancel_self = true;
+		cancel_enable = true;
+		expect_flag = BIT(0) | BIT(1) | BIT(4);
+
+		k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cancel,
+				INT_TO_POINTER(cancel_self), INT_TO_POINTER(cancel_enable), NULL, 0,
+				K_USER, K_NO_WAIT);
+		zexpect_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+		zexpect_equal(execute_flag, expect_flag,
+			      "execution flag mismatch. expected: 0x%x actual: 0x%x", expect_flag,
+			      execute_flag);
+		zexpect_equal(result, K_THREAD_CANCELLED, "result %p instead of %p", result,
+			      K_THREAD_CANCELLED);
+	}
+
+	/*
+	 * Spawn a thread that
+	 * - disables cancellation
+	 * - cancels itself
+	 * - re-enables cancellation
+	 */
+	{
+		execute_flag = 0;
+		cancel_self = true;
+		cancel_enable = false;
+		expect_flag = BIT(0) | BIT(2) | BIT(4) | BIT(5);
+
+		k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cancel,
+				INT_TO_POINTER(cancel_self), INT_TO_POINTER(cancel_enable), NULL, 0,
+				K_USER, K_NO_WAIT);
+		zexpect_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+		zexpect_equal(execute_flag, expect_flag,
+			      "execution flag mismatch. expected: 0x%x actual: 0x%x", expect_flag,
+			      execute_flag);
+		zexpect_equal(result, K_THREAD_CANCELLED, "result %p instead of %p", result,
+			      K_THREAD_CANCELLED);
+	}
+
+	/* Spawn a thread and cancel it from this thread */
+	{
+		execute_flag = 0;
+		cancel_self = false;
+		cancel_enable = true;
+		expect_flag = BIT(0) | BIT(1) | BIT(3);
+
+		k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cancel,
+				INT_TO_POINTER(cancel_self), INT_TO_POINTER(cancel_enable), NULL, 0,
+				K_USER, K_NO_WAIT);
+		k_msleep(500);
+		zexpect_ok(k_thread_cancel(&tdata));
+		zexpect_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+		zexpect_equal(execute_flag, expect_flag,
+			      "execution flag mismatch. expected: 0x%x actual: 0x%x", expect_flag,
+			      execute_flag);
+		zexpect_equal(result, K_THREAD_CANCELLED, "result %p instead of %p", result,
+			      K_THREAD_CANCELLED);
+	}
+
+	/*
+	 * Spawn a thread
+	 * - disable cancellation
+	 * - cancel the spawned thread from this thread
+	 * - re-enable cancellation
+	 */
+	{
+		execute_flag = 0;
+		cancel_self = false;
+		cancel_enable = false;
+		expect_flag = BIT(0) | BIT(2) | BIT(3) | BIT(6) | BIT(7);
+
+		k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cancel,
+				INT_TO_POINTER(cancel_self), INT_TO_POINTER(cancel_enable), NULL, 0,
+				K_USER, K_NO_WAIT);
+		k_msleep(200);
+
+		/* expect join to fail, since cancellation has not been re-enabled */
+		zexpect_not_ok(k_thread_rejoin(&tdata, &result, K_MSEC(100)));
+
+		/* mark the thread as pending cancellation */
+		zexpect_ok(k_thread_cancel(&tdata));
+
+		/* expect join to fail, since cancellation has not been re-enabled */
+		zexpect_not_ok(k_thread_rejoin(&tdata, &result, K_MSEC(100)));
+
+		/* use BIT(6) of execute_flag to signal to thread_entry_cancel that it should
+		 * re-enable cancellation */
+		execute_flag |= BIT(6);
+
+		/* finally, join should succeed since cancellation has been re-enabled */
+		zexpect_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+		zexpect_equal(execute_flag, expect_flag,
+			      "execution flag mismatch. expected: 0x%x actual: 0x%x", expect_flag,
+			      execute_flag);
+		zexpect_equal(result, K_THREAD_CANCELLED, "result %p instead of %p", result,
+			      K_THREAD_CANCELLED);
+	}
+
+	/*
+	 * Spawn a thread with a pending cancellation request that enters
+	 * k_sleep(K_FOREVER). Deferred cancel must act at the cancellation
+	 * point before the sleep blocks.
+	 */
+	{
+		execute_flag = 0;
+		expect_flag = BIT(0) | BIT(1);
+
+		k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cancel_before_sleep, NULL,
+				NULL, NULL, 0, K_USER, K_NO_WAIT);
+		zassert_ok(k_sem_take(&sync_sema, K_FOREVER));
+		zexpect_ok(k_thread_cancel(&tdata));
+		k_sem_give(&cancel_ready);
+		zexpect_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+		zexpect_equal(execute_flag, expect_flag,
+			      "execution flag mismatch. expected: 0x%x actual: 0x%x", expect_flag,
+			      execute_flag);
+		zexpect_equal(result, K_THREAD_CANCELLED, "result %p instead of %p", result,
+			      K_THREAD_CANCELLED);
+	}
+
+#endif
+}
+
+#ifdef CONFIG_THREAD_CANCEL
+static void thread_entry_exit(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	execute_flag = 1;
+	k_thread_exit(p1);
+
+	execute_flag = 0xffffffff;
+	CODE_UNREACHABLE;
+	zassert_true(false);
+}
+#endif
+
+ZTEST_USER(threads_lifecycle, test_k_thread_exit)
+{
+#ifndef CONFIG_THREAD_CANCEL
+	ztest_test_skip();
+#else
+	void *actual_result = NULL;
+	const void *expected_result = INT_TO_POINTER(42);
+
+	execute_flag = 0;
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_exit, (void *)expected_result,
+			NULL, NULL, 0, K_USER, K_NO_WAIT);
+	zassert_ok(k_thread_rejoin(&tdata, &actual_result, K_FOREVER));
+	zassert_equal(POINTER_TO_INT(actual_result), POINTER_TO_INT(expected_result),
+		      "result %p instead of %p", actual_result, expected_result);
+	zassert_equal(execute_flag, 1);
+#endif
+}
+
 
 /**
  * @brief Verify that aborting an already terminated thread is harmless.

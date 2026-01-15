@@ -57,9 +57,21 @@ FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES_TLS */
+#if defined(CONFIG_THREAD_CANCEL)
+	/*
+	 * The `k_thread_result_get()` syscall is required until `k_thread_entry_t` is adjusted to
+	 * return `void *`. Once that is done, this code below can be simplified to
+	 * `k_thread_exit(entry(p1, p2, p3))`. That change will reduce overhead and improve
+	 * compatibility with C11 and POSIX threading APIs (possibly others).
+	 */
+	entry(p1, p2, p3);
+
+	k_thread_exit(k_thread_result_get());
+#else
 	entry(p1, p2, p3);
 
 	k_thread_abort(k_current_get());
+#endif
 
 	/*
 	 * Compiler can't tell that k_thread_abort() won't return and issues a

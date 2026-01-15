@@ -311,6 +311,21 @@ void k_thread_abort_cleanup(struct k_thread *thread);
 void k_thread_abort_cleanup_check_reuse(struct k_thread *thread);
 #endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
 
+#ifdef CONFIG_THREAD_CANCEL
+FUNC_NORETURN void z_thread_cancel_actuate(void);
+bool z_thread_cancel_try_actuate(void);
+
+static inline bool z_thread_cancel_is_async(struct k_thread *thread)
+{
+	return (thread->base.user_options & K_CANCEL_ASYNC) != 0U;
+}
+
+static inline bool z_thread_cancel_is_enabled(struct k_thread *thread)
+{
+	return k_sig_ismember(&thread->base.sig.mask, K_SIG_CANCEL) == 0;
+}
+#endif /* CONFIG_THREAD_CANCEL */
+
 #ifdef __cplusplus
 }
 #endif
