@@ -30,6 +30,9 @@ LOG_MODULE_REGISTER(tps55287, CONFIG_REGULATOR_LOG_LEVEL);
 #define RESET_PULSE_TIME_MS 5
 #define RESET_DELAY_MS 100
 
+#define TPS55287_CURRENT_LIMIT_RANGE(r_is)                                                         \
+	LINEAR_RANGE_INIT(0, 500 * 1000 / (r_is), 0, TPS55287_REG_IOUT_LIMIT_MASK)
+
 /* The order of the voltage ranges is important, as it maps to the VOUT_FS register */
 static const struct linear_range core_ranges[] = {
 	LINEAR_RANGE_INIT(800000u, 2500u, 0xf0, BIT_MASK(11)),
@@ -144,6 +147,30 @@ static int regulator_tps55287_get_voltage(const struct device *dev, int32_t *vol
 	return ret;
 }
 
+static unsigned int regulator_tps55287_count_current_limits(const struct device *dev)
+{
+	const struct regulator_tps55287_config *config = dev->config;
+
+	if (config->r_is == 0U) {
+		return 0U;
+	}
+	return TPS55287_REG_IOUT_LIMIT_MASK + 1U;
+}
+
+static int regulator_tps55287_list_current_limit(const struct device *dev, unsigned int idx,
+					   int32_t *curr_ua)
+{
+	const struct regulator_tps55287_config *config = dev->config;
+
+	if (config->r_is == 0U) {
+		return -ENOENT;
+	}
+
+	struct linear_range range = TPS55287_CURRENT_LIMIT_RANGE(config->r_is);
+
+	return linear_range_get_value(&range, idx, curr_ua);
+}
+
 static int regulator_tps55287_get_current_limit(const struct device *dev, int32_t *curr_ua)
 {
 	const struct regulator_tps55287_config *config = dev->config;
@@ -176,8 +203,7 @@ static int regulator_tps55287_set_current_limit(const struct device *dev,
 		return -ENOENT;
 	}
 
-	struct linear_range range = LINEAR_RANGE_INIT(0, 500 * 1000 / config->r_is,
-						      0, TPS55287_REG_IOUT_LIMIT_MASK);
+	struct linear_range range = TPS55287_CURRENT_LIMIT_RANGE(config->r_is);
 
 	ret = linear_range_get_win_index(&range, min_ua, max_ua, &idx);
 	if (ret) {
@@ -280,6 +306,8 @@ static DEVICE_API(regulator, api) = {
 	.get_voltage = regulator_tps55287_get_voltage,
 	.set_active_discharge = regulator_tps55287_set_active_discharge,
 	.get_active_discharge = regulator_tps55287_get_active_discharge,
+	.count_current_limits = regulator_tps55287_count_current_limits,
+	.list_current_limit = regulator_tps55287_list_current_limit,
 	.get_current_limit = regulator_tps55287_get_current_limit,
 	.set_current_limit = regulator_tps55287_set_current_limit,
 };
