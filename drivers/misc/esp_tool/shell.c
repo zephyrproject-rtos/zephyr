@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/version.h>
 #include <zephyr/logging/log.h>
-#include <stdlib.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/misc/esp_tool/esp_tool.h>
 #include <ctype.h>
 
 #ifdef CONFIG_NATIVE_LIBC
@@ -23,71 +24,6 @@ LOG_MODULE_REGISTER(esp_shell);
 
 static const struct device *esp = DEVICE_DT_GET(DT_INST(0, espressif_esp_tool));
 
-#if 0
-extern void foo(void);
-
-void timer_expired_handler(struct k_timer *timer)
-{
-	LOG_INF("Timer expired.");
-
-	/* Call another module to present logging from multiple sources. */
-	foo();
-}
-
-K_TIMER_DEFINE(log_timer, timer_expired_handler, NULL);
-
-static int cmd_log_test_start(const struct shell *sh, size_t argc,
-			      char **argv, uint32_t period)
-{
-	ARG_UNUSED(argv);
-
-	k_timer_start(&log_timer, K_MSEC(period), K_MSEC(period));
-	shell_print(sh, "Log test started\n");
-
-	return 0;
-}
-
-static int cmd_log_test_start_demo(const struct shell *sh, size_t argc,
-				   char **argv)
-{
-	return cmd_log_test_start(sh, argc, argv, 200);
-}
-
-static int cmd_log_test_start_flood(const struct shell *sh, size_t argc,
-				    char **argv)
-{
-	return cmd_log_test_start(sh, argc, argv, 10);
-}
-
-static int cmd_log_test_stop(const struct shell *sh, size_t argc,
-			     char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	k_timer_stop(&log_timer);
-	shell_print(sh, "Log test stopped");
-
-	return 0;
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_test_start,
-	SHELL_CMD_ARG(demo, NULL,
-		  "Start log timer which generates log message every 200ms.",
-		  cmd_log_test_start_demo, 1, 0),
-	SHELL_CMD_ARG(flood, NULL,
-		  "Start log timer which generates log message every 10ms.",
-		  cmd_log_test_start_flood, 1, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_test,
-	SHELL_CMD_ARG(start, &sub_log_test_start, "Start log test", NULL, 2, 0),
-	SHELL_CMD_ARG(stop, NULL, "Stop log test.", cmd_log_test_stop, 1, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
-
-SHELL_CMD_REGISTER(log_test, &sub_log_test, "Log test", NULL);
-#endif
 static int cmd_demo_ping(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -113,12 +49,21 @@ static int cmd_esp_connect(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (esp_tool_connect(esp)) {
+	if (argc > 1 && strcmp(argv[1], "stub") == 0) {
+		if (esp_tool_connect_stub(esp)) {
+			shell_print(sh,"Failed connecting stub");
+			return -1;
+		}
+		shell_print(sh, "STUB connected");
 
+		return 0;
+	}
+
+	if (esp_tool_connect(esp)) {
 		shell_print(sh, "Connection failed");
 		return -1;
 	}
-	shell_print(sh, "ESP connected");
+	shell_print(sh, "ROM connected");
 
 	return 0;
 }
@@ -129,60 +74,61 @@ static int cmd_esp_reset(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 
 	if (esp_tool_reset_target(esp)) {
-
-		shell_print(sh, "Connection failed");
+		shell_print(sh, "Reset failed");
 		return -1;
 	}
-	shell_print(sh, "ESP connected");
+	shell_print(sh, "ESP reset done");
 
 	return 0;
 }
 
-
-static int cmd_esp_target(const struct shell *sh, size_t argc, char **argv)
+static int cmd_esp_target_info(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
 	int id;
+	uint32_t size, offset;
+	char *name;
 
 	if (esp_tool_get_target(esp, &id)) {
-
-		shell_print(sh, "Failed");
+		shell_print(sh, "Failed to read ID");
 		return -1;
 	}
-	shell_print(sh, "%x", id);
+	if (esp_tool_get_target_name(esp, &name)) {
+		shell_print(sh, "Failed to read name");
+		return -1;
+	}
+	if (esp_tool_get_boot_offset(esp, &offset)) {
+		shell_print(sh, "Failed to get boot offset");
+		return -1;
+	}
+	if (esp_tool_flash_detect_size(esp, &size)) {
+		shell_print(sh, "Failed to detect flash size");
+		return -1;
+	}
+
+	if (argc > 1) {
+		if (strcmp(argv[1], "chip") == 0) {
+			shell_print(sh, "%s", name);
+			return 0;
+		}
+		if (strcmp(argv[1], "flash") == 0) {
+			shell_print(sh, "%d MB", size/1024/1024);
+			return 0;
+		}
+		if (strcmp(argv[1], "boot") == 0) {
+			shell_print(sh, "0x%x", offset);
+			return 0;
+		}
+	}
+	shell_print(sh, "%s, boot from 0x%x, flash size %d MB", name, offset,
+		    size/1024/1024);
 
 	return 0;
 }
 
-//static int cmd_esp_boot_offset(const struct shell *sh, size_t argc, char **argv)
-//{
-//	ARG_UNUSED(argc);
-//	ARG_UNUSED(argv);
-//	int id;
-//
-//	if (esp_tool_get_boot_offset(esp, &id)) {
-//
-//		shell_print(sh, "Failed");
-//		return -1;
-//	}
-//	shell_print(sh, "%x", id);
-//
-//	return 0;
-//}
-
-static int cmd_esp_flash_size(const struct shell *sh, size_t argc, char **argv)
+static int cmd_esp_resources(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-	uint32_t size;
-
-	if (esp_tool_flash_detect_size(esp, &size)) {
-
-		shell_print(sh, "Failed");
-		return -1;
-	}
-	shell_print(sh, "%d", size/1024/1024);
 
 	return 0;
 }
@@ -393,33 +339,33 @@ static int cmd_bypass(const struct shell *sh, size_t argc, char **argv)
 	return set_bypass(sh, bypass_cb);
 }
 
-static int cmd_dict(const struct shell *sh, size_t argc, char **argv,
-		    void *data)
-{
-	int val = (intptr_t)data;
-
-	shell_print(sh, "(syntax, value) : (%s, %d)", argv[0], val);
-
-	return 0;
-}
-
-SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, cmd_dict,
-	(value_0, 0, "value 0"),
-	(value_1, 1, "value 1"),
-	(value_2, 2, "value 2"),
-	(value_3, 3, "value 3")
-);
+//static int cmd_dict(const struct shell *sh, size_t argc, char **argv,
+//		    void *data)
+//{
+//	int val = (intptr_t)data;
+//
+//	shell_print(sh, "(syntax, value) : (%s, %d)", argv[0], val);
+//
+//	return 0;
+//}
+//
+//SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, cmd_dict,
+//	(value_0, 0, "value 0"),
+//	(value_1, 1, "value 1"),
+//	(value_2, 2, "value 2"),
+//	(value_3, 3, "value 3")
+//);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_esp,
-	SHELL_CMD(dictionary, &sub_dict_cmds, "Dictionary commands", NULL),
+//	SHELL_CMD(dictionary, &sub_dict_cmds, "Dictionary commands", NULL),
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
 	SHELL_CMD(board, NULL, "Show board name command.", cmd_demo_board),
-	SHELL_CMD(connect, NULL, "Connect ESP target.", cmd_esp_connect),
-	SHELL_CMD(reset, NULL, "Reset ESP target.", cmd_esp_reset),
-	SHELL_CMD(target, NULL, "Reset ESP target.", cmd_esp_target),
-	SHELL_CMD(flash_size, NULL, "ESP flash size.", cmd_esp_flash_size),
+	SHELL_CMD(connect, NULL, "Connect target.", cmd_esp_connect),
+	SHELL_CMD(reset, NULL, "Reset target.", cmd_esp_reset),
+	SHELL_CMD(info, NULL, "Reset target.", cmd_esp_target_info),
+	SHELL_CMD(resources, NULL, "ESP flash size.", cmd_esp_resources),
 //	SHELL_CMD(boot_offset, NULL, "ESP flash size.", cmd_esp_boot_offset),
 //	SHELL_CMD(flash_read, NULL, "ESP flash size.", cmd_esp_flash_read),
 //	SHELL_CMD(flash_erase, NULL, "ESP flash size.", cmd_esp_flash_erase),

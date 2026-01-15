@@ -10,13 +10,12 @@
 #include "zephyr/kernel.h"
 #include <sys/errno.h>
 
-#include <errno.h>
+//#include <errno.h>
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/gpio.h>
-//#include <zephyr/console/tty.h>
 
 #include <zephyr_port.h>
 #include <esp_loader.h>
@@ -25,26 +24,6 @@
 
 LOG_MODULE_REGISTER(esp_tool, CONFIG_UART_LOG_LEVEL);
 
-#if 0
-/*
- * DTS usage
- */
-esp_tool0: esp_tool {
-    compatible = "espressif,esp_tool";
-    uart = <&uart2>;
-    reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-    boot-gpios  = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-    initial-baudrate = <115200>;
-};
-esp_tool0: esp_tool {
-    compatible = "espressif,esp_tool";
-    spi = <&spi1>;
-    cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-    reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-    boot-gpios  = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-};
-#endif
-
 enum esp_tool_transport {
 	ESP_LOADER_TRANSPORT_UART,
 	ESP_LOADER_TRANSPORT_SPI,
@@ -52,6 +31,7 @@ enum esp_tool_transport {
 
 struct esp_tool_config {
 	enum esp_tool_transport transport;
+	esp_loader_connect_args_t connect;
 
 	const struct device *uart;
 	const struct device *spi;
@@ -66,24 +46,39 @@ struct esp_tool_config {
 
 struct esp_tool_data {
 	struct k_mutex lock;
-	bool connected;
 	uint32_t current_baudrate;
+	uint32_t flash_size;
+	bool connected;
 };
 
 /* Only boot addresses vary by chip
  * DO NOT specify array size - let compiler determine it from initializers
  */
 static const uint32_t boot_offset[] = {
-    [ESP8266_CHIP] = 0x0,
-    [ESP32_CHIP]   = 0x1000,
-    [ESP32S2_CHIP] = 0x1000,
-    [ESP32C3_CHIP] = 0x0,
-    [ESP32S3_CHIP] = 0x0,
-    [ESP32C2_CHIP] = 0x0,
-    [ESP32C5_CHIP] = 0x2000,
-    [ESP32H2_CHIP] = 0x0,
-    [ESP32C6_CHIP] = 0x0,
-    [ESP32P4_CHIP] = 0x2000
+	[ESP8266_CHIP] = 0x0,
+	[ESP32_CHIP]   = 0x1000,
+	[ESP32S2_CHIP] = 0x1000,
+	[ESP32C3_CHIP] = 0x0,
+	[ESP32S3_CHIP] = 0x0,
+	[ESP32C2_CHIP] = 0x0,
+	[ESP32C5_CHIP] = 0x2000,
+	[ESP32H2_CHIP] = 0x0,
+	[ESP32C6_CHIP] = 0x0,
+	[ESP32P4_CHIP] = 0x2000
+};
+
+static char* target_name[] = {
+	[ESP8266_CHIP] = "ESP8266",
+	[ESP32_CHIP]   = "ESP32",
+	[ESP32S2_CHIP] = "ESP32-S2",
+	[ESP32C3_CHIP] = "ESP32-C3",
+	[ESP32S3_CHIP] = "ESP32-S3",
+	[ESP32C2_CHIP] = "ESP32-C2",
+	[ESP32C5_CHIP] = "ESP32-C5",
+	[ESP32H2_CHIP] = "ESP32-H2",
+	[ESP32C6_CHIP] = "ESP32-C6",
+	[ESP32P4_CHIP] = "ESP32-P4",
+	[ESP_UNKNOWN_CHIP] = "Unknown"
 };
 
 /* If someone adds a new chip but forgets to update the array, compilation FAILS */
@@ -91,44 +86,36 @@ _Static_assert(sizeof(boot_offset) / sizeof(boot_offset[0]) == ESP_MAX_CHIP,
                "boot_offset array size mismatch! "
                "If you added a new chip to target_chip_t, you MUST add its address to bootloader_addresses[]");
 
-#if 0
-static int esp_tool_tx(const struct device *dev,
-                      const void *buf, size_t len)
-{
-    const struct esp_tool_config *cfg = dev->config;
-
-    switch (cfg->transport) {
-    case ESP_LOADER_TRANSPORT_UART:
-        return uart_tx(cfg->uart, buf, len, SYS_FOREVER_MS);
-
-    case ESP_LOADER_TRANSPORT_SPI:
-        return spi_write(cfg->spi, &spi_cfg, &tx_bufs);
-
-    default:
-        return -ENOTSUP;
-    }
-}
-
-#endif
-
 int esp_tool_get_target(const struct device *dev, uint32_t *id)
 {
-	target_chip_t chip_id = esp_loader_get_target();
+	struct esp_tool_data *data = dev->data;
+	int err = 0;
 
-	if (id) {
-		*id = (uint32_t) chip_id;
-		return 0;
-	} else {
-		return -EINVAL;
+	if (!data->connected) {
+		return -ENOTCONN;
 	}
 
-	return -ENODATA;
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (id) {
+		*id = esp_loader_get_target();
+	} else {
+		err = -EINVAL;
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return err;
 }
 
 int esp_tool_flash_detect_size(const struct device *dev, uint32_t *size)
 {
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
+
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -147,6 +134,10 @@ int esp_tool_flash_start(const struct device *dev, uint32_t offset,
 {
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
+
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -167,6 +158,10 @@ int esp_tool_flash_write(const struct device *dev, const void *payload,
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
 
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_flash_write((void *)payload, len) != ESP_LOADER_SUCCESS) {
@@ -183,6 +178,10 @@ int esp_tool_flash_finish(const struct device *dev, bool reboot)
 {
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
+
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -202,6 +201,10 @@ int esp_tool_mem_start(const struct device *dev, uint32_t offset, uint32_t size,
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
 
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_mem_start(offset, size, block_size) !=
@@ -220,6 +223,10 @@ int esp_tool_mem_write(const struct device *dev, const void *ptr, size_t size)
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
 
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_mem_write(ptr, size) != ESP_LOADER_SUCCESS) {
@@ -237,6 +244,10 @@ int esp_tool_mem_finish(const struct device *dev, uint32_t entry_point)
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
 
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_mem_finish(entry_point) != ESP_LOADER_SUCCESS) {
@@ -253,6 +264,10 @@ int esp_tool_read_mac(const struct device *dev, uint8_t mac[6])
 {
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
+
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -272,6 +287,10 @@ int esp_tool_flash_read(const struct device *dev, uint32_t offset, uint8_t *buf,
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
 
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_flash_read(buf, offset, len) != ESP_LOADER_SUCCESS) {
@@ -289,6 +308,10 @@ int esp_tool_write_register(const struct device *dev, uint32_t reg,
 {
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
+
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -308,6 +331,10 @@ int esp_tool_read_register(const struct device *dev, uint32_t reg,
 	struct esp_tool_data *data = dev->data;
 	int err = 0;
 
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_read_register(reg, value) != ESP_LOADER_SUCCESS) {
@@ -323,16 +350,34 @@ int esp_tool_read_register(const struct device *dev, uint32_t reg,
 int esp_tool_change_transmission_rate(const struct device *dev,
 					uint32_t baudrate)
 {
-//	const struct esp_tool_config *cfg = dev->config;
-//	struct esp_tool_data *data = dev->data;
-//
-//	struct uart_config uc;
-//	uart_config_get(cfg->uart, &uc);
-//	uc.baudrate = baudrate;
-//	uart_configure(cfg->uart, &uc);
-//
-//	data->current_baudrate = baudrate;
+	const struct esp_tool_config *cfg = dev->config;
+	struct esp_tool_data *data = dev->data;
+
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+
+	struct uart_config uc;
+	uart_config_get(cfg->uart, &uc);
+	uc.baudrate = baudrate;
+	uart_configure(cfg->uart, &uc);
+	data->current_baudrate = baudrate;
+
 	return 0;
+}
+
+static void gpios_engage(const struct device *dev)
+{
+	const struct esp_tool_config *cfg = dev->config;
+	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+}
+
+static void gpios_disengage(const struct device *dev)
+{
+	const struct esp_tool_config *cfg = dev->config;
+	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_DISCONNECTED);
+	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_DISCONNECTED);
 }
 
 int esp_tool_reset_target(const struct device *dev)
@@ -341,37 +386,33 @@ int esp_tool_reset_target(const struct device *dev)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 	esp_loader_reset_target();
+	data->connected = false;
+	gpios_disengage(dev);
 	LOG_DBG("ESP device reset done");
 	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
 
-int esp_tool_connect(const struct device *dev)
+int esp_tool_connect(const struct device *dev, bool high_speed)
 {
 	const struct esp_tool_config *cfg = dev->config;
 	struct esp_tool_data *data = dev->data;
-	esp_loader_connect_args_t config = ESP_LOADER_CONNECT_DEFAULT();
 	int err = 0;
-
-	//ets_printf("### %s ===\n", __func__);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_OUTPUT_ACTIVE);
-	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
-//	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_OUTPUT_INACTIVE);
-//	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	gpios_engage(dev);
 
-	if (esp_loader_connect(&config) != ESP_LOADER_SUCCESS) {
-		LOG_ERR("Target connection failed");
-		printk("timeouted connection.\n");
+	if (esp_loader_connect((esp_loader_connect_args_t *) &cfg->connect) !=
+				ESP_LOADER_SUCCESS) {
+		gpios_disengage(dev);
 		err = -ETIMEDOUT;
+		LOG_ERR("Target connection failed");
 	} else {
 		data->connected = true;
-		printk("connection OK!\n");
-
-
+		LOG_DBG("Connected target ROM with chip id %d",
+			esp_loader_get_target());
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -379,33 +420,67 @@ int esp_tool_connect(const struct device *dev)
 	return err;
 }
 
-int esp_tool_connect_with_stub(const struct device *dev)
+int esp_tool_connect_stub(const struct device *dev, bool high_speed)
+{
+	const struct esp_tool_config *cfg = dev->config;
+	struct esp_tool_data *data = dev->data;
+	int err = 0;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	gpios_engage(dev);
+
+	if (esp_loader_connect_with_stub(&cfg->connect) != ESP_LOADER_SUCCESS) {
+		gpios_disengage(dev);
+		err = -ETIMEDOUT;
+		LOG_ERR("Target stub connection failed");
+	} else {
+		data->connected = true;
+		LOG_DBG("Connected target STUB with chip id %d",
+			 esp_loader_get_target());
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return err;
+}
+
+int esp_tool_get_boot_offset(const struct device *dev, uint32_t *offset)
 {
 	struct esp_tool_data *data = dev->data;
-	esp_loader_connect_args_t config = ESP_LOADER_CONNECT_DEFAULT();
-	int err = 0;
+	target_chip_t chip;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (esp_loader_connect(&config) != ESP_LOADER_SUCCESS) {
-		LOG_ERR("Target stub connection failed");
-		err = -ETIMEDOUT;
-	} else {
-		data->connected = true;
-	}
-
-	k_mutex_unlock(&data->lock);
-
-	return err;
-}
-
-int esp_tool_get_boot_offset(const struct device *dev, int chip, uint32_t *offset)
-{
-	if (offset == NULL || chip > ESP_MAX_CHIP) {
+	if (!offset) {
 		return -EINVAL;
+	}
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+	if ((chip = esp_loader_get_target()) == ESP_UNKNOWN_CHIP) {
+		return -EIO;
 	}
 
 	*offset = boot_offset[chip];
+
+	return 0;
+}
+
+int esp_tool_get_target_name(const struct device *dev, char **name)
+{
+	struct esp_tool_data *data = dev->data;
+	target_chip_t chip;
+
+	if (!name) {
+		return -EINVAL;
+	}
+	if (!data->connected) {
+		return -ENOTCONN;
+	}
+	if ((chip = esp_loader_get_target()) == ESP_UNKNOWN_CHIP) {
+		return -EIO;
+	}
+
+	*name = target_name[chip];
 
 	return 0;
 }
@@ -418,33 +493,34 @@ static int esp_tool_init(const struct device *dev)
 	if (!device_is_ready(cfg->uart)) {
 		return -ENODEV;
 	}
-
 	if (!gpio_is_ready_dt(&cfg->boot_gpio)) {
 		return -ENODEV;
 	}
-
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
 		return -ENODEV;
 	}
 
+	k_mutex_init(&data->lock);
+
+	data->current_baudrate = cfg->initial_baudrate;
+	data->connected = false;
+	data->flash_size = 0;
+
+	/* ESF Zephyr port interface */
 	const loader_zephyr_config_t config = {
 		.uart_dev = cfg->uart,
 		.enable_spec = cfg->reset_gpio,
 		.boot_spec = cfg->boot_gpio
 	};
 
-	k_mutex_init(&data->lock);
-	data->connected = false;
-	data->current_baudrate = cfg->initial_baudrate;
-
 	loader_port_zephyr_init(&config);
 
-	printk("    %s \n", config.uart_dev->name);
-	printk("    %s .%d EN\n", config.enable_spec.port->name, config.enable_spec.pin);
-	printk("    %s .%d BOOT\n", config.boot_spec.port->name, config.boot_spec.pin);
-
-//	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_OUTPUT_ACTIVE);
-//	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	LOG_DBG("Serial interface name: %s", config.uart_dev->name);
+	LOG_DBG("Enable/Reset gpio: %s.%d", config.enable_spec.port->name,
+						  config.enable_spec.pin);
+	LOG_DBG("Boot gpio: %s.%d", config.boot_spec.port->name,
+				    config.boot_spec.pin);
+	ets_printf("%s\n",__func__);
 
 	return 0;
 }
@@ -467,6 +543,8 @@ static int esp_tool_init(const struct device *dev)
 		    DT_INST_PROP_OR(inst, initial_baudrate, 115200),		\
 		.higher_baudrate =						\
 		    DT_INST_PROP_OR(inst, higher_baudrate, 230400),		\
+		.connect.sync_timeout = DT_INST_PROP(inst, sync_timeout_ms),	\
+		.connect.trials = DT_INST_PROP(inst, num_trials),		\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(inst, esp_tool_init, NULL, &esp_tool_data_##inst,	\

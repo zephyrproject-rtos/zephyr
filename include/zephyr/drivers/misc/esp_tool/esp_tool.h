@@ -12,8 +12,9 @@
 #ifndef ZEPHYR_DRIVERS_MISC_ESP_TOOL_H_
 #define ZEPHYR_DRIVERS_MISC_ESP_TOOL_H_
 
-#include <zephyr/types.h>
 #include <stddef.h>
+#include <zephyr/types.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +58,7 @@ int esp_tool_connect(const struct device *dev);
  *
  * @return 0 on success, or negative errno code on failure.
  */
-int esp_tool_connect_with_stub(const struct device *dev);
+int esp_tool_connect_stub(const struct device *dev);
 
 /**
  * @brief Read the target chip ID / model identifier.
@@ -321,7 +322,7 @@ int esp_tool_get_security_info(const struct device *dev);
  */
 int esp_tool_connect_secure_download_mode(const struct device *dev);
 
-int esp_tool_get_boot_offset(const struct device *dev, int chip, uint32_t *off);
+int esp_tool_get_boot_offset(const struct device *dev, uint32_t *off);
 
 /** @} */
 
