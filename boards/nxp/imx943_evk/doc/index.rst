@@ -73,6 +73,10 @@ For A55 Core, ENET0, ENETC1, ENETC2 ports are enabled by default, so no overlay 
 needed, but NETC depends on GIC ITS, so need to make sure to allocate heap memory to
 be larger than 851968 byes by setting CONFIG_HEAP_MEM_POOL_SIZE.
 
+On the EVK board, switch port0 and port2 are connected to both SGMII port (SGMII-swp0
+and SGMII-swp1) and 100M port (swp0 and swp1), currently only 100M port (swp0 and swp1)
+is enabled, so could connect to 100M port for verify two switch ports.
+
 The two switch ports could be verified via :zephyr:code-sample:`dsa` on M33 core
 or on A55 Core, for example for A55 Core:
 

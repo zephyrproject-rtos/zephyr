@@ -57,13 +57,13 @@
 
 	phy0: phy@2 {
 		compatible = "ethernet-phy";
-		reg = <0xf>;
+		reg = <0x2>;
 		status = "disabled";
 	};
 
 	phy1: phy@3 {
 		compatible = "ethernet-phy";
-		reg = <0x10>;
+		reg = <0x3>;
 		status = "disabled";
 	};
 
