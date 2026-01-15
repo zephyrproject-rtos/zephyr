@@ -179,7 +179,7 @@ static int regulator_tps55287_set_current_limit(const struct device *dev,
 	struct linear_range range = LINEAR_RANGE_INIT(0, 500 * 1000 / config->r_is,
 						      0, TPS55287_REG_IOUT_LIMIT_MASK);
 
-	ret = linear_range_group_get_win_index(&range, 1, min_ua, max_ua, &idx);
+	ret = linear_range_get_win_index(&range, min_ua, max_ua, &idx);
 	if (ret) {
 		return ret;
 	}
