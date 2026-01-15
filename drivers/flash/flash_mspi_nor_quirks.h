@@ -9,6 +9,13 @@
 
 /* Flash chip specific quirks */
 struct flash_mspi_nor_quirks {
+#if defined(WITH_SOFT_RESET)
+	/* Some devices may require their own soft resetting sequence - for example, if the flash is
+	 * already configured in the IO mode 8D-8D-8D at the time of botting, it will requires its
+	 * own MSPI configuration
+	 */
+	int (*soft_reset)(const struct device *dev);
+#endif
 	/* Called at the beginning of the flash chip initialization,
 	 * right after reset if any is performed. Can be used to alter
 	 * structures that define communication with the chip, like

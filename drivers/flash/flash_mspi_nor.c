@@ -1077,7 +1077,13 @@ static int flash_chip_init(const struct device *dev)
 
 #if defined(WITH_SOFT_RESET)
 	if (dev_config->initial_soft_reset) {
-		rc = soft_reset(dev);
+
+		if (dev_config->quirks->soft_reset) {
+			rc = dev_config->quirks->soft_reset(dev);
+		} else {
+			rc = soft_reset(dev);
+		}
+
 		if (rc < 0) {
 			return rc;
 		}
