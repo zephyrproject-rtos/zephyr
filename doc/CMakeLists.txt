@@ -146,6 +146,17 @@ add_custom_target(
   COMMENT "Generating Doxygen coverage info and HTML report..."
 )
 
+add_custom_target(
+  doxygen-coverage-json
+  COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
+    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --src-dir ${ZEPHYR_BASE}/include/
+    --format json-v3
+    --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.json
+  DEPENDS doxygen
+  COMMENT "Generating Doxygen coverage info in JSON format..."
+)
+
 #-------------------------------------------------------------------------------
 # devicetree
 
