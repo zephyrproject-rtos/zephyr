@@ -4928,6 +4928,17 @@ Silabs SiM3U Platforms:
   description: >-
     SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
 
+Space Cubics Platforms:
+  status: maintained
+  maintainers:
+    - yashi
+  files:
+    - boards/sc/
+  labels:
+    - "platform: Space Cubics"
+  description: >-
+    Space Cubics on-board computers (OBCs).
+
 State machine framework:
   status: maintained
   maintainers:
