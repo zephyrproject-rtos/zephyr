@@ -272,32 +272,48 @@ static void test_main(void)
 
 static void test_main_disable(void)
 {
-	struct bt_le_ext_adv *adv;
-	struct bt_iso_big *big;
+	struct bt_le_ext_adv *adv = NULL;
+	struct bt_iso_big *big = NULL;
 
 	init();
 
-	/* Create advertising set and BIG */
-	create_ext_adv(&adv);
-	create_big(adv, ARRAY_SIZE(iso_chans), &big);
+	/* Perform this loop twice; once before the disable and once after the disable with a
+	 * disable between
+	 */
+	for (enum disable_states i = 0; i < DISABLE_STATE_COUNT; i++) {
+		LOG_INF("Running iteration %d", i);
 
-	/* Reset BT to see if we can set it up again */
-	reset_bluetooth();
+		/* Create advertising set and BIG */
+		if (adv == NULL) {
+			create_ext_adv(&adv);
 
-	/* After a disable, all advertising sets and BIGs are removed */
-	big = NULL;
-	adv = NULL;
+			if (big == NULL) {
+				create_big(adv, ARRAY_SIZE(iso_chans), &big);
+			}
 
-	/* Set everything up again to see if everything still works as expected */
-	create_ext_adv(&adv);
-	create_big(adv, ARRAY_SIZE(iso_chans), &big);
-	start_ext_adv(adv);
+			start_ext_adv(adv);
+		}
 
-	/* Wait for receiver to tell us to terminate */
-	bk_sync_wait();
+		/* Wait for receiver to tell us they received data */
+		bk_sync_wait();
 
-	terminate_big(big);
-	big = NULL;
+		if (i == DISABLE_STATE_BROADCASTER) {
+			reset_bluetooth();
+			/* After a disable, all advertising sets and BIGs are removed */
+			big = NULL;
+			adv = NULL;
+		} else if (i == DISABLE_STATE_SYNC_RECEIVER) {
+			/* no-op we just keep the broadcast alive */
+		} else if (i == DISABLE_STATE_BOTH) {
+			reset_bluetooth();
+			/* After a disable, all advertising sets and BIGs are removed */
+			big = NULL;
+			adv = NULL;
+		}
+
+		/* Wait for receiver to tell us to continue to the next test step */
+		bk_sync_wait();
+	}
 
 	TEST_PASS("Disable test passed");
 }
