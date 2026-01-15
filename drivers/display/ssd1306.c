@@ -71,8 +71,8 @@ struct ssd1306_data {
 	enum display_orientation orientation;
 };
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) || \
-	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309fb, i2c) || \
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
@@ -99,8 +99,8 @@ static const char *ssd1306_bus_name_i2c(const struct device *dev)
 }
 #endif
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, spi) || \
-	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309fb, spi) || \
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309, spi) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi))
 static bool ssd1306_bus_ready_spi(const struct device *dev)
 {
@@ -627,7 +627,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 		.com_sequential = DT_PROP(node_id, com_sequential),                                \
 		.prechargep = DT_PROP(node_id, prechargep),                                        \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
-		.ssd1309_compatible = DT_NODE_HAS_COMPAT(node_id, solomon_ssd1309fb),              \
+		.ssd1309_compatible = DT_NODE_HAS_COMPAT(node_id, solomon_ssd1309),                \
 		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),               \
 		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                                  \
 		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                          \
@@ -638,6 +638,6 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	DEVICE_DT_DEFINE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,            \
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1306_driver_api);
 
-DT_FOREACH_STATUS_OKAY(solomon_ssd1306fb, SSD1306_DEFINE)
-DT_FOREACH_STATUS_OKAY(solomon_ssd1309fb, SSD1306_DEFINE)
+DT_FOREACH_STATUS_OKAY(solomon_ssd1306, SSD1306_DEFINE)
+DT_FOREACH_STATUS_OKAY(solomon_ssd1309, SSD1306_DEFINE)
 DT_FOREACH_STATUS_OKAY(sinowealth_sh1106, SSD1306_DEFINE)
