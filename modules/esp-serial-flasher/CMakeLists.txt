@@ -29,6 +29,7 @@ if(CONFIG_ESP_SERIAL_FLASHER)
     ${ESF_DIR}/src/slip.c
     ${ESF_DIR}/src/md5_hash.c
     ${ESF_DIR}/port/zephyr_port.c
+    src/common.c
     )
 
   target_compile_definitions(esp_serial_flasher INTERFACE SERIAL_FLASHER_INTERFACE_UART)
