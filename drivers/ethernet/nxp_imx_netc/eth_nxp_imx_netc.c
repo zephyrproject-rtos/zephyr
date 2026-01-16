@@ -286,7 +286,7 @@ static void msgintr_isr(void)
 
 #endif
 
-int netc_eth_init_common(const struct device *dev)
+int netc_eth_init_hw(const struct device *dev)
 {
 	const struct netc_eth_config *config = dev->config;
 	struct netc_eth_data *data = dev->data;
@@ -393,8 +393,6 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.rxCacheMaintain = true;
 	ep_config.txCacheMaintain = true;
 
-	config->generate_mac(&data->mac_addr[0]);
-
 	result = EP_Init(&data->handle, &data->mac_addr[0], &ep_config, &bdr_config);
 	if (result != kStatus_Success) {
 		return -ENOBUFS;
@@ -421,6 +419,16 @@ int netc_eth_init_common(const struct device *dev)
 	/* Unmask MSIX message interrupt. */
 	EP_MsixSetEntryMask(&data->handle, NETC_TX_MSIX_ENTRY_IDX, false);
 	EP_MsixSetEntryMask(&data->handle, NETC_RX_MSIX_ENTRY_IDX, false);
+
+	return 0;
+}
+
+int netc_eth_init_sw(const struct device *dev)
+{
+	const struct netc_eth_config *config = dev->config;
+	struct netc_eth_data *data = dev->data;
+
+	config->generate_mac(&data->mac_addr[0]);
 
 	k_sem_init(&data->rx_sem, 0, 1);
 	k_thread_create(&data->rx_thread, data->rx_thread_stack,
