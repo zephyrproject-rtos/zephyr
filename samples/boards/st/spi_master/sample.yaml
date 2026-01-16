@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: SPI Master with DMA
+  description: |
+    Demonstrates SPI master communication with DMA support on STM32 boards.
+    Continuously sends messages to an SPI slave and displays the responses.
+
+tests:
+  sample.boards.st.spi_master:
+    harness: console
+    platform_allow:
+      - nucleo_l4r5zi
+    tags:
+      - spi
+      - stm32
+      - dma
+      - gpio
+    vendor_allow:
+      - st
+    integration_platforms:
+      - nucleo_l4r5zi
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "SPI Master Sample"
+        - "SPI device ready"
+        - "Starting SPI communication loop"
+        - "TX string:"
