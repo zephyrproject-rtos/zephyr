@@ -133,13 +133,26 @@ static int cmd_get_info(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_fpga, SHELL_CMD_ARG(off, NULL, "<device>", cmd_off, 2, 0),
-	SHELL_CMD_ARG(on, NULL, "<device>", cmd_on, 2, 0),
-	SHELL_CMD_ARG(reset, NULL, "<device>", cmd_reset, 2, 0),
-	SHELL_CMD_ARG(load, NULL, "<device> <address> <size in bytes>",
+	sub_fpga,
+	SHELL_CMD_ARG(off, NULL,
+		      SHELL_HELP("Turn off FPGA", "<device>"),
+		      cmd_off, 2, 0),
+	SHELL_CMD_ARG(on, NULL,
+		      SHELL_HELP("Turn on FPGA", "<device>"),
+		      cmd_on, 2, 0),
+	SHELL_CMD_ARG(reset, NULL,
+		      SHELL_HELP("Reset FPGA", "<device>"),
+		      cmd_reset, 2, 0),
+	SHELL_CMD_ARG(load, NULL,
+		      SHELL_HELP("Load bitstream to FPGA",
+				 "<device> <address> <size in bytes>"),
 		      cmd_load, 4, 0),
-	SHELL_CMD_ARG(get_status, NULL, "<device>", cmd_get_status, 2, 0),
-	SHELL_CMD_ARG(get_info, NULL, "<device>", cmd_get_info, 2, 0),
+	SHELL_CMD_ARG(get_status, NULL,
+		      SHELL_HELP("Get FPGA status", "<device>"),
+		      cmd_get_status, 2, 0),
+	SHELL_CMD_ARG(get_info, NULL,
+		      SHELL_HELP("Get FPGA information", "<device>"),
+		      cmd_get_info, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(fpga, &sub_fpga, "FPGA commands", NULL);
