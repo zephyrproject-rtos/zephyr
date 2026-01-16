@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -182,7 +182,7 @@ static void init(void)
 			.uri_schemes_supported = "tel,skype",
 			.gtbs = true,
 			.authorization_required = false,
-			.technology = BT_TBS_TECHNOLOGY_3G,
+			.technology = BT_BEARER_TECH_3G,
 			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 		};
 
