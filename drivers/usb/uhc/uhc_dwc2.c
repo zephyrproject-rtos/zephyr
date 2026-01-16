@@ -32,6 +32,11 @@ struct uhc_dwc2_data {
 	struct k_event event;
 };
 
+static void uhc_dwc2_isr_handler(const struct device *dev)
+{
+	/* TODO: Interrupt handling */
+}
+
 static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
 {
 	const struct device *const dev = (const struct device *)arg0;
