@@ -182,6 +182,7 @@ New APIs and options
     * :c:func:`bt_conn_drop`
     * :c:func:`bt_le_per_adv_update_did`
     * :c:member:`bt_conn_cb.le_param_update_rejected`
+    * :c:member:`bt_iso_chan_ops.send_failed`
 
   * Mesh
 
