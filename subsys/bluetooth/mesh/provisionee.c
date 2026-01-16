@@ -803,3 +803,72 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 
 	return 0;
 }
+
+int bt_mesh_prov_bearers_suspend(void)
+{
+	int err;
+
+	if (bt_mesh_is_provisioned()) {
+		return 0;
+	}
+
+	if (bt_mesh_prov_active()) {
+		return -EBUSY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
+	    (active_bearers & BT_MESH_PROV_GATT)) {
+		err = bt_mesh_pb_gatt_srv_disable();
+		if (err && err != -EALREADY) {
+			LOG_WRN("Disabling PB-GATT failed (err %d)", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
+	    (active_bearers & BT_MESH_PROV_ADV)) {
+		bt_mesh_pb_adv.link_cancel();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
+	    (active_bearers & BT_MESH_PROV_REMOTE)) {
+		pb_remote_srv.link_cancel();
+	}
+
+	return 0;
+}
+
+int bt_mesh_prov_bearers_resume(void)
+{
+	int err;
+
+	if (bt_mesh_is_provisioned()) {
+		/* For provisioned devices, only re-enable PB-Remote if it was active */
+		if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
+		    (active_bearers & BT_MESH_PROV_REMOTE)) {
+			pb_remote_srv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+		}
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
+	    (active_bearers & BT_MESH_PROV_GATT)) {
+		err = bt_mesh_pb_gatt_srv_enable();
+		if (err) {
+			LOG_WRN("Re-enabling PB-GATT failed (err %d)", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
+	    (active_bearers & BT_MESH_PROV_ADV)) {
+		bt_mesh_pb_adv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
+	    (active_bearers & BT_MESH_PROV_REMOTE)) {
+		pb_remote_srv.link_accept(bt_mesh_prov_bearer_cb_get(), NULL);
+	}
+
+	return 0;
+}
