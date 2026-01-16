@@ -21,6 +21,11 @@
 
 LOG_MODULE_REGISTER(esp_shell);
 
+#ifdef CONFIG_ESP_TOOL_FW_ARRAYS
+extern const uint8_t app_bin[];
+extern const uint32_t app_bin_size;
+extern const uint8_t app_bin_md5[];
+#endif
 
 static const struct device *esp = DEVICE_DT_GET(DT_INST(0, espressif_esp_tool));
 
@@ -46,20 +51,17 @@ static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_esp_connect(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
 	if (argc > 1 && strcmp(argv[1], "stub") == 0) {
-		if (esp_tool_connect_stub(esp)) {
+		if (esp_tool_connect_stub(esp, false)) {
 			shell_print(sh,"Failed connecting stub");
 			return -1;
 		}
-		shell_print(sh, "STUB connected");
+		shell_print(sh, "STUB connected at");
 
 		return 0;
 	}
 
-	if (esp_tool_connect(esp)) {
+	if (esp_tool_connect(esp, true)) {
 		shell_print(sh, "Connection failed");
 		return -1;
 	}
@@ -268,6 +270,113 @@ static int cmd_version(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_esp_flash_read(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint8_t buf[128];
+
+	if (esp_tool_flash_read(esp, 0x20000, buf, sizeof(buf))) {
+		shell_print(sh, "Failed to read flash");
+		return -1;
+	}
+	shell_hexdump(sh, buf, sizeof(buf));
+
+	return 0;
+}
+
+/* local */
+#include "hexdump.h"
+static int cmd_esp_flash_app(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	static uint8_t payload[1024];
+	const uint8_t *bin_ptr = app_bin;
+	size_t size = app_bin_size;
+	uint32_t offset;
+
+	if (!esp_tool_is_connected(esp)) {
+		shell_print(sh, "not connected");
+		return -1;
+	}
+
+	esp_tool_get_boot_offset(esp, &offset);
+
+	if (esp_tool_flash_start(esp, offset, size, sizeof(payload))) {
+		shell_print(sh, "Failed to read flash");
+		return -1;
+	}
+
+	shell_print(sh, "Start programming");
+
+	size_t written = 0;
+
+	while (size > 0) {
+		size_t to_write = MIN(size, sizeof(payload));
+		memcpy(payload, bin_ptr, to_write);
+
+		if (esp_tool_flash_write(esp, payload, to_write)) {
+			shell_print(sh, "Packet could not be written");
+			return -1;
+		}
+hexdump("pay", payload, 32);
+		size -= to_write;
+		bin_ptr += to_write;
+		written += to_write;
+
+		int progress = (int)(((float)written / app_bin_size) * 100);
+		shell_print(sh, "\rProgress: %d %%", progress);
+	};
+
+//	esp_tool_flash_finish(esp, true);
+
+	return 0;
+}
+
+static int cmd_esp_flash_erase(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (esp_tool_flash_erase(esp)) {
+		shell_print(sh, "Failed to read flash");
+		return -1;
+	}
+	shell_print(sh, "Flash is erased");
+
+	return 0;
+}
+
+static int cmd_esp_mac_read(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint8_t mac[8];
+	esp_tool_mac_read(esp, mac);
+
+	shell_print(sh, "MAC  %d:%d:%d:%d:%d:%d", mac[0], mac[1], mac[2], mac[3],
+	     mac[4], mac[5]);
+
+	return 0;
+}
+
+static int cmd_esp_reg_read(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint32_t reg;
+	esp_tool_register_read(esp, 0x60002000, &reg);
+
+	shell_print(sh, "Reg val:  0x%x", reg);
+
+	return 0;
+}
+
 static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 {
 	static bool in_use;
@@ -339,49 +448,18 @@ static int cmd_bypass(const struct shell *sh, size_t argc, char **argv)
 	return set_bypass(sh, bypass_cb);
 }
 
-//static int cmd_dict(const struct shell *sh, size_t argc, char **argv,
-//		    void *data)
-//{
-//	int val = (intptr_t)data;
-//
-//	shell_print(sh, "(syntax, value) : (%s, %d)", argv[0], val);
-//
-//	return 0;
-//}
-//
-//SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, cmd_dict,
-//	(value_0, 0, "value 0"),
-//	(value_1, 1, "value 1"),
-//	(value_2, 2, "value 2"),
-//	(value_3, 3, "value 3")
-//);
-
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_esp,
-//	SHELL_CMD(dictionary, &sub_dict_cmds, "Dictionary commands", NULL),
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
-	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
-	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
-	SHELL_CMD(board, NULL, "Show board name command.", cmd_demo_board),
 	SHELL_CMD(connect, NULL, "Connect target.", cmd_esp_connect),
 	SHELL_CMD(reset, NULL, "Reset target.", cmd_esp_reset),
 	SHELL_CMD(info, NULL, "Reset target.", cmd_esp_target_info),
 	SHELL_CMD(resources, NULL, "ESP flash size.", cmd_esp_resources),
-//	SHELL_CMD(boot_offset, NULL, "ESP flash size.", cmd_esp_boot_offset),
-//	SHELL_CMD(flash_read, NULL, "ESP flash size.", cmd_esp_flash_read),
-//	SHELL_CMD(flash_erase, NULL, "ESP flash size.", cmd_esp_flash_erase),
-//	SHELL_CMD(tr_rate, NULL, "ESP flash size.", cmd_esp_tr_rate),
-//	SHELL_CMD(mac_read, NULL, "ESP flash size.", cmd_esp_mac_read),
-//	SHELL_CMD(reg_read, NULL, "ESP flash size.", cmd_esp_reg_read),
+	SHELL_CMD(flash_read, NULL, "ESP flash size.", cmd_esp_flash_read),
+	SHELL_CMD(flash_erase, NULL, "ESP flash size.", cmd_esp_flash_erase),
+	SHELL_CMD(flash_app, NULL, "ESP flash size.", cmd_esp_flash_app),
+	SHELL_CMD(mac_read, NULL, "ESP flash size.", cmd_esp_mac_read),
+	SHELL_CMD(reg_read, NULL, "ESP flash size.", cmd_esp_reg_read),
 //	SHELL_CMD(mem_read, NULL, "ESP flash size.", cmd_esp_mem_read),
-
-#if defined CONFIG_SHELL_GETOPT
-	SHELL_CMD(getopt_thread_safe, NULL,
-		  "Cammand using getopt in thread safe way"
-		  " looking for: \"abhc:\".",
-		  cmd_demo_getopt_ts),
-	SHELL_CMD(getopt, NULL, "Cammand using getopt in non thread safe way"
-		  " looking for: \"abhc:\".\n", cmd_demo_getopt),
-#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

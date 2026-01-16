@@ -36,12 +36,13 @@ extern "C" {
  * @note This function acquires and releases the driver's internal mutex.
  *
  * @param dev Pointer to the device structure.
+ * @param hs Switch to higher speed after connection
  *
  * @return 0 on success, or negative errno code on failure
  *         (typically -ETIMEDOUT on synchronization failure,
  *          -EIO on communication error, etc.).
  */
-int esp_tool_connect(const struct device *dev);
+int esp_tool_connect(const struct device *dev, bool hs);
 
 /**
  * @brief Connect to the target ESP device using a flasher stub (if available).
@@ -55,10 +56,11 @@ int esp_tool_connect(const struct device *dev);
  * @note This function acquires and releases the driver's internal mutex.
  *
  * @param dev Pointer to the device structure.
+ * @param hs Switch to higher speed after connection
  *
  * @return 0 on success, or negative errno code on failure.
  */
-int esp_tool_connect_stub(const struct device *dev);
+int esp_tool_connect_stub(const struct device *dev, bool hs);
 
 /**
  * @brief Read the target chip ID / model identifier.
@@ -98,7 +100,8 @@ int esp_tool_reset_target(const struct device *dev);
  *
  * @return 0 on success, or negative errno code on failure.
  */
-int esp_tool_flash_start(const struct device *dev, uint32_t offset, size_t total_size);
+int esp_tool_flash_start(const struct device *dev, uint32_t offset,
+			size_t total_size, size_t block_size);
 
 /**
  * @brief Write a block of data to flash (streaming mode).
@@ -122,10 +125,11 @@ int esp_tool_flash_write(const struct device *dev, const void *data, size_t len)
  * Usually includes verification (if enabled) and final handshake.
  *
  * @param dev Pointer to the device structure.
+ * @param reboot Reboot target after flash write.
  *
  * @return 0 on success, or negative errno code on failure.
  */
-int esp_tool_flash_finish(const struct device *dev);
+int esp_tool_flash_finish(const struct device *dev, bool reboot);
 
 /**
  * @brief Detect the size of the attached SPI flash chip.
@@ -323,6 +327,8 @@ int esp_tool_get_security_info(const struct device *dev);
 int esp_tool_connect_secure_download_mode(const struct device *dev);
 
 int esp_tool_get_boot_offset(const struct device *dev, uint32_t *off);
+uint32_t esp_tool_get_current_baudrate(const struct device *dev);
+bool esp_tool_is_connected(const struct device *dev);
 
 /** @} */
 

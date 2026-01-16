@@ -9,8 +9,16 @@ config ESP_TOOL
 	help
 	  Enable the Espressif ESP Tool driver.
 
+if ESP_TOOL
+
 config ESP_TOOL_SHELL
 	bool "ESP tool shell"
-	depends on ESP_TOOL
 	help
 	  Enables the ESP tool shell
+
+config ESP_TOOL_FW_ARRAYS
+	bool "User provided firmware(s) array"
+	help
+	  Generates static arrays from provided binary files.
+
+endif # ESP_TOOL
