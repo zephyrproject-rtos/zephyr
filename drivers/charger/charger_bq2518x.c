@@ -129,12 +129,12 @@ static uint32_t bq2518x_ichg_to_ma(uint8_t ichg)
 static int bq2518x_mv_to_vbatreg(const struct bq2518x_config *cfg, uint32_t voltage_mv,
 				 uint8_t *vbat)
 {
-	if (!IN_RANGE(voltage_mv, BQ2518X_VOLTAGE_MIN_MV, cfg->max_voltage_microvolt)) {
+	if (!IN_RANGE(voltage_mv, BQ2518X_VOLTAGE_MIN_MV, BQ2518X_VOLTAGE_MAX_MV)) {
 		LOG_WRN("charging voltage out of range: %dmV, "
 			"clamping to the nearest limit",
 			voltage_mv);
 	}
-	voltage_mv = CLAMP(voltage_mv, BQ2518X_VOLTAGE_MIN_MV, cfg->max_voltage_microvolt);
+	voltage_mv = CLAMP(voltage_mv, BQ2518X_VOLTAGE_MIN_MV, BQ2518X_VOLTAGE_MAX_MV);
 
 	*vbat = (voltage_mv - BQ2518X_VOLTAGE_MIN_MV) / BQ2518X_FACTOR_VBAT_TO_MV;
 
