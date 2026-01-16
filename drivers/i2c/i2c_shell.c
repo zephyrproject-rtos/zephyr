@@ -393,12 +393,12 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i2c_target,
 	SHELL_CMD_ARG(register, &dsub_device_name,
-		      "Register an i2c-target on its respective bus.\n"
-		      "Usage: target register <device>",
+		      SHELL_HELP("Register an i2c-target on its respective bus",
+				 "<device>"),
 		      cmd_i2c_target_register, 2, 0),
 	SHELL_CMD_ARG(unregister, &dsub_device_name,
-		      "Unegister an i2c-target from its respective bus.\n"
-		      "Usage: target unregister <device>",
+		      SHELL_HELP("Unregister an i2c-target from its respective bus",
+				 "<device>"),
 		      cmd_i2c_target_unregister, 2, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
@@ -406,41 +406,41 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
-		      "Scan I2C devices\n"
-		      "Usage: scan <device>",
+		      SHELL_HELP("Scan I2C devices",
+				 "<device>"),
 		      cmd_i2c_scan, 2, 0),
 	SHELL_CMD_ARG(recover, &dsub_device_name,
-		      "Recover I2C bus\n"
-		      "Usage: recover <device>",
+		      SHELL_HELP("Recover I2C bus",
+				 "<device>"),
 		      cmd_i2c_recover, 2, 0),
 	SHELL_CMD_ARG(read, &dsub_device_name,
-		      "Read bytes from an I2C device\n"
-		      "Usage: read <device> <addr> <reg> [<bytes>]",
+		      SHELL_HELP("Read bytes from an I2C device",
+				 "<device> <addr> <reg> [<bytes>]"),
 		      cmd_i2c_read, 4, 1),
 	SHELL_CMD_ARG(read_byte, &dsub_device_name,
-		      "Read a byte from an I2C device\n"
-		      "Usage: read_byte <device> <addr> <reg>",
+		      SHELL_HELP("Read a byte from an I2C device",
+				 "<device> <addr> <reg>"),
 		      cmd_i2c_read_byte, 4, 0),
 	SHELL_CMD_ARG(direct_read, &dsub_device_name,
-		      "Read byte stream directly from an I2C device without "
-		      "writing a register address first\n"
-		      "Usage: direct_read <device> <addr> [<bytes>]",
+		      SHELL_HELP("Read byte stream directly from an I2C device "
+				 "without writing a register address first",
+				 "<device> <addr> [<bytes>]"),
 		      cmd_i2c_direct_read, 3, 1),
 	SHELL_CMD_ARG(write, &dsub_device_name,
-		      "Write bytes to an I2C device\n"
-		      "Usage: write <device> <addr> <reg> [<byte1>, ...]",
+		      SHELL_HELP("Write bytes to an I2C device",
+				 "<device> <addr> <reg> [<byte1>, ...]"),
 		      cmd_i2c_write, 4, MAX_I2C_BYTES),
 	SHELL_CMD_ARG(write_byte, &dsub_device_name,
-		      "Write a byte to an I2C device\n"
-		      "Usage: write_byte <device> <addr> <reg> <value>",
+		      SHELL_HELP("Write a byte to an I2C device",
+				 "<device> <addr> <reg> <value>"),
 		      cmd_i2c_write_byte, 5, 0),
 	SHELL_CMD_ARG(speed, &dsub_device_name,
-		      "Configure I2C bus speed\n"
-		      "Usage: speed <device> <speed>",
+		      SHELL_HELP("Configure I2C bus speed",
+				 "<device> <speed>"),
 		      cmd_i2c_speed, 3, 0),
 #ifdef CONFIG_I2C_TARGET
 	SHELL_CMD_ARG(target, &sub_i2c_target,
-		      "Subcommands operating on i2c targets.",
+		      SHELL_HELP("Subcommands operating on i2c targets", NULL),
 		      NULL, 3, 0),
 #endif /* CONFIG_I2C_TARGET */
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
