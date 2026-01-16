@@ -173,12 +173,12 @@ zephyr_create_scope(snippets)
             board_re = board[1:-1]
             output += f'''\
 # Appends for board regular expression '{board_re}'
-if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")
+if("${{BOARD}}/${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")
 '''
         else:
             output += f'''\
 # Appends for board '{board}'
-if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")
+if("${{BOARD}}/${{BOARD_QUALIFIERS}}" STREQUAL "{board}")
 '''
 
         # Output board variables first then board revision variables

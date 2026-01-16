@@ -65,7 +65,7 @@ endif()
 # Helper function for parsing a board's name, revision, and qualifiers,
 # from one input variable to three separate output variables.
 function(parse_board_components board_in name_out revision_out qualifiers_out)
-  if(NOT "${${board_in}}" MATCHES "^([^@/]+)(@[^@/]+)?(/[^@]+)?$")
+  if(NOT "${${board_in}}" MATCHES "^([^@/]+)(@[^@/]+)?(/([^@]+))?$")
     message(FATAL_ERROR
       "Invalid revision / qualifiers format for ${board_in} (${${board_in}}). "
       "Valid format is: <board>@<revision>/<qualifiers>"
@@ -75,7 +75,7 @@ function(parse_board_components board_in name_out revision_out qualifiers_out)
 
   set(${name_out}       ${CMAKE_MATCH_1}  PARENT_SCOPE)
   set(${revision_out}   ${board_revision} PARENT_SCOPE)
-  set(${qualifiers_out} ${CMAKE_MATCH_3}  PARENT_SCOPE)
+  set(${qualifiers_out} ${CMAKE_MATCH_4}  PARENT_SCOPE)
 endfunction()
 
 parse_board_components(
@@ -96,19 +96,19 @@ if(DEFINED ZEPHYR_BOARD_ALIASES)
     if(NOT DEFINED BOARD_REVISION)
       set(BOARD_REVISION ${BOARD_ALIAS_REVISION})
     endif()
-    set(BOARD_QUALIFIERS ${BOARD_ALIAS_QUALIFIERS}${BOARD_QUALIFIERS})
+    set(BOARD_QUALIFIERS ${BOARD_ALIAS_QUALIFIERS}/${BOARD_QUALIFIERS})
   endif()
 endif()
 
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
-if(${BOARD}${BOARD_QUALIFIERS}_DEPRECATED)
-  set(BOARD_DEPRECATED ${BOARD}${BOARD_QUALIFIERS} CACHE STRING "Deprecated BOARD, provided by user")
+if(${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED)
+  set(BOARD_DEPRECATED ${BOARD}/${BOARD_QUALIFIERS} CACHE STRING "Deprecated BOARD, provided by user")
   message(WARNING
     "Deprecated BOARD=${BOARD_DEPRECATED} specified, "
-    "board automatically changed to: ${${BOARD}${BOARD_QUALIFIERS}_DEPRECATED}."
+    "board automatically changed to: ${${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED}."
   )
   parse_board_components(
-    ${BOARD}${BOARD_QUALIFIERS}_DEPRECATED
+    ${BOARD}/${BOARD_QUALIFIERS}_DEPRECATED
     BOARD BOARD_DEPRECATED_REVISION BOARD_QUALIFIERS
   )
   if(DEFINED BOARD_DEPRECATED_REVISION)
@@ -267,15 +267,15 @@ if(LIST_BOARD_QUALIFIERS)
     set(BOARD_SINGLE_SOC TRUE)
     set(BOARD_${BOARD}_SINGLE_SOC TRUE)
     if(NOT DEFINED BOARD_QUALIFIERS)
-      set(BOARD_QUALIFIERS "/${LIST_BOARD_SOCS}")
-    elseif("${BOARD_QUALIFIERS}" MATCHES "^//.*")
-      string(REGEX REPLACE "^//" "/${LIST_BOARD_SOCS}/" BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
+      set(BOARD_QUALIFIERS "${LIST_BOARD_SOCS}")
+    elseif("/${BOARD_QUALIFIERS}" MATCHES "^//.*")
+      string(REGEX REPLACE "^/" "${LIST_BOARD_SOCS}/" BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
     endif()
   endif()
 
   set(board_targets ${LIST_BOARD_QUALIFIERS})
   list(TRANSFORM board_targets PREPEND "${BOARD}/")
-  if(NOT ("${BOARD}${BOARD_QUALIFIERS}" IN_LIST board_targets))
+  if(NOT ("${BOARD}/${BOARD_QUALIFIERS}" IN_LIST board_targets))
     string(REPLACE ";" "\n" board_targets "${board_targets}")
     unset(CACHED_BOARD CACHE)
     message(FATAL_ERROR "Board qualifiers `${BOARD_QUALIFIERS}` for board \
@@ -296,22 +296,15 @@ if(DEFINED BOARD_REVISION)
   string(REPLACE "." "_" BOARD_REVISION_STRING ${BOARD_REVISION})
 endif()
 
-if(DEFINED BOARD_QUALIFIERS)
-  string(REGEX REPLACE "^/" "qualifiers: " board_message_qualifiers "${BOARD_QUALIFIERS}")
-  set(board_message "${board_message}, ${board_message_qualifiers}")
+string(REPLACE "/" "_" NORMALIZED_BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
+string(REPLACE "/" "_" NORMALIZED_BOARD_TARGET "${BOARD}/${BOARD_QUALIFIERS}")
 
-  string(REPLACE "/" "_" NORMALIZED_BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
-endif()
-
-set(NORMALIZED_BOARD_TARGET "${BOARD}${BOARD_QUALIFIERS}")
-string(REPLACE "/" "_" NORMALIZED_BOARD_TARGET "${NORMALIZED_BOARD_TARGET}")
-
+set(board_message "${board_message}, qualifiers: ${BOARD_QUALIFIERS}")
 message(STATUS "${board_message}")
 
 add_custom_target(boards ${list_boards_commands} USES_TERMINAL)
 
 build_info(board name VALUE ${BOARD})
-string(REGEX REPLACE "^/" "" qualifiers "${BOARD_QUALIFIERS}")
-build_info(board qualifiers VALUE ${qualifiers})
+build_info(board qualifiers VALUE ${BOARD_QUALIFIERS})
 build_info(board revision VALUE ${BOARD_REVISION})
 build_info(board path PATH ${BOARD_DIRECTORIES})

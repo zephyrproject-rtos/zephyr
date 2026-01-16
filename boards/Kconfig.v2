@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 BOARD_STRING := $(normalize_upper,$(BOARD))
-BOARD_TARGET_STRING := $(normalize_upper,$(BOARD)$(BOARD_QUALIFIERS))
-BOARD_QUALIFIERS_NO_SEPARATOR := $(substring,$(BOARD_QUALIFIERS),1)
+BOARD_TARGET_STRING := $(normalize_upper,$(BOARD)/$(BOARD_QUALIFIERS))
 
 config BOARD_$(BOARD_STRING)
 	def_bool y
@@ -18,7 +17,7 @@ config BOARD_$(BOARD_TARGET_STRING)
 
 config BOARD_QUALIFIERS
 	string
-	default "$(BOARD_QUALIFIERS_NO_SEPARATOR)"
+	default "$(BOARD_QUALIFIERS)"
 	help
 	  Contains the qualifiers of the board being used without the name of the board itself.
 

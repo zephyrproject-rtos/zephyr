@@ -123,6 +123,6 @@ tests:
         - "Memory Size"
         - "Disk mounted"
     extra_args:
-      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
