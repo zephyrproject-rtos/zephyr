@@ -661,6 +661,14 @@ Bluetooth Audio
 * :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
   Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
   :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
+* :c:member:`bt_tbs_client_cb.technology` has changed the ``value`` parameter from ``uint32_t``
+  to ``enum bt_bearer_tech``. Application using this application should switch the type.
+  (:github:`102430`)
+* All ``BT_TBS_TECHNOLOGY_*`` values like ``BT_TBS_TECHNOLOGY_3G`` are renamed to
+  ``BT_BEARER_TECH_*`` like ``BT_BEARER_TECH_3G``. Application can do search-and-replace from
+  ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
+  :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
+  :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
 
 Bluetooth Mesh
 ==============
