@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -157,7 +157,7 @@ static int init_ccp_call_control_server(void)
 		.uri_schemes_supported = "tel,skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = BT_TBS_FEATURE_HOLD,
 	};
 	int err;
@@ -189,7 +189,7 @@ static int init_ccp_call_control_server(void)
 			.gtbs = false,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
-			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
+			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
 			.supported_features = BT_TBS_FEATURE_HOLD,
 		};
 
