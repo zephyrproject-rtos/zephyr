@@ -434,8 +434,10 @@
 			clocks = <&clock ESP32_USB_MODULE>;
 			num-out-eps = <6>;
 			num-in-eps = <6>;
+			gsnpsid = <0x4f54400a>;
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x224dd930>;
+			ghwcfg3 = <0x00c804b5>;
 			ghwcfg4 = <0xd3f0a030>;
 		};
 

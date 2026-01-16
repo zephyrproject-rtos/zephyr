@@ -56,6 +56,13 @@ struct uhc_dwc2_config {
 	void (*make_thread)(const struct device *dev);
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
+
+	/* Hardware configuration registers */
+	uint32_t gsnpsid;
+	uint32_t ghwcfg1;
+	uint32_t ghwcfg2;
+	uint32_t ghwcfg3;
+	uint32_t ghwcfg4;
 };
 
 #define UHC_DWC2_VENDOR_QUIRK_GET(n) \

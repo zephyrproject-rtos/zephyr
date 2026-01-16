@@ -21,20 +21,624 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
+#define DEBOUNCE_DELAY_MS CONFIG_UHC_DWC2_PORT_DEBOUNCE_DELAY_MS
+#define RESET_HOLD_MS     CONFIG_UHC_DWC2_PORT_RESET_HOLD_MS
+#define RESET_RECOVERY_MS CONFIG_UHC_DWC2_PORT_RESET_RECOVERY_MS
+
+enum uhc_dwc2_event {
+	/* Root port event */
+	UHC_DWC2_EVENT_PORT,
+	/* Root channel event */
+	UHC_DWC2_EVENT_CHANNEL,
+};
+
+enum uhc_dwc2_port_event {
+	/* No event has occurred or the event is no longer valid */
+	UHC_DWC2_PORT_EVENT_NONE,
+	/* A device has been connected to the port */
+	UHC_DWC2_PORT_EVENT_CONNECTION,
+	/* A device is connected to the port but has not been reset. */
+	UHC_DWC2_PORT_EVENT_DISABLED,
+	/* A device has completed reset and enabled on the port */
+	UHC_DWC2_PORT_EVENT_ENABLED,
+	/* A device disconnection has been detected */
+	UHC_DWC2_PORT_EVENT_DISCONNECTION,
+	/* Port error detected */
+	UHC_DWC2_PORT_EVENT_ERROR,
+	/* Overcurrent detected */
+	UHC_DWC2_PORT_EVENT_OVERCURRENT,
+	/* Port has pending channel event */
+	UHC_DWC2_PORT_EVENT_CHANNEL
+};
+
+enum uhc_dwc2_speed {
+	UHC_DWC2_SPEED_HIGH = 0,
+	UHC_DWC2_SPEED_FULL = 1,
+	UHC_DWC2_SPEED_LOW = 2,
+};
+
 K_THREAD_STACK_DEFINE(uhc_dwc2_stack, CONFIG_UHC_DWC2_STACK_SIZE);
 
-#define UHC_DWC2_CHAN_REG(base, chan_idx)                                                          \
-	((struct usb_dwc2_host_chan *)(((mem_addr_t)(base)) + 0x500UL + ((chan_idx) * 0x20UL)))
 
+#define UHC_DWC2_CHAN_REG(base, chan_idx)                                                          \
+	((struct usb_dwc2_host_chan *)(((mem_addr_t)(base)) + USB_DWC2_HCCHAR0 + ((chan_idx) * 0x20UL)))
+
+/* Mask to clear HPRT register */
+#define USB_DWC2_HPRT_W1C_MSK	(USB_DWC2_HPRT_PRTENA |		\
+								USB_DWC2_HPRT_PRTCONNDET |	\
+								USB_DWC2_HPRT_PRTENCHNG |	\
+	 							USB_DWC2_HPRT_PRTOVRCURRCHNG)
+
+
+/* Interrupts that pertain to core events */
+#define CORE_EVENTS_INTRS_MSK (USB_DWC2_GINTSTS_DISCONNINT | \
+							   USB_DWC2_GINTSTS_HCHINT)
+
+/* Interrupt that pertain to host port events */
+#define PORT_EVENTS_INTRS_MSK (USB_DWC2_HPRT_PRTCONNDET | \
+							   USB_DWC2_HPRT_PRTENCHNG | \
+							   USB_DWC2_HPRT_PRTOVRCURRCHNG)
 struct uhc_dwc2_data {
 	struct k_sem irq_sem;
 	struct k_thread thread;
+	/* Event the driver thread waits for */
 	struct k_event event;
+	/* Port last event */
+	enum uhc_dwc2_port_event last_event;
+	/* Bit mask of channels with pending interrupts */
+	uint32_t pending_channels_msk;
+	/* Root Port flags */
+	uint8_t debouncing: 1;
+	uint8_t has_device: 1;
 };
+
+static inline void dwc2_hal_toggle_reset(struct usb_dwc2_reg *const dwc2, const bool reset_on)
+{
+	uint32_t hprt;
+
+	hprt = sys_read32((mem_addr_t)&dwc2->hprt);
+	if (reset_on) {
+		hprt |= USB_DWC2_HPRT_PRTRST;
+	} else {
+		hprt &= ~USB_DWC2_HPRT_PRTRST;
+	}
+	sys_write32(hprt & (~USB_DWC2_HPRT_W1C_MSK), (mem_addr_t)&dwc2->hprt);
+}
+
+static inline void dwc2_hal_set_power(struct usb_dwc2_reg *const dwc2, const bool power_on)
+{
+	uint32_t hprt;
+
+	hprt = sys_read32((mem_addr_t)&dwc2->hprt);
+	if (power_on) {
+		hprt |= USB_DWC2_HPRT_PRTPWR;
+	} else {
+		hprt &= ~USB_DWC2_HPRT_PRTPWR;
+	}
+	sys_write32(hprt & (~USB_DWC2_HPRT_W1C_MSK), (mem_addr_t)&dwc2->hprt);
+}
+
+static inline enum uhc_dwc2_speed dwc2_hal_get_speed(struct usb_dwc2_reg *const dwc2)
+{
+	uint32_t hprt;
+
+	hprt = sys_read32((mem_addr_t)&dwc2->hprt);
+	return (hprt & USB_DWC2_HPRT_PRTSPD_MASK) >> USB_DWC2_HPRT_PRTSPD_POS;
+}
+
+static inline void dwc2_hal_enable_port(struct usb_dwc2_reg *const dwc2)
+{
+	const enum uhc_dwc2_speed speed = dwc2_hal_get_speed(dwc2);
+	uint32_t hcfg = sys_read32((mem_addr_t)&dwc2->hcfg);
+	uint32_t hfir = sys_read32((mem_addr_t)&dwc2->hfir);
+	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
+	uint8_t fslspclksel;
+	uint16_t frint;
+
+	/* We can select Buffer DMA of Scatter-Gather DMA mode here: Buffer DMA for now */
+	hcfg &= ~USB_DWC2_HCFG_DESCDMA;
+
+	/* Disable periodic scheduling, will enable later */
+	hcfg &= ~USB_DWC2_HCFG_PERSCHEDENA;
+
+	if (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2) == 0) {
+		/* Indicate to the OTG core what speed the PHY clock is at
+		 * Note: FSLS PHY has an implicit 8 divider applied when in LS mode,
+		 * so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
+		 */
+		fslspclksel = (speed == UHC_DWC2_SPEED_FULL) ? 1 : 2;
+		hcfg &= ~USB_DWC2_HCFG_FSLSPCLKSEL_MASK;
+		hcfg |= (fslspclksel << USB_DWC2_HCFG_FSLSPCLKSEL_POS);
+
+		/* Disable dynamic loading */
+		hfir &= ~USB_DWC2_HFIR_HFIRRLDCTRL;
+		/* Set frame interval to be equal to 1ms
+		 * Note: FSLS PHY has an implicit 8 divider applied when in LS mode,
+		 * so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
+		 */
+		frint = (speed == UHC_DWC2_SPEED_FULL) ? 48000 : 6000;
+		hfir &= ~USB_DWC2_HFIR_FRINT_MASK;
+		hfir |= (frint << USB_DWC2_HFIR_FRINT_POS);
+
+		sys_write32(hcfg, (mem_addr_t)&dwc2->hcfg);
+		sys_write32(hfir, (mem_addr_t)&dwc2->hfir);
+	} else {
+		LOG_ERR("Configuring clocks for HS PHY is not implemented");
+	}
+}
+
+static inline void dwc2_hal_init_gusbcfg(struct usb_dwc2_reg *const dwc2)
+{
+	uint32_t gusbcfg = sys_read32((mem_addr_t)&dwc2->gusbcfg);
+	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
+	uint32_t ghwcfg4 = sys_read32((mem_addr_t)&dwc2->ghwcfg4);
+	
+	/* Enable Host mode */
+	sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_FORCEHSTMODE);
+	/* Wait until core is in host mode */
+	while ((sys_read32((mem_addr_t)&dwc2->gintsts) & USB_DWC2_GINTSTS_CURMOD) != 1) {
+	}
+
+	if (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2) != 0) {
+		/* De-select FS PHY */
+		gusbcfg &= ~USB_DWC2_GUSBCFG_PHYSEL_USB11;
+
+		if (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2) == USB_DWC2_GHWCFG2_HSPHYTYPE_ULPI) {
+			LOG_DBG("Highspeed ULPI PHY init");
+			/* Select ULPI PHY (external) */
+			gusbcfg |= USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
+			/* ULPI is always 8-bit interface */
+			gusbcfg &= ~USB_DWC2_GUSBCFG_PHYIF_16_BIT;
+			/* ULPI select single data rate */
+			gusbcfg &= ~USB_DWC2_GUSBCFG_DDR_DOUBLE;
+			/* Default internal VBUS Indicator and Drive */
+			gusbcfg &= ~(USB_DWC2_GUSBCFG_ULPIEVBUSD | USB_DWC2_GUSBCFG_ULPIEVBUSI);
+			/* Disable FS/LS ULPI and Supend mode */
+			gusbcfg &= ~(USB_DWC2_GUSBCFG_ULPIFSLS | USB_DWC2_GUSBCFG_ULPICLK_SUSM);
+		} else {
+			LOG_DBG("Highspeed UTMI+ PHY init");
+			/* Select UTMI+ PHY (internal) */
+			gusbcfg &= ~USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
+			/* Set 16-bit interface if supported */
+			if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
+				gusbcfg |= USB_DWC2_GUSBCFG_PHYIF_16_BIT;
+			} else {
+				gusbcfg &= ~USB_DWC2_GUSBCFG_PHYIF_16_BIT;
+			}
+		}
+		sys_write32(gusbcfg, (mem_addr_t)&dwc2->gusbcfg);
+	} else {
+		LOG_DBG("Fullspeed PHY init");
+		sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_PHYSEL_USB11);
+	}
+}
+
+static inline int dwc2_hal_init_gahbcfg(struct usb_dwc2_reg *const dwc2)
+{
+	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
+
+	/* Disable Global Interrupt */
+	sys_clear_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+
+	/* TODO: Set AHB burst mode for some ECO only for ESP32S2 */
+	/* Make config quirk? */
+
+	/* TODO: Disable HNP and SRP capabilities */
+	/* Also move to quirk? */
+
+	/* Configure AHB */
+	uint32_t gahbcfg = sys_read32((mem_addr_t)&dwc2->gahbcfg);
+	gahbcfg |= USB_DWC2_GAHBCFG_NPTXFEMPLVL;
+	gahbcfg &= ~USB_DWC2_GAHBCFG_HBSTLEN_MASK;
+	gahbcfg |= (USB_DWC2_GAHBCFG_HBSTLEN_INCR16 << USB_DWC2_GAHBCFG_HBSTLEN_POS);
+	sys_write32(gahbcfg, (mem_addr_t)&dwc2->gahbcfg);
+
+	if (usb_dwc2_get_ghwcfg2_otgarch(ghwcfg2) == USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA) {
+		sys_set_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_DMAEN);
+	} else {
+		/* TODO: Implement Simple mode */
+		LOG_ERR("DMA isn't supported by the hardware");
+		return -ENXIO;
+	}
+
+	/* Enable Global Interrupt */
+	sys_set_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+	return 0;
+}
+
+static int dwc2_hal_core_reset(struct usb_dwc2_reg *const dwc2, const k_timeout_t timeout)
+{
+	const k_timepoint_t timepoint = sys_timepoint_calc(timeout);
+
+	/* Check AHB master idle state */
+	while ((sys_read32((mem_addr_t)&dwc2->grstctl) & USB_DWC2_GRSTCTL_AHBIDLE) == 0) {
+		if (sys_timepoint_expired(timepoint)) {
+			LOG_ERR("Wait for AHB idle timeout, GRSTCTL 0x%08x",
+				sys_read32((mem_addr_t)&dwc2->grstctl));
+			return -EIO;
+		}
+
+		k_busy_wait(1);
+	}
+
+	/* Apply Core Soft Reset */
+	sys_write32(USB_DWC2_GRSTCTL_CSFTRST, (mem_addr_t)&dwc2->grstctl);
+
+	/* Wait for reset to complete */
+	while ((sys_read32((mem_addr_t)&dwc2->grstctl) & USB_DWC2_GRSTCTL_CSFTRST) != 0 &&
+	       (sys_read32((mem_addr_t)&dwc2->grstctl) & USB_DWC2_GRSTCTL_CSFTRSTDONE) == 0) {
+		if (sys_timepoint_expired(timepoint)) {
+			LOG_ERR("Wait for CSR done timeout, GRSTCTL 0x%08x",
+				sys_read32((mem_addr_t)&dwc2->grstctl));
+			return -EIO;
+		}
+
+		k_busy_wait(1);
+	}
+
+	/* CSFTRSTDONE is W1C so the write must have the bit set to clear it */
+	sys_clear_bits((mem_addr_t)&dwc2->grstctl, USB_DWC2_GRSTCTL_CSFTRST);
+
+	LOG_DBG("DWC2 core reset done");
+
+	return 0;
+}
+
+static int dwc2_hal_init_host(struct usb_dwc2_reg *const dwc2)
+{
+	int ret;
+
+	/* Init GUSBCFG */
+	dwc2_hal_init_gusbcfg(dwc2);
+
+	/* Init GAHBCFG */
+	ret = dwc2_hal_init_gahbcfg(dwc2);
+
+	/* Clear interrupts */
+	sys_clear_bits((mem_addr_t)&dwc2->gintmsk, 0xFFFFFFFFUL);
+	sys_set_bits((mem_addr_t)&dwc2->gintmsk, USB_DWC2_GINTSTS_DISCONNINT);
+
+	/* Clear status */
+	uint32_t core_intrs = sys_read32((mem_addr_t)&dwc2->gintsts);
+	sys_write32(core_intrs, (mem_addr_t)&dwc2->gintsts);
+
+	return ret;
+}
+
+/* ---------------------------- */
+
+static void uhc_dwc2_port_debounce_lock(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	/* Disable Connection and disconnection interrupts to prevent spurious events */
+	sys_clear_bits((mem_addr_t)&dwc2->gintmsk, USB_DWC2_GINTSTS_PRTINT |
+												USB_DWC2_GINTSTS_DISCONNINT);
+	/* Set the debounce lock flag */
+	priv->debouncing = 1;
+}
+
+static void uhc_dwc2_port_debounce_unlock(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	/* Clear the flag */
+	priv->debouncing = 0;
+	/* Clear Connection and disconnection interrupt in case it triggered again */
+	sys_set_bits((mem_addr_t)&dwc2->gintsts, USB_DWC2_GINTSTS_DISCONNINT);
+	/* Clear the PRTCONNDET interrupt by writing 1 to the corresponding bit (W1C logic) */
+	sys_set_bits((mem_addr_t)&dwc2->hprt, USB_DWC2_HPRT_PRTCONNDET);
+	/* Re-enable the HPRT (connection) and disconnection interrupts */
+	sys_set_bits((mem_addr_t)&dwc2->gintmsk, USB_DWC2_GINTSTS_PRTINT |
+												USB_DWC2_GINTSTS_DISCONNINT);
+}
+
+static enum uhc_dwc2_port_event uhc_dwc2_port_get_event(const struct device *dev)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+
+	uint32_t gintsts = 0;
+	uint32_t hprt = 0;
+
+	/* Read and clear core interrupt status */
+	gintsts = sys_read32((mem_addr_t)&dwc2->gintsts);
+	sys_write32(gintsts, (mem_addr_t)&dwc2->gintsts);
+
+	/* If port interruprt - read and clear */
+	if (gintsts & USB_DWC2_GINTSTS_PRTINT) {
+		hprt = sys_read32((mem_addr_t)&dwc2->hprt);
+		/* Clear the interrupt status by writing 1 to the W1C bits, except the PRTENA bit */
+		sys_write32(hprt & (~USB_DWC2_HPRT_PRTENA), (mem_addr_t)&dwc2->hprt);
+	}
+
+	enum uhc_dwc2_port_event port_event = UHC_DWC2_PORT_EVENT_NONE;
+	/*
+	 * Events priority:
+	 * CONN < ENABLE/DISABLE < OVRCUR < DISCONN
+	 */
+	if ((gintsts & CORE_EVENTS_INTRS_MSK) || (hprt & PORT_EVENTS_INTRS_MSK)) {
+		if (gintsts & USB_DWC2_GINTSTS_DISCONNINT) {
+			/* Port disconnected */
+			port_event = UHC_DWC2_PORT_EVENT_DISCONNECTION;
+			uhc_dwc2_port_debounce_lock(dev);
+		} else {
+			/* Port still connected, check port event */
+			if (hprt & USB_DWC2_HPRT_PRTOVRCURRCHNG) {
+				/* TODO: Overcurrent or overcurrent clear? */
+				port_event = UHC_DWC2_PORT_EVENT_OVERCURRENT;
+			} else if (hprt & USB_DWC2_HPRT_PRTENCHNG) {
+				if (hprt & USB_DWC2_HPRT_PRTENA) {
+					/* Host port was enabled */
+					port_event = UHC_DWC2_PORT_EVENT_ENABLED;
+				} else {
+					/* Host port has been disabled */
+					port_event = UHC_DWC2_PORT_EVENT_DISABLED;
+				}
+			} else if (hprt & USB_DWC2_HPRT_PRTCONNDET && !priv->debouncing) {
+				port_event = UHC_DWC2_PORT_EVENT_CONNECTION;
+				uhc_dwc2_port_debounce_lock(dev);
+			} else {
+				/* Should never happened, as port event masked with PORT_EVENTS_INTRS_MSK */
+				__ASSERT(false,
+					 "uhc_dwc2_decode_intr: Unknown port interrupt, GINTSTS=%08Xh, HPRT=%08Xh",
+					 						gintsts, hprt);
+			}
+		}
+	}
+
+	if (port_event == UHC_DWC2_PORT_EVENT_NONE && (gintsts & USB_DWC2_GINTSTS_HCHINT)) {
+		/* One or more channels have pending interrupts. Store the mask of those channels */
+		priv->pending_channels_msk = sys_read32((mem_addr_t)&dwc2->haint);
+		port_event = UHC_DWC2_PORT_EVENT_CHANNEL;
+	}
+
+	return port_event;
+}
+
+static inline enum uhc_dwc2_port_event uhc_dwc2_port_debounce(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+	enum uhc_dwc2_port_event ret; 
+
+	/* TODO: k_msleep() inside uhc_lock_internal(), good/bad? */
+	/* Wait debounce time */
+	k_msleep(DEBOUNCE_DELAY_MS);
+
+	/* Check the post-debounce state (i.e., whether it's actually connected/disconnected) */
+	if ((sys_read32((mem_addr_t)&dwc2->hprt) & USB_DWC2_HPRT_PRTCONNSTS)) {
+		ret = UHC_DWC2_PORT_EVENT_CONNECTION;
+	} else {
+		ret = UHC_DWC2_PORT_EVENT_DISCONNECTION;
+	}
+	/* Disable debounce lock */
+	uhc_dwc2_port_debounce_unlock(dev);
+	return ret;
+}
+
+static enum uhc_dwc2_port_event uhc_dwc2_port_debounce_event(const struct device *dev)
+{
+	struct uhc_dwc2_data *priv = uhc_get_private(dev);
+
+	enum uhc_dwc2_port_event event = priv->last_event;
+
+	switch (event) {
+		case UHC_DWC2_PORT_EVENT_CONNECTION: 
+		case UHC_DWC2_PORT_EVENT_DISCONNECTION: {
+			/* Don't update state immediately, we need to debounce. */
+			event = uhc_dwc2_port_debounce(dev); 
+			break;
+		}
+		default: {
+			/* Do not need to debounce */
+			break;
+		}
+	}
+
+	return event;
+}
+
+static inline void uhc_dwc2_port_reset(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	// struct uhc_dwc2_data *priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const dwc2 = config->base;
+
+	/*
+	Proceed to resetting the bus:
+	- Update the port's state variable
+	- Hold the bus in the reset state for RESET_HOLD_MS.
+	- Return the bus to the idle state for RESET_RECOVERY_MS
+	During this reset the port state should be set to RESETTING and do not change.
+	*/
+	// priv->dynamic.port_state = UHC_DWC2_PORT_STATE_RESETTING;
+	dwc2_hal_toggle_reset(dwc2, true);
+
+	/* Hold the bus in the reset state */
+	k_msleep(RESET_HOLD_MS);
+
+	/* Return the bus to the idle state. Port enabled event should occur */
+	dwc2_hal_toggle_reset(dwc2, false);
+
+	/* Give the port time to recover */
+	k_msleep(RESET_RECOVERY_MS);
+
+	/* TODO: verify the port state after reset */
+
+	/* Finish the port config for the appeared device */
+	/* TODO: apply FIFO settings */
+	/* TODO: set frame list for the ISOC/INTR xfer */
+	/* TODO: enable periodic transfer */
+}
+
+static inline int uhc_dwc2_soft_reset(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+	int ret;
+
+	/* TODO: Implement port checks */
+	/* Port should have no ongoing transfers */
+	/* Port flags should be 0 */
+
+	/* Disable Global IRQ */
+	config->irq_disable_func(dev);
+
+	/* Reset the core */
+	ret = dwc2_hal_core_reset(dwc2, K_MSEC(10));
+	if (ret) {
+		LOG_ERR("Failed to perform soft reset: %d", ret);
+		return ret;
+	}
+
+	/* Re-config after reset */
+	dwc2_hal_init_gahbcfg(dwc2);
+
+	/* Enable Global IRQ */
+	config->irq_enable_func(dev);
+
+	/* Power on the port */
+	sys_clear_bits((mem_addr_t)&dwc2->haintmsk, 0xFFFFFFFFUL);
+	sys_set_bits((mem_addr_t)&dwc2->gintmsk, USB_DWC2_GINTSTS_PRTINT | USB_DWC2_GINTSTS_HCHINT);
+	dwc2_hal_set_power(dwc2, true);
+
+	// ret = uhc_dwc2_power_on(dev);
+	// if (ret) {
+	// 	LOG_ERR("Failed to power on root port: %d", ret);
+	// 	return ret;
+	// }
+
+	return ret;
+}
+
+/* ---------------------------- */
+
+static inline void uhc_dwc2_submit_new_device(const struct device *dev, enum uhc_dwc2_speed speed)
+{
+	static const char *const uhc_dwc2_speed_str[] = {"High", "Full", "Low"};
+	enum uhc_event_type type;
+
+	LOG_WRN("New device, %s-speed", uhc_dwc2_speed_str[speed]);
+
+	switch (speed) {
+		case UHC_DWC2_SPEED_LOW:
+			type = UHC_EVT_DEV_CONNECTED_LS;
+			break;
+		case UHC_DWC2_SPEED_FULL:
+			type = UHC_EVT_DEV_CONNECTED_FS;
+			break;
+		case UHC_DWC2_SPEED_HIGH:
+			type = UHC_EVT_DEV_CONNECTED_HS;
+			break;
+		default:
+			LOG_ERR("Unsupported speed %d", speed);
+			return;
+	}
+
+	/* TODO: uhc submit event UHC_EVT_DEV_CONNECTED_XX */
+}
+
+static inline void uhc_dwc2_submit_dev_gone(const struct device *dev)
+{
+	LOG_WRN("Device removed");
+
+	/* TODO: uhc submit event UHC_EVT_DEV_REMOVED */
+}
+
+/* ---------------------------- */
+
+static void uhc_dwc2_port_handle_events(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	enum uhc_dwc2_port_event event = uhc_dwc2_port_debounce_event(dev);
+
+	switch (event) {
+		case UHC_DWC2_PORT_EVENT_NONE:
+			/* No event, nothing to do */
+			break;
+		case UHC_DWC2_PORT_EVENT_CONNECTION: {
+			/* Device connected to the port, but hasn't been reset */
+			/* We don't have the device speed yet, but the device already in the port. */
+			LOG_DBG("Port connected");
+
+			/* Reset the port to get the device speed */
+			uhc_dwc2_port_reset(dev);
+			break;
+		}
+		case UHC_DWC2_PORT_EVENT_ENABLED: {
+			/* Port has a device connected and finish the first reset, we know the speed */
+			LOG_DBG("Port enabled");
+
+			enum uhc_dwc2_speed speed = dwc2_hal_get_speed(dwc2);
+			priv->has_device = 1;
+			/* Notify the higher logic about the new device */
+			uhc_dwc2_submit_new_device(dev, speed);
+			break;
+		}
+		case UHC_DWC2_PORT_EVENT_DISCONNECTION:
+		case UHC_DWC2_PORT_EVENT_ERROR:
+		case UHC_DWC2_PORT_EVENT_OVERCURRENT: {
+			LOG_DBG("Port disconnected / error");
+
+			if (priv->has_device) {
+				uhc_dwc2_submit_dev_gone(dev);
+			}
+
+			/* TODO: recover from the error */
+
+			/* Reset the controller to handle new connection */
+			uhc_dwc2_soft_reset(dev);
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+static void uhc_dwc2_channel_handle_events(const struct device *dev)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);	
+	LOG_WRN("Channel event: %d", priv->last_event);
+}
 
 static void uhc_dwc2_isr_handler(const struct device *dev)
 {
-	/* TODO: Interrupt handling */
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	enum uhc_dwc2_port_event port_event = uhc_dwc2_port_get_event(dev);
+
+	switch (port_event)
+	{
+	case UHC_DWC2_PORT_EVENT_CHANNEL: {
+		/* This is the one event, we do not propagate to the thread. */
+		/* Instead, we handle the channels and keep the last event in associated channel object. */
+
+		/* TODO: Cycle through each pending channel */
+
+		k_event_set(&priv->event, BIT(UHC_DWC2_EVENT_CHANNEL));
+		break;
+	}
+	case UHC_DWC2_PORT_EVENT_ERROR:
+	case UHC_DWC2_PORT_EVENT_OVERCURRENT:
+	case UHC_DWC2_PORT_EVENT_CONNECTION:
+	case UHC_DWC2_PORT_EVENT_DISABLED:
+	case UHC_DWC2_PORT_EVENT_DISCONNECTION:
+	case UHC_DWC2_PORT_EVENT_ENABLED: {
+		priv->last_event = port_event;
+		k_event_set(&priv->event, BIT(UHC_DWC2_EVENT_PORT));
+		break;
+	}
+	default:
+		// Clear events without thread notification
+		break;
+	}
+
+	(void) uhc_dwc2_quirk_irq_clear(dev);
 }
 
 static ALWAYS_INLINE void uhc_dwc2_thread_handler(void *const arg)
@@ -48,8 +652,13 @@ static ALWAYS_INLINE void uhc_dwc2_thread_handler(void *const arg)
 
 		uhc_lock_internal(dev, K_FOREVER);
 
-		/* TODO: handle port and channel events */
-		(void) event;
+		if (event & BIT(UHC_DWC2_EVENT_PORT)) {
+			uhc_dwc2_port_handle_events(dev);
+		}
+
+		if (event & BIT(UHC_DWC2_EVENT_CHANNEL)) {
+			uhc_dwc2_channel_handle_events(dev);
+		}
 
 		uhc_unlock_internal(dev);
 	}
@@ -136,21 +745,132 @@ static int uhc_dwc2_preinit(const struct device *const dev)
 
 static int uhc_dwc2_init(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	// struct uhc_dwc2_data *priv = uhc_get_private(dev);
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
+	uint32_t reg;
+	int ret;
 
-	return -ENOSYS;
+	/* 1. Power-up dwc2 hardware controller */
+
+	ret = uhc_dwc2_quirk_init(dev);
+	if (ret) {
+		LOG_ERR("Quirk init failed %d", ret);
+		return ret;
+	}
+
+	/* 2. Read hardware configuration registers */
+
+	reg = sys_read32((mem_addr_t)&dwc2->gsnpsid);
+	if (reg != config->gsnpsid) {
+		LOG_ERR("Unexpected GSNPSID 0x%08x instead of 0x%08x", reg, config->gsnpsid);
+		return -ENOTSUP;
+	}
+
+	reg = sys_read32((mem_addr_t)&dwc2->ghwcfg1);
+	if (reg != config->ghwcfg1) {
+		LOG_ERR("Unexpected GHWCFG1 0x%08x instead of 0x%08x", reg, config->ghwcfg1);
+		return -ENOTSUP;
+	}
+
+	reg = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
+	if (reg != config->ghwcfg2) {
+		LOG_ERR("Unexpected GHWCFG2 0x%08x instead of 0x%08x", reg, config->ghwcfg2);
+		return -ENOTSUP;
+	}
+
+	reg = sys_read32((mem_addr_t)&dwc2->ghwcfg3);
+	if (reg != config->ghwcfg3) {
+		LOG_ERR("Unexpected GHWCFG3 0x%08x instead of 0x%08x", reg, config->ghwcfg3);
+		return -ENOTSUP;
+	}
+
+	reg = sys_read32((mem_addr_t)&dwc2->ghwcfg4);
+	if (reg != config->ghwcfg4) {
+		LOG_ERR("Unexpected GHWCFG4 0x%08x instead of 0x%08x", reg, config->ghwcfg4);
+		return -ENOTSUP;
+	}
+
+	/* 3. Select PHY */
+
+	ret = uhc_dwc2_quirk_phy_pre_select(dev);
+	if (ret) {
+		LOG_ERR("Quirk PHY pre select failed %d", ret);
+		return ret;
+	}
+
+	if (uhc_dwc2_quirk_is_phy_clk_off(dev)) {
+		LOG_ERR("PHY clock is  turned off, cannot reset");
+		return -EIO;
+	}
+
+	ret = dwc2_hal_core_reset(dwc2, K_MSEC(10));
+	if (ret) {
+		LOG_ERR("DWC2 core reset failed after PHY init: %d", ret);
+		return ret;
+	}
+
+	ret = uhc_dwc2_quirk_phy_post_select(dev);
+	if (ret) {
+		LOG_ERR("Quirk PHY post select failed %d", ret);
+		return ret;
+	}
+
+	/* 4. Init DWC2 controller as a host */
+
+	ret = dwc2_hal_init_host(dwc2);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
 }
 
 static int uhc_dwc2_enable(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const dwc2 = config->base;
 
-	return -ENOSYS;
+	int ret;
+
+	ret = uhc_dwc2_quirk_pre_enable(dev);
+	if (ret) {
+		LOG_ERR("Quirk pre enable failed %d", ret);
+		return ret;
+	}
+
+	/* 1. Flush root port config */
+
+	/* TODO: Pre-calculate FIFO configuration */
+
+	/* TODO: Flush channels */
+
+	/* 2. Enable IRQ */
+	config->irq_enable_func(dev);
+
+	/* 3. Power up root port */
+	sys_clear_bits((mem_addr_t)&dwc2->haintmsk, 0xFFFFFFFFUL);
+	sys_set_bits((mem_addr_t)&dwc2->gintmsk, USB_DWC2_GINTSTS_PRTINT | USB_DWC2_GINTSTS_HCHINT);
+
+	dwc2_hal_set_power(dwc2, true);
+	// ret = uhc_dwc2_power_on(dev);
+	// if (ret) {
+	// 	LOG_ERR("Failed to power on port: %d", ret);
+	// 	return ret;
+	// }
+
+	return 0;
 }
 
 static int uhc_dwc2_disable(const struct device *const dev)
 {
 	LOG_WRN("%s has not been implemented", __func__);
+
+	/* 0. TODO: Check ongoing transfer? */
+
+	/* 1. Disable IRQ */
+
+	/* 2. Power down root port */
 
 	return -ENOSYS;
 }
@@ -269,6 +989,11 @@ static const struct uhc_api uhc_dwc2_api = {
 		.make_thread = uhc_dwc2_make_thread_##n,	\
 		.irq_enable_func = uhc_dwc2_irq_enable_func_##n,	\
 		.irq_disable_func = uhc_dwc2_irq_disable_func_##n,	\
+		.gsnpsid = DT_INST_PROP(n, gsnpsid),	\
+		.ghwcfg1 = DT_INST_PROP(n, ghwcfg1),	\
+		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),	\
+		.ghwcfg3 = DT_INST_PROP(n, ghwcfg3),	\
+		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),	\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, uhc_dwc2_preinit, NULL,	\
