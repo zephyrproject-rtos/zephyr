@@ -62,7 +62,7 @@ static int ctr_drbg_initialize(void)
 }
 
 
-int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
+int z_impl_sys_csrand_get(void *dst, size_t outlen)
 {
 	int ret;
 
