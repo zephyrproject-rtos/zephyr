@@ -1,6 +1,6 @@
 /* NXP NETC Block Controller Driver
  *
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(nxp_imx_netc_blk);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 
 /* NETC integrated endpoint register block register */
 #define IERB_EMDIOFAUXR 0x344
@@ -224,7 +225,7 @@ static int netcmix_init(const struct device *dev)
 }
 #endif
 
-static int eth_nxp_imx_netc_blk_init(const struct device *dev)
+static int eth_nxp_imx_netc_blk_init_hw(const struct device *dev)
 {
 	int ret;
 
@@ -260,6 +261,44 @@ static int eth_nxp_imx_netc_blk_init(const struct device *dev)
 	return 0;
 }
 
+static int eth_nxp_imx_netc_blk_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	LOG_INF("imx netc blk pm action: %d", action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = eth_nxp_imx_netc_blk_init_hw(dev);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int eth_nxp_imx_netc_blk_init(const struct device *dev)
+{
+	int ret;
+
+	ret = eth_nxp_imx_netc_blk_init_hw(dev);
+	if (ret) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, eth_nxp_imx_netc_blk_pm_action);
+}
+
 #define ETH_NXP_IMX_NETC_BLK_INIT(inst)                                                            \
 	static struct eth_nxp_imx_netc_blk_data eth_nxp_imx_netc_blk_data_##inst;                  \
 	static const struct eth_nxp_imx_netc_blk_config eth_nxp_imx_netc_blk_config_##inst = {     \
@@ -267,7 +306,8 @@ static int eth_nxp_imx_netc_blk_init(const struct device *dev)
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(prb, DT_DRV_INST(inst)),                        \
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(netcmix, DT_DRV_INST(inst)),                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, eth_nxp_imx_netc_blk_init, NULL,                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, eth_nxp_imx_netc_blk_pm_action);				   \
+	DEVICE_DT_INST_DEFINE(inst, eth_nxp_imx_netc_blk_init, PM_DEVICE_DT_INST_GET(inst),        \
 			      &eth_nxp_imx_netc_blk_data_##inst,                                   \
 			      &eth_nxp_imx_netc_blk_config_##inst, POST_KERNEL,                    \
 			      CONFIG_MDIO_INIT_PRIORITY, NULL);
