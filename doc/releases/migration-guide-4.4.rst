@@ -119,6 +119,29 @@ Boards
   * :kconfig:option:`CONFIG_SOC_SERIES_NRF91X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF91`
   * :kconfig:option:`CONFIG_SOC_SERIES_NRF92X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF92`
 
+* The following Sifive Freedom SoC Kconfigs have been deprecated and replaced, and
+  Kconfig/CMake/code needs to be updated if they reference the deprecated Kconfigs:
+
+  * :kconfig:option:`CONFIG_SOC_SERIES_SIFIVE_FREEDOM_FE300` with
+    :kconfig:option:`CONFIG_SOC_SERIES_FE300`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FE310_G000` with
+    :kconfig:option:`CONFIG_SOC_FE310_G000`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FE310_G002` with
+    :kconfig:option:`CONFIG_SOC_FE310_G002`
+  * :kconfig:option:`CONFIG_SOC_SERIES_SIFIVE_FREEDOM_FU500` with
+    :kconfig:option:`CONFIG_SOC_SERIES_FU500`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FU540` with :kconfig:option:`CONFIG_SOC_FU540`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FU540_E51` with
+    :kconfig:option:`CONFIG_SOC_FU540_E51`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FU540_U54` with
+    :kconfig:option:`CONFIG_SOC_FU540_U54`
+  * :kconfig:option:`CONFIG_SOC_SERIES_SIFIVE_FREEDOM_FU700` with
+    :kconfig:option:`CONFIG_SOC_SERIES_FU700`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FU740` with :kconfig:option:`CONFIG_SOC_FU740`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FU740_S7` with :kconfig:option:`CONFIG_SOC_FU740_S7`
+  * :kconfig:option:`CONFIG_SOC_SIFIVE_FREEDOM_FU740_U74` with
+    :kconfig:option:`CONFIG_SOC_FU740_U74`
+
 * ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
 
 Device Drivers and Devicetree
