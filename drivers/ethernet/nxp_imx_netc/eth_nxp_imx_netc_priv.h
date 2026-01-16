@@ -132,6 +132,7 @@ struct netc_eth_data {
 	unsigned int tx_intid;
 	unsigned int rx_intid;
 #endif
+	atomic_t turnoff_flag;
 };
 
 int netc_eth_init_common(const struct device *dev);
