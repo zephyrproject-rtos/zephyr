@@ -29,6 +29,10 @@ Build System
   :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
 * The ``full_name`` property of ``board``/``boards`` entries corresponding to new boards in
   board.yml files is now required.
+* The CMake variable ``BOARD_QUALIFIERS`` is aligned with the corresponding
+  :kconfig:option:`CONFIG_BOARD_QUALIFIERS` so that it is no longer prefixed with a ``/``.
+  This means that any use of ``${BOARD}${BOARD_QUALIFIERS}`` must be updated to include ``/``, like
+  this: ``${BOARD}/${BOARD_QUALIFIERS}``.
 
 Kernel
 ******

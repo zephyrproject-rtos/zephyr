@@ -31,8 +31,8 @@ tests:
       - ek_ra8d2/r7ka8d2kflcac/cm85
       - ek_ra8m2/r7ka8m2jflcac/cm85
     extra_args:
-      - DTC_OVERLAY_FILE="./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.overlay"
-      - CONF_FILE="./prj.conf ./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.conf"
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.conf"
   drivers.i2c.renesas_sci_i2c.api:
     depends_on: i2c
     tags:
