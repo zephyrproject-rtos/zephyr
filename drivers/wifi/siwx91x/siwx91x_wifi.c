@@ -15,6 +15,7 @@
 #include "siwx91x_wifi_socket.h"
 #include "siwx91x_wifi_sta.h"
 
+#include "sli_wifi_utility.h"
 #include "sl_rsi_utility.h"
 #include "sl_wifi_callback_framework.h"
 
@@ -458,7 +459,7 @@ static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_dom
 {
 	const struct siwx91x_config *siwx91x_cfg = dev->config;
 	const sli_wifi_set_region_ap_request_t *sdk_reg = NULL;
-	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
+	sl_wifi_operation_mode_t oper_mode = sli_wifi_get_opermode();
 	sl_wifi_region_code_t region_code;
 	const char *country_code;
 	int ret;
