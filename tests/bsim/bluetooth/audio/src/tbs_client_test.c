@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -36,7 +37,7 @@ CREATE_FLAG(call_terminated);
 CREATE_FLAG(provider_name);
 CREATE_FLAG(ccid_read_flag);
 CREATE_FLAG(signal_strength);
-CREATE_FLAG(technology);
+CREATE_FLAG(flag_technology);
 CREATE_FLAG(status_flags);
 CREATE_FLAG(signal_interval);
 CREATE_FLAG(call_accepted);
@@ -151,18 +152,17 @@ static void tbs_client_retrieve_call_cb(struct bt_conn *conn, int err,
 						  call_index);
 }
 
-static void tbs_client_technology_cb(struct bt_conn *conn, int err,
-				    uint8_t inst_index,
-				    uint32_t value)
+static void tbs_client_technology_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+				     enum bt_bearer_tech technology)
 {
 	if (err != 0) {
 		FAIL("Client bearer technology error: (%d)\n", err);
 		return;
 	}
 
-	printk("%s Instance: %u Technology: %u\n", __func__, inst_index, value);
+	printk("%s Instance: %u Technology: %d\n", __func__, inst_index, technology);
 
-	SET_FLAG(technology);
+	SET_FLAG(flag_technology);
 }
 
 static void tbs_client_signal_strength_cb(struct bt_conn *conn, int err,
@@ -411,7 +411,7 @@ static void test_technology(uint8_t index)
 {
 	int err;
 
-	UNSET_FLAG(technology);
+	UNSET_FLAG(flag_technology);
 
 	printk("%s\n", __func__);
 
@@ -421,7 +421,7 @@ static void test_technology(uint8_t index)
 		return;
 	}
 
-	WAIT_FOR_FLAG(technology);
+	WAIT_FOR_FLAG(flag_technology);
 
 	printk("Client read technology test success\n");
 }

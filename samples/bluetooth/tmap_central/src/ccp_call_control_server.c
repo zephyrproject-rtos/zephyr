@@ -2,15 +2,17 @@
  *  @brief Bluetooth Call Control Profile (CCP) Server role.
  *
  *  Copyright 2023,2025 NXP
- *  Copyright (c) 2024 Nordic Semiconductor ASA
+ *  Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/kernel.h>
@@ -54,7 +56,7 @@ int ccp_call_control_server_init(void)
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 
