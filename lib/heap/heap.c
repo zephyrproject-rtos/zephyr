@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,9 @@
 #include "heap.h"
 #ifdef CONFIG_MSAN
 #include <sanitizer/msan_interface.h>
+#endif
+#ifdef CONFIG_SYS_HEAP_CANARIES
+#include <zephyr/random/random.h>
 #endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -24,7 +28,24 @@ static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
 	chunk_unit_t *buf = chunk_buf(h);
-	uint8_t *ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
+	uint8_t *ret = NULL;
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	/* Special chunks (0 and end_chunk) do not have a custom header.
+	 * For other chunks, the user data pointer is offset by the total chunk header size.
+	 */
+	if (c != 0 && c != h->end_chunk) {
+		ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
+	} else {
+		/* For chunk 0 or end_chunk, only Zephyr's base internal header applies,
+		 * as these are special internal chunks that do not hold user data.
+		 */
+		ret = ((uint8_t *)&buf[c]) + zephyr_base_header_bytes(h);
+	}
+#else
+	/* If custom header is not enabled, use the standard chunk_header_bytes */
+	ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
+#endif
 
 	CHECK(!(((uintptr_t)ret) & (big_heap(h) ? 7 : 3)));
 
@@ -38,6 +59,20 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 	CHECK(!chunk_used(h, c));
 	CHECK(b->next != 0);
 	CHECK(h->avail_buckets & BIT(bidx));
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *custom_hdr_ptr =
+	(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	uint64_t computed_header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_free);
+
+	__ASSERT(custom_hdr_ptr->header_guard == computed_header_guard,
+		 "corrupted memory");
+#endif
 
 	if (next_free_chunk(h, c) == c) {
 		/* this is the last chunk */
@@ -146,6 +181,17 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 	}
 
 	free_list_add(h, c);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *hdr_ptr =
+		(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_free);
+#endif
 }
 
 /*
@@ -156,8 +202,60 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
  */
 static chunkid_t mem_to_chunkid(struct z_heap *h, void *p)
 {
-	uint8_t *mem = p, *base = (uint8_t *)chunk_buf(h);
-	return (mem - chunk_header_bytes(h) - base) / CHUNK_UNIT;
+	uint8_t *mem_ptr = (uint8_t *)p;
+	uint8_t *base = (uint8_t *)chunk_buf(h);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	chunkid_t id;
+
+	/* Not on a chunk boundary: the chunk id is stored immediately before mem_ptr */
+	if (((uintptr_t)mem_ptr % CHUNK_UNIT) != 0U) {
+		/* Compute offset once, and validate the memcpy source range explicitly */
+		size_t offset = (size_t)(mem_ptr - base);
+
+		__ASSERT(offset >= sizeof(id), "underflow - invalid pointer");
+		__ASSERT((const uint8_t *)mem_ptr <=
+			 (const uint8_t *)chunk_buf(h) + ((size_t)h->end_chunk * CHUNK_UNIT),
+			 "pointer beyond heap bounds");
+
+		/* At this point, source start = base + (offset - sizeof(id)) >= base
+		 * and source end = base + offset <= chunk_buf(h) + (h->end_chunk * CHUNK_UNIT)
+		 */
+
+		memcpy(&id, base + (offset - sizeof(id)), sizeof(id));
+
+		__ASSERT(id <= h->end_chunk, "corrupted chunk id");
+
+		return id;
+	}
+
+	/* On a chunk boundary: derive id from position after fixed header bytes */
+	{
+		size_t offset = (size_t)(mem_ptr - base);
+
+		__ASSERT(offset >= (size_t)chunk_header_bytes(h) &&
+			 (const uint8_t *)mem_ptr <= (const uint8_t *)chunk_buf(h)
+			 + ((size_t)h->end_chunk * CHUNK_UNIT),
+			 "pointer beyond heap bounds");
+
+		id = (chunkid_t)((offset - (size_t)chunk_header_bytes(h)) / CHUNK_UNIT);
+
+		__ASSERT(id <= h->end_chunk, "corrupted chunk id");
+
+		return id;
+	}
+#else
+	{
+		size_t offset = (size_t)(mem_ptr - base);
+
+		__ASSERT(offset >= (size_t)chunk_header_bytes(h) &&
+			 mem_ptr <= (const uint8_t *)chunk_buf(h) +
+			 ((size_t)h->end_chunk * CHUNK_UNIT),
+			 "pointer beyond heap bounds");
+
+		return (chunkid_t)((offset - (size_t)chunk_header_bytes(h)) / CHUNK_UNIT);
+	}
+#endif
 }
 
 void sys_heap_free(struct sys_heap *heap, void *mem)
@@ -183,6 +281,20 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	__ASSERT(left_chunk(h, right_chunk(h, c)) == c,
 		 "corrupted heap bounds (buffer overflow?) for memory at %p",
 		 mem);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *custom_hdr_ptr =
+	(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	uint64_t computed_header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_used);
+
+	__ASSERT(custom_hdr_ptr->header_guard == computed_header_guard,
+		 "corrupted memory");
+#endif
 
 	set_chunk_used(h, c, false);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -234,6 +346,20 @@ static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 		int i = CONFIG_SYS_HEAP_ALLOC_LOOPS;
 		do {
 			chunkid_t c = b->next;
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *custom_hdr_ptr =
+	(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	uint64_t computed_header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_free);
+
+	__ASSERT(custom_hdr_ptr->header_guard == computed_header_guard,
+		 "corrupted memory");
+#endif
 			if (chunk_size(h, c) >= sz) {
 				free_list_remove_bidx(h, c, bi);
 				return c;
@@ -264,27 +390,80 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 	void *mem;
+	chunksz_t actual_allocated_chunk_sz;
 
 	if (bytes == 0U) {
 		return NULL;
 	}
 
-	chunksz_t chunk_sz = bytes_to_chunksz(h, bytes, 0);
-	chunkid_t c = alloc_chunk(h, chunk_sz);
+	chunksz_t chunk_sz_orig = bytes_to_chunksz(h, bytes, 0);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	if (!big_heap(h)) {
+		chunksz_t min_needed_sz = chunksz
+			(Z_HEAP_CUSTOM_HEADER_BYTES +
+			zephyr_base_header_bytes(h) +
+			zephyr_free_list_pointers_bytes(h));
+		if (chunk_sz_orig < min_needed_sz) {
+			chunk_sz_orig = min_needed_sz;
+		}
+	}
+#endif
+
+	chunkid_t c = alloc_chunk(h, chunk_sz_orig);
 
 	if (c == 0U) {
 		return NULL;
 	}
 
-	/* Split off remainder if any */
-	if (chunk_size(h, c) > chunk_sz) {
-		split_chunks(h, c, c + chunk_sz);
-		free_list_add(h, c + chunk_sz);
+	chunksz_t allocated_chunk_sz = chunk_size(h, c);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	if ((allocated_chunk_sz - chunk_sz_orig) > 0 &&
+	    (allocated_chunk_sz - chunk_sz_orig) >= min_chunk_size(h)) {
+		chunkid_t new_free_chunk = c + chunk_sz_orig;
+
+		split_chunks(h, c, new_free_chunk);
+
+	struct z_heap_custom_header *hdr_ptr =
+		(struct z_heap_custom_header *)chunk_buf(h)[new_free_chunk].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[new_free_chunk];
+
+	hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, new_free_chunk, SIZE_AND_USED),
+		cmem, h->magic_num_free);
+
+		free_list_add(h, new_free_chunk);
+
+		actual_allocated_chunk_sz = chunk_sz_orig;
+	} else {
+		actual_allocated_chunk_sz = allocated_chunk_sz;
 	}
+#else
+	if (allocated_chunk_sz > chunk_sz_orig) {
+		split_chunks(h, c, c + chunk_sz_orig);
+		free_list_add(h, c + chunk_sz_orig);
+		actual_allocated_chunk_sz = chunk_sz_orig;
+	} else {
+		actual_allocated_chunk_sz = allocated_chunk_sz;
+	}
+#endif
 
 	set_chunk_used(h, c, true);
 
 	mem = chunk_mem(h, c);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *hdr_ptr =
+		(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_used);
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunksz_to_bytes(h, chunk_size(h, c)));
@@ -310,6 +489,9 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 	size_t gap, rew;
+	#ifdef CONFIG_SYS_HEAP_CANARIES
+	uint8_t *mem2 = NULL;
+	#endif
 
 	/*
 	 * Split align and rewind values (if any).
@@ -340,7 +522,16 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	size_t total_needed = bytes + align - gap + chunk_header_bytes(h);
+	chunksz_t padded_sz = bytes_to_chunksz(h, total_needed, 0);
+
+	if ((total_needed % CHUNK_UNIT) == 0U) {
+		padded_sz += 1U;
+	}
+#else
 	chunksz_t padded_sz = bytes_to_chunksz(h, bytes, align - gap);
+#endif
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
@@ -350,6 +541,18 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	/* Align allocated memory */
 	mem = (uint8_t *) ROUND_UP(mem + rew, align) - rew;
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	mem2 = mem;
+
+	if (((uintptr_t)mem2 % CHUNK_UNIT) != 0) {
+		size_t base_off = (size_t)(mem2 - (uint8_t *)chunk_buf(h));
+
+		__ASSERT(base_off >= sizeof(chunkid_t), "corrupted memory pointer");
+			 *((chunkid_t *)(mem2 - sizeof(chunkid_t))) = c0;
+	}
+#endif
+
 	chunk_unit_t *end = (chunk_unit_t *) ROUND_UP(mem + bytes, CHUNK_UNIT);
 
 	/* Get corresponding chunks */
@@ -359,17 +562,81 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	/* Split and free unused prefix */
 	if (c > c0) {
-		split_chunks(h, c0, c);
-		free_list_add(h, c0);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+		chunksz_t prefix_sz = c - c0;
+
+		if (prefix_sz >= min_chunk_size(h)) {
+#endif
+			split_chunks(h, c0, c);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+			struct z_heap_custom_header *hdr_ptr =
+				(struct z_heap_custom_header *)chunk_buf(h)[c0].bytes;
+			chunk_unit_t *buf = chunk_buf(h);
+			void *cmem = &buf[c0];
+
+			hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+				(chunk_field(h, c0, SIZE_AND_USED),
+				cmem, h->magic_num_free);
+#endif
+			free_list_add(h, c0);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+			if (((uintptr_t)mem2 % CHUNK_UNIT) != 0) {
+				size_t base_off = (size_t)(mem2 - (uint8_t *)chunk_buf(h));
+
+				__ASSERT(base_off >= sizeof(chunkid_t), "corrupted memory pointer");
+					 *(chunkid_t *)(mem2 - sizeof(chunkid_t)) = c;
+			}
+		} else {
+			c = c0;
+		}
+#endif
 	}
 
 	/* Split and free unused suffix */
 	if (right_chunk(h, c) > c_end) {
-		split_chunks(h, c, c_end);
-		free_list_add(h, c_end);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+		chunksz_t suffix_sz = right_chunk(h, c) - c_end;
+
+		if (suffix_sz >= min_chunk_size(h)) {
+#endif
+			split_chunks(h, c, c_end);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+			struct z_heap_custom_header *hdr_ptr =
+				(struct z_heap_custom_header *)chunk_buf(h)[c_end].bytes;
+			chunk_unit_t *buf = chunk_buf(h);
+			void *cmem = &buf[c_end];
+
+			hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+				(chunk_field(h, c_end, SIZE_AND_USED),
+				cmem, h->magic_num_free);
+#endif
+			free_list_add(h, c_end);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+		}
+#endif
 	}
 
 	set_chunk_used(h, c, true);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *hdr_ptr =
+		(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_used);
+
+	__ASSERT(left_chunk(h, right_chunk(h, c)) == c,
+		 "corrupted heap bounds (buffer overflow?) for memory at %p",
+		 mem);
+
+	__ASSERT(IS_ALIGNED((uintptr_t)(mem + rew), align),
+		 "corrupted mem pointer: address not aligned (addr=%p, align=%zu)",
+		 (void *)(mem + rew), (size_t)align);
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunksz_to_bytes(h, chunk_size(h, c)));
@@ -397,8 +664,11 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		/* We're good already */
 		return true;
 	}
-
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	if (chunk_size(h, c) >= (chunks_need + min_chunk_size(h))) {
+#else
 	if (chunk_size(h, c) > chunks_need) {
+#endif
 		/* Shrink in place, split off and free unused suffix */
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
@@ -411,6 +681,16 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 		split_chunks(h, c, c + chunks_need);
 		set_chunk_used(h, c, true);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+		struct z_heap_custom_header *hdr_ptr =
+			(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+		chunk_unit_t *buf = chunk_buf(h);
+		void *cmem = &buf[c];
+
+		hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+			(chunk_field(h, c, SIZE_AND_USED),
+			cmem, h->magic_num_used);
+#endif
 		free_chunk(h, c + chunks_need);
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -429,28 +709,68 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	    (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
 		/* Expand: split the right chunk and append */
 		chunksz_t split_size = chunks_need - chunk_size(h, c);
-
+#ifdef CONFIG_SYS_HEAP_CANARIES
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+		h->allocated_bytes -= chunk_size(h, c) * CHUNK_UNIT;
+#endif
+#else
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
 #endif
-
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 		increase_allocated_bytes(h, split_size * CHUNK_UNIT);
 #endif
-
+#endif
 		free_list_remove(h, rc);
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+		merge_chunks(h, c, rc);
+
+		if (chunk_size(h, c) >= chunks_need + min_chunk_size(h)) {
+			split_chunks(h, c, c + chunks_need);
+
+			struct z_heap_custom_header *hdr_ptr =
+				(struct z_heap_custom_header *)chunk_buf(h)[c + chunks_need].bytes;
+			chunk_unit_t *buf = chunk_buf(h);
+			void *cmem = &buf[c + chunks_need];
+
+			hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+				(chunk_field(h, c + chunks_need, SIZE_AND_USED),
+				cmem, h->magic_num_free);
+
+			free_list_add(h, c + chunks_need);
+		}
+#else
 		if (split_size < chunk_size(h, rc)) {
 			split_chunks(h, rc, rc + split_size);
 			free_list_add(h, rc + split_size);
 		}
 
 		merge_chunks(h, c, rc);
+#endif
 		set_chunk_used(h, c, true);
+#ifdef CONFIG_SYS_HEAP_CANARIES
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+		h->allocated_bytes += chunk_size(h, c) * CHUNK_UNIT;
+#endif
+
+#endif
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	struct z_heap_custom_header *hdr_ptr =
+		(struct z_heap_custom_header *)chunk_buf(h)[c].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+
+	hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, c, SIZE_AND_USED),
+		cmem, h->magic_num_used);
+#endif
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), ptr,
-					   chunksz_to_bytes(h, chunk_size(h, c)));
+					  chunksz_to_bytes(h, chunk_size(h, c)));
 		heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), ptr,
 					  bytes_freed);
 #endif
@@ -586,4 +906,22 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	set_chunk_used(h, heap_sz, true);
 
 	free_list_add(h, chunk0_size);
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	/* Fallback to a predefined value in case sys_rand_get() fails */
+	h->magic_num_used = Z_HEAP_MAGIC_NUM_USED;
+	h->magic_num_free = Z_HEAP_MAGIC_NUM_FREE;
+
+	sys_rand_get(&h->magic_num_used, sizeof(h->magic_num_used));
+	sys_rand_get(&h->magic_num_free, sizeof(h->magic_num_free));
+
+	struct z_heap_custom_header *hdr_ptr =
+		(struct z_heap_custom_header *)chunk_buf(h)[chunk0_size].bytes;
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[chunk0_size];
+
+	hdr_ptr->header_guard = COMPUTE_HEADER_GUARD
+		(chunk_field(h, chunk0_size, SIZE_AND_USED),
+		cmem, h->magic_num_free);
+#endif
 }
