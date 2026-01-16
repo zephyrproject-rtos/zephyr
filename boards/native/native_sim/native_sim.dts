@@ -109,6 +109,12 @@
 		size = <DT_SIZE_K(32)>;
 	};
 
+	otp0: otp {
+		compatible = "zephyr,otp-emul";
+		size = <DT_SIZE_K(1)>;
+		status = "okay";
+	};
+
 	i2c0: i2c@100 {
 		status = "okay";
 		compatible = "zephyr,i2c-emul-controller";

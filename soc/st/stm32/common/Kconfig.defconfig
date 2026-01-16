@@ -1,0 +1,9 @@
+if SOC_SERIES_STM32N6X && DT_HAS_ST_STM32_IOCELL_ENABLED
+
+config OTP
+	default y
+
+config NVMEM
+	default y
+
+endif # SOC_SERIES_STM32N6X && DT_HAS_ST_STM32_IOCELL_ENABLED

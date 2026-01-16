@@ -338,6 +338,18 @@
 	status = "okay";
 };
 
+&iocell {
+	vddxspi1 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+
+	vddxspi2 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
+
 usb2: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pm12 &usb_otg_fs_dp_pm11>;
 	pinctrl-names = "default";
