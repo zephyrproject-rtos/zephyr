@@ -55,7 +55,7 @@ static uint32_t ipc_virtio_get_features(struct virtio_device *dev)
 
 static void ipc_virtio_notify(struct virtqueue *vq)
 {
-#if defined(CONFIG_SOC_MPS2_AN521) || \
+#if defined(CONFIG_SOC_AN521) || \
 	defined(CONFIG_SOC_MUSCA_B1)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
@@ -64,7 +64,7 @@ static void ipc_virtio_notify(struct virtqueue *vq)
 	uint32_t dummy_data = 0x00110011; /* Some data must be provided */
 
 	ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
-#endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
+#endif /* #if defined(CONFIG_SOC_AN521) */
 }
 
 struct virtio_dispatch dispatch = {
