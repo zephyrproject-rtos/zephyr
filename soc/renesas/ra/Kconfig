@@ -26,7 +26,7 @@ rsource "*/Kconfig"
 
 config SOC_RA_ENABLE_START_SECOND_CORE
 	bool "Allows the primary core to start the secondary core"
-	depends on (SOC_SERIES_RA8P1 && CPU_CORTEX_M85)
+	depends on ((RENESAS_PN_NUMBER_OF_CORES = 2) && CPU_CORTEX_M85)
 	select SOC_LATE_INIT_HOOK
 	help
 	  Indicates the second core will be start in the soc_late_init_hook when enabled
