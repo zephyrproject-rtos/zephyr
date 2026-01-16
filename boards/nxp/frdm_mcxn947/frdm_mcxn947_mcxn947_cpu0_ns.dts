@@ -56,12 +56,59 @@
 		#size-cells = <1>;
 
 		/*
-		 * Partition sizes must be aligned
-		 * to the flash memory sector size of 8KB.
+		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
+		 *
+		 * This flash layout must exactly match the upstream TF-M layout defined in
+		 * the platform-specific `flash_layout.h`. Any modification to the layout
+		 * must be applied consistently in both `flash_layout.h` and this file.
+		 *
+		 * BL2 / MCUBoot
 		 */
-		slot0_ns_partition: partition@80000 {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;  /* 64 KB */
+		};
+
+		/* Secure image - primary */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(288)>;  /* 288 KB */
+		};
+
+		/* Non-secure image - primary */
+		slot0_ns_partition: partition@58000 {
 			label = "image-0-nonsecure";
-			reg = <0x00080000 DT_SIZE_K(512)>;
+			reg = <0x00058000 DT_SIZE_K(256)>;  /* 256 KB */
+		};
+
+		/* Secure image - secondary */
+		slot1_partition: partition@98000 {
+			label = "image-1-secondary";
+			reg = <0x00098000 DT_SIZE_K(288)>;  /* 288 KB */
+		};
+
+		/* Non-secure image - secondary */
+		slot1_ns_partition: partition@E0000 {
+			label = "image-1-non-secure";
+			reg = <0x000E0000 DT_SIZE_K(256)>;  /* 256 KB */
+		};
+
+		/* Protected Storage (PS) */
+		tfm_ps_partition: partition@120000 {
+			label = "tfm-ps";
+			reg = <0x00120000 DT_SIZE_K(16)>;   /* 16 KB */
+		};
+
+		/* Internal Trusted Storage (ITS) */
+		tfm_its_partition: partition@124000 {
+			label = "tfm-its";
+			reg = <0x00124000 DT_SIZE_K(16)>;   /* 16 KB */
+		};
+
+		/* OTP / NV counters */
+		tfm_otp_partition: partition@128000 {
+			label = "tfm-otp";
+			reg = <0x00128000 DT_SIZE_K(8)>;    /* 8 KB */
 		};
 	};
 };
