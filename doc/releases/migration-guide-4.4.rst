@@ -46,6 +46,17 @@ Boards
   in the respective board CMakeLists.txt files. Applications that depended on these definitions
   being globally available may need to be updated. (:github:`101322`)
 
+* The following Nordic SoC Kconfigs have been deprecated and replaced, and Kconfig/CMake/code
+  needs to be updated if they reference the deprecated Kconfigs:
+
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF51X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF51`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF52X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF52`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF53X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF53`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF54HX` with :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF54LX` with :kconfig:option:`CONFIG_SOC_SERIES_NRF54L`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF91X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF91`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF92X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF92`
+
 Device Drivers and Devicetree
 *****************************
 

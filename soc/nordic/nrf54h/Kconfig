@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF54HX
+config SOC_SERIES_NRF54H
 	select HAS_IRONSIDE_SE
 	select HAS_NRFS
 	select HAS_NRFX
@@ -11,6 +11,9 @@ config SOC_SERIES_NRF54HX
 	select SOC_EARLY_INIT_HOOK if ARM
 	select NRF_PLATFORM_HALTIUM
 	select EXPERIMENTAL if MCUBOOT
+
+config SOC_SERIES_NRF54HX
+	select DEPRECATED
 
 config SOC_NRF54H20_CPUAPP_COMMON
 	bool

@@ -3,11 +3,11 @@
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NRF52X
+if SOC_SERIES_NRF52
 
 rsource "Kconfig.defconfig.nrf52*"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,rtc1,clock-frequency)
 
-endif # SOC_SERIES_NRF52X
+endif # SOC_SERIES_NRF52

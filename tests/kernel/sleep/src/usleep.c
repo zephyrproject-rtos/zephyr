@@ -28,7 +28,7 @@
 /* The overhead of k_usleep() adds three ticks per loop iteration on
  * nRF51, which has a slow CPU clock.
  */
-#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_SOC_SERIES_NRF51X) ? 6 : 3)
+#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_SOC_SERIES_NRF51) ? 6 : 3)
 /* Similar situation for TI CC13XX/CC26XX RTC kernel timer due to the
  * limitation that a value too close to the current time cannot be
  * loaded to its comparator.

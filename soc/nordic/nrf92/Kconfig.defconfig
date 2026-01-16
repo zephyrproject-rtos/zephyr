@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NRF92X
+if SOC_SERIES_NRF92
 
 rsource "Kconfig.defconfig.nrf92*"
 
@@ -41,4 +41,4 @@ config SPI_DW_ACCESS_WORD_ONLY
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,grtc,clock-frequency) if NRF_GRTC_TIMER
 
-endif # SOC_SERIES_NRF92X
+endif # SOC_SERIES_NRF92

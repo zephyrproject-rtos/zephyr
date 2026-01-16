@@ -11,7 +11,7 @@ rsource "Kconfig.logging"
 
 config NRFX_ADC
 	bool "ADC driver"
-	depends on $(dt_nodelabel_exists,adc) && SOC_SERIES_NRF51X
+	depends on $(dt_nodelabel_exists,adc) && SOC_SERIES_NRF51
 
 config NRFX_CLOCK
 	bool "CLOCK driver"
@@ -35,15 +35,15 @@ config NRFX_CLOCK_LF_SRC_XTAL
 	bool "Crystal Oscillator"
 
 config NRFX_CLOCK_LF_SRC_SYNTH
-	depends on !SOC_SERIES_NRF91X
+	depends on !SOC_SERIES_NRF91
 	bool "Synthesized from HFCLK"
 
 config NRFX_CLOCK_LF_SRC_LOW_SWING
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_SERIES_NRF52
 	bool "External low swing"
 
 config NRFX_CLOCK_LF_SRC_FULL_SWING
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_SERIES_NRF52
 	bool "External full swing"
 
 endif # NRFX_CLOCK
@@ -167,7 +167,7 @@ config NRFX_GPPI
 config NRFX_GPPI_V1
 	bool "GPPI layer legacy"
 	depends on NRFX_GPPI
-	default y if SOC_SERIES_NRF54HX
+	default y if SOC_SERIES_NRF54H
 	help
 	  When enabled then legacy version of Generic PPI layer is used.
 
@@ -257,24 +257,24 @@ config NRFX_RTC131
 
 config NRFX_SAADC
 	bool "SAADC driver"
-	depends on $(dt_nodelabel_exists,adc) && !SOC_SERIES_NRF51X
+	depends on $(dt_nodelabel_exists,adc) && !SOC_SERIES_NRF51
 
 config NRFX_SPI
 	bool
 
 config NRFX_SPI0
 	bool "SPI0 driver instance"
-	depends on $(dt_nodelabel_exists,spi0) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	depends on $(dt_nodelabel_exists,spi0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
 	select NRFX_SPI
 
 config NRFX_SPI1
 	bool "SPI1 driver instance"
-	depends on $(dt_nodelabel_exists,spi1) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	depends on $(dt_nodelabel_exists,spi1) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
 	select NRFX_SPI
 
 config NRFX_SPI2
 	bool "SPI2 driver instance"
-	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52X
+	depends on $(dt_nodelabel_exists,spi2) && SOC_SERIES_NRF52
 	select NRFX_SPI
 
 config NRFX_SPIM
@@ -305,12 +305,12 @@ config NRFX_TWI
 
 config NRFX_TWI0
 	bool "TWI0 driver instance"
-	depends on $(dt_nodelabel_exists,i2c0) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	depends on $(dt_nodelabel_exists,i2c0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
 	select NRFX_TWI
 
 config NRFX_TWI1
 	bool "TWI1 driver instance"
-	depends on $(dt_nodelabel_exists,i2c1) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	depends on $(dt_nodelabel_exists,i2c1) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
 	select NRFX_TWI
 
 config NRFX_TWIM
@@ -324,7 +324,7 @@ config NRFX_UART
 
 config NRFX_UART0
 	bool "UART0 driver instance"
-	depends on $(dt_nodelabel_exists,uart0) && (SOC_SERIES_NRF51X || SOC_SERIES_NRF52X)
+	depends on $(dt_nodelabel_exists,uart0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
 	select NRFX_UART
 
 config NRFX_UARTE

@@ -9,7 +9,7 @@
 
 static enum ironside_se_dvfs_oppoint current_dvfs_oppoint = IRONSIDE_SE_DVFS_OPP_HIGH;
 
-#if defined(CONFIG_SOC_SERIES_NRF54HX)
+#if defined(CONFIG_SOC_SERIES_NRF54H)
 #define ABB_STATUSANA_LOCKED_L_Pos (0UL)
 #define ABB_STATUSANA_LOCKED_L_Msk (0x1UL << ABB_STATUSANA_LOCKED_L_Pos)
 #define ABB_STATUSANA_REG_OFFSET   (0x102UL)

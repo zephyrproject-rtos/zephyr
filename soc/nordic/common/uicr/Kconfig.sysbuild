@@ -3,7 +3,7 @@
 
 config NRF_HALTIUM_GENERATE_UICR
 	bool "Generate UICR artifacts"
-	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF92X
+	depends on SOC_SERIES_NRF54H || SOC_SERIES_NRF92
 	default y
 	help
 	  When enabled, a UICR generator image is included in the build.

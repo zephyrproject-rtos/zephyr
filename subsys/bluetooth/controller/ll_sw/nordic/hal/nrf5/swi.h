@@ -5,7 +5,7 @@
  */
 
 /* nRF51 and nRF52 Series IRQ mapping*/
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 
 #define HAL_SWI_RADIO_IRQ  SWI4_IRQn
 #define HAL_SWI_WORKER_IRQ RTC0_IRQn

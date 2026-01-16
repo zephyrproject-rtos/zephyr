@@ -23,7 +23,7 @@ config BT_LLL_VENDOR_NORDIC
 					 !BT_CTLR_DATA_LENGTH_CLEAR && \
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
-					  !SOC_SERIES_NRF51X
+					  !SOC_SERIES_NRF51
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
@@ -356,7 +356,7 @@ config BT_CTLR_TRPA_CACHE_SIZE
 
 config BT_CTLR_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
-	depends on SOC_SERIES_NRF51X
+	depends on SOC_SERIES_NRF51
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure, up to
 	  251 byte cleartext payloads in the Controller. Encrypted connections
@@ -365,7 +365,7 @@ config BT_CTLR_DATA_LENGTH_CLEAR
 
 config BT_CTLR_PHY_2M_NRF
 	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
-	depends on SOC_SERIES_NRF51X
+	depends on SOC_SERIES_NRF51
 	help
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
@@ -889,7 +889,7 @@ config BT_CTLR_SLOT_RESERVATION_UPDATE
 
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
-	range 0 3 if SOC_SERIES_NRF51X
+	range 0 3 if SOC_SERIES_NRF51
 	range 0 6 if (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
 	default 0
 	help
@@ -897,7 +897,7 @@ config BT_CTLR_LLL_PRIO
 
 config BT_CTLR_ULL_HIGH_PRIO
 	int "Upper Link Layer High IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
-	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51
 	range BT_CTLR_LLL_PRIO 6 if (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
 	default BT_CTLR_LLL_PRIO if (!BT_CTLR_ULL_LLL_PRIO_SUPPORT || BT_CTLR_ZLI || BT_CTLR_LOW_LAT)
 	default 1
@@ -907,7 +907,7 @@ config BT_CTLR_ULL_HIGH_PRIO
 
 config BT_CTLR_ULL_LOW_PRIO
 	int "Upper Link Layer Low IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
-	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51
 	range BT_CTLR_ULL_HIGH_PRIO 6 if (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
 	default BT_CTLR_ULL_HIGH_PRIO
 	help
@@ -917,7 +917,7 @@ config BT_CTLR_ULL_LOW_PRIO
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
 	depends on BT_CTLR_LOW_LAT_ULL && BT_CTLR_LOW_LAT_ULL_DONE
-	default y if SOC_SERIES_NRF51X
+	default y if SOC_SERIES_NRF51
 	help
 	  Use low latency non-negotiating event preemption. This reduces
 	  Radio ISR latencies by the controller event scheduling framework.
@@ -926,14 +926,14 @@ config BT_CTLR_LOW_LAT
 
 config BT_CTLR_LOW_LAT_ULL
 	bool "Low latency ULL"
-	default y if SOC_SERIES_NRF51X
+	default y if SOC_SERIES_NRF51
 	help
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
 
 config BT_CTLR_LOW_LAT_ULL_DONE
 	bool "Low latency ULL prepare dequeue"
-	default y if SOC_SERIES_NRF51X
+	default y if SOC_SERIES_NRF51
 	help
 	  Done events be processed and dequeued in ULL context.
 
@@ -1240,7 +1240,7 @@ config BT_TICKER_CNTR_FREE_RUNNING
 
 config BT_TICKER_LOW_LAT
 	bool "Ticker low latency mode"
-	default y if SOC_SERIES_NRF51X
+	default y if SOC_SERIES_NRF51
 	help
 	  This option enables legacy ticker scheduling which defers overlapping
 	  ticker node timeouts and thereby prevents ticker interrupts during

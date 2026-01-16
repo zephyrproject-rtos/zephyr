@@ -216,19 +216,19 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family is not None:
             return
 
-        if self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF51X'):
+        if self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF51'):
             self.family = 'nrf51'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF52X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF52'):
             self.family = 'nrf52'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53'):
             self.family = 'nrf53'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54LX'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54L'):
             self.family = 'nrf54l'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54HX'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54H'):
             self.family = 'nrf54h'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91'):
             self.family = 'nrf91'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF92X'):
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF92'):
             self.family = 'nrf92'
         else:
             raise RuntimeError(f'unknown nRF; update {__file__}')
