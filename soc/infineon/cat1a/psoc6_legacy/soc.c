@@ -111,9 +111,24 @@ static inline void Cy_SysClk_ClkSlowInit(void)
 	Cy_SysClk_ClkSlowSetDivider(0u);
 }
 
+#ifdef CONFIG_RUNTIME_NMI
+	/* Address of the NMI handler extracted from startup_psoc6_0x_cm0plus.S */
+	#define CY_NMI_HANLDER_ADDR         0x0000000D
+#endif /* CONFIG_RUNTIME_NMI */
 
 static void init_cycfg_platform(void)
 {
+	#ifdef CONFIG_RUNTIME_NMI
+	/* This is required for System Calls, see following excerpt from
+	 * TRM section 8.4.2:
+	 * NMI exception handler address is automatically initialized to
+	 * the system call API located in SROM (at 0x0000000D) by the boot
+	 * code. The value should be retained during vector table relocations;
+	 * otherwise, no system call will be executed.
+	 */
+	z_arm_nmi_set_handler((void *)CY_NMI_HANLDER_ADDR);
+	#endif
+
 	/* Set worst case memory wait states (! ultra low power, 150 MHz), will
 	 * update at the end
 	 */
