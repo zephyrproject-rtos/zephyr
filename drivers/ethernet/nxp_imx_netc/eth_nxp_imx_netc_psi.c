@@ -107,7 +107,9 @@ static int eth_nxp_imx_netc_psi_pm_action(const struct device *dev, enum pm_devi
 {
 	int ret;
 	struct netc_eth_data *data = dev->data;
-
+#ifdef CONFIG_PM_DEVICE
+	const struct netc_eth_config *cfg = dev->config;
+#endif
 	LOG_INF("imx netc psi pm action: %d", action);
 
 	switch (action) {
@@ -120,8 +122,14 @@ static int eth_nxp_imx_netc_psi_pm_action(const struct device *dev, enum pm_devi
 		if (ret) {
 			return ret;
 		}
+#ifdef CONFIG_PM_DEVICE
+		pm_device_action_run(cfg->phy_dev, PM_DEVICE_ACTION_RESUME);
+#endif
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
+#ifdef CONFIG_PM_DEVICE
+		pm_device_action_run(cfg->phy_dev, PM_DEVICE_ACTION_SUSPEND);
+#endif
 		ret = EP_Deinit(&data->handle);
 		if (ret) {
 			return ret;
