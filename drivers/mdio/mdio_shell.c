@@ -206,21 +206,24 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
-		"Scan MDIO bus for devices: scan <device> [<reg_addr>]",
+		SHELL_HELP("Scan MDIO bus for devices",
+			   "<device> [<reg_addr>]"),
 		cmd_mdio_scan, 2, 1),
 	SHELL_CMD_ARG(read, &dsub_device_name,
-		"Read from MDIO device: read <device> <phy_addr> <reg_addr>",
+		SHELL_HELP("Read from MDIO device",
+			   "<device> <phy_addr> <reg_addr>"),
 		cmd_mdio_read, 4, 0),
 	SHELL_CMD_ARG(write, &dsub_device_name,
-		"Write to MDIO device: write <device> <phy_addr> <reg_addr> <value>",
+		SHELL_HELP("Write to MDIO device",
+			   "<device> <phy_addr> <reg_addr> <value>"),
 		cmd_mdio_write, 5, 0),
 	SHELL_CMD_ARG(read_c45, &dsub_device_name,
-		"Read from MDIO Clause 45 device: "
-		"read_c45 <device> <port_addr> <dev_addr> <reg_addr>",
+		SHELL_HELP("Read from MDIO Clause 45 device",
+			   "<device> <port_addr> <dev_addr> <reg_addr>"),
 		cmd_mdio_read_c45, 5, 0),
 	SHELL_CMD_ARG(write_c45, &dsub_device_name,
-		"Write to MDIO Clause 45 device: "
-		"write_c45 <device> <port_addr> <dev_addr> <reg_addr> <value>",
+		SHELL_HELP("Write to MDIO Clause 45 device",
+			   "<device> <port_addr> <dev_addr> <reg_addr> <value>"),
 		cmd_mdio_write_45, 6, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
