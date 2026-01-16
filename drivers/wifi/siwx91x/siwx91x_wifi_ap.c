@@ -6,7 +6,7 @@
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 
-#include "sl_rsi_utility.h"
+#include "sli_wifi_utility.h"
 #include "sl_net.h"
 
 #define SIWX91X_AP_BEACON_INTERVAL_MS 100
@@ -216,7 +216,7 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 		return ret;
 	}
 
-	sli_get_saved_ap_configuration(&saved_ap_cfg);
+	sli_wifi_get_saved_ap_configuration(&saved_ap_cfg);
 	if (saved_ap_cfg.client_idle_timeout != 0) {
 		siwx91x_ap_cfg.client_idle_timeout = saved_ap_cfg.client_idle_timeout;
 	}
@@ -338,7 +338,7 @@ int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 		return -ENOTSUP;
 	}
 
-	sli_get_saved_ap_configuration(&siwx91x_ap_cfg);
+	sli_wifi_get_saved_ap_configuration(&siwx91x_ap_cfg);
 	siwx91x_ap_cfg.channel.bandwidth = SL_WIFI_BANDWIDTH_20MHz;
 	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
 		/*
@@ -360,7 +360,7 @@ int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 		siwx91x_set_max_sta(dev, params->max_num_sta);
 	}
 
-	sli_save_ap_configuration(&siwx91x_ap_cfg);
+	sli_wifi_save_ap_configuration(&siwx91x_ap_cfg);
 
 	return 0;
 }
