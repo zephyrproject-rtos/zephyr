@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/mdio.h>
 #include <string.h>
 #include <zephyr/sys/util_macro.h>
@@ -604,6 +605,37 @@ skip_int_gpio:
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int phy_realtek_rtl8211f_pm_action(const struct device *dev,
+					enum pm_device_action action)
+{
+	int ret;
+	struct rt_rtl8211f_data *data = dev->data;
+
+	LOG_INF("PHY: PM action %d", action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		k_work_cancel_delayable(&data->phy_monitor_work);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = phy_rt_rtl8211f_init(dev);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.get_link = phy_rt_rtl8211f_get_link,
 	.cfg_link = phy_rt_rtl8211f_cfg_link,
@@ -637,7 +669,9 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 										\
 	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(n, phy_realtek_rtl8211f_pm_action);		\
+	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init,				\
+			PM_DEVICE_DT_INST_GET(n),				\
 			&rt_rtl8211f_##n##_data, &rt_rtl8211f_##n##_config,	\
 			POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
 			&rt_rtl8211f_phy_api);
