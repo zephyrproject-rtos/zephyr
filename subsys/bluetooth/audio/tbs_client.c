@@ -1,7 +1,7 @@
 /*  Bluetooth TBS - Telephone Bearer Service - Client
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -397,7 +398,7 @@ static void provider_name_notify_handler(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
 static void technology_changed(struct bt_conn *conn, int err, uint8_t inst_index,
-			       uint8_t technology)
+			       enum bt_bearer_tech technology)
 {
 	struct bt_tbs_client_cb *listener, *next;
 
@@ -418,9 +419,11 @@ static void technology_notify_handler(struct bt_conn *conn,
 
 	if (length == sizeof(technology)) {
 		(void)memcpy(&technology, data, length);
-		LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+		LOG_DBG("%s (0x%02x)", bt_bearer_tech_str((enum bt_bearer_tech)technology),
+			technology);
 
-		technology_changed(conn, 0, tbs_index(conn, tbs_inst), technology);
+		technology_changed(conn, 0, tbs_index(conn, tbs_inst),
+				   (enum bt_bearer_tech)technology);
 	}
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
@@ -1025,7 +1028,8 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(technology)) {
 			(void)memcpy(&technology, data, length);
-			LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+			LOG_DBG("%s (0x%02x)", bt_bearer_tech_str((enum bt_bearer_tech)technology),
+				technology);
 		} else {
 			LOG_DBG("Invalid length");
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -1034,7 +1038,11 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 
 	tbs_client_gatt_read_complete(inst);
 
-	technology_changed(conn, cb_err, inst_index, technology);
+	/* TODO: We should probably verify that the read value is valid before calling
+	 * technology_changed with a non-0 error
+	 */
+
+	technology_changed(conn, cb_err, inst_index, (enum bt_bearer_tech)technology);
 
 	return BT_GATT_ITER_STOP;
 }

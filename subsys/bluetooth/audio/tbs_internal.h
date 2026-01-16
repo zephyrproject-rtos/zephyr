@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -126,26 +127,26 @@ static inline const char *bt_tbs_status_str(uint8_t status)
 	}
 }
 
-static inline const char *bt_tbs_technology_str(uint8_t status)
+static inline const char *bt_bearer_tech_str(uint8_t status)
 {
 	switch (status) {
-	case BT_TBS_TECHNOLOGY_3G:
+	case BT_BEARER_TECH_3G:
 		return "3G";
-	case BT_TBS_TECHNOLOGY_4G:
+	case BT_BEARER_TECH_4G:
 		return "4G";
-	case BT_TBS_TECHNOLOGY_LTE:
+	case BT_BEARER_TECH_LTE:
 		return "LTE";
-	case BT_TBS_TECHNOLOGY_WIFI:
+	case BT_BEARER_TECH_WIFI:
 		return "WIFI";
-	case BT_TBS_TECHNOLOGY_5G:
+	case BT_BEARER_TECH_5G:
 		return "5G";
-	case BT_TBS_TECHNOLOGY_GSM:
+	case BT_BEARER_TECH_GSM:
 		return "GSM";
-	case BT_TBS_TECHNOLOGY_CDMA:
+	case BT_BEARER_TECH_CDMA:
 		return "CDMA";
-	case BT_TBS_TECHNOLOGY_2G:
+	case BT_BEARER_TECH_2G:
 		return "2G";
-	case BT_TBS_TECHNOLOGY_WCDMA:
+	case BT_BEARER_TECH_WCDMA:
 		return "WCDMA";
 	default:
 		return "unknown technology";
