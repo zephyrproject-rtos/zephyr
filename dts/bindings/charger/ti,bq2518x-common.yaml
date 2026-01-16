@@ -4,6 +4,10 @@
 include: [battery.yaml, i2c-device.yaml]
 
 properties:
+  int-gpios:
+    type: phandle-array
+    description: GPIO for interrupt input
+
   constant-charge-current-max-microamp:
     type: int
     default: 0
