@@ -66,7 +66,7 @@ static void ipc_virtio_set_features(struct virtio_device *dev, uint32_t features
 static void ipc_virtio_notify(struct virtqueue *vq)
 {
 #if defined(CONFIG_SOC_MPS2_AN521) || \
-	defined(CONFIG_SOC_V2M_MUSCA_B1)
+	defined(CONFIG_SOC_MUSCA_B1)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
 	ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
@@ -254,7 +254,7 @@ int main(void)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 #if defined(CONFIG_SOC_MPS2_AN521) || \
-	defined(CONFIG_SOC_V2M_MUSCA_B1)
+	defined(CONFIG_SOC_MUSCA_B1)
 	wakeup_cpu1();
 	k_msleep(500);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
