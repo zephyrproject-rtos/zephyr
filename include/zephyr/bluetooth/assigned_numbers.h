@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2015-2025 Intel Corporation
- * Copyright (c) 2017-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -913,6 +913,36 @@ extern "C" {
  */
 
 /** @} */ /* end of bt_assigned_numbers_mesh */
+
+/**
+ * @brief Hands-Free Profile
+ * @defgroup bt_assigned_numbers_hfp Hands-Free Profile Assigned Numbers
+ * @ingroup bt_assigned_numbers
+ * @{
+ */
+
+/** Enum for valid bearer technology values */
+enum bt_hfp_technology {
+	/** 3G */
+	BT_HFP_TECHNOLOGY_3G = 0x01,
+	/** 4G */
+	BT_HFP_TECHNOLOGY_4G = 0x02,
+	/** Long-term evolution (LTE) */
+	BT_HFP_TECHNOLOGY_LTE = 0x03,
+	/** Wifi */
+	BT_HFP_TECHNOLOGY_WIFI = 0x04,
+	/** 5G */
+	BT_HFP_TECHNOLOGY_5G = 0x05,
+	/** Global System for Mobile Communications (GSM) */
+	BT_HFP_TECHNOLOGY_GSM = 0x06,
+	/** Code-Division Multiple Access (CDMA) */
+	BT_HFP_TECHNOLOGY_CDMA = 0x07,
+	/** 2G */
+	BT_HFP_TECHNOLOGY_2G = 0x08,
+	/** Wideband Code-Division Multiple Access (WCDMA) */
+	BT_HFP_TECHNOLOGY_WCDMA = 0x09,
+};
+/** @} */ /* end of bt_assigned_numbers_hfp */
 
 /**
  * @brief Generic Audio Assigned Numbers

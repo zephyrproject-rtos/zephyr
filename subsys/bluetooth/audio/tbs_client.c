@@ -1,7 +1,7 @@
 /*  Bluetooth TBS - Telephone Bearer Service - Client
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -418,7 +418,7 @@ static void technology_notify_handler(struct bt_conn *conn,
 
 	if (length == sizeof(technology)) {
 		(void)memcpy(&technology, data, length);
-		LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+		LOG_DBG("%s (0x%02x)", bt_hfp_technology_str(technology), technology);
 
 		technology_changed(conn, 0, tbs_index(conn, tbs_inst), technology);
 	}
@@ -1025,7 +1025,7 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(technology)) {
 			(void)memcpy(&technology, data, length);
-			LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+			LOG_DBG("%s (0x%02x)", bt_hfp_technology_str(technology), technology);
 		} else {
 			LOG_DBG("Invalid length");
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
