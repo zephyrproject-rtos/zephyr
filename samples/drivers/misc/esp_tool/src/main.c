@@ -29,7 +29,7 @@ int main(void)
 	}
 	printk("ESP device is ready (ret=%d).\n", ret);
 
-	ret = esp_tool_connect(esp);
+	ret = esp_tool_connect(esp, true);
 	if (ret) {
 		printk("Could not open esp device\n");
 		return -1;
