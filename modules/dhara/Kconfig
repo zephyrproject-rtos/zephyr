@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Endress+Hauser GmbH+Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_DHARA_MODULE
+	bool

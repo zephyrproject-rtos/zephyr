@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Endress+Hauser GmbH+Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Flash translation layer disk driver with Dhara implementation on flash partition.
+
+compatible: "zephyr,ftl-dhara"
+
+properties:
+  partition:
+    type: phandle
+    required: true
+    description: |
+      Backing storage flash map partition.
+
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
+
+  buffer-size:
+    type: int
+    required: true
+    description: |
+      Buffer size in bytes for the FTL driver. Must be equal or greater than the page size of the
+      backing flash.
+
+  gc-ratio:
+    type: int
+    default: 15
+    description: |
+      Garbage collection ratio for the FTL driver. This is the ratio of garbage collection
+      operations to real writes when automatic collection is active. Smaller values lead to faster
+      and more predictable input/output at the expense of capacity.
