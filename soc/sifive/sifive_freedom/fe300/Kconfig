@@ -2,19 +2,23 @@
 # Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_SIFIVE_FREEDOM_FE300
-	bool
-
-	# RISC-V options
+config SOC_SERIES_FE300
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
 	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
-
 	select INCLUDE_RESET_VECTOR
 	select SOC_EARLY_INIT_HOOK
 	imply XIP
 
-config SOC_SIFIVE_FREEDOM_FE310_G002
-	bool
+config SOC_SERIES_SIFIVE_FREEDOM_FE300
+	select DEPRECATED
+
+config SOC_FE310_G002
 	select RISCV_PMP
+
+config SOC_SIFIVE_FREEDOM_FE310_G000
+	select DEPRECATED
+
+config SOC_SIFIVE_FREEDOM_FE310_G002
+	select DEPRECATED
