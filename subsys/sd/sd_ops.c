@@ -863,8 +863,10 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		(*(uint32_t *)buf) = card->block_count;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
-	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		(*(uint32_t *)buf) = card->block_size;
+		break;
+	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
+		(*(uint32_t *)buf) = 1;
 		break;
 	case DISK_IOCTL_CTRL_SYNC:
 		/* Ensure card is not busy with data write.
