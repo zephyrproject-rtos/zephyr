@@ -785,8 +785,11 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	edma_tcd_t *tcd = NULL;
 	edma_tcd_t *pre_tcd = NULL;
+	uint32_t hw_channel;
 	uint32_t hw_id, sw_id;
 	uint8_t pre_idx;
+
+	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
 	if (data->transfer_settings.empty_tcds == 0) {
 		LOG_ERR("TCD list is full in loop mode.");
@@ -819,13 +822,13 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	 * code between EDMA_DisableChannelRequest() and
 	 * EDMA_EnableChannelRequest() is minimum.
 	 */
-	EDMA_DisableChannelRequest(DEV_BASE(dev), channel);
+	EDMA_DisableChannelRequest(DEV_BASE(dev), hw_channel);
 
 	/* Wait for the DMA to be inactive before updating the TCDs.
 	 * The CSR[ACTIVE] bit will deassert quickly after the EDMA's
 	 * minor loop burst completes.
 	 */
-	while (EDMA_HW_TCD_CSR(dev, channel) & EDMA_HW_TCD_CH_ACTIVE_MASK) {
+	while (EDMA_HW_TCD_CSR(dev, hw_channel) & EDMA_HW_TCD_CH_ACTIVE_MASK) {
 		;
 	}
 
@@ -836,7 +839,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 		/* All transfers have been done.DMA is stopped automatically,
 		 * invalid TCD has been loaded into the HW, update HW.
 		 */
-		dma_mcux_edma_update_hw_tcd(dev, channel, src, dst, size);
+		dma_mcux_edma_update_hw_tcd(dev, hw_channel, src, dst, size);
 		LOG_DBG("Transfer done,auto stop");
 
 	} else {
@@ -851,7 +854,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 			/* DMA is running on last transfer. HW has loaded the last one,
 			 * we need ensure it's DREQ is cleared.
 			 */
-			EDMA_EnableAutoStopRequest(DEV_BASE(dev), channel, false);
+			EDMA_EnableAutoStopRequest(DEV_BASE(dev), hw_channel, false);
 			LOG_DBG("Last transfer.");
 		}
 		LOG_DBG("Manu stop");
@@ -867,7 +870,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	/*We have not verified if this issue exist on V3/V4 HW, jut place a holder here. */
 #endif
 	/* TCDs are configured.  Resume DMA */
-	EDMA_EnableChannelRequest(DEV_BASE(dev), channel);
+	EDMA_EnableChannelRequest(DEV_BASE(dev), hw_channel);
 
 	/* Update the write index and available TCD numbers. */
 	data->transfer_settings.write_idx =
