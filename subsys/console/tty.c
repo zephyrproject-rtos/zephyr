@@ -8,6 +8,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/console/tty.h>
+#include <zephyr/sys/clock.h>
 
 static int tty_irq_input_hook(struct tty_serial *tty, uint8_t c);
 static int tty_putchar(struct tty_serial *tty, uint8_t c);
@@ -73,8 +74,7 @@ static int tty_putchar(struct tty_serial *tty, uint8_t c)
 	int res;
 
 	res = k_sem_take(&tty->tx_sem,
-			 k_is_in_isr() ? K_NO_WAIT :
-					 SYS_TIMEOUT_MS(tty->tx_timeout));
+			 k_is_in_isr() ? K_NO_WAIT : tty->tx_timeout);
 	if (res < 0) {
 		return res;
 	}
@@ -144,7 +144,7 @@ static int tty_getchar(struct tty_serial *tty)
 	uint8_t c;
 	int res;
 
-	res = k_sem_take(&tty->rx_sem, SYS_TIMEOUT_MS(tty->rx_timeout));
+	res = k_sem_take(&tty->rx_sem, tty->rx_timeout);
 	if (res < 0) {
 		return res;
 	}
@@ -164,7 +164,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 	uint8_t *p = buf;
 	size_t out_size = 0;
 	int res = 0;
-	uint32_t timeout = tty->rx_timeout;
+	k_timepoint_t timeout = sys_timepoint_calc(tty->rx_timeout);
 
 	while (size) {
 		uint8_t c;
@@ -187,8 +187,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 			size--;
 		}
 
-		if (size == 0 ||
-		    ((timeout != SYS_FOREVER_MS) && timeout-- == 0U)) {
+		if (size == 0 || sys_timepoint_expired(timeout)) {
 			break;
 		}
 
@@ -254,8 +253,8 @@ int tty_init(struct tty_serial *tty, const struct device *uart_dev)
 
 	tty->rx_get = tty->rx_put = tty->tx_get = tty->tx_put = 0U;
 
-	tty->rx_timeout = SYS_FOREVER_MS;
-	tty->tx_timeout = SYS_FOREVER_MS;
+	tty->rx_timeout = K_FOREVER;
+	tty->tx_timeout = K_FOREVER;
 
 	uart_irq_callback_user_data_set(uart_dev, tty_uart_isr, tty);
 
