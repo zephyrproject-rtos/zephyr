@@ -125,11 +125,13 @@ static int eth_nxp_imx_netc_psi_pm_action(const struct device *dev, enum pm_devi
 #ifdef CONFIG_PM_DEVICE
 		pm_device_action_run(cfg->phy_dev, PM_DEVICE_ACTION_RESUME);
 #endif
+		atomic_set(&data->turnoff_flag, 0);
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 #ifdef CONFIG_PM_DEVICE
 		pm_device_action_run(cfg->phy_dev, PM_DEVICE_ACTION_SUSPEND);
 #endif
+		atomic_set(&data->turnoff_flag, 1);
 		ret = EP_Deinit(&data->handle);
 		if (ret) {
 			return ret;
