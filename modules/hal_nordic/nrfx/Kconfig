@@ -228,32 +228,7 @@ config NRFX_RRAMC
 	depends on $(dt_nodelabel_exists,rram_controller)
 
 config NRFX_RTC
-	bool
-
-config NRFX_RTC0
-	bool "RTC0 driver instance"
-	depends on $(dt_nodelabel_exists,rtc0)
-	select NRFX_RTC
-
-config NRFX_RTC1
-	bool "RTC1 driver instance"
-	depends on $(dt_nodelabel_exists,rtc1)
-	select NRFX_RTC
-
-config NRFX_RTC2
-	bool "RTC2 driver instance"
-	depends on $(dt_nodelabel_exists,rtc2)
-	select NRFX_RTC
-
-config NRFX_RTC130
-	bool "RTC130 driver instance"
-	depends on $(dt_nodelabel_exists,rtc130)
-	select NRFX_RTC
-
-config NRFX_RTC131
-	bool "RTC131 driver instance"
-	depends on $(dt_nodelabel_exists,rtc131)
-	select NRFX_RTC
+	bool "RTC driver"
 
 config NRFX_SAADC
 	bool "SAADC driver"
