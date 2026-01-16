@@ -177,7 +177,9 @@ class HardwareAdapter(DeviceAdapter):
                 raise TwisterHarnessException(msg)
 
     def _close_device(self) -> None:
-        if self.device_config.post_script:
+        # Run post script only if the reader thread is started to avoid running it
+        # multiple times and when in initialization phase
+        if self.is_reader_started() and self.device_config.post_script:
             self._run_custom_script(self.device_config.post_script, self.base_timeout)
 
     @staticmethod

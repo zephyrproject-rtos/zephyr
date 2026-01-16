@@ -223,3 +223,7 @@ class DeviceAdapter(abc.ABC):
         Added to keep backward compatibility as it is used in fixtures.
         """
         return self.connections and self.connections[0].is_device_connected()
+
+    def is_reader_started(self) -> bool:
+        """Check if the reader thread is started."""
+        return self._reader_started.is_set()
