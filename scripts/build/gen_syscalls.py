@@ -75,6 +75,8 @@ not_cancellation_points = {
     "k_uptime_ticks",       # like clock_gettime()
     "k_wakeup",             # like pthread_kill()
     "k_yield",              # like sched_yield() (or pthread_yield() which is non-standard)
+    "k_thread_result_get",  # used by k_thread_exit()
+    "k_thread_result_set",  # used by k_thread_exit()
 }
 
 def is_excluded_from_signal_check(func: str) -> bool:

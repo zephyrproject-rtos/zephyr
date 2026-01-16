@@ -139,6 +139,11 @@ struct _thread_base {
 #ifdef CONFIG_SIGNAL
 	struct k_sig_ctx sig;
 #endif
+
+#ifdef CONFIG_THREAD_RESULT
+       /** Thread result or return value */
+       atomic_t result;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;

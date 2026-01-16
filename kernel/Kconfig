@@ -198,6 +198,11 @@ config THREAD_ABORT_NEED_CLEANUP
 	  k_thread_abort(_current) is called, as the cleanup cannot be
 	  running in the current thread stack.
 
+config THREAD_RESULT
+	bool "Thread result"
+	help
+	  Say 'Y' here to support a thread result or "return value".
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help

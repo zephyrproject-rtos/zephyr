@@ -979,6 +979,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #endif
 
+#ifdef CONFIG_THREAD_RESULT
+	new_thread->base.result = (atomic_t)NULL;
+#endif
+
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
 	return stack_ptr;
@@ -1832,10 +1837,24 @@ void z_impl_k_thread_abort(k_tid_t thread)
 }
 #endif /* !CONFIG_ARCH_HAS_THREAD_ABORT */
 
-int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+static void z_thread_epilogue(struct k_thread *thread, void **result, bool now)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(result);
+	ARG_UNUSED(now);
+
+#ifdef CONFIG_THREAD_RESULT
+	if (result != NULL) {
+		*result = (void *)atomic_get(&thread->base.result);
+	}
+#endif
+}
+
+int z_impl_k_thread_rejoin(struct k_thread *thread, void **result, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = z_sched_spinlock_lock();
 	int ret;
+	bool do_epilogue = false;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
@@ -1854,15 +1873,29 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_thread, join, thread, timeout);
 		ret = z_swap_locked(key);
+		if (ret == 0) {
+			z_thread_epilogue(thread, result, true);
+		}
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, join, thread, timeout, ret);
 
 		return ret;
 	}
 
+	do_epilogue = (ret == 0);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, join, thread, timeout, ret);
 
 	z_sched_spinlock_unlock(key);
+
+	if (do_epilogue) {
+		z_thread_epilogue(thread, result, true);
+	}
+
 	return ret;
+}
+
+int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+{
+	return z_impl_k_thread_rejoin(thread, NULL, timeout);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1903,12 +1936,28 @@ static inline int z_vrfy_k_thread_join(struct k_thread *thread,
 				       k_timeout_t timeout)
 {
 	if (thread_obj_validate(thread)) {
+		z_thread_epilogue(thread, NULL, true);
 		return 0;
 	}
 
 	return z_impl_k_thread_join(thread, timeout);
 }
 #include <zephyr/syscalls/k_thread_join_mrsh.c>
+
+static inline int z_vrfy_k_thread_rejoin(struct k_thread *thread, void **result,
+					 k_timeout_t timeout)
+{
+	if (thread_obj_validate(thread)) {
+		if (result != NULL) {
+			K_OOPS(K_SYSCALL_MEMORY_WRITE(result, sizeof(*result)));
+		}
+		z_thread_epilogue(thread, result, true);
+		return 0;
+	}
+
+	return z_impl_k_thread_rejoin(thread, result, timeout);
+}
+#include <zephyr/syscalls/k_thread_rejoin_mrsh.c>
 
 static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 {
@@ -1946,3 +1995,18 @@ static inline void z_vrfy_k_yield(void)
 }
 #include <zephyr/syscalls/k_yield_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_THREAD_RESULT)
+void z_vrfy_k_thread_result_set(void *result)
+{
+	return z_impl_k_thread_result_set(result);
+}
+#include <zephyr/syscalls/k_thread_result_set_mrsh.c>
+
+void *z_vrfy_k_thread_result_get(void)
+{
+	return z_impl_k_thread_result_get();
+}
+#include <zephyr/syscalls/k_thread_result_get_mrsh.c>
+#endif

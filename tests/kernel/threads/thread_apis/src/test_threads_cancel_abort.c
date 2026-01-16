@@ -13,6 +13,46 @@ static ZTEST_BMEM int execute_flag;
 K_SEM_DEFINE(sync_sema, 0, 1);
 #define BLOCK_SIZE 64
 
+static void thread_entry_result(void *p1, void *p2, void *p3)
+{
+	execute_flag = 1;
+	k_thread_result_set(p1);
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Validate @ref k_thread_result_set and @ref k_thread_rejoin
+ *
+ * @details Create a user thread and let the thread execute.
+ * Then call k_thread_rejoin() to verify that the results is as expected.
+ *
+ * @see k_thread_abort()
+ * @see k_thread_result_set()
+ * @see k_thread_rejoin()
+ */
+ZTEST_USER(threads_lifecycle, test_k_thread_rejoin)
+{
+	void *result;
+
+	execute_flag = 0;
+	result = (void *)(uintptr_t)42;
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_result, NULL, NULL, NULL, 0,
+			K_USER, K_NO_WAIT);
+	zassert_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+	zassert_equal(execute_flag, 1);
+	/* validate the default result is NULL */
+	zassert_equal(result, NULL);
+
+	execute_flag = 0;
+	result = (void *)(uintptr_t)42;
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_result, &result, NULL, NULL, 0,
+			K_USER, K_NO_WAIT);
+	zassert_ok(k_thread_rejoin(&tdata, &result, K_FOREVER));
+	zassert_equal(execute_flag, 1);
+	/* validate the manually seeting the thread result */
+	zassert_equal(result, &result);
+}
+
 static void thread_entry(void *p1, void *p2, void *p3)
 {
 	execute_flag = 1;

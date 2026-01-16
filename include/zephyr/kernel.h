@@ -519,6 +519,48 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 				  void *p1, void *p2, void *p3,
 				  int prio, uint32_t options, k_timeout_t delay);
 
+#if defined(CONFIG_THREAD_RESULT) || defined(__DOXYGEN__)
+/**
+ * @brief Set the result of the currently running thread.
+ *
+ * Zephyr threads do not natively support a result ("return value") since the
+ * @ref k_thread_entry_t is a void function. Until that function signature is changed, this API
+ * allows a thread to manually set the result of the currently running thread to @p result.
+ *
+ * The result can then be retrieved by other threads using @ref k_thread_rejoin.
+ *
+ * @param[in] result Pointer value to set as the thread's result.
+ *
+ * @see @kconfig{CONFIG_THREAD_RESULT}
+ */
+__syscall void k_thread_result_set(void *result);
+
+static inline void z_impl_k_thread_result_set(void *result)
+{
+	atomic_set(&_current->base.result, (atomic_val_t)result);
+}
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+/*
+ * This function should not be used directly. It is only temporarily required until
+ * `k_thread_entry_t` can be updated to return `void *` so that
+ * `k_thread_exit(entry(p1, p2, p3))` can be used for graceful thread termination in
+ * thread_entry.c. Production code should use always `k_thread_rejoin()` to obtain
+ * the result of a thread.
+ */
+__syscall void *k_thread_result_get(void);
+
+static inline void *z_impl_k_thread_result_get(void)
+{
+       return (void *)atomic_get(&_current->base.result);
+}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+#endif
+
 /**
  * @brief Drop a thread's privileges permanently to user mode
  *
@@ -744,6 +786,37 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  *                  is the caller
  */
 __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
+
+/**
+ * @brief Sleep until a thread exits, saving the thread's result
+ *
+ * The caller will be put to sleep until the target thread exits, either due
+ * to being aborted, self-exiting, or taking a fatal error. This API returns
+ * immediately if the thread isn't running.
+ *
+ * This API may only be called from ISRs with a K_NO_WAIT timeout,
+ * where it can be useful as a predicate to detect when a thread has
+ * aborted.
+ *
+ * This API is slightly different than @ref k_thread_join in that it also
+ * saves the target thread's result (return value) in @p result if
+ * @kconfig{CONFIG_THREAD_RESULT} is enabled.
+ *
+ * @note If @kconfig{CONFIG_THREAD_RESULT} is not enabled, the @p result
+ * parameter is ignored, and this function behaves identically to
+ * @ref k_thread_join.
+ *
+ * @param thread Thread to wait to exit
+ * @param result Pointer to location to store the thread's result.
+ * @param timeout upper bound time to wait for the thread to exit.
+ * @retval 0 success, target thread has exited or wasn't running
+ * @retval -EBUSY returned without waiting
+ * @retval -EAGAIN waiting period timed out
+ * @retval -EDEADLK target thread is joining on the caller, or target thread
+ *                  is the caller
+ */
+__syscall int k_thread_rejoin(struct k_thread *thread, void **result, k_timeout_t timeout);
+
 
 /**
  * @brief Cause the current thread to busy wait.
