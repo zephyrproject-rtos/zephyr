@@ -90,4 +90,12 @@ int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *param
 #endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+int hapd_11n_cfg(const struct device *dev, uint8_t enable);
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
+int hapd_11ac_cfg(const struct device *dev, uint8_t enable);
+#endif
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
+int hapd_11ax_cfg(const struct device *dev, uint8_t enable);
+#endif
+
 #endif /* __HAPD_API_H_ */
