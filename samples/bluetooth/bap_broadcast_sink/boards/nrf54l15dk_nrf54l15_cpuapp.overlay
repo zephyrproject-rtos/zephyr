@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,shell-uart = &uart30;
+		zephyr,console = &uart30;
+	};
+
+	aliases {
+		codec0 = &audio_codec;
+		i2s-codec-tx = &i2s20;
+	};
+};
+
+&uart20 {
+	status = "disabled";
+};
+
+&uart30 {
+	status = "okay";
+};
+
+&i2s20 {
+	status = "okay";
+	pinctrl-0 = <&i2s20_default>;
+	pinctrl-1 = <&i2s20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c21 {
+	status = "okay";
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	audio_codec: tlv320dac@18 {
+		compatible = "ti,tlv320dac";
+		status = "okay";
+		reg = <0x18>;
+		reset-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pinctrl {
+	i2s20_default: i2s20_default {
+		group1 {
+			psels = <NRF_PSEL(I2S_MCK, 1, 7)>,
+				<NRF_PSEL(I2S_SCK_S, 1, 6)>,
+				<NRF_PSEL(I2S_LRCK_S, 1, 5)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 4)>;
+		};
+	};
+
+	i2s20_sleep: i2s20_sleep {
+		group1 {
+			psels = <NRF_PSEL(I2S_MCK, 1, 7)>,
+				<NRF_PSEL(I2S_SCK_S, 1, 6)>,
+				<NRF_PSEL(I2S_LRCK_S, 1, 5)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 4)>;
+			low-power-enable;
+		};
+	};
+
+	i2c21_default: i2c21_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+		};
+	};
+
+	i2c21_sleep: i2c21_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+			low-power-enable;
+		};
+	};
+};

@@ -66,6 +66,8 @@ static bool codec_configured;
 static uint8_t block_data[CODEC_BLOCK_SIZE];
 static const struct device *g_dev;
 
+K_MEM_SLAB_DEFINE_IN_SECT_STATIC(mem_slab, __nocache, CODEC_BLOCK_SIZE, 20U, 4);
+
 static void tx_done(const struct device *dev, void *user_data)
 {
 	uint32_t avail;
@@ -106,7 +108,7 @@ int hw_codec_cfg(uint32_t samplerate)
 {
 	int ret;
 	audio_property_value_t val = {.vol = SPEAKER_VOL};
-	struct audio_codec_cfg cfg = {
+	struct audio_codec_cfg audio_cfg = {
 		.dai_type = AUDIO_DAI_TYPE_PCM,
 		.dai_cfg.pcm.dir = AUDIO_DAI_DIR_TX,
 		.dai_cfg.pcm.pcm_width = AUDIO_PCM_WIDTH_16_BITS,
@@ -121,8 +123,30 @@ int hw_codec_cfg(uint32_t samplerate)
 	}
 
 	LOG_INF("codec: samplerate=%d block_size=%d", samplerate, CODEC_BLOCK_SIZE);
+
 	audio_codec_register_done_callback(g_dev, tx_done, NULL, NULL, NULL);
-	ret = audio_codec_configure(g_dev, &cfg);
+
+#if defined(CONFIG_USE_I2S_CODEC)
+	/* MCLK frequency: 12.288 MHz is standard for 48kHz sample rates
+	 * For other rates, calculate as 256 * samplerate (common ratio)
+	 */
+	audio_cfg.mclk_freq = 256 * samplerate;
+	audio_cfg.dai_route = AUDIO_ROUTE_PLAYBACK;
+	audio_cfg.dai_type = AUDIO_DAI_TYPE_I2S;
+	audio_cfg.dai_cfg.i2s.word_size = AUDIO_PCM_WIDTH_16_BITS;
+	audio_cfg.dai_cfg.i2s.channels = 2;
+	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
+#if defined(CONFIG_USE_I2S_CODEC_CLK_MASTER)
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+#else /* !CONFIG_USE_I2S_CODEC_CLK_MASTER */
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
+#endif /* !CONFIG_USE_I2S_CODEC_CLK_MASTER */
+	audio_cfg.dai_cfg.i2s.frame_clk_freq = samplerate;
+	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
+	audio_cfg.dai_cfg.i2s.block_size = CODEC_BLOCK_SIZE;
+#endif /* CONFIG_USE_I2S_CODEC */
+
+	ret = audio_codec_configure(g_dev, &audio_cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to configure codec (err %d)", ret);
 		return ret;
@@ -142,6 +166,10 @@ int hw_codec_cfg(uint32_t samplerate)
 		}
 		return ret;
 	}
+
+	/* Start the codec output - this powers up and unmutes the DAC */
+	audio_codec_start_output(g_dev);
+
 	codec_configured = true;
 
 	return 0;
