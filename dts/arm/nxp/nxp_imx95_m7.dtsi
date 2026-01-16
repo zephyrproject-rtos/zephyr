@@ -108,6 +108,17 @@
 		};
 	};
 
+	power-domains {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		netc_mix: power-domain@12 {
+			compatible = "arm,scmi-power-domain";
+			reg = <18>;
+			#power-domain-cells = <0>;
+		};
+	};
+
 	soc {
 		itcm: itcm@0 {
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
@@ -749,6 +760,7 @@
 			reg-names = "ierb", "prb", "netcmix";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			power-domains = <&netc_mix>;
 			ranges;
 
 			netc: ethernet {
@@ -766,6 +778,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <0>;
 					si-index = <0>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -776,6 +789,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <1>;
 					si-index = <1>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -786,6 +800,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <2>;
 					si-index = <2>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -797,6 +812,7 @@
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
 					#address-cells = <1>;
 					#size-cells = <0>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -804,6 +820,7 @@
 					compatible = "nxp,netc-ptp-clock";
 					reg = <0x4ccc0000 0x10000>;
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 			};
