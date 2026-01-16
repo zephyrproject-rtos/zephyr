@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flashcontroller0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+	erase-block-size = <DT_SIZE_K(32)>;
+	write-block-size = <512>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ftl_partition: partition@0 {
+			label = "ftl";
+			reg = <0x00000000 DT_SIZE_K(1024)>;
+		};
+	};
+};
+
+/ {
+	ftl {
+		compatible = "zephyr,ftl-dhara";
+		partition = <&ftl_partition>;
+		disk-name = "NAND";
+		buffer-size = <512>;
+	};
+};
