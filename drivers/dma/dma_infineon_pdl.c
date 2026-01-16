@@ -192,8 +192,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 		descriptor_config.interruptType = CY_DMA_DESCR;
 	}
 
-	/* Keep CHANNEL_ENABLED if BURST transfer (config->dest_burst_length != 0) */
-	if (config->dest_burst_length != 0) {
+	if (config->block_count > 1U) {
 		descriptor_config.channelState = CY_DMA_CHANNEL_ENABLED;
 	} else {
 		descriptor_config.channelState = CY_DMA_CHANNEL_DISABLED;
