@@ -6,4 +6,10 @@ mainmenu "Disk driver performance test"
 config MAIN_STACK_SIZE
 	default 1280 if (MMC_STACK && IMX_USDHC)
 
+config TEST_DISK_SECTOR_SIZE
+	int "Sector size of disk device under test"
+	default 512
+	help
+	  Sector size of the disk device the test will validate against.
+
 source "Kconfig.zephyr"
