@@ -590,6 +590,14 @@ Bluetooth Audio
   receive states at the end of the procedure. Users will have to manually call
   :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
   prior to performing any operations. (:github:`91587`)
+* :c:member:`bt_tbs_client_cb.technology` has changed the ``value`` parameter from ``uint32_t``
+  to ``enum bt_hfp_technology``. Application using this application should switch the type.
+  (:github:`102430`)
+* All ``BT_TBS_TECHNOLOGY_*`` values like ``BT_TBS_TECHNOLOGY_3G`` are renamed to
+  ``BT_HFP_TECHNOLOGY_*`` like ``BT_HFP_TECHNOLOGY_3G``. Application can do search-and-replace from
+  ``BT_TBS_TECHNOLOGY`` to ``BT_HFP_TECHNOLOGY``. Additionally the values are now defined in
+  :zephyr_file:`include/zephyr/bluetooth/assign_numbers.h` instead of
+  :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
 
 Bluetooth Mesh
 ==============
