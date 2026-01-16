@@ -3,6 +3,8 @@
 
 zephyr_library()
 
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_ARM_SCMI power_domain_arm_scmi.c)
 zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_GPIO power_domain_gpio.c)
 zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_GPIO_MONITOR power_domain_gpio_monitor.c)
 zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_INTEL_ADSP power_domain_intel_adsp.c)
@@ -12,3 +14,4 @@ zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_NRFS_SWEXT power_domain_nrfs_sw
 zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_SOC_PM_STATE power_domain_soc_state_change.c)
 zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_TISCI power_domain_tisci.c)
 zephyr_library_sources_ifdef(CONFIG_POWER_DOMAIN_SILABS_SIWX91X power_domain_silabs_siwx91x.c)
+# zephyr-keep-sorted-stop
