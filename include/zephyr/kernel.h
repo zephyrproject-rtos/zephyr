@@ -1827,6 +1827,7 @@ struct k_timer_observer {
 		.node = {},\
 		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
+		.flags = 0, \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
@@ -2100,6 +2101,50 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 {
 	return timer->user_data;
 }
+
+/**
+ * @brief Set timeout flags on a timer object.
+ *
+ * @note For deterministic behavior, set flags before starting the timer
+ *
+ * @param timer Pointer to the timer object.
+ *
+ * @param flags Bitmask of flags to OR into the timeout flags.
+ */
+__syscall void k_timer_set_timeout_flags(struct k_timer *timer, uint8_t flags);
+
+static inline void z_impl_k_timer_set_timeout_flags(struct k_timer *timer, uint8_t flags)
+{
+	timer->timeout.flags |= flags;
+}
+
+/**
+ * @brief Get timeout flags from a timer object.
+ *
+ * @param timer Pointer to the timer object.
+ *
+ * @return Current timeout flags bitmask.
+ */
+__syscall uint8_t k_timer_get_timeout_flags(struct k_timer *timer);
+
+static inline uint8_t z_impl_k_timer_get_timeout_flags(struct k_timer *timer)
+{
+	return timer->timeout.flags;
+}
+
+/**
+ * @brief Retrieve the expiry time of the next non-deferrable timeout.
+ *
+ * This routine computes the time remaining (in ticks) until the next
+ * non-deferrable timeout expires. It is primarily used by the system idle
+ * loop or power management subsystem to determine the maximum duration
+ * the system can sleep without delaying critical events.
+ *
+ * If no non-deferrable timeouts exist, returns the maximum wait interval.
+ *
+ * @return The remaining ticks until the next non-deferrable timeout.
+ */
+__syscall int32_t k_get_next_non_deferrable_timeout_expiry(void);
 
 /** @} */
 
@@ -4225,6 +4270,28 @@ static inline k_ticks_t k_work_delayable_expires_get(
 static inline k_ticks_t k_work_delayable_remaining_get(
 	const struct k_work_delayable *dwork);
 
+/**
+ * @brief Set timeout flags on a delayable work item.
+ *
+ * @note For deterministic behavior, set flags before scheduling the work.
+ *
+ * @param dwork Pointer to the delayable work item.
+ *
+ * @param flags Flags to be set
+ */
+static inline void k_work_delayable_set_timeout_flags(
+	struct k_work_delayable *dwork, uint8_t flags);
+
+/**
+ * @brief Get current timeout flags for a delayable work item.
+ *
+ * @param dwork Pointer to the delayable work item.
+ *
+ * @return Current flags
+ */
+static inline uint8_t k_work_delayable_get_timeout_flags(
+	struct k_work_delayable *dwork);
+
 /** @brief Submit an idle work item to a queue after a delay.
  *
  * Unlike k_work_reschedule_for_queue() this is a no-op if the work item is
@@ -4712,10 +4779,23 @@ static inline k_ticks_t k_work_delayable_remaining_get(
 	return z_timeout_remaining(&dwork->timeout);
 }
 
+static inline void k_work_delayable_set_timeout_flags(
+	struct k_work_delayable *dwork, uint8_t flags)
+{
+	dwork->timeout.flags |= flags;
+}
+
+static inline uint8_t k_work_delayable_get_timeout_flags(
+	struct k_work_delayable *dwork)
+{
+	return dwork->timeout.flags;
+}
+
 static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue)
 {
 	return queue->thread_id;
 }
+
 
 /** @} */
 

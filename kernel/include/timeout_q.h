@@ -28,6 +28,7 @@ extern "C" {
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
+	to->flags = 0;
 }
 
 /* Adds the timeout to the queue.

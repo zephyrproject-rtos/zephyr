@@ -230,6 +230,49 @@ int32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
+int32_t z_impl_k_get_next_non_deferrable_timeout_expiry(void)
+{
+	struct _timeout *t;
+	int32_t ret = (int32_t)K_TICKS_FOREVER;
+	k_ticks_t ticks = 0;
+
+	/* Lock the timeout queue to safely iterate the linked list.
+	 * We must iterate because the head of the list might be a
+	 * deferrable timeout which we want to ignore for sleep
+	 * calculations.
+	 */
+	K_SPINLOCK(&timeout_lock) {
+		for (t = first(); t != NULL; t = next(t)) {
+			/* If the timeout is non-deferrable, this is the hard deadline
+			 * that limits how long we can stay in idle/sleep.
+			 */
+			if (!(t->flags & K_TIMEOUT_DEFERRABLE)) {
+				/* Found the nearest hard deadline.
+				 * Calculate time remaining until this critical timeout.
+				 */
+				ticks = timeout_rem(t) - elapsed();
+
+				if ((int64_t)ticks > (int64_t)INT_MAX) {
+					ret = SYS_CLOCK_MAX_WAIT;
+				} else {
+					ret = MAX(0, ticks);
+				}
+
+				break;
+			}
+		}
+
+		/* If t is NULL, the list was either empty or contained only
+		 * deferrable timeouts. In this case, we can sleep indefinitely.
+		 */
+		if (t == NULL) {
+			ret = SYS_CLOCK_MAX_WAIT;
+		}
+	}
+
+	return ret;
+}
+
 void sys_clock_announce(int32_t ticks)
 {
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);

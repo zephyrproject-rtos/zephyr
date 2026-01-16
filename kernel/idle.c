@@ -51,7 +51,13 @@ void idle(void *unused1, void *unused2, void *unused3)
 		(void) arch_irq_lock();
 
 #ifdef CONFIG_PM
-		_kernel.idle = z_get_next_timeout_expiry();
+
+		/* Use only the next non-deferrable timeout when deciding
+		 * how long the system may sleep. Deferrable timeouts can be
+		 * postponed in sleep, reducing unnecessary wakeups and
+		 * improving residency.
+		 */
+		_kernel.idle = k_get_next_non_deferrable_timeout_expiry();
 
 		/*
 		 * Call the suspend hook function of the soc interface
