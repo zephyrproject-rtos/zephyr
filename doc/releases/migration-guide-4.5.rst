@@ -141,6 +141,14 @@ Bluetooth Audio
   * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
   * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
   * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+* :c:member:`bt_tbs_client_cb.technology` has changed the ``value`` parameter from ``uint32_t``
+  to ``enum bt_bearer_tech``. Applications using this application should switch the type.
+  (:github:`102430`)
+* All ``BT_TBS_TECHNOLOGY_*`` values like ``BT_TBS_TECHNOLOGY_3G`` are renamed to
+  ``BT_BEARER_TECH_*`` like ``BT_BEARER_TECH_3G``. Applications can do search-and-replace from
+  ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
+  :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
+  :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
 
 Bluetooth HCI
 =============
