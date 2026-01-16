@@ -302,16 +302,16 @@ static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t s
 	return false;
 }
 
-static inline void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle)
+static inline void pm_policy_event_register(struct pm_policy_event *evt, int64_t uptime_ticks)
 {
 	ARG_UNUSED(evt);
-	ARG_UNUSED(cycle);
+	ARG_UNUSED(uptime_ticks);
 }
 
-static inline void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle)
+static inline void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks)
 {
 	ARG_UNUSED(evt);
-	ARG_UNUSED(cycle);
+	ARG_UNUSED(uptime_ticks);
 }
 
 static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
