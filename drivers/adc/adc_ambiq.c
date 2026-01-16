@@ -437,6 +437,11 @@ static int adc_ambiq_init(const struct device *dev)
 	/* power on ADC*/
 	ret = am_hal_adc_power_control(data->adcHandle, AM_HAL_SYSCTRL_WAKE, false);
 
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Failed to power on ADC, code: %d", ret);
+		return -EIO;
+	}
+
 	ret = pinctrl_apply_state(cfg->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
