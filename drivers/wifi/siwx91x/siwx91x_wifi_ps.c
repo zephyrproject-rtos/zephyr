@@ -122,8 +122,8 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 		sidev->ps_params.wakeup_mode = params->wakeup_mode;
 		break;
 	case WIFI_PS_PARAM_TIMEOUT:
-		/* 1000ms is arbitrary sane value */
-		if (params->timeout_ms < SLI_DEFAULT_MONITOR_INTERVAL ||
+		/* 50ms and 1000ms is arbitrary sane values */
+		if (params->timeout_ms < 50 ||
 		    params->timeout_ms > 1000) {
 			params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
 			return -EINVAL;
