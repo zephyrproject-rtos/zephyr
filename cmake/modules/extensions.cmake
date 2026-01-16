@@ -1733,7 +1733,7 @@ function(zephyr_build_string outvar)
   list(REMOVE_DUPLICATES ${outvar})
 
   if(BUILD_STR_SHORT AND BUILD_STR_BOARD_QUALIFIERS)
-    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
+    string(REGEX REPLACE "^.[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
     string(REPLACE "/" ";" str_short_segment_list "${shortened_qualifiers}")
     string(JOIN "_" ${BUILD_STR_SHORT}
            ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string}
