@@ -47,6 +47,16 @@ int console_getchar(void)
 	return c;
 }
 
+void console_set_rx_timeout(k_timeout_t timeout)
+{
+	console_serial.rx_timeout = timeout;
+}
+
+void console_set_tx_timeout(k_timeout_t timeout)
+{
+	console_serial.tx_timeout = timeout;
+}
+
 int console_init(void)
 {
 	const struct device *uart_dev;
