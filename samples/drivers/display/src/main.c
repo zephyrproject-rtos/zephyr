@@ -303,7 +303,7 @@ int main(void)
 
 	switch (capabilities.current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
-		bg_color = 0x00u;
+		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_argb8888;
 		buf_size *= 4;
 		break;
