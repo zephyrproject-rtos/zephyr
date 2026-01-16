@@ -13,7 +13,7 @@
  * platform, with workarounds.
  */
 
-#if defined(CONFIG_SOC_MPS2_AN521) && defined(CONFIG_QEMU_TARGET)
+#if defined(CONFIG_SOC_AN521) && defined(CONFIG_QEMU_TARGET)
 /* mps2/an521 blows up if allowed to link into large area, even though
  * the link is successful and it claims the memory is there.  We get
  * hard faults on boot in qemu before entry to cstart() once MEMSZ is
