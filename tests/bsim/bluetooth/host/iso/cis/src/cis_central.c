@@ -109,6 +109,7 @@ static void init(void)
 		.connected = iso_connected,
 		.disconnected = iso_disconnected,
 		.sent = iso_tx_sent_cb,
+		.send_failed = iso_tx_send_failed_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
 		.sdu = CONFIG_BT_ISO_TX_MTU,

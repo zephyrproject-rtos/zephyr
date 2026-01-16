@@ -69,6 +69,14 @@ bool iso_tx_can_send(const struct bt_iso_chan *iso_chan);
 void iso_tx_sent_cb(struct bt_iso_chan *iso_chan);
 
 /**
+ * @brief Callback to indicate a TX failure
+ *
+ * @param iso_chan The channel that failed TX
+ * @param err The reason for the failure
+ */
+void iso_tx_send_failed_cb(struct bt_iso_chan *iso_chan, int err);
+
+/**
  * @brief Get the number of sent SDUs for an ISO channel
  *
  * Counter will be unavailable after iso_tx_unregister()
