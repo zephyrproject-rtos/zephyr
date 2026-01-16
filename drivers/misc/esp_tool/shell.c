@@ -121,6 +121,7 @@ static int cmd_esp_target_info(const struct shell *sh, size_t argc, char **argv)
 			return 0;
 		}
 	}
+	shell_print(sh, "Current baudrate %d", esp_tool_get_current_baudrate(esp));
 	shell_print(sh, "%s, boot from 0x%x, flash size %d MB", name, offset,
 		    size/1024/1024);
 
@@ -292,6 +293,7 @@ static int cmd_esp_flash_app(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+	#if 0
 
 	static uint8_t payload[1024];
 	const uint8_t *bin_ptr = app_bin;
@@ -310,7 +312,7 @@ static int cmd_esp_flash_app(const struct shell *sh, size_t argc, char **argv)
 		return -1;
 	}
 
-	shell_print(sh, "Start programming");
+	shell_print(sh, "Start programming at 0x%x", offset);
 
 	size_t written = 0;
 
@@ -322,7 +324,7 @@ static int cmd_esp_flash_app(const struct shell *sh, size_t argc, char **argv)
 			shell_print(sh, "Packet could not be written");
 			return -1;
 		}
-hexdump("pay", payload, 32);
+//hexdump("pay", payload, 32);
 		size -= to_write;
 		bin_ptr += to_write;
 		written += to_write;
@@ -332,7 +334,11 @@ hexdump("pay", payload, 32);
 	};
 
 //	esp_tool_flash_finish(esp, true);
-
+#else
+	int ret;
+	ret = esp_tool_flash_binary(esp, app_bin, app_bin_size, 0x0);
+	printk("return code %d", ret);
+#endif
 	return 0;
 }
 
@@ -454,17 +460,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_esp,
 	SHELL_CMD(reset, NULL, "Reset target.", cmd_esp_reset),
 	SHELL_CMD(info, NULL, "Reset target.", cmd_esp_target_info),
 	SHELL_CMD(resources, NULL, "ESP flash size.", cmd_esp_resources),
-	SHELL_CMD(flash_read, NULL, "ESP flash size.", cmd_esp_flash_read),
-	SHELL_CMD(flash_erase, NULL, "ESP flash size.", cmd_esp_flash_erase),
-	SHELL_CMD(flash_app, NULL, "ESP flash size.", cmd_esp_flash_app),
+	SHELL_CMD(flash-read, NULL, "ESP flash size.", cmd_esp_flash_read),
+	SHELL_CMD(flash-erase, NULL, "ESP flash size.", cmd_esp_flash_erase),
+	SHELL_CMD(flash-app, NULL, "ESP flash size.", cmd_esp_flash_app),
 	SHELL_CMD(mac_read, NULL, "ESP flash size.", cmd_esp_mac_read),
 	SHELL_CMD(reg_read, NULL, "ESP flash size.", cmd_esp_reg_read),
-//	SHELL_CMD(mem_read, NULL, "ESP flash size.", cmd_esp_mem_read),
+
+	SHELL_CMD(flash, &sub_flash, "ESP flash size.", cmd_esp_mem_read),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(esp, &sub_esp, "ESP(tool) commands", NULL);
 
 SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
-
 SHELL_CMD_ARG_REGISTER(bypass, NULL, "Bypass shell", cmd_bypass, 1, 0);

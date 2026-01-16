@@ -326,9 +326,12 @@ int esp_tool_get_security_info(const struct device *dev);
  */
 int esp_tool_connect_secure_download_mode(const struct device *dev);
 
+// quick add list
 int esp_tool_get_boot_offset(const struct device *dev, uint32_t *off);
 uint32_t esp_tool_get_current_baudrate(const struct device *dev);
 bool esp_tool_is_connected(const struct device *dev);
+int esp_tool_flash_binary(const struct device *dev, const void *image,
+			  size_t size, uint32_t offset);
 
 /** @} */
 

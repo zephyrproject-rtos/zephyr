@@ -87,6 +87,19 @@ _Static_assert(sizeof(boot_offset) / sizeof(boot_offset[0]) == ESP_MAX_CHIP,
                "boot_offset array size mismatch! "
                "If you added a new chip to target_chip_t, you MUST add its address to bootloader_addresses[]");
 
+static const char *get_error_string(const esp_loader_error_t error)
+{
+    const char *mapping[ESP_LOADER_ERROR_INVALID_RESPONSE + 1] = {
+        "NONE", "UNKNOWN", "TIMEOUT", "IMAGE SIZE",
+        "INVALID MD5", "INVALID PARAMETER", "INVALID TARGET",
+        "UNSUPPORTED CHIP", "UNSUPPORTED FUNCTION", "INVALID RESPONSE"
+    };
+
+   // assert(error <= ESP_LOADER_ERROR_INVALID_RESPONSE);
+
+    return mapping[error];
+}
+
 int esp_tool_get_target(const struct device *dev, uint32_t *id)
 {
 	struct esp_tool_data *data = dev->data;
@@ -143,7 +156,7 @@ int esp_tool_flash_start(const struct device *dev, uint32_t offset,
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (esp_loader_flash_start(offset, image_size, block_size) !=
-	    ESP_LOADER_SUCCESS) {
+				   ESP_LOADER_SUCCESS) {
 		LOG_ERR("Flash start fail");
 		err = -EINVAL;
 	}
@@ -194,6 +207,64 @@ int esp_tool_flash_finish(const struct device *dev, bool reboot)
 	k_mutex_unlock(&data->lock);
 
 	return err;
+}
+
+int esp_tool_flash_binary(const struct device *dev, const void *image,
+			  size_t size, uint32_t offset)
+{
+    esp_loader_error_t err;
+    static uint8_t payload[1024];
+    const uint8_t *bin_addr = image;
+
+    printk("Erasing flash (this may take a while)...\n");
+    err = esp_loader_flash_start(offset, size, sizeof(payload));
+    if (err != ESP_LOADER_SUCCESS) {
+        printk("Erasing flash failed with error: %s.\n", get_error_string(err));
+
+        if (err == ESP_LOADER_ERROR_INVALID_PARAM) {
+            printk("If using Secure Download Mode, double check that the specified "
+                   "target flash size is correct.\n");
+        }
+        return err;
+    }
+    printk("Start programming\n");
+
+    size_t binary_size = size;
+    size_t written = 0;
+
+    while (size > 0) {
+        size_t to_read = MIN(size, sizeof(payload));
+        memcpy(payload, bin_addr, to_read);
+
+        err = esp_loader_flash_write(payload, to_read);
+        if (err != ESP_LOADER_SUCCESS) {
+            printk("\nPacket could not be written! Error %s.\n", get_error_string(err));
+            return err;
+        }
+
+        size -= to_read;
+        bin_addr += to_read;
+        written += to_read;
+
+        int progress = (int)(((float)written / binary_size) * 100);
+        printk("\rProgress: %d %%", progress);
+    };
+
+    printk("\nFinished programming\n");
+
+#if MD5_ENABLED
+    err = esp_loader_flash_verify();
+    if (err == ESP_LOADER_ERROR_UNSUPPORTED_FUNC) {
+        printk("ESP8266 does not support flash verify command.");
+        return err;
+    } else if (err != ESP_LOADER_SUCCESS) {
+        printk("MD5 does not match. Error: %s\n", get_error_string(err));
+        return err;
+    }
+    printk("Flash verified\n");
+#endif
+
+    return ESP_LOADER_SUCCESS;
 }
 
 int esp_tool_mem_start(const struct device *dev, uint32_t offset, uint32_t size,
@@ -442,8 +513,10 @@ static void gpios_engage(const struct device *dev)
 static void gpios_disengage(const struct device *dev)
 {
 	const struct esp_tool_config *cfg = dev->config;
-	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_DISCONNECTED);
-	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_DISCONNECTED);
+//	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_DISCONNECTED);
+//	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_DISCONNECTED);
+	gpio_pin_configure_dt(&cfg->boot_gpio, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 }
 
 int esp_tool_reset_target(const struct device *dev)
@@ -473,7 +546,7 @@ int esp_tool_connect(const struct device *dev, bool hs)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	gpios_engage(dev);
+//	gpios_engage(dev);
 
 	if (esp_loader_connect((esp_loader_connect_args_t *) &cfg->connect) !=
 				ESP_LOADER_SUCCESS) {
@@ -485,7 +558,7 @@ int esp_tool_connect(const struct device *dev, bool hs)
 		LOG_DBG("Connected target ROM with chip id %d",
 			esp_loader_get_target());
 	}
-
+hs = false;
 	if (hs && data->current_baudrate != cfg->higher_baudrate) {
 		if (esp_loader_change_transmission_rate(cfg->higher_baudrate)) {
 			LOG_ERR("Failed to change baudrate");
@@ -527,6 +600,7 @@ int esp_tool_connect_stub(const struct device *dev, bool hs)
 			 esp_loader_get_target());
 	}
 
+hs = false;
 	if (hs && data->current_baudrate != cfg->higher_baudrate) {
 		if (esp_loader_change_transmission_rate_stub(
 				data->current_baudrate,
