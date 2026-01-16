@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,8 +66,22 @@ struct z_heap_bucket {
 	chunkid_t next;
 };
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+struct z_heap_custom_header
+{
+	uint64_t canary;
+} __aligned(CHUNK_UNIT);
+#define CHUNK_HEADER_PREFIX \
+	DIV_ROUND_UP(sizeof(struct z_heap_custom_header), CHUNK_UNIT)
+#define CHUNK0_HEADER_SIZE \
+	(DIV_ROUND_UP(sizeof(struct z_heap_custom_header), sizeof(chunkid_t)) + 2U)
+#else
+#define CHUNK_HEADER_PREFIX 0
+#define CHUNK0_HEADER_SIZE 2
+#endif
+
 struct z_heap {
-	chunkid_t chunk0_hdr[2];
+	chunkid_t chunk0_hdr[CHUNK0_HEADER_SIZE];
 	chunkid_t end_chunk;
 	uint32_t avail_buckets;
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -74,8 +89,16 @@ struct z_heap {
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
 #endif
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	uint16_t magic_num_used;
+	uint16_t magic_num_free;
+#endif
 	struct z_heap_bucket buckets[];
 };
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+uint64_t sys_heap_compute_canary(struct z_heap *h, chunkid_t c, bool used);
+#endif
 
 static inline bool big_heap_chunks(chunksz_t chunks)
 {
@@ -108,7 +131,7 @@ static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
 				    enum chunk_fields f)
 {
 	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+	void *cmem = &buf[c + CHUNK_HEADER_PREFIX];
 
 	if (big_heap(h)) {
 		return ((uint32_t *)cmem)[f];
@@ -123,7 +146,7 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 	CHECK(c <= h->end_chunk);
 
 	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+	void *cmem = &buf[c + CHUNK_HEADER_PREFIX];
 
 	if (big_heap(h)) {
 		CHECK(val == (uint32_t)val);
@@ -133,6 +156,30 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 		((uint16_t *)cmem)[f] = val;
 	}
 }
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+static inline void set_canary(struct z_heap *h, chunkid_t c, bool used)
+{
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+	struct z_heap_custom_header *custom = cmem;
+
+	custom->canary = sys_heap_compute_canary(h, c, used);
+}
+
+static inline void test_canary(struct z_heap *h, chunkid_t c, bool used)
+{
+	chunk_unit_t *buf = chunk_buf(h);
+	void *cmem = &buf[c];
+	struct z_heap_custom_header *custom = cmem;
+
+	__ASSERT(custom->canary == sys_heap_compute_canary(h, c, used),
+		 "memory corruption at %p", cmem);
+}
+#else
+#define set_canary(...) do { } while (false)
+#define test_canary(...) do { } while (false)
+#endif
 
 static inline bool chunk_used(struct z_heap *h, chunkid_t c)
 {
@@ -147,7 +194,11 @@ static inline chunksz_t chunk_size(struct z_heap *h, chunkid_t c)
 static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 {
 	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+	void *cmem = &buf[c + CHUNK_HEADER_PREFIX];
+
+	if (used == false) {
+		test_canary(h, c, true);
+	}
 
 	if (big_heap(h)) {
 		if (used) {
@@ -161,6 +212,10 @@ static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 		} else {
 			((uint16_t *)cmem)[SIZE_AND_USED] &= ~1U;
 		}
+	}
+
+	if (used == true) {
+		set_canary(h, c, true);
 	}
 }
 
@@ -214,17 +269,17 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 
 static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
 {
-	return big_heap(h) && (chunk_size(h, c) == 1U);
+	return big_heap(h) && (chunk_size(h, c) == CHUNK_HEADER_PREFIX + 1U);
 }
 
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
-	return big_heap(h) ? 8 : 4;
+	return (CHUNK_UNIT * CHUNK_HEADER_PREFIX) + (big_heap(h) ? 8 : 4);
 }
 
 static inline size_t heap_footer_bytes(size_t size)
 {
-	return big_heap_bytes(size) ? 8 : 4;
+	return ((CHUNK_UNIT * CHUNK_HEADER_PREFIX) + (big_heap_bytes(size) ? 8 : 4));
 }
 
 static inline chunksz_t chunksz(size_t bytes)

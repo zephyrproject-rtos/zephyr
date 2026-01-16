@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,53 @@
 #include "heap.h"
 #ifdef CONFIG_MSAN
 #include <sanitizer/msan_interface.h>
+#endif
+#ifdef CONFIG_SYS_HEAP_CANARIES
+#include <zephyr/random/random.h>
+#endif
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+uint64_t sys_heap_compute_canary(struct z_heap *h, chunkid_t c, bool used)
+{
+	uint16_t magic = 0, zephyr_hdr = 0;
+	uintptr_t a = 0;
+
+	magic = used ? h->magic_num_used : h->magic_num_free;
+	a = (uintptr_t)&chunk_buf(h)[c];
+	zephyr_hdr = chunk_field(h, c, SIZE_AND_USED);
+
+	/* Extract 16-bit address lanes (low to high). */
+	uint16_t a0 = (uint16_t)(a & 0xFFFFU);
+	uint16_t a1 = (uint16_t)((a >> 16) & 0xFFFFU);
+#if UINTPTR_MAX > 0xFFFFFFFFUL /* 64-bit systems */
+	uint16_t a2 = (uint16_t)((a >> 32) & 0xFFFFU);
+	uint16_t a3 = (uint16_t)((a >> 48) & 0xFFFFU);
+#endif
+
+	/* Build 4 x 16-bit words by XOR-ing inputs, then place them in 64-bit. */
+	uint64_t g = 0;
+
+	/* Lower 16 bits: zephyr_hdr ^ a0 */
+	g ^= (uint64_t)((uint16_t)(zephyr_hdr ^ a0));
+
+	/* Next 16 bits: magic ^ a1 */
+	g ^= (uint64_t)((uint64_t)((uint16_t)(magic ^ a1)) << 16);
+
+#if UINTPTR_MAX > 0xFFFFFFFFUL
+	/* 64-bit: use remaining address lanes directly for better diffusion. */
+	g ^= (uint64_t)((uint64_t)((uint16_t)(zephyr_hdr ^ a2)) << 32);
+	g ^= (uint64_t)((uint64_t)((uint16_t)(magic ^ a3)) << 48);
+#else
+	/* 32-bit: fold/reuse lanes to populate upper half deterministically. */
+	uint16_t w2 = (uint16_t)(zephyr_hdr ^ a1);
+	uint16_t w3 = (uint16_t)(magic ^ a0);
+
+	g ^= (uint64_t)((uint64_t)w2 << 32);
+	g ^= (uint64_t)((uint64_t)w3 << 48);
+#endif
+
+	return g;
+}
 #endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -59,6 +107,8 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 
 static void free_list_remove(struct z_heap *h, chunkid_t c)
 {
+	test_canary(h, c, false);
+
 	if (!solo_free_header(h, c)) {
 		int bidx = bucket_idx(h, chunk_size(h, c));
 		free_list_remove_bidx(h, c, bidx);
@@ -101,6 +151,8 @@ static void free_list_add(struct z_heap *h, chunkid_t c)
 		int bidx = bucket_idx(h, chunk_size(h, c));
 		free_list_add_bidx(h, c, bidx);
 	}
+
+	set_canary(h, c, false);
 }
 
 /* Splits a chunk "lc" into a left chunk and a right chunk at "rc".
@@ -277,7 +329,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	}
 
 	/* Split off remainder if any */
-	if (chunk_size(h, c) > chunk_sz) {
+	if (chunk_size(h, c) >= chunk_sz + chunksz(chunk_header_bytes(h))) {
 		split_chunks(h, c, c + chunk_sz);
 		free_list_add(h, c + chunk_sz);
 	}
@@ -323,7 +375,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 		align -= rew;
 		gap = min(rew, chunk_header_bytes(h));
 	} else {
-		if (align <= chunk_header_bytes(h)) {
+		if (align <= (big_heap(h) ? 8 : 4)) {
 			return sys_heap_alloc(heap, bytes);
 		}
 		rew = 0;
@@ -340,7 +392,8 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
-	chunksz_t padded_sz = bytes_to_chunksz(h, bytes, align - gap);
+	chunksz_t padded_sz = bytes_to_chunksz(h, bytes, align - gap) +
+			      min_chunk_size(h) + chunksz(align);
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
@@ -349,13 +402,20 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	uint8_t *mem = chunk_mem(h, c0);
 
 	/* Align allocated memory */
-	mem = (uint8_t *) ROUND_UP(mem + rew, align) - rew;
-	chunk_unit_t *end = (chunk_unit_t *) ROUND_UP(mem + bytes, CHUNK_UNIT);
+	mem = (uint8_t *)ROUND_UP(mem + rew, align) - rew;
 
 	/* Get corresponding chunks */
 	chunkid_t c = mem_to_chunkid(h, mem);
+
+	if (c > c0 && (c - c0) < min_chunk_size(h)) {
+		mem = (uint8_t *)ROUND_UP(mem + rew + align, align) - rew;
+		c = mem_to_chunkid(h, mem);
+		CHECK(c - c0 >= min_chunk_size(h));
+	}
+
+	chunk_unit_t *end = (chunk_unit_t *)ROUND_UP(mem + bytes, CHUNK_UNIT);
 	chunkid_t c_end = end - chunk_buf(h);
-	CHECK(c >= c0 && c  < c_end && c_end <= c0 + padded_sz);
+	CHECK(c >= c0 && c < c_end && c_end <= c0 + padded_sz);
 
 	/* Split and free unused prefix */
 	if (c > c0) {
@@ -363,8 +423,8 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 		free_list_add(h, c0);
 	}
 
-	/* Split and free unused suffix */
-	if (right_chunk(h, c) > c_end) {
+	/* Split off suffix if it's large enough to be a valid chunk */
+	if (right_chunk(h, c) - c_end >= min_chunk_size(h)) {
 		split_chunks(h, c, c_end);
 		free_list_add(h, c_end);
 	}
@@ -381,6 +441,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 #endif
 
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
+
 	return mem;
 }
 
@@ -398,7 +459,7 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		return true;
 	}
 
-	if (chunk_size(h, c) > chunks_need) {
+	if (chunk_size(h, c) >= chunks_need + chunksz(chunk_header_bytes(h))) {
 		/* Shrink in place, split off and free unused suffix */
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
@@ -426,9 +487,16 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	chunkid_t rc = right_chunk(h, c);
 
 	if (!chunk_used(h, rc) &&
-	    (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
+	    (chunk_size(h, c) + chunk_size(h, rc) >=
+		 chunks_need + chunksz(chunk_header_bytes(h)))) {
 		/* Expand: split the right chunk and append */
 		chunksz_t split_size = chunks_need - chunk_size(h, c);
+
+		/* Check if we can make free blocks out of these, if not bail out */
+		if (split_size < chunk_header_bytes(h) ||
+		    chunk_size(h, rc) - split_size < chunk_header_bytes(h)) {
+			return false;
+		}
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
@@ -570,6 +638,11 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	for (int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].next = 0;
 	}
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	sys_rand_get(&h->magic_num_used, sizeof(h->magic_num_used));
+	sys_rand_get(&h->magic_num_free, sizeof(h->magic_num_free));
+#endif
 
 	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);

@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Intel Corporation
+# Copyright (c) 2026 Qualcomm Technologies, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -144,5 +145,25 @@ config SHARED_MULTI_HEAP
 	  multi-heap allocator to manage a set of reserved memory regions with
 	  different capabilities / attributes (cacheable, non-cacheable,
 	  etc...) defined in the DT.
+
+config SYS_HEAP_CANARIES
+	bool "Heap canary-based corruption detection"
+	help
+	  Enable heap canary guards for detecting memory corruption. When enabled,
+	  each allocated chunk includes a computed guard value in its header that
+	  is validated during heap operations
+
+	  The guard is computed using a non-cryptographic hash combining:
+	  - Chunk header metadata
+	  - Chunk memory address
+	  - Per-heap random magic numbers (separate for used/free chunks)
+
+	  This feature helps detect:
+	  - Buffer overflows that corrupt chunk headers
+	  - Double-free attempts
+	  - Heap metadata corruption
+
+	  Note: This adds 8 bytes overhead per allocation and requires a
+	  random number generator for initialization.
 
 endmenu
