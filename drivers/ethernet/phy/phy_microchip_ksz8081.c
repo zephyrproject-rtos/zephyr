@@ -407,12 +407,11 @@ static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 {
 	int ret;
 
-	if (!config->reset_gpio.port) {
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
 		return -ENODEV;
 	}
 
-	/* Start reset */
-	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
 	}
@@ -420,8 +419,8 @@ static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 	/* Wait for at least 500 us as specified by datasheet */
 	k_busy_wait(1000);
 
-	/* Reset over */
-	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+
 
 	/* After deasserting reset, must wait at least 100 us to use programming interface */
 	k_busy_wait(200);
