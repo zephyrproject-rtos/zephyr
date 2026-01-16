@@ -13,6 +13,7 @@
 #include <zephyr/cpu_freq/cpu_freq.h>
 #include <zephyr/cpu_freq/pstate.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/timer/system_timer.h>
 
 LOG_MODULE_REGISTER(mcxn_cpu_freq, CONFIG_CPU_FREQ_LOG_LEVEL);
 
@@ -85,7 +86,29 @@ int cpu_freq_pstate_set(const struct pstate *state)
 	LOG_DBG("Requesting CPU frequency change: level_idx=%u -> %u Hz (threshold=%u%%)",
 			(unsigned int)(entry - mcxn_levels), entry->hz, state->load_threshold);
 
-	return entry->apply();
+	int ret = entry->apply();
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	SystemCoreClockUpdate();
+
+	/* If the system timer is derived from the core clock, CPU_FREQ changes
+	 * its effective frequency and must be propagated to the kernel.
+	 *
+	 * When MCUX OS timer is used (default for CPU_FREQ on MCXN), the system
+	 * timer runs from a stable 1MHz source and does not require updates.
+	 */
+#if defined(CONFIG_CORTEX_M_SYSTICK)
+#if !defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+#error "MCXN CPU_FREQ with SysTick requires CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE"
+#endif
+	/* Update the system timer frequency at runtime. */
+	z_sys_clock_hw_cycles_per_sec_update((uint32_t)SystemCoreClock);
+#endif
+
+	return 0;
 }
 
 static int mcxn_set_cpu_frequency_to_150mhz(void)
