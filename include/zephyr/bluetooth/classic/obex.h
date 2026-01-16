@@ -310,7 +310,7 @@ struct bt_obex_server_ops {
 	 *  received.
 	 *
 	 *  @param server The OBEX server object.
-	 *  @param flags The flags.
+	 *  @param flags The flags @ref bt_obex_setpath_flags.
 	 *  @param buf Optional headers.
 	 */
 	void (*setpath)(struct bt_obex_server *server, uint8_t flags, struct net_buf *buf);
@@ -883,6 +883,14 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf);
  */
 int bt_obex_abort_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
+/** @brief OBEX SetPath operation flags. */
+enum __packed bt_obex_setpath_flags {
+	/** Backup a level before applying name (equivalent to ../ on many systems). */
+	BT_OBEX_SETPATH_FLAG_BACKUP = BIT(0U),
+	/** Don't create folder if it does not exist, return an error instead. */
+	BT_OBEX_SETPATH_FLAG_NO_CREATE = BIT(1U),
+};
+
 /** @brief OBEX setpath request
  *
  *  The setpath request is used to set the "current folder" on the receiving side in order to
@@ -909,7 +917,7 @@ int bt_obex_abort_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct ne
  *  the caller retains the ownership of the buffer.
  *
  *  @param client OBEX client object.
- *  @param flags Flags for setpath request.
+ *  @param flags Flags for setpath request @ref bt_obex_setpath_flags.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
