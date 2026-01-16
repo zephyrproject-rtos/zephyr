@@ -18,3 +18,24 @@ config I2C_XEC_V2
 	select PINCTRL
 	help
 	  Enable the Microchip XEC I2C V2 driver.
+
+if I2C_XEC_V2
+
+config I2C_XEC_PORT_MUX
+	bool "Allow I2C configuration to switch port and frequency"
+	default y
+	help
+	  Microhip MEC I2C-SMBus controllers each have a hardware port
+	  multiplexer. The MUX allows each controller to be connected to
+	  one of the 16 ports the specific chip implements. This can be
+	  used to dynamically switch controllers between multiple ports.
+	  Multiple controllers may also be connected to the same port.
+	  It is recommended the controller be reset and reconfigured after
+	  switching to a new port. The controller samples the pins over
+	  a time window when it is released from reset. This feature
+	  enodes the 4-bit port select field in unused bits[19:16] of
+	  the 32-bit I2C driver configuration word. This allows the
+	  application to switch the port and configure a new frequency
+	  in one API call.
+
+endif # I2C_XEC_V2

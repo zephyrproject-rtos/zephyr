@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/dt-binding/gpio/microchip-xec-gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 
 #include "mec172x/mec172x-vw-routing.dtsi"
