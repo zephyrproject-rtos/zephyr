@@ -132,6 +132,7 @@ static void init(void)
 		.disconnected = iso_disconnected_cb,
 		.connected = iso_connected_cb,
 		.sent = iso_tx_sent_cb,
+		.send_failed = iso_tx_send_failed_cb,
 	};
 	struct bt_le_local_features local_features;
 	int err;
