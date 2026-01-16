@@ -253,6 +253,30 @@ static int bq2518x_get_online(const struct device *dev, enum charger_online *onl
 	return 0;
 }
 
+static enum charger_status status_decode(uint8_t stat0, bool charging_disabled)
+{
+	if ((stat0 & BQ2518X_STAT0_VIN_PGOOD_STAT) == 0x00) {
+		/* No input power, must be discharging */
+		return CHARGER_STATUS_DISCHARGING;
+	}
+	if (charging_disabled) {
+		/* Input present, but charging disabled */
+		return CHARGER_STATUS_NOT_CHARGING;
+	}
+
+	switch (FIELD_GET(BQ2518X_STAT0_CHG_STAT_MASK, stat0)) {
+	case BQ2518X_STAT0_CHG_STAT_NOT_CHARGING:
+		return CHARGER_STATUS_NOT_CHARGING;
+	case BQ2518X_STAT0_CHG_STAT_CONSTANT_CURRENT:
+	case BQ2518X_STAT0_CHG_STAT_CONSTANT_VOLTAGE:
+		return CHARGER_STATUS_CHARGING;
+	case BQ2518X_STAT0_CHG_STAT_DONE:
+		return CHARGER_STATUS_FULL;
+	}
+	/* Unreachable */
+	return CHARGER_STATUS_UNKNOWN;
+}
+
 static int bq2518x_get_status(const struct device *dev, enum charger_status *status)
 {
 	const struct bq2518x_config *cfg = dev->config;
@@ -264,35 +288,12 @@ static int bq2518x_get_status(const struct device *dev, enum charger_status *sta
 	if (ret < 0) {
 		return ret;
 	}
-
-	if ((stat0 & BQ2518X_STAT0_VIN_PGOOD_STAT) == 0x00) {
-		*status = CHARGER_STATUS_DISCHARGING;
-		return 0;
-	}
-
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, BQ2518X_ICHG_CTRL, &ichg_ctrl);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if ((ichg_ctrl & BQ2518X_ICHG_CHG_DIS) != 0x00) {
-		*status = CHARGER_STATUS_NOT_CHARGING;
-		return 0;
-	}
-
-	switch (FIELD_GET(BQ2518X_STAT0_CHG_STAT_MASK, stat0)) {
-	case BQ2518X_STAT0_CHG_STAT_NOT_CHARGING:
-		*status = CHARGER_STATUS_NOT_CHARGING;
-		break;
-	case BQ2518X_STAT0_CHG_STAT_CONSTANT_CURRENT:
-	case BQ2518X_STAT0_CHG_STAT_CONSTANT_VOLTAGE:
-		*status = CHARGER_STATUS_CHARGING;
-		break;
-	case BQ2518X_STAT0_CHG_STAT_DONE:
-		*status = CHARGER_STATUS_FULL;
-		break;
-	}
-
+	*status = status_decode(stat0, ichg_ctrl & BQ2518X_ICHG_CHG_DIS);
 	return 0;
 }
 
