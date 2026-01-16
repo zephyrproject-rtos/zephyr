@@ -308,6 +308,10 @@ struct _timeout {
 #else
 	int32_t dticks;
 #endif
+
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+	bool deferrable;
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
 };
 
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);

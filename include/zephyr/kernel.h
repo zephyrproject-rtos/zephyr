@@ -871,6 +871,7 @@ __syscall void k_thread_abort(k_tid_t thread);
 
 k_ticks_t z_timeout_expires(const struct _timeout *timeout);
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
+void z_timeout_deferrable_set(struct _timeout *t);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
@@ -1827,6 +1828,7 @@ struct k_timer_observer {
 		.node = {},\
 		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
+		IF_ENABLED(CONFIG_DEFERRABLE_TIMEOUT, (.deferrable = false,)) \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
@@ -2100,6 +2102,39 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 {
 	return timer->user_data;
 }
+
+/**
+ * @brief Retrieve the expiry time of the next non-deferrable timeout.
+ *
+ * This routine computes the time remaining (in ticks) until the next
+ * non-deferrable timeout expires. It is primarily used by the system idle
+ * loop or power management subsystem to determine the maximum duration
+ * the system can sleep without delaying critical events.
+ *
+ * If no non-deferrable timeouts exist, returns the maximum wait interval.
+ *
+ * @return The remaining ticks until the next non-deferrable timeout.
+ */
+__syscall int32_t k_get_next_non_deferrable_timeout_expiry(void);
+
+/**
+ * @brief Mark a timer as deferrable.
+ *
+ * This routine marks the specified timer as a deferrable timer.
+ * Deferrable timers are placed into a separate timeout list
+ * (defer_timeout_list) that is not used to determine system sleep
+ * duration. While the system is in a low‑power or sleep state, these
+ * timers are allowed to expire later than their scheduled time and
+ * will be processed only after the system wakes.
+ *
+ * @note The timer should be marked as deferrable before starting
+ *       the timer.
+ *
+ * @kconfig_dep{CONFIG_DEFERRABLE_TIMEOUT}
+ *
+ * @param timer Pointer to the timer object.
+ */
+__syscall void k_timer_deferrable_set(struct k_timer *timer);
 
 /** @} */
 
