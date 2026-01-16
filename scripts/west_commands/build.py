@@ -122,11 +122,12 @@ class Build(Forceable):
                            help='force a cmake run')
         group.add_argument('--cmake-opt', action='append',
                            dest="cmake_opts", default=[],
-                           help='''same as using '-- cmake_opt' but avoid the
-                           end-of-options marker '--' (e.g. in alias commands);
-                           those options are passed to cmake first, so they can
-                           be overridden via '-- cmake_opt';
-                           may be given multiple times.''')
+                           help='''alternative to the end-of-options marker '--'.
+                           Can be given multiple times and 'argparse' should
+                           preserve the order for CMake. Not mutually exclusive
+                           with '--': options after '--' are given last to
+                           CMake.''',
+        )
         group.add_argument('--cmake-only', action='store_true',
                            help="just run cmake; don't build (implies -c)")
         group.add_argument('--domain', action='append',
