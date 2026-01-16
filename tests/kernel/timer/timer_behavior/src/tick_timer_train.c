@@ -9,9 +9,9 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
-#define TIMERS 4
+#define TIMERS_CNT 4
 #define TEST_SECONDS 10
-#define MAX_CALLBACKS (CONFIG_SYS_CLOCK_TICKS_PER_SEC*TEST_SECONDS)/TIMERS
+#define MAX_CALLBACKS (CONFIG_SYS_CLOCK_TICKS_PER_SEC*TEST_SECONDS)/TIMERS_CNT
 
 struct timer_wrapper {
 	int64_t last_scheduled;
@@ -24,7 +24,7 @@ struct timer_wrapper {
 
 K_SEM_DEFINE(timers_sem, 0, K_SEM_MAX_LIMIT);
 
-struct timer_wrapper timers[TIMERS];
+struct timer_wrapper timers[TIMERS_CNT];
 
 void tm_fn(struct k_timer *tm)
 {
@@ -36,7 +36,7 @@ void tm_fn(struct k_timer *tm)
 		uint32_t delta = now - tm_wrap->last_isr;
 
 		tm_wrap->max_delta = delta > tm_wrap->max_delta ? delta : tm_wrap->max_delta;
-		if (delta >= k_ticks_to_cyc_floor32(TIMERS + 1)) {
+		if (delta >= k_ticks_to_cyc_floor32(TIMERS_CNT + 1)) {
 			tm_wrap->late_callbacks++;
 		}
 	}
@@ -46,7 +46,7 @@ void tm_fn(struct k_timer *tm)
 		k_timer_stop(tm);
 		k_sem_give(&timers_sem);
 	} else {
-		int64_t next = tm_wrap->last_scheduled + TIMERS;
+		int64_t next = tm_wrap->last_scheduled + TIMERS_CNT;
 
 		tm_wrap->last_scheduled = next;
 		k_timer_start(tm, K_TIMEOUT_ABS_TICKS(next), K_NO_WAIT);
@@ -67,9 +67,9 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 	const uint32_t max_time = TEST_SECONDS*1000 + 1000;
 
 	TC_PRINT("Initializing %u Timers, Tick Rate %uHz, Expecting %u callbacks in %u ms\n",
-		 TIMERS, CONFIG_SYS_CLOCK_TICKS_PER_SEC, MAX_CALLBACKS, max_time);
+		 TIMERS_CNT, CONFIG_SYS_CLOCK_TICKS_PER_SEC, MAX_CALLBACKS, max_time);
 
-	for (int i = 0; i < TIMERS; i++) {
+	for (int i = 0; i < TIMERS_CNT; i++) {
 		k_timer_init(&timers[i].tm, tm_fn, NULL);
 		timers[i].max_delta = 0;
 	}
@@ -77,7 +77,7 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 	TC_PRINT("Starting Timers with Skews\n");
 	int64_t tick = k_uptime_ticks();
 
-	for (int i = 0; i < TIMERS; i++) {
+	for (int i = 0; i < TIMERS_CNT; i++) {
 		timers[i].last_scheduled = tick + i;
 		k_timer_start(&timers[i].tm, K_TIMEOUT_ABS_TICKS(timers[i].last_scheduled),
 			      K_NO_WAIT);
@@ -89,7 +89,7 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 	uint32_t start_time_ms = k_uptime_get();
 #endif
 
-	uint32_t remaining_timers = TIMERS;
+	uint32_t remaining_timers = TIMERS_CNT;
 
 	/* Do work in the meantime, proving there's enough time to do other things */
 	uint32_t busy_loops = 0;
@@ -127,8 +127,8 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 	uint32_t max_delta = 0;
 
 	TC_PRINT("    Perfect delta %u cycles or %u us\n",
-		 k_ticks_to_cyc_floor32(TIMERS), k_ticks_to_us_near32(TIMERS));
-	for (int i = 0; i < TIMERS; i++) {
+		 k_ticks_to_cyc_floor32(TIMERS_CNT), k_ticks_to_us_near32(TIMERS_CNT));
+	for (int i = 0; i < TIMERS_CNT; i++) {
 		TC_PRINT("Timer %d max delta %u cycles or %u us, "
 			 "%u late callbacks (%u.%u%%)\n",
 			 i, timers[i].max_delta,
@@ -148,16 +148,16 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 			 "}\n",
 			 i, timers[i].max_delta, k_cyc_to_us_near32(timers[i].max_delta),
 			 timers[i].late_callbacks,
-			 k_ticks_to_cyc_floor32(TIMERS), k_ticks_to_us_near32(TIMERS),
+			 k_ticks_to_cyc_floor32(TIMERS_CNT), k_ticks_to_us_near32(TIMERS_CNT),
 			 delta_time, busy_loops,
-			 TIMERS, MAX_CALLBACKS, max_time,
+			 TIMERS_CNT, MAX_CALLBACKS, max_time,
 			 CONFIG_SYS_CLOCK_TICKS_PER_SEC
 			 );
 		max_delta = timers[i].max_delta > max_delta ? timers[i].max_delta : max_delta;
 		k_timer_stop(&timers[i].tm);
 	}
 
-	if (max_delta >= k_ticks_to_cyc_floor32(TIMERS + 1)) {
+	if (max_delta >= k_ticks_to_cyc_floor32(TIMERS_CNT + 1)) {
 		TC_PRINT("!! Some ticks were missed.\n");
 		TC_PRINT("!! Consider making CONFIG_SYS_CLOCK_TICKS_PER_SEC smaller.\n");
 		/* should this fail the test? */
