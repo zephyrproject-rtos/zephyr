@@ -1,8 +1,8 @@
 /*
- * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "s32k3x4evb_t172_s32k344-pinctrl.dtsi"
@@ -18,76 +18,77 @@
 		sw1 = &user_button_1;
 		dma0 = &edma0;
 	};
-
+	
 	chosen {
 		zephyr,console = &lpuart6;
 		zephyr,canbus = &flexcan0;
+		// zephyr,uart=&lpuart9;
 	};
-
+	
 	leds {
 		compatible = "gpio-leds";
-
+		
 		user_led_red: user_led_red {
 			gpios = <&gpioa_h 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			label = "RGBLED0_RED";
 		};
-
+		
 		user_led_green: user_led_green {
 			gpios = <&gpioa_h 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			label = "RGBLED0_GREEN";
 		};
-
+		
 		user_led_blue: user_led_blue {
 			gpios = <&gpioa_h 15 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			label = "RGBLED0_BLUE";
 		};
 	};
-
+	
 	gpio_keys {
 		compatible = "gpio-keys";
-
+		
 		user_button_0: button_0 {
 			label = "USERSW0";
 			gpios = <&gpiob_h 10 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
-
+		
 		user_button_1: button_1 {
 			label = "USERSW1";
 			gpios = <&gpiob_h 3 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
+	
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpiod_l 1 0>,
-			   <ARDUINO_HEADER_R3_A1 0 &gpiod_l 0 0>,
-			   <ARDUINO_HEADER_R3_A2 0 &gpioa_l 13 0>,
-			   <ARDUINO_HEADER_R3_A3 0 &gpioe_l 1 0>,
-			   <ARDUINO_HEADER_R3_A4 0 &gpioe_l 0 0>,
-			   <ARDUINO_HEADER_R3_A5 0 &gpioa_l 14 0>,
-			   <ARDUINO_HEADER_R3_D0 0 &gpiob_l 12 0>,
-			   <ARDUINO_HEADER_R3_D1 0 &gpiob_l 13 0>,
-			   <ARDUINO_HEADER_R3_D2 0 &gpiod_l 2 0>,
-			   <ARDUINO_HEADER_R3_D3 0 &gpiod_l 3 0>,
-			   <ARDUINO_HEADER_R3_D4 0 &gpioa_l 2 0>,
-			   <ARDUINO_HEADER_R3_D5 0 &gpioa_l 3 0>,
-			   <ARDUINO_HEADER_R3_D6 0 &gpioa_l 1 0>,
-			   <ARDUINO_HEADER_R3_D7 0 &gpioa_l 0 0>,
-			   <ARDUINO_HEADER_R3_D8 0 &gpioc_l 11 0>,
-			   <ARDUINO_HEADER_R3_D9 0 &gpioc_l 10 0>,
-			   <ARDUINO_HEADER_R3_D10 0 &gpiob_h 1 0>,
-			   <ARDUINO_HEADER_R3_D11 0 &gpiob_h 0 0>,
-			   <ARDUINO_HEADER_R3_D12 0 &gpiob_l 15 0>,
-			   <ARDUINO_HEADER_R3_D13 0 &gpiob_l 14 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &gpioc_l 6 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &gpioc_l 7 0>;
+		<ARDUINO_HEADER_R3_A1 0 &gpiod_l 0 0>,
+		<ARDUINO_HEADER_R3_A2 0 &gpioa_l 13 0>,
+		<ARDUINO_HEADER_R3_A3 0 &gpioe_l 1 0>,
+		<ARDUINO_HEADER_R3_A4 0 &gpioe_l 0 0>,
+		<ARDUINO_HEADER_R3_A5 0 &gpioa_l 14 0>,
+		<ARDUINO_HEADER_R3_D0 0 &gpiob_l 12 0>,
+		<ARDUINO_HEADER_R3_D1 0 &gpiob_l 13 0>,
+		<ARDUINO_HEADER_R3_D2 0 &gpiod_l 2 0>,
+		<ARDUINO_HEADER_R3_D3 0 &gpiod_l 3 0>,
+		<ARDUINO_HEADER_R3_D4 0 &gpioa_l 2 0>,
+		<ARDUINO_HEADER_R3_D5 0 &gpioa_l 3 0>,
+		<ARDUINO_HEADER_R3_D6 0 &gpioa_l 1 0>,
+		<ARDUINO_HEADER_R3_D7 0 &gpioa_l 0 0>,
+		<ARDUINO_HEADER_R3_D8 0 &gpioc_l 11 0>,
+		<ARDUINO_HEADER_R3_D9 0 &gpioc_l 10 0>,
+		<ARDUINO_HEADER_R3_D10 0 &gpiob_h 1 0>,
+		<ARDUINO_HEADER_R3_D11 0 &gpiob_h 0 0>,
+		<ARDUINO_HEADER_R3_D12 0 &gpiob_l 15 0>,
+		<ARDUINO_HEADER_R3_D13 0 &gpiob_l 14 0>,
+		<ARDUINO_HEADER_R3_D14 0 &gpioc_l 6 0>,
+		<ARDUINO_HEADER_R3_D15 0 &gpioc_l 7 0>;
 	};
-
+	
 	can_phy0: can-phy0 {
 		compatible = "nxp,tja1443", "can-transceiver-gpio";
 		enable-gpios = <&gpioc_h 4 GPIO_ACTIVE_HIGH>;
@@ -199,7 +200,7 @@
 	pinctrl-0 = <&mdio0_default>;
 	pinctrl-names = "default";
 	status = "okay";
-
+	
 	phy: ethernet-phy@12 {
 		compatible = "nxp,tja1103";
 		status = "okay";

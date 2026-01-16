@@ -168,3 +168,10 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     platform_allow:
       - sam_e54_xpro
+  drivers.uart.async_api.s32k3x4evb_t172:
+    harness: ztest
+    platform_allow: s32k3x4evb_t172
+    extra_args: "DTC_OVERLAY_FILE=boards/s32k3x4evb_t172.overlay"
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_UART_ASYNC_API=y

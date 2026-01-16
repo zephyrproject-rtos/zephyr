@@ -1,0 +1,16 @@
+- connected: true
+  fixtures:
+    - gpio_loopback
+  platform: s32k3x4evb_t172
+  product: J-Link
+  runner: jlink
+  id: 000069652041
+  # id: A50285BI
+  serial: /dev/ttyUSB0
+  baud: 115200
+  connected: true
+  available: true
+  # platform: unknown
+  # product: FT232R USB UART
+  # runner: unknown
+  # serial: /dev/ttyUSB0
