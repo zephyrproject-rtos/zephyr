@@ -10,6 +10,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 
+#include <infineon_kconfig.h>
+
 #include "spi_context.h"
 
 #include <zephyr/drivers/pinctrl.h>
@@ -18,7 +20,7 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/kernel.h>
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 #include <zephyr/drivers/dma.h>
 #endif
 
@@ -50,12 +52,14 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #define IFX_CAT1_SPI_ASYMM_PDL_FUNC_AVAIL
 #endif
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 /* dummy buffers to be used by driver for DMA operations when app gives a NULL buffer
  * during an asymmetric transfer
  */
 static uint32_t tx_dummy_data;
 static uint32_t rx_dummy_data;
+
+#define IFX_CAT1_SPI_DMA_BURST_SIZE 256
 #endif
 
 typedef void (*ifx_cat1_spi_event_callback_t)(void *callback_arg, uint32_t event);
@@ -75,7 +79,7 @@ struct ifx_cat1_spi_config {
 	uint8_t cs_oversample_cnt;
 };
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 struct ifx_cat1_dma_stream {
 	const struct device *dev_dma;
 	uint32_t dma_channel;
@@ -96,11 +100,9 @@ struct ifx_cat1_spi_data {
 	size_t chunk_len;
 	bool dma_configured;
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 	struct ifx_cat1_dma_stream dma_rx;
 	struct ifx_cat1_dma_stream dma_tx;
-	en_peri0_trig_input_pdma0_tr_t spi_rx_trigger;
-	en_peri0_trig_output_pdma0_tr_t dma_rx_trigger;
 #endif
 
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
@@ -166,69 +168,85 @@ static void transfer_chunk(const struct device *dev)
 	if (chunk_len == 0) {
 		goto exit;
 	}
-
 	data->chunk_len = chunk_len;
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 	const struct ifx_cat1_spi_config *const config = dev->config;
-	CySCB_Type *spi_reg = config->reg_addr;
-
-	Cy_SCB_SetRxFifoLevel(spi_reg, chunk_len - 1);
-
 	register struct ifx_cat1_dma_stream *dma_tx = &data->dma_tx;
 	register struct ifx_cat1_dma_stream *dma_rx = &data->dma_rx;
 
-	if (data->dma_configured && spi_context_rx_buf_on(ctx) && spi_context_tx_buf_on(ctx)) {
-		/* Optimization to reduce config time if only buffer and size
-		 * are changing from the previous DMA configuration
-		 */
-		dma_reload(dma_tx->dev_dma, dma_tx->dma_channel, (uint32_t)ctx->tx_buf,
-			   dma_tx->blk_cfg.dest_address, chunk_len);
-		dma_reload(dma_rx->dev_dma, dma_rx->dma_channel, dma_rx->blk_cfg.source_address,
-			   (uint32_t)ctx->rx_buf, chunk_len);
-		return;
-	}
+	if (chunk_len <= Cy_SCB_GetFifoSize(config->reg_addr)) {
 
-	if (spi_context_rx_buf_on(ctx)) {
-		dma_rx->blk_cfg.dest_address = (uint32_t)ctx->rx_buf;
-		dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		cy_rslt_t result = ifx_cat1_spi_transfer_async(
+			dev, ctx->tx_buf, spi_context_tx_buf_on(ctx) ? chunk_len : 0, ctx->rx_buf,
+			spi_context_rx_buf_on(ctx) ? chunk_len : 0);
+		if (result == CY_RSLT_SUCCESS) {
+			return;
+		}
+		ret = -EIO;
 	} else {
-		dma_rx->blk_cfg.dest_address = (uint32_t)&rx_dummy_data;
-		dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	}
+		Cy_SCB_SetTxFifoLevel(config->reg_addr, 1U);
+		Cy_SCB_SetRxFifoLevel(config->reg_addr, 0U);
 
-	if (spi_context_tx_buf_on(ctx)) {
-		dma_tx->blk_cfg.source_address = (uint32_t)ctx->tx_buf;
-		dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		if (chunk_len > IFX_CAT1_SPI_DMA_BURST_SIZE) {
+			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
+				IFX_CAT1_SPI_DMA_BURST_SIZE;
+			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
+				IFX_CAT1_SPI_DMA_BURST_SIZE;
+			if (chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE != 0) {
+				LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
+					"length (%d)",
+					IFX_CAT1_SPI_DMA_BURST_SIZE);
+				goto exit;
+			}
+			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
+		} else {
+			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
+				0;
+			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length = 0;
+			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
+		}
 
-	} else {
-		tx_dummy_data = 0;
-		dma_tx->blk_cfg.source_address = (uint32_t)&tx_dummy_data;
-		dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	}
+		dma_rx->blk_cfg.block_size = dma_tx->blk_cfg.block_size = chunk_len;
 
-	dma_rx->blk_cfg.block_size = dma_tx->blk_cfg.block_size = chunk_len;
-	ret = dma_config(dma_rx->dev_dma, dma_rx->dma_channel, &dma_rx->dma_cfg);
-	if (ret < 0) {
-		goto exit;
-	}
+		if (spi_context_rx_buf_on(ctx)) {
+			dma_rx->blk_cfg.dest_address = (uint32_t)ctx->rx_buf;
+			dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		} else {
+			dma_rx->blk_cfg.dest_address = (uint32_t)&rx_dummy_data;
+			dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
 
-	ret = dma_config(dma_tx->dev_dma, dma_tx->dma_channel, &dma_tx->dma_cfg);
-	if (ret < 0) {
-		goto exit;
-	}
+		if (spi_context_tx_buf_on(ctx)) {
+			dma_tx->blk_cfg.source_address = (uint32_t)ctx->tx_buf;
+			dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA_TX_AUTO_TRIGGER
-	ret = dma_start(dma_tx->dev_dma, dma_tx->dma_channel);
-	if (ret == 0) {
-		return;
+		} else {
+			tx_dummy_data = 0;
+			dma_tx->blk_cfg.source_address = (uint32_t)&tx_dummy_data;
+			dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
+
+		ret = dma_config(dma_rx->dev_dma, dma_rx->dma_channel, &dma_rx->dma_cfg);
+		if (ret < 0) {
+			goto exit;
+		}
+
+		ret = dma_config(dma_tx->dev_dma, dma_tx->dma_channel, &dma_tx->dma_cfg);
+		if (ret < 0) {
+			goto exit;
+		}
+
+		ret = dma_start(dma_rx->dev_dma, dma_rx->dma_channel);
+		if (ret < 0) {
+			goto exit;
+		}
+
+		ret = dma_start(dma_tx->dev_dma, dma_tx->dma_channel);
+		if (ret == 0) {
+			return;
+		}
 	}
-#else
-	if (ret == 0) {
-		data->dma_configured = 1;
-		return;
-	}
-#endif
 #else
 	cy_rslt_t result = ifx_cat1_spi_transfer_async(
 		dev, ctx->tx_buf, spi_context_tx_buf_on(ctx) ? chunk_len : 0, ctx->rx_buf,
@@ -236,9 +254,14 @@ static void transfer_chunk(const struct device *dev)
 	if (result == CY_RSLT_SUCCESS) {
 		return;
 	}
-#endif
 	ret = -EIO;
+#endif
+
 exit:
+#ifdef CONFIG_SPI_INFINEON_DMA
+	dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
+	dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
+#endif
 	spi_context_cs_control(ctx, false);
 	spi_context_complete(ctx, dev, ret);
 }
@@ -264,7 +287,7 @@ static void spi_interrupt_callback(void *arg, uint32_t event)
 	}
 }
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
 	struct device *dev = arg;
@@ -394,6 +417,12 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	ctx->config = spi_cfg;
 
 	data->dfs_value = get_dfs_value(ctx);
+#ifdef CONFIG_SPI_INFINEON_DMA
+	data->dma_rx.dma_cfg.source_data_size = data->dfs_value;
+	data->dma_rx.dma_cfg.dest_data_size = data->dfs_value;
+	data->dma_tx.dma_cfg.source_data_size = data->dfs_value;
+	data->dma_tx.dma_cfg.dest_data_size = data->dfs_value;
+#endif
 
 	return 0;
 }
@@ -447,10 +476,11 @@ static int ifx_cat1_spi_release(const struct device *dev, const struct spi_confi
 {
 	spi_free(dev);
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
+#ifdef CONFIG_SPI_INFINEON_DMA
 	struct ifx_cat1_spi_data *const data = dev->data;
 
 	dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
+	dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
 #endif
 
 	return 0;
@@ -474,13 +504,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	data->resource.type = IFX_RSC_SCB;
 	data->resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
 
-#ifdef CONFIG_IFX_CAT1_SPI_DMA
-	/* spi_rx_trigger is initialized to PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0,
-	 * this is incremented by the resource.block_num to get the trigger for the selected SCB
-	 * from the trigmux enumeration (en_peri0_trig_input_pdma0_tr_t)
-	 */
-	data->spi_rx_trigger += data->resource.block_num;
-
+#ifdef CONFIG_SPI_INFINEON_DMA
 	if (data->dma_rx.dev_dma != NULL) {
 		if (!device_is_ready(data->dma_rx.dev_dma)) {
 			return -ENODEV;
@@ -491,6 +515,11 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
+				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
+				   false, TRIGGER_TYPE_LEVEL);
+#endif
 	}
 
 	if (data->dma_tx.dev_dma != NULL) {
@@ -503,9 +532,12 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
+				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
+				   false, TRIGGER_TYPE_EDGE);
+#endif
 	}
-
-	Cy_TrigMux_Connect(data->spi_rx_trigger, data->dma_rx_trigger, false, TRIGGER_TYPE_LEVEL);
 #endif
 
 	/* Configure dt provided device signals when available */
@@ -527,7 +559,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_IFX_CAT1_SPI_DMA)
+#if defined(CONFIG_SPI_INFINEON_DMA)
 #define SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_data_size, dst_data_size)                     \
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                           \
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                             \
@@ -546,15 +578,8 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		DT_INST_DMAS_HAS_NAME(index, dir),                                                 \
 		(SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_data_size, dst_data_size)),          \
 		(NULL))},
-
-#define SPI_DMA_TRIGGERS(index)                                                                    \
-	.spi_rx_trigger = (en_peri0_trig_input_pdma0_tr_t)(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0),   \
-	.dma_rx_trigger =                                                                          \
-		(en_peri0_trig_output_pdma0_tr_t)(PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 +             \
-						  DT_INST_DMAS_CELL_BY_NAME(index, rx, channel)),
 #else
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)
-#define SPI_DMA_TRIGGERS(index)
 #endif
 
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
@@ -631,7 +656,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
 			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
 			 .rxFifoIntEnableMask = DT_INST_PROP_OR(n, rx_fifo_int_enable_mask, 0),    \
-			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 0),       \
+			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 1),       \
 			 .txFifoIntEnableMask = DT_INST_PROP_OR(n, tx_fifo_int_enable_mask, 0),    \
 			 .masterSlaveIntEnableMask =                                               \
 				 DT_INST_PROP_OR(n, master_slave_int_enable_mask, 0)},             \
@@ -647,7 +672,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		SPI_CONTEXT_INIT_LOCK(spi_cat1_data_##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_cat1_data_##n, ctx),                                     \
 		SPI_DMA_CHANNEL(n, tx, MEMORY_TO_PERIPHERAL, 1, 1)                                 \
-			SPI_DMA_CHANNEL(n, rx, PERIPHERAL_TO_MEMORY, 1, 1) SPI_DMA_TRIGGERS(n)     \
+			SPI_DMA_CHANNEL(n, rx, PERIPHERAL_TO_MEMORY, 1, 1)                         \
 				SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)               \
 					SPI_PERI_CLOCK_INIT(n)                                     \
 						.spi_deep_sleep = {                                \
