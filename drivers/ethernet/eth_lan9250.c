@@ -91,7 +91,7 @@ static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32
 	}
 }
 
-static int lan9250_read_mac_reg(const struct device *dev, uint8_t address, uint32_t *value)
+static void lan9250_read_mac_reg(const struct device *dev, uint8_t address, uint32_t *value)
 {
 	uint32_t tmp;
 
@@ -107,10 +107,9 @@ static int lan9250_read_mac_reg(const struct device *dev, uint8_t address, uint3
 	lan9250_read_sys_reg(dev, LAN9250_MAC_CSR_DATA, &tmp);
 
 	*value = tmp;
-	return 0;
 }
 
-static int lan9250_write_mac_reg(const struct device *dev, uint8_t address, uint32_t data)
+static void lan9250_write_mac_reg(const struct device *dev, uint8_t address, uint32_t data)
 {
 	/* Wait for MAC to be ready and send writing register command and data */
 	lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
@@ -121,20 +120,17 @@ static int lan9250_write_mac_reg(const struct device *dev, uint8_t address, uint
 	/* Wait until writing MAC is done */
 	lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
 			   LAN9250_MAC_TIMEOUT);
-
-	return 0;
 }
 
 static int lan9250_wait_mac_ready(const struct device *dev, uint8_t address, uint32_t mask,
 				  uint32_t expected, uint32_t m_second)
 {
-	int ret;
 	uint32_t tmp;
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(m_second));
 
 	while (true) {
-		ret = lan9250_read_mac_reg(dev, address, &tmp);
-		if ((ret == 0) && ((tmp & mask) == expected)) {
+		lan9250_read_mac_reg(dev, address, &tmp);
+		if ((tmp & mask) == expected) {
 			return 0;
 		}
 		if (sys_timepoint_expired(end)) {
@@ -144,7 +140,7 @@ static int lan9250_wait_mac_ready(const struct device *dev, uint8_t address, uin
 	}
 }
 
-static int lan9250_read_phy_reg(const struct device *dev, uint8_t address, uint16_t *value)
+static void lan9250_read_phy_reg(const struct device *dev, uint8_t address, uint16_t *value)
 {
 	uint32_t tmp;
 
@@ -175,11 +171,9 @@ static int lan9250_read_phy_reg(const struct device *dev, uint8_t address, uint1
 	/* Read 32bit value from the indirect MAC registers */
 	lan9250_read_mac_reg(dev, LAN9250_HMAC_MII_DATA, &tmp);
 	*value = tmp;
-
-	return 0;
 }
 
-static int lan9250_write_phy_reg(const struct device *dev, uint8_t address, uint16_t data)
+static void lan9250_write_phy_reg(const struct device *dev, uint8_t address, uint16_t data)
 {
 	/* Wait PHY to be ready and send reading register command */
 	lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
@@ -206,11 +200,9 @@ static int lan9250_write_phy_reg(const struct device *dev, uint8_t address, uint
 	/* Wait PHY to be ready and send reading register command */
 	lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
 			       LAN9250_PHY_TIMEOUT);
-
-	return 0;
 }
 
-static int lan9250_set_macaddr(const struct device *dev)
+static void lan9250_set_macaddr(const struct device *dev)
 {
 	struct lan9250_runtime *ctx = dev->data;
 
@@ -219,11 +211,9 @@ static int lan9250_set_macaddr(const struct device *dev)
 			      (ctx->mac_address[2] << 16) | (ctx->mac_address[3] << 24));
 	lan9250_write_mac_reg(dev, LAN9250_HMAC_ADDRH,
 			      ctx->mac_address[4] | (ctx->mac_address[5] << 8));
-
-	return 0;
 }
 
-static int lan9250_hw_cfg_check(const struct device *dev)
+static void lan9250_hw_cfg_check(const struct device *dev)
 {
 	uint32_t tmp;
 
@@ -231,8 +221,6 @@ static int lan9250_hw_cfg_check(const struct device *dev)
 		lan9250_read_sys_reg(dev, LAN9250_HW_CFG, &tmp);
 		k_busy_wait(USEC_PER_MSEC * 1U);
 	} while ((tmp & LAN9250_HW_CFG_DEVICE_READY) == 0);
-
-	return 0;
 }
 
 static int lan9250_sw_reset(const struct device *dev)
