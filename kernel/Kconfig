@@ -885,6 +885,18 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+config DEFERRABLE_TIMEOUT
+	bool "Per-timeout threshold (slack) for timeouts"
+	help
+	  When enabled, the kernel allows timers to be configured with a
+	  threshold (slack). These timers are allowed to expire later than
+	  scheduled if the system is in a low-power state, preventing
+	  unnecessary wake-ups.
+
+	  The idle loop uses the earliest "effective" expiry (deadline + threshold)
+	  to determine maximum sleep duration. When disabled (default), all timers
+	  are treated as hard deadlines.
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365

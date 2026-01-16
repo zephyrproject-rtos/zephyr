@@ -350,6 +350,62 @@ k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
 	return K_TICKS(remaining);
 }
 
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+void z_timeout_threshold_set(struct _timeout *t, k_timeout_t threshold)
+{
+	K_SPINLOCK(&timeout_lock) {
+		t->threshold = threshold.ticks < 0 ? 0 : threshold.ticks;
+	}
+}
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
+
+int32_t z_impl_k_get_first_timeout_expiry(void)
+{
+	struct _timeout *t = NULL;
+	int32_t ret = SYS_CLOCK_MAX_WAIT;
+	int32_t min_ticks = SYS_CLOCK_MAX_WAIT;
+	k_ticks_t ticks = 0;
+
+	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
+
+	if (sys_dlist_is_empty(&timeout_list)) {
+		/* No pending timeouts */
+		k_spin_unlock(&timeout_lock, key);
+		return ret;
+	}
+
+	for (t = first(); t != NULL && min_ticks >= ticks; t = next(t)) {
+		int32_t sum_ticks = 0;
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+		int32_t th = t->threshold;
+#else
+		int32_t th = 0;
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
+
+		ticks += t->dticks;
+
+		sum_ticks = (th > INT_MAX - (int32_t)ticks) ?
+					 INT_MAX : (int32_t)ticks + th;
+
+		min_ticks = MIN(min_ticks, sum_ticks);
+	}
+
+	ret = ((int64_t)min_ticks >= (int64_t)INT_MAX) ? SYS_CLOCK_MAX_WAIT :
+		   MAX(0, min_ticks - elapsed());
+
+	k_spin_unlock(&timeout_lock, key);
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int32_t z_vrfy_k_get_first_timeout_expiry(void)
+{
+	return z_impl_k_get_first_timeout_expiry();
+}
+#include <zephyr/syscalls/k_get_first_timeout_expiry_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 #ifdef CONFIG_ZTEST
 void z_impl_sys_clock_tick_set(uint64_t tick)
 {

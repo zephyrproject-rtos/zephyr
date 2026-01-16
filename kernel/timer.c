@@ -311,6 +311,20 @@ static inline uint32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 #include <zephyr/syscalls/k_timer_status_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+void z_impl_k_timer_threshold_set(struct k_timer *timer, k_timeout_t threshold)
+{
+	z_timeout_threshold_set(&timer->timeout, threshold);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_timer_threshold_set(struct k_timer *timer, k_timeout_t threshold)
+{
+	K_OOPS(K_SYSCALL_OBJ(timer, K_OBJ_TIMER));
+	z_impl_k_timer_threshold_set(timer, threshold);
+}
+#include <zephyr/syscalls/k_timer_threshold_set_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!arch_is_in_isr(), "");

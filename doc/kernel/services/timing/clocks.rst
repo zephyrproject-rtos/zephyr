@@ -140,6 +140,32 @@ indicates a timeout that will expire after the system uptime reaches
 the specified value.  There are likewise nanosecond, microsecond,
 cycles and ticks variants of this API.
 
+Deferrable Timeouts
+-------------------
+
+The Zephyr kernel relies on timeouts to support several core features,
+such as timers, delayed work items, and thread sleeping. The system power
+management (PM) subsystem uses these kernel timeouts to determine the
+time until the next scheduled event, which in turn defines how long the CPU
+can remain idle. By default, all timeouts are interpreted as hard deadlines.
+This means the system schedules a wakeup based on the earliest timeout—even
+if that timeout is not time-critical which can reduce the amount of time the
+system spends in low-power states. To improve low-power residency, Zephyr
+supports two categories of timeouts:
+
+* **Non-deferrable timeouts** (default): these cannot be delayed and must
+  expire at their scheduled time.
+* **Deferrable timeouts**: these may expire later than scheduled when the
+  system is in sleep, up to a specific threshold.
+
+When :kconfig:option:`CONFIG_DEFERRABLE_TIMEOUT` is enabled, the kernel
+timeout structure (``struct _timeout``) includes a ``threshold`` field. This
+field defines the maximum acceptable delay (in ticks) for the timeout.
+The system idle loop calculates the sleep duration based on the earliest
+"effective" expiry (scheduled time + threshold). This allows the system to
+ignore the strict deadline of a deferrable timer and remain in sleep longer,
+waking up only when the threshold limit is reached or a hard deadline occurs.
+
 Timing Internals
 ================
 

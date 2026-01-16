@@ -1827,6 +1827,7 @@ struct k_timer_observer {
 		.node = {},\
 		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
+		IF_ENABLED(CONFIG_DEFERRABLE_TIMEOUT, (.threshold = 0,)) \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
@@ -2100,6 +2101,39 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 {
 	return timer->user_data;
 }
+
+/**
+ * @brief Set the threshold for a timer.
+ *
+ * This routine configures a "slack" or threshold value for the specified timer.
+ * When the system is in a low-power or idle state, the kernel may delay the
+ * expiration of this timer by up to threshold ticks beyond its scheduled
+ * deadline.
+ *
+ * @kconfig_dep{CONFIG_DEFERRABLE_TIMEOUT}
+ *
+ * @note The timer must be configured with a threshold before it is started
+ *       for the setting to take effect on the idle loop calculation.
+ *
+ * @param timer Pointer to the timer object.
+ * @param threshold The maximum allowable delay for the timer expiration.
+ */
+__syscall void k_timer_threshold_set(struct k_timer *timer, k_timeout_t threshold);
+
+/**
+ * @brief Retrieve the first timeout expiry.
+ *
+ * This routine iterates through the active timeout list to calculate the
+ * earliest point in time the system must wake up. It considers the
+ * absolute deadline of every timer plus its allowed threshold.
+ *
+ * - For standard timers (threshold = 0), the wake-up is the absolute deadline.
+ * - For deferrable timers (threshold > 0), the wake-up is (deadline + threshold).
+ *
+ * @return The remaining ticks until the earliest calculated wake-up time,
+ *         or SYS_CLOCK_MAX_WAIT if no timeouts are active.
+ */
+__syscall int32_t k_get_first_timeout_expiry(void);
 
 /** @} */
 
