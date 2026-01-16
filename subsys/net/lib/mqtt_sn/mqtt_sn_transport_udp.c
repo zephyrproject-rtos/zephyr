@@ -251,7 +251,8 @@ static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size
 	errno_backup = errno;
 	LOG_DBG("recv %zd", ret);
 	if (ret < 0) {
-		return -errno_backup;
+		errno = errno_backup;
+		return -1;
 	}
 	*addrlen = addrlen_local;
 
