@@ -499,8 +499,8 @@ static inline const struct pm_state_info *pm_state_get(uint8_t cpu,
 	return NULL;
 }
 
-static inline bool pm_state_in_constraints(struct pm_state_constraints *constraints,
-					   struct pm_state_constraint match)
+static inline bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
+					   const struct pm_state_constraint match)
 {
 	ARG_UNUSED(constraints);
 	ARG_UNUSED(match);
