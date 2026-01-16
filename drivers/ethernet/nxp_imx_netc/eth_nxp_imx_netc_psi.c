@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth_psi);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/pm/device.h>
 #include <ethernet/eth_stats.h>
 
 #include "../eth.h"
@@ -102,6 +103,37 @@ static void netc_eth_iface_init(struct net_if *iface)
 	phy_link_callback_set(cfg->phy_dev, &netc_eth_phylink_callback, (void *)dev);
 }
 
+static int eth_nxp_imx_netc_psi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+	struct netc_eth_data *data = dev->data;
+
+	LOG_INF("imx netc psi pm action: %d", action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = netc_eth_init_common(dev);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		ret = EP_Deinit(&data->handle);
+		if (ret) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int netc_eth_init(const struct device *dev)
 {
 	const struct netc_eth_config *cfg = dev->config;
@@ -120,7 +152,7 @@ static int netc_eth_init(const struct device *dev)
 	}
 
 init_common:
-	return netc_eth_init_common(dev);
+	return pm_device_driver_init(dev, eth_nxp_imx_netc_psi_pm_action);
 }
 
 static const struct device *netc_eth_get_phy(const struct device *dev)
@@ -218,8 +250,11 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
 		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,                                          \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, ptp_clock)),))      \
-	};                                                                                         \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \
+	};											   \
+												   \
+	PM_DEVICE_DT_INST_DEFINE(n, eth_nxp_imx_netc_psi_pm_action);				   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, PM_DEVICE_DT_INST_GET(n),		   \
+				      &netc_eth##n##_data,					   \
 				      &netc_eth##n##_config, CONFIG_ETH_INIT_PRIORITY,             \
 				      &netc_eth_api, NET_ETH_MTU);
 DT_INST_FOREACH_STATUS_OKAY(NETC_PSI_INSTANCE_DEFINE)
