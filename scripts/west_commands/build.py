@@ -347,7 +347,7 @@ class Build(Forceable):
                 self.die(f"Test item {test_item} not found in {yf}")
             item = tests.get(test_item)
 
-            sysbuild = False
+            sysbuild = None
             extra_dtc_overlay_files = []
             extra_overlay_confs = []
             extra_conf_files = []
@@ -413,7 +413,8 @@ class Build(Forceable):
                     else:
                         self.args.cmake_opts = args
 
-            self.args.sysbuild = sysbuild
+            if sysbuild is not None:
+                self.args.sysbuild = sysbuild
 
         if found_test_metadata:
             args = []
