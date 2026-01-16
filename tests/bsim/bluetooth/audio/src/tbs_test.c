@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -148,7 +149,7 @@ static int test_set_bearer_technology(uint8_t bearer_index)
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_set_bearer_technology(bearer_index, BT_TBS_TECHNOLOGY_GSM);
+	err = bt_tbs_set_bearer_technology(bearer_index, BT_BEARER_TECH_GSM);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer technology: %d\n", err);
 		return err;
@@ -332,7 +333,7 @@ static void init(void)
 		.uri_schemes_supported = "skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 	};
 	int err;
@@ -380,7 +381,7 @@ static void init(void)
 			.gtbs = false,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
-			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
+			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
 			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 		};
 
