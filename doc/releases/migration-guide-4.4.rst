@@ -422,6 +422,27 @@ GPIO
   The Devicetree property ``port-is-output`` has been removed.
   The reg-names are now taken directly from LiteX. (:github:`99329`)
 
+* The ``irqs`` property of :dtcompatible:`renesas,rz-gpio` has been reworked
+  to map a pin to an interrupt phandle explicitly instead of an interrupt index (:github:`101256`).
+
+  .. code-block:: devicetree
+
+     /* Old (Zephyr ≤ 4.3) */
+     &gpio16 {
+         /* Map port16 pin3 to tint7 */
+         irqs = <3 7>;
+     };
+
+     /* New (Zephyr ≥ 4.4) */
+     &tint7 {
+         status = "okay";
+     };
+
+     &gpio16 {
+         /* Map port16 pin3 to tint7 */
+         irqs = <&tint7 3>;
+     };
+
 Infineon
 ========
 
