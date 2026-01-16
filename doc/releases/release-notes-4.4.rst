@@ -290,6 +290,7 @@ Deprecated APIs and options
       deprecated.
       Applications should use :kconfig:option:`CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN`
       option instead.
+    * :c:member:`bt_iso_chan_ops.send_failed`
 
   * HCI
 
