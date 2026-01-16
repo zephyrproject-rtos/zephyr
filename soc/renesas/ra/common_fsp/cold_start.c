@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,9 +21,7 @@ void cold_start_handler(void)
 	/* Detect power on reset */
 	rstsr2_state_at_boot = R_SYSTEM->RSTSR2;
 	if (R_SYSTEM->RSTSR2_b.CWSF == 0) {
-#if defined(CONFIG_RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE)
 		battery_backup_init();
-#endif /* CONFIG_RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE */
 		R_SYSTEM->RSTSR2_b.CWSF = 1;
 	}
 }
