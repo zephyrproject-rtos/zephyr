@@ -12716,16 +12716,16 @@
     <profile>
       <name>CORE</name>
       <item>
-        <table>2b</table>
-        <row>61</row>
-      </item>
-      <item>
         <table>12</table>
         <row>3</row>
       </item>
       <item>
         <table>2a</table>
         <row>53</row>
+      </item>
+      <item>
+        <table>2a</table>
+        <row>61</row>
       </item>
       <item>
         <table>40</table>
@@ -12736,16 +12736,8 @@
         <row>6</row>
       </item>
       <item>
-        <table>2</table>
-        <row>60</row>
-      </item>
-      <item>
         <table>20a</table>
         <row>1</row>
-      </item>
-      <item>
-        <table>2b</table>
-        <row>60</row>
       </item>
       <item>
         <table>11</table>
@@ -12768,6 +12760,10 @@
         <row>2</row>
       </item>
       <item>
+        <table>2</table>
+        <row>62</row>
+      </item>
+      <item>
         <table>41</table>
         <row>2</row>
       </item>
@@ -12778,6 +12774,10 @@
       <item>
         <table>2</table>
         <row>1</row>
+      </item>
+      <item>
+        <table>2a</table>
+        <row>62</row>
       </item>
       <item>
         <table>20</table>
@@ -12812,7 +12812,7 @@
       <name>UHCI</name>
       <item>
         <table>0</table>
-        <row>60</row>
+        <row>62</row>
       </item>
     </profile>
     <profile>
