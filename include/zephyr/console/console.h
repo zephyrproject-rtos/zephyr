@@ -110,6 +110,28 @@ void console_getline_init(void);
  */
 char *console_getline(void);
 
+/**
+ * @brief Set receive timeout for console operations.
+ *
+ * Set timeout for console_getchar() and console_read() operations.
+ * Default timeout after initialization is K_FOREVER.
+ *
+ * @param timeout Maximum time to wait when reading.
+ */
+void console_set_rx_timeout(k_timeout_t timeout);
+
+
+/**
+ * @brief Set transmit timeout for console operations.
+ *
+ * Set timeout for console_putchar() and console_write() operations, for
+ * a case when output buffer is full.
+ * Default timeout after initialization is K_FOREVER.
+ *
+ * @param timeout Maximum time to wait when writing.
+ */
+void console_set_tx_timeout(k_timeout_t timeout);
+
 #ifdef __cplusplus
 }
 #endif
