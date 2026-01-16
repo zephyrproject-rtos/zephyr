@@ -5,14 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# The mgmt_mcumgr is interface library for MCUmgr services.
-zephyr_interface_library_named(mgmt_mcumgr)
-
 add_subdirectory(mgmt)
 add_subdirectory(smp)
 add_subdirectory(util)
 add_subdirectory(grp)
 add_subdirectory(transport)
 add_subdirectory_ifdef(CONFIG_SMP_CLIENT    smp_client)
-
-zephyr_library_link_libraries(mgmt_mcumgr)
