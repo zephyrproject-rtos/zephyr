@@ -13,7 +13,7 @@
 #include "hexdump.h"
 
 static const struct device *esp = DEVICE_DT_GET(DT_INST(0, espressif_esp_tool));
-static uint8_t buf[512];
+static uint8_t buf[128];
 
 int main(void)
 {
@@ -29,7 +29,8 @@ int main(void)
 	}
 	printk("ESP device is ready (ret=%d).\n", ret);
 
-	ret = esp_tool_connect(esp, true);
+#if 0
+	ret = esp_tool_connect_stub(esp, 0);
 	if (ret) {
 		printk("Could not open esp device\n");
 		return -1;
@@ -52,7 +53,7 @@ int main(void)
 
 	ret = esp_tool_flash_detect_size(esp, &flash_size);
 	if (ret) {
-		printk("Could not detected flash size");
+		printk("Could not detected flash size\n");
 		return -1;
 	}
 	printk("Detected flash size is %d MB (%d Bytes)\n",
@@ -75,7 +76,7 @@ int main(void)
 	if (buf[0] == 0xe9) {
 		printk("Boot vector installed\n");
 	} else {
-		printk("Target chip not bootable!");
+		printk("Target chip not bootable!\n");
 	}
 
 	printk("Resetting target...");
@@ -86,6 +87,7 @@ int main(void)
 		return -1;
 	}
 	printk("OK\n\n");
+#endif
 
 	return 0;
 }
