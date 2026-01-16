@@ -28,6 +28,9 @@ extern "C" {
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+	to->flags = 0;
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
 }
 
 /* Adds the timeout to the queue.
@@ -94,7 +97,18 @@ static inline k_ticks_t z_add_thread_timeout(struct k_thread *thread, k_timeout_
 	return 0;
 }
 
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+#define z_impl_k_get_next_non_deferrable_timeout_expiry ((int32_t) K_TICKS_FOREVER)
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
+
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
+
+#ifndef CONFIG_DEFERRABLE_TIMEOUT
+#define z_timeout_flags_set(t, flags) (void)0
+#define z_timeout_flags_get(t) 0
+#define z_timeout_flags_clear(t, flags) (void)0
+#define z_impl_k_get_next_non_deferrable_timeout_expiry ((int32_t) K_TICKS_FOREVER)
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
 
 #ifdef __cplusplus
 }

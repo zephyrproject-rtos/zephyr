@@ -311,6 +311,48 @@ static inline uint32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 #include <zephyr/syscalls/k_timer_status_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+void z_impl_k_timer_timeout_flags_set(struct k_timer *timer, uint8_t flags)
+{
+	z_timeout_flags_set(&timer->timeout, flags);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_timer_timeout_flags_set(struct k_timer *timer, uint8_t flags)
+{
+	K_OOPS(K_SYSCALL_OBJ(timer, K_OBJ_TIMER));
+	z_impl_k_timer_timeout_flags_set(timer, flags);
+}
+#include <zephyr/syscalls/k_timer_timeout_flags_set_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+uint8_t z_impl_k_timer_timeout_flags_get(struct k_timer *timer)
+{
+	return z_timeout_flags_get(&timer->timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline uint8_t z_vrfy_k_timer_timeout_flags_get(struct k_timer *timer)
+{
+	K_OOPS(K_SYSCALL_OBJ(timer, K_OBJ_TIMER));
+	return z_impl_k_timer_timeout_flags_get(timer);
+}
+#include <zephyr/syscalls/k_timer_timeout_flags_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+void z_impl_k_timer_timeout_flags_clear(struct k_timer *timer, uint8_t flags)
+{
+	z_timeout_flags_clear(&timer->timeout, flags);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_timer_timeout_flags_clear(struct k_timer *timer, uint8_t flags)
+{
+	K_OOPS(K_SYSCALL_OBJ(timer, K_OBJ_TIMER));
+	z_impl_k_timer_timeout_flags_clear(timer, flags);
+}
+#include <zephyr/syscalls/k_timer_timeout_flags_clear_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!arch_is_in_isr(), "");

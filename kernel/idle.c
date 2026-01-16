@@ -19,6 +19,10 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+int32_t timeout_type = K_TIMEOUT_NON_DEFERRABLE;
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
+
 void idle(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);
@@ -51,7 +55,16 @@ void idle(void *unused1, void *unused2, void *unused3)
 		(void) arch_irq_lock();
 
 #ifdef CONFIG_PM
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+		/* Use only the next non-deferrable timeout when deciding
+		 * how long the system may sleep. Deferrable timeouts can be
+		 * postponed in sleep, reducing unnecessary wakeups and
+		 * improving residency.
+		 */
+		_kernel.idle = k_get_next_non_deferrable_timeout_expiry(timeout_type);
+#else
 		_kernel.idle = z_get_next_timeout_expiry();
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
 
 		/*
 		 * Call the suspend hook function of the soc interface
