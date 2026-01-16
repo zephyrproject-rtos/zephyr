@@ -1,5 +1,5 @@
 identifier: adi_eval_adin2111d1z/max32690/m4
-name: ADI EVAL-ADIN2111D1Z evaulation board
+name: ADI EVAL-ADIN2111D1Z evaluation board
 type: mcu
 arch: arm
 vendor: adi
