@@ -163,7 +163,7 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @returns the current usage counter.
+ * @retval The current usage counter.
  * @retval -ENOTSUP If the device is not using runtime PM.
  * @retval -ENOSYS If the runtime PM is not enabled at all.
  */
