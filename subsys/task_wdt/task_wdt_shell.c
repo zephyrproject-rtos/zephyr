@@ -100,10 +100,18 @@ static int cmd_del(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_task_wdt,
-	SHELL_CMD(init, NULL, "Initialize task watchdog", cmd_init),
-	SHELL_CMD(add, NULL, "Install new timeout (time in seconds)", cmd_add),
-	SHELL_CMD(feed, NULL, "Feed specified watchdog channel", cmd_feed),
-	SHELL_CMD(del, NULL, "Delete task watchdog channel", cmd_del),
+	SHELL_CMD(init, NULL,
+		  SHELL_HELP("Initialize task watchdog", NULL),
+		  cmd_init),
+	SHELL_CMD(add, NULL,
+		  SHELL_HELP("Install new timeout", "<period_in_seconds>"),
+		  cmd_add),
+	SHELL_CMD(feed, NULL,
+		  SHELL_HELP("Feed specified watchdog channel", "<channel>"),
+		  cmd_feed),
+	SHELL_CMD(del, NULL,
+		  SHELL_HELP("Delete task watchdog channel", "<channel>"),
+		  cmd_del),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(task_wdt, &sub_task_wdt, "Task watchdog commands", NULL);
