@@ -25,4 +25,41 @@ config UHC_DWC2_THREAD_PRIORITY
 	help
 	  DWC2 driver thread priority.
 
+config UHC_DWC2_DEBOUNCE_DELAY_MS
+	int "Debounce delay in ms"
+	depends on UHC_DWC2
+	default 250
+	help
+	  On connection of a USB device, the USB 2.0 specification requires
+	  a "debounce interval with a minimum duration of 100ms" to allow the connection to stabilize
+	  (see USB 2.0 chapter 7.1.7.3 for more details).
+	  During the debounce interval, no new connection/disconnection events are registered.
+
+	  The default value is set to 250 ms to be safe.
+
+config UHC_DWC2_RESET_HOLD_MS
+	int "Reset hold in ms"
+	depends on UHC_DWC2
+	default 30
+	help
+	  The reset signaling can be generated on any Hub or Host Controller port by request from
+	  the USB System Software. The USB 2.0 specification requires that "the reset signaling must
+	  be driven for a minimum of 10ms" (see USB 2.0 chapter 7.1.7.5 for more details).
+	  After the reset, the hub port will transition to the Enabled state (refer to Section 11.5).
+
+	  The default value is set to 30 ms to be safe.
+
+config UHC_DWC2_RESET_RECOVERY_MS
+	int "Reset recovery delay in ms"
+	depends on UHC_DWC2
+	default 30
+	help
+	  After a port stops driving the reset signal, the USB 2.0 specification requires that
+	  the "USB System Software guarantees a minimum of 10 ms for reset recovery" before the
+	  attached device is expected to respond to data transfers (see USB 2.0 chapter 7.1.7.3 for
+	  more details).
+	  The device may ignore any data transfers during the recovery interval.
+
+	  The default value is set to 30 ms to be safe.
+
 endif # UHC_DWC2
