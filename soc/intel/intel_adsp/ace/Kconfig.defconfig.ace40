@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-if SOC_INTEL_ACE40
+if SOC_ACE40
 
 config MP_MAX_NUM_CPUS
 	default 4 if BOARD_INTEL_ADSP_ACE40_NVL

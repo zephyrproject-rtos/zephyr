@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-if SOC_INTEL_ACE30
+if SOC_ACE30
 
 config MP_MAX_NUM_CPUS
 	default 5 if BOARD_INTEL_ADSP_ACE30_PTL || BOARD_INTEL_ADSP_ACE30_PTL_SIM
