@@ -150,5 +150,31 @@ dmic_dev: &pdm20 {
 	status = "okay";
 };
 
+&hfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <16000>;
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+};
+
+&nfct {
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
 /* Include default memory partition configuration file */
 #include <nordic/nrf54l15_partition.dtsi>
