@@ -91,7 +91,7 @@ int pm_device_runtime_disable(const struct device *dev);
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
- * @retval -EWOUDBLOCK If call would block but it is not allowed (e.g. in ISR).
+ * @retval -EWOULDBLOCK If call would block but it is not allowed (e.g. in ISR).
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
