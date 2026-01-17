@@ -301,7 +301,7 @@ int phy_dm8806_port_init(const struct device *dev)
 		return res;
 	}
 	/* Hardware reset of the PHY DM8806 */
-	gpio_pin_set_dt(&cfg->gpio_rst, true);
+	res = gpio_pin_set_dt(&cfg->gpio_rst, true);
 	if (res < 0) {
 		LOG_ERR("Failed to assert gpio reset pin of the PHY DM886 to physical 0");
 		return res;
@@ -392,7 +392,7 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	/* Configure GPIO interrupt to be triggered on pin state change to logical
 	 * level 1 asserted by Davicom PHY DM8806 interrupt Pin
 	 */
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+	res = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (res < 0) {
 		LOG_ERR("Failed to configure PHY DM886 gpio interrupt pin trigger for "
 			"active edge");
@@ -665,7 +665,7 @@ static int phy_dm8806_link_cb_set(const struct device *dev, phy_callback_t cb, v
 	}
 	data->link_speed_chenge_cb = cb;
 	data->cb_data = user_data;
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+	res = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (res < 0) {
 		LOG_WRN("Failed to enable DM8806 interrupt: %i", res);
 		return res;
