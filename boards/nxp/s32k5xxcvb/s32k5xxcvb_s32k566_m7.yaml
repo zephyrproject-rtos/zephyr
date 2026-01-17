@@ -16,4 +16,5 @@ supported:
   - pwm
   - counter
   - i2c
+  - flash
 vendor: nxp

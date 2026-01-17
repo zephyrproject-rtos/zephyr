@@ -190,6 +190,15 @@ if(CONFIG_FLASH_NXP_S32_QSPI_NOR OR CONFIG_FLASH_NXP_S32_QSPI_HYPERFLASH)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/memc)
 endif()
 
+zephyr_library_sources_ifdef(
+  CONFIG_FLASH_NXP_S32_XSPI_HYPERRAM
+  flash_nxp_s32_xspi_hyperram.c
+)
+zephyr_library_include_directories_ifdef(
+  CONFIG_FLASH_NXP_S32_XSPI_HYPERRAM
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX_C40 flash_mcux_c40.c)
 
 if(CONFIG_SOC_FLASH_MCUX_C40 AND CONFIG_CODE_DATA_RELOCATION)
