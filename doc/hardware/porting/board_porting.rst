@@ -176,6 +176,13 @@ For ``thingy52`` the board target ``thingy52/nrf52832`` can be read as:
 - ``nrf52832``: The board qualifiers, in this case identical to the SoC, which
   is a Nordic nRF52832.
 
+Besides SoCs, variants can also be used to describe boards with varying peripherals.
+A board target ``esp32s3_luatos_core/esp32s3/procpu/usb`` can be read as:
+
+- ``esp32s3_luatos_core``: board name.
+- ``esp32s3``: The SoC.
+- ``procpu``: The core to use.
+- ``usb``: A board variant, in this case including USB serial support.
 
 Make sure your SoC is supported
 *******************************
