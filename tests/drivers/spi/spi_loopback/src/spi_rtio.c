@@ -262,6 +262,11 @@ static int spi_rx_half_end(struct rtio_iodev *spi_iodev)
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_SPI_MAX32_DMA)) {
+		LOG_INF("Skip half end");
+		return 0;
+	}
+
 	sqe = rtio_sqe_acquire(&r);
 	rtio_sqe_prep_write(sqe, spi_iodev, RTIO_PRIO_NORM,
 				 buffer_tx, 8, NULL);
@@ -318,6 +323,11 @@ static int spi_rx_every_4(struct rtio_iodev *spi_iodev)
 	}
 
 	if (IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+		LOG_INF("Skip every 4");
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_SPI_MAX32_DMA)) {
 		LOG_INF("Skip every 4");
 		return 0;
 	}
