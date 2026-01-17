@@ -16,20 +16,99 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 
-#include "ssd1306_regs.h"
+/*
+ * Commands
+ */
+#define SSD1306_SET_LOWER_COL_ADDRESS		0x00 /* No arguments, command is argument */
+#define SSD1306_SET_LOWER_COL_ADDRESS_END	0x0f /* Command as argument end */
+#define SSD1306_SET_HIGHER_COL_ADDRESS		0x10 /* No arguments, command is argument */
+#define SSD1306_SET_HIGHER_COL_ADDRESS_END	0x1f /* Command as argument end */
+#define SSD1306_SET_MEM_ADDRESSING_MODE		0x20 /* 1 byte args: A[1:0] Addressing mode */
+#define SSD1306_SET_COLUMN_ADDRESS		0x21 /* 2 bytes args: column address, start end */
+#define SSD1306_SET_PAGE_ADDRESS		0x22 /* 2 bytes args: page address, start end */
+#define SSD1306_SET_PUMP_VOLTAGE_64		0x30 /* No arguments, command is argument */
+#define SSD1306_SET_PUMP_VOLTAGE_74		0x31 /* No arguments, command is argument */
+#define SSD1306_SET_PUMP_VOLTAGE_80		0x32 /* No arguments, command is argument */
+#define SSD1306_SET_PUMP_VOLTAGE_90		0x33 /* No arguments, command is argument */
+#define SSD1306_SET_START_LINE			0x40 /* No arguments, command is argument */
+#define SSD1306_SET_START_LINE_END		0x7f /* Command as argument end */
+#define SSD1306_SET_CONTRAST_CTRL		0x81 /* 1 byte args: Constrast */
+#define SH1106_SET_DCDC_DISABLED		0x8a /* No arguments, command is argument */
+#define SH1106_SET_DCDC_ENABLED			0x8b /* No arguments, command is argument */
+#define SSD1306_SET_CHARGE_PUMP			0x8d /* 1 byte args: A[0]A[7] Volts A[2] Enable */
+#define SSD1306_SET_SEGMENT_MAP_NORMAL		0xa0 /* No arguments */
+#define SSD1306_SET_SEGMENT_MAP_REMAPED		0xa1 /* No arguments */
+#define SSD1306_SET_ENTIRE_DISPLAY_OFF		0xa4 /* No arguments */
+#define SSD1306_SET_ENTIRE_DISPLAY_ON		0xa5 /* No arguments */
+#define SSD1306_SET_NORMAL_DISPLAY		0xa6 /* No arguments */
+#define SSD1306_SET_REVERSE_DISPLAY		0xa7 /* No arguments */
+#define SSD1306_SET_MULTIPLEX_RATIO		0xa8 /* 1 byte args: A[5:0] Multiplex Ratio */
+#define SSD1306_SET_IREF_MODE			0xad /* 1 byte args: A[5:4] Iref configuration */
+#define SH1106_SET_DCDC_MODE			0xad /* No arguments */
+#define SSD1306_SET_DISPLAY_OFF			0xae /* No arguments */
+#define SSD1306_SET_DISPLAY_ON			0xaf /* No arguments */
+#define SSD1306_SET_PAGE_START_ADDRESS		0xb0 /* No arguments, command is argument */
+#define SSD1306_SET_PAGE_START_ADDRESS_END	0xb7 /* Command as argument end */
+#define SSD1306_SET_COM_OUTPUT_SCAN_NORMAL	0xc0 /* No arguments */
+#define SSD1306_SET_COM_OUTPUT_SCAN_FLIPPED	0xc8 /* No arguments */
+#define SSD1306_SET_DISPLAY_OFFSET		0xd3 /* 1 byte args: A[5:0] COM shift */
+#define SSD1306_SET_CLOCK_DIV_RATIO		0xd5 /* 1 byte args: A[3:0] dratio A[7:4] oscfreq */
+#define SSD1306_SET_CHARGE_PERIOD		0xd9 /* 1 byte args: A[3:0] Phase1 A[7:4] Phase2 */
+#define SSD1306_SET_PADS_HW_CONFIG		0xda /* 1 byte args: A[5:4] COM configuration */
+#define SSD1306_SET_VCOM_DESELECT_LEVEL		0xdb /* 1 byte args: A[5:4] Voltage */
 
-#define SSD1306_CLOCK_DIV_RATIO		0x0
-#define SSD1306_CLOCK_FREQUENCY		0x8
-#define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
-#define SSD1306_PANEL_PUMP_VOLTAGE	SSD1306_SET_PUMP_VOLTAGE_90
+/*
+ * Configuration Constants
+ */
+#define SSD1306_CLOCK_DIV_RATIO			0x0
+#define SSD1306_CLOCK_FREQUENCY			0x8
+#define SSD1306_PANEL_VCOM_DESEL_LEVEL		0x20
+#define SSD1306_PANEL_PUMP_VOLTAGE		SSD1306_SET_PUMP_VOLTAGE_90
+#define SSD1306_MEM_ADDRESSING_HORIZONTAL	0x00
+#define SSD1306_MEM_ADDRESSING_VERTICAL		0x01
+#define SSD1306_MEM_ADDRESSING_PAGE		0x02
+#define SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309	0x34
+#define SSD1306_PADS_HW_SEQUENTIAL		0x02
+#define SSD1306_PADS_HW_ALTERNATIVE		0x12
+#define SSD1306_PADS_HW_COM_FLIP_SEQUENTIAL	0x22
+#define SSD1306_PADS_HW_COM_FLIP_ALTERNATIVE	0x32
+#define SSD1306_IREF_MODE_INTERNAL_30UA		0x30
+#define SSD1306_IREF_MODE_INTERNAL_19UA		0x10
+#define SSD1306_IREF_MODE_EXTERNAL		0x00
+#define SSD1306_CHARGE_PUMP_DISABLED		0x10
+#define SSD1306_CHARGE_PUMP_ENABLED		0x14
 
-#define SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309  0x34
+/*
+ * Code Constants
+ */
+/* All following bytes will contain commands */
+#define SSD1306_I2C_ALL_BYTES_CMD		0x00
+/* All following bytes will contain data */
+#define SSD1306_I2C_ALL_BYTES_DATA		0x40
+/* The next byte will contain a command */
+#define SSD1306_I2C_BYTE_CMD			0x80
+/* The next byte will contain data */
+#define SSD1306_I2C_BYTE_DATA			0xc0
+
+#define SSD1306_RESET_DELAY			1
+#define SSD1306_SUPPLY_DELAY			20
 
 #ifndef SSD1306_ADDRESSING_MODE
-#define SSD1306_ADDRESSING_MODE		(SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
+#define SSD1306_ADDRESSING_MODE		(SSD1306_MEM_ADDRESSING_HORIZONTAL)
 #endif
 
 #define SSD1306_PPB_SHIFT	3
+
+/*
+ * Fields
+ */
+#define SSD1306_READ_STATUS_MASK		0xc0
+#define SSD1306_READ_STATUS_BUSY		0x80
+#define SSD1306_READ_STATUS_ON			0x40
+#define SSD1306_SET_LOWER_COL_ADDRESS_MASK	0x0f
+#define SSD1306_SET_HIGHER_COL_ADDRESS_MASK	0x0f
+#define SSD1306_SET_START_LINE_MASK		0x3f
+#define SSD1306_SET_PAGE_START_ADDRESS_MASK	0x07
 
 union ssd1306_bus {
 	struct i2c_dt_spec i2c;
@@ -86,8 +165,8 @@ static int ssd1306_write_bus_i2c(const struct device *dev, uint8_t *buf, size_t 
 	const struct ssd1306_config *config = dev->config;
 
 	return i2c_burst_write_dt(&config->bus.i2c,
-				  command ? SSD1306_CONTROL_ALL_BYTES_CMD :
-				  SSD1306_CONTROL_ALL_BYTES_DATA,
+				  command ? SSD1306_I2C_ALL_BYTES_CMD :
+				  SSD1306_I2C_ALL_BYTES_DATA,
 				  buf, len);
 }
 
@@ -198,8 +277,8 @@ static inline int ssd1306_set_hardware_config(const struct device *dev)
 		SSD1306_SET_DISPLAY_OFFSET,
 		config->display_offset,
 		SSD1306_SET_PADS_HW_CONFIG,
-		(config->com_sequential ? SSD1306_SET_PADS_HW_SEQUENTIAL
-					: SSD1306_SET_PADS_HW_ALTERNATIVE),
+		(config->com_sequential ? SSD1306_PADS_HW_SEQUENTIAL
+					: SSD1306_PADS_HW_ALTERNATIVE),
 		SSD1306_SET_MULTIPLEX_RATIO,
 		config->multiplex_ratio,
 	};
@@ -211,9 +290,9 @@ static inline int ssd1306_set_charge_pump(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
-		(config->sh1106_compatible ? SH1106_SET_DCDC_MODE : SSD1306_SET_CHARGE_PUMP_ON),
+		(config->sh1106_compatible ? SH1106_SET_DCDC_MODE : SSD1306_SET_CHARGE_PUMP),
 		(config->sh1106_compatible ? SH1106_SET_DCDC_ENABLED
-					   : SSD1306_SET_CHARGE_PUMP_ON_ENABLED),
+					   : SSD1306_CHARGE_PUMP_ENABLED),
 		SSD1306_PANEL_PUMP_VOLTAGE,
 	};
 
@@ -226,7 +305,7 @@ static inline int ssd1306_set_iref_mode(const struct device *dev)
 	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_IREF_MODE,
-		SSD1306_SET_IREF_MODE_INTERNAL,
+		SSD1306_IREF_MODE_INTERNAL_30UA,
 	};
 
 	if (config->use_internal_iref) {
@@ -240,7 +319,7 @@ static int ssd1306_resume(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
-		SSD1306_DISPLAY_ON,
+		SSD1306_SET_DISPLAY_ON,
 	};
 
 	/* Turn on supply if pin connected */
@@ -256,7 +335,7 @@ static int ssd1306_suspend(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
-		SSD1306_DISPLAY_OFF,
+		SSD1306_SET_DISPLAY_OFF,
 	};
 
 	/* Turn off supply if pin connected */
