@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxa366.dtsi>
+#include <nxp/mcx/nxp_mcxa366.dtsi>
 #include "frdm_mcxa366-pinctrl.dtsi"
 #include "board_common.dtsi"
 #include <freq.h>

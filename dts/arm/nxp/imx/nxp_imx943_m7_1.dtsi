@@ -1,0 +1,246 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/imx943_clock.h>
+#include <mem.h>
+#include <nxp/imx/nxp_imx94x.dtsi>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(800)>;
+			cpu-power-states = <&wait &stop &suspend>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			d-cache-line-size = <32>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			wait: power-state-wait {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <50>;
+			};
+
+			stop: power-state-stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000>;
+				exit-latency-us = <200>;
+			};
+
+			suspend: power-state-suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <5000>;
+				exit-latency-us = <1000>;
+			};
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem0: memory@44701000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x44701000 0x80>;
+		};
+	};
+
+	soc {
+		itcm: itcm@00000000 {
+			compatible = "nxp,imx-itcm";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+		};
+
+		dtcm: dtcm@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		irqsteer: interrupt-controller@44690000 {
+			compatible = "nxp,irqsteer-intc";
+			#size-cells = <0>;
+			#address-cells = <1>;
+			reg = <0x44690000 DT_SIZE_K(64)>;
+			nxp,irq-offset = <238>;
+			nxp,num-irqs = <960>;
+
+			irqsteer_master0: interrupt-controller@0 {
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 224 0>;
+			};
+
+			irqsteer_master1: interrupt-controller@1 {
+				compatible = "nxp,irqsteer-master";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 225 0>;
+			};
+
+			irqsteer_master2: interrupt-controller@2 {
+				compatible = "nxp,irqsteer-master";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 226 0>;
+			};
+
+			irqsteer_master3: interrupt-controller@3 {
+				compatible = "nxp,irqsteer-master";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 227 0>;
+			};
+
+			irqsteer_master4: interrupt-controller@4 {
+				compatible = "nxp,irqsteer-master";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 228 0>;
+			};
+
+			irqsteer_master5: interrupt-controller@5 {
+				compatible = "nxp,irqsteer-master";
+				reg = <5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 229 0>;
+			};
+
+			irqsteer_master6: interrupt-controller@6 {
+				compatible = "nxp,irqsteer-master";
+				reg = <6>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 230 0>;
+			};
+
+			irqsteer_master7: interrupt-controller@7 {
+				compatible = "nxp,irqsteer-master";
+				reg = <7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 231 0>;
+			};
+
+			irqsteer_master8: interrupt-controller@8 {
+				compatible = "nxp,irqsteer-master";
+				reg = <8>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 232 0>;
+			};
+
+			irqsteer_master9: interrupt-controller@9 {
+				compatible = "nxp,irqsteer-master";
+				reg = <9>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 233 0>;
+			};
+
+			irqsteer_master10: interrupt-controller@10 {
+				compatible = "nxp,irqsteer-master";
+				reg = <10>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 234 0>;
+			};
+
+			irqsteer_master11: interrupt-controller@11 {
+				compatible = "nxp,irqsteer-master";
+				reg = <11>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 235 0>;
+			};
+
+			irqsteer_master12: interrupt-controller@12 {
+				compatible = "nxp,irqsteer-master";
+				reg = <12>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 236 0>;
+			};
+		};
+	};
+
+	mailbox_m70_m71_for_m71_as_master: ipm-mbox8 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m70_m71_for_m71 1>, <&mu_m70_m71_for_m71 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m70_m71_for_m71_as_remote: ipm-mbox9 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m70_m71_for_m71 0>, <&mu_m70_m71_for_m71 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m33s_m71_for_m71_as_master: ipm-mbox10 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m33s_m71_for_m71 1>, <&mu_m33s_m71_for_m71 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m33s_m71_for_m71_as_remote: ipm-mbox11 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m33s_m71_for_m71 0>, <&mu_m33s_m71_for_m71 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&scmi {
+	shmem = <&scmi_shmem0>;
+	mboxes = <&mu7 0>;
+};
+
+&mu7 {
+	status = "okay";
+};
+
+/* m70 and m71 */
+&mu_m70_m71_for_m71 {
+	interrupts = <129 0>;
+	status = "okay";
+};
+
+&mu_m33s_secure_m71_for_m71 {
+	interrupts = <131 0>;
+	status = "okay";
+};
+
+&mu_m33s_m71_for_m71 {
+	interrupts = <132 0>;
+	status = "okay";
+};
