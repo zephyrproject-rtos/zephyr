@@ -136,13 +136,13 @@ struct icm45686_stream {
 
 struct icm45686_data {
 	struct icm45686_bus bus;
-	/** Single-shot encoded data instance to support fetch/get API */
-	struct icm45686_encoded_data edata;
 #if defined(CONFIG_ICM45686_TRIGGER)
 	struct icm45686_triggers triggers;
 #elif defined(CONFIG_ICM45686_STREAM)
 	struct icm45686_stream stream;
 #endif /* CONFIG_ICM45686_TRIGGER */
+	/** Single-shot encoded data instance to support fetch/get API */
+	struct icm45686_encoded_data edata;
 };
 
 struct icm45686_config {
