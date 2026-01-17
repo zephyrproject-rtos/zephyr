@@ -13,40 +13,6 @@
 		reg = <0x24000000 0x100000>;
 	};
 
-	dtcm {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		dtcm_m33: dtcm_m33@48040000 {
-			compatible = "zephyr,memory-region", "arm,dtcm";
-			reg = <0x48040000 DT_SIZE_K(256)>;
-			zephyr,memory-region = "DTCM_M33";
-		};
-
-		dtcm_m55: dtcm_m55@20000000 {
-			compatible = "zephyr,memory-region", "arm,dtcm";
-			reg = <0x20000000 DT_SIZE_K(256)>;
-			zephyr,memory-region = "DTCM_M55";
-		};
-	};
-
-	itcm {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		itcm_m33: itcm_m33@48000000 {
-			compatible = "zephyr,memory-region", "arm,itcm";
-			reg = <0x48000000 DT_SIZE_K(256)>;
-			zephyr,memory-region = "ITCM_M33";
-		};
-
-		itcm_m55: itcm_m55@0 {
-			compatible = "zephyr,memory-region", "arm,itcm";
-			reg = <0x00000000 DT_SIZE_K(256)>;
-			zephyr,memory-region = "ITCM_M55";
-		};
-	};
-
 	rram {
 		#address-cells = <1>;
 		#size-cells = <1>;
