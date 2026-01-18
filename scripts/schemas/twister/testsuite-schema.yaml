@@ -164,6 +164,11 @@ schema;scenario-schema:
           type: str
           enum: ["function", "class", "module", "package", "session"]
           required: false
+        "extra_test_args":
+          type: seq
+          required: false
+          sequence:
+            - type: str
         "ctest_args":
           type: seq
           required: false
