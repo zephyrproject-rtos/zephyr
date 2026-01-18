@@ -778,13 +778,15 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		return -ENOTCONN;
 	}
 
-	if (pdu->ref != 1) {
+	atomic_val_t ref = atomic_get(&pdu->ref);
+
+	if (ref != 1) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
 		 * refs suggests a silent data corruption would occur if not for
 		 * this error.
 		 */
-		LOG_ERR("Expecting 1 ref, got %d", pdu->ref);
+		LOG_ERR("Expecting 1 ref, got %ld", ref);
 		return -EINVAL;
 	}
 
@@ -3359,7 +3361,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		return -EMSGSIZE;
 	}
 
-	if (buf->ref != 1) {
+	if (atomic_get(&buf->ref) != 1) {
 		/* The host may alter the buf contents when segmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
 		 * refs suggests a silent data corruption would occur if not for
@@ -3430,8 +3432,10 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("chan %p buf %p len %u", chan, buf, buf->len);
 
-	if (buf->ref != 1) {
-		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+	atomic_val_t ref = atomic_get(&buf->ref);
+
+	if (ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %ld", ref);
 		return -EINVAL;
 	}
 
