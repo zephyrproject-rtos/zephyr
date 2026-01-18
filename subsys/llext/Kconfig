@@ -203,6 +203,69 @@ config LLEXT_EXPORT_SYMBOL_GROUP_DEVICE
 
 endmenu
 
+choice LLEXT_COMPRESSION
+prompt "Compress LLEXT extensions"
+default LLEXT_COMPRESSION_NONE
+
+config LLEXT_COMPRESSION_NONE
+	bool "No compression"
+	help
+	  Do not provide support for compression of extensions.
+
+config LLEXT_COMPRESSION_LZ4
+	bool "LZ4 Compression"
+	depends on LZ4
+	depends on LZ4_FRAME_SUPPORT
+	help
+	  Use LZ4 compression for LLEXT extensions.
+	  LZ4 is a high-performance compression algorithm
+	  with configurable compression ratio.
+	  You can fine-tune the compression ration using
+	  LLEXT_COMPRESSION_LZ4_RATIO.
+	  Requires lz4 module to build. You can enable this
+	  in your workspace using:
+	  west config manifest.project-filter -- +lz4
+endchoice
+
+if LLEXT_COMPRESSION_LZ4
+
+config LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP
+	bool "Use system heap for memory allocation in LZ4 decompression"
+	help
+	  Use k_malloc heap for memory allocations during decompression.
+	  By default, memory is allocated from the llext heap.
+	  However, platforms with particularly high memory constraints
+	  might want to allocate from the shared memory pool instead,
+	  avoiding possible RAM overflow.
+
+config LLEXT_COMPRESSION_LZ4_RATIO
+	int "LZ4 compression ratio for LLEXT extensions"
+	default 9
+	range 1 12
+	help
+	  Indicate intended LZ4 compression ratio between 1 and 12.
+	  1 is fastest compression, 12 is best compression.
+	  Note that there is a performance-code size trade-off.
+endif
+
+config LLEXT_COMPRESSION_LOAD_INCREMENT
+	int "LZ4 compression load increment"
+	default 128
+	help
+	  The decompression implementation tries to avoid
+	  loading the entire extension at once to reduce memory use.
+	  Instead, extensions are loaded incrementally.
+	  This configuration controls how many bytes are loaded
+	  at once.
+
+config LLEXT_COMPRESSION_LZ4_QUIET
+	bool "Disable statistics output from LZ4 during build"
+	default y
+	help
+	  LZ4 normally prints the compression ratio it achieved.
+	  This print can be suppressed using this option to
+	  de-clutter the console during build.
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"

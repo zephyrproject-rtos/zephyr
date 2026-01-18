@@ -54,6 +54,19 @@ int llext_fs_seek(struct llext_loader *l, size_t pos)
 	}
 }
 
+size_t llext_fs_get_size(struct llext_loader *ldr)
+{
+	struct llext_fs_loader *fs_l = CONTAINER_OF(ldr, struct llext_fs_loader, loader);
+
+	if (fs_l->is_open) {
+		int retval = fs_seek(&fs_l->file, 0, FS_SEEK_END);
+
+		__ASSERT(retval, "FS_SEEK_END should not fail!");
+		return retval ? 0 : fs_tell(&fs_l->file);
+	}
+	return 0;
+}
+
 void llext_fs_finalize(struct llext_loader *l)
 {
 	struct llext_fs_loader *fs_l = CONTAINER_OF(l, struct llext_fs_loader, loader);

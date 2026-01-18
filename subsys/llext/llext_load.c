@@ -39,6 +39,22 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
+__weak int llext_decompress(struct llext_loader **ldr, struct llext *ext,
+			    const struct llext_load_param *ldr_parm)
+{
+	ARG_UNUSED(ldr);
+	ARG_UNUSED(ext);
+	ARG_UNUSED(ldr_parm);
+
+	return 0;
+}
+
+__weak void llext_decompress_free(int ret, struct llext *ext)
+{
+	ARG_UNUSED(ret);
+	ARG_UNUSED(ext);
+}
+
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx)
 {
 	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
@@ -800,6 +816,12 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
+	ret = llext_decompress(&ldr, ext, ldr_parm);
+	if (ret != 0) {
+		LOG_ERR("Failed to decompress, ret %d", ret);
+		goto out;
+	}
+
 	ret = llext_load_elf_data(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to load basic ELF data, ret %d", ret);
@@ -915,6 +937,8 @@ out:
 		LOG_DBG("Loaded llext: %zu bytes in heap, .text at %p, .rodata at %p",
 			ext->alloc_size, ext->mem[LLEXT_MEM_TEXT], ext->mem[LLEXT_MEM_RODATA]);
 	}
+
+	llext_decompress_free(ret, ext);
 
 	llext_finalize(ldr);
 
