@@ -8,6 +8,14 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	power-states {
+		run0: run0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			substate-id = <1>;
+		};
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -17,6 +25,7 @@
 			compatible = "wch,qingke-v4b";
 			reg = <0>;
 			riscv,isa = "rv32imac_zicsr_zifencei";
+			cpu-power-states = <&run0>;
 		};
 	};
 

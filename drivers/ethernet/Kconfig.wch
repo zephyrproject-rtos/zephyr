@@ -1,0 +1,49 @@
+# Copyright (c) 2025 James Bennion-Pedley <james@bojit.org>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_WCH
+	bool "WCH Ethernet driver"
+	default y
+	depends on DT_HAS_WCH_ETHERNET_ENABLED
+	help
+	  Enable WCH Ethernet driver. It is available for
+	  all the CH32V307 and CH32V317 MCUs
+
+if ETH_WCH
+
+config ETH_WCH_HAL_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size
+
+config ETH_WCH_HAL_RX_THREAD_PRIO
+	int "WCH Ethernet RX Thread Priority"
+	default 2
+	help
+	  This option allows to configure the priority of the RX thread that
+	  handles incoming Ethernet packets.
+	  Switching between preemptive and cooperative scheduling can be done by
+	  NET_TC_THREAD_PREEMPTIVE.
+	  Preemptive scheduling can lead to more responsive handling of network traffic,
+	  especially under high load.
+
+config ETH_WCH_HW_CHECKSUM
+	bool "Use TX and RX hardware checksum"
+	help
+	  Enable receive and transmit checksum offload to enhance throughput
+	  performances.
+
+config ETH_WCH_MULTICAST_FILTER
+	bool "Multicast hash filter support"
+	imply CRC
+	help
+	  Enable support for multicast hash filtering in the MAC.
+	  Once enabled the ethernet MAC performs imperfect filtering
+	  based on a computed hash of the destination MAC address of
+	  the multicast address. Only multicast with the computed
+	  hash set in the multicast table will be received and all
+	  other multicast is dropped by the MAC. If disabled then all
+	  multicast is received by the MAC.
+
+endif # ETH_WCH
