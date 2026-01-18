@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/mbox/mbox_ti_secproxy.h>
 #include <stdint.h>
 #include <stdio.h>
-#define DT_DRV_COMPAT ti_k2g_sci
+#define DT_DRV_COMPAT      ti_k2g_sci
+#define DT_SECPROXY_COMPAT ti_secure_proxy
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/device.h>
 #include "tisci.h"
@@ -15,7 +17,12 @@
 #include <zephyr/sys/util.h>
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(ti_k2g_sci);
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "There can only be one DMSC instance");
+
+#define DMSC_USES_SECPROXY (DT_NODE_HAS_COMPAT(DT_INST_PHANDLE(0, mboxes), DT_SECPROXY_COMPAT))
 
 /**
  * @struct tisci_config - TISCI device configuration structure
@@ -65,7 +72,9 @@ static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_
 {
 	struct tisci_data *data = dev->data;
 
-	k_sem_take(&data->data_sem, K_FOREVER);
+	if (!k_is_pre_kernel()) {
+		k_sem_take(&data->data_sem, K_FOREVER);
+	}
 
 	const struct tisci_config *config = dev->config;
 	struct tisci_xfer *xfer = &data->xfer;
@@ -102,7 +111,9 @@ static void callback(const struct device *dev, mbox_channel_id_t channel_id, voi
 {
 	struct rx_msg *msg = user_data;
 
-	k_sem_give(msg->response_ready_sem);
+	if (!k_is_pre_kernel()) {
+		k_sem_give(msg->response_ready_sem);
+	}
 }
 
 static bool tisci_is_response_ack(void *r)
@@ -127,10 +138,12 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 		return -EINVAL;
 	}
 
-	if (k_sem_take(data->rx_message.response_ready_sem, K_MSEC(config->max_rx_timeout_ms)) !=
-	    0) {
-		LOG_ERR("Timeout waiting for response");
-		return -ETIMEDOUT;
+	if (!k_is_pre_kernel()) {
+		if (k_sem_take(data->rx_message.response_ready_sem,
+			       K_MSEC(config->max_rx_timeout_ms)) != 0) {
+			LOG_ERR("Timeout waiting for response");
+			return -ETIMEDOUT;
+		}
 	}
 
 	if (xfer->rx_message.size > config->max_msg_size) {
@@ -152,7 +165,9 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 		return -EINVAL;
 	}
 
-	k_sem_give(&data->data_sem);
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&data->data_sem);
+	}
 	return 0;
 }
 
@@ -166,7 +181,18 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 	struct mbox_msg *msg = &xfer->tx_message;
 	int ret;
 
-	ret = mbox_send_dt(&config->mbox_tx, msg);
+	if (k_is_pre_kernel()) {
+#if DMSC_USES_SECPROXY
+		ret = secproxy_mailbox_send_then_poll_rx_dt(&config->mbox_rx, &config->mbox_tx,
+							    msg);
+#else
+		LOG_ERR("Cannot transceive messages during pre kernel\n");
+		return -ENOTSUP;
+#endif
+	} else {
+		ret = mbox_send_dt(&config->mbox_tx, msg);
+	}
+
 	if (ret < 0) {
 		LOG_ERR("Could not send (%d)\n", ret);
 		return ret;
@@ -1576,27 +1602,24 @@ static int tisci_init(const struct device *dev)
 }
 
 /* Device Tree Instantiation */
-#define TISCI_DEFINE(_n)                                                                           \
-	static uint8_t rx_message_buf_##_n[MAILBOX_MBOX_SIZE] = {0};                               \
-	static struct k_sem response_ready_sem_##_n;                                               \
-	static struct tisci_data tisci_data_##_n = {                                               \
-		.seq = 0,                                                                          \
-		.rx_message =                                                                      \
-			{                                                                          \
-				.buf = rx_message_buf_##_n,                                        \
-				.size = sizeof(rx_message_buf_##_n),                               \
-				.response_ready_sem = &response_ready_sem_##_n,                    \
-			},                                                                         \
-		.data_sem = Z_SEM_INITIALIZER(tisci_data_##_n.data_sem, 1, 1),                     \
-	};                                                                                         \
-	static const struct tisci_config tisci_config_##_n = {                                     \
-		.mbox_tx = MBOX_DT_SPEC_INST_GET(_n, tx),                                          \
-		.mbox_rx = MBOX_DT_SPEC_INST_GET(_n, rx),                                          \
-		.host_id = DT_INST_PROP(_n, ti_host_id),                                           \
-		.max_msg_size = MAILBOX_MBOX_SIZE,                                                 \
-		.max_rx_timeout_ms = 10000,                                                        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_n, tisci_init, NULL, &tisci_data_##_n, &tisci_config_##_n,          \
-			      PRE_KERNEL_1, CONFIG_TISCI_INIT_PRIORITY, NULL);
+static uint8_t rx_message_buf[MAILBOX_MBOX_SIZE] = {0};
+static struct k_sem response_ready_sem;
+static struct tisci_data tisci_data = {
+	.seq = 0,
+	.rx_message = {
+		.buf = rx_message_buf,
+		.size = sizeof(rx_message_buf),
+		.response_ready_sem = &response_ready_sem,
+	},
+	.data_sem = Z_SEM_INITIALIZER(tisci_data.data_sem, 1, 1),
+};
+static const struct tisci_config tisci_config = {
+	.mbox_tx = MBOX_DT_SPEC_INST_GET(0, tx),
+	.mbox_rx = MBOX_DT_SPEC_INST_GET(0, rx),
+	.host_id = DT_INST_PROP(0, ti_host_id),
+	.max_msg_size = MAILBOX_MBOX_SIZE,
+	.max_rx_timeout_ms = 10000,
+};
 
-DT_INST_FOREACH_STATUS_OKAY(TISCI_DEFINE)
+DEVICE_DT_INST_DEFINE(0, tisci_init, NULL, &tisci_data, &tisci_config, PRE_KERNEL_1,
+		      CONFIG_TISCI_INIT_PRIORITY, NULL);
