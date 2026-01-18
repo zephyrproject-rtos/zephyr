@@ -12,6 +12,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_I3G4250D_I3G4250D_H_
 
 #include <stdint.h>
+#include <zephyr/types.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
@@ -19,16 +20,28 @@
 #include <stmemsc.h>
 #include "i3g4250d_reg.h"
 
+#define DT_DRV_COMPAT_I3G4250D st_i3g4250d
+
+#define I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(bus)         \
+(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(DT_DRV_COMPAT_I3G4250D, bus))
+
+
+#if I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif /* I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
 struct i3g4250d_device_config {
-	struct spi_dt_spec spi;
+	stmdev_ctx_t ctx;
+	union {
+	#if I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct spi_dt_spec spi;
+	#endif
+	} stmemsc_cfg;
 };
 
 /* sensor data */
 struct i3g4250d_data {
 	int16_t angular_rate[3];
-	stmdev_ctx_t *ctx;
 };
-
-int i3g4250d_spi_init(const struct device *dev);
 
 #endif /* __SENSOR_I3G4250D__ */

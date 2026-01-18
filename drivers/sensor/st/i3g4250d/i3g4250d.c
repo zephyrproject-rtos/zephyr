@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(i3g4250d, CONFIG_SENSOR_LOG_LEVEL);
 static int i3g4250d_sample_fetch(const struct device *dev,
 			enum sensor_channel chan)
 {
+	const struct i3g4250d_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct i3g4250d_data *i3g4250d = dev->data;
 	int ret;
 	uint8_t reg;
@@ -34,12 +36,12 @@ static int i3g4250d_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = i3g4250d_flag_data_ready_get(i3g4250d->ctx, &reg);
+	ret = i3g4250d_flag_data_ready_get(ctx, &reg);
 	if (ret < 0 || reg != 1) {
 		return ret;
 	}
 
-	ret = i3g4250d_angular_rate_raw_get(i3g4250d->ctx, buf);
+	ret = i3g4250d_angular_rate_raw_get(ctx, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to fetch raw data sample!");
 		return ret;
@@ -128,13 +130,14 @@ static int i3g4250d_config_gyro(const struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
-	struct i3g4250d_data *i3g4250d = dev->data;
+	const struct i3g4250d_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	i3g4250d_dr_t dr_reg;
 
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		dr_reg = gyr_odr_to_reg(val);
-		return i3g4250d_data_rate_set(i3g4250d->ctx, dr_reg);
+		return i3g4250d_data_rate_set(ctx, dr_reg);
 	default:
 		LOG_ERR("Gyro attribute not supported");
 		break;
@@ -166,16 +169,13 @@ static DEVICE_API(sensor, i3g4250d_driver_api) = {
 
 static int i3g4250d_init(const struct device *dev)
 {
-	struct i3g4250d_data *i3g4250d = dev->data;
+	const struct i3g4250d_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t wai;
 	int ret = 0;
 
-	ret = i3g4250d_spi_init(dev);
-	if (ret != 0) {
-		return ret;
-	}
 
-	ret = i3g4250d_device_id_get(i3g4250d->ctx, &wai);
+	ret = i3g4250d_device_id_get(ctx, &wai);
 	if (ret != 0) {
 		return ret;
 	}
@@ -186,20 +186,20 @@ static int i3g4250d_init(const struct device *dev)
 	}
 
 	/* Configure filtering chain -  Gyroscope - High Pass */
-	ret = i3g4250d_filter_path_set(i3g4250d->ctx, I3G4250D_LPF1_HP_ON_OUT);
+	ret = i3g4250d_filter_path_set(ctx, I3G4250D_LPF1_HP_ON_OUT);
 	if (ret != 0) {
 		LOG_ERR("Failed setting filter path");
 		return ret;
 	}
 
-	ret = i3g4250d_hp_bandwidth_set(i3g4250d->ctx, I3G4250D_HP_LEVEL_3);
+	ret = i3g4250d_hp_bandwidth_set(ctx, I3G4250D_HP_LEVEL_3);
 	if (ret != 0) {
 		LOG_ERR("Failed setting high pass");
 		return ret;
 	}
 
 	/* Set Output data rate */
-	ret = i3g4250d_data_rate_set(i3g4250d->ctx, I3G4250D_ODR_100Hz);
+	ret = i3g4250d_data_rate_set(ctx, I3G4250D_ODR_100Hz);
 	if (ret != 0) {
 		LOG_ERR("Failed setting data rate");
 		return ret;
@@ -208,20 +208,33 @@ static int i3g4250d_init(const struct device *dev)
 	return 0;
 }
 
-#define I3G4250D_DEVICE_INIT(inst)                                           \
-	static struct i3g4250d_data i3g4250d_data_##inst;                        \
-	static const struct i3g4250d_device_config i3g4250d_config_##inst = {    \
-		.spi = SPI_DT_SPEC_INST_GET(inst,                                    \
-					SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                     \
-					SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE)      \
-	};                                                                       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                                   \
-				i3g4250d_init,                                               \
-				NULL,                                                        \
-				&i3g4250d_data_##inst,                                       \
-				&i3g4250d_config_##inst,                                     \
-				POST_KERNEL,                                                 \
-				CONFIG_SENSOR_INIT_PRIORITY,                                 \
+#define I3G4250D_DEVICE_INIT(inst)	\
+	static struct i3g4250d_data i3g4250d_data_##inst;	\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,	\
+				i3g4250d_init,	\
+				NULL,	\
+				&i3g4250d_data_##inst,	\
+				&i3g4250d_device_config_##inst,	\
+				POST_KERNEL,	\
+				CONFIG_SENSOR_INIT_PRIORITY,	\
 				&i3g4250d_driver_api);
+#define I3G4250D_CONFIG_SPI(inst)	\
+	{	\
+		STMEMSC_CTX_SPI(&i3g4250d_device_config_##inst.stmemsc_cfg),	\
+		.stmemsc_cfg = {	\
+			.spi = SPI_DT_SPEC_INST_GET(	\
+				inst,	\
+				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |	\
+				SPI_MODE_CPHA | SPI_WORD_SET(8) |	\
+				SPI_LINES_SINGLE),	\
+		},	\
+	}
 
-DT_INST_FOREACH_STATUS_OKAY(I3G4250D_DEVICE_INIT)
+#define I3G4250D_DEFINE_SPI(inst)	\
+	static const struct i3g4250d_device_config i3g4250d_device_config_##inst =	\
+		I3G4250D_CONFIG_SPI(inst);
+#define I3G4250D_DEFINE(inst)	\
+	I3G4250D_DEFINE_SPI(inst);	\
+	I3G4250D_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(I3G4250D_DEFINE)
