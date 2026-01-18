@@ -23,6 +23,8 @@ config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 config COUNTER_RTC_STM32_SUBSECONDS
 	bool "Use the subseconds as a basic tick."
 	depends on !SOC_SERIES_STM32F1X
+	select COUNTER_SUPPORTS_64BITS_TICKS
+	select COUNTER_64BITS_TICKS
 	help
 	  Use the subseconds as the basic time tick. It increases resolution
 	  of the counter. The frequency of the time is RTC Source Clock divided
