@@ -129,6 +129,24 @@
 				reg = <0xc>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_mcp3426: mcp3426@d {
+				compatible = "microchip,mcp3426";
+				reg = <0xd>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_mcp3427: mcp3427@e {
+				compatible = "microchip,mcp3427";
+				reg = <0xe>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_mcp3428: mcp3428@f {
+				compatible = "microchip,mcp3428";
+				reg = <0xf>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {
