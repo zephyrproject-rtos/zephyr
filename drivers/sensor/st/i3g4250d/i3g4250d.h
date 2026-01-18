@@ -32,13 +32,11 @@
 
 struct i3g4250d_device_config {
 	stmdev_ctx_t ctx;
-	#if I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	union {
 	#if I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 		const struct spi_dt_spec spi;
 	#endif
 	} stmemsc_cfg;
-	#endif
 };
 
 /* sensor data */
