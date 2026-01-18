@@ -102,6 +102,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* ADC
+
+  * :c:member:`adc_sequence.injected_mode`
+  * :kconfig:option:`CONFIG_ADC_INJECTED_CHANNELS`
+
 * Architectures
 
   * Xtensa
@@ -277,6 +282,8 @@ DeviceTree
 
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
+* :dtcompatible:`st,stm32-adc` has a new optional property ``io-injected-channels``
+  to define ADC channels to be possibly used in injected mode.
 
 Libraries / Subsystems
 **********************
