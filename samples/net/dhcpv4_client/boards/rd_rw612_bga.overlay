@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	usbh_cdc_ecm {
+		compatible = "zephyr,cdc-ecm-host";
+		status = "okay";
+	};
+};
+
+&xtal32 {
+	status = "disabled";
+};
