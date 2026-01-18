@@ -39,6 +39,7 @@
 #include <zephyr/ztest_error_hook.h>
 #ifdef CONFIG_PICOLIBC
 #include <unistd.h>
+#include <malloc.h>
 #endif
 #ifdef CONFIG_NEWLIB_LIBC
 #include <unistd.h>
@@ -1311,6 +1312,42 @@ ZTEST(libc_common, test_exit)
 	k_sleep(K_MSEC(10));
 	k_thread_abort(tid);
 	zassert_equal(a, 0, "exit failed");
+#endif
+}
+
+/**
+ *
+ * @brief Test malloc and associated functions.
+ *
+ */
+ZTEST(libc_common, test_malloc)
+{
+#if defined(CONFIG_COMMON_LIBC_MALLOC) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 0
+	char *buf = NULL, *temp_buf = NULL;
+	struct mallinfo pre_malloc_info, post_malloc_info;
+
+	pre_malloc_info = mallinfo();
+	zassert(pre_malloc_info.arena > 0, "mallinfo failed, arena empty");
+
+	buf = malloc(100);
+	zassert_not_null(buf, "malloc failed");
+
+	post_malloc_info = mallinfo();
+	zassert(post_malloc_info.arena > 0, "mallinfo failed, arena empty");
+	zassert(pre_malloc_info.fordblks - post_malloc_info.fordblks >= 100,
+		"mallinfo failed, free bytes did not reduce as expected");
+	zassert(post_malloc_info.uordblks - pre_malloc_info.uordblks >= 100,
+		"mallinfo failed, used bytes did not increase as expected");
+
+	temp_buf = realloc(buf, 200);
+	zassert_not_null(temp_buf, "realloc failed");
+	if (temp_buf != NULL) {
+		buf = temp_buf;
+	}
+
+	free(buf);
+#else
+	ztest_test_skip();
 #endif
 }
 /**

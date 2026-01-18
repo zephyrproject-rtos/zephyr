@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <malloc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <errno.h>
@@ -16,6 +17,7 @@
 #endif
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/mem_stats.h>
 #include <zephyr/types.h>
 #ifdef CONFIG_MMU
 #include <zephyr/kernel/mm.h>
@@ -262,6 +264,30 @@ void free(void *ptr)
 	malloc_unlock();
 }
 
+struct mallinfo mallinfo(void)
+{
+	struct mallinfo info = {
+		.arena = HEAP_SIZE
+	};
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	struct sys_memory_stats stats;
+	int ret;
+
+	malloc_lock();
+
+	ret = sys_heap_runtime_stats_get(&z_malloc_heap, &stats);
+	if (ret == 0) {
+		info.uordblks = stats.allocated_bytes;
+		info.fordblks = stats.free_bytes;
+	}
+
+	malloc_unlock();
+#endif
+
+	return info;
+}
+
 SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 #else /* No malloc arena */
 void *malloc(size_t size)
@@ -284,7 +310,29 @@ void *realloc(void *ptr, size_t size)
 	ARG_UNUSED(ptr);
 	return malloc(size);
 }
+
+struct mallinfo mallinfo(void)
+{
+	struct mallinfo info = { 0 };
+	return info;
+}
+
 #endif /* else no malloc arena */
+
+void malloc_stats(void)
+{
+	struct mallinfo local_mallinfo = mallinfo();
+	FILE *fp;
+
+	fp = stderr;
+
+	fprintf(fp, "max system bytes = %10u\n",
+		(unsigned int)(local_mallinfo.arena));
+	fprintf(fp, "system bytes     = %10u\n",
+		(unsigned int)local_mallinfo.fordblks);
+	fprintf(fp, "in use bytes     = %10u\n",
+		(unsigned int)local_mallinfo.uordblks);
+}
 
 #endif /* CONFIG_COMMON_LIBC_MALLOC */
 
