@@ -499,13 +499,42 @@ static uint8_t btp_cap_broadcast_source_setup_stream(const void *cmd, uint16_t c
 		btp_bap_broadcast_local_source_from_src_id_get(cp->source_id);
 
 	if (source == NULL) {
-		return BTP_STATUS_FAILED;
+		if (cp->source_id >= CONFIG_BT_BAP_BROADCAST_SRC_COUNT) {
+			LOG_DBG("Invalid cp->source ID for new source: %u", cp->source_id);
+			return BTP_STATUS_FAILED;
+		}
+
+		LOG_DBG("Could not get source by id %u, allocating", cp->source_id);
+		/* The CAP BTP commands are fundamentally broken as they expect a broadcast source
+		 * to already have been allocated. In the case that the source isn't allocated, we
+		 * attempt to allocate it with a dummy broadcast ID that will be updated later by
+		 * `btp_cap_broadcast_source_setup`.
+		 * The source_id returned from btp_bap_broadcast_local_source_allocate is also
+		 * overridden as it may not be the same as requested by this command.
+		 */
+		source = btp_bap_broadcast_local_source_allocate(0);
+
+		if (source == NULL) {
+			LOG_DBG("Could not allocate source");
+
+			return BTP_STATUS_FAILED;
+		}
+
+		source->source_id = cp->source_id;
 	}
 
 	struct bt_audio_codec_cfg *codec_cfg;
 
 	stream = btp_bap_broadcast_stream_alloc(source);
 	if (stream == NULL) {
+		const int err = btp_bap_broadcast_local_source_free(source);
+
+		LOG_DBG("Could not allocate stream");
+
+		if (err != 0) {
+			LOG_ERR("Failed to free allocated broadcast source: %d", err);
+		}
+
 		return BTP_STATUS_FAILED;
 	}
 
@@ -541,21 +570,18 @@ static uint8_t btp_cap_broadcast_source_setup_subgroup(const void *cmd, uint16_t
 		btp_bap_broadcast_local_source_from_src_id_get(cp->source_id);
 
 	if (source == NULL) {
+		LOG_DBG("Could not get source from src_id %u", cp->source_id);
 		return BTP_STATUS_FAILED;
 	}
 
 	if (cp->subgroup_id >= ARRAY_SIZE(cap_broadcast_params[0].cap_subgroup_params)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	uint8_t idx = btp_bap_broadcast_local_source_idx_get(source);
-
-	if (idx >= ARRAY_SIZE(cap_broadcast_params)) {
+		LOG_DBG("Invalid subgroup_id: %u (>= %zu)", cp->subgroup_id,
+			ARRAY_SIZE(cap_broadcast_params[0].cap_subgroup_params));
 		return BTP_STATUS_FAILED;
 	}
 
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_param =
-		&cap_broadcast_params[idx].cap_subgroup_params[cp->subgroup_id];
+		&cap_broadcast_params[cp->source_id].cap_subgroup_params[cp->subgroup_id];
 
 	subgroup_param->codec_cfg = &source->subgroup_codec_cfg[cp->subgroup_id];
 
@@ -657,7 +683,10 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	struct btp_bap_broadcast_local_source *source =
 		btp_bap_broadcast_local_source_from_src_id_get(cp->source_id);
 
+	LOG_DBG("");
+
 	if (source == NULL) {
+		LOG_DBG("Could not get source from src_id %u", cp->source_id);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -666,9 +695,12 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 
 	struct bt_bap_qos_cfg *qos = &source->qos;
 
-	LOG_DBG("");
-
 	memset(&create_param, 0, sizeof(create_param));
+
+	/* The source is allocated by btp_cap_broadcast_source_setup_stream but at that time we do
+	 * not have the broadcast_id, so update it here
+	 */
+	source->broadcast_id = sys_get_le24(cp->broadcast_id);
 
 	for (size_t i = 0; i < ARRAY_SIZE(source->streams); i++) {
 		struct btp_bap_broadcast_stream *stream = &source->streams[i];
@@ -705,6 +737,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (create_param.subgroup_count == 0) {
+		LOG_DBG("create_param.subgroup_count is 0");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -734,9 +767,11 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 
 	err = cap_broadcast_source_adv_setup(source, &gap_settings);
 	if (err != 0) {
+		LOG_DBG("Failed to setup adv for source: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
+	rp->source_id = cp->source_id;
 	rp->gap_settings = gap_settings;
 	sys_put_le24(source->broadcast_id, rp->broadcast_id);
 	*rsp_len = sizeof(*rp);
