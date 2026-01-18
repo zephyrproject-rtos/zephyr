@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon Cat1 Family MCAN Driver
+
+compatible: "infineon,cat1-can"
+
+include: ["bosch,m_can-base.yaml", "pinctrl-device.yaml", "infineon,system-interrupts.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
