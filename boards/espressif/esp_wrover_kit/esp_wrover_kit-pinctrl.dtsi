@@ -85,4 +85,14 @@
 			output-high;
 		};
 	};
+
+	rmt_default: rmt_default {
+		group1 {
+			pinmux = <RMT_OUT0_GPIO13>;
+		};
+
+		group2 {
+			pinmux = <RMT_IN0_GPIO12>;
+		};
+	};
 };

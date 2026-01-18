@@ -20,4 +20,5 @@ supported:
   - input
   - crypto
   - retained_mem
+  - rmt
 vendor: espressif

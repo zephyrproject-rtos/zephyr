@@ -20,4 +20,5 @@ supported:
   - video
   - crypto
   - retained_mem
+  - rmt
 vendor: espressif
