@@ -218,7 +218,7 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	pipe->active->timestamp = k_uptime_get_32();
 	pipe->active->line_offset = 0;
 
-	k_fifo_put(&pipe->fifo_out, pipe->active);
+	k_fifo_alloc_put(&pipe->fifo_out, pipe->active);
 	pipe->active = NULL;
 }
 
@@ -1166,6 +1166,15 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (ret < 0) {
 			goto out;
 		}
+
+		/* Limit the amount of hardware handshake interrupts received by slave IP */
+		if (pipe->id == DCMIPP_PIPE1) {
+			MODIFY_REG(dcmipp->hdcmipp.Instance->P1PPCR, DCMIPP_P1PPCR_LINEMULT_Msk,
+				   DCMIPP_MULTILINE_128_LINES);
+		} else {
+			MODIFY_REG(dcmipp->hdcmipp.Instance->P2PPCR, DCMIPP_P1PPCR_LINEMULT_Msk,
+				   DCMIPP_MULTILINE_128_LINES);
+		}
 	}
 #endif
 
@@ -1227,6 +1236,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_config *config = dev->config;
+	struct video_buffer *vbuf;
 	int ret;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
@@ -1285,6 +1295,11 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 	if (pipe->active != NULL) {
 		k_fifo_put(&pipe->fifo_in, pipe->active);
+	}
+
+	/* Forward all buffers in fifo_in to fifo_out */
+	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT))) {
+		k_fifo_put(&pipe->fifo_out, vbuf);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
