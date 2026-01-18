@@ -36,6 +36,8 @@ void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority);
 uint32_t NVIC_GetPriority(IRQn_Type IRQn);
 void NVIC_SystemReset(void);
 
+void nrfbsim_clear_excl_access(void);
+
 #ifdef __cplusplus
 }
 #endif
