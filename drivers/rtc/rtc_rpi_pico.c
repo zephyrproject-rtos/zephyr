@@ -132,7 +132,7 @@ static int rtc_rpi_pico_set_time(const struct device *dev, const struct rtc_time
 static int rtc_rpi_pico_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	struct rtc_rpi_pico_data *data = dev->data;
-	datetime_t dt;
+	datetime_t dt = {0};
 	int err = 0;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
