@@ -37,7 +37,7 @@ def mocked_hm():
 TESTDATA_1 = [
     (
         {},
-        {'baud': 115200, 'lock': mock.ANY, 'flash_timeout': 60},
+        {'serial_baud': 115200, 'flash_timeout': 60},
         '<None (None) on None>'
     ),
     (
@@ -63,10 +63,9 @@ TESTDATA_1 = [
                 }
         },
         {
-            'lock': mock.ANY,
             'id': 'dummy id',
             'serial': 'dummy serial',
-            'baud': 4400,
+            'serial_baud': 4400,
             'platform': 'dummy platform',
             'product': 'dummy product',
             'serial_pty': 'dummy serial pty',
@@ -269,7 +268,7 @@ def test_hardwaremap_load():
   runner: r0
   flash_with_test: True
   flash_timeout: 15
-  baud: 14400
+  serial_baud: 14400
   fixtures:
   - dummy fixture 1
   - dummy fixture 2
@@ -310,7 +309,7 @@ def test_hardwaremap_load():
             'runner': 'r0',
             'flash_timeout': 15,
             'flash_with_test': True,
-            'baud': 14400,
+            'serial_baud': 14400,
             'fixtures': ['dummy fixture 1', 'dummy fixture 2'],
             'connected': True,
             'serial': 'dummy',
@@ -322,7 +321,7 @@ def test_hardwaremap_load():
             'runner': 'r1',
             'flash_timeout': 30,
             'flash_with_test': False,
-            'baud': 115200,
+            'serial_baud': 115200,
             'fixtures': [],
             'connected': True,
             'serial': None,
@@ -503,50 +502,45 @@ TESTDATA_5 = [
         '',
         [{
             'serial': 's1',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p1',
             'connected': True,
             'id': 1,
             'product': 'pr1',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's2',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p2',
             'id': 2,
             'product': 'pr2',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's3',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p3',
             'connected': True,
             'id': 3,
             'product': 'pr3',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's4',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p4',
             'id': 4,
             'product': 'pr4',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's5',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p5',
             'connected': True,
             'id': 5,
             'product': 'pr5',
-            'lock': mock.ANY,
             'flash_timeout': 60
         }]
     ),
@@ -603,41 +597,37 @@ TESTDATA_5 = [
         },
         {
             'serial': 's1',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p1',
             'connected': True,
             'id': 1,
             'product': 'pr1',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's2',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p2',
             'id': 2,
             'product': 'pr2',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's3',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p3',
             'connected': True,
             'id': 3,
             'product': 'pr3',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's5',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p5',
             'connected': True,
             'id': 5,
             'product': 'pr5',
-            'lock': mock.ANY,
             'flash_timeout': 60
         }]
     ),

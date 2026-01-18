@@ -552,7 +552,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     hardware = mock.Mock()
     hardware.serial_pty = pty_value
     hardware.serial = "serial"
-    hardware.baud = 115200
+    hardware.serial_baud = 115200
     hardware.runner = "runner"
     hardware.runner_params = ["--runner-param1", "runner-param2"]
     hardware.fixtures = ["fixture1:option1", "fixture2"]
