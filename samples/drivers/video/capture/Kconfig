@@ -65,6 +65,30 @@ config VIDEO_SHELL_AND_CAPTURE
 	help
 	  If set, the video capture is enabled even if the video shell is also enabled.
 
+config VIDEO_USE_CODEC
+	bool "Use codec to transform the captured frame"
+	default n
+	help
+	  If set, use the chosen vodeo codec to transform the captured frame
+
+config VIDEO_CODEC_FRAME_HEIGHT
+	int "Height of the video codec output frame"
+	default 0
+	help
+	  Height of the video codec frame. If set to 0, the default height is used.
+
+config VIDEO_CODEC_FRAME_WIDTH
+	int "Width of the video codec output frame"
+	default 0
+	help
+	  Width of the video codec frame. If set to 0, the default width is used.
+
+config VIDEO_CODEC_PIXEL_FORMAT
+	string "Pixel format of the video codec output frame"
+	help
+	  Pixel format of the video codec output frame. If not set, the default
+	  pixel format is used.
+
 endmenu
 
 source "Kconfig.zephyr"
