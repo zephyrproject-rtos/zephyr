@@ -46,17 +46,27 @@ extern "C" {
  * @brief Calculate maximum encoded buffer size
  *
  * @param decoded_size  Size of input data to be encoded
- * @param flags         COBS_FLAG_TRAILING_DELIMITER to include termination byte in calculation
+ * @param flags         Encoding flags including delimiter and COBS_FLAG_TRAILING_DELIMITER
  *
  * @return Required buffer size for worst-case encoding scenario
  */
 static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
 {
-	if (flags & COBS_FLAG_TRAILING_DELIMITER) {
-		return decoded_size + decoded_size / 254 + 1 + 1;
+	uint8_t delimiter = COBS_FLAG_CUSTOM_DELIMITER(flags);
+	size_t block_size;
+
+	if (delimiter <= 0x01) {
+		block_size = (delimiter == 0x01) ? 253 : 254;
 	} else {
-		return decoded_size + decoded_size / 254 + 1;
+		block_size = (delimiter > 2) ? (delimiter - 2) : 1;
 	}
+
+	size_t overhead = (decoded_size / block_size) + 1;
+
+	if (flags & COBS_FLAG_TRAILING_DELIMITER) {
+		return decoded_size + overhead + 1;
+	}
+	return decoded_size + overhead;
 }
 
 /**
