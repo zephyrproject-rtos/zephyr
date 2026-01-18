@@ -84,6 +84,24 @@
 			};
 		};
 
+		sram_shared: memory@20580000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			reg = <0x20580000 DT_SIZE_K(32)>;
+
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			sram_shared0: memory@20580000 {
+				reg = <0x20580000 DT_SIZE_K(16)>;
+			};
+
+			sram_shared1: memory@20584000 {
+				reg = <0x20584000 DT_SIZE_K(16)>;
+			};
+		};
+
 		peripheral: peripheral@40000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
