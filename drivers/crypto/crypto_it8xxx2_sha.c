@@ -157,7 +157,20 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 			memset(&chip_ctx.w_input[chip_ctx.w_input_index],
 			0, SHA_SHA256_BLOCK_LEN - chip_ctx.w_input_index);
 		}
-		chip_ctx.w_sha[15] = sys_cpu_to_be32(chip_ctx.total_len * 8);
+
+		/*
+		 * SHA-256 requires the message length (in bits) as a 64-bit big-endian
+		 * integer in the final 8 bytes (words 14 and 15). The message is stored
+		 * in little-endian memory, so conversion is necessary.
+		 */
+		uint64_t bit_len = (uint64_t)chip_ctx.total_len * 8;
+
+		/* Word 14: Most Significant 32 bits */
+		chip_ctx.w_sha[14] = sys_cpu_to_be32((uint32_t)(bit_len >> 32));
+
+		/* Word 15: Least Significant 32 bits */
+		chip_ctx.w_sha[15] = sys_cpu_to_be32((uint32_t)(bit_len & 0xFFFFFFFFUL));
+
 		it8xxx2_sha256_module_calculation();
 
 		for (int i = 0; i < SHA_SHA256_HASH_LEN_WORDS; i++) {
