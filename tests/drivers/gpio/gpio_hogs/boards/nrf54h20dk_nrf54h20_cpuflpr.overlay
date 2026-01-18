@@ -1,0 +1,44 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart131;
+	};
+};
+
+&pinctrl {
+	uart131_default_alt: uart131_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 11)>,
+				<NRF_PSEL(UART_RX, 1, 10)>,
+				<NRF_PSEL(UART_RTS, 1, 9)>,
+				<NRF_PSEL(UART_CTS, 1, 7)>;
+		};
+	};
+
+	uart131_sleep_alt: uart131_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 11)>,
+				<NRF_PSEL(UART_RX, 1, 10)>,
+				<NRF_PSEL(UART_RTS, 1, 9)>,
+				<NRF_PSEL(UART_CTS, 1, 7)>;
+			low-power-enable;
+		};
+	};
+};
+
+&cpuapp_dma_region {
+	status = "okay";
+};
+
+&uart131 {
+	status = "okay";
+	memory-regions = <&cpuapp_dma_region>;
+	pinctrl-0 = <&uart131_default_alt>;
+	pinctrl-1 = <&uart131_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	hw-flow-control;
+};
