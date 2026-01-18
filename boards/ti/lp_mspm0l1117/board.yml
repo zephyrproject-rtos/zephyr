@@ -1,0 +1,6 @@
+board:
+  name: lp_mspm0l1117
+  full_name: MSPM0L1117 Launchpad
+  vendor: ti
+  socs:
+    - name: mspm0l1117

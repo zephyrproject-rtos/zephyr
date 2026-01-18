@@ -1,0 +1,14 @@
+identifier: lp_mspm0l1117
+name: TI MSPM0L1117 Launchpad
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 16
+flash: 128
+supported:
+  - gpio
+  - pinctrl
+  - uart
+vendor: ti
