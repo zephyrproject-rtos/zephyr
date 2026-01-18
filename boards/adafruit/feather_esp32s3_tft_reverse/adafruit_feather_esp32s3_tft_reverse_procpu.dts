@@ -75,7 +75,7 @@
 
 		led1: led_1 {
 			label = "TFT Backlight";
-			gpios = <&gpio1 45 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -103,8 +103,8 @@
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&spi2>;
-		dc-gpios = <&gpio1 40 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio1 41 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
