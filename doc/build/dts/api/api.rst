@@ -257,6 +257,16 @@ controllers or channels, and properties related to them.
 
 .. doxygengroup:: devicetree-dmas
 
+.. _devicetree-display-api:
+
+Display
+=======
+
+These conveniences may be used for nodes which describe display
+controllers, and properties related to them.
+
+.. doxygengroup:: devicetree-display
+
 .. _devicetree-flash-api:
 
 Fixed flash partitions
@@ -278,6 +288,16 @@ and properties related to them.
 
 .. doxygengroup:: devicetree-gpio
 
+.. _devicetree-hwspinlock-api:
+
+HWSpinlock
+==========
+
+These conveniences may be used for nodes which describe hardware spinlock,
+and properties related to them.
+
+.. doxygengroup:: devicetree-hwspinlock
+
 IO channels
 ===========
 
@@ -295,6 +315,26 @@ These conveniences may be used for nodes which describe MBOX controllers/users,
 and properties related to them.
 
 .. doxygengroup:: devicetree-mbox
+
+.. _devicetree-nvmem-api:
+
+NVMEM
+=====
+
+These conveniences may be used for nodes which describe Non-Volatile
+Memory, and properties related to them.
+
+.. doxygengroup:: devicetree-nvmem
+
+.. _devicetree-ordinals-api:
+
+Ordinals
+========
+
+These conveniences may be used for nodes which describe Dependency
+tracking, and properties related to them.
+
+.. doxygengroup:: devicetree-dep-ord
 
 .. _devicetree-pinctrl-api:
 
