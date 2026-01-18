@@ -85,6 +85,10 @@ Deprecated APIs and options
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
+
 * Sensors
 
   * NXP
