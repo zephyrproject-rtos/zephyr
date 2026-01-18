@@ -10,7 +10,7 @@
 #  MCUMGR_TRANSPORT_UDP_
 
 menuconfig MCUMGR_TRANSPORT_UDP
-	bool "UDP mcumgr SMP transport"
+	bool "UDP MCUmgr SMP transport"
 	depends on NET_UDP
 	depends on NET_SOCKETS
 	select NET_CONNECTION_MANAGER
@@ -88,9 +88,8 @@ config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
 	default y
 	depends on !MCUMGR_TRANSPORT_UDP_DTLS
 	help
-	  Enable starting the UDP SMP transport at boot time without needing
-	  any code in the application to do this, otherwise will need the user
-	  application to manually start and stop the transport using
-	  `smp_udp_open` and `smp_udp_close`.
+	  Enable starting the UDP SMP transport at boot time without needing any code in the
+	  application to do this, otherwise will need the user application to manually start and
+	  stop the transport using `smp_udp_open` and `smp_udp_close`.
 
 endif # MCUMGR_TRANSPORT_UDP
