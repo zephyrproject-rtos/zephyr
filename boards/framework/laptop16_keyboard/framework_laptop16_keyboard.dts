@@ -122,3 +122,34 @@ zephyr_udc0: &usbd {
 	regulator-always-on;
 	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
 };
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	/* Macropad has a single controller */
+	led_ctrl1: is31fl3743@20 {
+		status = "okay";
+		reg = <0x20>;
+		compatible = "issi,is31fl3743";
+		sdb-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		/* Limit module current consumption to roughly 500mA when all LEDs on both
+		 * controllers are active.
+		 */
+		current-limit = <104>;
+		/* Disable unused current sources - otherwise audible electrical noise can occur */
+		current-sources = <9>;
+	};
+
+	/* RGB Keyboard has a second controller */
+	led_ctrl2: is31fl3743@23 {
+		status = "okay";
+		reg = <0x23>;
+		compatible = "issi,is31fl3743";
+		sdb-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		current-limit = <104>;
+		current-sources = <9>;
+	};
+};
