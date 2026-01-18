@@ -962,5 +962,13 @@
 				status = "disabled";
 			};
 		};
+
+		canxl: can@6a01b000 {
+			compatible = "nxp,s32-canxl";
+			reg = <0x6a01b000 0x1000>;
+			reg-names = "sic";
+			status = "disabled";
+			clocks = <&clock NXP_S32_CAN_PE_CLK>;
+		};
 	};
 };

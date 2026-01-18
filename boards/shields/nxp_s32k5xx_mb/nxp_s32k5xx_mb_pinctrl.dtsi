@@ -18,4 +18,16 @@
 			input-enable;
 		};
 	};
+
+	canxl_default: canxl_default {
+		group1 {
+			pinmux = <PE13_CANXL0_RX>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PE14_CANXL0_TX>;
+			output-enable;
+		};
+	};
 };
