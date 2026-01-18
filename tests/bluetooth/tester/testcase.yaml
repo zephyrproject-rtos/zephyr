@@ -106,5 +106,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="prj_br.conf"
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - SHIELD=nxp_m2_2el_wifi_bt
     tags: bluetooth
     harness: bluetooth
