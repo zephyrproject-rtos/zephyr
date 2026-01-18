@@ -105,8 +105,10 @@ config CORTEX_M_SYSTICK_RESET_BY_LPM
 	  special care from the driver - notably, SysTick needs to be restarted
 	  after waking up from such a low-power mode.
 
-	  Select this symbol if your SoC has a low-power mode that places SysTick
-	  under reset. Note that this requires that the platform provides a timer
-	  active in low-power mode, since SysTick cannot be used for timekeeping.
+	  Select this option if your SoC has at least one such low-power mode with
+	  its corresponding "zephyr,power-state" node enabled (i.e., if the system
+	  may enter in a low-power mode that resets SysTick). Note that a low-power
+	  mode timer must be provided by the platform in such configurations since
+	  SysTick cannot be reliably used for timekeeping.
 
 	  Refer to CONFIG_CORTEX_M_SYSTICK_LPM_TIMER for more details.
