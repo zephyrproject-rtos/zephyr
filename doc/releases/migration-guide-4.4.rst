@@ -33,6 +33,17 @@ Build System
 Kernel
 ******
 
+* The size of the system workqueue stack is now determined by
+  a ``SYSTEM_WORKQUEUE_STACK_SIZE`` define instead of the
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` Kconfig option. Subsystems can specify their
+  own custom system workqueue size requirements by specifying Kconfig options with the prefix
+  ``CONFIG_SYSTEM_WORKQUEUE_STACK_MIN_SIZE_``.
+  The old Kconfig option still exists, but will be overridden if the custom requirements
+  are larger. To force the old Kconfig option to be used, even when its value is less
+  than the indicated custom requirements, a new
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_IGNORE_MIN` option has been introduced (which
+  defaults being disabled).
+
 Boards
 ******
 
