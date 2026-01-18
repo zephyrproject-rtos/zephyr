@@ -273,8 +273,7 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	peer.sin6_port = net_htons(aMessageInfo->mPeerPort);
 	memcpy(&peer.sin6_addr, &aMessageInfo->mPeerAddr, sizeof(otIp6Address));
 
-	if ((aMessageInfo->mPeerAddr.mFields.m8[0] == 0xfe) &&
-	    ((aMessageInfo->mPeerAddr.mFields.m8[1] & 0xc0) == 0x80)) {
+	if (otIp6IsLinkLocalUnicast((const otIp6Address *)&aMessageInfo->mPeerAddr)) {
 		if (aMessageInfo->mIsHostInterface) {
 			peer.sin6_scope_id = ail_iface_index;
 		} else {
