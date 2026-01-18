@@ -1,0 +1,151 @@
+name: Run Bluetooth Classic Simulation tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/bluetooth_classic_sim_tests.yml'
+      - "west.yml"
+      - 'include/zephyr/bluetooth/**'
+      - "subsys/bluetooth/**"
+      - 'tests/bluetooth/classic/**'
+      - "samples/bluetooth/classic/**"
+      - "boards/native/**"
+      - "soc/native/**"
+      - "arch/posix/**"
+      - "include/zephyr/arch/posix/**"
+      - "scripts/native_simulator/**"
+      - "modules/mbedtls/**"
+      - '!**.rst'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bluetooth_classic_sim_tests:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.7.20251127
+      options: '--entrypoint /bin/bash'
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+    permissions:
+      checks: write # to create the check run entry with test results
+
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Environment Setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
+          git rebase origin/${BASE_REF}
+          git clean -f -d
+          git log  --pretty=oneline | head -n 10
+          west init -l . || true
+          west config manifest.group-filter -- +ci
+          west config --global update.narrow true
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Install Bluetooth Classic Simulation dependencies
+        run: |
+          pip install bumble==0.0.220
+
+      - name: Make test scripts executable
+        run: |
+          find tests/bluetooth/classic/sim -name "*.sh" -type f \
+            -exec chmod +x {} \;
+
+      - name: Run Bluetooth Classic Sim tests
+        id: run_tests
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          tests/bluetooth/classic/sim/ci.bt.classic.sh
+
+      - name: Create Test Results
+        run: |
+          junit2html tests/bluetooth/classic/sim/test_logs/junit.xml tests/bluetooth/classic/sim/test_logs/junit.html
+
+      - name: Upload Unit Test Results in HTML
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
+          path: |
+            tests/bluetooth/classic/sim/test_logs/junit.html
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@34d7c956a59aed1bfebf31df77b8de55db9bbaaf # v2.21.0
+        with:
+          check_name: Bluetooth Classic Simulation Test Results
+          files: "tests/bluetooth/classic/sim/test_logs/junit.xml"
+          comment_mode: off
+
+      - name: Upload test logs
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@34d7c956a59aed1bfebf31df77b8de55db9bbaaf # v2.21.0
+        with:
+          name: bluetooth-classic-sim-test-logs
+          path: |
+            tests/bluetooth/classic/sim/test_logs/
+            bt_classic_sim/
+          comment_mode: off
+
+      - name: Check test results
+        if: always()
+        run: |
+          if [[ -f tests/bluetooth/classic/sim/test_logs/junit.xml ]]; then
+            failures=$(grep -o 'failures="[0-9]*"' \
+              tests/bluetooth/classic/sim/test_logs/junit.xml | \
+              grep -o '[0-9]*')
+            if [[ "$failures" -gt 0 ]]; then
+              echo "::error::$failures test(s) failed"
+              exit 1
+            fi
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          sudo pkill -9 zephyr.exe || true
