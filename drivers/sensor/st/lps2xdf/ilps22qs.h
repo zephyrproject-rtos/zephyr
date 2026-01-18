@@ -18,6 +18,4 @@
 
 extern const struct lps2xdf_chip_api st_ilps22qs_chip_api;
 
-int st_ilps22qs_init(const struct device *dev);
-
 #endif /* ZEPHYR_DRIVERS_SENSOR_ILPS22QS_H_ */

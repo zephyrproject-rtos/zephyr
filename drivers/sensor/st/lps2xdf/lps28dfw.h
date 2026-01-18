@@ -18,6 +18,4 @@
 
 extern const struct lps2xdf_chip_api st_lps28dfw_chip_api;
 
-int st_lps28dfw_init(const struct device *dev);
-
 #endif /* ZEPHYR_DRIVERS_SENSOR_LPS28DFW_H_ */

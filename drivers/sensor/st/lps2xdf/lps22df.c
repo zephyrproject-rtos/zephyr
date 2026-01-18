@@ -39,6 +39,8 @@ static int lps22df_sample_fetch(const struct device *dev, enum sensor_channel ch
 
 	data->sample_press = raw_data.pressure.raw;
 	data->sample_temp = raw_data.heat.raw;
+	LOG_DBG("Raw press data %d, Raw temp data %d",
+		data->sample_press, data->sample_temp);
 
 	return 0;
 }
@@ -152,17 +154,7 @@ static int lps22df_trigger_set(const struct device *dev,
 }
 #endif /* CONFIG_LPS2XDF_TRIGGER */
 
-const struct lps2xdf_chip_api st_lps22df_chip_api = {
-	.mode_set_odr_raw = lps22df_mode_set_odr_raw,
-	.sample_fetch = lps22df_sample_fetch,
-#if CONFIG_LPS2XDF_TRIGGER
-	.config_interrupt = lps22df_config_interrupt,
-	.handle_interrupt = lps22df_handle_interrupt,
-	.trigger_set = lps22df_trigger_set,
-#endif
-};
-
-int st_lps22df_init(const struct device *dev)
+static int st_lps22df_init(const struct device *dev)
 {
 	const struct lps2xdf_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -240,6 +232,9 @@ int st_lps22df_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Store odr for PM resume */
+	((struct lps2xdf_data *)dev->data)->odr = cfg->odr;
+
 #ifdef CONFIG_LPS2XDF_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lps2xdf_init_interrupt(dev, DEVICE_VARIANT_LPS22DF) < 0) {
@@ -251,3 +246,14 @@ int st_lps22df_init(const struct device *dev)
 
 	return 0;
 }
+
+const struct lps2xdf_chip_api st_lps22df_chip_api = {
+	.mode_set_odr_raw = lps22df_mode_set_odr_raw,
+	.sample_fetch = lps22df_sample_fetch,
+	.power_on = st_lps22df_init,
+#if CONFIG_LPS2XDF_TRIGGER
+	.config_interrupt = lps22df_config_interrupt,
+	.handle_interrupt = lps22df_handle_interrupt,
+	.trigger_set = lps22df_trigger_set,
+#endif
+};

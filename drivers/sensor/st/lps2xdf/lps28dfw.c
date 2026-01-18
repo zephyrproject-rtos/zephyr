@@ -159,17 +159,7 @@ static int lps28dfw_trigger_set(const struct device *dev,
 }
 #endif /* CONFIG_LPS2XDF_TRIGGER */
 
-const struct lps2xdf_chip_api st_lps28dfw_chip_api = {
-	.mode_set_odr_raw = lps28dfw_mode_set_odr_raw,
-	.sample_fetch = lps28dfw_sample_fetch,
-#if CONFIG_LPS2XDF_TRIGGER
-	.config_interrupt = lps28dfw_config_interrupt,
-	.handle_interrupt = lps28dfw_handle_interrupt,
-	.trigger_set = lps28dfw_trigger_set,
-#endif
-};
-
-int st_lps28dfw_init(const struct device *dev)
+static int st_lps28dfw_init(const struct device *dev)
 {
 	const struct lps2xdf_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -247,6 +237,9 @@ int st_lps28dfw_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Store odr for PM resume */
+	((struct lps2xdf_data *)dev->data)->odr = cfg->odr;
+
 #ifdef CONFIG_LPS2XDF_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lps2xdf_init_interrupt(dev, DEVICE_VARIANT_LPS28DFW) < 0) {
@@ -258,3 +251,14 @@ int st_lps28dfw_init(const struct device *dev)
 
 	return 0;
 }
+
+const struct lps2xdf_chip_api st_lps28dfw_chip_api = {
+	.mode_set_odr_raw = lps28dfw_mode_set_odr_raw,
+	.sample_fetch = lps28dfw_sample_fetch,
+	.power_on = st_lps28dfw_init,
+#if CONFIG_LPS2XDF_TRIGGER
+	.config_interrupt = lps28dfw_config_interrupt,
+	.handle_interrupt = lps28dfw_handle_interrupt,
+	.trigger_set = lps28dfw_trigger_set,
+#endif
+};
