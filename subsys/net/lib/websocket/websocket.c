@@ -697,6 +697,11 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 	NET_DBG("[%p] Len %zd %s/%d/%s", ctx, payload_len, opcode2str(opcode),
 		mask, final ? "final" : "more");
 
+	if (payload_len == 0 || payload == NULL) {
+		NET_DBG("DATA len 0 or NULL");
+	} else {
+		NET_DBG("DATA %.*s", payload_len, payload);
+	}
 	memset(header, 0, sizeof(header));
 
 	/* Is this the last packet? */
