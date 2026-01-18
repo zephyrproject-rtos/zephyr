@@ -485,3 +485,105 @@ Distributing the broadcast code
    Broadcast reception start completed
    uart:~$ cap_commander distribute_broadcast_code 0 "BroadcastCode"
    Distribute broadcast code completed
+
+CAP Handover
+************
+
+The handover procedures allow the user to switch between unicast and broadcast streams. Since
+broadcast streams are always unidirectional, the procedures will only work for streams with audio
+direction from the Initiator to the Acceptor (sink streams).
+
+Using the CAP Handover procedures
+=================================
+
+When the Bluetooth stack has been initialized (:code:`bt init`),
+one or more remote CAP acceptor devices have been connected,
+and audio streams have been set up,
+the handover procedures can be used to switch between unicast and broadcast.
+Before any of the handover procedures can be used,
+the :code:`bap discover`, :code:`cap_initiator discover`
+and :code:`bap_broadcast_assistant discover` commands must have been issued and completed.
+
+.. code-block:: console
+
+   cap_handover --help
+   cap_handover - Bluetooth CAP handover shell commands
+   Subcommands:
+     unicast_to_broadcast  : Handover current unicast group to broadcast (unicast
+                           group will be deleted) [enc <broadcast_code>] [preset <preset_name>]
+     broadcast_to_unicast  : Handover current broadcast source to unicast
+                           (broadcast source will be deleted)
+                           [csip] [conns <count>|all] [preset <preset_name>]
+
+
+
+Handover unicast to broadcast
+-----------------------------
+
+This command hands over one or more unicast streams from unicast to broadcast.
+
+.. code-block:: console
+
+   uart:~$ bt init
+   uart:~$ bap init
+   uart:~$ bt connect <addr>
+
+   # Discover necessary services
+   uart:~$ bap discover
+   uart:~$ cap_initiator discover
+   uart:~$ bap_broadcast_assistant discover
+
+   # Setup unicast audio e.g. using the ac_1
+   uart:~$ cap_initiator ac_1
+
+   # Create a non-connectable and non-scannable extended advertising set for broadcast
+   uart:~$ bt adv-create nconn-nscan ext-adv
+   uart:~$ bt per-adv-param
+
+   # Perform the handover and update the advertising data to contain the broadcast ID
+   uart:~$ cap_handover unicast_to_broadcast
+   uart:~$ bt adv-data dev-name discov
+   uart:~$ bt per-adv-data
+
+   # Enable periodic advertising (extended advertising is enabled as part of handover)
+   uart:~$ bt per-adv on
+
+Handover broadcast to unicast
+-----------------------------
+
+This command hands over one or more unicast streams from broadcast to unicast.
+
+.. code-block:: console
+
+   uart:~$ bt init
+   uart:~$ bap init
+   uart:~$ bt connect <addr>
+
+   # Discover necessary services
+   uart:~$ bap discover
+   uart:~$ cap_initiator discover
+   uart:~$ bap_broadcast_assistant discover
+
+   # Create a non-connectable and non-scannable extended advertising set for broadcast
+   uart:~$ bt adv-create nconn-nscan ext-adv
+   uart:~$ bt per-adv-param
+
+   # Setup broadcast audio e.g. using the ac_12
+   uart:~$ cap_initiator ac_12
+   uart:~$ cap_initiator broadcast_start
+
+   # Set advertising data and enable advertising
+   uart:~$ bt adv-data dev-name discov
+   uart:~$ bt per-adv-data
+   uart:~$ bt per-adv on
+   uart:~$ bt adv-start
+
+   # Wait for broadcast sink to self-scan, or use broadcast reception to instruct sink to sync
+
+   # Perform the handover
+   uart:~$ cap_handover broadcast_to_unicast
+
+   # Terminate the advertiser (optional)
+   uart:~$ bt adv-stop
+   uart:~$ bt per-adv off
+   uart:~$ bt adv-delete
