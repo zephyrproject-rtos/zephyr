@@ -47,7 +47,7 @@
 
 #include <spixf.h>
 
-#include "spi_nor.h"
+#include <zephyr/drivers/flash/spi_nor.h>
 #include "jesd216.h"
 
 #include <zephyr/logging/log.h>
