@@ -13,6 +13,7 @@ as well as some other helpers for concrete runner classes.
 
 import abc
 import argparse
+import contextlib
 import errno
 import logging
 import os
@@ -988,20 +989,138 @@ class ZephyrBinaryRunner(abc.ABC):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((host, port))
 
-        # Otherwise, use a pure python implementation. This will work well for logging,
-        # but input is line based only.
+        if platform.system() == 'Windows':
+            self._windows_telnet_client(sock)
+        else:
+            self._unix_telnet_client(sock)
+
+
+    def _unix_telnet_client(self, sock: socket.socket) -> None:
+        """
+        Start a telnet client on Unix.
+
+        Selectors are used to register both the given socket and the stdin and wait on
+        incoming data, to later process it.
+        """
+        import termios
+        import tty
+
         sel = selectors.DefaultSelector()
         sel.register(sys.stdin, selectors.EVENT_READ)
         sel.register(sock, selectors.EVENT_READ)
-        while True:
-            events = sel.select()
-            for key, _ in events:
-                if key.fileobj == sys.stdin:
-                    text = sys.stdin.readline()
-                    if text:
-                        sock.send(text.encode())
 
-                elif key.fileobj == sock:
+
+        # We can't type check functions from tty and termios on Windows operating
+        # systems: mypy thinks the modules have no such attributes.
+        fd = sys.stdin.fileno()
+        orig_attr = termios.tcgetattr(fd) # type: ignore
+        try:
+            # Enable cbreak mode on the keyboard input, that way all shell editing
+            # commands (arrow keys, backspace, etc.) work as expected.
+            tty.setcbreak(fd) # type: ignore
+            while True:
+                events = sel.select()
+                for key, _ in events:
+                    if key.fileobj == sys.stdin:
+                        data = os.read(fd, 2048)
+                        if data:
+                            sock.send(data)
+
+                    elif key.fileobj == sock:
+                        resp = sock.recv(2048)
+                        if resp:
+                            print(resp.decode(), end='', flush=True)
+        except OSError as e:
+            print("\n\nCommunication was closed, reason:", e)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, orig_attr) # type: ignore
+
+
+    def _windows_telnet_client(self, sock):
+        """
+        Start a telnet client on Windows.
+
+        Since we don't have tty package on the Windows, a different approach to
+        establish two-way communction:
+        - Two threads are started.
+        - One uses the kbhit() and getch() from msvcrt package to read every single
+          character from input.
+        - The other one reads data from the socket and prints it to the screen.
+
+        Additional logic is need to convert arrow keys and navigation keys into
+        corresponding ANSI escape sequences
+        Additional logic with the stop event is needed to handle CTRL+C and any errors.
+        """
+        import msvcrt
+        import threading
+
+        def send_keyboard_input(sock: socket.socket,
+                                stop: threading.Event,
+                                err: threading.Event):
+            KEY_MAP = {
+                # Arrow keys
+                b'\xe0H': b'\x1b[A',  # Up
+                b'\xe0P': b'\x1b[B',  # Down
+                b'\xe0K': b'\x1b[D',  # Left
+                b'\xe0M': b'\x1b[C',  # Right
+
+                # Navigation keys
+                b'\xe0G': b'\x1b[H',  # Home
+                b'\xe0O': b'\x1b[F',  # End
+                b'\xe0R': b'\x1b[2~', # Insert
+                b'\xe0S': b'\x1b[3~', # Delete
+            }
+
+            try:
+                # We can't type check functions from msvcrt on Unix operating systems:
+                # mypy thinks the module has no such attributes.
+                while not stop.is_set():
+                    if msvcrt.kbhit(): # type: ignore
+                        ch = msvcrt.getch() # type: ignore
+                        if ch == b'\xe0':
+                            ch2 = msvcrt.getch() # type: ignore
+                            if ansi := KEY_MAP.get(ch + ch2):
+                                sock.sendall(ansi)
+                        elif ch == b'\r':
+                            # Normalize CR to CRLF
+                            sock.sendall(b"\r\n")
+                        else:
+                            sock.sendall(ch)
+            except OSError as e:
+                if not err.is_set() and not stop.is_set():
+                    err.set()
+                    print("\n\nCommunication was closed, reason:", e)
+                stop.set()
+
+        def receive_rtt_data(sock: socket.socket,
+                            stop: threading.Event,
+                            err: threading.Event):
+            try:
+                while not stop.is_set():
                     resp = sock.recv(2048)
-                    if resp:
-                        print(resp.decode(), end='')
+                    if not resp:
+                        print("\n\nConnection closed by the remote host, exiting!")
+                        stop.set()
+                        break
+                    print(resp.decode(errors="replace"), end='', flush=True)
+            except OSError as e:
+                if not err.is_set() and not stop.is_set():
+                    err.set()
+                    print("\n\nCommunication was closed, reason:", e)
+                stop.set()
+
+        stop = threading.Event()
+        err = threading.Event()
+        threading.Thread(target=send_keyboard_input, args=(sock, stop, err)).start()
+        threading.Thread(target=receive_rtt_data, args=(sock, stop, err)).start()
+
+        try:
+            while not stop.is_set():
+                # Wait for an event in the loop. Without timeout the
+                # KeyboardInterrupt would not be detected.
+                stop.wait(timeout=0.1)
+        except KeyboardInterrupt:
+            stop.set()
+        finally:
+            with contextlib.suppress(OSError):
+                sock.close()
