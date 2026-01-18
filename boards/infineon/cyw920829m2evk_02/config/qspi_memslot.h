@@ -10,6 +10,9 @@
 
 #include "cy_smif_memslot.h"
 
+/* Slave Select Pin */
+#define QSPI_SLAVE_SELECT (P2_0)
+
 extern cy_stc_smif_mem_config_t sfdp_slave_slot_0;
 
 #endif /*QSPI_MEMSLOT_H*/
