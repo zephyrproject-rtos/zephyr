@@ -17,8 +17,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
 #include "babblekit/flags.h"
@@ -26,6 +26,7 @@
 #include "babblekit/testcase.h"
 #include "bstests.h"
 #include "common.h"
+#include "iso_tx.h"
 
 LOG_MODULE_REGISTER(bis_broadcaster, LOG_LEVEL_INF);
 
@@ -34,10 +35,6 @@ LOG_MODULE_REGISTER(bis_broadcaster, LOG_LEVEL_INF);
 extern enum bst_result_t bst_result;
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *default_chan = &iso_chans[0];
-static uint16_t seq_num;
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(ARRAY_SIZE(mock_iso_data)),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_iso_chan_io_qos iso_tx = {
 	.sdu = 0U,
@@ -51,54 +48,6 @@ static struct bt_iso_chan_qos iso_qos = {
 };
 
 DEFINE_FLAG_STATIC(flag_iso_connected);
-
-static void send_data_cb(struct k_work *work);
-K_WORK_DELAYABLE_DEFINE(iso_send_work, send_data_cb);
-
-static void send_data(struct bt_iso_chan *chan)
-{
-	static size_t len_to_send = 1U;
-	struct net_buf *buf;
-	int ret;
-
-	if (!IS_FLAG_SET(flag_iso_connected)) {
-		/* TX has been aborted */
-		return;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
-	TEST_ASSERT(buf != NULL, "Failed to allocate buffer");
-
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
-	net_buf_add_mem(buf, mock_iso_data, len_to_send);
-
-	ret = bt_iso_chan_send(default_chan, buf, seq_num++);
-	if (ret < 0) {
-		LOG_DBG("Failed to send ISO data: %d", ret);
-		net_buf_unref(buf);
-
-		/* Reschedule for next interval */
-		k_work_reschedule(&iso_send_work, K_USEC(SDU_INTERVAL_US));
-
-		return;
-	}
-
-	len_to_send++;
-	if (len_to_send > chan->qos->tx->sdu) {
-		len_to_send = 1;
-	}
-}
-
-static void send_data_cb(struct k_work *work)
-{
-	const uint16_t tx_pool_cnt = tx_pool.uninit_count;
-
-	/* Send/enqueue as many as we can */
-	for (uint16_t i = 0U; i < tx_pool_cnt; i++) {
-		send_data(default_chan);
-	}
-}
 
 static void iso_connected_cb(struct bt_iso_chan *chan)
 {
@@ -151,14 +100,16 @@ static void iso_connected_cb(struct bt_iso_chan *chan)
 		IN_RANGE(info.broadcaster.bis_number, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX),
 		"Invalid BIS number 0x%02x", info.broadcaster.bis_number);
 
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
+
 	if (chan == default_chan) {
-		seq_num = 0U;
+		/* Register for TX to start sending */
+		err = iso_tx_register(chan);
+		TEST_ASSERT(err == 0, "Failed to register chan for TX: %d", err);
 
 		SET_FLAG(flag_iso_connected);
 	}
-
-	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
-	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected_cb(struct bt_iso_chan *chan, uint8_t reason)
@@ -166,20 +117,13 @@ static void iso_disconnected_cb(struct bt_iso_chan *chan, uint8_t reason)
 	LOG_INF("ISO Channel %p disconnected (reason 0x%02x)", chan, reason);
 
 	if (chan == default_chan) {
-		k_work_cancel_delayable(&iso_send_work);
+		int err;
+
+		err = iso_tx_unregister(chan);
+		TEST_ASSERT(err == 0, "Failed to unregister chan for TX: %d", err);
 
 		UNSET_FLAG(flag_iso_connected);
 	}
-}
-
-static void sdu_sent_cb(struct bt_iso_chan *chan)
-{
-	if (!IS_FLAG_SET(flag_iso_connected)) {
-		/* TX has been aborted */
-		return;
-	}
-
-	send_data(chan);
 }
 
 static void init(void)
@@ -187,7 +131,7 @@ static void init(void)
 	static struct bt_iso_chan_ops iso_ops = {
 		.disconnected = iso_disconnected_cb,
 		.connected = iso_connected_cb,
-		.sent = sdu_sent_cb,
+		.sent = iso_tx_sent_cb,
 	};
 	struct bt_le_local_features local_features;
 	int err;
@@ -212,6 +156,8 @@ static void init(void)
 	}
 
 	bk_sync_init();
+
+	iso_tx_init();
 }
 
 static void create_ext_adv(struct bt_le_ext_adv **adv)
@@ -277,18 +223,6 @@ static void create_big(struct bt_le_ext_adv *adv, size_t cnt, struct bt_iso_big 
 	WAIT_FOR_FLAG(flag_iso_connected);
 }
 
-static void start_tx(void)
-{
-	const uint16_t tx_pool_cnt = tx_pool.uninit_count;
-
-	LOG_INF("Starting TX");
-
-	/* Send/enqueue as many as we can */
-	for (uint16_t i = 0U; i < tx_pool_cnt; i++) {
-		send_data(default_chan);
-	}
-}
-
 static void terminate_big(struct bt_iso_big *big)
 {
 	int err;
@@ -325,7 +259,6 @@ static void test_main(void)
 	create_ext_adv(&adv);
 	create_big(adv, 1U, &big);
 	start_ext_adv(adv);
-	start_tx();
 
 	/* Wait for receiver to tell us to terminate */
 	bk_sync_wait();
@@ -358,7 +291,6 @@ static void test_main_disable(void)
 	create_ext_adv(&adv);
 	create_big(adv, ARRAY_SIZE(iso_chans), &big);
 	start_ext_adv(adv);
-	start_tx();
 
 	/* Wait for receiver to tell us to terminate */
 	bk_sync_wait();
@@ -400,7 +332,6 @@ static void test_main_fragment(void)
 	create_ext_adv(&adv);
 	create_big(adv, 1U, &big);
 	start_ext_adv(adv);
-	start_tx();
 
 	/* Wait for receiver to tell us to terminate */
 	bk_sync_wait();

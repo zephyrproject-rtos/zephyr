@@ -16,84 +16,30 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
 #include "bstests.h"
 #include "common.h"
+#include "iso_tx.h"
 
-#define ENQUEUE_COUNT 2
+#define EXPECTED_TX_CNT 100U
 
 extern enum bst_result_t bst_result;
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *default_chan = &iso_chans[0];
 static struct bt_iso_cig *cig;
-static uint16_t seq_num;
-static volatile size_t enqueue_cnt;
-static uint32_t latency_ms = 10U; /* 10ms */
-static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+static const uint32_t latency_ms = 10U;                  /* 10ms */
+static const uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
+static uint8_t disconnect_reason;
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
 
 DEFINE_FLAG_STATIC(flag_iso_connected);
-
-static void send_data_cb(struct k_work *work)
-{
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
-	static size_t len_to_send = 1;
-	static bool data_initialized;
-	struct net_buf *buf;
-	int ret;
-
-	if (!IS_FLAG_SET(flag_iso_connected)) {
-		/* TX has been aborted */
-		return;
-	}
-
-	if (!data_initialized) {
-		for (int i = 0; i < ARRAY_SIZE(buf_data); i++) {
-			buf_data[i] = (uint8_t)i;
-		}
-
-		data_initialized = true;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
-	net_buf_add_mem(buf, buf_data, len_to_send);
-
-	ret = bt_iso_chan_send(default_chan, buf, seq_num++);
-	if (ret < 0) {
-		printk("Failed to send ISO data (%d)\n", ret);
-		net_buf_unref(buf);
-
-		/* Reschedule for next interval */
-		k_work_reschedule(k_work_delayable_from_work(work), K_USEC(interval_us));
-
-		return;
-	}
-
-	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
-	}
-
-	enqueue_cnt--;
-	if (enqueue_cnt > 0U) {
-		/* If we have more buffers available, we reschedule the workqueue item immediately
-		 * to trigger another encode + TX, but without blocking this call for too long
-		 */
-		k_work_reschedule(k_work_delayable_from_work(work), K_NO_WAIT);
-	}
-}
-K_WORK_DELAYABLE_DEFINE(iso_send_work, send_data_cb);
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -126,18 +72,16 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 	printk("ISO Channel %p connected\n", chan);
 
-	seq_num = 0U;
-	enqueue_cnt = ENQUEUE_COUNT;
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 
 	if (chan == default_chan) {
-		/* Start send timer */
-		k_work_schedule(&iso_send_work, K_MSEC(0));
+		/* Register for TX to start sending */
+		err = iso_tx_register(chan);
+		TEST_ASSERT(err == 0, "Failed to register chan for TX: %d", err);
 
 		SET_FLAG(flag_iso_connected);
 	}
-
-	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
-	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -147,35 +91,16 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
 	if (chan == default_chan) {
-		k_work_cancel_delayable(&iso_send_work);
+		err = iso_tx_unregister(chan);
+		TEST_ASSERT(err == 0, "Failed to unregister chan for TX: %d", err);
+
+		disconnect_reason = reason;
 
 		UNSET_FLAG(flag_iso_connected);
 	}
 
 	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
-
-	if (seq_num < 100) {
-		printk("Channel disconnected early, bumping seq_num to 1000 to end test\n");
-		seq_num = 1000;
-	}
-}
-
-static void sdu_sent_cb(struct bt_iso_chan *chan)
-{
-	int err;
-
-	enqueue_cnt++;
-
-	if (!IS_FLAG_SET(flag_iso_connected)) {
-		/* TX has been aborted */
-		return;
-	}
-
-	err = k_work_schedule(&iso_send_work, K_NO_WAIT);
-	if (err < 0) {
-		TEST_FAIL("Failed to schedule TX for chan %p: %d", chan, err);
-	}
 }
 
 static void init(void)
@@ -183,7 +108,7 @@ static void init(void)
 	static struct bt_iso_chan_ops iso_ops = {
 		.connected = iso_connected,
 		.disconnected = iso_disconnected,
-		.sent = sdu_sent_cb,
+		.sent = iso_tx_sent_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
 		.sdu = CONFIG_BT_ISO_TX_MTU,
@@ -210,6 +135,8 @@ static void init(void)
 		iso_chans[i].required_sec_level = BT_SECURITY_L2;
 #endif /* CONFIG_BT_SMP */
 	}
+
+	iso_tx_init();
 }
 
 static void set_cig_defaults(struct bt_iso_cig_param *param)
@@ -446,6 +373,7 @@ static void reset_bluetooth(void)
 
 	/* After a disable, all CIGs and BIGs are removed */
 	cig = NULL;
+	disconnect_reason = 0U;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -455,6 +383,27 @@ static void reset_bluetooth(void)
 	}
 }
 
+static void wait_tx_complete(void)
+{
+	size_t tx_cnt;
+
+	do {
+		tx_cnt = iso_tx_get_sent_cnt(default_chan);
+		k_sleep(K_USEC(interval_us));
+
+		if (!IS_FLAG_SET(flag_iso_connected)) {
+			/* We don't expect all TX to be complete in the test where the peripheral
+			 * actively disconnects
+			 */
+			if (disconnect_reason != BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
+				TEST_FAIL("Did not send expected amount before disconnection");
+			}
+
+			return;
+		}
+	} while (tx_cnt < EXPECTED_TX_CNT);
+}
+
 static void test_main(void)
 {
 	init();
@@ -462,21 +411,14 @@ static void test_main(void)
 	reconfigure_cig();
 	connect_acl();
 	connect_cis();
-
-	while (seq_num < 100U) {
-		k_sleep(K_USEC(interval_us));
-	}
-
-	if (seq_num == 100) {
+	wait_tx_complete();
+	if (IS_FLAG_SET(flag_iso_connected)) {
 		disconnect_cis();
-		disconnect_acl();
-		terminate_cig();
 	}
-
-	/* check that all buffers returned to pool */
-	TEST_ASSERT(atomic_get(&tx_pool.avail_count) == ENQUEUE_COUNT,
-		    "tx_pool has non returned buffers, should be %u but is %u",
-		    ENQUEUE_COUNT, atomic_get(&tx_pool.avail_count));
+	if (IS_FLAG_SET(flag_connected)) {
+		disconnect_acl();
+	}
+	terminate_cig();
 
 	TEST_PASS("Test passed");
 }
@@ -497,13 +439,13 @@ static void test_main_disable(void)
 	create_cig(ARRAY_SIZE(iso_chans));
 	connect_acl();
 	connect_cis();
-
-	while (seq_num < 100U) {
-		k_sleep(K_USEC(interval_us));
+	wait_tx_complete();
+	if (IS_FLAG_SET(flag_iso_connected)) {
+		disconnect_cis();
 	}
-
-	disconnect_cis();
-	disconnect_acl();
+	if (IS_FLAG_SET(flag_connected)) {
+		disconnect_acl();
+	}
 	terminate_cig();
 
 	TEST_PASS("Disable test passed");
