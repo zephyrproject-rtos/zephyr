@@ -635,18 +635,21 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 static void handle_msg_setup(struct udc_stm32_data *priv)
 {
 	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
+	struct udc_ep_config *cfg_out;
+	struct udc_ep_config *cfg_in;
 	const struct device *dev = priv->dev;
 	struct net_buf *buf;
 	int err;
 
+	cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
+
 	/* Drop all transfers in control endpoints queue upon new SETUP */
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
-	if (buf != NULL) {
+	while ((buf = udc_buf_get(cfg_out))) {
 		net_buf_unref(buf);
 	}
 
-	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
-	if (buf != NULL) {
+	while ((buf = udc_buf_get(cfg_in))) {
 		net_buf_unref(buf);
 	}
 
@@ -1180,8 +1183,7 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 
 	udc_stm32_ep_flush(dev, ep_cfg);
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf != NULL) {
+	while ((buf = udc_buf_get(ep_cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
