@@ -43,9 +43,9 @@
 	};
 
 	soc {
-		sram0: memory@20006000 {
+		sram0: memory@20005000 {
 			compatible = "mmio-sram";
-			reg = <0x20006000 DT_SIZE_K(200)>;
+			reg = <0x20005000 DT_SIZE_K(200)>;
 		};
 	};
 };
