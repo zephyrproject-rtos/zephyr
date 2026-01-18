@@ -128,6 +128,14 @@
 			status = "disabled";
 		};
 
+		adc0: adc@403a0000 {
+			compatible = "infineon,psoc4-adc";
+			reg = <0x403a0000 0xf08>;
+			interrupts = <22 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		tcpwm0: tcpwm0@40200100 {
 			reg = <0x40200100 0x180>;
 			#address-cells = <1>;
