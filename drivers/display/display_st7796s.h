@@ -43,5 +43,7 @@
 #define ST7796S_MADCTL_MH  BIT(2) /* Set horizontal refresh order */
 #define ST7796S_MADCTL_BGR BIT(3) /* Sets BGR color mode */
 
+/* Define a mask of all bits that control orientation */
+#define ST7796S_MADCTL_ORIENTATION_MASK (ST7796S_MADCTL_MX | ST7796S_MADCTL_MY | ST7796S_MADCTL_MV)
 
 #endif /* _ZEPHYR_DRIVERS_DISPLAY_ST7796S_H_ */

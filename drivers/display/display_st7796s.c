@@ -197,9 +197,53 @@ static void st7796s_get_capabilities(const struct device *dev,
 
 	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
 
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		capabilities->x_resolution = config->width;
+		capabilities->y_resolution = config->height;
+	} else {
+		capabilities->x_resolution = config->height;
+		capabilities->y_resolution = config->width;
+	}
+
 	capabilities->current_orientation = data->orientation;
+}
+
+static int st7796s_set_orientation(const struct device *dev,
+				   const enum display_orientation orientation)
+{
+	struct st7796s_data *data = dev->data;
+	const struct st7796s_config *config = dev->config;
+
+	uint8_t tx_data = config->madctl;
+	int ret;
+
+	tx_data &= ~ST7796S_MADCTL_ORIENTATION_MASK;
+
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		/* works 0° - default */
+		tx_data |= ST7796S_MADCTL_MV;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		/* works CW 90° */
+		tx_data |= ST7796S_MADCTL_MY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		/* works CW 180° */
+		tx_data |= ST7796S_MADCTL_MX | ST7796S_MADCTL_MY | ST7796S_MADCTL_MV;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		/* works CW 270° */
+		tx_data |= ST7796S_MADCTL_MX;
+	} else {
+		return -EINVAL;
+	}
+
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_MADCTL, &tx_data, 1U);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static int st7796s_lcd_config(const struct device *dev)
@@ -314,39 +358,6 @@ static int st7796s_lcd_config(const struct device *dev)
 	return st7796s_send_cmd(dev, ST7796S_CMD_CSCON, &param, sizeof(param));
 }
 
-static int st7796s_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	struct st7796s_data *data = dev->data;
-	uint8_t tx_data = ST7796S_MADCTL_BGR;
-	int ret;
-
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		/* works 0° - default */
-		tx_data |= ST7796S_MADCTL_MV;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-		/* works CW 90° */
-		tx_data |= ST7796S_MADCTL_MY;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-		/* works CW 180° */
-		tx_data |= ST7796S_MADCTL_MX | ST7796S_MADCTL_MY | ST7796S_MADCTL_MV;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-		/* works CW 270° */
-		tx_data |= ST7796S_MADCTL_MX;
-	} else {
-		return -EINVAL;
-	}
-
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_MADCTL, &tx_data, 1U);
-	if (ret < 0) {
-		return ret;
-	}
-
-	data->orientation = orientation;
-
-	return 0;
-}
-
 static int st7796s_init(const struct device *dev)
 {
 	const struct st7796s_config *config = dev->config;
@@ -387,6 +398,11 @@ static int st7796s_init(const struct device *dev)
 
 	param = config->madctl;
 	ret = st7796s_send_cmd(dev, ST7796S_CMD_MADCTL, &param, sizeof(param));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = st7796s_set_orientation(dev, DISPLAY_ORIENTATION_NORMAL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -444,9 +460,11 @@ static DEVICE_API(display, st7796s_api) = {
 		.te_delay = DT_INST_PROP(n, te_delay),                          \
 	};									\
 										\
+	static struct st7796s_data st7796s_data_##n;                            \
+										\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
 			NULL,							\
-			NULL,							\
+			&st7796s_data_##n,					\
 			&st7796s_config_##n,					\
 			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,		\
 			&st7796s_api);
