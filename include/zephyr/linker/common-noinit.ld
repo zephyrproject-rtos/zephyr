@@ -26,6 +26,9 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 	*(.user_stacks*)
 	z_user_stacks_end = .;
 #endif /* CONFIG_USERSPACE */
+	z_kernel_stacks_start = .;
+	*(.kernel_stacks*)
+	z_kernel_stacks_end = .;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
