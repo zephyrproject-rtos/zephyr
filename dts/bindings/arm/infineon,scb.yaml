@@ -13,6 +13,11 @@ properties:
   reg:
     required: true
 
+  clk-dst:
+    type: int
+    required: true
+    description: Peripheral clock destination ID for this SCB instance
+
   interrupts:
     description: Required for non-cat1c devices
 
