@@ -8,9 +8,6 @@ if BOARD_STM32F746G_DISCO
 configdefault NET_L2_ETHERNET
 	default y
 
-config INPUT
-	default y if LVGL
-
 if DISPLAY
 
 # MEMC needs to be enabled in order to store

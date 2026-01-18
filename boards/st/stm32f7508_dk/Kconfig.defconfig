@@ -17,7 +17,4 @@ config MEMC
 
 endif # DISPLAY
 
-config INPUT
-	default y if LVGL
-
 endif # BOARD_STM32F7508_DK
