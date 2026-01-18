@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: endresshauser
+      url-base: https://github.com/endresshauser-lp
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -133,6 +135,10 @@ manifest:
       path: modules/hal/cmsis_6
       groups:
         - hal
+    - name: dhara
+      remote: endresshauser
+      revision: da79ce087055d86b174fc69a9297f8d033dabe54
+      path: modules/lib/dhara
     - name: edtt
       revision: c282625e694f0b53ea53e13231ea6d2f49411768
       path: tools/edtt
