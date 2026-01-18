@@ -23,5 +23,6 @@
 #define SIWX91X_CLK_STATIC_ULP_I2S 16
 #define SIWX91X_CLK_ADC            17
 #define SIWX91X_CLK_GPDMA0         18
+#define SIWX91X_CLK_RNG            19
 
 #endif
