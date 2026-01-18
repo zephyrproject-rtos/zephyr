@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 KAGA FEI Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "ec4l15ba1_cpuapp_common.dtsi"
+
+/ {
+	compatible = "kaga-fei,ec4l15ba1-cpuapp";
+	model = "kafa-fei_ec4l15ba1";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54l15_partition.dtsi>
