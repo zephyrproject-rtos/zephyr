@@ -199,7 +199,7 @@ void *gnttab_get_pages(unsigned int npages)
 	int ret = 0;
 	void *page_addr;
 	unsigned int removed;
-	xen_pfn_t gfn;
+	xen_pfn_t gfn = 0;
 
 	if (npages == 0) {
 		return NULL;
