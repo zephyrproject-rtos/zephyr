@@ -267,8 +267,7 @@ __weak void clock_init(void)
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm7), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
-	CLOCK_SetIpSrc(kCLOCK_Ewm0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(ewm0), ip_source));
+	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetIpSrc(kCLOCK_Flexio0,

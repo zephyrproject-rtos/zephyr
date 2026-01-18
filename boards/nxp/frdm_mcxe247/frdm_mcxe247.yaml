@@ -24,4 +24,5 @@ supported:
   - arduino_gpio
   - comparator
   - dma
+  - watchdog
 vendor: nxp
