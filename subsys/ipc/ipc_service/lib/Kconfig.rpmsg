@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance
+	  for RPMSG backend.
