@@ -196,27 +196,45 @@ void log_output_dropped_process(const struct log_output *output, uint32_t cnt);
  * @param buf  Buffer.
  * @param len  Buffer length.
  * @param ctx  Context passed to the %p outf.
+ *
+ * @return 0 if successful else error number
  */
-static inline void log_output_write(log_output_func_t outf, uint8_t *buf, size_t len, void *ctx)
+static inline int log_output_write(log_output_func_t outf, uint8_t *buf, size_t len, void *ctx)
 {
 	int processed;
 
 	while (len != 0) {
 		processed = outf(buf, len, ctx);
+
+		/*
+		 * Negative value indicates error, while zero indicates that no progress has been
+		 * made. It is better to drop this message instead of risking an infinite loop.
+		 */
+		if (processed <= 0) {
+			return processed;
+		}
+
 		len -= processed;
 		buf += processed;
 	}
+
+	return 0;
 }
 
 /** @brief Flush output buffer.
  *
  * @param output Pointer to the log output instance.
+ *
+ * @return 0 if successful else error number
  */
-static inline void log_output_flush(const struct log_output *output)
+static inline int log_output_flush(const struct log_output *output)
 {
-	log_output_write(output->func, output->buf, output->control_block->offset,
+	int ret;
+
+	ret = log_output_write(output->func, output->buf, output->control_block->offset,
 			 output->control_block->ctx);
 	output->control_block->offset = 0;
+	return ret;
 }
 
 /** @brief Function for setting user context passed to the output function.
