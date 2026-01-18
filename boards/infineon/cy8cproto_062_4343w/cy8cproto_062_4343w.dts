@@ -77,6 +77,12 @@ uart2: &scb2 {
 	};
 };
 
+&clk_hf4 {
+	clock-div = <1>;
+	clocks = <&fll0>;
+	status = "okay";
+};
+
 &sdhc0 {
 	status = "okay";
 
@@ -84,6 +90,13 @@ uart2: &scb2 {
 	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
 		     &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
 	pinctrl-names = "default";
+
+	bus-width = <4>;
+	max-bus-freq = <50000000>;
+	min-bus-freq = <400000>;
+	power-delay-ms = <1000>;
+	no-1-8-v;
+	clocks = <&clk_hf4>;
 
 	/* Wi-Fi configuration */
 	airoc-wifi {

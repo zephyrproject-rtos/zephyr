@@ -1,5 +1,5 @@
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -24,3 +24,24 @@ properties:
 
   system-interrupts:
     description: Required for cat1c devices
+
+  bus-width:
+    type: int
+    default: 4
+    description: |
+      bus width for SDMMC access, defaults to the minimum necessary
+      number of bus lines
+    enum:
+      - 1
+      - 4
+      - 8
+
+  no-1-8-v:
+    type: boolean
+    description: |
+      The SD/MMC bus on the board doesn't support the 1.8V voltage,
+      Which disables UHS-I, HS200 and HS400 support.
+
+  cd-gpios:
+    type: phandle-array
+    description: Card Detect pin

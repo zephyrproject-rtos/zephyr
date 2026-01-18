@@ -85,8 +85,11 @@ endif()
 if(CONFIG_WIFI_AIROC)
   add_subdirectory(whd-expansion)
 
-  ## Add core-lib sources for CAT1 devices
-  add_subdirectory_ifndef(CONFIG_SOC_FAMILY_INFINEON_CAT1 core-lib)
+  if(NOT CONFIG_SOC_FAMILY_INFINEON_CAT1
+  AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY
+  AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  add_subdirectory(core-lib)
+  endif()
 
   ## Add abstraction-rtos sources
   add_subdirectory_ifndef(CONFIG_SOC_FAMILY_INFINEON_CAT1 abstraction-rtos)

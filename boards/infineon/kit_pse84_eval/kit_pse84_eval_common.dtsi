@@ -78,6 +78,10 @@ uart2: &scb2 {
 	status = "okay";
 };
 
+&gpio_prt11 {
+	status = "okay";
+};
+
 &gpio_prt13 {
 	status = "okay";
 };
@@ -87,5 +91,9 @@ uart2: &scb2 {
 };
 
 &gpio_prt16 {
+	status = "okay";
+};
+
+&gpio_prt17 {
 	status = "okay";
 };

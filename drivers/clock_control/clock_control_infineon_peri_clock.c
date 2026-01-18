@@ -50,6 +50,11 @@ struct ifx_peri_clock_data {
 #define IFX_SCB5_PCLK_CLOCK    PCLK_SCB5_CLOCK_SCB_EN
 #endif
 
+#if defined(CY_IP_MXSDHC)
+#define IFX_SDHC0_PCLK_CLOCK PCLK_SDHC0_CLK_HF
+#define IFX_SDHC1_PCLK_CLOCK PCLK_SDHC1_CLK_HF
+#endif
+
 #define CLK_FRAC_DIV_MODE 0x02
 
 en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num)
@@ -101,6 +106,21 @@ en_clk_dst_t ifx_cat1_tcpwm_get_clock_index(uint32_t block_num, uint32_t channel
 	return clk;
 }
 
+en_clk_dst_t ifx_cat1_sdhc_get_clock_index(uint32_t block_num, uint32_t channel)
+{
+	en_clk_dst_t clk = -EINVAL;
+
+#if defined(CY_IP_MXSDHC)
+	if (block_num == 0) {
+		clk = (en_clk_dst_t)((uint32_t)IFX_SDHC0_PCLK_CLOCK);
+	} else {
+		clk = (en_clk_dst_t)((uint32_t)IFX_SDHC1_PCLK_CLOCK);
+	}
+#endif
+
+	return clk;
+}
+
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
 	struct ifx_peri_clock_data *const data = dev->data;
@@ -133,6 +153,13 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 	} else if (data->hw_resource.type == IFX_RSC_TCPWM) {
 		en_clk_dst_t clk_idx = ifx_cat1_tcpwm_get_clock_index(
 			data->hw_resource.block_num, data->hw_resource.channel_num);
+
+		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
+		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
+		ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+	} else if (data->hw_resource.type == IFX_RSC_SDHC) {
+		en_clk_dst_t clk_idx = ifx_cat1_sdhc_get_clock_index(data->hw_resource.block_num,
+								     data->hw_resource.channel_num);
 
 		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
 		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
