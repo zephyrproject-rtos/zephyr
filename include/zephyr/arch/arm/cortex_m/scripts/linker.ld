@@ -182,7 +182,7 @@ GROUP_END(ITCM)
 
 	__text_region_end = .;
 
-#if defined (CONFIG_CPP) || defined(CONFIG_RUST)
+#if defined (CONFIG_CPP) || defined(CONFIG_RUST) || defined(CONFIG_ARCH_STACKWALK)
 	SECTION_PROLOGUE(.ARM.extab,,)
 	{
 	/*
