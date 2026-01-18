@@ -27,20 +27,71 @@ config 2ND_LEVEL_INTERRUPTS
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 234
 
+# 8 aggregators are from display irqsteer
+#   max interrupts: 8 * 64 = 512
+# 10 aggregators are from cortex-m7 irqsteer
+#   max interrupts: 10 * 64 = 640
 config NUM_2ND_LEVEL_AGGREGATORS
-	default 1
+	default 18
 
 config 2ND_LEVEL_INTERRUPT_BITS
 	default 8
 
+# 214 - 219 for display irqsteer interrupt controller(first instance)
 config 2ND_LVL_INTR_00_OFFSET
+	default 214
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 215
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 216
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 217
+
+config 2ND_LVL_INTR_04_OFFSET
+	default 218
+
+config 2ND_LVL_INTR_07_OFFSET
+	default 219
+
+# 224 - 233 for irqsteer interrupt controller(second instance)
+config 2ND_LVL_INTR_010_OFFSET
 	default 224
+
+config 2ND_LVL_INTR_011_OFFSET
+	default 225
+
+config 2ND_LVL_INTR_012_OFFSET
+	default 226
+
+config 2ND_LVL_INTR_013_OFFSET
+	default 227
+
+config 2ND_LVL_INTR_014_OFFSET
+	default 228
+
+config 2ND_LVL_INTR_015_OFFSET
+	default 229
+
+config 2ND_LVL_INTR_016_OFFSET
+	default 230
+
+config 2ND_LVL_INTR_017_OFFSET
+	default 231
+
+config 2ND_LVL_INTR_018_OFFSET
+	default 232
+
+config 2ND_LVL_INTR_019_OFFSET
+	default 233
 
 config 3RD_LEVEL_INTERRUPTS
 	default n
 
 config NUM_IRQS
-	default 250 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
+	default 1514 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 800000000
