@@ -37,7 +37,6 @@ from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
-from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')
 
@@ -186,7 +185,7 @@ class TestPlan:
         self.hwm = env.hwm
         # used during creating shorter build paths
         self.link_dir_counter = 0
-        self.modules = []
+        self.modules = [module.get('name') for module in self.env.modules]
 
         self.run_individual_testsuite = []
         self.levels = []
@@ -210,7 +209,6 @@ class TestPlan:
                 raise TwisterRuntimeError("Tests not found")
 
     def discover(self):
-        self.handle_modules()
         self.test_config = TestConfiguration(self.env.test_config)
 
         self.add_configurations()
@@ -363,12 +361,6 @@ class TestPlan:
             # to the first set to allow for better distribution among all sets.
             self.instances.update(skipped)
             self.instances.update(errors)
-
-
-    def handle_modules(self):
-        # get all enabled west projects
-        modules_meta = parse_modules(ZEPHYR_BASE)
-        self.modules = [module.meta.get('name') for module in modules_meta]
 
 
     def report(self):
