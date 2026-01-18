@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <sifli/sf32lb58_hpsys.dtsi>
+#include <mem.h>
+
+/ {
+    chosen {
+		zephyr,sram = &sram_hcpu;
+        zephyr,itcm = &itcm;
+        zephyr,dtcm = &dtcm_hcpu;
+    };
+
+    soc {
+        itcm: itcm@10000 {
+            compatible = "zephyr,memory-region", "mmio-sram";
+            reg = <0x00010000 DT_SIZE_K(64)>;
+            zephyr,memory-region = "ITCM";
+        };
+
+        sram_retention: sram-retention@20000 {
+            compatible = "zephyr,memory-region", "mmio-sram";
+            reg = <0x00020000 DT_SIZE_K(64)>;
+            zephyr,memory-region = "RetentionSram";
+        };
+    };
+
+    cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		hcpu: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			// cpu-power-states = <&stop0 &stop1 &stop2>;
+		};
+    };
+};

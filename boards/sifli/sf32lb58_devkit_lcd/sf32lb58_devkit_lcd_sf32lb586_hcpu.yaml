@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sf32lb58_devkit/sf32lb586/hcpu
+name: SF32LB58-DEVKIT-SF32LB586-HCPU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 1024
+supported:
+  - uart
+vendor: sifli

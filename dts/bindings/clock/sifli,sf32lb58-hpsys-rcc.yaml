@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sifli SF32LB58 HPSYS Reset and Clock Controller
+
+compatible: "sifli,sf32lb58-hpsys-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  sel-sys:
+    type: int
+    required: true
+
+  sel-lp-sys:
+    type: int
+    required: true
+
+  sel-mpi1:
+    type: int
+    required: true
+
+  sel-mpi2:
+    type: int
+    required: true
+
+  sel-mpi3:
+    type: int
+    required: true
+
+  sel-mpi4:
+    type: int
+    required: true
+
+  sel-peri:
+    type: int
+    required: true
+
+  sel-pdm1:
+    type: int
+    required: true
+
+  sel-pdm2:
+    type: int
+    required: true
+
+  sel-usbc:
+    type: int
+    required: true
+
+  sel-sdmmc:
+    type: int
+    required: true
+
+clock-cells:
+  - id # subsys, named as `id` to be compatible to sf32lb drivers
