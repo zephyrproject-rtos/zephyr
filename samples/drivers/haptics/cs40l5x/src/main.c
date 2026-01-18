@@ -310,7 +310,7 @@ int main(void)
 		}
 	}
 
-	(void)cs40l5x_register_error_callback(cs40l5x, cs40l5x_dummy_callback);
+	(void)haptics_register_error_callback(cs40l5x, cs40l5x_dummy_callback);
 
 	/* Demonstration of PCM upload (CUSTOM0) */
 	error = cs40l5x_upload_pcm(cs40l5x, CS40L5X_CUSTOM_0, CS40L5X_DEMO_REDC, CS40L5X_DEMO_F0,
