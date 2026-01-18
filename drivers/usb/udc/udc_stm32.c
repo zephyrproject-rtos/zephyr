@@ -38,16 +38,9 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define PCD_SPEED_HIGH_IN_FULL	(PCD_SPEED_HIGH + 1)
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define DT_DRV_COMPAT st_stm32_otghs
-#define UDC_STM32_IRQ_NAME     otghs
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-#define DT_DRV_COMPAT st_stm32_otgfs
-#define UDC_STM32_IRQ_NAME     otgfs
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define DT_DRV_COMPAT st_stm32_usb
-#define UDC_STM32_IRQ_NAME     usb
-#endif
+#define DT_DRV_COMPAT_OTGHS st_stm32_otghs
+#define DT_DRV_COMPAT_OTGFS st_stm32_otgfs
+#define DT_DRV_COMPAT_USB st_stm32_usb
 
 /* Shorthand to obtain PHY node for an instance */
 #define UDC_STM32_PHY(usb_node)			DT_PROP_BY_IDX(usb_node, phys, 0)
@@ -58,7 +51,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 		DT_NODE_HAS_COMPAT(UDC_STM32_PHY(usb_node), st_stm32u5_otghs_phy))
 
 /* Evaluates to 1 if 'usb_node' is HS-capable, 0 otherwise. */
-#define UDC_STM32_NODE_IS_HS_CAPABLE(usb_node)	DT_NODE_HAS_COMPAT(usb_node, st_stm32_otghs)
+#define UDC_STM32_NODE_IS_HS_CAPABLE(usb_node)	DT_NODE_HAS_COMPAT(usb_node, DT_DRV_COMPAT_OTGHS)
 
 /*
  * Returns the 'PCD_PHY_Module' value for 'usb_node', which
@@ -1231,61 +1224,6 @@ static const struct udc_api udc_stm32_api = {
 	.device_speed = udc_stm32_device_speed,
 };
 
-/* ----------------- Instance/Device specific data ----------------- */
-
-/*
- * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
- * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
- * support USB device controller. STM32 F4 and F7 series support USB_OTG_FS
- * device controller. STM32 F1 and L4 series support either USB or USB_OTG_FS
- * device controller.STM32 G0 series supports USB_DRD_FS device controller.
- *
- * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
- * Kconfig system.
- */
-K_THREAD_STACK_DEFINE(udc0_thr_stk, CONFIG_UDC_STM32_STACK_SIZE);
-
-static struct udc_ep_config udc0_in_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
-static struct udc_ep_config udc0_out_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
-
-static struct udc_stm32_data udc0_priv;
-
-static struct udc_data udc0_data = {
-	.mutex = Z_MUTEX_INITIALIZER(udc0_data.mutex),
-	.priv = &udc0_priv,
-};
-
-static void udc0_irq_connect(void)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
-		    DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority),
-		    HAL_PCD_IRQHandler, &udc0_priv.pcd, 0);
-}
-
-PINCTRL_DT_INST_DEFINE(0);
-
-static const struct stm32_pclken udc0_pclken[] = STM32_DT_INST_CLOCKS(0);
-
-static const struct udc_stm32_config udc0_cfg  = {
-	.base = (void *)DT_INST_REG_ADDR(0),
-	.num_endpoints = DT_INST_PROP(0, num_bidir_endpoints),
-	.dram_size = DT_INST_PROP(0, ram_size),
-	.irq_connect = udc0_irq_connect,
-	.irqn = DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
-	.pclken = (struct stm32_pclken *)udc0_pclken,
-	.num_clocks = DT_INST_NUM_CLOCKS(0),
-	.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.in_eps = udc0_in_ep_cfg,
-	.out_eps = udc0_out_ep_cfg,
-	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
-	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
-	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
-	.thread_stack = udc0_thr_stk,
-	.thread_stack_size = K_THREAD_STACK_SIZEOF(udc0_thr_stk),
-	.disconnect_gpio = GPIO_DT_SPEC_INST_GET_OR(0, disconnect_gpios, {0}),
-	.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(UDC_STM32_PHY(DT_DRV_INST(0)), reset_gpios, {0}),
-};
-
 static int udc_stm32_clock_enable(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -1318,14 +1256,14 @@ static int udc_stm32_clock_enable(const struct device *dev)
 
 	LL_PWR_EnableVddUSB();
 
-	#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT_OTGHS)
 		/* Configure VOSR register of USB HSTransceiverSupply(); */
 		LL_PWR_EnableUSBPowerSupply();
 		LL_PWR_EnableUSBEPODBooster();
 		while (LL_PWR_IsActiveFlag_USBBOOST() != 1) {
 			/* Wait for USB EPOD BOOST ready */
 		}
-	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+	#endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT_OTGHS) */
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	/* Enable Vdd33USB voltage monitoring */
 	LL_PWR_EnableVddUSBMonitoring();
@@ -1403,7 +1341,7 @@ static int udc_stm32_clock_enable(const struct device *dev)
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 	/* PHY configuration */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT_OTGHS)
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
 	/*
 	 * Note that the USBPHYC is clocked only when
@@ -1454,31 +1392,33 @@ static int udc_stm32_clock_enable(const struct device *dev)
 	 * Otherwise, disable ULPI clock in sleep/low-power mode.
 	 * (No need to disable Run mode clock, it is off by default)
 	 */
-	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
+	if (cfg->selected_phy == PCD_PHY_ULPI) {
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 	} else {
 		LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	/*
-	 * Preprocessor check is required here because
-	 * the OTGPHYC defines are not provided if it
-	 * doesn't exist on SoC.
-	 */
-	#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
+	if (cfg->selected_phy == PCD_PHY_ULPI) {
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-	#elif UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_UTMI
+
 		/*
 		 * For some reason, the ULPI clock still needs to be
 		 * enabled when the internal USBPHYC HS PHY is used.
+		 *
+		 * Preprocessor check is required here because
+		 * the OTGPHYC defines are not provided if it
+		 * doesn't exist on SoC.
 		 */
-		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-	#endif
+		#ifdef LL_APB2_GRP1_PERIPH_OTGPHYC
+		if (cfg->selected_phy == PCD_PHY_UTMI) {
+			LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+		}
+		#endif
+	}
 #else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
-	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
+	if (cfg->selected_phy == PCD_PHY_ULPI) {
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-	} else if (UDC_STM32_NODE_SPEED(DT_DRV_INST(0)) == PCD_SPEED_HIGH_IN_FULL) {
+	} else if (cfg->selected_speed == PCD_SPEED_HIGH_IN_FULL) {
 		/*
 		 * Some parts of the STM32F4 series require the OTGHSULPILPEN to be
 		 * cleared if the OTG_HS is used in FS mode. Disable it on all parts
@@ -1487,12 +1427,12 @@ static int udc_stm32_clock_enable(const struct device *dev)
 		LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	}
 #endif /* CONFIG_SOC_SERIES_* */
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT_OTGFS)
 	/* The USB2 controller only works in FS mode, but the ULPI clock needs
 	 * to be disabled in sleep mode for it to work.
 	 */
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT_OTGHS) */
 
 	return 0;
 }
@@ -1506,7 +1446,7 @@ static int udc_stm32_clock_disable(const struct device *dev)
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT_OTGHS) && defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
 #endif
 
@@ -1618,7 +1558,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 		}
 	}
 
-	/*cd
+	/*
 	 * Required for at least STM32L4 devices as they electrically
 	 * isolate USB features from VDDUSB. It must be enabled before
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
@@ -1641,6 +1581,74 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, udc_stm32_driver_init0, NULL, &udc0_data, &udc0_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &udc_stm32_api);
+/* ----------------- Instance/Device specific data ----------------- */
+
+/*
+ * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
+ * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
+ * support USB device controller. STM32 F4 and F7 series support USB_OTG_FS
+ * device controller. STM32 F1 and L4 series support either USB or USB_OTG_FS
+ * device controller.STM32 G0 series supports USB_DRD_FS device controller.
+ *
+ * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
+ * Kconfig system.
+ */
+#define UDC_STM32_INSTANCE_DEFINE(compat, irq_name, inst)                                          \
+	K_THREAD_STACK_DEFINE(udc_thr_stk_##inst, CONFIG_UDC_STM32_STACK_SIZE);                    \
+	                                                                                           \
+	static struct udc_ep_config udc_in_ep_cfg_##inst[DT_PROP(inst, num_bidir_endpoints)];      \
+	static struct udc_ep_config udc_out_ep_cfg_##inst[DT_PROP(inst, num_bidir_endpoints)];     \
+	                                                                                           \
+	static struct udc_stm32_data udc_priv_##inst;                                              \
+	                                                                                           \
+	static struct udc_data udc_data_##inst = {                                                 \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##inst.mutex),                               \
+		.priv = &udc_priv_##inst,                                                          \
+	};                                                                                         \
+	                                                                                           \
+	static const struct stm32_pclken udc_pclken_##inst[] = STM32_DT_CLOCKS(inst);              \
+	                                                                                           \
+	static void udc_irq_connect_##inst(void)                                                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(inst, irq_name, irq),                                   \
+			DT_IRQ_BY_NAME(inst, irq_name, priority),                                  \
+			HAL_PCD_IRQHandler, &udc_priv_##inst.pcd, 0);                              \
+	}                                                                                          \
+	                                                                                           \
+	PINCTRL_DT_DEFINE(inst);                                                                   \
+	                                                                                           \
+	static const struct udc_stm32_config udc_cfg_##inst  = {                                   \
+		.base = (void *)DT_REG_ADDR_BY_IDX(inst, 0),                                       \
+		.num_endpoints = DT_PROP(inst, num_bidir_endpoints),                               \
+		.dram_size = DT_PROP(inst, ram_size),                                              \
+		.irq_connect = udc_irq_connect_##inst,                                             \
+		.irqn = DT_IRQ_BY_NAME(inst, irq_name, irq),                                       \
+		.pclken = (struct stm32_pclken *)udc_pclken_##inst,                                \
+		.num_clocks = DT_NUM_CLOCKS(inst),                                                 \
+		.pinctrl = PINCTRL_DT_DEV_CONFIG_GET(inst),                                        \
+		.in_eps = udc_in_ep_cfg_##inst,                                                    \
+		.out_eps = udc_out_ep_cfg_##inst,                                                  \
+		.ep_mps = UDC_STM32_NODE_EP_MPS(inst),                                             \
+		.selected_phy = UDC_STM32_NODE_PHY_ITFACE(inst),                                   \
+		.selected_speed = UDC_STM32_NODE_SPEED(inst),                                      \
+		.thread_stack = udc_thr_stk_##inst,                                                \
+		.thread_stack_size = K_THREAD_STACK_SIZEOF(udc_thr_stk_##inst),                    \
+		.disconnect_gpio = GPIO_DT_SPEC_INST_GET_OR(0, disconnect_gpios, {0}),             \
+		.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(UDC_STM32_PHY(inst), reset_gpios, {0}),     \
+	};                                                                                         \
+	                                                                                           \
+	DEVICE_DT_DEFINE(inst, udc_stm32_driver_init0, NULL, &udc_data_##inst, &udc_cfg_##inst,    \
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_stm32_api);
+
+#define UDC_STM32_OTGHS_INSTANCE_DEFINE(inst) \
+	UDC_STM32_INSTANCE_DEFINE(DT_DRV_COMPAT_OTGHS, otghs, inst)
+
+#define UDC_STM32_OTGFS_INSTANCE_DEFINE(inst) \
+	UDC_STM32_INSTANCE_DEFINE(DT_DRV_COMPAT_OTGFS, otgfs, inst)
+
+#define UDC_STM32_USB_INSTANCE_DEFINE(inst) \
+	UDC_STM32_INSTANCE_DEFINE(DT_DRV_COMPAT_USB, usb, inst)
+
+DT_FOREACH_STATUS_OKAY(DT_DRV_COMPAT_OTGHS, UDC_STM32_OTGHS_INSTANCE_DEFINE);
+DT_FOREACH_STATUS_OKAY(DT_DRV_COMPAT_OTGFS, UDC_STM32_OTGFS_INSTANCE_DEFINE);
+DT_FOREACH_STATUS_OKAY(DT_DRV_COMPAT_USB, UDC_STM32_USB_INSTANCE_DEFINE);
