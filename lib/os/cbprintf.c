@@ -46,7 +46,7 @@ static int str_out(int c,
 		*(scp->dp++) = c;
 	}
 
-	return c;
+	return 0;
 }
 
 int fprintfcb(FILE *stream, const char *format, ...)
