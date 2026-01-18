@@ -19,6 +19,11 @@ set_variable_ifdef(CONFIG_COUNTER_MCUX_LPC_RTC  CONFIG_MCUX_COMPONENT_driver.lpc
 set_variable_ifdef(CONFIG_GLIKEY_MCUX_GLIKEY    CONFIG_MCUX_COMPONENT_driver.glikey)
 
 if(CONFIG_NXP_LP_FLEXCOMM)
+  # The Zephyr MFD shim driver unconditionally includes <fsl_lpflexcomm.h>.
+  # Ensure the base LPFLEXCOMM MCUX component (and its include directory) is
+  # enabled even in build-only configurations that don't enable LPI2C/LPUART.
+  set(CONFIG_MCUX_COMPONENT_driver.lpflexcomm ON)
+
   set_variable_ifdef(CONFIG_I2C_MCUX_LPI2C      CONFIG_MCUX_COMPONENT_driver.lpflexcomm)
   set_variable_ifdef(CONFIG_I2C_MCUX_LPI2C      CONFIG_MCUX_COMPONENT_driver.lpflexcomm_lpi2c)
   set_variable_ifdef(CONFIG_UART_MCUX_LPUART    CONFIG_MCUX_COMPONENT_driver.lpflexcomm)

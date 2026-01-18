@@ -1,0 +1,15 @@
+identifier: nxp_virtual/mcxc141
+name: NXP Virtual (nxp_virtual/mcxc141)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - uart
+vendor: nxp
