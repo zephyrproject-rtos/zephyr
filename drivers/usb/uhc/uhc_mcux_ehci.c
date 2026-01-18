@@ -160,6 +160,8 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 				mcux_ep->update_addr = 1U;
 			}
 		}
+	} else if (status == kStatus_USB_TransferStall) {
+		err = -EPIPE;
 	}
 
 #if defined(CONFIG_NOCACHE_MEMORY)
