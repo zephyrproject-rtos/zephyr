@@ -295,6 +295,17 @@ typedef struct {
 
 #endif /* CONFIG_WAITQ_SCALABLE */
 
+enum {
+	/* Timeouts that are not required to expire at an exact hard deadline
+	 * if the processor is in a low-power state. By default all timeouts
+	 * are non-deferrable.
+	 */
+	K_TIMEOUT_DEFERRABLE = BIT(0),
+
+	/* Timeout associated with the Low Power Island (LPI) domain. */
+	K_TIMEOUT_LPI = BIT(1)
+};
+
 /* kernel timeout record */
 struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
@@ -308,6 +319,7 @@ struct _timeout {
 #else
 	int32_t dticks;
 #endif
+	uint8_t flags;
 };
 
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
