@@ -1177,8 +1177,14 @@ static inline int bt_obex_add_header_body_or_end_body(struct net_buf *buf, uint1
 	uint16_t tx_len;
 	int err;
 
-	if ((buf == NULL) || (body == NULL) || (added_len == NULL) || (mopl < BT_OBEX_MIN_MTU) ||
-	    (len == 0)) {
+	/*
+	 * OBEX Version 1.5, section 2.2.9 Body, End-of-Body
+	 * The `body` could be a NULL, so the `len` of the name could 0.
+	 * In some cases, the object body data is generated on the fly and the end cannot
+	 * be anticipated, so it is legal to send a zero length End-of-Body header.
+	 */
+	if ((buf == NULL) || ((len != 0) && (body == NULL)) || (added_len == NULL) ||
+	    (mopl < BT_OBEX_MIN_MTU)) {
 		return -EINVAL;
 	}
 
@@ -1744,6 +1750,15 @@ bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str);
  *  @return true if the header is found or false otherwise.
  */
 bool bt_obex_has_header(struct net_buf *buf, uint8_t id);
+
+/** @brief Check whether the buf has the specified application parameter
+ *
+ *  @param buf Buffer needs to be sent.
+ *  @param id The tag id of the application parameter.
+ *
+ *  @return true if the tag is found or false otherwise.
+ */
+bool bt_obex_has_app_param(struct net_buf *buf, uint8_t id);
 
 #ifdef __cplusplus
 }

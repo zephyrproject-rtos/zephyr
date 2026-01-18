@@ -76,7 +76,7 @@ static int obex_transport_disconn(struct bt_obex *obex)
 	if (err) {
 		LOG_ERR("Fail to disconnect transport (err %d)", err);
 	}
-	return -EINVAL;
+	return err;
 }
 
 struct bt_obex_has_header {
@@ -475,6 +475,8 @@ static int obex_server_get_final(struct bt_obex_server *server, uint16_t len, st
 	return obex_server_get_common(server, true, len, buf);
 }
 
+#define BT_OBEX_SETPATH_FLAGS_MASK (BIT(0) | BIT(1))
+
 static int obex_server_setpath(struct bt_obex_server *server, uint16_t len, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *rsp_hdr;
@@ -509,7 +511,7 @@ static int obex_server_setpath(struct bt_obex_server *server, uint16_t len, stru
 	}
 
 	req_hdr = net_buf_pull_mem(buf, sizeof(*req_hdr));
-	server->ops->setpath(server, req_hdr->flags, buf);
+	server->ops->setpath(server, req_hdr->flags & BT_OBEX_SETPATH_FLAGS_MASK, buf);
 	return 0;
 
 failed:
@@ -2234,7 +2236,7 @@ int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf
 	}
 
 	req_hdr = net_buf_push(buf, sizeof(*req_hdr));
-	req_hdr->flags = flags;
+	req_hdr->flags = flags & BT_OBEX_SETPATH_FLAGS_MASK;
 	req_hdr->constants = 0;
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = BT_OBEX_OPCODE_SETPATH;
@@ -2753,7 +2755,13 @@ int bt_obex_add_header_end_body(struct net_buf *buf, uint16_t len, const uint8_t
 {
 	size_t total;
 
-	if (!buf || !body || !len) {
+	/*
+	 * OBEX Version 1.5, section 2.2.9 Body, End-of-Body
+	 * The `body` could be a NULL, so the `len` of the name could 0.
+	 * In some cases, the object body data is generated on the fly and the end cannot
+	 * be anticipated, so it is legal to send a zero length End-of-Body header.
+	 */
+	if ((buf == NULL) || ((len != 0) && (body == NULL))) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
@@ -3641,6 +3649,47 @@ int bt_obex_get_header_app_param(struct net_buf *buf, uint16_t *len, const uint8
 	*len = data.hdr.len;
 	*app_param = data.hdr.data;
 	return 0;
+}
+
+struct bt_obex_has_app_param {
+	uint8_t id;
+	bool found;
+};
+
+static bool bt_obex_has_app_param_cb(struct bt_obex_tlv *tlv, void *user_data)
+{
+	struct bt_obex_has_app_param *data = user_data;
+
+	if (tlv->type == data->id) {
+		data->found = true;
+		return false;
+	}
+	return true;
+}
+
+bool bt_obex_has_app_param(struct net_buf *buf, uint8_t id)
+{
+	struct bt_obex_has_app_param ap;
+	uint16_t len = 0;
+	const uint8_t *data = NULL;
+	int err;
+
+	if (bt_obex_get_header_app_param(buf, &len, &data) != 0) {
+		return false;
+	}
+	if (len == 0U || data == NULL) {
+		return false;
+	}
+
+	ap.id = id;
+	ap.found = false;
+
+	err = bt_obex_tlv_parse(len, data, bt_obex_has_app_param_cb, &ap);
+	if (err != 0) {
+		return false;
+	}
+
+	return ap.found;
 }
 
 int bt_obex_get_header_auth_challenge(struct net_buf *buf, uint16_t *len, const uint8_t **auth)
