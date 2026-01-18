@@ -20,3 +20,4 @@ supported:
   - netif:openthread
   - crypto
   - retained_mem
+  - rmt

@@ -18,4 +18,5 @@ supported:
   - entropy
   - crypto
   - retained_mem
+  - rmt
 vendor: espressif

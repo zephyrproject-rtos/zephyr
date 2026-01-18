@@ -20,6 +20,7 @@ supported:
   - input
   - crypto
   - retained_mem
+  - rmt
 testing:
   ignore_tags:
     - bluetooth
