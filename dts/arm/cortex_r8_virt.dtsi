@@ -58,9 +58,9 @@
 			clock-frequency = <5000000>;
 		};
 
-		gic: interrupt-controller@f9000000 {
+		gic: interrupt-controller@ae001000 {
 			compatible = "arm,gic-v1", "arm,gic";
-			reg = <0xf9000000 0x1000>, <0xf9001000 0x100>;
+			reg = <0xae001000 0x1000>, <0xae000100 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <0x4>;
 			status = "okay";
