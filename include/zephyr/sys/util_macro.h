@@ -408,7 +408,7 @@ extern "C" {
 /**
  * @brief Get nth argument from argument list.
  *
- * @param N Argument index to fetch. Counter from 1.
+ * @param N Argument index to fetch. Counter from 1. N is valid if N < 64.
  * @param ... Variable list of arguments from which one argument is returned.
  *
  * @return Nth argument.
@@ -418,12 +418,22 @@ extern "C" {
 /**
  * @brief Strips n first arguments from the argument list.
  *
- * @param N Number of arguments to discard.
+ * @param N Number of arguments to discard. N is valid if N < 64.
  * @param ... Variable list of arguments.
  *
  * @return argument list without N first arguments.
  */
 #define GET_ARGS_LESS_N(N, ...) UTIL_CAT(Z_GET_ARGS_LESS_, N)(__VA_ARGS__)
+
+/**
+ * @brief Get the first N arguments from the argument list.
+ *
+ * @param N Number of arguments to take. N is valid if N < 64.
+ * @param ... Variable list of arguments.
+ *
+ * @return argument list only contains first N arguments.
+ */
+#define GET_ARGS_FIRST_N(N, ...) UTIL_CAT(Z_GET_ARGS_FIRST_, N)(__VA_ARGS__)
 
 /**
  * @brief Like <tt>a || b</tt>, but does evaluation and
