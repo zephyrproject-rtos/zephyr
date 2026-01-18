@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,12 @@
 			bias-pull-up;
 			input-schmitt-enable;
 			drive-strength = <1>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <GPIO11_ADC_CH10>;
 		};
 	};
 };

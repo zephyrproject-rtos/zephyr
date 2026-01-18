@@ -23,4 +23,5 @@ supported:
   - flash
   - input
   - pwm
+  - adc
 vendor: bflb
