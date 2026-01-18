@@ -12,7 +12,7 @@
 #include <zephyr/pm/device_runtime.h>
 
 #if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
-/* st,timeout is set. Application can be woken up exaclty on expected tick */
+/* st,timeout is set. Application can be woken up exactly on expected tick */
 #define SLEEP_TIME_MS   (DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout) * 1000)
 #else
 #define SLEEP_TIME_MS   2000
