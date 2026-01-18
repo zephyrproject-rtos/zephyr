@@ -41,6 +41,17 @@ implemented and controlled.
   implemented in the architectural code or in an external cache controller
   driver.
 
+* :kconfig:option:`CONFIG_CACHE_INIT_ONLY`: enable init-only cache drivers
+  without exposing the generic cache management API.
+
+  When this option is enabled Zephyr will still build drivers under
+  :file:`drivers/cache/` so that platforms can perform cache controller
+  setup at boot (for example, programming region boundaries/policies and
+  enabling cache write buffers) while keeping the public cache API disabled.
+  This is useful for SoCs that require cache initialization for XIP or
+  memory-mapped peripherals but do not provide runtime flush/invalidate
+  operations via Zephyr’s cache API.
+
 * :kconfig:option:`CONFIG_MEM_ATTR`: this option allows the user to
   specify (using :ref:`memory region attributes<mem_mgmt_api>`) a fixed region
   in memory that will have caching disabled once the kernel has initialized.
@@ -60,7 +71,10 @@ implemented and controlled.
 
   * :kconfig:option:`CONFIG_EXTERNAL_CACHE`: the cache API is implemented by a
     driver that supports the external cache controller. In this case the driver
-    must be located as usual in the :file:`drivers/cache/` directory
+    must be located as usual in the :file:`drivers/cache/` directory. External
+    cache drivers can be used either with
+    :kconfig:option:`CONFIG_CACHE_MANAGEMENT` (full API available) or with
+    :kconfig:option:`CONFIG_CACHE_INIT_ONLY` (initialization-only, no API).
 
 .. _cache_api:
 
