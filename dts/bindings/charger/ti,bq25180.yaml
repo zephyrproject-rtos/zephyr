@@ -3,17 +3,17 @@
 
 description: |
   BQ25180 I2C Controlled, 1-Cell, 1-A Linear Battery Charger with Power Path
-  and Ship Mode.
-
-  The device has a single node for the charger. For example:
-
-  bq25180@6a {
-    compatible = "ti,bq25180";
-    reg = <0x6a>;
-
-    constant-charge-current-max-microamp = <500000>;
-  };
+  and Ship Mode. The device has a single node for the charger.
 
 compatible: "ti,bq25180"
 
 include: ti,bq2518x-common.yaml
+
+examples:
+  - |
+    bq25180@6a {
+      compatible = "ti,bq25180";
+      reg = <0x6a>;
+
+      constant-charge-current-max-microamp = <500000>;
+    };
