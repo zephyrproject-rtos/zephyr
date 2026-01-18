@@ -73,6 +73,14 @@ extern "C" {
 		.__buf  = net_buf_data_##_name,           \
 	}
 
+#if defined(CONFIG_NET_BUF_LARGE_SIZE)
+/** @brief net buf size type */
+typedef uint32_t net_buf_size_t;
+#else
+/** @brief net buf size type */
+typedef uint16_t net_buf_size_t;
+#endif
+
 /**
  * @brief Simple network buffer representation.
  *
@@ -95,10 +103,10 @@ struct net_buf_simple {
 	 *
 	 * To determine the max length, use net_buf_simple_max_len(), not #size!
 	 */
-	uint16_t len;
+	net_buf_size_t len;
 
 	/** Amount of data that net_buf_simple#__buf can store. */
-	uint16_t size;
+	net_buf_size_t size;
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
@@ -949,9 +957,9 @@ uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf);
  */
 struct net_buf_simple_state {
 	/** Offset of the data pointer from the beginning of the storage */
-	uint16_t offset;
+	net_buf_size_t offset;
 	/** Length of data */
-	uint16_t len;
+	net_buf_size_t len;
 };
 
 /**
@@ -965,7 +973,7 @@ struct net_buf_simple_state {
 static inline void net_buf_simple_save(const struct net_buf_simple *buf,
 				       struct net_buf_simple_state *state)
 {
-	state->offset = (uint16_t)net_buf_simple_headroom(buf);
+	state->offset = (net_buf_size_t)net_buf_simple_headroom(buf);
 	state->len = buf->len;
 }
 
@@ -1032,10 +1040,10 @@ struct net_buf {
 			uint8_t *data;
 
 			/** Length of the data behind the data pointer. */
-			uint16_t len;
+			net_buf_size_t len;
 
 			/** Amount of data that this buffer can store. */
-			uint16_t size;
+			net_buf_size_t size;
 
 			/** Start of the data storage. Not to be accessed
 			 *  directly (the data pointer should be used
@@ -1097,7 +1105,7 @@ struct net_buf_pool {
 	atomic_t avail_count;
 
 	/** Total size of the pool. */
-	const uint16_t pool_size;
+	const net_buf_size_t pool_size;
 
 	/** Maximum count of used buffers. */
 	uint16_t max_used;
