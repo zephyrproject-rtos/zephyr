@@ -849,6 +849,19 @@ static inline k_tid_t k_current_get(void)
 }
 
 /**
+ * @brief Test whether provided thread is user thread.
+ *
+ * @funcprops \isr_ok
+ *
+ * @return true if provided thread is user thread
+ * @return false if provided thread is not user thread
+ */
+static inline bool k_thread_is_user_thread(k_tid_t thread)
+{
+	return thread->base.user_options & K_USER;
+}
+
+/**
  * @brief Abort a thread.
  *
  * This routine permanently stops execution of @a thread. The thread is taken

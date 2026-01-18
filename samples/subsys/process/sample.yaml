@@ -1,0 +1,31 @@
+sample:
+  description: Subprocess start and stop with userspace
+  name: Subprocess
+tests:
+  sample.subprocess.userspace:
+    # Most filters copied from userspace and llext tests/samples
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    min_ram: 172
+    min_flash: 172
+    integration_platforms:
+    - mps2/an385
+    arch_exclude:
+      - posix
+    platform_exclude:
+      - numaker_pfm_m487
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - qemu_cortex_m0
+      - mps2/an383
+      - qemu_xtensa/dc233c/mmu
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "starting subprocesses from user mode"
+        - "hello from ext"
+        - "hello from builtin"
+        - "starting subprocesses from supervisor mode"
+        - "hello from ext"
+        - "hello from builtin"
