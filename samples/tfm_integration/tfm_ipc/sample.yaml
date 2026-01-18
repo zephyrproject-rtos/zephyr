@@ -18,6 +18,7 @@ tests:
       - bl5340_dvk/nrf5340/cpuapp/ns
       - b_u585i_iot02a/stm32u585xx/ns
       - stm32h573i_dk/stm32h573xx/ns
+      - frdm_mcxn947/mcxn947/cpu0/ns
     integration_platforms:
       - mps2/an521/cpu0/ns
     harness: console
@@ -37,7 +38,6 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
-      - frdm_mcxn947/mcxn947/cpu0/ns
     extra_configs:
       - CONFIG_TFM_BL2=n
     harness: console
