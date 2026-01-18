@@ -144,6 +144,16 @@ union ic_comp_param_1_register {
 	} bits;
 };
 
+/* SDAHOLD */
+union ic_sdahold_register {
+	uint32_t		raw;
+	struct {
+		uint32_t sdahold_tx : 16 __packed;
+		uint32_t sdahold_rx : 8 __packed;
+		uint32_t reserved : 8 __packed;
+	} bits;
+};
+
 #define DW_IC_REG_CON           (0x00)
 #define DW_IC_REG_TAR           (0x04)
 #define DW_IC_REG_SAR           (0x08)

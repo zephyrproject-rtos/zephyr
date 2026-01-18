@@ -94,10 +94,14 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 #define I2C_DW_TX_WATERMARK 2
 #define I2C_DW_RX_WATERMARK 7
 
+#define SDA_HOLD_INVALID UINT32_MAX
+
 struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t config_func;
 	uint32_t bitrate;
+	uint32_t sda_hold_tx;
+	uint32_t sda_hold_rx;
 	uint32_t irqnumber;
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
