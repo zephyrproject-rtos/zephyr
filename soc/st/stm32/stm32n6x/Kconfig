@@ -30,12 +30,6 @@ if SOC_SERIES_STM32N6X
 config STM32N6_BOOT_SERIAL
 	bool "Serial boot target (USB)"
 
-config STM32N6_NPU
-	bool "Neural-ART accelerator (NPU)"
-	select RESET
-	default y
-	depends on DT_HAS_ST_STM32_NPU_ENABLED
-
 config STM32N6_RIF_OPEN
 	bool "Configure the RIF with all OPEN access"
 	default y
@@ -44,5 +38,7 @@ config STM32N6_RIF_OPEN
 	  When this option is enabled, the RIMC of all masters and the RISC of all slaves are
 	  configured during SoC initialization. Zephyr running with Secure privileges has full
 	  access to all SoC resources.
+
+source "soc/st/stm32/stm32n6x/npu/Kconfig"
 
 endif # SOC_SERIES_STM32N6X
