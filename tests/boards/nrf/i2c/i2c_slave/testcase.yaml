@@ -59,3 +59,11 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="i2c_speed_fast_plus.overlay"
+  boards.nrf.i2c.i2c_slave.custom:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="i2c_speed_custom.overlay"
