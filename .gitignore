@@ -33,6 +33,7 @@ outdir
 outdir-*
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
+scripts/logging/can/recv_can_log
 coverage-report
 doc-coverage.info
 doc/_build
