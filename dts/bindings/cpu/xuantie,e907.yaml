@@ -5,9 +5,4 @@ description: Xuantie E907 Core CPU
 
 compatible: "xuantie,e907"
 
-include: riscv,cpus.yaml
-
-properties:
-  hardware-exec-breakpoint-count:
-    type: int
-    description: Number of hardware break points
+include: xuantie,riscv.yaml

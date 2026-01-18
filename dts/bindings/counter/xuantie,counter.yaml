@@ -1,0 +1,19 @@
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+description: XuanTie COUNTER
+
+compatible: "xuantie,counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true

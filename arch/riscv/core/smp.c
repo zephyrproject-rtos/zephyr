@@ -13,6 +13,10 @@
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/platform/hooks.h>
 
+#if CONFIG_ARCH_RISCV_HAS_CUSTOM
+#include <riscv_custom.h>
+#endif
+
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;

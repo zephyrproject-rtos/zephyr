@@ -1,0 +1,24 @@
+# XUANTIE xiaohui&smartl UART configuration option
+
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_XUANTIE
+	bool "XuanTie Freedom serial driver"
+	default y
+	depends on DT_HAS_XUANTIE_UART0_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the XuanTie xiaohui&smartl serial driver.
+
+if UART_XUANTIE
+
+config UART_XUANTIE_PORT_0
+	bool "XUANTIE Port 0"
+	depends on UART_XUANTIE
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+endif # UART_XUANTIE

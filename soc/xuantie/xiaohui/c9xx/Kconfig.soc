@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_XIAOHUI_C9XX
+    bool "xiaohui(FPGA) c9xx"
+
+    select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+
+    select RISCV_HAS_PLIC
+    select RISCV_ISA_EXT_ZICSR
+    select RISCV_ISA_EXT_ZIFENCEI
+    select RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+
+	select CPU_XUANTIE_DOUBLE_FPU if (RISCV_ISA_EXT_F && RISCV_ISA_EXT_D)
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_ISA_EXT_V
+
+	select SOC_FAMILY_XIAOHUI
+
+config SOC_SERIES
+	default "c9xx" if SOC_SERIES_XIAOHUI_C9XX
+
+config SOC
+    default "c906"      if CPU_XUANTIE_C906
+    default "c906fd"    if CPU_XUANTIE_C906FD
+    default "c906fdv"   if CPU_XUANTIE_C906FDV
+
+    default "c907"      if CPU_XUANTIE_C907
+    default "c907fd"    if CPU_XUANTIE_C907FD
+    default "c907fdv"   if CPU_XUANTIE_C907FDV
+    default "c907fdvm"  if CPU_XUANTIE_C907FDVM
+
+    default "c907-rv32"     if CPU_XUANTIE_C907_RV32
+    default "c907fd-rv32"   if CPU_XUANTIE_C907FD_RV32
+    default "c907fdv-rv32"  if CPU_XUANTIE_C907FDV_RV32
+    default "c907fdvm-rv32" if CPU_XUANTIE_C907FDVM_RV32
+
+    default "c908"      if CPU_XUANTIE_C908
+    default "c908i"     if CPU_XUANTIE_C908I
+    default "c908v"     if CPU_XUANTIE_C908V
+
+    default "c910"      if CPU_XUANTIE_C910
+    default "c910v2"    if CPU_XUANTIE_C910V2
+    default "c910v3"    if CPU_XUANTIE_C910V3
+    default "c910v3_cp" if CPU_XUANTIE_C910V3_CP
+
+    default "c920"      if CPU_XUANTIE_C920
+    default "c920v2"    if CPU_XUANTIE_C920V2
+    default "c920v3"    if CPU_XUANTIE_C920V3
+    default "c920v3_cp" if CPU_XUANTIE_C920V3_CP

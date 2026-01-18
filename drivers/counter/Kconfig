@@ -85,6 +85,7 @@ source "drivers/counter/Kconfig.stm32_timer"
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 source "drivers/counter/Kconfig.xec"
 source "drivers/counter/Kconfig.xlnx"
+source "drivers/counter/Kconfig.xuantie"
 # zephyr-keep-sorted-stop
 
 source "drivers/counter/Kconfig.rv3032_counter"
