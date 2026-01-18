@@ -71,3 +71,35 @@
 &rtc {
 	reg = <0x4002c000 0x60>;
 };
+
+&wdog0 {
+	clocks = <&clk_ctrl MCXW_CLOCK(0x68, MCXW_CLK_IP_MUX_SLOW_CLK,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_ENABLED_LP_STALL)>,
+		 <&clk_ctrl MCXW_CLOCK(0x68, MCXW_CLK_IP_MUX_32K,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_ENABLED_LP_STALL)>,
+		 <&clk_ctrl MCXW_CLOCK(0x68, MCXW_CLK_IP_MUX_NONE,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_DISABLED)>,
+		 <&clk_ctrl MCXW_CLOCK(0x68, MCXW_CLK_IP_MUX_SOSC,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	clock-names = "clksrc0", "clksrc1", "clksrc2", "clksrc3";
+};
+
+&wdog1 {
+	clocks = <&clk_ctrl MCXW_CLOCK(0x6c, MCXW_CLK_IP_MUX_SLOW_CLK,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_ENABLED_LP_STALL)>,
+		 <&clk_ctrl MCXW_CLOCK(0x6c, MCXW_CLK_IP_MUX_32K,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_ENABLED_LP_STALL)>,
+		 <&clk_ctrl MCXW_CLOCK(0x6c, MCXW_CLK_IP_MUX_NONE,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_DISABLED)>,
+		 <&clk_ctrl MCXW_CLOCK(0x6c, MCXW_CLK_IP_MUX_SOSC,
+							MCXW_CLK_DIV_NONE,
+							MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	clock-names = "clksrc0", "clksrc1", "clksrc2", "clksrc3";
+};

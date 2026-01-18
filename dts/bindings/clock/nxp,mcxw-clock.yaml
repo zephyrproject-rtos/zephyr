@@ -1,0 +1,167 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCXW series clock controller
+
+compatible: "nxp,mcxw-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+  osc32k-mode:
+    type: int
+    required: true
+    description: |
+      32 kHz clock source selection.
+    enum:
+      - 0
+      - 1
+      - 3
+
+  osc32k-xtal-cap:
+    type: int
+    required: true
+    description: |
+      internal capacitance value for 32 kHz OSC XTAL.
+      0: The internal capacitance for XTAL pin is 0pF.
+      1: The internal capacitance for XTAL pin is 2pF.
+      2: The internal capacitance for XTAL pin is 4pF.
+      3: The internal capacitance for XTAL pin is 6pF.
+      4: The internal capacitance for XTAL pin is 8pF.
+      5: The internal capacitance for XTAL pin is 10pF.
+      6: The internal capacitance for XTAL pin is 12pF.
+      7: The internal capacitance for XTAL pin is 14pF.
+      8: The internal capacitance for XTAL pin is 16pF.
+      9: The internal capacitance for XTAL pin is 18pF.
+      10: The internal capacitance for XTAL pin is 20pF.
+      11: The internal capacitance for XTAL pin is 22pF.
+      12: The internal capacitance for XTAL pin is 24pF.
+      13: The internal capacitance for XTAL pin is 26pF.
+      14: The internal capacitance for XTAL pin is 28pF.
+      15: The internal capacitance for XTAL pin is 30pF.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+
+  osc32k-extal-cap:
+    type: int
+    required: true
+    description: |
+      internal capacitance value for 32 kHz OSC EXTAL.
+      0: The internal capacitance for EXTAL pin is 0pF.
+      1: The internal capacitance for EXTAL pin is 2pF.
+      2: The internal capacitance for EXTAL pin is 4pF.
+      3: The internal capacitance for EXTAL pin is 6pF.
+      4: The internal capacitance for EXTAL pin is 8pF.
+      5: The internal capacitance for EXTAL pin is 10pF.
+      6: The internal capacitance for EXTAL pin is 12pF.
+      7: The internal capacitance for EXTAL pin is 14pF.
+      8: The internal capacitance for EXTAL pin is 16pF.
+      9: The internal capacitance for EXTAL pin is 18pF.
+      10: The internal capacitance for EXTAL pin is 20pF.
+      11: The internal capacitance for EXTAL pin is 22pF.
+      12: The internal capacitance for EXTAL pin is 24pF.
+      13: The internal capacitance for EXTAL pin is 26pF.
+      14: The internal capacitance for EXTAL pin is 28pF.
+      15: The internal capacitance for EXTAL pin is 30pF.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+
+  firc-mode:
+    type: int
+    required: true
+    description: |
+      FIRC (Fast Internal Reference Clock) mode selection.
+      0: FIRC is disabled.
+      1: FIRC is enabled in normal mode.
+      2: FIRC is enabled in low power mode.
+    enum:
+      - 0
+      - 1
+      - 2
+
+  firc-range:
+    type: int
+    required: true
+    description: |
+      FIRC frequency range selection.
+
+  enable-sirc-in-lp-mode:
+    type: boolean
+    description: |
+     Enable/disable SIRC(FRO 6M) in low power mode.
+
+  sys-clk-src:
+    type: int
+    required: true
+    description: |
+      System clock source selection.
+
+  sys-clk-div-bus:
+    type: int
+    required: true
+    description: |
+      System clock divider for bus clock.
+      Valid range: 1 to 16.
+
+  sys-clk-div-slow:
+    type: int
+    required: true
+    description: |
+      System clock divider for slow clock.
+      Valid range: 1 to 16.
+
+  sys-clk-div-core:
+    type: int
+    required: true
+    description: |
+      System clock divider for core clock.
+      Valid range: 1 to 16.
+
+  enable-sosc:
+    type: boolean
+    description: |
+      Enable/disable SOSC (System Oscillator).
+
+  sosc-freq:
+    type: int
+    required: true
+    description: |
+      SOSC (System Oscillator) frequency in Hz.
+
+  "#clock-cells":
+    type: int
+    const: 1
+
+clock-cells:
+  - name
