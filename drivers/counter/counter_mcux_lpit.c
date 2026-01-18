@@ -1,5 +1,5 @@
 /*
- * Copyright 2023, 2025 NXP
+ * Copyright 2023, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,10 +171,27 @@ static int mcux_lpit_init(const struct device *dev)
 	const struct mcux_lpit_config *config = dev->config;
 	lpit_config_t lpit_config;
 	uint32_t clock_rate;
+	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("Clock control device not ready");
 		return -ENODEV;
+	}
+
+	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (ret != 0) {
+		/* Check if error is due to lack of support */
+		if (ret != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", ret);
+			return ret;
+		}
+	}
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable clock: %d", ret);
+		return ret;
 	}
 
 	LPIT_GetDefaultConfig(&lpit_config);
