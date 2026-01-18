@@ -19,6 +19,7 @@ module-str = otp
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/otp/Kconfig.emu"
+source "drivers/otp/Kconfig.stm32"
 
 config OTP_INIT_PRIORITY
 	int "OTP init priority"

@@ -746,6 +746,29 @@
 			status = "disabled";
 		};
 
+		bsec: efuse@56009000 {
+			compatible = "st,stm32-bsec";
+			reg = <0x56009000 0x1000>;
+			st,upper-fuse-limit = <256>;
+			status = "disabled";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				mac_address0: mac-address@2a4 {
+					reg = <0x2a4 0x6>;
+					#nvmem-cell-cells = <0>;
+				};
+
+				mac_address1: mac-address@2ac {
+					reg = <0x2ac 0x6>;
+					#nvmem-cell-cells = <0>;
+				};
+			};
+		};
+
 		dcmipp: dcmipp@58002000 {
 			compatible = "st,stm32n6-dcmipp", "st,stm32-dcmipp";
 			reg = <0x58002000 0x1000>;
