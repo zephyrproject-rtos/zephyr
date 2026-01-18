@@ -20,7 +20,10 @@ zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)
 
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
 
-zephyr_sources_ifdef(CONFIG_RING_BUFFER ring_buffer.c)
+zephyr_sources_ifdef(CONFIG_RING_BUFFER
+    ring_buffer.c
+    fifo.c
+)
 
 zephyr_sources_ifdef(CONFIG_UTF8 utf8.c)
 

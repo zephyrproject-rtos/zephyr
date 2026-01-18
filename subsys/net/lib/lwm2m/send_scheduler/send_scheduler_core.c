@@ -538,15 +538,11 @@ static bool send_sched_find_oldest_timestamp(time_t *out_ts)
 		}
 
 		cache_entry = lwm2m_cache_entry_get_by_object(&path);
-		if (!cache_entry || ring_buf_is_empty(&cache_entry->rb)) {
+		if (!cache_entry || fifo_empty(&cache_entry->rb)) {
 			continue;
 		}
 
-		if (ring_buf_peek(&cache_entry->rb, (uint8_t *)&elem, sizeof(elem)) !=
-		    sizeof(elem)) {
-			continue;
-		}
-
+		fifo_peek(&cache_entry->rb, &elem);
 		if (!found || elem.t < oldest) {
 			oldest = elem.t;
 			found = true;

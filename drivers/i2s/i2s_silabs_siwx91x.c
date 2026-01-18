@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <zephyr/sys/fifo.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -46,13 +47,6 @@ struct i2s_siwx91x_queue_item {
 	size_t size;
 };
 
-struct i2s_siwx91x_ring_buffer {
-	struct i2s_siwx91x_queue_item *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 struct i2s_siwx91x_stream {
 	int32_t state;
 	struct k_sem sem;
@@ -60,7 +54,7 @@ struct i2s_siwx91x_stream {
 	uint32_t dma_channel;
 	bool last_block;
 	struct i2s_config cfg;
-	struct i2s_siwx91x_ring_buffer mem_block_queue;
+	struct fifo mem_block_queue;
 	void *mem_block;
 	bool reload_en;
 	struct dma_block_config dma_descriptors[CONFIG_I2S_SILABS_SIWX91X_DMA_MAX_BLOCKS];
@@ -125,50 +119,35 @@ static int i2s_siwx91x_convert_to_resolution(uint8_t word_size)
 	}
 }
 
-static int i2s_siwx91x_queue_put(struct i2s_siwx91x_ring_buffer *rb, void *mem_block, size_t size)
+static int i2s_siwx91x_queue_put(struct fifo *f, void *mem_block, size_t size)
 {
-	uint16_t head_next;
+	int rc;
 	unsigned int key;
+	struct i2s_siwx91x_queue_item item = {
+		.mem_block = mem_block,
+		.size = size,
+	};
 
 	key = irq_lock();
-
-	head_next = rb->head;
-	head_next = (head_next + 1) % rb->len;
-
-	if (head_next == rb->tail) {
-		/* Ring buffer is full */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	rb->buf[rb->head].mem_block = mem_block;
-	rb->buf[rb->head].size = size;
-	rb->head = head_next;
+	rc = fifo_put(f, &item);
 
 	irq_unlock(key);
-
-	return 0;
+	return rc;
 }
 
-static int i2s_siwx91x_queue_get(struct i2s_siwx91x_ring_buffer *rb, void **mem_block, size_t *size)
+static int i2s_siwx91x_queue_get(struct fifo *f, void **mem_block, size_t *size)
 {
+	int rc;
 	unsigned int key;
+	struct i2s_siwx91x_queue_item item;
 
 	key = irq_lock();
+	rc = fifo_get(f, &item);
 
-	if (rb->tail == rb->head) {
-		/* Ring buffer is empty */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	*mem_block = rb->buf[rb->tail].mem_block;
-	*size = rb->buf[rb->tail].size;
-	rb->tail = (rb->tail + 1) % rb->len;
-
+	*mem_block = item.mem_block;
+	*size = item.size;
 	irq_unlock(key);
-
-	return 0;
+	return rc;
 }
 
 static int i2s_siwx91x_dma_config(const struct device *dev, struct i2s_siwx91x_stream *stream,
@@ -905,10 +884,10 @@ static DEVICE_API(i2s, i2s_siwx91x_driver_api) = {
 
 #define SIWX91X_I2S_INIT(inst)                                                                     \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	struct i2s_siwx91x_queue_item                                                              \
-		rx_ring_buf_##inst[CONFIG_I2S_SILABS_SIWX91X_RX_BLOCK_COUNT + 1];                  \
-	struct i2s_siwx91x_queue_item                                                              \
-		tx_ring_buf_##inst[CONFIG_I2S_SILABS_SIWX91X_TX_BLOCK_COUNT + 1];                  \
+	FIFO_DEFINE(rx_fifo_##inst, sizeof(struct queue_item),                                     \
+		CONFIG_I2S_SILABS_SIWX91X_RX_BLOCK_COUNT);                                         \
+	FIFO_DEFINE(tx_fifo_##inst, sizeof(struct queue_item),                                     \
+		CONFIG_I2S_SILABS_SIWX91X_TX_BLOCK_COUNT);                                         \
                                                                                                    \
 	BUILD_ASSERT((DT_INST_PROP(inst, silabs_channel_group) <                                   \
 		      DT_INST_PROP(inst, silabs_max_channel_count)),                               \
@@ -917,14 +896,12 @@ static DEVICE_API(i2s, i2s_siwx91x_driver_api) = {
 	static struct i2s_siwx91x_data i2s_data_##inst = {                                         \
 		.rx.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),                    \
 		.rx.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, rx)),                  \
-		.rx.mem_block_queue.buf = rx_ring_buf_##inst,                                      \
-		.rx.mem_block_queue.len = ARRAY_SIZE(rx_ring_buf_##inst),                          \
+		.rx.mem_block_queue = rx_fifo_##inst,                                              \
 		.rx.stream_start = i2s_siwx91x_rx_stream_start,                                    \
 		.rx.queue_drop = i2s_siwx91x_rx_queue_drop,                                        \
 		.tx.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),                       \
 		.tx.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, tx)),                  \
-		.tx.mem_block_queue.buf = tx_ring_buf_##inst,                                      \
-		.tx.mem_block_queue.len = ARRAY_SIZE(tx_ring_buf_##inst),                          \
+		.rx.mem_block_queue = tx_fifo_##inst,                                              \
 		.tx.stream_start = i2s_siwx91x_tx_stream_start,                                    \
 		.tx.queue_drop = i2s_siwx91x_tx_queue_drop,                                        \
 	};                                                                                         \
