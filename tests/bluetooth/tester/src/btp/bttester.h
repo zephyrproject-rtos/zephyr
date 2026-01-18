@@ -148,3 +148,9 @@ uint8_t tester_unregister_pbp(void);
 
 uint8_t tester_init_sdp(void);
 uint8_t tester_unregister_sdp(void);
+
+uint8_t tester_init_a2dp(void);
+uint8_t tester_unregister_a2dp(void);
+
+uint8_t tester_init_avdtp(void);
+uint8_t tester_unregister_avdtp(void);
