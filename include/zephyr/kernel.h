@@ -322,7 +322,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_DSP_SHARING} is not enabled.
  */
-#define K_DSP_IDX 6
+#define K_DSP_IDX 13
 #define K_DSP_REGS (BIT(K_DSP_IDX))
 
 /**
@@ -333,7 +333,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
  * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
  */
-#define K_AGU_IDX 7
+#define K_AGU_IDX 14
 #define K_AGU_REGS (BIT(K_AGU_IDX))
 
 /**
@@ -345,7 +345,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * save and restore the contents of these registers when scheduling
  * the thread. No effect if @kconfig{CONFIG_X86_SSE} is not enabled.
  */
-#define K_SSE_REGS (BIT(7))
+#define K_SSE_REGS (BIT(15))
 
 /* end - thread options */
 

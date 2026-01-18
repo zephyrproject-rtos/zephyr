@@ -57,10 +57,7 @@ struct _thread_base {
 	_wait_q_t *pended_on;
 
 	/* user facing 'thread options'; values defined in include/zephyr/kernel.h */
-	uint8_t user_options;
-
-	/* thread state */
-	uint8_t thread_state;
+	uint16_t user_options;
 
 	/*
 	 * scheduler lock count and thread priority
@@ -97,6 +94,9 @@ struct _thread_base {
 	uint32_t order_key;
 #endif
 
+	/* thread state */
+	uint8_t thread_state;
+
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */
 	uint8_t is_idle;
@@ -111,11 +111,7 @@ struct _thread_base {
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
-#if CONFIG_MP_MAX_NUM_CPUS <= 8
-	uint8_t cpu_mask;
-#else
 	uint16_t cpu_mask;
-#endif /* CONFIG_MP_MAX_NUM_CPUS */
 #endif /* CONFIG_SCHED_CPU_MASK */
 
 	/* data returned by APIs */

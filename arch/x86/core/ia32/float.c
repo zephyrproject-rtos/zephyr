@@ -179,7 +179,7 @@ void z_float_enable(struct k_thread *thread, unsigned int options)
 
 	/* Indicate thread requires floating point context saving */
 
-	thread->base.user_options |= (uint8_t)options;
+	thread->base.user_options |= (uint16_t)options;
 	/*
 	 * The current thread might not allow FP instructions, so clear CR0[TS]
 	 * so we can use them. (CR0[TS] gets restored later on, if necessary.)

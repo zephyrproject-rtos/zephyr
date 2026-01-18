@@ -69,7 +69,7 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
-    ldrb r0, [r2, #_thread_offset_to_user_options]
+    ldrh r0, [r2, #_thread_offset_to_user_options]
     tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
     beq out_fp_inactive
 
@@ -151,7 +151,7 @@ out_fp_inactive:
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
-    ldrb r0, [r2, #_thread_offset_to_user_options]
+    ldrh r0, [r2, #_thread_offset_to_user_options]
     tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
     beq in_fp_inactive
 

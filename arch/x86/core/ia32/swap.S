@@ -175,7 +175,7 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * _and_ whether the thread was context switched out preemptively.
 	 */
 
-	testb	$_FP_USER_MASK, _thread_offset_to_user_options(%eax)
+	testw	$_FP_USER_MASK, _thread_offset_to_user_options(%eax)
 	je 	restoreContext_NoFloatSwap
 
 
@@ -216,7 +216,7 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 
 
 #ifdef CONFIG_X86_SSE
-	testb	$K_SSE_REGS, _thread_offset_to_user_options(%ebx)
+	testw	$K_SSE_REGS, _thread_offset_to_user_options(%ebx)
 	je	x87FloatSave
 
 	/*
@@ -255,7 +255,7 @@ restoreContext_NoFloatSave:
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_X86_SSE
-	testb	$K_SSE_REGS, _thread_offset_to_user_options(%eax)
+	testw	$K_SSE_REGS, _thread_offset_to_user_options(%eax)
 	je	x87FloatRestore
 
 	fxrstor	_thread_offset_to_preempFloatReg(%eax)
@@ -290,7 +290,7 @@ restoreContext_NoFloatSwap:
 	 * registers
 	 */
 
-	testb	$_FP_USER_MASK, _thread_offset_to_user_options(%eax)
+	testw	$_FP_USER_MASK, _thread_offset_to_user_options(%eax)
 	jne	CROHandlingDone
 
 	/*
