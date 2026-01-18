@@ -587,6 +587,19 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 #endif
 
+/* _sched_spinlock must be held */
+static void add_to_waitq_locked_no_sorted(struct k_thread *thread, sys_dlist_t *wait_q)
+{
+	unready_thread(thread);
+	z_mark_thread_as_pending(thread);
+
+	SYS_PORT_TRACING_FUNC(k_thread, sched_pend, thread);
+
+	if (wait_q != NULL) {
+		sys_dlist_append(wait_q, &thread->base.qnode_dlist);
+	}
+}
+
 static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 {
 	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
@@ -601,6 +614,16 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
+	add_thread_timeout(thread, timeout);
+}
+
+static void pend_locked_no_sorted(struct k_thread *thread, sys_dlist_t *wait_q,
+			k_timeout_t timeout)
+{
+#ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
+#endif /* CONFIG_KERNEL_COHERENCE */
+	add_to_waitq_locked_no_sorted(thread, wait_q);
 	add_thread_timeout(thread, timeout);
 }
 
@@ -682,6 +705,30 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	k_spin_release(lock);
 	return z_swap(&_sched_spinlock, key);
 }
+
+int z_pend_curr_no_sorted(struct k_spinlock *lock, k_spinlock_key_t key,
+	       sys_dlist_t *wait_q, k_timeout_t timeout)
+{
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
+	pending_current = _current;
+#endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
+	__ASSERT_NO_MSG(sizeof(_sched_spinlock) == 0 || lock != &_sched_spinlock);
+
+	/* We do a "lock swap" prior to calling z_swap(), such that
+	 * the caller's lock gets released as desired.  But we ensure
+	 * that we hold the scheduler lock and leave local interrupts
+	 * masked until we reach the context switch.  z_swap() itself
+	 * has similar code; the duplication is because it's a legacy
+	 * API that doesn't expect to be called with scheduler lock
+	 * held.
+	 */
+	(void) k_spin_lock(&_sched_spinlock);
+	pend_locked_no_sorted(_current, wait_q, timeout);
+	k_spin_release(lock);
+	return z_swap(&_sched_spinlock, key);
+}
+
+
 
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 {
