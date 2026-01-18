@@ -252,13 +252,11 @@ static void save_config_and_notify(struct sensing_sensor *sensor)
 	k_sem_give(&ctx->event_sem);
 }
 
-static int set_sensor_state(struct sensing_sensor *sensor, enum sensing_sensor_state state)
+static void set_sensor_state(struct sensing_sensor *sensor, enum sensing_sensor_state state)
 {
 	__ASSERT(sensor, "set sensor state, sensing_sensor is NULL");
 
 	sensor->state = state;
-
-	return 0;
 }
 
 static void init_connection(struct sensing_connection *conn,
@@ -290,7 +288,7 @@ static void sensing_sensor_polling_timer(struct k_timer *timer_id)
 	sensor_read_async_mempool(sensor->iodev, &sensing_rtio_ctx, sensor);
 }
 
-static int init_sensor(struct sensing_sensor *sensor)
+static void init_sensor(struct sensing_sensor *sensor)
 {
 	struct sensing_submit_config *config;
 	struct sensing_connection *conn;
@@ -313,28 +311,17 @@ static int init_sensor(struct sensing_sensor *sensor)
 
 	config = sensor->iodev->data;
 	config->chan = sensing_sensor_type_to_chan(sensor->info->type);
-
-	return 0;
 }
 
 static int sensing_init(const struct device *dev)
 {
 	struct sensing_context *ctx = dev->data;
-	enum sensing_sensor_state state;
-	int ret = 0;
 
 	LOG_INF("sensing init begin...");
 
 	for_each_sensor(sensor) {
-		ret = init_sensor(sensor);
-		if (ret) {
-			LOG_ERR("sensor:%s initial error", sensor->dev->name);
-		}
-		state = (ret ? SENSING_SENSOR_STATE_OFFLINE : SENSING_SENSOR_STATE_READY);
-		ret = set_sensor_state(sensor, state);
-		if (ret) {
-			LOG_ERR("set sensor:%s state:%d error", sensor->dev->name, state);
-		}
+		init_sensor(sensor);
+		set_sensor_state(sensor, SENSING_SENSOR_STATE_READY);
 		LOG_INF("sensing init, sensor:%s, state:%d", sensor->dev->name, sensor->state);
 	}
 
@@ -343,7 +330,7 @@ static int sensing_init(const struct device *dev)
 	LOG_INF("create sensing runtime thread ok");
 	ctx->sensing_initialized = true;
 
-	return ret;
+	return 0;
 }
 
 int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn)
