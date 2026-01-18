@@ -23,16 +23,15 @@
 		ethernet@40028000 {
 			reg = <0x40028000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
-			clock-names = "stm-eth";
-			clocks = <&rcc STM32_CLOCK(AHB1, 19)>;
+			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK(AHB1, 19)>,
+				 <&rcc STM32_CLOCK(AHB1, 20)>,
+				 <&rcc STM32_CLOCK(AHB1, 21)>;
 
 			mac: ethernet {
 				compatible = "st,stm32h5-ethernet", "st,stm32h7-ethernet",
 					     "st,stm32-ethernet";
 				interrupts = <106 0>;
-				clock-names = "mac-clk-tx", "mac-clk-rx";
-				clocks = <&rcc STM32_CLOCK(AHB1, 20)>,
-					 <&rcc STM32_CLOCK(AHB1, 21)>;
 				status = "disabled";
 			};
 

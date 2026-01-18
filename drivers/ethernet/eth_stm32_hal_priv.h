@@ -104,17 +104,13 @@ extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB];
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
-	struct stm32_pclken pclken;
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
-	struct stm32_pclken pclken_mac;
-#endif
-#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
-	struct stm32_pclken pclken_ker;
-#endif
-	struct stm32_pclken pclken_rx;
-	struct stm32_pclken pclken_tx;
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-	struct stm32_pclken pclken_ptp;
+	const struct stm32_pclken *pclken;
+	uint8_t pclken_cnt;
+	/* Index of the clock used for kernel clock selection ("eth-ker"), or UINT8_MAX if none */
+	uint8_t kclk_sel_idx;
+#ifdef CONFIG_PTP_CLOCK_STM32_HAL
+	/* Index of the clock that gives the ethernet clock rate */
+	uint8_t rate_pclken_idx;
 #endif
 	const struct pinctrl_dev_config *pcfg;
 };

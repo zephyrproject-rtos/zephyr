@@ -925,15 +925,14 @@
 		ethernet@40028000 {
 			reg = <0x40028000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
-			clock-names = "stm-eth";
-			clocks = <&rcc STM32_CLOCK(AHB1, 15)>;
+			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
+				 <&rcc STM32_CLOCK(AHB1, 16)>,
+				 <&rcc STM32_CLOCK(AHB1, 17)>;
 
 			mac: ethernet {
 				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 				interrupts = <92 0>;
-				clock-names = "mac-clk-tx", "mac-clk-rx";
-				clocks = <&rcc STM32_CLOCK(AHB1, 16)>,
-					 <&rcc STM32_CLOCK(AHB1, 17)>;
 				memory-regions = <&sram2>;
 				status = "disabled";
 			};
