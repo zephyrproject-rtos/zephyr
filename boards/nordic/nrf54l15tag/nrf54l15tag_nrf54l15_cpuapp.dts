@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nrf54l15tag_cpuapp_common.dtsi"
+#include <vendor/nordic/nrf54l15_partition.dtsi>
+
+/ {
+	compatible = "nordic,nrf54l15tag_nrf54l15_cpuapp";
+	model = "Nordic nRF54L15 TAG nRF54L15 Application MCU";
+
+	chosen {
+		zephyr,flash = &cpuapp_rram;
+		zephyr,sram = &cpuapp_sram;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&uicr {
+	nfct-pins-as-gpios;
+};

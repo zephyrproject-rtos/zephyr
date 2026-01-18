@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if SPI_NOR
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
+
+endif # SPI_NOR
+
+if BOARD_NRF54L15TAG_NRF54L15_CPUAPP_NS
+
+config BOARD_NRF54L15TAG
+	select USE_DT_CODE_PARTITION
+
+config HAS_BT_CTLR
+	default BT
+
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y
+
+endif # BOARD_NRF54L15TAG_NRF54L15_CPUAPP_NS
