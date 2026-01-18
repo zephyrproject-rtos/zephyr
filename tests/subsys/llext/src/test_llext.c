@@ -23,6 +23,13 @@
 #include "syscalls_ext.h"
 #include "threads_kernel_objects_ext.h"
 
+#ifdef CONFIG_LLEXT_HEAP_K_HEAP
+#include <zephyr/llext/k_heap.h>
+#elif defined(CONFIG_LLEXT_HEAP_SYS_MEM_BLOCKS)
+#include <zephyr/llext/sys_mem_blocks_heap.h>
+#else
+#error "No llext heap implementation selected"
+#endif
 
 LOG_MODULE_REGISTER(test_llext);
 
@@ -162,6 +169,7 @@ void load_call_unload(const struct llext_test *test_case)
 	res = llext_add_domain(ext, &domain);
 	if (res == -ENOSPC) {
 		TC_PRINT("Too many memory partitions for this particular hardware\n");
+		llext_unload(&ext);
 		ztest_test_skip();
 		return;
 	}
@@ -467,7 +475,6 @@ ZTEST(llext, test_inter_ext)
 	zassert_ok(ret, "dependency load should succeed");
 
 	ret = llext_load(loader_dependent, "export_dependent", &ext_dependent, &ldr_parm);
-
 	zassert_ok(ret, "dependent load should succeed");
 
 	int (*test_entry_fn)() = llext_find_sym(&ext_dependent->exp_tab, "test_entry");
@@ -711,15 +718,16 @@ static void *ztest_suite_setup(void)
 {
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
 #ifdef CONFIG_HARVARD
-	zassert_ok(llext_heap_init_harvard(llext_instr_heap_data, sizeof(llext_instr_heap_data),
-					   llext_data_heap_data, sizeof(llext_data_heap_data)));
+	zassert_ok(llext_heap_init_harvard(llext_heap_inst, llext_instr_heap_data,
+					   sizeof(llext_instr_heap_data), llext_data_heap_data,
+					   sizeof(llext_data_heap_data)));
 	LOG_INF("Allocated LLEXT dynamic instruction heap of size %uKB\n",
 		(unsigned int)(sizeof(llext_instr_heap_data) / KB(1)));
 	LOG_INF("Allocated LLEXT dynamic data heap of size %uKB\n",
 		(unsigned int)(sizeof(llext_data_heap_data) / KB(1)));
 #else
 	/* Test runtime allocation of the LLEXT loader heap */
-	zassert_ok(llext_heap_init(llext_heap_data, sizeof(llext_heap_data)));
+	zassert_ok(llext_heap_init(llext_heap_inst, llext_heap_data, sizeof(llext_heap_data)));
 	LOG_INF("Allocated LLEXT dynamic heap of size %uKB\n",
 			(unsigned int)(sizeof(llext_heap_data)/KB(1)));
 #endif
@@ -732,7 +740,7 @@ static void ztest_suite_teardown(void *data)
 	ARG_UNUSED(data);
 
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
-	zassert_ok(llext_heap_uninit());
+	zassert_ok(llext_heap_uninit(llext_heap_inst));
 #endif
 }
 

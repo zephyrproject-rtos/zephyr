@@ -7,4 +7,6 @@ API Reference
 
 .. doxygengroup:: llext_loader_apis
 
+.. doxygengroup:: llext_heap_apis
+
 .. doxygengroup:: llext_inspect_apis

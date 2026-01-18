@@ -90,6 +90,18 @@ struct llext_loader;
 /** Maximum number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
 
+#ifdef CONFIG_LLEXT_HEAP_SYS_MEM_BLOCKS
+struct llext_alloc {
+	void *alloc_ptr; /* Pointer to allocated memory represented by sys_mem_blocks */
+	int num_blocks;
+	void **sys_mem_blocks_ptr; /* Pointer to array of sys_mem_blocks */
+};
+struct llext_alloc_map {
+	int idx;
+	struct llext_alloc map[LLEXT_MEM_COUNT];
+};
+#endif
+
 /**
  * @brief Structure describing a linkable loadable extension
  *
@@ -114,6 +126,10 @@ struct llext {
 
 	/** Is the memory for this region allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
+
+#ifdef CONFIG_LLEXT_HEAP_SYS_MEM_BLOCKS
+	struct llext_alloc_map mem_alloc_map;
+#endif
 
 	/** Size of each stored region */
 	size_t mem_size[LLEXT_MEM_COUNT];
@@ -419,45 +435,6 @@ int llext_get_section_header(const struct llext_loader *loader, const struct lle
 			     const char *search_name, elf_shdr_t *shdr);
 
 /**
- * @brief Initialize LLEXT heap dynamically
- *
- * Use the provided memory block as the LLEXT heap at runtime.
- *
- * @param mem Pointer to memory.
- * @param bytes Size of memory region, in bytes
- *
- * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
- *         or it is and option @kconfig{CONFIG_HARVARD} is enabled
- */
-int llext_heap_init(void *mem, size_t bytes);
-
-/**
- * @brief Initialize LLEXT heap dynamically for Harvard architecture
- *
- * Use the provided memory blocks as the LLEXT heaps at runtime.
- *
- * @param instr_mem Pointer to instruction memory.
- * @param instr_bytes Size of instruction memory region, in bytes
- * @param data_mem Pointer to data memory.
- * @param data_bytes Size of data memory region, in bytes
- *
- * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported,
- *         or it is and option @kconfig{CONFIG_HARVARD} is not enabled
- */
-int llext_heap_init_harvard(void *instr_mem, size_t instr_bytes, void *data_mem, size_t data_bytes);
-
-/**
- * @brief Mark LLEXT heap as uninitialized.
- *
- * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported
- * @retval -EBUSY On heap not empty
- */
-int llext_heap_uninit(void);
-
-/**
  * @brief Relink dependencies to prepare for suspend
  *
  * For suspend-resume use-cases, when LLEXT context should be saved in a
@@ -483,7 +460,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
  * During suspend the user has saved all the extension and loader descriptors
  * and related objects and called @ref llext_relink_dependency() to prepare
  * dependency pointers.
- * When resuming llext_alloc_data() has to be used to re-allocate all the objects,
+ * When resuming llext_heap_alloc_metadata() has to be used to re-allocate all the objects,
  * therefore the user needs support from LLEXT core to accomplish that.
  * This function takes arrays of pointers to saved copies of extensions and
  * loaders as arguments and re-allocates all the objects, while also adding them

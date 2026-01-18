@@ -55,28 +55,94 @@ config LLEXT_HEAP_DYNAMIC
 	  does not need LLEXT functionality any more, it should call llext_heap_uninit(),
 	  which releases control of the buffer back to the application.
 
+choice LLEXT_HEAP_MANAGEMENT
+	prompt "llext heap memory management"
+	default LLEXT_HEAP_K_HEAP
+	help
+	  Select the memory management API used to store extension sections in
+	  LLEXT heap memory. This choice does not affect LLEXT metadata, which is always
+	  managed with k_heap.
+
+config LLEXT_HEAP_K_HEAP
+	bool "Use k_heap"
+	help
+	  Use the k_heap API to manage LLEXT heap memory for extension sections.
+	  k_heap stores bookkeeping data alongside the allocated memory, which
+	  increases the memory overhead slightly and may cause misalignment with
+	  MPU regions.
+
+config LLEXT_HEAP_SYS_MEM_BLOCKS
+	bool "Use sys_mem_blocks"
+	depends on !LLEXT_HEAP_DYNAMIC
+	select SYS_MEM_BLOCKS
+	help
+	  Use sys_mem_blocks API to manage LLEXT heap memory for extension sections.
+	  Extension region alignment must be taken into account when selecting the block size.
+
+endchoice
+
+if LLEXT_HEAP_SYS_MEM_BLOCKS
+
+config LLEXT_METADATA_HEAP_SIZE
+	int "llext metadata heap memory size in kilobytes"
+	default 4
+	help
+	  Heap size in kilobytes available for llext metadata.
+
+config LLEXT_EXT_HEAP_SIZE
+	int "llext extension heap memory size in kilobytes"
+	depends on !HARVARD
+	default 16
+	help
+	  Heap size in kilobytes available for llext extension data. Must be a multiple of
+	  LLEXT_HEAP_SYS_MEM_BLOCK_BLOCK_SIZE. Replaced by LLEXT_INSTR_HEAP_SIZE and
+	  LLEXT_DATA_HEAP_SIZE if HARVARD is selected.
+
+config LLEXT_HEAP_SYS_MEM_BLOCK_BLOCK_SIZE
+	int "llext sys_mem_blocks block size in bytes"
+	default 32
+	help
+	  Block size in bytes for llext sys_mem_blocks heaps. Must be a multiple of LLEXT_PAGE_SIZE.
+	  The block size must be equal to or greater than the largest alignment needed for any
+	  extension region, as sys_mem_blocks does not allow for aligned allocations.
+
+endif
+
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
-	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD
+	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_SYS_MEM_BLOCKS
 	default 8
 	help
 	  Heap size in kilobytes available to llext for dynamic allocation
 
 config LLEXT_INSTR_HEAP_SIZE
-	int "llext ICCM heap memory size in kilobytes"
+	int "llext instruction heap memory size in kilobytes"
 	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
 	default 4
 	help
-	  ICCM heap size in kilobytes available to llext for dynamic allocation.
+	  Instruction heap size in kilobytes available to llext.
 	  Only executable sections will be placed in this heap.
 
 config LLEXT_DATA_HEAP_SIZE
-	int "llext DCCM heap memory size in kilobytes"
+	int "llext data heap memory size in kilobytes"
 	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
 	default 8
 	help
-	  DCCM heap size in kilobytes available to llext for dynamic allocation.
-	  Extension data and metadata will be placed in this heap.
+	  Data heap size in kilobytes available to llext.
+
+config LLEXT_INSTR_HEAP_SECTION
+	string "Section to place llext instruction heap"
+	depends on HARVARD
+	default ".rodata.llext_instr_heap"
+	help
+	  Section to place the llext instruction heap in memory.
+
+config LLEXT_DATA_HEAP_SECTION
+	string "Section to place llext data heap"
+	depends on HARVARD
+	default ".data.llext_data_heap"
+	help
+	  Section to place the llext data heap in memory.
 
 config LLEXT_BUILD_PIC
 	bool "Use -fPIC when building LLEXT"

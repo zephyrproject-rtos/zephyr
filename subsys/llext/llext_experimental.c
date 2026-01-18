@@ -10,6 +10,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
 
+#ifdef CONFIG_LLEXT_HEAP_K_HEAP
+#include <zephyr/llext/k_heap.h>
+#elif defined(CONFIG_LLEXT_HEAP_SYS_MEM_BLOCKS)
+#include <zephyr/llext/sys_mem_blocks_heap.h>
+#else
+#error "No llext heap implementation selected"
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
@@ -51,7 +59,8 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext)
 
 int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_ext)
 {
-	struct llext_elf_sect_map **map = llext_alloc_data(sizeof(*map) * n_ext);
+	struct llext_elf_sect_map **map =
+		llext_heap_alloc_metadata(llext_heap_inst, sizeof(*map) * n_ext);
 	struct llext *next, *tmp, *first = ext[0], *last = ext[n_ext - 1];
 	unsigned int i, j, n_map, n_exp_tab;
 	int ret;
@@ -69,7 +78,8 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 	 */
 	for (n_map = 0, n_exp_tab = 0; n_map < n_ext; n_map++) {
 		/* Need to allocate individually, because that's how they're freed */
-		map[n_map] = llext_alloc_data(sizeof(**map) * ext[n_map]->sect_cnt);
+		map[n_map] = llext_heap_alloc_metadata(llext_heap_inst,
+						       sizeof(**map) * ext[n_map]->sect_cnt);
 		if (!map[n_map]) {
 			LOG_ERR("cannot allocate section map of %zu",
 				sizeof(**map) * ext[n_map]->sect_cnt);
@@ -84,7 +94,8 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 	}
 
 	/* Array of pointers to exported symbol tables. Can be NULL if n_exp_tab == 0 */
-	struct llext_symbol **exp_tab = llext_alloc_data(sizeof(*exp_tab) * n_exp_tab);
+	struct llext_symbol **exp_tab =
+		llext_heap_alloc_metadata(llext_heap_inst, sizeof(*exp_tab) * n_exp_tab);
 
 	if (n_exp_tab) {
 		if (!exp_tab) {
@@ -99,7 +110,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 			if (ext[i]->exp_tab.sym_cnt) {
 				size_t size = sizeof(**exp_tab) * ext[i]->exp_tab.sym_cnt;
 
-				exp_tab[j] = llext_alloc_data(size);
+				exp_tab[j] = llext_heap_alloc_metadata(llext_heap_inst, size);
 				if (!exp_tab[j]) {
 					LOG_ERR("cannot allocate exported symbol table of %zu",
 						size);
@@ -115,7 +126,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 
 	/* Allocate extensions and add them to the global list */
 	for (i = 0, j = 0; i < n_ext; i++) {
-		next = llext_alloc_data(sizeof(*next));
+		next = llext_heap_alloc_metadata(llext_heap_inst, sizeof(*next));
 		if (!next) {
 			LOG_ERR("cannot allocate LLEXT of %zu", sizeof(*next));
 			ret = -ENOMEM;
@@ -142,8 +153,8 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 		ldr[i]->sect_map = map[i];
 	}
 
-	llext_free(map);
-	llext_free(exp_tab);
+	llext_heap_free_metadata(llext_heap_inst, map);
+	llext_heap_free_metadata(llext_heap_inst, exp_tab);
 
 	/* Restore dependencies previously saved by llext_relink_dependency() */
 	SYS_SLIST_FOR_EACH_CONTAINER(&llext_list, next, llext_list) {
@@ -179,7 +190,7 @@ free_llext:
 		for (i = 0; i < n_ext; i++) {
 			if (ext[i] == next) {
 				sys_slist_remove(&llext_list, NULL, &next->llext_list);
-				llext_free(next);
+				llext_heap_free_metadata(llext_heap_inst, next);
 				ext[i] = NULL;
 				break;
 			}
@@ -190,17 +201,17 @@ free_llext:
 
 free_sym:
 	for (i = 0; i < n_exp_tab && exp_tab[i]; i++) {
-		llext_free(exp_tab[i]);
+		llext_heap_free_metadata(llext_heap_inst, exp_tab[i]);
 	}
 
-	llext_free(exp_tab);
+	llext_heap_free_metadata(llext_heap_inst, exp_tab);
 
 free_map:
 	for (i = 0; i < n_map; i++) {
-		llext_free(map[i]);
+		llext_heap_free_metadata(llext_heap_inst, map[i]);
 	}
 
-	llext_free(map);
+	llext_heap_free_metadata(llext_heap_inst, map);
 
 	return ret;
 }

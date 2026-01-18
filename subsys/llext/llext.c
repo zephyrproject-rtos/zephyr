@@ -12,6 +12,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 
+#ifdef CONFIG_LLEXT_HEAP_K_HEAP
+#include <zephyr/llext/k_heap.h>
+#elif defined(CONFIG_LLEXT_HEAP_SYS_MEM_BLOCKS)
+#include <zephyr/llext/sys_mem_blocks_heap.h>
+#else
+#error "No llext heap implementation selected"
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
 
@@ -179,7 +187,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	*ext = llext_alloc_data(sizeof(struct llext));
+	*ext = llext_heap_alloc_metadata(llext_heap_inst, sizeof(struct llext));
 	if (*ext == NULL) {
 		LOG_ERR("Not enough memory for extension metadata");
 		ret = -ENOMEM;
@@ -188,7 +196,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 
 	ret = do_llext_load(ldr, *ext, ldr_parm);
 	if (ret < 0) {
-		llext_free(*ext);
+		llext_heap_free_metadata(llext_heap_inst, *ext);
 		*ext = NULL;
 		goto out;
 	}
@@ -238,13 +246,13 @@ int llext_unload(struct llext **ext)
 	k_mutex_unlock(&llext_lock);
 
 	if (tmp->sect_hdrs_on_heap) {
-		llext_free(tmp->sect_hdrs);
+		llext_heap_free_metadata(llext_heap_inst, tmp->sect_hdrs);
 	}
 
 	llext_free_regions(tmp);
-	llext_free(tmp->sym_tab.syms);
-	llext_free(tmp->exp_tab.syms);
-	llext_free(tmp);
+	llext_heap_free_metadata(llext_heap_inst, tmp->sym_tab.syms);
+	llext_heap_free_metadata(llext_heap_inst, tmp->exp_tab.syms);
+	llext_heap_free_metadata(llext_heap_inst, tmp);
 
 	return 0;
 }
