@@ -274,6 +274,8 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 		if (sync->skip > skip_max) {
 			sync->skip = skip_max;
 		}
+	} else {
+		sync->skip = 0U;
 	}
 
 	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
@@ -321,14 +323,9 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 	conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
 
 	/* Calculate offset and schedule sync radio events */
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
-
 	sync_offset_us = PDU_ADV_SYNC_INFO_OFFSET_GET(si) * lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (PDU_ADV_SYNC_INFO_OFFS_ADJUST_GET(si) ? OFFS_ADJUST_US : 0U);
-	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
-	sync_offset_us -= EVENT_JITTER_US;
-	sync_offset_us -= ready_delay_us;
 
 	if (conn_evt_offset) {
 		int64_t conn_offset_us = (int64_t)conn_evt_offset * conn_interval_us;
@@ -386,6 +383,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 
 	/* Calculate event time reservation */
 	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	slot_us += ready_delay_us;
 
 	/* Add implementation defined radio event overheads */
@@ -410,7 +408,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Compensate for window widening */
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(conn->lll.periph.window_widening_event_us);
+		sync_offset_us += conn->lll.periph.window_widening_event_us;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
