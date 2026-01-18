@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: <text>Copyright 2025 Arm Limited and/or
+# its affiliates <open-source-office@arm.com></text>
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "arm,axi-timing-adapter"
+
+include: base.yaml
+
+description: |
+  AXI-to-AXI timing adapter for shaping memory access timing.
+  The adapter can delay and throttle transactions to model realistic
+  memory timings.
+
+  - Common tuning parameters (most users will adjust these):
+    - maxr, maxw, maxrw
+    - rlatency, wlatency
+    - pulse-on, pulse-off
+    - bwcap
+
+  - Other parameters are available for completeness or specialized use
+    (e.g. mode, performance counters, histograms). They are typically
+    left at defaults.
+
+  - Performance counter: When measuring from outside the NPU, the
+    performance counter can be used to count DUT clock-off cycles.
+    See timing_adapter_perfctrl_settings in the official driver:
+    https://gitlab.arm.com/artificial-intelligence/ethos-u/
+    ethos-u-core-platform/-/blob/main/drivers/timing_adapter/
+    include/timing_adapter.h
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: TA base address
+
+  # Optional hardware/RTL version (for info/logging)
+  version:
+    type: int
+    description: Optional TA block version (informational).
+
+  # --- Common tuning parameters ---
+  maxr:
+    type: int
+    description: "6-bit. Max pending reads. 0 = infinite. [Common tuning parameter]"
+
+  maxw:
+    type: int
+    description: "6-bit. Max pending writes. 0 = infinite. [Common tuning parameter]"
+
+  maxrw:
+    type: int
+    description: "6-bit. Max pending reads+writes. 0 = infinite. [Common tuning parameter]"
+
+  rlatency:
+    type: int
+    description: "12-bit. Min cycles AVALID->RVALID. [Common tuning parameter]"
+
+  wlatency:
+    type: int
+    description: "12-bit. Min cycles (WVALID&WLAST)->BVALID. [Common tuning parameter]"
+
+  pulse-on:
+    type: int
+    description: "Number of cycles addresses let through (0-65535). [Common tuning parameter]"
+
+  pulse-off:
+    type: int
+    description: "Number of cycles addresses blocked (0-65535). [Common tuning parameter]"
+
+  bwcap:
+    type: int
+    description: >
+      16-bit. Max number of bus words per pulse cycle. 0 = infinite.
+      A "bus word" is 64 bits on Ethos-U55, and 128 bits on Ethos-U65/U85.
+      [Common tuning parameter]
+
+  # --- Other parameters (typically left at defaults) ---
+  perfctrl:
+    type: int
+    description: |
+      6-bit event selector for the performance counter.
+      Commonly used to count DUT clock-on/off cycles when profiling from
+      outside the NPU. See the official driver's timing_adapter_perfctrl_settings
+      for enumerated values.
+
+  perfcnt:
+    type: int
+    description: |
+      32-bit performance counter preload/reset value.
+      Optional preload before measurement; read back after the run when
+      perfctrl is configured (e.g. to count DUT clock-off cycles).
+
+  mode:
+    type: int
+    description: |
+      Mode bits for clocking and reordering (bits 0-11).
+      On FVP only bit 0 is implemented; other bits are ignored/reserved.
+      Bit 0 controls dynamic clocking:
+        0 = static clocking (no dynamic adjustment).
+        1 = dynamic clocking enabled to avoid underrun (recommended).
+    default: 1
+
+  histbin:
+    type: int
+    description: Histogram bin selector (0-15).
+
+  histcnt:
+    type: int
+    description: Histogram bin value (32-bit).
