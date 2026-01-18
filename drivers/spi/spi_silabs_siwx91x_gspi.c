@@ -188,7 +188,7 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 }
 
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
-static void gspi_siwx91x_dma_tx_callback(const struct device *dev, void *user_data,
+static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 					 uint32_t channel, int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
@@ -213,7 +213,8 @@ static void gspi_siwx91x_dma_tx_callback(const struct device *dev, void *user_da
 
 static int gspi_siwx91x_dma_config(const struct device *dev,
 				   struct gspi_siwx91x_dma_channel *channel, uint32_t block_count,
-				   bool is_tx, uint8_t dfs, uint8_t burst_size)
+				   bool is_tx, uint8_t dfs, uint8_t burst_size,
+				   uint8_t rx_null_buf)
 {
 	struct dma_config cfg = {
 		.channel_direction = is_tx ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY,
@@ -226,9 +227,14 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 		.block_count = block_count,
 		.head_block = channel->dma_descriptors,
 		.dma_slot = channel->dma_slot,
-		.dma_callback = is_tx ? &gspi_siwx91x_dma_tx_callback : NULL,
 		.user_data = (void *)dev,
 	};
+
+	if ((rx_null_buf && is_tx) || (!is_tx && !rx_null_buf)) {
+		cfg.dma_callback = &gspi_siwx91x_dma_callback;
+	} else {
+		cfg.dma_callback = NULL;
+	}
 
 	return dma_config(channel->dma_dev, channel->chan_nb, &cfg);
 }
@@ -347,6 +353,7 @@ static int gspi_siwx91x_prepare_dma_channel(const struct device *spi_dev,
 	struct gspi_siwx91x_data *data = spi_dev->data;
 	const uint8_t dfs = SPI_WORD_SIZE_GET(data->ctx.config->operation) / 8;
 	struct dma_block_config *desc;
+	uint8_t rx_null_buf = 0;
 	int ret = 0;
 
 	gspi_siwx91x_reset_desc(channel);
@@ -357,9 +364,13 @@ static int gspi_siwx91x_prepare_dma_channel(const struct device *spi_dev,
 		return -ENOMEM;
 	}
 
+	if (data->ctx.rx_buf == NULL) {
+		rx_null_buf = 1;
+	}
+
 	ret = gspi_siwx91x_dma_config(spi_dev, channel,
 				      ARRAY_INDEX(channel->dma_descriptors, desc) + 1, is_tx, dfs,
-				      burst_size);
+				      burst_size, rx_null_buf);
 	return ret;
 }
 
@@ -433,6 +444,7 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 	const struct device *dma_dev = data->dma_rx.dma_dev;
 	struct spi_context *ctx = &data->ctx;
 	size_t padded_transaction_size = gspi_siwx91x_longest_transfer_size(ctx);
+	uint8_t rx_null_buf = 0;
 	uint8_t burst_size = 1;
 	int ret = 0;
 
@@ -462,9 +474,15 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 		burst_size = gspi_siwx91x_burst_size(ctx);
 	}
 
-	cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
-	cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
-	cfg->reg->GSPI_FIFO_THRLD = 0;
+	/* Detect transfers where RX data is either not requested or shorter than
+	 * the transmitted data. In such cases, the RX buffer is treated as NULL
+	 * since incoming data will not be fully consumed by the SPI context.
+	 */
+	if (data->ctx.rx_buf == NULL ||
+	    spi_context_total_rx_len(ctx) < spi_context_total_tx_len(ctx)) {
+		rx_null_buf = 1;
+	}
+
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AEMPTY_THRLD = burst_size - 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AFULL_THRLD = burst_size - 1;
 
@@ -489,6 +507,19 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 	ret = spi_context_wait_for_completion(&data->ctx);
 	if (ret < 0) {
 		goto force_transaction_close;
+	}
+
+	if (rx_null_buf) {
+		/* When a NULL RX buffer is used, RX data is not consumed by software
+		 * and may remain in the GSPI RX FIFO. Explicitly reset both RX and TX
+		 * FIFOs to flush any residual data, ensuring subsequent transfers
+		 * start with a clean FIFO state.
+		 */
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
+		cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 0;
+		cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 0;
+		rx_null_buf = 0;
 	}
 
 	/* Successful transaction. DMA transfer done interrupt ended the transaction. */

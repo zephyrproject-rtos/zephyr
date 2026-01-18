@@ -22,6 +22,9 @@
 #define LF_FSM_CLOCK_FREQUENCY 32768
 #define XTAL_FREQUENCY         40000000
 #define INTF_PLL_FREQUENCY     160000000
+#define QSPI_SWALLO_DIS        0
+#define QSPI_ODD_DIV_DIS       0
+#define QSPI_DIV_FACTOR        1
 
 LOG_MODULE_REGISTER(siwx91x_clock, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -241,6 +244,8 @@ static enum clock_control_status siwx91x_clock_get_status(const struct device *d
 
 static int siwx91x_clock_init(const struct device *dev)
 {
+	M4CLK_Type *pCLK = M4CLK;
+
 	SystemCoreClockUpdate();
 
 	sl_si91x_clock_manager_init();
@@ -251,6 +256,10 @@ static int siwx91x_clock_init(const struct device *dev)
 
 	/* Use interface PLL at configured frequency as peripheral clock */
 	sl_si91x_clock_manager_set_pll_freq(INFT_PLL, INTF_PLL_FREQUENCY, PLL_REF_CLK_VAL_XTAL);
+
+	/* Increase QSPI clock speed to 80MHz from 40MHz */
+	RSI_CLK_QspiClkConfig(pCLK, QSPI_INTFPLLCLK, QSPI_SWALLO_DIS, QSPI_ODD_DIV_DIS,
+			      QSPI_DIV_FACTOR);
 
 	/* FIXME: Currently the clock consumer use clocks without power on them.
 	 * This should be fixed in drivers. Meanwhile, get the list of required
