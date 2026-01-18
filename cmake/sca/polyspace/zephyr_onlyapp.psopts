@@ -1,0 +1,6 @@
+# tweaks for zephyr if only the application shall be analyzed
+-ignore-macro-definition Z_LOG
+-ignore-macro-definition Z_LOG_INSTANCE
+-ignore-macro-definition Z_LOG_HEXDUMP
+-ignore-macro-definition Z_LOG_HEXDUMP_INSTANCE
+-D_POLYSPACE_APP_ONLY=1
