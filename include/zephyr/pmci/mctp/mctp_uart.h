@@ -56,6 +56,15 @@ struct mctp_binding_uart {
  */
 void mctp_uart_start_rx(struct mctp_binding_uart *uart);
 
+/**
+ * @brief Stop the receive of a single mctp message
+ *
+ * Will stop reading a single mctp message from the uart.
+ *
+ * @param uart MCTP UART binding
+ */
+void mctp_uart_stop_rx(struct mctp_binding_uart *uart);
+
 /** @cond INTERNAL_HIDDEN */
 int mctp_uart_start(struct mctp_binding *binding);
 int mctp_uart_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
