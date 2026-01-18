@@ -32,4 +32,11 @@ config SEGGER_SYSVIEW_SECTION_DTCM
 
 endchoice
 
+config SEGGER_SYSVIEW_CUSTOM_ISR_NAMES
+	string "SystemView ISR name descriptions"
+	help
+	  Custom ISR name descriptions for SystemView tracing.
+	  Format: "I#<num>=<name>, I#<num>=<name>, ..."
+	  Example: "I#33=RTC1, I#19=SPI0/TWI0"
+
 endif
