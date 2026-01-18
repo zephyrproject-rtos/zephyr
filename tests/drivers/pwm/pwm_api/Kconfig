@@ -7,14 +7,14 @@ source "Kconfig.zephyr"
 
 config DEFAULT_PWM_PORT
 	int "Default PWM port/channel"
-	default 1 if PWM_STM32 || PWM_MCHP_G1_TCC || PWM_MCHP_G1_TC
+	default 1 if PWM_STM32 || PWM_MCHP_G1_TCC || PWM_MCHP_TC_G1
 	default 0
 	help
 	  PWM port matching the channel associated with PWM pin.
 
 config INVALID_PWM_PORT
 	int "Invalid PWM port/channel"
-	default 9 if PWM_NRFX || PWM_MCHP_G1_TCC || PWM_MCHP_G1_TC
+	default 9 if PWM_NRFX || PWM_MCHP_G1_TCC || PWM_MCHP_TC_G1
 	default -1
 	help
 	  Invalid PWM port/channel for negative testing.
@@ -38,7 +38,7 @@ config DEFAULT_PULSE_CYCLE
 config DEFAULT_PERIOD_NSEC
 	int "Default PWM period in nanoseconds"
 	default 4000000 if SOC_FAMILY_MCXW
-	default 546000 if PWM_MCHP_G1_TCC || PWM_MCHP_G1_TC
+	default 546000 if PWM_MCHP_G1_TCC
 	default 2000000
 	help
 	  Default PWM period in nanoseconds.
@@ -48,7 +48,7 @@ config DEFAULT_PULSE_NSEC
 	default 500000 if SOC_MK64F12 || SOC_MKW41Z4 || SOC_ESP32S2 || SOC_ESP32S3 || SOC_ESP32C3
 	default 500000 if PWM_INTEL_BLINKY
 	default 2000000 if SOC_FAMILY_MCXW
-	default 273000 if PWM_MCHP_G1_TCC || PWM_MCHP_G1_TC
+	default 273000 if PWM_MCHP_G1_TCC
 	default 1000000
 	help
 	  Default PWM pulse in nanoseconds.

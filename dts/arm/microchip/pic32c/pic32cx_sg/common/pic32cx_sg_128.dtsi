@@ -31,6 +31,30 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		tc6: tc@43001400 {
+			compatible = "microchip,tc-g1";
+			reg = <0x43001400 0x400>;
+			interrupts = <113 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC6>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC6>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc7: tc@43001800 {
+			compatible = "microchip,tc-g1";
+			reg = <0x43001800 0x400>;
+			interrupts = <114 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC7>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC7>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
 	};
 };
 

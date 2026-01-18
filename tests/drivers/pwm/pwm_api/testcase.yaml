@@ -132,9 +132,12 @@ tests:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc5:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg41_cult_tc5.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc6:
     extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
