@@ -32,6 +32,7 @@
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 #include "did_internal.h"
+#include "hid_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
@@ -6221,6 +6222,10 @@ void bt_l2cap_br_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_DID)) {
 		bt_did_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_HID_DEVICE)) {
+		bt_hid_dev_init();
 	}
 }
 
