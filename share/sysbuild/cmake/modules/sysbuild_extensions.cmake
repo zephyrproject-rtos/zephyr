@@ -320,6 +320,8 @@ function(ExternalZephyrProject_Add)
     shared_cmake_variables_list
     CMAKE_BUILD_TYPE
     CMAKE_VERBOSE_MAKEFILE
+    WEST_PYTHON        # Temporary export. Waiting for #87083 and extensions.cmake to be cleaned up.
+    Python3_EXECUTABLE # Temporary export. Waiting for #87083 and extensions.cmake to be cleaned up.
   )
 
   set(sysbuild_cache_file ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}_sysbuild_cache.txt)
