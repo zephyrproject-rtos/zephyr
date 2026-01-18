@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: espressif
+      url-base: https://github.com/espressif
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -138,6 +140,10 @@ manifest:
       path: tools/edtt
       groups:
         - tools
+    - name: esp-serial-flasher
+      remote: espressif
+      revision: 3ff3a1a4a9c9094b73e6e91e606aa57d7568e064
+      path: modules/lib/esp-serial-flasher
     - name: fatfs
       revision: f4ead3bf4a6dab3a07d7b5f5315795c073db568d
       path: modules/fs/fatfs

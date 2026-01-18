@@ -8,6 +8,7 @@ menu "Miscellaneous Drivers"
 # zephyr-keep-sorted-start
 source "drivers/misc/devmux/Kconfig"
 source "drivers/misc/ethos_u/Kconfig"
+source "drivers/misc/esp_tool/Kconfig"
 source "drivers/misc/ft8xx/Kconfig"
 source "drivers/misc/grove_lcd_rgb/Kconfig"
 source "drivers/misc/interconn/Kconfig"
