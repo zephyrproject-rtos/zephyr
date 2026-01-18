@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	uart_proxy_agent: uart-proxy {
+		compatible = "zephyr,zbus-proxy-agent-uart";
+		status = "okay";
+		uart-device = <&uart30>;
+	};
+};
+
+&uart30 {
+	status = "okay";
+	current-speed = <1000000>;
+	/delete-property/ hw-flow-control;
+};
