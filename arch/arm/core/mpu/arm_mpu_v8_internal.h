@@ -516,12 +516,6 @@ static int region_allocate_and_init(const uint8_t index,
 static int mpu_configure_region(const uint8_t index,
 	const struct z_arm_mpu_partition *new_region);
 
-#if !defined(CONFIG_MPU_GAP_FILLING)
-static int mpu_configure_regions(const struct z_arm_mpu_partition
-	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check);
-#endif
-
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
  * sanity check of the memory regions to be programmed.
@@ -657,6 +651,111 @@ static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 	return reg_index;
 }
 
+#if !defined(CONFIG_MPU_GAP_FILLING)
+/*
+ * Bitmask tracking for MPU regions:
+ * - mpu_static_regions_mask: Regions configured during static init (immutable after init)
+ * - mpu_dynamic_regions_mask: Regions allocated for dynamic use (mutable at runtime)
+ * Each bit represents one MPU region (bit set = region in use)
+ */
+static uint16_t mpu_static_regions_mask;
+static uint16_t mpu_dynamic_regions_mask;
+
+static inline void mpu_track_static_add(const uint8_t index)
+{
+	mpu_static_regions_mask |= (1U << index);
+}
+
+static inline void mpu_track_static_remove(const uint8_t index)
+{
+	mpu_static_regions_mask &= ~(1U << index);
+}
+
+static inline void mpu_track_dynamic_add(const uint8_t index)
+{
+	mpu_dynamic_regions_mask |= (1U << index);
+}
+
+static inline void mpu_track_dynamic_remove(const uint8_t index)
+{
+	mpu_dynamic_regions_mask &= ~(1U << index);
+}
+
+static inline int mpu_track_find_free(void)
+{
+	const uint16_t forbidden = mpu_static_regions_mask | mpu_dynamic_regions_mask;
+
+	for (int i = 0; i < mpu_get_num_regions(); i++) {
+		if (!(forbidden & (1U << i))) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static inline bool mpu_track_is_static(uint8_t index)
+{
+	return (mpu_static_regions_mask & (1U << index)) != 0;
+}
+
+static void mpu_track_scan_static_regions(void)
+{
+	for (int i = 0; i < static_regions_num; i++) {
+		mpu_set_rnr(i);
+		if (mpu_get_rlar() & MPU_RLAR_EN_Msk) {
+			mpu_track_static_add(i);
+		}
+	}
+}
+
+static inline void mpu_clear_and_untrack_dynamic_regions(void)
+{
+	for (uint8_t i = 0; i < mpu_get_num_regions(); i++) {
+		if (!mpu_track_is_static(i)) {
+			mpu_clear_region(i);
+			mpu_track_dynamic_remove(i);
+		}
+	}
+}
+
+static int mpu_configure_dynamic_regions_with_reuse(const struct z_arm_mpu_partition regions[],
+						    uint8_t regions_num, bool do_sanity_check)
+{
+	mpu_clear_and_untrack_dynamic_regions();
+
+	int configured = 0;
+
+	for (int i = 0; i < regions_num; i++) {
+		if (regions[i].size == 0U) {
+			continue;
+		}
+
+		if (do_sanity_check && (!mpu_partition_is_valid(&regions[i]))) {
+			LOG_ERR("Partition %u: sanity check failed.", i);
+			return -EINVAL;
+		}
+
+		int reg_index = mpu_track_find_free();
+
+		if (reg_index == -1) {
+			LOG_ERR("No free MPU regions (configured %d of %d)", configured,
+				regions_num);
+			return -EINVAL;
+		}
+
+		reg_index = mpu_configure_region(reg_index, &regions[i]);
+		if (reg_index == -EINVAL) {
+			return -EINVAL;
+		}
+
+		mpu_track_dynamic_add(reg_index);
+		configured++;
+	}
+
+	return configured;
+}
+#endif
+
 /* This internal function programs the static MPU regions.
  *
  * It returns the number of MPU region indices configured.
@@ -683,6 +782,12 @@ static int mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
 		regions_num, mpu_reg_index, true);
 
 	static_regions_num = mpu_reg_index;
+
+#if !defined(CONFIG_MPU_GAP_FILLING)
+	mpu_static_regions_mask = 0;
+	mpu_dynamic_regions_mask = 0;
+	mpu_track_scan_static_regions();
+#endif
 
 	return mpu_reg_index;
 }
@@ -720,11 +825,19 @@ static int mpu_mark_areas_for_dynamic_regions(
 			return -EINVAL;
 		}
 
+#if defined(CONFIG_MPU_GAP_FILLING)
 		/* Store default configuration */
 		mpu_region_get_conf(dyn_reg_info[i].index,
 			&dyn_reg_info[i].region_conf);
+#else
+		/* Clear the underlying region now (during static regions init)
+		 * and remove it from static mask so it can be reused for dynamic regions.
+		 */
+		mpu_clear_region(dyn_reg_info[i].index);
+		static_regions_num--;
+		mpu_track_static_remove(dyn_reg_info[i].index);
+#endif
 	}
-
 	return 0;
 }
 
@@ -749,12 +862,12 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 {
 	int mpu_reg_index = static_regions_num;
 
+#if defined(CONFIG_MPU_GAP_FILLING)
 	/* Disable all MPU regions except for the static ones. */
 	for (int i = mpu_reg_index; i < get_num_regions(); i++) {
 		mpu_clear_region(i);
 	}
 
-#if defined(CONFIG_MPU_GAP_FILLING)
 	/* Reset MPU regions inside which dynamic memory regions may
 	 * be programmed.
 	 */
@@ -770,20 +883,13 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	mpu_reg_index = mpu_configure_regions_and_partition(dynamic_regions,
 		regions_num, mpu_reg_index, true);
 #else
+	mpu_reg_index =
+		mpu_configure_dynamic_regions_with_reuse(dynamic_regions, regions_num, true);
 
-	/* We are going to skip the full partition of the background areas.
-	 * So we can disable MPU regions inside which dynamic memory regions
-	 * may be programmed.
-	 */
-	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
-		mpu_clear_region(dyn_reg_info[i].index);
+	if (mpu_reg_index == -EINVAL) {
+		LOG_ERR("Dynamic MPU configuration failed");
+		return mpu_reg_index;
 	}
-
-	/* The dynamic regions are now programmed on top of
-	 * existing SRAM region configuration.
-	 */
-	mpu_reg_index = mpu_configure_regions(dynamic_regions,
-		regions_num, mpu_reg_index, true);
 
 #endif /* CONFIG_MPU_GAP_FILLING */
 	return mpu_reg_index;

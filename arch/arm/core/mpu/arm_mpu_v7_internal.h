@@ -202,12 +202,41 @@ static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 
 #endif /* CONFIG_USERSPACE */
 
-static int mpu_configure_region(const uint8_t index,
-	const struct z_arm_mpu_partition *new_region);
+/* This internal function programs a set of given MPU regions
+ * over a background memory area, optionally performing a
+ * sanity check of the memory regions to be programmed.
+ */
+static int mpu_configure_region(const uint8_t index, const struct z_arm_mpu_partition *new_region);
 
-static int mpu_configure_regions(const struct z_arm_mpu_partition
-	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check);
+static int mpu_configure_regions(const struct z_arm_mpu_partition regions[], uint8_t regions_num,
+				 uint8_t start_reg_index, bool do_sanity_check)
+{
+	int i;
+	int reg_index = start_reg_index;
+
+	for (i = 0; i < regions_num; i++) {
+		if (regions[i].size == 0U) {
+			continue;
+		}
+		/* Non-empty region. */
+
+		if (do_sanity_check && (!mpu_partition_is_valid(&regions[i]))) {
+			LOG_ERR("Partition %u: sanity check failed.", i);
+			return -EINVAL;
+		}
+
+		reg_index = mpu_configure_region(reg_index, &regions[i]);
+
+		if (reg_index == -EINVAL) {
+			return reg_index;
+		}
+
+		/* Increment number of programmed MPU indices. */
+		reg_index++;
+	}
+
+	return reg_index;
+}
 
 /* This internal function programs the static MPU regions.
  *
