@@ -6,3 +6,20 @@ description: NXP FlexSPI NOR
 compatible: "nxp,imx-flexspi-nor"
 
 include: ["nxp,imx-flexspi-device.yaml", soc-nv-flash.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Reset GPIO pin.
+
+  reset-assert-duration-ms:
+    type: int
+    description: |
+      Minimum duration to activate a hardware reset.
+      Ignored if no reset GPIO pin specified.
+
+  boot-duration-ms:
+    type: int
+    description: |
+      Minimum time to wait following a hardware reset.
+      Ignored if no reset GPIO pin specified.
