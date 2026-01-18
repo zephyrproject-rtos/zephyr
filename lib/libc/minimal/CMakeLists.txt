@@ -52,3 +52,5 @@ add_custom_command(
   DEPENDS include/errno.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)

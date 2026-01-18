@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 #ifdef HAVE_ARPA_INET_H
-#include <zephyr/posix/arpa/inet.h>
+#include <arpa/inet.h>
 #endif
 #include <sys/types.h>
 #ifdef HAVE_POLL_H

@@ -8,7 +8,7 @@
 
 #include "posix_shell.h"
 
-#include <zephyr/posix/sys/utsname.h>
+#include <sys/utsname.h>
 #include <zephyr/shell/shell.h>
 
 #define UNAME_KERNEL   BIT(0)
