@@ -6,117 +6,41 @@
 
 /dts-v1/;
 
-#include <adi/max32/max78002.dtsi>
+#include <adi/max32/max78002-m4.dtsi>
+#include "max78002evkit.dtsi"
+
 #include <adi/max32/max78002-pinctrl.dtsi>
-#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
-#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+storage_partition: &m4_storage_partition {};
 
 / {
 	model = "Analog Devices MAX78002EVKIT";
 	compatible = "adi,max78002evkit";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram2;
-		zephyr,flash = &flash0;
+		zephyr,console = &m4_uart;
+		zephyr,shell-uart = &m4_uart;
+		zephyr,sram = &m4_sram;
+		zephyr,code-partition = &m4_partition;
+		zephyr,settings-partition = &m4_storage_partition;
+		zephyr,code-rv32-partition = &rv32_partition;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-
-		led1: led_1 {
-			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
-
-		led2: led_2 {
-			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
-			label = "Red LED";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		pb1: pb1 {
-			gpios = <&gpio2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW2";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-
-		pb2: pb2 {
-			gpios = <&gpio2 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW3";
-			zephyr,code = <INPUT_KEY_1>;
-		};
-
-		pb_wakeup: pb_wakeup {
-			gpios = <&gpio3 1
-				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
-			label = "Wakeup";
-			zephyr,code = <INPUT_KEY_WAKEUP>;
-		};
-	};
-
-	/* These aliases are provided for compatibility with samples */
 	aliases {
-		led0 = &led1;
-		led1 = &led2;
-		sw0 = &pb1;
-		sw1 = &pb2;
 		watchdog0 = &wdt0;
 	};
 };
 
-&uart0 {
-	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	data-bits = <8>;
-	parity = "none";
+&flc0 {
 	status = "okay";
 };
 
-&clk_ipo {
-	status = "okay";
-};
-
-&clk_ibro {
-	status = "okay";
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpio3 {
-	status = "okay";
-};
-
-&trng {
-	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
+&cpu1 {
+	pinctrl-0 = <&rv_tck_p1_0 &rv_tms_p1_1 &rv_tdi_p1_2 &rv_tdo_p1_3>;
 	pinctrl-names = "default";
 };
 
-&dma0 {
-	status = "okay";
-};
-
-&wdt0 {
+&m4_uart {
 	status = "okay";
 };
 
@@ -126,11 +50,15 @@
 	pinctrl-names = "default";
 };
 
+&wdt0 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
 &w1 {
 	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
 	pinctrl-names = "default";
-};
-
-&rtc_counter {
-	status = "okay";
 };

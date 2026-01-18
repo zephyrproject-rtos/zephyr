@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <adi/max32/max32655.dtsi>
+#include <adi/max32/max32655-m4.dtsi>
 #include <adi/max32/max32655-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -18,9 +18,19 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram2;
+		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &code_partition;
+	};
+
+	soc {
+		/*
+		 * Concatenate SRAM0(32KB), SRAM1(32KB) and SRAM2(48KB) for the M4
+		 */
+		m4_sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(112)>;
+		};
 	};
 
 	leds {
@@ -202,6 +212,7 @@
 
 	spi0_cs1_flash: w25q128jv@1 {
 		compatible = "jedec,spi-nor";
+		status = "disabled";
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
 		reg = <1>;

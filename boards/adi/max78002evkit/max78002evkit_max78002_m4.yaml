@@ -22,4 +22,4 @@ supported:
   - w1
   - flash
 ram: 64
-flash: 2560
+flash: 1024
