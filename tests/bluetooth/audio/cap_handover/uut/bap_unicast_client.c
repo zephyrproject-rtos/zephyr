@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023 Codecoup
- * Copyright (c) 2024-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +29,7 @@ static struct bt_bap_unicast_group bap_unicast_group;
 
 bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
+	/* TODO: This cannot always return true */
 	return true;
 }
 
