@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Vaisala Oyj
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulated DAC
+
+compatible: "zephyr,dac-emul"
+
+include: dac-controller.yaml
+
+properties:
+  nchannels:
+    type: int
+    required: true
+    description: |
+      Number of channels supported by this instance.
