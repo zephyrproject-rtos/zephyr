@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <zephyr/arch/cpu.h>
+#include "fsl_smc.h"
 
 /*******************************************************************************
  * Definitions
@@ -124,6 +125,10 @@ void soc_early_init_hook(void)
 #endif /* CONFIG_TEMP_KINETIS */
 
 	clock_init();
+
+#ifdef CONFIG_PM
+	SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
+#endif /* CONFIG_PM */
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK

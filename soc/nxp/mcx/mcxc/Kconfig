@@ -7,6 +7,7 @@ config SOC_FAMILY_MCXC
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_VTOR
 	select CLOCK_CONTROL
+	select HAS_PM
 	select SOC_RESET_HOOK
 	select HAS_MCUX
 	select HAS_MCUX_SIM
