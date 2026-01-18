@@ -877,7 +877,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 	return 0;
 }
 
-static int usb_dc_control_ep_read_continue(const struct udc_rpi_ep_state *const ep_state,
+static void usb_dc_control_ep_read_continue(const struct udc_rpi_ep_state *const ep_state,
 					   bool *const arm_out_endpoint)
 {
 	const struct usb_setup_packet *const setup = (const void *)&usb_dpram->setup_packet;
@@ -916,7 +916,6 @@ static int usb_dc_control_ep_read_continue(const struct udc_rpi_ep_state *const 
 			}
 		}
 	}
-	return 0;
 }
 
 int usb_dc_ep_read_continue(const uint8_t ep)
@@ -929,11 +928,7 @@ int usb_dc_ep_read_continue(const uint8_t ep)
 		return -EINVAL;
 	}
 	if (ep == USB_CONTROL_EP_OUT) {
-		int ret = usb_dc_control_ep_read_continue(ep_state, &arm_out_endpoint);
-
-		if (ret != 0) {
-			return ret;
-		}
+		usb_dc_control_ep_read_continue(ep_state, &arm_out_endpoint);
 	} else {
 		const size_t len = udc_rpi_get_ep_buffer_len(ep);
 
