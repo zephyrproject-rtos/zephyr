@@ -32,6 +32,8 @@
 		zephyr,sram = &m55_data;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 	};
 
 	power-states {
