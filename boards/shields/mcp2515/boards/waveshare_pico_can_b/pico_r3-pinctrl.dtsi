@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Common re-routing for "Pico (W)" or "Pico 2(W)" compatible boards.
+ *
+ * Changes the pin assignments for the required Pico SPI bus on GP4, GP5,
+ * GP6 and GP7, which conflict with I2C busses 0 and 1 on the same pins.
+ * I2C bus 0 is then assigned to GP16 and GP17 (formerly SPI MISO and CSn).
+ * I2C bus 1 is then assigned to GP18 and GP19 (formerly SPI SCK and MOSI).
+ */
+
+/delete-node/ &i2c0_default;	/* force error when not existent */
+/delete-node/ &i2c1_default;	/* force error when not existent */
+/delete-node/ &spi0_default;	/* force error when not existent */
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P16>, <I2C0_SCL_P17>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P18>, <I2C1_SCL_P19>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_CSN_P5>, <SPI0_SCK_P6>, <SPI0_TX_P7>;
+		};
+
+		group2 {
+			pinmux = <SPI0_RX_P4>;
+			input-enable;
+		};
+	};
+};
