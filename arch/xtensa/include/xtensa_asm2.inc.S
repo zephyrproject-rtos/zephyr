@@ -677,16 +677,19 @@ _Level\LVL\()Vector:
 .if \LVL == 1
 	/* If there are any TLB misses during interrupt handling,
 	 * the user/kernel/double exception vector will be triggered
-	 * to handle these misses. This results in DEPC and EXCCAUSE
-	 * being overwritten, and then execution returned back to
-	 * this site of TLB misses. When it gets to the C handler,
-	 * it will not see the original cause. So stash
-	 * the EXCCAUSE here so C handler can see the original cause.
+	 * to handle these misses. This results in DEPC, EXCCAUSE
+	 * and EXCVADDR being overwritten, and then execution returned
+	 * back to this site of TLB misses. When it gets to the C handler,
+	 * it will not see the original cause. So stash the EXCCAUSE
+	 * and EXCVADDR here so C handler can see the original cause.
 	 *
 	 * For double exception, DEPC in saved in earlier vector
 	 * code.
 	 */
 	wsr a0, ZSR_A0SAVE
+
+	rsr.exccause a0
+	wsr a0, ZSR_EXCCAUSE_SAVE
 
 	esync
 
@@ -717,24 +720,41 @@ _Level\LVL\()Vector:
 	j _TripleFault
 
 _not_triple_fault:
-	rsr a0, ZSR_A0SAVE
 .endif
 #endif
 
 	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
+
+#ifdef CONFIG_XTENSA_MMU
+.if \LVL == 1
+	/* Save EXCVADDR register needed for handling the exception
+	 * as this register can be overwritten during nested
+	 * exceptions.  It has to be saved first, because
+	 * executing the store instruction may trigger a
+	 * TLB miss, which will modify its value.
+	 */
+	rsr.excvaddr a0
+	s32i a0, a1, ___xtensa_irq_bsa_t_excvaddr_OFFSET
+	rsr a0, ZSR_A0SAVE
+.endif
+#endif
+
 	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 
-	/* Save registers needed for handling the exception as
-	 * these registers can be overwritten during nested
+#ifdef CONFIG_XTENSA_MMU
+.if \LVL != 1
+#endif
+	/* Save register needed for handling the exception as
+	 * this register can be overwritten during nested
 	 * exceptions.
 	 */
-	rsr.exccause a0
-	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
-
 	rsr.excvaddr a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_excvaddr_OFFSET
+#ifdef CONFIG_XTENSA_MMU
+.endif
+#endif
 
 	/* Level "1" is the exception handler, which uses a different
 	 * calling convention.  No special register holds the
