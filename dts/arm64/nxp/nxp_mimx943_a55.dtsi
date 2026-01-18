@@ -526,6 +526,7 @@
 				reg = <0x4cd40000 0x40000>,
 				      <0x4ca00000 0x1000>;
 				reg-names = "port", "pfconfig";
+				msi-device-id = <0x68>;
 				mac-index = <3>;
 				si-index = <3>;
 				phy-connection-type = "internal";
