@@ -11,13 +11,16 @@
 
 / {
 	clocks {
-		plli2s: plli2s {
-			compatible = "st,stm32f411-plli2s-clock";
+		pllsai: pllsai {
+			compatible = "st,stm32fx-pll-clock";
+			#clock-cells = <0>;
+			status = "disabled";
 		};
 
-		pllsai: pllsai {
-			compatible = "st,stm32fx-pllsai-clock";
+		clk48: clk48 {
 			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 	};
