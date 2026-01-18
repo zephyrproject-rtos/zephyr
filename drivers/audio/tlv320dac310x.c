@@ -47,7 +47,7 @@ static void codec_soft_reset(const struct device *dev);
 static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg);
 static int codec_configure_clocks(const struct device *dev,
 				  struct audio_codec_cfg *cfg);
-static int codec_configure_filters(const struct device *dev,
+static void codec_configure_filters(const struct device *dev,
 				   audio_dai_cfg_t *cfg);
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg);
 static void codec_configure_output(const struct device *dev);
@@ -100,7 +100,7 @@ static int codec_configure(const struct device *dev,
 		ret = codec_configure_dai(dev, &cfg->dai_cfg);
 	}
 	if (ret == 0) {
-		ret = codec_configure_filters(dev, &cfg->dai_cfg);
+		codec_configure_filters(dev, &cfg->dai_cfg);
 	}
 	codec_configure_output(dev);
 
@@ -352,7 +352,7 @@ static int codec_configure_clocks(const struct device *dev,
 	return 0;
 }
 
-static int codec_configure_filters(const struct device *dev,
+static void codec_configure_filters(const struct device *dev,
 				   audio_dai_cfg_t *cfg)
 {
 	enum proc_block proc_blk;
@@ -373,7 +373,6 @@ static int codec_configure_filters(const struct device *dev,
 	}
 
 	codec_write_reg(dev, PROC_BLK_SEL_ADDR, PROC_BLK_SEL(proc_blk));
-	return 0;
 }
 
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
