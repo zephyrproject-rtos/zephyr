@@ -167,6 +167,9 @@ class RelationshipData:
     # owner SPDX Document (if ownerType is DOCUMENT)
     ownerDocument: Optional['Document'] = None
 
+    # owner package ID (if ownerType is PACKAGEID and otherType is PACKAGEID)
+    ownerPackageID = ""
+
     # for the "other" element (e.g., the right side of the Relationship),
     # is it a filename or a target name (e.g., a Package in the build doc)
     otherType: RelationshipDataElementType = RelationshipDataElementType.UNKNOWN
