@@ -381,10 +381,10 @@ static int rm67162_write_fb(const struct device *dev, bool first_write,
 			return (int)wlen;
 		}
 		/* Advance source pointer and decrement remaining */
-		if (desc->pitch > desc->width) {
+		if (desc->pitch > desc->width * data->bytes_per_pixel) {
 			len_sent += wlen;
 			local_src += wlen + len_sent / (desc->width * data->bytes_per_pixel) *
-				((desc->pitch - desc->width) * data->bytes_per_pixel);
+				(desc->pitch - desc->width * data->bytes_per_pixel);
 		} else {
 			local_src += wlen;
 		}

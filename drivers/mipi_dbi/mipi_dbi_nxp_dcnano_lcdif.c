@@ -195,6 +195,7 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 	struct mcux_dcnano_lcdif_dbi_data *lcdif_data = dev->data;
 	int ret = 0;
 	uint8_t bytes_per_pixel = 0U;
+	uint32_t local_pitch;
 
 	/* The DBI bus type and color coding. */
 	ret = mcux_dcnano_lcdif_dbi_configure(dev, dbi_config);
@@ -248,10 +249,11 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 		/* For RGB888 the stride shall be calculated as
 		 * 4 bytes per pixel instead of 3.
 		 */
-		LCDIF_SetFrameBufferStride(config->base, 0, 4U * desc->pitch);
+		local_pitch = desc->pitch * 4U / 3U;
 	} else {
-		LCDIF_SetFrameBufferStride(config->base, 0, bytes_per_pixel * desc->pitch);
+		local_pitch = desc->pitch;
 	}
+	LCDIF_SetFrameBufferStride(config->base, 0, local_pitch);
 
 	/* Set the updated area's size according to desc. */
 	LCDIF_SetFrameBufferPosition(config->base, 0U, 0U, 0U, desc->width,

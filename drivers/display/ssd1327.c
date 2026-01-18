@@ -285,8 +285,8 @@ static int ssd1327_write(const struct device *dev, const uint16_t x, const uint1
 	uint8_t x_position[] = {x / 2, (x + desc->width - 1) / 2};
 	uint8_t y_position[] = {y, y + desc->height - 1};
 
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+	if (desc->pitch != desc->width * sizeof(uint8_t)) {
+		LOG_ERR("Pitch is not width in bytes");
 		return -EINVAL;
 	}
 

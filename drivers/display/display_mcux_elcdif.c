@@ -89,7 +89,8 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 	LOG_DBG("W=%d, H=%d, @%d,%d", desc->width, desc->height, x, y);
 
-	if ((x == 0) && (y == 0) && (desc->width == config->rgb_mode.panelWidth) &&
+	if ((x == 0) && (y == 0) &&
+	    (desc->pitch == config->rgb_mode.panelWidth * dev_data->pixel_bytes) &&
 	    (desc->height == config->rgb_mode.panelHeight) && (desc->pitch == desc->width)) {
 		/* We can use the display buffer directly, no need to copy it */
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb, (void *)buf);
@@ -97,6 +98,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		full_fb = true;
 	} else if ((x == 0) && (y == 0) && (desc->width == config->rgb_mode.panelHeight) &&
 		   (desc->height == config->rgb_mode.panelWidth) && (desc->pitch == desc->width) &&
+		   (desc->pitch == config->rgb_mode.panelHeight * dev_data->pixel_bytes) &&
 		   IS_ENABLED(CONFIG_MCUX_ELCDIF_PXP)) {
 		/* With the PXP, we can rotate this display buffer to align
 		 * with output dimensions
@@ -126,7 +128,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, dev_data->pixel_bytes * desc->width);
-			src += dev_data->pixel_bytes * desc->pitch;
+			src += desc->pitch;
 			dst += dev_data->pixel_bytes * config->rgb_mode.panelWidth;
 		}
 
@@ -187,7 +189,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		}
 
 		pxp_dma.channel_direction = MEMORY_TO_MEMORY;
-		pxp_dma.source_data_size = desc->width * dev_data->pixel_bytes;
+		pxp_dma.source_data_size = desc->pitch;
 		pxp_dma.dest_data_size = config->rgb_mode.panelWidth * dev_data->pixel_bytes;
 		/* Burst lengths are heights of source/dest buffer in pixels */
 		pxp_dma.source_burst_length = desc->height;

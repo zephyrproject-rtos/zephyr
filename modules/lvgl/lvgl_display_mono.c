@@ -104,9 +104,9 @@ void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *p
 	}
 
 	struct display_buffer_descriptor desc = {
-		.buf_size = (w * h) / 8U,
+		.buf_size = h * DIV_ROUND_UP(w, 8),
 		.width = w,
-		.pitch = w,
+		.pitch = DIV_ROUND_UP(w, 8),
 		.height = h,
 		.frame_incomplete = !is_last,
 	};

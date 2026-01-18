@@ -88,15 +88,18 @@ static struct led_rgb *pixel_address(const struct led_strip_matrix_config *confi
 static inline int check_descriptor(const struct led_strip_matrix_config *config, const uint16_t x,
 				   const uint16_t y, const struct display_buffer_descriptor *desc)
 {
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT(desc->pitch <= config->width, "Pitch in descriptor is larger than screen size");
+	const uint16_t bytes_per_pixel = (config->pixel_format == PIXEL_FORMAT_ARGB_8888 ? 4 : 3);
+	const uint16_t width_bytes = desc->width * bytes_per_pixel;
+
+	__ASSERT(width_bytes <= desc->pitch, "Pitch is too small");
+	__ASSERT(desc->width <= config->width, "Width in descriptor is larger than screen size");
 	__ASSERT(desc->height <= config->height, "Height in descriptor is larger than screen size");
-	__ASSERT(x + desc->pitch <= config->width,
+	__ASSERT(x + desc->width <= config->width,
 		 "Writing outside screen boundaries in horizontal direction");
 	__ASSERT(y + desc->height <= config->height,
 		 "Writing outside screen boundaries in vertical direction");
 
-	if (desc->width > desc->pitch || x + desc->pitch > config->width ||
+	if (width_bytes > desc->pitch || x + desc->pitch > config->width ||
 	    y + desc->height > config->height) {
 		return -EINVAL;
 	}
@@ -109,6 +112,7 @@ static int led_strip_matrix_write(const struct device *dev, const uint16_t x, co
 {
 	const struct led_strip_matrix_config *config = dev->config;
 	const uint8_t *buf_ptr = buf;
+	const uint16_t bytes_per_pixel = (config->pixel_format == PIXEL_FORMAT_ARGB_8888 ? 4 : 3);
 	int rc;
 
 	rc = check_descriptor(config, x, y, desc);
@@ -138,8 +142,7 @@ static int led_strip_matrix_write(const struct device *dev, const uint16_t x, co
 				buf_ptr++;
 			}
 		}
-		buf_ptr += (desc->pitch - desc->width) *
-			   (config->pixel_format == PIXEL_FORMAT_ARGB_8888 ? 4 : 3);
+		buf_ptr += desc->pitch - (desc->width * bytes_per_pixel);
 	}
 
 	for (size_t i = 0; i < config->num_of_strips; i++) {
@@ -158,6 +161,7 @@ static int led_strip_matrix_read(const struct device *dev, const uint16_t x, con
 {
 	const struct led_strip_matrix_config *config = dev->config;
 	uint8_t *buf_ptr = buf;
+	const uint16_t bytes_per_pixel = (config->pixel_format == PIXEL_FORMAT_ARGB_8888 ? 4 : 3);
 	int rc;
 
 	rc = check_descriptor(config, x, y, desc);
@@ -183,8 +187,7 @@ static int led_strip_matrix_read(const struct device *dev, const uint16_t x, con
 				buf_ptr++;
 			}
 		}
-		buf_ptr += (desc->pitch - desc->width) *
-			   (config->pixel_format == PIXEL_FORMAT_ARGB_8888 ? 4 : 3);
+		buf_ptr += desc->pitch - (desc->width * bytes_per_pixel);
 	}
 
 	return 0;

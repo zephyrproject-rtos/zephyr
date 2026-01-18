@@ -26,7 +26,7 @@ static void cfb_test_before(void *text_fixture)
 {
 	struct display_buffer_descriptor desc = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = display_width / 8,
 		.width = display_width,
 		.buf_size = display_height * display_width / 8,
 	};

@@ -78,7 +78,7 @@ static int app_display_frame(const struct device *const display_dev,
 	struct display_buffer_descriptor buf_desc = {
 		.buf_size = vbuf->bytesused,
 		.width = fmt->width,
-		.pitch = buf_desc.width,
+		.pitch = fmt->pitch,
 		.height = vbuf->bytesused / fmt->pitch,
 	};
 

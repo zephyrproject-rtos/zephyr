@@ -218,7 +218,7 @@ static int sh1122_write_pixels_mipi(const struct device *dev, const uint8_t *buf
 	struct display_buffer_descriptor mipi_desc;
 
 	mipi_desc.buf_size = desc->width / 2;
-	mipi_desc.pitch = desc->pitch;
+	mipi_desc.pitch = desc->width / 2; /* One byte contains 2 pixels */
 	mipi_desc.width = desc->width;
 	mipi_desc.height = 1;
 
@@ -261,6 +261,7 @@ static int sh1122_write(const struct device *dev, const uint16_t x, const uint16
 	int total = 0;
 	uint8_t ybuf = y;
 
+	/* Supported pixel format is PIXEL_FORMAT_L_8, pitch equals width */
 	if (desc->pitch != desc->width) {
 		LOG_ERR("Pitch is not width");
 		return -EINVAL;
