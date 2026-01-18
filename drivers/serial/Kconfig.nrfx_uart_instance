@@ -17,6 +17,13 @@ config UART_$(nrfx_uart_num)_ASYNC
 	help
 	  This option enables UART Asynchronous API support on port $(nrfx_uart_num).
 
+config UART_$(nrfx_uart_num)_COUNT_BYTES_WITH_TIMER
+	bool
+	depends on $(dt_nodelabel_has_prop,uart$(nrfx_uart_num),timer)
+	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
+	default y
+	imply UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+
 config UART_$(nrfx_uart_num)_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port $(nrfx_uart_num)"
 	depends on !$(dt_nodelabel_bool_prop,uart$(nrfx_uart_num),endtx-stoptx-supported)

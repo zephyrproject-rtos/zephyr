@@ -34,4 +34,10 @@ properties:
       This pin defaults to active high when consumed by the SPI SDHC driver.
       It can be used to toggle card power via an external control circuit
 
+  cd-gpios:
+    type: phandle-array
+    description: |
+      Card detect pin
+      This pin can be used to detect if a card is present in the slot.
+
 bus: sd

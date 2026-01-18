@@ -32,13 +32,14 @@ HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/static",
 static uint8_t dynamic_buf[TEST_BUF_SIZE];
 static size_t dynamic_len;
 
-static int dynamic_cb(struct http_client_ctx *client, enum http_data_status status,
+static int dynamic_cb(struct http_client_ctx *client, enum http_transaction_status status,
 		      const struct http_request_ctx *request_ctx,
 		      struct http_response_ctx *response_ctx, void *user_data)
 {
 	static size_t offset;
 
-	if (status == HTTP_SERVER_DATA_ABORTED) {
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		offset = 0;
 		return 0;
 	}
@@ -60,7 +61,7 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 			offset += request_ctx->data_len;
 		}
 
-		if (status == HTTP_SERVER_DATA_FINAL) {
+		if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 			/* All data received, reset progress. */
 			dynamic_len = offset;
 			offset = 0;
@@ -361,7 +362,7 @@ ZTEST(http_client, test_http1_client_post_payload_cb)
 
 static void client_tests_before(void *fixture)
 {
-	struct sockaddr_in6 sa;
+	struct net_sockaddr_in6 sa;
 	int ret;
 
 	ARG_UNUSED(fixture);
@@ -379,23 +380,23 @@ static void client_tests_before(void *fixture)
 		return;
 	}
 
-	ret = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	ret = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (ret < 0) {
 		printk("Failed to create client socket (%d)\n", errno);
 		return;
 	}
 	client_fd = ret;
 
-	sa.sin6_family = AF_INET6;
-	sa.sin6_port = htons(SERVER_PORT);
+	sa.sin6_family = NET_AF_INET6;
+	sa.sin6_port = net_htons(SERVER_PORT);
 
-	ret = zsock_inet_pton(AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
+	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
 	if (ret != 1) {
 		printk("inet_pton() failed to convert %s\n", SERVER_IPV6_ADDR);
 		return;
 	}
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	ret = zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printk("Failed to connect (%d)\n", errno);
 	}

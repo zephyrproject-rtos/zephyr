@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf7120_enga_cpuflpr.dtsi>
+#include "nrf7120dk_nrf7120-common.dtsi"
+
+/ {
+	model = "Nordic nRF7120 DK nRF7120 FLPR MCU";
+	compatible = "nordic,nrf7120dk_nrf7120-cpuflpr";
+
+	chosen {
+		zephyr,console = &uart00;
+		zephyr,shell-uart = &uart00;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_mram;
+		zephyr,sram = &ram03_sram;
+	};
+};
+
+/* RAM03 is single cycle access for FLPR core while RAM01 is 2 cycle access */
+&ram03_sram {
+	status = "okay";
+	reg = <0x200e0000 DT_SIZE_K(120)>;
+	ranges = <0x0 0x200e0000 0x1e000>;
+};
+
+&cpuflpr_mram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuflpr_code_partition: partition@0 {
+			label = "image-0";
+			reg = <0 DT_SIZE_K(116)>;
+		};
+	};
+};
+
+&grtc {
+	owned-channels = <3 4>;
+	status = "okay";
+};
+
+&uart00 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};

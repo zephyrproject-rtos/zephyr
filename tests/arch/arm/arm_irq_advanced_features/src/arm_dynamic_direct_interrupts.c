@@ -10,7 +10,11 @@
 #include <zephyr/sys/barrier.h>
 
 /* Offset for the Direct interrupt used in this test. */
+#ifdef CONFIG_2ND_LVL_ISR_TBL_OFFSET
+#define DIRECT_ISR_OFFSET (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#else
 #define DIRECT_ISR_OFFSET (CONFIG_NUM_IRQS - 1)
+#endif
 
 static volatile int test_flag;
 

@@ -159,7 +159,8 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags);
+	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags) |
+		ESP_INTR_FLAG_IRAM;
 	ret = esp_intr_alloc(config->irq_source, flags, (intr_handler_t)wdt_esp32_isr, (void *)dev,
 			     NULL);
 
@@ -201,7 +202,7 @@ static DEVICE_API(wdt, wdt_api) = {
 			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	   \
 			      &wdt_api)
 
-static void wdt_esp32_isr(void *arg)
+static void IRAM_ATTR wdt_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct wdt_esp32_data *data = dev->data;

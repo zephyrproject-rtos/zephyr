@@ -1,5 +1,6 @@
 /*
  * (c) Meta Platforms, Inc. and affiliates.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -206,9 +207,9 @@ static int mcux_ctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 		return err;
 	}
 
-	if (config->prescale > 0) {
-		*cycles /= config->prescale;
-	}
+	*cycles /= (uint64_t)config->prescale + 1;
+	__ASSERT((*cycles) > 0, "Invalid PWM frequency: cycles per second is 0(check clock rate
+		and prescaler)");
 
 	return err;
 }

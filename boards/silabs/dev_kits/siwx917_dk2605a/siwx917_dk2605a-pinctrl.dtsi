@@ -32,4 +32,10 @@
 			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group {
+			pinmux = <ADC_TOPGPIO_HP28>;
+		};
+	};
 };

@@ -68,20 +68,20 @@ K_MEM_SLAB_DEFINE(usbip_slab, sizeof(struct usbip_cmd_node),
 
 static void usbip_ntoh_command(struct usbip_command *const cmd)
 {
-	cmd->hdr.command = ntohl(cmd->hdr.command);
-	cmd->hdr.seqnum = ntohl(cmd->hdr.seqnum);
-	cmd->hdr.devid = ntohl(cmd->hdr.devid);
-	cmd->hdr.direction = ntohl(cmd->hdr.direction);
-	cmd->hdr.ep = ntohl(cmd->hdr.ep);
+	cmd->hdr.command = net_ntohl(cmd->hdr.command);
+	cmd->hdr.seqnum = net_ntohl(cmd->hdr.seqnum);
+	cmd->hdr.devid = net_ntohl(cmd->hdr.devid);
+	cmd->hdr.direction = net_ntohl(cmd->hdr.direction);
+	cmd->hdr.ep = net_ntohl(cmd->hdr.ep);
 
 	if (cmd->hdr.command == USBIP_CMD_SUBMIT) {
-		cmd->submit.flags = ntohl(cmd->submit.flags);
-		cmd->submit.length = ntohl(cmd->submit.length);
-		cmd->submit.start_frame = ntohl(cmd->submit.start_frame);
-		cmd->submit.numof_iso_pkts = ntohl(cmd->submit.numof_iso_pkts);
-		cmd->submit.interval = ntohl(cmd->submit.interval);
+		cmd->submit.flags = net_ntohl(cmd->submit.flags);
+		cmd->submit.length = net_ntohl(cmd->submit.length);
+		cmd->submit.start_frame = net_ntohl(cmd->submit.start_frame);
+		cmd->submit.numof_iso_pkts = net_ntohl(cmd->submit.numof_iso_pkts);
+		cmd->submit.interval = net_ntohl(cmd->submit.interval);
 	} else {
-		cmd->unlink.seqnum = ntohl(cmd->unlink.seqnum);
+		cmd->unlink.seqnum = net_ntohl(cmd->unlink.seqnum);
 	}
 }
 
@@ -130,16 +130,16 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	LOG_INF("SUBMIT seqnum %u finished err %d ep 0x%02x",
 		cmd->hdr.seqnum, xfer->err, xfer->ep);
 
-	ret.hdr.command = htonl(USBIP_RET_SUBMIT);
-	ret.hdr.seqnum = htonl(cmd->hdr.seqnum);
-	ret.hdr.devid = htonl(cmd->hdr.devid);
-	ret.hdr.ep = htonl(xfer->ep);
-	ret.hdr.direction = htonl(cmd->hdr.direction);
+	ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
+	ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
+	ret.hdr.devid = net_htonl(cmd->hdr.devid);
+	ret.hdr.ep = net_htonl(xfer->ep);
+	ret.hdr.direction = net_htonl(cmd->hdr.direction);
 
 	memset(&ret.submit, 0, sizeof(ret.submit));
-	ret.submit.status = htonl(xfer->err);
-	ret.submit.start_frame = htonl(cmd->submit.start_frame);
-	ret.submit.numof_iso_pkts = htonl(0xFFFFFFFFUL);
+	ret.submit.status = net_htonl(xfer->err);
+	ret.submit.start_frame = net_htonl(cmd->submit.start_frame);
+	ret.submit.numof_iso_pkts = net_htonl(0xFFFFFFFFUL);
 
 	if (xfer->err == -ECONNRESET) {
 		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
@@ -151,7 +151,11 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 	if (xfer->err == 0 && cmd->submit.length != 0) {
-		ret.submit.actual_length = htonl(buf->len);
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			ret.submit.actual_length = net_htonl(buf->len);
+		} else {
+			ret.submit.actual_length = net_htonl(cmd->submit.length);
+		}
 	}
 
 
@@ -166,7 +170,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		goto usbip_req_cb_error;
 	}
 
-	if (ret.submit.actual_length != 0) {
+	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
 		err = zsock_send(dev_ctx->connfd, buf->data, buf->len, 0);
 		if (err != buf->len) {
@@ -253,6 +257,12 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
+		if (cmd->submit.length > USBIP_MAX_PKT_SIZE) {
+			LOG_ERR("Buffer size %u too small, requested length %zu",
+				USBIP_MAX_PKT_SIZE, cmd->submit.length);
+			return -ENOMEM;
+		}
+
 		buf = net_buf_alloc(&usbip_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
@@ -327,7 +337,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	}
 
 	memcpy(&rsp.hdr, &cmd->hdr, sizeof(rsp.hdr));
-	rsp.hdr.command = htonl(USBIP_RET_UNLINK);
+	rsp.hdr.command = net_htonl(USBIP_RET_UNLINK);
 
 	usbip_ntoh_command(cmd);
 
@@ -339,7 +349,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	key = irq_lock();
 	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
 		if (cmd_nd->cmd.hdr.seqnum == cmd->unlink.seqnum) {
-			rsp.unlink.status = htonl(-ECONNRESET);
+			rsp.unlink.status = net_htonl(-ECONNRESET);
 			usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
 			break;
 		}
@@ -366,7 +376,7 @@ static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
 
 	LOG_HEXDUMP_DBG((uint8_t *)&cmd.hdr, sizeof(cmd.hdr), "cmd.hdr");
 
-	switch (ntohl(cmd.hdr.command)) {
+	switch (net_ntohl(cmd.hdr.command)) {
 	case USBIP_CMD_SUBMIT:
 		ret = usbip_handle_submit(dev_ctx, &cmd);
 		break;
@@ -374,7 +384,7 @@ static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
 		ret = usbip_handle_unlink(dev_ctx, &cmd);
 		break;
 	default:
-		LOG_ERR("Unknown command: 0x%x", ntohl(cmd.hdr.command));
+		LOG_ERR("Unknown command: 0x%x", net_ntohl(cmd.hdr.command));
 		break;
 	}
 
@@ -410,13 +420,13 @@ static int handle_devlist_device(struct usb_device *const udev,
 	const uint32_t devnum = udev->addr;
 	int err;
 
-	devlist.busnum = htonl(busnum);
-	devlist.devnum = htonl(devnum);
+	devlist.busnum = net_htonl(busnum);
+	devlist.devnum = net_htonl(devnum);
 
-	devlist.speed = htonl(udev->speed);
-	devlist.idVendor = htons(d_desc->idVendor);
-	devlist.idProduct = htons(d_desc->idProduct);
-	devlist.bcdDevice = htons(d_desc->bcdDevice);
+	devlist.speed = net_htonl(udev->speed);
+	devlist.idVendor = net_htons(d_desc->idVendor);
+	devlist.idProduct = net_htons(d_desc->idProduct);
+	devlist.bcdDevice = net_htons(d_desc->bcdDevice);
 	devlist.bDeviceClass = d_desc->bDeviceClass;
 	devlist.bDeviceSubClass = d_desc->bDeviceSubClass;
 	devlist.bDeviceProtocol = d_desc->bDeviceProtocol;
@@ -477,10 +487,10 @@ static int handle_devlist_device_iface(struct usb_device *const udev, int connfd
 static int usbip_handle_devlist(struct usbip_bus_ctx *const bus_ctx, int connfd)
 {
 	struct usbip_devlist_header rep_hdr = {
-		.version = htons(USBIP_VERSION),
-		.code = htons(USBIP_OP_REP_DEVLIST),
+		.version = net_htons(USBIP_VERSION),
+		.code = net_htons(USBIP_OP_REP_DEVLIST),
 		.status = 0,
-		.ndev = htonl(1),
+		.ndev = net_htonl(1),
 	};
 	struct usb_device *udev;
 	uint32_t ndev = 0;
@@ -490,7 +500,7 @@ static int usbip_handle_devlist(struct usbip_bus_ctx *const bus_ctx, int connfd)
 		ndev++;
 	}
 
-	rep_hdr.ndev = htonl(ndev);
+	rep_hdr.ndev = net_htonl(ndev);
 	/* Send reply header with the number of USB devices  */
 	err = zsock_send(connfd, &rep_hdr, sizeof(rep_hdr), 0);
 	if (err != sizeof(rep_hdr)) {
@@ -555,8 +565,8 @@ static struct usbip_dev_ctx *get_free_dev_ctx(struct usbip_bus_ctx *const bus_ct
 static int usbip_handle_import(struct usbip_bus_ctx *const bus_ctx, int connfd)
 {
 	struct usbip_req_header rep_hdr = {
-		.version = htons(USBIP_VERSION),
-		.code = htons(USBIP_OP_REP_IMPORT),
+		.version = net_htons(USBIP_VERSION),
+		.code = net_htons(USBIP_OP_REP_IMPORT),
 		.status = 0,
 	};
 	struct usbip_dev_ctx *dev_ctx;
@@ -570,12 +580,12 @@ static int usbip_handle_import(struct usbip_bus_ctx *const bus_ctx, int connfd)
 
 	dev_ctx = get_free_dev_ctx(bus_ctx);
 	if (dev_ctx == NULL) {
-		rep_hdr.status = htonl(-1);
+		rep_hdr.status = net_htonl(-1);
 		LOG_ERR("No free device context to export a device");
 	} else {
 		dev_ctx->udev = get_device_by_busid(bus_ctx, busid);
 		if (dev_ctx->udev == NULL) {
-			rep_hdr.status = htonl(-1);
+			rep_hdr.status = net_htonl(-1);
 			dev_ctx = NULL;
 			LOG_ERR("No USB device with busid %s", busid);
 		}
@@ -614,9 +624,9 @@ static int usbip_handle_connection(struct usbip_bus_ctx *const bus_ctx, int conn
 	}
 
 	LOG_HEXDUMP_DBG((uint8_t *)&hdr, sizeof(hdr), "header");
-	LOG_INF("Code: 0x%x", ntohs(hdr.code));
+	LOG_INF("Code: 0x%x", net_ntohs(hdr.code));
 
-	switch (ntohs(hdr.code)) {
+	switch (net_ntohs(hdr.code)) {
 	case USBIP_OP_REQ_DEVLIST:
 		ret = usbip_handle_devlist(bus_ctx, connfd);
 		zsock_close(connfd);
@@ -628,7 +638,7 @@ static int usbip_handle_connection(struct usbip_bus_ctx *const bus_ctx, int conn
 		}
 		break;
 	default:
-		LOG_ERR("Unknown request: 0x%x", ntohs(hdr.code));
+		LOG_ERR("Unknown request: 0x%x", net_ntohs(hdr.code));
 		ret = -1;
 		break;
 	}
@@ -639,29 +649,29 @@ static int usbip_handle_connection(struct usbip_bus_ctx *const bus_ctx, int conn
 static void usbip_thread_handler(void *const a, void *const b, void *const c)
 {
 	struct usbip_bus_ctx *const bus_ctx = a;
-	struct sockaddr_in srv;
+	struct net_sockaddr_in srv;
 	int listenfd;
 	int connfd;
 	int reuse = 1;
 
 	LOG_DBG("Started connection handling thread");
 
-	listenfd = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	listenfd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (listenfd < 0) {
 		LOG_ERR("socket() failed: %s", strerror(errno));
 		return;
 	}
 
-	if (zsock_setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+	if (zsock_setsockopt(listenfd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
 			     (const char *)&reuse, sizeof(reuse)) < 0) {
 		LOG_INF("setsockopt() failed: %s", strerror(errno));
 	}
 
-	srv.sin_family = AF_INET;
-	srv.sin_addr.s_addr = htonl(INADDR_ANY);
-	srv.sin_port = htons(USBIP_PORT);
+	srv.sin_family = NET_AF_INET;
+	srv.sin_addr.s_addr = net_htonl(NET_INADDR_ANY);
+	srv.sin_port = net_htons(USBIP_PORT);
 
-	if (zsock_bind(listenfd, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
+	if (zsock_bind(listenfd, (struct net_sockaddr *)&srv, sizeof(srv)) < 0) {
 		LOG_ERR("bind() failed: %s", strerror(errno));
 		return;
 	}
@@ -672,12 +682,12 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 	}
 
 	while (true) {
-		struct sockaddr_in client_addr;
-		socklen_t client_addr_len = sizeof(client_addr);
-		char addr_str[INET_ADDRSTRLEN];
+		struct net_sockaddr_in client_addr;
+		net_socklen_t client_addr_len = sizeof(client_addr);
+		char addr_str[NET_INET_ADDRSTRLEN];
 		int err;
 
-		connfd = zsock_accept(listenfd, (struct sockaddr *)&client_addr,
+		connfd = zsock_accept(listenfd, (struct net_sockaddr *)&client_addr,
 				      &client_addr_len);
 		if (connfd < 0) {
 			LOG_ERR("accept() failed: %d", errno);

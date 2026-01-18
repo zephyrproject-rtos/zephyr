@@ -12,7 +12,6 @@
 
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/ztest.h>
 
 #define BUFFER_SIZE                    1024
@@ -253,15 +252,22 @@ HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/",
 static uint8_t dynamic_payload[32];
 static size_t dynamic_payload_len = sizeof(dynamic_payload);
 static bool dynamic_error;
+static bool dynamic_complete;
 
-static int dynamic_cb(struct http_client_ctx *client, enum http_data_status status,
+static int dynamic_cb(struct http_client_ctx *client, enum http_transaction_status status,
 		      const struct http_request_ctx *request_ctx,
 		      struct http_response_ctx *response_ctx, void *user_data)
 {
 	static size_t offset;
 
-	if (status == HTTP_SERVER_DATA_ABORTED) {
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		offset = 0;
+		if (status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+			zassert_false(dynamic_complete,
+				      "Transaction complete called multiple times");
+			dynamic_complete = true;
+		}
 		return 0;
 	}
 
@@ -292,7 +298,7 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 			offset += request_ctx->data_len;
 		}
 
-		if (status == HTTP_SERVER_DATA_FINAL) {
+		if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 			/* All data received, reset progress. */
 			dynamic_payload_len = offset;
 			offset = 0;
@@ -328,7 +334,8 @@ struct test_headers_clone {
 	enum http_header_status status;
 };
 
-static int dynamic_request_headers_cb(struct http_client_ctx *client, enum http_data_status status,
+static int dynamic_request_headers_cb(struct http_client_ctx *client,
+				      enum http_transaction_status status,
 				      const struct http_request_ctx *request_ctx,
 				      struct http_response_ctx *response_ctx, void *user_data)
 {
@@ -336,6 +343,11 @@ static int dynamic_request_headers_cb(struct http_client_ctx *client, enum http_
 	struct http_header *hdrs_src;
 	struct http_header *hdrs_dst;
 	struct test_headers_clone *clone = (struct test_headers_clone *)user_data;
+
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		return 0;
+	}
 
 	if (request_ctx->header_count != 0) {
 		/* Copy the captured header info to static buffer for later assertions in testcase.
@@ -426,7 +438,8 @@ enum dynamic_response_headers_variant {
 static uint8_t dynamic_response_headers_variant;
 static uint8_t dynamic_response_headers_buffer[sizeof(long_payload)];
 
-static int dynamic_response_headers_cb(struct http_client_ctx *client, enum http_data_status status,
+static int dynamic_response_headers_cb(struct http_client_ctx *client,
+				       enum http_transaction_status status,
 				       const struct http_request_ctx *request_ctx,
 				       struct http_response_ctx *response_ctx, void *user_data)
 {
@@ -441,7 +454,13 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client, enum http
 		{.name = "Content-Type", .value = "application/json"},
 	};
 
-	if (status != HTTP_SERVER_DATA_FINAL &&
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		offset = 0;
+		return 0;
+	}
+
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL &&
 	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG) {
 		/* Long body variant is the only one which needs to take some action before final
 		 * data has been received from server
@@ -516,7 +535,7 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client, enum http
 			       request_ctx->data_len);
 			offset += request_ctx->data_len;
 
-			if (status == HTTP_SERVER_DATA_FINAL) {
+			if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 				offset = 0;
 			}
 		} else {
@@ -856,6 +875,7 @@ static void common_verify_http2_dynamic_post_request(const uint8_t *request,
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_post)
@@ -910,6 +930,7 @@ static void common_verify_http1_dynamic_upgrade_post(const uint8_t *method)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
@@ -952,6 +973,7 @@ static void common_verify_http1_dynamic_post(const uint8_t *method)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_post)
@@ -978,6 +1000,7 @@ static void common_verify_http2_dynamic_get_request(const uint8_t *request,
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_DYNAMIC_GET_PAYLOAD,
 				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get)
@@ -1025,6 +1048,7 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_get)
 	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_DYNAMIC_GET_PAYLOAD,
 				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get)
@@ -1056,6 +1080,7 @@ ZTEST(server_function_tests, test_http1_dynamic_get)
 	test_read_data(&offset, sizeof(expected_response) - 1);
 	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
 			  "Received data doesn't match expected response");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_put)
@@ -1368,6 +1393,7 @@ ZTEST(server_function_tests, test_http2_post_trailing_headers)
 		      "Wrong dynamic resource length");
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_get_headers_with_padding)
@@ -2361,13 +2387,13 @@ ZTEST(server_function_tests, test_http2_500_internal_server_error)
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 {
-	struct sockaddr_in sa = { 0 };
+	struct net_sockaddr_in sa = { 0 };
 	int ret;
 
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(SERVER_PORT);
+	sa.sin_family = NET_AF_INET;
+	sa.sin_port = net_htons(SERVER_PORT);
 
-	ret = zsock_inet_pton(AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr);
+	ret = zsock_inet_pton(NET_AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr);
 	zassert_equal(1, ret, "inet_pton() failed to convert %s", SERVER_IPV4_ADDR);
 
 	zassert_ok(http_server_start(), "Failed to start the server");
@@ -2379,11 +2405,11 @@ ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 	zassert_ok(http_server_start(), "Failed to start the server");
 
 	/* Server should be listening now. */
-	ret = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	ret = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
 	client_fd = ret;
 
-	zassert_ok(zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa)),
+	zassert_ok(zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa)),
 		   "failed to connect to the server (%d)", errno);
 	zassert_ok(zsock_close(client_fd), "close() failed on the client fd (%d)", errno);
 	client_fd = -1;
@@ -2395,11 +2421,11 @@ ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 	/* Let the server thread run. */
 	k_msleep(CONFIG_HTTP_SERVER_RESTART_DELAY + 10);
 
-	ret = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	ret = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
 	client_fd = ret;
 
-	zassert_ok(zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa)),
+	zassert_ok(zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa)),
 		   "failed to connect to the server (%d)", errno);
 	zassert_ok(zsock_close(client_fd), "close() failed on the client fd (%d)", errno);
 	client_fd = -1;
@@ -2783,7 +2809,7 @@ ZTEST(server_function_tests, test_http1_static_fs_compression)
 
 static void http_server_tests_before(void *fixture)
 {
-	struct sockaddr_in sa;
+	struct net_sockaddr_in sa;
 	struct timeval optval = {
 		.tv_sec = TIMEOUT_S,
 		.tv_usec = 0,
@@ -2798,6 +2824,7 @@ static void http_server_tests_before(void *fixture)
 	memset(&request_headers_clone2, 0, sizeof(request_headers_clone2));
 	dynamic_payload_len = 0;
 	dynamic_error = false;
+	dynamic_complete = false;
 
 	ret = http_server_start();
 	if (ret < 0) {
@@ -2805,30 +2832,30 @@ static void http_server_tests_before(void *fixture)
 		return;
 	}
 
-	ret = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	ret = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (ret < 0) {
 		printk("Failed to create client socket (%d)\n", errno);
 		return;
 	}
 	client_fd = ret;
 
-	ret = zsock_setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &optval,
+	ret = zsock_setsockopt(client_fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
 			       sizeof(optval));
 	if (ret < 0) {
 		printk("Failed to set timeout (%d)\n", errno);
 		return;
 	}
 
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(SERVER_PORT);
+	sa.sin_family = NET_AF_INET;
+	sa.sin_port = net_htons(SERVER_PORT);
 
-	ret = zsock_inet_pton(AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr);
+	ret = zsock_inet_pton(NET_AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr);
 	if (ret != 1) {
 		printk("inet_pton() failed to convert %s\n", SERVER_IPV4_ADDR);
 		return;
 	}
 
-	ret = zsock_connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
+	ret = zsock_connect(client_fd, (struct net_sockaddr *)&sa, sizeof(sa));
 	if (ret < 0) {
 		printk("Failed to connect (%d)\n", errno);
 	}

@@ -13,18 +13,15 @@ description: |
       compatible = "allegro,a4979";
       micro-step-res = <2>;
       reset-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
-      dir-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
-      step-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
       en-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
       m0-gpios = <&gpiod 13 0>;
       m1-gpios = <&gpiod 12 0>;
-      counter = <&counter5>;
   };
 
 compatible: "allegro,a4979"
 
 include:
-  - name: stepper-controller.yaml
+  - name: stepper-driver.yaml
   - name: step-dir-timing.yaml
 
 properties:

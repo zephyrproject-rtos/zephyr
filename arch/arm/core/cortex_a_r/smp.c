@@ -199,9 +199,7 @@ void arch_secondary_cpu_init(void)
 	 */
 #endif
 
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 
 	fn = arm_cpu_boot_params.fn;
 	arg = arm_cpu_boot_params.arg;

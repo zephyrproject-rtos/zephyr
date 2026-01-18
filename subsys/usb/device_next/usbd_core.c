@@ -34,29 +34,53 @@ K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
 static int usbd_event_carrier(const struct device *dev,
 			      const struct udc_event *const event)
 {
+	struct usbd_context *const uds_ctx = (void *)udc_get_event_ctx(dev);
+	k_spinlock_key_t key;
+
+	if (event->type == UDC_EVT_EP_REQUEST) {
+		/*
+		 * Always add completed transfer requests to the list, so they
+		 * do not get lost.
+		 */
+		key = k_spin_lock(&uds_ctx->ep_event_lock);
+		sys_slist_append(&uds_ctx->ep_events, &event->buf->node);
+		k_spin_unlock(&uds_ctx->ep_event_lock, key);
+	}
+
 	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
 }
 
-static int event_handler_ep_request(struct usbd_context *const uds_ctx,
-				    const struct udc_event *const event)
+static void event_handler_ep_request(struct usbd_context *const uds_ctx)
 {
 	struct udc_buf_info *bi;
+	k_spinlock_key_t key;
+	struct net_buf *buf;
+	sys_snode_t *node;
 	int ret;
 
-	bi = udc_get_buf_info(event->buf);
+	while (!sys_slist_is_empty(&uds_ctx->ep_events)) {
+		key = k_spin_lock(&uds_ctx->ep_event_lock);
+		node = sys_slist_get(&uds_ctx->ep_events);
+		k_spin_unlock(&uds_ctx->ep_event_lock, key);
 
-	if (USB_EP_GET_IDX(bi->ep) == 0) {
-		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf, bi->err);
-	} else {
-		ret = usbd_class_handle_xfer(uds_ctx, event->buf, bi->err);
+		buf = SYS_SLIST_CONTAINER(node, buf, node);
+		if (buf == NULL) {
+			break;
+		}
+
+		bi = udc_get_buf_info(buf);
+		if (USB_EP_GET_IDX(bi->ep) == 0) {
+			ret = usbd_handle_ctrl_xfer(uds_ctx, buf, bi->err);
+		} else {
+			ret = usbd_class_handle_xfer(uds_ctx, buf, bi->err);
+		}
+
+		if (ret) {
+			LOG_ERR("Unrecoverable error %d, ep 0x%02x, buf %p",
+				ret, bi->ep, (void *)buf);
+			usbd_msg_pub_simple(uds_ctx, USBD_MSG_STACK_ERROR, ret);
+		}
 	}
-
-	if (ret) {
-		LOG_ERR("unrecoverable error %d, ep 0x%02x, buf %p",
-			ret, bi->ep, event->buf);
-	}
-
-	return ret;
 }
 
 static void usbd_class_bcast_event(struct usbd_context *const uds_ctx,
@@ -138,6 +162,13 @@ static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
 {
 	int err = 0;
 
+	/* Always check if there is a completed transfer request. */
+	event_handler_ep_request(uds_ctx);
+	if (event->type == UDC_EVT_EP_REQUEST) {
+		/* It has already been handled and cannot be another event type. */
+		return;
+	}
+
 	switch (event->type) {
 	case UDC_EVT_VBUS_REMOVED:
 		LOG_DBG("VBUS remove event");
@@ -166,9 +197,6 @@ static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
 		LOG_DBG("RESET event");
 		err = event_handler_bus_reset(uds_ctx);
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESET, 0);
-		break;
-	case UDC_EVT_EP_REQUEST:
-		err = event_handler_ep_request(uds_ctx, event);
 		break;
 	case UDC_EVT_ERROR:
 		LOG_ERR("UDC error event");

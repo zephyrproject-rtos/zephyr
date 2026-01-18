@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,13 +15,14 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sd/sd_spec.h>
 
 /**
  * @brief Interfaces for Secure Digital Host Controllers (SDHC).
  * @defgroup sdhc_interface SDHC
  * @since 3.1
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -67,6 +68,9 @@ struct sdhc_data {
 	unsigned int block_size; /*!< Block size */
 	unsigned int blocks; /*!< Number of blocks */
 	unsigned int bytes_xfered; /*!< populated with number of bytes sent by SDHC */
+#if defined(CONFIG_SDHC_SCATTER_GATHER_TRANSFER) || defined(__DOXYGEN__)
+	bool is_sg_data; /*!< Is scatter gather data using net_buf data structure */
+#endif
 	void *data; /*!< Data to transfer or receive */
 	int timeout_ms; /*!< data timeout in milliseconds */
 };
@@ -283,8 +287,8 @@ __subsystem struct sdhc_driver_api {
  *
  * @param dev: SD host controller device
  * @retval 0 reset succeeded
- * @retval -ETIMEDOUT: controller reset timed out
- * @retval -EIO: reset failed
+ * @retval -ETIMEDOUT controller reset timed out
+ * @retval -EIO reset failed
  */
 __syscall int sdhc_hw_reset(const struct device *dev);
 
@@ -311,7 +315,7 @@ static inline int z_impl_sdhc_hw_reset(const struct device *dev)
  * @retval 0 command was sent successfully
  * @retval -ETIMEDOUT command timed out while sending
  * @retval -ENOTSUP host controller does not support command
- * @retval -EIO: I/O error
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 			   struct sdhc_data *data);
@@ -387,9 +391,9 @@ static inline int z_impl_sdhc_card_present(const struct device *dev)
  * allows an application to request the SD host controller to tune the card.
  * @param dev: SDHC device
  * @retval 0 tuning succeeded, card is ready for commands
- * @retval -ETIMEDOUT: tuning failed after timeout
- * @retval -ENOTSUP: controller does not support tuning
- * @retval -EIO: I/O error while tuning
+ * @retval -ETIMEDOUT tuning failed after timeout
+ * @retval -ENOTSUP controller does not support tuning
+ * @retval -EIO I/O error while tuning
  */
 __syscall int sdhc_execute_tuning(const struct device *dev);
 
@@ -466,8 +470,8 @@ static inline int z_impl_sdhc_get_host_props(const struct device *dev,
  *        indicating which interrupts should produce a callback
  * @param user_data: parameter that will be passed to callback function
  * @retval 0 interrupts were enabled, and callback was installed
- * @retval -ENOTSUP: controller does not support this function
- * @retval -EIO: I/O error
+ * @retval -ENOTSUP controller does not support this function
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_enable_interrupt(const struct device *dev,
 				    sdhc_interrupt_cb_t callback,
@@ -495,8 +499,8 @@ static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
  * @param sources: bitmask of @ref sdhc_interrupt_source values
  *        indicating which interrupts should be disabled.
  * @retval 0 interrupts were disabled
- * @retval -ENOTSUP: controller does not support this function
- * @retval -EIO: I/O error
+ * @retval -ENOTSUP controller does not support this function
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_disable_interrupt(const struct device *dev, int sources);
 

@@ -12,9 +12,9 @@ some highlights of the STM32F429I-DISC1 board:
 - On-board ST-LINK/V2-B debugger/programmer with SWD connector
 - Flexible board power supply:
 
-       - ST-LINK/V2-1 USB connector
-       - User USB FS connector
-       - VIN from Arduino* compatible connectors
+  - ST-LINK/V2-1 USB connector
+  - User USB FS connector
+  - VIN from Arduino* compatible connectors
 
 - Two push-buttons: USER and RESET
 - USB OTG FS with micro-AB connector
@@ -62,8 +62,9 @@ The STM32F429I-DISC1 Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F429ZI can be found here:
-       - `STM32F429ZI on www.st.com`_
-       - `STM32F429 Reference Manual`_
+
+- `STM32F429ZI on www.st.com`_
+- `STM32F429 Reference Manual`_
 
 Supported Features
 ==================

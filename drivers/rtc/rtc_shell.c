@@ -217,6 +217,65 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+#ifdef CONFIG_RTC_CALIBRATION
+static int cmd_get_calibration(const struct shell *sh, size_t argc, char **argv)
+{
+	int res;
+	int32_t calibration_ppb;
+	const struct device *dev = shell_device_get_binding(argv[1]);
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	res = rtc_get_calibration(dev, &calibration_ppb);
+	if (-ENOTSUP == res) {
+		shell_error(sh, "Calibration not supported");
+		return 0;
+	}
+	if (res < 0) {
+		shell_error(sh, "Error getting calibration: %d", res);
+		return res;
+	}
+
+	shell_print(sh, "%dppb", calibration_ppb);
+	return 0;
+}
+
+static int cmd_set_calibration(const struct shell *sh, size_t argc, char **argv)
+{
+	int res;
+	char *endptr;
+	int32_t calibration_ppb;
+	const struct device *dev = shell_device_get_binding(argv[1]);
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	calibration_ppb = strtol(argv[2], &endptr, 10);
+	if (*endptr != '\0') {
+		return -EINVAL;
+	}
+	if (calibration_ppb > 1000000 || calibration_ppb < -1000000) {
+		return -EINVAL;
+	}
+
+	res = rtc_set_calibration(dev, calibration_ppb);
+	if (-ENOTSUP == res) {
+		shell_error(sh, "Calibration not supported");
+		return 0;
+	}
+	if (res < 0) {
+		shell_error(sh, "Error setting calibration: %d", res);
+	}
+
+	return res;
+}
+#endif /* CONFIG_RTC_CALIBRATION */
+
 static bool device_is_rtc(const struct device *dev)
 {
 	return DEVICE_API_IS(rtc, dev);
@@ -240,12 +299,21 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	SHELL_HELP("Set UTC time",                                                                 \
 		   "<device> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
 
+#define RTC_GET_CALIBRATION_HELP SHELL_HELP("Get calibration", "<device>")
+#define RTC_SET_CALIBRATION_HELP SHELL_HELP("Set calibration", "<device> <ppb>")
+
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_rtc,
 			       /* Alphabetically sorted */
 			       SHELL_CMD_ARG(set, &dsub_device_name, RTC_SET_HELP, cmd_set, 3, 0),
 			       SHELL_CMD_ARG(get, &dsub_device_name, RTC_GET_HELP, cmd_get, 2, 0),
+#ifdef CONFIG_RTC_CALIBRATION
+			       SHELL_CMD_ARG(get_calibration, &dsub_device_name,
+					     RTC_GET_CALIBRATION_HELP, cmd_get_calibration, 2, 0),
+			       SHELL_CMD_ARG(set_calibration, &dsub_device_name,
+					     RTC_SET_CALIBRATION_HELP, cmd_set_calibration, 3, 0),
+#endif /* CONFIG_RTC_CALIBRATION */
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(rtc, &sub_rtc, "RTC commands", NULL);

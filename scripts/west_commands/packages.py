@@ -4,13 +4,16 @@
 
 import argparse
 import os
+import platform
 import subprocess
 import sys
 import textwrap
 from itertools import chain
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from west.commands import WestCommand
+from west.util import quote_sh_list
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
@@ -157,11 +160,38 @@ class Packages(WestCommand):
                 self.die("Running pip install outside of a virtual environment")
 
             if len(requirements) > 0:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install"]
-                    + list(chain.from_iterable([("-r", r) for r in requirements]))
-                    + manager_args
+                cmd = [sys.executable, "-m", "pip", "install"]
+                cmd += chain.from_iterable([("-r", str(r)) for r in requirements])
+                cmd += manager_args
+                self.dbg(quote_sh_list(cmd))
+
+                # Use os.execv to execute a new program, replacing the current west process,
+                # this unloads all python modules first and allows for pip to update packages safely
+                if platform.system() != 'Windows':
+                    os.execv(cmd[0], cmd)
+
+                # Only reachable on Windows systems
+                # Windows does not really support os.execv:
+                # https://github.com/python/cpython/issues/63323
+                # https://github.com/python/cpython/issues/101191
+                # Warn the users about permission errors as those reported in:
+                # https://github.com/zephyrproject-rtos/zephyr/issues/100296
+                cmdscript = (
+                    PureWindowsPath(__file__).parents[1] / "utils" / "west-packages-pip-install.cmd"
                 )
+                self.wrn(
+                    "Updating packages on Windows with 'west packages pip --install', that are "
+                    "currently in use by west, results in permission errors. Leaving your "
+                    "environment with conflicting package versions. Recommended is to start with "
+                    "a new environment in that case.\n\n"
+                    "To avoid this using powershell run the following command instead:\n"
+                    f"{sys.executable} -m pip install @((west packages pip) -split ' ')\n\n"
+                    "Using cmd.exe execute the helper script:\n"
+                    f"cmd /c {cmdscript}\n\n"
+                    "Running 'west packages pip --install -- --dry-run' can provide information "
+                    "without actually updating the environment."
+                )
+                subprocess.check_call(cmd)
             else:
                 self.inf("Nothing to install")
             return

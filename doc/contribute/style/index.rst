@@ -9,6 +9,7 @@ Coding Style Guidelines
 
    naming.rst
    code.rst
+   doxygen.rst
    cmake.rst
    devicetree.rst
    kconfig.rst
@@ -96,6 +97,7 @@ to quickly reformat large amounts of devicetree files to our `Coding Style Guide
 standards. You can also run it manually like this:
 
 For individual files
+
 .. code-block:: bash
 
    npx --prefix ./scripts/ci dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch
@@ -106,6 +108,7 @@ has been called. Alternatively ``--cwd`` can also be passed set the base dir whe
 should look for files. This option is also used to make the paths relative in the patch file.
 
 You can also fix in place with
+
 .. code-block:: bash
 
    npx --prefix ./scripts/ci dts-linter --formatFixAll

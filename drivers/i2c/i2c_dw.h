@@ -39,14 +39,14 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 #define I2C_DW_CMD_RECV    (1 << 1)
 #define I2C_DW_CMD_ERROR   (1 << 2)
 #define I2C_DW_BUSY        (1 << 3)
-#define I2C_DW_TX_ABRT     (1 << 4)
+#define I2C_DW_USER_ABRT   (1 << 4)
 #define I2C_DW_NACK        (1 << 5)
 #define I2C_DW_SCL_STUCK   (1 << 6)
 #define I2C_DW_SDA_STUCK   (1 << 7)
 
 #define I2C_DW_ERR_MASK (I2C_DW_CMD_ERROR | I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_NACK)
 
-#define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK)
+#define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_USER_ABRT)
 
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 #define DW_ENABLE_TX_INT_I2C_MASTER                                                                \

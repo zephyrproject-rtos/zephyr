@@ -31,7 +31,7 @@
 
 		loco: clock-loco {
 			compatible = "renesas,rx-cgc-root-clock";
-			clock-frequency =  <240000>;
+			clock-frequency = <240000>;
 			#clock-cells = <0>;
 			status = "okay";
 		};

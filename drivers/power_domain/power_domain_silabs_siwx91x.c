@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #define DT_DRV_COMPAT silabs_siwx91x_power_domain
 
@@ -13,10 +13,12 @@ static int siwx91x_pd_pm_action(const struct device *dev, enum pm_device_action 
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		pm_policy_device_power_lock_get(dev);
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
+		pm_policy_device_power_lock_put(dev);
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		break;

@@ -1,0 +1,23 @@
+identifier: rp2350b_core/rp2350b/m33
+name: WeAct RP2350B Core (Cortex-M33)
+type: mcu
+arch: arm
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - crypto
+  - dma
+  - entropy
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog

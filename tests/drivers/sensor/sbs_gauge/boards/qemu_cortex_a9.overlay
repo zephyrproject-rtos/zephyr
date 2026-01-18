@@ -21,6 +21,7 @@
 &fake_i2c_bus {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	compatible = "zephyr,i2c-emul-controller";
+
 	smartbattery0: smartbattery@b {
 		compatible = "sbs,sbs-gauge";
 		reg = <0x0B>;

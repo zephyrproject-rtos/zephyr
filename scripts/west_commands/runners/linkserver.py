@@ -29,7 +29,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
                  override=None,
-                 tui=False, tool_opt=None):
+                 tui=False, tool_opt=None, batch=False):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -49,6 +49,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.tui_arg = ['-tui'] if tui else []
         self.override = override if override else []
         self.override_cli = self._build_override_cli()
+        self.is_batch = batch
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -63,7 +64,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
                           dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True, file=True)
+                          tool_opt=True, file=True, batch_debug=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -104,7 +105,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                                  semihost_port=args.semihost_port,
                                  gdb_port=args.gdb_port,
                                  override=args.override,
-                                 tui=args.tui, tool_opt=args.tool_opt)
+                                 tui=args.tui, tool_opt=args.tool_opt,
+                                 batch=args.batch)
 
     @property
     def linkserver_version_str(self):
@@ -147,6 +149,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                 gdb_cmd = ([self.gdb_cmd] +
                            self.tui_arg +
                            [self.elf_name] +
+                           ['-batch' if self.is_batch else ''] +
                            ['-ex', f'target remote {self.gdb_host}:{self.gdb_port}'])
 
                 if command == 'debug':
@@ -154,6 +157,9 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                     # the ram as inaccessible and does not flash.
                     gdb_cmd += ['-ex', 'set mem inaccessible-by-default off']
                     gdb_cmd += ['-ex', 'monitor reset', '-ex', 'load']
+                    if self.is_batch:
+                        gdb_cmd += ['-ex', 'monitor ondisconnect cont', '-ex',
+                                    'monitor kill_server', '-ex', 'quit']
 
                 if command == 'attach':
                     linkserver_cmd += ['--attach']

@@ -6,9 +6,11 @@
 /dts-v1/;
 
 #include <renesas/ra/ra4/r7fa4l1bd4cfp.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 #include "ek_ra4l1-pinctrl.dtsi"
 
 / {
@@ -42,6 +44,58 @@
 			gpios = <&ioport6 1 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
 		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport5 10 0>,	/* AN  */
+			   <1 0 &ioport1 13 0>,	/* RST */
+			   <2 0 &ioport2 4 0>,	/* CS   */
+			   <3 0 &ioport2 9 0>,	/* SCK  */
+			   <4 0 &ioport2 10 0>,	/* MISO */
+			   <5 0 &ioport2 11 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport4 5 0>,	/* PWM  */
+			   <7 0 &ioport4 3 0>,	/* INT  */
+			   <8 0 &ioport6 8 0>,	/* RX   */
+			   <9 0 &ioport1 15 0>,	/* TX   */
+			   <10 0 &ioport4 0 0>,	/* SCL  */
+			   <11 0 &ioport4 1 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &ioport5 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &ioport5 11 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &ioport5 12 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &ioport5 13 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &ioport0 3 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &ioport0 4 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &ioport6 8 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &ioport1 15 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &ioport4 15 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &ioport4 14 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &ioport4 4 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &ioport4 5 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &ioport4 6 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &ioport1 7 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &ioport6 2 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &ioport6 0 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &ioport2 4 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &ioport2 11 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &ioport2 10 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &ioport2 9 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &ioport4 1 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &ioport4 0 0>;
 	};
 
 	buttons {
@@ -110,6 +164,19 @@
 	status = "okay";
 };
 
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart1: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
 &sci5 {
 	pinctrl-0 = <&sci5_default>;
 	pinctrl-names = "default";
@@ -126,6 +193,10 @@
 };
 
 &ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
 	status = "okay";
 };
 
@@ -230,3 +301,7 @@
 &crc {
 	status = "okay";
 };
+
+mikrobus_serial: &uart1 {};
+
+arduino_serial: &uart1 {};

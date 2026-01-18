@@ -9,6 +9,7 @@
 #include <zephyr/drivers/can/can_mcan.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
@@ -173,6 +174,9 @@ struct can_stm32fd_config {
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t clock_divider;
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	const struct device *external_timestamp_counter_dev;
+#endif
 };
 
 static inline uint16_t can_stm32fd_remap_reg(uint16_t reg)
@@ -361,8 +365,10 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 		break;
 	case CAN_MCAN_GFC:
 		/* Map fields to RXGFC including STM32 FDCAN LSS and LSE fields */
-		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
-			FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER);
+		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS,
+				   CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS);
+		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSE,
+				   CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);
 		bits |= val & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE |
 			CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE);
 		break;
@@ -499,8 +505,8 @@ static int can_stm32fd_init(const struct device *dev)
 		return ret;
 	}
 
-	rxgfc |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
-		 FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER);
+	rxgfc |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS) |
+		 FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);
 
 	ret = can_mcan_write_reg(dev, CAN_STM32FD_RXGFC, rxgfc);
 	if (ret != 0) {
@@ -517,6 +523,29 @@ static int can_stm32fd_init(const struct device *dev)
 	if (ret != 0) {
 		return ret;
 	}
+
+
+#ifdef CONFIG_CAN_RX_TIMESTAMP
+	if (stm32fd_cfg->external_timestamp_counter_dev != NULL) {
+		if (!device_is_ready(stm32fd_cfg->external_timestamp_counter_dev)) {
+			LOG_ERR("Timestamp counter device not ready");
+			return -ENODEV;
+		}
+
+		ret = counter_start(stm32fd_cfg->external_timestamp_counter_dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to start timestamp counter (%d)", ret);
+			return ret;
+		}
+
+		/* Use External Timestamp counter (TSS=2) */
+		ret = can_mcan_write_reg(dev, CAN_MCAN_TSCC, FIELD_PREP(CAN_MCAN_TSCC_TSS, 0x2));
+		if (ret != 0) {
+			LOG_ERR("Failed to write TSCC register");
+			return ret;
+		}
+	}
+#endif /* CONFIG_CAN_RX_TIMESTAMP */
 
 	stm32fd_cfg->config_irq();
 
@@ -572,51 +601,54 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst) == 3,	\
 		     "Tx Buffer elements must be 0");
 
-#define CAN_STM32FD_IRQ_CFG_FUNCTION(inst)                                     \
-static void config_can_##inst##_irq(void)                                      \
-{                                                                              \
-	LOG_DBG("Enable CAN" #inst " IRQ");                                    \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                      \
-		    DT_INST_IRQ_BY_NAME(inst, int0, priority),                 \
-		    can_mcan_line_0_isr, DEVICE_DT_INST_GET(inst), 0);         \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                      \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                      \
-		    DT_INST_IRQ_BY_NAME(inst, int1, priority),                 \
-		    can_mcan_line_1_isr, DEVICE_DT_INST_GET(inst), 0);         \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                      \
-}
+#define CAN_STM32FD_IRQ_CFG_FUNCTION(inst)					\
+	static void config_can_##inst##_irq(void)				\
+	{									\
+		LOG_DBG("Enable CAN" #inst " IRQ");				\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, int0, priority),		\
+			    can_mcan_line_0_isr, DEVICE_DT_INST_GET(inst), 0);	\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));		\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),		\
+			    DT_INST_IRQ_BY_NAME(inst, int1, priority),		\
+			    can_mcan_line_1_isr, DEVICE_DT_INST_GET(inst), 0);	\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));		\
+	}
 
-#define CAN_STM32FD_CFG_INST(inst)					\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <=	\
-		     CAN_MCAN_DT_INST_MRAM_SIZE(inst),			\
-		     "Insufficient Message RAM size to hold elements");	\
-									\
-	PINCTRL_DT_INST_DEFINE(inst);					\
-	CAN_MCAN_CALLBACKS_DEFINE(can_stm32fd_cbs_##inst,		\
+#define CAN_STM32FD_CFG_INST(inst)						\
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <=		\
+		     CAN_MCAN_DT_INST_MRAM_SIZE(inst),				\
+		     "Insufficient Message RAM size to hold elements");		\
+										\
+	PINCTRL_DT_INST_DEFINE(inst);						\
+	CAN_MCAN_CALLBACKS_DEFINE(can_stm32fd_cbs_##inst,			\
 				  CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst), \
-				  CONFIG_CAN_MAX_STD_ID_FILTER,		\
-				  CONFIG_CAN_MAX_EXT_ID_FILTER);	\
-									\
-	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =	\
-					STM32_DT_INST_CLOCKS(inst);	\
-									\
-	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
-		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
-		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),		\
-		.pclken = can_stm32fd_pclken_##inst,			\
-		.pclk_len = DT_INST_NUM_CLOCKS(inst),			\
-		.config_irq = config_can_##inst##_irq,			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
-		.clock_divider = DT_INST_PROP_OR(inst, clk_divider, 0)  \
-	};								\
-									\
-	static const struct can_mcan_config can_mcan_cfg_##inst =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst, \
-					    &can_stm32fd_ops,		\
+				  CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS,	\
+				  CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);	\
+										\
+	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =		\
+					STM32_DT_INST_CLOCKS(inst);		\
+										\
+	static const struct can_stm32fd_config can_stm32fd_cfg_##inst =	{	\
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),			\
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),			\
+		.pclken = can_stm32fd_pclken_##inst,				\
+		.pclk_len = DT_INST_NUM_CLOCKS(inst),				\
+		.config_irq = config_can_##inst##_irq,				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
+		.clock_divider = DT_INST_PROP_OR(inst, clk_divider, 0),		\
+		IF_ENABLED(CONFIG_CAN_RX_TIMESTAMP,				\
+			   (.external_timestamp_counter_dev = DEVICE_DT_GET_OR_NULL( \
+					DT_INST_PHANDLE(inst, external_timestamp_counter)),)) \
+	};									\
+										\
+	static const struct can_mcan_config can_mcan_cfg_##inst =		\
+		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst,	\
+					    &can_stm32fd_ops,			\
 					    &can_stm32fd_cbs_##inst);
 
-#define CAN_STM32FD_DATA_INST(inst)					\
-	static struct can_mcan_data can_mcan_data_##inst =		\
+#define CAN_STM32FD_DATA_INST(inst)						\
+	static struct can_mcan_data can_mcan_data_##inst =			\
 		CAN_MCAN_DATA_INITIALIZER(NULL);
 
 #define CAN_STM32FD_DEVICE_INST(inst)						\
@@ -625,11 +657,11 @@ static void config_can_##inst##_irq(void)                                      \
 				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
 				  &can_stm32fd_driver_api);
 
-#define CAN_STM32FD_INST(inst)          \
-CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst) \
-CAN_STM32FD_IRQ_CFG_FUNCTION(inst)      \
-CAN_STM32FD_CFG_INST(inst)              \
-CAN_STM32FD_DATA_INST(inst)             \
-CAN_STM32FD_DEVICE_INST(inst)
+#define CAN_STM32FD_INST(inst)			\
+	CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)	\
+	CAN_STM32FD_IRQ_CFG_FUNCTION(inst)	\
+	CAN_STM32FD_CFG_INST(inst)		\
+	CAN_STM32FD_DATA_INST(inst)		\
+	CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)

@@ -6,3 +6,10 @@ config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags for all images if set.
+
+config MERGED_HEX_FILES
+	bool "Create merged hex files"
+	help
+	  If this option is enabled, merged hex files will be created, one per unique board
+	  target, that contain all the data of the hex output files merged into a single file,
+	  named ``merged_<NORMALIZED_BOARD_TARGET>.hex``.

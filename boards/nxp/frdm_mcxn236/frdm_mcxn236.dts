@@ -26,6 +26,8 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan1;
+		zephyr,edac = &erm0;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	aliases {
@@ -161,6 +163,30 @@
 	status = "okay";
 };
 
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
+};
+
 &flexcomm2 {
 	status = "okay";
 };
@@ -253,10 +279,6 @@ zephyr_udc0: &usb1 {
 	tx-cal-45-dm-ohms = <7>;
 };
 
-&lpcmp0 {
-	status = "okay";
-};
-
 &i3c1 {
 	status = "okay";
 };
@@ -318,13 +340,13 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-/*
- * MCXN236 board uses OS timer as the kernel timer
- * In case we need to switch to SYSTICK timer, then
- * replace &os_timer with &systick
+/* The MCXN236 can use ostimer as the kernel timer.
+ * We enable it in the dts, and which specific timer
+ * to use as the system timer can be controlled through
+ * Kconfig option based on application requirements.
  */
 &os_timer {
-	status = "disabled";
+	status = "okay";
 };
 
 &systick {
@@ -373,11 +395,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 &lpadc0 {
 	pinctrl-0 = <&pinmux_lpadc0>;
-	pinctrl-names = "default";
-};
-
-&lpcmp0 {
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

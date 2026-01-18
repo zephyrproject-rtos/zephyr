@@ -30,7 +30,7 @@
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		pwms = <&qtmr4 0 0 PWM_POLARITY_NORMAL>, /* GPIO_AD_00, J45 pin 15, out */
-			<&qtmr5 0 0 PWM_POLARITY_NORMAL>; /*  GPIO_AD_04, J45 pin 5, in */
+		       <&qtmr5 0 0 PWM_POLARITY_NORMAL>; /*  GPIO_AD_04, J45 pin 5, in */
 	};
 };
 

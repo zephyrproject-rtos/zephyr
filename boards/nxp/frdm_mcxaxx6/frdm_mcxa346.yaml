@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxa346
-name: NXP FRDM MCXA346
+name: NXP FRDM-MCXA346
 type: mcu
 arch: arm
 ram: 240
@@ -24,4 +24,5 @@ supported:
   - counter
   - dma
   - opamp
+  - can
 vendor: nxp

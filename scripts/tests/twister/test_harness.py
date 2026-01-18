@@ -573,6 +573,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     # Act
     if hardware_value == 0:
         handler.get_hardware.return_value = hardware
+        handler.get_more_serials_from_device = mock.Mock(return_value=[])
         command = pytest_test._generate_parameters_for_hardware(handler)
     else:
         handler.get_hardware.return_value = None

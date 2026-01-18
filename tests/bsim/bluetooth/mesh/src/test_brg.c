@@ -188,14 +188,6 @@ static void tester_setup(void)
 			FAIL("NetKey add failed (status %u)", status);
 			return;
 		}
-
-		struct bt_mesh_cdb_subnet *subnet = bt_mesh_cdb_subnet_alloc(i + 1);
-
-		ASSERT_TRUE(subnet != NULL);
-
-		ASSERT_OK(bt_mesh_cdb_subnet_key_import(subnet, 0, subnet_keys[i]));
-
-		bt_mesh_cdb_subnet_store(subnet);
 	}
 
 	uint8_t transmit;
@@ -836,6 +828,9 @@ static void check_subnet_list_get(struct bt_mesh_brg_cfg_filter_netkey filter, u
 	};
 
 	net_buf_simple_init(rsp.list, 0);
+
+	/* Sleep here to avoid packet collision. */
+	k_sleep(K_MSEC(100));
 
 	LOG_INF("Getting subnet list, filter = (filter: %d, subnet: %d), start_idx = %d",
 		filter.filter, filter.net_idx, start_idx);

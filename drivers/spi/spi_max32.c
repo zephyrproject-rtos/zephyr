@@ -20,7 +20,6 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/spi/rtio.h>
 
 #include <wrap_max32_spi.h>
 

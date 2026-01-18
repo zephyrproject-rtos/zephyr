@@ -64,19 +64,41 @@ struct adsp_debug_slot {
 	uint8_t data[ADSP_DW_SLOT_SIZE - sizeof(uint32_t) * 2];
 } __packed;
 
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+static struct adsp_debug_slot *slot;
+#endif
+
 static void mtrace_init(void)
 {
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+	struct adsp_dw_desc slot_desc = { .type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE), };
+
+	if (slot) {
+		return;
+	}
+
+	slot = adsp_dw_request_slot(&slot_desc, NULL);
+#else
 	if (ADSP_DW->descs[ADSP_DW_SLOT_NUM_MTRACE].type == MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE)) {
 		return;
 	}
 
 	ADSP_DW->descs[ADSP_DW_SLOT_NUM_MTRACE].type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE);
+#endif
 }
 
 static size_t mtrace_out(int8_t *str, size_t len, size_t *space_left)
 {
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+	/* Debug slot is not allocated */
+	if (!slot) {
+		return 0;
+	}
+#else
 	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)
 		ADSP_DW->slots[ADSP_DW_SLOT_NUM_MTRACE];
+#endif
+
 	uint8_t *data = slot->data;
 	uint32_t r = slot->host_ptr;
 	uint32_t w = slot->dsp_ptr;

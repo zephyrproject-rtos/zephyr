@@ -66,7 +66,7 @@ with security implications. The effects on security of not implementing
 a MUST or SHOULD, or doing something the specification says MUST NOT or
 SHOULD NOT be done may be very subtle. Document authors should take the
 time to elaborate the security implications of not following
-recommendations or requirements as most implementors will not have had
+recommendations or requirements as most implementers will not have had
 the benefit of the experience and discussion that produced the
 specification."
 

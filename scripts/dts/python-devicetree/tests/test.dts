@@ -19,35 +19,40 @@
 			#interrupt-cells = <3>;
 			interrupt-controller;
 		};
+
 		node {
 			interrupts = <1 2 3 4 5 6>;
 			interrupt-names = "foo", "bar";
 			interrupt-parent = <&{/interrupt-parent-test/controller}>;
 		};
 	};
+
 	interrupts-extended-test {
 		controller-0 {
 			compatible = "interrupt-one-cell";
 			#interrupt-cells = <1>;
 			interrupt-controller;
 		};
+
 		controller-1 {
 			compatible = "interrupt-two-cell";
 			#interrupt-cells = <2>;
 			interrupt-controller;
 		};
+
 		controller-2 {
 			compatible = "interrupt-three-cell";
 			#interrupt-cells = <3>;
 			interrupt-controller;
 		};
+
 		node {
-			interrupts-extended = <
-				&{/interrupts-extended-test/controller-0} 1
-				&{/interrupts-extended-test/controller-1} 2 3
-				&{/interrupts-extended-test/controller-2} 4 5 6>;
+			interrupts-extended = <&{/interrupts-extended-test/controller-0} 1
+					       &{/interrupts-extended-test/controller-1} 2 3
+					       &{/interrupts-extended-test/controller-2} 4 5 6>;
 		};
 	};
+
 	interrupt-map-test {
 		#address-cells = <2>;
 		#size-cells = <0>;
@@ -58,81 +63,88 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 		};
+
 		controller-1 {
 			compatible = "interrupt-two-cell";
 			#address-cells = <2>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 		};
+
 		controller-2 {
 			compatible = "interrupt-three-cell";
 			#address-cells = <3>;
 			#interrupt-cells = <3>;
 			interrupt-controller;
 		};
+
 		nexus {
 			#interrupt-cells = <2>;
-			interrupt-map = <
-				0 0  0 0  &{/interrupt-map-test/controller-0}  0      0
-				0 0  0 1  &{/interrupt-map-test/controller-1}  0 0    0 1
-				0 0  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 2
-				0 1  0 0  &{/interrupt-map-test/controller-0}  0      3
-				0 1  0 1  &{/interrupt-map-test/controller-1}  0 0    0 4
-				0 1  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 5>;
+			interrupt-map = <0 0 0 0 &{/interrupt-map-test/controller-0} 0 0
+					 0 0 0 1 &{/interrupt-map-test/controller-1} 0 0 0 1
+					 0 0 0 2 &{/interrupt-map-test/controller-2} 0 0 0 0 0 2
+					 0 1 0 0 &{/interrupt-map-test/controller-0} 0 3
+					 0 1 0 1 &{/interrupt-map-test/controller-1} 0 0 0 4
+					 0 1 0 2 &{/interrupt-map-test/controller-2} 0 0 0 0 0 5>;
 		};
+
 		nexus-0 {
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
-			interrupt-map = <
-				0 0  &{/interrupt-map-test/controller-0}  0      0
-				0 1  &{/interrupt-map-test/controller-1}  0 0    0 1
-				1 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 2>;
+			interrupt-map = <0 0 &{/interrupt-map-test/controller-0} 0 0
+					 0 1 &{/interrupt-map-test/controller-1} 0 0 0 1
+					 1 2 &{/interrupt-map-test/controller-2} 0 0 0 0 0 2>;
 		};
+
 		nexus-1 {
 			#address-cells = <1>;
 			#interrupt-cells = <1>;
-			interrupt-map = <
-				4 0  &{/interrupt-map-test/controller-0}  0      3
-				4 1  &{/interrupt-map-test/controller-1}  0 0    0 4
-				4 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 5>;
+			interrupt-map = <4 0 &{/interrupt-map-test/controller-0} 0 3
+					 4 1 &{/interrupt-map-test/controller-1} 0 0 0 4
+					 4 2 &{/interrupt-map-test/controller-2} 0 0 0 0 0 5>;
 		};
+
 		node@0 {
 			reg = <0 0>;
 			interrupts = <0 0 0 1 0 2>;
 			interrupt-parent = <&{/interrupt-map-test/nexus}>;
 		};
+
 		node@1 {
 			reg = <0 1>;
-			interrupts-extended = <
-			    &{/interrupt-map-test/nexus} 0 0
-			    &{/interrupt-map-test/nexus} 0 1
-			    &{/interrupt-map-test/nexus} 0 2>;
+			interrupts-extended = <&{/interrupt-map-test/nexus} 0 0
+					       &{/interrupt-map-test/nexus} 0 1
+					       &{/interrupt-map-test/nexus} 0 2>;
 		};
+
 		node@2 {
 			reg = <0 2>;
 			interrupts = <0 0 0 1 1 2>;
 			interrupt-parent = <&{/interrupt-map-test/nexus-0}>;
 		};
+
 		node@3 { /* Test the precedence of interrupts/interrupts-extended too */
 			reg = <0 3>;
 			interrupts = <1 2 0 0 0 1>;
 			interrupt-parent = <&{/interrupt-map-test/nexus-0}>;
-			interrupts-extended = <
-			    &{/interrupt-map-test/nexus-0} 0 0
-			    &{/interrupt-map-test/nexus-0} 0 1
-			    &{/interrupt-map-test/nexus-0} 1 2>;
+			interrupts-extended = <&{/interrupt-map-test/nexus-0} 0 0
+					       &{/interrupt-map-test/nexus-0} 0 1
+					       &{/interrupt-map-test/nexus-0} 1 2>;
 		};
+
 		node@4 {
 			reg = <0 4>;
 			interrupts = <0 1 2>;
 			interrupt-parent = <&{/interrupt-map-test/nexus-1}>;
 		};
+
 		node@100000004 {
 			reg = <1 4>;
 			interrupts = <0 1 2>;
 			interrupt-parent = <&{/interrupt-map-test/nexus-1}>;
 		};
 	};
+
 	interrupt-map-bitops-test {
 		#address-cells = <2>;
 		#size-cells = <0>;
@@ -143,16 +155,16 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 		};
+
 		nexus {
 			#interrupt-cells = <2>;
-			interrupt-map = <
-			    6 6  6 6  &{/interrupt-map-bitops-test/controller}  2 1
-			>;
+			interrupt-map = <6 6 6 6 &{/interrupt-map-bitops-test/controller} 2 1>;
 			interrupt-map-mask = <0xE 0x7 0xE 0x7>;
 			// Not specified in the DT spec., but shows up due to
 			// common code with GPIO. Might as well test it here.
 			interrupt-map-pass-thru = <1 2 3 3>;
 		};
+
 		// Child unit specifier: 00000007 0000000E 00000007 0000000E
 		// Mask:                 0000000E 00000007 0000000E 00000007
 		// Pass-thru:            00000001 00000002 00000003 00000003
@@ -266,7 +278,6 @@
 		};
 	};
 
-
 	//
 	// 'reg'
 	//
@@ -280,6 +291,7 @@
 			reg-names = "foo", "bar";
 		};
 	};
+
 	reg-zero-size-cells {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -288,16 +300,16 @@
 			reg = <1 2>;
 		};
 	};
+
 	// Use implied #size-cells = <1>
 	reg-ranges {
 		#address-cells = <2>;
 
 		parent {
 			#address-cells = <1>;
-			ranges = <1  0xA 0xB  1 /* 1    -> 0xA 0xB */
-				  2  0xC 0xD  2 /* 2..3 -> 0xC 0xD */
-				  4  0xE 0xF  1 /* 4    -> 0xE 0xF */
-				 >;
+			ranges = <1 0xA 0xB 1 /* 1    -> 0xA 0xB */
+				  2 0xC 0xD 2 /* 2..3 -> 0xC 0xD */
+				  4 0xE 0xF 1 /* 4    -> 0xE 0xF */ >;
 
 			node {
 				reg = <5 1 /* Matches no range */
@@ -305,11 +317,11 @@
 				       3 1 /* Matches second range */
 				       2 1 /* Matches second range */
 				       1 1 /* Matches first range */
-				       0 1 /* Matches no range */
-				       >;
+				       0 1 /* Matches no range */ >;
 			};
 		};
 	};
+
 	// Build up <3 2 1> address with nested 'ranges'
 	reg-nested-ranges {
 		#address-cells = <3>;
@@ -317,11 +329,11 @@
 		grandparent {
 			#address-cells = <2>;
 			#size-cells = <2>;
-			ranges = <0 0  3 0 0  2 2>;
+			ranges = <0 0 3 0 0 2 2>;
 
 			parent {
 				#address-cells = <1>;
-				ranges = <0  2 0  2>;
+				ranges = <0 2 0 2>;
 
 				node {
 					reg = <1 1>;
@@ -342,11 +354,11 @@
 				     &{/pinctrl/pincontroller/state-2}>;
 			pinctrl-names = "zero", "one", "two";
 		};
+
 		pincontroller {
-			state-1 {
-			};
-			state-2 {
-			};
+			state-1 {};
+
+			state-2 {};
 		};
 	};
 
@@ -355,11 +367,10 @@
 	//
 
 	parent {
-		child-1 {
-		};
+		child-1 {};
+
 		child-2 {
-			grandchild {
-			};
+			grandchild {};
 		};
 	};
 
@@ -391,13 +402,13 @@
 		existent-boolean;
 		int = <1>;
 		array = <1 2 3>;
-		uint8-array = [ 12 34 ];
+		uint8-array = [12 34];
 		string = "foo";
 		string-array = "foo", "bar", "baz";
-		phandle-ref = < &{/ctrl-1} >;
-		phandle-refs = < &{/ctrl-1} &{/ctrl-2} >;
-		phandle-array-foos = < &{/ctrl-1} 1 &{/ctrl-2} 2 3 >;
-		foo-gpios = < &{/ctrl-1} 1 >;
+		phandle-ref = <&{/ctrl-1}>;
+		phandle-refs = <&{/ctrl-1} &{/ctrl-2}>;
+		phandle-array-foos = <&{/ctrl-1} 1 &{/ctrl-2} 2 3>;
+		foo-gpios = <&{/ctrl-1} 1>;
 		path = &{/ctrl-1};
 	};
 
@@ -414,7 +425,7 @@
 
 	props-2 {
 		compatible = "props";
-		phandle-array-foos = < &{/ctrl-0-1} 0 &{/ctrl-0-2} >;
+		phandle-array-foos = <&{/ctrl-0-1} 0 &{/ctrl-0-2}>;
 		phandle-array-foo-names = "a", "missing", "b";
 	};
 
@@ -438,6 +449,7 @@
 			foo-gpios = <&{/gpio-map/connector} 3 4
 				     &{/gpio-map/connector} 1 2>;
 		};
+
 		connector {
 			#gpio-cells = <2>;
 			// Use different data lengths for source and
@@ -445,6 +457,7 @@
 			gpio-map = <1 2 &{/gpio-map/destination} 5
 				    3 4 &{/gpio-map/destination} 6>;
 		};
+
 		destination {
 			compatible = "gpio-dst";
 			gpio-controller;
@@ -486,22 +499,28 @@
 		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
+
 			node1 {
 				compatible = "on-bus", "on-any-bus";
+
 				nested {
 					compatible = "on-bus";
 				};
 			};
+
 			node2 {
 				compatible = "on-any-bus", "on-bus";
 			};
 		};
+
 		bar-bus {
 			compatible = "bar-bus";
+
 			node {
 				compatible = "on-bus";
 			};
 		};
+
 		no-bus-node {
 			compatible = "on-any-bus";
 		};
@@ -512,21 +531,23 @@
 	// 'child-binding:')
 	//
 
-	child-binding-dep {
-	};
+	child-binding-dep {};
 
 	child-binding {
 		compatible = "top-binding";
+
 		child-1 {
 			child-prop = <1>;
+
 			grandchild {
 				grandchild-prop = <2>;
-				grandchild-ref = < &{/child-binding-dep} >;
+				grandchild-ref = <&{/child-binding-dep}>;
 			};
 		};
+
 		child-2 {
 			child-prop = <3>;
-			child-ref = < &{/child-binding-dep} >;
+			child-ref = <&{/child-binding-dep}>;
 		};
 	};
 
@@ -557,6 +578,7 @@
 			compatible = "order-1";
 			foo = <1>;
 		};
+
 		node-2 {
 			compatible = "order-2";
 			foo = <2>;
@@ -572,7 +594,6 @@
 		curprop = <5>;
 	};
 
-
 	//
 	// For testing deprecated features
 	//
@@ -582,6 +603,7 @@
 		required = <1>;
 		required-2 = <2>;
 		#foo-cells = <2>;
+
 		sub-node {
 			foos = <&{/deprecated} 1 2>;
 		};

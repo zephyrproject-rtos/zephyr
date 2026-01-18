@@ -65,3 +65,14 @@ properties:
     description: |
       Enable RX boosted mode, which increases the power consumption of
       RX mode by ~2mA in exchange for ~3dB sensitivity improvement.
+
+  regulator-ldo:
+    type: boolean
+    description: |
+      Use the internal LDO instead of the internal DCDC. Increases power consumption.
+
+  force-ldro:
+    type: boolean
+    description: |
+      Force usage of Low Data Rate Optimization even in cases where the symbol time is shorter than
+      16.38ms. Useful for designs using no TCXO or with bad heat dissipation.

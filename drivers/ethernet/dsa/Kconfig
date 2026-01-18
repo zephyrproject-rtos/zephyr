@@ -71,6 +71,7 @@ config DSA_NXP_IMX_NETC
 	bool "Support for NXP i.MX NETC"
 	default y
 	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
+	select NET_PKT_CONTROL_BLOCK if NET_L2_PTP && PTP_CLOCK_NXP_NETC
 	help
 	  Add support for NXP i.MX NETC DSA device driver.
 

@@ -156,12 +156,11 @@
 	pinctrl-names = "default";
 };
 
-/*
- * MCXW23 EVK board uses SYSTICK timer as the kernel timer.
- * In case we need to switch to OS timer, then
- * replace &systick with &os_timer
- */
 &systick {
+	status = "okay";
+};
+
+&os_timer {
 	status = "okay";
 };
 

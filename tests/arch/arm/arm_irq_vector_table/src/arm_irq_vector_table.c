@@ -24,7 +24,7 @@
  * the TIMER0 IRQ line, which is used by the system timer.
  */
 #define _ISR_OFFSET (TIMER0_IRQn + 1)
-#elif defined(CONFIG_SOC_SERIES_NRF54LX)
+#elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)
 /* For nRF54L Series, use SWI00-02 interrupt lines. */
 #define _ISR_OFFSET SWI00_IRQn
 #elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
@@ -157,7 +157,7 @@ void timer0_nrf_isr(void);
 #define TIMER_IRQ_HANDLER timer0_nrf_isr
 #define TIMER_IRQ_NUM     TIMER0_IRQn
 #elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54HX) ||                  \
-	defined(CONFIG_SOC_SERIES_NRF92X)
+	defined(CONFIG_SOC_SERIES_NRF71) || defined(CONFIG_SOC_SERIES_NRF92X)
 void nrfx_grtc_irq_handler(void);
 #define TIMER_IRQ_HANDLER nrfx_grtc_irq_handler
 #define TIMER_IRQ_NUM     DT_IRQN(DT_NODELABEL(grtc))
@@ -265,6 +265,17 @@ const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #ifdef CONFIG_SOC_SERIES_APOLLO5X
 	[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = hal_internal_timer_isr,
 #endif
+};
+
+#elif defined(CONFIG_SOC_FAMILY_RENESAS_SMARTBOND)
+
+extern void timer2_isr(void);
+
+const vth __irq_vector_table _irq_vector_table[] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+	[TIMER2_IRQn] = timer2_isr,
 };
 
 #else

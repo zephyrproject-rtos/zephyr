@@ -47,8 +47,6 @@ that run the command:
 
    west blobs fetch hal_infineon
 
-.. note:: Only Bluetooth functionality is currently supported.
-
 Resources sharing
 =================
 

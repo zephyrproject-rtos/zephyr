@@ -10,6 +10,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&tcc1 3 PWM_MSEC(500)>;
 			label = "Blue PWM LED";

@@ -10,6 +10,7 @@ The Wi-Fi management API is used to manage Wi-Fi networks. It supports below mod
 
 * IEEE802.11 Station (STA)
 * IEEE802.11 Access Point (AP)
+* IEEE802.11 P2P (Wi-Fi Direct)
 
 Only personal mode security is supported with below types:
 
@@ -120,6 +121,29 @@ To initiate a Wi-Fi connection using enterprise security, use one of the followi
 Server certificate is also provided in the same directory for testing purposes.
 Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or ``hostapd``.
 
+Server certificate domain name verification
+-------------------------------------------
+
+The authentication server’s identity is verified by validating the domain name in the X.509 certificate received from the server, using the ``Common Name`` (CN) field.
+
+* Exact domain match — Verifies that the certificate’s CN exactly matches the specified domain.
+
+* Domain suffix match — Allows a certificate whose CN ends with the specified domain suffix.
+
+To initiate a Wi-Fi connection using enterprise security with server certificate validation, use one of the following commands, depending on the desired validation mode:
+
+* Exact domain match
+
+  .. code-block:: console
+
+     wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> -e <Domain match>
+
+* Domain suffix match
+
+  .. code-block:: console
+
+     wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> -x <Domain suffix name>
+
 Certificate requirements for EAP methods
 ----------------------------------------
 
@@ -191,6 +215,19 @@ The test certificates in ``samples/net/wifi/test_certs/rsa2k`` are generated usi
 
 .. note::
    These certificates are for testing only and should not be used in production.
+
+Wi-Fi P2P (Wi-Fi Direct)
+************************
+
+Wi-Fi P2P or Wi-Fi Direct enables devices to communicate directly with each other without requiring
+a traditional access point. This feature is particularly useful for device-to-device communication
+scenarios.
+
+To enable and build with Wi-Fi P2P support:
+
+.. code-block:: bash
+
+    $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
 
 API Reference
 *************

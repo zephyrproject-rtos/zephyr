@@ -280,6 +280,15 @@ extern "C" {
 	HID_ITEM(HID_ITEM_TAG_USAGE_PAGE, HID_ITEM_TYPE_GLOBAL, 1), page
 
 /**
+ * @brief Define HID Usage Page item with the data length of two bytes.
+ *
+ * @param page Usage Page
+ * @return     HID Usage Page item
+ */
+#define HID_USAGE_PAGE16(page)		\
+	HID_ITEM(HID_ITEM_TAG_USAGE_PAGE, HID_ITEM_TYPE_GLOBAL, 2), (uint8_t)page, (page >> 8)
+
+/**
  * @brief Define HID Logical Minimum item with the data length of one byte.
  *
  * For usage examples, see @ref HID_MOUSE_REPORT_DESC(),

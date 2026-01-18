@@ -35,16 +35,14 @@ toolchain that supports the C99 standard and above:
 * variadic macros
 * ``restrict`` qualification
 
-Some Zephyr components make use of the features newly introduced in the 2011
-release of the ISO C standard (ISO/IEC 9899:2011, hereinafter referred to as
-C11) such as the type-generic expressions using the ``_Generic`` keyword. For
-example, the :c:func:`cbprintf` component, used as the default formatted output
-processor for Zephyr, makes use of the C11 type-generic expressions, and this
-effectively requires most Zephyr applications to be compiled using a compiler
-toolchain that supports the C11 standard and above.
+Additionally, some components or parts of them make use of features introduced in the
+C11 and C17 versions of the standard (ISO/IEC 9899:2011 and 9899:2018 respectively):
+
+* _Generic keyword
+* _Static_assert keyword
 
 In summary, it is recommended to use a compiler toolchain that supports at
-least the C11 standard for developing with Zephyr. It is, however, important to
+least the C17 standard for developing with Zephyr. It is, however, important to
 note that some optional Zephyr components and external modules may make use of
 the C language features that have been introduced in more recent versions of
 the standards, in which case it will be necessary to use a more up-to-date

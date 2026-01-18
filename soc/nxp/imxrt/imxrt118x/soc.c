@@ -26,18 +26,48 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
-#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
-#include <zephyr_image_info.h>
-/* Memcpy macro to copy segments from secondary core image stored in flash
- * to RAM section that secondary core boots from.
- * n is the segment number, as defined in zephyr_image_info.h
- */
-#define MEMCPY_SEGMENT(n, _)							\
-	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA) + 0x303C0000),	\
-		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),			\
-		(SEGMENT_SIZE_ ## n))
-#endif /* !defined(CONFIG_CM7_BOOT_FROM_FLASH) */
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M33)
+#include <fsl_flexspi_nor_boot.h>
+
+extern char __start[];
+extern char _flash_used[];
+extern char __rom_region_start[];
+const __imx_boot_container_section container boot_header = {
+	.hdr = {
+		CNT_VERSION,
+		CNT_SIZE,
+		CNT_TAG_HEADER,
+		CNT_FLAGS,
+		CNT_SW_VER,
+		CNT_FUSE_VER,
+		CNT_NUM_IMG,
+		sizeof(cnt_hdr) + CNT_NUM_IMG * sizeof(image_entry),
+		0
+	},
+	.array = {
+		{
+			(uint32_t)(-1 * CONFIG_IMAGE_CONTAINER_OFFSET),
+			(uint32_t)_flash_used,
+			(uint32_t)__rom_region_start,
+			0x00000000,
+			(uint32_t)__start,
+			0x00000000,
+			IMG_FLAGS,
+			0x0,
+			{0},
+			{0}
+		},
+	},
+	.sign_block = {
+		SGNBK_VERSION,
+		SGNBK_SIZE,
+		SGNBK_TAG,
+		0x0,
+		0x0,
+		0x0,
+		0x0
+	},
+};
 #endif
 
 /*
@@ -72,13 +102,14 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 #if (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33))
-/* Handle CM7 core initialization based on execution mode */
-#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
-#define CM7_BOOT_ADDRESS (0)
-#else
 /* Get CM7 partition address from device tree */
 #define CM7_PARTITION_NODE DT_CHOSEN(zephyr_code_m7_partition)
 #define CM7_FLASH_ADDR     DT_REG_ADDR(CM7_PARTITION_NODE)
+
+/* Handle CM7 core initialization based on execution mode */
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
+#define CM7_BOOT_ADDRESS   (CM7_FLASH_ADDR + CONFIG_CM7_FLEXSPI_OFFSET - ADJUSTED_LMA)
+#else
 #define CM7_BOOT_ADDRESS   (CM7_FLASH_ADDR + CONFIG_CM7_FLEXSPI_OFFSET)
 #endif /* defined(CONFIG_CM7_BOOT_FROM_FLASH) */
 #endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
@@ -834,6 +865,26 @@ void soc_early_init_hook(void)
 
 #if (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33))
 #if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
+#include <zephyr_image_info.h>
+
+/* Determine if CM33 needs to adjust the address to access CM7 memory */
+#if ((CM7_BOOT_ADDRESS >= 0U) && (CM7_BOOT_ADDRESS <= 0x1FFFFU))
+	/* Adjust to CM33 address to access CM7 ITCM */
+	#define MEMMAP_ADJUST 0x303C0000U
+#else
+	#define MEMMAP_ADJUST 0U /* No adjustment needed */
+#endif
+
+/* Memcpy macro to copy segments from secondary core image stored in flash
+ * to RAM section that secondary core boots from.
+ * n is the segment number, as defined in zephyr_image_info.h
+ */
+#define MEMCPY_SEGMENT(n, _)						\
+	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n)		\
+			- ADJUSTED_LMA) + MEMMAP_ADJUST),		\
+		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),		\
+		(SEGMENT_SIZE_ ## n))
+
 	/**
 	 * Copy CM7 core from flash to memory. Note that depending on where the
 	 * user decided to store CM7 code, this is likely going to read from the
@@ -844,8 +895,8 @@ void soc_early_init_hook(void)
 	 * ensure the data is written directly to RAM (since the M4 core will use it)
 	 */
 	LISTIFY(SEGMENT_NUM, MEMCPY_SEGMENT, (;));
-#endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
 #endif /* !defined(CONFIG_CM7_BOOT_FROM_FLASH) */
+#endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
 
 	/* Enable data cache */
 	sys_cache_data_enable();

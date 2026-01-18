@@ -10,7 +10,7 @@ The following are some of the boards that can be used with TF-M:
      - NSPE board name
    * - :ref:`mps2_an521_board`
      - ``mps2/an521/cpu0/ns`` (qemu supported)
-   * - :ref:`mps3_board`
+   * - :zephyr:board:`mps3`
      -
        - ``mps3/corstone300/fvp/ns`` (armfvp supported)
        - ``mps3/corstone310/fvp/ns`` (armfvp supported)
@@ -32,9 +32,9 @@ The following are some of the boards that can be used with TF-M:
      - ``nucleo_l552ze_q/stm32l552xx/ns``
    * - :zephyr:board:`stm32l562e_dk`
      - ``stm32l562e_dk/stm32l562xx/ns``
-   * - :ref:`v2m_musca_b1_board`
+   * - :zephyr:board:`v2m_musca_b1`
      - ``v2m_musca_b1/musca_b1/ns``
-   * - :ref:`v2m_musca_s1_board`
+   * - :zephyr:board:`v2m_musca_s1`
      - ``v2m_musca_s1/musca_s1/ns``
 
 To make sure TF-M is supported for a board

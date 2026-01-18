@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Replace the octospi1 by a "st,stm32-ospi-controller" compatible */
+/delete-node/ &octospi1;
+
+/ {
+	aliases {
+		flash0 = &mx25lm51245;
+	};
+
+	soc {
+		octospi1: spi@52005000 {
+			compatible = "st,stm32-ospi-controller";
+			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <92 0>;
+			clock-names = "ospix", "ospi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB3, 14)>,
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			pinctrl-0 = <&octospim_p1_clk_pf10 &octospim_p1_ncs_pg6
+				     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+				     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13
+				     &octospim_p1_io4_pd4 &octospim_p1_io5_pd5
+				     &octospim_p1_io6_pg9 &octospim_p1_io7_pd7
+				     &octospim_p1_dqs_pb2>;
+			pinctrl-names = "default";
+			status = "okay";
+
+			mx25lm51245: ospi-nor-flash@0 {
+				compatible = "jedec,mspi-nor";
+				reg = <0>;
+				size = <DT_SIZE_M(512)>;
+				status = "okay";
+				mspi-max-frequency = <DT_FREQ_M(50)>;
+				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+				mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+				mspi-hardware-ce-num = <0>;
+				read-command = <0xEC13>;
+				write-command = <0x12ED>;
+				command-length = "INSTR_2_BYTE";
+				rx-dummy = <20>;
+				jedec-id = [c2 85 3a];
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "nor";
+						reg = <0x00000000 DT_SIZE_M(4)>;
+					};
+				};
+			};
+		};
+	};
+};

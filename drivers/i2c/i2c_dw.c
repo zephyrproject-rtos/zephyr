@@ -21,7 +21,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/arch/cpu.h>
 #include <zephyr/irq.h>
 #include <string.h>
 
@@ -50,7 +49,6 @@
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
@@ -134,6 +132,11 @@ static int i2c_dw_error_chk(const struct device *dev)
 		if (ic_txabrt_src.bits.SDASTUCKLOW) {
 			dw->state |= I2C_DW_SDA_STUCK;
 			LOG_ERR("SDA Stuck Low on %s", dev->name);
+		}
+		/* check if user abort the transmit */
+		if (ic_txabrt_src.bits.USRABRT) {
+			dw->state |= I2C_DW_USER_ABRT;
+			LOG_ERR("User Abort on %s", dev->name);
 		}
 		/* clear RTS5912_INTR_STAT_TX_ABRT */
 		value = read_clr_tx_abrt(reg_base);
@@ -1294,6 +1297,11 @@ static int i2c_dw_initialize(const struct device *dev)
 	uint32_t reg_base = get_regs(dev);
 
 	clear_bit_enable_en(reg_base);
+	/*
+	 * depending on the IP configuration, we may have to disable block mode in
+	 * controller mode
+	 */
+	clear_bit_enable_block(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {

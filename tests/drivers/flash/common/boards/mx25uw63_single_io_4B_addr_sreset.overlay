@@ -60,5 +60,5 @@
 	mspi-io-mode = "MSPI_IO_MODE_SINGLE";
 	use-4byte-addressing;
 	initial-soft-reset;
-	transfer-timeout = <500>;
+	transfer-timeout = <1000>;
 };

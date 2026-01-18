@@ -136,7 +136,7 @@
 
 		scratch_partition: partition@c000 {
 			label = "image-scratch";
-			reg = <0x0000C000 DT_SIZE_K(16)>;
+			reg = <0x0000c000 DT_SIZE_K(16)>;
 		};
 	};
 };

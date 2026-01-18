@@ -18,26 +18,26 @@ LOG_MODULE_DECLARE(net_shell);
 #define DEFAULT_DEV_NAME "NET_CAPTURE0"
 static const struct device *capture_dev;
 
-static void get_address_str(const struct sockaddr *addr,
+static void get_address_str(const struct net_sockaddr *addr,
 			    char *str, int str_len)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		snprintk(str, str_len, "[%s]:%u",
 			 net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
-			 ntohs(net_sin6(addr)->sin6_port));
+			 net_ntohs(net_sin6(addr)->sin6_port));
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		snprintk(str, str_len, "%s:%d",
 			 net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
-			 ntohs(net_sin(addr)->sin_port));
+			 net_ntohs(net_sin(addr)->sin_port));
 
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   addr->sa_family == AF_PACKET) {
+		   addr->sa_family == NET_AF_PACKET) {
 		snprintk(str, str_len, "AF_PACKET");
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   addr->sa_family == AF_CAN) {
+		   addr->sa_family == NET_AF_CAN) {
 		snprintk(str, str_len, "AF_CAN");
-	} else if (addr->sa_family == AF_UNSPEC) {
+	} else if (addr->sa_family == NET_AF_UNSPEC) {
 		snprintk(str, str_len, "AF_UNSPEC");
 	} else {
 		snprintk(str, str_len, "AF_UNK(%d)", addr->sa_family);

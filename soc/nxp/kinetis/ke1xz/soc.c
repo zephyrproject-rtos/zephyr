@@ -15,140 +15,170 @@
 #include <fsl_clock.h>
 #include <cmsis_core.h>
 
-#define ASSERT_WITHIN_RANGE(val, min, max, str) \
-	BUILD_ASSERT(val >= min && val <= max, str)
+#define ASSERT_WITHIN_RANGE(val, min, max, str) BUILD_ASSERT(val >= min && val <= max, str)
 
-#define ASSERT_ASYNC_CLK_DIV_VALID(val, str) \
-	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 ||	\
-		     val == 8 || val == 16 || val == 2 || val == 64, str)
+#define ASSERT_ASYNC_CLK_DIV_VALID(val, str)                                                       \
+	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 || val == 8 || val == 16 ||      \
+			     val == 2 || val == 64,                                                \
+		     str)
 
 #define TO_SYS_CLK_DIV(val) _DO_CONCAT(kSCG_SysClkDivBy, val)
 
-#define kSCG_AsyncClkDivBy0 kSCG_AsyncClkDisable
+#define kSCG_AsyncClkDivBy0   kSCG_AsyncClkDisable
 #define TO_ASYNC_CLK_DIV(val) _DO_CONCAT(kSCG_AsyncClkDivBy, val)
 
 #define SCG_CLOCK_NODE(name) DT_CHILD(DT_INST(0, nxp_kinetis_scg), name)
-#define SCG_CLOCK_DIV(name) DT_PROP(SCG_CLOCK_NODE(name), clock_div)
+#define SCG_CLOCK_DIV(name)  DT_PROP(SCG_CLOCK_NODE(name), clock_div)
 
 /* System Clock configuration */
-ASSERT_WITHIN_RANGE(SCG_CLOCK_DIV(bus_clk), 2, 8,
-		    "Invalid SCG bus clock divider value");
-ASSERT_WITHIN_RANGE(SCG_CLOCK_DIV(core_clk), 1, 16,
-		    "Invalid SCG core clock divider value");
+ASSERT_WITHIN_RANGE(SCG_CLOCK_DIV(bus_clk), 2, 8, "Invalid SCG bus clock divider value");
+ASSERT_WITHIN_RANGE(SCG_CLOCK_DIV(core_clk), 1, 16, "Invalid SCG core clock divider value");
 
 static const scg_sys_clk_config_t scg_sys_clk_config = {
 	.divSlow = TO_SYS_CLK_DIV(SCG_CLOCK_DIV(bus_clk)),
 	.divCore = TO_SYS_CLK_DIV(SCG_CLOCK_DIV(core_clk)),
 #if DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(sirc_clk))
-	.src     = kSCG_SysClkSrcSirc,
+	.src = kSCG_SysClkSrcSirc,
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(firc_clk))
-	.src     = kSCG_SysClkSrcFirc,
+	.src = kSCG_SysClkSrcFirc,
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(lpfll_clk))
+	.src = kSCG_SysClkSrcLpFll,
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(SCG_CLOCK_NODE(core_clk)), SCG_CLOCK_NODE(sosc_clk))
+	.src = kSCG_SysClkSrcSysOsc,
+#else
+#error Invalid SCG core clock selected
 #endif
 };
 
 /* Slow Internal Reference Clock (SIRC) configuration */
-ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(sircdiv2_clk),
-		       "Invalid SCG SIRC divider 2 value");
+ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(sircdiv2_clk), "Invalid SCG SIRC divider 2 value");
 static const scg_sirc_config_t scg_sirc_config = {
 	.enableMode = kSCG_SircEnable,
-	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(sircdiv2_clk)),
+	.div2 = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(sircdiv2_clk)),
 #if MHZ(2) == DT_PROP(SCG_CLOCK_NODE(sirc_clk), clock_frequency)
-	.range      = kSCG_SircRangeLow
+	.range = kSCG_SircRangeLow
 #elif MHZ(8) == DT_PROP(SCG_CLOCK_NODE(sirc_clk), clock_frequency)
-	.range      = kSCG_SircRangeHigh
+	.range = kSCG_SircRangeHigh
 #else
 #error Invalid SCG SIRC clock frequency
 #endif
 };
 
 /* Fast Internal Reference Clock (FIRC) configuration */
-ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(fircdiv2_clk),
-		       "Invalid SCG FIRC divider 2 value");
+ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(fircdiv2_clk), "Invalid SCG FIRC divider 2 value");
 static const scg_firc_config_t scg_firc_config = {
 	.enableMode = kSCG_FircEnable,
-	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(fircdiv2_clk)), /* b20253 */
+	.div2 = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(fircdiv2_clk)),
 #if MHZ(48) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
-	.range      = kSCG_FircRange48M,
+	.range = kSCG_FircRange48M,
 #elif MHZ(52) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
-	.range      = kSCG_FircRange52M,
+	.range = kSCG_FircRange52M,
 #elif MHZ(56) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
-	.range      = kSCG_FircRange56M,
+	.range = kSCG_FircRange56M,
 #elif MHZ(60) == DT_PROP(SCG_CLOCK_NODE(firc_clk), clock_frequency)
-	.range      = kSCG_FircRange60M,
+	.range = kSCG_FircRange60M,
 #else
 #error Invalid SCG FIRC clock frequency
 #endif
-	.trimConfig = NULL
+	.trimConfig = NULL};
+
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
+/* System Oscillator (SOSC) configuration */
+ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(soscdiv2_clk), "Invalid SCG SOSC divider 2 value");
+static const scg_sosc_config_t scg_sosc_config = {
+	.freq = DT_PROP(SCG_CLOCK_NODE(sosc_clk), clock_frequency),
+	.monitorMode = kSCG_SysOscMonitorDisable,
+	.enableMode = kSCG_SysOscEnable | kSCG_SysOscEnableInLowPower,
+	.div2 = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(soscdiv2_clk)),
+	.workMode = DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_mode)};
+#endif
+
+static const scg_lpfll_config_t scg_lpfll_config = {
+	.enableMode = kSCG_LpFllEnable,
+	.div2 = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(flldiv2_clk)),
+#if MHZ(48) == DT_PROP(SCG_CLOCK_NODE(lpfll_clk), clock_frequency)
+	.range = kSCG_LpFllRange48M,
+#elif MHZ(72) == DT_PROP(SCG_CLOCK_NODE(lpfll_clk), clock_frequency)
+	.range = kSCG_LpFllRange72M,
+#elif MHZ(96) == DT_PROP(SCG_CLOCK_NODE(lpfll_clk), clock_frequency)
+	.range = kSCG_LpFllRange96M,
+#else
+#error Invalid SCG FLL clock frequency
+#endif
+	.trimConfig = NULL,
 };
+
+static void CLOCK_CONFIG_FircSafeConfig(const scg_firc_config_t *fircConfig)
+{
+	scg_sys_clk_config_t curConfig;
+	const scg_sirc_config_t scgSircConfig = {.enableMode = kSCG_SircEnable,
+						 .div2 = kSCG_AsyncClkDivBy2,
+						 .range = kSCG_SircRangeHigh};
+	scg_sys_clk_config_t sysClkSafeConfigSource = {
+		.divSlow = kSCG_SysClkDivBy4, /* Slow clock divider */
+		.divCore = kSCG_SysClkDivBy1, /* Core clock divider */
+		.src = kSCG_SysClkSrcSirc     /* System clock source */
+	};
+	/* Init Sirc. */
+	CLOCK_InitSirc(&scgSircConfig);
+	/* Change to use SIRC as system clock source to prepare to change FIRCCFG register. */
+	CLOCK_SetRunModeSysClkConfig(&sysClkSafeConfigSource);
+	/* Wait for clock source switch finished. */
+	do {
+		CLOCK_GetCurSysClkConfig(&curConfig);
+	} while (curConfig.src != sysClkSafeConfigSource.src);
+
+	/* Init Firc. */
+	CLOCK_InitFirc(fircConfig);
+	/* Change back to use FIRC as system clock source in order to configure SIRC if needed. */
+	sysClkSafeConfigSource.src = kSCG_SysClkSrcFirc;
+	CLOCK_SetRunModeSysClkConfig(&sysClkSafeConfigSource);
+	/* Wait for clock source switch finished. */
+	do {
+		CLOCK_GetCurSysClkConfig(&curConfig);
+	} while (curConfig.src != sysClkSafeConfigSource.src);
+}
+
+#define CLOCK_SETUP_ENTRY(node_label, clock_type) \
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(node_label)), ( \
+		CLOCK_SetIpSrc(clock_type, DT_CLOCKS_CELL(DT_NODELABEL(node_label), ip_source)); \
+	))
+
+#define CLOCK_ENABLE_ENTRY(node_label, clock_type) \
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(node_label)), ( \
+		CLOCK_EnableClock(clock_type); \
+	))
 
 __weak void clk_init(void)
 {
-	const scg_sys_clk_config_t scg_sys_clk_config_safe = {
-		.divSlow = kSCG_SysClkDivBy4,
-		.divCore = kSCG_SysClkDivBy1,
-		.src     = kSCG_SysClkSrcSirc
-	};
-	scg_sys_clk_config_t current;
+	scg_sys_clk_config_t current = {0};
 
-	/* Configure SIRC */
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
+	/* Init SOSC according to board configuration. */
+	CLOCK_InitSysOsc(&scg_sosc_config);
+	CLOCK_SetXtal0Freq(scg_sosc_config.freq);
+#endif
+
+	CLOCK_CONFIG_FircSafeConfig(&scg_firc_config);
 	CLOCK_InitSirc(&scg_sirc_config);
-
-	/* Temporary switch to safe SIRC in order to configure FIRC */
-	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config_safe);
-	do {
-		CLOCK_GetCurSysClkConfig(&current);
-	} while (current.src != scg_sys_clk_config_safe.src);
-	CLOCK_InitFirc(&scg_firc_config);
-
-	/* Only RUN mode supported for now */
+	CLOCK_InitLpFll(&scg_lpfll_config);
 	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config);
 	do {
 		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
-	CLOCK_SetIpSrc(kCLOCK_Lpuart0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart0), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
-	CLOCK_SetIpSrc(kCLOCK_Lpuart1,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart1), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2))
-	CLOCK_SetIpSrc(kCLOCK_Lpuart2,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart2), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c0))
-	CLOCK_SetIpSrc(kCLOCK_Lpi2c0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c0), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1))
-	CLOCK_SetIpSrc(kCLOCK_Lpi2c1,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c1), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio))
-	CLOCK_SetIpSrc(kCLOCK_Flexio0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(flexio), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
-	CLOCK_SetIpSrc(kCLOCK_Lpspi0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi0), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
-	CLOCK_SetIpSrc(kCLOCK_Lpspi1,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi1), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc0))
-	CLOCK_SetIpSrc(kCLOCK_Adc0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
-	CLOCK_EnableClock(kCLOCK_Ewm0);
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpit0))
-	CLOCK_SetIpSrc(kCLOCK_Lpit0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(lpit0), ip_source));
-#endif
+	/* Clock configuration table */
+	CLOCK_SETUP_ENTRY(lpuart0, kCLOCK_Lpuart0)
+	CLOCK_SETUP_ENTRY(lpuart1, kCLOCK_Lpuart1)
+	CLOCK_SETUP_ENTRY(lpuart2, kCLOCK_Lpuart2)
+	CLOCK_SETUP_ENTRY(lpi2c0, kCLOCK_Lpi2c0)
+	CLOCK_SETUP_ENTRY(lpi2c1, kCLOCK_Lpi2c1)
+	CLOCK_SETUP_ENTRY(flexio, kCLOCK_Flexio0)
+	CLOCK_SETUP_ENTRY(lpspi0, kCLOCK_Lpspi0)
+	CLOCK_SETUP_ENTRY(lpspi1, kCLOCK_Lpspi1)
+	CLOCK_SETUP_ENTRY(adc0, kCLOCK_Adc0)
+	CLOCK_SETUP_ENTRY(lpit0, kCLOCK_Lpit0)
+	CLOCK_ENABLE_ENTRY(ewm0, kCLOCK_Ewm0)
 }
 
 void soc_early_init_hook(void)

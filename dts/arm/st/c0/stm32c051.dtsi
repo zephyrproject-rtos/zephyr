@@ -54,6 +54,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <26 0>;
 			interrupt-names = "global";
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 

@@ -135,11 +135,6 @@ static int pcf857x_port_get_raw(const struct device *dev, gpio_port_value_t *val
 		return -EWOULDBLOCK;
 	}
 
-	if ((~drv_data->pins_cfg.configured_as_outputs & (uint16_t)*value) != (uint16_t)*value) {
-		LOG_ERR("Pin(s) is/are configured as output which should be input.");
-		return -EOPNOTSUPP;
-	}
-
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	/**
@@ -185,6 +180,7 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 	tx_buf = (drv_data->pins_cfg.outputs_state & ~mask);
 	tx_buf |= (value & mask);
 	tx_buf ^= toggle;
+	tx_buf |= ~drv_data->pins_cfg.configured_as_outputs;
 	sys_put_le16(tx_buf, tx_buf_p);
 
 	rc = i2c_write_dt(&drv_cfg->i2c, tx_buf_p, drv_data->num_bytes);
@@ -223,7 +219,7 @@ static int pcf857x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	}
 	if (flags & GPIO_INPUT) {
 		temp_outputs &= ~BIT(pin);
-		temp_pins &= ~(1 << pin);
+		temp_pins |= (1 << pin);
 	} else if (flags & GPIO_OUTPUT) {
 		drv_data->pins_cfg.configured_as_outputs |= BIT(pin);
 		temp_outputs = drv_data->pins_cfg.configured_as_outputs;

@@ -41,7 +41,7 @@ struct mcumgr_handler {
  * @param _init	Init function to be called (mcumgr_handler_init_t).
  */
 #define MCUMGR_HANDLER_DEFINE(name, _init)			\
-	STRUCT_SECTION_ITERABLE(mcumgr_handler, name) = {	\
+	const STRUCT_SECTION_ITERABLE(mcumgr_handler, name) = {	\
 		.init = _init,					\
 	}
 

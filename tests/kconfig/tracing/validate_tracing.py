@@ -26,7 +26,7 @@ EXPECTED_TRACES = [
         "string",
         "native_sim",
         "default",
-        [ "zephyr/boards/Kconfig", None ] # only test the file name
+        [ "boards/Kconfig", None ] # only test the file name
     ],
     [
         "CONFIG_MAIN_FLAG",

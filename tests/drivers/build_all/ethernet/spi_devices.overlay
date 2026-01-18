@@ -100,6 +100,7 @@
 				port1 {
 					local-mac-address = [CA 2F B7 10 23 63];
 				};
+
 				port2 {
 					local-mac-address = [3C 82 D4 A2 29 8E];
 				};
@@ -115,6 +116,7 @@
 						compatible = "adi,adin2111-phy";
 						status = "okay";
 					};
+
 					ethernet-phy@2 {
 						reg = <0x2>;
 						compatible = "adi,adin2111-phy";
@@ -130,11 +132,13 @@
 				int-gpios = <&test_gpio 0 0>;
 				rst-gpios = <&test_gpio 0 0>;
 				local-mac-address = [00 00 00 01 02 03];
+
 				lan865x_mdio: lan865x_mdio {
 					compatible = "microchip,lan865x-mdio";
 					status = "okay";
 					#address-cells = <1>;
 					#size-cells = <0>;
+
 					ethernet-phy@0 {
 						compatible = "microchip,t1s-phy";
 						reg = <0x0>;

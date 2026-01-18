@@ -5,9 +5,7 @@
 # Validate board and setup boards target.
 #
 # This CMake module will validate the BOARD argument as well as splitting the
-# BOARD argument into <BOARD> and <BOARD_REVISION>. When BOARD_EXTENSIONS option
-# is enabled (default) this module will also take care of finding board
-# extension directories.
+# BOARD argument into <BOARD> and <BOARD_REVISION>.
 #
 # If a board implementation is not found for the specified board an error will
 # be raised and list of valid boards will be printed.
@@ -31,11 +29,9 @@
 # - BOARD_DIR:                   Board directory with the implementation for selected board
 # - ARCH_DIR:                    Arch dir for extracted from selected board
 # - BOARD_ROOT:                  BOARD_ROOT with ZEPHYR_BASE appended
-# - BOARD_EXTENSION_DIRS:        List of board extension directories (If
-#                                BOARD_EXTENSIONS is not explicitly disabled)
 #
 # The following targets will be defined when this CMake module completes:
-# - board: when invoked, a list of valid boards will be printed
+# - boards: when invoked, a list of valid boards will be printed
 #
 # Required variables:
 # - BOARD: Board name, including any optional revision field, for example: `foo` or `foo@1.0.0`
@@ -141,7 +137,7 @@ Hints:
   endif()
 endforeach()
 
-if(HWMv2 AND NOT EXISTS ${BOARD_DIR}/board.yml)
+if(DEFINED BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/board.yml)
   message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
                   "Trying to find new location."
   )
@@ -180,7 +176,7 @@ if(NOT BOARD_DIR)
   endif()
 endif()
 
-set(format_str "{NAME}\;{DIR}\;{HWM}\;")
+set(format_str "{NAME}\;{DIR}\;")
 set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
 set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}")
 
@@ -197,7 +193,7 @@ endif()
 
 if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
-  set(single_val "NAME;HWM;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
+  set(single_val "NAME;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
   set(multi_val  "DIR;REVISIONS;SOCS;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   list(GET LIST_BOARD_DIR 0 BOARD_DIR)
@@ -210,12 +206,12 @@ if(NOT "${ret_board}" STREQUAL "")
   # Create two CMake variables identifying the hw model.
   # CMake variable: HWM=v2
   # CMake variable: HWMv2=True
-  set(HWM       ${LIST_BOARD_HWM} CACHE INTERNAL "Zephyr hardware model version")
-  set(HWM${HWM} True   CACHE INTERNAL "Zephyr hardware model")
+  set(HWM v2 CACHE INTERNAL "Zephyr hardware model version")
+  set(HWMv2 True CACHE INTERNAL "Zephyr hardware model")
 elseif(BOARD_DIR)
   message(FATAL_ERROR "Error finding board: ${BOARD} in ${BOARD_DIR}.\n"
           "This indicates the board has been removed, renamed, or placed at a new location.\n"
-	  "Please run a pristine build."
+          "Please run a pristine build."
   )
 else()
   message("No board named '${BOARD}' found. Did you mean:\n")
@@ -314,23 +310,6 @@ message(STATUS "${board_message}")
 
 add_custom_target(boards ${list_boards_commands} USES_TERMINAL)
 
-# Board extensions are enabled by default
-set(BOARD_EXTENSIONS ON CACHE BOOL "Support board extensions")
-zephyr_get(BOARD_EXTENSIONS)
-
-# Process board extensions
-if(BOARD_EXTENSIONS)
-  get_filename_component(board_dir_name ${BOARD_DIR} NAME)
-
-  foreach(root ${BOARD_ROOT})
-    set(board_extension_dir ${root}/boards/extensions/${board_dir_name})
-    if(NOT EXISTS ${board_extension_dir})
-      continue()
-    endif()
-
-    list(APPEND BOARD_EXTENSION_DIRS ${board_extension_dir})
-  endforeach()
-endif()
 build_info(board name VALUE ${BOARD})
 string(REGEX REPLACE "^/" "" qualifiers "${BOARD_QUALIFIERS}")
 build_info(board qualifiers VALUE ${qualifiers})

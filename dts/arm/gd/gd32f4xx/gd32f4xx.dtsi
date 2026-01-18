@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Teslabs Engineering S.L.
- *
+ * Copyright (c) 2025 Aleksandr Senin <al@meshium.net>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -66,6 +66,14 @@
 				write-block-size = <2>;
 				max-erase-time-ms = <8000>;
 			};
+		};
+
+		trng0: trng@50060800 {
+			compatible = "gd,gd32-trng";
+			reg = <0x50060800 0x400>;
+			clocks = <&cctl GD32_CLOCK_TRNG>;
+			resets = <&rctl GD32_RESET_TRNG>;
+			status = "disabled";
 		};
 
 		usart0: usart@40011000 {

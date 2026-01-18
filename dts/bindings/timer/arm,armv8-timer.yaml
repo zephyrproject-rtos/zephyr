@@ -7,3 +7,9 @@ include: base.yaml
 properties:
   interrupts:
     required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      The clock source frequencey for this timer, in Hz. This value can be used as
+      the default setting for SYS_CLOCK_HW_CYCLES_PER_SEC at the SoC level.

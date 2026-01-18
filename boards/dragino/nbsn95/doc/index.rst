@@ -13,8 +13,10 @@ This kit provides:
 
 - STM32L072CZ MCU
 - Quectel BC95-G NB-IoT
-- Expansion connectors:
-        - PMOD
+- Expansion connectors
+
+  - PMOD
+
 - Li/SOCI2 Unchargable Battery
 - GPIOs exposed via screw terminals on the carrier board
 - Housing

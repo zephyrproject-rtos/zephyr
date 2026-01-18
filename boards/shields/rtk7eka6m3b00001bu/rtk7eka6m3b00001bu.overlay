@@ -9,11 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336_rtk7eka6m3b00001bu>;
+		zephyr,touch = &ft5336_rtk7eka6m3b00001bu;
 	};
 
 	lcd_expansion_rtk7eka6m3b00001bu: parallel-graphics-connector {
@@ -51,5 +47,6 @@
 		hfront-porch = <4>;
 		vfront-porch = <35>;
 	};
+
 	backlight-gpios = <&lcd_expansion_rtk7eka6m3b00001bu 39 GPIO_ACTIVE_HIGH>;
 };

@@ -11,6 +11,11 @@
 #include "zephyr/dt-bindings/display/panel.h"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
+/*
+ * WARNING:
+ * JP6 must be in PC1 position when using Ethernet.
+ */
+
 / {
 	chosen {
 		zephyr,console = &uart4;
@@ -18,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,display = &ltdc;
 		zephyr,touch = &display_ctp;
+		zephyr,canbus = &fdcan1;
 	};
 
 	psram: memory@90000000 {
@@ -75,8 +81,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };
 
@@ -123,6 +128,10 @@
 	ppre2 = <2>;
 	ppre4 = <2>;
 	ppre5 = <2>;
+};
+
+&pwr {
+	power-supply = "smps-direct";
 };
 
 &uart4 {
@@ -199,6 +208,11 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	/*
+	 * Make sure FDCAN and i2c1 are not enabled at the same time
+	 * because they share the pb9 pin
+	 * reference: DS14359 Rev 4 page 134
+	 */
 	status = "okay";
 
 	display_ctp: gt911@5d {
@@ -206,6 +220,41 @@
 		reg = <0x5d>;
 		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
+	};
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	/*
+	 * fdcan1 is disabled by default in favor of i2c1 due to pb9 pin conflict
+	 * reference: DS14359 Rev 4 page 134
+	 */
+	status = "disabled";
+};
+
+&mac {
+	pinctrl-0 = <&eth_rmii_ref_clk_pd7
+		     &eth_rmii_crs_dv_pa7
+		     &eth_rmii_rxd0_pc4
+		     &eth_rmii_rxd1_pc5
+		     &eth_rmii_tx_en_pg11
+		     &eth_rmii_txd0_pb0
+		     &eth_rmii_txd1_pb1>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
 	};
 };
 
@@ -308,12 +357,13 @@ zephyr_udc0: &usb2 {};
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&psram>;
 
 	status = "okay";
 
 	width = <800>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -329,7 +379,7 @@ zephyr_udc0: &usb2 {};
 		vfront-porch = <8>;
 	};
 
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };

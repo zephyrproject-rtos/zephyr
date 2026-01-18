@@ -119,12 +119,15 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 			return -EINVAL;
 		}
 		status->twt_capable = false;
-		status->link_mode = WIFI_4;
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
-		status->channel = sl_ap_cfg.channel.channel;
+		status->channel = wlan_info.channel_number;
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
+		status->link_mode = WIFI_4;
+		if (status->channel == 14) {
+			status->link_mode = WIFI_1;
+		}
 		wlan_info.sec_type = (uint8_t)sl_ap_cfg.security;
 		memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
 	} else {
@@ -264,9 +267,17 @@ sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 					     sl_wifi_buffer_t *buffer)
 {
 	sl_si91x_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
+	const struct net_eth_hdr *eth = (const struct net_eth_hdr *)si_pkt->data;
 	struct net_if *iface = net_if_get_first_wifi();
+	const struct net_linkaddr *ll = net_if_get_link_addr(iface);
 	struct net_pkt *pkt;
 	int ret;
+
+	/* NWP sometime echoes the Tx frames */
+	if (memcmp(eth->src.addr, ll->addr, sizeof(eth->src.addr)) == 0) {
+		LOG_DBG("Dropped packet (source MAC matches our MAC)");
+		return SL_STATUS_OK;
+	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, buffer->length, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
@@ -288,6 +299,56 @@ sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 unref:
 	net_pkt_unref(pkt);
 	return SL_STATUS_FAIL;
+}
+
+static enum ethernet_hw_caps siwx91x_get_capabilities(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETHERNET_HW_FILTERING;
+}
+
+static int siwx91x_set_config(const struct device *dev,
+			      enum ethernet_config_type type,
+			      const struct ethernet_config *config)
+{
+	sl_wifi_multicast_filter_info_t filter_info = {};
+	sl_status_t status;
+
+	ARG_UNUSED(dev);
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		memcpy(filter_info.mac_address.octet, config->filter.mac_address.addr,
+		       sizeof(config->filter.mac_address.addr));
+
+		if (config->filter.set) {
+			filter_info.command_type = SL_WIFI_MULTICAST_MAC_ADD_BIT;
+		} else {
+			filter_info.command_type = SL_WIFI_MULTICAST_MAC_CLEAR_BIT;
+		}
+
+		status = sl_wifi_configure_multicast_filter(&filter_info);
+		if (status != SL_STATUS_OK) {
+			LOG_ERR("Failed to %s multicast filter: 0x%x",
+				config->filter.set ? "add" : "remove", status);
+			return -EIO;
+		}
+
+		LOG_DBG("Multicast filter %s for %02x:%02x:%02x:%02x:%02x:%02x",
+			config->filter.set ? "added" : "removed",
+			config->filter.mac_address.addr[0],
+			config->filter.mac_address.addr[1],
+			config->filter.mac_address.addr[2],
+			config->filter.mac_address.addr[3],
+			config->filter.mac_address.addr[4],
+			config->filter.mac_address.addr[5]);
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
 }
 
 #endif
@@ -443,6 +504,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 {
 	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	sl_wifi_advanced_client_configuration_t client_config = {
+		.max_retry_attempts = 1,
+		.scan_interval = 0,
+		.beacon_missed_count = 0,
+		.first_time_retry_enable = 0,
+	};
 	int ret;
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
@@ -461,6 +528,12 @@ static void siwx91x_iface_init(struct net_if *iface)
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {
 		LOG_ERR("Failed to set max tx power:%x", ret);
+		return;
+	}
+
+	ret = sl_wifi_set_advanced_client_configuration(SL_WIFI_CLIENT_INTERFACE, &client_config);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set advanced client config: 0x%x", ret);
 		return;
 	}
 
@@ -569,6 +642,8 @@ static const struct net_wifi_mgmt_offload siwx91x_api = {
 	.wifi_iface.iface_api.init = siwx91x_iface_init,
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
 	.wifi_iface.send = siwx91x_send,
+	.wifi_iface.get_capabilities = siwx91x_get_capabilities,
+	.wifi_iface.set_config = siwx91x_set_config,
 #else
 	.wifi_iface.get_type = siwx91x_get_type,
 #endif

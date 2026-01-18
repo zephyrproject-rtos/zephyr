@@ -137,21 +137,11 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 	struct arch_esf esf_copy;
 
 	memcpy(&esf_copy, esf, offsetof(struct arch_esf, extra_info));
-#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* extra exception info is collected in callee_reg param
-	 * on CONFIG_ARMV7_M_ARMV8_M_MAINLINE
-	 */
+	/* extra exception info is collected in callee_reg. */
 
 	esf_copy.extra_info = (struct __extra_esf_info) {
 		.callee = callee_regs,
 	};
-#else
-	/* extra exception info is not collected for kernel oops
-	 * path today so we make a copy of the ESF and zero out
-	 * that information
-	 */
-	esf_copy.extra_info = (struct __extra_esf_info) { 0 };
-#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 	z_arm_fatal_error(reason, &esf_copy);
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */

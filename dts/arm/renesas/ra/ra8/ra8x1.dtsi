@@ -264,6 +264,15 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci1: sci1@40358100 {
@@ -285,6 +294,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <1>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <1>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -310,6 +328,15 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci3: sci3@40358300 {
@@ -331,6 +358,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <3>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -356,6 +392,15 @@
 				channel = <4>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci9: sci9@40358900 {
@@ -379,6 +424,15 @@
 				channel = <9>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <9>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		flash: flash-controller@40100000 {
@@ -391,9 +445,10 @@
 		};
 
 		adc0: adc@40332000 {
-			compatible = "renesas,ra-adc";
+			compatible = "renesas,ra-adc12";
 			interrupts = <38 1>;
 			interrupt-names = "scanend";
+			unit = <0>;
 			reg = <0x40332000 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
@@ -402,9 +457,10 @@
 		};
 
 		adc1: adc@40332200 {
-			compatible = "renesas,ra-adc";
+			compatible = "renesas,ra-adc12";
 			interrupts = <39 1>;
 			interrupt-names = "scanend";
+			unit = <1>;
 			reg = <0x40332200 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;

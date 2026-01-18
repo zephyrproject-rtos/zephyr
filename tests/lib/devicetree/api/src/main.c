@@ -206,6 +206,50 @@ ZTEST(devicetree_api, test_inst_props)
 }
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_reg_holder_2
+ZTEST(devicetree_api, test_any_inst_reg_names)
+{
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(bar), 1, "");
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 5, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_1(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 5, "");
+	zassert_true(IS_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo)), "");
+	zassert_true(!IS_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz)), "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo), (1)) + 1, 2, "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(baz), (1)) + 1, 1, "");
+}
+
+ZTEST(devicetree_api, test_all_inst_reg_names)
+{
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo), 1, "");
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(bar), 0, "");
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz), 0, "");
+	zassert_equal(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 5, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_1(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 6, "");
+	zassert_equal(COND_CODE_0(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz),
+				  (5), (6)), 5, "");
+	zassert_true(IS_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo)), "");
+	zassert_true(!IS_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz)), "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(foo), (1)) + 1, 2, "");
+	zassert_equal(IF_ENABLED(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(baz), (1)) + 1, 1, "");
+}
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_device_with_props
 ZTEST(devicetree_api, test_any_inst_prop)
 {
@@ -2514,6 +2558,14 @@ ZTEST(devicetree_api, test_children)
 	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_a), val), 0, "");
 	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_b), val), 1, "");
 	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_c), val), 2, "");
+
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR_INT(DT_NODELABEL(test_children), 10), val), 0);
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR_INT(DT_NODELABEL(test_children), 11), val), 1);
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR_INT(DT_NODELABEL(test_children), 12), val), 2);
+
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR_INT(0, 10), val), 0);
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR_INT(0, 11), val), 1);
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR_INT(0, 12), val), 2);
 }
 
 #undef DT_DRV_COMPAT
@@ -3430,7 +3482,9 @@ ZTEST(devicetree_api, test_string_token)
 #define DT_DRV_COMPAT vnd_string_array_token
 ZTEST(devicetree_api, test_string_idx_token)
 {
+	/* The enum has 7 values in total - thus invalid idx starts with 16 */
 	enum token_string_idx {
+		token_idx_default,
 		/* Tokens */
 		token_first_idx_zero,
 		token_first_idx_one,
@@ -3464,6 +3518,15 @@ ZTEST(devicetree_api, test_string_idx_token)
 			token_second_idx_two, "");
 	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 3),
 			token_second_idx_three, "");
+
+	/* Index is in range */
+	zassert_equal(DT_STRING_TOKEN_BY_IDX_OR(DT_NODELABEL(test_str_array_token_1), val, 3,
+						token_idx_default),
+		      token_second_idx_three, "");
+	/* Index is out of range */
+	zassert_equal(DT_STRING_TOKEN_BY_IDX_OR(DT_NODELABEL(test_str_array_token_1), val, 42,
+						token_idx_default),
+		      token_idx_default, "");
 
 	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 0),
 			TOKEN_FIRST_IDX_ZERO, "");
@@ -3502,6 +3565,57 @@ ZTEST(devicetree_api, test_string_idx_token)
 			token_second_idx_one, "");
 	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[2],
 			token_second_idx_two, "");
+
+	/* Test instances - index is in range */
+#define STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(node_id) _CONCAT(var_in_range_token_or_, node_id)
+#define STRING_TOKEN_BY_IDX_OR_TEST_INST_EXPANSION_IN_RANGE(inst)                                  \
+	enum token_string_idx STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_DRV_INST(inst))[] = {         \
+		DT_INST_STRING_TOKEN_BY_IDX_OR(inst, val, 0, token_idx_default),                   \
+		DT_INST_STRING_TOKEN_BY_IDX_OR(inst, val, 1, token_idx_default),                   \
+		DT_INST_STRING_TOKEN_BY_IDX_OR(inst, val, 2, token_idx_default)};
+	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_BY_IDX_OR_TEST_INST_EXPANSION_IN_RANGE);
+
+	zassert_equal(STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_NODELABEL(test_str_array_token_0))[0],
+		      token_first_idx_zero, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_NODELABEL(test_str_array_token_0))[1],
+		      token_first_idx_one, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_NODELABEL(test_str_array_token_0))[2],
+		      token_first_idx_two, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_NODELABEL(test_str_array_token_1))[0],
+		      token_second_idx_zero, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_NODELABEL(test_str_array_token_1))[1],
+		      token_second_idx_one, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_OR_VAR_IN_RANGE(DT_NODELABEL(test_str_array_token_1))[2],
+		      token_second_idx_two, "");
+
+	/* Test instances - index is out of range */
+#define STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(node_id)                                           \
+	_CONCAT(var_not_in_range_token_or_, node_id)
+#define STRING_TOKEN_BY_IDX_OR_TEST_INST_EXPANSION_NOT_IN_RANGE(inst)                              \
+	enum token_string_idx STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_DRV_INST(inst))[] = {     \
+		DT_INST_STRING_TOKEN_BY_IDX_OR(inst, val, 15, token_idx_default),                  \
+		DT_INST_STRING_TOKEN_BY_IDX_OR(inst, val, 16, token_idx_default),                  \
+		DT_INST_STRING_TOKEN_BY_IDX_OR(inst, val, 17, token_idx_default)};
+	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_BY_IDX_OR_TEST_INST_EXPANSION_NOT_IN_RANGE);
+
+	zassert_equal(
+		STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_NODELABEL(test_str_array_token_0))[0],
+		token_idx_default, "");
+	zassert_equal(
+		STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_NODELABEL(test_str_array_token_0))[1],
+		token_idx_default, "");
+	zassert_equal(
+		STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_NODELABEL(test_str_array_token_0))[2],
+		token_idx_default, "");
+	zassert_equal(
+		STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_NODELABEL(test_str_array_token_1))[0],
+		token_idx_default, "");
+	zassert_equal(
+		STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_NODELABEL(test_str_array_token_1))[1],
+		token_idx_default, "");
+	zassert_equal(
+		STRING_TOKEN_BY_IDX_OR_VAR_NOT_IN_RANGE(DT_NODELABEL(test_str_array_token_1))[2],
+		token_idx_default, "");
 
 #define STRING_UPPER_TOKEN_BY_IDX_VAR(node_id) _CONCAT(var_upper_token, node_id)
 #define STRING_UPPER_TOKEN_BY_IDX_TEST_INST_EXPANSION(inst) \

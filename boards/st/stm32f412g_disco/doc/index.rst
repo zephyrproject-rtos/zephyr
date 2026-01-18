@@ -11,9 +11,9 @@ some highlights of the STM32F412G-DISCO board:
 - STM32F412ZGT6 microcontroller featuring 1 Mbyte of Flash memory and 256 Kbytes of RAM in an LQFP144 package
 - On-board ST-LINK/V2-1 SWD debugger supporting USB re-enumeration capability:
 
-       - USB virtual COM port
-       - mass storage
-       - debug port
+  - USB virtual COM port
+  - Mass storage
+  - Debug port
 
 - 1.54 inch 240x240 pixel TFT color LCD with parallel interface and capacitive touchscreen
 - I2S Audio CODEC, with a stereo headset jack, including analog microphone input and a loudspeaker output
@@ -26,10 +26,10 @@ some highlights of the STM32F412G-DISCO board:
 - USB OTG FS with Micro-AB connector
 - Four power supply options:
 
-       - ST-LINK/V2-1 USB connector
-       - User USB FS connector
-       - VIN from Arduino* connectors
-       - + 5 V from Arduino* connectors
+  - ST-LINK/V2-1 USB connector
+  - User USB FS connector
+  - VIN from Arduino* connectors
+  - + 5 V from Arduino* connectors
 
 - Two power supplies for MCU: 2.0 V and 3.3 V
 - Compatible with Arduino(tm) Uno revision 3 connectors
@@ -66,8 +66,9 @@ STM32F412G-DISCO Discovery kit provides the following hardware components:
 - DMA Controller
 
 More information about STM32F412ZG can be found here:
-       - `STM32F412ZG on www.st.com`_
-       - `STM32F412 reference manual`_
+
+- `STM32F412ZG on www.st.com`_
+- `STM32F412 reference manual`_
 
 Supported Features
 ==================

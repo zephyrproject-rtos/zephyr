@@ -124,3 +124,9 @@ properties:
   def-back-color-blue:
     type: int
     description: Default display background color - blue
+
+  ext-ram:
+    type: phandle
+    description: |
+      Secondary RAM in which frame buffer will be stored.
+      If not defined, the 'zephyr,sram' chosen memory will be used.

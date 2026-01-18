@@ -23,6 +23,7 @@ config SOC_SERIES_STM32N6X
 	# MPU_GAP_FILLING is default when !USERSPACE, select it in the other case as well.
 	select MPU_GAP_FILLING if USERSPACE
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS if USERSPACE && !XIP
+	select USE_STM32_HAL_RIF if STM32N6_RIF_OPEN
 
 if SOC_SERIES_STM32N6X
 
@@ -31,9 +32,17 @@ config STM32N6_BOOT_SERIAL
 
 config STM32N6_NPU
 	bool "Neural-ART accelerator (NPU)"
-	select USE_STM32_HAL_RIF
 	select RESET
 	default y
 	depends on DT_HAS_ST_STM32_NPU_ENABLED
+
+config STM32N6_RIF_OPEN
+	bool "Configure the RIF with all OPEN access"
+	default y
+	depends on TRUSTED_EXECUTION_SECURE
+	help
+	  When this option is enabled, the RIMC of all masters and the RISC of all slaves are
+	  configured during SoC initialization. Zephyr running with Secure privileges has full
+	  access to all SoC resources.
 
 endif # SOC_SERIES_STM32N6X

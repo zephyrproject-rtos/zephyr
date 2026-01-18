@@ -6,7 +6,7 @@ common:
     - drivers
     - flash
 tests:
-  flash.throttling:
+  boards.nrf.rram_throttling:
     harness: ztest
     harness_config:
       fixture: external_flash

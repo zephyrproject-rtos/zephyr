@@ -3,6 +3,7 @@
 include_guard(GLOBAL)
 
 include(user_cache)
+include(yaml)
 
 # Dependencies on CMake modules from the CMake distribution.
 include(CheckCCompilerFlag)
@@ -1771,10 +1772,6 @@ function(zephyr_syscall_include_directories)
       syscalls_interface INTERFACE
       ${include_dir}
     )
-    add_dependencies(
-      syscalls_interface
-      ${include_dir}
-    )
 
     unset(include_dir)
   endforeach()
@@ -1793,10 +1790,6 @@ function(zephyr_syscall_header)
 
     target_sources(
       syscalls_interface INTERFACE
-      ${header_file}
-    )
-    add_dependencies(
-      syscalls_interface
       ${header_file}
     )
 
@@ -5313,7 +5306,7 @@ function(zephyr_iterable_section)
   endif()
 
   if(DEFINED SECTION_SUBALIGN)
-    set(subalign "SUBALIGN ${SECTION_SUBALIGN}")
+    set(subalign SUBALIGN ${SECTION_SUBALIGN})
   endif()
 
   if(SECTION_ALIGN_WITH_INPUT)

@@ -12,7 +12,6 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/peci.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include <zephyr/logging/log.h>

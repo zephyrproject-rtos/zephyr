@@ -47,8 +47,8 @@ The expectations above affect selection of other features; for example
 What Cannot be Expected to Work
 *******************************
 
-Functionality that will not work with :kconfig:option:`CONFIG_MULTITHREADING`
-includes majority of the kernel API:
+Functionality that will not work when :kconfig:option:`CONFIG_MULTITHREADING`
+is disabled includes majority of the kernel API:
 
 * :ref:`threads_v2`
 

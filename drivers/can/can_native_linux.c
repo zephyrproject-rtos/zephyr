@@ -33,7 +33,7 @@ struct can_filter_context {
 
 struct can_native_linux_data {
 	struct can_driver_data common;
-	struct can_filter_context filters[CONFIG_CAN_MAX_FILTER];
+	struct can_filter_context filters[CONFIG_CAN_NATIVE_LINUX_MAX_FILTERS];
 	struct k_mutex filter_mutex;
 	struct k_sem tx_idle;
 	can_tx_callback_t tx_callback;
@@ -399,7 +399,7 @@ static int can_native_linux_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_NATIVE_LINUX_MAX_FILTERS;
 }
 
 static DEVICE_API(can, can_native_linux_driver_api) = {

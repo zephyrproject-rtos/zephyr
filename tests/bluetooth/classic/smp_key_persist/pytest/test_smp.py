@@ -4,11 +4,9 @@
 
 
 import asyncio
-import contextlib
 import logging
 import re
 import sys
-import time
 
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
@@ -30,34 +28,6 @@ from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
-
-
-def app_handle_device_output(self) -> None:
-    """
-    This method is dedicated to run it in separate thread to read output
-    from device and put them into internal queue and save to log file.
-    """
-    with open(self.handler_log_path, 'a+') as log_file:
-        while self.is_device_running():
-            if self.is_device_connected():
-                output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
-                if output:
-                    self._device_read_queue.put(output)
-                    logger.debug(f'{output}\n')
-                    try:
-                        log_file.write(f'{output}\n')
-                    except Exception:
-                        contextlib.suppress(Exception)
-                    log_file.flush()
-            else:
-                # ignore output from device
-                self._flush_device_output()
-                time.sleep(0.1)
-
-
-# After reboot, there may be gbk character in the console, so replace _handle_device_output to
-# handle the exception.
-DeviceAdapter._handle_device_output = app_handle_device_output
 
 
 # power on dongle
@@ -407,9 +377,18 @@ async def sm_key_persist_004(hci_port, shell, dut, address) -> None:
                 device, shell, dut, bumble_address, iut_address
             )
 
-            await send_cmd_to_iut(shell, dut, "br clear all", "Pairings successfully cleared")
+            lines = await send_cmd_to_iut(
+                shell, dut, "br clear all", "Pairings successfully cleared"
+            )
 
-            await sm_test_initial_disconnect(dut, connection)
+            disconnected = False
+            for line in lines:
+                if "Disconnected:" in line:
+                    disconnected = True
+                    break
+
+            if not disconnected:
+                await sm_test_initial_disconnect(dut, connection)
 
             await sm_test_reboot(shell, dut)
 

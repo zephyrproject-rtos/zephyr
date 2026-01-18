@@ -1313,7 +1313,7 @@ def _check_valid(dialog, entry, sym, s):
         entry.focus_set()
         return False
 
-    for low_sym, high_sym, cond in sym.ranges:
+    for low_sym, high_sym, cond, _ in sym.ranges:
         if expr_value(cond):
             low_s = low_sym.str_value
             high_s = high_sym.str_value
@@ -1336,7 +1336,7 @@ def _range_info(sym):
     # 'sym', or None if 'sym' doesn't have a range
 
     if sym.type in (INT, HEX):
-        for low, high, cond in sym.ranges:
+        for low, high, cond, _ in sym.ranges:
             if expr_value(cond):
                 return "Range: {}-{}".format(low.str_value, high.str_value)
 

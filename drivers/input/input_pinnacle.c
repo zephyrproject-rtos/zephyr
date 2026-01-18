@@ -819,13 +819,16 @@ static int pinnacle_init(const struct device *dev)
 	value = PINNACLE_FEED_CONFIG1_FEED_ENABLE;
 	if (!config->relative_mode) {
 		value |= PINNACLE_FEED_CONFIG1_DATA_MODE_ABSOLUTE;
-		if (config->invert_x) {
-			value |= PINNACLE_FEED_CONFIG1_X_INVERT;
-		}
-		if (config->invert_y) {
-			value |= PINNACLE_FEED_CONFIG1_Y_INVERT;
-		}
 	}
+
+	/* Datasheet states these are absolute only, but they also work in rel mode */
+	if (config->invert_x) {
+		value |= PINNACLE_FEED_CONFIG1_X_INVERT;
+	}
+	if (config->invert_y) {
+		value |= PINNACLE_FEED_CONFIG1_Y_INVERT;
+	}
+
 	rc = pinnacle_write(dev, PINNACLE_REG_FEED_CONFIG1, value);
 	if (rc) {
 		LOG_ERR("Failed to enable Feed in FeedConfig1");

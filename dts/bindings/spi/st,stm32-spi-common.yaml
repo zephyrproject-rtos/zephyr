@@ -21,3 +21,16 @@ properties:
   ioswp:
     type: boolean
     description: Swap SPI MOSI and MISO pins
+
+  st,spi-data-width:
+    type: string
+    required: true
+    enum:
+      - "full-4-to-32-bit"
+      - "full-4-to-16-bit"
+      - "limited-8-16-bit"
+    description: |
+      Indicates the data width supported by the SPI instance.
+      - full-4-to-32-bit: supports data width from 4 to 32 bits
+      - full-4-to-16-bit: supports data width from 4 to 16 bits
+      - limited-8-16-bit: supports only 8 and 16-bit data widths

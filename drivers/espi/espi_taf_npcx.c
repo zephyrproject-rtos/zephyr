@@ -217,19 +217,22 @@ static int espi_taf_npcx_configure(const struct device *dev, const struct espi_s
 static int espi_taf_npcx_set_pr(const struct device *dev, const struct espi_saf_protection *pr)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	const struct espi_saf_pr *preg = pr->pregions;
-	size_t n = pr->nregions;
+	const struct espi_saf_pr *preg;
+	size_t n;
 	uint8_t regnum;
 	uint16_t offset;
 	uint32_t bitmask, rw_pr, override_rw;
 
-	if ((dev == NULL) || (pr == NULL)) {
+	if (pr == NULL) {
 		return -EINVAL;
 	}
 
 	if (pr->nregions >= CONFIG_ESPI_TAF_PR_NUM) {
 		return -EINVAL;
 	}
+
+	preg = pr->pregions;
+	n = pr->nregions;
 
 	while (n--) {
 		regnum = preg->pr_num;

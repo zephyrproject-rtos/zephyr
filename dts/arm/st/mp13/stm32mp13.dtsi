@@ -45,7 +45,7 @@
 		sysram: memory@2ffe0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "SYSRAM";
-			reg = <0x2FFE0000 DT_SIZE_K(128)>;
+			reg = <0x2ffe0000 DT_SIZE_K(128)>;
 		};
 
 		uart4: serial@40010000 {
@@ -153,7 +153,7 @@
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
-			reg = <0x5000D000 0x400>;
+			reg = <0x5000d000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3_S, 0)>;
 			num-lines = <96>;
 			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -246,27 +246,54 @@
 			interrupt-names = "event", "error";
 			status = "disabled";
 		};
+
+		eth0: ethernet@5800a000 {
+			reg = <0x5800a000 0x2000>;
+			compatible = "st,stm32-ethernet-controller";
+			clock-names = "stm-eth";
+			clocks = <&rcc STM32_CLOCK(AHB6, 7)>;
+
+			mac: ethernet {
+				compatible = "st,stm32mp13-ethernet", "st,stm32h7-ethernet",
+					     "st,stm32-ethernet";
+				interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clock-names = "mac-clk", "mac-clk-tx", "mac-clk-rx", "eth-ker";
+				clocks = <&rcc STM32_CLOCK(AHB6, 8)>,
+					 <&rcc STM32_CLOCK(AHB6, 9)>,
+					 <&rcc STM32_CLOCK(AHB6, 10)>,
+					 <&rcc STM32_SRC_PLL4_Q ETH1_SEL(0)>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
 	};
 
-	gic: gic@A0021000 {
+	gic: gic@a0021000 {
 		compatible = "arm,gic-v2", "arm,gic";
-		reg = <0xA0021000 0x1000>,
-		      <0xA0022000 0x2000>;
+		reg = <0xa0021000 0x1000>,
+		      <0xa0022000 0x2000>;
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";
 	};
 
-	ddr_code: memory@C0000000 {
+	ddr_code: memory@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "DDR_CODE";
-		reg = <0xC0000000 0x10000000>;
+		reg = <0xc0000000 0x10000000>;
 	};
 
-	ddr_data: memory@D0000000 {
+	ddr_data: memory@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "DDR_DATA";
-		reg = <0xD0000000 0x10000000>;
+		reg = <0xd0000000 0x10000000>;
 	};
 
 	clocks {

@@ -16,16 +16,16 @@ target_include_directories(app PRIVATE
 )
 
 set(ext_names
-	hello_world
-	logging
-	relative_jump
-	object
-	syscalls
-	inspect
-	threads_kernel_objects
-	export_dependent
-	export_dependency
-	align
+  hello_world
+  logging
+  relative_jump
+  object
+  syscalls
+  inspect
+  threads_kernel_objects
+  export_dependent
+  export_dependency
+  align
 )
 
 if(CONFIG_ARM)
@@ -45,6 +45,10 @@ endif()
 if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
     # ELF shared libraries do not support init sections
     list(APPEND ext_names init_fini)
+endif()
+
+if(CONFIG_LLEXT_RODATA_NO_RELOC)
+    list(APPEND ext_names rodata_no_reloc)
 endif()
 
 # generate extension targets for each extension in 'ext_names'

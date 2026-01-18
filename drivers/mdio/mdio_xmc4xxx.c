@@ -103,19 +103,6 @@ static int mdio_xmc4xxx_write(const struct device *dev, uint8_t phy_addr,
 	return mdio_xmc4xxx_transfer(dev, phy_addr, reg_addr, 1, data, NULL);
 }
 
-static void mdio_xmc4xxx_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	/* this will enable the clock for ETH, which generates to MDIO clk  */
-	XMC_ETH_MAC_Enable(NULL);
-}
-
-static void mdio_xmc4xxx_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	XMC_ETH_MAC_Disable(NULL);
-}
-
 static int mdio_xmc4xxx_set_clock_divider(const struct device *dev)
 {
 	struct mdio_xmc4xxx_dev_data *dev_data = dev->data;
@@ -161,14 +148,15 @@ static int mdio_xmc4xxx_initialize(const struct device *dev)
 	port_ctrl.mdio = dev_cfg->mdi_port_ctrl;
 	ETH0_CON->CON = port_ctrl.raw;
 
+	/* this will enable the clock for ETH, which generates to MDIO clk  */
+	XMC_ETH_MAC_Enable(NULL);
+
 	return ret;
 }
 
 static DEVICE_API(mdio, mdio_xmc4xxx_driver_api) = {
 	.read = mdio_xmc4xxx_read,
 	.write = mdio_xmc4xxx_write,
-	.bus_enable = mdio_xmc4xxx_bus_enable,
-	.bus_disable = mdio_xmc4xxx_bus_disable,
 };
 
 PINCTRL_DT_INST_DEFINE(0);

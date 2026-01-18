@@ -146,6 +146,16 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 /* Size of hardware fifo in RX path. */
 #define UARTE_HW_RX_FIFO_SIZE 5
 
+/* TIMER CC channels for counting bytes with TIMER. */
+/* Channel used for capturing current counter value. */
+#define UARTE_TIMER_CAPTURE_CH 0
+/* Channel used to get compare event when number of received bytes reaches user buffer size. */
+#define UARTE_TIMER_USR_CNT_CH 1
+/* Channel used to get compare event when bounce buffer need to be switched. */
+#define UARTE_TIMER_BUF_SWITCH_CH 2
+/* Magic byte that is used to fill the buffer. */
+#define UARTE_MAGIC_BYTE 0xAA
+
 #ifdef UARTE_ANY_ASYNC
 
 struct uarte_async_tx {
@@ -159,6 +169,30 @@ struct uarte_async_tx {
 	bool pending;
 };
 
+/* Structure with data for Count Bytes With Timer receiver mode (cbwt). */
+struct uarte_async_rx_cbwt {
+	uint8_t *curr_bounce_buf;
+	uint8_t *anomaly_byte_addr;
+	uint32_t usr_rd_off;
+	uint32_t usr_wr_off;
+	uint32_t bounce_off;
+	uint32_t bounce_limit;
+	uint32_t last_cnt;
+	uint32_t cc_usr;
+	uint32_t cc_swap;
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	size_t bounce_buf_swap_len;
+#endif
+#ifdef UARTE_ANY_CACHE
+	uint8_t *anomaly_byte_dst;
+	uint8_t anomaly_byte;
+#endif
+	nrfx_gppi_handle_t ppi_h;
+	uint8_t bounce_idx;
+	bool in_irq;
+	bool discard_fifo;
+};
+
 struct uarte_async_rx {
 	struct k_timer timer;
 #ifdef CONFIG_HAS_NORDIC_DMM
@@ -170,8 +204,9 @@ struct uarte_async_rx {
 	size_t offset;
 	uint8_t *next_buf;
 	size_t next_buf_len;
-#ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
-#if !defined(UARTE_HAS_FRAME_TIMEOUT)
+#if	defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) || \
+	defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
+#if !defined(UARTE_HAS_FRAME_TIMEOUT) || defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
 	uint32_t idle_cnt;
 #endif
 	k_timeout_t timeout;
@@ -182,7 +217,7 @@ struct uarte_async_rx {
 	int32_t timeout_slab; /* rx_timeout divided by RX_TIMEOUT_DIV */
 	int32_t timeout_left; /* Current time left until user callback */
 	union {
-		uint8_t ppi;
+		nrfx_gppi_handle_t ppi;
 		uint32_t cnt;
 	} cnt;
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
@@ -229,11 +264,12 @@ struct uarte_nrfx_data {
 #endif
 #ifdef UARTE_ANY_ASYNC
 	struct uarte_async_cb *async;
+	nrfx_timer_t timer;
 #endif
 	atomic_val_t poll_out_lock;
 	atomic_t flags;
 #ifdef UARTE_ENHANCED_POLL_OUT
-	uint8_t ppi_ch_endtx;
+	nrfx_gppi_handle_t ppi_h_endtx;
 #endif
 };
 
@@ -244,6 +280,10 @@ struct uarte_nrfx_data {
 #define UARTE_FLAG_POLL_OUT BIT(3)
 /* Flag indicating that a workaround for not working frame timeout is active. */
 #define UARTE_FLAG_FTIMEOUT_WATCH BIT(4)
+/* Flag indicating that UART_RX_BUF_REQUEST event need to be called from the interrupt context. */
+#define UARTE_FLAG_RX_BUF_REQ BIT(5)
+/* Flag indicating that CC value in TIMER was set too late. */
+#define UARTE_FLAG_LATE_CC BIT(6)
 
 /* If enabled then ENDTX is PPI'ed to TXSTOP */
 #define UARTE_CFG_FLAG_PPI_ENDTX   BIT(0)
@@ -261,6 +301,12 @@ struct uarte_nrfx_data {
 
 /* Indicates that workaround for spurious RXTO during restart shall be applied. */
 #define UARTE_CFG_FLAG_SPURIOUS_RXTO BIT(3)
+
+/* Indicates that UARTE/TIMER interrupt priority differs from system clock (GRTC/RTC). */
+#define UARTE_CFG_FLAG_VAR_IRQ BIT(4)
+
+/* Indicates that instance needs special handling of BAUDRATE register. */
+#define UARTE_CFG_FLAG_VOLATILE_BAUDRATE BIT(5)
 
 /* Formula for getting the baudrate settings is following:
  * 2^12 * (2^20 / (f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
@@ -298,6 +344,14 @@ struct uarte_nrfx_data {
 	(baudrate) == 921600 ? NRF_UARTE_BAUDRATE_921600 :	\
 	(baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000 : 0)
 
+#define UARTE_MIN_BUF_SWAP_LEN 10
+
+#define UARTE_US_TO_BYTES(baudrate) \
+	DIV_ROUND_UP((CONFIG_UART_NRFX_UARTE_BOUNCE_BUF_SWAP_LATENCY * baudrate), 10000000)
+
+#define UARTE_BUF_SWAP_LEN(bounce_buf_len, baudrate) \
+	((bounce_buf_len) - MAX(UARTE_MIN_BUF_SWAP_LEN, UARTE_US_TO_BYTES(baudrate)))
+
 #define LOW_POWER_ENABLED(_config) \
 	(IS_ENABLED(UARTE_ANY_LOW_POWER) && \
 	 !IS_ENABLED(CONFIG_PM_DEVICE) && \
@@ -326,7 +380,15 @@ struct uarte_nrfx_config {
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef UARTE_ANY_ASYNC
-	nrfx_timer_t timer;
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	NRF_TIMER_Type * timer_regs;
+	IRQn_Type timer_irqn;
+	IRQn_Type uarte_irqn;
+	uint8_t *bounce_buf[2];
+	size_t bounce_buf_len;
+	size_t bounce_buf_swap_len;
+	struct uarte_async_rx_cbwt *cbwt_data;
+#endif
 	uint8_t *tx_cache;
 	uint8_t *rx_flush_buf;
 #endif
@@ -340,6 +402,12 @@ struct uarte_nrfx_config {
 #define HW_RX_COUNTING_ENABLED(config)    \
 	(IS_ENABLED(UARTE_ANY_HW_ASYNC) ? \
 	 (config->flags & UARTE_CFG_FLAG_HW_BYTE_COUNTING) : false)
+
+/* Determine if instance is using an approach with counting bytes with TIMER (cbwt). */
+#define IS_CBWT(dev)									\
+	COND_CODE_1(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,			\
+		((((const struct uarte_nrfx_config *)dev->config)->cbwt_data != NULL)),	\
+		(false))
 
 static inline NRF_UARTE_Type *get_uarte_instance(const struct device *dev)
 {
@@ -389,7 +457,7 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 
 #if defined(UARTE_ANY_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 	if (data->async && HW_RX_COUNTING_ENABLED(config)) {
-		nrfx_timer_disable(&config->timer);
+		nrfx_timer_disable(&data->timer);
 		/* Timer/counter value is reset when disabled. */
 		data->async->rx.total_byte_cnt = 0;
 		data->async->rx.total_user_byte_cnt = 0;
@@ -506,10 +574,23 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 		return -EINVAL;
 	}
 
-#ifdef UARTE_BAUDRATE_RETENTION_WORKAROUND
-	struct uarte_nrfx_data *data = dev->data;
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	if (IS_CBWT(dev)) {
+		struct uarte_async_rx_cbwt *cbwt_data = config->cbwt_data;
 
-	data->nrf_baudrate = nrf_baudrate;
+		cbwt_data->bounce_buf_swap_len = UARTE_BUF_SWAP_LEN(config->bounce_buf_len,
+								 baudrate);
+	}
+#endif
+
+#ifdef UARTE_BAUDRATE_RETENTION_WORKAROUND
+	if (config->flags & UARTE_CFG_FLAG_VOLATILE_BAUDRATE) {
+		struct uarte_nrfx_data *data = dev->data;
+
+		data->nrf_baudrate = nrf_baudrate;
+	} else {
+		nrf_uarte_baudrate_set(get_uarte_instance(dev), nrf_baudrate);
+	}
 #else
 	nrf_uarte_baudrate_set(get_uarte_instance(dev), nrf_baudrate);
 #endif
@@ -523,7 +604,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 	struct uarte_nrfx_data *data = dev->data;
 	nrf_uarte_config_t uarte_cfg;
 
-#if defined(UARTE_CONFIG_STOP_Msk)
+#if NRF_UARTE_HAS_STOP_MODES
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		uarte_cfg.stop = NRF_UARTE_STOP_ONE;
@@ -555,7 +636,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+#if NRF_UARTE_HAS_PARITY_TYPES
 	uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_EVEN;
 #endif
 	switch (cfg->parity) {
@@ -565,7 +646,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 	case UART_CFG_PARITY_EVEN:
 		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		break;
-#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+#if NRF_UARTE_HAS_PARITY_TYPES
 	case UART_CFG_PARITY_ODD:
 		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_ODD;
@@ -674,15 +755,17 @@ static void uarte_periph_enable(const struct device *dev)
 	nrf_uarte_enable(uarte);
 
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
-	nrf_uarte_baudrate_set(uarte,
-		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
-			(data->nrf_baudrate), (config->nrf_baudrate)));
+	if (config->flags & UARTE_CFG_FLAG_VOLATILE_BAUDRATE) {
+		nrf_uarte_baudrate_set(uarte,
+			COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
+				(data->nrf_baudrate), (config->nrf_baudrate)));
+	}
 #endif
 
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		if (HW_RX_COUNTING_ENABLED(config)) {
-			const nrfx_timer_t *timer = &config->timer;
+			nrfx_timer_t *timer = &data->timer;
 
 			nrfx_timer_enable(timer);
 
@@ -757,6 +840,108 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 static void rx_timeout(struct k_timer *timer);
 static void tx_timeout(struct k_timer *timer);
 
+static void user_callback(const struct device *dev, struct uart_event *evt)
+{
+	struct uarte_nrfx_data *data = dev->data;
+
+	if (data->async->user_callback) {
+		data->async->user_callback(dev, evt, data->async->user_data);
+	}
+}
+
+static void rx_buf_release(const struct device *dev, uint8_t *buf)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx_buf.buf = buf,
+	};
+
+	user_callback(dev, &evt);
+}
+
+static void rx_disable_finalize(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uart_event evt = {
+		.type = UART_RX_DISABLED,
+	};
+
+	async_rx->enabled = false;
+
+	if (LOW_POWER_ENABLED(cfg)) {
+		uint32_t key = irq_lock();
+
+		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
+		irq_unlock(key);
+	}
+
+	user_callback(dev, (struct uart_event *)&evt);
+
+	/* runtime PM is put after the callback. In case uart is re-enabled from that
+	 * callback we avoid suspending/resuming the device.
+	 */
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
+	}
+}
+
+static int rx_disable(const struct device *dev, bool api)
+{
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	int key;
+
+	k_timer_stop(&async_rx->timer);
+
+	key = irq_lock();
+
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+
+	if (cbwt_data) {
+		nrf_timer_event_clear(cfg->timer_regs,
+				nrf_timer_compare_event_get(UARTE_TIMER_BUF_SWITCH_CH));
+		nrf_timer_event_clear(cfg->timer_regs,
+				nrf_timer_compare_event_get(UARTE_TIMER_USR_CNT_CH));
+		nrf_timer_int_disable(cfg->timer_regs,
+				nrf_timer_compare_int_get(UARTE_TIMER_BUF_SWITCH_CH) |
+					 nrf_timer_compare_int_get(UARTE_TIMER_USR_CNT_CH));
+		nrf_uarte_shorts_disable(cfg->uarte_regs, NRF_UARTE_SHORT_ENDRX_STARTRX);
+	}
+#endif
+
+	if (async_rx->next_buf != NULL) {
+		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	}
+
+	async_rx->enabled = false;
+	if (api) {
+		async_rx->discard_fifo = true;
+	}
+
+	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+	irq_unlock(key);
+
+	return 0;
+}
+
+static int uarte_nrfx_rx_disable(const struct device *dev)
+{
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+
+	if (async_rx->buf == NULL) {
+		return -EFAULT;
+	}
+
+	return rx_disable(dev, true);
+}
+
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 static void timer_handler(nrf_timer_event_t event_type, void *p_context) { }
 
@@ -769,31 +954,30 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 
 	if (HW_RX_COUNTING_ENABLED(cfg)) {
 		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG(
-						NRF_TIMER_BASE_FREQUENCY_GET(cfg->timer.p_reg));
+						NRF_TIMER_BASE_FREQUENCY_GET(data->timer.p_reg));
 		uint32_t evt_addr = nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_RXDRDY);
-		uint32_t tsk_addr = nrfx_timer_task_address_get(&cfg->timer, NRF_TIMER_TASK_COUNT);
+		uint32_t tsk_addr = nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_COUNT);
 
 		tmr_config.mode = NRF_TIMER_MODE_COUNTER;
 		tmr_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
-		ret = nrfx_timer_init(&cfg->timer,
+		ret = nrfx_timer_init(&data->timer,
 				      &tmr_config,
 				      timer_handler);
-		if (ret != NRFX_SUCCESS) {
+		if (ret != 0) {
 			LOG_ERR("Timer already initialized");
 			return -EINVAL;
-		} else {
-			nrfx_timer_clear(&cfg->timer);
 		}
 
-		ret = nrfx_gppi_channel_alloc(&data->async->rx.cnt.ppi);
-		if (ret != NRFX_SUCCESS) {
+		nrfx_timer_clear(&data->timer);
+
+		ret = nrfx_gppi_conn_alloc(evt_addr, tsk_addr, &data->async->rx.cnt.ppi);
+		if (ret < 0) {
 			LOG_ERR("Failed to allocate PPI Channel");
-			nrfx_timer_uninit(&cfg->timer);
-			return -EINVAL;
+			nrfx_timer_uninit(&data->timer);
+			return ret;
 		}
 
-		nrfx_gppi_channel_endpoints_setup(data->async->rx.cnt.ppi, evt_addr, tsk_addr);
-		nrfx_gppi_channels_enable(BIT(data->async->rx.cnt.ppi));
+		nrfx_gppi_conn_enable(data->async->rx.cnt.ppi);
 	} else {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXDRDY_MASK);
 	}
@@ -801,6 +985,652 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 	return 0;
 }
 #endif /* !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) */
+
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+
+static uint32_t get_byte_cnt(NRF_TIMER_Type *timer)
+{
+	nrf_timer_task_trigger(timer, nrf_timer_capture_task_get(UARTE_TIMER_CAPTURE_CH));
+
+	nrf_barrier_w();
+
+	return nrf_timer_cc_get(timer, UARTE_TIMER_CAPTURE_CH);
+}
+
+static void rx_buf_req(const struct device *dev)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_REQUEST,
+	};
+
+	user_callback(dev, &evt);
+}
+
+static bool notify_rx_rdy(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	size_t len = cbwt_data->usr_wr_off - cbwt_data->usr_rd_off;
+
+	if (len == 0) {
+		return async_rx->buf != NULL;
+	}
+
+	struct uart_event evt = {
+		.type = UART_RX_RDY,
+		.data.rx.buf = async_rx->buf,
+		.data.rx.len = len,
+		.data.rx.offset = cbwt_data->usr_rd_off
+	};
+	user_callback(dev, &evt);
+	cbwt_data->usr_rd_off += len;
+
+	if (cbwt_data->usr_rd_off == async_rx->buf_len) {
+		rx_buf_release(dev, async_rx->buf);
+		async_rx->buf = async_rx->next_buf;
+		async_rx->buf_len = async_rx->next_buf_len;
+		async_rx->next_buf_len = 0;
+		async_rx->next_buf = 0;
+		cbwt_data->usr_rd_off = 0;
+		cbwt_data->usr_wr_off = 0;
+
+		if (async_rx->buf_len == 0) {
+			return false;
+		}
+
+		/* Set past value to ensure that event will not expire after clearing but
+		 * before setting the new value.
+		 */
+		nrf_timer_cc_set(cfg->timer_regs, UARTE_TIMER_USR_CNT_CH, cbwt_data->cc_usr - 1);
+		nrf_timer_event_clear(cfg->timer_regs,
+				nrf_timer_compare_event_get(UARTE_TIMER_USR_CNT_CH));
+		cbwt_data->cc_usr += async_rx->buf_len;
+		nrf_timer_cc_set(cfg->timer_regs, UARTE_TIMER_USR_CNT_CH, cbwt_data->cc_usr);
+
+		/* Check if CC is already in the past. In that case trigger CC handling.*/
+		if (cbwt_data->cc_usr <= get_byte_cnt(cfg->timer_regs)) {
+			atomic_or(&data->flags, UARTE_FLAG_LATE_CC);
+			NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
+		} else {
+			atomic_and(&data->flags, ~UARTE_FLAG_LATE_CC);
+		}
+	}
+
+	return true;
+}
+
+static void anomaly_byte_handle(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	uint8_t curr_byte, anomaly_byte;
+	uint32_t diff;
+
+	if (cbwt_data->anomaly_byte_addr == NULL) {
+		return;
+	}
+
+	diff = cfg->uarte_regs->DMA.RX.PTR - (uint32_t)cbwt_data->curr_bounce_buf;
+	/* Anomaly can be checked only if more than 1 byte is received to the current buffer. */
+	if (diff < 2) {
+		return;
+	}
+
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_invd_range(cbwt_data->curr_bounce_buf, 1);
+		sys_cache_data_invd_range(cbwt_data->anomaly_byte_addr, 1);
+	}
+
+	curr_byte = cbwt_data->curr_bounce_buf[0];
+	anomaly_byte = *cbwt_data->anomaly_byte_addr;
+	if ((curr_byte == UARTE_MAGIC_BYTE) && (anomaly_byte != UARTE_MAGIC_BYTE)) {
+#ifdef UARTE_ANY_CACHE
+		if (cfg->flags & UARTE_CFG_FLAG_CACHEABLE) {
+			/* We cannot write directly to curr_bounce_buf as it is written by
+			 * DMA and with cache operations data may be overwritten. Copying
+			 * need to be postponed to the moment when user buffer is filled.
+			 */
+			cbwt_data->anomaly_byte = anomaly_byte;
+			cbwt_data->anomaly_byte_dst = &cbwt_data->curr_bounce_buf[0];
+		} else {
+			cbwt_data->curr_bounce_buf[0] = anomaly_byte;
+		}
+#else
+		cbwt_data->curr_bounce_buf[0] = anomaly_byte;
+#endif
+	}
+
+	cbwt_data->anomaly_byte_addr = NULL;
+}
+
+static uint32_t fill_usr_buf(const struct device *dev, uint32_t len)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+
+	uint8_t *buf = cfg->bounce_buf[cbwt_data->bounce_idx];
+	uint32_t usr_rem = async_rx->buf_len - cbwt_data->usr_wr_off;
+	uint32_t bounce_rem = cbwt_data->bounce_limit - cbwt_data->bounce_off;
+	uint32_t cpy_len = MIN(bounce_rem, MIN(usr_rem, len));
+
+	__ASSERT(cpy_len + cbwt_data->bounce_off <= cfg->bounce_buf_len,
+		"Exceeding the buffer cpy_len:%d off:%d limit:%d",
+		cpy_len, cbwt_data->bounce_off, cbwt_data->bounce_limit);
+
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_invd_range(&buf[cbwt_data->bounce_off], cpy_len);
+	}
+
+	memcpy(&async_rx->buf[cbwt_data->usr_wr_off], &buf[cbwt_data->bounce_off], cpy_len);
+#ifdef UARTE_ANY_CACHE
+	if ((buf == cbwt_data->anomaly_byte_dst) && (cbwt_data->bounce_off == 0)) {
+		async_rx->buf[cbwt_data->usr_wr_off] = cbwt_data->anomaly_byte;
+		cbwt_data->anomaly_byte_dst = NULL;
+	}
+#endif
+	cbwt_data->bounce_off += cpy_len;
+	cbwt_data->usr_wr_off += cpy_len;
+	cbwt_data->last_cnt += cpy_len;
+	if (cbwt_data->bounce_off == cbwt_data->bounce_limit) {
+		/* Bounce buffer drained */
+		cbwt_data->bounce_idx = cbwt_data->bounce_idx == 0 ? 1 : 0;
+		cbwt_data->bounce_off = 0;
+		cbwt_data->bounce_limit = cfg->bounce_buf_len;
+	}
+
+	return cpy_len;
+}
+
+static bool update_usr_buf(const struct device *dev, uint32_t len, bool notify_any, bool buf_req)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+
+	anomaly_byte_handle(dev);
+
+	do {
+		uint32_t cpy_len = len ? fill_usr_buf(dev, len) : 0;
+		bool usr_buf_full = cbwt_data->usr_wr_off == async_rx->buf_len;
+
+		len -= cpy_len;
+		if (((len == 0) && notify_any) || usr_buf_full) {
+			if (!notify_rx_rdy(dev)) {
+				return false;
+			}
+
+			if (usr_buf_full && buf_req) {
+				rx_buf_req(dev);
+			}
+		}
+	} while (len > 0);
+
+	return true;
+}
+
+static void prepare_bounce_buf(const struct device *dev, uint8_t *buf,
+			       size_t swap_len, size_t len)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+	buf[0] = UARTE_MAGIC_BYTE;
+	for (size_t i = swap_len; i < len; i++) {
+		buf[i] = UARTE_MAGIC_BYTE;
+	}
+
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_flush_range(buf, 1);
+		sys_cache_data_flush_range(&buf[swap_len], len);
+	}
+}
+
+/* This function is responsible for swapping the bounce buffer and it is the most
+ * tricky part of the solution. Receiver is continuously working and we want to
+ * change DMA pointer on the fly. DMA is also incrementing that pointer so there are
+ * moments in the reception when updating the pointer will result in different behavior.
+ *
+ * There are two main cases that need to be handled:
+ * 1. PTR is updated and there was no byte boundary (in the middle of a byte or there is
+ *   no byte on the line). It is a safe spot.
+ *
+ *   The most common and simplest case. PTR is update but since
+ *   DMA already started the reception of the previous byte it means that next byte will
+ *   be stored in the previous PTR and bytes following that byte will be stored to the
+ *   new bounce buffer
+ *
+ * 2. Updating the pointer collided with byte boundary.
+ *
+ *   RXDRDY and RXSTARTED events are used to detect if collision occurred.
+ *   There are few scenarios that may happen and the driver must detect which one occurred.
+ *   Detection is done by reading back the PTR register. Following cases are considered:
+ *
+ *   - PTR did not change. It means that it was written after byte boundary. It is the same
+ *     case as if PTR was updated in the safe spot.
+ *
+ *   - PTR is updated by 1. There is an anomaly and it is unclear where next byte will be
+ *     copied. PTR state indicates that it should be copied to the beginning of the new
+ *     bounce buffer but it might be copied to the previous bounce buffer. Both locations
+ *     are written with a magic byte (0xAA) and later on it is checked which location has
+ *     changed and if byte was written to the previous bounce buffer it is copied to the
+ *     start of the new bounce buffer.
+ *
+ *   - PTR is not updated with the new bounce buffer location. DMA is incrementing PTR content
+ *     and it is possible that SW writes new value between read and modify and DMA may
+ *     overwrite value written by the driver. In that case reception continuous to the
+ *     previous bounce buffer and swap procedure need to be repeated.
+ */
+static int bounce_buf_swap(const struct device *dev, uint8_t *prev_bounce_buf)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	uint32_t prev_buf_cnt, new_cnt, cnt, ptr;
+	uint32_t prev_buf_inc = 1;
+	int key;
+
+	key = irq_lock();
+	/* Clear events that indicates byte boundary and set PTR. If events are set
+	 * after PTR is set then we know that setting PTR collided with byte boundary.
+	 */
+	nrf_uarte_event_clear(cfg->uarte_regs, NRF_UARTE_EVENT_RXSTARTED);
+	nrf_uarte_event_clear(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY);
+	cfg->uarte_regs->DMA.RX.PTR = (uint32_t)cbwt_data->curr_bounce_buf;
+	cnt = get_byte_cnt(cfg->timer_regs);
+
+	if (!nrf_uarte_event_check(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY) &&
+	    !nrf_uarte_event_check(cfg->uarte_regs, NRF_UARTE_EVENT_RXSTARTED)) {
+		/* RXDRDY did not happen when PTR was set. Safest case. PTR was updated
+		 * correctly. Last byte will be received to the previous buffer.
+		 */
+		new_cnt = 0;
+		prev_buf_cnt = cnt - cbwt_data->last_cnt;
+		goto no_collision;
+	}
+
+	/* Setting PTR collided with byte boundary we need to detect what happened. */
+	while (!nrf_uarte_event_check(cfg->uarte_regs, NRF_UARTE_EVENT_RXSTARTED)) {
+	}
+
+	/* Read pointer when there is no new byte coming. */
+	do {
+		cnt = get_byte_cnt(cfg->timer_regs);
+		ptr = cfg->uarte_regs->DMA.RX.PTR;
+	} while (cnt != get_byte_cnt(cfg->timer_regs));
+
+	new_cnt = ptr - (uint32_t)cbwt_data->curr_bounce_buf;
+	prev_buf_cnt = cnt - cbwt_data->last_cnt;
+
+	if (new_cnt == 0) {
+		/* New PTR is not incremented. It was written after LIST post ENDRX
+		 * incrementation.
+		 */
+	} else if (new_cnt == 1) {
+		/* new_cnt == 1. New PTR incremented. It's possible that data is already
+		 * copied to that new location or it is written to the tail of the previous
+		 * bounce buffer. We try to detect what happens.
+		 */
+		prev_buf_inc = 0;
+		cbwt_data->anomaly_byte_addr =
+			&prev_bounce_buf[cbwt_data->bounce_off + prev_buf_cnt];
+	} else if (new_cnt <= cfg->bounce_buf_len) {
+		prev_buf_inc = 0;
+		prev_buf_cnt = cnt - cbwt_data->last_cnt - (new_cnt - 1);
+	} else {
+		/* New PTR value is not set. Re-set PTR is needed. Transfer continues to
+		 * previous buffer whole buffer swapping need to be repeat.
+		 */
+		irq_unlock(key);
+		return -EAGAIN;
+	}
+
+no_collision:
+	cbwt_data->bounce_limit = cbwt_data->bounce_off + prev_buf_cnt + prev_buf_inc;
+	__ASSERT(cbwt_data->bounce_limit < cfg->bounce_buf_len,
+		 "Too high limit (%d, max:%d), increase latency",
+		 cbwt_data->bounce_limit, cfg->bounce_buf_len);
+	irq_unlock(key);
+
+	return prev_buf_cnt;
+}
+
+static size_t get_swap_len(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+
+	return cbwt_data->bounce_buf_swap_len;
+#else
+	return cfg->bounce_buf_swap_len;
+#endif
+}
+
+static void bounce_buf_switch(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	int new_data = cbwt_data->cc_swap - cbwt_data->last_cnt;
+	uint8_t *prev_bounce_buf = cbwt_data->curr_bounce_buf;
+	int prev_cnt;
+
+	/* Fill user buffer with all pending data. */
+	if (!update_usr_buf(dev, new_data < 0 ? 0 : new_data, false, true)) {
+		rx_disable(dev, false);
+		return;
+	}
+
+	cbwt_data->curr_bounce_buf = (cbwt_data->curr_bounce_buf == cfg->bounce_buf[0]) ?
+			cfg->bounce_buf[1] : cfg->bounce_buf[0];
+	prepare_bounce_buf(dev, cbwt_data->curr_bounce_buf, get_swap_len(dev),
+			   cfg->bounce_buf_len);
+
+	/* Swapping may need retry. */
+	while ((prev_cnt = bounce_buf_swap(dev, prev_bounce_buf)) < 0) {
+	}
+
+	/* Update user buffer with data that was received during swapping. */
+	if (update_usr_buf(dev, prev_cnt, false, true)) {
+		/* Set compare event for next moment when bounce buffers need to be swapped. */
+		cbwt_data->cc_swap += get_swap_len(dev);
+		__ASSERT(cbwt_data->cc_swap > get_byte_cnt(cfg->timer_regs),
+			 "Setting CC too late next:%d cnt:%d",
+				cbwt_data->cc_swap, get_byte_cnt(cfg->timer_regs));
+		nrf_timer_cc_set(cfg->timer_regs, UARTE_TIMER_BUF_SWITCH_CH, cbwt_data->cc_swap);
+	} else {
+		/* Stop RX. */
+		rx_disable(dev, false);
+	}
+}
+
+static void usr_buf_complete(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	uint32_t rem = async_rx->buf_len - cbwt_data->usr_wr_off;
+
+	__ASSERT_NO_MSG(rem <= (get_byte_cnt(cfg->timer_regs) - cbwt_data->last_cnt));
+
+	if (!update_usr_buf(dev, rem, true, true)) {
+		/* Stop RX if there is no next buffer. */
+		rx_disable(dev, false);
+	}
+}
+
+static void notify_new_data(const struct device *dev, bool buf_req)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	uint32_t cnt = get_byte_cnt(cfg->timer_regs);
+	uint32_t new_data = cnt - cbwt_data->last_cnt;
+
+	(void)update_usr_buf(dev, new_data, true, buf_req);
+}
+
+static void cbwt_rx_timeout(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+
+	if (nrf_uarte_event_check(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY)) {
+		nrf_uarte_event_clear(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY);
+		async_rx->idle_cnt = 0;
+	} else {
+		async_rx->idle_cnt++;
+		if (async_rx->idle_cnt == (RX_TIMEOUT_DIV - 1)) {
+			if (cfg->flags & UARTE_CFG_FLAG_VAR_IRQ) {
+				if (cbwt_data->in_irq) {
+					/* TIMER or UARTE interrupt preempted. Lets try again
+					 * later.
+					 */
+					k_timer_start(timer, async_rx->timeout, K_NO_WAIT);
+					return;
+				}
+				irq_disable(cfg->uarte_irqn);
+				irq_disable(cfg->timer_irqn);
+			}
+
+			nrf_uarte_int_enable(cfg->uarte_regs, NRF_UARTE_INT_RXDRDY_MASK);
+			notify_new_data(dev, true);
+
+			if (cfg->flags & UARTE_CFG_FLAG_VAR_IRQ) {
+				irq_enable(cfg->uarte_irqn);
+				irq_enable(cfg->timer_irqn);
+			}
+			return;
+		}
+	}
+
+	k_timer_start(timer, async_rx->timeout, K_NO_WAIT);
+}
+
+static void cbwt_rx_flush_handle(const struct device *dev)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	uint32_t rem_data = get_byte_cnt(cfg->timer_regs) - cbwt_data->last_cnt;
+	uint32_t bbuf_rem_data = cbwt_data->bounce_limit - cbwt_data->bounce_off;
+	uint32_t amount;
+	uint8_t *dst;
+
+	nrf_uarte_rx_buffer_set(uarte, cfg->rx_flush_buf, UARTE_HW_RX_FIFO_SIZE);
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_FLUSHRX);
+	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+		/* empty */
+	}
+
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+	if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+		/* FIFO is empty. */
+		return;
+	}
+
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+	amount = nrf_uarte_rx_amount_get(uarte);
+
+	if (rem_data <= bbuf_rem_data) {
+		/* instead of -1 it should be -amount but RXDRDY event is not generated
+		 * for bytes following first that goes to FIFO they are generated during flushing.
+		 */
+		dst = &cfg->bounce_buf[cbwt_data->bounce_idx][cbwt_data->bounce_off + rem_data - 1];
+	} else {
+		/* See comment in if clause. */
+		dst = &cbwt_data->curr_bounce_buf[rem_data - bbuf_rem_data - 1];
+	}
+
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (cfg->flags & UARTE_CFG_FLAG_CACHEABLE)) {
+		sys_cache_data_invd_range(cfg->rx_flush_buf, amount);
+		sys_cache_data_invd_range(dst, amount);
+	}
+
+	memcpy(dst, cfg->rx_flush_buf, amount);
+}
+
+static void cbwt_rxto_isr(const struct device *dev, bool do_flush)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+
+	if (async_rx->buf) {
+		notify_new_data(dev, false);
+	}
+
+	if (async_rx->buf) {
+		rx_buf_release(dev, async_rx->buf);
+		async_rx->buf = NULL;
+	}
+
+	if (async_rx->next_buf) {
+		rx_buf_release(dev, async_rx->next_buf);
+		async_rx->next_buf = NULL;
+	}
+
+	if (do_flush) {
+		cbwt_rx_flush_handle(dev);
+	}
+
+	if (async_rx->discard_fifo) {
+		cbwt_data->discard_fifo = async_rx->discard_fifo;
+		async_rx->discard_fifo = false;
+	}
+	nrf_timer_task_trigger(cfg->timer_regs, NRF_TIMER_TASK_STOP);
+	rx_disable_finalize(dev);
+}
+
+static bool timer_ch_evt_check_clear(NRF_TIMER_Type *timer, uint32_t ch)
+{
+	nrf_timer_event_t evt = nrf_timer_compare_event_get(ch);
+
+	if (nrf_timer_event_check(timer, evt)) {
+		nrf_timer_event_clear(timer, evt);
+		return true;
+	}
+
+	return false;
+}
+
+static void timer_isr(const void *arg)
+{
+	const struct device *dev = arg;
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	static const uint32_t flags_to_check = UARTE_FLAG_RX_BUF_REQ |
+					       UARTE_FLAG_TRIG_RXTO |
+					       UARTE_FLAG_LATE_CC;
+	uint32_t flags = atomic_and(&data->flags, ~flags_to_check);
+
+	cbwt_data->in_irq = true;
+
+	if (timer_ch_evt_check_clear(cfg->timer_regs, UARTE_TIMER_USR_CNT_CH) ||
+	    (flags & UARTE_FLAG_LATE_CC)) {
+		usr_buf_complete(dev);
+	}
+
+	/* Must be after user buf complet CC handling. */
+	if (timer_ch_evt_check_clear(cfg->timer_regs, UARTE_TIMER_BUF_SWITCH_CH)) {
+		bounce_buf_switch(dev);
+	}
+
+	if (flags & UARTE_FLAG_RX_BUF_REQ) {
+		rx_buf_req(dev);
+	}
+
+	if (flags & UARTE_FLAG_TRIG_RXTO) {
+		cbwt_rxto_isr(dev, false);
+	}
+
+	cbwt_data->in_irq = false;
+}
+
+static void cbwt_rx_enable(const struct device *dev, bool with_timeout)
+{
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	uint32_t rem_data;
+	uint32_t len = async_rx->buf_len;
+	uint32_t rx_int_mask = NRF_UARTE_INT_RXTO_MASK |
+			       (with_timeout ? NRF_UARTE_INT_RXDRDY_MASK : 0);
+
+	if (cbwt_data->discard_fifo) {
+		rem_data = 0;
+		cbwt_data->discard_fifo = false;
+	} else {
+		rem_data = get_byte_cnt(cfg->timer_regs) - cbwt_data->last_cnt;
+	}
+
+	cbwt_data->usr_rd_off = 0;
+	cbwt_data->usr_wr_off = 0;
+
+	if (rem_data >= len) {
+		atomic_or(&data->flags, UARTE_FLAG_TRIG_RXTO);
+		NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
+		return;
+	} else if (rem_data) {
+		(void)update_usr_buf(dev, rem_data, false, true);
+		len -= rem_data;
+	}
+
+	prepare_bounce_buf(dev, cfg->bounce_buf[0], get_swap_len(dev), cfg->bounce_buf_len);
+
+	cbwt_data->last_cnt = 0;
+	cbwt_data->bounce_off = 0;
+	cbwt_data->bounce_idx = 0;
+	cbwt_data->curr_bounce_buf = cfg->bounce_buf[0];
+	cbwt_data->bounce_limit = cfg->bounce_buf_len;
+	/* Enable ArrayList. */
+	nrf_uarte_shorts_enable(cfg->uarte_regs, NRF_UARTE_SHORT_ENDRX_STARTRX);
+	nrf_uarte_event_clear(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY);
+	nrf_uarte_int_enable(cfg->uarte_regs, rx_int_mask);
+	nrf_uarte_rx_buffer_set(cfg->uarte_regs, cbwt_data->curr_bounce_buf, 1);
+
+	nrf_timer_event_clear(cfg->timer_regs,
+			nrf_timer_compare_event_get(UARTE_TIMER_BUF_SWITCH_CH));
+	nrf_timer_event_clear(cfg->timer_regs,
+			nrf_timer_compare_event_get(UARTE_TIMER_USR_CNT_CH));
+	nrf_timer_int_enable(cfg->timer_regs,
+			nrf_timer_compare_int_get(UARTE_TIMER_BUF_SWITCH_CH) |
+			nrf_timer_compare_int_get(UARTE_TIMER_USR_CNT_CH));
+	nrf_timer_task_trigger(cfg->timer_regs, NRF_TIMER_TASK_CLEAR);
+	nrf_timer_task_trigger(cfg->timer_regs, NRF_TIMER_TASK_START);
+	cbwt_data->cc_usr = len;
+	cbwt_data->cc_swap = get_swap_len(dev);
+	nrf_timer_cc_set(cfg->timer_regs, UARTE_TIMER_BUF_SWITCH_CH, get_swap_len(dev));
+	nrf_timer_cc_set(cfg->timer_regs, UARTE_TIMER_USR_CNT_CH, len);
+
+	atomic_or(&data->flags, UARTE_FLAG_RX_BUF_REQ);
+	nrf_uarte_task_trigger(cfg->uarte_regs, NRF_UARTE_TASK_STARTRX);
+	NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
+}
+
+static int cbwt_uarte_async_init(const struct device *dev)
+{
+	/* As this approach does not use nrfx_timer driver but only HAL special setup
+	 * function is used.
+	 */
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_async_rx_cbwt *cbwt_data = cfg->cbwt_data;
+	static const uint32_t rx_int_mask = NRF_UARTE_INT_ERROR_MASK |
+						NRF_UARTE_INT_RXTO_MASK;
+	uint32_t evt = nrf_uarte_event_address_get(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY);
+	uint32_t tsk = nrf_timer_task_address_get(cfg->timer_regs, NRF_TIMER_TASK_COUNT);
+	int ret;
+
+	nrf_timer_mode_set(cfg->timer_regs, NRF_TIMER_MODE_COUNTER);
+	nrf_timer_bit_width_set(cfg->timer_regs, NRF_TIMER_BIT_WIDTH_32);
+
+	ret = nrfx_gppi_conn_alloc(evt, tsk, &cbwt_data->ppi_h);
+	if (ret < 0) {
+		return ret;
+	}
+
+	nrfx_gppi_conn_enable(cbwt_data->ppi_h);
+
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	cbwt_data->bounce_buf_swap_len = cfg->bounce_buf_swap_len;
+#endif
+
+	/* Enable EasyDMA LIST feature (it is exposed in SPIM but not in UARTE). */
+	*(volatile uint32_t *)((uint32_t)cfg->uarte_regs + 0x714) = 1;
+	nrf_uarte_int_enable(cfg->uarte_regs, rx_int_mask);
+
+	return 0;
+}
+#endif /* CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER */
 
 static int uarte_async_init(const struct device *dev)
 {
@@ -814,6 +1644,17 @@ static int uarte_async_init(const struct device *dev)
 		((IS_ENABLED(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) &&
 		  !IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT)) ? NRF_UARTE_INT_RXDRDY_MASK : 0);
 
+	k_timer_init(&data->async->rx.timer, rx_timeout, NULL);
+	k_timer_user_data_set(&data->async->rx.timer, (void *)dev);
+	k_timer_init(&data->async->tx.timer, tx_timeout, NULL);
+	k_timer_user_data_set(&data->async->tx.timer, (void *)dev);
+
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	if (IS_CBWT(dev)) {
+		return cbwt_uarte_async_init(dev);
+	}
+#endif
+
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 	int ret = uarte_nrfx_rx_counting_init(dev);
 
@@ -823,11 +1664,6 @@ static int uarte_async_init(const struct device *dev)
 #endif
 
 	nrf_uarte_int_enable(uarte, rx_int_mask);
-
-	k_timer_init(&data->async->rx.timer, rx_timeout, NULL);
-	k_timer_user_data_set(&data->async->rx.timer, (void *)dev);
-	k_timer_init(&data->async->tx.timer, tx_timeout, NULL);
-	k_timer_user_data_set(&data->async->tx.timer, (void *)dev);
 
 	return 0;
 }
@@ -941,15 +1777,6 @@ static int uarte_nrfx_tx_abort(const struct device *dev)
 	return 0;
 }
 
-static void user_callback(const struct device *dev, struct uart_event *evt)
-{
-	struct uarte_nrfx_data *data = dev->data;
-
-	if (data->async->user_callback) {
-		data->async->user_callback(dev, evt, data->async->user_data);
-	}
-}
-
 static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 {
 	struct uarte_nrfx_data *data = dev->data;
@@ -963,29 +1790,6 @@ static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 	user_callback(dev, &evt);
 }
 
-static void rx_buf_release(const struct device *dev, uint8_t *buf)
-{
-	struct uart_event evt = {
-		.type = UART_RX_BUF_RELEASED,
-		.data.rx_buf.buf = buf,
-	};
-
-	user_callback(dev, &evt);
-}
-
-static void notify_rx_disable(const struct device *dev)
-{
-	struct uart_event evt = {
-		.type = UART_RX_DISABLED,
-	};
-
-	user_callback(dev, (struct uart_event *)&evt);
-
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
-	}
-}
-
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 static uint32_t us_to_bauds(uint32_t baudrate, int32_t timeout)
 {
@@ -995,6 +1799,7 @@ static uint32_t us_to_bauds(uint32_t baudrate, int32_t timeout)
 }
 #endif
 
+
 static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 				size_t len,
 				int32_t timeout)
@@ -1003,6 +1808,11 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	const struct uarte_nrfx_config *cfg = dev->config;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+
+#if	defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) || \
+	defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
+	bool with_timeout = timeout != SYS_FOREVER_US;
+#endif
 
 	if (cfg->disable_rx) {
 		__ASSERT(false, "TX only UARTE instance");
@@ -1018,35 +1828,45 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	}
 
 #ifdef CONFIG_HAS_NORDIC_DMM
-	uint8_t *dma_buf;
-	int ret = 0;
+	if (!IS_CBWT(dev)) {
+		void *dma_buf;
+		int ret = 0;
 
-	ret = dmm_buffer_in_prepare(cfg->mem_reg, buf, len, (void **)&dma_buf);
-	if (ret < 0) {
-		return ret;
+		ret = dmm_buffer_in_prepare(cfg->mem_reg, buf, len, &dma_buf);
+		if (ret < 0) {
+			return ret;
+		}
+
+		async_rx->usr_buf = buf;
+		buf = dma_buf;
 	}
-
-	async_rx->usr_buf = buf;
-	buf = dma_buf;
 #endif
 
-#ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
-#ifdef UARTE_HAS_FRAME_TIMEOUT
-	if (timeout != SYS_FOREVER_US) {
-		uint32_t baudrate = COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
-			(data->uart_config.baudrate), (cfg->baudrate));
+#if	defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) || \
+	defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
 
-		async_rx->timeout = K_USEC(timeout);
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+	if (!IS_CBWT(dev) && with_timeout) {
+		uint32_t baudrate = COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
+				(data->uart_config.baudrate), (cfg->baudrate));
 		nrf_uarte_frame_timeout_set(uarte, us_to_bauds(baudrate, timeout));
 		nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX);
+	}
+#endif
+#if !defined(UARTE_HAS_FRAME_TIMEOUT) || defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
+	async_rx->idle_cnt = 0;
+#endif
+
+	if (with_timeout) {
+		if (!IS_CBWT(dev) && IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT)) {
+			async_rx->timeout = K_USEC(timeout);
+		} else {
+			async_rx->timeout = with_timeout ?
+				K_USEC(timeout / RX_TIMEOUT_DIV) : K_NO_WAIT;
+		}
 	} else {
 		async_rx->timeout = K_NO_WAIT;
 	}
-#else
-	async_rx->timeout = (timeout == SYS_FOREVER_US) ?
-		K_NO_WAIT : K_USEC(timeout / RX_TIMEOUT_DIV);
-	async_rx->idle_cnt = 0;
-#endif /* UARTE_HAS_FRAME_TIMEOUT */
 #else
 	async_rx->timeout_us = timeout;
 	async_rx->timeout_slab = timeout / RX_TIMEOUT_DIV;
@@ -1060,7 +1880,19 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_get(dev);
+	} else if (LOW_POWER_ENABLED(cfg)) {
+		unsigned int key = irq_lock();
+
+		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
+		irq_unlock(key);
 	}
+
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	if (IS_CBWT(dev)) {
+		cbwt_rx_enable(dev, with_timeout);
+		return 0;
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(cfg)) {
 		if (async_rx->flush_cnt) {
@@ -1098,7 +1930,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 				return 0;
 			} else {
 #ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
-				if (!K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
+				if (with_timeout) {
 					nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 					k_timer_start(&async_rx->timer, async_rx->timeout,
 							K_NO_WAIT);
@@ -1123,13 +1955,6 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 
 	async_rx->enabled = true;
 
-	if (LOW_POWER_ENABLED(cfg)) {
-		unsigned int key = irq_lock();
-
-		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
-		irq_unlock(key);
-	}
-
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 
 	return 0;
@@ -1148,29 +1973,33 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 		err = -EACCES;
 	} else if (async_rx->next_buf == NULL) {
 #ifdef CONFIG_HAS_NORDIC_DMM
-		uint8_t *dma_buf;
-		const struct uarte_nrfx_config *config = dev->config;
+		if (!IS_CBWT(dev)) {
+			uint8_t *dma_buf;
+			const struct uarte_nrfx_config *config = dev->config;
 
-		err = dmm_buffer_in_prepare(config->mem_reg, buf, len, (void **)&dma_buf);
-		if (err < 0) {
-			return err;
+			err = dmm_buffer_in_prepare(config->mem_reg, buf, len, (void **)&dma_buf);
+			if (err < 0) {
+				return err;
+			}
+			async_rx->next_usr_buf = buf;
+			buf = dma_buf;
 		}
-		async_rx->next_usr_buf = buf;
-		buf = dma_buf;
 #endif
 		async_rx->next_buf = buf;
 		async_rx->next_buf_len = len;
-		nrf_uarte_rx_buffer_set(uarte, buf, len);
-		/* If buffer is shorter than RX FIFO then there is a risk that due
-		 * to interrupt handling latency ENDRX event is not handled on time
-		 * and due to ENDRX_STARTRX short data will start to be overwritten.
-		 * In that case short is not enabled and ENDRX event handler will
-		 * manually start RX for that buffer. Thanks to RX FIFO there is
-		 * 5 byte time for doing that. If interrupt latency is higher and
-		 * there is no HWFC in both cases data will be lost or corrupted.
-		 */
-		if (len >= UARTE_HW_RX_FIFO_SIZE) {
-			nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+		if (!IS_CBWT(dev)) {
+			nrf_uarte_rx_buffer_set(uarte, buf, len);
+			/* If buffer is shorter than RX FIFO then there is a risk that due
+			 * to interrupt handling latency ENDRX event is not handled on time
+			 * and due to ENDRX_STARTRX short data will start to be overwritten.
+			 * In that case short is not enabled and ENDRX event handler will
+			 * manually start RX for that buffer. Thanks to RX FIFO there is
+			 * 5 byte time for doing that. If interrupt latency is higher and
+			 * there is no HWFC in both cases data will be lost or corrupted.
+			 */
+			if (len >= UARTE_HW_RX_FIFO_SIZE) {
+				nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
+			}
 		}
 		err = 0;
 	} else {
@@ -1198,35 +2027,6 @@ static int uarte_nrfx_callback_set(const struct device *dev,
 	return 0;
 }
 
-static int uarte_nrfx_rx_disable(const struct device *dev)
-{
-	struct uarte_nrfx_data *data = dev->data;
-	struct uarte_async_rx *async_rx = &data->async->rx;
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	int key;
-
-	if (async_rx->buf == NULL) {
-		return -EFAULT;
-	}
-
-	k_timer_stop(&async_rx->timer);
-
-	key = irq_lock();
-
-	if (async_rx->next_buf != NULL) {
-		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
-	}
-
-	async_rx->enabled = false;
-	async_rx->discard_fifo = true;
-
-	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-	irq_unlock(key);
-
-	return 0;
-}
-
 static void tx_timeout(struct k_timer *timer)
 {
 	const struct device *dev = k_timer_user_data_get(timer);
@@ -1249,6 +2049,13 @@ static void rx_timeout(struct k_timer *timer)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	if (IS_CBWT(dev)) {
+		cbwt_rx_timeout(timer);
+		return;
+	}
+#endif
+
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	bool rxdrdy = nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY);
@@ -1308,7 +2115,7 @@ static void rx_timeout(struct k_timer *timer)
 			      NRF_UARTE_INT_ENDRX_MASK);
 
 	if (HW_RX_COUNTING_ENABLED(cfg)) {
-		read = nrfx_timer_capture(&cfg->timer, 0);
+		read = nrfx_timer_capture(&data->timer, 0);
 	} else {
 		read = async_rx->cnt.cnt;
 	}
@@ -1395,7 +2202,7 @@ static void error_isr(const struct device *dev)
 	nrf_uarte_errorsrc_clear(uarte, err);
 
 	user_callback(dev, &evt);
-	(void) uarte_nrfx_rx_disable(dev);
+	(void)rx_disable(dev, false);
 }
 
 static void rxstarted_isr(const struct device *dev)
@@ -1614,7 +2421,6 @@ static void rxto_isr(const struct device *dev)
 	 * In the second case, additionally, data from the UARTE internal RX
 	 * FIFO need to be discarded.
 	 */
-	async_rx->enabled = false;
 	if (async_rx->discard_fifo) {
 		async_rx->discard_fifo = false;
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
@@ -1642,15 +2448,7 @@ static void rxto_isr(const struct device *dev)
 #endif
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 #endif
-
-	if (LOW_POWER_ENABLED(config)) {
-		uint32_t key = irq_lock();
-
-		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
-		irq_unlock(key);
-	}
-
-	notify_rx_disable(dev);
+	rx_disable_finalize(dev);
 }
 
 static void txstopped_isr(const struct device *dev)
@@ -1740,10 +2538,12 @@ static void txstopped_isr(const struct device *dev)
 
 static void rxdrdy_isr(const struct device *dev)
 {
-#if !defined(UARTE_HAS_FRAME_TIMEOUT)
+#if !defined(UARTE_HAS_FRAME_TIMEOUT) || defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
 	struct uarte_nrfx_data *data = dev->data;
 
-#if defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
+#if	defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) || \
+	defined(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER)
+
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	data->async->rx.idle_cnt = 0;
@@ -1775,8 +2575,9 @@ static void uarte_nrfx_isr_async(const void *arg)
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	uint32_t imask = nrf_uarte_int_enable_check(uarte, UINT32_MAX);
 
-	if (!(HW_RX_COUNTING_ENABLED(config) || IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT))
-	    && event_check_clear(uarte, NRF_UARTE_EVENT_RXDRDY, NRF_UARTE_INT_RXDRDY_MASK, imask)) {
+	if ((IS_CBWT(dev) ||
+	     !(HW_RX_COUNTING_ENABLED(config) || IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT))) &&
+	    event_check_clear(uarte, NRF_UARTE_EVENT_RXDRDY, NRF_UARTE_INT_RXDRDY_MASK, imask)) {
 		rxdrdy_isr(dev);
 
 	}
@@ -1804,6 +2605,12 @@ static void uarte_nrfx_isr_async(const void *arg)
 		rxstarted_isr(dev);
 	}
 
+#ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
+	if (IS_CBWT(dev) &&
+	    event_check_clear(uarte, NRF_UARTE_EVENT_RXTO, NRF_UARTE_INT_RXTO_MASK, imask)) {
+		cbwt_rxto_isr(dev, true);
+	} else
+#endif
 	/* RXTO must be handled after ENDRX which should notify the buffer.
 	 * Skip if ENDRX is set when RXTO is set. It means that
 	 * ENDRX occurred after check for ENDRX in isr which may happen when
@@ -1828,7 +2635,8 @@ static void uarte_nrfx_isr_async(const void *arg)
 		txstopped_isr(dev);
 	}
 
-	if (atomic_and(&data->flags, ~UARTE_FLAG_TRIG_RXTO) & UARTE_FLAG_TRIG_RXTO) {
+	if (!IS_CBWT(dev) &&
+	    (atomic_and(&data->flags, ~UARTE_FLAG_TRIG_RXTO) & UARTE_FLAG_TRIG_RXTO)) {
 #ifdef CONFIG_HAS_NORDIC_DMM
 		int ret;
 
@@ -1843,7 +2651,7 @@ static void uarte_nrfx_isr_async(const void *arg)
 		rx_buf_release(dev, async_rx->buf);
 		async_rx->buf_len = 0;
 		async_rx->buf = NULL;
-		notify_rx_disable(dev);
+		rx_disable_finalize(dev);
 	}
 }
 
@@ -2022,27 +2830,35 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
+	bool already_enabled;
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_get(dev);
-	}
+	pm_device_runtime_get(dev);
 
 	unsigned int key = irq_lock();
 
-	data->int_driven->disable_tx_irq = false;
-	data->int_driven->tx_irq_enabled = true;
-	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+	already_enabled = data->int_driven->tx_irq_enabled;
+	if (!already_enabled) {
+		data->int_driven->disable_tx_irq = false;
+		data->int_driven->tx_irq_enabled = true;
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+	}
 
 	irq_unlock(key);
+
+	if (already_enabled) {
+		pm_device_runtime_put(dev);
+	}
 }
 
 /** Interrupt driven transfer disabling function */
 static void uarte_nrfx_irq_tx_disable(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
-	/* TX IRQ will be disabled after current transmission is finished */
-	data->int_driven->disable_tx_irq = true;
-	data->int_driven->tx_irq_enabled = false;
+	if (data->int_driven->tx_irq_enabled) {
+		/* TX IRQ will be disabled after current transmission is finished */
+		data->int_driven->disable_tx_irq = true;
+		data->int_driven->tx_irq_enabled = false;
+	}
 }
 
 /** Interrupt driven transfer ready function */
@@ -2078,7 +2894,11 @@ static void uarte_nrfx_irq_rx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDRX_MASK);
+	if (!nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDRX_MASK)) {
+		pm_device_runtime_get(dev);
+
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDRX_MASK);
+	}
 }
 
 /** Interrupt driven receiver disabling function */
@@ -2086,7 +2906,11 @@ static void uarte_nrfx_irq_rx_disable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	nrf_uarte_int_disable(uarte, NRF_UARTE_INT_ENDRX_MASK);
+	if (nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDRX_MASK)) {
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
+
+		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_ENDRX_MASK);
+	}
 }
 
 /** Interrupt driven error enabling function */
@@ -2175,18 +2999,17 @@ static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 				 struct uarte_nrfx_data *data)
 {
-	nrfx_err_t ret;
+	int ret;
 
-	ret = nrfx_gppi_channel_alloc(&data->ppi_ch_endtx);
-	if (ret != NRFX_SUCCESS) {
+	ret = nrfx_gppi_conn_alloc(
+		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
+		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX), &data->ppi_h_endtx);
+	if (ret < 0) {
 		LOG_ERR("Failed to allocate PPI Channel");
-		return -EIO;
+		return ret;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(data->ppi_ch_endtx,
-		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
-		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX));
-	nrfx_gppi_channels_enable(BIT(data->ppi_ch_endtx));
+	nrfx_gppi_conn_enable(data->ppi_h_endtx);
 
 	return 0;
 }
@@ -2265,7 +3088,7 @@ static void uarte_pm_suspend(const struct device *dev)
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 		if (data->async && HW_RX_COUNTING_ENABLED(cfg)) {
-			nrfx_timer_disable(&cfg->timer);
+			nrfx_timer_disable(&data->timer);
 			/* Timer/counter value is reset when disabled. */
 			data->async->rx.total_byte_cnt = 0;
 			data->async->rx.total_user_byte_cnt = 0;
@@ -2412,10 +3235,51 @@ static int uarte_instance_init(const struct device *dev,
 	return pm_device_driver_init(dev, uarte_nrfx_pm_action);
 }
 
+#ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int uarte_instance_deinit(const struct device *dev)
 {
 	return pm_device_driver_deinit(dev, uarte_nrfx_pm_action);
 }
+#endif
+
+#define UARTE_TIMER_REG(idx) (NRF_TIMER_Type *)DT_REG_ADDR(DT_PHANDLE(UARTE(idx), timer))
+
+#define UARTE_TIMER_IRQN(idx) DT_IRQN(DT_PHANDLE(UARTE(idx), timer))
+
+#define UARTE_TIMER_IRQ_PRIO(idx) DT_IRQ(DT_PHANDLE(UARTE(idx), timer), priority)
+
+#define UARTE_COUNT_BYTES_WITH_TIMER_CONFIG(idx)					\
+	IF_ENABLED(UARTE_HAS_PROP(idx, timer),						\
+		(.timer_regs = UARTE_TIMER_REG(idx),					\
+		 .timer_irqn = UARTE_TIMER_IRQN(idx),					\
+		 .uarte_irqn = DT_IRQN(UARTE(idx)),					\
+		 .bounce_buf = {							\
+			uart##idx##_bounce_buf,						\
+			&uart##idx##_bounce_buf[sizeof(uart##idx##_bounce_buf) / 2]	\
+		 },									\
+		 .bounce_buf_len = sizeof(uart##idx##_bounce_buf) / 2,			\
+		 .bounce_buf_swap_len = UARTE_BUF_SWAP_LEN(sizeof(uart##idx##_bounce_buf) / 2,\
+				UARTE_US_TO_BYTES(UARTE_PROP(idx, current_speed))),	\
+		 .cbwt_data = &uart##idx##_bounce_data,))
+
+#define UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx) \
+	__ASSERT_NO_MSG(UARTE_TIMER_IRQ_PRIO(idx) == DT_IRQ(UARTE(idx), priority))
+
+#define UARTE_TIMER_IRQ_CONNECT(idx, func)						\
+	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),	\
+			    UARTE_HAS_PROP(idx, timer)),				\
+		(UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx);			\
+		 IRQ_CONNECT(UARTE_TIMER_IRQN(idx), UARTE_TIMER_IRQ_PRIO(idx), func,	\
+			     DEVICE_DT_GET(UARTE(idx)), 0);				\
+		 irq_enable(UARTE_TIMER_IRQN(idx));))
+
+/* Macro sets flag to indicate that uart use different interrupt priority than the system clock. */
+#define UARTE_HAS_VAR_PRIO(idx)									\
+	COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),	\
+			    UARTE_HAS_PROP(idx, timer)),					\
+		   ((DT_IRQ(UARTE(idx), priority) != DT_IRQ(DT_NODELABEL(grtc), priority)) ?	\
+		    UARTE_CFG_FLAG_VAR_IRQ : 0), (0))
+
 
 #define UARTE_GET_ISR(idx) \
 	COND_CODE_1(CONFIG_UART_##idx##_ASYNC, (uarte_nrfx_isr_async), (uarte_nrfx_isr_int))
@@ -2432,16 +3296,18 @@ static int uarte_instance_deinit(const struct device *dev)
 		))
 
 /* Depending on configuration standard or direct IRQ is connected. */
-#define UARTE_IRQ_CONNECT(idx, irqn, prio)							\
-	COND_CODE_1(CONFIG_UART_NRFX_UARTE_NO_IRQ, (), \
-		(COND_CODE_1(CONFIG_UART_NRFX_UARTE_DIRECT_ISR,					\
-		    (IRQ_DIRECT_CONNECT(irqn, prio, uarte_##idx##_direct_isr, 0)),		\
-		    (IRQ_CONNECT(irqn, prio, UARTE_GET_ISR(idx), DEVICE_DT_GET(UARTE(idx)), 0)))))
+#define UARTE_IRQ_CONNECT(idx, irqn, prio)						\
+	COND_CODE_1(CONFIG_UART_NRFX_UARTE_NO_IRQ, (),					\
+		(COND_CODE_1(CONFIG_UART_NRFX_UARTE_DIRECT_ISR,				\
+		    (IRQ_DIRECT_CONNECT(irqn, prio, uarte_##idx##_direct_isr, 0)),	\
+		    (IRQ_CONNECT(irqn, prio, UARTE_GET_ISR(idx),			\
+				 DEVICE_DT_GET(UARTE(idx)), 0)))))
 
 #define UARTE_IRQ_CONFIGURE(idx)							   \
 	do {										   \
 		UARTE_IRQ_CONNECT(idx, DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority)); \
 		irq_enable(DT_IRQN(UARTE(idx)));					   \
+		UARTE_TIMER_IRQ_CONNECT(idx, timer_isr)					   \
 	} while (false)
 
 /* Low power mode is used when disable_rx is not defined or in async mode if
@@ -2525,6 +3391,12 @@ static int uarte_instance_deinit(const struct device *dev)
 	UARTE_INT_DRIVEN(idx);						       \
 	PINCTRL_DT_DEFINE(UARTE(idx));					       \
 	IF_ENABLED(CONFIG_UART_##idx##_ASYNC, (				       \
+		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER), \
+			   UARTE_HAS_PROP(idx, timer)),			       \
+		(static uint8_t uart##idx##_bounce_buf[CONFIG_UART_NRFX_UARTE_BOUNCE_BUF_LEN] \
+			DMM_MEMORY_SECTION(UARTE(idx));			       \
+		static struct uarte_async_rx_cbwt uart##idx##_bounce_data;     \
+		  ))							       \
 		static uint8_t						       \
 			uarte##idx##_tx_cache[CONFIG_UART_ASYNC_TX_CACHE_SIZE] \
 			DMM_MEMORY_SECTION(UARTE(idx));			       \
@@ -2538,6 +3410,9 @@ static int uarte_instance_deinit(const struct device *dev)
 				(.uart_config = UARTE_CONFIG(idx),))	       \
 		IF_ENABLED(CONFIG_UART_##idx##_ASYNC,			       \
 			    (.async = &uarte##idx##_async,))		       \
+		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
+			    (.timer = NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(  \
+				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER)),))    \
 		IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	       \
 			    (.int_driven = &uarte##idx##_int_driven,))	       \
 	};								       \
@@ -2566,6 +3441,10 @@ static int uarte_instance_deinit(const struct device *dev)
 			(IS_ENABLED(CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND) && \
 			 INSTANCE_IS_HIGH_SPEED(_, /*empty*/, idx, _) ?	       \
 			 UARTE_CFG_FLAG_SPURIOUS_RXTO : 0) |		       \
+			((IS_ENABLED(UARTE_BAUDRATE_RETENTION_WORKAROUND) &&   \
+			  UARTE_IS_CACHEABLE(idx)) ?			       \
+			   UARTE_CFG_FLAG_VOLATILE_BAUDRATE : 0) |	       \
+			UARTE_HAS_VAR_PRIO(idx) |			       \
 			USE_LOW_POWER(idx),				       \
 		UARTE_DISABLE_RX_INIT(UARTE(idx)),			       \
 		.poll_out_byte = &uarte##idx##_poll_out_byte,		       \
@@ -2573,9 +3452,8 @@ static int uarte_instance_deinit(const struct device *dev)
 		IF_ENABLED(CONFIG_UART_##idx##_ASYNC,			       \
 				(.tx_cache = uarte##idx##_tx_cache,	       \
 				 .rx_flush_buf = uarte##idx##_flush_buf,))     \
-		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
-			(.timer = NRFX_TIMER_INSTANCE(			       \
-				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
+		IF_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,     \
+			(UARTE_COUNT_BYTES_WITH_TIMER_CONFIG(idx)))	       \
 	};								       \
 	UARTE_DIRECT_ISR_DECLARE(idx)					       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
@@ -2613,5 +3491,4 @@ static int uarte_instance_deinit(const struct device *dev)
 
 #define COND_UART_NRF_UARTE_DEVICE(unused, prefix, i, _) \
 	IF_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i, (UART_NRF_UARTE_DEVICE(prefix##i);))
-
 UARTE_FOR_EACH_INSTANCE(COND_UART_NRF_UARTE_DEVICE, (), ())

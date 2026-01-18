@@ -224,9 +224,19 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_SOC_SERIES_RA8D1)
+#define RENESAS_RA_PHY_PLL_MUL_INT_MIN 20
+#define RENESAS_RA_PHY_PLL_MUL_INT_MAX 180
+#elif defined(CONFIG_SOC_SERIES_RA8P1)
+#define RENESAS_RA_PHY_PLL_MUL_INT_MIN 40
+#define RENESAS_RA_PHY_PLL_MUL_INT_MAX 375
+#else
+#error "Unsupported SoC series"
+#endif
+
 #define RENESAS_RA_MIPI_PHYS_SETTING_DEFINE(n)                                                     \
 	static const mipi_phy_timing_t mipi_phy_##n##_timing = {                                   \
-		.t_init = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_init), 0, 0x7FFF),        \
+		.t_init = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_init), 0, 0x7FFFF),       \
 		.dphytim2_b =                                                                      \
 			{                                                                          \
 				.t_clk_prep =                                                      \
@@ -266,8 +276,12 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 		.pll_settings =                                                                    \
 			{                                                                          \
 				.div = DT_INST_PROP(n, pll_div) - 1,                               \
+				.pll_div = DT_INST_ENUM_IDX_OR(n, pll_out_div, 0),                 \
 				.mul_frac = DT_INST_ENUM_IDX(n, pll_mul_frac),                     \
-				.mul_int = CLAMP(DT_INST_PROP(n, pll_mul_int), 20, 180) - 1,       \
+				.mul_int = CLAMP(DT_INST_PROP(n, pll_mul_int),                     \
+						 RENESAS_RA_PHY_PLL_MUL_INT_MIN,                   \
+						 RENESAS_RA_PHY_PLL_MUL_INT_MAX) -                 \
+					   1,                                                      \
 			},                                                                         \
 		.lp_divisor = CLAMP(DT_INST_PROP(n, lp_divisor), 1, 32) - 1,                       \
 		.p_timing = &mipi_phy_##n##_timing,                                                \

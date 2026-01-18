@@ -135,7 +135,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
 		bt_addr_le_copy(&ev.address, info.le.dst);
-		ev.interval = sys_cpu_to_le16(info.le.interval);
+		ev.interval = sys_cpu_to_le16(info.le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US);
 		ev.latency = sys_cpu_to_le16(info.le.latency);
 		ev.timeout = sys_cpu_to_le16(info.le.timeout);
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
@@ -2484,6 +2484,7 @@ static int bt_iso_chan_get_index(struct bt_iso_chan *chan);
 
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 static struct bt_iso_big *iso_sync_receiver_big;
+static bt_addr_le_t iso_sync_receiver_addr;
 
 static void iso_sync_receiver_big_started_cb(struct bt_iso_big *big)
 {
@@ -2519,7 +2520,7 @@ static void iso_sync_receiver_big_started_cb(struct bt_iso_big *big)
 		return;
 	}
 
-	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+	bt_addr_le_copy(&ev.address, &iso_sync_receiver_addr);
 	ev.latency = sys_cpu_to_le32(info.sync_receiver.latency);
 	ev.nse = info.max_subevent;
 	ev.bn = info.sync_receiver.bn;
@@ -2539,12 +2540,13 @@ static void iso_sync_receiver_big_stopped_cb(struct bt_iso_big *big, uint8_t rea
 		return;
 	}
 
-	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+	bt_addr_le_copy(&ev.address, &iso_sync_receiver_addr);
 	ev.reason = reason;
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIG_SYNC_LOST, &ev, sizeof(ev));
 
 	iso_sync_receiver_big = NULL;
+	bt_addr_le_copy(&iso_sync_receiver_addr, BT_ADDR_LE_NONE);
 }
 
 static struct bt_iso_big_cb iso_sync_receiver_big_cb = {
@@ -2766,6 +2768,9 @@ static uint8_t big_create_sync(const void *cmd, uint16_t cmd_len, void *rsp, uin
 		LOG_ERR("Unable to sync to BIG (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
+
+	/* PA may be terminated so just store addr here */
+	bt_addr_le_copy(&iso_sync_receiver_addr, &pa_sync->addr);
 
 	LOG_DBG("BIG syncing");
 

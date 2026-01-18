@@ -139,7 +139,7 @@ static struct net_pkt *eth_ivshmem_rx(const struct device *dev)
 	}
 
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
-		dev_data->iface, rx_len, AF_UNSPEC, 0, K_MSEC(100));
+		dev_data->iface, rx_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
 		LOG_ERR("Failed to allocate rx buffer");
 		eth_stats_update_errors_rx(dev_data->iface);

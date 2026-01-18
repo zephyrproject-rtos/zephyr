@@ -43,94 +43,75 @@ static void intel_adsp_ipc_receive_cb(const void *data, size_t len, void *priv)
 	struct intel_adsp_ipc_data *devdata = dev->data;
 	struct intel_adsp_ipc_ept_priv_data *priv_data =
 		(struct intel_adsp_ipc_ept_priv_data *)priv;
-	bool done = true;
 
-	if (len == INTEL_ADSP_IPC_CB_MSG) {
-		const struct intel_adsp_ipc_msg *msg = (const struct intel_adsp_ipc_msg *)data;
+	__ASSERT(len == sizeof(uint32_t) * 2, "Unexpected IPC payload length: %zu", len);
+	__ASSERT(data != NULL, "IPC payload pointer is NULL");
 
-		if (devdata->handle_message != NULL) {
-			done = devdata->handle_message(dev, devdata->handler_arg, msg->data,
-						       msg->ext_data);
-		}
+	const uint32_t *msg = (const uint32_t *)data;
 
-		if (done) {
-			priv_data->cb_ret = INTEL_ADSP_IPC_CB_RET_OKAY;
-		} else {
-			priv_data->cb_ret = -EBADMSG;
-		}
-	} else if (len == INTEL_ADSP_IPC_CB_DONE) {
-		bool external_completion = false;
-
-		if (devdata->done_notify != NULL) {
-			external_completion = devdata->done_notify(dev, devdata->done_arg);
-		}
-
-		if (external_completion) {
-			priv_data->cb_ret = INTEL_ADSP_IPC_CB_RET_EXT_COMPLETE;
-		} else {
-			priv_data->cb_ret = INTEL_ADSP_IPC_CB_RET_OKAY;
-		}
+	if (devdata->handle_message != NULL) {
+		priv_data->msg_done = devdata->handle_message(dev, devdata->handler_arg, msg[0],
+							      msg[1]);
 	}
 }
 
 void intel_adsp_ipc_complete(const struct device *dev)
 {
-	int ret;
-
-	ret = ipc_service_send(&intel_adsp_ipc_ept, NULL, INTEL_ADSP_IPC_SEND_DONE);
+	ARG_UNUSED(dev);
+	int ret = ipc_service_release_rx_buffer(&intel_adsp_ipc_ept, NULL);
 
 	ARG_UNUSED(ret);
+	__ASSERT(ret == 0, "ipc_service_release_rx_buffer() failed: %d", ret);
 }
 
 bool intel_adsp_ipc_is_complete(const struct device *dev)
 {
-	int ret;
-
-	ret = ipc_service_send(&intel_adsp_ipc_ept, NULL, INTEL_ADSP_IPC_SEND_IS_COMPLETE);
-
-	return ret == 0;
+	ARG_UNUSED(dev);
+	return ipc_service_get_tx_buffer_size(&intel_adsp_ipc_ept) > 0;
 }
 
 int intel_adsp_ipc_send_message(const struct device *dev, uint32_t data, uint32_t ext_data)
 {
-	struct intel_adsp_ipc_msg msg = {.data = data, .ext_data = ext_data};
-	int ret;
+	ARG_UNUSED(dev);
+	uint32_t msg[2] = {data, ext_data};
 
-	ret = ipc_service_send(&intel_adsp_ipc_ept, &msg, INTEL_ADSP_IPC_SEND_MSG);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
+	return ipc_service_send(&intel_adsp_ipc_ept, &msg, sizeof(msg));
 }
 
+/*
+ * This helper sends an IPC message and then waits synchronously for completion using the backend
+ * semaphore. It is currently only used by tests, SOF firmware does not rely on it.
+ *
+ * The long‑term plan is to either:
+ * - remove this helper entirely,
+ * - move the synchronous wait logic to the application layer (SOF), or
+ * - extend the generic IPC service API with an explicit synchronous send primitive.
+ *
+ * Until that decision is made, the function is kept here only to support existing test code and
+ * should not be used by new callers.
+ */
 int intel_adsp_ipc_send_message_sync(const struct device *dev, uint32_t data, uint32_t ext_data,
 				     k_timeout_t timeout)
 {
-	struct intel_adsp_ipc_msg msg = {
-		.data = data,
-		.ext_data = ext_data,
-		.timeout = timeout,
-	};
-	int ret;
+	uint32_t msg[2] = {data, ext_data};
+	struct intel_adsp_ipc_data *devdata = dev->data;
 
-	ret = ipc_service_send(&intel_adsp_ipc_ept, &msg, INTEL_ADSP_IPC_SEND_MSG_SYNC);
+	int ret = ipc_service_send(&intel_adsp_ipc_ept, &msg, sizeof(msg));
 
 	if (ret < 0) {
-		return ret;
+		k_sem_take(&devdata->sem, timeout);
 	}
 
-	return 0;
+	return ret;
 }
 
 void intel_adsp_ipc_send_message_emergency(const struct device *dev, uint32_t data,
 					   uint32_t ext_data)
 {
-	struct intel_adsp_ipc_msg msg = {.data = data, .ext_data = ext_data};
 	int ret;
+	uint32_t msg[2] = {data, ext_data};
 
-	ret = ipc_service_send(&intel_adsp_ipc_ept, &msg, INTEL_ADSP_IPC_SEND_MSG_EMERGENCY);
+	ret = ipc_service_send_critical(&intel_adsp_ipc_ept, &msg, sizeof(msg));
 
 	ARG_UNUSED(ret);
 }

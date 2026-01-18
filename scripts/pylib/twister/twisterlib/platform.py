@@ -72,6 +72,7 @@ class Platform:
         self.ignore_tags = []
         self.only_tags = []
         self.default = False
+        self.flash_before = False
         # if no flash size is specified by the board, take a default of 512K
         self.flash = 512
         self.supported = set()
@@ -116,6 +117,7 @@ class Platform:
         self.default = testing.get("default", self.default)
         self.binaries = testing.get("binaries", [])
         self.timeout_multiplier = testing.get("timeout_multiplier", self.timeout_multiplier)
+        self.flash_before = testing.get("flash_before", self.flash_before)
 
         # testing data for variant
         testing_var = variant_data.get("testing", data.get("testing", {}))
@@ -124,6 +126,7 @@ class Platform:
         self.only_tags = testing_var.get("only_tags", self.only_tags)
         self.default = testing_var.get("default", self.default)
         self.binaries = testing_var.get("binaries", self.binaries)
+        self.flash_before = testing_var.get("flash_before", self.flash_before)
         renode = testing.get("renode", {})
         self.uart = renode.get("uart", "")
         self.resc = renode.get("resc", "")

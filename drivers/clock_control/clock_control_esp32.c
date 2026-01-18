@@ -567,10 +567,16 @@ static int clock_control_esp32_get_rate(const struct device *dev, clock_control_
 
 	switch ((int)sys) {
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST:
-		*rate = esp_clk_tree_lp_fast_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
+		*rate = esp_clk_tree_lp_fast_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
-		*rate = clk_hal_lp_slow_get_freq_hz();
+		*rate = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED);
+		break;
+	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST_NOMINAL:
+		*rate = esp_clk_tree_lp_fast_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
+		break;
+	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW_NOMINAL:
+		*rate = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
 		break;
 	default:
 		*rate = clk_hal_cpu_get_freq_hz();

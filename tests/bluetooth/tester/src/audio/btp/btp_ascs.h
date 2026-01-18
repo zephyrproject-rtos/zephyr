@@ -117,5 +117,20 @@ struct btp_ascs_ase_state_changed_ev {
 	uint8_t state;
 } __packed;
 
+#define BTP_ASCS_EV_CIS_CONNECTED 0x83
+struct btp_ascs_cis_connected_ev {
+	bt_addr_le_t address;
+	uint8_t ase_id;
+	uint8_t cis_id;
+} __packed;
+
+#define BTP_ASCS_EV_CIS_DISCONNECTED 0x84
+struct btp_ascs_cis_disconnected_ev {
+	bt_addr_le_t address;
+	uint8_t ase_id;
+	uint8_t cis_id;
+	uint8_t reason;
+} __packed;
+
 #define BTP_ASCS_STATUS_SUCCESS	0x00
 #define BTP_ASCS_STATUS_FAILED	0x01

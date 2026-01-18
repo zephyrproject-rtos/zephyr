@@ -281,4 +281,6 @@ file(ARCHIVE_CREATE
     ${llext_edk_format}
 )
 
-file(REMOVE_RECURSE ${llext_edk})
+if(NOT CONFIG_LLEXT_EDK_PRESERVE_INPUT_FOLDER)
+    file(REMOVE_RECURSE ${llext_edk})
+endif()

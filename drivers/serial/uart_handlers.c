@@ -72,7 +72,7 @@ static inline int z_vrfy_uart_config_get(const struct device *dev,
 static inline int z_vrfy_uart_configure(const struct device *dev,
 					const struct uart_config *cfg)
 {
-	K_OOPS(K_SYSCALL_DRIVER_UART(dev, config_get));
+	K_OOPS(K_SYSCALL_DRIVER_UART(dev, configure));
 	K_OOPS(K_SYSCALL_MEMORY_READ(cfg, sizeof(struct uart_config)));
 
 	return z_impl_uart_configure(dev, cfg);

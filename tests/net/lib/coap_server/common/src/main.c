@@ -10,7 +10,7 @@
 #include <zephyr/net/coap_service.h>
 
 static int coap_method1(struct coap_resource *resource, struct coap_packet *request,
-			struct sockaddr *addr, socklen_t addr_len)
+			struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	ARG_UNUSED(resource);
 	ARG_UNUSED(request);
@@ -21,7 +21,7 @@ static int coap_method1(struct coap_resource *resource, struct coap_packet *requ
 }
 
 static int coap_method2(struct coap_resource *resource, struct coap_packet *request,
-			struct sockaddr *addr, socklen_t addr_len)
+			struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	ARG_UNUSED(resource);
 	ARG_UNUSED(request);

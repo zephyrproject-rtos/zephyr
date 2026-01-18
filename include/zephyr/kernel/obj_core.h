@@ -136,7 +136,7 @@ struct k_obj_core {
  * @param id A means to identify the object type
  * @param off Offset of object core within the structure
  *
- * @retval Pointer to initialized object type
+ * @return Pointer to initialized object type
  */
 struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
 				   uint32_t id, size_t off);
@@ -150,7 +150,7 @@ struct k_obj_type *z_obj_type_init(struct k_obj_type *type,
  * @param type_id  Type ID associated with object type
  *
  * @retval NULL if object type not found
- * @retval Pointer to object type if found
+ * @return Pointer to object type if found
  */
 struct k_obj_type *k_obj_type_find(uint32_t type_id);
 

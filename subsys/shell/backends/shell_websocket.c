@@ -155,7 +155,7 @@ error:
 
 static void ws_server_cb(struct net_socket_service_event *evt)
 {
-	socklen_t optlen = sizeof(int);
+	net_socklen_t optlen = sizeof(int);
 	struct shell_websocket *ws;
 	int sock_error;
 
@@ -163,8 +163,8 @@ static void ws_server_cb(struct net_socket_service_event *evt)
 
 	if ((evt->event.revents & ZSOCK_POLLERR) ||
 	    (evt->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(evt->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
+		(void)zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET,
+				       ZSOCK_SO_ERROR, &sock_error, &optlen);
 		LOG_ERR("Websocket socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == ws->fds[0].fd) {

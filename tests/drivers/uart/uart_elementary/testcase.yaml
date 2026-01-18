@@ -11,6 +11,7 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuflpr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -24,7 +25,7 @@ tests:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - bgm220_ek4314a
       - slwrb4180b
       - xg23_rb4210a
@@ -113,3 +114,12 @@ tests:
     extra_configs:
       - CONFIG_NRF_SYS_EVENT=y
       - CONFIG_SOC_NRF_FORCE_CONSTLAT=y
+  drivers.uart.uart_elementary.build_gd32:
+    build_only: true
+    harness: ""
+    depends_on: []
+    platform_allow:
+      - gd32f470i_eval
+    extra_configs:
+      - CONFIG_SERIAL=y
+      - CONFIG_UART_USE_RUNTIME_CONFIGURE=y

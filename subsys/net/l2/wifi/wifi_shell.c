@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
@@ -46,7 +45,8 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_AP_STA_CONNECTED   |\
 				NET_EVENT_WIFI_AP_STA_DISCONNECTED|\
 				NET_EVENT_WIFI_SIGNAL_CHANGE      |\
-				NET_EVENT_WIFI_NEIGHBOR_REP_COMP)
+				NET_EVENT_WIFI_NEIGHBOR_REP_COMP  |\
+				NET_EVENT_WIFI_P2P_DEVICE_FOUND)
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 #define WIFI_SHELL_SCAN_EVENTS (                   \
@@ -97,7 +97,7 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 	int iface_index = -1;
 
 	/* Parse arguments manually to find -i or --iface,
-	 * it's intentional not to use getopt() here to avoid
+	 * it's intentional not to use sys_getopt() here to avoid
 	 * permuting the arguments.
 	 */
 	for (int i = 1; i < argc; i++) {
@@ -519,6 +519,26 @@ static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb
 }
 #endif
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static void handle_wifi_p2p_device_found(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_p2p_device_info *peer_info =
+		(const struct wifi_p2p_device_info *)cb->info;
+	const struct shell *sh = context.sh;
+
+	if (!peer_info || peer_info->device_name[0] == '\0') {
+		return;
+	}
+
+	PR("Device Name: %-20s MAC Address: %02x:%02x:%02x:%02x:%02x:%02x      "
+	   "Config Methods: 0x%x\n",
+	   peer_info->device_name,
+	   peer_info->mac[0], peer_info->mac[1], peer_info->mac[2],
+	   peer_info->mac[3], peer_info->mac[4], peer_info->mac[5],
+	   peer_info->config_methods);
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -552,6 +572,11 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_neighbor_rep_complete(cb, iface);
 		break;
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	case NET_EVENT_WIFI_P2P_DEVICE_FOUND:
+		handle_wifi_p2p_device_found(cb);
+		break;
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 	default:
 		break;
 	}
@@ -583,44 +608,46 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"ssid", required_argument, 0, 's'},
-		{"passphrase", required_argument, 0, 'p'},
-		{"key-mgmt", required_argument, 0, 'k'},
-		{"ieee-80211w", required_argument, 0, 'w'},
-		{"bssid", required_argument, 0, 'm'},
-		{"band", required_argument, 0, 'b'},
-		{"channel", required_argument, 0, 'c'},
-		{"timeout", required_argument, 0, 't'},
-		{"anon-id", required_argument, 0, 'a'},
-		{"bandwidth", required_argument, 0, 'B'},
-		{"key1-pwd", required_argument, 0, 'K'},
-		{"key2-pwd", required_argument, 0, 'K'},
-		{"wpa3-enterprise", required_argument, 0, 'S'},
-		{"TLS-cipher", required_argument, 0, 'T'},
-		{"verify-peer-cert", required_argument, 0, 'A'},
-		{"eap-version", required_argument, 0, 'V'},
-		{"eap-id1", required_argument, 0, 'I'},
-		{"eap-id2", required_argument, 0, 'I'},
-		{"eap-id3", required_argument, 0, 'I'},
-		{"eap-id4", required_argument, 0, 'I'},
-		{"eap-id5", required_argument, 0, 'I'},
-		{"eap-id6", required_argument, 0, 'I'},
-		{"eap-id7", required_argument, 0, 'I'},
-		{"eap-id8", required_argument, 0, 'I'},
-		{"eap-pwd1", required_argument, 0, 'P'},
-		{"eap-pwd2", required_argument, 0, 'P'},
-		{"eap-pwd3", required_argument, 0, 'P'},
-		{"eap-pwd4", required_argument, 0, 'P'},
-		{"eap-pwd5", required_argument, 0, 'P'},
-		{"eap-pwd6", required_argument, 0, 'P'},
-		{"eap-pwd7", required_argument, 0, 'P'},
-		{"eap-pwd8", required_argument, 0, 'P'},
-		{"ignore-broadcast-ssid", required_argument, 0, 'g'},
-		{"ieee-80211r", no_argument, 0, 'R'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"passphrase", sys_getopt_required_argument, 0, 'p'},
+		{"key-mgmt", sys_getopt_required_argument, 0, 'k'},
+		{"ieee-80211w", sys_getopt_required_argument, 0, 'w'},
+		{"bssid", sys_getopt_required_argument, 0, 'm'},
+		{"band", sys_getopt_required_argument, 0, 'b'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"timeout", sys_getopt_required_argument, 0, 't'},
+		{"anon-id", sys_getopt_required_argument, 0, 'a'},
+		{"bandwidth", sys_getopt_required_argument, 0, 'B'},
+		{"key1-pwd", sys_getopt_required_argument, 0, 'K'},
+		{"key2-pwd", sys_getopt_required_argument, 0, 'K'},
+		{"wpa3-enterprise", sys_getopt_required_argument, 0, 'S'},
+		{"TLS-cipher", sys_getopt_required_argument, 0, 'T'},
+		{"verify-peer-cert", sys_getopt_required_argument, 0, 'A'},
+		{"eap-version", sys_getopt_required_argument, 0, 'V'},
+		{"eap-id1", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id2", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id3", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id4", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id5", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id6", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id7", sys_getopt_required_argument, 0, 'I'},
+		{"eap-id8", sys_getopt_required_argument, 0, 'I'},
+		{"eap-pwd1", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd2", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd3", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd4", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd5", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd6", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd7", sys_getopt_required_argument, 0, 'P'},
+		{"eap-pwd8", sys_getopt_required_argument, 0, 'P'},
+		{"ignore-broadcast-ssid", sys_getopt_required_argument, 0, 'g'},
+		{"ieee-80211r", sys_getopt_no_argument, 0, 'R'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"server-cert-domain-exact", sys_getopt_required_argument, 0, 'e'},
+		{"server-cert-domain-suffix", sys_getopt_required_argument, 0, 'x'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
 	int idx = 1;
@@ -648,9 +675,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			params->ssid = state->optarg;
@@ -665,6 +692,14 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->security = atoi(state->optarg);
 			if (params->security) {
 				secure_connection = true;
+			}
+			/* WPA3 security types (SAE) require MFP (802.11w) as required,
+			 * if not otherwise set.
+			 */
+			if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
+			    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+				params->mfp = WIFI_MFP_REQUIRED;
 			}
 			break;
 		case 'p':
@@ -811,6 +846,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'S':
 			params->wpa3_ent_mode = atoi(state->optarg);
+			if (params->wpa3_ent_mode != WIFI_WPA3_ENTERPRISE_NA) {
+				params->mfp = WIFI_MFP_REQUIRED;
+			}
 			break;
 		case 'T':
 			params->TLS_cipher = atoi(state->optarg);
@@ -872,6 +910,16 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
 			break;
+		case 'e':
+			params->server_cert_domain_exact = state->optarg;
+			params->server_cert_domain_exact_len =
+					strlen(params->server_cert_domain_exact);
+			break;
+		case 'x':
+			params->server_cert_domain_suffix = state->optarg;
+			params->server_cert_domain_suffix_len =
+					strlen(params->server_cert_domain_suffix);
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -894,43 +942,28 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		return -EINVAL;
 	}
 
-	if (params->security == WIFI_SECURITY_TYPE_SAE_HNP
-		|| params->security == WIFI_SECURITY_TYPE_SAE_H2E
-		|| params->security == WIFI_SECURITY_TYPE_SAE_AUTO
-		|| params->wpa3_ent_mode != WIFI_WPA3_ENTERPRISE_NA) {
-		if (params->mfp != WIFI_MFP_REQUIRED) {
-			PR_ERROR("MFP is required for WPA3 mode\n");
-			return -EINVAL;
-		}
-	}
-
 	if (iface_mode == WIFI_MODE_AP && params->channel == WIFI_CHANNEL_ANY) {
 		PR_ERROR("Channel not provided\n");
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (iface_mode == WIFI_MODE_AP) {
-		if (params->channel == 0 && params->band == WIFI_FREQ_BAND_UNKNOWN) {
-			PR_ERROR("Band not provided when channel is 0\n");
-			return -EINVAL;
-		}
+	/* AP mode: channel 0 means ACS, band must be specified */
+	if (iface_mode == WIFI_MODE_AP && params->channel == 0 &&
+	    params->band == WIFI_FREQ_BAND_UNKNOWN) {
+		PR_ERROR("Band not provided when channel is 0 (ACS)\n");
+		return -EINVAL;
+	}
 
-		if (params->channel > 0 && params->channel <= 14 &&
-		    (params->band != WIFI_FREQ_BAND_2_4_GHZ &&
-		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
-			PR_ERROR("Band and channel mismatch\n");
-			return -EINVAL;
-		}
-
-		if (params->channel >= 36 &&
-		    (params->band != WIFI_FREQ_BAND_5_GHZ &&
-		     params->band != WIFI_FREQ_BAND_UNKNOWN)) {
-			PR_ERROR("Band and channel mismatch\n");
+	/* Validate band and channel combination when both are explicitly provided */
+	if (params->channel != WIFI_CHANNEL_ANY && params->channel != 0 &&
+	    params->band != WIFI_FREQ_BAND_UNKNOWN) {
+		if (!wifi_utils_validate_chan(params->band, params->channel)) {
+			PR_ERROR("Channel %d is not valid for %s band\n",
+				 params->channel, wifi_band_txt(params->band));
 			return -EINVAL;
 		}
 	}
-#endif
+
 	if (params->ignore_broadcast_ssid > 2) {
 		PR_ERROR("Invalid ignore_broadcast_ssid value\n");
 		return -EINVAL;
@@ -1017,26 +1050,26 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"bands", required_argument, 0, 'b'},
-		{"dwell_time_active", required_argument, 0, 'a'},
-		{"dwell_time_passive", required_argument, 0, 'p'},
-		{"ssid", required_argument, 0, 's'},
-		{"max_bss", required_argument, 0, 'm'},
-		{"chans", required_argument, 0, 'c'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"bands", sys_getopt_required_argument, 0, 'b'},
+		{"dwell_time_active", sys_getopt_required_argument, 0, 'a'},
+		{"dwell_time_passive", sys_getopt_required_argument, 0, 'p'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"max_bss", sys_getopt_required_argument, 0, 'm'},
+		{"chans", sys_getopt_required_argument, 0, 'c'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	int val;
 	int opt_num = 0;
 
 	*do_scan = true;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "t:b:a:p:s:m:c:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (!strncasecmp(state->optarg, "passive", 7)) {
@@ -1729,36 +1762,36 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	long value;
 	double twt_mantissa_scale = 0.0;
 	double twt_interval_scale = 0.0;
 	uint16_t scale = 1000;
 	int exponent = 0;
-	static const struct option long_options[] = {
-		{"negotiation-type", required_argument, 0, 'n'},
-		{"setup-cmd", required_argument, 0, 'c'},
-		{"dialog-token", required_argument, 0, 't'},
-		{"flow-id", required_argument, 0, 'f'},
-		{"responder", required_argument, 0, 'r'},
-		{"trigger", required_argument, 0, 'T'},
-		{"implicit", required_argument, 0, 'I'},
-		{"announce", required_argument, 0, 'a'},
-		{"wake-interval", required_argument, 0, 'w'},
-		{"interval", required_argument, 0, 'p'},
-		{"wake-ahead-duration", required_argument, 0, 'D'},
-		{"info-disable", required_argument, 0, 'd'},
-		{"exponent", required_argument, 0, 'e'},
-		{"mantissa", required_argument, 0, 'm'},
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+	static const struct sys_getopt_option long_options[] = {
+		{"negotiation-type", sys_getopt_required_argument, 0, 'n'},
+		{"setup-cmd", sys_getopt_required_argument, 0, 'c'},
+		{"dialog-token", sys_getopt_required_argument, 0, 't'},
+		{"flow-id", sys_getopt_required_argument, 0, 'f'},
+		{"responder", sys_getopt_required_argument, 0, 'r'},
+		{"trigger", sys_getopt_required_argument, 0, 'T'},
+		{"implicit", sys_getopt_required_argument, 0, 'I'},
+		{"announce", sys_getopt_required_argument, 0, 'a'},
+		{"wake-interval", sys_getopt_required_argument, 0, 'w'},
+		{"interval", sys_getopt_required_argument, 0, 'p'},
+		{"wake-ahead-duration", sys_getopt_required_argument, 0, 'D'},
+		{"info-disable", sys_getopt_required_argument, 0, 'd'},
+		{"exponent", sys_getopt_required_argument, 0, 'e'},
+		{"mantissa", sys_getopt_required_argument, 0, 'm'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	params->operation = WIFI_TWT_SETUP;
 
-	while ((opt = getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'n':
 			if (!parse_number(sh, &value, state->optarg, NULL,
@@ -2138,22 +2171,22 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"max_inactivity", required_argument, 0, 't'},
-		{"max_num_sta", required_argument, 0, 's'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"max_inactivity", sys_getopt_required_argument, 0, 't'},
+		{"max_num_sta", sys_getopt_required_argument, 0, 's'},
 #if defined(CONFIG_WIFI_NM_HOSTAPD_AP)
-		{"ht_capab", required_argument, 0, 'n'},
-		{"vht_capab", required_argument, 0, 'c'},
+		{"ht_capab", sys_getopt_required_argument, 0, 'n'},
+		{"vht_capab", sys_getopt_required_argument, 0, 'c'},
 #endif
-		{"iface", required_argument, 0, 'i'},
-		{"help", no_argument, 0, 'h'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "t:s:n:c:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "t:s:n:c:i:h",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (!parse_number(sh, &val, state->optarg, "max_inactivity",
@@ -2265,14 +2298,14 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	bool force = false;
 	bool verbose = false;
 	int opt_index = 0;
-	static const struct option long_options[] = {
-		{"force", no_argument, 0, 'f'},
-		{"verbose", no_argument, 0, 'v'},
-		{"iface", required_argument, 0, 'i'},
+	static const struct sys_getopt_option long_options[] = {
+		{"force", sys_getopt_no_argument, 0, 'f'},
+		{"verbose", sys_getopt_no_argument, 0, 'v'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{NULL, 0, NULL, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
+	while ((opt = sys_getopt_long(argc, argv, "fvi:", long_options, &opt_index)) != -1) {
 		switch (opt) {
 		case 'f':
 			force = true;
@@ -2288,24 +2321,25 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		}
 	}
 
-	if (optind == argc) {
+	if (sys_getopt_optind == argc) {
 		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
-	} else if (optind == argc - 1) {
-		if (strlen(argv[optind]) != 2) {
+	} else if (sys_getopt_optind == argc - 1) {
+		if (strlen(argv[sys_getopt_optind]) != 2) {
 			PR_WARNING("Invalid reg domain: Length should be two letters/digits\n");
 			return -ENOEXEC;
 		}
 
 		/* Two letter country code with special case of 00 for WORLD */
-		if (((argv[optind][0] < 'A' || argv[optind][0] > 'Z') ||
-			(argv[optind][1] < 'A' || argv[optind][1] > 'Z')) &&
-			(argv[optind][0] != '0' || argv[optind][1] != '0')) {
-			PR_WARNING("Invalid reg domain %c%c\n", argv[optind][0], argv[optind][1]);
+		if (((argv[sys_getopt_optind][0] < 'A' || argv[sys_getopt_optind][0] > 'Z') ||
+			(argv[sys_getopt_optind][1] < 'A' || argv[sys_getopt_optind][1] > 'Z')) &&
+			(argv[sys_getopt_optind][0] != '0' || argv[sys_getopt_optind][1] != '0')) {
+			PR_WARNING("Invalid reg domain %c%c\n", argv[sys_getopt_optind][0],
+				   argv[sys_getopt_optind][1]);
 			return -ENOEXEC;
 		}
-		regd.country_code[0] = argv[optind][0];
-		regd.country_code[1] = argv[optind][1];
+		regd.country_code[0] = argv[sys_getopt_optind][0];
+		regd.country_code[1] = argv[sys_getopt_optind][1];
 		regd.force = force;
 		regd.oper = WIFI_MGMT_SET;
 	} else {
@@ -2634,20 +2668,20 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int opt_index = 0;
 	int opt_num = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", required_argument, 0, 'i'},
-		{"sta", no_argument, 0, 's'},
-		{"monitor", no_argument, 0, 'm'},
-		{"ap", no_argument, 0, 'a'},
-		{"softap", no_argument, 0, 'k'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"sta", sys_getopt_no_argument, 0, 's'},
+		{"monitor", sys_getopt_no_argument, 0, 'm'},
+		{"ap", sys_getopt_no_argument, 0, 'a'},
+		{"softap", sys_getopt_no_argument, 0, 'k'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	mode->oper = WIFI_MGMT_GET;
-	while ((opt = getopt_long(argc, argv, "i:smtpakh",
+	while ((opt = sys_getopt_long(argc, argv, "i:smtpakh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 's':
 			mode->mode |= WIFI_STA_MODE;
@@ -2737,17 +2771,17 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", optional_argument, 0, 'i'},
-		{"channel", required_argument, 0, 'c'},
-		{"get", no_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_optional_argument, 0, 'i'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"get", sys_getopt_no_argument, 0, 'g'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:c:gh",
+	while ((opt = sys_getopt_long(argc, argv, "i:c:gh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			channel->channel = (uint16_t)atoi(state->optarg);
@@ -2835,21 +2869,21 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"iface", required_argument, 0, 'i'},
-		{"capture-len", optional_argument, 0, 'b'},
-		{"all", no_argument, 0, 'a'},
-		{"mgmt", no_argument, 0, 'm'},
-		{"ctrl", no_argument, 0, 'c'},
-		{"data", no_argument, 0, 'd'},
-		{"get", no_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"capture-len", sys_getopt_optional_argument, 0, 'b'},
+		{"all", sys_getopt_no_argument, 0, 'a'},
+		{"mgmt", sys_getopt_no_argument, 0, 'm'},
+		{"ctrl", sys_getopt_no_argument, 0, 'c'},
+		{"data", sys_getopt_no_argument, 0, 'd'},
+		{"get", sys_getopt_no_argument, 0, 'g'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:b:amcdgh",
+	while ((opt = sys_getopt_long(argc, argv, "i:b:amcdgh",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'a':
 			filter->filter |= WIFI_PACKET_FILTER_ALL;
@@ -2959,20 +2993,20 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"peer", required_argument, 0, 'p'},
-		{"role", required_argument, 0, 'r'},
-		{"configurator", required_argument, 0, 'c'},
-		{"mode", required_argument, 0, 'm'},
-		{"ssid", required_argument, 0, 's'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"role", sys_getopt_required_argument, 0, 'r'},
+		{"configurator", sys_getopt_required_argument, 0, 'c'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'p':
 			params->auth_init.peer = shell_strtol(state->optarg, 10, &ret);
@@ -3011,17 +3045,17 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"own", required_argument, 0, 'o'},
-		{"freq", required_argument, 0, 'f'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"own", sys_getopt_required_argument, 0, 'o'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "o:f:i:",
+	while ((opt = sys_getopt_long(argc, argv, "o:f:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'o':
 			params->chirp.id = shell_strtol(state->optarg, 10, &ret);
@@ -3051,17 +3085,17 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"role", required_argument, 0, 'r'},
-		{"freq", required_argument, 0, 'f'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"role", sys_getopt_required_argument, 0, 'r'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "r:f:i:",
+	while ((opt = sys_getopt_long(argc, argv, "r:f:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'r':
 			params->listen.role = shell_strtol(state->optarg, 10, &ret);
@@ -3091,19 +3125,19 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"opclass", required_argument, 0, 'o'},
-		{"channel", required_argument, 0, 'h'},
-		{"mac", required_argument, 0, 'a'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"opclass", sys_getopt_required_argument, 0, 'o'},
+		{"channel", sys_getopt_required_argument, 0, 'h'},
+		{"mac", sys_getopt_required_argument, 0, 'a'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "t:o:h:a:i:",
+	while ((opt = sys_getopt_long(argc, argv, "t:o:h:a:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			params->bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
@@ -3157,18 +3191,18 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"configurator", required_argument, 0, 'c'},
-		{"mode", required_argument, 0, 'm'},
-		{"ssid", required_argument, 0, 's'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"configurator", sys_getopt_required_argument, 0, 'c'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"ssid", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:r:c:m:s:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'c':
 			params->configurator_set.configurator =
@@ -3449,10 +3483,10 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"peer", required_argument, 0, 'p'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	int ret = 0;
 	struct net_if *iface = get_iface(IFACE_TYPE_SAP, argc, argv);
@@ -3460,9 +3494,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 
 	params.action = WIFI_DPP_AUTH_INIT;
 
-	while ((opt = getopt_long(argc, argv, "p:i:",
+	while ((opt = sys_getopt_long(argc, argv, "p:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'p':
 			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
@@ -3516,6 +3550,570 @@ static int cmd_wifi_dpp_reconfig(const struct shell *sh, size_t argc, char *argv
 }
 
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static void print_peer_info(const struct shell *sh, int index,
+			    const struct wifi_p2p_device_info *peer)
+{
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+	const char *device_name;
+	const char *device_type;
+	const char *config_methods;
+
+	device_name = (peer->device_name[0] != '\0') ?
+		      peer->device_name : "<Unknown>";
+	device_type = (peer->pri_dev_type_str[0] != '\0') ?
+		      peer->pri_dev_type_str : "-";
+	config_methods = (peer->config_methods_str[0] != '\0') ?
+			 peer->config_methods_str : "-";
+
+	PR("%-4d | %-32s | %-17s | %-4d | %-20s | %s\n",
+	   index,
+	   device_name,
+	   net_sprint_ll_addr_buf(peer->mac, WIFI_MAC_ADDR_LEN,
+				  mac_string_buf,
+				  sizeof(mac_string_buf)),
+	   peer->rssi,
+	   device_type,
+	   config_methods);
+}
+
+static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+	static struct wifi_p2p_device_info peers[WIFI_P2P_MAX_PEERS];
+	int ret;
+	int max_peers = (argc < 2) ? WIFI_P2P_MAX_PEERS : 1;
+
+	context.sh = sh;
+
+	memset(peers, 0, sizeof(peers));
+
+	params.peers = peers;
+	params.oper = WIFI_P2P_PEER;
+	params.peer_count = max_peers;
+
+	if (argc >= 2) {
+		if (sscanf(argv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+			   &mac_addr[0], &mac_addr[1], &mac_addr[2],
+			   &mac_addr[3], &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+			PR_ERROR("Invalid MAC address format. Use: XX:XX:XX:XX:XX:XX\n");
+			return -EINVAL;
+		}
+		memcpy(params.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+		params.peer_count = 1;
+	} else {
+		/* Use broadcast MAC to query all peers */
+		memset(params.peer_addr, 0xFF, WIFI_MAC_ADDR_LEN);
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params));
+	if (ret) {
+		PR_WARNING("P2P peer info request failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.peer_count > 0) {
+		PR("\n%-4s | %-32s | %-17s | %-4s | %-20s | %s\n",
+		   "Num", "Device Name", "MAC Address", "RSSI", "Device Type", "Config Methods");
+		for (int i = 0; i < params.peer_count; i++) {
+			print_peer_info(sh, i + 1, &peers[i]);
+		}
+	} else {
+		if (argc >= 2) {
+			shell_print(sh, "No information available for peer %s", argv[1]);
+		} else {
+			shell_print(sh, "No P2P peers found");
+		}
+	}
+
+	return 0;
+}
+
+
+static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_FIND;
+	params.discovery_type = WIFI_P2P_FIND_START_WITH_FULL;
+	params.timeout = 10; /* Default 10 second timeout */
+
+	if (argc > 1) {
+		int opt;
+		int opt_index = 0;
+		struct sys_getopt_state *state;
+		static const struct sys_getopt_option long_options[] = {
+			{"timeout", sys_getopt_required_argument, 0, 't'},
+			{"type", sys_getopt_required_argument, 0, 'T'},
+			{"iface", sys_getopt_required_argument, 0, 'i'},
+			{"help", sys_getopt_no_argument, 0, 'h'},
+			{0, 0, 0, 0}
+		};
+		long val;
+
+		while ((opt = sys_getopt_long(argc, argv, "t:T:i:h",
+						long_options, &opt_index)) != -1) {
+			state = sys_getopt_state_get();
+			switch (opt) {
+			case 't':
+				if (!parse_number(sh, &val, state->optarg, "timeout", 0, 65535)) {
+					return -EINVAL;
+				}
+				params.timeout = (uint16_t)val;
+				break;
+			case 'T':
+				if (!parse_number(sh, &val, state->optarg, "type", 0, 2)) {
+					return -EINVAL;
+				}
+				switch (val) {
+				case 0:
+					params.discovery_type = WIFI_P2P_FIND_ONLY_SOCIAL;
+					break;
+				case 1:
+					params.discovery_type = WIFI_P2P_FIND_PROGRESSIVE;
+					break;
+				case 2:
+					params.discovery_type = WIFI_P2P_FIND_START_WITH_FULL;
+					break;
+				default:
+					return -EINVAL;
+				}
+				break;
+			case 'i':
+				/* Unused, but parsing to avoid unknown option error */
+				break;
+			case 'h':
+				shell_help(sh);
+				return -ENOEXEC;
+			default:
+				PR_ERROR("Invalid option %c\n", state->optopt);
+				return -EINVAL;
+			}
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P find request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P find started\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_stop_find(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_STOP_FIND;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P stop find request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P find stopped\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+	const char *method_arg = NULL;
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"go-intent", sys_getopt_required_argument, 0, 'g'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"join", sys_getopt_no_argument, 0, 'j'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{0, 0, 0, 0}
+	};
+	long val;
+
+	context.sh = sh;
+
+	if (argc < 3) {
+		PR_ERROR("Usage: wifi p2p connect <MAC address> <pbc|pin> [PIN] "
+			 "[--go-intent=<0-15>] [--freq=<frequency>] [--join]\n");
+		return -EINVAL;
+	}
+
+	/* Parse MAC address */
+	if (sscanf(argv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		   &mac_addr[0], &mac_addr[1], &mac_addr[2],
+		   &mac_addr[3], &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+		PR_ERROR("Invalid MAC address format. Use: XX:XX:XX:XX:XX:XX\n");
+		return -EINVAL;
+	}
+	memcpy(params.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+
+	method_arg = argv[2];
+	if (strcmp(method_arg, "pbc") == 0) {
+		params.connect.method = WIFI_P2P_METHOD_PBC;
+	} else if (strcmp(method_arg, "pin") == 0) {
+		if (argc > 3 && argv[3][0] != '-') {
+			params.connect.method = WIFI_P2P_METHOD_KEYPAD;
+			strncpy(params.connect.pin, argv[3], WIFI_WPS_PIN_MAX_LEN);
+			params.connect.pin[WIFI_WPS_PIN_MAX_LEN] = '\0';
+		} else {
+			params.connect.method = WIFI_P2P_METHOD_DISPLAY;
+			params.connect.pin[0] = '\0';
+		}
+	} else {
+		PR_ERROR("Invalid connection method. Use: pbc or pin\n");
+		return -EINVAL;
+	}
+
+	/* Set default GO intent */
+	params.connect.go_intent = 0;
+	/* Set default frequency to 2462 MHz (channel 11, 2.4 GHz) */
+	params.connect.freq = 2462;
+	/* Set default join to false */
+	params.connect.join = false;
+
+	while ((opt = sys_getopt_long(argc, argv, "g:f:ji:h", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'g':
+			if (!parse_number(sh, &val, state->optarg, "go-intent", 0, 15)) {
+				return -EINVAL;
+			}
+			params.connect.go_intent = (uint8_t)val;
+			break;
+		case 'f':
+			if (!parse_number(sh, &val, state->optarg, "freq", 0, 6000)) {
+				return -EINVAL;
+			}
+			params.connect.freq = (unsigned int)val;
+			break;
+		case 'j':
+			params.connect.join = true;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case 'h':
+			shell_help(sh);
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	params.oper = WIFI_P2P_CONNECT;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P connect request failed\n");
+		return -ENOEXEC;
+	}
+
+	/* Display the generated PIN for DISPLAY method */
+	if (params.connect.method == WIFI_P2P_METHOD_DISPLAY && params.connect.pin[0] != '\0') {
+		PR("%s\n", params.connect.pin);
+	} else {
+		PR("P2P connection initiated\n");
+	}
+	return 0;
+}
+
+static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"persistent", sys_getopt_required_argument, 0, 'p'},
+		{"ht40", sys_getopt_no_argument, 0, 'h'},
+		{"vht", sys_getopt_no_argument, 0, 'v'},
+		{"he", sys_getopt_no_argument, 0, 'H'},
+		{"edmg", sys_getopt_no_argument, 0, 'e'},
+		{"go-bssid", sys_getopt_required_argument, 0, 'b'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, '?'},
+		{0, 0, 0, 0}
+	};
+	long val;
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_GROUP_ADD;
+	params.group_add.freq = 0;
+	params.group_add.persistent = -1;
+	params.group_add.ht40 = false;
+	params.group_add.vht = false;
+	params.group_add.he = false;
+	params.group_add.edmg = false;
+	params.group_add.go_bssid_length = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "f:p:hvHeb:i:?", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'f':
+			if (!parse_number(sh, &val, state->optarg, "freq", 0, 6000)) {
+				return -EINVAL;
+			}
+			params.group_add.freq = (int)val;
+			break;
+		case 'p':
+			if (!parse_number(sh, &val, state->optarg, "persistent", -1, 255)) {
+				return -EINVAL;
+			}
+			params.group_add.persistent = (int)val;
+			break;
+		case 'h':
+			params.group_add.ht40 = true;
+			break;
+		case 'v':
+			params.group_add.vht = true;
+			params.group_add.ht40 = true;
+			break;
+		case 'H':
+			params.group_add.he = true;
+			break;
+		case 'e':
+			params.group_add.edmg = true;
+			break;
+		case 'b':
+			if (sscanf(state->optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+				   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+				PR_ERROR("Invalid GO BSSID format. Use: XX:XX:XX:XX:XX:XX\n");
+				return -EINVAL;
+			}
+			memcpy(params.group_add.go_bssid, mac_addr, WIFI_MAC_ADDR_LEN);
+			params.group_add.go_bssid_length = WIFI_MAC_ADDR_LEN;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case '?':
+			shell_help(sh);
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P group add request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P group add initiated\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_group_remove(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+
+	context.sh = sh;
+
+	if (argc < 2) {
+		PR_ERROR("Interface name required. Usage: wifi p2p group_remove <ifname>\n");
+		return -EINVAL;
+	}
+
+	params.oper = WIFI_P2P_GROUP_REMOVE;
+	strncpy(params.group_remove.ifname, argv[1],
+		CONFIG_NET_INTERFACE_NAME_LEN);
+	params.group_remove.ifname[CONFIG_NET_INTERFACE_NAME_LEN] = '\0';
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P group remove request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P group remove initiated\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"persistent", sys_getopt_required_argument, 0, 'p'},
+		{"group", sys_getopt_required_argument, 0, 'g'},
+		{"peer", sys_getopt_required_argument, 0, 'P'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"go-dev-addr", sys_getopt_required_argument, 0, 'd'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{0, 0, 0, 0}
+	};
+	long val;
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_INVITE;
+	params.invite.type = WIFI_P2P_INVITE_PERSISTENT;
+	params.invite.persistent_id = -1;
+	params.invite.group_ifname[0] = '\0';
+	params.invite.freq = 0;
+	params.invite.go_dev_addr_length = 0;
+	memset(params.invite.peer_addr, 0, WIFI_MAC_ADDR_LEN);
+
+	if (argc < 2) {
+		PR_ERROR("Usage: wifi p2p invite --persistent=<id> <peer MAC> OR "
+			 "wifi p2p invite --group=<ifname> --peer=<MAC> [options]\n");
+		return -EINVAL;
+	}
+
+	while ((opt = sys_getopt_long(argc, argv, "p:g:P:f:d:i:h", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'p':
+			if (!parse_number(sh, &val, state->optarg, "persistent", 0, 255)) {
+				return -EINVAL;
+			}
+			params.invite.type = WIFI_P2P_INVITE_PERSISTENT;
+			params.invite.persistent_id = (int)val;
+			break;
+		case 'g':
+			params.invite.type = WIFI_P2P_INVITE_GROUP;
+			strncpy(params.invite.group_ifname, state->optarg,
+				CONFIG_NET_INTERFACE_NAME_LEN);
+			params.invite.group_ifname[CONFIG_NET_INTERFACE_NAME_LEN] = '\0';
+			break;
+		case 'P':
+			if (sscanf(state->optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+				   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+				PR_ERROR("Invalid peer MAC address format\n");
+				return -EINVAL;
+			}
+			memcpy(params.invite.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+			break;
+		case 'f':
+			if (!parse_number(sh, &val, state->optarg, "freq", 0, 6000)) {
+				return -EINVAL;
+			}
+			params.invite.freq = (int)val;
+			break;
+		case 'd':
+			if (sscanf(state->optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+				   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+				   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+				PR_ERROR("Invalid GO device address format\n");
+				return -EINVAL;
+			}
+			memcpy(params.invite.go_dev_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+			params.invite.go_dev_addr_length = WIFI_MAC_ADDR_LEN;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case 'h':
+			shell_help(sh);
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	state = sys_getopt_state_get();
+
+	if (params.invite.type == WIFI_P2P_INVITE_PERSISTENT &&
+	    params.invite.persistent_id >= 0 &&
+	    params.invite.peer_addr[0] == 0 && params.invite.peer_addr[1] == 0 &&
+	    argc > state->optind && argv[state->optind][0] != '-') {
+		if (sscanf(argv[state->optind], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+			   &mac_addr[0], &mac_addr[1], &mac_addr[2], &mac_addr[3],
+			   &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+			PR_ERROR("Invalid peer MAC address format\n");
+			return -EINVAL;
+		}
+		memcpy(params.invite.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+	}
+
+	if (params.invite.type == WIFI_P2P_INVITE_PERSISTENT) {
+		if (params.invite.persistent_id < 0) {
+			PR_ERROR("Persistent group ID required. Use --persistent=<id>\n");
+			return -EINVAL;
+		}
+		if (params.invite.peer_addr[0] == 0 && params.invite.peer_addr[1] == 0) {
+			PR_ERROR("Peer MAC address required\n");
+			return -EINVAL;
+		}
+	} else if (params.invite.type == WIFI_P2P_INVITE_GROUP) {
+		if (params.invite.group_ifname[0] == '\0') {
+			PR_ERROR("Group interface name required. Use --group=<ifname>\n");
+			return -EINVAL;
+		}
+		if (params.invite.peer_addr[0] == 0 && params.invite.peer_addr[1] == 0) {
+			PR_ERROR("Peer MAC address required. Use --peer=<MAC>\n");
+			return -EINVAL;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P invite request failed\n");
+		return -ENOEXEC;
+	}
+	PR("P2P invite initiated\n");
+	return 0;
+}
+
+static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	bool power_save_enable = false;
+
+	context.sh = sh;
+
+	if (argc < 2) {
+		PR_ERROR("Usage: wifi p2p power_save <on|off>\n");
+		return -EINVAL;
+	}
+
+	if (strcmp(argv[1], "on") == 0) {
+		power_save_enable = true;
+	} else if (strcmp(argv[1], "off") == 0) {
+		power_save_enable = false;
+	} else {
+		PR_ERROR("Invalid argument. Use 'on' or 'off'\n");
+		return -EINVAL;
+	}
+
+	params.oper = WIFI_P2P_POWER_SAVE;
+	params.power_save = power_save_enable;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P power save request failed\n");
+		return -ENOEXEC;
+	}
+
+	PR("P2P power save %s\n", power_save_enable ? "enabled" : "disabled");
+	return 0;
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
@@ -3562,20 +4160,21 @@ static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char 
 	int err;
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"type", required_argument, 0, 't'},
-		{"short-interval", required_argument, 0, 's'},
-		{"rss-threshold", required_argument, 0, 'r'},
-		{"long-interval", required_argument, 0, 'l'},
-		{"btm-queries", required_argument, 0, 'b'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"type", sys_getopt_required_argument, 0, 't'},
+		{"short-interval", sys_getopt_required_argument, 0, 's'},
+		{"rss-threshold", sys_getopt_required_argument, 0, 'r'},
+		{"long-interval", sys_getopt_required_argument, 0, 'l'},
+		{"btm-queries", sys_getopt_required_argument, 0, 'b'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	unsigned long uval;
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "t:s:r:l:b:i:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = sys_getopt_long(argc, argv, "t:s:r:l:b:i:", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 't':
 			if (strcmp("simple", state->optarg) == 0) {
@@ -3667,16 +4266,16 @@ static int wifi_config_args_to_params(const struct shell *sh, size_t argc, char 
 {
 	int opt;
 	int opt_index = 0;
-	struct getopt_state *state;
-	static const struct option long_options[] = {
-		{"okc", required_argument, 0, 'o'},
-		{"iface", required_argument, 0, 'i'},
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"okc", sys_getopt_required_argument, 0, 'o'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "o:i:",
+	while ((opt = sys_getopt_long(argc, argv, "o:i:",
 				  long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'o':
 			if (!parse_number(sh, &val, state->optarg, "okc", 0, 1)) {
@@ -4028,10 +4627,12 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		 "[-P, --eap-pwd1]: Client Password.\n"
 		 "Default no password for eap user.\n"
 		 "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect."
+		 "[-e, --server-cert-domain-exact]: Full domain names for server certificate match.\n"
+		 "[-x, --server-cert-domain-suffix]: Domain name suffixes for server certificate match.\n"
 		 "[-h, --help]: Print out the help for the connect command.\n"
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_connect,
-		 2, 42);
+		 2, 46);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "Disconnect from the Wi-Fi AP.\n"
@@ -4217,6 +4818,93 @@ SHELL_SUBCMD_ADD((wifi), bgscan, NULL,
 		 cmd_wifi_set_bgscan,
 		 2, 6);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	wifi_cmd_p2p,
+	SHELL_CMD_ARG(find, NULL,
+		      "Start P2P device discovery\n"
+		      "[-t, --timeout=<timeout in seconds>]: Discovery timeout\n"
+		      "[-T, --type=<0|1|2>]: Discovery type\n"
+		      "  0: Social channels only (1, 6, 11)\n"
+		      "  1: Progressive scan (all channels)\n"
+		      "  2: Full scan first, then social (default)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n"
+		      "[-h, --help]: Show help\n",
+		      cmd_wifi_p2p_find, 1, 6),
+	SHELL_CMD_ARG(stop_find, NULL,
+		      "Stop P2P device discovery\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_stop_find, 1, 2),
+	SHELL_CMD_ARG(peer, NULL,
+		      "Show information about P2P peers\n"
+		      "Usage: peer [<MAC address>]\n"
+		      "<MAC address>: Show detailed info for specific peer (format: XX:XX:XX:XX:XX:XX)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_peer, 1, 3),
+	SHELL_CMD_ARG(connect, NULL,
+		      "Connect to a P2P peer\n"
+		      "Usage: connect <MAC address> <pbc|pin> [PIN] [options]\n"
+		      "<MAC address>: Peer device MAC address (format: XX:XX:XX:XX:XX:XX)\n"
+		      "<pbc>: Use Push Button Configuration\n"
+		      "<pin>: Use PIN method\n"
+		      "  - Without PIN: Device displays generated PIN for peer to enter\n"
+		      "  - With PIN: Device uses provided PIN to connect\n"
+		      "[PIN]: 8-digit PIN (optional, generates if omitted)\n"
+		      "[-g, --go-intent=<0-15>]: GO intent (0=client, 15=GO, default: 0)\n"
+		      "[-f, --freq=<frequency>]: Frequency in MHz (default: 2462)\n"
+		      "[-j, --join]: Join an existing group (as a client) instead of starting GO negotiation\n"
+		      "[-i, --iface=<interface index>]: Interface index\n"
+		      "[-h, --help]: Show help\n"
+		      "Examples:\n"
+		      "  wifi p2p connect 9c:b1:50:e3:81:96 pin -g 0  (displays PIN)\n"
+		      "  wifi p2p connect 9c:b1:50:e3:81:96 pin 12345670 -g 0  (uses PIN)\n"
+		      "  wifi p2p connect f4:ce:36:01:00:38 pbc --join  (join existing group)\n",
+		      cmd_wifi_p2p_connect, 3, 6),
+	SHELL_CMD_ARG(group_add, NULL,
+		      "Add a P2P group (start as GO)\n"
+		      "Usage: group_add [options]\n"
+		      "[-f, --freq=<MHz>]: Frequency in MHz (0 = auto)\n"
+		      "[-p, --persistent=<id>]: Persistent group ID (-1 = not persistent)\n"
+		      "[-h, --ht40]: Enable HT40\n"
+		      "[-v, --vht]: Enable VHT (also enables HT40)\n"
+		      "[-H, --he]: Enable HE\n"
+		      "[-e, --edmg]: Enable EDMG\n"
+		      "[-b, --go-bssid=<MAC>]: GO BSSID (format: XX:XX:XX:XX:XX:XX)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_group_add, 1, 10),
+	SHELL_CMD_ARG(group_remove, NULL,
+		      "Remove a P2P group\n"
+		      "Usage: group_remove <ifname>\n"
+		      "<ifname>: Interface name (e.g., wlan0)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_group_remove, 2, 3),
+	SHELL_CMD_ARG(invite, NULL,
+		      "Invite a peer to a P2P group\n"
+		      "Usage: invite --persistent=<id> <peer MAC> OR\n"
+		      "       invite --group=<ifname> --peer=<MAC> [options]\n"
+		      "[-p, --persistent=<id>]: Persistent group ID\n"
+		      "[-g, --group=<ifname>]: Group interface name\n"
+		      "[-P, --peer=<MAC>]: Peer MAC address (format: XX:XX:XX:XX:XX:XX)\n"
+		      "[-f, --freq=<MHz>]: Frequency in MHz (0 = auto)\n"
+		      "[-d, --go-dev-addr=<MAC>]: GO device address (for group type)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_invite, 2, 8),
+	SHELL_CMD_ARG(power_save, NULL,
+		      "Set P2P power save mode\n"
+		      "Usage: power_save <on|off>\n"
+		      "<on>: Enable P2P power save\n"
+		      "<off>: Disable P2P power save\n"
+		      "[-i, --iface=<interface index>]: Interface index\n",
+		      cmd_wifi_p2p_power_save, 2, 3),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_SUBCMD_ADD((wifi), p2p, &wifi_cmd_p2p,
+		 "Wi-Fi Direct (P2P) commands.",
+		 NULL,
+		 0, 0);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 SHELL_SUBCMD_ADD((wifi), config, NULL,
 		 "Configure STA parameters.\n"

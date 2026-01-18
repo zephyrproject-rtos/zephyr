@@ -120,7 +120,8 @@
 			/* Index 0: UART2 register, Index 1: MDMA2 register */
 			reg = <0x400E2000 0x2000 0x40011200 0x100>;
 			interrupts = <32 4>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6
+				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 1>;
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
 		};
@@ -374,6 +375,7 @@
 		adc0: adc@400d1000 {
 			channel-count = <26>;
 			threshold-count = <6>;
+			support-npcxn-v3;
 		};
 
 		/* ADC1 which reference voltage is AVCC */
@@ -384,9 +386,11 @@
 			interrupts = <22 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 3>;
 			vref-mv = <3300>;
+			speed-conf = <0x03 0x8B07 0x0100 0x0001>;
 			channel-count = <26>;
 			threshold-count = <6>;
 			status = "disabled";
+			support-npcxn-v3;
 		};
 
 		/* FIU0 configuration in npcx4 series */
@@ -541,6 +545,16 @@
 			#dma-cells = <2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lct0: lct@400d7000 {
+			compatible = "nuvoton,npcx-lct-v2";
+			reg = <0x400d7000 0x10>;
+			lct-wui = <&wui_lct>;
+			/* The maximum counter value is (1025 weeks - 1 second) */
+			maximum-cnt-in-sec = <619919999>;
+			pwr-by-vsby;
 			status = "disabled";
 		};
 	};

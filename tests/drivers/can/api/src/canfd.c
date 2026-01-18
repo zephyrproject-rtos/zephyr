@@ -527,8 +527,9 @@ ZTEST_USER(canfd, test_set_timing_data_while_started)
 	struct can_timing timing = { 0 };
 	int err;
 
-	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, TEST_SAMPLE_POINT);
-	zassert_ok(err, "failed to calculate data timing (err %d)", err);
+	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, TEST_SAMPLE_POINT_2);
+	zassert_true(err >= 0, "failed to calculate data timing (err %d)", err);
+	zassert_true(err <= CONFIG_CAN_SAMPLE_POINT_MARGIN, "sample point error %d too large", err);
 
 	err = can_set_timing_data(can_dev, &timing);
 	zassert_not_equal(err, 0, "changed data timing while started");

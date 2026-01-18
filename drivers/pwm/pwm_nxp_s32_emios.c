@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
  */
 #if EMIOS_PWM_IP_USED
 
-#if defined(CONFIG_SOC_SERIES_S32ZE)
+#if defined(CONFIG_SOC_SERIES_S32ZE) || defined(CONFIG_SOC_SERIES_S32K5)
 #define eMios_Icu_Ip_IndexInChState eMios_Icu_Ip_u8IndexInChState
 #endif
 

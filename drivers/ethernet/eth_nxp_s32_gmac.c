@@ -414,7 +414,7 @@ static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
 
 	/* Using root iface, it will be updated in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen,
-					   AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
+					   NET_AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
 	if (!pkt) {
 		LOG_ERR("Failed to allocate rx buffer of length %u", rx_info->PktLen);
 		goto exit;
@@ -537,7 +537,7 @@ static int eth_nxp_s32_set_config(const struct device *dev,
 		break;
 #endif
 #if defined(CONFIG_ETH_NXP_S32_MULTICAST_FILTER)
-	case ETHERNET_HW_FILTERING:
+	case ETHERNET_CONFIG_TYPE_FILTER:
 		if (config->filter.set) {
 			Gmac_Ip_AddDstAddrToHashFilter(cfg->instance,
 						       config->filter.mac_address.addr);

@@ -27,7 +27,6 @@ LOG_MODULE_REGISTER(central, LOG_LEVEL_INF);
 #include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
-#include "bstests.h"
 #include "bs_pc_backchannel.h"
 
 #include "babblekit/testcase.h"
@@ -739,6 +738,12 @@ void test_central_main(void)
 			LOG_ERR("subscription failed: %d, not notifying", err);
 		}
 		k_msleep(10);
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		TEST_FAIL("Unregister GATT callbacks failed (%d)", err);
+		return;
 	}
 
 	TEST_PASS("Central tests passed");

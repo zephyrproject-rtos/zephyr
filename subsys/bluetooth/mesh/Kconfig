@@ -72,7 +72,8 @@ if BT_MESH_ADV_LEGACY
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
-	default 1024 if BT_HOST_CRYPTO
+	default 1800 if BT_MESH_PROVISIONER
+	default 1536 if BT_MESH_PROXY
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -142,8 +143,8 @@ if BT_MESH_WORKQ_MESH
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh extended advertiser thread stack size"
+	default 2048 if BT_MESH_PROVISIONER
 	default 1536 if BT_MESH_PROXY
-	default 1024 if BT_HOST_CRYPTO
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -360,6 +361,18 @@ config BT_MESH_OOB_AUTH_REQUIRED
 	bool "OOB authentication mandates to use HMAC SHA256"
 	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 
+config BT_MESH_PROV_OOB_API_LEGACY
+	bool "Reduced maximum OOB authentication size support [DEPRECATED]"
+	select DEPRECATED
+	depends on BT_MESH_PROV
+	help
+	  By default, the maximum OOB authentication size is 32 bytes.
+	  Enable this option to use the legacy API which is only compatible with
+	  specification v1.1 and earlier. This limits OOB authentication to 8
+	  bytes maximum.
+	  This option is intended for backward compatibility.
+	  Not recommended for new designs due to reduced security.
+
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_CDB
@@ -396,6 +409,16 @@ config BT_MESH_CDB_APP_KEY_COUNT
 	help
 	  This option specifies how many application keys that can at most
 	  be saved in the configuration database.
+
+config BT_MESH_CDB_KEY_SYNC
+	bool "Keys synchronization support"
+	default y
+	help
+	  Enable this option to have support for synchronizing keys between
+	  mesh stack and cdb.
+	  When this option is enabled, key operations (add, remove, update)
+	  performed on the mesh stack through Configuration Server messages
+	  are automatically mirrored to the CDB.
 
 endif # BT_MESH_CDB
 
@@ -772,11 +795,12 @@ config BT_MESH_ACCESS_LAYER_MSG
 	  might wear out persistent memory.
 
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
-	bool "Force vendor model to use the corresponding CID field message"
-	default y
+	bool "Force vendor model to use opcodes with matching CID [DEPRECATED]"
+	default n
+	select DEPRECATED
 	help
-	  This option forces vendor model to use messages for the
-	  corresponding CID field.
+	  This option forces vendor models to only use opcodes with a CID field
+	  matching the models CID. It is deprecated and should no longer be used.
 
 config BT_MESH_MODEL_EXTENSIONS
 	bool "Support for Model extensions"

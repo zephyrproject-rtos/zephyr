@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -402,6 +403,7 @@ class Pytest(Harness):
             'pytest',
             '--twister-harness',
             '-s', '-v',
+            '--log-level=DEBUG',
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
             f'--platform={self.instance.platform.name}'
@@ -412,12 +414,6 @@ class Pytest(Harness):
 
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
-
-        # Always pass output from the pytest test and the test image up to Twister log.
-        command.extend([
-            '--log-cli-level=DEBUG',
-            '--log-cli-format=%(levelname)s: %(message)s'
-        ])
 
         # Use the test timeout as the base timeout for pytest
         base_timeout = handler.get_test_timeout()
@@ -469,6 +465,8 @@ class Pytest(Harness):
                 f'--device-serial={hardware.serial}',
                 f'--device-serial-baud={hardware.baud}'
             ])
+            for extra_serial in handler.get_more_serials_from_device(hardware):
+                command.append(f'--device-serial={extra_serial}')
 
         if hardware.flash_timeout:
             command.append(f'--flash-timeout={hardware.flash_timeout}')
@@ -502,8 +500,11 @@ class Pytest(Harness):
         if hardware.post_script:
             command.append(f'--post-script={hardware.post_script}')
 
-        if hardware.flash_before:
-            command.append(f'--flash-before={hardware.flash_before}')
+        # Check flash_before from both hardware map and platform (board YAML)
+        # Platform flash_before is intended for boards with USB reset issues during flashing
+        flash_before = hardware.flash_before or self.instance.platform.flash_before
+        if flash_before:
+            command.append(f'--flash-before={flash_before}')
 
         for fixture in hardware.fixtures:
             command.append(f'--twister-fixture={fixture}')
@@ -573,7 +574,7 @@ class Pytest(Harness):
     def _output_reader(self, proc):
         self._output = []
         while proc.stdout.readable() and proc.poll() is None:
-            line = proc.stdout.readline().decode().strip()
+            line = proc.stdout.readline().decode().rstrip()
             if not line:
                 continue
             self._output.append(line)

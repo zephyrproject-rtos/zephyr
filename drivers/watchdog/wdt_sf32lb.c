@@ -32,6 +32,20 @@ struct wdt_sf32lb_config {
 	uintptr_t base;
 };
 
+struct wdt_sf32lb_data {
+	bool timeout_valid;
+};
+
+static inline bool wdt_sf32lb_is_enabled(const struct device *dev)
+{
+	const struct wdt_sf32lb_config *config = dev->config;
+	uint32_t cr;
+
+	cr = sys_read32(config->base + WDT_CCR);
+
+	return (cr == WDT_CMD_START);
+}
+
 static int wdt_sf32lb_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_sf32lb_config *config = dev->config;
@@ -39,6 +53,11 @@ static int wdt_sf32lb_setup(const struct device *dev, uint8_t options)
 	if (options != 0U) {
 		LOG_ERR("Options not supported");
 		return -ENOTSUP;
+	}
+
+	if (wdt_sf32lb_is_enabled(dev)) {
+		LOG_ERR("Setup not allowed with watchdog enabled");
+		return -EBUSY;
 	}
 
 	sys_write32(WDT_CMD_START, config->base + WDT_CCR);
@@ -49,7 +68,13 @@ static int wdt_sf32lb_setup(const struct device *dev, uint8_t options)
 static int wdt_sf32lb_disable(const struct device *dev)
 {
 	const struct wdt_sf32lb_config *config = dev->config;
+	struct wdt_sf32lb_data *data = dev->data;
 
+	if (!wdt_sf32lb_is_enabled(dev)) {
+		LOG_ERR("Watchdog already disabled");
+		return -EFAULT;
+	}
+	data->timeout_valid = false;
 	sys_write32(WDT_CMD_STOP, config->base + WDT_CCR);
 
 	return 0;
@@ -59,6 +84,12 @@ static int wdt_sf32lb_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *wdt_cfg)
 {
 	const struct wdt_sf32lb_config *config = dev->config;
+	struct wdt_sf32lb_data *data = dev->data;
+
+	if (wdt_sf32lb_is_enabled(dev)) {
+		LOG_ERR("Timeout install not allowed with watchdog enabled");
+		return -EBUSY;
+	}
 
 	if (wdt_cfg->flags != WDT_FLAG_RESET_SOC) {
 		LOG_ERR("Only SoC reset supported");
@@ -79,6 +110,8 @@ static int wdt_sf32lb_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
+	data->timeout_valid = true;
+
 	sys_write32(wdt_cfg->window.max * WDT_CLK_KHZ, config->base + WDT_CVR0);
 
 	return 0;
@@ -87,6 +120,12 @@ static int wdt_sf32lb_install_timeout(const struct device *dev,
 static int wdt_sf32lb_feed(const struct device *dev, int channel_id)
 {
 	const struct wdt_sf32lb_config *config = dev->config;
+	struct wdt_sf32lb_data *data = dev->data;
+
+	if (!data->timeout_valid) {
+		LOG_ERR("No valid timeout installed");
+		return -EINVAL;
+	}
 
 	sys_write32(WDT_CMD_START, config->base + WDT_CCR);
 
@@ -117,7 +156,8 @@ static int wdt_sf32lb_init(const struct device *dev)
 	static const struct wdt_sf32lb_config wdt_sf32lb_config_##index = {                        \
 		.base = DT_INST_REG_ADDR(index),                                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, wdt_sf32lb_init, NULL, NULL,                                  \
+	static struct wdt_sf32lb_data wdt_sf32lb_data_##index;                                     \
+	DEVICE_DT_INST_DEFINE(index, wdt_sf32lb_init, NULL, &wdt_sf32lb_data_##index,              \
 			      &wdt_sf32lb_config_##index, POST_KERNEL,                             \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sf32lb_api);
 

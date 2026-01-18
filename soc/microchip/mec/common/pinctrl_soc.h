@@ -26,47 +26,47 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Type for MCHP XEC pin. */
-typedef uint32_t pinctrl_soc_pin_t;
+struct mec_pinctrl {
+	uint32_t pinmux		: 12; /* b[11:0] */
+	uint32_t no_pud		: 1; /* b[12] */
+	uint32_t pd		: 1; /* b[13] */
+	uint32_t pu		: 1; /* b[14] */
+	uint32_t obuf_pp	: 1; /* b[15] */
+	uint32_t obuf_od	: 1; /* b[16] */
+	uint32_t out_dis	: 1; /* b[17] */
+	uint32_t out_en		: 1; /* b[18] */
+	uint32_t out_hi		: 1; /* b[19] */
+	uint32_t out_lo		: 1; /* b[20] */
+	uint32_t rsvd21		: 1; /* b[21] unused */
+	uint32_t slew_rate	: 2; /* b[23:22] */
+	uint32_t drive_str	: 3; /* b[26:24] */
+	uint32_t rsvd27		: 1; /* b[27] unused */
+	uint32_t finv		: 1; /* b[28] */
+	uint32_t lp		: 1; /* b[29] */
+};
 
-/* initialize pinmux member fields of pinctrl_pin_t */
-#define Z_PINCTRL_MCHP_XEC_PINMUX_INIT(node_id) (uint32_t)(DT_PROP(node_id, pinmux))
+typedef struct mec_pinctrl pinctrl_soc_pin_t;
 
-#ifdef CONFIG_HAS_MEC5_HAL
-#define Z_PINCTRL_STATE_PINCFG_INIT(node_id)                                                       \
-	((DT_PROP(node_id, bias_disable) << MCHP_XEC_NO_PUD_POS) |                                 \
-	 (DT_PROP(node_id, bias_pull_down) << MCHP_XEC_PD_POS) |                                   \
-	 (DT_PROP(node_id, bias_pull_up) << MCHP_XEC_PU_POS) |                                     \
-	 (DT_PROP(node_id, drive_push_pull) << MCHP_XEC_PUSH_PULL_POS) |                           \
-	 (DT_PROP(node_id, drive_open_drain) << MCHP_XEC_OPEN_DRAIN_POS) |                         \
-	 (DT_PROP(node_id, output_disable) << MCHP_XEC_OUT_DIS_POS) |                              \
-	 (DT_PROP(node_id, output_enable) << MCHP_XEC_OUT_EN_POS) |                                \
-	 (DT_PROP(node_id, output_high) << MCHP_XEC_OUT_HI_POS) |                                  \
-	 (DT_PROP(node_id, output_low) << MCHP_XEC_OUT_LO_POS) |                                   \
-	 (DT_PROP(node_id, low_power_enable) << MCHP_XEC_PIN_LOW_POWER_POS) |                      \
-	 (DT_PROP(node_id, microchip_output_func_invert) << MCHP_XEC_FUNC_INV_POS) |               \
-	 (DT_ENUM_IDX_OR(node_id, slew_rate, 0x3) << MCHP_XEC_SLEW_RATE_POS) |                     \
-	 (DT_ENUM_IDX_OR(node_id, drive_strength, 0x7) << MCHP_XEC_DRV_STR_POS))
-#else
-#define Z_PINCTRL_STATE_PINCFG_INIT(node_id)                                                       \
-	((DT_PROP(node_id, bias_disable) << MCHP_XEC_NO_PUD_POS) |                                 \
-	 (DT_PROP(node_id, bias_pull_down) << MCHP_XEC_PD_POS) |                                   \
-	 (DT_PROP(node_id, bias_pull_up) << MCHP_XEC_PU_POS) |                                     \
-	 (DT_PROP(node_id, drive_push_pull) << MCHP_XEC_PUSH_PULL_POS) |                           \
-	 (DT_PROP(node_id, drive_open_drain) << MCHP_XEC_OPEN_DRAIN_POS) |                         \
-	 (DT_PROP(node_id, output_disable) << MCHP_XEC_OUT_DIS_POS) |                              \
-	 (DT_PROP(node_id, output_enable) << MCHP_XEC_OUT_EN_POS) |                                \
-	 (DT_PROP(node_id, output_high) << MCHP_XEC_OUT_HI_POS) |                                  \
-	 (DT_PROP(node_id, output_low) << MCHP_XEC_OUT_LO_POS) |                                   \
-	 (DT_PROP(node_id, low_power_enable) << MCHP_XEC_PIN_LOW_POWER_POS) |                      \
-	 (DT_PROP(node_id, microchip_output_func_invert) << MCHP_XEC_FUNC_INV_POS) |               \
-	 (DT_ENUM_IDX(node_id, slew_rate) << MCHP_XEC_SLEW_RATE_POS) |                             \
-	 (DT_ENUM_IDX(node_id, drive_strength) << MCHP_XEC_DRV_STR_POS))
-#endif
+#define MCHP_XEC_PIN_INIT(node_id)                                                                 \
+	{                                                                                          \
+		.pinmux = DT_PROP(node_id, pinmux),                                                \
+		.no_pud = DT_PROP(node_id, bias_disable),                                          \
+		.pd = DT_PROP(node_id, bias_pull_down),                                            \
+		.pu = DT_PROP(node_id, bias_pull_up),                                              \
+		.obuf_pp = DT_PROP(node_id, drive_push_pull),                                      \
+		.obuf_od = DT_PROP(node_id, drive_open_drain),                                     \
+		.out_dis = DT_PROP(node_id, output_disable),                                       \
+		.out_en = DT_PROP(node_id, output_enable),                                         \
+		.out_hi = DT_PROP(node_id, output_high),                                           \
+		.out_lo = DT_PROP(node_id, output_low),                                            \
+		.slew_rate = DT_PROP_OR(node_id, slew_rate, 0),                                    \
+		.drive_str = DT_PROP_OR(node_id, drive_strength, 0),                               \
+		.finv = DT_PROP(node_id, microchip_output_func_invert),                            \
+		.lp = DT_PROP(node_id, low_power_enable),                                          \
+	},
 
-/* initialize pin structure members */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, state_prop, idx)                                         \
-	(Z_PINCTRL_MCHP_XEC_PINMUX_INIT(DT_PROP_BY_IDX(node_id, state_prop, idx)) |                \
-	 Z_PINCTRL_STATE_PINCFG_INIT(DT_PROP_BY_IDX(node_id, state_prop, idx))),
+#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx) \
+	MCHP_XEC_PIN_INIT(DT_PROP_BY_IDX(node_id, prop, idx))
 
 /* Use DT FOREACH macro to initialize each used pin */
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \

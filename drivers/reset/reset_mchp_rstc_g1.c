@@ -1,22 +1,14 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file reset_mchp_rstc_g1.c
- * @brief Zephyr reset driver for Microchip G1 peripherals
- *
- * This file implements the driver for the Microchip RSTC g1 reset controller,
- * providing APIs to assert, deassert, toggle, and query the status of reset lines.
- *
  */
 
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/drivers/reset/mchp_rstc_g1.h>
 
 #define DT_DRV_COMPAT microchip_rstc_g1_reset
 
@@ -46,6 +38,8 @@ static int reset_mchp_status(const struct device *dev, uint32_t id, uint8_t *sta
 
 	if (id >= MCHP_RST_LINE_MAX) {
 		ret = -EINVAL;
+	} else if ((BIT(id) & RSTC_UNSUPPORTED_RCAUSE) != 0U) {
+		ret = -ENOTSUP;
 	} else {
 		rcause = (((const struct reset_mchp_config *)((dev)->config))->regs)->RSTC_RCAUSE;
 		*status = (rcause & BIT(id)) ? 1 : 0;

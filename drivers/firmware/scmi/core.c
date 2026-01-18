@@ -115,6 +115,13 @@ static int scmi_send_message_polling(struct scmi_protocol *proto,
 	int ret;
 	int status;
 
+	/* wait for channel to be free */
+	ret = k_mutex_lock(&proto->tx->lock, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("failed to acquire chan lock");
+		return -EBUSY;
+	}
+
 	/*
 	 * SCMI communication interrupt is enabled by default during setup_chan
 	 * to support interrupt-driven communication. When using polling mode
@@ -151,6 +158,8 @@ cleanup:
 	if (status >= 0) {
 		scmi_interrupt_enable(proto->tx, true);
 	}
+
+	k_mutex_unlock(&proto->tx->lock);
 
 	return ret;
 }
@@ -215,6 +224,45 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	}
 }
 
+static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
+
+{
+	uint32_t agent_version, platform_version;
+	int ret;
+
+	if (!proto) {
+		return -EINVAL;
+	}
+
+	agent_version = proto->version;
+
+	if (!agent_version) {
+		LOG_ERR("Protocol 0x%X: Agent version not specified", proto->id);
+		return -EINVAL;
+	}
+
+	ret = scmi_protocol_get_version(proto, &platform_version);
+	if (ret < 0) {
+		LOG_ERR("Protocol 0x%X: Failed to get platform version: %d",
+			proto->id, ret);
+		return ret;
+	}
+
+	if (platform_version > agent_version) {
+		ret = scmi_protocol_version_negotiate(proto, agent_version);
+		if (ret < 0) {
+			LOG_WRN("Protocol 0x%X: Negotiation failed (%d). "
+				"Platform v0x%08x does not support downgrade to agent v0x%08x",
+				proto->id, ret, platform_version, agent_version);
+		}
+	}
+
+	LOG_INF("Using protocol 0x%X: agent version 0x%08x, platform version 0x%08x",
+			proto->id, agent_version, platform_version);
+
+	return 0;
+}
+
 static int scmi_core_protocol_setup(const struct device *transport)
 {
 	int ret;
@@ -235,6 +283,12 @@ static int scmi_core_protocol_setup(const struct device *transport)
 		if (ret < 0) {
 			return ret;
 		}
+
+		ret = scmi_core_protocol_negotiate(it);
+		if (ret < 0) {
+			return ret;
+		}
+
 	}
 
 	return 0;

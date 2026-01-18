@@ -230,8 +230,8 @@ struct mqtt_sn_transport_udp {
 	int sock;
 
 	/** Address of broadcasts */
-	struct sockaddr bcaddr;
-	socklen_t bcaddrlen;
+	struct net_sockaddr bcaddr;
+	net_socklen_t bcaddrlen;
 };
 
 #define UDP_TRANSPORT(transport) CONTAINER_OF(transport, struct mqtt_sn_transport_udp, tp)
@@ -243,8 +243,8 @@ struct mqtt_sn_transport_udp {
  * @param[in] gwaddr Pre-initialized gateway address
  * @param[in] addrlen Size of the gwaddr structure.
  */
-int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct sockaddr *gwaddr,
-			       socklen_t addrlen);
+int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct net_sockaddr *gwaddr,
+			       net_socklen_t addrlen);
 #endif
 
 /**

@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip PIC32CM_JH SOC family clock
+
+description: |
+  Microchip PIC32CM_JH SOC family clock (OSCCTRL, OSC32KCTRL, GCLK, MCLK)
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "microchip,pic32cm-jh-clock"
+
+properties:
+  on-timeout-ms:
+    type: int
+    default: 5
+    description: |
+      Timeout in milliseconds for clock to be on.
+
+      Driver waits in clock on API to check if the clock is actually on,
+      so that the waiting time is not indefinite.
+
+  flash-wait-states:
+    type: int
+    default: 0
+    description: |
+      Number of wait states for a flash read operation.
+
+      Change this value based on the NVM access time and system frequency
+      up to 15 wait states.

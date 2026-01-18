@@ -36,7 +36,6 @@
 #include "btp_bap_audio_stream.h"
 #include "bap_endpoint.h"
 #include "btp/btp.h"
-#include "btp_bap_audio_stream.h"
 #include "btp_bap_broadcast.h"
 
 #define LOG_MODULE_NAME bttester_bap_broadcast
@@ -1162,6 +1161,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 		bt_addr_le_copy(&broadcaster->address, &recv_state->addr);
 	}
 
+	broadcast_source_to_sync = broadcaster;
+
 	broadcaster->sink_recv_state = recv_state;
 
 	btp_send_pas_sync_req_ev(conn, recv_state->src_id, recv_state->adv_sid,
@@ -1380,20 +1381,6 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 
 	LOG_DBG("");
 
-	broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
-	if (broadcaster == NULL) {
-		broadcaster = remote_broadcaster_alloc();
-		if (broadcaster == NULL) {
-			LOG_ERR("Failed to allocate broadcast source");
-			return BTP_STATUS_FAILED;
-		}
-
-		broadcaster->broadcast_id = broadcast_id;
-		bt_addr_le_copy(&broadcaster->address, &cp->address);
-	}
-
-	broadcast_source_to_sync = broadcaster;
-
 	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER) && cp->past_avail) {
 		/* The Broadcast Assistant supports PAST transfer, and it has found
 		 * a Broadcaster for us. Let's sync to the Broadcaster PA with the PAST.
@@ -1421,7 +1408,22 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 		create_params.sid = cp->advertiser_sid;
 		create_params.skip = cp->skip;
 		create_params.timeout = cp->sync_timeout;
+
 		err = tester_gap_padv_create_sync(&create_params);
+
+		broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
+		if (broadcaster == NULL) {
+			broadcaster = remote_broadcaster_alloc();
+			if (broadcaster == NULL) {
+				LOG_ERR("Failed to allocate broadcast source");
+				return BTP_STATUS_FAILED;
+			}
+
+			broadcaster->broadcast_id = broadcast_id;
+			bt_addr_le_copy(&broadcaster->address, &cp->address);
+		}
+
+		broadcast_source_to_sync = broadcaster;
 	}
 
 	if (err != 0) {
@@ -1677,12 +1679,6 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
-		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* For semantic purposes Zephyr API uses BIS Index bitfield
-			 * where BIT(1) means BIS Index 1
-			 */
-			subgroup->bis_sync <<= 1;
-		}
 
 		ptr += sizeof(subgroup->bis_sync);
 		subgroup->metadata_len = *ptr;
@@ -1748,12 +1744,6 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 		struct bt_bap_bass_subgroup *subgroup = &delegator_subgroups[i];
 
 		subgroup->bis_sync = sys_get_le32(ptr);
-		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* For semantic purposes Zephyr API uses BIS Index bitfield
-			 * where BIT(1) means BIS Index 1
-			 */
-			subgroup->bis_sync <<= 1;
-		}
 
 		ptr += sizeof(subgroup->bis_sync);
 		subgroup->metadata_len = *ptr;
@@ -1826,6 +1816,71 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 
 		return BTP_STATUS_FAILED;
 	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_bap_scan_delegator_add_src_cmd *cp = cmd;
+	struct btp_bap_scan_delegator_add_src_rp *rp = rsp;
+	struct bt_bap_scan_delegator_add_src_param param = {0};
+	struct net_buf_simple buf;
+	int err;
+
+	if (cmd_len < sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->big_encryption > BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
+	param.sid = cp->advertiser_sid;
+	param.pa_state = (enum bt_bap_pa_state)cp->pa_sync_state;
+	param.encrypt_state = (enum bt_bap_big_enc_state)cp->big_encryption;
+	param.broadcast_id = sys_get_le24(cp->broadcast_id);
+	param.num_subgroups = cp->num_subgroups;
+
+	net_buf_simple_init_with_data(&buf, (void *)cp->subgroups, cmd_len - sizeof(*cp));
+
+	for (uint8_t i = 0; i < param.num_subgroups; i++) {
+		struct bt_bap_bass_subgroup *subgroup = &param.subgroups[i];
+
+		/* If remaining data is less than the necessary subgroup fields, return failed */
+		if (buf.len < sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		subgroup->bis_sync = net_buf_simple_pull_le32(&buf);
+		subgroup->metadata_len = net_buf_simple_pull_u8(&buf);
+
+		if (subgroup->metadata_len > sizeof(subgroup->metadata) ||
+		    subgroup->metadata_len > buf.len) {
+			return BTP_STATUS_FAILED;
+		}
+
+		memcpy(subgroup->metadata, net_buf_simple_pull_mem(&buf, subgroup->metadata_len),
+		       subgroup->metadata_len);
+	}
+
+	if (buf.len != 0U) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_scan_delegator_add_src(&param);
+	if (err < 0) {
+		return BTP_STATUS_VAL(err);
+	}
+
+	rp->src_id = (uint8_t)err;
+	*rsp_len = sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

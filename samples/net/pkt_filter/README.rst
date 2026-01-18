@@ -54,13 +54,15 @@ In network shell, you can monitor the network packet filters:
 .. code-block:: console
 
    uart:~$ net filter
-   Rule  Type        Verdict  Tests
-   [ 1]  recv        OK       3    eth vlan type[0x0800],size max[200],iface[2]
-   [ 2]  recv        OK       3    eth vlan type[0x0800],size min[100],iface[3]
-   [ 3]  recv        OK       1    iface[1]
-   [ 4]  recv        OK       2    eth vlan type[0x0806],iface[2]
-   [ 5]  recv        OK       2    eth vlan type[0x0806],iface[3]
-   [ 6]  recv        DROP     0
+   Rule  Type        Verdict   Pkt-Prio  Queue  Thread-Prio  Tests
+   [ 1]  recv        OK             N/A    N/A          N/A  3    iface[2],eth vlan type[0x0800],size max[200]
+   [ 2]  recv        OK             N/A    N/A          N/A  3    iface[3],eth vlan type[0x0800],size min[100]
+   [ 3]  recv        OK             N/A    N/A          N/A  1    iface[1]
+   [ 4]  recv        OK             N/A    N/A          N/A  2    iface[2],eth vlan type[0x0806]
+   [ 5]  recv        OK             N/A    N/A          N/A  2    iface[3],eth vlan type[0x0806]
+   [ 6]  recv        DROP           N/A    N/A          N/A  0
+   [ 7]  IPv4 recv   OK             N/A    N/A          N/A  1    ip src block[192.0.2.2,198.51.100.2]
+   [ 8]  IPv6 recv   OK             N/A    N/A          N/A  1    ip src block[2001:db8::2,2001:db8::100:2]
 
 The above sample application network packet filter rules can be interpreted
 like this:
@@ -79,6 +81,36 @@ like this:
 
 * Rule 6: Drop all other packets. This also means that IPv6 packets are
   dropped.
+
+* Rule 7: Drop IPv4 packets where the source address is either ``192.0.2.2`` or ``198.51.100.2``.
+
+* Rule 8: Drop IPv6 packets where the source address is either ``2001:db8::2`` or ``2001:db8::100:2``.
+
+If you enable network packet priority option :kconfig:option:`CONFIG_NET_SAMPLE_USE_PACKET_PRIORITIES`
+then the sample will install extra rules for setting up the priorities.
+
+   uart:~$ net filter
+   Rule  Type        Verdict   Pkt-Prio  Queue  Thread-Prio  Tests
+   [ 1]  recv        CONTINUE         1      0            1  1    iface[1]
+   [ 2]  recv        CONTINUE         7      2         SKIP  2    iface[1],eth type[0x88f7]
+   [ 3]  recv        CONTINUE         2      0            1  2    iface[1],eth type[0x8100]
+   [ 4]  recv        CONTINUE         1      0            1  2    iface[2],eth vlan type[0x0806]
+   [ 5]  recv        CONTINUE         1      0            1  2    iface[3],eth vlan type[0x0806]
+   [ 6]  recv        OK             N/A    N/A          N/A  3    iface[2],eth vlan type[0x0800],size max[200]
+   [ 7]  recv        OK             N/A    N/A          N/A  3    iface[3],eth vlan type[0x0800],size min[100]
+   [ 8]  recv        OK             N/A    N/A          N/A  1    iface[1]
+   [ 9]  recv        OK             N/A    N/A          N/A  2    iface[2],eth vlan type[0x0806]
+   [10]  recv        OK             N/A    N/A          N/A  2    iface[3],eth vlan type[0x0806]
+   [11]  recv        DROP           N/A    N/A          N/A  0
+   [12]  IPv4 recv   OK             N/A    N/A          N/A  1    ip src block[192.0.2.2,198.51.100.2]
+   [13]  IPv6 recv   OK             N/A    N/A          N/A  1    ip src block[2001:db8::2,2001:db8::100:2]
+
+The above sample application network packet filter rules can be interpreted
+like this:
+
+* Rules 1 - 5: Add rules to set network packet priority to certain type packets.
+
+* Rule 6 - 13: These are the same as in previous rule list.
 
 The network statistics can be used to see that the packets are dropped.
 Use ``net stats`` command to monitor statistics.

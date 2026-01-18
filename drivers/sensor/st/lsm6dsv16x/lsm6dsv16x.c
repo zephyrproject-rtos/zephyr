@@ -1106,13 +1106,13 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 	 */
 	if (ON_I3C_BUS(cfg)) {
 		/* Restore default configuration */
-		lsm6dsv16x_reset_set(ctx, LSM6DSV16X_RESTORE_CAL_PARAM);
+		lsm6dsv16x_reboot(ctx);
 
 		/* wait 150us as reported in AN5763 */
 		k_sleep(K_USEC(150));
 	} else {
 		/* reset device (sw_por) */
-		if (lsm6dsv16x_reset_set(ctx, LSM6DSV16X_GLOBAL_RST) < 0) {
+		if (lsm6dsv16x_sw_por(ctx) < 0) {
 			return -EIO;
 		}
 
@@ -1232,11 +1232,11 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSV16X_DT_ODR_OFF) < 0) {
+		if (lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
 			LOG_ERR("failed to disable accelerometer");
 			ret = -EIO;
 		}
-		if (lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSV16X_DT_ODR_OFF) < 0) {
+		if (lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
 			LOG_ERR("failed to disable gyroscope");
 			ret = -EIO;
 		}

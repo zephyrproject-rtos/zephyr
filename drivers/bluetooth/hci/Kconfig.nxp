@@ -14,11 +14,13 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 
 config HCI_NXP_SET_CAL_DATA
 	bool "Bluetooth Controller calibration data"
+	default y if BT_NXP_NW612 || BT_NXP_IW416
 	help
 	  If enabled, the Host will send calibration data to the Bluetooth Controller during HCI init.
 
 config HCI_NXP_SET_CAL_DATA_ANNEX100
 	bool "Bluetooth Controller calibration data annex 100"
+	default y if BT_NXP_NW612 || BT_NXP_IW416
 	help
 	  If enabled, the Host will send calibration data annex 100 to the Bluetooth Controller during HCI
 	  init.

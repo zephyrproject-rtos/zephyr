@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2025 TiaC Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&mikrobus_spi {
+	status = "okay";
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	tcan4x5x_mikroe_can_fd_6_click: tcan4x5x@0 {
+		compatible = "ti,tcan4x5x";
+		reg = <0>;
+		spi-max-frequency = <18000000>;
+		status = "okay";
+
+		clock-frequency = <40000000>;
+		device-state-gpios = <&mikrobus_header 0 GPIO_ACTIVE_HIGH>;
+		device-wake-gpios = <&mikrobus_header 6 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&mikrobus_header 1 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
+
+		can-transceiver {
+			max-bitrate = <8000000>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,canbus = &tcan4x5x_mikroe_can_fd_6_click;
+	};
+};

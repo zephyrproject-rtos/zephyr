@@ -5,3 +5,11 @@ tests:
     integration_platforms:
       - native_sim
     tags: pm
+  pm.power_doamin.isr_safe:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_TEST_PM_DEVICE_ISR_SAFE=y
+    tags: pm

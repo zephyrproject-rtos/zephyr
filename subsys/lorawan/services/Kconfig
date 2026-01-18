@@ -68,10 +68,12 @@ config LORAWAN_FRAG_TRANSPORT
 choice LORAWAN_FRAG_TRANSPORT_DECODER
 	bool "Fragmented Data Block Transport decoder implementation"
 	depends on LORAWAN_FRAG_TRANSPORT
-	default LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
+	default LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH if LORA_MODULE_BACKEND_LORAMAC_NODE
+	default LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM
 
 config LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 	bool "Semtech"
+	depends on LORA_MODULE_BACKEND_LORAMAC_NODE
 	help
 	  The default decoder implementation from LoRaMAC-node.
 
@@ -159,6 +161,8 @@ config LORAWAN_REMOTE_MULTICAST
 	bool "Remote Multicast Setup"
 	depends on LORAWAN_APP_CLOCK_SYNC
 	depends on !LORAWAN_NVM_NONE
+	# The multicast service implementation currently only supports loramac-node
+	depends on LORA_MODULE_BACKEND_LORAMAC_NODE
 	help
 	  Enables the LoRaWAN Remote Multicast Setup service according to
 	  TS005-1.0.0 as published by the LoRa Alliance.

@@ -10,4 +10,6 @@ toolchain:
 supported:
   - gpio
   - uart
+  - spi
+  - sdhc
 vendor: renesas

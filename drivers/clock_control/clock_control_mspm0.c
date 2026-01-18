@@ -29,12 +29,21 @@
 			DT_PROP(DT_NODELABEL(mfpclk), clk_div))),	\
 		(0))
 
+#define DT_SYSOSC_FREQ	DT_PROP(DT_NODELABEL(sysosc), clock_frequency)
+#if DT_SYSOSC_FREQ == 32000000
+#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_BASE
+#elif DT_SYSOSC_FREQ == 4000000
+#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_4M
+#else
+#error "Set SYSOSC clock frequency not supported"
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(mfpclk), okay)
 #define MSPM0_MFPCLK_ENABLED 1
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pll), okay)
-#define MSPM0_PLL_ENABLED 1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(syspll), okay)
+#define MSPM0_SYSPLL_ENABLED 1
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(hfxt), okay)
@@ -43,10 +52,9 @@
 
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
 #define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(lfclk))
-#define DT_HSCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(hsclk))
 #define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(hfclk))
 #define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
-#define DT_PLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll))
+#define DT_SYSPLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(syspll))
 
 struct mspm0_clk_cfg {
 	uint32_t clk_div;
@@ -62,11 +70,6 @@ static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
 	.clk_div = MSPM0_ULPCLK_DIV,
 };
 
-static struct mspm0_clk_cfg mspm0_mclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(mclk), clock_frequency),
-	.clk_div = MSPM0_MCLK_DIV,
-};
-
 #if MSPM0_MFPCLK_ENABLED
 static struct mspm0_clk_cfg mspm0_mfpclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(mfpclk), clock_frequency),
@@ -74,33 +77,33 @@ static struct mspm0_clk_cfg mspm0_mfpclk_cfg = {
 };
 #endif
 
-#if MSPM0_PLL_ENABLED
+#if MSPM0_SYSPLL_ENABLED
 /* basic checks of the devicetree to follow */
-#if (DT_NODE_HAS_PROP(DT_NODELABEL(pll), clk2x_div) && \
-	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clk0_div))
-#error "Only CLK2X or CLK0 can be enabled at a time on the PLL"
+#if (DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk2x_div) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk0_div))
+#error "Only CLK2X or CLK0 can be enabled at a time on the SYSPLL"
 #endif
 
 static DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll = {
 	.inputFreq = DL_SYSCTL_SYSPLL_INPUT_FREQ_32_48_MHZ,
 	.sysPLLMCLK = DL_SYSCTL_SYSPLL_MCLK_CLK2X,
 	.sysPLLRef = DL_SYSCTL_SYSPLL_REF_SYSOSC,
-	.rDivClk2x = (DT_PROP_OR(DT_NODELABEL(pll), clk2x_div, 1) - 1),
-	.rDivClk1 = (DT_PROP_OR(DT_NODELABEL(pll), clk1_div, 1) - 1),
-	.rDivClk0 = (DT_PROP_OR(DT_NODELABEL(pll), clk0_div, 1) - 1),
-	.qDiv = (DT_PROP(DT_NODELABEL(pll), q_div) - 1),
+	.rDivClk2x = (DT_PROP_OR(DT_NODELABEL(syspll), clk2x_div, 1) - 1),
+	.rDivClk1 = (DT_PROP_OR(DT_NODELABEL(syspll), clk1_div, 1) - 1),
+	.rDivClk0 = (DT_PROP_OR(DT_NODELABEL(syspll), clk0_div, 1) - 1),
+	.qDiv = (DT_PROP(DT_NODELABEL(syspll), q_div) - 1),
 	.pDiv = CONCAT(DL_SYSCTL_SYSPLL_PDIV_,
-		       DT_PROP(DT_NODELABEL(pll), p_div)),
+		       DT_PROP(DT_NODELABEL(syspll), p_div)),
 	.enableCLK2x = COND_CODE_1(
-		DT_NODE_HAS_PROP(DT_NODELABEL(pll), clk2x_div),
+		DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk2x_div),
 		(DL_SYSCTL_SYSPLL_CLK2X_ENABLE),
 		(DL_SYSCTL_SYSPLL_CLK2X_DISABLE)),
 	.enableCLK1 = COND_CODE_1(
-		DT_NODE_HAS_PROP(DT_NODELABEL(pll), clk1_div),
+		DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk1_div),
 		(DL_SYSCTL_SYSPLL_CLK1_ENABLE),
 		(DL_SYSCTL_SYSPLL_CLK1_DISABLE)),
 	.enableCLK0 = COND_CODE_1(
-		DT_NODE_HAS_PROP(DT_NODELABEL(pll), clk0_div),
+		DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk0_div),
 		(DL_SYSCTL_SYSPLL_CLK0_ENABLE),
 		(DL_SYSCTL_SYSPLL_CLK0_DISABLE)),
 };
@@ -153,18 +156,21 @@ static int clock_mspm0_get_rate(const struct device *dev,
 static int clock_mspm0_init(const struct device *dev)
 {
 	/* setup clocks based on specific rates */
-	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
+	DL_SYSCTL_setSYSOSCFreq(SYSOSC_FREQ);
 
-	DL_SYSCTL_setMCLKDivider(mspm0_mclk_cfg.clk_div);
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(sysosc)) && (DT_SYSOSC_FREQ == 4000000)
+	DL_SYSCTL_setMCLKDivider(MSPM0_MCLK_DIV);
+#endif
+
 #if DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div)
 	DL_SYSCTL_setULPCLKDivider(mspm0_ulpclk_cfg.clk_div);
 #endif
 
-#if MSPM0_PLL_ENABLED
-#if DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll0))
+#if MSPM0_SYSPLL_ENABLED
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
 	clock_mspm0_cfg_syspll.sysPLLMCLK = DL_SYSCTL_SYSPLL_MCLK_CLK0;
 #endif
-#if DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(hfclk))
+#if DT_SAME_NODE(DT_SYSPLL_CLOCKS_CTRL, DT_NODELABEL(hfclk))
 	clock_mspm0_cfg_syspll.sysPLLRef = DL_SYSCTL_SYSPLL_REF_HFCLK;
 #endif
 	DL_SYSCTL_configSYSPLL(
@@ -204,33 +210,27 @@ static int clock_mspm0_init(const struct device *dev)
 #endif
 #endif
 
-#if MSPM0_LFCLK_ENABLED
 #if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfxt))
 	DL_SYSCTL_LFCLKConfig config = {0};
 
 	DL_SYSCTL_setLFCLKSourceLFXT(&config);
 #elif DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfdig_in))
 	DL_SYSCTL_setLFCLKSourceEXLF();
-#endif
-#endif /* MSPM0_LFCLK_ENABLED */
 
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hsclk))
-#if DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
+#endif
+
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
 				DL_SYSCTL_HSCLK_SOURCE_HFCLK);
-#endif
 
-#if MSPM0_PLL_ENABLED
-#if (DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll0)) || \
-	DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll2x)))
+#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
 				DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
-#endif
-#endif /* MSPM0_PLL_ENABLED */
 
 #elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(lfclk))
 	DL_SYSCTL_setMCLKSource(SYSOSC, LFCLK, false);
-#endif /* DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hsclk)) */
+
+#endif /* DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk)) */
 
 #if MSPM0_MFPCLK_ENABLED
 #if DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))

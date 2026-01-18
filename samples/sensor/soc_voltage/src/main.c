@@ -25,13 +25,13 @@ static int print_voltage(const struct device *dev)
 	rc = sensor_sample_fetch(dev);
 	if (rc) {
 		printk("Failed to fetch sample (%d)\n", rc);
-		return 0;
+		return rc;
 	}
 
 	rc = sensor_channel_get(dev, SENSOR_CHAN_VOLTAGE, &val);
 	if (rc) {
 		printk("Failed to get data (%d)\n", rc);
-		return 0;
+		return rc;
 	}
 
 	printk("Sensor voltage[%s]: %.2f V\n", dev->name, sensor_value_to_double(&val));

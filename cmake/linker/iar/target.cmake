@@ -29,7 +29,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(STEERING_FILE "${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}.xcl")
   set(STEERING_FILE_ARG "-DSTEERING_FILE=${STEERING_FILE}")
   set(cmake_linker_script_settings
-      ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${linker_pass_define}.cmake
+    ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${linker_pass_define}.cmake
   )
   if("${linker_pass_define}" STREQUAL "LINKER_ZEPHYR_PREBUILT")
     set(ILINK_THUMB_CALLS_WARNING_SUPPRESSED "--diag_suppress=Lt056")
@@ -44,13 +44,15 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   zephyr_linker_generate_linker_settings_file(${cmake_linker_script_settings})
 
   add_custom_command(
-    OUTPUT ${linker_script_gen}
-           ${STEERING_FILE}
+    OUTPUT
+      ${linker_script_gen}
+      ${STEERING_FILE}
     DEPENDS
-           ${extra_dependencies}
-           ${cmake_linker_script_settings}
-           ${DEVICE_API_LD_TARGET}
-    COMMAND ${CMAKE_COMMAND}
+      ${extra_dependencies}
+      ${cmake_linker_script_settings}
+      ${DEVICE_API_LD_TARGET}
+    COMMAND
+      ${CMAKE_COMMAND}
       -C ${cmake_linker_script_settings}
       -DPASS="${linker_pass_define}"
       ${STEERING_FILE_ARG}
@@ -72,7 +74,7 @@ function(toolchain_ld_link_elf)
 
   set(whole_libs)
   foreach(lib ${WHOLE_ARCHIVE_LIBS})
-	  list(APPEND whole_libs --whole_archive ${lib})
+    list(APPEND whole_libs --whole_archive ${lib})
   endforeach()
 
   set(ILINK_SEMIHOSTING)

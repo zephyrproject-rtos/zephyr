@@ -75,11 +75,13 @@ static uint32_t arbitrate_interval(struct sensing_sensor *sensor)
 
 static int set_arbitrate_interval(struct sensing_sensor *sensor, uint32_t interval)
 {
-	struct sensing_submit_config *config = sensor->iodev->data;
+	struct sensing_submit_config *config;
 	struct sensor_value odr = {0};
 	int ret;
 
 	__ASSERT(sensor && sensor->dev, "set arbitrate interval, sensor or sensor device is NULL");
+
+	config = sensor->iodev->data;
 
 	LOG_INF("set arbitrate interval:%d, sensor:%s, is_streaming:%d",
 			interval, sensor->dev->name, config->is_streaming);
@@ -409,9 +411,9 @@ int sensing_register_callback(struct sensing_connection *conn,
 
 int set_interval(struct sensing_connection *conn, uint32_t interval)
 {
-	LOG_INF("set interval, sensor:%s, interval:%u(us)", conn->source->dev->name, interval);
-
 	__ASSERT(conn && conn->source, "set interval, connection or reporter not be NULL");
+
+	LOG_INF("set interval, sensor:%s, interval:%u(us)", conn->source->dev->name, interval);
 
 	if (interval > 0 && interval < conn->source->info->minimal_interval) {
 		LOG_ERR("interval:%d(us) should no less than min interval:%d(us)",

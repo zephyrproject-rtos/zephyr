@@ -45,6 +45,7 @@ extern struct bst_test_list *test_op_agg_install(struct bst_test_list *test);
 extern struct bst_test_list *test_sar_install(struct bst_test_list *test);
 extern struct bst_test_list *test_cdp1_install(struct bst_test_list *test);
 extern struct bst_test_list *test_brg_install(struct bst_test_list *test);
+extern struct bst_test_list *test_cdb_install(struct bst_test_list *test);
 #endif
 
 bst_test_install_t test_installers[] = {
@@ -61,9 +62,15 @@ bst_test_install_t test_installers[] = {
 	test_proxy_sol_install,
 #endif
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
-	test_adv_install, test_suspend_install, test_beacon_install, test_provision_install,
+	test_adv_install,
+	test_suspend_install,
+	test_beacon_install,
+	test_provision_install,
 #elif defined(CONFIG_BT_CTLR_LOW_LAT)
-	test_transport_install, test_friendship_install, test_suspend_install, test_adv_install,
+	test_transport_install,
+	test_friendship_install,
+	test_suspend_install,
+	test_adv_install,
 #else
 	test_transport_install,
 	test_friendship_install,
@@ -80,6 +87,7 @@ bst_test_install_t test_installers[] = {
 	test_sar_install,
 	test_cdp1_install,
 	test_brg_install,
+	test_cdb_install,
 #endif
 	NULL};
 

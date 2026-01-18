@@ -30,6 +30,9 @@ Supported boards and camera modules include:
 - :zephyr:board:`stm32h7b3i_dk`
   with the :ref:`st_b_cams_omv_mb1683` shield and a compatible camera module.
 
+- :zephyr:board:`stm32n6570_dk`
+  with the :ref:`st_b_cams_imx_mb1854` camera module.
+
 Also :zephyr:board:`arduino_nicla_vision` can be used in this sample as capture device, in that case
 The user can transfer the captured frames through on board USB.
 
@@ -47,6 +50,10 @@ USB debug connector (J11) in order to get console output via the daplink interfa
 On :zephyr:board:`stm32h7b3i_dk`, connect the :ref:`st_b_cams_omv_mb1683` shield to the
 board on CN7 connector. A USB cable should be connected from a host to the micro USB
 connector in order to get console output.
+
+On :zephyr:board:`stm32n6570_dk`, connect the :ref:`st_b_cams_imx_mb1854` camera module
+to the J4 CSI connector. A USB cable should be connected from a host to both USB-C ports for
+power, flashing and console output.
 
 For :zephyr:board:`arduino_nicla_vision` there is no extra wiring required.
 
@@ -97,6 +104,16 @@ using the :ref:`st_b_cams_omv_mb1683` shield with a compatible camera module:
    :zephyr-app: samples/drivers/video/capture
    :board: stm32h7b3i_dk
    :shield: st_b_cams_omv_mb1683
+   :goals: build
+   :compact:
+
+For :zephyr:board:`stm32n6570_dk`, build this sample application with the following commands,
+using the :ref:`st_b_cams_imx_mb1854` camera module:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: stm32n6570_dk
+   :shield: st_b_cams_imx_mb1854
    :goals: build
    :compact:
 
@@ -153,17 +170,19 @@ Sample Output
       current_pixel_format = 32, current_orientation = 0
 
     Capture started
-    Got frame 0! size: 261120; timestamp 249 ms
-    Got frame 1! size: 261120; timestamp 282 ms
-    Got frame 2! size: 261120; timestamp 316 ms
-    Got frame 3! size: 261120; timestamp 350 ms
-    Got frame 4! size: 261120; timestamp 384 ms
-    Got frame 5! size: 261120; timestamp 418 ms
-    Got frame 6! size: 261120; timestamp 451 ms
+    Got frame 0! size: 261120; timestamp 249 ms (delta 249 ms)
+    Got frame 1! size: 261120; timestamp 282 ms (delta 33 ms)
+    Got frame 2! size: 261120; timestamp 316 ms (delta 34 ms)
+    Got frame 3! size: 261120; timestamp 350 ms (delta 34 ms)
+    Got frame 4! size: 261120; timestamp 384 ms (delta 34 ms)
+    Got frame 5! size: 261120; timestamp 418 ms (delta 34 ms)
+    Got frame 6! size: 261120; timestamp 451 ms (delta 33 ms)
 
    <repeats endlessly>
 
-If using the shell, the capture would not start, and instead it is possible to access the shell
+If using the shell, the capture will not start unless the Kconfig option
+:kconfig:option:`VIDEO_SHELL_AND_CAPTURE` is set. In both cases, the shell can be used to change
+parameters on the fly:
 
 .. code-block:: console
 

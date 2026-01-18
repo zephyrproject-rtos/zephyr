@@ -75,6 +75,7 @@
 
 				port@0 {
 					reg = <0>;
+
 					test_mipi_csi2rx_ep_out: endpoint {
 						remote-endpoint-label = "test_csi_ep_in";
 					};

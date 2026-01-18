@@ -5,7 +5,7 @@ description: Broadcom iProc PAX(PCIE<->AXI) DMA controller version 2
 
 include: dma-controller.yaml
 
-compatible: brcm,iproc-pax-dma-v2
+compatible: "brcm,iproc-pax-dma-v2"
 
 properties:
   reg:

@@ -1514,13 +1514,16 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
-		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED))) {
+		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
+		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
 			bt_id_set_adv_private_addr(adv);
 		}
 	} else {
 		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
-		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED))) {
+		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
+		     (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		      !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)))) {
 			bt_id_set_adv_private_addr(adv);
 		}
 	}

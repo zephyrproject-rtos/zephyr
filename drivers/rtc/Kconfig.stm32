@@ -5,6 +5,5 @@ config RTC_STM32
 	bool "STM32 RTC driver"
 	default y if !COUNTER
 	depends on DT_HAS_ST_STM32_RTC_ENABLED && !SOC_SERIES_STM32F1X
-	select USE_STM32_LL_RTC
 	help
 	  Build RTC driver for STM32 SoCs, excluding STM32F1 series.

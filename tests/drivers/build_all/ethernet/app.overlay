@@ -104,6 +104,15 @@
 					status = "okay";
 					int-gpios = <&test_gpio 0 0>;
 				};
+
+				ethernet-phy@a {
+					reg = <0xa>;
+					compatible = "ethernet-phy";
+					status = "okay";
+					reset-gpios = <&test_gpio 0 0>;
+					reset-assert-duration-us = <100>;
+					reset-deassertion-timeout-ms = <10>;
+				};
 			};
 		};
 	};

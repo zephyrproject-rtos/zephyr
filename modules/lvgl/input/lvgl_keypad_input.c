@@ -57,8 +57,8 @@ int lvgl_keypad_input_init(const struct device *dev)
 
 #define LVGL_KEYPAD_INPUT_DEFINE(inst)                                                             \
 	ASSERT_PROPERTIES(inst);                                                                   \
-	LVGL_INPUT_DEFINE(inst, keypad, CONFIG_LV_Z_KEYPAD_INPUT_MSGQ_COUNT,                       \
-			  lvgl_keypad_process_event);                                              \
+	LVGL_INPUT_INST_DEFINE(inst, keypad, CONFIG_LV_Z_KEYPAD_INPUT_MSGQ_COUNT,                  \
+			       lvgl_keypad_process_event);                                         \
 	static const uint16_t lvgl_keypad_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);  \
 	static const uint16_t lvgl_keypad_lvgl_codes_##inst[] = DT_INST_PROP(inst, lvgl_codes);    \
 	static const struct lvgl_keypad_input_config lvgl_keypad_input_config_##inst = {           \

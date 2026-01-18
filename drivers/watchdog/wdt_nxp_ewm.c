@@ -88,7 +88,7 @@ static int nxp_ewm_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	if (cfg && cfg->window.max <= NXP_EWM_MAX_TIMEOUT_WINDOW &&
+	if (cfg->window.max <= NXP_EWM_MAX_TIMEOUT_WINDOW &&
 		cfg->window.min <= cfg->window.max &&
 		cfg->window.max > 0 &&
 		cfg->window.min >= 0) {

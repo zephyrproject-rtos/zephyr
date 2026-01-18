@@ -15,13 +15,15 @@ Here are some highlights of the STM32F411E-DISCO board:
 - LSM303DLHC(rev B) or LSM303AGR(rev D): ST MEMS system-in-package featuring a 3D digital linear acceleration sensor and a 3D digital magnetic sensor.
 - MP45DT02(rev B) or IMP34DT05(rev D), ST MEMS audio sensor, omnidirectional digital microphone
 - CS43L22, audio DAC with integrated class D speaker driver
-- Eight LEDs:
-    - LD1 (red/green) for USB communication
-    - LD2 (red) for 3.3 V power on
-    - Four user LEDs:
-        LD3 (orange), LD4 (green), LD5 (red) and LD6 (blue)
-    - Two USB OTG LEDs:
-        LD7 (green) VBus and LD8 (red) over-current
+- Eight LEDs
+
+  - LD1 (red/green) for USB communication
+  - LD2 (red) for 3.3 V power on
+  - Four user LEDs:
+    LD3 (orange), LD4 (green), LD5 (red) and LD6 (blue)
+  - Two USB OTG LEDs:
+    LD7 (green) VBus and LD8 (red) over-current
+
 - Two pushbuttons (user and reset)
 - USB OTG with micro-AB connector
 - Extension header for LQFP100 I/Os for a quick connection to the prototyping board and an easy probing
@@ -53,8 +55,9 @@ STM32F411E-DISCO Discovery kit provides the following hardware components:
 - RTC
 
 More information about STM32F411VE can be found here:
-       - `STM32F411VE website`_
-       - `STM32F411x reference manual`_
+
+- `STM32F411VE website`_
+- `STM32F411x reference manual`_
 
 Supported Features
 ==================

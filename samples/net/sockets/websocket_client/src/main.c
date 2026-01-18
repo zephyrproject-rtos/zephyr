@@ -7,6 +7,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_websocket_client_sample, LOG_LEVEL_DBG);
 
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>

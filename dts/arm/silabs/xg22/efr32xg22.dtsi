@@ -20,6 +20,11 @@
 			pa-initial-power-dbm = <10>;
 			pa-ramp-time-us = <2>;
 			pa-voltage-mv = <3300>;
+			ble-2mbps-supported;
+			ble-coded-phy-supported;
+			ble-cte-tx-supported;
+			ble-cte-rx-supported;
+			radio-tx-high-power-supported;
 
 			pti: pti {
 				compatible = "silabs,pti";

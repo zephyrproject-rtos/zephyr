@@ -9,6 +9,10 @@ source "Kconfig.constants"
 
 osource "$(APPLICATION_SOURCE_DIR)/VERSION"
 
+# This should be sourced early since the autogen Kconfig.dts options
+# and macros may get used by shields/boards/SoC defconfig or modules.
+source "dts/Kconfig"
+
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
 # After merging all definitions for a symbol/choice, Kconfig picks the first
@@ -32,10 +36,6 @@ source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
 source "subsys/testsuite/Kconfig.defconfig"
-
-# This should be early since the autogen Kconfig.dts symbols may get
-# used by modules
-source "dts/Kconfig"
 
 menu "Modules"
 
@@ -357,18 +357,19 @@ menu "Compiler Options"
 
 config REQUIRES_STD_C99
 	bool
+	select DEPRECATED
 	help
 	  Hidden option to select compiler support C99 standard or higher.
 
 config REQUIRES_STD_C11
 	bool
+	select DEPRECATED
 	select REQUIRES_STD_C99
 	help
 	  Hidden option to select compiler support C11 standard or higher.
 
 config REQUIRES_STD_C17
 	bool
-	select REQUIRES_STD_C11
 	help
 	  Hidden option to select compiler support C17 standard or higher.
 
@@ -381,27 +382,28 @@ config REQUIRES_STD_C23
 choice STD_C
 	prompt "C Standard"
 	default STD_C23 if REQUIRES_STD_C23
-	default STD_C17 if REQUIRES_STD_C17
-	default STD_C11 if REQUIRES_STD_C11
-	default STD_C99
+	default STD_C17
 	help
 	  C Standards.
 
 config STD_C90
-	bool "C90"
+	bool "C90 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C99
 	help
 	  1989 C standard as completed in 1989 and ratified by ISO/IEC
 	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
 
 config STD_C99
-	bool "C99"
+	bool "C99 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C11
 	help
 	  1999 C standard.
 
 config STD_C11
-	bool "C11"
+	bool "C11 [DEPRECATED]"
+	select DEPRECATED
 	depends on !REQUIRES_STD_C17
 	help
 	  2011 C standard.
@@ -528,6 +530,14 @@ config LTO
 	depends on !CODE_DATA_RELOCATION
 	help
 	  This option enables Link Time Optimization.
+
+config LTO_SINGLE_THREADED
+	bool "Single-threaded LTO"
+	depends on LTO
+	help
+	  This option instructs the linker to use a single thread to process
+	  LTO. See the following issue for more info:
+	  https://github.com/zephyrproject-rtos/sdk-ng/issues/1038
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
@@ -1011,7 +1021,8 @@ config WARN_DEPRECATED
 	prompt "Warn on deprecated usage"
 	help
 	  Print a warning when the Kconfig tree is parsed if any deprecated
-	  features are enabled.
+	  features are enabled, or at compile time, when deprecated macros or
+	  symbols are used.
 
 config EXPERIMENTAL
 	bool
@@ -1061,8 +1072,6 @@ menu "Boot Options"
 
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
-	depends on XIP
-	depends on ARM
 	help
 	  This option indicates that Zephyr will act as a bootloader to execute
 	  a separate Zephyr image payload.

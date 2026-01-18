@@ -45,11 +45,6 @@
 		};
 	};
 
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&input_sdl_touch>;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -112,6 +107,12 @@
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
 		size = <DT_SIZE_K(32)>;
+	};
+
+	otp0: otp {
+		compatible = "zephyr,otp-emul";
+		size = <DT_SIZE_K(1)>;
+		status = "okay";
 	};
 
 	i2c0: i2c@100 {

@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxn947/mcxn947/cpu1
-name: NXP FRDM MCXN947 (CPU1)
+name: NXP FRDM-MCXN947 (CPU1)
 type: mcu
 arch: arm
 ram: 64

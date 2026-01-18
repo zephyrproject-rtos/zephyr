@@ -266,7 +266,15 @@ static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ct
 	if (ret) {
 		return ret;
 	}
-	return api->trylock(dev, id);
+
+	ret = api->trylock(dev, id);
+	if (ret) {
+		/* HW trylock failed: release local lock before returning. */
+		k_spin_unlock(&ctx->lock, *key);
+		return ret;
+	}
+
+	return 0;
 }
 
 /**
@@ -337,7 +345,7 @@ static inline void hw_spin_unlock(const struct device *dev, hwspinlock_ctx_t *ct
  *
  * @param dev HW spinlock device instance.
  *
- * @retval HW spinlock max ID.
+ * @return HW spinlock max ID.
  */
 static inline uint32_t hw_spinlock_get_max_id(const struct device *dev)
 {

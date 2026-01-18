@@ -68,6 +68,7 @@ struct modem_backend_uart_async {
 
 struct modem_backend_uart {
 	const struct device *uart;
+	const struct gpio_dt_spec *dtr_gpio;
 	struct modem_pipe pipe;
 	struct k_work_delayable receive_ready_work;
 	struct k_work transmit_idle_work;
@@ -85,6 +86,7 @@ struct modem_backend_uart {
 
 struct modem_backend_uart_config {
 	const struct device *uart;
+	const struct gpio_dt_spec *dtr_gpio;
 	/* Address must be word-aligned when CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC is enabled. */
 	uint8_t *receive_buf;
 	uint32_t receive_buf_size;

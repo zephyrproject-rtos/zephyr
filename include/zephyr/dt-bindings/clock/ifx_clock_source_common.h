@@ -52,6 +52,23 @@
 #define IFX_CLK_HF_DIVIDE_BY_16 15 /**< divide clkHf by 16 */
 #define IFX_CLK_HF_MAX_DIVIDER     /**< Max divider */
 
+#define IFX_CLK_HF_IN_CLKPATH0  0  /**< clkHf input is Clock Path 0 */
+#define IFX_CLK_HF_IN_CLKPATH1  1  /**< clkHf input is Clock Path 1 */
+#define IFX_CLK_HF_IN_CLKPATH2  2  /**< clkHf input is Clock Path 2 */
+#define IFX_CLK_HF_IN_CLKPATH3  3  /**< clkHf input is Clock Path 3 */
+#define IFX_CLK_HF_IN_CLKPATH4  4  /**< clkHf input is Clock Path 4 */
+#define IFX_CLK_HF_IN_CLKPATH5  5  /**< clkHf input is Clock Path 5 */
+#define IFX_CLK_HF_IN_CLKPATH6  6  /**< clkHf input is Clock Path 6 */
+#define IFX_CLK_HF_IN_CLKPATH7  7  /**< clkHf input is Clock Path 7 */
+#define IFX_CLK_HF_IN_CLKPATH8  8  /**< clkHf input is Clock Path 8 */
+#define IFX_CLK_HF_IN_CLKPATH9  9  /**< clkHf input is Clock Path 9 */
+#define IFX_CLK_HF_IN_CLKPATH10 10 /**< clkHf input is Clock Path 10 */
+#define IFX_CLK_HF_IN_CLKPATH11 11 /**< clkHf input is Clock Path 11 */
+#define IFX_CLK_HF_IN_CLKPATH12 12 /**< clkHf input is Clock Path 12 */
+#define IFX_CLK_HF_IN_CLKPATH13 13 /**< clkHf input is Clock Path 13 */
+#define IFX_CLK_HF_IN_CLKPATH14 14 /**< clkHf input is Clock Path 14 */
+#define IFX_CLK_HF_IN_CLKPATH15 15 /**< clkHf input is Clock Path 15 */
+
 /* Target resource types for peripheral dividers */
 #define IFX_RSC_ADC     0  /*!< Analog to digital converter */
 #define IFX_RSC_ADCMIC  1  /*!< Analog to digital converter with Analog Mic support */

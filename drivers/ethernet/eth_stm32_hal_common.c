@@ -140,32 +140,6 @@ static void generate_mac(uint8_t *mac_addr)
 #endif
 }
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-/**
- * Configures the RISAF (RIF Security Attribute Framework) for Ethernet on STM32N6.
- * This function sets up the master and slave security attributes for the Ethernet peripheral.
- */
-
-static void RISAF_Config(void)
-{
-	/* Define and initialize the master configuration structure */
-	RIMC_MasterConfig_t RIMC_master = {0};
-
-	/* Enable the clock for the RIFSC (RIF Security Controller) */
-	__HAL_RCC_RIFSC_CLK_ENABLE();
-
-	RIMC_master.MasterCID = RIF_CID_1;
-	RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-
-	/* Configure the master attributes for the Ethernet peripheral (ETH1) */
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
-
-	/* Set the secure and privileged attributes for the Ethernet peripheral (ETH1) as a slave */
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ETH1,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-}
-#endif
-
 static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
@@ -178,11 +152,6 @@ static int eth_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-	/* RISAF Configuration */
-	RISAF_Config();
-#endif
-
 	/* enable clock */
 	ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken);
@@ -193,6 +162,15 @@ static int eth_initialize(const struct device *dev)
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_ptp);
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	ret |= clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				       (clock_control_subsys_t)&cfg->pclken_ker,
+				       NULL);
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t)&cfg->pclken_mac);
 #endif
 
 	if (ret) {
@@ -422,15 +400,19 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
-	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bus),
-		   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bits)},
-	.pclken_tx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
-		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bits)},
-	.pclken_rx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bus),
-		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bits)},
+	.pclken = STM32_CLOCK_INFO_BY_NAME(DT_INST_PARENT(0), stm_eth),
+	.pclken_tx = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_tx),
+	.pclken_rx = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_rx),
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-	.pclken_ptp = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bus),
-		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bits)},
+	.pclken_ptp = STM32_DT_INST_CLOCK_INFO_BY_NAME(0, mac_clk_ptp),
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	.pclken_mac = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bits)},
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	.pclken_ker = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bits)},
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
@@ -447,14 +429,15 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 		.Init = {
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
-			.AutoNegotiation = ETH_STM32_AUTO_NEGOTIATION_ENABLE ?
-					   ETH_AUTONEGOTIATION_ENABLE : ETH_AUTONEGOTIATION_DISABLE,
-			.PhyAddress = DT_REG_ADDR(DT_INST_PHANDLE(0, phy_handle)),
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* CONFIG_ETH_STM32_HAL_API_V1 */
 			.MediaInterface = STM32_ETH_PHY_MODE(0),
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+			.ClockSelection = DT_INST_PROP(0, st_ext_phyclk) ? HAL_ETH1_REF_CLK_RCC
+							     : HAL_ETH1_REF_CLK_RX_CLK_PIN,
+#endif
 		},
 	},
 };

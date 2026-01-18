@@ -1,0 +1,37 @@
+# OTP driver configuration options
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OTP
+	bool "One Time Programmable (OTP) drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for hardware OTP. The OTP technology can be anything
+	  from fuses to flash memory option bytes as long as it stays one time
+	  programmable.
+
+if OTP
+
+module = OTP
+module-str = otp
+
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/otp/Kconfig.emu"
+
+config OTP_INIT_PRIORITY
+	int "OTP init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  OTP device drivers initialization priority. This initialization
+	  priority is used unless the driver implementation has its own
+	  initialization priority.
+
+config OTP_PROGRAM
+	bool "Support OTP programming through Zephyr API"
+	help
+	  Allowing the programming of OTPs may cause irreversible damage
+	  to a platform. Use it very carefully and at your own risk.
+
+endif # OTP

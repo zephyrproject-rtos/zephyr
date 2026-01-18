@@ -35,7 +35,7 @@ description: |
     An example for MSPM0 family, include the chip level pinctrl
     DTSI file in the board level DTS:
 
-      #include <dt-bindings/pinctrl/mspm0-pinctrl.h>
+      #include <zephyr/dt-bindings/pinctrl/mspm0-pinctrl.h>
 
     We want to configure the I2C pins to open drain, with pullup enabled
     and input enabled.

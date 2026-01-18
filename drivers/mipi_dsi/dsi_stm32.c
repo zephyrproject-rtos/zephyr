@@ -21,16 +21,6 @@
 
 LOG_MODULE_REGISTER(dsi_stm32, CONFIG_MIPI_DSI_LOG_LEVEL);
 
-#if defined(CONFIG_STM32_LTDC_ARGB8888)
-#define STM32_DSI_INIT_PIXEL_FORMAT	DSI_RGB888
-#elif defined(CONFIG_STM32_LTDC_RGB888)
-#define STM32_DSI_INIT_PIXEL_FORMAT	DSI_RGB888
-#elif defined(CONFIG_STM32_LTDC_RGB565)
-#define STM32_DSI_INIT_PIXEL_FORMAT	DSI_RGB565
-#else
-#error "Invalid LTDC pixel format chosen"
-#endif /* CONFIG_STM32_LTDC_ARGB8888 */
-
 #define MAX_TX_ESC_CLK_KHZ 20000
 #define MAX_TX_ESC_CLK_DIV 8
 
@@ -272,6 +262,21 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	return 0;
 }
 
+static int mipi_dsi_stm32_set_colorcoding(uint32_t pixfmt, uint32_t *colorcoding)
+{
+	switch (pixfmt) {
+	case MIPI_DSI_PIXFMT_RGB888:
+		*colorcoding = DSI_RGB888;
+		break;
+	case MIPI_DSI_PIXFMT_RGB565:
+		*colorcoding = DSI_RGB565;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 				 const struct mipi_dsi_device *mdev)
@@ -287,7 +292,10 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 	}
 
 	vcfg->VirtualChannelID = channel;
-	vcfg->ColorCoding = STM32_DSI_INIT_PIXEL_FORMAT;
+	if (mipi_dsi_stm32_set_colorcoding(mdev->pixfmt, &vcfg->ColorCoding) < 0) {
+		LOG_ERR("MIPI PIXFMT not supported by the DSI host");
+		return -ENOTSUP;
+	}
 
 	if (mdev->mode_flags & MIPI_DSI_MODE_VIDEO_BURST) {
 		vcfg->Mode = DSI_VID_MODE_BURST;
@@ -504,24 +512,11 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 	static const struct mipi_dsi_stm32_config stm32_dsi_config_##inst = {			\
 		.rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),					\
 		.reset = RESET_DT_SPEC_INST_GET(inst),						\
-		.dsi_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bits),			\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bus),			\
-		},										\
-		COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, dsisrc),				\
-			(.dsisrc_clk = {							\
-				.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsisrc, bits),		\
-				.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsisrc, bus),		\
-			},),									\
-			(.dsisrc_clk = {0},))							\
-		.ref_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bits),			\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bus),			\
-		},										\
-		.pix_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bits),		\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bus),		\
-		},										\
+		.dsi_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dsiclk),			\
+		IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(inst, dsisrc),				\
+			   (.dsisrc_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dsisrc),))	\
+		.ref_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, refclk),			\
+		.pix_clk = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, pixelclk),			\
 		/* Use only one (the first) display configuration for DSI HOST configuration */	\
 		.data_lanes = data_lanes_##inst[0],						\
 		.active_errors = DT_INST_PROP_OR(inst, active_errors, HAL_DSI_ERROR_NONE),	\

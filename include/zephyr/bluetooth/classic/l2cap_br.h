@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_BR_H_
 
 /**
- * @brief L2CAP
- * @defgroup bt_l2cap L2CAP
+ * @brief Bluetooth Logical Link Control and Adaptation Protocol (L2CAP) for BR/EDR
+ * @defgroup bt_l2cap_br Bluetooth Logical Link Control and Adaptation Protocol (L2CAP) for BR/EDR
  * @ingroup bluetooth
  * @{
  */

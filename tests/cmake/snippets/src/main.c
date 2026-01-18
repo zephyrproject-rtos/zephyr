@@ -19,6 +19,23 @@
 #define TEST_BAR_VAL_BAR		(964183)
 #define TEST_COMMON_VAL_BAR		(109234)
 
+/* Check board-specific snippet files */
+#if defined(CONFIG_TEST_TYPE_VER_CHECK)
+#if !defined(CONFIG_TEST_VER_CHECK_APPLIED)
+#error "Base ver_check snippet has not been applied"
+#endif
+#if defined(CONFIG_TEST_VER_CHECK_SPECIFIC_VERSION_APPLIED)
+#error "Board specific ver_check snippet has wrongly been applied"
+#endif
+#elif defined(CONFIG_TEST_TYPE_VER_CHECK_SPECIFIC)
+#if !defined(CONFIG_TEST_VER_CHECK_APPLIED)
+#error "Base ver_check snippet has not been applied"
+#endif
+#if !defined(CONFIG_TEST_VER_CHECK_SPECIFIC_VERSION_APPLIED)
+#error "Board specific ver_check snippet has not been applied"
+#endif
+#endif
+
 ZTEST_SUITE(snippet_tests, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(snippet_tests, test_overlay_config)

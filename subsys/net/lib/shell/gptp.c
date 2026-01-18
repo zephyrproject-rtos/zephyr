@@ -550,23 +550,22 @@ static void gptp_print_port_info(const struct shell *sh, int port)
 static int cmd_net_gptp_port(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_GPTP)
-	int arg = 1;
 	char *endptr;
 	int port;
 #endif
 
 #if defined(CONFIG_NET_GPTP)
-	if (!argv[arg]) {
+	if (argv[1] == NULL) {
 		PR_WARNING("Port number must be given.\n");
 		return -ENOEXEC;
 	}
 
-	port = strtol(argv[arg], &endptr, 10);
+	port = strtol(argv[1], &endptr, 10);
 
 	if (*endptr == '\0') {
 		gptp_print_port_info(sh, port);
 	} else {
-		PR_WARNING("Not a valid gPTP port number: %s\n", argv[arg]);
+		PR_WARNING("Not a valid gPTP port number: %s\n", argv[1]);
 	}
 #else
 	ARG_UNUSED(argc);

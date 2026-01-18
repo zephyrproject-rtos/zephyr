@@ -470,6 +470,7 @@ int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lv
 	return ret;
 }
 
+#ifdef CONFIG_I3C_USE_IBI
 static void i3c_sec_bus_reset(const struct device *dev)
 {
 	struct i3c_device_desc *i3c_desc;
@@ -483,7 +484,7 @@ static void i3c_sec_bus_reset(const struct device *dev)
 		i3c_detach_i2c_device(i3c_i2c_desc);
 	}
 }
-#ifdef CONFIG_I3C_USE_IBI
+
 /* call this from a workq after the interrupt from a controller */
 void i3c_sec_handoffed(struct k_work *work)
 {
@@ -896,6 +897,38 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 	}
 
 	return 0;
+}
+
+enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list)
+{
+	enum i3c_bus_mode mode = I3C_BUS_MODE_PURE;
+
+	__ASSERT_NO_MSG(dev_list != NULL);
+
+	for (int i = 0; i < dev_list->num_i2c; i++) {
+		switch (I3C_LVR_I2C_DEV_IDX(dev_list->i2c[i].lvr)) {
+		case I3C_LVR_I2C_DEV_IDX_0:
+			if (mode < I3C_BUS_MODE_MIXED_FAST) {
+				mode = I3C_BUS_MODE_MIXED_FAST;
+			}
+			break;
+		case I3C_LVR_I2C_DEV_IDX_1:
+			if (mode < I3C_BUS_MODE_MIXED_LIMITED) {
+				mode = I3C_BUS_MODE_MIXED_LIMITED;
+			}
+			break;
+		case I3C_LVR_I2C_DEV_IDX_2:
+			if (mode < I3C_BUS_MODE_MIXED_SLOW) {
+				mode = I3C_BUS_MODE_MIXED_SLOW;
+			}
+			break;
+		default:
+			mode = I3C_BUS_MODE_INVALID;
+			break;
+		}
+	}
+
+	return mode;
 }
 
 bool i3c_bus_has_sec_controller(const struct device *dev)

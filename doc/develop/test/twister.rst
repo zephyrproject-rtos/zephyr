@@ -202,7 +202,7 @@ testing:
   testing relating keywords to provide best coverage for the features of this
   board.
 
-.. _twister_default_testing_board:
+  .. _twister_default_testing_board:
 
   binaries:
     A list of custom binaries to be kept for device testing.
@@ -215,14 +215,18 @@ testing:
     tags.
   only_tags:
     Only execute tests with this list of tags on a specific platform.
-
-  .. _twister_board_timeout_multiplier:
-
   timeout_multiplier: <float> (default 1)
+    .. _twister_board_timeout_multiplier:
+
     Multiply each test scenario timeout by specified ratio. This option allows to tune timeouts only
     for required platform. It can be useful in case naturally slow platform I.e.: HW board with
     power-efficient but slow CPU or simulation platform which can perform instruction accurate
     simulation but does it slowly.
+
+  flash_before: [True|False] (default False)
+    For pytest/shell harness hardware testing, flash the device before opening the serial port.
+    This prevents serial port disconnection issues during flashing on some boards (e.g., those
+    with USB CDC that reset during flash operations).
 
 env:
   A list of environment variables. Twister will check if all these environment variables are set,
@@ -1202,7 +1206,7 @@ testing using video fingerprints.
    Window being displayed for a "compare" run where fingerprint is a 90% match with the reference.
 
 Hardware setup
-++++++++++++++
+--------------
 
 The display capture harness requires:
 
@@ -1212,7 +1216,7 @@ The display capture harness requires:
 - DUT connected to the same PC for flashing and serial console access
 
 Configuration
-+++++++++++++
+-------------
 
 The harness uses a YAML configuration file that defines camera settings, test parameters, and video
 signature analysis options. A typical configuration is shown below:
@@ -1327,7 +1331,7 @@ environment variable:
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
 
 Workflow
-++++++++
+--------
 
 First, generate **reference fingerprints** for a known-good display output:
 
@@ -1564,6 +1568,9 @@ the following new options:
 The ``--device-serial`` option denotes the serial device the board is connected to.
 This needs to be accessible by the user running twister. You can run this on
 only one board at a time, specified using the ``--platform`` option.
+If the platform supports multiple serial ports, you can provide ``--device-serial``
+multiple times, and it will be passed to the pytest harness. Alternatively you can use
+the hardware map, see :ref:`multi-core testing <twister_multi_core_testing>` for more details
 
 The ``--device-serial-baud`` option is only needed if your device does not run at
 115200 baud.
@@ -1910,6 +1917,34 @@ Using Single Board For Multiple Variants
       product: J-Link
       runner: nrfjprog
       serial: /dev/ttyACM1
+
+.. _twister_multi_core_testing:
+
+Multi-Core testing support
+--------------------------
+
+Twister supports testing multi-core applications where different cores use
+separate UART interfaces. This feature works only with the pytest harness
+(``harness: pytest``). Generated hardware map should contain multiple entries
+for the same physical device, each representing a different core connection.
+For example:
+
+.. code-block:: yaml
+
+    - connected: true
+      id: 001234567890
+      serial: /dev/ttyACM0
+    - connected: true
+      id: 001234567890
+      platform:
+      - nrf54l15dk/nrf54l15/cpuapp
+      product: J-Link
+      runner: nrfutil
+      serial: /dev/ttyACM1
+
+Both instances share the same device ID but have different serial ports, allowing
+tests to interact with multiple cores simultaneously. Each connection
+is handled independently with separate log files.
 
 Quarantine
 ----------

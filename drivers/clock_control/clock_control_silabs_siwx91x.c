@@ -21,6 +21,7 @@
 #define DT_DRV_COMPAT          silabs_siwx91x_clock
 #define LF_FSM_CLOCK_FREQUENCY 32768
 #define XTAL_FREQUENCY         40000000
+#define INTF_PLL_FREQUENCY     160000000
 
 LOG_MODULE_REGISTER(siwx91x_clock, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -184,7 +185,7 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 		*rate = LF_FSM_CLOCK_FREQUENCY;
 		return 0;
 	case SIWX91X_CLK_GSPI:
-		*rate = RSI_CLK_GetBaseClock(M4_GSPI);
+		*rate = INTF_PLL_FREQUENCY;
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */
@@ -245,11 +246,11 @@ static int siwx91x_clock_init(const struct device *dev)
 	sl_si91x_clock_manager_init();
 
 	/* Use SoC PLL at configured frequency as core clock */
-	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK,
+					       DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 
 	/* Use interface PLL at configured frequency as peripheral clock */
-	sl_si91x_clock_manager_set_pll_freq(INFT_PLL, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-					    PLL_REF_CLK_VAL_XTAL);
+	sl_si91x_clock_manager_set_pll_freq(INFT_PLL, INTF_PLL_FREQUENCY, PLL_REF_CLK_VAL_XTAL);
 
 	/* FIXME: Currently the clock consumer use clocks without power on them.
 	 * This should be fixed in drivers. Meanwhile, get the list of required

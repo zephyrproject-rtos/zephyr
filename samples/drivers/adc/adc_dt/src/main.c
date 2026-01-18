@@ -38,6 +38,9 @@ int main(void)
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(buf),
+#if CONFIG_SAMPLE_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
 	};
 
 	/* Configure channels individually prior to sampling. */

@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-# Enable the internal SMPS regulator
-CONFIG_POWER_SUPPLY_LDO=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
