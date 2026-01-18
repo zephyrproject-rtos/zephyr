@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2025 STMicroelectronics.
+ * Copyright (c) 2025 tinyVision.ai Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
@@ -13,7 +12,7 @@
 		zephyr,camera = &csi_capture_port;
 	};
 
-	imx335_input_clock: imx335-input-clock {
+	imx219_input_clock: imx219-input-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <24000000>;
 		#clock-cells = <0>;
@@ -25,30 +24,23 @@
 };
 
 &csi_ep_in {
-	remote-endpoint-label = "imx335_ep_out";
+	remote-endpoint-label = "imx219_ep_out";
 	bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 	data-lanes = <1 2>;
 };
 
 &csi_i2c {
-	imx335: camera@1a {
-		compatible = "sony,imx335";
-		clocks = <&imx335_input_clock>;
-		reg = <0x1a>;
-		reset-gpios = <&csi_connector CSI_IO0 GPIO_ACTIVE_LOW>;
+	imx219: imx219@10 {
+		compatible = "sony,imx219";
+		clocks = <&imx219_input_clock>;
+		reg = <0x10>;
 
 		port {
-			imx335_ep_out: endpoint {
+			imx219_ep_out: endpoint {
 				remote-endpoint-label = "csi_ep_in";
 				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 				data-lanes = <1 2>;
 			};
 		};
 	};
-};
-
-/* Power the camera module */
-&csi_gpio1_hog {
-	status = "okay";
-	output-high;
 };
