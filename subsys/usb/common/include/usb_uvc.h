@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2025 tinyVision.ai Inc.
  *
+ * Copyright 2025 NXP
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,20 +18,26 @@
  * - USB Device Class Definition for Video Devices: Motion-JPEG Payload (Revision 1.5)
  */
 
-#ifndef ZEPHYR_INCLUDE_USBD_CLASS_UVC_H_
-#define ZEPHYR_INCLUDE_USBD_CLASS_UVC_H_
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_UVC_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_UVC_H_
 
 #include <zephyr/usb/usb_ch9.h>
 
 /* Video Class-Specific Request Codes */
 #define UVC_SET_CUR					0x01
 #define UVC_GET_CUR					0x81
+#define UVC_SET_CUR_ALL				0x11
 #define UVC_GET_MIN					0x82
 #define UVC_GET_MAX					0x83
 #define UVC_GET_RES					0x84
 #define UVC_GET_LEN					0x85
-#define UVC_GET_INFO					0x86
+#define UVC_GET_INFO				0x86
 #define UVC_GET_DEF					0x87
+#define UVC_GET_CUR_ALL				0x91
+#define UVC_GET_MIN_ALL				0x92
+#define UVC_GET_MAX_ALL				0x93
+#define UVC_GET_RES_ALL				0x94
+#define UVC_GET_DEF_ALL				0x97
 
 /* Flags announcing which controls are supported */
 #define UVC_INFO_SUPPORTS_GET				BIT(0)
@@ -232,6 +240,16 @@ struct uvc_unit_descriptor {
 	uint8_t bUnitID;
 };
 
+struct uvc_input_terminal_descriptor {
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDescriptorSubtype;
+	uint8_t  bTerminalID;
+	uint16_t wTerminalType;
+	uint8_t  bAssocTerminal;
+	uint8_t  iTerminal;
+} __packed;
+
 struct uvc_output_terminal_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -401,7 +419,9 @@ struct uvc_frame_descriptor {
 	uint16_t wHeight;
 	uint32_t dwMinBitRate;
 	uint32_t dwMaxBitRate;
-	/* Other fields depending on bDescriptorSubtype value */
+	uint32_t dwMaxVideoFrameBufferSize;
+	uint32_t dwDefaultFrameInterval;
+	uint8_t bFrameIntervalType;
 } __packed;
 
 struct uvc_frame_continuous_descriptor {
@@ -435,7 +455,8 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+	/* TODO: consider about device and host */	
+	uint32_t dwFrameInterval[CONFIG_USBH_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_frame_based_continuous_descriptor {
@@ -467,7 +488,14 @@ struct uvc_frame_based_discrete_descriptor {
 	uint32_t dwMaxBitRate;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+	/* TODO: consider about device and host */
+	uint32_t dwFrameInterval[CONFIG_USBH_VIDEO_MAX_FRMIVAL];
+} __packed;
+
+struct uvc_cs_descriptor_header {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
 } __packed;
 
 struct uvc_color_descriptor {
@@ -526,4 +554,4 @@ struct uvc_payload_header {
 	uint16_t scrSourceClockSOF;  /* optional */
 } __packed;
 
-#endif /* ZEPHYR_INCLUDE_USBD_CLASS_UVC_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_UVC_H_ */
