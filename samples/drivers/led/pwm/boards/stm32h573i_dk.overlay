@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 CodeWrights GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		status = "disabled";
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&lptim5 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "LD3 - red led";
+		};
+	};
+};
+
+&lptim5 {
+	compatible = "st,stm32-lptim-pwm";
+	clocks = <&rcc STM32_CLOCK(APB3, 14)>,
+		 <&rcc STM32_SRC_LSE LPTIM5_SEL(3)>;
+	#pwm-cells = <3>;
+
+	st,prescaler = <2>;
+
+	pinctrl-0 = <&lptim5_ch2_pf1>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
