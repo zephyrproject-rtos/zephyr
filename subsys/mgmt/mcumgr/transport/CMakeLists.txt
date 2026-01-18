@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2018-2021 mcumgr authors
-# Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2022-2026 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,6 +22,9 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_SHELL
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UART
   src/smp_uart.c
 )
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_RAW_UART
+  src/smp_raw_uart.c
+)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UDP
   src/smp_udp.c
 )
@@ -31,8 +34,13 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_LORAWAN
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_DUMMY
   src/smp_dummy.c
 )
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY
+  src/smp_raw_dummy.c
+)
 
-if(CONFIG_MCUMGR_TRANSPORT_SHELL OR CONFIG_MCUMGR_TRANSPORT_UART)
+if(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE OR
+  CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
+)
   zephyr_library_sources(src/serial_util.c)
 endif()
 

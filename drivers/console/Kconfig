@@ -57,13 +57,13 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	  code handle them if they are of no special significance to it.
 
 config UART_CONSOLE_MCUMGR
-	bool "UART console mcumgr passthrough"
+	bool "UART console MCUmgr passthrough"
 	depends on UART_CONSOLE
 	help
-	  Enables the UART console to receive mcumgr frames for image upgrade
+	  Enables the UART console to receive MCUmgr frames for image upgrade
 	  and device management.  When enabled, the UART console does not
-	  process mcumgr frames, but it hands them up to a higher level module
-	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
+	  process MCUmgr frames, but it hands them up to a higher level module
+	  (e.g., the shell).  If unset, incoming MCUmgr frames are dropped.
 
 config UART_CONSOLE_INPUT_EXPIRED
 	bool "Support for UART console input expired mechanism"
@@ -203,11 +203,11 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  where characters are stored before sending the whole line.
 
 config UART_MCUMGR
-	bool "Mcumgr UART driver"
+	bool "MCUmgr UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
-	  Enable the mcumgr UART driver. This driver allows the application to
-	  communicate over UART using the mcumgr protocol for image upgrade and
+	  Enable the MCUmgr UART driver. This driver allows the application to
+	  communicate over UART using the MCUmgr (over console) protocol for image upgrade and
 	  device management. The driver doesn't inspect received data (as
 	  contrary to console UART driver) and all aspects of received protocol
 	  data are handled by an application provided callback.
@@ -215,22 +215,31 @@ config UART_MCUMGR
 if UART_MCUMGR
 
 config UART_MCUMGR_RX_BUF_SIZE
-	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
+	int "Size of receive buffer for MCUmgr fragments received over UART, in bytes"
 	default 128
 	help
-	  Specifies the size of the mcumgr UART receive buffer, in bytes. This
-	  value must be large enough to accommodate any line sent by an mcumgr
-	  client.
+	  Specifies the size of the MCUmgr UART receive buffer, in bytes. This value must be large
+	  enough to accommodate any line sent by an MCUmgr client.
 
 config UART_MCUMGR_RX_BUF_COUNT
-	int "Number of receive buffers for mcumgr fragments received over UART"
+	int "Number of receive buffers for MCUmgr fragments received over UART"
 	default 2
 	help
-	  Specifies the number of the mcumgr UART receive buffers.  Receive
-	  buffers hold received mcumgr fragments prior to reassembly.  This
-	  setting's value must satisfy the following relation:
-	  UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >=
-	  MCUMGR_TRANSPORT_UART_MTU
+	  Specifies the number of the MCUmgr UART receive buffers. Receive buffers hold received
+	  MCUmgr fragments prior to reassembly. If using SMP over console: this setting's value
+	  must satisfy the following relation:
+	    UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >= MCUMGR_TRANSPORT_UART_MTU
+
+	  If using raw UART (non-SMP over console) this is the size of the buffer passed to the
+	  SMP handling code which will directly be put into a netbuf, therefore unlike SMP over
+	  console, the value of this should not need to be changed from the default and does not
+	  need to satisfy the above relation.
+
+config UART_MCUMGR_RAW_PROTOCOL
+	bool "Raw (non-SMP over console) protocol"
+	help
+	  Commands sent to/by the device will be in raw MCUmgr format instead of SMP over console
+	  format - this means without base64 encoding and additional console-specific parts added.
 
 endif # UART_MCUMGR
 
