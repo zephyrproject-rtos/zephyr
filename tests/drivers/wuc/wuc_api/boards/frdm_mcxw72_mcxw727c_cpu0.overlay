@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/drivers/wuc/wuc_nxp_wuu.h>
+
+/ {
+	zephyr,user {
+		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_PIN_0_RISING_INT>,
+			       <&wuu NXP_WUU_MODULE_0_INT>;
+	};
+};
