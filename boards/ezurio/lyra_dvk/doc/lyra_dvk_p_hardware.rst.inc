@@ -1,0 +1,17 @@
+.. SPDX-License-Identifier: Apache-2.0
+..
+.. Copyright (c) 2026 Ezurio LLC
+
+Hardware
+********
+
+The Lyra P DVK has two crystal oscillators as follows.
+
+* High-frequency 38.4 MHz crystal oscillator (HFXO)
+* Low-frequency 32.768 kHz crystal oscillator (LFXO)
+
+Both crystal oscillators are fitted within the Lyra P module.
+
+The module supports an on-chip Bluetooth Low Energy antenna.
+
+Full details of the DVK can be found in the |User Guide Ref| and |Schematics Ref|.

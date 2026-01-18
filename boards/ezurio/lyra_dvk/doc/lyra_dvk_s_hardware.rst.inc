@@ -1,0 +1,19 @@
+.. SPDX-License-Identifier: Apache-2.0
+..
+.. Copyright (c) 2026 Ezurio LLC
+
+Hardware
+********
+
+The Lyra S DVK has two crystal oscillators as follows.
+
+* High-frequency 38.4 MHz crystal oscillator (HFXO)
+* Low-frequency 32.768 kHz crystal oscillator (LFXO)
+
+The high-frequency crystal oscillator is fitted within the Lyra S module.
+
+The low-frequency crystal oscillator is fitted to the DVK and is external to the Lyra S module.
+
+The module supports an on-chip or external Bluetooth Low Energy antenna.
+
+Full details of the DVK can be found in the |User Guide Ref| and |Schematics Ref|.
