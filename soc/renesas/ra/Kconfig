@@ -1,4 +1,5 @@
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_RENESAS_RA
@@ -47,7 +48,7 @@ config SOC_RA_SKIP_CLOCK_INIT
 config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
 	bool "VBAT switching manual"
 	default y
-	depends on DT_HAS_RENESAS_RA_BATTERY_BACKUP_ENABLED && $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_BATTERY_BACKUP),manual-configure)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_BATTERY_BACKUP),manual-configure)
 	help
 	  Enable if this SoC's battery backup domain allows switching to VBAT manually.
 	  Leave disabled if switching is automatic.

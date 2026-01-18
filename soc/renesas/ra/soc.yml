@@ -1,6 +1,19 @@
 family:
   - name: renesas_ra
     series:
+      - name: ra0e1
+        socs:
+          - name: r7fa0e1053cfj
+          - name: r7fa0e1053cnh
+          - name: r7fa0e1053cnk
+          - name: r7fa0e1053cnl
+          - name: r7fa0e1053csc
+          - name: r7fa0e1073cfj
+          - name: r7fa0e1073cnh
+          - name: r7fa0e1073cnk
+          - name: r7fa0e1073cnl
+          - name: r7fa0e1073csc
+          - name: r7fa0e1073csd
       - name: ra2a1
         socs:
           - name: r7fa2a1ab3cfm
