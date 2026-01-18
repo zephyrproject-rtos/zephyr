@@ -50,9 +50,8 @@ static const struct device *const zephyr_flash_controller =
 
 static uint8_t __aligned(4) test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
 
-static int parse_helper(const struct shell *sh, size_t *argc,
-		char **argv[], const struct device * *flash_dev,
-		uint32_t *addr)
+static int parse_helper(const struct shell *sh, size_t *argc, char **argv[],
+			const struct device **flash_dev, uint32_t *addr)
 {
 	char *endptr;
 
@@ -99,26 +98,48 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *flash_dev;
 	uint32_t page_addr;
 	uint32_t size;
+	char *endptr;
+
+	/* For safety, require explicit device name for erase operations */
+	if (argc < 2) {
+		shell_error(sh, "Missing device name");
+		return -EINVAL;
+	}
+
+	/* Check if first argument is a device name (not a number) */
+	(void)strtoul(argv[1], &endptr, 16);
+	if (*endptr == '\0') {
+		/* First argument is a number, not a device name */
+		shell_error(sh, "Device name required for erase operations");
+		shell_print(sh, "Usage: flash erase <device> <address> [size]");
+		return -EINVAL;
+	}
 
 	result = parse_helper(sh, &argc, &argv, &flash_dev, &page_addr);
 	if (result) {
 		return result;
 	}
 	if (argc > 2) {
-		size = strtoul(argv[2], NULL, 16);
+		size = strtoul(argv[2], NULL, 0);
 	} else {
 		struct flash_pages_info info;
 
-		result = flash_get_page_info_by_offs(flash_dev, page_addr,
-						     &info);
+		result = flash_get_page_info_by_offs(flash_dev, page_addr, &info);
 
 		if (result != 0) {
-			shell_error(sh, "Could not determine page size, "
-				    "code %d.", result);
+			shell_error(sh,
+				    "Could not determine page size, "
+				    "code %d.",
+				    result);
 			return -EINVAL;
 		}
 
 		size = info.size;
+	}
+
+	if (size == 0) {
+		shell_error(sh, "Invalid size: 0");
+		return -EINVAL;
 	}
 
 	result = flash_erase(flash_dev, page_addr, size);
@@ -141,6 +162,22 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 	uint32_t w_addr;
 	int ret;
 	size_t op_size;
+	char *endptr;
+
+	/* For safety, require explicit device name for write operations */
+	if (argc < 2) {
+		shell_error(sh, "Missing device name");
+		return -EINVAL;
+	}
+
+	/* Check if first argument is a device name (not a number) */
+	(void)strtoul(argv[1], &endptr, 16);
+	if (*endptr == '\0') {
+		/* First argument is a number, not a device name */
+		shell_error(sh, "Device name required for write operations");
+		shell_print(sh, "Usage: flash write <device> <address> <data>...");
+		return -EINVAL;
+	}
 
 	ret = parse_helper(sh, &argc, &argv, &flash_dev, &w_addr);
 	if (ret) {
@@ -275,8 +312,7 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 	size = strtoul(argv[2], NULL, 16);
 	repeat = strtoul(argv[3], NULL, 16);
 	if (size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
-		shell_error(sh, "<size> must be at most 0x%x.",
-			    CONFIG_FLASH_SHELL_BUFFER_SIZE);
+		shell_error(sh, "<size> must be at most 0x%x.", CONFIG_FLASH_SHELL_BUFFER_SIZE);
 		return -EINVAL;
 	}
 
@@ -332,7 +368,7 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
-const static uint8_t speed_types[][4] = { "B", "KiB", "MiB", "GiB" };
+const static uint8_t speed_types[][4] = {"B", "KiB", "MiB", "GiB"};
 const static uint32_t speed_divisor = 1024;
 
 static int read_write_erase_validate(const struct shell *sh, size_t argc, char *argv[],
@@ -645,11 +681,11 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *u
 		if (flash_load_boff == flash_load_buf_size) {
 			uint32_t addr = flash_load_addr + flash_load_written;
 			int rc = flash_write(flash_load_dev, addr, flash_load_buf,
-					flash_load_buf_size);
+					     flash_load_buf_size);
 
 			if (rc != 0) {
-				shell_error(sh, "Write to addr %x on dev %p ERROR!",
-						addr, flash_load_dev);
+				shell_error(sh, "Write to addr %x on dev %p ERROR!", addr,
+					    flash_load_dev);
 			}
 
 			shell_print(sh, "Written chunk %d", flash_load_chunk);
@@ -664,15 +700,14 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *u
 	 * at the end.
 	 */
 	if (flash_load_written < flash_load_total &&
-			flash_load_written + flash_load_boff >= flash_load_total) {
+	    flash_load_written + flash_load_boff >= flash_load_total) {
 
 		uint32_t addr = flash_load_addr + flash_load_written;
 		int rc = flash_write(flash_load_dev, addr, flash_load_buf, flash_load_boff);
 
 		if (rc != 0) {
 			set_bypass(sh, NULL);
-			shell_error(sh, "Write to addr %x on dev %p ERROR!",
-					addr, flash_load_dev);
+			shell_error(sh, "Write to addr %x on dev %p ERROR!", addr, flash_load_dev);
 			return;
 		}
 
@@ -715,7 +750,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
 
 	if (flash_load_buf_size < write_block_size) {
 		shell_error(sh, "Size of buffer is too small to be aligned to %zu.",
-				write_block_size);
+			    write_block_size);
 		return -ENOSPC;
 	}
 
@@ -725,7 +760,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_warn(sh, "Load buffer was not aligned to %zu.", write_block_size);
 		shell_warn(sh, "Effective load buffer size was set from %d to %d",
-				FLASH_LOAD_BUF_MAX, flash_load_buf_size);
+			   FLASH_LOAD_BUF_MAX, flash_load_buf_size);
 	}
 
 	/* Prepare data for callback. */
@@ -761,8 +796,8 @@ static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d",
-			addr, info.start_offset, info.size, info.index);
+	shell_print(sh, "Page for address 0x%x:\nstart offset: 0x%lx\nsize: %zu\nindex: %d", addr,
+		    info.start_offset, info.size, info.index);
 	return 0;
 }
 
@@ -794,56 +829,41 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
-	entry->help  = NULL;
+	entry->help = NULL;
 	entry->subcmd = &dsub_device_name;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	flash_cmds,
 	SHELL_CMD_ARG(copy, &dsub_device_name,
-		"<src_device> <dst_device> <src_offset> <dst_offset> <size>",
-		cmd_copy, 5, 5),
-	SHELL_CMD_ARG(erase, &dsub_device_name,
-		"[<device>] <page address> [<size>]",
-		cmd_erase, 2, 2),
-	SHELL_CMD_ARG(read, &dsub_device_name,
-		"[<device>] <address> [<Dword count>]",
-		cmd_read, 2, 2),
-	SHELL_CMD_ARG(test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_test, 4, 1),
-	SHELL_CMD_ARG(write, &dsub_device_name,
-		"[<device>] <address> <dword> [<dword>...]",
-		cmd_write, 3, BUF_ARRAY_CNT),
-	SHELL_CMD_ARG(load, &dsub_device_name,
-		"[<device>] <address> <size>",
-		cmd_load, 3, 1),
-	SHELL_CMD_ARG(page_info, &dsub_device_name,
-		"[<device>] <address>",
-		cmd_page_info, 2, 1),
+		      "<src_device> <dst_device> <src_offset> <dst_offset> <size>", cmd_copy, 5, 5),
+	SHELL_CMD_ARG(erase, &dsub_device_name, "<device> <page address> [<size>]", cmd_erase, 2,
+		      2),
+	SHELL_CMD_ARG(read, &dsub_device_name, "[<device>] <address> [<Dword count>]", cmd_read, 2,
+		      2),
+	SHELL_CMD_ARG(test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_test, 4, 1),
+	SHELL_CMD_ARG(write, &dsub_device_name, "<device> <address> <dword> [<dword>...]",
+		      cmd_write, 3, BUF_ARRAY_CNT),
+	SHELL_CMD_ARG(load, &dsub_device_name, "[<device>] <address> <size>", cmd_load, 3, 1),
+	SHELL_CMD_ARG(page_info, &dsub_device_name, "[<device>] <address>", cmd_page_info, 2, 1),
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
-	SHELL_CMD_ARG(partitions, &dsub_device_name,
-		"",
-		cmd_partitions, 0, 0),
+	SHELL_CMD_ARG(partitions, &dsub_device_name, "", cmd_partitions, 0, 0),
 #endif
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_read_test, 4, 1),
-	SHELL_CMD_ARG(write_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_write_test, 4, 1),
-	SHELL_CMD_ARG(erase_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_erase_test, 4, 1),
+	SHELL_CMD_ARG(read_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_read_test, 4, 1),
+	SHELL_CMD_ARG(write_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_write_test, 4, 1),
+	SHELL_CMD_ARG(erase_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
+		      cmd_erase_test, 4, 1),
 	SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_erase_write_test, 4, 1),
+		      "[<device>] <address> <size> <repeat count>", cmd_erase_write_test, 4, 1),
 #endif
 
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_flash(const struct shell *sh, size_t argc, char **argv)
 {
@@ -851,5 +871,4 @@ static int cmd_flash(const struct shell *sh, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_ARG_REGISTER(flash, &flash_cmds, "Flash shell commands",
-		       cmd_flash, 2, 0);
+SHELL_CMD_ARG_REGISTER(flash, &flash_cmds, "Flash shell commands", cmd_flash, 2, 0);
