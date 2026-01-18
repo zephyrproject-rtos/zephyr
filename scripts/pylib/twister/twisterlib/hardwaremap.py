@@ -14,6 +14,7 @@ from pathlib import Path
 import scl
 import yaml
 from natsort import natsorted
+import subprocess
 from twisterlib.environment import ZEPHYR_BASE
 
 try:
@@ -42,10 +43,7 @@ class DUT:
                  serial_pty=None,
                  connected=False,
                  runner_params=None,
-                 pre_script=None,
-                 post_script=None,
-                 post_flash_script=None,
-                 script_param=None,
+                 hooks=None,
                  runner=None,
                  flash_timeout=60,
                  flash_with_test=False,
@@ -59,17 +57,13 @@ class DUT:
         self._available = Value("i", 1)
         self._failures = Value("i", 0)
         self.connected = connected
-        self.pre_script = pre_script
+        self.hooks = hooks or {}
         self.id = id
         self.product = product
         self.runner = runner
         self.runner_params = runner_params
         self.flash_before = flash_before
         self.fixtures = []
-        self.post_flash_script = post_flash_script
-        self.post_script = post_script
-        self.pre_script = pre_script
-        self.script_param = script_param
         self.probe_id = None
         self.notes = None
         self.lock = Lock()
@@ -124,6 +118,32 @@ class DUT:
                 d[k] = v[k]
         return d
 
+
+    def run_hook(self, hook_type):
+        hook = None
+        for h in self.hooks:
+            if h.get('type', None) == hook_type:
+                hook = h
+        if not hook:
+            return
+
+        script = hook.get('script')
+        args = hook.get('args', [])
+        cmd = [script] + args
+        timeout = hook.get('timeout', 60)
+
+        logger.info(f"Running command {cmd}....")
+        with subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+            try:
+                stdout, stderr = proc.communicate(timeout=timeout)
+                logger.debug(stdout.decode())
+                if proc.returncode != 0:
+                    logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
+
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                logger.error(f"{script} timed out")
 
     def __repr__(self):
         return f"<{self.platform} ({self.product}) on {self.serial}>"
@@ -252,10 +272,19 @@ class HardwareMap:
         flash_with_test=False,
         flash_before=False
     ):
+        _hooks = {}
+        if pre_script:
+            pre_hook = {
+                'script': pre_script,
+                'args': [],
+                'timeout': 60
+            }
+            _hooks['pre'] = pre_hook
+
         device = DUT(
             platform=platform,
             connected=True,
-            pre_script=pre_script,
+            hooks=_hooks,
             serial_baud=baud,
             flash_timeout=flash_timeout,
             flash_with_test=flash_with_test,
@@ -272,11 +301,41 @@ class HardwareMap:
         hwm_schema = scl.yaml_load(self.schema_path)
         duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
+            # deprecated fields are still supported for backward compatibility
             pre_script = dut.get('pre_script')
             script_param = dut.get('script_param')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
+            # prepare hooks dictionary for forward compatibility
+            _hooks = {}
+            if pre_script:
+                pre_hook = {
+                    'script': pre_script,
+                    'args': [],
+                    'timeout': script_param.get('pre_script_timeout', 60) if script_param else 60
+                }
+                _hooks['pre'] = pre_hook
+            if post_script:
+                post_hook = {
+                    'script': post_script,
+                    'args': [],
+                    'timeout': script_param.get('post_script_timeout', 60) if script_param else 60
+                }
+                _hooks['post'] = post_hook
+            if post_flash_script:
+                post_flash_hook = {
+                    'script': post_flash_script,
+                    'args': [],
+                    'timeout': script_param.get('post_flash_timeout', 60) if script_param else 60
+                }
+                _hooks['post_flash'] = post_flash_hook
+
+
             flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
+
+            # get hooks from hardware map if available
+            hooks = dut.get('hooks', _hooks)
+
             flash_with_test = dut.get('flash_with_test')
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
@@ -311,11 +370,8 @@ class HardwareMap:
                               serial=serial,
                               serial_baud=baud,
                               connected=connected,
-                              pre_script=pre_script,
+                              hooks=hooks,
                               flash_before=flash_before,
-                              post_script=post_script,
-                              post_flash_script=post_flash_script,
-                              script_param=script_param,
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test)
                 new_dut.fixtures = fixtures

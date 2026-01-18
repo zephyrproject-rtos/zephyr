@@ -77,3 +77,27 @@ sequence:
           "post_flash_timeout":
             type: int
             required: false
+      "hooks":
+        type: seq
+        seq:
+          - type: map
+            mapping:
+              "type":
+                type: str
+                required: true
+                enum:
+                  - "pre"
+                  - "post"
+                  - "pre_flash"
+                  - "post_flash"
+              "script":
+                type: str
+                required: true
+              "args":
+                type: seq
+                required: false
+                sequence:
+                  - type: str
+              "timeout":
+                type: int
+                required: false
