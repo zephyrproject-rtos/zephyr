@@ -1,0 +1,6 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM64 FEAT_RNG entropy
+
+compatible: "zephyr,arm64-rng"
