@@ -53,7 +53,6 @@ struct eth_nxp_s32_data {
 	struct net_if *iface;
 	uint8_t mac_addr[ETH_NXP_S32_MAC_ADDR_LEN];
 	uint8_t	if_suspended;
-	struct k_mutex tx_mutex;
 	struct k_sem rx_sem;
 	struct k_sem tx_sem;
 	struct k_thread rx_thread;
@@ -209,7 +208,6 @@ static int eth_nxp_s32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_mutex_init(&ctx->tx_mutex);
 	k_sem_init(&ctx->rx_sem, 0, 1);
 	k_sem_init(&ctx->tx_sem, 0, 1);
 
@@ -350,7 +348,6 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 
 	__ASSERT(pkt, "Packet pointer is NULL");
 
-	k_mutex_lock(&ctx->tx_mutex, K_FOREVER);
 	k_sem_reset(&ctx->tx_sem);
 
 	buf.Length = (uint16_t)pkt_len;
@@ -396,8 +393,6 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 error:
-	k_mutex_unlock(&ctx->tx_mutex);
-
 	if (res != 0) {
 		eth_stats_update_errors_tx(ctx->iface);
 	}
