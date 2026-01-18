@@ -148,6 +148,34 @@ void net_dhcpv4_server_set_provider_cb(net_dhcpv4_server_provider_cb_t cb,
 				       void *user_data);
 
 /**
+ * @typedef net_dhcpv4_server_address_validator_cb_t
+ * @brief Callback used to let application accept or reject a proposed DHCP
+ * address
+ * @details This function is called before accepting an address to a client,
+ * and lets the application reject the address for a given client. If the
+ * callback returns 0, addr needs to be a valid address and will be assigned
+ * to the client. If the callback returns anything non-zero, the client will
+ * be assigned an address from the pool.
+ *
+ * @param iface Pointer to the network interface
+ * @param client_id Pointer to client requesting the address
+ * @param addr Address to be assigned to client
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef int (*net_dhcpv4_server_address_validator_cb_t)(struct net_if *iface,
+							const struct dhcpv4_client_id *client_id,
+							const struct net_in_addr *addr,
+							void *user_data);
+/**
+ * @brief Set the callback used to validate new addresses to the DHCP server.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data A valid pointer to user data or NULL
+ */
+void net_dhcpv4_server_set_address_validator_cb(net_dhcpv4_server_address_validator_cb_t cb,
+						void *user_data);
+
+/**
  * @}
  */
 
