@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf9151ns_laca.dtsi>
+#include <arm/nordic/nrf9151_ns_laca.dtsi>
 #include "nrf9151dk_nrf9151_common.dtsi"
 
 / {

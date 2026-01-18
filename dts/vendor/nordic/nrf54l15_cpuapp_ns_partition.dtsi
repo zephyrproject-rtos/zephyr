@@ -4,17 +4,45 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * Default SRAM planning when building for nRF54L15 with ARM TrustZone-M support
+ * - Lowest 128 kB SRAM allocated to Secure image (sram0_s).
+ * - Upper 128 kB SRAM allocated to Non-Secure image (sram0_ns).
+ *
+ * nRF54L15 has 256 kB of volatile memory (SRAM).
+ * This static layout needs to be the same with the upstream TF-M layout in the
+ * header flash_layout.h of the relevant platform. Any updates in the layout
+ * needs to happen both in the flash_layout.h and in this file at the same time.
+ */
+&cpuapp_sram {
+	sram0_s: image_s@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Secure image memory */
+		reg = <0x0 DT_SIZE_K(128)>;
+		ranges = <0x0 0x0 DT_SIZE_K(128)>;
+	};
+
+	sram0_ns: image_ns@20000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Non-Secure image memory */
+		reg = <0x20000 DT_SIZE_K(128)>;
+		ranges = <0x0 0x20000 DT_SIZE_K(128)>;
+	};
+};
+
 &cpuapp_rram {
 	/*
-	 * Default NVM layout on NRF54LM20A Application MCU without BL2:
+	 * Default NVM layout on NRF54L15 Application MCU without BL2:
 	 * This layout matches (by necessity) that in the TF-M repository:
 	 *
 	 * 0x0000_0000 Secure image primary (512 KB)
 	 * 0x0008_0000 Protected Storage Area (16 KB)
 	 * 0x0008_4000 Internal Trusted Storage Area (16 KB)
 	 * 0x0008_8000 OTP / NV counters area (8 KB)
-	 * 0x0008_A000 Non-secure image primary (1356 KB)
-	 * 0x001D_DD00 Non-secure storage, used when built with NRF_NS_STORAGE=ON,
+	 * 0x0008_A000 Non-secure image primary (940 KB)
+	 * 0x0017_5000 Non-secure storage, used when built with NRF_NS_STORAGE=ON,
 	 *             otherwise unused (32 KB)
 	 */
 	partitions {
@@ -22,8 +50,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* nRF54LM20A has 2036 kB of non-volatile memory (RRAM) but the last
-		 * 96 kB are reserved for the FLPR MCU.
+		/* nRF54L15 has 1524 kB of non volatile memory (RRAM)
 		 *
 		 * This static layout needs to be the same with the upstream TF-M layout in the
 		 * header flash_layout.h of the relevant platform. Any updates in the layout
@@ -51,12 +78,12 @@
 
 		slot0_ns_partition: partition@8A000 {
 			label = "image-0-nonsecure";
-			reg = <0x0008A000 DT_SIZE_K(1356)>;
+			reg = <0x0008A000 DT_SIZE_K(940)>;
 		};
 
-		storage_partition: partition@1DD000 {
+		storage_partition: partition@175000 {
 			label = "storage";
-			reg = <0x001DD000 DT_SIZE_K(32)>;
+			reg = <0x000175000 DT_SIZE_K(32)>;
 		};
 	};
 };
