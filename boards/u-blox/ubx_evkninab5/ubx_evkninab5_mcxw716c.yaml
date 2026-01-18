@@ -1,0 +1,22 @@
+identifier: ubx_evkninab5
+name: u-blox EVK-NINA-B5
+type: mcu
+arch: arm
+ram: 64
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - counter
+  - flash
+  - flexio
+  - gpio
+  - pinctrl
+  - pwm
+  - regulator
+  - uart
+  - watchdog
+vendor: u-blox
