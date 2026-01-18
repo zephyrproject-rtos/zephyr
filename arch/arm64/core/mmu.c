@@ -22,6 +22,8 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm64.h>
 #include <mmu.h>
 
 #include "mmu.h"
@@ -878,6 +880,126 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 	}
 }
 
+#define _BUILD_REGION_CONF(reg, _ATTR)					\
+	(struct arm_mmu_region) {						\
+		.name = (reg).dt_name,					\
+		.base_pa = (reg).dt_addr,				\
+		.base_va = (reg).dt_addr,				\
+		.size = (reg).dt_size,					\
+		.attrs = _ATTR						\
+	}
+
+#ifdef CONFIG_MEM_ATTR
+/* This internal function configures MMU regions defined in DT when using
+ * the `zephyr,memory-attr = <( DT_MEM_ARM64(...) )>` property.
+ *
+ * IMPORTANT: Only processes nodes with compatible = "zephyr,memory-region".
+ * This follows the design guidance to use separate memory-region nodes
+ * rather than reusing device nodes' reg property. This avoids coupling
+ * device description to MMU policy and ensures explicit opt-in for MMU
+ * configuration.
+ *
+ * Example DTS usage:
+ *   uart0_mmu: memory-region@ff010000 {
+ *       compatible = "zephyr,memory-region";
+ *       reg = <0xff010000 0x1000>;
+ *       zephyr,memory-region = "UART0";
+ *       zephyr,memory-attr = <DT_MEM_ARM64_MMU_DEVICE>;
+ *   };
+ */
+static void mmu_configure_regions_from_dt(struct arm_mmu_ptables *ptables)
+{
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+	uintptr_t max_va = 0, max_pa = 0;
+
+	num_regions = mem_attr_get_regions(&region);
+	if (num_regions == 0) {
+		LOG_INF("DT-MMU: No memory-region nodes found in devicetree");
+		return;
+	}
+
+	LOG_INF("DT-MMU: Processing %zu memory-region nodes from devicetree", num_regions);
+
+	for (size_t idx = 0; idx < num_regions; idx++) {
+		struct arm_mmu_region region_conf;
+		uint32_t dt_mem_arm64_attr = DT_MEM_ARM64_GET(region[idx].dt_attr);
+
+		/* Only process ARM64 MMU specific attributes */
+		if (dt_mem_arm64_attr == 0) {
+			continue;
+		}
+
+		/* Shift the attribute value back to get the raw enum */
+		dt_mem_arm64_attr >>= DT_MEM_ARCH_ATTR_SHIFT;
+
+		switch (dt_mem_arm64_attr) {
+		case ATTR_MMU_DEVICE:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+				MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE);
+			break;
+		case ATTR_MMU_DEVICE_nGnRE:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+				MT_DEVICE_nGnRE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE);
+			break;
+		case ATTR_MMU_DEVICE_GRE:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+				MT_DEVICE_GRE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE);
+			break;
+		case ATTR_MMU_NORMAL_NC:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+				MT_NORMAL_NC | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE);
+			break;
+		case ATTR_MMU_NORMAL:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+				MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE);
+			break;
+		case ATTR_MMU_NORMAL_WT:
+			region_conf = _BUILD_REGION_CONF(region[idx],
+				MT_NORMAL_WT | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE);
+			break;
+		default:
+			/* Attribute other than ARM64-specific is set.
+			 * This region should not be configured in MMU.
+			 */
+			continue;
+		}
+
+		/* Validate address ranges */
+		max_va = MAX(max_va, region_conf.base_va + region_conf.size);
+		max_pa = MAX(max_pa, region_conf.base_pa + region_conf.size);
+
+		__ASSERT(max_va <= (1ULL << CONFIG_ARM64_VA_BITS),
+			 "DT region %s VA range exceeds CONFIG_ARM64_VA_BITS", region_conf.name);
+		__ASSERT(max_pa <= (1ULL << CONFIG_ARM64_PA_BITS),
+			 "DT region %s PA range exceeds CONFIG_ARM64_PA_BITS", region_conf.name);
+
+		/* Add the region to MMU */
+		add_arm_mmu_region(ptables, &region_conf, MT_NO_OVERWRITE);
+
+		/* Cache maintenance for cacheable normal memory types
+		 * Device memory types (DEVICE_nGnRnE, DEVICE_nGnRE, DEVICE_GRE)
+		 * and non-cacheable memory (NORMAL_NC) don't need cache invalidation
+		 */
+		if (dt_mem_arm64_attr == ATTR_MMU_NORMAL ||
+		    dt_mem_arm64_attr == ATTR_MMU_NORMAL_WT) {
+			sys_cache_data_invd_range(UINT_TO_POINTER(region_conf.base_va),
+						   region_conf.size);
+		}
+
+		LOG_INF("DT-MMU: Added region %s: VA=0x%lx, PA=0x%lx, size=0x%lx, attrs=0x%x",
+			region_conf.name, region_conf.base_va, region_conf.base_pa,
+			region_conf.size, region_conf.attrs);
+	}
+}
+#else
+static void mmu_configure_regions_from_dt(struct arm_mmu_ptables *ptables)
+{
+	/* Memory attribute subsystem not enabled - no dynamic regions */
+	ARG_UNUSED(ptables);
+}
+#endif /* CONFIG_MEM_ATTR */
+
 static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
@@ -915,6 +1037,9 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 		region = &mmu_config.mmu_regions[index];
 		add_arm_mmu_region(ptables, region, MT_NO_OVERWRITE);
 	}
+
+	/* Configure MMU regions from devicetree memory attributes */
+	mmu_configure_regions_from_dt(ptables);
 
 	invalidate_tlb_all();
 }
