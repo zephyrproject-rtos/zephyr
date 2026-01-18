@@ -310,7 +310,9 @@ static int32_t st_lis2duxs12_init_interrupt(const struct device *dev)
 	}
 
 	route.drdy = 1;
-
+	if (cfg->drdy_pin == 3) {
+		route.int_on_res = 1;
+	}
 	err = lis2duxs12_pin_int1_route_set(ctx, &route);
 	if (err < 0) {
 		return err;
