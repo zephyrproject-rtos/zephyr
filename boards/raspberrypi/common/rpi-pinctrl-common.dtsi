@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h>
+
+&pinctrl {
+	uart0_gpio14: uart0-gpio14 {
+		group1 {
+			pinmux = <UART0_TX_GPIO14>,
+				 <UART0_RX_GPIO15>;
+		};
+	};
+
+	uart1_gpio14: uart1-gpio14 {
+		group1 {
+			pinmux = <UART1_TX_GPIO14>,
+				 <UART1_RX_GPIO15>;
+		};
+	};
+};
