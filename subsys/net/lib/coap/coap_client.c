@@ -87,7 +87,7 @@ static void release_internal_request(struct coap_client_internal_request *reques
 	request->pending.timeout = 0;
 }
 
-static int coap_client_schedule_poll(struct coap_client *client, int sock,
+static void coap_client_schedule_poll(struct coap_client *client, int sock,
 				     struct coap_client_request *req,
 				     struct coap_client_internal_request *internal_req)
 {
@@ -96,8 +96,6 @@ static int coap_client_schedule_poll(struct coap_client *client, int sock,
 	internal_req->request_ongoing = true;
 
 	k_sem_give(&coap_client_recv_sem);
-
-	return 0;
 }
 
 static bool exchange_lifetime_exceeded(struct coap_client_internal_request *internal_req)
@@ -486,11 +484,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 		client->send_echo = false;
 	}
 
-	ret = coap_client_schedule_poll(client, sock, req, internal_req);
-	if (ret < 0) {
-		LOG_ERR("Failed to schedule polling");
-		goto release;
-	}
+	coap_client_schedule_poll(client, sock, req, internal_req);
 
 	ret = coap_pending_init(&internal_req->pending, &internal_req->request,
 				&client->address, params);
