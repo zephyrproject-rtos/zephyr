@@ -21,6 +21,7 @@
 	};
 
 	aliases {
+		sdhc0 = &sdhc0;
 		watchdog0 = &wdt0;
 	};
 
@@ -232,6 +233,79 @@
 				compatible = "jedec,spi-nor";
 				reg = <0>;
 				spi-max-frequency = <10000000>;
+			};
+		};
+
+		sdhc0: sdhc@e000e800 {
+			compatible = "litex,litesdcard-sdhc";
+			interrupt-parent = <&intc0>;
+			reg = <0xe000e800 0x4>,
+			      <0xe000e804 0x4>,
+			      <0xe000e808 0x4>,
+			      <0xe000e80c 0x4>,
+			      <0xe000e810 0x4>,
+			      <0xe000e814 0x4>,
+			      <0xe000e818 0x4>,
+			      <0xe000e81c 0x4>,
+			      <0xe000e820 0x4>,
+			      <0xe000e824 0x4>,
+			      <0xe000e828 0x10>,
+			      <0xe000e838 0x4>,
+			      <0xe000e83c 0x4>,
+			      <0xe000e840 0x4>,
+			      <0xe000e844 0x4>,
+			      <0xe000e848 0x8>,
+			      <0xe000e850 0x4>,
+			      <0xe000e854 0x4>,
+			      <0xe000e858 0x4>,
+			      <0xe000e85c 0x4>,
+			      <0xe000e860 0x4>,
+			      <0xe000e864 0x8>,
+			      <0xe000e86c 0x4>,
+			      <0xe000e870 0x4>,
+			      <0xe000e874 0x4>,
+			      <0xe000e878 0x4>,
+			      <0xe000e87c 0x4>,
+			      <0xe000e880 0x4>,
+			      <0xe000e884 0x4>,
+			      <0xe000e888 0x4>;
+			reg-names = "phy_card_detect",
+				    "phy_clocker_divider",
+				    "phy_init_initialize",
+				    "phy_cmdr_timeout",
+				    "phy_dataw_status",
+				    "phy_datar_timeout",
+				    "phy_settings",
+				    "core_cmd_argument",
+				    "core_cmd_command",
+				    "core_cmd_send",
+				    "core_cmd_response",
+				    "core_cmd_event",
+				    "core_data_event",
+				    "core_block_length",
+				    "core_block_count",
+				    "block2mem_dma_base",
+				    "block2mem_dma_length",
+				    "block2mem_dma_enable",
+				    "block2mem_dma_done",
+				    "block2mem_dma_loop",
+				    "block2mem_dma_offset",
+				    "mem2block_dma_base",
+				    "mem2block_dma_length",
+				    "mem2block_dma_enable",
+				    "mem2block_dma_done",
+				    "mem2block_dma_loop",
+				    "mem2block_dma_offset",
+				    "ev_status",
+				    "ev_pending",
+				    "ev_enable";
+			interrupts = <5 1>;
+			status = "okay";
+
+			mmc {
+				compatible = "zephyr,sdmmc-disk";
+				status = "okay";
+				disk-name = "SD";
 			};
 		};
 
