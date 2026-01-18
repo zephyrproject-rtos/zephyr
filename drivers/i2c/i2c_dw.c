@@ -1039,17 +1039,61 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 			dw->hcnt = value;
 		} else {
 			rc = -EINVAL;
+			goto error;
 		}
 		break;
 	default:
 		/* TODO change */
 		rc = -EINVAL;
+		goto error;
 	}
 
 	/*
 	 * Clear any interrupts currently waiting in the controller
 	 */
 	value = read_clr_intr(reg_base);
+
+	/*
+	 * Check SDA hold
+	 */
+#ifdef CONFIG_I2C_DW_SDA_HOLD_SUPPORT
+	union ic_sda_hold_register sda_hold_reg = {.raw = read_sdahold(reg_base)};
+
+	/* 
+	 * According to the datasheet, the maximum value of SDA TX HOLD is N_SCL_LOW - 2, 
+	 * where N_SCL_LOW = IC_*_LCNT + 1
+	 */
+	int32_t max_sda_tx_hold = dw->lcnt - 1;
+	if ((int32_t)sda_hold_reg.bits.sda_tx_hold > max_sda_tx_hold) {
+		LOG_ERR("I2C: SDA TX hold (%d) cannot be larger than low part of the SCL period (%d)", 
+			    sda_hold_reg.bits.sda_tx_hold, max_sda_tx_hold);
+		rc = -EINVAL;
+		goto error;
+	}
+
+	/* All calculations are taken from datasheet (2.16.1 SDA Hold Timings in Receiver) */
+	int32_t max_sda_rx_hold;
+	if (I2C_SPEED_GET(dw->app_config) != I2C_SPEED_HIGH) {
+		max_sda_rx_hold = dw->hcnt - read_fs_spklen(reg_base) - 3;
+	} else {
+		/* 
+		 * WARNING: Initialization of the value returned by the read_fs_scl_hcnt()
+		 * function occurs when transferring the first message at Fast Speed.
+		 * Otherwise, the default register value is used (which may not correspond
+		 * to the I2C peripheral input frequency).
+		 */
+		max_sda_rx_hold = MIN(read_fs_scl_hcnt(reg_base) - read_fs_spklen(reg_base) - 3,
+				      dw->lcnt - read_hs_spklen(reg_base) - 3);
+	}
+
+	if ((int32_t)sda_hold_reg.bits.sda_rx_hold > max_sda_rx_hold) {
+		LOG_ERR("I2C: SDA RX hold (%d) bigger than the maximum permissible value (%d)",
+			sda_hold_reg.bits.sda_rx_hold, max_sda_rx_hold);
+		rc = -EINVAL;
+	}
+#endif
+
+error:
 
 	/*
 	 * TEMPORARY HACK - The I2C does not work in any mode other than Master
@@ -1328,6 +1372,40 @@ static int i2c_dw_initialize(const struct device *dev)
 
 	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
 
+#ifdef CONFIG_I2C_DW_SDA_HOLD_SUPPORT
+	/* 
+	 * Convert values in nanoseconds to values in ic_clk cycles.
+	 * These calculations are equivalent: 
+	 * sda_tx_hold = sda_tx_hold_ns / (input frequency of the periphery in ns)
+	 */
+	uint32_t sda_tx_hold = (rom->sda_tx_hold_ns * CONFIG_I2C_DW_CLOCK_SPEED) / KHZ(1);
+	uint32_t sda_rx_hold = (rom->sda_rx_hold_ns * CONFIG_I2C_DW_CLOCK_SPEED) / KHZ(1);
+
+	if (sda_tx_hold < 1) {
+		LOG_ERR("I2C: SDA TX hold (%d) cannot be less than 1", sda_tx_hold);
+		return -EINVAL;
+	}
+
+	if (sda_tx_hold > UINT16_MAX) {
+		LOG_ERR("I2C: SDA TX hold (%d) cannot be more than %d", sda_tx_hold, UINT16_MAX);
+		return -EINVAL;
+	}
+
+	if (sda_rx_hold > UINT8_MAX) {
+		LOG_ERR("I2C: SDA RX hold (%d) cannot be more than %d", sda_rx_hold, UINT8_MAX);
+		return -EINVAL;
+	}
+
+	union ic_sda_hold_register sda_hold_reg = {
+		.bits = {
+			.sda_tx_hold = (uint16_t)sda_tx_hold,
+			.sda_rx_hold = (uint8_t)sda_rx_hold,
+		}
+	};
+
+	write_sdahold(sda_hold_reg.raw, reg_base);
+#endif
+
 	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
 		LOG_DBG("I2C: Cannot set default configuration");
 		return -EIO;
@@ -1424,6 +1502,14 @@ static int i2c_dw_initialize(const struct device *dev)
 #define TIMEOUT_DW_CONFIG(n)
 #endif
 
+#ifdef CONFIG_I2C_DW_SDA_HOLD_SUPPORT
+#define I2C_CONFIG_SDA_HOLD_INIT(n)	\
+		.sda_tx_hold_ns = DT_INST_PROP(n, sda_tx_hold_ns), \
+		.sda_rx_hold_ns = DT_INST_PROP(n, sda_rx_hold_ns),
+#else
+#define I2C_CONFIG_SDA_HOLD_INIT(n)
+#endif
+
 #define I2C_DEVICE_INIT_DW(n)                                                                      \
 	PINCTRL_DW_DEFINE(n);                                                                      \
 	I2C_PCIE_DEFINE(n);                                                                        \
@@ -1435,7 +1521,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
-			I2C_CONFIG_DMA_INIT(n)};                                                   \
+			I2C_CONFIG_DMA_INIT(n) I2C_CONFIG_SDA_HOLD_INIT(n)};                       \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \
 				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
