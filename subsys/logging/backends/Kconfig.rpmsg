@@ -1,0 +1,52 @@
+# Copyright (c) 2025 Lexmark
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_RPMSG
+	bool "RPMSG backend"
+	select OPENAMP
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  When enabled backend is using RPMSG to output logs.
+
+if LOG_BACKEND_RPMSG
+
+config LOG_BACKEND_RPMSG_BUFFER_SIZE
+	int "Maximum number of bytes to buffer in RAM before flushing"
+	default 256
+	help
+	  In deferred logging mode, sets the maximum number of bytes which can be buffered in
+	  RAM before log_output_flush is automatically called on the RPMSG backend. The buffer
+	  will also be flushed after each log message.
+
+	  In immediate logging mode, processed log messages are not buffered and are always
+	  output one byte at a time.
+
+config LOG_BACKEND_RPMSG_BLOCKING_MODE
+	bool "Block until successful rpmsg_send or use rpmsg_trysend"
+	help
+	  Enable to block sending log through rpmsg_send instead of using rpmsg_trysend
+
+config LOG_BACKEND_RPMSG_SERVICE_NAME
+	string "Service name"
+	default "rpmsg-tty"
+	help
+	  The service name associated with the RPMsg endpoint.
+
+config LOG_BACKEND_RPMSG_SRC_ADDR
+	hex "Local address"
+	default 0xffffffff # The ANY address
+	help
+	  Local address of the RPMsg endpoint.
+
+config LOG_BACKEND_RPMSG_DST_ADDR
+	hex "Remote address"
+	default 0xffffffff # The ANY address
+	help
+	  Target address of the RPMsg endpoint.
+
+backend = RPMSG
+backend-str = rpmsg
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_RPMSG
