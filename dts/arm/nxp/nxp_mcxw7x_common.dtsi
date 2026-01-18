@@ -315,6 +315,7 @@
 		reg = <0x1a000 10>;
 		interrupts = <23 0>;
 		clocks = <&scg SCG_K4_RTCOSC_CLK 0x68>;
+		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <1>;
 		status = "okay";
@@ -325,6 +326,7 @@
 		reg = <0x1b000 10>;
 		interrupts = <24 0>;
 		clocks = <&scg SCG_K4_RTCOSC_CLK 0x6c>;
+		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <1>;
 		status = "disabled";
