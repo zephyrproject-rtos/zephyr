@@ -219,6 +219,13 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
 
+* Utilities
+
+  * :c:struct:`sys_set_node`
+  * :c:func:`sys_set_makeset`
+  * :c:func:`sys_set_find`
+  * :c:func:`sys_set_union`
+
 * Video
 
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
