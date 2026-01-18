@@ -197,6 +197,13 @@ static uint32_t sf32lb_get_pclk1(const struct clock_control_sf32lb_rcc_config *c
 	return sf32lb_get_hclk(config) / MAX(divisor, 1U);
 }
 
+static uint32_t sf32lb_get_pclk2(const struct clock_control_sf32lb_rcc_config *config)
+{
+	uint32_t divisor = BIT(config->pdiv2);
+
+	return sf32lb_get_hclk(config) / MAX(divisor, 1U);
+}
+
 static uint32_t sf32lb_get_clk_peri(const struct clock_control_sf32lb_rcc_config *config)
 {
 	return config->peri_clk_freq;
@@ -226,6 +233,11 @@ static uint32_t sf32lb_get_usb_clk(const struct clock_control_sf32lb_rcc_config 
 	}
 
 	return src / config->usb_div;
+}
+
+static uint32_t sf32lb_get_lrc10_freq(const struct clock_control_sf32lb_rcc_config *config)
+{
+	return config->lrc10_freq;
 }
 
 static int clock_control_sf32lb_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -313,6 +325,15 @@ int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_su
 	case SF32LB52X_CLOCK_PDM1:
 		*rate = config->hxt48_freq;
 		return 0;
+
+	case SF32LB52X_CLOCK_LRC10:
+		*rate = sf32lb_get_lrc10_freq(config);
+		return 0;
+
+	case SF32LB52X_CLOCK_PCLK2:
+		*rate = sf32lb_get_pclk2(config);
+		return 0;
+
 	default:
 		break;
 	}
