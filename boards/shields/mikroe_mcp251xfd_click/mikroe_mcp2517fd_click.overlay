@@ -1,7 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 &mikrobus_spi {
 	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
 
-	mcp2518fd_mikroe_mcp2518fd_click: mcp2518fd@0 {
+	mcp2517fd_mikroe_mcp2517fd_click: mcp2517fd@0 {
 		compatible = "microchip,mcp251xfd";
 		status = "okay";
 
@@ -14,6 +20,6 @@
 
 / {
 	chosen {
-		zephyr,canbus = &mcp2518fd_mikroe_mcp2518fd_click;
+		zephyr,canbus = &mcp2517fd_mikroe_mcp2517fd_click;
 	};
 };
