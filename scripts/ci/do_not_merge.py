@@ -59,6 +59,36 @@ def workflow_delay(repo, pr):
         time.sleep(WAIT_FOR_DELAY_S)
 
 
+APPROVAL_ALL_LABEL = "All assignees approval"
+
+
+def check_approvals(pr):
+    labels = [label.name for label in pr.labels]
+
+    if APPROVAL_ALL_LABEL not in labels:
+        return True
+
+    approvers = set()
+    approvers.add(pr.user.login)
+    for review in pr.get_reviews():
+        if review.user:
+            if review.state == 'APPROVED':
+                approvers.add(review.user.login)
+            elif review.state in ['DISMISSED', 'CHANGES_REQUESTED']:
+                approvers.discard(review.user.login)
+
+    assignees = {[a.login for a in pr.assignees]}
+
+    print(f"Want all assignees: approvers: {approvers} assignees: {assignees}")
+
+    if assignees.issubset(approvers):
+        print("All approvers approved")
+        return True
+    else:
+        print(f"Missing approvers: {assignees - approvers}")
+        return False
+
+
 def main(argv):
     args = parse_args(argv)
 
@@ -85,6 +115,9 @@ def main(argv):
 
     if not pr.body:
         print("Pull request is description is empty.")
+        fail = True
+
+    if not check_approvals(pr):
         fail = True
 
     if fail:
