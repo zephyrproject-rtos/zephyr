@@ -15,6 +15,8 @@
 
 #include <cmsis_core.h>
 
+extern void stm32_power_init(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -30,6 +32,10 @@ void soc_early_init_hook(void)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 8 MHz from HSI */
 	SystemCoreClock = 8000000;
+
+#if defined(CONFIG_PM)
+	stm32_power_init();
+#endif
 
 	/* Allow reflashing the board */
 	LL_DBGMCU_EnableDBGSleepMode();
