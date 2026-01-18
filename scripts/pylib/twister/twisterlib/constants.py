@@ -14,6 +14,7 @@ SUPPORTED_SIMS = [
     "xt-sim",
     "native",
     "custom",
+    "whisper",
     "simics",
 ]
 SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
