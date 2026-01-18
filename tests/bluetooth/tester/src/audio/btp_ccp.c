@@ -31,7 +31,11 @@ struct bt_tbs_instance *tbs_inst;
 static uint8_t call_index;
 static uint8_t inst_ccid;
 static bool send_ev;
-
+static uint32_t tbs_supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES;
+static uint8_t tester_tbs_set_supported_features(const void *cmd,
+							uint16_t cmd_len,
+							void *rsp,
+							uint16_t *rsp_len);
 static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
@@ -1148,6 +1152,11 @@ static const struct btp_handler tbs_handlers[] = {
 		.expect_len = sizeof(struct btp_tbs_terminate_call_cmd),
 		.func = tbs_terminate_call
 	},
+	{
+		.opcode = BTP_TBS_SET_SUPPORTED_FEATURES,
+		.index  = BTP_INDEX_NONE,
+		.func   = tester_tbs_set_supported_features,
+	},
 };
 
 uint8_t tester_init_tbs(void)
@@ -1159,7 +1168,7 @@ uint8_t tester_init_tbs(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		.supported_features = tbs_supported_features,
 	};
 	const struct bt_tbs_register_param tbs_param = {
 		.provider_name = "TBS",
@@ -1169,7 +1178,7 @@ uint8_t tester_init_tbs(void)
 		.authorization_required = false,
 		/* Set different technologies per bearer */
 		.technology = BT_TBS_TECHNOLOGY_4G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		.supported_features = tbs_supported_features,
 	};
 	int err;
 
@@ -1197,5 +1206,21 @@ uint8_t tester_init_tbs(void)
 
 uint8_t tester_unregister_tbs(void)
 {
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tester_tbs_set_supported_features(const void *cmd,
+						 uint16_t cmd_len,
+						 void *rsp,
+						 uint16_t *rsp_len)
+{
+	const struct btp_tbs_set_supported_features_cmd *cp = cmd;
+
+	if (cmd_len != sizeof(*cp)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	tbs_supported_features = sys_le32_to_cpu(cp->supported_features);
+
 	return BTP_STATUS_SUCCESS;
 }
