@@ -110,7 +110,7 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 /*! @brief How many the DTD are supported. */
 #define USB_DEVICE_CONFIG_EHCI_MAX_DTD (16U)
 
-#ifndef CONFIG_UDC_BUF_FORCE_NOCACHE
+#ifndef CONFIG_USB_BUF_FORCE_NOCACHE
 #ifdef CONFIG_NOCACHE_MEMORY
 #define USB_DEVICE_CONFIG_BUFFER_PROPERTY_CACHEABLE (1U)
 #endif
