@@ -1,4 +1,5 @@
 # Copyright (c) 2025 Core Devices LLC
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -72,6 +73,13 @@ properties:
     description: |
       Source used for the HPSYS system clock. When set to ``dll1`` the DLL1 child
       node must be enabled. Defaults to ``hrc48`` if not provided (reset default).
+
+  sifli,clk-wdt-src:
+    type: string
+    enum: ["lrc10", "lrc32"]
+    default: "lrc10"
+    description: |
+      Selects the watchdog clock source when ``sifli,sys-clk-src`` is ``clk_wdt``.
 
   sifli,peri-clk-src:
     type: string
