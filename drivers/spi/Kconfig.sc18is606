@@ -4,7 +4,7 @@
 config SPI_SC18IS606
 	bool  "NXP SC18IS606 SPI controller driver"
 	default y
-	select I2C
+	select MFD
 	depends on DT_HAS_NXP_SC18IS606_SPI_ENABLED
 	help
 	  Enable driver for the NXP SC18IS606 SPI controller driver
@@ -13,7 +13,7 @@ if SPI_SC18IS606
 
 config SPI_SC18IS606_INIT_PRIORITY
 	int "SC18IS606 SPI init priority"
-	default 59
+	default 99
 	help
 	  SC18IS606 SPI controller initialization priority
 
