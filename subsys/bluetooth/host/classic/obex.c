@@ -219,8 +219,12 @@ static int obex_server_connect(struct bt_obex_server *server, uint16_t len, stru
 
 	if (mopl > server->obex->tx.mtu) {
 		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, server->obex->tx.mtu);
-		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
-		goto failed;
+		/* In mainstream mobile operating system settings, such as IPhone and Android,
+		 * MOPL is usually greater than the MTU of rfcomm or l2cap.
+		 * Therefore, the smaller value among them is selected as the final MOPL and
+		 * transmitted to the application by callback.
+		 */
+		mopl = server->obex->tx.mtu;
 	}
 
 	server->tx.mopl = mopl;
