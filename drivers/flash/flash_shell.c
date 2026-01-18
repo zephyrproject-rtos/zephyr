@@ -56,7 +56,7 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 {
 	char *endptr;
 
-	*addr = strtoul((*argv)[1], &endptr, 16);
+	*addr = strtoul((*argv)[1], &endptr, 0);
 
 	if (*endptr != '\0') {
 		/* flash controller from user input */
@@ -85,7 +85,7 @@ static int parse_helper(const struct shell *sh, size_t *argc,
 		shell_error(sh, "Missing address.");
 		return -EINVAL;
 	}
-	*addr = strtoul((*argv)[2], &endptr, 16);
+	*addr = strtoul((*argv)[2], &endptr, 0);
 	(*argc)--;
 	(*argv)++;
 	return 0;
@@ -105,7 +105,7 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 	if (argc > 2) {
-		size = strtoul(argv[2], NULL, 16);
+		size = strtoul(argv[2], NULL, 0);
 	} else {
 		struct flash_pages_info info;
 
@@ -272,8 +272,8 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 
-	size = strtoul(argv[2], NULL, 16);
-	repeat = strtoul(argv[3], NULL, 16);
+	size = strtoul(argv[2], NULL, 0);
+	repeat = strtoul(argv[3], NULL, 0);
 	if (size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
 		shell_error(sh, "<size> must be at most 0x%x.",
 			    CONFIG_FLASH_SHELL_BUFFER_SIZE);
@@ -806,7 +806,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 		"[<device>] <page address> [<size>]",
 		cmd_erase, 2, 2),
 	SHELL_CMD_ARG(read, &dsub_device_name,
-		"[<device>] <address> [<Dword count>]",
+		"[<device>] <address> [<dword count>]",
 		cmd_read, 2, 2),
 	SHELL_CMD_ARG(test, &dsub_device_name,
 		"[<device>] <address> <size> <repeat count>",
