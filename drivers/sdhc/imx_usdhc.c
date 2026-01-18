@@ -135,10 +135,20 @@ static void sdio_interrupt_cb(USDHC_Type *usdhc, void *user_data)
 {
 	const struct device *dev = user_data;
 	struct usdhc_data *data = dev->data;
+	USDHC_Type *base = get_base(dev);
 
 	if (data->sdhc_cb) {
 		data->sdhc_cb(dev, SDHC_INT_SDIO, data->sdhc_cb_user_data);
 	}
+
+	/*
+	 * Match the behavior of other Zephyr sdhc drivers, which automatically
+	 * mask the card interrupt when it arrives and expect an asynchronous
+	 * handler to re-enable it once the card's interrupt condition has been
+	 * cleared.
+	 */
+	USDHC_DisableInterruptStatus(base, kUSDHC_CardInterruptFlag);
+	USDHC_DisableInterruptSignal(base, kUSDHC_CardInterruptFlag);
 }
 
 static void card_inserted_cb(USDHC_Type *usdhc, void *user_data)
