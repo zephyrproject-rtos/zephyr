@@ -4,3 +4,13 @@ CONFIG_CONSOLE=y
 CONFIG_SERIAL=y
 CONFIG_UART_CONSOLE=y
 CONFIG_GPIO=y
+
+# Camera (OV2640) support requires external SPIRAM
+CONFIG_ESP_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+
+# Enable I2C for camera sensor communication
+CONFIG_I2C=y
+
+# Enable DMA for camera data transfer
+CONFIG_DMA=y
