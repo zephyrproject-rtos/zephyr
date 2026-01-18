@@ -274,14 +274,19 @@ static void uart_bflb_isr(const struct device *dev)
 {
 	struct bflb_data *const data = dev->data;
 	const struct bflb_config *const cfg = dev->config;
-	uint32_t tmp = 0;
+	uint32_t tmp;
+	bool clear_err = !(sys_read32(cfg->base_reg + UART_INT_MASK_OFFSET) & UART_CR_URX_PCE_MASK);
 
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
 	}
 	/* clear interrupts that require ack*/
 	tmp = sys_read32(cfg->base_reg + UART_INT_CLEAR_OFFSET);
-	tmp = tmp | UART_CR_URX_RTO_CLR;
+	/* Clear PCE in case callback didn't read it and the interrupt is unmasked */
+	if (clear_err) {
+		tmp |= UART_CR_URX_PCE_CLR;
+	}
+	tmp |= UART_CR_URX_RTO_CLR;
 	sys_write32(tmp, cfg->base_reg + UART_INT_CLEAR_OFFSET);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -443,9 +448,6 @@ static int uart_bflb_init(const struct device *dev)
 	sys_write32(0xFF, cfg->base_reg + UART_INT_CLEAR_OFFSET);
 	/* mask all IRQs */
 	sys_write32(0xFFFFFFFFU, cfg->base_reg + UART_INT_MASK_OFFSET);
-	/* unmask necessary irqs */
-	uart_bflb_irq_rx_enable(dev);
-	uart_bflb_irq_err_enable(dev);
 	/* enable all irqs */
 	sys_write32(0xFF, cfg->base_reg + UART_INT_EN_OFFSET);
 	cfg->irq_config_func(dev);
