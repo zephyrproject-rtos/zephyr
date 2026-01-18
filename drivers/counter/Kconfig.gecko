@@ -1,6 +1,8 @@
 # Silicon Labs Gecko Counter driver config
 
 # Copyright (c) 2019, Piotr Mienkowski
+# Copyright (c) 2026, Shontal Biton, Based on:
+# Kconfig.mcux_lptmr, Copyright (c) 2020 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_SILABS_SLEEPTIMER := silabs,sleeptimer
@@ -23,3 +25,29 @@ config COUNTER_GECKO_STIMER
 	help
 	  Enable the counter driver for Sleep Timer module for Silicon Labs
 	  Gecko chips.
+
+config COUNTER_GECKO_BURTC
+	bool "Silicon Labs Gecko Counter Backup Timer (BURTC) driver"
+	depends on DT_HAS_SILABS_BURTC_COUNTER_ENABLED
+	select SILABS_SISDK_BURTC
+	help
+	  Enable the counter driver for Backup Real Time Counter module
+	  for Silicon Labs Gecko chips.
+
+config COUNTER_GECKO_BURTC_ALARM
+	bool "LPTMR alarm support"
+	default y
+	depends on COUNTER_GECKO_BURTC
+	help
+	  BURTC is a commonly used wake-up source for many Silabs MCUs and
+	  may be used as the companion low-power timer for the Cortex-M
+	  systick. Enabling single-shot alarm support requires reprogramming
+	  the hardware compare register (COMPARE/CMR), which is the same
+	  resource used for the periodic TOP callback. Because of this
+	  hardware limitation, this Kconfig option selects whether alarm
+	  support is enabled. When alarm support is enabled the driver will
+	  not allow set TOP operation at runtime (attempts to set TOP will
+	  return -ENOTSUP); When alarm support is disabled the driver will
+	  not allow set and cancel ALARM operation at runtime (attempts to
+	  set and cancel ALARM will return -ENOTSUP). Choose the configuration
+	  that matches your application's requirements.
