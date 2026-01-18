@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
+		zephyr,ot-uart = &uart1;
+	};
+
+	hdlc_rcp_if: hdlc_rcp_if {
+		compatible = "uart,hdlc-rcp-if";
+	};
+};
+
+&uart1_default {
+	group1 {
+		pinmux = <UART1_TX_GPIO17>;
+		output-high;
+	};
+
+	group2 {
+		pinmux = <UART1_RX_GPIO18>;
+		bias-pull-up;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <460800>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&spim2_default {
+	group1 {
+		pinmux = <SPIM2_MISO_GPIO2>,
+			 <SPIM2_SCLK_GPIO6>,
+			 <SPIM2_CSEL_GPIO10>;
+	};
+
+	group2 {
+		pinmux = <SPIM2_MOSI_GPIO7>;
+		output-low;
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_w5500: eth-w5500@0 {
+		compatible = "wiznet,w5500";
+		status = "okay";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		int-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		zephyr,random-mac-address;
+	};
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&wifi {
+	status = "disabled";
+};
