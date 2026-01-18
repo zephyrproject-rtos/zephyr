@@ -224,10 +224,15 @@ This is the form factor of the Raspberry Pi Pico boards.
 Relevant devicetree node labels:
 
 - ``pico_header`` See :dtcompatible:`raspberrypi,pico-header` for GPIO pin definitions.
+- ``pico_i2c`` Default, refers to a node behind the following indexed labels in parallel.
 - ``pico_i2c0``
 - ``pico_i2c1``
-- ``pico_serial``
-- ``pico_spi``
+- ``pico_serial`` Default, refers to a node behind the following indexed labels in parallel.
+- ``pico_serial0``
+- ``pico_serial1``
+- ``pico_spi`` Default, refers to a node behind the following indexed labels in parallel.
+- ``pico_spi0``
+- ``pico_spi1``
 
 
 ST Morpho
