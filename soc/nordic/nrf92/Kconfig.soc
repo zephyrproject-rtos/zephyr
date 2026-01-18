@@ -18,6 +18,9 @@
 # as build target, and so that its definition can also be re-used
 # for other SiPs.
 
+config SOC_SERIES_NRF92_CPUAPP
+	bool
+
 config SOC_NRF9230_ENGB
 	bool
 	select SOC_SERIES_NRF92X
@@ -47,6 +50,7 @@ config SOC_NRF9280
 config SOC_NRF9280_CPUAPP
 	bool
 	select SOC_NRF9280
+	select SOC_SERIES_NRF92_CPUAPP
 	help
 	  nRF9280 CPUAPP
 
