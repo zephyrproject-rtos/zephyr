@@ -1,0 +1,30 @@
+# COBS Serial L2 configuration
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_L2_COBS_SERIAL
+	bool "COBS Serial L2 layer"
+	select NET_PKT_COBS
+	help
+	  Enable COBS (Consistent Overhead Byte Stuffing) L2 layer.
+	  This L2 performs COBS encoding/decoding on packets sent/received
+	  over serial links, providing framing and byte-stuffing.
+
+if NET_L2_COBS_SERIAL
+
+config NET_L2_COBS_SERIAL_RX_MARK_LOOPBACK
+	bool "Mark RX packets as loopback (test/self-loop helper)"
+	help
+	  Mark received packets as loopback before passing them to the IP stack.
+	  This is useful for self-loop tests where packets traverse a physical
+	  medium (e.g., cross-wired UART) but still originate from a local IP
+	  address. Without this, IPv6 input may drop such packets as spoofed
+	  ("src addr is mine").
+
+module = NET_L2_COBS_SERIAL
+module-dep = NET_LOG
+module-str = Log level for COBS Serial L2 layer
+module-help = Sets log level for COBS Serial L2 operations.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_L2_COBS_SERIAL
+
