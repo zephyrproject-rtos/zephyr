@@ -25,13 +25,10 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #include <cy_scb_spi.h>
 #include <cy_trigmux.h>
 
-#define IFX_CAT1_SPI_DEFAULT_OVERSAMPLE (4)
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define IFX_CAT1_SPI_MIN_DATA_WIDTH (4)
-#else
-#define IFX_CAT1_SPI_MIN_DATA_WIDTH (8)
-#endif
-#define IFX_CAT1_SPI_MAX_DATA_WIDTH (32)
+#define IFX_CAT1_SPI_DEFAULT_OVERSAMPLE CONFIG_IFX_CAT1_SPI_OVERSAMPLE_DEFAULT
+
+#define IFX_CAT1_SPI_MIN_DATA_WIDTH CONFIG_IFX_CAT1_SPI_MIN_DATA_WIDTH
+#define IFX_CAT1_SPI_MAX_DATA_WIDTH CONFIG_IFX_CAT1_SPI_MAX_DATA_WIDTH
 
 #define IFX_CAT1_SPI_OVERSAMPLE_MIN 4
 #define IFX_CAT1_SPI_OVERSAMPLE_MAX 16
@@ -570,6 +567,20 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #define EN_XFER_SEPARATION enableTransferSeperation
 #endif
 
+/*
+ * Trigger level 7 to optimize DMA efficiency by enabling 8-byte burst transfers,
+ * which reduces overhead. Lower values would lead to frequent single-byte DMA operations,
+ * which are less efficient. This strikes a good balance between throughput and latency.
+ * (matching bare-metal implementation)
+ */
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define DEFAULT_TX_FIFO_TRIGGER_LEVEL 7
+#define DEFAULT_RX_FIFO_TRIGGER_LEVEL 7
+#else
+#define DEFAULT_TX_FIFO_TRIGGER_LEVEL 0
+#define DEFAULT_RX_FIFO_TRIGGER_LEVEL 0
+#endif
+
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define SPI_PERI_CLOCK_INIT(n)                                                                     \
 	.clock =                                                                                   \
@@ -591,6 +602,15 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define ADVANCED_SPI_FIELDS(n)                                                                     \
+	.ssSetupDelay = DT_INST_PROP_OR(n, ss_setup_delay, 0),                                     \
+	.ssHoldDelay = DT_INST_PROP_OR(n, ss_hold_delay, 0),                                       \
+	.ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_dataframe_delay, 0),
+#else
+#define ADVANCED_SPI_FIELDS(n)
 #endif
 
 #define IFX_CAT1_SPI_INIT(n)                                                                       \
@@ -629,9 +649,12 @@ static int ifx_cat1_spi_init(const struct device *dev)
 				 DT_INST_PROP_OR(n, enable_transfer_separation, false),            \
 			 .enableWakeFromSleep = DT_INST_PROP_OR(n, enableWakeFromSleep, false),    \
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
-			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
+			 ADVANCED_SPI_FIELDS(n)                                                    \
+			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level,           \
+							       DEFAULT_RX_FIFO_TRIGGER_LEVEL),     \
 			 .rxFifoIntEnableMask = DT_INST_PROP_OR(n, rx_fifo_int_enable_mask, 0),    \
-			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 0),       \
+			 .txFifoTriggerLevel = DT_INST_PROP_OR(n, tx_fifo_trigger_level,           \
+							       DEFAULT_TX_FIFO_TRIGGER_LEVEL),     \
 			 .txFifoIntEnableMask = DT_INST_PROP_OR(n, tx_fifo_int_enable_mask, 0),    \
 			 .masterSlaveIntEnableMask =                                               \
 				 DT_INST_PROP_OR(n, master_slave_int_enable_mask, 0)},             \
@@ -787,6 +810,8 @@ void ifx_cat1_spi_register_callback(const struct device *dev,
 #define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
 #endif
 
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || \
+	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 {
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
@@ -838,6 +863,7 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 #endif
 	return -EINVAL;
 }
+#endif /* COMPONENT_CAT1B || COMPONENT_CAT1C || CONFIG_SOC_FAMILY_INFINEON_EDGE */
 
 static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t hz,
 					    uint8_t *over_sample_val)
@@ -862,6 +888,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
 
 	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency(hfclk);
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency();
 #endif
 
 	if (!data->is_slave) {
