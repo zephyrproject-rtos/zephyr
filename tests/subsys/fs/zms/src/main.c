@@ -1318,3 +1318,78 @@ ZTEST_F(zms, test_zms_free_space_5sectors)
 	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
 		      "total free space did not match sum of gc'd sectors");
 }
+
+/*
+ * Test mounting recovery using zms_mount_force().
+ * Verifies that corrupted ZMS partition triggers mount failure when using zms_mount(),
+ * but auto-recovery when using zms_mount_force().
+ */
+ZTEST_F(zms, test_zms_mount_force)
+{
+	int err;
+	struct zms_ate close_ate;
+	struct zms_ate empty_ate;
+	uint32_t test_data = 0xDEADBEEF;
+	ssize_t len;
+
+	/* Construct valid ZMS ATEs with UNSUPPORTED VERSION (version=2).
+	 * This will cause zms_init to detect ZMS magic but fail with -EPROTONOSUPPORT.
+	 */
+
+	/* Create close_ate with version=2, magic=0x42, format=0 */
+	memset(&close_ate, 0, sizeof(close_ate));
+	close_ate.id = ZMS_HEAD_ID;
+	close_ate.len = 0;
+	close_ate.cycle_cnt = 1;
+	close_ate.offset = 2 * sizeof(struct zms_ate); /* Points to close ATE location */
+	close_ate.metadata = FIELD_PREP(ZMS_VERSION_MASK, 2) |  /* Unsupported version */
+			     FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) |
+			     FIELD_PREP(ZMS_ATE_FORMAT_MASK, ZMS_DEFAULT_ATE_FORMAT);
+	close_ate.crc8 = crc8_ccitt(0xff,
+				    (uint8_t *)&close_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+				    sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+
+	/* Create empty_ate with version=2 */
+	memset(&empty_ate, 0, sizeof(empty_ate));
+	empty_ate.id = ZMS_HEAD_ID;
+	empty_ate.len = 0xffff;  /* Empty ATE marker */
+	empty_ate.cycle_cnt = 1;
+	empty_ate.metadata = FIELD_PREP(ZMS_VERSION_MASK, 2) |  /* Unsupported version */
+			     FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) |
+			     FIELD_PREP(ZMS_ATE_FORMAT_MASK, ZMS_DEFAULT_ATE_FORMAT);
+	empty_ate.crc8 = crc8_ccitt(0xff,
+				    (uint8_t *)&empty_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+				    sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+
+	/* Erase sector 0 before writing corrupted ATEs */
+	err = flash_erase(fixture->fs.flash_device, fixture->fs.offset, fixture->fs.sector_size);
+	zassert_true(err == 0, "flash_erase failed: %d", err);
+
+	/* Write corrupted ATEs to sector 0 */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size - sizeof(struct zms_ate),
+			  &empty_ate, sizeof(empty_ate));
+	zassert_true(err == 0, "flash_write empty_ate failed: %d", err);
+
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size - 2 * sizeof(struct zms_ate),
+			  &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_write close_ate failed: %d", err);
+
+	/* Test 1: Mount using zms_mount() - should FAIL with -EPROTONOSUPPORT */
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, -EPROTONOSUPPORT,
+		      "zms_mount should fail with -EPROTONOSUPPORT, got: %d", err);
+
+	/* Test 2: Mount with zms_mount_force - should SUCCEED (auto-wipe and recover) */
+	err = zms_mount_force(&fixture->fs);
+	zassert_true(err == 0, "zms_mount_force should succeed: %d", err);
+
+	/* Verify that the filesystem is functional after auto-wipe */
+	len = zms_write(&fixture->fs, 1, &test_data, sizeof(test_data));
+	zassert_equal(len, sizeof(test_data), "zms_write after recovery failed: %d", len);
+
+	len = zms_read(&fixture->fs, 1, &test_data, sizeof(test_data));
+	zassert_equal(len, sizeof(test_data), "zms_read after recovery failed: %d", len);
+	zassert_equal(test_data, 0xDEADBEEF, "read data mismatch after recovery");
+}
