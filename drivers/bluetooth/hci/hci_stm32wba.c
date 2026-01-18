@@ -38,26 +38,6 @@ struct hci_data {
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
-#define BLE_CTRLR_STACK_BUFFER_SIZE 300
-
-#define MBLOCK_COUNT	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, \
-					  CFG_BLE_ATT_MTU_MAX, \
-					  CFG_BLE_NUM_LINK) \
-			 + CFG_BLE_MBLOCK_COUNT_MARGIN)
-
-#define BLE_DYN_ALLOC_SIZE \
-	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, \
-			       MBLOCK_COUNT, \
-			       (CFG_BLE_EATT_BEARER_PER_LINK * CFG_BLE_NUM_LINK)))
-
-/* GATT buffer size (in bytes)*/
-#define BLE_GATT_BUF_SIZE \
-	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, \
-				   CFG_BLE_NUM_GATT_SERVICES, \
-				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
-
-#define DIVC(x, y)         (((x)+(y)-1)/(y))
-
 #if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
 static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
@@ -108,9 +88,6 @@ struct aci_reset {
 #define BT_HCI_STATE_CLOSED                   2
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
-
-static uint32_t __noinit buffer[DIVC(BLE_DYN_ALLOC_SIZE, 4)];
-static uint32_t __noinit gatt_buffer[DIVC(BLE_GATT_BUF_SIZE, 4)];
 
 extern uint8_t ll_state_busy;
 
@@ -408,7 +385,9 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
 	uint16_t event_length;
-	uint8_t tx_buffer[BLE_CTRLR_STACK_BUFFER_SIZE];
+	struct hci_data *hci = dev->data;
+	struct net_buf *evt_buf = NULL;
+	uint8_t *data;
 
 	ARG_UNUSED(dev);
 
@@ -416,13 +395,43 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 
 	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
-	memcpy(&tx_buffer, buf->data, buf->len);
+	if (buf->data[0] == BT_HCI_H4_CMD) {
+		/*
+		 * Get Event Buffer which will be used to store Tx buffer and store
+		 * the response event which is a Command Complete Event or a
+		 * Command Status Event.
+		 */
+		evt_buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
+		if (!evt_buf) {
+			LOG_ERR("No available event buffers!");
+			__ASSERT_NO_MSG(evt_buf);
+			return -ENOMEM;
+		}
+		/*
+		 * Reset the event buffer length and copy the data packet to transmit
+		 * in the event buffer resource.
+		 */
+		evt_buf->len = 0;
+		net_buf_add_mem(evt_buf, buf->data, buf->len);
+		data = evt_buf->data;
+	} else {
+		data = buf->data;
+	}
 
-	event_length = BleStack_Request(tx_buffer);
+	event_length = BleStack_Request(data);
 	LOG_DBG("event_length: %u", event_length);
 
-	if (event_length) {
-		receive_data(dev, (uint8_t *)&tx_buffer, (size_t)event_length, NULL, 0);
+	if (evt_buf) {
+		if (event_length) {
+			/*
+			 * Update the length of the event packet returned by
+			 * the BleStack_Request() function.
+			 */
+			evt_buf->len = event_length;
+			hci->recv(dev, evt_buf);
+		} else {
+			net_buf_unref(evt_buf);
+		}
 	}
 
 	k_sem_give(&hci_sem);
@@ -436,22 +445,7 @@ static int bt_ble_ctlr_init(void)
 {
 	BleStack_init_t init_params_p = {0};
 
-	init_params_p.numAttrRecord           = CFG_BLE_NUM_GATT_ATTRIBUTES;
-	init_params_p.numAttrServ             = CFG_BLE_NUM_GATT_SERVICES;
-	init_params_p.attrValueArrSize        = CFG_BLE_ATT_VALUE_ARRAY_SIZE;
-	init_params_p.prWriteListSize         = CFG_BLE_ATTR_PREPARE_WRITE_VALUE_SIZE;
-	init_params_p.attMtu                  = CFG_BLE_ATT_MTU_MAX;
-	init_params_p.max_coc_nbr             = CFG_BLE_COC_NBR_MAX;
-	init_params_p.max_coc_mps             = CFG_BLE_COC_MPS_MAX;
-	init_params_p.max_coc_initiator_nbr   = CFG_BLE_COC_INITIATOR_NBR_MAX;
-	init_params_p.numOfLinks              = CFG_BLE_NUM_LINK;
-	init_params_p.mblockCount             = CFG_BLE_MBLOCK_COUNT;
-	init_params_p.bleStartRamAddress      = (uint8_t *)buffer;
-	init_params_p.total_buffer_size       = BLE_DYN_ALLOC_SIZE;
-	init_params_p.bleStartRamAddress_GATT = (uint8_t *)gatt_buffer;
-	init_params_p.total_buffer_size_GATT  = BLE_GATT_BUF_SIZE;
-	init_params_p.options                 = CFG_BLE_OPTIONS;
-	init_params_p.debug                   = 0U;
+	init_params_p.options = BLE_OPTIONS_LL_ONLY | BLE_OPTIONS_EXTENDED_ADV;
 
 	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
 		return -EIO;
