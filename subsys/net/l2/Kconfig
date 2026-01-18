@@ -44,6 +44,8 @@ config NET_L2_CUSTOM_IEEE802154_MTU
 
 source "subsys/net/l2/canbus/Kconfig"
 
+source "subsys/net/l2/cobs_serial/Kconfig"
+
 config NET_L2_WIFI_UTILS
 	bool
 	help
