@@ -484,6 +484,10 @@ static int32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_le
 					     sevp->sigev_notify_attributes,
 					     mq_notify_thread,
 					     mqd->mqueue);
+			if (ret != 0) {
+				errno = ret;
+				return -1;
+			}
 		}
 	}
 
