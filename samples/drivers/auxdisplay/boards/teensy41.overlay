@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2026 Hatus Vianna Wanderley
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Teensy 4.1 overlay for the auxdisplay sample application.
+ *
+ * Hardware Configuration:
+ * - LPUART6 (pins 0/1): Console output at 115200 baud
+ * - LPI2C1 (pins 18/19): I2C bus for PCF8574 GPIO expander at address 0x20
+ * - HD44780 16x2 LCD: Connected via PCF8574 I2C GPIO expander
+ *
+ * Tested Hardware:
+ * - DFRobot DFR0063 16x2 LCD with I2C backpack (PCF8574-based)
+ * - Connected to Teensy 4.1 via DFR0063 low voltage (3.3V) I2C interface
+ *
+ */
+
+#include <dt-bindings/input/input-event-codes.h>
+
+/* Enable LPUART6 on Teensy 4.1 (Pins 0/1) */
+&lpuart6 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+/* Enable LPI2C1 on Teensy 4.1 (Pins 18/19) */
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+
+	aux_display_gpio: pcf8574@20 {
+		compatible = "nxp,pcf857x";
+		reg = <0x20>;
+		gpio-controller;
+		ngpios = <8>;
+		#gpio-cells = <2>;
+	};
+};
+
+/ {
+	chosen {
+		zephyr,console = &lpuart6;
+		zephyr,shell-uart = &lpuart6;
+	};
+
+	auxdisplay_0: hd44780 {
+		compatible = "hit,hd44780";
+		columns = <16>;
+		rows = <2>;
+		mode = <4>;
+
+		enable-line-rise-delay-ns = <450>;
+		enable-line-fall-delay-ns = <550>;
+		rs-line-delay-ns = <60>;
+		clear-command-delay-us = <5000>;
+		boot-delay-ms = <0>;
+
+		register-select-gpios = <&aux_display_gpio 0 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&aux_display_gpio 2 GPIO_ACTIVE_HIGH>;
+		backlight-gpios = <&aux_display_gpio 3 GPIO_ACTIVE_HIGH>;
+		data-bus-gpios = <0>, <0>, <0>, <0>,
+			<&aux_display_gpio 4 GPIO_ACTIVE_HIGH>,
+			<&aux_display_gpio 5 GPIO_ACTIVE_HIGH>,
+			<&aux_display_gpio 6 GPIO_ACTIVE_HIGH>,
+			<&aux_display_gpio 7 GPIO_ACTIVE_HIGH>;
+	};
+};
