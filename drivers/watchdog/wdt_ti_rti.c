@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT ti_j7_rti_wdt
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <stdint.h>
 
@@ -19,6 +20,9 @@
 #define WDT_PRELOAD_SHIFT 13
 
 #define WDT_PRELOAD_MAX 0xfff
+
+/* Only the last 6 bits are used */
+#define CLEAR_WDSTATUS 0x3f
 
 #define RTIWWDRX_NMI   0xa
 #define RTIWWDRX_RESET 0x5
@@ -59,12 +63,15 @@ struct wdt_ti_rti_regs {
 
 struct wdt_ti_rti_data {
 	DEVICE_MMIO_RAM;
+
+	wdt_callback_t callback;
 };
 
 struct wdt_ti_rti_config {
 	DEVICE_MMIO_ROM;
 
 	uint64_t freq;
+	void (*irq_config_func)(void);
 };
 
 static int wdt_ti_rti_setup(const struct device *dev, uint8_t options)
@@ -79,6 +86,8 @@ static int wdt_ti_rti_setup(const struct device *dev, uint8_t options)
 		regs->GCTRL = RTIGCTRL_RUN_BY_DBG;
 	}
 
+	/* Clear the Watchdog status register before enabling */
+	regs->WDSTATUS = CLEAR_WDSTATUS;
 	regs->DWDCTRL = WDENABLE_KEY;
 
 	return 0;
@@ -119,9 +128,12 @@ static int wdt_ti_rti_window_size(const struct wdt_window window)
 static int wdt_ti_rti_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	const struct wdt_ti_rti_config *config = DEV_CFG(dev);
+	struct wdt_ti_rti_data *data = DEV_DATA(dev);
 	struct wdt_ti_rti_regs *regs = DEV_REGS(dev);
 	uint32_t timer_margin;
 	int window_size;
+
+	data->callback = cfg->callback;
 
 	window_size = wdt_ti_rti_window_size(cfg->window);
 	if (window_size < 0) {
@@ -134,6 +146,7 @@ static int wdt_ti_rti_timeout(const struct device *dev, const struct wdt_timeout
 		return -EINVAL;
 	}
 
+	/* Only NMI is supported */
 	if (cfg->flags == WDT_FLAG_RESET_SOC) {
 		regs->WWDRXNCTRL = RTIWWDRX_NMI;
 	}
@@ -158,8 +171,23 @@ static int wdt_ti_rti_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
+static void wdt_ti_rti_isr(const struct device *dev)
+{
+	struct wdt_ti_rti_data *data = DEV_DATA(dev);
+	struct wdt_ti_rti_regs *regs = DEV_REGS(dev);
+	volatile uint32_t status = regs->WDSTATUS;
+	/* Clear status register before servicing the watchdog */
+	regs->WDSTATUS = CLEAR_WDSTATUS;
+	if (status & BIT(5) && data->callback) {
+		data->callback(dev, 0);
+	}
+	regs->WDKEY = WDKEY_SEQ0;
+	regs->WDKEY = WDKEY_SEQ1;
+}
+
 static int wdt_ti_rti_init(const struct device *dev)
 {
+	const struct wdt_ti_rti_config *config = DEV_CFG(dev);
 	struct wdt_ti_rti_regs *regs;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -169,6 +197,7 @@ static int wdt_ti_rti_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	config->irq_config_func();
 	return 0;
 }
 
@@ -180,11 +209,18 @@ static DEVICE_API(wdt, wdt_ti_rti_api) = {
 };
 
 #define WDT_TI_RTI_INIT(i)                                                                         \
+	static void wdt_ti_rti_irq_config_##i(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), wdt_ti_rti_isr,             \
+			    DEVICE_DT_INST_GET(i), 0);                                             \
+		irq_enable(DT_INST_IRQN(i));                                                       \
+	};                                                                                         \
 	static struct wdt_ti_rti_data wdt_ti_rti_data_##i = {};                                    \
                                                                                                    \
 	static struct wdt_ti_rti_config wdt_ti_rti_config_##i = {                                  \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(i)),                                              \
 		.freq = DT_INST_PROP(i, clock_frequency),                                          \
+		.irq_config_func = wdt_ti_rti_irq_config_##i,                                      \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(i, wdt_ti_rti_init, NULL, &wdt_ti_rti_data_##i,                      \
