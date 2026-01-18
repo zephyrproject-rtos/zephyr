@@ -365,10 +365,12 @@ pmod_header: &pmod2_header {};
 	local-mac-address = [74 90 50 B0 6D 5D];
 	status = "okay";
 	phy-handle = <&phy>;
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
 };
 
 &mdio {
-	pinctrl-0 = <&ether_default>;
+	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
 	status = "okay";
 

@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/net/phy.h>
+#include "r_ether_api.h"
 #include "r_ether.h"
 #include "r_ether_phy.h"
 
@@ -32,21 +33,28 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define ETHER_BUF_SIZE         1536
 #define ETHER_PADDING_OFFSET   1
 #define ETHER_BROADCAST_FILTER 0
+#define ETHER_TX_TIMEOUT_MS    100
 #define ETHER_TOTAL_BUF_NUM    (CONFIG_ETH_RENESAS_TX_BUF_NUM + CONFIG_ETH_RENESAS_RX_BUF_NUM)
 #define ETHER_EE_RECEIVE_EVENT_MASK                                                                \
 	(ETHER_EESR_EVENT_MASK_RFOF | ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR |       \
-	 ETHER_EESR_EVENT_MASK_RFCOF)
+	 ETHER_EESR_EVENT_MASK_TFUF | ETHER_EESR_EVENT_MASK_TDE | ETHER_EESR_EVENT_MASK_TC | 0U)
 
 BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection setting");
 
-void ether_eint_isr(void);
 void renesas_ra_eth_callback(ether_callback_args_t *p_args);
 static void renesas_ra_eth_buffer_init(const struct device *dev);
 
+extern void ether_eint_isr(void);
 extern void ether_init_buffers(ether_instance_ctrl_t *const p_instance_ctrl);
 extern void ether_configure_mac(ether_instance_ctrl_t *const p_instance_ctrl,
 				const uint8_t mac_addr[], const uint8_t mode);
 extern void ether_do_link(ether_instance_ctrl_t *const p_instance_ctrl, const uint8_t mode);
+
+#if defined(CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY)
+struct eth_renesas_ra_buf_header {
+	uint8_t *buf;
+};
+#endif
 
 uint8_t g_ether0_mac_address[6] = DT_INST_PROP(0, local_mac_address);
 struct renesas_ra_eth_context {
@@ -55,7 +63,18 @@ struct renesas_ra_eth_context {
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ETH_RA_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
+#if defined(CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY)
+	/* DMA buffer header */
+	struct eth_renesas_ra_buf_header *txb_header;
+	uint8_t txb_idx;
+	uint8_t txb_num;
+#else
+	/* staging buffer */
+	uint8_t txb[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t rxb[NET_ETH_MAX_FRAME_SIZE];
+#endif
 	struct k_sem rx_sem;
+	struct k_sem tx_sem;
 	ether_instance_ctrl_t ctrl;
 	/** pinctrl configs */
 	const struct pinctrl_dev_config *pcfg;
@@ -63,16 +82,22 @@ struct renesas_ra_eth_context {
 
 struct renesas_ra_eth_config {
 	const ether_cfg_t *p_cfg;
+	const struct pinctrl_dev_config *pincfg;
 	const struct device *phy_dev;
+	const struct device *clk_dev;
+	const struct clock_control_ra_subsys_cfg clk_subsys;
 };
+
+#define ETHER_BUFFER_ALIGN(s) static __aligned(s)
 
 /*
  * In some Renesas SoCs, Ethernet peripheral is always a non-secure bus master.
  * In that case, placing the Ethernet buffer in non-secure RAM is necessary.
  */
-#define ETHER_BUFFER_ALIGN(s) static __aligned(s)
 #if defined(CONFIG_ETH_RENESAS_RA_USE_NS_BUF)
 #define ETHER_BUFFER_PLACE_IN_SECTION __attribute__((section(".ns_buffer.eth")))
+#elif defined(CONFIG_NOCACHE_MEMORY)
+#define ETHER_BUFFER_PLACE_IN_SECTION __nocache
 #else
 #define ETHER_BUFFER_PLACE_IN_SECTION
 #endif
@@ -113,17 +138,13 @@ const ether_extended_cfg_t g_ether0_extended_cfg_t = {
 const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg = {
 	.p_target_init = ETHER_DEFAULT, .p_target_link_partner_ability_get = ETHER_DEFAULT};
 
-const ether_phy_cfg_t g_ether_phy0_cfg;
-
-ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
-
-const ether_phy_instance_t g_ether_phy0 = {.p_ctrl = &g_ether_phy0_ctrl,
-					   .p_cfg = &g_ether_phy0_cfg,
-					   .p_api = &g_ether_phy_on_ether_phy};
-
 const ether_cfg_t g_ether0_cfg = {
 	.channel = ETHER_CHANNEL0,
+#if defined(CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY)
+	.zerocopy = ETHER_ZEROCOPY_ENABLE,
+#else
 	.zerocopy = ETHER_ZEROCOPY_DISABLE,
+#endif
 	.multicast = ETHER_MULTICAST_ENABLE,
 	.promiscuous = ETHER_PROMISCUOUS_DISABLE,
 	.flow_control = ETHER_FLOW_CONTROL_DISABLE,
@@ -138,13 +159,9 @@ const ether_cfg_t g_ether0_cfg = {
 	.irq = DT_INST_IRQN(0),
 	.interrupt_priority = DT_INST_IRQ(0, priority),
 	.p_callback = ETHER_DEFAULT,
-	.p_ether_phy_instance = &g_ether_phy0,
 	.p_context = ETHER_DEFAULT,
 	.p_extend = &g_ether0_extended_cfg_t,
 };
-
-static struct renesas_ra_eth_config eth_0_config = {
-	.p_cfg = &g_ether0_cfg, .phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};
 
 /* Driver functions */
 static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device *dev)
@@ -159,8 +176,16 @@ void renesas_ra_eth_callback(ether_callback_args_t *p_args)
 	struct device *dev = (struct device *)p_args->p_context;
 	struct renesas_ra_eth_context *ctx = dev->data;
 
-	if (p_args->event == ETHER_EVENT_RX_COMPLETE) {
+	switch (p_args->event) {
+	case ETHER_EVENT_RX_COMPLETE:
+	case ETHER_EVENT_RX_MESSAGE_LOST:
 		k_sem_give(&ctx->rx_sem);
+		break;
+	case ETHER_EVENT_TX_COMPLETE:
+		k_sem_give(&ctx->tx_sem);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -274,39 +299,63 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 		LOG_ERR("Failed to init ether - R_ETHER_CallbackSet fail");
 	}
 
-	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(ctx->iface);
+
+	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 }
 
 static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	fsp_err_t err = FSP_SUCCESS;
 	struct renesas_ra_eth_context *ctx = dev->data;
 	uint16_t len = net_pkt_get_len(pkt);
-	static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t *tx_buf;
+	fsp_err_t err;
+	int ret;
 
-	if (net_pkt_read(pkt, tx_buf, len)) {
-		goto error;
+#if defined(CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY)
+	tx_buf = ctx->txb_header[ctx->txb_idx].buf;
+	ctx->txb_idx = (ctx->txb_idx + 1) % (ctx->txb_num);
+#else
+	tx_buf = ctx->txb;
+#endif
+
+	ret = net_pkt_read(pkt, tx_buf, len);
+	if (ret < 0) {
+		LOG_DBG("Failed to copy packet to tx buffer");
+		return ret;
 	}
-
-	/* Check if packet length is less than minimum Ethernet frame size */
+	/* Pad short packets */
 	if (len < NET_ETH_MINIMAL_FRAME_SIZE) {
-		/* Add padding to meet the minimum frame size */
 		memset(tx_buf + len, 0, NET_ETH_MINIMAL_FRAME_SIZE - len);
 		len = NET_ETH_MINIMAL_FRAME_SIZE;
 	}
 
+	/* Clear semaphore before starting transfer */
+	k_sem_reset(&ctx->tx_sem);
+
+	/* Start transmission */
 	err = R_ETHER_Write(&ctx->ctrl, tx_buf, len);
 	if (err != FSP_SUCCESS) {
-		goto error;
+		LOG_DBG("R_ETHER_Write failed (%d)", err);
+		return -EIO;
 	}
 
-	return 0;
+	/* Wait for TX completion with timeout */
+	if (k_sem_take(&ctx->tx_sem, K_MSEC(ETHER_TX_TIMEOUT_MS)) != 0) {
+		LOG_DBG("TX timeout");
+		return -ETIMEDOUT;
+	}
 
-error:
-	LOG_ERR("Writing to FIFO failed");
-	return -1;
+#if CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY
+	err = R_ETHER_TxStatusGet(&ctx->ctrl, (void *)tx_buf);
+	if (err != FSP_SUCCESS) {
+		LOG_DBG("Transmit buffer failed (%d)", err);
+		return -EIO;
+	}
+#endif
+
+	return 0;
 }
 
 static const struct device *renesas_ra_eth_get_phy(const struct device *dev)
@@ -332,33 +381,38 @@ static void renesas_ra_eth_isr(const struct device *dev)
 static struct net_pkt *renesas_ra_eth_rx(const struct device *dev)
 {
 	fsp_err_t err = FSP_SUCCESS;
-	struct renesas_ra_eth_context *ctx;
+	struct renesas_ra_eth_context *ctx = dev->data;
 	struct net_pkt *pkt = NULL;
 	uint32_t len = 0;
-	static uint8_t rx_buf[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t *rx_buf;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	ctx = dev->data;
-	__ASSERT_NO_MSG(ctx != NULL);
-
+#if (CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY)
+	err = R_ETHER_Read(&ctx->ctrl,  (void *) &rx_buf, &len);
+#else
+	rx_buf = ctx->rxb;
 	err = R_ETHER_Read(&ctx->ctrl, rx_buf, &len);
+#endif
 	if ((err != FSP_SUCCESS) && (err != FSP_ERR_ETHER_ERROR_NO_DATA)) {
-		LOG_ERR("Failed to read packets");
+		LOG_DBG("Failed to read packets");
 		goto out;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_DBG("Failed to obtain RX buffer");
 		goto out;
 	}
 
 	if (net_pkt_write(pkt, rx_buf, len)) {
-		LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_DBG("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto out;
 	}
+
+#ifdef CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY
+	R_ETHER_RxBufferUpdate(&ctx->ctrl, (void *)rx_buf);
+#endif
 
 out:
 	if (pkt == NULL) {
@@ -401,6 +455,18 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 int renesas_ra_eth_init(const struct device *dev)
 {
 	struct renesas_ra_eth_context *ctx = dev->data;
+	const struct renesas_ra_eth_config *cfg = dev->config;
+	int ret;
+
+	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&cfg->clk_subsys);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		return ret;
+	}
 
 	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
 	case 0: /* mii */
@@ -424,19 +490,43 @@ int renesas_ra_eth_init(const struct device *dev)
 	k_thread_create(&ctx->thread, ctx->thread_stack, CONFIG_ETH_RA_RX_THREAD_STACK_SIZE,
 			renesas_ra_eth_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_RA_RX_THREAD_PRIORITY), 0, K_NO_WAIT);
+	k_thread_name_set(&ctx->thread, "eth_renesas_ra_rx");
 
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
+#if defined(CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY)
+#define ETH_TX_BUF_HEADER_DECLARE(idx, _) {.buf = DECLARE_ETHER_TX_BUFFER_PTR(idx, n)}
+static struct eth_renesas_ra_buf_header eth_0_txb_header[] = {
+	LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, ETH_TX_BUF_HEADER_DECLARE, (,)),
+};
+#define ETH_BUF_INIT                                                                               \
+	.txb_header = eth_0_txb_header, .txb_idx = 0, .txb_num = CONFIG_ETH_RENESAS_TX_BUF_NUM,
+#else /* CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY */
+#define ETH_BUF_INIT
+#endif /* CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY */
+
 #define ETHER_RA_INIT(idx)                                                                         \
 	PINCTRL_DT_INST_DEFINE(0);                                                                 \
+	static struct renesas_ra_eth_config eth_0_config = {                                       \
+		.p_cfg = &g_ether0_cfg,                                                            \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),                                       \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),                                  \
+		.clk_subsys =                                                                      \
+			{                                                                          \
+				.mstp = DT_INST_CLOCKS_CELL(0, mstp),                              \
+				.stop_bit = DT_INST_CLOCKS_CELL(0, stop_bit),                      \
+			},                                                                         \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),                          \
+	};                                                                                         \
 	static struct renesas_ra_eth_context eth_0_context = {                                     \
 		.mac = DT_INST_PROP(0, local_mac_address),                                         \
 		.rx_sem = Z_SEM_INITIALIZER(eth_0_context.rx_sem, 0, UINT_MAX),                    \
+		.tx_sem = Z_SEM_INITIALIZER(eth_0_context.tx_sem, 0, 1),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),                                         \
-	};                                                                                         \
+		ETH_BUF_INIT};                                                                     \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(0, renesas_ra_eth_init, NULL, &eth_0_context, &eth_0_config, \
 				      CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU /*MTU*/);
