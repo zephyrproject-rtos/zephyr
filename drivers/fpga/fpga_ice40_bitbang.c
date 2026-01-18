@@ -115,27 +115,36 @@ static void fpga_ice40_spi_send_data(size_t delay, volatile gpio_port_pins_t *se
  *
  * https://www.latticesemi.com/~/media/LatticeSemi/Documents/Handbooks/iCE40FamilyHandbook.pdf
  */
-static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
+static void fpga_ice40_load_handler(struct k_work *item)
 {
+	struct fpga_ice40_work_item *work_item =
+		CONTAINER_OF(item, struct fpga_ice40_work_item, work);
+	const struct device *dev = work_item->dev;
+	uint32_t *image_ptr = work_item->image_ptr;
+	const uint32_t image_size = work_item->image_size;
+
 	int ret;
 	uint32_t crc;
 	gpio_port_pins_t cs;
 	gpio_port_pins_t clk;
-	k_spinlock_key_t key;
 	gpio_port_pins_t pico;
 	gpio_port_pins_t creset;
+	struct k_spinlock spinlock;
+	k_spinlock_key_t spinlock_key;
 	struct fpga_ice40_data *data = dev->data;
 	const struct fpga_ice40_config *config = dev->config;
 	const struct fpga_ice40_config_bitbang *config_bitbang = config->derived_config;
 
 	if (!device_is_ready(config_bitbang->clk.port)) {
 		LOG_ERR("%s: GPIO for clk is not ready", dev->name);
-		return -ENODEV;
+		ret = -ENODEV;
+		goto exit;
 	}
 
 	if (!device_is_ready(config_bitbang->pico.port)) {
 		LOG_ERR("%s: GPIO for pico is not ready", dev->name);
-		return -ENODEV;
+		ret = -ENODEV;
+		goto exit;
 	}
 
 	/* prepare masks */
@@ -145,12 +154,13 @@ static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32
 	creset = BIT(config->creset.pin);
 
 	/* crc check */
-	crc = crc32_ieee((uint8_t *)image_ptr, img_size);
+	crc = crc32_ieee((uint8_t *)image_ptr, image_size);
 	if (data->loaded && crc == data->crc) {
 		LOG_WRN("already loaded with image CRC32c: 0x%08x", data->crc);
 	}
 
-	key = k_spin_lock(&data->lock);
+	/* spinlock to prevent interruptions; this entire function is very timing sensitive */
+	spinlock_key = k_spin_lock(&spinlock);
 
 	/* clear crc */
 	data->crc = 0;
@@ -204,7 +214,7 @@ static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32
 	LOG_DBG("Set SPI_CS high");
 	fpga_ice40_spi_send_data(config_bitbang->mhz_delay_count, config_bitbang->set,
 				 config_bitbang->clear, cs, clk, pico, (uint8_t *)image_ptr,
-				 img_size);
+				 image_size);
 
 	LOG_DBG("Send %u clocks", config->trailing_clocks);
 	fpga_ice40_send_clocks(config_bitbang->mhz_delay_count, config_bitbang->set,
@@ -234,9 +244,13 @@ static int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32
 	}
 
 unlock:
-	k_spin_unlock(&data->lock, key);
+	k_spin_unlock(&spinlock, spinlock_key);
 
-	return ret;
+exit:
+	work_item->result = ret;
+	k_sem_give(&work_item->finished);
+
+	return;
 }
 
 static DEVICE_API(fpga, fpga_ice40_api) = {
@@ -261,7 +275,8 @@ static DEVICE_API(fpga, fpga_ice40_api) = {
 		.mhz_delay_count = DT_INST_PROP(inst, mhz_delay_count),                            \
 	};                                                                                         \
                                                                                                    \
-	FPGA_ICE40_CONFIG_DEFINE(inst, &fpga_ice40_config_bitbang_##inst);                         \
+	FPGA_ICE40_CONFIG_DEFINE(inst, fpga_ice40_load_handler,                                    \
+				 &fpga_ice40_config_bitbang_##inst);                               \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
 			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
