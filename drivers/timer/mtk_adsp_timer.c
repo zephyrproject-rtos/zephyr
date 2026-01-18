@@ -32,6 +32,8 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(ostimer0));
  * slaved the same underlying clock -- they don't skew relative to
  * each other.
  */
+
+#ifndef CONFIG_SOC_MT8365
 struct mtk_ostimer {
 	unsigned int con;
 	unsigned int rst;
@@ -48,6 +50,19 @@ struct mtk_ostimer64 {
 	unsigned int tval_h;
 	unsigned int irq_ack;
 };
+#else
+struct mtk_ostimer {
+	unsigned int con;
+	unsigned int cur;
+};
+
+struct mtk_ostimer64 {
+	unsigned int cntcr;
+	unsigned int cntsr;
+	unsigned int cur_l;
+	unsigned int cur_h;
+};
+#endif
 
 #define OSTIMER64 (*(volatile struct mtk_ostimer64 *)OSTIMER64_BASE)
 
@@ -67,11 +82,22 @@ struct mtk_ostimer64 {
 #define OSTIMER_CON_CLKSRC_PCLK 0x30 /*  ~312 MHz experimentally */
 #endif
 
-#define OSTIMER_IRQ_ACK_ENABLE BIT(0)
+#if defined(CONFIG_SOC_MT8365)
+#define OSTIMER_CON_IRQ_ENABLE    BIT(1)
+#define OSTIMER_CON_IRQ_STA_CLEAR BIT(4) /*  read = status, write = clear */
+#else
+#define OSTIMER_IRQ_ACK_ENABLE BIT(0) /*  read = status, write = enable */
 #define OSTIMER_IRQ_ACK_CLEAR  BIT(5)
+#endif
 
 #define OST64_HZ 13000000U
+
+#ifdef CONFIG_SOC_MT8365
+#define OST_HZ 13000000U
+#else
 #define OST_HZ 26000000U
+#endif
+
 #define OST64_PER_TICK (OST64_HZ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define OST_PER_TICK (OST_HZ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -91,11 +117,20 @@ uint64_t sys_clock_cycle_get_64(void)
 {
 	uint32_t l, h0, h1;
 
+#ifndef CONFIG_SOC_MT8365
 	do {
 		h0 = OSTIMER64.cur_h;
 		l  = OSTIMER64.cur_l;
 		h1 = OSTIMER64.cur_h;
 	} while (h0 != h1);
+#else
+	/* cur_h is only updated when the cur_l is read.
+	 * Always read cur_l before cur_h to get a valid 64-bit timestamp.
+	 */
+	l = OSTIMER64.cur_l;
+	h0 = OSTIMER64.cur_h;
+	(void)h1; /* silence the "unused variable" warning */
+#endif
 
 	return (((uint64_t)h0) << 32) | l;
 }
@@ -110,6 +145,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Round up to tick boundary */
 	dt = ((dt + OST64_PER_TICK - 1) / OST64_PER_TICK) * OST64_PER_TICK;
 
+#ifndef CONFIG_SOC_MT8365
 	/* Convert to "fast" OSTIMER[0] cycles! */
 	uint32_t cyc = 2 * (dt - (uint32_t)(now - last_announce));
 
@@ -121,6 +157,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	OSTIMERS[0].irq_ack |= OSTIMER_IRQ_ACK_CLEAR;
 	OSTIMERS[0].irq_ack |= OSTIMER_IRQ_ACK_ENABLE;
 	OSTIMERS[0].con |= OSTIMER_CON_ENABLE;
+#else
+	uint32_t cyc = dt - (uint32_t)(now - last_announce);
+
+	OSTIMERS[0].cur = cyc;
+	OSTIMERS[0].con |= OSTIMER_CON_IRQ_ENABLE;
+#endif
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -150,9 +192,14 @@ static void timer_isr(__maybe_unused void *arg)
 	 * sys_clock_set_timeout() is responsible for turning it back
 	 * on.
 	 */
+#ifndef CONFIG_SOC_MT8365
 	OSTIMERS[0].irq_ack |=  OSTIMER_IRQ_ACK_CLEAR;
 	OSTIMERS[0].con     &= ~OSTIMER_CON_ENABLE;
 	OSTIMERS[0].irq_ack &= ~OSTIMER_IRQ_ACK_ENABLE;
+#else
+	OSTIMERS[0].con     |= OSTIMER_CON_IRQ_STA_CLEAR;
+	OSTIMERS[0].con     &= ~OSTIMER_CON_IRQ_ENABLE;
+#endif
 
 	last_announce += ticks * OST64_PER_TICK;
 	sys_clock_announce(ticks);
@@ -169,18 +216,27 @@ static int mtk_adsp_timer_init(void)
 
 	/* Disable all timers */
 	for (int i = 0; i < 4; i++) {
+#ifndef CONFIG_SOC_MT8365
 		OSTIMERS[i].con &= ~OSTIMER_CON_ENABLE;
 		OSTIMERS[i].irq_ack |= OSTIMER_IRQ_ACK_CLEAR;
 		OSTIMERS[i].irq_ack &= ~OSTIMER_IRQ_ACK_ENABLE;
+#else
+		OSTIMERS[i].con = OSTIMER_CON_IRQ_STA_CLEAR | OSTIMER_CON_ENABLE;
+		OSTIMERS[i].con &= ~OSTIMER_CON_ENABLE;
+#endif
 	}
 
 	/* Set them up to use the same clock.  Note that OSTIMER64 has
 	 * a built-in divide by two (or it's configurable and I don't
 	 * know the register) and exposes a 13 MHz counter!
 	 */
+#ifndef CONFIG_SOC_MT8365
 	OSTIMERS[0].con = ((OSTIMERS[0].con & ~OSTIMER_CON_CLKSRC_MASK)
 			   | OSTIMER_CON_CLKSRC_26M);
 	OSTIMERS[0].con |= OSTIMER_CON_ENABLE;
+#else
+	OSTIMERS[0].con |= OSTIMER_CON_IRQ_ENABLE | OSTIMER_CON_ENABLE;
+#endif
 
 	/* Clock is free running and survives reset, doesn't start at zero */
 	last_announce = sys_clock_cycle_get_64();

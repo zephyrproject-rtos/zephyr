@@ -5,18 +5,20 @@ Mediatek Audio DSPs
 
 Zephyr can be built and run on the Audio DSPs included in various
 members of the Mediatek MT8xxx series of ARM SOCs used in Chromebooks
-from various manufacturers.
+from various manufacturers and Mediatek Genio evaluations kits.
 
-Two of these DSPs are in the market already, implemented via the
-MT8195 ("Kompanio 1380") and MT8186 ("Kompanio 520") SOCs.
-Development has been done on and validation performed on at least
-these devices, though more exist:
+Four of these DSPs are in the market already, implemented via the
+MT8195 ("Kompanio 1380", MT8186 ("Kompanio 520"), MT8188 ("Kompanio 838")
+and MT8365 ("Genio 350 EVK") SOCs. Development has been done on and
+validation performed on at least these devices, though more exist:
 
   ======  =============  ===================================  =================
   SOC     Product Name   Example Device                       ChromeOS Codename
   ======  =============  ===================================  =================
   MT8195  Kompanio 1380  HP Chromebook x360 13b               dojo
   MT8186  Kompanio 520   Lenovo 300e Yoga Chromebook Gen 4    steelix
+  MT8188  Kompanio 838   Lenovo Chromebook Duet 11            ciri
+  MT8365  Genio 350      Genio 350 EVK
   ======  =============  ===================================  =================
 
 Hardware
@@ -67,7 +69,7 @@ my mt8186 device named "steelix":
 
 .. code-block:: console
 
-   user@dev_host:~$ west build -b mt8186//adsp samples/hello_world
+   user@dev_host:~$ west build -b mt8186/mt8186/adsp samples/hello_world
    ...
    ... # build output
    ...
@@ -76,8 +78,8 @@ my mt8186 device named "steelix":
    user@dev_host:~$ ssh steelix
 
    root@steelix:~ # ./mtk_adsp_load.py load zephyr.img
-   *** Booting Zephyr OS build v3.6.0-5820-gd2a89b3c089e ***
-   Hello World! mt8186_adsp/mt8186_adsp
+   *** Booting Zephyr OS build v4.2.0-4743-g80fdfabcba48 ***
+   Hello World! mt8186/mt8186/adsp
 
 Debugging
 =========
@@ -93,60 +95,11 @@ but this is still unintegrated.
 Toolchains
 **********
 
-The MT8195 toolchain is already part of the Zephyr SDK, so builds for
-the ``mt8195//adsp`` board should work out of the box simply following
-the generic Zephyr build instructions in the Getting Started guide.
-
-The MT8186 toolchain is not, and given the proliferation of Xtensa
-toolchains in the SDK may not be.  The overlay files for the device
-are maintained by the SOF project, however, and building a toolchain
-yourself using crosstools-ng is not difficult or time-consuming.  This
-script should work for most users:
-
-.. code-block:: shell
-
-   #!/bin/sh
-
-   TC=mtk_mt818x_adsp
-
-   # Grab source (these are small)
-   git clone https://github.com/crosstool-ng/crosstool-ng
-   git clone https://github.com/thesofproject/xtensa-overlay
-
-   # Build ct-ng itself
-   cd crosstool-ng
-   ./bootstrap
-   ./configure --enable-local
-   make -j$(nproc)
-
-   mkdir overlays
-   (cd overlays; ln -s ../../xtensa-overlay/xtensa_mt8186.tar.gz xtensa_${TC}.tar.gz)
-
-   # Construct a .config file
-   cat >.config <<EOF
-   CT_CONFIG_VERSION="3"
-   CT_EXPERIMENTAL=y
-   CT_OVERLAY_LOCATION="overlays"
-   CT_OVERLAY_NAME="${TC}"
-   CT_ARCH_XTENSA=y
-   CT_XTENSA_CUSTOM=y
-   CT_TARGET_VENDOR="${TC}_zephyr"
-   CT_TARGET_CFLAGS="-ftls-model=local-exec"
-   CT_CC_GCC_CONFIG_TLS=n
-   CT_GDB_CROSS_EXTRA_CONFIG_ARRAY="--enable-xtensa-use-target-regnum --disable-xtensa-remote-g-packet"
-   EOF
-
-   # Build
-   ./ct-ng olddefconfig
-   ./ct-ng build.$(nproc)
-
-After this completes, you will find your toolchain in ``~/x-tools``
-and can use it to build by setting it as your Zephyr cross compiler:
-
-.. code-block:: shell
-
-   export CROSS_COMPILE=$HOME/x-tools/xtensa-mtk_mt818x_adsp_zephyr-elf/bin/xtensa-mtk_mt818x_adsp_zephyr-elf-
-   export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
+The MT8195, MT818X and MT8365 toolchains are already part of the Zephyr
+SDK, so builds for the ``mt8195/mt8195/adsp``, ``mt8186/mt8186/adsp``,
+``mt8188/mt8188/adsp`` and ``mt8365/mt8365/adsp`` board targets should
+work out of the box simply following the generic Zephyr build instructions
+in the Getting Started guide.
 
 Closed-source Tools
 ===================
