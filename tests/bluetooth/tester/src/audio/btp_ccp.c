@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2023 Oticon
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -987,7 +989,7 @@ static uint8_t tbs_set_bearer_technology(const void *cmd, uint16_t cmd_len, void
 
 	LOG_DBG("TBS Set bearer technology");
 
-	err = bt_tbs_set_bearer_technology(cp->index, cp->tech);
+	err = bt_tbs_set_bearer_technology(cp->index, (enum bt_hfp_technology)cp->tech);
 	if (err) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1158,7 +1160,7 @@ uint8_t tester_init_tbs(void)
 		.uri_schemes_supported = "tel,skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_HFP_TECHNOLOGY_3G,
 		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 	const struct bt_tbs_register_param tbs_param = {
@@ -1168,7 +1170,7 @@ uint8_t tester_init_tbs(void)
 		.gtbs = false,
 		.authorization_required = false,
 		/* Set different technologies per bearer */
-		.technology = BT_TBS_TECHNOLOGY_4G,
+		.technology = BT_HFP_TECHNOLOGY_4G,
 		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 	int err;

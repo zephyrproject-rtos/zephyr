@@ -1,7 +1,7 @@
 /* Bluetooth TBS - Telephone Bearer Service
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,6 +16,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -844,7 +845,7 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 
 	if (flags->bearer_technology_changed) {
 		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
-			bt_tbs_technology_str(inst->technology), inst->technology);
+			bt_hfp_technology_str(inst->technology), inst->technology);
 
 		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &inst->technology,
 			     sizeof(inst->technology));
@@ -2232,7 +2233,7 @@ static bool valid_register_param(const struct bt_tbs_register_param *param)
 		return false;
 	}
 
-	if (!IN_RANGE(param->technology, BT_TBS_TECHNOLOGY_3G, BT_TBS_TECHNOLOGY_WCDMA)) {
+	if (!IN_RANGE(param->technology, BT_HFP_TECHNOLOGY_3G, BT_HFP_TECHNOLOGY_WCDMA)) {
 		LOG_DBG("Invalid technology: %u", param->technology);
 
 		return false;
@@ -2874,12 +2875,12 @@ static void set_bearer_technology_changed_cb(struct tbs_flags *flags)
 	flags->bearer_technology_changed = true;
 }
 
-int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology)
+int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_hfp_technology new_technology)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	int err;
 
-	if (new_technology < BT_TBS_TECHNOLOGY_3G || new_technology > BT_TBS_TECHNOLOGY_WCDMA) {
+	if (new_technology < BT_HFP_TECHNOLOGY_3G || new_technology > BT_HFP_TECHNOLOGY_WCDMA) {
 		return -EINVAL;
 	} else if (inst == NULL) {
 		return -EINVAL;
