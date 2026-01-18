@@ -766,12 +766,16 @@ static void rz_dma_err_isr(const struct device *dev)
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dma_unit),                                         \
 				(DT_INST_PROP(inst, dma_unit)), (0))
 
+#define RZ_DMA_EXT_CFG_INIT(idx, inst) [idx] = {.p_reg = (void *)DT_INST_REG_ADDR(inst)},
+
 #define DMA_RZ_INIT(inst)                                                                          \
 	static dma_instance_ctrl_t g_transfer_ctrl[DT_INST_PROP(inst, dma_channels)];              \
 	RZ_DMA_EXTERN_INFO_DECLARATION(DT_INST_PROP(inst, dma_channels));                          \
 	static transfer_info_t g_transfer_info[DT_INST_PROP(inst, dma_channels)] =                 \
 		RZ_DMA_TRANSFER_INFO_ARRAY(inst);                                                  \
-	static dma_extended_cfg_t g_transfer_extend[DT_INST_PROP(inst, dma_channels)];             \
+	static dma_extended_cfg_t g_transfer_extend[DT_INST_PROP(inst, dma_channels)] = {          \
+		LISTIFY(DT_INST_PROP(inst, dma_channels), RZ_DMA_EXT_CFG_INIT, (), inst)           \
+	};                                                                                         \
 	static struct dma_channel_data                                                             \
 		dma_rz_##inst##_channels[DT_INST_PROP(inst, dma_channels)] =                       \
 			RZ_DMA_CHANNEL_DATA_ARRAY(inst);                                           \

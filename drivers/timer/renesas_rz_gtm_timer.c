@@ -212,6 +212,7 @@ static int sys_clock_driver_init(void)
 	const gtm_extended_cfg_t g_timer0_extend = {                                               \
 		.generate_interrupt_when_starts = GTM_GIWS_TYPE_DISABLED,                          \
 		.gtm_mode = GTM_TIMER_MODE_FREERUN,                                                \
+		.p_reg = (void *)DT_REG_ADDR(TIMER_NODE),                                          \
 	};                                                                                         \
                                                                                                    \
 	static timer_cfg_t g_timer0_cfg = {                                                        \
