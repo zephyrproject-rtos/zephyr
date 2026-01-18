@@ -13,21 +13,26 @@
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
-
-#include <infineon_kconfig.h>
 #include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
-#include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
-
-#include <cy_tcpwm_pwm.h>
-#include <cy_gpio.h>
-#include <cy_sysclk.h>
 
 #include <zephyr/logging/log.h>
+#include <cy_device_headers.h>
+#include <infineon_kconfig.h>
+#include <cy_tcpwm_pwm.h>
+#include <cy_tcpwm.h>
+#include <cy_gpio.h>
+#include <cy_sysclk.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+
 LOG_MODULE_REGISTER(pwm_ifx_tcpwm, CONFIG_PWM_LOG_LEVEL);
 
 struct ifx_tcpwm_pwm_config {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	TCPWM_Type * reg_base;
+#else
 	TCPWM_GRP_CNT_Type *reg_base;
+#endif
 	const struct pinctrl_dev_config *pcfg;
 	bool resolution_32_bits;
 	uint32_t tcpwm_index;
@@ -55,14 +60,19 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 		.enablePeriodSwap = true,
 	};
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	status = Cy_TCPWM_PWM_Init(config->reg_base, config->tcpwm_index, &pwm_config);
+#else
+	status = IFX_TCPWM_PWM_Init(config->reg_base, &pwm_config);
+#endif
+
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Configure the TCPWM to be a PWM */
-	status = IFX_TCPWM_PWM_Init(config->reg_base, &pwm_config);
 	if (status != CY_TCPWM_SUCCESS) {
+		LOG_ERR("PWM init failed for counter %u: 0x%08x", config->tcpwm_index, status);
 		return -ENOTSUP;
 	}
 
@@ -77,7 +87,6 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
 	uint32_t pwm_status;
-	uint32_t ctrl_temp;
 
 	if (!config->resolution_32_bits &&
 	    ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX))) {
@@ -90,6 +99,9 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		}
 		return -EINVAL;
 	}
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1)
+	uint32_t ctrl_temp;
+
 	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED) {
 		config->reg_base->CTRL |= TCPWM_GRP_CNT_V2_CTRL_QUAD_ENCODING_MODE_Msk;
 	} else {
@@ -138,7 +150,37 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* Start the TCPWM block */
 	IFX_TCPWM_TriggerStart_Single(config->reg_base);
+#else
+	/* PSOC4 config */
+	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED) {
+		config->reg_base->CTRL |= TCPWM_CNT_CTRL_QUADRATURE_MODE_Msk;
+	} else {
+		config->reg_base->CTRL &= ~TCPWM_CNT_CTRL_QUADRATURE_MODE_Msk;
+	}
 
+	pwm_status = Cy_TCPWM_PWM_GetStatus(config->reg_base, config->tcpwm_index);
+	if ((pwm_status & TCPWM_CNT_STATUS_RUNNING_Msk) == 0) {
+		if ((period_cycles != 0) && (pulse_cycles != 0)) {
+			Cy_TCPWM_PWM_SetPeriod0(config->reg_base, config->tcpwm_index,
+						period_cycles - 1);
+			Cy_TCPWM_PWM_SetCompare0(config->reg_base, config->tcpwm_index,
+						 pulse_cycles);
+		}
+	}
+
+	if (period_cycles == 0) {
+		Cy_TCPWM_PWM_SetPeriod1(config->reg_base, config->tcpwm_index, 0);
+		Cy_TCPWM_PWM_SetCompare0(config->reg_base, config->tcpwm_index, 0);
+		Cy_TCPWM_TriggerCaptureOrSwap(config->reg_base, config->tcpwm_index);
+	} else {
+		Cy_TCPWM_PWM_SetPeriod1(config->reg_base, config->tcpwm_index, period_cycles - 1);
+		Cy_TCPWM_PWM_SetCompare0(config->reg_base, config->tcpwm_index, pulse_cycles);
+		Cy_TCPWM_TriggerCaptureOrSwap(config->reg_base, config->tcpwm_index);
+	}
+
+	Cy_TCPWM_PWM_Enable(config->reg_base, config->tcpwm_index);
+	Cy_TCPWM_TriggerStart(config->reg_base, BIT(config->tcpwm_index));
+#endif
 	return 0;
 }
 
@@ -157,8 +199,7 @@ static int ifx_tcpwm_pwm_get_cycles_per_sec(const struct device *dev, uint32_t c
 	/* Calculate clock connection based on TCPWM index */
 	clk_connection = ifx_cat1_tcpwm_get_clock_index(tcpwm_block, config->index);
 
-	*cycles = ifx_cat1_utils_peri_pclk_get_frequency(clk_connection,
-							 &data->clock);
+	*cycles = ifx_cat1_utils_peri_pclk_get_frequency(clk_connection, &data->clock);
 
 	return 0;
 }
@@ -169,37 +210,56 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 };
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define PWM_PERI_CLOCK_INIT(n)                                                                     \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),         \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-		}
+#define COUNTER_PERI_CLOCK_INSTANCE(n) DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),
 #else
+#define COUNTER_PERI_CLOCK_INSTANCE(n)
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define PWM_PERI_CLOCK_INIT(n)                                                                     \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-		}
+	.clock = {                                                                                 \
+		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
+			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),                 \
+			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
+			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
+		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
+	}
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define PWM_PERI_CLOCK_INIT(n)                                                                     \
+	.clock = {                                                                                 \
+		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
+			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
+			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
+		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
+	}
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define IFX_TCPWM_BASE_INIT(n) .reg_base = (TCPWM_Type *)(DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n))))
+#else
+#define IFX_TCPWM_BASE_INIT(n) .reg_base = (TCPWM_GRP_CNT_Type *)(DT_REG_ADDR(DT_INST_PARENT(n)))
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define TCPWM_PWM_IDX(n) .tcpwm_index = DT_NODE_CHILD_IDX(DT_INST_PARENT(n))
+#else
+#define TCPWM_PWM_IDX(n)                                                                           \
+	.tcpwm_index =                                                                             \
+		(DT_REG_ADDR(DT_INST_PARENT(n)) - DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /     \
+		DT_REG_SIZE(DT_INST_PARENT(n))
 #endif
 
 #define INFINEON_TCPWM_PWM_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static struct ifx_tcpwm_pwm_data ifx_tcpwm_pwm##n##_data =                                 \
-		{PWM_PERI_CLOCK_INIT(n)};                                                          \
+	static struct ifx_tcpwm_pwm_data ifx_tcpwm_pwm##n##_data = {PWM_PERI_CLOCK_INIT(n)};       \
                                                                                                    \
 	static const struct ifx_tcpwm_pwm_config pwm_tcpwm_config_##n = {                          \
-		.reg_base = (TCPWM_GRP_CNT_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                  \
 		.tcpwm_index = (DT_REG_ADDR(DT_INST_PARENT(n)) -                                   \
 				DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /                       \
 			       DT_REG_SIZE(DT_INST_PARENT(n)),                                     \
+		IFX_TCPWM_BASE_INIT(n),                                                            \
+		TCPWM_PWM_IDX(n),                                                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.resolution_32_bits =                                                              \
 			(DT_PROP(DT_INST_PARENT(n), resolution) == 32) ? true : false,             \
