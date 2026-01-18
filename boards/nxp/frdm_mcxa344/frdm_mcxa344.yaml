@@ -19,5 +19,8 @@ supported:
   - counter
   - flash
   - gpio
+  - i2c
+  - spi
   - uart
+  - watchdog
 vendor: nxp
