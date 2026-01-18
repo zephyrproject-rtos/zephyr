@@ -1,0 +1,25 @@
+tests:
+  kernel.smp.cache:
+    tags:
+      - kernel
+      - smp
+      - cache
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    min_ram: 64
+    platform_exclude:
+      - qemu_x86
+    arch_exclude:
+      - posix
+  kernel.smp.cache.cpu_mask:
+    tags:
+      - kernel
+      - smp
+      - cache
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    min_ram: 64
+    platform_exclude:
+      - qemu_x86
+    arch_exclude:
+      - posix
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
