@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,13 +134,13 @@
 /*
  * Size of the status region (possibly a multiple of the cache line size).
  */
-#define VDEV_STATUS_SIZE	CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
+#define VDEV_STATUS_SIZE CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
-#define VIRTQUEUE_ID_HOST	(0)
-#define VIRTQUEUE_ID_REMOTE	(1)
+#define VIRTQUEUE_ID_HOST   (0)
+#define VIRTQUEUE_ID_REMOTE (1)
 
-#define ROLE_HOST		VIRTIO_DEV_DRIVER
-#define ROLE_REMOTE		VIRTIO_DEV_DEVICE
+#define ROLE_HOST   VIRTIO_DEV_DRIVER
+#define ROLE_REMOTE VIRTIO_DEV_DEVICE
 
 static inline size_t vq_ring_size(unsigned int num, unsigned int buf_size)
 {
@@ -149,20 +150,21 @@ static inline size_t vq_ring_size(unsigned int num, unsigned int buf_size)
 static inline size_t shm_size(unsigned int num, unsigned int buf_size)
 {
 	return (VRING_COUNT * (vq_ring_size(num, buf_size) +
-		ROUND_UP(vring_size(num, MEM_ALIGNMENT), MEM_ALIGNMENT)));
+			       ROUND_UP(vring_size(num, MEM_ALIGNMENT), MEM_ALIGNMENT)));
 }
 
 static inline unsigned int optimal_num_desc(size_t mem_size, unsigned int buf_size)
 {
 	size_t available;
-	unsigned int num_desc = 1;
-
+	unsigned int num_desc_log = 1;
 	available = mem_size - VDEV_STATUS_SIZE;
+	const unsigned int max_num_desc_log = 15;
 
-	while (available > shm_size(num_desc, buf_size)) {
-		num_desc++;
+	while ((num_desc_log <= max_num_desc_log) &&
+	       (available > shm_size(1 << num_desc_log, buf_size))) {
+		num_desc_log++;
 	}
 
 	/* if num_desc == 1 there is not enough memory */
-	return (--num_desc == 0) ? 0 : (1 << LOG2(num_desc));
+	return (--num_desc_log == 0) ? 0 : (1 << num_desc_log);
 }
