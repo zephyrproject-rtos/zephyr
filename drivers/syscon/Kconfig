@@ -46,6 +46,7 @@ config SYSCON_SHELL
 
 # zephyr-keep-sorted-start
 source "drivers/syscon/Kconfig.bflb_efuse"
+source "drivers/syscon/Kconfig.sifli_efuse"
 # zephyr-keep-sorted-stop
 
 endif # SYSCON

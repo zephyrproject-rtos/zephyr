@@ -1,0 +1,17 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB eFuse Controller
+
+compatible: "sifli,sf32lb-efuse"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  sifli,pmuc:
+    type: phandle
+    required: true
+    description: Reference to PMUC syscon for voltage control during eFuse read

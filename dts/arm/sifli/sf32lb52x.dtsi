@@ -332,6 +332,13 @@
 			};
 		};
 
+		efuse: syscon@5000c000 {
+			compatible = "sifli,sf32lb-efuse";
+			reg = <0x5000c000 0x100>;
+			sifli,pmuc = <&pmuc>;
+			status = "disabled";
+		};
+
 		cfg: syscon@5000b000 {
 			compatible = "sifli,sf32lb-cfg", "syscon";
 			reg = <0x5000b000 0x1000>;
