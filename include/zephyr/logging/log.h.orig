@@ -804,10 +804,8 @@ extern struct k_mem_partition k_log_partition;
  * @see LOG_MODULE_REGISTER
  */
 #define LOG_MODULE_DECLARE(...)                                                                    \
-	extern const struct log_source_const_data                                                  \
-		Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__))                                   \
-		__in_section(_log_const, static,                                                   \
-			     _CONCAT(Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)), _));        \
+	extern const struct log_source_const_data Z_LOG_ITEM_CONST_DATA(                           \
+		GET_ARG_N(1, __VA_ARGS__));                                                        \
 	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__));    \
                                                                                                    \
 	Z_LOG_MODULE_PARTITION(K_APP_DMEM)                                                         \
