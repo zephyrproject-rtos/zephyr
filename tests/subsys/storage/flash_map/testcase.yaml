@@ -27,23 +27,8 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     tags: flash_map
-  storage.flash_map_sha.mbedtls:
-    extra_args: EXTRA_CONF_FILE=overlay-mbedtls.conf
-    platform_allow:
-      - nrf51dk/nrf51822
-      - qemu_x86
-      - native_sim
-      - native_sim/native/64
-      - mr_canhubk3
-      - s32z2xxdc2/s32z270/rtu0
-      - s32z2xxdc2/s32z270/rtu1
-      - s32z2xxdc2@D/s32z270/rtu0
-      - s32z2xxdc2@D/s32z270/rtu1
-    tags: flash_map
-    integration_platforms:
-      - native_sim
   storage.flash_map_sha.psa:
-    extra_args: EXTRA_CONF_FILE=overlay-psa.conf
+    extra_args: EXTRA_CONF_FILE=overlay-integrity-check.conf
     platform_allow:
       - nrf51dk/nrf51822
       - native_sim
