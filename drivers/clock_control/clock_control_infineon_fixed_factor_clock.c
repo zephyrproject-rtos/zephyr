@@ -18,6 +18,9 @@
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_boards.h>
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#include <zephyr/dt-bindings/clock/ifx_clock_source_psoc4xx.h>
+#endif
 
 #include <cy_sysclk.h>
 

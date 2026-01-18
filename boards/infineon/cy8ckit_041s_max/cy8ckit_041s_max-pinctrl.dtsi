@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure pin drive mode for uart pins */
+&p0_5_scb2_uart_tx {
+	drive-push-pull;
+};
+
+&p0_4_scb2_uart_rx {
+	input-enable;
+};
