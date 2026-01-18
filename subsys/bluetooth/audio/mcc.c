@@ -1579,7 +1579,7 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("Subscribed: value handle: %d, ccc handle: %d",
 	       params->value_handle, params->ccc_handle);
 
-	if (params->value_handle == 0) {
+	if (params->value == 0) {
 		/* Unsubscribing, ignore */
 		return;
 	}
