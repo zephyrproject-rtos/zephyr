@@ -268,8 +268,7 @@ static void dma_emul_work_handler(struct k_work *work)
 		dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STOPPED);
 		k_spin_unlock(&data->lock, key);
 
-		/* FIXME: tests/drivers/dma/chan_blen_transfer/ does not set complete_callback_en */
-		if (true) {
+		if (xfer_config.complete_callback_en) {
 			xfer_config.dma_callback(dev, xfer_config.user_data, channel,
 						 DMA_STATUS_COMPLETE);
 		} else {
