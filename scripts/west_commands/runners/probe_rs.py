@@ -150,18 +150,26 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
             download_args += ['--chip-erase']
         if self.verify:
             download_args += ['--verify']
-        # Use provided file or default ELF file
-        flash_file = self.file if self.file else self.elf_name
-        # Determine format based on file_type or binary_format
-        if self.file_type:
-            format_map = {
-                FileType.HEX: 'hex',
-                FileType.BIN: 'bin',
-                FileType.ELF: 'elf'
-            }
-            flash_format = format_map.get(self.file_type, 'elf')
+
+        if self.file:
+            flash_file = self.file
+            match self.file_type:
+                case FileType.HEX:
+                    flash_format = 'hex'
+                case FileType.BIN:
+                    flash_format = 'bin'
+                case _:
+                    flash_format = 'elf'
+        elif self.cfg.hex_file:
+            flash_file = self.cfg.hex_file
+            flash_format = 'hex'
+        elif self.cfg.bin_file:
+            flash_file = self.cfg.bin_file
+            flash_format = 'bin'
         else:
-            flash_format = self.binary_format
+            flash_file = self.elf_name
+            flash_format = 'elf'
+
         download_args += ['--binary-format', flash_format, flash_file]
 
         self.check_call([self.probe_rs, 'download']
