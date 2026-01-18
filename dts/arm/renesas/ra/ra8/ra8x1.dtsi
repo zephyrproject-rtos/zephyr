@@ -538,6 +538,11 @@
 			reg = <0x40322000 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec0: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm1: pwm1@40322100 {
@@ -548,6 +553,11 @@
 			reg = <0x40322100 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec1: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm2: pwm2@40322200 {
@@ -558,6 +568,11 @@
 			reg = <0x40322200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec2: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm3: pwm3@40322300 {
@@ -568,6 +583,11 @@
 			reg = <0x40322300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec3: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm4: pwm4@40322400 {
@@ -578,6 +598,11 @@
 			reg = <0x40322400 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec4: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm5: pwm5@40322500 {
@@ -588,6 +613,11 @@
 			reg = <0x40322500 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec5: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm6: pwm6@40322600 {
@@ -598,6 +628,11 @@
 			reg = <0x40322600 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec6: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm7: pwm7@40322700 {
@@ -608,6 +643,11 @@
 			reg = <0x40322700 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec7: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm8: pwm8@40322800 {
@@ -618,6 +658,11 @@
 			reg = <0x40322800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec8: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm9: pwm9@40322900 {
@@ -628,6 +673,11 @@
 			reg = <0x40322900 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec9: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm10: pwm10@40322a00 {
@@ -638,6 +688,11 @@
 			reg = <0x40322a00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec10: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm11: pwm11@40322b00 {
@@ -648,6 +703,11 @@
 			reg = <0x40322b00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec11: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm12: pwm12@40322c00 {
@@ -658,6 +718,11 @@
 			reg = <0x40322c00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec12: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm13: pwm13@40322d00 {
@@ -668,6 +733,11 @@
 			reg = <0x40322d00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec13: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		ulpt0: ulpt@40220000 {
