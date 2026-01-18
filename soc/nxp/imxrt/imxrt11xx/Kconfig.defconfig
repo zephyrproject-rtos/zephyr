@@ -32,6 +32,13 @@ config NXP_IMXRT_BOOT_HEADER
 	default y
 	depends on !(CPU_CORTEX_M4 || BOOTLOADER_MCUBOOT)
 
+config NXP
+
 endif
+
+config NXP_IMXRT11xx_GPU
+	bool "GPU2D graphics accelerator"
+	default y
+	depends on DT_HAS_NXP_GPU2D_ENABLED
 
 endif
