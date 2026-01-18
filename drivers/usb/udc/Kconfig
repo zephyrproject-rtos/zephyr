@@ -1,7 +1,6 @@
 # Copyright (c) 2021-2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-
 menuconfig UDC_DRIVER
 	bool "USB device controller drivers"
 	select NET_BUF
@@ -84,5 +83,6 @@ source "drivers/usb/udc/Kconfig.ambiq"
 source "drivers/usb/udc/Kconfig.renesas_ra"
 source "drivers/usb/udc/Kconfig.max32"
 source "drivers/usb/udc/Kconfig.sam0"
+source "drivers/usb/udc/Kconfig.elan"
 
 endif # UDC_DRIVER
