@@ -60,3 +60,11 @@
 &mma8652fc {
 	status = "disabled";
 };
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};
