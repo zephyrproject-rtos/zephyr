@@ -444,7 +444,6 @@ static int uart_bflb_init(const struct device *dev)
 	/* mask all IRQs */
 	sys_write32(0xFFFFFFFFU, cfg->base_reg + UART_INT_MASK_OFFSET);
 	/* unmask necessary irqs */
-	uart_bflb_irq_rx_enable(dev);
 	uart_bflb_irq_err_enable(dev);
 	/* enable all irqs */
 	sys_write32(0xFF, cfg->base_reg + UART_INT_EN_OFFSET);
