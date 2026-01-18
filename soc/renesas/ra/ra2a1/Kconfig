@@ -11,3 +11,19 @@ config SOC_SERIES_RA2A1
 	select XIP
 	select HAS_RENESAS_RA_FSP
 	select SOC_EARLY_INIT_HOOK
+
+if SOC_SERIES_RA2A1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 5
+	default 1 if SOC_R7FA2A1AB3CFM
+	help
+	  Package type:
+	  1 -> FM: LQFP 64 pins
+	  2 -> FJ: LQFP 32 pins
+	  3 -> BT: BGA 36 pins
+	  4 -> NE: QFN 48 pins
+	  5 -> NF: QFN 40 pins
+
+endif # SOC_SERIES_RA2A1

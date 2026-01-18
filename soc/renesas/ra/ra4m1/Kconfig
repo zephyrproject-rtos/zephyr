@@ -21,4 +21,20 @@ config SOC_OPTION_SETTING_MEMORY
 	bool "Option Setting Memory"
 	default y
 
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 7
+	default 1 if SOC_R7FA4M1AB3CFP
+	default 2 if SOC_R7FA4M1AB3CFM
+	default 6 if SOC_R7FA4M1AB3CNE
+	help
+	  Package type:
+	  1 -> FP: LQFP 100 pins
+	  2 -> FM: LQFP 64 pins
+	  3 -> FL: LQFP 48 pins
+	  4 -> LJ: LGA 100 pins
+	  5 -> NB: QFN 64 pins
+	  6 -> NE: QFN 48 pins
+	  7 -> NF: QFN 40 pins
+
 endif
