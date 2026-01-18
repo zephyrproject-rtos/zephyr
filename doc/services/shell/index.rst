@@ -630,6 +630,12 @@ modules you can execute the following command:
       :alt: Wildcard usage example
 
 This feature is activated by :kconfig:option:`CONFIG_SHELL_WILDCARD` set to ``y``.
+By default, :kconfig:option:`CONFIG_SHELL_WILDCARD` is ``y`` if
+:kconfig:option:`!SHELL_MINIMAL`.
+
+.. note::
+	When the wildcard feature is enabled, the characters ``*`` and ``?``
+	cannot be used as normal characters in commands or arguments.
 
 Meta Keys Feature
 *****************
