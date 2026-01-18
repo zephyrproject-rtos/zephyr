@@ -996,16 +996,16 @@ static int set_addr_info(const struct SlNetUtil_addrInfo_t *sl_ai,
 	struct net_sockaddr *ai_addr;
 	int retval = 0;
 
-	ai = calloc(1, sizeof(struct zsock_addrinfo));
+	ai = k_calloc(1, sizeof(struct zsock_addrinfo));
 	if (!ai) {
 		retval = DNS_EAI_MEMORY;
 		goto exit;
 	} else {
 		/* Now, alloc the embedded net_sockaddr struct: */
-		ai_addr = calloc(1, sizeof(struct net_sockaddr));
+		ai_addr = k_calloc(1, sizeof(struct net_sockaddr));
 		if (!ai_addr) {
 			retval = DNS_EAI_MEMORY;
-			free(ai);
+			k_free(ai);
 			goto exit;
 		}
 	}
@@ -1130,8 +1130,8 @@ static void simplelink_freeaddrinfo(struct zsock_addrinfo *res)
 {
 	__ASSERT_NO_MSG(res);
 
-	free(res->ai_addr);
-	free(res);
+	k_free(res->ai_addr);
+	k_free(res);
 }
 
 static int simplelink_fcntl(int sd, int cmd, va_list args)
