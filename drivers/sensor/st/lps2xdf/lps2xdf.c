@@ -18,6 +18,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include "lps2xdf.h"
 
@@ -42,6 +43,7 @@ static int lps2xdf_odr_set(const struct device *dev, uint16_t freq)
 	int odr;
 	const struct lps2xdf_config *const cfg = dev->config;
 	const struct lps2xdf_chip_api *chip_api = cfg->chip_api;
+	struct lps2xdf_data *data = dev->data;
 
 	for (odr = 0; odr < ARRAY_SIZE(lps2xdf_map); odr++) {
 		if (freq == lps2xdf_map[odr]) {
@@ -58,6 +60,9 @@ static int lps2xdf_odr_set(const struct device *dev, uint16_t freq)
 		LOG_DBG("failed to set sampling rate");
 		return -EIO;
 	}
+
+	/* Store odr for PM resume */
+	data->odr = odr;
 
 	return 0;
 }
@@ -150,6 +155,35 @@ static DEVICE_API(sensor, lps2xdf_driver_api) = {
 #endif
 };
 
+static int lps2xdf_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	const struct lps2xdf_config *const cfg = dev->config;
+	const struct lps2xdf_chip_api *chip_api = cfg->chip_api;
+	struct lps2xdf_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Set ODR to 0 (power-down mode) */
+		return chip_api->mode_set_odr_raw(dev, 0);
+	case PM_DEVICE_ACTION_RESUME:
+		/* Restore previous ODR */
+		return chip_api->mode_set_odr_raw(dev, data->odr);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		return chip_api->power_on(dev);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lps2xdf_init(const struct device *dev)
+{
+	return pm_device_driver_init(dev, lps2xdf_pm_control);
+}
+
 #ifdef CONFIG_LPS2XDF_TRIGGER
 #define LPS2XDF_CFG_IRQ(inst)                                                  \
 	.trig_enabled = true,                                                  \
@@ -215,7 +249,10 @@ static DEVICE_API(sensor, lps2xdf_driver_api) = {
 			     (LPS2XDF_CONFIG_I3C_OR_I2C(inst, name)),                        \
 			     (LPS2XDF_CONFIG_I2C(inst, name)))));                            \
 											     \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, name##_init, NULL, &lps2xdf_data_##name##_##inst, \
+	PM_DEVICE_DT_INST_DEFINE(inst, lps2xdf_pm_control);                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps2xdf_init,                                     \
+				     PM_DEVICE_DT_INST_GET(inst),                            \
+				     &lps2xdf_data_##name##_##inst,                          \
 				     &lps2xdf_config_##name##_##inst, POST_KERNEL,           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lps2xdf_driver_api);
 
