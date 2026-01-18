@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	stemma_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpio0 7 0>, /* SCL */
+			   <1 0 &gpio0 6 0>; /* SDA */
+	};
+};
+
+stemma_i2c: &zephyr_i2c {
+	status = "okay";
+};
+
+qwiic_connector: &stemma_connector {};
+
+qwiic_i2c: &stemma_i2c {};
