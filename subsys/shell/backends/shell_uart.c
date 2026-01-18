@@ -445,44 +445,46 @@ static int async_read(struct shell_uart_async *sh_uart,
 {
 	uint8_t *buf;
 	size_t blen;
+	size_t sh_cnt = 0;
 	struct uart_async_rx *async_rx = &sh_uart->async_rx;
 
-	blen = uart_async_rx_data_claim(async_rx, &buf, length);
+	do {
+		blen = uart_async_rx_data_claim(async_rx, &buf, length - sh_cnt);
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
-	struct smp_shell_data *const smp = &sh_uart->common.smp;
-	size_t sh_cnt = 0;
+		struct smp_shell_data *const smp = &sh_uart->common.smp;
 
-	for (size_t i = 0; i < blen; i++) {
-		if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
-			((uint8_t *)data)[sh_cnt++] = buf[i];
-		}
-	}
-#else
-	size_t sh_cnt = blen;
-
-	memcpy(data, buf, blen);
-#endif
-	bool buf_available = uart_async_rx_data_consume(async_rx, sh_cnt);
-	*cnt = sh_cnt;
-
-	if (sh_uart->pending_rx_req && buf_available) {
-		uint8_t *buf = uart_async_rx_buf_req(async_rx);
-		size_t len = uart_async_rx_get_buf_len(async_rx);
-		int err;
-
-		__ASSERT_NO_MSG(buf != NULL);
-		atomic_dec(&sh_uart->pending_rx_req);
-		err = uart_rx_buf_rsp(sh_uart->common.dev, buf, len);
-		/* If it is too late and RX is disabled then re-enable it. */
-		if (err < 0) {
-			if (err == -EACCES) {
-				sh_uart->pending_rx_req = 0;
-				err = rx_enable(sh_uart->common.dev, buf, len);
-			} else {
-				return err;
+		for (size_t i = 0; i < blen; i++) {
+			if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
+				((uint8_t *)data)[sh_cnt++] = buf[i];
 			}
 		}
-	}
+#else
+		sh_cnt += blen;
+
+		memcpy(&((uint8_t *)data)[sh_cnt], buf, blen);
+#endif
+		bool buf_available = uart_async_rx_data_consume(async_rx, blen);
+
+		if (sh_uart->pending_rx_req && buf_available) {
+			uint8_t *buf = uart_async_rx_buf_req(async_rx);
+			size_t len = uart_async_rx_get_buf_len(async_rx);
+			int err;
+
+			__ASSERT_NO_MSG(buf != NULL);
+			atomic_dec(&sh_uart->pending_rx_req);
+			err = uart_rx_buf_rsp(sh_uart->common.dev, buf, len);
+			/* If it is too late and RX is disabled then re-enable it. */
+			if (err < 0) {
+				if (err == -EACCES) {
+					sh_uart->pending_rx_req = 0;
+					err = rx_enable(sh_uart->common.dev, buf, len);
+				} else {
+					return err;
+				}
+			}
+		}
+	} while (blen > 0 && sh_cnt < length);
+	*cnt = sh_cnt;
 
 	return 0;
 }
