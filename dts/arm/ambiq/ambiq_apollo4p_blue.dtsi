@@ -431,6 +431,26 @@
 			status = "disabled";
 		};
 
+		ios0: ios@40034000 {
+			compatible = "ambiq,ios";
+			reg = <0x40034000 0x1000>;
+			interrupts = <4 0>, <5 0>;
+
+			spi {
+				compatible = "ambiq,spid";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "ambiq,ios-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		iom0: iom@40050000 {
 			compatible = "ambiq,iom";
 			reg = <0x40050000 0x1000>;
