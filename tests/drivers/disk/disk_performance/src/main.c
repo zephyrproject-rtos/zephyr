@@ -22,18 +22,23 @@
 #error "No disk device defined, is your board supported?"
 #endif
 
-/* Assume the largest sector we will encounter is 512 bytes */
-#define SECTOR_SIZE 512
+/* Assume the largest sector we will encounter is CONFIG_TEST_DISK_SECTOR_SIZE bytes */
+#define SECTOR_SIZE CONFIG_TEST_DISK_SECTOR_SIZE
+
 #if CONFIG_SRAM_SIZE >= 512
 /* Cap buffer size at 128 KiB */
-#define SEQ_BLOCK_COUNT 256
+#define MAX_TOTAL_BUF_SIZE 128
 #elif CONFIG_SOC_POSIX
 /* Posix does not define SRAM size */
-#define SEQ_BLOCK_COUNT 256
+#define MAX_TOTAL_BUF_SIZE 128
 #else
-/* Two buffers with 512 byte blocks will use half of all SRAM */
-#define SEQ_BLOCK_COUNT (CONFIG_SRAM_SIZE / 2)
+/* Use half of all SRAM */
+#define MAX_TOTAL_BUF_SIZE (CONFIG_SRAM_SIZE / 2)
 #endif
+
+/* Two buffers with SECTOR_SIZE byte blocks will use MAX_TOTAL_BUF_SIZE */
+#define SEQ_BLOCK_COUNT ((MAX_TOTAL_BUF_SIZE * 1024) / (2 * SECTOR_SIZE))
+
 #define BUF_SIZE (SECTOR_SIZE * SEQ_BLOCK_COUNT)
 /* Number of sequential reads to get an average speed */
 #define SEQ_ITERATIONS 10
@@ -75,7 +80,7 @@ static void test_setup(void)
 	TC_PRINT("Disk reports sector size %u\n", cmd_buf);
 	disk_sector_size = cmd_buf;
 
-	/* Assume sector size is 512 bytes, it will speed up calculations later */
+	/* Verify that sector size of disk is SECTOR_SIZE, it will speed up calculations later */
 	zassert_true(cmd_buf == SECTOR_SIZE,
 		"Test will fail, SECTOR_SIZE definition must be changed");
 
@@ -235,7 +240,8 @@ ZTEST(disk_performance, test_random_read)
 	/* Stop timing system */
 	timing_stop();
 
-	TC_PRINT("512 Byte IOPS over %d random reads: %"PRIu64" IOPS\n",
+	TC_PRINT("%d Byte IOPS over %d random reads: %"PRIu64" IOPS\n",
+		SECTOR_SIZE,
 		RANDOM_ITERATIONS,
 		((uint64_t)(((uint64_t)RANDOM_ITERATIONS)*
 		((uint64_t)NSEC_PER_SEC)))
@@ -287,7 +293,8 @@ ZTEST(disk_performance, test_random_write)
 	/* Stop timing system */
 	timing_stop();
 
-	TC_PRINT("512 Byte IOPS over %d random writes: %"PRIu64" IOPS\n",
+	TC_PRINT("%d Byte IOPS over %d random writes: %"PRIu64" IOPS\n",
+		SECTOR_SIZE,
 		RANDOM_ITERATIONS,
 		((uint64_t)(((uint64_t)RANDOM_ITERATIONS)*
 		((uint64_t)NSEC_PER_SEC)))
