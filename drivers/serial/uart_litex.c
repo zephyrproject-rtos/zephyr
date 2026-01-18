@@ -264,7 +264,14 @@ static void uart_litex_irq_err(const struct device *dev)
  */
 static int uart_litex_irq_is_pending(const struct device *dev)
 {
-	return (uart_litex_irq_tx_ready(dev) || uart_litex_irq_rx_ready(dev));
+	const struct uart_litex_device_config *config = dev->config;
+	uint8_t pending;
+
+	pending = litex_read8(config->ev_pending_addr);
+	pending &= litex_read8(config->ev_enable_addr);
+	pending &= UART_EV_RX | UART_EV_TX;
+
+	return pending > 0;
 }
 
 static int uart_litex_irq_update(const struct device *dev)
