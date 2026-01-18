@@ -156,6 +156,10 @@ def main():
             cmake_props.append(f'"DT_REG|{node.path}|ADDR" "{cmake_addr}"')
             cmake_props.append(f'"DT_REG|{node.path}|SIZE" "{cmake_size}"')
 
+            cmake_unit_addr_int = 'NONE' if node.unit_addr is None else hex(node.unit_addr)
+
+            cmake_props.append(f'"DT_UNIT_ADDR|{node.path}" "{cmake_unit_addr_int}"')
+
     for comp in compatible2paths.keys():
         cmake_path = ''
         for path in compatible2paths[comp]:
