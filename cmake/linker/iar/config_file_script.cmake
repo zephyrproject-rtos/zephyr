@@ -79,14 +79,6 @@ function(process_region)
     endif()
     set(ZI)
 
-    if(${name_clean} STREQUAL last_ram_section)
-      # A trick to add the symbol for the nxp devices
-      # _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
-      create_symbol(OBJECT ${REGION_OBJECT} SYMBOL _flash_used
-        EXPR "(@LOADADDR(last_section)@ + @SIZE(last_section)@ - @__rom_region_start@)"
-        )
-    endif()
-
     if(${name_clean} STREQUAL rom_start)
       # The below two symbols is meant to make aliases to the _vector_table symbol.
       list(GET symbols 0 symbol_start)
