@@ -132,6 +132,130 @@ This command loads the symbol table from the elf binary file, for example the
 Now the debug environment has been set up, and it's possible to debug the application with gdb
 commands.
 
+Debugging with lldbac
+---------------------
+
+The ``lldbac`` runner is provided as part of the Synopsys ARC MWDT toolchain and supports both
+``run-lldbac`` (for integrated debugging) and ``lldbac`` (for client-only mode).
+
+.. note::
+   Ensure ``run-lldbac`` and ``lldbac`` (from `ARC MWDT`_) are installed and available in your
+   ``PATH``.
+
+The ``lldbac`` runner operates in two modes:
+
+1. **Integrated mode** (``debug``/``flash``): Runner manages the debug server internally
+2. **Client-only mode** (``debugserver``): Connect to an externally managed GDB server
+
+Integrated Mode - Simulator (nSIM)
+***********************************
+
+For interactive debugging on nSIM simulator, use the ``debug`` command with ``--simulator`` flag:
+
+.. code-block:: console
+
+   west debug --runner lldbac --simulator
+
+The runner uses nSIM properties configured in the board's ``board.cmake`` file. You can override
+with ``--nsim-props`` or use a TCF file with ``--tcf``:
+
+.. code-block:: console
+
+   west debug --runner lldbac --simulator --nsim-props=rmx100.props
+   west debug --runner lldbac --simulator --tcf=rmx100
+
+.. note::
+   The ``lldbac`` runner is designed specifically for interactive debugging workflows. For
+   simulator execution without debugging (flash), use the ``arc-nsim`` runner which provides
+   efficient non-interactive execution:
+
+   .. code-block:: console
+
+      west flash --runner arc-nsim
+
+   This separation allows ``lldbac`` to focus on debugging features while ``arc-nsim`` handles
+   standard execution efficiently.
+
+Integrated Mode - Hardware
+***************************
+
+For debugging on physical hardware, provide JTAG configuration via command-line flags:
+
+.. code-block:: console
+
+   west debug --runner lldbac
+   west flash --runner lldbac
+
+Available hardware options:
+
+* ``--jtag``: JTAG adapter type (default: jtag-digilent)
+* ``--jtag-device``: JTAG device name (optional, auto-detected if not specified, e.g., JtagHs2)
+* ``--jtag-frequency``: JTAG clock frequency (default: 500KHz)
+* ``--postconnect-cmd``: Command to execute after connection (can be used multiple times)
+* ``--postconnect-file``: File containing commands to execute after hardware initialization
+* ``--board-json``: Path to board.json file for complex board configurations
+
+Examples with postconnect commands for hardware initialization:
+
+.. code-block:: console
+
+   west flash --runner lldbac --postconnect-cmd "reg write sp 0x1000"
+   west flash --runner lldbac --postconnect-file postconnect.cmd
+   west debug --runner lldbac --board-json board.json
+
+GUI Mode
+********
+
+To launch debugging with VS Code GUI support, add the ``--gui`` flag:
+
+.. code-block:: console
+
+   west debug --runner lldbac --simulator --gui
+   west debug --runner lldbac --gui
+
+Client-Only Mode (debugserver)
+*******************************
+
+The ``debugserver`` command connects an ``lldbac`` client to an externally managed GDB server. This
+enables remote debugging via GDB remote protocol, the primary solution for accessing ARC
+probes/targets over network connections.
+
+.. note::
+   This is a **non-standard** use of ``debugserver``. Most Zephyr runners use ``debugserver`` to
+   *start* a GDB server, but ``lldbac`` uses it to *connect* to an existing server.
+
+First, start a GDB server manually:
+
+For simulator:
+
+.. code-block:: console
+
+   nsimdrv -gdb -port=3333 -propsfile build/zephyr/nsim.props
+
+For hardware (if supported by your setup):
+
+.. code-block:: console
+
+   lldbac gdbserver --jtag :3333
+
+Then connect the debugger client:
+
+.. code-block:: console
+
+   west debugserver --runner lldbac
+   west debugserver --runner lldbac --gui
+   west debugserver --runner lldbac --gdb-host=remote.server.com --gdb-port=3333
+
+Available client-only options:
+
+* ``--gdb-host``: GDB server hostname/IP (default: localhost)
+* ``--gdb-port``: GDB server port (default: 3333)
+* ``--gui``: Launch VS Code GUI debugger
+
+.. note::
+   Current ``nsim_arc_v`` targets are single-core. Multi-core workflows may require additional
+   board-specific integration and are not covered here.
+
 Modifying the configuration
 ***************************
 
