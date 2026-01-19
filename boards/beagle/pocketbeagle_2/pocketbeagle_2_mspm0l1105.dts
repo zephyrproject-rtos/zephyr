@@ -29,6 +29,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
 	};
 };
 
@@ -38,4 +39,10 @@
 
 &pinctrl {
 	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_rx_pa26 &uart0_tx_pa25>;
 };
