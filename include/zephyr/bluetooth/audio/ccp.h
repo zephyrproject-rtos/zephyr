@@ -35,6 +35,7 @@
 #include <stddef.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/slist.h>
@@ -133,6 +134,31 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
 					      const char **uci);
 
+/**
+ * @brief Set a new bearer technology.
+ *
+ * @param[out] bearer The bearer to set the name for.
+ * @param tech The new bearer technology.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or is NULL or @p tech is invalid.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
+					       enum bt_bearer_tech tech);
+
+/**
+ * @brief Get the bearer technology.
+ *
+ * @param[in] bearer The bearer to get the technology for.
+ * @param[out] tech Pointer that will be updated to be the bearer technology.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p bearer or @p tech is NULL.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_get_bearer_tech(
+	const struct bt_ccp_call_control_server_bearer *bearer, enum bt_bearer_tech *tech);
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**
