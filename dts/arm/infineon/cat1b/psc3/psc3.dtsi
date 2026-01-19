@@ -137,10 +137,10 @@
 				compatible = "infineon,hppass-sar-adc";
 				/* Offset within HPPASS analog region => 0x42b70000 physical */
 				reg = <0x00070000 0x10000>;
-				interrupts = <109 4>;
-				status = "disabled";
-				#io-channel-cells = <1>;
-			};
+			interrupts = <109 4>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 		};
 
 		ipc0: ipc@421d0000 {
@@ -658,6 +658,20 @@
 				     <67 4>, /* CH14 */
 				     <68 4>; /* CH15 */
 			status = "disabled";
+		};
+
+		can0: can@42800000 {
+			compatible = "infineon,canfd";
+			reg = <0x42800000 0x200>;
+			status = "disabled";
+			interrupts = <99 4>, <100 4>, <103 4>;
+		};
+
+		can1: can@42800200 {
+			compatible = "infineon,canfd";
+			reg = <0x42800200 0x200>;
+			status = "disabled";
+			interrupts = <101 4>, <102 4>, <104 4>;
 		};
 	};
 };
