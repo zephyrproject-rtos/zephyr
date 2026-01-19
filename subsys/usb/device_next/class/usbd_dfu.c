@@ -516,24 +516,21 @@ static int dfu_set_next_state(struct usbd_class_data *const c_data,
 
 /* Run-Time mode instance implementation, for instance "dfu_runtime" */
 
-static int handle_get_status(struct usbd_class_data *const c_data,
-			     const struct usb_setup_packet *const setup,
-			     struct net_buf **const pbuf)
+static struct net_buf *handle_get_status(struct usbd_class_data *const c_data,
+					 const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 	const size_t getstatus_len = 6;
 
 	if (setup->wLength != getstatus_len) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), getstatus_len);
 	if (buf == NULL) {
-		return -ENOMEM;
+		return NULL;
 	}
-
-	*pbuf = buf;
 
 	/*
 	 * Add GET_STATUS response consisting of
@@ -545,38 +542,36 @@ static int handle_get_status(struct usbd_class_data *const c_data,
 	net_buf_add_u8(buf, data->state);
 	net_buf_add_u8(buf, 0);
 
-	return 0;
+	return buf;
 }
 
-static int handle_get_state(struct usbd_class_data *const c_data,
-			    const struct usb_setup_packet *const setup,
-			    struct net_buf **const pbuf)
+static struct net_buf *handle_get_state(struct usbd_class_data *const c_data,
+					const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 	struct net_buf *buf;
 	const size_t getstate_len = 1;
 
 	if (setup->wLength != getstate_len) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), getstate_len);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
 
-	*pbuf = buf;
+	if (buf == NULL) {
+		return NULL;
+	}
 
 	net_buf_add_u8(buf, data->state);
 
-	return 0;
+	return buf;
 }
 
-static int runtime_mode_control_to_host(struct usbd_class_data *const c_data,
-					const struct usb_setup_packet *const setup,
-					struct net_buf **const pbuf)
+static struct net_buf *runtime_mode_control_to_host(struct usbd_class_data *const c_data,
+						    const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = dfu_set_next_state(c_data, setup);
@@ -584,10 +579,10 @@ static int runtime_mode_control_to_host(struct usbd_class_data *const c_data,
 	if (ret == 0) {
 		switch (setup->bRequest) {
 		case USB_DFU_REQ_GETSTATUS:
-			ret = handle_get_status(c_data, setup, pbuf);
+			buf = handle_get_status(c_data, setup);
 			break;
 		case USB_DFU_REQ_GETSTATE:
-			ret = handle_get_state(c_data, setup, pbuf);
+			buf = handle_get_state(c_data, setup);
 			break;
 		default:
 			break;
@@ -596,7 +591,7 @@ static int runtime_mode_control_to_host(struct usbd_class_data *const c_data,
 
 	data->state = data->next;
 
-	return ret;
+	return buf;
 }
 
 static int runtime_mode_control_to_dev(struct usbd_class_data *const c_data,
@@ -657,9 +652,8 @@ USBD_DEFINE_CLASS(dfu_runtime, &runtime_mode_api, &dfu_data, NULL);
 
 /* DFU mode instance implementation, for instance "dfu_dfu" */
 
-static int handle_upload(struct usbd_class_data *const c_data,
-			 const struct usb_setup_packet *const setup,
-			 struct net_buf **const pbuf)
+static struct net_buf *handle_upload(struct usbd_class_data *const c_data,
+				     const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 	uint16_t size;
@@ -671,10 +665,8 @@ static int handle_upload(struct usbd_class_data *const c_data,
 	size = CONFIG_USBD_DFU_TRANSFER_SIZE;
 	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), size);
 	if (buf == NULL) {
-		return -ENOMEM;
+		return NULL;
 	}
-
-	*pbuf = buf;
 
 	/* Do not return more than requested */
 	size = MIN(setup->wLength, size);
@@ -687,10 +679,10 @@ static int handle_upload(struct usbd_class_data *const c_data,
 		}
 	} else {
 		dfu_error(c_data, DFU_ERROR, ERR_UNKNOWN);
-		return -ENOTSUP;
+		net_buf_drop(&buf);
 	}
 
-	return 0;
+	return buf;
 }
 
 static int handle_download(struct usbd_class_data *const c_data,
@@ -717,11 +709,11 @@ static int handle_download(struct usbd_class_data *const c_data,
 	return 0;
 }
 
-static int dfu_mode_control_to_host(struct usbd_class_data *const c_data,
-				    const struct usb_setup_packet *const setup,
-				    struct net_buf **const pbuf)
+static struct net_buf *dfu_mode_control_to_host(struct usbd_class_data *const c_data,
+						const struct usb_setup_packet *const setup)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+	struct net_buf *buf = NULL;
 	int ret;
 
 	ret = dfu_set_next_state(c_data, setup);
@@ -729,13 +721,13 @@ static int dfu_mode_control_to_host(struct usbd_class_data *const c_data,
 	if (ret == 0) {
 		switch (setup->bRequest) {
 		case USB_DFU_REQ_GETSTATUS:
-			ret = handle_get_status(c_data, setup, pbuf);
+			buf = handle_get_status(c_data, setup);
 			break;
 		case USB_DFU_REQ_GETSTATE:
-			ret = handle_get_state(c_data, setup, pbuf);
+			buf = handle_get_state(c_data, setup);
 			break;
 		case USB_DFU_REQ_UPLOAD:
-			ret = handle_upload(c_data, setup, pbuf);
+			buf = handle_upload(c_data, setup);
 			break;
 		default:
 			break;
@@ -744,7 +736,7 @@ static int dfu_mode_control_to_host(struct usbd_class_data *const c_data,
 
 	data->state = data->next;
 
-	return ret;
+	return buf;
 }
 
 static int dfu_mode_control_to_dev(struct usbd_class_data *const c_data,

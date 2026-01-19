@@ -113,9 +113,8 @@ struct bos_msosv2_descriptor bos_msosv2_desc = {
 	},
 };
 
-static int msosv2_to_host_cb(const struct usbd_context *const ctx,
-			     const struct usb_setup_packet *const setup,
-			     struct net_buf **const pbuf)
+static struct net_buf *msosv2_to_host_cb(const struct usbd_context *const ctx,
+					 const struct usb_setup_packet *const setup)
 {
 	LOG_INF("Vendor callback to host");
 
@@ -128,17 +127,15 @@ static int msosv2_to_host_cb(const struct usbd_context *const ctx,
 
 		buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
 		if (buf == NULL) {
-			return -ENOMEM;
+			return NULL;
 		}
-
-		*pbuf = buf;
 
 		net_buf_add_mem(buf, &msosv2_desc, len);
 
-		return 0;
+		return buf;
 	}
 
-	return -ENOTSUP;
+	return NULL;
 }
 
 USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_msosv2, sizeof(bos_msosv2_desc), &bos_msosv2_desc,
