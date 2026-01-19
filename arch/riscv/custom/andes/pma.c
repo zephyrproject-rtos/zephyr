@@ -141,7 +141,7 @@ static void region_init(const uint32_t index,
 }
 
 /*
- * This internal function performs run-time sanity check for
+ * This internal function performs run-time coherence check for
  * PMA region start address and size.
  */
 static int pma_region_is_valid(const struct pma_region *region)
