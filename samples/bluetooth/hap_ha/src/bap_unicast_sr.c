@@ -14,14 +14,14 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
@@ -55,6 +55,7 @@ static size_t configured_source_stream_count;
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
+
 
 static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 {
@@ -131,8 +132,7 @@ static void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",
-	       qos->interval, qos->framing, qos->phy, qos->sdu,
-	       qos->rtn, qos->latency, qos->pd);
+	       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
 }
 
 /**
@@ -185,12 +185,12 @@ static void audio_timer_timeout(struct k_work *work)
 
 		ret = bt_bap_stream_send(stream, buf, get_and_incr_seq_num(stream));
 		if (ret < 0) {
-			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
-			       i, stream, ret);
+			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n", i, stream,
+			       ret);
 			net_buf_unref(buf);
 		} else {
-			printk("Sending mock data with len %zu on streams[%zu] (%p)\n",
-			       len_to_send, i, stream);
+			printk("Sending mock data with len %zu on streams[%zu] (%p)\n", len_to_send,
+			       i, stream);
 		}
 	}
 
@@ -286,7 +286,7 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 		}
 
 		if (configured_source_stream_count > 0 &&
-		!k_work_delayable_is_pending(&audio_send_work)) {
+		    !k_work_delayable_is_pending(&audio_send_work)) {
 
 			/* Start send timer */
 			k_work_schedule(&audio_send_work, K_MSEC(0));
@@ -338,10 +338,8 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
-static struct bt_bap_unicast_server_register_param param = {
-	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
-};
+static struct bt_bap_unicast_server_register_param param = {CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+							    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT};
 
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
