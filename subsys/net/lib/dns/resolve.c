@@ -318,6 +318,11 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			goto free_buf;
 		}
 
+		if (ctx->queries[i].additional_queries >= CONFIG_DNS_RESOLVER_ADDITIONAL_QUERIES) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
+
 		for (j = 0; j < SERVER_COUNT; j++) {
 			if (ctx->servers[j].sock < 0) {
 				continue;
@@ -331,6 +336,8 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 				nfail++;
 			}
 		}
+
+		ctx->queries[i].additional_queries++;
 
 		if (nfail > 0) {
 			NET_DBG("DNS cname query %d fails on %d attempts",
@@ -2041,6 +2048,7 @@ try_resolve:
 	ctx->queries[i].user_data = user_data;
 	ctx->queries[i].ctx = ctx;
 	ctx->queries[i].query_hash = 0;
+	ctx->queries[i].additional_queries = 0;
 	ctx->queries[i].cb_called = false;
 
 	k_work_init_delayable(&ctx->queries[i].timer, query_timeout);
