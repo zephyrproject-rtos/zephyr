@@ -72,6 +72,54 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	main_ospi0_clk: ospi0-clk {
+		pinmux = <K3_PINMUX(0x0000, PIN_OUTPUT, MUX_MODE_0)>; /* (N20) OSPI0_CLK */
+	};
+
+	main_ospi0_csn0: ospi0-csn0 {
+		pinmux = <K3_PINMUX(0x002c, PIN_OUTPUT, MUX_MODE_0)>; /* (L19) OSPI0_CSN0 */
+	};
+
+	main_ospi0_d0: ospi0-d0 {
+		pinmux = <K3_PINMUX(0x000c, PIN_INPUT, MUX_MODE_0)>; /* (M19) OSPI0_D0 */
+	};
+
+	main_ospi0_d1: ospi0-d1 {
+		pinmux = <K3_PINMUX(0x0010, PIN_INPUT, MUX_MODE_0)>; /* (M18) OSPI0_D1 */
+	};
+
+	main_ospi0_d2: ospi0-d2 {
+		pinmux = <K3_PINMUX(0x0014, PIN_INPUT, MUX_MODE_0)>; /* (M20) OSPI0_D2 */
+	};
+
+	main_ospi0_d3: ospi0-d3 {
+		pinmux = <K3_PINMUX(0x0018, PIN_INPUT, MUX_MODE_0)>; /* (M21) OSPI0_D3 */
+	};
+
+	main_ospi0_d4: ospi0-d4 {
+		pinmux = <K3_PINMUX(0x001C, PIN_INPUT, MUX_MODE_0)>; /* (P21) OSPI0_D4 */
+	};
+
+	main_ospi0_d5: ospi0-d5 {
+		pinmux = <K3_PINMUX(0x0020, PIN_INPUT, MUX_MODE_0)>; /* (P20) OSPI0_D5 */
+	};
+
+	main_ospi0_d6: ospi0-d6 {
+		pinmux = <K3_PINMUX(0x0024, PIN_INPUT, MUX_MODE_0)>; /* (N18) OSPI0_D6 */
+	};
+
+	main_ospi0_d7: ospi0-d7 {
+		pinmux = <K3_PINMUX(0x0028, PIN_INPUT, MUX_MODE_0)>; /* (M17) OSPI0_D7 */
+	};
+
+	main_ospi0_dqs: ospi0-dqs {
+		pinmux = <K3_PINMUX(0x0008, PIN_INPUT, MUX_MODE_0)>; /* (N19) OSPI0_DQS */
+	};
+
+	main_ospi0_lbclko: ospi0-lbclko {
+		pinmux = <K3_PINMUX(0x0004, PIN_OUTPUT, MUX_MODE_0)>; /* (N21) OSPI0_LBCLKO */
+	};
 };
 
 &mcu_pinctrl {
