@@ -33,6 +33,17 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+#define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
+				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
+				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
+				 BT_AUDIO_CONTEXT_TYPE_GAME | \
+				 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
+
+#define AVAILABLE_SOURCE_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
+				  BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
+				  BT_AUDIO_CONTEXT_TYPE_MEDIA | \
+				  BT_AUDIO_CONTEXT_TYPE_GAME)
+
 static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
 	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
@@ -356,8 +367,21 @@ static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_i
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
+static void stream_enabled_cb(struct bt_bap_stream *stream)
+{
+	/* The unicast server is responsible for starting sink ASEs after the
+	 * client has enabled them.
+	 */
+	const int err = bt_bap_stream_start(stream);
+
+	if (err != 0) {
+		printk("Failed to start stream %p: %d", stream, err);
+	}
+}
+
 static struct bt_bap_stream_ops stream_ops = {
-	.recv = stream_recv
+	.recv = stream_recv,
+	.enabled = stream_enabled_cb,
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -414,8 +438,141 @@ static struct bt_pacs_cap cap_source = {
 	.codec_cap = &lc3_codec_cap,
 };
 
+
+static int set_location(void)
+{
+	int err;
+
+	/* HAP_d1.0r00 §3.7 (BAP Unicast Server role)
+	 * A Banded Hearing Aid in the HA role shall set the Front Left and
+	 * Front Right bits to 1 in the Audio Locations characteristic value.
+	 * For LEFT/RIGHT devices, set the appropriate single channel.
+	 */
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
+		/* BANDED: set both L+R */
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+								BT_AUDIO_LOCATION_FRONT_LEFT |
+								BT_AUDIO_LOCATION_FRONT_RIGHT);
+			if (err != 0) {
+				printk("Failed to set source location (BANDED) (err %d)\n", err);
+				return err;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+								BT_AUDIO_LOCATION_FRONT_LEFT |
+								BT_AUDIO_LOCATION_FRONT_RIGHT);
+			if (err != 0) {
+				printk("Failed to set sink location (BANDED) (err %d)\n", err);
+				return err;
+			}
+		}
+	} else if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_LEFT)) {
+		/* LEFT: set FL for both dirs (if enabled) */
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+								BT_AUDIO_LOCATION_FRONT_LEFT);
+			if (err != 0) {
+				printk("Failed to set source location (LEFT) (err %d)\n", err);
+				return err;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+								BT_AUDIO_LOCATION_FRONT_LEFT);
+			if (err != 0) {
+				printk("Failed to set sink location (LEFT) (err %d)\n", err);
+				return err;
+			}
+		}
+
+	} else {
+    /* RIGHT (default): set FR for both dirs (if enabled) */
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+								BT_AUDIO_LOCATION_FRONT_RIGHT);
+			if (err != 0) {
+				printk("Failed to set source location (RIGHT) (err %d)\n", err);
+				return err;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+								BT_AUDIO_LOCATION_FRONT_RIGHT);
+			if (err != 0) {
+				printk("Failed to set sink location (RIGHT) (err %d)\n", err);
+				return err;
+			}
+		}
+	}
+
+	printk("Location successfully set\n");
+	return 0;
+}
+
+static int set_supported_contexts(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     AVAILABLE_SINK_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set sink supported contexts (err %d)\n",
+			       err);
+
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
+						     AVAILABLE_SOURCE_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set source supported contexts (err %d)\n",
+			       err);
+
+			return err;
+		}
+	}
+
+	printk("Supported contexts successfully set\n");
+
+	return 0;
+}
+
+static int set_available_contexts(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+						     AVAILABLE_SINK_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set sink available contexts (err %d)\n", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						     AVAILABLE_SOURCE_CONTEXT);
+		if (err != 0) {
+			printk("Failed to set source available contexts (err %d)\n", err);
+			return err;
+		}
+	}
+
+	printk("Available contexts successfully set\n");
+	return 0;
+}
 int bap_unicast_sr_init(void)
 {
+
 	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
@@ -434,25 +591,8 @@ int bap_unicast_sr_init(void)
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	/* Set PACS Source Audio Locations */
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
-			/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
-			 * A Banded Hearing Aid in the HA role shall set the
-			 * Front Left and the Front Right bits to a value of 0b1
-			 * in the Sink Audio Locations characteristic value.
-			 */
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     (BT_AUDIO_LOCATION_FRONT_LEFT |
-					      BT_AUDIO_LOCATION_FRONT_RIGHT));
-		} else if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_LEFT)) {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_LOCATION_FRONT_LEFT);
-		} else {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					     BT_AUDIO_LOCATION_FRONT_RIGHT);
-		}
-	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
 		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
@@ -460,6 +600,21 @@ int bap_unicast_sr_init(void)
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_bap_stream_cb_register(&streams[i], &stream_ops);
+	}
+
+	err = set_location();
+	if (err != 0) {
+		return 0;
+	}
+
+	err = set_supported_contexts();
+	if (err != 0) {
+		return 0;
+	}
+
+	err = set_available_contexts();
+	if (err != 0) {
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
