@@ -11,6 +11,9 @@
 		radio: radio@b0000000 {
 			compatible = "silabs,series2-radio";
 			reg = <0xb0000000 0x01000000>;
+			ble-2mbps-supported;
+			ble-coded-phy-supported;
+			ble-cte-tx-supported;
 			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
 					  "rac_rsm", "rac_seq", "rdmailbox", "rfsense", "synth",
 					  "prortc";
@@ -20,9 +23,6 @@
 			pa-initial-power-dbm = <10>;
 			pa-ramp-time-us = <2>;
 			pa-voltage-mv = <3300>;
-			ble-2mbps-supported;
-			ble-coded-phy-supported;
-			ble-cte-tx-supported;
 			radio-tx-high-power-supported;
 
 			bt_hci_silabs: bt_hci_silabs {

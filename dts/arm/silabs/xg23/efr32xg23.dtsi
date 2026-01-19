@@ -20,6 +20,7 @@
 			pa-ramp-time-us = <10>;
 			pa-subghz = "highest";
 			pa-voltage-mv = <3300>;
+			radio-tx-high-power-supported;
 
 			pti: pti {
 				compatible = "silabs,pti";
