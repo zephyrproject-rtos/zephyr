@@ -32,7 +32,7 @@ tests:
       - ek_ra8m1
       - ek_ra8d1
       - ek_ra8p1/r7ka8p1kflcac/cm85
-      - mck_ra8t2/r7ka8t2lfecac/cm85
+      - mck_ra8t2/r7ka8t2lflcac/cm85
       - ek_ra8p1/r7ka8p1kflcac/cm33
       - ek_ra8d2/r7ka8d2kflcac/cm85
       - ek_ra8m2/r7ka8m2jflcac/cm85
@@ -50,7 +50,7 @@ tests:
       - platform:ek_ra8d2/r7ka8d2kflcac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
       - platform:ek_ra8m2/r7ka8m2jflcac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
       - platform:mck_ra8t1/r7fa8t1ahecbd:CONFIG_EXT2_DISK_STARTING_SECTOR=0
-      - platform:mck_ra8t2/r7ka8t2lfecac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
+      - platform:mck_ra8t2/r7ka8t2lflcac/cm85:CONFIG_EXT2_DISK_STARTING_SECTOR=0
 
   filesystem.ext2.flash:
     platform_allow:
