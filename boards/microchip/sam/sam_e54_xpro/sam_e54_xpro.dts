@@ -60,6 +60,93 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &portb  4 0>, /* ADC1/AIN[6]                 */
+			   <1  0 &portb  5 0>, /* ADC1/AIN[7]                 */
+			   <2  0 &porta  6 0>, /* GPIO (RTS)                  */
+			   <3  0 &porta  7 0>, /* GPIO (CTS)                  */
+			   <4  0 &portb  8 0>, /* TC4/WO[0]                   */
+			   <5  0 &portb  9 0>, /* TC4/WO[1]                   */
+			   <6  0 &portb  7 0>, /* IRQ7/GPIO                   */
+			   <7  0 &porta 27 0>, /* GPIO                        */
+			   <8  0 &porta 22 0>, /* SERCOM3 PAD[0] I2C SDA      */
+			   <9  0 &porta 23 0>, /* SERCOM3 PAD[1] I2C SCL      */
+			   <10 0 &porta  5 0>, /* SERCOM0 PAD[1] UART RX      */
+			   <11 0 &porta  4 0>, /* SERCOM0 PAD[0] UART TX      */
+			   <12 0 &portb 28 0>, /* SERCOM4 PAD[2] SPI SS       */
+			   <13 0 &portb 27 0>, /* SERCOM4 PAD[0] SPI MOSI     */
+			   <14 0 &portb 29 0>, /* SERCOM4 PAD[3] SPI MISO     */
+			   <15 0 &portb 26 0>; /* SERCOM4 PAD[1] SPI SCK      */
+					       /* GND                         */
+					       /* +3.3V                       */
+		/* dts-format on */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                       Shared */
+		gpio-map = <0  0 &portb  0 0>, /* ADC0/AIN[12]                 */
+			   <1  0 &porta  3 0>, /* ADC0/AIN[1]                  */
+			   <2  0 &portb  1 0>, /* GPIO                         */
+			   <3  0 &portb  6 0>, /* GPIO                         */
+			   <4  0 &portb 14 0>, /* TCC4/WO[4]                   */
+			   <5  0 &portb 15 0>, /* TCC4/WO[5]                   */
+			   <6  0 &portd  0 0>, /* IRQ0/GPIO                    */
+			   <7  0 &portb  2 0>, /* GPIO                         */
+			   <8  0 &portd  8 0>, /* SERCOM7 PAD[0] I2C SDA       */
+			   <9  0 &portd  9 0>, /* SERCOM7 PAD[1] I2C SCL       */
+			   <10 0 &portb 17 0>, /* SERCOM5 PAD[1] UART RX       */
+			   <11 0 &portb 16 0>, /* SERCOM5 PAD[0] UART TX       */
+			   <12 0 &portc  6 0>, /* SERCOM6 PAD[2] SPI SS        */
+			   <13 0 &portc  4 0>, /* SERCOM6 PAD[0] SPI MOSI      */
+			   <14 0 &portc  7 0>, /* SERCOM6 PAD[3] SPI MISO      */
+			   <15 0 &portc  5 0>; /* SERCOM6 PAD[1] SPI SCK       */
+					       /* GND                          */
+					       /* +3.3V                        */
+		/* dts-format on */
+	};
+
+	ext3_header: xplained-pro-connector3 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &portc  2 0>, /* ADC1/AIN[4]                 */
+			   <1  0 &portc  3 0>, /* ADC1/AIN[5]                 */
+			   <2  0 &portc  1 0>, /* GPIO                        */
+			   <3  0 &portc 10 0>, /* GPIO                        */
+			   <4  0 &portd 10 0>, /* TCC0/WO[3]                  */
+			   <5  0 &portd 11 0>, /* TCC0/WO[4]                  */
+			   <6  0 &portc 30 0>, /* IRQ14/GPIO                  */
+			   <7  0 &portc 31 0>, /* GPIO                        */
+			   <8  0 &portd  8 0>, /* SERCOM7 PAD[0] I2C SDA      */
+			   <9  0 &portd  9 0>, /* SERCOM7 PAD[1] I2C SCL      */
+			   <10 0 &portc 23 0>, /* SERCOM1 PAD[1] UART RX      */
+			   <11 0 &portc 22 0>, /* SERCOM1 PAD[0] UART TX      */
+			   <12 0 &portc 14 0>, /* GPIO                        */
+			   <13 0 &portc  4 0>, /* SERCOM6 PAD[0] SPI MOSI     */
+			   <14 0 &portc  7 0>, /* SERCOM6 PAD[3] SPI MISO     */
+			   <15 0 &portc  5 0>; /* SERCOM6 PAD[1] SPI SCK      */
+					       /* GND                         */
+					       /* +3.3V                       */
+		/* dts-format on */
+	};
 };
 
 &rtc {
