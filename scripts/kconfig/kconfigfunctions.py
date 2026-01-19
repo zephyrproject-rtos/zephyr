@@ -867,6 +867,9 @@ def dt_compat_any_has_prop(kconf, _, compat, prop, value=None):
             if prop in node.props:
                 if value is None:
                     return "y"
+                if isinstance(node.props[prop].val, list):
+                    if value in map(str, node.props[prop].val):
+                        return "y"
                 elif str(node.props[prop].val) == value:
                     return "y"
     return "n"
