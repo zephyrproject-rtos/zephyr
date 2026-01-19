@@ -4,7 +4,13 @@
 # KConfig'uration and sets this to GCC_M_CPU
 
 if("${ARCH}" STREQUAL "arm")
-  if(CONFIG_CPU_CORTEX_M0)
+  if(CONFIG_CPU_ARM9)
+    if(CONFIG_CPU_ARM926EJ_S)
+      set(GCC_M_CPU arm926ej-s)
+    else()
+      message(FATAL_ERROR "ARM9 CPUs other than arm926ej-s are not supported")
+    endif()
+  elseif(CONFIG_CPU_CORTEX_M0)
     set(GCC_M_CPU cortex-m0)
   elseif(CONFIG_CPU_CORTEX_M0PLUS)
     set(GCC_M_CPU cortex-m0plus)

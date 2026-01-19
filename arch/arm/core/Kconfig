@@ -3,6 +3,15 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config CPU_AARCH32_ARM9
+	bool
+	select CPU_ARM9
+	select HAS_FLASH_LOAD_OFFSET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  This option signifies the use of a CPU of the ARM9 family.
+
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
@@ -327,6 +336,7 @@ config FP16_ALT
 
 endchoice
 
+rsource "arm9/Kconfig"
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 
