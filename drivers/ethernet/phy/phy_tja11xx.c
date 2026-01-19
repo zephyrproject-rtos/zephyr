@@ -93,7 +93,6 @@ static int update_link_state(const struct device *dev)
 static int phy_tja11xx_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
 	struct phy_tja11xx_data *const data = dev->data;
-	int rc = 0;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
@@ -101,7 +100,7 @@ static int phy_tja11xx_get_link_state(const struct device *dev, struct phy_link_
 
 	k_sem_give(&data->sem);
 
-	return rc;
+	return 0;
 }
 
 static void invoke_link_cb(const struct device *dev)
@@ -114,9 +113,7 @@ static void invoke_link_cb(const struct device *dev)
 	}
 
 	/* Send callback only on link state change */
-	if (phy_tja11xx_get_link_state(dev, &state) != 0) {
-		return;
-	}
+	phy_tja11xx_get_link_state(dev, &state);
 
 	data->cb(dev, &state, data->cb_data);
 }
