@@ -123,6 +123,25 @@ config SOC_POWER_DOMAIN_INIT
 
 endif #POWER_DOMAIN_TISCI
 
+config POWER_DOMAIN_ARM_SCMI
+	bool "ARM SCMI Power Domain driver"
+	default y
+	depends on ARM_SCMI_POWER_DOMAIN_HELPERS
+	depends on DT_HAS_ARM_SCMI_POWER_DOMAIN_ENABLED
+	select DEVICE_DEPS
+	help
+	  Enable SCMI-based power domain driver.
+
+if POWER_DOMAIN_ARM_SCMI
+
+config POWER_DOMAIN_ARM_SCMI_INIT_PRIORITY
+	int "ARM SCMI PD driver init priority"
+	default 10
+	help
+	  ARM SCMI PD driver initialization priority.
+
+endif #POWER_DOMAIN_ARM_SCMI
+
 # zephyr-keep-sorted-start
 rsource "Kconfig.nrfs_gdpwr"
 rsource "Kconfig.nrfs_swext"
