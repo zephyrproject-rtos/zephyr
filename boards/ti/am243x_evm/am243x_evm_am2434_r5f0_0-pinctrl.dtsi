@@ -40,6 +40,54 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	main_ospi0_clk: ospi0_clk {
+		pinmux = <K3_PINMUX(0x0000, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_csn0: ospi0_csn0 { // GPIO0 11
+		pinmux = <K3_PINMUX(0x002c, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d0: ospi0_d0 {
+		pinmux = <K3_PINMUX(0x000c, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d1: ospi0_d1 {
+		pinmux = <K3_PINMUX(0x0010, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d2: ospi0_d2 {
+		pinmux = <K3_PINMUX(0x0014, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d3: ospi0_d3 {
+		pinmux = <K3_PINMUX(0x0018, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d4: ospi0_d4 {
+		pinmux = <K3_PINMUX(0x001C, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d5: ospi0_d5 {
+		pinmux = <K3_PINMUX(0x0020, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d6: ospi0_d6 {
+		pinmux = <K3_PINMUX(0x0024, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_d7: ospi0_d7 {
+		pinmux = <K3_PINMUX(0x0028, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_dqs: ospi0_dqs {
+		pinmux = <K3_PINMUX(0x0008, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	main_ospi0_lbclko: ospi0_lbclko {
+		pinmux = <K3_PINMUX(0x0004, PIN_OUTPUT, MUX_MODE_0)>;
+	};
 };
 
 &mcu_pinctrl {
