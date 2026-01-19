@@ -2230,6 +2230,7 @@ Documentation Infrastructure:
   collaborators:
     - anangl
     - henrikbrixandersen
+    - FelixWang47831
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
