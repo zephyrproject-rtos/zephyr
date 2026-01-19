@@ -24,7 +24,7 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 	int ret;
 	bool use_polling;
 
-	/* sanity checks */
+	/* input validation */
 	if (!proto || !power_state) {
 		return -EINVAL;
 	}
@@ -65,7 +65,7 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 	int status, ret;
 	bool use_polling;
 
-	/* sanity checks */
+	/* input validation */
 	if (!proto || !cfg) {
 		return -EINVAL;
 	}
