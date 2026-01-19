@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,9 +15,35 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
+/*
+ * Include transform.h unconditionally to ensure it's compiled and checked by CI,
+ * even though the functions in this header are not used here at all.
+ * This prevents silent breakage when APIs change.
+ */
+#include "transform.h"
+
 #if !DT_HAS_CHOSEN(zephyr_camera)
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
 #endif
+
+/* The default transform implementation is a pass-through when no transform device is available */
+int __weak app_setup_video_transform(const struct device *const transform_dev,
+				     struct video_format *const in_fmt,
+				     struct video_format *const out_fmt,
+				     struct video_buffer **out_buf)
+{
+	*out_fmt = *in_fmt;
+
+	return 0;
+}
+
+int __weak app_transform_frame(const struct device *const transform_dev,
+			       struct video_buffer *in_buf, struct video_buffer **out_buf)
+{
+	*out_buf = in_buf;
+
+	return 0;
+}
 
 static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
 {
@@ -274,12 +300,12 @@ static int app_setup_video_buffers(const struct device *const camera_dev,
 	int ret;
 
 	/* Alloc video buffers and enqueue for capture */
-	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+	if (caps->min_vbuf_count > CONFIG_VIDEO_CAM_NUM_BUFS) {
 		LOG_ERR("Not enough buffers to start streaming");
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+	for (uint8_t i = 0; i < CONFIG_VIDEO_CAM_NUM_BUFS; i++) {
 		struct video_buffer *vbuf;
 
 		/*
@@ -309,8 +335,13 @@ int main(void)
 {
 	const struct device *const camera_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	const struct device *const display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
-	struct video_buffer *vbuf = &(struct video_buffer){};
-	struct video_format fmt = {
+	const struct device *transform_dev = NULL;
+	struct video_buffer *camera_vbuf = &(struct video_buffer){};
+	struct video_buffer *transformed_vbuf = &(struct video_buffer){};
+	struct video_format camera_fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	struct video_format transformed_fmt = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	struct video_caps caps = {
@@ -326,22 +357,27 @@ int main(void)
 		return 0;
 	}
 
-	ret = app_query_video_info(camera_dev, &caps, &fmt);
+	transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videotrans));
+	if (transform_dev == NULL) {
+		transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videodec));
+	}
+
+	ret = app_query_video_info(camera_dev, &caps, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_selection(camera_dev, &fmt);
+	ret = app_setup_video_selection(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_format(camera_dev, &fmt);
+	ret = app_setup_video_format(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
 
-	ret = app_setup_video_frmival(camera_dev, &fmt);
+	ret = app_setup_video_frmival(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
@@ -351,14 +387,21 @@ int main(void)
 		goto err;
 	}
 
+	ret = app_setup_video_transform(transform_dev, &camera_fmt, &transformed_fmt,
+					&transformed_vbuf);
+	if (ret < 0) {
+		LOG_ERR("Unable to setup video transform");
+		goto err;
+	}
+
 	if (DT_HAS_CHOSEN(zephyr_display)) {
-		ret = app_setup_display(display_dev, fmt.pixelformat);
+		ret = app_setup_display(display_dev, transformed_fmt.pixelformat);
 		if (ret < 0) {
 			goto err;
 		}
 	}
 
-	ret = app_setup_video_buffers(camera_dev, &caps, &fmt);
+	ret = app_setup_video_buffers(camera_dev, &caps, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}
@@ -371,26 +414,33 @@ int main(void)
 
 	LOG_INF("Capture started");
 
-	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+	camera_vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
-		ret = video_dequeue(camera_dev, &vbuf, K_FOREVER);
+		ret = video_dequeue(camera_dev, &camera_vbuf, K_FOREVER);
 		if (ret < 0) {
 			LOG_ERR("Unable to dequeue video buf");
 			goto err;
 		}
 
-		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)",
-			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp - last_ts);
-		last_ts = vbuf->timestamp;
+		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)", frame++,
+			camera_vbuf->bytesused, camera_vbuf->timestamp,
+			camera_vbuf->timestamp - last_ts);
+		last_ts = camera_vbuf->timestamp;
+
+		ret = app_transform_frame(transform_dev, camera_vbuf, &transformed_vbuf);
+		if (ret < 0) {
+			LOG_ERR("Unable to transform video frame");
+			goto err;
+		}
 
 		if (DT_HAS_CHOSEN(zephyr_display)) {
-			ret = app_display_frame(display_dev, vbuf, &fmt);
+			ret = app_display_frame(display_dev, transformed_vbuf, &transformed_fmt);
 			if (ret != 0) {
 				LOG_WRN("Failed to display this frame");
 			}
 		}
 
-		ret = video_enqueue(camera_dev, vbuf);
+		ret = video_enqueue(camera_dev, camera_vbuf);
 		if (ret < 0) {
 			LOG_ERR("Unable to requeue video buf");
 			goto err;
