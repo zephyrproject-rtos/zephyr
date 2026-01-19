@@ -29,6 +29,8 @@
 };
 
 &radio {
+	ble-2mbps-supported;
+	ble-cte-tx-supported;
 	pa-voltage-mv = <1800>;
 };
 
