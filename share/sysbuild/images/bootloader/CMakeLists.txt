@@ -14,6 +14,9 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   sysbuild_add_dependencies(CONFIGURE ${DEFAULT_IMAGE} ${image})
   sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} ${image})
 
+  # Link the footer size output of this MCUboot build with the main sysbuild image
+  set_target_properties(${image} PROPERTIES MCUBOOT_FOOTER_UPDATE_IMAGES ${DEFAULT_IMAGE})
+
   set_config_string(${image} CONFIG_BOOT_SIGNATURE_KEY_FILE "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}")
 
   if(SB_CONFIG_MCUBOOT_DIRECT_XIP_GENERATE_VARIANT)
