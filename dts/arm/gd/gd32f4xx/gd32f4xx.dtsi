@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/reset/gd32f4xx.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

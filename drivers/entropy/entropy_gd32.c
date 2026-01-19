@@ -58,7 +58,7 @@ static bool entropy_gd32_ck48m_ready(void)
 	return (RCU_CTL & RCU_CTL_PLLSTB) != 0U;
 }
 
-static entropy_gd32_recover(void)
+static void entropy_gd32_recover(void)
 {
 	/*
 	 * For GD32F4xx TRNG the HAL exposes status bits (CECS/SECS) but provides
@@ -69,8 +69,6 @@ static entropy_gd32_recover(void)
 	trng_deinit();
 	entropy_gd32_clear_int_flags();
 	trng_enable();
-
-	return 0;
 }
 
 static int entropy_gd32_wait_drdy(void)
