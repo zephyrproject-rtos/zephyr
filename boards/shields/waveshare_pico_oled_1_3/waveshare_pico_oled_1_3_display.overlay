@@ -23,7 +23,7 @@
 		page-offset = <0>;
 		display-offset = <0x20>;
 		multiplex-ratio = <63>;
-		prechargep = <0x22>;
+		precharge-period = <0x22>;
 		segment-remap;
 		com-invdir;
 		reset-gpios = <&pico_header 12 GPIO_ACTIVE_LOW>;

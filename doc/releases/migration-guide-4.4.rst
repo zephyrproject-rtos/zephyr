@@ -326,6 +326,12 @@ Display
 * For ILI9341 controller, display mirroring configuration has been updated to conform with
   the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
 
+* ``solomon,ssd1306fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1306`
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
+* ``solomon,ssd1309fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1309`
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
 DMA
 ===
 

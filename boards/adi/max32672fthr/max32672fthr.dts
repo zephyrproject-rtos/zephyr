@@ -130,7 +130,7 @@
 	status = "okay";
 
 	ssd1306: ssd1306@3d {
-		compatible = "solomon,ssd1306fb";
+		compatible = "solomon,ssd1306";
 		reg = <0x3d>;
 		width = <128>;
 		height = <32>;
@@ -141,7 +141,7 @@
 		segment-remap;
 		com-invdir;
 		com-sequential;
-		prechargep = <0x22>;
+		precharge-period = <0x22>;
 		inversion-on;
 	};
 };

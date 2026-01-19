@@ -48,7 +48,7 @@
 	pinctrl-names = "default";
 
 	eastrising_72x40: ssd1306@3c {
-		compatible = "solomon,ssd1306fb";
+		compatible = "solomon,ssd1306";
 		reg = <0x3c>;
 
 		width = <72>;
@@ -58,7 +58,7 @@
 		page-offset = <0>;
 		display-offset = <0>;
 		multiplex-ratio = <0x27>;
-		prechargep = <0x22>;
+		precharge-period = <0x22>;
 		ready-time-ms = <10>;
 		segment-remap;
 		com-invdir;
