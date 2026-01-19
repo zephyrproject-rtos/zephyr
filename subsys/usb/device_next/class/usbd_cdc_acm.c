@@ -484,9 +484,8 @@ static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
 	}
 }
 
-static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
-			    const struct usb_setup_packet *const setup,
-			    struct net_buf **const pbuf)
+static struct net_buf *usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
+					const struct usb_setup_packet *const setup)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
@@ -499,21 +498,19 @@ static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
 		buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), min_len);
 		if (buf == NULL) {
 			errno = -ENOMEM;
-			return 0;
+			return NULL;
 		}
-
-		*pbuf = buf;
 
 		net_buf_add_mem(buf, &data->line_coding, min_len);
 
-		return 0;
+		return buf;
 	}
 
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x unsupported",
 		setup->bmRequestType, setup->bRequest);
 	errno = -ENOTSUP;
 
-	return 0;
+	return NULL;
 }
 
 static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,

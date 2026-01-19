@@ -825,12 +825,11 @@ static int msc_bot_control_to_dev(struct usbd_class_data *const c_data,
 }
 
 /* USB control request handler to host */
-static int msc_bot_control_to_host(struct usbd_class_data *const c_data,
-				   const struct usb_setup_packet *const setup,
-				   struct net_buf **const pbuf)
+static struct net_buf *msc_bot_control_to_host(struct usbd_class_data *const c_data,
+					       const struct usb_setup_packet *const setup)
 {
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	uint8_t max_lun;
 
 	if (setup->bRequest == GET_MAX_LUN &&
@@ -844,17 +843,15 @@ static int msc_bot_control_to_host(struct usbd_class_data *const c_data,
 		buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), 1);
 		if (buf == NULL) {
 			errno = -ENOMEM;
-			return 0;
+			return NULL;
 		}
-
-		*pbuf = buf;
 
 		net_buf_add_mem(buf, &max_lun, 1);
 	} else {
 		errno = -ENOTSUP;
 	}
 
-	return 0;
+	return buf;
 }
 
 /* Endpoint request completion event handler */
