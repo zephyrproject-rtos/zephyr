@@ -1,0 +1,59 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_INFINEON
+	bool "Infineon CAT1 CAN FD driver"
+	default y
+	depends on DT_HAS_INFINEON_CAN_ENABLED
+	select USE_INFINEON_CANFD
+	select PINCTRL
+	help
+	  Enable CAN FD driver for Infineon CAT1 devices using Cy_CANFD PDL.
+
+if CAN_INFINEON
+
+config CAN_INFINEON_MAX_TX_QUEUE
+	int "Maximum number of queued messages"
+	default 16
+	range 1 32
+	help
+	  Defines the array size of transmit callback pointers and semaphores,
+	  as well as the number of messages in the TX queue.
+
+config CAN_INFINEON_RX_FIFO_ITEMS
+	int "Number of CAN messages allocated to each RX FIFO"
+	default 16
+	range 1 64
+	help
+	  Defines the number of CAN messages in each RX FIFO. A separate RX FIFO
+	  is created for each RX filter.
+
+config CAN_INFINEON_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 16
+	range 1 64
+	help
+	  Maximum number of filters supported by the can_add_rx_callback() API call.
+
+config CAN_INFINEON_MRAM_SIZE
+	int "Message RAM size"
+	default 4096
+	range 80 4096
+
+config CAN_INFINEON_NUMBER_FIFO0_ELEMENTS
+	int "Message RAM size"
+	default 8
+	range 0 64
+	help
+	  Number Of FIFO elements.
+
+config CAN_INFINEON_NUMBER_FIFO1_ELEMENTS
+	int "Message RAM size"
+	default 8
+	range 0 64
+	help
+	  Number Of FIFO elements.
+
+endif # CAN_INFINEON

@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 CAN
+
+compatible: "infineon,can"
+
+include:
+  - name: can-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: "infineon,system-interrupts.yaml"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for TX, RX signals.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and be of the form p<port>_<pin><peripheral inst>_<signal>.
+
+      Examples
+        pinctrl-0 = <&p5_3_canfd0_ttcan_tx1 &p5_2_canfd0_ttcan_rx1>;
+    required: true
+
+  pinctrl-names:
+    required: true

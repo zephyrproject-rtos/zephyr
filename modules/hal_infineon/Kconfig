@@ -95,6 +95,11 @@ config USE_INFINEON_UART
 	  Enable Universal Asynchronous Receiver/Transmitter (UART) HAL module
 	  driver for Infineon devices
 
+config USE_INFINEON_CANFD
+	bool
+	help
+	  Enable Infineon PDL CANFD source
+
 config USE_INFINEON_PWM
 	bool
 	help

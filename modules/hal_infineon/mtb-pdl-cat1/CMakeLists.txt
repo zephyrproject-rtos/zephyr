@@ -49,6 +49,7 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER    ${pdl_drv_dir}/source/
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART     ${pdl_drv_dir}/source/cy_scb_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH    ${pdl_drv_dir}/source/cy_flash.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT      ${pdl_drv_dir}/source/cy_wdt.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_CANFD    ${pdl_drv_dir}/source/cy_canfd.c)
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_adcmic.c)
