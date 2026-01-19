@@ -25,4 +25,5 @@ supported:
   - dma
   - opamp
   - can
+  - arduino_gpio
 vendor: nxp

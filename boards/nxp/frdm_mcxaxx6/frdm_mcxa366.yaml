@@ -27,4 +27,6 @@ supported:
   - opamp
   - entropy
   - can
+  - arduino_gpio
+  - usbd
 vendor: nxp
