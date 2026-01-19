@@ -12,7 +12,9 @@
 			device_type = "cpu";
 			reg = <0>;
 			clock-frequency = <5000000>;
-			riscv,isa = "rv32imac_zicsr_zifencei_zba_zbb_zbc_zbs";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei",
+					       "zba", "zbb", "zbc", "zbs";
 
 			cpu0_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
