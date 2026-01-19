@@ -23,11 +23,26 @@ static int entropy_mcux_rng_get_entropy(const struct device *dev,
 {
 	const struct mcux_entropy_config *config = dev->config;
 	status_t status;
+	int ret;
 
 	status = RNG_GetRandomData(config->base, buffer, length);
-	__ASSERT_NO_MSG(!status);
 
-	return 0;
+	/* It seems that this function returns either success or
+	 * invalid argument.
+	 */
+	switch (status) {
+	case kStatus_InvalidArgument:
+		ret = -EINVAL;
+		break;
+	case kStatus_Success:
+		ret = 0;
+		break;
+	default:
+		ret = -ENODATA;
+		break;
+	}
+
+	return ret;
 }
 
 static DEVICE_API(entropy, entropy_mcux_rng_api_funcs) = {
