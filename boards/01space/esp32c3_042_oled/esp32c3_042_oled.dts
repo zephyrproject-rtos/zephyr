@@ -58,7 +58,7 @@
 		page-offset = <0>;
 		display-offset = <0>;
 		multiplex-ratio = <0x27>;
-		prechargep = <0x22>;
+		precharge-period = <0x22>;
 		ready-time-ms = <10>;
 		segment-remap;
 		com-invdir;

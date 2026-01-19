@@ -134,7 +134,7 @@ struct ssd1306_config {
 	uint8_t page_offset;
 	uint8_t display_offset;
 	uint8_t multiplex_ratio;
-	uint8_t prechargep;
+	uint8_t precharge_period;
 	bool segment_remap;
 	bool com_invdir;
 	bool com_sequential;
@@ -261,7 +261,7 @@ static inline int ssd1306_set_timing_setting(const struct device *dev)
 	uint8_t cmd_buf[] = {SSD1306_SET_CLOCK_DIV_RATIO,
 			     (SSD1306_CLOCK_FREQUENCY << 4) | SSD1306_CLOCK_DIV_RATIO,
 			     SSD1306_SET_CHARGE_PERIOD,
-			     config->prechargep,
+			     config->precharge_period,
 			     SSD1306_SET_VCOM_DESELECT_LEVEL,
 			     config->ssd1309_compatible ? SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309 :
 				SSD1306_PANEL_VCOM_DESEL_LEVEL};
@@ -704,7 +704,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 		.segment_remap = DT_PROP(node_id, segment_remap),                                  \
 		.com_invdir = DT_PROP(node_id, com_invdir),                                        \
 		.com_sequential = DT_PROP(node_id, com_sequential),                                \
-		.prechargep = DT_PROP(node_id, prechargep),                                        \
+		.precharge_period = DT_PROP(node_id, precharge_period),                            \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
 		.ssd1309_compatible = DT_NODE_HAS_COMPAT(node_id, solomon_ssd1309),                \
 		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),               \

@@ -24,6 +24,6 @@
 		multiplex-ratio = <63>;
 		segment-remap;
 		com-invdir;
-		prechargep = <0x22>;
+		precharge-period = <0x22>;
 	};
 };
