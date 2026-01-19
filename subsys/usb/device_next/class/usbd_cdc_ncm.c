@@ -929,35 +929,30 @@ static int usbd_cdc_ncm_ctd(struct usbd_class_data *const c_data,
 	return -ENOTSUP;
 }
 
-static int cdc_ncm_cth_response(struct usbd_class_data *const c_data,
-				const struct usb_setup_packet *const setup,
-				struct net_buf **const pbuf,
-				const void *data, uint16_t data_len)
+static struct net_buf *cdc_ncm_cth_response(struct usbd_class_data *const c_data,
+					    const struct usb_setup_packet *const setup,
+					    const void *data, uint16_t data_len)
 {
 	struct net_buf *buf;
 	uint16_t len = MIN(setup->wLength, data_len);
 
 	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
 	if (buf == NULL) {
-		return -ENOMEM;
+		return NULL;
 	}
 
-	*pbuf = buf;
-
 	net_buf_add_mem(buf, data, len);
-
-	return 0;
+	return buf;
 }
 
-static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
-			    const struct usb_setup_packet *const setup,
-			    struct net_buf **const pbuf)
+static struct net_buf *usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
+					const struct usb_setup_packet *const setup)
 {
 	LOG_DBG("%d: %d %d %d %d", setup->RequestType.type, setup->bRequest,
 		setup->wLength, setup->wIndex, setup->wValue);
 
 	if (setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	switch (setup->bRequest) {
@@ -978,7 +973,7 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 		};
 
 		LOG_DBG("GET_NTB_PARAMETERS");
-		return cdc_ncm_cth_response(c_data, setup, pbuf, &ntb_params, sizeof(ntb_params));
+		return cdc_ncm_cth_response(c_data, setup, &ntb_params, sizeof(ntb_params));
 	}
 
 	case GET_NTB_INPUT_SIZE: {
@@ -989,15 +984,14 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 		};
 
 		LOG_DBG("GET_NTB_INPUT_SIZE");
-		return cdc_ncm_cth_response(c_data, setup, pbuf, &input_size, sizeof(input_size));
+		return cdc_ncm_cth_response(c_data, setup, &input_size, sizeof(input_size));
 	}
 
 	default:
 		LOG_DBG("bRequest 0x%02x not supported", setup->bRequest);
-		return -ENOTSUP;
 	}
 
-	return 0;
+	return NULL;
 }
 
 static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)

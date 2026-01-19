@@ -101,9 +101,8 @@ struct usbd_str_desc_data {
  * Example callback code fragment:
  *
  * @code{.c}
- * static int foo_to_host_cb(const struct usbd_context *const ctx,
- *                           const struct usb_setup_packet *const setup,
- *                           struct net_buf **const pbuf)
+ * static struct net_buf *foo_to_host_cb(const struct usbd_context *const ctx,
+ *                                       const struct usb_setup_packet *const setup)
  * {
  *     if (setup->wIndex == WEBUSB_REQ_GET_URL) {
  *         struct net_buf *buf;
@@ -111,23 +110,21 @@ struct usbd_str_desc_data {
  *         uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
  *
  *         if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
- *             return -ENOTSUP;
+ *             return NULL;
  *         }
  *
  *         len = MIN(setup->wLength, sizeof(webusb_origin_url));
  *         buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
  *         if (buf == NULL) {
- *             return -ENOMEM;
+ *             return NULL;
  *         }
- *
- *         *pbuf = buf;
  *
  *         net_buf_add_mem(buf, &webusb_origin_url, len);
  *
- *         return 0;
+ *         return buf;
  *     }
  *
- *     return -ENOTSUP;
+ *     return NULL;
  * }
  * @endcode
  */
@@ -137,9 +134,8 @@ struct usbd_vreq_node {
 	/** Vendor code (bRequest value) */
 	const uint8_t code;
 	/** Vendor request callback for device-to-host direction */
-	int (*to_host)(const struct usbd_context *const ctx,
-		       const struct usb_setup_packet *const setup,
-		       struct net_buf **const pbuf);
+	struct net_buf *(*to_host)(const struct usbd_context *const ctx,
+				   const struct usb_setup_packet *const setup);
 	/**
 	 * Vendor request callback for host-to-device direction
 	 *
@@ -361,9 +357,8 @@ struct usbd_class_api {
 			      const struct net_buf *const buf);
 
 	/** USB control request handler to host */
-	int (*control_to_host)(struct usbd_class_data *const c_data,
-			       const struct usb_setup_packet *const setup,
-			       struct net_buf **const pbuf);
+	struct net_buf *(*control_to_host)(struct usbd_class_data *const c_data,
+					   const struct usb_setup_packet *const setup);
 
 	/** Endpoint request completion event handler */
 	int (*request)(struct usbd_class_data *const c_data,
