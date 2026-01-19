@@ -315,6 +315,12 @@
 				int-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 1 0>;
 			};
+
+			tma525b@d {
+				compatible = "parade,tma525b";
+				reg = <0xd>;
+				int-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		spi@2 {
