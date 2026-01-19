@@ -16,6 +16,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config WIFI_INIT_PRIORITY
 	int "Wi-Fi driver init priority"
+	default 86 if WIFI_AIROC && AIROC_WIFI_BUS_SDIO
 	default 80
 	help
 	  Wi-Fi device driver initialization priority.
