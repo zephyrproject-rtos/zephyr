@@ -545,7 +545,7 @@ static int i2s_cfg_to_max32_cfg(const struct i2s_config *i2s_cfg, mxc_i2s_req_t 
 		return -EINVAL;
 	}
 
-	/* Set master/slave mode */
+	/* Set controller/target mode */
 	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET) {
 		max_cfg->channelMode = MXC_I2S_EXTERNAL_SCK_EXTERNAL_WS;
 	} else {
