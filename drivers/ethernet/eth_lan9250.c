@@ -723,7 +723,7 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 	const struct device *dev = p1;
 	struct lan9250_runtime *context = dev->data;
 	uint32_t int_sts;
-	uint16_t tmp;
+	uint16_t tmp = 0;
 	uint32_t ier;
 
 	while (true) {
