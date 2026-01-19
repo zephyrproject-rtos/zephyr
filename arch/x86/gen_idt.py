@@ -136,7 +136,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
     irq_vec_map = [0 for i in range(max_irq)]
     vectors = [None for i in range(max_vec)]
 
-    # Pass 1: sanity check and set up hard-coded interrupt vectors
+    # Pass 1: coherence check and set up hard-coded interrupt vectors
     for handler, irq, prio, vec, dpl, tss in intlist:
         if vec == -1:
             if prio == -1:
