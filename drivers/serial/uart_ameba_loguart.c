@@ -238,9 +238,14 @@ static void loguart_ameba_irq_callback_set(const struct device *dev,
  */
 static int loguart_ameba_init(const struct device *dev)
 {
-	LOGUART_RxCmd(LOGUART_DEV, DISABLE);
-	LOGUART_INT_NP2AP();
+	struct loguart_ameba_data *data = dev->data;
 
+	LOGUART_RxCmd(LOGUART_DEV, DISABLE);
+
+	LOGUART_WaitTxComplete();
+	LOGUART_SetBaud(LOGUART_DEV, data->config.baudrate);
+
+	LOGUART_INT_NP2AP();
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	const struct loguart_ameba_config *config = dev->config;
 
