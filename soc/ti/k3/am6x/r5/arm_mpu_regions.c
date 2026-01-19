@@ -16,6 +16,8 @@
 #define PERM_Msk P_RW_U_NA_Msk
 #endif
 
+#define FLASH_NODE DT_CHOSEN(zephyr_flash)
+
 static const struct arm_mpu_region mpu_regions[] = {
 #if defined CONFIG_SOC_AM2434_R5F0_0
 	MPU_REGION_ENTRY("Device", 0x0, REGION_2G, {MPU_RASR_S_Msk | NOT_EXEC | PERM_Msk}),
@@ -24,6 +26,11 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY(
 		"SRAM", CONFIG_SRAM_BASE_ADDRESS, REGION_SRAM_SIZE,
 		{NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | PERM_Msk}),
+
+#if DT_NODE_EXISTS(FLASH_NODE)
+	MPU_REGION_ENTRY("FSS0", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_SIZE,
+			 {P_RW_U_NA_Msk | STRONGLY_ORDERED_SHAREABLE}),
+#endif
 };
 
 const struct arm_mpu_config mpu_config = {
