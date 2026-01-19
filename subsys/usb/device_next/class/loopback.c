@@ -202,13 +202,12 @@ static void lb_update(struct usbd_class_data *c_data,
 		c_data, iface, alternate);
 }
 
-static int lb_control_to_host(struct usbd_class_data *c_data,
-			      const struct usb_setup_packet *const setup,
-			      struct net_buf **const pbuf)
+static struct net_buf *lb_control_to_host(struct usbd_class_data *c_data,
+					  const struct usb_setup_packet *const setup)
 {
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
 		errno = -ENOTSUP;
-		return 0;
+		return NULL;
 	}
 
 	if (setup->bRequest == LB_VENDOR_REQ_IN) {
@@ -218,22 +217,20 @@ static int lb_control_to_host(struct usbd_class_data *c_data,
 		buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
 		if (buf == NULL) {
 			errno = -ENOMEM;
-			return 0;
+			return NULL;
 		}
-
-		*pbuf = buf;
 
 		net_buf_add_mem(buf, lb_buf, len);
 
 		LOG_WRN("Device-to-Host, wLength %u | %zu", setup->wLength, len);
 
-		return 0;
+		return buf;
 	}
 
 	LOG_ERR("Class request 0x%x not supported", setup->bRequest);
 	errno = -ENOTSUP;
 
-	return 0;
+	return NULL;
 }
 
 static int lb_control_to_dev(struct usbd_class_data *c_data,

@@ -1057,7 +1057,10 @@ static int vendor_device_request(struct usbd_context *const uds_ctx,
 
 	if (reqtype_is_to_host(setup) && vreq_nd->to_host != NULL) {
 		LOG_DBG("Vendor request 0x%02x to host", setup->bRequest);
-		errno = vreq_nd->to_host(uds_ctx, setup, pbuf);
+		*pbuf = vreq_nd->to_host(uds_ctx, setup);
+		if (*pbuf == NULL && errno == 0) {
+			errno = -ENODATA;
+		}
 		return 0;
 	}
 
@@ -1090,7 +1093,10 @@ static int nonstd_request(struct usbd_context *const uds_ctx,
 		if (reqtype_is_to_device(setup)) {
 			ret = usbd_class_control_to_dev(c_nd->c_data, setup, *pbuf);
 		} else {
-			ret = usbd_class_control_to_host(c_nd->c_data, setup, pbuf);
+			*pbuf = usbd_class_control_to_host(c_nd->c_data, setup);
+			if (*pbuf == NULL && errno == 0) {
+				errno = -ENODATA;
+			}
 		}
 	} else {
 		return vendor_device_request(uds_ctx, pbuf);
