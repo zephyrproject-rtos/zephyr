@@ -89,8 +89,10 @@ int main(void)
 	}
 
 #if 0
-	for (; res; res = res->ai_next) {
-		dump_addrinfo(res);
+	struct addrinfo *temp_res = res;
+
+	for (; temp_res; temp_res = temp_res->ai_next) {
+		dump_addrinfo(temp_res);
 	}
 #endif
 
