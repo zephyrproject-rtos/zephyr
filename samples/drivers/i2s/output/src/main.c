@@ -76,8 +76,8 @@ int main(void)
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = 2000;
 	/* Configure the Transmit port as Master */
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER
-			| I2S_OPT_BIT_CLK_MASTER;
+	i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
+			| I2S_OPT_BIT_CLK_CONTROLLER;
 	i2s_cfg.mem_slab = &tx_0_mem_slab;
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
 	if (ret < 0) {

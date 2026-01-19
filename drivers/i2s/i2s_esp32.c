@@ -126,8 +126,8 @@ static esp_err_t i2s_esp32_calculate_clock(const struct i2s_config *i2s_cfg, uin
 		mclk_multiple = 384;
 	}
 
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE ||
-	    i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET ||
+	    i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) {
 		i2s_hal_clock_info->bclk_div = 8;
 		i2s_hal_clock_info->bclk =
 			i2s_cfg->frame_clk_freq * i2s_cfg->channels * channel_length;
@@ -1209,11 +1209,11 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
-	if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) != 0 &&
-	    (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) != 0) {
+	if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET) != 0 &&
+	    (i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) != 0) {
 		is_slave = true;
-	} else if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) == 0 &&
-		   (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) == 0) {
+	} else if ((i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET) == 0 &&
+		   (i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) == 0) {
 		is_slave = false;
 	} else {
 		LOG_DBG("I2S_OPT_FRAME_CLK and I2S_OPT_BIT_CLK options are incompatible");

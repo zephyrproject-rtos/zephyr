@@ -95,19 +95,19 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 	}
 
 	/* Set master/slave configuration */
-	switch (i2s_cfg->options & (I2S_OPT_BIT_CLK_SLAVE |
-				    I2S_OPT_FRAME_CLK_SLAVE)) {
-	case I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER:
+	switch (i2s_cfg->options & (I2S_OPT_BIT_CLK_TARGET |
+				    I2S_OPT_FRAME_CLK_TARGET)) {
+	case I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_CONTROLLER:
 		fsl_cfg->masterSlave = kI2S_MasterSlaveNormalMaster;
 		break;
-	case I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE:
+	case I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET:
 		fsl_cfg->masterSlave = kI2S_MasterSlaveNormalSlave;
 		break;
-	case I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_MASTER:
+	case I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_CONTROLLER:
 		/* Master using external CLK */
 		fsl_cfg->masterSlave = kI2S_MasterSlaveExtSckMaster;
 		break;
-	case I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_SLAVE:
+	case I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_TARGET:
 		/* WS synchronized master */
 		fsl_cfg->masterSlave = kI2S_MasterSlaveWsSyncMaster;
 		break;

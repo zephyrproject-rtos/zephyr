@@ -85,7 +85,7 @@ static int da7212_clock_mode_config(const struct device *dev, audio_dai_cfg_t *c
 	/* Master mode => DAI_CLK_EN = 1 (BCLK/WCLK output).
 	 * Slave mode => DAI_CLK_EN = 0 (BCLK/WCLK input)
 	 */
-	if ((cfg->i2s.options & I2S_OPT_FRAME_CLK_SLAVE) == 0) {
+	if ((cfg->i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
 		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
 				DIALOG7212_DAI_CLK_EN_MASK, DIALOG7212_DAI_CLK_EN_MASK);
 
