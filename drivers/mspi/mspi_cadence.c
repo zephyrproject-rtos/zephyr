@@ -197,6 +197,25 @@ static int mspi_cadence_check_transfer_request(const struct mspi_xfer *request)
 	return 0;
 }
 
+/**
+ * Check whether the low level SPI pipeline is idle or not
+ * @retval 0 if idle
+ * @retval -EBUSY if busy
+ */
+static int mspi_cadence_get_channel_status(const struct device *controller, uint8_t ch)
+{
+	ARG_UNUSED(ch);
+
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+	bool idle = MSPI_CADENCE_REG_READ_MASKED(CONFIG, IDLE, base_addr);
+
+	if (idle == 0) {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
 static int mspi_cadence_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -913,7 +932,7 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 #else
 	.timing_config = NULL,
 #endif
-	.get_channel_status = NULL,
+	.get_channel_status = mspi_cadence_get_channel_status,
 	.register_callback = NULL,
 	.transceive = mspi_cadence_transceive,
 };
