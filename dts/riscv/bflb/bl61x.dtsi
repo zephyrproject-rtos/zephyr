@@ -86,7 +86,8 @@
 			device_type = "cpu";
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
-			riscv,isa = "rv32imafcp";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
