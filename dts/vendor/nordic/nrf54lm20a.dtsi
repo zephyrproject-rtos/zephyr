@@ -42,7 +42,8 @@
 			compatible = "nordic,vpr", "riscv";
 			reg = <1>;
 			device_type = "cpu";
-			riscv,isa = "rv32emc";
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "c", "zicsr";
 			nordic,bus-width = <32>;
 		};
 	};
