@@ -307,7 +307,7 @@ int main(void)
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
 	/*
 	 * On MAX32655FTHR, MAX9867 MCLK is connected to external 12.2880 crystal
-	 * thus using slave mode
+	 * thus using target mode
 	 */
 #if CONFIG_BOARD_MAX32655FTHR_MAX32655_M4
 	config.options = I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET;

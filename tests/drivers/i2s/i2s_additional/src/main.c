@@ -271,11 +271,11 @@ static int configure_stream(const struct device *dev, enum i2s_dir dir,
 	int ret;
 
 	if (dir == I2S_DIR_TX) {
-		/* Configure the Transmit port as Master */
+		/* Configure the Transmit port as Controller */
 		i2s_cfg->options = I2S_OPT_FRAME_CLK_CONTROLLER
 				| I2S_OPT_BIT_CLK_CONTROLLER;
 	} else if (dir == I2S_DIR_RX) {
-		/* Configure the Receive port as Slave */
+		/* Configure the Receive port as Target */
 		i2s_cfg->options = I2S_OPT_FRAME_CLK_TARGET
 				| I2S_OPT_BIT_CLK_TARGET;
 	} else { /* dir == I2S_DIR_BOTH */
