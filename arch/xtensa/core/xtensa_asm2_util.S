@@ -344,7 +344,7 @@ noflush:
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange
 	 * for the restored "next" address to be immediately after for
-	 * sanity.
+	 * coherence.
 	 */
 	 l32i a1, a2, ___xtensa_irq_bsa_t_a2_OFFSET
 
