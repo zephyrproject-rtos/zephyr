@@ -26,4 +26,5 @@ supported:
   - i3c
   - entropy
   - can
+  - arduino_gpio
 vendor: nxp

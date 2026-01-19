@@ -27,4 +27,5 @@ supported:
   - opamp
   - entropy
   - can
+  - arduino_gpio
 vendor: nxp
