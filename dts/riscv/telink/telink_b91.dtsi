@@ -24,7 +24,8 @@
 			reg = <0>;
 			clock-frequency = <24000000>;
 			compatible = "telink,b91", "andestech,andescore-v5", "riscv";
-			riscv,isa = "rv32imac_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "f", "zicsr", "zifencei";
 
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
