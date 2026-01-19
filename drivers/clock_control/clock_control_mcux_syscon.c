@@ -610,7 +610,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
 #if (defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT == 1) && \
-	!defined(CONFIG_SOC_MCXA346))
+	!defined(CONFIG_SOC_MCXA346) && !defined(CONFIG_SOC_MCXN547))
 	case MCUX_FLEXCAN0_CLK:
 		*rate = CLOCK_GetFlexcanClkFreq();
 		break;
