@@ -169,6 +169,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -507,6 +508,14 @@
 				reg = <0x2f>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
+			};
+
+			test_spi_max2253x: max2253x@30 {
+				compatible = "maxim,max2253x";
+				reg = <0x30>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				int-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 			};
 		};
 	};
