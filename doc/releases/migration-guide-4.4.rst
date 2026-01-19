@@ -715,6 +715,13 @@ Networking
 * The protocol version passed to :c:func:`zsock_socket` when creating a secure socket is now
   enforced as the minimum TLS version to use for the TLS session.
 
+* Automatic selection of crypto Kconfigs has been removed from :kconfig:option:`NET_SOCKETS_SOCKOPT_TLS`
+  as they strongly depend on the final application's needs. As a consequence the desired TLS protocol
+  version and ciphersuite(s) must be explicitly selected.
+  Available :kconfig:option-regex:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_.*` Kconfig helpers can be used
+  to automatically enable all the dependencies of a given ciphersuite, and more can be added as
+  needed following the same pattern.
+
 Modem
 *****
 
@@ -816,6 +823,12 @@ Settings
 
 Modules
 *******
+
+HostAP
+======
+
+* Kconfig :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is now
+  enabled by default.
 
 OpenThread
 ==========
