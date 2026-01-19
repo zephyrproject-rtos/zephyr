@@ -24,7 +24,8 @@
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			status = "okay";
 
 			cpu0intctrl: interrupt-controller {
@@ -41,7 +42,8 @@
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <1>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			status = "okay";
 
 			cpu1intctrl: interrupt-controller {
