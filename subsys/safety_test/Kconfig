@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SAFETY_TEST
+	bool "Safety Test subsystem"
+	help
+	  Safety Test subsystem for hardware and software self-testing.
+	  This provides a framework for registering and executing tests at boot time and runtime.
+
+if SAFETY_TEST
+
+config SAFETY_TEST_EARLY_TESTS
+	bool "Enable EARLY level tests"
+	default y
+	help
+	  Run safety tests at the EARLY init level, before any kernel services
+	  are available. Only minimal tests can run at this level
+
+config SAFETY_TEST_RESULT_BUFFER_SIZE
+	int "Number of test results to buffer"
+	default 32
+	range 8 256
+	help
+	  Maximum number of test results stored for later query.
+	  Each result uses approximately 24 bytes of RAM.
+
+config SAFETY_TEST_USERSPACE
+	bool "Enable userspace Safety Test API"
+	depends on USERSPACE
+	default y if USERSPACE
+	help
+	  Syscall interface for safety test execution and result queries
+	  from userspace. Only tests marked with SAFETY_TEST_FLAG_USERSPACE_OK
+	  can be executed from userspace.
+
+config SAFETY_TEST_SHELL
+	bool "Safety Test shell commands"
+	depends on SHELL
+	default y if SHELL
+	help
+	  Shell commands for safety test execution and status.
+	  Commands include: safety_test list, safety_test run, safety_test status.
+
+config SAFETY_TEST_LOG_LEVEL
+	int "Safety Test log level"
+	depends on LOG
+	default 3
+	range 0 4
+	help
+	  Log level for safety Test subsystem
+	  0 = off, 1 = error, 2 = warning, 3 = info, 4 = debug
+
+config SAFETY_TEST_MAX_FAILURE_HOOKS
+	int "Maximum number of failure hooks"
+	default 4
+	range 1 16
+	help
+	  Maximum number of failure callbacks that can be registered.
+
+#endif # SAFETY_TEST
