@@ -39,7 +39,7 @@
 		};
 
 		cpuflpr: cpu@1 {
-			compatible = "nordic,vpr";
+			compatible = "nordic,vpr", "riscv";
 			reg = <1>;
 			device_type = "cpu";
 			clocks = <&hfpll>;
