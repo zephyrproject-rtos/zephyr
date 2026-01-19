@@ -15,32 +15,24 @@ config SOC_MKW22D5
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_MCUX_RCM
 
 config SOC_MKW24D5
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_MCUX_RCM
 
 config SOC_MKW40Z4
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_MCUX_RCM
 
 config SOC_MKW41Z4
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_MCUX_RCM
