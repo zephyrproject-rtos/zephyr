@@ -2390,18 +2390,39 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) && \
 	defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		max_tx_time = lll->dle.eff.max_tx_time;
 		max_rx_time = lll->dle.eff.max_rx_time;
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+#if defined(CONFIG_BT_CTLR_PHY)
+		max_tx_time = PDU_MAX_US(0U, 0U, lll->phy_tx);
+		max_rx_time = PDU_MAX_US(0U, 0U, lll->phy_rx);
+#else /* !CONFIG_BT_CTLR_PHY */
+		max_tx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+		max_rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
 
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH ||
        * !CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE
        */
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 		max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+		max_tx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+		max_rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+
 #if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		max_tx_time = MAX(max_tx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_tx));
 		max_rx_time = MAX(max_rx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_rx));
-#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+		max_tx_time = PDU_MAX_US(0U, 0U, lll->phy_tx);
+		max_rx_time = PDU_MAX_US(0U, 0U, lll->phy_rx);
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH ||
 	* !CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE
 	*/
