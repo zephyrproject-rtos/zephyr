@@ -321,6 +321,7 @@ int main(void)
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	unsigned int frame = 0;
+	uint32_t last_ts = 0;
 	int ret;
 
 	/* When the video shell is enabled, do not run the capture loop unless requested */
@@ -374,8 +375,6 @@ int main(void)
 
 	LOG_INF("Capture started");
 
-	uint32_t last_ts = 0;
-
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
 		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
@@ -385,7 +384,7 @@ int main(void)
 		}
 
 		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)",
-			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp-last_ts);
+			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp - last_ts);
 		last_ts = vbuf->timestamp;
 
 		if (DT_HAS_CHOSEN(zephyr_display)) {
