@@ -17,6 +17,9 @@
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/util.h>
+
+#include "audio/tbs_internal.h"
 
 static struct bt_ccp_call_control_server_bearer
 	*bearers[CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT];
@@ -182,6 +185,75 @@ static int cmd_ccp_call_control_server_get_bearer_uci(const struct shell *sh, si
 	return 0;
 }
 
+static int cmd_ccp_call_control_server_set_bearer_tech(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	enum bt_bearer_tech tech;
+	unsigned long tech_arg;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 2) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	tech_arg = shell_strtoul(argv[argc - 1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse technology: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	tech = (enum bt_bearer_tech)tech_arg;
+	if (!IN_RANGE(tech, BT_BEARER_TECH_3G, BT_BEARER_TECH_WCDMA)) {
+		shell_error(sh, "Invalid technology: %d", tech);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_ccp_call_control_server_set_bearer_tech(bearers[index], (enum bt_bearer_tech)tech);
+	if (err != 0) {
+		shell_error(sh, "Failed to set bearer[%d] tech: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] new technology: %s (0x%02X)", index, bt_bearer_tech_str(tech),
+		    tech);
+
+	return 0;
+}
+
+static int cmd_ccp_call_control_server_get_bearer_tech(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	enum bt_bearer_tech tech;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 1) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_ccp_call_control_server_get_bearer_tech(bearers[index], &tech);
+	if (err != 0) {
+		shell_error(sh, "Failed to get bearer[%d] tech: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] technology: %s (0x%02X)", index, bt_bearer_tech_str(tech),
+		    tech);
+
+	return 0;
+}
+
 static int cmd_ccp_call_control_server(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -203,6 +275,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ccp_call_control_server_cmds,
 					     cmd_ccp_call_control_server_get_bearer_name, 1, 1),
 			       SHELL_CMD_ARG(get_bearer_uci, NULL, "Get bearer UCI [index]",
 					     cmd_ccp_call_control_server_get_bearer_uci, 1, 1),
+			       SHELL_CMD_ARG(set_bearer_tech, NULL,
+					     "Set bearer technology [index] <technology>",
+					     cmd_ccp_call_control_server_set_bearer_tech, 2, 1),
+			       SHELL_CMD_ARG(get_bearer_tech, NULL, "Get bearer technology [index]",
+					     cmd_ccp_call_control_server_get_bearer_tech, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(ccp_call_control_server, &ccp_call_control_server_cmds,

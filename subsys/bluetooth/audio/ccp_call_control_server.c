@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -30,6 +31,7 @@ LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVE
 struct bt_ccp_call_control_server_bearer {
 	char provider_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	char uci[BT_TBS_MAX_UCI_SIZE];
+	enum bt_bearer_tech bearer_tech;
 	uint8_t tbs_index;
 	bool registered;
 	struct k_mutex mutex;
@@ -98,6 +100,7 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 		(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
 				sizeof(free_bearer->provider_name));
 		(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
+		free_bearer->bearer_tech = param->technology;
 		*bearer = free_bearer;
 
 		ret = 0;
@@ -271,6 +274,67 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return ret;
+}
+
+int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
+					       enum bt_bearer_tech tech)
+{
+	int err;
+
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	if (!IN_RANGE(tech, BT_BEARER_TECH_3G, BT_BEARER_TECH_WCDMA)) {
+		LOG_DBG("Invalid tech param: %d", tech);
+
+		return -EINVAL;
+	}
+
+	if (bearer->bearer_tech == tech) {
+		return 0;
+	}
+
+	err = bt_tbs_set_bearer_technology(bearer->tbs_index, tech);
+	if (err == 0) {
+		bearer->bearer_tech = tech;
+	}
+
+	return err;
+}
+
+int bt_ccp_call_control_server_get_bearer_tech(
+	const struct bt_ccp_call_control_server_bearer *bearer, enum bt_bearer_tech *tech)
+{
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	if (tech == NULL) {
+		LOG_DBG("tech is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	*tech = bearer->bearer_tech;
+
+	return 0;
 }
 
 static int ccp_server_init(void)
