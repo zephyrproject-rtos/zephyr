@@ -1490,12 +1490,12 @@ static int dns_read(struct dns_resolve_context *ctx,
 	ret = dns_validate_msg(ctx, &dns_msg, dns_id, &query_idx,
 			       dns_cname, query_hash);
 	if (ret == DNS_EAI_AGAIN) {
-		goto finished;
+		return ret;
 	}
 
 	if ((ret < 0 && ret != DNS_EAI_ALLDONE) || query_idx < 0 ||
 	    query_idx > CONFIG_DNS_NUM_CONCUR_QUERIES) {
-		goto quit;
+		return ret;
 	}
 
 #if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
@@ -1518,13 +1518,6 @@ static int dns_read(struct dns_resolve_context *ctx,
 	}
 
 	return 0;
-
-finished:
-	dns_resolve_cancel_with_name(ctx, *dns_id,
-				     ctx->queries[query_idx].query,
-				     ctx->queries[query_idx].query_type);
-quit:
-	return ret;
 }
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
