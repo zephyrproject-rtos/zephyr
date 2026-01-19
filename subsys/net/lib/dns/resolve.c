@@ -1395,6 +1395,14 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			goto quit;
 		}
 
+
+		if (answer_type == DNS_RR_TYPE_CNAME) {
+			/* Don't report CNAME records to the application, they're used internally
+			 * for query redirection.
+			 */
+			continue;
+		}
+
 		invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
 
 		if (dns_msg->response_type == DNS_RESPONSE_IP ||
