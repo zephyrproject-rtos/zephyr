@@ -889,16 +889,19 @@ def dt_compat_any_has_prop(kconf, _, compat, prop, value=None):
     if doc_mode or edt is None:
         return "n"
 
-    if compat in edt.compat2okay:
-        for node in edt.compat2okay[compat]:
-            if prop in node.props:
-                if value is None:
-                    return "y"
-                if isinstance(node.props[prop].val, list):
-                    if value in map(str, node.props[prop].val):
-                        return "y"
-                elif str(node.props[prop].val) == value:
-                    return "y"
+    if compat not in edt.compat2okay:
+        return "n"
+
+    for node in edt.compat2okay[compat]:
+        if prop not in node.props:
+            continue
+        if value is None:
+            return "y"
+        if isinstance(node.props[prop].val, list):
+            if value in map(str, node.props[prop].val):
+                return "y"
+        elif str(node.props[prop].val) == value:
+            return "y"
     return "n"
 
 def dt_compat_any_not_has_prop(kconf, _, compat, prop):
