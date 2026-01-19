@@ -23,6 +23,16 @@
 		zephyr,flash = &slot0_partition;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
+		zephyr,canbus = &can1;
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		status = "okay";
+		standby-gpios = <&gpio_prt7 6 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		min-bitrate = <15000>;
+		#phy-cells = <0>;
 	};
 };
 
@@ -35,6 +45,23 @@ uart3: &scb3 {
 
 	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx &p6_1_scb3_uart_rts &p6_0_scb3_uart_cts>;
 	pinctrl-names = "default";
+};
+
+&can1 {
+	compatible = "infineon,can";
+	status = "okay";
+	clocks = <&peri0_group4_8bit_1>;
+	pinctrl-0 = <&p5_3_can1_ttcan_tx &p5_2_can1_ttcan_rx>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+};
+
+&peri0_group4_8bit_1 {
+	status = "okay";
+	resource-type = <IFX_RSC_CAN>;
+	resource-instance = <0>;
+	resource-channel = <1>;
+	clock-div = <3>;
 };
 
 &peri0_group4_8bit_0 {

@@ -19,3 +19,11 @@
 &p6_0_scb3_uart_cts {
 	input-enable;
 };
+
+&p5_3_can1_ttcan_tx {
+	drive-push-pull;
+};
+
+&p5_2_can1_ttcan_rx {
+	input-enable;
+};
