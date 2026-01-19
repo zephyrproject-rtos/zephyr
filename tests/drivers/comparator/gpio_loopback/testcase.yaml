@@ -68,3 +68,6 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+  drivers.comparator.gpio_loopback.ite:
+    platform_allow:
+      - it51xxx_evb/it51526aw

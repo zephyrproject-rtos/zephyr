@@ -19,6 +19,7 @@ REDIRECTS = (
     ('boards/arm/fvp_baser_aemv8r/doc/aarch32', 'boards/arm/fvp_baser_aemv8r/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/aarch64', 'boards/arm/fvp_baser_aemv8r/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/debug-with-arm-ds', 'boards/arm/fvp_baser_aemv8r/doc/index'),
+    ('boards/ite/it515xx_evb/doc/index', 'boards/ite/it51xxx_evb/doc/index'),
     ('boards/nordic/nrf54l20pdk/doc/index', 'boards/nordic/nrf54lm20dk/doc/index'),
     ('boards/nxp/hexiwear/doc/index', 'boards/mikroe/hexiwear/doc/index'),
     ('boards/panasonic/panb511evb/doc/index', 'boards/panasonic/panb611evb/doc/index'),
