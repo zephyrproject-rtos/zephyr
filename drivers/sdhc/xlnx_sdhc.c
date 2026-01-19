@@ -248,6 +248,14 @@ static uint16_t xlnx_sdhc_cmd_frame(struct sdhc_command *cmd, bool data, uint8_t
 		command |= RESP_R3;
 		break;
 
+	case SD_RSP_TYPE_R4:
+		command |= RESP_R3;
+		break;
+
+	case SD_RSP_TYPE_R5:
+		command |= RESP_R1;
+		break;
+
 	case SD_RSP_TYPE_R6:
 		command |= RESP_R6;
 		break;
@@ -533,6 +541,23 @@ static int xlnx_sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 
 	case SD_WRITE_SINGLE_BLOCK:
 		dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		ret = xlnx_sdhc_transfer(dev, cmd, data);
+		break;
+
+	case SDIO_RW_EXTENDED:
+		if (cmd->arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
+			dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		}
+		if (data->blocks > 1) {
+			dev_data->transfermode |= XLNX_SDHC_TM_MUL_SIN_BLK_SEL_MASK;
+		}
+		ret = xlnx_sdhc_transfer(dev, cmd, data);
+		break;
+
+	case SDIO_RW_DIRECT:
+		if (cmd->arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
+			dev_data->transfermode &= ~XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		}
 		ret = xlnx_sdhc_transfer(dev, cmd, data);
 		break;
 
