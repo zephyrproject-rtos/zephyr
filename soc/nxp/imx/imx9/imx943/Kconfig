@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# SPDX-FileCopyrightText: Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_MIMX94398_A55
@@ -23,6 +23,7 @@ config SOC_MIMX94398_M33
 	select INIT_ARCH_HW_AT_BOOT
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
+	select SOC_EARLY_RESET_HOOK
 
 config SOC_MIMX94398_M7_0
 	select ARM
