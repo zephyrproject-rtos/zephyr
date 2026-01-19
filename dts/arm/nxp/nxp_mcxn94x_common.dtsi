@@ -95,7 +95,7 @@
 
 	opamp1: opamp@113000 {
 		compatible = "nxp,opamp";
-		reg = <0x40113000 0x1000>;
+		reg = <0x113000 0x1000>;
 		status = "disabled";
 		operation-mode = "low_noise";
 		functional-mode = "follower";
