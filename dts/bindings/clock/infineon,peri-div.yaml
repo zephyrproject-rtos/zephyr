@@ -58,6 +58,7 @@ properties:
       Resource type that the peripheral clock is assigned to:
       &scb3     : resource-type = IFX_RSC_SCB
       &tcpwm0_0 : resource-type = IFX_RSC_TCPWM
+      &can0_0   : resource-type = IFX_RSC_CAN
 
   resource-instance:
     type: int
@@ -76,3 +77,4 @@ properties:
       &tcpwm0_0 : resource-channel = <0>
       &tcpwm0_4 : resource-channel = <4>
       &tcpwm1_2 : resource-channel = <2>
+      &can0_0   : resource-channel = <0>

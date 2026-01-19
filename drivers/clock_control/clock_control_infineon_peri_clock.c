@@ -42,12 +42,13 @@ struct ifx_peri_clock_data {
 
 #elif defined(CY_IP_MXSPERI)
 
-#define IFX_PCLK_GROUP(clkdst) ((uint8_t)((uint32_t)(clkdst) >> 8))
-#define IFX_TCPWM0_PCLK_CLOCK0 PCLK_TCPWM0_CLOCK_COUNTER_EN0
-#define IFX_TCPWM1_PCLK_CLOCK0 PCLK_TCPWM0_CLOCK_COUNTER_EN256
-#define IFX_SCB0_PCLK_CLOCK    PCLK_SCB0_CLOCK_SCB_EN
-#define IFX_SCB1_PCLK_CLOCK    PCLK_SCB1_CLOCK_SCB_EN
-#define IFX_SCB5_PCLK_CLOCK    PCLK_SCB5_CLOCK_SCB_EN
+#define IFX_PCLK_GROUP(clkdst)     ((uint8_t)((uint32_t)(clkdst) >> 8))
+#define IFX_TCPWM0_PCLK_CLOCK0     PCLK_TCPWM0_CLOCK_COUNTER_EN0
+#define IFX_TCPWM1_PCLK_CLOCK0     PCLK_TCPWM0_CLOCK_COUNTER_EN256
+#define IFX_SCB0_PCLK_CLOCK        PCLK_SCB0_CLOCK_SCB_EN
+#define IFX_SCB1_PCLK_CLOCK        PCLK_SCB1_CLOCK_SCB_EN
+#define IFX_SCB5_PCLK_CLOCK        PCLK_SCB5_CLOCK_SCB_EN
+#define IFX_CAT1_CANFD0_PCLK_CLOCK PCLK_CANFD0_CLOCK_CAN_EN0
 #endif
 
 #define CLK_FRAC_DIV_MODE 0x02
@@ -101,6 +102,17 @@ en_clk_dst_t ifx_cat1_tcpwm_get_clock_index(uint32_t block_num, uint32_t channel
 	return clk;
 }
 
+en_clk_dst_t ifx_cat1_can_get_clock_index(uint32_t block_num, uint32_t channel)
+{
+	en_clk_dst_t clk = -EINVAL;
+#if defined(COMPONENT_CAT1B)
+	if (block_num == 0) {
+		clk = (en_clk_dst_t)((uint32_t)IFX_CAT1_CANFD0_PCLK_CLOCK + channel);
+	}
+#endif
+	return clk;
+}
+
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
 	struct ifx_peri_clock_data *const data = dev->data;
@@ -133,6 +145,13 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 	} else if (data->hw_resource.type == IFX_RSC_TCPWM) {
 		en_clk_dst_t clk_idx = ifx_cat1_tcpwm_get_clock_index(
 			data->hw_resource.block_num, data->hw_resource.channel_num);
+
+		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
+		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
+		ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+	} else if (data->hw_resource.type == IFX_RSC_CAN) {
+		en_clk_dst_t clk_idx = ifx_cat1_can_get_clock_index(data->hw_resource.block_num,
+								    data->hw_resource.channel_num);
 
 		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
 		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
