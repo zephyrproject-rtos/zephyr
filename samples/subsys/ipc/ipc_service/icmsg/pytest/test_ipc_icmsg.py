@@ -23,5 +23,7 @@ def test_ipc_icmsg(dut: DeviceAdapter):
 
     # check output from the remote core (skip for non-hardware devices, e.g. bsim)
     if dut.device_config.type == "hardware":
+        if len(dut.connections) < 2:
+            pytest.skip("Only one UART connection configured for this device")
         lines_from_remote = dut.readlines_until(connection_index=1, regex="demo ended")
         pytest.LineMatcher(lines_from_remote).fnmatch_lines(expected_lines)
