@@ -371,7 +371,8 @@
 			interrupts = <99 0>, <100 0>, <101 0>, <102 0>, <104 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			prescaler = <1>;
+			clock-source = "external";
+			prescaler = <32>;
 			status = "disabled";
 		};
 
