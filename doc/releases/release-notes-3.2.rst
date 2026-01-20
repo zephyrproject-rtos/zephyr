@@ -52,14 +52,14 @@ Changes in this release
   release.  The :zephyr_file:`scripts/utils/migrate_includes.py` script is
   provided to automate the migration.
 
-* :zephyr_file:`include/zephyr/zephyr.h` no longer defines ``__ZEPHYR__``.
+* ``include/zephyr/zephyr.h`` no longer defines ``__ZEPHYR__``.
   This definition can be used by third-party code to compile code conditional
   to Zephyr. The definition is already injected by the Zephyr build system.
   Therefore, any third-party code integrated using the Zephyr build system will
   require no changes. External build systems will need to inject the definition
   by themselves, if they did not already.
 
-* :zephyr_file:`include/zephyr/zephyr.h` has been deprecated in favor of
+* ``include/zephyr/zephyr.h`` has been deprecated in favor of
   :zephyr_file:`include/zephyr/kernel.h`, since it only included that header. No
   changes are required by applications other than replacing ``#include
   <zephyr/zephyr.h>`` with ``#include <zephyr/kernel.h>``.
