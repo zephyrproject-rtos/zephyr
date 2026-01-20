@@ -193,6 +193,7 @@ endfunction()
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
 #                             [APP_TYPE <MAIN|BOOTLOADER>]
+#                             [BUILD_ONLY <bool>]
 #   )
 #
 # This function includes a Zephyr based build system into the multiimage
@@ -448,6 +449,149 @@ function(ExternalZephyrProject_Add)
 endfunction()
 
 # Usage:
+#   ExternalZephyrNonConfigProject_Add(APPLICATION <name>
+#                                      SOURCE_DIR <dir>
+#                                      [BOARD <board> [BOARD_REVISION <revision>]]
+#                                      [BUILD_ONLY <bool>]
+#   )
+#
+# This function includes a Zephyr based build system into the multiimage build system without the
+# usual configuration options (e.g. menuconfig) being added, and without importing devicetree or
+# Kconfig data from the image. This does not also use alternate configuration paths etc. for the
+# image, which allows usage with images that do not have Kconfig options at all.
+#
+# APPLICATION: <name>:        Name of the application, name will also be used for the build folder
+#                             of the application
+# SOURCE_DIR <dir>:           Source directory of the application
+# BOARD <board>:              Use <board> for application build instead user defined BOARD.
+# BOARD_REVISION <revision>:  Use <revision> of <board> for application (only valid if <board> is
+#                             also supplied).
+# BUILD_ONLY <bool>:          Mark the application as build-only. If <bool> evaluates to true, then
+#                             this application will be excluded from flashing and debugging.
+#
+function(ExternalZephyrNonConfigProject_Add)
+  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;BUILD_ONLY" "" ${ARGN})
+
+  if(ZBUILD_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR
+      "ExternalZephyrNonConfigProject_Add(${ARGV0} <val> ...) given unknown arguments:"
+      " ${ZBUILD_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if(TARGET ${ZBUILD_APPLICATION})
+    message(FATAL_ERROR
+      "ExternalZephyrNonConfigProject_Add(APPLICATION ${ZBUILD_APPLICATION} ...) "
+      "already exists. Application names must be unique."
+    )
+  endif()
+
+  if(NOT DEFINED SYSBUILD_CURRENT_SOURCE_DIR)
+    message(FATAL_ERROR
+      "ExternalZephyrNonConfigProject_Add(${ARGV0} <val> ...) must not be called outside of"
+      " sysbuild_add_subdirectory(). SYSBUILD_CURRENT_SOURCE_DIR is undefined."
+    )
+  endif()
+  set_property(
+    DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}"
+    APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
+  )
+  set_property(
+    GLOBAL
+    APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
+  )
+
+  # Update ROOT variables with relative paths to use absolute paths based on
+  # the source application directory.
+  foreach(type MODULE_EXT BOARD SOC ARCH SCA)
+    if(DEFINED CACHE{${ZBUILD_APPLICATION}_${type}_ROOT} AND NOT IS_ABSOLUTE $CACHE{${ZBUILD_APPLICATION}_${type}_ROOT})
+      set(rel_path $CACHE{${ZBUILD_APPLICATION}_${type}_ROOT})
+      cmake_path(ABSOLUTE_PATH rel_path BASE_DIRECTORY "${ZBUILD_SOURCE_DIR}" NORMALIZE OUTPUT_VARIABLE abs_path)
+      set(${ZBUILD_APPLICATION}_${type}_ROOT ${abs_path} CACHE PATH "Sysbuild adjusted absolute path" FORCE)
+    endif()
+  endforeach()
+
+  # CMake variables which must be known by all Zephyr CMake build systems
+  # Those are settings which controls the build and must be known to CMake at
+  # invocation time, and thus cannot be passed though the sysbuild cache file.
+  set(
+    shared_cmake_variables_list
+    CMAKE_BUILD_TYPE
+    CMAKE_VERBOSE_MAKEFILE
+  )
+
+  set(sysbuild_cache_file ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}_sysbuild_cache.txt)
+
+  set(shared_cmake_vars_argument)
+  foreach(shared_var ${shared_cmake_variables_list})
+    if(DEFINED CACHE{${ZBUILD_APPLICATION}_${shared_var}})
+      get_property(var_type  CACHE ${ZBUILD_APPLICATION}_${shared_var} PROPERTY TYPE)
+      list(APPEND shared_cmake_vars_argument
+           "-D${shared_var}:${var_type}=$CACHE{${ZBUILD_APPLICATION}_${shared_var}}"
+      )
+    elseif(DEFINED CACHE{${shared_var}})
+      get_property(var_type  CACHE ${shared_var} PROPERTY TYPE)
+      list(APPEND shared_cmake_vars_argument
+           "-D${shared_var}:${var_type}=$CACHE{${shared_var}}"
+      )
+    endif()
+  endforeach()
+
+  set(list_separator ",")
+
+  include(ExternalProject)
+  set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
+  ExternalProject_Add(
+    ${ZBUILD_APPLICATION}
+    SOURCE_DIR ${ZBUILD_SOURCE_DIR}
+    BINARY_DIR ${application_binary_dir}
+    CONFIGURE_COMMAND ""
+    LIST_SEPARATOR "${list_separator}"
+    CMAKE_ARGS -DSYSBUILD:BOOL=True
+               -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
+               ${shared_cmake_vars_argument}
+               ${image_extra_kconfig_targets}
+    BUILD_COMMAND ${CMAKE_COMMAND} --build .
+    INSTALL_COMMAND ""
+    BUILD_ALWAYS True
+    USES_TERMINAL_BUILD True
+  )
+
+  set_target_properties(${ZBUILD_APPLICATION} PROPERTIES CACHE_FILE ${sysbuild_cache_file})
+  set_target_properties(${ZBUILD_APPLICATION} PROPERTIES NON_CONFIG_IMAGE y)
+
+  if(DEFINED ZBUILD_BOARD)
+    # Only set image specific board if provided.
+    # The sysbuild BOARD is exported through sysbuild cache, and will be used
+    # unless <image>_BOARD is defined.
+    if(DEFINED ZBUILD_BOARD_REVISION)
+      # Use provided board revision, HWMv2 requires adding version to the board, split elements
+      # up, attach version, then reassemble into a complete string
+      string(REPLACE "/" ";" split_board_qualifiers "${ZBUILD_BOARD}")
+      list(GET split_board_qualifiers 0 target_board)
+      set(target_board ${target_board}@${ZBUILD_BOARD_REVISION})
+      list(REMOVE_AT split_board_qualifiers 0)
+      list(PREPEND split_board_qualifiers ${target_board})
+      string(REPLACE ";" "/" board_qualifiers "${split_board_qualifiers}")
+      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${board_qualifiers})
+      set(split_board_qualifiers)
+      set(board_qualifiers)
+    else()
+      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD})
+    endif()
+  elseif(DEFINED ZBUILD_BOARD_REVISION)
+    message(FATAL_ERROR
+      "ExternalZephyrNonConfigProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
+      " requires BOARD."
+    )
+  endif()
+
+  if(DEFINED ZBUILD_BUILD_ONLY)
+    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BUILD_ONLY ${ZBUILD_BUILD_ONLY})
+  endif()
+endfunction()
+
+# Usage:
 #   ExternalZephyrProject_Cmake(APPLICATION <name>)
 #
 # This function invokes the CMake configure step on an external Zephyr project
@@ -534,18 +678,23 @@ function(ExternalZephyrProject_Cmake)
             "Location: ${SOURCE_DIR}"
     )
   endif()
-  load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
-  import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
-  zephyr_dt_import(EDT_PICKLE_FILE ${BINARY_DIR}/zephyr/edt.pickle TARGET ${ZCMAKE_APPLICATION})
 
-  # This custom target informs CMake how the BYPRODUCTS are generated if a target
-  # depends directly on the BYPRODUCT instead of depending on the image target.
-  get_target_property(${ZCMAKE_APPLICATION}_byproducts ${ZCMAKE_APPLICATION}_cache EXTRA_BYPRODUCTS)
-  add_custom_target(${ZCMAKE_APPLICATION}_extra_byproducts
-                    COMMAND ${CMAKE_COMMAND} -E true
-                    BYPRODUCTS ${${ZCMAKE_APPLICATION}_byproducts}
-                    DEPENDS ${ZCMAKE_APPLICATION}
-  )
+  get_target_property(image_is_non_config ${ZCMAKE_APPLICATION} NON_CONFIG_IMAGE)
+
+  if(NOT ${image_is_non_config})
+    load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
+    import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+    zephyr_dt_import(EDT_PICKLE_FILE ${BINARY_DIR}/zephyr/edt.pickle TARGET ${ZCMAKE_APPLICATION})
+
+    # This custom target informs CMake how the BYPRODUCTS are generated if a target
+    # depends directly on the BYPRODUCT instead of depending on the image target.
+    get_target_property(${ZCMAKE_APPLICATION}_byproducts ${ZCMAKE_APPLICATION}_cache EXTRA_BYPRODUCTS)
+    add_custom_target(${ZCMAKE_APPLICATION}_extra_byproducts
+                      COMMAND ${CMAKE_COMMAND} -E true
+                      BYPRODUCTS ${${ZCMAKE_APPLICATION}_byproducts}
+                      DEPENDS ${ZCMAKE_APPLICATION}
+    )
+  endif()
 endfunction()
 
 # Usage:
