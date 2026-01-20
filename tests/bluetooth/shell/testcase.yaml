@@ -71,6 +71,19 @@ tests:
     platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
     harness: keyboard
+  bluetooth.shell.shell_br.accept_conn_as_central:
+    extra_configs:
+      - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+      - CONFIG_BT_ACCEPT_CONN_AS_CENTRAL=y
+    extra_args: CONF_FILE="prj_br.conf"
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_sim
+      - native_sim/native/64
+    platform_exclude: nrf52dk/nrf52810
+    tags: bluetooth
+    harness: keyboard
   bluetooth.shell.no_privacy:
     build_only: true
     extra_args: CONFIG_BT_PRIVACY=n
