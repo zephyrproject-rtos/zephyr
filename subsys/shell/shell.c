@@ -199,6 +199,11 @@ static void history_handle(const struct shell *sh, bool up)
 		return;
 	}
 
+	/* No history when capturing user input */
+	if (sh->ctx->readline_state != SHELL_READLINE_INACTIVE) {
+		return;
+	}
+
 	/* Checking if history process has been stopped */
 	if (z_flag_history_exit_get(sh)) {
 		z_flag_history_exit_set(sh, false);
@@ -834,6 +839,11 @@ static void tab_handle(const struct shell *sh)
 	size_t argc;
 	size_t cnt;
 
+	/* Disable tab handling when readline is active */
+	if (sh->ctx->readline_state != SHELL_READLINE_INACTIVE) {
+		return;
+	}
+
 	bool tab_possible = tab_prepare(sh, &cmd, &argv, &argc, &arg_idx,
 					&d_entry);
 
@@ -902,7 +912,11 @@ static void ctrl_metakeys_handle(const struct shell *sh, char data)
 			z_cursor_next_line_move(sh);
 		}
 		z_flag_history_exit_set(sh, true);
-		state_set(sh, SHELL_STATE_ACTIVE);
+		if (sh->ctx->readline_state == SHELL_READLINE_ACTIVE) {
+			sh->ctx->readline_state = SHELL_READLINE_CANCELED;
+		} else {
+			state_set(sh, SHELL_STATE_ACTIVE);
+		}
 		break;
 
 	case SHELL_VT100_ASCII_CTRL_D: /* CTRL + D */
@@ -1036,6 +1050,13 @@ static void state_collect(const struct shell *sh)
 		switch (sh->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
 			if (process_nl(sh, data)) {
+				/* Running in a re-entry for user input */
+				if (sh->ctx->readline_state == SHELL_READLINE_ACTIVE) {
+					z_cursor_next_line_move(sh);
+					sh->ctx->readline_state = SHELL_READLINE_DONE;
+					return;
+				}
+
 				if (!sh->ctx->cmd_buff_len) {
 					history_mode_exit(sh);
 					z_cursor_next_line_move(sh);
@@ -1833,6 +1854,68 @@ bool shell_ready(const struct shell *sh)
 	__ASSERT_NO_MSG(sh);
 
 	return state_get(sh) ==	SHELL_STATE_ACTIVE;
+}
+
+int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t timeout)
+{
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	int ret;
+
+	__ASSERT_NO_MSG(sh != NULL);
+
+	/* Only allow calling from inside a shell command with no bypass active */
+	if (!z_flag_cmd_ctx_get(sh) || sh->ctx->bypass != NULL) {
+		return -EACCES;
+	}
+
+	sh->ctx->readline_state = SHELL_READLINE_ACTIVE;
+
+	/* Save the current command buffer */
+	sh->ctx->cmd_tmp_buff_len = sh->ctx->cmd_buff_len;
+	sh->ctx->cmd_tmp_buff_pos = sh->ctx->cmd_buff_pos;
+	memcpy(sh->ctx->temp_buff, sh->ctx->cmd_buff, sh->ctx->cmd_buff_len);
+
+	/* Clear the buffer for user input */
+	cmd_buffer_clear(sh);
+
+	while (true) {
+		state_collect(sh);
+
+		if (sh->ctx->readline_state == SHELL_READLINE_DONE) {
+			if (buf == NULL || sh->ctx->cmd_buff_len >= len) {
+				ret = -ENOBUFS;
+				break;
+			}
+
+			memcpy(buf, sh->ctx->cmd_buff, sh->ctx->cmd_buff_len);
+			buf[sh->ctx->cmd_buff_len] = '\0';
+
+			ret = sh->ctx->cmd_buff_len;
+			break;
+		}
+
+		if (sh->ctx->readline_state == SHELL_READLINE_CANCELED) {
+			ret = -ECANCELED;
+			break;
+		}
+
+		/* Check for timeout */
+		if (sys_timepoint_expired(end)) {
+			ret = -ETIMEDOUT;
+			break;
+		}
+
+		/* Small delay to avoid busy-waiting */
+		k_msleep(1);
+	}
+
+	/* Restore the command state */
+	sh->ctx->cmd_buff_len = sh->ctx->cmd_tmp_buff_len;
+	sh->ctx->cmd_buff_pos = sh->ctx->cmd_tmp_buff_pos;
+	memcpy(sh->ctx->cmd_buff, sh->ctx->temp_buff, sh->ctx->cmd_buff_len);
+
+	sh->ctx->readline_state = SHELL_READLINE_INACTIVE;
+	return ret;
 }
 
 static int cmd_help(const struct shell *sh, size_t argc, char **argv)

@@ -388,6 +388,10 @@ void z_shell_cmd_line_erase(const struct shell *sh)
 
 static void print_prompt(const struct shell *sh)
 {
+	if (sh->ctx->readline_state != SHELL_READLINE_INACTIVE) {
+		return;
+	}
+
 	z_shell_fprintf(sh, SHELL_INFO, "%s", sh->ctx->prompt);
 }
 
