@@ -150,6 +150,10 @@ New APIs and options
     * Added :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES` which allows generating
       :ref:`merged hex files <sysbuild_merged_hex_files>`.
 
+* CPUFreq
+
+  * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE`
+
 * Ethernet
 
   * Driver MAC address configuration with support for NVMEM cell.
@@ -272,6 +276,7 @@ New Samples
 ***********
 
 * :zephyr:code-sample:`ble_peripheral_ans`
+* :zephyr:code-sample:`cpu_freq_pressure`
 
 ..
   Same as above, this will also be recomputed at the time of the release.
