@@ -139,7 +139,7 @@ _get_west_shields() {
   _describe 'shields' _west_shields
 }
 
-# -------------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # Bash Compatibility & Helper Functions
 # -------------------------------------------------------------------------
 # The following functions provide compatibility with Bash-style completion
