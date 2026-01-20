@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,7 +9,7 @@ LOG_MODULE_REGISTER(net_dsa_port, CONFIG_NET_DSA_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/dsa_core.h>
-#include "dsa_tag.h"
+#include <zephyr/net/dsa_tag.h>
 
 #if defined(CONFIG_NET_INTERFACE_NAME_LEN)
 #define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
