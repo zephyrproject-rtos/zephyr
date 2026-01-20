@@ -5,4 +5,4 @@ board:
   full_name: Digilent CV64A6 on Genesys 2
   vendor: openhwgroup
   socs:
-    - name: cv64a6_imafdc
+    - name: cv64a6

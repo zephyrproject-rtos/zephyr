@@ -44,7 +44,7 @@ Loading the FPGA configuration
 You need to build a bitstream with Xilinx Vivado and load it into the FPGA
 before you can load zephyr onto the board.
 Please refer to the CVA6 documentation for the required steps.
-This configuration is compatible with the following build target: cv64a6_imafdc_sv39
+This configuration is compatible with the following build target: cv64a6_sv39
 
 Flashing
 ========
