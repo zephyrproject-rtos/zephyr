@@ -199,9 +199,9 @@
 };
 
 &spi4 {
-	pinctrl-0 = <&spi4_nss_pe4 &spi4_sck_pe12
-		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-0 = <&spi4_sck_pe12 &spi4_miso_pe13 &spi4_mosi_pe14>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpioe 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
