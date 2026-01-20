@@ -4324,6 +4324,16 @@ Power management:
   tests:
     - pm
 
+QNX Hypervisor Platforms:
+  status: maintained
+  maintainers:
+    - soburi
+  files:
+    - boards/blackberry/qnxhv_vm/
+    - soc/blackberry/qnxhv_vm/
+  labels:
+    - "platform: QNX Hypervisor"
+
 "Quicklogic Platform":
   status: odd fixes
   files:
