@@ -44,19 +44,18 @@ void dsa_tag_setup(const struct device *dev_cpu)
 {
 	const struct dsa_port_config *cfg = dev_cpu->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev_cpu->data;
+	bool match = false;
 
-	switch (cfg->tag_proto) {
-#ifdef CONFIG_DSA_TAG_PROTOCOL_NETC
-	case DSA_TAG_PROTO_NETC:
-		dsa_switch_ctx->dapi->recv = dsa_tag_netc_recv;
-		dsa_switch_ctx->dapi->xmit = dsa_tag_netc_xmit;
-		break;
-#endif
-	case DSA_TAG_PROTO_NOTAG:
-		dsa_switch_ctx->dapi->recv = NULL;
-		dsa_switch_ctx->dapi->xmit = NULL;
-		break;
-	default:
+	STRUCT_SECTION_FOREACH(dsa_tag_register, tag) {
+		if (tag->proto == cfg->tag_proto) {
+			dsa_switch_ctx->dapi->recv = tag->recv;
+			dsa_switch_ctx->dapi->xmit = tag->xmit;
+			match = true;
+			break;
+		}
+	}
+
+	if ((!match) && (cfg->tag_proto != DSA_TAG_PROTO_NOTAG)) {
 		LOG_ERR("DSA tag protocol %d not supported", cfg->tag_proto);
 	}
 

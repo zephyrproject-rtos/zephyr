@@ -21,13 +21,31 @@
  */
 
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
-#ifdef CONFIG_DSA_TAG_PROTOCOL_NETC
-#include <zephyr/net/dsa_tag_netc.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Registration information for a dsa tag protocol
+ */
+struct dsa_tag_register {
+	/** Protocol ID */
+	int proto;
+
+	/** Received packet handler */
+	struct net_if *(*recv)(struct net_if *iface, struct net_pkt *pkt);
+
+	/** Transmit packet handler */
+	struct net_pkt *(*xmit)(struct net_if *iface, struct net_pkt *pkt);
+};
+
+#define DSA_TAG_REGISTER(_proto, _recv, _xmit)                                                     \
+	static const STRUCT_SECTION_ITERABLE(dsa_tag_register, __dsa_tag_register_##_proto) = {    \
+		.proto = _proto,                                                                   \
+		.recv = _recv,                                                                     \
+		.xmit = _xmit,                                                                     \
+	}
 
 /** @cond INTERNAL_HIDDEN */
 
