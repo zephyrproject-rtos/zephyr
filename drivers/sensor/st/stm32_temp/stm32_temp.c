@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 
-#define CAL_RES			12
+#define CAL_RES			12U
 #define MAX_CALIB_POINTS	2
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
@@ -275,7 +275,7 @@ static int stm32_temp_init(const struct device *dev)
 		.channels = BIT(data->adc_cfg.channel_id),
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
-		.resolution = 12U,
+		.resolution = CAL_RES,
 	};
 
 	return 0;
