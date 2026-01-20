@@ -38,9 +38,6 @@ LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 #endif
 
 struct stm32_temp_data {
-	const struct device *adc;
-	const struct adc_channel_cfg adc_cfg;
-	ADC_TypeDef *adc_base;
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
 	int16_t sample_buffer;
@@ -48,6 +45,10 @@ struct stm32_temp_data {
 };
 
 struct stm32_temp_config {
+	const struct device *adc;
+	struct adc_channel_cfg adc_cfg;
+	ADC_TypeDef *adc_base;
+
 #if !defined(HAS_CALIBRATION)
 	float average_slope;		/** Unit: mV/°C */
 	int v25;			/** Unit: mV */
@@ -125,7 +126,7 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 {
 	struct stm32_temp_data *data = dev->data;
 	const struct stm32_temp_config *cfg = dev->config;
-	const uint16_t vdda_mv = adc_ref_internal(data->adc);
+	const uint16_t vdda_mv = adc_ref_internal(cfg->adc);
 	float temperature;
 
 #if !defined(HAS_CALIBRATION)
@@ -209,6 +210,7 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 
 static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	const struct stm32_temp_config *cfg = dev->config;
 	struct stm32_temp_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
@@ -218,25 +220,25 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
-	pm_device_runtime_get(data->adc);
+	pm_device_runtime_get(cfg->adc);
 
-	rc = adc_channel_setup(data->adc, &data->adc_cfg);
+	rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
 	if (rc) {
-		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
+		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
 		goto unlock;
 	}
 
-	adc_enable_tempsensor_channel(data->adc_base);
+	adc_enable_tempsensor_channel(cfg->adc_base);
 
-	rc = adc_read(data->adc, sp);
+	rc = adc_read(cfg->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-	adc_disable_tempsensor_channel(data->adc_base);
+	adc_disable_tempsensor_channel(cfg->adc_base);
 
 unlock:
-	pm_device_runtime_put(data->adc);
+	pm_device_runtime_put(cfg->adc);
 	k_mutex_unlock(&data->mutex);
 
 	return rc;
@@ -261,18 +263,19 @@ static DEVICE_API(sensor, stm32_temp_driver_api) = {
 
 static int stm32_temp_init(const struct device *dev)
 {
+	const struct stm32_temp_config *cfg = dev->config;
 	struct stm32_temp_data *data = dev->data;
 	struct adc_sequence *asp = &data->adc_seq;
 
 	k_mutex_init(&data->mutex);
 
-	if (!device_is_ready(data->adc)) {
-		LOG_ERR("Device %s is not ready", data->adc->name);
+	if (!device_is_ready(cfg->adc)) {
+		LOG_ERR("Device %s is not ready", cfg->adc->name);
 		return -ENODEV;
 	}
 
 	*asp = (struct adc_sequence){
-		.channels = BIT(data->adc_cfg.channel_id),
+		.channels = BIT(cfg->adc_cfg.channel_id),
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = CAL_RES,
@@ -298,7 +301,9 @@ BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed
  */
 #else
 
-static struct stm32_temp_data stm32_temp_dev_data = {
+static struct stm32_temp_data stm32_temp_dev_data;
+
+static const struct stm32_temp_config stm32_temp_dev_config = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_cfg = {
@@ -308,9 +313,7 @@ static struct stm32_temp_data stm32_temp_dev_data = {
 		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
 		.differential = 0
 	},
-};
 
-static const struct stm32_temp_config stm32_temp_dev_config = {
 #if defined(HAS_CALIBRATION)
 	.ts_cal1_addr = (const void *)DT_INST_PROP(0, ts_cal1_addr),
 	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
