@@ -11,7 +11,6 @@ LOG_MODULE_REGISTER(dsa_tag_netc, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/dsa_tag.h>
 
 #include "dsa_tag_netc.h"
-#include "fsl_netc_tag.h"
 
 struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -22,8 +21,8 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 		(struct dsa_tag_netc_data *)(dsa_switch_ctx->tagger_data);
 #endif
 	void *header = pkt->frags->data;
-	uint16_t tag_len = sizeof(netc_swt_tag_host_t);
-	netc_swt_tag_common_t *tag_common;
+	uint16_t tag_len = sizeof(struct netc_switch_tag_host);
+	struct netc_switch_tag_common *tag_common;
 	struct net_if *iface_dst = iface;
 	uint8_t *ptr;
 
@@ -34,26 +33,27 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	/* Handle tag type */
-	tag_common = (netc_swt_tag_common_t *)((uintptr_t)pkt->frags->data + NET_ETH_ADDR_LEN * 2);
-	if (tag_common->type == kNETC_TagForward) {
+	tag_common = (struct netc_switch_tag_common *)((uintptr_t)pkt->frags->data +
+			NET_ETH_ADDR_LEN * 2);
+	if (tag_common->type == NETC_SWITCH_TAG_TYPE_FORWARD) {
 
 		/* Update tag length per tag type */
-		tag_len = sizeof(netc_swt_tag_forward_t);
+		tag_len = sizeof(struct netc_switch_tag_forward);
 
-	} else if (tag_common->type == kNETC_TagToHost) {
+	} else if (tag_common->type == NETC_SWITCH_TAG_TYPE_TO_HOST) {
 #ifdef CONFIG_NET_L2_PTP
-		netc_swt_tag_host_rx_ts_t *tag_rx_ts;
-		netc_swt_tag_host_tx_ts_t *tag_tx_ts;
+		struct netc_switch_tag_host_rx_ts *tag_rx_ts;
+		struct netc_switch_tag_host_tx_ts *tag_tx_ts;
 		uint64_t ts;
 #endif
 		/* Handle tag sub-type */
-		switch (tag_common->subType) {
-		case kNETC_TagToHostNoTs:
+		switch (tag_common->subtype) {
+		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_NO_TS:
 			/* Normal case */
 			break;
-		case kNETC_TagToHostRxTs:
+		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_RX_TS:
 #ifdef CONFIG_NET_L2_PTP
-			tag_rx_ts = (netc_swt_tag_host_rx_ts_t *)tag_common;
+			tag_rx_ts = (struct netc_switch_tag_host_rx_ts *)tag_common;
 			ts = net_ntohll(tag_rx_ts->timestamp);
 
 			/* Fill timestamp */
@@ -61,20 +61,20 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 			pkt->timestamp.second = ts / NSEC_PER_SEC;
 #endif
 			/* Update tag length per tag type */
-			tag_len = sizeof(netc_swt_tag_host_rx_ts_t);
+			tag_len = sizeof(struct netc_switch_tag_host_rx_ts);
 			break;
-		case kNETC_TagToHostTxTs:
+		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_TX_TS:
 #ifdef CONFIG_NET_L2_PTP
-			tag_tx_ts = (netc_swt_tag_host_tx_ts_t *)tag_common;
+			tag_tx_ts = (struct netc_switch_tag_host_tx_ts *)tag_common;
 			ts = net_ntohll(tag_tx_ts->timestamp);
 
 			if (tagger_data->twostep_timestamp_handler != NULL) {
 				tagger_data->twostep_timestamp_handler(dsa_switch_ctx,
-					tag_tx_ts->tsReqId, ts);
+					tag_tx_ts->ts_req_id, ts);
 			}
 #endif
 			/* Update tag length per tag type */
-			tag_len = sizeof(netc_swt_tag_host_tx_ts_t);
+			tag_len = sizeof(struct netc_switch_tag_host_tx_ts);
 			break;
 		default:
 			LOG_ERR("tag sub-type error");
@@ -102,14 +102,14 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
 	struct net_buf *header_buf;
 	size_t header_len = NET_ETH_ADDR_LEN * 2;
-	netc_swt_tag_common_t *tag_common;
+	struct netc_switch_tag_common *tag_common;
 	void *tag;
 
 	/* Tag is inserted after DMAC/SMAC fields. Decide header size per tag type. */
 	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
-		header_len += sizeof(netc_swt_tag_port_two_step_ts_t);
+		header_len += sizeof(struct netc_switch_tag_port_two_step_ts);
 	} else {
-		header_len += sizeof(netc_swt_tag_port_no_ts_t);
+		header_len += sizeof(struct netc_switch_tag_port_no_ts);
 	}
 
 	/* Allocate net_buf for header */
@@ -131,21 +131,21 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
 
 		/* Utilize control block for timestamp request ID */
-		((netc_swt_tag_port_two_step_ts_t *)tag)->tsReqId = pkt->cb.cb[0] & 0xf;
+		((struct netc_switch_tag_port_two_step_ts *)tag)->ts_req_id = pkt->cb.cb[0] & 0xf;
 
-		tag_common = &((netc_swt_tag_port_two_step_ts_t *)tag)->comTag;
-		tag_common->subType = kNETC_TagToPortTwoStepTs;
+		tag_common = &((struct netc_switch_tag_port_two_step_ts *)tag)->common;
+		tag_common->subtype = NETC_SWITCH_TAG_SUBTYPE_TO_PORT_TWOSTEP_TS;
 	} else {
-		tag_common = &((netc_swt_tag_port_no_ts_t *)tag)->comTag;
-		tag_common->subType = kNETC_TagToPortNoTs;
+		tag_common = &((struct netc_switch_tag_port_no_ts *)tag)->common;
+		tag_common->subtype = NETC_SWITCH_TAG_SUBTYPE_TO_PORT_NO_TS;
 	}
 #else
-	tag_common = &((netc_swt_tag_port_no_ts_t *)tag)->comTag;
-	tag_common->subType = kNETC_TagToPortNoTs;
+	tag_common = &((struct netc_switch_tag_port_no_ts *)tag)->common;
+	tag_common->subtype = NETC_SWITCH_TAG_SUBTYPE_TO_PORT_NO_TS;
 #endif
-	tag_common->tpid = NETC_SWITCH_DEFAULT_ETHER_TYPE;
-	tag_common->type = kNETC_TagToPort;
-	tag_common->swtId = 1;
+	tag_common->tpid = NETC_SWITCH_ETHER_TYPE;
+	tag_common->type = NETC_SWITCH_TAG_TYPE_TO_PORT;
+	tag_common->swtid = 1;
 	tag_common->port = cfg->port_idx;
 
 	/* Drop DMAC/SMAC on original frag */
