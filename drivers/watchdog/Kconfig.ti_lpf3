@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+
+config WDT_LPF3
+	bool "TI LPF3 Watchdog driver"
+	default y
+	depends on DT_HAS_TI_LPF3_WDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  This option enables support for the unified watchdog timer driver
+	  for TI SimpleLink CC23X0 and CC27XX family of devices.
+
+if WDT_LPF3
+
+config WDT_LPF3_INITIAL_TIMEOUT
+	int "Value for initial WDT timeout in ms"
+	default 2000
+	help
+	  Value for initial WDT timeout in ms for TI LPF3 family devices.
+
+endif # WDT_LPF3

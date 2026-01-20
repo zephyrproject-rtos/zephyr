@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/watchdog.h)
-
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
@@ -15,7 +14,6 @@ zephyr_library_sources_ifdef(CONFIG_WDT_AMBIQ wdt_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_ANDES_ATCWDT200 wdt_andes_atcwdt200.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_BFLB wdt_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_CC13XX_CC26XX wdt_cc13xx_cc26xx.c)
-zephyr_library_sources_ifdef(CONFIG_WDT_CC23X0 wdt_cc23x0.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_CC32XX wdt_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_CC35XX wdt_cc35xx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_COUNTER wdt_counter.c)
@@ -30,6 +28,7 @@ zephyr_library_sources_ifdef(CONFIG_WDT_ITE_IT51XXX wdt_ite_it51xxx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_ITE_IT8XXX2 wdt_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_IWDG_WCH wdt_iwdg_wch.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_LITEX wdt_litex.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_LPF3 wdt_lpf3.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MAX32 wdt_max32.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCHP_G1 wdt_mchp_g1.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_COP wdt_mcux_cop.c)
