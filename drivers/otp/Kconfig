@@ -18,8 +18,11 @@ module-str = otp
 
 source "subsys/logging/Kconfig.template.log_config"
 
+# zephyr-keep-sorted-start
 source "drivers/otp/Kconfig.emu"
+source "drivers/otp/Kconfig.mcux_ocotp"
 source "drivers/otp/Kconfig.stm32"
+# zephyr-keep-sorted-stop
 
 config OTP_INIT_PRIORITY
 	int "OTP init priority"
