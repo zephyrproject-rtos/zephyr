@@ -49,8 +49,6 @@ void ipc_receive_cb(const void *data, size_t len, void *priv)
 
 	const uint32_t *msg = (const uint32_t *)data;
 
-	ARG_UNUSED(priv_data);
-
 	zassert_equal(len, sizeof(uint32_t) * 2, "unexpected IPC message length");
 	zassert_not_null(data, "IPC payload pointer is NULL");
 
@@ -58,6 +56,7 @@ void ipc_receive_cb(const void *data, size_t len, void *priv)
 	zassert_true(msg[0] == RETURN_MSG_SYNC_VAL ||
 		     msg[0] == RETURN_MSG_ASYNC_VAL, "unexpected msg data");
 	msg_flag = true;
+	priv_data->msg_done = true;
 }
 
 static struct intel_adsp_ipc_ept_priv_data host_ipc_priv_data;
