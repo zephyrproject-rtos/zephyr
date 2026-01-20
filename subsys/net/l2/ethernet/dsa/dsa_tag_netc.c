@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +8,7 @@ LOG_MODULE_REGISTER(net_dsa_tag_netc, CONFIG_NET_DSA_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
+#include <zephyr/net/dsa_tag.h>
 #include <zephyr/net/dsa_tag_netc.h>
 #include "fsl_netc_tag.h"
 
@@ -157,3 +157,5 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 	return pkt;
 }
+
+DSA_TAG_REGISTER(DSA_TAG_PROTO_NETC, dsa_tag_netc_recv, dsa_tag_netc_xmit);
