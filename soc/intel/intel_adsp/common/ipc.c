@@ -98,7 +98,7 @@ int intel_adsp_ipc_send_message_sync(const struct device *dev, uint32_t data, ui
 
 	int ret = ipc_service_send(&intel_adsp_ipc_ept, &msg, sizeof(msg));
 
-	if (ret < 0) {
+	if (ret == 0) {
 		k_sem_take(&devdata->sem, timeout);
 	}
 
