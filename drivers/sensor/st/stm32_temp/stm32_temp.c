@@ -51,6 +51,9 @@ union stm32_dietemp_calib_data {
 struct stm32_temp_data {
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
+#if defined(HAS_CALIBRATION)
+	union stm32_dietemp_calib_data calib_data;
+#endif /* HAS_CALIBRATION */
 	int16_t sample_buffer;
 	int16_t raw; /* raw adc Sensor value */
 };
@@ -96,39 +99,6 @@ static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
 					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
-#if defined(HAS_CALIBRATION)
-static uint32_t fetch_mfg_data(const void *addr)
-{
-	/* On all STM32 series, the calibration data is stored
-	 * as 16-bit data in the manufacturing flash region
-	 */
-	return sys_read16((mem_addr_t)addr);
-}
-
-static void read_calibration_data(const struct stm32_temp_config *cfg,
-				  union stm32_dietemp_calib_data *cd)
-{
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
-	 * This is required on STM32H5, where the manufacturing flash must be
-	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
-	 */
-	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-
-	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1_addr);
-#if defined(HAS_DUAL_CALIBRATION)
-	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2_addr);
-#endif
-
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
-	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-}
-#endif /* HAS_CALIBRATION */
-
 static float convert_adc_sample_to_temperature(const struct device *dev)
 {
 	struct stm32_temp_data *data = dev->data;
@@ -163,10 +133,7 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	temperature /= cfg->average_slope;
 	temperature += 25.0f;
 #else /* HAS_CALIBRATION */
-	union stm32_dietemp_calib_data cd;
-
-	read_calibration_data(cfg, &cd);
-
+	const union stm32_dietemp_calib_data *cd = &data->calib_data;
 	const float sense_data = ((float)vdda_mv / cfg->calib_vrefanalog) * data->raw;
 
 #if defined(HAS_SINGLE_CALIBRATION)
@@ -189,9 +156,9 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	float dividend;
 
 	if (cfg->is_ntc) {
-		dividend = ((float)(cd.ts_cal1 >> cfg->calib_data_shift) - sense_data);
+		dividend = ((float)(cd->ts_cal1 >> cfg->calib_data_shift) - sense_data);
 	} else {
-		dividend = (sense_data - (cd.ts_cal1 >> cfg->calib_data_shift));
+		dividend = (sense_data - (cd->ts_cal1 >> cfg->calib_data_shift));
 	}
 
 	temperature = (dividend / avg_slope_code) + cfg->ts_cal1_temp;
@@ -205,9 +172,9 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	 *                      (TS_CAL2 - TS_CAL1)
 	 */
 	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp))
-					/ ((cd.ts_cal2 - cd.ts_cal1) >> cfg->calib_data_shift);
+					/ ((cd->ts_cal2 - cd->ts_cal1) >> cfg->calib_data_shift);
 
-	temperature = (slope * (sense_data - (cd.ts_cal1 >> cfg->calib_data_shift)))
+	temperature = (slope * (sense_data - (cd->ts_cal1 >> cfg->calib_data_shift)))
 			+ cfg->ts_cal1_temp;
 #endif /* HAS_SINGLE_CALIBRATION */
 #endif /* HAS_CALIBRATION */
@@ -268,6 +235,39 @@ static DEVICE_API(sensor, stm32_temp_driver_api) = {
 	.channel_get = stm32_temp_channel_get,
 };
 
+#if defined(HAS_CALIBRATION)
+static uint32_t fetch_mfg_data(const void *addr)
+{
+	/* On all STM32 series, the calibration data is stored
+	 * as 16-bit data in the manufacturing flash region
+	 */
+	return sys_read16((mem_addr_t)addr);
+}
+
+static void read_calibration_data(const struct stm32_temp_config *cfg,
+				  union stm32_dietemp_calib_data *cd)
+{
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
+	 * This is required on STM32H5, where the manufacturing flash must be
+	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
+	 */
+	sys_cache_instr_disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1_addr);
+#if defined(HAS_DUAL_CALIBRATION)
+	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2_addr);
+#endif
+
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	sys_cache_instr_enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+}
+#endif /* HAS_CALIBRATION */
+
 static int stm32_temp_init(const struct device *dev)
 {
 	const struct stm32_temp_config *cfg = dev->config;
@@ -280,6 +280,11 @@ static int stm32_temp_init(const struct device *dev)
 		LOG_ERR("Device %s is not ready", cfg->adc->name);
 		return -ENODEV;
 	}
+
+#if defined(HAS_CALIBRATION)
+	/* Read calibration data once during init */
+	read_calibration_data(cfg, &data->calib_data);
+#endif
 
 	*asp = (struct adc_sequence){
 		.channels = BIT(cfg->adc_cfg.channel_id),
