@@ -32,6 +32,9 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=256
+    platform_exclude:
+      # Platform excluded because of https://github.com/zephyrproject-rtos/zephyr/issues/102558
+      - hifive1/fe310_g000
   portability.xsi.single_process.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
