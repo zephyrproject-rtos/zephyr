@@ -842,10 +842,16 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 						     config->rx_dma_config.dma_channel,
 						     &status);
 
-	if (get_status_result < 0 || status.busy) {
-		LOG_ERR("Unable to start receive on UART.");
+	if (get_status_result < 0) {
 		irq_unlock(key);
-		return get_status_result < 0 ? get_status_result : -EBUSY;
+		LOG_ERR("Failed to get DMA(Rx) status (%d)", get_status_result);
+		return get_status_result;
+	}
+
+	if (status.busy) {
+		irq_unlock(key);
+		LOG_DBG("UART RX busy (DMA ch %u)", config->rx_dma_config.dma_channel);
+		return -EBUSY;
 	}
 
 	rx_dma_params->timeout_us = timeout_us;
