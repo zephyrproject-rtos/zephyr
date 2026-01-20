@@ -272,4 +272,35 @@
 			input-enable;
 		};
 	};
+
+	pinmux_lcdif_dbi: pinmux_lcdif_dbi {
+		group0 {
+			pinmux = <LCDIF_DBI_DATA0_PIO2_6>,
+				 <LCDIF_DBI_DATA1_PIO2_7>,
+				 <LCDIF_DBI_DATA2_PIO2_8>,
+				 <LCDIF_DBI_DATA3_PIO2_9>,
+				 <LCDIF_DBI_DATA4_PIO2_10>,
+				 <LCDIF_DBI_DATA5_PIO2_11>,
+				 <LCDIF_DBI_DATA6_PIO2_12>,
+				 <LCDIF_DBI_DATA7_PIO2_13>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			bias-pull-up;
+		};
+
+		group1 {
+			pinmux = <GPIO2_GPIO15_PIO2_15>,
+				 <LCD_DBI_CSX_AB_PIO2_0>,
+				 <LCD_DBI_WRX_PIO2_4>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		group2 {
+			pinmux = <LCD_DBI_DCX_AB_PIO2_1>,
+				 <LCD_DBI_RWDX_PIO2_3>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
 };
