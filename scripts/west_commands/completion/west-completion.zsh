@@ -5,7 +5,7 @@
 
 # Ensure this works also when being source-ed
 autoload -U +X compinit && compinit
-autoload -U +X bashcompinit && bashcompinit
+
 compdef _west west
 
 typeset -A -g _opt_args
@@ -47,6 +47,7 @@ _west_cmds() {
   'packages[manage packages for Zephyr]'
   'patch[manage patches for Zephyr modules]'
   'gtags[create a GNU global tags file for the current workspace]'
+  'twister[run Twister test runner]'
   )
 
   local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})
@@ -117,13 +118,13 @@ _get_west_projs() {
 _get_west_boards() {
   local boards=( $(__west_x boards --format='{name}|{qualifiers}') )
   local -a transformed_boards
-  
+
   for board_line in "${boards[@]}"; do
     local name="${board_line%%|*}"
     local transformed_board="${board_line//|//}"
     transformed_boards+=("${transformed_board//,/ ${name}/}")
   done
-  
+
   _describe 'boards' transformed_boards
 }
 
@@ -138,541 +139,25 @@ _get_west_shields() {
 
   _describe 'shields' _west_shields
 }
+__west_tilde() {
+    local cur=${words[CURRENT]}
 
-# ----------------------------------------------------------------------
-# Bash Compatibility & Helper Functions
-# -------------------------------------------------------------------------
-# The following functions provide compatibility with Bash-style completion
-# logic and handle complex parsing scenarios not natively covered by basic zsh flows.
+    [[ $cur == "~"* && $cur != */* ]] || return 1
 
-# Reassemble words by excluding certain word separators
-# Handles cases like --option=value which gets split into multiple words
-__west_reassemble_comp_words_by_ref() {
-#compdef west
-
-# Copyright (c) 2022 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-# Ensure this works also when being source-ed
-compdef _west west
-
-typeset -A -g _opt_args
-
-_west_cmds() {
-  local -a builtin_cmds=(
-  'init[create a west workspace]'
-  'update[update projects described in west manifest]'
-  'list[print information about projects]'
-  'manifest[manage the west manifest]'
-  'diff["git diff" for one or more projects]'
-  'status["git status" for one or more projects]'
-  'grep["run grep or a grep-like tool in one or more local projects]'
-  'forall[run a command in one or more local projects]'
-  'help[get help for west or a command]'
-  'config[get or set config file values]'
-  'topdir[print the top level directory of the workspace]'
-  )
-
-  local -a zephyr_ext_cmds=(
-  'completion[display shell completion scripts]'
-  'boards[display information about supported boards]'
-  'shields[display information about supported shields]'
-  'build[compile a Zephyr application]'
-  'sign[sign a Zephyr binary for bootloader chain-loading]'
-  'flash[flash and run a binary on a board]'
-  'debug[flash and interactively debug a Zephyr application]'
-  'debugserver[connect to board and launch a debug server]'
-  'attach[interactively debug a board]'
-  'rtt[open an rtt shell]'
-  'zephyr-export[export Zephyr installation as a CMake config package]'
-  'spdx[create SPDX bill of materials]'
-  'blobs[work with binary blobs]'
-  'bindesc[work with Binary Descriptors]'
-  'robot[run RobotFramework test suites]'
-  'sdk[manage SDKs]'
-  'packages[manage packages for Zephyr]'
-  'patch[manage patches for Zephyr modules]'
-  'gtags[create a GNU global tags file for the current workspace]'
-  )
-
-  local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})
-
-  if [[ -v WEST_COMP_CHECK_WORKSPACE ]]; then
-    west topdir &>/dev/null
-    if [ $? -eq 0 ]; then
-      _values "west command" $all_cmds
-    else
-      _values "west command" $builtin_cmds
-    fi
-  else
-      _values "west command" $all_cmds
-  fi
+    compset -P '~'
+    _users
 }
 
-# Completion script for Zephyr's meta-tool, west
-_west() {
 
-
-  # Global options for all commands
-  local -a global_opts=(
-  # (: * -) as exclusion list means exclude everything else
-  '(: * -)'{-h,--help}'[show help]'
-  # An exclusion list with the very option means only allow once
-  {-v,--verbose}'[enable verbosity]'
-  '(: * -)'{-V,--version}'[print version]'
-  '(-z --zephyr-base)'{-z,--zephyr-base}'[zephyr base folder]:zephyr base folder:_directories'
-  )
-
-  typeset -A opt_args
-  local curcontext="$curcontext" context state state_descr line
-  local -a orig_words
-
-  orig_words=( ${words[@]} )
-
-  _arguments -S -C \
-    $global_opts \
-          "1: :->cmds" \
-          "*::arg:->args" \
-
-  case "$state" in
-  cmds)
-    _west_cmds
-    ;;
-
-  args)
-    _opt_args=( ${(@kv)opt_args} )
-    _call_function ret _west_$line[1]
-    ;;
-  esac
-}
-
-__west_x()
-{
-  west 2>/dev/null "$@"
-}
-
-_get_west_projs() {
-  local extra_args
-  [[ -v _opt_args[-z] ]] && extra_args="-z $_opt_args[-z]"
-  [[ -v _opt_args[--zephyr-base] ]] && extra_args="-z $_opt_args[--zephyr-base]"
-
-  _west_projs=($(__west_x $extra_args list --format={name}))
-  _describe 'projs' _west_projs
-}
-
-_get_west_boards() {
-  _west_boards=( $(__west_x boards --format='{name}|{qualifiers}') )
-  for i in {1..${#_west_boards[@]}}; do
-    local name="${_west_boards[$i]%%|*}"
-    local transformed_board="${_west_boards[$i]//|//}"
-    _west_boards[$i]="${transformed_board//,/ ${name}/}"
-  done
-  _west_boards=(${(@s/ /)_west_boards})
-
-  _describe 'boards' _west_boards
-}
-
-_get_west_shields() {
-  _west_shields=( $(__west_x shields --format='{name}') )
-  for i in {1..${#_west_shields[@]}}; do
-    local name="${_west_shields[$i]%%|*}"
-    local transformed_shield="${_west_shields[$i]//|//}"
-    _west_shields[$i]="${transformed_shield//,/ ${name}/}"
-  done
-  _west_shields=(${(@s/ /)_west_shields})
-
-  _describe 'shields' _west_shields
-}
-
-_west_init() {
-  local -a opts=(
-  '(-l --local)'{--mr,--manifest-rev}'[manifest revision]:manifest rev:'
-  {--mf,--manifest-file}'[manifest file]:manifest file:'
-  '(-l --local)'{-m,--manifest}'[manifest URL]:manifest URL:_directories'
-  '(-m --manifest --mr --manifest-rev)'{-l,--local}'[use local directory as manifest repository]:local manifest repository directory:_directories'
-  )
-
-  _arguments -S $opts \
-          "1:workspace directory:"
-}
-
-_west_update() {
-  local -a opts=(
-  '--stats[print performance stats]'
-  '--name-cache[name-based cache]:name cache folder:_directories'
-  '--path-cache[path-based cache]:path cache folder:_directories'
-  {-f,--fetch}'[fetch strategy]:fetch strategy:(always smart)'
-  {-o,--fetch-opt}'[fetch options]:fetch options:'
-  {-n,--narrow}'[narrow fetch]'
-  {-k,--keep-descendants}'[keep manifest-rev descendants checked out]'
-  {-r,--rebase}'[rebase checked out branch onto the new manifest-rev]'
-  )
-
-  _arguments -S $opts \
-      "1:west proj:_get_west_projs"
-}
-
-_west_list() {
-  local -a opts=(
-  {-a,--all}'[include inactive projects]'
-  '--manifest-path-from-yaml[print performance stats]'
-  {-f,--format}'[format string]:format string:'
-  )
-
-  _arguments -S $opts \
-      "1:west proj:_get_west_projs"
-}
-
-_west_manifest() {
-  local -a opts=(
-  '--resolve[resolve into single manifest]'
-  '--freeze[resolve into single manifest, with SHAs]'
-  '--validate[silently validate manifest]'
-  '--path[print the path to the top level manifest file]'
-  {-o,--out}'[output file]:output file:_files'
-  )
-
-  _arguments -S $opts
-}
-
-_west_diff() {
-  local -a opts=(
-  {-a,--all}'[include inactive projects]'
-  )
-
-  _arguments -S $opts \
-      "1:west proj:_get_west_projs"
-}
-
-_west_status() {
-  local -a opts=(
-  {-a,--all}'[include inactive projects]'
-  )
-
-  _arguments -S $opts \
-      "1:west proj:_get_west_projs"
-}
-
-_west_forall() {
-  local -a opts=(
-  '-c[command to execute]:command:'
-  {-a,--all}'[include inactive projects]'
-  )
-
-  _arguments -S $opts \
-      "1:west proj:_get_west_projs"
-}
-
-_west_config() {
-  local -a opts=(
-  {-l,--list}'[list all options and values]'
-  {-d,--delete}'[delete an option in one config file]'
-  {-D,--delete-all}"[delete an option everywhere it\'s set]"
-  + '(mutex)'
-  '--system[system-wide file]'
-  '--global[global user-wide file]'
-  "--local[this workspace\'s file]"
-  )
-
-  _arguments -S $opts
-}
-
-_west_help() {
-  _west_cmds
-}
-
-_west_completion() {
-
-  _arguments -S "1:shell:(bash zsh fish)"
-}
-
-_west_boards() {
-  local -a opts=(
-  {-f,--format}'[format string]:format string:'
-  {-n,--name}'[name regex]:regex:'
-  '*--arch-root[Add an arch root]:arch root:_directories'
-  '*--board-root[Add a board root]:board root:_directories'
-  '*--soc-root[Add a soc root]:soc root:_directories'
-  )
-
-  _arguments -S $opts
-}
-
-_west_shields() {
-  local -a opts=(
-  {-f,--format}'[format string]:format string:'
-  {-n,--name}'[name regex]:regex:'
-  '*--board-root[Add a board root]:board root:_directories'
-  )
-
-  _arguments -S $opts
-}
-
-_west_build() {
-  local -a opts=(
-  '(-b --board)'{-b,--board}'[board to build for]:board:_get_west_boards'
-  '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
-  '(-f --force)'{-f,--force}'[ignore errors and continue]'
-  '--sysbuild[create multi-domain build system]'
-  '--no-sysbuild[do not create multi-domain build system]'
-  '(-c --cmake)'{-c,--cmake}'[force a cmake run]'
-  '--cmake-only[just run cmake]'
-  '--domain[execute build tool (make or ninja) for a given domain]:domain:'
-  '(-t --target)'{-t,--target}'[run build system target]:target:'
-  '(-T --test-item)'{-T,--test-item}'[Build based on test data in .yml]:test item:'
-  {-o,--build-opt}'[options to pass to build tool (make or ninja)]:tool opt:'
-  '(-n --just-print --dry-run --recon)'{-n,--just-print,--dry-run,--recon}"[just print build commands, don't run them]"
-  '(-p --pristine)'{-p,--pristine}'[pristine build setting]:pristine:(auto always never)'
-  '--shield[shield to build for]:shield:_get_west_shields'
-  )
-  _arguments -S $opts \
-      "1:source_dir:_directories"
-}
-
-_west_sign() {
-  local -a opts=(
-  '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
-  '(-q --quiet)'{-q,--quiet}'[suppress non-error output]'
-  '(-f --force)'{-f,--force}'[ignore errors and continue]'
-  '(-t --tool)'{-t,--tool}'[image signing tool name]:tool:(imgtool rimage)'
-  '(-p --tool-path)'{-p,--tool-path}'[path to the tool]:tool path:_directories'
-  '(-D --tool-data)'{-D,--tool-data}'[path to tool data]:tool data path:_directories'
-  '(--no-bin)--bin[produce a signed bin file]'
-  '(--bin)--no-bin[do not produce a signed bin file]'
-  '(-B --sbin)'{-B,--sbin}'[signed .bin filename]:bin filename:_files'
-  '(--no-hex)--hex[produce a signed hex file]'
-  '(--hex)--no-hex[do not produce a signed hex file]'
-  '(-H --shex)'{-H,--shex}'[signed .hex filename]:hex filename:_files'
-  )
-
-  _arguments -S $opts
-}
-
-typeset -a -g _west_runner_opts=(
-  '(-H --context)'{-H,--context}'[print runner-specific options]'
-  '--board-dir[board directory]:board dir:_directories'
-  '(-f --file)'{-f,--file}'[path to binary]:path to binary:_files'
-  '(-t --file-type)'{-t,--file-type}'[type of binary]:type of binary:(hex bin elf)'
-  '--elf-file[path to zephyr.elf]:path to zephyr.elf:_files'
-  '--hex-file[path to zephyr.hex]:path to zephyr.hex:_files'
-  '--bin-file[path to zephyr.bin]:path to zephyr.bin:_files'
-  '--gdb[path to GDB]:path to GDB:_files'
-  '--openocd[path to openocd]:path to openocd:_files'
-  '--openocd-search[path to add to openocd search path]:openocd search:_directories'
-)
-
-_west_flash() {
-  local -a opts=(
-  '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
-  '(-r --runner)'{-r,--runner}'[override default runner from build-dir]:runner:'
-  '--no-rebuild[manually specify to reinvoke cmake or not]'
-  '--rebuild[manually specify to reinvoke cmake or not]'
-  '--domain[execute build tool (make or ninja) for a given domain]:domain:'
-  )
-
-  local -a all_opts=(${_west_runner_opts} ${opts})
-  _arguments -S $all_opts
-}
-
-_west_debug() {
-  _west_flash
-}
-
-_west_debugserver() {
-  _west_flash
-}
-
-_west_attach() {
-  _west_flash
-}
-
-_west_spdx() {
-  local -a opts=(
-  '(-i --init)'{-i,--init}'[initialize CMake file-based API]'
-  '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
-  '(-n --namespace-prefix)'{-n,--namespace-prefix}'[namespace prefix]:namespace prefix:'
-  '(-s --spdx-dir)'{-s,--spdx-dir}'[SPDX output directory]:spdx output dir:_directories'
-  '--analyze-includes[also analyze included header files]'
-  '--include-sdk[also generate SPDX document for SDK]'
-  )
-  _arguments -S $opts
-}
-
-_west_blobs() {
-  local -a blob_cmds=(
-  'list[list binary blobs]'
-  'fetch[fetch binary blobs]'
-  'clean[clean working tree of binary blobs]'
-  )
-
-  local line state
-
-  _arguments -S -C \
-          "1: :->cmds" \
-          "*::arg:->args" \
-
-  case "$state" in
-  cmds)
-    _values "west blob cmds" $blob_cmds
-    ;;
-
-  args)
-    _opt_args=( ${(@kv)opt_args} )
-    _call_function ret _west_blob_$line[1]
-    ;;
-  esac
-}
-
-_west_blob_list () {
-  local -a opts=(
-  {-f,--format}'[format string]:format string:'
-  )
-
-  _arguments -S $opts \
-      "1:west proj:_get_west_projs"
-}
-
-_west_blob_fetch () {
-  _arguments -S "1:west proj:_get_west_projs"
-}
-
-_west_blob_clean () {
-  _arguments -S "1:west proj:_get_west_projs"
-}
-
-# don't run the completion function when being source-ed or eval-ed
-if [ "$funcstack[1]" = "_west" ]; then
-    _west
-fi
-  local exclude="$1"
-  local i j first
-  
-  # Build new word array excluding specified separators
-  local -a reassembled
-  for ((i=1; i<=${#words[@]}; i++)); do
-    if [[ -z "$exclude" ]] || [[ ! "$words[$i]" =~ ^[$exclude]+$ ]]; then
-      reassembled+=("${words[$i]}")
-    else
-      # Append separator to previous word if not first
-      if [[ ${#reassembled[@]} -gt 0 ]]; then
-        reassembled[-1]+="${words[$i]}"
-      fi
-    fi
-  done
-  
-  # Update words array and current position
-  words=("${reassembled[@]}")
-  CURRENT=${#reassembled[@]}
-}
-
-# Perform tilde (~) completion
-# @return  True (0) if completion needs further processing,
-#          False (> 0) if tilde is followed by a valid username, completions
-#          are put in COMPREPLY and no further processing is necessary.
-_tilde()
-{
-    local result=0
-    if [[ $1 == \~* && $1 != */* ]]; then
-        # Try generate ~username completions
-        COMPREPLY=( $( compgen -P '~' -u -- "${1#\~}" ) )
-        result=${#COMPREPLY[@]}
-        # 2>/dev/null for direct invocation, e.g. in the _tilde unit test
-        [[ $result -gt 0 ]] && compopt -o filenames 2>/dev/null
-    fi
-    return $result
-}
-
-# Quote arguments for readline dequoting
-# Handles special characters: quotes, backslashes, tildes, spaces
-_quote_readline_by_ref() {
-  local arg="$1"
-  local var_name="$2"
-  local quoted
-  
-  if [[ -z "$arg" ]]; then
-    # Empty argument
-    quoted=""
-  elif [[ "$arg" == \'* ]]; then
-    # Already single-quoted, remove first character
-    quoted="${arg:1}"
-  elif [[ "$arg" == \~* ]]; then
-    # Tilde - avoid escaping first ~
-    quoted="~${(q)arg:1}"
-  else
-    # Use zsh parameter expansion for quoting
-    quoted="${(q)arg}"
-  fi
-  
-  # Replace double escaping (\\) with single (\)
-  quoted="${quoted//\\\\/\\}"
-  
-  # If result is quoted like $'string', re-evaluate
-  if [[ "$quoted" == \$* ]]; then
-    quoted="${(e)quoted}"
-  fi
-  
-  # Return via variable name
-  eval "$var_name='$quoted'"
-}
-
-# Enable filename completion mode
-# In zsh, this sets options for proper filename handling in completions
-_compopt_o_filenames() {
-  # In zsh, we can use compopt if available (for bash compatibility)
-  # or rely on zsh's native filename handling
-  if type compopt &>/dev/null; then
-    compopt -o filenames 2>/dev/null
-  fi
-  # In zsh, filename completion is handled natively by _files and _directories
-  # so additional configuration is usually not needed
-}
-
-# This function performs file and directory completion. It's better than
-# simply using 'compgen -f', because it honours spaces in filenames.
-# @param $1  If `-d', complete only on directories.  Otherwise filter/pick only
-#            completions with `.$1' and the uppercase version of it as file
-#            extension.
-#
+# This function performs file and directory completion using Zsh native _files
 _filedir()
 {
-    local IFS=$'\n'
-
-    _tilde "$cur" || return
-
-    local -a toks
-    local x tmp
-
-    x=$( compgen -d -- "$cur" ) &&
-    while read -r tmp; do
-        toks+=( "$tmp" )
-    done <<< "$x"
-
-    if [[ "$1" != -d ]]; then
-        local quoted
-        _quote_readline_by_ref "$cur" quoted
-
-        # Munge xspec to contain uppercase version too
-        # http://thread.gmane.org/gmane.comp.shells.bash.bugs/15294/focus=15306
-        local xspec=${1:+"!*.@($1|${1^^})"}
-        x=$( compgen -f -X "$xspec" -- $quoted ) &&
-        while read -r tmp; do
-            toks+=( "$tmp" )
-        done <<< "$x"
-
-        # Try without filter if it failed to produce anything and configured to
-        [[ -n ${COMP_FILEDIR_FALLBACK:-} && -n "$1" && ${#toks[@]} -lt 1 ]] && \
-            x=$( compgen -f -- $quoted ) &&
-            while read -r tmp; do
-                toks+=( "$tmp" )
-            done <<< "$x"
+    if [[ "$1" == "-d" ]]; then
+        _files -/
+    else
+        _files
     fi
-
-    if [[ ${#toks[@]} -ne 0 ]]; then
-        # 2>/dev/null for direct invocation, e.g. in the _filedir unit test
-        _compopt_o_filenames
-        COMPREPLY+=( "${toks[@]}" )
-    fi
-} # _filedir()
+}
 
 # Shared completion for runner commands (flash, debug, debugserver, attach)
 __comp_west_runner_cmd() {
@@ -681,12 +166,12 @@ __comp_west_runner_cmd() {
   '(-H --context)'{-H,--context}'[print runner-specific options]'
   '--rebuild[reinvoke cmake]'
   '--no-rebuild[do not reinvoke cmake]'
-  
+
   # Directory options
   '--board-dir[board directory]:board dir:_directories'
   '(-d --build-dir)'{-d,--build-dir}'[build directory]:build dir:_directories'
   '--openocd-search[openocd search path]:path:_directories'
-  
+
   # File options
   '(-f --file)'{-f,--file}'[path to binary]:binary:_files'
   '(-t --file-type)'{-t,--file-type}'[type of binary]:type:(hex bin elf)'
@@ -695,13 +180,13 @@ __comp_west_runner_cmd() {
   '--bin-file[path to zephyr.bin]:file:_files'
   '--gdb[path to GDB]:gdb:_files'
   '--openocd[path to openocd]:openocd:_files'
-  
+
   # Other options
   '(-r --runner)'{-r,--runner}'[override runner]:runner:'
   '--domain[build domain]:domain:'
   '(-i --dev-id)'{-i,--dev-id}'[device id]:id:'
   )
-  
+
   _arguments -S -C $opts
 }
 
@@ -975,8 +460,8 @@ _west_sdk() {
   '(-H --no-hosttools)'{-H,--no-hosttools}'[skip hosttools]'
   '--version[SDK version]:version:'
   '--toolchains[toolchains]:toolchains:'
-  '--personal-access-token[GitHub personal access token (PAT)]:token:'
-  '--api-url[GitHub API URL]:url:'
+  '--personal-access-token[Github personal access token (PAT)]:token:'
+  '--api-url[Github API URL]:url:'
   )
 
   _arguments -S $opts \
@@ -1001,7 +486,7 @@ _west_twister() {
   '--cmake-only[only run cmake]'
   '--no-update[do not update test results]'
   '--inline-logs[inline test logs in output]'
-  
+
   '--aggressive-no-clean[do not clean before building]'
   '(-D --all-deltas)'{-D,--all-deltas}'[show all deltas]'
   '--allow-installed-plugin[allow installed plugins]'
@@ -1048,7 +533,7 @@ _west_twister() {
   '--test-only[test only]'
   '--test-tree[test tree]'
   '--timestamps[timestamps]'
-  
+
   # Directory options
   '(-O --outdir)'{-O,--outdir}'[output directory]:dir:_directories'
   '(-A --board-root)'{-A,--board-root}'[board root directory]:dir:_directories'
@@ -1056,7 +541,7 @@ _west_twister() {
   '(-o --report-dir)'{-o,--report-dir}'[report directory]:dir:_directories'
   '--alt-config-root[alt config root]:dir:_directories'
   '--coverage-basedir[coverage basedir]:dir:_directories'
-  
+
   # File options
   '--compare-report[compare report]:file:_files'
   '--device-serial[device serial]:file:_files'
@@ -1107,7 +592,7 @@ _west_twister() {
   '--west-flash[west flash command]:command:'
   '--west-runner[west runner]:runner:'
   )
-  
+
   _arguments -S -C $opts
 }
 
@@ -1118,18 +603,18 @@ _west_twister() {
 
 _west_simulate() {
   __comp_west_runner_cmd
-}
+  }
 
 _west_rtt() {
   local -a opts=(
   '(-d --build-dir)'{-d,--build-dir}'[build directory]:build dir:_directories'
   '(-s --serial-pty)'{-s,--serial-pty}'[serial PTY]:pty:_files'
   )
-  
+
   _arguments -S $opts
 }
 
-_west_zephyr_export() {
+_west_zephyr-export() {
   _arguments -S
 }
 
@@ -1142,8 +627,53 @@ _west_bindesc() {
   'list:List all known descriptors'
   'get_offset:Get the offset of the descriptors'
   )
-  
-  _describe 'subcommands' subcommands
+
+  local context state line
+  typeset -A opt_args
+
+  _arguments -S -C \
+    '1:subcommand:->subcmds' \
+    '*::arg:->args'
+
+  case $state in
+  subcmds)
+    _describe 'subcommands' subcommands
+    ;;
+  args)
+    curcontext="${curcontext%:*:*}:west-bindesc-${line[1]}:"
+    _call_function ret _west_bindesc_${line[1]}
+    ;;
+  esac
+}
+
+_west_bindesc_dump() {
+  _arguments -S \
+    '*:image:_files'
+}
+
+_west_bindesc_extract() {
+  _arguments -S \
+    '*:image:_files'
+}
+
+_west_bindesc_search() {
+  _arguments -S \
+    '*:image:_files'
+}
+
+_west_bindesc_custom_search() {
+  _arguments -S \
+    '*:image:_files'
+}
+
+_west_bindesc_list() {
+  _arguments -S \
+    '*:image:_files'
+}
+
+_west_bindesc_get_offset() {
+  _arguments -S \
+    '*:image:_files'
 }
 
 # don't run the completion function when being source-ed or eval-ed
