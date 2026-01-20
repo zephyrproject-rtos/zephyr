@@ -14,5 +14,5 @@ toolchain:
 supported:
   - clock_control
   - gpio
-  - pin_ctrl
+  - pinctrl
   - uart
