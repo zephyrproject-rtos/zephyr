@@ -20,7 +20,8 @@
 			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv32imafc_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			mmu-type = "riscv,sv32";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
