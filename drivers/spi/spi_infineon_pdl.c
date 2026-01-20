@@ -560,7 +560,6 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	spi_context_cs_control(ctx, true);
 
 	transfer_chunk(dev);
-
 	result = spi_context_wait_for_completion(&data->ctx);
 
 	spi_context_release(ctx, result);
@@ -738,6 +737,16 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	PERI_INFO(n)
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define ADVANCED_SPI_FIELDS(n)                                                                     \
+	.parity = CY_SCB_SPI_PARITY_NONE, .dropOnParityError = false,                              \
+	.ssSetupDelay = DT_INST_PROP_OR(n, ss_setup_delay, 0),                                     \
+	.ssHoldDelay = DT_INST_PROP_OR(n, ss_hold_delay, 0),                                       \
+	.ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0)
+#else
+#define ADVANCED_SPI_FIELDS(n)
+#endif
+
 #define IFX_CAT1_SPI_INIT(n)                                                                       \
                                                                                                    \
 	void spi_handle_events_func_##n(uint32_t event)                                            \
@@ -772,6 +781,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 				 DT_INST_PROP_OR(n, enable_miso_late_sample, true),                \
 			 .EN_XFER_SEPARATION =                                                     \
 				 DT_INST_PROP_OR(n, enable_transfer_separation, false),            \
+			 ADVANCED_SPI_FIELDS(n),                                                   \
 			 .enableWakeFromSleep = DT_INST_PROP_OR(n, enableWakeFromSleep, false),    \
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
 			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
@@ -847,7 +857,6 @@ cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *t
 
 			data->rx_buffer = rx + (tx_words);
 			data->rx_buffer_size = rx_words - tx_words;
-
 		} else {
 			/*  I) read only. */
 			data->pending = IFX_SPI_PENDING_RX;
@@ -928,6 +937,7 @@ void ifx_cat1_spi_register_callback(const struct device *dev,
 	data->irq_cause = 0;
 }
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
 #endif
@@ -983,6 +993,7 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 #endif
 	return -EINVAL;
 }
+#endif
 
 static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t hz,
 					    uint8_t *over_sample_val)
@@ -1008,6 +1019,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
 
 	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency(hfclk);
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency();
 #endif
 
 	if (!data->is_slave) {
