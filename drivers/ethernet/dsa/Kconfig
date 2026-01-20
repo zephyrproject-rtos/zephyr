@@ -84,4 +84,17 @@ config DSA_NXP_IMX_NETC_GCL_LEN
 	  Amount of Gate control list to use. Small value saves RAM.
 	  The Max of the value can be 64, 128, or 256.
 
+# DSA tag protocol drivers
+#   Tag protocol ID found in <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+
+DSA_PORT_COMPAT := zephyr,dsa-port
+
+config DSA_TAG_PROTOCOL_NETC
+	bool "Tag protocol - NETC"
+	default y
+	select NET_PKT_CONTROL_BLOCK
+	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,1)
+	help
+	  NXP NETC tag protocol.
+
 endif # DSA_DRIVERS

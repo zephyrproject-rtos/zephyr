@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_SUBSYS_DSA_TAG_NETC_H_
-#define ZEPHYR_SUBSYS_DSA_TAG_NETC_H_
+#ifndef ZEPHYR_DRIVERS_DSA_TAG_NETC_H_
+#define ZEPHYR_DRIVERS_DSA_TAG_NETC_H_
 
 struct dsa_tag_netc_data {
 #ifdef CONFIG_NET_L2_PTP
@@ -12,4 +12,4 @@ struct dsa_tag_netc_data {
 #endif
 };
 
-#endif /* ZEPHYR_SUBSYS_DSA_TAG_NETC_H_ */
+#endif /* ZEPHYR_DRIVERS_DSA_TAG_NETC_H_ */
