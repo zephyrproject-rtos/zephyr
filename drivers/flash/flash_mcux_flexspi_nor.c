@@ -597,17 +597,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		return 0;
 	case JESD216_DW15_QER_VAL_S2B1v1:
 	case JESD216_DW15_QER_VAL_S2B1v4:
+	case JESD216_DW15_QER_VAL_S2B1v5:
 		/* Install read and write status command */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD][1] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_JUMP_ON_CS, kFLEXSPI_1PAD, 0x2,
-				kFLEXSPI_Command_JUMP_ON_CS, kFLEXSPI_1PAD, 0x2);
-		flexspi_lut[SCRATCH_CMD][2] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD][3] = FLEXSPI_LUT_SEQ(
+		flexspi_lut[SCRATCH_CMD][1] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0,
 				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
@@ -647,20 +642,6 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		rd_size = 1;
 		wr_size = 1;
 		break;
-	case JESD216_DW15_QER_VAL_S2B1v5:
-		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
-
-		/* Set bit 1 of status register 2 */
-		bit = BIT(9);
-		rd_size = 1;
-		wr_size = 2;
-		break;
 	case JESD216_DW15_QER_VAL_S2B1v6:
 		/* Install read and write status command */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
@@ -686,23 +667,40 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	if (ret < 0) {
 		return ret;
 	}
-	transfer.dataSize = rd_size;
+
+	uint8_t tmp_save = 0;
+
+	if (rd_size == 2) {
+		/* Read first status register byte */
+		transfer.dataSize = 1;
+		transfer.seqIndex = READ_STATUS_REG;
+		transfer.cmdType = kFLEXSPI_Read;
+		ret = memc_flexspi_transfer(&data->controller, &transfer);
+		if (ret < 0) {
+			return ret;
+		}
+		tmp_save = (uint8_t)(buffer & 0xFF);
+	}
+
+	/* Read second status register byte */
+	transfer.dataSize = 1;
 	transfer.seqIndex = SCRATCH_CMD;
 	transfer.cmdType = kFLEXSPI_Read;
-	/* Read status register */
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (rd_size == 2) {
+		/* Combine both bytes: SR2 in upper byte, SR1 in lower byte */
+		buffer = ((buffer & 0xFF) << 8) | tmp_save;
 	}
 	/* Enable write */
 	ret = flash_flexspi_nor_write_enable(data);
 	if (ret < 0) {
 		return ret;
 	}
-	if (qer == JESD216_DW15_QER_VAL_S2B1v5) {
-		/* Left shift buffer by a byte */
-		buffer = buffer << 8;
-	}
+
 	buffer |= bit;
 	transfer.dataSize = wr_size;
 	transfer.seqIndex = SCRATCH_CMD2;
