@@ -37,6 +37,17 @@ LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 #define HAS_CALIBRATION 1
 #endif
 
+union stm32_dietemp_calib_data {
+	uint16_t raw[MAX_CALIB_POINTS];
+
+	struct {
+		uint16_t ts_cal1;
+#if defined(HAS_DUAL_CALIBRATION)
+		uint16_t ts_cal2;
+#endif /* HAS_DUAL_CALIBRATION */
+	};
+};
+
 struct stm32_temp_data {
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
@@ -94,12 +105,8 @@ static uint32_t fetch_mfg_data(const void *addr)
 	return sys_read16((mem_addr_t)addr);
 }
 
-/**
- * @returns TS_CAL1 in calib_data[0]
- *          TS_CAL2 in calib_data[1] if applicable
- */
 static void read_calibration_data(const struct stm32_temp_config *cfg,
-				uint32_t calib_data[MAX_CALIB_POINTS])
+				  union stm32_dietemp_calib_data *cd)
 {
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
@@ -109,9 +116,9 @@ static void read_calibration_data(const struct stm32_temp_config *cfg,
 	sys_cache_instr_disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	calib_data[0] = fetch_mfg_data(cfg->ts_cal1_addr);
+	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1_addr);
 #if defined(HAS_DUAL_CALIBRATION)
-	calib_data[1] = fetch_mfg_data(cfg->ts_cal2_addr);
+	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2_addr);
 #endif
 
 
@@ -156,9 +163,9 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	temperature /= cfg->average_slope;
 	temperature += 25.0f;
 #else /* HAS_CALIBRATION */
-	uint32_t calib[MAX_CALIB_POINTS];
+	union stm32_dietemp_calib_data cd;
 
-	read_calibration_data(cfg, calib);
+	read_calibration_data(cfg, &cd);
 
 	const float sense_data = ((float)vdda_mv / cfg->calib_vrefanalog) * data->raw;
 
@@ -182,9 +189,9 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	float dividend;
 
 	if (cfg->is_ntc) {
-		dividend = ((float)(calib[0] >> cfg->calib_data_shift) - sense_data);
+		dividend = ((float)(cd.ts_cal1 >> cfg->calib_data_shift) - sense_data);
 	} else {
-		dividend = (sense_data - (calib[0] >> cfg->calib_data_shift));
+		dividend = (sense_data - (cd.ts_cal1 >> cfg->calib_data_shift));
 	}
 
 	temperature = (dividend / avg_slope_code) + cfg->ts_cal1_temp;
@@ -198,9 +205,9 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	 *                      (TS_CAL2 - TS_CAL1)
 	 */
 	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp))
-					/ ((calib[1] - calib[0]) >> cfg->calib_data_shift);
+					/ ((cd.ts_cal2 - cd.ts_cal1) >> cfg->calib_data_shift);
 
-	temperature = (slope * (sense_data - (calib[0] >> cfg->calib_data_shift)))
+	temperature = (slope * (sense_data - (cd.ts_cal1 >> cfg->calib_data_shift)))
 			+ cfg->ts_cal1_temp;
 #endif /* HAS_SINGLE_CALIBRATION */
 #endif /* HAS_CALIBRATION */
