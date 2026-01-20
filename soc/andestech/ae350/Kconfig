@@ -6,11 +6,6 @@ config SOC_SERIES_AE350
 	select RISCV_PRIVILEGED
 	select RISCV_PMP
 	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
-	select RISCV_ISA_EXT_M
-	select RISCV_ISA_EXT_A
-	select RISCV_ISA_EXT_C
-	select RISCV_ISA_EXT_ZICSR
-	select RISCV_ISA_EXT_ZIFENCEI
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select CPU_HAS_ANDES_EXECIT
@@ -40,42 +35,6 @@ config SOC_AE350_INTERRUPT_TYPE_CLIC
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	select CLIC_SMCLICCONFIG_EXT
 	select LEGACY_CLIC_MEMORYMAP_ACCESS
-
-endchoice
-
-choice
-	prompt "Base CPU ISA options"
-	default RV32I_CPU
-
-config RV32I_CPU
-	bool "RISCV32 CPU ISA"
-	select RISCV_ISA_RV32I
-
-config RV32E_CPU
-	bool "RISCV32E CPU ISA"
-	select RISCV_ISA_RV32E
-
-config RV64I_CPU
-	bool "RISCV64 CPU ISA"
-	select RISCV_ISA_RV64I
-
-endchoice
-
-choice
-	prompt "FPU options"
-	default NO_FPU
-
-config NO_FPU
-	bool "No FPU"
-
-config SINGLE_PRECISION_FPU
-	bool "Single precision FPU"
-	select RISCV_ISA_EXT_F
-
-config DOUBLE_PRECISION_FPU
-	bool "Double precision FPU"
-	select RISCV_ISA_EXT_F
-	select RISCV_ISA_EXT_D
 
 endchoice
 
