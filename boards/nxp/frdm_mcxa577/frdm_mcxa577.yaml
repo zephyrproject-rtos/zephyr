@@ -17,4 +17,5 @@ supported:
   - gpio
   - uart
   - counter
+  - dma
 vendor: nxp
