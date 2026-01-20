@@ -41,6 +41,7 @@ void clock_ipc_receive_cb(const void *data, size_t len, void *priv)
 
 	/* Store returned timestamp from the extended payload word. */
 	tpd->priv = (void *)(uintptr_t)msg[1];
+	tpd->msg_done = true;
 }
 
 struct ipc_ept_cfg clock_ipc_ept_cfg = {
