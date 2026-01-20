@@ -475,6 +475,8 @@ int arch_float_disable(struct k_thread *thread)
 {
 	if (thread != NULL) {
 		unsigned int key = arch_irq_lock();
+		/* Clear FP options to indicate FPU mode is disabled */
+		thread->base.user_options &= ~K_FP_REGS;
 
 #ifdef CONFIG_SMP
 		flush_owned_fpu(thread);
