@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        System Control and Management Interface (SCMI) with doorbell
-        and shared memory (SHMEM) transport.
+        SCMI (System Control and Management Interface) with doorbell
+        and SHMEM (shared memory) transport.
 
         Devicetree example:
             #include <mem.h>
