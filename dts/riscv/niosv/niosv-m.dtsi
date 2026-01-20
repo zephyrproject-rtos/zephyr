@@ -19,7 +19,8 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "intel,niosv", "riscv";
-			riscv,isa = "rv32ia_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "a", "zicsr", "zifencei";
 			reg = <0>;
 			clock-frequency = <50000000>;
 
