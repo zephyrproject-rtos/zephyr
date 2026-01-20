@@ -1460,6 +1460,7 @@ Documentation Infrastructure:
     - nordic-krch
   collaborators:
     - Holt-Sun
+    - FelixWang47831
   files:
     - drivers/counter/
     - include/zephyr/drivers/counter.h
