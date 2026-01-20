@@ -57,7 +57,6 @@ config.txt
 .. code-block:: text
 
    kernel=zephyr.bin
-   arm_64bit=1
 
 
 zephyr.bin
@@ -98,7 +97,6 @@ config.txt
 .. code-block:: text
 
    kernel=zephyr.bin
-   arm_64bit=1
    enable_uart=1
    uart_2ndstage=1
 
