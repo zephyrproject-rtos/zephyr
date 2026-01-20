@@ -702,6 +702,7 @@
 		eth: ethernet@40064100 {
 			compatible = "renesas,ra-ethernet";
 			reg = <0x40064100 0xfc>;
+			clocks = <&pclka MSTPB 15>;
 			interrupts = <51 0>;
 			local-mac-address = [00 11 22 33 44 55];
 			phy-connection-type = "rmii";

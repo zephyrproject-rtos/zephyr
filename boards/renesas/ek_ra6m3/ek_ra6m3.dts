@@ -209,10 +209,12 @@
 	local-mac-address = [00 11 22 33 44 57];
 	status = "okay";
 	phy-handle = <&phy>;
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
 };
 
 &mdio {
-	pinctrl-0 = <&ether_default>;
+	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
 	status = "okay";
 

@@ -6,6 +6,7 @@ config ETH_RENESAS_RA
 	default y
 	depends on DT_HAS_RENESAS_RA_ETHERNET_ENABLED
 	select USE_RA_FSP_ETHER
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable Renesas RA Ethernet Driver.
 
@@ -37,5 +38,12 @@ config ETH_RENESAS_RA_USE_NS_BUF
 	default y if SOC_SERIES_RA6M5 || SOC_SERIES_RA6M4
 	depends on CPU_HAS_TEE
 	depends on !ARM_SECURE_FIRMWARE && !ARM_NONSECURE_FIRMWARE
+
+config ETH_RENESAS_RA_USE_ZERO_COPY
+	bool "Use zero copy feature"
+	default y
+	help
+	  Enable zero copy feature to reduce CPU load during packet
+	  transmission and reception.
 
 endif
