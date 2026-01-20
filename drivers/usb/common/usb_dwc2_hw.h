@@ -798,6 +798,8 @@ USB_DWC2_GET_FIELD_DEFINE(hprt_prtlnsts, HPRT_PRTLNSTS)
  */
 #define USB_DWC2_HCCHAR0                    0x0500UL
 
+#define USB_DWC2_HCCHARN(n)                 (USB_DWC2_HCCHAR0 + ((n) * 0x20UL))
+
 /* Bitfield Masks */
 #define USB_DWC2_HCCHAR_CHENA_POS           31UL
 #define USB_DWC2_HCCHAR_CHENA               BIT(USB_DWC2_HCCHAR_CHENA_POS)
