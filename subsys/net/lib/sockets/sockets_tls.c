@@ -1321,6 +1321,24 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	}
 	tls_set_max_frag_len(&context->config, context->type);
 
+	switch (context->tls_version) {
+	case NET_IPPROTO_TLS_1_3:
+		mbedtls_ssl_conf_min_tls_version(&context->config, MBEDTLS_SSL_VERSION_TLS1_3);
+		break;
+	case NET_IPPROTO_TLS_1_2:
+	case NET_IPPROTO_DTLS_1_2:
+		mbedtls_ssl_conf_min_tls_version(&context->config, MBEDTLS_SSL_VERSION_TLS1_2);
+		break;
+	case NET_IPPROTO_TLS_1_0:
+	case NET_IPPROTO_TLS_1_1:
+	case NET_IPPROTO_DTLS_1_0:
+		/* Nothing to do */
+		break;
+	default:
+		NET_ASSERT(false, "Unknown (D)TLS version, cannot specify minimum requirement");
+		break;
+	}
+
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
 	mbedtls_ssl_conf_legacy_renegotiation(&context->config,
 					   MBEDTLS_SSL_LEGACY_BREAK_HANDSHAKE);
