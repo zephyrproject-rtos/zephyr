@@ -1637,7 +1637,7 @@ static int litex_clk_dts_timeout_read(struct litex_clk_timeout *timeout)
 	return 0;
 }
 
-static int litex_clk_dts_clkouts_read(void)
+static void litex_clk_dts_clkouts_read(void)
 {
 	struct litex_clk_range clkout_div;
 	struct litex_clk_clkout *lcko;
@@ -1665,7 +1665,6 @@ static int litex_clk_dts_clkouts_read(void)
 #if CLKOUT_EXIST(6) == 1
 		CLKOUT_INIT(6)
 #endif
-	return 0;
 }
 
 static void litex_clk_init_clkouts(void)
@@ -1756,10 +1755,7 @@ static int litex_clk_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = litex_clk_dts_clkouts_read();
-	if (ret != 0) {
-		return ret;
-	}
+	litex_clk_dts_clkouts_read();
 
 	litex_clk_init_clkouts();
 
