@@ -71,7 +71,8 @@ static int accept_conn(const bt_addr_t *bdaddr)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->role = BT_HCI_ROLE_PERIPHERAL;
+	cp->role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ? BT_HCI_ROLE_CENTRAL :
+			BT_HCI_ROLE_PERIPHERAL;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
 	if (err) {
@@ -99,13 +100,18 @@ void bt_hci_conn_req(struct net_buf *buf)
 	}
 
 	conn = bt_conn_add_br(&evt->bdaddr);
-	if (!conn) {
+	if (conn == NULL) {
 		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
 	}
 
 	accept_conn(&evt->bdaddr);
-	conn->role = BT_HCI_ROLE_PERIPHERAL;
+
+	/* The role is peripheral by default. If CONFIG_BT_ACCEPT_CONN_AS_CENTRAL is enabled,
+	 * the role will be updated by the role change event if the role switch is accepted by
+	 * the peer device.
+	 */
+	conn->role = BT_CONN_ROLE_PERIPHERAL;
 	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 }

@@ -44,6 +44,14 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_ACCEPT_CONN_AS_CENTRAL
+	bool "Accept a new incoming ACL connection request as central role"
+	help
+	  By default, the device will accept the ACL connection request as the peripheral role.
+	  If the option is enabled, the device will accept the ACL connection request as the
+	  central role. Normally, the HCI Role Change event will be generated after the HCI command
+	  Accept Connection Request is succeeded.
+
 config BT_L2CAP_RX_FLUSH_TO
 	hex "Minimum Bluetooth L2CAP RX flush Timeout accepted in milliseconds"
 	default 0x0001 if BT_A2DP_SINK
