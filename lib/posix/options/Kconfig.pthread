@@ -114,15 +114,7 @@ config POSIX_THREADS_EXT
 
 config POSIX_THREAD_PRIORITY_SCHEDULING
 	bool "Run POSIX threads with different priorities and schedulers"
-	help
-	  Enabling this option allows the application to configure different priorities and
-	  scheduling algorithms for different threads via functions such as pthread_setschedparam()
-	  and pthread_setschedprio(). This is required for Realtime Threads and Advanced Realtime
-	  Threads.
-
-	  For more information, please see
-	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html#tag_02_01_06
-	  https://man7.org/linux/man-pages/man7/posixoptions.7.html
+	select DEPRECATED
 
 config POSIX_PTHREAD_ATTR_STACKSIZE_BITS
 	int "Significant bits for pthread_attr_t stacksize"
@@ -158,19 +150,11 @@ config POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT
 
 config POSIX_THREAD_PRIO_INHERIT
 	bool "POSIX mutex priority inheritance"
-	help
-	  Select 'y' here to enable POSIX mutex priority inheritance.
-
-	  For more information, please see
-	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_mutexattr_getprotocol.html
+	select DEPRECATED
 
 config POSIX_THREAD_PRIO_PROTECT
 	bool "POSIX mutex priority protection"
-	help
-	  Select 'y' here to enable POSIX mutex priority protection.
-
-	  For more information, please see
-	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_mutexattr_getprotocol.html
+	select DEPRECATED
 
 config POSIX_THREAD_SAFE_FUNCTIONS
 	bool "POSIX thread-safe functions"

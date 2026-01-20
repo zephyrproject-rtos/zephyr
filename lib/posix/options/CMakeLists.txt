@@ -165,6 +165,21 @@ if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
 endif()
 
+if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME_THREADS)
+  zephyr_library_sources_ifdef(CONFIG_XSI_REALTIME_THREADS
+    xsi_realtime_threads.c
+  )
+endif()
+
+if(CONFIG_XSI_REALTIME_THREADS)
+  zephyr_compile_definitions(-D_XOPEN_REALTIME_THREADS=${XOPEN_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_PRIORITY_SCHEDULING=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_PRIO_INHERIT=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_PRIO_PROTECT=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_ROBUST_PRIO_INHERIT=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_ROBUST_PRIO_PROTECT=${POSIX_VERSION})
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
 
 if(NOT CONFIG_TC_PROVIDES_XSI_SINGLE_PROCESS)
