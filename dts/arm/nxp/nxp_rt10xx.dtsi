@@ -1225,6 +1225,13 @@
 			interrupts = <90 0>;
 			clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
 		};
+
+		ocotp: ocotp@401f4000 {
+			compatible = "nxp,mcux-ocotp";
+			reg = <0x401f4000 0x4000>;
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_OCOTP_CLK 0 0>;
+		};
 	};
 };
 
