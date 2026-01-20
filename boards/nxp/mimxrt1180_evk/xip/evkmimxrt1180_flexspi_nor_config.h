@@ -190,7 +190,7 @@ typedef struct flexspi_config {
 	 * 8 - Octal
 	 */
 	uint8_t sflash_pad_type;
-	/* [0x046-0x046] Serial Flash Frequencey, device specific
+	/* [0x046-0x046] Serial Flash Frequency, device specific
 	 * definitions, See System Boot Chapter for more details
 	 */
 	uint8_t serial_clk_freq;
