@@ -9,4 +9,23 @@ if SOC_FAMILY_REALTEK_AMEBA
 
 rsource "*/Kconfig"
 
+choice SOC_AMEBA_NP_CORE
+	prompt "Ameba NP prebuilt images"
+	default SOC_AMEBA_NP_DISABLED
+	help
+	  Choose the prebuilt image to be executed on the NP core of the Ameba multi-core MCU.
+	  The image is responsible for booting the NP on the device.
+
+config SOC_AMEBA_NP_DISABLED
+	bool "None"
+	help
+	  Do not include any prebuilt image for the NP core.
+
+config SOC_AMEBA_NP_IMAGE
+	bool "DeepSleep"
+	help
+	  DeepSleep prebuilt image is executed on the NP core of the Ameba multi-core MCU.
+
+endchoice
+
 endif # SOC_FAMILY_REALTEK_AMEBA
