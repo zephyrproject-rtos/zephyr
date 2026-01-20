@@ -322,7 +322,7 @@ static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
 		     base + DMICLCTL_OFFSET);
 }
 
-static int dai_dmic_probe(struct dai_intel_dmic *dmic)
+static void dai_dmic_probe(struct dai_intel_dmic *dmic)
 {
 	LOG_INF("dmic_probe()");
 
@@ -340,8 +340,6 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 
 	/* DMIC Owner Select to DSP */
 	dai_dmic_claim_ownership(dmic);
-
-	return 0;
 }
 
 static int dai_dmic_remove(struct dai_intel_dmic *dmic)
@@ -806,25 +804,20 @@ out:
 	return ret;
 }
 
-static int dai_dmic_probe_wrapper(const struct device *dev)
+static void dai_dmic_probe_wrapper(const struct device *dev)
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
 	k_spinlock_key_t key;
-	int ret = 0;
 
 	key = k_spin_lock(&dmic->lock);
 
 	if (dmic->sref == 0) {
-		ret = dai_dmic_probe(dmic);
+		dai_dmic_probe(dmic);
 	}
 
-	if (!ret) {
-		dmic->sref++;
-	}
+	dmic->sref++;
 
 	k_spin_unlock(&dmic->lock, key);
-
-	return ret;
 }
 
 static int dai_dmic_remove_wrapper(const struct device *dev)
