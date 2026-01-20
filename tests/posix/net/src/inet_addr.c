@@ -6,8 +6,8 @@
 
 #include <stdint.h>
 
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -39,7 +39,7 @@ ZTEST(net, test_inet_addr)
 		{"1.2.3.4", htonl(0x01020304)},
 		{"1.2.3.4    ", htonl(0x01020304)},
 		{"0.0.0.123 a", htonl(0x0000007b)},
-		{"255.255.255.255", htonl(0xffffffff)},
+		{"255.255.255.255", htonl(0xffffffffU)},
 	};
 
 	ARRAY_FOR_EACH_PTR(parms, p) {
