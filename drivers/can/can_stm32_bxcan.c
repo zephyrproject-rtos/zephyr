@@ -721,7 +721,7 @@ static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
-	int ret = -EAGAIN;
+	int ret;
 	int64_t start_time;
 
 	if (!data->common.started) {
