@@ -100,8 +100,14 @@ config ARM_PAC
 
 config ARM_BTI
 	bool
+	depends on MINIMAL_LIBC || PICOLIBC_USE_MODULE
 	help
 	  This option signifies that Branch Target Identification is enabled.
+
+	  Note: BTI requires that the C library be compiled with
+	  -mbranch-protection to include BTI landing pads. Newlib from
+	  toolchains lacks this support, so only minimal libc or picolibc
+	  built from source (PICOLIBC_USE_MODULE) can be used with BTI.
 
 choice ARM_PACBTI
 	prompt "Pointer Authentication and Branch Target Identification (PACBTI)"
