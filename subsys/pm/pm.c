@@ -214,7 +214,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		 * is not passed as the next timeout.
 		 *
 		 */
-		sys_clock_set_timeout(MAX(0, ticks - exit_latency_ticks), true);
+		sys_clock_set_timeout(MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks), true);
 	}
 
 	/*
