@@ -109,6 +109,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_CTIMER2);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXCAN0, 3U);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCAN0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	RESET_ReleasePeripheralReset(kGPIO0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO0);
