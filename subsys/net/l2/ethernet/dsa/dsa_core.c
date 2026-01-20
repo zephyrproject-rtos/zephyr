@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,8 +8,7 @@ LOG_MODULE_REGISTER(net_dsa_core, CONFIG_NET_DSA_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
-
-#include "dsa_tag.h"
+#include <zephyr/net/dsa_tag.h>
 
 struct net_if *dsa_recv(struct net_if *iface, struct net_pkt *pkt)
 {
