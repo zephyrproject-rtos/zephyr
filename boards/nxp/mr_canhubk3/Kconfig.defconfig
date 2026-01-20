@@ -12,13 +12,16 @@ endif # SERIAL
 
 if SPI
 
+config GPIO_INIT_PRIORITY
+	default 10
+
 config SPI_INIT_PRIORITY
-	default 50
+	default 10
 
 if WDT_NXP_FS26
 
 config WDT_NXP_FS26_INIT_PRIORITY
-	default 51
+	default 10
 
 endif # WDT_NXP_FS26
 endif # SPI
