@@ -67,7 +67,7 @@ static enum clock_control_status tisci_get_status(const struct device *dev,
 	if (curr_state) {
 		return CLOCK_CONTROL_STATUS_ON;
 	}
-	if (req_state && !curr_state) {
+	if (req_state) {
 		return CLOCK_CONTROL_STATUS_STARTING;
 	}
 
