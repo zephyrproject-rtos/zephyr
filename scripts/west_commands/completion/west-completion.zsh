@@ -975,8 +975,8 @@ _west_sdk() {
   '(-H --no-hosttools)'{-H,--no-hosttools}'[skip hosttools]'
   '--version[SDK version]:version:'
   '--toolchains[toolchains]:toolchains:'
-  '--personal-access-token[Github personal access token (PAT)]:token:'
-  '--api-url[Github API URL]:url:'
+  '--personal-access-token[GitHub personal access token (PAT)]:token:'
+  '--api-url[GitHub API URL]:url:'
   )
 
   _arguments -S $opts \
