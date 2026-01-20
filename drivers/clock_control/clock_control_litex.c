@@ -1248,7 +1248,7 @@ static int litex_clk_calc_clkout_params(struct litex_clk_clkout *lcko,
 					 uint64_t vco_freq)
 {
 	int delta_f;
-	uint64_t m, clk_freq = 0;
+	uint64_t m, clk_freq;
 	uint32_t d, margin = 1;
 
 	if (lcko->margin.exp) {
@@ -1311,13 +1311,13 @@ static int litex_clk_calc_all_clkout_params(uint64_t vco_freq)
 static int litex_clk_calc_all_params(void)
 {
 	uint32_t div, mul;
-	uint64_t vco_freq = 0;
+	uint64_t vco_freq;
 
 	for (div = ldev->divclk.min; div <= ldev->divclk.max; div++) {
 		ldev->ts_g_config.div = div;
 		for (mul = ldev->clkfbout.max; mul >= ldev->clkfbout.min;
 								 mul--) {
-			int below, above, all_valid = true;
+			int below, above, all_valid;
 
 			vco_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)mul;
 			vco_freq /= div;
