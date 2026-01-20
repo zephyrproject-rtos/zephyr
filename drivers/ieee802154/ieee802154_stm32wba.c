@@ -66,6 +66,11 @@ IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
 #define MAX_CSMA_BACKOFF 4
 #define MAX_FRAME_RETRY  3
 #define CCA_THRESHOLD    (-70)
+/* Default maximum of energy detection */
+#define DEFAULT_MAX_ED   (-36)
+/* Default minimum of energy detection */
+#define DEFAULT_MIN_ED   (-75)
+
 
 static void stm32wba_802154_receive_done(uint8_t *p_buffer,
 					 stm32wba_802154_ral_receive_done_metadata_t *p_metadata);
@@ -75,7 +80,7 @@ static void stm32wba_802154_transmit_done(
 				stm32wba_802154_ral_tx_error_t error,
 				const stm32wba_802154_ral_transmit_done_metadata_t *p_metadata);
 static void stm32wba_802154_cca_done(uint8_t error);
-static void stm32wba_802154_energy_scan_done(int8_t rssi_result);
+static void stm32wba_802154_energy_scan_done(int8_t ed_result);
 
 static const struct device *stm32wba_802154_get_device(void)
 {
@@ -1047,10 +1052,31 @@ static void stm32wba_802154_cca_done(uint8_t error)
 	k_sem_give(&stm32wba_802154_data.cca_wait);
 }
 
-static void stm32wba_802154_energy_scan_done(int8_t rssi_result)
+static int8_t stm32wba_802154_convert_ed_to_rssi(uint8_t ed_result)
+{
+	int8_t rssi_result;
+
+	if (ed_result == 0xFF) {
+		/*  Max dBm */
+		rssi_result = DEFAULT_MAX_ED;
+	} else if (ed_result == 0) {
+		/* Min dBm */
+		rssi_result = DEFAULT_MIN_ED;
+	} else {
+		rssi_result = (((uint32_t)(ed_result * 5) >> 5) + DEFAULT_MIN_ED);
+	}
+
+	return rssi_result;
+}
+
+static void stm32wba_802154_energy_scan_done(int8_t ed_result)
 {
 	if (stm32wba_802154_data.energy_scan_done_cb != NULL) {
 		energy_scan_done_cb_t callback = stm32wba_802154_data.energy_scan_done_cb;
+		int8_t rssi_result;
+
+		/* Convert the normalized energy detected in dBm */
+		rssi_result = stm32wba_802154_convert_ed_to_rssi((uint8_t)ed_result);
 
 		stm32wba_802154_data.energy_scan_done_cb = NULL;
 		callback(stm32wba_802154_get_device(), rssi_result);
