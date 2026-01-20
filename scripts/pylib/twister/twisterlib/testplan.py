@@ -730,7 +730,8 @@ class TestPlan:
                             case = instance.set_case_status_by_name(
                                 identifier,
                                 tc_status,
-                                tc_reason
+                                tc_reason,
+                                True
                             )
                             case.duration = tc.get('execution_time', 0)
                             if tc.get('log'):

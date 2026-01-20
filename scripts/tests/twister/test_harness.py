@@ -51,6 +51,7 @@ SAMPLE_GTEST_END_VARIANT = (
 
 
 def process_logs(harness, logs):
+    harness.instance.force_create = True
     for line in logs:
         harness.handle(line)
 
@@ -321,6 +322,7 @@ def test_robot_handle(tmp_path):
 
     handler = Robot()
     handler.instance = instance
+    handler.instance.force_create = True
     handler.id = "test_case_1"
 
     line = "Test case passed"
@@ -483,6 +485,7 @@ def test_console_handle(
     instance = TestInstance(
         testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
     )
+    instance.force_create = True
 
     console = Console()
     console.instance = instance
@@ -937,6 +940,7 @@ def test_test_handle(
             testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
         )
     instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
+    instance.force_create = True
 
     test_obj = Test()
     test_obj.configure(instance)
