@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #include "eth_dwmac_priv.h"
 
@@ -33,8 +34,8 @@ int dwmac_bus_init(struct dwmac_priv *p)
 #error "CONFIG_DCACHE_LINE_SIZE must be configured to a non-zero value"
 #endif
 
-static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
-			dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
+static struct dwmac_dma_desc __dcacheline_aligned
+	dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
 
 static const uint8_t dwmac_mac_addr[6] = DT_INST_PROP(0, local_mac_address);
 
