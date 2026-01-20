@@ -5263,6 +5263,7 @@ Twister:
     - gchwier
     - LukaszMrugala
     - KamilxPaszkiet
+    - fundakol
   files:
     - scripts/twister
     - scripts/schemas/twister/
