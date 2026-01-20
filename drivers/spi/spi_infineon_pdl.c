@@ -384,6 +384,13 @@ static void spi_interrupt_callback(void *arg, uint32_t event)
 	struct ifx_cat1_spi_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* PSOC4 slave mode: completion is handled by polling in transceive() */
+	if (data->is_slave) {
+		return;
+	}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
+
 	if (event & CY_SCB_SPI_TRANSFER_ERR_EVENT) {
 		const struct ifx_cat1_spi_config *const config = dev->config;
 
@@ -545,6 +552,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 {
 	int result;
 	struct ifx_cat1_spi_data *const data = dev->data;
+	const struct ifx_cat1_spi_config *const config = dev->config;
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
@@ -560,6 +568,27 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	spi_context_cs_control(ctx, true);
 
 	transfer_chunk(dev);
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	if (data->is_slave) {
+		/* PSOC4 SPI slave mode: Use polling for transfer completion.
+		 * The slave doesn't control when the master starts the transaction,
+		 * so we poll until CY_SCB_SPI_TRANSFER_ACTIVE clears (matching
+		 * the bare-metal implementation approach).
+		 * Use short sleep to allow other threads to run while waiting.
+		 */
+		while (CY_SCB_SPI_TRANSFER_ACTIVE &
+		       Cy_SCB_SPI_GetTransferStatus(config->reg_addr, &data->context)) {
+			k_sleep(K_USEC(100));
+		}
+
+		spi_context_update_tx(ctx, data->dfs_value, data->chunk_len);
+		spi_context_update_rx(ctx, data->dfs_value, data->chunk_len);
+		spi_context_cs_control(ctx, false);
+		spi_context_release(ctx, 0);
+		return 0;
+	}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 	result = spi_context_wait_for_completion(&data->ctx);
 
@@ -738,6 +767,16 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	PERI_INFO(n)
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define ADVANCED_SPI_FIELDS(n)                                                                     \
+	.parity = CY_SCB_SPI_PARITY_NONE, .dropOnParityError = false,                              \
+	.ssSetupDelay = DT_INST_PROP_OR(n, ss_setup_delay, 0),                                     \
+	.ssHoldDelay = DT_INST_PROP_OR(n, ss_hold_delay, 0),                                       \
+	.ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0)
+#else
+#define ADVANCED_SPI_FIELDS(n)
+#endif
+
 #define IFX_CAT1_SPI_INIT(n)                                                                       \
                                                                                                    \
 	void spi_handle_events_func_##n(uint32_t event)                                            \
@@ -772,6 +811,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 				 DT_INST_PROP_OR(n, enable_miso_late_sample, true),                \
 			 .EN_XFER_SEPARATION =                                                     \
 				 DT_INST_PROP_OR(n, enable_transfer_separation, false),            \
+			 ADVANCED_SPI_FIELDS(n),                                                   \
 			 .enableWakeFromSleep = DT_INST_PROP_OR(n, enableWakeFromSleep, false),    \
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
 			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
@@ -847,7 +887,15 @@ cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *t
 
 			data->rx_buffer = rx + (tx_words);
 			data->rx_buffer_size = rx_words - tx_words;
-
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		} else if (data->is_slave) {
+			/* PSOC4 slave mode: receive all bytes in one transfer.
+			 * Pass rx_words as the transfer size.
+			 */
+			data->pending = IFX_SPI_PENDING_RX;
+			tx = NULL;
+			tx_words = rx_words;
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 		} else {
 			/*  I) read only. */
 			data->pending = IFX_SPI_PENDING_RX;
@@ -928,6 +976,7 @@ void ifx_cat1_spi_register_callback(const struct device *dev,
 	data->irq_cause = 0;
 }
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
 #endif
@@ -983,6 +1032,7 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 #endif
 	return -EINVAL;
 }
+#endif
 
 static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t hz,
 					    uint8_t *over_sample_val)
@@ -1008,6 +1058,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
 
 	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency(hfclk);
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency();
 #endif
 
 	if (!data->is_slave) {
@@ -1124,6 +1176,15 @@ static cy_rslt_t spi_init_hw(const struct device *dev, cy_stc_scb_spi_config_t *
 		data->callback_data.callback_arg = NULL;
 		data->irq_cause = 0;
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+		/* PSOC4 slave mode: set active slave select BEFORE enabling SPI
+		 * (matching bare-metal initialization order)
+		 */
+		if (cfg->spiMode == CY_SCB_SPI_SLAVE) {
+			Cy_SCB_SPI_SetActiveSlaveSelect(config->reg_addr, CY_SCB_SPI_SLAVE_SELECT0);
+		}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
+
 		irq_enable(config->irq_num);
 		Cy_SCB_SPI_Enable(config->reg_addr);
 	} else {
@@ -1171,6 +1232,13 @@ static void spi_irq_handler(const struct device *dev)
 	const struct ifx_cat1_spi_config *const config = dev->config;
 
 	Cy_SCB_SPI_Interrupt(config->reg_addr, &(data->context));
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* PSOC4 slave mode: completion is handled by polling in transceive() */
+	if (data->is_slave) {
+		return;
+	}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 	if (!data->is_async) {
 		if (CY_SCB_MASTER_INTR_SPI_DONE &
