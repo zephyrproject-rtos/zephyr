@@ -854,7 +854,7 @@ Build and Infrastructure
 
     * pyocd runner: board-specific pyOCD configuration files in YAML can now be
       placed in :file:`support/pyocd.yaml` inside the board directory. See
-      :zephyr_file:`boards/arm/reel_board/support/pyocd.yaml` for an example,
+      ``boards/arm/reel_board/support/pyocd.yaml`` for an example,
       and the pyOCD documentation for details on its configuration format.
 
   * ``west spdx``: new command which can be used to generate SPDX software
