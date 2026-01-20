@@ -402,6 +402,11 @@ static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *ar
 			k_sleep(K_MSEC(10));
 		}
 	}
+
+	if (data->async.user_callback) {
+		evt.type = UART_RX_DISABLED;
+		data->async.user_callback(data->async.dev, &evt, data->async.user_data);
+	}
 }
 
 static int np_uart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
