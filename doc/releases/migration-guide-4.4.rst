@@ -312,3 +312,10 @@ Architectures
   the feature is cache related so move it under cache.
 
   * Use :c:func:`sys_cache_is_mem_coherent` instead of :c:func:`arch_mem_coherent`.
+
+Crypto
+******
+
+* Added AES CFB and OFB cipher mode identifiers to the crypto API
+  (``include/zephyr/crypto/cipher.h``). This change is additive and does not affect existing
+  applications.
