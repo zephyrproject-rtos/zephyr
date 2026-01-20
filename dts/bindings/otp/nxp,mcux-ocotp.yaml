@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP MCUX OCOTP driver
+
+description: |
+  NXP MCUX On-Chip OTP (One-Time Programmable) controller driver.
+
+  This binding represents the OCOTP peripheral found on NXP i.MX RT series
+  and similar SoCs. The OCOTP module provides access to on-chip fuse memory
+  used to store configuration data, security keys, MAC addresses, and other
+  device-specific information.
+
+  The driver integrates with the NVMEM subsystem, allowing individual fuse
+  values to be accessed through nvmem-layout child nodes that define specific
+  memory regions.
+
+  Note: The OTP driver API uses byte addressing, while the OCOTP peripheral
+  has 32-bit wide registers. When specifying the 'reg' property in nvmem-layout
+  child nodes, use byte offsets. The driver handles the conversion between byte
+  addresses and register indices internally.
+
+compatible: "nxp,mcux-ocotp"
+
+include: base.yaml
+
+examples:
+  - |
+    ocotp: ocotp@401f4000 {
+            compatible = "nxp,mcux-ocotp";
+            reg = <0x401f4000 0x4000>;
+            status = "okay";
+            clocks = <&ccm IMX_CCM_OCOTP_CLK 0 0>;
+
+            nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    mac_address0: mac-address@88 {
+                            reg = <0x88 0x6>;
+                            #nvmem-cell-cells = <0>;
+                    };
+
+                    mac_address1: mac-address@8e {
+                            reg = <0x8e 0x6>;
+                            #nvmem-cell-cells = <0>;
+                    };
+            };
+    };
