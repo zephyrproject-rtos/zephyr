@@ -19,6 +19,7 @@ from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
+from typing import Any
 
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS
@@ -1033,9 +1034,11 @@ def parse_arguments(
 
     return options
 
+
 def strip_ansi_sequences(s: str) -> str:
     """Remove ANSI escape sequences from a string."""
     return re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', "", s)
+
 
 class TwisterEnv:
 
@@ -1137,9 +1140,9 @@ class TwisterEnv:
             logger.exception("Failure while reading head commit date.")
 
     @staticmethod
-    def run_cmake_script(args=None):
-        if args is None:
-            args = []
+    def run_cmake_script(args: list[str]) -> dict[str, Any]:
+        if not args:
+            raise ValueError("args list cannot be empty")
         script = os.fspath(args[0])
 
         logger.debug(f"Running cmake script {script}")
