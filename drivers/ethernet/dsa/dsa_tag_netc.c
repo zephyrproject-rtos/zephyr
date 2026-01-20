@@ -4,12 +4,13 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_dsa_tag_netc, CONFIG_NET_DSA_LOG_LEVEL);
+LOG_MODULE_REGISTER(dsa_tag_netc, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
 #include <zephyr/net/dsa_tag.h>
-#include <zephyr/net/dsa_tag_netc.h>
+
+#include "dsa_tag_netc.h"
 #include "fsl_netc_tag.h"
 
 struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
