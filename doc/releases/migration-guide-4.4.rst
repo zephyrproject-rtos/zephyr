@@ -656,6 +656,9 @@ Networking
   handle this status in the handler callback to properly reset resource state after successful
   response transmission.
 
+* The protocol version passed to :c:func:`zsock_socket` when creating a secure socket is now
+  enforced as the minimum TLS version to use for the TLS session.
+
 Modem
 *****
 
