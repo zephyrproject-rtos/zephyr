@@ -210,7 +210,7 @@ struct change_speed_config {
 	uint32_t fcr_val;
 };
 
-#define SEND_BUFFER_MAX_LENGTH  0xFFFFU /* Maximum 2 byte value */
+#define SEND_BUFFER_MAX_LENGTH  4096 /* The supported maximum FW chunk size is 4 KB */
 #define RECV_RING_BUFFER_LENGTH 1024
 
 struct nxp_ctlr_fw_upload_state {
@@ -219,7 +219,7 @@ struct nxp_ctlr_fw_upload_state {
 
 	uint8_t buffer[A6REQ_PAYLOAD_LEN + REQ_HEADER_LEN + 1];
 
-	uint8_t send_buffer[SEND_BUFFER_MAX_LENGTH + 1];
+	uint8_t send_buffer[SEND_BUFFER_MAX_LENGTH];
 
 	struct {
 		uint8_t buffer[RECV_RING_BUFFER_LENGTH];
@@ -915,6 +915,15 @@ static int fw_upload_v1_send_data(uint16_t len)
 		len = fw_upload.fw_length - fw_upload.current_length;
 	}
 
+	__ASSERT(sizeof(fw_upload.send_buffer) >= len, "V1: Out of sending buffer range (%u < %u)",
+		 sizeof(fw_upload.send_buffer), len);
+
+	if (sizeof(fw_upload.send_buffer) < len) {
+		LOG_ERR("V1: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+			len);
+		return -ENOMEM;
+	}
+
 	memcpy(fw_upload.send_buffer, fw_upload.fw + fw_upload.current_length, len);
 	fw_upload.current_length += len;
 	cmd = sys_get_le32(fw_upload.send_buffer);
@@ -965,6 +974,16 @@ static int fw_upload_v3_send_data(void)
 	if ((fw_upload.length + start) > fw_upload.fw_length) {
 		fw_upload.length = fw_upload.fw_length - start;
 	}
+	__ASSERT(sizeof(fw_upload.send_buffer) >= fw_upload.length,
+		 "V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+		 fw_upload.length);
+
+	if (sizeof(fw_upload.send_buffer) < fw_upload.length) {
+		LOG_ERR("V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+			fw_upload.length);
+		return -ENOMEM;
+	}
+
 	memcpy(fw_upload.send_buffer, fw_upload.fw + start, fw_upload.length);
 	fw_upload.current_length = start + fw_upload.length;
 
