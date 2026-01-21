@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HELTEC_WIFI_LORA32_V3_ESP32S3_PROCPU
+
+config POWER_DOMAIN
+	default y
+
+config POWER_DOMAIN_GPIO
+	default y
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_DPI_DEF
+	default 116
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+config LV_Z_COLOR_MONO_HW_INVERSION
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+endif # LVGL
+
+endif # BOARD_HELTEC_WIFI_LORA32_V3_ESP32S3_PROCPU
