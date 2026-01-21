@@ -25,6 +25,7 @@ properties:
   riscv,isa-base:
     description: The base ISA implemented by the hart.
     type: string
+    required: true
     enum:
       - rv32i
       - rv32e
@@ -39,3 +40,4 @@ properties:
       for a list of possible extensions. Not all options listed there are
       necessarily supported by Zephyr.
     type: string-array
+    required: true
