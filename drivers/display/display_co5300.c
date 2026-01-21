@@ -37,6 +37,7 @@ struct co5300_config {
 	uint16_t panel_height;
 	uint16_t channel;
 	uint16_t num_of_lanes;
+	uint16_t frame_pitch_align; /* Pitch alignment requirement, in bytes. */
 };
 
 struct co5300_data {
@@ -46,7 +47,7 @@ struct co5300_data {
 	struct k_sem tear_effect_sem;
 	/* Pointer to framebuffer */
 	uint8_t *frame_ptr;
-	uint32_t frame_pitch;
+	uint32_t frame_pitch; /* Pitch in bytes. */
 };
 
 /* Organized as MIPI_CMD | SIZE OF MIPI PARAM | MIPI PARAM */
@@ -108,12 +109,12 @@ static void co5300_copy_and_adjust_coordinates(const struct device *dev,
 
 	/* Copy the update area to the framebuffer */
 	src = buf;
-	dst = data->frame_ptr + (y * data->frame_pitch * data->bytes_per_pixel)
+	dst = data->frame_ptr + (y * data->frame_pitch)
 		+ (x * data->bytes_per_pixel);
 	for (uint16_t row = 0; row < desc->height; row++) {
 		memcpy(dst, src, desc->width * data->bytes_per_pixel);
-		src += desc->pitch * data->bytes_per_pixel;
-		dst += data->frame_pitch * data->bytes_per_pixel;
+		src += desc->pitch;
+		dst += data->frame_pitch;
 	}
 
 	/*
@@ -139,7 +140,7 @@ static void co5300_copy_and_adjust_coordinates(const struct device *dev,
 	local_desc->height = ROUND_UP(local_desc->height, 2U);
 	local_desc->pitch = data->frame_pitch;
 	local_desc->frame_incomplete = desc->frame_incomplete;
-	local_desc->buf_size = local_desc->width * local_desc->height * data->bytes_per_pixel;
+	local_desc->buf_size = local_desc->pitch * local_desc->height;
 }
 
 static int co5300_write(const struct device *dev,
@@ -222,7 +223,7 @@ static int co5300_write(const struct device *dev,
 
 	/* Start memory write. */
 	/* The address and the total pixel size of the updated area. */
-	src = data->frame_ptr + (local_y * data->frame_pitch * data->bytes_per_pixel)
+	src = data->frame_ptr + (local_y * data->frame_pitch)
 		+ (local_x * data->bytes_per_pixel);
 	tx_size = local_desc.buf_size;
 
@@ -246,11 +247,11 @@ static int co5300_write(const struct device *dev,
 		}
 
 		/* Advance source pointer and decrement remaining */
-		if (local_desc.pitch > local_desc.width) {
+		if (local_desc.pitch > (local_desc.width * data->bytes_per_pixel)) {
 			total_bytes_sent += bytes_written;
 			src += bytes_written + total_bytes_sent /
 				(local_desc.width * data->bytes_per_pixel) *
-				((local_desc.pitch - local_desc.width) * data->bytes_per_pixel);
+				(local_desc.pitch - local_desc.width * data->bytes_per_pixel);
 		} else {
 			src += bytes_written;
 		}
@@ -342,6 +343,8 @@ static int co5300_set_pixel_format(const struct device *dev,
 	/* Update the format in the device data after DCS command succeeds. */
 	data->bytes_per_pixel = bytes_per_pixel;
 	data->pixel_format = mipi_pixel_format;
+	data->frame_pitch = ROUND_UP(config->panel_width * bytes_per_pixel,
+		 config->frame_pitch_align);
 
 	return 0;
 }
@@ -552,13 +555,12 @@ static DEVICE_API(display, co5300_api) = {
 		.tear_effect_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, tear_effect_gpios, {0}),	\
 		.panel_width = DT_INST_PROP(node_id, width),					\
 		.panel_height = DT_INST_PROP(node_id, height),					\
+		.frame_pitch_align = DT_INST_PROP(node_id, pitch_align),			\
 	};											\
 	CO5300_FRAMEBUFFER_DECL(node_id);							\
 	static struct co5300_data co5300_data_##node_id = {					\
 		.pixel_format = DT_INST_PROP(node_id, pixel_format),				\
 		.frame_ptr = CO5300_FRAMEBUFFER(node_id),					\
-		.frame_pitch = ROUND_UP(DT_INST_PROP(node_id, width),				\
-				DT_INST_PROP(node_id, pitch_align)),				\
 	};											\
 	DEVICE_DT_INST_DEFINE(node_id,								\
 			    &co5300_init,							\

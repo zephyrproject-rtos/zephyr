@@ -181,7 +181,12 @@ static int ssd1322_write_pixels_MONO01(const struct device *dev, const uint8_t *
 	int ret, i;
 	int total = 0;
 
-	mipi_desc.pitch = desc->pitch;
+	/* See ssd1322_convert_MONO01 for pixel format details */
+	if (config->segments_per_pixel == SSD1322_2PPP) {
+		mipi_desc.pitch = desc->width;
+	} else {
+		mipi_desc.pitch = desc->width / 2;
+	}
 
 	while (pixel_count > total) {
 		i = ssd1322_convert_MONO01(dev, buf, total, pixel_count);
@@ -212,7 +217,12 @@ static int ssd1322_write_pixels_L_8(const struct device *dev, const uint8_t *buf
 	int ret, i;
 	int total = 0;
 
-	mipi_desc.pitch = desc->pitch;
+	/* See ssd1322_convert_L_8 for the conversion details */
+	if (config->segments_per_pixel == SSD1322_2PPP) {
+		mipi_desc.pitch = desc->width;
+	} else {
+		mipi_desc.pitch = desc->width / 2;
+	}
 
 	while (pixel_count > total) {
 		i = ssd1322_convert_L_8(dev, buf, total, pixel_count);
@@ -241,20 +251,23 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	size_t buf_len;
 	int ret;
 	uint8_t cmd_data[2];
-
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is different from width");
-		return -EINVAL;
-	}
+	uint16_t valid_pitch;
 
 	switch (data->current_pixel_format) {
 	case PIXEL_FORMAT_MONO01:
 		buf_len = MIN(desc->buf_size, desc->height * desc->width / SSD1322_8PPB);
+		valid_pitch = desc->width / 8;
 	break;
 	case PIXEL_FORMAT_L_8:
 		buf_len = MIN(desc->buf_size, desc->height * desc->width / SSD1322_2PPB);
+		valid_pitch = desc->width;
 	break;
 	default:
+		return -EINVAL;
+	}
+
+	if (desc->pitch != valid_pitch) {
+		LOG_ERR("Pitch is different from width in bytes");
 		return -EINVAL;
 	}
 

@@ -253,7 +253,8 @@ static int ssd1363_write_pixels_mipi(const struct device *dev, const uint8_t *bu
 	int ret, i;
 	int total = 0;
 
-	mipi_desc.pitch = desc->pitch;
+	/* In conversion buf, two pixels are saved in one byte, see ssd1363_convert_L_8. */
+	mipi_desc.pitch = desc->pitch / 2;
 
 	while (pixel_count > total) {
 		i = ssd1363_convert_L_8(dev, buf, total, pixel_count);
@@ -306,7 +307,7 @@ static int ssd1363_write(const struct device *dev, const uint16_t x, const uint1
 	size_t buf_len;
 	int32_t pixel_count = desc->width * desc->height;
 
-	if (desc->pitch != desc->width) {
+	if (desc->pitch != desc->width * DISPLAY_BITS_PER_PIXEL(PIXEL_FORMAT_L_8) / 8) {
 		LOG_ERR("Pitch is not width");
 		return -EINVAL;
 	}

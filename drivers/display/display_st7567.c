@@ -328,18 +328,18 @@ static int st7567_write(const struct device *dev, const uint16_t x, const uint16
 {
 	size_t buf_len;
 
-	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+	if (desc->pitch < DIV_ROUND_UP(desc->width, 8)) {
+		LOG_ERR("Pitch is smaller than width in bytes");
 		return -EINVAL;
 	}
 
-	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
+	buf_len = MIN(desc->buf_size, desc->height * DIV_ROUND_UP(desc->width, 8));
 	if (buf == NULL || buf_len == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -EINVAL;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch > DIV_ROUND_UP(desc->width, 8)) {
 		LOG_ERR("Unsupported mode");
 		return -EINVAL;
 	}

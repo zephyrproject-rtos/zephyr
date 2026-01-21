@@ -63,6 +63,11 @@ API Changes
       * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
       * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
 
+* Display
+
+  * :c:member:`pitch` in :c:struct:`display_buffer_descriptor` changes from number of pixels
+    to number of bytes between consecutive rows in the data buffer.
+
 Removed APIs and options
 ========================
 

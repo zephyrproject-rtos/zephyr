@@ -17,10 +17,10 @@ void lvgl_flush_cb_8bit(lv_display_t *display, const lv_area_t *area, uint8_t *p
 	flush.display = display;
 	flush.x = area->x1;
 	flush.y = area->y1;
-	flush.desc.buf_size = w * h;
 	flush.desc.width = w;
 	flush.desc.pitch = ROUND_UP(w, LV_DRAW_BUF_STRIDE_ALIGN);
 	flush.desc.height = h;
+	flush.desc.buf_size = flush.desc.pitch * h;
 	flush.buf = (void *)px_map;
 
 	lvgl_flush_display(&flush);

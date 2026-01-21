@@ -53,9 +53,9 @@ bool verify_pixel(int x, int y, uint32_t color)
 {
 	struct display_buffer_descriptor desc = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = DIV_ROUND_UP(display_width, 8),
 		.width = display_width,
-		.buf_size = display_height * display_width / 8,
+		.buf_size = display_height * DIV_ROUND_UP(display_width, 8),
 	};
 
 	zassert_ok(display_read(dev, 0, 0, &desc, read_buffer), "display_read failed");
@@ -67,9 +67,9 @@ bool verify_image(int cmp_x, int cmp_y, const uint32_t *img, size_t width, size_
 {
 	struct display_buffer_descriptor desc = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = DIV_ROUND_UP(display_width, 8),
 		.width = display_width,
-		.buf_size = display_height * display_width / 8,
+		.buf_size = display_height * DIV_ROUND_UP(display_width, 8),
 	};
 
 	zassert_ok(display_read(dev, 0, 0, &desc, read_buffer), "display_read failed");
@@ -98,9 +98,9 @@ bool verify_color_inside_rect(int x, int y, size_t width, size_t height, uint32_
 {
 	struct display_buffer_descriptor desc = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = DIV_ROUND_UP(display_width, 8),
 		.width = display_width,
-		.buf_size = display_height * display_width / 8,
+		.buf_size = display_height * DIV_ROUND_UP(display_width, 8),
 	};
 
 	zassert_ok(display_read(dev, 0, 0, &desc, read_buffer), "display_read failed");

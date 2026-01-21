@@ -576,7 +576,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 		.buf_size = fb->size,
 		.width = fb->x_res,
 		.height = fb->y_res,
-		.pitch = fb->x_res,
+		.pitch = DIV_ROUND_UP(fb->x_res, 8),
 	};
 
 	if ((fb->pixel_format == PIXEL_FORMAT_MONO10) == fb->inverted) {

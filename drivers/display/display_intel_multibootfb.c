@@ -23,7 +23,7 @@ struct framebuf_dev_config {
 
 struct framebuf_dev_data {
 	void *buffer;
-	uint32_t pitch;
+	uint32_t pitch; /* In Bytes. */
 };
 
 static int framebuf_set_pixel_format(const struct device *dev,
@@ -67,11 +67,11 @@ static int framebuf_write(const struct device *dev, const uint16_t x,
 			  const void *buf)
 {
 	struct framebuf_dev_data *data = dev->data;
-	uint32_t *dst = data->buffer;
-	const uint32_t *src = buf;
+	uint8_t *dst = data->buffer;
+	const uint8_t *src = buf;
 	uint32_t row;
 
-	dst += x;
+	dst += x * sizeof(uint32_t);
 	dst += (y * data->pitch);
 
 	for (row = 0; row < desc->height; ++row) {
@@ -89,11 +89,11 @@ static int framebuf_read(const struct device *dev, const uint16_t x,
 			 void *buf)
 {
 	struct framebuf_dev_data *data = dev->data;
-	uint32_t *src = data->buffer;
-	uint32_t *dst = buf;
+	uint8_t *src = data->buffer;
+	uint8_t *dst = buf;
 	uint32_t row;
 
-	src += x;
+	src += x * sizeof(uint32_t);
 	src += (y * data->pitch);
 
 	for (row = 0; row < desc->height; ++row) {
@@ -135,12 +135,12 @@ static int multiboot_framebuf_init(const struct device *dev)
 
 		adj_x = info->fb_width - config->width;
 		adj_y = info->fb_height - config->height;
-		data->pitch = (info->fb_pitch / 4) + adj_x;
+		data->pitch = info->fb_pitch + adj_x * sizeof(uint32_t);
 		adj_x /= 2U;
 		adj_y /= 2U;
 		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
 		buffer += adj_x;
-		buffer += adj_y * data->pitch;
+		buffer += adj_y * (data->pitch / sizeof(uint32_t));
 		data->buffer = buffer;
 		return 0;
 	} else {

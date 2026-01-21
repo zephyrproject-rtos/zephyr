@@ -647,8 +647,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		 */
 		if (desc != NULL) {
 #endif
-			if ((desc->pitch * data->src_bytes_per_pixel) >
-				(msg->tx_len / desc->height)) {
+			if (desc->pitch > (msg->tx_len / desc->height)) {
 				data->data_left_each_line = desc->width * data->src_bytes_per_pixel;
 				msg->tx_len = data->data_left_each_line;
 				data->update_tx_len = true;

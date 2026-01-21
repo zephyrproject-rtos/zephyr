@@ -365,8 +365,8 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 	uint8_t x_position[] = {x_start, x_end};
 	uint8_t y_position[] = {y / ST730X_PPYA, (y + desc->height) / ST730X_PPYA - 1};
 
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+	if (desc->pitch * ST730X_PPB != desc->width) {
+		LOG_ERR("Pitch x ST730X_PPB is not width");
 		return -EINVAL;
 	}
 
@@ -416,6 +416,7 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 		mipi_desc.buf_size = i * desc->width / ST730X_PPB;
 		mipi_desc.width = desc->width;
 		mipi_desc.height = i;
+		mipi_desc.pitch = desc->width / ST730X_PPB;
 
 		err = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config,
 						config->conversion_buf, &mipi_desc,

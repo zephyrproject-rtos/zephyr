@@ -316,12 +316,12 @@ static int ssd16xx_set_window(const struct device *dev,
 	uint16_t panel_h = config->height -
 			   config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 
-	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+	if (desc->pitch * SSD16XX_PIXELS_PER_BYTE < desc->width) {
+		LOG_ERR("Pitch is smaller than width in bytes");
 		return -EINVAL;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch * SSD16XX_PIXELS_PER_BYTE > desc->width) {
 		LOG_ERR("Unsupported mode");
 		return -ENOTSUP;
 	}
@@ -422,7 +422,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		config->profiles[SSD16XX_PROFILE_PARTIAL] != NULL;
 	const bool partial_refresh = !data->blanking_on && have_partial_refresh;
 	const size_t buf_len = MIN(desc->buf_size,
-				   desc->height * desc->width / 8);
+				   desc->height * desc->pitch);
 	int err;
 
 	if (buf == NULL || buf_len == 0U) {
@@ -498,7 +498,7 @@ int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
 {
 	const struct ssd16xx_data *data = dev->data;
 	const size_t buf_len = MIN(desc->buf_size,
-				   desc->height * desc->width / 8);
+				   desc->height * desc->pitch);
 	int err;
 	uint8_t ram_ctrl;
 

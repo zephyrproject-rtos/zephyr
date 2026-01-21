@@ -27,7 +27,7 @@ enum corner {
 };
 
 typedef void (*fill_buffer)(enum corner corner, uint8_t grey, uint8_t *buf,
-			    size_t buf_size);
+			    struct display_buffer_descriptor *buf_desc);
 
 
 #ifdef CONFIG_ARCH_POSIX
@@ -45,7 +45,7 @@ static void posix_exit_main(int exit_code)
 #endif
 
 static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
-				 size_t buf_size)
+				 struct display_buffer_descriptor *buf_desc)
 {
 	uint32_t color = 0;
 
@@ -64,13 +64,16 @@ static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 		break;
 	}
 
-	for (size_t idx = 0; idx < buf_size; idx += 4) {
-		*((uint32_t *)(buf + idx)) = sys_cpu_to_le32(color);
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < buf_desc->width; col++) {
+			size_t idx = row * buf_desc->pitch + col * 4;
+			*((uint32_t *)(buf + idx)) = sys_cpu_to_le32(color);
+		}
 	}
 }
 
 static void fill_buffer_rgb888(enum corner corner, uint8_t grey, uint8_t *buf,
-			       size_t buf_size)
+			       struct display_buffer_descriptor *buf_desc)
 {
 	uint32_t color = 0;
 
@@ -89,10 +92,13 @@ static void fill_buffer_rgb888(enum corner corner, uint8_t grey, uint8_t *buf,
 		break;
 	}
 
-	for (size_t idx = 0; idx < buf_size; idx += 3) {
-		*(buf + idx + 0) = (color >> 0) & 0xFFu;
-		*(buf + idx + 1) = (color >> 8) & 0xFFu;
-		*(buf + idx + 2) = (color >> 16) & 0xFFu;
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < buf_desc->width; col++) {
+			size_t idx = row * buf_desc->pitch + col * 3;
+			*(buf + idx + 0) = (color >> 0) & 0xFFu;
+			*(buf + idx + 1) = (color >> 8) & 0xFFu;
+			*(buf + idx + 2) = (color >> 16) & 0xFFu;
+		}
 	}
 }
 
@@ -121,31 +127,38 @@ static uint16_t get_rgb565_color(enum corner corner, uint8_t grey)
 }
 
 static void fill_buffer_rgb565x(enum corner corner, uint8_t grey, uint8_t *buf,
-				size_t buf_size)
+			       struct display_buffer_descriptor *buf_desc)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
 
-	for (size_t idx = 0; idx < buf_size; idx += 2) {
-		*(buf + idx + 0) = (color >> 8) & 0xFFu;
-		*(buf + idx + 1) = (color >> 0) & 0xFFu;
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < buf_desc->width; col++) {
+			size_t idx = row * buf_desc->pitch + col * 2;
+			*(buf + idx + 0) = (color >> 8) & 0xFFu;
+			*(buf + idx + 1) = (color >> 0) & 0xFFu;
+		}
 	}
 }
 
 static void fill_buffer_rgb565(enum corner corner, uint8_t grey, uint8_t *buf,
-			       size_t buf_size)
+			       struct display_buffer_descriptor *buf_desc)
 {
 	uint16_t color = get_rgb565_color(corner, grey);
 
-	for (size_t idx = 0; idx < buf_size; idx += 2) {
-		*(uint16_t *)(buf + idx) = color;
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < buf_desc->width; col++) {
+			size_t idx = row * buf_desc->pitch + col * 2;
+			*(uint16_t *)(buf + idx) = color;
+		}
 	}
 }
 
 static void fill_buffer_mono(enum corner corner, uint8_t grey,
 			     uint8_t black, uint8_t white,
-			     uint8_t *buf, size_t buf_size)
+			     uint8_t *buf,
+			     struct display_buffer_descriptor *buf_desc)
 {
-	uint16_t color;
+	uint8_t color;
 
 	switch (corner) {
 	case BOTTOM_LEFT:
@@ -156,10 +169,16 @@ static void fill_buffer_mono(enum corner corner, uint8_t grey,
 		break;
 	}
 
-	memset(buf, color, buf_size);
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < DIV_ROUND_UP(buf_desc->width, 8U); col++) {
+			size_t idx = row * buf_desc->pitch + col;
+			*(uint8_t *)(buf + idx) = color;
+		}
+	}
 }
 
-static inline void fill_buffer_l_8(enum corner corner, uint8_t grey, uint8_t *buf, size_t buf_size)
+static inline void fill_buffer_l_8(enum corner corner, uint8_t grey, uint8_t *buf,
+				   struct display_buffer_descriptor *buf_desc)
 {
 	uint8_t color;
 
@@ -182,13 +201,16 @@ static inline void fill_buffer_l_8(enum corner corner, uint8_t grey, uint8_t *bu
 		break;
 	}
 
-	for (size_t idx = 0; idx < buf_size; idx += 1) {
-		*(uint8_t *)(buf + idx) = color;
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < buf_desc->width; col++) {
+			size_t idx = row * buf_desc->pitch + col;
+			*(uint8_t *)(buf + idx) = color;
+		}
 	}
 }
 
 static void fill_buffer_al_88(enum corner corner, uint8_t grey, uint8_t *buf,
-				 size_t buf_size)
+			      struct display_buffer_descriptor *buf_desc)
 {
 	uint16_t color;
 
@@ -210,21 +232,26 @@ static void fill_buffer_al_88(enum corner corner, uint8_t grey, uint8_t *buf,
 		break;
 	}
 
-	for (size_t idx = 0; idx < buf_size; idx += 2) {
-		*((uint16_t *)(buf + idx)) = sys_cpu_to_le16(color);
+	for (size_t row = 0; row < buf_desc->height; row++) {
+		for (size_t col = 0; col < buf_desc->width; col++) {
+			size_t idx = row * buf_desc->pitch + col * 2;
+			*((uint16_t *)(buf + idx)) = sys_cpu_to_le16(color);
+		}
 	}
 }
 
 static inline void fill_buffer_mono01(enum corner corner, uint8_t grey,
-				      uint8_t *buf, size_t buf_size)
+				      uint8_t *buf,
+				      struct display_buffer_descriptor *buf_desc)
 {
-	fill_buffer_mono(corner, grey, 0x00u, 0xFFu, buf, buf_size);
+	fill_buffer_mono(corner, grey, 0x00u, 0xFFu, buf, buf_desc);
 }
 
 static inline void fill_buffer_mono10(enum corner corner, uint8_t grey,
-				      uint8_t *buf, size_t buf_size)
+				      uint8_t *buf,
+				      struct display_buffer_descriptor *buf_desc)
 {
-	fill_buffer_mono(corner, grey, 0xFFu, 0x00u, buf, buf_size);
+	fill_buffer_mono(corner, grey, 0xFFu, 0x00u, buf, buf_desc);
 }
 
 int main(void)
@@ -245,6 +272,8 @@ int main(void)
 	size_t buf_size = 0;
 	fill_buffer fill_buffer_fnc = NULL;
 	int ret;
+	uint16_t rect_pitch;
+	uint16_t full_screen_pitch;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -293,55 +322,58 @@ int main(void)
 		rect_w = capabilities.x_resolution;
 	}
 
-	rect_w = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
-
-	buf_size = rect_w * rect_h;
-
-	if (buf_size < (capabilities.x_resolution * h_step)) {
-		buf_size = capabilities.x_resolution * h_step;
-	}
-
 	switch (capabilities.current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_argb8888;
-		buf_size *= 4;
+		rect_pitch = rect_w * 4;
+		full_screen_pitch = capabilities.x_resolution * 4;
 		break;
 	case PIXEL_FORMAT_RGB_888:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb888;
-		buf_size *= 3;
+		rect_pitch = rect_w * 3;
+		full_screen_pitch = capabilities.x_resolution * 3;
 		break;
 	case PIXEL_FORMAT_RGB_565:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb565;
-		buf_size *= 2;
+		rect_pitch = rect_w * 2;
+		full_screen_pitch = capabilities.x_resolution * 2;
 		break;
 	case PIXEL_FORMAT_RGB_565X:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb565x;
-		buf_size *= 2;
+		rect_pitch = rect_w * 2;
+		full_screen_pitch = capabilities.x_resolution * 2;
 		break;
 	case PIXEL_FORMAT_L_8:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_l_8;
+		rect_pitch = rect_w;
+		full_screen_pitch = capabilities.x_resolution;
 		break;
 	case PIXEL_FORMAT_AL_88:
 		bg_color = 0x00u;
 		fill_buffer_fnc = fill_buffer_al_88;
-		buf_size *= 2;
+		rect_pitch = rect_w * 2;
+		full_screen_pitch = capabilities.x_resolution * 2;
 		break;
 	case PIXEL_FORMAT_MONO01:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_mono01;
-		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
-			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
+		rect_pitch = DIV_ROUND_UP(DIV_ROUND_UP(
+			rect_w, NUM_BITS(uint8_t)), sizeof(uint8_t));
+		full_screen_pitch = DIV_ROUND_UP(DIV_ROUND_UP(
+			capabilities.x_resolution, NUM_BITS(uint8_t)), sizeof(uint8_t));
 		break;
 	case PIXEL_FORMAT_MONO10:
 		bg_color = 0x00u;
 		fill_buffer_fnc = fill_buffer_mono10;
-		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
-			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
+		rect_pitch = DIV_ROUND_UP(DIV_ROUND_UP(
+			rect_w, NUM_BITS(uint8_t)), sizeof(uint8_t));
+		full_screen_pitch = DIV_ROUND_UP(DIV_ROUND_UP(
+			capabilities.x_resolution, NUM_BITS(uint8_t)), sizeof(uint8_t));
 		break;
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting sample.");
@@ -352,6 +384,10 @@ int main(void)
 #endif
 	}
 
+	rect_pitch = ROUND_UP(rect_pitch, CONFIG_SAMPLE_PITCH_ALIGN);
+	full_screen_pitch = ROUND_UP(full_screen_pitch, CONFIG_SAMPLE_PITCH_ALIGN);
+
+	buf_size = MAX(rect_pitch * rect_h, full_screen_pitch * h_step);
 	buf = k_aligned_alloc(CONFIG_SAMPLE_BUFFER_ADDR_ALIGN, buf_size);
 
 	if (buf == NULL) {
@@ -366,7 +402,7 @@ int main(void)
 	(void)memset(buf, bg_color, buf_size);
 
 	buf_desc.buf_size = buf_size;
-	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_PITCH_ALIGN);
+	buf_desc.pitch = full_screen_pitch;
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
@@ -398,11 +434,11 @@ int main(void)
 		}
 	}
 
-	buf_desc.pitch = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
+	buf_desc.pitch = rect_pitch;
 	buf_desc.width = rect_w;
 	buf_desc.height = rect_h;
 
-	fill_buffer_fnc(TOP_LEFT, 0, buf, buf_size);
+	fill_buffer_fnc(TOP_LEFT, 0, buf, &buf_desc);
 	x = 0;
 	y = 0;
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
@@ -415,7 +451,7 @@ int main(void)
 #endif
 	}
 
-	fill_buffer_fnc(TOP_RIGHT, 0, buf, buf_size);
+	fill_buffer_fnc(TOP_RIGHT, 0, buf, &buf_desc);
 	x = capabilities.x_resolution - rect_w;
 	y = 0;
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
@@ -435,7 +471,7 @@ int main(void)
 	 */
 	buf_desc.frame_incomplete = false;
 
-	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, buf_size);
+	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, &buf_desc);
 	x = capabilities.x_resolution - rect_w;
 	y = capabilities.y_resolution - rect_h;
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
@@ -464,7 +500,7 @@ int main(void)
 
 	LOG_INF("Display starts");
 	while (1) {
-		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
+		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, &buf_desc);
 		ret = display_write(display_dev, x, y, &buf_desc, buf);
 		if (ret < 0) {
 			LOG_ERR("Failed to write to display (error %d)", ret);

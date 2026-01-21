@@ -254,7 +254,7 @@ static int ls0xx_write(const struct device *dev, const uint16_t x,
 		return -EINVAL;
 	}
 
-	if (desc->pitch != desc->width) {
+	if ((desc->pitch * LS0XX_PIXELS_PER_BYTE) != desc->width) {
 		LOG_ERR("Unsupported mode");
 		return -ENOTSUP;
 	}

@@ -60,7 +60,7 @@ static void verify_bytes_of_area(uint8_t *data, int cmp_x, int cmp_y, size_t wid
 {
 	struct display_buffer_descriptor desc = {
 		.height = height,
-		.pitch = width,
+		.pitch = width * bpp,
 		.width = width,
 		.buf_size = buffer_size(width, height),
 	};
@@ -77,7 +77,7 @@ static void verify_background_color(int x, int y, size_t width, size_t height, u
 	size_t buf_size = buffer_size(width, height);
 	struct display_buffer_descriptor desc = {
 		.height = height,
-		.pitch = width,
+		.pitch = width * bpp,
 		.width = width,
 		.buf_size = buf_size,
 	};
@@ -131,7 +131,7 @@ static void display_before(void *text_fixture)
 
 	struct display_buffer_descriptor desc = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = display_width * bpp,
 		.width = display_width,
 		.buf_size = display_height * display_width * bpp,
 	};
@@ -161,7 +161,7 @@ ZTEST(display_read_write, test_write_to_buffer_head)
 	uint16_t buf_size = width * bpp;
 	struct display_buffer_descriptor desc = {
 		.height = height,
-		.pitch = width,
+		.pitch = width * bpp,
 		.width = width,
 		.buf_size = buf_size,
 	};
@@ -189,13 +189,13 @@ ZTEST(display_read_write, test_write_to_buffer_tail)
 	uint16_t buf_size = width * bpp;
 	struct display_buffer_descriptor desc = {
 		.height = height,
-		.pitch = width,
+		.pitch = width * bpp,
 		.width = width,
 		.buf_size = buf_size,
 	};
 	struct display_buffer_descriptor desc_whole = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = display_width * bpp,
 		.width = display_width,
 		.buf_size = buffer_size(display_width, display_height),
 	};
@@ -231,13 +231,13 @@ ZTEST(display_read_write, test_read_does_not_clear_existing_buffer)
 	uint16_t buf_size = width * bpp;
 	struct display_buffer_descriptor desc = {
 		.height = height,
-		.pitch = width,
+		.pitch = width * bpp,
 		.width = width,
 		.buf_size = buf_size,
 	};
 	struct display_buffer_descriptor desc_whole = {
 		.height = display_height,
-		.pitch = display_width,
+		.pitch = display_width * bpp,
 		.width = display_width,
 		.buf_size = buffer_size(display_width, display_height),
 	};

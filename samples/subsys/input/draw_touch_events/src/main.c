@@ -77,6 +77,7 @@ static int clear_screen(void)
 
 			ddesc.width = MIN(buf_desc.width, rem_w);
 			ddesc.height = MIN(buf_desc.height, rem_h);
+			ddesc.pitch = ddesc.width * BPP;
 			ddesc.buf_size = ddesc.width * ddesc.height * BPP;
 
 			ret = display_write(display_dev, x, y, &ddesc, buffer_cross_empty);
@@ -143,6 +144,7 @@ int main(void)
 		return 0;
 	}
 	fill_cross_buffer();
+	buf_desc.pitch = CROSS_DIM * BPP;
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
 		LOG_ERR("Failed to turn blanking off (error %d)", ret);

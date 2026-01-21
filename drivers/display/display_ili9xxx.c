@@ -135,9 +135,8 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <=
-			 desc->buf_size,
+	__ASSERT(desc->width * data->bytes_per_pixel <= desc->pitch, "Pitch too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -147,11 +146,11 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 		return r;
 	}
 
-	if (desc->pitch > desc->width) {
+	if (desc->pitch > desc->width * data->bytes_per_pixel) {
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * data->bytes_per_pixel;
+		mipi_desc.buf_size = desc->width * data->bytes_per_pixel;
 	} else {
 		write_h = desc->height;
 		mipi_desc.height = desc->height;
@@ -161,7 +160,7 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 
 	mipi_desc.width = desc->width;
 	/* Per MIPI API, pitch must always match width */
-	mipi_desc.pitch = desc->width;
+	mipi_desc.pitch = desc->width * data->bytes_per_pixel;
 	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
 	r = ili9xxx_transmit(dev, ILI9XXX_RAMWR, NULL, 0);
@@ -179,7 +178,7 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 			return r;
 		}
 
-		write_data_start += desc->pitch * data->bytes_per_pixel;
+		write_data_start += desc->pitch;
 	}
 
 	return 0;
@@ -203,9 +202,8 @@ static int ili9xxx_read(const struct device *dev, const uint16_t x,
 		return -ENOTSUP;
 	}
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <=
-			 desc->buf_size,
+	__ASSERT(desc->width * data->bytes_per_pixel <= desc->pitch, "Pitch is too small");
+	__ASSERT((desc->pitch * desc->height) <= desc->buf_size,
 		 "Output buffer too small");
 
 	LOG_DBG("Reading %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -234,7 +232,7 @@ static int ili9xxx_read(const struct device *dev, const uint16_t x,
 	mipi_desc.width = 1;
 	mipi_desc.height = 1;
 	/* Per MIPI API, pitch must always match width */
-	mipi_desc.pitch = 1;
+	mipi_desc.pitch = 1 * data->bytes_per_pixel;
 
 	nbr_of_reads = desc->width * desc->height;
 

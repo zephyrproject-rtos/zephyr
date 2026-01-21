@@ -338,8 +338,8 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	const struct ssd1306_config *config = dev->config;
 	const size_t buf_len = (desc->height * desc->width) >> SSD1306_PPB_SHIFT;
 
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+	if (desc->pitch != DIV_ROUND_UP(desc->width, 8)) {
+		LOG_ERR("Pitch is not width in bytes");
 		return -EINVAL;
 	}
 

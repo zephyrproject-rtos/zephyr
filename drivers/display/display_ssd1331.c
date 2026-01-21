@@ -194,8 +194,8 @@ static int ssd1331_write(const struct device *dev, const uint16_t x, const uint1
 	uint8_t x_position[] = {x, x + desc->width - 1};
 	uint8_t y_position[] = {y, y + desc->height - 1};
 
-	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+	if (desc->pitch != desc->width * 2) {
+		LOG_ERR("Pitch is not width * bytes per pixel");
 		return -EINVAL;
 	}
 

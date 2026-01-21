@@ -18,7 +18,7 @@ static const struct display_buffer_descriptor buf_desc = {
 	.buf_size = sizeof(buf),
 	.width    = 5,
 	.height   = 5,
-	.pitch    = 8,
+	.pitch    = 1,
 };
 
 static void update_block_3x3(const struct device *dev)
