@@ -140,7 +140,9 @@ extern "C" {
 #define IN6ADDR_ANY_INIT       NET_IN6ADDR_ANY_INIT
 #define IN6ADDR_LOOPBACK_INIT  NET_IN6ADDR_LOOPBACK_INIT
 
+#if !defined(IFNAMSIZ)
 #define IFNAMSIZ NET_IFNAMSIZ
+#endif /* IFNAMSIZ */
 
 #define in_pktinfo   net_in_pktinfo
 #define ip_mreqn     net_ip_mreqn
