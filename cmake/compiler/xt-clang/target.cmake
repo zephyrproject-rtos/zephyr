@@ -28,6 +28,17 @@ set(LLEXT_APPEND_FLAGS ${LLEXT_APPEND_FLAGS}
 else()
 set(LLEXT_APPEND_FLAGS ${LLEXT_APPEND_FLAGS}
   -ffreestanding
-  -mno-generate-flix
 )
+endif()
+
+if(CONFIG_LLEXT_CODEGEN_VLIW_ENABLED)
+  set(LLEXT_REMOVE_FLAGS ${LLEXT_REMOVE_FLAGS}
+    -mno-generate-flix
+  )
+endif()
+
+if(CONFIG_LLEXT_CODEGEN_VLIW_DISABLED)
+  set(LLEXT_APPEND_FLAGS ${LLEXT_APPEND_FLAGS}
+    -mno-generate-flix
+  )
 endif()

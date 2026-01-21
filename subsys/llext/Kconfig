@@ -224,6 +224,37 @@ config LLEXT_EXPERIMENTAL
 	  Include support for LLEXT experimental and unstable functionality that
 	  has a very high likelihood to change in the future.
 
+menu "Customize compiler options for LLEXT"
+
+choice LLEXT_CODEGEN_VLIW
+	prompt "VLIW code generation"
+	default LLEXT_CODEGEN_VLIW_INHERIT
+	help
+	  This option allows customization of global compiler settings with regards to
+	  generating VLIW (Very Long Instruction Word) instructions for all LLEXT
+	  modules.
+
+config LLEXT_CODEGEN_VLIW_INHERIT
+	bool "Inherit settings"
+	help
+	  Preserve global complier settings with regards to VLIW.
+
+config LLEXT_CODEGEN_VLIW_ENABLED
+	bool "Generate VLIW"
+	help
+	  Customize global complier settings by instructing the compiler to generate
+	  VLIW instructions for LLEXT modules if possible.
+
+config LLEXT_CODEGEN_VLIW_DISABLED
+	bool "DO NOT generate VLIW"
+	help
+	  Customize global complier settings by instructing the compiler to NEVER
+	  generate VLIW instructions for LLEXT modules.
+
+endchoice # LLEXT_CODEGEN_VLIW
+
+endmenu # Customize Compiler Options for LLEXT
+
 menu "Exported symbol groups"
 
 config LLEXT_EXPORT_DEFAULT_GROUPS
