@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -11,17 +11,11 @@ include: base.yaml
 properties:
   sdio-reset-gpios:
     type: phandle-array
-    description: |
-      sd-card io to reset standalone BT CPU/WLAN CPU. If not defined
-      Coex (WIFI + BT use case) overlay uses the same IO
-      for CPU reset to avoid BT CPU reset post WLAN init.
+    required: true
 
   w-disable-gpios:
     type: phandle-array
-    description: |
-      wlan-power io to reset standalone BT CPU/WLAN CPU. If not defined
-      Coex (WIFI + BT use case) overlay uses the same IO
-      for CPU reset to avoid BT CPU reset post WLAN init.
+    required: true
 
   hci-operation-speed:
     type: int
