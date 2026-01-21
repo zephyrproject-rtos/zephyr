@@ -30,3 +30,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
