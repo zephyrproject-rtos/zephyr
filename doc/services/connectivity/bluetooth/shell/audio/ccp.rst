@@ -21,12 +21,14 @@ to :code:`0` which is the GTBS bearer.
    ccp_call_control_server --help
    ccp_call_control_server - Bluetooth CCP Call Control Server shell commands
    Subcommands:
-     init             : Initialize CCP Call Control Server
-     set_bearer_name  : Set bearer name [index] <name>
-     get_bearer_name  : Get bearer name [index]
-     get_bearer_uci   : Get bearer UCI [index]
-     set_bearer_tech  : Set bearer technology [index] <technology>
-     get_bearer_tech  : Get bearer technology [index]
+     init                    : Initialize CCP Call Control Server
+     set_bearer_name         : Set bearer name [index] <name>
+     get_bearer_name         : Get bearer name [index]
+     get_bearer_uci          : Get bearer UCI [index]
+     set_bearer_tech         : Set bearer technology [index] <technology>
+     get_bearer_tech         : Get bearer technology [index]
+     set_bearer_uri_schemes  : Set bearer URI schemes supported list [index] <URI schemes> (e.g. \"tel,skype\")
+     get_bearer_uri_schemes  : Get bearer URI schemes supported list [index]
 
 
 Example Usage
@@ -81,6 +83,16 @@ Setting and getting the bearer technology
    Bearer[0] technology: 3G (0x01)
    uart:~$ ccp_call_control_server set_bearer_tech 0x02
    Bearer[0] new technology: 4G (0x02)
+
+Setting and getting the bearer URI supported schemes list
+---------------------------------------------------------
+
+.. code-block:: console
+
+   uart:~$ ccp_call_control_server get_bearer_uri_schemes
+   Bearer[0] URI schemes supported list: tel,skype
+   uart:~$ ccp_call_control_server set_bearer_uri_schemes "tel,teamspeak"
+   Bearer[0] new URI schemes supported list: tel,teamspeak
 
 Call Control Client
 *******************
