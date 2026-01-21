@@ -12,7 +12,7 @@ if(CONFIG_NET_ZPERF_SERVER)
   zephyr_library_sources_ifdef(CONFIG_NET_TCP zperf_tcp_receiver.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_NET_ZPERF_SHELL
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_ZPERF_SUPPORTED
   zperf_shell.c
 )
 

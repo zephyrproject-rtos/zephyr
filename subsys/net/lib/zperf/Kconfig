@@ -14,7 +14,7 @@ menuconfig NET_ZPERF
 
 if NET_ZPERF
 
-config NET_ZPERF_SHELL
+config NET_SHELL_ZPERF_SUPPORTED
 	bool "Enables or Disables Shell access to zperf"
 	default y
 	help
