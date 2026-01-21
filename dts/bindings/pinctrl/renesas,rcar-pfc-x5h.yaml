@@ -1,0 +1,81 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Renesas R-Car Gen5 Pin Function Controller (PFC)
+
+    The R-Car PFC is a singleton node responsible for controlling pin function
+    selection and pin properties.
+
+    The node has the 'pfc' node label set in the SoC's devicetree and can be
+    modified through a 'board-pinctrl.dtsi' file in the board directory, or a
+    devicetree overlay in the application. All device pin configurations must
+    be placed in child nodes of the 'pfc' node. For example, this node can be
+    used to route CAN8 TX to pin 'CLK_EXTFXR', and enable pull-up resistor as
+    well as driving ability.
+
+compatible: "renesas,rcar-pfc-x5h"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: R-Car Gen5 pin configuration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-strength-microamp
+
+  properties:
+    pin:
+      type: array
+      required: true
+      description: |
+        The array is expected to have up to two elements. The first element
+        is the pin, the second optional element is the pin function.
+    drive-strength-microamp:
+      enum: [7500, 9500, 10300, 10600, 10800, 11000, 11200]
+
+examples:
+- |
+  /*
+   * In the 'board-pinctrl.dtsi' file, include pre-defined pins
+   * and functions for the SoC used by the board
+   */
+  #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a78000.h>
+
+  &pfc {
+    /* ... */
+
+    /* Configuration for CAN8 TX default state */
+    can8_tx_default: can8_tx_default {
+      /* Configure PIN_CLK_EXTFXR as FUNC_CAN8TX */
+      pin = <PIN_CLK_EXTFXR FUNC_CAN8TX>;
+    };
+    /* Configuration for CAN8 RX default state */
+    can8_rx_default: can8_rx_default {
+      /* Configure PIN_FXR_CLKOUT2 as FUNC_CAN8RX_INTP8 */
+      pin = <PIN_FXR_CLKOUT2 FUNC_CAN8RX_INTP8>;
+    };
+  };
+
+  /*
+   * In the board's DTS file', use pinctrl-N properties to link
+   * pin configurations with a device
+   */
+  #include "board-pinctrl.dtsi"
+
+  &can8 {
+    /* ... */
+
+    pinctrl-0 = <&can8_tx_default &can8_rx_default>;
+    pinctrl-1 = <&can8_tx_sleep &can8_rx_sleep>;
+    pinctrl-names = "default", "sleep";
+  };
