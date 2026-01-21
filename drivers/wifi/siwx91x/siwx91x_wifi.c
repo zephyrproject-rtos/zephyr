@@ -64,7 +64,8 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		return -EIO;
 	}
 
-	strncpy(status->ssid, wlan_info.ssid, WIFI_SSID_MAX_LEN);
+	strncpy(status->ssid, wlan_info.ssid, sizeof(status->ssid));
+	status->ssid[sizeof(status->ssid) - 1] = 0;
 	status->ssid_len = strlen(status->ssid);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
