@@ -5212,6 +5212,11 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		l2cap_br_conn_pend(chan, hci_status);
 
+		if (chan->conn == NULL) {
+			LOG_WRN("Invalid ACL conn for chan %p", chan);
+			continue;
+		}
+
 		if (chan->ops && chan->ops->encrypt_change) {
 			chan->ops->encrypt_change(chan, hci_status);
 		}
