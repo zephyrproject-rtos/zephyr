@@ -200,6 +200,16 @@ New APIs and options
     mailbox usage. Applications should be prepared to receive a NULL payload pointer
     in IPM callbacks when no data buffer is provided by the mailbox.
 
+* Management
+
+  * MCUmgr
+
+    * :kconfig:option:`CONFIG_UART_MCUMGR_RAW_PROTOCOL`,
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART`,
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`,
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS` see
+      :ref:`raw UART MCUmgr SMP transport <mcumgr_smp_transport_raw_uart>` for details.
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
