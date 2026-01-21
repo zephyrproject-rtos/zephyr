@@ -136,10 +136,27 @@
 
 LOG_MODULE_REGISTER(TMAG5170, CONFIG_SENSOR_LOG_LEVEL);
 
+static void swap(uint8_t *a, uint8_t *b)
+{
+	uint8_t temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
 static int tmag5170_transmit_raw(const struct tmag5170_dev_config *config,
 				 uint8_t *buffer_tx,
 				 uint8_t *buffer_rx)
 {
+	// NOTE: There abnormalities with the spi_ll_stm32.c implementation. As of Zephyr v4.1.0,
+	// it checks the spi word size and fails if it is not 8 or 16 bits. This chip only supports
+	// 32 bits. To get this working, we needed to allow 32 bit transfers in spi_ll_stm32.c.
+	// This introduces another problem. Now 32 bit transfers are allow, but it seems as though
+	// they are done as 2 16-bit transfers for whatever reason. This means that the byte order
+	// is incorrect and the top and bottom bytes are swapped with their pair. To account for this
+	// we insert a hack here to swap the bytes around.
+	swap(&buffer_tx[0], &buffer_tx[1]);
+	swap(&buffer_tx[2], &buffer_tx[3]);
+
 	const struct spi_buf tx_buf = {
 		.buf = buffer_tx,
 		.len = TMAG5170_SPI_BUFFER_LEN,
@@ -161,6 +178,12 @@ static int tmag5170_transmit_raw(const struct tmag5170_dev_config *config,
 	};
 
 	int ret = spi_transceive_dt(&config->bus, &tx, &rx);
+
+	if (buffer_rx != NULL)
+	{
+		swap(&buffer_rx[0], &buffer_rx[1]);
+		swap(&buffer_rx[2], &buffer_rx[3]);
+	}
 
 	return ret;
 }
@@ -206,7 +229,7 @@ static int tmag5170_read_register(const struct device *dev,
 
 	int ret = tmag5170_transmit(dev, buffer_tx, buffer_rx);
 
-	*output = (buffer_rx[1] << 8) | buffer_rx[2];
+	*output = (((uint16_t)buffer_rx[1]) << 8) | buffer_rx[2];
 
 	return ret;
 }
@@ -260,7 +283,7 @@ static void tmag5170_convert_temp_reading_to_celsius(struct sensor_value *output
 {
 	int32_t result = chan_reading - TMAG5170_T_ADC_T0;
 
-	result = (TMAG5170_T_SENS_T0 * 100000) + (100000 * result / (int32_t)TMAG5170_T_ADC_RES);
+	result = (TMAG5170_T_SENS_T0 * 100000) + ((100000 * result) / (int32_t)TMAG5170_T_ADC_RES);
 
 	output->val1 = result / 100000;
 	output->val2 = (result % 100000) * 10;
