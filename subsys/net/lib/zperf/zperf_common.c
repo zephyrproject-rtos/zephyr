@@ -339,7 +339,7 @@ static int zperf_init(void)
 		zperf_session_init();
 	}
 
-	if (IS_ENABLED(CONFIG_NET_SHELL)) {
+	if (IS_ENABLED(CONFIG_NET_ZPERF_SHELL)) {
 		zperf_shell_init();
 	}
 

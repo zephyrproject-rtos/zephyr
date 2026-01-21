@@ -14,6 +14,12 @@ menuconfig NET_ZPERF
 
 if NET_ZPERF
 
+config NET_ZPERF_SHELL
+	bool "Enables or Disables Shell access to zperf"
+	default y
+	help
+	  Enables or Disables shell access to zperf.
+
 config NET_ZPERF_LEGACY_HEADER_COMPAT
 	bool "Legacy iperf UDP header format"
 	help
