@@ -21,8 +21,8 @@ tests:
       type: multi_line
       regex:
         - "Starting Direct-XIP bootloader"
-        - "Primary slot: version=0.0.0+0"
-        - "Secondary slot: version=0.0.0+0"
+        - "Primary slot: version=0.0.0\\+0"
+        - "Secondary slot: version=0.0.0\\+0"
         - "Image 0 loaded from the primary slot"
         - "Bootloader chainload address offset"
         - "Image version: v0.0.0"
@@ -36,7 +36,7 @@ tests:
       regex:
         - "Starting Direct-XIP bootloader"
         - "Image 0 Primary slot: Image not found"
-        - "Secondary slot: version=0.0.0+0"
+        - "Secondary slot: version=0.0.0\\+0"
         - "Image 0 loaded from the secondary slot"
         - "Bootloader chainload address offset"
         - "Image version: v0.0.0"
