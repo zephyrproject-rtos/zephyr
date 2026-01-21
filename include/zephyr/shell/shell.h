@@ -326,10 +326,16 @@ struct shell_cmd_help {
  */
 static inline bool shell_help_is_structured(const char *help)
 {
-	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
+	const uint32_t magic32 = SHELL_STRUCTURED_HELP_MAGIC;
+	const char *magic = (const char *)&magic32;
 
-	return structured != NULL && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
-	       structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
+	/**
+	 * Check if what help points to starts with the structured help magic word,
+	 * but without assuming help is 32 bit aligned, or that if it is a string,
+	 * that it is at least 4 bytes long.
+	 */
+	return help != NULL && (magic[0] == help[0]) && (magic[1] == help[1])
+	       && (magic[2] == help[2]) && (magic[3] == help[3]);
 }
 
 #if defined(CONFIG_SHELL_HELP) || defined(__DOXYGEN__)
