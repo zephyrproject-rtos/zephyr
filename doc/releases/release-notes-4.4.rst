@@ -66,6 +66,8 @@ API Changes
 Removed APIs and options
 ========================
 
+* ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
+
 Deprecated APIs and options
 ===========================
 
