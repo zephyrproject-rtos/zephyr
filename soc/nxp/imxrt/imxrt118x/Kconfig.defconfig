@@ -42,24 +42,4 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE if SOC_MIMXRT1189_CM33
 endchoice
 
-if MBEDTLS_PSA_CRYPTO_C
-
-config PSA_CRYPTO_DRIVER_ELE_S4xx
-	bool
-	default y
-
-if MBEDTLS_PSA_CRYPTO_STORAGE_C
-
-config TEST_KEY_LOCATION
-	hex
-	default 0xC00002
-
-config PSA_ELE_S4XX_NVM_MANAGER
-	bool "Enables ELE S4xx support for persistent opaque keys in ELE crypto backend for psa-crypto-driver"
-	default y
-
-endif # MBEDTLS_PSA_CRYPTO_STORAGE_C
-
-endif # MBEDTLS_PSA_CRYPTO_C
-
 endif # SOC_SERIES_IMXRT118X
