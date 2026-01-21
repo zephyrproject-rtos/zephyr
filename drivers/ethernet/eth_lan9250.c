@@ -490,7 +490,7 @@ static int lan9250_configure(const struct device *dev)
 	}
 
 	/* Clear interrupt status */
-	ret = lan9250_write_sys_reg(dev, LAN9250_INT_STS, 0xFFFFFFFF);
+	ret = lan9250_write_sys_reg(dev, LAN9250_INT_STS, 0xFFFFFFFFU);
 	if (ret < 0) {
 		return ret;
 	}
