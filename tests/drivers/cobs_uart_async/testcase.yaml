@@ -1,0 +1,12 @@
+tests:
+  drivers.cobs_uart_async_sockets:
+    tags:
+      - net
+      - cobs
+      - uart
+      - sockets
+    platform_allow:
+      - native_sim
+      - nrf5340dk_nrf5340_cpuapp
+    integration_platforms:
+      - native_sim
