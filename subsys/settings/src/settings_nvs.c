@@ -74,17 +74,20 @@ int settings_nvs_dst(struct settings_nvs *cf)
 }
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
-#define SETTINGS_NVS_CACHE_OVFL(cf) ((cf)->cache_total > ARRAY_SIZE((cf)->cache))
-
 static void settings_nvs_cache_add(struct settings_nvs *cf, const char *name,
 				   uint16_t name_id)
 {
 	uint16_t name_hash = crc16_ccitt(0xffff, name, strlen(name));
 
-	cf->cache[cf->cache_next].name_hash = name_hash;
-	cf->cache[cf->cache_next++].name_id = name_id;
+	if (!cf->overflowed &&
+	    (cf->cache_next >= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE)) {
+		cf->overflowed = true;
+	}
 
 	cf->cache_next %= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
+
+	cf->cache[cf->cache_next].name_hash = name_hash;
+	cf->cache[cf->cache_next++].name_id = name_id;
 }
 
 static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *name,
@@ -132,8 +135,7 @@ static int settings_nvs_load(struct settings_store *cs,
 	uint16_t name_id = NVS_NAMECNT_ID;
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
-	uint16_t cached = 0;
-
+	cf->overflowed = false;
 	cf->loaded = false;
 #endif
 
@@ -145,7 +147,6 @@ static int settings_nvs_load(struct settings_store *cs,
 		if (name_id == NVS_NAMECNT_ID) {
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 			cf->loaded = true;
-			cf->cache_total = cached;
 #endif
 			break;
 		}
@@ -198,7 +199,6 @@ static int settings_nvs_load(struct settings_store *cs,
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 		settings_nvs_cache_add(cf, name, name_id);
-		cached++;
 #endif
 
 		ret = settings_call_set_handler(
@@ -246,7 +246,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 	/* We can skip reading NVS if we know that the cache wasn't overflowed. */
-	if (cf->loaded && !SETTINGS_NVS_CACHE_OVFL(cf)) {
+	if (cf->loaded && !cf->overflowed) {
 		goto found;
 	}
 #endif
@@ -345,9 +345,6 @@ found:
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 	if (!name_in_cache) {
 		settings_nvs_cache_add(cf, name, write_name_id);
-		if (cf->loaded && !SETTINGS_NVS_CACHE_OVFL(cf)) {
-			cf->cache_total++;
-		}
 	}
 #endif
 
