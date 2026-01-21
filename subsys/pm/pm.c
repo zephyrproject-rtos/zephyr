@@ -173,6 +173,12 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	events_ticks = pm_policy_next_event_ticks();
 	ticks = ticks_expiring_sooner(kernel_ticks, events_ticks);
 
+#ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
+	int32_t custom_ticks = pm_policy_next_custom_ticks();
+
+	ticks = ticks_expiring_sooner(custom_ticks, ticks);
+#endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
+
 	key = k_spin_lock(&pm_forced_state_lock);
 	if (z_cpus_pm_forced_state[id] != NULL) {
 		z_cpus_pm_state[id] = z_cpus_pm_forced_state[id];

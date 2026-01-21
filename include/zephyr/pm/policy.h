@@ -273,6 +273,23 @@ bool pm_policy_device_is_disabling_state(const struct device *dev,
  */
 int64_t pm_policy_next_event_ticks(void);
 
+#if defined(CONFIG_PM_CUSTOM_TICKS_HOOK) || defined(__DOXYGEN__)
+/**
+ * @brief Get ticks to custom next event for PM policy.
+ *
+ * This optional hook allows providing an additional "next event"
+ * tick value derived from proprietary or hardware-specific sources
+ * that are not modeled via pm_policy_next_event_ticks().
+ *
+ * @kconfig_dep{CONFIG_PM_CUSTOM_TICKS_HOOK}
+ *
+ * @retval >0 If next custom event is in the future
+ * @retval 0 If next custom event is now or in the past
+ * @retval -1 If there is no custom event pending
+ */
+int64_t pm_policy_next_custom_ticks(void);
+#endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
+
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
@@ -323,6 +340,13 @@ static inline int64_t pm_policy_next_event_ticks(void)
 {
 	return -1;
 }
+#ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
+
+static inline int64_t pm_policy_next_custom_ticks(void)
+{
+	return -1;
+}
+#endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
 
 #endif /* CONFIG_PM */
 
