@@ -26,8 +26,6 @@ endfunction()
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
-  SL_SUPPRESS_DEPRECATION_WARNINGS_WISECONNECT_3_5
-  SL_SUPPRESS_DEPRECATION_WARNINGS_WISECONNECT_4_0
   SL_SI91X_ENABLE_LITTLE_ENDIAN
   SLI_CODE_CLASSIFICATION_DISABLE
   SLI_SI91X_MCU_COMMON_FLASH_MODE
