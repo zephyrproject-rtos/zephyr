@@ -695,7 +695,7 @@
 
 			test_ssd1363: ssd1363@6 {
 				compatible = "solomon,ssd1363";
-				reg = <0x5>;
+				reg = <0x6>;
 				width = <256>;
 				height = <128>;
 				precharge-period = <0x0>;
@@ -706,6 +706,15 @@
 				start-line = <0>;
 				multiplex-ratio = <0>;
 				phase-length = <0x0>;
+			};
+
+			test_waveshare_dsi_lcd: waveshare_dsi_lcd@7 {
+				compatible = "waveshare,7inch-dsi-lcd-c";
+				reg = <0x7>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				mipi-dsi = <&mipi_dsi>;
+				status = "okay";
 			};
 		};
 	};
