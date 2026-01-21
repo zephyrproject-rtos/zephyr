@@ -551,11 +551,6 @@ int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf)
 	}
 
 	bi = udc_get_buf_info(buf);
-	if (bi->ep == USB_CONTROL_EP_OUT) {
-		ret = -EPERM;
-		goto ep_enqueue_error;
-	}
-
 	cfg = udc_get_ep_cfg(dev, bi->ep);
 	if (cfg == NULL) {
 		ret = -ENODEV;
@@ -570,7 +565,6 @@ int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf)
 	LOG_DBG("Queue ep 0x%02x %p len %u", cfg->addr, buf,
 		USB_EP_DIR_IS_IN(cfg->addr) ? buf->len : buf->size);
 
-	bi->setup = 0;
 	ret = api->ep_enqueue(dev, cfg, buf);
 
 ep_enqueue_error:
@@ -652,14 +646,37 @@ struct net_buf *udc_ctrl_alloc(const struct device *dev,
 	return udc_ep_buf_alloc(dev, ep, size);
 }
 
+struct net_buf *udc_ctrl_setup_alloc(const struct device *dev)
+{
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct net_buf *buf;
+
+	/* Allocate bMaxPacketSize0 despite SETUP being just 8 bytes */
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, ep_cfg->mps);
+	if (buf) {
+		udc_ep_buf_set_setup(buf);
+	}
+
+	return buf;
+}
+
 struct net_buf *udc_ctrl_data_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    const size_t size)
 {
 	struct udc_buf_info *bi;
 	struct net_buf *buf;
+	size_t alloc_len = size;
 
-	buf = udc_ctrl_alloc(dev, ep, size);
+	if (ep == USB_CONTROL_EP_OUT) {
+		struct udc_ep_config *ep_cfg;
+
+		/* Round up to bMaxPacketSize0 */
+		ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+		alloc_len = ROUND_UP(size, ep_cfg->mps);
+	}
+
+	buf = udc_ctrl_alloc(dev, ep, alloc_len);
 	if (buf) {
 		bi = udc_get_buf_info(buf);
 		bi->data = true;
@@ -728,8 +745,6 @@ int udc_enable(const struct device *dev)
 		ret = -EALREADY;
 		goto udc_enable_error;
 	}
-
-	data->stage = CTRL_PIPE_STAGE_SETUP;
 
 	ret = api->enable(dev);
 	if (ret == 0) {
@@ -821,241 +836,6 @@ udc_shutdown_error:
 	api->unlock(dev);
 
 	return ret;
-}
-
-static ALWAYS_INLINE
-struct net_buf *udc_ctrl_alloc_stage(const struct device *dev,
-				     struct net_buf *const parent,
-				     const uint8_t ep,
-				     const size_t size)
-{
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc(dev, ep, size);
-	if (buf == NULL) {
-		return NULL;
-	}
-
-	if (parent) {
-		net_buf_frag_add(parent, buf);
-	}
-
-	return buf;
-}
-
-int udc_ctrl_submit_s_out_status(const struct device *dev,
-			      struct net_buf *const dout)
-{
-	struct udc_buf_info *bi = udc_get_buf_info(dout);
-	struct udc_data *data = dev->data;
-	int ret = 0;
-
-	bi->data = true;
-	net_buf_frag_add(data->setup, dout);
-
-	return udc_submit_ep_event(dev, data->setup, ret);
-}
-
-int udc_ctrl_submit_s_in_status(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-	int ret = 0;
-
-	if (!udc_ctrl_stage_is_data_in(dev)) {
-		return -ENOTSUP;
-	}
-
-	return udc_submit_ep_event(dev, data->setup, ret);
-}
-
-int udc_ctrl_submit_s_status(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-	int ret = 0;
-
-	return udc_submit_ep_event(dev, data->setup, ret);
-}
-
-int udc_ctrl_submit_status(const struct device *dev,
-			   struct net_buf *const buf)
-{
-	struct udc_buf_info *bi = udc_get_buf_info(buf);
-
-	bi->status = true;
-
-	return udc_submit_ep_event(dev, buf, 0);
-}
-
-bool udc_ctrl_stage_is_data_out(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-
-	return data->stage == CTRL_PIPE_STAGE_DATA_OUT ? true : false;
-}
-
-bool udc_ctrl_stage_is_data_in(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-
-	return data->stage == CTRL_PIPE_STAGE_DATA_IN ? true : false;
-}
-
-bool udc_ctrl_stage_is_status_out(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-
-	return data->stage == CTRL_PIPE_STAGE_STATUS_OUT ? true : false;
-}
-
-bool udc_ctrl_stage_is_status_in(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-
-	return data->stage == CTRL_PIPE_STAGE_STATUS_IN ? true : false;
-}
-
-bool udc_ctrl_stage_is_no_data(const struct device *dev)
-{
-	struct udc_data *data = dev->data;
-
-	return data->stage == CTRL_PIPE_STAGE_NO_DATA ? true : false;
-}
-
-static bool udc_data_stage_to_host(const struct net_buf *const buf)
-{
-	struct usb_setup_packet *setup = (void *)buf->data;
-
-	return USB_REQTYPE_GET_DIR(setup->bmRequestType);
-}
-
-void udc_ctrl_update_stage(const struct device *dev,
-			   struct net_buf *const buf)
-{
-	struct udc_buf_info *bi = udc_get_buf_info(buf);
-	struct udc_device_caps caps = udc_caps(dev);
-	uint8_t next_stage = CTRL_PIPE_STAGE_ERROR;
-	struct udc_data *data = dev->data;
-
-	__ASSERT(USB_EP_GET_IDX(bi->ep) == 0,
-		 "0x%02x is not a control endpoint", bi->ep);
-
-	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
-		uint16_t length  = udc_data_stage_length(buf);
-
-		if (data->stage != CTRL_PIPE_STAGE_SETUP) {
-			LOG_INF("Sequence %u not completed", data->stage);
-
-			if (data->stage == CTRL_PIPE_STAGE_DATA_OUT) {
-				/*
-				 * The last setup packet is "floating" because
-				 * DATA OUT stage was awaited. This setup
-				 * packet must be removed here because it will
-				 * never reach the stack.
-				 */
-				LOG_INF("Drop setup packet (%p)", (void *)data->setup);
-				net_buf_unref(data->setup);
-			}
-
-			data->stage = CTRL_PIPE_STAGE_SETUP;
-		}
-
-		data->setup = buf;
-
-		/*
-		 * Setup Stage has been completed (setup packet received),
-		 * regardless of the previous stage, this is now being reset.
-		 * Next state depends on wLength and the direction bit (D7).
-		 */
-		if (length == 0) {
-			/*
-			 * No Data Stage, next is Status Stage
-			 * complete sequence: s->status
-			 */
-			LOG_DBG("s->(status)");
-			next_stage = CTRL_PIPE_STAGE_NO_DATA;
-		} else if (udc_data_stage_to_host(buf)) {
-			/*
-			 * Next is Data Stage (to host / IN)
-			 * complete sequence: s->in->status
-			 */
-			LOG_DBG("s->(in)");
-			next_stage = CTRL_PIPE_STAGE_DATA_IN;
-		} else {
-			/*
-			 * Next is Data Stage (to device / OUT)
-			 * complete sequence: s->out->status
-			 */
-			LOG_DBG("s->(out)");
-			next_stage = CTRL_PIPE_STAGE_DATA_OUT;
-		}
-
-	} else if (bi->ep == USB_CONTROL_EP_OUT) {
-		if (data->stage == CTRL_PIPE_STAGE_DATA_OUT) {
-			/*
-			 * Next sequence is Status Stage if request is okay,
-			 * (IN ZLP status to host)
-			 */
-			next_stage = CTRL_PIPE_STAGE_STATUS_IN;
-		} else if (data->stage == CTRL_PIPE_STAGE_STATUS_OUT) {
-			/*
-			 * End of a sequence: s->in->status,
-			 * We should check the length here because we always
-			 * submit a OUT request with the minimum length
-			 * of the control endpoint.
-			 */
-			if (buf->len == 0) {
-				LOG_DBG("s-in-status");
-				next_stage = CTRL_PIPE_STAGE_SETUP;
-			} else {
-				LOG_WRN("ZLP expected");
-				next_stage = CTRL_PIPE_STAGE_ERROR;
-			}
-		} else {
-			LOG_ERR("Cannot determine the next stage");
-			next_stage = CTRL_PIPE_STAGE_ERROR;
-		}
-
-	} else { /* if (bi->ep == USB_CONTROL_EP_IN) */
-		if (data->stage == CTRL_PIPE_STAGE_STATUS_IN) {
-			/*
-			 * End of a sequence: setup->out->in
-			 */
-			LOG_DBG("s-out-status");
-			next_stage = CTRL_PIPE_STAGE_SETUP;
-		} else if (data->stage == CTRL_PIPE_STAGE_DATA_IN) {
-			/*
-			 * Data IN stage completed, next sequence
-			 * is Status Stage (OUT ZLP status to device).
-			 * over-engineered controllers can send status
-			 * on their own, skip this state then.
-			 */
-			if (caps.out_ack) {
-				LOG_DBG("s-in->[status]");
-				next_stage = CTRL_PIPE_STAGE_SETUP;
-			} else {
-				LOG_DBG("s-in->(status)");
-				next_stage = CTRL_PIPE_STAGE_STATUS_OUT;
-			}
-		} else if (data->stage == CTRL_PIPE_STAGE_NO_DATA) {
-			/*
-			 * End of a sequence (setup->in)
-			 * Previous NO Data stage was completed and
-			 * we confirmed it with an IN ZLP.
-			 */
-			LOG_DBG("s-status");
-			next_stage = CTRL_PIPE_STAGE_SETUP;
-		} else {
-			LOG_ERR("Cannot determine the next stage");
-			next_stage = CTRL_PIPE_STAGE_ERROR;
-		}
-	}
-
-
-	if (next_stage == data->stage) {
-		LOG_WRN("State not changed!");
-	}
-
-	data->stage = next_stage;
 }
 
 #if defined(CONFIG_UDC_WORKQUEUE)

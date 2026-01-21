@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#error This UDC driver has to be adapted to new control transfer handling
+
 /**
  * @file  udc_stm32.c
  * @brief STM32 USB device controller (UDC) driver

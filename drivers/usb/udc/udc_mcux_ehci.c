@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#error This UDC driver has to be adapted to new control transfer handling
+
 #define DT_DRV_COMPAT nxp_ehci
 
 #include <string.h>

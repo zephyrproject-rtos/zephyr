@@ -285,10 +285,6 @@ struct udc_data {
 	const void *event_ctx;
 	/** USB device controller status */
 	atomic_t status;
-	/** Internal used Control Sequence Stage */
-	int stage;
-	/** Pointer to buffer containing setup packet */
-	struct net_buf *setup;
 	/** Driver private data */
 	void *priv;
 };
@@ -667,6 +663,17 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep);
 struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 				 const uint8_t ep,
 				 const size_t size);
+
+/**
+ * @brief Allocate UDC control transfer SETUP buffer
+ *
+ * Allocate a new buffer from common control transfer buffer pool.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *udc_ctrl_setup_alloc(const struct device *dev);
 
 /**
  * @brief Allocate UDC control transfer data stage buffer
