@@ -302,8 +302,7 @@ static int init_name_labels(struct net_buf *query)
 	query->len += DNS_MSG_HEADER_SIZE + 1;
 
 	/* Append the terminator byte (0x00) */
-	query->data[query->len] = 0x00;
-	query->len += 1;
+	net_buf_add_u8(query, 0x00);
 
 	return 0;
 }
@@ -319,8 +318,6 @@ static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
 			      uint16_t addr_len, const uint8_t *addr,
 			      bool include_name_ptr)
 {
-
-	uint16_t offset;
 	uint16_t name_len = 0;
 
 	if (include_name_ptr) {
@@ -333,32 +330,17 @@ static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
 		return;
 	}
 
-	offset = ctx->query->len;
-
 	if (include_name_ptr) {
-		ctx->query->data[offset] = NS_CMPRSFLGS | ((ctx->name_offset >> 8) & 0x3f);
-		ctx->query->data[offset + 1] = ctx->name_offset & 0xff;
-		offset += DNS_POINTER_SIZE;
+		net_buf_add_u8(ctx->query, NS_CMPRSFLGS | ((ctx->name_offset >> 8) & 0x3f));
+		net_buf_add_u8(ctx->query, ctx->name_offset & 0xff);
 	}
 
-	UNALIGNED_PUT(net_htons(ctx->qtype), (uint16_t *)(ctx->query->data + offset));
-
+	net_buf_add_be16(ctx->query, ctx->qtype);
 	/* Bit 15 tells to flush the cache */
-	offset += DNS_QTYPE_LEN;
-	UNALIGNED_PUT(net_htons(DNS_CLASS_IN | BIT(15)),
-		      (uint16_t *)(ctx->query->data + offset));
-
-	offset += DNS_QCLASS_LEN;
-	UNALIGNED_PUT(net_htonl(ttl), ctx->query->data + offset);
-
-	offset += DNS_TTL_LEN;
-	UNALIGNED_PUT(net_htons(addr_len), ctx->query->data + offset);
-
-	offset += DNS_RDLENGTH_LEN;
-	memcpy(ctx->query->data + offset, addr, addr_len);
-
-	ctx->query->len += DNS_QTYPE_LEN + DNS_QCLASS_LEN + DNS_TTL_LEN +
-			   DNS_RDLENGTH_LEN + addr_len + name_len;
+	net_buf_add_be16(ctx->query, DNS_CLASS_IN | BIT(15));
+	net_buf_add_be32(ctx->query, ttl);
+	net_buf_add_be16(ctx->query, addr_len);
+	net_buf_add_mem(ctx->query, addr, addr_len);
 
 	ctx->answer_count++;
 }
