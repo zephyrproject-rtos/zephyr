@@ -1112,9 +1112,6 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 	ARG_UNUSED(base);
 
 	switch (status) {
-	case kStatus_FLEXCAN_UnHandled:
-		/* Not all fault confinement state changes are handled by the HAL */
-		__fallthrough;
 	case kStatus_FLEXCAN_ErrorStatus:
 		mcux_flexcan_transfer_error_status(data->dev, status_flags);
 		break;
@@ -1141,6 +1138,12 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 	case kStatus_FLEXCAN_RxIdle:
 		mcux_flexcan_transfer_rx_idle(data->dev, mb);
 		break;
+	case kStatus_FLEXCAN_UnHandled:
+		/*
+		 * Unhandled status during Message Buffer processing.
+		 * If result field is 0xFF, it means no message buffer interrupt occurred.
+		 */
+		__fallthrough;
 	default:
 		LOG_WRN("Unhandled status 0x%08x (result = 0x%016llx)",
 			status, status_flags);
