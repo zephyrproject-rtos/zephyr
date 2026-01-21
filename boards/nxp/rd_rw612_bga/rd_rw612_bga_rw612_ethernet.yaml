@@ -5,7 +5,7 @@
 #
 
 identifier: rd_rw612_bga/rw612/ethernet
-name: NXP RD_RW612_BGA ETHERNET
+name: NXP RD-RW612-BGA (Ethernet)
 type: mcu
 arch: arm
 toolchain:

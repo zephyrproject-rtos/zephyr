@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxn947/mcxn947/cpu0/qspi
-name: NXP FRDM-MCXN947 QSPI (CPU0)
+name: NXP FRDM-MCXN947 (CPU0) (QSPI)
 type: mcu
 arch: arm
 ram: 320
