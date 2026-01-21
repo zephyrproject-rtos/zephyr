@@ -70,7 +70,8 @@ struct bt_ccp_call_control_server_bearer;
  * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered
  * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered
  * @retval -ENOMEM @p param.gtbs is false and no more TBS can be registered (see
- *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT})
+ *                 @kconfig{CONFIG_BT_TBS_BEARER_COUNT}) or @p param.uri_schemes is larger than
+ *                 @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH}
  * @retval -ENOEXEC The service failed to be registered
  */
 int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_param *param,
@@ -161,6 +162,41 @@ int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server
  */
 int bt_ccp_call_control_server_get_bearer_tech(
 	const struct bt_ccp_call_control_server_bearer *bearer, enum bt_bearer_tech *tech);
+
+/**
+ * @brief Set a new bearer URI schemes supported list.
+ *
+ * @param bearer  The bearer to set the URI schemes supported list for.
+ * @param uri_schemes The new bearer URI schemes supported list.
+ *
+ * @retval 0 New URI schemes supported list set, or if there were no change.
+ * @retval -EINVAL @p bearer or @p uri_schemes is NULL, @p uri_schemes is the empty string or
+ *                 @p uri_schemes contains invalid characters for URI schemes
+ * @retval -EFAULT @p bearer is not registered
+ * @retval -ENOMEM @p uri_schemes is larger than
+ *                 @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH}
+ */
+int bt_ccp_call_control_server_set_bearer_uri_schemes(
+	struct bt_ccp_call_control_server_bearer *bearer, const char *uri_schemes);
+
+/**
+ * @brief Get the bearer URI schemes supported list.
+ *
+ * @param[in] bearer  The bearer to get the URI schemes supported list for.
+ * @param[out] uri_schemes Pointer that will be updated to be the bearer URI schemes supported list.
+ * @param uri_schemes_size The size of the @p uri_schemes buffer. The suggested size is
+ *                         @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH} + 1 to
+ *                         ensure that the URI schemes supported list always fits.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p uri_schemes is NULL
+ * @retval -EFAULT @p bearer is not registered
+ * @retval -ENOMEM @p uri_schemes_size is insufficient to hold the bearer URI schemes supported list
+ *                    (including null terminator)
+ */
+int bt_ccp_call_control_server_get_bearer_uri_schemes(
+	struct bt_ccp_call_control_server_bearer *bearer, char *uri_schemes,
+	size_t uri_schemes_size);
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**

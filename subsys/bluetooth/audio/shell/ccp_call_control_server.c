@@ -265,22 +265,84 @@ static int cmd_ccp_call_control_server(const struct shell *sh, size_t argc, char
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(ccp_call_control_server_cmds,
-			       SHELL_CMD_ARG(init, NULL, "Initialize CCP Call Control Server",
-					     cmd_ccp_call_control_server_init, 1, 0),
-			       SHELL_CMD_ARG(set_bearer_name, NULL,
-					     "Set bearer name [index] <name>",
-					     cmd_ccp_call_control_server_set_bearer_name, 2, 1),
-			       SHELL_CMD_ARG(get_bearer_name, NULL, "Get bearer name [index]",
-					     cmd_ccp_call_control_server_get_bearer_name, 1, 1),
-			       SHELL_CMD_ARG(get_bearer_uci, NULL, "Get bearer UCI [index]",
-					     cmd_ccp_call_control_server_get_bearer_uci, 1, 1),
-			       SHELL_CMD_ARG(set_bearer_tech, NULL,
-					     "Set bearer technology [index] <technology>",
-					     cmd_ccp_call_control_server_set_bearer_tech, 2, 1),
-			       SHELL_CMD_ARG(get_bearer_tech, NULL, "Get bearer technology [index]",
-					     cmd_ccp_call_control_server_get_bearer_tech, 1, 1),
-			       SHELL_SUBCMD_SET_END);
+static int cmd_ccp_call_control_server_set_bearer_uri_schemes(const struct shell *sh, size_t argc,
+							      char *argv[])
+{
+	const char *uri_schemes;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 2) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	uri_schemes = argv[argc - 1];
+
+	err = bt_ccp_call_control_server_set_bearer_uri_schemes(bearers[index], uri_schemes);
+	if (err != 0) {
+		shell_error(sh, "Failed to set bearer[%d] URI schemes supported list: %d", index,
+			    err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] new URI schemes supported list: %s", index, uri_schemes);
+
+	return 0;
+}
+
+static int cmd_ccp_call_control_server_get_bearer_uri_schemes(const struct shell *sh, size_t argc,
+							      char *argv[])
+{
+	char uri_schemes[CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH + 1];
+	int index = 0;
+	int err = 0;
+
+	if (argc > 1) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_ccp_call_control_server_get_bearer_uri_schemes(bearers[index], uri_schemes,
+								sizeof(uri_schemes));
+	if (err != 0) {
+		shell_error(sh, "Failed to get bearer[%d] URI schemes supported list: %d", index,
+			    err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] URI schemes supported list: %s", index, uri_schemes);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	ccp_call_control_server_cmds,
+	SHELL_CMD_ARG(init, NULL, "Initialize CCP Call Control Server",
+		      cmd_ccp_call_control_server_init, 1, 0),
+	SHELL_CMD_ARG(set_bearer_name, NULL, "Set bearer name [index] <name>",
+		      cmd_ccp_call_control_server_set_bearer_name, 2, 1),
+	SHELL_CMD_ARG(get_bearer_name, NULL, "Get bearer name [index]",
+		      cmd_ccp_call_control_server_get_bearer_name, 1, 1),
+	SHELL_CMD_ARG(get_bearer_uci, NULL, "Get bearer UCI [index]",
+		      cmd_ccp_call_control_server_get_bearer_uci, 1, 1),
+	SHELL_CMD_ARG(set_bearer_tech, NULL, "Set bearer technology [index] <technology>",
+		      cmd_ccp_call_control_server_set_bearer_tech, 2, 1),
+	SHELL_CMD_ARG(get_bearer_tech, NULL, "Get bearer technology [index]",
+		      cmd_ccp_call_control_server_get_bearer_tech, 1, 1),
+	SHELL_CMD_ARG(
+		set_bearer_uri_schemes, NULL,
+		"Set bearer URI schemes supported list [index] <URI schemes> (e.g. \"tel,skype\")",
+		cmd_ccp_call_control_server_set_bearer_uri_schemes, 2, 1),
+	SHELL_CMD_ARG(get_bearer_uri_schemes, NULL, "Get bearer URI schemes supported list [index]",
+		      cmd_ccp_call_control_server_get_bearer_uri_schemes, 1, 1),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(ccp_call_control_server, &ccp_call_control_server_cmds,
 		       "Bluetooth CCP Call Control Server shell commands",
