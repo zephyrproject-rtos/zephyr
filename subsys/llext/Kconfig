@@ -224,6 +224,33 @@ config LLEXT_EXPERIMENTAL
 	  Include support for LLEXT experimental and unstable functionality that
 	  has a very high likelihood to change in the future.
 
+choice LLEXT_CODEGEN_VLIW_OVERWRITE
+	prompt "Overwrite VLIW codegen"
+	default LLEXT_CODEGEN_VLIW_NO_OVERWRITE
+	help
+	  This option allows overwriting global compiler settings with regards to
+	  generating VLIW (Very Long Instruction Word) instructions for all LLEXT
+	  modules.
+
+config LLEXT_CODEGEN_VLIW_NO_OVERWRITE
+	bool "Keep VLIW settings"
+	help
+	  Preserve global complier settings with regards to VLIW.
+
+config LLEXT_CODEGEN_VLIW_ENABLED
+	bool "Generate VLIW"
+	help
+	  Overwrite global complier settings by instructing the compiler to generate
+	  VLIW instructions for LLEXT modules if possible.
+
+config LLEXT_CODEGEN_VLIW_DISABLED
+	bool "DO NOT generate VLIW"
+	help
+	  Overwrite global complier settings by instructing the compiler to NEVER
+	  generate VLIW instructions for LLEXT modules.
+
+endchoice # LLEXT_CODEGEN_VLIW_OVERWRITE
+
 menu "Exported symbol groups"
 
 config LLEXT_EXPORT_DEFAULT_GROUPS
