@@ -28,8 +28,9 @@ config VIDEO_BUFFER_POOL_HEAP_SIZE
 	default 2097152
 
 config VIDEO_BUFFER_POOL_NUM_MAX
-	int "Number of maximum sized buffer in the video pool"
+	int "Number of buffers in the video buffer pool"
 	default 2
+	range 1 65535
 
 config VIDEO_BUFFER_POOL_ALIGN
 	int "Alignment of the video pool’s buffer"
