@@ -220,7 +220,7 @@
 			};
 
 			gpio_240_276: gpio@40081280 {
-				compatible = "microchip,mec5-gpio";
+				compatible = "microchip,xec-gpio";
 				reg = <0x40081280 0x80 0x40081314 0x04
 				       0x40081394 0x04 0x400813e8 0x04>;
 				gpio-controller;
