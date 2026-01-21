@@ -3256,9 +3256,6 @@ int bt_avrcp_ct_register_notification(struct bt_avrcp_ct *ct, uint8_t tid, uint8
 	if (ct->ct_notify[event_id].cb != NULL) {
 		return -EBUSY;
 	}
-	ct->ct_notify[event_id].cb = cb;
-	ct->ct_notify[event_id].interim_received = 0;
-	ct->ct_notify[event_id].tid = tid;
 
 	buf = avrcp_prepare_vendor_pdu(ct->avrcp, BT_AVRCP_PKT_TYPE_SINGLE, BT_AVRCP_CTYPE_NOTIFY,
 				       BT_AVRCP_PDU_ID_REGISTER_NOTIFICATION, param_len);
@@ -3271,15 +3268,18 @@ int bt_avrcp_ct_register_notification(struct bt_avrcp_ct *ct, uint8_t tid, uint8
 	/* Add playback interval */
 	net_buf_add_be32(buf, interval);
 
-	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, ct->ct_notify[event_id].tid);
+	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
 	if (err < 0) {
 		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
-		/* Roll back state so the app can retry */
-		ct->ct_notify[event_id].cb = NULL;
-		ct->ct_notify[event_id].interim_received = 0;
+		return err;
 	}
-	return err;
+
+	ct->ct_notify[event_id].cb = cb;
+	ct->ct_notify[event_id].interim_received = 0;
+	ct->ct_notify[event_id].tid = tid;
+
+	return 0;
 }
 
 static int bt_avrcp_ct_vendor_dependent(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t pdu_id,
