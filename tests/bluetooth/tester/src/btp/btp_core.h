@@ -31,10 +31,5 @@ struct btp_core_unregister_service_cmd {
 	uint8_t id;
 } __packed;
 
-/* reserve for future use */
-#define RSFU							0x05
-
-#define CORE_RESET_BOARD				0x06
-
 /* events */
 #define BTP_CORE_EV_IUT_READY			0x80
