@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2025 Martin Schröder
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,6 +121,10 @@ NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 #define CANBUS_RAW_L2		CANBUS_RAW
 #define CANBUS_RAW_L2_CTX_TYPE	void*
 NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
+
+#define COBS_SERIAL_L2		COBS_SERIAL
+#define COBS_SERIAL_L2_CTX_TYPE	void*
+NET_L2_DECLARE_PUBLIC(COBS_SERIAL_L2);
 
 #ifdef CONFIG_NET_L2_CUSTOM_IEEE802154
 #ifndef CUSTOM_IEEE802154_L2

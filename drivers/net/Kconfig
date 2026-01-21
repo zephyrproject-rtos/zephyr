@@ -184,6 +184,103 @@ config SLIP_MAC_ADDR
 endif
 
 #
+# COBS UART Async options
+#
+menuconfig COBS_UART_ASYNC
+	bool "COBS driver using UART async API with COBS framing"
+	depends on NET_NATIVE
+	depends on UART_ASYNC_API
+	depends on NET_L2_COBS_SERIAL
+	depends on COBS
+	select RING_BUFFER
+	help
+	  Enable COBS (Consistent Overhead Byte Stuffing) driver using UART async API.
+	  This provides a point-to-point network interface over a UART with
+	  efficient framing.
+
+if COBS_UART_ASYNC
+
+config COBS_UART_ASYNC_DRV_NAME
+	string "Driver name"
+	default "cobs"
+	help
+	  Name of the COBS UART async network interface.
+
+config COBS_UART_ASYNC_MTU
+	int "MTU for COBS UART async interface"
+	default 1500
+	help
+	  Maximum Transmission Unit for the COBS UART async interface.
+
+config COBS_UART_ASYNC_RX_BUF_LEN
+	int "UART RX buffer length"
+	default 128
+	help
+	  Length of each UART RX buffer. Two buffers are used for
+	  double-buffering.
+
+config COBS_UART_ASYNC_TX_BUF_LEN
+	int "UART TX buffer length"
+	default 2048
+	help
+	  Length of the UART TX buffer.
+
+config COBS_UART_ASYNC_RINGBUF_SIZE
+	int "Ring buffer size for RX data"
+	default 512
+	help
+	  Size of the ring buffer used to store received UART data
+	  before processing.
+
+config COBS_UART_ASYNC_RX_BUF_COUNT
+	int "Number of net_buf structures for RX"
+	default 8
+	help
+	  Number of net_buf structures allocated for receiving and
+	  decoding COBS frames. These buffers are chained together
+	  to handle large frames.
+
+config COBS_UART_ASYNC_RX_STACK_SIZE
+	int "RX worker stack size"
+	default 1024
+	help
+	  Stack size for the RX worker thread.
+
+config COBS_UART_ASYNC_RX_PRIORITY
+	int "RX worker priority"
+	default 7
+	help
+	  Priority of the RX worker thread.
+
+config COBS_UART_ASYNC_TX_TIMEOUT_MS
+	int "TX timeout in milliseconds"
+	default 1000
+	help
+	  Timeout for UART TX operations.
+
+config COBS_UART_ASYNC_RX_TIMEOUT_US
+	int "RX idle timeout in microseconds"
+	default 1000
+	help
+	  UART RX idle timeout (passed to uart_rx_enable).
+
+config COBS_UART_ASYNC_INIT_PRIORITY
+	int "COBS UART async driver init priority"
+	default 60
+	help
+	  Initialization priority for the COBS UART async driver.
+	  This should be set to a value higher than CONFIG_SERIAL_INIT_PRIORITY
+	  to ensure UART devices are initialized before this driver.
+
+module = COBS_UART_ASYNC
+module-dep = LOG
+module-str = Log level for COBS UART async driver
+module-help = Sets log level for COBS UART async driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # COBS_UART_ASYNC
+
+#
 # Net loopback options
 #
 menuconfig NET_LOOPBACK

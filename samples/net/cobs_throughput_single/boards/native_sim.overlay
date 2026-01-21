@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#size-cells = <0>;
+
+	cobs: cobs@0 {
+		compatible = "zephyr,cobs-uart-async";
+		reg = <0>;
+		uart = <&uart0>;
+		status = "okay";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
