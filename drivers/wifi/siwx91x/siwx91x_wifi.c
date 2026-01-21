@@ -44,7 +44,7 @@ static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
-	sl_si91x_rsp_wireless_info_t wlan_info = { };
+	sl_wifi_interface_info_t wlan_info = { };
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_mfp_mode_t mfp;
 	int32_t rssi;
@@ -59,7 +59,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		return 0;
 	}
 
-	ret = sl_wifi_get_wireless_info(&wlan_info);
+	ret = sl_wifi_get_interface_info(interface, &wlan_info);
 	if (ret) {
 		LOG_ERR("Failed to get the wireless info: 0x%x", ret);
 		return -EIO;
