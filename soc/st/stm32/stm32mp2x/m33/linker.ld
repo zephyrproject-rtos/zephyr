@@ -9,10 +9,3 @@
 #define rom_start .isr_vectors
 
 #include <zephyr/arch/arm/cortex_m/scripts/linker.ld>
-
-SECTIONS
-{
-  /* Standard Zephyr relocation section */
-#include <zephyr/linker/rel-sections.ld>
-#include <zephyr/linker/llext-sections.ld>
-}
