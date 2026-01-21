@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -326,6 +326,24 @@ static int read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
 	return 0;
 }
 
+static int read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_tech(bearer);
+	if (err != 0) {
+		return err;
+	}
+
+	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int read_bearer_values(void)
 {
 	int err;
@@ -346,6 +364,14 @@ static int read_bearer_values(void)
 			return err;
 		}
 	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)) {
+		err = read_bearer_tech(client_bearers.gtbs_bearer);
+		if (err != 0) {
+			LOG_ERR("Failed to read techonology for GTBS bearer: %d", err);
+			return err;
+		}
+	}
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
@@ -362,6 +388,15 @@ static int read_bearer_values(void)
 			err = read_bearer_uci(client_bearers.tbs_bearers[i]);
 			if (err != 0) {
 				LOG_ERR("Failed to read UCI for bearer[%zu]: %d", i, err);
+				return err;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)) {
+			err = read_bearer_tech(client_bearers.tbs_bearers[i]);
+			if (err != 0) {
+				LOG_ERR("Failed to read techonology for TBS bearer[%zu]: %d", i,
+					err);
 				return err;
 			}
 		}

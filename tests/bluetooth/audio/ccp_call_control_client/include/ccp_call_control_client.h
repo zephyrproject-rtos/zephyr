@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #ifndef MOCKS_CCP_CALL_CONTROL_CLIENT_H_
 #define MOCKS_CCP_CALL_CONTROL_CLIENT_H_
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
@@ -23,5 +24,7 @@ DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_provider_name_cb,
 		       struct bt_ccp_call_control_client_bearer *, int, const char *);
 DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_uci_cb,
 		       struct bt_ccp_call_control_client_bearer *, int, const char *);
+DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_tech_cb,
+		       struct bt_ccp_call_control_client_bearer *, int, enum bt_bearer_tech);
 
 #endif /* MOCKS_CCP_CALL_CONTROL_CLIENT_H_ */
