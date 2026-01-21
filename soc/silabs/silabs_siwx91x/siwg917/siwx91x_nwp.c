@@ -137,7 +137,7 @@ const sli_wifi_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t re
 	return NULL;
 }
 
-static void siwx91x_apply_sram_config(sl_si91x_boot_configuration_t *boot_config)
+static void siwx91x_apply_sram_config(sl_wifi_system_boot_configuration_t *boot_config)
 {
 	/* The size does not match exactly because 1 KB is reserved at the start of the RAM */
 	size_t sram_size = DT_REG_SIZE(DT_CHOSEN(zephyr_sram));
@@ -154,7 +154,7 @@ static void siwx91x_apply_sram_config(sl_si91x_boot_configuration_t *boot_config
 }
 
 static void siwx91x_apply_boot_config(const struct device *dev,
-				      sl_si91x_boot_configuration_t *boot_config)
+				      sl_wifi_system_boot_configuration_t *boot_config)
 {
 	const struct siwx91x_nwp_config *cfg = dev->config;
 	struct {
@@ -181,7 +181,7 @@ static void siwx91x_apply_boot_config(const struct device *dev,
 		FIELD_PREP(SL_SI91X_EXT_FEAT_FRONT_END_MSK, cfg->antenna_selection);
 }
 
-static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_config)
+static void siwx91x_configure_sta_mode(sl_wifi_system_boot_configuration_t *boot_config)
 {
 	const bool wifi_enabled = IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X);
 	const bool bt_enabled = IS_ENABLED(CONFIG_BT_SILABS_SIWX91X);
@@ -243,8 +243,8 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 #endif
 }
 
-static void siwx91x_configure_ap_mode(sl_si91x_boot_configuration_t *boot_config, bool hidden_ssid,
-				      uint8_t max_num_sta)
+static void siwx91x_configure_ap_mode(sl_wifi_system_boot_configuration_t *boot_config,
+				      bool hidden_ssid, uint8_t max_num_sta)
 {
 	boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
 	boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
@@ -264,7 +264,7 @@ static void siwx91x_configure_ap_mode(sl_si91x_boot_configuration_t *boot_config
 	}
 }
 
-static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_config,
+static void siwx91x_configure_network_stack(sl_wifi_system_boot_configuration_t *boot_config,
 					    uint8_t wifi_oper_mode)
 {
 	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
@@ -360,7 +360,7 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		}
 	};
 
-	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
+	sl_wifi_system_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
 	__ASSERT((hidden_ssid == false && max_num_sta == 0) || wifi_oper_mode == WIFI_SOFTAP_MODE,
