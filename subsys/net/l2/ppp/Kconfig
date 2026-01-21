@@ -60,13 +60,6 @@ config NET_L2_PPP_OPTION_MRU
 	help
 	  Enable support for LCP MRU option.
 
-config NET_L2_PPP_OPTION_MAX_MRU
-	int "LCP MRU maximum size"
-	default 1500
-	help
-	  Set the maximal MRU size which is allowed while negotiation with peer over LCP.
-	  The default value is defined by RFC 1661.
-
 config NET_L2_PPP_OPTION_SERVE_IP
 	bool "Serve IP address to peer"
 	help
