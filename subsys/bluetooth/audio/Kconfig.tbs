@@ -21,15 +21,6 @@ config BT_TBS
 
 if BT_TBS
 
-config BT_TBS_SUPPORTED_FEATURES
-	int "Telephone Bearer Service Supported Features"
-	default 1
-	range 0 3
-	help
-	  Bitfield to set supported features of the bearer.
-	  Bit 0: Local Hold and Retrieve
-	  Bit 1: Join calls within Telephone Bearer Service
-
 config BT_TBS_MAX_CALLS
 	int "Telephone Bearer Service Maximum Number Of Calls Supported"
 	default 3
