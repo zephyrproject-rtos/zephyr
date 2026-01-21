@@ -108,7 +108,6 @@ zephyr_linker_section_configure(SECTION .rela.plt INPUT ".rela.iplt")
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-text.cmake)
 
-zephyr_linker_section_configure(SECTION .text INPUT ".TEXT.*")
 zephyr_linker_section_configure(SECTION .text INPUT ".gnu.linkonce.t.*")
 
 zephyr_linker_section_configure(SECTION .text INPUT ".glue_7t")
