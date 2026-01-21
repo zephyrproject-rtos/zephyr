@@ -53,20 +53,16 @@ static ssize_t settings_zms_read_fn(void *back_end, void *data, size_t len)
 	return zms_read(rd_fn_arg->fs, rd_fn_arg->id, data, len);
 }
 
-static int settings_zms_src(struct settings_zms *cf)
+static void settings_zms_src(struct settings_zms *cf)
 {
 	cf->cf_store.cs_itf = &settings_zms_itf;
 	settings_src_register(&cf->cf_store);
-
-	return 0;
 }
 
-static int settings_zms_dst(struct settings_zms *cf)
+static void settings_zms_dst(struct settings_zms *cf)
 {
 	cf->cf_store.cs_itf = &settings_zms_itf;
 	settings_dst_register(&cf->cf_store);
-
-	return 0;
 }
 
 #ifndef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
@@ -749,15 +745,11 @@ int settings_backend_init(void)
 		return rc;
 	}
 
-	rc = settings_zms_src(&default_settings_zms);
+	settings_zms_src(&default_settings_zms);
 
-	if (rc) {
-		return rc;
-	}
+	settings_zms_dst(&default_settings_zms);
 
-	rc = settings_zms_dst(&default_settings_zms);
-
-	return rc;
+	return 0;
 }
 
 static void *settings_zms_storage_get(struct settings_store *cs)
