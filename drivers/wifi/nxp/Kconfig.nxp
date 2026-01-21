@@ -853,8 +853,8 @@ config NXP_WIFI_WLS
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
-	imply NXP_WIFI_IND_DNLD if (NXP_IW610 || NXP_IW61X || NXP_IW416) && !NXP_WIFI_CUSTOM_HOST
-	imply NXP_WIFI_IND_RESET if (NXP_IW610 || NXP_IW61X || NXP_IW416) && !NXP_WIFI_CUSTOM_HOST
+	imply NXP_WIFI_IND_DNLD if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
+	imply NXP_WIFI_IND_RESET if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 
@@ -1135,7 +1135,7 @@ config NXP_WIFI_CUSTOM_CALDATA
 	help
 	  This option force to use custom calibration data.
 
-if NXP_88W8987 || NXP_IW416 || NXP_IW610 || NXP_IW61X
+if NXP_88W8987 || NXP_IW416 || NXP_IW610
 
 config NXP_WIFI_FW_AUTO_RECONNECT
 	bool "Firmware Auto Reconnect"
