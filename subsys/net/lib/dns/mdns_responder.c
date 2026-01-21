@@ -247,7 +247,7 @@ static int get_socket(net_sa_family_t family)
 
 static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 {
-	uint16_t offset;
+	struct dns_header *hdr = (struct dns_header *)buf;
 	uint16_t flags;
 
 	/* See RFC 1035, ch 4.1.1 for header details */
@@ -255,22 +255,12 @@ static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 	flags = BIT(15);  /* This is response */
 	flags |= BIT(10); /* Authoritative Answer */
 
-	UNALIGNED_PUT(0, (uint16_t *)(buf)); /* Identifier, RFC 6762 ch 18.1 */
-	offset = DNS_HEADER_ID_LEN;
-
-	UNALIGNED_PUT(net_htons(flags), (uint16_t *)(buf+offset));
-	offset += DNS_HEADER_FLAGS_LEN;
-
-	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
-	offset += DNS_QDCOUNT_LEN;
-
-	UNALIGNED_PUT(net_htons(answers), (uint16_t *)(buf + offset));
-	offset += DNS_ANCOUNT_LEN;
-
-	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
-	offset += DNS_NSCOUNT_LEN;
-
-	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
+	UNALIGNED_PUT(0, &hdr->id); /* Identifier, RFC 6762 ch 18.1 */
+	UNALIGNED_PUT(net_htons(flags), &hdr->flags);
+	UNALIGNED_PUT(0, &hdr->qdcount);
+	UNALIGNED_PUT(net_htons(answers), &hdr->ancount);
+	UNALIGNED_PUT(0, &hdr->nscount);
+	UNALIGNED_PUT(0, &hdr->arcount);
 }
 
 static int init_name_labels(struct net_buf *query)
