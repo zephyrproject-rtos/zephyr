@@ -440,7 +440,7 @@ int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hi
 int siwx91x_nwp_apply_power_profile(const struct device *dev)
 {
 	struct siwx91x_nwp_data *data = dev->data;
-	sl_wifi_performance_profile_t performance_profile = {
+	sl_wifi_performance_profile_v2_t performance_profile = {
 		.profile = data->power_profile
 	};
 	sl_bt_performance_profile_t bt_performance_profile = {
@@ -461,7 +461,7 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev)
 		}
 	}
 
-	ret = sl_wifi_set_performance_profile(&performance_profile);
+	ret = sl_wifi_set_performance_profile_v2(&performance_profile);
 	if (ret) {
 		return -EINVAL;
 	}
