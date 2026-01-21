@@ -13,6 +13,7 @@ supported:
   - clock_control
   - dma
   - gpio
+  - i2c
   - pinctrl
   - reset
   - uart
