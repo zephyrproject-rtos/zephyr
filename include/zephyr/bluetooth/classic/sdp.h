@@ -206,6 +206,8 @@ extern "C" {
 #define BT_SDP_ATTR_HID_SUPERVISION_TIMEOUT     0x020c /**< HID Supervision Timeout */
 #define BT_SDP_ATTR_HID_NORMALLY_CONNECTABLE    0x020d /**< HID Normally Connectable */
 #define BT_SDP_ATTR_HID_BOOT_DEVICE             0x020e /**< HID Boot Device */
+#define BT_SDP_ATTR_HID_MAX_LATENCY             0x020f /**< HID Max Latency */
+#define BT_SDP_ATTR_HID_MIN_LATENCY             0x0210 /**< HID Min Latency */
 /**
  * @}
  */

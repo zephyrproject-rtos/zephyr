@@ -628,6 +628,12 @@ config BT_DEVICE_VERSION
 
 endif # BT_DID
 
+config BT_HID_DEVICE
+	bool "Bluetooth HID Device Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the HID Device profile
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000
