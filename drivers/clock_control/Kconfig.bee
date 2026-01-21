@@ -1,0 +1,10 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_BEE
+	bool "Realtek Bee series clock control driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_CCTL_ENABLED
+	select HAL_REALTEK_BEE_RCC
+	help
+	  This option enables the clock controller driver for Realtek Bee SoCs.
