@@ -517,15 +517,13 @@ static void siwx91x_iface_init(struct net_if *iface)
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
 
-	sl_wifi_set_callback(SL_WIFI_SCAN_RESULT_EVENTS,
-			     (sl_wifi_callback_function_t)siwx91x_on_scan, sidev);
-	sl_wifi_set_callback(SL_WIFI_JOIN_EVENTS, (sl_wifi_callback_function_t)siwx91x_on_join,
-			     sidev);
-	sl_wifi_set_callback(SL_WIFI_CLIENT_CONNECTED_EVENTS, siwx91x_on_ap_sta_connect, sidev);
-	sl_wifi_set_callback(SL_WIFI_CLIENT_DISCONNECTED_EVENTS, siwx91x_on_ap_sta_disconnect,
-			     sidev);
-	sl_wifi_set_callback(SL_WIFI_STATS_RESPONSE_EVENTS, siwx91x_wifi_module_stats_event_handler,
-			     sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_SCAN_RESULT_EVENTS, siwx91x_on_scan, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_JOIN_EVENTS, siwx91x_on_join, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_CLIENT_CONNECTED_EVENTS, siwx91x_on_ap_sta_connect, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_CLIENT_DISCONNECTED_EVENTS,
+				siwx91x_on_ap_sta_disconnect, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_STATS_RESPONSE_EVENTS,
+				siwx91x_wifi_module_stats_event_handler, sidev);
 
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {
