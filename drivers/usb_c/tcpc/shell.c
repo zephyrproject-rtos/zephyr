@@ -141,16 +141,16 @@ SHELL_DYNAMIC_CMD_CREATE(list_device_names, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_tcpc_cmds,
 			       SHELL_CMD_ARG(dump, &list_device_names,
-					     "Dump TCPC registers\n"
-					     "Usage: tcpc dump [<tcpc device>]",
+					     SHELL_HELP("Dump TCPC registers",
+							"[<tcpc device>]"),
 					     cmd_tcpc_dump, 1, 1),
 			       SHELL_CMD_ARG(vbus, &list_device_names,
-					     "Display VBUS voltage\n"
-					     "Usage: tcpc vbus [<vbus device>]",
+					     SHELL_HELP("Display VBUS voltage",
+							"[<vbus device>]"),
 					     cmd_tcpc_vbus, 1, 1),
 			       SHELL_CMD_ARG(chip, &list_device_names,
-					     "Display chip information\n"
-					     "Usage: tcpc chip [<tcpc device>]",
+					     SHELL_HELP("Display chip information",
+							"[<tcpc device>]"),
 					     cmd_tcpc_chip_info, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
