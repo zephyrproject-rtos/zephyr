@@ -74,7 +74,7 @@
 			width = <240>;
 			height = <320>;
 			rotation = <180>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			frmctr1 = [00 1f]; /* 60Hz frame rate */
 		};
 	};
