@@ -13,7 +13,7 @@ int siwx91x_scan(const struct device *dev,
 		 struct wifi_scan_params *params,
 		 scan_result_cb_t cb);
 
-unsigned int siwx91x_on_scan(sl_wifi_event_t event, sl_wifi_scan_result_t *result,
-			     uint32_t result_size, void *arg);
+unsigned int siwx91x_on_scan(sl_wifi_event_t event, unsigned int status,
+			     void *data, uint32_t data_length, void *arg);
 
 #endif

@@ -281,8 +281,8 @@ int siwx91x_ap_sta_disconnect(const struct device *dev, const uint8_t *mac_addr)
 	return ret;
 }
 
-sl_status_t siwx91x_on_ap_sta_connect(sl_wifi_event_t event, void *data,
-				      uint32_t data_length, void *arg)
+unsigned int siwx91x_on_ap_sta_connect(sl_wifi_event_t event, unsigned int status,
+				       void *data, uint32_t data_length, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
 	struct wifi_ap_sta_info sta_info = { };
@@ -301,8 +301,8 @@ sl_status_t siwx91x_on_ap_sta_connect(sl_wifi_event_t event, void *data,
 	return SL_STATUS_OK;
 }
 
-sl_status_t siwx91x_on_ap_sta_disconnect(sl_wifi_event_t event, void *data,
-					 uint32_t data_length, void *arg)
+unsigned int siwx91x_on_ap_sta_disconnect(sl_wifi_event_t event, unsigned int status,
+					  void *data, uint32_t data_length, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
 	struct wifi_ap_sta_info sta_info = { };
