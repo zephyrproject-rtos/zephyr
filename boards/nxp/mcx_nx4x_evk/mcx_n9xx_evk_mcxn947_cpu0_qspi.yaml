@@ -5,7 +5,7 @@
 #
 
 identifier: mcx_n9xx_evk/mcxn947/cpu0/qspi
-name: NXP MCX-N9XX-EVK QSPI (CPU0)
+name: NXP MCX-N9XX-EVK (CPU0) (QSPI)
 type: mcu
 arch: arm
 ram: 320

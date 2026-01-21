@@ -5,7 +5,7 @@
 #
 
 identifier: lpcxpresso54114/lpc54114/m4
-name: NXP LPCXpresso54114 M4
+name: NXP LPCXpresso54114 (M4)
 type: mcu
 arch: arm
 ram: 64
