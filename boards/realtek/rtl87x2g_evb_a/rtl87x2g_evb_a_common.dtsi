@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	compatible = "realtek,rtl87x2g_evb_a";
+
+	chosen {
+		zephyr,sram = &tcm0;
+		zephyr,flash = &flash;
+		zephyr,code-partition = &app_partition;
+		zephyr,itcm = &tcm1;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	aliases {
+		led0 = &led5;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led5: led5 {
+			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+			label = "LED 5";
+		};
+
+		led7: led7 {
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			label = "LED 7";
+		};
+
+		rgb_green: rgb_green {
+			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+			label = "RGB Green LED";
+		};
+
+		rgb_red: rgb_red {
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			label = "RGB Red LED";
+		};
+	};
+};
+
+&gpioa {
+	pinctrl-0 = <&gpioa_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	current-speed = <115200>;
+	parity = "none";
+	stop-bits = "1";
+	data-bits = <8>;
+};
+
+&cpu {
+	clock-frequency = <40000000>;
+};

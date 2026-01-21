@@ -1,0 +1,17 @@
+identifier: rtl87x2g_evb_a/rtl8762gkh
+name: RTL87x2G Model A Evaluation Board with RTL8762GKH Daughter Board
+type: mcu
+arch: arm
+ram: 384
+flash: 828
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - pinctrl
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - pm
+vendor: realtek
