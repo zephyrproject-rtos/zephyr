@@ -51,6 +51,7 @@ struct mctp_usb_class_ctx {
 	struct k_fifo rx_fifo;
 	struct k_work out_work;
 	atomic_t state;
+	atomic_t in_pending;
 };
 
 static struct net_buf *mctp_usb_class_buf_alloc(const uint8_t ep)
@@ -112,14 +113,18 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	struct usbd_class_data *c_data = usb->usb_class_data;
 	struct mctp_usb_class_ctx *ctx = usbd_class_get_private(c_data);
 	size_t len = mctp_pktbuf_size(pkt);
+	size_t tx_len = len + MCTP_USB_HEADER_SIZE;
 	struct net_buf *buf = NULL;
+	struct net_buf *zlp = NULL;
 	int err;
+	uint16_t mps;
+	bool need_zlp;
 
 	if (!atomic_test_bit(&ctx->state, MCTP_USB_ENABLED)) {
 		return -EPERM;
 	}
 
-	if (len > MCTP_USB_MAX_PACKET_LENGTH) {
+	if (tx_len > MCTP_USB_MAX_PACKET_LENGTH) {
 		return -E2BIG;
 	}
 
@@ -129,10 +134,36 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 		return err;
 	}
 
+	/* Determine MaxPacketSize for this speed */
+#if USBD_SUPPORTS_HIGH_SPEED
+	if (usbd_bus_speed(usbd_class_get_ctx(ctx->class_data)) == USBD_SPEED_HS) {
+		mps = sys_le16_to_cpu(ctx->desc->if0_hs_in_ep.wMaxPacketSize);
+	} else {
+#endif
+		mps = sys_le16_to_cpu(ctx->desc->if0_fs_in_ep.wMaxPacketSize);
+#if USBD_SUPPORTS_HIGH_SPEED
+	}
+#endif
+
+	need_zlp = (mps != 0U) && ((tx_len % mps) == 0U);
+
+	/* If we need ZLP, allocate it FIRST to avoid half-inflight states */
+	if (need_zlp) {
+		zlp = mctp_usb_class_buf_alloc(mctp_usb_class_get_bulk_in(c_data));
+		if (!zlp) {
+			k_sem_give(&usb->tx_lock);
+			LOG_ERR("Failed to allocate ZLP buffer");
+			return -ENOMEM;
+		}
+	}
+
+	/* Completion may happen very fast: set pending BEFORE enqueue */
+	atomic_set(&ctx->in_pending, need_zlp ? 2 : 1);
+
 	usb->tx_buf[0] = MCTP_USB_DMTF_0;
 	usb->tx_buf[1] = MCTP_USB_DMTF_1;
 	usb->tx_buf[2] = 0;
-	usb->tx_buf[3] = len + MCTP_USB_HEADER_SIZE;
+	usb->tx_buf[3] = tx_len;
 
 	memcpy((void *)&usb->tx_buf[MCTP_USB_HEADER_SIZE], pkt->data, len);
 
@@ -145,6 +176,10 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 
 	buf = mctp_usb_class_buf_alloc(mctp_usb_class_get_bulk_in(c_data));
 	if (buf == NULL) {
+		atomic_set(&ctx->in_pending, 0);
+		if (zlp) {
+			net_buf_unref(zlp);
+		}
 		k_sem_give(&usb->tx_lock);
 		LOG_ERR("Failed to allocate IN buffer");
 		return -ENOMEM;
@@ -153,11 +188,28 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	net_buf_add_mem(buf, usb->tx_buf, len + MCTP_USB_HEADER_SIZE);
 
 	err = usbd_ep_enqueue(c_data, buf);
-	if (err) {
+	if (err != 0) {
+		atomic_set(&ctx->in_pending, 0);
+		if (zlp) {
+			net_buf_unref(zlp);
+		}
 		k_sem_give(&usb->tx_lock);
 		LOG_ERR("Failed to enqueue IN buffer");
 		net_buf_unref(buf);
 		return err;
+	}
+
+	if (need_zlp) {
+		LOG_DBG("TX len %zu is multiple of MPS %u, sending ZLP", tx_len, mps);
+		err = usbd_ep_enqueue(c_data, zlp);
+		if (err != 0) {
+		/* Data is already in-flight; reduce pending so IN completion releases once */
+			net_buf_unref(zlp);
+			atomic_set(&ctx->in_pending, 1);
+			k_sem_give(&usb->tx_lock);
+			LOG_ERR("Failed to enqueue ZLP: %d", err);
+			return err;
+		}
 	}
 
 	return 0;
@@ -347,6 +399,9 @@ static int mctp_usb_class_request(struct usbd_class_data *const c_data,
 
 	if (bi->ep == ep_in) {
 		net_buf_unref(buf);
+		if (atomic_dec(&ctx->in_pending) == 1) {
+			k_sem_give(&ctx->inst->mctp_binding->tx_lock);
+		}
 		return 0;
 	}
 
@@ -410,6 +465,7 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 
 	k_fifo_init(&ctx->rx_fifo);
 	k_work_init(&ctx->out_work, mctp_usb_class_out_work);
+	atomic_set(&ctx->in_pending, 0);
 
 	if (ctx->inst->sublcass == USBD_MCTP_SUBCLASS_MANAGEMENT_CONTROLLER ||
 	    ctx->inst->sublcass == USBD_MCTP_SUBCLASS_MANAGED_DEVICE_ENDPOINT ||
@@ -511,7 +567,9 @@ struct usbd_class_api mctp_usb_class_api = {
 		.fs_desc = mctp_usb_class_fs_desc_##n,					\
 		.hs_desc = mctp_usb_class_hs_desc_##n,					\
 		.inst_idx = n,								\
-		.rx_fifo = Z_FIFO_INITIALIZER(mctp_usb_class_ctx_##n.rx_fifo)		\
+		.rx_fifo = Z_FIFO_INITIALIZER(mctp_usb_class_ctx_##n.rx_fifo),		\
+		.state = ATOMIC_INIT(0),						\
+		.in_pending = ATOMIC_INIT(0),						\
 	};										\
 											\
 	USBD_DEFINE_CLASS(mctp_##n, &mctp_usb_class_api, &mctp_usb_class_ctx_##n, NULL);
