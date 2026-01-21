@@ -424,9 +424,25 @@ static void *mctp_usb_class_get_desc(struct usbd_class_data *const c_data,
 static void mctp_usb_class_enable(struct usbd_class_data *const c_data)
 {
 	struct mctp_usb_class_ctx *ctx = usbd_class_get_private(c_data);
+	struct net_buf *nb;
+	int e;
 
 	if (!atomic_test_and_set_bit(&ctx->state, MCTP_USB_ENABLED)) {
-		k_work_submit(&ctx->out_work);
+		/* Arm FIRST OUT transfer so the host's first write can complete */
+		nb = mctp_usb_class_buf_alloc(mctp_usb_class_get_bulk_out(c_data));
+		if (!nb) {
+			LOG_ERR("Failed to allocate initial OUT buffer");
+			return;
+		}
+
+		e = usbd_ep_enqueue(c_data, nb);
+		if (e) {
+			LOG_ERR("Failed to enqueue initial OUT buffer: %d", e);
+			net_buf_unref(nb);
+			return;
+		}
+
+		LOG_INF("MCTP USB enabled: initial OUT armed");
 	}
 
 	LOG_DBG("Enabled %s", c_data->name);
@@ -435,8 +451,33 @@ static void mctp_usb_class_enable(struct usbd_class_data *const c_data)
 static void mctp_usb_class_disable(struct usbd_class_data *const c_data)
 {
 	struct mctp_usb_class_ctx *ctx = usbd_class_get_private(c_data);
+	struct mctp_binding_usb *usb = ctx->inst->mctp_binding;
 
 	atomic_clear_bit(&ctx->state, MCTP_USB_ENABLED);
+
+	/* Stop worker first so it doesn't race while we drain FIFO */
+	(void)k_work_cancel(&ctx->out_work);
+
+	/* Drain and free any queued OUT buffers */
+	while (1) {
+		struct net_buf *rx = k_fifo_get(&ctx->rx_fifo, K_NO_WAIT);
+
+		if (!rx) {
+			break;
+		}
+		net_buf_unref(rx);
+	}
+
+	/* Reset RX parser state */
+	mctp_usb_reset_rx_state(usb);
+
+	/* Clear pending IN accounting */
+	atomic_set(&ctx->in_pending, 0);
+
+	/* Unblock TX if host disconnects mid-IN */
+	if (k_sem_count_get(&usb->tx_lock) == 0) {
+		k_sem_give(&usb->tx_lock);
+	}
 
 	LOG_DBG("Disabled %s", c_data->name);
 }
