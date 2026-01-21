@@ -1,0 +1,18 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_REALTEK_BEE
+	select BUILD_OUTPUT_HEX
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+if SOC_FAMILY_REALTEK_BEE
+
+rsource "*/Kconfig"
+
+config SOC_FAMILY_REALTEK_BEE_IMAGE_HEADER
+	bool
+	default y
+	help
+	  This config will prepend bee_image_header on the zephyr binary.
+
+endif # SOC_FAMILY_REALTEK_BEE

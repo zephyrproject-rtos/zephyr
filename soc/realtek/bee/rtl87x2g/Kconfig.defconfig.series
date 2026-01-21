@@ -1,0 +1,30 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RTL87X2G
+
+config NUM_IRQS
+	default 96
+
+config CODE_DATA_RELOCATION
+	default y
+
+config USE_DT_CODE_PARTITION
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk-32K-systick,clock-frequency)
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+config TIMESLICE_SIZE
+	default 10
+
+config INIT_STACKS
+	default y
+
+endif # SOC_SERIES_RTL87X2G

@@ -1,0 +1,15 @@
+family:
+- name: realtek_bee
+  series:
+  - name: rtl87x2g
+    socs:
+    - name: rtl8762gc
+    - name: rtl8762gku
+    - name: rtl8762gkh
+    - name: rtl8762gru
+    - name: rtl8762grh
+    - name: rtl8762gtp
+    - name: rtl8762gtu
+    - name: rtl8762gth
+    - name: rtl8772gwf
+    - name: rtl8772gwp
