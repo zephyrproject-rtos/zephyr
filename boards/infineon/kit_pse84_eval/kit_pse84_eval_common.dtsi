@@ -62,6 +62,10 @@ uart2: &scb2 {
 	clock-div = <1>;
 };
 
+&watchdog0 {
+	status = "okay";
+};
+
 &gpio_prt0 {
 	status = "okay";
 };

@@ -8,11 +8,11 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		out-gpios = <&gpio_prt12 6 0>;
-		in-gpios = <&gpio_prt12 7 0>;
+		out-gpios = <&gpio_prt10 0 0>;
+		in-gpios = <&gpio_prt10 1 0>;
 	};
 };
 
-&gpio_prt12 {
+&gpio_prt10 {
 	status = "okay";
 };
