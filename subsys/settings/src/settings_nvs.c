@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Laczen
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,7 +88,8 @@ static void settings_nvs_cache_add(struct settings_nvs *cf, const char *name,
 	cf->cache_next %= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
 
 	cf->cache[cf->cache_next].name_hash = name_hash;
-	cf->cache[cf->cache_next++].name_id = name_id;
+	cf->cache[cf->cache_next].name_id = name_id;
+	cf->cache_next++;
 }
 
 static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *name,
@@ -120,6 +122,28 @@ static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *na
 	}
 
 	return NVS_NAMECNT_ID;
+}
+
+static void settings_nvs_cache_delete(struct settings_nvs *cf, uint16_t name_id)
+{
+	for (int i = 0; i < CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE; i++) {
+		if (cf->cache[i].name_id != name_id) {
+			continue;
+		}
+
+		if (cf->overflowed) {
+			cf->cache[i].name_id = NVS_NAMECNT_ID;
+			break;
+		}
+
+		(void)memmove(&cf->cache[i], &cf->cache[i + 1],
+			      sizeof(cf->cache[i]) * (cf->cache_next - i - 1));
+
+		cf->cache[cf->cache_next - 1].name_id = NVS_NAMECNT_ID;
+		cf->cache_next--;
+
+		break;
+	}
 }
 #endif /* CONFIG_SETTINGS_NVS_NAME_CACHE */
 
@@ -308,6 +332,12 @@ found:
 				return rc;
 			}
 		}
+
+#if CONFIG_SETTINGS_NVS_NAME_CACHE
+		if (name_in_cache) {
+			settings_nvs_cache_delete(cf, name_id);
+		}
+#endif
 
 		return 0;
 	}
