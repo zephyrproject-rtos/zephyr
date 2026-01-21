@@ -268,7 +268,7 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 					     sl_wifi_buffer_t *buffer)
 {
-	sl_si91x_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
+	sl_wifi_system_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
 	const struct net_eth_hdr *eth = (const struct net_eth_hdr *)si_pkt->data;
 	struct net_if *iface = net_if_get_first_wifi();
 	const struct net_linkaddr *ll = net_if_get_link_addr(iface);
