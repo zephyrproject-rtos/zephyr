@@ -988,9 +988,9 @@ static void state_collect(const struct shell *sh)
 			(void)sh->iface->api->read(sh->iface, buf,
 							sizeof(buf), &count);
 			if (count) {
-				z_flag_cmd_ctx_set(sh, true);
+				bool prev_cmd_ctx = z_flag_cmd_ctx_set(sh, true);
 				bypass(sh, buf, count);
-				z_flag_cmd_ctx_set(sh, false);
+				z_flag_cmd_ctx_set(sh, prev_cmd_ctx);
 				/* Check if bypass mode ended. */
 				if (!(volatile shell_bypass_cb_t *)sh->ctx->bypass) {
 					state_set(sh, SHELL_STATE_ACTIVE);
