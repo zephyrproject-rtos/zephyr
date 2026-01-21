@@ -1,0 +1,226 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8.1-m.dtsi>
+#include <freq.h>
+#include <dt-bindings/pinctrl/rtl87x2g-pinctrl.h>
+#include <dt-bindings/clock/rtl87x2g-clocks.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m55";
+			reg = <0>;
+		};
+	};
+
+	tcm {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		tcm_reserved0: memory@100000 {
+			/* Reserved memory for realtek internal usage */
+			reg = <0x100000 DT_SIZE_K(3)>;
+		};
+
+		/* 0x100c00-0x13cc00: Free space for Zephyr */
+		tcm0: memory@100c00 {
+			/* TCM0, used as zephyr-sram */
+			reg = <0x100c00 DT_SIZE_K(100)>;
+		};
+
+		tcm1: memory@119c00 {
+			/* TCM1, used as zephyr-itcm */
+			compatible = "zephyr,memory-region", "arm,itcm";
+			reg = <0x119c00 DT_SIZE_K(140)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		tcm_reserved1: memory@13cc00 {
+			/* Reserved memory for realtek internal usage */
+			reg = <0x13cc00 DT_SIZE_K(77)>;
+		};
+	};
+
+	ext_data_ram: memory@200000 {
+		/* Extra data ram region */
+		compatible = "zephyr,memory-region";
+		zephyr,memory-region = "EXTRAM";
+		reg = <0x200000 DT_SIZE_K(16)>;
+	};
+
+	buffer_ram: memory@280000 {
+		/* Reserved memory for realtek internal usage */
+		reg = <0x280000 DT_SIZE_K(48)>;
+	};
+
+	clocks {
+		clk_32K_systick: clk-32K-systick {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "okay";
+		};
+	};
+
+	soc {
+		fmc: flash-controller@40022000 {
+			compatible = "realtek,rtl87x2g-flash-controller";
+			reg = <0x40022000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash: flash@4000000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+				erase-block-size = <4096>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					ranges;
+
+					/* 0x4000000-0x402d000 is reserved for Realtek firmwares.
+					 * Do not use.
+					 */
+					reserved: partition@0 {
+						label = "reserved-image";
+						reg = <0x0 DT_SIZE_K(4)>;
+					};
+
+					config_file: partition@1000 {
+						label = "config-file-image";
+						reg = <0x1000 DT_SIZE_K(4)>;
+					};
+
+					boot_patch_0: partition@2000 {
+						label = "boot-patch-0-image";
+						reg = <0x2000 DT_SIZE_K(32)>;
+					};
+
+					boot_patch_1: partition@a000 {
+						label = "boot-patch-1-image";
+						reg = <0xa000 DT_SIZE_K(32)>;
+					};
+
+					ota_header: partition@12000 {
+						label = "ota-header-image";
+						reg = <0x12000 DT_SIZE_K(4)>;
+					};
+
+					system_patch: partition@13000 {
+						label = "system-patch-image";
+						reg = <0x13000 DT_SIZE_K(32)>;
+					};
+
+					stack_patch: partition@1b000 {
+						label = "stack-patch-image";
+						reg = <0x1b000 DT_SIZE_K(72)>;
+					};
+				};
+			};
+		};
+
+		cctl: clock-controller@40002300 {
+			compatible = "realtek,bee-cctl";
+			reg = <0x40002300 0x400>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		pinctrl: pin-controller@40002500 {
+			compatible = "realtek,bee-pinctrl";
+			reg = <0x40002500 0x864>;
+		};
+
+		gpioa: gpio@40030000 {
+			compatible = "realtek,bee-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40030000 0x64>;
+			clocks = <&cctl APB_CLK(GPIOA)>;
+			interrupts = <9 0>, <10 0>, <11 0>, <12 0>, <13 0>, <14 0>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@40030800 {
+			compatible = "realtek,bee-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40030800 0x64>;
+			clocks = <&cctl APB_CLK(GPIOB)>;
+			interrupts = <15 0>, <16 0>, <17 0>, <18 0>;
+			status = "disabled";
+		};
+
+		uart0: serial@40034000 {
+			compatible = "realtek,bee-uart";
+			reg = <0x40034000 0x60>;
+			clocks = <&cctl APB_CLK(UART0)>;
+			interrupts = <34 0>;
+			status = "disabled";
+		};
+
+		/* uart1 is reserved for realtek bee internal log system. */
+		uart1: serial@40034400 {
+			compatible = "realtek,bee-uart";
+			reg = <0x40034400 0x60>;
+			clocks = <&cctl APB_CLK(UART1)>;
+			interrupts = <35 0>;
+			status = "disabled";
+		};
+
+		uart2: serial@40034800 {
+			compatible = "realtek,bee-uart";
+			reg = <0x40034800 0x60>;
+			clocks = <&cctl APB_CLK(UART2)>;
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
+		uart3: serial@40034c00 {
+			compatible = "realtek,bee-uart";
+			reg = <0x40034c00 0x60>;
+			clocks = <&cctl APB_CLK(UART3)>;
+			interrupts = <37 0>;
+			status = "disabled";
+		};
+
+		uart4: serial@40035000 {
+			compatible = "realtek,bee-uart";
+			reg = <0x40035000 0x60>;
+			clocks = <&cctl APB_CLK(UART4)>;
+			interrupts = <38 0>;
+			status = "disabled";
+		};
+
+		uart5: serial@40035400 {
+			compatible = "realtek,bee-uart";
+			reg = <0x40035400 0x60>;
+			clocks = <&cctl APB_CLK(UART5)>;
+			interrupts = <39 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	external-clock-source;
+};
