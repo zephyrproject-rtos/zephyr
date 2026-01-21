@@ -636,6 +636,7 @@ void sys_trace_k_event_wait_enter(struct k_event *event, uint32_t events, uint32
 void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, uint32_t options,
 				     k_timeout_t timeout);
 void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, int ret);
+void sys_trace_set_state_ctf(bool state);
 
 #define sys_port_trace_socket_init(sock, family, type, proto)                                      \
 	sys_trace_socket_init(sock, family, type, proto)
@@ -879,6 +880,8 @@ void sys_trace_gpio_fire_callback(const struct device *port, struct gpio_callbac
 #define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
 #define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
 #define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
+
+#define sys_trace_set_state(state) sys_trace_set_state_ctf(state)
 
 #ifdef __cplusplus
 }
