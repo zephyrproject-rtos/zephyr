@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 		m2_bt_module: m2_bt_module {
 			sdio-reset-gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 			w-disable-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+			wakeup-bt-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
