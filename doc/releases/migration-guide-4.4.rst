@@ -977,6 +977,9 @@ Bluetooth Audio
 * :c:func:`bt_tbs_set_uri_scheme_list` now only takes a single string value,
   instead of a list/array of URIs. Applications will need to modify any current input
   from e.g. ``{"tel", "skype"}`` to ``"tel,skype"``. (:github:`102724`)
+* ``CONFIG_BT_TBS_SUPPORTED_FEATURES`` has been removed. Applications should use the defined macros
+  :c:macro:`BT_TBS_FEATURE_HOLD` and :c:macro:`BT_TBS_FEATURE_JOIN` to set their supported features.
+  (:github:`102666`)
 
 Bluetooth Mesh
 ==============
