@@ -885,6 +885,50 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	return 0;
 }
 
+static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+{
+	wifi_config_t config;
+	esp_err_t rc;
+
+	if (params->enabled == WIFI_PS_DISABLED) {
+		rc = esp_wifi_set_ps(WIFI_PS_NONE);
+		if (rc != ESP_OK) {
+			LOG_ERR("Failed to disable power save, error: %d", rc);
+			return -EIO;
+		}
+		return 0;
+	}
+
+	if (params->enabled != WIFI_PS_ENABLED) {
+		LOG_ERR("Unsupported power save mode: %d", params->enabled);
+		return -ENOTSUP;
+	}
+
+	rc = esp_wifi_get_config(ESP_IF_WIFI_STA, &config);
+
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to get ESP WiFi config, error: %d", rc);
+		return -EIO;
+	}
+
+	config.sta.listen_interval = params->listen_interval;
+	rc = esp_wifi_set_config(ESP_IF_WIFI_STA, &config);
+
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to set ESP WiFi config, error: %d", rc);
+		return -EINVAL;
+	}
+
+	rc = esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
+
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to set ESP power save max modem mode, error: %d", rc);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static void esp32_wifi_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1040,6 +1084,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.ap_enable = esp32_wifi_ap_enable,
 	.ap_disable = esp32_wifi_ap_disable,
 	.iface_status = esp32_wifi_status,
+	.set_power_save = esp32_wifi_set_power_save,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = esp32_wifi_get_stats,
 	.reset_stats = esp32_wifi_reset_stats,
