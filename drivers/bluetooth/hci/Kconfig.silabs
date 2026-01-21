@@ -164,7 +164,7 @@ if BT_PER_ADV_RSP
 
 config BT_SILABS_EFR32_MAX_PAWR_ADVERTISERS
 	int "Maximum numbers of Periodic Advertising With Response advertisers"
-	default 0
+	default 1
 	range 0 BT_SILABS_EFR32_MAX_PERIODIC_ADVERTISERS
 
 config BT_SILABS_EFR32_MAX_PAWR_ADVERTISED_DATA_LENGTH_HINT
