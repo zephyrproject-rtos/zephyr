@@ -20,6 +20,17 @@ extern "C" {
  */
 
 /**
+ * MGMT event opcodes for enumeration management group.
+ */
+enum enum_mgmt_group_events {
+	/** Callback when fetching details on supported command groups. */
+	MGMT_EVT_OP_ENUM_MGMT_DETAILS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_ENUM, 0),
+
+	/** Used to enable all enum_mgmt_group events. */
+	MGMT_EVT_OP_ENUM_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_ENUM),
+};
+
+/**
  * Structure provided in the #MGMT_EVT_OP_ENUM_MGMT_DETAILS notification callback: This callback
  * function is called once per command group when the detail command is used, it can be used to
  * return additional information/fields in the response.

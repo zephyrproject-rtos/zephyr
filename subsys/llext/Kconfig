@@ -108,6 +108,20 @@ config LLEXT_STORAGE_WRITABLE
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
 
+config LLEXT_RODATA_NO_RELOC
+	bool "Keep read-only data without relocations in flash"
+	depends on !MMU && !USERSPACE
+	help
+	  When enabled, read-only data sections (.rodata) that do not have
+	  any relocations are kept in their original location (typically flash)
+	  instead of being copied to RAM.
+
+	  This is useful for large constant data like certificates, lookup
+	  tables, or string literals that don't contain any pointers.
+
+	  This feature requires the extension to manually tag that data with
+	  the LLEXT_RODATA_NO_RELOC macro.
+
 config LLEXT_EXPORT_DEVICES
 	bool "Export all DT devices to llexts"
 	select LLEXT_EXPORT_SYMBOL_GROUP_DEVICE

@@ -11,82 +11,50 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 #include <stm32_ll_utils.h>
 
 /* Macros to fill up multiplication and division factors values */
-#define z_pllm(v) LL_RCC_PLLM_DIV_ ## v
-#define pllm(v) z_pllm(v)
-
-#define z_pllp(v) LL_RCC_PLLP_DIV_ ## v
-#define pllp(v) z_pllp(v)
-
-#define z_pllq(v) LL_RCC_PLLQ_DIV_ ## v
-#define pllq(v) z_pllq(v)
-
-#define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
-#define pllr(v) z_pllr(v)
+#define pllm(v) CONCAT(LL_RCC_PLLM_DIV_, v)
+#define pllp(v) CONCAT(LL_RCC_PLLP_DIV_, v)
+#define pllq(v) CONCAT(LL_RCC_PLLQ_DIV_, v)
+#define pllr(v) CONCAT(LL_RCC_PLLR_DIV_, v)
+#define plldivr(v) CONCAT(LL_RCC_PLLDIVR_DIV_, v)
 
 #if defined(RCC_PLLI2SCFGR_PLLI2SM)
 /* Some stm32F4 devices have a dedicated PLL I2S with M divider */
-#define z_plli2s_m(v) LL_RCC_PLLI2SM_DIV_ ## v
+#define plli2sm(v) CONCAT(LL_RCC_PLLI2SM_DIV_, v)
 #else
 /* Some stm32F4 devices (typ. stm32F401) have a dedicated PLL I2S with PLL M divider */
-#define z_plli2s_m(v) LL_RCC_PLLM_DIV_ ## v
+#define plli2sm(v) CONCAT(LL_RCC_PLLM_DIV_, v)
 #endif /* RCC_PLLI2SCFGR_PLLI2SM */
-#define plli2sm(v) z_plli2s_m(v)
+#define plli2sp(v) CONCAT(LL_RCC_PLLI2SP_DIV_, v)
+#define plli2sq(v) CONCAT(LL_RCC_PLLI2SQ_DIV_, v)
+#define plli2sdivq(v) CONCAT(LL_RCC_PLLI2SDIVQ_DIV_, v)
+#define plli2sr(v) CONCAT(LL_RCC_PLLI2SR_DIV_, v)
+#define plli2sdivr(v) CONCAT(LL_RCC_PLLI2SDIVR_DIV_, v)
 
-#define z_plli2s_q(v) LL_RCC_PLLI2SQ_DIV_ ## v
-#define plli2sq(v) z_plli2s_q(v)
+#define pllsaim(v) CONCAT(LL_RCC_PLLM_DIV_, v)
+#define pllsaip(v) CONCAT(LL_RCC_PLLSAIP_DIV_, v)
+#define pllsaiq(v) CONCAT(LL_RCC_PLLSAIQ_DIV_, v)
+#define pllsaidivq(v) CONCAT(LL_RCC_PLLSAIDIVQ_DIV_, v)
+#define pllsair(v) CONCAT(LL_RCC_PLLSAIR_DIV_, v)
+#define pllsaidivr(v) CONCAT(LL_RCC_PLLSAIDIVR_DIV_, v)
 
-#define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
-#define plli2sr(v) z_plli2s_r(v)
-
-#define z_pllsai_m(v) LL_RCC_PLLM_DIV_ ## v
-#define pllsaim(v) z_pllsai_m(v)
-
-#define z_pllsai_p(v) LL_RCC_PLLSAIP_DIV_ ## v
-#define pllsaip(v) z_pllsai_p(v)
-
-#define z_pllsai_q(v) LL_RCC_PLLSAIQ_DIV_ ## v
-#define pllsaiq(v) z_pllsai_q(v)
-
-#define z_pllsai_divq(v) LL_RCC_PLLSAIDIVQ_DIV_ ## v
-#define pllsaidivq(v) z_pllsai_divq(v)
-
-#define z_pllsai_r(v) LL_RCC_PLLSAIR_DIV_ ## v
-#define pllsair(v) z_pllsai_r(v)
-
-#define z_pllsai_divr(v) LL_RCC_PLLSAIDIVR_DIV_ ## v
-#define pllsaidivr(v) z_pllsai_divr(v)
-
-#define z_pllsai1_p(v) LL_RCC_PLLSAI1P_DIV_ ## v
-#define pllsai1p(v) z_pllsai1_p(v)
-
-#define z_pllsai1_q(v) LL_RCC_PLLSAI1Q_DIV_ ## v
-#define pllsai1q(v) z_pllsai1_q(v)
-
-#define z_pllsai1_r(v) LL_RCC_PLLSAI1R_DIV_ ## v
-#define pllsai1r(v) z_pllsai1_r(v)
+#define pllsai1p(v) CONCAT(LL_RCC_PLLSAI1P_DIV_, v)
+#define pllsai1q(v) CONCAT(LL_RCC_PLLSAI1Q_DIV_, v)
+#define pllsai1r(v) CONCAT(LL_RCC_PLLSAI1R_DIV_, v)
 
 #if defined(RCC_PLLSAI2M_DIV_1_16_SUPPORT)
-#define z_pllsai2_m(v) LL_RCC_PLLSAI2M_DIV_ ## v
+#define pllsai2m(v) CONCAT(LL_RCC_PLLSAI2M_DIV_, v)
 #else
-#define z_pllsai2_m(v) LL_RCC_PLLM_DIV_ ## v
+#define pllsai2m(v) CONCAT(LL_RCC_PLLM_DIV_, v)
 #endif
-#define pllsai2m(v) z_pllsai2_m(v)
-
-#define z_pllsai2_p(v) LL_RCC_PLLSAI2P_DIV_ ## v
-#define pllsai2p(v) z_pllsai2_p(v)
-
-#define z_pllsai2_q(v) LL_RCC_PLLSAI2Q_DIV_ ## v
-#define pllsai2q(v) z_pllsai2_q(v)
-
-#define z_pllsai2_r(v) LL_RCC_PLLSAI2R_DIV_ ## v
-#define pllsai2r(v) z_pllsai2_r(v)
-
-#define z_pllsai2_divr(v) LL_RCC_PLLSAI2DIVR_DIV_ ## v
-#define pllsai2divr(v) z_pllsai2_divr(v)
+#define pllsai2p(v) CONCAT(LL_RCC_PLLSAI2P_DIV_, v)
+#define pllsai2q(v) CONCAT(LL_RCC_PLLSAI2Q_DIV_, v)
+#define pllsai2r(v) CONCAT(LL_RCC_PLLSAI2R_DIV_, v)
+#define pllsai2divr(v) CONCAT(LL_RCC_PLLSAI2DIVR_DIV_, v)
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,6 +69,7 @@ uint32_t get_pllsrc_frequency(void);
 void config_pll2(void);
 #endif
 #if defined(STM32_PLLI2S_ENABLED)
+uint32_t get_plli2ssrc_frequency(void);
 void config_plli2s(void);
 #endif
 #if defined(STM32_PLLSAI_ENABLED)

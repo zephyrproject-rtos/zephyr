@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Add SVE support if enabled
+# Add SVE support if enabled, or explicitly disable it for ARMv9-A
 if(CONFIG_ARM64_SVE)
   if(DEFINED GCC_M_ARCH)
     set(GCC_M_ARCH "${GCC_M_ARCH}+sve")
   else()
     set(GCC_M_ARCH "armv9-a+sve")
+  endif()
+elseif(CONFIG_ARMV9_A)
+  # ARMv9-A includes SVE by default, so explicitly disable it when not configured
+  if(DEFINED GCC_M_ARCH)
+    set(GCC_M_ARCH "${GCC_M_ARCH}+nosve")
+  else()
+    set(GCC_M_ARCH "armv9-a+nosve")
   endif()
 endif()
 

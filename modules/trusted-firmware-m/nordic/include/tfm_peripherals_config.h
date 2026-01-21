@@ -37,6 +37,8 @@ extern "C" {
     #include <tfm_peripherals_config_nrf5340_application.h>
 #elif defined(NRF54L_SERIES)
     #include <tfm_peripherals_config_nrf54l.h>
+#elif defined(NRF71_SERIES)
+    #include <tfm_peripherals_config_nrf71.h>
 #else
     #error "Unknown device."
 #endif

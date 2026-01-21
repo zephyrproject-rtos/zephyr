@@ -1184,6 +1184,7 @@ Display drivers:
     - jfischer-no
     - danieldegrasse
     - VynDragon
+    - KATE-WANG-NXP
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1325,6 +1326,7 @@ Documentation Infrastructure:
     - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/mikroe_can_fd_6_click/
+    - boards/shields/mikroe_mcp251xfd_click/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
     - doc/hardware/peripherals/can/
@@ -2023,6 +2025,7 @@ Documentation Infrastructure:
   collaborators:
     - JarmouniA
     - VynDragon
+    - KATE-WANG-NXP
   files:
     - drivers/mipi_dbi/
     - include/zephyr/drivers/mipi_dbi.h
@@ -2035,6 +2038,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - JarmouniA
+    - KATE-WANG-NXP
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
@@ -2226,6 +2230,7 @@ Documentation Infrastructure:
   collaborators:
     - anangl
     - henrikbrixandersen
+    - FelixWang47831
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
@@ -2586,6 +2591,7 @@ Documentation Infrastructure:
   collaborators:
     - katsuster
     - martinjaeger
+    - yvesll
   files:
     - doc/hardware/peripherals/watchdog.rst
     - drivers/watchdog/
@@ -2634,6 +2640,7 @@ Documentation Infrastructure:
     - dts/bindings/wifi/nordic,nrf7000-spi.yaml
     - dts/bindings/wifi/nordic,nrf7001-qspi.yaml
     - dts/bindings/wifi/nordic,nrf7001-spi.yaml
+    - dts/bindings/wifi/nordic,nrf71-wifi.yaml
     - boards/shields/nrf7002ek/
   labels:
     - "area: Wi-Fi"
@@ -3401,11 +3408,14 @@ Microchip RISC-V Platforms:
   collaborators:
     - kgugala
     - tgorochowik
+    - con-pax
   files:
     - boards/microchip/m2gl025_miv/
     - boards/microchip/mpfs_icicle/
+    - boards/microchip/pic64gx_curiosity_kit/
     - dts/riscv/microchip/
     - soc/microchip/miv/
+    - soc/microchip/pic64/
   labels:
     - "platform: Microchip RISC-V"
 
@@ -3602,6 +3612,7 @@ NXP Platforms (MCU):
     - mmahadevan108
   collaborators:
     - butok
+    - DerekSnell
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -3609,7 +3620,6 @@ NXP Platforms (MCU):
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
     - boards/nxp/*rw*/
-    - boards/nxp/hexiwear/
     - boards/nxp/common/
     - boards/nxp/*
     - soc/nxp/common/
@@ -4166,6 +4176,22 @@ OSDP:
   tests:
     - sample.mgmt.osdp
 
+OTP:
+  status: odd fixes
+  collaborators:
+    - GseoC
+    - pdgendt
+  files:
+    - doc/hardware/peripherals/otp/
+    - drivers/otp/
+    - dts/bindings/otp/
+    - include/zephyr/drivers/otp.h
+    - tests/subsys/nvmem/api/otp.overlay
+  labels:
+    - "area: OTP"
+  tests:
+    - nvmem
+
 Octavo Systems Platforms:
   status: maintained
   maintainers:
@@ -4230,6 +4256,7 @@ PMCI:
   collaborators:
     - nashif
     - kehintel
+    - edersondisouza
   files:
     - subsys/pmci/
     - samples/subsys/pmci/
@@ -4902,6 +4929,17 @@ Silabs SiM3U Platforms:
     - "platform: Silabs SiM3U"
   description: >-
     SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
+
+Space Cubics Platforms:
+  status: maintained
+  maintainers:
+    - yashi
+  files:
+    - boards/sc/
+  labels:
+    - "platform: Space Cubics"
+  description: >-
+    Space Cubics on-board computers (OBCs).
 
 State machine framework:
   status: maintained

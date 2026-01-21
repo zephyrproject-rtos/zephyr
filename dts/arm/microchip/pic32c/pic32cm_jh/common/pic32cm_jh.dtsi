@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,11 @@
 				compatible = "microchip,pic32cm-jh-mclkperiph";
 				#clock-cells = <1>;
 			};
+		};
+
+		rstc: rstc@40000c00 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x40000c00 0x400>;
 		};
 
 		pinctrl: pinctrl@41000000 {

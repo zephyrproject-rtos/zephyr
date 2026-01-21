@@ -97,6 +97,11 @@ int intc_rz_ext_irq_set_type(const struct device *dev, uint8_t trig)
 	fsp_err_t err = FSP_SUCCESS;
 	external_irq_cfg_t *p_cfg = (external_irq_cfg_t *)config->fsp_cfg;
 
+	/* High level detection is not supported by HW */
+	if (trig == EXTERNAL_IRQ_TRIG_LEVEL_HIGH) {
+		return -ENOTSUP;
+	}
+
 	p_cfg->trigger = (external_irq_trigger_t)trig;
 	err = config->fsp_api->close(data->fsp_ctrl);
 

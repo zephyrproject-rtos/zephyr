@@ -318,6 +318,11 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			goto free_buf;
 		}
 
+		if (ctx->queries[i].additional_queries >= CONFIG_DNS_RESOLVER_ADDITIONAL_QUERIES) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
+
 		for (j = 0; j < SERVER_COUNT; j++) {
 			if (ctx->servers[j].sock < 0) {
 				continue;
@@ -331,6 +336,8 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 				nfail++;
 			}
 		}
+
+		ctx->queries[i].additional_queries++;
 
 		if (nfail > 0) {
 			NET_DBG("DNS cname query %d fails on %d attempts",
@@ -1395,6 +1402,14 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			goto quit;
 		}
 
+
+		if (answer_type == DNS_RR_TYPE_CNAME) {
+			/* Don't report CNAME records to the application, they're used internally
+			 * for query redirection.
+			 */
+			continue;
+		}
+
 		invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
 
 		if (dns_msg->response_type == DNS_RESPONSE_IP ||
@@ -1482,12 +1497,12 @@ static int dns_read(struct dns_resolve_context *ctx,
 	ret = dns_validate_msg(ctx, &dns_msg, dns_id, &query_idx,
 			       dns_cname, query_hash);
 	if (ret == DNS_EAI_AGAIN) {
-		goto finished;
+		return ret;
 	}
 
 	if ((ret < 0 && ret != DNS_EAI_ALLDONE) || query_idx < 0 ||
 	    query_idx > CONFIG_DNS_NUM_CONCUR_QUERIES) {
-		goto quit;
+		return ret;
 	}
 
 #if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
@@ -1510,13 +1525,6 @@ static int dns_read(struct dns_resolve_context *ctx,
 	}
 
 	return 0;
-
-finished:
-	dns_resolve_cancel_with_name(ctx, *dns_id,
-				     ctx->queries[query_idx].query,
-				     ctx->queries[query_idx].query_type);
-quit:
-	return ret;
 }
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
@@ -2040,6 +2048,7 @@ try_resolve:
 	ctx->queries[i].user_data = user_data;
 	ctx->queries[i].ctx = ctx;
 	ctx->queries[i].query_hash = 0;
+	ctx->queries[i].additional_queries = 0;
 	ctx->queries[i].cb_called = false;
 
 	k_work_init_delayable(&ctx->queries[i].timer, query_timeout);

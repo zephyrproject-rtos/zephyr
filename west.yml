@@ -200,17 +200,17 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 248eadcacf976bbd27f1c0bc0dd3f11d8ec8657e
+      revision: a83db66acbeca0bfef157a0c3482c07ddbb82555
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 602db600cae5275ab0946de696a6068d769a6b3d
+      revision: 8f1bf948a94cf59926ea7b686985e1d6c6f954c7
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 05702fcda8247876970f198669b72e3a8c99f6e5
+      revision: 2f8883b3358e7be2101075cd0f00dd2e0fa68050
       path: modules/hal/nxp
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 6894582f2d7ff750caa60d60dd5ccac7927b72e4
+      revision: 56c35ce22bac062a9d6b1fc87f145b5d48571efb
       groups:
         - hal
     - name: hal_rpi_pico
@@ -255,7 +255,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: ec0fe4a09a5bbf0e482ab1f4bd42d66131c64369
+      revision: e05bb4707857ecf4344c29a9407aaa4227407546
       path: modules/hal/stm32
       groups:
         - hal
@@ -318,7 +318,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: c016f72d4c125098287be5e83c0f1abed4706ee5
+      revision: 94ae6c0535aa6ac4b08a75f4ae2c3a08cacb5c41
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
@@ -344,10 +344,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 0f0c43748111c65800c6920f1c0690676423a351
+      revision: 4d11a73d62bf999205f16de21a0ef675501f5b21
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: eaf223da0c3f987caa1156cbed54b513bee4ba37
+      revision: 29afb11a512787bc68e2afd58c9dfde4bb4d5dc4
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 5efe7974f9546582e99f5a842a816ea4b65f5227
@@ -364,7 +364,7 @@ manifest:
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: psa-arch-tests
-      revision: 941cd8436a2e0f1da9d8584b83a403930826899d
+      revision: d70b2c7072cedf0f14724211d2122ef07b98720c
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing
@@ -386,7 +386,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: e9ea674ed02e8ee00548f1bb994d52df23c8068d
+      revision: 6788687e013733d12f015b5d45b214019dea58f7
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -394,7 +394,7 @@ manifest:
       revision: ac80c3bf2b88deec86d129654fbde09761582342
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 9b07780aca6fb21f82a241ba386ad9b379809337
+      revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
   # zephyr-keep-sorted-stop
 

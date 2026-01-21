@@ -13,7 +13,7 @@ extern char _rom_attr[];
 #endif
 
 #define REGION_PERIPHERAL_BASE_ADDRESS 0x40000000
-#define REGION_PERIPHERAL_SIZE         REGION_512M
+#define REGION_PERIPHERAL_SIZE         REGION_1G
 #define REGION_PPB_BASE_ADDRESS        0xE0000000
 #define REGION_PPB_SIZE                REGION_1M
 

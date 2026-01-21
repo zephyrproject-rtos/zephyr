@@ -19,6 +19,7 @@
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 #include <zephyr/net/conn_mgr_monitor.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
 
 #include "net_private.h"
@@ -427,7 +428,13 @@ int nrf_wifi_if_send(const struct device *dev,
 	}
 
 #ifdef CONFIG_NRF70_RAW_DATA_TX
-	if ((*(unsigned int *)pkt->frags->data) == NRF_WIFI_MAGIC_NUM_RAWTX) {
+	/*
+	 * Check for raw TX magic number in both byte orders:
+	 * - Little-endian: programmatic API stores native uint32_t
+	 * - Big-endian: shell hex input "12345678" stores bytes 0x12,0x34,0x56,0x78
+	 */
+	if (sys_get_le32(pkt->frags->data) == NRF_WIFI_MAGIC_NUM_RAWTX ||
+	    sys_get_be32(pkt->frags->data) == NRF_WIFI_MAGIC_NUM_RAWTX) {
 		if (vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
 			goto drop;
 		}

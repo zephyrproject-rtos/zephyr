@@ -115,7 +115,7 @@ void modem_pipelink_notify_disconnected(struct modem_pipelink *link);
  * @param name Pipelink name
  */
 #define MODEM_PIPELINK_DT_SYM(node_id, name) \
-	_CONCAT_4(__modem_pipelink_, DT_DEP_ORD(node_id), _, name)
+	CONCAT(__modem_pipelink_, DT_DEP_ORD(node_id), _, name)
 
 /** @endcond */
 

@@ -11,7 +11,11 @@
 	};
 };
 
+&tint24 {
+	status = "okay";
+};
+
 &gpio8 {
-	irqs = <1 24>;
+	irqs = <&tint24 1>;
 	status = "okay";
 };

@@ -51,6 +51,8 @@ else()
   set(KCONFIG_ROOT ${ZEPHYR_BASE}/Kconfig)
 endif()
 
+zephyr_get(KCONFIG_VARIANT_SOURCE SYSBUILD LOCAL)
+
 if(NOT DEFINED BOARD_DEFCONFIG)
   zephyr_file(CONF_FILES ${BOARD_DIRECTORIES} DEFCONFIG BOARD_DEFCONFIG)
 endif()
@@ -197,7 +199,11 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_traceconfig
   ${PROJECT_BINARY_DIR}/kconfig-trace.md
   )
 
-set_ifndef(KCONFIG_TARGETS menuconfig guiconfig hardenconfig traceconfig)
+zephyr_get(KCONFIG_TARGETS SYSBUILD LOCAL)
+
+if(NOT DEFINED KCONFIG_TARGETS)
+  set(KCONFIG_TARGETS menuconfig guiconfig hardenconfig traceconfig)
+endif()
 
 foreach(kconfig_target
     ${KCONFIG_TARGETS}
@@ -313,6 +319,13 @@ foreach(f ${merge_config_files})
   endif()
 endforeach()
 
+if(KCONFIG_VARIANT_SOURCE)
+  set(
+    merge_config_files
+    ${KCONFIG_VARIANT_SOURCE}
+  )
+endif()
+
 # Calculate a checksum of merge_config_files to determine if we need
 # to re-generate .config
 set(merge_config_files_checksum "")
@@ -355,7 +368,10 @@ if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_files_checksum_file})
 endif()
 
 if(CREATE_NEW_DOTCONFIG)
-  set(input_configs_flags --handwritten-input-configs)
+  if(NOT KCONFIG_VARIANT_SOURCE)
+    set(input_configs_flags --handwritten-input-configs)
+  endif()
+
   set(input_configs ${merge_config_files} ${FORCED_CONF_FILE})
   build_info(kconfig files PATH ${input_configs})
 else()

@@ -53,6 +53,9 @@ enum llext_mem {
 	LLEXT_MEM_PREINIT,      /**< Array of early setup functions */
 	LLEXT_MEM_INIT,         /**< Array of setup functions */
 	LLEXT_MEM_FINI,         /**< Array of cleanup functions */
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+	LLEXT_MEM_RODATA_NO_RELOC,  /**< Read-only data without relocations (kept in flash) */
+#endif
 
 	LLEXT_MEM_COUNT,        /**< Number of regions managed by LLEXT */
 };
@@ -61,6 +64,22 @@ enum llext_mem {
 
 /* Number of memory partitions used by LLEXT */
 #define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS+1)
+
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+/* Section name for read-only data kept in flash */
+#define LLEXT_SECT_RODATA_NO_RELOC llext.rodata.noreloc
+
+/* Full section name as string for comparisons */
+#define LLEXT_SECTION_RODATA_NO_RELOC ("." STRINGIFY(LLEXT_SECT_RODATA_NO_RELOC))
+
+/**
+ * Use this attribute on read-only data that should remain in flash
+ * instead of being copied to RAM.
+ */
+#define LLEXT_RODATA_NO_RELOC Z_GENERIC_DOT_SECTION(LLEXT_SECT_RODATA_NO_RELOC)
+#else
+#define LLEXT_RODATA_NO_RELOC
+#endif
 
 struct llext_loader;
 /** @endcond */

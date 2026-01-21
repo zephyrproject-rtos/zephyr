@@ -56,6 +56,7 @@
 enum session_proto {
 	SESSION_UDP = 0,
 	SESSION_TCP = 1,
+	SESSION_RAW = 2,
 	SESSION_PROTO_END
 };
 
@@ -136,6 +137,7 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps);
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work);
 void zperf_udp_uploader_init(void);
 void zperf_tcp_uploader_init(void);
+void zperf_raw_uploader_init(void);
 
 void zperf_shell_init(void);
 

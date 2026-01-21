@@ -30,23 +30,23 @@ config MCUMGR_TRANSPORT_REASSEMBLY
 	  Enable structures and functions needed for packet reassembly by SMP backend.
 
 config MCUMGR_TRANSPORT_NETBUF_COUNT
-	int "Number of mcumgr buffers"
+	int "Number of MCUmgr buffers"
 	default 2 if MCUMGR_TRANSPORT_UDP
 	default 4
 	help
-	  The number of net_bufs to allocate for mcumgr.  These buffers are
-	  used for both requests and responses.
+	  The number of net_bufs to allocate for MCUmgr. These buffers are used for both requests
+	  and responses.
 
 config MCUMGR_TRANSPORT_NETBUF_SIZE
-	int "Size of each mcumgr buffer"
+	int "Size of each MCUmgr buffer"
 	default 2048 if MCUMGR_TRANSPORT_UDP
 	default 384
 	help
-	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
-	  the following relation:
+	  The size, in bytes, of each MCUmgr buffer. This value must satisfy the following
+	  relation:
 	  MCUMGR_TRANSPORT_NETBUF_SIZE >= transport-specific-MTU + transport-overhead
-	  In case when MCUMGR_TRANSPORT_SHELL is enabled this value should be set to
-	  at least MCUMGR_GRP_SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
+	  In case when MCUMGR_TRANSPORT_SHELL is enabled this value should be set to at least
+	  CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
 
 config MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
 	int
@@ -59,16 +59,15 @@ config MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
 	  Hidden option to determine minimum user data size.
 
 config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
-	int "Size of mcumgr buffer user data"
+	int "Size of MCUmgr buffer user data"
 	range MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE 128
 	default MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
 	help
-	  The size, in bytes, of user data to allocate for each mcumgr buffer.
+	  The size, in bytes, of user data to allocate for each MCUmgr buffer.
 
-	  Different mcumgr transports impose different requirements for this
-	  setting. A value of 4 is sufficient for UART and shell, a value of 8
-	  is sufficient for Bluetooth. For UDP, the userdata must be large
-	  enough to hold IPv4/IPv6 addresses.
+	  Different MCUmgr transports impose different requirements for this setting. A value of 4
+	  is sufficient for UART and shell, a value of 8 is sufficient for Bluetooth. For UDP, the
+	  userdata must be large enough to hold IPv4/IPv6 addresses.
 
 module = MCUMGR_TRANSPORT
 module-str = mcumgr_transport

@@ -276,6 +276,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "realtek,rts5912-spi";
+			clocks = <&sccon RTS5912_SCCON_SYS 0>;
 			reg = <0x40010400 0x3C>;
 			status = "disabled";
 		};

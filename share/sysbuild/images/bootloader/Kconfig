@@ -150,6 +150,17 @@ config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
 
 endchoice
 
+config MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
+	bool "Generate slot 1 variant image [EXPERIMENTAL]"
+	depends on MCUBOOT_MODE_DIRECT_XIP || MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+	select EXPERIMENTAL
+	default y
+	help
+	  Will generate an image for the alternate partition (``slot1_partition``) which can be
+	  used for firmware updates. This image will have the same configuration options applied
+	  as the main image, with an extra dts overlay that changes the chosen flash partition to
+	  slot1_partition, and will be named ``<app>_slot_1_variant``.
+
 config MCUBOOT_MODE_FIRMWARE_UPDATER_BOOT_MODE_ENTRANCE
 	bool "Firmware updater retention boot mode entrance"
 	depends on MCUBOOT_MODE_FIRMWARE_UPDATER

@@ -596,6 +596,16 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
         description = binding.description.strip()
     print(to_code_block(description), file=string_io)
 
+    # Examples
+    if binding.examples:
+        print_block('''\
+        Examples
+        ********
+        ''', string_io)
+        blocks = [to_code_block(example, language='dts')
+                  for example in binding.examples]
+        print("\n----\n".join(blocks), file=string_io)
+
     # Properties.
     print_block('''\
     Properties
@@ -819,13 +829,13 @@ def print_block(block, string_io):
 
     print(textwrap.dedent(block), file=string_io)
 
-def to_code_block(s, indent=0):
+def to_code_block(s, indent=0, language='none'):
     # Converts 's', a string, to an indented rst .. code-block::. The
     # 'indent' argument is a leading indent for each line in the code
     # block, in spaces.
     indent = indent * ' '
-    return ('.. code-block:: none\n\n' +
-            textwrap.indent(s, indent + '   ') + '\n')
+    return (f".. code-block:: {language}\n\n"
+            f"{textwrap.indent(s, f'{indent}   ')}\n")
 
 def compatible_vnd(compatible):
     # Get the vendor prefix for a compatible string 'compatible'.

@@ -267,10 +267,18 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 	sys_snode_t *current, *next;
 	struct net_arp_hdr *arp_hdr;
 	struct net_if_ipv4 *ipv4;
+	struct net_linkaddr *dst_lladdr;
 
 	if (net_pkt_get_len(pkt) < sizeof(struct net_arp_hdr)) {
 		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
 			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr));
+		return NET_DROP;
+	}
+
+	dst_lladdr = net_pkt_lladdr_dst(pkt);
+	if ((dst_lladdr->type != NET_LINK_ETHERNET) ||
+	    (dst_lladdr->len != sizeof(struct net_eth_addr))) {
+		NET_ERR("Invalid LinkLayer in ARP");
 		return NET_DROP;
 	}
 
@@ -298,15 +306,16 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 		 * - ARP Request/Reply with Sender IP address match OR,
 		 * - ARP Probe where Target IP address match with different sender HW address,
 		 * indicate a conflict.
-		 * ARP Probe has an all-zero sender IP address
+		 * ARP Probe has an all-zero sender IP address and is broadcasted
 		 */
 		if (net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
 					  (uint8_t *)&ifaddr->address.in_addr) ||
 		    (net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
-					  (uint8_t *)&ifaddr->address.in_addr) &&
-				 (memcmp(&arp_hdr->src_hwaddr, ll_addr->addr, ll_addr->len) != 0) &&
-				 (net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
-					(uint8_t *)&(struct net_in_addr)NET_INADDR_ANY_INIT)))) {
+					   (uint8_t *)&ifaddr->address.in_addr) &&
+		     (memcmp(&arp_hdr->src_hwaddr, ll_addr->addr, ll_addr->len) != 0) &&
+		     (net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
+					    (uint8_t *)&(struct net_in_addr)NET_INADDR_ANY_INIT)) &&
+		     net_eth_is_addr_broadcast((struct net_eth_addr *)dst_lladdr->addr))) {
 			NET_DBG("Conflict detected from %s for %s",
 				net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
 						   arp_hdr->hwlen),

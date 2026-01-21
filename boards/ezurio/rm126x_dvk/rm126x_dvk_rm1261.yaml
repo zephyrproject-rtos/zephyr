@@ -1,0 +1,27 @@
+identifier: rm126x_dvk_rm1261
+name: RM1261 DVK
+type: mcu
+arch: arm
+ram: 32
+flash: 224
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - i2c
+  - led
+  - lora
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: ezurio

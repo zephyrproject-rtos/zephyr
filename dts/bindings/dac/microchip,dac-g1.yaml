@@ -1,0 +1,149 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 DAC
+
+description: |
+  Microchip G1 DAC peripherals.
+
+  Group G1 DAC includes the following hardware peripherals:
+    - module name="DAC" id="U2502" version="1.0.0"
+
+compatible: "microchip,dac-g1"
+
+include:
+  - name: dac-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  "#io-channel-cells":
+    type: int
+    required: true
+    const: 1
+    description: |
+      Number of cells needed to represent a channel.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  refsel:
+    type: string
+    required: true
+    enum:
+      - "vref_au"
+      - "vdd_ana"
+      - "vref_ab"
+      - "int_ref"
+    description: |
+      Reference Voltage selection.
+
+      Must be one of:
+      - "vref_au" (0x0) - Unbuffered External Voltage Reference
+      - "vdd_ana" (0x1) - Voltage Supply
+      - "vref_ab" (0x2) - Buffered External Voltage Reference
+      - "int_ref" (0x3) - Internal Bandgap Reference
+
+  max-channels:
+    type: int
+    default: 2
+    description: |
+      Maximum number of channels
+
+child-binding:
+  description: |
+    Channel configuration.
+    All child nodes using this binding must be named "channel".
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        DAC channel number.
+
+        Allowed channel numbers are 0 to (max-channels - 1).
+        For example, if max-channels = 2, the allowed channels are 0 and 1.
+
+    rate:
+      type: int
+      required: true
+      description: |
+        Conversion Speed in KSPS(Kilo Samples per second)
+      enum:
+        - 100
+        - 500
+        - 1000
+
+    ext-filter:
+      type: boolean
+      description: |
+        Enable External Filter
+
+    data-adj:
+      type: string
+      default: right
+      enum:
+        - "right"
+        - "left"
+      description: |
+        Controls how the DAC value is aligned in the DATA register.
+
+        "right" selects right alignment and "left" selects left alignment,
+        as controlled by the LEFTADJ bit. The default is "right", which
+        matches the hardware reset value of LEFTADJ = 0.
+        Right alignment places the LSB of the 12-bit value at bit 0 of DATA.
+
+    dither-mode:
+      type: boolean
+      description: |
+        Enable the Dithering Mode
+
+    sampling-ratio:
+      type: int
+      default: 1
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
+      description: |
+        Set the Oversampling Ratio
+
+        Setting oversampling disables the refresh rate.
+
+    refresh-period:
+      type: int
+      default: 0
+      description: |
+        Refresh Period in us ( 0 - Disabled )
+      enum:
+        - 0
+        - 30
+        - 60
+        - 90
+        - 120
+        - 150
+        - 180
+        - 210
+        - 240
+        - 270
+        - 300
+        - 330
+        - 360
+        - 390
+        - 420
+        - 450

@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+
+# Enable TrustZone-M
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# Use devicetree code partition for TF-M
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Don't enable the cache in the non-secure image as it is a
+# secure-only peripheral on 71x series
+CONFIG_CACHE_MANAGEMENT=n
+CONFIG_EXTERNAL_CACHE=n
+
+CONFIG_UART_CONSOLE=y
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Start SYSCOUNTER on driver init
+CONFIG_NRF_GRTC_START_SYSCOUNTER=y
+
+# Disable TFM BL2 since it is not supported
+CONFIG_TFM_BL2=n

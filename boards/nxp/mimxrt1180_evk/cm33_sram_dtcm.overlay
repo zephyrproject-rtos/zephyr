@@ -1,0 +1,21 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Remove property from DTCM: zephyr,memory-region = "DTCM"; */
+/delete-node/ &dtcm;
+
+/ {
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+
+	soc {
+		dtcm: memory@30000000 {
+			compatible = "nmmio-sram";
+			reg = <0x30000000 DT_SIZE_K(128)>;
+		};
+	};
+};

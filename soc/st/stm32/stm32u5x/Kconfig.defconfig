@@ -13,8 +13,17 @@ config ROM_START_OFFSET
 config ICACHE
 	default y
 
+config ICACHE_LINE_SIZE
+	default 16
+
 config DCACHE
 	default y
+
+config DCACHE_LINE_SIZE
+	default 32 if (SOC_STM32U595XX || SOC_STM32U599XX || \
+		SOC_STM32U5A5XX || SOC_STM32U5A9XX || \
+		SOC_STM32U5F9XX || SOC_STM32U5G9XX)
+	default 16
 
 config CACHE_MANAGEMENT
 	default y

@@ -38,18 +38,10 @@ static int regulator_gpio_apply_state(const struct device *dev, uint32_t state)
 		int ret;
 		int new_state_of_gpio = (state >> gpio_idx) & 0x1;
 
-		ret = gpio_pin_get_dt(&cfg->gpios[gpio_idx]);
+		ret = gpio_pin_set_dt(&cfg->gpios[gpio_idx], new_state_of_gpio);
 		if (ret < 0) {
-			LOG_ERR("%s: can't get pin state", dev->name);
+			LOG_ERR("%s: can't set pin state", dev->name);
 			return ret;
-		}
-
-		if (ret != new_state_of_gpio) {
-			ret = gpio_pin_set_dt(&cfg->gpios[gpio_idx], new_state_of_gpio);
-			if (ret < 0) {
-				LOG_ERR("%s: can't set pin state", dev->name);
-				return ret;
-			}
 		}
 	}
 
@@ -162,6 +154,7 @@ static DEVICE_API(regulator, regulator_gpio_api) = {
 static int regulator_gpio_init(const struct device *dev)
 {
 	const struct regulator_gpio_config *cfg = dev->config;
+	const bool should_enable = cfg->common.flags & REGULATOR_INIT_ENABLED;
 	int ret;
 
 	regulator_common_data_init(dev);
@@ -188,7 +181,8 @@ static int regulator_gpio_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW);
+		ret = gpio_pin_configure_dt(&cfg->enable, should_enable ? GPIO_OUTPUT_ACTIVE
+									: GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			LOG_ERR("%s: can't configure enable pin (%d) as output", dev->name,
 				cfg->enable.pin);
@@ -196,7 +190,7 @@ static int regulator_gpio_init(const struct device *dev)
 		}
 	}
 
-	return regulator_common_init(dev, false);
+	return regulator_common_init(dev, should_enable);
 }
 
 #define REG_GPIO_CONTEXT_GPIOS_SPEC_ELEM(_node_id, _prop, _idx)                                    \

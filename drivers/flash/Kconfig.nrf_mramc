@@ -7,6 +7,7 @@
 config SOC_FLASH_NRF_MRAMC
 	bool "Nordic Semiconductor flash driver for MRAM using MRAM Controller"
 	default y
+	depends on !BUILD_WITH_TFM
 	depends on DT_HAS_NORDIC_NRF_MRAMC_ENABLED
 	select NRFX_MRAMC
 	select FLASH_HAS_DRIVER_ENABLED

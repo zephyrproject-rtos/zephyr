@@ -79,12 +79,6 @@ static const uint8_t test_response_error_data[8] = {
 	0xbf, 0x62, 0x72, 0x63, 0x19, 0x01, 0x00, 0xff
 };
 
-/*
- * TODO: The contents of these structs are not used, which is why clang complains.
- * The test should be updated to use these values. See discussion in
- * https://github.com/zephyrproject-rtos/zephyr/pull/87592.
- */
-TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION)
 static const uint8_t test_response_read_data_start[5] = {
 	0xbf, 0x63, 0x76, 0x61, 0x6c
 };
@@ -92,7 +86,6 @@ static const uint8_t test_response_read_data_start[5] = {
 static const uint8_t test_response_read_data_end[1] = {
 	0xff
 };
-TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_UNNEEDED_INTERNAL_DECLARATION)
 
 static void cleanup_test(void *p)
 {
@@ -525,6 +518,14 @@ ZTEST(settings_mgmt, test_set_read)
 
 		zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 			      "SMP header length mismatch");
+		zassert_mem_equal(nb->data, test_response_read_data_start,
+				  sizeof(test_response_read_data_start),
+				  "SMP response start mismatch");
+		zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+				  test_response_read_data_end,
+				  sizeof(test_response_read_data_end),
+				  "SMP response end mismatch");
+
 		zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 		zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP,
 			      "SMP header operation mismatch");
@@ -629,6 +630,14 @@ ZTEST(settings_mgmt, test_read_max_size)
 
 	zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 		      "SMP header length mismatch");
+	zassert_mem_equal(nb->data, test_response_read_data_start,
+			  sizeof(test_response_read_data_start),
+			  "SMP response start mismatch");
+	zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+			  test_response_read_data_end,
+			  sizeof(test_response_read_data_end),
+			  "SMP response end mismatch");
+
 	zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 	zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
 	zassert_equal(smp_header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
@@ -784,6 +793,14 @@ ZTEST(settings_mgmt, test_set_disallowed)
 
 	zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 		      "SMP header length mismatch");
+	zassert_mem_equal(nb->data, test_response_read_data_start,
+			  sizeof(test_response_read_data_start),
+			  "SMP response start mismatch");
+	zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+			  test_response_read_data_end,
+			  sizeof(test_response_read_data_end),
+			  "SMP response end mismatch");
+
 	zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 	zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
 	zassert_equal(smp_header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
@@ -914,6 +931,14 @@ ZTEST(settings_mgmt, test_set_disallowed)
 
 	zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 		      "SMP header length mismatch");
+	zassert_mem_equal(nb->data, test_response_read_data_start,
+			  sizeof(test_response_read_data_start),
+			  "SMP response start mismatch");
+	zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+			  test_response_read_data_end,
+			  sizeof(test_response_read_data_end),
+			  "SMP response end mismatch");
+
 	zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 	zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
 	zassert_equal(smp_header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
@@ -1186,6 +1211,14 @@ ZTEST(settings_mgmt, test_delete)
 
 	zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 		      "SMP header length mismatch");
+	zassert_mem_equal(nb->data, test_response_read_data_start,
+			  sizeof(test_response_read_data_start),
+			  "SMP response start mismatch");
+	zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+			  test_response_read_data_end,
+			  sizeof(test_response_read_data_end),
+			  "SMP response end mismatch");
+
 	zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 	zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
 	zassert_equal(smp_header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
@@ -1313,6 +1346,14 @@ ZTEST(settings_mgmt, test_delete)
 
 	zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 		      "SMP header length mismatch");
+	zassert_mem_equal(nb->data, test_response_read_data_start,
+			  sizeof(test_response_read_data_start),
+			  "SMP response start mismatch");
+	zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+			  test_response_read_data_end,
+			  sizeof(test_response_read_data_end),
+			  "SMP response end mismatch");
+
 	zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 	zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
 	zassert_equal(smp_header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),
@@ -1558,6 +1599,14 @@ ZTEST(settings_mgmt, test_delete)
 
 	zassert_true(smp_header->nh_len > sys_cpu_to_be16(TEST_RESPONSE_READ_DATA_LENGTH),
 		      "SMP header length mismatch");
+	zassert_mem_equal(nb->data, test_response_read_data_start,
+			  sizeof(test_response_read_data_start),
+			  "SMP response start mismatch");
+	zassert_mem_equal(&nb->data[nb->len - sizeof(test_response_read_data_end)],
+			  test_response_read_data_end,
+			  sizeof(test_response_read_data_end),
+			  "SMP response end mismatch");
+
 	zassert_equal(smp_header->nh_flags, 0, "SMP header flags mismatch");
 	zassert_equal(smp_header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
 	zassert_equal(smp_header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_SETTINGS),

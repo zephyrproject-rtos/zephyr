@@ -1,7 +1,7 @@
 # Copyright (c) 2020,2022-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_INTEL_CAVS_V25
+if SOC_CAVSV25
 
 # For backward compatibility, to be removed
 config SOC_SERIES_INTEL_CAVS_V25
@@ -53,4 +53,4 @@ endif
 config ADSP_NEED_POWER_ON_CACHE
 	default y
 
-endif # SOC_INTEL_CAVS_V25
+endif # SOC_CAVSV25

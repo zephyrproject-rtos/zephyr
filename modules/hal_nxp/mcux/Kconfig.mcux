@@ -24,12 +24,6 @@ config HAS_MCUX_CACHE
 	help
 	  Set if the L1 or L2 cache is present in the SoC.
 
-config HAS_MCUX_SIM
-	bool
-	help
-	  Set if the system integration module (SIM) module is present in the
-	  SoC.
-
 config HAS_MCUX_SRC
 	bool
 	help
@@ -40,12 +34,6 @@ config HAS_MCUX_RDC
 	bool
 	help
 	  Set if the RDC module is present in the SoC.
-
-config HAS_MCUX_RCM
-	bool
-	help
-	  Set if the Reset Control Module (RCM) module is present in
-	  the SoC.
 
 config HAS_MCUX_XCACHE
 	bool
@@ -92,6 +80,11 @@ config NXP_IEEE802154_MAC
 	help
 	   If enabled, the NBU firmware used by the device will be use the 802.15.4
 	   MAC interface.
+
+config NXP_MULTICORE
+	bool "NXP Multicore Manager support"
+	help
+	  Includes NXP Multicore Manager support.
 
 endif # HAS_MCUX
 

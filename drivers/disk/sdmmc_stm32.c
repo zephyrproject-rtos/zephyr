@@ -187,6 +187,11 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 	if (IS_ENABLED(CONFIG_SDMMC_STM32_CLOCK_CHECK)) {
 		uint32_t sdmmc_clock_rate;
 
+		if (DT_INST_NUM_CLOCKS(0) <= 1) {
+			LOG_ERR("No domain clock provided on SDMMC DT node!");
+			return -ENOTSUP;
+		}
+
 		if (clock_control_get_rate(clock,
 					   (clock_control_subsys_t)&priv->pclken[1],
 					   &sdmmc_clock_rate) != 0) {

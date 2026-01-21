@@ -246,3 +246,56 @@ generation of custom packet contents instead of sending a constant packet
 consisting solely of the ``z`` character. An example use case would be
 determining the maximum throughput of uploading data from an external flash
 memory chip.
+
+Raw TX Mode
+***********
+
+zperf supports raw packet transmission mode for testing custom L2 frames or
+vendor-specific protocols. This mode bypasses UDP/TCP and sends raw packets
+directly using packet sockets.
+
+To enable raw TX mode, set the following Kconfig options:
+
+.. code-block:: kconfig
+
+   CONFIG_NET_SOCKETS_PACKET=y
+   CONFIG_NET_ZPERF_RAW_TX=y
+
+The maximum header size can be configured with
+:kconfig:option:`CONFIG_NET_ZPERF_RAW_TX_MAX_HDR_SIZE` (default: 64 bytes).
+
+Before using raw TX mode, TX injection mode must be enabled on the network
+interface:
+
+.. code-block:: console
+
+   uart:~$ net iface txinjection 1 on
+
+The raw TX upload command syntax is:
+
+.. code-block:: console
+
+   zperf raw upload [-a] <if_index> <header_hex> [<duration_sec>] [<packet_size>] [<rate_kbps>]
+
+Where:
+
+- ``-a``: Optional async mode flag
+- ``if_index``: Network interface index (e.g., 1)
+- ``header_hex``: User-provided header as hex string (vendor metadata + frame header)
+- ``duration_sec``: Test duration in seconds (default: 1)
+- ``packet_size``: Total packet size including header (default: 256)
+- ``rate_kbps``: Target rate in Kbps, supports K/M suffixes (default: 10)
+
+Example for sending raw 802.11 frames with vendor metadata:
+
+.. code-block:: console
+
+   uart:~$ zperf raw upload 1 12345678000400030000000088000000ffffffffffa06960e35215a06960e3521500000000aaaa030000000800 10 1024 50M
+
+The header hex string contains:
+
+- Vendor metadata (first 12 bytes in this example)
+- 802.11 QoS Data header with LLC/SNAP
+
+The payload (filled with ``z`` characters) is automatically appended to reach
+the specified packet size.

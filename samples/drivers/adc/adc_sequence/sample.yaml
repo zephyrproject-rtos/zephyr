@@ -26,6 +26,7 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
       - ucans32k1sic
       - s32k148_evb
+      - frdm_ke15z
       - frdm_mcxc242
       - frdm_mcxe247
       - siwx917_rb4342a

@@ -67,6 +67,28 @@
 		};
 	};
 
+	dcmi_camera_connector: connector_dcmi_camera {
+		compatible = "st,stm32-dcmi-camera-fpu-330zh";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <3 0 &gpiob 6 0>,	/* I2C1_SCL */
+			   <4 0 &gpiob 9 0>,	/* I2C1_SDA */
+			   <5 0 &gpion 7 0>,	/* RESET */
+			   <6 0 &gpiof 5 0>,	/* PWDN_EN */
+			   <12 0 &gpiob 7 0>,	/* DCMI_VSYNC */
+			   <14 0 &gpiog 3 0>,	/* DCMI_HSYNC */
+			   <16 0 &gpiod 5 0>,	/* DCMI_PIXCK */
+			   <20 0 &gpiod 14 0>,	/* DCMI_D7 */
+			   <21 0 &gpiob 8 0>,	/* DCMI_D6 */
+			   <22 0 &gpiod 3 0>,	/* DCMI_D5 */
+			   <23 0 &gpioe 4 0>,	/* DCMI_D4 */
+			   <24 0 &gpioe 1 0>,	/* DCMI_D3 */
+			   <25 0 &gpioe 0 0>,	/* DCMI_D2 */
+			   <26 0 &gpioc 7 0>,	/* DCMI_D1 */
+			   <27 0 &gpioc 6 0>;	/* DCMI_D0 */
+	};
+
 	aliases {
 		led0 = &blue_led;
 		sw0 = &user_button;
@@ -199,13 +221,13 @@
 };
 
 &spi4 {
-	pinctrl-0 = <&spi4_nss_pe4 &spi4_sck_pe12
-		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-0 = <&spi4_sck_pe12 &spi4_miso_pe13 &spi4_mosi_pe14>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpioe 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
-&i2c1 {
+st_cam_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
 	/*
@@ -382,4 +404,12 @@ zephyr_udc0: &usb2 {};
 	def-back-color-red = <0xff>;
 	def-back-color-green = <0xff>;
 	def-back-color-blue = <0xff>;
+};
+
+st_cam_dvp: &dcmipp {
+	pinctrl-0 = <&dcmipp_d0_pc6 &dcmipp_d1_pc7 &dcmipp_d2_pe0 &dcmipp_d3_pe1
+		     &dcmipp_d4_pe4 &dcmipp_d5_pd3 &dcmipp_d6_pb8 &dcmipp_d7_pd14
+		     &dcmipp_pixclk_pd5 &dcmipp_hsync_pg3 &dcmipp_vsync_pb7>;
+
+	pinctrl-names = "default";
 };

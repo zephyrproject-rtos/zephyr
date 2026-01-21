@@ -105,8 +105,8 @@ static void ipc_virtio_notify(struct virtqueue *vq)
 	status = ipm_send(ipm_tx_handle, 0, 0, NULL, 0);
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
 
-#if defined(CONFIG_SOC_MPS2_AN521) || \
-	defined(CONFIG_SOC_V2M_MUSCA_B1)
+#if defined(CONFIG_SOC_AN521) || \
+	defined(CONFIG_SOC_MUSCA_B1)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
 	status = ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
@@ -123,7 +123,7 @@ static void ipc_virtio_notify(struct virtqueue *vq)
 	uint32_t dummy_data = 0x55005500;
 
 	status = ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
-#endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
+#endif /* #if defined(CONFIG_SOC_AN521) */
 
 #endif
 

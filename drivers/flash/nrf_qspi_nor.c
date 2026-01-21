@@ -96,7 +96,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
  * need to be used to achieve the SCK frequency as close as possible (but not
  * higher) to the one specified in DT.
  */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 /*
  * On nRF53 Series SoCs, the default /4 divider for the HFCLK192M clock can
  * only be used when the QSPI peripheral is idle. When a QSPI operation is
@@ -149,7 +149,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 
 #endif
 
-#endif /* defined(CONFIG_SOC_SERIES_NRF53X) */
+#endif /* defined(CONFIG_SOC_SERIES_NRF53) */
 
 /* 0 for MODE0 (CPOL=0, CPHA=0), 1 for MODE3 (CPOL=1, CPHA=1). */
 #define INST_0_SPI_MODE DT_INST_PROP(0, cpol)
@@ -257,7 +257,7 @@ static inline void qspi_unlock(const struct device *dev)
 
 static inline void qspi_clock_div_change(const struct device *dev)
 {
-#ifdef CONFIG_SOC_SERIES_NRF53X
+#ifdef CONFIG_SOC_SERIES_NRF53
 #if NRF53_ERRATA_159_ENABLE_WORKAROUND
 	struct qspi_nor_data *dev_data = dev->data;
 
@@ -277,7 +277,7 @@ static inline void qspi_clock_div_change(const struct device *dev)
 
 static inline void qspi_clock_div_restore(const struct device *dev)
 {
-#ifdef CONFIG_SOC_SERIES_NRF53X
+#ifdef CONFIG_SOC_SERIES_NRF53
 	/* Restore the default base clock divider to reduce power
 	 * consumption when the QSPI peripheral is idle.
 	 */

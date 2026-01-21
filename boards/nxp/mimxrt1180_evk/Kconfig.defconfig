@@ -29,17 +29,18 @@ config BUILD_OUTPUT_INFO_HEADER
 	default y
 
 DT_CHOSEN_IMAGE_M7 = nxp,m7-partition
+DT_CHOSEN_ZEPHYR_FLASH = zephyr,flash
 
-# Only adjust LMA if running from ITCM
+# Only adjust LMA if running from RAM
 if !CM7_BOOT_FROM_FLASH
 
-# Adjust the offset of the output image if building for RT118x SOC ITCM
+# Adjust the offset of the output image if building for RT118x SOC in RAM
 FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi,1)
-ITCM_BASE := $(dt_nodelabel_reg_addr_hex,itcm,1)
+M7_CODE_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_ZEPHYR_FLASH))
 IMAGE_M7_ADDR := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7))
 
 config BUILD_OUTPUT_ADJUST_LMA
-	default "($(IMAGE_M7_ADDR) + $(FLEXSPI_BASE) - $(ITCM_BASE))"
+	default "($(IMAGE_M7_ADDR) + $(FLEXSPI_BASE) - $(M7_CODE_BASE))"
 
 endif # !CM7_BOOT_FROM_FLASH
 endif # SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7

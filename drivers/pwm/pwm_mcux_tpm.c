@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020, 2024-2025 NXP
+ * Copyright 2020, 2024-2026 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -513,6 +513,16 @@ static int mcux_tpm_init(const struct device *dev)
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
+	}
+
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (err != 0) {
+		/* Check if error is due to lack of support */
+		if (err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
 	}
 
 #if defined(CONFIG_SOC_MIMX9596)

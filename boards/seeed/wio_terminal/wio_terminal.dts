@@ -8,7 +8,7 @@
 #include "wio_terminal-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include "raspberrypi_40pins_connector.dtsi"
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -148,7 +148,7 @@
 			compatible = "ilitek,ili9341";
 			mipi-max-frequency = <24000000>;
 			reg = <0>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			rotation = <270>;
 			width = <320>;
 			height = <240>;

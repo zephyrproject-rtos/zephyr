@@ -667,6 +667,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
 	esp_err_t err = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
@@ -729,11 +730,32 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EAGAIN;
 	}
 
+	/*
+	 * Update interface link address to AP MAC.
+	 * In AP-only mode (without CONFIG_ESP32_WIFI_AP_STA_MODE), the interface
+	 * is initialized with STA MAC but operates with AP MAC. Some clients
+	 * correctly address frames to AP MAC, which would be dropped without
+	 * this update. See: https://github.com/zephyrproject-rtos/zephyr/issues/101761
+	 */
+#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_SOFTAP);
+	net_if_carrier_off(iface);
+	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
+			     NET_LINK_ETHERNET);
+	net_if_carrier_on(iface);
+#else
+	ARG_UNUSED(iface);
+#endif
+
 	return 0;
 };
 
 static int esp32_wifi_ap_disable(const struct device *dev)
 {
+#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	struct esp32_wifi_runtime *data = dev->data;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+#endif
 	int err = 0;
 	wifi_mode_t mode;
 
@@ -748,6 +770,15 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 		LOG_ERR("Failed to disable Wi-Fi AP mode: (%d)", err);
 		return -EAGAIN;
 	}
+
+	/* Restore interface link address to STA MAC when AP mode is disabled */
+#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_STA);
+	net_if_carrier_off(iface);
+	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
+			     NET_LINK_ETHERNET);
+	net_if_carrier_on(iface);
+#endif
 
 	return 0;
 };

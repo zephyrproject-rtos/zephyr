@@ -9,3 +9,11 @@ config ZEPHYR_LORA_BASICS_MODEM_MODULE
 
 config USE_LORA_BASICS_MODEM_DRIVERS
 	bool
+
+config LORA_BASICS_MODEM_HAL
+	bool "LoRa Basics Modem HAL implementation"
+	depends on USE_LORA_BASICS_MODEM_DRIVERS && LORA_SX126X
+	help
+	  Compile the smtc_modem_hal implementation for LoRa Basics Modem.
+	  This is required for porting tests and full modem functionality.
+	  Currently only supported with SX126x radios.

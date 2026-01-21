@@ -1,0 +1,45 @@
+# Nordic Semiconductor nRF71 MCU line
+
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NRF71
+
+rsource "Kconfig.defconfig.nrf71*"
+
+if ARM
+
+config CORTEX_M_SYSTICK
+	default !NRF_GRTC_TIMER
+
+config CACHE_NRF_CACHE
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # ARM
+
+if RISCV
+
+DT_CHOSEN_Z_SRAM = zephyr,sram
+DT_CHOSEN_Z_CODE = zephyr,code-partition
+
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on !XIP
+	default "$(dt_chosen_partition_addr_hex,$(DT_CHOSEN_Z_CODE)) - \
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))"
+
+endif # RISCV
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,grtc,clock-frequency) if NRF_GRTC_TIMER
+
+config MSPI_DW_DDR
+	default n
+
+endif # SOC_SERIES_NRF71

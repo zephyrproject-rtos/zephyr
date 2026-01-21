@@ -13,10 +13,6 @@ static int ina2xx_fetch_bus_voltage(const struct device *dev)
 		const struct ina2xx_channel *ch = config->channels->voltage;
 		struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
 		return ina2xx_reg_read(&config->bus, ch->reg, data->voltage, sizeof(data->voltage));
 	}
 
@@ -29,10 +25,6 @@ static int ina2xx_fetch_shunt_voltage(const struct device *dev)
 		const struct ina2xx_config *config = dev->config;
 		const struct ina2xx_channel *ch = config->channels->vshunt;
 		struct ina2xx_data *data = dev->data;
-
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
 
 		return ina2xx_reg_read(&config->bus, ch->reg, data->vshunt, sizeof(data->vshunt));
 	}
@@ -47,10 +39,6 @@ static int ina2xx_fetch_current(const struct device *dev)
 		const struct ina2xx_channel *ch = config->channels->current;
 		struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
 		return ina2xx_reg_read(&config->bus, ch->reg, data->current, sizeof(data->current));
 	}
 
@@ -64,10 +52,6 @@ static int ina2xx_fetch_power(const struct device *dev)
 		const struct ina2xx_channel *ch = config->channels->power;
 		struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
 		return ina2xx_reg_read(&config->bus, ch->reg, data->power, sizeof(data->power));
 	}
 
@@ -80,10 +64,6 @@ static int ina2xx_fetch_die_temp(const struct device *dev)
 		const struct ina2xx_config *config = dev->config;
 		const struct ina2xx_channel *ch = config->channels->die_temp;
 		struct ina2xx_data *data = dev->data;
-
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
 
 		return ina2xx_reg_read(&config->bus, ch->reg, data->die_temp,
 			sizeof(data->die_temp));
@@ -99,10 +79,6 @@ static int ina2xx_fetch_energy(const struct device *dev)
 		const struct ina2xx_channel *ch = config->channels->energy;
 		struct ina2xx_data *data = dev->data;
 
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
-
 		return ina2xx_reg_read(&config->bus, ch->reg, data->energy, sizeof(data->energy));
 	}
 
@@ -115,10 +91,6 @@ static int ina2xx_fetch_charge(const struct device *dev)
 		const struct ina2xx_config *config = dev->config;
 		const struct ina2xx_channel *ch = config->channels->charge;
 		struct ina2xx_data *data = dev->data;
-
-		if (ch == NULL) {
-			return -ENOTSUP;
-		}
 
 		return ina2xx_reg_read(&config->bus, ch->reg, data->charge, sizeof(data->charge));
 	}

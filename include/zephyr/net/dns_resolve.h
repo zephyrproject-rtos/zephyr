@@ -530,6 +530,11 @@ struct dns_resolve_context {
 		 */
 		uint16_t query_hash;
 
+		/* Number of additional queries sent to resolve CNAME record
+		 * name aliases.
+		 */
+		uint8_t additional_queries;
+
 		/** Flag to indicate that the callback has been called at least once. */
 		bool cb_called;
 	} queries[DNS_NUM_CONCUR_QUERIES];

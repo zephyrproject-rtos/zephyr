@@ -132,9 +132,12 @@ tests:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc5:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg41_cult_tc5.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc6:
     extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
@@ -146,3 +149,13 @@ tests:
     platform_allow:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
+  drivers.pwm.s32k5xxcvb_s32k566_ftm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/s32k5xxcvb_s32k566_ftm.overlay"
+    platform_allow:
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
+    depends_on: pwm

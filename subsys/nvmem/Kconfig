@@ -26,6 +26,15 @@ config NVMEM_FLASH_WRITE
 	  to write to flash devices requiring out-of-bands erase or
 	  taking write-block sizes into account.
 
+config NVMEM_OTP
+	bool "NVMEM (read) support for OTP memory handling devices"
+	default y
+	depends on OTP
+
+config NVMEM_OTP_WRITE
+	bool "NVMEM (write) support for OTP memory handling devices"
+	depends on NVMEM_OTP && OTP_PROGRAM
+
 module = NVMEM
 module-str = nvmem
 source "subsys/logging/Kconfig.template.log_config"

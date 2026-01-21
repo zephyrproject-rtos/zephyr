@@ -80,7 +80,6 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 		}
 	}
 
-	k_mutex_init(&ctx->tx_mutex);
 	k_sem_init(&ctx->rx_sem, 0, 1);
 
 	k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
@@ -122,7 +121,7 @@ void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_fi
 
 int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	struct nxp_s32_eth_data *ctx = dev->data;
+	__maybe_unused struct nxp_s32_eth_data *ctx = dev->data;
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	size_t pkt_len = net_pkt_get_len(pkt);
 	int res = 0;
@@ -130,8 +129,6 @@ int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	Netc_Eth_Ip_BufferType buf;
 
 	__ASSERT(pkt, "Packet pointer is NULL");
-
-	k_mutex_lock(&ctx->tx_mutex, K_FOREVER);
 
 	buf.length = (uint16_t)pkt_len;
 	buf.data = NULL;
@@ -163,8 +160,6 @@ int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 error:
-	k_mutex_unlock(&ctx->tx_mutex);
-
 	if (res != 0) {
 		eth_stats_update_errors_tx(ctx->iface);
 	}

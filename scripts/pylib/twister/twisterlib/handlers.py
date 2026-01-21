@@ -765,7 +765,7 @@ class DeviceHandler(Handler):
             ser_pty_master, slave = pty.openpty()
             serial_device = os.ttyname(slave)
 
-        logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
+        logger.debug(f"Using serial device {serial_device} @ {hardware.serial_baud} baud")
 
         command = self._create_command(runner, hardware)
 
@@ -787,7 +787,7 @@ class DeviceHandler(Handler):
             ser = self._create_serial_connection(
                 hardware,
                 serial_port,
-                hardware.baud,
+                hardware.serial_baud,
                 flash_timeout,
                 serial_pty,
                 ser_pty_process
@@ -848,7 +848,7 @@ class DeviceHandler(Handler):
             try:
                 if serial_pty:
                     ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
-                logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
+                logger.debug(f"Attach serial device {serial_device} @ {hardware.serial_baud} baud")
                 ser.port = serial_device
 
                 # Apply ESP32-specific RTS/DTR reset logic

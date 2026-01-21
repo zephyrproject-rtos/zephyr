@@ -11,12 +11,15 @@
 
 #ifndef _ASMLANGUAGE
 
+#define MCHP_HAS_UART_LSR2
+
 #include <device_mec5.h>
 
 /* common peripheral register defines */
 #include <reg/mec_acpi_ec.h>
 #include <reg/mec_adc.h>
 #include <reg/mec_global_cfg.h>
+#include <reg/mec_gpio.h>
 #include <reg/mec_kbc.h>
 #include <reg/mec_keyscan.h>
 #include <reg/mec_peci.h>
@@ -28,7 +31,6 @@
 #include <reg/mec_uart.h>
 #include <reg/mec_vci.h>
 #include <reg/mec_wdt.h>
-#include <reg/mec_gpio.h>
 
 /* common SoC API */
 #include <soc_dt.h>
@@ -38,7 +40,6 @@
 #include <soc_mmcr.h>
 #include <soc_pcr.h>
 #include <soc_pins.h>
-
 
 #endif
 #endif

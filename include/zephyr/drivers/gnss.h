@@ -434,7 +434,7 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 #define GNSS_DT_DATA_CALLBACK_DEFINE(_node_id, _callback)                                          \
 	static const STRUCT_SECTION_ITERABLE(                                                      \
 		gnss_data_callback,                                                                \
-		_CONCAT_4(_gnss_data_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {           \
+		CONCAT(_gnss_data_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {              \
 		.dev = DEVICE_DT_GET(_node_id),                                                    \
 		.callback = _callback,                                                             \
 	}
@@ -460,7 +460,7 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 #define GNSS_DT_SATELLITES_CALLBACK_DEFINE(_node_id, _callback)                                    \
 	static const STRUCT_SECTION_ITERABLE(                                                      \
 		gnss_satellites_callback,                                                          \
-		_CONCAT_4(_gnss_satellites_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {     \
+		CONCAT(_gnss_satellites_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {        \
 		.dev = DEVICE_DT_GET(_node_id),                                                    \
 		.callback = _callback,                                                             \
 	}

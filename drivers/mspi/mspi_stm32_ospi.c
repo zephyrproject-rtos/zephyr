@@ -934,7 +934,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 	}
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) != 0) {
-		if (dev_cfg->freq > MSPI_MAX_FREQ) {
+		if (dev_cfg->freq > cfg->mspicfg.max_freq) {
 			LOG_ERR("%u, freq is too large.", __LINE__);
 			return -ENOTSUP;
 		}
@@ -990,44 +990,6 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 	}
 
 	mspi_stm32_ospi_set_cfg(data, param_mask, dev_cfg);
-
-	return 0;
-}
-
-/**
- * Verify if the device with dev_id is on this MSPI bus.
- *
- * @param controller Pointer to the device structure for the driver instance.
- * @param dev_id Pointer to the device ID structure from a device.
- * @return 0 The device is on this MSPI bus.
- * @return -ENODEV The device is not on this MSPI bus.
- */
-static int mspi_stm32_ospi_verify_device(const struct device *controller,
-						const struct mspi_dev_id *dev_id)
-{
-	const struct mspi_stm32_conf *cfg = controller->config;
-	int device_index = cfg->mspicfg.num_periph;
-
-	if (cfg->mspicfg.num_ce_gpios != 0) {
-		for (int i = 0; i < cfg->mspicfg.num_periph; i++) {
-			if (dev_id->ce.port == cfg->mspicfg.ce_group[i].port &&
-			    dev_id->ce.pin == cfg->mspicfg.ce_group[i].pin &&
-			    dev_id->ce.dt_flags == cfg->mspicfg.ce_group[i].dt_flags) {
-				device_index = i;
-				break;
-			}
-		}
-
-		if (device_index >= cfg->mspicfg.num_periph || device_index != dev_id->dev_idx) {
-			LOG_ERR("%u, invalid device ID.", __LINE__);
-			return -ENODEV;
-		}
-	} else {
-		if (dev_id->dev_idx >= cfg->mspicfg.num_periph) {
-			LOG_ERR("%u, invalid device ID.", __LINE__);
-			return -ENODEV;
-		}
-	}
 
 	return 0;
 }
@@ -1393,7 +1355,7 @@ static __maybe_unused void mspi_stm32_ospi_dma_callback(const struct device *dev
 }
 #endif /* CONFIG_MSPI_DMA && !HAL_MDMA_MODULE_ENABLED */
 
-static int mspi_stm32_ospi_conf_validate(const struct mspi_cfg *config)
+static int mspi_stm32_ospi_conf_validate(const struct mspi_cfg *config, uint32_t max_frequency)
 {
 	/* Only Controller mode is supported */
 	if (config->op_mode != MSPI_OP_MODE_CONTROLLER) {
@@ -1402,7 +1364,7 @@ static int mspi_stm32_ospi_conf_validate(const struct mspi_cfg *config)
 	}
 
 	/* Check the max possible freq. */
-	if (config->max_freq > MSPI_STM32_MAX_FREQ) {
+	if (config->max_freq > max_frequency) {
 		LOG_ERR("Max_freq %d too large.", config->max_freq);
 		return -ENOTSUP;
 	}
@@ -1521,7 +1483,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	struct mspi_stm32_data *dev_data = spec->bus->data;
 	int ret = 0;
 
-	ret = mspi_stm32_ospi_conf_validate(config);
+	ret = mspi_stm32_ospi_conf_validate(config, dev_cfg->mspicfg.max_freq);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1764,7 +1726,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 		.channel_num = 0,                                                                  \
 		.op_mode = DT_INST_ENUM_IDX_OR(index, op_mode, MSPI_OP_MODE_CONTROLLER),           \
 		.duplex = DT_INST_ENUM_IDX_OR(index, duplex, MSPI_HALF_DUPLEX),                    \
-		.max_freq = DT_INST_PROP_OR(index, mspi_max_frequency, MSPI_STM32_MAX_FREQ),       \
+		.max_freq = DT_INST_PROP(index, clock_frequency),                                  \
 		.dqs_support = DT_INST_PROP(index, dqs_support),                                   \
 		.num_periph = DT_INST_CHILD_NUM(index),                                            \
 		.sw_multi_periph = DT_INST_PROP(index, software_multiperipheral),                  \

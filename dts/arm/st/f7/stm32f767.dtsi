@@ -30,7 +30,7 @@
 			clock-names = "dsiclk", "refclk", "pixelclk";
 			clocks = <&rcc STM32_CLOCK(APB2, 27)>,
 				 <&rcc STM32_SRC_HSE NO_SEL>,
-				 <&rcc STM32_SRC_PLLSAI_DIVR NO_SEL>;
+				 <&rcc STM32_SRC_PLLSAI_POST_R NO_SEL>;
 			resets = <&rctl STM32_RESET(APB2, 27)>;
 			status = "disabled";
 		};

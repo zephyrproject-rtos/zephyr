@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 	};
 
 	power-states {
@@ -51,7 +52,7 @@
 };
 
 &uart1 {
-	compatible = "microchip,mec5-uart";
+	compatible = "microchip,xec-uart";
 	status = "okay";
 	clock-frequency = <1843200>;
 	current-speed = <115200>;

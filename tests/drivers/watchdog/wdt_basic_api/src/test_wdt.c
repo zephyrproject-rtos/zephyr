@@ -70,8 +70,8 @@
 #if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
-#define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
-#define TIMEOUTS 0
+#define WDT_NODE            DT_INST(0, st_stm32_window_watchdog)
+#define TIMEOUTS            0
 #define WDT_TEST_MAX_WINDOW 200
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
@@ -105,41 +105,52 @@
 #define WDT_NODE DT_INST(0, nuvoton_numaker_wwdt)
 #define TIMEOUTS 1
 #elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
-#define WDT_NODE DT_INST(0, andestech_atcwdt200)
-#define TIMEOUTS 0
+#define WDT_NODE            DT_INST(0, andestech_atcwdt200)
+#define TIMEOUTS            0
 #define WDT_TEST_MAX_WINDOW 200U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_TEST_MAX_WINDOW 8000U
-#define TIMEOUTS 0
+#define TIMEOUTS            0
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(intel_tco_wdt)
-#define TIMEOUTS 0
+#define TIMEOUTS            0
 #define WDT_TEST_MAX_WINDOW 3000U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_wdog32)
 #define WDT_TEST_MAX_WINDOW 1000U
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_cop)
+#define WDT_TEST_BAD_MAX_WINDOW 0
+#define WDT_TEST_FINAL_DISABLE  1
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1
 
-#define WDT_TEST_CB0_TEST_VALUE    0x0CB0
-#define WDT_TEST_CB1_TEST_VALUE    0x0CB1
+#define WDT_TEST_CB0_TEST_VALUE 0x0CB0
+#define WDT_TEST_CB1_TEST_VALUE 0x0CB1
 
 #ifndef WDT_TEST_MAX_WINDOW
-#define WDT_TEST_MAX_WINDOW                2000U
+#define WDT_TEST_MAX_WINDOW 2000U
 #endif
 
 #ifndef TIMEOUTS
-#define TIMEOUTS                   1
+#define TIMEOUTS 1
 #endif
 
 #if !(defined(CONFIG_HAS_WDT_NO_CALLBACKS) && CONFIG_HAS_WDT_NO_CALLBACKS)
-#define TEST_WDT_CALLBACK_1        (TIMEOUTS > 0)
-#define TEST_WDT_CALLBACK_2        (TIMEOUTS > 1)
+#define TEST_WDT_CALLBACK_1 (TIMEOUTS > 0)
+#define TEST_WDT_CALLBACK_2 (TIMEOUTS > 1)
 #endif
 
+#if CONFIG_PM
+#define TEST_WDT_WAIT_MODE 1
+#endif
+
+#ifndef WDT_TEST_BAD_MAX_WINDOW
+#define WDT_TEST_BAD_MAX_WINDOW 1
+#endif
 
 static struct wdt_timeout_cfg m_cfg_wdt0;
 #if TEST_WDT_CALLBACK_2
@@ -200,12 +211,12 @@ static int test_wdt_no_callback(void)
 	int err;
 	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
+	TC_PRINT("Testcase: %s\n", __func__);
+
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
-
-	TC_PRINT("Testcase: %s\n", __func__);
 
 	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
 		m_state = WDT_TEST_STATE_IDLE;
@@ -247,12 +258,12 @@ static int test_wdt_callback_1(void)
 	int err;
 	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
+	TC_PRINT("Testcase: %s\n", __func__);
+
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
-
-	TC_PRINT("Testcase: %s\n", __func__);
 
 	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
 		m_state = WDT_TEST_STATE_IDLE;
@@ -281,7 +292,6 @@ static int test_wdt_callback_1(void)
 			TC_PRINT("CB1 not supported on platform\n");
 			m_testcase_index++;
 			return TC_PASS;
-
 		}
 		TC_PRINT("Watchdog install error\n");
 		return TC_FAIL;
@@ -312,12 +322,12 @@ static int test_wdt_callback_2(void)
 	int err;
 	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
+	TC_PRINT("Testcase: %s\n", __func__);
+
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
-
-	TC_PRINT("Testcase: %s\n", __func__);
 
 	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
 		m_state = WDT_TEST_STATE_IDLE;
@@ -377,17 +387,18 @@ static int test_wdt_callback_2(void)
 }
 #endif
 
+#if TEST_WDT_BAD_MAX_WINDOW
 static int test_wdt_bad_window_max(void)
 {
 	int err;
 	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
+	TC_PRINT("Testcase: %s\n", __func__);
+
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
-
-	TC_PRINT("Testcase: %s\n", __func__);
 
 	err = wdt_disable(wdt);
 	if (err < 0 && err != -EPERM && err != -EFAULT) {
@@ -405,28 +416,25 @@ static int test_wdt_bad_window_max(void)
 
 	return TC_FAIL;
 }
+#endif
 
+#if TEST_WDT_WAIT_MODE
 static int test_wdt_enable_wait_mode(void)
 {
-#ifndef CONFIG_PM
-	TC_PRINT("Testcase: %s\n", __func__);
-	ztest_test_skip();
-	m_state = WDT_TEST_STATE_IDLE;
-	return TC_SKIP;
-#else
 	int err;
 	int wdt_channel_id;
 	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	TC_PRINT("Testcase: %s\n", __func__);
 
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Testcase: %s\n", __func__);
-
 	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
 		m_state = WDT_TEST_STATE_IDLE;
+		m_testcase_index++;
 		TC_PRINT("Testcase passed\n");
 		return TC_PASS;
 	}
@@ -447,10 +455,13 @@ static int test_wdt_enable_wait_mode(void)
 	}
 
 	err = wdt_setup(wdt, (WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP));
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog in sleep mode or by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
 	if (err < 0) {
 		printk("Watchdog setup error\n");
-		ztest_test_skip();
-		return TC_SKIP;
+		return TC_FAIL;
 	}
 
 	for (int i = 0; i < 20; ++i) {
@@ -467,13 +478,12 @@ static int test_wdt_enable_wait_mode(void)
 	}
 
 	return TC_PASS;
-#endif
 }
+#endif
 
 ZTEST(wdt_basic_test_suite, test_wdt)
 {
-	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)
-		&& (m_testcase_index != 3U)) {
+	if ((m_testcase_index != 1U) && (m_testcase_index != 2U) && (m_testcase_index != 3U)) {
 		zassert_true(test_wdt_no_callback() == TC_PASS);
 	}
 	if (m_testcase_index == 1U) {
@@ -491,14 +501,24 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 #endif
 	}
 	if (m_testcase_index == 3U) {
+#if TEST_WDT_WAIT_MODE
 		zassert_true(test_wdt_enable_wait_mode() == TC_PASS);
+#else
 		m_testcase_index++;
+#endif
 	}
 	if (m_testcase_index == 4U) {
+#if TEST_WDT_BAD_MAX_WINDOW
 		zassert_true(test_wdt_bad_window_max() == TC_PASS);
+#endif
 		m_testcase_index++;
 	}
 	if (m_testcase_index > 4) {
 		m_state = WDT_TEST_STATE_IDLE;
+#if WDT_TEST_FINAL_DISABLE
+		const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+		wdt_disable(wdt);
+#endif
 	}
 }

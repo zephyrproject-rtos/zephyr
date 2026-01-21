@@ -24,12 +24,12 @@
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
 
-#if CONFIG_SOC_INTEL_ACE15_MTPM
+#if CONFIG_SOC_ACE15_MTPM
 /* Used to force any pending transaction by HW issuing an upstream read before
  * power down host domain.
  */
 uint8_t adsp_pending_buffer[CONFIG_DCACHE_LINE_SIZE] __aligned(CONFIG_DCACHE_LINE_SIZE);
-#endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
+#endif /* CONFIG_SOC_ACE15_MTPM */
 
 __imr void power_init(void)
 {
@@ -41,13 +41,13 @@ __imr void power_init(void)
 	DSPCS.bootctl[0].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
 #endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
 
-#if CONFIG_SOC_INTEL_ACE15_MTPM
+#if CONFIG_SOC_ACE15_MTPM
 	*((__sparse_force uint32_t *)sys_cache_cached_ptr_get(&adsp_pending_buffer)) =
 		INTEL_ADSP_ACE15_MAGIC_KEY;
 	sys_cache_data_flush_range((__sparse_force void *)
 			sys_cache_cached_ptr_get(&adsp_pending_buffer),
 			sizeof(adsp_pending_buffer));
-#endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
+#endif /* CONFIG_SOC_ACE15_MTPM */
 }
 
 #ifdef CONFIG_PM

@@ -128,6 +128,17 @@ The MIMXRT1180 SoC is configured to use SysTick as the system clock source,
 running at 240MHz. When targeting the M7 core, SysTick will also be used,
 running at 792MHz
 
+ITCM and DTCM
+=============
+
+If placing ``zephyr,flash`` in ITCM or ``zephyr,sram`` in DTCM, the property
+``zephyr,memory-region`` should be deleted from the memory device node.
+For example, this overlay moves the CM33 ``zephyr,sram`` to DTCM:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm33_sram_dtcm.overlay
+
 Serial Port
 ===========
 
@@ -177,23 +188,28 @@ starting the CM7 core.
 CM7 Execution Modes
 ===================
 
-The CM7 core can execute code in two different modes:
+The CM7 core is enabled to execute code in three memory options:
 
-1. **ITCM Mode (Default)**: The CM7 code is copied from flash to ITCM (Instruction Tightly Coupled Memory)
+1. **ITCM (Default)**: The CM7 code is copied from flash to ITCM (Instruction Tightly Coupled Memory)
    and executed from there. This provides faster execution but is limited by the ITCM size.
 
-2. **Flash Mode**: The CM7 code is executed directly from flash memory (XIP - eXecute In Place).
+2. **Flash**: The CM7 code is executed directly from flash memory (XIP - eXecute In Place).
    This allows for larger code size but may be slower than ITCM execution.
    When booting CM7 from Flash the TRDC execution permissions has to be set by CM33 core.
 
-Configuring CM7 Execution Mode
-==============================
+3. **HyperRAM**: The CM7 code is copied from flash to external HyperRAM and executed from there.
+   This allows for larger code size but may be slower than ITCM execution.  Be aware, the CM33
+   default data placement ``zephyr,sram`` is in HyperRAM.  Ensure the CM33 and CM7 are not using overlapping
+   regions in HyperRAM.  One option given below moves the CM33 data to DTCM.
 
-To configure the CM7 execution mode, you can use the following Kconfig option:
+Configuring CM7 Execution memory
+================================
+
+To configure the memory for CM7 execution, you can use the following Kconfig option:
 
 .. code-block:: none
 
-   CONFIG_CM7_BOOT_FROM_FLASH=n  # For ITCM execution (default)
+   CONFIG_CM7_BOOT_FROM_FLASH=n  # For RAM execution, ITCM or HyperRAM (default)
    CONFIG_CM7_BOOT_FROM_FLASH=y  # For flash execution
 
 When building with west, you can specify this option on the command line:
@@ -212,6 +228,11 @@ When building with west, you can specify this option on the command line:
      -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay \
      -DCONFIG_CM7_BOOT_FROM_FLASH=y -Dremote_CONFIG_CM7_BOOT_FROM_FLASH=y
 
+   # For HyperRAM execution
+   west build -b mimxrt1180_evk//cm33 samples/drivers/mbox --sysbuild -- \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay \
+     -DEXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/mimxrt1180_evk/cm33_sram_dtcm.overlay
+
 Flash Boot Overlay
 ==================
 
@@ -224,17 +245,44 @@ the flash memory properly. The overlay file is located at:
 
 This overlay configures the CM7 core to use the flash memory for code execution instead of ITCM.
 
+HyperRAM Execution Overlay
+==========================
+
+When executing the CM7 core from HyperRAM, you need to apply a device tree overlay.  An example
+overlay file is located at:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm7_code_hyperram.overlay
+
+The MPU attributes for the board also need to be changed in this file:
+
+.. code-block:: none
+
+   boards/nxp/mimxrt1180_evk/cm7/mpu_regions.c
+
+Changing the line below enables execution from the HyperRAM region by setting the flash attribute:
+
+.. code-block:: none
+
+   #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
+        MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
+   -                        REGION_RAM_ATTR(REGION_HYPER_RAM_SIZE)),
+   +                        REGION_FLASH_ATTR(REGION_HYPER_RAM_SIZE)),
+   #endif
+
 Memory Usage
 ============
 
-* **ITCM Mode**: The CM7 code is copied from flash to ITCM.
-* **Flash Mode**: The CM7 code is executed directly from flash, which allows for larger code size.
+* **from RAM**: The CM7 code is copied from flash to ITCM or HyperRAM.
+* **from Flash**: The CM7 code is executed directly from flash, which allows for larger code size than ITCM.
 
 Performance Considerations
 ==========================
 
-* **ITCM Mode**: Provides faster execution due to the low-latency ITCM memory.
-* **Flash Mode**: May be slower due to flash memory access times, but allows for larger code size.
+* **from ITCM**: Provides faster execution due to the low-latency internal ITCM memory.
+* **from external memory**: External flash or HyperRAM may be slower due to memory access times,
+    but allows for larger code size.
 
 Dual Core samples Debugging
 ===========================

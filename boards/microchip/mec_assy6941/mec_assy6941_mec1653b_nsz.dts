@@ -17,7 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart1;
-		rtimer-busy-wait-timer = &timer5;
+		zephyr,shell-uart = &uart1;
 	};
 
 	power-states {
@@ -51,13 +51,8 @@
 	status = "okay";
 };
 
-/* We chose 32-bit basic timer 5 for use by ktimer */
-&timer5 {
-	status = "okay";
-};
-
 &uart1 {
-	compatible = "microchip,mec5-uart";
+	compatible = "microchip,xec-uart";
 	status = "okay";
 	clock-frequency = <1843200>;
 	current-speed = <115200>;

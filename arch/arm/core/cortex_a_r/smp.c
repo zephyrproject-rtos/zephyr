@@ -98,18 +98,18 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 {
 	int cpu_count, i, j;
 	uint32_t cpu_mpid = 0;
-	uint32_t master_core_mpid;
+	uint32_t primary_core_mpid;
 
-	/* Now it is on master core */
+	/* Now it is on primary core */
 	__ASSERT(arch_curr_cpu()->id == 0, "");
-	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
+	primary_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
 	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
 
 	for (i = 0, j = 0; i < cpu_count; i++) {
-		if (cpu_node_list[i] == master_core_mpid) {
+		if (cpu_node_list[i] == primary_core_mpid) {
 			continue;
 		}
 		if (j == cpu_num - 1) {

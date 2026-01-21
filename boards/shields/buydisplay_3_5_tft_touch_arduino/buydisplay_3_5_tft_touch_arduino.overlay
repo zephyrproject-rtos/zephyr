@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
@@ -26,7 +26,7 @@
 			compatible = "ilitek,ili9488";
 			mipi-max-frequency = <25000000>;
 			reg = <0>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB888>;
 			width = <320>;
 			height = <480>;
 			rotation = <0>;

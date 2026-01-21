@@ -7,10 +7,11 @@
 #include <freq.h>
 #include <arm/armv8-r.dtsi>
 #include <freq.h>
-#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
+#include <zephyr/dt-bindings/gpio/renesas-rztn-gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -41,6 +42,11 @@
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(25)>;
 		#clock-cells = <0>;
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "renesas,rzt-pinctrl";
 	};
 
 	soc {
@@ -239,8 +245,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x0>;
 				interrupts = <GIC_SPI 6 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -248,8 +253,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x1>;
 				interrupts = <GIC_SPI 7 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -257,8 +261,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x2>;
 				interrupts = <GIC_SPI 8 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -266,8 +269,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x3>;
 				interrupts = <GIC_SPI 9 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -275,8 +277,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x4>;
 				interrupts = <GIC_SPI 10 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -284,8 +285,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x5>;
 				interrupts = <GIC_SPI 11 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -293,8 +293,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x6>;
 				interrupts = <GIC_SPI 12 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -302,8 +301,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x7>;
 				interrupts = <GIC_SPI 13 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -311,8 +309,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x8>;
 				interrupts = <GIC_SPI 14 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -320,8 +317,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0x9>;
 				interrupts = <GIC_SPI 15 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -329,8 +325,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xa>;
 				interrupts = <GIC_SPI 16 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -338,8 +333,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xb>;
 				interrupts = <GIC_SPI 17 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -347,8 +341,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xc>;
 				interrupts = <GIC_SPI 18 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -356,8 +349,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xd>;
 				interrupts = <GIC_SPI 19 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -365,8 +357,7 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xe>;
 				interrupts = <GIC_SPI 394 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 
@@ -374,15 +365,20 @@
 				compatible = "renesas,rz-ext-irq";
 				reg = <0xf>;
 				interrupts = <GIC_SPI 395 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+				#irq-cells = <1>;
 				status = "disabled";
 			};
 		};
 
-		pinctrl: pinctrl@800a0000 {
-			compatible = "renesas,rzn-pinctrl";
-			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
+		gpio: gpio@800a0000 {
+			compatible = "renesas,rz-gpio-common-v2";
+			reg = <0x800a0000 0x1000>,
+			      <0x81030000 0x1000>,
+			      <0x81030c00 0x64>,
+			      <0x0 0x19>,
+			      <0x200 0x32>,
+			      <0x600 0x64>;
+			reg-names = "base_ns", "base_s", "rselp", "p", "pm", "pfc";
 			#address-cells = <1>;
 			#size-cells = <0>;
 

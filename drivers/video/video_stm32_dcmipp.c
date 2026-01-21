@@ -30,8 +30,10 @@
 #define HAL_DCMIPP_PARALLEL_SetConfig HAL_DCMIPP_SetParallelConfig
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_dcmipp)
+#if defined(DCMIPP_SERIAL_MODE)
 #define STM32_DCMIPP_HAS_CSI
+#endif
+#if defined(DCMIPP_PIPE1) && defined(DCMIPP_PIPE2)
 #define STM32_DCMIPP_HAS_PIXEL_PIPES
 #endif
 

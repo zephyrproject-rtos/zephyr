@@ -223,3 +223,13 @@
 	dma-names = "rx", "tx";
 	status = "okay";
 };
+
+&tc5 {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc5_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};

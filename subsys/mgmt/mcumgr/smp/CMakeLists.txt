@@ -5,5 +5,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Protocol API is only exposed to MCUmgr internals.
-zephyr_library()
+zephyr_library_named(mcumgr_smp)
 zephyr_library_sources(src/smp.c)

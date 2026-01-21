@@ -32,6 +32,13 @@ config LSM6DSV16X_STREAM
 	help
 	  Use this config option to enable streaming sensor data via RTIO subsystem.
 
+config LSM6DSV16X_SELF_TEST
+	bool "Self test attribute"
+	help
+	  Enable support for configuring the sensor self test bits.
+	  Refer to the datasheet of the sensor for a description of
+	  the appropriate self test procedure.
+
 choice LSM6DSV16X_TRIGGER_MODE
 	default LSM6DSV16X_TRIGGER_GLOBAL_THREAD if LSM6DSV16X_STREAM
 	default LSM6DSV16X_TRIGGER_NONE

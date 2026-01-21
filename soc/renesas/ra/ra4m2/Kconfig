@@ -15,3 +15,18 @@ config SOC_SERIES_RA4M2
 	select XIP
 	select SOC_EARLY_INIT_HOOK
 	select GPIO_RA_HAS_VBTICTLR
+
+if SOC_SERIES_RA4M2
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 4
+	default 3 if SOC_R7FA4M2AD3CFP
+	help
+	  Package type:
+	  1 -> FL: LQFP 48 pins
+	  2 -> FM: LQFP 64 pins
+	  3 -> FP: LQFP 100 pins
+	  4 -> NE: QFN 48 pins
+
+endif # SOC_SERIES_RA4M2

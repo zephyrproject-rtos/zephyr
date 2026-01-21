@@ -237,15 +237,15 @@ tests:
     platform_allow:
       - it8xxx2_evb
       - it82xx2_evb
-      - it515xx_evb
+      - it51xxx_evb/it51526aw
     extra_args:
       - DTC_OVERLAY_FILE="./boards/it8xxx2_indirect.overlay"
-  drivers.flash.common.it515xx_m1k:
+  drivers.flash.common.it51xxx_m1k:
     build_only: true
     platform_allow:
-      - it515xx_evb
+      - it51xxx_evb/it51526aw
     extra_args:
-      - DTC_OVERLAY_FILE="./boards/it515xx_m1k.overlay"
+      - DTC_OVERLAY_FILE="./boards/it51xxx_m1k.overlay"
   drivers.flash.common.mspi_single_io_low_frequency:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

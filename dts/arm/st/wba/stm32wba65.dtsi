@@ -69,6 +69,10 @@
 			status = "disabled";
 		};
 
+		rng: rng@420c0800 {
+			nist-config = <0x8200f00>;
+		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;

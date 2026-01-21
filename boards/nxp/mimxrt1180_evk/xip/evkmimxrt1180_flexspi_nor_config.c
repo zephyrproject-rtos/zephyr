@@ -8,8 +8,8 @@
 #include "evkmimxrt1180_flexspi_nor_config.h"
 
 /* clang-format off */
-#if defined(XIP_EXTERNAL_FLASH) && (XIP_EXTERNAL_FLASH == 1) &&		\
-	defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
+#if defined(XIP_EXTERNAL_FLASH) && (XIP_EXTERNAL_FLASH == 1) && \
+	defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR)
 /* clang-format on */
 
 #if defined(USE_HYPERRAM)

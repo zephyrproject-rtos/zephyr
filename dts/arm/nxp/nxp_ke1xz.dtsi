@@ -26,31 +26,40 @@
 			compatible = "arm,cortex-m0+";
 			clock-frequency = <DT_FREQ_M(48)>;
 			reg = <0>;
-			cpu-power-states = <&idle &stop &pstop1 &pstop2>;
+			cpu-power-states = <&idle &pstop2 &pstop1 &stop>;
 		};
 
 		power-states {
 			idle: idle {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
+				min-residency-us = <10>;
+				/* 0.7 µs rounded */
+				exit-latency-us = <1>;
 			};
 
 			stop: stop {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <0>;
+				min-residency-us = <14>;
+				exit-latency-us = <140>;
 			};
 
 			pstop1: pstop1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
+				min-residency-us = <13>;
+				exit-latency-us = <130>;
 			};
 
 			pstop2: pstop2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
+				min-residency-us = <12>;
+				exit-latency-us = <120>;
 			};
 		};
 	};
@@ -254,6 +263,7 @@
 			reg = <0x40052000 0x1000>;
 			interrupts = <28 0>;
 			clocks = <&lpo>;
+			clock-names = "clksrc1";
 			clk-source = <1>;
 			clk-divider = <256>;
 			status = "disabled";

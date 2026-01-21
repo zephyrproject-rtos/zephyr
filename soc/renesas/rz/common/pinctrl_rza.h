@@ -15,20 +15,25 @@ extern "C" {
 #endif
 
 /* Porting */
-typedef struct pinctrl_cfg_data_t {
-	uint32_t reserved: 4;
-	uint32_t pupd_reg: 6;
-	uint32_t iolh_reg: 6;
-	uint32_t pmc_reg: 1;
-	uint32_t sr_reg: 1;
-	uint32_t ien_reg: 1;
-	uint32_t filonoff_reg: 1;
-	uint32_t filnum_reg: 2;
-	uint32_t filclksel_reg: 2;
-	uint32_t pfc_reg: 3;
+typedef union {
+	uint32_t cfg;
+	struct {
+		uint32_t p_reg: 2;
+		uint32_t pm_reg: 2;
+		uint32_t pupd_reg: 6;
+		uint32_t iolh_reg: 4;
+		uint32_t isel_reg: 2;
+		uint32_t pmc_reg: 1;
+		uint32_t sr_reg: 1;
+		uint32_t ien_reg: 1;
+		uint32_t filonoff_reg: 1;
+		uint32_t filnum_reg: 2;
+		uint32_t filclksel_reg: 2;
+		uint32_t pfc_reg: 3;
+	} cfg_b;
 } pinctrl_cfg_data_t;
 
-typedef struct pinctrl_soc_pin_t {
+typedef struct pinctrl_soc_pin {
 	bsp_io_port_pin_t port_pin;
 	pinctrl_cfg_data_t config;
 } pinctrl_soc_pin_t;
@@ -66,11 +71,13 @@ typedef struct pinctrl_soc_pin_t {
 #define Z_PINCTRL_PINMUX_INIT(node_id, state_prop, idx)                                            \
 	{                                                                                          \
 		.port_pin = RZA_GET_PORT_PIN(DT_PROP_BY_IDX(node_id, state_prop, idx)),            \
-		.config =                                                                          \
+		.config.cfg_b =                                                                    \
 			{                                                                          \
-				.reserved = 0,                                                     \
+				.p_reg = 0,                                                        \
+				.pm_reg = 0,                                                       \
 				.pupd_reg = RZA_GET_PU_PD(node_id),                                \
 				.iolh_reg = DT_PROP(node_id, drive_strength),                      \
+				.isel_reg = 0,                                                     \
 				.pmc_reg = 1,                                                      \
 				.sr_reg = DT_ENUM_IDX(node_id, slew_rate),                         \
 				.ien_reg = DT_PROP(node_id, input_enable),                         \
@@ -84,11 +91,13 @@ typedef struct pinctrl_soc_pin_t {
 #define Z_PINCTRL_SPECIAL_PINS_INIT(node_id, state_prop, idx)                                      \
 	{                                                                                          \
 		.port_pin = DT_PROP_BY_IDX(node_id, state_prop, idx),                              \
-		.config =                                                                          \
+		.config.cfg_b =                                                                    \
 			{                                                                          \
-				.reserved = 0,                                                     \
+				.p_reg = 0,                                                        \
+				.pm_reg = 0,                                                       \
 				.pupd_reg = RZA_GET_PU_PD(node_id),                                \
 				.iolh_reg = DT_PROP(node_id, drive_strength),                      \
+				.isel_reg = 0,                                                     \
 				.pmc_reg = 0,                                                      \
 				.sr_reg = DT_ENUM_IDX(node_id, slew_rate),                         \
 				.ien_reg = DT_PROP(node_id, input_enable),                         \

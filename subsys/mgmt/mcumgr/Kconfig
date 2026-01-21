@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MCUMGR
-	bool "mcumgr Support"
+	bool "MCUmgr Support"
 	depends on NET_BUF
 	depends on ZCBOR
 	help
-	  This option enables the mcumgr management library.
+	  This option enables the MCUmgr management library.
 
 if MCUMGR
 
@@ -23,14 +23,13 @@ config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
 	bool "Legacy rc (result code) response behaviour"
 	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	help
-	  This will enable legacy result code response behaviour of having rc
-	  present in responses when the status is 0. With this option disabled,
-	  mcumgr acts with new behaviour and will only return rc is the result
-	  code is non-zero (i.e. an error occurred).
+	  This will enable legacy result code response behaviour of having rc present in responses
+	  when the status is 0. With this option disabled, MCUmgr acts with new behaviour and will
+	  only return rc is the result code is non-zero (i.e. an error occurred).
 
-	  If a command only returns a result code, this will mean that the
-	  response will be empty with the new behaviour enabled, as opposed to
-	  the old behaviour where the rc field will be present in the response.
+	  If a command only returns a result code, this will mean that the response will be empty
+	  with the new behaviour enabled, as opposed to the old behaviour where the rc field will
+	  be present in the response.
 
 menu "SMP Client"
 

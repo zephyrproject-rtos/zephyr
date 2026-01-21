@@ -18,10 +18,18 @@
 #if IRQLESS_TRNG
 #define DT_DRV_COMPAT st_stm32_rng_noirq
 #define TRNG_GENERATION_DELAY	K_NSEC(DT_INST_PROP_OR(0, generation_delay_ns, 0))
+
+/* In IRQ-less hardware, the system workqueue is used to poll the TRNG
+ * during driver initialization. Since the workqueue service is not available
+ * in PRE_KERNEL_1/PRE_KERNEL_2, the init routine must run at POST_KERNEL.
+ */
+#define STM32_TRNG_INIT_LEVEL POST_KERNEL
+
 #else /* !IRQLESS_TRNG */
 #define DT_DRV_COMPAT st_stm32_rng
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
+#define STM32_TRNG_INIT_LEVEL PRE_KERNEL_1
 #endif /* IRQLESS_TRNG */
 
 /* Cross-series LL compatibility wrappers */

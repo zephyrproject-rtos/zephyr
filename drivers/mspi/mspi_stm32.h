@@ -17,7 +17,6 @@
 #include "mspi_nor.h"
 
 #define MSPI_STM32_FIFO_THRESHOLD 4U
-#define MSPI_MAX_FREQ            CONFIG_MSPI_STM32_MAX_FREQ
 #define MSPI_MAX_DEVICE          1
 
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -33,7 +32,6 @@
 #endif
 
 #define MSPI_STM32_WRITE_REG_MAX_TIME          40U
-#define MSPI_STM32_MAX_FREQ                    48000000
 
 typedef void (*irq_config_func_t)(void);
 

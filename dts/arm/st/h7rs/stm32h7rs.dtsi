@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -917,21 +918,22 @@
 			reg = <0x48020000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
 			interrupts = <37 0>;
+			nist-config = <0xf00d00>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 
 		ethernet@40028000 {
 			reg = <0x40028000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
-			clock-names = "stm-eth";
-			clocks = <&rcc STM32_CLOCK(AHB1, 15)>;
+			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
+				 <&rcc STM32_CLOCK(AHB1, 16)>,
+				 <&rcc STM32_CLOCK(AHB1, 17)>;
 
 			mac: ethernet {
 				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 				interrupts = <92 0>;
-				clock-names = "mac-clk-tx", "mac-clk-rx";
-				clocks = <&rcc STM32_CLOCK(AHB1, 16)>,
-					 <&rcc STM32_CLOCK(AHB1, 17)>;
 				memory-regions = <&sram2>;
 				status = "disabled";
 			};
@@ -1004,6 +1006,26 @@
 				 <&rcc STM32_SRC_PLL3_R NO_SEL>;
 			resets = <&rctl STM32_RESET(APB5, 1)>;
 			status = "disabled";
+		};
+
+		dcmipp: dcmipp@50002000 {
+			compatible = "st,stm32-dcmipp";
+			reg = <0x50002000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB5, 2)>,
+				 <&rcc STM32_SRC_PCLK5 NO_SEL>;
+			clock-names = "dcmipp", "dcmipp-ker";
+			interrupts = <95 0>;
+			resets = <&rctl STM32_RESET(APB5, 2)>;
+			status = "disabled";
+
+			pipe_dump: pipe {};
+
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				};
+			};
 		};
 	};
 

@@ -28,6 +28,6 @@
 };
 
 &gpio15 {
-	irqs = <4 3>;
+	irqs = <&irq3 4>;
 	status = "okay";
 };

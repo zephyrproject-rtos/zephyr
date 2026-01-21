@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxa153
-name: NXP FRDM MCXA153
+name: NXP FRDM-MCXA153
 type: mcu
 arch: arm
 ram: 24

@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <raspberrypi/rpi_pico/rp2350a.dtsi>
+#include <riscv/raspberrypi/hazard3.dtsi>
+
+#include "beetle_rp2350.dtsi"

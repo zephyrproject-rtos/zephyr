@@ -15,7 +15,6 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
       "the RD_RW612_BGA, but targeting a custom board. You may need to "
      "update your flash configuration block data")
   endif()
-  zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)
   zephyr_library_sources(MX25U51245GZ4I00_FCB.c)
 endif()
 

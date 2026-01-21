@@ -100,6 +100,10 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
+&edma {
+	status = "okay";
+};
+
 &erm0 {
 	status = "okay";
 };
@@ -118,6 +122,13 @@
 
 &gpiob_h {
 	status = "okay";
+};
+
+&lpuart_2 {
+	pinctrl-0 = <&pinmux_lpuart_2>;
+	pinctrl-names = "default";
+	dmas = <&edma 16 38>, <&edma 17 39>;
+	dma-names = "tx", "rx";
 };
 
 &lpuart_5 {
@@ -164,6 +175,10 @@
 	workmode = "crystal";
 	delay = <49>;
 	overdrive = <12>;
+};
+
+&pit_0 {
+	status = "okay";
 };
 
 &pll {
@@ -215,3 +230,6 @@
 &adc_0 {
 	status = "okay";
 };
+
+/* Add lpuart2 label to lpuart_2. */
+lpuart2: &lpuart_2 {};

@@ -747,7 +747,6 @@
 		flexcan0: can@449a0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x449a0000 0x4000>;
-			clk-source = <0>;
 			interrupts = <GIC_SPI 581 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 583 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 584 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -764,7 +763,6 @@
 		flexcan1: can@449b0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x449b0000 0x4000>;
-			clk-source = <0>;
 			interrupts = <GIC_SPI 587 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 589 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 590 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -780,7 +778,6 @@
 
 		flexcan2: can@449c0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x449c0000 0x4000>;
 			interrupts = <GIC_SPI 593 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 595 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -797,7 +794,6 @@
 
 		flexcan3: can@449d0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x449d0000 0x4000>;
 			interrupts = <GIC_SPI 599 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 601 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -814,7 +810,6 @@
 
 		flexcan4: can@449e0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x449e0000 0x4000>;
 			interrupts = <GIC_SPI 605 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 607 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -831,7 +826,6 @@
 
 		flexcan5: can@449f0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x449f0000 0x4000>;
 			interrupts = <GIC_SPI 611 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 613 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -848,7 +842,6 @@
 
 		flexcan6: can@44ba0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44ba0000 0x4000>;
 			interrupts = <GIC_SPI 617 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 619 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -865,7 +858,6 @@
 
 		flexcan7: can@44bb0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44bb0000 0x4000>;
 			interrupts = <GIC_SPI 623 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 625 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -882,7 +874,6 @@
 
 		flexcan8: can@44bc0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44bc0000 0x4000>;
 			interrupts = <GIC_SPI 629 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 631 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -899,7 +890,6 @@
 
 		flexcan9: can@44bd0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44bd0000 0x4000>;
 			interrupts = <GIC_SPI 635 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 637 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -916,7 +906,6 @@
 
 		flexcan10: can@44be0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44be0000 0x4000>;
 			interrupts = <GIC_SPI 641 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 643 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -933,7 +922,6 @@
 
 		flexcan11: can@44bf0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44bf0000 0x4000>;
 			interrupts = <GIC_SPI 647 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 649 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -950,7 +938,6 @@
 
 		flexcan12: can@44da0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44da0000 0x4000>;
 			interrupts = <GIC_SPI 653 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 655 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -967,7 +954,6 @@
 
 		flexcan13: can@44db0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44db0000 0x4000>;
 			interrupts = <GIC_SPI 659 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 661 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -984,7 +970,6 @@
 
 		flexcan14: can@44dc0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44dc0000 0x4000>;
 			interrupts = <GIC_SPI 665 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 667 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1001,7 +986,6 @@
 
 		flexcan15: can@44dd0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44dd0000 0x4000>;
 			interrupts = <GIC_SPI 671 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 673 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1018,7 +1002,6 @@
 
 		flexcan16: can@44de0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44de0000 0x4000>;
 			interrupts = <GIC_SPI 677 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 679 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1035,7 +1018,6 @@
 
 		flexcan17: can@44df0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44df0000 0x4000>;
 			interrupts = <GIC_SPI 683 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 685 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1052,7 +1034,6 @@
 
 		flexcan18: can@44fa0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44fa0000 0x4000>;
 			interrupts = <GIC_SPI 689 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 691 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1069,7 +1050,6 @@
 
 		flexcan19: can@44fb0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44fb0000 0x4000>;
 			interrupts = <GIC_SPI 695 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 697 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1086,7 +1066,6 @@
 
 		flexcan20: can@44fc0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44fc0000 0x4000>;
 			interrupts = <GIC_SPI 701 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 703 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1103,7 +1082,6 @@
 
 		flexcan21: can@44fd0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44fd0000 0x4000>;
 			interrupts = <GIC_SPI 707 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 709 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1120,7 +1098,6 @@
 
 		flexcan22: can@44fe0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44fe0000 0x4000>;
 			interrupts = <GIC_SPI 713 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 715 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1137,7 +1114,6 @@
 
 		flexcan23: can@44ff0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			clk-source = <0>;
 			reg = <0x44ff0000 0x4000>;
 			interrupts = <GIC_SPI 719 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 721 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,

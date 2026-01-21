@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "QNX Hypervisor Virtual Machine";
+	compatible = "blackberry,qnxhv_vm";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &qvm_console;
+		zephyr,shell-uart = &qvm_console;
+	};
+
+	cpus {
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,armv8";
+			enable-method = "psci";
+			reg = <0x00>;
+		};
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "hvc";
+	};
+
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		interrupt-parent = <&gic>;
+
+		sram0: memory@80000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x80000000 0x0 DT_SIZE_M(128)>;
+		};
+
+		gic: interrupt-controller@2c001000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0x00 0x2c001000 0x00 0x00001000>,
+			      <0x00 0x2c002000 0x00 0x00002000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		timer: timer {
+			compatible = "arm,armv8-timer";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <54000000>;
+		};
+
+		qvm_console: uart@1c090000 {
+			compatible = "arm,pl011";
+			reg = <0x00 0x1c090000 0x00 0x1000>;
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+			current-speed = <115200>;
+			status = "okay";
+		};
+	};
+};

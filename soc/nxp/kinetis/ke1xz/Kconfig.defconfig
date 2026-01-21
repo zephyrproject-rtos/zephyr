@@ -1,16 +1,10 @@
 # Kinetis KE1xZ series configuration options
 
 # Copyright (c) 2019-2021 Vestas Wind Systems A/S
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_KE1XZ
-
-config MCUX_LPTMR_TIMER
-	default y if PM
-
-config CORTEX_M_SYSTICK
-	default n if MCUX_LPTMR_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK

@@ -471,9 +471,9 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 				.OW_OFF_EN3 = DT_INST_PROP_BY_IDX(id, ow_en, 2),                   \
 				.OW_OFF_EN4 = DT_INST_PROP_BY_IDX(id, ow_en, 3),                   \
 				.GDRV_EN1 = DT_INST_PROP_BY_IDX(id, gdrv_en, 0),                   \
-				.GDRV_EN1 = DT_INST_PROP_BY_IDX(id, gdrv_en, 1),                   \
-				.GDRV_EN2 = DT_INST_PROP_BY_IDX(id, gdrv_en, 2),                   \
-				.GDRV_EN3 = DT_INST_PROP_BY_IDX(id, gdrv_en, 3),                   \
+				.GDRV_EN2 = DT_INST_PROP_BY_IDX(id, gdrv_en, 1),                   \
+				.GDRV_EN3 = DT_INST_PROP_BY_IDX(id, gdrv_en, 2),                   \
+				.GDRV_EN4 = DT_INST_PROP_BY_IDX(id, gdrv_en, 3),                   \
 			},                                                                         \
 		.chan_en.sht_vdd_en.reg_bits =                                                     \
 			{                                                                          \

@@ -76,7 +76,7 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
  * need to be used to achieve the SCK frequency as close as possible (but not
  * higher) to the one specified in DT.
  */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 /*
  * On nRF53 Series SoCs, the default /4 divider for the HFCLK192M clock can
  * only be used when the QSPI peripheral is idle. When a QSPI operation is
@@ -145,7 +145,7 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 /* For 8 MHz, use PCLK32M / 4 */
 #define INST_0_SCK_CFG_WAKE NRF_QSPI_FREQ_DIV4
 
-#endif /* defined(CONFIG_SOC_SERIES_NRF53X) */
+#endif /* defined(CONFIG_SOC_SERIES_NRF53) */
 
 static int qspi_device_init(const struct device *dev);
 static void qspi_device_uninit(const struct device *dev);
@@ -358,7 +358,7 @@ static inline void qspi_lock(const struct device *dev)
 	 * to perform a QSPI operation, otherwise the power consumption would be
 	 * increased also when the QSPI peripheral is idle.
 	 */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
@@ -366,7 +366,7 @@ static inline void qspi_lock(const struct device *dev)
 
 static inline void qspi_unlock(const struct device *dev)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 	/* Restore the default base clock divider to reduce power consumption.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
@@ -701,7 +701,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 
 	qspi_fill_init_struct(&QSPIconfig);
 
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 	/* When the QSPI peripheral is activated, during the nrfx_qspi driver
 	 * initialization, it reads the status of the connected flash chip.
 	 * Make sure this transaction is performed with a valid base clock
@@ -713,7 +713,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 
 	int ret = _nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 	/* Restore the default /4 divider after the QSPI initialization. */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
@@ -984,7 +984,7 @@ static int qspi_nor_init(const struct device *dev)
 	return qspi_nor_configure(dev);
 }
 
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 static int qspi_cmd_encryption(const struct device *dev, nrf_qspi_encryption_t *p_cfg)
 {
 	const struct qspi_buf tx_buf = { .buf = (uint8_t *)&p_cfg->nonce[1],
@@ -1404,7 +1404,7 @@ int qspi_cmd_sleep_rpu(const struct device *dev)
 
 int qspi_enable_encryption(uint8_t *key)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_SERIES_NRF53)
 	int err = 0;
 
 	if (qspi_cfg->encryption) {

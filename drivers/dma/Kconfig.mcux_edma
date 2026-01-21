@@ -5,6 +5,7 @@
 
 EDMA_COMPAT := $(DT_COMPAT_NXP_MCUX_EDMA)
 REV_PROP := nxp,version
+DMAMUX_PROP:= has-dmamux
 
 config DMA_MCUX_EDMA
 	bool "MCUX DMA driver"
@@ -12,35 +13,40 @@ config DMA_MCUX_EDMA
 	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),2)
 	imply NOCACHE_MEMORY if CPU_HAS_DCACHE
 	help
-	  DMA driver for MCUX series SoCs.
+	  DMA version 2 driver for MCUX series SoCs with EDMA IP.
 
 config DMA_MCUX_EDMA_V3
 	bool "MCUX DMA v3 driver"
 	default y
 	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),3)
 	help
-	  DMA version 3 driver for MCUX series SoCs.
+	  DMA version 3 driver for MCUX series SoCs with DMA3 IP.
 
 config DMA_MCUX_EDMA_V4
-	bool "MCUX DMA v4 driver"
+	bool "MCUX DMA UNIFIED driver"
 	default y
-	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),4)
+	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),4) || \
+	           $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),5)
 	help
-	  DMA version 4 driver for MCUX series SoCs.
+	  DMA version 4  driver for MCUX Series SoCs Equipped
+	  with Multiple EDMA IPs(EDMA, DMA3, EDMA4, EDMA5).
+	  For the EDMA4 driver, it is compatible with different EDMA IPs
+	  and allows different EDMA IPs to be used within a single project.
+	  However, it required provide additional support in the SDK
+	  device header. Therefore, only new SoCs could use it.
 
-config DMA_MCUX_EDMA_V5
-	bool "MCUX DMA v5 driver"
-	default y
-	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),5)
+config DMA_MCUX_EDMA_DMAMUX
+	bool
+	default (DMA_MCUX_EDMA || $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(DMAMUX_PROP),True))
 	help
-	  DMA version 5 driver for MCUX series SoCs.
+	  Automatically enabled when EDMA device tree node has has-dmamux property.
 
 config DMA_MCUX_MAX_DATA_SIZE
 	int
-	default 64 if DMA_MCUX_EDMA_V5 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V3
+	default 64 if DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V3
 	default 32
 
-if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V5
+if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4
 
 config DMA_TCD_QUEUE_SIZE
 	int "number of TCD in a queue for SG mode"
@@ -51,11 +57,12 @@ config DMA_TCD_QUEUE_SIZE
 config DMA_MCUX_TEST_SLOT_START
 	int "test slot start num"
 	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF \
-		    || SOC_SERIES_S32K3 || SOC_SERIES_S32ZE || SOC_SERIES_KE1XZ || SOC_SERIES_MCXE24X)
+		    || SOC_SERIES_S32K3 || SOC_SERIES_S32ZE || SOC_SERIES_KE1XZ || SOC_SERIES_MCXE24X \
+		    || SOC_SERIES_MCXE31X)
 	default 58 if SOC_SERIES_KINETIS_K6X
 	default 60 if SOC_SERIES_KINETIS_KE1XF
 	default 60 if SOC_SERIES_KE1XZ
-	default 62 if SOC_SERIES_S32K3 || SOC_SERIES_S32ZE || SOC_SERIES_MCXE24X
+	default 62 if SOC_SERIES_S32K3 || SOC_SERIES_S32ZE || SOC_SERIES_MCXE24X || SOC_SERIES_MCXE31X
 	help
 	  test slot start num
 
@@ -69,4 +76,4 @@ config DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
 	  When this option is activated, the descriptors for DMA transfer are
 	  located in the DTCM (Data Tightly Coupled Memory).
 
-endif # DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V5
+endif # DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4

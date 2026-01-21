@@ -457,3 +457,12 @@
 &lpi2c3 {
 	interrupts = <146 0>;
 };
+
+&lpe_ftm {
+	interrupts = <223 0>;
+};
+
+&canxl {
+	interrupts = <97 0>;
+	interrupt-names = "rx_tx_mru_error";
+};

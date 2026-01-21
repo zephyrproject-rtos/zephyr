@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_sources(soc.c)
+zephyr_library()
+zephyr_library_sources(soc.c)
 zephyr_sources_ifdef(CONFIG_PM power.c)
 
 zephyr_include_directories(.)
@@ -21,5 +22,15 @@ if(CONFIG_SECOND_CORE_MCUX_REMOTE_DIR)
   zephyr_include_directories(${CONFIG_SECOND_CORE_MCUX_REMOTE_DIR})
 endif()
 
+if(CONFIG_NXP_IMXRT_BOOT_HEADER)
+  if(CONFIG_BOOT_FLEXSPI_NOR)
+    zephyr_library_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
+    zephyr_library_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)
+  endif()
+
+  if(CONFIG_DEVICE_CONFIGURATION_DATA)
+    zephyr_library_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
+  endif()
+endif()
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

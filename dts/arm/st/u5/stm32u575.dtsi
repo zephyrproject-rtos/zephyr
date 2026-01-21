@@ -21,5 +21,11 @@
 
 	soc {
 		compatible = "st,stm32u575", "st,stm32u5", "simple-bus";
+
+		rng: rng@420c0800 {
+			nist-config = <0xf00d00>;
+			health-test-config = <0xa2b0>;
+			noise-source-control = <0x17cbb>;
+		};
 	};
 };

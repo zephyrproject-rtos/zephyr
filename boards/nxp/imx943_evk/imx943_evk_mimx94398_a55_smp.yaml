@@ -1,0 +1,20 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx943_evk/mimx94398/a55/smp
+name: NXP i.MX943 EVK A55 SMP
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 10240
+supported:
+  - counter
+  - gpio
+  - net
+  - uart
+vendor: nxp

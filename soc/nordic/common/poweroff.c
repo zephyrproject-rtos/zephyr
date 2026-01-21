@@ -7,14 +7,14 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/drivers/retained_mem/nrf_retained_mem.h>
 
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #include <hal/nrf_power.h>
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#elif defined(CONFIG_SOC_SERIES_NRF54H)
 #include <power.h>
 #else
 #include <hal/nrf_regulators.h>
 #endif
-#if defined(CONFIG_SOC_SERIES_NRF54LX)
+#if defined(CONFIG_SOC_SERIES_NRF54L)
 #include <helpers/nrfx_reset_reason.h>
 #include <hal/nrf_memconf.h>
 #endif
@@ -23,7 +23,7 @@
 #include <helpers/nrfx_ram_ctrl.h>
 #endif
 
-#if defined(CONFIG_SOC_SERIES_NRF54LX)
+#if defined(CONFIG_SOC_SERIES_NRF54L)
 #define VPR_POWER_IDX 1
 #define VPR_RET_BIT   MEMCONF_POWER_RET_MEM0_Pos
 #endif
@@ -64,15 +64,15 @@ void z_sys_poweroff(void)
 	(void)z_nrf_retained_mem_retention_apply();
 #endif
 
-#if defined(CONFIG_SOC_SERIES_NRF54LX)
+#if defined(CONFIG_SOC_SERIES_NRF54L)
 	/* Set VPR to remain in its reset state when waking from OFF */
 	nrf_memconf_ramblock_ret_enable_set(NRF_MEMCONF, VPR_POWER_IDX, VPR_RET_BIT, false);
 
 	nrfx_reset_reason_clear(UINT32_MAX);
 #endif
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 	nrf_power_system_off(NRF_POWER);
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#elif defined(CONFIG_SOC_SERIES_NRF54H)
 	nrf_poweroff();
 #else
 	nrf_regulators_system_off(NRF_REGULATORS);

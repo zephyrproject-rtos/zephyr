@@ -58,7 +58,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	int res;
 	size_t total_len;
 	uint8_t *dma_buffer;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
@@ -73,8 +72,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
-
 	dma_tx_desc = heth->TxDesc;
 	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
 		k_yield();
@@ -83,16 +80,14 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
 
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Transmit: failed!");
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
 	/* When Transmit Underflow flag is set, clear it and issue a
@@ -103,16 +98,10 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		heth->Instance->DMASR = ETH_DMASR_TUS;
 		/* Resume DMA transmission*/
 		heth->Instance->DMATPDR = 0;
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
-	res = 0;
-error:
-
-	k_mutex_unlock(&dev_data->tx_mutex);
-
-	return res;
+	return 0;
 }
 
 struct net_pkt *eth_stm32_rx(const struct device *dev)
@@ -197,7 +186,6 @@ int eth_stm32_hal_init(const struct device *dev)
 	}
 
 	/* Initialize semaphores */
-	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 
 	if (HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,

@@ -77,7 +77,7 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 #endif
 
 #define MCUX_ACMP_ENUM(name, value) \
-	_CONCAT_4(COMP_MCUX_ACMP_, name, _, value)
+	CONCAT(COMP_MCUX_ACMP_, name, _, value)
 
 #define MCUX_ACMP_DT_INST_ENUM(inst, name, prop) \
 	MCUX_ACMP_ENUM(name, DT_INST_STRING_TOKEN(inst, prop))

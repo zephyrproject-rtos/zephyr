@@ -15,6 +15,6 @@ supported:
   - clock_control
   - dma
   - gpio
-  - pin_ctrl
+  - pinctrl
   - uart
   - spi

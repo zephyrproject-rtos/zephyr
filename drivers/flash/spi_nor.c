@@ -848,7 +848,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Enable high performace mode failed: %d", ret);
+			LOG_ERR("Enable high performance mode failed: %d", ret);
 		}
 
 		release_device(dev);

@@ -674,7 +674,6 @@ static void vcp_vol_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 
 	if (vol_ctlr == NULL) {
 		LOG_ERR("Could not lookup vol_ctlr from aics");
-		vcp_vol_ctlr_discover_complete(vol_ctlr, BT_GATT_ERR(BT_ATT_ERR_UNLIKELY));
 
 		return;
 	}

@@ -210,11 +210,11 @@ static int mpu_configure_region(const uint8_t index,
 	!defined(CONFIG_MPU_GAP_FILLING)
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
- * sanity check of the memory regions to be programmed.
+ * coherence check of the memory regions to be programmed.
  */
 static int mpu_configure_regions(const struct z_arm_mpu_partition
 	regions[], uint8_t regions_num, uint8_t start_reg_index,
-	bool do_sanity_check)
+	bool do_coherence_check)
 {
 	int i;
 	int reg_index = start_reg_index;
@@ -225,9 +225,9 @@ static int mpu_configure_regions(const struct z_arm_mpu_partition
 		}
 		/* Non-empty region. */
 
-		if (do_sanity_check &&
+		if (do_coherence_check &&
 				(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: sanity check failed.", i);
+			LOG_ERR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 
@@ -620,7 +620,7 @@ int z_arm_mpu_init(void)
 #endif
 #endif /* CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU */
 
-	/* Sanity check for number of regions in Cortex-M0+, M3, and M4. */
+	/* Coherence check for number of regions in Cortex-M0+, M3, and M4. */
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4)

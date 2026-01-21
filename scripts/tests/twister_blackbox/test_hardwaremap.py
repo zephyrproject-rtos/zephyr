@@ -112,7 +112,7 @@ class TestHardwaremap:
     def test_generate(self, capfd, out_path, manufacturer, product, serial, runner):
         file_name = "test-map.yaml"
         path = os.path.join(ZEPHYR_BASE, file_name)
-        args = ['--outdir', out_path, '--generate-hardware-map', file_name]
+        args = ['--outdir', out_path, '--generate-hardware-map', path]
 
         if os.path.exists(path):
             os.remove(path)
@@ -164,7 +164,7 @@ class TestHardwaremap:
     def test_few_generate(self, capfd, out_path, manufacturer, product, serial, runner):
         file_name = "test-map.yaml"
         path = os.path.join(ZEPHYR_BASE, file_name)
-        args = ['--outdir', out_path, '--generate-hardware-map', file_name]
+        args = ['--outdir', out_path, '--generate-hardware-map', path]
 
         if os.path.exists(path):
             os.remove(path)
@@ -245,7 +245,7 @@ class TestHardwaremap:
     def test_texas_exeption(self, capfd, out_path, manufacturer, product, serial, location):
         file_name = "test-map.yaml"
         path = os.path.join(ZEPHYR_BASE, file_name)
-        args = ['--outdir', out_path, '--generate-hardware-map', file_name]
+        args = ['--outdir', out_path, '--generate-hardware-map', path]
 
         if os.path.exists(path):
             os.remove(path)

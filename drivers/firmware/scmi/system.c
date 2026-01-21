@@ -47,7 +47,7 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 	int ret;
 	bool use_polling;
 
-	/* sanity checks */
+	/* input validation */
 	if (!proto || !cfg) {
 		return -EINVAL;
 	}

@@ -51,11 +51,6 @@ struct st7796s_config {
 	bool rgb_is_inverted;
 };
 
-/* Display data struct */
-struct st7796s_data {
-	enum display_orientation orientation;
-};
-
 static int st7796s_send_cmd(const struct device *dev,
 			uint8_t cmd, const uint8_t *data, size_t len)
 {
@@ -110,19 +105,19 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 * Zephyr uses little endian byte order when the pixel format has
 	 * multiple bytes.
 	 *
-	 * For BGR565, Red is placed in byte 1 and Blue in byte 0.
-	 * For RGB565, Red is placed in byte 0 and Blue in byte 1.
+	 * For RGB565, Red is placed in byte 1 and Blue in byte 0.
+	 * For RGB565X, Red is placed in byte 0 and Blue in byte 1.
 	 *
 	 * This is not an issue when using a 16-bit interface.
 	 * For RGB565, this would map to Red being in D[11:15] and
-	 * Blue in D[0:4] and vice versa for BGR565.
+	 * Blue in D[0:4] and vice versa for RGB565X.
 	 *
 	 * However this is an issue when using a 8-bit interface.
-	 * For BGR565, Blue is placed in byte 0 as mentioned earlier.
+	 * For RGB565, Blue is placed in byte 0 as mentioned earlier.
 	 * However the controller expects Red to be in D[3:7] of byte 0.
 	 *
-	 * Hence we report pixel format as RGB when MADCTL setting is BGR
-	 * and vice versa.
+	 * Hence we report pixel format as RGB565 when MADCTL setting is
+	 * RGB565X and vice versa.
 	 */
 	if (config->dbi_config.mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
 		/*
@@ -134,7 +129,7 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 		    config->rgb_is_inverted) {
 			return PIXEL_FORMAT_RGB_565;
 		} else {
-			return PIXEL_FORMAT_BGR_565;
+			return PIXEL_FORMAT_RGB_565X;
 		}
 	}
 
@@ -150,7 +145,7 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	    config->rgb_is_inverted) {
 		return PIXEL_FORMAT_RGB_565;
 	} else {
-		return PIXEL_FORMAT_BGR_565;
+		return PIXEL_FORMAT_RGB_565X;
 	}
 }
 
@@ -190,7 +185,6 @@ static int st7796s_write(const struct device *dev,
 static void st7796s_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
-	struct st7796s_data *data = dev->data;
 	const struct st7796s_config *config = dev->config;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
@@ -199,7 +193,7 @@ static void st7796s_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-	capabilities->current_orientation = data->orientation;
+	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static int st7796s_lcd_config(const struct device *dev)
@@ -314,39 +308,6 @@ static int st7796s_lcd_config(const struct device *dev)
 	return st7796s_send_cmd(dev, ST7796S_CMD_CSCON, &param, sizeof(param));
 }
 
-static int st7796s_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	struct st7796s_data *data = dev->data;
-	uint8_t tx_data = ST7796S_MADCTL_BGR;
-	int ret;
-
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		/* works 0° - default */
-		tx_data |= ST7796S_MADCTL_MV;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-		/* works CW 90° */
-		tx_data |= ST7796S_MADCTL_MY;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-		/* works CW 180° */
-		tx_data |= ST7796S_MADCTL_MX | ST7796S_MADCTL_MY | ST7796S_MADCTL_MV;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-		/* works CW 270° */
-		tx_data |= ST7796S_MADCTL_MX;
-	} else {
-		return -EINVAL;
-	}
-
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_MADCTL, &tx_data, 1U);
-	if (ret < 0) {
-		return ret;
-	}
-
-	data->orientation = orientation;
-
-	return 0;
-}
-
 static int st7796s_init(const struct device *dev)
 {
 	const struct st7796s_config *config = dev->config;
@@ -406,7 +367,6 @@ static DEVICE_API(display, st7796s_api) = {
 	.blanking_off = st7796s_blanking_off,
 	.write = st7796s_write,
 	.get_capabilities = st7796s_get_capabilities,
-	.set_orientation = st7796s_set_orientation,
 };
 
 

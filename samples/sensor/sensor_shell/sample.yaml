@@ -23,6 +23,7 @@ tests:
     timeout: 180
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+      - platform:iotdk/arc_iot:CONFIG_ARC_IOT_CUSTOM_CPU_IDLE=y
     extra_args: DTC_OVERLAY_FILE=fake_sensor.overlay
     integration_platforms:
       - native_sim

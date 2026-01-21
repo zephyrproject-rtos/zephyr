@@ -16,9 +16,6 @@ config MEMC
 endif # DISPLAY || VIDEO
 
 if DISPLAY
-config INPUT
-	default y
-
 config I2C_STM32_V2_TIMING
 	default y if INPUT
 endif # DISPLAY

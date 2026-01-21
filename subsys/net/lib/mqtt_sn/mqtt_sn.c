@@ -1032,9 +1032,8 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
  *
  * @param client
  * @param next_cycle will be set to the time when the next action is required
- * @retval 0 on success
  */
-static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
+static void process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
 
@@ -1064,8 +1063,6 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 	}
 
 	LOG_DBG("next_cycle: %lld", *next_cycle);
-
-	return 0;
 }
 
 /**
@@ -1073,9 +1070,8 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
  *
  * @param client
  * @param next_cycle will be set to the time when the next action is required
- * @return int
  */
-static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
+static void process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
 	struct mqtt_sn_gateway *gw;
@@ -1095,8 +1091,6 @@ static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 		}
 	}
 	LOG_DBG("next_cycle: %lld", *next_cycle);
-
-	return 0;
 }
 
 /**
@@ -1118,16 +1112,10 @@ static void process_work(struct k_work *wrk)
 		k_uptime_get());
 
 	/* Clean up old advertised gateways from list */
-	err = process_advertise(client, &next_cycle);
-	if (err) {
-		return;
-	}
+	process_advertise(client, &next_cycle);
 
 	/* Handle GW search process timers */
-	err = process_search(client, &next_cycle);
-	if (err) {
-		return;
-	}
+	process_search(client, &next_cycle);
 
 	process_pubs_qos_m1(client);
 

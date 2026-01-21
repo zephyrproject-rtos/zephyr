@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RZ GPT
@@ -23,7 +23,10 @@ properties:
       - 256
       - 512
       - 1024
-    description: Input clock prescaler. For RZ/G3S, only 1, 4, 16, 64, 256, 1024 are supported.
+    description: |
+      Input clock prescaler:
+      - For RZ/G3S, RZ/G2, and RZ/V2L, only prescalers 1, 4, 16, 64, 256, and 1024 are supported.
+      - For RZ/V2H, RZ/V2N, RZ/T2, and RZ/N2, prescalers 128 and 512 are prohibited.
 
   channel:
     type: int

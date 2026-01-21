@@ -57,6 +57,13 @@ config IDLE_STACK_SIZE
 	default 640
 endif
 
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
 config ROM_START_OFFSET
 	default 0x800 if BOOTLOADER_MCUBOOT
 

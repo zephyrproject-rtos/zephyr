@@ -21,6 +21,8 @@
 #include <zephyr/timing/timing.h>
 #endif
 
+#define SPEED_TEST_MAX_REPETITIONS 10000
+
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
 
@@ -350,8 +352,8 @@ static int read_write_erase_validate(const struct shell *sh, size_t argc, char *
 		return -EINVAL;
 	}
 
-	if (*repeat == 0 || *repeat > 10) {
-		shell_error(sh, "<repeat> must be between 1 and 10.");
+	if (*repeat == 0 || *repeat > SPEED_TEST_MAX_REPETITIONS) {
+		shell_error(sh, "<repeat> must be between 1 and %d.", SPEED_TEST_MAX_REPETITIONS);
 		return -EINVAL;
 	}
 

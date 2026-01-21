@@ -39,3 +39,6 @@ properties:
       Enables Sample Shifting half-cycle.
 
       It is recommended to be enabled in STR mode and disabled in DTR mode.
+
+  clock-frequency:
+    required: true

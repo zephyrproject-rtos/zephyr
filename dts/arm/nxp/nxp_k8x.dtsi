@@ -45,8 +45,13 @@
 			status = "disabled";
 		};
 
+		rcm: rcm@4007F000 {
+			compatible = "nxp,rcm-hwinfo";
+			reg = <0x4007F000 0x1000>;
+		};
+
 		sim: sim@40047000 {
-			compatible = "nxp,kinetis-sim";
+			compatible = "nxp,kinetis-sim", "nxp,sim-uuid";
 			reg = <0x40047000 0x2000>;
 			#clock-cells = <3>;
 

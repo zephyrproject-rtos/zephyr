@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &tc5;
+	};
+};
+
+&tcc0 {
+	status = "disabled";
+};
+
+&tc5 {
+	prescaler = <256>;
+	status = "okay";
+};

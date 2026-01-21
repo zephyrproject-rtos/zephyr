@@ -5,7 +5,7 @@
 
 /**
  * @file
- * @brief Main header file for NVMEM API.
+ * @brief Public NVMEM header file.
  * @ingroup nvmem_interface
  */
 
@@ -13,8 +13,8 @@
 #define ZEPHYR_INCLUDE_NVMEM_H_
 
 /**
- * @brief Interfaces for NVMEM cells.
  * @defgroup nvmem_interface NVMEM
+ * @brief Non-volatile memory cells.
  * @since 4.3
  * @version 0.1.0
  * @ingroup io_interfaces
@@ -45,7 +45,7 @@ struct nvmem_cell {
 };
 
 /**
- * @brief Static initializer for a struct nvmem_cell.
+ * @brief Get a static initializer for a struct nvmem_cell.
  *
  * This returns a static initializer for a struct nvmem_cell given a devicetree
  * node identifier.
@@ -84,7 +84,7 @@ struct nvmem_cell {
  *	// }
  * @endcode
  *
- * @param node_id Devicetree node identifier.
+ * @param node_id Node identifier for an NVMEM cell.
  *
  * @return Static initializer for a struct nvmem_cell
  */
@@ -97,7 +97,7 @@ struct nvmem_cell {
 	}
 
 /**
- * @brief Static initializer for a struct nvmem_cell.
+ * @brief Get a static initializer for a struct nvmem_cell by name.
  *
  * This returns a static initializer for a struct nvmem_cell given a devicetree
  * node identifier and a name.
@@ -139,7 +139,7 @@ struct nvmem_cell {
  *	// }
  * @endcode
  *
- * @param node_id Devicetree node identifier.
+ * @param node_id Node identifier for a node with an nvmem-cells property.
  * @param name Lowercase-and-underscores name of an nvmem-cells element as defined by
  *             the node's nvmem-cell-names property.
  *
@@ -150,10 +150,10 @@ struct nvmem_cell {
 #define NVMEM_CELL_GET_BY_NAME(node_id, name) NVMEM_CELL_INIT(DT_NVMEM_CELL_BY_NAME(node_id, name))
 
 /**
- * @brief Static initializer for a struct nvmem_cell from a DT_DRV_COMPAT
- *        instance.
+ * @brief Get a static initializer for a struct nvmem_cell from a DT_DRV_COMPAT
+ *        instance by name.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name of an nvmem-cells element as defined by
  *             the node's nvmem-cell-names property.
  *
@@ -164,14 +164,14 @@ struct nvmem_cell {
 #define NVMEM_CELL_INST_GET_BY_NAME(inst, name) NVMEM_CELL_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Like NVMEM_CELL_GET_BY_NAME(), with a fallback to a default value.
+ * @brief Get a static initializer for a struct nvmem_cell by name, with a fallback.
  *
  * If the devicetree node identifier 'node_id' refers to a node with a property
  * 'nvmem-cells', this expands to <tt>NVMEM_CELL_GET_BY_NAME(node_id, name)</tt>. The
  * @p default_value parameter is not expanded in this case. Otherwise, this
  * expands to @p default_value.
  *
- * @param node_id Devicetree node identifier.
+ * @param node_id Node identifier for a node that may have an nvmem-cells property.
  * @param name Lowercase-and-underscores name of an nvmem-cells element as defined by
  *             the node's nvmem-cell-names property.
  * @param default_value Fallback value to expand to.
@@ -187,10 +187,10 @@ struct nvmem_cell {
 		    (default_value))
 
 /**
- * @brief Like NVMEM_CELL_INST_GET_BY_NAME(), with a fallback to a default
- *        value.
+ * @brief Get a static initializer for a struct nvmem_cell from a DT_DRV_COMPAT
+ *        instance by name, with a fallback.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name of an nvmem-cells element as defined by
  *             the node's nvmem-cell-names property.
  * @param default_value Fallback value to expand to.
@@ -204,7 +204,7 @@ struct nvmem_cell {
 	NVMEM_CELL_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
- * @brief Static initializer for a struct nvmem_cell.
+ * @brief Get a static initializer for a struct nvmem_cell by index.
  *
  * This returns a static initializer for a struct nvmem_cell given a devicetree
  * node identifier and an index.
@@ -246,7 +246,7 @@ struct nvmem_cell {
  *	// }
  * @endcode
  *
- * @param node_id Devicetree node identifier.
+ * @param node_id Node identifier for a node with an nvmem-cells property.
  * @param idx Logical index into 'nvmem-cells' property.
  *
  * @return Static initializer for a struct nvmem_cell for the property.
@@ -256,10 +256,10 @@ struct nvmem_cell {
 #define NVMEM_CELL_GET_BY_IDX(node_id, idx) NVMEM_CELL_INIT(DT_NVMEM_CELL_BY_IDX(node_id, idx))
 
 /**
- * @brief Static initializer for a struct nvmem_cell from a DT_DRV_COMPAT
- *        instance.
+ * @brief Get a static initializer for a struct nvmem_cell from a DT_DRV_COMPAT
+ *        instance by index.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst DT_DRV_COMPAT instance number.
  * @param idx Logical index into 'nvmem-cells' property.
  *
  * @return Static initializer for a struct nvmem_cell for the property.
@@ -269,14 +269,14 @@ struct nvmem_cell {
 #define NVMEM_CELL_INST_GET_BY_IDX(inst, idx) NVMEM_CELL_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Like NVMEM_CELL_GET_BY_IDX(), with a fallback to a default value.
+ * @brief Get a static initializer for a struct nvmem_cell by index, with a fallback.
  *
  * If the devicetree node identifier 'node_id' refers to a node with a property
  * 'nvmem-cells', this expands to <tt>NVMEM_CELL_GET_BY_IDX(node_id, idx)</tt>. The
  * @p default_value parameter is not expanded in this case. Otherwise, this
  * expands to @p default_value.
  *
- * @param node_id Devicetree node identifier.
+ * @param node_id Node identifier for a node that may have an nvmem-cells property.
  * @param idx Logical index into 'nvmem-cells' property.
  * @param default_value Fallback value to expand to.
  *
@@ -291,10 +291,10 @@ struct nvmem_cell {
 		    (default_value))
 
 /**
- * @brief Like NVMEM_CELL_INST_GET_BY_IDX(), with a fallback to a default
- *        value.
+ * @brief Get a static initializer for a struct nvmem_cell from a DT_DRV_COMPAT
+ *        instance by index, with a fallback.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst DT_DRV_COMPAT instance number.
  * @param idx Logical index into 'nvmem-cells' property.
  * @param default_value Fallback value to expand to.
  *
@@ -309,27 +309,34 @@ struct nvmem_cell {
 /**
  * @brief Read data from an NVMEM cell.
  *
- * @param cell The NVMEM cell.
- * @param data Buffer to store read data.
- * @param off The offset to start reading from.
+ * @param cell NVMEM cell to read from.
+ * @param[out] data Buffer to store the read data.
+ *                  Must be at least @p len bytes.
+ * @param off Offset within the cell to start reading from, in bytes.
+ *            Must be less than the cell size.
  * @param len Number of bytes to read.
+ *            @p off + @p len must not exceed the cell size.
  *
  * @kconfig_dep{CONFIG_NVMEM}
  *
  * @retval -EINVAL Invalid offset or length arguments.
  * @retval -ENODEV The controller device is not ready.
  * @retval -ENXIO  No runtime device API available.
- * @return the result of the underlying device API call.
+ * @return The result of the underlying device API call.
  */
 int nvmem_cell_read(const struct nvmem_cell *cell, void *data, off_t off, size_t len);
 
 /**
  * @brief Write data to an NVMEM cell.
  *
- * @param cell The NVMEM cell.
- * @param data Buffer with data to write.
- * @param off The offset to start writing to.
+ * @param cell NVMEM cell to write to.
+ *             Must not be read-only.
+ * @param data Buffer containing data to write.
+ *             Must be at least @p len bytes.
+ * @param off Offset within the cell to start writing to, in bytes.
+ *            Must be less than the cell size.
  * @param len Number of bytes to write.
+ *            @p off + @p len must not exceed the cell size.
  *
  * @kconfig_dep{CONFIG_NVMEM}
  *
@@ -337,16 +344,16 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *data, off_t off, size_t
  * @retval -EROFS  Writing to a read-only NVMEM Cell.
  * @retval -ENODEV The controller device is not ready.
  * @retval -ENXIO  No runtime device API available.
- * @return the result of the underlying device API call.
+ * @return The result of the underlying device API call.
  */
 int nvmem_cell_write(const struct nvmem_cell *cell, const void *data, off_t off, size_t len);
 
 /**
- * @brief Validate that the NVMEM cell is ready.
+ * @brief Check if an NVMEM cell is ready.
  *
- * @param cell The NVMEM cell.
+ * @param cell NVMEM cell to check. May be NULL.
  *
- * @return true if the NVMEM cell is ready for use and false otherwise.
+ * @return True if the NVMEM cell is ready for use and false otherwise.
  */
 static inline bool nvmem_cell_is_ready(const struct nvmem_cell *cell)
 {

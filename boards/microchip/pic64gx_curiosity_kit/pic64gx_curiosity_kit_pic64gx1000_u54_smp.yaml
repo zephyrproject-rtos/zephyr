@@ -1,0 +1,12 @@
+identifier: pic64gx_curiosity_kit/pic64gx1000/u54/smp
+name: Microchip PIC64GX Curiosity kit
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 1024
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: microchip

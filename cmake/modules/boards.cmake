@@ -31,7 +31,7 @@
 # - BOARD_ROOT:                  BOARD_ROOT with ZEPHYR_BASE appended
 #
 # The following targets will be defined when this CMake module completes:
-# - board: when invoked, a list of valid boards will be printed
+# - boards: when invoked, a list of valid boards will be printed
 #
 # Required variables:
 # - BOARD: Board name, including any optional revision field, for example: `foo` or `foo@1.0.0`

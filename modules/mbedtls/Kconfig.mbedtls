@@ -496,7 +496,7 @@ config MBEDTLS_HAVE_TIME_DATE
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
-	select MBEDTLS_MD_C
+	depends on MBEDTLS_MD_C
 	help
 	  Enable PKCS5 functions
 

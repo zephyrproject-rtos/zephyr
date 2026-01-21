@@ -58,6 +58,7 @@ tests:
       - frdm_mcxa346
       - frdm_mcxa266
       - frdm_mcxa366
+      - frdm_mcxa344
       - frdm_mcxc242
       - max32655evkit/max32655/m4
       - max32662evkit
@@ -75,6 +76,7 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
+      - it51xxx_evb/it51526aw
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp

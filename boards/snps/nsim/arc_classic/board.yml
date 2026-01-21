@@ -27,3 +27,5 @@ board:
     variants:
     - name: mpu_stack_guard
   - name: nsim_vpx5
+    variants:
+    - name: mpuv3

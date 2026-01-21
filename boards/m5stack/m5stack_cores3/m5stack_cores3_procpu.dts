@@ -15,6 +15,8 @@
 	aliases {
 		accel0 = &bmi270;
 		magn0 = &bmm150;
+		light-sensor = &ltr553;
+		prox-sensor0 = &ltr553;
 	};
 };
 
@@ -28,6 +30,12 @@
 		compatible = "bosch,bmm150";
 		status = "okay";
 		reg = <0x10>;
+	};
+
+	ltr553: ltr553@23 {
+		compatible = "liteon,ltr553";
+		reg = <0x23>;
+		status = "okay";
 	};
 };
 

@@ -237,7 +237,7 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 	)
 
 #define MSG_BUF_SYM(inst) \
-	_CONCAT_3(twim_, inst, _msg_buf)
+	CONCAT(twim_, inst, _msg_buf)
 
 #define MSG_BUF_DEFINE(inst) \
 	static uint8_t MSG_BUF_SYM(inst)[MSG_BUF_SIZE(inst)] MSG_BUF_ATTR(inst)
@@ -253,11 +253,19 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 				.p_twim = (NRF_TWIM_Type *)DT_INST_REG_ADDR(inst),		\
 			},									\
 	};											\
+	NRF_DT_INST_IRQ_DIRECT_DEFINE(								\
+		inst,										\
+		nrfx_twim_irq_handler,								\
+		&CONCAT(twim_, inst, z_data.twim)						\
+	)											\
 	static void pre_init##inst(void)							\
 	{											\
 		twim_##inst##z_data.twim.p_twim = (NRF_TWIM_Type *)DT_INST_REG_ADDR(inst);	\
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
-			    nrfx_twim_irq_handler, &twim_##inst##z_data.twim, 0);		\
+		NRF_DT_INST_IRQ_CONNECT(							\
+			inst,									\
+			nrfx_twim_irq_handler,							\
+			&CONCAT(twim_, inst, z_data.twim)					\
+		)										\
 	}											\
 	IF_ENABLED(USES_MSG_BUF(inst), (MSG_BUF_DEFINE(inst);))					\
 	I2C_RTIO_DEFINE(_i2c##inst##_twim_rtio,							\

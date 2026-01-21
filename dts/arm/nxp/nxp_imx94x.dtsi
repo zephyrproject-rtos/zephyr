@@ -119,6 +119,7 @@
 			reg = <0x42530000 0x4000>;
 			interrupts = <67 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C3>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -130,6 +131,7 @@
 			reg = <0x42540000 0x4000>;
 			interrupts = <68 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C4>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -207,6 +209,7 @@
 			reg = <0x426b0000 0x4000>;
 			interrupts = <108 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C5>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -218,6 +221,7 @@
 			reg = <0x426c0000 0x4000>;
 			interrupts = <109 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C6>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -229,6 +233,7 @@
 			reg = <0x426d0000 0x4000>;
 			interrupts = <110 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C7>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -240,6 +245,7 @@
 			reg = <0x426e0000 0x4000>;
 			interrupts = <111 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C8>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -502,6 +508,7 @@
 			reg = <0x44340000 0x4000>;
 			interrupts = <15 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C1>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -513,6 +520,7 @@
 			reg = <0x44350000 0x4000>;
 			interrupts = <16 0>;
 			clocks = <&scmi_clk IMX943_CLK_LPI2C2>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 

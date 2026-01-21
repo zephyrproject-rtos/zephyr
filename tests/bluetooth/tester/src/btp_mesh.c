@@ -4486,7 +4486,7 @@ static int cmd_blob_target(uint16_t addr)
 
 	if (blob_cli_xfer.target_count == ARRAY_SIZE(blob_cli_xfer.targets)) {
 		LOG_ERR("No more room");
-		return 0;
+		return -ENOMEM;
 	}
 
 	t = &blob_cli_xfer.targets[blob_cli_xfer.target_count];

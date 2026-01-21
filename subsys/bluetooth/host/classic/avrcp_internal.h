@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (C) 2024 Xiaomi Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -279,7 +280,7 @@ struct bt_avrcp_frame {
 	uint8_t data[];
 } __packed;
 
-int bt_avrcp_init(void);
+void bt_avrcp_init(void);
 
 int bt_avrcp_tg_cover_art_init(uint16_t *psm);
 

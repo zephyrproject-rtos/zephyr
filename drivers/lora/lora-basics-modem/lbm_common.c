@@ -16,6 +16,14 @@
 
 LOG_MODULE_REGISTER(lbm_driver, CONFIG_LORA_LOG_LEVEL);
 
+/* When Symbol Time exceeds 16.38 ms (6.1.1.4 SX1261/2 datasheet), enable LDRO
+ * Symbol Rate is bw / (2 ^ sf) so Symbol time is (2 ^ sf) / bw (6.1.1.1 SX1261/2 datasheet)
+ * Additionally, enable LDRO in additional situations described in Lora Basic Modem lr1mac
+ * where t < 16 from ral_compute_lora_ldro: Bandwidth less than 41 Khz, and SF9 with BW 41 KHz
+ */
+#define LORA_LDRO(sf, bw) ((((1 << sf) / bw) >= 16 ? 1 : 0) \
+	| (bw < BW_41_KHZ || (bw == BW_41_KHZ && sf == SF_9) ? 1 : 0))
+
 /**
  * @brief Attempt to acquire the modem for operations
  *
@@ -73,7 +81,8 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 		.mod_params = {
 			.sf = lora_config->datarate,
 			.cr = lora_config->coding_rate,
-			.ldro = 0,
+			.ldro = config->force_ldro ? 1 : LORA_LDRO(lora_config->datarate,
+								   lora_config->bandwidth),
 		},
 		.pkt_params = {
 			.preamble_len_in_symb = lora_config->preamble_len,
@@ -105,14 +114,50 @@ int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_con
 	}
 
 	switch (lora_config->bandwidth) {
+	case BW_7_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_007_KHZ;
+		break;
+	case BW_10_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_010_KHZ;
+		break;
+	case BW_15_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_015_KHZ;
+		break;
+	case BW_20_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_020_KHZ;
+		break;
+	case BW_31_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_031_KHZ;
+		break;
+	case BW_41_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_041_KHZ;
+		break;
+	case BW_62_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_062_KHZ;
+		break;
 	case BW_125_KHZ:
 		params.mod_params.bw = RAL_LORA_BW_125_KHZ;
+		break;
+	case BW_200_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_200_KHZ;
 		break;
 	case BW_250_KHZ:
 		params.mod_params.bw = RAL_LORA_BW_250_KHZ;
 		break;
+	case BW_400_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_400_KHZ;
+		break;
 	case BW_500_KHZ:
 		params.mod_params.bw = RAL_LORA_BW_500_KHZ;
+		break;
+	case BW_800_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_800_KHZ;
+		break;
+	case BW_1000_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_1000_KHZ;
+		break;
+	case BW_1600_KHZ:
+		params.mod_params.bw = RAL_LORA_BW_1600_KHZ;
 		break;
 	default:
 		ret = -EINVAL;

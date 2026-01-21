@@ -29,3 +29,4 @@ config SOC_SERIES_PSC3
 	select SOC_EARLY_INIT_HOOK
 	select CPU_CORTEX_M33
 	select NOINIT_SNIPPET_FIRST
+	select HAS_PM

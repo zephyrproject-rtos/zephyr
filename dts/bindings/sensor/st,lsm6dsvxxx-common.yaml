@@ -36,6 +36,12 @@ properties:
       mandatory and if not present it defaults to 1 which is the
       configuration at power-up.
 
+  self-test:
+    type: boolean
+    description: |
+      Enable device self-test procedure, which applies an electrostatic force to the sensor to
+      simulate acceleration and rotation without actually moving the device.
+
   accel-odr:
     type: int
     default: 0x0

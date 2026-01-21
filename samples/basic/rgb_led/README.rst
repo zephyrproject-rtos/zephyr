@@ -39,7 +39,7 @@ an unsupported board:
    Unsupported board: green-pwm-led devicetree alias is not defined
    Unsupported board: blue-pwm-led devicetree alias is not defined
 
-See :zephyr_file:`boards/nxp/hexiwear/hexiwear_mk64f12.dts` for an example
+See :zephyr_file:`boards/mikroe/hexiwear/hexiwear_mk64f12.dts` for an example
 :file:`BOARD.dts` file which supports this sample.
 
 Wiring

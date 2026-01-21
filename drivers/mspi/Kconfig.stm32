@@ -25,16 +25,6 @@ config MSPI_STM32_BUFFER_ALIGNMENT
 	  in order for DMA to work correctly. This represents the alignment
 	  of buffers required in bytes.
 
-config MSPI_STM32_MAX_FREQ
-	int "MSPI max frequency"
-	default 250000000 if SOC_SERIES_STM32H5X
-	default 280000000 if SOC_SERIES_STM32H7X
-	default 160000000 if SOC_SERIES_STM32U5X
-	default 120000000 if SOC_SERIES_STM32L4X
-	default 110000000 if SOC_SERIES_STM32L5X
-	default 96000000  if SOC_SERIES_STM32U3X
-	default 250000000
-
 config MSPI_STM32_OSPI
 	bool "STM32 OSPI Controller driver"
 	depends on DT_HAS_ST_STM32_OSPI_CONTROLLER_ENABLED

@@ -175,7 +175,9 @@ static int at_shell_cmd_handler(const struct shell *sh, size_t argc, char **argv
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(modem_sub_cmds,
-	SHELL_CMD_ARG(at, NULL, "at <command> <response>", at_shell_cmd_handler, 1, 2),
+	SHELL_CMD_ARG(at, NULL,
+		      SHELL_HELP("Send AT command", "<command> [expected_response]"),
+		      at_shell_cmd_handler, 1, 2),
 	SHELL_SUBCMD_SET_END
 );
 

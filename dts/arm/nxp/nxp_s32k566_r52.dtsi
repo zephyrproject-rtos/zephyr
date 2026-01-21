@@ -407,3 +407,12 @@
 &lpi2c3 {
 	interrupts = <GIC_SPI 135 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&lpe_ftm {
+	interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&canxl {
+	interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "rx_tx_mru_error";
+};

@@ -1,7 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,19 +23,23 @@
 #include <zephyr/bluetooth/classic/hfp_ag.h>
 #include <zephyr/settings/settings.h>
 
+#include "pcm.h"
+#include "codec.h"
+
 static struct bt_conn *default_conn;
-struct bt_hfp_ag *hfp_ag;
-struct bt_hfp_ag_call *hfp_ag_call;
+static struct bt_hfp_ag *hfp_ag;
+static struct bt_conn *active_sco_conn;
+static struct bt_hfp_ag_call *hfp_ag_call;
 
 static struct bt_br_discovery_param br_discover;
 static struct bt_br_discovery_result scan_result[CONFIG_BT_HFP_AG_DISCOVER_RESULT_COUNT];
 
-struct k_work discover_work;
-struct k_work_delayable call_connect_work;
-struct k_work_delayable call_disconnect_work;
+static struct k_work discover_work;
+static struct k_work_delayable call_connect_work;
+static struct k_work_delayable call_disconnect_work;
 
-struct k_work_delayable call_remote_ringing_work;
-struct k_work_delayable call_remote_accept_work;
+static struct k_work_delayable call_remote_ringing_work;
+static struct k_work_delayable call_remote_accept_work;
 
 NET_BUF_POOL_DEFINE(sdp_discover_pool, 10, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -58,13 +62,96 @@ static void ag_disconnected(struct bt_hfp_ag *ag)
 	printk("HFP AG disconnected!\n");
 }
 
+static void pcm_rx_cb(const uint8_t *data, uint32_t len)
+{
+	int err;
+
+	if (active_sco_conn == NULL) {
+		return;
+	}
+
+	err = codec_tx(data, len);
+	if (err != 0) {
+		printk("Failed to transmit PCM data: %d\n", err);
+	}
+}
+
+static void codec_rx_cb(const uint8_t *data, uint32_t len)
+{
+	int err;
+
+	if (active_sco_conn == NULL) {
+		return;
+	}
+
+	err = pcm_tx(data, len);
+	if (err != 0) {
+		printk("Failed to transmit Codec data: %d\n", err);
+	}
+}
+
 static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 {
-	printk("HFP AG SCO connected!\n");
+	struct bt_conn_info info;
+	int err;
+
+	printk("AG SCO connected\n");
+	active_sco_conn = bt_conn_ref(sco_conn);
+
+	err = bt_conn_get_info(sco_conn, &info);
+	if (err != 0) {
+		printk("Failed to get sco conn %p info\n", sco_conn);
+		return;
+	}
+
+	printk("SCO air mode %u\n", info.sco.air_mode);
+
+	err = pcm_init(info.sco.air_mode);
+	if (err != 0) {
+		printk("Failed to initialize PCM for air mode %u\n", info.sco.air_mode);
+		return;
+	}
+
+	err = codec_init(info.sco.air_mode);
+	if (err != 0) {
+		printk("Failed to initialize CODEC for air mode %u\n", info.sco.air_mode);
+		return;
+	}
+
+	err = pcm_rx_start(pcm_rx_cb);
+	if (err != 0) {
+		printk("Failed to start PCM\n");
+		return;
+	}
+
+	err = codec_rx_start(codec_rx_cb);
+	if (err != 0) {
+		printk("Failed to start CODEC\n");
+		return;
+	}
 }
 
 static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
+	int err;
+
+	if (active_sco_conn != sco_conn) {
+		return;
+	}
+
+	bt_conn_unref(active_sco_conn);
+	active_sco_conn = NULL;
+
+	err = pcm_rx_stop();
+	if (err != 0) {
+		printk("Failed to stop PCM\n");
+	}
+
+	err = codec_rx_stop();
+	if (err != 0) {
+		printk("Failed to stop CODEC\n");
+	}
+
 	printk("HFP AG SCO disconnected %u!\n", reason);
 }
 
@@ -106,6 +193,18 @@ static void ag_incoming(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const
 	k_work_cancel_delayable(&call_connect_work);
 }
 
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+static void ag_codec(struct bt_hfp_ag *ag, uint32_t ids)
+{
+	printk("AG received codec id bit map %x\n", ids);
+}
+
+static void ag_codec_negotiate(struct bt_hfp_ag *ag, int err)
+{
+	printk("AG codec negotiation result %d\n", err);
+}
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+
 static struct bt_hfp_ag_cb ag_cb = {
 	.connected = ag_connected,
 	.disconnected = ag_disconnected,
@@ -117,6 +216,10 @@ static struct bt_hfp_ag_cb ag_cb = {
 	.accept = ag_accept,
 	.reject = ag_reject,
 	.terminate = ag_terminate,
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+	.codec = ag_codec,
+	.codec_negotiate = ag_codec_negotiate,
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
 };
 
 static uint8_t sdp_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,

@@ -1,0 +1,81 @@
+# Copyright (c) 2025 Konrad Sikora
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteOn LTR-553 Digital Ambient Light and proximity sensor
+
+compatible: "liteon,ltr553"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  als-gain:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8, 48, 96]
+    description: |
+      This parameter adjusts the ADC gain factor, impacting the sensor's
+      light sensitivity range. The default setting, corresponding to the
+      register reset value (1X).
+
+  als-integration-time:
+    type: int
+    default: 100
+    enum: [100, 50, 200, 400, 150, 250, 300, 350]
+    description: |
+      ALS Integration Time is the measurement time for each ALS cycle.
+      Default value is a register reset value (100ms).
+
+  als-measurement-rate:
+    type: int
+    default: 500
+    enum: [50, 100, 200, 500, 1000, 2000]
+    description: |
+      ALS Measurement Rate is the rate at which the sensor
+      takes measurements in the active mode. This is the interval
+      between ALS_DATA registers update. ALS Measurement Repeat Rate
+      must be set to be equal or larger than the Integration Time.
+      If ALS Measurement Repeat Rate is set to be smaller than
+      ALS Integration Time, it will automatically be reset to be
+      equal to ALS Integration Time by the IC internally. Default value
+      is a register reset value (500ms).
+
+  ps-saturation-indicator:
+    type: boolean
+    description: |
+      Enable the PS saturation indicator flag in PS_DATA_1.
+
+  ps-led-pulse-frequency:
+    type: int
+    default: 60
+    enum: [30, 40, 50, 60, 70, 80, 90, 100]
+    description: |
+      PS LED pulse modulation frequency.
+
+  ps-led-duty-cycle:
+    type: int
+    default: 100
+    enum: [25, 50, 75, 100]
+    description: |
+      PS LED duty cycle.
+
+  ps-led-current:
+    type: int
+    default: 100
+    enum: [5, 10, 20, 50, 100]
+    description: |
+      PS LED peak current in milliamperes.
+
+  ps-n-pulses:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      Number of PS LED pulses emitted per measurement.
+
+  ps-measurement-rate:
+    type: int
+    default: 100
+    enum: [50, 70, 100, 200, 500, 1000, 2000, 10]
+    description: |
+      PS Measurement Repeat Rate is the interval between PS_DATA updates.

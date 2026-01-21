@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (C) 2024 Xiaomi Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,7 +159,7 @@ struct bt_avctp_event_cb {
 };
 
 /* Initialize AVCTP layer*/
-int bt_avctp_init(void);
+void bt_avctp_init(void);
 
 /* Application register with AVCTP layer */
 int bt_avctp_server_register(struct bt_avctp_server *server);

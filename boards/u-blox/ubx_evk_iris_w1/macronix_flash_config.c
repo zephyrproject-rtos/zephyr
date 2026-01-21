@@ -1,6 +1,7 @@
 /*
- * Copyright 2021-2024 NXP
- * All rights reserved.
+ * Copyright (c) 2021-2024 NXP
+ *
+ * Copyright (c) 2025 u-blox AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +21,7 @@ const fc_flexspi_nor_config_t flexspi_config = {
 			.seqNum = 1,
 			.seqId = 2,
 		},
-		.deviceModeArg = 0x0200,
+		.deviceModeArg = 0xC740,
 		.configCmdEnable = 0,
 		.deviceType = 0x1,
 		.sflashPadType = kSerialFlash_4Pads,
@@ -37,14 +38,9 @@ const fc_flexspi_nor_config_t flexspi_config = {
 				FC_FLEXSPI_4PAD, 0x18),
 			[1] = FC_FLEXSPI_LUT_SEQ(
 				FC_MODE8_SDR,
-				FC_FLEXSPI_4PAD, 0x00,
+				FC_FLEXSPI_4PAD, 0x0A,
 				FC_DUMMY_SDR,
 				FC_FLEXSPI_4PAD, 0x04),
-			[2] = FC_FLEXSPI_LUT_SEQ(
-				FC_READ_SDR,
-				FC_FLEXSPI_4PAD, 0x04,
-				FC_STOP_EXE,
-				FC_FLEXSPI_1PAD, 0x00),
 
 			/* Read Status */
 			[4 * 1 + 0] = FC_FLEXSPI_LUT_SEQ(
@@ -61,14 +57,6 @@ const fc_flexspi_nor_config_t flexspi_config = {
 				0x01, FC_WRITE_SDR,
 				FC_FLEXSPI_1PAD,
 				0x02),
-
-			/* Write Enable */
-			[4 * 3 + 0] = FC_FLEXSPI_LUT_SEQ(
-				FC_CMD_SDR,
-				FC_FLEXSPI_1PAD,
-				0x06, FC_STOP_EXE,
-				FC_FLEXSPI_1PAD,
-				0x00),
 
 			/* Sector erase */
 			[4 * 5 + 0] = FC_FLEXSPI_LUT_SEQ(
@@ -93,6 +81,7 @@ const fc_flexspi_nor_config_t flexspi_config = {
 				0x02, FC_RADDR_SDR,
 				FC_FLEXSPI_1PAD,
 				0x18),
+
 			[4 * 9 + 1] = FC_FLEXSPI_LUT_SEQ(
 				FC_WRITE_SDR,
 				FC_FLEXSPI_1PAD,
@@ -114,5 +103,5 @@ const fc_flexspi_nor_config_t flexspi_config = {
 	.sectorSize = 0x1000,
 	.ipcmdSerialClkFreq = 0,
 	.blockSize = 0x8000,
-	.fcb_fill = 0xFFFFFFFFU,
+	.fcb_fill[0] = 0xFFFFFFFFU,
 };

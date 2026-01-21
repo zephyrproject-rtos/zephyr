@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1673,22 +1674,31 @@ static int bt_sdp_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 
 void bt_sdp_init(void)
 {
+	__maybe_unused int err;
+
+	static bool initialized;
 	static struct bt_l2cap_server server = {
 		.psm = SDP_PSM,
 		.accept = bt_sdp_accept,
 		.sec_level = BT_SECURITY_L0,
 	};
-	int res;
 
-	res = bt_l2cap_br_server_register(&server);
-	if (res) {
-		LOG_ERR("L2CAP server registration failed with error %d", res);
+	if (initialized) {
+		return;
+	}
+
+	err = bt_l2cap_br_server_register(&server);
+	if ((err != 0) && (err != -EEXIST)) {
+		LOG_ERR("Failed to register SDP L2CAP server (error %d)", err);
+		return;
 	}
 
 	ARRAY_FOR_EACH(bt_sdp_client_pool, i) {
 		/* Locking semaphore initialized to 1 (unlocked) */
 		k_sem_init(&bt_sdp_client_pool[i].sem_lock, 1, 1);
 	}
+
+	initialized = true;
 }
 
 int bt_sdp_register_service(struct bt_sdp_record *service)

@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf5340_cpuappns_qkaa.dtsi>
+#include <arm/nordic/nrf5340_cpuapp_ns_qkaa.dtsi>
 #include "raytac_mdbt53v_db_40_nrf5340_cpuapp_common.dtsi"
 
 / {

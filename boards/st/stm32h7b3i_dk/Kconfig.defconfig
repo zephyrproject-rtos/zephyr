@@ -6,9 +6,6 @@
 
 if BOARD_STM32H7B3I_DK
 
-config INPUT
-	default y if LVGL
-
 # MEMC needs to be enabled in order to store
 # display buffer to external SDRAM connected to FMC
 config MEMC

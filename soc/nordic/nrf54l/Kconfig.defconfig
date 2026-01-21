@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NRF54LX
+if SOC_SERIES_NRF54L
 
 rsource "Kconfig.defconfig.nrf54l*"
 
@@ -52,4 +52,4 @@ endif # RISCV
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,grtc,clock-frequency) if NRF_GRTC_TIMER
 
-endif # SOC_SERIES_NRF54LX
+endif # SOC_SERIES_NRF54L

@@ -7,7 +7,7 @@
 
 # Statistics management group public API is exposed by MCUmgr API
 # interface, when Statistics management is enabled.
-zephyr_library()
+zephyr_library_named(mcumgr_grp_stat_mgmt)
 zephyr_library_sources(src/stat_mgmt.c)
 
 zephyr_library_include_directories(include)

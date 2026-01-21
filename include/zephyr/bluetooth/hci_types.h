@@ -4044,7 +4044,7 @@ struct bt_hci_le_cs_step_data_mode_1 {
 	union {
 		int16_t toa_tod_initiator;
 		int16_t tod_toa_reflector;
-	};
+	} __packed;
 	uint8_t packet_antenna;
 } __packed;
 
@@ -4062,7 +4062,7 @@ struct bt_hci_le_cs_step_data_mode_1_ss_rtt {
 	union {
 		int16_t toa_tod_initiator;
 		int16_t tod_toa_reflector;
-	};
+	} __packed;
 	uint8_t packet_antenna;
 	uint8_t packet_pct1[4];
 	uint8_t packet_pct2[4];
@@ -4101,7 +4101,7 @@ struct bt_hci_le_cs_step_data_mode_3 {
 	union {
 		int16_t toa_tod_initiator;
 		int16_t tod_toa_reflector;
-	};
+	} __packed;
 	uint8_t packet_antenna;
 	uint8_t antenna_permutation_index;
 	struct bt_hci_le_cs_step_data_tone_info tone_info[];
@@ -4121,7 +4121,7 @@ struct bt_hci_le_cs_step_data_mode_3_ss_rtt {
 	union {
 		int16_t toa_tod_initiator;
 		int16_t tod_toa_reflector;
-	};
+	} __packed;
 	uint8_t packet_antenna;
 	uint8_t packet_pct1[4];
 	uint8_t packet_pct2[4];

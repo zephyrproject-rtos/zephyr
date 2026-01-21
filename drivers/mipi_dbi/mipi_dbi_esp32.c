@@ -286,7 +286,7 @@ static int mipi_dbi_esp32_write_display(const struct device *dev,
 	struct mipi_dbi_esp32_data *drv_data = dev->data;
 	int ret;
 
-	if (pixfmt != PIXEL_FORMAT_RGB_565 && pixfmt != PIXEL_FORMAT_BGR_565) {
+	if (pixfmt != PIXEL_FORMAT_RGB_565 && pixfmt != PIXEL_FORMAT_RGB_565X) {
 		return -ENOTSUP;
 	}
 

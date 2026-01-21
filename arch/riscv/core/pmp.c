@@ -318,7 +318,7 @@ extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
  *
- * This performs some sanity checks before calling z_riscv_write_pmp_entries().
+ * This performs some coherence checks before calling z_riscv_write_pmp_entries().
  *
  * @param start Start of the PMP range to be written
  * @param end End (exclusive) of the PMP range to be written

@@ -17,8 +17,9 @@ static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 	uint32_t random_num;
 	int ret;
 
-	__ASSERT(device_is_ready(entropy_dev), "Entropy device %s not ready",
-		 entropy_dev->name);
+	if (!device_is_ready(entropy_dev)) {
+		return -ENODEV;
+	}
 
 	ret = entropy_get_entropy(entropy_dev, dst, outlen);
 

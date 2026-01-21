@@ -75,7 +75,7 @@ config BT_HCI_TX_PRIO
 
 choice BT_RECV_CONTEXT
 	prompt "BT RX Thread Selection"
-	default BT_RECV_WORKQ_SYS if SOC_SERIES_NRF51X
+	default BT_RECV_WORKQ_SYS if SOC_SERIES_NRF51
 	default BT_RECV_WORKQ_BT
 	help
 	  Selects in which context incoming low priority HCI packets are processed.
@@ -136,10 +136,10 @@ config BT_DRIVER_RX_HIGH_PRIO
 config BT_TX_PROCESSOR_THREAD
 	# This thread is used to send pending HCI Commands, ACL and ISO data to
 	# Controller.
-	bool
+	bool "TX processor thread. Disabling may cause deadlocks."
 	# This option is automatically selected for all platforms except nRF51
 	# due to limited RAM on nRF51 devices.
-	default y if !SOC_SERIES_NRF51X
+	default y if !SOC_SERIES_NRF51
 
 if BT_TX_PROCESSOR_THREAD
 
@@ -148,8 +148,12 @@ config BT_TX_PROCESSOR_THREAD_PRIO
 	default SYSTEM_WORKQUEUE_PRIORITY
 
 config BT_TX_PROCESSOR_STACK_SIZE
-	int
+	int "TX processor thread stack size"
 	default 1024
+	help
+	  Size of the TX processor thread stack. How much stack is needed depends on which
+	  and how many host features are enabled. One might try to decrease it to save RAM,
+	  or increase it if there are stack overflows.
 
 endif
 

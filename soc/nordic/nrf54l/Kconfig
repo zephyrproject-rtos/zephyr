@@ -3,12 +3,15 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF54LX
+config SOC_SERIES_NRF54L
 	select SOC_COMPATIBLE_NRF54LX
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select NRF_PLATFORM_LUMOS
+
+config SOC_SERIES_NRF54LX
+	select DEPRECATED
 
 config SOC_NRF54L_CPUAPP_COMMON
 	bool
@@ -68,7 +71,7 @@ config SOC_NRF54L15_CPUFLPR
 config SOC_NRF54LM20A_ENGA_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
-if SOC_SERIES_NRF54LX
+if SOC_SERIES_NRF54L
 
 config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 	bool "Disable trimming of the device"
@@ -91,4 +94,4 @@ config SOC_NRF54L_ANOMALY_56_WORKAROUND
 	help
 	   This option enables configuration workaround 56 for nRF54L Series SoCs.
 
-endif # SOC_SERIES_NRF54LX
+endif # SOC_SERIES_NRF54L

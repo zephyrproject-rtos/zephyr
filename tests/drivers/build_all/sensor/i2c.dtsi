@@ -1525,3 +1525,8 @@ test_i2c_ism6hg256x: ism6hg256x@c8 {
 	gyro-range = <LSM6DSV80X_DT_FS_2000DPS>;
 	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
+
+test_i2c_ltr553: ltr553@c9 {
+	compatible = "liteon,ltr553";
+	reg = <0xc9>;
+};

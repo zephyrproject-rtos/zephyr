@@ -539,6 +539,12 @@ config NXP_WIFI_STA_RECONNECT
 	  This option enables Station auto reconnection support,
 	  when disconnected from current associated Access Point.
 
+config NXP_WIFI_MAX_RECONNECT_LIMIT
+	int "Max reconnect limit"
+	default 5
+	help
+	  This option sets the max reconnect limit.
+
 config NXP_WIFI_AUTO_POWER_SAVE
 	bool "Automatically starts Power Save support"
 	default y
@@ -578,6 +584,12 @@ config NXP_WIFI_SCAN_CHANNEL_GAP
 	default 1
 	help
 	  This option sets the max scan channel gap time between two scan commands.
+
+config NXP_WIFI_MAX_RESCAN_LIMIT
+	int "Max scan limit"
+	default 30
+	help
+	  This option sets the max scan limit.
 
 endmenu
 

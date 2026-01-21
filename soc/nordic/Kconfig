@@ -43,6 +43,12 @@ config SOC_COMPATIBLE_NRF54LM20A
 config SOC_COMPATIBLE_NRF54LM20A_CPUAPP
 	bool
 
+config SOC_COMPATIBLE_NRF7120_ENGA
+	bool
+
+config SOC_COMPATIBLE_NRF7120_ENGA_CPUAPP
+	bool
+
 config SOC_FAMILY_NORDIC_NRF
 	select SOC_COMPATIBLE_NRF
 	select SOC_RESET_HOOK
@@ -63,8 +69,8 @@ rsource "*/Kconfig"
 
 config NRF_SOC_SECURE_SUPPORTED
 	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)
-	depends on !SOC_SERIES_NRF54HX
-	depends on !SOC_SERIES_NRF92X
+	depends on !SOC_SERIES_NRF54H
+	depends on !SOC_SERIES_NRF92
 	help
 	  Hidden function to indicate that the soc_secure functions are
 	  available.
@@ -98,7 +104,6 @@ config TFM_NRF_NS_STORAGE
 
 endif # BUILD_WITH_TFM
 
-
 config NRF_MPU_FLASH_REGION_SIZE
 	hex
 	default 0x1000
@@ -106,24 +111,27 @@ config NRF_MPU_FLASH_REGION_SIZE
 	help
 	  FLASH region size for the NRF_MPU peripheral.
 
+DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+DT_CHOSEN_ZEPHYR_FLASH_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_FLASH))
+
 config NRF_BPROT_FLASH_REGION_SIZE
 	hex
-	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH),erase-block-size)
+	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH_PATH),erase-block-size)
 	depends on HAS_HW_NRF_BPROT
 	help
 	  FLASH region size for the NRF_BPROT peripheral (nRF52).
 
 config NRF_ACL_FLASH_REGION_SIZE
 	hex
-	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH),erase-block-size)
+	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH_PATH),erase-block-size)
 	depends on HAS_HW_NRF_ACL
 	help
 	  FLASH region size for the NRF_ACL peripheral.
 
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_NRF54L_CPUAPP_COMMON || \
-		   SOC_SERIES_NRF91X
+	depends on SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_NRF54L_CPUAPP_COMMON || \
+		   SOC_SERIES_NRF91
 	default NRF_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
 	default NRF_APPROTECT_USE_UICR
 	help
@@ -139,7 +147,7 @@ config NRF_APPROTECT_DISABLE
 
 config NRF_APPROTECT_USE_UICR
 	bool "Use UICR"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF91X
+	depends on SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_SERIES_NRF91
 	help
 	  When this option is selected, the SystemInit() function loads the
 	  firmware branch state of the APPROTECT mechanism from UICR, so if
@@ -154,7 +162,7 @@ config NRF_APPROTECT_LOCK
 
 config NRF_APPROTECT_USER_HANDLING
 	bool "Allow user handling"
-	depends on !SOC_SERIES_NRF52X
+	depends on !SOC_SERIES_NRF52
 	help
 	  When this option is selected, the SystemInit() function does not
 	  touch the APPROTECT mechanism, allowing the user code to handle it
@@ -164,7 +172,7 @@ endchoice
 
 choice NRF_SECURE_APPROTECT_HANDLING
 	bool "Secure APPROTECT handling"
-	depends on SOC_NRF5340_CPUAPP || SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF91X
+	depends on SOC_NRF5340_CPUAPP || SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF91
 	default NRF_SECURE_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
 	default NRF_SECURE_APPROTECT_USE_UICR
 	help
@@ -180,7 +188,7 @@ config NRF_SECURE_APPROTECT_DISABLE
 
 config NRF_SECURE_APPROTECT_USE_UICR
 	bool "Use UICR"
-	depends on SOC_NRF5340_CPUAPP || SOC_SERIES_NRF91X
+	depends on SOC_NRF5340_CPUAPP || SOC_SERIES_NRF91
 	help
 	  When this option is selected, the SystemInit() function loads the
 	  firmware branch state of the secure APPROTECT mechanism from UICR,
@@ -196,7 +204,7 @@ config NRF_SECURE_APPROTECT_LOCK
 
 config NRF_SECURE_APPROTECT_USER_HANDLING
 	bool "Allow user handling"
-	depends on !SOC_SERIES_NRF52X
+	depends on !SOC_SERIES_NRF52
 	help
 	  When this option is selected, the SystemInit() function does not
 	  touch the secure APPROTECT mechanism, allowing the user code to
@@ -216,7 +224,7 @@ config NRF_SKIP_CLOCK_CONFIG
 
 config NRF_TRACE_PORT
 	bool "nRF TPIU"
-	depends on !SOC_SERIES_NRF51X
+	depends on !SOC_SERIES_NRF51
 	help
 	  Enable this option to initialize the TPIU (Trace Port Interface
 	  Unit) for tracing using a hardware probe. If disabled, the trace

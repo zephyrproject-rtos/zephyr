@@ -3,14 +3,24 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF91X
+config SOC_SERIES_NRF91
+	bool
 	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF91 MCU series
 
+config SOC_SERIES_NRF91X
+	bool
+	select SOC_SERIES_NRF91
+	help
+	  Deprecated Kconfig, use SOC_SERIES_NRF91 instead
+
+config SOC_SERIES
+	default "nrf91" if SOC_SERIES_NRF91
+
 config SOC_NRF9120
 	bool
-	select SOC_SERIES_NRF91X
+	select SOC_SERIES_NRF91
 
 config SOC_NRF9131_LACA
 	bool
@@ -22,7 +32,7 @@ config SOC_NRF9151_LACA
 
 config SOC_NRF9160
 	bool
-	select SOC_SERIES_NRF91X
+	select SOC_SERIES_NRF91
 
 config SOC_NRF9160_SICA
 	bool

@@ -19,5 +19,7 @@ config LORAWAN_NVM_NONE
 config LORAWAN_NVM_SETTINGS
 	bool "Settings based NVM"
 	depends on SETTINGS
+	# The settings-based NVM implementation currently only supports loramac-node
+	depends on LORA_MODULE_BACKEND_LORAMAC_NODE
 
 endchoice

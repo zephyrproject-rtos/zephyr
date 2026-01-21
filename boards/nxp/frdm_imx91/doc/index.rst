@@ -104,6 +104,13 @@ uSDHC2 for testing:
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
+There are multiple methods to program and debug Zephyr
+
+Option 1. Boot Zephyr by Using U-Boot Command
+=============================================
+
 U-Boot "go" command is used to load and kick Zephyr to Cortex-A55 Core.
 
 Stop the board at U-Boot command line, then need to download Zephyr binary image into
@@ -148,5 +155,56 @@ display the following console output:
     thread_b: Hello World from cpu 0 on frdm_imx91!
     thread_a: Hello World from cpu 0 on frdm_imx91!
     thread_b: Hello World from cpu 0 on frdm_imx91!
+
+Option 2. Boot Zephyr by Using JLink Runner
+===========================================
+
+Hardware Setup
+--------------
+
+The default runner for the board is JLink runner, there is one SWD connnector P14 on
+the FRDM-IMX91 board, connect P14 to J-Link debugger with Pin1 of P14 connect to SWDCLK,
+Pin2 of P14 connect to SWDIO, and Pin3 of P14 connect to GND, the VCC of J-Link debugger
+could connect to P1 of P12 connector.
+
+Flash and Run
+-------------
+
+Power up the board and stop the board at U-Boot command line.
+
+Then use "west flash" command to load the zephyr.bin image from the host computer and
+start the Zephyr application on A55 core.
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: frdm_imx91/mimx9131
+   :goals: flash
+
+Then the following log could be found on UART1 console:
+
+.. code-block:: console
+
+
+    *** Booting Zephyr OS build v4.3.0-1976-g8f0df404c2ee ***
+    Hello World! frdm_imx91/mimx9131
+
+Debug
+-----
+
+Power up the board and stop the board at U-Boot command line.
+
+Then use "west debug" command to load the zephyr.bin image from the host computer and
+debug the Zephyr application on A55 core.
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: frdm_imx91/mimx9131
+   :goals: debug
 
 .. include:: ../../common/board-footer.rst.inc

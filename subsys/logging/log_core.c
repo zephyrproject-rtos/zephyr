@@ -759,9 +759,9 @@ union log_msg_generic *z_log_msg_claim_oldest(k_timeout_t *backoff)
 				* long processing shall back off.
 				*/
 				if (timestamp_freq == sys_clock_hw_cycles_per_sec()) {
-					*backoff = K_TICKS(diff);
+					*backoff = K_CYC(diff);
 				} else {
-					*backoff = K_TICKS((diff * sys_clock_hw_cycles_per_sec()) /
+					*backoff = K_CYC((diff * sys_clock_hw_cycles_per_sec()) /
 							timestamp_freq);
 				}
 

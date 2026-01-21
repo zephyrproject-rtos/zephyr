@@ -1,0 +1,31 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/efr32bg22c224f512im40.dtsi>
+#include "rm126x_dvk.dtsi"
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+/ {
+	model = "Ezurio RM1261 DVK";
+	compatible = "ezurio,rm126x_dvk_rm1261", "silabs,efr32bg22";
+};
+
+&usart1 {
+	lora0: lora@0 {
+		compatible = "semtech,sx1261";
+		reg = <0>;
+		reset-gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpioa 7 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+		antenna-enable-gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+		dio1-gpios = <&gpioa 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
+};

@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Andes Technology Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_ANDES_AE350
+config SOC_SERIES_AE350
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_PMP
@@ -23,20 +23,29 @@ config SOC_SERIES_ANDES_AE350
 	select SOC_PER_CORE_INIT_HOOK if RISCV_CUSTOM_CSR_ANDES_PMA
 	imply XIP
 
-config SOC_ANDES_AE350
+if SOC_SERIES_AE350
+
+choice SOC_AE350_INTERRUPT_TYPE
+	prompt "Base interrupt type"
+	depends on SOC_AE350
+	default SOC_AE350_INTERRUPT_TYPE_PLIC
+
+config SOC_AE350_INTERRUPT_TYPE_PLIC
+	bool "PLIC"
 	select RISCV_HAS_PLIC
 
-config SOC_ANDES_AE350_CLIC
+config SOC_AE350_INTERRUPT_TYPE_CLIC
+	bool "CLIC"
 	select RISCV_HAS_CLIC
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	select CLIC_SMCLICCONFIG_EXT
 	select LEGACY_CLIC_MEMORYMAP_ACCESS
 
-if SOC_SERIES_ANDES_AE350
+endchoice
 
 choice
-prompt "Base CPU ISA options"
-default RV32I_CPU
+	prompt "Base CPU ISA options"
+	default RV32I_CPU
 
 config RV32I_CPU
 	bool "RISCV32 CPU ISA"
@@ -53,8 +62,8 @@ config RV64I_CPU
 endchoice
 
 choice
-prompt "FPU options"
-default NO_FPU
+	prompt "FPU options"
+	default NO_FPU
 
 config NO_FPU
 	bool "No FPU"
@@ -98,8 +107,7 @@ config SOC_ANDES_V5_IOCP
 	bool "Andes V5 I/O Coherence Port (IOCP)"
 	depends on DCACHE
 	help
-		Support Andes V5 I/O Coherence Port to handle cache coherency
-		between cache and external non-caching master, such as DMA
-		controller.
+	  Support Andes V5 I/O Coherence Port to handle cache coherency between cache and external
+	  non-caching master, such as DMA controller.
 
-endif # SOC_SERIES_ANDES_AE350
+endif # SOC_SERIES_AE350

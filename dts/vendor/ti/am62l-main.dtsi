@@ -1,0 +1,283 @@
+/*
+ * Device Tree Source for AM62L SoC Family Main Domain peripherals
+ *
+ * Copyright (C) 2025 Texas Instruments Incorporated - https://www.ti.com/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	main_uart0: serial@2800000 {
+		compatible = "ns16550";
+		reg = <0x02800000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_uart1: serial@2810000 {
+		compatible = "ns16550";
+		reg = <0x02810000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_uart2: serial@2820000 {
+		compatible = "ns16550";
+		reg = <0x02820000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_uart3: serial@2830000 {
+		compatible = "ns16550";
+		reg = <0x02830000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_uart4: serial@2840000 {
+		compatible = "ns16550";
+		reg = <0x02840000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_uart5: serial@2850000 {
+		compatible = "ns16550";
+		reg = <0x02850000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_uart6: serial@2860000 {
+		compatible = "ns16550";
+		reg = <0x02860000 0x100>;
+		clock-frequency = <48000000>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	main_i2c0: i2c@20000000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20000000 0x100>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_i2c1: i2c@20010000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20010000 0x100>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_i2c2: i2c@20020000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20020000 0x100>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_i2c3: i2c@20030000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20030000 0x100>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_gpio0: main-gpio0 {
+		#gpio-cells = <2>;
+		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
+			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,
+			   <4 0 &main_gpio0_0 4 0>, <5 0 &main_gpio0_0 5 0>,
+			   <6 0 &main_gpio0_0 6 0>, <7 0 &main_gpio0_0 7 0>,
+			   <8 0 &main_gpio0_0 8 0>, <9 0 &main_gpio0_0 9 0>,
+			   <10 0 &main_gpio0_0 10 0>, <11 0 &main_gpio0_0 11 0>,
+			   <12 0 &main_gpio0_0 12 0>, <13 0 &main_gpio0_0 13 0>,
+			   <14 0 &main_gpio0_0 14 0>, <15 0 &main_gpio0_0 15 0>,
+			   <16 0 &main_gpio0_0 16 0>, <17 0 &main_gpio0_0 17 0>,
+			   <18 0 &main_gpio0_0 18 0>, <19 0 &main_gpio0_0 19 0>,
+			   <20 0 &main_gpio0_0 20 0>, <21 0 &main_gpio0_0 21 0>,
+			   <22 0 &main_gpio0_0 22 0>, <23 0 &main_gpio0_0 23 0>,
+			   <24 0 &main_gpio0_0 24 0>, <25 0 &main_gpio0_0 25 0>,
+			   <26 0 &main_gpio0_0 26 0>, <27 0 &main_gpio0_0 27 0>,
+			   <28 0 &main_gpio0_0 28 0>, <29 0 &main_gpio0_0 29 0>,
+			   <30 0 &main_gpio0_0 30 0>, <31 0 &main_gpio0_0 31 0>,
+			   <32 0 &main_gpio0_1 0 0>, <33 0 &main_gpio0_1 1 0>,
+			   <34 0 &main_gpio0_1 2 0>, <35 0 &main_gpio0_1 3 0>,
+			   <36 0 &main_gpio0_1 4 0>, <37 0 &main_gpio0_1 5 0>,
+			   <38 0 &main_gpio0_1 6 0>, <39 0 &main_gpio0_1 7 0>,
+			   <40 0 &main_gpio0_1 8 0>, <41 0 &main_gpio0_1 9 0>,
+			   <42 0 &main_gpio0_1 10 0>, <43 0 &main_gpio0_1 11 0>,
+			   <44 0 &main_gpio0_1 12 0>, <45 0 &main_gpio0_1 13 0>,
+			   <46 0 &main_gpio0_1 14 0>, <47 0 &main_gpio0_1 15 0>,
+			   <48 0 &main_gpio0_1 16 0>, <49 0 &main_gpio0_1 17 0>,
+			   <50 0 &main_gpio0_1 18 0>, <51 0 &main_gpio0_1 19 0>,
+			   <52 0 &main_gpio0_1 20 0>, <53 0 &main_gpio0_1 21 0>,
+			   <54 0 &main_gpio0_1 22 0>, <55 0 &main_gpio0_1 23 0>,
+			   <56 0 &main_gpio0_1 24 0>, <57 0 &main_gpio0_1 25 0>,
+			   <58 0 &main_gpio0_1 26 0>, <59 0 &main_gpio0_1 27 0>,
+			   <60 0 &main_gpio0_1 28 0>, <61 0 &main_gpio0_1 29 0>,
+			   <62 0 &main_gpio0_1 30 0>, <63 0 &main_gpio0_1 31 0>,
+			   <64 0 &main_gpio0_2 0 0>, <65 0 &main_gpio0_2 1 0>,
+			   <66 0 &main_gpio0_2 2 0>, <67 0 &main_gpio0_2 3 0>,
+			   <68 0 &main_gpio0_2 4 0>, <69 0 &main_gpio0_2 5 0>,
+			   <70 0 &main_gpio0_2 6 0>, <71 0 &main_gpio0_2 7 0>,
+			   <72 0 &main_gpio0_2 8 0>, <73 0 &main_gpio0_2 9 0>,
+			   <74 0 &main_gpio0_2 10 0>, <75 0 &main_gpio0_2 11 0>,
+			   <76 0 &main_gpio0_2 12 0>, <77 0 &main_gpio0_2 13 0>,
+			   <78 0 &main_gpio0_2 14 0>, <79 0 &main_gpio0_2 15 0>,
+			   <80 0 &main_gpio0_2 16 0>, <81 0 &main_gpio0_2 17 0>,
+			   <82 0 &main_gpio0_2 18 0>, <83 0 &main_gpio0_2 17 0>,
+			   <84 0 &main_gpio0_2 20 0>, <85 0 &main_gpio0_2 21 0>,
+			   <86 0 &main_gpio0_2 22 0>, <87 0 &main_gpio0_2 23 0>,
+			   <88 0 &main_gpio0_2 24 0>, <89 0 &main_gpio0_2 25 0>,
+			   <90 0 &main_gpio0_2 26 0>, <91 0 &main_gpio0_2 27 0>,
+			   <92 0 &main_gpio0_2 28 0>, <93 0 &main_gpio0_2 29 0>,
+			   <94 0 &main_gpio0_2 30 0>, <95 0 &main_gpio0_2 31 0>,
+			   <96 0 &main_gpio0_3 0 0>, <97 0 &main_gpio0_3 1 0>,
+			   <98 0 &main_gpio0_3 2 0>, <99 0 &main_gpio0_3 3 0>,
+			   <100 0 &main_gpio0_3 4 0>, <101 0 &main_gpio0_3 5 0>,
+			   <102 0 &main_gpio0_3 6 0>, <103 0 &main_gpio0_3 7 0>,
+			   <104 0 &main_gpio0_3 8 0>, <105 0 &main_gpio0_3 9 0>,
+			   <106 0 &main_gpio0_3 10 0>, <107 0 &main_gpio0_3 11 0>,
+			   <108 0 &main_gpio0_3 12 0>, <109 0 &main_gpio0_3 13 0>,
+			   <110 0 &main_gpio0_3 14 0>, <111 0 &main_gpio0_3 15 0>,
+			   <112 0 &main_gpio0_3 16 0>, <113 0 &main_gpio0_3 17 0>,
+			   <114 0 &main_gpio0_3 18 0>, <115 0 &main_gpio0_3 17 0>,
+			   <116 0 &main_gpio0_3 20 0>, <117 0 &main_gpio0_3 21 0>,
+			   <118 0 &main_gpio0_3 22 0>, <119 0 &main_gpio0_3 23 0>,
+			   <120 0 &main_gpio0_3 24 0>, <121 0 &main_gpio0_3 25 0>,
+			   <122 0 &main_gpio0_3 26 0>, <123 0 &main_gpio0_3 27 0>,
+			   <124 0 &main_gpio0_3 28 0>, <125 0 &main_gpio0_3 29 0>;
+		gpio-map-mask = <0xffff 0x0>;
+		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	main_gpio0_0: gpio@600010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_1: gpio@600038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_2: gpio@600060 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600060 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_3: gpio@600088 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600088 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <30>;
+		status = "disabled";
+	};
+
+	main_rti0: watchdog@e000000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e000000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	main_rti1: watchdog@e010000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e010000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	main_spi0: spi@20100000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20100000 0x400>;
+		interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&scmi_pds 72>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		clocks = <&scmi_clk 299>;
+		ti,spi-num-cs = <4>;
+		status = "disabled";
+	};
+
+	main_spi1: spi@20110000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20110000 0x400>;
+		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&scmi_pds 73>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		clocks = <&scmi_clk 302>;
+		ti,spi-num-cs = <4>;
+		status = "disabled";
+	};
+
+	main_spi2: spi@20120000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20120000 0x400>;
+		interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&scmi_pds 74>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		clocks = <&scmi_clk 305>;
+		ti,spi-num-cs = <4>;
+		status = "disabled";
+	};
+
+	main_spi3: spi@20130000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20130000 0x400>;
+		interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&scmi_pds 75>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		clocks = <&scmi_clk 308>;
+		ti,spi-num-cs = <4>;
+		status = "disabled";
+	};
+};

@@ -540,7 +540,7 @@
 			interrupts = <59 0>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 				 <&rcc STM32_SRC_HSI16 RNG_SEL(2)>;
-			nist-config = <0xf00d>;
+			nist-config = <0xf00d00>;
 			health-test-config = <0xaac7>;
 			status = "disabled";
 		};

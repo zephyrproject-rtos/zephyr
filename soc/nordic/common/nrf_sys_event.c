@@ -16,7 +16,7 @@
 #endif
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if CONFIG_SOC_SERIES_NRF54HX
+#if CONFIG_SOC_SERIES_NRF54H
 
 /*
  * The 54HX is not yet supported by an nrfx driver nor the system controller so

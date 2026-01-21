@@ -51,7 +51,9 @@
 		uart2: uart@400f2c00 {
 			reg = <0x400f2c00 0x400>;
 			interrupts = <183 2>;
-			girqs = <15 25>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 25)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 28)>;
+			ldn = <11>;
 			clock-frequency = <1843200>;
 			current-speed = <115200>;
 			status = "disabled";
@@ -60,7 +62,9 @@
 		uart3: uart@400f3000 {
 			reg = <0x400f3000 0x400>;
 			interrupts = <184 2>;
-			girqs = <15 26>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(15, 26)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 30)>;
+			ldn = <12>;
 			clock-frequency = <1843200>;
 			current-speed = <115200>;
 			status = "disabled";
