@@ -7,17 +7,6 @@ description: |
   It is designed to operate bipolar stepper motors in full-, half-, quarter-, and sixteenth-step
   modes.
 
-  Example:
-  a4979: a4979 {
-      status = "okay";
-      compatible = "allegro,a4979";
-      micro-step-res = <2>;
-      reset-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
-      en-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
-      m0-gpios = <&gpiod 13 0>;
-      m1-gpios = <&gpiod 12 0>;
-  };
-
 compatible: "allegro,a4979"
 
 include:
@@ -42,3 +31,15 @@ properties:
     type: phandle-array
     required: true
     description: Reset pin
+
+examples:
+  - |
+    a4979: a4979 {
+        status = "okay";
+        compatible = "allegro,a4979";
+        micro-step-res = <2>;
+        reset-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
+        en-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+        m0-gpios = <&gpiod 13 0>;
+        m1-gpios = <&gpiod 12 0>;
+    };

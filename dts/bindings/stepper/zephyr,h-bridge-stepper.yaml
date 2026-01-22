@@ -5,16 +5,6 @@
 description: |
   GPIO Stepper Controller for darlington transistor arrays or dual H-bridge
 
-  Example:
-    /* Lead A is connected Lead C and Lead B is connected to Lead D*/
-    h_bridge_stepper: h_bridge_stepper {
-        compatible = "zephyr,h-bridge-stepper";
-        gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,  /* Lead A1/A */
-                <&gpioc 7 GPIO_ACTIVE_HIGH>,  /* Lead B1/B */
-                <&gpiob 0 GPIO_ACTIVE_HIGH>,  /* Lead A2/C */
-                <&gpioa 7 GPIO_ACTIVE_HIGH>;  /* Lead B2/D */
-    };
-
 compatible: "zephyr,h-bridge-stepper"
 
 properties:
@@ -52,3 +42,14 @@ properties:
       Note: The counter needs to support both set_top_value functionalities:
             - Setting a new top value
             - Attaching an ISR to the turnaround
+
+examples:
+  - |
+    /* Lead A is connected Lead C and Lead B is connected to Lead D*/
+    h_bridge_stepper: h_bridge_stepper {
+        compatible = "zephyr,h-bridge-stepper";
+        gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,  /* Lead A1/A */
+                <&gpioc 7 GPIO_ACTIVE_HIGH>,  /* Lead B1/B */
+                <&gpiob 0 GPIO_ACTIVE_HIGH>,  /* Lead A2/C */
+                <&gpioa 7 GPIO_ACTIVE_HIGH>;  /* Lead B2/D */
+    };

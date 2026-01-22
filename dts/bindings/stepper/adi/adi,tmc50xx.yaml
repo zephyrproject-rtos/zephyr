@@ -4,8 +4,45 @@
 description: |
   Analog Devices TMC50XX Stepper Motor Controller
 
-  Example:
+compatible: "adi,tmc50xx"
 
+include:
+  - name: spi-device.yaml
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - poscmp-enable
+      - test-mode
+      - lock-gconf
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The frequency of the clock signal provided to the TMC50XX.
+      This is used for real world conversion.
+
+      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[50xx] * ( fCLK[Hz]/2 / 2^23 )
+            where v[50xx] is the value written to the TMC50XX.
+
+  shaft1:
+    type: boolean
+    description: |
+      Inverse motor 1 direction
+
+  shaft2:
+    type: boolean
+    description: |
+      Inverse motor 2 direction
+
+child-binding:
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+
+examples:
+  - |
     &spi0 {
         /* SPI bus options here, not shown */
 
@@ -49,41 +86,3 @@ description: |
             };
         };
     };
-
-
-compatible: "adi,tmc50xx"
-
-include:
-  - name: spi-device.yaml
-  - name: adi,trinamic-gconf.yaml
-    property-allowlist:
-      - poscmp-enable
-      - test-mode
-      - lock-gconf
-
-properties:
-  clock-frequency:
-    type: int
-    required: true
-    description: |
-      The frequency of the clock signal provided to the TMC50XX.
-      This is used for real world conversion.
-
-      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[50xx] * ( fCLK[Hz]/2 / 2^23 )
-            where v[50xx] is the value written to the TMC50XX.
-
-  shaft1:
-    type: boolean
-    description: |
-      Inverse motor 1 direction
-
-  shaft2:
-    type: boolean
-    description: |
-      Inverse motor 2 direction
-
-child-binding:
-  include:
-    - name: base.yaml
-      property-allowlist:
-        - reg

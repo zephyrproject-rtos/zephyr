@@ -4,14 +4,6 @@
 description: |
   Analog Devices TMC2209 stepper motor driver.
 
-  Example:
-  tmc2209: tmc2209 {
-      compatible = "adi,tmc2209";
-      enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
-      m0-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-      m1-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
-  }
-
 compatible: "adi,tmc2209"
 
 include:
@@ -35,3 +27,12 @@ properties:
     description: |
       If present, the stepper motor controller supports dual edge step signals.
       This means that the step signal can be toggled on both the rising and falling edge.
+
+examples:
+  - |
+    tmc2209: tmc2209 {
+        compatible = "adi,tmc2209";
+        enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+        m0-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+        m1-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+    }
