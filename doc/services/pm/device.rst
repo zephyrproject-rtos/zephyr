@@ -310,7 +310,7 @@ for brevity, in real drivers they must be handled.
             * The device driver would keep the bus ACTIVE while the device is
             * ACTIVE in cases of high throughput or unsolicitet data on the
             * bus, to avoid inefficient RESUME/SUSPEND cycles of the bus
-            * for every transaction, and allowing reception of unsolicitet
+            * for every transaction, and allowing reception of unsolicited
             * data on buses like UART.
             */
            (void)pm_device_runtime_put(config->bus);
@@ -503,7 +503,7 @@ for brevity, in real drivers they must be handled.
 Device Model with Partial Device Power Management Support
 *********************************************************
 
-If :kconfig:option:`CONFIG_PM_DEVICE` is not enabled, The device
+If :kconfig:option:`CONFIG_PM_DEVICE` is not enabled, the device
 power state is tied to the devices initialization state.
 
 Once a device is initialized, the device driver PM action hook is
