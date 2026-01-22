@@ -5437,11 +5437,10 @@ VFS:
     - filesystem
 
 WCH Platforms:
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - nzmichaelh
     - kholia
-  collaborators:
     - VynDragon
   files:
     - boards/wch/
