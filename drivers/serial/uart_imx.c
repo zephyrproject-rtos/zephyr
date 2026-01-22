@@ -232,11 +232,6 @@ static int uart_imx_irq_is_pending(const struct device *dev)
 		UART_GetStatusFlag(uart, uartStatusTxReady);
 }
 
-static int uart_imx_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_imx_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *cb_data)
@@ -283,7 +278,6 @@ static DEVICE_API(uart, uart_imx_driver_api) = {
 	.irq_err_enable   = uart_imx_irq_err_enable,
 	.irq_err_disable  = uart_imx_irq_err_disable,
 	.irq_is_pending   = uart_imx_irq_is_pending,
-	.irq_update		  = uart_imx_irq_update,
 	.irq_callback_set = uart_imx_irq_callback_set,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 

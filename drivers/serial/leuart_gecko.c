@@ -215,11 +215,6 @@ static int leuart_gecko_irq_is_pending(const struct device *dev)
 	return leuart_gecko_irq_tx_ready(dev) || leuart_gecko_irq_rx_ready(dev);
 }
 
-static int leuart_gecko_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void leuart_gecko_irq_callback_set(const struct device *dev,
 					  uart_irq_callback_user_data_t cb,
 					  void *cb_data)
@@ -312,7 +307,6 @@ static DEVICE_API(uart, leuart_gecko_driver_api) = {
 	.irq_err_enable = leuart_gecko_irq_err_enable,
 	.irq_err_disable = leuart_gecko_irq_err_disable,
 	.irq_is_pending = leuart_gecko_irq_is_pending,
-	.irq_update = leuart_gecko_irq_update,
 	.irq_callback_set = leuart_gecko_irq_callback_set,
 #endif
 };

@@ -240,11 +240,6 @@ static int uart_bcm2711_irq_is_pending(const struct device *dev)
 		bcm2711_mu_lowlevel_can_putc(uart_data->uart_addr);
 }
 
-static int uart_bcm2711_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_bcm2711_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *cb_data)
@@ -289,7 +284,6 @@ static DEVICE_API(uart, uart_bcm2711_driver_api) = {
 	.irq_rx_disable   = uart_bcm2711_irq_rx_disable,
 	.irq_rx_ready	  = uart_bcm2711_irq_rx_ready,
 	.irq_is_pending   = uart_bcm2711_irq_is_pending,
-	.irq_update		  = uart_bcm2711_irq_update,
 	.irq_callback_set = uart_bcm2711_irq_callback_set,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 

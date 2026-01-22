@@ -1136,11 +1136,6 @@ static int uart_stm32_irq_is_pending(const struct device *dev)
 		 LL_USART_IsEnabledIT_TC(usart)));
 }
 
-static int uart_stm32_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_stm32_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
@@ -2171,7 +2166,6 @@ static DEVICE_API(uart, uart_stm32_driver_api) = {
 	.irq_err_enable = uart_stm32_irq_err_enable,
 	.irq_err_disable = uart_stm32_irq_err_disable,
 	.irq_is_pending = uart_stm32_irq_is_pending,
-	.irq_update = uart_stm32_irq_update,
 	.irq_callback_set = uart_stm32_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_UART_ASYNC_API

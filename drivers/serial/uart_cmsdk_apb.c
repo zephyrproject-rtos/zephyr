@@ -416,18 +416,6 @@ static int uart_cmsdk_apb_irq_is_pending(const struct device *dev)
 }
 
 /**
- * @brief Update the interrupt status
- *
- * @param dev UART device struct
- *
- * @return always 1
- */
-static int uart_cmsdk_apb_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
-/**
  * @brief Set the callback function pointer for an Interrupt.
  *
  * @param dev UART device structure
@@ -479,7 +467,6 @@ static DEVICE_API(uart, uart_cmsdk_apb_driver_api) = {
 	.irq_err_enable = uart_cmsdk_apb_irq_err_enable,
 	.irq_err_disable = uart_cmsdk_apb_irq_err_disable,
 	.irq_is_pending = uart_cmsdk_apb_irq_is_pending,
-	.irq_update = uart_cmsdk_apb_irq_update,
 	.irq_callback_set = uart_cmsdk_apb_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

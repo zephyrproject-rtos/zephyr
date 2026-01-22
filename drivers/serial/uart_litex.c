@@ -267,11 +267,6 @@ static int uart_litex_irq_is_pending(const struct device *dev)
 	return (uart_litex_irq_tx_ready(dev) || uart_litex_irq_rx_ready(dev));
 }
 
-static int uart_litex_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 /**
  * @brief Set the callback function pointer for IRQ.
  *
@@ -317,7 +312,6 @@ static DEVICE_API(uart, uart_litex_driver_api) = {
 	.irq_err_enable		= uart_litex_irq_err,
 	.irq_err_disable	= uart_litex_irq_err,
 	.irq_is_pending		= uart_litex_irq_is_pending,
-	.irq_update		= uart_litex_irq_update,
 	.irq_callback_set	= uart_litex_irq_callback_set
 #endif
 };

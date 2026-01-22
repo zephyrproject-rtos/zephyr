@@ -210,11 +210,6 @@ static int loguart_ameba_irq_is_pending(const struct device *dev)
 	return loguart_ameba_irq_tx_ready(dev) || loguart_ameba_irq_rx_ready(dev);
 }
 
-static int loguart_ameba_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void loguart_ameba_irq_callback_set(const struct device *dev,
 					   uart_irq_callback_user_data_t cb, void *cb_data)
 {
@@ -297,7 +292,6 @@ static const struct uart_driver_api loguart_ameba_driver_api = {
 	.irq_err_enable = loguart_ameba_irq_err_enable,
 	.irq_err_disable = loguart_ameba_irq_err_disable,
 	.irq_is_pending = loguart_ameba_irq_is_pending,
-	.irq_update = loguart_ameba_irq_update,
 	.irq_callback_set = loguart_ameba_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

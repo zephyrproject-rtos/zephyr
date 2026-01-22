@@ -348,11 +348,6 @@ static int mcux_flexcomm_irq_is_pending(const struct device *dev)
 		|| mcux_flexcomm_irq_rx_pending(dev));
 }
 
-static int mcux_flexcomm_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void mcux_flexcomm_irq_callback_set(const struct device *dev,
 					   uart_irq_callback_user_data_t cb,
 					   void *cb_data)
@@ -1276,7 +1271,6 @@ static DEVICE_API(uart, mcux_flexcomm_driver_api) = {
 	.irq_err_enable = mcux_flexcomm_irq_err_enable,
 	.irq_err_disable = mcux_flexcomm_irq_err_disable,
 	.irq_is_pending = mcux_flexcomm_irq_is_pending,
-	.irq_update = mcux_flexcomm_irq_update,
 	.irq_callback_set = mcux_flexcomm_irq_callback_set,
 #endif
 #ifdef CONFIG_UART_ASYNC_API

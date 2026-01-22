@@ -320,12 +320,6 @@ int z_uart_async_to_irq_irq_is_pending(const struct device *dev)
 	return tx_rdy || rx_rdy || err_pending;
 }
 
-/** Interrupt driven interrupt update function */
-int z_uart_async_to_irq_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 /** Set the irq callback function */
 void z_uart_async_to_irq_irq_callback_set(const struct device *dev,
 			 uart_irq_callback_user_data_t cb,

@@ -104,7 +104,6 @@ static void np_uart_irq_rx_enable(const struct device *dev);
 static void np_uart_irq_rx_disable(const struct device *dev);
 static int np_uart_irq_rx_ready(const struct device *dev);
 static int np_uart_irq_is_pending(const struct device *dev);
-static int np_uart_irq_update(const struct device *dev);
 static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				     void *cb_data);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -131,7 +130,6 @@ static DEVICE_API(uart, np_uart_driver_api) = {
 	.irq_rx_disable   = np_uart_irq_rx_disable,
 	.irq_rx_ready     = np_uart_irq_rx_ready,
 	.irq_is_pending   = np_uart_irq_is_pending,
-	.irq_update       = np_uart_irq_update,
 	.irq_callback_set = np_uart_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
@@ -646,13 +644,6 @@ static int np_uart_irq_is_pending(const struct device *dev)
 {
 	return np_uart_irq_rx_ready(dev) ||
 		np_uart_irq_tx_ready(dev);
-}
-
-static int np_uart_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
 }
 
 static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
