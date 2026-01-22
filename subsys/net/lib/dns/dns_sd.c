@@ -801,7 +801,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_a
 	rsp->arcount++;
 	offset += r;
 
-	if (addr6 != NULL) {
+	if (addr6 != NULL && !net_ipv6_is_addr_unspecified(addr6)) {
 		r = add_aaaa_record(inst, DNS_SD_AAAA_TTL, host_offset, addr6->s6_addr, buf, offset,
 				    buf_size - offset); /* LCOV_EXCL_LINE */
 		if (r < 0) {
@@ -812,7 +812,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_a
 		offset += r;
 	}
 
-	if (addr4 != NULL) {
+	if (addr4 != NULL && !net_ipv4_is_addr_unspecified(addr4)) {
 		tmp = net_htonl(*(addr4->s4_addr32));
 		r = add_a_record(inst, DNS_SD_A_TTL, host_offset, tmp, buf, offset,
 				 buf_size - offset);
