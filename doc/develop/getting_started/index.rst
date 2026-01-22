@@ -575,7 +575,7 @@ If you're using blinky, the LED will start to blink as shown in this figure:
    :width: 400px
    :name: reelboard-blinky
 
-   Phytec :ref:`reel_board <reel_board>` running blinky
+   Phytec :zephyr:board:`reel_board <reel_board>` running blinky
 
 Next Steps
 **********

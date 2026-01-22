@@ -300,7 +300,7 @@ Boards & SoC Support
    * :zephyr:board:`NXP FRDM-MCXW71 <frdm_mcxw71>` (``frdm_mcxw71``)
    * :zephyr:board:`NXP i.MX95 EVK <imx95_evk>` (``imx95_evk``)
    * :zephyr:board:`NXP MIMXRT1180-EVK <mimxrt1180_evk>` (``mimxrt1180_evk``)
-   * :ref:`PHYTEC phyBOARD-Nash i.MX93 <phyboard_nash>` (``phyboard_nash``)
+   * :zephyr:board:`PHYTEC phyBOARD-Nash i.MX93 <phyboard_nash>` (``phyboard_nash``)
    * :zephyr:board:`Renesas RA2A1 Evaluation Kit <ek_ra2a1>` (``ek_ra2a1``)
    * :zephyr:board:`Renesas RA4E2 Evaluation Kit <ek_ra4e2>` (``ek_ra4e2``)
    * :zephyr:board:`Renesas RA4M2 Evaluation Kit <ek_ra4m2>` (``ek_ra4m2``)
@@ -318,7 +318,7 @@ Boards & SoC Support
    * :zephyr:board:`Renesas RA8T1 Motor Control Kit <mck_ra8t1>` (``mck_ra8t1``)
    * :zephyr:board:`Renode Cortex-R8 Virtual <cortex_r8_virtual>` (``cortex_r8_virtual``)
    * :zephyr:board:`Seeed XIAO ESP32-S3 Sense Variant <xiao_esp32s3>`: ``xiao_esp32s3``.
-   * :ref:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
+   * :zephyr:board:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
    * :zephyr:board:`SiLabs SiM3U1xx 32-bit MCU USB Development Kit <sim3u1xx_dk>` (``sim3u1xx_dk``)
    * :zephyr:board:`SparkFun Thing Plus Matter <sparkfun_thing_plus_matter_mgm240p>` (``sparkfun_thing_plus_matter_mgm240p``)
    * :zephyr:board:`ST Nucleo G431KB <nucleo_g431kb>` (``nucleo_g431kb``)
@@ -345,9 +345,9 @@ Boards & SoC Support
     See ``samples/boards/st/mco`` sample.
   * STM32: STM32CubeProgrammer is now the default runner on all STMicroelectronics STM32 boards.
   * Removed the ``nrf54l15pdk`` board, use :zephyr:board:`nrf54l15dk` instead.
-  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
+  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :zephyr:board:`phyboard_pollux<phyboard_pollux>`,
     with the old name marked as deprecated.
-  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
+  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :zephyr:board:`phyboard_polis<phyboard_polis>`,
     with the old name marked as deprecated.
   * The board qualifier for MPS3/AN547 is changed from:
 
