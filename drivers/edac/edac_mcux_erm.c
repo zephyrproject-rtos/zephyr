@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 
 LOG_MODULE_REGISTER(edac_mcux_erm, CONFIG_EDAC_LOG_LEVEL);
 
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 #include <fsl_eim.h>
 
 #define EDAC_NXP_SINGLE_BIT_ERROR_MASK 0x1
@@ -29,15 +29,15 @@ struct edac_nxp_eim_channel {
 	uint8_t channel_id;
 	uint8_t erm_channel_id;
 };
-#endif /* CONFIG_EDAC_ERROR_INJECT */
+#endif /* CONFIG_EDAC_NXP_ERROR_INJECT */
 
 struct edac_nxp_config {
 	ERM_Type *erm_base;
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 	EIM_Type *eim_base;
 	const struct edac_nxp_eim_channel *eim_channels;
 	uint8_t eim_channel_num;
-#endif /* CONFIG_EDAC_ERROR_INJECT */
+#endif /* CONFIG_EDAC_NXP_ERROR_INJECT */
 	const int *erm_channels;
 	uint8_t erm_channel_num;
 	void (*irq_config_func)(const struct device *dev);
@@ -45,11 +45,11 @@ struct edac_nxp_config {
 
 struct edac_nxp_data {
 	edac_notify_callback_f cb;
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 	uint32_t eim_channel;
 	uint32_t eim_channel_word;
 	uint32_t inject_error_type;
-#endif /* CONFIG_EDAC_ERROR_INJECT */
+#endif /* CONFIG_EDAC_NXP_ERROR_INJECT */
 	uint32_t erm_channel;
 };
 
@@ -68,7 +68,7 @@ static bool check_erm_channel(const int *erm_channels, size_t size, uint32_t val
 	return false;
 }
 
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 static bool check_eim_channel(const struct edac_nxp_eim_channel *eim_channels, size_t size,
 			      uint32_t value)
 {
@@ -194,7 +194,7 @@ static int inject_error_trigger(const struct device *dev)
 		eim_channel_data->start_address + eim_channel_data->size - 1);
 	return 0;
 }
-#endif /* CONFIG_EDAC_ERROR_INJECT */
+#endif /* CONFIG_EDAC_NXP_ERROR_INJECT */
 
 static int errors_cor_get(const struct device *dev)
 {
@@ -259,7 +259,7 @@ static void edac_nxp_isr(const struct device *dev)
 }
 
 static DEVICE_API(edac, edac_nxp_api) = {
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 	/* Error Injection functions */
 	.inject_set_param1 = inject_set_param1,
 	.inject_get_param1 = inject_get_param1,
@@ -268,7 +268,7 @@ static DEVICE_API(edac, edac_nxp_api) = {
 	.inject_set_error_type = inject_set_error_type,
 	.inject_get_error_type = inject_get_error_type,
 	.inject_error_trigger = inject_error_trigger,
-#endif /* CONFIG_EDAC_ERROR_INJECT */
+#endif /* CONFIG_EDAC_NXP_ERROR_INJECT */
 
 	/* Get error stats */
 	.errors_cor_get = errors_cor_get,
@@ -282,12 +282,12 @@ static int edac_nxp_init(const struct device *dev)
 	const struct edac_nxp_config *config = dev->config;
 	struct edac_nxp_data *data = dev->data;
 
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 	EIM_Init(config->eim_base);
 	EIM_EnableGlobalErrorInjection(config->eim_base, true);
 	data->eim_channel_word = 1U;
 	LOG_INF("EIM driver initialized");
-#endif /* CONFIG_EDAC_ERROR_INJECT */
+#endif /* CONFIG_EDAC_NXP_ERROR_INJECT */
 
 	ERM_Init(config->erm_base);
 	if (!check_erm_channel(config->erm_channels, config->erm_channel_num,
@@ -308,7 +308,7 @@ static int edac_nxp_init(const struct device *dev)
 
 #define DT_DRV_COMPAT nxp_erm
 
-#ifdef EDAC_NXP_ERROR_INJECT
+#ifdef CONFIG_EDAC_NXP_ERROR_INJECT
 /* Initializes an element of the eim channel device pointer array */
 #define NXP_EIM_CHANNEL_DEV_ARRAY_INIT(node)                                                       \
 	{                                                                                          \
