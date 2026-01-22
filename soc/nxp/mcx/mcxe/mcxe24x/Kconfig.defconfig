@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXE24X
@@ -26,5 +26,8 @@ configdefault CACHE_MANAGEMENT
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
+
+config WDT_DISABLE_AT_BOOT
+	default y
 
 endif # SOC_SERIES_MCXE24X
