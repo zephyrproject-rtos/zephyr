@@ -1,4 +1,4 @@
-.. _96b_stm32_sensor_mez:
+.. zephyr:board:: 96b_stm32_sensor_mez
 
 96Boards STM32 Sensor Mezzanine
 ###############################
@@ -46,35 +46,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_stm32_sensor_mez board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-
-The default board configuration can be found in
-:zephyr_file:`boards/96boards/stm32_sensor_mez/96b_stm32_sensor_mez_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
