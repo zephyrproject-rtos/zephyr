@@ -136,7 +136,7 @@ if POWER_DOMAIN_ARM_SCMI
 
 config POWER_DOMAIN_ARM_SCMI_INIT_PRIORITY
 	int "ARM SCMI PD driver init priority"
-	default 10
+	default 30
 	help
 	  ARM SCMI PD driver initialization priority.
 
