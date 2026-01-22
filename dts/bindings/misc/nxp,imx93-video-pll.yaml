@@ -1,0 +1,42 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP i.MX93 Video PLL controller
+
+compatible: "nxp,imx93-video-pll"
+
+include: base.yaml
+
+properties:
+  rdiv:
+    type: int
+    required: true
+    description: Reference divider value.
+
+  mfi:
+    type: int
+    required: true
+    description: Integer multiplier factor.
+
+  mfn:
+    type: int
+    required: true
+    description: Fractional numerator.
+
+  mfd:
+    type: int
+    required: true
+    description: Fractional denominator.
+
+  odiv:
+    type: int
+    required: true
+    description: Output divider value.
+
+  pll-frequency:
+    type: int
+    required: true
+    description: Target PLL output frequency in Hz.

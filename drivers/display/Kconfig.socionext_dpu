@@ -1,0 +1,67 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_SOCIONEXT_DPU
+	bool "Socionext DPU driver"
+	default y
+	depends on DT_HAS_SOCIONEXT_DPU_ENABLED
+	help
+	  Enable support for dpu driver.
+
+if DISPLAY_SOCIONEXT_DPU
+
+config DPU_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 2
+	range 0 2
+	help
+	  Number of framebuffers to allocate in DPU driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
+	  NOTE: when no framebuffers are allocated, the DPU will be
+	  set to display an empty buffer during initialization. This means
+	  the display will show what is effectively a dump of
+	  system RAM until a new framebuffer is written. If the security
+	  implications of this concern you, leave at least one driver
+	  framebuffer enabled.
+
+config DPU_FB_SIZE
+	int "Framebuffer size required by the dpu driver"
+	default 10108800
+	help
+	  DPU driver allocates framebuffers to support partial display updates.
+	  The framebuffer size is computed as : panel_width * panel_height * bpp.
+	  The default value is set to afford for a default resolution of 1080x2340 and
+	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
+	  according to the actual used resolution and format to optimize the heap size.
+
+config DPU_EXTERNAL_FB_MEM
+	bool "Use external memory for framebuffer"
+	imply MEMC
+	help
+	  Use external memory for framebuffer. Configures the DPU to write
+	  framebuffer data to a memory mapped external device.
+
+	  Note that no specific linker section is used for this framebuffer, so
+	  if the application uses the external memory for other purposes, care
+	  should be taken to ensure that the memory allocated for the DPU
+	  does not overlap with other data. Each allocated DPU buffer will
+	  utilize (panel_width * panel_height * bytes_per_pixel) bytes of data,
+	  and buffers will be allocated contiguously.
+
+if DPU_EXTERNAL_FB_MEM
+
+config DPU_EXTERNAL_FB_ADDR
+	hex "DPU framebuffer address"
+	help
+	  Address of memory mapped external framebuffer.
+	  Must be 32 byte aligned
+
+endif # DPU_EXTERNAL_FB_MEM
+
+endif # DISPLAY_SOCIONEXT_DPU

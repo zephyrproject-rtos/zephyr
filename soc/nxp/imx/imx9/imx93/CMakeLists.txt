@@ -7,7 +7,6 @@ if(CONFIG_SOC_MIMX9352_A55)
   zephyr_sources_ifdef(CONFIG_ARM_MMU a55/mmu_regions.c)
 
   zephyr_sources(common_clock_set.c)
-  zephyr_sources(a55/soc.c)
   set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm64/scripts/linker.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_MIMX9352_M33)
   zephyr_include_directories(.)
