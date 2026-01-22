@@ -771,13 +771,14 @@ int hostapd_ap_status(const struct device *dev, struct wifi_iface_status *status
 
 	hw_mode = iface->current_mode;
 
-	status->link_mode = conf->ieee80211ax                          ? WIFI_6
-			    : conf->ieee80211ac                        ? WIFI_5
-			    : conf->ieee80211n                         ? WIFI_4
-			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211G ? WIFI_3
-			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211A ? WIFI_2
-			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211B ? WIFI_1
-								       : WIFI_0;
+	status->link_mode = (hw_mode->he_capab[IEEE80211_MODE_AP].he_supported
+			    && conf->ieee80211ax)                       ? WIFI_6
+			    : (hw_mode->vht_capab && conf->ieee80211ac) ? WIFI_5
+			    : (hw_mode->ht_capab && conf->ieee80211n)   ? WIFI_4
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211G  ? WIFI_3
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211A  ? WIFI_2
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211B  ? WIFI_1
+									: WIFI_0;
 	status->twt_capable = (hw_mode->he_capab[IEEE80211_MODE_AP].mac_cap[0] & 0x04);
 
 out:
