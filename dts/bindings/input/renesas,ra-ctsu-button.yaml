@@ -8,33 +8,6 @@ description: |
   to detect an input event on a group which is the child of renesas,ra-ctsu.
   For more information see input/renesas,ra-ctsu.yaml
 
-  Example:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  &ctsu {
-    compatible = "renesas,ra-ctsu";
-
-    group1 {
-      ...
-      button1 {
-        compatible = "renesas,ra-ctsu-button";
-        elements = <0>;
-        threshold = <769>;
-        hysteresis = <38>;
-        event-code = <INPUT_KEY_0>;
-      };
-
-      button2 {
-        compatible = "renesas,ra-ctsu-button";
-        elements = <1>;
-        threshold = <769>;
-        hysteresis = <38>;
-        event-code = <INPUT_KEY_1>;
-      };
-    };
-  };
-
   Notes: The order of the CTSU button nodes in the same group must follow these elements index.
 
 compatible: "renesas,ra-ctsu-button"
@@ -67,3 +40,30 @@ properties:
     default: 0
     description: |
       Threshold hysteresis for chattering prevention for automatic judgement.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    &ctsu {
+      compatible = "renesas,ra-ctsu";
+
+      group1 {
+        /* ... */
+        button1 {
+          compatible = "renesas,ra-ctsu-button";
+          elements = <0>;
+          threshold = <769>;
+          hysteresis = <38>;
+          event-code = <INPUT_KEY_0>;
+        };
+
+        button2 {
+          compatible = "renesas,ra-ctsu-button";
+          elements = <1>;
+          threshold = <769>;
+          hysteresis = <38>;
+          event-code = <INPUT_KEY_1>;
+        };
+      };
+    };
