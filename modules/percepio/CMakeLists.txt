@@ -38,7 +38,7 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     ${TRACERECORDER_DIR}/trcTimestamp.c
     ${TRACERECORDER_DIR}/trcDependency.c
     ${TRACERECORDER_DIR}/trcRunnable.c
-    )
+  )
 
   if(CONFIG_PERCEPIO_TRC_CFG_STREAM_PORT_RTT)
     zephyr_library_sources(
@@ -103,9 +103,17 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     ${TRACERECORDER_DIR}/include
     )
 
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+  if(CONFIG_PERCEPIO_TRC_CFG_USE_SYSCALL_EXTENSION)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${TRACERECORDER_DIR}/kernelports/Zephyr/scripts/tz_parse_syscalls.py ${CMAKE_BINARY_DIR} ${ZEPHYR_BASE}
     )
+  endif()
+
+  if(CONFIG_PERCEPIO_TRC_CFG_AUTOISR)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${TRACERECORDER_DIR}/kernelports/Zephyr/scripts/tz_parse_irqs.py --xml-out ${CMAKE_BINARY_DIR}/AutoISR-v1.1.0.xml --edt-pickle ${EDT_PICKLE}
+    )
+  endif()
 
 endif()
 
@@ -118,11 +126,11 @@ if(CONFIG_PERCEPIO_DFM)
     ${DFM_DIR}/dfmAlert.c
     ${DFM_DIR}/dfmCloud.c
     ${DFM_DIR}/dfmEntry.c
+    ${DFM_DIR}/dfmRetainedMemory.c
     ${DFM_DIR}/dfmSession.c
     ${DFM_DIR}/dfmStorage.c
-    ${DFM_DIR}/dfmRetainedMemory.c
     ${DFM_DIR}/kernelports/Zephyr/dfmKernelPort.c
-    )
+  )
 
   if(CONFIG_PERCEPIO_DFM_CFG_STORAGEPORT_NONE)
     zephyr_library_sources(
@@ -175,11 +183,10 @@ if(CONFIG_PERCEPIO_DFM)
     )
   endif()
 
-  if(CONFIG_PERCEPIO_DFM_CFG_RETAINED_MEMORY)
-    zephyr_library_sources(
-      ${DFM_DIR}/kernelports/Zephyr/dfmRetainedMemoryPort.c
-    )
-  endif()
+  zephyr_library_sources_ifdef(
+    CONFIG_PERCEPIO_DFM_CFG_RETAINED_MEMORY
+    ${DFM_DIR}/kernelports/Zephyr/dfmRetainedMemoryPort.c
+  )
 
   zephyr_include_directories(
     ${DFM_DIR}/kernelports/Zephyr/config
