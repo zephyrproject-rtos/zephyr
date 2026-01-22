@@ -268,7 +268,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_set_bearer_provider_name)
 {
-	char res_bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	const char *new_bearer_name = "New bearer name";
 	int err;
 
@@ -358,7 +358,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_provider_name)
 {
-	char res_bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	register_default_bearer(fixture);
@@ -374,7 +374,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_provider_name_inval_not_registered)
 {
-	char res_bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
@@ -390,7 +390,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_provider_name_inval_null_bearer)
 {
-	char res_bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	register_default_bearer(fixture);
