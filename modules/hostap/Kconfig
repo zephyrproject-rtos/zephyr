@@ -62,7 +62,7 @@ endif # WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
-	default 7300 if WIFI_NM_WPA_SUPPLICANT_P2P
+	default 7900 if WIFI_NM_WPA_SUPPLICANT_P2P
 	# TODO: Providing higher stack size for Enterprise mode to fix stack
 	# overflow issues. Need to identify the cause for higher stack usage.
 	default 8192 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || WIFI_USAGE_MODE_STA_AP
