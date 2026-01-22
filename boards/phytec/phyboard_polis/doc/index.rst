@@ -1,4 +1,4 @@
-.. _phyboard_polis:
+.. zephyr:board:: phyboard_polis
 
 phyBOARD-Polis i.MX8M Mini
 ##########################
@@ -70,38 +70,7 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr ``phyboard_polis/mimx8mm6/m4`` board target configuration supports
-the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | ECSPI                               |
-+-----------+------------+-------------------------------------+
-| CAN       | MCP2518    | MCP2518 via ECSPI                   |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/phytec/phyboard_polis/phyboard_polis_mimx8mm6_m4_defconfig`.
-
-It is recommended to disable peripherals used by the M4 core on the Linux host.
-
-Other hardware features are not currently supported with Zephyr on the
-M4-Core.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
