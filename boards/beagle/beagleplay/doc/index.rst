@@ -126,6 +126,9 @@ Programming and Debugging
 Flashing
 ========
 
+CC1352P7
+--------
+
 To flash, disable the existing driver that ties up the serial port and use
 the customized BSL Python script.
 
@@ -152,16 +155,70 @@ the customized BSL Python script.
 
       west flash
 
+M4F Core
+--------
+
+The board supports remoteproc using the OpenAMP resource table.
+
+The testing requires the binary to be copied to the SD card to allow the A53 cores to load it while booting using remoteproc.
+
+To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
+
+.. zephyr-app-commands::
+   :board: pocketbeagle_2/am6254/m4
+   :zephyr-app: samples/hello_world
+   :goals: build
+
+This builds the program and the binary is present in the :file:`build/zephyr` directory as
+:file:`zephyr.elf`.
+
+We now copy this binary onto the SD card in the :file:`/lib/firmware` directory and name it as
+:file:`am62-mcu-m4f0_0-fw`.
+
+.. code-block:: console
+
+   # Mount the SD card at sdcard for example
+   sudo mount /dev/sdX sdcard
+   # copy the elf to the /lib/firmware directory
+   sudo cp --remove-destination zephyr.elf sdcard/lib/firmware/am62-mcu-m4f0_0-fw
+
+The SD card can now be used for booting. The binary will now be loaded onto the M4F core on boot.
+
+The binary will run and print Hello world to the MCU_UART0 port.
+
 Debugging
 =========
+
+CC1352P7
+--------
 
 For debugging, you can use the serial port or JTAG. You can use OpenOCD
 over the Tag-Connect header on the board.
 
 * Tagconnect JTAG
 
+M4F Core
+--------
+
+The board supports debugging M4 core from the A53 cores running Linux. Since the target needs
+superuser privilege, OpenOCD needs to be launched separately for now:
+
+.. code-block:: console
+
+   sudo openocd -f board/ti_am625_swd_native.cfg
+
+
+Start debugging
+
+.. zephyr-app-commands::
+   :board: pocketbeagle_2/am6254/m4
+   :goals: debug
+
 References
 **********
+
+* `BeagleBoard.org BeaglePlay`_
+* `Documentation <https://docs.beagleboard.org/boards/beagleplay/index.html>`_
 
 .. target-notes::
 
