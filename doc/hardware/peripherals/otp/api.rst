@@ -21,3 +21,4 @@ OTP related configuration options:
 * :kconfig:option:`CONFIG_OTP`
 * :kconfig:option:`CONFIG_OTP_PROGRAM`
 * :kconfig:option:`CONFIG_OTP_INIT_PRIORITY`
+* :kconfig:option-regex:`CONFIG_OTP_SHELL.*`

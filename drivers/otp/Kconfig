@@ -34,4 +34,28 @@ config OTP_PROGRAM
 	  Allowing the programming of OTPs may cause irreversible damage
 	  to a platform. Use it very carefully and at your own risk.
 
+config OTP_SHELL
+	bool "OTP shell"
+	depends on SHELL
+	help
+	  Enable the OTP shell with One Time Programmable related commands.
+
+if OTP_SHELL
+
+config OTP_SHELL_BUFFER_SIZE
+	int "OTP shell program buffer size"
+	default 256
+	help
+	  Size of the buffer used for OTP program commands in the OTP shell.
+
+config OTP_SHELL_PROGRAM_PASSWORD
+	string "OTP shell program password"
+	depends on OTP_PROGRAM
+	help
+	  Password string to pass to the program command.
+	  As the program command is irreversible, add a protective measure
+	  in the form of a password.
+
+endif # OTP_SHELL
+
 endif # OTP
