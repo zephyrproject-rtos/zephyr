@@ -9,23 +9,6 @@ description: |
     address. Feature-specific(GPIO, TCPC) properties should be placed in a child
     node e.g. a number of GPIOs.
 
-    Example:
-      &i2c2_0 {
-          rt1718s_port0: rt1718s@40 {
-              compatible = "richtek,rt1718s";
-              reg = <0x40>;
-              irq-gpios = <&gpioe 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-
-              rt1718s_gpio_port0: rt1718s_gpio {
-                  compatible = "richtek,rt1718s-gpio-port";
-
-                  gpio-controller;
-                  #gpio-cells = <2>;
-                  ngpios = <3>;
-              };
-          };
-      };
-
 compatible: "richtek,rt1718s"
 
 include: [i2c-device.yaml]
@@ -34,3 +17,21 @@ properties:
   irq-gpios:
     type: phandle-array
     description: Interrupt GPIO pin connected from the chip(IRQB)
+
+examples:
+  - |
+    &i2c2_0 {
+        rt1718s_port0: rt1718s@40 {
+            compatible = "richtek,rt1718s";
+            reg = <0x40>;
+            irq-gpios = <&gpioe 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+
+            rt1718s_gpio_port0: rt1718s_gpio {
+                compatible = "richtek,rt1718s-gpio-port";
+
+                gpio-controller;
+                #gpio-cells = <2>;
+                ngpios = <3>;
+            };
+        };
+    };

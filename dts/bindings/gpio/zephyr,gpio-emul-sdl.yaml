@@ -22,29 +22,6 @@ description: |
   with standard keycode values 2, 3 and 4, corresponding to
   INPUT_KEY_1, INPUT_KEY_2 and INPUT_KEY_3 in input-event-codes.h.
 
-  /* gpio0 has to be a zephyr,gpio-emul device */
-  &gpio0 {
-    ngpios = <3>;
-
-    sdl_gpio {
-      compatible = "zephyr,gpio-emul-sdl";
-      scancodes = <30 31 32>;
-    };
-  };
-
-  keypad: keypad {
-    compatible = "gpio-keys";
-    key1: key1 {
-      gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
-    };
-    key2: key2 {
-      gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-    };
-    key3: key3 {
-      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
-    };
-  };
-
   The limitations of usage are:
   - Only active high as we don't get events for keys that aren't pressed
   - Pressing multiple keys is best effort, state will be kept but no events
@@ -60,3 +37,28 @@ properties:
     required: true
     description: |
       An array of SDL scancodes mapped to its GPIO index
+
+examples:
+  - |
+    /* gpio0 has to be a zephyr,gpio-emul device */
+    &gpio0 {
+      ngpios = <3>;
+
+      sdl_gpio {
+        compatible = "zephyr,gpio-emul-sdl";
+        scancodes = <30 31 32>;
+      };
+    };
+
+    keypad: keypad {
+      compatible = "gpio-keys";
+      key1: key1 {
+        gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+      };
+      key2: key2 {
+        gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      };
+      key3: key3 {
+        gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      };
+    };

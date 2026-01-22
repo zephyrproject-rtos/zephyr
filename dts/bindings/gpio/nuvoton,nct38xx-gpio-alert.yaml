@@ -4,13 +4,6 @@
 description: |
     Nuvoton NCT38XX series I2C-based GPIO expander alert handler.
 
-    Example:
-      nct3807_alert_1 {
-        compatible = "nuvoton,nct38xx-gpio-alert";
-        irq-gpios = <&gpiod 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-        nct38xx-dev = <&nct3808_0_P1 &nct3808_0_P2>;
-      };
-
 compatible: "nuvoton,nct38xx-gpio-alert"
 
 include: [base.yaml]
@@ -26,3 +19,11 @@ properties:
     required: true
     description: |
       List of NCT38XX multi-function devices managed by this alert handler.
+
+examples:
+  - |
+    nct3807_alert_1 {
+      compatible = "nuvoton,nct38xx-gpio-alert";
+      irq-gpios = <&gpiod 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+      nct38xx-dev = <&nct3808_0_P1 &nct3808_0_P2>;
+    };
