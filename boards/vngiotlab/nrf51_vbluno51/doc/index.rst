@@ -22,9 +22,6 @@ VBLUno51 board has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 16 MHz.
 
-Supported Features
-==================
-
 - CPU:
 	+ Nordic nRF51822: ARM® Cortex® M0 32bit.
 	+ *Bluetooth Low Energy interface.*
@@ -54,6 +51,11 @@ Supported Features
 - Open source: Hardware design, firmware, packages, tutorial and example codes
 
 See `VBLUno51 wiki page`_ for full documents and tutorials about the VBLUno51 board.
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
