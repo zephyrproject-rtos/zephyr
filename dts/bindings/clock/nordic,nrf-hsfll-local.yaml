@@ -7,19 +7,6 @@ description: |
   The local HSFLL mixed-mode IP generates several clock frequencies in the range
   from 64 MHz to 400 MHz (in steps of 16 MHz).
 
-  Usage example:
-
-    hsfll: clock@deadbeef {
-        compatible = "nordic,nrf-hsfll-local";
-        reg = <0xdeadbeef 0x1000>;
-        clocks = <&fll16m>;
-        clock-frequency = <DT_FREQ_M(320)>;
-        nordic,ficrs = <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
-                       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
-                       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
-        nordic,ficr-names = "vsup", "coarse", "fine";
-    };
-
   Required FICR entries are for VSUP, COARSE and FINE trim values.
 
 compatible: "nordic,nrf-hsfll-local"
@@ -57,3 +44,16 @@ properties:
       - 368000000
       - 384000000
       - 400000000
+
+examples:
+  - |
+    hsfll: clock@deadbeef {
+        compatible = "nordic,nrf-hsfll-local";
+        reg = <0xdeadbeef 0x1000>;
+        clocks = <&fll16m>;
+        clock-frequency = <DT_FREQ_M(320)>;
+        nordic,ficrs = <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
+                       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
+                       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
+        nordic,ficr-names = "vsup", "coarse", "fine";
+    };
