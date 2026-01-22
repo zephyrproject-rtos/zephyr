@@ -4,16 +4,6 @@
 description: |
   CPU based Stepper Motion Controller for controlling stepper motors using GPIO pins.
   It is used to generate step and direction signals for a stepper motor driver.
-  Example:
-  step_dir_motion_control: step_dir_motion_control {
-      compatible = "zephyr,gpio-step-dir-stepper";
-      step-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
-      dir-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-      invert-direction;
-      counter = <&counter1>;
-      stepper-drv = <&tmc2209>; /* Optional stepper-drv driver reference */
-  };
-
 
 compatible: "zephyr,gpio-step-dir-stepper"
 
@@ -53,3 +43,14 @@ properties:
       Reference to the stepper driver device.
       This property, if provided, will result in configuring the driver with the
       step-width-ns and dual-edge-step properties from the stepper driver node.
+
+examples:
+  - |
+    step_dir_motion_control: step_dir_motion_control {
+        compatible = "zephyr,gpio-step-dir-stepper";
+        step-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        dir-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        invert-direction;
+        counter = <&counter1>;
+        stepper-drv = <&tmc2209>; /* Optional stepper-drv driver reference */
+    };

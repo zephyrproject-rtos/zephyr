@@ -4,8 +4,24 @@
 description: |
   Analog Devices TMC51XX Stepper Motor Controller (SPI mode)
 
-  Example:
+compatible: "adi,tmc51xx"
 
+include: [spi-device.yaml, "adi,tmc51xx-base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      Diagnostics output DIAG0 pin. This pin enables interrupt-based
+      rampstat handling, allowing the driver to respond to motor events
+      like position reached or stall detection without polling.
+      Should be configured as push-pull output (active high).
+
+examples:
+  - |
     &spi0 {
         tmc51xx: tmc51xx@0 {
             compatible = "adi,tmc51xx";
@@ -51,19 +67,3 @@ description: |
             };
         };
     };
-
-compatible: "adi,tmc51xx"
-
-include: [spi-device.yaml, "adi,tmc51xx-base.yaml"]
-
-properties:
-  reg:
-    required: true
-
-  diag0-gpios:
-    type: phandle-array
-    description: |
-      Diagnostics output DIAG0 pin. This pin enables interrupt-based
-      rampstat handling, allowing the driver to respond to motor events
-      like position reached or stall detection without polling.
-      Should be configured as push-pull output (active high).
