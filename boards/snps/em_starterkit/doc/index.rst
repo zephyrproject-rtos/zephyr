@@ -61,38 +61,7 @@ In Zephyr, only firmware versions 2.2 and 2.3 are supported.
 Supported Features
 ==================
 
-The Zephyr kernel supports multiple hardware features on the EM Starter Kit
-through the use of device drivers.
-
-The EM Starter Kit supports 6 Digilent Pmod(TM) Interfaces, which enables the
-use of a large variety of pluggable modules for storage, communications,
-sensors, displays, etc. With the Pmod interface, you can prototype your
-applications using the Zephyr RTOS.
-
-The table below shows which drivers are supported and which functionality can
-be found on which architectures:
-
-+-----------+------------+-----+-------+-----------------------+
-| Interface | Controller |EM9D | EM11D | Driver/Component      |
-+===========+============+=====+=======+=======================+
-| INT       | on-chip    | Y   | Y     | interrupt_controller  |
-+-----------+------------+-----+-------+-----------------------+
-| UART      | usb +      | Y   | Y     | serial port-polling;  |
-|           | 2 Pmods    |     |       | serial port-interrupt |
-+-----------+------------+-----+-------+-----------------------+
-| SPI       | 2 Pmods    | Y   | Y     | spi                   |
-+-----------+------------+-----+-------+-----------------------+
-| ADC       | n/a        | N   | N     | adc (can add via Pmod)|
-+-----------+------------+-----+-------+-----------------------+
-| I2C       | 2 Pmods    | Y   | Y     | i2c                   |
-+-----------+------------+-----+-------+-----------------------+
-| GPIO      | 6 Pmods    | Y   | Y     | gpio                  |
-+-----------+------------+-----+-------+-----------------------+
-| PWM       | n/a        | N   | N     | pwm                   |
-+-----------+------------+-----+-------+-----------------------+
-
-The board has 3 (debounced and interrupting) buttons for use with GPIO, 4 dip
-switches, 9 LEDs, SDCard on SPI, and a 16MB SPI-Flash memory.
+.. zephyr:board-supported-hw::
 
 The SPI-FLASH driver is supported with sample, which can be found in
 ``samples/drivers/spi_flash``.
