@@ -1,5 +1,5 @@
 /*
- * Copyright 2025-2026 NXP
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,11 @@
 	aliases {
 		pwm-test = &tpm0;
 	};
+};
+
+/* Add node label for twister test case drivers.pwm.tpm.center */
+pwm_test_center: &tpm0 {
+	status = "okay";
 };
 
 /* To test this sample, check the wave from PTA21(J1-8). */
@@ -24,4 +29,5 @@
 	status = "okay";
 	pinctrl-0 = <&tpm0_default>;
 	pinctrl-names = "default";
+	pwm-mode = <1>;
 };

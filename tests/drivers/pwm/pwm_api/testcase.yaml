@@ -159,3 +159,14 @@ tests:
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
     depends_on: pwm
+  drivers.pwm.tpm.center:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args:
+      - platform:frdm_mcxw71/mcxw716c:DTC_OVERLAY_FILE="boards/frdm_mcxw71_2.overlay"
+    platform_allow:
+      - frdm_mcxw71
+    filter: dt_nodelabel_enabled("pwm_test_center") and CONFIG_DT_HAS_NXP_KINETIS_TPM_ENABLED
+    depends_on: pwm
