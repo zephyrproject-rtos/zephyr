@@ -1,6 +1,0 @@
-/*
- * Copyright (c) 2025 Ambiq Micro Inc.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-#include <apollo510/ambiq-apollo510-pinmux.h>

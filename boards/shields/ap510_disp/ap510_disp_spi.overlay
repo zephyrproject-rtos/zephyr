@@ -8,13 +8,6 @@
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
-/ {
-	chosen {
-		zephyr,display = &co5300;
-		zephyr,touch = &chsc5x;
-	};
-};
-
 &iom2 {
 	cmdq-buffer-location = "SRAM_NO_CACHE";
 	cmdq-buffer-size = <256>;
