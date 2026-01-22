@@ -17,6 +17,7 @@
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
 		zephyr,sram = &a53_ddr_section;
+		zephyr,ipc = &ipc0;
 	};
 
 	aliases {
@@ -69,6 +70,13 @@
 		ld1: led_0 {
 			gpios = <&main_gpio1 49 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	/* A53 -> M4F */
+	ipc0: ipc0 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 1>, <&mbox0 0>;
+		mbox-names = "tx", "rx";
 	};
 };
 
