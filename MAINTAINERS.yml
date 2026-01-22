@@ -1520,6 +1520,7 @@ Documentation Infrastructure:
     - lgirdwood
     - iuliana-prodan
     - dbaluta
+    - abonislawski
   files:
     - drivers/dai/
     - doc/hardware/peripherals/audio/dai.rst
@@ -3061,6 +3062,7 @@ Intel Platforms (Xtensa):
     - jxstelter
     - marcinszkudlinski
     - nashif
+    - abonislawski
   files:
     - boards/intel/adsp/
     - soc/intel/intel_adsp/
