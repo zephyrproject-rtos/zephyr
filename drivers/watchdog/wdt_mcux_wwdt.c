@@ -3,7 +3,7 @@
  *
  * Based on wdt_mcux_wdog32.c, which is:
  * Copyright (c) 2019 Vestas Wind Systems A/S
- * Copyright 2018, 2025 NXP
+ * Copyright 2018, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #define DT_DRV_COMPAT nxp_lpc_wwdt
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/pm/device.h>
@@ -27,6 +29,8 @@ LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 struct mcux_wwdt_config {
 	WWDT_Type *base;
 	uint8_t clk_divider;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -36,6 +40,50 @@ struct mcux_wwdt_data {
 	bool timeout_valid;
 	bool active_before_sleep;
 };
+
+static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
+{
+	const struct mcux_wwdt_config *config = dev->config;
+	int ret;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	switch ((uint32_t)config->clock_subsys) {
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	case MCUX_WWDT0_CLK:
+#if defined(CONFIG_SOC_SERIES_MCXW2XX) || defined(CONFIG_SOC_SERIES_LPC55XXX)
+		CLOCK_SetClkDiv(kCLOCK_DivWdtClk, config->clk_divider, true);
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_SetClockDiv(kCLOCK_DivWWDT0, config->clk_divider);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+		CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, config->clk_divider);
+#endif
+		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
+	case MCUX_WWDT1_CLK:
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_SetClockDiv(kCLOCK_DivWWDT1, config->clk_divider);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+		CLOCK_SetClkDiv(kCLOCK_DivWdt1Clk, config->clk_divider);
+#endif
+		break;
+#endif
+	default:
+		break;
+	}
+
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, freq);
+	if (ret) {
+		LOG_ERR("Failed to get clock frequency: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 {
@@ -80,34 +128,17 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 {
 	struct mcux_wwdt_data *data = dev->data;
 	uint32_t clock_freq;
+	int ret;
 
 	if (data->timeout_valid) {
 		LOG_ERR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) \
-	|| defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) \
-	|| defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
-	clock_freq = CLOCK_GetWdtClkFreq(0);
-#elif defined(CONFIG_SOC_SERIES_RW6XX)
-	clock_freq = CLOCK_GetWdtClkFreq();
-#elif defined(CONFIG_SOC_MCXA577)
-	const struct mcux_wwdt_config *config = dev->config;
-
-	if (config->base == WWDT0) {
-		clock_freq = CLOCK_GetWwdt0ClkFreq();
-	} else {
-		clock_freq = CLOCK_GetWwdt1ClkFreq();
+	ret = mcux_wwdt_get_clock_frequency(dev, &clock_freq);
+	if (ret) {
+		return ret;
 	}
-#elif defined(CONFIG_SOC_FAMILY_MCXA)
-	clock_freq = CLOCK_GetWwdtClkFreq();
-#else
-	const struct mcux_wwdt_config *config = dev->config;
-
-	CLOCK_SetClkDiv(kCLOCK_DivWdtClk, config->clk_divider, true);
-	clock_freq = CLOCK_GetWdtClkFreq();
-#endif
 
 	WWDT_GetDefaultConfig(&data->wwdt_config);
 
@@ -118,7 +149,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 
 	if (data->wwdt_config.timeoutValue > MAX_TIMEOUT ||
 	    data->wwdt_config.timeoutValue < MIN_TIMEOUT) {
-		LOG_ERR("Timeout value out of range");
+		LOG_ERR("Timeout value %d out of range %d - %d", data->wwdt_config.timeoutValue,
+			MIN_TIMEOUT, MAX_TIMEOUT);
 		return -EINVAL;
 	}
 
@@ -150,7 +182,7 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		} else {
 			LOG_ERR("Warning interrupt callback requires "
 				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
-			return -ENOTSUP;
+			return -EINVAL;
 		}
 	}
 
@@ -231,6 +263,22 @@ static int mcux_wwdt_driver_pm_action(const struct device *dev,
 static int mcux_wwdt_init(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (ret && ret != -ENOSYS) {
+		/* Real error occurred */
+		LOG_ERR("Failed to configure clock: %d", ret);
+		return ret;
+	}
+
+#if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret) {
+		LOG_ERR("Failed to enable clock: %d", ret);
+		return ret;
+	}
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 	/* The rest of the device init is done from the
 	 * PM_DEVICE_ACTION_TURN_ON in the pm callback
@@ -247,30 +295,30 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 	.feed = mcux_wwdt_feed,
 };
 
-static void mcux_wwdt_config_func_0(const struct device *dev);
+#define MCUX_WWDT_INIT_CONFIG(id)                                                                  \
+	static void mcux_wwdt_config_func_##id(const struct device *dev);                          \
+                                                                                                   \
+	static const struct mcux_wwdt_config mcux_wwdt_config_##id = {                             \
+		.base = (WWDT_Type *)DT_INST_REG_ADDR(id),                                         \
+		.clk_divider = DT_INST_PROP(id, clk_divider),                                      \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
+		.irq_config_func = mcux_wwdt_config_func_##id,                                     \
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_wwdt_data mcux_wwdt_data_##id;                                          \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(id, mcux_wwdt_driver_pm_action);                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(id, &mcux_wwdt_init, PM_DEVICE_DT_INST_GET(id),                      \
+			      &mcux_wwdt_data_##id, &mcux_wwdt_config_##id, POST_KERNEL,           \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_wwdt_api);                 \
+                                                                                                   \
+	static void mcux_wwdt_config_func_##id(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_wwdt_isr,            \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+		irq_enable(DT_INST_IRQN(id));                                                      \
+	}
 
-static const struct mcux_wwdt_config mcux_wwdt_config_0 = {
-	.base = (WWDT_Type *) DT_INST_REG_ADDR(0),
-	.clk_divider =
-		DT_INST_PROP(0, clk_divider),
-	.irq_config_func = mcux_wwdt_config_func_0,
-};
-
-static struct mcux_wwdt_data mcux_wwdt_data_0;
-
-PM_DEVICE_DT_INST_DEFINE(0, mcux_wwdt_driver_pm_action);
-
-DEVICE_DT_INST_DEFINE(0, &mcux_wwdt_init,
-		    PM_DEVICE_DT_INST_GET(0), &mcux_wwdt_data_0,
-		    &mcux_wwdt_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wwdt_api);
-
-static void mcux_wwdt_config_func_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wwdt_isr, DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
+DT_INST_FOREACH_STATUS_OKAY(MCUX_WWDT_INIT_CONFIG)
