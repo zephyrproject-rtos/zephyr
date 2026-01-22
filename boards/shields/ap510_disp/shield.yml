@@ -11,9 +11,3 @@ shields:
     supported_features:
       - display
       - input
-  - name: ap510b_disp
-    full_name: MIPI-DSI Display Shield for Apollo510 Evaluation Board
-    vendor: ambiq
-    supported_features:
-      - display
-      - input

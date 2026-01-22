@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <apollo510/ambiq-apollo510-pinmux.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		zephyr,display = &co5300;
+		zephyr,touch = &chsc5x;
+		ambiq,gpu = &gpu;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&chsc5x>;
+	};
+};
+
+&mipi_dsi {
+	vdd18-gpios = <&gpio32_63 17 GPIO_PULL_DOWN>;
+
+	co5300: co5300@0 {
+		reset-gpios = <&gpio32_63 3 GPIO_PULL_UP>;
+	};
+};
