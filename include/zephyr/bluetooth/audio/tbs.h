@@ -460,13 +460,11 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags);
  * @brief Sets the URI scheme list of a bearer.
  *
  * @param bearer_index  The index of the Telephone Bearer.
- * @param uri_list      List of URI prefixes (e.g. {"skype", "tel"}).
- * @param uri_count     Number of URI prefixies in @p uri_list.
+ * @param uri_scheme_list Comma-separated list of URI prefixes (e.g. "skype,tel").
  *
  * @return BT_TBS_RESULT_CODE_* if positive or 0, errno value if negative.
  */
-int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
-			       uint8_t uri_count);
+int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list);
 /**
  * @brief Register the callbacks for TBS.
  *
