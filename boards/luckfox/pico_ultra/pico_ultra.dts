@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Patryk Koscik
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rockchip/rv1106.dtsi>
+
+/ {
+	model = "Luckfox Pico Ultra W";
+	compatible = "luckfox,pico-ultra-w";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,sram = &ddr;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	ddr: ddr@0 {
+		/* DDR is initialized by the FSBL before the kernel starts */
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_M(256)>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(816)>;
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
