@@ -7,15 +7,6 @@ description: |
   streaming functionality, make sure to include adxl362.h and
   use the macros defined there for fifo-mode and fifo-watermark properties.
 
-  Example:
-  #include <zephyr/dt-bindings/sensor/adxl362.h>
-
-  adxl362: adxl362@0 {
-    ...
-    fifo-mode = <ADXL362_FIFO_MODE_STREAM>;
-    fifo-watermark = <0x80>;
-  };
-
 compatible: "adi,adxl362"
 
 include: [sensor-device.yaml, spi-device.yaml]
@@ -60,3 +51,13 @@ properties:
     description: |
       Specify the FIFO watermark level in frame count.
       Valid range: 0 - 511
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adxl362.h>
+
+    adxl362: adxl362@0 {
+      /* ... */
+      fifo-mode = <ADXL362_FIFO_MODE_STREAM>;
+      fifo-watermark = <0x80>;
+    };

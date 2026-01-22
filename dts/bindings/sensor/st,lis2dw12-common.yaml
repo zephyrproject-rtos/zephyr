@@ -5,19 +5,6 @@ description: |
     When setting the odr property in a .dts or .dtsi file you may include
     lis2dw12.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/lis2dw12.h>
-
-    lis2dw12: lis2dw12@0 {
-      ...
-
-      wakeup-duration = <LIS2DW12_DT_WAKEUP_4_ODR>;
-      ff-threshold = <LIS2DW12_DT_FF_THRESHOLD_500_mg>;
-      tap-mode = <LIS2DW12_DT_SINGLE_DOUBLE_TAP>;
-      power-mode = <LIS2DW12_DT_HP_MODE>;
-      bw-filt = <LIS2DW12_DT_FILTER_BW_ODR_DIV_2>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -265,3 +252,17 @@ properties:
       - 15 # LIS2DW12_DT_SLEEP_15_ODR
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lis2dw12.h>
+
+    lis2dw12: lis2dw12@0 {
+      /* ... */
+
+      wakeup-duration = <LIS2DW12_DT_WAKEUP_4_ODR>;
+      ff-threshold = <LIS2DW12_DT_FF_THRESHOLD_500_mg>;
+      tap-mode = <LIS2DW12_DT_SINGLE_DOUBLE_TAP>;
+      power-mode = <LIS2DW12_DT_HP_MODE>;
+      bw-filt = <LIS2DW12_DT_FILTER_BW_ODR_DIV_2>;
+    };

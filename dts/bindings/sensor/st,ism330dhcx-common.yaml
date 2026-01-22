@@ -5,16 +5,6 @@ description: |
     When setting the accel-odr and gyro-odr properties in a .dts or .dtsi file you may include
     ism330dhcx.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
-
-    ism330dhcx: ism330dhcx@0 {
-      ...
-
-      accel-odr = <ISM330DHCX_DT_ODR_104Hz>;
-      gyro-odr = <ISM330DHCX_DT_ODR_104Hz>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -112,3 +102,14 @@ properties:
       - 2000 # +/- 2000dps
 
     enum: [125, 250, 500, 1000, 2000]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
+
+    ism330dhcx: ism330dhcx@0 {
+      /* ... */
+
+      accel-odr = <ISM330DHCX_DT_ODR_104Hz>;
+      gyro-odr = <ISM330DHCX_DT_ODR_104Hz>;
+    };

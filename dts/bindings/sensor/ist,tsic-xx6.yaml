@@ -5,16 +5,6 @@ description: |
   TSic xx6 temperature sensor.
   https://www.ist-ag.com/sites/default/files/downloads/ATTSic_E.pdf
 
-  Example:
-    tsic_716: tsic_716 {
-      status = "okay";
-      compatible = "ist,tsic-xx6";
-      pwms = <&pwm2 1 PWM_USEC(5) PWM_POLARITY_NORMAL>;
-      data-bits = <14>;
-      lower-temperature-limit = <(-10)>;
-      higher-temperature-limit = <60>;
-    };
-
 compatible: "ist,tsic-xx6"
 
 include: sensor-device.yaml
@@ -40,3 +30,14 @@ properties:
     type: int
     description: Data bits per reading.
     enum: [11, 14]
+
+examples:
+  - |
+    tsic_716: tsic_716 {
+      status = "okay";
+      compatible = "ist,tsic-xx6";
+      pwms = <&pwm2 1 PWM_USEC(5) PWM_POLARITY_NORMAL>;
+      data-bits = <14>;
+      lower-temperature-limit = <(-10)>;
+      higher-temperature-limit = <60>;
+    };
