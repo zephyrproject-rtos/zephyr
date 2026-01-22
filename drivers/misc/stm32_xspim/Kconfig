@@ -1,0 +1,8 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_XSPIM
+	bool
+	select USE_STM32_HAL_XSPI
+	depends on IS_BOOTLOADER
+	default y if DT_HAS_ST_STM32_XSPIM_ENABLED

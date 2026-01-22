@@ -289,6 +289,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if !defined(CONFIG_STM32_XSPIM)
 	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
 		/*
 		 * Do not configure the XSPIManager if running on the ext flash
@@ -308,6 +309,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 			return -EIO;
 		}
 	}
+#endif
 
 	/* Configure AP memory registers */
 	ret = ap_memory_configure(hxspi);
