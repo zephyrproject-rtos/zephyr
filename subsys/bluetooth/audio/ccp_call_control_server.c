@@ -14,6 +14,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
@@ -179,8 +180,10 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 }
 
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
-					      const char **uci)
+					      char uci[BT_TBS_MAX_UCI_SIZE])
 {
+	size_t uci_len;
+
 	CHECKIF(bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
@@ -199,7 +202,10 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
 		return -EFAULT;
 	}
 
-	*uci = bearer->uci;
+	uci_len = strlen(bearer->uci);
+	__ASSERT_NO_MSG(uci_len < BT_TBS_MAX_UCI_SIZE);
+	(void)memcpy(uci, bearer->uci, uci_len);
+	uci[uci_len] = '\0';
 
 	return 0;
 }
