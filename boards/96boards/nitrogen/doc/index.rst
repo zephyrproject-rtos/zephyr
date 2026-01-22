@@ -1,4 +1,4 @@
-.. _96b_nitrogen_board:
+.. zephyr:board:: 96b_nitrogen
 
 96Boards Nitrogen
 #################
@@ -50,33 +50,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_nitrogen board configuration supports the following hardware
-features:
-
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vectored interrupt controller |
-+-----------+------------+--------------------------------------+
-| RTC       | on-chip    | system clock                         |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | serial port                          |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | gpio                                 |
-+-----------+------------+--------------------------------------+
-| FLASH     | on-chip    | flash                                |
-+-----------+------------+--------------------------------------+
-| RADIO     | on-chip    | Bluetooth                            |
-+-----------+------------+--------------------------------------+
-| RTT       | on-chip    | console                              |
-+-----------+------------+--------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-See `Nordic Semiconductor Infocenter`_ for a complete list of nRF52-based
-board hardware features.
-
-The default configuration can be found in
-:zephyr_file:`boards/96boards/nitrogen/96b_nitrogen_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========

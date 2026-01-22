@@ -1,4 +1,4 @@
-.. _96b_wistrio:
+.. zephyr:board:: 96b_wistrio
 
 96Boards WisTrio
 #################
@@ -45,33 +45,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_wistrio board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| EEPROM    | on-chip    | eeprom                              |
-+-----------+------------+-------------------------------------+
-
-The default board configuration can be found in
-:zephyr_file:`boards/96boards/wistrio/96b_wistrio_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
