@@ -2191,8 +2191,9 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	LOG_DBG("XSPI Init'd");
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2) || \
-	defined(XSPIM) || defined(XSPIM1) || defined(XSPIM2)
+
+#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2) || \
+	defined(XSPIM) || defined(XSPIM1) || defined(XSPIM2)) && !defined(CONFIG_STM32_XSPIM)
 	/* XSPI I/O manager init Function */
 	XSPIM_CfgTypeDef xspi_mgr_cfg;
 

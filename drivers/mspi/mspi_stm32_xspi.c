@@ -1594,7 +1594,7 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		goto end;
 	}
 
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
+#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)) && !defined(CONFIG_STM32_XSPIM)
 	/* XSPI I/O manager config */
 	XSPIM_CfgTypeDef mspi_mgr_cfg;
 

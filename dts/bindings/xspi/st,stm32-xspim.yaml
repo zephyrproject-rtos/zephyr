@@ -1,0 +1,40 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 XSPI Controller Manager
+
+    XSPIM configuration provide the XSPI manager state which should be used
+    when exiting first stage application (typically a bootloader).
+    Its configura
+
+compatible: "st,stm32-xspim"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  io-port-1:
+    type: phandles
+    description: |
+      Phandle list of xspi controllers mapped to io-port-1
+
+  io-port-2:
+    type: phandles
+    description: |
+      Phandle list of xspi controllers mapped to io-port-2
+
+  ncs-override:
+    type: string
+    enum: ["disabled", "ncs1", "ncs2"]
+    default: "disabled"
+    description: |
+      Foo
+
+  req2ack-time:
+    type: int
+    default: 1
+    description: |
+      Foo
