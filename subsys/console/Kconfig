@@ -16,6 +16,7 @@ choice
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"
 	select UART_INTERRUPT_DRIVEN
+	select EVENTS
 
 config CONSOLE_GETLINE
 	bool "Line by line input"
