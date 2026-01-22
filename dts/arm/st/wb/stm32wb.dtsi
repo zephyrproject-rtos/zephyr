@@ -161,6 +161,41 @@
 				/* maximum erase time(ms) for a 4K sector */
 				max-erase-time = <25>;
 			};
+
+			st_nvm_user_otp: flash@1fff7000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7000 DT_SIZE_K(1)>;
+				status = "disabled";
+
+				st,user-otp;
+			};
+
+			/* Undocumented/unnamed RO area */
+			flash@1fff7500 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7500 768>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@a8 {
+						reg = <0xa8 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					vrefint_otp: vrefint@aa {
+						reg = <0xaa 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal2_otp: ts-cal2@ca {
+						reg = <0xca 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
 		};
 
 		rcc: rcc@58000000 {

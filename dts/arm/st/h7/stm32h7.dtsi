@@ -162,6 +162,36 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Device-unique information is stored
+			 * at the end of the System memory area.
+			 */
+			flash@1ff1e000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ff1e000 DT_SIZE_K(8)>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@820 {
+						reg = <0x820 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal2_otp: ts-cal2@840 {
+						reg = <0x840 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					vrefint_otp: vrefint@860 {
+						reg = <0x860 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
 		};
 
 		rcc: rcc@58024400 {

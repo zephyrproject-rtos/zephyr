@@ -131,6 +131,31 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			st_nvm_user_otp: flash@10001800 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x10001800 DT_SIZE_K(1)>;
+				status = "disabled";
+
+				st,user-otp;
+			};
+
+			/* Undocumented/unnamed RO area */
+			flash@10001e00 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x10001e00 256>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_c30_otp: c30@60 {
+						reg = <0x60 0x4>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
+
 			flash0: flash@10040000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				write-block-size = <4>;

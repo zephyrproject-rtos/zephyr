@@ -17,6 +17,41 @@
 #include <freq.h>
 #include <mem.h>
 
+/*
+ * The "OTP area" and "Engineering bytes" layout
+ * in both STM32WBA5x and STM32WBA6x lines SoCs
+ * seems identical... except the areas don't have
+ * the same start address!
+ *
+ * To avoid duplication, we expect the DTSI files
+ * for STM32WBA6x (e.g., stm32wba65.dtsi) - which
+ * will #include this file - to #define the macro
+ * FLASH_LAYOUT_STM32WBA6X such that we know what
+ * base address to use for the regions. Note that
+ * we cannot use the CONFIG_SOC_STM32WBAxx option
+ * because DTS is processed before Kconfig.
+ */
+#ifdef FLASH_LAYOUT_STM32WBA6X
+/*
+ * This doesn't match the value in RM0515 Table 40
+ * but using the same offset from OTP_BASE as on
+ * STM32WBA5x results in the "Engineering bytes"
+ * area having the same layout, allowing us to
+ * define the NVMEM cells only once.
+ */
+#define ENGI_BYTES_BASE	bfa0500
+#define USER_OTP_BASE	bfa0000
+#else /* STM32WBA5x SoC */
+#define ENGI_BYTES_BASE	bf90500
+#define USER_OTP_BASE	bf90000
+#endif /* FLASH_LAYOUT_STM32WBA6X */
+
+/*
+ * "Engineering bytes" area ends at USER_OTP_BASE+0x4000
+ * on both STM32WBA5x and STM32WBA6x product lines.
+ */
+#define ENGI_BYTES_SIZE ((DT_ADDR(USER_OTP_BASE) + 0x4000) - DT_ADDR(ENGI_BYTES_BASE))
+
 / {
 	chosen {
 		zephyr,entropy = &rng;
@@ -148,6 +183,41 @@
 				erase-block-size = <8192>;
 				/* maximum erase time(ms) for a 8K sector */
 				max-erase-time = <5>;
+			};
+
+			st_nvm_user_otp: flash@USER_OTP_BASE {
+				compatible = "st,stm32-nvm-otp";
+				reg = <DT_ADDR(USER_OTP_BASE) 512>;
+				status = "disabled";
+
+				st,user-otp;
+			};
+
+			/* "Engineering bytes" */
+			flash@ENGI_BYTES_BASE {
+				compatible = "st,stm32-nvm-otp";
+				reg = <DT_ADDR(ENGI_BYTES_BASE) ENGI_BYTES_SIZE>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@210 {
+						reg = <0x210 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal2_otp: ts-cal2@242 {
+						reg = <0x242 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					vrefint_otp: vrefint@2a5 {
+						reg = <0x2a5 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
 			};
 		};
 

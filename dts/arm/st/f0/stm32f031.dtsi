@@ -40,6 +40,17 @@
 				status = "disabled";
 			};
 		};
+
+		flash-controller@40022000 {
+			flash@1ffff700 {
+				nvmem-layout {
+					ts_cal2_otp: ts-cal2@c2 {
+						reg = <0xc2 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
+		};
 	};
 
 	die_temp: dietemp {

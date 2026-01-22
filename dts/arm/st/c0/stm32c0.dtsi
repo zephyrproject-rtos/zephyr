@@ -169,6 +169,36 @@
 				/* maximum erase time(ms) for a 2K sector */
 				max-erase-time = <40>;
 			};
+
+			st_nvm_user_otp: flash@1fff7000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7000 DT_SIZE_K(1)>;
+				status = "disabled";
+
+				st,user-otp;
+			};
+
+			/* "Engineering bytes" */
+			flash@1fff7500 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1fff7500 768>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@68 {
+						reg = <0x68 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					vrefint_otp: vrefint@6a {
+						reg = <0x6a 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
 		};
 
 		rcc: rcc@40021000 {

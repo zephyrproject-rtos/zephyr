@@ -41,14 +41,49 @@
 			interrupts = <103 0>;
 			status = "disabled";
 		};
-	};
 
-	die_temp: dietemp {
-		ts-cal1-addr = <0x1ff07a2c>;
-		ts-cal2-addr = <0x1ff07a2e>;
-	};
+		flash-controller@40023c00 {
+			/*
+			 * Delete OTP regions declared in root DTSI
+			 * which are not correct for this product line.
+			 */
+			/delete-node/ flash@1ff0f000;
+			/delete-node/ flash@1ff0f400;
 
-	vref: vref {
-		vrefint-cal-addr = <0x1ff07a2a>;
+			st_nvm_user_otp: flash@1ff07800 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ff0f000 DT_SIZE_K(1)>;
+				status = "disabled";
+
+				st,user-otp;
+			};
+
+			/* c.f. root DTSI file - same comment applies */
+			flash@1ff07a00 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ff07a00 256>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					vrefint_otp: vrefint@2a {
+						reg = <0x2a 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal1_otp: ts-cal1@2c {
+						reg = <0x2c 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal2_otp: ts-cal2@2e {
+						reg = <0x2e 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
+		};
 	};
 };

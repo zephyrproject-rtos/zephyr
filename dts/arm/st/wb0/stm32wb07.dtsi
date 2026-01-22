@@ -14,6 +14,15 @@
 			flash0: flash@10040000 {
 				reg = <0x10040000 DT_SIZE_K(256)>;
 			};
+
+			flash@10001e00 {
+				nvmem-layout {
+					ts_c85_otp: c85@68 {
+						reg = <0x68 0x4>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
 		};
 
 		i2c2: i2c@41001000 {

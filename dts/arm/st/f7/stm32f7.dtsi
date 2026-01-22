@@ -151,6 +151,51 @@
 				/* maximum erase time (ms) for a 256K sector */
 				max-erase-time = <4000>;
 			};
+
+			st_nvm_user_otp: flash@1ff0f000 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ff0f000 DT_SIZE_K(1)>;
+				status = "disabled";
+
+				st,user-otp;
+			};
+
+			/*
+			 * Device-specific information is found in NVM
+			 * after the documented end of the "OTP area".
+			 *
+			 * Note that we encompass the last 16 bytes that
+			 * RefMan documents as part of the "OTP area" to
+			 * obtain an aligned start address for this range,
+			 * which makes the `reg` property of children NVMEM
+			 * cells easier to read; these 16 bytes can't be
+			 * used to hold any data so this is a non-issue.
+			 */
+			flash@1ff0f400 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ff0f400 256>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					vrefint_otp: vrefint@4a {
+						reg = <0x4a 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal1_otp: ts-cal1@4c {
+						reg = <0x4c 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					ts_cal2_otp: ts-cal2@4e {
+						reg = <0x4e 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
 		};
 
 		rcc: rcc@40023800 {
