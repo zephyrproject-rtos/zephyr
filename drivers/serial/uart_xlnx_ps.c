@@ -1100,17 +1100,14 @@ static int uart_xlnx_ps_irq_is_pending(const struct device *dev)
  * @brief Update cached contents of IIR
  *
  * @param dev UART device struct
- *
- * @return Always 1
  */
-static int uart_xlnx_ps_irq_update(const struct device *dev)
+static void uart_xlnx_ps_irq_update(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	/* Clear RX/TX interrupts */
 	sys_write32(XUARTPS_IXR_TTRIG | XUARTPS_IXR_TXEMPTY | XUARTPS_IXR_RTRIG,
 		    reg_base + XUARTPS_ISR_OFFSET);
-	return 1;
 }
 
 /**

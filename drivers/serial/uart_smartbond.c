@@ -614,7 +614,7 @@ static int uart_smartbond_irq_is_pending(const struct device *dev)
 	return 0;
 }
 
-static int uart_smartbond_irq_update(const struct device *dev)
+static void uart_smartbond_irq_update(const struct device *dev)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
 	bool no_intr = false;
@@ -642,8 +642,6 @@ static int uart_smartbond_irq_update(const struct device *dev)
 			break;
 		}
 	}
-
-	return 1;
 }
 
 static void uart_smartbond_irq_callback_set(const struct device *dev,

@@ -872,14 +872,14 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
 	return 0;
 }
 
-static int cdc_acm_irq_update(const struct device *dev)
+static void cdc_acm_irq_update(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
 		__ASSERT_NO_MSG(false);
-		return 0;
+		return;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -895,8 +895,6 @@ static int cdc_acm_irq_update(const struct device *dev)
 	} else {
 		data->tx_fifo.irq = false;
 	}
-
-	return 1;
 }
 
 /*

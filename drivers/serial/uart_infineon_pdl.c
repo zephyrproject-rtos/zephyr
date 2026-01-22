@@ -562,24 +562,6 @@ static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 	return (int)(intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
 }
 
-/* Start processing interrupts in ISR.
- * This function should be called the first thing in the ISR. Calling
- * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
- * allowed only after this.
- */
-static int ifx_cat1_uart_irq_update(const struct device *dev)
-{
-	const struct ifx_cat1_uart_config *const config = dev->config;
-	uint32_t rx_intr_pending = ((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR));
-	uint32_t num_in_rx_fifo = Cy_SCB_UART_GetNumInRxFifo(config->reg_addr);
-
-	if (rx_intr_pending != 0u && num_in_rx_fifo == 0u) {
-		return 0;
-	}
-
-	return 1;
-}
-
 static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
 					   uart_irq_callback_user_data_t cb, void *cb_data)
 {
@@ -1375,7 +1357,6 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.irq_err_enable = ifx_cat1_uart_irq_err_enable,
 	.irq_err_disable = ifx_cat1_uart_irq_err_disable,
 	.irq_is_pending = ifx_cat1_uart_irq_is_pending,
-	.irq_update = ifx_cat1_uart_irq_update,
 	.irq_callback_set = ifx_cat1_uart_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 

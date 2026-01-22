@@ -533,15 +533,13 @@ static int uart_esp32_irq_is_pending(const struct device *dev)
 	return uart_esp32_irq_rx_ready(dev) || uart_esp32_irq_tx_ready(dev);
 }
 
-static int uart_esp32_irq_update(const struct device *dev)
+static void uart_esp32_irq_update(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
-
-	return 1;
 }
 
 static void uart_esp32_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
