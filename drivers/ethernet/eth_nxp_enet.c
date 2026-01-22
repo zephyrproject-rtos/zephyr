@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/devicetree/nvmem.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
 #include <ethernet/eth_stats.h>
@@ -72,8 +73,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RING_ID 0
 
 enum mac_address_source {
-	MAC_ADDR_SOURCE_LOCAL,
-	MAC_ADDR_SOURCE_RANDOM,
 	MAC_ADDR_SOURCE_UNIQUE,
 	MAC_ADDR_SOURCE_FUSED,
 	MAC_ADDR_SOURCE_INVALID,
@@ -83,7 +82,12 @@ struct nxp_enet_mac_config {
 	const struct device *module_dev;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+
+	struct net_eth_mac_config mac_cfg;
+
+	/* Deprecated */
 	enum mac_address_source mac_addr_source;
+
 	const struct pinctrl_dev_config *pincfg;
 	enet_buffer_config_t buffer_config[1];
 	uint8_t phy_mode;
@@ -694,19 +698,18 @@ static int eth_nxp_enet_init(const struct device *dev)
 #endif
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
-	switch (config->mac_addr_source) {
-	case MAC_ADDR_SOURCE_RANDOM:
-		gen_random_mac(data->mac_addr,
-			FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
-		break;
-	case MAC_ADDR_SOURCE_UNIQUE:
-		nxp_enet_unique_mac(data->mac_addr);
-		break;
-	case MAC_ADDR_SOURCE_FUSED:
-		nxp_enet_fused_mac(data->mac_addr);
-		break;
-	default:
-		break;
+	err = net_eth_mac_load(&config->mac_cfg, data->mac_addr);
+	if (err == -ENODATA) {
+		switch (config->mac_addr_source) {
+		case MAC_ADDR_SOURCE_UNIQUE:
+			nxp_enet_unique_mac(data->mac_addr);
+			break;
+		case MAC_ADDR_SOURCE_FUSED:
+			nxp_enet_fused_mac(data->mac_addr);
+			break;
+		default:
+			break;
+		}
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -909,7 +912,8 @@ static const struct ethernet_api api_funcs = {
 	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
 			DT_INST_PROP(n, zephyr_random_mac_address) ||			\
 			DT_INST_PROP(n, nxp_unique_mac) ||				\
-			DT_INST_PROP(n, nxp_fused_mac),					\
+			DT_INST_PROP(n, nxp_fused_mac) ||				\
+			DT_INST_NVMEM_CELLS_HAS_NAME(n, mac_address),			\
 			"MAC address not specified on ENET DT node");
 
 #define NXP_ENET_NODE_PHY_MODE_CHECK(n)							\
@@ -919,14 +923,11 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			"RGMII mode requires nxp,enet1g compatible on ENET DT node"	\
 			" and CONFIG_ETH_NXP_ENET_1G enabled");
 
+/* Deprecated but kept for backwards compatibility */
 #define NXP_ENET_MAC_ADDR_SOURCE(n)							\
-	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),				\
-			(MAC_ADDR_SOURCE_RANDOM),					\
-	(COND_CODE_1(DT_INST_PROP(n, nxp_unique_mac), (MAC_ADDR_SOURCE_UNIQUE),		\
-	(COND_CODE_1(DT_INST_PROP(n, nxp_fused_mac), (MAC_ADDR_SOURCE_FUSED),		\
-	(COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
-			(MAC_ADDR_SOURCE_LOCAL),					\
-	(MAC_ADDR_SOURCE_INVALID))))))))
+	COND_CASE_1(DT_INST_PROP(n, nxp_unique_mac), (MAC_ADDR_SOURCE_UNIQUE),		\
+		    DT_INST_PROP(n, nxp_fused_mac), (MAC_ADDR_SOURCE_FUSED),		\
+		    (MAC_ADDR_SOURCE_INVALID))
 
 #define NXP_ENET_MAC_INIT(n)								\
 		NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)					\
@@ -987,6 +988,7 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
 			NXP_ENET_MDIO_DEV(n)						\
 			NXP_ENET_PTP_DEV(n)						\
+			.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),			\
 			.mac_addr_source = NXP_ENET_MAC_ADDR_SOURCE(n),			\
 		};									\
 											\
@@ -999,7 +1001,6 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
 			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
 			.dev = DEVICE_DT_INST_GET(n),					\
-			.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
 		};									\
 											\
 		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
