@@ -8,24 +8,6 @@ description: |
   to detect an input event on a group which is the child of renesas,ra-ctsu.
   For more information see input/renesas,ra-ctsu.yaml
 
-  Example:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  &ctsu {
-    compatible = "renesas,ra-ctsu";
-
-    group1 {
-      ...
-      slider {
-        compatible = "renesas,ra-ctsu-slider";
-        elements = <1>, <0>, <2>, <4>, <3>;
-        threshold = <573>;
-        event-code = <INPUT_ABS_THROTTLE>;
-      };
-    };
-  };
-
 compatible: "renesas,ra-ctsu-slider"
 
 include: [base.yaml]
@@ -50,3 +32,21 @@ properties:
     default: 0
     description: |
       Touch/non-touch judgement threshold for automatic judgement.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    &ctsu {
+      compatible = "renesas,ra-ctsu";
+
+      group1 {
+        /* ... */
+        slider {
+          compatible = "renesas,ra-ctsu-slider";
+          elements = <1>, <0>, <2>, <4>, <3>;
+          threshold = <573>;
+          event-code = <INPUT_ABS_THROTTLE>;
+        };
+      };
+    };

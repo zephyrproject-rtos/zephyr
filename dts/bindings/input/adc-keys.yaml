@@ -8,30 +8,6 @@ description: |
   values. Instead, users are required to specify the voltage for each single
   key press or for combinations of key presses.
 
-  Example:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  / {
-          buttons {
-                  compatible = "adc-keys";
-                  io-channels = <&adc 2>;
-                  keyup-threshold-mv = <0>;
-
-                  key_0 {
-                          press-thresholds-mv = <1650>,  /* KEY0 */
-                                                <2536>;  /* KEY0 + KEY1 */
-                          zephyr,code = <INPUT_KEY_0>;
-                  };
-
-                  key_1 {
-                          press-thresholds-mv = <2300>,  /* KEY1 */
-                                                <2536>;  /* KEY0 + KEY1 */
-                          zephyr,code = <INPUT_KEY_1>;
-                  };
-          };
-  };
-
 compatible: "adc-keys"
 
 include: base.yaml
@@ -68,3 +44,27 @@ child-binding:
       type: int
       required: true
       description: Key code to emit.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    / {
+            buttons {
+                    compatible = "adc-keys";
+                    io-channels = <&adc 2>;
+                    keyup-threshold-mv = <0>;
+
+                    key_0 {
+                            press-thresholds-mv = <1650>,  /* KEY0 */
+                                                  <2536>;  /* KEY0 + KEY1 */
+                            zephyr,code = <INPUT_KEY_0>;
+                    };
+
+                    key_1 {
+                            press-thresholds-mv = <2300>,  /* KEY1 */
+                                                  <2536>;  /* KEY0 + KEY1 */
+                            zephyr,code = <INPUT_KEY_1>;
+                    };
+            };
+    };
