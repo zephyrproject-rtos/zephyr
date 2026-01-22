@@ -14,6 +14,9 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/cpu.h>
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+#include <zephyr/arch/arm64/pac.h>
+#endif
 
 /*
  * Note about stack usage:
@@ -148,6 +151,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_ARM64_STACK_PROTECTION)
 	thread->arch.stack_limit = (uint64_t)stack + Z_ARM64_STACK_GUARD_SIZE;
 	z_arm64_thread_mem_domains_init(thread);
+#endif
+
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/* Generate unique PAC keys for this thread */
+	z_arm64_pac_keys_generate(&thread->arch.pac_keys);
 #endif
 }
 
