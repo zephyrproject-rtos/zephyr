@@ -1,4 +1,4 @@
-.. xenvm:
+.. zephyr:board:: xenvm
 
 ARMv8 Xen Virtual Machine Example
 #################################
@@ -20,22 +20,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------+-------------+----------------------+
-| Interface    | Controller  | Driver/Component     |
-+==============+=============+======================+
-| GIC          | virtualized | interrupt controller |
-+--------------+-------------+----------------------+
-| ARM TIMER    | virtualized | system clock         |
-+--------------+-------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
-
-The default configuration for this board can be found in these files:
-
-- :zephyr_file:`boards/xen/xenvm/Kconfig.defconfig`
-- :zephyr_file:`boards/xen/xenvm/xenvm_defconfig`
+.. zephyr:board-supported-hw::
 
 Devices
 ========
