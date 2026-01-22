@@ -101,7 +101,7 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
  *
  * @retval 0 Success
  * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
- *                 than @kconfig{CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH}
+ *                 than @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH}
  * @retval -EFAULT @p bearer is not registered
  */
 int bt_ccp_call_control_server_set_bearer_provider_name(
