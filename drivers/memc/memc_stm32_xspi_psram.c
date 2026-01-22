@@ -413,7 +413,7 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 			.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE,
 			.ChipSelectBoundary = DT_INST_PROP(0, st_csbound),
 			.MaxTran = 0U,
-			.Refresh = 0x81U,
+			.Refresh = DT_INST_PROP(0, st_refresh),
 			.MemorySelect = HAL_XSPI_CSSEL_NCS1,
 		},
 	},
