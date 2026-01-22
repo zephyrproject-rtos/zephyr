@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ECM_CLASS
+	bool "USB Communication Device Class (ECM) support [EXPERIMENTAL]"
+	depends on NETWORKING
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	help
+	  USB Host Communication Device Class - Ethernet Control Model (CDC-ECM)
+	  implementation.
+
+	  Enables support for USB CDC-ECM devices (for example, USB Ethernet
+	  adapters) and exposes them as Ethernet network interfaces.
+
+if USBH_CDC_ECM_CLASS
+
+config USBH_CDC_ECM_ETH_DRV_NAME
+	string "Ethernet interface name"
+	default "usbh_cdc_ecm_eth"
+	help
+	  This option sets the driver name and name of the network interface
+	  in your host system. If there are multiple network interfaces
+	  defined, then this value is used as a prefix and the interface names
+	  will be usbh_cdc_ecm_eth0, usbh_cdc_ecm_eth1, etc.
+
+config USBH_CDC_ECM_TX_PIPELINE_DEPTH
+	int "Number of bulk OUT transfers that may be queued"
+	default 1
+	range 1 16
+	help
+	  Number of bulk OUT transfers a driver instance can keep queued at the
+	  same time. Every queued transfer holds one transmit buffer, so this
+	  also bounds the memory used for transmission.
+
+	  Using more than one allows several packets to be in flight at once and
+	  keeps the USB bus busy while a completed transfer is being processed.
+
+config USBH_CDC_ECM_RX_PIPELINE_DEPTH
+	int "Number of bulk IN transfers that may be queued"
+	default 1
+	range 1 16
+	help
+	  Number of bulk IN transfers a driver instance can keep queued at the
+	  same time. Every queued transfer holds one receive buffer, so this
+	  also bounds the memory used for reception.
+
+	  Using more than one reduces the chance of dropping packets while a
+	  completed transfer is being handed to the network stack.
+
+module = USBH_CDC_ECM
+module-str = "usbh cdc_ecm"
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_CDC_ECM_CLASS
