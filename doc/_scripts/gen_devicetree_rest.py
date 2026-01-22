@@ -604,7 +604,7 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
         ''', string_io)
         blocks = [to_code_block(example, language='dts')
                   for example in binding.examples]
-        print("\n----\n".join(blocks), file=string_io)
+        print("\n\n----\n\n".join(blocks), file=string_io)
 
     # Properties.
     print_block('''\
