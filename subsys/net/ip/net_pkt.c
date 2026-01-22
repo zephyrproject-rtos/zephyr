@@ -1917,37 +1917,72 @@ int net_pkt_read(struct net_pkt *pkt, void *data, size_t length)
 
 int net_pkt_read_be16(struct net_pkt *pkt, uint16_t *data)
 {
-	uint8_t d16[2];
+	uint8_t d16[sizeof(uint16_t)];
 	int ret;
 
 	ret = net_pkt_read(pkt, d16, sizeof(uint16_t));
 
-	*data = d16[0] << 8 | d16[1];
+	*data = sys_get_be16(d16);
 
 	return ret;
 }
 
 int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data)
 {
-	uint8_t d16[2];
+	uint8_t d16[sizeof(uint16_t)];
 	int ret;
 
 	ret = net_pkt_read(pkt, d16, sizeof(uint16_t));
 
-	*data = d16[1] << 8 | d16[0];
+	*data = sys_get_le16(d16);
 
 	return ret;
 }
 
 int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data)
 {
-	uint8_t d32[4];
+	uint8_t d32[sizeof(uint32_t)];
 	int ret;
 
 	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
 
-	*data = (uint32_t)d32[0] << 24 | (uint32_t)d32[1] << 16 |
-		(uint32_t)d32[2] << 8 | (uint32_t)d32[3];
+	*data = sys_get_be32(d32);
+
+	return ret;
+}
+
+int net_pkt_read_le32(struct net_pkt *pkt, uint32_t *data)
+{
+	uint8_t d32[sizeof(uint32_t)];
+	int ret;
+
+	ret = net_pkt_read(pkt, d32, sizeof(uint32_t));
+
+	*data = sys_get_le32(d32);
+
+	return ret;
+}
+
+int net_pkt_read_be64(struct net_pkt *pkt, uint64_t *data)
+{
+	uint8_t d64[sizeof(uint64_t)];
+	int ret;
+
+	ret = net_pkt_read(pkt, d64, sizeof(uint64_t));
+
+	*data = sys_get_be64(d64);
+
+	return ret;
+}
+
+int net_pkt_read_le64(struct net_pkt *pkt, uint64_t *data)
+{
+	uint8_t d64[sizeof(uint64_t)];
+	int ret;
+
+	ret = net_pkt_read(pkt, d64, sizeof(uint64_t));
+
+	*data = sys_get_le64(d64);
 
 	return ret;
 }
