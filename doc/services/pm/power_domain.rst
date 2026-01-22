@@ -92,7 +92,7 @@ PM subsystem to turn devices on and off.
 .. code-block:: c
 
     static int mydomain_pm_action(const struct device *dev,
-                               enum pm_device_action *action)
+                               enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_RESUME:
