@@ -557,8 +557,8 @@ static void console_input_init(void)
 	uart_irq_callback_set(uart_console_dev, uart_console_isr);
 
 	/* Drain the fifo */
-	while (uart_irq_rx_ready(uart_console_dev) > 0) {
-		uart_fifo_read(uart_console_dev, &c, 1);
+	while (uart_poll_in(uart_console_dev, &c) == 0) {
+		/* do nothing */
 	}
 
 	uart_irq_rx_enable(uart_console_dev);
