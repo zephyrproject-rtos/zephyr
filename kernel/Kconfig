@@ -606,9 +606,26 @@ config WORKQUEUE_WORK_TIMEOUT
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
-	default 4096 if COVERAGE_GCOV || WIFI_NRF70
-	default 2560 if WIFI_NM_WPA_SUPPLICANT
+	default 1024 if SYSTEM_WORKQUEUE_STACK_IGNORE_MIN
+	default 0
+	help
+	  Minimum system work queue stack size. If subsystems
+	  specify SYSTEM_WORKQUEUE_STACK_MIN_SIZE_* options, then the largest
+	  value of these is selected for the system workqueue stack size.
+
+config SYSTEM_WORKQUEUE_STACK_IGNORE_MIN
+	bool "Ignore the minimum system workqueue stack size requirement"
+	help
+	  This option can be set to force setting a smaller stack size
+	  than what's specified by enabled subsystems. This can be useful
+	  when optimizing memory usage and a more precise minimum stack size
+	  is known for a given application.
+
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_APP
+	int "System workqueue stack size for a applications"
 	default 1024
+	help
+	  Default setting for application system work queue size.
 
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"

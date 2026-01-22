@@ -122,9 +122,7 @@ config BT_MESH_WORKQ_SYS
 	bool "System workqueue"
 	help
 	  When this option is selected, the mesh sends messages from
-	  the system work queue. The application needs to ensure the system
-	  workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE) is large enough,
-	  refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
+	  the system work queue.
 
 	  When this option is enabled and the mesh tries to send a message,
 	  and the host ran out of the HCI command buffers controlled by
@@ -138,6 +136,14 @@ config BT_MESH_WORKQ_SYS
 	  reduced reliability for sending mesh messages.
 
 endchoice
+
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_BT_MESH
+	int "System workqueue stack size for Bluetooth mesh"
+	depends on BT_MESH_WORKQ_SYS
+	default 1536 if BT_MESH_PROXY
+	default 1024 if BT_HOST_CRYPTO
+	default 776 if BT_MESH_PRIV_BEACONS
+	default 768
 
 if BT_MESH_WORKQ_MESH
 

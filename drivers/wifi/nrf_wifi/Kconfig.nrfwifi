@@ -236,6 +236,9 @@ config NRF70_WORKQ_STACK_SIZE
 	int "Stack size for workqueue"
 	default 4096
 
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_NRF70
+	def_int NRF70_WORKQ_STACK_SIZE
+
 config NRF70_WORKQ_MAX_ITEMS
 	int "Maximum work items for all workqueues"
 	default 100

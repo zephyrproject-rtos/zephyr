@@ -51,6 +51,11 @@ config COVERAGE_GCOV
 
 endchoice
 
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_COVERAGE
+	int "System workqueue stack size for gcov coverage"
+	depends on COVERAGE_GCOV
+	default 4096
+
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
 	depends on COVERAGE_GCOV
