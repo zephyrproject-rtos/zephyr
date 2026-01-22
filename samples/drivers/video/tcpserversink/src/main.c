@@ -187,6 +187,12 @@ int encode_frame(struct video_buffer *in, struct video_buffer **out)
 		return ret;
 	}
 
+	ret = video_dequeue(encoder_dev, &in, K_FOREVER);
+	if (ret) {
+		LOG_ERR("Unable to dequeue encoder input buf");
+		return ret;
+	}
+
 	return 0;
 }
 
