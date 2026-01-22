@@ -220,7 +220,7 @@ static int kb1200_uart_irq_is_pending(const struct device *dev)
 	return (data->pending_flag_data) ? 1 : 0;
 }
 
-static int kb1200_uart_irq_update(const struct device *dev)
+static void kb1200_uart_irq_update(const struct device *dev)
 {
 	struct kb1200_uart_data *data = dev->data;
 	const struct kb1200_uart_config *config = dev->config;
@@ -228,7 +228,6 @@ static int kb1200_uart_irq_update(const struct device *dev)
 	data->pending_flag_data = (config->ser->SERPF) & (config->ser->SERIE);
 	/*clear	pending	flag*/
 	config->ser->SERPF = data->pending_flag_data;
-	return 1;
 }
 
 static void kb1200_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,

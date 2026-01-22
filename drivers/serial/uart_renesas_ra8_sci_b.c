@@ -495,7 +495,7 @@ static int uart_ra_sci_b_irq_is_pending(const struct device *dev)
 	return tx_pending || rx_pending;
 }
 
-static int uart_ra_sci_b_irq_update(const struct device *dev)
+static void uart_ra_sci_b_irq_update(const struct device *dev)
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 	const struct uart_ra_sci_b_config *cfg = dev->config;
@@ -514,8 +514,6 @@ static int uart_ra_sci_b_irq_update(const struct device *dev)
 	}
 
 	cfg->regs->CFCLR = cfclr;
-
-	return 1;
 }
 
 static void uart_ra_sci_b_irq_callback_set(const struct device *dev,

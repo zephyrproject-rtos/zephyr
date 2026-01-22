@@ -755,9 +755,8 @@ static int uart_xec_irq_is_pending(const struct device *dev)
 
 /* Update cached contents of IIR
  * param:  dev UART device struct
- * return: Always 1
  */
-static int uart_xec_irq_update(const struct device *dev)
+static void uart_xec_irq_update(const struct device *dev)
 {
 	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
@@ -768,7 +767,6 @@ static int uart_xec_irq_update(const struct device *dev)
 
 	k_spin_unlock(&dev_data->lock, key);
 
-	return 1;
 }
 
 /* Set the callback function pointer for IRQ.

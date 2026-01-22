@@ -369,15 +369,13 @@ static int uart_mspm0_irq_is_pending(const struct device *dev)
 	return data->pending_interrupt != DL_UART_MAIN_IIDX_NO_INTERRUPT;
 }
 
-static int uart_mspm0_irq_update(const struct device *dev)
+static void uart_mspm0_irq_update(const struct device *dev)
 {
 	struct uart_mspm0_data *data = dev->data;
 	const struct uart_mspm0_config *config = dev->config;
 
 	data->pending_interrupt =
 		DL_UART_Main_getPendingInterrupt(config->regs);
-
-	return 1;
 }
 
 static void uart_mspm0_irq_callback_set(const struct device *dev,
