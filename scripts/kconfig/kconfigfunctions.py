@@ -402,8 +402,10 @@ def _dt_chosen_partition_addr(kconf, chosen, index=0, unit=None):
     if not p_node:
         return 0
 
-    return _node_reg_addr(p_node.parent, index, unit) + _node_reg_addr(node, 0, unit)
-
+    if 'fixed-subpartitions' in p_node.compats:
+        return _node_reg_addr(p_node.parent.parent, index, unit) + _node_reg_addr(node, 0, unit)
+    else:
+        return _node_reg_addr(p_node.parent, index, unit) + _node_reg_addr(node, 0, unit)
 
 def dt_chosen_partition_addr(kconf, name, chosen, index=0, unit=None):
     """
