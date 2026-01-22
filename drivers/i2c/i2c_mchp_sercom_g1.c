@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,10 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
 #include <zephyr/drivers/dma.h>
 #include <mchp_dt_helper.h>
+#endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 
@@ -100,11 +102,11 @@ struct i2c_mchp_dev_data {
 	struct i2c_target_config target_config;
 	struct i2c_target_callbacks target_callbacks;
 	uint8_t rx_tx_data;
+	bool first_read_after_addr_match;
 #endif /*CONFIG_I2C_TARGET*/
 #ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
 	const struct i2c_mchp_dev_config *cfg;
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
-	bool firstReadAfterAddrMatch;
 };
 
 #ifdef CONFIG_I2C_MCHP_DMA_DRIVEN
@@ -746,7 +748,7 @@ static void i2c_target_address_match(const struct device *dev, struct i2c_mchp_d
 	const struct i2c_target_callbacks *target_cb = &data->target_callbacks;
 
 	i2c_target_set_command(dev, I2C_MCHP_TARGET_COMMAND_SEND_ACK);
-	data->firstReadAfterAddrMatch = true;
+	data->first_read_after_addr_match = true;
 
 	if ((target_status & SERCOM_I2CS_STATUS_DIR_Msk) == SERCOM_I2CS_STATUS_DIR_Msk) {
 
@@ -766,7 +768,7 @@ static void i2c_target_data_ready(const struct device *dev, struct i2c_mchp_dev_
 	int retval;
 
 	if (((target_status & SERCOM_I2CS_STATUS_DIR_Msk) == SERCOM_I2CS_STATUS_DIR_Msk)) {
-		if ((data->firstReadAfterAddrMatch == true) ||
+		if ((data->first_read_after_addr_match == true) ||
 		    (i2c_target_get_lastbyte_ack_status(dev) ==
 		     I2C_MCHP_TARGET_ACK_STATUS_RECEIVED_ACK)) {
 
@@ -774,7 +776,7 @@ static void i2c_target_data_ready(const struct device *dev, struct i2c_mchp_dev_
 			i2c_byte_write(dev, data->rx_tx_data);
 
 			/* first byte read after address match done*/
-			data->firstReadAfterAddrMatch = false;
+			data->first_read_after_addr_match = false;
 			i2c_target_set_command(dev, I2C_MCHP_TARGET_COMMAND_RECEIVE_ACK_NAK);
 
 			/* Load the next byte for host read*/
@@ -811,8 +813,6 @@ static void i2c_target_handler(const struct device *dev)
 		/* Handle address match */
 		if ((int_status & SERCOM_I2CS_INTFLAG_AMATCH_Msk) ==
 		    SERCOM_I2CS_INTFLAG_AMATCH_Msk) {
-			i2c_target_set_command(dev, I2C_MCHP_TARGET_COMMAND_SEND_ACK);
-			data->firstReadAfterAddrMatch = true;
 			i2c_target_address_match(dev, data, target_status);
 		}
 
@@ -1512,20 +1512,29 @@ static int i2c_poll_out(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = dev->data;
 
+	/* Wait for address byte transfer completion */
+	if (WAIT_FOR(((i2c_controller_int_flag_get(dev) & SERCOM_I2CM_INTFLAG_MB_Msk) != 0),
+		     TIMEOUT_VALUE_US, k_busy_wait(DELAY_US)) == false) {
+		LOG_ERR("Timeout waiting for MB flag");
+		return -ETIMEDOUT;
+	}
+
+	/* Address NACK check */
 	if (i2c_is_nack(dev) == true) {
 		i2c_controller_transfer_stop(dev);
-		LOG_ERR("NACK received during I2C write operation");
+		LOG_ERR("NACK received during I2C addr write operation");
 		return -EIO;
 	}
 
 	for (uint32_t i = 0; i < data->current_msg.size; i++) {
+		i2c_byte_write(dev, data->current_msg.buffer[i]);
+
+		/* Wait for data byte completion */
 		if (WAIT_FOR(((i2c_controller_int_flag_get(dev) & SERCOM_I2CM_INTFLAG_MB_Msk) != 0),
 			     TIMEOUT_VALUE_US, k_busy_wait(DELAY_US)) == false) {
 			LOG_ERR("Timeout waiting for MB flag");
 			return -ETIMEDOUT;
 		}
-
-		i2c_byte_write(dev, data->current_msg.buffer[i]);
 
 		/* Check for a NACK condition after writing each byte. */
 		if (i2c_is_nack(dev) == true) {
