@@ -11,33 +11,6 @@ description: |
   24V under voltage alarm, 24V missing voltage alarm, and SPI and CRC
   communication error detection.
 
-  Sample binding
-  &sdp_spi {
-    status = "okay";
-    pinctrl-names = "default";
-    max22199_gpio0: max22199_gpio@0 {
-      compatible = "adi,max22199-gpio";
-      reg = <0>;
-
-      spi-max-frequency = <1000000>;
-      status = "okay";
-
-      gpio-controller;
-      #gpio-cells = <2>;
-      ngpios = <8>;
-      status = "okay";
-
-      max22199-mode = <1>; // modes range from 0-4
-
-      drdy-gpios = <&gpioj 12 GPIO_ACTIVE_LOW>; /* SDP-GPIO5 - PMOD-PIN8 */
-      fault-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>; /* SDP-SERIAL_INT - PMOD-PIN7 */
-      latch-gpios = <&gpioj 13 GPIO_ACTIVE_LOW>; /* SDP-GPIO6 - PMOD-PIN9 */
-
-      filter-fbps = <0 0 0 0  0 0 0 0>; // programmable filter INx
-      filter-delays = <50 100 400 800 1600 3200 12800 20000>; // 1000 us == 1ms
-    };
-  };
-
 compatible: "adi,max22199-gpio"
 
 gpio-cells:
@@ -45,3 +18,31 @@ gpio-cells:
   - flags
 
 include: adi,max2219x-base-gpio.yaml
+
+examples:
+  - |
+    &sdp_spi {
+      status = "okay";
+      pinctrl-names = "default";
+      max22199_gpio0: max22199_gpio@0 {
+        compatible = "adi,max22199-gpio";
+        reg = <0>;
+
+        spi-max-frequency = <1000000>;
+        status = "okay";
+
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <8>;
+        status = "okay";
+
+        max22199-mode = <1>; // modes range from 0-4
+
+        drdy-gpios = <&gpioj 12 GPIO_ACTIVE_LOW>; /* SDP-GPIO5 - PMOD-PIN8 */
+        fault-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>; /* SDP-SERIAL_INT - PMOD-PIN7 */
+        latch-gpios = <&gpioj 13 GPIO_ACTIVE_LOW>; /* SDP-GPIO6 - PMOD-PIN9 */
+
+        filter-fbps = <0 0 0 0  0 0 0 0>; // programmable filter INx
+        filter-delays = <50 100 400 800 1600 3200 12800 20000>; // 1000 us == 1ms
+      };
+    };
