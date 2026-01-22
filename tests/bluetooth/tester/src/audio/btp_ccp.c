@@ -1001,7 +1001,6 @@ static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *
 {
 	const struct btp_tbs_set_uri_schemes_list_cmd *cp = cmd;
 	char uri_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	char *uri_ptr = (char *)&uri_list;
 	int err;
 
 	LOG_DBG("TBS Set Uri Scheme list");
@@ -1018,7 +1017,7 @@ static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *
 		return BTP_STATUS_FAILED;
 	}
 
-	err = bt_tbs_set_uri_scheme_list(cp->index, (const char **)&uri_ptr, cp->uri_count);
+	err = bt_tbs_set_uri_scheme_list(cp->index, uri_list);
 	if (err) {
 		return BTP_STATUS_FAILED;
 	}
