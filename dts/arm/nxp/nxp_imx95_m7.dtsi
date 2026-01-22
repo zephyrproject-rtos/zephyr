@@ -112,7 +112,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		netc_mix: power-domain@12 {
+		disp_mix: power-domain@13 {
+			compatible = "arm,scmi-power-domain";
+			reg = <13>;
+			#power-domain-cells = <0>;
+		};
+
+		netc_mix: power-domain@18 {
 			compatible = "arm,scmi-power-domain";
 			reg = <18>;
 			#power-domain-cells = <0>;
@@ -695,6 +701,7 @@
 			#address-cells = <1>;
 			nxp,irq-offset = <874>;
 			nxp,num-irqs = <512>;
+			power-domains = <&disp_mix>;
 			status = "disabled";
 
 			disp_irqsteer_master0: interrupt-controller@0 {
