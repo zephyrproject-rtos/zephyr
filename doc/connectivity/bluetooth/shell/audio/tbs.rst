@@ -199,8 +199,7 @@ GTBS bearer.
                                     gtbs}>] <strength>
       set_status_flags            :Set the bearer feature and status value
                                     [<{instance_index, gtbs}>] <feature_and_status>
-      set_uri_scheme              :Set the URI prefix list <bearer_idx> <uri1 [uri2
-                                    [uri3 [...]]]>
+      set_uri_scheme              :Set the URI prefix list <bearer_idx> <uri1[,uri2[,uri3[,...]]]>
       print_calls                 :Output all calls in the debug log
 
 Example Usage
