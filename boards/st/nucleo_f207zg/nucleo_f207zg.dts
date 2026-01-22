@@ -228,6 +228,7 @@ zephyr_udc0: &usbotg_fs {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/* Sectors 0 and 1 (2x16kByte) */
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
@@ -235,10 +236,14 @@ zephyr_udc0: &usbotg_fs {
 		};
 
 		/*
+		 * Sectors 2 and 3 (2x16kByte)
+		 *
 		 * nvs subsystem requires 2 sectors with a max total of 32K
 		 * On F2 series, the only option is to use the following
 		 * partition, which is compatible with mcuboot usage.
-		 * Keep it commented in order it is not used by CI.
+		 * Keep it commented in order it is not used by CI
+		 * since, when MCUBoot is not embedded, Zephyr image starts
+		 * from flash0 beginning and overlaps storage_partition.
 		 *
 		 * storage_partition: partition@8000 {
 		 *	label = "storage";
@@ -246,19 +251,24 @@ zephyr_udc0: &usbotg_fs {
 		 * };
 		 */
 
+		/* Sector 4 (64kByte): spare/unused */
+
+		/* Sectors 5 to 7 (3x128kByte) */
 		slot0_partition: partition@20000 {
 			label = "image-0";
 			reg = <0x20000 DT_SIZE_K(384)>;
 		};
 
-		slot1_partition: partition@60000 {
+		/* Sectors 8 to 10 (3x128kByte) */
+		slot1_partition: partition@80000 {
 			label = "image-1";
-			reg = <0x60000 DT_SIZE_K(384)>;
+			reg = <0x80000 DT_SIZE_K(384)>;
 		};
 
-		scratch_partition: partiimagtion@c0000 {
+		/* Sector 11 (128kByte) */
+		scratch_partition: partiimagtion@e0000 {
 			label = "image-scratch";
-			reg = <0xc0000 DT_SIZE_K(128)>;
+			reg = <0xe0000 DT_SIZE_K(128)>;
 		};
 	};
 };
