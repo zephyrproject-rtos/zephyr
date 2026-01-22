@@ -744,6 +744,7 @@ vdl	Van der Laan b.v.
 via	VIA Technologies, Inc.
 vicharak	Vicharak
 videostrong	Videostrong Technology Co., Ltd.
+viewe   VIEWE Technology Co., Ltd.
 virtio	Virtual I/O Device Specification, developed by the OASIS consortium
 virtual	Used for virtual device without specific vendor.
 vishay	Vishay Intertechnology, Inc
