@@ -1,0 +1,47 @@
+# Copyright (c) 2025 sevenlab engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: Sensirion SEN6x sensor driver.
+description: |
+    3rd Generation Environmental Sensor Node for Air Quality Applications.
+
+    Example:
+
+    &i2c0 {
+      ...
+
+      sen6x: sen6x@6b {
+        ...
+
+        model = SEN6X_MODEL_SEN66;
+        auto-clear-device-status;
+        start-measurement-on-init;
+      };
+    };
+
+compatible: "sensirion,sen6x"
+
+include: ["i2c-device.yaml", "sensor-device.yaml"]
+
+properties:
+  model:
+    type: string
+    required: true
+    description: |
+      The model of the connected sensor.
+    enum:
+      - "SEN60"
+      - "SEN63C"
+      - "SEN65"
+      - "SEN66"
+      - "SEN68"
+
+  auto-clear-device-status:
+    type: boolean
+    description: |
+      Automatically clear device status after reading it. Not supported on SEN60.
+
+  start-measurement-on-init:
+    type: boolean
+    description: |
+      Start continuous measurement after successful initialization.
