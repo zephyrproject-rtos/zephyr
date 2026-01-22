@@ -112,13 +112,17 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
  *
  * @param[in]  bearer  The bearer to get the name for.
  * @param[out] name    Pointer that will be updated to be the bearer provider name.
+ * @param name_size The size of the @p name buffer. The suggested size is
+ *                  @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH} + 1 to
+ *                  ensure that the name always fits.
  *
  * @retval 0 Success
  * @retval -EINVAL @p bearer or @p name is NULL
  * @retval -EFAULT @p bearer is not registered
+ * @retval -ENOMEM @p name_size is insufficient to hold the bearer name (including null terminator)
  */
 int bt_ccp_call_control_server_get_bearer_provider_name(
-	struct bt_ccp_call_control_server_bearer *bearer, const char **name);
+	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size);
 
 /**
  * @brief Get the bearer UCI.
