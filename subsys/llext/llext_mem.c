@@ -156,6 +156,11 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		return -EFAULT;
 	}
 
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	/* If allocating to heap, allocation must be multiple of block size */
+	region_alloc = ROUND_UP(region_alloc, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
+#endif
+
 	/* Allocate a suitably aligned area for the region. */
 	if (region->sh_flags & SHF_EXECINSTR) {
 		ext->mem[mem_idx] = llext_aligned_alloc_instr(ext, region_align, region_alloc);

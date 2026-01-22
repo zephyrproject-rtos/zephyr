@@ -71,11 +71,49 @@ config LLEXT_HEAP_K_HEAP
 	  requested allocation, which increases the memory overhead slightly
 	  and may cause misalignment with MPU regions.
 
+config LLEXT_HEAP_MEMBLK
+	bool "Use sys_mem_blocks"
+	depends on !LLEXT_HEAP_DYNAMIC
+	select SYS_MEM_BLOCKS
+	help
+	  Use sys_mem_blocks API to manage LLEXT heap memory for extension regions.
+	  A minimum of one block will be allocated per region. Block size must be
+	  selected with care to ensure proper alignment for extension regions.
+
 endchoice
+
+if LLEXT_HEAP_MEMBLK
+
+config LLEXT_METADATA_HEAP_SIZE
+	int "llext metadata heap memory size in kilobytes"
+	default 4
+	help
+	  Heap size in kilobytes available for LLEXT metadata.
+
+config LLEXT_EXT_HEAP_SIZE
+	int "llext extension heap memory size in kilobytes"
+	depends on !HARVARD
+	default 16
+	help
+	  Heap size in kilobytes available for LLEXT extension data. Must be a multiple of
+	  LLEXT_HEAP_MEMBLK_BLOCK_SIZE. Replaced by LLEXT_INSTR_HEAP_SIZE and
+	  LLEXT_DATA_HEAP_SIZE if HARVARD is selected.
+
+config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
+	int "llext sys_mem_blocks block size in bytes"
+	default 32
+	help
+	  Block size in bytes for LLEXT sys_mem_blocks heap(s). Must be equal to or
+	  a multiple of LLEXT_PAGE_SIZE. The block size must also be equal to or a
+	  multiple of the largest alignment needed for any extension region.
+	  If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
+	  an unreasonably large block size may be needed to satisfy alignment requirements.
+
+endif
 
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
-	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD
+	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
 	default 8
 	help
 	  Heap size in kilobytes available to llext for dynamic allocation
