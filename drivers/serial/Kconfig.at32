@@ -1,0 +1,12 @@
+# Copyright (c) 2021 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config USART_AT32
+	bool "AT32 serial driver"
+	default y
+	depends on DT_HAS_ARTERY_AT32_USART_ENABLED
+	select PINCTRL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the USART driver for AT32 SoC family.
