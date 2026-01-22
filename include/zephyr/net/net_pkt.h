@@ -2433,6 +2433,48 @@ int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data);
 int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data);
 
 /**
+ * @brief Read uint32_t little endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint32_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_le32(struct net_pkt *pkt, uint32_t *data);
+
+/**
+ * @brief Read uint64_t big endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint64_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_be64(struct net_pkt *pkt, uint64_t *data);
+
+/**
+ * @brief Read uint64_t little endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination uint64_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_le64(struct net_pkt *pkt, uint64_t *data);
+
+/**
  * @brief Write data into a net_pkt
  *
  * @details net_pkt's cursor should be properly initialized and,
