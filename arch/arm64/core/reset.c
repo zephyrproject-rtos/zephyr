@@ -108,6 +108,10 @@ void z_arm64_el3_init(void)
 		SCR_ST_BIT |		/* Do not trap EL1 accesses to timer */
 		SCR_HCE_BIT |		/* Do not trap HVC */
 		SCR_SMD_BIT);		/* Do not trap SMC */
+#ifdef CONFIG_ARM_PAC
+	reg |= (SCR_APK_BIT |		/* Do not trap pointer authentication key accesses */
+		SCR_API_BIT);		/* Do not trap pointer authentication instructions */
+#endif
 	write_scr_el3(reg);
 
 #if defined(CONFIG_GIC_V3)
@@ -166,6 +170,12 @@ void z_arm64_el2_init(void)
 	 */
 	reg &= ~(HCR_IMO_BIT | HCR_AMO_BIT | HCR_TGE_BIT);
 	reg |= HCR_RW_BIT;		/* EL1 Execution state is AArch64 */
+
+#ifdef CONFIG_ARM_PAC
+	/* Do not trap pointer authentication instructions and key registers */
+	reg |= (HCR_API_BIT | HCR_APK_BIT);
+#endif
+
 	write_hcr_el2(reg);
 
 	reg = 0U;			/* RES0 */
@@ -213,6 +223,9 @@ void z_arm64_el2_init(void)
 	barrier_isync_fence_full();
 }
 
+#ifdef CONFIG_ARM_PAC
+__attribute__((target("branch-protection=none")))
+#endif
 void z_arm64_el1_init(void)
 {
 	uint64_t reg;
@@ -244,7 +257,17 @@ void z_arm64_el1_init(void)
 		SCTLR_I_BIT |		/* Enable i-cache */
 		SCTLR_C_BIT |		/* Enable d-cache */
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
+
+#ifdef CONFIG_ARM_PAC
+	/* Set a default APIA key BEFORE enabling PAC */
+	write_apiakeylo_el1(0x0123456789ABCDEFULL);
+	write_apiakeyhi_el1(0xFEDCBA9876543210ULL);
+	/* Now enable Pointer Authentication */
+	reg |= SCTLR_EnIA_BIT;		/* Enable instruction address signing using key A */
+#endif
+
 	write_sctlr_el1(reg);
+	barrier_isync_fence_full();
 
 	write_cntv_cval_el0(~(uint64_t)0);
 	/*

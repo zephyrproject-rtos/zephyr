@@ -10,6 +10,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <stdbool.h>
 
+/** @cond INTERNAL_HIDDEN */
+
 #define DAIFSET_FIQ_BIT		BIT(0)
 #define DAIFSET_IRQ_BIT		BIT(1)
 #define DAIFSET_ABT_BIT		BIT(2)
@@ -53,6 +55,7 @@
 #define SCTLR_SA_BIT		BIT(3)
 #define SCTLR_I_BIT		BIT(12)
 #define SCTLR_BR_BIT		BIT(17)
+#define SCTLR_EnIA_BIT		BIT(31)	/* Enable Instruction address signing using key A */
 
 #define CPACR_EL1_FPEN		GENMASK(21, 20)
 #define CPACR_EL1_ZEN		GENMASK(17, 16)
@@ -65,6 +68,8 @@
 #define SCR_HCE_BIT		BIT(8)
 #define SCR_RW_BIT		BIT(10)
 #define SCR_ST_BIT		BIT(11)
+#define SCR_APK_BIT		BIT(16)	/* Do not trap pointer authentication key accesses */
+#define SCR_API_BIT		BIT(17)	/* Do not trap pointer authentication instructions */
 #define SCR_EEL2_BIT		BIT(18)
 
 #define SCR_RES1		(BIT(4) | BIT(5))
@@ -158,6 +163,20 @@
 #define HCR_AMO_BIT		BIT(5)
 #define HCR_TGE_BIT		BIT(27)
 #define HCR_RW_BIT		BIT(31)
+#define HCR_APK_BIT		BIT(40)	/* Trap pointer authentication key registers */
+#define HCR_API_BIT		BIT(41)	/* Trap pointer authentication instructions */
+
+/* PAC Key Registers - System register encodings */
+#define APIAKeyLo_EL1		S3_0_C2_C1_0
+#define APIAKeyHi_EL1		S3_0_C2_C1_1
+#define APIBKeyLo_EL1		S3_0_C2_C1_2
+#define APIBKeyHi_EL1		S3_0_C2_C1_3
+#define APDAKeyLo_EL1		S3_0_C2_C2_0
+#define APDAKeyHi_EL1		S3_0_C2_C2_1
+#define APDBKeyLo_EL1		S3_0_C2_C2_2
+#define APDBKeyHi_EL1		S3_0_C2_C2_3
+#define APGAKeyLo_EL1		S3_0_C2_C3_0
+#define APGAKeyHi_EL1		S3_0_C2_C3_1
 
 /* System register interface to GICv3 */
 #define ICC_IGRPEN1_EL1		S3_0_C12_C12_7
@@ -230,5 +249,7 @@
 #define L1_CACHE_SHIFT		(6)
 #define L1_CACHE_BYTES		BIT(L1_CACHE_SHIFT)
 #define ARM64_CPU_INIT_SIZE	L1_CACHE_BYTES
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_ */
