@@ -1,7 +1,9 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: SCMI (System Control and Management Interface) clock protocol
+title: SCMI (System Control and Management Interface) clock control
+
+description: SCMI clock control for SoC-managed clocks exposed to agents.
 
 compatible: "arm,scmi-clock"
 

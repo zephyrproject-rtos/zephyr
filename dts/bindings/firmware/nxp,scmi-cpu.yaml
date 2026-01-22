@@ -1,7 +1,9 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: SCMI (System Control and Management Interface) cpu domain protocol
+title: SCMI (System Control and Management Interface) CPU (Central Processing Unit) domain
+
+description: NXP SCMI CPU domain management for per-core power and state control.
 
 compatible: "nxp,scmi-cpu"
 
