@@ -591,7 +591,7 @@ static void send_sd_response(int sock,
 					continue;
 				}
 			} else {
-				ret = dns_sd_handle_ptr_query(record, addr4, addr6,
+				ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6,
 						result->data, net_buf_max_len(result));
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
