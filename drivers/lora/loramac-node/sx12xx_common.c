@@ -20,6 +20,10 @@
 #define STATE_BUSY      1
 #define STATE_CLEANUP   2
 
+#define LMN_BW_125_KHZ	0
+#define LMN_BW_250_KHZ	1
+#define LMN_BW_500_KHZ	2
+
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
 struct sx12xx_rx_params {
@@ -39,6 +43,18 @@ static struct sx12xx_data {
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
 } dev_data;
+
+static uint32_t loramac_node_bw(const enum lora_signal_bandwidth bw)
+{
+	switch (bw) {
+	case BW_250_KHZ:
+		return LMN_BW_250_KHZ;
+	case BW_500_KHZ:
+		return LMN_BW_500_KHZ;
+	default:
+		return LMN_BW_125_KHZ;
+	}
+}
 
 int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 {
@@ -195,7 +211,7 @@ static void sx12xx_ev_rx_error(void)
 uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 {
 	return Radio.TimeOnAir(MODEM_LORA,
-			       dev_data.tx_cfg.bandwidth,
+			       loramac_node_bw(dev_data.tx_cfg.bandwidth),
 			       dev_data.tx_cfg.datarate,
 			       dev_data.tx_cfg.coding_rate,
 			       dev_data.tx_cfg.preamble_len,
@@ -344,6 +360,12 @@ int sx12xx_lora_config(const struct device *dev,
 {
 	bool crc = !config->packet_crc_disable;
 
+	if ((config->bandwidth != BW_125_KHZ)
+	    && (config->bandwidth != BW_250_KHZ)
+	    && (config->bandwidth != BW_500_KHZ)) {
+		return -EINVAL;
+	}
+
 	/* Ensure available, decremented after configuration */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
@@ -356,12 +378,12 @@ int sx12xx_lora_config(const struct device *dev,
 		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
 		/* Configure radio driver */
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
-				  config->bandwidth, config->datarate,
+				  loramac_node_bw(config->bandwidth), config->datarate,
 				  config->coding_rate, config->preamble_len,
 				  false, crc, 0, 0, config->iq_inverted, 4000);
 	} else {
 		/* TODO: Get symbol timeout value from config parameters */
-		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
+		Radio.SetRxConfig(MODEM_LORA, loramac_node_bw(config->bandwidth),
 				  config->datarate, config->coding_rate,
 				  0, config->preamble_len, 10, false, 0,
 				  crc, false, 0, config->iq_inverted, true);
