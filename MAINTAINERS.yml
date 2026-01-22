@@ -1111,10 +1111,9 @@ Device Driver Model:
     - init
 
 Devicetree:
-  status: maintained
-  maintainers:
-    - mbolivar
+  status: odd fixes
   collaborators:
+    - mbolivar
     - decsny
     - rruuaanng
   files-regex:
