@@ -179,7 +179,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		goto out;
 	}
 
-	*ext = llext_alloc_data(sizeof(struct llext));
+	*ext = llext_alloc_metadata(sizeof(struct llext));
 	if (*ext == NULL) {
 		LOG_ERR("Not enough memory for extension metadata");
 		ret = -ENOMEM;
@@ -188,7 +188,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 
 	ret = do_llext_load(ldr, *ext, ldr_parm);
 	if (ret < 0) {
-		llext_free(*ext);
+		llext_free_metadata(*ext);
 		*ext = NULL;
 		goto out;
 	}
@@ -238,13 +238,13 @@ int llext_unload(struct llext **ext)
 	k_mutex_unlock(&llext_lock);
 
 	if (tmp->sect_hdrs_on_heap) {
-		llext_free(tmp->sect_hdrs);
+		llext_free_metadata(tmp->sect_hdrs);
 	}
 
 	llext_free_regions(tmp);
-	llext_free(tmp->sym_tab.syms);
-	llext_free(tmp->exp_tab.syms);
-	llext_free(tmp);
+	llext_free_metadata(tmp->sym_tab.syms);
+	llext_free_metadata(tmp->exp_tab.syms);
+	llext_free_metadata(tmp);
 
 	return 0;
 }
