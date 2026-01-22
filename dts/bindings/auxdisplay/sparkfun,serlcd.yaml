@@ -46,7 +46,7 @@ properties:
 examples:
   - |
     &i2c1 {
-      serlcd@72 {
+      auxdisplay_0: serlcd@72 {
         compatible = "sparkfun,serlcd";
         reg = <0x72>;
         columns = <16>;
