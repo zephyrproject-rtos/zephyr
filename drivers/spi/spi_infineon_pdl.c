@@ -44,6 +44,12 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #define IFX_SPI_ASYMM_PDL_FUNC_AVAIL
 #endif
 
+#if defined(CY_IP_MXSCB_INSTANCES)
+#define IFX_SCB_ARRAY_SIZE (CY_IP_MXSCB_INSTANCES)
+#elif defined(CY_IP_M0S8SCB_INSTANCES)
+#define IFX_SCB_ARRAY_SIZE (CY_IP_M0S8SCB_INSTANCES)
+#endif
+
 #ifdef CONFIG_SPI_INFINEON_DMA
 /* dummy buffers to be used by driver for DMA operations when app gives a NULL buffer
  * during an asymmetric transfer
@@ -134,7 +140,120 @@ static void ifx_cat1_spi_cb_wrapper(const struct device *dev, uint32_t event);
 cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *tx, size_t tx_length,
 				      uint8_t *rx, size_t rx_length);
 
-int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr);
+CySCB_Type *const IFX_SCB_BASE_ADDR[IFX_SCB_ARRAY_SIZE] = {
+#ifdef SCB0
+	SCB0,
+#endif
+#ifdef SCB1
+	SCB1,
+#endif
+#ifdef SCB2
+	SCB2,
+#endif
+#ifdef SCB3
+	SCB3,
+#endif
+#ifdef SCB4
+	SCB4,
+#endif
+#ifdef SCB5
+	SCB5,
+#endif
+#ifdef SCB6
+	SCB6,
+#endif
+#ifdef SCB7
+	SCB7,
+#endif
+#ifdef SCB8
+	SCB8,
+#endif
+#ifdef SCB9
+	SCB9,
+#endif
+#ifdef SCB10
+	SCB10,
+#endif
+#ifdef SCB11
+	SCB11,
+#endif
+#ifdef SCB12
+	SCB12,
+#endif
+#ifdef SCB13
+	SCB13,
+#endif
+#ifdef SCB14
+	SCB14,
+#endif
+#ifdef SCB15
+	SCB15,
+#endif
+};
+
+const uint8_t IFX_SCB_BASE_ADDR_IDX[IFX_SCB_ARRAY_SIZE] = {
+#ifdef SCB0
+	0u,
+#endif
+#ifdef SCB1
+	1u,
+#endif
+#ifdef SCB2
+	2u,
+#endif
+#ifdef SCB3
+	3u,
+#endif
+#ifdef SCB4
+	4u,
+#endif
+#ifdef SCB5
+	5u,
+#endif
+#ifdef SCB6
+	6u,
+#endif
+#ifdef SCB7
+	7u,
+#endif
+#ifdef SCB8
+	8u,
+#endif
+#ifdef SCB9
+	9u,
+#endif
+#ifdef SCB10
+	10u,
+#endif
+#ifdef SCB11
+	11u,
+#endif
+#ifdef SCB12
+	12u,
+#endif
+#ifdef SCB13
+	13u,
+#endif
+#ifdef SCB14
+	14u,
+#endif
+#ifdef SCB15
+	15u,
+#endif
+};
+
+int32_t ifx_get_hw_block_num(CySCB_Type *reg_addr)
+{
+	uint32_t val;
+
+	for (val = 0u; val < IFX_SCB_ARRAY_SIZE; val++) {
+		if (IFX_SCB_BASE_ADDR[val] == reg_addr) {
+			return IFX_SCB_BASE_ADDR_IDX[val];
+		}
+	}
+
+	return -1;
+}
 
 static uint8_t get_dfs_value(struct spi_context *ctx)
 {
@@ -497,7 +616,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 
 	/* Dedicate SCB HW resource */
 	data->resource.type = IFX_RSC_SCB;
-	data->resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
+	data->resource.block_num = ifx_get_hw_block_num(config->reg_addr);
 
 	/* Connect this SCB to the peripheral clock */
 	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
