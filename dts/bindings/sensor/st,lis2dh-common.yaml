@@ -5,17 +5,6 @@ description: |
     When setting the int1-gpio-config/int2-gpio-config and anym-mode properties
     in a .dts or .dtsi file you may include lis2dh.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/lis2dh.h>
-
-    lis2dh: lis2dh@0 {
-      ...
-
-      int1-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
-      int2-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
-      anym-mode = <LIS2DH_DT_ANYM_6D_POSITION>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -93,3 +82,15 @@ properties:
       - 3 # LIS2DH_DT_ANYM_6D_POSITION
 
     enum: [0, 1, 2, 3]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lis2dh.h>
+
+    lis2dh: lis2dh@0 {
+      /* ... */
+
+      int1-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
+      int2-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
+      anym-mode = <LIS2DH_DT_ANYM_6D_POSITION>;
+    };

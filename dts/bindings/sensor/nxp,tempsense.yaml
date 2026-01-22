@@ -5,34 +5,7 @@ description: |
   NXP on-die temperature sensor (TEMPSENSE)
 
   Note: The temperature value calculation depends on the ADC reference voltage
-  and resolution. These must be configured in the ADC node. Here is an example
-  tempsense and ADC channel configuration:
-
-  tempsense: tempsense@1234 {
-    status = "okay";
-    reg = <0x1234 0x100>;
-    compatible = "nxp,tempsense";
-    io-channels = <&adc_0 0>;
-  };
-
-  adc_0: adc@5678 {
-    status = "okay";
-    compatible = "nxp,sar-adc";
-    reg = <0x5678 0x1000>;
-    ...
-    #address-cells = <1>;
-    #size-cells = <0>;
-
-    channel@0 {
-      reg = <0>;
-      zephyr,gain = "ADC_GAIN_1";
-      zephyr,reference = "ADC_REF_VDD_1";
-      zephyr,vref-mv = <3300>;
-      zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-      zephyr,resolution = <15>;
-      zephyr,input-positive = <49>;
-    };
-  };
+  and resolution. These must be configured in the ADC node.
 
 compatible: "nxp,tempsense"
 
@@ -51,3 +24,31 @@ properties:
       If present, set ETSCTL[GNDSEL] to expose the ETS ground on the ADC
       output (requires ETS_EN=1). This can improve precision when the ADC
       ground and ETS ground differ.
+
+examples:
+  - |
+    tempsense: tempsense@1234 {
+      status = "okay";
+      reg = <0x1234 0x100>;
+      compatible = "nxp,tempsense";
+      io-channels = <&adc_0 0>;
+    };
+
+    adc_0: adc@5678 {
+      status = "okay";
+      compatible = "nxp,sar-adc";
+      reg = <0x5678 0x1000>;
+      /* ... */
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      channel@0 {
+        reg = <0>;
+        zephyr,gain = "ADC_GAIN_1";
+        zephyr,reference = "ADC_REF_VDD_1";
+        zephyr,vref-mv = <3300>;
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <15>;
+        zephyr,input-positive = <49>;
+      };
+    };

@@ -6,18 +6,6 @@ description: |
     a .dts or .dtsi file you may include lsm6dso16is.h and use the macros
     defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
-
-    lsm6dso16is: lsm6dso16is@0 {
-      ...
-
-      accel-range = <LSM6DSO16IS_DT_FS_8G>;
-      accel-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
-      gyro-range = <LSM6DSO16IS_DT_FS_2000DPS>;
-      gyro-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -145,3 +133,16 @@ properties:
     description: |
       Selects the pulsed mode for data-ready interrupt when enabled,
       and the latched mode when disabled.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
+
+    lsm6dso16is: lsm6dso16is@0 {
+      /* ... */
+
+      accel-range = <LSM6DSO16IS_DT_FS_8G>;
+      accel-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
+      gyro-range = <LSM6DSO16IS_DT_FS_2000DPS>;
+      gyro-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
+    };
