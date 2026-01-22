@@ -76,7 +76,7 @@ static int scmi_pd_init(const struct device *dev)
 			      PM_DEVICE_DT_INST_GET(inst),			\
 			      NULL,						\
 			      &scmi_pd_cfg_##inst,				\
-			      PRE_KERNEL_2,					\
+			      PRE_KERNEL_1,					\
 			      CONFIG_POWER_DOMAIN_ARM_SCMI_INIT_PRIORITY,	\
 			      NULL);
 DT_INST_FOREACH_STATUS_OKAY(SCMI_PD_DEVICE)
