@@ -346,15 +346,41 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32n6570_dk
+   :board: stm32n6570_dk/stm32n657xx/fsbl
    :maybe-skip-config:
    :goals: debug
+
+To debug a multi-stage application (application loaded by a bootloader such as MCUboot), follow these steps:
+
+To debug the bootloader
+
+.. code-block:: console
+
+   west debug --domain mcuboot
+
+To debug the chainloaded application, enter the bootloader debug session, then run the following gdb commands:
+
+.. code-block:: console
+
+   (gdb) b main
+   (gdb) c
+   (gdb) add-symbol-file ./build/hello_world/zephyr/zephyr.elf
+   (gdb) set directories samples/hello_world/src/
+   (gdb) b main
+   (gdb) c
 
 .. note::
    To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
    * BOOT0: 0
    * BOOT1: 1
+
+   Then, don't forget to systematically power reset the board before each debug session.
+   This can be done using the following script:
+
+   .. code-block:: console
+
+      ./boards/st/common/scripts/board_power_reset.sh
 
 Another solution for debugging is to use STM32CubeIDE:
 
