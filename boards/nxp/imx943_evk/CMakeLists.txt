@@ -19,7 +19,91 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     set(DDR_FW "lpddr5")
   endif()
 
-  if(CONFIG_SOC_MIMX94398_A55)
+  if(CONFIG_SOC_MIMX94398_M7_0)
+    set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m7_0_ahab.yaml")
+
+    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
+      "
+      family: mimx943
+      revision: a0
+      target_memory: standard
+      output:                   ${CMAKE_BINARY_DIR}/zephyr/flash.bin
+      containers:
+        - binary_container:
+            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a0-ahab-container.img
+        - container:
+            srk_set: none
+            images:
+              - lpddr_imem:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_imem_v202409.bin
+                lpddr_imem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_imem_qb_v202409.bin
+                lpddr_dmem:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_v202409.bin
+                lpddr_dmem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_qb_v202409.bin
+                oei_ddr:        ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/oei-m33-ddr-${DDR_FW}.bin
+              - system_manager: ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/m33_image-mx94alt.bin
+              - cortex_m7_app:  ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
+    ")
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${7Z_EXECUTABLE} x ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin -o./imx-boot-firmware -aos -bso0 -bse1
+      COMMAND ${7Z_EXECUTABLE} x imx-boot-firmware/${FIRMWARE_RELEASE} -aos -bso0 -bse1
+      COMMAND nxpimage ahab export -c ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
+    )
+  elseif(CONFIG_SOC_MIMX94398_M7_1)
+    set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m7_1_ahab.yaml")
+
+    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
+      "
+      family: mimx943
+      revision: a0
+      target_memory: standard
+      output:                   ${CMAKE_BINARY_DIR}/zephyr/flash.bin
+      containers:
+        - binary_container:
+            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a0-ahab-container.img
+        - container:
+            srk_set: none
+            images:
+              - lpddr_imem:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_imem_v202409.bin
+                lpddr_imem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_imem_qb_v202409.bin
+                lpddr_dmem:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_v202409.bin
+                lpddr_dmem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_qb_v202409.bin
+                oei_ddr:        ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/oei-m33-ddr-${DDR_FW}.bin
+              - system_manager: ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/m33_image-mx94alt.bin
+              - cortex_m7_2_app:  ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
+    ")
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${7Z_EXECUTABLE} x ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin -o./imx-boot-firmware -aos -bso0 -bse1
+      COMMAND ${7Z_EXECUTABLE} x imx-boot-firmware/${FIRMWARE_RELEASE} -aos -bso0 -bse1
+      COMMAND nxpimage ahab export -c ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
+    )
+  elseif(CONFIG_SOC_MIMX94398_M33)
+    set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m33_ahab.yaml")
+
+    file(WRITE ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
+      "
+      family: mimx943
+      revision: a0
+      target_memory: standard
+      output:                   ${CMAKE_BINARY_DIR}/zephyr/flash.bin
+      containers:
+        - binary_container:
+            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a0-ahab-container.img
+        - container:
+            srk_set: none
+            images:
+              - lpddr_imem:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_imem_v202409.bin
+                lpddr_imem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_imem_qb_v202409.bin
+                lpddr_dmem:     ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_v202409.bin
+                lpddr_dmem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_qb_v202409.bin
+                oei_ddr:        ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/oei-m33-ddr-${DDR_FW}.bin
+              - system_manager: ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/m33_image-mx94alt.bin
+              - cortex_m33_2_app:  ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
+    ")
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${7Z_EXECUTABLE} x ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin -o./imx-boot-firmware -aos -bso0 -bse1
+      COMMAND ${7Z_EXECUTABLE} x imx-boot-firmware/${FIRMWARE_RELEASE} -aos -bso0 -bse1
+      COMMAND nxpimage ahab export -c ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
+    )
+  elseif(CONFIG_SOC_MIMX94398_A55)
     file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx943_evk_mimx94398_a55_ahab_primary.yaml
       "
       family: mimx943
