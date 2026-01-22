@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, NXP
+ * Copyright (c) 2020, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -169,30 +169,33 @@ static DEVICE_API(wdt, mcux_wdog_api) = {
 	.feed = mcux_wdog_feed,
 };
 
-static void mcux_wdog_config_func(const struct device *dev);
+#define MCUX_WDOG_INIT(id)								\
+	static void mcux_wdog_config_func_##id(const struct device *dev);		\
+											\
+	PINCTRL_DT_INST_DEFINE(id);							\
+											\
+	static const struct mcux_wdog_config mcux_wdog_config_##id = {			\
+		.base = (WDOG_Type *)DT_INST_REG_ADDR(id),				\
+		.irq_config_func = mcux_wdog_config_func_##id,				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),				\
+	};										\
+											\
+	static struct mcux_wdog_data mcux_wdog_data_##id;				\
+											\
+	DEVICE_DT_INST_DEFINE(id,							\
+			      &mcux_wdog_init,						\
+			      NULL,							\
+			      &mcux_wdog_data_##id, &mcux_wdog_config_##id,		\
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      &mcux_wdog_api);						\
+											\
+	static void mcux_wdog_config_func_##id(const struct device *dev)		\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(id),						\
+			    DT_INST_IRQ(id, priority),					\
+			    mcux_wdog_isr, DEVICE_DT_INST_GET(id), 0);			\
+											\
+		irq_enable(DT_INST_IRQN(id));						\
+	}
 
-PINCTRL_DT_INST_DEFINE(0);
-
-static const struct mcux_wdog_config mcux_wdog_config = {
-	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
-	.irq_config_func = mcux_wdog_config_func,
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-};
-
-static struct mcux_wdog_data mcux_wdog_data;
-
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_wdog_init,
-		    NULL,
-		    &mcux_wdog_data, &mcux_wdog_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wdog_api);
-
-static void mcux_wdog_config_func(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wdog_isr, DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
+DT_INST_FOREACH_STATUS_OKAY(MCUX_WDOG_INIT)
