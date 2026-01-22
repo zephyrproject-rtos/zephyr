@@ -42,7 +42,7 @@ jobs:
     steps:
       - name: Checkout
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
+        uses: zephyrproject-rtos/action-zephyr-setup@360ff9b36e58499d9eb28015cdcde7ca03a5b04d # v1.0.12
         with:
           app-path: zephyr
           enable-ccache: false
@@ -171,7 +171,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -283,7 +283,7 @@ jobs:
 
       - name: Upload Unit Test Results
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: Unit Test Results (Subset ${{ matrix.subset }})
           if-no-files-found: ignore
@@ -305,7 +305,7 @@ jobs:
 
       - if: matrix.subset == 1 && github.event_name == 'push'
         name: Upload the list of Python packages
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: Frozen PIP package set
           path: |
@@ -323,7 +323,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -341,7 +341,7 @@ jobs:
           pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Download Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           path: artifacts
 
@@ -352,7 +352,7 @@ jobs:
 
       - name: Upload Unit Test Results
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: Unit Test Results
           if-no-files-found: ignore
@@ -362,12 +362,12 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() && (github.event_name == 'push') }}
-        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f # v1.1.1
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@34d7c956a59aed1bfebf31df77b8de55db9bbaaf # v2.21.0
+        uses: EnricoMi/publish-unit-test-result-action@27d65e188ec43221b20d26de30f4892fad91df2f # v2.22.0
         with:
           check_name: Unit Test Results
           files: "**/twister.xml"
@@ -384,7 +384,7 @@ jobs:
 
       - name: Upload Twister Analysis Results
         if: needs.twister-build.result == 'failure'
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: Twister Analysis Results
           if-no-files-found: ignore

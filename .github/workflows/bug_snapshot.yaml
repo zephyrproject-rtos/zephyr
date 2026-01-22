@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Set up Python
       uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
@@ -51,7 +51,7 @@ jobs:
         echo "BUGS_PICKLE_PATH=${BUGS_PICKLE_PATH}" >> ${GITHUB_ENV}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
+      uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_SECRET_ACCESS_KEY }}

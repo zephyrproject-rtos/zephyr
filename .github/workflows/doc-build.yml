@@ -27,12 +27,12 @@ jobs:
       file_check: ${{ steps.check-doc-files.outputs.any_modified }}
     steps:
     - name: checkout
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+      uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47.0.1
       id: check-doc-files
       with:
         files: |
@@ -92,7 +92,7 @@ jobs:
         git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
     - name: Checkout
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -156,13 +156,13 @@ jobs:
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
     - name: Upload HTML output
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: html-output
         path: html-output.tar.xz
 
     - name: Upload Doxygen coverage artifacts
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: api-coverage
         path: api-coverage.tar.xz
@@ -183,7 +183,7 @@ jobs:
         echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: Upload PR number
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       if: github.event_name == 'pull_request'
       with:
         name: pr_num
@@ -202,7 +202,7 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         path: zephyr
 
@@ -230,7 +230,7 @@ jobs:
         echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
+      uses: zephyrproject-rtos/action-zephyr-setup@360ff9b36e58499d9eb28015cdcde7ca03a5b04d # v1.0.12
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'
@@ -259,7 +259,7 @@ jobs:
 
     - name: upload-build
       if: always()
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: pdf-output
         if-no-files-found: ignore

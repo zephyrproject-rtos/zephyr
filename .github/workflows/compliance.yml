@@ -21,7 +21,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Checkout the code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -61,7 +61,7 @@ jobs:
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
 
     - name: Setup Node.js
-      uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+      uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
       with:
         node-version: "lts/*"
         cache: npm
@@ -91,14 +91,14 @@ jobs:
         ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
 
     - name: upload-results
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       continue-on-error: true
       with:
         name: compliance.xml
         path: compliance.xml
 
     - name: Upload dts linter patch
-      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       continue-on-error: true
       if: hashFiles('dts_linter.patch') != ''
       with:
