@@ -162,6 +162,7 @@ void load_call_unload(const struct llext_test *test_case)
 	res = llext_add_domain(ext, &domain);
 	if (res == -ENOSPC) {
 		TC_PRINT("Too many memory partitions for this particular hardware\n");
+		llext_unload(&ext);
 		ztest_test_skip();
 		return;
 	}

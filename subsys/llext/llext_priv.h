@@ -16,6 +16,8 @@
 
 #ifdef CONFIG_LLEXT_HEAP_K_HEAP
 #include "llext_kheap.h"
+#elif defined(CONFIG_LLEXT_HEAP_MEMBLK)
+#include "llext_memblk.h"
 #else
 #error "No LLEXT heap implementation selected; see CONFIG_LLEXT_HEAP_MANAGEMENT"
 #endif
