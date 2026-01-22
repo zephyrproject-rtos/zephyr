@@ -4,5 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "Kconfig.cdc_ecm"
 rsource "Kconfig.uvc"
 rsource "Kconfig.hub_host"
