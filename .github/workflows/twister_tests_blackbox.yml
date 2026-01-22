@@ -44,7 +44,7 @@ jobs:
         cache-dependency-path: scripts/requirements-actions.txt
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@cefbf9086ce2da7d70e7ad9589af8aa1e4bda265 # v1.0.11
+      uses: zephyrproject-rtos/action-zephyr-setup@0fa1f4cdbd22d1ec8d502287e5174390416a8f36 # drop ninja PR 60
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi:riscv64-zephyr-elf:x86_64-zephyr-elf'
