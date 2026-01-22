@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define FLASH_LAYOUT_STM32WBA6X /* see stm32wba.dtsi */
 #include <st/wba/stm32wba55.dtsi>
 
 / {
