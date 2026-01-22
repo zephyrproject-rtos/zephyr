@@ -108,7 +108,7 @@ void z_arm64_el3_init(void)
 		SCR_ST_BIT |		/* Do not trap EL1 accesses to timer */
 		SCR_HCE_BIT |		/* Do not trap HVC */
 		SCR_SMD_BIT);		/* Do not trap SMC */
-#ifdef CONFIG_ARM_PAC
+#if defined(CONFIG_ARM_PAC) || defined(CONFIG_ARM_BTI)
 	reg |= (SCR_APK_BIT |		/* Do not trap pointer authentication key accesses */
 		SCR_API_BIT);		/* Do not trap pointer authentication instructions */
 #endif
@@ -171,7 +171,7 @@ void z_arm64_el2_init(void)
 	reg &= ~(HCR_IMO_BIT | HCR_AMO_BIT | HCR_TGE_BIT);
 	reg |= HCR_RW_BIT;		/* EL1 Execution state is AArch64 */
 
-#ifdef CONFIG_ARM_PAC
+#if defined(CONFIG_ARM_PAC) || defined(CONFIG_ARM_BTI)
 	/* Do not trap pointer authentication instructions and key registers */
 	reg |= (HCR_API_BIT | HCR_APK_BIT);
 #endif
@@ -264,6 +264,12 @@ void z_arm64_el1_init(void)
 	write_apiakeyhi_el1(0xFEDCBA9876543210ULL);
 	/* Now enable Pointer Authentication */
 	reg |= SCTLR_EnIA_BIT;		/* Enable instruction address signing using key A */
+#endif
+
+#ifdef CONFIG_ARM_BTI
+	/* Enable Branch Target Identification */
+	reg |= SCTLR_BT0_BIT;		/* Enable BTI for EL0 (userspace threads) */
+	reg |= SCTLR_BT1_BIT;		/* Enable BTI for EL1 (kernel) */
 #endif
 
 	write_sctlr_el1(reg);

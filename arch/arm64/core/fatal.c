@@ -370,6 +370,20 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 #endif
 
 /**
+ * @brief Check if exception is a BTI violation
+ */
+static bool is_bti_violation(uint64_t esr)
+{
+#ifdef CONFIG_ARM_BTI
+	/* BTI violations have Exception Class 0x0d */
+	return (GET_ESR_EC(esr) == 0x0d);
+#else
+	ARG_UNUSED(esr);
+	return false;
+#endif
+}
+
+/**
  * @brief Check if exception is a PAC authentication failure
  *
  * PAC authentication failures typically manifest as FPAC exceptions
@@ -392,20 +406,31 @@ static bool is_pac_failure(uint64_t esr, uint64_t far)
 }
 
 /**
- * @brief Handle PAC-related exceptions
+ * @brief Handle PACBTI-related exceptions
  *
  * @param esf Exception stack frame
  * @param esr Exception syndrome register value
  * @param far Fault address register value
- * @return true if this was a PAC exception and was handled, false otherwise
+ * @return true if this was a PACBTI exception and was handled, false otherwise
  */
-static bool z_arm64_handle_pac_exception(struct arch_esf *esf, uint64_t esr, uint64_t far)
+static bool z_arm64_handle_pacbti_exception(struct arch_esf *esf, uint64_t esr, uint64_t far)
 {
 	ARG_UNUSED(esf);
 
 	if (is_pac_failure(esr, far)) {
 		EXCEPTION_DUMP("PAC AUTHENTICATION FAILURE");
 		EXCEPTION_DUMP("This indicates a potential ROP/JOP attack or corrupted pointer");
+#ifdef CONFIG_THREAD_NAME
+		EXCEPTION_DUMP("Thread: %s", _current ? _current->name : "unknown");
+#else
+		EXCEPTION_DUMP("Thread: %p", _current);
+#endif
+		return true;  /* Treat as fatal */
+	}
+
+	if (is_bti_violation(esr)) {
+		EXCEPTION_DUMP("BTI VIOLATION - Indirect branch to invalid target");
+		EXCEPTION_DUMP("This indicates a potential JOP attack or software bug");
 #ifdef CONFIG_THREAD_NAME
 		EXCEPTION_DUMP("Thread: %s", _current ? _current->name : "unknown");
 #else
@@ -475,8 +500,8 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 		}
 #endif
 
-		/* Check for PAC-related exceptions */
-		if (z_arm64_handle_pac_exception(esf, esr, far)) {
+		/* Check for PACBTI-related exceptions */
+		if (z_arm64_handle_pacbti_exception(esf, esr, far)) {
 			reason = K_ERR_CPU_EXCEPTION;
 		}
 

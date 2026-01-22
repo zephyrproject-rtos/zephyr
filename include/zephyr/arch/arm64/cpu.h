@@ -56,6 +56,8 @@
 #define SCTLR_I_BIT		BIT(12)
 #define SCTLR_BR_BIT		BIT(17)
 #define SCTLR_EnIA_BIT		BIT(31)	/* Enable Instruction address signing using key A */
+#define SCTLR_BT0_BIT		BIT(35)	/* PAC Branch Type compatibility for EL0 */
+#define SCTLR_BT1_BIT		BIT(36)	/* PAC Branch Type compatibility for EL1 */
 
 #define CPACR_EL1_FPEN		GENMASK(21, 20)
 #define CPACR_EL1_ZEN		GENMASK(17, 16)
