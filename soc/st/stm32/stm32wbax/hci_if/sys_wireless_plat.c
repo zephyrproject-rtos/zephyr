@@ -14,6 +14,7 @@
 #if defined(CONFIG_BT_STM32WBA)
 #include "bleplat.h"
 #include "bpka.h"
+#include "baes.h"
 #endif /* CONFIG_BT_STM32WBA */
 #include "linklayer_plat.h"
 
@@ -40,6 +41,31 @@ void BLEPLAT_Init(void)
 	if (!device_is_ready(rng_dev)) {
 		LOG_ERR("error: random device not ready");
 	}
+}
+
+int BLEPLAT_AesCcmCrypt(uint8_t mode,
+			const uint8_t *key,
+			uint8_t iv_length,
+			const uint8_t *iv,
+			uint16_t add_length,
+			const uint8_t *add,
+			uint32_t input_length,
+			const uint8_t *input,
+			uint8_t tag_length,
+			uint8_t *tag,
+			uint8_t *output)
+{
+	return BAES_CcmCrypt(mode,
+			     key,
+			     iv_length,
+			     iv,
+			     add_length,
+			     add,
+			     input_length,
+			     input,
+			     tag_length,
+			     tag,
+			     output);
 }
 
 void BLEPLAT_RngGet(uint8_t n, uint32_t *val)
