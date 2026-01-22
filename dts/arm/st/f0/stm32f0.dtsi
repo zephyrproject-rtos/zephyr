@@ -99,6 +99,31 @@
 				/* maximum erase time for a 2K sector */
 				max-erase-time = <40>;
 			};
+
+			/*
+			 * Device-unique information is stored
+			 * at the end of the System memory area.
+			 */
+			flash@1ffff700 {
+				compatible = "st,stm32-nvm-otp";
+				reg = <0x1ffff700 256>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ts_cal1_otp: ts-cal1@b8 {
+						reg = <0xb8 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+
+					vrefint_otp: vrefint@ba {
+						reg = <0xba 0x2>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
 		};
 
 		rcc: rcc@40021000 {

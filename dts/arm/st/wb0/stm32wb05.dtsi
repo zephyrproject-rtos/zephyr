@@ -10,6 +10,17 @@
 	soc {
 		compatible = "st,stm32wb05", "st,stm32wb0", "simple-bus";
 
+		flash-controller@40001000 {
+			flash@10001e00 {
+				nvmem-layout {
+					ts_tck_otp: tck@5c {
+						reg = <0x5c 0x4>;
+						#nvmem-cell-cells = <0>;
+					};
+				};
+			};
+		};
+
 		timers2: timers@40002000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 DT_SIZE_K(1)>;
