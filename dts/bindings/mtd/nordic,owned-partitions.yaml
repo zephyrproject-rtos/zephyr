@@ -15,12 +15,49 @@ description: |
   spanning the contained partitions will be recorded in the UICR. These regions
   are allowed to contain gaps between the partitions, but this is discouraged.
 
-  Example:
+compatible: "nordic,owned-partitions"
+
+include:
+  - name: nordic,owned-memory.yaml
+    property-blocklist:
+      - reg
+
+properties:
+  "#address-cells":
+    required: true
+
+  "#size-cells":
+    required: true
+
+child-binding:
+  description: |
+    Partitions in the table are defined as subnodes. Each partition must have a
+    size and an offset relative to the base address of the parent memory node.
+
+  include:
+    - name: base.yaml
+      property-blocklist:
+        - compatible
+
+  properties:
+    reg:
+      required: true
+
+examples:
+  - |
+    /*
+     * From the example below, two memory regions will be inferred:
+     *
+     *   - 0x0E0C0000--0x0E100000, with read & execute permissions, containing the
+     *     partition labeled "image-0".
+     *   - 0x0E100000--0x0E156000, with read & write permissions, containing the
+     *     partitions labeled "image-1" and "storage".
+     */
 
     mram1x: mram@e000000 {
         compatible = "nordic,mram";
         reg = <0xe000000 0x200000>;
-        ...
+        /* ... */
 
         rx-partitions {
             compatible = "nordic,owned-partitions";
@@ -50,38 +87,3 @@ description: |
             };
         };
     };
-
-  From this example, two memory regions will be inferred:
-
-    - 0x0E0C0000--0x0E100000, with read & execute permissions, containing the
-      partition labeled "image-0".
-    - 0x0E100000--0x0E156000, with read & write permissions, containing the
-      partitions labeled "image-1" and "storage".
-
-compatible: "nordic,owned-partitions"
-
-include:
-  - name: nordic,owned-memory.yaml
-    property-blocklist:
-      - reg
-
-properties:
-  "#address-cells":
-    required: true
-
-  "#size-cells":
-    required: true
-
-child-binding:
-  description: |
-    Partitions in the table are defined as subnodes. Each partition must have a
-    size and an offset relative to the base address of the parent memory node.
-
-  include:
-    - name: base.yaml
-      property-blocklist:
-        - compatible
-
-  properties:
-    reg:
-      required: true
