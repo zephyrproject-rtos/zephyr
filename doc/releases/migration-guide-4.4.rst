@@ -661,6 +661,9 @@ Bluetooth Audio
 * :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
   Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
   :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
+* :c:func:`bt_tbs_set_uri_scheme_list` now only takes a single string value,
+  instead of a list/array of URIs. Applications will need to modify any current input
+  from e.g. ``{"tel", "skype"}`` to ``"tel,skype"``. (:github:`102724`)
 
 Bluetooth Mesh
 ==============
