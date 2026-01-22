@@ -25,24 +25,26 @@ properties:
       clock for an specific peripheral. The generator 2 is used on this
       example and can be defined by the user at board.
 
-      Example: Enable SERCOM0 on SAMD21
-        &sercom0 {
-          clocks = <&gclk 0x14>, <&pm 0x20 2>;
-          clock-names = "GCLK", "PM";
-
-          atmel,assigned-clocks = <&gclk 2>;
-          atmel,assigned-clock-names = "GCLK";
-        };
-
-      Example: Enable SERCOM0 on SAME54
-        &sercom0 {
-          clocks = <&gclk 7>, <&mclk 0x14 12>;
-          clock-names = "GCLK", "MCLK";
-
-          atmel,assigned-clocks = <&gclk 2>;
-          atmel,assigned-clock-names = "GCLK";
-        };
-
 clock-cells:
   - offset
   - bit
+
+examples:
+  - |
+    /* Enable SERCOM0 on SAMD21 */
+    &sercom0 {
+      clocks = <&gclk 0x14>, <&pm 0x20 2>;
+      clock-names = "GCLK", "PM";
+
+      atmel,assigned-clocks = <&gclk 2>;
+      atmel,assigned-clock-names = "GCLK";
+    };
+  - |
+    /* Enable SERCOM0 on SAME54 */
+    &sercom0 {
+      clocks = <&gclk 7>, <&mclk 0x14 12>;
+      clock-names = "GCLK", "MCLK";
+
+      atmel,assigned-clocks = <&gclk 2>;
+      atmel,assigned-clock-names = "GCLK";
+    };

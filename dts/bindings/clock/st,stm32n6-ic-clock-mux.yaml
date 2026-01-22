@@ -6,13 +6,6 @@ description: |
 
   This node selects a clock input and a divider.
 
-  For instance:
-    &ic6 {
-      pll-src = <2>;
-      div = <16>;
-      status = "okay";
-    };
-
 compatible: "st,stm32n6-ic-clock-mux"
 
 properties:
@@ -33,3 +26,11 @@ properties:
         ICx integer division factor
         The input ICx frequency is divided by the specified value
         Valid range: 1 - 256
+
+examples:
+  - |
+    &ic6 {
+      pll-src = <2>;
+      div = <16>;
+      status = "okay";
+    };

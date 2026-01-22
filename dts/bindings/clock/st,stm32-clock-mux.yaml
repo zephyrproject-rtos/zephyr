@@ -7,11 +7,6 @@ description: |
         Describes a clock multiplexer, such as per_ck on STM32H7 or
         CLK48 on STM32WB.
         The only property of this node is to select a clock input.
-        For instance:
-                &perck {
-                        clocks = <&rcc STM32_SRC_HSI_KER CKPER_SEL(0)>;
-                        status = "okay";
-                };
 
 compatible: "st,stm32-clock-mux"
 
@@ -26,3 +21,10 @@ properties:
 
   clocks:
     required: true
+
+examples:
+  - |
+    &perck {
+            clocks = <&rcc STM32_SRC_HSI_KER CKPER_SEL(0)>;
+            status = "okay";
+    };

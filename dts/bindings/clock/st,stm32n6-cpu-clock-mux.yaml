@@ -7,13 +7,6 @@ description: |
   Describes the STM32N6 CPU clock multiplexer. On STM32N6, this is the CPU
   clock that feeds the SysTick.
 
-  For instance:
-  &cpusw {
-    clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
-    clock-frequency = <DT_FREQ_M(600)>;
-    status = "okay";
-  };
-
 compatible: "st,stm32n6-cpu-clock-mux"
 
 include:
@@ -29,3 +22,11 @@ properties:
     type: int
     description: |
       default frequency in Hz for CPU clock (sysa_ck/sys_cpu_ck)
+
+examples:
+  - |
+    &cpusw {
+            clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+            clock-frequency = <DT_FREQ_M(600)>;
+            status = "okay";
+    };
