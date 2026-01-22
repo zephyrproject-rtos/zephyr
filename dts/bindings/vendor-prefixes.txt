@@ -418,6 +418,7 @@ loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
 luatos	LuatOS Team
+luckfox	Shenzhen Luckfox Technology Co., Ltd.
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
 m5stack	M5Stack
