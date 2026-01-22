@@ -1,4 +1,4 @@
-.. _sparkfun_micromod:
+.. zephyr:board:: micromod
 
 SparkFun MicroMod board Processor
 #################################
@@ -72,35 +72,7 @@ hardware features:
 Supported Features
 ==================
 
-The Zephyr ``micromod/nrf52840`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth,                          |
-|           |            | ieee802154                          |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-| QSPI      | on-chip    | nordic,nrf-qspi                     |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 
 Connections and IOs
