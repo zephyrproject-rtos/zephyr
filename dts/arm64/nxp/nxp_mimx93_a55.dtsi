@@ -116,6 +116,12 @@
 		status = "disabled";
 	};
 
+	video_pll: videopll@44481400 {
+		compatible = "nxp,imx93-video-pll";
+		reg = <0x44481400 0x1000>;
+		status = "disabled";
+	};
+
 	wdog3: watchdog@42490000 {
 		compatible = "nxp,wdog32";
 		reg = <0x42490000 0x1000>;

@@ -543,6 +543,16 @@
 				height = <466>;
 				pixel-format = <0>;
 			};
+
+			test_rm67199: rm67199@8 {
+				status = "okay";
+				compatible = "raydium,rm67199";
+				reg = <8>;
+				bl-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <4>;
+				pixel-format = <0>;
+			};
 		};
 
 		test_spi: spi@33334444 {
