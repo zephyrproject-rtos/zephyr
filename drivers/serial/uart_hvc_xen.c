@@ -182,12 +182,6 @@ static int xen_hvc_irq_is_pending(const struct device *dev)
 	return xen_hvc_irq_rx_ready(dev);
 }
 
-static int xen_hvc_irq_update(const struct device *dev)
-{
-	/* Nothing needs to be updated before actual ISR */
-	return 1;
-}
-
 static void xen_hvc_irq_callback_set(const struct device *dev,
 		 uart_irq_callback_user_data_t cb, void *user_data)
 {
@@ -210,7 +204,6 @@ static DEVICE_API(uart, xen_hvc_api) = {
 	.irq_tx_complete = xen_hvc_irq_tx_complete,
 	.irq_rx_ready = xen_hvc_irq_rx_ready,
 	.irq_is_pending = xen_hvc_irq_is_pending,
-	.irq_update = xen_hvc_irq_update,
 	.irq_callback_set = xen_hvc_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
