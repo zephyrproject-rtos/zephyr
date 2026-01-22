@@ -304,6 +304,7 @@ st_cam_i2c: &i2c1 {
 		write-latency = <1>;
 		burst-length = <0>;
 		st,csbound = <11>;
+		st,refresh = <129>;
 		status = "okay";
 	};
 };
