@@ -7,6 +7,8 @@
 #ifndef _ITE_IT8XXX2_SOC_DT_H_
 #define _ITE_IT8XXX2_SOC_DT_H_
 
+#include <zephyr/drivers/wuc/wuc_ite.h>
+
 /*
  * For it8xxx2 wake-up controller (WUC)
  */
@@ -14,6 +16,16 @@
 	DEVICE_DT_GET(DT_PHANDLE(IT8XXX2_DT_INST_WUCCTRL(inst, idx), wucs))
 #define IT8XXX2_DEV_WUC_MASK(idx, inst)					\
 	DT_PHA(IT8XXX2_DT_INST_WUCCTRL(inst, idx), wucs, mask)
+
+/**
+ * @brief For it8xxx2, encode WUC id from wucctrl entry
+ *
+ * @param idx index in the wucctrl property
+ * @param inst instance number
+ * @return encoded WUC id (mask + flags)
+ */
+#define IT8XXX2_DEV_WUC_ID(idx, inst)					\
+	ITE_WUC_ID_ENCODE(IT8XXX2_DEV_WUC_MASK(idx, inst), 0)
 
 /**
  * @brief For it8xxx2, get a node identifier from a wucctrl property
@@ -61,6 +73,44 @@
 	LISTIFY(IT8XXX2_DT_INST_WUCCTRL_LEN(inst),			\
 		IT8XXX2_DT_WUC_ITEMS_FUNC, (,),				\
 		inst)							\
+	}
+
+/**
+ * @brief For it8xxx2, construct wuc_dt_spec structure in LISTIFY extension
+ *
+ * @param idx index in LISTIFY extension
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT
+ * @return a structure of wuc_dt_spec
+ */
+#define IT8XXX2_DT_WUC_SPEC_ITEMS_FUNC(idx, inst)			\
+	{									\
+		.dev = IT8XXX2_DEV_WUC(idx, inst),			\
+		.id = IT8XXX2_DEV_WUC_ID(idx, inst),			\
+	}
+
+/**
+ * @brief For it8xxx2, construct an array of wuc_dt_spec structures
+ *
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT
+ * @return an array of wuc_dt_spec structure
+ */
+#define IT8XXX2_DT_WUC_SPEC_ITEMS_LIST(inst) {			\
+	LISTIFY(IT8XXX2_DT_INST_WUCCTRL_LEN(inst),		\
+		IT8XXX2_DT_WUC_SPEC_ITEMS_FUNC, (,),		\
+		inst)							\
+	}
+
+/**
+ * @brief For it8xxx2, construct a single wuc_dt_spec from wucctrl entry
+ *
+ * @param idx index in the wucctrl property
+ * @param inst instance number
+ * @return a wuc_dt_spec initializer
+ */
+#define IT8XXX2_DT_WUC_SPEC_ITEM(idx, inst)			\
+	{								\
+		.dev = IT8XXX2_DEV_WUC(idx, inst),		\
+		.id = IT8XXX2_DEV_WUC_ID(idx, inst),		\
 	}
 
 /**

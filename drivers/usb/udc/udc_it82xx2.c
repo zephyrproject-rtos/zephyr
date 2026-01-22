@@ -11,8 +11,8 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
-#include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/drivers/wuc/wuc_ite.h>
 LOG_MODULE_REGISTER(udc_it82xx2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 #define DT_DRV_COMPAT ite_it82xx2_usb
@@ -105,13 +105,6 @@ struct it82xx2_ep_event {
 K_MSGQ_DEFINE(evt_msgq, sizeof(struct it82xx2_ep_event),
 	      CONFIG_UDC_IT82xx2_EVENT_COUNT, sizeof(uint32_t));
 
-struct usb_it8xxx2_wuc {
-	/* WUC control device structure */
-	const struct device *dev;
-	/* WUC pin mask */
-	uint8_t mask;
-};
-
 struct it82xx2_data {
 	const struct device *dev;
 
@@ -134,7 +127,7 @@ struct it82xx2_data {
 struct usb_it82xx2_config {
 	struct usb_it82xx2_regs *const base;
 	const struct pinctrl_dev_config *pcfg;
-	const struct usb_it8xxx2_wuc wuc;
+	const struct wuc_dt_spec wuc;
 	uint8_t usb_irq;
 	uint8_t wu_irq;
 	struct udc_ep_config *ep_cfg_in;
@@ -385,7 +378,7 @@ static void it82xx2_enable_wu_irq(const struct device *dev, bool enable)
 	const struct usb_it82xx2_config *config = dev->config;
 
 	/* Clear pending interrupt */
-	it8xxx2_wuc_clear_status(config->wuc.dev, config->wuc.mask);
+	wuc_clear_wakeup_source_triggered_dt(&config->wuc);
 
 	if (enable) {
 		irq_enable(config->wu_irq);
@@ -406,13 +399,14 @@ static void it82xx2_wu_isr(const void *arg)
 static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 {
 	const struct usb_it82xx2_config *config = dev->config;
+	struct wuc_dt_spec wuc = config->wuc;
 
 	/* Initializing the WUI */
-	it8xxx2_wuc_set_polarity(config->wuc.dev, config->wuc.mask, WUC_TYPE_EDGE_FALLING);
-	it8xxx2_wuc_clear_status(config->wuc.dev, config->wuc.mask);
+	wuc.id = ITE_WUC_ID_ENCODE(ITE_WUC_ID_DECODE_MASK(wuc.id), ITE_WUC_FLAG_EDGE_FALLING);
+	wuc_clear_wakeup_source_triggered_dt(&wuc);
 
 	/* Enabling the WUI */
-	it8xxx2_wuc_enable(config->wuc.dev, config->wuc.mask);
+	wuc_enable_wakeup_source_dt(&wuc);
 
 	/* Connect WU (USB D+) interrupt but make it disabled initially */
 	irq_connect_dynamic(config->wu_irq, 0, it82xx2_wu_isr, dev, 0);
@@ -1629,7 +1623,7 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 	static struct usb_it82xx2_config udc_cfg_##n = {                                           \
 		.base = (struct usb_it82xx2_regs *)DT_INST_REG_ADDR(n),                            \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.wuc = {.dev = IT8XXX2_DEV_WUC(0, n), .mask = IT8XXX2_DEV_WUC_MASK(0, n)},         \
+		.wuc = IT8XXX2_DT_WUC_SPEC_ITEM(0, n),                                             \
 		.usb_irq = DT_INST_IRQ_BY_IDX(n, 0, irq),                                          \
 		.wu_irq = DT_INST_IRQ_BY_IDX(n, 1, irq),                                           \
 		.ep_cfg_in = ep_cfg_out,                                                           \

@@ -19,6 +19,7 @@ config ITE_IT51XXX_INTC
 config ITE_IT51XXX_WUC
 	bool "ITE it51xxx Wakeup controller (WUC) interface"
 	default y
+	depends on !WUC
 	depends on DT_HAS_ITE_IT51XXX_WUC_ENABLED
 	help
 	  This option enables the wakeup controller interface for IT51XXX

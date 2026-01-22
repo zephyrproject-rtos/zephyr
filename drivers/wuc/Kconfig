@@ -20,6 +20,7 @@ config WUC_INIT_PRIORITY
 
 
 # zephyr-keep-sorted-start
+rsource "Kconfig.ite_wuc"
 rsource "Kconfig.mcux_wuc"
 # zephyr-keep-sorted-stop
 
