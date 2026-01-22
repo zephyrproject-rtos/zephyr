@@ -437,7 +437,7 @@ static struct memc_stm32_ospi_psram_data memc_stm32_ospi_data = {
 			.ChipSelectBoundary = DT_INST_PROP(0, st_csbound),
 			.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED,
 			.MaxTran = 0,
-			.Refresh = 320,
+			.Refresh = DT_INST_PROP(0, st_refresh),
 		},
 	},
 	.ospim_cfg = {
