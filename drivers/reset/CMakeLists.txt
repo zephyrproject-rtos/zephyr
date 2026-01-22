@@ -6,6 +6,7 @@ zephyr_library()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_RESET_AST10X0 reset_ast10x0.c)
+zephyr_library_sources_ifdef(CONFIG_RESET_AT32 reset_at32.c)
 zephyr_library_sources_ifdef(CONFIG_RESET_FOCALTECH_FT9001 reset_ft9001.c)
 zephyr_library_sources_ifdef(CONFIG_RESET_GD32 reset_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_RESET_INTEL_SOCFPGA reset_intel_socfpga.c)
