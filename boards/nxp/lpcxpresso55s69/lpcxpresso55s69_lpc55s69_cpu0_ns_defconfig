@@ -1,5 +1,5 @@
 #
-# Copyright 2019,2024 NXP
+# Copyright 2019,2024, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,3 +22,6 @@ CONFIG_ARM_TRUSTZONE_M=y
 CONFIG_BUILD_WITH_TFM=y
 
 CONFIG_BUILD_OUTPUT_HEX=y
+
+# Allow wwdt callback
+CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG=512
