@@ -1,10 +1,28 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_IDLE_TIMER := zephyr,cortex-m-idle-timer
+DT_NXP_LPTMR := nxp,lptmr
+
 if SOC_FAMILY_MCXC
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
+
+if PM && CORTEX_M_SYSTICK
+configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+	default y if TICKLESS_KERNEL
+endif # PM && CORTEX_M_SYSTICK
+
+if PM && $(dt_chosen_enabled,$(DT_CHOSEN_IDLE_TIMER))
+
+configdefault COUNTER
+	default y
+
+configdefault COUNTER_MCUX_LPTMR_ALARM
+	default y if $(dt_chosen_has_compat,$(DT_CHOSEN_IDLE_TIMER),$(DT_NXP_LPTMR))
+
+endif
 
 config NUM_IRQS
 	default 32
