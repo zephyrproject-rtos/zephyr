@@ -234,7 +234,7 @@ for brevity, in real drivers they must be handled.
 
    struct dummy_driver_config {
            const struct device *bus;
-           const struct gpio_dt_spec int_pin;
+           const struct gpio_dt_spec int_gpio;
            const struct gpio_dt_spec enable_pin;
    };
 
@@ -253,7 +253,7 @@ for brevity, in real drivers they must be handled.
    static int dummy_driver_pm_suspend(const struct device *dev)
    {
            struct dummy_driver_data *dev_data = dev->data;
-           const struct dummy_driver_config *dev_config = dev->config;
+           const struct dummy_driver_config *config = dev->config;
 
            /* Request devices needed by device */
            (void)pm_device_runtime_get(config->enable_pin.port);
@@ -282,7 +282,7 @@ for brevity, in real drivers they must be handled.
    static int dummy_driver_pm_resume(const struct device *dev)
    {
            struct dummy_driver_data *dev_data = dev->data;
-           const struct dummy_driver_config *dev_config = dev->config;
+           const struct dummy_driver_config *config = dev->config;
 
            /* Request devices needed by device */
            (void)pm_device_runtime_get(config->enable_pin.port);
@@ -326,7 +326,7 @@ for brevity, in real drivers they must be handled.
 
    static int dummy_driver_pm_turn_off(const struct device *dev)
    {
-           const struct dummy_driver_config *dev_config = dev->config;
+           const struct dummy_driver_config *config = dev->config;
 
            /* Request devices needed for configuring device */
            (void)pm_device_runtime_get(config->enable_pin.port);
@@ -356,7 +356,7 @@ for brevity, in real drivers they must be handled.
 
    static int dummy_driver_pm_turn_on(const struct device *dev)
    {
-           const struct dummy_driver_config *dev_config = dev->config;
+           const struct dummy_driver_config *config = dev->config;
 
            /* Request devices needed for configuring device */
            (void)pm_device_runtime_get(config->enable_pin.port);
