@@ -1,0 +1,5 @@
+# Copyright (c) 2018 Philémon Jaermann
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AT_START_F405
+	select SOC_AT32F405
