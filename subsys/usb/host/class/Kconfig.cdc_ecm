@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ECM_CLASS
+	bool "USB Communication Device Class - Ethernet Control Mode (CDC-ECM) implementation [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	select CRC
+	help
+	  USB Host Communication Device Class - Ethernet Control Mode (CDC-ECM) implementation.
+
+if USBH_CDC_ECM_CLASS
+
+config USBH_CDC_ECM_ETH_DRV_NAME
+	string "USB CDC-ECM ethernet interface name"
+	default "zeth"
+	help
+	  This option sets the driver name and name of the network interface
+	  in your host system. If there are multiple network interfaces defined,
+	  then this value is used as a prefix and use "(usbh_cdc_ecm)" as suffix
+	  and the interface names will be "zeth0 (usbh_cdc_ecm)",
+	  "zeth1 (usbh_cdc_ecm)", etc.
+
+config USBH_CDC_ECM_DATA_BUF_POOL_SIZE
+	int "USB CDC-ECM buffer pool size"
+	default 1514
+	range 60 9000
+	help
+	  USB CDC-ECM buffer pool size in bytes.
+
+config USBH_CDC_ECM_DATA_TX_CONCURRENT_NUM
+	int "USB CDC-ECM maximum concurrent transmissions"
+	default 4
+	help
+		Number of USB CDC-ECM maximum concurrent transmissions.
+
+config USBH_CDC_ECM_HW_STATS
+	bool "CDC-ECM hardware network statistics (if the USB device supports it)"
+	help
+	  Collection of hardware network statistics for CDC-ECM devices.
+
+config USBH_CDC_ECM_HW_STATS_INTERVAL
+	int "CDC-ECM hardware network statistics interval"
+	depends on USBH_CDC_ECM_HW_STATS
+	default 5
+	help
+	  CDC-ECM hardware network statistics collection interval in seconds.
+
+module = USBH_CDC_ECM
+module-str = "usbh cdc_ecm"
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_CDC_ECM_CLASS
