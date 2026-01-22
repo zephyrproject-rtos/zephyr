@@ -1,0 +1,15 @@
+# Copyright (c) 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB CDC Ethernet Control Model (CDC-ECM) host instance.
+  Each CDC-ECM instance added to the USB Host Controller (UHC) node
+  will be visible as a new ethernet interface from Zephyr point of
+  view.
+  As soon as a ethernet interface is connected to USB this device will
+  be usable by the application as a ethernet interface device,
+  following the networking API.
+
+compatible: "zephyr,cdc-ecm-host"
+
+include: base.yaml
