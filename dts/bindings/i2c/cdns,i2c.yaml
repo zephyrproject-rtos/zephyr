@@ -5,18 +5,6 @@
 description: |
   Cadence I2C controller.
 
-  Example I2C device tree node:
-    i2c@e0004000 {
-        compatible = "cdns,i2c";
-        clocks = <&clkc 38>;
-        interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
-        reg = <0xe0004000 0x1000>;
-        clock-frequency = <400000>;
-        #address-cells = <1>;
-        #size-cells = <0>;
-        fifo-depth = <8>;
-    };
-
 compatible: "cdns,i2c"
 
 include: [i2c-controller.yaml, reset-device.yaml]
@@ -40,3 +28,16 @@ properties:
     type: int
     required: true
     description: Size of the data FIFO in bytes.
+
+examples:
+  - |
+    i2c@e0004000 {
+        compatible = "cdns,i2c";
+        clocks = <&clkc 38>;
+        interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
+        reg = <0xe0004000 0x1000>;
+        clock-frequency = <400000>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        fifo-depth = <8>;
+    };
