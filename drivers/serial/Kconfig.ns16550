@@ -5,7 +5,7 @@ menuconfig UART_NS16550
 	default y
 	depends on DT_HAS_NS16550_ENABLED
 	select SERIAL_HAS_DRIVER
-	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_INTERRUPT if $(dt_compat_any_has_prop,$(DT_COMPAT_NS16550),interrupts)
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_NS16550),pinctrl-0)
 	help
 	  This option enables the NS16550 serial driver.
