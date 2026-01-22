@@ -71,6 +71,10 @@ Injection help can be received with:
      enable_nmi    :Enable NMI
      test_default  :Test default injection parameters
 
+.. note::
+   Since each vendor implements EDAC differently, the exact meanings of param1
+   and param2 should be checked in the corresponding driver implementation.
+
 Testing Error Injection
 =======================
 
@@ -78,11 +82,11 @@ Set Error Injection parameters with:
 
 .. code-block:: console
 
-   uart:~$ edac inject addr 0x1000
-   Set injection address base to: 0x1000
+   uart:~$ edac inject param1 0x1000
+   Set injection param1 to: 0x1000
 
-   uart:~$ edac inject mask 0x7fffffffc0
-   Set injection address mask to 7fffffffc0
+   uart:~$ edac inject param2 0x7fffffffc0
+   Set injection param2 to 7fffffffc0
 
    uart:~$ edac inject error_type correctable
    Set injection error type: correctable
