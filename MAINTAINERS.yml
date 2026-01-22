@@ -5604,6 +5604,17 @@ West:
   labels:
     - "platform: Ambiq"
 
+"West project: hal_at32":
+  status: maintained
+  maintainers:
+    - ubieda
+  collaborators:
+    - asmellby
+  files:
+    - modules/hal_at32/
+  labels:
+    - "platform: AT32"
+
 "West project: hal_atmel":
   status: maintained
   maintainers:
