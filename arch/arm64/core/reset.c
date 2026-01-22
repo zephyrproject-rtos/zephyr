@@ -266,6 +266,12 @@ void z_arm64_el1_init(void)
 	reg |= SCTLR_EnIA_BIT;		/* Enable instruction address signing using key A */
 #endif
 
+#ifdef CONFIG_ARM_BTI
+	/* Enable Branch Target Identification */
+	reg |= SCTLR_BT0_BIT;		/* Enable BTI for EL0 (userspace threads) */
+	reg |= SCTLR_BT1_BIT;		/* Enable BTI for EL1 (kernel) */
+#endif
+
 	write_sctlr_el1(reg);
 	barrier_isync_fence_full();
 
