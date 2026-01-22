@@ -163,8 +163,8 @@ docutils==0.21.2 \
     #   sphinx-rtd-theme
     #   sphinx-tabs
     #   sphinx-togglebutton
-doxmlparser==1.15.0 \
-    --hash=sha256:a5107dbc96577c1078377790df9332d91845ce0f07c93b3fa393023195a4fe34
+doxmlparser==1.16.1 \
+    --hash=sha256:3f51651077a8a77360548e4a236b7b9ae71a283f187373677fa4a2ab763b9c2e
     # via -r requirements.in
 exceptiongroup==1.3.1 ; python_full_version < '3.11' \
     --hash=sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219 \
@@ -679,9 +679,9 @@ sphinx-notfound-page==1.1.0 \
     --hash=sha256:835dc76ff7914577a1f58d80a2c8418fb6138c0932c8da8adce4d9096fbcd389 \
     --hash=sha256:913e1754370bb3db201d9300d458a8b8b5fb22e9246a816643a819a9ea2b8067
     # via -r requirements.in
-sphinx-rtd-theme==3.0.2 \
-    --hash=sha256:422ccc750c3a3a311de4ae327e82affdaf59eb695ba4936538552f3b00f4ee13 \
-    --hash=sha256:b7457bc25dda723b20b086a670b9953c859eab60a2a03ee8eb2bb23e176e5f85
+sphinx-rtd-theme==3.1.0 \
+    --hash=sha256:1785824ae8e6632060490f67cf3a72d404a85d2d9fc26bce3619944de5682b89 \
+    --hash=sha256:b44276f2c276e909239a4f6c955aa667aaafeb78597923b1c60babc76db78e4c
     # via -r requirements.in
 sphinx-sitemap==2.9.0 \
     --hash=sha256:70f97bcdf444e3d68e118355cf82a1f54c4d3c03d651cd17fe87398b26e25e21 \
@@ -691,9 +691,9 @@ sphinx-tabs==3.4.7 \
     --hash=sha256:991ad4a424ff54119799ba1491701aa8130dd43509474aef45a81c42d889784d \
     --hash=sha256:c12d7a36fd413b369e9e9967a0a4015781b71a9c393575419834f19204bd1915
     # via -r requirements.in
-sphinx-togglebutton==0.3.2 \
-    --hash=sha256:9647ba7874b7d1e2d43413d8497153a85edc6ac95a3fea9a75ef9c1e08aaae2b \
-    --hash=sha256:ab0c8b366427b01e4c89802d5d078472c427fa6e9d12d521c34fa0442559dc7a
+sphinx-togglebutton==0.4.4 \
+    --hash=sha256:04c332692fd5f5363ad02a001e693369767d6c1f0e58279770a2aeb571b472a1 \
+    --hash=sha256:820658cd4c4c34c2ee7a21105e638b2f65a9e1d43ee991090715eb7fd9683cdf
     # via -r requirements.in
 sphinxcontrib-applehelp==2.0.0 \
     --hash=sha256:2f29ef331735ce958efa4734873f084941970894c6090408b079c61b2e1c06d1 \

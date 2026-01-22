@@ -2,7 +2,7 @@
 #      Follow the "Getting Started" guide first.
 
 sphinx<8.3.0
-sphinx_rtd_theme~=3.0
+sphinx_rtd_theme~=3.1
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 pygments>=2.9,!=2.19.0
