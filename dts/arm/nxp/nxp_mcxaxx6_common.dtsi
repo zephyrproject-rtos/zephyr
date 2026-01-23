@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -521,6 +521,14 @@
 			status = "disabled";
 			interrupts = <23 0>;
 			clocks = <&syscon MCUX_FLEXIO0_CLK>;
+		};
+
+		slcd0: slcd@400c2000 {
+			compatible = "nxp,slcd";
+			reg = <0x400c2000 0x1000>;
+			interrupts = <121 0>;
+			clocks = <&syscon MCUX_SLCD_CLK>;
+			status = "disabled";
 		};
 
 		trng: random@400ec000 {
