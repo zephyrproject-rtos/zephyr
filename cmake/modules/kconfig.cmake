@@ -209,7 +209,7 @@ foreach(kconfig_target
     ${KCONFIG_TARGETS}
     ${EXTRA_KCONFIG_TARGETS}
     )
-  add_custom_target(
+  zephyr_custom_target_shared(
     ${kconfig_target}
     ${CMAKE_COMMAND} -E env
     ZEPHYR_BASE=${ZEPHYR_BASE}
